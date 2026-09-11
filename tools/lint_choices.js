@@ -17,24 +17,50 @@
  * acknowledgment menu is a deliberate, common pattern; only bare narrative
  * options get held to the "must be a real choice" standard.
  *
- * Two checks:
- *   RULE A - the *choice contains 1 or fewer `#` option lines in total,
- *            counted anywhere inside it (any nesting depth). Always a bug.
- *   RULE B - every top-level item in the *choice is a conditional branch
- *            (no bare, unconditional `#`), all those branches test equality
- *            on the *same* variable with distinct literal values (so at
- *            most one can ever be true), and every one of them individually
- *            resolves to exactly one option. Since the variable can only
- *            hold one value, this *choice always renders exactly one
- *            option — same practical bug as Rule A, just spread across
- *            branches instead of written as a single bare line.
+ * For every *choice, the linter estimates two numbers:
+ *   guaranteedMin - the fewest options it can ever render. Unconditional
+ *                   `#` lines always count. For a group of branches that
+ *                   all test equality on the *same* variable with distinct
+ *                   values (e.g. character_class = "fighter" / "barbarian"
+ *                   / ...), exactly one is assumed to fire — same
+ *                   assumption this linter has always made — so the group
+ *                   contributes its smallest branch's option count, not
+ *                   the sum. Anything it can't classify (complex/compound
+ *                   conditions, or a lone branch sharing no variable with
+ *                   a sibling) contributes 0 to the guarantee, since it
+ *                   can't be proven always true.
+ *   possibleMax     - the most it could ever render: unconditional options,
+ *                   plus each mutually-exclusive group's *largest* branch
+ *                   (only one of them can fire at once), plus every
+ *                   ungrouped/complex branch's full count (best case, they
+ *                   could all coincide).
  *
- * This is a heuristic over the raw text, not a real ChoiceScript parser —
- * it assumes this project's consistent 2-space-per-level indentation and
- * simple `VAR = "value"` equality guards. Compound conditions (and/or) or
- * inconsistent indentation will fall back to "can't tell", not a false
- * "safe" — see the SKIPPED summary at the end for anything it couldn't
- * classify, and check those by eye.
+ * Three severities, worst first:
+ *   RULE A - guaranteedMin is 0 or 1 from unconditional `#` lines alone
+ *            (a flat, unconditional single-option or empty *choice).
+ *   RULE B - guaranteedMin is 1 via mutually-exclusive branches with no
+ *            unconditional fallback (the squad-test bug this tool was
+ *            originally built to catch: whichever single class/race/squad
+ *            branch is true is all the player ever sees).
+ *   RULE C - guaranteedMin is exactly 2. Not broken, but two options reads
+ *            almost as thin as one — three is treated as the standard
+ *            worth aiming for. Reported as a review list, not an error.
+ *
+ * This is a heuristic over the raw text, not a real ChoiceScript parser,
+ * and deliberately errs toward under-flagging: it assumes this project's
+ * consistent 2-space-per-level indentation and simple `VAR = "value"`
+ * equality guards. Compound conditions (and/or) or inconsistent
+ * indentation fall back to "can't tell" (contributing 0 to the guarantee,
+ * its full count to the possible max) rather than a false "safe" — see the
+ * SKIPPED summary at the end for anything it couldn't fully classify.
+ *
+ * A random-sampling approach (run many playthroughs, count what actually
+ * rendered) was considered instead, per a suggestion to try that — but
+ * static analysis is the better tool for this specific question: it gives
+ * a certain answer for every pattern it understands, with no risk of a
+ * rare state combination never getting sampled. Random testing still adds
+ * real value elsewhere (see check_balance.js for success/fail rates,
+ * which genuinely can't be computed without simulating rolls).
  *
  * Usage:
  *   node tools/lint_choices.js [path]
@@ -42,8 +68,9 @@
  *   path - optional single file or directory to lint (default:
  *          web/mygame/scenes/)
  *
- * Exit code is 1 if any Rule A/B issue was found, 0 otherwise (skips don't
- * affect the exit code — they're a nudge to look closer, not a failure).
+ * Exit code is 1 if any Rule A/B issue was found. Rule C findings and
+ * skips don't affect the exit code — they're a nudge to look closer, not
+ * a failure.
  */
 
 const fs = require('fs');
@@ -163,43 +190,100 @@ function lintFile(file) {
 
     const allTexts = hashTexts(lines, j, blockEndIdx);
     const totalHashes = allTexts.length;
+    const hasBranches = items.some((it) => it.kind === 'branch');
 
-    // Rule A: 0 or 1 real options anywhere in the whole block, unless
-    // that single option is a bracket-style nav/menu acknowledgment.
-    if (totalHashes === 0 || (totalHashes === 1 && !isNavOption(allTexts[0]))) {
-      findings.push({
+    // Case 1: no branches at all — the rendered count IS totalHashes, no
+    // uncertainty possible. Safe to score directly, including Rule C.
+    if (!hasBranches) {
+      if (totalHashes === 0 || (totalHashes === 1 && !isNavOption(allTexts[0]))) {
+        findings.push({
+          file,
+          line: choiceLineNum,
+          rule: 'A',
+          detail: `*choice resolves to ${totalHashes} option${totalHashes === 1 ? '' : 's'} — not a real choice`,
+        });
+      } else if (totalHashes === 2) {
+        findings.push({ file, line: choiceLineNum, rule: 'C', detail: 'exactly 2 unconditional options — consider a third' });
+      }
+      continue;
+    }
+
+    // Case 2: there are branches. Group simple, non-else branches by
+    // variable to find mutually exclusive sets (same variable, distinct
+    // literal values) — the only pattern this tool can reason about with
+    // full confidence. Anything else (compound conditions, a lone branch
+    // sharing no variable with a sibling, overlapping values) goes to
+    // `unresolved`: not because it's assumed to contribute 0, but because
+    // we genuinely can't tell, and a wrong confident answer is worse than
+    // an honest "check by eye".
+    const unconditionalCount = items.filter((it) => it.kind === 'hash').length;
+    const branches = items.filter((it) => it.kind === 'branch');
+
+    const byVariable = new Map();
+    const unresolved = [];
+
+    for (const b of branches) {
+      if (!b.simple || b.isElse) {
+        unresolved.push(b);
+        continue;
+      }
+      if (!byVariable.has(b.variable)) byVariable.set(b.variable, []);
+      byVariable.get(b.variable).push(b);
+    }
+
+    const exclusiveGroups = [];
+    for (const [variable, members] of byVariable) {
+      const distinctValues = new Set(members.map((m) => m.value)).size === members.length;
+      if (members.length < 2 || !distinctValues) {
+        unresolved.push(...members); // lone branch, or overlapping values — not provably exclusive
+        continue;
+      }
+      exclusiveGroups.push({ variable, members });
+    }
+
+    if (unresolved.length > 0) {
+      skipped.push({
         file,
         line: choiceLineNum,
-        rule: 'A',
-        detail: `*choice resolves to ${totalHashes} option${totalHashes === 1 ? '' : 's'} — not a real choice`,
+        reason: `${unresolved.length} branch(es) not fully classified (compound condition, or shares no variable with a sibling) — can't confidently bound this choice`,
       });
-      continue; // Rule B is moot if Rule A already fired.
+      continue; // do not score — an unresolved branch could always be the thing that saves it
     }
-    if (totalHashes <= 1) continue; // single nav option — fine, nothing more to check
 
-    // Rule B: every top-level item is a conditional branch (no bare '#'),
-    // all branches are simple equality on the same variable with distinct
-    // values, none is *else, and every branch offers exactly 1 option.
-    const hasUnconditional = items.some((it) => it.kind === 'hash');
-    const branches = items.filter((it) => it.kind === 'branch');
-    if (!hasUnconditional && branches.length >= 2) {
-      const allSimple = branches.every((b) => b.simple && !b.isElse);
-      const sameVar = allSimple && branches.every((b) => b.variable === branches[0].variable);
-      const distinctValues = sameVar && new Set(branches.map((b) => b.value)).size === branches.length;
-      const allSingleOption = branches.every((b) => b.optionCount === 1);
+    let guaranteedMin = unconditionalCount;
+    let possibleMax = unconditionalCount;
+    for (const g of exclusiveGroups) {
+      const counts = g.members.map((m) => m.optionCount);
+      guaranteedMin += Math.min(...counts);
+      possibleMax += Math.max(...counts);
+    }
 
-      if (sameVar && distinctValues && allSingleOption) {
+    if (guaranteedMin <= 1) {
+      const culprit = exclusiveGroups.find((g) => Math.min(...g.members.map((m) => m.optionCount)) === guaranteedMin);
+      if (unconditionalCount === 0 && culprit) {
         findings.push({
           file,
           line: choiceLineNum,
           rule: 'B',
-          detail: `all branches gate on \`${branches[0].variable}\` (values: ${branches
-            .map((b) => JSON.stringify(b.value))
-            .join(', ')}) with no unconditional fallback — since ${branches[0].variable} only ever holds one value, this always renders exactly 1 option`,
+          detail: `all branches gate on \`${culprit.variable}\` (values: ${culprit.members
+            .map((m) => JSON.stringify(m.value))
+            .join(', ')}) with no unconditional fallback — since ${culprit.variable} only ever holds one value, worst case renders exactly 1 option`,
         });
-      } else if (!allSimple) {
-        skipped.push({ file, line: choiceLineNum, reason: 'branches use compound/complex conditions, not analyzed' });
+      } else {
+        findings.push({
+          file,
+          line: choiceLineNum,
+          rule: 'B',
+          detail: `worst case renders ${guaranteedMin} option${guaranteedMin === 1 ? '' : 's'} (best case ${possibleMax})`,
+        });
       }
+    } else if (guaranteedMin === 2) {
+      findings.push({
+        file,
+        line: choiceLineNum,
+        rule: 'C',
+        detail: `worst case renders only 2 options (best case ${possibleMax}) — consider a third`,
+      });
     }
   }
 
@@ -216,20 +300,30 @@ for (const file of files) {
   allSkipped = allSkipped.concat(skipped);
 }
 
-if (allFindings.length === 0) {
-  console.log(`No single-option *choice issues found across ${files.length} file(s).`);
+const errors = allFindings.filter((f) => f.rule === 'A' || f.rule === 'B');
+const advisories = allFindings.filter((f) => f.rule === 'C');
+
+if (errors.length === 0) {
+  console.log(`No 0/1-option *choice issues found across ${files.length} file(s).`);
 } else {
-  console.log(`Found ${allFindings.length} issue(s):\n`);
-  for (const f of allFindings) {
+  console.log(`Found ${errors.length} issue(s) (guaranteed 0 or 1 options):\n`);
+  for (const f of errors) {
     console.log(`${path.relative(process.cwd(), f.file)}:${f.line} [Rule ${f.rule}] ${f.detail}`);
   }
 }
 
+if (advisories.length > 0) {
+  console.log(`\n${advisories.length} two-option *choice(s) worth a look (not errors — three is the standard, not a requirement):`);
+  for (const f of advisories) {
+    console.log(`  ${path.relative(process.cwd(), f.file)}:${f.line} [Rule C] ${f.detail}`);
+  }
+}
+
 if (allSkipped.length > 0) {
-  console.log(`\n${allSkipped.length} *choice block(s) skipped (compound conditions — check by eye):`);
+  console.log(`\n${allSkipped.length} *choice block(s) with some complex/compound conditions (min/max may be understated — check by eye):`);
   for (const s of allSkipped) {
     console.log(`  ${path.relative(process.cwd(), s.file)}:${s.line} — ${s.reason}`);
   }
 }
 
-process.exit(allFindings.length > 0 ? 1 : 0);
+process.exit(errors.length > 0 ? 1 : 0);
