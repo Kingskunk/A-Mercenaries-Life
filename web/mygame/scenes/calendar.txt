@@ -1,0 +1,151 @@
+*label advance_time
+*if (minutes_to_pass > 0)
+  *set clock_minute + minutes_to_pass
+  *set minutes_to_pass 0
+
+*label check_minutes
+*if (clock_minute >= 60)
+  *set clock_minute - 60
+  *set clock_hour + 1
+  *goto check_minutes
+
+*if (hours_to_pass > 0)
+  *set clock_hour + hours_to_pass
+  *set hours_to_pass 0
+
+*label check_hours
+*if (clock_hour >= 24)
+  *set clock_hour - 24
+  *set days_to_pass + 1
+  *goto check_hours
+
+*if (days_to_pass > 0)
+  *set campaign_day + days_to_pass
+  *set calendar_day + days_to_pass
+  *if (days_to_pay > days_to_pass)
+    *set days_to_pay - days_to_pass
+  *else
+    *set days_to_pay 0
+  *set days_to_pass 0
+
+*label check_calendar_month
+*temp month_max 30
+*if (calendar_month_num = 1)
+  *set month_max 30
+*if (calendar_month_num = 2)
+  *set month_max 31
+*if (calendar_month_num = 3)
+  *set month_max 32
+*if (calendar_month_num = 4)
+  *set month_max 31
+*if (calendar_month_num = 5)
+  *set month_max 31
+*if (calendar_month_num = 6)
+  *set month_max 31
+*if (calendar_month_num = 7)
+  *set month_max 31
+*if (calendar_month_num = 8)
+  *set month_max 30
+*if (calendar_month_num = 9)
+  *set month_max 30
+*if (calendar_month_num = 10)
+  *set month_max 28
+*if (calendar_month_num = 11)
+  *set month_max 30
+*if (calendar_month_num = 12)
+  *set month_max 30
+
+*if (calendar_day > month_max)
+  *set calendar_day - month_max
+  *set calendar_month_num + 1
+  *if (calendar_month_num > 12)
+    *set calendar_month_num 1
+    *set calendar_year + 1
+  *goto check_calendar_month
+
+*if (calendar_month_num = 1)
+  *set calendar_month "Aries"
+  *set current_season "Spring"
+*if (calendar_month_num = 2)
+  *set calendar_month "Taurus"
+  *set current_season "Spring"
+*if (calendar_month_num = 3)
+  *set calendar_month "Gemini"
+  *set current_season "Spring"
+*if (calendar_month_num = 4)
+  *set calendar_month "Cancer"
+  *set current_season "Summer"
+*if (calendar_month_num = 5)
+  *set calendar_month "Leo"
+  *set current_season "Summer"
+*if (calendar_month_num = 6)
+  *set calendar_month "Virgo"
+  *set current_season "Summer"
+*if (calendar_month_num = 7)
+  *set calendar_month "Libra"
+  *set current_season "Autumn"
+*if (calendar_month_num = 8)
+  *set calendar_month "Scorpio"
+  *set current_season "Autumn"
+*if (calendar_month_num = 9)
+  *set calendar_month "Sagittarius"
+  *set current_season "Autumn"
+*if (calendar_month_num = 10)
+  *set calendar_month "Capricorn"
+  *set current_season "Winter"
+*if (calendar_month_num = 11)
+  *set calendar_month "Aquarius"
+  *set current_season "Winter"
+*if (calendar_month_num = 12)
+  *set calendar_month "Pisces"
+  *set current_season "Winter"
+
+*if (calendar_day = 1)
+  *set day_suffix "st"
+*elseif (calendar_day = 21)
+  *set day_suffix "st"
+*elseif (calendar_day = 31)
+  *set day_suffix "st"
+*elseif (calendar_day = 2)
+  *set day_suffix "nd"
+*elseif (calendar_day = 22)
+  *set day_suffix "nd"
+*elseif (calendar_day = 32)
+  *set day_suffix "nd"
+*elseif (calendar_day = 3)
+  *set day_suffix "rd"
+*elseif (calendar_day = 23)
+  *set day_suffix "rd"
+*else
+  *set day_suffix "th"
+
+*set calendar_date "${calendar_day}${day_suffix} of ${calendar_month}, ${calendar_year} IR"
+
+*temp hr_str ""
+*temp min_str ""
+*if (clock_hour < 10)
+  *set hr_str "0${clock_hour}"
+*else
+  *set hr_str "${clock_hour}"
+
+*if (clock_minute < 10)
+  *set min_str "0${clock_minute}"
+*else
+  *set min_str "${clock_minute}"
+
+*set clock_time "${hr_str}:${min_str}"
+
+*if ((clock_hour >= 4) and (clock_hour <= 6))
+  *set time_of_day "Pre-Dawn (Freezing Mist)"
+*if ((clock_hour >= 7) and (clock_hour <= 11))
+  *set time_of_day "Morning (Column on the Road)"
+*if ((clock_hour >= 12) and (clock_hour <= 13))
+  *set time_of_day "Midday (Ration Halt)"
+*if ((clock_hour >= 14) and (clock_hour <= 17))
+  *set time_of_day "Afternoon (March Leg)"
+*if ((clock_hour >= 18) and (clock_hour <= 20))
+  *set time_of_day "Dusk (Camp-Pitch)"
+*if ((clock_hour >= 21) or (clock_hour <= 3))
+  *set time_of_day "Night (Dead Hours)"
+
+*return
