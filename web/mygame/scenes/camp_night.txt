@@ -16,9 +16,7 @@
   This is your very first evening among the Iron Carrion. Tomorrow morning brings your first march under Captain Vane's black banner. You have enough time to look around and make preparations before the watch changes and you're ordered to your bedrolls. Where do you go?
 
 *if (camp_actions_left = 1)
-  *set clock_time "21:45"
-  *set physical_state "Warmed slightly by charcoal embers; fatigue setting in"
-  You step back into the muddy thoroughfare between the rows of sodden canvas. The rain drums steadily on the canvas, and damp woodsmoke hangs low in the freezing mist. 
+  You step back into the muddy thoroughfare between the rows of sodden canvas. The rain drums steadily on the canvas, and damp woodsmoke hangs low in the freezing mist.
 
   The third watch has not yet sounded; you still have a little time left before the camp settles for the night. Where do you spend your remaining hours?
 
@@ -64,7 +62,7 @@ Lyra lets out a quiet, guarded scoff, staring down into the coals.
 She pulls her rough cloak higher against the freezing drizzle, her eyes hard and guarded. "Out here, the less anyone knows about who you were yesterday, the fewer knives find your ribs. All that matters is whether you can shoot straight tomorrow."
 
 *if (family_tie = "sibling")
-  You think of your sister, hidden away downriver, waiting for silver marks that might never come if your luck runs out tomorrow.
+  You think of ${family_name}, hidden away downriver, waiting for silver marks that might never come if your luck runs out tomorrow.
 *if (family_tie = "none")
   You stare into the orange embers. You have no one waiting for you downriver; no letters to write, no graves to tend. Just the cold iron in your hands.
 *if (family_tie = "indentured")
@@ -94,7 +92,7 @@ She pulls a battered pewter flask from beneath her cloak and extends it toward y
 
       Lyra takes the flask back with a quiet, rueful smirk. "Hits hard, doesn't it? Better get used to the burn, ${name}. Tomorrow won't be any smoother."
     *page_break Step away from the supply cart...
-    *goto camp_hub
+    *goto lyra_done
 
   # [Insight / WIS Check (DC 11)] Take the flask and speak with cold realism: "We're butchers now, Lyra."
     *set check_stat "wis"
@@ -115,7 +113,7 @@ She pulls a battered pewter flask from beneath her cloak and extends it toward y
 
       "Big talk for someone who hasn't swung iron in the muck yet," she mutters, pulling her cloak tighter. "Let's see if your nerve holds when the screaming starts."
     *page_break Step away from the supply cart...
-    *goto camp_hub
+    *goto lyra_done
 
   # [Empathy / CHA Check (DC 12)] Decline the liquor gently and steady her trembling hands.
     *set check_stat "cha"
@@ -136,7 +134,13 @@ She pulls a battered pewter flask from beneath her cloak and extends it toward y
 
       "I don't need coddling," she snaps softly, though her voice lacks real heat. She stares into the fire with her jaw clenched, putting her guard back up.
     *page_break Step away from the supply cart...
-    *goto camp_hub
+    *goto lyra_done
+
+*label lyra_done
+*set minutes_to_pass 45
+*gosub_scene calendar advance_time
+*set physical_state "Warmed slightly by charcoal embers; fatigue setting in"
+*goto camp_hub
 
 *label visit_dice
 *set codex_port_valen true
@@ -164,7 +168,7 @@ You pull two coins from your purse and toss them into the ring.
       *set ruthless +5
       You try to read the veterans' tells, but these bastards have been fleecing recruits since before you could hold a knife. Three rounds later, your silver is gone and the tent erupts into laughter at your expense.
     *page_break Pocket what remains and step outside...
-    *goto camp_hub
+    *goto dice_done
 
   # [Intimidation / STR Check (DC 12)] Slam your ${weapon} down on the drum rim with heavy menace.
     *set check_stat "str"
@@ -182,7 +186,13 @@ You pull two coins from your purse and toss them into the ring.
       *set silver -4
       You try to play the hard-bitten killer, but your voice cracks slightly under the veteran's flat, dead-eyed stare. He laughs in your face, rakes in your coins, and nudges you aside.
     *page_break Shrug off their laughter and step outside...
-    *goto camp_hub
+    *goto dice_done
+
+*label dice_done
+*set minutes_to_pass 30
+*gosub_scene calendar advance_time
+*set physical_state "Restless from the noise and smoke of the gambling tent"
+*goto camp_hub
 
 *label visit_varren
 *set codex_black_sinks true
@@ -209,7 +219,7 @@ You march over to where Sergeant Varren stands under the fluttering Carrion bann
 
       "You think being a sellsword is tactical debate, whelp? Captain Vane negotiated with the Scales' purse-bearers; our job is to march twenty miles and clear the road. Keep your boots dry and do what you're told."
     *page_break Leave the Sergeant to his watch...
-    *goto camp_hub
+    *goto varren_done
 
   # [Athletics / CON Check (DC 11)] Snap to attention and demonstrate your weapon drills in the rain.
     *set check_stat "con"
@@ -227,13 +237,19 @@ You march over to where Sergeant Varren stands under the fluttering Carrion bann
 
       "Clumsy," he growls. "The mud in the Sinks will swallow you whole if your feet are that loose. Double up on your whetstone and get out of my sight."
     *page_break Leave the Sergeant to his watch...
-    *goto camp_hub
+    *goto varren_done
+
+*label varren_done
+*set minutes_to_pass 20
+*gosub_scene calendar advance_time
+*set physical_state "Alert after speaking with Sergeant Varren"
+*goto camp_hub
 
 *label night_end
 *set battle_ready true
 *set codex_black_sinks true
-*set clock_time "23:00"
-*set time_period "Dead of Night"
+*set minutes_to_pass 60
+*gosub_scene calendar advance_time
 *set physical_state "Resting in recruit tent; kit greased for the march"
 By midnight, the camp falls into an eerie, suffocating stillness. The fires dwindle into pale plumes of gray smoke drifting into the freezing mist.
 
@@ -270,11 +286,23 @@ Tomorrow the march begins. Tomorrow, the first layer of your innocence will be s
 *line_break
 • [b]Name:[/b] ${name}
 *line_break
+• [b]Lineage:[/b] ${race_title}
+*line_break
+• [b]Racial Trait:[/b] ${race_trait_title} — ${race_trait_desc}
+*line_break
 • [b]Age:[/b] ${age_desc}
 *line_break
-• [b]Rank:[/b] Greenhorn Recruit (Vanguard File)
+• [b]Rank:[/b] Greenhorn Recruit
 *line_break
 • [b]Background:[/b] ${origin_title}
+*line_break
+• [b]Class Path:[/b] ${class_title}
+*if (not(race_cantrip = "none"))
+  *line_break
+  • [b]Innate Magic:[/b] ${race_cantrip_desc}
+*if (not(race_cantrip_2 = "none"))
+  *line_break
+  • [b] [/b] ${race_cantrip_2_desc}
 *line_break
 • [b]Physique:[/b] ${build_desc}
 *line_break
@@ -333,4 +361,4 @@ Tomorrow the march begins. Tomorrow, the first layer of your innocence will be s
   percent lyra_bond Lyra (Vanguard Scout)
   percent varren_respect Sergeant Varren (File Drillmaster)
 
-*ending
+*finish

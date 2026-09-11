@@ -5,6 +5,8 @@
 *scene_list
   startup
   camp_night
+  dawn_trial
+  battle_black_sinks
 
 *create implicit_control_flow true
 
@@ -14,6 +16,41 @@
 
 *comment --- CHARACTER PROFILE ---
 *create name "Corin"
+*create race "human"
+*create race_title "Human"
+*create race_desc "Common human stock. Unremarkable to look at, adaptable enough to thrive in any gutter, court, or killing field."
+*create race_darkvision false
+*create race_trait_title "Versatile"
+*create race_trait_desc "No single edge, but no glaring gap either."
+*create race_cantrip "none"
+*create race_cantrip_desc "You know no innate magic."
+*create race_cantrip_2 "none"
+*create race_cantrip_2_desc "You know no second innate working."
+*create warlock_cantrip "none"
+*create warlock_cantrip_desc "You have called on no power yet."
+*create warlock_cantrip_2 "none"
+*create warlock_cantrip_2_desc "You have called on no second power yet."
+*create warlock_spell "none"
+*create warlock_spell_desc "You have bound no true spell to your pact yet."
+*create warlock_spell_slots 1
+*create wizard_cantrip "none"
+*create wizard_cantrip_desc "You have mastered no working yet."
+*create wizard_cantrip_2 "none"
+*create wizard_cantrip_2_desc "You have mastered no second working yet."
+*create wizard_cantrip_3 "none"
+*create wizard_cantrip_3_desc "You have mastered no third working yet."
+*create wizard_spell "none"
+*create wizard_spell_desc "Your spellbook holds nothing yet."
+*create wizard_spell_slots 2
+*create bard_cantrip "none"
+*create bard_cantrip_desc "You have no trick ready yet."
+*create bard_cantrip_2 "none"
+*create bard_cantrip_2_desc "You have no second trick ready yet."
+*create bard_spell "none"
+*create bard_spell_desc "You have no verse bound to magic yet."
+*create bard_spell_2 "none"
+*create bard_spell_2_desc "You have no second verse bound to magic yet."
+*create bard_spell_slots 2
 *create gender "man"
 *create age 19
 *create age_desc "Nineteen winters (A green youth)"
@@ -37,13 +74,43 @@
 *create armor_desc "Padded gambeson & leather brigandine"
 *create armor_type "brigandine"
 
+*comment --- CLASS PATH (Revealed during the Dawn Trial) ---
+*create character_class "none"
+*create class_title "Unproven Recruit"
+*create class_assigned false
+*create hit_die_max 10
+*create class_feature_title "None"
+*create class_feature_desc "You have not yet manifested a defining class feature."
+*create class_feature_2_title "None"
+*create class_feature_2_desc "You have no second defining class feature."
+*create fighter_fighting_style "none"
+*create fighter_second_wind_uses 1
+*create second_wind_roll 0
+*create rogue_expertise_1 "none"
+*create rogue_expertise_2 "none"
+*create rogue_sneak_attack_die "1d6"
+*create ranger_favored_enemy "none"
+*create ranger_favored_terrain "none"
+*create barbarian_rage_uses 2
+*create barbarian_rage_damage_bonus 2
+*create is_raging false
+*create warlock_patron "none"
+*create warlock_patron_title "None"
+*create warlock_patron_desc "You have made no pact with anything."
+
 *comment --- CALENDAR & TIMELINE (ZODIAC SYSTEM) ---
 *create calendar_date "14th of Scorpio, 428 IR"
 *create calendar_month "Scorpio"
+*create calendar_month_num 8
 *create calendar_day 14
 *create calendar_year 428
 *create campaign_day 1
 *create current_season "Autumn"
+*create minutes_to_pass 0
+*create hours_to_pass 0
+*create days_to_pass 0
+*create days_to_pay 16
+*create day_suffix "th"
 *create clock_hour 21
 *create clock_minute 0
 *create clock_time "21:00"
@@ -86,13 +153,20 @@
 *create lyra_bond 0
 *create varren_respect 0
 *create vane_standing 0
+*create kestrel_respect 0
+*create ysolde_respect 0
 *create intake_completed false
 *create met_varren false
 *create met_lyra false
 *create met_vane false
+*create met_kestrel false
+*create met_ysolde false
+*create squad "none"
+*create squad_title "None"
 
 *comment --- D&D D20 DICE & SKILL CHECK ENGINE ---
 *create d20_roll 10
+*create d20_roll_2 10
 *create check_stat "cha"
 *create check_dc 10
 *create check_skill "Persuasion"
@@ -101,6 +175,9 @@
 *create check_success true
 *create is_nat_20 false
 *create is_nat_1 false
+*create advantage false
+*create disadvantage false
+*create save_vs "none"
 
 *create camp_activity "none"
 *create camp_actions_left 2
@@ -121,6 +198,16 @@
 *create codex_karrs_keep false
 *create codex_port_valen false
 *create codex_black_sinks false
+*create codex_the_drowned false
+
+*comment --- GAME SETTINGS ---
+Before the mud and the blood: many choices throughout this game carry mechanical weight—ability scores, dice, DCs, damage. Would you like these shown as numeric hints next to the choices that have them?
+
+*choice
+  # Yes, show me the numbers. (You can toggle this later from the dossier's Settings option.)
+    *set show_stat_hints true
+  # No, keep it immersive—let me discover what a choice does through the story alone.
+    *set show_stat_hints false
 
 Rain beats steadily against the black canvas of the encampment, turning the red clay of the river valley into a miserable sea of mud.
 
@@ -187,21 +274,23 @@ You stare past his shoulder into the dying embers of a ditch brazier. The noise 
     *set constitution 10
     *set intelligence 10
     *set silver +8
+    *set ruthless +5
     *goto flashback_slums
 
-  # The Fallen Scion: How the scandal at Karr's Keep stripped your inheritance and forced an alias.@{show_stat_hints  [CHA 16 (+3), INT 14 (+2), DEX 12 (+1), +15 Silver]|}
+  # The Fallen Scion: How the scandal at Karr's Keep stripped your inheritance and forced an alias.@{show_stat_hints  [CHA 15 (+2), INT 15 (+2), DEX 12 (+1), +15 Silver]|}
     *set origin "disgraced"
     *set origin_title "Disgraced Scion"
     *set origin_desc "A fallen scion of the Marches who traded a ruined crest for the anonymity of common sellswords."
     *set codex_baron_karr true
     *set codex_karrs_keep true
-    *set charisma 16
-    *set intelligence 14
+    *set charisma 15
+    *set intelligence 15
     *set dexterity 12
     *set strength 10
     *set constitution 10
     *set wisdom 10
     *set silver +15
+    *set ruthless -5
     *goto flashback_scandal
 
 *label flashback_village
@@ -219,7 +308,7 @@ Inside, Sergeant Varren was buying bodies for the autumn campaign with the Baron
 
 You ate the stew. You took the iron. And the farmer's son died at that table.
 
-*goto intake_profile
+*goto choose_race
 
 *label flashback_slums
 The stench of rotting fish, raw sewage, and cheap jasmine perfume in the [b]Lower Sinks[/b] of [b]Port Valen[/b]—the capital where men were sold for copper and killed for silver.
@@ -234,7 +323,7 @@ When the barge docked at the marshland border, you saw the Carrion's encampment 
 
 You didn't wait to be hunted down. You marched straight past the sentries, flipped a stolen silver mark onto the quartermaster's table, and offered your daggers. The Black Tally has long reach, but even dockside loan sharks don't send debt collectors into an army of four hundred killers. You traded the gallows for a mercenary's cloak.
 
-*goto intake_profile
+*goto choose_race
 
 *label flashback_scandal
 Silk sheets, the heavy musk of spilled wine and lavender oil, and the muffled giggles of Baron Aldous Karr's younger wife in the high towers of [b]Karr's Keep[/b]. A glorious, reckless conquest—until the heavy oak doors splintered inward with the force of a battering ram.
@@ -253,7 +342,102 @@ You approached their table. You offered no noble excuses and asked for no pity. 
 
 He laughed, tossed you a leather arming doublet, and had the clerk scratch your new name into the ledger. You buried the nobleman that night, trading a ruined name for the absolute freedom of the sword.
 
-*goto intake_profile
+*goto choose_race
+
+*label choose_race
+The clerk sets his stylus down for a moment, studying your face and frame with a more clinical eye than before. "Before winters and scars—what blood runs in you, recruit? Matters for the burial detail, if nothing else. Different bones get dug different holes."
+
+*choice
+  # Human. Common stock—unremarkable to look at, stubborn enough to survive anywhere.@{show_stat_hints  [+1 to All Six Stats]|}
+    *set race "human"
+    *set race_title "Human"
+    *set race_desc "Common human stock. Unremarkable to look at, adaptable enough to thrive in any gutter, court, or killing field."
+    *set race_darkvision false
+    *set race_trait_title "Versatile"
+    *set race_trait_desc "No single edge, but no glaring gap either."
+    *set strength +1
+    *set dexterity +1
+    *set constitution +1
+    *set intelligence +1
+    *set wisdom +1
+    *set charisma +1
+    "Human," the clerk grunts, not even glancing up. "Half this camp is. Cheapest coffin wood to cut, so the quartermaster likes you already."
+    *goto intake_profile
+
+  # Elf. Sharp-eared, long-lived, and colder in the eyes than most men expect.@{show_stat_hints  [+2 DEX, Darkvision]|}
+    *set race "elf"
+    *set race_title "Elf"
+    *set race_desc "Sharp-eared and long-lived. Centuries of patience sit strangely on a body still young enough to bleed like anyone else's."
+    *set race_darkvision true
+    *set race_trait_title "Fey Ancestry"
+    *set race_trait_desc "Advantage on saves against being charmed, and magic can't put you to sleep."
+    *set dexterity +2
+    The clerk's quill pauses. "Elf," he mutters, glancing at your ears twice. "Don't get many of your kind taking iron for coin. Your sort usually has better places to be dying slowly than the Grey Marches."
+    *goto intake_profile
+
+  # Dwarf. Stout, dense-boned, and built to hold a line that lesser men would break under.@{show_stat_hints  [+2 CON, Darkvision]|}
+    *set race "dwarf"
+    *set race_title "Dwarf"
+    *set race_desc "Stout and dense-boned, built low and hard to the ground. Stubborn enough to hold a shield-wall long after softer men would have run."
+    *set race_darkvision true
+    *set race_trait_title "Dwarven Resilience"
+    *set race_trait_desc "Advantage on saves against poison, and resistance to poison damage."
+    *set constitution +2
+    "Dwarf," the clerk notes, unimpressed but approving. "Good. Varren likes stacking your kind in the front rank. Something about the low center of gravity, he says. I don't ask questions."
+    *goto intake_profile
+
+  # Half-Orc. Broad-jawed and tusked, used to being feared before you've said a single word.@{show_stat_hints  [+2 STR, +1 CON, Darkvision]|}
+    *set race "half_orc"
+    *set race_title "Half-Orc"
+    *set race_desc "Broad-jawed and formidable, carrying tusks and a reputation you never asked for. Most doors open faster out of fear than respect."
+    *set race_darkvision true
+    *set race_trait_title "Relentless Endurance"
+    *set race_trait_desc "When you'd be dropped to 0 HP but not outright killed, you can cling to 1 HP instead—once, until you rest."
+    *set strength +2
+    *set constitution +1
+    The clerk eyes your jaw and doesn't bother hiding his relief. "Half-Orc. Good—scares the debt collectors off faster than steel does. Not that the Carrion cares what you are, so long as you swing hard."
+    *goto intake_profile
+
+  # Halfling. Small, quick, and chronically underestimated by every fool who ever regretted it.@{show_stat_hints  [+2 DEX, Reroll Nat-1s]|}
+    *set race "halfling"
+    *set race_title "Halfling"
+    *set race_desc "Small, quick, and endlessly underestimated. Slips through gaps and guards' attention alike that a bigger body never could."
+    *set race_darkvision false
+    *set race_trait_title "Lucky"
+    *set race_trait_desc "Whenever the dice betray you with a natural 1, fate gives you one immediate reroll—no questions asked."
+    *set dexterity +2
+    "Halfling," the clerk says, arching a brow at your height. "Don't see many small folk take the shilling. Either you're braver than you look, or you're planning to hide behind someone bigger. No judgment. Half of us plan to do the same."
+    *goto intake_profile
+
+  # Tiefling. Horned, tailed, and marked by infernal blood you never asked for and can't hide from a suspicious world.@{show_stat_hints  [+2 CHA, +1 INT, Darkvision]|}
+    *set race "tiefling"
+    *set race_title "Tiefling"
+    *set race_desc "Horned and tailed, with sulfur-dark eyes and a bloodline that traces back to something infernal, generations removed but never quite forgotten by the people who look at you twice."
+    *set race_darkvision true
+    *set race_trait_title "Hellish Resistance"
+    *set race_trait_desc "Your infernal blood shrugs off fire that would blister lesser flesh. Older tieflings learn to spit a devil's rebuke or drown a room in darkness—you haven't earned either yet."
+    *set race_cantrip "thaumaturgy"
+    *set race_cantrip_desc "Thaumaturgy—small, innate parlor tricks of infernal blood: your voice booms like three men, your eyes flash brimstone-red, doors creak open or slam shut untouched. Nothing that draws blood, but plenty that unsettles a room."
+    *set charisma +2
+    *set intelligence +1
+    The clerk's eyes flick to your horns, then back to the ledger, his jaw tight. "Tiefling," he mutters, tracing the letters slower than usual. "Chaplain's lot won't like that. Chaplain's lot don't like much, though. Long as you march and don't set the supply wagons on fire, the Carrion won't ask whose blood is in you."
+    *goto intake_profile
+
+  # Hexblood. Grey-toned skin, unnervingly still eyes—the lingering mark of a bargain struck with something old and inhuman.@{show_stat_hints  [+1 CON, +1 CHA, Darkvision]|}
+    *set race "hexblood"
+    *set race_title "Hexblood"
+    *set race_desc "Fey-touched and strange—skin gone faintly grey, eyes too still, the lingering shape of an old bargain with something inhuman that was never fully explained to anyone, including you."
+    *set race_darkvision true
+    *set race_trait_title "Hex Magic"
+    *set race_trait_desc "Carries a fragment of real, unlearned magic from the bargain that made you—instinctive, untrained, and impossible to fully suppress. Usable once per long rest before the working needs to settle again."
+    *set race_cantrip "disguise_self"
+    *set race_cantrip_desc "Disguise Self—you can innately blur your own face and voice into someone else's for a short while, a lingering scrap of the hag's craft that remade you. Never taught, never fully understood, just there when you reach for it."
+    *set race_cantrip_2 "hex"
+    *set race_cantrip_2_desc "Hex—a murmured curse laid on a single target, making your wounds cut deeper and their chosen ability falter, for as long as you hold your concentration on it. The other half of the bargain, just as real as the first."
+    *set constitution +1
+    *set charisma +1
+    The clerk's quill freezes over the page. He looks at your eyes a beat too long before writing anything down. "...Hexblood," he says carefully, like the word itself might be listening. "Didn't ask, don't want to know. Just don't let Varren see you do anything unnatural before the pay ledger's settled."
+    *goto intake_profile
 
 *label intake_profile
 The clerk's stylus hovers above the ledger as he squints at you through the flickering candlelight, sizing up your face.
@@ -386,11 +570,11 @@ The clerk turns to the bottom corner of the ledger page, stylus poised over a bl
 
 *if (origin = "disgraced")
   *choice
-    # "Lady Isolde. Kept under house arrest in the high manor after our betrothal was broken by the scandal."
-      *set family_name "Isolde"
+    # "Lady Rosalind. Kept under house arrest in the high manor after our betrothal was broken by the scandal."
+      *set family_name "Rosalind"
       *set family_tie "lover"
-      *set family_title "Betrothed (Lady Isolde)"
-      *set family_desc "Your former betrothed, Lady Isolde, confined under guard in the High Crags. A reminder of the noble life stripped from you."
+      *set family_title "Betrothed (Lady Rosalind)"
+      *set family_desc "Your former betrothed, Lady Rosalind, confined under guard in the High Crags. A reminder of the noble life stripped from you."
       *goto munitions_scene
     # "My younger brother, Valerian. Kept as a political hostage in the dungeons of Karr's Keep."
       *set family_name "Valerian"
@@ -425,8 +609,16 @@ Sergeant Varren stalks into the torchlight like an ill-tempered bear. A massive 
 
 "Padded doublets and iron in the mud!" Varren roars, kicking a hesitant recruit out of his path. "Grab something that fits your shoulders, find an edge, and get to your whetstones! The company marches at first light, and nobody carries dead weight!"
 
-Other greenhorns scramble and shove in the muck, frantic to claim anything with protection and steel. 
+Other greenhorns scramble and shove in the muck, frantic to claim anything with protection and steel.
 
+*if (origin = "ruined")
+  *goto munitions_ashbrook
+*if (origin = "outlaw")
+  *goto munitions_outlaw
+*if (origin = "disgraced")
+  *goto munitions_disgraced
+
+*label munitions_ashbrook
 You step up to the armor casks first. What protection do you pull from the brine and grease to strap over your damp tunic?
 
 *choice
@@ -435,24 +627,24 @@ You step up to the armor casks first. What protection do you pull from the brine
     *set armor_desc "Padded gambeson & leather brigandine"
     *set armor_type "brigandine"
     You pull a heavy canvas gambeson lined with overlapping boiled-leather plates and blackened iron rivets from the cask. Pulling it over your head, you cinch the stiff oil-cured leather straps tight across your ribs. It smells of pine-tar and old tallow, but it is dense enough to turn a slashing knife and blunt the shock of a club.
-    *goto choose_weapon
+    *goto choose_weapon_ashbrook
 
   # A dense quilted wool aketon reinforced with an iron chain-jack.
     *set armor "chain_jack"
     *set armor_desc "Quilted aketon & iron chain-jack"
     *set armor_type "chain_jack"
     You haul a heavy wool jacket laced with interlocking scrap iron rings from the pile. It settles onto your shoulders with cold, reassuring weight, rattling softly as you cinch the horn toggles. Dented and rust-flecked from past campaigns, but solid against hacking blades.
-    *goto choose_weapon
+    *goto choose_weapon_ashbrook
 
   # A greased oxhide buff-coat with segmented scale sleeves.
     *set armor "buff_coat"
     *set armor_desc "Greased oxhide buff-coat & scale sleeves"
     *set armor_type "buff_coat"
     You pull a thick, oil-treated hide coat from the bottom of the pile. The leather is supple and water-resistant, reinforced with horn and steel scales laced along the forearms and shoulders. Lightweight and flexible, allowing unhindered stride through the mud.
-    *goto choose_weapon
+    *goto choose_weapon_ashbrook
 
-*label choose_weapon
-Beside you, a lean, sharp-featured girl with raven hair tied back in rough cord gets shoved roughly into the mud by an oafish recruit. She recovers instantly with feral grace, snatching a lightweight recurve shortbow and a quiver of black-fletched bodkin arrows from the crate before anyone else can touch them. 
+*label choose_weapon_ashbrook
+Beside you, a lean, sharp-featured girl with raven hair tied back in rough cord gets shoved roughly into the mud by an oafish recruit. She recovers instantly with feral grace, snatching a lightweight recurve shortbow and a quiver of black-fletched bodkin arrows from the crate before anyone else can touch them.
 
 Wiping a streak of muddy rain from her jaw, she catches your eye through the drizzle.
 
@@ -488,6 +680,130 @@ With your armor cinched tight, you turn your attention to the spilled weapons. W
     You lift a heavy, oil-blackened crossbow from the bottom of the crate, strapping its spanning lever and a leather case of stubby, armor-piercing iron bolts to your belt. You check the thick hemp string and oiled trigger sear with practiced precision. The great equalizer of common sellswords—a weapon of cold mechanical slaughter that can punch straight through steel plates and heavy brigandine at fifty paces.
     *goto ready_camp
 
+*label munitions_outlaw
+You step up to the gear casks first. Heavy war-harness is useless to someone who survives on speed and silence—what do you pull from the pile that won't slow you down?
+
+*choice
+  # A boiled leather cuirass, close-fitted and reinforced at the ribs.
+    *set armor "leather_cuirass"
+    *set armor_desc "Boiled leather cuirass"
+    *set armor_type "leather"
+    You lace a close-fitted cuirass of hardened, boiled leather over your tunic, checking the give at the shoulders and ribs. Stiff enough to turn a glancing blade, light enough that you can still move like you need to.
+    *goto choose_weapon_outlaw
+
+  # A dark, oiled leather jerkin lined with hidden pockets and pouches.
+    *set armor "thief_leather"
+    *set armor_desc "Oiled leather jerkin with hidden pockets"
+    *set armor_type "leather"
+    You pull on a supple, dark-dyed leather jerkin, its lining stitched with more hidden pockets and sheaths than any honest tailor would bother sewing. Not much against a real blow, but you were never planning to take one standing still.
+    *goto choose_weapon_outlaw
+
+  # Layered leather wraps built for silent movement over rough ground.
+    *set armor "scout_wraps"
+    *set armor_desc "Layered leather wraps"
+    *set armor_type "leather"
+    You bind supple layers of treated leather around your torso and limbs, more concerned with silence than protection. No buckle rattles, no plate creaks—you move through the mud without announcing yourself to anything.
+    *goto choose_weapon_outlaw
+
+*label choose_weapon_outlaw
+Beside you, a lean, sharp-featured girl with raven hair tied back in rough cord gets shoved roughly into the mud by an oafish recruit. She recovers instantly with feral grace, snatching a lightweight recurve shortbow and a quiver of black-fletched bodkin arrows from the crate before anyone else can touch them.
+
+Wiping a streak of muddy rain from her jaw, she catches your eye through the drizzle.
+
+"Better grab some iron before the pigs take it all," she mutters under her breath.
+
+With your gear cinched tight, you turn your attention to the spilled weapons. What steel calls to your grip?
+
+*choice
+  # A matched pair of balanced daggers, quick in the hand and quicker to hide.@{show_stat_hints  [1d4 Piercing, Finesse]|}
+    *set weapon "twin daggers"
+    *set weapon_desc "Matched pair of daggers"
+    *set weapon_damage "1d4 piercing"
+    *set weapon_type "finesse"
+    *set has_shield false
+    You pluck two well-balanced daggers from the pile, testing their edge against your thumb before sheathing one at your hip and the other up your sleeve, out of sight. Not much for a shield-wall, but nobody in the Sinks fights fair either.
+    *goto ready_camp
+
+  # A seven-foot ash-wood spear tipped with blackened, leaf-bladed steel.@{show_stat_hints  [1d6/1d8 Piercing (Reach)]|}
+    *set weapon "ash-wood spear"
+    *set weapon_desc "Seven-foot ash-wood spear"
+    *set weapon_damage "1d6/1d8 piercing"
+    *set weapon_type "reach"
+    *set has_shield false
+    You slide the ash spear from the tangle, sighting along the straight shaft. The grain is dense and supple, the steel head pinned securely and sharpened to a cruel leaf point. Not your usual trade, but reach keeps desperate men from ever closing the distance.
+    *goto ready_camp
+
+  # A compact hand crossbow, small enough to conceal beneath a cloak.@{show_stat_hints  [1d6 Piercing (Ranged, Concealable)]|}
+    *set weapon "hand crossbow"
+    *set weapon_desc "Compact hand crossbow"
+    *set weapon_damage "1d6 piercing"
+    *set weapon_type "ranged"
+    *set has_shield false
+    You lift a small, single-handed crossbow from the crate, no bigger than a large pistol, along with a pouch of stubby bolts. Quiet, quick to reload, and easy enough to tuck beneath a cloak when you'd rather not be seen carrying steel at all.
+    *goto ready_camp
+
+*label munitions_disgraced
+You step up to the gear casks, but none of it looks like anything you were ever trained to wear. What do you pull on over your travel-worn clothes, more for warmth than war?
+
+*choice
+  # A heavy traveling cloak, oiled against the rain and lined for warmth.
+    *set armor "traveling_cloak"
+    *set armor_desc "Oiled traveling cloak"
+    *set armor_type "cloth"
+    You wrap yourself in a heavy oiled cloak meant for long roads, not battle lines. It sheds the rain well enough and hides your hands, but you know full well it wouldn't stop a determined knife.
+    *goto choose_weapon_disgraced
+
+  # Layered scholar's robes reinforced with leather bracers at the wrists.
+    *set armor "scholar_robes"
+    *set armor_desc "Layered robes with leather bracers"
+    *set armor_type "cloth"
+    You pull on layered robes, cinching leather bracers over the wrists to keep the sleeves from catching on anything important. It looks more like a study than a battlefield, but it's what your hands know.
+    *goto choose_weapon_disgraced
+
+  # A fine leather satchel-harness, built for scrolls and components rather than steel.
+    *set armor "satchel_harness"
+    *set armor_desc "Leather satchel-harness"
+    *set armor_type "cloth"
+    You strap on a leather harness meant for carrying scrolls, ink, and small components close to the body, tucked under your ordinary clothes. Not a stitch of it will stop a blade, but it keeps your hands free for what actually matters.
+    *goto choose_weapon_disgraced
+
+*label choose_weapon_disgraced
+Beside you, a lean, sharp-featured girl with raven hair tied back in rough cord gets shoved roughly into the mud by an oafish recruit. She recovers instantly with feral grace, snatching a lightweight recurve shortbow and a quiver of black-fletched bodkin arrows from the crate before anyone else can touch them.
+
+Wiping a streak of muddy rain from her jaw, she catches your eye through the drizzle.
+
+"Better grab some iron before the pigs take it all," she mutters under her breath.
+
+With your gear settled, you turn your attention to the spilled weapons—none of which you were ever properly trained to swing.
+
+*choice
+  # A slim, well-balanced dagger, closer to a letter-opener than a soldier's blade.@{show_stat_hints  [1d4 Piercing, Finesse]|}
+    *set weapon "dagger"
+    *set weapon_desc "Slim balanced dagger"
+    *set weapon_damage "1d4 piercing"
+    *set weapon_type "finesse"
+    *set has_shield false
+    You take up a slim, well-made dagger, closer to something you'd have found on your own writing desk than a company armory. It sits strangely familiar in your hand all the same.
+    *goto ready_camp
+
+  # A plain traveler's quarterstaff, worn smooth from years of use.@{show_stat_hints  [1d6/1d8 Bludgeoning]|}
+    *set weapon "quarterstaff"
+    *set weapon_desc "Traveler's quarterstaff"
+    *set weapon_damage "1d6/1d8 bludgeoning"
+    *set weapon_type "melee"
+    *set has_shield false
+    You take up a plain, iron-shod quarterstaff, worn smooth by some traveler's hands long before it ended up in a mercenary company's crate. Unglamorous, but it has a certain honest weight to it.
+    *goto ready_camp
+
+  # A compact light crossbow, mechanical and precise, built for someone who prefers distance.@{show_stat_hints  [1d8 Piercing (Ranged)]|}
+    *set weapon "light crossbow"
+    *set weapon_desc "Compact light crossbow"
+    *set weapon_damage "1d8 piercing"
+    *set weapon_type "ranged"
+    *set has_shield false
+    You lift a light crossbow from the crate, along with a small case of bolts. Simple mechanics, no real strength required to use it well—cold, distant, and precise, much like everything else you were actually trained for.
+    *goto ready_camp
+
 *label ready_camp
 *set met_lyra true
 *set intake_completed true
@@ -502,6 +818,16 @@ The raven-haired girl slides her quiver strap across her shoulder and gives your
   "Smart," she murmurs, eyeing the leaf-bladed tip. "Reach keeps you breathing when desperate men try to drag you down into the mud."
 *if (weapon = "heavy crossbow")
   "Lethal mechanism," she whispers, eyeing the thick steel prod and heavy quarrels. "Puts fifty paces between you and a dying man's spit. A weapon for someone who prefers cold mathematics to wrestling in the muck."
+*if (weapon = "twin daggers")
+  "Quiet iron," she says, an approving edge in her voice. "Whoever taught you to hide the second one knew what they were doing."
+*if (weapon = "hand crossbow")
+  "Neat little thing," she murmurs, eyeing the compact stock. "Small enough nobody sees it coming until it's already in them."
+*if (weapon = "dagger")
+  She eyes the slim blade, then your hands, clearly unconvinced. "That's a letter-opener, not iron. Hope you're better with words than with that."
+*if (weapon = "quarterstaff")
+  "Old-fashioned," she says, not unkindly. "Won't win you any duels, but it'll keep most drunks and half the recruits at arm's length."
+*if (weapon = "light crossbow")
+  "Precise," she says, studying the mechanism. "You'll want to keep your distance with that. Doesn't look built for anything else."
 
 "I'm Lyra," she adds curtly, sliding the bow over her shoulder. "What do they call you?"
 
@@ -616,8 +942,8 @@ No banners, no songs of chivalry—just mud, cold iron, and the first night of a
   *set cha_mod 3
   *set cha_mod_str "+3"
 
-*comment Hit Points (Level 1 Fighter: Base 10 + CON mod)
-*set hp_max (10 + con_mod)
+*comment Hit Points (Level 1: Class Hit Die Max + CON mod)
+*set hp_max (hit_die_max + con_mod)
 *set hp_current hp_max
 
 *comment Armor Class: 11 base (Light Armor) + DEX mod (+ 2 with Buckler Shield)
@@ -625,13 +951,42 @@ No banners, no songs of chivalry—just mud, cold iron, and the first night of a
   *set armor_class (13 + dex_mod)
 *if (not(has_shield))
   *set armor_class (11 + dex_mod)
+
+*comment Fighting Style: Defense (+1 AC while wearing armor) — dormant until fighter_fighting_style is actually chosen
+*if (fighter_fighting_style = "defense")
+  *set armor_class + 1
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment D&D 5E D20 SKILL CHECK ENGINE
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label roll_d20_check
+*comment Racial saves that grant advantage — a calling scene sets save_vs before gosubbing in
+*if ((race = "elf") and ((save_vs = "charmed") or (save_vs = "sleep")))
+  *set advantage true
+*if ((race = "dwarf") and (save_vs = "poison"))
+  *set advantage true
+
+*temp adv_label ""
+*if (advantage) and (not(disadvantage))
+  *set adv_label " (Advantage)"
+*if (disadvantage) and (not(advantage))
+  *set adv_label " (Disadvantage)"
+
 *rand d20_roll 1 20
+*if (advantage) and (not(disadvantage))
+  *rand d20_roll_2 1 20
+  *if (d20_roll_2 > d20_roll)
+    *set d20_roll d20_roll_2
+*if (disadvantage) and (not(advantage))
+  *rand d20_roll_2 1 20
+  *if (d20_roll_2 < d20_roll)
+    *set d20_roll d20_roll_2
+
+*if ((race = "halfling") and (d20_roll = 1))
+  *comment Halfling Lucky: reroll a natural 1 once, must use the new result. Resolved after
+  *comment advantage/disadvantage, matching RAW — Lucky rerolls the die actually used for the check.
+  *rand d20_roll 1 20
 
 *if (check_stat = "str")
   *set check_mod str_mod
@@ -646,22 +1001,32 @@ No banners, no songs of chivalry—just mud, cold iron, and the first night of a
 *if (check_stat = "cha")
   *set check_mod cha_mod
 
+*comment Rogue Expertise: double proficiency bonus on two chosen skills — dormant until rogue_expertise_1/2 are actually chosen
+*if ((character_class = "rogue") and ((check_skill = rogue_expertise_1) or (check_skill = rogue_expertise_2)))
+  *set check_mod + (prof_bonus * 2)
+
 *set check_total (d20_roll + check_mod)
 
 *if (d20_roll = 20)
   *set is_nat_20 true
   *set is_nat_1 false
   *set check_success true
-  [b][🎲 D20 Check: ${check_skill} (DC ${check_dc}) | Natural 20! Total: ${check_total} — CRITICAL SUCCESS][/b]
+  [b][🎲 D20 Check: ${check_skill} (DC ${check_dc}) | Natural 20!${adv_label} Total: ${check_total} — CRITICAL SUCCESS][/b]
   *line_break
+  *set advantage false
+  *set disadvantage false
+  *set save_vs "none"
   *return
 
 *if (d20_roll = 1)
   *set is_nat_1 true
   *set is_nat_20 false
   *set check_success false
-  [b][🎲 D20 Check: ${check_skill} (DC ${check_dc}) | Natural 1! Total: ${check_total} — CRITICAL FAILURE][/b]
+  [b][🎲 D20 Check: ${check_skill} (DC ${check_dc}) | Natural 1!${adv_label} Total: ${check_total} — CRITICAL FAILURE][/b]
   *line_break
+  *set advantage false
+  *set disadvantage false
+  *set save_vs "none"
   *return
 
 *set is_nat_20 false
@@ -670,15 +1035,50 @@ No banners, no songs of chivalry—just mud, cold iron, and the first night of a
 *if (check_total >= check_dc)
   *set check_success true
   *if (check_mod >= 0)
-    [b][🎲 D20 Check: ${check_skill} (DC ${check_dc}) | Roll: ${d20_roll} +${check_mod} = ${check_total} — SUCCESS][/b]
+    [b][🎲 D20 Check: ${check_skill} (DC ${check_dc}) | Roll: ${d20_roll} +${check_mod}${adv_label} = ${check_total} — SUCCESS][/b]
   *if (check_mod < 0)
-    [b][🎲 D20 Check: ${check_skill} (DC ${check_dc}) | Roll: ${d20_roll} ${check_mod} = ${check_total} — SUCCESS][/b]
+    [b][🎲 D20 Check: ${check_skill} (DC ${check_dc}) | Roll: ${d20_roll} ${check_mod}${adv_label} = ${check_total} — SUCCESS][/b]
 *if (check_total < check_dc)
   *set check_success false
   *if (check_mod >= 0)
-    [b][🎲 D20 Check: ${check_skill} (DC ${check_dc}) | Roll: ${d20_roll} +${check_mod} = ${check_total} — FAILURE][/b]
+    [b][🎲 D20 Check: ${check_skill} (DC ${check_dc}) | Roll: ${d20_roll} +${check_mod}${adv_label} = ${check_total} — FAILURE][/b]
   *if (check_mod < 0)
-    [b][🎲 D20 Check: ${check_skill} (DC ${check_dc}) | Roll: ${d20_roll} ${check_mod} = ${check_total} — FAILURE][/b]
+    [b][🎲 D20 Check: ${check_skill} (DC ${check_dc}) | Roll: ${d20_roll} ${check_mod}${adv_label} = ${check_total} — FAILURE][/b]
 
 *line_break
+*set advantage false
+*set disadvantage false
+*set save_vs "none"
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment FIGHTER: SECOND WIND
+*comment Bonus action, 1d10 + character_level HP, once per rest. Nothing calls
+*comment this yet (no combat scene exists), but it's ready to *gosub_scene the
+*comment moment one does.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label second_wind
+*if (fighter_second_wind_uses > 0)
+  *set fighter_second_wind_uses - 1
+  *rand second_wind_roll 1 10
+  *set hp_current + (second_wind_roll + character_level)
+  *if (hp_current > hp_max)
+    *set hp_current hp_max
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment BARBARIAN: RAGE
+*comment Bonus action, 2 uses per long rest at level 1, +2 melee STR damage
+*comment while raging, resistance to bludgeoning/piercing/slashing (resistance
+*comment has no consumer yet — no incoming-damage system exists). Sets
+*comment is_raging true so a future combat scene can check it.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label activate_rage
+*if ((barbarian_rage_uses > 0) and (not(is_raging)))
+  *set barbarian_rage_uses - 1
+  *set is_raging true
+*return
+
+*label end_rage
+*set is_raging false
 *return

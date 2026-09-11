@@ -157,6 +157,7 @@ function compile(){
   }
   verifyFileName("choicescript_stats.txt");
   verifyFileName("choicescript_upgrade.txt");
+  verifyFileName("calendar.txt");
   
   //Check startup.txt for a *scene_list
   var sceneList = false;
