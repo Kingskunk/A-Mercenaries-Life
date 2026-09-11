@@ -20,10 +20,10 @@ A developer reference for every racial trait, innate magic, class cantrip, and c
 | Human | +1 to all six | No | Versatile (no combat effect, pure flavor) | None | No |
 | Elf | +2 DEX | Yes | Fey Ancestry (advantage vs. charmed/sleep saves) | None | **Yes** — see below |
 | Dwarf | +2 CON | Yes | Dwarven Resilience (advantage vs. poison saves; poison damage *resistance* still not wired — no damage system exists) | None | **Partially** — see below |
-| Half-Orc | +2 STR, +1 CON | Yes | Relentless Endurance (cling to 1 HP once — *not wired in, no HP-loss system exists yet*) | None | No |
+| Half-Orc | +2 STR, +1 CON | Yes | Relentless Endurance (cling to 1 HP on lethal blow — wired in `battle_take_damage`) | None | **Yes** — see below |
 | Halfling | +2 DEX | No | Lucky | None | **Yes** — see below |
-| Tiefling | +2 CHA, +1 INT | Yes | Hellish Resistance (fire resistance — *not wired in*). Trait text notes Hellish Rebuke (lvl 3) / Darkness (lvl 5) are real 5e unlocks **not yet earned** — no leveling system exists yet, so these are intentionally absent, not missing. | **Thaumaturgy** (cantrip, `race_cantrip`) | No |
-| Hexblood | +1 CON, +1 CHA | Yes | Hex Magic (umbrella name for the two spells below; "once per long rest" noted in flavor text only, not enforced) | **Disguise Self** (`race_cantrip`) + **Hex** (`race_cantrip_2`) — both granted immediately at 1st level, verified against actual VRGtR text (no level-3 gate, unlike what was first assumed) | No |
+| Tiefling | +2 CHA, +1 INT | Yes | Hellish Resistance (fire resistance — *not wired in*). Trait text notes Hellish Rebuke (lvl 3) / Darkness (lvl 5) are real 5e unlocks **not yet earned** — no leveling system exists yet, so these are intentionally absent, not missing. | **Thaumaturgy** (cantrip, `race_cantrip` — wired into `camp_night.txt` intimidation) | **Yes** — see below |
+| Hexblood | +1 CON, +1 CHA | Yes | Hex Magic (umbrella name for the two spells below; "once per long rest" noted in flavor text only, not enforced) | **Disguise Self** (`race_cantrip`) + **Hex** (`race_cantrip_2` — wired into `battle_black_sinks.txt` melee curse) | **Partially** — see below |
 
 **MECHANICAL — Halfling Lucky:** wired into `roll_d20_check`. If a Halfling rolls a natural 1, the engine automatically rerolls once and uses the new result.
 
@@ -31,7 +31,11 @@ A developer reference for every racial trait, innate magic, class cantrip, and c
 
 **MECHANICAL — Fey Ancestry (Elf) & Dwarven Resilience (Dwarf):** both now trigger automatically inside `roll_d20_check` via a `save_vs` context tag. A future scene just needs to `*set save_vs "charmed"` (or `"sleep"`, or `"poison"`) immediately before the check — the engine handles granting advantage to the right race on its own. Example: right before a hag tries to charm the player, a scene would do `*set check_stat "wis"` / `*set save_vs "charmed"` / `*gosub_scene startup roll_d20_check`, and an Elf automatically gets advantage without the scene needing to know or care that Elves have Fey Ancestry.
 
-**Why Relentless Endurance still isn't mechanical:** unlike the two above, it isn't a roll at all — it's an HP-loss trigger ("when you'd drop to 0 HP, cling to 1 instead"), which needs a real damage/HP-loss system to hook into. That doesn't exist yet, so it stays flavor-only until combat does. Dwarven Resilience's *damage resistance* half (not the save) has the same blocker.
+**MECHANICAL — Relentless Endurance (Half-Orc):** wired into `battle_take_damage` in `battle_black_sinks.txt`. When an attack would reduce the player to 0 HP, a Half-Orc's savage tenacity triggers specifically, keeping them on their feet at 1 HP with custom orcish flavor.
+
+**MECHANICAL — Innate Magic in Scenes:** 
+- **Thaumaturgy (Tiefling):** Active option in `camp_night.txt`'s gambling tent for a specialized DC 10 Charisma Intimidation check with brimstone eyes and booming voice.
+- **Hex (Hexblood / Warlock):** Active combat choice in `battle_black_sinks.txt`'s gatehouse melee to curse the lead defender (DC 12 Charisma check).
 
 ---
 
@@ -45,21 +49,21 @@ Only three of the seven classes have any spellcasting at level 1 — this matche
 | Barbarian | 1d12 | 0 | 0 | 0 |
 | Rogue | 1d8 | 0 | 0 | 0 |
 | Ranger | 1d10 | 0 | 0 | 0 (correctly starts at level 2 in RAW — not implemented, not a bug) |
-| Bard | 1d8 | 2 (from a pool of 4) | 2 (from a pool of 3–4*) | 2, long rest |
-| Warlock | 1d8 | 2 (from a pool of 4) | 1 (from a pool of 2–3*) | 1, **short rest** (Pact Magic) |
+| Bard | 1d8 | 2 (from a pool of 4) | 2 (from a pool of 4–5*) | 2, long rest |
+| Warlock | 1d8 | 2 (from a pool of 4) | 1 (from a pool of 3–4*) | 1, **short rest** (Pact Magic) |
 | Wizard | 1d6 | 3 (from a pool of 6) | 1 (from a pool of 3, always) | 2, long rest |
 
-\* **Bard's** and **Warlock's** spell pools shrink by one option for a Hexblood character, since Disguise Self (Bard) and Hex (Warlock) are hidden — the character already has them innately from `race_cantrip`/`race_cantrip_2`, so offering them again as a "new" class spell would be redundant. Wizard's spell pool (Identify / Feather Fall / Comprehend Languages) never overlaps with Hexblood's innate magic, so it's unaffected. See the `*if (not(race = "hexblood"))` guards in `dawn_trial.txt`.
+\* **Bard's** and **Warlock's** spell pools shrink by one option for a Hexblood character, since Disguise Self (Bard) and Hex (Warlock) are hidden — the character already has them innately from `race_cantrip`/`race_cantrip_2`, so offering them again as a "new" class spell would be redundant. Dissonant Whispers (Bard) and Armor of Agathys (Warlock) exist specifically to keep the pool at 3+ genuine options for Hexblood even after that exclusion — see narrative_guidelines.md §5 (Three Is the Standard). Wizard's spell pool (Identify / Feather Fall / Comprehend Languages) never overlaps with Hexblood's innate magic, so it's unaffected. See the `*if (not(race = "hexblood"))` guards in `dawn_trial.txt`.
 
 ### Bard
 - **Cantrip pool** (`bard_cantrip`, `bard_cantrip_2` — pick 2, second pick excludes the first): `vicious_mockery`, `minor_illusion`, `message`, `mage_hand`
-- **Spell pool** (`bard_spell`, `bard_spell_2` — pick 2, second excludes the first): `charm_person`, `healing_word`, `disguise_self` (hidden for Hexblood), `comprehend_languages`
+- **Spell pool** (`bard_spell`, `bard_spell_2` — pick 2, second excludes the first): `charm_person`, `healing_word`, `disguise_self` (hidden for Hexblood), `comprehend_languages`, `dissonant_whispers`
 - Framing: these are **not** newly discovered — the narration explicitly frames them as a lifelong knack the character always suspected was more than charm, finally admitted to under stress. Don't write future Bard content as "wow, I have magic now."
 
 ### Warlock
 - **Patron** (`warlock_patron`): `archfey`, `fiend`, or `great_old_one` — flavor/identity only, doesn't gate anything else currently.
 - **Cantrip pool** (`warlock_cantrip`, `warlock_cantrip_2` — pick 2, second excludes the first): `eldritch_blast`, `minor_illusion`, `chill_touch`, `prestidigitation`
-- **Spell pool** (`warlock_spell`): `hex` (hidden for Hexblood), `comprehend_languages`, `unseen_servant`
+- **Spell pool** (`warlock_spell`): `hex` (hidden for Hexblood), `comprehend_languages`, `unseen_servant`, `armor_of_agathys`
 - Framing: this **is** meant to read as sudden and new — a pact is a discrete origin event in 5e fiction, so "wow, I have powers now" is the correct tone here, unlike Bard/Wizard.
 
 ### Wizard
@@ -75,12 +79,12 @@ None of these four classes are spellcasters, but they still have real level-1 cl
 
 | Class | Feature | Tagged? | Wired In? |
 |---|---|---|---|
-| Fighter | Fighting Style (player picks one) | `fighter_fighting_style`, default `"none"` | **Partially** — if a future scene ever sets it to `"defense"`, `update_dnd_stats` adds +1 AC automatically. The other five styles (Archery, Dueling, Great Weapon Fighting, Protection, Two-Weapon Fighting) aren't wired to anything since there's no attack-roll or damage-roll system yet. |
-| Fighter | Second Wind | `fighter_second_wind_uses` (starts at 1) | **Yes** — `*label second_wind` in `startup.txt` is a real, callable subroutine: restores `1d10 + character_level` HP (capped at `hp_max`) and consumes a use. Nothing calls it yet since there's no scene where taking damage matters, but it'll work the moment one does. |
-| Barbarian | Rage | `barbarian_rage_uses` (starts at 2), `is_raging`, `barbarian_rage_damage_bonus` (2) | **Partially** — `*label activate_rage` / `*label end_rage` in `startup.txt` toggle `is_raging` and spend a use. The damage bonus and damage *resistance* have no consumer yet — no combat/incoming-damage system exists to apply either to. |
-| Barbarian | Unarmored Defense | `class_feature_2_title`/`_desc` | No — and it's currently **unreachable**: Ashbrook-origin characters (the only ones who can become Barbarian) always pick real armor at muster, so "unarmored" never actually applies under the current gear flow. Flavor text says as much. |
+| Fighter | Fighting Style (player picks one: Defense, Dueling, Great Weapon Fighting, Protection) | `fighter_fighting_style` (chosen during `dawn_trial.txt`) | **Yes / Active** — chosen at dawn trial. `"defense"` gives +1 AC immediately in `update_dnd_stats`. All four styles also gate a dedicated, style-specific melee option (DC 12 STR) in `battle_black_sinks.txt`'s `beat_gatehouse_fight` — Fighter previously had zero class-specific combat choices there, unlike every other class. |
+| Fighter | Second Wind | `fighter_second_wind_uses` (starts at 1) | **Yes** — `*label second_wind` in `startup.txt` is a real, callable subroutine: restores `1d10 + character_level` HP (capped at `hp_max`) and consumes a use. Wired into `battle_black_sinks.txt` before the gatehouse melee. |
+| Barbarian | Rage | `barbarian_rage_uses` (starts at 2), `is_raging`, `barbarian_rage_damage_bonus` (2) | **Partially** — `*label activate_rage` / `*label end_rage` in `startup.txt` toggle `is_raging` and spend a use. Wired into `battle_black_sinks.txt` for pre-battle activation and gatehouse frenzy. |
+| Barbarian | Unarmored Defense | `class_feature_2_title`/`_desc` | No — and it's currently **unreachable**: Ashbrook-origin characters always pick real armor at muster, so "unarmored" never actually applies under the current gear flow. Flavor text says as much. |
 | Rogue | Sneak Attack | `rogue_sneak_attack_die` ("1d6") | No — static flag only. No attack-with-advantage system exists to trigger it. |
-| Rogue | Expertise (player picks 2 skills) | `rogue_expertise_1`, `rogue_expertise_2`, default `"none"` | **Yes** — `roll_d20_check` adds `prof_bonus * 2` to `check_mod` if `check_skill` matches either chosen skill *and* `character_class = "rogue"`. Dormant until a future scene actually sets the two skill names (they need to match `check_skill` strings exactly, e.g. `"Sleight of Hand"`). |
+| Rogue | Expertise (Stealth & Thieves' Tools) | `rogue_expertise_1` ("Stealth"), `rogue_expertise_2` ("Thieves' Tools") | **Yes** — `roll_d20_check` adds `prof_bonus * 2` (+4) to `check_mod` if `check_skill` matches either chosen skill *and* `character_class = "rogue"`. Active in `dawn_trial.txt`. |
 | Ranger | Favored Enemy (player picks a creature type) | `ranger_favored_enemy`, default `"none"` | No — the advantage/disadvantage engine now exists (see below), so once this is chosen, wiring it in is just a `*set save_vs`-style tag away. What's still missing is a creature-type context on checks — a future tracking/recall scene would need to set something like `*set check_context "goblin"` before the check so the engine knows what's being tracked. |
 | Ranger | Natural Explorer (player picks a terrain) | `ranger_favored_terrain`, default `"none"` | No — same shape as above; needs a terrain-context tag on checks, not an advantage mechanic (that part's solved). |
 
