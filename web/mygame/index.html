@@ -45,8 +45,107 @@ window.storeName = null;
 //Scene.generatedFast = true;
 var rootDir = "../";
 </script>
+<style>
+#statSidebar {
+  position: fixed;
+  top: 0.75em;
+  right: 0.75em;
+  width: 235px;
+  max-height: 92vh;
+  overflow-y: auto;
+  background: rgba(247,244,241,0.95);
+  border: 1px solid rgba(0,0,0,0.25);
+  border-radius: 6px;
+  padding: 0.75em 1em;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 0.82em;
+  line-height: 1.6;
+  color: rgba(0,0,0,0.85);
+  z-index: 999;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+}
+#statSidebar h3 {
+  margin: 0 0 0.5em 0;
+  font-size: 1.05em;
+  border-bottom: 1px solid rgba(0,0,0,0.2);
+  padding-bottom: 0.35em;
+}
+#statSidebar .statRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75em;
+}
+#statSidebar .statRow > span:first-child {
+  color: rgba(0,0,0,0.6);
+  white-space: nowrap;
+}
+#statSidebar .statRow > span:last-child {
+  text-align: right;
+  font-weight: 600;
+}
+#statSidebar .timePeriod {
+  margin-top: -0.1em;
+  margin-bottom: 0.2em;
+  font-size: 0.92em;
+  font-style: italic;
+  color: rgba(0,0,0,0.55);
+  text-align: right;
+}
+#statSidebar .abilityGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.25em 0.5em;
+  margin-top: 0.5em;
+}
+#statSidebar .sectionDivider {
+  margin: 0.65em 0 0.5em 0;
+  border: none;
+  border-top: 1px solid rgba(0,0,0,0.15);
+}
+@media (max-width: 960px) {
+  #statSidebar { display: none !important; }
+}
+</style>
 </head>
-<body><div class="container" id="container1">
+<body>
+<div id="statSidebar"></div>
+<script>
+(function() {
+  function fmt(v) { return (v === undefined || v === null) ? "" : v; }
+  function renderStatSidebar() {
+    var el = document.getElementById("statSidebar");
+    if (!el) return;
+    var s = window.stats;
+    if (!s || !s.intake_completed || s.intake_completed === "false") {
+      el.style.display = "none";
+      return;
+    }
+    el.style.display = "";
+    el.innerHTML =
+      "<h3>" + fmt(s.name) + " — Lv" + fmt(s.character_level) + " " + fmt(s.class_name || "Recruit") + "</h3>" +
+      "<div class=\"statRow\"><span>HP</span><span>" + fmt(s.hp_current) + " / " + fmt(s.hp_max) + "</span></div>" +
+      "<div class=\"statRow\"><span>AC</span><span>" + fmt(s.armor_class) + "</span></div>" +
+      "<div class=\"statRow\"><span>Proficiency</span><span>+" + fmt(s.prof_bonus) + "</span></div>" +
+      "<div class=\"abilityGrid\">" +
+        "<span>STR " + fmt(s.strength) + " (" + fmt(s.str_mod_str) + ")</span>" +
+        "<span>DEX " + fmt(s.dexterity) + " (" + fmt(s.dex_mod_str) + ")</span>" +
+        "<span>CON " + fmt(s.constitution) + " (" + fmt(s.con_mod_str) + ")</span>" +
+        "<span>INT " + fmt(s.intelligence) + " (" + fmt(s.int_mod_str) + ")</span>" +
+        "<span>WIS " + fmt(s.wisdom) + " (" + fmt(s.wis_mod_str) + ")</span>" +
+        "<span>CHA " + fmt(s.charisma) + " (" + fmt(s.cha_mod_str) + ")</span>" +
+      "</div>" +
+      "<hr class=\"sectionDivider\">" +
+      "<div class=\"statRow\"><span>Date</span><span>" + fmt(s.calendar_date) + "</span></div>" +
+      "<div class=\"statRow\"><span>Time</span><span>" + fmt(s.clock_time) + "</span></div>" +
+      "<div class=\"timePeriod\">" + fmt(s.time_period) + "</div>" +
+      "<hr class=\"sectionDivider\">" +
+      "<div class=\"statRow\"><span>Purse</span><span>" + fmt(s.gold) + "g " + fmt(s.silver) + "s " + fmt(s.copper) + "c</span></div>";
+  }
+  window.setInterval(renderStatSidebar, 400);
+  document.addEventListener("DOMContentLoaded", renderStatSidebar);
+})();
+</script>
+<div class="container" id="container1">
 <div id="advertisement">
 </div>
 <div id="header">

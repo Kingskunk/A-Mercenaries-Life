@@ -17,13 +17,13 @@ trigger: always_on
 
 ## 3. Squad Presence (Show the Unit, Not Just the Protagonist)
 * **The Squad Acts Collectively:** In any scene where the protagonist fights or works alongside their assigned squad (Vanguard/Scout Company/Cadre), the prose must show other squad members doing their job in parallel — landing hits, casting spells, giving cover — not just the protagonist acting in a vacuum with allies as silent scenery.
-* **Named NPCs Perform Their Role:** If a commanding NPC (Kestrel, Ysolde, Varren) is present for an event, something in the text should reflect their actual specialty in that moment (Kestrel loosing an arrow, Ysolde casting something visibly stronger than the player's spell) rather than just standing nearby.
+* **Named NPCs Perform Their Role:** If a commanding or specialist NPC is present for an event, something in the text should reflect their actual specialty in that moment (e.g., an archer officer loosing arrows, an experienced caster weaving visibly stronger magic) rather than just standing nearby.
 * **Match Squad Concept to Squad Action:** If a squad is defined by a role (Scout Company = ranged/mobility), scenes involving that squad need at least one beat that actually exercises that role. Don't build a squad identity in setup text and then never pay it off in the scene.
 
 ## 4. Continuity Discipline (No Invented Callbacks)
 * **Never Reference an Event That Didn't Happen:** Lines like "just as X promised" or "exactly like Y warned you" must trace back to real prior text — an actual line of dialogue or a described event earlier in the game. If no such moment exists, write it as a generic beat ("as the plan called for") instead of inventing a false callback.
-* **Check Cross-Squad/Cross-NPC References:** A character who never appears in a given squad's path (e.g. Kestrel referenced in a Cadre-only scene) should not be name-dropped as if they'd interacted with the player there.
-* **When Renaming or Reworking a Character, Sweep for Old References:** Name collisions or leftover mentions of a cut/renamed character (e.g. old "Isolde" vs. "Ysolde") should be grepped for across all scene files before considering a change complete.
+* **Check Cross-Squad/Cross-NPC References:** A character who never appears in a given squad's path should not be name-dropped as if they'd interacted with the player there.
+* **When Renaming or Reworking a Character, Sweep for Old References:** Name collisions or leftover mentions of a cut/renamed character should be grepped for across all scene files before considering a change complete.
 
 ## 5. Choice Design (Three Real Options, No Hidden Traps)
 * **Three Is the Standard:** Meaningful choices should offer three genuine options, not two. A two-option choice is a design smell; a single unconditional option is a bug unless it's deliberate (a class-determining trial, a settings toggle, or a `[Return to X]` nav link).
@@ -37,7 +37,7 @@ trigger: always_on
 
 ## 7. Natural Dialogue & Distinct NPC Voice
 * **Imperfect, Not Clinical:** NPC dialogue should sound like a person talking, not a script — fragments, contractions, implication instead of spelled-out exposition. Avoid dialogue where a character explains information both speakers would already know, purely for the player's benefit.
-* **Each NPC Has a Register:** Varren, Kestrel, Ysolde, and Lyra should each read as a distinct person — word choice, sentence length, what they choose to say versus imply. Before writing a line for a recurring NPC, ask whether it sounds like *them* specifically or could be swapped into any other character's mouth unchanged.
+* **Each NPC Has a Register:** Recurring NPCs should each read as a distinct person — word choice, sentence length, what they choose to say versus imply. Before writing a line for a recurring NPC, ask whether it sounds like *them* specifically or could be swapped into any other character's mouth unchanged.
 
 ## 8. Avoid AI Prose Tics
 * **Earn Silence, Don't Default to It:** Before writing that a character "says nothing" or answers "without a word," write what they actually do or say instead. Described silence is a cop-out unless it's a deliberate, rare beat for a specific character.
@@ -50,8 +50,25 @@ trigger: always_on
 * When the protagonist makes a meaningful decision in narration — sparing an enemy, picking one tactic over another, trusting or doubting an NPC — the prose should carry the specific reason, not just the outcome. A character who acts without visible reasoning reads as a plot device rather than a person making a choice in this specific moment.
 
 ## 10. Describe NPCs on Introduction
-* The first time a named NPC appears on the page, give a concrete physical description — build, face, clothing, and anything visibly telling (scars, gear, bearing). This prevents the "faceless commander" problem and matches how Kestrel and Ysolde were already introduced.
+* The first time a named NPC appears on the page, give a concrete physical description — build, face, clothing, and anything visibly telling (scars, gear, bearing). This prevents the "faceless commander" problem and anchors the character immediately.
 
 ## 11. Don't Over-Explain Established Mechanics
 * Once a racial trait, class feature, or mechanic has been established (in the codex, or from an earlier scene), later uses shouldn't re-explain how or why it works. Show the action and trust the player to already know it. Reserve an explicit explanation for: the first time something is established, a moment where it fails or meets friction, or a beat where it specifically changes what the player learns.
+
+## 12. Action Economy in Choices (Combat vs. Exploration)
+* **In Combat (Turn/Action Cost):** High-stakes combat beats must treat casting or tactical abilities as dedicated choice slots/actions in initiative order (e.g. casting a cantrip or spell is a full choice). You cannot swing a melee weapon and cast an action cantrip simultaneously without a specific class feature.
+* **Outside Combat (Exploration/Downtime At-Will Prep):** Cantrips are at-will. In exploration, downtime, and investigation hubs, offer a preparatory pre-cast choice (e.g. `[Cantrip: Guidance]`) allowing the player to freely choose which subsequent skill check or dialogue option receives their magical focus.
+
+## 13. ChoiceScript Code Discipline & State Hygiene
+* **No Nested Multireplaces:** ChoiceScript's parser fails on nested multireplaces (`@{var1 @{var2 ...|...}|...}`). For dynamic stat hints based on multiple conditions, always compute them into `*temp` strings (e.g. `${hint_text}`) before the `*choice` block.
+* **Engine State Hygiene:** Every temporary roll modifier (`advantage`, `disadvantage`, `guidance_active`) must automatically reset to `false` inside the engine subroutine (`roll_d20_check`) upon return so bonuses never leak across unrelated choices.
+* **Full Slot Coverage:** When gating choices by learned spells or cantrips, always check all potential character slots (e.g. `wizard_cantrip`, `wizard_cantrip_2`, `wizard_cantrip_3`) so a player's build choices are never orphaned.
+
+## 14. Grounded Economy & Low-Fantasy Magic Reception
+* **Magic Is Rare, Distrusted, and Practical:** Mundane sellswords, officers, and common folk fear what they don't understand. Prose should reflect this: common soldiers eyeing unnatural bloodlines with suspicion, practitioners sitting slightly apart from the main campfire line, and line troops being rattled by sudden eldritch flares.
+* **Economic Grit:** Silver marks, iron shillings, and copper coins are scarce and hard-won. Loot must feel tangible and modest (smoked rations, tallow candles, water-damaged ledgers, preserved frontier coins), reinforcing the mercenary reality that every mark counts.
+
+## 15. Mechanics Confined to Brackets, Never in Prose
+* **Strict Separation of Stats and Story:** Numbers, dice designations, DCs, and mechanic names belong strictly in `[bracketed stat hints]` or banner cards.
+* **Pure In-Universe Narration:** Prose must never mention game mechanics directly (e.g. avoid *"you took 4 damage"* or *"you passed a DC 12 check"*). Ground the result in physical sensation: torn gambesons, bruised ribs, the cold bite of iron, and the sharp relief of a strike landing true.
 

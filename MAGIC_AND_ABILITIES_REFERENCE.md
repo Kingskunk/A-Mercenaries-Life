@@ -90,9 +90,10 @@ None of these four classes are spellcasters, but they still have real level-1 cl
 
 ---
 
-## Guidance — a deliberate non-mechanic
+## Guidance Cantrip Engine
 
-`wizard_cantrip = "guidance"` is flagged specifically because you asked for "easy to implement" options. It's *not* wired into anything automatically, and that's intentional: real Guidance requires spending an action casting it on someone **before** their check — unlike Halfling Lucky, which is a passive reflex triggered by a bad roll. Auto-applying a bonus to every single check a Wizard ever makes would be a silent, permanent buff, not a faithful implementation. When it's actually needed, the right pattern is a contextual choice in whatever scene calls for it ("you have a moment — steady your hand first?") that adds a one-off bonus to that specific `check_total`, the same way skill checks already branch on background/class.
+`guidance_active` allows any scene or choice where you cast *Guidance* before a check to trigger an active `+1d4` roll.
+- Setting `*set guidance_active true` right before `*gosub_scene startup roll_d20_check` automatically rolls `1d4`, adds it to `check_total`, displays `+X (Guidance)` in the check banner, and auto-resets `guidance_active false` upon return (matching the lifecycle of `advantage` and `disadvantage`).
 
 ---
 
@@ -100,7 +101,7 @@ None of these four classes are spellcasters, but they still have real level-1 cl
 
 | Concept | Variables |
 |---|---|
-| Advantage/disadvantage engine | `advantage`, `disadvantage`, `save_vs` (set right before `*gosub_scene startup roll_d20_check` — all three auto-reset after) |
+| Advantage / Disadvantage / Guidance engine | `advantage`, `disadvantage`, `guidance_active`, `save_vs` (set right before `*gosub_scene startup roll_d20_check` — all auto-reset after) |
 | Race identity | `race`, `race_title`, `race_desc`, `race_darkvision` |
 | Racial trait | `race_trait_title`, `race_trait_desc` |
 | Racial innate magic | `race_cantrip`, `race_cantrip_desc`, `race_cantrip_2`, `race_cantrip_2_desc` |
