@@ -129,6 +129,20 @@ Scene.prototype.printLoop = function printLoop() {
     if (!this.finished) {
         this.autofinish();
     }
+    // Refresh the resumable "" save's stats/temps here, at the moment the
+    // screen actually pauses (not just when the player next clicks a
+    // choice/Next). We deliberately keep "" pointed at the page's start line
+    // (stats.choice_page_start_line, set by resetPage() -- see
+    // refreshSavedProgress()) rather than this.lineNum: by the time a
+    // command like *choice sets this.finished, this.lineNum has already
+    // been bumped past it by this loop's own increment and no longer points
+    // at a safe place to resume — only the top of the page does. Without
+    // this, "" only picked up whatever *rand etc. had done once the player
+    // advanced past the current page, so a refresh or a trip to the Stats
+    // screen in between (both of which restore from "" and replay from its
+    // line) would replay the page from before this pause and could re-fire
+    // *rand.
+    this.refreshSavedProgress();
     this.save("temp");
     if (this.skipFooter) {
         this.skipFooter = false;
@@ -735,9 +749,32 @@ Scene.prototype.execute = function execute() {
       if (!subsceneStack.length) this.save("backup");
     }
     if (this.redirectingFromStats) {
+      this.stats.choice_page_start_line = this.lineNum;
+      this.stats.choice_page_start_indent = this.indent;
       this.save("");
       delete this.redirectingFromStats;
     }
+    // choice_ is a reserved prefix (see validateVariable), so scripts can
+    // read these but never *create/*set them themselves; make sure they
+    // exist before the very first page transition ever reads them.
+    if (typeof this.stats.choice_page_id !== "number") this.stats.choice_page_id = 0;
+    if (typeof this.stats.choice_page_start_line !== "number") {
+      this.stats.choice_page_start_line = this.lineNum;
+      this.stats.choice_page_start_indent = this.indent;
+    }
+    // Deliberately NOT "this.pageStartLineNum = this.lineNum" here: execute()
+    // also runs every time execution resumes across a scene-file boundary
+    // (goto_scene, and *return from a cross-scene *gosub_scene reconstructs
+    // a brand-new Scene object and calls execute() on it) -- none of which
+    // are a new page from the player's point of view, just the same page
+    // continuing past a file boundary. Setting it here unconditionally once
+    // reset it to the line right after a *gosub_scene call, which is *after*
+    // whatever that subroutine had already printed (e.g. a check's roll
+    // banner) -- so a refresh replayed only what came after the gosub and
+    // silently dropped the banner. choice_page_start_line instead lives on
+    // stats, which is the one object every one of those reconstructed Scene
+    // instances shares, and is only ever (re)set from resetPage() below,
+    // which is the actual "a real new page began" signal.
     this.printLoop();
 };
 
@@ -943,6 +980,20 @@ Scene.prototype.resetPage = function resetPage() {
     var self = this;
     this.resetCheckedPurchases();
     clearScreen(function() {
+      // Bump a persistent page counter every time the player genuinely
+      // advances (a real choice or a *page_break's Next), as opposed to a
+      // refresh/Stats-screen round trip replaying the same page. Scene
+      // scripts can compare this (via choice_page_id) to tell "this is the
+      // same page being replayed" apart from "this is a new occurrence of
+      // the same line/choice," which a lock keyed only on stat values (e.g.
+      // a repeated skill name) can't distinguish.
+      self.stats.choice_page_id = (self.stats.choice_page_id || 0) + 1;
+      // This is the one place a genuine new page begins (see execute()'s
+      // comment on why it can't just be tracked there): remember where, so
+      // refreshSavedProgress() has a safe line to resume/replay from even
+      // after execution has moved on through *gosub_scene calls and back.
+      self.stats.choice_page_start_line = self.lineNum;
+      self.stats.choice_page_start_indent = self.indent;
       // save in the background, eventually
       self.save("");
       self.prevLine = "empty";
@@ -987,6 +1038,29 @@ Scene.prototype.save = function save(slot) {
 
       saveCookie(function() {}, slot, this.stats, this.temps, this.lineNum, this.indent);
     }
+};
+
+// Rewrites the resumable "" save with the CURRENT stats/temps, but resuming
+// from stats.choice_page_start_line/indent (set by resetPage() when this
+// page actually began) instead of this.lineNum. this.lineNum can be
+// mid-command bookkeeping by the time a page pauses (e.g. *choice leaves it
+// one past itself), which is only safe to continue from in-memory, never to
+// persist and resume cold. choice_page_start_line is tracked on stats,
+// rather than as a plain property on this Scene instance, because it has to
+// survive execution crossing a scene-file boundary and back (*goto_scene,
+// or *return from a cross-scene *gosub_scene) -- both reconstruct a brand
+// new Scene object mid-page, and stats is the one thing every one of those
+// instances shares.
+Scene.prototype.refreshSavedProgress = function refreshSavedProgress() {
+    if (this.saveSlot) return;
+    var lineNum = (typeof this.stats.choice_page_start_line === "number") ? this.stats.choice_page_start_line : this.lineNum;
+    var indent = (typeof this.stats.choice_page_start_indent === "number") ? this.stats.choice_page_start_indent : this.indent;
+    for (var key in tempStatWrites) {
+      if (tempStatWrites.hasOwnProperty(key)) {
+        this.stats[key] = tempStatWrites[key];
+      }
+    }
+    saveCookie(function() {}, "", this.stats, this.temps, lineNum, indent);
 };
 
 // *goto labelName

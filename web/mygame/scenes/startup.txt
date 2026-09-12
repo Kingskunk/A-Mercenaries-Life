@@ -185,6 +185,26 @@
 *create disadvantage false
 *create guidance_active false
 *create save_vs "none"
+*comment Guards against re-rolling this exact check on a page refresh or a
+*comment Show Stats round trip (both replay the current page from the top).
+*comment locked_page_id is compared against the engine's choice_page_id
+*comment counter (reserved "choice_" prefix, maintained by web/scene.js),
+*comment which only advances on a genuine new choice/Next click — so a
+*comment replay of the same page always matches, while a later, brand new
+*comment occurrence of the same check_skill (e.g. the next combat round)
+*comment never does.
+*create roll_locked false
+*create locked_page_id 0
+*create locked_guidance_roll 0
+*create locked_adv_label ""
+*comment Same idea, separate flag, for battle_take_damage's own *rand
+*comment (web/mygame/scenes/battle_black_sinks.txt). Deliberately not the
+*comment same variables as the check lock above: a page commonly runs a
+*comment failed check (locking roll_locked) and then battle_take_damage in
+*comment the same breath, and sharing one flag would make the damage roll
+*comment see itself as already "locked" and never apply on the first pass.
+*create damage_roll_locked false
+*create locked_damage_page_id 0
 
 *comment --- NIGHT 1 CAMP ---
 *create camp_activity "none"
@@ -835,9 +855,9 @@ You ate the stew. You took the iron. And the farmer's son died at that table.
 *goto choose_race
 
 *label flashback_slums
-The stench of rotting fish, raw sewage, and cheap jasmine perfume in the [b]Lower Sinks[/b] of [b]Port Valen[/b]—the capital where men were sold for copper and killed for silver.
+The stench of rotting fish, raw sewage, and cheap jasmine perfume in the canal slums of [b]Dredge-End[/b] in [b]Port Valen[/b]—the capital where men were sold for copper and killed for silver.
 
-You had taken six hundred silver marks off the counting-table of the [b]Black Tally[/b]—the ruthless dockside syndicate of loan sharks and river-smugglers. But their chief enforcer, a two-hundred-pound brute with gold teeth, cornered you in the blind alley behind the canal brothel. When his butcher's cleaver flashed in the gaslight, your reflexes were already moving. 
+You had taken six hundred silver marks off the counting-table of the [b]Black Tally[/b]—the ruthless dockside syndicate of loan sharks and river-smugglers. But their chief enforcer, a two-hundred-pound brute with gold teeth, cornered you in the blind alley behind the canal brothel. When his butcher's cleaver flashed in the lantern light, your reflexes were already moving. 
 
 Two quick, vicious upward jabs of your bone-handled shiv beneath his floating ribs. He collapsed into the filthy gutter with a wet gurgle. You snatched his purse, scrambled over a spiked iron fence, and vanished into the fog just as the whistles of the Port Watch began to shriek through the alleys.
 
@@ -1040,11 +1060,11 @@ The clerk turns to the bottom corner of the ledger page, stylus poised over a bl
 
 *if (origin = "ruined")
   *choice
-    # "Write down my younger sister, Elspeth. She survived the fire and is hidden with salt-weavers at Marrow-Ferry."
+    # "Write down my younger sister, Elspeth. She survived the fire and is hidden with salt-weavers at Alderford."
       *set family_name "Elspeth"
       *set family_tie "sibling"
       *set family_title "Sister (Elspeth)"
-      *set family_desc "Your younger sister, Elspeth, sheltered with salt-weavers at Marrow-Ferry. She depends on your mercenary pay to survive."
+      *set family_desc "Your younger sister, Elspeth, sheltered with salt-weavers at Alderford. She depends on your mercenary pay to survive."
       *goto munitions_scene
     # "My older brother, Alden. Captured by the bailiffs and breaking rock in the lime-kiln pits at Karr's Redoubt."
       *set family_name "Alden"
@@ -1085,11 +1105,11 @@ The clerk turns to the bottom corner of the ledger page, stylus poised over a bl
       *set family_title "Sister (Klara)"
       *set family_desc "Your younger sister, Klara, hiding in the slums of Dredge-End. She depends on your pay packet to avoid the debtor's gangs."
       *goto munitions_scene
-    # "Nobody. I trust no one in the Sinks. Stamp it for the Carrion chest."
+    # "Nobody. I trust no one in Dredge-End. Stamp it for the Carrion chest."
       *set family_name "None"
       *set family_tie "none"
       *set family_title "None (Company Chest)"
-      *set family_desc "A lone rogue from Port Valen's gutters. Untethered; answering to no one and leaving nothing behind."
+      *set family_desc "A lone rogue from Dredge-End's gutters. Untethered; answering to no one and leaving nothing behind."
       *goto munitions_scene
 
 *if (origin = "disgraced")
@@ -1245,7 +1265,7 @@ With your gear cinched tight, you turn your attention to the spilled weapons. Wh
     *set weapon_damage "1d4 piercing"
     *set weapon_type "finesse"
     *set has_shield false
-    You pluck two well-balanced daggers from the pile, testing their edge against your thumb before sheathing one at your hip and the other up your sleeve, out of sight. Not much for a shield-wall, but nobody in the Sinks fights fair either.
+    You pluck two well-balanced daggers from the pile, testing their edge against your thumb before sheathing one at your hip and the other up your sleeve, out of sight. Not much for a shield-wall, but nobody in a brawl fights fair either.
     *goto ready_camp
 
   # A seven-foot ash-wood spear tipped with blackened, leaf-bladed steel.@{show_stat_hints  [1d6/1d8 Piercing (Reach)]|}
@@ -1507,51 +1527,67 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set advantage true
 
 *temp adv_label ""
-*if (advantage) and (not(disadvantage))
-  *set adv_label " (Advantage)"
-*if (disadvantage) and (not(advantage))
-  *set adv_label " (Disadvantage)"
-
 *temp guidance_roll 0
-*if (guidance_active)
-  *rand guidance_roll 1 4
-  *set adv_label "${adv_label} +${guidance_roll} (Guidance)"
 
-*rand d20_roll 1 20
-*if (advantage) and (not(disadvantage))
-  *rand d20_roll_2 1 20
-  *if (d20_roll_2 > d20_roll)
-    *set d20_roll d20_roll_2
-*if (disadvantage) and (not(advantage))
-  *rand d20_roll_2 1 20
-  *if (d20_roll_2 < d20_roll)
-    *set d20_roll d20_roll_2
+*if (roll_locked) and (locked_page_id = choice_page_id)
+  *comment Same page being replayed (refresh / Show Stats / Menu) — reuse the
+  *comment roll we already locked in rather than rolling again. d20_roll,
+  *comment check_mod, check_total, is_nat_20 and is_nat_1 are all persistent
+  *comment and already hold the locked-in result; only the display label and
+  *comment guidance roll (both *temp, lost across the scene switch on
+  *comment *return) need to be restored here.
+  *set adv_label locked_adv_label
+  *set guidance_roll locked_guidance_roll
+*else
+  *if (advantage) and (not(disadvantage))
+    *set adv_label " (Advantage)"
+  *if (disadvantage) and (not(advantage))
+    *set adv_label " (Disadvantage)"
 
-*if ((race = "halfling") and (d20_roll = 1))
-  *comment Halfling Lucky: reroll a natural 1 once, must use the new result. Resolved after
-  *comment advantage/disadvantage, matching RAW — Lucky rerolls the die actually used for the check.
+  *if (guidance_active)
+    *rand guidance_roll 1 4
+    *set adv_label "${adv_label} +${guidance_roll} (Guidance)"
+
   *rand d20_roll 1 20
+  *if (advantage) and (not(disadvantage))
+    *rand d20_roll_2 1 20
+    *if (d20_roll_2 > d20_roll)
+      *set d20_roll d20_roll_2
+  *if (disadvantage) and (not(advantage))
+    *rand d20_roll_2 1 20
+    *if (d20_roll_2 < d20_roll)
+      *set d20_roll d20_roll_2
 
-*if (check_stat = "str")
-  *set check_mod str_mod
-*if (check_stat = "dex")
-  *set check_mod dex_mod
-*if (check_stat = "con")
-  *set check_mod con_mod
-*if (check_stat = "int")
-  *set check_mod int_mod
-*if (check_stat = "wis")
-  *set check_mod wis_mod
-*if (check_stat = "cha")
-  *set check_mod cha_mod
+  *if ((race = "halfling") and (d20_roll = 1))
+    *comment Halfling Lucky: reroll a natural 1 once, must use the new result. Resolved after
+    *comment advantage/disadvantage, matching RAW — Lucky rerolls the die actually used for the check.
+    *rand d20_roll 1 20
 
-*comment Rogue Expertise: double proficiency bonus on two chosen skills — dormant until rogue_expertise_1/2 are actually chosen
-*if ((character_class = "rogue") and ((check_skill = rogue_expertise_1) or (check_skill = rogue_expertise_2)))
-  *set check_mod + (prof_bonus * 2)
+  *if (check_stat = "str")
+    *set check_mod str_mod
+  *if (check_stat = "dex")
+    *set check_mod dex_mod
+  *if (check_stat = "con")
+    *set check_mod con_mod
+  *if (check_stat = "int")
+    *set check_mod int_mod
+  *if (check_stat = "wis")
+    *set check_mod wis_mod
+  *if (check_stat = "cha")
+    *set check_mod cha_mod
 
-*set check_total (d20_roll + check_mod)
-*if (guidance_active)
-  *set check_total + guidance_roll
+  *comment Rogue Expertise: double proficiency bonus on two chosen skills — dormant until rogue_expertise_1/2 are actually chosen
+  *if ((character_class = "rogue") and ((check_skill = rogue_expertise_1) or (check_skill = rogue_expertise_2)))
+    *set check_mod + (prof_bonus * 2)
+
+  *set check_total (d20_roll + check_mod)
+  *if (guidance_active)
+    *set check_total + guidance_roll
+
+  *set roll_locked true
+  *set locked_page_id choice_page_id
+  *set locked_guidance_roll guidance_roll
+  *set locked_adv_label adv_label
 
 *if (d20_roll = 20)
   *set is_nat_20 true
