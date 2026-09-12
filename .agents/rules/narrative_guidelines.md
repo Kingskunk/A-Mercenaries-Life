@@ -72,3 +72,10 @@ trigger: always_on
 * **Strict Separation of Stats and Story:** Numbers, dice designations, DCs, and mechanic names belong strictly in `[bracketed stat hints]` or banner cards.
 * **Pure In-Universe Narration:** Prose must never mention game mechanics directly (e.g. avoid *"you took 4 damage"* or *"you passed a DC 12 check"*). Ground the result in physical sensation: torn gambesons, bruised ribs, the cold bite of iron, and the sharp relief of a strike landing true.
 
+## 16. Time Progression & Chronological Discipline
+* **Realistic Clock & Activity Alignment:** Every advance of the clock (`hours_to_pass` / `minutes_to_pass`) must directly correlate with the physical actions taking place in the scene (e.g. 15-mile campaign march = 6–8h; skirmish & breach = 1h; post-battle fatigue duty = 3–4h; camp activity = 30–45m; long rest = 8h). Never advance time without narrative and sensory grounding (sweat cooling, muscles stiffening, mud crusting, shadows stretching, weather shifting).
+* **Atmospheric & Seasonal Lighting Integrity:** Scene lighting and weather must strictly match the calendar season and current hour (e.g. Scorpio/Autumn: Dawn `~06:00`, Midday `~12:00–13:00`, Dusk `~17:30–18:00`, Night `~20:00+`). If a battle ends in early afternoon (`14:00`), the text cannot abruptly jump to "dusk cook-fires" without depicting the grueling afternoon labor (hauling corpses, un-bogging carts, barricading arches) that fills those hours.
+* **Midnight Rollover & Rest Synchronization:** Sleeping or resting across midnight must advance the clock into early morning (`04:30 – 06:00`) so `calendar.txt` automatically rolls `campaign_day` and `calendar_date` to the next day. Morning muster scenes must always align with a pre-dawn/morning timestamp, ensuring status cards never display night hours during a morning beat.
+* **Incremental Hub Passage & Dynamic Atmosphere:** Exploration and camp hubs with multiple action slots must pass time incrementally per visit (`minutes_to_pass 30-45`), with the hub text dynamically reflecting the fading twilight, deepening night, and changing sentry watches as activities are spent.
+
+

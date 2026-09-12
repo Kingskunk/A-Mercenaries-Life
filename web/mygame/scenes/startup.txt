@@ -112,10 +112,10 @@
 *create days_to_pass 0
 *create days_to_pay 16
 *create day_suffix "th"
-*create clock_hour 21
+*create clock_hour 19
 *create clock_minute 0
-*create clock_time "21:00"
-*create time_period "Late Night"
+*create clock_time "19:00"
+*create time_period "Evening"
 *create physical_state "Shivering in damp wool; exploring camp"
 
 *comment --- COMBAT VITALS & DEFENSE (TRUE D&D LEVEL 1) ---
@@ -159,12 +159,14 @@
 *create vane_standing 0
 *create kestrel_respect 0
 *create ysolde_respect 0
+*create odessa_respect 0
 *create intake_completed false
 *create met_varren false
 *create met_lyra false
 *create met_vane false
 *create met_kestrel false
 *create met_ysolde false
+*create met_odessa false
 *create squad "none"
 *create squad_title "None"
 
@@ -184,20 +186,40 @@
 *create guidance_active false
 *create save_vs "none"
 
+*comment --- NIGHT 1 CAMP ---
 *create camp_activity "none"
-*create camp_actions_left 2
+*create camp_actions_left 4
 *create visited_lyra false
 *create visited_dice false
 *create visited_varren false
+*create visited_whetstone false
+*create visited_sentry false
+*create visited_odessa_night false
+*create visited_mess false
 *create battle_ready false
 
+*comment --- PREPARATION & ADVANTAGE BUFFS (DAY 2 PAYOFFS) ---
+*create prep_honed_blade false
+*create prep_marsh_intel false
+*create prep_odessa_salve false
+*create prep_lyra_pact false
+*create prep_varren_drill false
+
 *comment --- BIVOUAC (POST-BATTLE CAMP) ---
-*create bivouac_actions_left 2
+*create bivouac_actions_left 3
 *create visited_bivouac_companion false
+*create visited_bivouac_lyra false
+*create visited_bivouac_kestrel false
+*create visited_bivouac_ysolde false
 *create visited_bivouac_search false
 *create visited_bivouac_fire false
+*create visited_bivouac_odessa false
+*create errand_kestrel_unlocked false
+*create errand_ysolde_unlocked false
+*create errand_vanguard_unlocked false
 *create intel_fish_cache false
 *create found_fish_cache false
+*create found_customs_vellum false
 
 *comment --- CODEX INTELLIGENCE UNLOCKS ---
 *create codex_gilded_scales false
@@ -209,6 +231,10 @@
 *create codex_black_sinks false
 *create codex_the_drowned false
 *create codex_meridian_empire false
+*create codex_odessa false
+*create codex_broken_crags false
+*create codex_iron_bailiffs false
+*create codex_marsh_squatters false
 
 *comment --- GAME SETTINGS ---
 Before the mud and the blood: many choices throughout this game carry mechanical weight—ability scores, dice, DCs, damage. Would you like these shown as numeric hints next to the choices that have them?
@@ -216,9 +242,326 @@ Before the mud and the blood: many choices throughout this game carry mechanical
 *choice
   # Yes, show me the numbers. (You can toggle this later from the dossier's Settings option.)
     *set show_stat_hints true
+    *goto mode_select
   # No, keep it immersive—let me discover what a choice does through the story alone.
     *set show_stat_hints false
+    *goto mode_select
 
+*label mode_select
+*choice
+  # [Begin Campaign from Prologue]
+    *goto prologue_start
+  # 🛠️ [Developer: Quick Scene Jump & Character Presets]
+    *goto dev_jump_menu
+
+*label dev_jump_menu
+[b]🛠️ DEVELOPER TESTING: CHOOSE CHARACTER PRESET[/b]
+*line_break
+Select an archetype to automatically initialize stats, inventory, squad assignment, and codex lore:
+
+*choice
+  # 🛡️ Vanguard Fighter (Human / Longsword & Buckler / STR 16, CON 14 / Vanguard)
+    *set name "Corin"
+    *set intake_completed true
+    *set origin "ruined"
+    *set origin_title "Ashbrook Survivor"
+    *set origin_desc "A survivor of the razed village of Ashbrook who traded a murderer's noose for a mercenary's sword."
+    *set race "human"
+    *set race_title "Human"
+    *set race_trait_title "Resourceful & Versatile"
+    *set race_trait_desc "+1 to two primary attributes; adaptable grit."
+    *set character_class "fighter"
+    *set class_title "Fighter"
+    *set class_name "Fighter"
+    *set class_assigned true
+    *set hit_die_max 10
+    *set hit_die "1d10"
+    *set fighter_second_wind_uses 1
+    *set fighter_fighting_style "dueling"
+    *set squad "vanguard"
+    *set squad_title "Vanguard"
+    *set strength 16
+    *set constitution 14
+    *set wisdom 12
+    *set dexterity 10
+    *set intelligence 10
+    *set charisma 10
+    *set armor "brigandine"
+    *set armor_desc "Padded gambeson & leather brigandine"
+    *set armor_type "brigandine"
+    *set has_shield true
+    *set weapon "longsword"
+    *set weapon_desc "Arming sword & iron buckler"
+    *set weapon_damage "1d8 slashing"
+    *set weapon_type "melee"
+    *set silver 10
+    *set met_varren true
+    *set met_lyra true
+    *set codex_ashbrook true
+    *set codex_baron_karr true
+    *set codex_iron_bailiffs true
+    *set codex_black_sinks true
+    *gosub update_dnd_stats
+    *goto dev_scene_select
+
+  # 🏹 Scout Rogue & Archer (Human / Recurve Bow & Dirk / DEX 16, WIS 14 / Scout Company)
+    *set name "Kaelen"
+    *set intake_completed true
+    *set origin "outlaw"
+    *set origin_title "Port Valen Outlaw"
+    *set origin_desc "A quick-fingered rogue fleeing the Black Tally's blood bounty in Port Valen under the Carrion banner."
+    *set race "human"
+    *set race_title "Human"
+    *set race_trait_title "Resourceful & Versatile"
+    *set race_trait_desc "+1 to two primary attributes; adaptable grit."
+    *set character_class "rogue"
+    *set class_title "Rogue"
+    *set class_name "Rogue"
+    *set class_assigned true
+    *set hit_die_max 8
+    *set hit_die "1d8"
+    *set squad "scouts"
+    *set squad_title "Scout Company"
+    *set strength 10
+    *set constitution 12
+    *set wisdom 14
+    *set dexterity 16
+    *set intelligence 10
+    *set charisma 12
+    *set armor "leather"
+    *set armor_desc "Hardened leather jerkin"
+    *set armor_type "leather"
+    *set has_shield false
+    *set weapon "shortbow"
+    *set weapon_desc "Recurve shortbow & trench dirk"
+    *set weapon_damage "1d6 piercing"
+    *set weapon_type "ranged"
+    *set silver 18
+    *set met_varren true
+    *set met_lyra true
+    *set met_kestrel true
+    *set codex_black_tally true
+    *set codex_port_valen true
+    *set codex_black_sinks true
+    *gosub update_dnd_stats
+    *goto dev_scene_select
+
+  # 🔮 Cadre Battle-Wizard (Human / Staff & Spells / INT 16, CON 14 / The Cadre)
+    *set name "Lucius"
+    *set intake_completed true
+    *set origin "disgraced"
+    *set origin_title "Disgraced Scion"
+    *set origin_desc "A fallen scion of the Marches who traded a ruined crest for the anonymity of common sellswords."
+    *set race "human"
+    *set race_title "Human"
+    *set race_trait_title "Resourceful & Versatile"
+    *set race_trait_desc "+1 to two primary attributes; adaptable grit."
+    *set character_class "wizard"
+    *set class_title "Wizard"
+    *set class_name "Wizard"
+    *set class_assigned true
+    *set hit_die_max 6
+    *set hit_die "1d6"
+    *set wizard_cantrip "fire_bolt"
+    *set wizard_cantrip_desc "Fire Bolt (1d10 Fire)"
+    *set wizard_cantrip_2 "guidance"
+    *set wizard_cantrip_2_desc "Guidance (+1d4 Check Bonus)"
+    *set wizard_cantrip_3 "prestidigitation"
+    *set wizard_cantrip_3_desc "Prestidigitation (Minor Arcane Transmutation)"
+    *set wizard_spell "shield"
+    *set wizard_spell_desc "Shield (+5 AC Reaction)"
+    *set wizard_spell_slots 2
+    *set squad "cadre"
+    *set squad_title "The Cadre"
+    *set strength 10
+    *set constitution 14
+    *set wisdom 10
+    *set dexterity 12
+    *set intelligence 16
+    *set charisma 12
+    *set armor "cloth"
+    *set armor_desc "Traveling robes & wool mantle"
+    *set armor_type "cloth"
+    *set has_shield false
+    *set weapon "quarterstaff"
+    *set weapon_desc "Iron-shod quarterstaff"
+    *set weapon_damage "1d6 bludgeoning"
+    *set weapon_type "melee"
+    *set silver 25
+    *set met_varren true
+    *set met_lyra true
+    *set met_ysolde true
+    *set codex_karrs_keep true
+    *set codex_baron_karr true
+    *set codex_meridian_empire true
+    *set codex_black_sinks true
+    *gosub update_dnd_stats
+    *goto dev_scene_select
+
+  # 👁️ Cadre Warlock (Human / Dagger & Eldritch Blast / CHA 16, CON 14 / The Cadre)
+    *set name "Corin"
+    *set intake_completed true
+    *set origin "outlaw"
+    *set origin_title "Port Valen Outlaw"
+    *set origin_desc "A quick-fingered rogue fleeing the Black Tally's blood bounty in Port Valen under the Carrion banner."
+    *set race "human"
+    *set race_title "Human"
+    *set race_trait_title "Resourceful & Versatile"
+    *set race_trait_desc "+1 to two primary attributes; adaptable grit."
+    *set character_class "warlock"
+    *set class_title "Warlock"
+    *set class_name "Warlock"
+    *set class_assigned true
+    *set hit_die_max 8
+    *set hit_die "1d8"
+    *set warlock_patron "the_drowned"
+    *set warlock_patron_title "The Drowned King"
+    *set warlock_patron_desc "An ancient submerged consciousness bound beneath the Black Sinks."
+    *set warlock_cantrip "eldritch_blast"
+    *set warlock_cantrip_desc "Eldritch Blast (1d10 Force)"
+    *set warlock_cantrip_2 "prestidigitation"
+    *set warlock_cantrip_2_desc "Prestidigitation"
+    *set warlock_spell "hex"
+    *set warlock_spell_desc "Hex (+1d6 Necrotic Damage)"
+    *set warlock_spell_slots 1
+    *set squad "cadre"
+    *set squad_title "The Cadre"
+    *set strength 10
+    *set constitution 14
+    *set wisdom 10
+    *set dexterity 12
+    *set intelligence 12
+    *set charisma 16
+    *set armor "leather"
+    *set armor_desc "Hardened leather jerkin"
+    *set armor_type "leather"
+    *set has_shield false
+    *set weapon "dagger"
+    *set weapon_desc "Trench dagger"
+    *set weapon_damage "1d4 piercing"
+    *set weapon_type "melee"
+    *set silver 18
+    *set met_varren true
+    *set met_lyra true
+    *set met_ysolde true
+    *set codex_the_drowned true
+    *set codex_black_sinks true
+    *gosub update_dnd_stats
+    *goto dev_scene_select
+
+  # 🪓 Vanguard Barbarian (Half-Orc / Greataxe & Rage / STR 16, CON 14 / Vanguard)
+    *set name "Thorgar"
+    *set intake_completed true
+    *set origin "ruined"
+    *set origin_title "Ashbrook Survivor"
+    *set origin_desc "A survivor of the razed village of Ashbrook who traded a murderer's noose for a mercenary's sword."
+    *set race "half_orc"
+    *set race_title "Half-Orc"
+    *set race_trait_title "Relentless Endurance & Darkvision"
+    *set race_trait_desc "Drop to 1 HP instead of 0 once per long rest; see in darkness."
+    *set character_class "barbarian"
+    *set class_title "Barbarian"
+    *set class_name "Barbarian"
+    *set class_assigned true
+    *set hit_die_max 12
+    *set hit_die "1d12"
+    *set barbarian_rage_uses 2
+    *set squad "vanguard"
+    *set squad_title "Vanguard"
+    *set strength 16
+    *set constitution 14
+    *set wisdom 10
+    *set dexterity 14
+    *set intelligence 8
+    *set charisma 10
+    *set armor "leather"
+    *set armor_desc "Hardened leather harness"
+    *set armor_type "leather"
+    *set has_shield false
+    *set weapon "greataxe"
+    *set weapon_desc "Bearded greataxe"
+    *set weapon_damage "1d12 slashing"
+    *set weapon_type "melee"
+    *set silver 10
+    *set met_varren true
+    *set met_lyra true
+    *set codex_ashbrook true
+    *set codex_baron_karr true
+    *set codex_iron_bailiffs true
+    *set codex_black_sinks true
+    *gosub update_dnd_stats
+    *goto dev_scene_select
+
+*label dev_scene_select
+[b]🛠️ DEVELOPER TESTING: CHOOSE TARGET SCENE[/b]
+*line_break
+Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${squad_title}). Select story milestone to jump into:
+
+*choice
+  # ⛺ Jump to Night 1 Campfire Hub (camp_night.txt)
+    *set campaign_day 1
+    *set calendar_date "14th of Scorpio, 428 IR"
+    *set clock_hour 19
+    *set clock_minute 0
+    *set clock_time "19:00"
+    *set time_period "Evening"
+    *set camp_actions_left 4
+    *goto_scene camp_night camp_hub
+
+  # ⚔️ Jump to Dawn Trial & Muster (dawn_trial.txt)
+    *set campaign_day 2
+    *set calendar_date "15th of Scorpio, 428 IR"
+    *set clock_hour 4
+    *set clock_minute 30
+    *set clock_time "04:30"
+    *set time_period "Pre-Dawn"
+    *goto_scene dawn_trial
+
+  # 🌊 Jump to Battle of Black Sinks: Causeway Skirmish (battle_black_sinks.txt)
+    *set campaign_day 2
+    *set calendar_date "15th of Scorpio, 428 IR"
+    *set clock_hour 4
+    *set clock_minute 30
+    *set clock_time "04:30"
+    *set time_period "Pre-Dawn"
+    *goto_scene battle_black_sinks battle_start
+
+  # 🏰 Jump to Battle of Black Sinks: Gatehouse Breach Melee (battle_black_sinks.txt)
+    *set campaign_day 2
+    *set calendar_date "15th of Scorpio, 428 IR"
+    *set clock_hour 13
+    *set clock_minute 45
+    *set clock_time "13:45"
+    *set time_period "Afternoon"
+    *set codex_black_sinks true
+    *goto_scene battle_black_sinks beat_gatehouse_fight
+
+  # 🔥 Jump to Bivouac Rest Hub: Gatehouse Night (battle_black_sinks.txt)
+    *set campaign_day 2
+    *set calendar_date "15th of Scorpio, 428 IR"
+    *set clock_hour 18
+    *set clock_minute 0
+    *set clock_time "18:00"
+    *set time_period "Dusk"
+    *set codex_black_sinks true
+    *set codex_gilded_scales true
+    *set codex_marsh_squatters true
+    *set bivouac_actions_left 3
+    *goto_scene battle_black_sinks bivouac
+
+  # 🌅 Jump to Bivouac Morning: Day 3 March (battle_black_sinks.txt)
+    *set campaign_day 2
+    *set calendar_date "15th of Scorpio, 428 IR"
+    *set clock_hour 21
+    *set clock_minute 0
+    *set clock_time "21:00"
+    *set time_period "Night"
+    *set codex_black_sinks true
+    *set codex_gilded_scales true
+    *set codex_marsh_squatters true
+    *goto_scene battle_black_sinks bivouac_end
+
+*label prologue_start
 Rain beats steadily against the black canvas of the encampment, turning the red clay of the river valley into a miserable sea of mud.
 
 Smoke from damp pine fires stings your eyes. All around you, the Iron Carrion—four hundred hardened sellswords, deserters, and scoundrels—prepare for tomorrow's march into the contested borderlands. The sound of whetstones scraping against iron fills the air, rhythmic and cold as a death knell.
@@ -262,6 +605,7 @@ You stare past his shoulder into the dying embers of a ditch brazier. The noise 
     *set origin_desc "A survivor of the razed village of Ashbrook who traded a murderer's noose for a mercenary's sword."
     *set codex_ashbrook true
     *set codex_baron_karr true
+    *set codex_iron_bailiffs true
     *set strength 16
     *set constitution 14
     *set wisdom 12
@@ -849,6 +1193,8 @@ The raven-haired girl slides her quiver strap across her shoulder and gives your
 The smoke of wet peat fires drifts thick through the rows of tents. You shoulder your gear, push past the knots of swearing recruits, and find your place in the mud of the encampment.
 
 *page_break Step into the encampment...
+*set camp_actions_left 4
+*set time_period "Evening"
 *finish
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -960,6 +1306,11 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *temp effective_dex_mod dex_mod
 *if (armor_type = "cloth")
   *set base_ac 10
+  *comment Mage Armor: 13 + DEX while not wearing actual armor. Cloth options
+  *comment (traveling cloak, scholar robes, etc.) are ordinary clothes, not
+  *comment armor, so this is the correct RAW condition rather than "any Wizard".
+  *if (wizard_spell = "mage_armor")
+    *set base_ac 13
 *if ((armor_type = "leather") or (armor_type = "buff_coat"))
   *set base_ac 11
 *if ((armor_type = "brigandine") or (armor_type = "chain_jack"))

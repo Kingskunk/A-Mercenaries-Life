@@ -49,27 +49,39 @@ Only three of the seven classes have any spellcasting at level 1 — this matche
 | Barbarian | 1d12 | 0 | 0 | 0 |
 | Rogue | 1d8 | 0 | 0 | 0 |
 | Ranger | 1d10 | 0 | 0 | 0 (correctly starts at level 2 in RAW — not implemented, not a bug) |
-| Bard | 1d8 | 2 (from a pool of 4) | 2 (from a pool of 4–5*) | 2, long rest |
-| Warlock | 1d8 | 2 (from a pool of 4) | 1 (from a pool of 3–4*) | 1, **short rest** (Pact Magic) |
-| Wizard | 1d6 | 3 (from a pool of 6) | 1 (from a pool of 3, always) | 2, long rest |
+| Bard | 1d8 | 2 (from a pool of 5) | 2 (from a pool of 4–5*) | 2, long rest |
+| Warlock | 1d8 | 2 (from a pool of 4) | 1 (from a pool of 4–5*) | 1, **short rest** (Pact Magic) |
+| Wizard | 1d6 | 3 (from a pool of 8) | 1 (from a pool of 7, always) | 2, long rest |
 
-\* **Bard's** and **Warlock's** spell pools shrink by one option for a Hexblood character, since Disguise Self (Bard) and Hex (Warlock) are hidden — the character already has them innately from `race_cantrip`/`race_cantrip_2`, so offering them again as a "new" class spell would be redundant. Dissonant Whispers (Bard) and Armor of Agathys (Warlock) exist specifically to keep the pool at 3+ genuine options for Hexblood even after that exclusion — see narrative_guidelines.md §5 (Three Is the Standard). Wizard's spell pool (Identify / Feather Fall / Comprehend Languages) never overlaps with Hexblood's innate magic, so it's unaffected. See the `*if (not(race = "hexblood"))` guards in `dawn_trial.txt`.
+\* **Bard's** and **Warlock's** spell pools shrink by one option for a Hexblood character, since Disguise Self (Bard) and Hex (Warlock) are hidden — the character already has them innately from `race_cantrip`/`race_cantrip_2`, so offering them again as a "new" class spell would be redundant. Dissonant Whispers (Bard) and Armor of Agathys / False Life (Warlock) keep the pool robust for Hexblood characters — see narrative_guidelines.md §5 (Three Is the Standard). Wizard's spell pool never overlaps with Hexblood's innate magic, so it's unaffected. See the `*if (not(race = "hexblood"))` guards in `dawn_trial.txt`.
 
 ### Bard
-- **Cantrip pool** (`bard_cantrip`, `bard_cantrip_2` — pick 2, second pick excludes the first): `vicious_mockery`, `minor_illusion`, `message`, `mage_hand`
+- **Cantrip pool** (`bard_cantrip`, `bard_cantrip_2` — pick 2, second pick excludes the first): `vicious_mockery`, `minor_illusion`, `message`, `mage_hand`, `mending`
 - **Spell pool** (`bard_spell`, `bard_spell_2` — pick 2, second excludes the first): `charm_person`, `healing_word`, `disguise_self` (hidden for Hexblood), `comprehend_languages`, `dissonant_whispers`
 - Framing: these are **not** newly discovered — the narration explicitly frames them as a lifelong knack the character always suspected was more than charm, finally admitted to under stress. Don't write future Bard content as "wow, I have magic now."
 
 ### Warlock
 - **Patron** (`warlock_patron`): `archfey`, `fiend`, or `great_old_one` — flavor/identity only, doesn't gate anything else currently.
 - **Cantrip pool** (`warlock_cantrip`, `warlock_cantrip_2` — pick 2, second excludes the first): `eldritch_blast`, `minor_illusion`, `chill_touch`, `prestidigitation`
-- **Spell pool** (`warlock_spell`): `hex` (hidden for Hexblood), `comprehend_languages`, `unseen_servant`, `armor_of_agathys`
+- **Spell pool** (`warlock_spell`): `hex` (hidden for Hexblood), `comprehend_languages`, `unseen_servant`, `armor_of_agathys`, `false_life`
 - Framing: this **is** meant to read as sudden and new — a pact is a discrete origin event in 5e fiction, so "wow, I have powers now" is the correct tone here, unlike Bard/Wizard.
 
 ### Wizard
-- **Cantrip pool** (`wizard_cantrip`, `wizard_cantrip_2`, `wizard_cantrip_3` — pick 3, each pick excludes prior picks): `fire_bolt`, `ray_of_frost`, `mage_hand`, `guidance`, `light`, `prestidigitation`
-- **Spell pool** (`wizard_spell`): `identify`, `feather_fall`, `comprehend_languages`
+- **Cantrip pool** (`wizard_cantrip`, `wizard_cantrip_2`, `wizard_cantrip_3` — pick 3, each pick excludes prior picks): `fire_bolt`, `ray_of_frost`, `shocking_grasp`, `mage_hand`, `guidance`, `mending`, `light`, `prestidigitation`
+- **Spell pool** (`wizard_spell`): `identify`, `feather_fall`, `comprehend_languages`, `mage_armor`, `shield`, `magic_missile`, `false_life`
 - Framing: same as Bard — these are years of secret, hidden practice (afraid of the scandal it'd cause if a lord's heir was caught dabbling in real theory), only just being admitted to under pressure, not invented on the spot.
+
+**MECHANICAL — Mage Armor:** wired into the AC formula in `update_dnd_stats` (`startup.txt`). RAW is 13 + DEX while not wearing armor; implemented as `*if ((armor_type = "cloth") and (wizard_spell = "mage_armor")) *set base_ac 13` — "cloth" (traveling cloak, scholar robes, satchel harness) is ordinary clothing in this game's armor model, already using the same `10 + DEX` baseline as true unarmored, so it's the correct condition rather than gating on class alone. A Wizard who instead picked real armor at muster doesn't get the bonus, matching RAW (Mage Armor doesn't apply over actual armor).
+
+**MECHANICAL — Shield:** wired into `battle_black_sinks.txt` before the gatehouse melee (`beat_gatehouse`), providing an emergency reactive barrier that deflects skittering missiles and grants advantage on the approach.
+
+**MECHANICAL — Magic Missile:** wired into `battle_black_sinks.txt` for both the Cadre causeway crossing (`beat_crossing_cadre`) and gatehouse melee (`beat_gatehouse_fight`), providing guaranteed automatic success (no d20 roll needed) to eliminate parapet archers or suppress defenders in the breach.
+
+**MECHANICAL — Shocking Grasp:** wired into `battle_black_sinks.txt` gatehouse melee (`beat_gatehouse_fight`), providing a close-quarters lightning attack with Advantage against metal-armored/chain-wielding defenders.
+
+**MECHANICAL — False Life:** wired into `battle_black_sinks.txt` pre-battle preparations, allowing Warlocks and Wizards to bolster their flesh with +5 temporary Hit Points (`hp_current + 5`).
+
+**MECHANICAL — Mending:** wired into `battle_black_sinks.txt` bivouac companion interactions (`bivouac_companion_vanguard` to mend Lyra's torn armor seam for bonus regard) and gatehouse search (`bivouac_search` to automatically restore the water-damaged toll ledger).
 
 ---
 
