@@ -267,6 +267,49 @@
 *comment see itself as already "locked" and never apply on the first pass.
 *create damage_roll_locked false
 *create locked_damage_page_id 0
+*comment Same idea again, for the small-combat engine's two per-round
+*comment rolls (resolve_player_hit / resolve_enemy_attack, below) -- two
+*comment separate flags since both fire on the same page every round with
+*comment no *choice between them, same reasoning as stat_bump_locked/
+*comment stat_bump2_locked elsewhere in this file. A fresh *choice each
+*comment round means a fresh choice_page_id, so reusing the same two flags
+*comment across every round of every future small fight is safe -- each
+*comment round's page can never match a previous round's locked page_id.
+*create combat_player_hit_locked false
+*create locked_combat_player_hit_page_id 0
+*create combat_enemy_atk_locked false
+*create locked_combat_enemy_atk_page_id 0
+*comment second_wind/activate_rage predate this combat engine (built for a
+*comment future combat scene that didn't exist yet) and had no lock at all
+*comment since nothing exercised the bug -- now something does.
+*create second_wind_locked false
+*create locked_second_wind_page_id 0
+*create activate_rage_locked false
+*create locked_activate_rage_page_id 0
+*comment Shared combat state a calling scene sets once when a fight starts
+*comment and updates each round -- see resolve_player_hit/resolve_enemy_attack.
+*create combat_enemy_name "none"
+*create combat_enemy_hp 0
+*create combat_enemy_max_hp 0
+*create combat_enemy_ac 10
+*create combat_enemy_atk_bonus 0
+*create combat_enemy_dmg_dice_sides 4
+*create combat_enemy_dmg_bonus 0
+*create combat_enemy_disadvantage false
+*create combat_enemy_advantage false
+*create combat_enemy_atk_total 0
+*create combat_enemy_hit_success false
+*create combat_enemy_dmg_dealt 0
+*create combat_player_dmg_dice_sides 4
+*create combat_player_dmg_bonus 0
+*create combat_player_dmg_dealt 0
+*create combat_round 0
+*comment Held-in-reserve reaction spell (Shield, etc.) -- armed by the
+*comment player ahead of time at no action cost, auto-fires the next time
+*comment resolve_enemy_attack would otherwise land a hit. See that
+*comment primitive's comment block for why this needs no extra pause point.
+*create shield_armed false
+*create combat_shield_triggered false
 *comment Same idea again, for spending/gaining currency (shop purchases,
 *comment rewards, gambling, bribes, etc.). *set silver/copper +N is exactly
 *comment as replay-unsafe as *set armor_class +N was -- wrap the deduction
@@ -420,6 +463,10 @@
 *create asked_rorik_alderford false
 *create discussed_smiths_past false
 *create bought_smiths_ale false
+*create discussed_alderford_life false
+*create visited_maura_cellar false
+*create maura_cellar_cleared false
+*create culvert_bounty_silver 4
 *comment Captures the lyra_bond >= 15 check's result the one time it's
 *comment actually evaluated (inside taphouse_talk_lyra's stat_bump_locked
 *comment guard), so a refresh replaying the page after lyra_bond has already
@@ -444,7 +491,6 @@
 *create has_timber_axe false
 *create has_stiletto false
 *create has_iron_crowbar false
-*create has_whetstone false
 *create has_talia_provisions false
 *create intimate_encounters 0
 
@@ -2073,6 +2119,109 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment REUSABLE ENGINE PRIMITIVE: SMALL-COMBAT ROUND RESOLUTION
+*comment A minimal, generic per-round combat engine for short optional
+*comment skirmishes (a cellar nuisance, not a set-piece battle like the
+*comment Black Sinks) -- meant to be *gosub_scene'd from any future small
+*comment fight, not just the one that motivated it. The player's own
+*comment attack roll needs no new code at all: it's just roll_d20_check
+*comment with check_dc set to the enemy's AC, exactly like any other check.
+*comment These two subroutines cover the two things that check doesn't
+*comment already do -- applying the resulting damage to a generic enemy HP
+*comment pool, and rolling the enemy's own attack back at the player.
+*comment
+*comment Shared combat-state stats (see *create block): combat_enemy_name,
+*comment combat_enemy_hp/max_hp, combat_enemy_ac, combat_enemy_atk_bonus,
+*comment combat_round. A calling scene sets these once when the fight
+*comment starts and gosubs the two subroutines below once per round.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_player_hit
+*comment Call this only after the caller's own roll_d20_check against
+*comment combat_enemy_ac came back check_success. Input:
+*comment combat_player_dmg_dice_sides, combat_player_dmg_bonus. Applies the
+*comment damage to combat_enemy_hp (never below 0) and reports it back via
+*comment combat_player_dmg_dealt for the caller's own prose.
+*if (not(combat_player_hit_locked)) or (not(locked_combat_player_hit_page_id = choice_page_id))
+  *temp cph_roll 0
+  *rand cph_roll 1 combat_player_dmg_dice_sides
+  *set combat_player_dmg_dealt (cph_roll + combat_player_dmg_bonus)
+  *set combat_enemy_hp - combat_player_dmg_dealt
+  *if (combat_enemy_hp < 0)
+    *set combat_enemy_hp 0
+  *set combat_player_hit_locked true
+  *set locked_combat_player_hit_page_id choice_page_id
+*return
+
+*label resolve_enemy_attack
+*comment Input: combat_enemy_atk_bonus, combat_enemy_dmg_dice_sides,
+*comment combat_enemy_dmg_bonus, and combat_enemy_disadvantage -- set
+*comment true/nonzero by the caller for the round if the player Dodged/
+*comment braced; reset it back to false again before the NEXT round, this
+*comment subroutine doesn't clear it for you. Rolls the enemy's attack
+*comment against the player's own armor_class, and on a hit, applies
+*comment damage to hp_current -- halved for a raging barbarian, same as
+*comment battle_take_damage, and never lower than 1 (a random cellar
+*comment nuisance doesn't get to kill the protagonist; let the calling
+*comment scene narrate the near-miss).
+*comment
+*comment Also handles a reaction spell held in reserve: if shield_armed is
+*comment true and this attack would otherwise land, it auto-fires -- spends
+*comment one wizard_spell_slots, disarms itself, and re-checks against
+*comment armor_class+5. This is why arming Shield doesn't cost the round's
+*comment action (see alderford.txt's culvert fight): the player spends a
+*comment charge choosing WHEN to arm it, not on whether to react in the
+*comment instant of impact, so no extra pause point is needed here.
+*comment
+*comment combat_enemy_advantage is the mirror of combat_enemy_disadvantage --
+*comment set it true for a one-time "you were spotted/alerted it" penalty
+*comment (e.g. a failed pre-fight Investigation check); it self-clears after
+*comment this one call, unlike combat_enemy_disadvantage which the caller
+*comment resets itself each round. If both are true on the same call (the
+*comment player Dodges on the same round the enemy has advantage), they
+*comment cancel per the usual rule and this rolls flat.
+*comment
+*comment Reports back combat_enemy_atk_total, combat_enemy_hit_success,
+*comment combat_shield_triggered (whether the reaction fired at all, hit or
+*comment not), and combat_enemy_dmg_dealt (0 on a miss) for the caller's
+*comment own prose.
+*if (not(combat_enemy_atk_locked)) or (not(locked_combat_enemy_atk_page_id = choice_page_id))
+  *temp cea_roll 0
+  *rand cea_roll 1 20
+  *if ((combat_enemy_disadvantage) and (not(combat_enemy_advantage)))
+    *temp cea_roll_2 0
+    *rand cea_roll_2 1 20
+    *if (cea_roll_2 < cea_roll)
+      *set cea_roll cea_roll_2
+  *if ((combat_enemy_advantage) and (not(combat_enemy_disadvantage)))
+    *temp cea_roll_2 0
+    *rand cea_roll_2 1 20
+    *if (cea_roll_2 > cea_roll)
+      *set cea_roll cea_roll_2
+  *set combat_enemy_advantage false
+  *set combat_enemy_atk_total (cea_roll + combat_enemy_atk_bonus)
+  *set combat_enemy_hit_success (combat_enemy_atk_total >= armor_class)
+  *set combat_shield_triggered false
+  *if ((combat_enemy_hit_success) and (shield_armed))
+    *set shield_armed false
+    *set wizard_spell_slots - 1
+    *set combat_shield_triggered true
+    *set combat_enemy_hit_success (combat_enemy_atk_total >= (armor_class + 5))
+  *set combat_enemy_dmg_dealt 0
+  *if (combat_enemy_hit_success)
+    *temp cea_dmg 0
+    *rand cea_dmg 1 combat_enemy_dmg_dice_sides
+    *set cea_dmg (cea_dmg + combat_enemy_dmg_bonus)
+    *if ((character_class = "barbarian") and (is_raging))
+      *set cea_dmg cea_dmg / 2
+    *set combat_enemy_dmg_dealt cea_dmg
+    *set hp_current - combat_enemy_dmg_dealt
+    *if (hp_current < 1)
+      *set hp_current 1
+  *set combat_enemy_atk_locked true
+  *set locked_combat_enemy_atk_page_id choice_page_id
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment REUSABLE ENGINE PRIMITIVE: CURRENCY MATH
 *comment Pure arithmetic, no locking of its own -- callers gosub this from
 *comment inside their own replay-safety guard (see resolve_wager and
@@ -2087,7 +2236,11 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *temp ca_amount currency_add_amount
 *temp ca_sign 1
 *if (ca_amount < 0)
-  *set ca_sign -1
+  *comment A bare "*set ca_sign -1" is ChoiceScript's decrement shorthand
+  *comment (ca_sign - 1), not a literal assignment -- it would leave
+  *comment ca_sign at 0, not -1. "0 - 1" sidesteps the shorthand the same
+  *comment way ca_amount's own negation two lines below already does.
+  *set ca_sign 0 - 1
   *set ca_amount 0 - ca_amount
 *temp ca_gold (ca_amount - (ca_amount modulo 100)) / 100
 *set ca_amount ca_amount - (ca_gold * 100)
@@ -2198,30 +2351,34 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment FIGHTER: SECOND WIND
-*comment Bonus action, 1d10 + character_level HP, once per rest. Nothing calls
-*comment this yet (no combat scene exists), but it's ready to *gosub_scene the
-*comment moment one does.
+*comment Bonus action, 1d10 + character_level HP, once per rest.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label second_wind
-*if (fighter_second_wind_uses > 0)
-  *set fighter_second_wind_uses - 1
-  *rand second_wind_roll 1 10
-  *set hp_current + (second_wind_roll + character_level)
-  *if (hp_current > hp_max)
-    *set hp_current hp_max
+*if (not(second_wind_locked)) or (not(locked_second_wind_page_id = choice_page_id))
+  *if (fighter_second_wind_uses > 0)
+    *set fighter_second_wind_uses - 1
+    *rand second_wind_roll 1 10
+    *set hp_current + (second_wind_roll + character_level)
+    *if (hp_current > hp_max)
+      *set hp_current hp_max
+  *set second_wind_locked true
+  *set locked_second_wind_page_id choice_page_id
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment BARBARIAN: RAGE
 *comment Bonus action, 2 uses per long rest at level 1, +2 melee STR damage
-*comment while raging, resistance to bludgeoning/piercing/slashing (resistance
-*comment has no consumer yet — no incoming-damage system exists). Sets
-*comment is_raging true so a future combat scene can check it.
+*comment while raging, resistance to bludgeoning/piercing/slashing (halved
+*comment incoming damage -- see resolve_enemy_attack's is_raging check).
+*comment Sets is_raging true so a combat scene can check it.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label activate_rage
-*if ((barbarian_rage_uses > 0) and (not(is_raging)))
-  *set barbarian_rage_uses - 1
-  *set is_raging true
+*if (not(activate_rage_locked)) or (not(locked_activate_rage_page_id = choice_page_id))
+  *if ((barbarian_rage_uses > 0) and (not(is_raging)))
+    *set barbarian_rage_uses - 1
+    *set is_raging true
+  *set activate_rage_locked true
+  *set locked_activate_rage_page_id choice_page_id
 *return
 
 *label end_rage

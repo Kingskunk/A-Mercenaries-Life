@@ -18,6 +18,7 @@
  */
 
 // usage: randomtest num=10000 game=mygame seed=0 delay=false trial=false
+//                    showUnreachedLabels=false
 
 var isRhino = false;
 var iterations = 10;
@@ -34,6 +35,15 @@ var recordBalance = false;
 var outputFile = undefined;
 var allowBetaBug = false;
 var requireFeedbackCommand = false;
+// Opt-in: reuses the same per-line hit-count instrumentation showCoverage
+// already builds (the lineNum getter/setter below), but instead of dumping
+// every line, it just cross-references every *label declaration in every
+// scene file -- including scenes/labels the random walk never entered at
+// all -- against that hit-count map and reports the ones that stayed at 0
+// across the whole run. Catches genuinely dead content (an *if guard that
+// can never be false, a *label nothing *goto's anymore) that showCoverage's
+// raw per-line dump makes tedious to spot by hand.
+var showUnreachedLabels = false;
 var slurps = {}
 function parseArgs(args) {
   for (var i = 0; i < args.length; i++) {
@@ -59,6 +69,8 @@ function parseArgs(args) {
       showChoices = (value !== "false");
     } else if (name === "showCoverage") {
       showCoverage = (value !== "false");
+    } else if (name === "showUnreachedLabels") {
+      showUnreachedLabels = (value !== "false");
     } else if (name === "recordBalance") {
       recordBalance = (value !== "false");
     } else if (name === "outputFile") {
@@ -937,6 +949,35 @@ function randomtest() {
         for (var j = 0; j < sceneCoverage.length; j++) {
           console.log(sceneName + " "+ (sceneCoverage[j] || 0) + ": " + sceneLines[j]);
         }
+      }
+    }
+    if (showUnreachedLabels) {
+      var sceneDir = 'web/' + gameName + '/scenes';
+      var sceneFiles = fs.readdirSync(sceneDir).filter(function (f) { return /\.txt$/.test(f); });
+      var totalLabels = 0;
+      var unreachedLabels = [];
+      sceneFiles.forEach(function (file) {
+        var labelSceneName = file.replace(/\.txt$/, '');
+        var labelSceneLines = slurpFileLines(sceneDir + '/' + file);
+        // A scene the random walk never entered at all has no entry in
+        // `coverage`, which is exactly the case we want to report -- every
+        // *label in it is unreached by definition.
+        var labelSceneCoverage = coverage[labelSceneName] || [];
+        for (var k = 0; k < labelSceneLines.length; k++) {
+          var labelMatch = /^\s*\*label\s+(\S+)/.exec(labelSceneLines[k]);
+          if (!labelMatch) continue;
+          totalLabels++;
+          if (!labelSceneCoverage[k]) {
+            unreachedLabels.push(labelSceneName + ":" + (k + 1) + " *label " + labelMatch[1]);
+          }
+        }
+      });
+      console.log("");
+      if (unreachedLabels.length) {
+        console.log(unreachedLabels.length + " of " + totalLabels + " LABEL(S) NEVER REACHED across this run -- either dead content or content this particular random walk just didn't happen to hit (rerun with a different seed/num before concluding it's truly unreachable):");
+        unreachedLabels.forEach(function (line) { console.log("  " + line); });
+      } else {
+        console.log("All " + totalLabels + " labels were reached at least once.");
       }
     }
     if (missingFeedback) {
