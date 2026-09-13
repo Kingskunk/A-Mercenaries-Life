@@ -29,6 +29,7 @@ Sergeant Varren stalks the vanguard line in his blackened chainmail, his breath 
 
 *set hours_to_pass 8
 *set minutes_to_pass 30
+*set time_advance_call_id "alderford_start_1"
 *gosub_scene calendar advance_time
 *set physical_state "Sore arches; road-grit caked across your leathers"
 
@@ -46,6 +47,7 @@ The merchant—[b]Factor Morzan[/b]—unrolls a stamped vellum ledger, checking 
 
 *set hours_to_pass 3
 *set minutes_to_pass 45
+*set time_advance_call_id "alderford_start_2"
 *gosub_scene calendar advance_time
 *set codex_gilded_scales true
 
@@ -78,9 +80,9 @@ Sergeant Varren stalks between the tent lines, his blackened chainmail clinking 
   
   Beside you at the picket rope, Lyra is scraping caked marsh clay from her boot heel with a belt knife, a damp wool mantle pulled tight over her shoulders.
   
-  "Look at these boot seams, ${name}," she mutters, shaking her head. "One day on open river barges in that gorge spray tomorrow and our leather will rot right off our feet. The baggage mule-drivers said the salt lofts down along the lower pier boil down mutton dubbin by the tub. Get yourself a tin of grease before dawn."
+  "Fourteen miles in freezing rain and Varren expects us to scrub iron before we sleep," she mutters under her breath, testing a frayed seam on her quiver strap.
   *if (family_name = "Elspeth")
-    She pauses, glancing at you. "The wagon-drivers mentioned they put the displaced refugees from the Marches to work down in those same brine sheds, too."
+    She pauses, glancing up at you through the mist. "Though the baggage drivers did mention something when we pulled in—they've been putting displaced refugees from the Marches to work down in the lower brine sheds."
   
   Across the meadow by the willows, two line-soldiers carry a stretcher bearing a wounded vanguard fighter toward the Cadre's black marquee. Through the lantern-lit tent flap, camp chirurgeons are stitching wounds, while Scholar Ysolde studies sounding charts of the hazardous downriver gorge.
   
@@ -103,6 +105,7 @@ Sergeant Varren stalks between the tent lines, his blackened chainmail clinking 
         *set visited_alder_weavers true
         *set alder_actions_left - 1
         *set minutes_to_pass 45
+        *set time_advance_call_id "alder_hub_1"
         *gosub_scene calendar advance_time
         *goto visit_curing_sheds
     *else
@@ -110,6 +113,7 @@ Sergeant Varren stalks between the tent lines, his blackened chainmail clinking 
         *set visited_alder_weavers true
         *set alder_actions_left - 1
         *set minutes_to_pass 45
+        *set time_advance_call_id "alder_hub_2"
         *gosub_scene calendar advance_time
         *goto visit_curing_sheds
 
@@ -118,6 +122,7 @@ Sergeant Varren stalks between the tent lines, his blackened chainmail clinking 
       *set visited_talia_loft true
       *set alder_actions_left - 1
       *set minutes_to_pass 45
+      *set time_advance_call_id "alder_hub_3"
       *gosub_scene calendar advance_time
       *goto visit_talia_loft
 
@@ -126,6 +131,7 @@ Sergeant Varren stalks between the tent lines, his blackened chainmail clinking 
       *set visited_alder_cadre true
       *set alder_actions_left - 1
       *set minutes_to_pass 45
+      *set time_advance_call_id "alder_hub_4"
       *gosub_scene calendar advance_time
       *goto visit_cadre_pavilion
 
@@ -134,12 +140,26 @@ Sergeant Varren stalks between the tent lines, his blackened chainmail clinking 
       *set visited_alder_smithy true
       *set alder_actions_left - 1
       *set minutes_to_pass 45
+      *set time_advance_call_id "alder_hub_5"
       *gosub_scene calendar advance_time
       *goto visit_smithy
 
   *if (visited_alder_smithy)
     # Return to the upstream timber smithy to browse Torvald and Janna's ironware racks.
       *goto return_to_smithy_shop
+
+  *if (not(visited_alder_tavern))
+    # Push through the low-timber doors of the watermen's taphouse down by the logging slips for hot broth and dry warmth.
+      *set visited_alder_tavern true
+      *set alder_actions_left - 1
+      *set minutes_to_pass 45
+      *set time_advance_call_id "alder_hub_6"
+      *gosub_scene calendar advance_time
+      *goto visit_taphouse
+
+  *if (visited_alder_tavern)
+    # Head back down to the Drowned Oar Taphouse for another round.
+      *goto return_to_taphouse
 
   *if (alder_actions_left < 3)
     # Return to your bedroll by the squad fire—you need every scrap of rest before tomorrow's gorge run.
@@ -215,7 +235,7 @@ The man towering over her—[b]Master Rennick[/b]—is a stocky, thick-necked gu
     *set hint_curing_rogue " [Sleight of Hand, DEX DC 10]"
 
 *choice
-  *if ((((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) or (bard_cantrip = "guidance")) or (bard_cantrip_2 = "guidance")) and (not(guidance_active)))
+  *if ((((((((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) or (bard_cantrip = "guidance")) or (bard_cantrip_2 = "guidance")) or (warlock_cantrip = "guidance")) or (warlock_cantrip_2 = "guidance")) or (race_cantrip = "guidance")) or (race_cantrip_2 = "guidance")) and (not(guidance_active)))
     # [Cantrip: Guidance] Murmur the soft focusing cadence, centering your breath before stepping forward.
       *set guidance_active true
       You murmur the quiet centering verse, feeling a cool current of focus steady your pulse.
@@ -362,7 +382,7 @@ Behind you, shouting and the sickening crunch of splintered timber echo into the
   
   "${name}..." she sobs softly, her thin fingers clutching the cold iron buckles of your armor as if afraid you'll vanish into the smoke. "I thought you died in the fires at Ashbrook... when you took the wood-axe to the bailiff and drew the hounds into the hills..."
   
-  *if ((((((wizard_cantrip = "prestidigitation") or (wizard_cantrip_2 = "prestidigitation")) or (wizard_cantrip_3 = "prestidigitation")) or (bard_cantrip = "prestidigitation")) or (bard_cantrip_2 = "prestidigitation")) or (((((wizard_cantrip = "mending") or (wizard_cantrip_2 = "mending")) or (wizard_cantrip_3 = "mending")) or (bard_cantrip = "mending")) or (bard_cantrip_2 = "mending")))
+  *if ((((((((wizard_cantrip = "prestidigitation") or (wizard_cantrip_2 = "prestidigitation")) or (wizard_cantrip_3 = "prestidigitation")) or (bard_cantrip = "prestidigitation")) or (bard_cantrip_2 = "prestidigitation")) or (race_cantrip = "prestidigitation")) or (race_cantrip_2 = "prestidigitation")) or (((((((((wizard_cantrip = "mending") or (wizard_cantrip_2 = "mending")) or (wizard_cantrip_3 = "mending")) or (bard_cantrip = "mending")) or (bard_cantrip_2 = "mending")) or (warlock_cantrip = "mending")) or (warlock_cantrip_2 = "mending")) or (race_cantrip = "mending")) or (race_cantrip_2 = "mending")))
     You murmur a soft, centering incantation. With a gentle touch of your fingers, the stinging salt-crust and fish brine dissolve cleanly from her cheeks, soothing warmth radiating through her chilled hands as the frayed seams of her apron knit whole again. Elspeth looks up in wonder, a faint, tearful smile touching her lips.
   *else
     You unclip your heavy wool military mantle and wrap it securely around her trembling shoulders, pressing a clean cloth to her bruised cheek and checking her wrists with calm, soldierly care.
@@ -380,7 +400,7 @@ Behind you, shouting and the sickening crunch of splintered timber echo into the
   You look down at Elspeth. You cannot leave her behind in this shed to face Rennick's vengeance alone.
   
   *choice
-    # \"Pack your kit, Elspeth. You're coming with the Carrion Company—I'll apprentice you to Surgeon Odessa.\"@{show_stat_hints  [Flotilla Hospital Placement, Odessa Regard +10, Elspeth Bond +10]|}
+    # "Pack your kit, Elspeth. You're coming with the Carrion Company—I'll apprentice you to Surgeon Odessa."@{show_stat_hints  [Flotilla Hospital Placement, Odessa Regard +10, Elspeth Bond +10]|}
       *set elspeth_with_company true
       *set elspeth_role "odessa_apprentice"
       *set elspeth_bond +10
@@ -397,7 +417,7 @@ Behind you, shouting and the sickening crunch of splintered timber echo into the
       Elspeth hugs you with fierce, tearful gratitude. For the first time since Ashbrook burned, she has a safe roof, hot food, and an honorable craft.
       *goto curing_done
 
-    # \"You're coming with the column to Port Valen—we'll register you with Sergeant Varren and the baggage train.\"@{show_stat_hints  [Flotilla Baggage Train Placement, Varren Standing +5, Elspeth Bond +5]|}
+    # "You're coming with the column to Port Valen—we'll register you with Sergeant Varren and the baggage train."@{show_stat_hints  [Flotilla Baggage Train Placement, Varren Standing +5, Elspeth Bond +5]|}
       *set elspeth_with_company true
       *set elspeth_role "baggage_train"
       *set elspeth_bond +5
@@ -486,7 +506,7 @@ Behind you, shouting and the sickening crunch of splintered timber echo into the
       *set hint_talia_wis " [WIS Check (DC 11)]"
 
   *choice
-    *if ((((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) or (bard_cantrip = "guidance")) or (bard_cantrip_2 = "guidance")) and (not(guidance_active)))
+    *if ((((((((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) or (bard_cantrip = "guidance")) or (bard_cantrip_2 = "guidance")) or (warlock_cantrip = "guidance")) or (warlock_cantrip_2 = "guidance")) or (race_cantrip = "guidance")) or (race_cantrip_2 = "guidance")) and (not(guidance_active)))
       # [Cantrip: Guidance] Murmur Guidance to steady your footing on the wet timbers.
         *set guidance_active true
         You whisper the soft focusing syllable, feeling a cool clarity steady your limbs.
@@ -509,7 +529,7 @@ Behind you, shouting and the sickening crunch of splintered timber echo into the
     # Rig a quick block-and-tackle with dock rope to hoist the kegs smoothly through the hatch.${hint_talia_dex}
       *set check_stat "dex"
       *set check_dc 11
-      *set check_skill "Investigation"
+      *set check_skill "Sleight of Hand"
       *gosub_scene startup roll_d20_check
       *if (check_success)
         You spot an iron cargo ring bolted into the ceiling rafter above the hatch. Threading a stout hemp dock line through the loop, you create a quick two-to-one haulage rig. Working together in rhythm, you and Talia winch the heavy casks up through the floor without straining a muscle.
@@ -641,7 +661,7 @@ For a long while, the only sound in the small loft is the rain on the roof and t
 
 *label talia_intimacy_beat1
 *temp talia_position ""
-You drop your weapons belt onto the heavy cedar chest, turning to Talia as the dry woodstove heat fills the small attic. In the amber lantern light, her linen shift is damp from the scramble in the vault, clinging sheer and soft over the full curve of her breasts and the gentle dip of her hips.
+You drop your weapons belt onto the heavy cedar chest, turning to Talia as the dry woodstove heat fills the small attic. In the amber lantern light, her simple linen shift catches the glow of the hearth, falling soft over the curve of her breasts and the gentle dip of her hips.
 
 Talia steps close, her breath coming in quick, shallow catches against your neck. Her fingers find the clasps and fastenings of your ${armor_desc}, working them free with patient care and easing the cold, damp weight from your shoulders.
 
@@ -670,12 +690,12 @@ Talia steps close, her breath coming in quick, shallow catches against your neck
 *choice
   # Pull her close with urgent hunger, lifting her up against the stove-warmed cedar post.
     *set talia_position "standing_post"
-    The built-up adrenaline of the march and the vault scramble boils over. You wrap your arms around her waist, lifting her effortlessly until her back meets the smooth, stove-warmed cedar timber. Talia lets out a breathless gasp against your mouth, her legs tangling tightly around your hips as her hands grip your shoulders, kissing you with fierce, hungry passion as your bodies press flush in the rising heat.
+    The built-up adrenaline of the march and the evening's confrontations boils over. You wrap your arms around her waist, lifting her effortlessly until her back meets the smooth, stove-warmed cedar timber. Talia lets out a breathless gasp against your mouth, her legs tangling tightly around your hips as her hands grip your shoulders, kissing you with fierce, hungry passion as your bodies press flush in the rising heat.
     *goto talia_intimacy_beat2
 
   # Back her onto the bed, pinning her into the thick woolen quilts beneath your weight.
     *set talia_position "pinned_bed"
-    You take her by the hips and guide her backward onto the heavy cedar bedstead. She falls back into the thick wool quilts with a breathless laugh, her chestnut hair spilling wide across the pillows. You settle between her parted knees, your body covering hers with heavy, enveloping warmth as your hands untie her damp linen shift.
+    You take her by the hips and guide her backward onto the heavy cedar bedstead. She falls back into the thick wool quilts with a breathless laugh, her chestnut hair spilling wide across the pillows. You settle between her parted knees, your body covering hers with heavy, enveloping warmth as your hands untie the linen laces of her shift.
     *goto talia_intimacy_beat2
 
   # Sit back on the edge of the quilt-covered bed with a low smile, letting her straddle your lap.
@@ -817,7 +837,7 @@ She looks up at you with grave intensity. "Shallow local dories and canoes draw 
     *set hint_cadre_vane " [WIS Check (DC 11), Vane Regard +5/+10]"
 
 *choice
-  *if ((((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) or (bard_cantrip = "guidance")) or (bard_cantrip_2 = "guidance")) and (not(guidance_active)))
+  *if ((((((((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) or (bard_cantrip = "guidance")) or (bard_cantrip_2 = "guidance")) or (warlock_cantrip = "guidance")) or (warlock_cantrip_2 = "guidance")) or (race_cantrip = "guidance")) or (race_cantrip_2 = "guidance")) and (not(guidance_active)))
     # [Cantrip: Guidance] Murmur the focusing cadence to steady your hands.
       *set guidance_active true
       You whisper the focusing phrase, letting the magical clarity sharpen your thoughts.
@@ -874,6 +894,7 @@ She looks up at you with grave intensity. "Shallow local dories and canoes draw 
 
   # Tell Ysolde that river hazards are the guild pilots' problem, not yours.
     You shake your head and step back toward the tent flap. Sellswords fight battles; navigating river silt is what the Gilded Scales get paid to manage.
+    *page_break Step out of the marquee into the twilight...
     *goto alder_hub
 
 *label cadre_vane_success
@@ -935,7 +956,7 @@ Torvald turns his fierce, bloodshot eye on you as you step onto the platform wit
     *set hint_smithy_forge " [STR Check (DC 11) / DEX Check (DC 11)]"
 
 *choice
-  *if ((((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) or (bard_cantrip = "guidance")) or (bard_cantrip_2 = "guidance")) and (not(guidance_active)))
+  *if ((((((((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) or (bard_cantrip = "guidance")) or (bard_cantrip_2 = "guidance")) or (warlock_cantrip = "guidance")) or (warlock_cantrip_2 = "guidance")) or (race_cantrip = "guidance")) or (race_cantrip_2 = "guidance")) and (not(guidance_active)))
     # [Cantrip: Guidance] Murmur Guidance to focus your strength before tackling the jammed race.
       *set guidance_active true
       You whisper the centering cadence under your breath, letting the calm steady your pulse.
@@ -1027,6 +1048,7 @@ Torvald turns his fierce, bloodshot eye on you as you step onto the platform wit
 
   # Tell Torvald you are a sellsword, not a millwright, and take your gear back.
     You shake your head and step away from the roaring race. You didn't march fourteen miles in the mud to dive into freezing water for a foul-tempered blacksmith.
+    *page_break Step away from the roaring mill-race...
     *goto alder_hub
 
 *label smithy_resolved
@@ -1058,7 +1080,7 @@ Torvald grunts in satisfaction, wipes his hands on his apron, and grabs a clay a
 "Mind the shop racks, [b]Janna[/b]!" Torvald calls back over his shoulder. "And finish those sixteen barge mooring pins before dawn muster, or the factor will take the cost out of your hide!"
 
 *label janna_scene
-Janna—the journeyman smith—watches Torvald leave with a sharp scowl, setting her heavy tongs down on the anvil with an angry clatter. She wipes sweat and soot from the hollow of her throat with a clean rag, the amber firelight catching the curve of her bare, soot-dusted shoulders and the proud, full swell of her chest beneath her work-apron. Her waist is narrow and firm, her hips curving cleanly into muscular thighs molded by long days at the anvil.
+Janna—the journeyman smith—watches Torvald leave with a sharp scowl, setting her heavy tongs down on the anvil with an angry clatter. She wipes soot from her brow with the back of a calloused wrist, rolling the tension from her neck as the hearth coals reflect in her dark, determined eyes. Her stance before the anvil is solid and grounded, breath steadying after the frantic struggle on the headrace platform.
 
 "Sixteen deepwater mooring pins," she mutters bitterly, kicking an iron ingot on the floor. "One-inch square high-carbon rod, punched eyelets, and double brine quench. A two-man striking job, and he walks off to drink barley ale with the river pilots."
 
@@ -1079,7 +1101,7 @@ She turns her dark, fierce eyes on you, her gaze sweeping lingeringly over your 
     *set hint_janna_dex " [DEX Check (DC 11)]"
 
 *choice
-  *if ((((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) or (bard_cantrip = "guidance")) or (bard_cantrip_2 = "guidance")) and (not(guidance_active)))
+  *if ((((((((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) or (bard_cantrip = "guidance")) or (bard_cantrip_2 = "guidance")) or (warlock_cantrip = "guidance")) or (warlock_cantrip_2 = "guidance")) or (race_cantrip = "guidance")) or (race_cantrip_2 = "guidance")) and (not(guidance_active)))
     # [Cantrip: Guidance] Murmur Guidance over your wrists to maintain hammer rhythm.
       *set guidance_active true
       You whisper the focusing cadence, feeling steady control fill your arms.
@@ -1465,6 +1487,355 @@ You follow the roar of the mill-race back to the timber forge. Inside, the heart
 *goto alder_hub
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment CHAIN 4: THE DROWNED OAR TAPHOUSE
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label visit_taphouse
+Following the smell of burning peat, woodsmoke, and boiling mutton, you make your way down the gravel track toward the logging slips south of the sawmills.
+
+Built directly against the stone wharf embankment on massive cedar piles, a long, low-roofed timber building hugs the water. Above its heavy iron-strapped door, a weathered cedar signboard creaks in the freezing autumn wind, bearing a faded icon of an anchor entangled in riverweed: [b]THE DROWNED OAR TAPHOUSE[/b].
+
+You push through the heavy leather draft-curtain into a wall of dry heat, stinging pipe smoke, and the steady murmur of tavern conversation.
+
+The taproom is filled with local watermen, heavy-set draymen in wool frocks, and river-barge pilots resting on scarred trestle benches. Near the roaring central river-stone hearth, off-duty Carrion mercenaries have claimed a wide semicircle of tables—vanguard heavy infantry scraping marsh mud from their greaves, fen-scouts waxing recurve strings, and cadre quartermaster clerks nursing clay mugs of bitter barley ale out of the drizzle.
+
+Behind the wide oak plank bar, a lean, sharp-eyed woman in a clean linen apron and a bleached wolf-skin vest works the earthenware ale-taps with practiced ease. A faded mercenary brand is visible on the side of her neck as she fills stoneware mugs for thirsty carters.
+
+*if (lyra_bond >= 20)
+  At the edge of the hearth light, Lyra sits with her boots propped on an overturned nail-keg, nursing a cup of mulled cider. When she spots you through the peat haze, a faint, genuine smirk breaks across her guarded face. She kicks an empty wooden stool out from under the table toward you with the heel of her boot, raising her cup in a warm, welcoming toast.
+*if ((lyra_bond >= 8) and (lyra_bond < 20))
+  At the edge of the hearth light, Lyra sits with her boots propped on an overturned nail-keg, nursing a cup of mulled cider. She catches your eye through the peat haze, giving a slow, respectful nod of sellsword acknowledgment and lifting her flagon before returning to her drink.
+*if (lyra_bond < 8)
+  At the edge of the hearth light, Lyra sits with her boots propped on an overturned nail-keg, nursing a cup of mulled cider. She watches you step in with a cool, measuring gaze over the rim of her cup, offering a faint, unreadable dip of her chin before looking back toward the door.
+
+*if (squad = "vanguard")
+  Near the hearth bench, two heavy-set vanguard comrades have unbuckled their iron greaves, laughing quietly as they compare bruised knuckles and dried mud on their brigandines.
+*if (squad = "scouts")
+  Near the dark corner booth, two of Kestrel's fen-runners sit in low-voiced conversation with a local boatman, comparing landmark descriptions over a bowl of roasted river nuts.
+*if (squad = "cadre")
+  At a smaller side bench away from the main floor, a young Cadre logistical clerk is checking grain vouchers into a ledger while enjoying a steaming bowl of broth.
+
+*goto taphouse_menu_hub
+
+*label return_to_taphouse
+The heavy leather draft-curtain swings shut behind you, sealing out the cold. The hearth-warmth and pipe smoke of the Drowned Oar close back around you like a second coat.
+
+*goto taphouse_menu_hub
+
+*label taphouse_menu_hub
+*temp hint_taphouse_dice ""
+*temp hint_taphouse_bard ""
+*if (show_stat_hints)
+  *if (guidance_active)
+    *set hint_taphouse_dice " [Guidance: Sleight of Hand (DEX DC 11) + 1d4, +1 Silver, +2 Copper]"
+    *set hint_taphouse_bard " [Guidance: Performance (CHA DC 10) + 1d4, +1 Silver, +1 Copper, Free Drink]"
+  *else
+    *set hint_taphouse_dice " [Sleight of Hand (DEX DC 11), +1 Silver, +2 Copper]"
+    *set hint_taphouse_bard " [Performance (CHA DC 10), +1 Silver, +1 Copper, Free Drink]"
+
+The taproom hums with quiet comfort and warmth.
+
+*choice
+  *if ((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) and (not(guidance_active)))
+    # [Cantrip: Guidance] Murmur a focusing syllable to center your thoughts before stepping to the tables.
+      *set guidance_active true
+      You whisper the quiet focusing verse under your breath, letting the steady calm sharpen your hearing and perception amidst the taproom din.
+      *goto taphouse_menu_hub
+
+  # Pull up the stool beside Lyra near the hearth to talk over warm cider.
+    *goto taphouse_talk_lyra
+
+  # Approach the oak counter to speak with the tavern-keeper and order warm food or drink.
+    *goto taphouse_shop_bar
+
+  # Pull up a bench at Corporal Rorik's bone-dice table by the hearth to wager a few coins.${hint_taphouse_dice}
+    *goto taphouse_dice_table
+
+  *if (character_class = "bard")
+    # [Bard: Performance] Borrow a tavern lute and play a steady border tune for the room.${hint_taphouse_bard}
+      *goto taphouse_bard_performance
+
+  # Step out of the taphouse and return to the company lines.
+    You pull the heavy leather draft-curtain aside and step back out into the cold, clean night air of the wharves.
+    *goto alder_hub
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment TAPHOUSE SUB-BRANCH: TALKING TO LYRA
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label taphouse_talk_lyra
+*temp discussed_lyra_valen false
+*temp discussed_lyra_archery false
+*temp discussed_lyra_pay false
+*temp discussed_lyra_pact false
+You pull up the wooden stool beside Lyra, feeling the dry heat from the river-stone hearth radiate against your boots. She slides a small wooden plate of roasted chestnuts toward you with the tip of her belt knife.
+
+"Look at this," Lyra murmurs, leaning back against the timber wall. "A dry roof, peat in the grate, and cider that doesn't taste like marsh water. Beats sleeping in wet wool by a long shot."
+
+*label lyra_dialogue_hub
+*choice
+  *if (not(discussed_lyra_valen))
+    # "What are we walking into at Port Valen tomorrow?"
+      *set discussed_lyra_valen true
+      *if (lyra_bond >= 8)
+        *set lyra_bond +2
+        "Dredge-End," Lyra says quietly, staring into her cup. "When I left three winters back, I was bolting barefoot through freezing canal silt with half a sack of barley meal and two bailiff hounds baying behind me. Tomorrow we tie up at the timber slips with two companies of heavy steel and crossbows at our backs."
+
+        She looks up at you with a faint, wry smirk. "The merchant factors in their velvet coats look right through you when you're begging in the ditch. But when the Carrion marches down the quay with pikes leveled, they suddenly remember how to bow."
+        *page_break "What about the streets themselves?"...
+        *goto lyra_port_valen_intel
+      *else
+        "Canals, rotting pilings, and crooked toll-wardens," Lyra says, keeping her eyes on her mug. "High stone wharves belong to the guild factors. Everything below the waterline belongs to footpads and canal draymen. Keep your purse laced inside your shirt and your dagger loose in the frog, or you'll be fishing your pockets out of the muck before midday."
+        *page_break "Sound advice."...
+        *goto lyra_dialogue_hub
+
+  *if ((lyra_bond >= 8) and (not(discussed_lyra_archery)))
+    # "Most recruits from the alleys grab a billhook or a spear. How'd you end up on the archery line?"
+      *set discussed_lyra_archery true
+      *set lyra_bond +2
+      Lyra lets out a low, dry chuckle, tapping the horn tip of her bow propped against the table. "Spears are for people who like wrestling in the mud. I started on the ridge estates north of the city—poaching roe deer and hares out of Baron Karr's private timber to keep my younger cousins fed."
+
+      Her expression turns distant, shadowed by old memory. "You learn to shoot fast and quiet when an iron bailiff's hounds are baying in the brush. And on the line, a bow gives you distance. In melee, you have to watch a man's eyes while his breath leaves him. At eighty yards, it's just wind, drop, and letting go."
+      *page_break "Sounds like you earned every calloused finger."...
+      *goto lyra_dialogue_hub
+
+  *if (not(discussed_lyra_pay))
+    # "Got any plans for your pay once the full moon muster rolls around?"
+      *set discussed_lyra_pay true
+      *if (lyra_bond >= 15)
+        *set lyra_bond +2
+        Lyra pauses, looking down into her cider. Her voice drops, losing its usual caustic edge. "First thing? Buy a pair of lined leather boots that don't split at the welt. Then track down my aunt's kids in the lower tenements. If they made it through the frost, buy them a sack of dry rye flour and square their debt with the tenement rent-collector before they get turned out into the silt. That's the only reason I took Vane's coin."
+        *page_break "That's good coin well spent."...
+        *goto lyra_dialogue_hub
+      *else
+        *set lyra_bond +1
+        Lyra taps the rim of her cup against the table. "Lined boots that don't split at the welt, a fresh whetstone, and a pint of something that actually burns on the way down. Beyond that? Hold onto every copper. A sellsword with empty pockets ends up back in the ditch the day the contract expires."
+        *page_break "Practical enough."...
+        *goto lyra_dialogue_hub
+
+  *if (((prep_lyra_pact) and (lyra_bond >= 12)) and (not(discussed_lyra_pact)))
+    # "Glad we kept each other in one piece back at the ditch."
+      *set discussed_lyra_pact true
+      *set lyra_bond +2
+      Lyra clinks her battered tin cup against yours with a dull ring. "Aye. When the line buckled, having someone watching the flanks was the only reason I didn't catch an iron point in the ribs." She takes a slow drink, shaking her head. "Here's to not feeding crows in the reeds, ${name}."
+      *page_break Share a quiet drink with Lyra...
+      *goto lyra_dialogue_hub
+
+  # "Take it easy by the fire. I'm going to stretch my legs."
+    "Don't let Rorik talk you out of your coin at the dice table," Lyra smirks, lifting her cup in a parting nod. "See you on the morning barges, ${name}."
+    *page_break Step away from the bench...
+    *goto taphouse_menu_hub
+
+*label lyra_port_valen_intel
+Lyra leans in closer over the table, keeping her voice beneath the tavern hum. "Down in the water-streets, the Gilded Scales don't collect the coin—the [b]Black Tally[/b] does. They control the eel-traps, the night barges, and every cellar flophouse along the marsh cut. Don't go flashing silver in the taprooms, and don't take side alleys after dusk unless you've got two mates carrying iron at your flank."
+*set prep_marsh_intel true
+*set codex_black_tally true
+*page_break Commit her warning to memory...
+*goto lyra_dialogue_hub
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment TAPHOUSE SUB-BRANCH: MAURA'S COUNTER & NOURISHMENT
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label taphouse_shop_bar
+*temp discussed_maura_past false
+You step up to the wide oak bar. The lean woman in the bleached wolf-skin vest pauses her wiping of the counter with a clean linen rag, her sharp, assessing eyes taking in your company gear and weapons.
+
+"Welcome to the Drowned Oar, soldier," she says in a calm, smoky voice. "I'm [b]Maura[/b]. If you came off the marsh road with the rest of Vane's outfit, you look like you could use something hot in your ribs. I've got thick mutton pottage bubbling on the grate, smoked river herring, clean spiced cider, and herbal bitters. What'll it be?"
+
+*label taphouse_bar_loop
+*choice
+  # Order a bowl of Hot Mutton-and-Marrow Pottage (3 Copper Bits)@{show_stat_hints  [Restore 3 HP, +1 CON Checks for 4h]|}
+    *if (((silver * 10) + copper) < 3)
+      You don't have enough copper for the pottage.
+      *goto taphouse_bar_loop
+    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+      *if (copper >= 3)
+        *set copper - 3
+      *else
+        *set silver - 1
+        *set copper + 7
+      *if (hp_current < hp_max)
+        *set hp_current + 3
+        *if (hp_current > hp_max)
+          *set hp_current hp_max
+      *set meal_buff_active true
+      *set meal_buff_name "Mutton Pottage"
+      *set meal_buff_desc "+1 CON Checks"
+      *set meal_buff_stat "con"
+      *set meal_buff_bonus 1
+      *set meal_buff_minutes_left 240
+      *set currency_txn_locked true
+      *set locked_currency_txn_page_id choice_page_id
+    Maura ladles a steaming wooden bowl of thick mutton stew loaded with barley, root vegetables, and rich marrow broth, sliding a wooden spoon across the bar.
+
+    You eat it right at the counter, the dense, savory broth spreading deep heat through your chest and limbs, completely banishing the road chill from your muscles.
+    [b][🍲 Hot Meal Consumed: Restored 3 HP | Fortified Stamina (+1 CON Checks for 4 Hours) | HP: ${hp_current} / ${hp_max}][/b]
+    *goto taphouse_bar_loop
+
+  # Order a mug of Hot Spiced River Cider (2 Copper Bits)@{show_stat_hints  [+1 WIS Checks for 4h]|}
+    *if (((silver * 10) + copper) < 2)
+      You don't have enough copper for the cider.
+      *goto taphouse_bar_loop
+    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+      *if (copper >= 2)
+        *set copper - 2
+      *else
+        *set silver - 1
+        *set copper + 8
+      *set meal_buff_active true
+      *set meal_buff_name "Spiced River Cider"
+      *set meal_buff_desc "+1 WIS Checks"
+      *set meal_buff_stat "wis"
+      *set meal_buff_bonus 1
+      *set meal_buff_minutes_left 240
+      *set currency_txn_locked true
+      *set locked_currency_txn_page_id choice_page_id
+    Maura draws a foaming earthenware mug from the kettle simmered on the hearth embers, the fragrant steam carrying scents of dried clove, wild ginger, and orchard honey.
+
+    The hot cider warms your throat and clears the dull fog of the road from your mind, sharpening your focus and senses.
+    [b][🍎 Spiced Cider Consumed: Clearheaded Focus (+1 WIS Checks for 4 Hours)][/b]
+    *goto taphouse_bar_loop
+
+  # Order a trencher of Smoked Peat-Herring & Rye Bread (3 Copper Bits)@{show_stat_hints  [Restore 1 HP, +1 STR Checks for 4h]|}
+    *if (((silver * 10) + copper) < 3)
+      You don't have enough copper for the herring.
+      *goto taphouse_bar_loop
+    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+      *if (copper >= 3)
+        *set copper - 3
+      *else
+        *set silver - 1
+        *set copper + 7
+      *if (hp_current < hp_max)
+        *set hp_current + 1
+        *if (hp_current > hp_max)
+          *set hp_current hp_max
+      *set meal_buff_active true
+      *set meal_buff_name "Smoked Peat-Herring"
+      *set meal_buff_desc "+1 STR Checks"
+      *set meal_buff_stat "str"
+      *set meal_buff_bonus 1
+      *set meal_buff_minutes_left 240
+      *set currency_txn_locked true
+      *set locked_currency_txn_page_id choice_page_id
+    Maura slides a wooden trencher across the counter bearing two salted river herring cured over fragrant peat smoke, accompanied by coarse stoneground mustard and a thick slice of dense rye bread.
+
+    The oily, mineral-rich fish and hearty grain provide solid, enduring fuel for working muscles.
+    [b][🐟 Smoked Fish Consumed: Restored 1 HP | Sustained Muscle (+1 STR Checks for 4 Hours) | HP: ${hp_current} / ${hp_max}][/b]
+    *goto taphouse_bar_loop
+
+  # Order a dram of Old Marches Herbal Bitters (2 Copper Bits)@{show_stat_hints  [+1 CHA Checks for 4h]|}
+    *if (((silver * 10) + copper) < 2)
+      You don't have enough copper for the bitters.
+      *goto taphouse_bar_loop
+    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+      *if (copper >= 2)
+        *set copper - 2
+      *else
+        *set silver - 1
+        *set copper + 8
+      *set meal_buff_active true
+      *set meal_buff_name "Herbal Bitters"
+      *set meal_buff_desc "+1 CHA Checks"
+      *set meal_buff_stat "cha"
+      *set meal_buff_bonus 1
+      *set meal_buff_minutes_left 240
+      *set currency_txn_locked true
+      *set locked_currency_txn_page_id choice_page_id
+    Maura unbungs a dark clay decanter and pours a single iron-thimble measure of dark, pungent liquor. "Careful," she grins. "Distilled out of wormwood and wild angelica by the mountain rangers."
+
+    You toss the measure back. A jolt of blistering, herbal fire hits the back of your throat, rushing warmth straight into your blood and putting a sharp, confident edge on your posture.
+    [b][🥃 Bitters Consumed: Iron Resolve (+1 CHA Checks for 4 Hours)][/b]
+    *goto taphouse_bar_loop
+
+  *if (not(discussed_maura_past))
+    # Ask about the faded sellsword brand on her neck.
+      *set discussed_maura_past true
+      Maura glances up, running a thumb over the blurred ink on her throat with a dry, knowing smirk. "Five campaign seasons with the Iron Bull Free Company down in the border marches," she says calmly. "Until a heavy crossbow quarrel through my left knee told me it was time to find dry floorboards. Bought this timber house off an old barge-carpenter ten years back."
+
+      She taps the oak bar with a scarred knuckle. "The river's quieter than the shield wall, and nobody shoots at you over the counter—most nights, anyway."
+      *goto taphouse_bar_loop
+
+  # Ask about river conditions down to Port Valen.
+    Maura rests her forearms on the oak counter, glancing toward the sound of the river rushing past the wharf piles outside. "Thirty miles of open water between here and the capital," she explains in a low, measured tone. "No rapids to speak of, but the current runs fast after the autumn rains, and the spray will soak straight through wool before midday if your cloaks aren't waxed. You'll make good time on the timber barges—just stay out of the river pilots' way and don't drop your iron over the gunwales."
+    *goto taphouse_bar_loop
+
+  # Step back from the counter.
+    *goto taphouse_menu_hub
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment TAPHOUSE SUB-BRANCH: BONE-DICE TABLE
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label taphouse_dice_table
+You walk over to the long hearthside table where Corporal Rorik is sitting with two burly timber-sawyers and a dwarven mill-wright. A leather dice cup clatters rhythmically against the oak table as polished bone cubes roll across a circle of chalk.
+
+"Look who wandered in out of the drizzle!" Rorik chuckles, blowing a plume of fragrant pipe smoke toward the rafters. "Care to risk a few marks on the horn, recruit? Two copper to ante, three dice to beat the high point."
+
+*choice
+  *if (((silver * 10) + copper) >= 4)
+    # Drop 4 Copper Bits onto the table and take your turn with the leather cup.${hint_taphouse_dice}
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+        *if (copper >= 4)
+          *set copper - 4
+        *else
+          *set silver - 1
+          *set copper + 6
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id choice_page_id
+      *set check_stat "dex"
+      *set check_dc 11
+      *set check_skill "Sleight of Hand"
+      *gosub_scene startup roll_d20_check
+      *if (check_success)
+        *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+          *set silver + 1
+          *set copper + 2
+          *set currency_txn_locked true
+          *set locked_currency_txn_page_id choice_page_id
+        You rattle the leather cup with crisp, rhythmic precision, turning the bones out smoothly onto the chalk circle. The dice tumble to a stop showing two crown-triples—a clean high point!
+
+        Rorik bellows with laughter, slapping his thigh as the sawyers groan in good-natured defeat. "Look at that! Clean as a whistle!" The old corporal sweeps the pot of coins across the table into your hands.
+        [b][🎲 Dice Wager Won: +1 Silver Mark, +2 Copper Bits][/b]
+      *else
+        You shake the cup and roll, but the bone cubes bounce erratically across an uneven knothole, landing on an uncoordinated pair of twos.
+
+        Rorik grins, dragging the copper coins toward his pile with a wink. "Better luck on the next cast, recruit. The bones are fickle mistresses."
+      *page_break Step back from the table...
+      *goto taphouse_menu_hub
+
+  # Shake your head and watch the veterans roll a round before stepping away.
+    You raise your hands in good-humored refusal, watching the veterans roll another round while you rest your boots near the warm hearth.
+    *goto taphouse_menu_hub
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment TAPHOUSE SUB-BRANCH: BARD PERFORMANCE
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label taphouse_bard_performance
+*set check_stat "cha"
+*set check_dc 10
+*set check_skill "Performance"
+*gosub_scene startup roll_d20_check
+*if (check_success)
+  *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+    *set silver + 1
+    *set copper + 1
+    *set currency_txn_locked true
+    *set locked_currency_txn_page_id choice_page_id
+  You step onto the low hearth bench with your instrument, tuning the strings with a swift, confident flourish before striking into a rhythmic border ballad.
+
+  Within moments, the entire taproom is stomping heavy work boots in rhythm against the floorboards, singing out the chorus over clattering mugs. When you strike the final chord, the room erupts into thundering cheers and tankards banged against tables.
+
+  The woman behind the oak counter slides a foaming mug of spiced ale across the bar with a broad, approving grin, and several appreciative watermen toss silver and copper onto the hearth bench!
+  [b][🎵 Performance Acclaimed: +1 Silver Mark, +1 Copper Bit | Free Spiced Ale][/b]
+*else
+  You tune your instrument, but the humidity of the crowded room has slackened your strings. Your opening chord buzzes flat against the wood. A few draymen chuckle, but you recover smoothly enough to finish a quiet tune that earns polite nods from the veterans.
+*page_break Step down from the bench...
+*goto taphouse_menu_hub
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment ACT 4: LONG REST & MIDNIGHT ROLLOVER
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -1476,6 +1847,7 @@ You follow the roar of the mill-race back to the timber forge. Inside, the heart
   *set hours_to_dawn + 1
 *set hours_to_pass hours_to_dawn
 *set minutes_to_pass minutes_to_dawn
+*set time_advance_call_id "alder_end"
 *gosub_scene calendar advance_time
 *set hp_current hp_max
 *if (character_class = "fighter")
@@ -1502,6 +1874,9 @@ You wake stiff and cold, but fully rested. All around you, the Iron Carrion is a
 
 *if (elspeth_role = "chapel_sanctuary")
   High on the limestone ridge above the port, the pale morning bells of the River Weavers' chapel toll softly across the mist. Elspeth is safe behind those cloistered stone walls, shielded from bailiffs and mud while the flotilla prepares to cast off into the gorge.
+
+*if ((family_name = "Elspeth") and (elspeth_role = "none"))
+  Your eyes scan the crowded timber wharves and the distant salt-curing sheds, but there is no sign of Elspeth among the marching ranks. The unresolved dread of leaving her in the frontier port weighs heavy on your chest as the company forms up.
 
 [b]◈ ALDERFORD WHARVES — PRE-DAWN MUSTER[/b]
 *line_break

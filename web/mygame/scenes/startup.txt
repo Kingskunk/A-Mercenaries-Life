@@ -60,7 +60,7 @@
 *create origin_desc "A desperate runaway fleeing debts and the noose."
 *create build "broad"
 *create build_desc "Broad-shouldered and heavy-set"
-*create hair_eyes "Shaved scalp, cold flint-grey eyes"
+*create hair_eyes "Shaved scalp, flint-grey eyes"
 *create mark "Crooked nose and a split brow"
 *create family_tie "none"
 *create family_name "None"
@@ -227,6 +227,20 @@
 *create disadvantage false
 *create guidance_active false
 *create save_vs "none"
+*comment --- TEMPORARY NOURISHMENT BUFF (The Drowned Oar Taphouse, Alderford) ---
+*comment A single active buff slot -- no stacking, buying a new item just
+*comment replaces whatever's active. All *set here are plain assignments
+*comment (never +N), so granting the buff is naturally replay-safe on its
+*comment own; it's the accompanying HP heal and currency spend at the
+*comment purchase site that need the usual currency_txn_locked guard.
+*comment Decays via calendar.txt's advance_time (see the guard there); read
+*comment by roll_d20_check above.
+*create meal_buff_active false
+*create meal_buff_name "none"
+*create meal_buff_desc "none"
+*create meal_buff_stat "none"
+*create meal_buff_bonus 0
+*create meal_buff_minutes_left 0
 *comment Guards against re-rolling this exact check on a page refresh or a
 *comment Show Stats round trip (both replay the current page from the top).
 *comment locked_page_id is compared against the engine's choice_page_id
@@ -260,6 +274,24 @@
 *comment menu) always bumps choice_page_id again first.
 *create currency_txn_locked false
 *create locked_currency_txn_page_id 0
+*comment Same idea again, for calendar.txt's advance_time: *set clock_minute
+*comment + minutes_to_pass (and the hour/day rollovers built on top of it)
+*comment is exactly as replay-unsafe as any other *set stat +N -- a refresh
+*comment mid-page would restage minutes_to_pass/hours_to_pass and re-run the
+*comment addition, advancing the game clock twice for one action. Unlike the
+*comment other locks, this one needs a per-call-site identifier rather than
+*comment just choice_page_id: a single page can legitimately call
+*comment advance_time more than once (e.g. mess_done then falling straight
+*comment through into night_end), so choice_page_id alone can't tell "this
+*comment call replaying" apart from "a second, different call on this same
+*comment page." advance_time takes a `time_advance_id` param for exactly
+*comment this -- pass a string unique to that call site (the enclosing
+*comment *label is usually enough; append a number if one label has more
+*comment than one advance_time call in it, as alderford_start does).
+*create time_advance_locked false
+*create locked_time_advance_page_id 0
+*create locked_time_advance_id ""
+*create time_advance_call_id ""
 
 *comment --- NIGHT 1 CAMP ---
 *create camp_activity "none"
@@ -1866,9 +1898,24 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *if ((character_class = "rogue") and ((check_skill = rogue_expertise_1) or (check_skill = rogue_expertise_2)))
     *set check_mod + (prof_bonus * 2)
 
+  *comment Nourishment buff from the Alderford taphouse (see startup.txt's
+  *comment meal_buff_* creates and calendar.txt's advance_time decay) --
+  *comment applies only to the matching ability, same as any other check
+  *comment modifier, and folds into the same locked check_total/adv_label
+  *comment as everything else above so a replay reuses it correctly instead
+  *comment of re-deriving it from whatever meal_buff_active happens to be by
+  *comment then (the buff could expire between the original roll and a much
+  *comment later refresh).
+  *temp meal_bonus 0
+  *if (meal_buff_active) and (check_stat = meal_buff_stat)
+    *set meal_bonus meal_buff_bonus
+    *set adv_label "${adv_label} +${meal_bonus} (${meal_buff_name})"
+
   *set check_total (d20_roll + check_mod)
   *if (guidance_active)
     *set check_total + guidance_roll
+  *if (meal_bonus > 0)
+    *set check_total + meal_bonus
 
   *set roll_locked true
   *set locked_page_id choice_page_id

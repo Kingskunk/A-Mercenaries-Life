@@ -1,32 +1,66 @@
+*comment Caller sets *set time_advance_call_id "<call_site_id>" (unique per
+*comment call SITE, not just per page -- see the comment above
+*comment time_advance_locked in startup.txt for why choice_page_id alone
+*comment isn't enough here) immediately before *gosub_scene calendar
+*comment advance_time, the same way roll_d20_check's caller sets check_skill
+*comment before *gosub_scene startup roll_d20_check. A plain *create'd
+*comment variable rather than *params, deliberately: quicktest exercises
+*comment calendar.txt directly as its own scene (not only via gosub_scene),
+*comment where no gosub args are ever pushed, and *params errors out with
+*comment nothing to read; a *create default of "" here just reads as
+*comment "unlocked," which is harmless.
 *label advance_time
-*if (minutes_to_pass > 0)
-  *set clock_minute + minutes_to_pass
-  *set minutes_to_pass 0
+*if (not(time_advance_locked)) or (not((locked_time_advance_page_id = choice_page_id) and (locked_time_advance_id = time_advance_call_id)))
+  *comment Captured before minutes_to_pass/hours_to_pass get consumed below,
+  *comment so the nourishment buff decays by exactly the elapsed time this
+  *comment call is applying -- inside the same guard as the clock itself,
+  *comment since it's derived from the same staged values and would double-
+  *comment decay on a replay for the same reason the clock would.
+  *temp total_mins_this_call ((hours_to_pass * 60) + minutes_to_pass)
 
-*label check_minutes
-*if (clock_minute >= 60)
-  *set clock_minute - 60
-  *set clock_hour + 1
-  *goto check_minutes
+  *if (minutes_to_pass > 0)
+    *set clock_minute + minutes_to_pass
+    *set minutes_to_pass 0
 
-*if (hours_to_pass > 0)
-  *set clock_hour + hours_to_pass
-  *set hours_to_pass 0
+  *label check_minutes
+  *if (clock_minute >= 60)
+    *set clock_minute - 60
+    *set clock_hour + 1
+    *goto check_minutes
 
-*label check_hours
-*if (clock_hour >= 24)
-  *set clock_hour - 24
-  *set days_to_pass + 1
-  *goto check_hours
+  *if (hours_to_pass > 0)
+    *set clock_hour + hours_to_pass
+    *set hours_to_pass 0
 
-*if (days_to_pass > 0)
-  *set campaign_day + days_to_pass
-  *set calendar_day + days_to_pass
-  *if (days_to_pay > days_to_pass)
-    *set days_to_pay - days_to_pass
-  *else
-    *set days_to_pay 0
-  *set days_to_pass 0
+  *label check_hours
+  *if (clock_hour >= 24)
+    *set clock_hour - 24
+    *set days_to_pass + 1
+    *goto check_hours
+
+  *if (days_to_pass > 0)
+    *set campaign_day + days_to_pass
+    *set calendar_day + days_to_pass
+    *if (days_to_pay > days_to_pass)
+      *set days_to_pay - days_to_pass
+    *else
+      *set days_to_pay 0
+    *set days_to_pass 0
+
+  *if (meal_buff_active) and (total_mins_this_call > 0)
+    *if (meal_buff_minutes_left > total_mins_this_call)
+      *set meal_buff_minutes_left - total_mins_this_call
+    *else
+      *set meal_buff_minutes_left 0
+      *set meal_buff_active false
+      *set meal_buff_name "none"
+      *set meal_buff_desc "none"
+      *set meal_buff_stat "none"
+      *set meal_buff_bonus 0
+
+  *set time_advance_locked true
+  *set locked_time_advance_page_id choice_page_id
+  *set locked_time_advance_id time_advance_call_id
 
 *label check_calendar_month
 *temp month_max 30
