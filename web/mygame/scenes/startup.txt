@@ -196,6 +196,7 @@
 *create ysolde_respect 0
 *create odessa_respect 0
 *create torvald_respect 0
+*create rorik_regard 0
 *create janna_regard 0
 *create talia_regard 0
 *create intake_completed false
@@ -241,6 +242,11 @@
 *create meal_buff_stat "none"
 *create meal_buff_bonus 0
 *create meal_buff_minutes_left 0
+*comment House bankroll for Corporal Rorik's bone-dice table -- drains as
+*comment the player wins, refills as the player loses (their ante becomes
+*comment part of the pot), and once it hits 0 the wager option disappears
+*comment ("the house is tapped out") via resolve_wager's wager_bankroll_busted.
+*create taphouse_dice_bankroll 200
 *comment Guards against re-rolling this exact check on a page refresh or a
 *comment Show Stats round trip (both replay the current page from the top).
 *comment locked_page_id is compared against the engine's choice_page_id
@@ -274,6 +280,55 @@
 *comment menu) always bumps choice_page_id again first.
 *create currency_txn_locked false
 *create locked_currency_txn_page_id 0
+*comment Same idea again, for every other bare *set stat +N/-N that isn't
+*comment currency or a dice/damage roll: hub "actions remaining" counters
+*comment (camp_actions_left, alder_actions_left, bivouac_actions_left) and
+*comment companion regard/respect/bond bumps (lyra_bond, varren_respect,
+*comment odessa_respect, kestrel_respect, ysolde_respect, janna_regard,
+*comment talia_regard, ruthless, compassion, etc.) are all exactly as
+*comment replay-unsafe as currency, and by the same reasoning one shared
+*comment flag covers the whole game: an actions-left spend and the check
+*comment resolution it leads into are always two separate pages (the *choice
+*comment the activity's own dialogue pauses on in between always bumps
+*comment choice_page_id first), so they never collide over one shared lock.
+*create stat_bump_locked false
+*create locked_stat_bump_page_id 0
+*comment Healing Word's *rand roll, preserved across a replay of its guard
+*comment the same way locked_guidance_roll preserves roll_d20_check's --
+*comment the healed amount is displayed in the banner text, so a replay
+*comment needs to show the SAME roll it already locked in, not just skip
+*comment re-applying it silently.
+*create locked_heal_roll 0
+*comment A second copy of the same lock, for the rare page that legitimately
+*comment fires two independent stat-bump events at once (e.g. a hub spends an
+*comment actions-left slot AND immediately grants a companion regard bump on
+*comment the very same page, with no intervening *choice to separate them) --
+*comment the exact "two mutations, one breath" situation resolve_wager's
+*comment ante/win split handles for currency.
+*create stat_bump2_locked false
+*create locked_stat_bump2_page_id 0
+*comment Inputs/locks for the currency_add / resolve_wager / buy_tavern_item
+*comment reusable primitives (defined below, after roll_d20_check) -- see
+*comment the comment blocks there for what each does and why the wager's
+*comment ante and win payout need two separate lock pairs rather than one.
+*create currency_add_amount 0
+*create wager_bankroll_var "taphouse_dice_bankroll"
+*create wager_ante_copper 0
+*create wager_win_copper 0
+*create wager_bankroll_busted false
+*create wager_ante_locked false
+*create locked_wager_ante_page_id 0
+*create wager_win_locked false
+*create locked_wager_win_page_id 0
+*create tavern_item_cost_copper 0
+*create tavern_item_hp_heal 0
+*create tavern_item_buff_name ""
+*create tavern_item_buff_desc ""
+*create tavern_item_buff_stat ""
+*create tavern_item_buff_bonus 0
+*create tavern_item_buff_minutes 0
+*create tavern_purchase_locked false
+*create locked_tavern_purchase_page_id 0
 *comment Same idea again, for calendar.txt's advance_time: *set clock_minute
 *comment + minutes_to_pass (and the hour/day rollovers built on top of it)
 *comment is exactly as replay-unsafe as any other *set stat +N -- a refresh
@@ -353,6 +408,24 @@
 *create visited_alder_cadre false
 *create visited_alder_smithy false
 *create visited_alder_tavern false
+*comment These need to be *create'd (persistent), not *temp -- discussing a
+*comment topic grants lyra_bond, so if they lived as *temp (reset fresh
+*comment every time the player re-enters taphouse_talk_lyra from the tavern
+*comment hub) leaving and re-approaching Lyra would let every topic, and its
+*comment bond reward, be replayed indefinitely.
+*create discussed_lyra_valen false
+*create discussed_lyra_archery false
+*create discussed_lyra_pay false
+*create discussed_lyra_pact false
+*create asked_rorik_alderford false
+*create discussed_smiths_past false
+*create bought_smiths_ale false
+*comment Captures the lyra_bond >= 15 check's result the one time it's
+*comment actually evaluated (inside taphouse_talk_lyra's stat_bump_locked
+*comment guard), so a refresh replaying the page after lyra_bond has already
+*comment been bumped once can't re-derive a different answer from the
+*comment now-higher value and show the wrong half of the branching prose.
+*create lyra_pay_generous false
 *create visited_alder_guild false
 *create visited_alder_bathhouse false
 *create alder_actions_left 3
@@ -362,7 +435,7 @@
 *create elspeth_safe false
 *create elspeth_with_company false
 *create elspeth_role "none"
-*create elspeth_bond 85
+*create elspeth_bond 55
 *create weaver_gratitude false
 *create gilded_scales_leverage false
 *create alder_wager_won false
@@ -943,7 +1016,10 @@ You stare past his shoulder into the dying embers of a ditch brazier. The noise 
     *set dexterity 10
     *set intelligence 10
     *set charisma 10
-    *set ruthless +10
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *set ruthless +10
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     *goto flashback_village
 
   # Outlaw Sanctuary: How a botched heist against the Black Tally in Port Valen made the Carrion your only shield.@{show_stat_hints  [DEX 16 (+3), WIS 14 (+2), CHA 12 (+1), +8 Silver, Ruthless +5]|}
@@ -962,7 +1038,10 @@ You stare past his shoulder into the dying embers of a ditch brazier. The noise 
       *set silver +8
       *set currency_txn_locked true
       *set locked_currency_txn_page_id choice_page_id
-    *set ruthless +5
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *set ruthless +5
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     *goto flashback_slums
 
   # The Fallen Scion: How the scandal at Karr's Keep stripped your inheritance and forced an alias.@{show_stat_hints  [CHA 15 (+2), INT 15 (+2), DEX 12 (+1), +15 Silver, Compassionate +5]|}
@@ -982,7 +1061,10 @@ You stare past his shoulder into the dying embers of a ditch brazier. The noise 
       *set silver +15
       *set currency_txn_locked true
       *set locked_currency_txn_page_id choice_page_id
-    *set ruthless -5
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *set ruthless -5
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     *goto flashback_scandal
 
 *label flashback_village
@@ -1047,12 +1129,15 @@ The clerk sets his stylus down for a moment, studying your face and frame with a
     *set race_darkvision false
     *set race_trait_title "Versatile"
     *set race_trait_desc "No single edge, but no glaring gap either."
-    *set strength +1
-    *set dexterity +1
-    *set constitution +1
-    *set intelligence +1
-    *set wisdom +1
-    *set charisma +1
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *set strength +1
+      *set dexterity +1
+      *set constitution +1
+      *set intelligence +1
+      *set wisdom +1
+      *set charisma +1
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     "Human," the clerk grunts, not even glancing up. "Half this camp is. Cheapest coffin wood to cut, so the quartermaster likes you already."
     *goto intake_profile
 
@@ -1063,7 +1148,10 @@ The clerk sets his stylus down for a moment, studying your face and frame with a
     *set race_darkvision true
     *set race_trait_title "Fey Ancestry"
     *set race_trait_desc "Advantage on saves against being charmed, and magic can't put you to sleep."
-    *set dexterity +2
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *set dexterity +2
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     The clerk's quill pauses. "Elf," he mutters, glancing at your ears twice. "Don't get many of your kind taking iron for coin. Your sort usually has better places to be dying slowly than the Grey Marches."
     *goto intake_profile
 
@@ -1074,7 +1162,10 @@ The clerk sets his stylus down for a moment, studying your face and frame with a
     *set race_darkvision true
     *set race_trait_title "Dwarven Resilience"
     *set race_trait_desc "Advantage on saves against poison, and resistance to poison damage."
-    *set constitution +2
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *set constitution +2
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     "Dwarf," the clerk notes, unimpressed but approving. "Good. Varren likes stacking your kind in the front rank. Something about the low center of gravity, he says. I don't ask questions."
     *goto intake_profile
 
@@ -1085,8 +1176,11 @@ The clerk sets his stylus down for a moment, studying your face and frame with a
     *set race_darkvision true
     *set race_trait_title "Relentless Endurance"
     *set race_trait_desc "When you'd be dropped to 0 HP but not outright killed, you can cling to 1 HP instead—once, until you rest."
-    *set strength +2
-    *set constitution +1
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *set strength +2
+      *set constitution +1
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     The clerk eyes your jaw and doesn't bother hiding his relief. "Half-Orc. Good—scares the debt collectors off faster than steel does. Not that the Carrion cares what you are, so long as you swing hard."
     *goto intake_profile
 
@@ -1097,7 +1191,10 @@ The clerk sets his stylus down for a moment, studying your face and frame with a
     *set race_darkvision false
     *set race_trait_title "Lucky"
     *set race_trait_desc "Whenever the dice betray you with a natural 1, fate gives you one immediate reroll—no questions asked."
-    *set dexterity +2
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *set dexterity +2
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     "Halfling," the clerk says, arching a brow at your height. "Don't see many small folk take the shilling. Either you're braver than you look, or you're planning to hide behind someone bigger. No judgment. Half of us plan to do the same."
     *goto intake_profile
 
@@ -1110,8 +1207,11 @@ The clerk sets his stylus down for a moment, studying your face and frame with a
     *set race_trait_desc "Your infernal blood shrugs off fire that would blister lesser flesh. Older tieflings learn to spit a devil's rebuke or drown a room in darkness—you haven't earned either yet."
     *set race_cantrip "thaumaturgy"
     *set race_cantrip_desc "Thaumaturgy—small, innate parlor tricks of infernal blood: your voice booms like three men, your eyes flash brimstone-red, doors creak open or slam shut untouched. Nothing that draws blood, but plenty that unsettles a room."
-    *set charisma +2
-    *set intelligence +1
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *set charisma +2
+      *set intelligence +1
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     The clerk's eyes flick to your horns, then back to the ledger, his jaw tight. "Tiefling," he mutters, tracing the letters slower than usual. "Chaplain's lot won't like that. Chaplain's lot don't like much, though. Long as you march and don't set the supply wagons on fire, the Carrion won't ask whose blood is in you."
     *goto intake_profile
 
@@ -1126,8 +1226,11 @@ The clerk sets his stylus down for a moment, studying your face and frame with a
     *set race_cantrip_desc "Disguise Self—you can innately blur your own face and voice into someone else's for a short while, a lingering scrap of the hag's craft that remade you. Never taught, never fully understood, just there when you reach for it."
     *set race_cantrip_2 "hex"
     *set race_cantrip_2_desc "Hex—a murmured curse laid on a single target, making your wounds cut deeper and their chosen ability falter, for as long as you hold your concentration on it. The other half of the bargain, just as real as the first."
-    *set constitution +1
-    *set charisma +1
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *set constitution +1
+      *set charisma +1
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     The clerk's quill freezes over the page. He looks at your eyes a beat too long before writing anything down. "...Hexblood," he says carefully, like the word itself might be listening. "Didn't ask, don't want to know. Just don't let Varren see you do anything unnatural before the pay ledger's settled."
     *goto intake_profile
 
@@ -1967,6 +2070,130 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *set disadvantage false
 *set guidance_active false
 *set save_vs "none"
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment REUSABLE ENGINE PRIMITIVE: CURRENCY MATH
+*comment Pure arithmetic, no locking of its own -- callers gosub this from
+*comment inside their own replay-safety guard (see resolve_wager and
+*comment buy_tavern_item below for the pattern), the same way every other
+*comment *set stat +N mutation in this game needs one.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label currency_add
+*comment Input: currency_add_amount, a signed integer in copper-equivalent
+*comment units (10 copper = 1 silver, 10 silver = 1 gold). Adds (or, if
+*comment negative, spends) that amount against gold/silver/copper, carrying
+*comment and borrowing across denominations so the three stats stay sane.
+*temp ca_amount currency_add_amount
+*temp ca_sign 1
+*if (ca_amount < 0)
+  *set ca_sign -1
+  *set ca_amount 0 - ca_amount
+*temp ca_gold (ca_amount - (ca_amount modulo 100)) / 100
+*set ca_amount ca_amount - (ca_gold * 100)
+*temp ca_silver (ca_amount - (ca_amount modulo 10)) / 10
+*set ca_amount ca_amount - (ca_silver * 10)
+*temp ca_copper ca_amount
+*if (ca_sign > 0)
+  *set gold + ca_gold
+  *set silver + ca_silver
+  *set copper + ca_copper
+  *if (copper > 9)
+    *set copper - 10
+    *set silver + 1
+  *if (silver > 9)
+    *set silver - 10
+    *set gold + 1
+*else
+  *set copper - ca_copper
+  *if (copper < 0)
+    *set copper + 10
+    *set silver - 1
+  *set silver - ca_silver
+  *if (silver < 0)
+    *set silver + 10
+    *set gold - 1
+  *set gold - ca_gold
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment REUSABLE ENGINE PRIMITIVE: GAMBLING WAGER
+*comment One shared subroutine for every gambling table in the game (dice,
+*comment cards, knuckle-bones, whatever a future town needs) instead of
+*comment hand-rolling a new ante/payout/lock trio per location. A caller
+*comment just needs its own *create'd house-bankroll stat (so the NPC can
+*comment eventually run dry and stop offering the game) plus these four
+*comment inputs, set right before *gosub_scene startup resolve_wager:
+*comment   wager_bankroll_var  - string name of that table's bankroll stat
+*comment   wager_ante_copper   - cost to play, in copper-equivalent units
+*comment   wager_win_copper    - gross payout on success (capped to
+*comment                         whatever's left in the bankroll)
+*comment   check_stat/check_dc/check_skill - as usual for roll_d20_check
+*comment Outputs: check_success (as always) and wager_bankroll_busted (true
+*comment once the bankroll hits 0, so the caller can hide the option and/or
+*comment print a "the house is tapped out" line on the next visit).
+*comment The ante debit and the win payout are two separate mutations that
+*comment can both fire on the same page (ante, then the check, then a
+*comment conditional credit) -- exactly the "two mutations, one breath"
+*comment problem *rand and *set stat +N run into everywhere else in this
+*comment game, so each half gets its own dedicated lock rather than sharing
+*comment one, the same way damage_roll_locked is kept separate from
+*comment roll_locked.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_wager
+*if (wager_bankroll_var = "")
+  *set wager_bankroll_var "taphouse_dice_bankroll"
+*if (not(wager_ante_locked)) or (not(locked_wager_ante_page_id = choice_page_id))
+  *set currency_add_amount 0 - wager_ante_copper
+  *gosub currency_add
+  *set {wager_bankroll_var} + wager_ante_copper
+  *set wager_ante_locked true
+  *set locked_wager_ante_page_id choice_page_id
+*gosub roll_d20_check
+*set wager_bankroll_busted ({wager_bankroll_var} <= 0)
+*if (check_success)
+  *if (not(wager_win_locked)) or (not(locked_wager_win_page_id = choice_page_id))
+    *temp wager_payout wager_win_copper
+    *if (wager_payout > {wager_bankroll_var})
+      *set wager_payout {wager_bankroll_var}
+    *set currency_add_amount wager_payout
+    *gosub currency_add
+    *set {wager_bankroll_var} - wager_payout
+    *set wager_win_locked true
+    *set locked_wager_win_page_id choice_page_id
+  *set wager_bankroll_busted ({wager_bankroll_var} <= 0)
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment REUSABLE ENGINE PRIMITIVE: TAVERN PURCHASE
+*comment One shared subroutine for buying a consumable (food, drink,
+*comment whatever a future tavern sells) that spends coin, optionally heals
+*comment HP, and optionally grants the single-slot nourishment buff. Set
+*comment these inputs before *gosub_scene startup buy_tavern_item:
+*comment   tavern_item_cost_copper - price, in copper-equivalent units
+*comment   tavern_item_hp_heal     - HP restored (0 for none)
+*comment   tavern_item_buff_bonus  - 0 to skip granting a buff entirely;
+*comment                             otherwise also set buff_name/desc/stat
+*comment   tavern_item_buff_name/desc/stat/minutes - the buff's display
+*comment                             text, matching check_stat, and duration
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label buy_tavern_item
+*if (not(tavern_purchase_locked)) or (not(locked_tavern_purchase_page_id = choice_page_id))
+  *set currency_add_amount 0 - tavern_item_cost_copper
+  *gosub currency_add
+  *if (tavern_item_hp_heal > 0)
+    *set hp_current + tavern_item_hp_heal
+    *if (hp_current > hp_max)
+      *set hp_current hp_max
+  *if (tavern_item_buff_bonus > 0)
+    *set meal_buff_active true
+    *set meal_buff_name tavern_item_buff_name
+    *set meal_buff_desc tavern_item_buff_desc
+    *set meal_buff_stat tavern_item_buff_stat
+    *set meal_buff_bonus tavern_item_buff_bonus
+    *set meal_buff_minutes_left tavern_item_buff_minutes
+  *set tavern_purchase_locked true
+  *set locked_tavern_purchase_page_id choice_page_id
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

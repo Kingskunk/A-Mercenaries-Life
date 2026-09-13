@@ -325,7 +325,16 @@ clearScreen = function clearScreen(code) {
 };
 
 saveCookie = function(callback) {
-  if (callback) timeout = callback;
+  // Fire immediately rather than deferring through `timeout` (unlike
+  // clearScreen above). web/scene.js's printLoop() now calls
+  // refreshSavedProgress() -- which calls this with a plain `function(){}`
+  // -- on every single pause, purely to persist stats/temps for a refresh
+  // that will never happen in randomtest. Deferring it through `timeout`
+  // instead clobbered the *choice continuation set moments earlier by
+  // choice() below, silently stopping every random walk after its very
+  // first choice (still reported as RANDOMTEST PASSED). Matches headless.js's
+  // own saveCookie, which this overrides.
+  if (callback) callback.call();
 };
 
 choiceUseCounts = {};

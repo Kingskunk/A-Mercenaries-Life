@@ -20,7 +20,6 @@
 
   *if (minutes_to_pass > 0)
     *set clock_minute + minutes_to_pass
-    *set minutes_to_pass 0
 
   *label check_minutes
   *if (clock_minute >= 60)
@@ -30,7 +29,6 @@
 
   *if (hours_to_pass > 0)
     *set clock_hour + hours_to_pass
-    *set hours_to_pass 0
 
   *label check_hours
   *if (clock_hour >= 24)
@@ -45,7 +43,6 @@
       *set days_to_pay - days_to_pass
     *else
       *set days_to_pay 0
-    *set days_to_pass 0
 
   *if (meal_buff_active) and (total_mins_this_call > 0)
     *if (meal_buff_minutes_left > total_mins_this_call)
@@ -61,6 +58,20 @@
   *set time_advance_locked true
   *set locked_time_advance_page_id choice_page_id
   *set locked_time_advance_id time_advance_call_id
+
+*comment Reset the caller's consumed inputs to a clean 0 baseline
+*comment unconditionally, outside the guard above -- unlike the clock math
+*comment itself, setting a literal 0 is always safe to repeat, and it must
+*comment run even when the guard just skipped a replay of that math, or a
+*comment refresh mid-call would leave minutes_to_pass/hours_to_pass/
+*comment days_to_pass stuck at their last input value instead of 0. A later,
+*comment unrelated advance_time call further down the same page (or on a
+*comment later page, for days_to_pass specifically, since most call sites
+*comment never set it at all) would otherwise silently inherit that stale
+*comment leftover and advance the clock an extra, uncalled-for stretch.
+*set minutes_to_pass 0
+*set hours_to_pass 0
+*set days_to_pass 0
 
 *label check_calendar_month
 *temp month_max 30

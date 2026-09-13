@@ -743,12 +743,13 @@ Scene.prototype.execute = function execute() {
           throw new Error(this.targetLabel.origin + " line " + (this.targetLabel.originLine+1) + ": "+this.name+" doesn't contain label " + label);
       }
     }
+    var subsceneStack = (this.stats && this.stats.choice_subscene_stack) || [];
     // this backup slot will only be used when the scene crc changes during upgrades
     if (!this.lineNum) {
-      var subsceneStack = this.stats.choice_subscene_stack || [];
       if (!subsceneStack.length) this.save("backup");
     }
     if (this.redirectingFromStats) {
+      this.stats.choice_page_start_scene = this.name;
       this.stats.choice_page_start_line = this.lineNum;
       this.stats.choice_page_start_indent = this.indent;
       this.save("");
@@ -758,7 +759,8 @@ Scene.prototype.execute = function execute() {
     // read these but never *create/*set them themselves; make sure they
     // exist before the very first page transition ever reads them.
     if (typeof this.stats.choice_page_id !== "number") this.stats.choice_page_id = 0;
-    if (typeof this.stats.choice_page_start_line !== "number") {
+    if (typeof this.stats.choice_page_start_line !== "number" || (!subsceneStack.length && this.stats.choice_page_start_scene && this.stats.choice_page_start_scene !== this.name)) {
+      this.stats.choice_page_start_scene = this.name;
       this.stats.choice_page_start_line = this.lineNum;
       this.stats.choice_page_start_indent = this.indent;
     }
@@ -992,6 +994,7 @@ Scene.prototype.resetPage = function resetPage() {
       // comment on why it can't just be tracked there): remember where, so
       // refreshSavedProgress() has a safe line to resume/replay from even
       // after execution has moved on through *gosub_scene calls and back.
+      self.stats.choice_page_start_scene = self.name;
       self.stats.choice_page_start_line = self.lineNum;
       self.stats.choice_page_start_indent = self.indent;
       // save in the background, eventually
@@ -1053,8 +1056,8 @@ Scene.prototype.save = function save(slot) {
 // instances shares.
 Scene.prototype.refreshSavedProgress = function refreshSavedProgress() {
     if (this.saveSlot) return;
-    var lineNum = (typeof this.stats.choice_page_start_line === "number") ? this.stats.choice_page_start_line : this.lineNum;
-    var indent = (typeof this.stats.choice_page_start_indent === "number") ? this.stats.choice_page_start_indent : this.indent;
+    var lineNum = (typeof this.stats.choice_page_start_line === "number" && (!this.stats.choice_page_start_scene || this.stats.choice_page_start_scene === this.name)) ? this.stats.choice_page_start_line : this.lineNum;
+    var indent = (typeof this.stats.choice_page_start_indent === "number" && (!this.stats.choice_page_start_scene || this.stats.choice_page_start_scene === this.name)) ? this.stats.choice_page_start_indent : this.indent;
     for (var key in tempStatWrites) {
       if (tempStatWrites.hasOwnProperty(key)) {
         this.stats[key] = tempStatWrites[key];

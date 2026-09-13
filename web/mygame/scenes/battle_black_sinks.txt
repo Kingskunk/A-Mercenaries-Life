@@ -40,7 +40,10 @@ The company doesn't approach as one mass. The Vanguard forms up dead center on t
       You grit your teeth and keep the fury leashed, coiled and waiting behind your ribs like a held breath.
       *goto beat_crossing_router
     # Ignore the fury clawing at your chest and put a steadying hand on Lyra's shoulder instead.@{show_stat_hints  [Lyra Bond +4]|}
-      *set lyra_bond +4
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set lyra_bond +4
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
       You let the anger sit for now, unspent, and reach over to still her bowstring hand with your own. She startles, then steadies under your grip. "Whatever's coming," you tell her, "you've already survived worse just to get here." It's not much. It's true anyway, and she breathes a little easier for it.
       *goto beat_crossing_router
 
@@ -49,7 +52,10 @@ The company doesn't approach as one mass. The Vanguard forms up dead center on t
 
   *choice
     # Murmur the necromantic rite to bolster your body with borrowed vigor.@{show_stat_hints  [Spell: False Life, +5 Temp HP]|}
-      *set hp_current + 5
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set hp_current + 5
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
       A cold, prickling numbness washes across your skin from your chest outward, dulling the bite of the wind and settling into your limbs like an armor of deadened nerves. You feel fortified, impervious to the first blows.
       [b][✨ False Life: +5 Temporary Hit Points | Hit Points: ${hp_current}/${hp_max}][/b]
       *goto beat_crossing_router
@@ -416,10 +422,16 @@ A gap in the broken gate spills three defenders out to meet the fighting—gaunt
   *choice
     # Murmur the verse of restoration to knit torn flesh before closing into the melee.@{show_stat_hints  [Healing Word: Recover HP]|}
       *temp heal_roll 0
-      *rand heal_roll 1 4
-      *set hp_current + (heal_roll + cha_mod)
-      *if (hp_current > hp_max)
-        *set hp_current hp_max
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *rand heal_roll 1 4
+        *set hp_current + (heal_roll + cha_mod)
+        *if (hp_current > hp_max)
+          *set hp_current hp_max
+        *set locked_heal_roll heal_roll
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
+      *else
+        *set heal_roll locked_heal_roll
       A single, sharp syllable escapes your mouth—and a sudden, soothing warmth floods through your bruised ribs, sealing torn skin and clearing your vision.
       [b][✨ Healing Word: Recovered ${heal_roll} + ${cha_mod_str} HP | Current HP: ${hp_current}/${hp_max}][/b]
       *line_break
@@ -872,38 +884,59 @@ The last defender left standing is a woman in ragged homespun, gaunt-cheeked, sh
 
 *choice
   # Finish it. A starving deserter today is a knife in your back tomorrow, and the Carrion doesn't pay you to gamble on gratitude.@{show_stat_hints  [Ruthless +15, Companion Regard -5]|}
-    *set ruthless +15
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *set ruthless +15
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     You look past her face as the blow lands. The kill is swift, but the cold knot of revulsion takes far longer to leave your gut.
+    *if (not(stat_bump2_locked)) or (not(locked_stat_bump2_page_id = choice_page_id))
+      *if (squad = "vanguard")
+        *set lyra_bond -5
+      *if (squad = "scouts")
+        *set kestrel_respect -5
+      *if (squad = "cadre")
+        *set ysolde_respect -5
+      *set stat_bump2_locked true
+      *set locked_stat_bump2_page_id choice_page_id
     *if (squad = "vanguard")
       Lyra looks away, jaw clamped, furiously checking the fletching on her bodkins.
-      *set lyra_bond -5
     *if (squad = "scouts")
       Kestrel watches the blade fall without blinking, her face an unreadable mask of stone. "Messy," she mutters coldly. "Check her pockets for iron."
-      *set kestrel_respect -5
     *if (squad = "cadre")
       Ysolde watches the blow land, writing something quiet in her ledger. "Practical," she remarks, voice flat as cold slate. "Wasteful, perhaps, but predictable."
-      *set ysolde_respect -5
     *goto battle_resolution
 
-  # Lower your weapon. Whatever the Gilded Scales are paying for, it isn't this.@{show_stat_hints  [Compassion +15, Companion Regard +10]|}
-    *set ruthless -15
+  # Lower your weapon. Whatever the Gilded Scales are paying for, it isn't this.@{show_stat_hints  [Compassion +15, Companion Regard +6]|}
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *set ruthless -15
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     "Run," you tell her, and mean it, close enough now to see the tremor in her jaw. "Don't let the sergeants see you standing when the causeway's called clear."
 
     The deserter scrambles into the reeds on hands and knees before the words have fully left your mouth.
+    *if (not(stat_bump2_locked)) or (not(locked_stat_bump2_page_id = choice_page_id))
+      *if (squad = "vanguard")
+        *set lyra_bond +6
+      *if (squad = "scouts")
+        *set kestrel_respect +6
+      *if (squad = "cadre")
+        *set ysolde_respect +6
+      *set stat_bump2_locked true
+      *set locked_stat_bump2_page_id choice_page_id
     *if (squad = "vanguard")
       Lyra exhales, her shoulders easing as she lowers her bow. "Didn't think you had that in you," she says quietly, her voice carrying a rare note of genuine respect.
-      *set lyra_bond +6
     *if (squad = "scouts")
       Kestrel slowly eases the tension on her bowstring, a faint, rare nod touching her chin. "Smart," she murmurs. "Corpses don't give you answers; living runners tell the others to clear the road."
-      *set kestrel_respect +10
     *if (squad = "cadre")
       Ysolde watches the woman vanish into the mist, her severe expression softening by a fraction of an inch. "Compassion is a rare commodity in this company," she notes quietly. "Hold onto it as long as you can afford to."
-      *set ysolde_respect +10
     *goto battle_resolution
 
   *if (((character_class = "bard") and ((bard_spell = "charm_person") or (bard_spell_2 = "charm_person"))))
-    # [Charm Person / Level 1 Spell] Weave a soothing, magical cadence into your voice to calm her panic and glean river intel.@{show_stat_hints  [Charm Person, Compassion +10, Intel, Companion Regard +15]|}
-      *set ruthless -10
+    # [Charm Person / Level 1 Spell] Weave a soothing, magical cadence into your voice to calm her panic and glean river intel.@{show_stat_hints  [Charm Person, Compassion +10, Intel, Companion Regard +6]|}
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set ruthless -10
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
       You lower your weapon and let your voice drop into a warm, melodic register laced with subtle enchantment. The woman's panicked gasps slow, her dilated pupils focusing on you with sudden, tearful trust.
 
       "Nobody's going to hurt you," you murmur gently. "Who put you up on this wall?"
@@ -912,15 +945,21 @@ The last defender left standing is a woman in ragged homespun, gaunt-cheeked, sh
       *set intel_fish_cache true
 
       "Go," you tell her softly. She nods with profound gratitude and slips safely away into the tall reeds.
+      *if (not(stat_bump2_locked)) or (not(locked_stat_bump2_page_id = choice_page_id))
+        *if (squad = "vanguard")
+          *set lyra_bond +6
+        *if (squad = "scouts")
+          *set kestrel_respect +6
+        *if (squad = "cadre")
+          *set ysolde_respect +6
+        *set stat_bump2_locked true
+        *set locked_stat_bump2_page_id choice_page_id
       *if (squad = "vanguard")
         Lyra lowers her bow in open astonishment. "What in the hell did you just say to her?" she breathes, shaking her head with begrudging awe.
-        *set lyra_bond +6
       *if (squad = "scouts")
         Kestrel's eyebrows raise slightly. "Extracting intelligence without wasting iron. I might actually find a use for you yet, recruit."
-        *set kestrel_respect +15
       *if (squad = "cadre")
         Ysolde smiles—a real, genuine smile that rarely graces her features. "Subtle, clean, and effective. That is how the Cadre works."
-        *set ysolde_respect +15
       *goto battle_resolution
 
   # Disarm her and hand her off to the company sergeants instead of deciding her fate yourself.
@@ -1034,19 +1073,28 @@ You have a little time before the second watch is posted and the camp settles in
   *if ((squad = "vanguard") and (not(visited_bivouac_lyra)))
     # Find Lyra in the guardroom corner to see how she's holding up after the fighting.@{show_stat_hints  [Lyra Bond]|}
       *set visited_bivouac_lyra true
-      *set bivouac_actions_left - 1
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set bivouac_actions_left - 1
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
       *goto bivouac_companion_vanguard
 
   *if ((squad = "scouts") and (not(visited_bivouac_kestrel)))
     # Locate Kestrel by the outer parapet where the scouts are drying bowstrings.@{show_stat_hints  [Kestrel Regard]|}
       *set visited_bivouac_kestrel true
-      *set bivouac_actions_left - 1
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set bivouac_actions_left - 1
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
       *goto bivouac_companion_scouts
 
   *if ((squad = "cadre") and (not(visited_bivouac_ysolde)))
     # Approach Ysolde in the dry corner of the collapsed chapel.@{show_stat_hints  [Ysolde Regard]|}
       *set visited_bivouac_ysolde true
-      *set bivouac_actions_left - 1
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set bivouac_actions_left - 1
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
       *goto bivouac_companion_cadre
 
   *if ((errand_kestrel_unlocked) and (not(visited_bivouac_kestrel)))
@@ -1082,19 +1130,28 @@ You have a little time before the second watch is posted and the camp settles in
   *if (not(visited_bivouac_search))
     # Search the ruined upper floor of the gatehouse for salvage or secure the perimeter.@{show_stat_hints  [WIS/INT/DEX Check]|}
       *set visited_bivouac_search true
-      *set bivouac_actions_left - 1
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set bivouac_actions_left - 1
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
       *goto bivouac_search
 
   *if (not(visited_bivouac_odessa))
     # Visit Surgeon Odessa at her triage station by the south wall to have your wounds dressed.@{show_stat_hints  [Odessa Respect, Medical Lore]|}
       *set visited_bivouac_odessa true
-      *set bivouac_actions_left - 1
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set bivouac_actions_left - 1
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
       *goto bivouac_odessa
 
   *if (not(visited_bivouac_fire))
     # Join the circle of veterans around the hearth fire in the lower guardroom.
       *set visited_bivouac_fire true
-      *set bivouac_actions_left - 1
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set bivouac_actions_left - 1
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
       *goto bivouac_fire
 
   *if (bivouac_actions_left < 3)
@@ -1123,7 +1180,10 @@ You have a little time before the second watch is posted and the camp settles in
 *choice
   *if (((((wizard_cantrip = "mending") or (wizard_cantrip_2 = "mending")) or (wizard_cantrip_3 = "mending")) or (bard_cantrip = "mending")) or (bard_cantrip_2 = "mending"))
     # [Cantrip: Mending] Trace your finger over the split seam in her brigandine, sealing leather and thread instantly.@{show_stat_hints  [Mending: Automatic Success, Lyra Bond +6]|}
-      *set lyra_bond +6
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set lyra_bond +6
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
       You kneel beside her and press your thumb against the ragged tear in her brigandine shoulder. You whisper the slow, tactile cadence—and beneath your fingertips, the torn boiled leather smooths together, the frayed linen threads knit whole, and the iron rivet resets flush into the hide.
 
       Lyra freezes, staring at her pristine shoulder armor with wide, stunned eyes. She runs her calloused fingers over the seamless mend, letting out a low, disbelieving breath. "Well... look at you, scholar," she murmurs, a genuine, crooked grin breaking across her weary face. "Guess you're good for more than just reading ledgers. My thanks, ${name}."
@@ -1143,13 +1203,18 @@ You have a little time before the second watch is posted and the camp settles in
     *set check_dc 11
     *set check_skill "Maintain Gear"
     *gosub_scene startup roll_d20_check
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *if (check_success)
+        *set lyra_bond +6
+      *else
+        *set lyra_bond +2
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     *if (check_success)
-      *set lyra_bond +6
       You sit down opposite her, pulling out your wax cake and a handful of retrieved shafts. You work with steady, disciplined care—smoothing the frayed hemp of her bowstring until it sits taut and sleek, then testing each iron head for true alignment.
-      
+
       Lyra watches your hands for a long moment, the tension in her jaw easing. "You've done this before," she murmurs, leaning back against the cold stone. "Most greenhorns think a bow shoots itself. Out here, a bad string gets you gutted before you draw half-weight." She tosses you a small strip of dried beef from her pouch with a faint, wry smirk. "Eat. You earned half of it."
     *else
-      *set lyra_bond +2
       You take a seat and try to work the wax into the bowstring, but the post-battle tremor in your fingers makes your grip clumsy, nearly dropping the wooden core into the dirt. Lyra snatches it back with a sharp click of her tongue. "Steady your hands before you touch the recurve, recruit. Go find some hot broth."
     *goto bivouac_vanguard_wrapup
 
@@ -1161,21 +1226,29 @@ You have a little time before the second watch is posted and the camp settles in
     *set check_dc 11
     *set check_skill "Speak Truth"
     *gosub_scene startup roll_d20_check
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *if (check_success)
+        *set lyra_bond +6
+      *else
+        *set lyra_bond +2
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     *if (check_success)
-      *set lyra_bond +6
       You speak low, keeping your voice beneath the crackle of the hearth fire. You don't sugarcoat the blood on the stone—the merchants in Port Valen bought forty veteran blades to clear desperate river folk who had nowhere else to run.
-      
+
       *if (origin = "outlaw")
         Lyra stops her needle mid-stitch, staring into the flame. "I grew up in Dredge-End," she says softly, her voice hard as river gravel. "I saw bailiffs drown squatters in the canal for stealing grain husks. I know where you came from, too—I saw the way you move in tight alleys. We both took Vane's iron shilling so we'd be the ones holding the bow instead of the ones begging in the mud." She meets your gaze with flinty respect. "At least you don't pretend it's noble."
       *if (not(origin = "outlaw"))
         Lyra stops her needle mid-stitch, staring into the flame. "I grew up in Dredge-End," she says softly, her voice hard as river gravel. "I saw bailiffs drown squatters in the canal for stealing grain husks. I took Vane's iron shilling so I'd be the one holding the bow instead of the one begging in the mud. It's foul work, but it's the only work that pays enough to keep breath in your ribs." She meets your gaze with flinty respect. "At least you don't pretend it's noble."
     *else
-      *set lyra_bond +2
       "Don't preach to me about morality," Lyra mutters coldly, yanking her thread tight. "Save the philosophy for the officers. In the ranks, we bleed or we get paid." She turns her shoulder, ending the conversation.
     *goto bivouac_vanguard_wrapup
 
   # Cut off half your dried salt-pork ration with your belt knife and share it in companionable silence.@{show_stat_hints  [Lyra Bond +4]|}
-    *set lyra_bond +4
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *set lyra_bond +4
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     You sit on an overturned cask, draw your knife, and slice a generous wedge of hard salt-pork, extending it across the flagstones. Lyra glances up, hesitates for half a second, then takes the meat with a sharp nod.
     
     In the shared warmth of the nearby hearth, you eat side-by-side, two line recruits resting after their first blooding.
@@ -1204,11 +1277,11 @@ You have a little time before the second watch is posted and the camp settles in
 *temp hint_scout_intel ""
 *if (show_stat_hints)
   *if (guidance_active)
-    *set hint_scout_approach " [Guidance: DEX/WIS Check (DC 11) + 1d4, Kestrel Respect (+15/+5)]"
-    *set hint_scout_intel " [Guidance: INT/CHA Check (DC 11) + 1d4, Kestrel Respect (+15/+5), March Intel]"
+    *set hint_scout_approach " [Guidance: DEX/WIS Check (DC 11) + 1d4, Kestrel Respect (+6/+2)]"
+    *set hint_scout_intel " [Guidance: INT/CHA Check (DC 11) + 1d4, Kestrel Respect (+6/+2), March Intel]"
   *else
-    *set hint_scout_approach " [DEX/WIS Check (DC 11), Kestrel Respect (+15/+5)]"
-    *set hint_scout_intel " [INT/CHA Check (DC 11), Kestrel Respect (+15/+5), March Intel]"
+    *set hint_scout_approach " [DEX/WIS Check (DC 11), Kestrel Respect (+6/+2)]"
+    *set hint_scout_intel " [INT/CHA Check (DC 11), Kestrel Respect (+6/+2), March Intel]"
 
 *choice
   *if ((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) and (not(guidance_active)))
@@ -1225,13 +1298,18 @@ You have a little time before the second watch is posted and the camp settles in
     *set check_dc 11
     *set check_skill "Scout Approach"
     *gosub_scene startup roll_d20_check
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *if (check_success)
+        *set kestrel_respect +6
+      *else
+        *set kestrel_respect +2
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     *if (check_success)
-      *set kestrel_respect +15
       You study the reed beds before placing your boots, spotting the taut strands of grey horsehair she anchored between submerged stumps. You step over the line without disturbing a single reed stem or splashing stagnant water.
       
       Kestrel lowers her nocked bow by an inch, a rare flicker of professional approval crossing her scarred face. "Light on your feet," she murmurs in a low rasp. "Most recruits stomp through the bog like drowning cattle. You have eyes in your skull. Keep them open when we hit the highlands."
     *else
-      *set kestrel_respect +5
       Your boot catches a submerged root, snapping a dry reed with a sharp crack. A split-second later, an iron-tipped arrow point is leveled dead at your sternum from the shadows. Kestrel lowers it slowly, shaking her head with dry contempt. "You're lucky I check targets before I loose. Watch where you step in my sector."
     *goto bivouac_scouts_wrapup
 
@@ -1243,20 +1321,28 @@ You have a little time before the second watch is posted and the camp settles in
     *set check_dc 11
     *set check_skill "Scout Intel"
     *gosub_scene startup roll_d20_check
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *if (check_success)
+        *set kestrel_respect +6
+      *else
+        *set kestrel_respect +2
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     *if (check_success)
-      *set kestrel_respect +15
       *set codex_broken_crags true
       *set codex_iron_bailiffs true
       You hand over the wooden slate with Varren's sentry shifts, asking with measured precision about the highland trails past the causeway. Kestrel takes the slate, tracing the wood with a dirt-caked thumb.
-      
+
       "The bog ends three miles north," she says in her flat, clipped tone. "Past that, it's scrub hills and steep granite ravines owned by Baron Karr's bailiffs. Narrow choke points, rocky soil that breaks horse ankles, and heavy fog in every hollow. If you're on point, watch the ridge-lines, not the path." She gives you a nod. "Solid questions. Now get back to the guardroom."
     *else
-      *set kestrel_respect +5
       Kestrel snatches the slate without looking up. "I scout the terrain; the line marches it. Don't crowd my skiff asking for tactical lectures, recruit. Report back to your sergeant."
     *goto bivouac_scouts_wrapup
 
-  # Lay down the salvaged arrow bundle, give a crisp military nod, and withdraw without intruding.@{show_stat_hints  [Kestrel Respect +10]|}
-    *set kestrel_respect +10
+  # Lay down the salvaged arrow bundle, give a crisp military nod, and withdraw without intruding.@{show_stat_hints  [Kestrel Respect +4]|}
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *set kestrel_respect +4
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     You place the bundle of straightened iron bodkins neatly on the skiff's transom, give her a disciplined nod of acknowledgment, and step back toward the gatehouse torches without wasting words.
     
     Kestrel glances at the bundle, then raises two fingers in a brief, silent salute of respect for a soldier who knows how to deliver supplies without making noise.
@@ -1283,11 +1369,11 @@ You have a little time before the second watch is posted and the camp settles in
 *temp hint_cadre_lore ""
 *if (show_stat_hints)
   *if (guidance_active)
-    *set hint_cadre_aid " [Guidance: INT Check (DC 11) + 1d4, Ysolde Respect (+15/+5), Alchemy Lore]"
-    *set hint_cadre_lore " [Guidance: CHA/INT Check (DC 11) + 1d4, Ysolde Respect (+15/+5), Arcane Lore]"
+    *set hint_cadre_aid " [Guidance: INT Check (DC 11) + 1d4, Ysolde Respect (+6/+2), Alchemy Lore]"
+    *set hint_cadre_lore " [Guidance: CHA/INT Check (DC 11) + 1d4, Ysolde Respect (+6/+2), Arcane Lore]"
   *else
-    *set hint_cadre_aid " [INT Check (DC 11), Ysolde Respect (+15/+5), Alchemy Lore]"
-    *set hint_cadre_lore " [CHA/INT Check (DC 11), Ysolde Respect (+15/+5), Arcane Lore]"
+    *set hint_cadre_aid " [INT Check (DC 11), Ysolde Respect (+6/+2), Alchemy Lore]"
+    *set hint_cadre_lore " [CHA/INT Check (DC 11), Ysolde Respect (+6/+2), Arcane Lore]"
 
 *choice
   *if ((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) and (not(guidance_active)))
@@ -1301,13 +1387,18 @@ You have a little time before the second watch is posted and the camp settles in
     *set check_dc 11
     *set check_skill "Inspect Reagents"
     *gosub_scene startup roll_d20_check
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *if (check_success)
+        *set ysolde_respect +6
+      *else
+        *set ysolde_respect +2
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     *if (check_success)
-      *set ysolde_respect +15
       You set the crate down carefully and offer a steady pair of hands, identifying the yellow-tinged sulfur crusts and decanting the brackish marsh-salts into clean crystal phials. You handle the stoppers with precise, methodical care.
-      
+
       Ysolde pauses, her stern gaze softening with genuine intellectual approval. "You treat the glass with respect," she notes in a calm, measured voice. "Most common sellswords cross their fingers and spit when they see powdered brimstone, thinking it invites devils. Understanding that magic is a disciplined craft of measurement and consequence makes you far more useful than a brute with a broadsword."
     *else
-      *set ysolde_respect +5
       You reach for a glass phial, but the slick vinegar on the wood causes the stopper to slip, spilling pungent grey salts across the ground cloth. Ysolde clicks her tongue sharply, motioning you back with a firm gesture. "Step back. Saltpeter is too scarce in the Marches to waste on clumsy thumbs. Just leave the crate."
     *goto bivouac_cadre_wrapup
 
@@ -1319,18 +1410,26 @@ You have a little time before the second watch is posted and the camp settles in
     *set check_dc 11
     *set check_skill "Inquire Arcane Strain"
     *gosub_scene startup roll_d20_check
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *if (check_success)
+        *set ysolde_respect +6
+      *else
+        *set ysolde_respect +2
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     *if (check_success)
-      *set ysolde_respect +15
       You ask with genuine, respectful inquiry rather than idle superstition, noting the grey exhaustion shadowing her eyes.
-      
+
       Ysolde sets down a vial of amber oil, studying you with solemn composure. "A line soldier expends muscle and blood," she says quietly. "When a practitioner weaves a working under arrow fire, they channel raw current through their own nerves and marrow. Hold it too long, and your fingers seize; push it too far, and your heart gives out in the mud. That is why the Carrion rations the Cadre's power—not out of mercy, but out of necessity." She nods slowly. "Never forget the cost of what you wield."
     *else
-      *set ysolde_respect +5
       Ysolde adjusts her satchel strap, keeping her tone distant and reserved. "The mysteries of the Cadre are not camp gossip for green recruits. Tend to your armor and leave the workings to those who bear their cost."
     *goto bivouac_cadre_wrapup
 
-  # Stack the beeswax candles securely by her wagon, take her signed supply chit, and withdraw respectfully.@{show_stat_hints  [Ysolde Respect +10]|}
-    *set ysolde_respect +10
+  # Stack the beeswax candles securely by her wagon, take her signed supply chit, and withdraw respectfully.@{show_stat_hints  [Ysolde Respect +4]|}
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *set ysolde_respect +4
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     You unpack the beeswax tapers and vinegar jars with disciplined efficiency, stacking them beneath the wagon's oilcloth awning away from the night damp. You present the quartermaster's requisition slate, wait for her neat wax mark, and offer a respectful nod.
     
     Ysolde signs the slate with a swift flourish of her quill. "Disciplined and reliable," she murmurs. "The company could use more soldiers who understand order."
@@ -1362,11 +1461,11 @@ You pick your way up the gatehouse's collapsed interior stair, boots crunching o
   *if (guidance_active)
     *set hint_floorboards " [Guidance: WIS Check (DC 11) + 1d4, Cache / +5 Silver]"
     *set hint_strongbox " [Guidance: INT Check (DC 12) + 1d4, Ledgers / +3 Silver]"
-    *set hint_perimeter " [Guidance: DEX Check (DC 11) + 1d4, Varren Respect +5]"
+    *set hint_perimeter " [Guidance: DEX Check (DC 11) + 1d4, Varren Respect +2]"
   *else
     *set hint_floorboards " [WIS Check (DC 11), Cache / +5 Silver]"
     *set hint_strongbox " [INT Check (DC 12), Ledgers / +3 Silver]"
-    *set hint_perimeter " [DEX Check (DC 11), Varren Respect +5]"
+    *set hint_perimeter " [DEX Check (DC 11), Varren Respect +2]"
 
 *choice
   *if ((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) and (not(guidance_active)))
@@ -1446,8 +1545,11 @@ You pick your way up the gatehouse's collapsed interior stair, boots crunching o
     *set check_skill "Perimeter Check"
     *gosub_scene startup roll_d20_check
     *if (check_success)
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set varren_respect +2
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
       You clear the floor methodically, corner by corner, and come up with nothing worse than a very startled rat—but you can report the upper floor secure with actual confidence, which is worth more to whoever draws watch duty tonight than any amount of loot.
-      *set varren_respect +5
     *else
       You clear most of the upper floor, though a stretch of collapsed slate roofing stays out of reach beneath a groaning rafter.
     *goto bivouac_search_done
@@ -1477,15 +1579,15 @@ Odessa keeps her needle moving through boiled leather as your shadow falls acros
 
 *if (show_stat_hints)
   *if (guidance_active)
-    *set hint_odessa_aid "  [Guidance: WIS Check (DC 11) + 1d4, Odessa Respect (+15/+5), Field Dressing]"
-    *set hint_odessa_talk "  [Guidance: INT/CHA Check (DC 11) + 1d4, Odessa Respect (+15/+5), Intel]"
-    *set hint_odessa_stitch "  [Guidance: CON Check (DC 11) + 1d4, Odessa Respect (+15/+5), Composure]"
-    *set hint_odessa_magic "  [Guidance: INT Check (DC 10) + 1d4, Odessa Respect (+20/+5)]"
+    *set hint_odessa_aid "  [Guidance: WIS Check (DC 11) + 1d4, Odessa Respect (+6/+2), Field Dressing]"
+    *set hint_odessa_talk "  [Guidance: INT/CHA Check (DC 11) + 1d4, Odessa Respect (+6/+2), Intel]"
+    *set hint_odessa_stitch "  [Guidance: CON Check (DC 11) + 1d4, Odessa Respect (+6/+2), Composure]"
+    *set hint_odessa_magic "  [Guidance: INT Check (DC 10) + 1d4, Odessa Respect (+8/+2)]"
   *else
-    *set hint_odessa_aid "  [WIS Check (DC 11), Odessa Respect (+15/+5), Field Dressing]"
-    *set hint_odessa_talk "  [INT/CHA Check (DC 11), Odessa Respect (+15/+5), Intel]"
-    *set hint_odessa_stitch "  [CON Check (DC 11), Odessa Respect (+15/+5), Composure]"
-    *set hint_odessa_magic "  [INT Check (DC 10), Odessa Respect (+20/+5)]"
+    *set hint_odessa_aid "  [WIS Check (DC 11), Odessa Respect (+6/+2), Field Dressing]"
+    *set hint_odessa_talk "  [INT/CHA Check (DC 11), Odessa Respect (+6/+2), Intel]"
+    *set hint_odessa_stitch "  [CON Check (DC 11), Odessa Respect (+6/+2), Composure]"
+    *set hint_odessa_magic "  [INT Check (DC 10), Odessa Respect (+8/+2)]"
 
 *choice
   *if (((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) and (not(guidance_active))))
@@ -1495,8 +1597,11 @@ Odessa keeps her needle moving through boiled leather as your shadow falls acros
       *goto bivouac_odessa_hub
 
   *if (((character_class = "bard") and ((bard_spell = "healing_word") or (bard_spell_2 = "healing_word"))))
-    # Weave a low, restorative verse to seal a punctured lung on Odessa's next patient.@{show_stat_hints  [Healing Word, Odessa Respect +20]|}
-      *set odessa_respect +20
+    # Weave a low, restorative verse to seal a punctured lung on Odessa's next patient.@{show_stat_hints  [Healing Word, Odessa Respect +8]|}
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set odessa_respect +8
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
       You step up to the bloody crate, placing two steady fingers over the gasping recruit's torn chest. In a low, resonant murmur beneath the din of the camp, you speak the soothing cadence of Healing Word.
       
       A soft, golden luminescence ripples beneath the torn wool. The shredded tissue knits before Odessa's eyes; the frothing blood clears, and the boy's breathing eases into a deep, steady rhythm.
@@ -1513,15 +1618,20 @@ Odessa keeps her needle moving through boiled leather as your shadow falls acros
       *set check_dc 10
       *set check_skill "Sterilize Tools"
       *gosub_scene startup roll_d20_check
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *if (check_success)
+          *set odessa_respect +8
+        *else
+          *set odessa_respect +2
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
       *if (check_success)
-        *set odessa_respect +20
         You point a single finger at the pan of dull iron knives and scalpels. With a soft crackle of warmth, every trace of dried grime, rust, and river silt vanishes in an instant, the steel emerging scalding hot and surgically spotless.
 
         Odessa pauses mid-stitch, staring at the gleaming instruments with wide, assessing eyes. A slow, crooked smirk touches her scarred mouth.
 
         "Now that," she says, tapping the spotless flat of a scalpel with a blunt fingernail, "is actual magic. The flashy bastards in the Cadre usually just blow up trees and expect me to stitch what's left. Keep those fingers handy, recruit. You and I are going to get along just fine."
       *else
-        *set odessa_respect +5
         You snap your fingers to channel the heat, but the damp marsh chill sputters the working into a harmless puff of sulfurous smoke that makes the wounded recruit cough. Odessa sighs dryly without looking up. "Don't burn my tent down with parlor tricks, wizard. Hand me the dry rags instead."
       *goto bivouac_odessa_done
 
@@ -1530,12 +1640,18 @@ Odessa keeps her needle moving through boiled leather as your shadow falls acros
     *set check_dc 11
     *set check_skill "Field Medicine"
     *gosub_scene startup roll_d20_check
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *if (check_success)
+        *set odessa_respect +6
+        *if (hp_current < hp_max)
+          *set hp_current + 3
+          *if (hp_current > hp_max)
+            *set hp_current hp_max
+      *else
+        *set odessa_respect +2
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     *if (check_success)
-      *set odessa_respect +15
-      *if (hp_current < hp_max)
-        *set hp_current + 3
-        *if (hp_current > hp_max)
-          *set hp_current hp_max
       You roll up your sleeves without being asked, taking a mortar and pestle to the dried willow bark and carefully laying out strips of boiled linen. You anticipate her next move with disciplined field sense, catching a slipping clamp and handing her the waxed thread before she has to ask for it.
 
       When the last recruit is bandaged, Odessa rinses her scarred hands in a bucket of vinegar-water and looks at you with a nod of genuine professional approval.
@@ -1543,7 +1659,6 @@ Odessa keeps her needle moving through boiled leather as your shadow falls acros
       "You've got steady hands and you don't faint at the sight of guts," she grunts, tossing you a small tin of soothing pine-balm salve. "Rub that into your bruises tonight. It'll keep the rot out."
       [b][🩹 Treated & Assisted: +15 Odessa Respect | Restored 3 HP][/b]
     *else
-      *set odessa_respect +5
       You try to assist with the bandages, but you fumble a tray of boiled needles into the mud. Odessa clicks her tongue in sharp irritation, nudging you aside with a sharp elbow. "Leave the kit alone before you give someone camp-fever, recruit. Just hold the lantern steady."
     *goto bivouac_odessa_done
 
@@ -1555,15 +1670,20 @@ Odessa keeps her needle moving through boiled leather as your shadow falls acros
     *set check_dc 11
     *set check_skill "Inquire Past"
     *gosub_scene startup roll_d20_check
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *if (check_success)
+        *set odessa_respect +6
+      *else
+        *set odessa_respect +2
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     *if (check_success)
-      *set odessa_respect +15
       You ask with genuine, measured curiosity rather than idle pry, watching the deft precision of her stitches. Odessa snorts softly, knotting a thread with a sharp tug of her teeth.
 
       "Ten years under Captain Vane," she says, wiping blood from her apron. "I ran an apothecary in the high city before a tax-bailiff burned it for unpaid levies. Vane offered forty silver marks a season and promised no lord would ever tell me who I could or couldn't treat. The Carrion's brutal, but Vane's contracts are honest. In this company, a soldier dies of steel or gangrene—never of politics."
 
       She glances at you sideways. "Keep your wits sharp, recruit. Steel kills fast, but the marsh fever kills slow. Wash your wounds in boiled water, not ditch-runoff, and you might actually live to see your contract pay out."
     *else
-      *set odessa_respect +5
       Odessa snorts dismissively, not looking up from her work. "If I wanted to tell camp-tales, recruit, I'd sit at the hearth with the drunkards. Hold still while I dab this vinegar on your cut."
     *goto bivouac_odessa_done
 
@@ -1572,15 +1692,20 @@ Odessa keeps her needle moving through boiled leather as your shadow falls acros
     *set check_dc 11
     *set check_skill "Endure Treatment"
     *gosub_scene startup roll_d20_check
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *if (check_success)
+        *set odessa_respect +6
+      *else
+        *set odessa_respect +2
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     *if (check_success)
-      *set odessa_respect +15
       You sit rigid on the crate while she splashes raw, burning grain spirits directly into your open scrapes. You don't flinch, grunt, or blink, meeting her gaze with flinty resolve, then pull a small flask of camp liquor from your belt and offer it to her.
 
       Odessa pauses, eyebrows ticking upward in slight amusement. She takes a long, appreciative swallow from the flask, wipes her mouth on the back of a scarred wrist, and hands it back.
 
       "Tougher than you look," she grunts, slapping a clean patch of boiled linen over your shoulder. "Most greenhorns scream like stuck pigs over a little vinegar. Fall back to the fires, recruit. You'll live."
     *else
-      *set odessa_respect +5
       The fire of the raw spirit hitting torn flesh catches you unprepared; you hiss through your teeth and jerk your shoulder back. Odessa smirks dryly. "Breathes like fire, doesn't it? Don't squirm, or the thread goes crooked."
     *goto bivouac_odessa_done
 
@@ -1617,10 +1742,10 @@ A scarred crossbowman spits into the embers, shaking his head. "Forty silver mar
 *if (show_stat_hints)
   *if (guidance_active)
     *set hint_fire_dice " [Guidance: DEX Check (DC 11) + 1d4, Wager / +3 Silver]"
-    *set hint_fire_lore " [Guidance: WIS Check (DC 11) + 1d4, Company Lore, Varren Respect +5]"
+    *set hint_fire_lore " [Guidance: WIS Check (DC 11) + 1d4, Company Lore, Varren Respect +2]"
   *else
     *set hint_fire_dice " [DEX Check (DC 11), Wager / +3 Silver]"
-    *set hint_fire_lore " [WIS Check (DC 11), Company Lore, Varren Respect +5]"
+    *set hint_fire_lore " [WIS Check (DC 11), Company Lore, Varren Respect +2]"
 
 *choice
   *if ((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) and (not(guidance_active)))
@@ -1653,7 +1778,10 @@ A scarred crossbowman spits into the embers, shaking his head. "Forty silver mar
     *set check_skill "Mercenary Lore"
     *gosub_scene startup roll_d20_check
     *if (check_success)
-      *set varren_respect +5
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set varren_respect +2
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
       *set codex_broken_crags true
       You sit quietly near the chimney flue, reading the subtle tells in their voices—who flinches when the Broken Crown War is named, who served under the Empire before the garrisons pulled out, and how Captain Vane earned the company's absolute obedience by executing a corrupt contractor thirty years ago. You absorb the unwritten rules of mercenary survival in the Marches.
       
