@@ -7,6 +7,7 @@
   camp_night
   dawn_trial
   battle_black_sinks
+  alderford
 
 *create implicit_control_flow true
 
@@ -69,10 +70,38 @@
 *create weapon_desc "Heavy falchion & iron buckler"
 *create weapon_damage "1d8 slashing"
 *create weapon_type "melee"
+*create weapon_hands "one_handed"
 *create has_shield true
+*create shield_equipped true
 *create armor "brigandine"
 *create armor_desc "Padded gambeson & leather brigandine"
 *create armor_type "brigandine"
+*comment --- EQUIPMENT LOADOUT (see apply_weapon_loadout / equip_weapon below) ---
+*comment starting_weapon* is a permanent snapshot of whatever weapon
+*comment character creation assigned, captured once in update_dnd_stats, so
+*comment switching to a purchased weapon and back is always possible without
+*comment needing a full duplicate of every archetype's weapon block.
+*create starting_weapon "falchion"
+*create starting_weapon_desc "Heavy falchion & iron buckler"
+*create starting_weapon_damage "1d8 slashing"
+*create starting_weapon_type "melee"
+*create starting_weapon_hands "one_handed"
+*create equipped_weapon_id "starting"
+*comment Guards the one-time starting-loadout snapshot in update_dnd_stats;
+*comment don't key that off equipped_weapon_id itself, since it *create-
+*comment defaults to "starting" too and would make the guard always false.
+*create loadout_initialized false
+
+*comment --- MAGIC ITEM ATTUNEMENT ---
+*comment A magic item only grants its bonus while attuned (see attune_item /
+*comment unattune_item / recalculate_attuned_bonuses below), and only a
+*comment limited number can be attuned at once -- otherwise every artifact
+*comment found over the campaign stacks forever with no cap. 5 slots is a
+*comment house-rule bump over 5E's RAW 3, since this is a solo protagonist
+*comment rather than a party splitting found items.
+*create max_attunement_slots 5
+*create attuned_count 0
+*create hearthstone_attuned false
 
 *comment --- CLASS PATH (Revealed during the Dawn Trial) ---
 *create character_class "none"
@@ -133,6 +162,12 @@
 *create intelligence 10
 *create wisdom 10
 *create charisma 10
+*comment Snapshot of constitution as character creation left it, before any
+*comment attuned magic item bonuses -- see recalculate_attuned_bonuses,
+*comment which always rederives constitution from this rather than
+*comment accumulating +N edits that could never safely be undone when a
+*comment player unattunes something.
+*create base_constitution 10
 
 *create str_mod 0
 *create dex_mod 0
@@ -160,6 +195,9 @@
 *create kestrel_respect 0
 *create ysolde_respect 0
 *create odessa_respect 0
+*create torvald_respect 0
+*create janna_regard 0
+*create talia_regard 0
 *create intake_completed false
 *create met_varren false
 *create met_lyra false
@@ -167,6 +205,10 @@
 *create met_kestrel false
 *create met_ysolde false
 *create met_odessa false
+*create met_rorik false
+*create met_torvald false
+*create met_janna false
+*create met_talia false
 *create squad "none"
 *create squad_title "None"
 
@@ -205,6 +247,19 @@
 *comment see itself as already "locked" and never apply on the first pass.
 *create damage_roll_locked false
 *create locked_damage_page_id 0
+*comment Same idea again, for spending/gaining currency (shop purchases,
+*comment rewards, gambling, bribes, etc.). *set silver/copper +N is exactly
+*comment as replay-unsafe as *set armor_class +N was -- wrap the deduction
+*comment or reward in *if (not(currency_txn_locked)) or (not
+*comment (locked_currency_txn_page_id = choice_page_id)) ... *set
+*comment currency_txn_locked true ... *set locked_currency_txn_page_id
+*comment choice_page_id, the same way roll_d20_check guards *rand. One
+*comment shared flag is enough for the whole game: only one currency
+*comment transaction can happen per resetPage()-bumped choice_page_id, since
+*comment picking another option (even one that loops back to the same shop
+*comment menu) always bumps choice_page_id again first.
+*create currency_txn_locked false
+*create locked_currency_txn_page_id 0
 
 *comment --- NIGHT 1 CAMP ---
 *create camp_activity "none"
@@ -224,6 +279,8 @@
 *create prep_odessa_salve false
 *create prep_lyra_pact false
 *create prep_varren_drill false
+*create knows_torvald_sluice_trick false
+*create knows_highland_striking_cadence false
 
 *comment --- BIVOUAC (POST-BATTLE CAMP) ---
 *create bivouac_actions_left 3
@@ -255,6 +312,36 @@
 *create codex_broken_crags false
 *create codex_iron_bailiffs false
 *create codex_marsh_squatters false
+*create codex_alderford false
+
+*comment --- CHAPTER 2: ALDERFORD ---
+*create visited_alder_weavers false
+*create visited_talia_loft false
+*create talia_invitation_open false
+*create visited_alder_cadre false
+*create visited_alder_smithy false
+*create visited_alder_tavern false
+*create visited_alder_guild false
+*create visited_alder_bathhouse false
+*create alder_actions_left 3
+*create turned_in_customs_vellum false
+*create studied_customs_vellum false
+*create alder_river_chain_cleared false
+*create elspeth_safe false
+*create elspeth_with_company false
+*create elspeth_role "none"
+*create elspeth_bond 85
+*create weaver_gratitude false
+*create gilded_scales_leverage false
+*create alder_wager_won false
+*create prep_waterproof_gear false
+*create has_hearthstone_talisman false
+*create has_timber_axe false
+*create has_stiletto false
+*create has_iron_crowbar false
+*create has_whetstone false
+*create has_talia_provisions false
+*create intimate_encounters 0
 
 *comment --- GAME SETTINGS ---
 Before the mud and the blood: many choices throughout this game carry mechanical weight—ability scores, dice, DCs, damage. Would you like these shown as numeric hints next to the choices that have them?
@@ -324,6 +411,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set weapon_desc "Iron-shod quarterstaff"
     *set weapon_damage "1d6 bludgeoning"
     *set weapon_type "melee"
+    *set weapon_hands "one_handed"
     *set silver 25
     *set met_varren true
     *set met_lyra true
@@ -377,6 +465,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set weapon_desc "Iron-shod quarterstaff"
     *set weapon_damage "1d6 bludgeoning"
     *set weapon_type "melee"
+    *set weapon_hands "one_handed"
     *set silver 25
     *set met_varren true
     *set met_lyra true
@@ -434,6 +523,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set weapon_desc "Trench dagger"
     *set weapon_damage "1d4 piercing"
     *set weapon_type "finesse"
+    *set weapon_hands "one_handed"
     *set silver 20
     *set met_varren true
     *set met_lyra true
@@ -490,6 +580,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set weapon_desc "Trench dagger"
     *set weapon_damage "1d4 piercing"
     *set weapon_type "melee"
+    *set weapon_hands "one_handed"
     *set silver 18
     *set met_varren true
     *set met_lyra true
@@ -534,6 +625,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set weapon_desc "Recurve shortbow & trench dirk"
     *set weapon_damage "1d6 piercing"
     *set weapon_type "ranged"
+    *set weapon_hands "two_handed"
     *set silver 18
     *set met_varren true
     *set met_lyra true
@@ -580,6 +672,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set weapon_desc "Recurve shortbow & trench dirk"
     *set weapon_damage "1d6 piercing"
     *set weapon_type "ranged"
+    *set weapon_hands "two_handed"
     *set silver 18
     *set met_varren true
     *set met_lyra true
@@ -625,6 +718,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set weapon_desc "Arming sword & iron buckler"
     *set weapon_damage "1d8 slashing"
     *set weapon_type "melee"
+    *set weapon_hands "one_handed"
     *set silver 10
     *set met_varren true
     *set met_lyra true
@@ -670,6 +764,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set weapon_desc "Bearded greataxe"
     *set weapon_damage "1d12 slashing"
     *set weapon_type "melee"
+    *set weapon_hands "two_handed"
     *set silver 10
     *set met_varren true
     *set met_lyra true
@@ -750,6 +845,21 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
     *set codex_marsh_squatters true
     *goto_scene battle_black_sinks bivouac_end
 
+  # 🌊 Jump to Chapter 2: Alderford Evening Hub (alderford.txt)
+    *set campaign_day 3
+    *set calendar_day 16
+    *set calendar_date "16th of Scorpio, 428 IR"
+    *set clock_hour 17
+    *set clock_minute 30
+    *set clock_time "17:30"
+    *set time_period "Dusk"
+    *set alder_actions_left 3
+    *set codex_black_sinks true
+    *set codex_gilded_scales true
+    *set codex_marsh_squatters true
+    *set codex_alderford true
+    *goto_scene alderford alder_hub
+
 *label prologue_start
 Rain beats steadily against the black canvas of the encampment, turning the red clay of the river valley into a miserable sea of mud.
 
@@ -816,7 +926,10 @@ You stare past his shoulder into the dying embers of a ditch brazier. The noise 
     *set strength 10
     *set constitution 10
     *set intelligence 10
-    *set silver +8
+    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+      *set silver +8
+      *set currency_txn_locked true
+      *set locked_currency_txn_page_id choice_page_id
     *set ruthless +5
     *goto flashback_slums
 
@@ -833,7 +946,10 @@ You stare past his shoulder into the dying embers of a ditch brazier. The noise 
     *set strength 10
     *set constitution 10
     *set wisdom 10
-    *set silver +15
+    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+      *set silver +15
+      *set currency_txn_locked true
+      *set locked_currency_txn_page_id choice_page_id
     *set ruthless -5
     *goto flashback_scandal
 
@@ -1202,6 +1318,7 @@ With your armor cinched tight, you turn your attention to the spilled weapons. W
     *set weapon_desc "Heavy falchion & iron buckler"
     *set weapon_damage "1d8 slashing"
     *set weapon_type "melee"
+    *set weapon_hands "one_handed"
     *set has_shield true
     You haul three feet of forward-weighted, single-edged chopping steel from the pile, strapping the scarred buckler onto your left forearm. You test the brutal balance with a downward cleave. It lacks noble grace, but in the close, screaming press of a shield-wall, a heavy falchion can hack through boiled leather, split wooden shields, and crush bone.
     *goto ready_camp
@@ -1211,6 +1328,7 @@ With your armor cinched tight, you turn your attention to the spilled weapons. W
     *set weapon_desc "Seven-foot ash-wood spear"
     *set weapon_damage "1d6/1d8 piercing"
     *set weapon_type "reach"
+    *set weapon_hands "one_handed"
     *set has_shield false
     You slide the ash spear from the tangle, sighting along the straight shaft. The grain is dense and supple, the steel head pinned securely and sharpened to a cruel leaf point. The true workhorse of mercenary line infantry—a weapon of reach and discipline that keeps enemies at bay before they can ever get within blade-stroke.
     *goto ready_camp
@@ -1220,6 +1338,7 @@ With your armor cinched tight, you turn your attention to the spilled weapons. W
     *set weapon_desc "Heavy two-handed broadaxe"
     *set weapon_damage "1d12 slashing"
     *set weapon_type "melee"
+    *set weapon_hands "two_handed"
     *set has_shield false
     You pull a brutal, heavy-bearded broadaxe from beneath a crate of shaft-heads, resting the three-foot ash haft against your shoulder. The steel head is pitted and dark with old oil, ground to a cruel, chopping wedge. Not a weapon for fencing or polished maneuvers—in the screaming press of a vanguard crash, a heavy axe splits oak shields, shears through boiled leather, and leaves ruined limbs in its wake.
     *goto ready_camp
@@ -1264,6 +1383,7 @@ With your gear cinched tight, you turn your attention to the spilled weapons. Wh
     *set weapon_desc "Matched pair of daggers"
     *set weapon_damage "1d4 piercing"
     *set weapon_type "finesse"
+    *set weapon_hands "one_handed"
     *set has_shield false
     You pluck two well-balanced daggers from the pile, testing their edge against your thumb before sheathing one at your hip and the other up your sleeve, out of sight. Not much for a shield-wall, but nobody in a brawl fights fair either.
     *goto ready_camp
@@ -1273,6 +1393,7 @@ With your gear cinched tight, you turn your attention to the spilled weapons. Wh
     *set weapon_desc "Seven-foot ash-wood spear"
     *set weapon_damage "1d6/1d8 piercing"
     *set weapon_type "reach"
+    *set weapon_hands "one_handed"
     *set has_shield false
     You slide the ash spear from the tangle, sighting along the straight shaft. The grain is dense and supple, the steel head pinned securely and sharpened to a cruel leaf point. Not your usual trade, but reach keeps desperate men from ever closing the distance.
     *goto ready_camp
@@ -1282,6 +1403,7 @@ With your gear cinched tight, you turn your attention to the spilled weapons. Wh
     *set weapon_desc "Compact hand crossbow"
     *set weapon_damage "1d6 piercing"
     *set weapon_type "ranged"
+    *set weapon_hands "one_handed"
     *set has_shield false
     You lift a small, single-handed crossbow from the crate, no bigger than a large pistol, along with a pouch of stubby bolts. Quiet, quick to reload, and easy enough to tuck beneath a cloak when you'd rather not be seen carrying steel at all.
     *goto ready_camp
@@ -1326,6 +1448,7 @@ With your gear settled, you turn your attention to the spilled weapons—none of
     *set weapon_desc "Slim balanced dagger"
     *set weapon_damage "1d4 piercing"
     *set weapon_type "finesse"
+    *set weapon_hands "one_handed"
     *set has_shield false
     You take up a slim, well-made dagger, closer to something you'd have found on your own writing desk than a company armory. It sits strangely familiar in your hand all the same.
     *goto ready_camp
@@ -1335,6 +1458,7 @@ With your gear settled, you turn your attention to the spilled weapons—none of
     *set weapon_desc "Traveler's quarterstaff"
     *set weapon_damage "1d6/1d8 bludgeoning"
     *set weapon_type "melee"
+    *set weapon_hands "one_handed"
     *set has_shield false
     You take up a plain, iron-shod quarterstaff, worn smooth by some traveler's hands long before it ended up in a mercenary company's crate. Unglamorous, but it has a certain honest weight to it.
     *goto ready_camp
@@ -1344,6 +1468,7 @@ With your gear settled, you turn your attention to the spilled weapons—none of
     *set weapon_desc "Compact light crossbow"
     *set weapon_damage "1d8 piercing"
     *set weapon_type "ranged"
+    *set weapon_hands "two_handed"
     *set has_shield false
     You lift a light crossbow from the crate, along with a small case of bolts. Simple mechanics, no real strength required to use it well—cold, distant, and precise, much like everything else you were actually trained for.
     *goto ready_camp
@@ -1422,21 +1547,7 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set dex_mod 3
   *set dex_mod_str "+3"
 
-*if (constitution <= 9)
-  *set con_mod -1
-  *set con_mod_str "-1"
-*if (constitution = 10) or (constitution = 11)
-  *set con_mod 0
-  *set con_mod_str "+0"
-*if (constitution = 12) or (constitution = 13)
-  *set con_mod 1
-  *set con_mod_str "+1"
-*if (constitution = 14) or (constitution = 15)
-  *set con_mod 2
-  *set con_mod_str "+2"
-*if (constitution >= 16)
-  *set con_mod 3
-  *set con_mod_str "+3"
+*gosub recalculate_con_mod
 
 *if (intelligence <= 9)
   *set int_mod -1
@@ -1488,9 +1599,128 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 
 *comment Hit Points (Level 1: Class Hit Die Max + CON mod)
 *set hp_max (hit_die_max + con_mod)
-*set hp_current hp_max
+*if (hp_current = 0)
+  *set hp_current hp_max
+*if (hp_current > hp_max)
+  *set hp_current hp_max
 
-*comment Armor Class: Base determined by armor_type + DEX mod (+ 2 with Buckler Shield)
+*comment Snapshot whichever weapon character creation just assigned as the
+*comment permanent "starting" loadout, so the equipment menu can always
+*comment switch back to it later regardless of what's currently equipped.
+*comment Gated on loadout_initialized rather than equipped_weapon_id itself
+*comment -- equipped_weapon_id *create-defaults to "starting", so checking
+*comment it for "" here would never be true and this block would silently
+*comment never run, leaving every new character's weapon overwritten by the
+*comment startup.txt *create placeholder gear (falchion) instead of what
+*comment their archetype actually assigned.
+*if (not(loadout_initialized))
+  *set starting_weapon weapon
+  *set starting_weapon_desc weapon_desc
+  *set starting_weapon_damage weapon_damage
+  *set starting_weapon_type weapon_type
+  *set starting_weapon_hands weapon_hands
+  *set equipped_weapon_id "starting"
+  *set shield_equipped has_shield
+  *comment Same idea as starting_weapon: constitution as creation left it,
+  *comment before any attuned magic item bonuses -- recalculate_attuned_bonuses
+  *comment always rebuilds constitution from this baseline.
+  *set base_constitution constitution
+  *set loadout_initialized true
+*gosub apply_weapon_loadout
+
+*gosub recalculate_armor_class
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment CONSTITUTION MODIFIER (extracted so both update_dnd_stats and
+*comment recalculate_attuned_bonuses can recompute it after constitution
+*comment changes, without duplicating the lookup table twice)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label recalculate_con_mod
+*if (constitution <= 9)
+  *set con_mod -1
+  *set con_mod_str "-1"
+*if (constitution = 10) or (constitution = 11)
+  *set con_mod 0
+  *set con_mod_str "+0"
+*if (constitution = 12) or (constitution = 13)
+  *set con_mod 1
+  *set con_mod_str "+1"
+*if (constitution = 14) or (constitution = 15)
+  *set con_mod 2
+  *set con_mod_str "+2"
+*if (constitution >= 16)
+  *set con_mod 3
+  *set con_mod_str "+3"
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment MAGIC ITEM ATTUNEMENT
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment Same "fully derived, safe to call any number of times" shape as
+*comment recalculate_armor_class: constitution (and any future ability score
+*comment a later magic item touches) is always rebuilt from its base_* value
+*comment plus whichever items are CURRENTLY attuned, never nudged with a
+*comment permanent *set constitution +N on pickup. That's what makes
+*comment unattuning possible at all -- a +N you can't reliably undo can't
+*comment ever be safely removed again, and it's also refresh-safe for the
+*comment same reason every other *set +N in this game had to become a
+*comment recompute (see roll_d20_check / recalculate_armor_class above).
+*label recalculate_attuned_bonuses
+*set constitution base_constitution
+*if (hearthstone_attuned)
+  *set constitution + 1
+*comment Future magic items that touch a different ability score get their
+*comment own "*set <stat> base_<stat>" + "*if (item_attuned) *set <stat> + N"
+*comment pair here, mirroring the lines above.
+*gosub recalculate_con_mod
+*temp old_hp_max hp_max
+*set hp_max (hit_die_max + con_mod)
+*set hp_current (hp_current + (hp_max - old_hp_max))
+*if (hp_current > hp_max)
+  *set hp_current hp_max
+*if (hp_current < 1)
+  *set hp_current 1
+*gosub recalculate_armor_class
+*return
+
+*comment *gosub_scene startup attune_item <id>. Does nothing (silently) if
+*comment already attuned to it or if all slots are full -- the equipment
+*comment menu is expected to already hide the option in either case; this is
+*comment a backstop, not the primary guard.
+*label attune_item
+*params item_id
+*if (attuned_count < max_attunement_slots)
+  *if ((item_id = "hearthstone_talisman") and (not(hearthstone_attuned)))
+    *set hearthstone_attuned true
+    *set attuned_count + 1
+    *gosub recalculate_attuned_bonuses
+*return
+
+*comment *gosub_scene startup unattune_item <id>.
+*label unattune_item
+*params item_id
+*if ((item_id = "hearthstone_talisman") and (hearthstone_attuned))
+  *set hearthstone_attuned false
+  *set attuned_count - 1
+  *gosub recalculate_attuned_bonuses
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment ARMOR CLASS RECOMPUTE
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment Fully rederives armor_class from scratch every time, instead of
+*comment nudging it with one-off *set armor_class +N edits at each place
+*comment gear changes. That matters beyond tidiness: a +N edit is only
+*comment safe to run once, but any *set on a page can be re-run by a
+*comment refresh or a Show Stats round trip (see roll_d20_check above for
+*comment the full mechanism) -- a shop purchase that did *set armor_class +
+*comment 2 directly would add +2 again on every refresh, compounding
+*comment forever. A full recompute is naturally idempotent: call it as
+*comment often as you like (new armor, a shield purchase, a smithing
+*comment upgrade, a refresh replaying the page it happened on), it always
+*comment lands on the same, correct number.
+*label recalculate_armor_class
 *temp base_ac 11
 *temp effective_dex_mod dex_mod
 *if (armor_type = "cloth")
@@ -1508,12 +1738,68 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
     *set effective_dex_mod 2
 
 *set armor_class (base_ac + effective_dex_mod)
-*if (has_shield)
+*comment Shield bonus follows whether it's actually strapped on right now
+*comment (shield_equipped), not merely owned (has_shield) -- see
+*comment equip_weapon/toggle_shield_equipped below, which keep the two in
+*comment sync with what's physically possible to hold at once.
+*if (shield_equipped)
   *set armor_class + 2
 
 *comment Fighting Style: Defense (+1 AC while wearing armor) — dormant until fighter_fighting_style is actually chosen
 *if (fighter_fighting_style = "defense")
   *set armor_class + 1
+
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment EQUIPMENT LOADOUT (Weapon Switching & Shield Toggle)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment apply_weapon_loadout is the same "fully derived, safe to call any
+*comment number of times" pattern as recalculate_armor_class: it sets
+*comment weapon/weapon_desc/weapon_damage/weapon_type/weapon_hands purely
+*comment from equipped_weapon_id, never accumulates. Add a new owned weapon
+*comment here (and to its purchase site's has_ flag) to make it equippable.
+*label apply_weapon_loadout
+*if (equipped_weapon_id = "starting")
+  *set weapon starting_weapon
+  *set weapon_desc starting_weapon_desc
+  *set weapon_damage starting_weapon_damage
+  *set weapon_type starting_weapon_type
+  *set weapon_hands starting_weapon_hands
+*if (equipped_weapon_id = "timber_axe")
+  *set weapon "timber axe"
+  *set weapon_desc "Highland Hewing Axe"
+  *set weapon_damage "1d8 slashing"
+  *set weapon_type "melee"
+  *set weapon_hands "one_handed"
+*if (equipped_weapon_id = "stiletto")
+  *set weapon "bodkin stiletto"
+  *set weapon_desc "Alderford Bodkin Stiletto"
+  *set weapon_damage "1d4 piercing"
+  *set weapon_type "finesse"
+  *set weapon_hands "one_handed"
+*comment A two-handed weapon leaves no free hand for a shield.
+*if (weapon_hands = "two_handed")
+  *set shield_equipped false
+*return
+
+*comment *gosub_scene startup equip_weapon <id>, where <id> is one of the
+*comment equipped_weapon_id values handled by apply_weapon_loadout above.
+*label equip_weapon
+*params new_weapon_id
+*set equipped_weapon_id new_weapon_id
+*gosub apply_weapon_loadout
+*gosub recalculate_armor_class
+*return
+
+*comment *gosub_scene startup toggle_shield_equipped -- silently does
+*comment nothing if a two-handed weapon is currently equipped, since the
+*comment equipment menu itself hides the option in that case; the guard
+*comment here is a backstop in case that ever changes.
+*label toggle_shield_equipped
+*if (not(weapon_hands = "two_handed"))
+  *set shield_equipped not(shield_equipped)
+*gosub recalculate_armor_class
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -881,6 +881,21 @@ function restoreGame(state, forcedScene, userRestored, forcedStats, forcedTemps)
           state.temps[temp] = forcedTemps[temp];
         }
       }
+      // Merge in any edits made on a "temp"-saveSlot secondary scene (the
+      // Stats/Upgrade screen) since the main game's last real save -- a
+      // settings toggle or an equipment change there records into
+      // tempStatWrites (see setVar) rather than the "" slot directly, and
+      // this is the ONE path every restore goes through (refresh, "Return to
+      // Game", "Return to Menu", achievements return...). Without this, any
+      // such edit is silently discarded the moment the player leaves that
+      // screen, because this function overwrites _global.stats with the
+      // older save from before they ever opened it.
+      for (var tempStatKey in tempStatWrites) {
+        if (tempStatWrites.hasOwnProperty(tempStatKey)) {
+          state.stats[tempStatKey] = tempStatWrites[tempStatKey];
+        }
+      }
+      tempStatWrites = {};
       _global.stats = state.stats;
       // Someday, inflate the navigator using the state object
       scene = new Scene(state.stats.sceneName, state.stats, _global.nav, {debugMode:state.debug || _global.debug, secondaryMode:secondaryMode, saveSlot:saveSlot});
