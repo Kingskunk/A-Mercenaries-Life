@@ -192,14 +192,12 @@ Consult company ledgers, personnel roster, field intel, or toggle interface pref
 *choice
   # [Equipment: Manage Loadout]
     *goto codex_equipment
-  # [Company Roster: Personnel & Relationships]
+  # [Abilities & Grimoire: Spells, Traits & Mechanics]
+    *goto codex_abilities
+  # [Personnel & Relationships]
     *goto codex_personnel
-  # [Codex: The Iron Carrion & Chain of Command]
-    *goto codex_company
-  # [Codex: Factions & Regional Powers]
-    *goto codex_factions
-  # [Codex: Gazetteer & Map of the Grey Marches]
-    *goto codex_gazetteer
+  # [Lore & Regional Codex: World, Factions & History]
+    *goto codex_lore_hub
   # @{show_stat_hints [Settings: Disable Numeric Stat Hints]|[Settings: Enable Numeric Stat Hints]}
     *set show_stat_hints not(show_stat_hints)
     *goto_scene choicescript_stats
@@ -290,17 +288,312 @@ Swapping a weapon or shield takes a moment out of camp or downtime, not mid-figh
   # [Return to Dossier]
     *goto_scene choicescript_stats
 
+*label codex_abilities
+*temp ab_casting_mod 0
+*temp ab_casting_stat "None"
+*temp ab_spell_dc 0
+*temp ab_spell_atk 0
+*if (character_class = "wizard")
+  *set ab_casting_mod int_mod
+  *set ab_casting_stat "Intelligence"
+*if ((character_class = "warlock") or (character_class = "bard"))
+  *set ab_casting_mod cha_mod
+  *set ab_casting_stat "Charisma"
+*set ab_spell_dc ((8 + prof_bonus) + ab_casting_mod)
+*set ab_spell_atk (prof_bonus + ab_casting_mod)
+
+*temp ab_style_label ""
+*temp ab_style_desc ""
+*if (fighter_fighting_style = "defense")
+  *set ab_style_label "Defense"
+  *set ab_style_desc "+1 Armor Class while wearing armor."
+*if (fighter_fighting_style = "dueling")
+  *set ab_style_label "Dueling"
+  *set ab_style_desc "+2 damage on hits with a one-handed melee weapon, so long as you're wielding nothing else in your other hand."
+*if (fighter_fighting_style = "great_weapon")
+  *set ab_style_label "Great Weapon Fighting"
+  *set ab_style_desc "Reroll any 1 or 2 on a damage die from a two-handed weapon, once per die."
+*if (fighter_fighting_style = "protection")
+  *set ab_style_label "Protection"
+  *set ab_style_desc "Impose Disadvantage on an attack against a nearby ally when you're wielding a shield."
+
+[b]ABILITIES & GRIMOIRE[/b]
+[i]Spells, Traits & Mechanical Reference[/i]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[b]◈ COMBAT & CASTING METRICS[/b]
+*line_break
+• [b]Level & Hit Die:[/b] Level ${character_level} ${class_name} (${hit_die}, full recovery on a Long Rest)
+*line_break
+• [b]Proficiency Bonus:[/b] +${prof_bonus}
+*if (not(ab_casting_stat = "None"))
+  *line_break
+  • [b]Spellcasting Ability:[/b] ${ab_casting_stat}
+  *line_break
+  • [b]Spell Save DC: ${ab_spell_dc}[/b]
+  *line_break
+  • [b]Spell Attack Modifier: +${ab_spell_atk}[/b]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[b]◈ INNATE TRAITS & RACIAL MAGIC[/b]
+*line_break
+• [b]${race_title} — ${race_trait_title}:[/b] ${race_trait_desc}
+*if (race_darkvision)
+  *line_break
+  • [b]Darkvision:[/b] You can see in dim light within 60 feet as if it were bright light, and in darkness as if it were dim light (no color, just shades of grey).
+*if (not(race_cantrip = "none"))
+  *line_break
+  • [b]Innate Magic:[/b] ${race_cantrip_desc}
+*if (not(race_cantrip_2 = "none"))
+  *line_break
+  • [b]Innate Magic:[/b] ${race_cantrip_2_desc}
+
+*if (not(character_class = "none"))
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [b]◈ CLASS FEATURES & ACTION ECONOMY — ${class_name}[/b]
+  *if (character_class = "fighter")
+    *line_break
+    • [b]Second Wind (Bonus Action, ${fighter_second_wind_uses}/Short Rest remaining): Regain 1d10 + your character level in hit points.[/b]
+    *if (not(ab_style_label = ""))
+      *line_break
+      • [b]Fighting Style — ${ab_style_label}:[/b] ${ab_style_desc}
+  *if (character_class = "barbarian")
+    *line_break
+    • [b]Rage (Bonus Action, ${barbarian_rage_uses}/Long Rest remaining): +${barbarian_rage_damage_bonus} melee damage, resistance to bludgeoning, piercing, and slashing damage, and Advantage on Strength checks and saves while raging.[/b]
+    *line_break
+    • [b]Unarmored Defense: While not wearing armor, your base Armor Class equals 10 + your Dexterity modifier + your Constitution modifier.[/b]
+  *if (character_class = "rogue")
+    *line_break
+    • [b]Sneak Attack (Passive, once per turn): ${rogue_sneak_attack_die} extra damage when you have Advantage on the attack, or are wielding a finesse or ranged weapon with an ally adjacent to your target.[/b]
+    *if (not(rogue_expertise_1 = "none"))
+      *line_break
+      • [b]Expertise:[/b] Double proficiency bonus on ${rogue_expertise_1} and ${rogue_expertise_2} checks.
+  *if (character_class = "ranger")
+    *if (not(ranger_favored_enemy = "none"))
+      *line_break
+      • [b]Favored Enemy:[/b] You have significant experience tracking, hunting, and surviving encounters with ${ranger_favored_enemy}.
+    *if (not(ranger_favored_terrain = "none"))
+      *line_break
+      • [b]Natural Explorer:[/b] You are particularly familiar with ${ranger_favored_terrain} terrain, moving through it without being slowed by nonmagical difficult terrain and staying alert to danger even while doing other tasks.
+  *if (character_class = "bard")
+    *line_break
+    • [b]Bardic Inspiration (Bonus Action, ${cha_mod}/Long Rest): Grant an ally a 1d6 die they can add to one ability check, attack roll, or saving throw within the next 10 minutes.[/b]
+  *if (character_class = "wizard")
+    *line_break
+    • [b]Arcane Recovery (Short Rest, 1/Day): Recover one expended spell slot.[/b]
+    *line_break
+    • [b]Ritual Casting:[/b] You can cast any known wizard spell tagged as a ritual without expending a spell slot, taking 10 extra minutes to cast.
+    *line_break
+    • [b]Spellbook:[/b] Your spells are inscribed in a bound spellbook — losing it without a backup would cost you every spell you haven't already memorized for the day.
+  *if (character_class = "warlock")
+    *line_break
+    • [b]Pact Magic:[/b] Your spell slots recharge on a Short Rest instead of a Long Rest.
+    *if (not(warlock_patron = "none"))
+      *line_break
+      • [b]Otherworldly Patron — ${warlock_patron_title}:[/b] ${warlock_patron_desc}
+
+*temp ab_has_cantrips false
+*if (not(race_cantrip = "none"))
+  *set ab_has_cantrips true
+*if (not(race_cantrip_2 = "none"))
+  *set ab_has_cantrips true
+*if (not(wizard_cantrip = "none"))
+  *set ab_has_cantrips true
+*if (not(warlock_cantrip = "none"))
+  *set ab_has_cantrips true
+*if (not(bard_cantrip = "none"))
+  *set ab_has_cantrips true
+*if (ab_has_cantrips)
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [b]◈ CANTRIPS & INNATE MAGIC (AT-WILL)[/b]
+  *if (not(race_cantrip = "none"))
+    *gosub print_ability_card race_cantrip
+  *if (not(race_cantrip_2 = "none"))
+    *gosub print_ability_card race_cantrip_2
+  *if (not(wizard_cantrip = "none"))
+    *gosub print_ability_card wizard_cantrip
+  *if (not(wizard_cantrip_2 = "none"))
+    *gosub print_ability_card wizard_cantrip_2
+  *if (not(wizard_cantrip_3 = "none"))
+    *gosub print_ability_card wizard_cantrip_3
+  *if (not(warlock_cantrip = "none"))
+    *gosub print_ability_card warlock_cantrip
+  *if (not(warlock_cantrip_2 = "none"))
+    *gosub print_ability_card warlock_cantrip_2
+  *if (not(bard_cantrip = "none"))
+    *gosub print_ability_card bard_cantrip
+  *if (not(bard_cantrip_2 = "none"))
+    *gosub print_ability_card bard_cantrip_2
+
+*temp ab_has_spells false
+*if (not(wizard_spell = "none"))
+  *set ab_has_spells true
+*if (not(warlock_spell = "none"))
+  *set ab_has_spells true
+*if (not(bard_spell = "none"))
+  *set ab_has_spells true
+*if (not(bard_spell_2 = "none"))
+  *set ab_has_spells true
+*if (ab_has_spells)
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [b]◈ 1ST-LEVEL SPELLS & SLOT TRACKER[/b]
+  *if (not(wizard_spell = "none"))
+    *line_break
+    • [b]Wizard Spell Slots Remaining: ${wizard_spell_slots} (Long Rest)[/b]
+  *if (not(warlock_spell = "none"))
+    *line_break
+    • [b]Warlock Spell Slots Remaining: ${warlock_spell_slots} (Short Rest)[/b]
+  *if ((not(bard_spell = "none")) or (not(bard_spell_2 = "none")))
+    *line_break
+    • [b]Bard Spell Slots Remaining: ${bard_spell_slots} (Long Rest)[/b]
+  *if (not(wizard_spell = "none"))
+    *gosub print_ability_card wizard_spell
+  *if (not(warlock_spell = "none"))
+    *gosub print_ability_card warlock_spell
+  *if (not(bard_spell = "none"))
+    *gosub print_ability_card bard_spell
+  *if (not(bard_spell_2 = "none"))
+    *gosub print_ability_card bard_spell_2
+
+*choice
+  # [Return to Dossier]
+    *goto_scene choicescript_stats
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment print_ability_card -- shared card renderer for the Abilities &
+*comment Grimoire screen above. One *if branch per known cantrip/spell id
+*comment in this game's actual character-creation data (dawn_trial.txt /
+*comment startup.txt); action-economy/range follow 5E RAW as flavor, but
+*comment every damage/DC/healing number here matches this project's own
+*comment combat.txt implementation exactly (never invented) -- see
+*comment attack_cantrip_dice_sides and the resolve_cast_*/resolve_dissonant_
+*comment whispers subroutines in startup.txt for the source of truth.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label print_ability_card
+*params ability_id
+*if (ability_id = "fire_bolt")
+  *line_break
+  • [b]Fire Bolt — Action, 120 ft, Ranged Spell Attack: 1d10 Fire damage.[/b]
+  A small, precise mote of fire flung on command, more a thrown dagger than a fireball, but undeniably real.
+*if (ability_id = "ray_of_frost")
+  *line_break
+  • [b]Ray of Frost — Action, 60 ft, Ranged Spell Attack: 1d8 Cold damage, target's speed reduced by 10 ft until your next turn.[/b]
+  A thin, pale ray of unnatural cold that saps warmth and slows whatever it strikes.
+*if (ability_id = "shocking_grasp")
+  *line_break
+  • [b]Shocking Grasp — Action, Melee Spell Attack: 1d8 Lightning damage.[/b]
+  A jolt of violent, crackling lightning channeled through your palm, bypassing metal armor.
+*if (ability_id = "eldritch_blast")
+  *line_break
+  • [b]Eldritch Blast — Action, 120 ft, Ranged Spell Attack: 1d10 Force damage.[/b]
+  A crackling bolt of raw force that answers when you reach for it, more instinct than spell.
+*if (ability_id = "chill_touch")
+  *line_break
+  • [b]Chill Touch — Action, 120 ft, Ranged Spell Attack: 1d8 Necrotic damage; the target can't regain hit points until the start of your next turn.[/b]
+  A skeletal, ghostly hand of grasping cold that saps warmth and strength, and lingers just long enough to stop a wound from closing.
+*if (ability_id = "vicious_mockery")
+  *line_break
+  • [b]Vicious Mockery — Action, Spell Attack: 1d4 Psychic damage.[/b]
+  A cruel, perfectly-aimed insult that rattles its target enough to genuinely throw off their next strike.
+*if (ability_id = "guidance")
+  *line_break
+  • [b]Guidance — Action, Touch, Concentration (up to 1 minute): Add 1d4 to one ability check of your choice before it's rolled.[/b]
+  A soft, murmured focusing working that steadies your hand or sharpens your mind for one task.
+*if (ability_id = "mending")
+  *line_break
+  • [b]Mending — 1 Minute, Touch:[/b] Repairs a single tear or break in an object. No combat application.
+  A slow, tactile working that seals clean breaks, torn leather, or snapped cord with a touch.
+*if (ability_id = "mage_hand")
+  *line_break
+  • [b]Mage Hand — Action, 30 ft:[/b] A spectral hand that can manipulate, carry up to 10 pounds, or interact with an object at range.
+  A spectral, disembodied hand that can lift, carry, or fumble with small objects at a distance.
+*if (ability_id = "message")
+  *line_break
+  • [b]Message — Action, 120 ft:[/b] A whispered word only the target can hear, who can whisper a reply.
+  A whispered word that travels straight into one chosen listener's ear from well across a room, or a battlefield line.
+*if (ability_id = "minor_illusion")
+  *line_break
+  • [b]Minor Illusion — Action, 30 ft:[/b] Creates a harmless illusory sound or image within range.
+  A small false sound or image conjured from nothing, useful for a distraction or a moment's cover.
+*if (ability_id = "light")
+  *line_break
+  • [b]Light — Action, Touch, 1 Hour:[/b] An object sheds bright light in a 20-foot radius.
+  A small, steady radiance kindled at will, bright as a torch.
+*if (ability_id = "prestidigitation")
+  *line_break
+  • [b]Prestidigitation — Action, 10 ft:[/b] A minor magical trick — harmless sparks, colored smoke, a cleaned or soiled surface. No mechanical effect.
+  Small, showy magic tricks: harmless sparks, colored smoke, minor sensory flourishes.
+*if (ability_id = "thaumaturgy")
+  *line_break
+  • [b]Thaumaturgy — Action, 30 ft:[/b] A minor supernatural effect — a booming voice, flickering flame, a slamming door. No mechanical effect.
+  Small, innate parlor tricks of infernal blood: voice booms, eyes flash, doors slam.
+*if (ability_id = "disguise_self")
+  *line_break
+  • [b]Disguise Self — Action, Self, 1 Hour:[/b] Changes your appearance — height, features, voice, and clothing — until it ends or you dismiss it.
+  A verse under your breath blurs your face and voice into someone else's for as long as you need to hold the lie.
+*if (ability_id = "identify")
+  *line_break
+  • [b]Identify — 1 Minute, Touch:[/b] Learn the properties and function of one object or spell.
+  Hold an object or observe a spell for a moment, and its true properties, function, and nature become plain to you.
+*if (ability_id = "feather_fall")
+  *line_break
+  • [b]Feather Fall — Reaction, 60 ft, 1 Minute:[/b] Up to five falling creatures descend at 60 feet per round and take no fall damage.
+  A word and a gesture slow a fall to a drift, turning what should be broken bones into a soft landing.
+*if (ability_id = "comprehend_languages")
+  *line_break
+  • [b]Comprehend Languages — Action, Self, 1 Hour:[/b] Understand any spoken or written language.
+  For a short while, every language spoken or written around you becomes as plain as your own tongue.
+*if (ability_id = "mage_armor")
+  *line_break
+  • [b]Mage Armor — Action, Touch, 8 Hours: While not wearing armor, your base Armor Class becomes 13 + Dexterity modifier.[/b]
+  A shell of unseen magical force laid over your skin each morning, standing in for the armor a wizard's training never included.
+*if (ability_id = "shield")
+  *line_break
+  • [b]Shield — Reaction (when hit or targeted): +5 Armor Class until the start of your next turn, arming automatically against your next incoming hit.[/b]
+  An instinctive, reflexive barrier of invisible arcane force that flares to life in a split second.
+*if (ability_id = "magic_missile")
+  *line_break
+  • [b]Magic Missile — Action, 120 ft: Three darts of force automatically hit for 1d4+1 damage each (3d4+3 total) — no attack roll.[/b]
+  Three luminous darts of unerring magical force that strike with absolute certainty, bypassing armor, cover, and evasive dodges.
+*if (ability_id = "false_life")
+  *line_break
+  • [b]False Life — Action, Self, 1 Hour: Gain 1d4+4 Temporary Hit Points.[/b]
+  A grim, necromantic rite that bolsters your body with a necromantic facsimile of life.
+*if (ability_id = "hex")
+  *line_break
+  • [b]Hex — Bonus Action, 90 ft, Concentration (up to 1 hour): Your attacks against the cursed target deal +1d6 Necrotic damage.[/b]
+  A murmured curse bound to one target, making your wounds cut deeper for as long as you hold your concentration on it.
+*if (ability_id = "unseen_servant")
+  *line_break
+  • [b]Unseen Servant — Action, 60 ft, 1 Hour:[/b] An invisible, mindless force that can fetch, carry, clean, or open things at your command.
+  An invisible, mindless force you can summon to fetch, carry, clean, or open things at your spoken command.
+*if (ability_id = "armor_of_agathys")
+  *line_break
+  • [b]Armor of Agathys — Action, Self, 1 Hour: Gain 5 Temporary Hit Points; while any remain, a creature that hits you with a melee attack takes 5 Cold damage.[/b]
+  A spectral rime of frost that sheathes your skin, punishing anyone who lands a blow against you with biting, unnatural cold in return.
+*if (ability_id = "charm_person")
+  *line_break
+  • [b]Charm Person — Action, 30 ft, Wisdom Save, 1 Hour:[/b] On a failed save, the target regards you as a friendly acquaintance for the duration.
+  A warm, persuasive undertone woven into your words, making a listener genuinely inclined to see things your way.
+*if (ability_id = "healing_word")
+  *line_break
+  • [b]Healing Word — Bonus Action, 60 ft: Restore 1d4 + Charisma modifier hit points (minimum 1) to one creature you can see.[/b]
+  A single, sharp word of command, spoken from a distance, that knits a wound shut and puts fight back into a comrade who needs it.
+*if (ability_id = "dissonant_whispers")
+  *line_break
+  • [b]Dissonant Whispers — Action, 60 ft, Wisdom Save (DC 12): 3d6 Psychic damage on a failed save, half on a success.[/b]
+  A whispered dissonance planted directly in one mind, discordant enough that the target flinches and recoils before it understands why.
+*return
+
 *label codex_personnel
-[b]COMPANY ROSTER & RELATIONSHIPS[/b]
+[b]PERSONNEL & RELATIONSHIPS[/b]
 [i]Standing, Comradeship, & Regard with Known Figures[/i]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *if (met_varren)
   [b]◈ SERGEANT VARREN[/b]
   *line_break
-  • [b]Rank & Role:[/b] Vanguard Drillmaster & Frontline Veteran
-  *line_break
-  • [b]Status:[/b] Active (Vanguard)
+  • [b]Role:[/b] Iron Carrion — Vanguard Drillmaster & Frontline Veteran
   *line_break
   • [b]Regard & Standing:[/b]
   *stat_chart
@@ -312,9 +605,7 @@ Swapping a weapon or shield takes a moment out of camp or downtime, not mid-figh
   *line_break
   [b]◈ KESTREL[/b]
   *line_break
-  • [b]Rank & Role:[/b] Scout Company Commander
-  *line_break
-  • [b]Status:[/b] Active (Scout Company)
+  • [b]Role:[/b] Iron Carrion — Scout Company Commander
   *line_break
   • [b]Regard & Standing:[/b]
   *stat_chart
@@ -326,9 +617,7 @@ Swapping a weapon or shield takes a moment out of camp or downtime, not mid-figh
   *line_break
   [b]◈ YSOLDE MARROW[/b]
   *line_break
-  • [b]Rank & Role:[/b] Cadre Handler
-  *line_break
-  • [b]Status:[/b] Active (The Cadre)
+  • [b]Role:[/b] Iron Carrion — Cadre Handler
   *line_break
   • [b]Regard & Standing:[/b]
   *stat_chart
@@ -340,9 +629,7 @@ Swapping a weapon or shield takes a moment out of camp or downtime, not mid-figh
   *line_break
   [b]◈ LYRA[/b]
   *line_break
-  • [b]Rank & Role:[/b] Vanguard Scout & Recurve Archer
-  *line_break
-  • [b]Status:[/b] Active (Rookie Cohort)
+  • [b]Role:[/b] Iron Carrion — Vanguard Scout & Recurve Archer, Rookie Cohort
   *line_break
   • [b]Comradeship & Bond:[/b]
   *stat_chart
@@ -354,9 +641,7 @@ Swapping a weapon or shield takes a moment out of camp or downtime, not mid-figh
   *line_break
   [b]◈ CAPTAIN JOSHUA VANE[/b]
   *line_break
-  • [b]Rank & Role:[/b] Company Commander (The Iron Carrion)
-  *line_break
-  • [b]Status:[/b] High Command
+  • [b]Role:[/b] Iron Carrion — Company Commander
   *line_break
   • [b]Regard & Standing:[/b]
   *stat_chart
@@ -368,9 +653,7 @@ Swapping a weapon or shield takes a moment out of camp or downtime, not mid-figh
   *line_break
   [b]◈ SURGEON ODESSA[/b]
   *line_break
-  • [b]Rank & Role:[/b] Company Surgeon & Field Medic
-  *line_break
-  • [b]Status:[/b] Logistics & Baggage Train
+  • [b]Role:[/b] Iron Carrion — Company Surgeon & Field Medic, Logistics & Baggage Train
   *line_break
   • [b]Regard & Standing:[/b]
   *stat_chart
@@ -382,9 +665,7 @@ Swapping a weapon or shield takes a moment out of camp or downtime, not mid-figh
   *line_break
   [b]◈ VETERAN RORIK[/b]
   *line_break
-  • [b]Rank & Role:[/b] Munitions Armorer & Sapper Veteran
-  *line_break
-  • [b]Status:[/b] Active (Munitions Train)
+  • [b]Role:[/b] Iron Carrion — Munitions Armorer & Sapper Veteran, Munitions Train
   *line_break
   • [b]Standing & Comradeship:[/b]
   *stat_chart
@@ -396,9 +677,7 @@ Swapping a weapon or shield takes a moment out of camp or downtime, not mid-figh
   *line_break
   [b]◈ MASTER TORVALD[/b]
   *line_break
-  • [b]Rank & Role:[/b] Alderford Forge-Master & Millwright
-  *line_break
-  • [b]Status:[/b] Settlement Artisan (Alderford Weir)
+  • [b]Role:[/b] Alderford — Forge-Master & Millwright
   *line_break
   • [b]Regard & Standing:[/b]
   *stat_chart
@@ -410,9 +689,7 @@ Swapping a weapon or shield takes a moment out of camp or downtime, not mid-figh
   *line_break
   [b]◈ JANNA[/b]
   *line_break
-  • [b]Rank & Role:[/b] Journeyman Smith & Armorer
-  *line_break
-  • [b]Status:[/b] Settlement Artisan (Alderford Weir)
+  • [b]Role:[/b] Alderford — Journeyman Smith & Armorer, Alderford Weir
   *line_break
   • [b]Comradeship & Bond:[/b]
   *stat_chart
@@ -424,9 +701,7 @@ Swapping a weapon or shield takes a moment out of camp or downtime, not mid-figh
   *line_break
   [b]◈ TALIA[/b]
   *line_break
-  • [b]Rank & Role:[/b] Curing Mistress & Smoked Goods Factor
-  *line_break
-  • [b]Status:[/b] Riverport Trade (Alderford Lower Wharves)
+  • [b]Role:[/b] Alderford — Curing Mistress & Smoked Goods Factor, Lower Wharves
   *line_break
   • [b]Comradeship & Bond:[/b]
   *stat_chart
@@ -439,17 +714,11 @@ Swapping a weapon or shield takes a moment out of camp or downtime, not mid-figh
   [b]◈ ELSPETH[/b]
   *line_break
   *if (elspeth_role = "odessa_apprentice")
-    • [b]Rank & Role:[/b] Chirurgeon's Assistant & Apprentice
-    *line_break
-    • [b]Status:[/b] Active (Logistics & Baggage Train)
+    • [b]Role:[/b] Iron Carrion — Chirurgeon's Assistant & Apprentice, Logistics & Baggage Train
   *if (elspeth_role = "baggage_train")
-    • [b]Rank & Role:[/b] Camp Seamstress & Carter
-    *line_break
-    • [b]Status:[/b] Active (Baggage Train)
+    • [b]Role:[/b] Iron Carrion — Camp Seamstress & Carter, Baggage Train
   *if (elspeth_role = "chapel_sanctuary")
-    • [b]Rank & Role:[/b] Weaver Novice (Ecclesiastical Sanctuary)
-    *line_break
-    • [b]Status:[/b] Protected (Alderford Upper Chapel)
+    • [b]Role:[/b] Alderford — Weaver Novice, Ecclesiastical Sanctuary (Upper Chapel)
   *line_break
   • [b]Kinship & Sibling Bond:[/b]
   *stat_chart
@@ -460,7 +729,29 @@ Swapping a weapon or shield takes a moment out of camp or downtime, not mid-figh
   # [Return to Dossier]
     *goto_scene choicescript_stats
 
-*label codex_company
+*label codex_lore_hub
+[b]LORE & REGIONAL CODEX[/b]
+[i]World, Factions, History & the Occult[/i]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Consult the company's accumulated intelligence on the powers, places, and past of the Grey Marches:
+
+*choice
+  # [Codex: Factions & Regional Powers]
+    *goto codex_factions
+  # [Codex: The Iron Carrion & Chain of Command]
+    *goto codex_mercenaries
+  # [Codex: Gazetteer & Map of the Grey Marches]
+    *goto codex_gazetteer
+  # [Codex: History & the Meridian Empire]
+    *goto codex_history
+  *if (codex_the_drowned)
+    # [Codex: Occult & Eldritch Entities]
+      *goto codex_occult
+  # [Return to Dossier]
+    *goto_scene choicescript_stats
+
+*label codex_mercenaries
 [b]THE IRON CARRION[/b]
 [i]Free Company Hierarchy & Command[/i]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -502,7 +793,9 @@ Founded thirty years ago in the ashes of the Broken Crown War, the Iron Carrion 
   • [b]Veteran Rorik:[/b] A grizzled Highland smith and munitions armorer who keeps the company's steel honed at the baggage wagons.
 
 *choice
-  # [Return to Dossier]
+  # [Return to Lore Codex]
+    *goto codex_lore_hub
+  # [Return to Main Dossier]
     *goto_scene choicescript_stats
 
 *label codex_factions
@@ -529,19 +822,6 @@ Founded thirty years ago in the ashes of the Broken Crown War, the Iron Carrion 
   *line_break
   The grasping, paranoid feudal lord of Karr's Keep. Notorious for ruinous agricultural taxes, violent bailiffs, and an iron grip on his highland tenants.
 
-*if (codex_meridian_empire)
-  *line_break
-  *line_break
-  [b]◈ THE MERIDIAN EMPIRE & THE BROKEN CROWN WAR[/b]
-  *line_break
-  Long before its final collapse, the Meridian Empire was already a dying titan—rotted from within by centuries of bureaucratic decay, warring client kingdoms, regional rebellions, and endless external border conflicts. The colossal ashlar causeways, fortified weirs, and deepwater river booms found across the Marches are the bones of an ancient, monumental civilization that hollowed out long before its legions withdrew.
-  *line_break
-  *line_break
-  The [b]Broken Crown War[/b] thirty years ago was not the beginning of the fall, but the Empire's final, convulsive death rattle. A catastrophic war of succession fought across the western provinces bled the imperial treasury white, shattered the remaining noble dynasties, and permanently splintered the realm. In the vacuum left behind, the imperial center simply went silent—never formally releasing its frontier holdings, but abandoning them entirely to the elements.
-  *line_break
-  *line_break
-  Today, the continent is a fractured patchwork of ruined successor territories, petty warlords, and grasping frontier barons (like Aldous Karr) squabbling over broken provinces, each attempting to carve out petty kingdoms in the shadow of an empire long dead.
-
 *if (codex_iron_bailiffs)
   *line_break
   *line_break
@@ -556,15 +836,10 @@ Founded thirty years ago in the ashes of the Broken Crown War, the Iron Carrion 
   *line_break
   A desperate coalition of displaced highland tenants, escaped bond-servants, and army deserters who fortified the Black Sinks toll gatehouse. Driven into the fen by starvation and debt, they fought with scythes, sickles, and fishing spears to hold the causeway before being overwhelmed by the Carrion.
 
-*if (codex_the_drowned)
-  *line_break
-  *line_break
-  [b]◈ THE DROWNED — ${warlock_patron_title}[/b]
-  *line_break
-  ${warlock_patron_desc} You carry a cold, unspoken weight behind your ribs that wasn't there before the Dawn Trial—a debt to something that has not yet named its price.
-
 *choice
-  # [Return to Dossier]
+  # [Return to Lore Codex]
+    *goto codex_lore_hub
+  # [Return to Main Dossier]
     *goto_scene choicescript_stats
 
 *label codex_gazetteer
@@ -601,5 +876,45 @@ A contested, mist-shrouded frontier borderland wedged between coastal trade rout
   • [b]Alderford River Weir & Waystation:[/b] The frontier's primary river port built around an ancient imperial limestone weir. Sawmills, brine curing lofts, and heavy timber wharves connect the highland road to the downstream river gorge toward Port Valen.
 
 *choice
-  # [Return to Dossier]
+  # [Return to Lore Codex]
+    *goto codex_lore_hub
+  # [Return to Main Dossier]
+    *goto_scene choicescript_stats
+
+*label codex_history
+[b]HISTORY & ANCIENT FOUNDATIONS[/b]
+[i]The Fall of an Empire[/i]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*if (codex_meridian_empire)
+  [b]◈ THE MERIDIAN EMPIRE & THE BROKEN CROWN WAR[/b]
+  *line_break
+  Long before its final collapse, the Meridian Empire was already a dying titan—rotted from within by centuries of bureaucratic decay, warring client kingdoms, regional rebellions, and endless external border conflicts. The colossal ashlar causeways, fortified weirs, and deepwater river booms found across the Marches are the bones of an ancient, monumental civilization that hollowed out long before its legions withdrew.
+  *line_break
+  *line_break
+  The [b]Broken Crown War[/b] thirty years ago was not the beginning of the fall, but the Empire's final, convulsive death rattle. A catastrophic war of succession fought across the western provinces bled the imperial treasury white, shattered the remaining noble dynasties, and permanently splintered the realm. In the vacuum left behind, the imperial center simply went silent—never formally releasing its frontier holdings, but abandoning them entirely to the elements.
+  *line_break
+  *line_break
+  Today, the continent is a fractured patchwork of ruined successor territories, petty warlords, and grasping frontier barons (like Aldous Karr) squabbling over broken provinces, each attempting to carve out petty kingdoms in the shadow of an empire long dead.
+
+*choice
+  # [Return to Lore Codex]
+    *goto codex_lore_hub
+  # [Return to Main Dossier]
+    *goto_scene choicescript_stats
+
+*label codex_occult
+[b]OCCULT & ELDRITCH ENTITIES[/b]
+[i]Powers Beyond Common Knowledge[/i]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*if (codex_the_drowned)
+  [b]◈ THE DROWNED — ${warlock_patron_title}[/b]
+  *line_break
+  ${warlock_patron_desc} You carry a cold, unspoken weight behind your ribs that wasn't there before the Dawn Trial—a debt to something that has not yet named its price.
+
+*choice
+  # [Return to Lore Codex]
+    *goto codex_lore_hub
+  # [Return to Main Dossier]
     *goto_scene choicescript_stats
