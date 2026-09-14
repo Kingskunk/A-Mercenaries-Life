@@ -8,6 +8,14 @@
   dawn_trial
   battle_black_sinks
   alderford
+*comment "combat" (a fight-engine library, entered only via *gosub_scene, never
+*comment via *finish or a direct *goto_scene) is deliberately NOT listed here.
+*comment *scene_list order also builds the implicit "*finish continues into
+*comment the next scene" chain (see nav.nextSceneName) -- adding combat as a
+*comment chain link previously hijacked ready_camp's *finish into it instead
+*comment of camp_night. *gosub_scene doesn't require scene_list membership to
+*comment target a scene, and compile.js bundles every .txt in scenes/
+*comment regardless, so leaving it off here is both correct and sufficient.
 
 *create implicit_control_flow true
 
@@ -259,6 +267,19 @@
 *create locked_page_id 0
 *create locked_guidance_roll 0
 *create locked_adv_label ""
+*comment Whether advantage (not cancelled by disadvantage) applied to the
+*comment just-completed roll -- a persistent stat, not *temp, so it survives
+*comment untouched across the *return the same way check_success/check_total
+*comment do, and correctly stays at the original roll's answer on a replay
+*comment (the guarded skip above never touches it, same reasoning as those).
+*comment A caller that needs to know "did this specific roll have advantage"
+*comment (Rogue Sneak Attack, for one) should read this instead of trying to
+*comment capture the live advantage flag itself -- that flag gets cleared by
+*comment this same subroutine before it returns, so reading it after the
+*comment gosub always sees false, and capturing it into a *temp beforehand
+*comment doesn't survive a replay correctly either (see resolve_player_weapon_hit's
+*comment comment block for the exact failure mode that discovered this).
+*create roll_had_advantage false
 *comment Same idea, separate flag, for battle_take_damage's own *rand
 *comment (web/mygame/scenes/battle_black_sinks.txt). Deliberately not the
 *comment same variables as the check lock above: a page commonly runs a
@@ -279,6 +300,8 @@
 *create locked_combat_player_hit_page_id 0
 *create combat_enemy_atk_locked false
 *create locked_combat_enemy_atk_page_id 0
+*create combat_magic_missile_locked false
+*create locked_combat_magic_missile_page_id 0
 *comment second_wind/activate_rage predate this combat engine (built for a
 *comment future combat scene that didn't exist yet) and had no lock at all
 *comment since nothing exercised the bug -- now something does.
@@ -303,13 +326,65 @@
 *create combat_player_dmg_dice_sides 4
 *create combat_player_dmg_bonus 0
 *create combat_player_dmg_dealt 0
+*create combat_weapon_hit_locked false
+*create locked_combat_weapon_hit_page_id 0
+*create combat_sneak_attack_triggered false
+*comment Populated by detect_attack_cantrip -- see that primitive.
+*create has_attack_cantrip false
+*create attack_cantrip_name ""
+*create attack_cantrip_stat "int"
+*create attack_cantrip_dice_sides 6
 *create combat_round 0
+*comment Populated by combat.txt's fight_* labels for the calling scene to
+*comment read once *gosub_scene combat fight_<name> returns.
+*create combat_outcome ""
+*comment Set once per fight (in combat.txt's per-enemy fight_<name> label)
+*comment so the shared round hub/enemy-turn prose stays enemy-agnostic
+*comment everywhere except these few genuinely creature-specific lines.
+*create combat_enemy_epithet "the creature"
+*create combat_flavor_weapon_hit ""
+*create combat_flavor_weapon_miss ""
+*create combat_flavor_cantrip_hit ""
+*create combat_flavor_cantrip_miss ""
+*create combat_flavor_enemy_hit ""
+*create combat_flavor_enemy_miss ""
+*create combat_flavor_dissonant_hit ""
+*create combat_flavor_dissonant_miss ""
 *comment Held-in-reserve reaction spell (Shield, etc.) -- armed by the
 *comment player ahead of time at no action cost, auto-fires the next time
 *comment resolve_enemy_attack would otherwise land a hit. See that
 *comment primitive's comment block for why this needs no extra pause point.
 *create shield_armed false
 *create combat_shield_triggered false
+*comment Ongoing curse -- +1d6 necrotic on every hit while active (RAW
+*comment applies to any attack, weapon or spell, so every damage-dealing
+*comment combat primitive checks this the same way). Hexblood innate casts
+*comment (race_cantrip_2 = "hex") consume hexblood_hex_used instead of a
+*comment warlock_spell_slots charge, once per long rest.
+*create hex_active false
+*create hexblood_hex_used false
+*comment Temporary hit points (False Life, Armor of Agathys) -- a separate
+*comment pool from hp_current so it's never touched by ordinary healing/rest
+*comment clamps, absorbed first by resolve_enemy_attack on an incoming hit.
+*comment agathys_active additionally retaliates 5 cold damage back at the
+*comment attacker on a hit while temp_hp > 0, and shatters (clears itself)
+*comment the moment temp_hp is fully spent.
+*create temp_hp 0
+*create agathys_active false
+*create combat_agathys_triggered false
+*create combat_agathys_shattered false
+*comment Shared lock for the simple "spend a slot, set a flag/roll a value"
+*comment buff casts below (Hex, Armor of Agathys, False Life, Healing Word)
+*comment -- safe to reuse across all of them since only one is ever chosen
+*comment per round, same reasoning as stat_bump_locked/stat_bump2_locked.
+*create combat_cast_locked false
+*create locked_combat_cast_page_id 0
+*comment Generic numeric output for whichever cast primitive above just ran
+*comment (temp HP gained, HP healed) -- one shared name rather than a
+*comment separate single-use output stat per spell.
+*create combat_cast_result 0
+*create combat_dissonant_whispers_locked false
+*create locked_combat_dissonant_whispers_page_id 0
 *comment Same idea again, for spending/gaining currency (shop purchases,
 *comment rewards, gambling, bribes, etc.). *set silver/copper +N is exactly
 *comment as replay-unsafe as *set armor_class +N was -- wrap the deduction
@@ -467,6 +542,14 @@
 *create visited_maura_cellar false
 *create maura_cellar_cleared false
 *create culvert_bounty_silver 4
+*create met_maura false
+*create met_rennick false
+*create discussed_maura_past false
+*create discussed_river_conditions false
+*create visited_lyra_taphouse false
+*create visited_smiths_table false
+*create janna_romanced false
+*create bard_performed_taphouse false
 *comment Captures the lyra_bond >= 15 check's result the one time it's
 *comment actually evaluated (inside taphouse_talk_lyra's stat_bump_locked
 *comment guard), so a refresh replaying the page after lyra_bond has already
@@ -2066,6 +2149,7 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *if (meal_bonus > 0)
     *set check_total + meal_bonus
 
+  *set roll_had_advantage ((advantage) and (not(disadvantage)))
   *set roll_locked true
   *set locked_page_id choice_page_id
   *set locked_guidance_roll guidance_roll
@@ -2140,16 +2224,61 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *comment combat_enemy_ac came back check_success. Input:
 *comment combat_player_dmg_dice_sides, combat_player_dmg_bonus. Applies the
 *comment damage to combat_enemy_hp (never below 0) and reports it back via
-*comment combat_player_dmg_dealt for the caller's own prose.
+*comment combat_player_dmg_dealt for the caller's own prose. Generic --
+*comment no Sneak Attack check (RAW restricts that to a finesse/ranged
+*comment WEAPON attack, never a cantrip/spell); use resolve_player_weapon_hit
+*comment below for an actual weapon swing.
 *if (not(combat_player_hit_locked)) or (not(locked_combat_player_hit_page_id = choice_page_id))
   *temp cph_roll 0
   *rand cph_roll 1 combat_player_dmg_dice_sides
   *set combat_player_dmg_dealt (cph_roll + combat_player_dmg_bonus)
+  *if (hex_active)
+    *temp cph_hex_die 0
+    *rand cph_hex_die 1 6
+    *set combat_player_dmg_dealt + cph_hex_die
   *set combat_enemy_hp - combat_player_dmg_dealt
   *if (combat_enemy_hp < 0)
     *set combat_enemy_hp 0
   *set combat_player_hit_locked true
   *set locked_combat_player_hit_page_id choice_page_id
+*return
+
+*label resolve_player_weapon_hit
+*comment Same shape as resolve_player_hit, but specifically for an actual
+*comment weapon swing -- also resolves Rogue Sneak Attack (RAW: a finesse or
+*comment ranged weapon, plus advantage on the attack roll). Reads
+*comment roll_had_advantage straight from the roll_d20_check call the caller
+*comment just made, rather than trusting a caller-passed flag: an earlier
+*comment version had the caller capture advantage into a *temp and copy it
+*comment into a persistent input right before this gosub, which looked fine
+*comment but wasn't -- that bare *set ran unconditionally on every replay of
+*comment the page, while this subroutine's own reset of that same input only
+*comment ran inside its lock, so a replay left the input stuck relative to
+*comment the original run. roll_had_advantage has no such asymmetry (nothing
+*comment external ever sets it), so there's nothing left for a caller to
+*comment manage -- just call roll_d20_check, then this, in that order.
+*comment Own dedicated lock, separate from resolve_player_hit's, since a
+*comment single fight might call both across different rounds. Reports
+*comment combat_player_dmg_dealt and combat_sneak_attack_triggered.
+*if (not(combat_weapon_hit_locked)) or (not(locked_combat_weapon_hit_page_id = choice_page_id))
+  *temp cwh_roll 0
+  *rand cwh_roll 1 combat_player_dmg_dice_sides
+  *set combat_player_dmg_dealt (cwh_roll + combat_player_dmg_bonus)
+  *set combat_sneak_attack_triggered false
+  *if (((character_class = "rogue") and ((weapon_type = "finesse") or (weapon_type = "ranged"))) and (roll_had_advantage))
+    *set combat_sneak_attack_triggered true
+    *temp cwh_sneak_die 0
+    *rand cwh_sneak_die 1 6
+    *set combat_player_dmg_dealt + cwh_sneak_die
+  *if (hex_active)
+    *temp cwh_hex_die 0
+    *rand cwh_hex_die 1 6
+    *set combat_player_dmg_dealt + cwh_hex_die
+  *set combat_enemy_hp - combat_player_dmg_dealt
+  *if (combat_enemy_hp < 0)
+    *set combat_enemy_hp 0
+  *set combat_weapon_hit_locked true
+  *set locked_combat_weapon_hit_page_id choice_page_id
 *return
 
 *label resolve_enemy_attack
@@ -2180,10 +2309,18 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *comment player Dodges on the same round the enemy has advantage), they
 *comment cancel per the usual rule and this rolls flat.
 *comment
+*comment Also absorbs incoming damage with temp_hp before hp_current, and
+*comment handles Armor of Agathys' retaliation: while agathys_active and
+*comment temp_hp > 0, a hit deals 5 cold damage straight back to
+*comment combat_enemy_hp (which can end the fight on the enemy's own turn --
+*comment the caller must check combat_enemy_hp <= 0 immediately after this
+*comment gosub, before checking hp_current, or a retaliatory kill will be
+*comment missed). agathys_active clears itself the moment temp_hp hits 0.
+*comment
 *comment Reports back combat_enemy_atk_total, combat_enemy_hit_success,
 *comment combat_shield_triggered (whether the reaction fired at all, hit or
-*comment not), and combat_enemy_dmg_dealt (0 on a miss) for the caller's
-*comment own prose.
+*comment not), combat_agathys_triggered/combat_agathys_shattered, and
+*comment combat_enemy_dmg_dealt (0 on a miss) for the caller's own prose.
 *if (not(combat_enemy_atk_locked)) or (not(locked_combat_enemy_atk_page_id = choice_page_id))
   *temp cea_roll 0
   *rand cea_roll 1 20
@@ -2207,6 +2344,8 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
     *set combat_shield_triggered true
     *set combat_enemy_hit_success (combat_enemy_atk_total >= (armor_class + 5))
   *set combat_enemy_dmg_dealt 0
+  *set combat_agathys_triggered false
+  *set combat_agathys_shattered false
   *if (combat_enemy_hit_success)
     *temp cea_dmg 0
     *rand cea_dmg 1 combat_enemy_dmg_dice_sides
@@ -2214,11 +2353,193 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
     *if ((character_class = "barbarian") and (is_raging))
       *set cea_dmg cea_dmg / 2
     *set combat_enemy_dmg_dealt cea_dmg
-    *set hp_current - combat_enemy_dmg_dealt
+    *if ((agathys_active) and (temp_hp > 0))
+      *set combat_agathys_triggered true
+      *set combat_enemy_hp - 5
+      *if (combat_enemy_hp < 0)
+        *set combat_enemy_hp 0
+    *if (temp_hp > 0)
+      *if (temp_hp >= combat_enemy_dmg_dealt)
+        *set temp_hp - combat_enemy_dmg_dealt
+      *else
+        *temp cea_overflow (combat_enemy_dmg_dealt - temp_hp)
+        *set temp_hp 0
+        *set hp_current - cea_overflow
+    *else
+      *set hp_current - combat_enemy_dmg_dealt
+    *if ((temp_hp <= 0) and (agathys_active))
+      *set combat_agathys_shattered true
+      *set agathys_active false
     *if (hp_current < 1)
       *set hp_current 1
   *set combat_enemy_atk_locked true
   *set locked_combat_enemy_atk_page_id choice_page_id
+*return
+
+*label detect_attack_cantrip
+*comment No lock needed -- purely derived from persistent build stats every
+*comment call, so it always lands on the same answer no matter how many
+*comment times a round replays it (same reasoning as recalculate_armor_class).
+*comment Call once at the top of any fight's round hub, before the *choice,
+*comment to populate has_attack_cantrip/attack_cantrip_name/_stat/
+*comment _dice_sides -- the fight's own "Channel ${attack_cantrip_name} at
+*comment the creature" option just reads these back, no per-fight copy of
+*comment this cascade needed. Checks every cantrip slot (wizard x3, race x2,
+*comment warlock x2, bard x2) per the Full Slot Coverage rule.
+*set has_attack_cantrip false
+*set attack_cantrip_name ""
+*set attack_cantrip_stat "int"
+*set attack_cantrip_dice_sides 6
+*if ((((wizard_cantrip = "fire_bolt") or (wizard_cantrip_2 = "fire_bolt")) or (wizard_cantrip_3 = "fire_bolt")) or ((race_cantrip = "fire_bolt") or (race_cantrip_2 = "fire_bolt")))
+  *set has_attack_cantrip true
+  *set attack_cantrip_name "Fire Bolt"
+  *set attack_cantrip_stat "int"
+  *set attack_cantrip_dice_sides 10
+*else
+  *if ((((wizard_cantrip = "ray_of_frost") or (wizard_cantrip_2 = "ray_of_frost")) or (wizard_cantrip_3 = "ray_of_frost")) or ((race_cantrip = "ray_of_frost") or (race_cantrip_2 = "ray_of_frost")))
+    *set has_attack_cantrip true
+    *set attack_cantrip_name "Ray of Frost"
+    *set attack_cantrip_stat "int"
+    *set attack_cantrip_dice_sides 8
+  *else
+    *if ((((wizard_cantrip = "shocking_grasp") or (wizard_cantrip_2 = "shocking_grasp")) or (wizard_cantrip_3 = "shocking_grasp")) or ((race_cantrip = "shocking_grasp") or (race_cantrip_2 = "shocking_grasp")))
+      *set has_attack_cantrip true
+      *set attack_cantrip_name "Shocking Grasp"
+      *set attack_cantrip_stat "int"
+      *set attack_cantrip_dice_sides 8
+    *else
+      *if ((warlock_cantrip = "eldritch_blast") or (warlock_cantrip_2 = "eldritch_blast"))
+        *set has_attack_cantrip true
+        *set attack_cantrip_name "Eldritch Blast"
+        *set attack_cantrip_stat "cha"
+        *set attack_cantrip_dice_sides 10
+      *else
+        *if ((warlock_cantrip = "chill_touch") or (warlock_cantrip_2 = "chill_touch"))
+          *set has_attack_cantrip true
+          *set attack_cantrip_name "Chill Touch"
+          *set attack_cantrip_stat "cha"
+          *set attack_cantrip_dice_sides 8
+        *else
+          *if ((bard_cantrip = "vicious_mockery") or (bard_cantrip_2 = "vicious_mockery"))
+            *set has_attack_cantrip true
+            *set attack_cantrip_name "Vicious Mockery"
+            *set attack_cantrip_stat "cha"
+            *set attack_cantrip_dice_sides 4
+*return
+
+*label resolve_magic_missile
+*comment No input needed beyond global character state. Spends one
+*comment wizard_spell_slots, deals 3d4+3 force damage that bypasses AC
+*comment entirely (no roll_d20_check at all -- Magic Missile RAW always
+*comment hits), and reports combat_player_dmg_dealt for the caller's prose.
+*comment Own dedicated lock, separate from resolve_player_hit's, since this
+*comment never goes through that primitive (there's no attack roll to gate
+*comment it on).
+*if (not(combat_magic_missile_locked)) or (not(locked_combat_magic_missile_page_id = choice_page_id))
+  *set wizard_spell_slots - 1
+  *temp mm_dart_1 0
+  *temp mm_dart_2 0
+  *temp mm_dart_3 0
+  *rand mm_dart_1 1 4
+  *rand mm_dart_2 1 4
+  *rand mm_dart_3 1 4
+  *set combat_player_dmg_dealt (((mm_dart_1 + mm_dart_2) + mm_dart_3) + 3)
+  *if (hex_active)
+    *temp mm_hex_die 0
+    *rand mm_hex_die 1 6
+    *set combat_player_dmg_dealt + mm_hex_die
+  *set combat_enemy_hp - combat_player_dmg_dealt
+  *if (combat_enemy_hp < 0)
+    *set combat_enemy_hp 0
+  *set combat_magic_missile_locked true
+  *set locked_combat_magic_missile_page_id choice_page_id
+*return
+
+*label resolve_cast_hex
+*comment Sets hex_active for +1d6 necrotic on every subsequent hit (see the
+*comment three damage primitives above). A Hexblood's innate cast consumes
+*comment hexblood_hex_used (once per long rest) instead of a warlock slot --
+*comment checked first since it's the "free" source.
+*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = choice_page_id))
+  *if ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))
+    *set hexblood_hex_used true
+  *else
+    *set warlock_spell_slots - 1
+  *set hex_active true
+  *set combat_cast_locked true
+  *set locked_combat_cast_page_id choice_page_id
+*return
+
+*label resolve_cast_agathys
+*comment Spends one warlock_spell_slots for 5 temp_hp and arms the
+*comment retaliation resolve_enemy_attack checks for (agathys_active).
+*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = choice_page_id))
+  *set warlock_spell_slots - 1
+  *set temp_hp 5
+  *set agathys_active true
+  *set combat_cast_locked true
+  *set locked_combat_cast_page_id choice_page_id
+*return
+
+*label resolve_cast_false_life
+*comment Spends one slot from whichever pool the caster actually has this
+*comment spell in (wizard or warlock) for 1d4+4 temp_hp. Reports the amount
+*comment gained via combat_cast_result for the caller's prose.
+*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = choice_page_id))
+  *if (character_class = "wizard")
+    *set wizard_spell_slots - 1
+  *else
+    *set warlock_spell_slots - 1
+  *temp fl_roll 0
+  *rand fl_roll 1 4
+  *set combat_cast_result (fl_roll + 4)
+  *set temp_hp combat_cast_result
+  *set combat_cast_locked true
+  *set locked_combat_cast_page_id choice_page_id
+*return
+
+*label resolve_cast_healing_word
+*comment Spends one bard_spell_slots for 1d4+cha_mod healing (minimum 1),
+*comment capped at hp_max. Reports the amount healed via combat_cast_result.
+*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = choice_page_id))
+  *set bard_spell_slots - 1
+  *temp hw_roll 0
+  *rand hw_roll 1 4
+  *set combat_cast_result (hw_roll + cha_mod)
+  *if (combat_cast_result < 1)
+    *set combat_cast_result 1
+  *set hp_current + combat_cast_result
+  *if (hp_current > hp_max)
+    *set hp_current hp_max
+  *set combat_cast_locked true
+  *set locked_combat_cast_page_id choice_page_id
+*return
+
+*label resolve_dissonant_whispers
+*comment Call after the caller's own roll_d20_check against a target DC --
+*comment check_success standing in for "the target failed its save" (full
+*comment damage); on a failure the target "saved" for half, rounded down.
+*comment Spends one bard_spell_slots regardless of outcome (RAW: the slot is
+*comment spent on casting, not on the save result). Deals 3d6 psychic,
+*comment applied straight to combat_enemy_hp. Reports combat_player_dmg_dealt.
+*if (not(combat_dissonant_whispers_locked)) or (not(locked_combat_dissonant_whispers_page_id = choice_page_id))
+  *set bard_spell_slots - 1
+  *temp dw_d1 0
+  *temp dw_d2 0
+  *temp dw_d3 0
+  *rand dw_d1 1 6
+  *rand dw_d2 1 6
+  *rand dw_d3 1 6
+  *temp dw_total ((dw_d1 + dw_d2) + dw_d3)
+  *if (check_success)
+    *set combat_player_dmg_dealt dw_total
+  *else
+    *set combat_player_dmg_dealt ((dw_total - (dw_total modulo 2)) / 2)
+  *set combat_enemy_hp - combat_player_dmg_dealt
+  *if (combat_enemy_hp < 0)
+    *set combat_enemy_hp 0
+  *set combat_dissonant_whispers_locked true
+  *set locked_combat_dissonant_whispers_page_id choice_page_id
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

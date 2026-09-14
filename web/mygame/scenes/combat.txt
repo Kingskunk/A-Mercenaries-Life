@@ -1,0 +1,296 @@
+*comment ══════════════════════════════════════════════════════════════
+*comment SHARED SMALL-COMBAT ENGINE
+*comment All dice math (attack rolls, damage, spell slots, temp HP, locks)
+*comment lives in startup.txt -- this file just wires those primitives into
+*comment a playable round-by-round loop and owns the mechanical shell every
+*comment fight shares (the choice skeleton, the enemy-turn resolution).
+*comment
+*comment Calling convention: a scene starts a fight with
+*comment   *gosub_scene combat fight_<name>
+*comment and gets back combat_outcome set to "victory", "rescued", or
+*comment "fled" once it returns. Nothing in here prints start-of-fight or
+*comment end-of-fight prose -- that's deliberate: the kill/retreat and
+*comment whatever NPC's reaction to it read as one continuous narrative beat
+*comment when the calling quest scene writes both together, instead of a
+*comment jarring cut between this file's text and theirs.
+*comment
+*comment Adding a new fight: write a new *label fight_<name> block below
+*comment that sets the enemy's stats (combat_enemy_*) and its bespoke
+*comment flavor lines (combat_enemy_epithet, combat_flavor_weapon_hit/miss,
+*comment combat_flavor_cantrip_hit/miss, combat_flavor_enemy_hit/miss, and
+*comment optionally combat_flavor_dissonant_hit/miss), then *gosub
+*comment fight_setup and *goto fight_round_hub. Everything else -- every
+*comment spell/ability option, the enemy's attack resolution, retreat/rescue
+*comment handling -- is already shared and needs no duplication. The eight
+*comment ability options below (cantrips aside) deliberately avoid any
+*comment enemy-specific wording, since they describe the PLAYER's own
+*comment casting motion, not the creature -- keep new ones that way too, so
+*comment they never need a per-fight override.
+*comment ══════════════════════════════════════════════════════════════
+
+*label fight_setup
+*comment Resets every ephemeral combat flag so encounter N+1 never inherits
+*comment leftover state from encounter N (or a Shield/Hex left armed from a
+*comment fight the player fled).
+*set hex_active false
+*set agathys_active false
+*set temp_hp 0
+*set shield_armed false
+*set combat_agathys_triggered false
+*set combat_agathys_shattered false
+*set combat_outcome ""
+*return
+
+*label fight_cleanup
+*set hex_active false
+*set agathys_active false
+*set temp_hp 0
+*set shield_armed false
+*set combat_agathys_triggered false
+*set combat_agathys_shattered false
+*return
+
+*label fight_victory
+*set combat_enemy_hp 0
+*set combat_outcome "victory"
+*gosub fight_cleanup
+*return
+
+*label fight_rescued
+*set hp_current 1
+*set combat_outcome "rescued"
+*gosub fight_cleanup
+*return
+
+*label fight_fled
+*set combat_outcome "fled"
+*gosub fight_cleanup
+*return
+
+*comment ──────────────────────────────────────────────────────────────
+*comment THE ROUND HUB (shared choice skeleton)
+*comment ──────────────────────────────────────────────────────────────
+
+*label fight_round_hub
+*set combat_enemy_disadvantage false
+*gosub_scene startup detect_attack_cantrip
+
+[b][⚔️ Round ${combat_round} — ${combat_enemy_name}: HP ${combat_enemy_hp}/${combat_enemy_max_hp} (AC ${combat_enemy_ac}) | You: HP ${hp_current}/${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|} (AC ${armor_class})][/b]
+*if (shield_armed)
+  [b][✨ Shield Armed — will trigger on the next hit][/b]
+*if (hex_active)
+  [b][🔮 Hex Active — +1d6 Necrotic Damage on all hits][/b]
+*if (agathys_active)
+  [b][❄️ Armor of Agathys Active — ${temp_hp} Temp HP | 5 Cold Damage Retaliation][/b]
+
+*choice
+  # Attack with your ${weapon}.
+    *if (weapon_type = "ranged")
+      *set check_stat "dex"
+    *else
+      *if (weapon_type = "finesse")
+        *comment Finesse (RAW): the wielder's choice of STR or DEX, whichever
+        *comment is higher -- not a blanket DEX weapon.
+        *if (str_mod > dex_mod)
+          *set check_stat "str"
+        *else
+          *set check_stat "dex"
+      *else
+        *set check_stat "str"
+    *set check_dc combat_enemy_ac
+    *set check_skill "Melee Attack"
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      *if (weapon_type = "finesse")
+        *set combat_player_dmg_dice_sides 4
+        *comment Matches the STR-or-higher check above -- 5e uses the same
+        *comment ability for a finesse weapon's attack and its damage.
+        *if (str_mod > dex_mod)
+          *set combat_player_dmg_bonus str_mod
+        *else
+          *set combat_player_dmg_bonus dex_mod
+      *else
+        *if (weapon_type = "ranged")
+          *set combat_player_dmg_dice_sides 6
+          *set combat_player_dmg_bonus dex_mod
+        *else
+          *if (weapon_type = "two_handed")
+            *set combat_player_dmg_dice_sides 12
+            *set combat_player_dmg_bonus str_mod
+          *else
+            *set combat_player_dmg_dice_sides 8
+            *set combat_player_dmg_bonus str_mod
+      *gosub_scene startup resolve_player_weapon_hit
+      *if (combat_sneak_attack_triggered)
+        You strike from an opening it never saw coming, driving your ${weapon} into an exposed weak point for a vicious, precise finishing blow.
+        [b][🗡️ Sneak Attack | 🩸 Hit: ${combat_player_dmg_dealt} damage][/b]
+      *else
+        ${combat_flavor_weapon_hit}
+        [b][🩸 Hit: ${combat_player_dmg_dealt} damage][/b]
+    *else
+      ${combat_flavor_weapon_miss}
+      [b][💨 Miss][/b]
+    *goto fight_check_enemy_hp
+
+  *if (has_attack_cantrip)
+    # Channel ${attack_cantrip_name} at ${combat_enemy_epithet}.
+      *set check_stat attack_cantrip_stat
+      *set check_dc combat_enemy_ac
+      *set check_skill attack_cantrip_name
+      *gosub_scene startup roll_d20_check
+      *if (check_success)
+        *set combat_player_dmg_dice_sides attack_cantrip_dice_sides
+        *set combat_player_dmg_bonus 0
+        *gosub_scene startup resolve_player_hit
+        ${combat_flavor_cantrip_hit}
+        [b][🔥 Hit: ${combat_player_dmg_dealt} damage][/b]
+      *else
+        ${combat_flavor_cantrip_miss}
+        [b][💨 Miss][/b]
+      *goto fight_check_enemy_hp
+
+  *if (((character_class = "wizard") and (wizard_spell = "magic_missile")) and (wizard_spell_slots > 0))
+    # [Spell: Magic Missile] Unleash three darts of force that strike unerringly, bypassing its hide entirely.
+      *gosub_scene startup resolve_magic_missile
+      You speak three crisp syllables and snap your fingers forward. Three glowing, pale-blue darts of crackling arcane force burst from your fingertips, curving unerringly through the air to slam home.
+      [b][✨ Magic Missile: Automatic Hit | ${combat_player_dmg_dealt} damage][/b]
+      *goto fight_check_enemy_hp
+
+  *if ((((warlock_spell = "hex") and (warlock_spell_slots > 0)) or ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))) and (not(hex_active)))
+    # [Spell: Hex] Lay a baleful eldritch curse upon ${combat_enemy_epithet}, marking it to suffer deeper wounds.
+      *gosub_scene startup resolve_cast_hex
+      You whisper a guttural syllable of ancient ruin. Dark, spectral runes flare briefly across ${combat_enemy_epithet}, tying its fate to your will—every strike you land will tear through it with extra necrotic fury!
+      [b][🔮 Hex Active — +1d6 Necrotic Damage on all hits][/b]
+      *goto fight_round_hub
+
+  *if (((warlock_spell = "armor_of_agathys") and (warlock_spell_slots > 0)) and (not(agathys_active)))
+    # [Spell: Armor of Agathys] Sheathe yourself in spectral frost that shields you and punishes melee strikes.
+      *gosub_scene startup resolve_cast_agathys
+      A brittle casing of translucent, jagged rime coats your leather harness and shoulders, radiating bone-chilling cold. Any creature foolish enough to strike you will feel the frost shatter against them.
+      [b][🛡️ Armor of Agathys: +5 Temp HP | 5 Cold Damage Retaliation on Hits][/b]
+      *goto fight_enemy_turn
+
+  *if (((((character_class = "wizard") and (wizard_spell = "false_life")) and (wizard_spell_slots > 0)) or (((character_class = "warlock") and (warlock_spell = "false_life")) and (warlock_spell_slots > 0))) and (temp_hp = 0))
+    # [Spell: False Life] Weave a necromantic shroud over your flesh for a protective buffer of vitality.
+      *gosub_scene startup resolve_cast_false_life
+      You murmur a dark necromantic rite. A numb, leathery vitality spreads beneath your skin, insulating your muscles against immediate harm.
+      [b][✨ False Life: +${combat_cast_result} Temporary Hit Points][/b]
+      *goto fight_enemy_turn
+
+  *if (((bard_spell = "dissonant_whispers") or (bard_spell_2 = "dissonant_whispers")) and (bard_spell_slots > 0))
+    # [Spell: Dissonant Whispers] Utter a hideous, discordant psychic phrase that wracks its mind.
+      *set check_stat "cha"
+      *set check_dc 12
+      *set check_skill "Dissonant Whispers"
+      *gosub_scene startup roll_d20_check
+      *gosub_scene startup resolve_dissonant_whispers
+      *if (check_success)
+        ${combat_flavor_dissonant_hit}
+        [b][🧠 Dissonant Whispers: Failed Save | ${combat_player_dmg_dealt} Psychic Damage][/b]
+      *else
+        ${combat_flavor_dissonant_miss}
+        [b][🧠 Dissonant Whispers: Saved | Half Damage: ${combat_player_dmg_dealt} Psychic Damage][/b]
+      *goto fight_check_enemy_hp
+
+  *if ((((bard_spell = "healing_word") or (bard_spell_2 = "healing_word")) and (bard_spell_slots > 0)) and (hp_current < hp_max))
+    # [Spell: Healing Word] Speak a resonant, curative syllable to knit your gashes and steady your footing.
+      *gosub_scene startup resolve_cast_healing_word
+      A sharp, ringing cadence leaves your lips. Warmth rushes through your marrow, knitting shut the worst of your wounds.
+      [b][🩸 Healing Word: Restored ${combat_cast_result} HP | HP: ${hp_current}/${hp_max}][/b]
+      *goto fight_round_hub
+
+  # Brace and watch its strikes, giving ground instead of pressing the attack.
+    *set combat_enemy_disadvantage true
+    You plant your feet and hold your ground, tracking its movement instead of swinging blind.
+    *goto fight_enemy_turn
+
+  *if ((((character_class = "wizard") and (wizard_spell = "shield")) and (wizard_spell_slots > 0)) and (not(shield_armed)))
+    # [Spell: Shield] Hold the barrier-spell coiled and ready, primed to snap into place the instant something connects.
+      *set shield_armed true
+      You murmur the first half of the somatic phrase under your breath, holding the working coiled and ready at your fingertips, costing you nothing to keep it there.
+      [b][✨ Shield Readied — will trigger automatically on the next hit][/b]
+      *goto fight_round_hub
+
+  *if ((character_class = "fighter") and (fighter_second_wind_uses > 0))
+    # [Second Wind] Grit your teeth through the pain and the fear, and keep going.
+      *gosub_scene startup second_wind
+      A surge of stubborn, practiced discipline steadies your breathing and closes the worst of your scrapes.
+      [b][🩸 Hit Points: ${hp_current} / ${hp_max}][/b]
+      *goto fight_enemy_turn
+
+  *if (((character_class = "barbarian") and (not(is_raging))) and (barbarian_rage_uses > 0))
+    # [Rage] Let the fury take you.
+      *gosub_scene startup activate_rage
+      A hot, roaring pressure floods your chest, dulling the pain and the fear to nothing at all.
+      *goto fight_enemy_turn
+
+  # Break off and disengage.
+    *goto fight_fled
+
+*label fight_check_enemy_hp
+*if (combat_enemy_hp <= 0)
+  *goto fight_victory
+*goto fight_enemy_turn
+
+*label fight_enemy_turn
+*gosub_scene startup resolve_enemy_attack
+*if (combat_shield_triggered)
+  *if (combat_enemy_hit_success)
+    A shimmering lattice of force flares to life around you on pure reflex, but the blow crashes through it anyway, striking home regardless.
+    [b][✨ Shield Broken Through | 🩸 ${combat_enemy_name} Hits: ${combat_enemy_dmg_dealt} damage | HP: ${hp_current} / ${hp_max}][/b]
+  *else
+    A shimmering lattice of force flares to life around you on pure reflex, deflecting the strike a hair's breadth away.
+    [b][✨ Shield Holds | 💨 ${combat_enemy_name} Misses][/b]
+*else
+  *if (combat_enemy_hit_success)
+    ${combat_flavor_enemy_hit}
+    *if (combat_agathys_triggered)
+      *if (combat_agathys_shattered)
+        As the blow lands, your frost-sheathe shatters violently in a burst of crystalline rime, driving shards of biting cold deep into ${combat_enemy_epithet}!
+        [b][❄️ Armor of Agathys: 5 Cold Damage dealt to ${combat_enemy_name} | Frost Armor Shattered][/b]
+      *else
+        As the blow lands, the rime holding across your harness pulses with bitter frost, biting into ${combat_enemy_epithet} while your armor holds!
+        [b][❄️ Armor of Agathys: 5 Cold Damage dealt to ${combat_enemy_name} | ${temp_hp} Temp HP remaining][/b]
+    [b][🩸 ${combat_enemy_name} Hits: ${combat_enemy_dmg_dealt} damage | HP: ${hp_current} / ${hp_max}][/b]
+  *else
+    ${combat_flavor_enemy_miss}
+    [b][💨 ${combat_enemy_name} Misses][/b]
+*if (combat_enemy_hp <= 0)
+  *goto fight_victory
+*if (hp_current <= 1)
+  *goto fight_rescued
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+  *set combat_round + 1
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id choice_page_id
+*page_break Hold your ground...
+*goto fight_round_hub
+
+*comment ══════════════════════════════════════════════════════════════
+*comment FIGHT LIBRARY
+*comment One short entry label per enemy: set combat_enemy_* stats and the
+*comment handful of combat_flavor_* lines, then hand off to the shared
+*comment engine above. Nothing else needs to be rewritten per fight.
+*comment ══════════════════════════════════════════════════════════════
+
+*label fight_silt_lurker
+*comment Used by alderford.txt's Maura cellar-nuisance quest.
+*set combat_enemy_name "Silt-Lurker Lacedon"
+*set combat_enemy_hp 12
+*set combat_enemy_max_hp 12
+*set combat_enemy_ac 12
+*set combat_enemy_atk_bonus 4
+*set combat_enemy_dmg_dice_sides 6
+*set combat_enemy_dmg_bonus 2
+*set combat_round 1
+*set combat_enemy_epithet "the creature"
+*set combat_flavor_weapon_hit "You drive your ${weapon} home. It bites deep, and the creature recoils with a wet, furious hiss."
+*set combat_flavor_weapon_miss "Your ${weapon} scrapes off wet scale and old chitin, throwing you half a step off balance in the current."
+*set combat_flavor_cantrip_hit "The working leaves your fingertips and strikes true, searing across wet scale in the dark."
+*set combat_flavor_cantrip_miss "The working goes wide, scattering harmlessly into the black water."
+*set combat_flavor_enemy_hit "The thing surges out of the dark water in a wet lunge, ragged claws raking for your ribs."
+*set combat_flavor_enemy_miss "It lunges out of the water, but you're already moving, and the claws rake nothing but torchlit air."
+*set combat_flavor_dissonant_hit "You whisper a jarring, dissonant phrase into the shadows. The sound bypasses its ears and ruptures straight into its rotting brain—the beast screeches in agony, clawing wildly at its own skull!"
+*set combat_flavor_dissonant_miss "The phrase reverberates through the drain, but the creature recoils just enough to weather the worst of the psychic assault."
+*gosub fight_setup
+*goto fight_round_hub

@@ -84,17 +84,20 @@ Sergeant Varren stalks between the tent lines, his blackened chainmail clinking 
   *if (family_name = "Elspeth")
     She pauses, glancing up at you through the mist. "Though the baggage drivers did mention something when we pulled in—they've been putting displaced refugees from the Marches to work down in the lower brine sheds."
   
-  Across the meadow by the willows, two line-soldiers carry a stretcher bearing a wounded vanguard fighter toward the Cadre's black marquee. Through the lantern-lit tent flap, camp chirurgeons are stitching wounds, while Scholar Ysolde studies sounding charts and barge draft tables for tomorrow's river transit.
+  *if (met_ysolde)
+    Across the meadow by the willows, two line-soldiers carry a stretcher bearing a wounded vanguard fighter toward the Cadre's black marquee. Through the lantern-lit tent flap, camp chirurgeons are stitching wounds under the reek of boiled willow bark, while Scholar Ysolde works over drafting vellum and brass dividers at a chart table.
+  *else
+    Across the meadow by the willows, two line-soldiers carry a stretcher bearing a wounded vanguard fighter toward the Cadre's black marquee. Through the lantern-lit tent flap, camp chirurgeons are stitching wounds under the reek of boiled willow bark, while a specialist in ink-stained scholar's robes works over drafting vellum and brass dividers at a chart table.
   
   Upstream along the river channel, showers of orange sparks leap into the mist from the waterside timber smithy, accompanied by the steady, thundering beat of a waterwheel trip-hammer. Your blade is notched and armor straps strained from the gatehouse fight; an hour at the forge is your only chance to sharpen steel or purchase frontier ironware before the barges cast off.
 
 *if (alder_actions_left = 2)
-  Dusk has faded into a cold, clinging autumn twilight. Heavy mist rolls off the limestone weir in rolling sheets, turning the lanterns along the timber wharves into fuzzy amber halos. The thoroughfares between the sawmills and company lines are crowded with river-pilots and off-duty mercenaries huddled in damp wool cloaks.
+  Dusk has faded into a cold, clinging autumn twilight. Heavy mist rolls off the limestone weir in rolling sheets, turning the lanterns along the timber wharves into fuzzy amber halos. The gravel thoroughfares between the sawmills and company lines are churning into grey slurry under hundreds of marching boots. A two-man provost patrol with hooded iron lanterns passes by, checking sentry watch-tokens, while local carters hurry their dray-teams under shelter, casting wary glances at off-duty mercenaries huddled in damp wool cloaks.
   
   You have attended to one pressing matter, but the freezing river damp continues to seep into your leathers. You have two opportunities remaining before the camp settles for the night.
 
 *if (alder_actions_left = 1)
-  Full dark has settled over the river gorge. The deafening roar of water plunging over the weir dominates the night, and camp sentries along the riverbank have fired the iron cressets with spitting pitch. Breath steams in the freezing air, and the squad fires are burning low to embers.
+  Full dark has settled over the river gorge. The deafening roar of water plunging over the weir dominates the night, and camp sentries along the riverbank have fired the iron cressets with spitting pitch. Breath steams in the freezing air; off-duty soldiers are hunkering close to squad fires, scraping mud from boots and nursing battered mess-tins. Across the water, the town's timber cottages have shuttered their windows tight against the cold and the armed occupation.
   
   You have time for one final task before turning in to your bedroll.
 
@@ -135,8 +138,20 @@ Sergeant Varren stalks between the tent lines, his blackened chainmail clinking 
       *gosub_scene calendar advance_time
       *goto visit_talia_loft
 
-  *if (not(visited_alder_cadre))
-    # Visit the Cadre pavilion to check on wounded comrades and consult Scholar Ysolde on the river gorge charts.
+  *if ((not(visited_alder_cadre)) and (met_ysolde))
+    # Visit the Cadre pavilion to check on wounded comrades and consult Scholar Ysolde on tomorrow's river transit.
+      *set visited_alder_cadre true
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set alder_actions_left - 1
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
+      *set minutes_to_pass 45
+      *set time_advance_call_id "alder_hub_4"
+      *gosub_scene calendar advance_time
+      *goto visit_cadre_pavilion
+
+  *if ((not(visited_alder_cadre)) and (not(met_ysolde)))
+    # Walk over to the Cadre pavilion by the willows to check on wounded comrades and see what the company scholars know about the river.
       *set visited_alder_cadre true
       *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
         *set alder_actions_left - 1
@@ -188,25 +203,17 @@ Sergeant Varren stalks between the tent lines, his blackened chainmail clinking 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label visit_curing_sheds
-*if (family_name = "Elspeth")
-  You make your way down the slippery gravel track toward the lower riverbank, where rows of massive, brine-soaked curing lofts stand on heavy timber stilts above the water. The air here is thick with the stinging reek of coarse rock salt, smoked river trout, and damp cedar sawdust.
-  
-  You push open the heavy slat-wood door of the primary drying loft. Inside, endless rows of wooden racks laden with salted fish hang over long brine troughs. 
-  
-  Shouting suddenly echoes from the far end of the cavernous shed.
-*else
-  You make your way down the slippery gravel track toward the lower riverbank, where rows of massive, brine-soaked curing lofts stand on heavy timber stilts above the water. The air here is thick with the stinging reek of coarse rock salt, smoked river trout, and damp cedar sawdust.
-  
-  You push open the heavy slat-wood door of the primary drying loft in search of waterproofing wax to grease your marching kit. Inside, endless rows of wooden racks laden with salted fish hang over long brine troughs, but the front tally desk is abandoned.
-  
-  An angry commotion suddenly erupts from the far end of the cavernous drying shed.
+Following the rank, pungent smell of woodsmoke, coarse salt, and curing brine, you make your way down to the low, sprawling timber sheds along the riverbank.
+
+Inside, the air is thick with steam and the sharp sting of peat smoke. Long rows of split-cedar drying racks stretch into the shadows, laden with split river trout and whitefish. Scores of local townswomen and refugee laborers in salt-crusted oilcloth aprons work furiously under tallow lanterns, packing fish into heavy firkins. As you enter, several packers tense, casting anxious, wary glances at your company leathers and sheathed iron before returning hurriedly to their knives.
 
 *label curing_crisis
-At the far end of the cavernous shed, an angry altercation breaks out over an overturned brine barrel.
+At the far end of the central aisle, an ugly altercation breaks out over an overturned brine barrel.
 
 "Master Rennick, please!" a young woman cries out, shielding an elderly salt-worker behind her against the curing vats. "We paid our drying tax in full at the last weigh-in!"
 
 The man towering over her—[b]Master Rennick[/b]—is a stocky, thick-necked guild bailiff wrapped in a water-stained beaver-fur mantle. A pewter Gilded Scales badge is pinned prominently to his lapel, and he leans with heavy arrogance on a brass-tipped oak cane. Flanked by two thuggish dock-guards clutching iron-banded cudgels, he kicks over another drying rack, sending salted trout tumbling into the muck.
+*set met_rennick true
 
 *if (family_name = "Elspeth")
   Your chest tightens with sudden, cold shock. The trembling girl wiping brine and tears from her bruised cheek is [b]Elspeth[/b]—your younger sister, thinner and paler than when you last saw her in the Marches, but unmistakably kin.
@@ -285,7 +292,9 @@ The man towering over her—[b]Master Rennick[/b]—is a stocky, thick-necked gu
         
         Rennick's face turns grey as ash. His cudgel-men stumble backward in sheer superstitious terror, dropping their clubs onto the floorboards and sprinting out the door into the rain. Rennick clutches his fur coat tight and scuttles out after them without a backward glance.
       *else
-        You project your voice with magic, though the howling wind outside muffles the echo. Still, the sudden flare in your eyes and the arcane hum in the damp air unnerve the guards enough that Rennick hastily decides against a fight, retreating into the storm.
+        You reach for the power, but the raw wind howling through the wall slats tears the working apart before the resonance can fully peak. The lantern flames flicker dully, and your voice cracks under the draft.
+        
+        Rennick sneers, though his dock-guards hesitate at the unnatural hum lingering in the damp air. "Parlor tricks from a hedge-mage," the bailiff barks, though he keeps two steps behind his men's cudgels. You rest your hand firmly on your weapon hilt, meeting his gaze with cold, unwavering lethal intent. Realizing that four hundred armed sellswords are camped fifty paces away across the mud, Rennick spits on the floorboards and signals a sullen retreat into the rain.
       *goto curing_resolution
 
   *if ((character_class = "barbarian") or (character_class = "fighter"))
@@ -297,11 +306,13 @@ The man towering over her—[b]Master Rennick[/b]—is a stocky, thick-necked gu
       *if (check_success)
         You step out of the shadows, your hobnailed boots striking like iron thunder. Stepping past the stunned guards, you grip a three-inch oak curing beam beside Rennick's head and snap the dense timber clean in two with a single, violent flex of your arms, tossing the splintered halves at his feet.
         
-        "Next one is your collarbone, bailiff," you state coldly, your hand dropping to your pommel.
+        "Next one is your collarbone, bailiff," you state coldly, your weapon hand dropping to your side—a clear, unhurried signal of what comes next.
         
         Rennick's bluster completely disintegrates. He blanches, looks past your massive frame toward four hundred armed sellswords bivouacked fifty paces away, and takes a frantic step back, dragging his terrified guards out into the rain.
       *else
-        You step forward and slam your fist into the curing post, splintering the bark. The sudden display of raw violence rattles the bailiff's nerve; Rennick blenches, curses under his breath, and hustles his men out the door.
+        You step out of the shadows and drive your shoulder into the curing post to wrench it loose, but the green timber groans without snapping, sending a jarring jolt through your collarbone. 
+        
+        The two dock-guards raise their iron-banded cudgels, moving to flank you with ugly grins. But you don't flinch—you shift your weight back into a solid fighting stance, one hand coming up to your weapon with a slow, deliberate calm. The cold, veteran stillness in your posture freezes their advance. Rennick's jaw tightens; calculating the cost of a slaughter on guild property, he curses under his breath and jerks his chin toward the exit, dragging his men back into the storm.
       *goto curing_resolution
 
   *if (character_class = "rogue")
@@ -317,7 +328,9 @@ The man towering over her—[b]Master Rennick[/b]—is a stocky, thick-necked gu
         
         Rennick gasps, clutching his purse in horror at how effortlessly you bypassed his guards. Shaking with humiliated rage, he snarls a curse and turns on his heel, hurrying out into the night.
       *else
-        You step in close to confront him on harbor bylaws. While Rennick barks excuses, the mention of official magistrates and company retribution makes his men nervous enough to pull him toward the exit.
+        You ease close through the cedar smoke to lift his velvet purse, but your damp wool sleeve catches on a rusty salt hook with an audible scrape. Rennick flinches and spins around, clutching his belt as his guards raise their clubs with a shout.
+        
+        You don't retreat. You lean in close, resting your thumb on your pommel, and recite the exact municipal statute regarding illegal toll extortion under company witness. Rennick blusters and denies the charge, but the guards glance nervously at each other—unwilling to face a company provost-tribunal over a bailiff's private shakedown. With a bitter snarl, Rennick turns and leads his men out into the gloom.
       *goto curing_resolution
 
   # Step directly between the bailiff and the workers, hand resting on your hilt, and tell him to back off.${hint_curing_str}
@@ -379,7 +392,11 @@ The man towering over her—[b]Master Rennick[/b]—is a stocky, thick-necked gu
       
       Rennick's florid face turns the color of curdled milk. He drops his cane an inch, glancing nervously at his men. Spitting into the muck, he turns sharply and hustles out into the gloom.
     *else
-      You try to call out his fraudulent scale weights, but Rennick barks a harsh laugh and brandishes his guild tally book. Still, the mention of company involvement makes his guards uneasy enough that he decides against further violence, turning to leave with petty insults.
+      You challenge his balance weights, but Rennick barks a harsh, contemptuous laugh, waving an official guild tally slip in your face. "Stamped by the Chancellery, recruit! You don't know guild law from swamp mud!"
+      
+      His guards step forward aggressively, but you don't yield the floor. "Then let's take your stamped slip to Captain Vane and Factor Morzan together," you state evenly, your hand resting over your pommel. "Let's see if the factor agrees with your math under company oath." 
+      
+      The mention of an immediate command audit makes Rennick's eyes dart toward the door. Unwilling to risk his position over a petty shakedown, he sneers, tucks his papers into his fur coat, and hustles his men out into the cold night.
     *goto curing_resolution
 
   # Turn around and step back out into the rain, leaving the locals to settle their own disputes.
@@ -461,7 +478,7 @@ Behind you, shouting and the sickening crunch of splintered timber echo into the
       *goto curing_done
 
     *if (((silver * 10) + copper) >= 20)
-      # "The campaign is too dangerous. Take this coin and find safe sanctuary with the upper-town chapel weavers."@{show_stat_hints  [-2 Silver, Upper Chapel Sanctuary, Elspeth Bond +4]|}
+      # "The campaign is too dangerous. Take this coin and find safe sanctuary with the upper-town chapel weavers."@{show_stat_hints  [-2 Silver, Elspeth Bond +4]|}
         *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
           *set copper - 20
           *label balance_elspeth_chapel_coin
@@ -479,9 +496,13 @@ Behind you, shouting and the sickening crunch of splintered timber echo into the
           *set locked_stat_bump_page_id choice_page_id
         *set family_desc "Your younger sister, Elspeth, is sheltered under holy sanctuary with the weavers at Alderford's upper chapel, funded by your mercenary remittances."
         
-        You press two heavy silver marks into her palm and walk her up the stone stair to the upper-town chapel of the River Weavers. The deacon receives the coin and accepts Elspeth under ecclesiastical sanctuary, where guild bailiffs and dock debt-collectors cannot touch her.
+        You press two heavy silver marks into her trembling palm and guide her out of the brine lofts. Together, you climb the steep limestone stair leading up to the high ridge above the weir, where the River Weavers' chapel stands cloistered behind ancient ashlar walls.
         
-        "I'll pray for you at every watch, ${name}," she whispers, embracing you tightly before stepping into the warm, candlelit cloisters.
+        Inside, the air is warm and dry, smelling of sweet beeswax candles, raw spun wool, and cedar woodsmoke. An elder deacon in a simple undyed robe meets you at the chancel gate. He inspects the silver marks, confirms the ecclesiastical sanctuary registry, and nods with solemn grace.
+        
+        "She is safe behind these stone walls, soldier," the deacon murmurs, placing a gentle hand on her shoulder. "Neither guild bailiffs nor dock debt-masters may cross this lintel."
+        
+        "I'll pray for you at every watch, ${name}," Elspeth whispers, throwing her arms around your neck in a fierce, tearful embrace before stepping into the quiet cloisters.
         *goto curing_done
 
     *if ((((silver * 10) + copper) < 20) and (((silver * 10) + copper) >= 5))
@@ -812,7 +833,6 @@ When you finally pull your clean, dried tunic back on, the bone-deep aches of th
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label visit_cadre_pavilion
-*set met_ysolde true
 You cross the soggy meadow toward the Cadre pavilion—a large black marquee bearing the company's quartered raven banner, pitched near the willow line by the weir embankment.
 
 Near the entrance flap, several wounded vanguard soldiers from the Black Sinks gatehouse rest on dry straw pallets, groaning softly as camp chirurgeons cleanse cut limbs and bind splints with boiled linen. 
@@ -820,9 +840,17 @@ Near the entrance flap, several wounded vanguard soldiers from the Black Sinks g
 *if (elspeth_role = "odessa_apprentice")
   Near the chirurgeon's table in the corner, Elspeth is visible in a dry wool apron, diligently folding boiled linen strips and brewing steaming willow-bark tea under Surgeon Odessa's sharp supervision. She catches your eye with a proud, reassuring smile of gratitude as you pass.
 
-Further inside, the air smells of bitter willow-bark tea, sulfur, and burning whale oil. [b]Scholar Ysolde[/b] sits behind a folding camp table buried beneath rolled waterway charts, iron compasses, and ink-horns. A pierced-tin lantern illuminates her sharp, aristocratic features and the silver-framed spectacles perched on her nose. She is tapping an iron stylus against an imperial sounding chart of the river gorge, her brow furrowed in deep concentration.
+*if (met_ysolde)
+  Further inside, the air smells of bitter willow-bark tea, sulfur, and burning whale oil. Scholar Ysolde sits behind a folding camp table buried beneath rolled waterway charts, iron compasses, and ink-horns. A pierced-tin lantern illuminates her sharp, aristocratic features and the silver-framed spectacles perched on her nose. She is tapping an iron stylus against an imperial sounding chart of the river gorge, her brow furrowed in deep concentration.
 
-"${name}," she greets you, pushing her spectacles up the bridge of her nose with an ink-stained thumb. "Come look at this sounding chart. The hydraulic logs for this stretch of the Grey River don't make sense."
+  "${name}," she greets you, pushing her spectacles up the bridge of her nose with an ink-stained thumb. "Come look at this sounding chart. The hydraulic logs for this stretch of the Grey River don't make sense."
+*else
+  *set met_ysolde true
+  Further inside, the air smells of bitter willow-bark tea, sulfur, and burning whale oil. Behind a folding camp table buried beneath rolled vellum charts, brass dividers, and ink-horns sits the Cadre's navigation specialist—a sharp-featured woman in an ink-stained scholar's robe, silver-framed spectacles perched on her nose. Her dark hair is pulled back in a severe highland knot, and an iron stylus taps restlessly against the parchment.
+
+  She glances up as your shadow crosses the table, her cool, assessing grey eyes measuring your mud-caked company leathers.
+
+  "If you're looking for clean dressings or fever tea, the chirurgeon's bench is by the willow flap," she says in a crisp, aristocratic register. "If you're here on company business, I am Scholar Ysolde. And unless my sounding logs are lying to me, tomorrow's flotilla is sailing straight into a disaster."
 
 Ysolde spreads the annotated parchment flat across the folding desk.
 
@@ -871,11 +899,15 @@ She looks up at you with grave intensity. "Shallow local freight dories and merc
     # Keep the toll register in your pack for your own records and ask how to clear the boom without the blueprints.
       You keep the ledger secure in your pack, nodding instead toward the incomplete charts spread before her. "If the records are lost, how do we trip the release?"
 
-      Ysolde adjusts her spectacles, gathering her survey tools. "The release chamber is a flooded ashlar conduit beneath the southern weir foundation—four feet of freezing silt and calcified iron. I must maintain the pavilion's detection wards and verify tomorrow's navigation bearings with the scout runners, so I need an operative in the field. Take a heavy lantern and tools from the survey crate—get down into that sump before full dark and trip the dog."
+      Ysolde adjusts her spectacles, gathering her survey tools with urgent discipline. "The release chamber is a flooded ashlar conduit beneath the southern weir foundation—four feet of freezing silt and calcified iron. I cannot march a company sapper squad with sledges onto the weir; the entire structure is deeded to the Gilded Scales. The moment Factor Morzan spots twelve armed sellswords breaking into imperial masonry, he will declare municipal sabotage, seize our contract bonds, and double the lock fees.
+      
+      "We need a single operative to slip into that sump unobserved before full dark and trip the dog. Take a heavy lantern and tools from the survey crate—clear the boom so our barges can pass unharmed at dawn."
       *goto cadre_choice_hub
 *else
   *label cadre_action_prep
-  Ysolde adjusts her spectacles, gathering her survey tools. "The release chamber is a flooded ashlar conduit beneath the southern weir foundation—four feet of freezing silt and calcified iron. I must maintain the pavilion's detection wards and verify tomorrow's navigation bearings with the scout runners, so I need an operative in the field. Take a heavy lantern and tools from the survey crate—get down into that sump before full dark and trip the dog."
+  Ysolde adjusts her spectacles, gathering her survey tools with urgent discipline. "The release chamber is a flooded ashlar conduit beneath the southern weir foundation—four feet of freezing silt and calcified iron. I cannot march a company sapper squad with sledges onto the weir; the entire structure is deeded to the Gilded Scales. The moment Factor Morzan spots twelve armed sellswords breaking into imperial masonry, he will declare municipal sabotage, seize our contract bonds, and double the lock fees.
+  
+  "We need a single operative to slip into that sump unobserved before full dark and trip the dog. Take a heavy lantern and tools from the survey crate—clear the boom so our barges can pass unharmed at dawn."
   *goto cadre_choice_hub
 
 *label cadre_choice_hub
@@ -944,7 +976,9 @@ She looks up at you with grave intensity. "Shallow local freight dories and merc
       
       With a deafening, echoing *CLANG* that reverberates through the stone, the seized ratchet snaps free. The massive lead counterweight plunges into the river sump, and out in the foaming gorge, the enormous iron river-chain drops twenty feet into the limestone silt with a shuddering rush!
     *else
-      You strain against the rusted iron, your muscles burning in the damp cold, but the silt has hardened like mortar around the ratchet dog. You hammer the prybar with a heavy field stone, chipping away the calcified crust until the lever finally trips with a violent clatter.
+      You drop into the freezing, knee-deep river sludge, the icy water numbing your shins through your leather boots. You wedge the prybar behind the calcified ratchet dog and heave with everything you have, but decades of hardened limestone mortar hold the iron fast. The cold current drags at your balance, and the deafening, vibrating roar of the weir overhead threatens to drown your senses.
+      
+      Grit grinding into your palms, you grab a heavy river cobble from the silt and hammer furiously against the prybar's heel. With a sharp, ringing crack, the calcified shell shatters, and the rusted lever finally trips with a violent, shuddering clatter!
     *goto cadre_success
 
   # Use fine steel picks from Ysolde's drafting kit to unpick the silted locking ratchet and trip the dog.${hint_cadre_tools}
@@ -955,7 +989,9 @@ She looks up at you with grave intensity. "Shallow local freight dories and merc
     *if (check_success)
       Kneeling by the ancient mechanism, you clean out the limestone grit with a fine steel pick, levering the spring-loaded pawl with delicate precision. With a smooth, satisfying *click*, the internal release pin slips, sending the counterweight tumbling and dropping the boom into the deep riverbed.
     *else
-      The pick slips against the rusted iron, barking your knuckles. You curse under your breath, adjust your grip, and wedge the mechanism open with brute force until the heavy chain disengages.
+      Kneeling on the slimy ashlar ledge, your frozen fingers struggle with the delicate steel picks. The pick slips against the rusted iron with a sharp screech, gouging your knuckles against the calcified housing. You curse under your breath, wiping blood and cold river spray from your hand.
+      
+      Abandoning delicate finesse, you wedge the tempered pick deep behind the spring-plate and wrench it sideways with raw, desperate leverage. With a muffled pop, the internal release pin snaps clear, allowing the heavy chain to disengage and plunge into the silt.
     *goto cadre_success
 
   # Take the waterway coordinates straight to Captain Vane and the barge pilots to handle it.${hint_cadre_vane}
@@ -971,10 +1007,36 @@ She looks up at you with grave intensity. "Shallow local freight dories and merc
         *set vane_standing +5
       *set stat_bump_locked true
       *set locked_stat_bump_page_id choice_page_id
+    You take the annotated sounding parchment and make your way across the muddy bivouac toward the company command tent—a massive, double-walled pavilion bearing the quartered raven standard.
+    
+    Outside the entrance flap, two tall vanguard line-sentries in burnished chainmail cross their heavy halberds with a sharp metallic clatter, barring your path.
+    
+    "Command tent is closed to general file, recruit," the lead sentry grunts, eyeing your mud-spattered boots. "Sergeant Varren takes company grievances at the third watch."
+    
     *if (check_success)
-      You bring the annotated chart directly to Captain Vane's command tent. Vane listens with sharp, calculating eyes, recognizing the imperial coordinates instantly. He commends your tactical vigilance with a rare, approving nod and dispatches a company sapper party with heavy sledgehammers to trip the weir counterweight.
+      You hold up the vellum, pointing to the Cadre seal and the imperial chancellery stamp. "Navigational emergency for tomorrow's flotilla. Lead barges are chartered to hit an imperial boom at first light. Let me through."
+      
+      The sentries exchange a quick glance, noting the urgent discipline in your posture, and uncross their polearms to pull the tent flap aside.
+      
+      Inside, the air is warm and still, smelling of beeswax tallow, fine pipe tobacco, and damp woolen maps. Captain Joshua Vane stands over a campaign table lit by three heavy brass candle-stands, studying transit vouchers with a quill in hand. His dark officer's coat is pristine, a jeweled signet ring catching the light as he looks up with cold, calculating grey eyes.
+      
+      "Speak, recruit," Vane says, his tone level and clipped. "And make it worth the breach of my tent flap."
+      
+      You lay the imperial soundings flat across his map table, pointing out the five-foot draft collision coordinates below the weir. Vane leans forward, his gaze narrowing as he traces the imperial hydraulic schematics.
+      
+      "Sixty-foot deepwater hulls drawing five feet over a two-hundred-year-old iron boom," Vane murmurs, a dangerous, calculating stillness settling over his face. "Four hundred troops, eighty horses, and thirty thousand marks of contract cargo ripped open before breakfast."
+      
+      He straightens, fixing you with a rare, measuring nod of professional approval. "Sharp eyes, soldier. You showed initiative bringing this directly to my table instead of letting it rot in a sergeant's pouch." Turning to his orderly, Vane snaps: "Fetch Sapper Sergeant Kell. Tell him to take six men with muffled sledges and drop that boom before the middle watch. Discrete—I will not have Factor Morzan claiming municipal interference."
     *else
-      You bring the chart to Captain Vane. Though initially impatient with a recruit bypassing file sergeants, Vane inspects the hydraulic markings, recognizes the hazard, and sends sappers to clear the boom, nodding gruffly at your initiative.
+      You try to explain the hazard, but fumble the exact hydraulic terms in your haste. The sentries scoff, but your insistence and the sight of Ysolde's Cadre seal convince them to part their halberds with a gruff warning.
+      
+      Inside, Captain Joshua Vane stands over a campaign table lit by brass candle-stands, reviewing supply requisitions. He looks up, his cold, aristocratic gaze pinning you in place with freezing authority.
+      
+      "Who gave you leave from the picket line, recruit?" Vane demands, his voice low and sharp as a razor. "You bypass Sergeant Varren and barge into my command tent without an officer's escort? In the border leagues, that earns three days docked pay and second-file trench duty."
+      
+      You swallow your pride and press the imperial vellum onto the table, stating the hazard plainly. Vane's eyes flick to the three-headed hawk seal. His sharp tactical mind grasps the disaster in an instant: four chartered grain barges gutted on submerged imperial iron.
+      
+      The captain's expression remains stone-cold, but the anger leaves his voice. "You lack file discipline, recruit, but you possess eyes that work. If our hulls had torn on that boom, the contract would have drowned with them." He marks a chit on his ledger and turns to his orderly. "Dispatch Kell and the sappers to the southern weir immediately. Keep it quiet."
     *goto cadre_vane_success
 
   # Tell Ysolde that river hazards are the guild pilots' problem, not yours.
@@ -1355,6 +1417,7 @@ Janna drops her heavy leather apron aside, wearing only a damp, soot-dusted line
     *goto smithy_shop_loop
 
 *label janna_intimacy_beat1
+*set janna_romanced true
 *temp janna_position ""
 Janna drops the heavy iron crossbar across the double workshop doors, securing the forge from interruptions. She leads you past the roaring furnace and through a heavy wool partition curtain into the [b]adjoining hearth alcove[/b]—a private, cedar-paneled living chamber built directly behind the massive chimney breast. The thick granite stones of the flue radiate deep, dry warmth through the room, driving every ounce of river damp from the air.
 
@@ -1471,7 +1534,10 @@ Pushing aside the wool partition drape, you both step back into the main forge w
     *goto smithy_shop_loop
 
   # Share a parting cup of highland cider and ask about the old imperial ruins along the river.@{show_stat_hints  [River Lore & Historical Intel]|}
-    You pour two final measures of highland cider, leaning close against the workbench. "Ysolde mentioned ancient Meridian works downriver. What else remains along that waterway?"
+    *if (met_ysolde)
+      You pour two final measures of highland cider, leaning close against the workbench. "Ysolde mentioned ancient Meridian works downriver. What else remains along that waterway?"
+    *else
+      You pour two final measures of highland cider, leaning close against the workbench. "The river pilots mentioned ancient imperial works downriver. What else remains along that waterway?"
     
     Janna sips the cider, her eyes reflective in the hearth-glow. "Old legion signal towers and imperial toll-piers along the limestone bluffs," she murmurs softly. "The empire built them out of dressed ashlar two centuries ago to monitor merchant trade. They're mostly weathered stone now, though the old foundations still make good navigation marks for the barge pilots heading down to the capital."
     
@@ -1483,9 +1549,16 @@ Pushing aside the wool partition drape, you both step back into the main forge w
     *goto smithy_done
 
 *label return_to_smithy_shop
-You follow the roar of the mill-race back to the timber forge. Inside, the hearth still pulses with warm orange light. Janna looks up from oiling a row of finished barge pins, giving you a welcoming nod.
+You follow the roar of the mill-race back to the timber forge. Inside, the hearth still pulses with deep, glowing warmth.
 
-"Back for more iron, sellsword?" she asks with a crooked smile. "Torvald's finished stock is still on the south racks."
+*if (janna_romanced)
+  Janna looks up from the workbench, setting aside an oily rag as a warm, private smile touches her lips. Her amber eyes linger on yours with quiet fondness before she gestures toward the tool racks.
+  
+  "Back so soon, soldier?" she murmurs softly, stepping close enough for you to catch the scent of cedar shavings and warm skin. "Torvald's finished stock is still over on the south wall if you need anything before morning."
+*else
+  Janna looks up from oiling a row of finished barge pins, giving you a welcoming nod of craft camaraderie.
+  
+  "Back for more iron, sellsword?" she asks with a crooked smile. "Torvald's finished stock is still on the south racks."
 
 *goto smithy_shop_loop
 
@@ -1512,7 +1585,7 @@ You follow the roar of the mill-race back to the timber forge. Inside, the heart
         *set has_timber_axe true
         *set currency_txn_locked true
         *set locked_currency_txn_page_id choice_page_id
-      You purchase the broad-bearded single-handed felling axe, strapping the greased leather sheath to your belt.
+      Janna lifts the broad-bearded hewing axe from the cedar rack, wiping the protective pine tallow from the forged head with a rag. You take the hickory haft, testing the forward balance with a firm, one-handed swing that cuts a clean whistle through the workshop air. You drop the coin into the bench box and strap the greased leather sheath securely to your belt.
       *goto smithy_shop_loop
 
   *if (not(has_stiletto))
@@ -1530,7 +1603,7 @@ You follow the roar of the mill-race back to the timber forge. Inside, the heart
         *set has_stiletto true
         *set currency_txn_locked true
         *set locked_currency_txn_page_id choice_page_id
-      You purchase the square-section file-steel thrusting dagger, sliding it cleanly into your boot sheath.
+      Janna pulls the slender, square-sectioned thrusting dagger from the tool bin. The high-carbon file steel is ground to a needle-sharp armor-piercing bodkin point, balanced perfectly above a turned iron crossguard. You test the grip in your palm and slide the narrow leather sheath cleanly into the top of your marching boot.
       *goto smithy_shop_loop
 
   *if ((not(has_shield)) and (((character_class = "fighter") or (character_class = "barbarian")) or (character_class = "ranger")))
@@ -1551,14 +1624,15 @@ You follow the roar of the mill-race back to the timber forge. Inside, the heart
         *gosub_scene startup recalculate_armor_class
         *set currency_txn_locked true
         *set locked_currency_txn_page_id choice_page_id
+      Janna takes down the heavy oak-and-iron shield from the forge wall, rapping her knuckles against the central cold-hammered boss to demonstrate its solid, ring-tested density.
       *if (shield_equipped)
-        You strap the cold-hammered oak-and-iron shield to your forearm.
+        You slip your arm through the oiled leather enarmes, adjusting the buckled forearm strap until the heavy shield rests solid and protective against your flank.
       *else
-        You sling the cold-hammered oak-and-iron shield across your back—both hands are already full with your ${weapon_desc}. You can strap it on properly from your dossier's Equipment page once you free up a hand.
+        You sling the heavy shield across your back—both hands are currently occupied with your ${weapon_desc}. You can equip it at any time from your dossier loadout once a hand is free.
       *goto smithy_shop_loop
 
   *if (not(has_iron_crowbar))
-    # Purchase the Pioneer's Iron Prybar & Pitons (1 Silver, 2 Copper)@{show_stat_hints  [Advantage on Forcing Levers & Heavy Locks]|}
+    # Purchase the Sapper's Pinch Crowbar (1 Silver, 2 Copper)@{show_stat_hints  [Advantage on Force/Pry Checks]|}
       *if (((silver * 10) + copper) < 12)
         You don't have enough coin for the crowbar.
         *goto smithy_shop_loop
@@ -1572,7 +1646,7 @@ You follow the roar of the mill-race back to the timber forge. Inside, the heart
         *set has_iron_crowbar true
         *set currency_txn_locked true
         *set locked_currency_txn_page_id choice_page_id
-      You purchase the cold-forged iron crowbar and tempered wedges, sliding them into your gear pack.
+      Janna hands you the three-foot bar of octagonal forged iron, complete with a curved pinch-claw and chisel heel. You test its rigid heft and slide it securely through the bedroll straps of your field pack.
       *goto smithy_shop_loop
 
   # Finished shopping. Step out of the smithy into the night air.
@@ -1665,7 +1739,7 @@ The taproom hums with quiet comfort and warmth.
     # Pull up a bench at the dice table by the hearth where a scarred company corporal is rolling bones with the locals.${hint_taphouse_dice}
       *goto taphouse_dice_table
 
-  *if (character_class = "bard")
+  *if ((character_class = "bard") and (not(bard_performed_taphouse)))
     # [Bard: Performance] Borrow a tavern lute and play a steady border tune for the room.${hint_taphouse_bard}
       *goto taphouse_bard_performance
 
@@ -1679,9 +1753,15 @@ The taproom hums with quiet comfort and warmth.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label taphouse_talk_lyra
-You pull up the wooden stool beside Lyra, feeling the dry heat from the river-stone hearth radiate against your boots. She slides a small wooden plate of roasted chestnuts toward you with the tip of her belt knife.
+*if (not(visited_lyra_taphouse))
+  *set visited_lyra_taphouse true
+  You pull up the wooden stool beside Lyra, feeling the dry heat from the river-stone hearth radiate against your boots. She slides a small wooden plate of roasted chestnuts toward you with the tip of her belt knife.
 
-"Look at this," Lyra murmurs, leaning back against the timber wall. "A dry roof, peat in the grate, and cider that doesn't taste like marsh water. Beats sleeping in wet wool by a long shot."
+  "Look at this," Lyra murmurs, leaning back against the timber wall. "A dry roof, peat in the grate, and cider that doesn't taste like marsh water. Beats sleeping in wet wool by a long shot."
+*else
+  You step back over to the hearth table and pull your stool back up beside Lyra. She glances up over the rim of her cider mug with a dry, familiar smirk.
+
+  "Done roaming the taproom?" she asks, nudging the plate of chestnuts your way. "What's on your mind?"
 
 *label lyra_dialogue_hub
 *choice
@@ -1765,11 +1845,20 @@ Lyra leans in closer over the table, keeping her voice beneath the tavern hum. "
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label taphouse_shop_bar
-*temp discussed_maura_past false
-*temp discussed_river_conditions false
-You step up to the wide oak bar. The lean woman in the bleached wolf-skin vest pauses her wiping of the counter with a clean linen rag, her sharp, assessing eyes taking in your company gear and weapons.
+You step up to the wide oak bar. 
 
-"Welcome to the Drowned Oar, soldier," she says in a calm, smoky voice. "I'm [b]Maura[/b]. If you came off the marsh road with the rest of Vane's outfit, you look like you could use something hot in your ribs. I've got thick mutton pottage bubbling on the grate, smoked river herring, clean spiced cider, and herbal bitters. What'll it be?"
+*if (not(met_maura))
+  *set met_maura true
+  The lean woman in the bleached wolf-skin vest pauses her wiping of the counter with a clean linen rag, her sharp, assessing eyes taking in your company gear and weapons.
+
+  "Welcome to the Drowned Oar, soldier," she says in a calm, smoky voice. "I'm [b]Maura[/b]. If you came off the marsh road with the rest of Vane's outfit, you look like you could use something hot in your ribs. I've got thick mutton pottage bubbling on the grate, smoked river herring, clean spiced cider, and herbal bitters. What'll it be?"
+*else
+  *if (maura_cellar_cleared)
+    Maura looks up from wiping the oak counter with a clean linen rag, giving you a nod of genuine respect. "Cellar's quiet for the first time in weeks, soldier. Word's already spreading among the carters. What can I get you from the grate?"
+  *elseif (visited_maura_cellar)
+    Maura glances up as you approach the bar, one eyebrow arched. "Still got that cellar nuisance to deal with, or did you come back for a warm mug first?"
+  *else
+    Maura looks up from rinsing an earthenware mug, giving you a welcoming nod of sellsword acknowledgment. "Back for another round, soldier? Pottage is still hot on the grate, or I can draw you a mug of spiced cider."
 
 *label taphouse_bar_loop
 *choice
@@ -1951,14 +2040,6 @@ She looks you dead in the eye.
     *goto taphouse_bar_loop
 
 *label culvert_breach_start
-*set combat_enemy_name "Silt-Lurker Lacedon"
-*set combat_enemy_hp 12
-*set combat_enemy_max_hp 12
-*set combat_enemy_ac 12
-*set combat_enemy_atk_bonus 4
-*set combat_enemy_dmg_dice_sides 6
-*set combat_enemy_dmg_bonus 2
-*set combat_round 1
 Maura lifts the iron-banded trapdoor by its ring, the hinges shrieking with disuse. Cold, mineral-smelling air rises out of the dark in a slow exhale. You light the pitch torch off the hearth and drop down through the breach into ankle-deep silt, the flagstones giving way almost immediately to the raw, mortared brick of the old imperial drain.
 
 The torchlight catches three hundred years of dead water: a collapsed portcullis furred with pale lichen, a slow current dragging at your boots, and somewhere beyond the reach of the flame, a wet, clicking rasp like iron scraping across stone.
@@ -1981,7 +2062,7 @@ Two yellow eyes open in the dark, thirty feet off across the flooded stone, unmo
       [b][🗡️ Unnoticed — Advantage on your first strike][/b]
     *else
       A loose brick shifts underfoot with a wet scrape, and the yellow eyes snap toward the sound.
-    *goto culvert_combat_round_hub
+    *goto culvert_enter_combat
 
   # Study the flooded conduit and the old imperial brickwork for a way to end this without wading in yourself.@{show_stat_hints  [INT Check (DC 13), Bypass: Environmental Kill]|}
     *set check_stat "int"
@@ -1994,10 +2075,10 @@ Two yellow eyes open in the dark, thirty feet off across the flooded stone, unmo
       You crouch by the sagging brickwork, tracing the old mortar joints for a weak point, but a chunk of loose stone slips from your grip and splashes into the black water. The eyes fix on you instantly.
       *set combat_enemy_advantage true
       [b][⚠️ Alerted — the creature strikes first][/b]
-      *goto culvert_combat_round_hub
+      *goto culvert_enter_combat
 
   # Go in loud. Whatever's down there can come to you.
-    *goto culvert_combat_round_hub
+    *goto culvert_enter_combat
 
 *label culvert_environmental_kill
 *set maura_cellar_cleared true
@@ -2017,209 +2098,17 @@ She studies you a moment longer, then shrugs and reaches under the counter for h
   *gosub_scene startup currency_add
   *set currency_txn_locked true
   *set locked_currency_txn_page_id choice_page_id
-[b][🪙 Paid: ${culvert_bounty_silver} Silver Marks][/b]
+[b][💰 Paid: ${culvert_bounty_silver} Silver Marks][/b]
 *page_break Step back from the counter...
 *goto taphouse_bar_loop
 
-*label culvert_combat_round_hub
-*set combat_enemy_disadvantage false
-*temp has_attack_cantrip false
-*temp attack_cantrip_name ""
-*temp attack_cantrip_stat "int"
-*temp attack_cantrip_dice_sides 6
-*if ((((wizard_cantrip = "fire_bolt") or (wizard_cantrip_2 = "fire_bolt")) or (wizard_cantrip_3 = "fire_bolt")) or ((race_cantrip = "fire_bolt") or (race_cantrip_2 = "fire_bolt")))
-  *set has_attack_cantrip true
-  *set attack_cantrip_name "Fire Bolt"
-  *set attack_cantrip_stat "int"
-  *set attack_cantrip_dice_sides 10
-*else
-  *if ((((wizard_cantrip = "ray_of_frost") or (wizard_cantrip_2 = "ray_of_frost")) or (wizard_cantrip_3 = "ray_of_frost")) or ((race_cantrip = "ray_of_frost") or (race_cantrip_2 = "ray_of_frost")))
-    *set has_attack_cantrip true
-    *set attack_cantrip_name "Ray of Frost"
-    *set attack_cantrip_stat "int"
-    *set attack_cantrip_dice_sides 8
-  *else
-    *if ((((wizard_cantrip = "shocking_grasp") or (wizard_cantrip_2 = "shocking_grasp")) or (wizard_cantrip_3 = "shocking_grasp")) or ((race_cantrip = "shocking_grasp") or (race_cantrip_2 = "shocking_grasp")))
-      *set has_attack_cantrip true
-      *set attack_cantrip_name "Shocking Grasp"
-      *set attack_cantrip_stat "int"
-      *set attack_cantrip_dice_sides 8
-    *else
-      *if ((warlock_cantrip = "eldritch_blast") or (warlock_cantrip_2 = "eldritch_blast"))
-        *set has_attack_cantrip true
-        *set attack_cantrip_name "Eldritch Blast"
-        *set attack_cantrip_stat "cha"
-        *set attack_cantrip_dice_sides 10
-      *else
-        *if ((bard_cantrip = "vicious_mockery") or (bard_cantrip_2 = "vicious_mockery"))
-          *set has_attack_cantrip true
-          *set attack_cantrip_name "Vicious Mockery"
-          *set attack_cantrip_stat "cha"
-          *set attack_cantrip_dice_sides 4
-
-[b][⚔️ Round ${combat_round} — ${combat_enemy_name}: HP ${combat_enemy_hp}/${combat_enemy_max_hp} (AC ${combat_enemy_ac}) | You: HP ${hp_current}/${hp_max} (AC ${armor_class})][/b]
-*if (shield_armed)
-  [b][✨ Shield Armed — will trigger on the next hit][/b]
-
-*choice
-  # Attack with your ${weapon}.
-    *if (weapon_type = "ranged")
-      *set check_stat "dex"
-    *else
-      *if (weapon_type = "finesse")
-        *comment Finesse (RAW): the wielder's choice of STR or DEX, whichever
-        *comment is higher -- not a blanket DEX weapon.
-        *if (str_mod > dex_mod)
-          *set check_stat "str"
-        *else
-          *set check_stat "dex"
-      *else
-        *set check_stat "str"
-    *comment Sneak Attack only cares whether advantage was true going into
-    *comment this roll -- roll_d20_check clears the live flag itself before
-    *comment returning, so it has to be captured here, before the gosub.
-    *temp attack_had_advantage advantage
-    *set check_dc combat_enemy_ac
-    *set check_skill "Melee Attack"
-    *gosub_scene startup roll_d20_check
-    *if (check_success)
-      *if (weapon_type = "finesse")
-        *set combat_player_dmg_dice_sides 4
-        *comment Matches the STR-or-higher check above -- 5e uses the same
-        *comment ability for a finesse weapon's attack and its damage.
-        *if (str_mod > dex_mod)
-          *set combat_player_dmg_bonus str_mod
-        *else
-          *set combat_player_dmg_bonus dex_mod
-      *else
-        *if (weapon_type = "ranged")
-          *set combat_player_dmg_dice_sides 6
-          *set combat_player_dmg_bonus dex_mod
-        *else
-          *if (weapon_type = "two_handed")
-            *set combat_player_dmg_dice_sides 12
-            *set combat_player_dmg_bonus str_mod
-          *else
-            *set combat_player_dmg_dice_sides 8
-            *set combat_player_dmg_bonus str_mod
-      *gosub_scene startup resolve_player_hit
-      *temp sneak_attack_landed false
-      *if ((((character_class = "rogue") and ((weapon_type = "finesse") or (weapon_type = "ranged"))) and (attack_had_advantage)))
-        *set sneak_attack_landed true
-        *if (not(stat_bump2_locked)) or (not(locked_stat_bump2_page_id = choice_page_id))
-          *temp sneak_die 0
-          *rand sneak_die 1 6
-          *set combat_enemy_hp - sneak_die
-          *if (combat_enemy_hp < 0)
-            *set combat_enemy_hp 0
-          *set combat_player_dmg_dealt + sneak_die
-          *set stat_bump2_locked true
-          *set locked_stat_bump2_page_id choice_page_id
-      *if (sneak_attack_landed)
-        You strike from an opening it never saw coming, driving your ${weapon} into an exposed weak point for a vicious, precise finishing blow.
-        [b][🗡️ Sneak Attack | 🩸 Hit: ${combat_player_dmg_dealt} damage][/b]
-      *else
-        You drive your ${weapon} home. It bites deep, and the creature recoils with a wet, furious hiss.
-        [b][🩸 Hit: ${combat_player_dmg_dealt} damage][/b]
-    *else
-      Your ${weapon} scrapes off wet scale and old chitin, throwing you half a step off balance in the current.
-      [b][💨 Miss][/b]
-    *goto culvert_check_enemy_hp
-
-  *if (has_attack_cantrip)
-    # Channel ${attack_cantrip_name} at the creature.
-      *set check_stat attack_cantrip_stat
-      *set check_dc combat_enemy_ac
-      *set check_skill attack_cantrip_name
-      *gosub_scene startup roll_d20_check
-      *if (check_success)
-        *set combat_player_dmg_dice_sides attack_cantrip_dice_sides
-        *set combat_player_dmg_bonus 0
-        *gosub_scene startup resolve_player_hit
-        The working leaves your fingertips and strikes true, searing across wet scale in the dark.
-        [b][🔥 Hit: ${combat_player_dmg_dealt} damage][/b]
-      *else
-        The working goes wide, scattering harmlessly into the black water.
-        [b][💨 Miss][/b]
-      *goto culvert_check_enemy_hp
-
-  *if (((character_class = "wizard") and (wizard_spell = "magic_missile")) and (wizard_spell_slots > 0))
-    # [Spell: Magic Missile] Unleash three darts of force that strike unerringly, bypassing its hide entirely.
-      *if (not(stat_bump2_locked)) or (not(locked_stat_bump2_page_id = choice_page_id))
-        *set wizard_spell_slots - 1
-        *temp mm_dart_1 0
-        *temp mm_dart_2 0
-        *temp mm_dart_3 0
-        *rand mm_dart_1 1 4
-        *rand mm_dart_2 1 4
-        *rand mm_dart_3 1 4
-        *set combat_player_dmg_dealt (((mm_dart_1 + mm_dart_2) + mm_dart_3) + 3)
-        *set combat_enemy_hp - combat_player_dmg_dealt
-        *if (combat_enemy_hp < 0)
-          *set combat_enemy_hp 0
-        *set stat_bump2_locked true
-        *set locked_stat_bump2_page_id choice_page_id
-      You speak three crisp syllables and snap your fingers forward. Three glowing, pale-blue darts of crackling arcane force burst from your fingertips, curving through the dark water with impossible precision to slam home.
-      [b][✨ Magic Missile: Automatic Hit | ${combat_player_dmg_dealt} damage][/b]
-      *goto culvert_check_enemy_hp
-
-  # Brace and watch its strikes, giving ground instead of pressing the attack.
-    *set combat_enemy_disadvantage true
-    You plant your feet in the silt and keep the torch high, tracking the shape moving low through the water instead of swinging blind.
-    *goto culvert_enemy_turn
-
-  *if ((((character_class = "wizard") and (wizard_spell = "shield")) and (wizard_spell_slots > 0)) and (not(shield_armed)))
-    # [Spell: Shield] Hold the barrier-spell coiled and ready, primed to snap into place the instant something connects.
-      *set shield_armed true
-      You murmur the first half of the somatic phrase under your breath, holding the working coiled and ready at your fingertips, costing you nothing to keep it there.
-      [b][✨ Shield Readied — will trigger automatically on the next hit][/b]
-      *goto culvert_combat_round_hub
-
-  *if ((character_class = "fighter") and (fighter_second_wind_uses > 0))
-    # [Second Wind] Grit your teeth through the cold and the fear, and keep going.
-      *gosub_scene startup second_wind
-      A surge of stubborn, practiced discipline steadies your breathing and closes the worst of your scrapes.
-      [b][🩸 Hit Points: ${hp_current} / ${hp_max}][/b]
-      *goto culvert_enemy_turn
-
-  *if (((character_class = "barbarian") and (not(is_raging))) and (barbarian_rage_uses > 0))
-    # [Rage] Let the fury take you.
-      *gosub_scene startup activate_rage
-      A hot, roaring pressure floods your chest, dulling the cold and the stink of the drain to nothing at all.
-      *goto culvert_enemy_turn
-
-  # Break off and scramble back up through the breach.
-    *goto culvert_flee
-
-*label culvert_check_enemy_hp
-*if (combat_enemy_hp <= 0)
+*label culvert_enter_combat
+*gosub_scene combat fight_silt_lurker
+*if (combat_outcome = "victory")
   *goto culvert_victory
-*goto culvert_enemy_turn
-
-*label culvert_enemy_turn
-*gosub_scene startup resolve_enemy_attack
-*if (combat_shield_triggered)
-  *if (combat_enemy_hit_success)
-    A shimmering lattice of force flares to life around you on pure reflex, but the blow crashes through it anyway, claws finding your ribs regardless.
-    [b][✨ Shield Broken Through | 🩸 ${combat_enemy_name} Hits: ${combat_enemy_dmg_dealt} damage | HP: ${hp_current} / ${hp_max}][/b]
-  *else
-    A shimmering lattice of force flares to life around you on pure reflex, deflecting the claws a hair's breadth from your ribs.
-    [b][✨ Shield Holds | 💨 ${combat_enemy_name} Misses][/b]
-*else
-  *if (combat_enemy_hit_success)
-    The thing surges out of the dark water in a wet lunge, ragged claws raking for your ribs.
-    [b][🩸 ${combat_enemy_name} Hits: ${combat_enemy_dmg_dealt} damage | HP: ${hp_current} / ${hp_max}][/b]
-  *else
-    It lunges out of the water, but you're already moving, and the claws rake nothing but torchlit air.
-    [b][💨 ${combat_enemy_name} Misses][/b]
-*if (hp_current <= 1)
+*if (combat_outcome = "rescued")
   *goto culvert_rescue
-*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
-  *set combat_round + 1
-  *set stat_bump_locked true
-  *set locked_stat_bump_page_id choice_page_id
-*page_break Hold your ground...
-*goto culvert_combat_round_hub
+*goto culvert_flee
 
 *label culvert_victory
 *set maura_cellar_cleared true
@@ -2233,7 +2122,7 @@ You climb back up through the breach into the warm firelight of the taphouse. Ma
   *gosub_scene startup currency_add
   *set currency_txn_locked true
   *set locked_currency_txn_page_id choice_page_id
-[b][🪙 Paid: ${culvert_bounty_silver} Silver Marks][/b]
+[b][💰 Paid: ${culvert_bounty_silver} Silver Marks][/b]
 *page_break Step back from the counter...
 *goto taphouse_bar_loop
 
@@ -2243,7 +2132,6 @@ A blow you don't fully see connects, and your legs go out from under you into th
 The iron hook catches your harness and hauls you bodily back up through the breach, dumped in a soaked, shivering heap on the taphouse flagstones.
 
 "Iron's iron, not a death wish," Maura mutters, pressing a rag to a cut over your eye. "Whatever's down there keeps its silver. Come back with better odds."
-*set hp_current 1
 *page_break Catch your breath...
 *goto taphouse_bar_loop
 
@@ -2340,16 +2228,22 @@ Maura eyes your empty hands and the state of your nerves without much sympathy. 
 *set met_torvald true
 You step over to the wide hearthside table. Master Torvald and Corporal Rorik sit side by side on the scarred pine bench, two dark earthenware pitchers of heavy river ale foaming between them. The air around the table is dense with aromatic pipeweed smoke and the sharp, familiar tang of forge-soot clinging to their wool coats.
 
-*if (knows_torvald_sluice_trick)
-  "I'm telling you, the housing would have held!" Torvald roars, slamming a calloused, square fist onto the timber table so hard the dice bounce. "Then this green Carrion whelp of yours walks onto my race, reaches right into the flume casing, and trips the intake dog! Water blasted halfway to the logging slips!"
+*if (not(visited_smiths_table))
+  *set visited_smiths_table true
+  *if (knows_torvald_sluice_trick)
+    "I'm telling you, the housing would have held!" Torvald roars, slamming a calloused, square fist onto the timber table so hard the dice bounce. "Then this green Carrion whelp of yours walks onto my race, reaches right into the flume casing, and trips the intake dog! Water blasted halfway to the logging slips!"
 
-  Rorik throws his head back, howling with laughter as he drags the clay dice cup toward himself. "Told you that bypass was good craft twenty winters back, you one-eyed badger! Saved your drive-cam from snapping, didn't it? You owe the recruit a pint and me an apology."
+    Rorik throws his head back, howling with laughter as he drags the clay dice cup toward himself. "Told you that bypass was good craft twenty winters back, you one-eyed badger! Saved your drive-cam from snapping, didn't it? You owe the recruit a pint and me an apology."
 
-  "I gave the whelp my hearthstone talisman, didn't I?!" Torvald grunts, though his single eye gleams with begrudging craft pride as he turns his gaze on you. "Good to see you out of the wet, sellsword."
+    "I gave the whelp my hearthstone talisman, didn't I?!" Torvald grunts, though his single eye gleams with begrudging craft pride as he turns his gaze on you. "Good to see you out of the wet, sellsword."
+  *else
+    "Look at this one," Torvald rumbles, pointing the stem of his clay pipe at you as you approach the bench. "Dove right into the flume without a whimper, squared the leverage, and got my trip-hammer pounding before second bell. Got more iron in their back than half the drunken carters you march with, Rorik."
+
+    Rorik grins through a thick plume of blue smoke, giving you an approving nod. "Told you the new muster had backbone, Torvald. The Carrion doesn't keep dead weight on the payroll."
 *else
-  "Look at this one," Torvald rumbles, pointing the stem of his clay pipe at you as you approach the bench. "Dove right into the flume without a whimper, squared the leverage, and got my trip-hammer pounding before second bell. Got more iron in their back than half the drunken carters you march with, Rorik."
-
-  Rorik grins through a thick plume of blue smoke, giving you an approving nod. "Told you the new muster had backbone, Torvald. The Carrion doesn't keep dead weight on the payroll."
+  Torvald and Rorik glance up from their foaming flagons, the bone dice rattling rhythmically in Rorik's leather cup.
+  
+  "Back for another cast, recruit?" Rorik chuckles through a haze of pipe smoke. "Torvald here was just about to lose his last three coppers."
 
 *label taphouse_smiths_menu
 *temp hint_smiths_dice ""
@@ -2411,7 +2305,7 @@ You step over to the wide hearthside table. Master Torvald and Corporal Rorik si
         You don't have enough copper to buy the pitcher of ale.
         *goto taphouse_smiths_menu
       *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
-        *set currency_add_amount -2
+        *set currency_add_amount (0 - 2)
         *gosub_scene startup currency_add
         *set currency_txn_locked true
         *set locked_currency_txn_page_id choice_page_id
@@ -2441,25 +2335,29 @@ You step over to the wide hearthside table. Master Torvald and Corporal Rorik si
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label taphouse_bard_performance
+*set bard_performed_taphouse true
 *set check_stat "cha"
 *set check_dc 10
 *set check_skill "Performance"
 *gosub_scene startup roll_d20_check
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+  *if (check_success)
+    *set currency_add_amount 11
+    *gosub_scene startup currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id choice_page_id
 *if (check_success)
-  *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
-    *set silver + 1
-    *set copper + 1
-    *set currency_txn_locked true
-    *set locked_currency_txn_page_id choice_page_id
-  You step onto the low hearth bench with your instrument, tuning the strings with a swift, confident flourish before striking into a rhythmic border ballad.
-
-  Within moments, the entire taproom is stomping heavy work boots in rhythm against the floorboards, singing out the chorus over clattering mugs. When you strike the final chord, the room erupts into thundering cheers and tankards banged against tables.
-
-  The woman behind the oak counter slides a foaming mug of spiced ale across the bar with a broad, approving grin, and several appreciative watermen toss silver and copper onto the hearth bench!
-  [b][🎵 Performance Acclaimed: +1 Silver Mark, +1 Copper Bit | Free Spiced Ale][/b]
+  You borrow a scarred cedar lute from the taphouse hearth peg, tuning the gut strings with practiced ease. Stepping up near the warmth of the fire, you strike up [i]"The Oarsman's Shilling"[/i]—a rhythmic, driving river-ballad known from the high Crags to the capital tidewater.
+  
+  Your clear voice cuts through the peat smoke and din, the steady tempo capturing the cadence of oars striking grey water. Conversations taper off as watermen, timber sawyers, and off-duty Carrion sellswords begin stamping their boots in unison against the oak floorboards. When you hit the chorus, the entire taproom joins in a roaring, full-throated cheer that shakes the hanging lanterns.
+  
+  A shower of copper bits and a bright silver mark clatter onto the bench beside you. Maura slides a foaming mug of spiced cider across the bar with an approving grin. "On the house, minstrel. You kept the timber carters from brawling for half an hour."
+  [b][🎵 Performance Acclaimed: +1 Silver Mark, +1 Copper Bit, Free Warm Drink][/b]
 *else
-  You tune your instrument, but the humidity of the crowded room has slackened your strings. Your opening chord buzzes flat against the wood. A few draymen chuckle, but you recover smoothly enough to finish a quiet tune that earns polite nods from the veterans.
-*page_break Step down from the bench...
+  You borrow the hearth lute and begin a highland ballad, but the damp autumn chill has slackened the gut strings, throwing the lower drone out of tune. Your fingers stumble on a rapid cadence, and your voice struggles to carry over the roar of the weir vibrating through the floorboards.
+  
+  A few scarred timber-haulers chuckle into their ale, but Rorik claps his hands in good-natured cadence to help you recover the rhythm. You finish the verse on a steady, dignified chord, earning respectful nods from your squad mates before returning the instrument to its peg.
+*page_break Step down from the hearth...
 *goto taphouse_menu_hub
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2487,11 +2385,23 @@ You step over to the wide hearthside table. Master Torvald and Corporal Rorik si
   *set wizard_spell_slots 2
 *if (character_class = "bard")
   *set bard_spell_slots 2
+*if (race = "hexblood")
+  *set hexblood_hex_used false
 *set physical_state "Rested; kit greased and prepared for barge transit"
 
-The fourth horn of the morning watch sounds across the misty river meadows, rolling through the bivouac like distant thunder.
+The final bell from the upper river chapel echoes across the gorge, its deep iron toll swallowed by the thunder of the weir. Night sentries along the perimeter have banked the perimeter braziers with sod, leaving only red embers glowing in the freezing mist.
 
-You wake stiff and cold, but fully rested. All around you, the Iron Carrion is already in motion—draft horses being led down the timber ramps onto the four massive grain barges, baggage wagons lashed to deck rings, and four hundred sellswords taking their muster stations along the river wharves.
+You make your way back through the quiet bivouac to your squad's picket line. You unlace your mud-crusted boots, setting them by the embers to dry, and wrap yourself in your heavy wool mantle. Despite the hard ground and the damp river wind cutting through the willows, exhaustion pulls you under into deep, dreamless sleep.
+
+*page_break A harsh bronze horn shatters the dawn mist...
+
+A long, blasting note from a vanguard horn tears through the morning fog.
+
+Across the camp, four hundred men and women are on their feet in moments, rolling bedrolls, buckling iron greaves, and dousing picket fires with river sand. Down at the stone wharves, the heavy cedar boom-chains have dropped into the depths, and forty-foot freight barges sit low in the foaming water, their timber decks crowded with pikes, baggage wagons, and draft mules.
+
+"Form up on the middle pier!" Sergeant Varren's gravelly roar echoes over the docks as iron pikes clatter into marching order. "Flotilla casts off on the flood tide! Secure your gear and step lively!"
+
+You hoist your field pack, settle your weapons at your belt, and fall in with your squad on the timber slipway, ready for the voyage down the Grey River toward the capital.
 
 *if (elspeth_role = "odessa_apprentice")
   Near the hospital transport barge, you catch sight of Elspeth bundled in a dry wool mantle, helping Surgeon Odessa secure crates of dried willow bark and rolled linen bandages under oiled canvas. She catches your eye through the morning mist, offering a shy, grateful wave—safe, fed, and under company protection.
