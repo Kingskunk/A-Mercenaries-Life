@@ -14,8 +14,18 @@
 *comment the next scene" chain (see nav.nextSceneName) -- adding combat as a
 *comment chain link previously hijacked ready_camp's *finish into it instead
 *comment of camp_night. *gosub_scene doesn't require scene_list membership to
-*comment target a scene, and compile.js bundles every .txt in scenes/
-*comment regardless, so leaving it off here is both correct and sufficient.
+*comment target a scene at runtime -- but compile.js has NO directory-scan
+*comment fallback (see its own "as we can't read the dir" comment) and only
+*comment bundles scenes it's explicitly told about, so combat.txt is instead
+*comment added via a hardcoded verifyFileName("combat.txt") call in
+*comment compile.js, right next to calendar.txt's (same situation: a
+*comment gosub_scene-only subroutine scene, deliberately off this list).
+*comment Leaving it off *scene_list without that compile.js line means it
+*comment silently stops being bundled into play_game.html at all -- no
+*comment compile-time error, and quicktest/randomtest/refresh_fuzz_test all
+*comment load scenes straight off disk so none of them catch it either; the
+*comment failure only shows up as "scene doesn't exist" the moment a real
+*comment compiled build reaches a *gosub_scene combat ... call.
 
 *create implicit_control_flow true
 
@@ -329,23 +339,66 @@
 *create combat_weapon_hit_locked false
 *create locked_combat_weapon_hit_page_id 0
 *create combat_sneak_attack_triggered false
-*comment Populated by detect_attack_cantrip -- see that primitive.
-*create has_attack_cantrip false
-*create attack_cantrip_name ""
-*create attack_cantrip_stat "int"
-*create attack_cantrip_dice_sides 6
 *create combat_round 0
 *comment Populated by combat.txt's fight_* labels for the calling scene to
 *comment read once *gosub_scene combat fight_<name> returns.
 *create combat_outcome ""
+*comment Multi-enemy fight support (combat.txt): up to 3 simultaneous enemy
+*comment slots. Slot 1 IS the original single-enemy combat_enemy_* stats
+*comment below -- fight_setup snapshots whatever a fight_<name> label set
+*comment there into combat_enemy1_*, the real permanent home for slot 1, so
+*comment an existing single-enemy fight (fight_silt_lurker) needs zero
+*comment changes. combat_active_target says which slot is currently mirrored
+*comment into the canonical combat_enemy_* names below, which the shared
+*comment damage primitives (resolve_player_hit, resolve_enemy_attack, etc.)
+*comment read/write -- see combat.txt's fight_sync_target_in/out and
+*comment fight_pick_target for the mirroring logic. A fight with only one
+*comment enemy never touches slots 2/3 and behaves exactly as before.
+*create combat_enemy_count 1
+*create combat_active_target 1
+*create combat_all_enemies_dead false
+*create combat_enemy1_name "none"
+*create combat_enemy1_hp 0
+*create combat_enemy1_max_hp 0
+*create combat_enemy1_ac 10
+*create combat_enemy1_atk_bonus 0
+*create combat_enemy1_dmg_dice_sides 4
+*create combat_enemy1_dmg_bonus 0
+*create combat_enemy1_epithet "the creature"
+*create combat_enemy1_metal_armor false
+*create combat_enemy2_name "none"
+*create combat_enemy2_hp 0
+*create combat_enemy2_max_hp 0
+*create combat_enemy2_ac 10
+*create combat_enemy2_atk_bonus 0
+*create combat_enemy2_dmg_dice_sides 4
+*create combat_enemy2_dmg_bonus 0
+*create combat_enemy2_epithet "the second creature"
+*create combat_enemy2_metal_armor false
+*create combat_flavor_enemy2_hit ""
+*create combat_flavor_enemy2_miss ""
+*create combat_enemy3_name "none"
+*create combat_enemy3_hp 0
+*create combat_enemy3_max_hp 0
+*create combat_enemy3_ac 10
+*create combat_enemy3_atk_bonus 0
+*create combat_enemy3_dmg_dice_sides 4
+*create combat_enemy3_dmg_bonus 0
+*create combat_enemy3_epithet "the third creature"
+*create combat_enemy3_metal_armor false
+*create combat_flavor_enemy3_hit ""
+*create combat_flavor_enemy3_miss ""
 *comment Set once per fight (in combat.txt's per-enemy fight_<name> label)
 *comment so the shared round hub/enemy-turn prose stays enemy-agnostic
 *comment everywhere except these few genuinely creature-specific lines.
+*comment combat_enemy_metal_armor: RAW Shocking Grasp grants the player
+*comment advantage against a metal-armored target -- defaults false (most
+*comment monsters/dock-guard-tier mooks aren't in plate or chain), set true
+*comment per-slot for a fight against armored soldiers/knights/constructs.
 *create combat_enemy_epithet "the creature"
+*create combat_enemy_metal_armor false
 *create combat_flavor_weapon_hit ""
 *create combat_flavor_weapon_miss ""
-*create combat_flavor_cantrip_hit ""
-*create combat_flavor_cantrip_miss ""
 *create combat_flavor_enemy_hit ""
 *create combat_flavor_enemy_miss ""
 *create combat_flavor_dissonant_hit ""
@@ -1996,6 +2049,14 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *comment armor, so this is the correct RAW condition rather than "any Wizard".
   *if (wizard_spell = "mage_armor")
     *set base_ac 13
+  *comment Barbarian Unarmored Defense: 10 + DEX + CON while wearing no
+  *comment armor -- cloth items are clothes, not armor, so this is the same
+  *comment "not wearing armor" condition Mage Armor uses just above. Replaces
+  *comment the plain 10 + DEX base entirely (the +effective_dex_mod add below
+  *comment still applies on top, giving the correct 10 + CON + DEX total). A
+  *comment Barbarian never has Mage Armor available, so the two never compete.
+  *if (character_class = "barbarian")
+    *set base_ac (10 + con_mod)
 *if ((armor_type = "leather") or (armor_type = "buff_coat"))
   *set base_ac 11
 *if ((armor_type = "brigandine") or (armor_type = "chain_jack"))
@@ -2265,6 +2326,15 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *if (not(combat_weapon_hit_locked)) or (not(locked_combat_weapon_hit_page_id = choice_page_id))
   *temp cwh_roll 0
   *rand cwh_roll 1 combat_player_dmg_dice_sides
+  *comment Fighting Style: Great Weapon Fighting -- reroll a 1 or 2 on the
+  *comment weapon's own damage die (once), RAW-restricted to a two-handed
+  *comment weapon. Deliberately only the base weapon die, not a bonus die
+  *comment from Sneak Attack/Hex below -- those are rare/no overlap with a
+  *comment two-handed-weapon build in this game's class model, not worth
+  *comment the added complexity for.
+  *if ((fighter_fighting_style = "great_weapon") and (weapon_hands = "two_handed"))
+    *if (cwh_roll <= 2)
+      *rand cwh_roll 1 combat_player_dmg_dice_sides
   *set combat_player_dmg_dealt (cwh_roll + combat_player_dmg_bonus)
   *set combat_sneak_attack_triggered false
   *if (((character_class = "rogue") and ((weapon_type = "finesse") or (weapon_type = "ranged"))) and (roll_had_advantage))
@@ -2353,7 +2423,10 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
     *rand cea_dmg 1 combat_enemy_dmg_dice_sides
     *set cea_dmg (cea_dmg + combat_enemy_dmg_bonus)
     *if ((character_class = "barbarian") and (is_raging))
-      *set cea_dmg cea_dmg / 2
+      *comment RAW rounds resistance damage down -- plain "/ 2" on an odd
+      *comment number produces a fractional HP value (e.g. 3 -> 1.5), which
+      *comment ChoiceScript's *set happily stores and prints. Floor it first.
+      *set cea_dmg ((cea_dmg - (cea_dmg modulo 2)) / 2)
     *set combat_enemy_dmg_dealt cea_dmg
     *if ((agathys_active) and (temp_hp > 0))
       *set combat_agathys_triggered true
@@ -2376,57 +2449,6 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
       *set hp_current 1
   *set combat_enemy_atk_locked true
   *set locked_combat_enemy_atk_page_id choice_page_id
-*return
-
-*label detect_attack_cantrip
-*comment No lock needed -- purely derived from persistent build stats every
-*comment call, so it always lands on the same answer no matter how many
-*comment times a round replays it (same reasoning as recalculate_armor_class).
-*comment Call once at the top of any fight's round hub, before the *choice,
-*comment to populate has_attack_cantrip/attack_cantrip_name/_stat/
-*comment _dice_sides -- the fight's own "Channel ${attack_cantrip_name} at
-*comment the creature" option just reads these back, no per-fight copy of
-*comment this cascade needed. Checks every cantrip slot (wizard x3, race x2,
-*comment warlock x2, bard x2) per the Full Slot Coverage rule.
-*set has_attack_cantrip false
-*set attack_cantrip_name ""
-*set attack_cantrip_stat "int"
-*set attack_cantrip_dice_sides 6
-*if ((((wizard_cantrip = "fire_bolt") or (wizard_cantrip_2 = "fire_bolt")) or (wizard_cantrip_3 = "fire_bolt")) or ((race_cantrip = "fire_bolt") or (race_cantrip_2 = "fire_bolt")))
-  *set has_attack_cantrip true
-  *set attack_cantrip_name "Fire Bolt"
-  *set attack_cantrip_stat "int"
-  *set attack_cantrip_dice_sides 10
-*else
-  *if ((((wizard_cantrip = "ray_of_frost") or (wizard_cantrip_2 = "ray_of_frost")) or (wizard_cantrip_3 = "ray_of_frost")) or ((race_cantrip = "ray_of_frost") or (race_cantrip_2 = "ray_of_frost")))
-    *set has_attack_cantrip true
-    *set attack_cantrip_name "Ray of Frost"
-    *set attack_cantrip_stat "int"
-    *set attack_cantrip_dice_sides 8
-  *else
-    *if ((((wizard_cantrip = "shocking_grasp") or (wizard_cantrip_2 = "shocking_grasp")) or (wizard_cantrip_3 = "shocking_grasp")) or ((race_cantrip = "shocking_grasp") or (race_cantrip_2 = "shocking_grasp")))
-      *set has_attack_cantrip true
-      *set attack_cantrip_name "Shocking Grasp"
-      *set attack_cantrip_stat "int"
-      *set attack_cantrip_dice_sides 8
-    *else
-      *if ((warlock_cantrip = "eldritch_blast") or (warlock_cantrip_2 = "eldritch_blast"))
-        *set has_attack_cantrip true
-        *set attack_cantrip_name "Eldritch Blast"
-        *set attack_cantrip_stat "cha"
-        *set attack_cantrip_dice_sides 10
-      *else
-        *if ((warlock_cantrip = "chill_touch") or (warlock_cantrip_2 = "chill_touch"))
-          *set has_attack_cantrip true
-          *set attack_cantrip_name "Chill Touch"
-          *set attack_cantrip_stat "cha"
-          *set attack_cantrip_dice_sides 8
-        *else
-          *if ((bard_cantrip = "vicious_mockery") or (bard_cantrip_2 = "vicious_mockery"))
-            *set has_attack_cantrip true
-            *set attack_cantrip_name "Vicious Mockery"
-            *set attack_cantrip_stat "cha"
-            *set attack_cantrip_dice_sides 4
 *return
 
 *label resolve_magic_missile

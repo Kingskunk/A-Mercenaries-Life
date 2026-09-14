@@ -17,15 +17,30 @@
 *comment Adding a new fight: write a new *label fight_<name> block below
 *comment that sets the enemy's stats (combat_enemy_*) and its bespoke
 *comment flavor lines (combat_enemy_epithet, combat_flavor_weapon_hit/miss,
-*comment combat_flavor_cantrip_hit/miss, combat_flavor_enemy_hit/miss, and
-*comment optionally combat_flavor_dissonant_hit/miss), then *gosub
-*comment fight_setup and *goto fight_round_hub. Everything else -- every
-*comment spell/ability option, the enemy's attack resolution, retreat/rescue
-*comment handling -- is already shared and needs no duplication. The eight
-*comment ability options below (cantrips aside) deliberately avoid any
-*comment enemy-specific wording, since they describe the PLAYER's own
-*comment casting motion, not the creature -- keep new ones that way too, so
-*comment they never need a per-fight override.
+*comment combat_flavor_enemy_hit/miss, and optionally
+*comment combat_flavor_dissonant_hit/miss), then *gosub fight_setup and
+*comment *goto fight_round_hub. Everything else -- every spell/cantrip/
+*comment ability option, the enemy's attack resolution, retreat/rescue
+*comment handling -- is already shared and needs no duplication.
+*comment
+*comment Every cantrip (Fire Bolt, Ray of Frost, Shocking Grasp, Eldritch
+*comment Blast, Chill Touch, Vicious Mockery) and buff/utility spell below is
+*comment its OWN bespoke *choice option with its own real description and
+*comment RAW secondary effect where one maps cleanly onto this engine
+*comment (Ray of Frost/Vicious Mockery both set combat_enemy_disadvantage,
+*comment matching what the dossier's print_ability_card already promises the
+*comment player -- see choicescript_stats.txt). This used to be a single
+*comment generic "Channel ${attack_cantrip_name}" option reading four shared
+*comment variables (has_attack_cantrip/attack_cantrip_name/_stat/
+*comment _dice_sides, populated by a detect_attack_cantrip primitive) --
+*comment that was more reusable to write but broke two things: every cantrip
+*comment read identically ("the working..."), and the *else-chained
+*comment detection only ever exposed the FIRST matching cantrip slot, so a
+*comment build with two attack cantrips could never reach the second one in
+*comment combat at all. Deliberately avoid an enemy-specific wording in these
+*comment options -- they describe the PLAYER's own casting motion, not the
+*comment creature (parametrize with ${combat_enemy_epithet} instead) -- so
+*comment new ones never need a per-fight override, same as the buff spells.
 *comment ══════════════════════════════════════════════════════════════
 
 *label fight_setup
@@ -39,6 +54,21 @@
 *set combat_agathys_triggered false
 *set combat_agathys_shattered false
 *set combat_outcome ""
+*comment Snapshot whatever the calling fight_<name> label just set on the
+*comment canonical combat_enemy_* names into slot 1's permanent storage --
+*comment a single-enemy fight (fight_silt_lurker) never touches slot 2/3 or
+*comment combat_enemy_count, so this is the only multi-enemy plumbing it
+*comment needs to participate in, invisibly.
+*set combat_enemy1_name combat_enemy_name
+*set combat_enemy1_hp combat_enemy_hp
+*set combat_enemy1_max_hp combat_enemy_max_hp
+*set combat_enemy1_ac combat_enemy_ac
+*set combat_enemy1_atk_bonus combat_enemy_atk_bonus
+*set combat_enemy1_dmg_dice_sides combat_enemy_dmg_dice_sides
+*set combat_enemy1_dmg_bonus combat_enemy_dmg_bonus
+*set combat_enemy1_epithet combat_enemy_epithet
+*set combat_enemy1_metal_armor combat_enemy_metal_armor
+*set combat_active_target 1
 *return
 
 *label fight_cleanup
@@ -48,6 +78,95 @@
 *set shield_armed false
 *set combat_agathys_triggered false
 *set combat_agathys_shattered false
+*comment Multi-enemy state must not leak into the next fight -- a future
+*comment single-enemy encounter defaults to slot 1 only via combat_enemy_count.
+*set combat_enemy_count 1
+*set combat_active_target 1
+*return
+
+*comment ──────────────────────────────────────────────────────────────
+*comment MULTI-ENEMY TARGETING (up to 3 simultaneous enemy slots)
+*comment Slot 1/2/3 (combat_enemy1_*/2_*/3_*, startup.txt) are each enemy's
+*comment real, permanent stats. The canonical combat_enemy_* names (no
+*comment number) are a scratch mirror of whichever slot is "active" --
+*comment that's what every shared primitive in startup.txt (resolve_player_
+*comment hit, resolve_enemy_attack, etc.) actually reads and writes, so they
+*comment never needed to learn about multiple enemies at all. These three
+*comment subroutines are the entire seam: sync the active slot in before a
+*comment primitive touches it, sync it back out after, and pick which slot
+*comment is active (skipping defeated ones, slot order 1/2/3).
+*comment ──────────────────────────────────────────────────────────────
+
+*label fight_sync_target_in
+*if (combat_active_target = 1)
+  *set combat_enemy_name combat_enemy1_name
+  *set combat_enemy_hp combat_enemy1_hp
+  *set combat_enemy_max_hp combat_enemy1_max_hp
+  *set combat_enemy_ac combat_enemy1_ac
+  *set combat_enemy_atk_bonus combat_enemy1_atk_bonus
+  *set combat_enemy_dmg_dice_sides combat_enemy1_dmg_dice_sides
+  *set combat_enemy_dmg_bonus combat_enemy1_dmg_bonus
+  *set combat_enemy_epithet combat_enemy1_epithet
+  *set combat_enemy_metal_armor combat_enemy1_metal_armor
+*if (combat_active_target = 2)
+  *set combat_enemy_name combat_enemy2_name
+  *set combat_enemy_hp combat_enemy2_hp
+  *set combat_enemy_max_hp combat_enemy2_max_hp
+  *set combat_enemy_ac combat_enemy2_ac
+  *set combat_enemy_atk_bonus combat_enemy2_atk_bonus
+  *set combat_enemy_dmg_dice_sides combat_enemy2_dmg_dice_sides
+  *set combat_enemy_dmg_bonus combat_enemy2_dmg_bonus
+  *set combat_enemy_epithet combat_enemy2_epithet
+  *set combat_enemy_metal_armor combat_enemy2_metal_armor
+*if (combat_active_target = 3)
+  *set combat_enemy_name combat_enemy3_name
+  *set combat_enemy_hp combat_enemy3_hp
+  *set combat_enemy_max_hp combat_enemy3_max_hp
+  *set combat_enemy_ac combat_enemy3_ac
+  *set combat_enemy_atk_bonus combat_enemy3_atk_bonus
+  *set combat_enemy_dmg_dice_sides combat_enemy3_dmg_dice_sides
+  *set combat_enemy_dmg_bonus combat_enemy3_dmg_bonus
+  *set combat_enemy_epithet combat_enemy3_epithet
+  *set combat_enemy_metal_armor combat_enemy3_metal_armor
+*return
+
+*label fight_sync_target_out
+*if (combat_active_target = 1)
+  *set combat_enemy1_hp combat_enemy_hp
+*if (combat_active_target = 2)
+  *set combat_enemy2_hp combat_enemy_hp
+*if (combat_active_target = 3)
+  *set combat_enemy3_hp combat_enemy_hp
+*return
+
+*label fight_pick_target
+*comment First living slot, in order 1/2/3 -- a group is always fought
+*comment down roughly front-to-back, never picks a dead slot back up.
+*set combat_active_target 0
+*if (combat_enemy1_hp > 0)
+  *set combat_active_target 1
+*if (combat_active_target = 0)
+  *if (combat_enemy_count >= 2)
+    *if (combat_enemy2_hp > 0)
+      *set combat_active_target 2
+*if (combat_active_target = 0)
+  *if (combat_enemy_count >= 3)
+    *if (combat_enemy3_hp > 0)
+      *set combat_active_target 3
+*if (combat_active_target > 0)
+  *gosub fight_sync_target_in
+*return
+
+*label fight_check_all_dead
+*set combat_all_enemies_dead true
+*if (combat_enemy1_hp > 0)
+  *set combat_all_enemies_dead false
+*if (combat_enemy_count >= 2)
+  *if (combat_enemy2_hp > 0)
+    *set combat_all_enemies_dead false
+*if (combat_enemy_count >= 3)
+  *if (combat_enemy3_hp > 0)
+    *set combat_all_enemies_dead false
 *return
 
 *label fight_victory
@@ -73,9 +192,17 @@
 
 *label fight_round_hub
 *set combat_enemy_disadvantage false
-*gosub_scene startup detect_attack_cantrip
 
-[b][⚔️ Round ${combat_round} — ${combat_enemy_name}: HP ${combat_enemy_hp}/${combat_enemy_max_hp} (AC ${combat_enemy_ac}) | You: HP ${hp_current}/${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|} (AC ${armor_class})][/b]
+*if (combat_enemy_count = 1)
+  [b][⚔️ Round ${combat_round} — ${combat_enemy_name}: HP ${combat_enemy_hp}/${combat_enemy_max_hp} (AC ${combat_enemy_ac}) | You: HP ${hp_current}/${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|} (AC ${armor_class})][/b]
+*else
+  [b][⚔️ Round ${combat_round}][/b]
+  [b][${combat_enemy1_name}: HP ${combat_enemy1_hp}/${combat_enemy1_max_hp}@{(combat_enemy1_hp <= 0)  (Down)|} (AC ${combat_enemy1_ac})][/b]
+  *if (combat_enemy_count >= 2)
+    [b][${combat_enemy2_name}: HP ${combat_enemy2_hp}/${combat_enemy2_max_hp}@{(combat_enemy2_hp <= 0)  (Down)|} (AC ${combat_enemy2_ac})][/b]
+  *if (combat_enemy_count >= 3)
+    [b][${combat_enemy3_name}: HP ${combat_enemy3_hp}/${combat_enemy3_max_hp}@{(combat_enemy3_hp <= 0)  (Down)|} (AC ${combat_enemy3_ac})][/b]
+  [b][You: HP ${hp_current}/${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|} (AC ${armor_class})][/b]
 *if (shield_armed)
   [b][✨ Shield Armed — will trigger on the next hit][/b]
 *if (hex_active)
@@ -120,6 +247,24 @@
           *else
             *set combat_player_dmg_dice_sides 8
             *set combat_player_dmg_bonus str_mod
+      *comment Fighting Style: Dueling -- +2 damage with a one-handed melee
+      *comment weapon (RAW excludes two-handed and ranged weapons). Both the
+      *comment finesse and plain-melee branches above are one-handed melee
+      *comment in this game's model.
+      *if (fighter_fighting_style = "dueling")
+        *if (not((weapon_type = "ranged") or (weapon_type = "two_handed")))
+          *set combat_player_dmg_bonus + 2
+      *comment Rage: +barbarian_rage_damage_bonus on a melee weapon attack
+      *comment made using Strength (RAW excludes ranged attacks, and a
+      *comment finesse attack made with DEX instead of STR since the bonus
+      *comment specifically only fires "using Strength").
+      *if ((character_class = "barbarian") and (is_raging))
+        *if (not(weapon_type = "ranged"))
+          *if (weapon_type = "finesse")
+            *if (str_mod > dex_mod)
+              *set combat_player_dmg_bonus + barbarian_rage_damage_bonus
+          *else
+            *set combat_player_dmg_bonus + barbarian_rage_damage_bonus
       *gosub_scene startup resolve_player_weapon_hit
       *if (combat_sneak_attack_triggered)
         You strike from an opening it never saw coming, driving your ${weapon} into an exposed weak point for a vicious, precise finishing blow.
@@ -132,21 +277,118 @@
       [b][💨 Miss][/b]
     *goto fight_check_enemy_hp
 
-  *if (has_attack_cantrip)
-    # Channel ${attack_cantrip_name} at ${combat_enemy_epithet}.
-      *set check_stat attack_cantrip_stat
+  *if ((((wizard_cantrip = "fire_bolt") or (wizard_cantrip_2 = "fire_bolt")) or (wizard_cantrip_3 = "fire_bolt")) or ((race_cantrip = "fire_bolt") or (race_cantrip_2 = "fire_bolt")))
+    # [Cantrip: Fire Bolt] Hurl a mote of arcane flame at ${combat_enemy_epithet}.
+      *set check_stat "int"
       *set check_dc combat_enemy_ac
-      *set check_skill attack_cantrip_name
+      *set check_skill "Fire Bolt"
       *gosub_scene startup roll_d20_check
       *if (check_success)
-        *set combat_player_dmg_dice_sides attack_cantrip_dice_sides
+        *set combat_player_dmg_dice_sides 10
         *set combat_player_dmg_bonus 0
         *gosub_scene startup resolve_player_hit
-        ${combat_flavor_cantrip_hit}
-        [b][🔥 Hit: ${combat_player_dmg_dealt} damage][/b]
+        A searing mote of fire snaps from your outstretched fingers and punches home in a violent flare and a hiss of steam.
+        [b][🔥 Fire Bolt: Hit | ${combat_player_dmg_dealt} Fire damage][/b]
       *else
-        ${combat_flavor_cantrip_miss}
+        The mote of fire streaks wide, scorching nothing but empty air.
         [b][💨 Miss][/b]
+      *goto fight_check_enemy_hp
+
+  *if ((((wizard_cantrip = "ray_of_frost") or (wizard_cantrip_2 = "ray_of_frost")) or (wizard_cantrip_3 = "ray_of_frost")) or ((race_cantrip = "ray_of_frost") or (race_cantrip_2 = "ray_of_frost")))
+    # [Cantrip: Ray of Frost] Loose a beam of numbing cold at ${combat_enemy_epithet}.
+      *set check_stat "int"
+      *set check_dc combat_enemy_ac
+      *set check_skill "Ray of Frost"
+      *gosub_scene startup roll_d20_check
+      *if (check_success)
+        *set combat_player_dmg_dice_sides 8
+        *set combat_player_dmg_bonus 0
+        *gosub_scene startup resolve_player_hit
+        *set combat_enemy_disadvantage true
+        A pale ray of unnatural cold catches ${combat_enemy_epithet} square on, rime crackling across the point of impact and slowing its next strike to a sluggish crawl.
+        [b][❄️ Ray of Frost: Hit | ${combat_player_dmg_dealt} Cold damage | ⚠️ Slowed — disadvantage on its next attack][/b]
+      *else
+        The ray splashes past, freezing nothing but the damp air.
+        [b][💨 Miss][/b]
+      *goto fight_check_enemy_hp
+
+  *if ((((wizard_cantrip = "shocking_grasp") or (wizard_cantrip_2 = "shocking_grasp")) or (wizard_cantrip_3 = "shocking_grasp")) or ((race_cantrip = "shocking_grasp") or (race_cantrip_2 = "shocking_grasp")))
+    # [Cantrip: Shocking Grasp] Drive a crackling jolt of lightning into ${combat_enemy_epithet}.
+      *comment RAW: advantage on the attack roll if the target wears metal
+      *comment armor. combat_enemy_metal_armor defaults false (see startup.txt)
+      *comment -- only true for a fight that explicitly sets it on an armored
+      *comment enemy, so this is a no-op for every fight so far.
+      *if (combat_enemy_metal_armor)
+        *set advantage true
+      *set check_stat "int"
+      *set check_dc combat_enemy_ac
+      *set check_skill "Shocking Grasp"
+      *gosub_scene startup roll_d20_check
+      *if (check_success)
+        *set combat_player_dmg_dice_sides 8
+        *set combat_player_dmg_bonus 0
+        *gosub_scene startup resolve_player_hit
+        *if (combat_enemy_metal_armor)
+          Blue-white lightning discharges from your palm and leaps hungrily to the iron on ${combat_enemy_epithet}, arcing through every buckle and plate in one violent convulsion.
+          [b][⚡ Shocking Grasp: Hit | ${combat_player_dmg_dealt} Lightning damage | 🔩 Metal-Seeking Advantage][/b]
+        *else
+          Blue-white lightning discharges from your palm, locking muscle and jaw alike in one violent convulsion.
+          [b][⚡ Shocking Grasp: Hit | ${combat_player_dmg_dealt} Lightning damage][/b]
+      *else
+        The charge earths itself somewhere else entirely, dissipating in a shower of harmless sparks.
+        [b][💨 Miss][/b]
+      *goto fight_check_enemy_hp
+
+  *if ((warlock_cantrip = "eldritch_blast") or (warlock_cantrip_2 = "eldritch_blast"))
+    # [Cantrip: Eldritch Blast] Unleash a crackling beam of eldritch force at ${combat_enemy_epithet}.
+      *set check_stat "cha"
+      *set check_dc combat_enemy_ac
+      *set check_skill "Eldritch Blast"
+      *gosub_scene startup roll_d20_check
+      *if (check_success)
+        *set combat_player_dmg_dice_sides 10
+        *set combat_player_dmg_bonus 0
+        *gosub_scene startup resolve_player_hit
+        A jagged streak of violet force slams home with the concussive boom of a shattered timber.
+        [b][✨ Eldritch Blast: Hit | ${combat_player_dmg_dealt} Force damage][/b]
+      *else
+        The beam tears past and shatters against whatever's unlucky enough to be standing behind it.
+        [b][💨 Miss][/b]
+      *goto fight_check_enemy_hp
+
+  *if ((warlock_cantrip = "chill_touch") or (warlock_cantrip_2 = "chill_touch"))
+    # [Cantrip: Chill Touch] Conjure a skeletal hand of necrotic frost against ${combat_enemy_epithet}.
+      *set check_stat "cha"
+      *set check_dc combat_enemy_ac
+      *set check_skill "Chill Touch"
+      *gosub_scene startup roll_d20_check
+      *if (check_success)
+        *set combat_player_dmg_dice_sides 8
+        *set combat_player_dmg_bonus 0
+        *gosub_scene startup resolve_player_hit
+        A ghostly, translucent hand wreathed in necrotic mist closes around ${combat_enemy_epithet}, sapping the warmth and strength from the wound it leaves behind.
+        [b][💀 Chill Touch: Hit | ${combat_player_dmg_dealt} Necrotic damage][/b]
+      *else
+        The spectral hand dissolves into harmless mist a hair's breadth short of its mark.
+        [b][💨 Miss][/b]
+      *goto fight_check_enemy_hp
+
+  *if ((bard_cantrip = "vicious_mockery") or (bard_cantrip_2 = "vicious_mockery"))
+    # [Cantrip: Vicious Mockery] Hurl a barbed, perfectly-aimed insult at ${combat_enemy_epithet}.
+      *set check_stat "cha"
+      *set check_dc 12
+      *set check_skill "Vicious Mockery"
+      *gosub_scene startup roll_d20_check
+      *if (check_success)
+        *set combat_player_dmg_dice_sides 4
+        *set combat_player_dmg_bonus 0
+        *gosub_scene startup resolve_player_hit
+        *set combat_enemy_disadvantage true
+        Your cutting cadence lands with surgical precision, needling straight at a nerve you didn't know was there — its balance and its nerve both falter in the same breath.
+        [b][🎭 Vicious Mockery: Hit | ${combat_player_dmg_dealt} Psychic damage | ⚠️ Rattled — disadvantage on its next attack][/b]
+      *else
+        Whatever passes for pride in ${combat_enemy_epithet} shrugs the insult off without a flicker.
+        [b][💨 Resisted][/b]
       *goto fight_check_enemy_hp
 
   *if (((character_class = "wizard") and (wizard_spell = "magic_missile")) and (wizard_spell_slots > 0))
@@ -228,12 +470,34 @@
     *goto fight_fled
 
 *label fight_check_enemy_hp
-*if (combat_enemy_hp <= 0)
+*gosub fight_sync_target_out
+*gosub fight_check_all_dead
+*if (combat_all_enemies_dead)
   *goto fight_victory
+*gosub fight_pick_target
 *goto fight_enemy_turn
 
-*label fight_enemy_turn
-*gosub_scene startup resolve_enemy_attack
+*label fight_narrate_enemy_turn
+*comment Called once per attacking slot from fight_enemy_turn below, with
+*comment combat_active_target/combat_enemy_* already synced to that slot
+*comment and resolve_enemy_attack already resolved against it. Falls back
+*comment to the shared combat_flavor_enemy_hit/miss when a slot 2/3 doesn't
+*comment define its own -- a group of identical mooks only needs to write
+*comment the flavor once.
+*temp fnet_hit ""
+*temp fnet_miss ""
+*set fnet_hit combat_flavor_enemy_hit
+*set fnet_miss combat_flavor_enemy_miss
+*if (combat_active_target = 2)
+  *if (not(combat_flavor_enemy2_hit = ""))
+    *set fnet_hit combat_flavor_enemy2_hit
+  *if (not(combat_flavor_enemy2_miss = ""))
+    *set fnet_miss combat_flavor_enemy2_miss
+*if (combat_active_target = 3)
+  *if (not(combat_flavor_enemy3_hit = ""))
+    *set fnet_hit combat_flavor_enemy3_hit
+  *if (not(combat_flavor_enemy3_miss = ""))
+    *set fnet_miss combat_flavor_enemy3_miss
 *if (combat_shield_triggered)
   *if (combat_enemy_hit_success)
     A shimmering lattice of force flares to life around you on pure reflex, but the blow crashes through it anyway, striking home regardless.
@@ -243,7 +507,7 @@
     [b][✨ Shield Holds | 💨 ${combat_enemy_name} Misses][/b]
 *else
   *if (combat_enemy_hit_success)
-    ${combat_flavor_enemy_hit}
+    ${fnet_hit}
     *if (combat_agathys_triggered)
       *if (combat_agathys_shattered)
         As the blow lands, your frost-sheathe shatters violently in a burst of crystalline rime, driving shards of biting cold deep into ${combat_enemy_epithet}!
@@ -253,12 +517,44 @@
         [b][❄️ Armor of Agathys: 5 Cold Damage dealt to ${combat_enemy_name} | ${temp_hp} Temp HP remaining][/b]
     [b][🩸 ${combat_enemy_name} Hits: ${combat_enemy_dmg_dealt} damage | HP: ${hp_current} / ${hp_max}][/b]
   *else
-    ${combat_flavor_enemy_miss}
+    ${fnet_miss}
     [b][💨 ${combat_enemy_name} Misses][/b]
-*if (combat_enemy_hp <= 0)
+*gosub fight_sync_target_out
+*return
+
+*label fight_enemy_turn
+*comment Each living slot gets one attack this round, order 1/2/3. A dead
+*comment slot's turn is skipped entirely -- no attack roll, no prose. This
+*comment collapses to the original single-enemy behavior automatically when
+*comment combat_enemy_count is 1 (the only value a single-enemy fight ever
+*comment sets), since the slot-2/3 blocks below never activate.
+*if (combat_enemy1_hp > 0)
+  *set combat_active_target 1
+  *gosub fight_sync_target_in
+  *gosub_scene startup resolve_enemy_attack
+  *gosub fight_narrate_enemy_turn
+  *if (hp_current <= 1)
+    *goto fight_rescued
+*if (combat_enemy_count >= 2)
+  *if (combat_enemy2_hp > 0)
+    *set combat_active_target 2
+    *gosub fight_sync_target_in
+    *gosub_scene startup resolve_enemy_attack
+    *gosub fight_narrate_enemy_turn
+    *if (hp_current <= 1)
+      *goto fight_rescued
+*if (combat_enemy_count >= 3)
+  *if (combat_enemy3_hp > 0)
+    *set combat_active_target 3
+    *gosub fight_sync_target_in
+    *gosub_scene startup resolve_enemy_attack
+    *gosub fight_narrate_enemy_turn
+    *if (hp_current <= 1)
+      *goto fight_rescued
+*gosub fight_check_all_dead
+*if (combat_all_enemies_dead)
   *goto fight_victory
-*if (hp_current <= 1)
-  *goto fight_rescued
+*gosub fight_pick_target
 *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
   *set combat_round + 1
   *set stat_bump_locked true
@@ -286,11 +582,52 @@
 *set combat_enemy_epithet "the creature"
 *set combat_flavor_weapon_hit "You drive your ${weapon} home. It bites deep, and the creature recoils with a wet, furious hiss."
 *set combat_flavor_weapon_miss "Your ${weapon} scrapes off wet scale and old chitin, throwing you half a step off balance in the current."
-*set combat_flavor_cantrip_hit "The working leaves your fingertips and strikes true, searing across wet scale in the dark."
-*set combat_flavor_cantrip_miss "The working goes wide, scattering harmlessly into the black water."
 *set combat_flavor_enemy_hit "The thing surges out of the dark water in a wet lunge, ragged claws raking for your ribs."
 *set combat_flavor_enemy_miss "It lunges out of the water, but you're already moving, and the claws rake nothing but torchlit air."
 *set combat_flavor_dissonant_hit "You whisper a jarring, dissonant phrase into the shadows. The sound bypasses its ears and ruptures straight into its rotting brain—the beast screeches in agony, clawing wildly at its own skull!"
 *set combat_flavor_dissonant_miss "The phrase reverberates through the drain, but the creature recoils just enough to weather the worst of the psychic assault."
+*gosub fight_setup
+*goto fight_round_hub
+
+*label fight_rennick_guards
+*comment Used by alderford.txt's curing-shed standoff (defending Talia/
+*comment Elspeth from Rennick), when a physical/intimidation approach fails
+*comment and his two dock-guards close in. Deliberately weaker than a real
+*comment monster and this file's own defeat/rescue floors already prevent a
+*comment kill on the player's side -- the guards are hired muscle looking to
+*comment rough someone up and drag them to the toll-post, not to murder
+*comment anyone, and the prose throughout is written for a non-lethal brawl
+*comment regardless of what weapon the player is carrying.
+*comment Deliberately lighter per-guard than a single-enemy fight's stats
+*comment would suggest -- two attackers roughly double a round's expected
+*comment incoming damage, so each one hits softer than the Silt-Lurker does
+*comment alone. A first pass at atk_bonus+3/1d4+1 each nearly dropped a
+*comment 10-HP caster to the rescue floor in round one; this is tuned to
+*comment still be a real, multi-round threat without being a coin-flip
+*comment near-knockout on the first exchange.
+*set combat_enemy_count 2
+*set combat_enemy_name "Rennick's Dock-Guard (Left)"
+*set combat_enemy_hp 8
+*set combat_enemy_max_hp 8
+*set combat_enemy_ac 12
+*set combat_enemy_atk_bonus 2
+*set combat_enemy_dmg_dice_sides 4
+*set combat_enemy_dmg_bonus 0
+*set combat_enemy_epithet "the guards"
+*set combat_enemy2_name "Rennick's Dock-Guard (Right)"
+*set combat_enemy2_hp 8
+*set combat_enemy2_max_hp 8
+*set combat_enemy2_ac 12
+*set combat_enemy2_atk_bonus 2
+*set combat_enemy2_dmg_dice_sides 4
+*set combat_enemy2_dmg_bonus 0
+*set combat_enemy2_epithet "the guards"
+*set combat_round 1
+*set combat_flavor_weapon_hit "Your ${weapon} connects solidly, and the guard staggers back with a pained grunt, boots skidding on the wet floorboards."
+*set combat_flavor_weapon_miss "Your ${weapon} whistles past as the guard twists aside, cursing through gritted teeth."
+*set combat_flavor_enemy_hit "A cudgel cracks against you, the iron-banded head glancing off with a dull, ringing thud."
+*set combat_flavor_enemy_miss "The cudgel whistles wide, splintering a drying rack instead of your ribs."
+*set combat_flavor_dissonant_hit "You plant a jarring, dissonant phrase straight behind the guard's eyes. He staggers, clutching his skull with a strangled groan."
+*set combat_flavor_dissonant_miss "The dissonant phrase lands, but the guard shakes it off with a pained grimace, more angry than hurt."
 *gosub fight_setup
 *goto fight_round_hub

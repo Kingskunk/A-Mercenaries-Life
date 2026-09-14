@@ -158,7 +158,16 @@ function compile(){
   verifyFileName("choicescript_stats.txt");
   verifyFileName("choicescript_upgrade.txt");
   verifyFileName("calendar.txt");
-  
+  // "combat" is a *gosub_scene-only subroutine library (see combat.txt's own
+  // header comment) and is deliberately NOT in *scene_list -- adding it there
+  // would hijack *finish's implicit "continue to the next scene" chain (see
+  // nav.nextSceneName). compile.js has no directory-scan fallback (see the
+  // comment above), so it has to be told about explicitly here, exactly like
+  // calendar.txt just above, or it silently never makes it into the compiled
+  // allScenes object and every *gosub_scene combat ... call fails at runtime
+  // with "scene doesn't exist" the moment a player actually reaches a fight.
+  verifyFileName("combat.txt");
+
   //Check startup.txt for a *scene_list
   var sceneList = false;
   scene = new Scene("startup");
