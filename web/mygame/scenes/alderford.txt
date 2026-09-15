@@ -11,6 +11,7 @@
 *set clock_time "05:15"
 *set time_period "Pre-Dawn (Freezing Mist)"
 *set codex_alderford true
+*set codex_river_gorge true
 
 The third horn sounds sharp and cold across the ruined gatehouse of the Black Sinks, cutting through the freezing pre-dawn mist. 
 
@@ -457,6 +458,7 @@ The man towering over her—[b]Master Rennick[/b]—is a stocky, thick-necked gu
     "Two silver marks and five copper bits," you state with cold, steady finality. "Their arrears are paid in full under company witness. Sign your mark on the ledger receipt and clear out."
     
     Rennick's eyes dart greedily to the shining metal. He scoops the coin into his velvet purse, scrawls a jagged receipt with his grease-pencil, and gives a sullen grunt before turning on his heel to hustle his guards out into the rain.
+    *set rennick_disposition "paid_off"
     *goto curing_resolution
 
   # Call out the bailiff on his shaved salt scales, threatening to report his skimming to Factor Morzan.${hint_curing_int}
@@ -482,9 +484,11 @@ The man towering over her—[b]Master Rennick[/b]—is a stocky, thick-necked gu
       His guards step forward aggressively, but you don't yield the floor. "Then let's take your stamped slip to Captain Vane and Factor Morzan together," you state evenly, your gaze level and unflinching. "Let's see if the factor agrees with your math under company oath."
       
       The mention of an immediate command audit makes Rennick's eyes dart toward the door. Unwilling to risk his position over a petty shakedown, he sneers, tucks his papers into his fur coat, and hustles his men out into the cold night.
+    *set rennick_disposition "intimidated"
     *goto curing_resolution
 
   # Turn around and step back out into the rain, leaving the locals to settle their own disputes.
+    *set rennick_disposition "hostile"
     You turn your back on the shouting and slip back through the heavy door. Out here, getting involved in civilian squabbles only earns you enemies and wasted breath.
     *goto curing_abandoned
 
@@ -499,10 +503,12 @@ The man towering over her—[b]Master Rennick[/b]—is a stocky, thick-necked gu
 *goto curing_brawl_lost
 
 *label curing_brawl_won
+*set rennick_disposition "humiliated"
 With both of his dock-guards sprawled senseless and groaning across the cedar sawdust, Rennick's bluster shatters in an instant. His fleshy jowls go pale as lard; clutching his velvet ledger-pouch against his fur collar, he casts one terrified look at your weapon and scrambles backward through the doorway into the freezing rain, abandoning his hirelings to nurse their bruised ribs in the dark.
 *goto curing_resolution
 
 *label curing_brawl_lost
+*set rennick_disposition "hostile"
 *set talia_invitation_open false
 *set prep_waterproof_gear false
 *if (combat_outcome = "rescued")
@@ -517,6 +523,7 @@ Behind you, shouting and the sickening crunch of splintered timber echo into the
 *goto curing_done
 
 *label curing_abandoned
+*set rennick_disposition "hostile"
 *set talia_invitation_open false
 *set prep_waterproof_gear false
 Behind you, shouting and the sickening crunch of splintered timber echo into the rain as Rennick's thugs smash the drying racks and drag the crying workers out toward the toll-post. You pull your collar tight against the freezing mist and head back toward the company lines.
@@ -524,6 +531,8 @@ Behind you, shouting and the sickening crunch of splintered timber echo into the
 
 *label curing_resolution
 *set met_talia true
+*if (rennick_disposition = "unmet")
+  *set rennick_disposition "intimidated"
 *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
   *set talia_regard +8
   *comment Word of a quietly-handled shakedown in his own toll district
@@ -533,6 +542,8 @@ Behind you, shouting and the sickening crunch of splintered timber echo into the
   *set morzan_regard +12
   *if (rennick_reported)
     *set morzan_regard +12
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id choice_page_id
   *set stat_bump_locked true
   *set locked_stat_bump_page_id choice_page_id
 *if (family_name = "Elspeth")
@@ -615,6 +626,7 @@ Behind you, shouting and the sickening crunch of splintered timber echo into the
         You press two heavy silver marks into her trembling palm and guide her out of the brine lofts. Together, you climb the steep limestone stair leading up to the high ridge above the weir, where the River Weavers' chapel stands cloistered behind ancient ashlar walls.
         
         Inside, the air is warm and dry, smelling of sweet beeswax candles, raw spun wool, and cedar woodsmoke. An elder deacon in a simple undyed robe meets you at the chancel gate. He inspects the silver marks, confirms the ecclesiastical sanctuary registry, and nods with solemn grace.
+        *set codex_sanctuary_charter true
         
         "She is safe behind these stone walls, soldier," the deacon murmurs, placing a gentle hand on her shoulder. "Neither guild bailiffs nor dock debt-masters may cross this lintel."
         
@@ -965,6 +977,7 @@ Near the entrance flap, several wounded vanguard soldiers from the Black Sinks g
   "If you're looking for clean dressings or fever tea, the chirurgeon's bench is by the willow flap," she says in a crisp, aristocratic register. "If you're here on company business, I am Scholar Ysolde. And unless my sounding logs are lying to me, tomorrow's flotilla is sailing straight into a disaster."
 
 Ysolde spreads the annotated parchment flat across the folding desk.
+*set codex_imperial_booms true
 
 "Look here," she explains, tracing the river channel just two hundred yards downstream from the Alderford weir. "Centuries ago, when the Meridian Empire still commanded the provinces, imperial hydraulic sappers winched a massive, submerged [b]anti-galley iron boom[/b] across the riverbed to regulate water traffic. The weir and boom were engineered by an empire that has long since rotted into history—built to withstand legion rams, not the petty border skiffs that ply the river today."
 
@@ -2088,6 +2101,11 @@ You step up to the wide oak bar.
   *if (not(discussed_maura_past))
     # Ask about the faded sellsword brand on her neck.
       *set discussed_maura_past true
+      *set codex_iron_bull true
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set maura_regard +2
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
       Maura glances up, running a thumb over the blurred ink on her throat with a dry, knowing smirk. "Five campaign seasons with the Iron Bull Free Company down in the border marches," she says calmly. "Until a heavy crossbow quarrel through my left knee told me it was time to find dry floorboards. Bought this timber house off an old barge-carpenter ten years back."
 
       She taps the oak bar with a scarred knuckle. "The river's quieter than the shield wall, and nobody shoots at you over the counter—most nights, anyway."
@@ -2204,6 +2222,7 @@ The torchlight catches three hundred years of dead water: a collapsed portcullis
   The unseen shell of force you keep laid over your skin every morning settles a little tighter against the damp chill, standing in for the armor your training never included.
 
 Two yellow eyes open in the dark, thirty feet off across the flooded stone, unmoving. Whatever it is, it hasn't marked you yet.
+*set codex_silt_lurkers true
 
 *label culvert_approach_hub
 *choice
@@ -2249,11 +2268,16 @@ You climb back up through the breach into the quiet barrel vault and step throug
 "Didn't need to," you reply. "It's not coming back."
 
 She studies you a moment longer, then gives a low, approving chuckle and reaches under the counter for her coin purse. "Clean work. I don't care how it went down so long as the vault is quiet. I'll have the tap-boy brick that wall up proper come morning."
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+  *set maura_regard +10
 *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
   *set currency_add_amount (culvert_bounty_silver * 10)
   *gosub_scene startup currency_add
   *set currency_txn_locked true
   *set locked_currency_txn_page_id choice_page_id
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id choice_page_id
 [b][💰 Paid: ${culvert_bounty_silver} Silver Marks][/b]
 *goto taphouse_bar_loop
 
@@ -2272,11 +2296,16 @@ Silence returns to the culvert drain, the black water settling still around the 
 You haul yourself back up through the breach into the barrel vault and step back into the warm firelight of the taproom. Maura takes one look at your soaked boots and the state of your knuckles and lets out a short, relieved breath.
 
 "You held your ground," she says with a firm nod of respect, pressing the silver marks into your palm. "You've earned every bit of this. I'll have the tap-boy brick that breach up proper come morning."
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+  *set maura_regard +8
 *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
   *set currency_add_amount (culvert_bounty_silver * 10)
   *gosub_scene startup currency_add
   *set currency_txn_locked true
   *set locked_currency_txn_page_id choice_page_id
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id choice_page_id
 [b][💰 Paid: ${culvert_bounty_silver} Silver Marks][/b]
 *goto taphouse_bar_loop
 
@@ -2304,6 +2333,7 @@ Past the sawmills and the smoking curing lofts, the customs slip juts out over t
 Inside, the freezing river damp gives way to close, lamp-warmed air—whale-oil wicks guttering in brass sconces, the dry smell of cedar shelving and beeswax polish under a sharper tang of fresh vellum and drying ink. Rows of high oak stools hold clerks bent over ledgers, quills scratching in a steady, unbroken rhythm, while somewhere out of sight brass balance pans clink against lead standard weights.
 
 A narrow man in ink-stained shirtsleeves rises from behind an oak desk marked with a tarnished brass nameplate: [b]Chief Clerk Orlov[/b]. He has spectacles pushed up into thinning grey hair, a stylus tucked behind one ear, and the permanently harried look of a man who has never once caught up on his own paperwork, sizing up every stranger by the state of their boots before they've said a word.
+*set met_orlov true
 
 "Company business, or your own?" he asks, already thumbing open a slim ledger bound in cracked leather. He runs a finger down a column of stamped seals until he finds the one he wants. "Iron Carrion—the Gilded Scales' own contract company, current and in good standing. You've access to the board same as any registered company man."
 *if (morzan_regard >= 12)
@@ -2359,15 +2389,24 @@ Orlov's manner sharpens the moment you produce the water-stained vellum. He wave
 *else
   Morzan leans out of his office just long enough to glance over the vellum himself, giving a short, approving grunt before waving Orlov to handle the rest and withdrawing back to his ledgers.
 *set turned_in_customs_vellum true
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+  *set orlov_regard +6
 *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
   *set currency_add_amount 40
   *gosub_scene startup currency_add
   *set currency_txn_locked true
   *set locked_currency_txn_page_id choice_page_id
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id choice_page_id
 [b][💰 Paid: 4 Silver Marks][/b]
 *goto counting_house_menu
 
 *label ch_ask_commutation
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+  *set orlov_regard +2
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id choice_page_id
 Orlov pushes his spectacles up his nose, wetting a thumb to flip to the district parish ledger.
 
 "Saint Althea's parish labor commutation," he drones, running an ink-stained finger down the column. "Quarterly assessment for twenty registered refugee spinners. Four Silver Marks assessed against their wool sales, paid in full to the guild treasury."
@@ -2380,6 +2419,7 @@ Orlov pushes his spectacles up his nose, wetting a thumb to flip to the district
 *goto counting_house_menu
 
 *label ch_letters_of_credit
+*set codex_letters_of_credit true
 A separate clerk keeps the vault ledger here, a heavyset woman with ink-black fingers and a set of nested lead weights lined up with military precision beside her scale.
 *if (has_letter_of_credit)
   *set silver_amount_to_describe letter_of_credit_value
@@ -2609,6 +2649,10 @@ He looks toward the heavy timber doorway, where the high ridge of the town rises
 *choice
   # "Heft it onto my shoulder. I'll carry the sack up to the chapel weavers."
     *set carries_chapel_grain true
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *set bran_regard +4
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     Bran's face eases with genuine, unburdened relief. He helps hoist the coarse burlap sack onto your shoulder, covering the split seam with an oiled wool sack-cloth.
     
     "Deacon Corbel is usually near the inner looms," Bran murmurs, clapping your arm. "Tell him Bran sent it before the river took it."
@@ -2618,11 +2662,16 @@ He looks toward the heavy timber doorway, where the high ridge of the town rises
     Bran grimaces, looking down at his chalk-stained fingers, but gives a grudging nod of respect for sellsword realism.
     
     "Fair enough," Bran mutters, digging five copper bits from his pouch and pressing them into your hand. "Five copper from my own pocket. Just don't let Rennick's boys catch you."
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *set bran_regard +4
     *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
       *set currency_add_amount 5
       *gosub_scene startup currency_add
       *set currency_txn_locked true
       *set locked_currency_txn_page_id choice_page_id
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id choice_page_id
     *set carries_chapel_grain true
     Bran helps hoist the heavy burlap sack onto your shoulder, securing the split seam. "Deacon Corbel is near the looms. Move quiet."
     [b][💰 Paid: 5 Copper Bits][/b]
@@ -2638,6 +2687,10 @@ Bran scoffs, a bitter edge in his tired voice. "Sergeant at the gate took one lo
 *goto granary_menu
 
 *label granary_chat_aftermath
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+  *set bran_regard +2
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id choice_page_id
 Bran pauses his tallying and gives you a weary but genuine nod of appreciation. "Floor's dry, the undercroft breach is quiet, and the grain's staying sound. Thanks to you, the whole winter harvest won't turn to mold before the freeze sets in."
 
 *goto granary_menu
@@ -2672,7 +2725,7 @@ The air down here is cold and heavy, smelling of damp limestone, river mud, and 
       You wedge a heavy meal-crate hard against the foundation breach, but rotting timber gives way with a sharp crack, and the three mire-rats spring from the shadows with aggressive hisses.
       *set combat_enemy_advantage true
       [b][⚠️ Alerted — the mire-rats strike first][/b]
-      *goto granary_rats_combat
+    *goto granary_rats_combat
 
   # Step forward with drawn focus or steel and clear the nest directly.
     *goto granary_rats_combat
@@ -2688,11 +2741,16 @@ You heave a massive, iron-banded grain chest across the foundation gap and drive
 You climb back up the stairs and report to Bran. He heads down to inspect the masonry, running a hand over the braced chest with a long, relieved exhale. "Clean work—sealed them right back out into the mud without a grain sack ruined."
 
 He pulls a leather pouch from his belt and counts out your pay.
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+  *set bran_regard +10
 *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
   *set currency_add_amount 15
   *gosub_scene startup currency_add
   *set currency_txn_locked true
   *set locked_currency_txn_page_id choice_page_id
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id choice_page_id
 [b][💰 Paid: 1 Silver Mark, 5 Copper Bits][/b]
 *goto granary_menu
 
@@ -2712,11 +2770,16 @@ Silence settles over the cold undercroft, broken only by the steady vibration of
 Bran looks up with immediate relief, glancing down the open hatchway before nodding with deep satisfaction. "Handled proper. The winter flour will keep now."
 
 He unties his petty pouch and counts out the promised bounty onto the scales table.
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+  *set bran_regard +8
 *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
   *set currency_add_amount 15
   *gosub_scene startup currency_add
   *set currency_txn_locked true
   *set locked_currency_txn_page_id choice_page_id
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id choice_page_id
 [b][💰 Paid: 1 Silver Mark, 5 Copper Bits][/b]
 *goto granary_menu
 
@@ -2818,6 +2881,7 @@ He stands, brushing flour from his habit, and crosses to a cedar chest beneath t
 
 *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
   *set has_althea_phial true
+  *set corbel_respect + 8
   *set stat_bump_locked true
   *set locked_stat_bump_page_id choice_page_id
 
@@ -2847,6 +2911,7 @@ He stands, brushing flour from his habit, and crosses to a cedar chest beneath t
   She reaches into the pocket of her coarse apron, drawing out a small square of tightly braided flax cord, knotted with three small river stones polished smooth by the current.
 
   "I braided this while the weavers were singing the vesper hymns," she murmurs, pressing the charm into your palm and closing your calloused fingers over it. "The watermen call it a weir-knot. It’s meant to keep you grounded when the river pulls hard. Take care of yourself on those barges tomorrow, ${name}."
+  *set codex_weir_knots true
 
   You spend a quiet, comforting ten minutes beside the loom, speaking of home, the road, and the days ahead before she returns to her work with a warm, lingering hug.
 *else
@@ -2869,7 +2934,7 @@ You take a knee on the worn stone flags, resting your forearms against the weath
 
 Deacon Corbel steps quietly to your side, dipping his fingers into a shallow stone stoup of cold spring water and resting a gentle, steady hand on your bowed shoulder.
 
-"The road through the river gorge is cold and treacherous, soldier," Corbel says in a soft, resonant murmur. "May the stone hold beneath your tread, may the waters spare your hulls, and may your hand stay from violence whenever mercy can be found."
+"The downriver road is cold and long, soldier," Corbel says in a soft, resonant murmur. "May the stone hold beneath your tread, may the waters carry your hulls safe, and may your hand stay from violence whenever mercy can be found."
 
 A deep, quiet clarity settles through your chest, easing the road-strain behind your temples and steadying your pulse.
 
@@ -2883,6 +2948,7 @@ A deep, quiet clarity settles through your chest, easing the road-strain behind 
   *set hp_current + 2
   *if (hp_current > hp_max)
     *set hp_current hp_max
+  *set corbel_respect + 4
   *set stat_bump_locked true
   *set locked_stat_bump_page_id choice_page_id
 
@@ -2895,6 +2961,12 @@ A deep, quiet clarity settles through your chest, easing the road-strain behind 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label chapel_ask_deity
+*set codex_saint_althea true
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+  *set corbel_respect + 2
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id choice_page_id
+
 Corbel glances up at the limestone statue of Saint Althea, a reverent smile touching his lined face.
 
 "In the grand cathedral of Port Valen, the bishops sing of the Sun-Father in his golden armor, smiting dragons and crowning emperors," Corbel says with quiet irony. "Out here in the mud of the border marches, we pray to his daughter, **Saint Althea of the Shroud**. 
@@ -2904,6 +2976,12 @@ Corbel glances up at the limestone statue of Saint Althea, a reverent smile touc
 *goto chapel_menu
 
 *label chapel_ask_sanctuary
+*set codex_sanctuary_charter true
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+  *set corbel_respect + 2
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id choice_page_id
+
 Corbel rests a hand on the edge of the chancel rail, looking down the nave at the refugees working the looms.
 
 "It's a matter of old provincial charter," Corbel explains in an unhurried, matter-of-fact tone. "The Gilded Scales hold the river trade, the sawmills, and the toll-posts. When displaced folk drift in from the border estates with unpaid tenant debts, bailiffs like Rennick look at them as cheap manual labor for the brine sumps and barge slips.
@@ -2992,6 +3070,7 @@ Under the divine heat, hairline fractures in your ribs pop back into true alignm
   *set hp_current + locked_heal_roll
   *if (hp_current > hp_max)
     *set hp_current hp_max
+  *set corbel_respect + 2
   *set stat_bump_locked true
   *set locked_stat_bump_page_id choice_page_id
 
@@ -3192,6 +3271,7 @@ You step over to the wide hearthside table. Master Torvald and Corporal Rorik si
       *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
         *set torvald_respect +2
         *set rorik_regard +5
+        *set maura_regard +2
         *set stat_bump_locked true
         *set locked_stat_bump_page_id choice_page_id
       *if (met_maura)
@@ -3221,12 +3301,18 @@ You step over to the wide hearthside table. Master Torvald and Corporal Rorik si
 *set check_dc 10
 *set check_skill "Performance"
 *gosub_scene startup roll_d20_check
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+  *if (check_success)
+    *set maura_regard +6
 *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
   *if (check_success)
     *set currency_add_amount 11
     *gosub_scene startup currency_add
   *set currency_txn_locked true
   *set locked_currency_txn_page_id choice_page_id
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id choice_page_id
 *if (check_success)
   *set has_free_taphouse_drink true
   You borrow a scarred cedar lute from the taphouse hearth peg, tuning the gut strings with practiced ease. Stepping up near the warmth of the fire, you strike up [i]"The Oarsman's Shilling"[/i]—a rhythmic, driving river-ballad known from the high Crags to the capital tidewater.
