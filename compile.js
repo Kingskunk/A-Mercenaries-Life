@@ -28,8 +28,11 @@ if (typeof process != "undefined") {
   load(rootDir+"mygame/mygame.js");
   load("mygamegenerator.js");
   var {content} = compile();
-  fs.writeFileSync(outputFile, content, "utf8");
-  console.log('Generated', path.resolve(outputFile));
+  var outputFiles = process.argv[2] ? [process.argv[2]] : ["play_game.html", "output.html"];
+  for (var file of outputFiles) {
+    fs.writeFileSync(file, content, "utf8");
+    console.log('Generated', path.resolve(file));
+  }
 }
 
 if (!rootDir) rootDir = "web/";

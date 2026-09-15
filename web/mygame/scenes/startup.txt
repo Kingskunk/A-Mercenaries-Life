@@ -87,6 +87,7 @@
 *create weapon "falchion"
 *create weapon_desc "Heavy falchion & iron buckler"
 *create weapon_damage "1d8 slashing"
+*create weapon_damage_type "slashing"
 *create weapon_type "melee"
 *create weapon_hands "one_handed"
 *create has_shield true
@@ -102,6 +103,7 @@
 *create starting_weapon "falchion"
 *create starting_weapon_desc "Heavy falchion & iron buckler"
 *create starting_weapon_damage "1d8 slashing"
+*create starting_weapon_damage_type "slashing"
 *create starting_weapon_type "melee"
 *create starting_weapon_hands "one_handed"
 *create equipped_weapon_id "starting"
@@ -157,13 +159,11 @@
 *create minutes_to_pass 0
 *create hours_to_pass 0
 *create days_to_pass 0
-*create days_to_pay 16
 *create day_suffix "th"
 *create clock_hour 19
 *create clock_minute 0
 *create clock_time "19:00"
 *create time_period "Evening"
-*create physical_state "Shivering in damp wool; exploring camp"
 
 *comment --- COMBAT VITALS & DEFENSE (TRUE D&D LEVEL 1) ---
 *create character_level 1
@@ -200,7 +200,7 @@
 *create int_mod_str "+0"
 *create wis_mod_str "+0"
 *create cha_mod_str "+0"
-*create ruthless 50
+*create spared_gate_squatter false
 *create silver 12
 *create copper 0
 *create gold 0
@@ -217,6 +217,7 @@
 *create rorik_regard 0
 *create janna_regard 0
 *create talia_regard 0
+*create morzan_regard 0
 *create intake_completed false
 *create met_varren false
 *create met_lyra false
@@ -228,8 +229,56 @@
 *create met_torvald false
 *create met_janna false
 *create met_talia false
+*create met_morzan false
+*create met_bran false
+*comment --- ALDERFORD: OLD CHAPEL, FACTOR MORZAN'S COUNTING HOUSE & WEIR GRANARY ---
+*create visited_counting_house false
+*create asked_ch_commutation false
+*create visited_alder_granary false
+*create read_alderford_bounty_board false
+*create read_granary_notice false
+*create knows_granary_problem false
+*create granary_rats_resolved false
+*create has_letter_of_credit false
+*create letter_of_credit_value 0
+*comment I/O for describe_silver_amount (see that label, near currency_add
+*comment below) -- a shared display formatter, not letter-of-credit-
+*comment specific, so any future silver sum that might cross into gold can
+*comment reuse it too.
+*create silver_amount_to_describe 0
+*create coin_amount_desc ""
+*comment Scratch working var, mirrors currency_add_amount's role -- holds
+*comment the amount a given Counting House visit is adding to the running
+*comment letter_of_credit_value balance (letters stack into one balance
+*comment rather than tracking separate note instances; see
+*comment counting_house_plan.md).
+*create ch_credit_deposit_amount 0
+*comment Set on the single Insight-check branch at the curing-shed
+*comment confrontation (alderford.txt) where the player explicitly
+*comment threatens to walk Rennick's shaved scales up to Morzan's
+*comment toll-house -- the one place the player's own dialogue names
+*comment Morzan directly, so it's the only branch that earns a specific
+*comment payoff at the Counting House rather than a general regard bump.
+*create rennick_reported false
+*create carrion_contract_ratcatcher_resolved false
 *create squad "none"
 *create squad_title "None"
+*create visited_alder_chapel false
+*create met_corbel false
+*create carries_chapel_grain false
+*create delivered_chapel_grain false
+*create chapel_blessing_received false
+*create discussed_chapel_sanctuary false
+*create discussed_chapel_refugees false
+*create discussed_chapel_deity false
+*create discussed_granary_aftermath false
+*create discussed_granary_garrison false
+*create discussed_granary_rations false
+*create discussed_granary_parched_grain false
+*create quest_chapel_flour_offered false
+*create corbel_healed_player false
+*create has_althea_phial false
+*create visited_elspeth_chapel false
 
 *comment --- D&D D20 DICE & SKILL CHECK ENGINE ---
 *create d20_roll 10
@@ -246,20 +295,49 @@
 *create disadvantage false
 *create guidance_active false
 *create save_vs "none"
-*comment --- TEMPORARY NOURISHMENT BUFF (The Drowned Oar Taphouse, Alderford) ---
-*comment A single active buff slot -- no stacking, buying a new item just
-*comment replaces whatever's active. All *set here are plain assignments
-*comment (never +N), so granting the buff is naturally replay-safe on its
-*comment own; it's the accompanying HP heal and currency spend at the
-*comment purchase site that need the usual currency_txn_locked guard.
-*comment Decays via calendar.txt's advance_time (see the guard there); read
-*comment by roll_d20_check above.
-*create meal_buff_active false
-*create meal_buff_name "none"
-*create meal_buff_desc "none"
-*create meal_buff_stat "none"
-*create meal_buff_bonus 0
-*create meal_buff_minutes_left 0
+*comment --- TEMPORARY BUFF SYSTEM (Food / Drink / Unique Boons) ---
+*comment Three independent buff channels that can all be active at once:
+*comment   FOOD  (1 slot) — solid meals from taverns (Pottage, Herring, etc.)
+*comment   DRINK (1 slot) — beverages from taverns (Cider, Bitters, etc.)
+*comment   UNIQUE BOONS (3 slots) — rare blessings, alchemy, shrines, etc.
+*comment Buying a new food replaces the food slot; a new drink replaces the
+*comment drink slot. Unique boons auto-fill into slots 1-3 via the
+*comment apply_unique_buff subroutine (see below). All *set here are plain
+*comment assignments (never +N), so granting a buff is naturally replay-safe
+*comment on its own; the accompanying HP heal / currency spend at the
+*comment purchase site needs the usual currency_txn_locked guard.
+*comment All timers decay via calendar.txt's advance_time; all matching
+*comment bonuses aggregate in roll_d20_check.
+*create food_buff_active false
+*create food_buff_name "none"
+*create food_buff_desc "none"
+*create food_buff_stat "none"
+*create food_buff_bonus 0
+*create food_buff_minutes_left 0
+*create drink_buff_active false
+*create drink_buff_name "none"
+*create drink_buff_desc "none"
+*create drink_buff_stat "none"
+*create drink_buff_bonus 0
+*create drink_buff_minutes_left 0
+*create unique_buff1_active false
+*create unique_buff1_name "none"
+*create unique_buff1_desc "none"
+*create unique_buff1_stat "none"
+*create unique_buff1_bonus 0
+*create unique_buff1_minutes_left 0
+*create unique_buff2_active false
+*create unique_buff2_name "none"
+*create unique_buff2_desc "none"
+*create unique_buff2_stat "none"
+*create unique_buff2_bonus 0
+*create unique_buff2_minutes_left 0
+*create unique_buff3_active false
+*create unique_buff3_name "none"
+*create unique_buff3_desc "none"
+*create unique_buff3_stat "none"
+*create unique_buff3_bonus 0
+*create unique_buff3_minutes_left 0
 *comment House bankroll for Corporal Rorik's bone-dice table -- drains as
 *comment the player wins, refills as the player loses (their ante becomes
 *comment part of the pot), and once it hits 0 the wager option disappears
@@ -308,8 +386,20 @@
 *comment round's page can never match a previous round's locked page_id.
 *create combat_player_hit_locked false
 *create locked_combat_player_hit_page_id 0
-*create combat_enemy_atk_locked false
 *create locked_combat_enemy_atk_page_id 0
+*comment Per-SLOT locks (not a single shared "last call" id) -- fight_enemy_
+*comment turn calls resolve_enemy_attack up to 3 times on the SAME page
+*comment (once per living enemy slot, no pause in between), reading
+*comment combat_active_target (1/2/3) to know which slot it's resolving. A
+*comment single shared lock variable was tried first and looked right, but
+*comment breaks on replay: it can only remember the MOST RECENT slot's "already
+*comment fired" state, so by the time slot 3 finishes, slot 1 and 2's locks
+*comment are effectively forgotten, and refresh_fuzz_test caught a refreshed
+*comment page re-rolling slots 1/2 with new random results. Three independent
+*comment booleans, one per slot, each genuinely remembers its own slot.
+*create combat_enemy_atk_locked_1 false
+*create combat_enemy_atk_locked_2 false
+*create combat_enemy_atk_locked_3 false
 *create combat_magic_missile_locked false
 *create locked_combat_magic_missile_page_id 0
 *comment second_wind/activate_rage predate this combat engine (built for a
@@ -319,6 +409,8 @@
 *create locked_second_wind_page_id 0
 *create activate_rage_locked false
 *create locked_activate_rage_page_id 0
+*create althea_phial_locked false
+*create locked_althea_phial_page_id 0
 *comment Shared combat state a calling scene sets once when a fight starts
 *comment and updates each round -- see resolve_player_hit/resolve_enemy_attack.
 *create combat_enemy_name "none"
@@ -357,6 +449,7 @@
 *create combat_enemy_count 1
 *create combat_active_target 1
 *create combat_all_enemies_dead false
+*create combat_is_nonlethal false
 *create combat_enemy1_name "none"
 *create combat_enemy1_hp 0
 *create combat_enemy1_max_hp 0
@@ -375,8 +468,22 @@
 *create combat_enemy2_dmg_bonus 0
 *create combat_enemy2_epithet "the second creature"
 *create combat_enemy2_metal_armor false
-*create combat_flavor_enemy2_hit ""
-*create combat_flavor_enemy2_miss ""
+*create combat_current_spell_id ""
+*comment Optional per-slot override set (up to 5 variants) -- empty string on any variant
+*comment falls back to the shared combat_flavor_enemy_hit/miss_N (see
+*comment fight_narrate_enemy_turn), so a group of identical mooks only
+*comment needs to write the flavor once; a distinct-named enemy (like
+*comment fight_rennick_guards' Left/Right guards) can still set its own.
+*create combat_flavor_enemy2_hit_1 ""
+*create combat_flavor_enemy2_hit_2 ""
+*create combat_flavor_enemy2_hit_3 ""
+*create combat_flavor_enemy2_hit_4 ""
+*create combat_flavor_enemy2_hit_5 ""
+*create combat_flavor_enemy2_miss_1 ""
+*create combat_flavor_enemy2_miss_2 ""
+*create combat_flavor_enemy2_miss_3 ""
+*create combat_flavor_enemy2_miss_4 ""
+*create combat_flavor_enemy2_miss_5 ""
 *create combat_enemy3_name "none"
 *create combat_enemy3_hp 0
 *create combat_enemy3_max_hp 0
@@ -386,8 +493,16 @@
 *create combat_enemy3_dmg_bonus 0
 *create combat_enemy3_epithet "the third creature"
 *create combat_enemy3_metal_armor false
-*create combat_flavor_enemy3_hit ""
-*create combat_flavor_enemy3_miss ""
+*create combat_flavor_enemy3_hit_1 ""
+*create combat_flavor_enemy3_hit_2 ""
+*create combat_flavor_enemy3_hit_3 ""
+*create combat_flavor_enemy3_hit_4 ""
+*create combat_flavor_enemy3_hit_5 ""
+*create combat_flavor_enemy3_miss_1 ""
+*create combat_flavor_enemy3_miss_2 ""
+*create combat_flavor_enemy3_miss_3 ""
+*create combat_flavor_enemy3_miss_4 ""
+*create combat_flavor_enemy3_miss_5 ""
 *comment Set once per fight (in combat.txt's per-enemy fight_<name> label)
 *comment so the shared round hub/enemy-turn prose stays enemy-agnostic
 *comment everywhere except these few genuinely creature-specific lines.
@@ -397,10 +512,70 @@
 *comment per-slot for a fight against armored soldiers/knights/constructs.
 *create combat_enemy_epithet "the creature"
 *create combat_enemy_metal_armor false
-*create combat_flavor_weapon_hit ""
-*create combat_flavor_weapon_miss ""
-*create combat_flavor_enemy_hit ""
-*create combat_flavor_enemy_miss ""
+*comment Every combat_flavor_* pair below is a 5-variant SET (_1 through _5),
+*comment randomly picked each time by combat.txt's pick_weapon_flavor /
+*comment fight_narrate_enemy_turn -- a fight that only ever prints one fixed
+*comment sentence per outcome reads as a stuck record across a multi-round
+*comment fight, since the exact same line repeats every hit/miss. All variants
+*comment for a given line should vary the actual PHYSICAL ACTION
+*comment (a thrust vs. a feint-and-cut vs. closing distance under a guard),
+*comment not just reshuffle adjectives around the same motion, or the
+*comment repetition just moves up a level instead of actually going away.
+*create combat_flavor_weapon_hit_1 ""
+*create combat_flavor_weapon_hit_2 ""
+*create combat_flavor_weapon_hit_3 ""
+*create combat_flavor_weapon_hit_4 ""
+*create combat_flavor_weapon_hit_5 ""
+*create combat_flavor_weapon_miss_1 ""
+*create combat_flavor_weapon_miss_2 ""
+*create combat_flavor_weapon_miss_3 ""
+*create combat_flavor_weapon_miss_4 ""
+*create combat_flavor_weapon_miss_5 ""
+*comment Ranged-weapon counterparts -- a bow/crossbow shot needs its own
+*comment wording ("the bolt punches into..." vs. "your blade connects..."),
+*comment not the melee text with ${weapon} swapped in.
+*create combat_flavor_weapon_hit_ranged_1 ""
+*create combat_flavor_weapon_hit_ranged_2 ""
+*create combat_flavor_weapon_hit_ranged_3 ""
+*create combat_flavor_weapon_hit_ranged_4 ""
+*create combat_flavor_weapon_hit_ranged_5 ""
+*create combat_flavor_weapon_miss_ranged_1 ""
+*create combat_flavor_weapon_miss_ranged_2 ""
+*create combat_flavor_weapon_miss_ranged_3 ""
+*create combat_flavor_weapon_miss_ranged_4 ""
+*create combat_flavor_weapon_miss_ranged_5 ""
+*comment Shared/default enemy-attack flavor (slot 1, and any slot 2/3
+*comment without its own override set above).
+*create combat_flavor_enemy_hit_1 ""
+*create combat_flavor_enemy_hit_2 ""
+*create combat_flavor_enemy_hit_3 ""
+*create combat_flavor_enemy_hit_4 ""
+*create combat_flavor_enemy_hit_5 ""
+*create combat_flavor_enemy_miss_1 ""
+*create combat_flavor_enemy_miss_2 ""
+*create combat_flavor_enemy_miss_3 ""
+*create combat_flavor_enemy_miss_4 ""
+*create combat_flavor_enemy_miss_5 ""
+*comment Finishing-blow flavor -- printed instead of the ordinary hit line
+*comment (combat.txt checks combat_enemy_hp <= 0 right after the damage
+*comment primitive returns) whenever a hit is the one that actually drops
+*comment the target, across EVERY damage source: the weapon attack and all
+*comment six cantrips plus Magic Missile and Dissonant Whispers. Generic and
+*comment enemy-agnostic (parametrized with ${combat_enemy_epithet}/${weapon}
+*comment only, no per-fight override) rather than bespoke per fight --
+*comment mirrors how this file's buff-spell flavor already stays enemy-
+*comment agnostic on purpose ("new ones never need a per-fight override",
+*comment see the header comment above the fight library), since a full
+*comment per-fight AND per-attack-type finisher set would be a much larger
+*comment writing cost for comparatively little payoff over one good shared
+*comment set. *create can't take a ${}-interpolated default (quicktest
+*comment rejects it: "value must be a simple string"), so the actual text
+*comment lives inline in combat.txt's pick_weapon_death_flavor /
+*comment pick_spell_death_flavor instead of as a named constant here.
+*comment Dissonant Whispers is a one-off cast, not a repeating round action
+*comment like the pairs above, so it stays a single fixed line -- much less
+*comment exposed to the "same sentence every round" problem this whole
+*comment variant system exists to solve.
 *create combat_flavor_dissonant_hit ""
 *create combat_flavor_dissonant_miss ""
 *comment Held-in-reserve reaction spell (Shield, etc.) -- armed by the
@@ -456,7 +631,7 @@
 *comment (camp_actions_left, alder_actions_left, bivouac_actions_left) and
 *comment companion regard/respect/bond bumps (lyra_bond, varren_respect,
 *comment odessa_respect, kestrel_respect, ysolde_respect, janna_regard,
-*comment talia_regard, ruthless, compassion, etc.) are all exactly as
+*comment talia_regard, etc.) are all exactly as
 *comment replay-unsafe as currency, and by the same reasoning one shared
 *comment flag covers the whole game: an actions-left spend and the check
 *comment resolution it leads into are always two separate pages (the *choice
@@ -493,6 +668,8 @@
 *create locked_wager_win_page_id 0
 *create tavern_item_cost_copper 0
 *create tavern_item_hp_heal 0
+*create tavern_item_temp_hp 0
+*create tavern_item_type "food"
 *create tavern_item_buff_name ""
 *create tavern_item_buff_desc ""
 *create tavern_item_buff_stat ""
@@ -500,6 +677,16 @@
 *create tavern_item_buff_minutes 0
 *create tavern_purchase_locked false
 *create locked_tavern_purchase_page_id 0
+*comment Input parameters for the apply_unique_buff subroutine (see that
+*comment label below). The caller sets these before *gosub apply_unique_buff.
+*comment The subroutine auto-fills into the first empty unique_buff slot
+*comment (1-3), or refreshes an existing buff with the same name, or
+*comment overwrites the slot with the least time remaining if all 3 are full.
+*create unique_buff_input_name ""
+*create unique_buff_input_desc ""
+*create unique_buff_input_stat ""
+*create unique_buff_input_bonus 0
+*create unique_buff_input_minutes 0
 *comment Same idea again, for calendar.txt's advance_time: *set clock_minute
 *comment + minutes_to_pass (and the hour/day rollovers built on top of it)
 *comment is exactly as replay-unsafe as any other *set stat +N -- a refresh
@@ -576,6 +763,7 @@
 *create visited_alder_weavers false
 *create visited_talia_loft false
 *create talia_invitation_open false
+*create janna_invitation_open false
 *create visited_alder_cadre false
 *create visited_alder_smithy false
 *create visited_alder_tavern false
@@ -613,7 +801,7 @@
 *create lyra_pay_generous false
 *create visited_alder_guild false
 *create visited_alder_bathhouse false
-*create alder_actions_left 3
+*create alder_actions_left 6
 *create turned_in_customs_vellum false
 *create studied_customs_vellum false
 *create alder_river_chain_cleared false
@@ -699,6 +887,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set weapon "quarterstaff"
     *set weapon_desc "Iron-shod quarterstaff"
     *set weapon_damage "1d6 bludgeoning"
+    *set weapon_damage_type "bludgeoning"
     *set weapon_type "melee"
     *set weapon_hands "one_handed"
     *set silver 25
@@ -753,6 +942,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set weapon "quarterstaff"
     *set weapon_desc "Iron-shod quarterstaff"
     *set weapon_damage "1d6 bludgeoning"
+    *set weapon_damage_type "bludgeoning"
     *set weapon_type "melee"
     *set weapon_hands "one_handed"
     *set silver 25
@@ -811,6 +1001,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set weapon "dagger"
     *set weapon_desc "Trench dagger"
     *set weapon_damage "1d4 piercing"
+    *set weapon_damage_type "piercing"
     *set weapon_type "finesse"
     *set weapon_hands "one_handed"
     *set silver 20
@@ -868,6 +1059,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set weapon "dagger"
     *set weapon_desc "Trench dagger"
     *set weapon_damage "1d4 piercing"
+    *set weapon_damage_type "piercing"
     *set weapon_type "melee"
     *set weapon_hands "one_handed"
     *set silver 18
@@ -913,6 +1105,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set weapon "shortbow"
     *set weapon_desc "Recurve shortbow & trench dirk"
     *set weapon_damage "1d6 piercing"
+    *set weapon_damage_type "piercing"
     *set weapon_type "ranged"
     *set weapon_hands "two_handed"
     *set silver 18
@@ -960,6 +1153,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set weapon "shortbow"
     *set weapon_desc "Recurve shortbow & trench dirk"
     *set weapon_damage "1d6 piercing"
+    *set weapon_damage_type "piercing"
     *set weapon_type "ranged"
     *set weapon_hands "two_handed"
     *set silver 18
@@ -1006,6 +1200,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set weapon "longsword"
     *set weapon_desc "Arming sword & iron buckler"
     *set weapon_damage "1d8 slashing"
+    *set weapon_damage_type "slashing"
     *set weapon_type "melee"
     *set weapon_hands "one_handed"
     *set silver 10
@@ -1045,13 +1240,14 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set wisdom 10
     *set charisma 10
     *set intelligence 8
-    *set armor "leather"
-    *set armor_desc "Hardened leather harness"
-    *set armor_type "leather"
+    *set armor "traveling_cloak"
+    *set armor_desc "Oiled traveling cloak & chest straps"
+    *set armor_type "cloth"
     *set has_shield false
     *set weapon "greataxe"
     *set weapon_desc "Bearded greataxe"
     *set weapon_damage "1d12 slashing"
+    *set weapon_damage_type "slashing"
     *set weapon_type "melee"
     *set weapon_hands "two_handed"
     *set silver 10
@@ -1142,7 +1338,7 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
     *set clock_minute 30
     *set clock_time "17:30"
     *set time_period "Dusk"
-    *set alder_actions_left 3
+    *set alder_actions_left 6
     *set codex_black_sinks true
     *set codex_gilded_scales true
     *set codex_marsh_squatters true
@@ -1187,7 +1383,7 @@ He pauses, stylus suspended in midair, his rheumy gaze trailing from your weathe
 You stare past his shoulder into the dying embers of a ditch brazier. The noise of the camp seems to recede, and for a fleeting, suffocating heartbeat, the memory of that day—and the desperate choice that brought you to this camp—roars back into your mind...
 
 *choice
-  # Starvation & The Bailiff's Hounds: How the burning of Ashbrook drove you to the recruiter's table.@{show_stat_hints  [STR 16 (+3), CON 14 (+2), WIS 12 (+1), Ruthless +10]|}
+  # Starvation & The Bailiff's Hounds: How the burning of Ashbrook drove you to the recruiter's table.@{show_stat_hints  [STR 16 (+3), CON 14 (+2), WIS 12 (+1)]|}
     *set origin "ruined"
     *set origin_title "Ashbrook Survivor"
     *set origin_desc "A survivor of the razed village of Ashbrook who traded a murderer's noose for a mercenary's sword."
@@ -1200,13 +1396,9 @@ You stare past his shoulder into the dying embers of a ditch brazier. The noise 
     *set dexterity 10
     *set intelligence 10
     *set charisma 10
-    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
-      *set ruthless +10
-      *set stat_bump_locked true
-      *set locked_stat_bump_page_id choice_page_id
     *goto flashback_village
 
-  # Outlaw Sanctuary: How a botched heist against the Black Tally in Port Valen made the Carrion your only shield.@{show_stat_hints  [DEX 16 (+3), WIS 14 (+2), CHA 12 (+1), +8 Silver, Ruthless +5]|}
+  # Outlaw Sanctuary: How a botched heist against the Black Tally in Port Valen made the Carrion your only shield.@{show_stat_hints  [DEX 16 (+3), WIS 14 (+2), CHA 12 (+1), +8 Silver]|}
     *set origin "outlaw"
     *set origin_title "Port Valen Outlaw"
     *set origin_desc "A quick-fingered rogue fleeing the Black Tally's blood bounty in Port Valen under the Carrion banner."
@@ -1219,16 +1411,13 @@ You stare past his shoulder into the dying embers of a ditch brazier. The noise 
     *set constitution 10
     *set intelligence 10
     *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
-      *set silver +8
+      *set currency_add_amount 80
+      *gosub currency_add
       *set currency_txn_locked true
       *set locked_currency_txn_page_id choice_page_id
-    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
-      *set ruthless +5
-      *set stat_bump_locked true
-      *set locked_stat_bump_page_id choice_page_id
     *goto flashback_slums
 
-  # The Fallen Scion: How the scandal at Karr's Keep stripped your inheritance and forced an alias.@{show_stat_hints  [CHA 15 (+2), INT 15 (+2), DEX 12 (+1), +15 Silver, Compassionate +5]|}
+  # The Fallen Scion: How the scandal at Karr's Keep stripped your inheritance and forced an alias.@{show_stat_hints  [CHA 15 (+2), INT 15 (+2), DEX 12 (+1), +15 Silver]|}
     *set origin "disgraced"
     *set origin_title "Disgraced Scion"
     *set origin_desc "A fallen scion of the Marches who traded a ruined crest for the anonymity of common sellswords."
@@ -1242,13 +1431,10 @@ You stare past his shoulder into the dying embers of a ditch brazier. The noise 
     *set constitution 10
     *set wisdom 10
     *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
-      *set silver +15
+      *set currency_add_amount 150
+      *gosub currency_add
       *set currency_txn_locked true
       *set locked_currency_txn_page_id choice_page_id
-    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
-      *set ruthless -5
-      *set stat_bump_locked true
-      *set locked_stat_bump_page_id choice_page_id
     *goto flashback_scandal
 
 *label flashback_village
@@ -1636,6 +1822,7 @@ With your armor cinched tight, you turn your attention to the spilled weapons. W
     *set weapon "falchion and buckler"
     *set weapon_desc "Heavy falchion & iron buckler"
     *set weapon_damage "1d8 slashing"
+    *set weapon_damage_type "slashing"
     *set weapon_type "melee"
     *set weapon_hands "one_handed"
     *set has_shield true
@@ -1646,6 +1833,7 @@ With your armor cinched tight, you turn your attention to the spilled weapons. W
     *set weapon "ash-wood spear"
     *set weapon_desc "Seven-foot ash-wood spear"
     *set weapon_damage "1d6/1d8 piercing"
+    *set weapon_damage_type "piercing"
     *set weapon_type "reach"
     *set weapon_hands "one_handed"
     *set has_shield false
@@ -1656,6 +1844,7 @@ With your armor cinched tight, you turn your attention to the spilled weapons. W
     *set weapon "heavy broadaxe"
     *set weapon_desc "Heavy two-handed broadaxe"
     *set weapon_damage "1d12 slashing"
+    *set weapon_damage_type "slashing"
     *set weapon_type "melee"
     *set weapon_hands "two_handed"
     *set has_shield false
@@ -1701,6 +1890,7 @@ With your gear cinched tight, you turn your attention to the spilled weapons. Wh
     *set weapon "twin daggers"
     *set weapon_desc "Matched pair of daggers"
     *set weapon_damage "1d4 piercing"
+    *set weapon_damage_type "piercing"
     *set weapon_type "finesse"
     *set weapon_hands "one_handed"
     *set has_shield false
@@ -1711,6 +1901,7 @@ With your gear cinched tight, you turn your attention to the spilled weapons. Wh
     *set weapon "ash-wood spear"
     *set weapon_desc "Seven-foot ash-wood spear"
     *set weapon_damage "1d6/1d8 piercing"
+    *set weapon_damage_type "piercing"
     *set weapon_type "reach"
     *set weapon_hands "one_handed"
     *set has_shield false
@@ -1721,6 +1912,7 @@ With your gear cinched tight, you turn your attention to the spilled weapons. Wh
     *set weapon "hand crossbow"
     *set weapon_desc "Compact hand crossbow"
     *set weapon_damage "1d6 piercing"
+    *set weapon_damage_type "piercing"
     *set weapon_type "ranged"
     *set weapon_hands "one_handed"
     *set has_shield false
@@ -1766,6 +1958,7 @@ With your gear settled, you turn your attention to the spilled weapons—none of
     *set weapon "dagger"
     *set weapon_desc "Slim balanced dagger"
     *set weapon_damage "1d4 piercing"
+    *set weapon_damage_type "piercing"
     *set weapon_type "finesse"
     *set weapon_hands "one_handed"
     *set has_shield false
@@ -1776,6 +1969,7 @@ With your gear settled, you turn your attention to the spilled weapons—none of
     *set weapon "quarterstaff"
     *set weapon_desc "Traveler's quarterstaff"
     *set weapon_damage "1d6/1d8 bludgeoning"
+    *set weapon_damage_type "bludgeoning"
     *set weapon_type "melee"
     *set weapon_hands "one_handed"
     *set has_shield false
@@ -1786,6 +1980,7 @@ With your gear settled, you turn your attention to the spilled weapons—none of
     *set weapon "light crossbow"
     *set weapon_desc "Compact light crossbow"
     *set weapon_damage "1d8 piercing"
+    *set weapon_damage_type "piercing"
     *set weapon_type "ranged"
     *set weapon_hands "two_handed"
     *set has_shield false
@@ -1917,11 +2112,17 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set cha_mod_str "+3"
 
 *comment Hit Points (Level 1: Class Hit Die Max + CON mod)
-*set hp_max (hit_die_max + con_mod)
-*if (hp_current = 0)
+*if (not(loadout_initialized))
+  *set hp_max (hit_die_max + con_mod)
   *set hp_current hp_max
-*if (hp_current > hp_max)
-  *set hp_current hp_max
+*else
+  *temp old_hp_max hp_max
+  *set hp_max (hit_die_max + con_mod)
+  *set hp_current (hp_current + (hp_max - old_hp_max))
+  *if (hp_current > hp_max)
+    *set hp_current hp_max
+  *if (hp_current < 1)
+    *set hp_current 1
 
 *comment Snapshot whichever weapon character creation just assigned as the
 *comment permanent "starting" loadout, so the equipment menu can always
@@ -1936,6 +2137,7 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set starting_weapon weapon
   *set starting_weapon_desc weapon_desc
   *set starting_weapon_damage weapon_damage
+  *set starting_weapon_damage_type weapon_damage_type
   *set starting_weapon_type weapon_type
   *set starting_weapon_hands weapon_hands
   *set equipped_weapon_id "starting"
@@ -2091,18 +2293,21 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set weapon starting_weapon
   *set weapon_desc starting_weapon_desc
   *set weapon_damage starting_weapon_damage
+  *set weapon_damage_type starting_weapon_damage_type
   *set weapon_type starting_weapon_type
   *set weapon_hands starting_weapon_hands
 *if (equipped_weapon_id = "timber_axe")
   *set weapon "timber axe"
   *set weapon_desc "Highland Hewing Axe"
   *set weapon_damage "1d8 slashing"
+  *set weapon_damage_type "slashing"
   *set weapon_type "melee"
   *set weapon_hands "one_handed"
 *if (equipped_weapon_id = "stiletto")
   *set weapon "bodkin stiletto"
   *set weapon_desc "Alderford Bodkin Stiletto"
   *set weapon_damage "1d4 piercing"
+  *set weapon_damage_type "piercing"
   *set weapon_type "finesse"
   *set weapon_hands "one_handed"
 *comment A two-handed weapon leaves no free hand for a shield.
@@ -2193,24 +2398,36 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *if ((character_class = "rogue") and ((check_skill = rogue_expertise_1) or (check_skill = rogue_expertise_2)))
     *set check_mod + (prof_bonus * 2)
 
-  *comment Nourishment buff from the Alderford taphouse (see startup.txt's
-  *comment meal_buff_* creates and calendar.txt's advance_time decay) --
-  *comment applies only to the matching ability, same as any other check
-  *comment modifier, and folds into the same locked check_total/adv_label
-  *comment as everything else above so a replay reuses it correctly instead
-  *comment of re-deriving it from whatever meal_buff_active happens to be by
-  *comment then (the buff could expire between the original roll and a much
-  *comment later refresh).
-  *temp meal_bonus 0
-  *if (meal_buff_active) and (check_stat = meal_buff_stat)
-    *set meal_bonus meal_buff_bonus
-    *set adv_label "${adv_label} +${meal_bonus} (${meal_buff_name})"
+  *comment Temporary buff aggregation -- checks all 5 buff channels
+  *comment (food, drink, unique1-3) for any bonus matching check_stat
+  *comment (or stat = "all" for general blessings). Each matching buff's
+  *comment bonus is individually annotated in adv_label and summed into
+  *comment buff_bonus. Folded into the same locked check_total/adv_label
+  *comment as everything else above so a replay reuses the result
+  *comment correctly even if a buff expires between the original roll
+  *comment and a much later refresh.
+  *temp buff_bonus 0
+  *if (food_buff_active) and ((check_stat = food_buff_stat) or (food_buff_stat = "all"))
+    *set buff_bonus + food_buff_bonus
+    *set adv_label "${adv_label} +${food_buff_bonus} (${food_buff_name})"
+  *if (drink_buff_active) and ((check_stat = drink_buff_stat) or (drink_buff_stat = "all"))
+    *set buff_bonus + drink_buff_bonus
+    *set adv_label "${adv_label} +${drink_buff_bonus} (${drink_buff_name})"
+  *if (unique_buff1_active) and ((check_stat = unique_buff1_stat) or (unique_buff1_stat = "all"))
+    *set buff_bonus + unique_buff1_bonus
+    *set adv_label "${adv_label} +${unique_buff1_bonus} (${unique_buff1_name})"
+  *if (unique_buff2_active) and ((check_stat = unique_buff2_stat) or (unique_buff2_stat = "all"))
+    *set buff_bonus + unique_buff2_bonus
+    *set adv_label "${adv_label} +${unique_buff2_bonus} (${unique_buff2_name})"
+  *if (unique_buff3_active) and ((check_stat = unique_buff3_stat) or (unique_buff3_stat = "all"))
+    *set buff_bonus + unique_buff3_bonus
+    *set adv_label "${adv_label} +${unique_buff3_bonus} (${unique_buff3_name})"
 
   *set check_total (d20_roll + check_mod)
   *if (guidance_active)
     *set check_total + guidance_roll
-  *if (meal_bonus > 0)
-    *set check_total + meal_bonus
+  *if (buff_bonus > 0)
+    *set check_total + buff_bonus
 
   *set roll_had_advantage ((advantage) and (not(disadvantage)))
   *set roll_locked true
@@ -2358,7 +2575,15 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *comment combat_enemy_dmg_bonus, and combat_enemy_disadvantage -- set
 *comment true/nonzero by the caller for the round if the player Dodged/
 *comment braced; reset it back to false again before the NEXT round, this
-*comment subroutine doesn't clear it for you. Rolls the enemy's attack
+*comment subroutine doesn't clear it for you. Also reads combat_active_
+*comment target (already set by the caller to the attacking slot, 1/2/3,
+*comment before the gosub) to know which of three independent per-slot
+*comment locks to check -- fight_enemy_turn calls this up to 3 times on ONE
+*comment page (once per living enemy slot, no pause between), and a single
+*comment shared lock can't tell those calls apart (tried first; broke on
+*comment refresh, since it can only remember the MOST RECENT slot's "already
+*comment fired" state -- see combat_enemy_atk_locked_1/_2/_3's own comment
+*comment in the *create block). Rolls the enemy's attack
 *comment against the player's own armor_class, and on a hit, applies
 *comment damage to hp_current -- halved for a raging barbarian, same as
 *comment battle_take_damage, and never lower than 1 (a random cellar
@@ -2393,7 +2618,22 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *comment combat_shield_triggered (whether the reaction fired at all, hit or
 *comment not), combat_agathys_triggered/combat_agathys_shattered, and
 *comment combat_enemy_dmg_dealt (0 on a miss) for the caller's own prose.
-*if (not(combat_enemy_atk_locked)) or (not(locked_combat_enemy_atk_page_id = choice_page_id))
+*if (not(locked_combat_enemy_atk_page_id = choice_page_id))
+  *comment Genuinely new page (a new round, or the fight's first) -- clear
+  *comment all three per-slot locks so this round's attacks can fire, then
+  *comment stamp the page id so this reset itself only runs once per page.
+  *set combat_enemy_atk_locked_1 false
+  *set combat_enemy_atk_locked_2 false
+  *set combat_enemy_atk_locked_3 false
+  *set locked_combat_enemy_atk_page_id choice_page_id
+*temp cea_already_locked false
+*if (combat_active_target = 1)
+  *set cea_already_locked combat_enemy_atk_locked_1
+*if (combat_active_target = 2)
+  *set cea_already_locked combat_enemy_atk_locked_2
+*if (combat_active_target = 3)
+  *set cea_already_locked combat_enemy_atk_locked_3
+*if (not(cea_already_locked))
   *temp cea_roll 0
   *rand cea_roll 1 20
   *if ((combat_enemy_disadvantage) and (not(combat_enemy_advantage)))
@@ -2447,8 +2687,12 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
       *set agathys_active false
     *if (hp_current < 1)
       *set hp_current 1
-  *set combat_enemy_atk_locked true
-  *set locked_combat_enemy_atk_page_id choice_page_id
+  *if (combat_active_target = 1)
+    *set combat_enemy_atk_locked_1 true
+  *if (combat_active_target = 2)
+    *set combat_enemy_atk_locked_2 true
+  *if (combat_active_target = 3)
+    *set combat_enemy_atk_locked_3 true
 *return
 
 *label resolve_magic_missile
@@ -2576,42 +2820,63 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *label currency_add
 *comment Input: currency_add_amount, a signed integer in copper-equivalent
 *comment units (10 copper = 1 silver, 10 silver = 1 gold). Adds (or, if
-*comment negative, spends) that amount against gold/silver/copper, carrying
-*comment and borrowing across denominations so the three stats stay sane.
-*temp ca_amount currency_add_amount
-*temp ca_sign 1
-*if (ca_amount < 0)
-  *comment A bare "*set ca_sign -1" is ChoiceScript's decrement shorthand
-  *comment (ca_sign - 1), not a literal assignment -- it would leave
-  *comment ca_sign at 0, not -1. "0 - 1" sidesteps the shorthand the same
-  *comment way ca_amount's own negation two lines below already does.
-  *set ca_sign 0 - 1
-  *set ca_amount 0 - ca_amount
-*temp ca_gold (ca_amount - (ca_amount modulo 100)) / 100
-*set ca_amount ca_amount - (ca_gold * 100)
-*temp ca_silver (ca_amount - (ca_amount modulo 10)) / 10
-*set ca_amount ca_amount - (ca_silver * 10)
-*temp ca_copper ca_amount
-*if (ca_sign > 0)
-  *set gold + ca_gold
-  *set silver + ca_silver
-  *set copper + ca_copper
-  *if (copper > 9)
-    *set copper - 10
-    *set silver + 1
-  *if (silver > 9)
-    *set silver - 10
-    *set gold + 1
+*comment negative, spends) that amount.
+*comment
+*comment Works by re-deriving gold/silver/copper from the player's new TOTAL
+*comment wealth, rather than adding/subtracting each denomination column
+*comment independently. An earlier column-wise version (subtract copper,
+*comment borrow into silver if <0; subtract silver, borrow into gold if <0;
+*comment subtract gold last with no further borrow) could still drive gold
+*comment negative even with plenty of total funds -- e.g. paying a
+*comment 2-gold-denominated cost (200 copper-equivalent) while holding 0
+*comment gold but 25 silver (250 copper-equivalent, easily enough) tried to
+*comment subtract 2 straight from the gold column, since nothing converted
+*comment the spare silver into gold to cover that specific column, leaving
+*comment gold at -2 while silver sat untouched at 25. Every transaction in
+*comment the game was small enough to keep ca_gold at 0 until the Counting
+*comment House's Letters of Credit became the first to spend a full gold's
+*comment worth, which is what finally exposed this. Total-value
+*comment redecomposition sidesteps the whole bug class: there's no column to
+*comment individually run short on, only one total that's always correctly
+*comment re-split after every transaction.
+*temp ca_total ((((gold * 100) + (silver * 10)) + copper) + currency_add_amount)
+*if (ca_total < 0)
+  *comment Defensive only -- every caller already checks affordability
+  *comment before spending, so this shouldn't trigger in practice.
+  *set ca_total 0
+*set gold (ca_total - (ca_total modulo 100)) / 100
+*temp ca_remainder (ca_total - (gold * 100))
+*set silver (ca_remainder - (ca_remainder modulo 10)) / 10
+*set copper (ca_remainder - (silver * 10))
+*return
+
+*label describe_silver_amount
+*comment Input: silver_amount_to_describe, a plain silver-mark integer (NOT
+*comment copper-equivalent units like currency_add_amount -- this is for
+*comment display of a sum already denominated in silver, e.g.
+*comment letter_of_credit_value). Output: coin_amount_desc, a display
+*comment string converted into proper coinage at the real 10:1 rate (see
+*comment currency_add above) -- so a sum of 10+ Silver Marks reads as Gold
+*comment Crowns instead of an oddly large silver count. Pure formatting, no
+*comment stat mutation, safe to call from any display site with no lock.
+*temp dsa_gold ((silver_amount_to_describe - (silver_amount_to_describe modulo 10)) / 10)
+*temp dsa_silver (silver_amount_to_describe modulo 10)
+*temp dsa_gold_str ""
+*if (dsa_gold = 1)
+  *set dsa_gold_str "1 Gold Crown"
 *else
-  *set copper - ca_copper
-  *if (copper < 0)
-    *set copper + 10
-    *set silver - 1
-  *set silver - ca_silver
-  *if (silver < 0)
-    *set silver + 10
-    *set gold - 1
-  *set gold - ca_gold
+  *set dsa_gold_str (dsa_gold & " Gold Crowns")
+*temp dsa_silver_str ""
+*if (dsa_silver = 1)
+  *set dsa_silver_str "1 Silver Mark"
+*else
+  *set dsa_silver_str (dsa_silver & " Silver Marks")
+*if ((dsa_gold > 0) and (dsa_silver > 0))
+  *set coin_amount_desc ((dsa_gold_str & ", ") & dsa_silver_str)
+*elseif (dsa_gold > 0)
+  *set coin_amount_desc dsa_gold_str
+*else
+  *set coin_amount_desc dsa_silver_str
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2664,12 +2929,13 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment REUSABLE ENGINE PRIMITIVE: TAVERN PURCHASE
-*comment One shared subroutine for buying a consumable (food, drink,
-*comment whatever a future tavern sells) that spends coin, optionally heals
-*comment HP, and optionally grants the single-slot nourishment buff. Set
-*comment these inputs before *gosub_scene startup buy_tavern_item:
+*comment One shared subroutine for buying a consumable (food or drink)
+*comment that spends coin, optionally heals HP or grants temp HP, and grants a buff into
+*comment the matching channel. Set these inputs before *gosub buy_tavern_item:
 *comment   tavern_item_cost_copper - price, in copper-equivalent units
 *comment   tavern_item_hp_heal     - HP restored (0 for none)
+*comment   tavern_item_temp_hp     - Temp HP granted (5e largest wins, 0 for none)
+*comment   tavern_item_type        - "food" or "drink" (routes the buff)
 *comment   tavern_item_buff_bonus  - 0 to skip granting a buff entirely;
 *comment                             otherwise also set buff_name/desc/stat
 *comment   tavern_item_buff_name/desc/stat/minutes - the buff's display
@@ -2683,15 +2949,113 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
     *set hp_current + tavern_item_hp_heal
     *if (hp_current > hp_max)
       *set hp_current hp_max
+  *if (tavern_item_temp_hp > 0)
+    *if (tavern_item_temp_hp > temp_hp)
+      *set temp_hp tavern_item_temp_hp
   *if (tavern_item_buff_bonus > 0)
-    *set meal_buff_active true
-    *set meal_buff_name tavern_item_buff_name
-    *set meal_buff_desc tavern_item_buff_desc
-    *set meal_buff_stat tavern_item_buff_stat
-    *set meal_buff_bonus tavern_item_buff_bonus
-    *set meal_buff_minutes_left tavern_item_buff_minutes
+    *if (tavern_item_type = "food")
+      *set food_buff_active true
+      *set food_buff_name tavern_item_buff_name
+      *set food_buff_desc tavern_item_buff_desc
+      *set food_buff_stat tavern_item_buff_stat
+      *set food_buff_bonus tavern_item_buff_bonus
+      *set food_buff_minutes_left tavern_item_buff_minutes
+    *if (tavern_item_type = "drink")
+      *set drink_buff_active true
+      *set drink_buff_name tavern_item_buff_name
+      *set drink_buff_desc tavern_item_buff_desc
+      *set drink_buff_stat tavern_item_buff_stat
+      *set drink_buff_bonus tavern_item_buff_bonus
+      *set drink_buff_minutes_left tavern_item_buff_minutes
   *set tavern_purchase_locked true
   *set locked_tavern_purchase_page_id choice_page_id
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment REUSABLE ENGINE PRIMITIVE: APPLY UNIQUE BUFF
+*comment Grants a rare boon (shrine blessing, alchemy, bathhouse, ritual)
+*comment into the unique_buff 1-3 pool. Auto-fills the first empty slot,
+*comment or refreshes an existing buff with the same name (extends
+*comment duration), or overwrites the slot with the lowest time remaining
+*comment if all 3 are occupied.
+*comment Set these inputs before *gosub apply_unique_buff:
+*comment   unique_buff_input_name/desc/stat/bonus/minutes
+*comment The call site must guard against replays itself -- either via a
+*comment one-time story flag (*if (not(received_X)) ... *set received_X
+*comment true) or a stat_bump_locked guard, depending on whether the boon
+*comment is one-off or repeatable.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label apply_unique_buff
+*comment --- Step 1: Deduplication — refresh if same buff name is already active ---
+*if (unique_buff1_active) and (unique_buff1_name = unique_buff_input_name)
+  *set unique_buff1_desc unique_buff_input_desc
+  *set unique_buff1_stat unique_buff_input_stat
+  *set unique_buff1_bonus unique_buff_input_bonus
+  *set unique_buff1_minutes_left unique_buff_input_minutes
+  *return
+*if (unique_buff2_active) and (unique_buff2_name = unique_buff_input_name)
+  *set unique_buff2_desc unique_buff_input_desc
+  *set unique_buff2_stat unique_buff_input_stat
+  *set unique_buff2_bonus unique_buff_input_bonus
+  *set unique_buff2_minutes_left unique_buff_input_minutes
+  *return
+*if (unique_buff3_active) and (unique_buff3_name = unique_buff_input_name)
+  *set unique_buff3_desc unique_buff_input_desc
+  *set unique_buff3_stat unique_buff_input_stat
+  *set unique_buff3_bonus unique_buff_input_bonus
+  *set unique_buff3_minutes_left unique_buff_input_minutes
+  *return
+*comment --- Step 2: Auto-fill first empty slot ---
+*if (not(unique_buff1_active))
+  *set unique_buff1_active true
+  *set unique_buff1_name unique_buff_input_name
+  *set unique_buff1_desc unique_buff_input_desc
+  *set unique_buff1_stat unique_buff_input_stat
+  *set unique_buff1_bonus unique_buff_input_bonus
+  *set unique_buff1_minutes_left unique_buff_input_minutes
+  *return
+*if (not(unique_buff2_active))
+  *set unique_buff2_active true
+  *set unique_buff2_name unique_buff_input_name
+  *set unique_buff2_desc unique_buff_input_desc
+  *set unique_buff2_stat unique_buff_input_stat
+  *set unique_buff2_bonus unique_buff_input_bonus
+  *set unique_buff2_minutes_left unique_buff_input_minutes
+  *return
+*if (not(unique_buff3_active))
+  *set unique_buff3_active true
+  *set unique_buff3_name unique_buff_input_name
+  *set unique_buff3_desc unique_buff_input_desc
+  *set unique_buff3_stat unique_buff_input_stat
+  *set unique_buff3_bonus unique_buff_input_bonus
+  *set unique_buff3_minutes_left unique_buff_input_minutes
+  *return
+*comment --- Step 3: All 3 slots full — overwrite the one with least time left ---
+*comment Find the slot with the minimum minutes_left. Ties go to the
+*comment lowest-numbered slot (arbitrary but deterministic).
+*temp lowest_slot 1
+*if (unique_buff2_minutes_left < unique_buff1_minutes_left)
+  *set lowest_slot 2
+*if (unique_buff3_minutes_left < unique_buff1_minutes_left) and (unique_buff3_minutes_left < unique_buff2_minutes_left)
+  *set lowest_slot 3
+*if (lowest_slot = 1)
+  *set unique_buff1_name unique_buff_input_name
+  *set unique_buff1_desc unique_buff_input_desc
+  *set unique_buff1_stat unique_buff_input_stat
+  *set unique_buff1_bonus unique_buff_input_bonus
+  *set unique_buff1_minutes_left unique_buff_input_minutes
+*if (lowest_slot = 2)
+  *set unique_buff2_name unique_buff_input_name
+  *set unique_buff2_desc unique_buff_input_desc
+  *set unique_buff2_stat unique_buff_input_stat
+  *set unique_buff2_bonus unique_buff_input_bonus
+  *set unique_buff2_minutes_left unique_buff_input_minutes
+*if (lowest_slot = 3)
+  *set unique_buff3_name unique_buff_input_name
+  *set unique_buff3_desc unique_buff_input_desc
+  *set unique_buff3_stat unique_buff_input_stat
+  *set unique_buff3_bonus unique_buff_input_bonus
+  *set unique_buff3_minutes_left unique_buff_input_minutes
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2729,3 +3093,25 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *label end_rage
 *set is_raging false
 *return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment CONSUMABLE: SAINT ALTHEA'S WATER PHIAL
+*comment Restores 2d4 + 2 HP (4-10 HP), consumes the phial.
+*comment Replay-safe via althea_phial_locked and locked_heal_roll.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label use_althea_phial
+*if (not(althea_phial_locked)) or (not(locked_althea_phial_page_id = choice_page_id))
+  *if (has_althea_phial)
+    *set has_althea_phial false
+    *temp phial_d1 0
+    *temp phial_d2 0
+    *rand phial_d1 1 4
+    *rand phial_d2 1 4
+    *set locked_heal_roll ((phial_d1 + phial_d2) + 2)
+    *set hp_current + locked_heal_roll
+    *if (hp_current > hp_max)
+      *set hp_current hp_max
+  *set althea_phial_locked true
+  *set locked_althea_phial_page_id choice_page_id
+*return
+

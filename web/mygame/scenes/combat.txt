@@ -15,11 +15,28 @@
 *comment jarring cut between this file's text and theirs.
 *comment
 *comment Adding a new fight: write a new *label fight_<name> block below
-*comment that sets the enemy's stats (combat_enemy_*) and its bespoke
-*comment flavor lines (combat_enemy_epithet, combat_flavor_weapon_hit/miss,
-*comment combat_flavor_enemy_hit/miss, and optionally
-*comment combat_flavor_dissonant_hit/miss), then *gosub fight_setup and
-*comment *goto fight_round_hub. Everything else -- every spell/cantrip/
+*comment that sets the enemy's stats (combat_enemy_*), combat_enemy_epithet,
+*comment and SIX flavor triplets, each as _1/_2/_3 (picked at random per hit,
+*comment see pick_weapon_flavor / fight_narrate_enemy_turn -- a fight that
+*comment only ever prints one fixed sentence per outcome reads as a stuck
+*comment record across a multi-round fight):
+*comment   combat_flavor_weapon_hit_1/2/3, _miss_1/2/3       (player, melee)
+*comment   combat_flavor_weapon_hit_ranged_1/2/3, _miss_ranged_1/2/3
+*comment     (player, ranged -- needs its own wording, not melee text with
+*comment      ${weapon} swapped in, which reads wrong for a bow/crossbow)
+*comment   combat_flavor_enemy_hit_1/2/3, _miss_1/2/3         (enemy, slot 1
+*comment     and the default/fallback for slot 2/3)
+*comment All three variants for a given line should vary the actual PHYSICAL
+*comment ACTION (a thrust vs. a feint-and-cut vs. closing distance under a
+*comment guard), not just reshuffle adjectives around the same motion.
+*comment Optionally, a distinctly-named multi-enemy fight can also give slot
+*comment 2/3 their OWN triplets (combat_flavor_enemy2/3_hit/miss_1/2/3,
+*comment startup.txt) instead of falling back to the shared one -- see
+*comment fight_rennick_guards' Left/Right guards. combat_flavor_dissonant_
+*comment hit/miss is optional and stays a single fixed line (a one-off cast,
+*comment not a repeating round action, so it's far less exposed to the
+*comment repetition problem the triplets above solve). Then *gosub fight_setup
+*comment and *goto fight_round_hub. Everything else -- every spell/cantrip/
 *comment ability option, the enemy's attack resolution, retreat/rescue
 *comment handling -- is already shared and needs no duplication.
 *comment
@@ -46,11 +63,12 @@
 *label fight_setup
 *comment Resets every ephemeral combat flag so encounter N+1 never inherits
 *comment leftover state from encounter N (or a Shield/Hex left armed from a
-*comment fight the player fled).
+*comment fight the player fled). Pre-existing temp_hp from meals or prep spells
+*comment is preserved.
 *set hex_active false
 *set agathys_active false
-*set temp_hp 0
 *set shield_armed false
+*set is_raging false
 *set combat_agathys_triggered false
 *set combat_agathys_shattered false
 *set combat_outcome ""
@@ -74,10 +92,11 @@
 *label fight_cleanup
 *set hex_active false
 *set agathys_active false
-*set temp_hp 0
 *set shield_armed false
+*set is_raging false
 *set combat_agathys_triggered false
 *set combat_agathys_shattered false
+*set combat_is_nonlethal false
 *comment Multi-enemy state must not leak into the next fight -- a future
 *comment single-enemy encounter defaults to slot 1 only via combat_enemy_count.
 *set combat_enemy_count 1
@@ -170,6 +189,7 @@
 *return
 
 *label fight_victory
+*line_break
 *set combat_enemy_hp 0
 *set combat_outcome "victory"
 *gosub fight_cleanup
@@ -214,6 +234,7 @@
   # Attack with your ${weapon}.
     *if (weapon_type = "ranged")
       *set check_stat "dex"
+      *set check_skill "Ranged Attack"
     *else
       *if (weapon_type = "finesse")
         *comment Finesse (RAW): the wielder's choice of STR or DEX, whichever
@@ -224,8 +245,13 @@
           *set check_stat "dex"
       *else
         *set check_stat "str"
+      *set check_skill "Melee Attack"
     *set check_dc combat_enemy_ac
-    *set check_skill "Melee Attack"
+    *comment fwh/fwm land on one of 3 randomized variants (melee or ranged
+    *comment per weapon_type) -- see pick_weapon_flavor below.
+    *temp fwh ""
+    *temp fwm ""
+    *gosub pick_weapon_flavor
     *gosub_scene startup roll_d20_check
     *if (check_success)
       *if (weapon_type = "finesse")
@@ -267,18 +293,42 @@
             *set combat_player_dmg_bonus + barbarian_rage_damage_bonus
       *gosub_scene startup resolve_player_weapon_hit
       *if (combat_sneak_attack_triggered)
-        You strike from an opening it never saw coming, driving your ${weapon} into an exposed weak point for a vicious, precise finishing blow.
-        [b][🗡️ Sneak Attack | 🩸 Hit: ${combat_player_dmg_dealt} damage][/b]
+        *comment Sneak Attack RAW requires finesse or ranged (see the gate in
+        *comment startup.txt), so this line is at least as likely to be seen
+        *comment on a bow/crossbow build as a melee one -- needs both. Already
+        *comment reads as climactic regardless of lethality, so it keeps its
+        *comment own fixed text rather than swapping to the generic finisher
+        *comment lines below -- just the banner distinguishes an actual kill.
+        *if (combat_is_nonlethal)
+          *if (weapon_type = "ranged")
+            You loose your shot from an opening he never saw coming, your ${weapon} grazing his arm and shattering his grip on his cudgel.
+          *else
+            You strike from an opening he never saw coming, driving the pommel of your ${weapon} into his jaw to drop him instantly unconscious into the sawdust.
+        *else
+          *if (weapon_type = "ranged")
+            You loose your shot from an opening it never saw coming, your ${weapon} finding an exposed weak point for a vicious, precise finishing blow.
+          *else
+            You strike from an opening it never saw coming, driving your ${weapon} into an exposed weak point for a vicious, precise finishing blow.
+        *if (combat_enemy_hp <= 0)
+          [b][🗡️ Sneak Attack | 💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage][/b]
+        *else
+          [b][🗡️ Sneak Attack | 🩸 Hit: ${combat_player_dmg_dealt} damage][/b]
+      *elseif (combat_enemy_hp <= 0)
+        *temp fdh ""
+        *gosub pick_weapon_death_flavor
+        ${fdh}
+        [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage][/b]
       *else
-        ${combat_flavor_weapon_hit}
+        ${fwh}
         [b][🩸 Hit: ${combat_player_dmg_dealt} damage][/b]
     *else
-      ${combat_flavor_weapon_miss}
+      ${fwm}
       [b][💨 Miss][/b]
     *goto fight_check_enemy_hp
 
   *if ((((wizard_cantrip = "fire_bolt") or (wizard_cantrip_2 = "fire_bolt")) or (wizard_cantrip_3 = "fire_bolt")) or ((race_cantrip = "fire_bolt") or (race_cantrip_2 = "fire_bolt")))
     # [Cantrip: Fire Bolt] Hurl a mote of arcane flame at ${combat_enemy_epithet}.
+      *set combat_current_spell_id "fire_bolt"
       *set check_stat "int"
       *set check_dc combat_enemy_ac
       *set check_skill "Fire Bolt"
@@ -287,8 +337,14 @@
         *set combat_player_dmg_dice_sides 10
         *set combat_player_dmg_bonus 0
         *gosub_scene startup resolve_player_hit
-        A searing mote of fire snaps from your outstretched fingers and punches home in a violent flare and a hiss of steam.
-        [b][🔥 Fire Bolt: Hit | ${combat_player_dmg_dealt} Fire damage][/b]
+        *if (combat_enemy_hp <= 0)
+          *temp fdh ""
+          *gosub pick_spell_death_flavor
+          ${fdh}
+          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Fire damage][/b]
+        *else
+          A searing mote of fire snaps from your outstretched fingers and punches home in a violent flare and a hiss of steam.
+          [b][🔥 Fire Bolt: Hit | ${combat_player_dmg_dealt} Fire damage][/b]
       *else
         The mote of fire streaks wide, scorching nothing but empty air.
         [b][💨 Miss][/b]
@@ -296,6 +352,7 @@
 
   *if ((((wizard_cantrip = "ray_of_frost") or (wizard_cantrip_2 = "ray_of_frost")) or (wizard_cantrip_3 = "ray_of_frost")) or ((race_cantrip = "ray_of_frost") or (race_cantrip_2 = "ray_of_frost")))
     # [Cantrip: Ray of Frost] Loose a beam of numbing cold at ${combat_enemy_epithet}.
+      *set combat_current_spell_id "ray_of_frost"
       *set check_stat "int"
       *set check_dc combat_enemy_ac
       *set check_skill "Ray of Frost"
@@ -305,8 +362,14 @@
         *set combat_player_dmg_bonus 0
         *gosub_scene startup resolve_player_hit
         *set combat_enemy_disadvantage true
-        A pale ray of unnatural cold catches ${combat_enemy_epithet} square on, rime crackling across the point of impact and slowing its next strike to a sluggish crawl.
-        [b][❄️ Ray of Frost: Hit | ${combat_player_dmg_dealt} Cold damage | ⚠️ Slowed — disadvantage on its next attack][/b]
+        *if (combat_enemy_hp <= 0)
+          *temp fdh ""
+          *gosub pick_spell_death_flavor
+          ${fdh}
+          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Cold damage][/b]
+        *else
+          A pale ray of unnatural cold catches ${combat_enemy_epithet} square on, rime crackling across the point of impact and slowing its next strike to a sluggish crawl.
+          [b][❄️ Ray of Frost: Hit | ${combat_player_dmg_dealt} Cold damage | ⚠️ Slowed — disadvantage on its next attack][/b]
       *else
         The ray splashes past, freezing nothing but the damp air.
         [b][💨 Miss][/b]
@@ -314,6 +377,7 @@
 
   *if ((((wizard_cantrip = "shocking_grasp") or (wizard_cantrip_2 = "shocking_grasp")) or (wizard_cantrip_3 = "shocking_grasp")) or ((race_cantrip = "shocking_grasp") or (race_cantrip_2 = "shocking_grasp")))
     # [Cantrip: Shocking Grasp] Drive a crackling jolt of lightning into ${combat_enemy_epithet}.
+      *set combat_current_spell_id "shocking_grasp"
       *comment RAW: advantage on the attack roll if the target wears metal
       *comment armor. combat_enemy_metal_armor defaults false (see startup.txt)
       *comment -- only true for a fight that explicitly sets it on an armored
@@ -328,7 +392,12 @@
         *set combat_player_dmg_dice_sides 8
         *set combat_player_dmg_bonus 0
         *gosub_scene startup resolve_player_hit
-        *if (combat_enemy_metal_armor)
+        *if (combat_enemy_hp <= 0)
+          *temp fdh ""
+          *gosub pick_spell_death_flavor
+          ${fdh}
+          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Lightning damage][/b]
+        *elseif (combat_enemy_metal_armor)
           Blue-white lightning discharges from your palm and leaps hungrily to the iron on ${combat_enemy_epithet}, arcing through every buckle and plate in one violent convulsion.
           [b][⚡ Shocking Grasp: Hit | ${combat_player_dmg_dealt} Lightning damage | 🔩 Metal-Seeking Advantage][/b]
         *else
@@ -341,6 +410,7 @@
 
   *if ((warlock_cantrip = "eldritch_blast") or (warlock_cantrip_2 = "eldritch_blast"))
     # [Cantrip: Eldritch Blast] Unleash a crackling beam of eldritch force at ${combat_enemy_epithet}.
+      *set combat_current_spell_id "eldritch_blast"
       *set check_stat "cha"
       *set check_dc combat_enemy_ac
       *set check_skill "Eldritch Blast"
@@ -349,8 +419,14 @@
         *set combat_player_dmg_dice_sides 10
         *set combat_player_dmg_bonus 0
         *gosub_scene startup resolve_player_hit
-        A jagged streak of violet force slams home with the concussive boom of a shattered timber.
-        [b][✨ Eldritch Blast: Hit | ${combat_player_dmg_dealt} Force damage][/b]
+        *if (combat_enemy_hp <= 0)
+          *temp fdh ""
+          *gosub pick_spell_death_flavor
+          ${fdh}
+          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Force damage][/b]
+        *else
+          A jagged streak of violet force slams home with the concussive boom of a shattered timber.
+          [b][✨ Eldritch Blast: Hit | ${combat_player_dmg_dealt} Force damage][/b]
       *else
         The beam tears past and shatters against whatever's unlucky enough to be standing behind it.
         [b][💨 Miss][/b]
@@ -358,6 +434,7 @@
 
   *if ((warlock_cantrip = "chill_touch") or (warlock_cantrip_2 = "chill_touch"))
     # [Cantrip: Chill Touch] Conjure a skeletal hand of necrotic frost against ${combat_enemy_epithet}.
+      *set combat_current_spell_id "chill_touch"
       *set check_stat "cha"
       *set check_dc combat_enemy_ac
       *set check_skill "Chill Touch"
@@ -366,8 +443,14 @@
         *set combat_player_dmg_dice_sides 8
         *set combat_player_dmg_bonus 0
         *gosub_scene startup resolve_player_hit
-        A ghostly, translucent hand wreathed in necrotic mist closes around ${combat_enemy_epithet}, sapping the warmth and strength from the wound it leaves behind.
-        [b][💀 Chill Touch: Hit | ${combat_player_dmg_dealt} Necrotic damage][/b]
+        *if (combat_enemy_hp <= 0)
+          *temp fdh ""
+          *gosub pick_spell_death_flavor
+          ${fdh}
+          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Necrotic damage][/b]
+        *else
+          A ghostly, translucent hand wreathed in necrotic mist closes around ${combat_enemy_epithet}, sapping the warmth and strength from the wound it leaves behind.
+          [b][💀 Chill Touch: Hit | ${combat_player_dmg_dealt} Necrotic damage][/b]
       *else
         The spectral hand dissolves into harmless mist a hair's breadth short of its mark.
         [b][💨 Miss][/b]
@@ -375,6 +458,7 @@
 
   *if ((bard_cantrip = "vicious_mockery") or (bard_cantrip_2 = "vicious_mockery"))
     # [Cantrip: Vicious Mockery] Hurl a barbed, perfectly-aimed insult at ${combat_enemy_epithet}.
+      *set combat_current_spell_id "vicious_mockery"
       *set check_stat "cha"
       *set check_dc 12
       *set check_skill "Vicious Mockery"
@@ -384,8 +468,14 @@
         *set combat_player_dmg_bonus 0
         *gosub_scene startup resolve_player_hit
         *set combat_enemy_disadvantage true
-        Your cutting cadence lands with surgical precision, needling straight at a nerve you didn't know was there — its balance and its nerve both falter in the same breath.
-        [b][🎭 Vicious Mockery: Hit | ${combat_player_dmg_dealt} Psychic damage | ⚠️ Rattled — disadvantage on its next attack][/b]
+        *if (combat_enemy_hp <= 0)
+          *temp fdh ""
+          *gosub pick_spell_death_flavor
+          ${fdh}
+          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Psychic damage][/b]
+        *else
+          Your cutting cadence lands with surgical precision, needling straight at a nerve you didn't know was there — its balance and its nerve both falter in the same breath.
+          [b][🎭 Vicious Mockery: Hit | ${combat_player_dmg_dealt} Psychic damage | ⚠️ Rattled — disadvantage on its next attack][/b]
       *else
         Whatever passes for pride in ${combat_enemy_epithet} shrugs the insult off without a flicker.
         [b][💨 Resisted][/b]
@@ -393,9 +483,16 @@
 
   *if (((character_class = "wizard") and (wizard_spell = "magic_missile")) and (wizard_spell_slots > 0))
     # [Spell: Magic Missile] Unleash three darts of force that strike unerringly, bypassing its hide entirely.
+      *set combat_current_spell_id "magic_missile"
       *gosub_scene startup resolve_magic_missile
-      You speak three crisp syllables and snap your fingers forward. Three glowing, pale-blue darts of crackling arcane force burst from your fingertips, curving unerringly through the air to slam home.
-      [b][✨ Magic Missile: Automatic Hit | ${combat_player_dmg_dealt} damage][/b]
+      *if (combat_enemy_hp <= 0)
+        *temp fdh ""
+        *gosub pick_spell_death_flavor
+        ${fdh}
+        [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage][/b]
+      *else
+        You speak three crisp syllables and snap your fingers forward. Three glowing, pale-blue darts of crackling arcane force burst from your fingertips, curving unerringly through the air to slam home.
+        [b][✨ Magic Missile: Automatic Hit | ${combat_player_dmg_dealt} damage][/b]
       *goto fight_check_enemy_hp
 
   *if ((((warlock_spell = "hex") and (warlock_spell_slots > 0)) or ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))) and (not(hex_active)))
@@ -421,12 +518,18 @@
 
   *if (((bard_spell = "dissonant_whispers") or (bard_spell_2 = "dissonant_whispers")) and (bard_spell_slots > 0))
     # [Spell: Dissonant Whispers] Utter a hideous, discordant psychic phrase that wracks its mind.
+      *set combat_current_spell_id "dissonant_whispers"
       *set check_stat "cha"
       *set check_dc 12
       *set check_skill "Dissonant Whispers"
       *gosub_scene startup roll_d20_check
       *gosub_scene startup resolve_dissonant_whispers
-      *if (check_success)
+      *if (combat_enemy_hp <= 0)
+        *temp fdh ""
+        *gosub pick_spell_death_flavor
+        ${fdh}
+        [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Psychic Damage][/b]
+      *elseif (check_success)
         ${combat_flavor_dissonant_hit}
         [b][🧠 Dissonant Whispers: Failed Save | ${combat_player_dmg_dealt} Psychic Damage][/b]
       *else
@@ -466,6 +569,13 @@
       A hot, roaring pressure floods your chest, dulling the pain and the fear to nothing at all.
       *goto fight_enemy_turn
 
+  *if ((has_althea_phial) and (hp_current < hp_max))
+    # [Item: Saint Althea's Phial] Unbung the clay flask and drink the consecrated cistern-water.
+      *gosub_scene startup use_althea_phial
+      You wrench the wax stopper free with your teeth and swallow the cold, herbal draught. Pure, radiant warmth floods through your marrow, knitting torn muscle and staunching fresh bleeding in an instant.
+      [b][🧪 Saint Althea's Water: Restored +${locked_heal_roll} HP | HP: ${hp_current} / ${hp_max}][/b]
+      *goto fight_enemy_turn
+
   # Break off and disengage.
     *goto fight_fled
 
@@ -480,24 +590,84 @@
 *label fight_narrate_enemy_turn
 *comment Called once per attacking slot from fight_enemy_turn below, with
 *comment combat_active_target/combat_enemy_* already synced to that slot
-*comment and resolve_enemy_attack already resolved against it. Falls back
-*comment to the shared combat_flavor_enemy_hit/miss when a slot 2/3 doesn't
-*comment define its own -- a group of identical mooks only needs to write
-*comment the flavor once.
+*comment and resolve_enemy_attack already resolved against it. fnet_hit/miss
+*comment land on one of up to 5 randomized variants, with fallback to variant 1
+*comment if a fight only defined 3 variants.
 *temp fnet_hit ""
 *temp fnet_miss ""
-*set fnet_hit combat_flavor_enemy_hit
-*set fnet_miss combat_flavor_enemy_miss
-*if (combat_active_target = 2)
-  *if (not(combat_flavor_enemy2_hit = ""))
-    *set fnet_hit combat_flavor_enemy2_hit
-  *if (not(combat_flavor_enemy2_miss = ""))
-    *set fnet_miss combat_flavor_enemy2_miss
-*if (combat_active_target = 3)
-  *if (not(combat_flavor_enemy3_hit = ""))
-    *set fnet_hit combat_flavor_enemy3_hit
-  *if (not(combat_flavor_enemy3_miss = ""))
-    *set fnet_miss combat_flavor_enemy3_miss
+*temp fnet_v 1
+*rand fnet_v 1 5
+*temp fnet_use_override false
+*if ((combat_active_target = 2) and (not(combat_flavor_enemy2_hit_1 = "")))
+  *set fnet_use_override true
+*if ((combat_active_target = 3) and (not(combat_flavor_enemy3_hit_1 = "")))
+  *set fnet_use_override true
+*if (fnet_use_override)
+  *if (combat_active_target = 2)
+    *if (fnet_v = 1)
+      *set fnet_hit combat_flavor_enemy2_hit_1
+      *set fnet_miss combat_flavor_enemy2_miss_1
+    *if (fnet_v = 2)
+      *set fnet_hit combat_flavor_enemy2_hit_2
+      *set fnet_miss combat_flavor_enemy2_miss_2
+    *if (fnet_v = 3)
+      *set fnet_hit combat_flavor_enemy2_hit_3
+      *set fnet_miss combat_flavor_enemy2_miss_3
+    *if (fnet_v = 4)
+      *set fnet_hit combat_flavor_enemy2_hit_4
+      *set fnet_miss combat_flavor_enemy2_miss_4
+    *if (fnet_v = 5)
+      *set fnet_hit combat_flavor_enemy2_hit_5
+      *set fnet_miss combat_flavor_enemy2_miss_5
+  *if (combat_active_target = 3)
+    *if (fnet_v = 1)
+      *set fnet_hit combat_flavor_enemy3_hit_1
+      *set fnet_miss combat_flavor_enemy3_miss_1
+    *if (fnet_v = 2)
+      *set fnet_hit combat_flavor_enemy3_hit_2
+      *set fnet_miss combat_flavor_enemy3_miss_2
+    *if (fnet_v = 3)
+      *set fnet_hit combat_flavor_enemy3_hit_3
+      *set fnet_miss combat_flavor_enemy3_miss_3
+    *if (fnet_v = 4)
+      *set fnet_hit combat_flavor_enemy3_hit_4
+      *set fnet_miss combat_flavor_enemy3_miss_4
+    *if (fnet_v = 5)
+      *set fnet_hit combat_flavor_enemy3_hit_5
+      *set fnet_miss combat_flavor_enemy3_miss_5
+*else
+  *if (fnet_v = 1)
+    *set fnet_hit combat_flavor_enemy_hit_1
+    *set fnet_miss combat_flavor_enemy_miss_1
+  *if (fnet_v = 2)
+    *set fnet_hit combat_flavor_enemy_hit_2
+    *set fnet_miss combat_flavor_enemy_miss_2
+  *if (fnet_v = 3)
+    *set fnet_hit combat_flavor_enemy_hit_3
+    *set fnet_miss combat_flavor_enemy_miss_3
+  *if (fnet_v = 4)
+    *set fnet_hit combat_flavor_enemy_hit_4
+    *set fnet_miss combat_flavor_enemy_miss_4
+  *if (fnet_v = 5)
+    *set fnet_hit combat_flavor_enemy_hit_5
+    *set fnet_miss combat_flavor_enemy_miss_5
+*if (fnet_hit = "")
+  *if (fnet_use_override)
+    *if (combat_active_target = 2)
+      *set fnet_hit combat_flavor_enemy2_hit_1
+    *if (combat_active_target = 3)
+      *set fnet_hit combat_flavor_enemy3_hit_1
+  *else
+    *set fnet_hit combat_flavor_enemy_hit_1
+*if (fnet_miss = "")
+  *if (fnet_use_override)
+    *if (combat_active_target = 2)
+      *set fnet_miss combat_flavor_enemy2_miss_1
+    *if (combat_active_target = 3)
+      *set fnet_miss combat_flavor_enemy3_miss_1
+  *else
+    *set fnet_miss combat_flavor_enemy_miss_1
+*line_break
 *if (combat_shield_triggered)
   *if (combat_enemy_hit_success)
     A shimmering lattice of force flares to life around you on pure reflex, but the blow crashes through it anyway, striking home regardless.
@@ -515,11 +685,333 @@
       *else
         As the blow lands, the rime holding across your harness pulses with bitter frost, biting into ${combat_enemy_epithet} while your armor holds!
         [b][❄️ Armor of Agathys: 5 Cold Damage dealt to ${combat_enemy_name} | ${temp_hp} Temp HP remaining][/b]
+      *if (combat_enemy_hp <= 0)
+        *temp fdh ""
+        *set combat_current_spell_id "armor_of_agathys"
+        *gosub pick_spell_death_flavor
+        ${fdh}
+        [b][💀 ${combat_enemy_name} Defeated — Killed by Its Own Strike][/b]
     [b][🩸 ${combat_enemy_name} Hits: ${combat_enemy_dmg_dealt} damage | HP: ${hp_current} / ${hp_max}][/b]
   *else
     ${fnet_miss}
     [b][💨 ${combat_enemy_name} Misses][/b]
 *gosub fight_sync_target_out
+*return
+
+*label pick_weapon_flavor
+*comment Randomly selects one of 5 variants for the caller's already-*temp'd
+*comment fwh/fwm (melee or ranged, per weapon_type) with fallback to variant 1 if blank.
+*temp pwf_v 1
+*rand pwf_v 1 5
+*if (weapon_type = "ranged")
+  *if (pwf_v = 1)
+    *set fwh combat_flavor_weapon_hit_ranged_1
+    *set fwm combat_flavor_weapon_miss_ranged_1
+  *if (pwf_v = 2)
+    *set fwh combat_flavor_weapon_hit_ranged_2
+    *set fwm combat_flavor_weapon_miss_ranged_2
+  *if (pwf_v = 3)
+    *set fwh combat_flavor_weapon_hit_ranged_3
+    *set fwm combat_flavor_weapon_miss_ranged_3
+  *if (pwf_v = 4)
+    *set fwh combat_flavor_weapon_hit_ranged_4
+    *set fwm combat_flavor_weapon_miss_ranged_4
+  *if (pwf_v = 5)
+    *set fwh combat_flavor_weapon_hit_ranged_5
+    *set fwm combat_flavor_weapon_miss_ranged_5
+*else
+  *if (pwf_v = 1)
+    *set fwh combat_flavor_weapon_hit_1
+    *set fwm combat_flavor_weapon_miss_1
+  *if (pwf_v = 2)
+    *set fwh combat_flavor_weapon_hit_2
+    *set fwm combat_flavor_weapon_miss_2
+  *if (pwf_v = 3)
+    *set fwh combat_flavor_weapon_hit_3
+    *set fwm combat_flavor_weapon_miss_3
+  *if (pwf_v = 4)
+    *set fwh combat_flavor_weapon_hit_4
+    *set fwm combat_flavor_weapon_miss_4
+  *if (pwf_v = 5)
+    *set fwh combat_flavor_weapon_hit_5
+    *set fwm combat_flavor_weapon_miss_5
+*if (fwh = "")
+  *if (weapon_type = "ranged")
+    *set fwh combat_flavor_weapon_hit_ranged_1
+  *else
+    *set fwh combat_flavor_weapon_hit_1
+*if (fwm = "")
+  *if (weapon_type = "ranged")
+    *set fwm combat_flavor_weapon_miss_ranged_1
+  *else
+    *set fwm combat_flavor_weapon_miss_1
+*return
+
+*label pick_weapon_death_flavor
+*comment Sets the caller's already-*temp'd fdh to one of 5 randomized
+*comment finishing-blow variants tailored to weapon damage type (slashing,
+*comment bludgeoning, piercing, or ranged) with visceral low-fantasy grit.
+*temp pdf_v 1
+*rand pdf_v 1 5
+*if (combat_is_nonlethal)
+  *if (weapon_type = "ranged")
+    *if (pdf_v = 1)
+      *set fdh "You loose on a low trajectory—the quarrel clips the guard's knee, sending him crashing hard onto the floorboards with all the fight knocked clean out of him."
+    *if (pdf_v = 2)
+      *set fdh "Your shot punches clean through the guard's forearm bracer, shattering his grip on his cudgel and driving him stumbling back into a curing bench, groaning in defeat."
+    *if (pdf_v = 3)
+      *set fdh "The missile pins the heavy wool of the guard's sleeve to a cedar upright with jarring force, spinning him around before he collapses dazed into an empty salt bin."
+    *if (pdf_v = 4)
+      *set fdh "A precise shot grazes his shoulder with concussive force, spinning him off-balance and sending him crashing headfirst into an empty firkin, where he lies motionless."
+    *if (pdf_v = 5)
+      *set fdh "Your shot splinters the cudgel in the guard's grip, the shockwave numbing his arm and dropping him to his knees in stunned surrender."
+  *elseif (weapon_damage_type = "slashing")
+    *if (pdf_v = 1)
+      *set fdh "You flip your grip in a smooth, practiced motion and slam the heavy iron pommel square into his jaw—his eyes roll back and he crumples unconscious into the cedar sawdust."
+    *if (pdf_v = 2)
+      *set fdh "You arrest the lethal arc mid-swing and strike with the flat of the heavy blade across his temple. The ringing blow drops him instantly limp to the floorboards."
+    *if (pdf_v = 3)
+      *set fdh "A brutal pommel-strike to his sternum knocks the breath clean out of him; he doubles over, drops his weapon, and collapses gasping and defeated into the grime."
+    *if (pdf_v = 4)
+      *set fdh "You step inside his guard, wrench his weapon free with your crossguard, and drive a savage elbow into his collarbone that puts him flat on his back, clutching his shoulder in agony."
+    *if (pdf_v = 5)
+      *set fdh "You sweep the flat of the iron hard into his lead knee and shove him back—he crashes sprawling into an empty curing bench, dazed and unable to rise."
+  *elseif (weapon_damage_type = "bludgeoning")
+    *if (pdf_v = 1)
+      *set fdh "A concussive crack from the haft catches him square across the jaw—his knees give out beneath him and he drops limp into the sawdust."
+    *if (pdf_v = 2)
+      *set fdh "You drive the blunt end of the weapon hard into his solar plexus. The air explodes from his lungs in a choked rasp as he folds up and crashes unconscious to the boards."
+    *if (pdf_v = 3)
+      *set fdh "A sharp, snapping strike across his collarbone shatters his stance, knocking him sideways into a salt vat where he slumps groaning in surrender."
+    *if (pdf_v = 4)
+      *set fdh "You sweep his legs out from under him and plant the heavy wood across his chest, pinning him breathless to the floor until he throws up his hands in defeat."
+    *if (pdf_v = 5)
+      *set fdh "An overhand strike with the shaft catches him across the shoulder, driving him down onto both knees with the fight battered completely out of him."
+  *elseif (weapon_damage_type = "piercing")
+    *if (pdf_v = 1)
+      *set fdh "You feint with the point, step past his clumsy swing, and bring the weighted hilt down hard behind his ear, dropping him cold into the dirt."
+    *if (pdf_v = 2)
+      *set fdh "You hook his wrist, wrenching the cudgel from his hand with a sharp twist, and drive your knee hard into his gut to send him gasping to the floor."
+    *if (pdf_v = 3)
+      *set fdh "A vicious strike with the crossguard catches him across the bridge of his nose—he stumbles back, clutching his face in dazed surrender as his knees buckle."
+    *if (pdf_v = 4)
+      *set fdh "You trap his lead arm and slam him backward over a salting trough, the breath knocking out of him as he slumps motionless in defeat."
+    *if (pdf_v = 5)
+      *set fdh "You drive a short, heavy pommel-blow to his ribs that cracks his guard wide open, sending him crashing down into a stack of cedar staves."
+  *else
+    *if (pdf_v = 1)
+      *set fdh "You drive a heavy shoulder-check into his chest, knocking him sprawling into the brine barrels where he lies groaning in defeat."
+    *if (pdf_v = 2)
+      *set fdh "A crisp, concussive blow catches him on the chin, snapping his head back and dropping him unconscious to the cedar boards."
+    *if (pdf_v = 3)
+      *set fdh "You step inside his swing and sweep his feet out from under him, sending him crashing down with all the wind knocked from his lungs."
+    *if (pdf_v = 4)
+      *set fdh "You wrench his cudgel away and strike him hard with the butt, driving him to his knees in surrender."
+    *if (pdf_v = 5)
+      *set fdh "A decisive blow to the flank breaks his balance entirely, sending him sprawling into the sawdust, unable to rise."
+*elseif (weapon_type = "ranged")
+  *if (pdf_v = 1)
+    *set fdh "The heavy iron quarrel punches straight through its breastbone with a dull, hollow thud, pinning its lungs and dropping it in a spray of crimson."
+  *if (pdf_v = 2)
+    *set fdh "You track its frantic movement and loose on the exhale—the broadhead takes it clean through the eye, snapping its head back violently before its knees buckle."
+  *if (pdf_v = 3)
+    *set fdh "The missile strikes with devastating kinetic punch, tearing through its throat and embedding deep into the woodwork behind as the carcass slides down limp."
+  *if (pdf_v = 4)
+    *set fdh "A clinical, center-mass shot drives deep into its vitals, the iron head exiting between its shoulder blades as it collapses with a wet, ragged gasp."
+  *if (pdf_v = 5)
+    *set fdh "You loose from close range—the iron broadhead shatters through collar and spine, killing all forward momentum in an instant as it crumples lifeless."
+*elseif (weapon_damage_type = "slashing")
+  *if (pdf_v = 1)
+    *set fdh "You step into the arc and bring the edge down in a violent cleave—the heavy steel bites clean through bone and sinew with a sickening crunch and a gush of dark blood."
+  *if (pdf_v = 2)
+    *set fdh "You pivot hard, putting your full weight behind the stroke. The honed iron shears through meat and muscle, nearly hewing the limb free before it collapses in a spray of scarlet."
+  *if (pdf_v = 3)
+    *set fdh "A brutal, downward chop splits straight through the shoulder. You wrench the notched iron free with a wet tearing sound, leaving it to crumple lifelessly into the pooling blood."
+  *if (pdf_v = 4)
+    *set fdh "The cutting edge takes it across the throat in a savage stroke—arterial crimson coats your knuckles as it claws blindly at the open ruin before dropping limp."
+  *if (pdf_v = 5)
+    *set fdh "You drive the heavy blade deep into its flank with all your strength, carving through hide and organ until its breath leaves it in a bloody, bubbling rasp."
+*elseif (weapon_damage_type = "bludgeoning")
+  *if (pdf_v = 1)
+    *set fdh "You drive the weighted iron ferrule straight into its temple with sickening momentum—the wet crack of fracturing bone rings out as its skull gives way and its frame drops like an unstrung puppet."
+  *if (pdf_v = 2)
+    *set fdh "A brutal two-handed sweep takes it square across the ribs, shattering bone inward with a concussive crunch that drives all air from its lungs in a bloody spray."
+  *if (pdf_v = 3)
+    *set fdh "You plant your back foot and thrust the blunt end hard into its sternum, caving in the chest with a dull, sickening thud that stops its heart on the spot."
+  *if (pdf_v = 4)
+    *set fdh "The crushing blow lands with brutal leverage, snapping its neck sideways with a sharp, dry fracture before it crashes dead to the stones."
+  *if (pdf_v = 5)
+    *set fdh "You bring the heavy wood around in an overhand smash that caves in its shoulder and spine, driving it down in a motionless, broken heap."
+*elseif (weapon_damage_type = "piercing")
+  *if (pdf_v = 1)
+    *set fdh "You step inside its guard and drive the point upward beneath the ribcage, burying steel to the crossguard. You twist the iron once before ripping it free in a heavy surge of dark blood."
+  *if (pdf_v = 2)
+    *set fdh "A lightning-fast thrust punches clean through its throat—it clutches at the iron in choking disbelief as red froth spills over your fingers, legs folding under it."
+  *if (pdf_v = 3)
+    *set fdh "You catch its arm, pull its weight off-balance, and ram the cold point straight through the eye-socket, dropping it instantly without another sound."
+  *if (pdf_v = 4)
+    *set fdh "The point finds the seam in its defenses and drives all the way through lung and heart. A wet gasp escapes its lips as you kick the carcass off your blade."
+  *if (pdf_v = 5)
+    *set fdh "You drive the spike deep into its spine at the base of the neck—it goes rigid in a single violent tremor before collapsing entirely limp."
+*else
+  *if (pdf_v = 1)
+    *set fdh "This strike lands with crushing finality—you feel the life go out of it the instant it connects, and it hits the floor like lead."
+  *if (pdf_v = 2)
+    *set fdh "The weight and follow-through carry all the way through this time, and whatever fight it had left breaks on impact in a spray of dark blood."
+  *if (pdf_v = 3)
+    *set fdh "No hesitation, no second thought—the strike lands true, carving through its defenses and taking the last of its strength before it even hits the stones."
+  *if (pdf_v = 4)
+    *set fdh "You step through the blow, putting your full weight behind the strike, and it drops without a second motion."
+  *if (pdf_v = 5)
+    *set fdh "The strike connects with clean, brutal precision, taking its balance and its breath in the same decisive heartbeat."
+*return
+
+*label pick_spell_death_flavor
+*comment Element- and spell-specific death flavor for each cantrip and spell,
+*comment with a 3-variant pool per spell type and element-neutral fallback.
+*temp psdf_v 1
+*rand psdf_v 1 3
+*if (combat_is_nonlethal)
+  *if (combat_current_spell_id = "fire_bolt")
+    *if (psdf_v = 1)
+      *set fdh "The concussive heat of the fire-mote blasts the cudgel from the guard's smoking grip, throwing him backward into a curing bench where he slumps unconscious."
+    *if (psdf_v = 2)
+      *set fdh "The searing flash detonates at the guard's feet, knocking him off his stride and sending him crashing hard against the timber wall, dazed and defeated."
+    *if (psdf_v = 3)
+      *set fdh "A scorching blast of superheated air knocks the wind completely out of him, dropping him to his knees clutching his singed collar in surrender."
+  *elseif (combat_current_spell_id = "ray_of_frost")
+    *if (psdf_v = 1)
+      *set fdh "The pale ray numbs his limbs to the bone—his legs lock rigid with bitter frost and he topples over into the sawdust, shivering violently and unable to fight."
+    *if (psdf_v = 2)
+      *set fdh "Rime washes over the guard's shoulders with concussive chill, sapping all strength from his arms until his cudgel clatters to the floor and he sinks down shivering."
+    *if (psdf_v = 3)
+      *set fdh "The bitter cold stops the guard's charge dead in its tracks, dropping him to his knees in the brine, teeth chattering too violently to rise."
+  *elseif (combat_current_spell_id = "shocking_grasp")
+    *if (psdf_v = 1)
+      *set fdh "Blue-white fulmination courses through his arms, seizing his muscles in a violent jolt that leaves him sprawled unconscious across the floorboards."
+    *if (psdf_v = 2)
+      *set fdh "The electric shock snaps through his spine, locking his frame for a stunned heartbeat before he crumples limp into the grime."
+    *if (psdf_v = 3)
+      *set fdh "A sudden arc of lightning numbs his limbs completely, tossing him back into a salt vat where he lies groaning and paralyzed."
+  *elseif (combat_current_spell_id = "eldritch_blast")
+    *if (psdf_v = 1)
+      *set fdh "A concussive shockwave of arcane force lifts him clean off his boots, slamming him into a stack of brine barrels where he slumps out cold."
+    *if (psdf_v = 2)
+      *set fdh "The force bolt punches into his chest like a battering ram, knocking all breath from his lungs as he crashes unconscious to the cedar boards."
+    *if (psdf_v = 3)
+      *set fdh "Pure kinetic thunder catches him mid-stride, hurling him sideways across the shed into stunned, motionless defeat."
+  *elseif (combat_current_spell_id = "chill_touch")
+    *if (psdf_v = 1)
+      *set fdh "The spectral grip drains the warmth and vigor from his limbs, leaving him too weak to stand as he collapses limp into the sawdust."
+    *if (psdf_v = 2)
+      *set fdh "A sudden wave of numbing grave-chill saps all strength from his frame, dropping him to the floorboards shivering and exhausted."
+    *if (psdf_v = 3)
+      *set fdh "The icy touch numbs his hands to lead; his cudgel falls from limp fingers as he sinks down in complete surrender."
+  *elseif (combat_current_spell_id = "vicious_mockery")
+    *if (psdf_v = 1)
+      *set fdh "The stinging psychic insult breaks his nerve completely—he drops his cudgel with a groan of despair and slumps against the wall, head in hands."
+    *if (psdf_v = 2)
+      *set fdh "The cruel cadence rings behind his eyes with unbearable pressure, driving him down to both knees clutching his pounding skull in defeat."
+    *if (psdf_v = 3)
+      *set fdh "The barbed words shatter whatever bluster he had left, leaving him trembling and defeated in the gloomy shed."
+  *elseif (combat_current_spell_id = "magic_missile")
+    *if (psdf_v = 1)
+      *set fdh "Three glowing darts of force strike his chest with concussive thuds, knocking him flat on his back where he lies stunned and breathless."
+    *if (psdf_v = 2)
+      *set fdh "The force missiles impact in rapid succession, bowling him backward into an empty cedar crate and knocking him cold."
+    *if (psdf_v = 3)
+      *set fdh "Arcane force punches into his shoulders, spinning him around and dropping him limp to the brine-soaked floor."
+  *elseif (combat_current_spell_id = "dissonant_whispers")
+    *if (psdf_v = 1)
+      *set fdh "The discordant screech behind his eyes overwhelms his senses—he drops his weapon and collapses to his knees, clutching his head in agony until he slumps unconscious."
+    *if (psdf_v = 2)
+      *set fdh "A violent psychic spike scrambles his thoughts completely; he stumbles backward, disoriented, and sinks to the floor in dazed defeat."
+    *if (psdf_v = 3)
+      *set fdh "The psychic assault shatters his resolve in an instant, leaving him groaning on the floorboards with all the fight driven out of him."
+  *elseif (combat_current_spell_id = "armor_of_agathys")
+    *if (psdf_v = 1)
+      *set fdh "The bitter frost surging from your armor numbs his striking arm and knocks him backward into the salt bins, shivering and incapacitated."
+    *if (psdf_v = 2)
+      *set fdh "The frost-rime rebounding off your ward shocks his muscles into stillness, sending him sprawling into the grime, too chilled to rise."
+    *if (psdf_v = 3)
+      *set fdh "A cold shockwave repels his strike, throwing him off-balance and down onto the wet boards in shivering defeat."
+  *else
+    *if (psdf_v = 1)
+      *set fdh "The working catches him with concussive force, tossing him into the gloom where he slumps motionless and out of the fight."
+    *if (psdf_v = 2)
+      *set fdh "The magic overwhelms his senses, dropping him to the floorboards dazed and unable to continue."
+    *if (psdf_v = 3)
+      *set fdh "The strike saps the last of his fight, and he collapses against the salting bench in total defeat."
+*elseif (combat_current_spell_id = "fire_bolt")
+  *if (psdf_v = 1)
+    *set fdh "The arcane fire punches through its chest in a blinding flash, incinerating what was left of its vitality in a shower of smoldering sparks."
+  *if (psdf_v = 2)
+    *set fdh "A violent bloom of flame sears through its flank—it collapses motionless with a hiss of steam and charred ash."
+  *if (psdf_v = 3)
+    *set fdh "The searing mote erupts with furnace heat, scorching straight through flesh and bone before dropping it motionless to the ground."
+*elseif (combat_current_spell_id = "ray_of_frost")
+  *if (psdf_v = 1)
+    *set fdh "The pale ray strikes deep into its flank, rime rushing outward in jagged crystals until its limbs lock rigid and it topples over with a brittle crack."
+  *if (psdf_v = 2)
+    *set fdh "Bitter cold surges through every vessel at once—it freezes mid-motion, then topples over like brittle ice."
+  *if (psdf_v = 3)
+    *set fdh "The numbing freeze claims its heart in a single shuddering heartbeat, leaving a frost-crusted husk in its place."
+*elseif (combat_current_spell_id = "shocking_grasp")
+  *if (psdf_v = 1)
+    *set fdh "Blue-white lightning arcs through its skull and spine, violent spasms snapping its frame rigid before it drops limp."
+  *if (psdf_v = 2)
+    *set fdh "The electric arc detonates with a deafening crack, burning through muscle and sinew as it crashes to the floor."
+  *if (psdf_v = 3)
+    *set fdh "A web of crackling fulmination floods its chest, stopping its pulse dead in a haze of ozone and smoke."
+*elseif (combat_current_spell_id = "eldritch_blast")
+  *if (psdf_v = 1)
+    *set fdh "The violet beam detonates against its torso with concussive thunder, hurling the broken body backward across the floor."
+  *if (psdf_v = 2)
+    *set fdh "Pure eldritch force punches through like a siege engine's bolt, shattering whatever was holding it together all at once."
+  *if (psdf_v = 3)
+    *set fdh "A violent pressure wave fractures the air—the concussive impact lifts it off its feet and drops it motionless in the shadows."
+*elseif (combat_current_spell_id = "chill_touch")
+  *if (psdf_v = 1)
+    *set fdh "The spectral hand squeezes tight around its throat, drawing out the last motes of warmth in a pallid wisp of necrotic vapor as it collapses."
+  *if (psdf_v = 2)
+    *set fdh "Grey necrosis spreads instantly from the ghostly grip, leaving the withered form to drop lifeless where it stands."
+  *if (psdf_v = 3)
+    *set fdh "The grave-chill pulls the pulse clean out of its veins, dropping it rigid with skin turned the color of ash."
+*elseif (combat_current_spell_id = "vicious_mockery")
+  *if (psdf_v = 1)
+    *set fdh "The razor-sharp insult cuts deeper than steel, rupturing its cognitive will until its knees buckle and it slumps lifelessly."
+  *if (psdf_v = 2)
+    *set fdh "The cruel cadence resonates behind its eyes like a hammer on glass, shattering its nervous focus until it collapses motionless."
+  *if (psdf_v = 3)
+    *set fdh "Your barbed words tear through whatever scrap of spirit sustained it, and it crumples to the floor without another twitch."
+*elseif (combat_current_spell_id = "magic_missile")
+  *if (psdf_v = 1)
+    *set fdh "All three glowing force-darts strike the same vital point in rapid succession, puncturing through hide and bone to drop it dead."
+  *if (psdf_v = 2)
+    *set fdh "The arcane missiles curve unerringly through the gloom and slam home with dull thuds, snuffing out its life in an instant."
+  *if (psdf_v = 3)
+    *set fdh "The force darts bore clean through its defenses, leaving smoking blue punctures as it collapses limp against the stones."
+*elseif (combat_current_spell_id = "dissonant_whispers")
+  *if (psdf_v = 1)
+    *set fdh "The discordant psychic agony shatters its mind from the inside out—it gasps once, blood running from its ears, and goes limp."
+  *if (psdf_v = 2)
+    *set fdh "The hideous psychic phrase tears through its thoughts like jagged iron, extinguishing its consciousness in a single violent convulsion."
+  *if (psdf_v = 3)
+    *set fdh "An unbearable psychic shriek ruptures its skull, and it drops dead, clutching at nothing."
+*elseif (combat_current_spell_id = "armor_of_agathys")
+  *if (psdf_v = 1)
+    *set fdh "The frost retaliates in a blinding burst of rime, driving shards of biting cold through its chest and freezing its heart solid."
+  *if (psdf_v = 2)
+    *set fdh "The bitter cold rebounding off your barrier snaps through its frame, freezing it solid where it stands before it topples over."
+  *if (psdf_v = 3)
+    *set fdh "Spectral frost surges backward along its strike, leaving it frozen rigid as it collapses to the floor."
+*else
+  *if (psdf_v = 1)
+    *set fdh "The working lands with finality this time—whatever was still animating it a heartbeat ago goes out all at once."
+  *if (psdf_v = 2)
+    *set fdh "You feel the spell take hold completely. Whatever fight was left drains away in a single shuddering breath, and then there's nothing."
+  *if (psdf_v = 3)
+    *set fdh "There's no shaking this one off. The magic finds its mark clean, and whatever was standing a moment ago isn't standing anymore."
 *return
 
 *label fight_enemy_turn
@@ -528,6 +1020,12 @@
 *comment collapses to the original single-enemy behavior automatically when
 *comment combat_enemy_count is 1 (the only value a single-enemy fight ever
 *comment sets), since the slot-2/3 blocks below never activate.
+*comment resolve_enemy_attack reads combat_active_target (set right below,
+*comment before each gosub) to know which of three independent per-slot
+*comment locks applies -- a single shared lock was tried first and broke on
+*comment refresh, since slot 2/3's attack this round would silently no-op
+*comment and just redisplay slot 1's stale roll/damage (see that label's
+*comment header comment in startup.txt).
 *if (combat_enemy1_hp > 0)
   *set combat_active_target 1
   *gosub fight_sync_target_in
@@ -571,6 +1069,7 @@
 
 *label fight_silt_lurker
 *comment Used by alderford.txt's Maura cellar-nuisance quest.
+*set combat_is_nonlethal false
 *set combat_enemy_name "Silt-Lurker Lacedon"
 *set combat_enemy_hp 12
 *set combat_enemy_max_hp 12
@@ -580,10 +1079,36 @@
 *set combat_enemy_dmg_bonus 2
 *set combat_round 1
 *set combat_enemy_epithet "the creature"
-*set combat_flavor_weapon_hit "You drive your ${weapon} home. It bites deep, and the creature recoils with a wet, furious hiss."
-*set combat_flavor_weapon_miss "Your ${weapon} scrapes off wet scale and old chitin, throwing you half a step off balance in the current."
-*set combat_flavor_enemy_hit "The thing surges out of the dark water in a wet lunge, ragged claws raking for your ribs."
-*set combat_flavor_enemy_miss "It lunges out of the water, but you're already moving, and the claws rake nothing but torchlit air."
+*set combat_flavor_weapon_hit_1 "You drive your ${weapon} home. The strike bites deep into water-logged muscle, and the creature thrashes back with a strangled screech."
+*set combat_flavor_weapon_hit_2 "You wait for its lunge to overextend, then step inside its reach and bring your ${weapon} across in a short, vicious arc—black blood clouds the water as it recoils."
+*set combat_flavor_weapon_hit_3 "You catch its first strike on instinct, twisting your weight past its claws, and drive your ${weapon} in hard along its flank. The creature convulses, hissing through a mouthful of broken teeth."
+*set combat_flavor_weapon_hit_4 "You drive your ${weapon} across its submerged shoulder, tearing through water-logged hide and drawing a violent lash of its tail."
+*set combat_flavor_weapon_hit_5 "You time the surge of the current and strike true, your ${weapon} biting deep into its neck before it can submerge."
+*set combat_flavor_weapon_miss_1 "Your ${weapon} scrapes off wet scale and old chitin, throwing you half a step off balance in the current."
+*set combat_flavor_weapon_miss_2 "You lunge, but the current drags at your legs, and your ${weapon} bites nothing but black water."
+*set combat_flavor_weapon_miss_3 "The creature twists aside at the last instant, and your ${weapon} carves an empty arc through torchlit spray."
+*set combat_flavor_weapon_miss_4 "The lacedon thrashes in a spray of brackish foam, and your ${weapon} glances harmlessly off a mortared culvert arch."
+*set combat_flavor_weapon_miss_5 "A sudden swirl of muddy silt obscures your vision, and your strike cuts empty air above the waterline."
+*set combat_flavor_weapon_hit_ranged_1 "Your shot punches into the creature's flank with a wet thud, and it recoils with a furious hiss, black water churning around the wound."
+*set combat_flavor_weapon_hit_ranged_2 "You track its motion through the murk and loose on the turn—the missile catches the creature mid-lunge, sending it skidding backward through the churned foam."
+*set combat_flavor_weapon_hit_ranged_3 "Timing the current's pull, you put the shot square into its exposed throat as it surfaces. It reels back, hissing, clawing at the wound."
+*set combat_flavor_weapon_hit_ranged_4 "The shot skims the dark surface and takes the creature between the shoulders, pinning its movement for a crucial second."
+*set combat_flavor_weapon_hit_ranged_5 "You loose straight down into the ripple as it dives—the missile strikes home, and black ichor boils to the surface."
+*set combat_flavor_weapon_miss_ranged_1 "Your shot goes wide, vanishing into the black water with barely a ripple."
+*set combat_flavor_weapon_miss_ranged_2 "The creature dips beneath a wave of churned silt just as you loose, and your shot passes clean through empty water."
+*set combat_flavor_weapon_miss_ranged_3 "Your aim wavers on the shifting current, and the shot skips off a submerged stone short of its mark."
+*set combat_flavor_weapon_miss_ranged_4 "A sudden burst of spray from the culvert flume knocks your aim aside, the shot embedding into an ancient ceiling brick."
+*set combat_flavor_weapon_miss_ranged_5 "The creature dives beneath the silt line just as your bowstring sings, leaving only churning bubbles in its wake."
+*set combat_flavor_enemy_hit_1 "The thing surges out of the dark water in a wet lunge, ragged claws raking for your ribs."
+*set combat_flavor_enemy_hit_2 "It closes the gap in a single thrashing lunge, catching you off-balance against the current before you can set your feet."
+*set combat_flavor_enemy_hit_3 "It comes up beneath you where the torchlight doesn't reach, claws finding purchase before you can twist away."
+*set combat_flavor_enemy_hit_4 "The lacedon whips its tail through the murky water, knocking your footing askew as cold claws rake your thigh."
+*set combat_flavor_enemy_hit_5 "A sudden surge of black water heralds its strike as jagged teeth clamp down hard against your forearm."
+*set combat_flavor_enemy_miss_1 "It lunges out of the water, but you're already moving, and the claws rake nothing but torchlit air."
+*set combat_flavor_enemy_miss_2 "You throw your weight back as it surges up out of the murk, and its claws rake past a hair's breadth from your throat."
+*set combat_flavor_enemy_miss_3 "It misjudges the current's drag, overshooting, and you sidestep into the space it just vacated."
+*set combat_flavor_enemy_miss_4 "It lunges with dripping jaws, but you shove off a submerged masonry pillar, letting the creature snap shut on empty current."
+*set combat_flavor_enemy_miss_5 "The lacedon overreaches on its leap, thrashing against an iron grate as you pull your guard clear."
 *set combat_flavor_dissonant_hit "You whisper a jarring, dissonant phrase into the shadows. The sound bypasses its ears and ruptures straight into its rotting brain—the beast screeches in agony, clawing wildly at its own skull!"
 *set combat_flavor_dissonant_miss "The phrase reverberates through the drain, but the creature recoils just enough to weather the worst of the psychic assault."
 *gosub fight_setup
@@ -598,13 +1123,7 @@
 *comment rough someone up and drag them to the toll-post, not to murder
 *comment anyone, and the prose throughout is written for a non-lethal brawl
 *comment regardless of what weapon the player is carrying.
-*comment Deliberately lighter per-guard than a single-enemy fight's stats
-*comment would suggest -- two attackers roughly double a round's expected
-*comment incoming damage, so each one hits softer than the Silt-Lurker does
-*comment alone. A first pass at atk_bonus+3/1d4+1 each nearly dropped a
-*comment 10-HP caster to the rescue floor in round one; this is tuned to
-*comment still be a real, multi-round threat without being a coin-flip
-*comment near-knockout on the first exchange.
+*set combat_is_nonlethal true
 *set combat_enemy_count 2
 *set combat_enemy_name "Rennick's Dock-Guard (Left)"
 *set combat_enemy_hp 8
@@ -613,7 +1132,7 @@
 *set combat_enemy_atk_bonus 2
 *set combat_enemy_dmg_dice_sides 4
 *set combat_enemy_dmg_bonus 0
-*set combat_enemy_epithet "the guards"
+*set combat_enemy_epithet "the left guard"
 *set combat_enemy2_name "Rennick's Dock-Guard (Right)"
 *set combat_enemy2_hp 8
 *set combat_enemy2_max_hp 8
@@ -621,13 +1140,140 @@
 *set combat_enemy2_atk_bonus 2
 *set combat_enemy2_dmg_dice_sides 4
 *set combat_enemy2_dmg_bonus 0
-*set combat_enemy2_epithet "the guards"
+*set combat_enemy2_epithet "the right guard"
 *set combat_round 1
-*set combat_flavor_weapon_hit "Your ${weapon} connects solidly, and the guard staggers back with a pained grunt, boots skidding on the wet floorboards."
-*set combat_flavor_weapon_miss "Your ${weapon} whistles past as the guard twists aside, cursing through gritted teeth."
-*set combat_flavor_enemy_hit "A cudgel cracks against you, the iron-banded head glancing off with a dull, ringing thud."
-*set combat_flavor_enemy_miss "The cudgel whistles wide, splintering a drying rack instead of your ribs."
-*set combat_flavor_dissonant_hit "You plant a jarring, dissonant phrase straight behind the guard's eyes. He staggers, clutching his skull with a strangled groan."
+*comment Distinct hit/miss per guard with 5-variant pools.
+*set combat_flavor_weapon_hit_1 "Your ${weapon} connects solidly, and the guard staggers back with a pained grunt, boots skidding on the wet floorboards."
+*set combat_flavor_weapon_hit_2 "You close the distance in a single step and bring your ${weapon} around hard—the guard doubles over with the breath knocked clean out of him, clutching bruised ribs."
+*set combat_flavor_weapon_hit_3 "You catch the guard mid-swing and turn his own momentum against him, your ${weapon} connecting solid enough to drop him back a full step, cursing."
+*set combat_flavor_weapon_hit_4 "You sidestep his clumsy rush and drive your ${weapon} into his flank, knocking him sideways into a salt trough."
+*set combat_flavor_weapon_hit_5 "A crisp, snapping strike catches him across the collarbone, sending him stumbling back through the fish crates."
+*set combat_flavor_weapon_miss_1 "Your ${weapon} whistles past as the guard twists aside, cursing through gritted teeth."
+*set combat_flavor_weapon_miss_2 "You commit to the strike, but the guard reads it early and rolls his shoulder clear, your ${weapon} finding nothing but damp air."
+*set combat_flavor_weapon_miss_3 "The guard backpedals into a stack of brine barrels, and your ${weapon} falls short by a hand's width."
+*set combat_flavor_weapon_miss_4 "He knocks your strike aside with the heavy iron ferrule of his cudgel, sneering through clenched teeth."
+*set combat_flavor_weapon_miss_5 "A slippery patch of brine underfoot robs your strike of purchase, your ${weapon} falling short of his jaw."
+*set combat_flavor_weapon_hit_ranged_1 "Your shot punches into the guard's shoulder, throwing his footing off balance as he collides with a split-cedar drying rack."
+*set combat_flavor_weapon_hit_ranged_2 "You lead the guard's stumbling retreat and put the shot square into him before he can find his footing, driving him back with a pained curse."
+*set combat_flavor_weapon_hit_ranged_3 "The shot catches him mid-shout, snapping his head back and dropping him a step, cursing through the pain."
+*set combat_flavor_weapon_hit_ranged_4 "Your shot drives through his forearm guard, forcing him to drop his cudgel to the floorboards with a sharp cry."
+*set combat_flavor_weapon_hit_ranged_5 "You loose on a low trajectory—the missile grazes his thigh, spoiling his charge and spinning him half around."
+*set combat_flavor_weapon_miss_ranged_1 "Your shot skips off an overhead timber as the guard ducks aside with a sharp curse."
+*set combat_flavor_weapon_miss_ranged_2 "The guard ducks behind a swinging drying rack just as you loose, and the shot buries itself in wet cedar instead."
+*set combat_flavor_weapon_miss_ranged_3 "Your shot goes wide as the guard lunges sideways, cursing, putting a stack of firkins between you."
+*set combat_flavor_weapon_miss_ranged_4 "He ducks behind a heavy salt vat, the shot thudding harmlessly into brine-soaked cedar."
+*set combat_flavor_weapon_miss_ranged_5 "Dense smoke from the peat hearth drifts between you, and your shot skips off the iron hoop of a fish firkin."
+*set combat_flavor_enemy_hit_1 "The guard on your left drives a cudgel into you, the iron-banded head glancing off with a dull, ringing thud."
+*set combat_flavor_enemy_hit_2 "The guard on your left closes fast and gets his cudgel in low, catching you across the ribs before you can turn to meet him."
+*set combat_flavor_enemy_hit_3 "The guard on your left feints high, then drives the cudgel in beneath your guard with jarring force."
+*set combat_flavor_enemy_hit_4 "The left guard bull-rushes you with his shoulder, following up with a brutal kidney check from his cudgel."
+*set combat_flavor_enemy_hit_5 "A sweeping backhand swing from the left guard catches you across the chest, knocking the wind from your lungs."
+*set combat_flavor_enemy_miss_1 "The guard on your left swings wide, splintering a drying rack instead of your ribs."
+*set combat_flavor_enemy_miss_2 "The guard on your left overcommits to the swing, and you slip aside as the cudgel shatters an empty curing bench behind you."
+*set combat_flavor_enemy_miss_3 "You read the guard on your left a half-second early and step inside his swing, the cudgel whistling wide over your shoulder."
+*set combat_flavor_enemy_miss_4 "The left guard swings a heavy downward chop, but you duck beneath the arc as the cudgel splinters an empty fish box."
+*set combat_flavor_enemy_miss_5 "The left guard attempts to hook your ankle with his boot, but you keep your balance and pivot out of his reach."
+*set combat_flavor_enemy2_hit_1 "The other guard closes from your right and lands a solid blow with his own cudgel, iron-banded wood cracking across your shoulder."
+*set combat_flavor_enemy2_hit_2 "The guard on your right times his strike to your footing, catching you along the collarbone before you can pull back."
+*set combat_flavor_enemy2_hit_3 "The guard on your right drives in low and fast, iron-banded wood catching you hard across the hip."
+*set combat_flavor_enemy2_hit_4 "The right guard corners you against a salting bench, driving the butt of his cudgel hard into your ribs."
+*set combat_flavor_enemy2_hit_5 "The right guard feints low and snaps the iron-shod wood upward, catching your shoulder in a jarring shock of pain."
+*set combat_flavor_enemy2_miss_1 "The guard on your right lunges in, but his swing goes wide and buries the cudgel in a stack of empty firkins instead."
+*set combat_flavor_enemy2_miss_2 "The guard on your right telegraphs the swing, and you twist clear as the cudgel gouges deep into a heavy cedar post."
+*set combat_flavor_enemy2_miss_3 "You catch the guard on your right's wrist mid-swing, throwing the blow wide into the salt-crusted floorboards."
+*set combat_flavor_enemy2_miss_4 "The right guard tries to pin your arm against the wall, but you wrench free before his club can land."
+*set combat_flavor_enemy2_miss_5 "The right guard slips on wet fish scales as he commits to his swing, stumbling past you into the shadows."
+*set combat_flavor_dissonant_hit "You plant a jarring, dissonant phrase straight behind one guard's eyes. He staggers, clutching his skull with a strangled groan."
 *set combat_flavor_dissonant_miss "The dissonant phrase lands, but the guard shakes it off with a pained grimace, more angry than hurt."
+*gosub fight_setup
+*goto fight_round_hub
+
+*label fight_granary_rats
+*label fight_archive_rats
+*comment Used by alderford.txt's Upper Weir Granary bounty quest
+*comment ("Vermin in the Granary Undercroft") -- vicious river mire-rats burrowing
+*comment into the stone foundation vaults beneath the granary, gnawing through
+*comment winter flour sacks and rye bins. Weakest multi-enemy encounter in the game --
+*comment low CR river vermin -- and exercises the full 3-slot multi-enemy combat engine.
+*set combat_is_nonlethal false
+*set combat_enemy_count 3
+*set combat_enemy_name "Black Mire-Rat (Lead)"
+*set combat_enemy_hp 4
+*set combat_enemy_max_hp 4
+*set combat_enemy_ac 9
+*set combat_enemy_atk_bonus 2
+*set combat_enemy_dmg_dice_sides 4
+*set combat_enemy_dmg_bonus 0
+*set combat_enemy_epithet "the lead mire-rat"
+*set combat_enemy2_name "Black Mire-Rat (Flank)"
+*set combat_enemy2_hp 4
+*set combat_enemy2_max_hp 4
+*set combat_enemy2_ac 9
+*set combat_enemy2_atk_bonus 2
+*set combat_enemy2_dmg_dice_sides 4
+*set combat_enemy2_dmg_bonus 0
+*set combat_enemy2_epithet "the flanking mire-rat"
+*set combat_enemy3_name "Black Mire-Rat (Rafters)"
+*set combat_enemy3_hp 4
+*set combat_enemy3_max_hp 4
+*set combat_enemy3_ac 9
+*set combat_enemy3_atk_bonus 2
+*set combat_enemy3_dmg_dice_sides 4
+*set combat_enemy3_dmg_bonus 0
+*set combat_enemy3_epithet "the third mire-rat"
+*set combat_round 1
+*comment Distinct hit/miss flavor per slot with 5-variant pools.
+*set combat_flavor_weapon_hit_1 "Your ${weapon} catches one of the mire-rats mid-scramble across a toppled grain crate, and it drops among the spilled barley with a final, wet twitch."
+*set combat_flavor_weapon_hit_2 "You track the scrabbling motion in the gloom and bring your ${weapon} down fast—one of the mire-rats goes still in the flour dust."
+*set combat_flavor_weapon_hit_3 "You plant your feet and let the mire-rat come to you, your ${weapon} catching it clean as it leaps, dropping it into the meal-chaff."
+*set combat_flavor_weapon_hit_4 "Your ${weapon} sweeps low along the stone flags, catching a mire-rat as it darts from behind a flour sack."
+*set combat_flavor_weapon_hit_5 "You pin the screeching beast to the floorboards with a fast, decisive downward strike of your ${weapon}."
+*set combat_flavor_weapon_miss_1 "Your ${weapon} splits a stack of dry cedar staves instead, and the mire-rats scatter through the settling flour dust before darting back in."
+*set combat_flavor_weapon_miss_2 "You swing at a blur of motion that isn't there anymore, your ${weapon} thudding into an empty grain bin."
+*set combat_flavor_weapon_miss_3 "The mire-rat darts under a fallen flour crate before your ${weapon} can find it, vanishing back into the dark piers."
+*set combat_flavor_weapon_miss_4 "The mire-rat scrambles up a cedar upright and leaps over your head, your ${weapon} shaving splinters from the post."
+*set combat_flavor_weapon_miss_5 "A cloud of disturbed oat chaff stings your eyes, and your strike thuds into a sack of coarse grain instead."
+*set combat_flavor_weapon_hit_ranged_1 "Your shot finds one of the mire-rats mid-scramble across a toppled grain sack, pinning it against the stone foundation pier."
+*set combat_flavor_weapon_hit_ranged_2 "You track the scrabbling motion and loose on the turn—the shot catches one of the mire-rats clean, dropping it among the spilled rye."
+*set combat_flavor_weapon_hit_ranged_3 "You wait for a clear line between the burlap sacks and put the shot through, dropping the creature instantly among the spilled barley."
+*set combat_flavor_weapon_hit_ranged_4 "Your shot pins the mire-rat mid-leap, driving it into an overturned barrel of rye."
+*set combat_flavor_weapon_hit_ranged_5 "You lead the creature's frantic zig-zag across the undercroft and strike it clean through the chest."
+*set combat_flavor_weapon_miss_ranged_1 "Your shot skips off a stone foundation pier instead, and the mire-rats scatter through the settling dust before darting back in."
+*set combat_flavor_weapon_miss_ranged_2 "The mire-rat vanishes behind a grain bin just as you loose, and the shot buries itself in old cedar instead."
+*set combat_flavor_weapon_miss_ranged_3 "Your shot goes wide in the cramped undercroft, skittering off a stone wall and burying itself in a heap of damp sacking."
+*set combat_flavor_weapon_miss_ranged_4 "The mire-rat darts beneath an iron-bound grain hopper, and your shot ricochets off the stone footing."
+*set combat_flavor_weapon_miss_ranged_5 "The flume's heavy thrum shakes your release just enough to send the missile wide into a pile of rotting straw."
+*set combat_flavor_enemy_hit_1 "The lead mire-rat gets a claw in, a thin scratch of pain through the meal-dust and gloom."
+*set combat_flavor_enemy_hit_2 "The lead mire-rat springs from a gap in the stone foundations and catches your forearm before you can pull it clear."
+*set combat_flavor_enemy_hit_3 "The lead mire-rat darts between your boots and sinks in at the ankle, quick and vicious."
+*set combat_flavor_enemy_hit_4 "The lead mire-rat darts from beneath a floor joist and sinks its incisors into the meat of your palm."
+*set combat_flavor_enemy_hit_5 "The lead mire-rat lunges straight forward, its claws tearing a sharp welt across your forearm before you tear it away."
+*set combat_flavor_enemy_miss_1 "The lead mire-rat lunges for your boot and gets nothing but a mouthful of hardened leather."
+*set combat_flavor_enemy_miss_2 "The lead mire-rat springs for your hand, and you snatch it back just in time, the teeth clicking shut on empty air."
+*set combat_flavor_enemy_miss_3 "The lead mire-rat scrabbles up your leg, but you kick your heel back hard, shaking it loose to tumble into the dust."
+*set combat_flavor_enemy_miss_4 "The lead mire-rat snaps at your fingers, but you smack it away with the flat of your guard."
+*set combat_flavor_enemy_miss_5 "The lead mire-rat scrabbles against the slick stone flags, failing to find purchase for its leap."
+*set combat_flavor_enemy2_hit_1 "The flanking mire-rat darts in low and catches your calf, needle teeth finding purchase through your leggings."
+*set combat_flavor_enemy2_hit_2 "The flanking mire-rat comes at you from the side while you're still recovering, teeth grazing your wrist."
+*set combat_flavor_enemy2_hit_3 "The flanking mire-rat leaps from a toppled oat crate and lands a bite before you can turn to meet it."
+*set combat_flavor_enemy2_hit_4 "The flanking mire-rat springs from a high sack of rye, landing across your shoulder and raking at your neck."
+*set combat_flavor_enemy2_hit_5 "A low strike from the flanking mire-rat catches the back of your knee, needle teeth drawing a sharp hiss of pain."
+*set combat_flavor_enemy2_miss_1 "The flanking mire-rat scrabbles up a fallen crate and lunges, missing by a hand's width and thudding into the stone."
+*set combat_flavor_enemy2_miss_2 "The flanking mire-rat lunges for your calf, and you kick it clear before the teeth can close."
+*set combat_flavor_enemy2_miss_3 "The flanking mire-rat darts in from the side, but you're already turning, and it skids past into a pile of loose grain."
+*set combat_flavor_enemy2_miss_4 "The flanking mire-rat tries to flank you through the meal bins, but you slam the lid shut on its snout."
+*set combat_flavor_enemy2_miss_5 "The flanking mire-rat darts between your boots, but you stomp down hard, forcing it to scramble back into the dark."
+*set combat_flavor_enemy3_hit_1 "The third mire-rat drops from the rafters above and sinks in hard before you can shake it loose."
+*set combat_flavor_enemy3_hit_2 "The third mire-rat comes at you from behind while the others hold your attention, teeth finding your shoulder."
+*set combat_flavor_enemy3_hit_3 "The third mire-rat scrabbles across a burlap sack and leaps, catching you across the back of the hand."
+*set combat_flavor_enemy3_hit_4 "The third mire-rat bursts from a torn burlap bag and buries its teeth in your hip."
+*set combat_flavor_enemy3_hit_5 "A frantic rush from the third mire-rat catches your off-hand, its sharp claws tearing your skin."
+*set combat_flavor_enemy3_miss_1 "The third mire-rat snaps at your wrist from the shadows, but you snatch your hand back in time, the teeth clicking shut on empty air."
+*set combat_flavor_enemy3_miss_2 "The third mire-rat drops from a foundation ledge, and you twist clear just as it lands where you'd been standing."
+*set combat_flavor_enemy3_miss_3 "The third mire-rat lunges out of the dark, and you catch it mid-air with a forearm, sending it tumbling into the dust."
+*set combat_flavor_enemy3_miss_4 "The third mire-rat leaps from an archway, but you swat it out of the air mid-flight."
+*set combat_flavor_enemy3_miss_5 "The third mire-rat hesitates at the edge of the lantern light, hissing in frustration as you turn to face it."
+*set combat_flavor_dissonant_hit "You loose a jarring, discordant note into the dark undercroft. One of the mire-rats convulses with a ragged screech, scrabbling wildly at its own ears in the flour dust."
+*set combat_flavor_dissonant_miss "The sound scatters the mire-rats for a moment, but they're back at your heels before it fades."
 *gosub fight_setup
 *goto fight_round_hub

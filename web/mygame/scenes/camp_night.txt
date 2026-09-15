@@ -128,13 +128,13 @@ She pulls a battered pewter flask from beneath her cloak and extends it toward y
 *temp hint_lyra_gentle ""
 *if (show_stat_hints)
   *if (guidance_active)
-    *set hint_lyra_reassure " [Guidance: CHA Check (DC 10) + 1d4, Lyra Bond (+6/+2), Compassion +10, Advantage Prep]"
-    *set hint_lyra_pragmatic " [Guidance: WIS Check (DC 11) + 1d4, Lyra Bond (+5/+2), Ruthless +10, Advantage Prep]"
-    *set hint_lyra_gentle " [Guidance: CHA Check (DC 12) + 1d4, Lyra Bond (+8/+2), Compassion +15, Advantage Prep]"
+    *set hint_lyra_reassure " [Guidance: CHA Check (DC 10) + 1d4, Lyra Bond (+6/+2), Advantage Prep]"
+    *set hint_lyra_pragmatic " [Guidance: WIS Check (DC 11) + 1d4, Lyra Bond (+5/+2), Advantage Prep]"
+    *set hint_lyra_gentle " [Guidance: CHA Check (DC 12) + 1d4, Lyra Bond (+8/+2), Advantage Prep]"
   *else
-    *set hint_lyra_reassure " [CHA Check (DC 10), Lyra Bond (+6/+2), Compassion +10, Advantage Prep]"
-    *set hint_lyra_pragmatic " [WIS Check (DC 11), Lyra Bond (+5/+2), Ruthless +10, Advantage Prep]"
-    *set hint_lyra_gentle " [CHA Check (DC 12), Lyra Bond (+8/+2), Compassion +15, Advantage Prep]"
+    *set hint_lyra_reassure " [CHA Check (DC 10), Lyra Bond (+6/+2), Advantage Prep]"
+    *set hint_lyra_pragmatic " [WIS Check (DC 11), Lyra Bond (+5/+2), Advantage Prep]"
+    *set hint_lyra_gentle " [CHA Check (DC 12), Lyra Bond (+8/+2), Advantage Prep]"
 
 *choice
   *if ((((((((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) or (bard_cantrip = "guidance")) or (bard_cantrip_2 = "guidance")) or (warlock_cantrip = "guidance")) or (warlock_cantrip_2 = "guidance")) or (race_cantrip = "guidance")) or (race_cantrip_2 = "guidance")) and (not(guidance_active)))
@@ -147,7 +147,6 @@ She pulls a battered pewter flask from beneath her cloak and extends it toward y
     # [Bard: Performer's Ease] Charm her with the easy, practiced warmth of a born performer.
       *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
         *set lyra_bond +6
-        *set ruthless -10
         *set stat_bump_locked true
         *set locked_stat_bump_page_id choice_page_id
       *set prep_lyra_pact true
@@ -161,7 +160,6 @@ She pulls a battered pewter flask from beneath her cloak and extends it toward y
     # [Hardened by Loss] Speak with cold, unflinching realism—you don't need to guess at her fear, you've lived it.
       *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
         *set lyra_bond +5
-        *set ruthless +10
         *set stat_bump_locked true
         *set locked_stat_bump_page_id choice_page_id
       *set prep_lyra_pact true
@@ -180,7 +178,6 @@ She pulls a battered pewter flask from beneath her cloak and extends it toward y
     # [You've Done This Before] Decline the liquor and steady her trembling hands—you already know how to comfort someone who's scared.
       *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
         *set lyra_bond +8
-        *set ruthless -15
         *set stat_bump_locked true
         *set locked_stat_bump_page_id choice_page_id
       *set prep_lyra_pact true
@@ -198,7 +195,6 @@ She pulls a battered pewter flask from beneath her cloak and extends it toward y
     *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
       *if (check_success)
         *set lyra_bond +6
-        *set ruthless -10
       *else
         *set lyra_bond +2
       *set stat_bump_locked true
@@ -227,7 +223,6 @@ She pulls a battered pewter flask from beneath her cloak and extends it toward y
         *set lyra_bond +5
       *else
         *set lyra_bond +2
-      *set ruthless +10
       *set stat_bump_locked true
       *set locked_stat_bump_page_id choice_page_id
     *set prep_lyra_pact true
@@ -252,7 +247,6 @@ She pulls a battered pewter flask from beneath her cloak and extends it toward y
     *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
       *if (check_success)
         *set lyra_bond +8
-        *set ruthless -15
       *else
         *set lyra_bond +2
       *set stat_bump_locked true
@@ -275,7 +269,6 @@ She pulls a battered pewter flask from beneath her cloak and extends it toward y
 *set minutes_to_pass 35
 *set time_advance_call_id "lyra_done"
 *gosub_scene calendar advance_time
-*set physical_state "Warmed by charcoal embers; shared an understanding with Lyra"
 *goto camp_hub
 
 *label visit_varren
@@ -432,7 +425,6 @@ You march over to where Sergeant Varren stands under the fluttering Carrion bann
 *set minutes_to_pass 25
 *set time_advance_call_id "varren_done"
 *gosub_scene calendar advance_time
-*set physical_state "Alert after drilling stances with Sergeant Varren"
 *goto camp_hub
 
 *label visit_dice
@@ -478,7 +470,8 @@ You pull two coins from your purse and toss them into the ring.
     *gosub_scene startup roll_d20_check
     *if (check_success)
       *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
-        *set silver +16
+        *set currency_add_amount 160
+        *gosub_scene startup currency_add
         *set currency_txn_locked true
         *set locked_currency_txn_page_id choice_page_id
       You notice the scarred veteran palming a weighted die on his second shake. You don't call him out—that gets knives drawn. Instead, you wait for his tilt, bait his bet, and call his roll on the bounce.
@@ -486,13 +479,10 @@ You pull two coins from your purse and toss them into the ring.
       The table roars as your pair of sixes sweeps the pot! You pocket sixteen silver pieces and the begrudging grins of the old dogs.
     *else
       *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
-        *set silver -6
+        *set currency_add_amount (0 - 60)
+        *gosub_scene startup currency_add
         *set currency_txn_locked true
         *set locked_currency_txn_page_id choice_page_id
-      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
-        *set ruthless +5
-        *set stat_bump_locked true
-        *set locked_stat_bump_page_id choice_page_id
       You try to read the veterans' tells, but these bastards have been fleecing recruits since before you could hold a knife. Three rounds later, your silver is gone and the tent erupts into laughter at your expense.
     *page_break Pocket what remains and step outside...
     *goto dice_done
@@ -514,7 +504,8 @@ You pull two coins from your purse and toss them into the ring.
       The veterans exchange glances, grinning at your audacity. They respect blood that doesn't quiver. You play five tense hands, breaking even and walking away with your coin and their nod of approval.
     *else
       *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
-        *set silver -4
+        *set currency_add_amount (0 - 40)
+        *gosub_scene startup currency_add
         *set currency_txn_locked true
         *set locked_currency_txn_page_id choice_page_id
       You try to play the hard-bitten killer, but your voice cracks slightly under the veteran's flat, dead-eyed stare. He laughs in your face, rakes in your coins, and nudges you aside.
@@ -528,13 +519,15 @@ You pull two coins from your purse and toss them into the ring.
     *gosub_scene startup roll_d20_check
     *if (check_success)
       *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
-        *set silver +8
+        *set currency_add_amount 80
+        *gosub_scene startup currency_add
         *set currency_txn_locked true
         *set locked_currency_txn_page_id choice_page_id
       You groan theatrically at every bad roll and grin through every good one, playing the easy mark so convincingly that the veterans stop watching you closely at all. By the time they notice the pot's been drifting your way for three hands running, you've already pocketed the coin and half their goodwill besides.
     *else
       *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
-        *set silver -6
+        *set currency_add_amount (0 - 60)
+        *gosub_scene startup currency_add
         *set currency_txn_locked true
         *set locked_currency_txn_page_id choice_page_id
       The act doesn't land—one of the older sellswords has fleeced too many "harmless fools" in his time to buy it twice, and calls you out with a grin that costs you the whole table's sympathy along with your coin.
@@ -549,7 +542,8 @@ You pull two coins from your purse and toss them into the ring.
       *gosub_scene startup roll_d20_check
       *if (check_success)
         *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
-          *set silver +12
+          *set currency_add_amount 120
+          *gosub_scene startup currency_add
           *set currency_txn_locked true
           *set locked_currency_txn_page_id choice_page_id
         You drop your two silver into the pot, and for half a heartbeat your voice resonates three times deeper than a mortal man's, low and crackling with dry heat. Your eyes catch the torchlight and flare brimstone-red.
@@ -557,7 +551,8 @@ You pull two coins from your purse and toss them into the ring.
         The tent goes dead silent. The scarred veteran pulls his hand back from his dice-cup like the hide burned him. Nobody tries any sleight of hand at your table tonight. You win three honest throws, sweep twelve marks, and step away into the cool drizzle with the whole tent staring at your horns.
       *else
         *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
-          *set silver -4
+          *set currency_add_amount (0 - 40)
+          *gosub_scene startup currency_add
           *set currency_txn_locked true
           *set locked_currency_txn_page_id choice_page_id
         You let the brimstone flicker, but the scarred veteran spits through his broken teeth and snorts. "Horns don't alter the bones, whelp. Roll or clear out." You lose your ante to bad luck, but at least nobody laughed out loud.
@@ -568,7 +563,6 @@ You pull two coins from your purse and toss them into the ring.
 *set minutes_to_pass 30
 *set time_advance_call_id "dice_done"
 *gosub_scene calendar advance_time
-*set physical_state "Restless from the noise and smoke of the gambling tent"
 *goto camp_hub
 
 *label visit_whetstone
@@ -726,7 +720,6 @@ The scarred smith—Rorik—nods toward a spare river slate and a pot of grease 
 *set minutes_to_pass 30
 *set time_advance_call_id "whetstone_done"
 *gosub_scene calendar advance_time
-*set physical_state "Hands smelling of whetstone slurry and oil; gear honed and weatherproofed"
 *goto camp_hub
 
 *label visit_sentry
@@ -829,7 +822,6 @@ Two veteran pickets in sodden woolen cloaks huddle over a shielded horn lantern,
 *set minutes_to_pass 30
 *set time_advance_call_id "sentry_done"
 *gosub_scene calendar advance_time
-*set physical_state "Chilled by marsh air; committed causeway layout to memory"
 *goto camp_hub
 
 *label visit_odessa_night
@@ -853,11 +845,11 @@ Behind a makeshift table of salt barrels and planks stands the company surgeon�
   *if (guidance_active)
     *set hint_odessa_med " [Guidance: WIS Check (DC 10) + 1d4, Odessa Regard +6, Salve Prep, HP Buffer]"
     *set hint_odessa_int " [Guidance: INT Check (DC 11) + 1d4, Odessa Regard +4, Salve Prep]"
-    *set hint_odessa_cha " [Guidance: CHA Check (DC 10) + 1d4, Odessa Regard +4, Compassion +5, Salve Prep]"
+    *set hint_odessa_cha " [Guidance: CHA Check (DC 10) + 1d4, Odessa Regard +4, Salve Prep]"
   *else
     *set hint_odessa_med " [WIS Check (DC 10), Odessa Regard +6, Salve Prep, HP Buffer]"
     *set hint_odessa_int " [INT Check (DC 11), Odessa Regard +4, Salve Prep]"
-    *set hint_odessa_cha " [CHA Check (DC 10), Odessa Regard +4, Compassion +5, Salve Prep]"
+    *set hint_odessa_cha " [CHA Check (DC 10), Odessa Regard +4, Salve Prep]"
 
 *choice
   *if ((((((((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) or (bard_cantrip = "guidance")) or (bard_cantrip_2 = "guidance")) or (warlock_cantrip = "guidance")) or (warlock_cantrip_2 = "guidance")) or (race_cantrip = "guidance")) or (race_cantrip_2 = "guidance")) and (not(guidance_active)))
@@ -917,7 +909,6 @@ Behind a makeshift table of salt barrels and planks stands the company surgeon�
     *if (check_success)
       *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
         *set odessa_respect +4
-        *set ruthless -5
         *set stat_bump_locked true
         *set locked_stat_bump_page_id choice_page_id
       *set prep_odessa_salve true
@@ -932,7 +923,6 @@ Behind a makeshift table of salt barrels and planks stands the company surgeon�
 *set minutes_to_pass 35
 *set time_advance_call_id "odessa_done"
 *gosub_scene calendar advance_time
-*set physical_state "Smelling of pungent camphor; abrasions treated with herbal salve"
 *goto camp_hub
 
 *label visit_mess
@@ -950,11 +940,11 @@ A handful of veterans and shivering greenhorns sit on overturned ale casks aroun
   *if (guidance_active)
     *set hint_mess_con " [Guidance: CON Check (DC 10) + 1d4, Vigor & Morale]"
     *set hint_mess_int " [Guidance: INT Check (DC 10) + 1d4, Lore: Gilded Scales & Iron Bailiffs]"
-    *set hint_mess_cha " [Guidance: CHA Check (DC 10) + 1d4, Morale, Compassion +5]"
+    *set hint_mess_cha " [Guidance: CHA Check (DC 10) + 1d4, Morale Boost]"
   *else
     *set hint_mess_con " [CON Check (DC 10), Vigor & Morale]"
     *set hint_mess_int " [INT Check (DC 10), Lore: Gilded Scales & Iron Bailiffs]"
-    *set hint_mess_cha " [CHA Check (DC 10), Morale, Compassion +5]"
+    *set hint_mess_cha " [CHA Check (DC 10), Morale Boost]"
 
 *choice
   *if ((((((((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) or (bard_cantrip = "guidance")) or (bard_cantrip_2 = "guidance")) or (warlock_cantrip = "guidance")) or (warlock_cantrip_2 = "guidance")) or (race_cantrip = "guidance")) or (race_cantrip_2 = "guidance")) and (not(guidance_active)))
@@ -969,10 +959,8 @@ A handful of veterans and shivering greenhorns sit on overturned ale casks aroun
     *set check_skill "Athletics"
     *gosub_scene startup roll_d20_check
     *if (check_success)
-      *set physical_state "Belly full of hot barley broth and smoked mutton; fortified against the cold"
       You down the piping hot broth, the rich bone-marrow and grain spreading a deep, comforting heat through your chest and limbs that staves off the bitter damp.
     *else
-      *set physical_state "Warmed slightly by hot broth"
       The mutton is gristly and tough, but the hot broth takes the edge off your hunger and warms your throat.
     *page_break Finish your bowl and step away...
     *goto mess_done
@@ -998,10 +986,6 @@ A handful of veterans and shivering greenhorns sit on overturned ale casks aroun
     *set check_skill "Persuasion"
     *gosub_scene startup roll_d20_check
     *if (check_success)
-      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
-        *set ruthless -5
-        *set stat_bump_locked true
-        *set locked_stat_bump_page_id choice_page_id
       You crack a dry joke about the company cook's questionable mutton stew, drawing a chorus of rough laughter from the shivering recruits. For a few minutes, the impending dread of tomorrow's battle is replaced by the warmth of shared comradeship.
     *else
       You offer a dry observation; a couple of recruits nod with faint smirks before returning to their quiet contemplation of the fire.
@@ -1020,7 +1004,6 @@ A handful of veterans and shivering greenhorns sit on overturned ale casks aroun
 *set minutes_to_pass 60
 *set time_advance_call_id "night_end"
 *gosub_scene calendar advance_time
-*set physical_state "Resting in recruit tent; kit prepared for dawn march"
 By midnight, the camp falls into an eerie, suffocating stillness. The fires dwindle into pale plumes of gray smoke drifting into the freezing mist.
 
 Through the canvas, the coarse shouts of camp sergeants echo down the lines: [i]"Muster at third horn! First file leads the vanguard toward the Black Sinks causeway!"[/i]
@@ -1029,56 +1012,35 @@ You crawl beneath your damp woolen blanket inside the recruit tent. Outside, the
 
 *page_break ...
 
-[b]SOLDIER'S RECORD[/b]
+[b]MERCENARY RECORD[/b]
 [i]Prologue Complete: First Night (${calendar_date})[/i]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [b]◈ CURRENT STATUS[/b]
 *line_break
-• [b]Date:[/b] ${calendar_date} (Day ${campaign_day} of the Autumn Campaign)
+• [b]Date:[/b] ${calendar_date} (Day ${campaign_day})
 *line_break
-• [b]Hour:[/b] ${clock_time} (${time_period})
-*line_break
-• [b]Condition:[/b] ${physical_state}
+• [b]Time:[/b] ${clock_time} (${time_period})
 *line_break
 • [b]Coin in Pouch:[/b] ${gold} Gold Crowns, ${silver} Silver Marks, ${copper} Copper Bits
-*line_break
-• [b]Next Pay Packet:[/b] 16 days until Full Moon (6 Silver due)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[b]◈ SOLDIER PROFILE[/b]
+[b]◈ MERCENARY PROFILE[/b]
 *line_break
 • [b]Name:[/b] ${name}
 *line_break
-• [b]Lineage:[/b] ${race_title}
-*line_break
-• [b]Racial Trait:[/b] ${race_trait_title} — ${race_trait_desc}
+• [b]Lineage:[/b] ${race_title} (${race_trait_title} — ${race_trait_desc})
 *line_break
 • [b]Age:[/b] ${age_desc}
 *line_break
-• [b]Rank:[/b] Greenhorn Recruit
+• [b]Archetype:[/b] ${class_title}
 *line_break
-• [b]Background:[/b] ${origin_title}
-*line_break
-• [b]Class Path:[/b] ${class_title}
-*if (not(race_cantrip = "none"))
+• [b]Background:[/b] ${origin_title} — [i]"${origin_desc}"[/i]
+*if (not(family_tie = "none"))
   *line_break
-  • [b]Innate Magic:[/b] ${race_cantrip_desc}
-*if (not(race_cantrip_2 = "none"))
-  *line_break
-  • [b] [/b] ${race_cantrip_2_desc}
+  • [b]Kin & Ties:[/b] [i]"${family_desc}"[/i]
 *line_break
-• [b]Physique:[/b] ${build_desc}
-*line_break
-• [b]Features:[/b] ${hair_eyes}; ${mark}
-
-[b]◈ INTAKE RECORD[/b]
-*line_break
-[i]"${origin_desc}"[/i]
-
-[b]◈ SURVIVING TIES & BENEFICIARY[/b]
-*line_break
-[i]"${family_desc}"[/i]
+• [b]Appearance:[/b] ${build_desc}; ${hair_eyes}; ${mark}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [b]◈ COMBAT VITALS & DEFENSE[/b]
@@ -1109,37 +1071,35 @@ You crawl beneath your damp woolen blanket inside the recruit tent. Outside, the
 • [b]Charisma (CHA):[/b] ${charisma} (${cha_mod_str})
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[b]◈ MORAL COMPASS[/b]
-
-*stat_chart
-  opposed_pair ruthless
-    Ruthless
-    Compassionate
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[b]◈ EQUIPMENT & INVENTORY[/b]
-*line_break
-• [b]Primary Armament:[/b] ${weapon_desc} [${weapon_damage}]
-*line_break
-• [b]Armor & Protection:[/b] ${armor_desc}@{shield_equipped  & iron buckler|} [AC ${armor_class}]
+[b]◈ CARRIED GEAR & SATCHEL[/b]
+*temp has_inventory_item false
 *if (prep_odessa_salve)
+  *set has_inventory_item true
   *line_break
   • [b]Tin of Camphor Fat:[/b] Pungent herbal lanolin balm from Surgeon Odessa
 *if (found_fish_cache)
+  *set has_inventory_item true
   *line_break
   • [b]Squatters' Cache:[/b] Smoked river fish, dried meat, and rushlight candle stubs
 *if ((errand_kestrel_unlocked) and (not(visited_bivouac_kestrel)))
+  *set has_inventory_item true
   *line_break
   • [b]Sentry Dispatch Slate:[/b] Wooden watch slate and straightened iron bodkins
 *if ((errand_ysolde_unlocked) and (not(visited_bivouac_ysolde)))
+  *set has_inventory_item true
   *line_break
   • [b]Cadre Supply Requisition:[/b] Crate of beeswax tapers and reagent requisition chits
 *if ((errand_vanguard_unlocked) and (not(visited_bivouac_lyra)))
+  *set has_inventory_item true
   *line_break
   • [b]Armorer's Grease Chit:[/b] Signed requisition chit for blade-grease
 *if (found_customs_vellum)
+  *set has_inventory_item true
   *line_break
   • [b]Grey Waterway Toll Register:[/b] Preserved provincial toll ledger with the three-headed hawk imperial wax seal
+*if (not(has_inventory_item))
+  *line_break
+  [i]Your satchel holds dry trail rations, flint and steel, and basic road gear.[/i]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [b]◈ PERSONNEL & RELATIONSHIPS[/b]

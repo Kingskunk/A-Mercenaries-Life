@@ -121,11 +121,29 @@ var rootDir = "../";
       return;
     }
     el.style.display = "";
+    var hpHtml = fmt(s.hp_current) + " / " + fmt(s.hp_max);
+    if (s.temp_hp && Number(s.temp_hp) > 0) {
+      hpHtml += " (+" + fmt(s.temp_hp) + ")";
+    }
+    var resourceHtml = "";
+    if (s.character_class === "wizard") {
+      resourceHtml = "<div class=\"statRow\"><span>Spell Slots</span><span>" + fmt(s.wizard_spell_slots) + " / 2</span></div>";
+    } else if (s.character_class === "warlock") {
+      resourceHtml = "<div class=\"statRow\"><span>Pact Slots</span><span>" + fmt(s.warlock_spell_slots) + " / 1</span></div>";
+    } else if (s.character_class === "bard") {
+      resourceHtml = "<div class=\"statRow\"><span>Spell Slots</span><span>" + fmt(s.bard_spell_slots) + " / 2</span></div>";
+    } else if (s.character_class === "fighter") {
+      resourceHtml = "<div class=\"statRow\"><span>Second Wind</span><span>" + fmt(s.fighter_second_wind_uses) + " / 1</span></div>";
+    } else if (s.character_class === "barbarian") {
+      resourceHtml = "<div class=\"statRow\"><span>Rage</span><span>" + fmt(s.barbarian_rage_uses) + " / 2</span></div>";
+    }
+
     el.innerHTML =
       "<h3>" + fmt(s.name) + " — Lv" + fmt(s.character_level) + " " + fmt(s.class_name || "Recruit") + "</h3>" +
-      "<div class=\"statRow\"><span>HP</span><span>" + fmt(s.hp_current) + " / " + fmt(s.hp_max) + "</span></div>" +
+      "<div class=\"statRow\"><span>HP</span><span>" + hpHtml + "</span></div>" +
       "<div class=\"statRow\"><span>AC</span><span>" + fmt(s.armor_class) + "</span></div>" +
       "<div class=\"statRow\"><span>Proficiency</span><span>+" + fmt(s.prof_bonus) + "</span></div>" +
+      resourceHtml +
       "<div class=\"abilityGrid\">" +
         "<span>STR " + fmt(s.strength) + " (" + fmt(s.str_mod_str) + ")</span>" +
         "<span>DEX " + fmt(s.dexterity) + " (" + fmt(s.dex_mod_str) + ")</span>" +
@@ -140,10 +158,28 @@ var rootDir = "../";
       "<div class=\"timePeriod\">" + fmt(s.time_period) + "</div>" +
       "<hr class=\"sectionDivider\">" +
       "<div class=\"statRow\"><span>Purse</span><span>" + fmt(s.gold) + "g " + fmt(s.silver) + "s " + fmt(s.copper) + "c</span></div>" +
-      (isTruthy(s.meal_buff_active) ?
+      (isTruthy(s.food_buff_active) || isTruthy(s.drink_buff_active) || isTruthy(s.unique_buff1_active) || isTruthy(s.unique_buff2_active) || isTruthy(s.unique_buff3_active) ?
         "<hr class=\"sectionDivider\">" +
-        "<div class=\"statRow\"><span>Buff</span><span>" + fmt(s.meal_buff_name) + "</span></div>" +
-        "<div class=\"timePeriod\">+" + fmt(s.meal_buff_bonus) + " " + fmt(s.meal_buff_stat).toUpperCase() + " checks, " + fmt(s.meal_buff_minutes_left) + "m left</div>"
+        (isTruthy(s.food_buff_active) ?
+          "<div class=\"statRow\"><span>Meal</span><span>" + fmt(s.food_buff_name) + "</span></div>" +
+          "<div class=\"timePeriod\">+" + fmt(s.food_buff_bonus) + " " + fmt(s.food_buff_stat).toUpperCase() + " checks, " + fmt(s.food_buff_minutes_left) + "m left</div>"
+          : "") +
+        (isTruthy(s.drink_buff_active) ?
+          "<div class=\"statRow\"><span>Drink</span><span>" + fmt(s.drink_buff_name) + "</span></div>" +
+          "<div class=\"timePeriod\">+" + fmt(s.drink_buff_bonus) + " " + fmt(s.drink_buff_stat).toUpperCase() + " checks, " + fmt(s.drink_buff_minutes_left) + "m left</div>"
+          : "") +
+        (isTruthy(s.unique_buff1_active) ?
+          "<div class=\"statRow\"><span>Boon</span><span>" + fmt(s.unique_buff1_name) + "</span></div>" +
+          "<div class=\"timePeriod\">+" + fmt(s.unique_buff1_bonus) + " " + fmt(s.unique_buff1_stat).toUpperCase() + ", " + fmt(s.unique_buff1_minutes_left) + "m left</div>"
+          : "") +
+        (isTruthy(s.unique_buff2_active) ?
+          "<div class=\"statRow\"><span>Boon</span><span>" + fmt(s.unique_buff2_name) + "</span></div>" +
+          "<div class=\"timePeriod\">+" + fmt(s.unique_buff2_bonus) + " " + fmt(s.unique_buff2_stat).toUpperCase() + ", " + fmt(s.unique_buff2_minutes_left) + "m left</div>"
+          : "") +
+        (isTruthy(s.unique_buff3_active) ?
+          "<div class=\"statRow\"><span>Boon</span><span>" + fmt(s.unique_buff3_name) + "</span></div>" +
+          "<div class=\"timePeriod\">+" + fmt(s.unique_buff3_bonus) + " " + fmt(s.unique_buff3_stat).toUpperCase() + ", " + fmt(s.unique_buff3_minutes_left) + "m left</div>"
+          : "")
         : "");
   }
   function isTruthy(v) { return v === true || v === "true"; }
@@ -169,6 +205,7 @@ var rootDir = "../";
     <button id="statsButton" class="spacedLink" onclick="showStats()">Show Stats</button>
     <button id="achievementsButton" onclick="showAchievements()" class="spacedLink" style="display: none">Achievements</button>
     <button id="bugButton" onclick="reportBug()" class="spacedLink" style="display: none">Report Bug</button>
+    <button id="saveLoadButton" class="spacedLink" onclick="ampSaveLoad.open()">Save / Load</button>
     <button id="menuButton" onclick="showMenu()" class="spacedLink">Menu</button>
   </p>
 </div>
@@ -200,6 +237,348 @@ if (window.location.hostname === 'localhost') {
   `
 }
 </script>
+<!-- ═══════════════════════════════════════════════════════════
+     AMP SAVE / LOAD SYSTEM
+     Works on file:// via localStorage (key: amp_save_v1_slot_N)
+     Hooks into ChoiceScript globals: computeCookie, restoreGame
+═══════════════════════════════════════════════════════════ -->
+<style>
+#ampSLModal {
+  border: none;
+  border-radius: 10px;
+  padding: 0;
+  max-width: 560px;
+  width: calc(100vw - 2rem);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.35);
+  font-family: Helvetica, Arial, sans-serif;
+  color: #1a1a1a;
+  background: #f9f6f2;
+}
+#ampSLModal::backdrop {
+  background: rgba(0,0,0,0.55);
+}
+#ampSLModal header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1em 1.25em 0.75em;
+  border-bottom: 1px solid #ddd;
+  background: #2c2c2c;
+  border-radius: 10px 10px 0 0;
+  color: #f0ece6;
+}
+#ampSLModal header h2 {
+  margin: 0;
+  font-size: 1.05em;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+#ampSLModal header button.ampClose {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 1.3em;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 0.2em;
+}
+#ampSLModal header button.ampClose:hover { color: #fff; }
+.ampSlotList {
+  padding: 0.75em 1em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+.ampSlot {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 7px;
+  padding: 0.55em 0.75em;
+  transition: border-color 0.15s;
+}
+.ampSlot:hover { border-color: #8b6a3e; }
+.ampSlotNum {
+  font-size: 0.78em;
+  font-weight: 700;
+  color: #888;
+  min-width: 2em;
+  text-align: center;
+}
+.ampSlotLabel {
+  flex: 1;
+  font-size: 0.85em;
+  line-height: 1.4;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ampSlotLabel.empty { color: #aaa; font-style: italic; }
+.ampSlotLabel small { display: block; font-size: 0.85em; color: #999; }
+.ampSlotBtns {
+  display: flex;
+  gap: 0.3em;
+  flex-shrink: 0;
+}
+.ampSlotBtns button {
+  font-size: 0.78em;
+  padding: 0.3em 0.6em;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background: #f4f0eb;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.ampSlotBtns button:hover { background: #e8e0d4; border-color: #8b6a3e; }
+.ampSlotBtns button.ampBtnSave { border-color: #5a8a5a; color: #2d5a2d; }
+.ampSlotBtns button.ampBtnSave:hover { background: #ddf0dd; }
+.ampSlotBtns button.ampBtnLoad { border-color: #5a6e8a; color: #1e3a5a; }
+.ampSlotBtns button.ampBtnLoad:hover { background: #dde8f5; }
+.ampSlotBtns button.ampBtnDel  { border-color: #cc4444; color: #882222; }
+.ampSlotBtns button.ampBtnDel:hover  { background: #ffe0e0; }
+#ampSLModal footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5em;
+  padding: 0.6em 1em 0.8em;
+  border-top: 1px solid #eee;
+}
+#ampSLModal footer button {
+  font-size: 0.8em;
+  padding: 0.35em 0.85em;
+  border: 1px solid #bbb;
+  border-radius: 5px;
+  background: #f4f0eb;
+  cursor: pointer;
+}
+#ampSLModal footer button:hover { background: #e8e0d4; border-color: #8b6a3e; }
+.ampToast {
+  position: fixed;
+  bottom: 1.5em;
+  left: 50%;
+  transform: translateX(-50%) translateY(2em);
+  background: #2c2c2c;
+  color: #f0ece6;
+  padding: 0.55em 1.2em;
+  border-radius: 6px;
+  font-size: 0.87em;
+  font-family: Helvetica, Arial, sans-serif;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 10000;
+  pointer-events: none;
+}
+.ampToast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+</style>
+
+<dialog id="ampSLModal">
+  <header>
+    <h2>⚔ Save &amp; Load</h2>
+    <button class="ampClose" onclick="document.getElementById('ampSLModal').close()" title="Close">✕</button>
+  </header>
+  <div class="ampSlotList" id="ampSlotList"></div>
+  <footer>
+    <button onclick="ampSaveLoad.exportAll()" title="Export all saves to a text file">📤 Export Saves</button>
+    <button onclick="ampSaveLoad.importPrompt()" title="Import saves from a text file">📥 Import Saves</button>
+    <input type="file" id="ampImportFile" accept=".json,.txt" style="display:none" onchange="ampSaveLoad.importFile(event)">
+  </footer>
+</dialog>
+
+<div class="ampToast" id="ampToast"></div>
+
+<script>
+(function() {
+  var SLOTS = 6;
+  var KEY_PREFIX = 'amp_save_v1_slot_';
+  var KEY_META   = 'amp_save_v1_meta_';
+
+  // ── helpers ──────────────────────────────────────────────────────────────
+  function toast(msg, ms) {
+    var el = document.getElementById('ampToast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(el._t);
+    el._t = setTimeout(function() { el.classList.remove('show'); }, ms || 2000);
+  }
+
+  function slotKey(n)    { return KEY_PREFIX + n; }
+  function metaKey(n)    { return KEY_META + n; }
+
+  function readSlot(n) {
+    var raw = localStorage.getItem(slotKey(n));
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch(e) { return null; }
+  }
+
+  function readMeta(n) {
+    var raw = localStorage.getItem(metaKey(n));
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch(e) { return null; }
+  }
+
+  function writeSlot(n, cookieStr, meta) {
+    localStorage.setItem(slotKey(n), JSON.stringify({ cookie: cookieStr }));
+    localStorage.setItem(metaKey(n), JSON.stringify(meta));
+  }
+
+  function deleteSlot(n) {
+    localStorage.removeItem(slotKey(n));
+    localStorage.removeItem(metaKey(n));
+  }
+
+  function buildMeta() {
+    var s = window.stats || {};
+    var name     = s.name     || 'Unknown';
+    var cls      = s.class_name || (s.character_class || '');
+    var hp       = (s.hp_current !== undefined) ? (s.hp_current + '/' + s.hp_max + ' HP') : '';
+    var location = s.calendar_date ? (s.calendar_date + (s.clock_time ? ' · ' + s.clock_time : '')) : '';
+    var scene    = s.sceneName ? s.sceneName.replace(/_/g,' ') : '';
+    var label    = [name, cls ? ('· ' + cls) : '', hp ? ('· ' + hp) : ''].filter(Boolean).join(' ');
+    var sub      = [location, scene].filter(Boolean).join(' — ');
+    return { label: label, sub: sub, saved: new Date().toLocaleString() };
+  }
+
+  // ── render ───────────────────────────────────────────────────────────────
+  function render() {
+    var list = document.getElementById('ampSlotList');
+    if (!list) return;
+    var html = '';
+    for (var i = 1; i <= SLOTS; i++) {
+      var meta = readMeta(i);
+      var occupied = !!meta;
+      html += '<div class="ampSlot">';
+      html += '<span class="ampSlotNum">' + i + '</span>';
+      if (occupied) {
+        html += '<span class="ampSlotLabel"><b>' + esc(meta.label) + '</b><small>' +
+                esc(meta.sub) + '</small><small style="color:#bbb">' + esc(meta.saved) + '</small></span>';
+      } else {
+        html += '<span class="ampSlotLabel empty">— Empty —</span>';
+      }
+      html += '<span class="ampSlotBtns">';
+      html += '<button class="ampBtnSave" onclick="ampSaveLoad.save(' + i + ')" title="Save to slot ' + i + '">💾 Save</button>';
+      if (occupied) {
+        html += '<button class="ampBtnLoad" onclick="ampSaveLoad.load(' + i + ')" title="Load slot ' + i + '">📂 Load</button>';
+        html += '<button class="ampBtnDel"  onclick="ampSaveLoad.del(' + i + ')"  title="Delete slot ' + i + '">🗑</button>';
+      }
+      html += '</span></div>';
+    }
+    list.innerHTML = html;
+  }
+
+  function esc(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── public API ───────────────────────────────────────────────────────────
+  window.ampSaveLoad = {
+    open: function() {
+      render();
+      document.getElementById('ampSLModal').showModal();
+    },
+
+    save: function(n) {
+      // Need an active scene on the page to capture state.
+      // computeCookie is a ChoiceScript global in util.js.
+      var s = window.stats;
+      if (!s || !s.sceneName) {
+        toast('Nothing to save yet — start a new game first.');
+        return;
+      }
+      // Grab the active scene's temps + position from pseudoSave[""].
+      var raw = null;
+      if (window._global && _global.pseudoSave) raw = _global.pseudoSave[''];
+      if (!raw && typeof pseudoSave !== 'undefined') raw = pseudoSave[''];
+      if (!raw) {
+        toast('Could not capture game state. Try clicking a choice first.');
+        return;
+      }
+      writeSlot(n, raw, buildMeta());
+      render();
+      toast('✔ Saved to Slot ' + n + '.');
+    },
+
+    load: function(n) {
+      var slot = readSlot(n);
+      if (!slot) { toast('Slot ' + n + ' is empty.'); return; }
+      if (!confirm('Load Slot ' + n + '? Unsaved progress will be lost.')) return;
+      document.getElementById('ampSLModal').close();
+      // Parse the cookie string and hand it back to ChoiceScript.
+      var state;
+      try { state = JSON.parse(slot.cookie); } catch(e) { toast('Save data corrupted.'); return; }
+      clearScreen(function() { restoreGame(state, null, true); });
+    },
+
+    del: function(n) {
+      if (!confirm('Delete Slot ' + n + '?')) return;
+      deleteSlot(n);
+      render();
+      toast('Slot ' + n + ' deleted.');
+    },
+
+    exportAll: function() {
+      var out = {};
+      for (var i = 1; i <= SLOTS; i++) {
+        var s = readSlot(i);
+        var m = readMeta(i);
+        if (s) out['slot_' + i] = { save: s, meta: m };
+      }
+      if (!Object.keys(out).length) { toast('No saves to export.'); return; }
+      var blob = new Blob([JSON.stringify(out, null, 2)], {type:'application/json'});
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'amp_mercenary_saves_' + Date.now() + '.json';
+      a.click();
+      toast('Saves exported.');
+    },
+
+    importPrompt: function() {
+      document.getElementById('ampImportFile').click();
+    },
+
+    importFile: function(evt) {
+      var file = evt.target.files[0];
+      if (!file) return;
+      evt.target.value = '';
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var data;
+        try { data = JSON.parse(e.target.result); } catch(err) { toast('Invalid save file.'); return; }
+        var count = 0;
+        for (var key in data) {
+          var m = key.match(/^slot_(\d+)$/);
+          if (!m) continue;
+          var n = parseInt(m[1], 10);
+          if (n < 1 || n > SLOTS) continue;
+          var entry = data[key];
+          if (entry && entry.save && entry.meta) {
+            localStorage.setItem(slotKey(n), JSON.stringify(entry.save));
+            localStorage.setItem(metaKey(n), JSON.stringify(entry.meta));
+            count++;
+          }
+        }
+        render();
+        toast('Imported ' + count + ' save(s).');
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  // Close modal if user clicks the backdrop
+  document.addEventListener('DOMContentLoaded', function() {
+    var modal = document.getElementById('ampSLModal');
+    if (modal) modal.addEventListener('click', function(e) {
+      if (e.target === modal) modal.close();
+    });
+  });
+})();
+</script>
+
 <dialog id="keyboardShortcuts" onclick="event.target === this && this.close()">
 <header><span>Keyboard Shortcuts</span> <form method=dialog><button>X</button></form></header>
 <div class="table">
