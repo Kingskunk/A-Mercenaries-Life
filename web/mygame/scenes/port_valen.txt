@@ -1,0 +1,269 @@
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment PORT VALEN -- RIVER TRANSIT
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment Entered from alderford.txt's own *finish via *scene_list fall-through
+*comment (see startup.txt). Reads two Alderford-era flags that were set but
+*comment never consumed anywhere else in the game: alder_river_chain_cleared
+*comment (Ysolde's submerged-boom puzzle) and prep_waterproof_gear (Talia's
+*comment curing-loft quest). A failed check here doesn't cost HP -- it sets a
+*comment flag that becomes disadvantage on the very next beat, so a rushed
+*comment Alderford compounds instead of just stinging once.
+
+*label transit_start
+*set hours_to_pass 2
+*set minutes_to_pass 0
+*set time_advance_call_id "port_valen_transit_1"
+*gosub_scene calendar advance_time
+
+The flotilla casts off on the flood tide, four heavy grain barges riding low under the weight of pikes, baggage carts, and four hundred sellswords. The crews push away from Alderford's muddy wharves while the last ropes are still being coiled, and for a few breaths the whole column seems to hang between land and water: too heavy to turn back, too slow to outrun the current.
+
+Then the river takes you.
+
+Alderford's timber wharves fall away behind the stern wake, the weir's roar fading into the general hiss of current and creaking hull-timber. The town shrinks by degrees into smoke, slate roofs, and the orange pinpricks of watch fires. From the deck, the great imperial weir looks less like a monument than a scar someone has taught to produce revenue. Its old stonework still holds, but the bronze gates are worked by guild hands now, and the tolls belong to merchants who wear no crown's badge.
+
+Ahead, the Grey River narrows into limestone gorge walls streaked green with weed and old flood-lines, the water running fast and black under a low grey sky. Barges have been carrying grain, iron, soldiers, and prisoners through this gorge for longer than anyone in the company can remember. The river does not care which of those things you are. It takes them all downstream.
+
+*if (squad = "vanguard")
+  Sergeant Varren works the deck rail near the bow, counting hulls and checking lashings with the same flint-eyed thoroughness he brought to the causeway. "Water's not much different from a shield wall," he grunts as you pass. "Hold your footing, watch the man beside you, and don't be the fool who goes over the rail."
+*if (squad = "scouts")
+  Kestrel crouches low near the gunwale, watching the gorge walls slide past with the same unhurried attention she gave the marsh reeds. "Current reads the same as ground, if you know how to look at it," she says without turning. "Watch the water, not just where it's taking you."
+*if (squad = "cadre")
+  Ysolde has claimed a dry corner of the lead barge's cargo tent, sounding charts spread across her knees despite the spray. She glances up as you settle nearby. "I'd rather be wrong about a river than a battlefield," she says. "Rivers, at least, hold still long enough to be studied properly."
+
+*goto transit_boom_approach
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment BEAT 1: THE BOOM PASSAGE
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label transit_boom_approach
+*if (alder_river_chain_cleared)
+  *goto transit_boom_cleared
+*else
+  *goto transit_boom_hazard
+
+*label transit_boom_cleared
+*if (vane_standing > 0)
+  A pilot's whistle sounds twice from the lead barge, short and businesslike. Captain Vane's sappers marked the channel with a floating cork line the night before, and the barge crews thread it without a wasted word—four hundred people moving through open water like it's nothing more than a drill line.
+*else
+  A pilot's whistle sounds twice from the lead barge, short and businesslike. Word passes hull to hull that the channel ahead is clear all the way to the gorge mouth—Scholar Ysolde's sounding work, paying off exactly the way she promised it would. The barges hold formation and glide through without so much as a scraped keel.
+
+You lean on the rail and watch the grey water slide by, undisturbed by whatever used to wait beneath it.
+*goto transit_boom_resolved
+
+*label transit_boom_hazard
+Word passes hull to hull in flat, clipped tones: nobody ever cleared the old imperial boom. It was built to close the river against raiders, back when an imperial officer could send a request upriver and expect an answer before the season changed. Now the chain lies drowned beneath the trade route it was meant to protect, a monument to a government that left its hardware behind when it stopped sending people.
+
+Somewhere under this stretch of black water, two centuries of rotted iron still wait on the riverbed. The current combs the surface smooth over the hidden teeth, and every barge in the column carries enough weight to break itself open if it catches wrong. The lead barge pilot has nothing but her own eyes and a boat-pole to find a way around it.
+
+"Eyes on the water!" the pilot shouts down the line, fighting the current with both hands on the tiller. "Anyone who's ever read river or reef, I want you at the rail *now*!"
+
+*temp hint_boom_str ""
+*temp hint_boom_dex ""
+*temp hint_boom_wis ""
+*if (show_stat_hints)
+  *if (guidance_active)
+    *set hint_boom_str " [Guidance: STR Check (DC 12) + 1d4]"
+    *set hint_boom_dex " [Guidance: DEX Check (DC 11) + 1d4]"
+    *set hint_boom_wis " [Guidance: WIS Check (DC 13) + 1d4]"
+  *else
+    *set hint_boom_str " [STR Check (DC 12)]"
+    *set hint_boom_dex " [DEX Check (DC 11)]"
+    *set hint_boom_wis " [WIS Check (DC 13)]"
+
+*choice
+  *if ((((((((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) or (bard_cantrip = "guidance")) or (bard_cantrip_2 = "guidance")) or (warlock_cantrip = "guidance")) or (warlock_cantrip_2 = "guidance")) or (race_cantrip = "guidance")) or (race_cantrip_2 = "guidance")) and (not(guidance_active)))
+    # [Cantrip: Guidance] Murmur the focusing cadence before the barge closes on the hazard.
+      *set guidance_active true
+      You whisper the soft focusing syllable, feeling a cool clarity steady your grip on the rail.
+      *goto transit_boom_hazard
+
+  # Grab a boat-pole and brace to shove off the submerged iron the instant the hull grinds close.${hint_boom_str}
+    *set check_stat "str"
+    *set check_dc 12
+    *set check_skill "Fend Off the Wreck"
+    *if ((family_name = "Elspeth") and (elspeth_role = "none"))
+      *set disadvantage true
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      You plant the pole against something hard and unyielding a foot below the surface, throwing your whole weight into the shove. The hull scrapes past with a groan of strained timber but no crack—the barge slides clear into open water.
+    *else
+      You get the pole down late, and the current wrenches it sideways out of your hands before you can brace it. The hull catches something below with a shuddering, grinding lurch that runs the length of the deck, spraying icy water up over the rail and soaking half the baggage lashings.
+      *set river_crossing_rattled true
+    *goto transit_boom_resolved
+
+  # Watch the surface for the telltale flatness where the current breaks over something old and hidden, and call the line.${hint_boom_wis}
+    *set check_stat "wis"
+    *set check_dc 13
+    *set check_skill "Read the Current"
+    *if ((family_name = "Elspeth") and (elspeth_role = "none"))
+      *set disadvantage true
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      You catch it—a strange, glassy flatness in the chop, thirty feet off the bow, exactly where a drowned mass of iron would flatten the current above it. "PORT SIDE, NOW!" The pilot hauls the tiller on your word alone, and the barge slides past with clean water to spare.
+    *else
+      You call the line a half-second too late, trusting a pattern in the water that turns out to be nothing but wind-chop. The pilot corrects hard anyway, but not hard enough—the hull catches something below with a shuddering, grinding lurch that runs the length of the deck, spraying icy water up over the rail.
+      *set river_crossing_rattled true
+    *goto transit_boom_resolved
+
+  # Work along the gunwale to the bow, relaying the pilot's corrections down the line of poling crew before the current can outrun them.${hint_boom_dex}
+    *set check_stat "dex"
+    *set check_dc 11
+    *set check_skill "Relay the Line"
+    *if ((family_name = "Elspeth") and (elspeth_role = "none"))
+      *set disadvantage true
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      You move hand over hand along the slick gunwale, catching each of the pilot's clipped corrections and passing them down the poling crew half a beat before they'd need them anyway. The barge threads the hazard in one smooth, unbroken motion.
+    *else
+      You lose your footing on the slick planking halfway down the line, and the correction you're carrying reaches the bow crew a beat too late. The hull catches something below with a shuddering, grinding lurch that runs the length of the deck, spraying icy water up over the rail.
+      *set river_crossing_rattled true
+    *goto transit_boom_resolved
+
+*label transit_boom_resolved
+*comment Force a real page boundary here on every path (including the
+*comment cleared-boom flow-through, which otherwise reaches transit_cold_
+*comment approach with no intervening *choice) so the two advance_time calls
+*comment in this scene never land on the same choice_page_id -- calendar.txt's
+*comment lock only remembers the most recent (page_id, call_id) pair, not a
+*comment set, so two calls sharing a page would double-advance the clock on
+*comment a refresh of the second one.
+*page_break The gorge widens ahead...
+*goto transit_cold_approach
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment BEAT 2: COLD WATER / EXPOSURE
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label transit_cold_approach
+*set hours_to_pass 3
+*set minutes_to_pass 0
+*set time_advance_call_id "port_valen_transit_2"
+*gosub_scene calendar advance_time
+
+The gorge walls close in tighter through the afternoon, funneling a raw wind straight off the water and down the back of every collar on deck. The four barges have lost their clean formation by then. One rides ahead around a bend, one falls behind, and the others drift close enough for shouted orders to cross the water but too far apart for anyone to mistake the distance for safety.
+
+Spray comes over the bow in sheets now, and the grey light gives no real warmth to dry by—just hours more of it, all the way to the gorge mouth. Men and women who spent the morning boasting over dice huddle under baggage tarps with their knees drawn up. Bowstrings are tucked beneath cloaks. Firewood is counted and recounted. A cook tries to coax a smokeless flame from damp chips while the river rolls past with the patience of something that has already outlasted every army sent along its banks.
+
+You begin to understand the particular cruelty of river travel. On a road, every mile is a decision made by feet and wheels. Here, the current makes the decision for you, and all your skill can do is keep the surrender from becoming a wreck.
+
+*if (river_crossing_rattled)
+  Your gear is still soaked through from the boom crossing, and the cold has had all afternoon to work its way in past wet wool and numbed fingers.
+
+*temp hint_cold_con ""
+*temp hint_cold_wis ""
+*temp hint_cold_dex ""
+*if (show_stat_hints)
+  *if (guidance_active)
+    *set hint_cold_con " [Guidance: CON Check (DC 12) + 1d4]"
+    *set hint_cold_wis " [Guidance: WIS Check (DC 11) + 1d4]"
+    *set hint_cold_dex " [Guidance: DEX Check (DC 12) + 1d4]"
+  *else
+    *set hint_cold_con " [CON Check (DC 12)]"
+    *set hint_cold_wis " [WIS Check (DC 11)]"
+    *set hint_cold_dex " [DEX Check (DC 12)]"
+
+*choice
+  *if ((((((((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) or (bard_cantrip = "guidance")) or (bard_cantrip_2 = "guidance")) or (warlock_cantrip = "guidance")) or (warlock_cantrip_2 = "guidance")) or (race_cantrip = "guidance")) or (race_cantrip_2 = "guidance")) and (not(guidance_active)))
+    # [Cantrip: Guidance] Murmur the focusing cadence against the cold and the ache in your shoulders.
+      *set guidance_active true
+      You whisper the soft focusing syllable, feeling a cool clarity settle the shiver out of your hands.
+      *goto transit_cold_approach
+
+  # Grit your teeth and absorb the cold directly, saving your strength for whatever's waiting at the far end.${hint_cold_con}
+    *set check_stat "con"
+    *set check_dc 12
+    *set check_skill "Endure the Crossing"
+    *if (river_crossing_rattled)
+      *set disadvantage true
+    *if (prep_waterproof_gear)
+      *set advantage true
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      You stop fighting the cold and just absorb it, hour after hour, until it stops being something you notice at all. By the time the wind eases, you're stiff but steady, still sharp behind the eyes.
+    *else
+      The cold wins by inches, then all at once—your hands go clumsy, your jaw won't stop clenching, and by the time the wind eases you're running on nothing but stubbornness.
+      *set river_crossing_weary true
+    *goto transit_arrival
+
+  # Find the driest lee of the deck and manage your body heat deliberately instead of just enduring.${hint_cold_wis}
+    *set check_stat "wis"
+    *set check_dc 11
+    *set check_skill "Manage the Cold"
+    *if (river_crossing_rattled)
+      *set disadvantage true
+    *if (prep_waterproof_gear)
+      *set advantage true
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      You read the deck the way you'd read a campsite—where the wind cuts least, where the spray doesn't reach, where a huddle of baggage crates breaks the worst of it—and settle in there instead of white-knuckling the open rail.
+    *else
+      You misjudge the wind's shift twice in a row, and each wrong guess costs you another soaking you didn't need. By the time the wind eases you're running on nothing but stubbornness.
+      *set river_crossing_weary true
+    *goto transit_arrival
+
+  # Stay moving along the deck, working circulation back into numbed hands and feet rather than holding still against the cold.${hint_cold_dex}
+    *set check_stat "dex"
+    *set check_dc 12
+    *set check_skill "Keep Moving"
+    *if (river_crossing_rattled)
+      *set disadvantage true
+    *if (prep_waterproof_gear)
+      *set advantage true
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      You keep circulating along the crowded deck in short, steady loops, flexing numbed fingers and stamping feeling back into your boots before the cold can properly set in. It's not comfortable, but it works.
+    *else
+      You misjudge your footing on the slick planking and go down hard twice, losing more warmth to the wet deck than you ever get back moving. By the time the wind eases you're running on nothing but stubbornness.
+      *set river_crossing_weary true
+    *goto transit_arrival
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment ARRIVAL: PORT VALEN
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label transit_arrival
+*set hours_to_pass 3
+*set minutes_to_pass 0
+*set time_advance_call_id "port_valen_transit_3"
+*gosub_scene calendar advance_time
+
+The gorge finally opens onto a wide, brown-water estuary. The change is so sudden that the company falls quiet: after hours of black water and close stone, the horizon has room in it again. Wind comes off the distant coast carrying salt, tar, rotting weed, and the heavy sweet stink of fish rendered down in market vats.
+
+Port Valen rises out of the evening haze ahead—a sprawl of grey slate roofs, stone quaysides, and forested masts crowding a harbor bigger than Alderford and the Black Sinks causeway put together. Warehouse cranes turn above the waterfront like skeletal gallows. Guild flags snap from the customs towers. Barges unload beneath rows of lanterns while clerks in dry coats stand above the mud and decide what every sack, blade, and body is worth.
+
+The city was built to be an imperial port. Now the river still brings the same taxes, soldiers, and grain, but the people collecting them answer to ledgers, contracts, and hired steel. The old authority has not vanished so much as been divided among whoever can keep a gate shut, a scale honest, or a sword pointed in the right direction.
+
+Gulls wheel and scream over the fish markets. Somewhere beyond the seawall, a harbor bell tolls the evening watch. Its sound reaches you across the brown water, deep and measured, marking not safety but arrival: the end of one current, and the beginning of whatever Port Valen has paid the Carrion Company to do next.
+
+*if ((river_crossing_rattled) and (river_crossing_weary))
+  You make landfall soaked, bruised, and running on fumes—every part of you aware of exactly how much worse this crossing could have gone, and how much of it you could have avoided.
+*elseif (river_crossing_rattled)
+  You make landfall still favoring a bruise from the boom crossing, but the worst of the cold never quite caught up with you.
+*elseif (river_crossing_weary)
+  You make landfall dry-hulled but hollowed out by the cold, glad beyond words to feel solid stone underfoot again.
+*else
+  You make landfall clean and dry, the crossing behind you without a single mark to show for it.
+
+*if (elspeth_with_company)
+  Further down the pier, Elspeth climbs off the barge alongside the rest of her placement, craning her neck at the size of the harbor with wide, disbelieving eyes. She catches sight of you and lifts a hand in an exhausted, grateful wave.
+*elseif (elspeth_role = "chapel_sanctuary")
+  Somewhere behind you now, up a ridge above a river you won't see again for a while, Elspeth is safe behind Saint Althea's walls. It's not nothing, knowing that.
+*elseif ((family_name = "Elspeth") and (elspeth_role = "none"))
+  You find yourself scanning the crowded quay out of old habit, the same way you did leaving Alderford—before you remember, again, that she isn't here to find.
+
+[b]◈ PORT VALEN — HARBOR QUAYSIDE[/b]
+*line_break
+• [b]Date:[/b] ${calendar_date} (Day ${campaign_day})
+*line_break
+• [b]Time:[/b] ${clock_time} (${time_period})
+*line_break
+• [b]Hit Points:[/b] ${hp_current} / ${hp_max}
+*line_break
+• [b]Armor Class:[/b] ${armor_class}
+*line_break
+• [b]Coin in Pouch:[/b] ${gold} Gold Crowns, ${silver} Silver Marks, ${copper} Copper Bits
+
+*page_break Make landfall at Port Valen...
+
+*finish

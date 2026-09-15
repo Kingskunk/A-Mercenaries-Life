@@ -8,6 +8,7 @@
   dawn_trial
   battle_black_sinks
   alderford
+  port_valen
 *comment "combat" (a fight-engine library, entered only via *gosub_scene, never
 *comment via *finish or a direct *goto_scene) is deliberately NOT listed here.
 *comment *scene_list order also builds the implicit "*finish continues into
@@ -896,12 +897,23 @@
 *create gilded_scales_leverage false
 *create alder_wager_won false
 *create prep_waterproof_gear false
+*comment Set by port_valen.txt's boom-passage/cold-exposure beats -- a failed
+*comment check compounds into disadvantage on the next beat instead of
+*comment dealing damage, rather than a fresh prep_* -> advantage input.
+*create river_crossing_rattled false
+*create river_crossing_weary false
 *create has_hearthstone_talisman false
 *create has_timber_axe false
 *create has_stiletto false
 *create has_iron_crowbar false
+*create has_torvald_iron_sallet false
+*create has_torvald_hide_cap false
 *create has_talia_provisions false
+*create has_talia_oiled_cloak false
+*create has_talia_deck_boots false
 *create has_toll_seal_ring false
+*create has_elspeth_weir_knot false
+*create has_althea_votive_ring false
 *create intimate_encounters 0
 
 *comment --- GAME SETTINGS ---
@@ -1476,6 +1488,21 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
     *set codex_marsh_squatters true
     *set codex_alderford true
     *goto_scene alderford alder_hub
+
+  # 🚢 Jump to Chapter 3: Port Valen River Transit (port_valen.txt)
+    *set campaign_day 4
+    *set calendar_day 17
+    *set calendar_date "17th of Scorpio, 428 IR"
+    *set clock_hour 5
+    *set clock_minute 30
+    *set clock_time "05:30"
+    *set time_period "Pre-Dawn (Freezing Mist)"
+    *set codex_black_sinks true
+    *set codex_gilded_scales true
+    *set codex_marsh_squatters true
+    *set codex_alderford true
+    *set codex_meridian_empire true
+    *goto_scene port_valen transit_start
 
 *label prologue_start
 Rain beats steadily against the black canvas of the encampment, turning the red clay of the river valley into a miserable sea of mud.
@@ -2390,6 +2417,10 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set neck_desc "Bare throat"
 *if (equipped_neck_id = "hearthstone_talisman")
   *set neck_desc "Torvald's Hearthstone Talisman, on a braided oxhide cord"
+*comment Mundane -- a sibling's keepsake, not a magic item, so no attunement
+*comment and no stat bonus. Granted directly at chapel_visit_elspeth.
+*if (equipped_neck_id = "elspeth_weir_knot")
+  *set neck_desc "Elspeth's Braided Weir-Knot"
 *return
 
 *label equip_neck
@@ -2579,11 +2610,11 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *gosub recalculate_armor_class
 *return
 
-*comment apply_head_loadout follows the same fully-derived pattern. No
-*comment chargen path currently assigns head_is_armor true or a nonzero
-*comment head_ac -- every baseline headgear is a non-armor cap/hood -- so the
-*comment head-AC term in recalculate_armor_class above is dormant until a
-*comment future shop sells real helms.
+*comment apply_head_loadout follows the same fully-derived pattern. Every
+*comment baseline chargen headgear is a non-armor cap/hood; Master Torvald's
+*comment Frontier Shop (alderford.txt) is the first real caller of equip_head,
+*comment selling one item that actually sets head_is_armor true and exercises
+*comment the head-AC term in recalculate_armor_class above.
 *label apply_head_loadout
 *if (equipped_head_id = "arming_cap")
   *set head_desc "Padded Arming Cap"
@@ -2597,14 +2628,20 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set head_desc "Scholar's Linen Coif"
   *set head_ac 0
   *set head_is_armor false
+*if (equipped_head_id = "torvald_iron_sallet")
+  *set head_desc "Cold-Hammered Iron Sallet"
+  *set head_ac 1
+  *set head_is_armor true
+*if (equipped_head_id = "torvald_hide_cap")
+  *set head_desc "Boiled-Hide Watch-Cap"
+  *set head_ac 0
+  *set head_is_armor false
 *if (equipped_head_id = "none")
   *set head_desc "Bare head"
   *set head_ac 0
   *set head_is_armor false
 *return
 
-*comment *gosub_scene startup equip_head <id>. No caller exists yet (no
-*comment purchasable head items) -- ready for the day one exists.
 *label equip_head
 *params new_head_id
 *set equipped_head_id new_head_id
@@ -2623,6 +2660,8 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set cloak_desc "Weathered Camouflage Cloak"
 *if (equipped_cloak_id = "weather_cloak")
   *set cloak_desc "Oiled Marcher Weather-Cloak"
+*if (equipped_cloak_id = "talia_oiled_cloak")
+  *set cloak_desc "Talia's Oiled Brine-Cloak"
 *if (equipped_cloak_id = "none")
   *set cloak_desc "None"
 *return
@@ -2678,6 +2717,8 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set feet_desc "Soft-Soled Scout Wraps"
 *if (equipped_feet_id = "riding_boots")
   *set feet_desc "Cured Travel Riding Boots"
+*if (equipped_feet_id = "talia_deck_boots")
+  *set feet_desc "Talia's Pitch-Sealed Deck Boots"
 *if (equipped_feet_id = "none")
   *set feet_desc "Bare feet"
 *return
@@ -2775,6 +2816,8 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *comment needing a has_ flag gated dossier choice.
 *if (item_id = "toll_seal_ring")
   *set new_ring_desc "Customs Officer's Signet Ring"
+*if (item_id = "althea_votive_ring")
+  *set new_ring_desc "Saint Althea's Votive River-Stone Ring"
 *comment Future ring items get their own *if (item_id = "...") branch here --
 *comment shared across both slots since a ring means the same thing on
 *comment either hand.
