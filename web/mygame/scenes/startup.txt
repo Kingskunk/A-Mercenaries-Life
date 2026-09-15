@@ -92,25 +92,94 @@
 *create weapon_hands "one_handed"
 *create has_shield true
 *create shield_equipped true
+*comment Tracks the player's own stance independent of what's currently
+*comment possible to hold -- apply_weapon_loadout auto-restores shield_equipped
+*comment from this the moment a one-handed weapon comes back out; only
+*comment toggle_shield_equipped ever changes it.
+*create wants_shield_equipped true
 *create armor "brigandine"
 *create armor_desc "Padded gambeson & leather brigandine"
 *create armor_type "brigandine"
-*comment --- EQUIPMENT LOADOUT (see apply_weapon_loadout / equip_weapon below) ---
-*comment starting_weapon* is a permanent snapshot of whatever weapon
-*comment character creation assigned, captured once in update_dnd_stats, so
-*comment switching to a purchased weapon and back is always possible without
-*comment needing a full duplicate of every archetype's weapon block.
+*comment --- EQUIPMENT LOADOUT (see apply_weapon_loadout / apply_armor_loadout
+*comment / equip_weapon below) ---
+*comment starting_weapon*/starting_armor* are permanent snapshots of whatever
+*comment weapon/armor character creation (or a dev preset) assigned, captured
+*comment once in update_dnd_stats, so switching to a purchased item and back
+*comment is always possible without needing a duplicate branch per origin
+*comment choice or per dev preset.
 *create starting_weapon "falchion"
 *create starting_weapon_desc "Heavy falchion & iron buckler"
 *create starting_weapon_damage "1d8 slashing"
 *create starting_weapon_damage_type "slashing"
 *create starting_weapon_type "melee"
 *create starting_weapon_hands "one_handed"
+*create starting_armor "brigandine"
+*create starting_armor_desc "Padded gambeson & leather brigandine"
+*create starting_armor_type "brigandine"
 *create equipped_weapon_id "starting"
+*create equipped_armor_id "starting"
 *comment Guards the one-time starting-loadout snapshot in update_dnd_stats;
-*comment don't key that off equipped_weapon_id itself, since it *create-
-*comment defaults to "starting" too and would make the guard always false.
+*comment don't key that off equipped_weapon_id/equipped_armor_id themselves,
+*comment since they *create-default to "starting" too and would make the
+*comment guard always false.
 *create loadout_initialized false
+
+*comment --- PAPER-DOLL SLOTS: HEAD / CLOAK / HANDS / WAIST / FEET ---
+*comment Same id-driven shape as weapon/armor above (apply_<slot>_loadout
+*comment derives every display/mechanical field from equipped_<slot>_id --
+*comment never a bare *set outside chargen/dev-presets/apply_*_loadout
+*comment itself). Only head carries AC math among these five; cloak/hands/
+*comment waist/feet are desc-only. None of these five need a "starting_*"
+*comment shadow copy the way weapon/armor do -- chargen assigns exactly one
+*comment concrete value per origin (no per-choice branching to collapse, and
+*comment nothing to revert to), so equipped_<slot>_id is set directly to a
+*comment concrete id. A future shop item just adds a new *if branch to the
+*comment matching apply_<slot>_loadout, exactly like timber_axe/stiletto did
+*comment for weapon.
+*create equipped_head_id "none"
+*create head_desc "Bare head"
+*create head_ac 0
+*create head_is_armor false
+*create equipped_cloak_id "none"
+*create cloak_desc "None"
+*create equipped_hands_id "none"
+*create hands_desc "None"
+*create equipped_waist_id "none"
+*create waist_desc "None"
+*create equipped_feet_id "none"
+*create feet_desc "Bare feet"
+
+*comment --- SIDEARM (swappable secondary weapon; see swap_active_sidearm) ---
+*comment 9 chargen sites (3 origins x 3 weapon choices) but only 5 distinct
+*comment values total -- no combinatorial reason to collapse through a
+*comment "starting" indirection the way weapon/armor do. It DOES need to be
+*comment able to resolve equipped_sidearm_id = "starting" though: a swap can
+*comment push the original main-hand identity into this slot, and "starting"
+*comment always means the same thing (the character's original weapon)
+*comment regardless of which physical slot currently holds it -- so
+*comment apply_sidearm_loadout's "starting" branch reads the EXISTING
+*comment starting_weapon_* snapshot above, not a duplicate of its own.
+*create equipped_sidearm_id "none"
+*create sidearm "none"
+*create sidearm_desc "None"
+*create sidearm_damage "none"
+*create sidearm_damage_type "none"
+*create sidearm_type "none"
+*create sidearm_hands "one_handed"
+
+*comment --- NECK & RINGS (physical slot only) ---
+*comment A magic item ALSO needs attune_item/unattune_item to grant its
+*comment bonus -- see recalculate_attuned_bonuses. Mundane jewelry (none
+*comment exists yet) would need only the physical slot filled. For the one
+*comment existing magic item (Hearthstone Talisman), attune_item/
+*comment unattune_item own syncing equipped_neck_id themselves (see below) --
+*comment there is deliberately no separate manual "wear" UI action for it.
+*create equipped_neck_id "none"
+*create neck_desc "Bare throat"
+*create equipped_ring1_id "none"
+*create ring1_desc "Bare finger"
+*create equipped_ring2_id "none"
+*create ring2_desc "Bare finger"
 
 *comment --- MAGIC ITEM ATTUNEMENT ---
 *comment A magic item only grants its bonus while attuned (see attune_item /
@@ -832,6 +901,7 @@
 *create has_stiletto false
 *create has_iron_crowbar false
 *create has_talia_provisions false
+*create has_toll_seal_ring false
 *create intimate_encounters 0
 
 *comment --- GAME SETTINGS ---
@@ -904,6 +974,12 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set weapon_damage_type "bludgeoning"
     *set weapon_type "melee"
     *set weapon_hands "one_handed"
+    *set equipped_head_id "scholar_coif"
+    *set equipped_cloak_id "weather_cloak"
+    *set equipped_hands_id "scribe_gloves"
+    *set equipped_waist_id "satchel_harness"
+    *set equipped_feet_id "riding_boots"
+    *set equipped_sidearm_id "bodkin_dagger"
     *set silver 25
     *set met_varren true
     *set met_lyra true
@@ -959,6 +1035,12 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set weapon_damage_type "bludgeoning"
     *set weapon_type "melee"
     *set weapon_hands "one_handed"
+    *set equipped_head_id "scholar_coif"
+    *set equipped_cloak_id "weather_cloak"
+    *set equipped_hands_id "scribe_gloves"
+    *set equipped_waist_id "satchel_harness"
+    *set equipped_feet_id "riding_boots"
+    *set equipped_sidearm_id "bodkin_dagger"
     *set silver 25
     *set met_varren true
     *set met_lyra true
@@ -1018,6 +1100,12 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set weapon_damage_type "piercing"
     *set weapon_type "finesse"
     *set weapon_hands "one_handed"
+    *set equipped_head_id "scholar_coif"
+    *set equipped_cloak_id "weather_cloak"
+    *set equipped_hands_id "scribe_gloves"
+    *set equipped_waist_id "satchel_harness"
+    *set equipped_feet_id "riding_boots"
+    *set equipped_sidearm_id "bodkin_dagger"
     *set silver 20
     *set met_varren true
     *set met_lyra true
@@ -1076,6 +1164,12 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set weapon_damage_type "piercing"
     *set weapon_type "melee"
     *set weapon_hands "one_handed"
+    *set equipped_head_id "camo_hood"
+    *set equipped_cloak_id "camo_cloak"
+    *set equipped_hands_id "archer_bracers"
+    *set equipped_waist_id "scabbard_belt"
+    *set equipped_feet_id "scout_boots"
+    *set equipped_sidearm_id "matched_dagger"
     *set silver 18
     *set met_varren true
     *set met_lyra true
@@ -1122,6 +1216,12 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set weapon_damage_type "piercing"
     *set weapon_type "ranged"
     *set weapon_hands "two_handed"
+    *set equipped_head_id "camo_hood"
+    *set equipped_cloak_id "camo_cloak"
+    *set equipped_hands_id "archer_bracers"
+    *set equipped_waist_id "scabbard_belt"
+    *set equipped_feet_id "scout_boots"
+    *set equipped_sidearm_id "matched_dagger"
     *set silver 18
     *set met_varren true
     *set met_lyra true
@@ -1170,6 +1270,12 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set weapon_damage_type "piercing"
     *set weapon_type "ranged"
     *set weapon_hands "two_handed"
+    *set equipped_head_id "camo_hood"
+    *set equipped_cloak_id "camo_cloak"
+    *set equipped_hands_id "archer_bracers"
+    *set equipped_waist_id "scabbard_belt"
+    *set equipped_feet_id "scout_boots"
+    *set equipped_sidearm_id "matched_dagger"
     *set silver 18
     *set met_varren true
     *set met_lyra true
@@ -1217,6 +1323,12 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set weapon_damage_type "slashing"
     *set weapon_type "melee"
     *set weapon_hands "one_handed"
+    *set equipped_head_id "arming_cap"
+    *set equipped_cloak_id "wool_mantle"
+    *set equipped_hands_id "leather_wraps"
+    *set equipped_waist_id "soldiers_belt"
+    *set equipped_feet_id "marching_boots"
+    *set equipped_sidearm_id "ash_spear"
     *set silver 10
     *set met_varren true
     *set met_lyra true
@@ -1264,6 +1376,12 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set weapon_damage_type "slashing"
     *set weapon_type "melee"
     *set weapon_hands "two_handed"
+    *set equipped_head_id "arming_cap"
+    *set equipped_cloak_id "wool_mantle"
+    *set equipped_hands_id "leather_wraps"
+    *set equipped_waist_id "soldiers_belt"
+    *set equipped_feet_id "marching_boots"
+    *set equipped_sidearm_id "ash_spear"
     *set silver 10
     *set met_varren true
     *set met_lyra true
@@ -1798,6 +1916,13 @@ Other greenhorns scramble and shove in the muck, frantic to claim anything with 
   *goto munitions_disgraced
 
 *label munitions_ashbrook
+*comment Auto-assigned baseline apparel -- Vanguard/Ashbrook origin. No player
+*comment choice needed; purely flavor until a future shop sells alternatives.
+*set equipped_head_id "arming_cap"
+*set equipped_cloak_id "wool_mantle"
+*set equipped_hands_id "leather_wraps"
+*set equipped_waist_id "soldiers_belt"
+*set equipped_feet_id "marching_boots"
 You step up to the armor casks first. What protection do you pull from the brine and grease to strap over your damp tunic?
 
 *choice
@@ -1840,6 +1965,7 @@ With your armor cinched tight, you turn your attention to the spilled weapons. W
     *set weapon_type "melee"
     *set weapon_hands "one_handed"
     *set has_shield true
+    *set equipped_sidearm_id "ash_spear"
     You haul three feet of forward-weighted, single-edged chopping steel from the pile, strapping the scarred buckler onto your left forearm. You test the brutal balance with a downward cleave. It lacks noble grace, but in the close, screaming press of a shield-wall, a heavy falchion can hack through boiled leather, split wooden shields, and crush bone.
     *goto ready_camp
 
@@ -1851,6 +1977,7 @@ With your armor cinched tight, you turn your attention to the spilled weapons. W
     *set weapon_type "reach"
     *set weapon_hands "one_handed"
     *set has_shield false
+    *set equipped_sidearm_id "felling_axe"
     You slide the ash spear from the tangle, sighting along the straight shaft. The grain is dense and supple, the steel head pinned securely and sharpened to a cruel leaf point. The true workhorse of mercenary line infantry—a weapon of reach and discipline that keeps enemies at bay before they can ever get within blade-stroke.
     *goto ready_camp
 
@@ -1862,10 +1989,17 @@ With your armor cinched tight, you turn your attention to the spilled weapons. W
     *set weapon_type "melee"
     *set weapon_hands "two_handed"
     *set has_shield false
+    *set equipped_sidearm_id "ash_spear"
     You pull a brutal, heavy-bearded broadaxe from beneath a crate of shaft-heads, resting the three-foot ash haft against your shoulder. The steel head is pitted and dark with old oil, ground to a cruel, chopping wedge. Not a weapon for fencing or polished maneuvers—in the screaming press of a vanguard crash, a heavy axe splits oak shields, shears through boiled leather, and leaves ruined limbs in its wake.
     *goto ready_camp
 
 *label munitions_outlaw
+*comment Auto-assigned baseline apparel -- Outlaw/Port Valen origin.
+*set equipped_head_id "camo_hood"
+*set equipped_cloak_id "camo_cloak"
+*set equipped_hands_id "archer_bracers"
+*set equipped_waist_id "scabbard_belt"
+*set equipped_feet_id "scout_boots"
 You step up to the gear casks first. Heavy war-harness is useless to someone who survives on speed and silence—what do you pull from the pile that won't slow you down?
 
 *choice
@@ -1908,6 +2042,7 @@ With your gear cinched tight, you turn your attention to the spilled weapons. Wh
     *set weapon_type "finesse"
     *set weapon_hands "one_handed"
     *set has_shield false
+    *set equipped_sidearm_id "hand_crossbow"
     You pluck two well-balanced daggers from the pile, testing their edge against your thumb before sheathing one at your hip and the other up your sleeve, out of sight. Not much for a shield-wall, but nobody in a brawl fights fair either.
     *goto ready_camp
 
@@ -1919,6 +2054,7 @@ With your gear cinched tight, you turn your attention to the spilled weapons. Wh
     *set weapon_type "reach"
     *set weapon_hands "one_handed"
     *set has_shield false
+    *set equipped_sidearm_id "matched_dagger"
     You slide the ash spear from the tangle, sighting along the straight shaft. The grain is dense and supple, the steel head pinned securely and sharpened to a cruel leaf point. Not your usual trade, but reach keeps desperate men from ever closing the distance.
     *goto ready_camp
 
@@ -1930,32 +2066,39 @@ With your gear cinched tight, you turn your attention to the spilled weapons. Wh
     *set weapon_type "ranged"
     *set weapon_hands "one_handed"
     *set has_shield false
+    *set equipped_sidearm_id "matched_dagger"
     You lift a small, single-handed crossbow from the crate, no bigger than a large pistol, along with a pouch of stubby bolts. Quiet, quick to reload, and easy enough to tuck beneath a cloak when you'd rather not be seen carrying steel at all.
     *goto ready_camp
 
 *label munitions_disgraced
+*comment Auto-assigned baseline apparel -- Disgraced Scion origin.
+*set equipped_head_id "scholar_coif"
+*set equipped_cloak_id "weather_cloak"
+*set equipped_hands_id "scribe_gloves"
+*set equipped_waist_id "satchel_harness"
+*set equipped_feet_id "riding_boots"
 You step up to the gear casks, but none of it looks like anything you were ever trained to wear. What do you pull on over your travel-worn clothes, more for warmth than war?
 
 *choice
-  # A heavy traveling cloak, oiled against the rain and lined for warmth.@{show_stat_hints  [Cloth Armor: Base AC 10 + DEX]|}
-    *set armor "traveling_cloak"
-    *set armor_desc "Oiled traveling cloak"
+  # A quilted scholar's cassock, laced snug beneath a leather chest-strap.@{show_stat_hints  [Cloth Armor: Base AC 10 + DEX]|}
+    *set armor "scholars_cassock"
+    *set armor_desc "Quilted scholar's cassock"
     *set armor_type "cloth"
-    You wrap yourself in a heavy oiled cloak meant for long roads, not battle lines. It sheds the rain well enough and hides your hands, but you know full well it wouldn't stop a determined knife.
+    You pull on a quilted cassock, cinching the chest-strap tight over old ink stains you never quite scrubbed out. Warm and unassuming — the sort of thing nobody looks at twice.
     *goto choose_weapon_disgraced
 
-  # Layered scholar's robes reinforced with leather bracers at the wrists.@{show_stat_hints  [Cloth Armor: Base AC 10 + DEX]|}
-    *set armor "scholar_robes"
-    *set armor_desc "Layered robes with leather bracers"
+  # A reinforced doublet, stiffened at the ribs with layered canvas.@{show_stat_hints  [Cloth Armor: Base AC 10 + DEX]|}
+    *set armor "reinforced_doublet"
+    *set armor_desc "Reinforced canvas doublet"
     *set armor_type "cloth"
-    You pull on layered robes, cinching leather bracers over the wrists to keep the sleeves from catching on anything important. It looks more like a study than a battlefield, but it's what your hands know.
+    You lace yourself into a stiff canvas doublet, its ribs quilted thick enough to blunt an idle shove without slowing your hands. It looks more like a study than a battlefield, but it's what your hands know.
     *goto choose_weapon_disgraced
 
-  # A fine leather satchel-harness, built for scrolls and components rather than steel.@{show_stat_hints  [Cloth Armor: Base AC 10 + DEX]|}
-    *set armor "satchel_harness"
-    *set armor_desc "Leather satchel-harness"
+  # A tailored vest, close-fitted beneath your travel-worn coat.@{show_stat_hints  [Cloth Armor: Base AC 10 + DEX]|}
+    *set armor "tailored_vest"
+    *set armor_desc "Tailored vest"
     *set armor_type "cloth"
-    You strap on a leather harness meant for carrying scrolls, ink, and small components close to the body, tucked under your ordinary clothes. Not a stitch of it will stop a blade, but it keeps your hands free for what actually matters.
+    You button a close-fitted vest under your coat, its lining worn smooth from years of the same routine. Not a stitch of it will stop a blade, but it keeps your hands free for what actually matters.
     *goto choose_weapon_disgraced
 
 *label choose_weapon_disgraced
@@ -1976,6 +2119,7 @@ With your gear settled, you turn your attention to the spilled weapons—none of
     *set weapon_type "finesse"
     *set weapon_hands "one_handed"
     *set has_shield false
+    *set equipped_sidearm_id "bodkin_dagger"
     You take up a slim, well-made dagger, closer to something you'd have found on your own writing desk than a company armory. It sits strangely familiar in your hand all the same.
     *goto ready_camp
 
@@ -1987,6 +2131,7 @@ With your gear settled, you turn your attention to the spilled weapons—none of
     *set weapon_type "melee"
     *set weapon_hands "one_handed"
     *set has_shield false
+    *set equipped_sidearm_id "bodkin_dagger"
     You take up a plain, iron-shod quarterstaff, worn smooth by some traveler's hands long before it ended up in a mercenary company's crate. Unglamorous, but it has a certain honest weight to it.
     *goto ready_camp
 
@@ -1998,6 +2143,7 @@ With your gear settled, you turn your attention to the spilled weapons—none of
     *set weapon_type "ranged"
     *set weapon_hands "two_handed"
     *set has_shield false
+    *set equipped_sidearm_id "bodkin_dagger"
     You lift a light crossbow from the crate, along with a small case of bolts. Simple mechanics, no real strength required to use it well—cold, distant, and precise, much like everything else you were actually trained for.
     *goto ready_camp
 
@@ -2138,15 +2284,12 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *if (hp_current < 1)
     *set hp_current 1
 
-*comment Snapshot whichever weapon character creation just assigned as the
-*comment permanent "starting" loadout, so the equipment menu can always
-*comment switch back to it later regardless of what's currently equipped.
-*comment Gated on loadout_initialized rather than equipped_weapon_id itself
-*comment -- equipped_weapon_id *create-defaults to "starting", so checking
-*comment it for "" here would never be true and this block would silently
-*comment never run, leaving every new character's weapon overwritten by the
-*comment startup.txt *create placeholder gear (falchion) instead of what
-*comment their archetype actually assigned.
+*comment Snapshot whichever weapon/armor character creation (or a dev preset)
+*comment just assigned as the permanent "starting" loadout, so the equipment
+*comment menu can always switch back to it later regardless of what's
+*comment currently equipped. Gated on loadout_initialized rather than
+*comment equipped_weapon_id/equipped_armor_id themselves -- both *create-
+*comment default to "starting" too and would make the guard always false.
 *if (not(loadout_initialized))
   *set starting_weapon weapon
   *set starting_weapon_desc weapon_desc
@@ -2155,13 +2298,32 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set starting_weapon_type weapon_type
   *set starting_weapon_hands weapon_hands
   *set equipped_weapon_id "starting"
+  *set starting_armor armor
+  *set starting_armor_desc armor_desc
+  *set starting_armor_type armor_type
+  *set equipped_armor_id "starting"
   *set shield_equipped has_shield
   *comment Same idea as starting_weapon: constitution as creation left it,
   *comment before any attuned magic item bonuses -- recalculate_attuned_bonuses
   *comment always rebuilds constitution from this baseline.
   *set base_constitution constitution
   *set loadout_initialized true
+*comment The paper-doll slots below have no "starting" indirection -- see the
+*comment schema comment block near the top of this file for why -- chargen/
+*comment dev-presets already set equipped_<slot>_id directly to a concrete
+*comment value; these gosubs just need to run every visit (pure re-derivation,
+*comment no guard) so the derived desc/AC fields exist at all.
 *gosub apply_weapon_loadout
+*gosub apply_armor_loadout
+*gosub apply_head_loadout
+*gosub apply_cloak_loadout
+*gosub apply_hands_loadout
+*gosub apply_waist_loadout
+*gosub apply_feet_loadout
+*gosub apply_sidearm_loadout
+*gosub apply_neck_loadout
+*gosub apply_ring_loadout "1" equipped_ring1_id
+*gosub apply_ring_loadout "2" equipped_ring2_id
 
 *gosub recalculate_armor_class
 *return
@@ -2219,6 +2381,23 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *gosub recalculate_armor_class
 *return
 
+*comment apply_neck_loadout is the same fully-derived pattern as every other
+*comment paper-doll slot. equip_neck exists as general plumbing for a future
+*comment mundane (non-attunement) neck item; today it's only called
+*comment internally by attune_item/unattune_item to keep neck_desc synced.
+*label apply_neck_loadout
+*if (equipped_neck_id = "none")
+  *set neck_desc "Bare throat"
+*if (equipped_neck_id = "hearthstone_talisman")
+  *set neck_desc "Torvald's Hearthstone Talisman, on a braided oxhide cord"
+*return
+
+*label equip_neck
+*params new_neck_id
+*set equipped_neck_id new_neck_id
+*gosub apply_neck_loadout
+*return
+
 *comment *gosub_scene startup attune_item <id>. Does nothing (silently) if
 *comment already attuned to it or if all slots are full -- the equipment
 *comment menu is expected to already hide the option in either case; this is
@@ -2229,6 +2408,10 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *if ((item_id = "hearthstone_talisman") and (not(hearthstone_attuned)))
     *set hearthstone_attuned true
     *set attuned_count + 1
+    *comment Attuning to it requires actually wearing it -- auto-equip the
+    *comment neck slot so neck_desc/equipped_neck_id reflect reality without
+    *comment a separate "wear" step the player would have to remember too.
+    *gosub equip_neck "hearthstone_talisman"
     *gosub recalculate_attuned_bonuses
 *return
 
@@ -2238,6 +2421,8 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *if ((item_id = "hearthstone_talisman") and (hearthstone_attuned))
   *set hearthstone_attuned false
   *set attuned_count - 1
+  *if (equipped_neck_id = "hearthstone_talisman")
+    *gosub equip_neck "none"
   *gosub recalculate_attuned_bonuses
 *return
 
@@ -2263,7 +2448,11 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *comment Mage Armor: 13 + DEX while not wearing actual armor. Cloth options
   *comment (traveling cloak, scholar robes, etc.) are ordinary clothes, not
   *comment armor, so this is the correct RAW condition rather than "any Wizard".
-  *if (wizard_spell = "mage_armor")
+  *comment An armored helm still counts as "wearing armor" over otherwise-
+  *comment cloth clothes, hence the added not(head_is_armor) guard -- no
+  *comment chargen path grants head_is_armor yet, so this is currently a
+  *comment no-op until a future shop sells real helms.
+  *if (wizard_spell = "mage_armor") and (not(head_is_armor))
     *set base_ac 13
   *comment Barbarian Unarmored Defense: 10 + DEX + CON while wearing no
   *comment armor -- cloth items are clothes, not armor, so this is the same
@@ -2271,7 +2460,7 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *comment the plain 10 + DEX base entirely (the +effective_dex_mod add below
   *comment still applies on top, giving the correct 10 + CON + DEX total). A
   *comment Barbarian never has Mage Armor available, so the two never compete.
-  *if (character_class = "barbarian")
+  *if (character_class = "barbarian") and (not(head_is_armor))
     *set base_ac (10 + con_mod)
 *if ((armor_type = "leather") or (armor_type = "buff_coat"))
   *set base_ac 11
@@ -2281,6 +2470,13 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
     *set effective_dex_mod 2
 
 *set armor_class (base_ac + effective_dex_mod)
+*comment Armored headgear adds its own flat bonus on top, same shape as the
+*comment shield bonus below. head_ac is 0 for every currently-assignable head
+*comment item (all chargen baselines are non-armor caps/hoods), so this is
+*comment dormant until a future shop sells actual helms.
+*if (head_is_armor) and (head_ac > 0)
+  *set armor_class + head_ac
+
 *comment Shield bonus follows whether it's actually strapped on right now
 *comment (shield_equipped), not merely owned (has_shield) -- see
 *comment equip_weapon/toggle_shield_equipped below, which keep the two in
@@ -2324,9 +2520,17 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set weapon_damage_type "piercing"
   *set weapon_type "finesse"
   *set weapon_hands "one_handed"
-*comment A two-handed weapon leaves no free hand for a shield.
+*comment A two-handed weapon leaves no free hand for a shield. Switching back
+*comment to a one-handed weapon auto-restores the player's own stance
+*comment (wants_shield_equipped) instead of leaving the shield stowed forever
+*comment after the first two-hander -- wants_shield_equipped is only ever
+*comment changed by the player's own manual toggle, so this never overrides
+*comment an explicit "I took it off" choice.
 *if (weapon_hands = "two_handed")
   *set shield_equipped false
+*else
+  *if (has_shield) and (wants_shield_equipped)
+    *set shield_equipped true
 *return
 
 *comment *gosub_scene startup equip_weapon <id>, where <id> is one of the
@@ -2345,7 +2549,250 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *label toggle_shield_equipped
 *if (not(weapon_hands = "two_handed"))
   *set shield_equipped not(shield_equipped)
+  *set wants_shield_equipped shield_equipped
 *gosub recalculate_armor_class
+*return
+
+*comment apply_armor_loadout is the same "fully derived, safe to call any
+*comment number of times" pattern as apply_weapon_loadout: it sets
+*comment armor/armor_desc/armor_type purely from equipped_armor_id, never
+*comment accumulates. All 3 origins' chargen choices (and all 8 dev presets)
+*comment still bare-*set armor/armor_desc/armor_type directly -- that's fine,
+*comment update_dnd_stats snapshots whichever one ran into starting_armor* the
+*comment same way it already does for starting_weapon*. A future purchasable
+*comment torso item gets its own *if branch here (and a has_ flag at its
+*comment purchase site), exactly like timber_axe/stiletto did for weapon.
+*label apply_armor_loadout
+*if (equipped_armor_id = "starting")
+  *set armor starting_armor
+  *set armor_desc starting_armor_desc
+  *set armor_type starting_armor_type
+*return
+
+*comment *gosub_scene startup equip_armor <id>. No caller exists yet (no
+*comment purchasable alternate torso armor) -- built now so the plumbing is
+*comment ready the moment one does, mirroring equip_weapon exactly.
+*label equip_armor
+*params new_armor_id
+*set equipped_armor_id new_armor_id
+*gosub apply_armor_loadout
+*gosub recalculate_armor_class
+*return
+
+*comment apply_head_loadout follows the same fully-derived pattern. No
+*comment chargen path currently assigns head_is_armor true or a nonzero
+*comment head_ac -- every baseline headgear is a non-armor cap/hood -- so the
+*comment head-AC term in recalculate_armor_class above is dormant until a
+*comment future shop sells real helms.
+*label apply_head_loadout
+*if (equipped_head_id = "arming_cap")
+  *set head_desc "Padded Arming Cap"
+  *set head_ac 0
+  *set head_is_armor false
+*if (equipped_head_id = "camo_hood")
+  *set head_desc "Shadowed Camo Hood"
+  *set head_ac 0
+  *set head_is_armor false
+*if (equipped_head_id = "scholar_coif")
+  *set head_desc "Scholar's Linen Coif"
+  *set head_ac 0
+  *set head_is_armor false
+*if (equipped_head_id = "none")
+  *set head_desc "Bare head"
+  *set head_ac 0
+  *set head_is_armor false
+*return
+
+*comment *gosub_scene startup equip_head <id>. No caller exists yet (no
+*comment purchasable head items) -- ready for the day one exists.
+*label equip_head
+*params new_head_id
+*set equipped_head_id new_head_id
+*gosub apply_head_loadout
+*gosub recalculate_armor_class
+*return
+
+*comment --- COSMETIC PAPER-DOLL SLOTS (Cloak / Hands / Waist / Feet) ---
+*comment Desc-only, no AC/mechanical effect -- same id-driven pattern as
+*comment every other slot so a future purchasable item is a one-branch
+*comment addition. No equip_<slot> caller exists yet for any of these.
+*label apply_cloak_loadout
+*if (equipped_cloak_id = "wool_mantle")
+  *set cloak_desc "Iron Bull Wool Mantle"
+*if (equipped_cloak_id = "camo_cloak")
+  *set cloak_desc "Weathered Camouflage Cloak"
+*if (equipped_cloak_id = "weather_cloak")
+  *set cloak_desc "Oiled Marcher Weather-Cloak"
+*if (equipped_cloak_id = "none")
+  *set cloak_desc "None"
+*return
+
+*label equip_cloak
+*params new_cloak_id
+*set equipped_cloak_id new_cloak_id
+*gosub apply_cloak_loadout
+*return
+
+*label apply_hands_loadout
+*if (equipped_hands_id = "leather_wraps")
+  *set hands_desc "Hardened Leather Weapon-Wraps"
+*if (equipped_hands_id = "archer_bracers")
+  *set hands_desc "Supple Archer Bracers"
+*if (equipped_hands_id = "scribe_gloves")
+  *set hands_desc "Scribe Wrist-Bracers & Writing Gloves"
+*if (equipped_hands_id = "rorik_grip_wraps")
+  *set hands_desc "Tarred Linen Grip-Wraps"
+*if (equipped_hands_id = "none")
+  *set hands_desc "None"
+*return
+
+*label equip_hands
+*params new_hands_id
+*set equipped_hands_id new_hands_id
+*gosub apply_hands_loadout
+*return
+
+*label apply_waist_loadout
+*if (equipped_waist_id = "soldiers_belt")
+  *set waist_desc "Heavy Soldier's Belt & Frog"
+*if (equipped_waist_id = "scabbard_belt")
+  *set waist_desc "Concealed Scabbard Belt"
+*if (equipped_waist_id = "satchel_harness")
+  *set waist_desc "Satchel-Harness & Vellum Roll"
+*if (equipped_waist_id = "rorik_campaign_belt")
+  *set waist_desc "Iron-Riveted Campaign Belt"
+*if (equipped_waist_id = "none")
+  *set waist_desc "None"
+*return
+
+*label equip_waist
+*params new_waist_id
+*set equipped_waist_id new_waist_id
+*gosub apply_waist_loadout
+*return
+
+*label apply_feet_loadout
+*if (equipped_feet_id = "marching_boots")
+  *set feet_desc "Hobnailed Marching Boots"
+*if (equipped_feet_id = "scout_boots")
+  *set feet_desc "Soft-Soled Scout Wraps"
+*if (equipped_feet_id = "riding_boots")
+  *set feet_desc "Cured Travel Riding Boots"
+*if (equipped_feet_id = "none")
+  *set feet_desc "Bare feet"
+*return
+
+*label equip_feet
+*params new_feet_id
+*set equipped_feet_id new_feet_id
+*gosub apply_feet_loadout
+*return
+
+*comment --- SIDEARM (Swappable Secondary Weapon) ---
+*comment apply_sidearm_loadout mirrors apply_weapon_loadout exactly, one
+*comment slot over. "starting" reuses the existing starting_weapon_* snapshot
+*comment rather than a duplicate of its own -- see the schema comment block
+*comment near the top of this file for why.
+*label apply_sidearm_loadout
+*if (equipped_sidearm_id = "starting")
+  *set sidearm starting_weapon
+  *set sidearm_desc starting_weapon_desc
+  *set sidearm_damage starting_weapon_damage
+  *set sidearm_damage_type starting_weapon_damage_type
+  *set sidearm_type starting_weapon_type
+  *set sidearm_hands starting_weapon_hands
+*if (equipped_sidearm_id = "ash_spear")
+  *set sidearm "ash-wood spear"
+  *set sidearm_desc "Slung Ash-Wood Spear"
+  *set sidearm_damage "1d6/1d8 piercing"
+  *set sidearm_damage_type "piercing"
+  *set sidearm_type "reach"
+  *set sidearm_hands "one_handed"
+*if (equipped_sidearm_id = "felling_axe")
+  *set sidearm "felling axe"
+  *set sidearm_desc "Slung Felling Axe"
+  *set sidearm_damage "1d8 slashing"
+  *set sidearm_damage_type "slashing"
+  *set sidearm_type "melee"
+  *set sidearm_hands "one_handed"
+*if (equipped_sidearm_id = "matched_dagger")
+  *set sidearm "matched dagger"
+  *set sidearm_desc "Matched Sidearm Dagger"
+  *set sidearm_damage "1d4 piercing"
+  *set sidearm_damage_type "piercing"
+  *set sidearm_type "finesse"
+  *set sidearm_hands "one_handed"
+*if (equipped_sidearm_id = "hand_crossbow")
+  *set sidearm "hand crossbow"
+  *set sidearm_desc "Holstered Hand Crossbow"
+  *set sidearm_damage "1d6 piercing"
+  *set sidearm_damage_type "piercing"
+  *set sidearm_type "ranged"
+  *set sidearm_hands "one_handed"
+*if (equipped_sidearm_id = "bodkin_dagger")
+  *set sidearm "bodkin dagger"
+  *set sidearm_desc "Slim Bodkin Dagger"
+  *set sidearm_damage "1d4 piercing"
+  *set sidearm_damage_type "piercing"
+  *set sidearm_type "finesse"
+  *set sidearm_hands "one_handed"
+*if (equipped_sidearm_id = "none")
+  *set sidearm "none"
+  *set sidearm_desc "None"
+  *set sidearm_damage "none"
+  *set sidearm_damage_type "none"
+  *set sidearm_type "none"
+  *set sidearm_hands "one_handed"
+*return
+
+*comment *gosub_scene startup swap_active_sidearm -- exchanges whatever's in
+*comment main-hand with whatever's in the sidearm slot. No replay lock
+*comment needed: this is a full exchange of two persistent ids (not an
+*comment accumulating +N), and every call site immediately *goto's to a
+*comment fresh *choice before the next pause point, exactly the same shape
+*comment equip_weapon/toggle_shield_equipped already use unlocked today --
+*comment even a duplicate call would just swap back, not compound.
+*label swap_active_sidearm
+*temp swap_hold_id equipped_weapon_id
+*set equipped_weapon_id equipped_sidearm_id
+*set equipped_sidearm_id swap_hold_id
+*gosub apply_weapon_loadout
+*gosub apply_sidearm_loadout
+*gosub recalculate_armor_class
+*return
+
+*comment --- RINGS (Ring1 / Ring2) ---
+*comment One shared subroutine for both slots -- a ring means the same thing
+*comment on either hand, so a future ring item only needs one new *if branch
+*comment total instead of one per slot.
+*label apply_ring_loadout
+*params ring_slot item_id
+*temp new_ring_desc "Bare finger"
+*if (item_id = "none")
+  *set new_ring_desc "Bare finger"
+*comment Mundane -- no attunement, no stat bonus. Found, not sold, so it
+*comment routes straight through equip_ring at the pickup site rather than
+*comment needing a has_ flag gated dossier choice.
+*if (item_id = "toll_seal_ring")
+  *set new_ring_desc "Customs Officer's Signet Ring"
+*comment Future ring items get their own *if (item_id = "...") branch here --
+*comment shared across both slots since a ring means the same thing on
+*comment either hand.
+*if (ring_slot = "1")
+  *set ring1_desc new_ring_desc
+*else
+  *set ring2_desc new_ring_desc
+*return
+
+*comment *gosub_scene startup equip_ring <"1"|"2"> <id>. No caller exists yet
+*comment (no ring items) -- ready for the day one does.
+*label equip_ring
+*params ring_slot new_item_id
+*if (ring_slot = "1")
+  *set equipped_ring1_id new_item_id
+*else
+  *set equipped_ring2_id new_item_id
+*gosub apply_ring_loadout ring_slot new_item_id
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

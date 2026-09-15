@@ -68,11 +68,13 @@
 *line_break
 • [b]Hit Points (HP):[/b] ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}
 *line_break
-• [b]Armor Class (AC):[/b] ${armor_class} (${armor_desc}@{shield_equipped  & iron buckler|})
+• [b]Armor Class (AC):[/b] ${armor_class} (${armor_desc}@{shield_equipped  & shield|}@{(head_is_armor and (head_ac > 0))  & ${head_desc}|})
 *line_break
 • [b]Proficiency Bonus:[/b] +${prof_bonus}
 *line_break
 • [b]Primary Armament:[/b] ${weapon_desc} [${weapon_damage}]
+*line_break
+• [b]Sidearm:[/b] ${sidearm_desc} [${sidearm_damage}]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [b]◈ ABILITY SCORES & MODIFIERS[/b]
@@ -136,6 +138,10 @@
   *set has_inventory_item true
   *line_break
   • [b]Pioneer's Iron Prybar & Pitons:[/b] Cold-forged crowbar and tempered wedges for forcing stubborn locks and stone seams
+*if (has_toll_seal_ring)
+  *set has_inventory_item true
+  *line_break
+  • [b]Customs Officer's Signet Ring:[/b] Tarnished silver band stamped with a three-headed imperial hawk@{((equipped_ring1_id = "toll_seal_ring") or (equipped_ring2_id = "toll_seal_ring"))  [Worn]|}
 *if (has_hearthstone_talisman)
   *set has_inventory_item true
   *line_break
@@ -159,6 +165,23 @@
   [i]Your satchel holds dry trail rations, flint and steel, and basic road gear.[/i]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[b]◈ APPAREL & WORN GEAR[/b]
+*line_break
+• [b]Head:[/b] ${head_desc}
+*line_break
+• [b]Cloak:[/b] ${cloak_desc}
+*line_break
+• [b]Hands:[/b] ${hands_desc}
+*line_break
+• [b]Waist:[/b] ${waist_desc}
+*line_break
+• [b]Feet:[/b] ${feet_desc}
+*line_break
+• [b]Neck:[/b] ${neck_desc}
+*line_break
+• [b]Rings:[/b] ${ring1_desc}, ${ring2_desc}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [b]◈ DOSSIER ARCHIVES & CODEX[/b]
 
 Review loadout, grimoire, known contacts, regional intelligence, or interface settings:
@@ -179,6 +202,31 @@ Review loadout, grimoire, known contacts, regional intelligence, or interface se
     *finish
 
 *label codex_equipment
+[b]EQUIPMENT LOADOUT[/b]
+[i]Manage Worn Gear & Attuned Relics[/i]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Swapping a weapon, shield, or sidearm takes a moment out of camp or downtime, not mid-fight — settle on a loadout before you march.
+
+*if (has_letter_of_credit)
+  *set silver_amount_to_describe letter_of_credit_value
+  *gosub_scene startup describe_silver_amount
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [b]◈ SEALED DOCUMENTS[/b]
+  *line_break
+  • [b]Gilded Scales Letter of Credit:[/b] ${coin_amount_desc} — redeemable at the Upper Wharves house in Port Valen, or voidable back to coin at Alderford's Counting House
+
+*choice
+  # [Weapons & Armor: Main-Hand, Sidearm, Off-Hand & Chest]
+    *goto codex_equipment_weapons
+  # [Apparel: Head, Cloak, Hands, Waist & Feet]
+    *goto codex_equipment_apparel
+  # [Accessories: Neck & Rings]
+    *goto codex_equipment_accessories
+  # [Return to Dossier]
+    *goto_scene choicescript_stats
+
+*label codex_equipment_weapons
 *temp grip_label ""
 *if (weapon_hands = "two_handed")
   *set grip_label " (Two-Handed)"
@@ -193,18 +241,72 @@ Review loadout, grimoire, known contacts, regional intelligence, or interface se
   *else
     *set off_hand_status "Empty"
 
-[b]EQUIPMENT LOADOUT[/b]
-[i]Manage Equipped Weapons & Attuned Relics[/i]
+[b]WEAPONS & ARMOR[/b]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 • [b]Wielding:[/b] ${weapon_desc} [${weapon_damage}]${grip_label}
 *line_break
+• [b]Sidearm:[/b] ${sidearm_desc} [${sidearm_damage}]
+*line_break
 • [b]Off-Hand:[/b] ${off_hand_status}
 *line_break
 • [b]Armor:[/b] ${armor_desc} [Armor Class ${armor_class}]
+*if (head_is_armor) and (head_ac > 0)
+  *line_break
+  • [b]Head:[/b] ${head_desc} [+${head_ac} AC]
 
-Swapping a weapon or shield takes a moment out of camp or downtime, not mid-fight — settle on a loadout before you march.
+*choice
+  *if (not(equipped_weapon_id = "starting"))
+    # Switch back to your ${starting_weapon_desc}.
+      *gosub_scene startup equip_weapon "starting"
+      *goto codex_equipment_weapons
+  *if ((has_timber_axe) and (not(equipped_weapon_id = "timber_axe")))
+    # Wield the Highland Hewing Axe instead [1d8 Slashing, One-Handed].
+      *gosub_scene startup equip_weapon "timber_axe"
+      *goto codex_equipment_weapons
+  *if ((has_stiletto) and (not(equipped_weapon_id = "stiletto")))
+    # Wield the Alderford Bodkin Stiletto instead [1d4 Piercing, One-Handed].
+      *gosub_scene startup equip_weapon "stiletto"
+      *goto codex_equipment_weapons
+  *if (not(equipped_sidearm_id = "none"))
+    # Swap to your ${sidearm_desc} [${sidearm_damage}].
+      *gosub_scene startup swap_active_sidearm
+      *goto codex_equipment_weapons
+  *if (has_shield)
+    *if ((weapon_hands = "two_handed") and (not(shield_equipped)))
+      # (Your ${weapon_desc} takes both hands — switch to a one-handed weapon to free one up for the shield.)
+        *goto codex_equipment_weapons
+    *elseif (shield_equipped)
+      # Unstrap the shield and stow it.
+        *gosub_scene startup toggle_shield_equipped
+        *goto codex_equipment_weapons
+    *else
+      # Strap on the Limestone Boss Shield.
+        *gosub_scene startup toggle_shield_equipped
+        *goto codex_equipment_weapons
+  # [Return to Equipment Hub]
+    *goto codex_equipment
 
+*label codex_equipment_apparel
+[b]APPAREL[/b]
+[i]Cosmetic Worn Gear — No Mechanical Effect[/i]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• [b]Head:[/b] ${head_desc}
+*line_break
+• [b]Cloak:[/b] ${cloak_desc}
+*line_break
+• [b]Hands:[/b] ${hands_desc}
+*line_break
+• [b]Waist:[/b] ${waist_desc}
+*line_break
+• [b]Feet:[/b] ${feet_desc}
+
+*choice
+  # [Return to Equipment Hub]
+    *goto codex_equipment
+
+*label codex_equipment_accessories
 *temp hearthstone_status_label ""
 *if (hearthstone_attuned)
   *set hearthstone_status_label "(Attuned)"
@@ -214,6 +316,14 @@ Swapping a weapon or shield takes a moment out of camp or downtime, not mid-figh
   *else
     *set hearthstone_status_label "(Not Attuned)"
 
+[b]ACCESSORIES[/b]
+[i]Neck & Rings — Magic Items Must Be Attuned[/i]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• [b]Neck:[/b] ${neck_desc}
+*line_break
+• [b]Rings:[/b] ${ring1_desc}, ${ring2_desc}
+
 *if (has_hearthstone_talisman)
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   [b]◈ MAGIC ITEM ATTUNEMENT[/b] (${attuned_count} / ${max_attunement_slots} Slots)
@@ -222,53 +332,21 @@ Swapping a weapon or shield takes a moment out of camp or downtime, not mid-figh
   *line_break
   • [b]Torvald's Hearthstone Talisman:[/b] +1 Constitution ${hearthstone_status_label}
 
-*if (has_letter_of_credit)
-  *set silver_amount_to_describe letter_of_credit_value
-  *gosub_scene startup describe_silver_amount
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  [b]◈ SEALED DOCUMENTS[/b]
-  *line_break
-  • [b]Gilded Scales Letter of Credit:[/b] ${coin_amount_desc} — redeemable at the Upper Wharves house in Port Valen, or voidable back to coin at Alderford's Counting House
-
 *choice
-  *if (not(equipped_weapon_id = "starting"))
-    # Switch back to your ${starting_weapon_desc}.
-      *gosub_scene startup equip_weapon "starting"
-      *goto codex_equipment
-  *if ((has_timber_axe) and (not(equipped_weapon_id = "timber_axe")))
-    # Wield the Highland Hewing Axe instead [1d8 Slashing, One-Handed].
-      *gosub_scene startup equip_weapon "timber_axe"
-      *goto codex_equipment
-  *if ((has_stiletto) and (not(equipped_weapon_id = "stiletto")))
-    # Wield the Alderford Bodkin Stiletto instead [1d4 Piercing, One-Handed].
-      *gosub_scene startup equip_weapon "stiletto"
-      *goto codex_equipment
-  *if (has_shield)
-    *if ((weapon_hands = "two_handed") and (not(shield_equipped)))
-      # (Your ${weapon_desc} takes both hands — switch to a one-handed weapon to free one up for the shield.)
-        *goto codex_equipment
-    *elseif (shield_equipped)
-      # Unstrap the shield and stow it.
-        *gosub_scene startup toggle_shield_equipped
-        *goto codex_equipment
-    *else
-      # Strap on the Limestone Boss Shield.
-        *gosub_scene startup toggle_shield_equipped
-        *goto codex_equipment
   *if (has_hearthstone_talisman)
     *if (hearthstone_attuned)
       # Break attunement with Torvald's Hearthstone Talisman.
         *gosub_scene startup unattune_item "hearthstone_talisman"
-        *goto codex_equipment
+        *goto codex_equipment_accessories
     *elseif (attuned_count >= max_attunement_slots)
       # (All ${max_attunement_slots} attunement slots are full — unattune something else first to bind the Hearthstone Talisman.)
-        *goto codex_equipment
+        *goto codex_equipment_accessories
     *else
       # Attune to Torvald's Hearthstone Talisman [+1 Constitution].
         *gosub_scene startup attune_item "hearthstone_talisman"
-        *goto codex_equipment
-  # [Return to Dossier]
-    *goto_scene choicescript_stats
+        *goto codex_equipment_accessories
+  # [Return to Equipment Hub]
+    *goto codex_equipment
 
 *label codex_abilities
 *temp ab_casting_mod 0
