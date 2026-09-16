@@ -138,6 +138,21 @@ var rootDir = "../";
       resourceHtml = "<div class=\"statRow\"><span>Rage</span><span>" + fmt(s.barbarian_rage_uses) + " / 2</span></div>";
     }
 
+    var activeQuestHtml = "";
+    if (s.silt_gate_quest_stage === "active") {
+      activeQuestHtml = "<hr class=\"sectionDivider\"><div class=\"statRow\"><span>Active Quest</span><span style=\"font-size:0.9em;\">Silt-Gate Contraband</span></div><div class=\"timePeriod\">Dredge-End Flume</div>";
+    } else if (s.timber_raft_quest_stage === "active") {
+      activeQuestHtml = "<hr class=\"sectionDivider\"><div class=\"statRow\"><span>Active Quest</span><span style=\"font-size:0.9em;\">Defaulted Timber Raft</span></div><div class=\"timePeriod\">Upper Wharves</div>";
+    } else if (s.red_tallow_quest_stage === "active") {
+      activeQuestHtml = "<hr class=\"sectionDivider\"><div class=\"statRow\"><span>Active Quest</span><span style=\"font-size:0.9em;\">Red-Tallow Consignment</span></div><div class=\"timePeriod\">Harbor Basin</div>";
+    } else if (isTruthy(s.found_customs_vellum) && !isTruthy(s.turned_in_customs_vellum)) {
+      activeQuestHtml = "<hr class=\"sectionDivider\"><div class=\"statRow\"><span>Active Quest</span><span style=\"font-size:0.9em;\">Toll Register Delivery</span></div><div class=\"timePeriod\">Gilded Scales</div>";
+    }
+
+    var dayDisplay = s.day_of_week ? fmt(s.day_of_week) : ("Day " + fmt(s.campaign_day || "1"));
+    var dateDisplay = fmt(s.calendar_date);
+    var weatherDisplay = fmt(s.weather || "Clear");
+
     el.innerHTML =
       "<h3>" + fmt(s.name) + " — Lv" + fmt(s.character_level) + " " + fmt(s.class_name || "Recruit") + "</h3>" +
       "<div class=\"statRow\"><span>HP</span><span>" + hpHtml + "</span></div>" +
@@ -153,11 +168,14 @@ var rootDir = "../";
         "<span>CHA " + fmt(s.charisma) + " (" + fmt(s.cha_mod_str) + ")</span>" +
       "</div>" +
       "<hr class=\"sectionDivider\">" +
-      "<div class=\"statRow\"><span>Date</span><span>" + fmt(s.calendar_date) + "</span></div>" +
+      "<div class=\"statRow\"><span>Day</span><span>" + dayDisplay + "</span></div>" +
+      "<div class=\"statRow\"><span>Date</span><span>" + dateDisplay + "</span></div>" +
       "<div class=\"statRow\"><span>Time</span><span>" + fmt(s.clock_time) + "</span></div>" +
       "<div class=\"timePeriod\">" + fmt(s.time_period) + "</div>" +
+      "<div class=\"statRow\"><span>Weather</span><span>" + weatherDisplay + "</span></div>" +
       "<hr class=\"sectionDivider\">" +
       "<div class=\"statRow\"><span>Purse</span><span>" + fmt(s.gold) + "g " + fmt(s.silver) + "s " + fmt(s.copper) + "c</span></div>" +
+      activeQuestHtml +
       (isTruthy(s.food_buff_active) || isTruthy(s.drink_buff_active) || isTruthy(s.unique_buff1_active) || isTruthy(s.unique_buff2_active) || isTruthy(s.unique_buff3_active) ?
         "<hr class=\"sectionDivider\">" +
         (isTruthy(s.food_buff_active) ?
