@@ -296,14 +296,9 @@ The Watch captain offers Vane a sealed slate bearing the city mark. He breaks it
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label port_valen_hub
-*if ((port_valen_actions_left <= 0) and (port_valen_first_patrol_complete))
-  *goto port_valen_day_end
 [b]◈ PORT VALEN — CITY OVERVIEW[/b]
-*line_break
-• [b]Time:[/b] ${clock_time} (${time_period})
-*line_break
-• [b]Actions Remaining:[/b] ${port_valen_actions_left}
-*line_break
+[b][⏳ Port Valen Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}][/b]
+
 The harbor city spreads inland from the brown water in four uneven rises of stone, timber, canal mud, and old imperial masonry. From the quay, every district seems close enough to reach before dark. The bells, crowded roads, and guarded gates suggest otherwise.
 *line_break
 *line_break
@@ -316,42 +311,39 @@ At the gate, a Carrion sergeant checks names against a slate while two recruits 
 Captain Vane's voice reaches the quay from somewhere inside the compound, hard to make out beneath the forge-hammers. The words come in fragments: "...quarter the new intake..." then, "...Watch detail at dawn..." A moment later, Sergeant Varren appears on the wall-walk and points three squads toward separate sections of the yard. The orders travel faster than the wagons. Men and women who have not yet found their bedrolls are already falling into place.
 
 *choice
-  # Report to your squad commander for the first city detail.
-    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
-      *set port_valen_actions_left -1
-      *set stat_bump_locked true
-      *set locked_stat_bump_page_id choice_page_id
-    *goto port_valen_squad_briefing
-  # Walk the Harbor Quayside and Iron Wharves while the compound settles in.
-    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
-      *set port_valen_actions_left -1
-      *set stat_bump_locked true
-      *set locked_stat_bump_page_id choice_page_id
-    *goto port_valen_harbor
-  # Find your squadmates inside the Carrion Compound.
-    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
-      *set port_valen_actions_left -1
-      *set stat_bump_locked true
-      *set locked_stat_bump_page_id choice_page_id
-    *goto port_valen_compound
+  *if (not(port_valen_first_briefing))
+    # Report to your squad commander for the first city detail.
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
+      *goto port_valen_squad_briefing
+  *if (not(port_valen_harbor_seen))
+    # Walk the Harbor Quayside and Iron Wharves while the compound settles in.
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
+      *goto port_valen_harbor
+  *if (not(port_valen_compound_seen))
+    # Find your squadmates inside the Carrion Compound.
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
+      *goto port_valen_compound
   *if (civic_heights_open)
     # Visit Civic Heights and the Cathedral district.
       *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
-        *set port_valen_actions_left -1
         *set stat_bump_locked true
         *set locked_stat_bump_page_id choice_page_id
       *goto port_valen_civic_heights
   *if (upper_wharves_open)
     # Climb toward the Upper Wharves and the Gilded Scales.
       *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
-        *set port_valen_actions_left -1
         *set stat_bump_locked true
         *set locked_stat_bump_page_id choice_page_id
       *goto port_valen_upper_wharves
   *if (dredge_end_open)
     # Follow the canals into Dredge-End.
       *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
-        *set port_valen_actions_left -1
         *set stat_bump_locked true
         *set locked_stat_bump_page_id choice_page_id
       *goto port_valen_dredge_end
@@ -416,13 +408,14 @@ The gate admits you into a yard built for carts, horses, and soldiers who expect
 *line_break
 *if (elspeth_with_company)
   Near the stores awning, Elspeth steadies a bundle of company bedding against her hip, pointing out the harbor cranes to another newcomer. She looks exhausted, upright, and — for the first time since Alderford — unafraid.
-*line_break
-*line_break
+  *line_break
+  *line_break
 Beyond the lower gate, cart wheels knock over the harbor stones. Higher inland, a line of blue-and-brass watch lanterns climbs toward Civic Heights. Farther off, somewhere past the warehouses, bells answer one another over the canals.
 *page_break Return to the compound overview...
 *goto port_valen_hub
 
 *label port_valen_harbor
+*set port_valen_harbor_seen true
 [b]◈ HARBOR QUAYSIDE & IRON WHARVES[/b]
 *line_break
 The Harbor Quayside is Port Valen's public face: customs towers, fish markets, stone piers, timber slips, and warehouse cranes turning above the traffic. Port Watch patrols move through the crowds with one hand near their cudgels, while guild clerks decide which cargo is worth protecting and which can be left to the tide.
