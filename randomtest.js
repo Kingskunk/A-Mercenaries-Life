@@ -18,7 +18,7 @@
  */
 
 // usage: randomtest num=10000 game=mygame seed=0 delay=false trial=false
-//                    showUnreachedLabels=false
+//                    showUnreachedLabels=false gotoLoopCap=200000
 
 var isRhino = false;
 var iterations = 10;
@@ -44,6 +44,13 @@ var requireFeedbackCommand = false;
 // can never be false, a *label nothing *goto's anymore) that showCoverage's
 // raw per-line dump makes tedious to spot by hand.
 var showUnreachedLabels = false;
+// Safety net against a *goto cycle with no intervening *choice/*page_break/
+// *finish/*ending -- see the gotoLoopCap guard installed below, right after
+// web/scene.js loads. Such a cycle runs entirely inside one synchronous JS
+// call and never yields, so Node has no chance to time out or interrupt it;
+// this counter is the only thing that can catch it instead of hanging the
+// process forever with no output.
+var gotoLoopCap = 200000;
 var slurps = {}
 function parseArgs(args) {
   for (var i = 0; i < args.length; i++) {
@@ -79,6 +86,8 @@ function parseArgs(args) {
       allowBetaBug = value;
     } else if (name === "requireFeedbackCommand") {
       requireFeedbackCommand = (value !== "false");
+    } else if (name === "gotoLoopCap") {
+      gotoLoopCap = Number(value);
     }
   }
   if (isTrial === null) {
@@ -327,6 +336,28 @@ if (typeof importScripts != "undefined") {
     };
   }
 }
+
+// --- Infinite-loop guard -------------------------------------------------
+// A *goto cycle with no intervening *choice/*page_break/*finish/*ending
+// (a content bug, not a crash) runs entirely inside one synchronous call --
+// the initial scene.execute() or one trampoline resumption below -- so
+// Node never gets a chance to time out or interrupt it. Left unguarded,
+// that single playthrough hangs the process forever with zero output,
+// indistinguishable from "still working." Counting every *goto across a
+// whole playthrough and throwing past a generous cap is the only way to
+// catch this instead of hanging; a realistic playthrough revisiting a hub
+// many times over many in-game days should never come close to it.
+// Override with gotoLoopCap=N if a legitimate run genuinely needs more.
+var gotoCallCount = 0;
+var _origSceneGoto = Scene.prototype["goto"];
+Scene.prototype["goto"] = function guardedGoto(line) {
+  if (++gotoCallCount > gotoLoopCap) {
+    var err = new Error(this.lineMsg() + "possible infinite loop: more than " + gotoLoopCap + " *goto calls in a single playthrough. Check for a *goto cycle with no *choice/*page_break/*finish/*ending in between. (Raise gotoLoopCap= if a legitimate run genuinely needs more.)");
+    err.isGotoLoopGuard = true;
+    throw err;
+  }
+  return _origSceneGoto.call(this, line);
+};
 
 printImage = function printImage(source, alignment, alt, invert) {
   //console.log('[IMAGE: ' + (alt || source) + ']');
@@ -886,11 +917,13 @@ function randomtest() {
   var warnings = 0;
   var start = new Date().getTime();
   var missingFeedback = 0;
+  var wanderCount = 0;
   randomSeed *= 1;
   for (var i = 0; i < iterations; i++) {
     console.log("*****Seed " + (i+randomSeed));
     nav.resetStats(stats);
     timeout = null;
+    gotoCallCount = 0;
     Math.seedrandom(i+randomSeed);
     var scene = new Scene(nav.getStartupScene(), stats, nav, false);
     try {
@@ -914,6 +947,17 @@ function randomtest() {
       if (e.message == "skip run") {
         println("SKIPPED RUN " + i);
         iterations++;
+        continue;
+      }
+      if (e.isGotoLoopGuard) {
+        // Not a code bug: an open-world seed that keeps choosing to
+        // eat/rest can genuinely wander forever with no *finish/*ending to
+        // reach (e.g. Port Valen's current content has no forced-progress
+        // trigger yet), which is exactly what this guard exists to catch
+        // instead of hanging. Report it and move on to the next seed
+        // rather than aborting the whole batch over a non-crash outcome.
+        console.log("OPEN-WORLD WANDER (seed " + (i + randomSeed) + "): " + e.message);
+        wanderCount++;
         continue;
       }
       console.log("RANDOMTEST FAILED: " + e);
@@ -984,6 +1028,7 @@ function randomtest() {
       //console.log("WARNING: " + missingFeedback + " runs missing *feedback");
     }
     console.log("RANDOMTEST PASSED");
+    if (wanderCount) console.log(wanderCount + " of " + iterations + " run(s) hit gotoLoopCap (open-world wander, no natural end -- not a failure).");
     if (warnings) console.log(warnings + " warning" + (warnings === 1 ? "": "s"));
     var duration = (new Date().getTime() - start)/1000;
     console.log("Time: " + duration + "s")

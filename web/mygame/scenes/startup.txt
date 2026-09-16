@@ -225,7 +225,29 @@
 *create calendar_day 14
 *create calendar_year 428
 *create campaign_day 1
+*comment day_of_week is a pure derived value ((campaign_day-1) modulo 7,
+*comment recomputed unconditionally alongside calendar_date in calendar.txt's
+*comment check_calendar_month) -- not incremented or persisted independently,
+*comment so it carries no replay-safety risk of its own. Ironday/Tideday/
+*comment Marketday/Hearthday/Forgeday/Greyday/Hallowday, in that order
+*comment starting from Day 1. Intended as the hook for future NPC/shop
+*comment schedules (*if (day_of_week = "Marketday")).
+*create day_of_week "Ironday"
 *create current_season "Autumn"
+*comment weather is rolled once per calendar day (inside the same
+*comment days_to_pass>0 / time_advance_locked guard as the clock itself --
+*comment see calendar.txt's advance_time), weighted by current_season, so it
+*comment carries the same replay-safety as everything else that guard
+*comment protects: a refresh of the day it changed on just replays the
+*comment already-locked value instead of rerolling. Any check can become
+*comment weather-aware the same way any check already becomes advantage/
+*comment disadvantage-aware -- a caller sets advantage/disadvantage true
+*comment based on *if (weather = "X") right before its own
+*comment *gosub_scene startup roll_d20_check, no new engine plumbing needed
+*comment (see port_valen.txt's transit_boom_hazard/transit_cold_approach
+*comment for a wired example). Values: Clear/Overcast/Rain/Fog/Storm year-
+*comment round, Snow/Sleet/Blizzard replacing Rain/Storm in Winter.
+*create weather "Clear"
 *create minutes_to_pass 0
 *create hours_to_pass 0
 *create days_to_pass 0
@@ -297,6 +319,34 @@
 *create port_watch_rep 0
 *create gilded_scales_rep 0
 *create black_tally_rep 0
+*create silt_gate_quest_stage "unstarted"
+*create silt_gate_resolution "none"
+*create silt_gate_lookout_spotted false
+*create silt_gate_winch_jammed false
+*create silt_gate_recon_done false
+*create silt_gate_lamp_snuffed false
+*create silt_gate_illusion_active false
+*create silt_gate_full_intel false
+*create silt_gate_bounty_claimed false
+*create has_silt_gate_iron false
+*comment --- HARBOR POI SUB-HUB ---
+*comment pv_pois_open gates the quayside POI menu (set at the Vane handoff with
+*comment the district opens). pv_*_seen flags swap each POI's first-visit intro
+*comment for a shorter return-visit line once the PC has already met the place.
+*comment pv_tavern_rumor_1/2/3 are one-shot rumor slots at the Cleaved Keel.
+*comment keel_dice_bankroll is the Keel dice table's house bankroll for
+*comment resolve_wager (one stat per den, per narrative_guidelines.md).
+*create pv_pois_open false
+*create pv_tavern_seen false
+*create pv_drydock_seen false
+*create pv_pier_seen false
+*create pv_shrine_seen false
+*create pv_quays_seen false
+*create pv_tavern_rumor_1 false
+*create pv_tavern_rumor_2 false
+*create pv_tavern_rumor_3 false
+*create pv_dice_met false
+*create keel_dice_bankroll 200
 *comment current_district is the single source of truth for "where is the
 *comment PC right now" -- set at the top of the compound hub and every
 *comment district label. port_valen_travel_to (port_valen.txt) reads it to
@@ -325,6 +375,15 @@
 *create neglect_damage_fatigue 0
 *create hunger_stage "Fed"
 *create fatigue_stage "Rested"
+*comment The compound mess is free but rationed -- pv_mess_ration_cap free
+*comment meals per rolling 7-day window (see port_valen_hub's rollover
+*comment check), so indefinite survival can't be sustained for free forever.
+*comment Once exhausted, the option disappears until the week rolls over;
+*comment the harbor taverns' paid "food"-type items (buy_tavern_item) are
+*comment the fallback, at real coin cost.
+*create pv_mess_rations_used 0
+*create pv_mess_week_start_day 0
+*create pv_mess_ration_cap 5
 *comment --- SHARED DEATH ENGINE (death.txt) ---
 *create death_cause "starvation"
 *create death_location_name "Port Valen"
@@ -867,6 +926,7 @@
 
 *comment --- CODEX INTELLIGENCE UNLOCKS ---
 *create codex_gilded_scales false
+*create codex_port_watch false
 *create codex_black_tally false
 *create codex_baron_karr false
 *create codex_ashbrook false
@@ -1286,6 +1346,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set met_kestrel true
     *set codex_black_tally true
     *set codex_port_valen true
+    *set codex_port_watch true
     *set codex_black_sinks true
     *gosub update_dnd_stats
     *goto dev_scene_select
@@ -1340,6 +1401,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set met_kestrel true
     *set codex_black_tally true
     *set codex_port_valen true
+    *set codex_port_watch true
     *set codex_black_sinks true
     *gosub update_dnd_stats
     *goto dev_scene_select
@@ -1545,6 +1607,7 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
     *set time_period "Midday"
     *set codex_black_sinks true
     *set codex_gilded_scales true
+    *set codex_port_watch true
     *set codex_marsh_squatters true
     *set codex_alderford true
     *set codex_meridian_empire true
@@ -1609,6 +1672,7 @@ You stare past his shoulder into the dying embers of a ditch brazier. The noise 
     *set origin_desc "A quick-fingered rogue fleeing the Black Tally's blood bounty in Port Valen under the Carrion banner."
     *set codex_black_tally true
     *set codex_port_valen true
+    *set codex_port_watch true
     *set dexterity 16
     *set wisdom 14
     *set charisma 12
@@ -1810,7 +1874,7 @@ The clerk sets his stylus down for a moment, studying your face and frame with a
     *goto intake_profile
 
 *label intake_profile
-The clerk's stylus hovers above the ledger as he squints at you through the flickering candlelight, sizing up your face.
+The clerk's stylus hovers above the page as he squints at you through the flickering candlelight, sizing up your face.
 
 "Intake record needs your age and description," he mutters, shivering as the freezing drizzle drips from his wool hood. "How many winters have you seen?"
 
@@ -1880,7 +1944,7 @@ The clerk's stylus hovers above the ledger as he squints at you through the flic
     *goto choose_family
 
 *label choose_family
-The clerk turns to the bottom corner of the ledger page, stylus poised over a blank box beside the ink stamp of the Carrion Crow.
+The clerk turns to the bottom corner of the page, stylus poised over a blank box beside the ink stamp of the Carrion Crow.
 
 "Final line," the clerk mutters, his voice dropping into flat administrative monotony. "Beneficiary. If an arrow splits your skull tomorrow, or a boar spear takes you in the gut, who gets your back-pay? I need a name and a location to scratch into the ledger, or your silver reverts straight to the company iron chest."
 

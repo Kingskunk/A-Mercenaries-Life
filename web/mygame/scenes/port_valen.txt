@@ -8,6 +8,15 @@
 *comment curing-loft quest). A failed check here doesn't cost HP -- it sets a
 *comment flag that becomes disadvantage on the very next beat, so a rushed
 *comment Alderford compounds instead of just stinging once.
+*comment
+*comment Arrival night goes straight to port_valen_hub (no separate landfall
+*comment choice -- an earlier version forced a one-time "where do you make
+*comment landfall" pick here, before the harbor POIs existed as a revisitable
+*comment sub-hub; once they did, the two were duplicate content, so the choice
+*comment was removed and its prose folded into the harbor POIs directly:
+*comment codex_black_tally/pv_poi_tavern, codex_port_valen/pv_poi_pier,
+*comment codex_saint_althea/pv_poi_shrine, gilded_scales_rep/pv_poi_drydock,
+*comment port_watch_rep/pv_poi_quays -- see port_valen_harbor_pois below).
 
 *label transit_start
 *set hours_to_pass 2
@@ -21,7 +30,7 @@ The four hulls are loaded by function. The Vanguard takes the lead barge. The Ca
 
 "Last clearance," Sergeant Varren says when he catches you looking. He taps the Black Sinks seal on the packet with one blunt finger. "Once this is delivered, we go home. Valen first. Whatever the Guild has waiting after that is Vane's problem."
 
-The flotilla casts off on the flood tide. Four grain barges ride low under pikes, baggage carts, horses, and four hundred sellswords. The crews shove away while the last ropes are still being coiled. The quay drifts back. The current takes the hull beneath your boots before anyone has finished shouting the final clearance.
+The flotilla casts off on the flood tide. Four grain barges ride low under pikes, baggage carts, horses, and four hundred sellswords. The crews shove away while the last ropes are still being coiled. The quay drifts back, and the rush of open water surges beneath the timbers before anyone has finished shouting the final clearance.
 
 Then the river takes you.
 
@@ -59,6 +68,21 @@ Ahead, the Grey River narrows between limestone walls streaked with weed and old
 You lean on the rail and watch the grey water slide by, undisturbed by whatever used to wait beneath it.
 *goto transit_boom_resolved
 
+*comment Only this path forces a real page boundary. Reaching here means
+*comment nothing has paused since transit_start's own advance_time call --
+*comment no *choice was ever shown -- so without a break, transit_cold_
+*comment approach's advance_time call would land on that same page and
+*comment double-advance the clock on a refresh (calendar.txt's lock only
+*comment remembers the most recent (page_id, call_id) pair, not a set). The
+*comment transit_boom_hazard *choice below doesn't need this: picking an
+*comment option there already advances choice_page_id on its own, so its
+*comment three branches *goto transit_cold_approach directly with no
+*comment page_break -- one fewer "Next" click through what reads as one
+*comment continuous river-crossing scene.
+*label transit_boom_resolved
+*page_break The gorge widens ahead...
+*goto transit_cold_approach
+
 *label transit_boom_hazard
 Word passes from hull to hull: nobody ever cleared the old imperial boom. It was built to close the river against raiders. Now the chain lies somewhere beneath the trade route, and four loaded barges are heading straight over it.
 
@@ -82,6 +106,21 @@ You cannot see the chain. You can see what the current does around it: a flat pa
     *set hint_boom_dex " [DEX Check (DC 11)]"
     *set hint_boom_wis " [WIS Check (DC 13)]"
 
+*comment Weather-aware checks: same advantage/disadvantage plumbing every
+*comment check already reads, just gated on *if (weather = "X") instead of a
+*comment prep flag or racial trait -- no new engine mechanism. Physical
+*comment (STR/DEX) checks care about a slick, violent deck; the visual (WIS)
+*comment check cares about being able to see the current at all. Both can
+*comment stack with the existing Elspeth-distraction disadvantage below;
+*comment roll_d20_check only tracks advantage/disadvantage as booleans, so
+*comment setting either true twice from two different sources is harmless.
+*temp weather_hazard_physical false
+*temp weather_hazard_visual false
+*if ((((weather = "Storm") or (weather = "Rain")) or (weather = "Snow")) or ((weather = "Sleet") or (weather = "Blizzard")))
+  *set weather_hazard_physical true
+*if ((((weather = "Fog") or (weather = "Storm")) or (weather = "Snow")) or (weather = "Blizzard"))
+  *set weather_hazard_visual true
+
 *choice
   *if ((((((((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) or (bard_cantrip = "guidance")) or (bard_cantrip_2 = "guidance")) or (warlock_cantrip = "guidance")) or (warlock_cantrip_2 = "guidance")) or (race_cantrip = "guidance")) or (race_cantrip_2 = "guidance")) and (not(guidance_active)))
     # [Cantrip: Guidance] Murmur the focusing cadence before the barge closes on the hazard.
@@ -95,13 +134,15 @@ You cannot see the chain. You can see what the current does around it: a flat pa
     *set check_skill "Fend Off the Wreck"
     *if ((family_name = "Elspeth") and (elspeth_role = "none"))
       *set disadvantage true
+    *if (weather_hazard_physical)
+      *set disadvantage true
     *gosub_scene startup roll_d20_check
     *if (check_success)
       You plant the pole against something hard and unyielding a foot below the surface, throwing your whole weight into the shove. The hull scrapes past with a groan of strained timber but no crack—the barge slides clear into open water.
     *else
-      You get the pole down late, and the current wrenches it sideways out of your hands before you can brace it. The hull catches something below with a shuddering, grinding lurch that runs the length of the deck, spraying icy water up over the rail and soaking half the baggage lashings.
+      You get the pole down late, and the submerged iron catches the ash timber with bone-jarring violence, wrenching your shoulder and tearing the wood from your grip. The barge grinds over the obstruction with a sickening shudder that sprays icy water across the deck and soaks half the baggage lashings.
       *set river_crossing_rattled true
-    *goto transit_boom_resolved
+    *goto transit_cold_approach
 
   # Watch the surface for the telltale flatness where the current breaks over something old and hidden, and call the line.${hint_boom_wis}
     *set check_stat "wis"
@@ -109,13 +150,15 @@ You cannot see the chain. You can see what the current does around it: a flat pa
     *set check_skill "Read the Current"
     *if ((family_name = "Elspeth") and (elspeth_role = "none"))
       *set disadvantage true
+    *if (weather_hazard_visual)
+      *set disadvantage true
     *gosub_scene startup roll_d20_check
     *if (check_success)
       You catch it—a strange, glassy flatness in the chop, thirty feet off the bow, exactly where a drowned mass of iron would flatten the current above it. "PORT SIDE, NOW!" The pilot hauls the tiller on your word alone, and the barge slides past with clean water to spare.
     *else
-      You call the line a half-second too late, trusting a pattern in the water that turns out to be nothing but wind-chop. The pilot corrects hard anyway, but not hard enough—the hull catches something below with a shuddering, grinding lurch that runs the length of the deck, spraying icy water up over the rail.
+      You call the line a half-second too late, mistaking a harmless eddy for the deep channel. The pilot hauls hard on the tiller, but the swing carries the keel straight over the drowned boom—iron teeth bite the oak bottom with a deafening scrape, throwing you hard against the bulwark as spray sweeps the deck.
       *set river_crossing_rattled true
-    *goto transit_boom_resolved
+    *goto transit_cold_approach
 
   # Work along the gunwale to the bow, relaying the pilot's corrections down the line of poling crew before the current can outrun them.${hint_boom_dex}
     *set check_stat "dex"
@@ -123,24 +166,15 @@ You cannot see the chain. You can see what the current does around it: a flat pa
     *set check_skill "Relay the Line"
     *if ((family_name = "Elspeth") and (elspeth_role = "none"))
       *set disadvantage true
+    *if (weather_hazard_physical)
+      *set disadvantage true
     *gosub_scene startup roll_d20_check
     *if (check_success)
       You move hand over hand along the slick gunwale, catching each of the pilot's clipped corrections and passing them down the poling crew half a beat before they'd need them anyway. The barge threads the hazard in one smooth, unbroken motion.
     *else
-      You lose your footing on the slick planking halfway down the line, and the correction you're carrying reaches the bow crew a beat too late. The hull catches something below with a shuddering, grinding lurch that runs the length of the deck, spraying icy water up over the rail.
+      You lose your footing on the slick planking halfway down the line, catching yourself on a rope lashing just as the bow swings wide. Without your relay, the poling crew reacts a beat too late, and the barge strikes the submerged boom with a jarring heave that sends cold river spray sloshing over your boots.
       *set river_crossing_rattled true
-    *goto transit_boom_resolved
-
-*label transit_boom_resolved
-*comment Force a real page boundary here on every path (including the
-*comment cleared-boom flow-through, which otherwise reaches transit_cold_
-*comment approach with no intervening *choice) so the two advance_time calls
-*comment in this scene never land on the same choice_page_id -- calendar.txt's
-*comment lock only remembers the most recent (page_id, call_id) pair, not a
-*comment set, so two calls sharing a page would double-advance the clock on
-*comment a refresh of the second one.
-*page_break The gorge widens ahead...
-*goto transit_cold_approach
+    *goto transit_cold_approach
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment BEAT 2: COLD WATER / EXPOSURE
@@ -156,7 +190,7 @@ The gorge walls close in tighter through the afternoon, funneling a raw wind str
 
 Spray comes over the bow in sheets now, and the grey light gives no real warmth to dry by—just hours more of it, all the way to the gorge mouth. Men and women who spent the morning boasting over dice huddle under baggage tarps with their knees drawn up. Bowstrings are tucked beneath cloaks. Firewood is counted and recounted. A cook tries to coax a smokeless flame from damp chips while the river rolls past with the patience of something that has already outlasted every army sent along its banks.
 
-You begin to understand the particular cruelty of river travel. On a road, every mile is a decision made by feet and wheels. Here, the current makes the decision for you, and all your skill can do is keep the surrender from becoming a wreck.
+Every mile down the gorge is paid in shivering muscles and frozen spray. The current drags four heavy barges forward without pause, leaving no room to pull ashore, no ground to stamp feeling into your boots, and nothing to hold against the numbing draft but wet wool.
 
 *if (river_crossing_rattled)
   Your gear is still soaked through from the boom crossing, and the cold has had all afternoon to work its way in past wet wool and numbed fingers.
@@ -193,7 +227,7 @@ You begin to understand the particular cruelty of river travel. On a road, every
     *if (check_success)
       You stop fighting the cold and just absorb it, hour after hour, until it stops being something you notice at all. By the time the wind eases, you're stiff but steady, still sharp behind the eyes.
     *else
-      The cold wins by inches, then all at once—your hands go clumsy, your jaw won't stop clenching, and by the time the wind eases you're running on nothing but stubbornness.
+      The cold settles deep into your chest, turning your breath ragged and your fingers numb as lead. By the time the wind eases, uncontrollable shivering has sapped the last warmth from your core.
       *set river_crossing_weary true
     *goto transit_arrival
 
@@ -209,7 +243,7 @@ You begin to understand the particular cruelty of river travel. On a road, every
     *if (check_success)
       You read the deck the way you'd read a campsite—where the wind cuts least, where the spray doesn't reach, where a huddle of baggage crates breaks the worst of it—and settle in there instead of white-knuckling the open rail.
     *else
-      You misjudge the wind's shift twice in a row, and each wrong guess costs you another soaking you didn't need. By the time the wind eases you're running on nothing but stubbornness.
+      You misjudge the wind's shift twice in a row, and each wrong guess catches you in a fresh blast of icy spray that penetrates your woolens down to the skin.
       *set river_crossing_weary true
     *goto transit_arrival
 
@@ -225,7 +259,7 @@ You begin to understand the particular cruelty of river travel. On a road, every
     *if (check_success)
       You keep circulating along the crowded deck in short, steady loops, flexing numbed fingers and stamping feeling back into your boots before the cold can properly set in. It's not comfortable, but it works.
     *else
-      You misjudge your footing on the slick planking and go down hard twice, losing more warmth to the wet deck than you ever get back moving. By the time the wind eases you're running on nothing but stubbornness.
+      You misjudge your footing on the slick planking and go down hard twice, barking both shins against a baggage chest and losing whatever heat your pacing had worked up.
       *set river_crossing_weary true
     *goto transit_arrival
 
@@ -245,9 +279,9 @@ The gorge finally opens onto a wide tidal estuary, the Grey River's current figh
   Port Valen rises out of the darkening haze ahead—a sprawl of grey slate roofs, stone quaysides, and forested masts crowding a harbor bigger than Alderford and the Black Sinks causeway put together. Deep-hulled seagoing ships ride at anchor beyond the breakwater, their lanterns marking the channel, while flat-bottomed river barges thread toward the inner wharves.
 *else
   Port Valen rises through the thinning river haze ahead—a sprawl of grey slate roofs, stone quaysides, and forested masts crowding a harbor bigger than Alderford and the Black Sinks causeway put together. Deep-hulled seagoing ships ride at anchor in the outer roads, sails brailed up tight, while flat-bottomed river barges thread between them toward the inner wharves.
-Warehouse cranes turn above the waterfront like skeletal gallows. Guild flags snap from the customs towers. Cargo moves beneath the changing light while clerks in dry coats stand above the mud and decide what every sack, blade, and body is worth.
+Warehouse cranes turn above the waterfront slips. Guild flags snap from the customs towers. Cargo moves beneath the changing light while clerks in dry coats stand above the mud and decide what every sack, blade, and body is worth.
 
-Old imperial masonry shows beneath the newer quay stones, and a weather-eaten crown is still carved above the customs arch. Below it, clerks in dry coats wave cargo through by ledger and seal while hired guards keep the line moving. A merchant's boy curses that the toll has changed hands again; a dockworker answers that the men with the scales decide what the crown forgot.
+Dressed limestone blocks show beneath the newer quay repairs, and a weather-eaten crown is still carved above the customs arch. Below it, tally-men in woolen mantles wave cargo through by ledger and seal while hired guards keep the line moving. A merchant's boy curses that the toll has changed hands again; a dockworker answers that the men with the scales decide what the crown forgot.
 
 Gulls wheel and scream over the fish markets, riding the wind off open water. Somewhere beyond the seawall, waves break against stone in a steady rhythm the river never had.
 *if (time_period = "Night")
@@ -268,6 +302,7 @@ Vane's gaze moves over the crowded waterfront, then across the ranks filing down
 The Watch captain offers Vane a sealed slate bearing the city mark. He breaks it, reads it once, and folds it into his coat.
 
 "We report to the Watch at dawn," he says. "Tonight, we get inside our own walls."
+*set codex_port_watch true
 
 *if ((river_crossing_rattled) and (river_crossing_weary))
   You make landfall soaked, bruised, and running on fumes—every part of you aware of exactly how much worse this crossing could have gone, and how much of it you could have avoided.
@@ -366,6 +401,12 @@ The gate opens onto a yard built for carts, horses, and soldiers who expect to l
 
 Beyond the lower gate, cart wheels knock over the harbor stones. Higher inland, blue-and-brass watch lanterns climb toward Civic Heights. Farther off, bells answer one another over the canals. Someone in the yard calls for a missing mule, and three people shout different directions.
 
+*if ((campaign_day - pv_mess_week_start_day) >= 7)
+  *set pv_mess_week_start_day campaign_day
+  *set pv_mess_rations_used 0
+*if (vane_independent_operative) and (pv_mess_rations_used >= pv_mess_ration_cap)
+  The quartermaster's stores for the week are already spoken for. Anyone still hungry will need coin for the harbor taverns instead.
+
 *choice
   *if (not(port_valen_first_briefing))
     # Report to your squad commander for the first city detail.
@@ -373,9 +414,13 @@ Beyond the lower gate, cart wheels knock over the harbor stones. Higher inland, 
         *set stat_bump_locked true
         *set locked_stat_bump_page_id choice_page_id
       *goto port_valen_squad_briefing
-  # Travel to another part of the city.
-    *goto port_valen_travel
+  *if (port_valen_first_briefing)
+    # Check the duty roster in your squad's quarter.
+      *goto port_valen_squad_briefing
   *if (vane_independent_operative)
+    # Travel to another part of the city.
+      *goto port_valen_travel
+  *if (pv_mess_rations_used < pv_mess_ration_cap)
     # Eat at the compound mess.
       *goto port_valen_eat_mess
   # Turn in to your bedroll inside the barracks for the night.
@@ -395,11 +440,11 @@ Beyond the lower gate, cart wheels knock over the harbor stones. Higher inland, 
   The assignment is for morning. Tonight, the compound is still swallowing wagons, wounded men, and new names. Your commander taps the duty roster once, then turns back to the work of fitting a doubled company into its old walls.
 *else
   *if (squad = "vanguard")
-    Varren is at the duty roster, sorting tomorrow's patrol into shield lines and relief watches.
+    You step into the Vanguard's quarter by the drill yard. Varren is at the duty roster, his heavy charcoal stub sorting tomorrow's patrol into shield lines and relief watches. He gives you a single nod and points toward the straw pallets. "Get some sleep before dawn muster. I want everyone in line when the Watch bells ring."
   *if (squad = "scouts")
-    Kestrel is at the duty roster, marking the quay roads and canal crossings with a charcoal nub.
+    You climb up to the Scout loft above the stores. Kestrel is at the duty roster, marking the quay roads and canal crossings with a charcoal nub. She glances up without shifting her stance. "Routes haven't changed. Rest while you have a dry roof—tomorrow we cover the canal bridges."
   *if (squad = "cadre")
-    Ysolde is at the duty roster, comparing the Watch's tablet with a folded harbor chart.
+    You duck into the Cadre's screened workroom. Ysolde is at the duty roster, comparing the Watch's tablet with a folded harbor chart. She marks an entry with ink and glances your way. "Tomorrow's ledger disputes are already logged. Find a dry pallet while the lamps are still burning."
 *page_break Return to the compound...
 *goto port_valen_hub
 
@@ -421,15 +466,18 @@ The harbor city spreads inland from the tideline in four uneven rises of stone, 
 *comment sentence have to move with the PC, not stay fixed on a harbor-side
 *comment view no matter where the PC actually is standing.
 *if (current_district = "compound")
-  From the compound gate, sea salt still edges the air this close to the Iron Wharves, and every district seems close enough to reach before dark. The bells, crowded roads, and guarded gates suggest otherwise.
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    From the compound gate, sea salt edges the breeze off the Iron Wharves. Behind you, torchlight washes over quiet rows of canvas and picket lines, while gate sentries check passes in low murmurs.
+  *else
+    From the compound gate, sea salt edges the breeze off the Iron Wharves. Behind you, forge-hammers ring out over the mud as armourers mend strained harness, while watch corporals bark orders along the mule-lines.
 *if (current_district = "harbor")
-  From the Harbor Quayside, salt air off open water clings to everything, and the rest of the city rises away from the water in uneven tiers—every district looks close enough to reach before dark. The bells, crowded roads, and guarded gates suggest otherwise.
+  From the Harbor Quayside, salt spray and coal smoke cling to everything. The crash of surf against the outer breakwater competes with shouting dray-drivers, rattling crane chains, and the constant scrape of heavy cargo across wet flagstones.
 *if (current_district = "civic_heights")
-  From Civic Heights, harbor salt and canal damp trade places on the wind, neither quite winning out, and the city falls away on every side—every district looks close enough to reach before dark. The bells, crowded roads, and guarded gates suggest otherwise.
+  From Civic Heights, harbor salt and canal damp trade places on the wind. The steep limestone stairs and crowded switchbacks between council halls and charity soup kitchens turn even a short errand into an uphill march between guarded archways.
 *if (current_district = "upper_wharves")
-  From the Upper Wharves, the air runs cleaner than it does below, salt and canal mud both a few streets down, and the counting houses give way to the harbor's noise and the canal district's mud—every district looks close enough to reach before dark. The bells, crowded roads, and guarded gates suggest otherwise.
+  From the Upper Wharves, the air runs cleaner than the docks below. Polished cobblestones, gilded river-serpent signs, and heavy iron gates keep the noise of the wharves at bay, while private liveried guards turn away anyone without sealed business.
 *if (current_district = "dredge_end")
-  From Dredge-End's sunken streets, the air is all canal damp and standing water, whatever salt the wind carries never quite reaching this far inland, and the rest of the city seems to rise up out of reach—though every district still looks close enough to reach before dark. The bells, crowded roads, and guarded gates suggest otherwise.
+  From Dredge-End's sunken lanes, the air is thick with canal mud, rotting pilings, and stagnant bilge. Leaning timber flophouses crowd over black water, forcing every traveler onto the ferrymen's skiffs or narrow footbridges.
 
 *comment Distance-based travel time, not a hand-authored point-to-point
 *comment matrix: each district just needs its own distance from the
@@ -504,9 +552,9 @@ The harbor city spreads inland from the tideline in four uneven rises of stone, 
 *if (gdd_district = "harbor")
   *set gdd_distance 15
 *if (gdd_district = "civic_heights")
-  *set gdd_distance 40
+  *set gdd_distance 35
 *if (gdd_district = "upper_wharves")
-  *set gdd_distance 45
+  *set gdd_distance 40
 *if (gdd_district = "dredge_end")
   *set gdd_distance 60
 *return
@@ -558,19 +606,14 @@ The harbor city spreads inland from the tideline in four uneven rises of stone, 
 [b]◈ HARBOR QUAYSIDE & IRON WHARVES[/b]
 *line_break
 The Harbor Quayside is Port Valen's public face: customs towers, fish markets, stone piers, timber slips, and warehouse cranes turning above the traffic. Beyond the breakwater, deep-hulled traders ride at anchor in open water, salt spray carrying up over the seawall with every swell, while Port Watch patrols move through the crowds with one hand near their cudgels and guild clerks decide which cargo is worth protecting and which can be left to the tide.
-*line_break
-*line_break
-Farther along the seawall, the Iron Wharves blacken the air with coal smoke and forge sparks. Shipwrights work on river barges and ocean-going hulls side by side, caulking seams and stepping new masts within earshot of the surf. Debtor bilge-hulks sit chained in the deeper water, their crews calling to one another through the bars. Above the yards, behind a gate reinforced with salvaged imperial iron, the Carrion's rented compound holds its barracks, stores, infirmary, and Captain Vane's contract office.
-*line_break
-*line_break
-*if (squad = "vanguard")
-  Varren would call this a shield line waiting to happen: one road in, one road out, and a thousand ways for a crowd to turn into a crush.
-*if (squad = "scouts")
-  Somewhere in this crush, Kestrel's runners are already working — you catch one marking quay numbers on a wax slate before the crowd swallows her again.
-*if (squad = "cadre")
-  Ysolde would want all of this charted: every crane, every customs tower, every door a ledger-keeper can vanish behind.
-*line_break
-*line_break
+
+Farther along the seawall, the Iron Wharves blacken the air with coal smoke and forge sparks. Shipwrights work on river barges and ocean-going hulls side by side, caulking seams and stepping new masts within earshot of the surf. Debtor bilge-hulks sit chained in the deeper water, their crews calling to one another through the bars. Above the yards, behind a heavy gate reinforced with banded iron plates, the Carrion's rented compound holds its barracks, stores, infirmary, and Captain Vane's contract office.
+
+*if (day_of_week = "Marketday")
+  Marketday stalls crowd the lower quays with barrels of salted sprats, drying nets, and foreign spice crates, making every step an argument with haggling carters.
+*elseif (day_of_week = "Tideday")
+  The flood tide rides high against the seawall, lifting deep-hulled ocean traders in their moorings while draymen scramble to secure gangplanks before the ebb.
+
 *if ((time_period = "Morning") or (time_period = "Midday"))
   Two Port Watch officers pass with a soaked ledger between them, comparing the morning's cargo count before moving on to the next warehouse door.
 *elseif (time_period = "Afternoon")
@@ -579,6 +622,9 @@ Farther along the seawall, the Iron Wharves blacken the air with coal smoke and 
   Warehouse doors are closing one by one. Two Port Watch officers hurry a soaked ledger beneath an awning while the fishmongers count what can be sold before dark.
 *else
   Most of the warehouse doors are shuttered. A watch patrol moves between the lanterns, and somewhere inside the fish market a final cart rattles toward the cold stores.
+
+*if (pv_pois_open)
+  *goto port_valen_harbor_pois
 *page_break Where to next…
 *goto port_valen_travel
 
@@ -587,20 +633,17 @@ Farther along the seawall, the Iron Wharves blacken the air with coal smoke and 
 [b]◈ THE UPPER WHARVES[/b]
 *line_break
 The road climbs above the wet streets toward the merchant quarter. Here, the paving stones are whole, the gutters are swept, and every warehouse door bears a lock large enough to make a statement. Brass scales and gilded river-serpents hang above the counting houses, while liveried guards turn away anyone without a sealed writ.
-*line_break
-*line_break
-Letters of credit change hands in quiet offices while bargemen below argue over delayed cargo and unpaid wages. From an open window, a clerk calls for another seal; from the street, a merchant shouts that a barge has missed its tide. The arguments rise from below and disappear behind clean shutters.
-*line_break
-*line_break
-*if (squad = "vanguard")
-  Varren would take one look at the polished guards and mutter that shields this clean have never held a line.
-*if (squad = "scouts")
-  Kestrel's rule would hold up here too: the liveried guards watch the doors, so the interesting traffic must move some way they don't.
-*if (squad = "cadre")
-  Ysolde would read this street in one pass — paper and credit climb uphill here, while coin and grievance roll down.
-*line_break
-*line_break
-*if ((time_period = "Morning") or (time_period = "Midday") or (time_period = "Afternoon"))
+
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  Iron grilles are padlocked across the counting houses, and private lanterns burn behind barred office windows. The only noise on the clean cobblestones is the slow pacing of liveried guards with halberds and watchdogs.
+*elseif (day_of_week = "Hallowday")
+  The counting-house grilles remain locked for the church calendar, leaving the merchant avenue unusually quiet while church bells toll from Civic Heights above.
+*else
+  Letters of credit change hands in quiet offices while bargemen below argue over delayed cargo and unpaid wages. From an open window, a clerk calls for another seal; from the street, a merchant shouts that a barge has missed its tide. The arguments rise from below and disappear behind clean shutters.
+
+*if (day_of_week = "Hallowday")
+  It is Hallowday, and most counting houses keep their iron grilles locked in observance of the church calendar, leaving only private gate guards on the street.
+*elseif (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
   At the top of the road, a bronze-faced factor stands beneath a guild awning, receiving petitioners one at a time. A pair of guards watches the street while a runner carries a stack of sealed tablets toward the council buildings.
 *elseif (time_period = "Dusk")
   At the top of the road, clerks hurry to close the guild awnings before the light goes. A pair of guards remains on the street while a runner carries the last sealed tablets toward the council buildings.
@@ -614,19 +657,11 @@ Letters of credit change hands in quiet offices while bargemen below argue over 
 [b]◈ CIVIC HEIGHTS & CATHEDRAL DISTRICT[/b]
 *line_break
 Between the merchant heights and the canal lowlands, the city gathers around its workshops, guild halls, shrines, and crowded respectable homes. Painted boards mark the council chambers and public records rooms. Clerks carry ledgers through barred doors while petitioners wait beneath the eaves, clutching cargo papers, tax notices, and residency tokens. The Port Watch headquarters stands nearby, its yard crowded with seized goods and complaint ledgers.
-*line_break
-*line_break
+
 The cathedral rises above the roofs on an older foundation, its bells carrying over every district. Kitchens and charitable houses cluster around its steps, drawing the sick, the displaced, and the people who have nowhere else to ask for help. Silk-workers carry bolts of dyed cloth through the surrounding streets. Bakers, smiths, and river clerks share walls with families who have lived here for generations and newcomers who arrived with nothing but a name.
-*line_break
-*line_break
-*if (squad = "vanguard")
-  The Watch yard's neat stacks of seized goods would earn Varren's approval; the complaint ledgers stacked beside them would earn his skepticism.
-*if (squad = "scouts")
-  Kestrel would like the cathedral steps: petitioners waiting in line make the best listeners in any city.
-*if (squad = "cadre")
-  Ysolde would head straight for the public records room — every debt in Dredge-End is written down somewhere up here.
-*line_break
-*line_break
+
+*if (day_of_week = "Hallowday")
+  The cathedral's great iron bells toll over the district for the Hallowday services, and a long queue of displaced families winds down the steps toward the mender's soup kitchens.
 *if ((time_period = "Morning") or (time_period = "Midday"))
   At the Watch yard, an officer argues with a clerk over a stack of complaint tablets. Near the cathedral steps, a woman in a patched blue cloak directs newcomers toward a charity kitchen as the bells call the first service.
 *elseif (time_period = "Afternoon")
@@ -642,28 +677,1261 @@ The cathedral rises above the roofs on an older foundation, its bells carrying o
 *set current_district "dredge_end"
 [b]◈ DREDGE-END[/b]
 *line_break
-The streets sink as they run inland, giving way to flooded canals, leaning tenements, cellar flophouses, and alleys too narrow for a proper cart. Water-streets thread between buildings on stilts. Every bridge has a watcher, every tavern has a back door, and the river carries away more secrets than it brings in.
-*line_break
-*line_break
-The streets give no single answer about who runs them. A ferryman offers a route through the flooded lanes for a copper bit. A woman behind a shuttered window asks whether you have come to collect a debt. At a bridge ahead, two men with black tally-sticks watch every crossing without wearing a Watch badge.
-*line_break
-*line_break
-*if (squad = "vanguard")
-  Varren's first order here would be the one he gives least often: never form a shield line in streets this narrow.
-*if (squad = "scouts")
-  Kestrel would count the bridge watchers first, then the back doors, then decide which of the two is lying.
-*if (squad = "cadre")
-  Ysolde would note the black tally-sticks and draw the obvious conclusion: someone keeps accounts in Dredge-End too — just not in ledgers.
-*line_break
-*line_break
-*if ((time_period = "Morning") or (time_period = "Midday") or (time_period = "Afternoon"))
-  Near the canal mouth, a fence displays three lengths of stolen chain beneath a cloth awning. Down a side street, someone calls for a healer. A narrow boat slips beneath the bridge and vanishes between the leaning houses before anyone on the quay can see its passenger.
-*elseif (time_period = "Dusk")
-  Near the canal mouth, the fence pulls a cloth over the stolen chain as the light drains from the water. A healer answers a call down a side street, while a narrow boat slips beneath the bridge without a lamp.
+The cobblestones give out at the drainage cut, replaced by greased timber duckboards and sunken mud tracks that run below the river's high-water mark. Dredge-End sits in the city's low silt-basin: rows of waterlogged timber tenements propped on black-greased pilings, connected by creaking rope gangways above stagnant canal trenches. The air hangs thick with brackish mud, forge smoke, and rotting dock-weed, and every footstep on the wet planks sends a hollow thud into the water below.
+
+*if (weather = "Rain")
+  Rain drums across the sagging shingle roofs, sending streams of brown runoff cascading from wooden gutters into the overflowing canals.
+*elseif (weather = "Storm")
+  A driving gale howls through the narrow canal cuts, churning the dark water and straining mooring lines against the pilings.
+*elseif (weather = "Fog")
+  Thick river fog sits trapped between the leaning buildings, muffling footsteps and turning footbridge lamps into faint yellow smudges.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Cold grey slush slicks the plank-walks, and residents huddle around smoking charcoal pots beneath sagging eaves.
+*elseif (weather = "Blizzard")
+  A freezing squall drives snow through the water-lanes, sending everyone scurrying beneath covered gangways and behind barred shutters.
+*elseif (weather = "Clear")
+  Pale daylight slants between the crowded roofs, drawing a heavy steam from the low-tide mud banks.
 *else
-  The canal mouth is nearly black beneath the bridges. A shutter lifts just long enough for a hand to pass out a wrapped parcel, and a narrow boat moves through the dark without a lamp or a sound.
-*page_break Where to next…
-*goto port_valen_travel
+  *comment Overcast
+  A flat, leaden sky presses down over the district, trapping the damp chill between the crowded rooftops.
+
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *if ((wisdom >= 13) or (origin = "outlaw"))
+    Beneath the bridges, the canal water is black. Two figures with heavy cudgels watch the footbridge from deep shadow without a city badge between them. A shutter cracks open just long enough for a hand to pass out a debt-parcel, while a muffled whistle warns of footsteps. Guided only by submerged guide ropes, a narrow boat slips past in the dark.
+  *else
+    Beneath the bridges, the canal water is black, and the water-streets give no sign of the Port Watch. A solitary skiff waits by a rotting piling, its boatman wrapped in a wet blanket, while from an overhead footbridge a lantern swings in the draft.
+*elseif (time_period = "Dusk")
+  *if ((wisdom >= 13) or (origin = "outlaw"))
+    The failing dusk light drains from the water, leaving the canals to the cellar-bosses. At the footbridge, two men with notched black tally-sticks check every boat crossing without wearing city colors. In the murk below, low whistles coordinate the transfer of unmarked sacks between two skiffs before the night Watch rotation begins.
+  *else
+    As dusk settles, lanterns flicker behind grimy bullseye glass and vendors pull rough canvas over their goods. A ferryman poles his skiff through the flooded lanes, calling for one last fare, while from an upper window a woman shakes out a wool blanket into the darkening water.
+*else
+  *if (day_of_week = "Marketday")
+    *if ((wisdom >= 13) or (origin = "outlaw"))
+      The Port Watch doesn't come down to the canals on Marketday—trade here settles with sharp elbows and quick fingers. Beneath a patched oilskin awning, the eel-seller weights her balance with a shaved copper coin to short customers, while two wharf boys shadow the tailor's apprentice to lift his purse. Down the cut, a woman calling for a healer keeps the timed rhythm of a street lookout, and a turnip punt shifts its tarp to reveal the iron corners of an unmarked strongbox.
+    *else
+      Marketday traffic spills into the flooded canals with mud-skiffs bumping against the pilings. Beneath a patched oilskin awning, an old woman ladles hot smoked eels from a steaming iron kettle, shouting prices over the water, while an apprentice tailor bargains for marsh-reeds under a shop eave.
+  *elseif (day_of_week = "Tideday")
+    *if ((wisdom >= 13) or (origin = "outlaw"))
+      With the tide drowning the lower steps, the water-lanes answer to whoever knows the channel. A boatman in tall oiled-leather waders drags a weighted grapple hook under the surface to haul up submerged contraband parcels tethered to the bridge pilings before the ebb. Down the lane, a submerged cellar hatch opens from inside to let a drenched diver slip into the flooded flophouse unseen.
+    *else
+      The flood tide has swallowed the lower stair landings, forcing foot traffic onto the raised walkways. Beneath a second-story pulley overhang, a woman hauls laundry clear of the surge while a boatman in tall oiled-leather waders poles a cargo punt past flooded cellars.
+  *elseif (day_of_week = "Hallowday")
+    *if ((wisdom >= 13) or (origin = "outlaw"))
+      Beneath the church-day quiet, the canals run on older debts. Under the timber arch of an alley shrine smeared with tallow, two Black Tally enforcers lean against the wall, checking faces against a scrap of vellum to corner debtors who came out only for the friar's charity broth. In the shadow of the bridge arch, an acolyte slips a leather pouch of temple silver to a canal fence in exchange for unrecorded tincture vials.
+    *else
+      Distant cathedral bells toll across the roofs from Civic Heights, but the canals keep their own quiet. Under the timber arch of an alley shrine smeared with animal tallow, an itinerant friar dispenses thin pea broth to a line of scavengers, while an oar-maker sits beneath a shed roof repairing a broken sweep.
+  *elseif (day_of_week = "Greyday")
+    *if ((wisdom >= 13) or (origin = "outlaw"))
+      The heavy river damp gives the water-lanes over to illicit traffic. Under a flophouse gangway, a debt collector with notched tally-sticks pounds on a tenement shutter—you spot the heavy lead core in his cudgel and see how surrounding windows go dead silent as neighbors pass the alarm. Overhead, a rooftop runner uses the low overhangs to slide wrapped parcels across an alley gap where no bailiff can follow.
+    *else
+      Heavy river damp clings to the leaning walls. Under the covered gangway of a tenement, a debt collector with a bundle of notched pine tally-sticks pounds on a door, shouting names into the fog, while a charcoal burner pushes a smoking brazier cart across the timber footbridge.
+  *elseif (day_of_week = "Forgeday")
+    *if ((wisdom >= 13) or (origin = "outlaw"))
+      Smelter smoke coats the canals, but the metal moving here bears no city stamps. Under the roof overhang of a boat-shed, a scrap dealer unloads heavy chain with the harbor-master's proof-marks freshly rasped away. Nearby, a smith's hammer pauses in measured beats to signal lookouts whenever a Watch skiff enters the channel, and two Black Tally watchers log every load that crosses the bridge.
+    *else
+      Under the roof overhang of a boat-shed, a scrap dealer unloads coils of salvage chain and pitted iron plate onto a timber platform. Nearby, a smith's striker hammers bent rowlocks over a bench anvil, sending bright red sparks hissing down into the canal below.
+  *else
+    *if ((wisdom >= 13) or (origin = "outlaw"))
+      The canals run on their own rules. Under a cloth awning near the canal mouth, a junk dealer lays out heavy lengths of salvage chain with the harbor-master's stamps freshly filed away. At a bridge ahead, two men with black tally-sticks log every crossing without a Watch badge in sight, while down the water-street a woman calling for a healer uses the sharp tempo of a lookout signaling a hidden boat slip.
+    *else
+      Regular workday traffic moves along the sheltered plank-walks. A junk dealer arranges salvaged iron under a cloth awning, while a ferryman poles a flat-bottomed skiff between the tenement stilts, taking laborers across the flooded cuts for a copper bit.
+*choice
+  *if (silt_gate_quest_stage = "active")
+    # Investigate the Silt-Gate drainage flume. [~15–45 min]
+      *goto pv_dredge_silt_gates
+  *if (silt_gate_quest_stage = "resolved")
+    # Walk past the quiet Silt-Gate flume. [~15 min]
+      *goto pv_dredge_silt_gates
+  # [Travel: Head to another district]
+    *goto port_valen_travel
+
+*label pv_dredge_silt_gates
+*set hours_to_pass 0
+*set minutes_to_pass 15
+*set time_advance_call_id "pv_dredge_silt_gates_1"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+You pick your way along a narrow timber walkway clinging to the moss-grown foundations of Dredge-End's lower tenements. Beneath the boardwalk, stagnant canal runoff trickles toward a massive arched culvert cut into the seawall—the Silt-Gate flume. Heavy oak flap-valves, banded with pitted iron, hang from stone lintels above the water-trench.
+
+*if (silt_gate_quest_stage = "resolved")
+  The stone flume is quiet. The flap-valves hang heavy and dark above the water-trench. A lone Watch sentry in a wool coat keeps vigil from the footbridge above, his cudgel resting against the rail. The smuggling line through this cut is thoroughly broken.
+  *page_break Return to the canals…
+  *goto port_valen_dredge_end
+
+*if (((time_period = "Morning") or (time_period = "Midday")) or ((time_period = "Afternoon") or (time_period = "Dusk")))
+  The estuary tide is out. The heavy oak flap-valves hang shut under their own counterweighted oak timbers, sealing the flume against the outer harbor. The channel bed is a trench of knee-deep, foul-smelling river sludge and rotting timber shoring. No boat can clear the mud banks at this hour; the drop only happens when the flood tide rises after dark.
+
+  *if (not(silt_gate_recon_done))
+    You have time to study the flume and prepare an approach before the water rises.
+    *choice
+      *if ((((((((((wizard_cantrip = "mage_hand") or (wizard_cantrip_2 = "mage_hand")) or (wizard_cantrip_3 = "mage_hand")) or (bard_cantrip = "mage_hand")) or (bard_cantrip_2 = "mage_hand")) or (warlock_cantrip = "mage_hand")) or (warlock_cantrip_2 = "mage_hand")) or (race_cantrip = "mage_hand")) or (race_cantrip_2 = "mage_hand")))
+        # [Cantrip: Mage Hand] Direct a spectral hand into the overhead winch housing to silently jam the ratchet without climbing.
+          *goto pv_silt_gate_recon_mage_hand
+      # Climb the stilt-timbers to map the overhead footbridges and lookouts.
+        *goto pv_silt_gate_recon_scout
+      # Inspect the storm-winch gearing bolted into the street masonry above.
+        *goto pv_silt_gate_recon_sapper
+      # Study the water-lines and tally-marks along the stone flume.
+        *goto pv_silt_gate_recon_cadre
+      # Back out of the flume and return to the canal streets for now.
+        *goto port_valen_dredge_end
+  *else
+    You have already scouted the culvert and mapped your approach. The flume remains dry and impassable until the flood tide fills the channel after dark.
+    *choice
+      # Return to the Dredge-End canals for now.
+        *goto port_valen_dredge_end
+      # Wait nearby among the stilt-timbers for the night flood tide. [~2 Hours]
+        *set hours_to_pass 2
+        *set minutes_to_pass 0
+        *set time_advance_call_id "pv_dredge_wait_tide_1"
+        *gosub_scene calendar advance_time
+        *gosub_scene calendar recalc_hp_from_neglect
+        *if (hp_current <= 0)
+          *set death_cause "starvation"
+          *if (neglect_damage_fatigue > neglect_damage_hunger)
+            *set death_cause "exhaustion"
+          *goto_scene death death_screen
+        *goto pv_dredge_silt_gates
+
+*else
+  The estuary tide has surged into the flume. Deep black seawater foams through the lifted oak flap-valves, filling the stone flume with four feet of dark, navigable water. The drainage channel is open.
+
+  *choice
+    # Stake out the flooded culvert for the incoming contraband punt. [~45 min]
+      *goto pv_silt_gate_stakeout
+    # Back out of the flume and return to the canal streets for now.
+      *goto port_valen_dredge_end
+
+*label pv_silt_gate_recon_scout
+You work your way up the slimy stilt-timbers of an adjacent tenement, moving through the shadows beneath an overhanging roof. From this high vantage, the canal footbridge is laid out in plain view.
+
+Perched on a cross-beam beneath the bridge deck sits a skinny wharf boy in a patched wool cap. Resting between his knees is a pierced-tin shutter lantern. If an armored Watch patrol enters the canal, one twist of the tin hood flashes a beam straight down the flume to warn incoming boats.
+
+You trace the shadow-lines along the opposite roof-gutters and water-stairs. By keeping to the lower stilt-reaches, you can slip straight into the culvert vault without ever crossing the boy's line of sight.
+
+*set silt_gate_lookout_spotted true
+*set silt_gate_recon_done true
+*page_break Note the route and slip back down…
+*goto pv_dredge_silt_gates
+
+*label pv_silt_gate_recon_sapper
+You climb the stone stairs to the alley street above the flume. Bolted into the street-level masonry sits the heavy iron storm-winch used by city road-crews to service the counterweight chains.
+
+You examine the iron gearing: when the flood tide pushes the oak flap-valves open, the counterweight arm lifts and engages a heavy ratchet pawl. If you drive a tempered iron wedge into the ratchet teeth, the pawl will lock the flap-valve shut the moment a boat clears the lintel—trapping the punt inside the culvert with no retreat back to the estuary.
+
+You wedge an iron spike firmly into the cog assembly, test the tension with your boot, and step back. The trap is armed.
+
+*set silt_gate_winch_jammed true
+*set silt_gate_recon_done true
+*page_break Slip back down to the flume…
+*goto pv_dredge_silt_gates
+
+*label pv_silt_gate_recon_cadre
+You climb down the slimy stone rungs into the flume, checking the damp masonry with a practitioner's eye for detail.
+
+High on the ashlar wall, a dark line of dried river weed marks the peak of the flood tide. Fresh charcoal tally-notches and a rough river-serpent chalk symbol are etched beside an iron mooring ring near a raised stone ledge. The arithmetic is unmistakable: the punt only has enough clearance during the two hours surrounding midnight, and the barrows will be waiting on that stone ledge.
+
+Knowing the exact depth and timing gives you complete control over when to strike.
+
+*set silt_gate_recon_done true
+*page_break Note the tidemarks and climb back up…
+*goto pv_dredge_silt_gates
+
+*label pv_silt_gate_recon_mage_hand
+You step into the deep shadows beneath the culvert arch and extend your hand toward the masonry overhead. A faint, shimmering spectral hand forms thirty paces above, gliding silently between the damp floor joists of the street above.
+
+Guiding the hand into the storm-winch gearing housing, you seize a loose iron bolt and drive it firmly between the ratchet teeth and the counterweight pawl. The spectral fingers twist the iron true, seating it with silent, mechanical precision. When the flood tide pushes the flap-valves open tonight, the jammed pawl will lock them shut behind the punt, sealing off any retreat to the estuary.
+
+*set silt_gate_winch_jammed true
+*set silt_gate_recon_done true
+*page_break Dissipate the working and step back…
+*goto pv_dredge_silt_gates
+
+*label pv_silt_gate_stakeout
+*set hours_to_pass 0
+*set minutes_to_pass 45
+*set time_advance_call_id "pv_silt_gate_stakeout_1"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+You crouch in the darkness along the wet limestone ledge beneath the low, dripping ceiling of the drainage flume. The smell of cold salt spray, rotting bilge, and sulfur mud fills the vault.
+
+*if (silt_gate_lookout_spotted)
+  Because you mapped the roofline blind spots during daylight, you slipped beneath the footbridge without the lookout boy's shutter lantern ever catching your silhouette.
+*else
+  Your dark woolens blend into the shadows of the stilt-timbers as you keep low beneath the vault rim.
+
+A muffled rhythm of oar-strokes carries from the estuary. Through the lifted oak flap-valves, a long, flat-bottomed marsh punt glides into the flume on the surging flood tide. Two hooded rivermen work the ash poles, easing the boat alongside a raised stone unloading platform ten paces from where you crouch.
+
+*if (silt_gate_winch_jammed)
+  Above the archway, the jammed counterweight gear clicks with a muffled iron crack. The oak flap-valves drop shut behind the punt, sealing the water-gate tight. The rivermen glance back at the closed gate in sudden unease, but the momentum of the drop carries them forward.
+
+Waiting on the platform beneath the dim glow of a hooded fish-oil lamp is a sharp-featured man in an oiled wool greatcoat, a black tally-stick tucked through his belt, flanked by two burly barrow-porters.
+
+"Four crates of highland shear-steel bodkins and tool-blanks," one of the boatmen grunts, hauling a greasecloth bundle onto the ledge. "And twelve stoneware jugs of peat-spiritus off the upper stills. Move it fast before the Watch shift changes on the quay."
+
+The tally-broker scores a wax tablet with an iron pin. "Corporal Kray has the night patrol walking the north bank until third bell. We have twenty minutes before the tide turns."
+
+The cargo rests on the stone platform. The boatmen and porters are focused entirely on the crates.
+
+*if (silt_gate_lamp_snuffed)
+  The stone platform sits in pitch blackness, the extinguished lamp smelling faintly of charred fish-oil. The porters mutter curses in the dark, struggling to orient their crates.
+
+*if (silt_gate_illusion_active)
+  Phantom boot-falls continue to echo softly down the north culvert, keeping the lookout and porters perpetually on edge.
+
+*choice
+  *if ((((((((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) or (bard_cantrip = "guidance")) or (bard_cantrip_2 = "guidance")) or (warlock_cantrip = "guidance")) or (warlock_cantrip_2 = "guidance")) or (race_cantrip = "guidance")) or (race_cantrip_2 = "guidance")) and (not(guidance_active)))
+    # [Cantrip: Guidance] Murmur a quiet divination blessing to steady your nerves and reflexes.
+      *set guidance_active true
+      You whisper a soft warding rhyme, feeling the subtle warmth of divination settle behind your eyes.
+      *goto pv_silt_gate_stakeout
+  *if ((((((((((wizard_cantrip = "prestidigitation") or (wizard_cantrip_2 = "prestidigitation")) or (wizard_cantrip_3 = "prestidigitation")) or (bard_cantrip = "prestidigitation")) or (bard_cantrip_2 = "prestidigitation")) or (warlock_cantrip = "prestidigitation")) or (warlock_cantrip_2 = "prestidigitation")) or (race_cantrip = "prestidigitation")) or (race_cantrip_2 = "prestidigitation")) and (not(silt_gate_lamp_snuffed)))
+    # [Cantrip: Prestidigitation] Snuff the platform's fish-oil lamp with a whispered friction-word from across the dark water.
+      *set silt_gate_lamp_snuffed true
+      You gesture across the black water, murmuring a sharp friction-word. Ten paces away, the flame inside the hooded fish-oil lamp dies instantly with a faint hiss, plunging the stone platform into pitch blackness and throwing the porters into startled confusion.
+      *goto pv_silt_gate_stakeout
+  *if ((((((((((wizard_cantrip = "minor_illusion") or (wizard_cantrip_2 = "minor_illusion")) or (wizard_cantrip_3 = "minor_illusion")) or (bard_cantrip = "minor_illusion")) or (bard_cantrip_2 = "minor_illusion")) or (warlock_cantrip = "minor_illusion")) or (warlock_cantrip_2 = "minor_illusion")) or (race_cantrip = "minor_illusion")) or (race_cantrip_2 = "minor_illusion")) and (not(silt_gate_illusion_active)))
+    # [Cantrip: Minor Illusion] Project the sharp echo of Watch boot-irons down the north culvert to divide their attention.
+      *set silt_gate_illusion_active true
+      You shape a phantom echo with your fingers, projecting the rhythmic clatter of hobnailed boots and iron scabbards striking stone sixty paces down the northern culvert. The porters freeze in terror, their attention pulled entirely away from your ledge toward the false patrol.
+      *goto pv_silt_gate_stakeout
+  # Coordinate a decisive ambush to seize the boat and contraband for the Watch.
+    *goto pv_silt_gate_ambush_watch
+  # Step out onto the platform in plain view and negotiate a hush-money cut with the Tally broker.
+    *goto pv_silt_gate_parley_tally
+  # Subdue the drop, divert the tool-steel to the Carrion compound armory, and hand Voss the corrupt corporals.
+    *goto pv_silt_gate_divert_vane
+
+*label pv_silt_gate_ambush_watch
+You prepare to strike from the shadows. The two porters are hauling the first heavy crate of highland bodkin blanks onto the stone platform, their backs turned to the vault ledge.
+
+*temp hint_ambush_str ""
+*temp hint_ambush_dex ""
+*temp hint_ambush_int ""
+*temp hint_ambush_shock ""
+*temp hint_ambush_frost ""
+*if (show_stat_hints)
+  *if (guidance_active)
+    *set hint_ambush_str " [STR DC 12 (+1d4 Guidance)]"
+    *set hint_ambush_dex " [DEX DC 12 (+1d4 Guidance)]"
+    *set hint_ambush_int " [INT DC 11 (+1d4 Guidance)]"
+    *set hint_ambush_shock " [INT DC 11 (+1d4 Guidance / Advantage)]"
+    *set hint_ambush_frost " [INT DC 11 (+1d4 Guidance)]"
+  *else
+    *set hint_ambush_str " [STR DC 12]"
+    *set hint_ambush_dex " [DEX DC 12]"
+    *set hint_ambush_int " [INT DC 11]"
+    *set hint_ambush_shock " [INT DC 11 (Advantage)]"
+    *set hint_ambush_frost " [INT DC 11]"
+
+*choice
+  *if ((((((((((wizard_cantrip = "shocking_grasp") or (wizard_cantrip_2 = "shocking_grasp")) or (wizard_cantrip_3 = "shocking_grasp")) or (bard_cantrip = "shocking_grasp")) or (bard_cantrip_2 = "shocking_grasp")) or (warlock_cantrip = "shocking_grasp")) or (warlock_cantrip_2 = "shocking_grasp")) or (race_cantrip = "shocking_grasp")) or (race_cantrip_2 = "shocking_grasp")))
+    # [Cantrip: Shocking Grasp] Channel a jolt of violent lightning through the wet timber deck and iron prybars.${hint_ambush_shock}
+      *set check_stat "int"
+      *set check_dc 11
+      *set check_skill "Shocking Grasp"
+      *set advantage true
+      *if (not(silt_gate_lookout_spotted))
+        *set disadvantage true
+      *gosub_scene startup roll_d20_check
+      *if (check_success)
+        You leap forward and drive your palm flat against the rain-slicked stone and the lead porter's iron prybar. A blinding blue arc of lightning detonates through the wet deck with a sharp crack like a splitting spar. The violent shock convulses both porters, throwing them sprawling into the canal sludge with their muscles locked, while the ozone blast leaves the broker cowering against the wall.
+      *else
+        You channel the lightning, but your footing gives on the wet moss—the charge discharges into the water-trench with a loud hiss of steam. The lead porter recovers and swings his prybar, grazing your ribs with a bruising blow before you drag him down into the sludge.
+        *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+          *set hp_current - 2
+          *if (hp_current < 1)
+            *set hp_current 1
+          *set stat_bump_locked true
+          *set locked_stat_bump_page_id choice_page_id
+      *goto pv_silt_gate_ambush_conclude
+
+  *if ((((((((((wizard_cantrip = "ray_of_frost") or (wizard_cantrip_2 = "ray_of_frost")) or (wizard_cantrip_3 = "ray_of_frost")) or (bard_cantrip = "ray_of_frost")) or (bard_cantrip_2 = "ray_of_frost")) or (warlock_cantrip = "ray_of_frost")) or (warlock_cantrip_2 = "ray_of_frost")) or (race_cantrip = "ray_of_frost")) or (race_cantrip_2 = "ray_of_frost")))
+    # [Cantrip: Ray of Frost] Loose a beam of freezing cold into the punt's steering oar and the flume sluice.${hint_ambush_frost}
+      *set check_stat "int"
+      *set check_dc 11
+      *set check_skill "Ray of Frost"
+      *if (((silt_gate_winch_jammed) or (silt_gate_lamp_snuffed)) or (silt_gate_illusion_active))
+        *set advantage true
+      *if (not(silt_gate_lookout_spotted))
+        *set disadvantage true
+      *gosub_scene startup roll_d20_check
+      *if (check_success)
+        A beam of piercing blue-white cold streaks from your outstretched hand, striking the punt's stern and the sluice basin. Rime-frost explodes across the timber; the steering oar freezes solid in its iron lock, and a sheet of thick canal ice locks the punt dead in the water. The boatmen cry out in panic as you step onto the platform with drawn steel, leaving the porters completely cornered.
+      *else
+        You loose the frost beam, but the boat rocks on the surge—the blast strikes the stone vault, encrusting the wall in frost while the boatmen scramble. You drop onto the platform amidst the commotion and tackle the lead porter, taking a glancing blow from his prybar as you force him into the sludge.
+        *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+          *set hp_current - 2
+          *if (hp_current < 1)
+            *set hp_current 1
+          *set stat_bump_locked true
+          *set locked_stat_bump_page_id choice_page_id
+      *goto pv_silt_gate_ambush_conclude
+
+  *if (((character_class = "wizard") and (wizard_spell = "magic_missile")) and (wizard_spell_slots > 0))
+    # [Spell: Magic Missile] Loose three glowing darts of force to disarm the platform instantly.
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set wizard_spell_slots - 1
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
+      You extend three fingers into the dark flume, releasing three motes of crackling violet force that whistle through the vault with unerring precision.
+      
+      The first two darts strike the iron handles of the heavy steel crate, shattering the porters' grip with jarring concussive force and knocking both men flat into the sludge. The third dart slams into the stone inches above the broker's ear, blowing a shower of limestone dust into his face. Before the echoing cracks fade, you stand over them with drawn steel, the drop neutralized without a single weapon reaching your throat.
+      *goto pv_silt_gate_ambush_conclude
+
+  # Vault from the ledge with a crushing charge into the lead porter.${hint_ambush_str}
+    *set check_stat "str"
+    *set check_dc 12
+    *set check_skill "Vault Strike"
+    *if (((silt_gate_winch_jammed) or (silt_gate_lamp_snuffed)) or (silt_gate_illusion_active))
+      *set advantage true
+    *if (not(silt_gate_lookout_spotted))
+      *set disadvantage true
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      Drawing on brutal momentum, you vault the gap and slam your shoulder straight into the lead porter before his fingers can touch his iron prybar. The impact drives him backward into the canal sludge with a heavy splash. You plant your boot on the second porter's dropped crate and bare your ${weapon_desc}, backing the broker against the wet masonry before anyone can scream.
+    *else
+      You vault the ledge, but your boots skid on the slime-crusted stone. The lead porter whips around and swings an iron prybar with desperate force—the blow grazes your ribs with a dull, bruising crack that knocks the breath from your chest before you tackle him into the sludge.
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set hp_current - 3
+        *if (hp_current < 1)
+          *set hp_current 1
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
+    *goto pv_silt_gate_ambush_conclude
+
+  # Drop silently from the rafters and disarm the platform with a precision strike.${hint_ambush_dex}
+    *set check_stat "dex"
+    *set check_dc 12
+    *set check_skill "Precision Disarm"
+    *if (((silt_gate_winch_jammed) or (silt_gate_lamp_snuffed)) or (silt_gate_illusion_active))
+      *set advantage true
+    *if (not(silt_gate_lookout_spotted))
+      *set disadvantage true
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      You drop like a falling shadow, landing without a sound between the porters. In a blur of motion, your blade flashes across the lead man's wrist, sending his knife clattering across the flagstones, while your off-hand seizes the broker by his oiled collar and forces his head against the cold limestone.
+    *else
+      You drop from the rafters, but a damp beam gives under your weight with a loud snap. The porters turn in time to brace—you manage to disarm the lead man with a savage strike, but his companion catches your shoulder with a glancing club blow that leaves your arm throbbing with bruised pain.
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set hp_current - 3
+        *if (hp_current < 1)
+          *set hp_current 1
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
+    *goto pv_silt_gate_ambush_conclude
+
+  # Time your strike for the moment the porters lift the heaviest crate, catching them off-balance.${hint_ambush_int}
+    *set check_stat "int"
+    *set check_dc 11
+    *set check_skill "Tactical Timing"
+    *if (((silt_gate_winch_jammed) or (silt_gate_lamp_snuffed)) or (silt_gate_illusion_active))
+      *set advantage true
+    *if (not(silt_gate_lookout_spotted))
+      *set disadvantage true
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      You wait for the precise second both porters strain under the weight of the steel crate. As their balance shifts and their hands are pinned under the iron handles, you drop onto the platform with drawn steel. A single kick to the timber crate topples both men into the water-trench, leaving the broker cornered against the wall before he can reach his coat.
+    *else
+      You wait for them to lift, but the lead porter shifts his grip early. When you spring from the shadows, he uses the heavy crate as an improvised shield, checking your charge and catching you a glancing blow to the ribs before you wrestle him down into the sludge.
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set hp_current - 2
+        *if (hp_current < 1)
+          *set hp_current 1
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
+    *goto pv_silt_gate_ambush_conclude
+
+*label pv_silt_gate_ambush_conclude
+*if (silt_gate_winch_jammed)
+  The rivermen scramble frantically for their poles to reverse the punt, but the oak flap-valves are jammed fast against the stone frame. Trapped in the flume, they drop their poles and raise their hands in sullen surrender.
+*else
+  Seeing the platform lost, the two rivermen shove off into the dark estuary swell, abandoning the cargo and the broker on the ledge.
+
+You whistle a sharp signal up through the overhead storm-grate. Two honest Watch corporals who had been posted in the alley above throw back the iron grating, dropping heavy hemp ropes to haul the seized crates up to the street. The broker is bound in irons and marched away under Watch guard.
+
+The Silt-Gate line is broken, and every crate of highland steel and spiritus is secured for the city customs ledger.
+
+*set silt_gate_quest_stage "resolved"
+*set silt_gate_resolution "watch_seized"
+
+*page_break Step back up into the Dredge-End streets…
+*goto port_valen_dredge_end
+
+*label pv_silt_gate_parley_tally
+You step out of the dark archway onto the stone platform with your hand resting easily on your belt, making no move to draw your ${weapon_desc}.
+
+"Quiet night for an uninspected cargo," you say smoothly, your voice carrying just enough weight to freeze the porters mid-reach.
+
+The broker spins around, his hand darting toward his coat, but stops dead when he catches the cold confidence in your stance and the absence of a Watch badge.
+
+"Carrion leathers," the broker mutters, his sharp eyes darting between you and the dark flume. "Vane's lot. What's a mercenary doing down in the silt flumes?"
+
+*temp hint_parley_cha ""
+*temp hint_parley_wis ""
+*temp hint_parley_int ""
+*temp hint_parley_thaum ""
+*if (show_stat_hints)
+  *if (guidance_active)
+    *set hint_parley_cha " [CHA DC 12 (+1d4 Guidance)]"
+    *set hint_parley_wis " [WIS DC 11 (+1d4 Guidance)]"
+    *set hint_parley_int " [INT DC 11 (+1d4 Guidance)]"
+    *set hint_parley_thaum " [CHA DC 10 (+1d4 Guidance)]"
+  *else
+    *set hint_parley_cha " [CHA DC 12]"
+    *set hint_parley_wis " [WIS DC 11]"
+    *set hint_parley_int " [INT DC 11]"
+    *set hint_parley_thaum " [CHA DC 10]"
+
+*choice
+  *if ((race_cantrip = "thaumaturgy") or (race_cantrip_2 = "thaumaturgy"))
+    # [Cantrip: Thaumaturgy] Flare your eyes brimstone-red and let an unnatural, booming voice command the vault.${hint_parley_thaum}
+      *set check_stat "cha"
+      *set check_dc 10
+      *set check_skill "Thaumaturgy Intimidation"
+      *if (not(silt_gate_lookout_spotted))
+        *set disadvantage true
+      *gosub_scene startup roll_d20_check
+      *if (check_success)
+        You step out into the lantern light, letting your eyes ignite like glowing coals. When you speak, your voice reverberates off the stone culvert with the booming weight of a furnace door slamming shut.
+        
+        "Thirty silver marks," your unnatural voice echoes through their teeth, "or the tide washes what is left of you into the harbor."
+        
+        The broker's face drains of all color; his teeth chatter as he drops a heavy greasecloth purse directly into your palm, throwing an extra five marks into the bargain out of sheer superstitious terror.
+        *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+          *set currency_add_amount 300
+          *gosub_scene startup currency_add
+          *set currency_txn_locked true
+          *set locked_currency_txn_page_id choice_page_id
+      *else
+        You let the brimstone flare, but the draft howling down the culvert carries the voice away before the resonance peaks. The broker stumbles back, shaken but stubborn. "Demons or sellswords, fifteen marks is what I have on me," he stammers, dropping the purse onto the stone.
+        *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+          *set currency_add_amount 150
+          *gosub_scene startup currency_add
+          *set currency_txn_locked true
+          *set locked_currency_txn_page_id choice_page_id
+      *goto pv_silt_gate_parley_conclude
+
+  *if (((((character_class = "bard") and ((bard_spell = "charm_person") or (bard_spell_2 = "charm_person"))) and (bard_spell_slots > 0)) or (((character_class = "wizard") and (wizard_spell = "charm_person")) and (wizard_spell_slots > 0))) or (((character_class = "warlock") and (warlock_spell = "charm_person")) and (warlock_spell_slots > 0)))
+    # [Spell: Charm Person] Weave an enchanting warmth into your greeting, making the broker treat you as a trusted confidant.
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *if (character_class = "bard")
+          *set bard_spell_slots - 1
+        *elseif (character_class = "wizard")
+          *set wizard_spell_slots - 1
+        *else
+          *set warlock_spell_slots - 1
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
+      You trace a subtle spiral in the damp air and speak with gentle, hypnotic cadence. The enchantment settles over the broker's tense features like warm wine; his suspicious scowl softens into an easy, relieved smile.
+      
+      "Ah, good—you're the contact Vane sent down," the broker chuckles warmly, clapping a hand onto your shoulder as if meeting a lifelong friend. "Here's the cut, twenty-five silver marks. Tell Voss the north gate will be clear again next Marketday."
+      
+      He hands over the heavy purse without a single hesitation.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+        *set currency_add_amount 250
+        *gosub_scene startup currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id choice_page_id
+      *goto pv_silt_gate_parley_conclude
+
+  *if (((((character_class = "bard") and ((bard_spell = "disguise_self") or (bard_spell_2 = "disguise_self"))) and (bard_spell_slots > 0)) or (((character_class = "wizard") and (wizard_spell = "disguise_self")) and (wizard_spell_slots > 0))) or ((race_cantrip = "disguise_self") or (race_cantrip_2 = "disguise_self")))
+    # [Spell: Disguise Self] Walk out wearing the salt-stained wool greatcoat and brass badge of a senior Harbor Watch corporal.
+      *if (not((race_cantrip = "disguise_self") or (race_cantrip_2 = "disguise_self")))
+        *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+          *if (character_class = "bard")
+            *set bard_spell_slots - 1
+          *else
+            *set wizard_spell_slots - 1
+          *set stat_bump_locked true
+          *set locked_stat_bump_page_id choice_page_id
+      An illusory shimmer ripples across your clothes, replacing your sellsword gear with the heavy wool coat, oilskin hood, and brass river-corporal badge of the Port Valen Harbor Watch.
+      
+      You step onto the platform with official, unhurried cadence. The broker immediately bows his head in deference, holding out a heavy purse of twenty-five silver marks before you even have to open your mouth.
+      
+      "Corporal's weekly tribute, sir," the broker says hastily. "Four crates of highland shear-steel, moving right on schedule."
+      
+      You nod curtly, take the silver, and gesture for them to clear the dock.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+        *set currency_add_amount 250
+        *gosub_scene startup currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id choice_page_id
+      *goto pv_silt_gate_parley_conclude
+
+  # Threaten to whistle for the Watch unless he pays twenty-five silver marks on the spot.${hint_parley_cha}
+    *set check_stat "cha"
+    *set check_dc 12
+    *set check_skill "Demand Heavy Cut"
+    *if (not(silt_gate_lookout_spotted))
+      *set disadvantage true
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      "Voss has Watch patrols checking the quays," you say with chilling calm, stepping into the lantern light. "He knows the Silt-Gates are leaking steel. Twenty-five silver marks, or this flume fills with Watch cudgels and your cargo ends up in the lockup."
+      The broker's throat bobs. Measuring the lethal certainty in your eyes against the risk of the lockup, he unhooks a heavy greasecloth purse from his belt and slaps it into your hand.
+      "Twenty-five silver marks," he rasps. "You report an empty flume to Voss, and the Tally remembers who lets the water run."
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+        *set currency_add_amount 250
+        *gosub_scene startup currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id choice_page_id
+    *else
+      You make your demand, but the broker catches a flicker of hesitation in your stance. He glances past you toward the dark flume and realizes you're operating without backup.
+      "Fifteen silver marks," the broker counters, his voice hardening as the porters step forward with heavy prybars. "Take it and file a clean report to Voss, or we dump the steel into ten feet of canal mud and you leave here with nothing."
+      Recognizing the hard calculus of the moment, you take the fifteen silver marks.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+        *set currency_add_amount 150
+        *gosub_scene startup currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id choice_page_id
+    *goto pv_silt_gate_parley_conclude
+
+  # Read the broker's panic and name a calculated price that secures his compliance.${hint_parley_wis}
+    *set check_stat "wis"
+    *set check_dc 11
+    *set check_skill "Read the Broker"
+    *if (not(silt_gate_lookout_spotted))
+      *set disadvantage true
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      You study the sweat beading along the broker's temple and the frantic glances he casts toward the estuary. He is behind schedule and terrified of losing his delivery window.
+      "Twenty-five silver marks," you state plainly. "That leaves you enough margin on the highland tool-steel to clear a profit, and buys you twenty minutes of undisturbed water."
+      Relief washes over the broker's face. Without haggling, he passes over the heavy purse of twenty-five silver marks.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+        *set currency_add_amount 250
+        *gosub_scene startup currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id choice_page_id
+    *else
+      You try to read the broker's margin, but he masks his panic behind a sneer. "Fifteen silver marks is what an empty report is worth in Dredge-End," he grunts, tossing a purse onto the stone. "Take it or start swinging."
+      You scoop up the fifteen silver marks before the standoff turns violent.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+        *set currency_add_amount 150
+        *gosub_scene startup currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id choice_page_id
+    *goto pv_silt_gate_parley_conclude
+
+  # Cite the Gilded Scales' steel monopoly to demonstrate how easily you could ruin his network.${hint_parley_int}
+    *set check_stat "int"
+    *set check_dc 11
+    *set check_skill "Underworld Leverage"
+    *if (not(silt_gate_lookout_spotted))
+      *set disadvantage true
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      "Un-stamped highland bodkins," you observe calmly. "The Gilded Scales would pay fifty silver marks just for the location of your drop-house. Twenty-five silver marks keeps my mouth shut and your network intact."
+      The broker goes white. Recognizing that you understand the true value of his illicit trade, he hands over the full twenty-five silver marks without a word.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+        *set currency_add_amount 250
+        *gosub_scene startup currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id choice_page_id
+    *else
+      You try to cite the guild regulations, but the broker laughs harshly. "The Scales don't run the low canals, sellsword. Fifteen silver marks, take it or swim for it."
+      You take the fifteen silver marks.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+        *set currency_add_amount 150
+        *gosub_scene startup currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id choice_page_id
+    *goto pv_silt_gate_parley_conclude
+
+*label pv_silt_gate_parley_conclude
+The broker snaps his fingers; the porters hoist the barrows and vanish into the canal cellar tunnels, while the punt slips back out through the water-gate into the dark estuary.
+
+*set silt_gate_quest_stage "resolved"
+*set silt_gate_resolution "tally_bribed"
+*set black_tally_rep +1
+
+*page_break Pocket the silver and slip back into Dredge-End…
+*goto port_valen_dredge_end
+
+*label pv_silt_gate_divert_vane
+You move before anyone on the platform can react. Dropping from the ledge, you plant your ${weapon_desc} clean between the broker's boots, driving the lead porter back with a ruthless sweep of your arm.
+
+"One word," you murmur, stepping close so the broker can see your drawn steel and travel-worn mercenary leathers, "and you go headfirst into the canal."
+
+The broker goes pale against the wet masonry. The porters freeze, hands well clear of their belts.
+
+You don't call the Watch. Instead, you secure the broker to an iron mooring ring with a length of dock rope and drag the four heavy crates of un-stamped highland tool-steel onto a wheeled hand-barrow resting on the platform. With quiet, steady labor, you wheel the steel up the secluded service ramp, stashing the load in a locked canal vault to be moved to the company forge at dawn.
+
+Now you turn back to the pinned broker to extract the names of his corrupt Watch contacts.
+
+*temp hint_divert_cha ""
+*temp hint_divert_str ""
+*temp hint_divert_wis ""
+*temp hint_divert_thaum ""
+*if (show_stat_hints)
+  *if (guidance_active)
+    *set hint_divert_cha " [CHA DC 12 (+1d4 Guidance)]"
+    *set hint_divert_str " [STR DC 12 (+1d4 Guidance)]"
+    *set hint_divert_wis " [WIS DC 11 (+1d4 Guidance)]"
+    *set hint_divert_thaum " [CHA DC 10 (+1d4 Guidance)]"
+  *else
+    *set hint_divert_cha " [CHA DC 12]"
+    *set hint_divert_str " [STR DC 12]"
+    *set hint_divert_wis " [WIS DC 11]"
+    *set hint_divert_thaum " [CHA DC 10]"
+
+*choice
+  *if ((race_cantrip = "thaumaturgy") or (race_cantrip_2 = "thaumaturgy"))
+    # [Cantrip: Thaumaturgy] Make the stone platform vibrate under his hands and demand every corrupt name.${hint_divert_thaum}
+      *set check_stat "cha"
+      *set check_dc 10
+      *set check_skill "Supernatural Interrogation"
+      *if (silt_gate_winch_jammed)
+        *set advantage true
+      *gosub_scene startup roll_d20_check
+      *if (check_success)
+        *set silt_gate_full_intel true
+        You lean close, your eyes glowing like embers in the darkness, and speak in a voice that resonates through his skull like iron striking stone. The broker collapses against the stone, completely broken by terror.
+        
+        "Corporal Kray and sentry Pell!" he babbles hysterically, thrusting his entire written payout slate into your hands. "They split six marks every Marketday! Take the names, take the slate, just call off the fire!"
+      *else
+        *set silt_gate_full_intel false
+        You let the power roll, but the broker thrashes against the mooring ring—a stoneware jug shatters, splashing peat-spiritus. In the confusion, he blurts out "Corporal Kray on the night watch!" before wrenching free and diving into the canal.
+      *goto pv_silt_gate_divert_conclude
+
+  *if (((character_class = "bard") and ((bard_spell = "dissonant_whispers") or (bard_spell_2 = "dissonant_whispers"))) and (bard_spell_slots > 0))
+    # [Spell: Dissonant Whispers] Whisper an agonizing chord of psychic discord directly into his mind.
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set bard_spell_slots - 1
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
+      *set silt_gate_full_intel true
+      You lean down and murmur a harsh, discordant syllable that tears into the broker's mind like rusted iron hooks. He clutches his temples with a choked scream, agony twisting his face as his defenses shatter completely.
+      
+      "Stop! Stop it!" he weeps, fumbling the oilskin slate from his inner pocket and pressing it into your hands. "Corporal Kray and sentry Pell! Every payout is marked in the wax—take it all!"
+      *goto pv_silt_gate_divert_conclude
+
+  # Press the flat of your blade against his neck and demand every name on his payroll.${hint_divert_cha}
+    *set check_stat "cha"
+    *set check_dc 12
+    *set check_skill "Extort Corrupt Contacts"
+    *if (silt_gate_winch_jammed)
+      *set advantage true
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      *set silt_gate_full_intel true
+      You press the cold steel against his throat with relentless, unflinching pressure.
+      Sweat cuts clean lines through the grime on the broker's face. "Corporal Kray and sentry Pell!" he whispers frantically, fumbling a wax tally-slip from his pocket. "They take six silver marks every Marketday to walk the north quay. That's both of them, I swear it by the river!"
+    *else
+      *set silt_gate_full_intel false
+      You press the blade close, but a thrashing porter suddenly knocks over a crate—a stoneware jug shatters with a loud crack, splashing fiery peat-spiritus across the stone.
+      In the chaos, the terrified broker blurts out, "Corporal Kray on the night watch!" before wrenching free and diving headlong into the murky canal waters, leaving only one name in your grasp.
+    *goto pv_silt_gate_divert_conclude
+
+  # Force him down onto the flagstones and search his coat for written tally-slates.${hint_divert_str}
+    *set check_stat "str"
+    *set check_dc 12
+    *set check_skill "Search Broker"
+    *if (silt_gate_winch_jammed)
+      *set advantage true
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      *set silt_gate_full_intel true
+      You slam the broker face-first against the stone platform with iron force, pinning his arm behind his back while your free hand strips his oiled greatcoat. Tucked inside an oilskin pocket is a folded wax slate detailing weekly payouts: Corporal Kray and sentry Pell, recorded in meticulous ink.
+    *else
+      *set silt_gate_full_intel false
+      You force the broker down, but he kicks wildly in the sludge, tearing the pocket of his coat as he scrambles free. You manage to rip away a scrap of paper bearing Corporal Kray's name before the broker slips into the dark water and vanishes.
+    *goto pv_silt_gate_divert_conclude
+
+  # Offer to let him and the boatmen walk away if he turns over his Watch contacts.${hint_divert_wis}
+    *set check_stat "wis"
+    *set check_dc 11
+    *set check_skill "Coerce Names"
+    *if (silt_gate_winch_jammed)
+      *set advantage true
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      *set silt_gate_full_intel true
+      "We took the steel," you tell him in a low, measured voice. "We don't care about your boat or your spiritus. Give me the Watchmen who sold out the gate and you walk out of here alive."
+      Recognizing a way out of the trap, the broker nods frantically and writes down the names of Corporal Kray and sentry Pell with trembling fingers.
+    *else
+      *set silt_gate_full_intel false
+      The broker eyes the open flume and tries to stall, giving you only Corporal Kray's name before shoving a barrow into your path and scrambling into the canal.
+    *goto pv_silt_gate_divert_conclude
+
+*label pv_silt_gate_divert_conclude
+The punt scrambles back through the gate. You step away into the shadows with fifty pounds of military tool-steel bound for the company forge, leaving the cheap spiritus jugs behind on the platform.
+
+*set silt_gate_quest_stage "resolved"
+*set silt_gate_resolution "vane_diverted"
+*set has_silt_gate_iron true
+*set vane_standing +1
+*set port_watch_rep +1
+
+*page_break Step back out into Dredge-End with your leverage secured…
+*goto port_valen_dredge_end
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment HARBOR POI SUB-HUB
+*comment Five revisit-able locations inside the Harbor district, opened by
+*comment pv_pois_open (set at the Vane handoff alongside the district opens).
+*comment current_district stays "harbor" throughout -- these are inside the
+*comment district, so get_district_distance/port_valen_travel_to need no
+*comment changes and every leg pricing keeps working. Time model (see
+*comment narrative_guidelines.md "Time Costs Are Tiered"): ONE advance_time
+*comment call per entry (the visit itself), then the Keel's bar/dice/rumor
+*comment loops are instant and coin-limited -- the Drowned Oar's
+*comment taphouse_bar_loop pattern. Each POI keeps a pv_*_seen flag that
+*comment swaps in a first-visit intro and grants that POI's one-time codex/
+*comment rep seed (codex_black_tally/tavern, port_watch_rep/quays,
+*comment gilded_scales_rep/drydock, codex_port_valen/pier,
+*comment codex_saint_althea/shrine) -- no separate arrival-night vignette;
+*comment landing goes straight to port_valen_hub and these seeds fire
+*comment whenever the player actually visits each place for the first time.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label port_valen_harbor_pois
+[b][⏳ Quayside Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}][/b]
+*line_break
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  Lanterns flicker through the sea-mist along the seawall, and the smell of bilge and coal smoke hangs over the shuttered quays.
+*elseif (time_period = "Dusk")
+  The harbor bell tolls the evening watch across the water as dock crews leave the slips and harbor taverns light their hearth fires.
+*else
+  The quayside hums with activity: cranes turning overhead, shouting draymen, and the constant scrape of cargo across wet stone.
+
+*choice
+  # Push into The Cleaved Keel, where the porter crews drink their wages. [~20 min]
+    *goto pv_poi_tavern
+  # Walk the cargo quay past the customs tower, where the dockmaster logs every hull. [~15 min]
+    *goto pv_poi_quays
+  # Step down to the shipwrights' ways at the Iron Wharves. [~15 min]
+    *goto pv_poi_drydock
+  # Walk out the long pier to the wreck-bell over the shoals. [~15 min]
+    *goto pv_poi_pier
+  # Climb the harbor stair to Saint Althea's seawall shrine. [~15 min]
+    *goto pv_poi_shrine
+  # Move on to the rest of the city.
+    *goto port_valen_travel
+
+*label pv_poi_tavern
+*set hours_to_pass 0
+*set minutes_to_pass 20
+*set time_advance_call_id "pv_poi_tavern_1"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*if (not(pv_tavern_seen))
+  *set pv_tavern_seen true
+  *set codex_black_tally true
+  The Cleaved Keel stands where the fish market gives up and the taverns take over: a low timber hall on pilings above the tideline, its sign a keel split down the middle by a painted iron wedge. Inside, the room smells of sprat smoke and spilled beer, and behind the counter a barrel-chested man with a salt-grey beard and a leather-strapped stump below the left knee draws two ales at once without looking up.
+  *if (not(squad = "none"))
+    "Company tab or copper tab?" he calls, before he has even caught sight of your woolens. He glances up, his sharp eyes catching the black raven pinned to your collar. A gruff nod follows.
+    "Name's Maret," he grunts, wiping down the oak counter with a damp rag. "Marched four seasons with the Carrion before a silt-lurker under the Black Sinks took the leg below the knee." He taps a hand against the carved raven on his maple peg. "Raven badges drink at cost at my bar. What'll it be?"
+  *else
+    "Thirsty or just out of the rain?" he calls, before he has even caught sight of your woolens. He glances up, his sharp eyes measuring your coin-pouch against the crowd. A gruff nod follows.
+    "Name's Maret," he grunts, wiping down the oak counter with a damp rag. "Marched four seasons with the Carrion before a silt-lurker under the Black Sinks took the leg below the knee, but coin speaks clean at my bar regardless. What'll it be?"
+*else
+  *if ((time_period = "Morning") or (time_period = "Pre-Dawn"))
+    The taproom is quiet this early, smelling of fresh pine sawdust and woodsmoke. Maret is up behind the counter, stirring a cauldron of barley porridge over the coals while a few sleepy draymen nurse hot mugs. He gives you a nod.
+    *if (not(squad = "none"))
+      "Mornin', raven. Porridge and tea are hot if you're breakin' fast."
+    *else
+      "Mornin', friend. Porridge and tea are hot if you're breakin' fast."
+  *elseif ((time_period = "Midday") or (time_period = "Afternoon"))
+    The room is loud with the midday meal turn—wet-woolled porters and river carters crowded along the benches, trenchers clattering as Maret ladles stew and slides salt mackerel across the counter with practiced ease.
+    *if (not(squad = "none"))
+      "Back for rations, raven? Plenty hot off the fire."
+    *else
+      "Back for a hot meal? Plenty fresh off the fire."
+  *else
+    The taproom is packed to the roofbeams, thick with peat smoke and shouting dockhands. Maret draws two dark porters at once without breaking rhythm, his wooden peg thumping the floorboards behind the taps.
+    *if (not(squad = "none"))
+      "Raven's back. What'll it be?"
+    *else
+      "Back again. What'll it be?"
+
+[b]◈ THE CLEAVED KEEL[/b]
+*line_break
+*if ((time_period = "Morning") or (time_period = "Pre-Dawn"))
+  A low hearth fire warms the damp timbers, and the smell of hot barley tea rises from the kettle.
+*elseif ((time_period = "Midday") or (time_period = "Afternoon"))
+  Trenchers clatter at the long trestles as porter crews take their midday meal between barge shifts.
+*else
+  Dice clatter from the back trestle, porter crews argue wages at the long tables, and the taproom's one lamp swings with the tide under the floorboards.
+
+*label pv_poi_tavern_menu
+*if ((time_period = "Morning") or (time_period = "Pre-Dawn"))
+  The taproom stays quiet around you, Maret working steady behind the counter while pine sawdust settles into the floorboards.
+*elseif ((time_period = "Midday") or (time_period = "Afternoon"))
+  Trenchers and tankards clatter across the long benches as the midday shift trades news between mouthfuls.
+*else
+  The Keel's evening noise wraps around you—bone cubes knocking out a slow rhythm at the back trestle, Maret's rag wiping a slow circle into the counter's beer stains.
+
+*choice
+  # Step up to the bar for something hot.
+    *goto pv_poi_tavern_bar
+  # Take a stool at the porter-crew dice game.
+    *goto pv_poi_tavern_dice
+  # Pull up a bench and listen to the harbor talk.
+    *goto pv_poi_tavern_rumors
+  # Back to the quayside.
+    *page_break Back to the quayside…
+    *goto port_valen_harbor_pois
+
+*label pv_poi_tavern_bar
+You step up to the counter under the one swinging lamp. Maret sets his rag down and waits.
+
+*label pv_poi_tavern_bar_loop
+*choice
+  *if (not((food_buff_active) and (food_buff_stat = "con")))
+    # Order a bowl of Sprat-and-Barley Stew (3 Copper Bits)@{show_stat_hints  [+2 Temp HP, +1 CON Checks for 4h]|}
+      *if ((((gold * 100) + (silver * 10)) + copper) < 3)
+        You don't have enough copper for the stew.
+        *goto pv_poi_tavern_bar_loop
+      *set tavern_item_cost_copper 3
+      *set tavern_item_hp_heal 0
+      *set tavern_item_temp_hp 2
+      *set tavern_item_type "food"
+      *set tavern_item_buff_name "Sprat Stew"
+      *set tavern_item_buff_desc "+1 CON Checks"
+      *set tavern_item_buff_stat "con"
+      *set tavern_item_buff_bonus 1
+      *set tavern_item_buff_minutes 240
+      *gosub_scene startup buy_tavern_item
+      Maret ladles a bowl of thick sprat-and-barley stew, dark with river herbs, and sets it on the counter with a heel of black bread. You eat standing, shoulder to shoulder with wet-woolled porters, and the warmth spreads down through your chest like a debt paid.
+      [b][🍲 Sprat Stew Consumed: +2 Temporary HP | Steady Hand (+1 CON Checks for 4 Hours)][/b]
+      *goto pv_poi_tavern_bar_loop
+
+  *if (not((food_buff_active) and (food_buff_stat = "str")))
+    # Order salt mackerel & shattered hard bread (3 Copper Bits)@{show_stat_hints  [+1 Temp HP, +1 STR Checks for 4h]|}
+      *if ((((gold * 100) + (silver * 10)) + copper) < 3)
+        You don't have enough copper for the mackerel.
+        *goto pv_poi_tavern_bar_loop
+      *set tavern_item_cost_copper 3
+      *set tavern_item_hp_heal 0
+      *set tavern_item_temp_hp 1
+      *set tavern_item_type "food"
+      *set tavern_item_buff_name "Salt Mackerel"
+      *set tavern_item_buff_desc "+1 STR Checks"
+      *set tavern_item_buff_stat "str"
+      *set tavern_item_buff_bonus 1
+      *set tavern_item_buff_minutes 240
+      *gosub_scene startup buy_tavern_item
+      Maret slides a trencher of salt mackerel and shattered hard bread across the counter—dockside rations, heavy as a paving stone and twice as honest. You chase the salt with the bread and feel your arms remember their weight.
+      [b][🐟 Mackerel & Bread Consumed: +1 Temporary HP | Long Haul (+1 STR Checks for 4 Hours)][/b]
+      *goto pv_poi_tavern_bar_loop
+
+  *if (not((drink_buff_active) and (drink_buff_stat = "cha")))
+    # Order a mug of Black Porter (2 Copper Bits)@{show_stat_hints  [+1 CHA Checks for 4h]|}
+      *if ((((gold * 100) + (silver * 10)) + copper) < 2)
+        You don't have enough copper for the porter.
+        *goto pv_poi_tavern_bar_loop
+      *set tavern_item_cost_copper 2
+      *set tavern_item_hp_heal 0
+      *set tavern_item_temp_hp 0
+      *set tavern_item_type "drink"
+      *set tavern_item_buff_name "Black Porter"
+      *set tavern_item_buff_desc "+1 CHA Checks"
+      *set tavern_item_buff_stat "cha"
+      *set tavern_item_buff_bonus 1
+      *set tavern_item_buff_minutes 240
+      *gosub_scene startup buy_tavern_item
+      Maret draws a mug of black porter off the cask, the head thick as sod thatch. It goes down smooth and dark, and the room's easy noise turns almost companionable.
+      [b][🍺 Black Porter Consumed: Glib Company (+1 CHA Checks for 4 Hours)][/b]
+      *goto pv_poi_tavern_bar_loop
+
+  *if (not((drink_buff_active) and (drink_buff_stat = "wis")))
+    # Order a mug of Hot Spiced Grog (2 Copper Bits)@{show_stat_hints  [+1 WIS Checks for 4h]|}
+      *if ((((gold * 100) + (silver * 10)) + copper) < 2)
+        You don't have enough copper for the grog.
+        *goto pv_poi_tavern_bar_loop
+      *set tavern_item_cost_copper 2
+      *set tavern_item_hp_heal 0
+      *set tavern_item_temp_hp 0
+      *set tavern_item_type "drink"
+      *set tavern_item_buff_name "Spiced Grog"
+      *set tavern_item_buff_desc "+1 WIS Checks"
+      *set tavern_item_buff_stat "wis"
+      *set tavern_item_buff_bonus 1
+      *set tavern_item_buff_minutes 240
+      *gosub_scene startup buy_tavern_item
+      Maret steams a measure of spiced grog over the grate lamp—strong spirit cut with river water and whatever the last spice sack carried. The fog of the day burns off your thoughts.
+      [b][🔥 Spiced Grog Consumed: Clearheaded Focus (+1 WIS Checks for 4 Hours)][/b]
+      *goto pv_poi_tavern_bar_loop
+
+  # Step back from the bar.
+    *goto pv_poi_tavern_menu
+
+*label pv_poi_tavern_dice
+*if (not(pv_dice_met))
+  *set pv_dice_met true
+  You take a stool at the long trestle by the hearth, where dock porters and a pair of off-duty Watchmen sit around a chalk circle with a cut-down drinking horn, its rim banded in brass. The man running the dice is a scarred longshoreman with a missing finger, grease-stained cuffs, and a laugh like two gulls fighting.
+  *if (not(squad = "none"))
+    "Shake 'em, Cutter—give the soldier a throw!" an off-duty porter calls out, slapping two coppers onto the wood.
+    The dice-man grins, shaking the horn so the bone cubes rattle like teeth. "Raven badge, is it?" Cutter asks, eyeing your collar. "Four copper to ante, three dice to beat the high point. Company money's still company money at my table, but I don't insult it either."
+  *else
+    "Shake 'em, Cutter—give the newcomer a throw!" an off-duty porter calls out, slapping two coppers onto the wood.
+    The dice-man grins, shaking the horn so the bone cubes rattle like teeth. "Fresh face at the slips?" Cutter asks, eyeing your coin. "Four copper to ante, three dice to beat the high point. Your copper's as good as any porter's."
+*else
+  *if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+    You pull up a stool at the long trestle. During the daylight shift, the table is quiet—most of the dockhands are on the cranes, and Cutter is leaning back against the hearth stones with an oilstone, honing a notched belt knife while nursing a mug.
+    *if (keel_dice_bankroll > 0)
+      *if (not(squad = "none"))
+        He sets the stone down with a grin. "Crews are working the slips till dusk, raven, but the bones don't care what hour it is. Four copper to roll."
+      *else
+        He sets the stone down with a grin. "Crews are working the slips till dusk, friend, but the bones don't care what hour it is. Four copper to roll."
+    *else
+      *if (not(squad = "none"))
+        He turns his coin-purse out over the table with a rueful shrug. Two buttons and a fish hook drop out. "Tapped out, raven. The crews took me apart. Come back when I've robbed someone honest."
+      *else
+        He turns his coin-purse out over the table with a rueful shrug. Two buttons and a fish hook drop out. "Tapped out, friend. The crews took me apart. Come back when I've robbed someone honest."
+  *else
+    You take your stool back at the crowded trestle. Shouting porters and off-duty Watchmen press close around the chalk ring as Cutter knocks the horn against the wood.
+    *if ((day_of_week = "Marketday") or (day_of_week = "Tideday"))
+      A couple of foreign sailors from the outer roads have joined the circle, their heavy copper pieces clinking against the wood.
+    *if (keel_dice_bankroll > 0)
+      *if (not(squad = "none"))
+        "Back for more, raven? Four copper to ante, three dice to beat the high point."
+      *else
+        "Back for more? Four copper to ante, three dice to beat the high point."
+    *else
+      *if (not(squad = "none"))
+        Cutter turns his coin-purse out over the table with a rueful shrug. Two buttons and a fish hook drop out. "Tapped out, raven. The crews took me apart tonight. Come back when I've robbed someone honest."
+      *else
+        Cutter turns his coin-purse out over the table with a rueful shrug. Two buttons and a fish hook drop out. "Tapped out tonight. The crews took me apart. Come back when I've robbed someone honest."
+
+*label pv_poi_tavern_dice_menu
+The throw goes hand to hand around the chalk circle, bone cubes clattering against the trestle.
+
+*choice
+  *if ((keel_dice_bankroll > 0) and ((((gold * 100) + (silver * 10)) + copper) >= 4))
+    # Drop 4 Copper Bits onto the chalk circle and take your throw.@{show_stat_hints  [DEX check, DC 11]|}
+      *set wager_bankroll_var "keel_dice_bankroll"
+      *set wager_ante_copper 4
+      *set wager_win_copper 8
+      *set check_stat "dex"
+      *set check_dc 11
+      *set check_skill "Sleight of Hand"
+      *gosub_scene startup resolve_wager
+      *if (check_success)
+        You tip the horn with a dockhand's lazy rhythm and turn the bones out clean onto the circle—a high point, and everybody at the table knows it before Cutter does.
+        Cutter barks that gull-fight laugh of his and sweeps the pot over without ceremony. "Fast wrists. There's a waste. Should've been born a crane-man."
+        [b][🎲 Dice Wager Won: +8 Copper Bits][/b]
+      *else
+        You upend the horn and the bones scatter wide of the circle, skittering off into a puddle of old beer. Cutter drags the ante in with his two good fingers and a grin.
+        *if (not(squad = "none"))
+          "The bones don't love anybody, raven. Not even the ones who pay on time."
+        *else
+          "The bones don't love anybody. Not even the ones who pay on time."
+      *if (wager_bankroll_busted)
+        Cutter counts what's left of the house money into his palm and winces. "That's me done for the night. The river giveth." He pockets the palmful. "Mostly it taketh."
+      *page_break Catch your breath at the table…
+      *goto pv_poi_tavern_dice_menu
+
+  # Step back toward the bar.
+    *goto pv_poi_tavern_menu
+
+*label pv_poi_tavern_rumors
+You find a bench against the wall with your back to it—a soldier's habit—and let the taproom wash over you. The harbor talks.
+
+*if (not(pv_tavern_rumor_1))
+  *set pv_tavern_rumor_1 true
+  *set codex_black_tally true
+  A dredge-woman at the next table runs her thumb along the rim of her mug, voice pitched under the noise. "Tally's boys collect at the canal bridges now. Tally-sticks, no Watch badge, and the stick don't forget." She drinks, wipes her mouth with the back of her hand. "Don't flash silver past dark in this quarter, soldier—unless you mean to donate it."
+  *page_break The talk moves on…
+  *goto pv_poi_tavern_menu
+*elseif (not(pv_tavern_rumor_2))
+  *set pv_tavern_rumor_2 true
+  *set codex_port_watch true
+  Two off-duty porters argue the day's news down to the wood: four hundred raven badges reinforcing the Watch's patrol rosters from the Iron Wharves to the water-stairs, and the terms the Watch captain read out at the pier—no private collections, no unsanctioned arrests, no settling old debts under city colors—recited like a litany neither of them quite believes will hold.
+  *page_break The talk moves on…
+  *goto pv_poi_tavern_menu
+*elseif (not(pv_tavern_rumor_3))
+  *set pv_tavern_rumor_3 true
+  *set codex_gilded_scales true
+  Someone by the hearth is telling the bilge-hulk story again: debtor crews chained in the deep water off the Iron Wharves, their bonds held in the Gilded Scales' counting houses, renewed every quarter-day. When the interest comes due, the old man insists, you can hear them singing to the tide.
+  *page_break The talk moves on…
+  *goto pv_poi_tavern_menu
+*else
+  The same talk, warmed over and passed around again. Maret draws you a short measure you didn't pay for and doesn't explain it. Some nights, that's the whole of what a taproom is for.
+  *page_break The talk moves on…
+  *goto pv_poi_tavern_menu
+
+*label pv_poi_quays
+*set hours_to_pass 0
+*set minutes_to_pass 15
+*set time_advance_call_id "pv_poi_quays_1"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*if (not(pv_quays_seen))
+  *set pv_quays_seen true
+  *set codex_port_watch true
+  *set port_watch_rep +1
+  The cargo quay runs from the fish market toward the customs tower, and at this hour it is one long argument conducted in ledger-paper. Guild clerks in the river-serpent colors of the Gilded Scales move crate to crate with wax tablets, while Port Watch officers walk the line with cudgels slung but visible.
+
+  Above it all, standing atop a wooden tally-box with a brass seal pinned to his salt-crusted oilskin coat, a hawk-nosed man with ink-stained thumbs calls hull numbers down to a runner.
+
+  Dockmaster Harl Voss pauses mid-column as you approach, his sharp grey eyes flicking over your weapons and travel-worn gear.
+
+  "Quayside's crowded," he grunts, wiping his pen against his leather apron. "If you're looking to haul crates, talk to the gang-boss by crane three. If you've got business with customs, wait your turn behind the draymen."
+*else
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    The wooden tally-box stands dark and empty under the sea-mist. Above the quayside, a lone lantern burns in the customs tower window where Voss audits tomorrow's tide manifests behind closed shutters. Down on the wet flagstones, a Port Watch sentry in a heavy wool greatcoat watches the gate.
+    "Quayside's shut down till dawn bell," the sentry mutters, breath misting in the cold. "Gate's closed to traffic till morning."
+  *elseif (time_period = "Dusk")
+    The day's freight traffic is winding down beneath the customs arches. Voss stands under a dripping oilcloth awning, sealing the last clearance slates with red wax while his runners padlock the cargo sheds for the night.
+    He catches your eye and gives a brisk nod from beneath his cowl before turning back to his slates.
+  *elseif ((((weather = "Storm") or (weather = "Snow")) or (weather = "Sleet")) or (weather = "Blizzard"))
+    With the ${weather} blowing hard off the water, all cargo unloading has been lashed down under heavy tarps. Voss stands in the lee of the customs gate, shouting orders through the gale as dray-crews double-rope the river barges against the surging swell.
+  *else
+    Voss is atop his wooden tally-box, book chained to his belt, calling hull numbers down to a runner while porters haul crates under the watchful eye of Watch corporals.
+    He glances your way without breaking rhythm—one more face in a tally that never stops growing.
+
+*if (vane_independent_operative)
+  *if (silt_gate_quest_stage = "unstarted")
+    *choice
+      # Step up to the customs desk and ask Dockmaster Voss if there is paid work on the quays.
+        *goto pv_quays_voss_briefing
+      # Walk the cargo line and observe the dock traffic.
+        *page_break Back up to the quayside…
+        *goto port_valen_harbor_pois
+  *elseif ((silt_gate_quest_stage = "resolved") and (not(silt_gate_bounty_claimed)))
+    *choice
+      # Report what happened at the Silt-Gates to Dockmaster Voss.
+        *goto pv_quays_voss_report
+      # Walk the cargo line and observe the dock traffic.
+        *page_break Back up to the quayside…
+        *goto port_valen_harbor_pois
+  *else
+    *page_break Back up to the quayside…
+    *goto port_valen_harbor_pois
+*else
+  *page_break Back up to the quayside…
+  *goto port_valen_harbor_pois
+
+*label pv_quays_voss_briefing
+You step up to the lee of the customs tower where Dockmaster Voss is arguing with a sweating Watch corporal over a discrepancy on a wax slate. When you draw near, Voss waves the corporal off with a stub of chalk and turns his attention to you.
+
+He looks you over—the weapon at your belt, the lack of a city tabard, and the easy way you carry yourself in a crowded harbor.
+
+"You don't look like a dock-porter," Voss says, setting his pen in an inkwell. "And you aren't wearing city colors. You looking for paid work, or just taking up dry ground?"
+
+*choice
+  # "I'm looking for coin, and you look like a man with more problems than hands to handle them."
+    *goto pv_quays_voss_pitch
+  # "I'm with the Iron Carrion, my captain said you might have work."
+    *goto pv_quays_voss_pitch
+  # "I'm offering a capable blade. What's got the Watch in a twist?"
+    *goto pv_quays_voss_pitch
+
+*label pv_quays_voss_pitch
+Voss gives a dry, humorless snort and leans over his tally-desk, lowering his voice against the noise of the cranes.
+
+"Highland tool-steel and un-taxed mountain spiritus," he says, tapping a charcoal mark on his slate. "It's showing up in taprooms and back-alley smithies across the lower quarter, and none of it came across my piers."
+
+He points with a charcoal stick downriver toward the low, leaning roofs of Dredge-End.
+
+"Our outer harbor chains are locked tight, so the cargo isn't coming across open water. It's slipping into the canal drainage conduits under the slums—the Silt-Gates. Every time I send an armored Watch patrol into the canals, rooftop lookouts blow tin whistles and the boatmen dump the crates into ten feet of river sludge before my men get within three hundred paces."
+
+His jaw tightens. "Worse, half my night corporals take weekly hush-money to walk their beats on the far side of the canal when the tide rises."
+
+"A flat-bottomed punt can only clear the stone flume when the estuary is at high flood tide—which means the drop only happens late at night or pre-dawn. Get down into Dredge-End, scout the culvert, and shut that water-line down. Seize the punt intact, and the city treasury will pay twelve silver marks bounty for the logged cargo."
+
+*choice
+  # "I'll scout the flume before the tide rises and wait for the drop."
+    "Keep your eyes open," Voss grunts, blotting his slate. "Dredge-End swallows people who move slow."
+    *set silt_gate_quest_stage "active"
+    *page_break Return to the quayside…
+    *goto port_valen_harbor_pois
+  # "If your night corporals are dirty, you'll need their names to clean up the roster."
+    Voss's eyes narrow, but he doesn't dispute it. "If you catch anyone with a Watch badge taking silver from a canal runner, bring me proof or names. I'll make sure the Council hears about it."
+    *set silt_gate_quest_stage "active"
+    *page_break Return to the quayside…
+    *goto port_valen_harbor_pois
+  # "Twelve silver marks if the cargo is intact. What if the smugglers draw steel down in the mud?"
+    "The city pays for cargo in coin and paper, not corpses in the canal," Voss replies flatly. "Disarm them, bring the boat in, or break their line so they don't use that flume again. Just keep it off the lips of the town criers."
+    *set silt_gate_quest_stage "active"
+    *page_break Return to the quayside…
+    *goto port_valen_harbor_pois
+
+*label pv_quays_voss_report
+You step up to the customs tower where Dockmaster Voss is auditing incoming barge slates. He glances up, his sharp eyes settling on you.
+
+"The Silt-Gate culverts," he murmurs, stepping under the awning. "What did you find?"
+
+*if (silt_gate_resolution = "watch_seized")
+  "The smuggling run is broken, Dockmaster. We hit the flume at peak flood tide, seized the punt, and secured the crates of highland steel and spiritus before they could reach the barrows."
+
+  Voss lets out a long breath, a rare nod of satisfaction crossing his weathered face. "The night corporals hauled the crates up to the customs lockup an hour ago. Forged bodkin tips, shear-steel blanks, and twelve stoneware jugs of un-taxed spiritus—every bit of it logged in the city's ledger."
+
+  He reaches beneath the tally-desk, counting twelve heavy silver marks into your palm. "Bounty as promised. Twelve silver marks, paid from municipal funds. The Council will see the Carrion's name on this report."
+  *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+    *set currency_add_amount 120
+    *gosub_scene startup currency_add
+    *set currency_txn_locked true
+    *set locked_currency_txn_page_id choice_page_id
+  *set silt_gate_bounty_claimed true
+  *set port_watch_rep +1
+
+*elseif (silt_gate_resolution = "tally_bribed")
+  "I staked out the drainage flume through the high tide," you report evenly. "The stone channel was choked with silt and rotting timber. No skiffs made the crossing tonight."
+
+  Voss frowns, running a thumb over his ledger with visible frustration. "Dead end, then. The Tally must have caught wind of our audit and routed their punts through a different cut. Still, at least the Silt-Gates stayed quiet on this tide."
+  He signs off on the patrol slate with a sharp stroke of chalk.
+  *set silt_gate_bounty_claimed true
+
+*elseif (silt_gate_resolution = "vane_diverted")
+  *if (silt_gate_full_intel)
+    "The smuggling run hit the flume at midnight," you report. "The boatmen scattered into the canal tunnels when we closed in, but we secured crates of highland spiritus—and more importantly, the names of the two night-watchmen who were taking payoffs to leave the sluice gate unwatched."
+
+    You slide a slip of wax vellum across the desk. Voss reads the names, his knuckles going white around his pen.
+
+    "Corporal Kray and sentry Pell," Voss growls, his jaw tightening. "I knew the rosters were bleeding from the inside. I'll have their badges stripped and both of them in the lockup before the midday bell tolls."
+
+    He tosses an eight-silver-mark voucher onto the desk. "It's not the full cargo bounty, but rooting out dirty corporals is worth twice the steel in this harbor. The Watch owes you for this."
+    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+      *set currency_add_amount 80
+      *gosub_scene startup currency_add
+      *set currency_txn_locked true
+      *set locked_currency_txn_page_id choice_page_id
+  *else
+    "The smuggling run hit the flume at midnight," you report. "The boatmen scattered into the canal tunnels when we closed in, but we secured crates of highland spiritus—and the identity of the night-watch corporal running the gate payoff."
+
+    You slide a slip of wax vellum across the desk. Voss reads the name, his jaw clenching.
+
+    "Corporal Kray," Voss nods grimly. "A shame the sentry got away into the canal, but rooting out a dirty corporal breaks their night rotation. I'll have him in irons before noon."
+
+    He tosses a six-silver-mark voucher onto the desk. "Good work. Rooting out corruption on the rosters is worth real silver to the Watch."
+    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+      *set currency_add_amount 60
+      *gosub_scene startup currency_add
+      *set currency_txn_locked true
+      *set locked_currency_txn_page_id choice_page_id
+  *set silt_gate_bounty_claimed true
+  *set port_watch_rep +1
+
+*page_break Return to the quayside…
+*goto port_valen_harbor_pois
+
+*label pv_poi_drydock
+*set hours_to_pass 0
+*set minutes_to_pass 15
+*set time_advance_call_id "pv_poi_drydock_1"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*if (not(pv_drydock_seen))
+  *set pv_drydock_seen true
+  *set gilded_scales_rep +1
+  The Iron Wharves announce themselves before you see them—coal smoke, forge-spark, the ring of caulking mauls coming off the water. Behind the shipyard wall, the merchant ways climb out of the tide like half-built animals: river barges and ocean hulls stripped to the ribs, steamed planks going down seam by seam under the Gilded Scales' river-serpent standard.
+*else
+  The Iron Wharves again, tar and coal smoke and the mauls keeping their time.
+
+*if (((time_period = "Dusk") or (time_period = "Night")) or (time_period = "Pre-Dawn"))
+  The yards are shuttered for the dark, but one gantry still burns—a night crew caulking a grain hull by torchbasket, mauls swinging in the spill of light while the rest of the waterfront sleeps.
+  *if (not(squad = "none"))
+    A night watchman warming his hands over an iron brazier gives your raven badge a single nod as you pass.
+  *else
+    A night watchman warming his hands over an iron brazier watches you pass in silence.
+*else
+  The yards run at full cry. Cranes swing, planers scream, and a forest of steamed planks leans against the ways, waiting for hands to feed them.
+
+  The grey-braided foreman marks his slate as you pass and touches his brow, not stopping his round.
+  *if (not(squad = "none"))
+    "Ravens pull," he says, to nobody in particular and to you exactly.
+  *else
+    "Keep clear of the gantry lines," he grunts, to nobody in particular and to you exactly.
+
+*page_break Back up to the quayside…
+*goto port_valen_harbor_pois
+
+*label pv_poi_pier
+*set hours_to_pass 0
+*set minutes_to_pass 15
+*set time_advance_call_id "pv_poi_pier_1"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*if (not(pv_pier_seen))
+  *set pv_pier_seen true
+  *set codex_port_valen true
+  The long pier runs out past the breakwater arm to where the harbor bar shows its teeth at low water. At the end of it, an iron bell hangs from a gallows-frame over the swell—the wreck-bell, worked by the sea itself, tolling its slow count over the shoals where the bar has been taking keels for as long as Port Valen has kept a ledger of anything.
+  The bell has no rope. No one rings it for the living.
+  Watermen passing along the pier touch the frame post without breaking stride—an old habit, a toll paid to whatever the bar holds down there. You do it too, after watching them long enough to feel foolish not to.
+*else
+  You walk the pier to the end and back, salt spray on your lips, the wreck-bell keeping its count the whole way.
+
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  In the darkness beneath the pier-head crane, two cloaked watchers with black tally-sticks slip into the deep shadows as you approach, silently counting the unlit skiffs that thread the harbor bar after curfew.
+*else
+  Under the pier-head crane, two men stand out of the traffic's way with black tally-sticks through their belts, counting what lands. They don't stop watching, and nobody makes them. Whatever the Dredge-End keeps accounts of, it keeps counting.
+
+*page_break Back along the pier…
+*goto port_valen_harbor_pois
+
+*label pv_poi_shrine
+*set hours_to_pass 0
+*set minutes_to_pass 15
+*set time_advance_call_id "pv_poi_shrine_1"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*if (not(pv_shrine_seen))
+  *set pv_shrine_seen true
+  *set codex_saint_althea true
+  A stair of wet stone climbs the seawall beside the fish market, and halfway up, cut into the wall itself, a niche holds a painted figure in a flaking shroud: Saint Althea of the Shroud, the mender—patroness of needle, loom, and herb, of broken cloth and broken flesh made whole again. At her feet a stone dish brims with river pebbles brought up from the tideline, and a votive coal glows under its crust of salt.
+  The custom is older than the Guild and immune to it. A waterman bound for open water brings a pebble to her feet before he runs the bar, so that she keeps his hull woven tight against the rocks, the way she weaves torn cloth back into itself.
+*else
+  You climb the harbor stair, pick a smooth pebble off the tideline, and set it in the dish with the rest.
+
+*if (elspeth_role = "chapel_sanctuary")
+  Somewhere upriver, behind walls like these, Elspeth is learning this same rite from women who bind wounds for a living. You leave the pebble for both of you.
+*elseif ((family_name = "Elspeth") and (elspeth_role = "none"))
+  You catch yourself choosing the smooth pebble, the one that fits a small hand. Old habit, empty room. You set it down anyway. The mender takes broken things; that is what she is for.
+
+*page_break Back down the stair…
+*goto port_valen_harbor_pois
 
 *label port_valen_eat_mess
 *set tavern_item_cost_copper 0
@@ -677,6 +1945,15 @@ The streets give no single answer about who runs them. A ferryman offers a route
 *comment real HP healing, the recalc gosub would need to move to BEFORE
 *comment buy_tavern_item instead.
 *gosub_scene startup buy_tavern_item
+
+*comment Consumes one of this week's free rations -- reuses the pre-declared
+*comment stat_bump2_locked pair (this page's own time-advance already owns
+*comment time_advance_locked, so this needs its own independent lock; see
+*comment narrative_guidelines.md Section 13).
+*if (not(stat_bump2_locked)) or (not(locked_stat_bump2_page_id = choice_page_id))
+  *set pv_mess_rations_used + 1
+  *set stat_bump2_locked true
+  *set locked_stat_bump2_page_id choice_page_id
 
 You find a spot at the stores awning where a quartermaster is still ladling out the company's plain fare—hard bread, boiled grain, whatever salt meat survived the barge crossing. Nobody asks why you're eating at this hour. Recruits and veterans alike drift through on their own schedule, not the Watch's.
 
@@ -753,7 +2030,10 @@ The compound never becomes silent. Cards slap against a crate in one barracks. S
 *set neglect_damage_fatigue 0
 *gosub_scene calendar recalc_hp_from_neglect
 
-The bells pull you awake before the light reaches the barracks windows, fully rested. The harbor wind has shifted, carrying coal smoke, river mud, and the ordinary noise of a city already at work.
+*if ((time_period = "Pre-Dawn") or (time_period = "Night"))
+  The bells pull you awake before the light reaches the barracks windows, fully rested. The harbor wind has shifted, carrying coal smoke, river mud, and the ordinary noise of a city already at work.
+*else
+  The shutters can't hide how far the day has climbed without you. The bells let you surface fully rested into a compound already loud with drill calls and cart wheels, the cook fires long burned down to embers, a day half-spent before you ever laced your boots.
 
 *if (not(port_valen_first_patrol_complete))
   *set port_valen_first_patrol_complete true
@@ -790,13 +2070,13 @@ The bells pull you awake before the light reaches the barracks windows, fully re
 *if (squad = "scouts")
   Kestrel takes the long way around the drying racks, the same unhurried pace she uses for everything, and leaves you at the office door without explanation.
 *if (squad = "cadre")
-  Ysolde walks beside you as far as the contract office door, then peels off toward her own morning ledgers without breaking stride.
+  Ysolde walks beside you as far as the contract office door, then peels off toward her own morning paperwork without breaking stride.
 
 Vane's office is smaller than the compound outside makes it look: a trestle desk crowded with ledgers and transit vouchers, one shuttered window letting in a blade of grey morning light, and the company's raven banner nailed flat to the stone behind him instead of hung loose from a pole. He doesn't look up until the door latches shut behind you.
 
-"Sit if you want. This won't take long." He doesn't wait to see whether you do, closing a ledger under one hand.
+"Sit if you want. This won't take long." He doesn't wait to see whether you do, closing one under his hand.
 
-"We marched out of the Black Sinks with four hundred banners and doubled that taking Alderford's contract. Half of what's wearing Carrion colors now has never held a line under me before, and every one of them still needs feeding, housing, and someone to answer for them when the Watch comes asking. That's not a problem shields fix."
+"We marched out of Valen with two hundred banners and doubled that before Alderford's ink was dry. Half of what's wearing Carrion colors now has never held a line under me before, and every one of them still needs feeding, housing, and someone to answer for them when the Watch comes asking. That's not a problem shields fix."
 
 He leans back, studying you the way he'd study a ledger column that didn't add up right.
 
@@ -812,40 +2092,64 @@ He leans back, studying you the way he'd study a ledger column that didn't add u
 *elseif (carries_chapel_grain)
   "Overseer Bran still talks about the recruit who hauled his condemned grain up to Saint Althea's on their own time—no orders, no pay worth the walk. Small thing. People remember small things longer than they remember pikes."
 *elseif (maura_cellar_cleared)
-  "Kestrel's runners tell me you cleared out whatever Maura had rotting in her cellar without costing the company a man to do it. That's the kind of ledger entry I like: problem solved, nothing spent."
+  "Kestrel's runners tell me you cleared out whatever Maura had rotting in her cellar without costing the company a man to do it. That's the kind of result I like: problem solved, nothing spent."
 *else
   "Varren, Kestrel, and Ysolde have all put your name in front of me more than once since the causeway, for reasons that have nothing to do with how you hold a line."
 
 "Alderford was crawling with my people—scouts, quartermasters, half the company at one point or another. Not much happens in a town that size without three separate reports of it landing on this desk by morning. Yours landed more than most."
 
-He taps the desk once, decisive. "There are a dozen names on Varren's, Kestrel's, and Ysolde's rosters I've had my eye on since we made landfall. You're one of them."
+He taps the desk once, decisive. "There are a dozen names across Varren's, Kestrel's, and Ysolde's rosters I've had my eye on since we made landfall. You're one of them."
 
-"Port Valen is a contract to reinforce the Watch, not a war. Most of what's wrong with this city won't be fixed by four hundred sellswords standing in a line—it needs people the citizenry doesn't flinch from, solving problems the Watch can't or won't. I'm pulling you off the patrol roster. You answer to no duty sergeant, no watch rotation—you work the city on your own judgment, and you report back to me every two weeks on what it's bought the company. Understood?"
+"Port Valen is a contract to reinforce the Watch, not fight a war. The Council wants quiet streets, but the Watch is overburdened, compromised, and handing us their dirtiest problems—smuggling in Dredge-End, merchant extortion on the Upper Wharves, and civic disputes the courts won't touch. Four hundred armored sellswords marching through narrow alleys will turn a scuffle into a riot."
+
+He leans forward, resting his forearms on the desk. "I need people who can move through the city without a shield line behind them—solving problems quietly, gathering intelligence, and building standing with the factions that actually run this city."
+
+He counts them off on three blunt fingers. "The Watch holds the charter and the public coin. The Gilded Scales hold the commerce, credit, and supply lines. The Black Tally holds the canal routes and the back alleys where Watch cudgels don't reach. I don't care whose hand you shake in the dark—alderman, merchant factor, or canal boss—so long as the Carrion holds the leverage when you wash your fingers."
+
+"You are detached from the standard line muster, but you remain tethered to your squad.
+*if (squad = "vanguard")
+  Varren knows you're operating outside the shield lines. When you need tactical backup or Watch intelligence, check in at his quarter.
+*if (squad = "scouts")
+  Kestrel has runners throughout the low alleys. When you need route maps or street intelligence, check in at her loft.
+*if (squad = "cadre")
+  Ysolde is auditing the city's disputed contracts. When you need account records or arcane counsel, check in at her workroom.
+
+"Two rules," Vane adds, his voice hardening. "First: no private extortion, no unsanctioned bloodshed under city colors. The contract pays too well to lose over a dockside brawl. Second: if the Watch drags you into the bilge-hulks for sticking your nose somewhere reckless, I don't know your name. You carry company coin, not company immunity."
+
+"You have two weeks before the Council's first audit. Work the districts, build our standing with anyone who has something to trade, and make sure the Carrion comes out indispensable. Understood?"
 
 *choice
-  # "Understood, Captain. I won't waste the trust."
-    You keep your voice level, but the offer lands harder than you let show—command trusting you this far, this early, isn't a thing to take lightly.
-    Vane's expression doesn't move, but something in his eyes eases half a degree. "See that you don't. My office, every second week. Sooner if something's burning."
-  # "That's a lot of rope for a recruit nobody's watching most days."
-    You've seen enough of how commanders reward initiative when it goes wrong to want the terms said plainly before you agree to anything.
-    "It is," Vane says, unbothered. "Rope holds you up or hangs you, depending how you use it. I'm gambling you're smart enough to know which." He doesn't offer reassurance beyond that. "Fortnight. My office."
-  # "I can work with that."
-    Whatever Port Valen needs solving, you'd rather be the one deciding how than waiting on a duty roster to hand you scraps of it.
-    For the first time since you stepped through the door, something like approval crosses Vane's face—thin, but real. "Good. Ambition's useful, so long as it doesn't outrun your judgment. Fortnight. My office."
+  # "Understood, Captain. I'll make sure the company gets leverage wherever it counts."
+    You keep your voice level, but the mandate is clear—Vane isn't just asking for guard duty; he's playing a long game of leverage across every tier of Port Valen, and giving you the run of the board.
+    Vane's expression doesn't soften, but he gives a single nod. "See that you do. My office, every second week. Sooner if something's burning."
+  # "Playing all sides between the Watch, the Guilds, and the canals is a quick way to make enemies of all three."
+    You've seen enough mercenary contracts to know that operatives walking the line between civic law and the underworld take the fall first when politics turn ugly.
+    "It is," Vane says, unbothered. "Rope holds you up or hangs you, depending how you use it. I'm gambling you're smart enough to know the difference." He doesn't offer reassurance beyond that. "Fortnight. My office."
+  # "I can work with that. As long as the coin and the standing follow."
+    Whatever Port Valen is hiding across its counting houses and canal bridges, you'd rather be out in the streets deciding how to play the factions than standing in a rigid guard rotation.
+    For the first time since you stepped through the door, something like cold approval crosses Vane's face. "Good. Ambition's useful, so long as it doesn't outrun your judgment. Fortnight. My office."
 
 Vane returns to his ledger before you've fully turned for the door. As far as he's concerned, the conversation is already finished.
 
 *set vane_independent_operative true
+*set codex_port_watch true
+*set codex_gilded_scales true
+*set codex_black_tally true
 *set port_valen_next_report_day (campaign_day + 14)
 *set civic_heights_open true
 *set upper_wharves_open true
 *set dredge_end_open true
+*comment Opens the quayside POI sub-hub (The Cleaved Keel, the customs quay,
+*comment the shipwrights' ways, the long pier, Saint Althea's shrine) with
+*comment the rest of the city.
+*set pv_pois_open true
 *comment The bi-weekly check-in scene at port_valen_next_report_day is a
 *comment hook for future content, not built yet. It should read back
 *comment port_watch_rep/gilded_scales_rep/black_tally_rep (created in
-*comment startup.txt but currently unwritten by anything) -- wiring those
-*comment into open-world Port Valen content is a separate task from this
-*comment handoff scene.
+*comment startup.txt; the harbor POIs now write the first port_watch_rep/
+*comment gilded_scales_rep touches, while black_tally_rep is still unwritten
+*comment by anything) -- wiring all three into open-world Port Valen content
+*comment is a separate task from this handoff scene.
 *page_break Step back out into the yard, off every roster but your own…
 *goto port_valen_hub
 

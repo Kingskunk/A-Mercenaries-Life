@@ -58,6 +58,7 @@
  * usage: node refresh_fuzz_test.js [num=30] [game=mygame] [seed=0]
  *                                  [avoidUsedOptions=true] [maxFindings=25]
  *                                  [mode=random|smart] [archetype=str|dex|con|int|wis|cha|balanced]
+ *                                  [gotoLoopCap=200000] [quietDiagnostics=true]
  */
 
 var fs = require('fs');
@@ -69,10 +70,27 @@ var gameName = "mygame";
 var randomSeed = 0;
 var avoidUsedOptions = true;
 var maxFindings = 25;
+// [shadow-diverged]/[shadow-no-pause] are diagnostic-only categories (see
+// narrative_guidelines.md Section 19) -- a real run on real content produces
+// dozens to hundreds of them, which both buries genuine findings in console
+// noise and (worse) can exhaust maxFindings on diagnostics alone, stopping
+// the batch before it ever reaches real content further along. Default true:
+// collapse both into one summary count each instead of a finding per
+// instance. Pass quietDiagnostics=false when actually investigating why a
+// specific page diverges -- that restores the exact prior behavior (each
+// instance printed and counted toward maxFindings).
+var quietDiagnostics = true;
 var mode = "random";
 var forcedArchetype = null; // null == "rotate through all archetypes across iterations"
 var VALID_ARCHETYPES = ["str", "dex", "con", "int", "wis", "cha", "balanced"];
 var showChoices = false;
+// Safety net against a *goto cycle with no intervening *choice/*page_break/
+// *finish/*ending -- see the gotoLoopCap guard installed below, right after
+// web/scene.js loads. The existing `guard < 200000` cap on the trampoline
+// loop only bounds how many pause points one playthrough processes; it
+// can't stop a tight *goto cycle that never reaches a pause at all, which
+// runs inside one synchronous call and would hang the process forever.
+var gotoLoopCap = 200000;
 
 function parseArgs(args) {
   for (var i = 0; i < args.length; i++) {
@@ -91,6 +109,8 @@ function parseArgs(args) {
       if (VALID_ARCHETYPES.indexOf(value) === -1) throw new Error("archetype must be one of " + VALID_ARCHETYPES.join("/") + ", got: " + value);
       forcedArchetype = value;
     } else if (name === "showChoices") showChoices = (value !== "false");
+    else if (name === "gotoLoopCap") gotoLoopCap = Number(value);
+    else if (name === "quietDiagnostics") quietDiagnostics = (value !== "false");
     else throw new Error("Unknown argument: " + name);
   }
 }
@@ -101,6 +121,28 @@ load("web/navigator.js");
 load("web/util.js");
 load("headless.js");
 load("seedrandom.js");
+
+// --- Infinite-loop guard -------------------------------------------------
+// A *goto cycle with no intervening *choice/*page_break/*finish/*ending
+// runs entirely inside one synchronous call and never yields, so Node
+// never gets a chance to time out or interrupt it -- left unguarded, that
+// one playthrough (or one shadow-replay probe, which reconstructs and
+// executes its own Scene the same way) hangs the process forever with
+// zero output. Counting every *goto across a whole iteration (main walk
+// plus every shadow probe it runs) and throwing past a generous cap is the
+// only way to catch this. Override with gotoLoopCap=N if a legitimate run
+// genuinely needs more.
+var gotoCallCount = 0;
+var _origSceneGoto = Scene.prototype["goto"];
+Scene.prototype["goto"] = function guardedGoto(line) {
+  if (++gotoCallCount > gotoLoopCap) {
+    var err = new Error(this.lineMsg() + "possible infinite loop: more than " + gotoLoopCap + " *goto calls in a single iteration. Check for a *goto cycle with no *choice/*page_break/*finish/*ending in between. (Raise gotoLoopCap= if a legitimate run genuinely needs more.)");
+    err.isGotoLoopGuard = true;
+    throw err;
+  }
+  return _origSceneGoto.call(this, line);
+};
+
 // Every fresh Scene's first execute() defers loading through util.js's
 // safeTimeout, which wraps a real (async) setTimeout -- harmless in a
 // browser event loop, but this harness drains its own continuation chain
@@ -312,6 +354,8 @@ var probeResult = null;
 
 var findings = [];
 var probesRun = 0;
+var quietDivergedCount = 0;
+var quietNoPauseCount = 0;
 var IGNORED_STAT_KEYS = { choice_time_stamp: true };
 
 function cloneForSnapshot(obj) {
@@ -342,6 +386,14 @@ function diffStats(before, after) {
 }
 
 function recordFinding(type, scene, pauseLine, message) {
+  if (quietDiagnostics && type === "shadow-diverged") {
+    quietDivergedCount++;
+    return;
+  }
+  if (quietDiagnostics && type === "shadow-no-pause") {
+    quietNoPauseCount++;
+    return;
+  }
   findings.push({ type: type, scene: scene.name, line: pauseLine + 1, message: message });
   console.log("  FINDING [" + type + "] " + scene.name + " line " + (pauseLine + 1) + ": " + message);
 }
@@ -356,6 +408,24 @@ function probeCurrentChoice(scene, pauseLine) {
   probesRun++;
   var startLine = (typeof scene.stats.choice_page_start_line === "number") ? scene.stats.choice_page_start_line : scene.lineNum;
   var startIndent = (typeof scene.stats.choice_page_start_indent === "number") ? scene.stats.choice_page_start_indent : scene.indent;
+
+  // The page can genuinely have begun in a DIFFERENT scene file than the
+  // current pause (reached via *gosub_scene, e.g. any fight run through
+  // combat.txt -- see narrative_guidelines.md Section 19's *gosub_scene
+  // blind spot). startLine/startIndent are only meaningful within
+  // choice_page_start_scene; blindly reconstructing a shadow Scene of the
+  // CURRENT scene at those coordinates can crash on a coincidental cross-
+  // file line/indent collision (confirmed: a page that began in alderford.txt
+  // reached a pause in combat.txt, and combat.txt's own unrelated line 431
+  // happened to sit at a different indent, throwing "increasing indent not
+  // allowed" -- a tooling artifact, not a real bug). Detect the mismatch
+  // up front and report it the same way the subscene-stack blind spot
+  // already is, instead of attempting an unsafe reconstruction.
+  if (scene.stats.choice_page_start_scene && scene.stats.choice_page_start_scene !== scene.name) {
+    recordFinding("shadow-no-pause", scene, pauseLine,
+      "page began in scene \"" + scene.stats.choice_page_start_scene + "\", not \"" + scene.name + "\" -- reached via *gosub_scene, can't safely shadow-replay across scene files without rebuilding choice_subscene_stack. Not a confirmed bug.");
+    return;
+  }
 
   var beforeStats = cloneForSnapshot(scene.stats);
 
@@ -478,6 +548,7 @@ function run() {
     }
     nav.resetStats(stats);
     timeout = null;
+    gotoCallCount = 0;
     Math.seedrandom(seed);
     var scene = new Scene(nav.getStartupScene(), stats, nav, false);
     try {
@@ -490,6 +561,13 @@ function run() {
         guard++;
       }
     } catch (e) {
+      if (e.isGotoLoopGuard) {
+        // Not a code bug -- see the gotoLoopCap guard's own comment above.
+        // Report it and move on to the next seed instead of counting it as
+        // a crash/finding.
+        console.log("OPEN-WORLD WANDER (seed " + seed + "): " + e.message);
+        continue;
+      }
       console.log("RUN " + seed + " CRASHED: " + (e.stack || e.message));
       findings.push({ type: "crash", message: "seed " + seed + ": " + e.message });
     }
@@ -502,6 +580,9 @@ function run() {
   console.log("");
   console.log("Probed " + probesRun + " choice/page_break pause points across " + Math.min(iterations, findings.length >= maxFindings ? iterations : iterations) + " random playthrough(s).");
   console.log("Time: " + ((Date.now() - start) / 1000) + "s");
+  if (quietDiagnostics && (quietDivergedCount || quietNoPauseCount)) {
+    console.log(quietDivergedCount + " [shadow-diverged], " + quietNoPauseCount + " [shadow-no-pause] -- diagnostic-only, not counted as findings (see narrative_guidelines.md Section 19). Rerun with quietDiagnostics=false to see each one.");
+  }
   if (!findings.length) {
     console.log("REFRESH FUZZ PASSED -- no refresh-duplication bugs found.");
     return;

@@ -40,6 +40,61 @@
     *set campaign_day + days_to_pass
     *set calendar_day + days_to_pass
 
+    *comment Weather rolled once per calendar day, weighted by current_season
+    *comment (whatever it was set to as of the START of this call -- a season
+    *comment change and a weather roll landing on the exact same advance_time
+    *comment call would use yesterday's season weighting, a negligible one-
+    *comment day edge case, not worth a second pass to avoid). Inside the
+    *comment days_to_pass>0 guard on purpose: same replay-safety as the rest
+    *comment of this block, and "once per day" semantics for free.
+    *temp weather_roll 0
+    *rand weather_roll 1 100
+    *if (current_season = "Winter")
+      *if (weather_roll <= 30)
+        *set weather "Clear"
+      *elseif (weather_roll <= 55)
+        *set weather "Overcast"
+      *elseif (weather_roll <= 75)
+        *set weather "Snow"
+      *elseif (weather_roll <= 90)
+        *set weather "Sleet"
+      *else
+        *set weather "Blizzard"
+    *elseif (current_season = "Summer")
+      *if (weather_roll <= 45)
+        *set weather "Clear"
+      *elseif (weather_roll <= 65)
+        *set weather "Overcast"
+      *elseif (weather_roll <= 80)
+        *set weather "Rain"
+      *elseif (weather_roll <= 95)
+        *set weather "Storm"
+      *else
+        *set weather "Fog"
+    *elseif (current_season = "Spring")
+      *if (weather_roll <= 35)
+        *set weather "Clear"
+      *elseif (weather_roll <= 60)
+        *set weather "Overcast"
+      *elseif (weather_roll <= 85)
+        *set weather "Rain"
+      *elseif (weather_roll <= 95)
+        *set weather "Fog"
+      *else
+        *set weather "Storm"
+    *else
+      *comment Autumn
+      *if (weather_roll <= 15)
+        *set weather "Clear"
+      *elseif (weather_roll <= 45)
+        *set weather "Overcast"
+      *elseif (weather_roll <= 70)
+        *set weather "Rain"
+      *elseif (weather_roll <= 90)
+        *set weather "Fog"
+      *else
+        *set weather "Storm"
+
   *comment --- Buff timer decay (food / drink / unique boons 1-3) ---
   *comment Each channel decays independently by total_mins_this_call.
   *if (food_buff_active) and (total_mins_this_call > 0)
@@ -262,6 +317,25 @@
   *set day_suffix "th"
 
 *set calendar_date "${calendar_day}${day_suffix} of ${calendar_month}, ${calendar_year} IR"
+
+*comment day_of_week is a pure function of campaign_day -- no incremented
+*comment state, no replay-safety concern, recomputed unconditionally here
+*comment every call alongside calendar_date/calendar_month above it.
+*temp week_remainder ((campaign_day - 1) modulo 7)
+*if (week_remainder = 0)
+  *set day_of_week "Ironday"
+*elseif (week_remainder = 1)
+  *set day_of_week "Tideday"
+*elseif (week_remainder = 2)
+  *set day_of_week "Marketday"
+*elseif (week_remainder = 3)
+  *set day_of_week "Hearthday"
+*elseif (week_remainder = 4)
+  *set day_of_week "Forgeday"
+*elseif (week_remainder = 5)
+  *set day_of_week "Greyday"
+*else
+  *set day_of_week "Hallowday"
 
 *temp hr_str ""
 *temp min_str ""
