@@ -170,6 +170,11 @@ function compile(){
   // allScenes object and every *gosub_scene combat ... call fails at runtime
   // with "scene doesn't exist" the moment a player actually reaches a fight.
   verifyFileName("combat.txt");
+  // "death" is a *goto_scene-only shared death screen (see death.txt's own
+  // header comment) and, same as combat.txt above, is deliberately NOT in
+  // *scene_list -- it isn't "the next chapter" for anyone's *finish chain,
+  // it's a jump target reached on death from any location's own scene.
+  verifyFileName("death.txt");
 
   //Check startup.txt for a *scene_list
   var sceneList = false;

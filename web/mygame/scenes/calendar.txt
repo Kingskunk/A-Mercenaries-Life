@@ -93,6 +93,65 @@
       *set unique_buff3_stat "none"
       *set unique_buff3_bonus 0
 
+  *comment --- Hunger & Fatigue neglect clock (Port Valen open-world only) ---
+  *comment Only ticks once vane_independent_operative is true, so the clock
+  *comment starts clean the moment the player is cut loose in the city --
+  *comment every earlier scripted chapter calls advance_time too, but never
+  *comment with this flag set, so none of them are affected.
+  *comment Accumulates into neglect_damage_hunger/_fatigue (a derived debt
+  *comment total) rather than mutating hp_current directly here. hp_current
+  *comment must be recomputed by the caller via *gosub recalc_hp_from_neglect
+  *comment (hp_max - both debts, clamped at 0) -- a direct `hp_current - N`
+  *comment here would only take effect on the ONE call that's not skipped by
+  *comment the replay guard above; port_valen_rest also runs an unconditional
+  *comment `hp_current hp_max` heal every execution, so a refresh replaying
+  *comment this same page would re-heal to full without this guard ever
+  *comment re-applying the (correctly skipped) drain, silently erasing it.
+  *comment Recomputing from the derived debt totals afterward is immune to
+  *comment that, exactly like recalculate_armor_class elsewhere.
+  *if (vane_independent_operative)
+    *set minutes_since_meal + total_mins_this_call
+    *set minutes_since_rest + total_mins_this_call
+
+    *temp meal_over_before 0
+    *temp meal_over_after 0
+    *if ((minutes_since_meal - total_mins_this_call) > 2160)
+      *set meal_over_before ((minutes_since_meal - total_mins_this_call) - 2160)
+    *if (minutes_since_meal > 2160)
+      *set meal_over_after (minutes_since_meal - 2160)
+    *temp meal_ticks_before ((meal_over_before - (meal_over_before modulo 240)) / 240)
+    *temp meal_ticks_after ((meal_over_after - (meal_over_after modulo 240)) / 240)
+    *temp meal_new_ticks (meal_ticks_after - meal_ticks_before)
+
+    *temp rest_over_before 0
+    *temp rest_over_after 0
+    *if ((minutes_since_rest - total_mins_this_call) > 2400)
+      *set rest_over_before ((minutes_since_rest - total_mins_this_call) - 2400)
+    *if (minutes_since_rest > 2400)
+      *set rest_over_after (minutes_since_rest - 2400)
+    *temp rest_ticks_before ((rest_over_before - (rest_over_before modulo 240)) / 240)
+    *temp rest_ticks_after ((rest_over_after - (rest_over_after modulo 240)) / 240)
+    *temp rest_new_ticks (rest_ticks_after - rest_ticks_before)
+
+    *if (meal_new_ticks > 0)
+      *set neglect_damage_hunger + meal_new_ticks
+    *if (rest_new_ticks > 0)
+      *set neglect_damage_fatigue + rest_new_ticks
+
+    *if (minutes_since_meal > 2160)
+      *set hunger_stage "Starving"
+    *elseif (minutes_since_meal > 1080)
+      *set hunger_stage "Hungry"
+    *else
+      *set hunger_stage "Fed"
+
+    *if (minutes_since_rest > 2400)
+      *set fatigue_stage "Collapsing"
+    *elseif (minutes_since_rest > 1200)
+      *set fatigue_stage "Exhausted"
+    *else
+      *set fatigue_stage "Rested"
+
   *set time_advance_locked true
   *set locked_time_advance_page_id choice_page_id
   *set locked_time_advance_id time_advance_call_id
@@ -219,16 +278,30 @@
 *set clock_time "${hr_str}:${min_str}"
 
 *if ((clock_hour >= 4) and (clock_hour <= 6))
-  *set time_period "Pre-Dawn (Freezing Mist)"
+  *set time_period "Pre-Dawn"
 *if ((clock_hour >= 7) and (clock_hour <= 11))
-  *set time_period "Morning (Column on the Road)"
+  *set time_period "Morning"
 *if ((clock_hour >= 12) and (clock_hour <= 13))
-  *set time_period "Midday (Ration Halt)"
+  *set time_period "Midday"
 *if ((clock_hour >= 14) and (clock_hour <= 17))
-  *set time_period "Afternoon (March Leg)"
+  *set time_period "Afternoon"
 *if ((clock_hour >= 18) and (clock_hour <= 20))
-  *set time_period "Dusk (Camp-Pitch)"
+  *set time_period "Dusk"
 *if ((clock_hour >= 21) or (clock_hour <= 3))
-  *set time_period "Night (Dead Hours)"
+  *set time_period "Night"
 
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment REUSABLE PRIMITIVE: RECOMPUTE HP FROM NEGLECT DEBT
+*comment Fully derived, no lock needed -- safe to call unconditionally on
+*comment every replay, unlike a bare hp_current +/-N. Callers that also
+*comment want to clear a debt (a meal clearing neglect_damage_hunger, a
+*comment night's sleep clearing neglect_damage_fatigue) must *set that debt
+*comment to 0 themselves BEFORE this gosub, not after.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label recalc_hp_from_neglect
+*set hp_current (hp_max - neglect_damage_hunger) - neglect_damage_fatigue
+*if (hp_current < 0)
+  *set hp_current 0
 *return

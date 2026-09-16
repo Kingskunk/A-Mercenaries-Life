@@ -206,6 +206,21 @@
 *gosub fight_cleanup
 *return
 
+*label fight_player_died
+*comment Only reachable when this fight set combat_player_can_die true AND
+*comment hp_current actually hit 0. Doesn't *goto_scene death itself --
+*comment that would fire from inside this *gosub_scene call and corrupt the
+*comment subscene stack (see narrative_guidelines.md Section 13). Instead
+*comment reports combat_outcome exactly like every other exit and *returns;
+*comment the CALLER checks it after the *gosub_scene returns and does the
+*comment *goto_scene death death_screen itself, setting death_cause "combat"
+*comment first. Every call site (*gosub_scene combat fight_<name>) needs
+*comment this check even for fights that are non-lethal today, in case a
+*comment later edit flips combat_player_can_die true on it.
+*set combat_outcome "player_died"
+*gosub fight_cleanup
+*return
+
 *comment ──────────────────────────────────────────────────────────────
 *comment THE ROUND HUB (shared choice skeleton)
 *comment ──────────────────────────────────────────────────────────────
@@ -1031,7 +1046,9 @@
   *gosub fight_sync_target_in
   *gosub_scene startup resolve_enemy_attack
   *gosub fight_narrate_enemy_turn
-  *if (hp_current <= 1)
+  *if (combat_player_can_die) and (hp_current <= 0)
+    *goto fight_player_died
+  *if (not(combat_player_can_die)) and (hp_current <= 1)
     *goto fight_rescued
 *if (combat_enemy_count >= 2)
   *if (combat_enemy2_hp > 0)
@@ -1039,7 +1056,9 @@
     *gosub fight_sync_target_in
     *gosub_scene startup resolve_enemy_attack
     *gosub fight_narrate_enemy_turn
-    *if (hp_current <= 1)
+    *if (combat_player_can_die) and (hp_current <= 0)
+      *goto fight_player_died
+    *if (not(combat_player_can_die)) and (hp_current <= 1)
       *goto fight_rescued
 *if (combat_enemy_count >= 3)
   *if (combat_enemy3_hp > 0)
@@ -1047,7 +1066,9 @@
     *gosub fight_sync_target_in
     *gosub_scene startup resolve_enemy_attack
     *gosub fight_narrate_enemy_turn
-    *if (hp_current <= 1)
+    *if (combat_player_can_die) and (hp_current <= 0)
+      *goto fight_player_died
+    *if (not(combat_player_can_die)) and (hp_current <= 1)
       *goto fight_rescued
 *gosub fight_check_all_dead
 *if (combat_all_enemies_dead)

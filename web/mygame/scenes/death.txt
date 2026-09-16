@@ -1,0 +1,84 @@
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SHARED DEATH ENGINE
+*comment *goto_scene-only library scene, like combat.txt -- never
+*comment *gosub_scene'd, never returns (every path here ends in *ending).
+*comment NOT in *scene_list (it isn't "the next chapter" for anyone's
+*comment *finish chain); told to compile.js via its own hardcoded
+*comment verifyFileName("death.txt") entry instead, same treatment
+*comment combat.txt gets and for the same reason -- see
+*comment narrative_guidelines.md Section 23.
+*comment
+*comment Every caller sets `death_cause` ("starvation" | "exhaustion" |
+*comment "combat") and, for "combat", `death_enemy_epithet` (how the
+*comment closing line refers to what killed you -- reuse combat_enemy_
+*comment epithet if the fight already set one) before jumping here. Also
+*comment reads `death_location_name` (defaults "Port Valen" in startup.txt)
+*comment so a future town/village just sets its own name first instead of
+*comment this file needing a hardcoded location per caller.
+*comment
+*comment Why callers *goto_scene here instead of a shared subroutine
+*comment redirecting internally: *goto_scene can't safely fire from inside
+*comment an active *gosub_scene call (corrupts scene.js's subscene stack --
+*comment see Section 13). Every location's own time-advancing/combat call
+*comment site does its own small check-and-jump after its *gosub_scene has
+*comment already returned; only the actual death CONTENT is shared here.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label death_screen
+[b]◈ ${death_location_name}[/b]
+*line_break
+
+*if (death_cause = "starvation")
+  The hunger stopped feeling like hunger days ago. What's left is a hollow, cold weight behind your ribs, and a body that no longer asks politely for food—it simply stops answering. You meant to eat. There was always something else first, and then there wasn't time, and then there wasn't strength either.
+*elseif (death_cause = "exhaustion")
+  Your body stopped waiting for permission to rest days ago. The world had already gone soft and distant at the edges, sounds arriving late, your own hands slow to answer for what you asked of them. You meant to sleep. There was always something else first, and the next task always felt more urgent than your own exhaustion.
+*else
+  The blow that finally lands is the one you don't see coming—or the one you see too late to matter. There's a moment of cold, distant clarity, and then the ground rushes up faster than it should.
+
+*comment Squad-reaction beats are deliberately written as news reaching
+*comment them, not a real-time near-miss rescue -- that framing holds
+*comment whether the squad is a room away or days out on the road, so this
+*comment scene never has to know or assume where the protagonist actually
+*comment died. Keep this shape (squad-flavored voice, no physical/
+*comment architectural anchors) when adding a fourth death_cause later.
+*if (death_cause = "starvation")
+  *if (squad = "vanguard")
+    When word reaches Varren, he goes quiet for a long moment before he finds anything to say—furious at the waste of it, furious at himself for not asking sooner why you'd stopped eating.
+  *if (squad = "scouts")
+    When word reaches Kestrel, she doesn't say anything at all. She just checks, twice, that someone remembered to note how long it had been since you'd last been seen eating.
+  *if (squad = "cadre")
+    When word reaches Ysolde, she goes back through her own notes first, searching for the point where she should have noticed and didn't.
+*elseif (death_cause = "exhaustion")
+  *if (squad = "vanguard")
+    When word reaches Varren, he goes quiet for a long moment before he finds anything to say—furious at the waste of it, furious at himself for never once ordering you to stop and sleep.
+  *if (squad = "scouts")
+    When word reaches Kestrel, she doesn't say anything at all. She just checks, twice, how many nights it had actually been since you'd last properly slept.
+  *if (squad = "cadre")
+    When word reaches Ysolde, she goes back through her own notes first, searching for the point where she should have noticed and didn't.
+*else
+  *if (squad = "vanguard")
+    When word reaches Varren, he goes quiet for a long moment before he finds anything to say—furious at whatever put you down, furious that he wasn't there to stand beside you when it did.
+  *if (squad = "scouts")
+    When word reaches Kestrel, she doesn't say anything at all. She just asks, twice, exactly how it happened, as if the answer might change on the second telling.
+  *if (squad = "cadre")
+    When word reaches Ysolde, she goes back through her own notes first, searching for the warning sign she should have caught before it came to this.
+
+*if (death_cause = "starvation")
+  ${death_location_name} does not stop, and does not care, for one more soul who let hunger go unanswered one day too many.
+*elseif (death_cause = "exhaustion")
+  ${death_location_name} does not stop, and does not care, for one more soul who kept choosing the next task over the rest they needed.
+*else
+  ${death_location_name} does not stop, and does not care, for one more soul who picked a fight ${death_enemy_epithet} was always going to win.
+
+[b]◈ THE END[/b]
+*line_break
+• [b]Campaign Day:[/b] Day ${campaign_day}
+*line_break
+*if (death_cause = "starvation")
+  • [b]Cause of Death:[/b] Starvation
+*elseif (death_cause = "exhaustion")
+  • [b]Cause of Death:[/b] Exhaustion
+*else
+  • [b]Cause of Death:[/b] Combat
+
+*ending

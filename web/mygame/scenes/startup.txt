@@ -297,14 +297,38 @@
 *create port_watch_rep 0
 *create gilded_scales_rep 0
 *create black_tally_rep 0
+*comment current_district is the single source of truth for "where is the
+*comment PC right now" -- set at the top of the compound hub and every
+*comment district label. port_valen_travel_to (port_valen.txt) reads it to
+*comment compute travel time via the distance-based model in
+*comment get_district_distance, instead of a full point-to-point matrix.
+*comment gdd_district/gdd_distance and pv_travel_dest are plain *create'd
+*comment inputs rather than *params, matching advance_time's own reasoning
+*comment (see that *comment in this file): quicktest can reach a *gosub-only
+*comment label directly without ever pushing real params.
+*create current_district "compound"
+*create gdd_district ""
+*create gdd_distance 0
+*create pv_travel_dest "compound"
 *create harbor_open true
 *create civic_heights_open false
 *create upper_wharves_open false
 *create dredge_end_open false
 *create port_valen_first_briefing false
 *create port_valen_harbor_seen false
-*create port_valen_compound_seen false
 *create port_valen_first_patrol_complete false
+*create vane_independent_operative false
+*create port_valen_next_report_day 0
+*create minutes_since_meal 0
+*create minutes_since_rest 0
+*create neglect_damage_hunger 0
+*create neglect_damage_fatigue 0
+*create hunger_stage "Fed"
+*create fatigue_stage "Rested"
+*comment --- SHARED DEATH ENGINE (death.txt) ---
+*create death_cause "starvation"
+*create death_location_name "Port Valen"
+*create death_enemy_epithet "whatever put you down"
 *create intake_completed false
 *create met_varren false
 *create met_lyra false
@@ -538,6 +562,16 @@
 *create combat_active_target 1
 *create combat_all_enemies_dead false
 *create combat_is_nonlethal false
+*comment combat_player_can_die is a DIFFERENT axis from combat_is_nonlethal
+*comment above -- that one controls whether the ENEMY is killed or knocked
+*comment out in the finishing-blow flavor text. This one controls whether
+*comment resolve_enemy_attack's damage can actually bring the PLAYER's own
+*comment hp_current to 0 (default false: every existing fight keeps its
+*comment current floor-at-1 "let the caller narrate a rescue" behavior
+*comment unchanged). A fight that should be able to kill the player sets
+*comment this true in its own fight_<name> entry label, same as any other
+*comment per-fight combat_enemy_* stat.
+*create combat_player_can_die false
 *create combat_enemy1_name "none"
 *create combat_enemy1_hp 0
 *create combat_enemy1_max_hp 0
@@ -3102,9 +3136,12 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *comment in the *create block). Rolls the enemy's attack
 *comment against the player's own armor_class, and on a hit, applies
 *comment damage to hp_current -- halved for a raging barbarian, same as
-*comment battle_take_damage, and never lower than 1 (a random cellar
+*comment battle_take_damage. Floored at 1 by default (a random cellar
 *comment nuisance doesn't get to kill the protagonist; let the calling
-*comment scene narrate the near-miss).
+*comment scene narrate the near-miss) UNLESS combat_player_can_die is true
+*comment for this fight, in which case it's allowed down to 0 -- the caller
+*comment (fight_enemy_turn) checks for that and reports combat_outcome
+*comment "player_died" instead of *goto fight_rescued's usual <=1 check.
 *comment
 *comment Also handles a reaction spell held in reserve: if shield_armed is
 *comment true and this attack would otherwise land, it auto-fires -- spends
@@ -3201,8 +3238,12 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
     *if ((temp_hp <= 0) and (agathys_active))
       *set combat_agathys_shattered true
       *set agathys_active false
-    *if (hp_current < 1)
-      *set hp_current 1
+    *if (combat_player_can_die)
+      *if (hp_current < 0)
+        *set hp_current 0
+    *else
+      *if (hp_current < 1)
+        *set hp_current 1
   *if (combat_active_target = 1)
     *set combat_enemy_atk_locked_1 true
   *if (combat_active_target = 2)
@@ -3468,6 +3509,9 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *if (tavern_item_temp_hp > 0)
     *if (tavern_item_temp_hp > temp_hp)
       *set temp_hp tavern_item_temp_hp
+  *if (tavern_item_type = "food")
+    *set minutes_since_meal 0
+    *set neglect_damage_hunger 0
   *if (tavern_item_buff_bonus > 0)
     *if (tavern_item_type = "food")
       *set food_buff_active true
