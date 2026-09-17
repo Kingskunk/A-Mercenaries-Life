@@ -620,5 +620,443 @@ if (window.location.hostname === 'localhost') {
   <div><span class="key">?</span></div>
 </div>
 </dialog>
+
+<!-- ═══════════════════════════════════════════════════════════
+     KOKORO READ-ALOUD SYSTEM
+     Reads narrative paragraphs aloud via the Mempalace/Kokoro TTS
+     server, with paragraph highlighting and look-ahead buffering
+     so playback never stalls waiting on the next line.
+     Hooks into ChoiceScript globals: printParagraph, clearScreen
+     Settings persist in localStorage (key: tts_reader_settings_v1)
+═══════════════════════════════════════════════════════════ -->
+<style>
+#ttsSettingsModal {
+  border: none;
+  border-radius: 10px;
+  padding: 0;
+  max-width: 420px;
+  width: calc(100vw - 2rem);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.35);
+  font-family: Helvetica, Arial, sans-serif;
+  color: #1a1a1a;
+  background: #f9f6f2;
+}
+#ttsSettingsModal::backdrop { background: rgba(0,0,0,0.55); }
+#ttsSettingsModal header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1em 1.25em 0.75em;
+  border-bottom: 1px solid #ddd;
+  background: #2c2c2c;
+  border-radius: 10px 10px 0 0;
+  color: #f0ece6;
+}
+#ttsSettingsModal header h2 { margin: 0; font-size: 1.05em; letter-spacing: 0.04em; font-weight: 600; }
+#ttsSettingsModal .ttsBody { padding: 1em 1.25em; }
+#ttsSettingsModal label { display: block; font-size: 0.8em; font-weight: 600; margin: 0.85em 0 0.3em; }
+#ttsSettingsModal label:first-child { margin-top: 0; }
+#ttsSettingsModal input[type="text"], #ttsSettingsModal select {
+  width: 100%; box-sizing: border-box; padding: 0.4em 0.55em; font-size: 0.85em;
+  border: 1px solid #ccc; border-radius: 5px;
+}
+#ttsSettingsModal input[type="range"] { width: 100%; }
+#ttsSettingsModal .ttsCheckRow { display: flex; align-items: center; gap: 0.5em; margin-top: 1em; }
+#ttsSettingsModal .ttsCheckRow label { margin: 0; font-weight: normal; }
+#ttsSettingsModal footer {
+  display: flex; justify-content: flex-end; gap: 0.5em;
+  padding: 0.6em 1em 0.8em; border-top: 1px solid #eee;
+}
+#ttsSettingsModal footer button {
+  font-size: 0.8em; padding: 0.35em 0.85em; border: 1px solid #bbb;
+  border-radius: 5px; background: #f4f0eb; cursor: pointer;
+}
+#ttsSettingsModal footer button:hover { background: #e8e0d4; border-color: #8b6a3e; }
+#ttsSettingsModal header button.ampClose { background: none; border: none; color: #aaa; font-size: 1.3em; cursor: pointer; line-height: 1; padding: 0 0.2em; }
+#ttsSettingsModal header button.ampClose:hover { color: #fff; }
+
+.ttsHighlight {
+  background: rgba(255, 213, 79, 0.55);
+  border-radius: 3px;
+  transition: background 0.25s ease;
+  box-shadow: 0 0 0 2px rgba(255, 213, 79, 0.55);
+}
+#ttsPanel {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 9999;
+  background: #1e1e24;
+  color: #f0f0f0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  display: none;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+}
+#ttsPanel button {
+  background: #33333d; color: #f0f0f0; border: none; border-radius: 8px;
+  width: 32px; height: 32px; font-size: 15px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+#ttsPanel button:hover { background: #46465a; }
+#ttsStatus { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: 0.85; }
+#ttsLauncher {
+  position: fixed; right: 24px; bottom: 24px; z-index: 9999;
+  background: #1e1e24; color: #f0f0f0; border: none; border-radius: 50%;
+  width: 48px; height: 48px; font-size: 20px; cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+#ttsLauncher:hover { background: #33333d; }
+</style>
+
+<dialog id="ttsSettingsModal">
+  <header>
+    <h2>🔊 Read Aloud Settings</h2>
+    <button class="ampClose" onclick="document.getElementById('ttsSettingsModal').close()" title="Close">✕</button>
+  </header>
+  <div class="ttsBody">
+    <label for="ttsServerUrl">Server URL (ngrok tunnel)</label>
+    <input type="text" id="ttsServerUrl" placeholder="https://xxxx.ngrok-free.app">
+
+    <label for="ttsKokoroVoice">Kokoro voice (preferred)</label>
+    <select id="ttsKokoroVoice">
+      <option value="">Auto (server default)</option>
+      <option value="af_bella">af_bella (US Female)</option>
+      <option value="af_sarah">af_sarah (US Female)</option>
+      <option value="af_nicole">af_nicole (US Female)</option>
+      <option value="am_michael">am_michael (US Male)</option>
+      <option value="am_adam">am_adam (US Male)</option>
+      <option value="bf_emma">bf_emma (UK Female)</option>
+      <option value="bm_george">bm_george (UK Male)</option>
+    </select>
+
+    <label for="ttsEdgeVoice">Edge TTS fallback voice</label>
+    <select id="ttsEdgeVoice">
+      <option value="en-US-AriaNeural">en-US-AriaNeural (Female)</option>
+      <option value="en-US-GuyNeural">en-US-GuyNeural (Male)</option>
+      <option value="en-US-ChristopherNeural">en-US-ChristopherNeural (Male)</option>
+      <option value="en-GB-SoniaNeural">en-GB-SoniaNeural (UK Female)</option>
+    </select>
+
+    <label for="ttsSpeed">Reading speed: <span id="ttsSpeedLabel">1.0x</span></label>
+    <input type="range" id="ttsSpeed" min="0.75" max="1.5" step="0.05" value="1.0">
+
+    <div class="ttsCheckRow">
+      <input type="checkbox" id="ttsAutoAdvance">
+      <label for="ttsAutoAdvance">Keep reading automatically after each choice</label>
+    </div>
+  </div>
+  <footer>
+    <button onclick="TTSReader.saveSettings()">Save</button>
+  </footer>
+</dialog>
+
+<div id="ttsPanel">
+  <button id="ttsPlayPause" title="Play/Pause">&#9658;</button>
+  <button id="ttsStop" title="Stop">&#9632;</button>
+  <span id="ttsStatus">Ready</span>
+  <button id="ttsGear" title="Settings">&#9881;</button>
+</div>
+<button id="ttsLauncher" title="Read this story aloud">🔊</button>
+
+<script>
+(function () {
+  var LOOKAHEAD = 2; // server caps concurrent Kokoro generation at 2 anyway
+  var STORAGE_KEY = 'tts_reader_settings_v1';
+
+  var savedSettings = {};
+  try { savedSettings = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch (e) {}
+  var settings = {
+    serverUrl: savedSettings.serverUrl || '',
+    kokoroVoice: savedSettings.kokoroVoice || '',
+    edgeVoice: savedSettings.edgeVoice || 'en-US-AriaNeural',
+    speed: savedSettings.speed || 1.0,
+    autoAdvance: !!savedSettings.autoAdvance
+  };
+
+  var state = {
+    paragraphs: [],   // [{ el, text, hash }]
+    index: -1,
+    playing: false,
+    enabled: false,
+    cache: new Map(), // idx -> { status, promise, url }
+    sessionId: 0,
+    listenMode: false,
+    autoResumeNextPage: false,
+    audio: new Audio()
+  };
+
+  function hashText(str) {
+    var h = 0;
+    for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
+    return 'p' + (h >>> 0).toString(36);
+  }
+
+  function fetchTTS(text, hash) {
+    if (!settings.serverUrl) return Promise.reject(new Error('No server URL set — click ⚙ to configure.'));
+    var base = settings.serverUrl.replace(/\/+$/, '');
+    return fetch(base + '/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+      body: JSON.stringify({
+        text: text,
+        text_hash: hash,
+        character_name: 'Narrator',
+        message_id: hash,
+        voice: settings.edgeVoice,
+        kokoro_voice: settings.kokoroVoice || null,
+        speed: settings.speed
+      })
+    }).then(function (res) {
+      if (!res.ok) throw new Error('Server responded ' + res.status);
+      return res.blob();
+    }).then(function (blob) {
+      return URL.createObjectURL(blob);
+    });
+  }
+
+  function ensureFetched(idx) {
+    if (idx < 0 || idx >= state.paragraphs.length) return;
+    if (state.cache.has(idx)) return;
+    var entry = { status: 'pending', url: null };
+    state.cache.set(idx, entry);
+    var mySession = state.sessionId;
+    var p = state.paragraphs[idx];
+    entry.promise = fetchTTS(p.text, p.hash).then(function (url) {
+      if (mySession !== state.sessionId) { URL.revokeObjectURL(url); return null; }
+      entry.status = 'ready';
+      entry.url = url;
+      return url;
+    }).catch(function (e) {
+      console.warn('[TTS Reader] failed for paragraph', idx, e);
+      entry.status = 'error';
+      setStatus('TTS error: ' + e.message);
+      return null;
+    });
+  }
+
+  function prefetchWindow(idx) {
+    for (var i = idx; i <= idx + LOOKAHEAD; i++) ensureFetched(i);
+  }
+
+  function highlight(idx) {
+    clearHighlight();
+    var p = state.paragraphs[idx];
+    if (!p) return;
+    p.el.classList.add('ttsHighlight');
+    var rect = p.el.getBoundingClientRect();
+    var inView = rect.top >= 60 && rect.bottom <= window.innerHeight - 60;
+    if (!inView) p.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function clearHighlight() {
+    state.paragraphs.forEach(function (p) { p.el.classList.remove('ttsHighlight'); });
+  }
+
+  function playFrom(idx) {
+    var mySession = state.sessionId;
+    if (idx >= state.paragraphs.length) {
+      state.playing = false;
+      state.index = idx;
+      updatePanel();
+      setStatus('Waiting for more story…');
+      return;
+    }
+    state.index = idx;
+    state.playing = true;
+    updatePanel();
+    highlight(idx);
+    prefetchWindow(idx);
+    setStatus('Loading ' + (idx + 1) + '/' + state.paragraphs.length + '…');
+
+    var entry = state.cache.get(idx);
+    entry.promise.then(function (url) {
+      if (mySession !== state.sessionId) return;
+      if (!url) { playFrom(idx + 1); return; }
+      setStatus('Reading ' + (idx + 1) + '/' + state.paragraphs.length);
+      state.audio.src = url;
+      state.audio.play().catch(function (e) { console.warn('[TTS Reader] play() failed', e); });
+    });
+  }
+
+  state.audio.addEventListener('ended', function () {
+    if (!state.playing) return;
+    playFrom(state.index + 1);
+  });
+  state.audio.addEventListener('error', function () {
+    if (!state.playing) return;
+    setStatus('Playback error, skipping…');
+    playFrom(state.index + 1);
+  });
+
+  function play() {
+    state.listenMode = true; // standing intent to keep listening across page turns
+    if (state.paragraphs.length === 0) { setStatus('No story text yet.'); return; }
+    if (state.index === -1 || state.index >= state.paragraphs.length) {
+      playFrom(0);
+    } else if (state.audio.src) {
+      state.playing = true;
+      state.audio.play();
+      updatePanel();
+      setStatus('Reading ' + (state.index + 1) + '/' + state.paragraphs.length);
+    } else {
+      playFrom(state.index);
+    }
+  }
+
+  function pause() {
+    state.listenMode = false; // explicit pause cancels auto-resume on the next page
+    state.playing = false;
+    state.audio.pause();
+    updatePanel();
+    setStatus('Paused.');
+  }
+
+  function stop() {
+    state.listenMode = false;
+    state.sessionId++;
+    state.playing = false;
+    state.audio.pause();
+    state.audio.removeAttribute('src');
+    clearHighlight();
+    state.cache.forEach(function (e) { if (e.url) URL.revokeObjectURL(e.url); });
+    state.cache.clear();
+    state.index = -1;
+    updatePanel();
+  }
+
+  function jumpTo(idx) {
+    state.audio.pause();
+    state.audio.removeAttribute('src');
+    playFrom(idx);
+  }
+
+  // --- hook into the ChoiceScript engine ---
+  var _origPrintParagraph = window.printParagraph;
+  window.printParagraph = function (msg, parent) {
+    var p = _origPrintParagraph(msg, parent);
+    if (p && state.enabled) onParagraphAdded(p);
+    return p;
+  };
+
+  var _origClearScreen = window.clearScreen;
+  window.clearScreen = function (code) {
+    onScreenClear();
+    return _origClearScreen(code);
+  };
+
+  function onScreenClear() {
+    if (!state.enabled) return;
+    var shouldResume = state.listenMode && settings.autoAdvance;
+    stop();
+    state.listenMode = shouldResume; // stop() clears this; restore it if we're auto-continuing
+    state.paragraphs = [];
+    state.autoResumeNextPage = shouldResume;
+    setStatus(shouldResume ? 'Waiting for next page…' : 'Ready');
+  }
+
+  // Splits off just the first sentence of a fresh page's opening paragraph
+  // so the reader has something short to synthesize and start playing
+  // immediately, instead of waiting on the whole (often multi-sentence)
+  // paragraph before any audio can begin. Only applied to the page
+  // opener - every choice in this game re-triggers this cold-start cost,
+  // unlike RoyalRoad where it's a one-time-per-chapter delay.
+  function splitOpeningSentence(text) {
+    var m = text.match(/^(.{1,300}?[.!?])(\s+)([\s\S]*)$/);
+    if (!m) return [text];
+    var rest = (m[3] || '').trim();
+    if (!rest) return [text];
+    return [m[1], rest];
+  }
+
+  function pushParagraphChunk(el, text) {
+    var idx = state.paragraphs.length;
+    state.paragraphs.push({ el: el, text: text, hash: hashText(text) });
+    return idx;
+  }
+
+  function onParagraphAdded(pEl) {
+    var text = pEl.innerText.trim();
+    if (!text) return;
+
+    var isPageOpener = state.paragraphs.length === 0;
+    var chunks = isPageOpener ? splitOpeningSentence(text) : [text];
+
+    var firstIdx = -1;
+    chunks.forEach(function (chunkText) {
+      var idx = pushParagraphChunk(pEl, chunkText);
+      if (firstIdx === -1) firstIdx = idx;
+    });
+
+    pEl.style.cursor = 'pointer';
+    pEl.title = 'Click to read from here';
+    pEl.addEventListener('click', function () { jumpTo(firstIdx); });
+
+    if (isPageOpener && state.autoResumeNextPage) {
+      state.autoResumeNextPage = false;
+      playFrom(0);
+    } else if (state.playing) {
+      prefetchWindow(state.index);
+    }
+  }
+
+  // --- UI wiring ---
+  var panel = document.getElementById('ttsPanel');
+  var launcher = document.getElementById('ttsLauncher');
+
+  function updatePanel() {
+    document.getElementById('ttsPlayPause').innerHTML = state.playing ? '&#10074;&#10074;' : '&#9658;';
+  }
+  function setStatus(text) {
+    var el = document.getElementById('ttsStatus');
+    if (el) el.textContent = text;
+  }
+
+  launcher.addEventListener('click', function () {
+    state.enabled = true;
+    launcher.style.display = 'none';
+    panel.style.display = 'flex';
+    if (state.paragraphs.length === 0) {
+      Array.prototype.forEach.call(document.querySelectorAll('#text > p'), function (pEl) {
+        if (pEl.innerText.trim()) onParagraphAdded(pEl);
+      });
+    }
+    play();
+  });
+  document.getElementById('ttsPlayPause').addEventListener('click', function () {
+    if (state.playing) pause(); else play();
+  });
+  document.getElementById('ttsStop').addEventListener('click', stop);
+  document.getElementById('ttsGear').addEventListener('click', function () {
+    document.getElementById('ttsServerUrl').value = settings.serverUrl;
+    document.getElementById('ttsKokoroVoice').value = settings.kokoroVoice;
+    document.getElementById('ttsEdgeVoice').value = settings.edgeVoice;
+    document.getElementById('ttsSpeed').value = settings.speed;
+    document.getElementById('ttsSpeedLabel').textContent = Number(settings.speed).toFixed(2) + 'x';
+    document.getElementById('ttsAutoAdvance').checked = settings.autoAdvance;
+    document.getElementById('ttsSettingsModal').showModal();
+  });
+  document.getElementById('ttsSpeed').addEventListener('input', function (e) {
+    document.getElementById('ttsSpeedLabel').textContent = Number(e.target.value).toFixed(2) + 'x';
+  });
+
+  window.TTSReader = {
+    saveSettings: function () {
+      settings.serverUrl = document.getElementById('ttsServerUrl').value.trim();
+      settings.kokoroVoice = document.getElementById('ttsKokoroVoice').value;
+      settings.edgeVoice = document.getElementById('ttsEdgeVoice').value;
+      settings.speed = parseFloat(document.getElementById('ttsSpeed').value);
+      settings.autoAdvance = document.getElementById('ttsAutoAdvance').checked;
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch (e) {}
+      document.getElementById('ttsSettingsModal').close();
+    }
+  };
+})();
+</script>
 </body>
 </html>
