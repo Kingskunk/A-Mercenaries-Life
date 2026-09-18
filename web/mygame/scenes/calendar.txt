@@ -147,6 +147,26 @@
       *set unique_buff3_desc "none"
       *set unique_buff3_stat "none"
       *set unique_buff3_bonus 0
+  *if (sleep_buff1_active) and (total_mins_this_call > 0)
+    *if (sleep_buff1_minutes_left > total_mins_this_call)
+      *set sleep_buff1_minutes_left - total_mins_this_call
+    *else
+      *set sleep_buff1_minutes_left 0
+      *set sleep_buff1_active false
+      *set sleep_buff1_name "none"
+      *set sleep_buff1_desc "none"
+      *set sleep_buff1_stat "none"
+      *set sleep_buff1_bonus 0
+  *if (sleep_buff2_active) and (total_mins_this_call > 0)
+    *if (sleep_buff2_minutes_left > total_mins_this_call)
+      *set sleep_buff2_minutes_left - total_mins_this_call
+    *else
+      *set sleep_buff2_minutes_left 0
+      *set sleep_buff2_active false
+      *set sleep_buff2_name "none"
+      *set sleep_buff2_desc "none"
+      *set sleep_buff2_stat "none"
+      *set sleep_buff2_bonus 0
 
   *comment --- Hunger & Fatigue neglect clock (Port Valen open-world only) ---
   *comment Only ticks once vane_independent_operative is true, so the clock
@@ -378,4 +398,102 @@
 *set hp_current (hp_max - neglect_damage_hunger) - neglect_damage_fatigue
 *if (hp_current < 0)
   *set hp_current 0
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment REUSABLE PRIMITIVE: RESOLVE A NIGHT'S SLEEP
+*comment Call once per sleep event, after the caller's own hours_to_pass/
+*comment minutes_to_pass *gosub_scene calendar advance_time for the sleep's
+*comment duration -- this does NOT advance time itself. Clears the fatigue
+*comment debt (same as before), grants this location's sleep-quality buff,
+*comment and updates the routine tracker. The caller still does its own
+*comment death check afterward, same as every other advance_time site.
+*comment
+*comment Inputs, set by the caller before gosub (plain *create'd variables
+*comment rather than *params, matching advance_time's own reasoning --
+*comment quicktest can reach a *gosub-only label directly this way):
+*comment   sleep_location_id       - unique id string for this exact spot,
+*comment                             e.g. "compound_barracks",
+*comment                             "rusty_anchor_loft"
+*comment   sleep_is_shared         - true for communal/institutional spaces;
+*comment                             hard-zeroes any bonus below regardless
+*comment                             of the tier inputs, so a shared bunk can
+*comment                             never accidentally roll the upper tiers
+*comment   sleep_tier_name         - display name for the granted buff,
+*comment                             "none" if this tier grants nothing
+*comment   sleep_tier_stat1/bonus1 - first stat bonus ("none"/0 if unused).
+*comment                             bonus1 may be negative (a squalid
+*comment                             location's debuff) -- resolve_sleep
+*comment                             handles the sign either way.
+*comment   sleep_tier_stat2/bonus2 - second stat bonus ("none"/0 if unused)
+*comment
+*comment Every call fully overwrites both sleep_buff slots, even to
+*comment inactive -- one night's sleep always supersedes the last, never
+*comment layers with it.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_sleep
+*comment --- Fatigue debt: cleared unconditionally. Fixed-value sets are
+*comment idempotent under replay (see recalc_hp_from_neglect above), so no
+*comment lock is needed for these two lines. ---
+*set minutes_since_rest 0
+*set neglect_damage_fatigue 0
+*gosub recalc_hp_from_neglect
+
+*comment --- Routine tracker: a genuine relative +1, needs its own lock,
+*comment kept separate from stat_bump_locked so this never collides with
+*comment whatever else a caller's page already spent that shared flag on. ---
+*if (not(sleep_award_locked)) or (not(locked_sleep_award_page_id = choice_page_id))
+  *if (sleep_location_id = last_sleep_location)
+    *set nights_same_location + 1
+  *else
+    *set last_sleep_location sleep_location_id
+    *set nights_same_location 1
+  *set sleep_award_locked true
+  *set locked_sleep_award_page_id choice_page_id
+
+*if (nights_same_location >= 6)
+  *set routine_stage "Rutted"
+*elseif (nights_same_location >= 3)
+  *set routine_stage "Restless"
+*else
+  *set routine_stage "Settled"
+
+*comment --- Sleep-quality buff: fixed-value sets, idempotent under replay,
+*comment no lock needed (same reasoning as the fatigue-clear above). A
+*comment shared space hard-zeroes both slots regardless of the tier inputs. ---
+*temp sleep_sign1 "+"
+*if (sleep_tier_bonus1 <= 0)
+  *set sleep_sign1 ""
+*if ((sleep_is_shared) or (sleep_tier_stat1 = "none")) or (sleep_tier_bonus1 = 0)
+  *set sleep_buff1_active false
+  *set sleep_buff1_name "none"
+  *set sleep_buff1_desc "none"
+  *set sleep_buff1_stat "none"
+  *set sleep_buff1_bonus 0
+  *set sleep_buff1_minutes_left 0
+*else
+  *set sleep_buff1_active true
+  *set sleep_buff1_name sleep_tier_name
+  *set sleep_buff1_desc "${sleep_sign1}${sleep_tier_bonus1} ${sleep_tier_stat1} checks"
+  *set sleep_buff1_stat sleep_tier_stat1
+  *set sleep_buff1_bonus sleep_tier_bonus1
+  *set sleep_buff1_minutes_left 480
+
+*temp sleep_sign2 "+"
+*if (sleep_tier_bonus2 <= 0)
+  *set sleep_sign2 ""
+*if ((sleep_is_shared) or (sleep_tier_stat2 = "none")) or (sleep_tier_bonus2 = 0)
+  *set sleep_buff2_active false
+  *set sleep_buff2_name "none"
+  *set sleep_buff2_desc "none"
+  *set sleep_buff2_stat "none"
+  *set sleep_buff2_bonus 0
+  *set sleep_buff2_minutes_left 0
+*else
+  *set sleep_buff2_active true
+  *set sleep_buff2_name sleep_tier_name
+  *set sleep_buff2_desc "${sleep_sign2}${sleep_tier_bonus2} ${sleep_tier_stat2} checks"
+  *set sleep_buff2_stat sleep_tier_stat2
+  *set sleep_buff2_bonus sleep_tier_bonus2
+  *set sleep_buff2_minutes_left 480
 *return

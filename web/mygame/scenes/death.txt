@@ -9,12 +9,13 @@
 *comment narrative_guidelines.md Section 23.
 *comment
 *comment Every caller sets `death_cause` ("starvation" | "exhaustion" |
-*comment "combat") and, for "combat", `death_enemy_epithet` (how the
-*comment closing line refers to what killed you -- reuse combat_enemy_
-*comment epithet if the fight already set one) before jumping here. Also
-*comment reads `death_location_name` (defaults "Port Valen" in startup.txt)
-*comment so a future town/village just sets its own name first instead of
-*comment this file needing a hardcoded location per caller.
+*comment "combat" | "drowning") and, for "combat", `death_enemy_epithet`
+*comment (how the closing line refers to what killed you -- reuse combat_
+*comment enemy_epithet if the fight already set one) before jumping here.
+*comment "drowning" needs no epithet. Also reads `death_location_name`
+*comment (defaults "Port Valen" in startup.txt) so a future town/village
+*comment just sets its own name first instead of this file needing a
+*comment hardcoded location per caller.
 *comment
 *comment Why callers *goto_scene here instead of a shared subroutine
 *comment redirecting internally: *goto_scene can't safely fire from inside
@@ -32,6 +33,8 @@
   The hunger stopped feeling like hunger days ago. What's left is a hollow, cold weight behind your ribs, and a body that no longer asks politely for food—it simply stops answering. You meant to eat. There was always something else first, and then there wasn't time, and then there wasn't strength either.
 *elseif (death_cause = "exhaustion")
   Your body stopped waiting for permission to rest days ago. The world had already gone soft and distant at the edges, sounds arriving late, your own hands slow to answer for what you asked of them. You meant to sleep. There was always something else first, and the next task always felt more urgent than your own exhaustion.
+*elseif (death_cause = "drowning")
+  The water is colder than the air by a long way, and it takes the breath out of you before it takes anything else. Whatever you were standing on is behind you now, or above you, and the cold has already closed your hands. You get one arm up toward where the surface was, and the current rolls you over, and there is no longer a direction that leads to air.
 *else
   The blow that finally lands is the one you don't see coming—or the one you see too late to matter. There's a moment of cold, distant clarity, and then the ground rushes up faster than it should.
 
@@ -40,7 +43,14 @@
 *comment whether the squad is a room away or days out on the road, so this
 *comment scene never has to know or assume where the protagonist actually
 *comment died. Keep this shape (squad-flavored voice, no physical/
-*comment architectural anchors) when adding a fourth death_cause later.
+*comment architectural anchors) when adding a fifth death_cause later --
+*comment "drowning" was added this way, and needed no change anywhere in
+*comment this file outside the four per-cause blocks.
+*comment
+*comment A caller that drowns the player should set `death_location_name`
+*comment to the water they went into before the *goto_scene, the same way a
+*comment future town sets its own name. Port Valen's Dredge-End sets
+*comment "Dredge-End".
 *if (death_cause = "starvation")
   *if (squad = "vanguard")
     When word reaches Varren, he goes quiet for a long moment before he finds anything to say—furious at the waste of it, furious at himself for not asking sooner why you'd stopped eating.
@@ -55,6 +65,13 @@
     When word reaches Kestrel, she doesn't say anything at all. She just checks, twice, how many nights it had actually been since you'd last properly slept.
   *if (squad = "cadre")
     When word reaches Ysolde, she goes back through her own notes first, searching for the point where she should have noticed and didn't.
+*elseif (death_cause = "drowning")
+  *if (squad = "vanguard")
+    When word reaches Varren, he goes quiet for a long moment before he finds anything to say—furious at the waste of it, furious that no one was standing close enough to pull you out.
+  *if (squad = "scouts")
+    When word reaches Kestrel, she doesn't say anything at all. She just asks, twice, how deep the water was, and whether anyone thought to drag for the body.
+  *if (squad = "cadre")
+    When word reaches Ysolde, she goes back through her own notes first, searching for the order she signed that sent you to the water's edge.
 *else
   *if (squad = "vanguard")
     When word reaches Varren, he goes quiet for a long moment before he finds anything to say—furious at whatever put you down, furious that he wasn't there to stand beside you when it did.
@@ -67,6 +84,8 @@
   ${death_location_name} does not stop, and does not care, for one more soul who let hunger go unanswered one day too many.
 *elseif (death_cause = "exhaustion")
   ${death_location_name} does not stop, and does not care, for one more soul who kept choosing the next task over the rest they needed.
+*elseif (death_cause = "drowning")
+  ${death_location_name} does not stop, and does not care, for one more soul who went into the water after something that was never theirs to carry.
 *else
   ${death_location_name} does not stop, and does not care, for one more soul who picked a fight ${death_enemy_epithet} was always going to win.
 
@@ -78,6 +97,8 @@
   • [b]Cause of Death:[/b] Starvation
 *elseif (death_cause = "exhaustion")
   • [b]Cause of Death:[/b] Exhaustion
+*elseif (death_cause = "drowning")
+  • [b]Cause of Death:[/b] Drowned
 *else
   • [b]Cause of Death:[/b] Combat
 

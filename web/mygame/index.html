@@ -141,10 +141,8 @@ var rootDir = "../";
     var activeQuestHtml = "";
     if (s.silt_gate_quest_stage === "active") {
       activeQuestHtml = "<hr class=\"sectionDivider\"><div class=\"statRow\"><span>Active Quest</span><span style=\"font-size:0.9em;\">Silt-Gate Contraband</span></div><div class=\"timePeriod\">Dredge-End Flume</div>";
-    } else if (s.timber_raft_quest_stage === "active") {
-      activeQuestHtml = "<hr class=\"sectionDivider\"><div class=\"statRow\"><span>Active Quest</span><span style=\"font-size:0.9em;\">Defaulted Timber Raft</span></div><div class=\"timePeriod\">Upper Wharves</div>";
-    } else if (s.red_tallow_quest_stage === "active") {
-      activeQuestHtml = "<hr class=\"sectionDivider\"><div class=\"statRow\"><span>Active Quest</span><span style=\"font-size:0.9em;\">Red-Tallow Consignment</span></div><div class=\"timePeriod\">Harbor Basin</div>";
+    } else if (s.anchor_quest_stage === "active" || s.anchor_quest_stage === "offered") {
+      activeQuestHtml = "<hr class=\"sectionDivider\"><div class=\"statRow\"><span>Active Quest</span><span style=\"font-size:0.9em;\">The Low-Water Box</span></div><div class=\"timePeriod\">The Rusty Anchor</div>";
     } else if (isTruthy(s.found_customs_vellum) && !isTruthy(s.turned_in_customs_vellum)) {
       activeQuestHtml = "<hr class=\"sectionDivider\"><div class=\"statRow\"><span>Active Quest</span><span style=\"font-size:0.9em;\">Toll Register Delivery</span></div><div class=\"timePeriod\">Gilded Scales</div>";
     }
@@ -236,10 +234,13 @@ startLoading();
 </div>
 <div id="mobileLinks" class="webOnly">
 </div>
+</div> <!-- close container1 explicitly: without this, it silently swallows everything
+              to the end of <body> (dialogs, the AMP save system, and now the TTS reader
+              panel), which then gets cloned into container2 and swapped out on every
+              page-turn animation, orphaning any JS-bound event listeners on that UI. -->
 <noscript>
 <p>This game requires JavaScript; please enable JavaScript and refresh this page.</p>
 </noscript>
-<p><a id="makeyourowngames" href="https://www.choiceofgames.com/make-your-own-games/choicescript-intro/">Make your own games with ChoiceScript</a></p>
 <div id="tools"></div>
 <script type="module">
 if (window.location.hostname === 'localhost') {
@@ -750,6 +751,11 @@ if (window.location.hostname === 'localhost') {
       <input type="checkbox" id="ttsAutoAdvance">
       <label for="ttsAutoAdvance">Keep reading automatically after each choice</label>
     </div>
+
+    <div class="ttsCheckRow">
+      <input type="checkbox" id="ttsFastStart">
+      <label for="ttsFastStart">Fast start: use Edge TTS for a page's opening line, then Kokoro</label>
+    </div>
   </div>
   <footer>
     <button onclick="TTSReader.saveSettings()">Save</button>
@@ -767,6 +773,7 @@ if (window.location.hostname === 'localhost') {
 <script>
 (function () {
   var LOOKAHEAD = 2; // server caps concurrent Kokoro generation at 2 anyway
+  var PARAGRAPH_PAUSE_MS = 400; // brief breath between paragraphs so lines don't run together
   var STORAGE_KEY = 'tts_reader_settings_v1';
 
   var savedSettings = {};
@@ -776,7 +783,8 @@ if (window.location.hostname === 'localhost') {
     kokoroVoice: savedSettings.kokoroVoice || '',
     edgeVoice: savedSettings.edgeVoice || 'en-US-AriaNeural',
     speed: savedSettings.speed || 1.0,
-    autoAdvance: !!savedSettings.autoAdvance
+    autoAdvance: !!savedSettings.autoAdvance,
+    fastStart: savedSettings.fastStart !== false // default on
   };
 
   var state = {
@@ -797,7 +805,7 @@ if (window.location.hostname === 'localhost') {
     return 'p' + (h >>> 0).toString(36);
   }
 
-  function fetchTTS(text, hash) {
+  function fetchTTS(text, hash, forceEdge) {
     if (!settings.serverUrl) return Promise.reject(new Error('No server URL set — click ⚙ to configure.'));
     var base = settings.serverUrl.replace(/\/+$/, '');
     return fetch(base + '/tts', {
@@ -810,7 +818,8 @@ if (window.location.hostname === 'localhost') {
         message_id: hash,
         voice: settings.edgeVoice,
         kokoro_voice: settings.kokoroVoice || null,
-        speed: settings.speed
+        speed: settings.speed,
+        force_edge: !!forceEdge
       })
     }).then(function (res) {
       if (!res.ok) throw new Error('Server responded ' + res.status);
@@ -827,7 +836,7 @@ if (window.location.hostname === 'localhost') {
     state.cache.set(idx, entry);
     var mySession = state.sessionId;
     var p = state.paragraphs[idx];
-    entry.promise = fetchTTS(p.text, p.hash).then(function (url) {
+    entry.promise = fetchTTS(p.text, p.hash, p.forceEdge).then(function (url) {
       if (mySession !== state.sessionId) { URL.revokeObjectURL(url); return null; }
       entry.status = 'ready';
       entry.url = url;
@@ -886,7 +895,11 @@ if (window.location.hostname === 'localhost') {
 
   state.audio.addEventListener('ended', function () {
     if (!state.playing) return;
-    playFrom(state.index + 1);
+    var mySession = state.sessionId;
+    setTimeout(function () {
+      if (mySession !== state.sessionId || !state.playing) return;
+      playFrom(state.index + 1);
+    }, PARAGRAPH_PAUSE_MS);
   });
   state.audio.addEventListener('error', function () {
     if (!state.playing) return;
@@ -974,22 +987,38 @@ if (window.location.hostname === 'localhost') {
     return [m[1], rest];
   }
 
-  function pushParagraphChunk(el, text) {
+  function pushParagraphChunk(el, text, forceEdge) {
     var idx = state.paragraphs.length;
-    state.paragraphs.push({ el: el, text: text, hash: hashText(text) });
+    state.paragraphs.push({ el: el, text: text, hash: hashText(text), forceEdge: !!forceEdge });
     return idx;
+  }
+
+  // HUD/status lines (location headers, clock & HP bars, combat toasts, loot
+  // popups) aren't narrative prose and sound like garbage read aloud. They
+  // have a consistent structural signature in this game's scenes: either a
+  // "◈ TITLE" section header, or an entire line wrapped in a single pair
+  // of literal square brackets (e.g. "[⏳ Hour: 10:30 | Hit Points: 7/7]").
+  function isHudLine(text) {
+    if (text.charAt(0) === '◈') return true; // section/location header
+    if (text.charAt(0) === '[' && text.charAt(text.length - 1) === ']') return true; // status/combat toast
+    return false;
   }
 
   function onParagraphAdded(pEl) {
     var text = pEl.innerText.trim();
-    if (!text) return;
+    if (!text || isHudLine(text)) return;
 
     var isPageOpener = state.paragraphs.length === 0;
     var chunks = isPageOpener ? splitOpeningSentence(text) : [text];
 
     var firstIdx = -1;
-    chunks.forEach(function (chunkText) {
-      var idx = pushParagraphChunk(pEl, chunkText);
+    chunks.forEach(function (chunkText, chunkIdx) {
+      // Only the very first chunk of a fresh page's opener goes to Edge - it's
+      // the one thing blocking any audio at all, and Edge has no CPU cost or
+      // concurrency cap. Everything else (including the rest of this same
+      // paragraph) still uses Kokoro.
+      var useEdge = settings.fastStart && isPageOpener && chunkIdx === 0;
+      var idx = pushParagraphChunk(pEl, chunkText, useEdge);
       if (firstIdx === -1) firstIdx = idx;
     });
 
@@ -1039,6 +1068,7 @@ if (window.location.hostname === 'localhost') {
     document.getElementById('ttsSpeed').value = settings.speed;
     document.getElementById('ttsSpeedLabel').textContent = Number(settings.speed).toFixed(2) + 'x';
     document.getElementById('ttsAutoAdvance').checked = settings.autoAdvance;
+    document.getElementById('ttsFastStart').checked = settings.fastStart;
     document.getElementById('ttsSettingsModal').showModal();
   });
   document.getElementById('ttsSpeed').addEventListener('input', function (e) {
@@ -1052,6 +1082,7 @@ if (window.location.hostname === 'localhost') {
       settings.edgeVoice = document.getElementById('ttsEdgeVoice').value;
       settings.speed = parseFloat(document.getElementById('ttsSpeed').value);
       settings.autoAdvance = document.getElementById('ttsAutoAdvance').checked;
+      settings.fastStart = document.getElementById('ttsFastStart').checked;
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch (e) {}
       document.getElementById('ttsSettingsModal').close();
     }

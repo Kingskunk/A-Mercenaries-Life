@@ -175,6 +175,15 @@ function compile(){
   // *scene_list -- it isn't "the next chapter" for anyone's *finish chain,
   // it's a jump target reached on death from any location's own scene.
   verifyFileName("death.txt");
+  // Port Valen's three smaller districts (Dredge-End, Civic Heights, Upper
+  // Wharves) were split out of port_valen.txt into their own files once each
+  // had enough content to be worth isolating (see each file's own header
+  // comment). Same shape as combat.txt/death.txt above -- reached only via
+  // *goto_scene from port_valen.txt's port_valen_travel_to, never part of
+  // anyone's *finish chain, so deliberately NOT in *scene_list either.
+  verifyFileName("port_valen_dredge_end.txt");
+  verifyFileName("port_valen_civic_heights.txt");
+  verifyFileName("port_valen_upper_wharves.txt");
 
   //Check startup.txt for a *scene_list
   var sceneList = false;

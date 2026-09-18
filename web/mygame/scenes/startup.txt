@@ -1,32 +1,15 @@
 *title A Mercenary's Path
-*author Kwesey
 *ifid d8ee30e2-04a1-4721-adad-8f0daedcedfd
 
 *scene_list
   startup
+  company_intake
   camp_night
   dawn_trial
   battle_black_sinks
   alderford
   port_valen
-*comment "combat" (a fight-engine library, entered only via *gosub_scene, never
-*comment via *finish or a direct *goto_scene) is deliberately NOT listed here.
-*comment *scene_list order also builds the implicit "*finish continues into
-*comment the next scene" chain (see nav.nextSceneName) -- adding combat as a
-*comment chain link previously hijacked ready_camp's *finish into it instead
-*comment of camp_night. *gosub_scene doesn't require scene_list membership to
-*comment target a scene at runtime -- but compile.js has NO directory-scan
-*comment fallback (see its own "as we can't read the dir" comment) and only
-*comment bundles scenes it's explicitly told about, so combat.txt is instead
-*comment added via a hardcoded verifyFileName("combat.txt") call in
-*comment compile.js, right next to calendar.txt's (same situation: a
-*comment gosub_scene-only subroutine scene, deliberately off this list).
-*comment Leaving it off *scene_list without that compile.js line means it
-*comment silently stops being bundled into play_game.html at all -- no
-*comment compile-time error, and quicktest/randomtest/refresh_fuzz_test all
-*comment load scenes straight off disk so none of them catch it either; the
-*comment failure only shows up as "scene doesn't exist" the moment a real
-*comment compiled build reaches a *gosub_scene combat ... call.
+*comment Note: combat and calendar are subroutine libraries called via *gosub_scene and compiled separately.
 
 *create implicit_control_flow true
 
@@ -93,21 +76,12 @@
 *create weapon_hands "one_handed"
 *create has_shield true
 *create shield_equipped true
-*comment Tracks the player's own stance independent of what's currently
-*comment possible to hold -- apply_weapon_loadout auto-restores shield_equipped
-*comment from this the moment a one-handed weapon comes back out; only
-*comment toggle_shield_equipped ever changes it.
+*comment Tracks stance preference; auto-restored when wielding a 1H weapon.
 *create wants_shield_equipped true
 *create armor "brigandine"
 *create armor_desc "Padded gambeson & leather brigandine"
 *create armor_type "brigandine"
-*comment --- EQUIPMENT LOADOUT (see apply_weapon_loadout / apply_armor_loadout
-*comment / equip_weapon below) ---
-*comment starting_weapon*/starting_armor* are permanent snapshots of whatever
-*comment weapon/armor character creation (or a dev preset) assigned, captured
-*comment once in update_dnd_stats, so switching to a purchased item and back
-*comment is always possible without needing a duplicate branch per origin
-*comment choice or per dev preset.
+*comment --- EQUIPMENT LOADOUT ---
 *create starting_weapon "falchion"
 *create starting_weapon_desc "Heavy falchion & iron buckler"
 *create starting_weapon_damage "1d8 slashing"
@@ -119,24 +93,9 @@
 *create starting_armor_type "brigandine"
 *create equipped_weapon_id "starting"
 *create equipped_armor_id "starting"
-*comment Guards the one-time starting-loadout snapshot in update_dnd_stats;
-*comment don't key that off equipped_weapon_id/equipped_armor_id themselves,
-*comment since they *create-default to "starting" too and would make the
-*comment guard always false.
 *create loadout_initialized false
 
 *comment --- PAPER-DOLL SLOTS: HEAD / CLOAK / HANDS / WAIST / FEET ---
-*comment Same id-driven shape as weapon/armor above (apply_<slot>_loadout
-*comment derives every display/mechanical field from equipped_<slot>_id --
-*comment never a bare *set outside chargen/dev-presets/apply_*_loadout
-*comment itself). Only head carries AC math among these five; cloak/hands/
-*comment waist/feet are desc-only. None of these five need a "starting_*"
-*comment shadow copy the way weapon/armor do -- chargen assigns exactly one
-*comment concrete value per origin (no per-choice branching to collapse, and
-*comment nothing to revert to), so equipped_<slot>_id is set directly to a
-*comment concrete id. A future shop item just adds a new *if branch to the
-*comment matching apply_<slot>_loadout, exactly like timber_axe/stiletto did
-*comment for weapon.
 *create equipped_head_id "none"
 *create head_desc "Bare head"
 *create head_ac 0
@@ -150,16 +109,7 @@
 *create equipped_feet_id "none"
 *create feet_desc "Bare feet"
 
-*comment --- SIDEARM (swappable secondary weapon; see swap_active_sidearm) ---
-*comment 9 chargen sites (3 origins x 3 weapon choices) but only 5 distinct
-*comment values total -- no combinatorial reason to collapse through a
-*comment "starting" indirection the way weapon/armor do. It DOES need to be
-*comment able to resolve equipped_sidearm_id = "starting" though: a swap can
-*comment push the original main-hand identity into this slot, and "starting"
-*comment always means the same thing (the character's original weapon)
-*comment regardless of which physical slot currently holds it -- so
-*comment apply_sidearm_loadout's "starting" branch reads the EXISTING
-*comment starting_weapon_* snapshot above, not a duplicate of its own.
+*comment --- SIDEARM (Swappable Secondary Weapon) ---
 *create equipped_sidearm_id "none"
 *create sidearm "none"
 *create sidearm_desc "None"
@@ -168,27 +118,13 @@
 *create sidearm_type "none"
 *create sidearm_hands "one_handed"
 
-*comment --- NECK & RINGS (physical slot only) ---
-*comment A magic item ALSO needs attune_item/unattune_item to grant its
-*comment bonus -- see recalculate_attuned_bonuses. Mundane jewelry (none
-*comment exists yet) would need only the physical slot filled. For the one
-*comment existing magic item (Hearthstone Talisman), attune_item/
-*comment unattune_item own syncing equipped_neck_id themselves (see below) --
-*comment there is deliberately no separate manual "wear" UI action for it.
+*comment --- ACCESSORIES & ATTUNEMENT ---
 *create equipped_neck_id "none"
 *create neck_desc "Bare throat"
 *create equipped_ring1_id "none"
 *create ring1_desc "Bare finger"
 *create equipped_ring2_id "none"
 *create ring2_desc "Bare finger"
-
-*comment --- MAGIC ITEM ATTUNEMENT ---
-*comment A magic item only grants its bonus while attuned (see attune_item /
-*comment unattune_item / recalculate_attuned_bonuses below), and only a
-*comment limited number can be attuned at once -- otherwise every artifact
-*comment found over the campaign stacks forever with no cap. 5 slots is a
-*comment house-rule bump over 5E's RAW 3, since this is a solo protagonist
-*comment rather than a party splitting found items.
 *create max_attunement_slots 5
 *create attuned_count 0
 *create hearthstone_attuned false
@@ -225,28 +161,10 @@
 *create calendar_day 14
 *create calendar_year 428
 *create campaign_day 1
-*comment day_of_week is a pure derived value ((campaign_day-1) modulo 7,
-*comment recomputed unconditionally alongside calendar_date in calendar.txt's
-*comment check_calendar_month) -- not incremented or persisted independently,
-*comment so it carries no replay-safety risk of its own. Ironday/Tideday/
-*comment Marketday/Hearthday/Forgeday/Greyday/Hallowday, in that order
-*comment starting from Day 1. Intended as the hook for future NPC/shop
-*comment schedules (*if (day_of_week = "Marketday")).
+*comment day_of_week: Ironday through Hallowday (derived from campaign_day).
 *create day_of_week "Ironday"
 *create current_season "Autumn"
-*comment weather is rolled once per calendar day (inside the same
-*comment days_to_pass>0 / time_advance_locked guard as the clock itself --
-*comment see calendar.txt's advance_time), weighted by current_season, so it
-*comment carries the same replay-safety as everything else that guard
-*comment protects: a refresh of the day it changed on just replays the
-*comment already-locked value instead of rerolling. Any check can become
-*comment weather-aware the same way any check already becomes advantage/
-*comment disadvantage-aware -- a caller sets advantage/disadvantage true
-*comment based on *if (weather = "X") right before its own
-*comment *gosub_scene startup roll_d20_check, no new engine plumbing needed
-*comment (see port_valen.txt's transit_boom_hazard/transit_cold_approach
-*comment for a wired example). Values: Clear/Overcast/Rain/Fog/Storm year-
-*comment round, Snow/Sleet/Blizzard replacing Rain/Storm in Winter.
+*comment Daily rolled weather weighted by current season.
 *create weather "Clear"
 *create minutes_to_pass 0
 *create hours_to_pass 0
@@ -272,11 +190,7 @@
 *create intelligence 10
 *create wisdom 10
 *create charisma 10
-*comment Snapshot of constitution as character creation left it, before any
-*comment attuned magic item bonuses -- see recalculate_attuned_bonuses,
-*comment which always rederives constitution from this rather than
-*comment accumulating +N edits that could never safely be undone when a
-*comment player unattunes something.
+*comment Baseline CON before attuned magic item bonuses.
 *create base_constitution 10
 
 *create str_mod 0
@@ -296,7 +210,7 @@
 *create silver 12
 *create copper 0
 *create gold 0
-*comment Currency ratio: 10 copper = 1 silver mark, 10 silver marks = 1 gold. Existing content awards/spends in silver only (matches established flavor text like "silver marks" and "iron shilling"); copper and gold are available for future rewards/costs to use at their own denomination without needing conversion.
+*comment Currency ratio: 10 copper = 1 silver mark, 10 silver marks = 1 gold crown.
 
 *comment --- RELATIONSHIPS & STANDING ---
 *create lyra_bond 0
@@ -305,26 +219,16 @@
 *create kestrel_respect 0
 *create ysolde_respect 0
 *create odessa_respect 0
-*create torvald_respect 0
 *create rorik_regard 0
-*create janna_regard 0
-*create talia_regard 0
-*create morzan_regard 0
-*create maura_regard 0
-*create bran_regard 0
-*create corbel_respect 0
-*create orlov_regard 0
 *create rennick_disposition "unmet"
-*comment --- PORT VALEN OPEN-WORLD STATE ---
+*comment --- FACTION & SETTLEMENT STANDING ---
+*create alderford_rep 0
 *create port_watch_rep 0
 *create gilded_scales_rep 0
 *create black_tally_rep 0
+*comment --- PORT VALEN OPEN-WORLD STATE ---
 *create silt_gate_quest_stage "unstarted"
 *create silt_gate_resolution "none"
-*create timber_raft_quest_stage "unstarted"
-*create timber_raft_resolution "none"
-*create red_tallow_quest_stage "unstarted"
-*create red_tallow_resolution "none"
 *create silt_gate_lookout_spotted false
 *create silt_gate_winch_jammed false
 *create silt_gate_recon_done false
@@ -333,13 +237,53 @@
 *create silt_gate_full_intel false
 *create silt_gate_bounty_claimed false
 *create has_silt_gate_iron false
+*comment --- THE RUSTY ANCHOR / THE LOW-WATER BOX ---
+*comment anchor_quest_stage: "unstarted" | "offered" | "active" | "resolved" | "declined"
+*create anchor_quest_stage "unstarted"
+*create anchor_quest_resolved false
+*comment anchor_route: "none" | "sal" | "watch" | "scales" | "kept" | "burned" | "walked"
+*create anchor_route "none"
+*create anchor_cellar_read "none"
+*create anchor_lie_caught false
+*create anchor_sal_trust 0
+*comment anchor_descent: "none" | "forced" | "threaded" | "surveyed" | "talked" | "arcaned"
+*create anchor_descent "none"
+*create anchor_descent_failed false
+*comment anchor_sounding_man: "none" | "recruited" | "dropped" | "warned"
+*create anchor_sounding_man "none"
+*create anchor_tab_unlocked false
+*create anchor_fee_paid false
+*create anchor_broker_note false
+*create anchor_fee 2
+*create anchor_ebb_ready false
+*create anchor_watch_chit_recognized false
+*create anchor_knows_riker_note false
+*create anchor_knows_second_void false
+*create anchor_rumor_1 false
+*create anchor_rumor_2 false
+*create anchor_tally_grudge false
+*create anchor_deposit 0
+*create anchor_stew_used 0
+*create anchor_stew_week_start_day 0
+*create anchor_stew_cap 3
+*comment --- CRANE THREE DAY-LABOR (Harbor Quayside) ---
+*comment crane_quest_stage: "unstarted" | "active" | "resolved"
+*create crane_quest_stage "unstarted"
+*create crane_seen false
+*create crane_grievance_known false
+*create crane_fee_bonus 3
+*comment crane_first_shift_method: "none" | "muscle" | "rigging" | "tally" | "talked"
+*create crane_first_shift_method "none"
+*create crane_shift_ontime false
+*create crane_shift_damaged false
+*create crane_job_unlocked false
+*create crane_shifts_completed 0
+*create crane_last_shift_day 0
+*create crane_dell_regard 0
+*create crane_award_locked false
+*create locked_crane_award_page_id 0
+
 *comment --- HARBOR POI SUB-HUB ---
-*comment pv_pois_open gates the quayside POI menu (set at the Vane handoff with
-*comment the district opens). pv_*_seen flags swap each POI's first-visit intro
-*comment for a shorter return-visit line once the PC has already met the place.
-*comment pv_tavern_rumor_1/2/3 are one-shot rumor slots at the Cleaved Keel.
-*comment keel_dice_bankroll is the Keel dice table's house bankroll for
-*comment resolve_wager (one stat per den, per narrative_guidelines.md).
 *create pv_pois_open false
 *create pv_tavern_seen false
 *create pv_drydock_seen false
@@ -351,15 +295,7 @@
 *create pv_tavern_rumor_3 false
 *create pv_dice_met false
 *create keel_dice_bankroll 200
-*comment current_district is the single source of truth for "where is the
-*comment PC right now" -- set at the top of the compound hub and every
-*comment district label. port_valen_travel_to (port_valen.txt) reads it to
-*comment compute travel time via the distance-based model in
-*comment get_district_distance, instead of a full point-to-point matrix.
-*comment gdd_district/gdd_distance and pv_travel_dest are plain *create'd
-*comment inputs rather than *params, matching advance_time's own reasoning
-*comment (see that *comment in this file): quicktest can reach a *gosub-only
-*comment label directly without ever pushing real params.
+*comment --- DISTRICT TRACKING ---
 *create current_district "compound"
 *create gdd_district ""
 *create gdd_distance 0
@@ -379,12 +315,34 @@
 *create neglect_damage_fatigue 0
 *create hunger_stage "Fed"
 *create fatigue_stage "Rested"
-*comment The compound mess is free but rationed -- pv_mess_ration_cap free
-*comment meals per rolling 7-day window (see port_valen_hub's rollover
-*comment check), so indefinite survival can't be sustained for free forever.
-*comment Once exhausted, the option disappears until the week rolls over;
-*comment the harbor taverns' paid "food"-type items (buy_tavern_item) are
-*comment the fallback, at real coin cost.
+*comment --- SLEEP QUALITY & ROUTINE ---
+*create sleep_buff1_active false
+*create sleep_buff1_name "none"
+*create sleep_buff1_desc "none"
+*create sleep_buff1_stat "none"
+*create sleep_buff1_bonus 0
+*create sleep_buff1_minutes_left 0
+*create sleep_buff2_active false
+*create sleep_buff2_name "none"
+*create sleep_buff2_desc "none"
+*create sleep_buff2_stat "none"
+*create sleep_buff2_bonus 0
+*create sleep_buff2_minutes_left 0
+*comment routine_stage: Settled -> Restless (-1 checks at 3+ nights) -> Rutted (-2 checks at 6+ nights)
+*create last_sleep_location "none"
+*create nights_same_location 0
+*create routine_stage "Settled"
+*create sleep_award_locked false
+*create locked_sleep_award_page_id 0
+*comment resolve_sleep call inputs
+*create sleep_location_id "none"
+*create sleep_is_shared false
+*create sleep_tier_name "none"
+*create sleep_tier_stat1 "none"
+*create sleep_tier_bonus1 0
+*create sleep_tier_stat2 "none"
+*create sleep_tier_bonus2 0
+*comment Compound mess ration tracking
 *create pv_mess_rations_used 0
 *create pv_mess_week_start_day 0
 *create pv_mess_ration_cap 5
@@ -416,24 +374,10 @@
 *create granary_rats_resolved false
 *create has_letter_of_credit false
 *create letter_of_credit_value 0
-*comment I/O for describe_silver_amount (see that label, near currency_add
-*comment below) -- a shared display formatter, not letter-of-credit-
-*comment specific, so any future silver sum that might cross into gold can
-*comment reuse it too.
+*comment I/O for describe_silver_amount formatter
 *create silver_amount_to_describe 0
 *create coin_amount_desc ""
-*comment Scratch working var, mirrors currency_add_amount's role -- holds
-*comment the amount a given Counting House visit is adding to the running
-*comment letter_of_credit_value balance (letters stack into one balance
-*comment rather than tracking separate note instances; see
-*comment counting_house_plan.md).
 *create ch_credit_deposit_amount 0
-*comment Set on the single Insight-check branch at the curing-shed
-*comment confrontation (alderford.txt) where the player explicitly
-*comment threatens to walk Rennick's shaved scales up to Morzan's
-*comment toll-house -- the one place the player's own dialogue names
-*comment Morzan directly, so it's the only branch that earns a specific
-*comment payoff at the Counting House rather than a general regard bump.
 *create rennick_reported false
 *create carrion_contract_ratcatcher_resolved false
 *create squad "none"
@@ -470,19 +414,7 @@
 *create disadvantage false
 *create guidance_active false
 *create save_vs "none"
-*comment --- TEMPORARY BUFF SYSTEM (Food / Drink / Unique Boons) ---
-*comment Three independent buff channels that can all be active at once:
-*comment   FOOD  (1 slot) — solid meals from taverns (Pottage, Herring, etc.)
-*comment   DRINK (1 slot) — beverages from taverns (Cider, Bitters, etc.)
-*comment   UNIQUE BOONS (3 slots) — rare blessings, alchemy, shrines, etc.
-*comment Buying a new food replaces the food slot; a new drink replaces the
-*comment drink slot. Unique boons auto-fill into slots 1-3 via the
-*comment apply_unique_buff subroutine (see below). All *set here are plain
-*comment assignments (never +N), so granting a buff is naturally replay-safe
-*comment on its own; the accompanying HP heal / currency spend at the
-*comment purchase site needs the usual currency_txn_locked guard.
-*comment All timers decay via calendar.txt's advance_time; all matching
-*comment bonuses aggregate in roll_d20_check.
+*comment --- TEMPORARY BUFF SYSTEM (Food, Drink, Unique Boons) ---
 *create food_buff_active false
 *create food_buff_name "none"
 *create food_buff_desc "none"
@@ -513,81 +445,32 @@
 *create unique_buff3_stat "none"
 *create unique_buff3_bonus 0
 *create unique_buff3_minutes_left 0
-*comment House bankroll for Corporal Rorik's bone-dice table -- drains as
-*comment the player wins, refills as the player loses (their ante becomes
-*comment part of the pot), and once it hits 0 the wager option disappears
-*comment ("the house is tapped out") via resolve_wager's wager_bankroll_busted.
 *create taphouse_dice_bankroll 200
-*comment Guards against re-rolling this exact check on a page refresh or a
-*comment Show Stats round trip (both replay the current page from the top).
-*comment locked_page_id is compared against the engine's choice_page_id
-*comment counter (reserved "choice_" prefix, maintained by web/scene.js),
-*comment which only advances on a genuine new choice/Next click — so a
-*comment replay of the same page always matches, while a later, brand new
-*comment occurrence of the same check_skill (e.g. the next combat round)
-*comment never does.
+
+*comment --- REPLAY LOCKS & ENGINE STATE ---
 *create roll_locked false
 *create locked_page_id 0
 *create locked_guidance_roll 0
 *create locked_adv_label ""
-*comment Whether advantage (not cancelled by disadvantage) applied to the
-*comment just-completed roll -- a persistent stat, not *temp, so it survives
-*comment untouched across the *return the same way check_success/check_total
-*comment do, and correctly stays at the original roll's answer on a replay
-*comment (the guarded skip above never touches it, same reasoning as those).
-*comment A caller that needs to know "did this specific roll have advantage"
-*comment (Rogue Sneak Attack, for one) should read this instead of trying to
-*comment capture the live advantage flag itself -- that flag gets cleared by
-*comment this same subroutine before it returns, so reading it after the
-*comment gosub always sees false, and capturing it into a *temp beforehand
-*comment doesn't survive a replay correctly either (see resolve_player_weapon_hit's
-*comment comment block for the exact failure mode that discovered this).
 *create roll_had_advantage false
-*comment Same idea, separate flag, for battle_take_damage's own *rand
-*comment (web/mygame/scenes/battle_black_sinks.txt). Deliberately not the
-*comment same variables as the check lock above: a page commonly runs a
-*comment failed check (locking roll_locked) and then battle_take_damage in
-*comment the same breath, and sharing one flag would make the damage roll
-*comment see itself as already "locked" and never apply on the first pass.
 *create damage_roll_locked false
 *create locked_damage_page_id 0
-*comment Same idea again, for the small-combat engine's two per-round
-*comment rolls (resolve_player_hit / resolve_enemy_attack, below) -- two
-*comment separate flags since both fire on the same page every round with
-*comment no *choice between them, same reasoning as stat_bump_locked/
-*comment stat_bump2_locked elsewhere in this file. A fresh *choice each
-*comment round means a fresh choice_page_id, so reusing the same two flags
-*comment across every round of every future small fight is safe -- each
-*comment round's page can never match a previous round's locked page_id.
 *create combat_player_hit_locked false
 *create locked_combat_player_hit_page_id 0
 *create locked_combat_enemy_atk_page_id 0
-*comment Per-SLOT locks (not a single shared "last call" id) -- fight_enemy_
-*comment turn calls resolve_enemy_attack up to 3 times on the SAME page
-*comment (once per living enemy slot, no pause in between), reading
-*comment combat_active_target (1/2/3) to know which slot it's resolving. A
-*comment single shared lock variable was tried first and looked right, but
-*comment breaks on replay: it can only remember the MOST RECENT slot's "already
-*comment fired" state, so by the time slot 3 finishes, slot 1 and 2's locks
-*comment are effectively forgotten, and refresh_fuzz_test caught a refreshed
-*comment page re-rolling slots 1/2 with new random results. Three independent
-*comment booleans, one per slot, each genuinely remembers its own slot.
 *create combat_enemy_atk_locked_1 false
 *create combat_enemy_atk_locked_2 false
 *create combat_enemy_atk_locked_3 false
 *create combat_magic_missile_locked false
 *create locked_combat_magic_missile_page_id 0
-*comment second_wind/activate_rage predate this combat engine (built for a
-*comment future combat scene that didn't exist yet) and had no lock at all
-*comment since nothing exercised the bug -- now something does.
 *create second_wind_locked false
 *create locked_second_wind_page_id 0
 *create activate_rage_locked false
 *create locked_activate_rage_page_id 0
 *create althea_phial_locked false
 *create locked_althea_phial_page_id 0
-*comment Shared combat state a calling scene sets once when a fight starts
-*comment and updates each round -- see resolve_player_hit/resolve_enemy_attack.
+
+*comment --- COMBAT ENGINE STATE (combat.txt) ---
 *create combat_enemy_name "none"
 *create combat_enemy_hp 0
 *create combat_enemy_max_hp 0
@@ -610,30 +493,11 @@
 *comment Populated by combat.txt's fight_* labels for the calling scene to
 *comment read once *gosub_scene combat fight_<name> returns.
 *create combat_outcome ""
-*comment Multi-enemy fight support (combat.txt): up to 3 simultaneous enemy
-*comment slots. Slot 1 IS the original single-enemy combat_enemy_* stats
-*comment below -- fight_setup snapshots whatever a fight_<name> label set
-*comment there into combat_enemy1_*, the real permanent home for slot 1, so
-*comment an existing single-enemy fight (fight_silt_lurker) needs zero
-*comment changes. combat_active_target says which slot is currently mirrored
-*comment into the canonical combat_enemy_* names below, which the shared
-*comment damage primitives (resolve_player_hit, resolve_enemy_attack, etc.)
-*comment read/write -- see combat.txt's fight_sync_target_in/out and
-*comment fight_pick_target for the mirroring logic. A fight with only one
-*comment enemy never touches slots 2/3 and behaves exactly as before.
+*comment Multi-enemy fight support (combat.txt: slots 1-3)
 *create combat_enemy_count 1
 *create combat_active_target 1
 *create combat_all_enemies_dead false
 *create combat_is_nonlethal false
-*comment combat_player_can_die is a DIFFERENT axis from combat_is_nonlethal
-*comment above -- that one controls whether the ENEMY is killed or knocked
-*comment out in the finishing-blow flavor text. This one controls whether
-*comment resolve_enemy_attack's damage can actually bring the PLAYER's own
-*comment hp_current to 0 (default false: every existing fight keeps its
-*comment current floor-at-1 "let the caller narrate a rescue" behavior
-*comment unchanged). A fight that should be able to kill the player sets
-*comment this true in its own fight_<name> entry label, same as any other
-*comment per-fight combat_enemy_* stat.
 *create combat_player_can_die false
 *create combat_enemy1_name "none"
 *create combat_enemy1_hp 0
@@ -654,11 +518,7 @@
 *create combat_enemy2_epithet "the second creature"
 *create combat_enemy2_metal_armor false
 *create combat_current_spell_id ""
-*comment Optional per-slot override set (up to 5 variants) -- empty string on any variant
-*comment falls back to the shared combat_flavor_enemy_hit/miss_N (see
-*comment fight_narrate_enemy_turn), so a group of identical mooks only
-*comment needs to write the flavor once; a distinct-named enemy (like
-*comment fight_rennick_guards' Left/Right guards) can still set its own.
+*comment Optional per-slot flavor overrides
 *create combat_flavor_enemy2_hit_1 ""
 *create combat_flavor_enemy2_hit_2 ""
 *create combat_flavor_enemy2_hit_3 ""
@@ -688,24 +548,9 @@
 *create combat_flavor_enemy3_miss_3 ""
 *create combat_flavor_enemy3_miss_4 ""
 *create combat_flavor_enemy3_miss_5 ""
-*comment Set once per fight (in combat.txt's per-enemy fight_<name> label)
-*comment so the shared round hub/enemy-turn prose stays enemy-agnostic
-*comment everywhere except these few genuinely creature-specific lines.
-*comment combat_enemy_metal_armor: RAW Shocking Grasp grants the player
-*comment advantage against a metal-armored target -- defaults false (most
-*comment monsters/dock-guard-tier mooks aren't in plate or chain), set true
-*comment per-slot for a fight against armored soldiers/knights/constructs.
 *create combat_enemy_epithet "the creature"
 *create combat_enemy_metal_armor false
-*comment Every combat_flavor_* pair below is a 5-variant SET (_1 through _5),
-*comment randomly picked each time by combat.txt's pick_weapon_flavor /
-*comment fight_narrate_enemy_turn -- a fight that only ever prints one fixed
-*comment sentence per outcome reads as a stuck record across a multi-round
-*comment fight, since the exact same line repeats every hit/miss. All variants
-*comment for a given line should vary the actual PHYSICAL ACTION
-*comment (a thrust vs. a feint-and-cut vs. closing distance under a guard),
-*comment not just reshuffle adjectives around the same motion, or the
-*comment repetition just moves up a level instead of actually going away.
+*comment Randomized 5-variant combat attack flavor pools
 *create combat_flavor_weapon_hit_1 ""
 *create combat_flavor_weapon_hit_2 ""
 *create combat_flavor_weapon_hit_3 ""
@@ -716,9 +561,6 @@
 *create combat_flavor_weapon_miss_3 ""
 *create combat_flavor_weapon_miss_4 ""
 *create combat_flavor_weapon_miss_5 ""
-*comment Ranged-weapon counterparts -- a bow/crossbow shot needs its own
-*comment wording ("the bolt punches into..." vs. "your blade connects..."),
-*comment not the melee text with ${weapon} swapped in.
 *create combat_flavor_weapon_hit_ranged_1 ""
 *create combat_flavor_weapon_hit_ranged_2 ""
 *create combat_flavor_weapon_hit_ranged_3 ""
@@ -729,8 +571,6 @@
 *create combat_flavor_weapon_miss_ranged_3 ""
 *create combat_flavor_weapon_miss_ranged_4 ""
 *create combat_flavor_weapon_miss_ranged_5 ""
-*comment Shared/default enemy-attack flavor (slot 1, and any slot 2/3
-*comment without its own override set above).
 *create combat_flavor_enemy_hit_1 ""
 *create combat_flavor_enemy_hit_2 ""
 *create combat_flavor_enemy_hit_3 ""
@@ -741,107 +581,31 @@
 *create combat_flavor_enemy_miss_3 ""
 *create combat_flavor_enemy_miss_4 ""
 *create combat_flavor_enemy_miss_5 ""
-*comment Finishing-blow flavor -- printed instead of the ordinary hit line
-*comment (combat.txt checks combat_enemy_hp <= 0 right after the damage
-*comment primitive returns) whenever a hit is the one that actually drops
-*comment the target, across EVERY damage source: the weapon attack and all
-*comment six cantrips plus Magic Missile and Dissonant Whispers. Generic and
-*comment enemy-agnostic (parametrized with ${combat_enemy_epithet}/${weapon}
-*comment only, no per-fight override) rather than bespoke per fight --
-*comment mirrors how this file's buff-spell flavor already stays enemy-
-*comment agnostic on purpose ("new ones never need a per-fight override",
-*comment see the header comment above the fight library), since a full
-*comment per-fight AND per-attack-type finisher set would be a much larger
-*comment writing cost for comparatively little payoff over one good shared
-*comment set. *create can't take a ${}-interpolated default (quicktest
-*comment rejects it: "value must be a simple string"), so the actual text
-*comment lives inline in combat.txt's pick_weapon_death_flavor /
-*comment pick_spell_death_flavor instead of as a named constant here.
-*comment Dissonant Whispers is a one-off cast, not a repeating round action
-*comment like the pairs above, so it stays a single fixed line -- much less
-*comment exposed to the "same sentence every round" problem this whole
-*comment variant system exists to solve.
+*comment Spell-specific combat attack flavor
 *create combat_flavor_dissonant_hit ""
 *create combat_flavor_dissonant_miss ""
-*comment Held-in-reserve reaction spell (Shield, etc.) -- armed by the
-*comment player ahead of time at no action cost, auto-fires the next time
-*comment resolve_enemy_attack would otherwise land a hit. See that
-*comment primitive's comment block for why this needs no extra pause point.
 *create shield_armed false
 *create combat_shield_triggered false
-*comment Ongoing curse -- +1d6 necrotic on every hit while active (RAW
-*comment applies to any attack, weapon or spell, so every damage-dealing
-*comment combat primitive checks this the same way). Hexblood innate casts
-*comment (race_cantrip_2 = "hex") consume hexblood_hex_used instead of a
-*comment warlock_spell_slots charge, once per long rest.
 *create hex_active false
 *create hexblood_hex_used false
-*comment Temporary hit points (False Life, Armor of Agathys) -- a separate
-*comment pool from hp_current so it's never touched by ordinary healing/rest
-*comment clamps, absorbed first by resolve_enemy_attack on an incoming hit.
-*comment agathys_active additionally retaliates 5 cold damage back at the
-*comment attacker on a hit while temp_hp > 0, and shatters (clears itself)
-*comment the moment temp_hp is fully spent.
 *create temp_hp 0
 *create agathys_active false
 *create combat_agathys_triggered false
 *create combat_agathys_shattered false
-*comment Shared lock for the simple "spend a slot, set a flag/roll a value"
-*comment buff casts below (Hex, Armor of Agathys, False Life, Healing Word)
-*comment -- safe to reuse across all of them since only one is ever chosen
-*comment per round, same reasoning as stat_bump_locked/stat_bump2_locked.
 *create combat_cast_locked false
 *create locked_combat_cast_page_id 0
-*comment Generic numeric output for whichever cast primitive above just ran
-*comment (temp HP gained, HP healed) -- one shared name rather than a
-*comment separate single-use output stat per spell.
 *create combat_cast_result 0
 *create combat_dissonant_whispers_locked false
 *create locked_combat_dissonant_whispers_page_id 0
-*comment Same idea again, for spending/gaining currency (shop purchases,
-*comment rewards, gambling, bribes, etc.). *set silver/copper +N is exactly
-*comment as replay-unsafe as *set armor_class +N was -- wrap the deduction
-*comment or reward in *if (not(currency_txn_locked)) or (not
-*comment (locked_currency_txn_page_id = choice_page_id)) ... *set
-*comment currency_txn_locked true ... *set locked_currency_txn_page_id
-*comment choice_page_id, the same way roll_d20_check guards *rand. One
-*comment shared flag is enough for the whole game: only one currency
-*comment transaction can happen per resetPage()-bumped choice_page_id, since
-*comment picking another option (even one that loops back to the same shop
-*comment menu) always bumps choice_page_id again first.
+
+*comment --- REPLAY LOCKS & SUBROUTINE PARAMETERS ---
 *create currency_txn_locked false
 *create locked_currency_txn_page_id 0
-*comment Same idea again, for every other bare *set stat +N/-N that isn't
-*comment currency or a dice/damage roll: hub "actions remaining" counters
-*comment (camp_actions_left, alder_actions_left, bivouac_actions_left) and
-*comment companion regard/respect/bond bumps (lyra_bond, varren_respect,
-*comment odessa_respect, kestrel_respect, ysolde_respect, janna_regard,
-*comment talia_regard, etc.) are all exactly as
-*comment replay-unsafe as currency, and by the same reasoning one shared
-*comment flag covers the whole game: an actions-left spend and the check
-*comment resolution it leads into are always two separate pages (the *choice
-*comment the activity's own dialogue pauses on in between always bumps
-*comment choice_page_id first), so they never collide over one shared lock.
 *create stat_bump_locked false
 *create locked_stat_bump_page_id 0
-*comment Healing Word's *rand roll, preserved across a replay of its guard
-*comment the same way locked_guidance_roll preserves roll_d20_check's --
-*comment the healed amount is displayed in the banner text, so a replay
-*comment needs to show the SAME roll it already locked in, not just skip
-*comment re-applying it silently.
 *create locked_heal_roll 0
-*comment A second copy of the same lock, for the rare page that legitimately
-*comment fires two independent stat-bump events at once (e.g. a hub spends an
-*comment actions-left slot AND immediately grants a companion regard bump on
-*comment the very same page, with no intervening *choice to separate them) --
-*comment the exact "two mutations, one breath" situation resolve_wager's
-*comment ante/win split handles for currency.
 *create stat_bump2_locked false
 *create locked_stat_bump2_page_id 0
-*comment Inputs/locks for the currency_add / resolve_wager / buy_tavern_item
-*comment reusable primitives (defined below, after roll_d20_check) -- see
-*comment the comment blocks there for what each does and why the wager's
-*comment ante and win payout need two separate lock pairs rather than one.
 *create currency_add_amount 0
 *create wager_bankroll_var "taphouse_dice_bankroll"
 *create wager_ante_copper 0
@@ -862,30 +626,11 @@
 *create tavern_item_buff_minutes 0
 *create tavern_purchase_locked false
 *create locked_tavern_purchase_page_id 0
-*comment Input parameters for the apply_unique_buff subroutine (see that
-*comment label below). The caller sets these before *gosub apply_unique_buff.
-*comment The subroutine auto-fills into the first empty unique_buff slot
-*comment (1-3), or refreshes an existing buff with the same name, or
-*comment overwrites the slot with the least time remaining if all 3 are full.
 *create unique_buff_input_name ""
 *create unique_buff_input_desc ""
 *create unique_buff_input_stat ""
 *create unique_buff_input_bonus 0
 *create unique_buff_input_minutes 0
-*comment Same idea again, for calendar.txt's advance_time: *set clock_minute
-*comment + minutes_to_pass (and the hour/day rollovers built on top of it)
-*comment is exactly as replay-unsafe as any other *set stat +N -- a refresh
-*comment mid-page would restage minutes_to_pass/hours_to_pass and re-run the
-*comment addition, advancing the game clock twice for one action. Unlike the
-*comment other locks, this one needs a per-call-site identifier rather than
-*comment just choice_page_id: a single page can legitimately call
-*comment advance_time more than once (e.g. mess_done then falling straight
-*comment through into night_end), so choice_page_id alone can't tell "this
-*comment call replaying" apart from "a second, different call on this same
-*comment page." advance_time takes a `time_advance_id` param for exactly
-*comment this -- pass a string unique to that call site (the enclosing
-*comment *label is usually enough; append a number if one label has more
-*comment than one advance_time call in it, as alderford_start does).
 *create time_advance_locked false
 *create locked_time_advance_page_id 0
 *create locked_time_advance_id ""
@@ -961,11 +706,6 @@
 *create visited_alder_cadre false
 *create visited_alder_smithy false
 *create visited_alder_tavern false
-*comment These need to be *create'd (persistent), not *temp -- discussing a
-*comment topic grants lyra_bond, so if they lived as *temp (reset fresh
-*comment every time the player re-enters taphouse_talk_lyra from the tavern
-*comment hub) leaving and re-approaching Lyra would let every topic, and its
-*comment bond reward, be replayed indefinitely.
 *create discussed_lyra_valen false
 *create discussed_lyra_archery false
 *create discussed_lyra_pay false
@@ -987,11 +727,6 @@
 *create bard_performed_taphouse false
 *create has_free_taphouse_drink false
 *create won_rorik_dice false
-*comment Captures the lyra_bond >= 15 check's result the one time it's
-*comment actually evaluated (inside taphouse_talk_lyra's stat_bump_locked
-*comment guard), so a refresh replaying the page after lyra_bond has already
-*comment been bumped once can't re-derive a different answer from the
-*comment now-higher value and show the wrong half of the branching prose.
 *create lyra_pay_generous false
 *create visited_alder_guild false
 *create visited_alder_bathhouse false
@@ -1007,9 +742,6 @@
 *create gilded_scales_leverage false
 *create alder_wager_won false
 *create prep_waterproof_gear false
-*comment Set by port_valen.txt's boom-passage/cold-exposure beats -- a failed
-*comment check compounds into disadvantage on the next beat instead of
-*comment dealing damage, rather than a fresh prep_* -> advantage input.
 *create river_crossing_rattled false
 *create river_crossing_weary false
 *create has_hearthstone_talisman false
@@ -1040,7 +772,7 @@ Before the mud and the blood: many choices throughout this game carry mechanical
 *label mode_select
 *choice
   # [Begin Campaign from Prologue]
-    *goto prologue_start
+    *goto_scene company_intake
   # 🛠️ [Developer: Quick Scene Jump & Character Presets]
     *goto dev_jump_menu
 
@@ -1523,6 +1255,8 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
 Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${squad_title}). Select story milestone to jump into:
 
 *choice
+  # 🌧️ Jump to Company Intake / Munitions (company_intake.txt)
+    *goto_scene company_intake
   # ⛺ Jump to Night 1 Campfire Hub (camp_night.txt)
     *set campaign_day 1
     *set calendar_date "14th of Scorpio, 428 IR"
@@ -1617,721 +1351,11 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
     *set codex_meridian_empire true
     *goto_scene port_valen port_valen_hub
 
-*label prologue_start
-Rain beats steadily against the black canvas of the encampment, turning the red clay of the river valley into a miserable sea of mud.
-
-Smoke from damp pine fires stings your eyes. All around you, the Iron Carrion—four hundred hardened sellswords, deserters, and scoundrels—prepare for tomorrow's march into the contested borderlands. The sound of whetstones scraping against iron fills the air, rhythmic and cold as a death knell.
-
-Before the horns sound tomorrow, you are just fresh meat in a company that buries three rookies for every one that survives the winter in the Grey Marches.
-
-You sit on an upturned ale cask beneath a sagging leather awning, picking dried clay from your boot heels, when squelching footsteps approach through the muck.
-
-A rat-faced company clerk in a moth-eaten wool mantle ducks under your awning. He clutches a tallow candle inside a pierced-tin lantern, shielding a cracked leather ledger from the drizzle. At the top of the damp vellum page, the date is scratched in dark iron-gall ink: [b]14th of Scorpio, 428 IR[/b]. He dips a split-iron pen into a horn of lampblack gall-ink and glares at you with watery, impatient eyes.
-
-"You on the cask," he snaps, wiping rain from his upper lip with a grimy sleeve. "Muster roll. What name am I scratching into the book so the paymaster knows who to pay—or who to bury?"
-
-*choice
-  # "Corin." Short, sharp, and easy to bark across a skirmish line.
-    *set name "Corin"
-    *goto meet_clerk
-  # "Kaelen." Your voice carrying the gravelly cadence of the northern border.
-    *set name "Kaelen"
-    *goto meet_clerk
-  # "Lucius." An imperial name carrying shadows of fallen grandeur.
-    *set name "Lucius"
-    *goto meet_clerk
-  # You give him your true name.
-    "My name is..."
-    *input_text name
-    *goto meet_clerk
-
-*label meet_clerk
-The clerk scratches your name with the sharp scrape of iron on vellum, blowing gently on the black ink to set it. 
-
-He pauses, pen suspended in midair, his rheumy gaze trailing from your weathered face down to your calloused hands.
-
-"No army brand on your wrist, but you don't have the posture of a common ditch-digger either," he murmurs, his voice dropping below the drum of rain on canvas. "Men don't take the Carrion shilling for the glorious view. What drove you into our ranks, lad? How did a boy like you end up taking blood-money from the Iron Carrion?"
-
-You stare past his shoulder into the dying embers of a ditch brazier. The noise of the camp seems to recede, and for a fleeting, suffocating heartbeat, the memory of that day—and the desperate choice that brought you to this camp—roars back into your mind...
-
-*choice
-  # Starvation & The Bailiff's Hounds: How the burning of Ashbrook drove you to the recruiter's table.@{show_stat_hints  [STR 16 (+3), CON 14 (+2), WIS 12 (+1)]|}
-    *set origin "ruined"
-    *set origin_title "Ashbrook Survivor"
-    *set origin_desc "A survivor of the razed village of Ashbrook who traded a murderer's noose for a mercenary's sword."
-    *set codex_ashbrook true
-    *set codex_baron_karr true
-    *set codex_iron_bailiffs true
-    *set strength 16
-    *set constitution 14
-    *set wisdom 12
-    *set dexterity 10
-    *set intelligence 10
-    *set charisma 10
-    *goto flashback_village
-
-  # Outlaw Sanctuary: How a botched heist against the Black Tally in Port Valen made the Carrion your only shield.@{show_stat_hints  [DEX 16 (+3), WIS 14 (+2), CHA 12 (+1), +8 Silver]|}
-    *set origin "outlaw"
-    *set origin_title "Port Valen Outlaw"
-    *set origin_desc "A quick-fingered rogue fleeing the Black Tally's blood bounty in Port Valen under the Carrion banner."
-    *set codex_black_tally true
-    *set codex_port_valen true
-    *set codex_port_watch true
-    *set dexterity 16
-    *set wisdom 14
-    *set charisma 12
-    *set strength 10
-    *set constitution 10
-    *set intelligence 10
-    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
-      *set currency_add_amount 80
-      *gosub currency_add
-      *set currency_txn_locked true
-      *set locked_currency_txn_page_id choice_page_id
-    *goto flashback_slums
-
-  # The Fallen Scion: How the scandal at Karr's Keep stripped your inheritance and forced an alias.@{show_stat_hints  [CHA 15 (+2), INT 15 (+2), DEX 12 (+1), +15 Silver]|}
-    *set origin "disgraced"
-    *set origin_title "Disgraced Scion"
-    *set origin_desc "A fallen scion of the Marches who traded a ruined crest for the anonymity of common sellswords."
-    *set codex_baron_karr true
-    *set codex_karrs_keep true
-    *set codex_meridian_empire true
-    *set charisma 15
-    *set intelligence 15
-    *set dexterity 12
-    *set strength 10
-    *set constitution 10
-    *set wisdom 10
-    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
-      *set currency_add_amount 150
-      *gosub currency_add
-      *set currency_txn_locked true
-      *set locked_currency_txn_page_id choice_page_id
-    *goto flashback_scandal
-
-*label flashback_village
-Black smoke choked the summer sky above the village of [b]Ashbrook[/b]. You remember the laughter of Baron Aldous Karr's mounted bailiffs as they put torches to the communal granary to enforce an unpaid grain tax. You remember your sister's scream as a bailiff kicked down the farmhouse door.
-
-You didn't plead. You grabbed the heavy iron-headed wood-axe from the chopping block.
-
-The memory of the impact still reverberates in your forearms: the sickening, splintering crunch as your axe split the bailiff's collarbone clean to the ribs. The spray of hot arterial blood across your face. You fled into the black woods of the High Crags with blood on your hands and the Baron's tracking hounds howling in the valley behind you.
-
-For three days you wandered the border scrublands like a starving ghost, living on pond water and bitter roots. Cold, hollow-eyed, and hunted for murder, you reached a crossroads waystation where the Carrion's black banner fluttered above the palisade. 
-
-Inside, Sergeant Varren was buying bodies for the Carrion's next contract with the Baron's own stolen silver. He took one look at the dried blood caked under your fingernails, slid a steaming bowl of mutton stew across the greasy oak table, and dropped a heavy iron shilling beside it.
-
-"Eat, boy," Varren had grunted. "Then put your thumb on the parchment. The Carrion doesn't ask who you killed, and the Baron's dogs don't search our baggage trains."
-
-You ate the stew. You took the iron. And the farmer's son died at that table.
-
-*goto choose_race
-
-*label flashback_slums
-The stench of rotting fish, raw sewage, and cheap jasmine perfume in the canal slums of [b]Dredge-End[/b] in [b]Port Valen[/b]—the capital where men were sold for copper and killed for silver.
-
-You had taken six hundred silver marks off the counting-table of the [b]Black Tally[/b]—the ruthless dockside syndicate of loan sharks and river-smugglers. But their chief enforcer, a two-hundred-pound brute with gold teeth, cornered you in the blind alley behind the canal brothel. When his butcher's cleaver flashed in the lantern light, your reflexes were already moving. 
-
-Two quick, vicious upward jabs of your bone-handled shiv beneath his floating ribs. He collapsed into the filthy gutter with a wet gurgle. You snatched his purse, scrambled over a spiked iron fence, and vanished into the fog just as the whistles of the Port Watch began to shriek through the alleys.
-
-Within two hours, the Black Tally had marked your blood-debt across every tavern in the province. Port Valen was a rat-trap. You sneaked into the foul, bilgewater belly of a grain barge heading upriver, hiding among rotting sacks for two days until the city walls were fifty miles behind you.
-
-When the barge docked at the marshland border, you saw the Carrion's encampment sprawling across the mud. You knew their reputation: cutthroats, renegades, and veterans who answered to no magistrate and respected no guild.
-
-You didn't wait to be hunted down. You marched straight past the sentries, flipped a stolen silver mark onto the quartermaster's table, and offered your daggers. The Black Tally has long reach, but even dockside loan sharks don't send debt collectors into an army of four hundred killers. You traded the gallows for a mercenary's cloak.
-
-*goto choose_race
-
-*label flashback_scandal
-Silk sheets, the heavy musk of spilled wine and lavender oil, and the muffled giggles of Baron Aldous Karr's younger wife in the high towers of [b]Karr's Keep[/b]. A glorious, reckless conquest—until the heavy oak doors splintered inward with the force of a battering ram.
-
-Four household guardsmen with drawn rapiers flooded the chamber, their lantern light catching you half-naked. You didn't panic. You grabbed your velvet doublet, parried the lead guard's thrust with a heavy silver candelabra, and hurled yourself through the stained-glass window into the night.
-
-The fall through the keep's rose arbor bruised your ribs and shredded your skin, but you hit the cobblestones running. By morning, Baron Karr's decree had declared your noble blood forfeit, your family lands seized by the local court, and your head priced for the executioner's block. Your family had held those lands on an old imperial patent, one no crown official had inspected or renewed in your grandfather's lifetime—a formality that meant nothing until the moment a baron's grudge decided it meant nothing at all. You pawned your signet ring at a frontier outpost for common woolens and a handful of silver.
-
-Sitting alone in a border tavern, watching commoners spit on your family's fallen crest, you overheard a scarred Carrion lieutenant and two veteran corporals dividing silver from a sacked border fort. They spoke with the crude, terrifying freedom of men who owed fealty to no king and knelt to no god but coin.
-
-You approached their table. You offered no noble excuses and asked for no pity. You asked for a contract.
-
-"High blood," the lieutenant had sneered, looking over your hands with amused contempt. "Can you bleed like a common dog, lad?"
-
-"Try me," you answered coldly.
-
-He laughed, tossed you a leather arming doublet, and had the clerk scratch your new name into the ledger. You buried the nobleman that night, trading a ruined name for the absolute freedom of the sword.
-
-*goto choose_race
-
-*label choose_race
-The clerk sets his iron pen down for a moment, studying your face and frame with a more clinical eye than before. "Before winters and scars—what blood runs in you, recruit? Matters for the burial detail, if nothing else. Different bones get dug different holes."
-
-*choice
-  # Human. Common stock—unremarkable to look at, stubborn enough to survive anywhere.@{show_stat_hints  [+1 to All Six Stats]|}
-    *set race "human"
-    *set race_title "Human"
-    *set race_desc "Common human stock. Unremarkable to look at, adaptable enough to thrive in any gutter, court, or killing field."
-    *set race_darkvision false
-    *set race_trait_title "Versatile"
-    *set race_trait_desc "No single edge, but no glaring gap either."
-    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
-      *set strength +1
-      *set dexterity +1
-      *set constitution +1
-      *set intelligence +1
-      *set wisdom +1
-      *set charisma +1
-      *set stat_bump_locked true
-      *set locked_stat_bump_page_id choice_page_id
-    "Human," the clerk grunts, not even glancing up. "Half this camp is. Cheapest coffin wood to cut, so the quartermaster likes you already."
-    *goto intake_profile
-
-  # Elf. Sharp-eared, long-lived, and colder in the eyes than most men expect.@{show_stat_hints  [+2 DEX, Darkvision]|}
-    *set race "elf"
-    *set race_title "Elf"
-    *set race_desc "Sharp-eared and long-lived. Centuries of patience sit strangely on a body still young enough to bleed like anyone else's."
-    *set race_darkvision true
-    *set race_trait_title "Fey Ancestry"
-    *set race_trait_desc "Advantage on saves against being charmed, and magic can't put you to sleep."
-    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
-      *set dexterity +2
-      *set stat_bump_locked true
-      *set locked_stat_bump_page_id choice_page_id
-    The clerk's pen pauses. "Elf," he mutters, glancing at your ears twice. "Don't get many of your kind taking iron for coin. Your sort usually has better places to be dying slowly than the Grey Marches."
-    *goto intake_profile
-
-  # Dwarf. Stout, dense-boned, and built to hold a line that lesser men would break under.@{show_stat_hints  [+2 CON, Darkvision]|}
-    *set race "dwarf"
-    *set race_title "Dwarf"
-    *set race_desc "Stout and dense-boned, built low and hard to the ground. Stubborn enough to hold a shield-wall long after softer men would have run."
-    *set race_darkvision true
-    *set race_trait_title "Dwarven Resilience"
-    *set race_trait_desc "Advantage on saves against poison, and resistance to poison damage."
-    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
-      *set constitution +2
-      *set stat_bump_locked true
-      *set locked_stat_bump_page_id choice_page_id
-    "Dwarf," the clerk notes, unimpressed but approving. "Good. Varren likes stacking your kind in the front rank. Something about the low center of gravity, he says. I don't ask questions."
-    *goto intake_profile
-
-  # Half-Orc. Broad-jawed and tusked, used to being feared before you've said a single word.@{show_stat_hints  [+2 STR, +1 CON, Darkvision]|}
-    *set race "half_orc"
-    *set race_title "Half-Orc"
-    *set race_desc "Broad-jawed and formidable, carrying tusks and a reputation you never asked for. Most doors open faster out of fear than respect."
-    *set race_darkvision true
-    *set race_trait_title "Relentless Endurance"
-    *set race_trait_desc "When you'd be dropped to 0 HP but not outright killed, you can cling to 1 HP instead—once, until you rest."
-    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
-      *set strength +2
-      *set constitution +1
-      *set stat_bump_locked true
-      *set locked_stat_bump_page_id choice_page_id
-    The clerk eyes your jaw and doesn't bother hiding his relief. "Half-Orc. Good—scares the debt collectors off faster than steel does. Not that the Carrion cares what you are, so long as you swing hard."
-    *goto intake_profile
-
-  # Halfling. Small, quick, and chronically underestimated by every fool who ever regretted it.@{show_stat_hints  [+2 DEX, Reroll Nat-1s]|}
-    *set race "halfling"
-    *set race_title "Halfling"
-    *set race_desc "Small, quick, and endlessly underestimated. Slips through gaps and guards' attention alike that a bigger body never could."
-    *set race_darkvision false
-    *set race_trait_title "Lucky"
-    *set race_trait_desc "Whenever the dice betray you with a natural 1, fate gives you one immediate reroll—no questions asked."
-    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
-      *set dexterity +2
-      *set stat_bump_locked true
-      *set locked_stat_bump_page_id choice_page_id
-    "Halfling," the clerk says, arching a brow at your height. "Don't see many small folk take the shilling. Either you're braver than you look, or you're planning to hide behind someone bigger. No judgment. Half of us plan to do the same."
-    *goto intake_profile
-
-  # Tiefling. Horned, tailed, and marked by infernal blood you never asked for and can't hide from a suspicious world.@{show_stat_hints  [+2 CHA, +1 INT, Darkvision]|}
-    *set race "tiefling"
-    *set race_title "Tiefling"
-    *set race_desc "Horned and tailed, with sulfur-dark eyes and a bloodline that traces back to something infernal, generations removed but never quite forgotten by the people who look at you twice."
-    *set race_darkvision true
-    *set race_trait_title "Hellish Resistance"
-    *set race_trait_desc "Your infernal blood shrugs off fire that would blister lesser flesh. Older tieflings learn to spit a devil's rebuke or drown a room in darkness—you haven't earned either yet."
-    *set race_cantrip "thaumaturgy"
-    *set race_cantrip_desc "Thaumaturgy—small, innate parlor tricks of infernal blood: your voice booms like three men, your eyes flash brimstone-red, doors creak open or slam shut untouched. Nothing that draws blood, but plenty that unsettles a room."
-    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
-      *set charisma +2
-      *set intelligence +1
-      *set stat_bump_locked true
-      *set locked_stat_bump_page_id choice_page_id
-    The clerk's eyes flick to your horns, then back to the ledger, his jaw tight. "Tiefling," he mutters, tracing the letters slower than usual. "Chaplain's lot won't like that. Chaplain's lot don't like much, though. Long as you march and don't set the supply wagons on fire, the Carrion won't ask whose blood is in you."
-    *goto intake_profile
-
-  # Hexblood. Grey-toned skin, unnervingly still eyes—the lingering mark of a bargain struck with something old and inhuman.@{show_stat_hints  [+1 CON, +1 CHA, Darkvision]|}
-    *set race "hexblood"
-    *set race_title "Hexblood"
-    *set race_desc "Fey-touched and strange—skin gone faintly grey, eyes too still, the lingering shape of an old bargain with something inhuman that was never fully explained to anyone, including you."
-    *set race_darkvision true
-    *set race_trait_title "Hex Magic"
-    *set race_trait_desc "Carries a fragment of real, unlearned magic from the bargain that made you—instinctive, untrained, and impossible to fully suppress. Usable once per long rest before the working needs to settle again."
-    *set race_cantrip "disguise_self"
-    *set race_cantrip_desc "Disguise Self—you can innately blur your own face and voice into someone else's for a short while, a lingering scrap of the hag's craft that remade you. Never taught, never fully understood, just there when you reach for it."
-    *set race_cantrip_2 "hex"
-    *set race_cantrip_2_desc "Hex—a murmured curse laid on a single target, making your wounds cut deeper and their chosen ability falter, for as long as you hold your concentration on it. The other half of the bargain, just as real as the first."
-    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
-      *set constitution +1
-      *set charisma +1
-      *set stat_bump_locked true
-      *set locked_stat_bump_page_id choice_page_id
-    The clerk's pen freezes over the page. He looks at your eyes a beat too long before writing anything down. "...Hexblood," he says carefully, like the word itself might be listening. "Didn't ask, don't want to know. Just don't let Varren see you do anything unnatural before the pay ledger's settled."
-    *goto intake_profile
-
-*label intake_profile
-The clerk's pen hovers above the page as he squints at you through the flickering candlelight, sizing up your face.
-
-"Intake record needs your age and description," he mutters, shivering as the freezing drizzle drips from his wool hood. "How many winters have you seen?"
-
-*choice
-  # Nineteen winters. Young, raw, and untested in the full meat grinder of campaign warfare.
-    *set age 19
-    *set age_desc "Nineteen winters (A green youth)"
-    *goto choose_build
-  # Twenty-four winters. In your physical prime, hardened by years of toil and survival.
-    *set age 24
-    *set age_desc "Twenty-four winters (In physical prime)"
-    *goto choose_build
-  # Twenty-nine winters. A weathered survivor with the hard, cynical eyes of someone who knows the world's rot.
-    *set age 29
-    *set age_desc "Twenty-nine winters (A weathered survivor)"
-    *goto choose_build
-
-*label choose_build
-"And your build?" the clerk grunts, pen scratching. "How do I mark you down?"
-
-*choice
-  # Broad-shouldered and heavy-set: Thick-limbed and solid as an anvil, built for holding the shield-wall.
-    *set build "broad"
-    *set build_desc "Broad-shouldered and heavy-set"
-    *goto choose_features
-  # Lean, wiry, and swift: Light on your feet, built for speed, evasion, and quick footwork.
-    *set build "wiry"
-    *set build_desc "Lean, wiry, and swift"
-    *goto choose_features
-  # Tall, sharp-featured, and watchful: An imposing frame with an alert, guarded posture.
-    *set build "tall"
-    *set build_desc "Tall, sharp-featured, and imposing"
-    *goto choose_features
-
-*label choose_features
-"And your coloring?" the clerk grumbles, scratching ink onto the page.
-
-*choice
-  # Shaved scalp close to the skin, with cold flint-grey eyes.
-    *set hair_eyes "Shaved scalp, flint-grey eyes"
-    *goto choose_mark
-  # Shaggy raven-black hair, with hollow, watchful dark eyes.
-    *set hair_eyes "Shaggy dark hair, hollow dark eyes"
-    *goto choose_mark
-  # Rough ash-brown hair, with sharp, calculating hazel eyes.
-    *set hair_eyes "Rough ash-brown hair, sharp hazel eyes"
-    *goto choose_mark
-  # Pale straw-blond hair, with piercing amber eyes.
-    *set hair_eyes "Pale blond hair, piercing amber eyes"
-    *goto choose_mark
-
-*label choose_mark
-"Any distinguishing marks?" the clerk asks, holding the lantern closer to your face. "Old scars, broken bone, brands?"
-
-*choice
-  # A crooked nose and a split brow from old tavern brawls and hard knocks.
-    *set mark "Crooked nose and split brow"
-    *goto choose_family
-  # Faint rope-burn and iron-chafing scars on your wrists.
-    *set mark "Iron-chafing scars on wrists"
-    *goto choose_family
-  # Heavy, calloused laborer's hands tough as boiled leather.
-    *set mark "Heavily calloused laborer's hands"
-    *goto choose_family
-  # Clean, unblemished skin—the mark of someone not yet broken by ditch-soldiering.
-    *set mark "Clean, unscarred skin"
-    *goto choose_family
-
-*label choose_family
-The clerk turns to the bottom corner of the page, pen poised over a blank box beside the ink stamp of the Carrion Crow.
-
-"Final line," the clerk mutters, his voice dropping into flat administrative monotony. "Beneficiary. If an arrow splits your skull tomorrow, or a boar spear takes you in the gut, who gets your back-pay? I need a name and a location to scratch into the ledger, or your silver reverts straight to the company iron chest."
-
-*if (origin = "ruined")
-  *choice
-    # "Write down my younger sister, Elspeth. She survived the fire and is hidden with salt-weavers at Alderford."
-      *set family_name "Elspeth"
-      *set family_tie "sibling"
-      *set family_title "Sister (Elspeth)"
-      *set family_desc "Your younger sister, Elspeth, sheltered with salt-weavers at Alderford. She depends on your mercenary pay to survive."
-      *goto munitions_scene
-    # "My older brother, Alden. Captured by the bailiffs and breaking rock in the lime-kiln pits at Karr's Redoubt."
-      *set family_name "Alden"
-      *set family_tie "indentured"
-      *set family_title "Brother (Alden)"
-      *set family_desc "Your older brother, Alden, sentenced to hard labor at Karr's Redoubt. Buying his freedom requires more blood-silver than you have."
-      *goto munitions_scene
-    # "Maren. Surviving among the tenant-refugees behind the flood-dykes at Siltmouth."
-      *set family_name "Maren"
-      *set family_tie "lover"
-      *set family_title "Sweetheart (Maren)"
-      *set family_desc "Your village sweetheart, Maren, surviving among the refugees at Siltmouth. You took the shilling so she wouldn't starve."
-      *goto munitions_scene
-    # "Nobody. Ashbrook burned to the bedrock. Stamp it for the Carrion chest."
-      *set family_name "None"
-      *set family_tie "none"
-      *set family_title "None (Company Chest)"
-      *set family_desc "The last survivor of Ashbrook. Untethered; no surviving kin or ties left behind."
-      *goto munitions_scene
-
-*if (origin = "outlaw")
-  *choice
-    # "Briony. A silk-weaver in Port Valen's guild-quarter who sheltered me when the Black Tally set their hounds loose."
-      *set family_name "Briony"
-      *set family_tie "lover"
-      *set family_title "Lover (Briony)"
-      *set family_desc "Your lover, Briony, a weaver in Port Valen. She sheltered you when the underworld hunted you, and doesn't know if you're alive."
-      *goto munitions_scene
-    # "My aging father, Jorick. Shackled in the debtor's bilge-hulks beneath Port Valen's Iron Wharves."
-      *set family_name "Jorick"
-      *set family_tie "indentured"
-      *set family_title "Father (Jorick)"
-      *set family_desc "Your father, Jorick, dying slowly in the bilge-hulks. You took the Carrion contract to buy his bond before the winter damp kills him."
-      *goto munitions_scene
-    # "My younger sister, Klara. Sheltered in the cellar-lofts of Dredge-End, counting on my silver to stay out of the workhouses."
-      *set family_name "Klara"
-      *set family_tie "sibling"
-      *set family_title "Sister (Klara)"
-      *set family_desc "Your younger sister, Klara, hiding in the slums of Dredge-End. She depends on your pay packet to avoid the debtor's gangs."
-      *goto munitions_scene
-    # "Nobody. I trust no one in Dredge-End. Stamp it for the Carrion chest."
-      *set family_name "None"
-      *set family_tie "none"
-      *set family_title "None (Company Chest)"
-      *set family_desc "A lone rogue from Dredge-End's gutters. Untethered; answering to no one and leaving nothing behind."
-      *goto munitions_scene
-
-*if (origin = "disgraced")
-  *choice
-    # "Lady Rosalind. Kept under house arrest in the high manor after our betrothal was broken by the scandal."
-      *set family_name "Rosalind"
-      *set family_tie "lover"
-      *set family_title "Betrothed (Lady Rosalind)"
-      *set family_desc "Your former betrothed, Lady Rosalind, confined under guard in the High Crags. A reminder of the noble life stripped from you."
-      *goto munitions_scene
-    # "My younger brother, Valerian. Kept as a political hostage in the dungeons of Karr's Keep."
-      *set family_name "Valerian"
-      *set family_tie "indentured"
-      *set family_title "Brother (Valerian)"
-      *set family_desc "Your younger brother, Valerian, held hostage in Karr's Keep. Your sword-arm is the only leverage to secure his release."
-      *goto munitions_scene
-    # "My family's old tutor, Gareth. Cast out alongside me and living in poverty in the outer town."
-      *set family_name "Gareth"
-      *set family_tie "sibling"
-      *set family_title "Loyal Retainer (Gareth)"
-      *set family_desc "Your family's old tutor, Gareth, who stood by you through the trial and now relies on your pay to survive in exile."
-      *goto munitions_scene
-    # "Nobody. My family stripped my name and cast me out. Let it rot in the company chest."
-      *set family_name "None"
-      *set family_tie "none"
-      *set family_title "None (Company Chest)"
-      *set family_desc "A disgraced noble who shed his crest and inheritance. Untethered; dead to your house and everyone you once knew."
-      *goto munitions_scene
-
-*label munitions_scene
-*set met_varren true
-The clerk snaps his ledger shut with a hollow thud, dragging you back to the cold, miserable reality of the river valley.
-
-"Right," he grunts, wiping ink from his pen. "Survive your first month's marches, ${name}, and the paymaster owes you six silver at the full moon."
-
-Before you can answer, two heavy wooden munitions crates and a brine barrel hit the mud twenty paces away with a splintering crash that shakes the earth.
-
-"ARM YOURSELVES, YOU DOGS!"
-
-Sergeant Varren stalks into the torchlight like an ill-tempered bear. A massive brute with half his face crisscrossed by old siege-scars, he kicks the iron-banded armor barrels onto their sides. Greased blades, notched spears, dented iron caps, and stacks of quilted infantry armor spill into the churned clay.
-
-"Padded doublets and iron in the mud!" Varren roars, kicking a hesitant recruit out of his path. "Grab something that fits your shoulders, find an edge, and get to your whetstones! The company marches at first light, and nobody carries dead weight!"
-
-Other greenhorns scramble and shove in the muck, frantic to claim anything with protection and steel.
-
-*if (origin = "ruined")
-  *goto munitions_ashbrook
-*if (origin = "outlaw")
-  *goto munitions_outlaw
-*if (origin = "disgraced")
-  *goto munitions_disgraced
-
-*label munitions_ashbrook
-*comment Auto-assigned baseline apparel -- Vanguard/Ashbrook origin. No player
-*comment choice needed; purely flavor until a future shop sells alternatives.
-*set equipped_head_id "arming_cap"
-*set equipped_cloak_id "wool_mantle"
-*set equipped_hands_id "leather_wraps"
-*set equipped_waist_id "soldiers_belt"
-*set equipped_feet_id "marching_boots"
-You step up to the armor casks first. What protection do you pull from the brine and grease to strap over your damp tunic?
-
-*choice
-  # A stiff padded gambeson lined with boiled-leather brigandine plates.@{show_stat_hints  [Medium Armor: Base AC 13 + DEX (max +2)]|}
-    *set armor "brigandine"
-    *set armor_desc "Padded gambeson & leather brigandine"
-    *set armor_type "brigandine"
-    You pull a heavy canvas gambeson lined with overlapping boiled-leather plates and blackened iron rivets from the cask. Pulling it over your head, you cinch the stiff oil-cured leather straps tight across your ribs. It smells of pine-tar and old tallow, but it is dense enough to turn a slashing knife and blunt the shock of a club.
-    *goto choose_weapon_ashbrook
-
-  # A dense quilted wool aketon reinforced with an iron chain-jack.@{show_stat_hints  [Medium Armor: Base AC 13 + DEX (max +2)]|}
-    *set armor "chain_jack"
-    *set armor_desc "Quilted aketon & iron chain-jack"
-    *set armor_type "chain_jack"
-    You haul a heavy wool jacket laced with interlocking scrap iron rings from the pile. It settles onto your shoulders with cold, reassuring weight, rattling softly as you cinch the horn toggles. Dented and rust-flecked from past campaigns, but solid against hacking blades.
-    *goto choose_weapon_ashbrook
-
-  # A greased oxhide buff-coat with segmented scale sleeves.@{show_stat_hints  [Light Armor: Base AC 11 + DEX]|}
-    *set armor "buff_coat"
-    *set armor_desc "Greased oxhide buff-coat & scale sleeves"
-    *set armor_type "buff_coat"
-    You pull a thick, oil-treated hide coat from the bottom of the pile. The leather is supple and water-resistant, reinforced with horn and steel scales laced along the forearms and shoulders. Lightweight and flexible, allowing unhindered stride through the mud.
-    *goto choose_weapon_ashbrook
-
-*label choose_weapon_ashbrook
-Beside you, a lean, sharp-featured girl with raven hair tied back in rough cord gets shoved roughly into the mud by an oafish recruit. She recovers instantly with feral grace, snatching a lightweight recurve shortbow and a quiver of black-fletched bodkin arrows from the crate before anyone else can touch them.
-
-Wiping a streak of muddy rain from her jaw, she catches your eye through the drizzle.
-
-"Better grab some iron before the pigs take it all," she mutters under her breath.
-
-With your armor cinched tight, you turn your attention to the spilled weapons. What steel calls to your grip?
-
-*choice
-  # A heavy iron-cleaving falchion paired with a scarred buckler.@{show_stat_hints  [1d8 Slashing, +2 Shield AC]|}
-    *set weapon "falchion and buckler"
-    *set weapon_desc "Heavy falchion & iron buckler"
-    *set weapon_damage "1d8 slashing"
-    *set weapon_damage_type "slashing"
-    *set weapon_type "melee"
-    *set weapon_hands "one_handed"
-    *set has_shield true
-    *set equipped_sidearm_id "ash_spear"
-    You haul three feet of forward-weighted, single-edged chopping steel from the pile, strapping the scarred buckler onto your left forearm. You test the brutal balance with a downward cleave. It lacks noble grace, but in the close, screaming press of a shield-wall, a heavy falchion can hack through boiled leather, split wooden shields, and crush bone.
-    *goto ready_camp
-
-  # A seven-foot ash-wood spear tipped with blackened, leaf-bladed steel.@{show_stat_hints  [1d6/1d8 Piercing (Reach)]|}
-    *set weapon "ash-wood spear"
-    *set weapon_desc "Seven-foot ash-wood spear"
-    *set weapon_damage "1d6/1d8 piercing"
-    *set weapon_damage_type "piercing"
-    *set weapon_type "reach"
-    *set weapon_hands "one_handed"
-    *set has_shield false
-    *set equipped_sidearm_id "felling_axe"
-    You slide the ash spear from the tangle, sighting along the straight shaft. The grain is dense and supple, the steel head pinned securely and sharpened to a cruel leaf point. The true workhorse of mercenary line infantry—a weapon of reach and discipline that keeps enemies at bay before they can ever get within blade-stroke.
-    *goto ready_camp
-
-  # A heavy two-handed broadaxe with a wide, rust-pitted bearded blade.@{show_stat_hints  [1d12 Slashing (Heavy, Two-Handed)]|}
-    *set weapon "heavy broadaxe"
-    *set weapon_desc "Heavy two-handed broadaxe"
-    *set weapon_damage "1d12 slashing"
-    *set weapon_damage_type "slashing"
-    *set weapon_type "melee"
-    *set weapon_hands "two_handed"
-    *set has_shield false
-    *set equipped_sidearm_id "ash_spear"
-    You pull a brutal, heavy-bearded broadaxe from beneath a crate of shaft-heads, resting the three-foot ash haft against your shoulder. The steel head is pitted and dark with old oil, ground to a cruel, chopping wedge. Not a weapon for fencing or polished maneuvers—in the screaming press of a vanguard crash, a heavy axe splits oak shields, shears through boiled leather, and leaves ruined limbs in its wake.
-    *goto ready_camp
-
-*label munitions_outlaw
-*comment Auto-assigned baseline apparel -- Outlaw/Port Valen origin.
-*set equipped_head_id "camo_hood"
-*set equipped_cloak_id "camo_cloak"
-*set equipped_hands_id "archer_bracers"
-*set equipped_waist_id "scabbard_belt"
-*set equipped_feet_id "scout_boots"
-You step up to the gear casks first. Heavy war-harness is useless to someone who survives on speed and silence—what do you pull from the pile that won't slow you down?
-
-*choice
-  # A boiled leather cuirass, close-fitted and reinforced at the ribs.@{show_stat_hints  [Light Armor: Base AC 11 + DEX]|}
-    *set armor "leather_cuirass"
-    *set armor_desc "Boiled leather cuirass"
-    *set armor_type "leather"
-    You lace a close-fitted cuirass of hardened, boiled leather over your tunic, checking the give at the shoulders and ribs. Stiff enough to turn a glancing blade, light enough that you can still move like you need to.
-    *goto choose_weapon_outlaw
-
-  # A dark, oiled leather jerkin lined with hidden pockets and pouches.@{show_stat_hints  [Light Armor: Base AC 11 + DEX]|}
-    *set armor "thief_leather"
-    *set armor_desc "Oiled leather jerkin with hidden pockets"
-    *set armor_type "leather"
-    You pull on a supple, dark-dyed leather jerkin, its lining stitched with more hidden pockets and sheaths than any honest tailor would bother sewing. Not much against a real blow, but you were never planning to take one standing still.
-    *goto choose_weapon_outlaw
-
-  # Layered leather wraps built for silent movement over rough ground.@{show_stat_hints  [Light Armor: Base AC 11 + DEX]|}
-    *set armor "scout_wraps"
-    *set armor_desc "Layered leather wraps"
-    *set armor_type "leather"
-    You bind supple layers of treated leather around your torso and limbs, more concerned with silence than protection. No buckle rattles, no plate creaks—you move through the mud without announcing yourself to anything.
-    *goto choose_weapon_outlaw
-
-*label choose_weapon_outlaw
-Beside you, a lean, sharp-featured girl with raven hair tied back in rough cord gets shoved roughly into the mud by an oafish recruit. She recovers instantly with feral grace, snatching a lightweight recurve shortbow and a quiver of black-fletched bodkin arrows from the crate before anyone else can touch them.
-
-Wiping a streak of muddy rain from her jaw, she catches your eye through the drizzle.
-
-"Better grab some iron before the pigs take it all," she mutters under her breath.
-
-With your gear cinched tight, you turn your attention to the spilled weapons. What steel calls to your grip?
-
-*choice
-  # A matched pair of balanced daggers, quick in the hand and quicker to hide.@{show_stat_hints  [1d4 Piercing, Finesse]|}
-    *set weapon "twin daggers"
-    *set weapon_desc "Matched pair of daggers"
-    *set weapon_damage "1d4 piercing"
-    *set weapon_damage_type "piercing"
-    *set weapon_type "finesse"
-    *set weapon_hands "one_handed"
-    *set has_shield false
-    *set equipped_sidearm_id "hand_crossbow"
-    You pluck two well-balanced daggers from the pile, testing their edge against your thumb before sheathing one at your hip and the other up your sleeve, out of sight. Not much for a shield-wall, but nobody in a brawl fights fair either.
-    *goto ready_camp
-
-  # A seven-foot ash-wood spear tipped with blackened, leaf-bladed steel.@{show_stat_hints  [1d6/1d8 Piercing (Reach)]|}
-    *set weapon "ash-wood spear"
-    *set weapon_desc "Seven-foot ash-wood spear"
-    *set weapon_damage "1d6/1d8 piercing"
-    *set weapon_damage_type "piercing"
-    *set weapon_type "reach"
-    *set weapon_hands "one_handed"
-    *set has_shield false
-    *set equipped_sidearm_id "matched_dagger"
-    You slide the ash spear from the tangle, sighting along the straight shaft. The grain is dense and supple, the steel head pinned securely and sharpened to a cruel leaf point. Not your usual trade, but reach keeps desperate men from ever closing the distance.
-    *goto ready_camp
-
-  # A compact hand crossbow, small enough to conceal beneath a cloak.@{show_stat_hints  [1d6 Piercing (Ranged, Concealable)]|}
-    *set weapon "hand crossbow"
-    *set weapon_desc "Compact hand crossbow"
-    *set weapon_damage "1d6 piercing"
-    *set weapon_damage_type "piercing"
-    *set weapon_type "ranged"
-    *set weapon_hands "one_handed"
-    *set has_shield false
-    *set equipped_sidearm_id "matched_dagger"
-    You lift a small, single-handed crossbow from the crate, no bigger than a large pistol, along with a pouch of stubby bolts. Quiet, quick to reload, and easy enough to tuck beneath a cloak when you'd rather not be seen carrying steel at all.
-    *goto ready_camp
-
-*label munitions_disgraced
-*comment Auto-assigned baseline apparel -- Disgraced Scion origin.
-*set equipped_head_id "scholar_coif"
-*set equipped_cloak_id "weather_cloak"
-*set equipped_hands_id "scribe_gloves"
-*set equipped_waist_id "satchel_harness"
-*set equipped_feet_id "riding_boots"
-You step up to the gear casks, but none of it looks like anything you were ever trained to wear. What do you pull on over your travel-worn clothes, more for warmth than war?
-
-*choice
-  # A quilted scholar's cassock, laced snug beneath a leather chest-strap.@{show_stat_hints  [Cloth Armor: Base AC 10 + DEX]|}
-    *set armor "scholars_cassock"
-    *set armor_desc "Quilted scholar's cassock"
-    *set armor_type "cloth"
-    You pull on a quilted cassock, cinching the chest-strap tight over old ink stains you never quite scrubbed out. Warm and unassuming — the sort of thing nobody looks at twice.
-    *goto choose_weapon_disgraced
-
-  # A reinforced doublet, stiffened at the ribs with layered canvas.@{show_stat_hints  [Cloth Armor: Base AC 10 + DEX]|}
-    *set armor "reinforced_doublet"
-    *set armor_desc "Reinforced canvas doublet"
-    *set armor_type "cloth"
-    You lace yourself into a stiff canvas doublet, its ribs quilted thick enough to blunt an idle shove without slowing your hands. It looks more like a study than a battlefield, but it's what your hands know.
-    *goto choose_weapon_disgraced
-
-  # A tailored vest, close-fitted beneath your travel-worn coat.@{show_stat_hints  [Cloth Armor: Base AC 10 + DEX]|}
-    *set armor "tailored_vest"
-    *set armor_desc "Tailored vest"
-    *set armor_type "cloth"
-    You button a close-fitted vest under your coat, its lining worn smooth from years of the same routine. Not a stitch of it will stop a blade, but it keeps your hands free for what actually matters.
-    *goto choose_weapon_disgraced
-
-*label choose_weapon_disgraced
-Beside you, a lean, sharp-featured girl with raven hair tied back in rough cord gets shoved roughly into the mud by an oafish recruit. She recovers instantly with feral grace, snatching a lightweight recurve shortbow and a quiver of black-fletched bodkin arrows from the crate before anyone else can touch them.
-
-Wiping a streak of muddy rain from her jaw, she catches your eye through the drizzle.
-
-"Better grab some iron before the pigs take it all," she mutters under her breath.
-
-With your gear settled, you turn your attention to the spilled weapons—none of which you were ever properly trained to swing.
-
-*choice
-  # A slim, well-balanced dagger, closer to a letter-opener than a soldier's blade.@{show_stat_hints  [1d4 Piercing, Finesse]|}
-    *set weapon "dagger"
-    *set weapon_desc "Slim balanced dagger"
-    *set weapon_damage "1d4 piercing"
-    *set weapon_damage_type "piercing"
-    *set weapon_type "finesse"
-    *set weapon_hands "one_handed"
-    *set has_shield false
-    *set equipped_sidearm_id "bodkin_dagger"
-    You take up a slim, well-made dagger, closer to something you'd have found on your own writing desk than a company armory. It sits strangely familiar in your hand all the same.
-    *goto ready_camp
-
-  # A plain traveler's quarterstaff, worn smooth from years of use.@{show_stat_hints  [1d6/1d8 Bludgeoning]|}
-    *set weapon "quarterstaff"
-    *set weapon_desc "Traveler's quarterstaff"
-    *set weapon_damage "1d6/1d8 bludgeoning"
-    *set weapon_damage_type "bludgeoning"
-    *set weapon_type "melee"
-    *set weapon_hands "one_handed"
-    *set has_shield false
-    *set equipped_sidearm_id "bodkin_dagger"
-    You take up a plain, iron-shod quarterstaff, worn smooth by some traveler's hands long before it ended up in a mercenary company's crate. Unglamorous, but it has a certain honest weight to it.
-    *goto ready_camp
-
-  # A compact light crossbow, mechanical and precise, built for someone who prefers distance.@{show_stat_hints  [1d8 Piercing (Ranged)]|}
-    *set weapon "light crossbow"
-    *set weapon_desc "Compact light crossbow"
-    *set weapon_damage "1d8 piercing"
-    *set weapon_damage_type "piercing"
-    *set weapon_type "ranged"
-    *set weapon_hands "two_handed"
-    *set has_shield false
-    *set equipped_sidearm_id "bodkin_dagger"
-    You lift a light crossbow from the crate, along with a small case of bolts. Simple mechanics, no real strength required to use it well—cold, distant, and precise, much like everything else you were actually trained for.
-    *goto ready_camp
-
-*label ready_camp
-*set met_lyra true
-*set intake_completed true
-*gosub update_dnd_stats
-You wipe the thick packing grease from your ${weapon} with a scrap of burlap. 
-
-The raven-haired girl slides her quiver strap across her shoulder and gives your weapon an appraising look.
-
-*if (weapon = "falchion and buckler")
-  "Brutal iron," she remarks quietly, nodding at the heavy chopping blade. "Good for someone who plans on being an anvil when the lines crash and teeth start flying."
-*if (weapon = "ash-wood spear")
-  "Smart," she murmurs, eyeing the leaf-bladed tip. "Reach keeps you breathing when desperate men try to drag you down into the mud."
-*if (weapon = "heavy broadaxe")
-  "Vicious piece of iron," she whispers, eyeing the brutal, heavy-bearded blade. "Takes two hands and a lot of bad temper to swing that in the mud. A weapon for someone who wants to break whatever's in front of them."
-*if (weapon = "twin daggers")
-  "Quiet iron," she says, an approving edge in her voice. "Whoever taught you to hide the second one knew what they were doing."
-*if (weapon = "hand crossbow")
-  "Neat little thing," she murmurs, eyeing the compact stock. "Small enough nobody sees it coming until it's already in them."
-*if (weapon = "dagger")
-  She eyes the slim blade, then your hands, clearly unconvinced. "That's a letter-opener, not iron. Hope you're better with words than with that."
-*if (weapon = "quarterstaff")
-  "Old-fashioned," she says, not unkindly. "Won't win you any duels, but it'll keep most drunks and half the recruits at arm's length."
-*if (weapon = "light crossbow")
-  "Precise," she says, studying the mechanism. "You'll want to keep your distance with that. Doesn't look built for anything else."
-
-"I'm Lyra," she adds curtly, sliding the bow over her shoulder. "What do they call you?"
-
-"${name}," you reply.
-
-"Keep your head down out there, ${name}," she says with a brief nod, just before Varren's booming roar orders the recruits away from the wagons.
-
-The smoke of wet peat fires drifts thick through the rows of tents. You shoulder your gear, push past the knots of swearing recruits, and find your place in the mud of the encampment.
-
-*page_break Step into the encampment...
-*set camp_actions_left 4
-*set time_period "Evening"
-*finish
-
-*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment D&D 5E STAT & MODIFIER ENGINE
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label update_dnd_stats
 *if (strength <= 9)
-  *set str_mod -1
+  *set str_mod 0 - 1
   *set str_mod_str "-1"
 *if (strength = 10) or (strength = 11)
   *set str_mod 0
@@ -2347,7 +1371,7 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set str_mod_str "+3"
 
 *if (dexterity <= 9)
-  *set dex_mod -1
+  *set dex_mod 0 - 1
   *set dex_mod_str "-1"
 *if (dexterity = 10) or (dexterity = 11)
   *set dex_mod 0
@@ -2365,7 +1389,7 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *gosub recalculate_con_mod
 
 *if (intelligence <= 9)
-  *set int_mod -1
+  *set int_mod 0 - 1
   *set int_mod_str "-1"
 *if (intelligence = 10) or (intelligence = 11)
   *set int_mod 0
@@ -2381,7 +1405,7 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set int_mod_str "+3"
 
 *if (wisdom <= 9)
-  *set wis_mod -1
+  *set wis_mod 0 - 1
   *set wis_mod_str "-1"
 *if (wisdom = 10) or (wisdom = 11)
   *set wis_mod 0
@@ -2397,7 +1421,7 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set wis_mod_str "+3"
 
 *if (charisma <= 9)
-  *set cha_mod -1
+  *set cha_mod 0 - 1
   *set cha_mod_str "-1"
 *if (charisma = 10) or (charisma = 11)
   *set cha_mod 0
@@ -2412,7 +1436,6 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set cha_mod 3
   *set cha_mod_str "+3"
 
-*comment Hit Points (Level 1: Class Hit Die Max + CON mod)
 *if (not(loadout_initialized))
   *set hp_max (hit_die_max + con_mod)
   *set hp_current hp_max
@@ -2425,12 +1448,6 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *if (hp_current < 1)
     *set hp_current 1
 
-*comment Snapshot whichever weapon/armor character creation (or a dev preset)
-*comment just assigned as the permanent "starting" loadout, so the equipment
-*comment menu can always switch back to it later regardless of what's
-*comment currently equipped. Gated on loadout_initialized rather than
-*comment equipped_weapon_id/equipped_armor_id themselves -- both *create-
-*comment default to "starting" too and would make the guard always false.
 *if (not(loadout_initialized))
   *set starting_weapon weapon
   *set starting_weapon_desc weapon_desc
@@ -2444,16 +1461,8 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set starting_armor_type armor_type
   *set equipped_armor_id "starting"
   *set shield_equipped has_shield
-  *comment Same idea as starting_weapon: constitution as creation left it,
-  *comment before any attuned magic item bonuses -- recalculate_attuned_bonuses
-  *comment always rebuilds constitution from this baseline.
   *set base_constitution constitution
   *set loadout_initialized true
-*comment The paper-doll slots below have no "starting" indirection -- see the
-*comment schema comment block near the top of this file for why -- chargen/
-*comment dev-presets already set equipped_<slot>_id directly to a concrete
-*comment value; these gosubs just need to run every visit (pure re-derivation,
-*comment no guard) so the derived desc/AC fields exist at all.
 *gosub apply_weapon_loadout
 *gosub apply_armor_loadout
 *gosub apply_head_loadout
@@ -2470,13 +1479,11 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment CONSTITUTION MODIFIER (extracted so both update_dnd_stats and
-*comment recalculate_attuned_bonuses can recompute it after constitution
-*comment changes, without duplicating the lookup table twice)
+*comment RECALCULATE CON MODIFIER
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label recalculate_con_mod
 *if (constitution <= 9)
-  *set con_mod -1
+  *set con_mod 0 - 1
   *set con_mod_str "-1"
 *if (constitution = 10) or (constitution = 11)
   *set con_mod 0
@@ -2493,24 +1500,12 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment MAGIC ITEM ATTUNEMENT
+*comment MAGIC ITEM ATTUNEMENT & RECOMPUTE
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment Same "fully derived, safe to call any number of times" shape as
-*comment recalculate_armor_class: constitution (and any future ability score
-*comment a later magic item touches) is always rebuilt from its base_* value
-*comment plus whichever items are CURRENTLY attuned, never nudged with a
-*comment permanent *set constitution +N on pickup. That's what makes
-*comment unattuning possible at all -- a +N you can't reliably undo can't
-*comment ever be safely removed again, and it's also refresh-safe for the
-*comment same reason every other *set +N in this game had to become a
-*comment recompute (see roll_d20_check / recalculate_armor_class above).
 *label recalculate_attuned_bonuses
 *set constitution base_constitution
 *if (hearthstone_attuned)
   *set constitution + 1
-*comment Future magic items that touch a different ability score get their
-*comment own "*set <stat> base_<stat>" + "*if (item_attuned) *set <stat> + N"
-*comment pair here, mirroring the lines above.
 *gosub recalculate_con_mod
 *temp old_hp_max hp_max
 *set hp_max (hit_die_max + con_mod)
@@ -2522,17 +1517,11 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *gosub recalculate_armor_class
 *return
 
-*comment apply_neck_loadout is the same fully-derived pattern as every other
-*comment paper-doll slot. equip_neck exists as general plumbing for a future
-*comment mundane (non-attunement) neck item; today it's only called
-*comment internally by attune_item/unattune_item to keep neck_desc synced.
 *label apply_neck_loadout
 *if (equipped_neck_id = "none")
   *set neck_desc "Bare throat"
 *if (equipped_neck_id = "hearthstone_talisman")
   *set neck_desc "Torvald's Hearthstone Talisman, on a braided oxhide cord"
-*comment Mundane -- a sibling's keepsake, not a magic item, so no attunement
-*comment and no stat bonus. Granted directly at chapel_visit_elspeth.
 *if (equipped_neck_id = "elspeth_weir_knot")
   *set neck_desc "Elspeth's Braided Weir-Knot"
 *return
@@ -2543,24 +1532,18 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *gosub apply_neck_loadout
 *return
 
-*comment *gosub_scene startup attune_item <id>. Does nothing (silently) if
-*comment already attuned to it or if all slots are full -- the equipment
-*comment menu is expected to already hide the option in either case; this is
-*comment a backstop, not the primary guard.
+*comment *gosub_scene startup attune_item <id>
 *label attune_item
 *params item_id
 *if (attuned_count < max_attunement_slots)
   *if ((item_id = "hearthstone_talisman") and (not(hearthstone_attuned)))
     *set hearthstone_attuned true
     *set attuned_count + 1
-    *comment Attuning to it requires actually wearing it -- auto-equip the
-    *comment neck slot so neck_desc/equipped_neck_id reflect reality without
-    *comment a separate "wear" step the player would have to remember too.
     *gosub equip_neck "hearthstone_talisman"
     *gosub recalculate_attuned_bonuses
 *return
 
-*comment *gosub_scene startup unattune_item <id>.
+*comment *gosub_scene startup unattune_item <id>
 *label unattune_item
 *params item_id
 *if ((item_id = "hearthstone_talisman") and (hearthstone_attuned))
@@ -2574,37 +1557,15 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment ARMOR CLASS RECOMPUTE
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment Fully rederives armor_class from scratch every time, instead of
-*comment nudging it with one-off *set armor_class +N edits at each place
-*comment gear changes. That matters beyond tidiness: a +N edit is only
-*comment safe to run once, but any *set on a page can be re-run by a
-*comment refresh or a Show Stats round trip (see roll_d20_check above for
-*comment the full mechanism) -- a shop purchase that did *set armor_class +
-*comment 2 directly would add +2 again on every refresh, compounding
-*comment forever. A full recompute is naturally idempotent: call it as
-*comment often as you like (new armor, a shield purchase, a smithing
-*comment upgrade, a refresh replaying the page it happened on), it always
-*comment lands on the same, correct number.
 *label recalculate_armor_class
 *temp base_ac 11
 *temp effective_dex_mod dex_mod
 *if (armor_type = "cloth")
   *set base_ac 10
-  *comment Mage Armor: 13 + DEX while not wearing actual armor. Cloth options
-  *comment (traveling cloak, scholar robes, etc.) are ordinary clothes, not
-  *comment armor, so this is the correct RAW condition rather than "any Wizard".
-  *comment An armored helm still counts as "wearing armor" over otherwise-
-  *comment cloth clothes, hence the added not(head_is_armor) guard -- no
-  *comment chargen path grants head_is_armor yet, so this is currently a
-  *comment no-op until a future shop sells real helms.
+  *comment Mage Armor: 13 + DEX while not wearing armor
   *if (wizard_spell = "mage_armor") and (not(head_is_armor))
     *set base_ac 13
-  *comment Barbarian Unarmored Defense: 10 + DEX + CON while wearing no
-  *comment armor -- cloth items are clothes, not armor, so this is the same
-  *comment "not wearing armor" condition Mage Armor uses just above. Replaces
-  *comment the plain 10 + DEX base entirely (the +effective_dex_mod add below
-  *comment still applies on top, giving the correct 10 + CON + DEX total). A
-  *comment Barbarian never has Mage Armor available, so the two never compete.
+  *comment Barbarian Unarmored Defense: 10 + DEX + CON while not wearing armor
   *if (character_class = "barbarian") and (not(head_is_armor))
     *set base_ac (10 + con_mod)
 *if ((armor_type = "leather") or (armor_type = "buff_coat"))
@@ -2615,34 +1576,21 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
     *set effective_dex_mod 2
 
 *set armor_class (base_ac + effective_dex_mod)
-*comment Armored headgear adds its own flat bonus on top, same shape as the
-*comment shield bonus below. head_ac is 0 for every currently-assignable head
-*comment item (all chargen baselines are non-armor caps/hoods), so this is
-*comment dormant until a future shop sells actual helms.
 *if (head_is_armor) and (head_ac > 0)
   *set armor_class + head_ac
 
-*comment Shield bonus follows whether it's actually strapped on right now
-*comment (shield_equipped), not merely owned (has_shield) -- see
-*comment equip_weapon/toggle_shield_equipped below, which keep the two in
-*comment sync with what's physically possible to hold at once.
 *if (shield_equipped)
   *set armor_class + 2
 
-*comment Fighting Style: Defense (+1 AC while wearing armor) — dormant until fighter_fighting_style is actually chosen
+*comment Fighting Style: Defense (+1 AC while wearing armor)
 *if (fighter_fighting_style = "defense")
   *set armor_class + 1
 
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment EQUIPMENT LOADOUT (Weapon Switching & Shield Toggle)
+*comment EQUIPMENT LOADOUT (Weapons & Armor)
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment apply_weapon_loadout is the same "fully derived, safe to call any
-*comment number of times" pattern as recalculate_armor_class: it sets
-*comment weapon/weapon_desc/weapon_damage/weapon_type/weapon_hands purely
-*comment from equipped_weapon_id, never accumulates. Add a new owned weapon
-*comment here (and to its purchase site's has_ flag) to make it equippable.
 *label apply_weapon_loadout
 *if (equipped_weapon_id = "starting")
   *set weapon starting_weapon
@@ -2665,12 +1613,6 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set weapon_damage_type "piercing"
   *set weapon_type "finesse"
   *set weapon_hands "one_handed"
-*comment A two-handed weapon leaves no free hand for a shield. Switching back
-*comment to a one-handed weapon auto-restores the player's own stance
-*comment (wants_shield_equipped) instead of leaving the shield stowed forever
-*comment after the first two-hander -- wants_shield_equipped is only ever
-*comment changed by the player's own manual toggle, so this never overrides
-*comment an explicit "I took it off" choice.
 *if (weapon_hands = "two_handed")
   *set shield_equipped false
 *else
@@ -2678,8 +1620,7 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
     *set shield_equipped true
 *return
 
-*comment *gosub_scene startup equip_weapon <id>, where <id> is one of the
-*comment equipped_weapon_id values handled by apply_weapon_loadout above.
+*comment *gosub_scene startup equip_weapon <id>
 *label equip_weapon
 *params new_weapon_id
 *set equipped_weapon_id new_weapon_id
@@ -2687,10 +1628,7 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *gosub recalculate_armor_class
 *return
 
-*comment *gosub_scene startup toggle_shield_equipped -- silently does
-*comment nothing if a two-handed weapon is currently equipped, since the
-*comment equipment menu itself hides the option in that case; the guard
-*comment here is a backstop in case that ever changes.
+*comment *gosub_scene startup toggle_shield_equipped
 *label toggle_shield_equipped
 *if (not(weapon_hands = "two_handed"))
   *set shield_equipped not(shield_equipped)
@@ -2698,15 +1636,6 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *gosub recalculate_armor_class
 *return
 
-*comment apply_armor_loadout is the same "fully derived, safe to call any
-*comment number of times" pattern as apply_weapon_loadout: it sets
-*comment armor/armor_desc/armor_type purely from equipped_armor_id, never
-*comment accumulates. All 3 origins' chargen choices (and all 8 dev presets)
-*comment still bare-*set armor/armor_desc/armor_type directly -- that's fine,
-*comment update_dnd_stats snapshots whichever one ran into starting_armor* the
-*comment same way it already does for starting_weapon*. A future purchasable
-*comment torso item gets its own *if branch here (and a has_ flag at its
-*comment purchase site), exactly like timber_axe/stiletto did for weapon.
 *label apply_armor_loadout
 *if (equipped_armor_id = "starting")
   *set armor starting_armor
@@ -2714,9 +1643,7 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set armor_type starting_armor_type
 *return
 
-*comment *gosub_scene startup equip_armor <id>. No caller exists yet (no
-*comment purchasable alternate torso armor) -- built now so the plumbing is
-*comment ready the moment one does, mirroring equip_weapon exactly.
+*comment *gosub_scene startup equip_armor <id>
 *label equip_armor
 *params new_armor_id
 *set equipped_armor_id new_armor_id
@@ -2724,11 +1651,6 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *gosub recalculate_armor_class
 *return
 
-*comment apply_head_loadout follows the same fully-derived pattern. Every
-*comment baseline chargen headgear is a non-armor cap/hood; Master Torvald's
-*comment Frontier Shop (alderford.txt) is the first real caller of equip_head,
-*comment selling one item that actually sets head_is_armor true and exercises
-*comment the head-AC term in recalculate_armor_class above.
 *label apply_head_loadout
 *if (equipped_head_id = "arming_cap")
   *set head_desc "Padded Arming Cap"
@@ -2763,10 +1685,7 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *gosub recalculate_armor_class
 *return
 
-*comment --- COSMETIC PAPER-DOLL SLOTS (Cloak / Hands / Waist / Feet) ---
-*comment Desc-only, no AC/mechanical effect -- same id-driven pattern as
-*comment every other slot so a future purchasable item is a one-branch
-*comment addition. No equip_<slot> caller exists yet for any of these.
+*comment --- PAPER-DOLL SLOTS ---
 *label apply_cloak_loadout
 *if (equipped_cloak_id = "wool_mantle")
   *set cloak_desc "Iron Bull Wool Mantle"
@@ -2843,11 +1762,7 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *gosub apply_feet_loadout
 *return
 
-*comment --- SIDEARM (Swappable Secondary Weapon) ---
-*comment apply_sidearm_loadout mirrors apply_weapon_loadout exactly, one
-*comment slot over. "starting" reuses the existing starting_weapon_* snapshot
-*comment rather than a duplicate of its own -- see the schema comment block
-*comment near the top of this file for why.
+*comment --- SIDEARM SLOTS ---
 *label apply_sidearm_loadout
 *if (equipped_sidearm_id = "starting")
   *set sidearm starting_weapon
@@ -2900,13 +1815,7 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set sidearm_hands "one_handed"
 *return
 
-*comment *gosub_scene startup swap_active_sidearm -- exchanges whatever's in
-*comment main-hand with whatever's in the sidearm slot. No replay lock
-*comment needed: this is a full exchange of two persistent ids (not an
-*comment accumulating +N), and every call site immediately *goto's to a
-*comment fresh *choice before the next pause point, exactly the same shape
-*comment equip_weapon/toggle_shield_equipped already use unlocked today --
-*comment even a duplicate call would just swap back, not compound.
+*comment *gosub_scene startup swap_active_sidearm
 *label swap_active_sidearm
 *temp swap_hold_id equipped_weapon_id
 *set equipped_weapon_id equipped_sidearm_id
@@ -2916,33 +1825,23 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *gosub recalculate_armor_class
 *return
 
-*comment --- RINGS (Ring1 / Ring2) ---
-*comment One shared subroutine for both slots -- a ring means the same thing
-*comment on either hand, so a future ring item only needs one new *if branch
-*comment total instead of one per slot.
+*comment --- RINGS ---
 *label apply_ring_loadout
 *params ring_slot item_id
 *temp new_ring_desc "Bare finger"
 *if (item_id = "none")
   *set new_ring_desc "Bare finger"
-*comment Mundane -- no attunement, no stat bonus. Found, not sold, so it
-*comment routes straight through equip_ring at the pickup site rather than
-*comment needing a has_ flag gated dossier choice.
 *if (item_id = "toll_seal_ring")
   *set new_ring_desc "Customs Officer's Signet Ring"
 *if (item_id = "althea_votive_ring")
   *set new_ring_desc "Saint Althea's Votive River-Stone Ring"
-*comment Future ring items get their own *if (item_id = "...") branch here --
-*comment shared across both slots since a ring means the same thing on
-*comment either hand.
 *if (ring_slot = "1")
   *set ring1_desc new_ring_desc
 *else
   *set ring2_desc new_ring_desc
 *return
 
-*comment *gosub_scene startup equip_ring <"1"|"2"> <id>. No caller exists yet
-*comment (no ring items) -- ready for the day one does.
+*comment *gosub_scene startup equip_ring <"1"|"2"> <id>
 *label equip_ring
 *params ring_slot new_item_id
 *if (ring_slot = "1")
@@ -2966,12 +1865,6 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *temp guidance_roll 0
 
 *if (roll_locked) and (locked_page_id = choice_page_id)
-  *comment Same page being replayed (refresh / Show Stats / Menu) — reuse the
-  *comment roll we already locked in rather than rolling again. d20_roll,
-  *comment check_mod, check_total, is_nat_20 and is_nat_1 are all persistent
-  *comment and already hold the locked-in result; only the display label and
-  *comment guidance roll (both *temp, lost across the scene switch on
-  *comment *return) need to be restored here.
   *set adv_label locked_adv_label
   *set guidance_roll locked_guidance_roll
 *else
@@ -2995,8 +1888,7 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
       *set d20_roll d20_roll_2
 
   *if ((race = "halfling") and (d20_roll = 1))
-    *comment Halfling Lucky: reroll a natural 1 once, must use the new result. Resolved after
-    *comment advantage/disadvantage, matching RAW — Lucky rerolls the die actually used for the check.
+    *comment Halfling Lucky: reroll natural 1
     *rand d20_roll 1 20
 
   *if (check_stat = "str")
@@ -3012,39 +1904,69 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *if (check_stat = "cha")
     *set check_mod cha_mod
 
-  *comment Rogue Expertise: double proficiency bonus on two chosen skills — dormant until rogue_expertise_1/2 are actually chosen
   *if ((character_class = "rogue") and ((check_skill = rogue_expertise_1) or (check_skill = rogue_expertise_2)))
     *set check_mod + (prof_bonus * 2)
 
-  *comment Temporary buff aggregation -- checks all 5 buff channels
-  *comment (food, drink, unique1-3) for any bonus matching check_stat
-  *comment (or stat = "all" for general blessings). Each matching buff's
-  *comment bonus is individually annotated in adv_label and summed into
-  *comment buff_bonus. Folded into the same locked check_total/adv_label
-  *comment as everything else above so a replay reuses the result
-  *comment correctly even if a buff expires between the original roll
-  *comment and a much later refresh.
+  *if (fatigue_stage = "Exhausted")
+    *set check_mod - 1
+  *if (fatigue_stage = "Collapsing")
+    *set check_mod - 2
+
+  *if (routine_stage = "Restless")
+    *set check_mod - 1
+  *if (routine_stage = "Rutted")
+    *set check_mod - 2
+
+  *comment Aggregate bonuses across all active buff channels
   *temp buff_bonus 0
+  *temp buff_sign ""
   *if (food_buff_active) and ((check_stat = food_buff_stat) or (food_buff_stat = "all"))
     *set buff_bonus + food_buff_bonus
-    *set adv_label "${adv_label} +${food_buff_bonus} (${food_buff_name})"
+    *set buff_sign ""
+    *if (food_buff_bonus > 0)
+      *set buff_sign "+"
+    *set adv_label "${adv_label} ${buff_sign}${food_buff_bonus} (${food_buff_name})"
   *if (drink_buff_active) and ((check_stat = drink_buff_stat) or (drink_buff_stat = "all"))
     *set buff_bonus + drink_buff_bonus
-    *set adv_label "${adv_label} +${drink_buff_bonus} (${drink_buff_name})"
+    *set buff_sign ""
+    *if (drink_buff_bonus > 0)
+      *set buff_sign "+"
+    *set adv_label "${adv_label} ${buff_sign}${drink_buff_bonus} (${drink_buff_name})"
   *if (unique_buff1_active) and ((check_stat = unique_buff1_stat) or (unique_buff1_stat = "all"))
     *set buff_bonus + unique_buff1_bonus
-    *set adv_label "${adv_label} +${unique_buff1_bonus} (${unique_buff1_name})"
+    *set buff_sign ""
+    *if (unique_buff1_bonus > 0)
+      *set buff_sign "+"
+    *set adv_label "${adv_label} ${buff_sign}${unique_buff1_bonus} (${unique_buff1_name})"
   *if (unique_buff2_active) and ((check_stat = unique_buff2_stat) or (unique_buff2_stat = "all"))
     *set buff_bonus + unique_buff2_bonus
-    *set adv_label "${adv_label} +${unique_buff2_bonus} (${unique_buff2_name})"
+    *set buff_sign ""
+    *if (unique_buff2_bonus > 0)
+      *set buff_sign "+"
+    *set adv_label "${adv_label} ${buff_sign}${unique_buff2_bonus} (${unique_buff2_name})"
   *if (unique_buff3_active) and ((check_stat = unique_buff3_stat) or (unique_buff3_stat = "all"))
     *set buff_bonus + unique_buff3_bonus
-    *set adv_label "${adv_label} +${unique_buff3_bonus} (${unique_buff3_name})"
+    *set buff_sign ""
+    *if (unique_buff3_bonus > 0)
+      *set buff_sign "+"
+    *set adv_label "${adv_label} ${buff_sign}${unique_buff3_bonus} (${unique_buff3_name})"
+  *if (sleep_buff1_active) and ((check_stat = sleep_buff1_stat) or (sleep_buff1_stat = "all"))
+    *set buff_bonus + sleep_buff1_bonus
+    *set buff_sign ""
+    *if (sleep_buff1_bonus > 0)
+      *set buff_sign "+"
+    *set adv_label "${adv_label} ${buff_sign}${sleep_buff1_bonus} (${sleep_buff1_name})"
+  *if (sleep_buff2_active) and ((check_stat = sleep_buff2_stat) or (sleep_buff2_stat = "all"))
+    *set buff_bonus + sleep_buff2_bonus
+    *set buff_sign ""
+    *if (sleep_buff2_bonus > 0)
+      *set buff_sign "+"
+    *set adv_label "${adv_label} ${buff_sign}${sleep_buff2_bonus} (${sleep_buff2_name})"
 
   *set check_total (d20_roll + check_mod)
   *if (guidance_active)
     *set check_total + guidance_roll
-  *if (buff_bonus > 0)
+  *if (not(buff_bonus = 0))
     *set check_total + buff_bonus
 
   *set roll_had_advantage ((advantage) and (not(disadvantage)))
@@ -3101,31 +2023,12 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment REUSABLE ENGINE PRIMITIVE: SMALL-COMBAT ROUND RESOLUTION
-*comment A minimal, generic per-round combat engine for short optional
-*comment skirmishes (a cellar nuisance, not a set-piece battle like the
-*comment Black Sinks) -- meant to be *gosub_scene'd from any future small
-*comment fight, not just the one that motivated it. The player's own
-*comment attack roll needs no new code at all: it's just roll_d20_check
-*comment with check_dc set to the enemy's AC, exactly like any other check.
-*comment These two subroutines cover the two things that check doesn't
-*comment already do -- applying the resulting damage to a generic enemy HP
-*comment pool, and rolling the enemy's own attack back at the player.
-*comment
-*comment Shared combat-state stats (see *create block): combat_enemy_name,
-*comment combat_enemy_hp/max_hp, combat_enemy_ac, combat_enemy_atk_bonus,
-*comment combat_round. A calling scene sets these once when the fight
-*comment starts and gosubs the two subroutines below once per round.
+*comment COMBAT: PLAYER HIT RESOLUTION
+*comment Applies generic player hit damage to combat_enemy_hp.
+*comment Inputs: combat_player_dmg_dice_sides, combat_player_dmg_bonus
+*comment Output: combat_player_dmg_dealt
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_player_hit
-*comment Call this only after the caller's own roll_d20_check against
-*comment combat_enemy_ac came back check_success. Input:
-*comment combat_player_dmg_dice_sides, combat_player_dmg_bonus. Applies the
-*comment damage to combat_enemy_hp (never below 0) and reports it back via
-*comment combat_player_dmg_dealt for the caller's own prose. Generic --
-*comment no Sneak Attack check (RAW restricts that to a finesse/ranged
-*comment WEAPON attack, never a cantrip/spell); use resolve_player_weapon_hit
-*comment below for an actual weapon swing.
 *if (not(combat_player_hit_locked)) or (not(locked_combat_player_hit_page_id = choice_page_id))
   *temp cph_roll 0
   *rand cph_roll 1 combat_player_dmg_dice_sides
@@ -3141,32 +2044,15 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set locked_combat_player_hit_page_id choice_page_id
 *return
 
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment COMBAT: PLAYER WEAPON HIT RESOLUTION
+*comment Resolves weapon damage, Great Weapon Fighting rerolls, Sneak Attack, and Hex.
+*comment Outputs: combat_player_dmg_dealt, combat_sneak_attack_triggered
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_player_weapon_hit
-*comment Same shape as resolve_player_hit, but specifically for an actual
-*comment weapon swing -- also resolves Rogue Sneak Attack (RAW: a finesse or
-*comment ranged weapon, plus advantage on the attack roll). Reads
-*comment roll_had_advantage straight from the roll_d20_check call the caller
-*comment just made, rather than trusting a caller-passed flag: an earlier
-*comment version had the caller capture advantage into a *temp and copy it
-*comment into a persistent input right before this gosub, which looked fine
-*comment but wasn't -- that bare *set ran unconditionally on every replay of
-*comment the page, while this subroutine's own reset of that same input only
-*comment ran inside its lock, so a replay left the input stuck relative to
-*comment the original run. roll_had_advantage has no such asymmetry (nothing
-*comment external ever sets it), so there's nothing left for a caller to
-*comment manage -- just call roll_d20_check, then this, in that order.
-*comment Own dedicated lock, separate from resolve_player_hit's, since a
-*comment single fight might call both across different rounds. Reports
-*comment combat_player_dmg_dealt and combat_sneak_attack_triggered.
 *if (not(combat_weapon_hit_locked)) or (not(locked_combat_weapon_hit_page_id = choice_page_id))
   *temp cwh_roll 0
   *rand cwh_roll 1 combat_player_dmg_dice_sides
-  *comment Fighting Style: Great Weapon Fighting -- reroll a 1 or 2 on the
-  *comment weapon's own damage die (once), RAW-restricted to a two-handed
-  *comment weapon. Deliberately only the base weapon die, not a bonus die
-  *comment from Sneak Attack/Hex below -- those are rare/no overlap with a
-  *comment two-handed-weapon build in this game's class model, not worth
-  *comment the added complexity for.
   *if ((fighter_fighting_style = "great_weapon") and (weapon_hands = "two_handed"))
     *if (cwh_roll <= 2)
       *rand cwh_roll 1 combat_player_dmg_dice_sides
@@ -3188,61 +2074,14 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set locked_combat_weapon_hit_page_id choice_page_id
 *return
 
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment COMBAT: ENEMY ATTACK RESOLUTION
+*comment Resolves incoming attack vs AC, Shield reactions, Barbarian Rage, Temp HP & Agathys.
+*comment Inputs: combat_enemy_atk_bonus, combat_enemy_dmg_dice_sides, combat_enemy_dmg_bonus, combat_enemy_disadvantage
+*comment Outputs: combat_enemy_atk_total, combat_enemy_hit_success, combat_enemy_dmg_dealt, combat_shield_triggered, combat_agathys_triggered
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_enemy_attack
-*comment Input: combat_enemy_atk_bonus, combat_enemy_dmg_dice_sides,
-*comment combat_enemy_dmg_bonus, and combat_enemy_disadvantage -- set
-*comment true/nonzero by the caller for the round if the player Dodged/
-*comment braced; reset it back to false again before the NEXT round, this
-*comment subroutine doesn't clear it for you. Also reads combat_active_
-*comment target (already set by the caller to the attacking slot, 1/2/3,
-*comment before the gosub) to know which of three independent per-slot
-*comment locks to check -- fight_enemy_turn calls this up to 3 times on ONE
-*comment page (once per living enemy slot, no pause between), and a single
-*comment shared lock can't tell those calls apart (tried first; broke on
-*comment refresh, since it can only remember the MOST RECENT slot's "already
-*comment fired" state -- see combat_enemy_atk_locked_1/_2/_3's own comment
-*comment in the *create block). Rolls the enemy's attack
-*comment against the player's own armor_class, and on a hit, applies
-*comment damage to hp_current -- halved for a raging barbarian, same as
-*comment battle_take_damage. Floored at 1 by default (a random cellar
-*comment nuisance doesn't get to kill the protagonist; let the calling
-*comment scene narrate the near-miss) UNLESS combat_player_can_die is true
-*comment for this fight, in which case it's allowed down to 0 -- the caller
-*comment (fight_enemy_turn) checks for that and reports combat_outcome
-*comment "player_died" instead of *goto fight_rescued's usual <=1 check.
-*comment
-*comment Also handles a reaction spell held in reserve: if shield_armed is
-*comment true and this attack would otherwise land, it auto-fires -- spends
-*comment one wizard_spell_slots, disarms itself, and re-checks against
-*comment armor_class+5. This is why arming Shield doesn't cost the round's
-*comment action (see alderford.txt's culvert fight): the player spends a
-*comment charge choosing WHEN to arm it, not on whether to react in the
-*comment instant of impact, so no extra pause point is needed here.
-*comment
-*comment combat_enemy_advantage is the mirror of combat_enemy_disadvantage --
-*comment set it true for a one-time "you were spotted/alerted it" penalty
-*comment (e.g. a failed pre-fight Investigation check); it self-clears after
-*comment this one call, unlike combat_enemy_disadvantage which the caller
-*comment resets itself each round. If both are true on the same call (the
-*comment player Dodges on the same round the enemy has advantage), they
-*comment cancel per the usual rule and this rolls flat.
-*comment
-*comment Also absorbs incoming damage with temp_hp before hp_current, and
-*comment handles Armor of Agathys' retaliation: while agathys_active and
-*comment temp_hp > 0, a hit deals 5 cold damage straight back to
-*comment combat_enemy_hp (which can end the fight on the enemy's own turn --
-*comment the caller must check combat_enemy_hp <= 0 immediately after this
-*comment gosub, before checking hp_current, or a retaliatory kill will be
-*comment missed). agathys_active clears itself the moment temp_hp hits 0.
-*comment
-*comment Reports back combat_enemy_atk_total, combat_enemy_hit_success,
-*comment combat_shield_triggered (whether the reaction fired at all, hit or
-*comment not), combat_agathys_triggered/combat_agathys_shattered, and
-*comment combat_enemy_dmg_dealt (0 on a miss) for the caller's own prose.
 *if (not(locked_combat_enemy_atk_page_id = choice_page_id))
-  *comment Genuinely new page (a new round, or the fight's first) -- clear
-  *comment all three per-slot locks so this round's attacks can fire, then
-  *comment stamp the page id so this reset itself only runs once per page.
   *set combat_enemy_atk_locked_1 false
   *set combat_enemy_atk_locked_2 false
   *set combat_enemy_atk_locked_3 false
@@ -3284,9 +2123,7 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
     *rand cea_dmg 1 combat_enemy_dmg_dice_sides
     *set cea_dmg (cea_dmg + combat_enemy_dmg_bonus)
     *if ((character_class = "barbarian") and (is_raging))
-      *comment RAW rounds resistance damage down -- plain "/ 2" on an odd
-      *comment number produces a fractional HP value (e.g. 3 -> 1.5), which
-      *comment ChoiceScript's *set happily stores and prints. Floor it first.
+      *comment Barbarian Rage: half damage rounded down
       *set cea_dmg ((cea_dmg - (cea_dmg modulo 2)) / 2)
     *set combat_enemy_dmg_dealt cea_dmg
     *if ((agathys_active) and (temp_hp > 0))
@@ -3320,14 +2157,10 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
     *set combat_enemy_atk_locked_3 true
 *return
 
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPELL: MAGIC MISSILE (3d4 + 3 force damage)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_magic_missile
-*comment No input needed beyond global character state. Spends one
-*comment wizard_spell_slots, deals 3d4+3 force damage that bypasses AC
-*comment entirely (no roll_d20_check at all -- Magic Missile RAW always
-*comment hits), and reports combat_player_dmg_dealt for the caller's prose.
-*comment Own dedicated lock, separate from resolve_player_hit's, since this
-*comment never goes through that primitive (there's no attack roll to gate
-*comment it on).
 *if (not(combat_magic_missile_locked)) or (not(locked_combat_magic_missile_page_id = choice_page_id))
   *set wizard_spell_slots - 1
   *temp mm_dart_1 0
@@ -3348,11 +2181,10 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set locked_combat_magic_missile_page_id choice_page_id
 *return
 
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPELL: HEX (+1d6 necrotic damage on hits)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_hex
-*comment Sets hex_active for +1d6 necrotic on every subsequent hit (see the
-*comment three damage primitives above). A Hexblood's innate cast consumes
-*comment hexblood_hex_used (once per long rest) instead of a warlock slot --
-*comment checked first since it's the "free" source.
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = choice_page_id))
   *if ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))
     *set hexblood_hex_used true
@@ -3363,9 +2195,10 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set locked_combat_cast_page_id choice_page_id
 *return
 
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPELL: ARMOR OF AGATHYS (5 Temp HP + 5 Cold Retaliation)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_agathys
-*comment Spends one warlock_spell_slots for 5 temp_hp and arms the
-*comment retaliation resolve_enemy_attack checks for (agathys_active).
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = choice_page_id))
   *set warlock_spell_slots - 1
   *set temp_hp 5
@@ -3374,10 +2207,10 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set locked_combat_cast_page_id choice_page_id
 *return
 
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPELL: FALSE LIFE (1d4 + 4 Temp HP)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_false_life
-*comment Spends one slot from whichever pool the caster actually has this
-*comment spell in (wizard or warlock) for 1d4+4 temp_hp. Reports the amount
-*comment gained via combat_cast_result for the caller's prose.
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = choice_page_id))
   *if (character_class = "wizard")
     *set wizard_spell_slots - 1
@@ -3391,9 +2224,10 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set locked_combat_cast_page_id choice_page_id
 *return
 
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPELL: HEALING WORD (1d4 + CHA mod healing)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_healing_word
-*comment Spends one bard_spell_slots for 1d4+cha_mod healing (minimum 1),
-*comment capped at hp_max. Reports the amount healed via combat_cast_result.
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = choice_page_id))
   *set bard_spell_slots - 1
   *temp hw_roll 0
@@ -3408,13 +2242,10 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set locked_combat_cast_page_id choice_page_id
 *return
 
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPELL: DISSONANT WHISPERS (3d6 psychic, save for half)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_dissonant_whispers
-*comment Call after the caller's own roll_d20_check against a target DC --
-*comment check_success standing in for "the target failed its save" (full
-*comment damage); on a failure the target "saved" for half, rounded down.
-*comment Spends one bard_spell_slots regardless of outcome (RAW: the slot is
-*comment spent on casting, not on the save result). Deals 3d6 psychic,
-*comment applied straight to combat_enemy_hp. Reports combat_player_dmg_dealt.
 *if (not(combat_dissonant_whispers_locked)) or (not(locked_combat_dissonant_whispers_page_id = choice_page_id))
   *set bard_spell_slots - 1
   *temp dw_d1 0
@@ -3437,37 +2268,11 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment REUSABLE ENGINE PRIMITIVE: CURRENCY MATH
-*comment Pure arithmetic, no locking of its own -- callers gosub this from
-*comment inside their own replay-safety guard (see resolve_wager and
-*comment buy_tavern_item below for the pattern), the same way every other
-*comment *set stat +N mutation in this game needs one.
+*comment Adds or spends currency_add_amount (in copper-equivalent units: 10c = 1s, 10s = 1g).
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label currency_add
-*comment Input: currency_add_amount, a signed integer in copper-equivalent
-*comment units (10 copper = 1 silver, 10 silver = 1 gold). Adds (or, if
-*comment negative, spends) that amount.
-*comment
-*comment Works by re-deriving gold/silver/copper from the player's new TOTAL
-*comment wealth, rather than adding/subtracting each denomination column
-*comment independently. An earlier column-wise version (subtract copper,
-*comment borrow into silver if <0; subtract silver, borrow into gold if <0;
-*comment subtract gold last with no further borrow) could still drive gold
-*comment negative even with plenty of total funds -- e.g. paying a
-*comment 2-gold-denominated cost (200 copper-equivalent) while holding 0
-*comment gold but 25 silver (250 copper-equivalent, easily enough) tried to
-*comment subtract 2 straight from the gold column, since nothing converted
-*comment the spare silver into gold to cover that specific column, leaving
-*comment gold at -2 while silver sat untouched at 25. Every transaction in
-*comment the game was small enough to keep ca_gold at 0 until the Counting
-*comment House's Letters of Credit became the first to spend a full gold's
-*comment worth, which is what finally exposed this. Total-value
-*comment redecomposition sidesteps the whole bug class: there's no column to
-*comment individually run short on, only one total that's always correctly
-*comment re-split after every transaction.
 *temp ca_total ((((gold * 100) + (silver * 10)) + copper) + currency_add_amount)
 *if (ca_total < 0)
-  *comment Defensive only -- every caller already checks affordability
-  *comment before spending, so this shouldn't trigger in practice.
   *set ca_total 0
 *set gold (ca_total - (ca_total modulo 100)) / 100
 *temp ca_remainder (ca_total - (gold * 100))
@@ -3475,15 +2280,12 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 *set copper (ca_remainder - (silver * 10))
 *return
 
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment FORMAT SILVER AMOUNT INTO DISPLAY STRING
+*comment Input: silver_amount_to_describe
+*comment Output: coin_amount_desc (e.g. "1 Gold Crown, 2 Silver Marks")
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label describe_silver_amount
-*comment Input: silver_amount_to_describe, a plain silver-mark integer (NOT
-*comment copper-equivalent units like currency_add_amount -- this is for
-*comment display of a sum already denominated in silver, e.g.
-*comment letter_of_credit_value). Output: coin_amount_desc, a display
-*comment string converted into proper coinage at the real 10:1 rate (see
-*comment currency_add above) -- so a sum of 10+ Silver Marks reads as Gold
-*comment Crowns instead of an oddly large silver count. Pure formatting, no
-*comment stat mutation, safe to call from any display site with no lock.
 *temp dsa_gold ((silver_amount_to_describe - (silver_amount_to_describe modulo 10)) / 10)
 *temp dsa_silver (silver_amount_to_describe modulo 10)
 *temp dsa_gold_str ""
@@ -3506,27 +2308,8 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment REUSABLE ENGINE PRIMITIVE: GAMBLING WAGER
-*comment One shared subroutine for every gambling table in the game (dice,
-*comment cards, knuckle-bones, whatever a future town needs) instead of
-*comment hand-rolling a new ante/payout/lock trio per location. A caller
-*comment just needs its own *create'd house-bankroll stat (so the NPC can
-*comment eventually run dry and stop offering the game) plus these four
-*comment inputs, set right before *gosub_scene startup resolve_wager:
-*comment   wager_bankroll_var  - string name of that table's bankroll stat
-*comment   wager_ante_copper   - cost to play, in copper-equivalent units
-*comment   wager_win_copper    - gross payout on success (capped to
-*comment                         whatever's left in the bankroll)
-*comment   check_stat/check_dc/check_skill - as usual for roll_d20_check
-*comment Outputs: check_success (as always) and wager_bankroll_busted (true
-*comment once the bankroll hits 0, so the caller can hide the option and/or
-*comment print a "the house is tapped out" line on the next visit).
-*comment The ante debit and the win payout are two separate mutations that
-*comment can both fire on the same page (ante, then the check, then a
-*comment conditional credit) -- exactly the "two mutations, one breath"
-*comment problem *rand and *set stat +N run into everywhere else in this
-*comment game, so each half gets its own dedicated lock rather than sharing
-*comment one, the same way damage_roll_locked is kept separate from
-*comment roll_locked.
+*comment Inputs: wager_bankroll_var, wager_ante_copper, wager_win_copper, check_stat/dc/skill
+*comment Outputs: check_success, wager_bankroll_busted
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_wager
 *if (wager_bankroll_var = "")
@@ -3554,17 +2337,8 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment REUSABLE ENGINE PRIMITIVE: TAVERN PURCHASE
-*comment One shared subroutine for buying a consumable (food or drink)
-*comment that spends coin, optionally heals HP or grants temp HP, and grants a buff into
-*comment the matching channel. Set these inputs before *gosub buy_tavern_item:
-*comment   tavern_item_cost_copper - price, in copper-equivalent units
-*comment   tavern_item_hp_heal     - HP restored (0 for none)
-*comment   tavern_item_temp_hp     - Temp HP granted (5e largest wins, 0 for none)
-*comment   tavern_item_type        - "food" or "drink" (routes the buff)
-*comment   tavern_item_buff_bonus  - 0 to skip granting a buff entirely;
-*comment                             otherwise also set buff_name/desc/stat
-*comment   tavern_item_buff_name/desc/stat/minutes - the buff's display
-*comment                             text, matching check_stat, and duration
+*comment Inputs: tavern_item_cost_copper, tavern_item_hp_heal, tavern_item_temp_hp, tavern_item_type,
+*comment         tavern_item_buff_bonus, tavern_item_buff_name/desc/stat/minutes
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label buy_tavern_item
 *if (not(tavern_purchase_locked)) or (not(locked_tavern_purchase_page_id = choice_page_id))
@@ -3601,20 +2375,9 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment REUSABLE ENGINE PRIMITIVE: APPLY UNIQUE BUFF
-*comment Grants a rare boon (shrine blessing, alchemy, bathhouse, ritual)
-*comment into the unique_buff 1-3 pool. Auto-fills the first empty slot,
-*comment or refreshes an existing buff with the same name (extends
-*comment duration), or overwrites the slot with the lowest time remaining
-*comment if all 3 are occupied.
-*comment Set these inputs before *gosub apply_unique_buff:
-*comment   unique_buff_input_name/desc/stat/bonus/minutes
-*comment The call site must guard against replays itself -- either via a
-*comment one-time story flag (*if (not(received_X)) ... *set received_X
-*comment true) or a stat_bump_locked guard, depending on whether the boon
-*comment is one-off or repeatable.
+*comment Inputs: unique_buff_input_name/desc/stat/bonus/minutes
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label apply_unique_buff
-*comment --- Step 1: Deduplication — refresh if same buff name is already active ---
 *if (unique_buff1_active) and (unique_buff1_name = unique_buff_input_name)
   *set unique_buff1_desc unique_buff_input_desc
   *set unique_buff1_stat unique_buff_input_stat
@@ -3633,7 +2396,6 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set unique_buff3_bonus unique_buff_input_bonus
   *set unique_buff3_minutes_left unique_buff_input_minutes
   *return
-*comment --- Step 2: Auto-fill first empty slot ---
 *if (not(unique_buff1_active))
   *set unique_buff1_active true
   *set unique_buff1_name unique_buff_input_name
@@ -3658,9 +2420,6 @@ The smoke of wet peat fires drifts thick through the rows of tents. You shoulder
   *set unique_buff3_bonus unique_buff_input_bonus
   *set unique_buff3_minutes_left unique_buff_input_minutes
   *return
-*comment --- Step 3: All 3 slots full — overwrite the one with least time left ---
-*comment Find the slot with the minimum minutes_left. Ties go to the
-*comment lowest-numbered slot (arbitrary but deterministic).
 *temp lowest_slot 1
 *if (unique_buff2_minutes_left < unique_buff1_minutes_left)
   *set lowest_slot 2
