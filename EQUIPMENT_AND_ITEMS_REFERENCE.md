@@ -15,27 +15,28 @@ A comprehensive developer and lore reference for every wearable, equippable, and
 - **Economic Scale & Denominations:**
   - **10 Copper Bits (c) = 1 Silver Mark (s)**
   - **10 Silver Marks (s) = 1 Gold Crown (g) = 100 Copper Bits**
-  - Ordinary labor pays 4s–7s per shift; common tavern meals cost 2c–3c; fine shear-steel and armor represent major capital investments.
+  - **The Laborer Anchor:** An ordinary dock or farm laborer earns **3 to 4 Copper Bits per day** (~7 Silver Marks / month).
+  - **Mechanics-Locked Pricing:** Items within the same mechanical tier (e.g. all 11+DEX Light Armors, or both 13+DEX Medium Armors) share identical price baselines to ensure gameplay fairness.
 
 ---
 
 ## 1. Weapons & Sidearms
 
-Primary weapons and secondary sidearms can be equipped in the main-hand or stored in the sidearm slot. Finesse weapons dynamically use the higher of Strength or Dexterity for both attack rolls and damage modifiers, and qualify for Rogue Sneak Attack.
+Primary weapons and secondary sidearms can be equipped in the main-hand or stored in the sidearm slot. Finesse weapons dynamically use the higher of Strength or Dexterity for both attack rolls and damage modifiers, and qualify for Rogue Sneak Attack. Prices are locked by damage die, grip, and martial category.
 
 | Item ID | Item Name | Category & Grip | Base Damage | Acquisition & Retail Cost | Mechanical Effects |
 |---|---|---|---|---|---|
-| `starting` (Ashbrook) | **Heavy Falchion & Buckler** | One-Handed Melee | `1d8 slashing` | Enlistment (Ashbrook) or Master Smith — **3s 2c** (Blade alone) | Standard 1d8 melee weapon (STR-based). Grants and pairs with the Limestone Boss Buckler (+2 AC when equipped). |
-| `starting` / `ash_spear` | **Seven-Foot Ash-Wood Spear** | One-Handed Reach Melee | `1d6/1d8 piercing` | Enlistment (Ashbrook / Outlaw) or Armorer — **1s 4c** | Reach weapon (STR-based). Versatile 1d8 profile in frontline combat. |
-| `starting` / `felling_axe` | **Heavy Bearded Broadaxe** | Two-Handed Heavy Melee | `1d12 slashing` | Enlistment (Ashbrook) or Master Smith — **4s 5c** | Heavy Two-Handed weapon (STR-based). Forces `weapon_hands = "two_handed"`, automatically stowing off-hand shields. Eligible for Great Weapon Fighting rerolls. Sidearm profile deals 1d8 slashing. |
-| `starting` / `matched_dagger` | **Matched Pair of Daggers** | One-Handed Finesse | `1d4 piercing` | Enlistment (Port Valen Outlaw) or Cutler — **1s 8c** (pair) | Finesse (uses higher of STR or DEX for attack and damage). Triggers Rogue Sneak Attack (+1d6). |
-| `starting` / `hand_crossbow` | **Compact Hand Crossbow** | One-Handed Ranged | `1d6 piercing` | Enlistment (Port Valen Outlaw) or Bowyer — **4s 2c** | Ranged weapon (DEX-based). Single-handed, concealable. Triggers Rogue Sneak Attack (+1d6). |
-| `starting` (Scout) | **Recurve Shortbow** | Two-Handed Ranged | `1d6 piercing` | Enlistment (Outlaw Dev Preset) or Bowyer — **2s 8c** | Ranged weapon (DEX-based). Two-handed. Triggers Rogue Sneak Attack (+1d6). |
-| `starting` (Disgraced) | **Iron-Shod Quarterstaff** | One-Handed / Versatile Melee | `1d6/1d8 bludgeoning` | Enlistment (Disgraced Scion) or Woodworker — **7c** | Versatile blunt weapon (STR-based). |
-| `starting` / `bodkin_dagger` | **Slim Bodkin Dagger** | One-Handed Finesse | `1d4 piercing` | Enlistment (Disgraced Scion) or Cutler — **1s 1c** | Finesse (uses higher of STR or DEX). Triggers Rogue Sneak Attack (+1d6). |
-| `starting` (Disgraced) | **Compact Light Crossbow** | Two-Handed Ranged | `1d8 piercing` | Enlistment (Disgraced Scion) or Bowyer — **3s 8c** | Ranged weapon (DEX-based, 1d8). Two-handed. |
+| `starting` (Ashbrook) | **Heavy Falchion & Buckler** | One-Handed Melee | `1d8 slashing` | Enlistment (Ashbrook) or Master Smith — **2s 5c** (Blade alone) | Standard 1d8 melee weapon (STR-based). Grants and pairs with the Limestone Boss Buckler (+2 AC when equipped). |
+| `starting` / `ash_spear` | **Seven-Foot Ash-Wood Spear** | One-Handed Reach Melee | `1d6/1d8 piercing` | Enlistment (Ashbrook / Outlaw) or Armorer — **2s 0c** | Reach weapon (STR-based). Versatile 1d8 profile in frontline combat. |
+| `starting` / `felling_axe` | **Heavy Bearded Broadaxe** | Two-Handed Heavy Melee | `1d12 slashing` | Enlistment (Ashbrook) or Master Smith — **5s 0c** | Heavy Two-Handed weapon (STR-based). Forces `weapon_hands = "two_handed"`, automatically stowing off-hand shields. Eligible for Great Weapon Fighting rerolls. Sidearm profile deals 1d8 slashing. |
+| `starting` / `matched_dagger` | **Matched Pair of Daggers** | One-Handed Finesse | `1d4 piercing` | Enlistment (Port Valen Outlaw) or Cutler — **1s 5c** (pair) | Finesse (uses higher of STR or DEX for attack and damage). Triggers Rogue Sneak Attack (+1d6). |
+| `starting` / `hand_crossbow` | **Compact Hand Crossbow** | One-Handed Ranged | `1d6 piercing` | Enlistment (Port Valen Outlaw) or Bowyer — **2s 5c** | Ranged weapon (DEX-based). Single-handed, concealable. Triggers Rogue Sneak Attack (+1d6). |
+| `starting` (Scout) | **Recurve Shortbow** | Two-Handed Ranged | `1d6 piercing` | Enlistment (Outlaw Dev Preset) or Bowyer — **2s 5c** | Ranged weapon (DEX-based). Two-handed. Triggers Rogue Sneak Attack (+1d6). |
+| `starting` (Disgraced) | **Iron-Shod Quarterstaff** | One-Handed / Versatile Melee | `1d6/1d8 bludgeoning` | Enlistment (Disgraced Scion) or Woodworker — **1s 5c** | Versatile blunt weapon (STR-based, 1d6/1d8). |
+| `starting` / `bodkin_dagger` | **Slim Bodkin Dagger** | One-Handed Finesse | `1d4 piercing` | Enlistment (Disgraced Scion) or Cutler — **1s 5c** | Finesse (uses higher of STR or DEX). Triggers Rogue Sneak Attack (+1d6). |
+| `starting` (Disgraced) | **Compact Light Crossbow** | Two-Handed Ranged | `1d8 piercing` | Enlistment (Disgraced Scion) or Bowyer — **3s 0c** | Ranged weapon (DEX-based, 1d8). Two-handed. |
 | `timber_axe` | **Highland Hewing Axe** | One-Handed Melee | `1d8 slashing` | Master Torvald's Smithy (Alderford) — **2s 5c** | One-handed felling axe (STR-based). Compatible with off-hand shields and Dueling Fighting Style (+2 damage). |
-| `stiletto` | **Alderford Bodkin Stiletto** | One-Handed Finesse | `1d4 piercing` | Master Torvald's Smithy (Alderford) — **1s 6c** | Refined file-steel thrusting blade. Finesse (STR or DEX). Triggers Rogue Sneak Attack (+1d6). |
+| `stiletto` | **Alderford Bodkin Stiletto** | One-Handed Finesse | `1d4 piercing` | Master Torvald's Smithy (Alderford) — **1s 5c** | Refined file-steel thrusting blade. Finesse (STR or DEX). Triggers Rogue Sneak Attack (+1d6). |
 
 ---
 
@@ -43,86 +44,96 @@ Primary weapons and secondary sidearms can be equipped in the main-hand or store
 
 | Item ID | Item Name | Slot | Acquisition / Cost | Mechanical Effects |
 |---|---|---|---|---|
-| `has_shield` / `shield_equipped` | **Limestone Boss Shield / Buckler** | Off-Hand | Enlistment (Ashbrook Falchion) or Torvald's Smithy (**3s 5c**) | **+2 Armor Class (AC)** when strapped on. Can be toggled on/off in the dossier. Automatically stows if a two-handed weapon is drawn. Enables Fighter *Protection* Fighting Style. |
+| `has_shield` / `shield_equipped` | **Limestone Boss Shield / Buckler** | Off-Hand | Enlistment (Ashbrook Falchion) or Torvald's Smithy (**3s 0c**) | **+2 Armor Class (AC)** when strapped on. Can be toggled on/off in the dossier. Automatically stows if a two-handed weapon is drawn. Enables Fighter *Protection* Fighting Style. |
 
 ---
 
 ## 3. Torso Armor
 
-Torso armor sets the character's base AC calculation in `recalculate_armor_class`.
+Torso armor sets the character's base AC calculation in `recalculate_armor_class`. All armors within the same category share identical pricing to reflect mechanical parity.
 
 | Item ID | Armor Name | Armor Class Category | Base AC Formula | Acquisition & Retail Cost | Mechanical Interaction & Rules |
 |---|---|---|---|---|---|
-| `brigandine` | **Padded Gambeson & Leather Brigandine** | Medium Armor | `13 + DEX (max +2)` | Enlistment (Ashbrook) or Armorer — **5s 5c** | Solid protection against slashing and bludgeoning. Caps DEX contribution at +2. |
-| `chain_jack` | **Quilted Aketon & Iron Chain-Jack** | Medium Armor | `13 + DEX (max +2)` | Enlistment (Ashbrook) or Armorer — **6s 2c** | Interlocking scrap iron rings over wool. Caps DEX contribution at +2. |
-| `buff_coat` | **Greased Oxhide Buff-Coat & Scale Sleeves** | Light Armor | `11 + DEX (full)` | Enlistment (Ashbrook) or Tanner — **3s 8c** | Supple hide with scale reinforcement. Full DEX bonus applies. |
-| `leather_cuirass` / `leather` | **Boiled Leather Cuirass** | Light Armor | `11 + DEX (full)` | Enlistment (Outlaw) or Leatherworker — **2s 4c** | Form-fitted hardened leather. Full DEX bonus applies. |
-| `thief_leather` | **Oiled Leather Jerkin with Hidden Pockets** | Light Armor | `11 + DEX (full)` | Enlistment (Outlaw) or Black Market — **2s 8c** | Concealed weapon pouches. Full DEX bonus applies. |
-| `scout_wraps` | **Layered Leather Scout Wraps** | Light Armor | `11 + DEX (full)` | Enlistment (Outlaw) or Tanner — **2s 2c** | Silent movement wraps. Full DEX bonus applies. |
-| `scholars_cassock` / `cloth` | **Quilted Scholar's Cassock** | Cloth / Unarmored | `10 + DEX (full)` | Enlistment (Disgraced) or Tailor — **1s 2c** | Ordinary clothing. Qualifies for Wizard *Mage Armor* (`13 + DEX`) and Barbarian *Unarmored Defense* (`10 + DEX + CON`). |
-| `reinforced_doublet` | **Reinforced Canvas Doublet** | Cloth / Unarmored | `10 + DEX (full)` | Enlistment (Disgraced) or Draper — **9c** | Stiffened canvas. Counts as cloth/unarmored. |
-| `tailored_vest` | **Tailored Vest & Travel Coat** | Cloth / Unarmored | `10 + DEX (full)` | Enlistment (Disgraced) or High Clothier — **1s 6c** | Noble travel garments. Counts as cloth/unarmored. |
-| `traveling_cloak` | **Oiled Traveling Cloak & Robes** | Cloth / Unarmored | `10 + DEX (full)` | Outfitter / Chandler — **1s 4c** | Traveling mantle and robes. Counts as cloth/unarmored. |
+| `brigandine` | **Padded Gambeson & Leather Brigandine** | Medium Armor | `13 + DEX (max +2)` | Enlistment (Ashbrook) or Armorer — **7s 0c** | Solid protection against slashing and bludgeoning. Caps DEX contribution at +2. Identical mechanical tier to Chain-Jack. |
+| `chain_jack` | **Quilted Aketon & Iron Chain-Jack** | Medium Armor | `13 + DEX (max +2)` | Enlistment (Ashbrook) or Armorer — **7s 0c** | Interlocking scrap iron rings over wool. Caps DEX contribution at +2. Identical mechanical tier to Brigandine. |
+| `buff_coat` | **Greased Oxhide Buff-Coat & Scale Sleeves** | Light Armor | `11 + DEX (full)` | Enlistment (Ashbrook) or Tanner — **3s 0c** | Supple hide with scale reinforcement. Full DEX bonus applies. Identical mechanical tier to all Light Armors. |
+| `leather_cuirass` / `leather` | **Boiled Leather Cuirass** | Light Armor | `11 + DEX (full)` | Enlistment (Outlaw) or Leatherworker — **3s 0c** | Form-fitted hardened leather. Full DEX bonus applies. |
+| `thief_leather` | **Oiled Leather Jerkin with Hidden Pockets** | Light Armor | `11 + DEX (full)` | Enlistment (Outlaw) or Black Market — **3s 0c** | Concealed weapon pouches. Full DEX bonus applies. |
+| `scout_wraps` | **Layered Leather Scout Wraps** | Light Armor | `11 + DEX (full)` | Enlistment (Outlaw) or Tanner — **3s 0c** | Silent movement wraps. Full DEX bonus applies. |
+| `scholars_cassock` / `cloth` | **Quilted Scholar's Cassock** | Cloth / Unarmored | `10 + DEX (full)` | Enlistment (Disgraced) or Tailor — **1s 0c** | Ordinary clothing. Qualifies for Wizard *Mage Armor* (`13 + DEX`) and Barbarian *Unarmored Defense* (`10 + DEX + CON`). |
+| `reinforced_doublet` | **Reinforced Canvas Doublet** | Cloth / Unarmored | `10 + DEX (full)` | Enlistment (Disgraced) or Draper — **1s 0c** | Stiffened canvas. Counts as cloth/unarmored. |
+| `tailored_vest` | **Tailored Vest & Travel Coat** | Cloth / Unarmored | `10 + DEX (full)` | Enlistment (Disgraced) or High Clothier — **1s 0c** | Noble travel garments. Counts as cloth/unarmored. |
+| `traveling_cloak` | **Oiled Traveling Cloak & Robes** | Cloth / Unarmored | `10 + DEX (full)` | Outfitter / Chandler — **1s 0c** | Traveling mantle and robes. Counts as cloth/unarmored. |
 
 ---
 
 ## 4. Headwear Slot (`equipped_head_id`)
 
+Headwear is divided into physical armor (+1 AC) and non-armor headwear (0 AC, cosmetic / warmth).
+
 | Item ID | Item Name | AC Bonus | Counts as Armor? | Acquisition & Retail Cost | Description & Mechanical Details |
 |---|---|---|---|---|---|
-| `torvald_iron_sallet` | **Cold-Hammered Iron Sallet** | **+1 AC** | **Yes** (`head_is_armor = true`) | Master Torvald's Smithy (Alderford) — **2s 8c** | Plain riveted steel skullcap with guild touchmark. Grants flat **+1 AC**. Because it counts as wearing real armor, it **suppresses** Wizard *Mage Armor* and Barbarian *Unarmored Defense*. |
+| `torvald_iron_sallet` | **Cold-Hammered Iron Sallet** | **+1 AC** | **Yes** (`head_is_armor = true`) | Master Torvald's Smithy (Alderford) — **3s 0c** | Plain riveted steel skullcap with guild touchmark. Grants flat **+1 AC**. Because it counts as wearing real armor, it **suppresses** Wizard *Mage Armor* and Barbarian *Unarmored Defense*. |
 | `torvald_hide_cap` | **Boiled-Hide Watch-Cap** | 0 AC | No | Master Torvald's Smithy (Alderford) — **8c** | Stiffened blackened leather cap. Cosmetic/warmth headwear. Does not interfere with unarmored/cloth abilities. |
-| `arming_cap` | **Padded Arming Cap** | 0 AC | No | Enlistment (Ashbrook) or Tailor — **5c** | Quilted linen and wool cap worn beneath iron helmets. Cosmetic headwear. |
-| `camo_hood` | **Shadowed Camo Hood** | 0 AC | No | Enlistment (Outlaw) or Draper — **7c** | Mottled dark hood designed to break facial contours in brush and fog. Cosmetic headwear. |
-| `scholar_coif` | **Scholar's Linen Coif** | 0 AC | No | Enlistment (Disgraced) or Scribe Shop — **6c** | Tailored linen coif worn by academics, tutors, and scions. Cosmetic headwear. |
+| `arming_cap` | **Padded Arming Cap** | 0 AC | No | Enlistment (Ashbrook) or Tailor — **8c** | Quilted linen and wool cap worn beneath iron helmets. Cosmetic headwear. |
+| `camo_hood` | **Shadowed Camo Hood** | 0 AC | No | Enlistment (Outlaw) or Draper — **8c** | Mottled dark hood designed to break facial contours in brush and fog. Cosmetic headwear. |
+| `scholar_coif` | **Scholar's Linen Coif** | 0 AC | No | Enlistment (Disgraced) or Scribe Shop — **8c** | Tailored linen coif worn by academics, tutors, and scions. Cosmetic headwear. |
 | `none` | **Bare Head** | 0 AC | No | Default / Unequipped | No headgear worn. |
 
 ---
 
 ## 5. Cloaks Slot (`equipped_cloak_id`)
 
+Cosmetic apparel worn over shoulders. Standard civilian and military mantles share a flat **1s 0c** baseline.
+
 | Item ID | Item Name | Acquisition & Retail Cost | Description & Mechanical Role |
 |---|---|---|---|
 | `talia_oiled_cloak` | **Talia's Oiled Brine-Cloak** | Talia's Shed (Alderford) — Quest Reward (Priceless) | Heavy oil-dark cloak saturated with mutton tallow and neatsfoot dubbin to repel salt spray and marsh rot. Equippable cosmetic cloak; awarded alongside the river crossing protection (`prep_waterproof_gear`). |
-| `wool_mantle` | **Iron Bull Wool Mantle** | Enlistment (Ashbrook) or Weaver — **1s 2c** | Coarse, heavy-spun wool cloak pinned with an iron brooch. Cosmetic apparel. |
-| `camo_cloak` | **Weathered Camouflage Cloak** | Enlistment (Outlaw) or Dyer — **1s 4c** | Mottled marsh-green and brown wool cloak for blending into reeds and scrub. Cosmetic apparel. |
-| `weather_cloak` | **Oiled Marcher Weather-Cloak** | Enlistment (Disgraced) or Outfitter — **1s 8c** | High-collared travel cloak treated with pine-oil against frontier rains. Cosmetic apparel. |
+| `wool_mantle` | **Iron Bull Wool Mantle** | Enlistment (Ashbrook) or Weaver — **1s 0c** | Coarse, heavy-spun wool cloak pinned with an iron brooch. Cosmetic apparel. |
+| `camo_cloak` | **Weathered Camouflage Cloak** | Enlistment (Outlaw) or Dyer — **1s 0c** | Mottled marsh-green and brown wool cloak for blending into reeds and scrub. Cosmetic apparel. |
+| `weather_cloak` | **Oiled Marcher Weather-Cloak** | Enlistment (Disgraced) or Outfitter — **1s 0c** | High-collared travel cloak treated with pine-oil against frontier rains. Cosmetic apparel. |
 | `none` | **No Cloak** | Default / Unequipped | Bare shoulders. |
 
 ---
 
 ## 6. Handwear Slot (`equipped_hands_id`)
 
+Cosmetic handwear and weapon wraps. All non-armor wraps share a flat **8c** baseline.
+
 | Item ID | Item Name | Acquisition & Retail Cost | Description & Mechanical Role |
 |---|---|---|---|
-| `rorik_grip_wraps` | **Tarred Linen Grip-Wraps** | Veteran Rorik (`camp_night.txt`) / Outfitter — **4c** | Dense coils of tarred linen wound around palms and knuckles to protect against blistering and wet hilt slippage. Equippable cosmetic handwear. |
-| `leather_wraps` | **Hardened Leather Weapon-Wraps** | Enlistment (Ashbrook) or Cobbler — **6c** | Boiled-leather straps wrapped around wrists and forearms for weapon grip. Cosmetic handwear. |
-| `archer_bracers` | **Supple Archer Bracers** | Enlistment (Outlaw) or Bowyer / Tanner — **1s 0c** | Flexible leather forearm bracers protecting against bowstring slap. Cosmetic handwear. |
-| `scribe_gloves` | **Scribe Wrist-Bracers & Writing Gloves** | Enlistment (Disgraced) or Guild Stationer — **1s 2c** | Supple fingerless calfskin writing gloves and tailored wrist supports. Cosmetic handwear. |
+| `rorik_grip_wraps` | **Tarred Linen Grip-Wraps** | Veteran Rorik (`camp_night.txt`) / Outfitter — **8c** | Dense coils of tarred linen wound around palms and knuckles to protect against blistering and wet hilt slippage. Equippable cosmetic handwear. |
+| `leather_wraps` | **Hardened Leather Weapon-Wraps** | Enlistment (Ashbrook) or Cobbler — **8c** | Boiled-leather straps wrapped around wrists and forearms for weapon grip. Cosmetic handwear. |
+| `archer_bracers` | **Supple Archer Bracers** | Enlistment (Outlaw) or Bowyer / Tanner — **8c** | Flexible leather forearm bracers protecting against bowstring slap. Cosmetic handwear. |
+| `scribe_gloves` | **Scribe Wrist-Bracers & Writing Gloves** | Enlistment (Disgraced) or Guild Stationer — **8c** | Supple fingerless calfskin writing gloves and tailored wrist supports. Cosmetic handwear. |
 | `none` | **Bare Hands** | Default / Unequipped | Unwrapped hands. |
 
 ---
 
 ## 7. Waist Slot (`equipped_waist_id`)
 
+Standard field belts and frogs share a flat **1s 0c** baseline.
+
 | Item ID | Item Name | Acquisition & Retail Cost | Description & Mechanical Role |
 |---|---|---|---|
 | `rorik_campaign_belt` | **Iron-Riveted Campaign Belt** | Veteran Rorik (`camp_night.txt`) — Veteran Gift (Priceless) | Worn, heavy leather field belt reinforced with hammered iron rivets and an reinforced frog. Equippable cosmetic belt. |
 | `soldiers_belt` | **Heavy Soldier's Belt & Frog** | Enlistment (Ashbrook) or Harness-Maker — **1s 0c** | Broad harness-leather belt with forged iron buckle and heavy scabbard frog. Cosmetic belt. |
-| `scabbard_belt` | **Concealed Scabbard Belt** | Enlistment (Outlaw) or Black Market — **1s 5c** | Supple leather belt fitted with low-profile loops and hidden sheath slots. Cosmetic belt. |
-| `satchel_harness` | **Satchel-Harness & Vellum Roll** | Enlistment (Disgraced) or Scribe — **1s 8c** | Cross-body shoulder and waist leather harness carrying document cylinders. Cosmetic belt. |
+| `scabbard_belt` | **Concealed Scabbard Belt** | Enlistment (Outlaw) or Black Market — **1s 0c** | Supple leather belt fitted with low-profile loops and hidden sheath slots. Cosmetic belt. |
+| `satchel_harness` | **Satchel-Harness & Vellum Roll** | Enlistment (Disgraced) or Scribe — **1s 0c** | Cross-body shoulder and waist leather harness carrying document cylinders. Cosmetic belt. |
 | `none` | **No Belt** | Default / Unequipped | Bare waist. |
 
 ---
 
 ## 8. Footwear Slot (`equipped_feet_id`)
 
+Standard travel and combat boots share a flat **1s 5c** baseline.
+
 | Item ID | Item Name | Acquisition & Retail Cost | Description & Mechanical Role |
 |---|---|---|---|
 | `talia_deck_boots` | **Talia's Pitch-Sealed Deck Boots** | Talia's Shed (Alderford) — Quest Reward (Priceless) | Waterproofed leather deck boots, pitch- and wax-sealed river-tight against marsh damp. Equippable cosmetic boots; awarded alongside river crossing protection (`prep_waterproof_gear`). |
-| `marching_boots` | **Hobnailed Marching Boots** | Enlistment (Ashbrook) or Cordwainer — **1s 8c** | Thick oxhide boots studded with iron hobnails for traction in heavy clay mud. Cosmetic footwear. |
-| `scout_boots` | **Soft-Soled Scout Wraps** | Enlistment (Outlaw) or Tanner — **1s 4c** | Supple, silent moccasin boots lined with sheepskin for muffled footing. Cosmetic footwear. |
-| `riding_boots` | **Cured Travel Riding Boots** | Enlistment (Disgraced) or Master Bootmaker — **2s 6c** | High-topped calfskin riding boots built for saddle stirrups and highway travel. Cosmetic footwear. |
+| `marching_boots` | **Hobnailed Marching Boots** | Enlistment (Ashbrook) or Cordwainer — **1s 5c** | Thick oxhide boots studded with iron hobnails for traction in heavy clay mud. Cosmetic footwear. |
+| `scout_boots` | **Soft-Soled Scout Wraps** | Enlistment (Outlaw) or Tanner — **1s 5c** | Supple, silent moccasin boots lined with sheepskin for muffled footing. Cosmetic footwear. |
+| `riding_boots` | **Cured Travel Riding Boots** | Enlistment (Disgraced) or Master Bootmaker — **1s 5c** | High-topped calfskin riding boots built for saddle stirrups and highway travel. Cosmetic footwear. |
 | `none` | **Bare Feet** | Default / Unequipped | Unshod feet. |
 
 ---

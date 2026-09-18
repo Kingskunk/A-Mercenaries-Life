@@ -1828,10 +1828,10 @@ A scarred crossbowman spits into the embers, shaking his head. "Four hundred sil
 *temp hint_fire_lore ""
 *if (show_stat_hints)
   *if (guidance_active)
-    *set hint_fire_dice " [Guidance: DEX Check (DC 11) + 1d4, Wager / +3 Silver]"
+    *set hint_fire_dice " [Guidance: Sleight of Hand (DEX DC 13) + 1d4, Wager / +3 Silver]"
     *set hint_fire_lore " [Guidance: WIS Check (DC 11) + 1d4, Company Lore, Varren Respect +2]"
   *else
-    *set hint_fire_dice " [DEX Check (DC 11), Wager / +3 Silver]"
+    *set hint_fire_dice " [Sleight of Hand (DEX DC 13), Wager / +3 Silver]"
     *set hint_fire_lore " [WIS Check (DC 11), Company Lore, Varren Respect +2]"
 
 *choice
@@ -1841,24 +1841,30 @@ A scarred crossbowman spits into the embers, shaking his head. "Four hundred sil
       You whisper the centering cadence under your breath, steadying your pulse and sharpening your perception amidst the firelight.
       *goto bivouac_fire_hub
 
-  # Toss three copper bits into the knuckle-bones wager rolling on an overturned buckler.${hint_fire_dice}
-    *set check_stat "dex"
-    *set check_dc 11
-    *set check_skill "Knuckle-bones"
-    *gosub_scene startup roll_d20_check
-    *if (check_success)
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 3)
+    # Toss three copper bits into the knuckle-bones wager rolling on an overturned buckler.${hint_fire_dice}
+      *set check_stat "dex"
+      *set check_dc 13
+      *set check_skill "Sleight of Hand"
       *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
-        *set currency_add_amount 30
+        *set currency_add_amount 0 - 3
         *gosub_scene startup currency_add
         *set currency_txn_locked true
         *set locked_currency_txn_page_id choice_page_id
-      You watch the rhythm of the roll, catch the wobble in the lead-weighted bone dice, and toss your pair with a clean, snapping flick of your wrist. They clatter across the iron boss and come up high-horns.
-      
-      A round of grudging curses and low laughter erupts around the circle. The pike-veteran scoops up the copper pot, counts out three silver marks, and slaps them into your palm. "Deft fingers, recruit," he grunts with a grin. "Don't let Varren catch you taking his regulars' pay."
-      [b][💰 Won: Knuckle-bones Pot | +3 Silver][/b]
-    *else
-      You toss the dice, but your fingers are stiff from the marsh damp; the bones bounce awkwardly off the shield rim and tumble into the fire ashes. The veterans chuckle with dry amusement as the pike-veteran scoops your copper. "Better luck next contract, greenhorn. Keep your day job."
-    *goto bivouac_fire_done
+      *gosub_scene startup roll_d20_check
+      *if (check_success)
+        *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+          *set currency_add_amount 30
+          *gosub_scene startup currency_add
+          *set stat_bump_locked true
+          *set locked_stat_bump_page_id choice_page_id
+        You watch the rhythm of the roll, catch the wobble in the lead-weighted bone dice, and toss your pair with a clean, snapping flick of your wrist. They clatter across the iron boss and come up high-horns.
+        
+        A round of grudging curses and low laughter erupts around the circle. The pike-veteran scoops up the copper pot, counts out three silver marks, and slaps them into your palm. "Deft fingers, recruit," he grunts with a grin. "Don't let Varren catch you taking his regulars' pay."
+        [b][💰 Won: Knuckle-bones Pot | +3 Silver][/b]
+      *else
+        You toss the dice, but your fingers are stiff from the marsh damp; the bones bounce awkwardly off the shield rim and tumble into the fire ashes. The veterans chuckle with dry amusement as the pike-veteran scoops your copper. "Better luck next contract, greenhorn. Keep your day job."
+      *goto bivouac_fire_done
 
   # Listen closely to the old campaigns, piecing together how Captain Vane runs the Iron Carrion.${hint_fire_lore}
     *set check_stat "wis"
