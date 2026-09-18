@@ -12,9 +12,9 @@
  *   1. TREND & BASELINE ALERTS — flags words that spiked (+25%+) or newly entered
  *      the top overuse tier compared to tools/vocab_baseline.json.
  *   2. GLOBAL OVERUSE — every non-stopword, non-proper-noun word ranked by
- *      raw count with per-1000-word rates and curated alternative suggestions.
+ *      raw count with per-1000-word rates.
  *   3. TIGHT CLUSTERS — words appearing 2+ times within clusterWindow lines
- *      with repetition warnings and immediate synonym suggestions.
+ *      with repetition warnings.
  *   4. RESTRICTED WORDS — hand-maintained list of words kept rare on purpose.
  *   5. WORD GROUPS — combined frequency of hand-defined synonym clusters.
  *
@@ -33,50 +33,6 @@ const path = require('path');
 
 const BASELINE_FILE = path.resolve(__dirname, 'vocab_baseline.json');
 
-// Curated setting-appropriate synonyms and alternative words
-const SUGGESTED_ALTERNATIVES = {
-  // Sensory & Atmospheric Adjectives
-  heavy: ['ponderous', 'leaden', 'massive', 'weighted', 'grueling', 'dense', 'stout', 'burdened'],
-  quiet: ['still', 'hushed', 'muted', 'subdued', 'low', 'soundless', 'restrained', 'faint'],
-  cold: ['chill', 'bitter', 'biting', 'raw', 'frost-rimmed', 'bleak', 'numbing', 'wintry'],
-  dark: ['dim', 'murky', 'shadow-draped', 'gloom-shrouded', 'blackened', 'unlit', 'somber'],
-  sharp: ['keen', 'crisp', 'piercing', 'jagged', 'acute', 'biting', 'honed', 'incisive'],
-  dry: ['parched', 'brittle', 'desiccated', 'seasoned', 'dusty', 'barren', 'arid'],
-  clean: ['neat', 'unmarred', 'unbroken', 'clear', 'precise', 'bare', 'flawless'],
-  low: ['faint', 'hushed', 'subdued', 'muffled', 'grounded', 'shallow', 'guttering'],
-  tight: ['taut', 'constricted', 'snug', 'narrow', 'rigid', 'drawn', 'unyielding'],
-  hard: ['stiff', 'stern', 'unyielding', 'calloused', 'solid', 'flinty', 'severe'],
-
-  // Physical Nouns & Setting Elements
-  eyes: ['gaze', 'stare', 'squint', 'glance', 'appraisal', 'regard', 'sight'],
-  hand: ['palm', 'fist', 'fingers', 'knuckles', 'grip', 'clasp'],
-  hands: ['palms', 'fists', 'fingers', 'knuckles', 'grip', 'clasps'],
-  face: ['features', 'visage', 'expression', 'brow', 'jaw', 'countenance'],
-  back: ['rear', 'retreat', 'return', 'withdrawal', 'spine', 'shoulders'],
-  iron: ['steel', 'blackened metal', 'shear-steel', 'ferrous alloy', 'bloomery iron', 'cold iron'],
-  stone: ['masonry', 'ashlar', 'limestone', 'cobblestones', 'flagstones', 'rock', 'granite'],
-  timber: ['lumber', 'beams', 'baulks', 'planking', 'oak', 'pine', 'posts'],
-  river: ['waterway', 'channel', 'current', 'flume', 'race', 'stream', 'flow'],
-  mud: ['slurry', 'mire', 'churned earth', 'silt', 'clay', 'mire-soaked track'],
-  water: ['spray', 'brine', 'run-off', 'drizzle', 'current', 'tide', 'surge'],
-  silver: ['marks', 'coinage', 'bullion', 'specie', 'change', 'payout'],
-  harbor: ['wharves', 'quayside', 'anchorage', 'docks', 'basin', 'waterfront', 'haven'],
-
-  // Action Verbs
-  says: ['remarks', 'notes', 'mutters', 'drawls', 'counters', 'answers', 'presses', 'barks'],
-  said: ['remarked', 'noted', 'muttered', 'drawled', 'countered', 'answered', 'pressed'],
-  looked: ['glanced', 'peered', 'scanned', 'appraised', 'surveyed', 'stared'],
-  looking: ['glancing', 'peering', 'scanning', 'appraising', 'surveying', 'staring'],
-  take: ['seize', 'claim', 'accept', 'draw', 'lift', 'secure', 'haul'],
-  step: ['pace', 'stride', 'tread', 'advance', 'cross', 'shift'],
-  stepped: ['paced', 'strode', 'trod', 'advanced', 'crossed', 'shifted'],
-  walked: ['strode', 'picked their way', 'crossed', 'marched', 'trudged'],
-  pulled: ['hauled', 'dragged', 'wrenched', 'tugged', 'heaved', 'drew'],
-  holding: ['gripping', 'clasping', 'bearing', 'cradling', 'wielding', 'clutching'],
-  turned: ['wheeled', 'swiveled', 'pivoted', 'shifted', 'faced'],
-  notice: ['catch sight of', 'observe', 'spot', 'glimpse', 'discern', 'mark'],
-};
-
 const RESTRICTED_WORDS = [];
 
 const WORD_GROUPS = [
@@ -87,6 +43,7 @@ let target = path.resolve(__dirname, '..', 'web', 'mygame', 'scenes');
 let top = 40;
 let minCount = 5;
 let clusterWindow = 8;
+let clusterMin = 4; // Only show tight clusters with > 3 uses (4+)
 let updateBaseline = false;
 
 for (const arg of process.argv.slice(2)) {
@@ -98,6 +55,7 @@ for (const arg of process.argv.slice(2)) {
   if (name === 'top') top = Number(value);
   else if (name === 'minCount') minCount = Number(value);
   else if (name === 'clusterWindow') clusterWindow = Number(value);
+  else if (name === 'clusterMin') clusterMin = Number(value);
   else if (!arg.startsWith('--')) target = path.resolve(arg);
 }
 
@@ -212,7 +170,6 @@ if (Object.keys(baseline).length > 0) {
           word: c.word,
           current: c.total,
           rate: ((c.total / totalWords) * 1000).toFixed(2),
-          hasAlt: !!SUGGESTED_ALTERNATIVES[c.word],
         });
       }
     } else if (baseCount > 0) {
@@ -224,7 +181,6 @@ if (Object.keys(baseline).length > 0) {
           previous: baseCount,
           current: c.total,
           deltaPercent,
-          hasAlt: !!SUGGESTED_ALTERNATIVES[c.word],
         });
       }
     }
@@ -256,11 +212,6 @@ if (trendAlerts.length > 0) {
     } else if (t.type === 'NEW_TOP') {
       console.log(`  ✨ [NEW TOP CRUTCH] "${t.word}" reached top overuse tier (${t.current} uses, ${t.rate}/1000 words).`);
     }
-    if (!t.hasAlt) {
-      console.log(`     ↳ Notice: No alternatives registered in SUGGESTED_ALTERNATIVES.`);
-    } else {
-      console.log(`     ↳ Try varying with: ${SUGGESTED_ALTERNATIVES[t.word].slice(0, 5).join(', ')}`);
-    }
   }
   console.log('');
 }
@@ -276,9 +227,6 @@ for (const c of candidates.slice(0, top)) {
     .join(', ');
   
   console.log(`  ${c.word.padEnd(18)} ${String(c.total).padStart(4)}  (${rate}/1000 words)  ${topFiles}`);
-  if (SUGGESTED_ALTERNATIVES[c.word]) {
-    console.log(`    ↳ Try varying with: ${SUGGESTED_ALTERNATIVES[c.word].slice(0, 6).join(', ')}`);
-  }
 }
 
 // --- Report 3: tight clusters --------------------------------------------
@@ -293,23 +241,18 @@ for (const [word, entry] of stats) {
       if (sorted[i] - sorted[i - 1] <= clusterWindow) {
         runLines.push(sorted[i]);
       } else {
-        if (runLines.length >= 2) clusters.push({ word, file, lines: runLines });
+        if (runLines.length >= clusterMin) clusters.push({ word, file, lines: runLines });
         runLines = [sorted[i]];
       }
     }
-    if (runLines.length >= 2) clusters.push({ word, file, lines: runLines });
+    if (runLines.length >= clusterMin) clusters.push({ word, file, lines: runLines });
   }
 }
 clusters.sort((a, b) => b.lines.length - a.lines.length);
 
-console.log(`\nTIGHT CLUSTERS — same word used 2+ times within ${clusterWindow} lines, same file (${clusters.length} found):\n`);
+console.log(`\nTIGHT CLUSTERS — same word used >3 times (${clusterMin}+) within ${clusterWindow} lines, same file (${clusters.length} found):\n`);
 for (const c of clusters.slice(0, top)) {
-  const isHighEcho = c.lines.length >= 3;
-  const tag = isHighEcho ? ' [WARNING: REPETITION ECHO]' : '';
-  console.log(`  ${path.relative(process.cwd(), c.file)}:${c.lines.join(',')} "${c.word}" (${c.lines.length}x)${tag}`);
-  if (SUGGESTED_ALTERNATIVES[c.word]) {
-    console.log(`    ↳ Suggested alternatives: ${SUGGESTED_ALTERNATIVES[c.word].slice(0, 5).join(', ')}`);
-  }
+  console.log(`  ${path.relative(process.cwd(), c.file)}:${c.lines.join(',')} "${c.word}" (${c.lines.length}x) [WARNING: REPETITION ECHO]`);
 }
 if (clusters.length > top) {
   console.log(`  ... and ${clusters.length - top} more (raise top= to see them all)`);
