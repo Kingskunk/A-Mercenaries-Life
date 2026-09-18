@@ -344,13 +344,7 @@ The Watch captain offers Vane a sealed parchment writ bearing the Council mark. 
 
 *label port_valen_hub
 *set current_district "compound"
-*temp hub_condition_str ""
-*if (vane_independent_operative)
-  *set hub_condition_str " | Hunger: ${hunger_stage} | Fatigue: ${fatigue_stage}"
-  *if (not(routine_stage = "Settled"))
-    *set hub_condition_str "${hub_condition_str} | Routine: ${routine_stage}"
-  *if (sleep_buff1_active)
-    *set hub_condition_str "${hub_condition_str} | ${sleep_buff1_name}"
+*gosub_scene calendar update_hub_condition
 [b]◈ THE CARRION COMPOUND[/b]
 *line_break
 [b][⏳ Port Valen Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
@@ -429,7 +423,7 @@ The Watch captain offers Vane a sealed parchment writ bearing the Council mark. 
         The surge of high flood tide churns through the lower drainage flumes below the seawall. Under the covered barracks gangways and drying lofts, soldiers take advantage of their break between watches to scrape road-grime from their leathers and rub rendered tallow into damp-stained leather.
       *else
         The surge of high flood tide laps against the lower compound drainage flumes. Along the barracks gangways, soldiers take advantage of their break between watches to scrub road-grime from their leathers, hanging lines of washed linen and woolens to dry in the breeze while armorers rub tallow into salt-stained scabbards.
-      *elseif (day_of_week = "Hallowday")
+    *elseif (day_of_week = "Hallowday")
       The compound observes a quiet morning muster. Near the casualty cairn by the stables, a veteran sergeant burns a handful of dried mountain herbs in a clay bowl, reciting the names of company dead. Recruits sit on bench ends scraping mud from their hobnails while officers review duty rosters under the canvas pavilion.
     *elseif (day_of_week = "Greyday")
       A damp chill hangs over the yard as the weapons master inspects the company arms racks. Sapper recruits test the windlasses of massive siege crossbows under the open wagon shed, while two armorer's assistants hammer bent rivets and replace frayed harness straps on the timber workbenches.
@@ -583,7 +577,7 @@ The port city rises from the tideline in four uneven tiers of granite, timber, c
 
 *choice
   *if (not(current_district = "compound"))
-    #  Visit the Carrion Compound. [~${pv_time_compound} min]
+    # Visit the Carrion Compound. [~${pv_time_compound} min]
       *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
         *set stat_bump_locked true
         *set locked_stat_bump_page_id choice_page_id
@@ -624,6 +618,24 @@ The port city rises from the tideline in four uneven tiers of granite, timber, c
         *set locked_stat_bump_page_id choice_page_id
       *set pv_travel_dest "middle_ward"
       *goto port_valen_travel_to
+  *if (current_district = "compound")
+    # Stay inside the Carrion Compound. [0 min]
+      *goto port_valen_hub
+  *if (current_district = "harbor")
+    # Stay on the Harbor Quayside. [0 min]
+      *goto port_valen_harbor_pois
+  *if (current_district = "civic_heights")
+    # Stay in Civic Heights. [0 min]
+      *goto_scene port_valen_civic_heights port_valen_civic_heights
+  *if (current_district = "upper_wharves")
+    # Stay on the Upper Wharves. [0 min]
+      *goto_scene port_valen_upper_wharves port_valen_upper_wharves
+  *if (current_district = "dredge_end")
+    # Stay in Dredge-End. [0 min]
+      *goto_scene port_valen_dredge_end port_valen_dredge_end
+  *if (current_district = "middle_ward")
+    # Stay in the Middle Ward. [0 min]
+      *goto_scene port_valen_middle_ward port_valen_middle_ward
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment SHARED TRAVEL PRIMITIVES
@@ -658,25 +670,29 @@ The port city rises from the tideline in four uneven tiers of granite, timber, c
 *comment destination's own label. Every transition -- opening travel from
 *comment the compound AND each district's own "return to the compound" exit
 *comment -- routes through here, so a leg costs the same either direction.
-*set gdd_district current_district
-*gosub get_district_distance
-*temp ptt_origin_dist gdd_distance
-*set gdd_district pv_travel_dest
-*gosub get_district_distance
-*temp ptt_total_minutes (ptt_origin_dist + gdd_distance)
+*if (current_district = pv_travel_dest)
+  *temp ptt_total_minutes 0
+*else
+  *set gdd_district current_district
+  *gosub get_district_distance
+  *temp ptt_origin_dist gdd_distance
+  *set gdd_district pv_travel_dest
+  *gosub get_district_distance
+  *temp ptt_total_minutes (ptt_origin_dist + gdd_distance)
 
 *set current_district pv_travel_dest
-*set hours_to_pass 0
-*set minutes_to_pass ptt_total_minutes
-*set time_advance_call_id "port_valen_travel_${choice_page_id}"
-*gosub_scene calendar advance_time
-*gosub_scene calendar recalc_hp_from_neglect
+*if (ptt_total_minutes > 0)
+  *set hours_to_pass 0
+  *set minutes_to_pass ptt_total_minutes
+  *set time_advance_call_id "port_valen_travel_${choice_page_id}"
+  *gosub_scene calendar advance_time
+  *gosub_scene calendar recalc_hp_from_neglect
 
-*if (hp_current <= 0)
-  *set death_cause "starvation"
-  *if (neglect_damage_fatigue > neglect_damage_hunger)
-    *set death_cause "exhaustion"
-  *goto_scene death death_screen
+  *if (hp_current <= 0)
+    *set death_cause "starvation"
+    *if (neglect_damage_fatigue > neglect_damage_hunger)
+      *set death_cause "exhaustion"
+    *goto_scene death death_screen
 
 *comment Compound and Harbor stay same-file (*goto); Civic Heights, Upper
 *comment Wharves, and Dredge-End were split into their own scene files (see
@@ -698,6 +714,7 @@ The port city rises from the tideline in four uneven tiers of granite, timber, c
 *label port_valen_harbor
 *set current_district "harbor"
 *set port_valen_harbor_seen true
+*gosub_scene calendar update_hub_condition
 [b]◈ HARBOR QUAYSIDE & IRON WHARVES[/b]
 *line_break
 The Harbor Quayside is Port Valen's maritime gateway—stone customs arches, timber cargo slips, granite wharves, and massive balance cranes jutting out over the estuary swell. Beyond the breakwater, deep-hulled merchant vessels ride at anchor in the outer roadstead, while closer to shore, flat-bottomed river barges and fishing smacks crowd the inner docks.
@@ -804,7 +821,8 @@ Along the curved seawall, the Iron Wharves house the city's major shipbuilding d
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label port_valen_harbor_pois
-[b][⏳ Quayside Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}][/b]
+*gosub_scene calendar update_hub_condition
+[b][⏳ Quayside Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
 *line_break
 *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
   Lanterns flicker through the sea-mist along the seawall, and the smell of bilge and coal smoke hangs over the shuttered quays.
@@ -842,33 +860,24 @@ Along the curved seawall, the Iron Wharves house the city's major shipbuilding d
 
 *if (not(pv_tavern_seen))
   *set pv_tavern_seen true
-  *set codex_black_tally true
   The Cleaved Keel stands where the fish market gives up and the taverns take over: a low timber hall on pilings above the tideline, its sign a keel split down the middle by a painted shipwright's wedge. Inside, the room smells of sprat smoke and spilled beer, and behind the bar a barrel-chested man with a salt-grey beard and a leather-strapped stump below the left knee draws two ales at once without looking up.
-  *if (not(squad = "none"))
-    "Company tab or copper tab?" he calls, before he has even looked up from his ale-casks. He glances up, his sharp eyes measuring the road-dust on your cloak and the way you carry yourself. A gruff nod follows.
-    "Name's Maret," he grunts, wiping down the oak tap-plank with a damp rag. "Marched four seasons with the Carrion before a silt-lurker under the Black Sinks took the leg below the knee." He thumps a hand against the carved raven on his maple peg. "I know the look of Vane's lot, badge or no badge. Anyone who marched in with the company drinks at cost at my counter. What'll it be?"
-  *else
-    "Thirsty or just out of the rain?" he calls, before he has even looked up from his ale-casks. He glances up, his sharp eyes measuring your coin-pouch against the crowd. A gruff nod follows.
-    "Name's Maret," he grunts, wiping down the oak tap-plank with a damp rag. "Marched four seasons with the Carrion before a silt-lurker under the Black Sinks took the leg below the knee, but coin speaks clean at my counter regardless. What'll it be?"
+
+  "Ale, stew, or looking for a dry bench?" he calls across the counter as you step inside. He sets the tankards onto the pass-board and turns a pair of weathered, clear eyes your way, wiping down the oak plank with a damp rag.
+
+  "Name's Maret," he grunts, resting his weight against his good leg. "Spent twenty winters hauling timber on the shipwright slips before a snapped crane cable took the lower leg, but I know how to keep an orderly house. Keep the peace and your coin on the wood, and you're as welcome as anyone. What can I get you?"
 *else
   *if ((time_period = "Morning") or (time_period = "Pre-Dawn"))
     The taproom is quiet this early, smelling of fresh pine sawdust and woodsmoke. Maret is up behind the service counter, stirring a cauldron of barley porridge over the coals while a few sleepy draymen nurse steaming mugs. He gives you a nod.
-    *if (not(squad = "none"))
-      "Mornin'. Porridge and tea are ready if you're breakin' fast."
-    *else
-      "Mornin', friend. Porridge and tea are ready if you're breakin' fast."
+
+    "Mornin'. Porridge and tea are ready if you're breakin' fast."
   *elseif ((time_period = "Midday") or (time_period = "Afternoon"))
     The room is loud with the midday meal turn—wet-woolled porters and river carters crowded along the benches, trenchers clattering as Maret ladles stew and slides salt mackerel along the serving boards with practiced ease.
-    *if (not(squad = "none"))
-      "Looking for rations? Fresh off the hearth."
-    *else
-      "Hungry for a warm meal? Plenty fresh off the hearth."
+
+    "Hungry for a warm meal? Plenty fresh off the hearth."
   *else
     The taproom is packed to the roofbeams, thick with peat smoke and shouting dockhands. Maret draws two dark porters at once without breaking rhythm, his wooden peg thumping the floorboards behind the taps.
-    *if (not(squad = "none"))
-      "Stepped in from the chill? What'll it be?"
-    *else
-      "Dry throat? What'll it be?"
+
+    "Dry throat, or looking to step in from the weather? What'll it be?"
 
 [b]◈ THE CLEAVED KEEL[/b]
 *line_break
@@ -1063,7 +1072,7 @@ You find a bench against the wall with your back to it—a soldier's habit—and
 *if (not(pv_tavern_rumor_1))
   *set pv_tavern_rumor_1 true
   *set codex_black_tally true
-  A dredge-woman at the next table runs her thumb along the rim of her mug, voice pitched under the noise. "Tally's boys collect at the canal bridges now. Tally-sticks, no Watch badge, and the stick don't forget." She drinks, wipes her mouth with the back of her hand. "Don't flash silver past dark in this quarter, soldier—unless you mean to donate it."
+  A dredge-woman at the next table runs her thumb along the rim of her mug, voice pitched under the noise. "Tally's boys collect at the canal bridges now. Bare knives, no Watch badge, and the Tally don't forget." She drinks, wipes her mouth with the back of her hand. "Don't flash silver past dark in this quarter, soldier—unless you mean to donate it."
   *page_break The talk moves on…
   *goto pv_poi_tavern_menu
 *elseif (not(pv_tavern_rumor_2))
@@ -1922,7 +1931,7 @@ He looks you over again, more carefully this time.
   *if ((weather = "Storm") or (weather = "Blizzard"))
     No unlit skiffs dare run the outer reef in this fury. The watchers have abandoned the exposed landing, sheltering deep beneath the vaulted arch of the customs tower where they can watch the shoreline in safety.
   *else
-    In the darkness beneath the jetty-head crane, two cloaked watchers with black tally-sticks slip into deep shadow as you approach, silently counting unlit skiffs threading the barrier shoals after curfew.
+    In the darkness beneath the jetty-head crane, two cloaked figures slip into deep shadow as you approach, tracking unlit skiffs threading the barrier shoals after curfew.
     *if (day_of_week = "Tideday")
       High tide conceals the jagged reef-crests, and the watchers track the dark shapes of smuggling punts running the deep fairway with muffled sweeps.
     *elseif (day_of_week = "Marketday")
@@ -1936,7 +1945,7 @@ He looks you over again, more carefully this time.
   *if ((weather = "Storm") or (weather = "Blizzard"))
     The seaward causeway is cleared of casual traffic, with only harbor pilots in greased oilskins watching the entrance from the pilot shelter.
   *else
-    Under the jetty-head crane, two men stand out of the traffic's way with black tally-sticks through their belts, counting what lands. They don't stop watching, and nobody makes them. Whatever Dredge-End keeps accounts of, it keeps counting.
+    Under the jetty-head crane, two men stand out of the traffic's way, silently tracking what lands. They don't stop watching, and nobody makes them. Whatever Dredge-End keeps accounts of, it keeps counting.
     *if (day_of_week = "Marketday")
       Fishers and oyster-dredgers land their baskets along the lower stone ladders, porters hauling wet sacks directly toward the market.
     *elseif (day_of_week = "Tideday")

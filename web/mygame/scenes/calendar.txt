@@ -386,6 +386,7 @@
 *if ((clock_hour >= 21) or (clock_hour <= 3))
   *set time_period "Night"
 
+*gosub update_hub_condition
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -400,6 +401,7 @@
 *set hp_current (hp_max - neglect_damage_hunger) - neglect_damage_fatigue
 *if (hp_current < 0)
   *set hp_current 0
+*gosub update_hub_condition
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -498,4 +500,19 @@
   *set sleep_buff2_stat sleep_tier_stat2
   *set sleep_buff2_bonus sleep_tier_bonus2
   *set sleep_buff2_minutes_left 480
+*gosub update_hub_condition
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment REUSABLE PRIMITIVE: UPDATE HUB CONDITION STRING
+*comment Keeps the standardized district status line synchronized.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label update_hub_condition
+*set hub_condition_str ""
+*if (vane_independent_operative)
+  *set hub_condition_str " | Hunger: ${hunger_stage} | Fatigue: ${fatigue_stage}"
+  *if (not(routine_stage = "Settled"))
+    *set hub_condition_str "${hub_condition_str} | Routine: ${routine_stage}"
+  *if (sleep_buff1_active)
+    *set hub_condition_str "${hub_condition_str} | ${sleep_buff1_name}"
 *return

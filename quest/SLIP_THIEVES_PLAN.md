@@ -55,7 +55,7 @@ What is taken, how, and what the player can find, in escalating layers. Layers 0
 | 0 — tell | A monger at a brine barrel with a chalk stub; the line she's marking reads too low for the season's catch | slip ambient, any daytime visit pre-quest | none |
 | 1 — asked | Mael's count: three barrels light in nine days; the pried stave behind her cart; the 2-silver bounty, offered overheard-style | `pv_slip_probe` | `slip_quest_stage "active"` |
 | 2 — looked | Wet small footprints under the ladder's foot; a needle-fine nail-scar in the stave's pry-mark; eel-grease on the lowest rung that never came off the racks | `pv_slip_evidence` | `slip_evidence_found` (advantage at the stakeout) |
-| 3 — watched | The boy himself, at slack water, sacking-wrapped eels going down the ladder to a drawn-up skiff | `pv_slip_stakeout` → `pv_slip_caught` / `pv_slip_botched` | catch outcome |
+| 3 — watched | The boy himself, at slack water, sacking-wrapped eels going down the ladder to a drawn-up skiff | `pv_slip_stakeout` → `pv_slip_take` → `pv_slip_caught` / `pv_slip_botched` | catch outcome |
 | 4 — counted | Mael's count and the count-man's board disagree by roughly a barrel a week | `pv_slip_skim` (probe follow-up, free) | `slip_skim_known` (unlocks the extort exit) |
 
 Layer 4 is deliberately decoupled from the catch: the ledgers can be compared on any route, day or dark, so the extort exit is never locked behind one archetype's success. Knowing the skim is knowing that "stopping the thief" and "stopping the shortage" are not the same sentence.
@@ -63,7 +63,7 @@ Layer 4 is deliberately decoupled from the catch: the ledgers can be compared on
 
 ## 3. Clocks, both from existing systems
 
-1. **Time-of-day gating.** The slip is a daytime POI (the QUESTS.md table's "day-dependent street life"). Entry costs the standard 15 minutes (`pv_poi_slip_1`). At Night/Pre-Dawn the market is shuttered — one ambient line, no menu business — except that the stakeout is offered from the daytime menu as a deliberate two-hour wait into the dark, mirroring the Silt-Gate stakeout's "wait for night flood tide [~2 Hours]" convention. Waiting is a physical action with real duration, so it costs the clock; every conversation on the slip is free (Rules §5).
+1. **Time-of-day gating.** The slip is a daytime POI (the QUESTS.md table's "day-dependent street life"). Entry costs the standard 15 minutes (`pv_poi_slip_1`). At Night/Pre-Dawn the market is shuttered — one ambient line, no menu business — except that the stakeout is offered from the daytime menu as a deliberate wait into the dark, advancing the clock to nightfall (or ~1 hour if already dark), mirroring the Silt-Gate stakeout's wait convention. Waiting is a physical action with real duration, so it costs the clock; every conversation on the slip is free (Rules §5).
 2. **The rolling-7-day ration cap.** The post-quest free-ration perk copies the compound-mess shape exactly (`port_valen.txt:467-469`, `port_valen_dredge_end.txt:815-821`): `slip_rations_used` resets against `slip_rations_week_start_day` at ≥ 7 campaign days, cap 3. A finished quest must not switch the hunger clock off (see `startup.txt`'s mess-ration comment). Consumption resets `minutes_since_meal`, `hunger_stage`, and `neglect_damage_hunger` inside a `stat_bump_locked` guard, exactly like the Anchor's tab (`port_valen_dredge_end.txt:839-845`). This page owns its own `time_advance_locked`, so `stat_bump_locked` (not `stat_bump2_locked`) is the right pair — same as `pv_anchor_hub`.
 
 ## 4. Beat sheet
@@ -72,9 +72,9 @@ Layer 4 is deliberately decoupled from the catch: the ledgers can be compared on
 |---|---|---|
 | 1 | First visit, daytime: slip intro — smoke, brine, mongers at the tide's schedule; paid rations live immediately | `pv_poi_slip` → `pv_slip_menu` |
 | 2 | The tell: Mael over her chalk count; the probe; the bounty lands overheard-style | `pv_slip_probe` |
-| 3 | The ledgers: ask to set her count beside the count-man's board | `pv_slip_skim` (free, any time while active) |
-| 4 | The evidence hunt: the ladder-line at your own initiative | `pv_slip_evidence` (~10 min, once) |
-| 5 | The stakeout: two hours into the dark at the mooring steps; optional Minor Illusion bait; the catch | `pv_slip_stakeout` → `pv_slip_take` → `pv_slip_caught` / `pv_slip_botched` |
+| 3 | The ledgers: ask to set her count beside the count-man's board | `pv_slip_skim` (INT DC 11 Investigation, free, any time while active) |
+| 4 | The evidence hunt: the ladder-line at your own initiative | `pv_slip_evidence` (WIS DC 11 Perception, ~10 min, once) |
+| 5 | The stakeout: wait into the dark at the mooring steps; tactical / Minor Illusion options; the catch | `pv_slip_stakeout` → `pv_slip_take` → `pv_slip_caught` / `pv_slip_botched` |
 | 6 | Fail-forward: the mob morning — the slip catches him without you | `pv_slip_mob` (armed by the entry guard) |
 | 7 | The five exits | `pv_slip_choice` |
 | 8 | Aftermath: perks, the Jorick pipe, ambient shift | `pv_slip_aftermath`, then living inside `pv_slip_menu` |
@@ -89,7 +89,7 @@ Layer 4 is deliberately decoupled from the catch: the ledgers can be compared on
 | **Extort the tally-keeper** *(requires `slip_skim_known`)* | `[CHA DC 12]` or `[INT DC 12]` | 3–4 silver hush, once (30–40 copper) | `"hush"`; no tab; the count-man owns you a small silence; eels keep walking |
 | **Walk away** | free | nothing | `"walked"`; the shortage stays everyone's problem |
 
-**Dell canon constraint:** the boy never takes a docker's line. Rilla's crew is mid-boycott over the mate's clipped coin (`pv_crane_dockers`), and solidarity norms would flare at a new hand on the crate-tally. Dell's gain is an oil-and-rags tar-runner, off the tally — which is why `crane_dell_regard`, the variable tracked "for a future promotion ladder hook" and read nowhere yet, is the natural currency this route spends. Gate on `crane_shifts_completed >= 1` (provable state, incremented at `pv_crane_shift_resolve`, `port_valen.txt:1673`); spend `crane_dell_regard -1` defensively only if > 0.
+**Dell canon constraint:** the boy never takes a docker's line. Rilla's crew is mid-boycott over the mate's clipped coin (`pv_crane_dockers`), and solidarity norms would flare at a new hand on the crate-tally. Dell's gain is an oil-and-rags tar-runner, off the tally — which is why `crane_dell_regard`, the variable tracked "for a future promotion ladder hook" and read nowhere yet, is the natural currency this route spends. Gate on `crane_shifts_completed >= 1` (provable state, incremented at `pv_crane_shift_resolve`, `port_valen.txt:1673`); spend `crane_dell_regard - 1` defensively only if > 0.
 
 **Fail-forward (botched stakeout → mob morning):** he reads you the moment you commit and goes over the ladder's side; you come up the lane with wet gloves and nothing the mongers would call proof — but he comes back, because his people are on those hulls and there is no other food. Next entry to the slip, it has caught him without you: three mongers, a cargo net off a crane's spare arm, and Mael watching from her barrel. Fast choice: talk the slip down (`[CHA DC 12]`), shoulder through and stand him behind you (`[STR DC 12]`), cut the net-line and put him in the water (`[DEX DC 12]` — he can swim; they can't be bothered), or let it happen (`slip_mob_outcome "complicit"`; the district remembers). Every intervention ends with Mael calling it off before a drowning happens on her slip — she is a creditor; drowned boys pay no bonds — and lands the boy in front of you and her → `pv_slip_choice`, minus the clean "catch" exit (you didn't do the catching). Nothing dead-ends.
 
@@ -134,10 +134,10 @@ Insert after the Anchor block (after `*create anchor_stew_cap 3`, ~line 273), sa
 pv_poi_slip          entry (15 min, weekly rollover, mob-morning guard)
 pv_slip_menu         living menu loop (ambient by time/day/resolution)
 pv_slip_probe        the tell -> the bounty (sets stage "active")
-pv_slip_skim         the ledgers compared (WIS DC 11, free)
-pv_slip_evidence     the ladder-line (WIS DC 11 Investigation, ~10 min, once)
-pv_slip_stakeout     the two-hour wait + Minor Illusion bait option
-pv_slip_take         the catch check (DEX DC 12 Stealth, advantage if evidence/bait)
+pv_slip_skim         the ledgers compared (INT DC 11 Investigation, free)
+pv_slip_evidence     the ladder-line (WIS DC 11 Perception, ~10 min, once)
+pv_slip_stakeout     wait into the dark + tactical & Minor Illusion options
+pv_slip_take         the catch check (DEX DC 12 Stealth, advantage if evidence/bait/vantage)
 pv_slip_caught       the talk (skim flavor; his account of the hulls)
 pv_slip_botched      the fail (he slips; the mob beat arms)
 pv_slip_mob          the mob morning (fast 4-way; armed by entry guard)
@@ -191,9 +191,9 @@ pv_slip_free_ration  the free tab (cap 3/rolling week)
   The fishmongers' slip is a plank-walk of stalls and mooring steps where the fish market gives up and the water takes over. Brine barrels stand three deep under a slung oilcloth, gutting tables run out over the tide, and the mongers work the water's schedule rather than the bell's — sales-bell at the turn, everything scrubbed and shuttered by dark.
   The smell is salt, smoke, and fish blood in equal parts, and underneath it, faint, the sourness of money counted too often.
   *if (not(squad = "none"))
-    A monger with rope-scarred knuckles marks you in one pass — woolens, a raven, company kit — and goes back to her knife without a word. Ravens buy like anyone else here.
+    A monger with rope-scarred knuckles marks you in one pass — woolens, a raven, company kit — and goes back to her knife, keeping her rhythm at the gutting block. Ravens buy like anyone else here.
   *else
-    A monger with rope-scarred knuckles marks you in one pass — woolens, travel kit, no colors — and goes back to her knife without a word.
+    A monger with rope-scarred knuckles marks you in one pass — woolens, travel kit, no colors — and goes back to her knife, letting the blade finish the cut before wiping it on her apron.
 *else
   *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
     The slip is shuttered and dark, stalls boarded, oilcloth lashed down. Somewhere out past the breakwater a hull-bell counts the flood, and the mooring steps run down into black water that smells of brine and smoke.
@@ -217,10 +217,10 @@ pv_slip_free_ration  the free tab (cap 3/rolling week)
       *else
         The slip's dark is thicker for what you know is under it. Nobody has said a word to you since the night you sat the mooring steps.
     *else
-      [b]Mael[/b] — the senior monger, hair gone salt and pinned with a fish-bone, chalk stub in one fist — stands over a brine barrel marking a line, reading it, and marking it again, like the wood is lying to her.
+      [b]A senior monger[/b] — hair gone salt and pinned with a fish-bone, chalk stub in one fist — stands over a brine barrel marking a line, reading it, and marking it again, like the wood is lying to her.
 ```
 
-*(Note: the tell — Mael at her chalk — is the `slip_quest_stage = "unstarted"` ambient. It re-renders every pre-quest daytime visit until the probe runs, so the player can simply buy eels a few times and never ask. That is the point: the quest is a room, not a popup.)*
+*(Note: the tell — the monger at her chalk — is the `slip_quest_stage = "unstarted"` ambient. It re-renders every pre-quest daytime visit until the probe runs, so the player can simply buy eels a few times and never ask. Her name is learned organically during the probe. That is the point: the quest is a room, not a popup.)*
 ### 6.2 The slip menu (`pv_slip_menu`)
 
 ```choicescript
@@ -254,8 +254,12 @@ pv_slip_free_ration  the free tab (cap 3/rolling week)
     # Work down the ladder-line while the mongers aren't watching. [~10 min]
       *goto pv_slip_evidence
   *if (slip_quest_stage = "active") and (not(slip_stakeout_done))
-    # Come back after dark and watch the ladder from the mooring steps. [~2 hours]
-      *goto pv_slip_stakeout
+    *if ((time_period = "Night") or (time_period = "Pre-Dawn") or (time_period = "Dusk"))
+      # Watch the ladder from the mooring steps at slack water. [~1 hour]
+        *goto pv_slip_stakeout
+    *else
+      # Wait by the mooring steps for nightfall to watch the ladder. [Wait until Dark]
+        *goto pv_slip_stakeout
   *if (slip_rations_unlocked) and (slip_rations_used < slip_rations_cap)
     # Take what's yours off the slip's tab. [~15 min]
       *goto pv_slip_free_ration
@@ -296,9 +300,9 @@ The count-man is a narrow man with ink on three fingers, and his board hangs fro
 
 "Read them," she says. "Out loud, if you like. My count and his."
 
-*set check_stat "wis"
+*set check_stat "int"
 *set check_dc 11
-*set check_skill "Insight"
+*set check_skill "Investigation"
 *gosub_scene startup roll_d20_check
 *if (check_success)
   *set slip_skim_known true
@@ -328,7 +332,7 @@ The count-man is a narrow man with ink on three fingers, and his board hangs fro
 
 *set check_stat "wis"
 *set check_dc 11
-*set check_skill "Investigation"
+*set check_skill "Perception"
 *gosub_scene startup roll_d20_check
 *if (check_success)
   *set slip_evidence_found true
@@ -347,11 +351,14 @@ The count-man is a narrow man with ink on three fingers, and his board hangs fro
 
 ```choicescript
 *label pv_slip_stakeout
-*comment The deliberate two-hour wait into the dark -- the Silt-Gate
-*comment stakeout's "wait for night flood tide [~2 Hours]" convention.
-*comment Conversation above was free; this is a physical wait with real
-*comment duration, so it costs the clock.
-*set hours_to_pass 2
+*comment The wait into the dark -- if daytime, advances clock to nightfall (21:00);
+*comment if already dark, advances standard 1 hour.
+*if ((time_period = "Night") or (time_period = "Pre-Dawn") or (time_period = "Dusk"))
+  *set hours_to_pass 1
+*elseif (clock_hour < 21)
+  *set hours_to_pass (21 - clock_hour)
+*else
+  *set hours_to_pass 2
 *set minutes_to_pass 0
 *set time_advance_call_id "pv_slip_stakeout_1"
 *gosub_scene calendar advance_time
@@ -365,7 +372,17 @@ The count-man is a narrow man with ink on three fingers, and his board hangs fro
 
 The lamps along the market lane go out one by one until only the customs tower keeps a shuttered glow. You fold yourself onto the mooring steps where the ladder meets the tide, back to a piling, and let the cold come up through the planks. Slack water is a long time coming. So is he.
 
-The boy comes at slack water, when the ladder's foot goes quiet — a thin shape down the market lane with wet sacking over one shoulder, moving the way working people move when they are somewhere they have no business being.
+The boy comes at slack water, when the ladder's foot goes quiet — a thin shape down the market lane with wet sacking over one shoulder, moving with the hurried silence of someone on forbidden ground.
+
+*temp hint_slip_take ""
+*temp hint_slip_percept ""
+*if (show_stat_hints)
+  *if (guidance_active)
+    *set hint_slip_take " [DEX DC 12 (+1d4 Guidance)]"
+    *set hint_slip_percept " [WIS DC 11 (+1d4 Guidance)]"
+  *else
+    *set hint_slip_take " [DEX DC 12]"
+    *set hint_slip_percept " [WIS DC 11]"
 
 *choice
   # Take him at the ladder-foot.${hint_slip_take}
@@ -375,6 +392,18 @@ The boy comes at slack water, when the ladder's foot goes quiet — a thin shape
       *set slip_illusion_bait true
       The creak of an empty cart turns him to stone against the boards — three long breaths of a boy learning in one night what every lane sounds like when it is empty. He commits to the ladder a beat later, and now you have his rhythm and his blind side both.
       *goto pv_slip_take
+  # Wait until his boots touch the lowest stone and step out to cut off his water exit.${hint_slip_percept}
+    *set check_stat "wis"
+    *set check_dc 11
+    *set check_skill "Perception"
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      You match the lap of the tide, easing down the wet masonry until you stand directly between the bottom rung and his skiff. When he drops, your hand is already waiting on his collar.
+      *set advantage true
+      *goto pv_slip_take
+    *else
+      A loose oyster shell crunches under your heel. The boy freezes three rungs up, his head snapping toward your silhouette on the lower landing.
+      *goto pv_slip_take
   # Let him work. You've seen what you came to see.
     *set slip_stakeout_done true
     He goes down the ladder like water going down stairs, eels and all, and a drawn-up skiff takes the sacking and pulls away soft oarless toward the breakwater lights. Out there past the bar, someone will be glad of smoked fish tonight, and none of them will know your name.
@@ -383,18 +412,10 @@ The boy comes at slack water, when the ladder's foot goes quiet — a thin shape
 
 *label pv_slip_take
 *comment Advantage plumbing: set immediately before the roll, cleared by the
-*comment roll itself (startup.txt:3187-3212). Evidence and illusion bait do not
-*comment stack -- advantage does not stack in this engine (startup.txt:3061-3063).
-*set advantage false
+*comment roll itself (startup.txt:3187-3212). Evidence, illusion bait, and vantage do not stack.
 *set disadvantage false
 *if (slip_evidence_found) or (slip_illusion_bait)
   *set advantage true
-*temp hint_slip_take ""
-*if (show_stat_hints)
-  *if (guidance_active)
-    *set hint_slip_take " [DEX DC 12 (+1d4 Guidance)]"
-  *else
-    *set hint_slip_take " [DEX DC 12]"
 *set check_stat "dex"
 *set check_dc 12
 *set check_skill "Stealth"
@@ -414,13 +435,13 @@ The boy comes at slack water, when the ladder's foot goes quiet — a thin shape
 *set slip_stakeout_success true
 You have him by the collar before the second rung, one arm pinned to the wet planks, and the sacking spills smoked eels across both your boots.
 
-He doesn't fight. That is the first surprising thing. He goes still the way small animals go still, and looks up with the patience of somebody who has been caught before and knows the arithmetic of it.
+He goes rigid under your grip, spine pressed flat to the timbers, and looks up with the hard patience of somebody who has been caught before and knows the arithmetic of it.
 
 "Two silver," he says. "That's what she's paying. I'd have asked five, me." A shrug under your grip, unbothered. "Do what you like."
 
 The eels go out past the breakwater — that much he gives you, because you are holding his collar and the tide is going your way. A drawn-up skiff, a cousin at the oars, smoked fish because smoked keeps for the row. He names no hull and no name, and he watches you not write them down, and there is something in the watching that is older than he is.
 
-His eyes cut once to the tally-post at the lane's end, where the count-man's board hangs — a glance he thinks you missed, filed the way he files everything, in the ledger of who knows what.
+His eyes cut once to the tally-post at the lane's end, where the count-man's board hangs — measuring the distance between the two of you with quiet care.
 
 *comment Note: slip_skim_known is NOT granted here. It lives only in
 *comment pv_slip_skim (the ledgers), so the extort exit stays reachable on
@@ -456,7 +477,7 @@ The slip has done its own watching since your wet night — somebody has been pa
 
 Mael stands apart with her arms folded. Not stopping it. Not starting it either. Looking at you — because you are the one who asked her count for a living, and whatever her slip does this morning, you are part of why.
 
-He sees you over their shoulders. Doesn't call out. He's done the same sum you have: what you do next is the whole of it.
+He sees you over their shoulders. His chin stays tucked against the netting, eyes dark and calculating. He's done the same sum you have: what you do next is the whole of it.
 
 *temp hint_slip_mob_talk ""
 *temp hint_slip_mob_shield ""
@@ -479,7 +500,7 @@ He sees you over their shoulders. Doesn't call out. He's done the same sum you h
     *gosub_scene startup roll_d20_check
     *if (check_success)
       "Two silver buys a catching," you say, to Mael, over the noise. "Not a drowning. Ask her what her count's worth with the Watch reading it."
-      The net comes off him by ones and twos, the way crowds give back what they were only holding onto for the shape of it. He hits the planks coughing, and nobody helps him up, and that is what mercy looks like on a working slip.
+      The net comes off him by ones and twos, the crowd yielding ground once the cost goes up. He hits the planks coughing, and nobody helps him up, and that is what mercy looks like on a working slip.
       *set slip_mob_outcome "talked"
     *else
       The words go into the crowd and come apart — and it is Mael who ends it, one raised hand and a voice like a cleaver: "Not on my slip. Drowned boys pay no bonds." The net comes off. He is deposited at your feet, deposited on you, by the plain arithmetic of who spoke last.
@@ -491,7 +512,7 @@ He sees you over their shoulders. Doesn't call out. He's done the same sum you h
     *set check_skill "Athletics"
     *gosub_scene startup roll_d20_check
     *if (check_success)
-      You take the net's pull on your own back and walk it, two steps, three, until the boy is behind you and the slip's anger has a wall in it. Mongers give ground the way they give change: exactly, and all at once.
+      You take the net's pull on your own back and walk it, two steps, three, until the boy is behind you and the slip's anger has a wall in it. Mongers step back, calculating the odds with a butcher's eye.
       *set slip_mob_outcome "shielded"
     *else
       You go into the gutter with a net-man's knee in your back, and it is Mael's hand that comes down — not yours — calling the whole thing off her slip before it becomes a drowning on her books.
@@ -503,7 +524,7 @@ He sees you over their shoulders. Doesn't call out. He's done the same sum you h
     *set check_skill "Acrobatics"
     *gosub_scene startup roll_d20_check
     *if (check_success)
-      One pass of a knife through wet mesh, one shove, and he is over the side and swimming like the thing he is — something the water has been raising on purpose. The crowd roars at the dare of it. Mael watches him go and says nothing at all.
+      One pass of a blade through wet mesh, one shove, and he is over the side and swimming like the thing he is — something the water has been raising on purpose. The crowd roars at the dare of it. Mael watches him hit the spray, wipes brine from her cleaver, and turns back to her stall.
       *page_break Wait by the mooring steps…
       *goto pv_slip_mob_freed
     *else
@@ -557,9 +578,9 @@ The boy is in front of you — by your hand or by the slip's — and Mael is wat
   *if (slip_stakeout_success) and (not(slip_bounty_claimed))
     # Walk him to Mael's cart and take her silver.
       *set slip_resolution "caught"
-      The boy walks because you are holding his arm, and because he has already priced this morning and found it acceptable. Mael counts twenty copper into your hand — to the copper, the way she counts everything — and sends a runner for the bond-men from the workhouse gate with the same chalk stub she counted the barrels with.
+      The boy walks because you are holding his arm, and because he has already priced this morning and found it acceptable. Mael counts twenty copper into your hand — to the copper, unhurried, marking the total against the wood with her thumb — and sends a runner for the bond-men from the workhouse gate with the same chalk stub she counted the barrels with.
 
-      He doesn't look back at the water. That is the worst of it. Out past the breakwater there is a skiff that will row a hungry circuit tonight and find nobody waiting.
+      He keeps his eyes fixed on the flagstones. That is the worst of it. Out past the breakwater there is a skiff that will row a hungry circuit tonight and find nobody waiting.
 
       *comment Bounty (2 silver = 20 copper), once-only guard per Rules §5.
       *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
@@ -582,7 +603,7 @@ The boy is in front of you — by your hand or by the slip's — and Mael is wat
     *if (check_success)
       "Three big lads off a Tally barge," you tell her. "Took what they could carry and ran the bar at slack water. They'll not come back — I saw to that."
 
-      Mael looks at you for a long, counting moment, the way she looks at everything. Then she spits over the tide, which is as close to thanks as this slip pays.
+      Mael looks at you for a long, counting moment, measuring the gap between your boots and her barrels. Then she spits over the tide, which is as close to thanks as this slip pays.
 
       "Then I'm out two silver and three barrels, and you're telling me a story." She shoulders her chalk. "But it's a story with an ending, which is more than my weeks have had lately."
 
@@ -623,7 +644,7 @@ The boy is in front of you — by your hand or by the slip's — and Mael is wat
         *comment route draws on. Spent defensively: the variable is tracked
         *comment from the first shift and read nowhere else yet.
         *if (crane_dell_regard > 0)
-          *set crane_dell_regard -1
+          *set crane_dell_regard - 1
 
         Back at the slip, Mael hears the word "crane" and the argument is over before it starts — an ending with a wage in it is the only kind she trusts. She pays the two silver for the shortage stopping, not for the boy, and nobody explains the difference to anybody.
 
@@ -636,6 +657,7 @@ The boy is in front of you — by your hand or by the slip's — and Mael is wat
         *set slip_quest_stage "resolved"
         *set slip_bounty_claimed true
         *set slip_rations_unlocked true
+        *goto pv_slip_aftermath
       *else
         "A boy off the streets, reformed by a raven's say-so." Mael chalks something that is not a number. "I want my shortage ended, not promised. Come back when he's somebody's."
 
@@ -665,7 +687,7 @@ The boy is in front of you — by your hand or by the slip's — and Mael is wat
 
         *set slip_quest_stage "resolved"
       *else
-        He doesn't go grey. He goes cold, and folds his board shut, and Mael backs her man the way slips back their own — with a look that docks you at the gate. The boy keeps his legend. The skim keeps its skim. You keep the knowledge, which buys you nothing on this slip but a wider berth.
+        His face hardens to stone. He folds his board shut, and Mael backs her man the way slips back their own — with a look that docks you at the gate. The boy keeps his legend. The skim keeps its skim. You keep the knowledge, which buys you nothing on this slip but a wider berth.
 
         *set slip_resolution "hush"
         *set slip_quest_stage "resolved"
@@ -677,7 +699,7 @@ The boy is in front of you — by your hand or by the slip's — and Mael is wat
     *if (slip_stakeout_success)
       You open your hand off the boy's collar and step back, and he is gone over the side before your boot leaves the first rung — sacking and all, into the soft black water, gone like something the tide was owed.
 
-      Mael watches you not spend the two silver. Whatever she writes about you in her own quiet books, she writes it now.
+      Mael watches you leave the silver on her cart. Whatever tally she keeps in her head, she marks it now.
     *else
       Whatever the slip is owed, you are not the one to collect it. You buy your eel, if you're buying, and you walk back up the lane.
 
@@ -696,20 +718,20 @@ The boy is in front of you — by your hand or by the slip's — and Mael is wat
 
 *if (slip_rations_unlocked)
   *if (slip_resolution = "lied")
-    He finds you at the ladder-step before the next flood, smelling of smoke and river, and lays a sacking bundle by your boot without a word about whose eels they were or whose they stay. "Three flood-tides a week," he says. "Not one more. A body's still got to buy its bread, or they'll know."
+    He finds you at the ladder-step before the next flood, smelling of smoke and river, and lays a sacking bundle by your boot, keeping his head down against the mist. "Three flood-tides a week," he says. "Not one more. A body's still got to buy its bread, or they'll know."
   *else
     Mael wraps your slab without being asked and charges you the look that goes with it. "Cheap at my slip, from now on. Three a week is three a week, mind. The rest pays."
 
 *if ((slip_resolution = "lied") or (slip_resolution = "employed"))
   *if (family_name = "Jorick")
     *if (not(slip_jorick_word_sent))
-      He lingers at the ladder-foot, weighing you the way he weighs everything now — by what you cost and what you carry.
+      He lingers at the ladder-foot, measuring your boots and what you carry.
 
       "There's a name I could carry down," he says. "If you had one. Names go further than bread on those hulls. Bread they take. A name they pass hand to hand."
 
       You give him Jorick's.
 
-      He nods once, slowly, and does not ask the thing you can see him wanting to ask — what the name is to you — because boys who live by carrying other people's business learn early not to weigh it out loud.
+      He nods once, slowly, and does not ask what the name is to you, because boys who live by carrying other people's business learn early not to weigh it out loud.
 
       Two flood-tides later there's an answer, wrapped in sacking with the eels: he's on the low hull, the one that takes the water. The damp is in his hands. He's breathing. And he kept his ration the week the chain-master came round.
 
@@ -725,6 +747,7 @@ The boy is in front of you — by your hand or by the slip's — and Mael is wat
       You send the first ration down with the next eels, and do not tell anyone, including yourself, what you would have paid for a second letter.
 
       *page_break Watch the skiff pull out past the breakwater…
+      *goto port_valen_harbor_pois
     *else
       The skiff comes and goes on its own schedule now, and every sacking bundle that comes back has been opened and re-tied in a way that is not the boy's doing.
   *else
@@ -847,7 +870,7 @@ Scale check (Rules §3): every payout sits inside the 1–5 silver street band �
 ## 9. Compliance checklist
 
 * **Rules §1 — Organic discovery.** The hook is a chalk stub over a brine-line and a monger talking to herself about her own losses, not a badge-scan or a noticeboard. Mael reads the player's *kit*, never their colors; the boy reads behavior ("You're staring at my barrels"). The bounty is overheard-style, pitched the way Voss pitches the Silt-Gate.
-* **Rules §2 — Multi-branching.** Five exits with real archetype parity: DEX catches, CHA lies and extorts and brokers, INT lays out the skim, WIS reads both the ladder-line and the ledgers, STR shields. Arcane coverage: Minor Illusion (9-slot guard, advantage at the catch). Every failure is fail-forward — the botched stakeout arms the mob morning; the failed lie keeps the boy's trust; the failed employ leaves all other exits live; the failed hush costs welcome, not progress. Zero HP costs anywhere (see §3's recalc-overwrite note).
+* **Rules §2 — Multi-branching.** Five exits with real archetype parity: DEX catches, CHA lies and extorts and brokers, INT lays out the skim (Investigation), WIS reads the ladder-line (Perception), STR shields. Arcane coverage: Minor Illusion (9-slot guard, advantage at the catch). Every failure is fail-forward — the botched stakeout arms the mob morning; the failed lie keeps the boy's trust; the failed employ leaves all other exits live; the failed hush costs welcome, not progress. Zero HP costs anywhere (see §3's recalc-overwrite note).
 * **Rules §3 — Low-fantasy economy.** 2-silver bounty / 2-silver employ pay / 4-silver hush ceiling: all inside the street band, below half of Silt-Gate's smallest figure, proportionate to Mael's own arithmetic (three barrels in nine days). The mercenary dilemma is the structure, not the garnish: lawful (bounty), underworld (hush), and a third thing this game does better than either — a boy kept whole.
 * **Rules §4 — Setting & technology.** Brine, peat-smoke, hand-carts, tally-boards, chalk, bond-men, cargo nets. Nothing invented past 1530; no firearms (run `node tools/lint_anachronisms.js` before finalizing). No weapons drawn, so `node tools/lint_weapon_assumption.js` should also pass clean.
 * **Rules §5 — State hygiene.** Every payout rides `currency_txn_locked`; the tab rides `stat_bump_locked` with the page's own `time_advance_locked`; every time advance has a unique `time_advance_call_id`; `slip_bounty_claimed` guards the once-only payout; `slip_quest_stage` transitions exactly once (idempotent lock at the top of `pv_slip_aftermath`); conversation is free, waits cost the clock.

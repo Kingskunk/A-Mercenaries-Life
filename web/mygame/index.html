@@ -793,6 +793,7 @@ if (window.location.hostname === 'localhost') {
     playing: false,
     enabled: false,
     cache: new Map(), // idx -> { status, promise, url }
+    inflight: new Set(), // AbortControllers for requests currently on the wire
     sessionId: 0,
     listenMode: false,
     autoResumeNextPage: false,
@@ -805,11 +806,12 @@ if (window.location.hostname === 'localhost') {
     return 'p' + (h >>> 0).toString(36);
   }
 
-  function fetchTTS(text, hash, forceEdge) {
+  function fetchTTS(text, hash, forceEdge, signal) {
     if (!settings.serverUrl) return Promise.reject(new Error('No server URL set — click ⚙ to configure.'));
     var base = settings.serverUrl.replace(/\/+$/, '');
     return fetch(base + '/tts', {
       method: 'POST',
+      signal: signal,
       headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
       body: JSON.stringify({
         text: text,
@@ -829,6 +831,44 @@ if (window.location.hostname === 'localhost') {
     });
   }
 
+  // Kokoro is CPU-bound: two jobs at once each run slower, so the chunk needed
+  // NEXT arrives later than if it had the CPU to itself (measured on this
+  // machine: 11.4s alone vs 16.1s alongside another job). So Kokoro requests
+  // go out one at a time, nearest upcoming chunk first. Edge requests skip the
+  // queue - they cost no local CPU. Queued requests from a page the player has
+  // already left are dropped before they're ever sent.
+  var kokoroQueue = [];
+  var kokoroBusy = false;
+
+  function pumpKokoro() {
+    if (kokoroBusy) return;
+    kokoroQueue = kokoroQueue.filter(function (job) {
+      if (job.session === state.sessionId) return true;
+      job.resolve(null);
+      return false;
+    });
+    if (!kokoroQueue.length) return;
+    var best = 0, bestScore = Infinity;
+    kokoroQueue.forEach(function (job, i) {
+      var d = job.idx - state.index;
+      var score = d >= 0 ? d : 10000 - d; // chunks ahead of the playhead first, nearest first
+      if (score < bestScore) { best = i; bestScore = score; }
+    });
+    var next = kokoroQueue.splice(best, 1)[0];
+    kokoroBusy = true;
+    next.run().then(next.resolve, next.reject).then(function () {
+      kokoroBusy = false;
+      pumpKokoro();
+    });
+  }
+
+  function scheduleKokoro(idx, session, run) {
+    return new Promise(function (resolve, reject) {
+      kokoroQueue.push({ idx: idx, session: session, run: run, resolve: resolve, reject: reject });
+      pumpKokoro();
+    });
+  }
+
   function ensureFetched(idx) {
     if (idx < 0 || idx >= state.paragraphs.length) return;
     if (state.cache.has(idx)) return;
@@ -836,12 +876,25 @@ if (window.location.hostname === 'localhost') {
     state.cache.set(idx, entry);
     var mySession = state.sessionId;
     var p = state.paragraphs[idx];
-    entry.promise = fetchTTS(p.text, p.hash, p.forceEdge).then(function (url) {
-      if (mySession !== state.sessionId) { URL.revokeObjectURL(url); return null; }
+    var controller = new AbortController();
+    var send = function () {
+      state.inflight.add(controller);
+      return fetchTTS(p.text, p.hash, p.forceEdge, controller.signal).then(function (url) {
+        state.inflight.delete(controller);
+        return url;
+      }, function (e) {
+        state.inflight.delete(controller);
+        throw e;
+      });
+    };
+    var request = p.forceEdge ? send() : scheduleKokoro(idx, mySession, send);
+    entry.promise = request.then(function (url) {
+      if (mySession !== state.sessionId) { if (url) URL.revokeObjectURL(url); return null; }
       entry.status = 'ready';
       entry.url = url;
       return url;
     }).catch(function (e) {
+      if (mySession !== state.sessionId) return null; // cancelled by a page turn / Stop - not an error
       console.warn('[TTS Reader] failed for paragraph', idx, e);
       entry.status = 'error';
       setStatus('TTS error: ' + e.message);
@@ -939,6 +992,12 @@ if (window.location.hostname === 'localhost') {
     clearHighlight();
     state.cache.forEach(function (e) { if (e.url) URL.revokeObjectURL(e.url); });
     state.cache.clear();
+    // Cancel requests still on the wire so the next page's first Kokoro job
+    // isn't stuck behind a stale one, then drop this session's queued jobs.
+    // (sessionId was bumped above, so the aborts read as cancellations.)
+    state.inflight.forEach(function (c) { c.abort(); });
+    state.inflight.clear();
+    pumpKokoro();
     state.index = -1;
     updatePanel();
   }
@@ -1004,8 +1063,23 @@ if (window.location.hostname === 'localhost') {
     return false;
   }
 
+  // A paragraph can mix HUD chrome with real prose: ChoiceScript merges
+  // consecutive script lines (e.g. a "◈ TITLE" header, a *line_break, then the
+  // opening prose) into ONE <p>. HUD lines are always bold, so strip just
+  // those <b> pieces and keep the narrative that remains.
+  function getNarrativeText(pEl) {
+    var clone = pEl.cloneNode(true);
+    Array.prototype.forEach.call(clone.querySelectorAll('b'), function (b) {
+      if (isHudLine(b.textContent.trim())) b.parentNode.removeChild(b);
+    });
+    Array.prototype.forEach.call(clone.querySelectorAll('br'), function (br) {
+      br.parentNode.replaceChild(document.createTextNode(' '), br);
+    });
+    return clone.textContent.replace(/\s+/g, ' ').trim();
+  }
+
   function onParagraphAdded(pEl) {
-    var text = pEl.innerText.trim();
+    var text = getNarrativeText(pEl);
     if (!text || isHudLine(text)) return;
 
     var isPageOpener = state.paragraphs.length === 0;
