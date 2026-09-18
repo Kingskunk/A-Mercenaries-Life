@@ -325,6 +325,18 @@ function computeCookie(stats, temps, lineNum, indent, deleted, undeleted) {
   var version = "UNKNOWN";
   if (typeof(window) != "undefined" && window && window.version) version = window.version;
   var obj = { version: version, stats: stats, temps: temps, lineNum: lineNum, indent: indent };
+  // Record the nearest *label above lineNum (against the CURRENT scene
+  // text), so restoreGame() can re-anchor this save by label name if the
+  // scene file gets edited before this save is ever resumed -- see
+  // Scene.prototype.computeResumeAnchor / resumeFromLabelAnchor.
+  if (scene && typeof scene.computeResumeAnchor === "function") {
+    var anchor = scene.computeResumeAnchor(lineNum);
+    if (anchor) {
+      obj.resumeLabel = anchor.label;
+      obj.resumeOffset = anchor.offset;
+      obj.resumeLineText = anchor.lineText;
+    }
+  }
   if (deleted) obj.deleted = deleted;
   if (undeleted) obj.undeleted = undeleted;
   var value = toJson(obj);
@@ -903,6 +915,13 @@ function restoreGame(state, forcedScene, userRestored, forcedStats, forcedTemps)
         scene.temps = state.temps;
         scene.lineNum = state.lineNum;
         scene.indent = state.indent;
+        // Stashed for checkSum()'s resumeFromLabelAnchor(): if this scene's
+        // text no longer matches temps.choice_crc (i.e. it was edited since
+        // this save was made), these let us re-resolve the resume point by
+        // label name instead of trusting the now-possibly-wrong lineNum.
+        scene.savedResumeLabel = state.resumeLabel;
+        scene.savedResumeOffset = state.resumeOffset;
+        scene.savedResumeLineText = state.resumeLineText;
       }
       if (userRestored) {
         scene.temps.choice_user_restored = true;

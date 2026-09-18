@@ -184,6 +184,7 @@ function compile(){
   verifyFileName("port_valen_dredge_end.txt");
   verifyFileName("port_valen_civic_heights.txt");
   verifyFileName("port_valen_upper_wharves.txt");
+  verifyFileName("port_valen_middle_ward.txt");
 
   //Check startup.txt for a *scene_list
   var sceneList = false;

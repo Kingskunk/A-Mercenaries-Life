@@ -688,7 +688,18 @@ Scene.prototype.loadFile = function loadFile() {
 Scene.prototype.checkSum = function checkSum() {
   if (this.temps.choice_crc) {
     if (!this.randomtest && !this.quicktest && this.temps.choice_crc != this.crc && this.lineNum) {
-      // The scene has changed; restart the scene from backup
+      // The scene text changed since this save was made, so this.lineNum may
+      // now point at completely different content. Try to re-anchor to the
+      // nearest surviving *label first (see computeResumeAnchor/
+      // resumeFromLabelAnchor) -- this recovers saves whenever the edit
+      // happened anywhere other than the exact block the player is paused
+      // in, which is the overwhelmingly common case while iterating on a
+      // script. Only fall back to restarting the scene from backup when
+      // that label itself is gone or the stored offset no longer fits.
+      if (this.resumeFromLabelAnchor()) {
+        this.temps.choice_crc = this.crc;
+        return true;
+      }
       if (typeof alertify !== 'undefined') {
         if (!initStore()) {
           alertify.log(this.name + ".txt has updated. Restarting chapter.");
@@ -706,6 +717,96 @@ Scene.prototype.checkSum = function checkSum() {
     }
   }
   this.temps.choice_crc = this.crc;
+  return true;
+};
+
+// Finds the nearest *label at or before lineNum, so a save can later be
+// resumed by label name (looked up fresh in whatever scene text is loaded
+// at that point) instead of by raw line number, which silently points at
+// different content once the scene file is edited above the save point.
+// Also records the exact text of lineNum itself, as a fingerprint: an
+// offset alone can't tell whether lines were inserted/removed *between*
+// the label and lineNum (as opposed to elsewhere in the file), which would
+// otherwise make resolveAnchoredLineNum land on the wrong line while still
+// reporting success. Returns null if lineNum comes before any label.
+Scene.prototype.computeResumeAnchor = function computeResumeAnchor(lineNum) {
+  var bestLabel = null;
+  var bestLine = -1;
+  for (var name in this.labels) {
+    if (!this.labels.hasOwnProperty(name)) continue;
+    var line = this.labels[name];
+    if (line <= lineNum && line > bestLine) {
+      bestLine = line;
+      bestLabel = name;
+    }
+  }
+  if (bestLabel === null) return null;
+  return {label: bestLabel, offset: lineNum - bestLine, lineText: this.lines[lineNum]};
+};
+
+// How far to search on either side of the naive label+offset guess for a
+// line matching the recorded fingerprint, when the guess itself doesn't
+// match (see resolveAnchoredLineNum). Arbitrary but generous: covers a
+// handful of inserted/removed paragraphs without risking a match against
+// unrelated content far away in the file.
+Scene.RESUME_ANCHOR_SEARCH_RADIUS = 40;
+
+// Re-resolves a label anchor recorded by computeResumeAnchor -- used both
+// for save-game resume points and for *gosub/*gosub_scene return addresses
+// stashed for later. Verifies the candidate line's text still matches what
+// was there when the anchor was recorded; if lines were inserted/removed
+// between the label and the original point (so the offset alone now lands
+// on the wrong content), searches outward from the naive guess for the
+// same line text before giving up. Returns null -- never a guess we
+// couldn't verify -- if the label is gone, the offset runs off the end of
+// the file, or no matching line turns up nearby. Blank/trivial line text
+// is never trusted as a fingerprint (too many identical candidates, e.g.
+// paragraph-break blank lines), so those situations fail closed too.
+Scene.prototype.resolveAnchoredLineNum = function resolveAnchoredLineNum(resumeLabel, resumeOffset, resumeLineText) {
+  if (!resumeLabel || typeof this.labels[resumeLabel] === "undefined") return null;
+  var candidate = this.labels[resumeLabel] + (resumeOffset || 0);
+  if (candidate < 0 || candidate >= this.lines.length) return null;
+  if (this.lines[candidate] === resumeLineText) return candidate;
+  if (typeof resumeLineText !== "string" || trim(resumeLineText).length < 3) return null;
+  var radius = Scene.RESUME_ANCHOR_SEARCH_RADIUS;
+  for (var delta = 1; delta <= radius; delta++) {
+    var below = candidate + delta;
+    var above = candidate - delta;
+    if (below < this.lines.length && this.lines[below] === resumeLineText) return below;
+    if (above >= 0 && this.lines[above] === resumeLineText) return above;
+  }
+  return null;
+};
+
+// Attempts to move this.lineNum to the current location of the *label that
+// was nearest (at or before) the line this save was made from.
+// savedResumeLabel/savedResumeOffset/savedResumeLineText are stashed by
+// restoreGame() from the resumeLabel/resumeOffset/resumeLineText that
+// computeCookie() recorded (via computeResumeAnchor) against the OLD scene
+// text at save time. Fails -- leaving this.lineNum untouched -- only when
+// the label itself is gone; see the fallback below for when the label
+// survives but the exact line didn't.
+Scene.prototype.resumeFromLabelAnchor = function resumeFromLabelAnchor() {
+  var label = this.savedResumeLabel;
+  var candidate = this.resolveAnchoredLineNum(label, this.savedResumeOffset, this.savedResumeLineText);
+  if (candidate === null) {
+    // The offset+fingerprint resolution failed -- most likely the player
+    // reworded the exact line they were paused on (the single most common
+    // edit while iterating: tweak the prose on the page you're looking at,
+    // save the file, refresh). That line's old text is simply gone, so no
+    // search radius will ever find it again. But the label itself still
+    // resolved, so landing right on it is a far smaller loss than the
+    // full-scene restart below: it only replays the current page (with the
+    // player's own edit now included), not everything since the top of
+    // the file.
+    if (!label || typeof this.labels[label] === "undefined") return false;
+    candidate = this.labels[label];
+  }
+  this.lineNum = candidate;
+  this.indent = this.getIndent(this.lines[this.lineNum]);
+  if (typeof alertify !== 'undefined') {
+    alertify.log("The game has updated. Resuming from the nearest checkpoint.");
+  }
   return true;
 };
 
@@ -1107,7 +1208,14 @@ Scene.prototype.gosub = function scene_gosub(data) {
     if (!this.temps.choice_substack) {
       this.temps.choice_substack = [];
     }
-    this.temps.choice_substack.push({lineNum: this.lineNum, indent: this.indent});
+    var gosubAnchor = this.computeResumeAnchor(this.lineNum);
+    this.temps.choice_substack.push({
+      lineNum: this.lineNum,
+      indent: this.indent,
+      resumeLabel: gosubAnchor && gosubAnchor.label,
+      resumeOffset: gosubAnchor && gosubAnchor.offset,
+      resumeLineText: gosubAnchor && gosubAnchor.lineText
+    });
     // Works exactly the same as gosub_scene, putting args in this.temps.param.
     // This means there's no notion of scope - param acts more like "registers" that
     // get clobbered the next time a sub is called.
@@ -1122,7 +1230,16 @@ Scene.prototype.gosub_scene = function scene_gosub_scene(data) {
     if (!this.stats.choice_subscene_stack) {
       this.stats.choice_subscene_stack = [];
     }
-    this.stats.choice_subscene_stack.push({name:this.name, lineNum: this.lineNum + 1, indent: this.indent, temps: this.temps});
+    var gosubSceneAnchor = this.computeResumeAnchor(this.lineNum + 1);
+    this.stats.choice_subscene_stack.push({
+      name:this.name,
+      lineNum: this.lineNum + 1,
+      indent: this.indent,
+      temps: this.temps,
+      resumeLabel: gosubSceneAnchor && gosubSceneAnchor.label,
+      resumeOffset: gosubSceneAnchor && gosubSceneAnchor.offset,
+      resumeLineText: gosubSceneAnchor && gosubSceneAnchor.lineText
+    });
     this.goto_scene(data, true /*isGosubScene*/);
 };
 
@@ -1159,14 +1276,22 @@ Scene.prototype["return"] = function scene_return() {
     var stackFrame;
     if (this.temps.choice_substack && this.temps.choice_substack.length) {
       stackFrame = this.temps.choice_substack.pop();
-      this.lineNum = stackFrame.lineNum;
-      this.indent = stackFrame.indent;
+      // *gosub's return address survives edits made to this file between
+      // the *gosub call and now (e.g. a save made mid-gosub, edited, then
+      // reloaded) by re-resolving against the label it was nearest to,
+      // rather than trusting a raw line number that may since have shifted.
+      var resolvedGosubLine = this.resolveAnchoredLineNum(stackFrame.resumeLabel, stackFrame.resumeOffset, stackFrame.resumeLineText);
+      if (resolvedGosubLine === null) resolvedGosubLine = stackFrame.lineNum;
+      this.indent = (resolvedGosubLine === stackFrame.lineNum) ? stackFrame.indent : this.getIndent(this.lines[resolvedGosubLine]);
+      this.lineNum = resolvedGosubLine;
     } else if (this.stats.choice_subscene_stack && this.stats.choice_subscene_stack.length) {
       stackFrame = this.stats.choice_subscene_stack.pop();
       if (stackFrame.name == this.name) {
         this.temps = stackFrame.temps;
-        this.lineNum = stackFrame.lineNum-1;
-        this.indent = stackFrame.indent;
+        var resolvedSameSceneLine = this.resolveAnchoredLineNum(stackFrame.resumeLabel, stackFrame.resumeOffset, stackFrame.resumeLineText);
+        if (resolvedSameSceneLine === null) resolvedSameSceneLine = stackFrame.lineNum;
+        this.indent = (resolvedSameSceneLine === stackFrame.lineNum) ? stackFrame.indent : this.getIndent(this.lines[resolvedSameSceneLine]);
+        this.lineNum = resolvedSameSceneLine-1;
         return;
       }
       this.finished = true;
@@ -1177,6 +1302,12 @@ Scene.prototype["return"] = function scene_return() {
       scene.prevLine = this.prevLine;
       scene.lineNum = stackFrame.lineNum;
       scene.indent = stackFrame.indent;
+      // scene.labels isn't parsed yet (the file hasn't loaded), so the
+      // label anchor can't be resolved here -- stash it for checkSum() to
+      // use once loadLines() runs, exactly like a normal save/reload does.
+      scene.savedResumeLabel = stackFrame.resumeLabel;
+      scene.savedResumeOffset = stackFrame.resumeOffset;
+      scene.savedResumeLineText = stackFrame.resumeLineText;
       scene.accumulatedParagraph = this.accumulatedParagraph;
       if (this.randomtest) {
         // pop the stack in randomtest to avoid overflow

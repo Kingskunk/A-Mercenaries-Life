@@ -577,6 +577,9 @@ The harbor city rises from the tideline in four uneven tiers of stone, timber, c
 *set gdd_district "dredge_end"
 *gosub get_district_distance
 *temp pv_time_dredge (pv_origin_dist + gdd_distance)
+*set gdd_district "middle_ward"
+*gosub get_district_distance
+*temp pv_time_middle (pv_origin_dist + gdd_distance)
 
 *choice
   *if (not(current_district = "compound"))
@@ -614,6 +617,13 @@ The harbor city rises from the tideline in four uneven tiers of stone, timber, c
         *set locked_stat_bump_page_id choice_page_id
       *set pv_travel_dest "dredge_end"
       *goto port_valen_travel_to
+  *if (middle_ward_open) and (not(current_district = "middle_ward"))
+    # Climb the switchbacks to the Middle Ward. [~${pv_time_middle} min]
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
+      *set pv_travel_dest "middle_ward"
+      *goto port_valen_travel_to
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment SHARED TRAVEL PRIMITIVES
@@ -634,6 +644,8 @@ The harbor city rises from the tideline in four uneven tiers of stone, timber, c
   *set gdd_distance 40
 *if (gdd_district = "dredge_end")
   *set gdd_distance 60
+*if (gdd_district = "middle_ward")
+  *set gdd_distance 25
 *return
 
 *label port_valen_travel_to
@@ -680,6 +692,8 @@ The harbor city rises from the tideline in four uneven tiers of stone, timber, c
   *goto_scene port_valen_upper_wharves port_valen_upper_wharves
 *if (pv_travel_dest = "dredge_end")
   *goto_scene port_valen_dredge_end port_valen_dredge_end
+*if (pv_travel_dest = "middle_ward")
+  *goto_scene port_valen_middle_ward port_valen_middle_ward
 
 *label port_valen_harbor
 *set current_district "harbor"
@@ -2267,6 +2281,7 @@ Vane returns to his ledger before you've fully turned for the door. As far as he
 *set civic_heights_open true
 *set upper_wharves_open true
 *set dredge_end_open true
+*set middle_ward_open true
 *comment Opens the quayside POI sub-hub (The Cleaved Keel, the customs quay,
 *comment the shipwrights' ways, the long pier, Saint Althea's shrine) with
 *comment the rest of the city.
