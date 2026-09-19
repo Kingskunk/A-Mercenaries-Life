@@ -36,7 +36,11 @@ either express or implied.
 <script src="../scene.js"></script>
 <script src="../navigator.js"></script>
 <script src="mygame.js"></script>
+<script src="lorebook-data.js"></script>
+<script src="lorebook.js"></script>
+<script src="quest-data.js"></script>
 <link href="../alertify.css" rel="stylesheet" type="text/css">
+<link href="lorebook.css" rel="stylesheet" type="text/css">
 <!--[if IE 6]><style>.alertify-logs { position: absolute; }</style><![endif]-->
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <script>
@@ -138,13 +142,15 @@ var rootDir = "../";
       resourceHtml = "<div class=\"statRow\"><span>Rage</span><span>" + fmt(s.barbarian_rage_uses) + " / 2</span></div>";
     }
 
+    // Every quest listed in quest-data.js whose active(stats) is true.
     var activeQuestHtml = "";
-    if (s.silt_gate_quest_stage === "active") {
-      activeQuestHtml = "<hr class=\"sectionDivider\"><div class=\"statRow\"><span>Active Quest</span><span style=\"font-size:0.9em;\">Silt-Gate Contraband</span></div><div class=\"timePeriod\">Dredge-End Flume</div>";
-    } else if (s.anchor_quest_stage === "active" || s.anchor_quest_stage === "offered") {
-      activeQuestHtml = "<hr class=\"sectionDivider\"><div class=\"statRow\"><span>Active Quest</span><span style=\"font-size:0.9em;\">The Low-Water Box</span></div><div class=\"timePeriod\">The Rusty Anchor</div>";
-    } else if (isTruthy(s.found_customs_vellum) && !isTruthy(s.turned_in_customs_vellum)) {
-      activeQuestHtml = "<hr class=\"sectionDivider\"><div class=\"statRow\"><span>Active Quest</span><span style=\"font-size:0.9em;\">Toll Register Delivery</span></div><div class=\"timePeriod\">Gilded Scales</div>";
+    var activeQuests = (window.QUESTLOG || []).filter(function (q) {
+      try { return q.active(s); } catch (e) { return false; }
+    });
+    if (activeQuests.length) {
+      activeQuestHtml = "<hr class=\"sectionDivider\">" + activeQuests.map(function (q) {
+        return "<div class=\"statRow\"><span>" + (activeQuests.length > 1 ? "Quest" : "Active Quest") + "</span><span style=\"font-size:0.9em;\">" + q.title + "</span></div><div class=\"timePeriod\">" + q.place + "</div>";
+      }).join("");
     }
 
     var dayDisplay = s.day_of_week ? fmt(s.day_of_week) : ("Day " + fmt(s.campaign_day || "1"));
@@ -219,6 +225,7 @@ var rootDir = "../";
     </p>
   <p id="buttons">
     <button id="statsButton" class="spacedLink" onclick="showStats()">Show Stats</button>
+    <button id="lorebookButton" class="spacedLink" onclick="LoreBook.toggle()">Lorebook</button>
     <button id="achievementsButton" onclick="showAchievements()" class="spacedLink" style="display: none">Achievements</button>
     <button id="bugButton" onclick="reportBug()" class="spacedLink" style="display: none">Report Bug</button>
     <button id="saveLoadButton" class="spacedLink" onclick="ampSaveLoad.open()">Save / Load</button>
@@ -615,6 +622,8 @@ if (window.location.hostname === 'localhost') {
   <div><span class="key">1</span> - <span class="key">9</span></div>
   <div>Show Stats</div>
   <div><span class="key">Q</span></div>
+  <div>Lorebook</div>
+  <div><span class="key">L</span></div>
   <div>Menu</div>
   <div><span class="key">W</span></div>
   <div>Show Shortcuts</div>

@@ -146,6 +146,7 @@ A comprehensive guide and rule-set for authoring quests, side contracts, investi
   * **Minor / Street Tasks (e.g. Tavern Shakedowns, Alley Skirmishes):** A brief greeting shift or single local perk from the directly involved NPC (e.g. a barkeep waiving lodging fees, a blacksmith offering a minor sharpening discount). *No district-wide rewrites or complex new systems required.*
   * **Settlement / Faction Contracts:** Faction reputation adjustments (`[faction]_rep`) and specific POI or specialist contact unlocks.
 * **Sync with `QUESTS.md`:** Every new quest must be documented in `quest/QUESTS.md` with its objective flow, mechanics, DCs, rewards, and variable list.
+* **Sync with the sidebar and the Lorebook:** Every new quest must also be added to `web/mygame/quest-data.js` (one object with its `active(stats)` check) so the stat sidebar lists it while it is in progress, and any people, places, factions or concepts the player learns about get an entry in `web/mygame/lorebook-data.js`, with a `link` phrase so the name is clickable in the story text.
 
 ## 7. Choice Design & Hub Presentation
 * **Three Is the Standard for Active Decision Hubs Only:** Meaningful player decision points, active exploration hubs, and open conversational nodes should offer three genuine options; two is a design smell, one unconditional option is a bug unless deliberate (a trial, a settings toggle, a `[Return]` link). This is only mechanically — an option being temporarily unavailable to a player or gated behind a prerequisite does not lower this count.

@@ -798,7 +798,7 @@ Hendryk turns his pale eyes to you.
 
 [b][⚖ Guild Standing: Gilded Scales Rep +1][/b]
 *line_break
-[b][🪙 Finder's Fee: +4 Silver Marks][/b]
+[b][💰 Finder's Fee: +4 Silver Marks][/b]
 *line_break
 [b][👢 Acquired: Brant's Iron-Heel Shipwright Boots][/b]
 
@@ -846,9 +846,9 @@ You sweep the cloth purse from the desk into your pocket and push the folded del
   *set locked_currency_txn_page_id choice_page_id
 
 *if (elric_alerted)
-  [b][🪙 Hush Money: +4 Silver Marks][/b]
+  [b][💰 Hush Money: +4 Silver Marks][/b]
 *else
-  [b][🪙 Hush Money: +8 Silver Marks][/b]
+  [b][💰 Hush Money: +8 Silver Marks][/b]
 
 Down on Slipway Two, Brant watches you pass the cradle toward the outer gates. He looks at your face, sees the heavy sag of your purse, and turns back to the rotten spruce with his iron braces, futilely bolting scrap metal across wood that cannot hold. The ship will launch on schedule, but her fate on the open swell is sealed.
 
@@ -892,7 +892,7 @@ Elric stares at you with pure hatred. For a second, his knuckles whiten on the a
   *set currency_txn_locked true
   *set locked_currency_txn_page_id choice_page_id
 
-[b][🪙 Black-Market Cut: +14 Silver Marks][/b]
+[b][💰 Black-Market Cut: +14 Silver Marks][/b]
 
 You pocket the fourteen silver marks and step back into the shipyard lane.
 
@@ -941,7 +941,7 @@ You look at the two thick-necked draymen through the window, then down at the sm
   *set currency_txn_locked true
   *set locked_currency_txn_page_id choice_page_id
 
-[b][🪙 Hush Money: +4 Silver Marks][/b]
+[b][💰 Hush Money: +4 Silver Marks][/b]
 
 Down on Slipway Two, Brant watches you pass the cradle with your head down. He turns back to the rotten spruce with his iron braces, futilely reinforcing wood that cannot hold.
 
@@ -976,7 +976,7 @@ Down on Slipway Two, Brant watches you pass the cradle with your head down. He t
   *set currency_txn_locked true
   *set locked_currency_txn_page_id choice_page_id
 
-[b][🪙 Hush Money: +8 Silver Marks][/b]
+[b][💰 Hush Money: +8 Silver Marks][/b]
 
 Down on Slipway Two, Brant watches you walk past the slipway toward the main gates. He sees the heavy line of your purse and turns back to the rotten wood in silence.
 
@@ -1101,7 +1101,7 @@ He folds the waybill into a neat square and slides it into a brass-cornered disp
 
 [b][🦅 Company Regard: Captain Vane's Regard +1][/b]
 *line_break
-[b][🪙 Intelligence Bounty: +5 Silver Marks][/b]
+[b][💰 Intelligence Bounty: +5 Silver Marks][/b]
 
 *page_break Return to the garrison yard…
 *goto port_valen_hub

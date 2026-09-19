@@ -633,9 +633,9 @@ Marl lifts Pip onto one of the sentries' backs, takes a sweep from the launch, a
 [b][🗡 Black Tally Standing: Black Tally Rep -1][/b]
 *line_break
 *if (bar_cargo_saved)
-  [b][🪙 Finder's Share: +6 Silver Marks][/b]
+  [b][💰 Finder's Share: +6 Silver Marks][/b]
 *else
-  [b][🪙 Rescue Fee: +2 Silver Marks][/b]
+  [b][💰 Rescue Fee: +2 Silver Marks][/b]
 
 *page_break Back to the pier…
 *goto pv_poi_pier_menu
@@ -694,7 +694,7 @@ They take Marl by the arms, not roughly, the way you take someone you intend to 
 *if (bar_tobin_spooked)
   Nobody offers you anything. You were never on the collectors' books, and the taller man looks through you as if you were a post.
 *else
-  [b][🪙 Collector's Cut: +@{bar_cargo_saved 12|4} Silver Marks][/b]
+  [b][💰 Collector's Cut: +@{bar_cargo_saved 12|4} Silver Marks][/b]
   *line_break
   [b][🗡 Black Tally Standing: Black Tally Rep +1][/b]
 
