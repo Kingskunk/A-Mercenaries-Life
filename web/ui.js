@@ -284,7 +284,10 @@ function showMenu() {
     // show title and author on menu screen
     // this will be hidden on desktop web, but visible elsewhere
     changeTitle(document.title);
-    changeAuthor(document.getElementById("author").innerText.substring(3));
+    var authorEl = document.getElementById("author");
+    if (authorEl && authorEl.innerText && /^by\s+/i.test(authorEl.innerText.trim())) {
+      changeAuthor(authorEl.innerText.trim().replace(/^by\s+/i, ""));
+    }
     if (window.isSteamApp) {
       printParagraph("Need help? Email us at " + getSupportEmail() + ".");
     }
@@ -3284,8 +3287,16 @@ function changeTitle(title) {
 
 function changeAuthor(author) {
   var authorTag = document.getElementById("author");
+  if (!author || !author.trim()) {
+    if (authorTag) {
+      authorTag.innerHTML = "";
+      authorTag.style.display = "none";
+    }
+    return;
+  }
   if (authorTag) {
     authorTag.innerHTML = "";
+    authorTag.style.display = "";
     authorTag.appendChild(document.createTextNode("by " + author));
   }
   var text = document.getElementById('text');

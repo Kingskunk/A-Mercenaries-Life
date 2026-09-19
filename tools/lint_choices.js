@@ -129,6 +129,64 @@ function isNavOption(hashLine) {
   return /^#\s*\[/.test(hashLine);
 }
 
+// Analyzes the surrounding label and options to distinguish one-shot quest
+// beats from repeating hubs and menu backouts.
+function analyzeChoiceContext(lines, choiceLineIdx, currentLabel, allTexts, blockEndIdx, file) {
+  let isQuestBeat = /^(beat_|quest_|stage_|investigation_|confrontation_|climax_)/i.test(currentLabel);
+  let isHub = /(_menu|_hub|_pois?|_inn|_quarters|_lodgings|_downtime|_rest)/i.test(currentLabel);
+  const isStats = /choicescript_stats|startup/i.test(file) || /^(stats_|inventory_|journal_)/i.test(currentLabel);
+
+  // Check recent comments (up to 25 lines preceding the choice)
+  const commentStart = Math.max(0, choiceLineIdx - 25);
+  for (let c = commentStart; c < choiceLineIdx; c++) {
+    const line = lines[c].trim();
+    if (/^\*comment\b/i.test(line)) {
+      if (/\b(?:BEAT\b|QUEST\b)/i.test(line)) isQuestBeat = true;
+      if (/\b(?:HUB\b|POI\b|DOWNTIME\b|REST\b|SUB-HUB)/i.test(line)) isHub = true;
+    }
+  }
+
+  // Check if any option is a hub return or backout
+  let hasHubReturn = false;
+  for (const text of allTexts) {
+    if (/^#\s*(?:\[?(?:Step back|Return to|Back to|Back out|Leave|Head back|Exit|Walk away)\b|"(?:Understood|Never mind|Leave it)")/i.test(text)) {
+      hasHubReturn = true;
+      break;
+    }
+  }
+
+  // Also scan gotos within the choice block for returns to hub/menu labels
+  if (!hasHubReturn) {
+    for (let c = choiceLineIdx; c < blockEndIdx; c++) {
+      const gotoMatch = /^\s*\*goto\s+([a-zA-Z0-9_]+)/i.exec(lines[c]);
+      if (gotoMatch) {
+        const target = gotoMatch[1];
+        if (/_menu|_hub|_pois?|_camp|_inn|_quarters|_square|_quayside/i.test(target)) {
+          hasHubReturn = true;
+          break;
+        }
+      }
+    }
+  }
+
+  let detail = '';
+  if (isQuestBeat) {
+    detail = hasHubReturn
+      ? `(Quest Beat: ${currentLabel}) 2 options [Action + Hub Return] — one-shot quest fork, not a timeless hub`
+      : `(Quest Beat: ${currentLabel}) 2 options — one-shot quest choice (consider a 3rd approach)`;
+  } else if (isHub) {
+    detail = `(Repeating Hub: ${currentLabel}) 2 options — repeating hub/menu should offer downtime variety (verify Rule 3)`;
+  } else if (isStats) {
+    detail = `(System/Menu: ${currentLabel}) 2 options — menu navigation`;
+  } else if (hasHubReturn) {
+    detail = `(${currentLabel}) 2 options [Action + Backout] — scene fork, not a repeating hub`;
+  } else {
+    detail = `(${currentLabel}) exactly 2 unconditional options — consider a third`;
+  }
+
+  return detail;
+}
+
 const EQUALITY = /\*(?:if|elseif)\s*\(\s*([\w.]+)\s*=\s*"([^"]*)"\s*\)\s*$/;
 
 function lintFile(file) {
@@ -136,9 +194,14 @@ function lintFile(file) {
   const lines = text.split(/\r?\n/);
   const findings = [];
   const skipped = [];
+  let currentLabel = '(top-level)';
 
   for (let i = 0; i < lines.length; i++) {
     if (isBlank(lines[i])) continue;
+    const labelMatch = /^\s*\*label\s+([a-zA-Z0-9_]+)/.exec(lines[i]);
+    if (labelMatch) {
+      currentLabel = labelMatch[1];
+    }
     if (!/^\s*\*choice\b/.test(lines[i])) continue;
 
     const choiceIndent = indentOf(lines[i]);
@@ -203,7 +266,8 @@ function lintFile(file) {
           detail: `*choice resolves to ${totalHashes} option${totalHashes === 1 ? '' : 's'} — not a real choice`,
         });
       } else if (totalHashes === 2) {
-        findings.push({ file, line: choiceLineNum, rule: 'C', detail: 'exactly 2 unconditional options — consider a third' });
+        const detail = analyzeChoiceContext(lines, i, currentLabel, allTexts, blockEndIdx, file);
+        findings.push({ file, line: choiceLineNum, rule: 'C', detail });
       }
       continue;
     }
@@ -278,11 +342,12 @@ function lintFile(file) {
         });
       }
     } else if (guaranteedMin === 2) {
+      const detail = analyzeChoiceContext(lines, i, currentLabel, allTexts, blockEndIdx, file);
       findings.push({
         file,
         line: choiceLineNum,
         rule: 'C',
-        detail: `worst case renders only 2 options (best case ${possibleMax}) — consider a third`,
+        detail: `${detail} (worst case renders 2 options, best case ${possibleMax})`,
       });
     }
   }

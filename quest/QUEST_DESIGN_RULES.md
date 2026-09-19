@@ -1,6 +1,6 @@
 # Quest Design & Creation Rules — A Mercenary's Path
 
-A comprehensive guide and rule-set for authoring quests, side contracts, investigations, and municipal encounters across *A Mercenary's Path*. 
+A comprehensive guide and rule-set for authoring quests, side contracts, investigations, and municipal encounters across *A Mercenary's Path*.
 
 ---
 
@@ -8,24 +8,41 @@ A comprehensive guide and rule-set for authoring quests, side contracts, investi
 
 * **No Faction-Scanning or Badge Recognition:** Never write NPCs who magically recognize a player's faction, gear, or background to dump a quest on them. Quests must originate through:
   1. **Environmental Tells:** Visible tension, a nervous barkeep watching an alley, crates being unloaded off-schedule, dockers arguing over a seized chain.
-  2. **Player-Initiated Dialogue:** The player asks questions, probes an NPC's behavior, or inquires about work. It's much more immersive for the player to see that there is a quest here, and offer to assit and accept it or solve it and have the ability to not do anything, decline, or walk off.  Unless it's a devloping situation or event happening around the player outside of his control, where he has to act to defend his own life do we restrict choices, like an ambush or natural disaster, quest givers never magically signal out the player, tell them their issues and give them a quest like it's a video game.
-* **Table-Facing DM Voice:** Write as though describing the scene aloud to one player at the table. Keep immediate senses and physical actions in the foreground. Let NPC dialogue and discoveries drive the plot without omniscient exposition.
-* **Strict Subjective POV:** Never name an unfamiliar NPC, reveal secret gang allegiances, or explain an hidden motives until discovered through in-universe dialogue, documents, or direct investigation.
-* **Wider World:** Understand that even though the amount of content we have now, with maybe only a town, or a village, the pc will dicover many more and be traveling around the world, adventuring, beyond Alderford, beyond Valen. What you write and create needs to make sense in a wider world too as well on the contien, where there is possibly no marches, where it could be a dester landscape, or a winter wonderland, or rocky mountain ranges, or a land of endless jungle, etc. Don't create possible world breaking lore. 
+  2. **Player-Initiated Dialogue:** The player observes the environment, probes an NPC's behavior, or inquires about work. The player must always have the agency to accept, decline, ignore, or walk away from an opportunity. Unless it is an immediate physical emergency occurring around the protagonist (an ambush, a collapsing scaffold, a natural catastrophe), quest-givers never single out the protagonist or dump tasks on them unprompted.
+* **Table-Facing DM Voice:** Write as though describing the scene aloud to one player at the table. Keep immediate senses and physical actions in the foreground. Let NPC dialogue and discovered details drive the plot without omniscient exposition.
+* **Strict Subjective POV:** Never name an unfamiliar NPC, reveal secret gang allegiances, or explain hidden motives until discovered through in-universe dialogue, documents, or direct investigation.
+* **Global Worldbuilding Compatibility (The Wider World Standard):** Content will span multiple continents, varied cultures, and disparate biomes—including arid desert wastes, sub-zero mountain passes, inland agricultural river-valleys, and untamed borderlands. Never write quest lore, legal institutions, or environmental descriptions that assume the whole world operates like a single province or climate. Keep regional lore grounded in its immediate geography without breaking broader world logic.
 
 ---
 
-## 2. Multi-Branching Choice Architecture
+## 2. Choice Architecture: Branch-and-Bottleneck (Avoid the "Mindmap Trap")
 
-* **The Rule of Three:** Every meaningful quest decision must offer at least three distinct, viable options. Avoid false binaries or identical checks dressed in different text.
-* **Archetype Parity:** Ensure encounters offer balanced paths across character builds:
+* **Branch-and-Bottleneck Discipline (The Funnel Pattern):**
+  Never design quests as an exponentially branching tree where every option splits into a permanently separate label with its own branching choices. That causes combinatorial explosion, turning a 10-minute sidequest into a tangled web requiring a mindmap. Instead, use the industry-standard **Branch-and-Bottleneck** architecture:
+  * **The Shared Spine (Bottlenecks):** The quest follows a linear spine of 3–5 milestone beats (Hook → Investigation → Confrontation → Climax).
+  * **Local Tactical Expression (The "Illusion of Choice"):** At each obstacle, offer 3 distinct archetype approaches (Combat/STR, Finesse/DEX, Social/Cunning/CHA, or Arcane). Each option provides its own check and unique immediate flavor/cost (HP damage, spent slots, or an evidence flag like `has_waybill`), but **converges back to the common trunk label** (`*goto next_beat`). They do *not* spawn separate narrative universes.
+  * **Delayed & Climax Divergence:** Reserve true, structural multi-ending branching for the **Climax / Resolution Beat** (Section 3: The Mercenary Dilemma). The climax reads the flags accumulated during the earlier bottlenecks (e.g. `*if (has_waybill)` unlocks blackmail; `*if (alarm_raised)` increases DC), making earlier choices feel deeply impactful without fracturing the quest into 30 sub-scenes.
+
+* **The Rule of Three (Tactical Expression, Not Structural Splitting):**
+  The "Rule of Three" applies to **tactical approaches at major challenge beats** (giving STR, DEX, and CHA/INT characters a satisfying roll), NOT to structural story branching. Offering three options means giving three ways to resolve the current obstacle before rejoining the trunk.
+
+* **Transitions & Pacing Don't Need Three Choices:**
+  Simple navigation, stair-climbs, room transitions, or binary gates (e.g. *"Climb the ladder to Brant"* vs *"Step back to the yard lane"*) do **not** require an artificial third option. Use a 2-option fork or a narrative `*page_break` cleanly without adding filler choices.
+
+* **Archetype Parity:** Ensure challenge encounters offer balanced paths across character builds:
   * **Brute Force / Combat:** `[STR DC X]` (Vault charge, counter-slam, weapon disarm).
-  * **Finesse / Stealth:** `[DEX DC X]` (Acrobatic sweep, stiletto draw, silent lock-tampering).
-  * **Social / Underworld:** `[CHA DC X]` (Mercenary intimidation, deception, street shakedown).
-  * **Tactical / Cunning:** `[INT DC X]` or `[WIS DC X]` (Exploiting guild regulations, reading tells, timing lifts).
+  * **Finesse / Stealth:** `[DEX DC X]` (Acrobatic sweep, silent movement, lock-tampering).
+  * **Social / Underworld:** `[CHA DC X]` (Intimidation, deception, street shakedown).
+  * **Tactical / Cunning:** `[INT DC X]` or `[WIS DC X]` (Exploiting regulations, reading physical tells, spotting structural flaws).
   * **Arcane / Occult:** Dedicated cantrip and spell slots (`Mage Hand`, `Thaumaturgy`, `Vicious Mockery`, `Charm Person`, `Dissonant Whispers`, etc.).
 * **Full Spell Slot Coverage:** When gating options by spells or cantrips, check all appropriate classes and origins (Wizard, Bard, Warlock, Hexblood) and deduct spell slots safely inside replay locks.
-* **Fail-Forward Design:** Failing a check should escalate tension (drawing blades, shattering a cask, losing a surprise advantage, taking glancing HP damage) rather than causing an immediate dead-end or game-over. Provide secondary recovery options or NPC interventions.
+* **Fail-Forward Design (Failure Must Cost Something):** A failed check keeps the story moving, but it never hands back the thing the roll was gambling for. The believability test is: *would a table DM allow this after that roll?* If not, the failure branch is wrong.
+  * **Failure closes a door and costs something.** Pick at least one real cost: time, an alarm that raises later DCs or cuts an NPC's offer, lost evidence or leverage, lost standing, a lost ally's trust, or an approach that is closed for good. Glancing HP damage counts only where a local damage routine exists.
+  * **Failure never converts into the success it was chasing, or into its reward.** No consolation coin or gear after a failed roll, and no failure menu that offers the exact route the player could have taken without rolling. If that route is available for free, the roll means nothing. Gate the strong route behind the risk, or remove it from the failure menu.
+  * **No stronger repeat of the failed act.** A failed attempt to intimidate, persuade or overpower an NPC is not followed by a bigger version of the same act on the same target (for example, dragging a guarded clerk to his employer after failing to scare him). The NPC now holds the upper hand and the scene should show it.
+  * **Fail-forward has a believability limit.** Investigation, approach and setup beats can fail forward freely (a raised alarm, a worse position for the next roll). The climactic check that decides the resolution cannot: failure there ends that approach and lands on a lesser or losing outcome, not a rescue menu.
+  * **Every quest needs a genuine loss state.** Declare a `[quest]_resolution = "failed"` (or an equivalent losing value) with its own aftermath prose, a stats-sheet line, and an outcome-specific rumor, so that "the player lost" is a designed result and not something the design routes around.
+  * **A failed roll that only sets a flag is fine when the flag has teeth.** Compounding disadvantage on the next beat, a harder DC on retries, or a cut payout all qualify. A flag that nothing reads does not.
 
 ---
 
@@ -33,27 +50,65 @@ A comprehensive guide and rule-set for authoring quests, side contracts, investi
 
 * **Currency Scale (10:1 System):**
   * `10 Copper Bits = 1 Silver Mark`
-  * `10 Silver Marks = 1 Gold Mark` (100 Copper)
-* **Grounded Bounty Scale:**
-  * **Street / Minor Task:** `1–5 Silver Marks` (10–50 copper).
-  * **Municipal Contract / Major District Quest:** `10–20 Silver Marks` (100–200 copper).
-  * **Major Guild / Military Campaign Reward:** `30–50 Silver Marks`.
-* **The Mercenary Dilemma:** Quests should present conflicting incentives:
-  * *The Lawful Route:* Modest official pay, but earns municipal standing and clean reputation (`port_watch_rep +1`).
-  * *The Underworld Route:* Double or triple the coin in dirty hush-money, but forfeits official standing.
-  * *The Company Route:* Diverting materials (steel, medical supplies) to the Carrion compound, earning standing with Captain Vane and long-term favors.
+  * `10 Silver Marks = 1 Gold Crown` (100 Copper Bits)
+
+
+* **Real-World Living Costs & Labor Benchmarks:**
+  To keep quest rewards grounded and believable, payouts must be measured against what common folk actually earn and spend:
+  **Magic** Maic exist in the world, mages, wizards, sorcers, magical items, etc. However they are rare, you do still find magical shops/ bazares in larger cities and it would be uncommon to find them in towns or villages. You'd more likely to find magical pratictioiners in the higher ranks of the nobility or richer merchants, heads of cults, among the leadership of gangs and organizations or specialized military units in the services of mercenary monaries or armies.
+  * **Daily Subsistence (Copper):** A hot bowl of pea-and-bacon stew, hard cider, or travel bread costs `2–5 copper bits`.
+  * **Manual Day Labor (Low Silver):** A backbreaking day-shift of dock crane labor or quarrying pays `2–4 silver marks` (20–40 copper).
+  * **Soldier / Mercenary Monthly Pay:** An enlisted soldier or private mercenary earns a base monthly wage of `~6 silver marks` (with communal barracks bunk and company bread provided).
+  * **Working Lodgings:** A modest, secure private room in a working district (e.g. Middle Ward tenement) costs `1 silver mark per week` (4 silver/month).
+  * **Capital & High Sinks (Gold Crowns):** Gold crowns represent serious wealth—used for purchasing ships, warehouses, masterwork plate armor, financing trade caravans, or retaining armed units. Aristocratic lifestyle upkeep and high-status civic standing can easily consume `5–10+ Gold Crowns per week`.
+
+* **Proportional Reward Scaling:**
+  Quest rewards should scale organically to **danger, risk, time, and the economic stature of the patron**, rather than following arbitrary flat brackets. A neighborhood errand should feel meaningful against a day laborer's wages; a dangerous smuggling bust or covert recovery should feel substantial against several months of soldier pay; and large faction or military operations deal in gold crowns because they fund vessels, estates, and whole companies.
+
+* **The Mercenary Dilemma (Three Universal Resolution Archetypes):** Major decision hubs should avoid simple binaries by offering three distinct, competing philosophies of resolution:
+  * *The Lawful / Institutional Route (Civil Standing & Legitimacy):* 
+    Solving the crisis by upholding local law, honoring the official contract, or backing established authorities.
+    * *Incentives:* Modest standard pay, public legitimacy, lawful faction reputation (`[local_authority]_rep +1`), and safe standing in the community.
+    * *Trade-offs:* Forfeits high black-market coin; upholds flawed institutional orders.
+  * *The Pragmatic / Underworld Route (Immediate Personal Profit):* 
+    Exploiting the crime or vulnerability for immediate self-enrichment (extortion, taking the bribe, skimming cargo, or fencing contraband).
+    * *Incentives:* Maximum immediate liquid wealth (double or triple the official contract fee) or underworld street credibility.
+    * *Trade-offs:* Forfeits institutional standing, alienates victims, and burns goodwill in the local area.
+  * *The Strategic / Leverage Route (Long-Term Influence & Allied Assets):* 
+    Subverting the situation to secure permanent political leverage, actionable intelligence, or valuable allied relationships rather than immediate cash or blind obedience.
+    * *Incentives:* Securing blackmail or debt-paper over influential figures, flipping compromised NPCs into ongoing informants, gaining permanent access to specialist facilities/services, or earning patron trust (`[patron]_standing +1`).
+    * *Trade-offs:* Requires operational discretion, foregoes immediate cash payouts, and carries the danger of managing dangerous secrets.
 
 ---
 
 ## 4. Setting, Technology & Worldbuilding Authenticity
 
-* **Era: Early Modern / Renaissance Low-Fantasy (circa 1480–1530):**
-  * **Allowed Technology:** Clocks and bell hours, waterwheels, tidal flap-valves, storm-winch counterweight cogs, drydock slipways, paper manifests, double-entry bookkeeping, bills of exchange, notarized vellum.
-  * **Allowed Metallurgy:** *Shear-steel*, *blister-steel*, *crucible tool-steel*, *spring-steel*, *bog-iron*, *bloomery iron*, *case-hardened iron*, *tempered bodkins*.
-  * **Ranged Armaments:** Heavy steel-limbed arbalests, hunting bows, recurve bows, siege ballistas, javelins.
-* **Strictly Forbidden Anachronisms:**
-  * **NO Gunpowder / Firearms:** No blunderbusses, flintlocks, pistols, or black powder.
-  * **NO Industrial / Chemical Terms:** No "high-carbon", "titanium", "chemical reaction", "calories", "pneumatic", "turbines", "hydraulic".
+* **Era & Core Identity: Late Medieval / High Renaissance Low-Fantasy (circa 1450–1520, Zero Gunpowder):** The setting combines peak late-medieval mechanics, early Renaissance civil bureaucracy, and grounded craftsmanship with an absolute absence of firearms or explosive powders. This preserves the viability of heavy armor, varied melee weapon types, and archery, while keeping the occult and alchemical distinct.
+
+* **A. Power, Machinery & Engineering (Non-Steam / Kinetic):**
+  * **Mechanical Power:** Undershot and overshot waterwheels, post/tower windmills, human and animal treadwheels, counterweight winches, capstans, windlasses, and block-and-tackle pulley rigs.
+  * **Engineering:** Canal pound-locks, weir sluices, trip-hammer forges, mine headframes, mechanical clock towers with verge-and-foliot escapements, bell carillons, water levels, and plumb-lines. *(No steam engines, turbines, pneumatic assemblies, or hydraulic pistons).*
+
+* **B. Commerce, Law & Bureaucracy:**
+  * **Financial Instruments:** Letters of credit, bills of exchange, notarized bond-paper, sealed wax tallies, debt-rolls, balance scales, and trade guild charters.
+  * **Written Records:** Linen-rag paper, calfskin vellum, iron gall ink, lead styluses, quills, wax seals, and tied folios. Official documents are scribed, ledgered, or proof-stamped by hand. *(No movable-type mechanized printing presses or mass print media).*
+
+* **C. Daily Life, Materials & Illumination:**
+  * **Lighting & Heat:** Tallow candles (common domestic), beeswax (wealthy/temple), clay oil lamps, horn lanterns, bullseye glass lanterns, wood charcoal, peat bricks, and pit-coal (bituminous coal for smithing and kiln work).
+  * **Glass & Ceramics:** Leaded crown glass (small, thick roundels), bottle glass, reading stones (convex polished glass or beryl lenses), stoneware jugs, glazed earthenware, and pewter tableware.
+
+* **D. Metallurgy & Armaments (Grounded & Non-Anachronistic):**
+  * **Historical Metallurgy:** *Shear-steel*, *blister-steel*, *crucible tool-steel*, *spring-steel*, *bog-iron*, *bloomery iron*, *case-hardened iron*, and *tempered steel*.
+  * **Ranged Warfare:** Steel-limbed heavy arbalests (spanned with cranequins or windlasses), light hunting crossbows, yew longbows, composite recurve bows, throwing javelins, bodkin arrows, and quarrels.
+  * **Siege Engines:** Counterweight trebuchets, traction mangonels, wall-mounted scorpions, and heavy siege ballistas.
+
+* **E. Medicine & Alchemy (Pre-Modern & Physical):**
+  * **Allowed Practices:** Willow-bark teas, bone-setting, cautery irons, wound-suturing with horsehair or gut, vinegar and wine washes, boiled tallow salves, aqua vitae, quicksilver (mercury) ointments, brimstone (sulfur), vitriol, and herbal poultices.
+  * **Strictly Forbidden:** No germ theory, cellular biology, sterile modern surgery, chemical antiseptics, or clinical calorie counts.
+
+* **F. Strictly Forbidden Anachronisms (Always Enforced by `tools/lint_anachronisms.js`):**
+  * **NO Gunpowder / Firearms:** Zero black powder, cannons, bombards, matchlocks, wheellocks, flintlocks, blunderbusses, muskets, or pistols.
+  * **NO Industrial / Modern Chemical Terms:** No "high-carbon", "carbon steel", "titanium", "chemical reaction", "calories", "pneumatic", "turbines", "hydraulic assembly", or "combustion".
   * **Run `tools/lint_anachronisms.js`** before finalizing any quest text.
 
 ---
@@ -62,7 +117,7 @@ A comprehensive guide and rule-set for authoring quests, side contracts, investi
 
 * **Standard Lifecycle Variables:**
   * `[quest]_quest_stage` — `"unstarted"`, `"active"`, `"resolved"`
-  * `[quest]_resolution` — stores specific path taken (e.g. `"watch_seized"`, `"bribed"`, `"vane_diverted"`)
+  * `[quest]_resolution` — stores specific path taken (e.g. `"[quest]_lawful"`, `"[quest]_bribed"`, `"[quest]_leveraged"`)
   * `[quest]_bounty_claimed` — boolean guard for one-time cash payouts
 * **Zero Bare Increments Before Pauses:**
   * Never use bare `*set rep +1` or `*set coin +X` before a `*page_break` or `*choice`.
@@ -72,11 +127,11 @@ A comprehensive guide and rule-set for authoring quests, side contracts, investi
     *if (not(quest_name_resolved))
       *set quest_name_resolved true
       *set quest_name_quest_stage "resolved"
-      *set port_watch_rep +1
+      *set local_faction_rep +1
     ```
   * **Combat / HP Damage:** Use `stat_bump_locked` with `locked_stat_bump_page_id = choice_page_id`.
 * **Action-Grounded Time Progression (No Arbitrary Flat Increments):**
-  * Time advances only when a physical action with genuine duration occurs (e.g. traveling between districts via the distance matrix, physical labor/cargo hauling, prolonged stakeouts, or resting).
+  * Time advances only when a physical action with genuine duration occurs (e.g. traveling between locations via the distance matrix, physical labor, prolonged stakeouts, or resting).
   * Dialogue choices, tactical decisions, and shop haggling are free—the clock does not advance for conversation or menu selection.
   * Advance time contextually to match the in-fiction action, rather than applying a rigid template formula.
 
@@ -84,10 +139,62 @@ A comprehensive guide and rule-set for authoring quests, side contracts, investi
 
 ## 6. Open-World & Living Hub Integration
 
-* **District & POI Hierarchy (No Floating Quest Menus):** Quests must live inside concrete physical locations within the world.
-* **Environmental & Clock Reactivity:**
-  * Quests should tie into living environmental systems where relevant: **Tidal Clocks** (low tide exposing canal vaults), **Day/Night Cycles** (contraband moving at dusk/night, merchants active during market hours), and **Weather** (rain slurry altering footing).
+* **Settlement & POI Hierarchy (No Floating Quest Menus):** Quests must live inside concrete physical locations within the world.
+* **Environmental & Operational Reactivity:**
+  * Quests should tie into living environmental systems where relevant: **Day/Night Cycles & Gate Curfews**, **Operational Hours** (merchants active by day, smugglers active by night), **Dynamic Weather** (blizzards, heavy downpours, mud affecting travel or checks), and **Local Terrain Dynamics** (seasonal river levels, flash flooding, tidal shifts).
 * **Proportional World Memory (Scale to Scope):** Quests should feel acknowledged without bloating hub systems or creating unnecessary maintenance overhead:
-  * **Minor / Street Tasks (e.g. Tavern Shakedowns, Alley Skirmishes):** A brief greeting shift or single local perk from the directly involved NPC (e.g. Maret pouring a complimentary draught, a clerk skipping a routine bribe). *No district-wide rewrites or complex new systems required.*
-  * **District / Faction Contracts (e.g. Silt-Gate Contraband, Vault Audits):** Faction reputation adjustments (`port_watch_rep`, `gilded_scales_rep`) and specific POI or contact unlocks.
+  * **Minor / Street Tasks (e.g. Tavern Shakedowns, Alley Skirmishes):** A brief greeting shift or single local perk from the directly involved NPC (e.g. a barkeep waiving lodging fees, a blacksmith offering a minor sharpening discount). *No district-wide rewrites or complex new systems required.*
+  * **Settlement / Faction Contracts:** Faction reputation adjustments (`[faction]_rep`) and specific POI or specialist contact unlocks.
 * **Sync with `QUESTS.md`:** Every new quest must be documented in `quest/QUESTS.md` with its objective flow, mechanics, DCs, rewards, and variable list.
+
+## 7. Choice Design & Hub Presentation
+* **Three Is the Standard for Active Decision Hubs Only:** Meaningful player decision points, active exploration hubs, and open conversational nodes should offer three genuine options; two is a design smell, one unconditional option is a bug unless deliberate (a trial, a settings toggle, a `[Return]` link). This is only mechanically — an option being temporarily unavailable to a player or gated behind a prerequisite does not lower this count.
+* **Never Force Three Choices on Barriers, Closed Doors, or Linear Returns (No Barrier Bloat):** When an entrance, vendor, workshop, or road is barred, closed for the night, shut due to weather (like a blizzard), or inaccessible, do NOT invent fake filler choices (e.g. "Inspect the shutter", "Listen at the crack", "Return"). Deliver a vivid, atmospheric sensory description of the closure, then cleanly route the player back with a simple `*page_break Return...` or direct `*goto` without an artificial `*choice` block. Forcing 3 choices onto a dead end or barrier creates unplayable menu bloat.
+* **New Options Must Be Real, Not Filler:** A third option added to satisfy an active decision hub needs its own flavor, mechanic, and consequence — not an existing option's stat/reward with new text.
+* **Earned Affordances (No Magic Buttons):** Every option must be grounded in physical features, sensory cues, items, or conversational openings already established in the preceding prose.
+* **Background & Trait Justification:** An option gated by origin, class, or a high attribute needs prose grounding *why* the protagonist has that insight, not just an abstract stat check.
+* **Watch for Hidden Stat Traps:** When multiple options resolve via different checks at the same nominal DC, verify they're actually comparable for the builds that can pick them.
+* **Living Hub Environments (No Menu Catalogs):** Exploration/camp/settlement hubs are continuous narrative scenes grounded in sensory atmosphere and squad activity — never an itemized/bulleted catalog of locations.
+
+## 8. Surface Interior Reasoning on Meaningful Choices
+* **Mercenary Logic & Motivation:** A meaningful decision (spending scarce coin, picking a tactical gambit, trusting an officer) needs the specific internal reasoning behind it in prose — a character who acts without visible motive reads as a plot device.
+
+## 9. Action Economy in Choices (Combat vs. Exploration)
+* **In Combat:** Casting or tactical abilities are dedicated choice slots/actions in initiative order — no swinging a weapon and casting an action cantrip in the same choice without a specific class feature.
+* **Outside Combat:** Cantrips are at-will. Exploration/downtime hubs get a preparatory pre-cast choice (`[Cantrip: Guidance]`) letting the player choose which subsequent check receives it.
+
+## 10. Grounded Economy, Metallurgy & Low-Fantasy Worldbuilding
+* **Magic Is Rare, Distrusted, and Practical:** Common folk fear what they don't understand — suspicion of unnatural bloodlines, practitioners sitting apart at camp, line troops rattled by eldritch flares.
+* **Economic Grit:** Silver, iron, and copper are scarce and hard-won. Loot is tangible and modest (smoked rations, tallow candles, water-damaged ledgers) — every mark counts.
+* **Period-Grounded Vocabulary & Material Culture:** Concrete, low fantasy setting-appropriate labor/logistics/military terms. 
+* **Period Metallurgy (No Chemical-Era Elements) — Forbidden:** "high-carbon," "carbon steel," "carbon content," "titanium," "chemical reaction," "calories." **Use instead:** *shear-steel*, *blister-steel*, *crucible steel*, *refined tool-steel*, *steely iron*, *quenched steel*, *bog-iron*, *bloomery iron*, *case-hardened iron*, *spring steel*.
+* **Period Mechanical Engineering (No Industrial Modernisms) — Forbidden:** "turbine," "drive-cam," "drive-shaft," "clutch," "flywheel," "cast-iron assembly," "pneumatic," "combustion," "hydraulic assembly." **Use instead:** *waterwheel*, *mill-wheel*, *paddle-wheel*, *camshaft*, *trip-cams / wipers / tappets*, *wheel axle*, *timber shaft*, *intake sluice*, *flume*, *headrace*, *trundle wheel / iron gearing*, *counterweight ratchet*.
+* **Fuel & Smelting Authenticity — Forbidden:** "coke-smelted," "forged anthracite steel" (anthracite is a coal, not a metal). **Use instead:** *charcoal*, *peat-turf*, *pit-coal*, *hard stone-coal*, *bloomery hearth*, *crucible melt*.
+* **Scan Trigger:** Before finalizing any craft, mechanical, or workshop passage, run `tools/lint_anachronisms.js` to flag modern engineering and chemical terms.
+
+## 11. Mechanics Confined to Brackets, Never in Prose
+* **Strict Separation of Stats and Story:** Numbers, DCs, and mechanic names stay in `[bracketed stat hints]`/banner cards — prose never states them directly ("you took 4 damage"). Ground results in physical sensation instead.
+* **Mechanical Purity in Choice Brackets:** Bracketed hints (`[STR DC 12]`, `[5 Silver Marks]`, `[Cantrip: Guidance]`) are reserved for actionable mechanics only — never narrative summaries or thematic tags.
+
+## 12. Time Progression & Chronological Discipline
+* **Realistic Clock & Activity Alignment:** Every clock advance must correlate with the physical action (15-mile march = 6–8h; skirmish = 1h; camp activity = 30–45m; long rest = 8h), grounded in sensory detail (sweat cooling, mud crusting, shadows stretching).
+* **Atmospheric & Seasonal Lighting Integrity:** Lighting/weather must match season and hour (Autumn: Dawn ~06:00, Dusk ~17:30–18:00, Night ~20:00+). A battle ending at 14:00 can't jump straight to "dusk cook-fires" without the intervening afternoon labor.
+* **Midnight Rollover & Rest Sync:** Resting across midnight advances into early morning (~04:30–06:00) so `calendar.txt` rolls `campaign_day`/`calendar_date` — morning muster scenes must always land on a morning timestamp.
+* **Time Costs Are Tiered, Not Flat Time now moves in tiers: (1) Travel between districts costs the distance table (`get_district_distance` / `port_valen_travel_to` — one number per location, leg = sum of both ends). (2) In-district browsing — a district label's own prose — is free. (3) An activity entered inside a district (taphouse, quest start, POI visit) costs 15–25m once on entry (Alderford's hub actions at 25m are the precedent; Port Valen's harbor POIs run 15–20m). (4) Multi-beat one-time set-pieces (the arrival vignettes, quest set-pieces) cost 30–45m per beat. (5) Sub-loops inside an activity (bar purchases, dialogue options, dice) are instant and free — coin and buff slots limit them instead of the clock (the Drowned Oar's `taphouse_bar_loop` is the pattern). Multi-slot set-piece hubs that span a whole evening (camp_night, the bivouac) still pass time per slot, with prose reflecting the changing light and watch as slots are spent.
+* **Time-of-Day Coloring Is Scene-by-Scene, Not Universal:** Most location/hub prose can stay time-agnostic — don't retrofit a full day/night rewrite into every existing scene just because a clock exists. Reserve an explicit time-of-day variant for a location where the hour materially changes what's there: crowd density, what's open vs. shuttered, what light source is lit, whether a gate is manned. Before writing a new hub/location, ask whether it actually looks or feels different at the hour the player's likely to arrive — if not, one time-agnostic pass is correct, not an oversight.
+* **The Neglect Clock (Hunger/Fatigue) Is Engine-Global, Not File-Local.** `minutes_since_meal`/`minutes_since_rest`/`neglect_damage_hunger`/`neglect_damage_fatigue` are plain global stats, and the math lives once in `calendar.txt`'s `advance_time` — any future scene file (a split-out Port Valen district, a new town, a travel chapter) gets full hunger/fatigue tracking for free just by calling `*gosub_scene calendar advance_time` when its own action should cost time, exactly like every other chapter already does; nothing resets or pauses just because the player crossed a file boundary. The only per-location cost is repeating the 3-line neglect-death check (see Section 13's `*goto_scene`-from-`*gosub_scene` entry) at whatever call site can drive `hp_current` to 0 — and actually calling `advance_time` at all. District travel in Port Valen now does this (see the travel-time entry below); a district's own internal content (browsing/interacting once already there) still doesn't advance time on its own.
+* **In-City Travel Time Is Distance-Based (One Number Per Location), Not a Point-to-Point Matrix.** `current_district` (a plain global stat, set at the top of the compound hub and every district label) is the single source of truth for "where is the PC right now." `get_district_distance` gives each location one fixed distance-from-the-compound value (Harbor 15m, Civic Heights 35m, Upper Wharves 40m, Dredge-End 60m); any leg's cost is just the sum of both ends' distances via the shared `port_valen_travel_to` primitive, which every transition routes through — opening travel from the compound, going district-to-district directly, and returning home all cost the same whichever direction they're walked, computed the same way. A full pairwise matrix for 5 locations is already 20 hand-authored entries and gets worse every time a location is added; this scales additively (one more number) instead. `port_valen_travel`'s own framing prose (and any sensory detail tied to being near the water) also branches on `current_district` for the same reason as the time-of-day rule above — it's reachable from every district now, not just the compound, so it can't assume a single fixed vantage. This pattern is Port-Valen-specific today (district names and the final dispatch are file-local `*goto`s) — deliberately not generalized into a shared cross-town engine yet, since there's only one town with districts to generalize *from*. Once a second town needs its own internal district travel, extract the shared version then (prefix ids to keep names unique across towns, e.g. `"portvalen_harbor"`, and swap the final dispatch to `*goto_scene` so it can land in any town's file) rather than copy-pasting this file's version wholesale. Inter-town travel (leaving Port Valen entirely) is a separate, higher-level system — hours/days instead of minutes, its own narrative treatment — not a bigger version of this one.
+* **`day_of_week` and `weather` Are Pure Derived Stats, Recomputed Inside `advance_time`'s Existing Guard — Not New Tracked State.** Both live in `calendar.txt`. `day_of_week` is `(campaign_day - 1) modulo 7` mapped to one of 7 names (Ironday/Tideday/Marketday/Hearthday/Forgeday/Greyday/Hallowday), recomputed unconditionally every call right alongside `calendar_date`/`calendar_month` — a pure function of `campaign_day`, so it carries zero replay-safety risk of its own, same as `calendar_month`/`current_season`. `weather` is a genuine `*rand`, so it can't be unconditional the same way — it's rolled once per calendar day, weighted by `current_season`, deliberately placed *inside* the existing `*if (days_to_pass > 0)` block (itself already inside `time_advance_locked`'s guard), which gives it "once per day" semantics and refresh-safety for free without a dedicated lock of its own. Both are intended as hooks for future content to gate on directly (`*if (day_of_week = "Marketday")`, `*if (weather = "Storm")`) — an NPC schedule or a shop's open days needs nothing more than reading `day_of_week`.
+* **Any Check Can Become Weather-Aware With One Line — No New Engine Mechanism Needed.** `roll_d20_check` already reads `advantage`/`disadvantage` as generic caller-set booleans (that's how racial traits, Guidance, and prep-flag bonuses like `prep_waterproof_gear` all work) — a check becomes weather-sensitive the exact same way, by setting `*if (weather = "Storm") *set disadvantage true` (or an `*or`-chain of several values) right before its own `*gosub_scene startup roll_d20_check`, no different in cost from any other situational modifier already scattered through the game. Multiple independent sources (weather, a distracted-PC flag, a racial trait) can each set the same boolean true with no conflict — `roll_d20_check` only ever asks "is it true," not "how many things made it true." Distinguish *what kind* of hazard the weather represents rather than one blanket "bad weather = disadvantage on everything" flag: `port_valen.txt`'s boom-passage checks split it into a physical/footing hazard (Storm/Rain/Snow/Sleet/Blizzard, applied to the STR/DEX options) and a visual hazard (Fog/Storm/Snow/Blizzard, applied to the WIS "read the current" option) via two `*temp` booleans computed once before the `*choice`, not a repeated inline condition per option. Don't retrofit this onto a scene whose base prose already unconditionally assumes bad weather (the very next beat, `transit_cold_approach`, describes gorge wind and spray no matter what `weather` rolled) — wiring the stat in there would first need that prose rewritten to branch on `weather` too, a bigger job than adding one check modifier.
+
+## 13. Fights Are a Consequence of a Failed Roll, Not a Given
+* **A quest that can end in combat needs a real approach beat first** — jumping straight from "accept" to "combat started" skips the tension a skill-based approach builds. Mirror the culvert's three-way split: a careful approach granting `advantage` on success with no failure penalty, a clever approach that can resolve the whole thing without a fight, and a no-check "just go in" for anyone skipping straight to combat.
+* **A non-combat resolution still has to satisfy what the quest-giver asked for.** If the stated goal is elimination, a bypass has to still be a kill (an environmental kill reads as clever, not anticlimactic) — leaving the threat alive doesn't close the request even if it removes the danger. Same reward as a combat win, since the practical outcome is identical.
+* **A failed bypass needs a real, asymmetric cost, not "the fight starts anyway."** The culvert's stealth failure costs only the forfeited advantage; its investigation failure specifically alerts the creature and hands *it* the advantage. Differentiate per approach rather than converging every failure on the same neutral outcome.
+
+## 14. Downtime Prep -> Consequence Idioms (Two Reusable Shapes)
+* **A downtime/hub flag pays off as `advantage` on a specific later check, never as an artificial penalty for skipping it.** `battle_black_sinks.txt` reads camp-night flags (`prep_marsh_intel`, `prep_honed_blade`, `prep_odessa_salve`) at specific points and does `*set advantage true` before the relevant `roll_d20_check` (or, for `prep_odessa_salve`, a free heal) — the reward for doing the legwork is a better shot at the roll, not a bonus stat; skipping it just means rolling that check cold, exactly as if the flag had never existed. `port_valen.txt`'s river-transit chapter reuses this same shape one chapter later, reading Alderford-era flags (`alder_river_chain_cleared`, `prep_waterproof_gear`) that had been set but never consumed anywhere else in the game. Absence of prep should never read as a debuff in the prose — it reads as "you don't get the edge everyone else who prepared got."
+* **A failed check can compound into the *next* beat via `disadvantage`, instead of dealing damage — a second reusable idiom for travel/journey chapters specifically.** `port_valen.txt`'s two river-crossing beats chain this way: a failed boom-passage check sets `river_crossing_rattled` (soaked gear, a grazed hull — no HP cost), and the very next beat reads `*if (river_crossing_rattled) *set disadvantage true` before its own roll. `roll_d20_check` already cancels advantage+disadvantage together when both are true (confirmed in `combat.txt`), so a `prep_*`-driven `advantage` and a compounding `disadvantage` compose for free with zero extra guard code — a player who rushed prep *and* muffed the first beat is playing at true-neutral odds on the second, not doubly punished. Reach for this shape (a boolean flag read once, one beat later) rather than inventing a new damage-application subroutine for a non-combat journey chapter; there is no shared, cross-file damage primitive outside `combat.txt`'s fight engine (`battle_take_damage` is scene-local to `battle_black_sinks.txt` and can't be `*gosub`'d from another file), so a travel chapter that genuinely wants HP cost on failure needs its own small local subroutine — compounding disadvantage is the cheaper, no-new-code default.
+* **Two `*gosub_scene calendar advance_time` calls on the same page (no intervening `*choice` between them) will double-advance the clock on a refresh.** `calendar.txt`'s replay guard (`time_advance_locked`/`locked_time_advance_page_id`/`locked_time_advance_id`) only remembers the *most recent* `(choice_page_id, time_advance_call_id)` pair — a scalar, not a set — so a second call on the same page overwrites the first's memory of ever having fired. A refresh that replays from that page's start re-runs the first call's math again, since its own `time_advance_call_id` no longer matches what's now locked. This is exactly the same lock-shape flaw Section 13 already documents for `resolve_enemy_attack` ("a single shared last-call id only tracks the most recent caller, and breaks once a subroutine is called 3+ times on one page") — `advance_time` has the identical limitation, just never triggered before `port_valen.txt` became the first caller to invoke it twice on one page (a "boom already cleared" flow-through with no player choice in between the two legs). **Fix at the call site, not in `calendar.txt` itself:** force a real page boundary (`*page_break`) between any two `advance_time` calls that could otherwise land on the same page — a `*page_break` increments `choice_page_id` exactly like a real `*choice` resolution does (confirmed in `web/scene.js`), so this is enough on its own, with no change to the shared subroutine required.
+
+

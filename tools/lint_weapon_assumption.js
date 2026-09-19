@@ -157,6 +157,14 @@ const EQUIPMENT_RULES = [
     inlineGates: /@\{[^{}]*(?:equipped_cloak|equipped_cloak_id)[^{}]*\|/i,
     desc: 'Assumes protagonist is wearing a cloak/mantle.',
   },
+  {
+    module: 'APPAREL',
+    id: 'coat-pocket-assumption',
+    regex: /\b(?:your|my)\s+(?:coat|jacket|vest|pockets?)\b/i,
+    gates: /\b(?:armor_desc\s*=\s*["']Tailored vest["']|equipped_chest)\b/i,
+    inlineGates: /@\{[^{}]*(?:armor_desc|equipped_chest)[^{}]*\|/i,
+    desc: 'Assumes protagonist is wearing a tailored coat, jacket, vest, or has pockets. Items belong in pouches, satchels, or belts.',
+  },
 
   // ── MODULE 5: RANGED ASSUMPTIONS ─────────────────────────────
   {
@@ -213,6 +221,10 @@ const EQUIPMENT_RULES = [
 const GLOBAL_WHITELIST = [
   // Disgraced Scion origin backstory prologue (pawned ring before campaign start)
   /pawned your signet ring at a frontier outpost/i,
+  // Disgraced Scion intake selection description
+  /You button a close-fitted vest under your coat/i,
+  // Lyra streetwise advice dialogue in Alderford
+  /fishing your pockets out of the muck/i,
 ];
 
 // Walk backward from match line index to find enclosing conditions

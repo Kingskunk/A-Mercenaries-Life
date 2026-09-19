@@ -175,6 +175,13 @@ function compile(){
   // *scene_list -- it isn't "the next chapter" for anyone's *finish chain,
   // it's a jump target reached on death from any location's own scene.
   verifyFileName("death.txt");
+  // "equipment" is the paper-doll loadout library (equipment.txt's own header
+  // comment), reached only via *gosub_scene equipment <label> -- from
+  // startup.txt's update_dnd_stats at character creation and every dev-menu
+  // preset, plus quest reward sites. Same shape as combat.txt/death.txt above,
+  // so it is deliberately NOT in *scene_list and has to be listed here or the
+  // compiled build fails with "scene doesn't exist" the moment chargen runs.
+  verifyFileName("equipment.txt");
   // Port Valen's three smaller districts (Dredge-End, Civic Heights, Upper
   // Wharves) were split out of port_valen.txt into their own files once each
   // had enough content to be worth isolating (see each file's own header
@@ -240,12 +247,14 @@ function compile(){
       console.log("Game title set to: " + csTitle);
     }
     if (csAuthor != "") {
-      patt = /^\*author[\s]+/i
-      csAuthor = csAuthor.replace(patt, "");
-      patt = /<h2.*>.*<\/h2>/i;
-      if (patt.exec(bottom)) bottom = bottom.replace(patt, '<h2 id="author" class="gameTitle">by ' + csAuthor + "</h2>");
-      console.log("");
-      console.log("Author set to: " + csAuthor);
+      patt = /^\*author[\s]*/i
+      csAuthor = csAuthor.replace(patt, "").trim();
+      if (csAuthor != "") {
+        patt = /<h2.*>.*<\/h2>/i;
+        if (patt.exec(bottom)) bottom = bottom.replace(patt, '<h2 id="author" class="gameTitle">by ' + csAuthor + "</h2>");
+        console.log("");
+        console.log("Author set to: " + csAuthor);
+      }
     }
   
   var ifidLine = scene.lines.find(line => /^\*ifid/i.test(line));
