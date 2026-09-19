@@ -92,27 +92,36 @@
 *create starting_armor_desc "Padded gambeson & leather brigandine"
 *create starting_armor_type "brigandine"
 *create equipped_weapon_id "starting"
+*create weapon_prose "falchion"
 *create equipped_armor_id "starting"
+*create armor_prose "linen shirt"
+*create shield_prose "free off-hand"
 *create loadout_initialized false
 
 *comment --- PAPER-DOLL SLOTS: HEAD / CLOAK / HANDS / WAIST / FEET ---
 *create equipped_head_id "none"
 *create head_desc "Bare head"
+*create head_prose "bare head"
 *create head_ac 0
 *create head_is_armor false
 *create equipped_cloak_id "none"
 *create cloak_desc "None"
+*create cloak_prose "bare shoulders"
 *create equipped_hands_id "none"
 *create hands_desc "None"
+*create hands_prose "bare hands"
 *create equipped_waist_id "none"
 *create waist_desc "None"
+*create waist_prose "unbelted waist"
 *create equipped_feet_id "none"
 *create feet_desc "Bare feet"
+*create feet_prose "bare feet"
 
 *comment --- SIDEARM (Swappable Secondary Weapon) ---
 *create equipped_sidearm_id "none"
 *create sidearm "none"
 *create sidearm_desc "None"
+*create sidearm_prose "none"
 *create sidearm_damage "none"
 *create sidearm_damage_type "none"
 *create sidearm_type "none"
@@ -121,10 +130,13 @@
 *comment --- ACCESSORIES & ATTUNEMENT ---
 *create equipped_neck_id "none"
 *create neck_desc "Bare throat"
+*create neck_prose "bare throat"
 *create equipped_ring1_id "none"
 *create ring1_desc "Bare finger"
+*create ring1_prose "bare finger"
 *create equipped_ring2_id "none"
 *create ring2_desc "Bare finger"
+*create ring2_prose "bare finger"
 *create max_attunement_slots 5
 *create attuned_count 0
 *create hearthstone_attuned false
@@ -1486,19 +1498,7 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
   *set shield_equipped has_shield
   *set base_constitution constitution
   *set loadout_initialized true
-*gosub apply_weapon_loadout
-*gosub apply_armor_loadout
-*gosub apply_head_loadout
-*gosub apply_cloak_loadout
-*gosub apply_hands_loadout
-*gosub apply_waist_loadout
-*gosub apply_feet_loadout
-*gosub apply_sidearm_loadout
-*gosub apply_neck_loadout
-*gosub apply_ring_loadout "1" equipped_ring1_id
-*gosub apply_ring_loadout "2" equipped_ring2_id
-
-*gosub recalculate_armor_class
+*gosub_scene equipment apply_all_loadouts
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1537,342 +1537,10 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
   *set hp_current hp_max
 *if (hp_current < 1)
   *set hp_current 1
-*gosub recalculate_armor_class
+*gosub_scene equipment recalculate_armor_class
 *return
 
-*label apply_neck_loadout
-*if (equipped_neck_id = "none")
-  *set neck_desc "Bare throat"
-*if (equipped_neck_id = "hearthstone_talisman")
-  *set neck_desc "Torvald's Hearthstone Talisman, on a braided oxhide cord"
-*if (equipped_neck_id = "elspeth_weir_knot")
-  *set neck_desc "Elspeth's Braided Weir-Knot"
-*return
-
-*label equip_neck
-*params new_neck_id
-*set equipped_neck_id new_neck_id
-*gosub apply_neck_loadout
-*return
-
-*comment *gosub_scene startup attune_item <id>
-*label attune_item
-*params item_id
-*if (attuned_count < max_attunement_slots)
-  *if ((item_id = "hearthstone_talisman") and (not(hearthstone_attuned)))
-    *set hearthstone_attuned true
-    *set attuned_count + 1
-    *gosub equip_neck "hearthstone_talisman"
-    *gosub recalculate_attuned_bonuses
-*return
-
-*comment *gosub_scene startup unattune_item <id>
-*label unattune_item
-*params item_id
-*if ((item_id = "hearthstone_talisman") and (hearthstone_attuned))
-  *set hearthstone_attuned false
-  *set attuned_count - 1
-  *if (equipped_neck_id = "hearthstone_talisman")
-    *gosub equip_neck "none"
-  *gosub recalculate_attuned_bonuses
-*return
-
-*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment ARMOR CLASS RECOMPUTE
-*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*label recalculate_armor_class
-*temp base_ac 11
-*temp effective_dex_mod dex_mod
-*if (armor_type = "cloth")
-  *set base_ac 10
-  *comment Mage Armor: 13 + DEX while not wearing armor
-  *if (wizard_spell = "mage_armor") and (not(head_is_armor))
-    *set base_ac 13
-  *comment Barbarian Unarmored Defense: 10 + DEX + CON while not wearing armor
-  *if (character_class = "barbarian") and (not(head_is_armor))
-    *set base_ac (10 + con_mod)
-*if ((armor_type = "leather") or (armor_type = "buff_coat"))
-  *set base_ac 11
-*if ((armor_type = "brigandine") or (armor_type = "chain_jack"))
-  *set base_ac 13
-  *if (effective_dex_mod > 2)
-    *set effective_dex_mod 2
-
-*set armor_class (base_ac + effective_dex_mod)
-*if (head_is_armor) and (head_ac > 0)
-  *set armor_class + head_ac
-
-*if (shield_equipped)
-  *set armor_class + 2
-
-*comment Fighting Style: Defense (+1 AC while wearing armor)
-*if (fighter_fighting_style = "defense")
-  *set armor_class + 1
-
-*return
-
-*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment EQUIPMENT LOADOUT (Weapons & Armor)
-*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*label apply_weapon_loadout
-*if (equipped_weapon_id = "starting")
-  *set weapon starting_weapon
-  *set weapon_desc starting_weapon_desc
-  *set weapon_damage starting_weapon_damage
-  *set weapon_damage_type starting_weapon_damage_type
-  *set weapon_type starting_weapon_type
-  *set weapon_hands starting_weapon_hands
-*if (equipped_weapon_id = "timber_axe")
-  *set weapon "timber axe"
-  *set weapon_desc "Highland Hewing Axe"
-  *set weapon_damage "1d8 slashing"
-  *set weapon_damage_type "slashing"
-  *set weapon_type "melee"
-  *set weapon_hands "one_handed"
-*if (equipped_weapon_id = "stiletto")
-  *set weapon "bodkin stiletto"
-  *set weapon_desc "Alderford Bodkin Stiletto"
-  *set weapon_damage "1d4 piercing"
-  *set weapon_damage_type "piercing"
-  *set weapon_type "finesse"
-  *set weapon_hands "one_handed"
-*if (weapon_hands = "two_handed")
-  *set shield_equipped false
-*else
-  *if (has_shield) and (wants_shield_equipped)
-    *set shield_equipped true
-*return
-
-*comment *gosub_scene startup equip_weapon <id>
-*label equip_weapon
-*params new_weapon_id
-*set equipped_weapon_id new_weapon_id
-*gosub apply_weapon_loadout
-*gosub recalculate_armor_class
-*return
-
-*comment *gosub_scene startup toggle_shield_equipped
-*label toggle_shield_equipped
-*if (not(weapon_hands = "two_handed"))
-  *set shield_equipped not(shield_equipped)
-  *set wants_shield_equipped shield_equipped
-*gosub recalculate_armor_class
-*return
-
-*label apply_armor_loadout
-*if (equipped_armor_id = "starting")
-  *set armor starting_armor
-  *set armor_desc starting_armor_desc
-  *set armor_type starting_armor_type
-*return
-
-*comment *gosub_scene startup equip_armor <id>
-*label equip_armor
-*params new_armor_id
-*set equipped_armor_id new_armor_id
-*gosub apply_armor_loadout
-*gosub recalculate_armor_class
-*return
-
-*label apply_head_loadout
-*if (equipped_head_id = "arming_cap")
-  *set head_desc "Padded Arming Cap"
-  *set head_ac 0
-  *set head_is_armor false
-*if (equipped_head_id = "camo_hood")
-  *set head_desc "Shadowed Camo Hood"
-  *set head_ac 0
-  *set head_is_armor false
-*if (equipped_head_id = "scholar_coif")
-  *set head_desc "Scholar's Linen Coif"
-  *set head_ac 0
-  *set head_is_armor false
-*if (equipped_head_id = "torvald_iron_sallet")
-  *set head_desc "Cold-Hammered Iron Sallet"
-  *set head_ac 1
-  *set head_is_armor true
-*if (equipped_head_id = "torvald_hide_cap")
-  *set head_desc "Boiled-Hide Watch-Cap"
-  *set head_ac 0
-  *set head_is_armor false
-*if (equipped_head_id = "none")
-  *set head_desc "Bare head"
-  *set head_ac 0
-  *set head_is_armor false
-*return
-
-*label equip_head
-*params new_head_id
-*set equipped_head_id new_head_id
-*gosub apply_head_loadout
-*gosub recalculate_armor_class
-*return
-
-*comment --- PAPER-DOLL SLOTS ---
-*label apply_cloak_loadout
-*if (equipped_cloak_id = "wool_mantle")
-  *set cloak_desc "Iron Bull Wool Mantle"
-*if (equipped_cloak_id = "camo_cloak")
-  *set cloak_desc "Weathered Camouflage Cloak"
-*if (equipped_cloak_id = "weather_cloak")
-  *set cloak_desc "Oiled Marcher Weather-Cloak"
-*if (equipped_cloak_id = "talia_oiled_cloak")
-  *set cloak_desc "Talia's Oiled Brine-Cloak"
-*if (equipped_cloak_id = "none")
-  *set cloak_desc "None"
-*return
-
-*label equip_cloak
-*params new_cloak_id
-*set equipped_cloak_id new_cloak_id
-*gosub apply_cloak_loadout
-*return
-
-*label apply_hands_loadout
-*if (equipped_hands_id = "leather_wraps")
-  *set hands_desc "Hardened Leather Weapon-Wraps"
-*if (equipped_hands_id = "archer_bracers")
-  *set hands_desc "Supple Archer Bracers"
-*if (equipped_hands_id = "scribe_gloves")
-  *set hands_desc "Scribe Wrist-Bracers & Writing Gloves"
-*if (equipped_hands_id = "rorik_grip_wraps")
-  *set hands_desc "Tarred Linen Grip-Wraps"
-*if (equipped_hands_id = "none")
-  *set hands_desc "None"
-*return
-
-*label equip_hands
-*params new_hands_id
-*set equipped_hands_id new_hands_id
-*gosub apply_hands_loadout
-*return
-
-*label apply_waist_loadout
-*if (equipped_waist_id = "soldiers_belt")
-  *set waist_desc "Heavy Soldier's Belt & Frog"
-*if (equipped_waist_id = "scabbard_belt")
-  *set waist_desc "Concealed Scabbard Belt"
-*if (equipped_waist_id = "satchel_harness")
-  *set waist_desc "Satchel-Harness & Vellum Roll"
-*if (equipped_waist_id = "rorik_campaign_belt")
-  *set waist_desc "Iron-Riveted Campaign Belt"
-*if (equipped_waist_id = "none")
-  *set waist_desc "None"
-*return
-
-*label equip_waist
-*params new_waist_id
-*set equipped_waist_id new_waist_id
-*gosub apply_waist_loadout
-*return
-
-*label apply_feet_loadout
-*if (equipped_feet_id = "marching_boots")
-  *set feet_desc "Hobnailed Marching Boots"
-*if (equipped_feet_id = "scout_boots")
-  *set feet_desc "Soft-Soled Scout Wraps"
-*if (equipped_feet_id = "riding_boots")
-  *set feet_desc "Cured Travel Riding Boots"
-*if (equipped_feet_id = "talia_deck_boots")
-  *set feet_desc "Talia's Pitch-Sealed Deck Boots"
-*if (equipped_feet_id = "none")
-  *set feet_desc "Bare feet"
-*return
-
-*label equip_feet
-*params new_feet_id
-*set equipped_feet_id new_feet_id
-*gosub apply_feet_loadout
-*return
-
-*comment --- SIDEARM SLOTS ---
-*label apply_sidearm_loadout
-*if (equipped_sidearm_id = "starting")
-  *set sidearm starting_weapon
-  *set sidearm_desc starting_weapon_desc
-  *set sidearm_damage starting_weapon_damage
-  *set sidearm_damage_type starting_weapon_damage_type
-  *set sidearm_type starting_weapon_type
-  *set sidearm_hands starting_weapon_hands
-*if (equipped_sidearm_id = "ash_spear")
-  *set sidearm "ash-wood spear"
-  *set sidearm_desc "Slung Ash-Wood Spear"
-  *set sidearm_damage "1d6/1d8 piercing"
-  *set sidearm_damage_type "piercing"
-  *set sidearm_type "reach"
-  *set sidearm_hands "one_handed"
-*if (equipped_sidearm_id = "felling_axe")
-  *set sidearm "felling axe"
-  *set sidearm_desc "Slung Felling Axe"
-  *set sidearm_damage "1d8 slashing"
-  *set sidearm_damage_type "slashing"
-  *set sidearm_type "melee"
-  *set sidearm_hands "one_handed"
-*if (equipped_sidearm_id = "matched_dagger")
-  *set sidearm "matched dagger"
-  *set sidearm_desc "Matched Sidearm Dagger"
-  *set sidearm_damage "1d4 piercing"
-  *set sidearm_damage_type "piercing"
-  *set sidearm_type "finesse"
-  *set sidearm_hands "one_handed"
-*if (equipped_sidearm_id = "hand_crossbow")
-  *set sidearm "hand crossbow"
-  *set sidearm_desc "Holstered Hand Crossbow"
-  *set sidearm_damage "1d6 piercing"
-  *set sidearm_damage_type "piercing"
-  *set sidearm_type "ranged"
-  *set sidearm_hands "one_handed"
-*if (equipped_sidearm_id = "bodkin_dagger")
-  *set sidearm "bodkin dagger"
-  *set sidearm_desc "Slim Bodkin Dagger"
-  *set sidearm_damage "1d4 piercing"
-  *set sidearm_damage_type "piercing"
-  *set sidearm_type "finesse"
-  *set sidearm_hands "one_handed"
-*if (equipped_sidearm_id = "none")
-  *set sidearm "none"
-  *set sidearm_desc "None"
-  *set sidearm_damage "none"
-  *set sidearm_damage_type "none"
-  *set sidearm_type "none"
-  *set sidearm_hands "one_handed"
-*return
-
-*comment *gosub_scene startup swap_active_sidearm
-*label swap_active_sidearm
-*temp swap_hold_id equipped_weapon_id
-*set equipped_weapon_id equipped_sidearm_id
-*set equipped_sidearm_id swap_hold_id
-*gosub apply_weapon_loadout
-*gosub apply_sidearm_loadout
-*gosub recalculate_armor_class
-*return
-
-*comment --- RINGS ---
-*label apply_ring_loadout
-*params ring_slot item_id
-*temp new_ring_desc "Bare finger"
-*if (item_id = "none")
-  *set new_ring_desc "Bare finger"
-*if (item_id = "toll_seal_ring")
-  *set new_ring_desc "Customs Officer's Signet Ring"
-*if (item_id = "althea_votive_ring")
-  *set new_ring_desc "Saint Althea's Votive River-Stone Ring"
-*if (ring_slot = "1")
-  *set ring1_desc new_ring_desc
-*else
-  *set ring2_desc new_ring_desc
-*return
-
-*comment *gosub_scene startup equip_ring <"1"|"2"> <id>
-*label equip_ring
-*params ring_slot new_item_id
-*if (ring_slot = "1")
-  *set equipped_ring1_id new_item_id
-*else
-  *set equipped_ring2_id new_item_id
-*gosub apply_ring_loadout ring_slot new_item_id
-*return
+*comment Note: Equipment loadouts and AC calculations are in equipment.txt
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment D&D 5E D20 SKILL CHECK ENGINE
