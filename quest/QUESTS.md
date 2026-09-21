@@ -46,7 +46,8 @@ graph TD
     subgraph Chapter 3: Port Valen
         Q8["Quest 1: The Silt-Gate Contraband"]
         Q9["Harbor POI Rumors & Chart House Navigation"]
-        Q10["Quest 2: The Rusty Anchor -- The Low-Water Box"]
+        Q10a["Quest 2a: A Bowl for the Oar-Maker -- The Rusty Anchor (tier 1)"]
+        Q10["Quest 2: The Rusty Anchor -- The Low-Water Box (tier 2)"]
         Q11["Crane Three: Day-Labor"]
         Q12["Quest 3: The Rotten Rib -- Iron Wharves"]
         Q13["Quest 4: What the Bar Keeps -- The Pier"]
@@ -140,11 +141,36 @@ graph TD
 
 ---
 
-### Quest 2: The Rusty Anchor — The Low-Water Box
+### Quest 2a: A Bowl for the Oar-Maker (tier 1 of The Rusty Anchor)
+* **Scene File:** `port_valen_dredge_end.txt` (`pv_anchor_counter`, `pv_anchor_hobb_walk`, `pv_anchor_hobb_after`, `pv_anchor_report`; hub gates at `pv_anchor_hub` / `pv_anchor_menu`).
+* **District:** Dredge-End, the Rusty Anchor and an oar-maker's shed three doors down the cut.
+* **Purpose:** a small, ordinary favor in an ordinary-looking taproom, so Sal's later trust in a stranger is earned before the box job is on the table. It also seeds the households in the box (Hobb's note) and the collector's runner.
+* **Briefing (player-initiated, no quest-giver approach):** the first visit is a talkative room with a covered bowl at an empty stool. The player chooses "Take a stool at the counter" and can ask about the pot and who drinks there (both optional, free). Asking about the bowl gets Hobb's name and a plain yes/no: carry it down the cut, or leave it. Sal never asks.
+* **Objective Flow:**
+  1. **Pick up the pot** (`pv_anchor_counter`): Sal hands over a pot and a loaf and says to bring the pot back. Handing it back later (no cost) returns the errand to unstarted.
+  2. **The runner at Hobb's door** (`pv_anchor_hobb_walk`, 20 min): a collector's runner is about to chalk Hobb's door for a mark and five. One obstacle, four approaches, all rejoining at `pv_anchor_hobb_after`.
+  3. **Report** (`pv_anchor_report`, 20 min): Sal reacts to the outcome; all state changes happen once here, behind `anchor_errand_resolved`.
+* **Approaches (Rule of Three plus a quiet option):**
+
+| Approach | Check | Outcome |
+| :--- | :--- | :--- |
+| Talk the runner into waiting | `[CHA DC 11]` | `talked`. Door stays clean. Sal pays 10 copper, `anchor_sal_trust +1` |
+| Read his tablet | `[INT DC 11]` | `read`. The figure was padded and drops to one mark. Same reward as `talked` |
+| Trip and put his chalk in the canal | `[DEX DC 11]` | `slipped`. Buys Hobb a week. Same reward as `talked`. Failure spills half the stew and is a `failed` outcome |
+| Pay the mark and five | 15 copper, no roll | `paid`. Door stays clean, `anchor_sal_trust +1`, no payback from Sal. Not offered once a roll has been failed |
+| Hand Hobb the pot and keep out | none | `stayed_out`. Door chalked, no reward, no rep change |
+
+* **Loss state:** `anchor_errand_resolution = "failed"` (any failed roll). Hobb's door is chalked, `black_tally_rep -1` (the runner remembers the player), no reward. It has its own dossier line and its own taproom rumor. A failed roll never leads to the pay route, and the pot is always returned, so failing never converts into the reward.
+* **Gate on the second tier:** any resolution finishes the errand. The box job only shows on a later day (`campaign_day > anchor_errand_day`), and even then only as a visible tell (the room turns tense) and a hub option the player chooses to take.
+* **Cross-hooks:** the box reveal (`pv_anchor_the_box`) adds "The oar-maker's note is signed Hobb." when `met_hobb`. Rumors: `anchor_errand_rumor` (clean door vs chalked door).
+* **Lorebook and sidebar:** `hobb` entry (unlock `met_hobb`), reactive Sal, Rusty Anchor and Dredge-End entries; sidebar quest `anchor_errand` in `web/mygame/quest-data.js`; dossier lines in `choicescript_stats.txt`.
+* **Variables:** `anchor_errand_stage` (`unstarted`, `active`, `resolved`), `anchor_errand_resolution` (`none`, `paid`, `talked`, `read`, `slipped`, `stayed_out`, `failed`), `anchor_errand_resolved`, `anchor_errand_day`, `anchor_errand_rumor`, `anchor_talk_1`, `anchor_talk_2`, `met_hobb`.
+
+### Quest 2: The Rusty Anchor — The Low-Water Box (tier 2)
 * **Scene File:** `port_valen.txt` (`pv_poi_rusty_anchor`, `pv_anchor_hub`, `pv_anchor_low_water`, `pv_anchor_bilge`, `pv_anchor_the_box`, `pv_anchor_choice`, `pv_anchor_aftermath`)
 * **District:** Dredge-End (reached from `port_valen_dredge_end`'s own `*choice`, alongside the Silt-Gate flume).
 * **Design doc:** `quest/RUSTY_ANCHOR_PLAN.md` — full rationale, the scrapped-draft postmortem, and the rescale-and-review history.
-* **Briefing:** taphouse-keeper Big Sal hires the player, on sight, to pull an iron-banded box out of a flooded barge void before the harbor-master's Forgeday lien stamp exposes it to inspection. She undersells the job and lies about the contents — catchable with a `[WIS DC 12]` Insight check at the offer, or buyable outright for an extra silver mark at the haggle.
+* **Briefing:** once the tier-1 errand is finished, and on a later day, the room turns tense (two men who are not drinking, a man sounding the water under the deck) and the player chooses to take the stool at the end of the counter. Taphouse-keeper Big Sal then hires the player, having seen how they handled Hobb, to pull an iron-banded box out of a flooded barge void before the harbor-master's Forgeday lien stamp exposes it to inspection. She undersells the job and lies about the contents — catchable with a `[WIS DC 12]` Insight check at the offer, or buyable outright for an extra silver mark at the haggle.
 * **Objective Flow:**
   1. **The hub (`pv_anchor_hub`):** a living taproom — rationed stew tab and a private loft, both gated behind actually earning Sal's trust (see Resolution below), taproom rumors, and the job hook.
   2. **The descent (`pv_anchor_bilge`):** wait for the ebb or go in early (a real risk/reward tradeoff: going early saves hours, but every descent check is made at **disadvantage** because the water is still high, and the hint shows it). Five approaches at full archetype parity: `[STR DC 13]` force it, `[DEX DC 13]` thread it, `[INT DC 13]` read the hull first, `[CHA DC 13]` talk the sounding-man into holding the line, plus `[Cantrip: Mage Hand]`/`[Cantrip: Light]`/`[Cantrip: Thaumaturgy]` alternatives. **Failure is a permanent loss** (`pv_anchor_descent_botched`): the box goes into the silt, no fee is paid, and the quest closes.

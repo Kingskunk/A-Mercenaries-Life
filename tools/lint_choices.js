@@ -46,6 +46,16 @@
  *            almost as thin as one — three is treated as the standard
  *            worth aiming for. Reported as a review list, not an error.
  *
+ * Exception for RULE C only: a two-option choice that is deliberately two
+ * (a plain yes/no, a fork where a third option would be padding) can opt out
+ * with a marker comment on the lines directly above the *choice:
+ *
+ *     *comment lint-ok two-options: plain yes or no
+ *     *choice
+ *
+ * The block is skipped, and the number of exempted blocks is printed at the
+ * end so exemptions stay visible. The marker never hides Rule A/B errors.
+ *
  * This is a heuristic over the raw text, not a real ChoiceScript parser,
  * and deliberately errs toward under-flagging: it assumes this project's
  * consistent 2-space-per-level indentation and simple `VAR = "value"`
@@ -189,11 +199,23 @@ function analyzeChoiceContext(lines, choiceLineIdx, currentLabel, allTexts, bloc
 
 const EQUALITY = /\*(?:if|elseif)\s*\(\s*([\w.]+)\s*=\s*"([^"]*)"\s*\)\s*$/;
 
+// True if a `*comment lint-ok two-options` marker sits in the comment/blank lines
+// directly above the *choice (see the header). Walks up until it hits real content.
+function hasTwoOptionExemption(lines, choiceLineIdx) {
+  for (let c = choiceLineIdx - 1; c >= 0 && choiceLineIdx - c <= 6; c--) {
+    const line = lines[c].trim();
+    if (/^\*comment\s+lint-ok\s+two-options\b/i.test(line)) return true;
+    if (line !== '' && !/^\*comment\b/i.test(line)) return false;
+  }
+  return false;
+}
+
 function lintFile(file) {
   const text = fs.readFileSync(file, 'utf8');
   const lines = text.split(/\r?\n/);
   const findings = [];
   const skipped = [];
+  const exempted = [];
   let currentLabel = '(top-level)';
 
   for (let i = 0; i < lines.length; i++) {
@@ -266,8 +288,12 @@ function lintFile(file) {
           detail: `*choice resolves to ${totalHashes} option${totalHashes === 1 ? '' : 's'} — not a real choice`,
         });
       } else if (totalHashes === 2) {
-        const detail = analyzeChoiceContext(lines, i, currentLabel, allTexts, blockEndIdx, file);
-        findings.push({ file, line: choiceLineNum, rule: 'C', detail });
+        if (hasTwoOptionExemption(lines, i)) {
+          exempted.push({ file, line: choiceLineNum });
+        } else {
+          const detail = analyzeChoiceContext(lines, i, currentLabel, allTexts, blockEndIdx, file);
+          findings.push({ file, line: choiceLineNum, rule: 'C', detail });
+        }
       }
       continue;
     }
@@ -342,27 +368,33 @@ function lintFile(file) {
         });
       }
     } else if (guaranteedMin === 2) {
-      const detail = analyzeChoiceContext(lines, i, currentLabel, allTexts, blockEndIdx, file);
-      findings.push({
-        file,
-        line: choiceLineNum,
-        rule: 'C',
-        detail: `${detail} (worst case renders 2 options, best case ${possibleMax})`,
-      });
+      if (hasTwoOptionExemption(lines, i)) {
+        exempted.push({ file, line: choiceLineNum });
+      } else {
+        const detail = analyzeChoiceContext(lines, i, currentLabel, allTexts, blockEndIdx, file);
+        findings.push({
+          file,
+          line: choiceLineNum,
+          rule: 'C',
+          detail: `${detail} (worst case renders 2 options, best case ${possibleMax})`,
+        });
+      }
     }
   }
 
-  return { findings, skipped };
+  return { findings, skipped, exempted };
 }
 
 const files = collectScenes(target);
 let allFindings = [];
 let allSkipped = [];
+let allExempted = [];
 
 for (const file of files) {
-  const { findings, skipped } = lintFile(file);
+  const { findings, skipped, exempted } = lintFile(file);
   allFindings = allFindings.concat(findings);
   allSkipped = allSkipped.concat(skipped);
+  allExempted = allExempted.concat(exempted);
 }
 
 const errors = allFindings.filter((f) => f.rule === 'A' || f.rule === 'B');
@@ -381,6 +413,13 @@ if (advisories.length > 0) {
   console.log(`\n${advisories.length} two-option *choice(s) worth a look (not errors — three is the standard, not a requirement):`);
   for (const f of advisories) {
     console.log(`  ${path.relative(process.cwd(), f.file)}:${f.line} [Rule C] ${f.detail}`);
+  }
+}
+
+if (allExempted.length > 0) {
+  console.log(`\n${allExempted.length} deliberate two-option *choice(s) exempted with "*comment lint-ok two-options":`);
+  for (const e of allExempted) {
+    console.log(`  ${path.relative(process.cwd(), e.file)}:${e.line}`);
   }
 }
 

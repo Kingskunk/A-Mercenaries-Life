@@ -33,7 +33,36 @@ const path = require('path');
 
 const BASELINE_FILE = path.resolve(__dirname, 'vocab_baseline.json');
 
-const RESTRICTED_WORDS = [];
+// Trade and period jargon kept rare on purpose (see "Plain Word First" in
+// quest/QUEST_DESIGN_RULES.md and narrative_guidelines.md section 4). Tokens split on hyphens, so
+// "cross-peen" is counted as "peen". A limit of 0 means the plain word replaced it everywhere.
+const RESTRICTED_WORDS = [
+  { word: 'flume', maxUses: 10 },
+  { word: 'flumes', maxUses: 3 },
+  { word: 'sluice', maxUses: 5 },
+  { word: 'sluices', maxUses: 2 },
+  { word: 'windlass', maxUses: 0 },
+  { word: 'windlasses', maxUses: 0 },
+  { word: 'hogshead', maxUses: 0 },
+  { word: 'hogsheads', maxUses: 0 },
+  { word: 'ashlar', maxUses: 0 },
+  { word: 'portcullis', maxUses: 0 },
+  { word: 'chirurgeon', maxUses: 0 },
+  { word: 'chirurgeons', maxUses: 0 },
+  { word: 'cranequin', maxUses: 0 },
+  { word: 'cranequins', maxUses: 0 },
+  { word: 'capstan', maxUses: 1 },
+  { word: 'firkin', maxUses: 2 },
+  { word: 'peen', maxUses: 1 },
+  { word: 'neatsfoot', maxUses: 1 },
+  { word: 'dubbin', maxUses: 1 },
+  // Everyday words that turned into crutches. Limits sit below today's counts on purpose, so each
+  // run lists every use for review. "register" is mostly the Grey Waterway Toll Register item and
+  // the parish register; "ledger" should be a real book a character handles, not a figure of speech.
+  { word: 'ledger', maxUses: 20 },
+  { word: 'ledgers', maxUses: 5 },
+  { word: 'register', maxUses: 15 },
+];
 
 const WORD_GROUPS = [
   { name: 'written-record', words: ['ledger', 'tally', 'slate', 'register', 'chart', 'log', 'roster', 'tablet', 'dossier', 'manifest'] },

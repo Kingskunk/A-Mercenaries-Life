@@ -7,9 +7,10 @@
 *comment port_valen_dredge_end.txt's header for the full reasoning); told to
 *comment compile.js via its own hardcoded
 *comment verifyFileName("port_valen_civic_heights.txt") entry.
-*comment Currently an ambient-only stub -- no POIs or quests wired in yet.
-*comment The "travel elsewhere" exit below is the only line that crosses
-*comment the file boundary, via *goto_scene back into port_valen.txt.
+*comment One POI so far: the records house and its Open Roll (public contract
+*comment postings, described but not yet wired to quests); see the block at the
+*comment end of this file. The "travel elsewhere" exit below is the only line
+*comment that crosses the file boundary, via *goto_scene back into port_valen.txt.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label port_valen_civic_heights
@@ -20,7 +21,7 @@
 *line_break
 [b][⏳ Civic Heights Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
 *line_break
-The road from the Middle Ward ends at a broad plaza of cut limestone, and the buildings change from timber to stone. The Council Hall stands at its head, tall-windowed, with a bronze balance-scale taller than a man hung above its doors and the words [i]"The Free City of Port Valen"[/i] carved beneath it. Around the plaza stand the tax hall, the records house, and the magistrates' courts, each door carved with the city's three-masted seal. Painted boards mark the public windows, where petitioners wait beneath the eaves with cargo papers, tax notices, and residency tokens. The Port Watch headquarters stands beside the courts, its yard crowded with seized goods and complaint scrolls.
+The road from the Middle Ward ends at a broad plaza of cut limestone, and the buildings change from timber to stone. The Council Hall stands at its head, tall-windowed, with a bronze balance-scale taller than a man hung above its doors and the words [i]"The Free City of Port Valen"[/i] carved beneath it. Around the plaza stand the tax hall, the records house, and the magistrates' courts, each door carved with the city's three-masted seal. Painted boards mark the public windows, where petitioners wait beneath the eaves with cargo papers, tax notices, and residency tokens. Beside the windows, public scriveners sit at sloped pine desks, writing petitions and work contracts for anyone who cannot write their own. The Port Watch headquarters stands beside the courts, its yard crowded with seized goods and complaint scrolls.
 
 Two lines run at the tax hall. The long one, for householders and small traders, winds out the door and down the steps. The other is a side window with no line at all, where clerks in river-serpent colors hand in leather cases and take out stamped receipts.
 
@@ -36,6 +37,140 @@ The cathedral rises above the courts on an older foundation, its bells carrying 
   The Watch yard is emptying by degrees, though complaint tablets still change hands. Near the cathedral steps, the charity kitchen serves its last bowls before the bells call the evening service.
 *else
   The Watch yard has barred its inner gate. Candlelight shows through the cathedral doors, and a few late petitioners wait beneath the eaves with their papers tucked under their coats.
-*page_break Where to next…
-*goto_scene port_valen port_valen_travel
+*choice
+  # Cross the plaza to the records house. [~5 min]
+    *set minutes_to_pass 5
+    *set time_advance_call_id "pv_ch_records_1"
+    *gosub pv_ch_walk_time
+    *goto pv_ch_records_door
+  # [Travel: Head to another district]
+    *goto_scene port_valen port_valen_travel
 
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment THE RECORDS HOUSE AND THE OPEN ROLL
+*comment Port Valen's public contract roll, the answer to "where does a hireling go for work" without a
+*comment guild or an adventurers' board. Under city law a hire is not enforceable in the courts unless its
+*comment terms are posted with both seals (the patron's and the city's), so every honest hirer posts here.
+*comment Carved over the arch: "What Is Not on the Roll Is Not Owed." The Scales' provincial bounty boards
+*comment (Alderford's counting house) are their own channel; this is the public, legal one.
+*comment Clerk Tolliver keeps the Postings window. Hours: open Morning through Afternoon, including in bad
+*comment weather; closed at Dusk, Night, Pre-Dawn and Hallowday.
+*comment QUEST SLOT: radiant quests add a posting in pv_ch_roll_read, guarded by their own flag. Rumors
+*comment heard in the Conduit Baths' hot room (mw_rumor_*) can be the "heard about it" flags that unlock a
+*comment matching posting here.
+*comment CLAIMS HOOK: filing an unpaid-wage claim is described, not wired. A future quest would open at the
+*comment Claims window; the rule to follow is in Tolliver's answer (a posted contract can be enforced, an
+*comment unposted one cannot).
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label pv_ch_records_door
+*if (((time_period = "Dusk") or (time_period = "Night")) or (time_period = "Pre-Dawn")) or (day_of_week = "Hallowday")
+  *comment Closed: Dusk, Night, Pre-Dawn, Hallowday
+  [b]◈ THE RECORDS HOUSE[/b]
+  *line_break
+  Carved letters run across the lintel of the records house: [i]"What Is Not on the Roll Is Not Owed."[/i]
+  *if (day_of_week = "Hallowday")
+    The doors are shut for the holy day, and the plaza is quiet except for the cathedral bells.
+  *elseif (time_period = "Dusk")
+    The clerks are barring the shutters, and the last petitioners drift off across the plaza.
+  *else
+    The building is dark and the doors are barred, but the carved lettering still shows in the light of the plaza lanterns.
+
+  *choice
+    # Read the notice beside the door.
+      A painted board reads: [i]"The Open Roll of Port Valen. Postings, Claims, and Seals. Open at Seventh Bell until the evening horn. Closed on Hallowday."[/i]
+      *page_break Step back from the door…
+      *goto pv_ch_records_door
+    # Return to the plaza.
+      *goto port_valen_civic_heights
+*else
+  *goto pv_ch_records_inside
+
+*label pv_ch_records_inside
+*if ((time_period = "Dusk") or (time_period = "Night")) or (time_period = "Pre-Dawn")
+  *comment Time passes in here (reading the wall), so a visit can run into the evening horn.
+  A horn sounds from the Heights, and the clerks begin barring their shutters. A guard in the city's colors steers the last of the crowd out through the arch.
+  *page_break Step out onto the plaza…
+  *goto port_valen_civic_heights
+[b]◈ THE RECORDS HOUSE: THE OPEN ROLL[/b]
+*line_break
+Inside the arch, a long hall of pale stone runs under a barrel roof. Wooden frames line both walls from floor to ceiling, each holding one posted sheet, sealed by the patron and stamped with the city's three-masted seal. At the far end, three windows in a low counter are marked [i]Postings[/i], [i]Claims[/i], and [i]Seals[/i]. Along the side wall a narrow desk is kept for clerks in river-serpent colors, who hand in bundles of contracts that are already sealed.
+
+*if (time_period = "Morning")
+  The hall is filling with hirers and job-seekers.
+*elseif (time_period = "Midday")
+  The hall is packed. Sellswords, guards, drivers, and hired hands wait along the walls under the frames that suit them, and hirers push toward the windows.
+*else
+  *comment Afternoon
+  The crowd has thinned to the ones who came for a second look, and the clerks work through their queues.
+
+*if ((weather = "Rain") or (weather = "Storm"))
+  Wet boots have tracked mud across the flagstones.
+*elseif ((weather = "Snow") or (weather = "Sleet")) or (weather = "Blizzard")
+  Snow melts in grey puddles along the walls.
+
+*if (not(ch_records_seen))
+  *set ch_records_seen true
+  Behind the Postings window sits a broad-shouldered clerk in a dark grey coat and a clerk's cap of the same cloth, his back straight in a way that has nothing to do with the stool. He has the flat, carrying voice of a man who reads other people's terms aloud all day.
+
+  "Tolliver," he says, before you have opened your mouth. "Clerk of the Roll. You read the wall, or you ask me. Either is free. Signing costs."
+*else
+  Clerk Tolliver keeps the Postings window.
+
+*choice
+  # Read the postings on the wall. [~10 min]
+    *goto pv_ch_roll_read
+  *if (not(ch_roll_rules_talk))
+    # Ask Clerk Tolliver what the Roll is for.
+      *set ch_roll_rules_talk true
+      "It is the law, not a courtesy," Tolliver says. "In Port Valen a hire is not a hire until both seals are on the Roll: the patron's, and the city's. Guilds, the Scales, a widow hiring a door-warden, the same rule for all. Ask the courts to enforce a promise that is not posted, and they will ask you what promise." He nods toward the arch. "It's carved up there so nobody can say they didn't see it."
+      *page_break "Fair enough."…
+      *goto pv_ch_records_inside
+  *if (not(ch_roll_claims_talk))
+    # Ask about the Claims window.
+      *set ch_roll_claims_talk true
+      "Unpaid," Tolliver says, and the word comes out flat. "You file at Claims with your copy of the posting. If the terms are on the Roll, the court can order the patron to pay, and the city takes its fee out of what it wins back. If the terms are not on the Roll, there is nothing for me to file." He taps the wall behind him. "Most people who come to Claims did not read the wall first."
+      *page_break "Good to know."…
+      *goto pv_ch_records_inside
+  # Step back out onto the plaza.
+    *goto port_valen_civic_heights
+
+*label pv_ch_roll_read
+*set minutes_to_pass 10
+*set time_advance_call_id "pv_ch_roll_read_1"
+*gosub pv_ch_walk_time
+*comment QUEST SLOT: quest postings go here, ahead of the standing postings, each guarded by its own flag.
+You work along the frames, reading each posting by the seal at its head.
+
+[i]"WANTED by the Port Watch. Hands for the night patrol. Apply at the Watch yard. Pay by the week."[/i]
+
+*if (day_of_week = "Marketday")
+  [i]"WANTED. Wagon guards for the valley road, two days out and back. Half the fee on signing."[/i]
+*elseif (day_of_week = "Tideday")
+  [i]"WANTED. Night watch for a Cargo Quay warehouse. Apply at the harbor registry."[/i]
+*elseif (day_of_week = "Greyday")
+  [i]"WANTED. Strong backs to move a household up to the upper terraces. Meals provided."[/i]
+*elseif (day_of_week = "Forgeday")
+  [i]"WANTED. Escort for a coal and iron wagon from the lower slips to the Middle Ward."[/i]
+*elseif (day_of_week = "Ironday")
+  [i]"WANTED. Guards for a stack of drying timber at a shipyard. Apply at the yard gate."[/i]
+*else
+  *comment Hearthday
+  [i]"WANTED. A door-warden for a wedding feast on the Heights. Clean coat required."[/i]
+
+Every posting says what it pays and who to ask for.
+*page_break Step back from the wall…
+*goto pv_ch_records_inside
+
+*label pv_ch_walk_time
+*comment Same routine as mw_walk_time in the Middle Ward. Callers set minutes_to_pass and a unique
+*comment time_advance_call_id first.
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return

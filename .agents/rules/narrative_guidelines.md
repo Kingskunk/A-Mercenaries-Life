@@ -41,6 +41,7 @@ trigger: always_on
 * **Simplify Language:** Try to simplify the prose to where your average modern 20-25 year old would understand and can conceptualize.
 * **Table-Facing DM Voice:** Write as though you are describing the scene aloud to one player at the table. Keep the protagonist's immediate senses and choices in the foreground, use present-tense delivery where practical, and prefer short connective beats over long authorial summaries. Let NPC dialogue, visible behavior, and discovered details carry the world's interpretation; do not explain the moral or thematic meaning of a place after the description has already shown it.
 * **Jargon & Table-Facing DM Standard:** Avoid jargon. If a word requires a dictionary, a footnote, working in a specialized trade, or a parenthetical gloss to understand to the average modern day person (e.g. *herse, lunellum, municipal, berms, firkin, jetties*), it pulls the player out of the fiction. Replace these specialized terms with vivid, tactile, sensory descriptions that any player immediately pictures or can conceptualize.
+* **Plain Word First (Setting Lists Are Reference, Not Vocabulary):** Period and trade word lists elsewhere (`quest/QUEST_DESIGN_RULES.md` §4 and §10) say what exists in the world, not which words to write. Use the everyday word (winch, barrel, gate, stone) unless no plain word is accurate, and use any trade term no more than once per scene. Do not reach for a word because it is period-flavored or appears on a list. Words that start to recur across scenes (flume, ledger, sealed, stamped, vellum) go into `RESTRICTED_WORDS` in `tools/lint_vocab_overuse.js`. The same applies to the Lorebook (`web/mygame/lorebook-*.js`).
 * **Responsive Description Over Set Dressing:** A location should answer the player's arrival and recent action. Mention the person calling for help, the cart blocking the road, the guard watching the gate, or the rain soaking the character's sleeve before adding broad city description. When a scene pauses for a choice, end on a concrete opening the player can act on.
 
 ## 5. Natural Dialogue & Distinct NPC Voice
@@ -55,7 +56,7 @@ trigger: always_on
 * **Cut Filler Processing Gestures:** "He files it away" or "let that settle" marks information landing without showing what happens next. Cut it, or write the actual decision/shift that follows.
 
 ## 7. Describe NPCs on Introduction
-* **Sensory Anchor on First Encounter:** First appearance needs a concrete physical description — build, face, clothing, gear, scars, bearing — anchored in what the protagonist observes.
+* **Sensory Anchor on First Encounter:** First appearance needs a concrete physical description anchored in what the protagonist observes. Pick two or three details that tell the player who this is (build, face, one piece of clothing or gear, a scar, bearing). Do not list a full outfit or every material; a catalog of garments and trims reads as set dressing and pushes trade vocabulary into the prose.
 * **Identity Follows Interaction:** Establish presence and appearance before declaring names; let identity emerge through dialogue, rank insignia, or direct introduction.
 
 ## 8. Don't Over-Explain Established Mechanics

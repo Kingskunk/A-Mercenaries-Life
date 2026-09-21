@@ -231,17 +231,52 @@
       role: "Keeper, The Rusty Anchor (Dredge-End)",
       link: ["Sal"],
       tags: ["Dredge-End"], aliases: ["cleaver", "tavern keeper", "anchor"],
-      unlock: "codex_rusty_anchor",
+      unlock: "met_sal",
       body: function (s) {
         var out = [
           "A woman broad across the shoulders, her hair gone salt and tied back with sail-twine, her forearms mapped with old rope-burns. She keeps a broad butcher's cleaver buried two inches in the chopping block and does not take her eyes off a stranger until she has measured him."
         ];
-        if (truthy(s.anchor_rumor_1)) {
+        if (truthy(s.anchor_rumor_2)) {
           out.push("Dredge-End says she has held that hull since before the Black Tally started keeping count, and that she neither scares nor pays.");
+        }
+        if (truthy(s.anchor_talk_1)) {
+          out.push("She told you what goes in her pot: smoked eel heads, barley, whatever the carters leave on the tables, and peat smoke she cannot get out of the wall. The eels come from the woman with the awning on Marketday, who will short your scale but not Sal's pot. Sal weighs that herself.");
+        }
+        if (truthy(s.anchor_talk_2)) {
+          out.push("Her trade is carters when the road is bad, dredgers when it is good, and the ferrymen and whoever mends their oars. Nobody in the quarter pays in silver if it can be copper, she says, and nobody pays in copper if it can be a favor. She takes the copper.");
+        }
+        if (s.anchor_errand_resolution === "paid" || s.anchor_errand_resolution === "talked" || s.anchor_errand_resolution === "read" || s.anchor_errand_resolution === "slipped") {
+          out.push("She sent you down the cut with a pot of stew for Hobb the oar-maker, and you kept his door clear of the collector's runner. She noticed, and said so.");
+        } else if (s.anchor_errand_resolution === "stayed_out") {
+          out.push("She sent you down the cut with a pot of stew for Hobb the oar-maker. His door was chalked while you stood there. You brought the pot back and she said only that you had.");
+        } else if (s.anchor_errand_resolution === "failed") {
+          out.push("She sent you down the cut with a pot of stew for Hobb the oar-maker. His door was chalked, the runner has your face, and word reached her before you did.");
+        }
+        if (Number(s.anchor_fee) === 3) {
+          out.push("For three silver she told you what the box held: notes of hand, tallies and liens, every promise anyone in the quarter ever made to anyone. She keeps it, she said, because she is the only one the Watch, the Scales and the Tally will all let keep it.");
+        }
+        if (s.anchor_route === "walked" && truthy(s.anchor_backed_out)) {
+          out.push("You said yes, and then took it back. She did not argue or look up from her counter. She had already stopped counting on you, and she will not ask a second time.");
+        } else if (s.anchor_route === "walked" && truthy(s.anchor_reoffer_used)) {
+          out.push("You turned her job down, and when she asked once more on Forgeday, with the clerk's runner on the plank-walk, you turned it down again. She nodded, and went back behind her counter to stand on the stamped boards herself.");
+        } else if (s.anchor_route === "walked") {
+          out.push("You turned her job down and left. She did not argue or look up from her counter. Whatever she meant to pay a stranger for, she will pay someone else, and someone in the quarter will remember that she had to.");
+        } else if (s.anchor_route === "sal") {
+          out.push("You put the packets back the way you found them and slid the box across the boards to her boot. She asked whether you had read the bottom, and you had, and she did not thank you, because thanking someone in this quarter is how you start owing them. She set an iron key beside your cup instead and counted the fee out to the copper, the way a woman pays a debt rather than does a favor.");
+        } else if (s.anchor_route === "watch") {
+          out.push("You carried the district's paper out of her cellar to Dockmaster Voss. The Anchor stayed open and busy and she served you without comment, but something had gone out of that room that could not be put back.");
+        } else if (s.anchor_route === "scales") {
+          out.push("You sold Riker's note and the household debts to the Scales' factoring house on the Upper Wharves. The Anchor stayed open and she served you without comment. Neither you nor the factor was the one who would have to live with what the district became.");
+        } else if (s.anchor_route === "kept") {
+          out.push("You took the packets out of her box one at a time and left the empty box on her floor. She did not stop you, and she did not speak to you that evening, or the next week, or the one after. The pot stayed on her fire and the attic stayed dry, and none of it was the same as being welcome.");
+        } else if (s.anchor_route === "burned") {
+          out.push("You fed the collection book into her pot-stove. She watched the paper curl, said \"You've ruined me\" in a voice of complete calm, and went on wiping a counter that was already clean.");
+        } else if (s.anchor_quest_stage === "failed") {
+          out.push("The box is in the silt under her floor. She heard you come dripping through the taproom and did not look up from her cup, and she told you not to come to her again with your hand out. The cleaver has moved from the block to the counter beside her hand.");
         }
         return out;
       },
-      see: ["rusty_anchor", "dredge_end", "black_tally"]
+      see: ["rusty_anchor", "hobb", "dredge_end", "black_tally", "voss"]
     },
 
     /* --------------------------------------------------------- PEOPLE: MIDDLE WARD */
@@ -274,8 +309,8 @@
     },
     {
       id: "vael", category: "people", title: "Master Vael",
-      sub: "Lock-wright, Locksmiths' Close",
-      role: "Lock-wright, Vael & Son",
+      sub: "Locksmith, Locksmiths' Close",
+      role: "Locksmith, Vael & Son",
       link: ["Master Vael"],
       tags: ["Middle Ward"], aliases: ["Vael", "locksmith", "locks", "keys"],
       unlock: "met_vael",
@@ -286,17 +321,114 @@
       see: ["kess", "terrace_lodgings", "middle_ward"]
     },
     {
-      id: "brand", category: "people", title: "Master Brand",
+      id: "ambrose", category: "people", title: "Master Ambrose",
       sub: "Herbalist and physic",
-      role: "Herbalist, Brand's Still-Room & Physic (Herb-Pounder Close)",
-      link: ["Master Brand"],
-      tags: ["Middle Ward"], aliases: ["Brand", "herbalist", "physic", "salve", "still-room"],
+      role: "Herbalist, Ambrose's Still-Room & Physic (Herb-Pounder Close)",
+      link: ["Master Ambrose"],
+      tags: ["Middle Ward"], aliases: ["Ambrose", "herbalist", "physic", "salve", "still-room"],
       unlock: "mw_herb_seen",
       body: [
         "An elderly herbalist with yellow-stained fingers, who pours pine medicine into small dark glass bottles behind a painted mortar-and-pestle sign. Wicker racks of mountain angelica, wormwood, pine resin and willow bark dry along the close, and two copper stills hiss over charcoal.",
         "The army takes his best willow bark for its field surgeons. What he sells to soldiers is wound salve, bitters, and a warming rub of animal fat with wintergreen, thyme and camphor that they swear by for strained knees and blistered heels."
       ],
       see: ["middle_ward"]
+    },
+    {
+      id: "hollis", category: "people", title: "Master Hollis",
+      sub: "General goods, Lantern Lane",
+      role: "Shopkeeper, Hollis & Daughters General Goods (Lantern Lane)",
+      link: ["Master Hollis"],
+      tags: ["Middle Ward", "Trade"], aliases: ["Hollis", "shopkeeper", "general goods", "general store", "Hollis & Daughters"],
+      unlock: "mw_store_seen",
+      body: function (s) {
+        var out = [
+          "An old shopkeeper in a canvas apron sewn with a dozen pockets, with close-cropped white hair, a nose broken at least once, and a stub of chalk on a cord at his waist. He keeps the general store on Lantern Lane, and every price in it is chalked on a slate on the wall behind him. Nothing is sold on credit.",
+          "The sign says Hollis & Daughters, but only he is ever behind the counter."
+        ];
+        if (truthy(s.mw_hollis_stock_talk)) {
+          out.push("His daughters do the buying. They shop the quay before the fish crews take the good carts and bring back rope and sailcloth the shipyards will not use. The tin comes from the smiths in the ward, and the wool from valley carts on Marketday. He sells it all for what it cost him, plus what it cost to carry.");
+        }
+        if (truthy(s.mw_hollis_neighbors_talk)) {
+          out.push("He knows his neighbors by what they buy. Vael buys brass wire and files, Marda takes flour sacks by the fifty, Ambrose takes corks by the hundred, and Kess buys beeswax and lavender. \"A ward runs on people who buy the same thing every week.\"");
+        }
+        if (truthy(s.mw_rumor_daughters)) {
+          out.push("Rumor from the baths: his daughters have come back from the quay with an empty cart three times this season, as if someone is buying ahead of them.");
+        }
+        return out;
+      },
+      see: ["lantern_lane", "middle_ward", "vael", "marda", "ambrose", "kess"]
+    },
+    {
+      id: "halda", category: "people", title: "Master Halda",
+      sub: "Smith, Smiths' Row",
+      role: "Smith, Halda's Forge (Smiths' Row)",
+      link: ["Master Halda"],
+      tags: ["Middle Ward", "Trade"], aliases: ["Halda", "smith", "blacksmith", "armorer", "forge", "blades", "steel"],
+      unlock: "mw_forge_seen",
+      body: function (s) {
+        var out = [
+          "A broad-shouldered smith past fifty, with a grey braid pinned up under a leather cap and forearms freckled with old burns. Her sign reads: Steel Bought, Sold, and Mended. She works the largest shed on Smiths' Row, and her racks hold every kind of blade, axe, spear, shield, helmet and mail shirt."
+        ];
+        if (truthy(s.mw_halda_trade_talk)) {
+          out.push("She pays for old steel by weight and by edge: sound steel by the pound, and more for a good edge. Rust she can grind off, but she will not mend cracked steel. It goes in the scrap bin at scrap price, and she says so to your face. What she sells comes with the same promise: a straight edge and no hidden flaws, or you bring it back.");
+        }
+        if (truthy(s.mw_halda_mend_talk)) {
+          out.push("She mends blades, helmets, tools and cartwheel rims, and mail by the link. A bent helmet she knocks straight, and a split shield she sends to the carpenter. Anything cracked through the middle she will not touch.");
+        }
+        if (truthy(s.mw_halda_steel_talk)) {
+          out.push("The best steel in the country came out of the Highland Crags, and hardly any of it comes down now. Karr's bailiffs taxed the Crag forges half out of business, and the smiths who could leave did. She has heard that a Crag dwarf set up at the weir in Alderford.");
+        }
+        if (truthy(s.mw_rumor_steel)) {
+          out.push("Rumor from the baths: half a wagon-load of Crag steel is sitting in a shed in Alderford, and no carter will haul it down while the bailiffs work the highway.");
+        }
+        return out;
+      },
+      see: ["smiths_row", "middle_ward", "iron_bailiffs", "broken_crags", "torvald"]
+    },
+    {
+      id: "merrin", category: "people", title: "Merrin",
+      sub: "Keeper of the Conduit Baths",
+      role: "Bath-keeper, Conduit Baths (Conduit Wash-House)",
+      link: ["Merrin"],
+      tags: ["Middle Ward"], aliases: ["bath keeper", "baths", "bathhouse", "wash-house", "soak"],
+      unlock: "mw_baths_seen",
+      body: function (s) {
+        var out = [
+          "A tall, thin woman in a spotless grey apron, with hands red and cracked from lye. She keeps the Conduit Baths from a small desk inside the door, where a copper bit buys a soak and a clean towel. Whatever a visitor carries that cuts, crushes, or shoots goes on the rack by the door until they leave."
+        ];
+        if (truthy(s.mw_merrin_rules_talk)) {
+          out.push("Her rules are three: steel on the rack, no quarrels in the steam, and nobody stays past the night bell. In twenty years she has had one fight, and both people left by the drain door without their clothes. People say things in the steam they would not say in the street, and anyone who repeats it outside does not come back.");
+        }
+        if (truthy(s.mw_merrin_water_talk)) {
+          out.push("The boilers are built into the back wall of Mother Marda's ovens, and Merrin pays for the heat in soaks. Marda's bakers bathe free on Hearthday.");
+        }
+        if (truthy(s.mw_rumor_steam)) {
+          out.push("Rumor from the hot room: someone has been repeating what is said in the steam. A regular has stopped coming, and Merrin does not lose a regular for nothing.");
+        }
+        return out;
+      },
+      see: ["conduit_baths", "marda", "middle_ward"]
+    },
+    {
+      id: "tolliver", category: "people", title: "Clerk Tolliver",
+      sub: "Clerk of the Open Roll",
+      role: "Clerk, Postings window, the Open Roll (Civic Heights records house)",
+      link: ["Clerk Tolliver"],
+      tags: ["Civic Heights", "Law"], aliases: ["Tolliver", "clerk", "roll clerk", "postings"],
+      unlock: "ch_records_seen",
+      body: function (s) {
+        var out = [
+          "A broad-shouldered clerk in a dark grey coat and a matching cap, with a straight back and the flat, carrying voice of a man who reads other people's terms aloud all day. He keeps the Postings window at the Open Roll. Reading the wall is free. Signing costs."
+        ];
+        if (truthy(s.ch_roll_rules_talk)) {
+          out.push("To him the Roll is the law and not a courtesy, and the words carved over the arch are there so nobody can say they did not see them.");
+        }
+        if (truthy(s.ch_roll_claims_talk)) {
+          out.push("He has a low opinion of people who reach the Claims window without reading the wall first. Most of them, he says, did not.");
+        }
+        return out;
+      },
+      see: ["open_roll", "civic_heights"]
     },
 
     /* ------------------------------------------------------------- PLACES: THE CITY */
@@ -338,7 +470,7 @@
       see: ["maret", "cutter", "harbor_quayside"]
     },
     {
-      id: "cargo_quay", category: "places", title: "The Cargo Quay & Customs Tower",
+      id: "cargo_quay", category: "places", title: "The Cargo Quay",
       sub: "The harbor registry",
       tags: ["Quayside", "Law", "Trade"], aliases: ["customs", "customs tower", "registry", "toll tower", "cargo line"],
       link: ["Cargo Quay"],
@@ -362,7 +494,7 @@
       see: ["brant", "hendryk", "gilded_scales", "carrion_compound"]
     },
     {
-      id: "pier", category: "places", title: "The Pier & the Wreck-Bell",
+      id: "pier", category: "places", title: "The Pier",
       sub: "The breakwater to the outer bar",
       tags: ["Pier", "Quayside"], aliases: ["pier", "breakwater", "wreck bell", "bell", "reef", "bar", "jetty"],
       link: ["Wreck-Bell", "wreck-bell"],
@@ -391,11 +523,66 @@
       tags: ["Dredge-End"], aliases: ["anchor", "tavern", "barges", "cellar hatch"],
       link: ["Rusty Anchor"],
       unlock: "codex_rusty_anchor",
-      body: [
-        "A tavern built on three old barges tied end to end, so the whole floor rises and dips with the river. It smells of boiling fish heads, wet rope and peat smoke, and carters and wagon drivers sit along the cedar tables with their hands flat on the wood.",
-        "Two men in ink-stained leather with long gutting knives watch the door and the cellar hatch instead of the room."
-      ],
-      see: ["sal", "dredge_end"]
+      body: function (s) {
+        var out = [
+          "A tavern built on three old barges tied end to end, so the whole floor rises and dips with the river. It smells of boiling fish heads, wet rope and peat smoke, and carters, dredgers and ferrymen argue wages down the long cedar tables."
+        ];
+        var stage = s.anchor_quest_stage;
+        if (s.anchor_errand_stage === "resolved" && (stage === "unstarted" || stage === "offered" || stage === "declined")) {
+          out.push("Two men in ink-stained leather with long gutting knives watch the door and the cellar hatch instead of the room, while a third lowers a knotted rope through the hatch and marks the depth of the water under the floor with his thumbnail.");
+        }
+        if (s.anchor_errand_stage === "unstarted" || s.anchor_errand_stage === "active") {
+          out.push(truthy(s.met_hobb)
+            ? "At the end of the counter a stool stands empty with a covered bowl set in front of it. It is kept for Hobb the oar-maker, who has not sat on it for three nights."
+            : "At the end of the counter a stool stands empty with a covered bowl set in front of it.");
+        }
+        if (truthy(s.anchor_knows_second_void)) {
+          out.push("Under the taproom floor the middle hull has been gutted stem to stern and re-ribbed in good oak, and the re-ribbing stops short of the stern by two frames. Past that line the old planking is sprung, and the grain has gone black and soft as tallow.");
+        }
+        if (truthy(s.anchor_tab_unlocked)) {
+          out.push("Up a ladder under the cedar shingles is a loft with a straw mattress, where the canal moves under the hulls and the hulls move under you. Sal's iron key opens it.");
+        }
+        if (stage === "failed") {
+          out.push("A fresh clerk's stamp is inked across the hatch boards now, and the box you lost lies in the silt beneath them.");
+        }
+        return out;
+      },
+      see: ["sal", "dredge_end", "black_tally"]
+    },
+    {
+      id: "hobb", category: "people", title: "Hobb",
+      sub: "Oar-maker, three sheds down the cut",
+      role: "Oar-maker (Dredge-End)",
+      link: ["Hobb"],
+      tags: ["Dredge-End"], aliases: ["oar-maker", "oars", "shed"],
+      unlock: "met_hobb",
+      body: function (s) {
+        var out = [
+          "Sal's oar-maker: he has had the end stool at the Rusty Anchor every night since before she tied the second barge, and it has been three nights since he sat on it. A man who owes, Sal says, does not drink where people can see him."
+        ];
+        var r = s.anchor_errand_resolution;
+        if (r && r !== "none") {
+          out.push("An older man in a leather apron with wood-dust in his eyebrows, working out of a raised shed on stilts three doors down the cut, with a rack of half-shaped ash oars under the eave. A collector's runner was chalking his door for a week's mark and five when you arrived.");
+        }
+        if (r === "paid") {
+          out.push("You paid the runner fifteen copper bits yourself. Hobb ate on his step and asked you to tell Sal the stool was still his.");
+        } else if (r === "talked") {
+          out.push("You talked the runner into waiting till next week. His door stayed clean.");
+        } else if (r === "read") {
+          out.push("You read the runner's tablet over his arm: Hobb's column had been scraped and rewritten twice, and the last figure sat a shade higher than the two under it. The runner came down to one mark and left.");
+        } else if (r === "slipped") {
+          out.push("You put the runner's chalk in the canal and he left to find more. It bought Hobb a week, no more.");
+        } else if (r === "stayed_out") {
+          out.push("You handed him the pot and stood by while the chalk went across his door. He left the marks where they were.");
+        } else if (r === "failed") {
+          out.push("The runner chalked his door in front of you, and remembers you for it.");
+        }
+        if (truthy(s.anchor_knows_riker_note)) {
+          out.push("His name is on one of the notes in Sal's box: an oar-maker's, two marks, with a margin note in a different hand about a boat he no longer owns.");
+        }
+        return out;
+      },
+      see: ["sal", "rusty_anchor", "dredge_end"]
     },
 
     /* ----------------------------------------------------------- PLACES: DISTRICTS */
@@ -406,11 +593,28 @@
       tags: ["Dredge-End", "Black Tally"], aliases: ["slums", "canals", "silt basin", "tenements"],
       link: ["Dredge-End"],
       unlock: "dredge_end_seen",
-      body: [
-        "The cobblestones give out at the drainage cut, replaced by greased timber duckboards and sunken mud tracks below the river's high-water mark. Dredge-End sits in the city's low silt-basin: rows of waterlogged tenements on black-greased pilings, joined by creaking rope gangways above stagnant canal trenches.",
-        "It is Black Tally country. The Watch seldom comes down to the canals on a market day, and trade settles with sharp elbows and quick fingers."
-      ],
-      see: ["black_tally", "rusty_anchor", "port_valen"]
+      body: function (s) {
+        var out = [
+          "The cobblestones give out at the drainage cut, replaced by greased timber duckboards and sunken mud tracks below the river's high-water mark. Dredge-End sits in the city's low silt-basin: rows of waterlogged tenements on black-greased pilings, joined by creaking rope gangways above stagnant canal trenches.",
+          "It is Black Tally country. The Watch seldom comes down to the canals on a market day, and trade settles with sharp elbows and quick fingers."
+        ];
+        if (s.anchor_errand_resolution && s.anchor_errand_resolution !== "none") {
+          out.push("A collector's runner walks the cut with a wax tablet and a stick of chalk, and chalks the door of any household that is a week behind. You watched one at an oar-maker's shed, three doors down from the Rusty Anchor.");
+        }
+        if (truthy(s.anchor_rumor_1)) {
+          out.push("A carter at the Rusty Anchor put the rule of the quarter plainly: the Tally holds the paper, the harbor-master holds the stamp, and the two of them hold each other. To know who runs Dredge-End, look at who keeps the book.");
+        }
+        if (truthy(s.anchor_quest_resolved)) {
+          out.push("It took the district about four hours to know what had happened to the box. Two men in heavy coats stood where no men had stood before, and neither of them was counting boats.");
+          if (s.anchor_route === "burned") {
+            out.push("For about a month the whole quarter was lighter on its feet. Then the collection started again out of a different doorway, with different men and a cleaner book.");
+          } else if (s.anchor_route === "kept") {
+            out.push("The syndicate ledgers got counting again, and the notes of hand began moving in your name instead of hers.");
+          }
+        }
+        return out;
+      },
+      see: ["black_tally", "rusty_anchor", "silt_gates", "port_valen"]
     },
     {
       id: "middle_ward", category: "places", title: "The Middle Ward",
@@ -418,11 +622,71 @@
       tags: ["Middle Ward"], aliases: ["terrace", "second terrace", "conduit square", "craftsmen", "workshops"],
       link: ["Middle Ward"],
       unlock: "mw_seen",
-      body: [
+      body: function (s) {
+        var out = [
         "The road climbs in turns from the docks and levels out on the broad stone terraces below the limestone cliffs of Civic Heights. Timber buildings lean over narrow lanes beneath steep slate roofs, their lower shutters open as shop counters, and the air smells of cooled iron, brass dust, cedar sawdust and warm caraway bread.",
-        "Conduit Square, with its octagonal fountain and four bronze lion-head spouts, is the crossroads. Lanes branch to the Locksmiths' Close, Herb-Pounder Close, Parchmenters' Wynd and the Cooperage Basin, and a communal oven feeds the ward."
-      ],
-      see: ["terrace_lodgings", "marda", "vael", "brand", "civic_heights"]
+        "Conduit Square, with its octagonal fountain and four bronze lion-head spouts, is the crossroads. Lanes branch to the Locksmiths' Close, Herb-Pounder Close, Lantern Lane and Smiths' Row. A communal oven feeds the ward, and a public wash-house with baths stands behind the square."
+        ];
+        if (truthy(s.mw_rumor_grain)) {
+          out.push("Rumor from the baths: a Council grain officer waves unlicensed flour wagons through Conduit Square on Marketdays for a small payment slip, so the licensed drivers end up paying twice, once in fees and once in waiting.");
+        }
+        return out;
+      },
+      see: ["lantern_lane", "smiths_row", "conduit_baths", "terrace_lodgings", "marda", "vael", "ambrose", "hollis", "halda", "merrin", "civic_heights"]
+    },
+    {
+      id: "lantern_lane", category: "places", title: "Lantern Lane",
+      sub: "The Middle Ward's shopping street",
+      tags: ["Middle Ward", "Trade"], aliases: ["shops", "shopping street", "general store", "counters", "stalls"],
+      link: ["Lantern Lane"],
+      unlock: "mw_lantern_seen",
+      body: function (s) {
+        var out = [
+          "A curving lane that climbs from Conduit Square under deep timber eaves, with an iron bracket for a horn lantern over every shop door. Rope, tin pans, blankets, cloth, boots, candles, lamp oil, paper and ink are sold from small shops and open counters. Hollis & Daughters General Goods has the widest front.",
+          "The shops open in daylight and close at dusk. On the holy day and in a blizzard the shutters stay barred."
+        ];
+        if (truthy(s.mw_hollis_lane_talk)) {
+          out.push("The name comes from the lanterns. Every shop keeps one lit over its door from dusk to dawn, and each pays a copper a week to the ward lamp-keeper for the oil. That makes it the best-lit street in the ward at night.");
+        }
+        return out;
+      },
+      see: ["hollis", "middle_ward", "civic_heights"]
+    },
+    {
+      id: "smiths_row", category: "places", title: "Smiths' Row",
+      sub: "The forges at the ward's lower end",
+      tags: ["Middle Ward", "Trade"], aliases: ["smithy", "forges", "smiths yard", "blacksmith", "cooper", "iron"],
+      link: ["Smiths' Row"],
+      unlock: "mw_smiths_seen",
+      body: function (s) {
+        var out = [
+        "A cobbled yard at the lower end of the Middle Ward, where the harbor road climbs in. Three forges stand under open sheds around a stone water trough, with racks of finished blades, helmets and tools along the walls. Iron bars and coal come up from the harbor by wagon. A cooper's bench at the far end still makes barrels for the ward.",
+        "The forges work in daylight and bank their fires at dusk. On the holy day and in a blizzard the sheds stay barred."
+        ];
+        if (truthy(s.mw_halda_forges_talk)) {
+          out.push("Three forges, three masters, one water trough. Halda does edges, the middle shed does wheel rims and nails, and the far one hammers out tin pots and tools for the ward's trades.");
+        }
+        return out;
+      },
+      see: ["halda", "middle_ward", "vael"]
+    },
+    {
+      id: "conduit_baths", category: "places", title: "The Conduit Wash-House",
+      sub: "Laundry yard and public baths",
+      tags: ["Middle Ward"], aliases: ["baths", "bathhouse", "laundry", "washing yard", "steam", "soak"],
+      link: ["Conduit Wash-House", "Conduit Baths"],
+      unlock: "mw_wash_seen",
+      body: function (s) {
+        var out = [
+          "A covered yard behind Conduit Square, where copper tubs sit on charcoal fires under long shed roofs and steam rolls out into the lanes. At the far end a low stone building holds the Conduit Baths, fed by a lead pipe from the conduit. A soak costs one copper bit.",
+          "The yard is busiest on Greyday, which is washday. It stays open into the evening for people coming off work, and it is closed at night and on the holy day."
+        ];
+        if (truthy(s.mw_merrin_water_talk)) {
+          out.push("The water is heated by boilers built into the back wall of Mother Marda's ovens.");
+        }
+        return out;
+      },
+      see: ["merrin", "marda", "middle_ward"]
     },
     {
       id: "terrace_lodgings", category: "places", title: "Terrace Lodgings",
@@ -431,7 +695,7 @@
       link: ["Terrace Lodgings"],
       unlock: "mw_lodgings_seen",
       body: [
-        "The four-storey limestone front of a boarding house at the end of the Locksmiths' Close, its thick wooden door fitted with a teardrop-shaped knocker. Rooms let by the week, with Mistress Kess collecting the rent and a lock-wright's deadbolt on every door."
+        "The four-storey limestone front of a boarding house at the end of the Locksmiths' Close, its thick wooden door fitted with a teardrop-shaped knocker. Rooms let by the week, with Mistress Kess collecting the rent and a locksmith's deadbolt on every door."
       ],
       see: ["kess", "vael", "middle_ward"]
     },
@@ -457,19 +721,53 @@
         "The road from the Middle Ward ends at a broad plaza of cut limestone, and the buildings change from timber to stone. The Council Hall stands at its head, with the tax hall, the records house and the magistrates' courts around the plaza and the Port Watch headquarters beside the courts. Painted boards mark the public windows, where petitioners wait beneath the eaves.",
         "The cathedral rises above the courts on an older foundation, its bells carrying over every district. Charity kitchens cluster around its steps, and the sick and the displaced gather there."
       ],
-      see: ["council", "port_watch", "middle_ward"]
+      see: ["open_roll", "council", "port_watch", "middle_ward"]
+    },
+    {
+      id: "open_roll", category: "places", title: "The Open Roll",
+      sub: "Public contracts at the records house",
+      tags: ["Civic Heights", "Law", "Trade"], aliases: ["records house", "contracts", "postings", "hiring", "claims", "wages", "job board", "work"],
+      link: ["Open Roll"],
+      unlock: "ch_records_seen",
+      body: function (s) {
+        var out = [
+          "A long stone hall in the records house on the Civic Heights plaza. Hirers post the terms of their contracts on wooden frames along the walls, each sealed by the patron and stamped with the city's three-masted seal. Carved over the arch: What Is Not on the Roll Is Not Owed. Sellswords, guards, drivers and hired hands read the postings here and wait for the Postings, Claims and Seals windows.",
+          "The hall is open by day and shuts when the evening horn sounds and on the holy day."
+        ];
+        if (truthy(s.ch_roll_rules_talk)) {
+          out.push("In Port Valen a hire is not a hire until both seals are on the Roll, the patron's and the city's. The rule is the same for guilds, the Scales and a widow hiring a door-warden. The courts will not enforce a promise that is not posted.");
+        }
+        if (truthy(s.ch_roll_claims_talk)) {
+          out.push("A worker who was not paid files a claim at the Claims window with a copy of the posting. If the terms are on the Roll, the court can order the patron to pay, and the city takes its fee out of what it wins back. If they are not on the Roll, there is nothing to file.");
+        }
+        return out;
+      },
+      see: ["tolliver", "civic_heights", "gilded_scales", "letters_of_credit"]
     },
     {
       id: "silt_gates", category: "places", title: "The Silt-Gates",
       sub: "Drainage conduits under the slums",
-      tags: ["Dredge-End", "Law"], aliases: ["silt gates", "conduits", "flume", "drainage", "contraband", "smuggling"],
+      tags: ["Dredge-End", "Law"], aliases: ["silt gates", "conduits", "channel", "drainage", "contraband", "smuggling"],
       link: ["Silt-Gates"],
       unlock: function (s) { return s.silt_gate_quest_stage && s.silt_gate_quest_stage !== "unstarted"; },
-      body: [
-        "The canal drainage conduits beneath the Dredge-End slums. The harbor's outer boom chains are locked tight, so the contraband is not coming through the main channel: it slips into the conduits instead. Any patrol the Watch sends into the canals is spotted by rooftop lookouts with tin whistles, and the boatmen dump the crates into ten feet of river sludge before it gets within three hundred paces.",
-        "Half the night sergeants working the stretch are said to take weekly hush-money to walk their beats on the far side of the canal when the tide rises."
-      ],
-      see: ["voss", "port_watch", "dredge_end"]
+      body: function (s) {
+        var out = [
+          "The canal drainage conduits beneath the Dredge-End slums. The harbor's outer boom chains are locked tight, so the contraband is not coming through the main channel: it slips into the conduits instead. Any patrol the Watch sends into the canals is spotted by rooftop lookouts with tin whistles, and the boatmen dump the crates into ten feet of river sludge before it gets within three hundred paces.",
+          "Half the night sergeants working the stretch are said to take weekly hush-money to walk their beats on the far side of the canal when the tide rises."
+        ];
+        var res = s.silt_gate_resolution;
+        if (res === "watch_seized") {
+          out.push("You bound the broker and his porters at the mooring rings and hauled four crates of highland shear-steel and the jugs of peat-spiritus up the ramp on a hand-barrow. The whole un-stamped cargo went to the Quayside customs house, and the run through the Silt-Gates was broken.");
+        } else if (res === "tally_bribed") {
+          out.push("You took twenty-five silver marks from the broker and let the run through. The porters took their barrows into the canal cellar tunnels and the punt slipped back out through the water-gate.");
+        } else if (res === "leverage") {
+          out.push("You interrupted the drop but did not break the run. The crates stayed on the platform for the tide or the Watch to deal with, and what you carried up the ramp was a strip of wax vellum in the broker's own hand, with a rate written beside each name: six silver marks a Marketday for the north quay.");
+        } else if (res === "failed") {
+          out.push("The night went against you. The run went back on the water by the next tide, and the broker now knows your face.");
+        }
+        return out;
+      },
+      see: ["voss", "port_watch", "dredge_end", "black_tally"]
     },
 
     /* ---------------------------------------------- INSTITUTIONS, LAW AND CUSTOM */
