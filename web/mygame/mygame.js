@@ -348,7 +348,7 @@ stats = {
  "found_fish_cache": "false",
  "found_customs_vellum": "false",
  "codex_gilded_scales": "false",
- "codex_black_tally": "false",
+ "codex_black_oath": "false",
  "codex_baron_karr": "false",
  "codex_ashbrook": "false",
  "codex_karrs_keep": "false",

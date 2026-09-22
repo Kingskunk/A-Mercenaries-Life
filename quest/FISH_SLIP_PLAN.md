@@ -854,7 +854,7 @@ Each `advance_time` call sits on its own page: the entry label, `fish_watch`, an
 | Weather and time reactivity | The market is closed at Dusk, Night and in storms. Pre-Dawn and Morning have the auction. |
 | Mechanics stay in brackets | DCs, stakes and rep changes appear only in hints and banner lines. |
 | No weapon or apparel assumption | Uses "brow", "purse", "smock" (the widow's), and no coat or belt items on the player. |
-| No modern jargon | No "pilot" and no "tally". Counting words: "count", "price", "lot". |
+| No modern jargon | No "pilot". Counting words: "count", "price", "lot". |
 
 ---
 

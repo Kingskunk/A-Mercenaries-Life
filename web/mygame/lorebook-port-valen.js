@@ -132,22 +132,22 @@
     {
       id: "tobin", category: "people", title: "Tobin",
       sub: "The watcher on the breakwater",
-      role: "Keeps the Black Tally's count of boats crossing the bar",
+      role: "Keeps the Black Oath's count of boats crossing the bar",
       link: ["Tobin"],
-      tags: ["Pier", "Black Tally"], aliases: ["watcher", "chalk", "count"],
+      tags: ["Pier", "Black Oath"], aliases: ["watcher", "chalk", "count"],
       unlock: "bar_asked_who",
       body: [
         "A thin man in a cloak stiff with old salt and a knit cap pulled to his eyebrows, with chalk ground into the creases of his fingers. He chalks a stroke on the base post of the jetty-head crane for every boat that goes over the bar after curfew, and another when it comes back.",
-        "He counts for the Black Tally and is not supposed to be seen talking to strangers."
+        "He counts for the Black Oath and is not supposed to be seen talking to strangers."
       ],
-      see: ["pier", "black_tally", "marl"]
+      see: ["pier", "black_oath", "marl"]
     },
     {
       id: "marl", category: "people", title: "Marl Coyne",
       sub: "Skipper of the Gannet",
       role: "Skipper, river-mouth skiff Gannet",
       link: ["Marl Coyne", "Marl"],
-      tags: ["Pier", "Black Tally"], aliases: ["skipper", "Gannet", "skiff"],
+      tags: ["Pier", "Black Oath"], aliases: ["skipper", "Gannet", "skiff"],
       unlock: "bar_asked_out",
       body: function (s) {
         var out = [
@@ -156,15 +156,15 @@
         if (s.bar_resolution === "lawful") {
           out.push("The Watch fined her and impounded the Gannet.");
         } else if (s.bar_resolution === "pragmatic") {
-          out.push("The Black Tally's collectors took her and the boy back under its thumb.");
+          out.push("The Oath's men took her and the boy back under its thumb.");
         } else if (s.bar_resolution === "strategic") {
-          out.push("The Black Tally's count lists the Gannet lost with all hands. She keeps a skiff on the lowest ladder at the pier, and she owes you a favor.");
+          out.push("The Black Oath's count lists the Gannet lost with all hands. She keeps a skiff on the lowest ladder at the pier, and she owes you a favor.");
         } else if (s.bar_quest_stage === "declined") {
           out.push("The Gannet never came back in.");
         }
         return out;
       },
-      see: ["pier", "pip", "tobin", "black_tally"]
+      see: ["pier", "pip", "tobin", "black_oath"]
     },
     {
       id: "pip", category: "people", title: "Pip",
@@ -466,17 +466,17 @@
     {
       id: "dredge_end", category: "places", title: "Dredge-End",
       sub: "The flooded low district",
-      tags: ["Dredge-End", "Black Tally"], aliases: ["slums", "canals", "silt basin", "tenements"],
+      tags: ["Dredge-End", "Black Oath"], aliases: ["slums", "canals", "silt basin", "tenements"],
       link: ["Dredge-End"],
       unlock: "dredge_end_seen",
       body: function (s) {
         var out = [
           "The city's paving stops at the drainage cut. Past it the lanes are broken stone and packed cinder, with planks laid over the low patches where the ground gives up. Dredge-End sits under the river's high-water line, its tenements standing on tarred pilings with rope gangways strung between them.",
-          "It is Black Tally country. The Watch seldom comes down to the canals on a market day, and trade settles with sharp elbows and quick fingers."
+          "It is Black Oath country. The Watch seldom comes down to the canals on a market day, and trade settles with sharp elbows and quick fingers."
         ];
         return out;
       },
-      see: ["black_tally", "silt_gates", "duckboard_market", "upper_gangways", "boat_sheds", "dredge_landing", "lamp_stair", "corve", "alley_shrine", "flooded_steps", "port_valen"]
+      see: ["black_oath", "silt_gates", "duckboard_market", "upper_gangways", "boat_sheds", "dredge_landing", "lamp_stair", "corve", "alley_shrine", "flooded_steps", "port_valen"]
     },
 
     /* ----------------------------------------------- DREDGE-END: THE CUT (seven areas) */
@@ -503,7 +503,7 @@
         }
         return out;
       },
-      see: ["dredge_end", "upper_gangways", "black_tally"]
+      see: ["dredge_end", "upper_gangways", "black_oath"]
     },
     {
       id: "upper_gangways", category: "places", title: "Upper Gangways",
@@ -573,7 +573,7 @@
     {
       id: "lamp_stair", category: "places", title: "Lamp Stair",
       sub: "The red-lamp street under the seawall",
-      tags: ["Dredge-End", "Black Tally"], aliases: ["red lamps", "red-lamp street", "blue door", "dice cellar", "pawnbroker", "hedge-doctor", "drinking house"],
+      tags: ["Dredge-End", "Black Oath"], aliases: ["red lamps", "red-lamp street", "blue door", "dice cellar", "pawnbroker", "hedge-doctor", "drinking house"],
       link: ["Lamp Stair"],
       unlock: "cut_seen_lamp_stair",
       body: function (s) {
@@ -589,14 +589,14 @@
           out.push("A woman is said to come on Hallowdays with a pouch of temple silver and leave with tincture vials nobody wrote down. The pawnbroker says he does not know her.");
         }
         if (drink >= 1) {
-          out.push("A ferryman in the drinking house says the Tally never has to raise a hand. You just wake up owing something you do not remember borrowing.");
+          out.push("A ferryman in the drinking house says the Oath never has to raise a hand. You just wake up owing something you do not remember borrowing.");
         }
         if (drink >= 2) {
-          out.push("Two dredgers argued over whether it is worse to owe the Tally or the Scales. The Scales send a clerk, said one. The Tally sends someone you grew up with.");
+          out.push("Two dredgers argued over whether it is worse to owe the Oath or the Scales. The Scales send a clerk, said one. The Oath sends someone you grew up with.");
         }
         return out;
       },
-      see: ["dredge_end", "black_tally", "upper_gangways", "corve"]
+      see: ["dredge_end", "black_oath", "upper_gangways", "corve"]
     },
     {
       id: "corve", category: "places", title: "Widow Corve's",
@@ -664,7 +664,7 @@
       body: function (s) {
         var n = Number(s.cut_rumors_shrine) || 0;
         var out = [
-          "A timber arch black with tallow smoke over a small carved figure in a veil, its face worn smooth by hands, with ALTHEA scratched into its base. Strips of old linen are tied along the arch, and a clay bowl at the figure's feet holds river pebbles and candle stubs. An iron hook holds a broth pot. On Hallowdays a friar in a patched habit of undyed wool ladles thin pea broth to the district's poorest, while men in boiled leather stand at the alley mouth checking faces against a scrap of vellum. The shrine is Saint Althea's, the mender the frontier prays to, and the district keeps it in tallow where the Middle Ward keeps its own saint's shrine in beeswax."
+          "A timber arch black with tallow smoke over a small carved figure in a veil, its face worn smooth by hands, with ALTHEA scratched into its base. Strips of old linen are tied along the arch, and a clay bowl at the figure's feet holds river pebbles and candle stubs. An iron hook holds a broth pot. On Hallowdays a friar in a patched habit of undyed wool ladles thin pea broth to the district's poorest, while men in boiled leather stand at the alley mouth checking faces against a roll of names. The shrine is Saint Althea's, the mender the frontier prays to, and the district keeps it in tallow where the Middle Ward keeps its own saint's shrine in beeswax."
         ];
         if (n >= 1) {
           out.push("The tin tray is emptier every month. People have no candles to spare, and light one for the ones who did not come back and none for themselves.");
@@ -677,7 +677,7 @@
         }
         return out;
       },
-      see: ["saint_althea", "dredge_end", "black_tally"]
+      see: ["saint_althea", "dredge_end", "black_oath"]
     },
     {
       id: "flooded_steps", category: "places", title: "Flooded Lower Steps",
@@ -842,7 +842,7 @@
         var res = s.silt_gate_resolution;
         if (res === "watch_seized") {
           out.push("You bound the broker and his porters at the mooring rings and hauled four crates of highland shear-steel and the jugs of peat-spiritus up the ramp on a hand-barrow. The whole un-stamped cargo went to the Quayside customs house, and the run through the Silt-Gates was broken.");
-        } else if (res === "tally_bribed") {
+        } else if (res === "hush_money") {
           out.push("You took twenty-five silver marks from the broker and let the run through. The porters took their barrows into the canal cellar tunnels and the punt slipped back out through the water-gate.");
         } else if (res === "leverage") {
           out.push("You interrupted the drop but did not break the run. The crates stayed on the platform for the tide or the Watch to deal with, and what you carried up the ramp was a strip of wax vellum in the broker's own hand, with a rate written beside each name: six silver marks a Marketday for the north quay.");
@@ -851,7 +851,7 @@
         }
         return out;
       },
-      see: ["voss", "port_watch", "dredge_end", "black_tally"]
+      see: ["voss", "port_watch", "dredge_end", "black_oath"]
     },
 
     /* ---------------------------------------------- INSTITUTIONS, LAW AND CUSTOM */

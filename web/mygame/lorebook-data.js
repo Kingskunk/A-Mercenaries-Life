@@ -11,11 +11,11 @@
  *   sub       one line under the title in the list (role, or what it is)
  *   role      optional line under the heading in the reader (defaults to sub)
  *   tags      short labels; clicking one filters the list. Also searched.
- *   aliases   extra search words that are not in the text ("Free City", "Tally")
+ *   aliases   extra search words that are not in the text ("Free City", "Oath")
  *   link      exact phrases in the story text that become clickable links to this entry (only
  *             once the entry is unlocked, and only the first mention on each page). Keep these
  *             specific: a full proper name (Port Watch, Gilded Scales), never a common word
- *             ("captain", "tolls", "watch", "tally") and never a phrase that starts with "the",
+ *             ("captain", "tolls", "watch", "oath") and never a phrase that starts with "the",
  *             since "the" is not always capitalised. Generic words could point at the wrong
  *             town once there is more than one.
  *   unlock    game variable name, or an array (any of them), or function(stats) -> bool.
@@ -567,26 +567,26 @@
         see: ["gilded_scales", "port_valen", "cargo_quay", "civic_heights", "silt_gates"]
       },
       {
-        id: "black_tally", category: "factions", title: "The Black Tally",
-        link: ["Black Tally"],
-        sub: "Dredge-End's debt syndicate",
-        tags: ["Port Valen", "Underworld"], aliases: ["Tally", "Dredge-End", "syndicate", "loan sharks", "smugglers"],
-        unlock: "codex_black_tally",
-        meter: { stat: "black_tally_rep", label: "Standing with the Black Tally" },
+        id: "black_oath", category: "factions", title: "The Black Oath",
+        link: ["Black Oath"],
+        sub: "Dredge-End's sworn brotherhood",
+        tags: ["Port Valen", "Underworld"], aliases: ["Oath", "Dredge-End", "brotherhood", "oath-breakers", "smugglers"],
+        unlock: "codex_black_oath",
+        meter: { stat: "black_oath_rep", label: "Standing with the Black Oath" },
         body: function (s) {
           var out = [
-            "The syndicate that holds Port Valen's flooded water-streets. They are called the Tally because they rule by paper rather than blades: promissory notes, unbonded labor liens, and interest books kept on every punt, eel-trap, and tenement stilt below the high-water line. While the Gilded Scales control international trade at the high stone wharves, the Black Tally owns the debt of everyone too poor to leave the mud.",
-            "Their power rests on an uneasy truce with the city above: the Port Watch stays off the canal lanes, the Scales buy up their distressed debt-paper at wholesale discount, and the Tally ensures the waterfront never boils over into open riot."
+            "The sworn brotherhood of the flooded quarter. Down here they say it began as a burial club: puntmen and dredgers paying into a common purse so their drowned got a grave and their families ate. The oaths are sworn at the shrine, and the roll of sworn names is kept there still.",
+            "Swear to it and it feeds you when the water takes your boat. Break it and it finds you, and there is no buying your way clear, only the work you said you would do. It holds what the Watch does not reach: the punt berths, the eel-traps, the night barges, and the narrow alleys. The city above leaves it alone, and in exchange the waterfront does not boil over."
           ];
           if (truthy(s.pv_tavern_rumor_1)) {
-            out.push("Their collectors work the canal footbridges with bare knives, checking faces against wax tablets. The advice along the quays is simple: do not flash silver past dark in that quarter, unless you mean to donate it.");
+            out.push("Their men work the canal footbridges with bare knives and no Watch badge, reading the faces that come past. The advice along the quays is simple: do not flash silver past dark in that quarter, unless you mean to donate it.");
           }
           if (truthy(s.silt_gate_full_intel) || truthy(s.has_silt_gate_payout_slip)) {
             out.push("Their smuggling lines penetrate the city's seawall through the storm flap-valves at the Silt-Gates, moving un-stamped highland shear-steel and illicit peat-spiritus right under the quays by paying off Harbor Watch sergeants six silver marks a week.");
           }
           return out;
         },
-        see: ["port_valen", "dredge_end", "gilded_scales", "port_watch"]
+        see: ["port_valen", "dredge_end", "gilded_scales", "port_watch", "alley_shrine"]
       },
       {
         id: "iron_bailiffs", category: "factions", title: "The Iron Bailiffs",
@@ -640,9 +640,9 @@
         tags: ["Port Valen"], aliases: ["Port Valen", "Dredge-End", "Upper Wharves", "free city", "Free City", "Council", "capital"],
         unlock: "codex_port_valen",
         body: [
-          "The sprawling port capital downriver, a free city in the old imperial sense, answerable to no crown. Its Council rules the surrounding towns and villages of the river country, Alderford among them, through tolls, tax contracts, and factors instead of garrisons. The merchant palaces of the Gilded Scales stand in the Upper Wharves. Dredge-End is a maze of flooded canals and rotting tenements, and Black Tally territory."
+          "The sprawling port capital downriver, a free city in the old imperial sense, answerable to no crown. Its Council rules the surrounding towns and villages of the river country, Alderford among them, through tolls, tax contracts, and factors instead of garrisons. The merchant palaces of the Gilded Scales stand in the Upper Wharves. Dredge-End is a maze of flooded canals and rotting tenements, and Black Oath territory."
         ],
-        see: ["gilded_scales", "port_watch", "black_tally", "alderford", "iron_carrion", "harbor_quayside", "dredge_end", "middle_ward", "upper_wharves", "civic_heights", "council"]
+        see: ["gilded_scales", "port_watch", "black_oath", "alderford", "iron_carrion", "harbor_quayside", "dredge_end", "middle_ward", "upper_wharves", "civic_heights", "council"]
       },
       {
         id: "alderford", category: "places", title: "Alderford",
