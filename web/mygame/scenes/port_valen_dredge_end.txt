@@ -12,8 +12,7 @@
 *comment loop) still targets labels in this same file via a plain *goto --
 *comment only the "travel elsewhere" exit below crosses the file boundary,
 *comment via *goto_scene back into port_valen.txt's own travel hub. Contains
-*comment the district hub, the Silt-Gate Contraband quest, and the Rusty
-*comment Anchor / Low-Water Box quest (see quest/RUSTY_ANCHOR_PLAN.md).
+*comment the district hub and the Silt-Gate Contraband quest.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label port_valen_dredge_end
@@ -24,74 +23,190 @@
 *line_break
 [b][⏳ Dredge-End Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
 *line_break
-The cobblestones give out at the drainage cut, replaced by greased timber duckboards and sunken mud tracks that run below the river's high-water mark. Dredge-End sits in the city's low silt-basin: rows of waterlogged timber tenements propped on black-greased pilings, connected by creaking rope gangways above stagnant canal trenches. The air hangs thick with brackish mud, forge smoke, and rotting dock-weed, and every footstep on the wet planks sends a hollow thud into the water below.
+*comment Intro is built in four layers, each with one job, so they cannot overwrite each other:
+*comment   1 PLACE  constant geography and smell. No weather, no time, no people.
+*comment   2 SKY    weather and light only. No people, no activity.
+*comment   3 STREET who is about, gated by street_life (calendar.txt): empty/thin/normal.
+*comment            Day-of-week is activity only when normal; when thin/empty it shows as absence.
+*comment   4 TELL   wisdom 13+ or outlaw adds sentences to layer 3; it never replaces it.
+*comment cut_low_water is true Morning through Dusk: tide out, and the hours people are about.
+*temp cut_day false
+*temp cut_low_water false
+*temp cut_outdoors true
+*temp cut_boats true
+*temp de_savvy false
+*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+  *set cut_day true
+*if ((cut_day) or (time_period = "Dusk"))
+  *set cut_low_water true
+*if (street_life = "empty")
+  *set cut_outdoors false
+*if (weather_visibility = "poor")
+  *set cut_boats false
+*if ((wisdom >= 13) or (origin = "outlaw"))
+  *set de_savvy true
 
+*comment ── LAYER 1: PLACE ──
+The city's paving stops at the drainage cut. Past it the lanes are broken rock and packed cinder, with planks laid over the low patches where the ground gives up. Below it, the water is always close. Dredge-End sits under the river's high-water line, its tenements standing on tarred pilings with rope gangways strung between them. Some of the pilings are stone, some are timber, and at least two are old ship's ribs, the district having been grown rather than built. The air hangs thick with the smell of tar and drying eel. Every step on the paving rings a little hollow.
+
+*comment ── LAYER 2: SKY ──
 *if (weather = "Rain")
-  Rain drums across the sagging shingle roofs, sending streams of brown runoff cascading from wooden gutters into the overflowing canals.
+  Rain drums across the sagging shingle roofs, a sound like a hundred fingernails on old linen, sending streams of brown runoff cascading from wooden gutters into the overflowing canals. The smell of wet ash rises from the charcoal heating pots, and the rain finds the gap at your collar and sits there, cold and patient. The gangway planks swell and go slick underfoot.
 *elseif (weather = "Storm")
-  A driving gale howls through the narrow canal cuts, churning the dark water and straining mooring lines against the pilings.
+  A driving gale howls through the narrow canal cuts, churning the dark water and straining mooring lines against the pilings. The wind presses against you, shoving your balance sideways on the gangway, and the salt-brine sting of the estuary drives up the cut. The canal chops against the pilings, a steady knocking that rises to match the wind. Somewhere above, a shutter bolt slides home with a clang that carries farther than it should.
 *elseif (weather = "Fog")
-  Thick river fog sits trapped between the leaning buildings, muffling footsteps and turning footbridge lamps into faint yellow smudges.
+  The fog has come, and it does not plan to leave. It sits trapped between the leaning buildings, muffling footsteps and turning footbridge lamps into faint yellow smudges, suggestions of light rather than light. The damp beads on your coat and does not shake off, and the canal water's mineral smell rises with the mist. A shutter bolt slides home somewhere you cannot see, and the sound comes from nowhere.
 *elseif ((weather = "Snow") or (weather = "Sleet"))
-  Cold grey slush slicks the plank-walks, and residents huddle around smoking charcoal pots beneath sagging eaves.
+  Cold grey slush slicks the plank-walks. The chill comes up through your boots and stays there. The smell of charcoal is sharp and close, cutting through the damp, and the snow on the awnings hisses as it melts against the old tar.
 *elseif (weather = "Blizzard")
-  A freezing squall drives snow through the water-lanes, sending everyone scurrying beneath covered gangways and behind barred shutters.
+  A freezing squall drives snow through the water-lanes, and the wind presses your coat flat against you and finds every gap at your wrists and neck. The air tastes of iron and cold, and the snow that blows in under the covered gangways melts in a thin black line along the planks.
 *elseif (weather = "Clear")
-  Pale daylight slants between the crowded roofs, drawing a heavy steam from the low-tide mud banks.
+  *if (cut_day)
+    Light filters between the crowded roofs, thin and clean, drawing a slow steam off the low-tide banks. The air is clean for once: woodsmoke and drying tar, the smell of a district at rest. A gull cries from the rooftops, and the creak of a footbridge under its own weight is audible in the stillness.
+  *elseif (time_period = "Dusk")
+    The low sun turns the canal water copper between the roofs, and the pilings throw long shadows across the planks. The air is still and smells of woodsmoke and cooling tar. A gull cries once from the rooftops.
+  *elseif (time_period = "Pre-Dawn")
+    The sky over the roofs is going from black to iron-grey, and a thin mist lifts off the water. The air is still enough that every creak of timber carries.
+  *else
+    A thin moon lies on the black water between the roofs, and the pilings are shapes without edges. The air is still enough that every creak of timber carries.
 *else
   *comment Overcast
-  A flat, leaden sky presses down over the district, trapping the damp chill between the crowded rooftops.
+  *if (cut_day)
+    The sky is a single grey sheet, and the air between the rooftops has stopped moving. Even the gulls have gone somewhere else.
+    *if (temp_index <= 2)
+      The chill is patient here: it does not bite, it simply waits.
+    *else
+      The air is close and heavy here: it does not press, it simply waits.
+  *elseif (time_period = "Dusk")
+    The grey sheet of the sky thickens toward dark, and the air between the rooftops has stopped moving. Even the gulls have gone somewhere else.
+  *elseif (time_period = "Pre-Dawn")
+    The grey sheet of the sky lightens by degrees without ever showing where the sun is, and the air between the rooftops has stopped moving.
+  *else
+    No moon or star shows through the cloud, and the dark between the roofs is close and total. The air has stopped moving.
 
-*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
-  *if ((wisdom >= 13) or (origin = "outlaw"))
-    Beneath the bridges, the canal water is black. Two figures with long knives watch the footbridge from deep shadow without a city badge between them. A shutter cracks open just long enough for a hand to pass out a debt-parcel, while a muffled whistle warns of footsteps. Guided only by submerged guide ropes, a narrow boat slips past in the dark.
+*comment Weather memory (calendar ground_state): after days of rain the district stays wet
+*comment even in a dry spell. Sky layer, so no people.
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  After days of rain the plank patches sit awash and the canals run high against the pilings.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The planks are still dark and slick from the last rain.
+
+*comment ── LAYER 3: STREET (with LAYER 4: TELL) ──
+*if (street_life = "empty")
+  The lanes are empty. Shutters are barred, gangway doors are wedged shut, and the tenement stilts stand alone in the weather. A skiff lies hauled up on the plank landing with its keel to the sky and its owner nowhere to be seen. Whatever business the cut has today is being done indoors, and anything that can wait for the weather is waiting.
+  *if (de_savvy)
+    The Port Watch has kept off the water-lanes too. Weather like this is when the cellar-bosses move goods under cover, and the doors left unbarred are the ones to watch.
+  *if (cut_low_water)
+    *if (day_of_week = "Marketday")
+      It is Marketday, but the stalls are lashed shut under their canvas and the awning poles bang against the pilings.
+    *elseif (day_of_week = "Tideday")
+      It is Tideday, and the boatmen who read the channel are indoors with their tide-tables and their grievances.
+    *elseif (day_of_week = "Hallowday")
+      It is Hallowday, and the friar has ladled his broth indoors today; the alley shrine stands empty but for the tallow smeared on its arch.
+    *elseif (day_of_week = "Greyday")
+      It is Greyday, and the collector's runner has kept his writs dry and his knocking for another day.
+    *elseif (day_of_week = "Forgeday")
+      It is Forgeday, but the boat-shed smiths have let their fires bank down; only the smelter chimneys smoke.
+    *elseif (day_of_week = "Ironday")
+      It is Ironday, and the laundry lines hang bare between the stilts.
+    *else
+      It is Hearthday, and the chimney smoke lies thick and low over a district that has shut itself indoors.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  Beneath the bridges, the canal water is black, and the water-streets give no sign of the Port Watch. The chill off the water is the kind that settles in your chest and stays there. A solitary skiff waits by a leaning piling, its boatman wrapped in a wool blanket, while from an overhead footbridge a lantern swings in the draft, throwing a slow circle of light on the black water.
+  *if (de_savvy)
+    Two figures with long knives watch the footbridge from deep shadow without a city badge between them. A shutter cracks open just long enough for a hand to pass out a debt-parcel, a muffled whistle warns of footsteps, and a narrow boat slips past on submerged guide ropes without a light.
+*elseif (street_life = "thin")
+  *comment severity 1-2 (Rain, Sleet, Snow, Fog), Morning through Dusk
+  *if (weather_visibility = "poor")
+    Fog keeps the skiffs tied up. The ferrymen have stopped calling fares, and the few people out move along the plank-walks by touch, one hand on the rail. Voices come out of the white with no one attached to them.
+    *if (de_savvy)
+      Fog is when the debt-parcels change hands. A whistle passes down the cut and gets an answer from somewhere you cannot see.
   *else
-    Beneath the bridges, the canal water is black, and the water-streets give no sign of the Port Watch. A solitary skiff waits by a rotting piling, its boatman wrapped in a wet blanket, while from an overhead footbridge a lantern swings in the draft.
-*elseif (time_period = "Dusk")
-  *if ((wisdom >= 13) or (origin = "outlaw"))
-    The failing dusk light drains from the water, leaving the canals to the cellar-bosses. At the footbridge, two men in dark coats stop every boat crossing the cut without wearing city colors. In the murk below, low whistles coordinate the transfer of unmarked sacks between two skiffs before the night Watch rotation begins.
-  *else
-    As dusk settles, lanterns flicker behind grimy bullseye glass and vendors pull rough canvas over their goods. A ferryman poles his skiff through the flooded lanes, calling for one last fare, while from an upper window a woman shakes out a wool blanket into the darkening water.
-*else
+    The lanes are half-empty. Traffic has drawn in under the eaves and the covered gangways, and the few people still out walk fast with their collars up. Under a patched oilskin awning, the eel-seller has pulled her canvas tight and curses the weather in three dialects, still selling to anyone desperate enough to stop.
+    *if (de_savvy)
+      Nobody with sense is watching the footbridge in this weather, which is exactly why the runners are using it.
   *if (day_of_week = "Marketday")
-    *if ((wisdom >= 13) or (origin = "outlaw"))
-      The Port Watch doesn't come down to the canals on Marketday—trade here settles with sharp elbows and quick fingers. Beneath a patched oilskin awning, the eel-seller weights her balance with a shaved copper coin to short customers, while two wharf boys shadow the tailor's apprentice to lift his purse. Down the cut, a woman calling for a healer keeps the timed rhythm of a street lookout, and a turnip punt shifts its tarp to reveal the iron corners of an unmarked strongbox.
-    *else
-      Marketday traffic spills into the flooded canals with mud-skiffs bumping against the pilings. Beneath a patched oilskin awning, an old woman ladles hot smoked eels from a steaming iron kettle, shouting prices over the water, while an apprentice tailor bargains for marsh-reeds under a shop eave.
+    It is Marketday, and the stalls that opened are open under lashed canvas, with more stallholders than customers.
   *elseif (day_of_week = "Tideday")
-    *if ((wisdom >= 13) or (origin = "outlaw"))
-      With the tide drowning the lower steps, the water-lanes answer to whoever knows the channel. A boatman in tall oiled-leather waders drags a weighted grapple hook under the surface to haul up submerged contraband parcels tethered to the bridge pilings before the ebb. Down the lane, a submerged cellar hatch opens from inside to let a drenched diver slip into the flooded flophouse unseen.
+    *if (weather_visibility = "poor")
+      It is Tideday, and the channel-boatmen have tied up and are reading the tide by the sound of it against the pilings.
     *else
-      The flood tide has swallowed the lower stair landings, forcing foot traffic onto the raised walkways. Beneath a second-story pulley overhang, a woman hauls laundry clear of the surge while a boatman in tall oiled-leather waders poles a cargo punt past flooded cellars.
+      It is Tideday, and the channel-boatmen work the tide anyway, slower and closer to the pilings.
   *elseif (day_of_week = "Hallowday")
-    *if ((wisdom >= 13) or (origin = "outlaw"))
-      Beneath the church-day quiet, the canals run on older debts. Under the timber arch of an alley shrine smeared with animal tallow, two men in boiled leather lean against the wall, checking faces against a scrap of vellum as scavengers line up for the friar's charity broth. In the shadow of the bridge arch, an acolyte slips a leather pouch of temple silver to a canal fence in exchange for unrecorded tincture vials.
-    *else
-      Distant cathedral bells toll across the roofs from Civic Heights, but the canals keep their own quiet. Under the timber arch of an alley shrine smeared with animal tallow, an itinerant friar dispenses thin pea broth to a line of scavengers, while an oar-maker sits beneath a shed roof repairing a broken sweep.
+    It is Hallowday, and the friar's broth line has crowded in under the shrine arch to get out of the weather.
   *elseif (day_of_week = "Greyday")
-    *if ((wisdom >= 13) or (origin = "outlaw"))
-      The heavy river damp gives the water-lanes over to illicit traffic. Under a flophouse gangway, a man with a bone-handled shiv tucked into his sash pounds on a tenement shutter—you see how surrounding windows go dead silent as neighbors pass the alarm. Overhead, a rooftop runner uses the low overhangs to slide wrapped parcels across an alley gap where no bailiff can follow.
-    *else
-      Heavy river damp clings to the leaning walls. Under the covered gangway of a tenement, a man with a bundle of blackened debt-writs pounds on a door, shouting names into the fog, while a charcoal burner pushes a smoking brazier cart across the timber footbridge.
+    It is Greyday, and the collector's runner knocks on doors with a sack held over his writs.
   *elseif (day_of_week = "Forgeday")
-    *if ((wisdom >= 13) or (origin = "outlaw"))
-      Smelter smoke coats the canals, but the metal moving here bears no city stamps. Under the roof overhang of a boat-shed, a scrap dealer unloads heavy chain with the harbor-master's proof-marks freshly rasped away. Nearby, a smith's hammer pauses in measured beats to signal an empty channel, while two men at the bridge parapet chalk marks on a slate for every load that crosses.
-    *else
-      Under the roof overhang of a boat-shed, a scrap dealer unloads coils of salvage chain and pitted iron plate onto a timber platform. Nearby, a smith's striker hammers bent rowlocks over a bench anvil, sending bright red sparks hissing down into the canal below.
+    It is Forgeday, and the smith's hammer rings from a boat-shed with its doors half-shut against the weather.
   *elseif (day_of_week = "Ironday")
-    *if ((wisdom >= 13) or (origin = "outlaw"))
-      You know Dredge-End's ordinary day by its silences as much as its noise. A collector's runner threads the footbridges checking names off a wax tablet, unhurried, because nobody here is going anywhere. Down the cut, laundry lines sag between tenement stilts, dripping steadily into water that never quite clears.
-    *else
-      The canals run their ordinary business today—laundry strung between tenement stilts, a runner crossing the footbridge with a satchel of correspondence, the water-lanes going about getting through another day.
+    It is Ironday, and the laundry lines hang heavy and dripping between the stilts.
+  *else
+    It is Hearthday, and the district has gone indoors early, the chimney smoke hanging low.
+*else
+  *comment normal: Clear or Overcast, Morning through Dusk. Day-of-week is full activity here.
+  *if (time_period = "Dusk")
+    As dusk settles, lanterns flicker behind grimy bullseye glass and vendors pull rough canvas over their goods. A ferryman poles his skiff through the flooded lanes, calling for one last fare, while from an upper window a woman shakes out a wool blanket into the darkening water. The laundry snaps once and then hangs still.
+    *if (de_savvy)
+      At the footbridge, two men in dark coats stop every boat crossing the cut without city colors, and low whistles coordinate the transfer of unmarked sacks between two skiffs before the night Watch rotation begins.
+  *if (day_of_week = "Marketday")
+    Marketday traffic spills onto the canals with flat skiffs bumping against the pilings. Beneath a patched oilskin awning, an old woman ladles hot smoked eels from a steaming iron kettle, shouting prices over the water. The same prices as last week, she says, though the portions tell a different story. The smell of eel and steam hangs over the lanes. An apprentice tailor bargains for marsh-reeds under a shop eave, and somewhere a gull calls from the rooftops.
+    *if (de_savvy)
+      The Port Watch doesn't come down to the canals on Marketday; trade here settles with sharp elbows and quick fingers. Two wharf boys shadow the tailor's apprentice to lift his purse. Down the cut, a woman calling for a healer keeps the timed rhythm of a street lookout, and a turnip punt shifts its tarp to reveal the iron corners of an unmarked strongbox.
+  *elseif (day_of_week = "Tideday")
+    The tide is drawn back today, and the lower stair landings stand bare and black to the weed. The smell of the canal is stronger for it: cold iron and rot and the brine of the estuary. Beneath a second-story pulley overhang, a woman hauls laundry clear of the mud-stink, while a boatman in tall oiled-leather waders poles a cargo punt down the narrowed channel past the exposed cellar doors.
+    *if (de_savvy)
+      The boatman is not fishing. He drags a weighted grapple hook under the surface to haul up contraband parcels tethered to the bridge pilings before the flood returns, and down the lane a cellar hatch opens from inside to let a drenched diver slip into the flophouse unseen.
+  *elseif (day_of_week = "Hallowday")
+    Distant cathedral bells toll across the roofs from Civic Heights, but the canals keep their own quiet. Under the timber arch of an alley shrine smeared with animal tallow, an itinerant friar dispenses thin pea broth to a line of scavengers. The broth steam smells of salt and nothing else. An oar-maker sits beneath a shed roof repairing a broken sweep, and the loudest sound is the friar's spoon against the bowl.
+    *if (de_savvy)
+      Two men in boiled leather lean against the wall checking faces against a scrap of vellum as the broth line shuffles forward, and in the shadow of the bridge arch an acolyte slips a leather pouch of temple silver to a canal fence in exchange for unrecorded tincture vials.
+  *elseif (day_of_week = "Greyday")
+    Under the covered gangway of a tenement, a man with a bundle of blackened debt-writs pounds on a door, shouting names down the lane. The list is shorter than it was last Greyday, some names struck through in a hand that is not his own. A charcoal burner pushes a smoking brazier cart across the timber footbridge, and the heat off it follows him across the planks.
+    *if (de_savvy)
+      Farther down, a man with a bone-handled shiv tucked into his sash pounds on a tenement shutter, and you see the surrounding windows go dead silent as the neighbors pass the alarm. Overhead, a rooftop runner slides wrapped parcels across an alley gap where no bailiff can follow.
+  *elseif (day_of_week = "Forgeday")
+    Under the roof overhang of a boat-shed, a scrap dealer unloads coils of salvage chain and pitted iron plate onto a timber platform. The pile is smaller than it was last Forgeday. Nearby, a smith's striker hammers bent rowlocks over a bench anvil, sending bright red sparks hissing down into the canal below. The smell of hot iron and char mixes with the canal smell, and neither is pleasant. The sparks hiss and die in the water like small, brief lives.
+    *if (de_savvy)
+      The chain has had the harbor-master's proof-marks freshly rasped away, and two men at the bridge parapet chalk a mark on a slate for every load that crosses. The smith's hammer pauses in measured beats: an all-clear for an empty channel.
+  *elseif (day_of_week = "Ironday")
+    The canals run their ordinary business today: laundry strung between tenement stilts, a runner crossing the footbridge with a satchel of correspondence, the water-lanes going about getting through another day. The list the runner carries is shorter than it was last week. The smell of drying linen and canal water mixes in the air, and neither overpowers the other.
+    *if (de_savvy)
+      You know the satchel holds a collector's wax tablet, not letters. He checks a name off at every door, unhurried, because nobody here is going anywhere.
   *else
     *comment Hearthday
-    *if ((wisdom >= 13) or (origin = "outlaw"))
-      Hearthday empties the water-lanes early. You clock the ones who don't get the day off — two men still checking names at the footbridge, never looking up as the empty boats drift through.
-    *else
-      Hearthday quiets the canals early, most of the district's working hands home for the evening. Smoke curls thick from tenement chimneys, and the water-lanes empty out well before dark.
+    Hearthday quiets the canals. Smoke curls thick from tenement chimneys, cheap coal rather than peat, and the water-lanes empty out well before dark. The smell of the district is woodsmoke and cold food and the quiet of people who are resting because they cannot afford to do anything else. A single gull calls from somewhere high, and then is gone.
+    *if (de_savvy)
+      You clock the two men still checking names at the footbridge, never looking up as the empty boats drift through. The boats drift because no one is paying them to move.
+
+*comment The new areas are options here, like every other district's POIs. Open hours:
+*comment tide is a derived value (low water Morning to Dusk, high water at Night and
+*comment Pre-Dawn), the same rule the Silt-Gate quest uses. A closed place is not listed.
+*comment Dredge-End's weather profile, read from the calendar flags:
+*comment   cut_outdoors is false while street_life is "empty" (severity 3): the open-air
+*comment   areas close. Lamp stair and shrine arch are sheltered and stay open.
+*comment   cut_boats is false while visibility is "poor" (Fog, Storm, Blizzard): the barges
+*comment   stay tied up, so the dredge landing has nothing to unload.
 *choice
-  # Push through the tarred doorflap of the Rusty Anchor. [~15 min]
-    *goto pv_poi_rusty_anchor
+  *if ((cut_low_water) and (cut_outdoors))
+    # Walk the market lane, where the stalls sit under patched awnings. [~15 min]
+      *goto cut_market
+  *if (cut_outdoors)
+    # Climb the ladder-stairs to the rope bridges over the trenches. [~15 min]
+      *goto cut_gangways
+  *if ((cut_day) and (cut_outdoors))
+    # Follow the cut to the boat-sheds and the scrap yard. [~15 min]
+      *goto cut_sheds
+  *if ((cut_low_water) and (cut_boats))
+    # Go down to the dredge landing, where the barges unload. [~15 min]
+      *goto cut_landing
+  # Climb the granite steps to Lamp Stair beneath the seawall. [~15 min]
+    *goto cut_lamp
+  *if (cut_low_water)
+    # Stop at the alley shrine under the timber arch. [~15 min]
+      *goto cut_shrine
+  *if ((cut_low_water) and (cut_outdoors))
+    # Go down the lower steps while the water is out. [~15 min]
+      *goto cut_steps
   *if (silt_gate_quest_stage = "active")
     # Investigate the Silt-Gate drainage channel. [~15–45 min]
       *goto pv_dredge_silt_gates
@@ -114,7 +229,17 @@ The cobblestones give out at the drainage cut, replaced by greased timber duckbo
     *set death_cause "exhaustion"
   *goto_scene death death_screen
 
-You pick your way along a narrow timber walkway clinging to the moss-grown foundations of Dredge-End's lower tenements. Beneath the boardwalk, stagnant canal runoff trickles toward a massive arched culvert cut into the seawall—the Silt-Gate channel. Heavy oak flap-valves, banded with pitted iron, hang from stone lintels above the water-trench.
+You pick your way along a narrow timber walkway clinging to the moss-grown foundations of Dredge-End's lower tenements. Beneath the boardwalk, slow canal runoff trickles toward a massive arched culvert cut into the seawall, the Silt-Gate channel. Heavy oak flap-valves, banded with pitted iron, hang from stone lintels above the water-trench.
+
+*comment Weather never closes this option. The channel's own clock is the tide, the quest
+*comment can't be locked out by a storm, and foul weather suits the smugglers, so it only
+*comment changes what the channel looks like.
+*if (weather_cold)
+  Frost furs the walkway timbers, and the runoff in the channel moves thick with slush.
+*elseif (weather_wet)
+  The rain has swollen the runoff into a brown rope of water, loud in the culvert.
+*elseif (weather_visibility = "poor")
+  Fog lies along the channel, and the lintels over the valves are lost in it.
 
 *if (silt_gate_quest_stage = "resolved")
   *if (silt_gate_resolution = "failed")
@@ -214,7 +339,7 @@ You trace the shadow-lines along the opposite roof-gutters and water-stairs. By 
 *label pv_silt_gate_recon_sapper
 You climb the stone stairs to the alley street above the channel. Bolted into the street-level masonry sits the heavy iron storm-winch used by city road-crews to service the counterweight chains.
 
-You examine the iron gearing: when the flood tide pushes the oak flap-valves open, the counterweight arm lifts and engages a heavy ratchet pawl. If you drive a tempered iron wedge into the ratchet teeth, the pawl will lock the flap-valve shut the moment a boat clears the lintel—trapping the punt inside the culvert with no retreat back to the estuary.
+You examine the iron gearing: when the flood tide pushes the oak flap-valves open, the counterweight arm lifts and engages a heavy ratchet pawl. If you drive a tempered iron wedge into the ratchet teeth, the pawl will lock the flap-valve shut the moment a boat clears the lintel, trapping the punt inside the culvert with no retreat back to the estuary.
 
 You wedge an iron spike firmly into the cog assembly, test the tension with your boot, and step back. The trap is armed.
 
@@ -600,10 +725,6 @@ The broker spins around, his hand darting toward his coat, but stops dead when h
         *gosub_scene startup currency_add
         *set currency_txn_locked true
         *set locked_currency_txn_page_id choice_page_id
-      *comment Wiring for quest/RUSTY_ANCHOR_PLAN.md Layer 2: this threat is the
-      *comment specific moment the broker's "we'll remember" line refers to, so
-      *comment it's the one that plants the player's own note in the Anchor's box.
-      *set anchor_broker_note true
     *else
       You make your demand, but the broker catches a flicker of hesitation in your stance. He glances past you toward the dark channel and realizes you're working without backup.
       "Then whistle," he says, and the porters step forward with heavy prybars. "Go on. We'll wait."
@@ -717,7 +838,7 @@ The broker goes pale against the wet masonry. The porters freeze, hands well cle
         "Sergeant Kray and watchman Pell!" he babbles hysterically, thrusting his entire written payout slip into your hands. "They split six marks every Marketday! Take the names, take the parchment, just call off the fire!"
       *else
         *set silt_gate_full_intel false
-        You let the power roll, but the broker thrashes against the mooring ring—a stoneware jug shatters, splashing peat-spiritus. In the confusion, he blurts out "Sergeant Kray on the night watch!" before wrenching free and diving into the canal.
+        You let the power roll, but the broker thrashes against the mooring ring. A stoneware jug shatters, splashing peat-spiritus. In the confusion, he blurts out "Sergeant Kray on the night watch!" before wrenching free and diving into the canal.
       *goto pv_silt_gate_divert_conclude
 
   *if (((character_class = "bard") and ((bard_spell = "dissonant_whispers") or (bard_spell_2 = "dissonant_whispers"))) and (bard_spell_slots > 0))
@@ -729,7 +850,7 @@ The broker goes pale against the wet masonry. The porters freeze, hands well cle
       *set silt_gate_full_intel true
       You lean down and murmur a harsh, discordant syllable that tears into the broker's mind like rusted iron hooks. He clutches his temples with a choked scream, agony twisting his face as his defenses shatter completely.
       
-      "Stop! Stop it!" he weeps, fumbling the oilskin-wrapped slip from his inner pocket and pressing it into your hands. "Sergeant Kray and watchman Pell! Every payout is marked in the wax—take it all!"
+      "Stop! Stop it!" he weeps, fumbling the oilskin-wrapped slip from his inner pocket and pressing it into your hands. "Sergeant Kray and watchman Pell! Every payout is marked in the wax. Take it all!"
       *goto pv_silt_gate_divert_conclude
 
   # Intimidate him with cold, quiet menace and demand every name on his payroll.${hint_divert_cha}
@@ -745,7 +866,7 @@ The broker goes pale against the wet masonry. The porters freeze, hands well cle
       Sweat cuts clean lines through the grime on the broker's face. "Sergeant Kray and watchman Pell!" he whispers frantically, fumbling a wax-sealed slip from his pocket. "They take six silver marks every Marketday to walk the north quay. That's both of them, I swear it by the river!"
     *else
       *set silt_gate_full_intel false
-      You corner him with cold menace, but a thrashing porter suddenly knocks over a crate—a stoneware jug shatters with a loud crack, splashing fiery peat-spiritus across the stone.
+      You corner him with cold menace, but a thrashing porter suddenly knocks over a crate. A stoneware jug shatters with a loud crack, splashing fiery peat-spiritus across the stone.
       In the chaos, the terrified broker blurts out, "Sergeant Kray on the night watch!" before wrenching free and diving headlong into the murky canal waters, leaving only one name in your grasp.
     *goto pv_silt_gate_divert_conclude
 
@@ -799,302 +920,164 @@ The Silt-Gate run is not broken, only interrupted. What you hold is worth the mo
 *goto port_valen_dredge_end
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment DREDGE-END POI: THE RUSTY ANCHOR
-*comment Full design spec, rationale, and the review/rescale history are in
-*comment quest/RUSTY_ANCHOR_PLAN.md -- this is that spec wired in.
+*comment DREDGE-END: THE CUT (seven areas off the district page)
+*comment Duckboard Market, Upper Gangways, Boat-Sheds and Scrap Yard, Dredge
+*comment Landing, Lamp Stair, Alley Shrine, Flooded Lower Steps. Places and small
+*comment things to do only: no quests, no faction effects. Design and open hours are
+*comment in quest/DREDGE_END_EXPANSION_PLAN.md. Rules used throughout:
+*comment - each area entry costs 15 minutes once; everything inside it is free
+*comment   unless it is a real activity (a shift, a search, a game), which has its own
+*comment   time call;
+*comment - tide is derived from time_period (low water Morning to Dusk), the same rule
+*comment   the Silt-Gate quest uses; a closed place is simply not offered on the
+*comment   district page;
+*comment - rumor pools are ints (cut_rumors_*), bumped once per page behind the
+*comment   stat_bump_locked guard, and read after the bump.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-*label pv_poi_rusty_anchor
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment AREA 1 OF 7: DUCKBOARD MARKET
+*comment chandler's shop, stalls, rumors, the Marketday crowd, the foot of the outside stair
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label cut_market
+*set cut_seen_market true
 *set hours_to_pass 0
 *set minutes_to_pass 15
-*set time_advance_call_id "pv_poi_anchor_1"
+*set time_advance_call_id "cut_market_1"
 *gosub_scene calendar advance_time
 *gosub_scene calendar recalc_hp_from_neglect
-
 *if (hp_current <= 0)
   *set death_cause "starvation"
   *if (neglect_damage_fatigue > neglect_damage_hunger)
     *set death_cause "exhaustion"
   *goto_scene death death_screen
 
-*if (anchor_cellar_read = "none")
-  *goto pv_anchor_first_visit
-*else
-  *goto pv_anchor_hub
-
-
-*comment Beat 0: an ordinary taproom. Nothing here is a hook. The tense image (two
-*comment men who aren't drinking, a man sounding the water under the floor) is held
-*comment back until the box job is actually offered -- see pv_anchor_low_water --
-*comment so the room turns on the player instead of starting out uncanny.
-*label pv_anchor_first_visit
-*set codex_rusty_anchor true
-*set anchor_cellar_read "sounding_line"
-[b]◈ THE RUSTY ANCHOR[/b]
+*label cut_market_page
+[b]◈ DUCKBOARD MARKET[/b]
 *line_break
-You shove past the heavy, tarred doorflap and your balance has to adjust immediately—the deck rolls beneath your boots. The whole tavern is built across three gutted river barges lashed end-to-end, swaying with every push of the tide.
+The market runs along the cut on broken stone and packed cinder, with planks laid over the low patches where the water comes up. Stalls stand under patched oilskin awnings in yellow and red: dried fish on strings, tar-stained rope, mended pots, hanks of wool. Punts nose in along the canal side, and the whole lane smells of frying eel, lamp oil and wet rope.
 
-The air hits you like a wet wool blanket: peat smoke, drenched hemp, and boiling fish heads. Under it is the noise of an ordinary taproom. Carters and draymen argue wages down the long cedar tables, a dredger bangs his mug for a refill, and somebody laughs too loudly at a joke that was not that good.
-
-Behind the low bar, the woman running the room is built like a timber bulkhead, her salt-and-pepper hair lashed back with sail-twine, her forearms mapped with old rope-scars. A butcher's cleaver is buried two inches into the chopping block by her right hand, and she works around it without looking. At the far end of the counter an empty stool has a bowl set in front of it under a cloth, and it is not getting any warmer.
-
-Her eyes come up and find you, and she takes your measure in about the time it takes a stranger to shut a door.
-
-*if (equipped_cloak_id = "talia_oiled_cloak")
-  Her gaze drops to the thick, yellow-cured folds of your cloak. "Talia's wax," she grunts, nodding toward the heavy mutton-tallow sheen. "Only one shed up the Grey River cures cloth that thick. Kept the river rot off your shoulders, did it?"
-*elseif (equipped_cloak_id = "none")
-  Her gaze drops to the damp cloth at your shoulders and the canal grit drying on your ${feet_prose}, taking your measure in the time it takes to draw a single breath.
+*if (time_period = "Dusk")
+  The stallholders are pulling canvas over their goods, and only the frying-eel stall still has a lit pan.
+*elseif (day_of_week = "Marketday")
+  *if (street_life = "normal")
+    It is Marketday, and the lane is packed shoulder to shoulder, with the eel-seller's awning the loudest thing in it.
+  *else
+    It is Marketday, and the stalls that opened are open under lashed canvas, with more stallholders than customers and the eel-seller's awning still the loudest thing in the lane.
 *else
-  Her gaze drops to the damp drape of your ${cloak_prose} and the canal grit drying on your ${feet_prose}, taking your measure in the time it takes to draw a single breath.
+  *if (street_life = "normal")
+    Off market days the lane runs at half its width: a few stalls, and more parked barrows than customers.
+  *else
+    Off market days and in this weather the lane is nearly bare: two stalls under lashed canvas, and the barrows parked with their tarps tied down.
 
-*goto pv_anchor_menu
+*if (weather_cold)
+  The cold has emptied half the stalls. A brazier at the end of the lane draws a knot of customers.
+*elseif (weather_wet)
+  *if (weather_severity >= 3)
+    A gale rattles the awnings against their poles, and everything on the stalls has been tied down twice.
+  *else
+    Rain drums on the awnings and runs off their edges in strings, and the plank patches are slick underfoot.
+*elseif (weather_visibility = "poor")
+  Fog turns the far end of the lane into moving shapes and colored blurs where the awnings hang.
+*elseif (weather = "Clear")
+  The awnings glow red and yellow in the light, and the wet patches steam.
 
-*label pv_anchor_hub
-*comment The box job is the second tier. It only shows up on a later day than the one
-*comment the player finished the small errand for Hobb (any outcome). Sal never
-*comment approaches the player: the room turns tense (the visible tell) and the player
-*comment chooses to take the stool at the end of the counter. Nothing forces it.
-*comment Second chance: one re-offer, on the first Forgeday after a plain refusal.
-*comment Never after backing out of a yes, and never on the day of the refusal.
-*if ((((anchor_quest_stage = "declined") and (not(anchor_reoffer_used))) and (not(anchor_backed_out))) and ((day_of_week = "Forgeday") and (campaign_day > anchor_declined_day)))
-  *goto pv_anchor_reoffer
-[b]◈ THE RUSTY ANCHOR[/b]
-*line_break
-The floor rolls with the tide under the pilings. Carters argue wages across the long tables, and the smell of the pot never quite leaves the room.
+At the landward end of the lane a chandler's shop sells wax, rope and lamp oil from behind a half-door. An outside stair climbs the wall beside it to a shut door on the upper floor, and a heavyset man sits on the bottom step.
 
-*if ((anchor_quest_stage = "unstarted") and ((anchor_errand_stage = "resolved") and (campaign_day > anchor_errand_day)))
-  The carters have dropped their voices. Two men in ink-stained leather sit in the corner booth with no drink between them, long gutting knives plain at their ribs, watching the door and a square hatch cut into the deck. A third man kneels at the hatch, feeding a knotted rope down into the bilge water. He pinches the wet hemp and marks the waterline with his thumbnail. He is not checking for leaks. He is sounding the clearance under the tavern like a man planning to come back. Sal is watching the corner booth instead of the room.
-*elseif (anchor_errand_stage = "unstarted")
-  A covered bowl sits in front of the empty stool at the end of the counter.
-*elseif (anchor_errand_stage = "resolved")
-  The hatch boards in the deck are pinned flat.
-
-*if (anchor_quest_stage = "failed")
-  A fresh clerk's stamp is inked across the hatch boards now, and Sal's cleaver has moved from the block to the counter beside her hand.
-
-*label pv_anchor_menu
-*temp box_ready false
-*if ((anchor_quest_stage = "unstarted") and ((anchor_errand_stage = "resolved") and (campaign_day > anchor_errand_day)))
-  *set box_ready true
-
-*comment Weekly rollover for the free tab -- the same rolling-7-day shape as
-*comment pv_mess_rations_used/pv_mess_week_start_day in port_valen_hub. A
-*comment finished quest must not switch the hunger clock off; see
-*comment startup.txt's mess-ration comment for why that cap exists at all.
-*if ((campaign_day - anchor_stew_week_start_day) >= 7)
-  *set anchor_stew_used 0
-  *set anchor_stew_week_start_day campaign_day
-
-*comment Both the tab and the loft are gated on anchor_tab_unlocked -- earned
-*comment only by giving the box back to Sal (pv_anchor_choice) -- not on
-*comment anchor_quest_stage alone. Neither option checks anchor_tab_unlocked
-*comment without this, every player gets the free room from the first visit
-*comment regardless of outcome, which undercuts the whole point of gating a
-*comment sleep-quality tier behind it (see resolve_sleep below).
-*if (anchor_tab_unlocked) and (anchor_stew_used >= anchor_stew_cap)
-  Sal has drawn your share off the tab this week, and she makes a point of not looking at the pot when you come in.
-
+*label cut_market_hub
 *choice
-  *if (anchor_tab_unlocked) and (anchor_stew_used < anchor_stew_cap)
-    # Take your bowl off the tab. [~30 min]
-      *set hours_to_pass 0
-      *set minutes_to_pass 30
-      *set time_advance_call_id "pv_anchor_stew_1"
-      *gosub_scene calendar advance_time
-      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
-        *set minutes_since_meal 0
-        *set hunger_stage "Fed"
-        *set neglect_damage_hunger 0
-        *set anchor_stew_used + 1
-        *set stat_bump_locked true
-        *set locked_stat_bump_page_id choice_page_id
-      *gosub_scene calendar recalc_hp_from_neglect
-      *if (hp_current <= 0)
-        *comment The meal above already zeroed the hunger side, so a death
-        *comment here is unambiguously fatigue, not hunger.
-        *set death_cause "exhaustion"
-        *goto_scene death death_screen
-      Sal fills a wooden bowl from the pot without being asked and sets it down with two heel-ends of loaf. It is thick, hot, and heavily salted, and nobody at this table is charging you for it.
-      *page_break Return to the taproom…
-      *goto pv_anchor_hub
-
-  *if (not((food_buff_active) and (food_buff_stat = "wis")))
-    # Buy a bowl the honest way. [3 Copper Bits]@{show_stat_hints  [+2 Temp HP, +1 WIS Checks for 4h]|}
+  *if (not((food_buff_active) and (food_buff_stat = "int")))
+    # Buy vinegar eel from the frying stall. [3 Copper Bits]@{show_stat_hints  [+1 Temp HP, +1 INT Checks for 4h]|}
       *if ((((gold * 100) + (silver * 10)) + copper) < 3)
-        You check your purse. You do not have three copper bits to spare.
-        *page_break Step away from the pot…
-        *goto pv_anchor_hub
+        You check your purse and find it a little short of three copper bits.
+        *goto cut_market_hub
       *set tavern_item_cost_copper 3
       *set tavern_item_hp_heal 0
-      *set tavern_item_temp_hp 2
+      *set tavern_item_temp_hp 1
       *set tavern_item_type "food"
-      *set tavern_item_buff_name "Anchor Stew"
-      *set tavern_item_buff_desc "+1 WIS Checks"
-      *set tavern_item_buff_stat "wis"
+      *set tavern_item_buff_name "Vinegar Eel"
+      *set tavern_item_buff_desc "+1 INT Checks"
+      *set tavern_item_buff_stat "int"
       *set tavern_item_buff_bonus 1
       *set tavern_item_buff_minutes 240
       *gosub_scene startup buy_tavern_item
-      *if (met_sal)
-        Sal takes three copper bits and fills a wooden bowl from the pot.
-      *else
-        The woman behind the counter takes three copper bits and fills a wooden bowl from the pot.
-      The stew is thick, hot, and heavily salted, and it comes with two heel-ends of loaf. You eat with your back to the wall. The salt and the peat smoke sit sharp on your tongue, and the room comes into focus around the edges.
-      
-      [b][🍲 Anchor Stew Consumed: +2 Temporary HP | Clear Eyes (+1 WIS Checks for 4 Hours)][/b]
-      *page_break Return to the taproom…
-      *goto pv_anchor_hub
+      The cook lifts a skewer of eel out of black oil, shakes vinegar and coarse salt over it, and hands it across on a twist of paper. It is hot enough to hurt and sour enough to make your eyes water, and your head is clearer by the last bite.
 
-  *if (anchor_tab_unlocked)
-    # Take the cot up in the loft. [~4 Hours]
-      *set hours_to_pass 4
-      *set minutes_to_pass 0
-      *set time_advance_call_id "pv_anchor_rest_1"
+      [b][🍢 Vinegar Eel Consumed: +1 Temporary HP | Sharp Palate (+1 INT Checks for 4 Hours)][/b]
+      *goto cut_market_hub
+
+  *if (cut_rumors_market < 3)
+    # Listen to the talk around the stalls.
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set cut_rumors_market + 1
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
+      *if (cut_rumors_market = 1)
+        Two women at the eel stall are arguing over a scale. "She keeps a shaved coin under the pan, everyone knows it," one says, and pays anyway. "Only stall with eels before noon."
+      *elseif (cut_rumors_market = 2)
+        A boy with a barrow tells his friend that the chandler's upper room has candles burning in it at all hours, and that nobody has ever seen it rented. "Ask the man on the stair," the friend says. "He'll say it's stores."
+      *else
+        A tailor's apprentice, one thumb hooked into a pocket he keeps touching, tells a stallholder his purse has been lifted three Marketdays running. "Same pocket?" she asks. "Where else would I keep it?" he says.
+      *goto cut_market_hub
+
+  *if ((day_of_week = "Marketday") and (cut_market_watch_day < campaign_day))
+    # Stand at the edge of the crowd and watch the wharf boys work.@{show_stat_hints  [WIS DC 12]|}
+      *set cut_market_watch_day campaign_day
+      *set hours_to_pass 0
+      *set minutes_to_pass 20
+      *set time_advance_call_id "cut_market_watch_1"
       *gosub_scene calendar advance_time
+      *set check_stat "wis"
+      *set check_dc 12
+      *set check_skill "Perception"
+      *gosub_scene startup roll_d20_check
+      *if (check_success)
+        You pick out the pattern in a minute: two boys drifting apart to bracket a mark, a third coming through the middle with his eyes on the sky. When the apprentice's pocket flexes open under a small hand, you catch the wrist. The boy squirms once and goes still, and the other two vanish between stalls. The apprentice, white to the ears, presses two copper bits into your hand and hurries away.
+        *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+          *set currency_add_amount 2
+          *gosub_scene startup currency_add
+          *set currency_txn_locked true
+          *set locked_currency_txn_page_id choice_page_id
+
+        [b][💰 Purse Saved: +2 Copper Bits][/b]
+      *else
+        You watch the crowd and see only a crowd. It is when you turn toward the eel stall that a shoulder hits yours, a hand goes into your pouch and out again, and the boy is gone under an awning before you have your breath back.
+        *if (((((gold * 100) + (silver * 10)) + copper) >= 3) and ((not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))))
+          *set currency_add_amount 0 - 3
+          *gosub_scene startup currency_add
+          *set currency_txn_locked true
+          *set locked_currency_txn_page_id choice_page_id
+
+          [b][💰 Purse Lifted: -3 Copper Bits][/b]
+        *else
+          There was little enough in it to take.
+      *gosub_scene calendar recalc_hp_from_neglect
       *if (hp_current <= 0)
         *set death_cause "starvation"
         *if (neglect_damage_fatigue > neglect_damage_hunger)
           *set death_cause "exhaustion"
         *goto_scene death death_screen
-      *comment resolve_sleep clears the fatigue debt, updates the routine
-      *comment tracker, and grants this location's sleep-quality buff in one
-      *comment call (see calendar.txt). The loft is a private room Sal handed
-      *comment over herself -- sleep_is_shared false, one stat tier, same
-      *comment shape as a future paid inn room, distinct from the compound's
-      *comment shared/capped barracks.
-      *set sleep_location_id "rusty_anchor_loft"
-      *set sleep_is_shared false
-      *set sleep_tier_name "none"
-      *set sleep_tier_stat1 "none"
-      *set sleep_tier_bonus1 0
-      *set sleep_tier_stat2 "none"
-      *set sleep_tier_bonus2 0
-      *gosub_scene calendar resolve_sleep
-      You climb the ladder to the timber loft and lie down on a straw mattress under cedar shingles. The canal moves under the hulls, and the hulls move under you, and the quiet is actually yours — no shield racks, no watch rotation, nobody else's gear crowding the corners.
-      *page_break Wake and climb back down…
-      *goto pv_anchor_hub
+      *goto cut_market_hub
 
-  *if (anchor_errand_stage = "active")
-    # Carry the covered pot out to the oar-maker's shed. [~40 min]
-      *goto pv_anchor_hobb_walk
+  # Look over the chandler's shop and the stair beside it.
+    You take a turn through the chandler's shop: coils of rope, tallow candles by the crate, lamp oil in stoneware jars, and paper by the ream on a shelf behind the counter. Outside, the man on the bottom step of the stair looks at your boots, then up the stair.
 
-  *if (anchor_errand_stage = "active")
-    # Hand the pot back and say you can't spare the time.
-      *set anchor_errand_stage "unstarted"
-      Sal takes the pot back without argument and sets it on the warm end of the stove. "Then it'll be there when somebody can," she says, and goes back to the cups.
-      *page_break Back to the taproom…
-      *goto pv_anchor_hub
+    "Stores," he says, before you ask. "Wax and paper. Not for rent."
+    *goto cut_market_hub
 
-  *if (anchor_errand_stage = "unstarted")
-    # Take a stool at the counter and talk to the woman behind it.
-      *goto pv_anchor_counter
-
-  *if (box_ready)
-    # Take the stool at the end of the counter, where Sal is watching the corner booth.
-      *goto pv_anchor_low_water
-
-  # Sit at the end of the long table with your back to the wall.
-    *goto pv_anchor_rumors
-
-  # Step back out onto the Dredge-End duckboards.
-    *page_break Back to the water-lanes…
+  # Head back to the cut.
+    *page_break Back to the cut…
     *goto port_valen_dredge_end
 
-
-*label pv_anchor_rumors
-You take the end of the long table with your back to the wall, the way somebody taught you once, and let the room talk over the top of you.
-
-*if (not(anchor_rumor_1))
-  *set anchor_rumor_1 true
-  *set codex_black_tally true
-  A carter two benches down is explaining water-liens to a boy with a barrow, slowly, the way you explain a thing that has already been decided. "Tally holds the paper, harbor-master holds the stamp, and the two of them hold each other. You want to know who runs this quarter, don't look at the boats. Look at who keeps the book."
-
-  The boy asks what happens if nobody signs. The carter drinks, and does not answer.
-
-*if (not(anchor_rumor_2))
-  *set anchor_rumor_2 true
-  *set met_sal true
-  A dredge-woman nursing a mug tilts her head at the counter without looking at it. "Sal's been on that hull since before the Tally started keeping count. She don't scare and she don't pay. Ask yourself how a woman with one pot and three hulls says no to men with knives."
-
-*if ((anchor_errand_stage = "resolved") and (not(anchor_errand_rumor)))
-  *set anchor_errand_rumor true
-  *if ((anchor_errand_resolution = "failed") or (anchor_errand_resolution = "stayed_out"))
-    A ferryman jerks his chin toward the empty stool. "Hobb's got chalk on his door. Three strokes. Somebody carried him a pot and it didn't help him any." He drinks. "It's a long way down the cut when you owe."
-  *else
-    A ferryman jerks his chin toward the empty stool. "Hobb's door is clean this week. Somebody got between him and the runner, and Hobb won't say who." He drinks. "That's a man who's still counting what he owes."
-
-*if ((anchor_quest_stage = "failed") and (not(anchor_rumor_failed)))
-  *set anchor_rumor_failed true
-  Two carters bend over one cup and lower their voices, though the room is too small for it to matter. "The box is in the silt and the stamp is on the boards," one says. "Whoever it suited, it wasn't Sal." The other turns his cup a quarter turn. "Somebody's going to dive for it. Somebody always does."
-
-*page_break The talk moves on…
-*goto pv_anchor_hub
-
-
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment THE RUSTY ANCHOR, TIER 1: A BOWL FOR THE OAR-MAKER
-*comment Small, ordinary, and entirely player-initiated. Sal never asks: the player
-*comment notices the covered bowl at the empty stool and chooses to raise it. Spine:
-*comment counter talk -> carry the pot -> the runner at Hobb's door (one obstacle,
-*comment three approaches plus staying out) -> report back. Every approach rejoins at
-*comment pv_anchor_hobb_after. All state changes happen once, in pv_anchor_report.
-*comment Finishing it (any outcome) is what lets Sal offer the box, on a later day.
+*comment AREA 2 OF 7: THE UPPER GANGWAYS
+*comment view, lookouts, rumors
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-*label pv_anchor_counter
-*if (met_sal)
-  You take a stool at the counter, where the heat of the pot comes up through the wood. Sal ladles without turning round.
-*else
-  You take a stool at the counter, where the heat of the pot comes up through the wood. The woman behind it ladles without turning round.
-
-*label pv_anchor_counter_hub
-*choice
-  *if (not(anchor_talk_1))
-    # Ask what goes in the pot.
-      *set anchor_talk_1 true
-      *set met_sal true
-      "Smoked eel heads, barley, whatever the carters leave on the tables, and peat smoke I can't get out of the wall," she says, and tips a spoonful back into the pot so you can see it. "The eels come from the woman with the awning on Marketday. She'll short your scale, but she won't short my pot. I weigh that myself."
-
-      "Sal," she adds. "Everybody asks about the pot before they ask my name."
-      *goto pv_anchor_counter_hub
-
-  *if (not(anchor_talk_2))
-    # Ask who drinks here.
-      *set anchor_talk_2 true
-      "Carters when the road is bad. Dredgers when it's good. Ferrymen, and whoever mends their sweeps." She tips her chin down the room without looking at anyone. "Nobody in this quarter pays in silver if it can be copper, and nobody pays in copper if it can be a favor. I take the copper."
-      *goto pv_anchor_counter_hub
-
-  *if (anchor_errand_stage = "unstarted")
-    # Ask about the covered bowl at the empty stool.
-      *set met_hobb true
-      *if (not(met_sal))
-        *set met_sal true
-        "Sal," says the woman behind the counter, before you can ask.
-
-      "Hobb's," she says, with her eyes on the cup she is drying. "Oar-maker, three sheds down the cut. He's had that stool every night since before I tied the second barge, and it's been three nights. A man who owes doesn't drink where people can see him."
-
-      "I can't leave this counter with a full room, and I don't send boys after a man's pride." She sets the cup down and waits, the way she waits on any order.
-
-      *comment lint-ok two-options: a plain yes or no, a third option would be padding
-      *choice
-        # "I'll take it down to him. It's three sheds and a hot pot."
-          *set anchor_errand_stage "active"
-          Sal lifts the cloth, looks under it, and tucks it back. Then she ladles a fresh potful and sets it in front of you with a heel of loaf wrapped in a rag.
-
-          "The pot is mine," she says. "Bring the pot back. Whatever he's got in his pockets he'll try to give you. He hasn't got any."
-          *page_break Out with the pot…
-          *goto pv_anchor_hub
-        # "That's his business."
-          "It is," Sal agrees, and moves the cloth an inch straighter over the bowl.
-          *goto pv_anchor_counter_hub
-
-  # Leave the counter.
-    *page_break Back to the taproom…
-    *goto pv_anchor_hub
-
-*label pv_anchor_hobb_walk
+*label cut_gangways
+*set cut_seen_gangways true
 *set hours_to_pass 0
-*set minutes_to_pass 20
-*set time_advance_call_id "pv_anchor_hobb_walk_1"
+*set minutes_to_pass 15
+*set time_advance_call_id "cut_gangways_1"
 *gosub_scene calendar advance_time
 *gosub_scene calendar recalc_hp_from_neglect
 *if (hp_current <= 0)
@@ -1103,115 +1086,336 @@ You take the end of the long table with your back to the wall, the way somebody 
     *set death_cause "exhaustion"
   *goto_scene death death_screen
 
-[b]◈ HOBB'S OAR-SHED[/b]
+*label cut_gangways_page
+[b]◈ THE UPPER GANGWAYS[/b]
 *line_break
-Three sheds down the cut, a raised shed on stilts leans out over the water with a rack of ash sweeps under its eave, pale and half-shaped, the blades trimmed to a rough spoon. Shavings drift down into the canal and turn in the slow water. The door is a plank on rope hinges.
+The ladder-stairs bring you up through the back walls of the tenements onto the gangways: walkways of plank and cord that run from stilt landing to stilt landing above the trenches. Laundry hangs along the rope rails, and the boards sway a little with every crossing. Lookouts sit on the larger landings with tin whistles hung at their belts, watching the lanes, the cut and the footbridge.
 
-*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
-  A horn lantern hangs from the eave and throws yellow light down onto the plank-walk.
-
-A young man in a hooded coat stands on the plank-walk below it with a wax tablet in one hand and a stick of chalk in the other, in no hurry. On the step above him, an older man in a leather apron, with wood-dust in his eyebrows, holds a wood plane like something he might yet need.
-
-"One mark five, oar-maker," the young man says. "The week's gone round. Chalk is chalk."
-
-"Next week," the old man says. "I'll have it next week."
-
-"You said that last week." The chalk comes up.
-
-Neither of them has noticed you or the pot.
-
-*temp hint_hobb_cha ""
-*temp hint_hobb_int ""
-*temp hint_hobb_dex ""
-*if (show_stat_hints)
-  *if (guidance_active)
-    *set hint_hobb_cha " [CHA DC 11 (+1d4 Guidance)]"
-    *set hint_hobb_int " [INT DC 11 (+1d4 Guidance)]"
-    *set hint_hobb_dex " [DEX DC 11 (+1d4 Guidance)]"
+*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+  *if (weather_severity = 0)
+    The wind and sun reach up here in a way they never do in the lanes. Gulls stand along the roof ridges and look down at the canals.
   *else
-    *set hint_hobb_cha " [CHA DC 11]"
-    *set hint_hobb_int " [INT DC 11]"
-    *set hint_hobb_dex " [DEX DC 11]"
+    The wind reaches up here in a way it never does in the lanes, and it does not carry the sounds of the district so much as scatter them.
+*elseif (time_period = "Dusk")
+  The lamps are being lit along the rail, landing after landing, and cooking smoke drifts across the walkways.
+*else
+  Shuttered lanterns hang at every landing and throw small yellow circles on the planks. Between them the gangway is dark, and the trench below is darker.
+
+*comment day-of-week noise belongs to the working day, the same window the hub intro uses
+*if (not((time_period = "Night") or (time_period = "Pre-Dawn")))
+  *if (day_of_week = "Greyday")
+    Down in the lanes someone is pounding on doors and shouting names from a list. It carries up here clearly.
+  *elseif (day_of_week = "Ironday")
+    Below, a collector's runner works the footbridges with a wax tablet.
+
+*if (weather_cold)
+  Frost stiffens the ropes, and the wind finds every gap between the boards.
+*elseif (weather_wet)
+  The rope rails run with water, and every plank is slick.
+*elseif (weather_visibility = "poor")
+  Fog lies in the trenches below and the landings float above it like rafts.
+*elseif (weather = "Clear")
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    The laundry snaps in the wind, and the whole district lies dark under the walkways, pricked with lamps.
+  *else
+    The laundry snaps in the wind, and the whole district lies bright under the walkways.
+
+*label cut_gangways_hub
+*choice
+  # Go out to the lookout landing and take in the view.
+    *if (weather_visibility = "poor")
+      From the landing you can make out the next two roofs and the suggestion of a third. The rest of the district is a grey sound: chains somewhere, a bell, water moving against the pilings.
+    *else
+      From the landing the whole district lies below you: the stone lanes, the plank patches, the tenement roofs, the cut running down to the seawall, the barges at the dredge landing. Above the wall the city climbs in terraces to the pale limestone of Civic Heights.
+    *if (((time_period = "Morning") or (time_period = "Midday")) or ((time_period = "Afternoon") or (time_period = "Dusk")))
+      The water is low, and dark banks show along both sides of the cut.
+    *else
+      The water is high and fills the trenches to the lowest planks.
+    *if (time_period = "Night")
+      Under the seawall a strip of red lamps marks a street that is very much awake.
+    *goto cut_gangways_hub
+
+  *if (cut_rumors_gangways < 2)
+    # Listen to what carries up from the lanes.
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set cut_rumors_gangways + 1
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
+      *if (cut_rumors_gangways = 1)
+        Two lookouts pass word between landings in whistles: a long, a short, a long. Now and then one of them says a plain word across the gap. "Boat." "Face." "Watch." You count how few words the district needs.
+      *else
+        From a window below comes a woman's voice going through a list of amounts, and another voice answering "yes" to each. The counting stops at one figure, and nobody answers that one.
+      *goto cut_gangways_hub
+
+  # Ask the lookout on the nearest landing what they are watching for.
+    "Boats, faces and the Watch," the lookout says, without turning. "In that order, on a good day."
+
+    "And on a bad day?"
+
+    "Same list. Different speed."
+    *goto cut_gangways_hub
+
+  # Climb back down to the lanes.
+    *page_break Back to the cut…
+    *goto port_valen_dredge_end
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment AREA 3 OF 7: THE BOAT-SHEDS AND SCRAP YARD
+*comment The scrap dealer and the smith's bench
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label cut_sheds
+*set cut_seen_sheds true
+*set hours_to_pass 0
+*set minutes_to_pass 15
+*set time_advance_call_id "cut_sheds_1"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*label cut_sheds_page
+[b]◈ THE BOAT-SHEDS AND SCRAP YARD[/b]
+*line_break
+The cut here is lined with sheds raised on stilts, their doors open to the water side. Racks of half-shaped ash oars lean under the eaves, pale as bone, and the ground between the sheds is trampled cinder scattered with wood shavings. Further along, the scrap yard is a fenced square of salvaged stone, coiled chain and pitted iron plate, rust-orange against the grey, and beyond it a smith's bench sits under a lean-to roof with a small fire going. It smells of cut ash wood, hot iron and tar.
+
+*if (day_of_week = "Forgeday")
+  *if (street_life = "normal")
+    It is Forgeday, and the yard is busy: chain coming off a punt in loads, and the smith's hammer ringing across the cut in steady beats.
+  *else
+    It is Forgeday, and the yard is mostly idle in this weather. The smith works on under his shed roof, and the hammer rings across the cut with long gaps between the beats.
+*else
+  The yard is quiet between loads, and the smith works at an easy pace.
+
+*if (weather_cold)
+  Frost whitens the oars on their racks, and the smith's fire is the only warm thing in sight.
+*elseif (weather_wet)
+  Water drips from the eaves onto the racks, and the cinder between the sheds has gone black and soft.
+*elseif (weather_visibility = "poor")
+  Fog blurs the far sheds until only their open doors show, small and dark.
+*elseif (weather = "Clear")
+  Light comes low along the cut and turns the shavings gold.
+
+*label cut_sheds_hub
+*choice
+  # Walk into the scrap yard and see what the dealer has.
+    *page_break Into the yard…
+    *goto cut_scrap_yard
+  # Go over to the smith's bench.
+    *page_break Over to the lean-to…
+    *goto cut_smith
+  # Head back to the cut.
+    *page_break Back to the cut…
+    *goto port_valen_dredge_end
+
+*comment ····· sub-location: the scrap dealer
+*label cut_scrap_yard
+[b]◈ THE SCRAP YARD[/b]
+*line_break
+A wide, slow man sits on an upturned bucket beside a pair of hanging scales, with a scrap of board on his knee and figures chalked on it in a column. Behind him the yard is stacked to head height: paving slabs, chain, plate iron, and iron oar-pins by the crate.
+
+*label cut_scrap_yard_hub
+*temp scrap_paid 0
+*choice
+  *if (cut_scrap > 0)
+    # Put your finds on the scales.
+      *set scrap_paid (cut_scrap * 3)
+      He weighs your finds in the hanging pan, muttering a figure to himself, and counts the coppers out of a leather bag.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+        *set currency_add_amount scrap_paid
+        *gosub_scene startup currency_add
+        *set cut_scrap 0
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id choice_page_id
+
+      [b][💰 Scrap Sold: +${scrap_paid} Copper Bits][/b]
+      *goto cut_scrap_yard_hub
+
+  *if (cut_rumors_scrap < 2)
+    # Ask what he is buying.
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set cut_rumors_scrap + 1
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
+      *if (cut_rumors_scrap = 1)
+        "Chain, plate, oar-pins, anything with iron in it that isn't nailed down," he says. "Stone, if it's flat." "Flat stone?" "Paving. Somebody in this quarter is always relaying a lane."
+      *else
+        "Some weeks the chain comes in with the harbor-master's mark rasped off it," he says. "I weigh it and I don't ask." He rubs a thumb across the board. "Everyone who doesn't ask lives a long time."
+      *goto cut_scrap_yard_hub
+
+  # Leave the yard.
+    *page_break Back out to the sheds…
+    *goto cut_sheds_page
+
+*comment ····· sub-location: the smith's bench
+*label cut_smith
+[b]◈ THE SMITH'S BENCH[/b]
+*line_break
+The smith works at a bench under a lean-to roof, with a small fire in a clay hearth beside him and a bucket of black water at his knee. He is a lean man with a leather patch on one forearm where the sparks land, and he looks over what you carry as a ferryman looks over a boat.
+
+*label cut_smith_hub
+*choice
+  # Have your gear looked over. [4 Copper Bits]@{show_stat_hints  [+1 STR Checks for 4h]|}
+    *if ((((gold * 100) + (silver * 10)) + copper) < 4)
+      "Four," the smith says, and holds up four fingers, and you find you are short.
+      *goto cut_smith_hub
+    *set hours_to_pass 0
+    *set minutes_to_pass 20
+    *set time_advance_call_id "cut_smith_1"
+    *gosub_scene calendar advance_time
+    He turns your ${weapon} over on the bench, dresses what is dull and tightens what is loose, then goes over your buckles and straps with small tongs and a drop of oil. You count four copper bits into his palm. Everything you carry sits a little more firmly on you afterward.
+    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+      *set currency_add_amount 0 - 4
+      *gosub_scene startup currency_add
+      *set unique_buff_input_name "Kit Tended"
+      *set unique_buff_input_desc "+1 STR Checks (Tightened Fittings)"
+      *set unique_buff_input_stat "str"
+      *set unique_buff_input_bonus 1
+      *set unique_buff_input_minutes 240
+      *gosub_scene startup apply_unique_buff
+      *set currency_txn_locked true
+      *set locked_currency_txn_page_id choice_page_id
+
+    [b][⚒ Kit Tended: +1 STR Checks for 4 Hours][/b]
+    *gosub_scene calendar recalc_hp_from_neglect
+    *if (hp_current <= 0)
+      *set death_cause "starvation"
+      *if (neglect_damage_fatigue > neglect_damage_hunger)
+        *set death_cause "exhaustion"
+      *goto_scene death death_screen
+    *goto cut_smith_hub
+
+  # Ask if he does more than tend kit.
+    "Oar-pins, hinges, chain links," he says. "Nobody in this quarter buys a new thing when an old thing can be beaten back into use."
+    *goto cut_smith_hub
+
+  # Step back out to the sheds.
+    *page_break Back out to the sheds…
+    *goto cut_sheds_page
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment AREA 4 OF 7: THE DREDGE LANDING
+*comment day shift with the dredgers, rumors (low water only)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label cut_landing
+*set cut_seen_landing true
+*set hours_to_pass 0
+*set minutes_to_pass 15
+*set time_advance_call_id "cut_landing_1"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*label cut_landing_page
+[b]◈ THE DREDGE LANDING[/b]
+*line_break
+The landing is a wide shelf of hard-packed cinder where the cut widens, with three low barges tied along its edge. Dredgers work the barges with hooked poles and iron scoops on chains, hauling black spoil up in baskets and tipping it onto long mounds that dry to a crust on the bank. Gulls walk the mounds. The air smells of wet clay and hot tar from a kettle on the shore.
+
+*if (time_period = "Dusk")
+  The last baskets are going up, and the crews are coiling chain.
+*else
+  The chains rattle in time with the poles, and a foreman's shout carries over the noise.
+
+*if (day_of_week = "Tideday")
+  It is Tideday, and a boatman in tall oiled waders works a grapple along the pilings, lifting parcels that were tied there before the water fell.
+
+*if (weather_cold)
+  The crews work in sacking and steam, and ice rims the baskets.
+*elseif (weather_wet)
+  Rain pocks the mounds and runs black down their sides.
+*elseif (weather_visibility = "poor")
+  Fog swallows the far barge, and the chains sound louder for it.
+*elseif (weather = "Clear")
+  The mounds crack and pale in the sun.
+
+*label cut_landing_hub
+*choice
+  # Ask the foreman about a place on the crew.
+    *goto cut_foreman
+
+  *if (cut_rumors_landing < 2)
+    # Listen to the dredgers as they work.
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set cut_rumors_landing + 1
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
+      *if (cut_rumors_landing = 1)
+        Two dredgers on a barge talk across the water while they work. "Fourth oar-pin this month," one says. "And a boot." "Whose boot?" "Just a boot."
+      *else
+        A dredger with a broken tooth tells a boy where the lanes come from. "Every basket that comes up goes on the bank. Dry it, ram it, lay stone on it. The stone under your feet came out of this cut, lad, one basket at a time."
+      *goto cut_landing_hub
+
+  # Head back up to the cut.
+    *page_break Back to the cut…
+    *goto port_valen_dredge_end
+
+*comment ····· sub-location: the foreman and the day shift
+*label cut_foreman
+A short, thick foreman stands on an upturned basket with a stick notched for every load, and looks at your hands before he looks at your face.
+
+*if (cut_labor_day = campaign_day)
+  "You've had your day," he says, and cuts a notch in the stick. "Come back tomorrow."
+  *goto cut_landing_hub
+
+"Four hours on the poles, eight copper bits at the end of it," he says. "Miss a basket, miss your coin. Nobody here is paid to look good."
+
+You count it against what else the district has to offer. Eight copper for four hours of hard pulling is better than an empty belly.
 
 *choice
-  # Tell the runner the book will keep till next week, like someone with business here.${hint_hobb_cha}
-    *set check_stat "cha"
+  # Take the shift.@{show_stat_hints  [CON DC 11, 4 hours, 8 Copper Bits]|}
+    *set cut_labor_day campaign_day
+    *set hours_to_pass 4
+    *set minutes_to_pass 0
+    *set time_advance_call_id "cut_landing_shift_1"
+    *gosub_scene calendar advance_time
+    *set check_stat "con"
     *set check_dc 11
-    *set check_skill "Persuasion"
+    *set check_skill "Endurance"
     *gosub_scene startup roll_d20_check
     *if (check_success)
-      *set anchor_errand_resolution "talked"
-      You come up the plank-walk at the pace of a person with business rather than a grievance. "The book will keep till next week," you say. "Chalk his door today and you spend next week scraping it off. The man's working in his own shed."
-
-      The runner looks at the pot, at the old man, and at you, and his thumb stops on the tablet. "Next week," he says, and the chalk goes back into his coat.
-    *else
-      *set anchor_errand_resolution "failed"
-      You come up the plank-walk with the pot and a good deal of confidence. The runner keeps his eyes on the tablet. "Whose book is it?" he asks, mildly. "Yours?"
-
-      You have no answer to that, and he isn't waiting for one. The chalk goes across the door in three strokes, and he looks at you for exactly as long as it takes to remember you.
-    *goto pv_anchor_hobb_after
-
-  # Read his tablet over his arm before he can lower the chalk.${hint_hobb_int}
-    *set check_stat "int"
-    *set check_dc 11
-    *set check_skill "Investigation"
-    *gosub_scene startup roll_d20_check
-    *if (check_success)
-      *set anchor_errand_resolution "read"
-      You step up beside him as though you are waiting your turn and read the tablet over his forearm. Hobb's column has been scraped and rewritten twice, and the last figure sits a shade higher than the two under it. "That isn't one mark five," you say. "That's a mark, and the same again written smaller."
-
-      The runner looks down and his mouth goes tight. "One mark," he says, quietly. "One mark, then. Next week." The chalk hangs at his side, forgotten.
-    *else
-      *set anchor_errand_resolution "failed"
-      The tablet is in a shorthand you do not know: ticks and a private code for names. You get as far as saying the figure looks wrong.
-
-      "Does it?" says the runner, and turns the tablet face-down against his chest. The chalk goes across the door in three strokes, and he looks at you for exactly as long as it takes to remember you.
-    *goto pv_anchor_hobb_after
-
-  # Trip on the loose plank as you come up, and put the runner's chalk in the canal.${hint_hobb_dex}
-    *set check_stat "dex"
-    *set check_dc 11
-    *set check_skill "Acrobatics"
-    *gosub_scene startup roll_d20_check
-    *if (check_success)
-      *set anchor_errand_resolution "slipped"
-      You come up the plank-walk with the pot out in front of you, catch a heel on a loose board on purpose, and lurch into the runner's arm. The chalk leaves his fingers and drops into the canal with barely a splash.
-
-      "It's a stick of chalk," he says, patting his coat for another and finding none. "Next week," he tells Hobb, and goes off up the plank-walk to find some.
-    *else
-      *set anchor_errand_resolution "failed"
-      You come up the plank-walk with the pot out in front of you, catch a heel on a loose board, and lurch. The lid slides off and half of Sal's stew goes into the canal. The runner steps neatly around the mess and chalks the door in three strokes, then looks at you for exactly as long as it takes to remember you.
-    *goto pv_anchor_hobb_after
-
-  *if ((((gold * 100) + (silver * 10)) + copper) >= 15)
-    # Pay the mark and five yourself. [15 Copper Bits]
-      *set anchor_errand_resolution "paid"
+      By the fourth hour your hands have closed on the pole so many times that you can no longer feel the grip, but your baskets go up and the foreman's stick counts them without complaint. He pays you out on the shore: eight copper bits.
       *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
-        *set currency_add_amount 0 - 15
+        *set currency_add_amount 8
         *gosub_scene startup currency_add
         *set currency_txn_locked true
         *set locked_currency_txn_page_id choice_page_id
-      One mark and five is less than a night's lodging, and a chalked door costs a man a good deal more. You come up the plank-walk and count fifteen copper bits into the runner's palm. He counts them again, ticks the tablet, and his boots knock away up the plank-walk.
-      *goto pv_anchor_hobb_after
 
-  # Hand Hobb the pot across the runner's shoulder, and keep out of it.
-    *set anchor_errand_resolution "stayed_out"
-    You pass the pot up to Hobb across the runner's shoulder, and Hobb takes it. The chalk goes across the door in three strokes anyhow, and you stand there with your hands empty.
-    *goto pv_anchor_hobb_after
+      [b][💰 Shift Paid: +8 Copper Bits][/b]
+    *else
+      Your grip slows in the third hour, and a basket goes over and spills its load across the bank. The foreman's stick cuts a fresh notch against you. He tosses four copper bits into your palm and holds back the rest for the spilled spoil.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+        *set currency_add_amount 4
+        *gosub_scene startup currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id choice_page_id
 
-*label pv_anchor_hobb_after
-*if ((anchor_errand_resolution = "failed") or (anchor_errand_resolution = "stayed_out"))
-  Hobb looks at the chalk on his door and leaves it there. He eats fast, standing on the step with his back to the plank-walk, and hands you the pot back scraped. "Tell her I'll be on the stool when I've got it," he says.
-*else
-  Hobb sets the wood plane down. He eats fast, standing on the step with his back to the plank-walk, and hands you the pot back scraped. "Tell her the stool's still mine by the end of the week," he says, and picks the plane up again.
+      [b][💰 Shift Docked: +4 Copper Bits][/b]
+    *gosub_scene calendar recalc_hp_from_neglect
+    *if (hp_current <= 0)
+      *set death_cause "starvation"
+      *if (neglect_damage_fatigue > neglect_damage_hunger)
+        *set death_cause "exhaustion"
+      *goto_scene death death_screen
+    *goto cut_landing_hub
+  # Not today.
+    "Suit yourself," the foreman says, and turns back to the barges.
+    *goto cut_landing_hub
 
-*page_break Carry the pot back to the Anchor…
-*goto pv_anchor_report
-
-*label pv_anchor_report
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment AREA 5 OF 7: LAMP STAIR
+*comment hedge-doctor, pawnbroker, dice cellar, drinking house, the blue door
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label cut_lamp
+*set cut_seen_lamp_stair true
 *set hours_to_pass 0
-*set minutes_to_pass 20
-*set time_advance_call_id "pv_anchor_hobb_walk_2"
+*set minutes_to_pass 15
+*set time_advance_call_id "cut_lamp_1"
 *gosub_scene calendar advance_time
 *gosub_scene calendar recalc_hp_from_neglect
 *if (hp_current <= 0)
@@ -1220,772 +1424,746 @@ Neither of them has noticed you or the pot.
     *set death_cause "exhaustion"
   *goto_scene death death_screen
 
-[b]◈ THE RUSTY ANCHOR[/b]
+*label cut_lamp_page
+[b]◈ LAMP STAIR[/b]
 *line_break
-The room is louder than when you left it. Sal is where you left her. The pot goes down on the counter in front of her, and she lifts the lid, looks in, turns it to check the base, and puts it on the warm end of the stove.
+A short flight of stone steps takes you up from the cut onto a flagged street that runs along the foot of the seawall, above the flood line. The flags are worn into shallow bowls by a great many feet. The doors along it are painted blue, green, and a red gone brown, and over each one hangs a lamp with a red glass shade.
 
-*if (anchor_errand_resolution = "paid")
-  "You paid his mark," she says, flat. "I won't pay you back for it. If I do, it stops being yours."
-*elseif ((anchor_errand_resolution = "talked") or ((anchor_errand_resolution = "read") or (anchor_errand_resolution = "slipped")))
-  "Is there chalk on his door?" she asks.
+*temp lamp_low false
+*temp lamp_evening false
+*temp lamp_open_late false
+*if (((time_period = "Morning") or (time_period = "Midday")) or ((time_period = "Afternoon") or (time_period = "Dusk")))
+  *set lamp_low true
+*if (((time_period = "Dusk") or (time_period = "Night")) or (time_period = "Pre-Dawn"))
+  *set lamp_evening true
+*if ((time_period = "Dusk") or (time_period = "Night"))
+  *set lamp_open_late true
 
-  "The door's clean."
-
-  She counts ten copper bits onto the wood and pushes them across with two fingers. "The pot's price, and a little over."
-*elseif (anchor_errand_resolution = "stayed_out")
-  "Is there chalk on his door?" she asks.
-
-  "There's chalk on it."
-
-  Sal nods once. "You brought the pot back," she says, and turns to the next cup.
-*else
-  "There's chalk on his door," Sal says, "and the runner has your face. Word came up the cut ahead of you." She puts a cup of small beer in front of you. "Be careful which stools you take for a few weeks."
-
-*if (not(anchor_errand_resolved))
-  *set anchor_errand_resolved true
-  *set anchor_errand_stage "resolved"
-  *set anchor_errand_day campaign_day
-  *if ((anchor_errand_resolution = "paid") or ((anchor_errand_resolution = "talked") or ((anchor_errand_resolution = "read") or (anchor_errand_resolution = "slipped"))))
-    *set anchor_sal_trust + 1
-  *if ((anchor_errand_resolution = "talked") or ((anchor_errand_resolution = "read") or (anchor_errand_resolution = "slipped")))
-    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
-      *set currency_add_amount 10
-      *gosub_scene startup currency_add
-      *set currency_txn_locked true
-      *set locked_currency_txn_page_id choice_page_id
-  *if (anchor_errand_resolution = "failed")
-    *set black_tally_rep -1
-
-*if (anchor_errand_resolution = "failed")
-  [b][🗡 Black Tally Standing: Black Tally Rep -1][/b]
-*elseif ((anchor_errand_resolution = "talked") or ((anchor_errand_resolution = "read") or (anchor_errand_resolution = "slipped")))
-  [b][🥣 Pot Returned: +10 Copper Bits][/b]
-
-*page_break Back to the taproom…
-*goto pv_anchor_hub
-
-
-*label pv_anchor_low_water
-*set anchor_quest_stage "offered"
-*set hours_to_pass 0
-*set minutes_to_pass 10
-*set time_advance_call_id "pv_anchor_offer_1"
-*gosub_scene calendar advance_time
-
-[b]◈ THE RUSTY ANCHOR[/b]
-*line_break
-You take the stool at the end of the counter. Sal stops watching the corner booth and sets a cup in front of you. Two heads at the nearest table turn, take her measure, and decide to study the wall instead.
-
-*if ((anchor_errand_resolution = "paid") or ((anchor_errand_resolution = "talked") or ((anchor_errand_resolution = "read") or (anchor_errand_resolution = "slipped"))))
-  "You carried Hobb his bowl and you kept his door clean," she says. "Nobody asked you for the second half. I noticed."
-*elseif (anchor_errand_resolution = "stayed_out")
-  "You carried Hobb his bowl and brought me my pot back," she says. "His door has chalk on it. I noticed that too."
-*else
-  "Hobb's door has chalk on it and the runner has your face," she says. "You came back and told me so anyway. Most don't."
-
-"The man with the rope has been at my floor since the last tide, and he'll be at it until he's done." She turns the cup toward you. It is not a friendly gesture. It is a transaction being opened.
-
-"Everyone in this quarter owes somebody. Hobb does, and half this room does. You don't, yet, and you brought my pot back. That is the whole of why I'm talking to you." She turns her own cup a quarter turn, watching the ring it leaves. "There's a box under the middle hull. I want it out of this building before the harbor-master's clerk stamps a water-lien on these boards. Clerks stamp on [b]Forgeday[/b], because clerks do everything on one day and call it law."
-
-"Once that stamp's down, he can pump my bilges and send a man in with a lamp and a writ."
-
-"Two silver marks when the box is on dry boards. Not my friendship. Coin."
-
-She drinks, and looks at you over the rim of the cup.
-
-"Nothing in it but my own paper. Hull titles, my dockers' indentures, family things."
-
-*comment That last line is the scene. Catching the lie is the difference between
-*comment going down there informed and going down there used -- the player
-*comment should only ever know what they actually looked at.
-*temp hint_anchor_insight ""
-*if (show_stat_hints)
-  *if (guidance_active)
-    *set hint_anchor_insight " [WIS DC 12 (+1d4 Guidance)]"
+*if ((lamp_low) and (not(time_period = "Dusk")))
+  By day the street is asleep. The lamps are unlit, the shutters closed, and the doorsteps scrubbed. Only the pawnbroker's window and the hedge-doctor's stall are open.
+*elseif (time_period = "Dusk")
+  *if (street_life = "empty")
+    The lamps are being lit one door at a time, but the shutters stay closed against the weather. Somewhere a fiddle is tuning to no one.
   *else
-    *set hint_anchor_insight " [WIS DC 12]"
+    The lamps are being lit one door at a time, and the shutters begin to open. Somewhere a fiddle is tuning.
+*elseif (time_period = "Night")
+  *if (street_life = "empty")
+    Every lamp is lit, and the red glass throws its light across empty flags. The weather has driven the trade indoors: the doors stay shut, a fiddle plays behind one of them, and only the doorkeepers stand out on the steps.
+  *else
+    Every lamp is lit, and the red glass throws warm light across the flags and up the face of the seawall. A fiddle plays behind one door and laughter comes from another. The air is cheap perfume over tar, and dredgers with their pay in their fists move slowly from door to door.
+*else
+  Most of the doors have closed again. The last customers are walking home along the flags, slowly, and the lamps burn low.
 
+*if (weather_cold)
+  Snow gathers in the doorways, and each lamp has a small red circle melted under it.
+*elseif (weather_wet)
+  Rain makes the flags shine, and the red lamps run down them in long streaks.
+*elseif (weather_visibility = "poor")
+  Fog gives each lamp a red halo, and the street is a row of them.
+
+*label cut_lamp_hub
 *choice
-  # Watch her hands while she says it.${hint_anchor_insight}
-    *set check_stat "wis"
-    *set check_dc 12
-    *set check_skill "Insight"
-    *gosub_scene startup roll_d20_check
-    *if (check_success)
-      *set anchor_lie_caught true
+  *if ((lamp_low) and (hp_current < hp_max))
+    # Let the hedge-doctor look you over. [5 Copper Bits]@{show_stat_hints  [Restores 4 HP]|}
+      *goto cut_doctor
+  *if (lamp_low)
+    # Look in at the pawnbroker's window.
+      *page_break Up to the window…
+      *goto cut_pawn
+  *if (lamp_evening)
+    # Go down the steps of the green door to the dice game.
+      *page_break Down the cellar steps…
+      *goto cut_dice
+  *if (lamp_evening)
+    # Push into the all-night drinking house at the end of the street.
+      *page_break Into the drinking house…
+      *goto cut_drink
+  *if (lamp_open_late)
+    # Step up to Widow Corve's door beneath the twin red lanterns.
+      *page_break Along to the blue door…
+      *goto cut_corve
+  # Go back down the steps to the cut.
+    *page_break Back to the cut…
+    *goto port_valen_dredge_end
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment ····· sub-location: the hedge-doctor's stall
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label cut_doctor
+*if ((((gold * 100) + (silver * 10)) + copper) < 5)
+  The hedge-doctor is a broad, grey woman behind a trestle hung with bundles of dried herbs, with a brazier and a pot of something brown at her elbow. She looks you over from boots to hairline, names her price, and you find your purse is a little short of it.
+  *goto cut_lamp_hub
+*set tavern_item_cost_copper 5
+*set tavern_item_hp_heal 4
+*set tavern_item_temp_hp 0
+*set tavern_item_type "drink"
+*set tavern_item_buff_name ""
+*set tavern_item_buff_desc ""
+*set tavern_item_buff_stat "none"
+*set tavern_item_buff_bonus 0
+*set tavern_item_buff_minutes 0
+*gosub_scene startup buy_tavern_item
+The hedge-doctor is a broad, grey woman behind a trestle hung with bundles of dried herbs, with a brazier and a pot of something brown at her elbow. She looks you over from boots to hairline and points at whatever hurts. A poultice of willow bark and comfrey goes on, then a clean rag around it, and five copper bits go into her apron.
+
+[b][🌿 Poultice Applied: HP ${hp_current} / ${hp_max}][/b]
+*goto cut_lamp_hub
+
+*comment ····· sub-location: the pawnbroker's window
+*label cut_pawn
+[b]◈ THE PAWNBROKER'S WINDOW[/b]
+*line_break
+The window is crowded with other people's worst days: a child's boots, a ring of keys, a tin whistle, a brass compass, a wedding cup. A narrow man behind the counter reads your face before he reads your boots.
+
+*label cut_pawn_hub
+*choice
+  *if (cut_rumors_pawn < 2)
+    # Ask what he lends against.
       *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
-        *set anchor_sal_trust + 1
+        *set cut_rumors_pawn + 1
         *set stat_bump_locked true
         *set locked_stat_bump_page_id choice_page_id
-      She keeps her right hand flat on the table the whole way through it. When she gets to *family things*, the thumb comes up off the wood, and comes back down.
-
-      You have known quartermasters with cleaner tells, and none of them were selling you anything.
-
-      "Hull titles and indentures," you say. "That's a light box. You wouldn't need a stranger for it, and you wouldn't pay two silver to move it twenty feet."
-
-      Sal looks at you for a while with nothing at all on her face, which is the most honest thing she has done since she sat down.
-
-      "No," she says at last. "You wouldn't." She finishes the cup, sets it down square, and drops her voice until it is underneath the room. "Paper. Debts. That is all you get before the hatch, and it is more than the last man got."
-
-      "Two silver is still the fee, if you want it." She sits back. "[b]Low water[/b]. The hatch only opens when the river gets bored."
-    *else
-      *set anchor_lie_caught false
-      She tells it flat, watching the room instead of you, and the words come out as dull as a manifest. Nothing in her face moves that you could name. Half the people you have ever taken coin from have lied to you exactly like this, and you have never once caught it.
-
-      "Hull titles," you say, and drink. It tastes of river water and scorched peat.
-    *goto pv_anchor_terms
-
-  # Take the fee and the job as offered.
-    *set anchor_sal_trust 0
-    "Hull titles," you say. "Low water. Two silver."
-    Sal nods once and stands, and as far as she is concerned the transaction is now closed.
-    *goto pv_anchor_ebb_wait
-
-  # Tell her you don't carry boxes you haven't opened.
-    *goto pv_anchor_haggle
-
-  # Tell her you're not for hire, and go.
-    *goto pv_anchor_decline
-
-*comment Reading her hands is not agreeing to the job. Both Insight outcomes land
-*comment here, so the player still gets an honest yes or no.
-*label pv_anchor_terms
-Sal turns the empty cup a quarter turn and waits. She does not ask twice.
-
-*comment lint-ok two-options: a plain yes or no, a third option would be padding
-*choice
-  # Take the job. "Low water, then."
-    "Low water, then," you say.
-
-    Sal nods once and stands, and as far as she is concerned the transaction is now closed.
-    *goto pv_anchor_ebb_wait
-
-  # Tell her you're not for hire, and go.
-    *goto pv_anchor_decline
-
-*label pv_anchor_decline
-*set anchor_quest_stage "declined"
-*set anchor_route "walked"
-*set anchor_declined_day campaign_day
-"Find another hand," you say, and set the cup back on her counter untouched.
-
-Sal does not argue and does not look up from wiping the ring of water off the wood. Whatever she meant to pay a stranger for, she will find someone else to pay it to, and someone in this quarter will remember that she had to.
-
-*page_break Back to the water-lanes…
-*goto port_valen_dredge_end
-
-*comment Backing out after saying yes. Same state as declining, but she knows you
-*comment said yes first. Reachable while waiting for low water and at the open hatch.
-*label pv_anchor_backout_wait
-*set anchor_quest_stage "declined"
-*set anchor_route "walked"
-*set anchor_backed_out true
-*set anchor_declined_day campaign_day
-*set anchor_sal_trust 0
-You push back from the table and stand. "I said yes to a box I hadn't seen the bottom of," you tell her. "I'm taking it back."
-
-Sal does not argue and does not look up from the bar. She has already stopped counting on you. Someone else will get the job, and she will remember that you said yes first.
-
-*page_break Back to the water-lanes…
-*goto port_valen_dredge_end
-
-*label pv_anchor_backout_hatch
-*set anchor_quest_stage "declined"
-*set anchor_route "walked"
-*set anchor_backed_out true
-*set anchor_declined_day campaign_day
-*set anchor_sal_trust 0
-You lower the hatch boards back into their frame and stand on them until they stop knocking. The box stays on its cradle in the dark, and whatever is written in it stays there too.
-
-Sal is at the bar when you come through the room. She reads the water on your boots and the empty hands, and goes back to her cups. You will not be asked twice.
-
-*page_break Back to the water-lanes…
-*goto port_valen_dredge_end
-
-*comment SECOND CHANCE. Sal asks once more, on Forgeday, after a plain refusal.
-*comment The cost of having refused is worse terms, not a closed door: no waiting
-*comment for low water (the tide is already up, so the descent is the early one
-*comment with Disadvantage), no haggle, no Insight, and no truth about the box.
-*comment Same two silver, same box. Refusing again is final.
-*label pv_anchor_reoffer
-*set anchor_reoffer_used true
-*set hours_to_pass 0
-*set minutes_to_pass 10
-*set time_advance_call_id "pv_anchor_reoffer_1"
-*gosub_scene calendar advance_time
-
-[b]◈ THE RUSTY ANCHOR[/b]
+      *if (cut_rumors_pawn = 1)
+        "Anything worth more than it costs a man to part with it," he says. "Tools first. People think it's rings. It's tools. A man can live without his ring."
+      *else
+        "There's a woman who comes on Hallowdays with a pouch of temple silver and goes out with tincture vials nobody wrote down," he says. "I don't know her. I'm telling you I don't know her."
+      *goto cut_pawn_hub
+  # Study what is hanging in the window.
+    Each thing in the window has a slip of paper tied to it with a date and a figure, and most of the dates are old. The boots have been here longest. A man does not leave a child's boots for that long unless he has stopped expecting to come back for them.
+    *goto cut_pawn_hub
+  # Step back out to the street.
+    *page_break Back to the street…
+    *goto cut_lamp_page
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment ····· sub-location: the dice cellar
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label cut_dice
+[b]◈ THE DICE CELLAR[/b]
 *line_break
-[b]Forgeday[/b] has come up grey and wet, and the taproom knows it. A clerk's runner is working along the plank-walk with a leather satchel and a brass stamp on his belt, and nobody at the long tables is looking at the door.
+Steps go down from the green door into a low brick cellar lit by two lamps. A dozen men crowd around a barrel-head, and a woman with a drawn face keeps the count in a jar of coppers at her elbow. The bones rattle in a wooden cup and come down on the wood with a small hard sound.
 
-Sal is at your elbow before you have sat down. She has not brought a cup this time.
-
-"I asked once," she says. "I don't do it twice, as a rule. Today isn't a rule, it's a clerk." She does not look at the runner. She looks at the hatch boards, where the sounding-man's chalk mark is still sitting on the wood. "The stamp comes down today. The water is up, and it won't wait for the ebb, and neither will he."
-
-"If you're going under, you go now, half in the tide. Two silver, when the box is on dry boards. I'll not tell you what's in it, and I'll not ask again."
-
-*comment lint-ok two-options: a last plain yes or no, a third option would be padding
+*label cut_dice_hub
 *choice
-  # Take it. "Two silver. Now."
-    *set anchor_quest_stage "offered"
-    *set anchor_route "none"
-    *set anchor_sal_trust 0
-    *set anchor_ebb_ready false
-    "Two silver," you say. "Now."
+  *if ((cut_dice_day < campaign_day) and ((((gold * 100) + (silver * 10)) + copper) >= 4))
+    # Put down four copper bits and read the throw.@{show_stat_hints  [4 Copper Bits, WIS DC 12]|}
+      *set cut_dice_day campaign_day
+      *set hours_to_pass 0
+      *set minutes_to_pass 20
+      *set time_advance_call_id "cut_dice_1"
+      *gosub_scene calendar advance_time
+      You have watched enough hands to think you can read the bones.
+      *set check_stat "wis"
+      *set check_dc 12
+      *set check_skill "Read the Dice"
+      *gosub_scene startup roll_d20_check
+      *if (check_success)
+        You watch three throws before you put your coppers down and notice that the bone that comes up high always leaves the cup on a slow turn. You wait for the slow one and take your stake back and as much again off the barrel-head, without raising your voice.
+        *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+          *set currency_add_amount 4
+          *gosub_scene startup currency_add
+          *set currency_txn_locked true
+          *set locked_currency_txn_page_id choice_page_id
 
-    Sal nods once. She does not thank you, and she does not warn you either. There is a pry bar leaning against the counter where nobody left it by accident, and she does not look at it as you pick it up.
+        [b][🎲 Won the Throw: +4 Copper Bits][/b]
+      *else
+        You put your four coppers down on a throw you were sure of, and the bones come up wrong. The woman with the drawn face slides your coppers into the jar without looking at them.
+        *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+          *set currency_add_amount 0 - 4
+          *gosub_scene startup currency_add
+          *set currency_txn_locked true
+          *set locked_currency_txn_page_id choice_page_id
 
-    You work the hatch boards up under their iron ring while the runner's boots go by outside on the plank-walk.
-    *goto pv_anchor_bilge
+        [b][🎲 Lost the Throw: -4 Copper Bits][/b]
+      *gosub_scene calendar recalc_hp_from_neglect
+      *if (hp_current <= 0)
+        *set death_cause "starvation"
+        *if (neglect_damage_fatigue > neglect_damage_hunger)
+          *set death_cause "exhaustion"
+        *goto_scene death death_screen
+      *goto cut_dice_hub
+  # Watch a round without playing.
+    A round goes by. Two of the men win small and lose them again, one loses big and laughs about it, and the woman with the jar never looks at the bones at all, only at the hands.
+    *goto cut_dice_hub
+  # Go back up the steps.
+    *page_break Back to the street…
+    *goto cut_lamp_page
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment ····· sub-location: the all-night drinking house
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label cut_drink
+[b]◈ THE DRINKING HOUSE[/b]
+*line_break
+The drinking house is a long low room with a bar made from a single ship's plank and a barrel of black ale on a stand. The crowd is rougher than the Anchor's: fewer carters, more men who have already spent their pay.
 
-  # Tell her no, again.
-    "No," you say. "Not for this."
-
-    Sal looks at you a moment longer than she did the first time, and then she nods, and the nod closes something. She goes back behind the counter. The runner's stamp comes down on the boards over the hatch before the hour is out, and she is the one standing on them.
-
-    *page_break Back to the water-lanes…
-    *goto port_valen_dredge_end
-
-
-*label pv_anchor_haggle
-"I don't move cargo I haven't looked at," you say. "Open it in front of me or find another hand."
-
-Sal laughs once, through her nose, with no warmth in it at all. "Then you'd know what I'm carrying, and I'd know you know. That is worse for both of us." She leans back and looks at you the way she looked at the two men in the corner. "Three silver, and I tell you what the box is. Or two, and you find out the way I found out."
-
+*label cut_drink_hub
 *choice
-  # Take the three silver and whatever truth she's willing to sell.
-    *set anchor_fee 3
-    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
-      *set anchor_sal_trust + 1
-      *set stat_bump_locked true
-      *set locked_stat_bump_page_id choice_page_id
-    *set anchor_lie_caught true
-    "Three silver," you say, and Sal nods, and pays herself the difference in honesty.
+  *if (not((drink_buff_active) and (drink_buff_stat = "con")))
+    # Take a mug of black ale. [3 Copper Bits]@{show_stat_hints  [+1 CON Checks for 4h]|}
+      *if ((((gold * 100) + (silver * 10)) + copper) < 3)
+        You check your purse and find it a little short of three copper bits.
+        *goto cut_drink_hub
+      *set tavern_item_cost_copper 3
+      *set tavern_item_hp_heal 0
+      *set tavern_item_temp_hp 0
+      *set tavern_item_type "drink"
+      *set tavern_item_buff_name "Black Ale"
+      *set tavern_item_buff_desc "+1 CON Checks"
+      *set tavern_item_buff_stat "con"
+      *set tavern_item_buff_bonus 1
+      *set tavern_item_buff_minutes 240
+      *gosub_scene startup buy_tavern_item
+      The ale is black, bitter and cold from the cellar, and it goes down like a hand on the back of the neck. Your shoulders settle, and the ache in them stops asking for attention.
 
-    "It's paper," she says, low. "Debts. Notes of hand, tallies, liens — every promise anybody in this quarter ever made to anybody. I keep it because I'm the only one the Watch, the Scales, and the Tally will all let keep it." She turns the cup a quarter turn, watching the ring it leaves. "And there's one page in it I don't like to think about, which is why I want it off this hull before a clerk puts a stamp on my boards."
+      [b][🍺 Black Ale Drunk: Steady Nerves (+1 CON Checks for 4 Hours)][/b]
+      *goto cut_drink_hub
+  *if (cut_rumors_drink < 2)
+    # Listen to the men along the bar.
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set cut_rumors_drink + 1
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
+      *if (cut_rumors_drink = 1)
+        A ferryman at the end of the bar tells anyone who will listen that the Tally never raises a hand to anybody. "Never has to," he says. "You just wake up owing something you don't remember borrowing."
+      *else
+        Two dredgers are quietly arguing about whether it is worse to owe the Tally or the Scales. "The Scales send a clerk," one says. "The Tally sends someone you grew up with."
+      *goto cut_drink_hub
+  # Finish up and go back out to the street.
+    *page_break Back to the street…
+    *goto cut_lamp_page
 
-    *goto pv_anchor_ebb_wait
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment WIDOW CORVE'S (THE STEWS UNDER THE SEAWALL)
+*comment Open Dusk through Pre-Dawn. Closed during daylight.
+*comment Table service, dynamic climate, live bard, and personal backgrounds.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  # Take the two and stop asking.
-    *set anchor_sal_trust 0
-    "Two, then," you say, and let it go, and Sal's shoulders come down a finger's width.
+*label cut_corve
+*set codex_corve true
+[b]◈ WIDOW CORVE'S[/b]
+*line_break
 
-    *goto pv_anchor_ebb_wait
+*comment ── OPERATING HOURS: CLOSED DURING DAYLIGHT ──
+*if ((time_period = "Morning") or ((time_period = "Midday") or (time_period = "Afternoon")))
+  The heavy oak door sits flush against the granite base of the seawall, secured by two thick iron drop-bars padlocked into the masonry. The twin horn lanterns overhead hang cold and dark, and a chalked slate tied to the latch reads simply: [i]"Sunset Bell."[/i]
 
-  # Refuse both offers and walk away.
-    *set anchor_quest_stage "declined"
-    *set anchor_route "walked"
-    *set anchor_declined_day campaign_day
-    "Keep your box and your two silver," you say, pushing back from the low table. "I'm not carrying a blind debt across this quarter."
+  Beside the threshold, a lone watchman in a stiff sheepskin coat leans against the wall, arms folded across an iron-shod club. He meets your approach with a single, silent shake of his head, gesturing with his chin toward the locked bars before looking back down the empty lane.
 
-    Sal doesn't blink or reach to stop you. She wipes a stray drop of peat-spiritus from the table with her thumb and lets the taproom swallow the silence between you.
+  *page_break Turn back toward Lamp Stair…
+  *goto cut_lamp_page
 
-    *page_break Back into the water-lanes…
-    *goto port_valen_dredge_end
+*comment ── OPEN HOURS: DUSK TO PRE-DAWN ──
+A heavy oak door bound in polished iron studs sits propped open a hand's width against the granite base of the seawall. Overhead, twin horn lanterns fitted with deep red bullseye glass burn brightly, casting warm scarlet reflections across the wet threshold flags.
 
-*label pv_anchor_ebb_wait
-The ebb runs late this week.
+Whenever the felt draft-curtain stirs, the scent of dried lavender, clean cedar shavings, and clove wine rolls out into the cold street.
 
-You sit with it a while. Outside, the water in the cut drops by fingers, and the duckboards stop knocking against the pilings. In the taproom the two men in the corner finish their business and leave without drinking, and the sounding-man coils his line and marks the hatch boards with a stub of chalk before he goes.
-
-*if (day_of_week = "Forgeday")
-  A clerk's runner works along the plank-walk with a leather satchel and a brass stamp on his belt. The stamp is on Forgeday. [b]Forgeday is today.[/b]
+*comment ── WEATHER AT THE THRESHOLD ──
+*if (weather = "Rain")
+  Rain streams in dark ribbons down the sheer stone of the seawall, hissing against the hot iron lantern hoods.
+*elseif (weather = "Storm")
+  Gale gusts sweep the high flags, rattling the lantern brackets and making the scarlet glow dance across the masonry.
+*elseif (weather = "Fog")
+  River mist clings to the flags, turning the twin red lamps into two blurred, bloody halos in the cold murk.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Slush cakes the granite step, melting into dark water where the warmth of the doorway vents into the chill.
+*elseif (weather = "Blizzard")
+  A bitter squall drives snow sideways, banking white drifts against the doorpost while the lanterns burn fierce and red against the gale.
 *else
-  The harbor-master's clerk stamps liens on Forgeday, and the week has to get there first.
+  The salt draft off the lower cut mixes with fragrant woodsmoke drifting from the rooftop flues.
 
-*comment The deadline derives itself from day_of_week rather than a new timer —
-*comment the clerk's stamp day is already established canon.
+*comment ── SILENT DOOR-GUARD ROTATION ──
+*temp door_guard_shift (((campaign_day * 24) + clock_hour) modulo 3) + 1
+
+*if (door_guard_shift = 1)
+  Beside the entryway sits a broad-shouldered man in a greased leather coat, an iron-shod hickory cudgel resting across his knees. He tracks your approach in stony silence, his weathered eyes measuring your posture and the position of your hands. Satisfied you intend no violence, he jerks his chin toward the felt curtain and looks back out over the lane.
+*elseif (door_guard_shift = 2)
+  Leaning back against the doorpost is a tall, grey-templed woman in a heavy wool mantle, a leaded tally rod balanced in one scarred hand. She does not speak. Her gaze measures your stride with cold, professional vigilance before she pulls the felt curtain aside to clear your way.
+*else
+  A stocky dock-veteran with a split brow sits on a low cedar stool by the doorpost, an unlit clay pipe clenched in his teeth. He watches your shadow cross the threshold, one thick hand resting near an iron-capped truncheon on the bench, letting you pass in watchful silence.
+
+*comment ── PARLOR ENTRANCE & SEATING ──
+You step past the heavy felt curtain into the parlor. The low-ceilinged hall is framed in seasoned ship-oak, paneled in dark cedar, and carpeted in fresh, clean rushes. The air is sweet with burning beeswax, clove, and dried herbs.
+
+*if ((temperature_band = "freezing") or (temperature_band = "cold"))
+  A broad cast-iron stove in the center of the hall radiates dense, crackling heat from split applewood coals, driving the freezing river damp from the floorboards.
+*elseif ((temperature_band = "warm") or (temperature_band = "hot"))
+  The central stove sits dark and cold. High casement transoms along the upper seawall are propped open with wooden stays, letting a cool evening sea-breeze pull through the room to clear the summer heat.
+*else
+  *comment Cool or Mild
+  The central stove is banked to a gentle, steady warmth with grey ash, keeping the hall comfortable against the night air.
+
+In the corner, a bard in an embroidered vest sits atop an overturned cask, plucking a dancing, melancholic melody from a five-stringed pear lute. Several river carters and off-duty lightermen lounge along the benches, talking in quiet murmurs over bone dice.
+
+You cross the room and take a seat at an empty cedar table near the wall, resting your back against a firm wool bolster.
+
+*comment ── DAILY ROSTER CALCULATION (LOCKED PER DAY) ──
+*comment Trimmed from the source draft's pool of 6 to Sable, Brinna, and one
+*comment unnamed rotating regular who covers for whoever's busy.
+*if (corve_roster_day != campaign_day)
+  *set corve_roster_day campaign_day
+  *rand corve_roster_id 1 4
+
+*temp free_sable false
+*temp free_brinna false
+*if (corve_roster_id = 1)
+  *set free_sable true
+  *set free_brinna true
+*elseif (corve_roster_id = 2)
+  *set free_sable true
+*elseif (corve_roster_id = 3)
+  *set free_brinna true
+*comment Pattern 4: neither regular is free tonight, but the house is never empty-handed
+
+*label cut_corve_parlor_menu
+[b]◈ YOUR TABLE[/b]
+*line_break
+From your bench, you can see several women attending to patrons across the parlor, while the rest are occupied upstairs.
+
 *choice
-  # Rest on the loft cot until the low water mark. [~3 Hours]
-    *set hours_to_pass 3
-    *set minutes_to_pass 0
-    *set time_advance_call_id "pv_anchor_ebb_1"
+  *if (free_sable)
+    # Signal to @{met_corve_sable Sable|the pale elf with white-blonde hair}.
+      *goto cut_corve_sable
+
+  *if (free_brinna)
+    # Signal to @{met_corve_brinna Brinna|the tusked half-orc woman near the serving counter}.
+      *goto cut_corve_brinna
+
+  # Signal to whichever woman is free.
+    *goto cut_corve_generic
+
+  # Listen to the bard play while watching the room. [~15 min]
+    *set hours_to_pass 0
+    *set minutes_to_pass 15
+    *set time_advance_call_id "cut_corve_bard_music"
     *gosub_scene calendar advance_time
     *gosub_scene calendar recalc_hp_from_neglect
     *if (hp_current <= 0)
-      *set death_cause "starvation"
-      *if (neglect_damage_fatigue > neglect_damage_hunger)
-        *set death_cause "exhaustion"
+      *set death_cause "exhaustion"
       *goto_scene death death_screen
-    You sleep in pieces on the loft cot, waking each time a hull shifts under you. By the low watch the canal has drawn down far enough to show black weed on the pilings at chest height, and the hatch boards come up under their iron ring without a sound.
-    *set anchor_ebb_ready true
-    *goto pv_anchor_bilge
 
-  # Keep watch by the taproom hearth until the tide slackens. [~1 Hour]
+    You lean back against the timber paneling and listen as the bard plucks the lute strings. The music weaves through the parlor: an old highland song of cold passes and lost travelers, sung in a smoky register that settles comfortably over the quiet hum of conversation.
+
+    *page_break The song finishes to quiet applause…
+    *goto cut_corve_parlor_menu
+
+  # Stand and head back out to Lamp Stair.
+    *goto cut_lamp_page
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment COMPANION SUB-MENUS & BACKGROUNDS
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label cut_corve_sable
+*if (not(met_corve_sable))
+  *set met_corve_sable true
+  The pale elf approaches your table with silent, smoke-like ease. Her white-blonde hair is cropped cleanly at her jawline, framing sharp, striking features and cool green eyes. A faint, measuring smile plays on her lips.
+
+  "Evening," she murmurs, pulling out the opposite stool and resting her forearms on the wood. "They call me Sable. What can I fetch for you?"
+*else
+  Sable slides onto the stool across from you, resting her chin in one pale hand with an unhurried, calculating gaze.
+
+*choice
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 5)
+    # [5 Copper Bits] Ask Sable to bring a mug of spiced clove wine to your table. [~15 min]
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+        *set currency_add_amount 0 - 5
+        *gosub_scene startup currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id choice_page_id
+      *set hours_to_pass 0
+      *set minutes_to_pass 15
+      *set time_advance_call_id "cut_corve_wine_sable"
+      *gosub_scene calendar advance_time
+      *gosub_scene calendar recalc_hp_from_neglect
+      *if (hp_current <= 0)
+        *set death_cause "exhaustion"
+        *goto_scene death death_screen
+
+      Sable returns moments later, placing a full mug on the table without making a sound.
+      *if ((temperature_band = "warm") or (temperature_band = "hot"))
+        Cool from the cellar, the spiced wine is crisp and sweet, easing the dry heat from your throat.
+      *else
+        Steaming hot, the spiced wine brings dense warmth to your chest, leaving you relaxed and steady.
+
+      *if (not(routine_stage = "Settled"))
+        *gosub_scene calendar ease_routine_malaise
+        For a while her company and the low murmur of the parlor wash the grim, grinding sameness of your days clean out of your head.
+
+        [b][🍷 Mind Eased: Routine Restored to Settled (Malaise Cleared)][/b]
+      *else
+        Your mind is already settled, so tonight it's simply a good drink in good company.
+
+        [b][🍷 Spiced Wine Consumed][/b]
+      *page_break Sit back at your table…
+      *goto cut_corve_sable
+
+  # Ask Sable where she learned to move with such quiet grace.
+    *set sable_talk_1 true
+    Sable's green eyes glint with quiet amusement.
+
+    "High-terrace grain lofts," she says in a hushed tone. "My mother worked the drying racks in Civic Heights. When you are an elven girl running across cedar rafters fifty feet above stone floors, you learn where to put your weight, or you learn what broken ribs feel like."
+    *page_break "Good training."…
+    *goto cut_corve_sable
+
+  # Ask why she chose to work in Dredge-End rather than the upper city.
+    *set sable_talk_2 true
+    "The Upper Wharves are full of merchants smiling while they steal your purse with a legal writ," she remarks dryly. "Down here beneath the seawall, people don't pretend to be noble. A mark on the brass tray is an honest wage, and when morning comes, nobody owes anyone an apology."
+    *page_break "Fair point."…
+    *goto cut_corve_sable
+
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 10)
+    # [1 Silver Mark] Go upstairs to a private chamber with Sable. [~45 min]
+      *set corve_approach_name "Sable"
+      *goto cut_corve_encounter
+
+  # Thank her and look back over the room.
+    *goto cut_corve_parlor_menu
+
+*label cut_corve_brinna
+*if (not(met_corve_brinna))
+  *set met_corve_brinna true
+  The broad-shouldered half-orc woman steps away from the counter and approaches your bench with a wide, tusked smile. She is built with formidable strength, but moves with unexpected lightness, balancing a flagon casually on one thick finger.
+
+  "Welcome to the bench," she greets you, her voice deep and full of good humor. "Name is Brinna. What can I get for you?"
+*else
+  Brinna stops beside your table, resting both palms against her hips with a warm, open grin.
+
+*choice
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 5)
+    # [5 Copper Bits] Ask Brinna to bring a mug of spiced clove wine to your table. [~15 min]
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+        *set currency_add_amount 0 - 5
+        *gosub_scene startup currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id choice_page_id
+      *set hours_to_pass 0
+      *set minutes_to_pass 15
+      *set time_advance_call_id "cut_corve_wine_brinna"
+      *gosub_scene calendar advance_time
+      *gosub_scene calendar recalc_hp_from_neglect
+      *if (hp_current <= 0)
+        *set death_cause "exhaustion"
+        *goto_scene death death_screen
+
+      Brinna places a brimming mug before you, her tusked smile bright in the lamplight.
+      *if ((temperature_band = "warm") or (temperature_band = "hot"))
+        Cool from the stone cellar, the spiced wine is rich and fragrant, cutting clean through the street heat.
+      *else
+        Piping hot, the clove and spirit wash down in a wave of comforting heat, setting you at ease.
+
+      *if (not(routine_stage = "Settled"))
+        *gosub_scene calendar ease_routine_malaise
+        For a while her company and the low murmur of the parlor wash the grim, grinding sameness of your days clean out of your head.
+
+        [b][🍷 Mind Eased: Routine Restored to Settled (Malaise Cleared)][/b]
+      *else
+        Your mind is already settled, so tonight it's simply a good drink in good company.
+
+        [b][🍷 Spiced Wine Consumed][/b]
+      *page_break Sit back at your table…
+      *goto cut_corve_brinna
+
+  # Ask Brinna if she ever worked a blacksmith's forge.
+    *set brinna_talk_1 true
+    Brinna laughs, a deep, booming sound that turns a few heads across the room.
+
+    "My father was a smith up in the highland foothills," she says, holding out thick, powerful forearms. "I grew up swinging sledges and working the leather bellows. I can still tell how hot iron is just by the color of the glow, but pouring spiced wine in a warm room beats breathing coal smoke all day."
+    *page_break "Much better trade."…
+    *goto cut_corve_brinna
+
+  # Ask what she likes best about working the house.
+    *set brinna_talk_2 true
+    "The music and the quiet hours," she says, gesturing toward the bard. "Out in the streets, people are shouting, bargaining, or reaching for knives. Here by the hearth, after a cup of wine, folks soften up. They remember how to laugh without looking over their shoulder."
+    *page_break "A rare thing in this city."…
+    *goto cut_corve_brinna
+
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 10)
+    # [1 Silver Mark] Go upstairs to a private chamber with Brinna. [~45 min]
+      *set corve_approach_name "Brinna"
+      *goto cut_corve_encounter
+
+  # Thank her and look back over the room.
+    *goto cut_corve_parlor_menu
+
+*comment ····· fallback: whichever regular is free, when neither Sable nor
+*comment Brinna is (pattern 4 above) -- same shape as their sub-menus, no
+*comment name and no backstory questions on purpose.
+*label cut_corve_generic
+*temp corve_generic_roll 0
+*rand corve_generic_roll 1 4
+*temp corve_generic_desc ""
+*if (corve_generic_roll = 1)
+  *set corve_generic_desc "a quiet, dark-haired woman mending a stocking by the lamp"
+*elseif (corve_generic_roll = 2)
+  *set corve_generic_desc "a freckled woman rolling bone dice against a low stool"
+*elseif (corve_generic_roll = 3)
+  *set corve_generic_desc "a heavyset woman warming her hands by the stove"
+*else
+  *set corve_generic_desc "a young woman leaning quietly against the timber post"
+
+You glance around the benches, and ${corve_generic_desc} catches your eye, setting her work aside to join you at the table with a polite, unhurried smile. She doesn't offer a name, and you don't ask for one.
+
+*choice
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 5)
+    # [5 Copper Bits] Ask her to bring a mug of spiced clove wine to your table. [~15 min]
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+        *set currency_add_amount 0 - 5
+        *gosub_scene startup currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id choice_page_id
+      *set hours_to_pass 0
+      *set minutes_to_pass 15
+      *set time_advance_call_id "cut_corve_wine_generic"
+      *gosub_scene calendar advance_time
+      *gosub_scene calendar recalc_hp_from_neglect
+      *if (hp_current <= 0)
+        *set death_cause "exhaustion"
+        *goto_scene death death_screen
+
+      She returns moments later, placing a full mug on the table with the same polite, unhurried smile.
+      *if ((temperature_band = "warm") or (temperature_band = "hot"))
+        Cool from the cellar, the spiced wine is crisp and sweet, easing the dry heat from your throat.
+      *else
+        Steaming hot, the spiced wine brings dense warmth to your chest, leaving you relaxed and steady.
+
+      *if (not(routine_stage = "Settled"))
+        *gosub_scene calendar ease_routine_malaise
+        For a while her company and the low murmur of the parlor wash the grim, grinding sameness of your days clean out of your head.
+
+        [b][🍷 Mind Eased: Routine Restored to Settled (Malaise Cleared)][/b]
+      *else
+        Your mind is already settled, so tonight it's simply a good drink in good company.
+
+        [b][🍷 Spiced Wine Consumed][/b]
+      *page_break Sit back at your table…
+      *goto cut_corve_generic
+
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 10)
+    # [1 Silver Mark] Go upstairs to a private chamber with her. [~45 min]
+      *set corve_approach_name "she"
+      *goto cut_corve_encounter
+
+  # Nod politely and look back over the room.
+    *goto cut_corve_parlor_menu
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment ENCOUNTER EXECUTION (45 MINS, BUFF, NO SLEEP)
+*comment Shared by all three parlor-bench paths above.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label cut_corve_encounter
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+  *set currency_add_amount 0 - 10
+  *gosub_scene startup currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id choice_page_id
+
+*set hours_to_pass 0
+*set minutes_to_pass 45
+*set time_advance_call_id "cut_corve_private_time"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*set unique_buff_input_name "Carnal Warmth"
+*set unique_buff_input_desc "+1 CHA Checks (Relaxed & Confident)"
+*set unique_buff_input_stat "cha"
+*set unique_buff_input_bonus 1
+*set unique_buff_input_minutes 240
+*gosub_scene startup apply_unique_buff
+
+*set intimate_encounters + 1
+
+You leave a silver mark on the side tray, and ${corve_approach_name} leads you away from the parlor tables toward the narrow timber staircase behind the tapestry.
+
+Upstairs, the private chamber beneath the seawall rafters is quiet and cedar-scented. A ceramic pitcher of fresh water sits on a washstand beside a low bed piled with clean wool blankets.
+
+*if ((temperature_band = "freezing") or (temperature_band = "cold"))
+  A small clay brazier of birch coals keeps the river damp from the room, radiating a comforting, steady heat.
+*elseif ((temperature_band = "warm") or (temperature_band = "hot"))
+  A narrow stone transom is propped open above the seawall, letting the clean night breeze drift over the bed.
+*else
+  The room is temperate, sheltered from both wind and rain by the massive seawall foundations.
+
+She tends to you with unhurried warmth and practiced care: bolting the door against the hallway, pouring water to wash away the road sweat, and shedding the cold weight of the street. For three quarters of an hour, there is no pretense and no judgment between you, only uncomplicated comfort, physical release, and genuine human warmth beneath the quilts.
+
+Afterward, you rinse at the basin and dress in the quiet room. Your muscles feel loose, the knots in your neck have softened, and you carry an easy, grounded confidence as you make your way back down the stairs to the parlor.
+
+[b][🕯️ Intimate Encounter: Carnal Warmth (+1 CHA Checks for 4 Hours) | Encounters: ${intimate_encounters}][/b]
+*page_break Return to the parlor…
+*goto cut_corve_parlor_menu
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment AREA 6 OF 7: THE ALLEY SHRINE
+*comment Hallowday broth line, the friar, rumors
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label cut_shrine
+*set cut_seen_shrine true
+*set codex_saint_althea true
+*set hours_to_pass 0
+*set minutes_to_pass 15
+*set time_advance_call_id "cut_shrine_1"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*label cut_shrine_page
+[b]◈ THE ALLEY SHRINE[/b]
+*line_break
+The alley narrows to a timber arch black with tallow smoke. Under it stands a small carved figure in a veil, its face worn smooth by hands, with a name scratched into the base in a shaky hand: ALTHEA. Strips of old linen are tied along the arch, and a clay bowl at the figure's feet holds river pebbles and a few candle stubs guttering in a tin tray. An iron hook on the arch holds a pot when there is broth to give. The alley smells of tallow and boiled peas.
+
+*if (day_of_week = "Hallowday")
+  *if (street_life = "empty")
+    It is Hallowday, and the district's poorest have crowded shoulder to shoulder under the arch to get out of the weather, bowls held close, while a friar in a patched habit of undyed wool ladles thin pea broth from the pot on its hook. Two men in boiled leather stand at the alley mouth all the same, checking faces against a scrap of vellum.
+  *else
+    It is Hallowday, and a long line of the district's poorest stands along the wall with bowls in their hands while a friar in a patched habit of undyed wool ladles thin pea broth from the pot on its hook. Two men in boiled leather stand at the alley mouth, checking faces against a scrap of vellum.
+*else
+  Between broth days the arch is quiet. A few people sit on the step under it with their backs to the wall, and the candle stubs burn low.
+
+*if (time_period = "Dusk")
+  The light through the alley has gone the color of weak tea.
+*if (weather_cold)
+  Snow has drifted against the step, and everyone near it has pulled their sacking over their heads.
+*elseif (weather_wet)
+  Rain runs off the arch in a curtain and spits into the tallow smoke.
+*elseif (weather_visibility = "poor")
+  Fog fills the alley, and the candles look like they are floating.
+
+*label cut_shrine_hub
+*choice
+  *if ((day_of_week = "Hallowday") and (cut_broth_day < campaign_day))
+    # Join the line and take a bowl of broth.
+      *set cut_broth_day campaign_day
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set minutes_since_meal 0
+        *set hunger_stage "Fed"
+        *set neglect_damage_hunger 0
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
+      The friar ladles a bowl of pea broth so thin you can see the bottom, and says a name under his breath as he hands it over. You cannot tell whether it is yours or hers. You drink it standing against the wall. It is hot, and there is a little salt in it.
+
+      [b][🍲 Broth Line: Hunger Eased][/b]
+      *goto cut_shrine_hub
+  *if (day_of_week = "Hallowday")
+    # Speak with the friar while the line moves.
+      "Who is on the list?" you ask.
+
+      "Everyone who comes," the friar says, and fills the next bowl.
+
+      "And who is off it?"
+
+      "Everyone who stops coming." He hands the bowl down. "Some of them move. Some of them are moved."
+      *goto cut_shrine_hub
+  *if (cut_rumors_shrine < 2)
+    # Sit on the step and listen.
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set cut_rumors_shrine + 1
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
+      *if (cut_rumors_shrine = 1)
+        A woman with a baby on her hip tells the man beside her that the tin tray is emptier every month. "People have no candles to spare. They light one for the ones who didn't come back and none for themselves."
+      *else
+        An old man tells a boy that the arch is older than the lanes. "They built the lanes around it. Everything here got built around something that was already sinking." He nods up toward the terraces. "The bishops up the hill sing to her father. Down here we still pray to her. She mended things. He only swears them."
+      *goto cut_shrine_hub
+  *if ((not(cut_shrine_gave)) and ((((gold * 100) + (silver * 10)) + copper) >= 1))
+    # Leave a copper bit in the clay bowl.
+      *set cut_shrine_gave true
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+        *set currency_add_amount 0 - 1
+        *gosub_scene startup currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id choice_page_id
+      The coin rings in the bowl. A woman on the step touches your sleeve. "Not the bowl," she says quietly. "The friar doesn't keep it. The bowl goes to whoever is on the list that week. Ask him who."
+
+      [b][💰 Offering: -1 Copper Bit][/b]
+      *goto cut_shrine_hub
+  # Leave the arch.
+    *page_break Back to the cut…
+    *goto port_valen_dredge_end
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment AREA 7 OF 7: THE FLOODED LOWER STEPS
+*comment scrap search, flophouse cellars (low water only)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label cut_steps
+*set cut_seen_lower_steps true
+*set hours_to_pass 0
+*set minutes_to_pass 15
+*set time_advance_call_id "cut_steps_1"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*label cut_steps_page
+[b]◈ THE FLOODED LOWER STEPS[/b]
+*line_break
+A broad flight of stone steps goes down the side of the seawall into the canal, and at low water the lower half of it stands out of the water, black and hung with green weed. Cellar doors open off the landings, some boarded, some with a rag hung in the gap. The stone is cold through your boots, and the air smells of weed, old smoke and cold water.
+
+*if (time_period = "Dusk")
+  The water is beginning to come back. Each landing is a little wetter than the one above it.
+*else
+  Grey light comes down the stair and stops at the water.
+
+*if (day_of_week = "Tideday")
+  It is Tideday. A diver in a greased cap slips through one of the cellar doors as you reach the bottom step, and the door closes behind him.
+
+*if (weather_cold)
+  Ice skins the lowest landing, and your breath shows.
+*elseif (weather_wet)
+  Rain dimples the water at the foot of the stair, and every step is slick.
+*elseif (weather_visibility = "poor")
+  Fog sits on the water, and the bottom steps go down into it and out of sight.
+
+*label cut_steps_hub
+*choice
+  # Wade the bottom landings and search for scrap.@{show_stat_hints  [WIS DC 11, about an hour]|}
     *set hours_to_pass 1
     *set minutes_to_pass 0
-    *set time_advance_call_id "pv_anchor_ebb_hearth_1"
+    *set time_advance_call_id "cut_steps_search_1"
     *gosub_scene calendar advance_time
+    *set check_stat "wis"
+    *set check_dc 11
+    *set check_skill "Investigation"
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      You wade along the bottom landings with your hands under the weed, feeling for shapes that aren't stone. Twice your fingers close on iron: an oar-pin, and a length of chain with two good links still in it.
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set cut_scrap + 2
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
+
+      [b][⛓ Scrap Found: 2 Pieces (the scrap yard pays for them)][/b]
+    *else
+      You work the lower steps for an hour and come up with weed, a broken clay pipe and a chill that reaches your knees.
     *gosub_scene calendar recalc_hp_from_neglect
     *if (hp_current <= 0)
       *set death_cause "starvation"
       *if (neglect_damage_fatigue > neglect_damage_hunger)
         *set death_cause "exhaustion"
       *goto_scene death death_screen
-    You warm your boots by the smoldering peat stove, watching the canal level drop through the gaps in the floorboards. Once the sounding-man turns the corner of the wharf and the river water drops below the outer sills, you unlatch the hatch ring.
-    *set anchor_ebb_ready true
-    *goto pv_anchor_bilge
+    *goto cut_steps_hub
 
-  # Pry the hatch and go down now, while the sounding-man is out of the room.
-    *comment Going early buys time and costs safety — his chalk mark is still on
-    *comment the boards, and he will be back for it.
-    *set anchor_ebb_ready false
-    *goto pv_anchor_bilge
-
-  # Change your mind and leave the box where it is.
-    *goto pv_anchor_backout_wait
-
-
-*label pv_anchor_bilge
-The hatch opens onto a ladder and a smell like old rope and cold iron.
-
-Under the taproom floor there is a space that should not be there. The middle hull has been gutted stem to stern and re-ribbed in good oak, and the void between the new ribs and the old planking is dry — for now. A foot of black water moves across the bottom boards, breathing in and out with the cut outside. The air is thick enough to chew.
-
-The box sits on a timber cradle at the far end. Iron-banded. Longer than a man's arm.
-
-*if (anchor_ebb_ready)
-  You have perhaps half an hour of floor before the water starts back. You can hear it working already, ticking at the planking.
-*else
-  The water is still high. It laps the second rib and it is climbing, and somewhere above you the iron ring of the hatch is no longer where you left it. Whatever you do down here, you will be doing it half under the water.
-
-*temp early_tag ""
-*if (not(anchor_ebb_ready))
-  *set early_tag " (Disadvantage)"
-*temp hint_anchor_str ""
-*temp hint_anchor_dex ""
-*temp hint_anchor_int ""
-*temp hint_anchor_cha ""
-*temp hint_anchor_hand ""
-*temp hint_anchor_light ""
-*temp hint_anchor_thaum ""
-*if (show_stat_hints)
-  *if (guidance_active)
-    *set hint_anchor_str " [STR DC 13 (+1d4 Guidance)${early_tag}]"
-    *set hint_anchor_dex " [DEX DC 13 (+1d4 Guidance)${early_tag}]"
-    *set hint_anchor_int " [INT DC 13 (+1d4 Guidance)${early_tag}]"
-    *set hint_anchor_cha " [CHA DC 13 (+1d4 Guidance)${early_tag}]"
-    *set hint_anchor_hand " [INT DC 11 (+1d4 Guidance)${early_tag}]"
-    *set hint_anchor_light " [WIS DC 11 (+1d4 Guidance)${early_tag}]"
-    *set hint_anchor_thaum " [CHA DC 12 (+1d4 Guidance)${early_tag}]"
-  *else
-    *set hint_anchor_str " [STR DC 13${early_tag}]"
-    *set hint_anchor_dex " [DEX DC 13${early_tag}]"
-    *set hint_anchor_int " [INT DC 13${early_tag}]"
-    *set hint_anchor_cha " [CHA DC 13${early_tag}]"
-    *set hint_anchor_hand " [INT DC 11${early_tag}]"
-    *set hint_anchor_light " [WIS DC 11${early_tag}]"
-    *set hint_anchor_thaum " [CHA DC 12${early_tag}]"
-
-*choice
-  # Shoulder the fallen rib aside and go down the middle of the hull.${hint_anchor_str}
-    *set hours_to_pass 0
-    *set minutes_to_pass 30
-    *set time_advance_call_id "pv_anchor_descent_str_1"
-    *gosub_scene calendar advance_time
-    *set check_stat "str"
-    *set check_dc 13
-    *set check_skill "Athletics"
-    *if (not(anchor_ebb_ready))
-      *set disadvantage true
-    *gosub_scene startup roll_d20_check
-    *set anchor_descent "forced"
-    *if (check_success)
-      *goto pv_anchor_box_reached
-    *else
-      *goto pv_anchor_descent_botched
-
-  # Thread the flooded ribs without a lamp and come at the box from the side.${hint_anchor_dex}
-    *set hours_to_pass 0
-    *set minutes_to_pass 40
-    *set time_advance_call_id "pv_anchor_descent_dex_1"
-    *gosub_scene calendar advance_time
-    *set check_stat "dex"
-    *set check_dc 13
-    *set check_skill "Stealth"
-    *if (not(anchor_ebb_ready))
-      *set disadvantage true
-    *gosub_scene startup roll_d20_check
-    *set anchor_descent "threaded"
-    *if (check_success)
-      *goto pv_anchor_box_reached
-    *else
-      *goto pv_anchor_descent_botched
-
-  # Read the sounding-man's chalk marks and the repair scars in the oak.${hint_anchor_int}
-    *set hours_to_pass 0
-    *set minutes_to_pass 20
-    *set time_advance_call_id "pv_anchor_descent_int_1"
-    *gosub_scene calendar advance_time
-    *set check_stat "int"
-    *set check_dc 13
-    *set check_skill "Investigation"
-    *if (not(anchor_ebb_ready))
-      *set disadvantage true
-    *gosub_scene startup roll_d20_check
-    *set anchor_descent "surveyed"
-    *if (check_success)
-      *set anchor_knows_second_void true
-      *goto pv_anchor_box_reached
-    *else
-      *goto pv_anchor_descent_botched
-
-
-  # Walk up like you belong to the surveyor's office and put the sounding-man to work.${hint_anchor_cha}
-    *set hours_to_pass 0
-    *set minutes_to_pass 25
-    *set time_advance_call_id "pv_anchor_descent_cha_1"
-    *gosub_scene calendar advance_time
-    *set check_stat "cha"
-    *set check_dc 13
-    *set check_skill "Deception"
-    *if (not(anchor_ebb_ready))
-      *set disadvantage true
-    *gosub_scene startup roll_d20_check
-    *set anchor_descent "talked"
-    *if (check_success)
-      You come up the plank-walk with a ledger under your arm and the flat, tired face of a man sent to check a number for somebody more important than himself.
-
-      "Second survey," you tell the sounding-man, without stopping. "Clerk's had two lien plats come back short this week, so he wants the middle hull plumbed by a second hand before the stamp goes down. You can hold the line, or you can stand there while I explain to him why I had to do it twice."
-
-      He looks at the ledger, and at your boots, and at the water-mark on the planking, and hands you the line. Then he sets the hatch boards back exactly as he found them and walks off to keep his own name clean, which is the only thing a man in his position actually owns.
-
-      *set anchor_sounding_man "recruited"
-      *goto pv_anchor_box_reached
-    *else
-      He asks, quite reasonably, which clerk. You do not have a name ready, and by the time you have invented one he is already backing toward the door with his hand on the knife at his belt.
-
-      *set anchor_sounding_man "warned"
-      *goto pv_anchor_descent_botched
-
-  *if ((((((((((wizard_cantrip = "mage_hand") or (wizard_cantrip_2 = "mage_hand")) or (wizard_cantrip_3 = "mage_hand")) or (bard_cantrip = "mage_hand")) or (bard_cantrip_2 = "mage_hand")) or (warlock_cantrip = "mage_hand")) or (warlock_cantrip_2 = "mage_hand")) or (race_cantrip = "mage_hand")) or (race_cantrip_2 = "mage_hand")))
-    # [Cantrip: Mage Hand] Send a spectral hand down the ladder to work the cradle pins.${hint_anchor_hand}
-      *set hours_to_pass 0
-      *set minutes_to_pass 35
-      *set time_advance_call_id "pv_anchor_descent_hand_1"
-      *gosub_scene calendar advance_time
-      *set check_stat "int"
-      *set check_dc 11
-      *set check_skill "Mage Hand"
-      *if (not(anchor_ebb_ready))
-        *set disadvantage true
-      *gosub_scene startup roll_d20_check
-      *set anchor_descent "arcaned"
-      *if (check_success)
-        You kneel at the hatch and send the hand down into the dark, where it works the cradle with the patience of something that cannot get cold or frightened.
-
-        The pins come out one at a time and drop into the bilge with three small, final sounds. When you finally climb down, the box is already sitting loose, and you have not put your weight on a single rotten board.
-
-        *goto pv_anchor_box_reached
+  *if (cut_rumors_steps < 2)
+    # Look into the flophouse cellars.
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+        *set cut_rumors_steps + 1
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id choice_page_id
+      *if (cut_rumors_steps = 1)
+        You put your head to a cellar door with a rag hung in the gap. Inside, a dozen people are sleeping in shifts on the same straw, while a man at the door turns a wooden token over in his fingers. Whoever holds the token sleeps.
       *else
-        The hand takes the first pin, drops the second, and rolls the third off the cradle on its own. The box shifts and settles hard into the timber with a knock you feel through the floorboards — and which, two seconds later, comes back to you echoed from somewhere above.
-
-        *goto pv_anchor_descent_botched
-
-  *if ((((((((((wizard_cantrip = "light") or (wizard_cantrip_2 = "light")) or (wizard_cantrip_3 = "light")) or (bard_cantrip = "light")) or (bard_cantrip_2 = "light")) or (warlock_cantrip = "light")) or (warlock_cantrip_2 = "light")) or (race_cantrip = "light")) or (race_cantrip_2 = "light")))
-    # [Cantrip: Light] Hang a cold light on the cradle rail and read the hull.${hint_anchor_light}
-      *set hours_to_pass 0
-      *set minutes_to_pass 25
-      *set time_advance_call_id "pv_anchor_descent_light_1"
-      *gosub_scene calendar advance_time
-      *set check_stat "wis"
-      *set check_dc 11
-      *set check_skill "Light"
-      *if (not(anchor_ebb_ready))
-        *set disadvantage true
-      *gosub_scene startup roll_d20_check
-      *set anchor_descent "arcaned"
-      *if (check_success)
-        You set the light on the cradle rail where the hatch boards will hide it from anyone standing above, and for the first time you can see what is under this building.
-
-        The middle hull is re-ribbed in good oak, and the re-ribbing stops short of the stern by two frames. Past that line the old planking is sprung, and the water has been in and out of it for years, and the grain has gone black and soft as tallow.
-
-        Nobody walks past that line and comes back up the ladder.
-
-        You go along the sound ribs, take the box from the dry side, and are climbing again before the light has finished swinging.
-
-        *set anchor_knows_second_void true
-        *goto pv_anchor_box_reached
-      *else
-        The light goes up clean and bright and shows you a hull you do not have time to read. You step out onto the second rib anyway, and the telltale under your boot gives.
-
-        *goto pv_anchor_descent_botched
-
-  *if ((race_cantrip = "thaumaturgy") or (race_cantrip_2 = "thaumaturgy"))
-    # [Cantrip: Thaumaturgy] Grumble the hull and the water like the tide has already turned.${hint_anchor_thaum}
-      *set hours_to_pass 0
-      *set minutes_to_pass 25
-      *set time_advance_call_id "pv_anchor_descent_thaum_1"
-      *gosub_scene calendar advance_time
-      *set check_stat "cha"
-      *set check_dc 12
-      *set check_skill "Thaumaturgy"
-      *if (not(anchor_ebb_ready))
-        *set disadvantage true
-      *gosub_scene startup roll_d20_check
-      *set anchor_descent "arcaned"
-      *if (check_success)
-        You let the hull speak. It is not a voice and it is not loud — it is the long grinding complaint of oak taking weight it does not want to take, and it comes up through the planks of the taproom and into the bones of everyone standing on them.
-
-        Above you, the sounding-man stops. He knows that sound better than anyone in the district; predicting it is the whole of his job. He coils his line and goes up the plank-walk at a pace that is not quite running, and the two men from the corner go with him, because none of them wants to be standing on this barge when the water comes back.
-
-        You have the room to yourself.
-
-        *set anchor_sounding_man "dropped"
-        *goto pv_anchor_box_reached
-      *else
-        The hull speaks, and speaks too well. The groan runs up through the timbers and every board in the room answers it, and every man in the room is suddenly and silently certain that the barge is going into the cut.
-
-        It is not the deception you wanted. It is a whole room coming up off the benches at once, shouting, and the sounding-man at the hatch with his chalk in his fist and his eyes on you.
-
-        *set anchor_sounding_man "warned"
-        *goto pv_anchor_descent_botched
-
-  # Close the hatch and leave the box where it is.
-    *goto pv_anchor_backout_hatch
-
-
-*label pv_anchor_box_reached
-The box comes up the ladder heavier than it looks. Iron bands, dense-packed oilcloth, and a hundred people's names add up fast.
-
-You set it down on the taproom floor. Sal puts both hands flat on the bar and looks at it for a while, and then she nods once, and you take the irons off.
-
-
-*comment Layer 2. The reveal is built out of households the player has already
-*comment walked past in Dredge-End's own ambient prose (the eel-seller,
-*comment oar-maker, and tailor's apprentice in port_valen_dredge_end's
-*comment day-of-week variants) rather than famous names. The district's small
-*comment debtors are the horror here, not a plot twist.
-*label pv_anchor_the_box
-*set codex_black_tally true
-Inside, in oilcloth packets tied with waxed cord, in an order somebody has been keeping for years: notes of hand.
-
-You read the top few, because they are face up.
-
-An eel-seller's note, one mark eleven copper, four years old, attested by a witness who has since died. An oar-maker's note, two marks, with a margin note in a different hand about a boat he no longer owns. A tailor's apprentice, six copper, on a page so small it must have been cut down from something else. A woman in the water-streets who signs with a mark, because she cannot write her own name.
-
-*if (met_hobb)
-  The oar-maker's note is signed Hobb.
-
-Half of Dredge-End is in this box. None of it is worth more than a night's drinking. All of it is worth everything to the people named on it.
-
-*if (anchor_broker_note)
-  And under the eel-seller's packet, still soft, in the same hand you watched write in the dark two streets away: a note of hand on an unknown stranger, one night's extortion at the silt gates, twenty-five marks.
-
-  It is the freshest page in the box. Somebody has been keeping the book on you since the night you shook down that contraband broker at the silt gates.
-
-Wedged between two household packets, on Watch-issue stock: a sergeant's pay-chit, six silver marks a Marketday, north quay. No name anywhere on it.
-
-*if (silt_gate_full_intel)
-  *comment Recognition, never assertion. An informed player gets the jolt; an
-  *comment uninformed one gets ominous paper and no spoiler. No NPC is named
-  *comment either way, so no Silt-Gate resolution can be contradicted.
-  Six marks a Marketday, north quay. You have heard that rate before — whispered on a wet stone platform by a man who very much wanted to keep breathing.
-  *set anchor_watch_chit_recognized true
-*else
-  You do not know that rate, or whose column it belongs in, and the fact that it is filed in here at all is the part that matters.
-
-*if (anchor_knows_second_void)
-  Sal watches you bring the box up and does not ask how you got it, which means she already knows about the stern frames. "Two more winters," she says. "Maybe three. Then the middle hull goes into the cut, surveyor or no surveyor. That's the real reason I wanted it off the boards and not just out of the water."
-
-And at the bottom, flat, on better paper than everything above it, with a seal:
-
-A note of hand. Signed by Garrick Riker.
-
-You read it twice to be sure of the columns. Forty marks principal, drawn eleven years ago, with interest recorded against it in tidy monthly entries — and every entry for the last four years matches, almost to the copper, what the district's collections are reported to have brought in.
-
-He is not collecting for the Tally. He has been collecting for her, at interest, and taking the difference out of his own reported tallies, and that is why the tribute has never once added up to what he said it would.
-
-*set anchor_knows_riker_note true
-*set anchor_quest_stage "active"
-*goto pv_anchor_choice
-
-
-*label pv_anchor_descent_botched
-It comes apart quietly and badly.
-
-*if (anchor_ebb_ready)
-  The water reaches the third rib while you are still working, and what was a foot of slack across the bottom boards becomes a knee, then a waist, moving with purpose. You get one hand on the cradle and lose your footing, and the box goes over the side into the black and sits down in the silt with a soft, final thud you feel through the boards.
-*else
-  The water is already at your chest when you reach the cradle, and it is not slack water, it is the returning tide and it is working like something with a job to do. You take the first pin and the current takes your feet, and the box goes over the side and sits down in the silt with a soft, final thud you feel through the boards.
-
-You come up the ladder with your arms shaking and nothing to show for it.
-
-*if (anchor_sounding_man = "warned")
-  And above you is the sounding-man, at the head of the hatch, with his chalk in one fist and his brass sounding-lead in the other, having watched you go down into a hull he has spent three days measuring.
-
-  He does not say anything. He looks at you the way a man looks at a number that has finally resolved, and then he walks away up the plank-walk, and you know exactly where he is going.
-
-  *set anchor_tally_grudge true
-*else
-  Above you, the hatch is closed and the boards are back on it. By the time you get out from under the taproom, whoever put them there is gone.
-
-*set anchor_descent_failed true
-*set anchor_quest_stage "failed"
-*set anchor_route "lost"
-*set anchor_sal_trust 0
-*set anchor_tally_grudge true
-Sal is at the bar with a fresh cup and does not look up when you come dripping through the room. She heard the whole thing through the floorboards, the way she hears everything on this barge.
-
-"You want to tell me you nearly drowned in my cellar for two silver," she says, "or do you want to sit down and dry out first."
-
-There is no box to ask about. It is in the silt under her floor, and it will lie there until the river gets bored enough to give it up.
-
-"The clerk stamps on Forgeday," she says, to the cup. "Somebody is going to pump my bilges and find what you left in them. Sit. Dry out. Then don't come to me with your hand out again."
-
-*page_break Sit down and dry out…
-*goto pv_anchor_hub
-
-
-*label pv_anchor_choice
-You are kneeling on a wet floor in Dredge-End with half the district's promises open in front of you and a woman watching you decide what they are worth.
-
-*choice
-  # Close the lid and give it back to her.
-    *set anchor_route "sal"
-    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
-      *set anchor_sal_trust + 1
-      *set stat_bump_locked true
-      *set locked_stat_bump_page_id choice_page_id
-    You put the packets back the way you found them, eel-seller on top, close the lid, and slide the box across the boards until it touches her boot.
-
-    Sal looks at it for a long moment. Then she crouches — slowly, because her knees are fifty years old — and puts one hand flat on the lid and stays like that.
-
-    "You didn't read the bottom," she says. It is not a question.
-    "I read the bottom."
-    "And you put it back."
-    "It isn't mine."
-
-    She stands and puts the box behind the bar and does not explain, and does not thank you, because in this quarter thanking somebody is how you start owing them. What she does instead is lift a small iron key off a nail and set it on the wood beside your cup.
-
-    "That's the loft," she says. "Coin you leave with me stays with me, and nobody in this quarter has ever touched what's behind my bar. Eat when you're hungry. Don't make me regret the key."
-
-    She counts the fee out of a tin box under the counter, to the copper, the way a woman pays a debt rather than does a favor.
-
-    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
-      *set currency_add_amount (anchor_fee * 10)
-      *gosub_scene startup currency_add
-      *set currency_txn_locked true
-      *set locked_currency_txn_page_id choice_page_id
-
-    *set anchor_tab_unlocked true
-    *set anchor_fee_paid true
-    *goto pv_anchor_aftermath
-
-  # Carry it up to Voss and let the Watch do what the Watch does.
-    *set anchor_route "watch"
-    You wrap the packets in their own oilcloth, stow them into your satchel, and climb out of Dredge-End with the whole quarter's paper against your ribs.
-
-    Voss is at the registry desk under the customs awning with a lamp and a cold cup, the way he is at every hour you have ever seen him, and he does not look surprised to see you.
-
-    He reads for a long time, going back twice to the same name before he's satisfied he read it right the first time. When he reaches Riker's note he lays it flat and puts one finger on the seal, as though it might otherwise get away.
-
-    "A Tally collector skimming his own tribute to cover a debt to the woman he's collecting from," he says, "and half of Dredge-End's paper sitting under a taproom floor the whole time." He looks at you over the sheet. "I've had a man watching that hull for a season on nothing but a hunch. You walked in with the ledger."
-
-    He counts coin out of the strongbox instead of the registry desk — a smaller sum than the box might suggest a smuggling case is worth, and he says as much while he does it. "The city doesn't have a line item for this. Call it a finder's fee, and my thanks, which costs the treasury nothing and is worth rather more."
-
-    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
-      *set currency_add_amount 40
-      *gosub_scene startup currency_add
-      *set currency_txn_locked true
-      *set locked_currency_txn_page_id choice_page_id
-
-    *goto pv_anchor_aftermath
-
-  # Sell Riker's note and the household debts to the Scales.
-    *set anchor_route "scales"
-    The Scales keep a factoring house on the Upper Wharves with clean steps and a brass rail, and a clerk who takes one look at the packets and asks you to wait, and then a factor who does not ask you to wait.
-
-    He does not haggle. He reads, does sums in the margin of a slate, reads again, and names a number that makes the eel-seller's one-mark-eleven note look like exactly what it is: nothing, to him, and everything to her.
-
-    "Distressed paper, bought below face value, from a debtor with no leverage to refuse it." He taps the stack without looking up. "That is the whole of the Scales' business, condensed into one barge cellar. We will collect on every page in here, eventually. All of it."
-
-    You take the coin. He does not ask where the box went. You do not tell him. Both of you understand that the district is about to get quieter and worse, and that neither of you is the one who will have to live in it.
-
-    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
-      *set currency_add_amount 80
-      *gosub_scene startup currency_add
-      *set currency_txn_locked true
-      *set locked_currency_txn_page_id choice_page_id
-
-    *goto pv_anchor_aftermath
-
-  # Keep it. All of it.
-    *set anchor_route "kept"
-    You take the packets out of the box one at a time, stow them into your satchel, and stand up.
-
-    Sal watches you do it, arms folded, her jaw set hard enough to show the muscle in it, and lets you finish before she speaks.
-
-    "It isn't yours," she says, at last.
-    "No," you agree, and fasten the strap, and leave the empty box on her floor, because the box was never the thing that mattered.
-
-    She does not stop you, and she does not speak to you again that evening, or the next week, or the one after. The pot stays on the fire and the attic stays dry, and none of it is the same as being welcome.
-
-    You walk out with the whole quarter's obligations in your satchel, and by the time you reach the footbridge you have begun to understand what you are carrying: not money, and not power exactly, but the ability to decide, for two hundred people you will never meet, whether this week is survivable.
-
-    *goto pv_anchor_aftermath
-
-  # Burn the debt ledger in the pot-stove.
-    *set anchor_route "burned"
-    You carry the collection book to the stove in the corner and lift the ring, and the columns catch quickly, because they are dry and they are old and they have been waiting for somebody to do this for years.
-
-    *if (anchor_knows_riker_note)
-      *comment Burning the Tally's ledger and burning Riker's note are different
-      *comment acts. The note is Sal's paper, not the Tally's, and the player has
-      *comment to decide which pile it belongs on. It stays out.
-      You hold Riker's note over the coals as well, and then you stop, and slip it back into your pouch, because it is not the syndicate's paper.
-
-    Two hundred people's worth of obligation goes up in about four minutes, and it smells like any other fire.
-
-    Nobody stops you. Two carters look up, look at each other, and go back to their ale with the studied blankness of men who have decided they did not see anything.
-
-    Sal stands at the bar and watches the paper curl, and does not say a word until the last corner has gone black. Then she says, "You've ruined me," in a voice of complete calm, and begins wiping a counter that is already clean.
-
-    The fee she owes you for the box sits forgotten on the wood between you. She is not going to remember it, and you are not going to remind her. You take it anyway, because the job was still the job.
-
-    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
-      *set currency_add_amount (anchor_fee * 10)
-      *gosub_scene startup currency_add
-      *set currency_txn_locked true
-      *set locked_currency_txn_page_id choice_page_id
-
-    *goto pv_anchor_aftermath
-
-
-*label pv_anchor_aftermath
-*if (not(anchor_quest_resolved))
-  *set anchor_quest_resolved true
-  *set anchor_quest_stage "resolved"
-  *if (anchor_route = "sal")
-    *set anchor_tally_grudge true
-  *elseif (anchor_route = "watch")
-    *set port_watch_rep +2
-    *set black_tally_rep -1
-    *set anchor_tally_grudge true
-  *elseif (anchor_route = "scales")
-    *set gilded_scales_rep +2
-    *set black_tally_rep -1
-    *set anchor_tally_grudge true
-  *elseif (anchor_route = "kept")
-    *set black_tally_rep +1
-    *set anchor_tally_grudge true
-  *elseif (anchor_route = "burned")
-    *set black_tally_rep -2
-
-It takes the district about four hours to know.
-
-By the time you cross the footbridge, two men in heavy coats are standing where no men were standing before, and neither of them is counting boats. One watches you the whole way across and does not pretend otherwise.
-
-*if (anchor_route = "sal")
-  Sal carries the consequences before you do. She starts taking her meals standing up, near the hatch, and the loft cot stays made, and when you ask about it she says the Anchor is fine and asks what you think of the price of fish. Whatever Riker does next he will do to her, because she is the one still on the boards at night.
-*elseif (anchor_route = "burned")
-  The pot keeps boiling and the crowds keep coming, and for about a month the whole quarter is lighter on its feet. Then the collection starts again out of a different doorway, with different men and a cleaner book, because the paper was never the part that wanted the money.
-*elseif (anchor_route = "kept")
-  Nobody comes for you, and nobody has to. The syndicate ledgers get counting again, and the notes of hand start moving in your name instead of hers, and the first person to offer you a bribe for one of them does it in the Anchor, in front of Sal, about nine days later.
-*else
-  The Anchor stays open and stays busy. Sal serves you without comment, and something has been taken out of that room that was never visible in the first place and cannot be put back.
-
-The fortnight turns over the way fortnights do, and a runner eventually finds you in the compound with a folded chit in his hand: [i]Captain's office. Second week. Bring what you've got.[/i]
-
-*page_break Pocket what you've got and go…
-*goto pv_anchor_hub
-
+        Someone has painted a line on the wall of the stair at head height, with a date beside it, and a second line above it. "That's how high it came," a woman on the landing says. "The first line is what the landlord said it would."
+      *goto cut_steps_hub
+
+  # Climb back up the stair.
+    *page_break Back to the cut…
+    *goto port_valen_dredge_end

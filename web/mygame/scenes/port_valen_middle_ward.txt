@@ -25,41 +25,93 @@
 *set mw_vignette_roll ((campaign_day + clock_hour) modulo 6) + 1
 *gosub_scene calendar update_hub_condition
 
-[b]◈ THE MIDDLE WARD — CONDUIT SQUARE[/b]
+[b]◈ THE MIDDLE WARD: CONDUIT SQUARE[/b]
 *line_break
 [b][⏳ Middle Ward Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
 *line_break
-The road climbs in turns through the salty mist from the docks, then levels out on the broad stone terraces of the Second Terrace. Between the lower docks and the tall limestone cliffs of Civic Heights, the Middle Ward hums with skilled workers. Sturdy timber buildings lean over narrow lanes, their upper floors nearly touching beneath steep slate roofs, while their lower shutters open as shop counters. The air smells of cooled iron, brass dust, cedar sawdust, and warm caraway bread from the public ovens.
+The road climbs in turns through the salty mist from the docks, then levels out on the broad stone terraces of the Second Terrace. Between the lower docks and the tall limestone cliffs of Civic Heights, the Middle Ward is where the city's skilled workers live and work. Sturdy timber buildings lean over narrow lanes, their upper floors nearly touching beneath steep slate roofs, while their lower shutters open as shop counters. The air smells of cooled iron, brass dust, cedar sawdust, and warm caraway bread from the public ovens.
 
 At the center of the square, an octagonal stone public fountain sends clear mountain water through four bronze lion-head spouts into deep basins. Narrow lanes branch from the crossroads toward the different craft quarters. Opposite the fountain, a broad chimney rises above a painted sign reading [i]"Mother Marda's Communal Oven,"[/i] sending sweet rye smoke into the air.
 
+*comment Layers (see port_valen_dredge_end.txt for the full rule): place, sky, street, tell.
+*comment Middle Ward profile: a craft district of covered lanes. Its trade runs indoors, so
+*comment severity 1-2 barely thins it. At severity 3 the street empties, and a cold one
+*comment (a blizzard) also snows the shops shut, which is how the bakehouse, Lantern Lane,
+*comment Smiths' Row and the locksmith's window already behave. A gale empties the flags
+*comment but leaves the counters trading.
+*temp mw_night false
+*temp mw_workday false
+*temp mw_savvy false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set mw_night true
+*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+  *set mw_workday true
+*if ((wisdom >= 13) or (origin = "outlaw"))
+  *set mw_savvy true
+
+*comment LAYER 2: SKY. Weather and light only.
 *if (weather = "Rain")
-  Steady coastal rain streams over the slate roofs and pours from metal gutters into the street, where apprentices leap between paving stones under oiled leather capes.
+  Steady coastal rain streams over the slate roofs and pours from metal gutters into the street, filling the gaps between the paving stones.
 *elseif (weather = "Storm")
   A fierce wind howls through the narrow lanes, rattling hanging trade signs and whistling beneath the overhanging upper floors.
 *elseif (weather = "Fog")
   River mist curls up from the lower harbor, settling between the leaning upper floors and turning horn lanterns into fuzzy amber lights.
 *elseif ((weather = "Snow") or (weather = "Sleet"))
-  Cold grey slush covers the granite paving stones, piled along workshop fronts while craftsmen work behind thick felt curtains.
+  Cold grey slush covers the granite paving stones and piles along the workshop fronts, where thick felt curtains hang stiff across the doorways.
 *elseif (weather = "Blizzard")
-  A freezing upland squall sweeps through the lanes, driving snow against timber doorframes and sending artisans indoors behind barred shutters.
+  A freezing upland squall sweeps through the lanes, driving snow against timber doorframes and packing it into the corners of the shutters.
 *elseif (weather = "Clear")
-  Sharp autumn sunlight washes over the red cedar shingles and whitewashed plaster, laundry lines fluttering like banners between the high windows.
+  *if (mw_workday)
+    Sharp sunlight washes over the red cedar shingles and whitewashed plaster, laundry lines fluttering like banners between the high windows.
+  *elseif (time_period = "Dusk")
+    The low sun turns the red cedar shingles copper and lays long shadows across the whitewashed plaster.
+  *elseif (time_period = "Pre-Dawn")
+    The sky over the slate roofs greys toward dawn, and the whitewashed plaster is only beginning to show against the dark timber.
+  *else
+    A thin moon stands over the slate roofs, and the whitewashed plaster gleams pale between the dark timbers.
 *else
   *comment Overcast
-  A grey sky hangs low over the slate rooftops, trapping the fragrant smoke from public ovens and charcoal fires in the narrow streets.
+  *if (mw_night)
+    Low cloud hides the sky entirely, trapping the smoke from banked ovens and charcoal fires in the narrow streets.
+  *else
+    A grey sky hangs low over the slate rooftops, trapping the fragrant smoke from public ovens and charcoal fires in the narrow streets.
 
-*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+*comment LAYER 3: STREET, with LAYER 4: TELL appended for a wisdom 13+ or outlaw reading.
+*if ((street_life = "empty") and (not(mw_night)))
+  *if (weather_cold)
+    The square is empty. Every shutter is barred against the snow, the awnings are lashed flat, and the fountain runs on with nobody at the basins.
+  *else
+    The square is nearly empty. Awnings are lashed down, the trestle stalls are stacked against the walls, and the shops trade through half-shuttered doors with nobody lingering on the flags.
+  *if (mw_savvy)
+    Even the Watch has drawn in under the arcade. A day like this is when the quarter's small debts get settled in back rooms.
+  *if (mw_workday)
+    *if (day_of_week = "Marketday")
+      It is Marketday, but the canvas stalls stay folded and the farm carts have not come up from the valley.
+    *elseif (day_of_week = "Tideday")
+      It is Tideday, but the freight wagons have stopped at the foot of the switchbacks and are waiting out the weather.
+    *elseif (day_of_week = "Hallowday")
+      It is Hallowday, and the chapel bells from Civic Heights carry down over a ward that has shut itself indoors.
+    *elseif (day_of_week = "Greyday")
+      It is Greyday, and the wash-house steam rolls up unseen behind the buildings while the lanes stay bare.
+    *elseif (day_of_week = "Forgeday")
+      It is Forgeday, and the ring of the forges comes muffled from behind closed sheds.
+    *elseif (day_of_week = "Ironday")
+      It is Ironday, and the ward's usual roar is a low mutter of hammers behind shutters.
+    *else
+      It is Hearthday, and the chimney smoke lies thick and low over a ward that has gone indoors early.
+*elseif (mw_night)
   The square is barred and quiet under the swinging horn lanterns. Watchmen in buff leather coats pace the perimeter in pairs, their spear-butts clicking in measured cadence against the pavers.
 *elseif (time_period = "Dusk")
   Apprentices are hauling in trestle displays and bolting drop-shutters across shopfronts. The smell of boiled mutton, leeks, and hearth stew drifts from upper tenement windows.
 *else
-  *comment Day shifts -- 7-day weekly rhythm
+  *comment Day shifts, 7-day weekly rhythm. Thin weather only changes Marketday.
   *if (day_of_week = "Marketday")
-    *if ((wisdom >= 13) or (origin = "outlaw"))
-      Marketday fills Conduit Square with valley farm carts, butter tubs, and turnip stalls beneath canvas awnings. Among the shouting shoppers, you notice a town grain officer pocketing a small payment slip from an unlicensed flour wagon driver, while two sharp-eyed street boys follow a cheese merchant and wait for the Watch sergeant to look away.
-    *else
+    *if (street_life = "normal")
       Marketday fills the square with upland farm carts and trestle stalls. Country carters shout prices over wheels of sharp yellow curd, sacks of winter oats, and smoked bacon under canvas awnings, while servants from the upper terraces haggle with bakers over caraway loaves.
+    *else
+      Marketday is thin in this weather. A few valley carts hold the crossroads under dripping canvas, and the carters shout their prices from beneath their hoods to servants who have come down from the upper terraces for bread and nothing else.
+    *if (mw_savvy)
+      Among the shoppers, you notice a town grain officer pocketing a small payment slip from an unlicensed flour wagon driver, while two sharp-eyed street boys follow a cheese merchant and wait for the Watch sergeant to look away.
   *elseif (day_of_week = "Tideday")
     Two-horse freight wagons loaded with rough iron bars, resin barrels, and bolts of cloth rattle up the switchbacks from the morning tide. Drivers pause at the fountain to water their steaming horses while apprentices carry bundles of metal hoops into the workshops.
   *elseif (day_of_week = "Hallowday")
@@ -72,23 +124,33 @@ At the center of the square, an octagonal stone public fountain sends clear moun
     The Middle Ward reaches its busiest pace. Locksmiths file metal, herbalists grind medicine, and smiths swing heavy hammers until the lanes fill with one steady roar.
   *else
     *comment Hearthday
-    *if ((wisdom >= 13) or (origin = "outlaw"))
-      Hearthday afternoon brings early closures, but the neighborhood keeps a sharp watch. Under the bakehouse awnings, retired Watch veterans and elder artisans nurse cider mugs with eyes fixed on newcomers. You feel their gaze tracking your weapon harness and pack—in a quarter where everyone knows their neighbor's rent, an unfamiliar mercenary is cataloged before you take twenty paces.
-    *else
-      Work winds down early for Hearthday. By afternoon, workshop shutters are propped halfway, and craftsmen gather under the bakehouse awnings smoking clay pipes and drinking sour orchard cider while children toss knucklebones in sheltered corners.
+    Work winds down early for Hearthday. By afternoon, workshop shutters are propped halfway, and craftsmen gather under the bakehouse awnings smoking clay pipes and drinking sour orchard cider while children toss knucklebones in sheltered corners.
+    *if (mw_savvy)
+      Retired Watch veterans and elder artisans nurse their cider with eyes fixed on newcomers. You feel their gaze tracking your weapon harness and pack. In a quarter where everyone knows their neighbor's rent, an unfamiliar mercenary is cataloged before you take twenty paces.
 
-*if (mw_vignette_roll = 1)
-  [i]Near the bakehouse, an apprentice cooper chases a runaway beer keg that slipped its chocks, swearing as it bounces over the granite gutters.[/i]
-*elseif (mw_vignette_roll = 2)
-  [i]Two washerwomen exchange sharp words beside the south fountain spout over whose wooden pail has the right place beneath the lion's mouth.[/i]
-*elseif (mw_vignette_roll = 3)
-  [i]A traveling knife-grinder working a foot-powered wheel catches your eye beneath an awning and nods toward your weapon belt with a professional wink.[/i]
-*elseif (mw_vignette_roll = 4)
-  [i]A street balladeer perched on a mounting block sings an irreverent tune about the Council's grain tariff until a passing Watchman raps a spear-butt on the stones.[/i]
-*elseif (mw_vignette_roll = 5)
-  [i]A drayman's shaggy grey terrier sits patiently outside the bakehouse door, its tail thumping the flagstones at the smell of roasting suet.[/i]
-*else
-  [i]A city officer wearing a dull metal badge nails a fresh notice about grain prices to the fountain's central pillar.[/i]
+*comment Passing vignette: only when there is a street to pass through. Normal weather gets the
+*comment full pool, thin weather a small covered-lane pool, and empty streets or night get none.
+*if (not(mw_night))
+  *if (street_life = "normal")
+    *if (mw_vignette_roll = 1)
+      [i]Near the bakehouse, an apprentice cooper chases a runaway beer keg that slipped its chocks, swearing as it bounces over the granite gutters.[/i]
+    *elseif (mw_vignette_roll = 2)
+      [i]Two washerwomen exchange sharp words beside the south fountain spout over whose wooden pail has the right place beneath the lion's mouth.[/i]
+    *elseif (mw_vignette_roll = 3)
+      [i]A traveling knife-grinder working a foot-powered wheel catches your eye beneath an awning and nods toward your weapon belt with a professional wink.[/i]
+    *elseif (mw_vignette_roll = 4)
+      [i]A street balladeer perched on a mounting block sings an irreverent tune about the Council's grain tariff until a passing Watchman raps a spear-butt on the stones.[/i]
+    *elseif (mw_vignette_roll = 5)
+      [i]A drayman's shaggy grey terrier sits patiently outside the bakehouse door, its tail thumping the flagstones at the smell of roasting suet.[/i]
+    *else
+      [i]A city officer wearing a dull metal badge nails a fresh notice about grain prices to the fountain's central pillar.[/i]
+  *elseif (street_life = "thin")
+    *if ((mw_vignette_roll = 1) or (mw_vignette_roll = 4))
+      [i]Under the bakehouse awning, a carter has unhitched his mule and sits out the weather with a heel of bread, watching the fountain run.[/i]
+    *elseif ((mw_vignette_roll = 2) or (mw_vignette_roll = 5))
+      [i]A shopkeeper props one shutter open a hand's width and passes a pair of boots out to a customer without letting him step inside.[/i]
+    *else
+      [i]A servant girl fills two pails at the south spout in a hurry and runs for the upper terraces with her head down.[/i]
 
 *choice
   # Turn into the Locksmiths' Close toward the rented lodgings. [~5 min]
@@ -96,8 +158,8 @@ At the center of the square, an octagonal stone public fountain sends clear moun
     *set time_advance_call_id "mw_walk_locksmiths_1"
     *gosub mw_walk_time
     *goto mw_locksmiths_close
-  *if ((time_period = "Night") or (weather = "Blizzard"))
-    *if (weather = "Blizzard")
+  *if ((time_period = "Night") or ((weather_severity >= 3) and (weather_cold)))
+    *if (weather_cold)
       # Check the snow-drifted shutters of the public bakehouse. [~2 min]
         *goto mw_bakehouse_walk
     *else
@@ -137,7 +199,43 @@ At the center of the square, an octagonal stone public fountain sends clear moun
     *set minutes_to_pass 2
     *set time_advance_call_id "mw_walk_spout_1"
     *gosub mw_walk_time
-    You step up to the octagonal basin and cup your hands beneath the cold, rushing mountain water from the bronze lion-head spout. The water is crisp, sweet, and icy cold, washing road dust and salt grit from your throat.
+
+    *temp spout_flavor 0
+    *rand spout_flavor 1 3
+
+    *if (spout_flavor = 1)
+      You step up to the octagonal stone fountain and lean over the basin, cupping your hands beneath the bronze lion-head spout.
+    *elseif (spout_flavor = 2)
+      You rest one hand on the cold limestone coping of the fountain and catch the gushing stream in your palms.
+    *else
+      You approach the central conduit, stepping onto the raised flags to catch the rushing mountain jet as it pours from the bronze lion jaws.
+
+    *comment Environmental and Weather Layer
+    *if ((weather = "Blizzard") or (temperature_band = "freezing"))
+      The stone rim is glazed in treacherous black ice, and brittle icicles fringe the bronze lion's whiskers. The water gushes out in a stinging torrent: shockingly, painfully cold. A deep draught sends a sharp ache straight through your front teeth and down your throat, but the icy mountain runoff shocks your senses wide awake, leaving your breath pluming in white clouds.
+    *elseif (weather_severity >= 3)
+      Gale gusts rip across the square, catching the stream and whipping cold spray across your face. Rain and mountain water splash together over your knuckles as you drink. The torrent tastes clean and mineral-heavy, drowning out the sour stink of wet street soot.
+    *elseif (weather_wet)
+      Rain drums a steady rhythm into the deep basin, stippling the surface with thousands of tiny rings. You duck your head beneath the bronze spout and drink. The mountain water is sweet and cold, washing the gritty taste of coal smoke from your mouth while runoff trickles from your hair.
+    *elseif (weather = "Fog")
+      Cold condensation coats the lion's bronze snout in slick grey beads. In the muffled quiet of the mist, the splashing water sounds loud and hollow against the stones. The icy drink cuts cleanly through the rank, salt-tinged river damp clinging to the back of your throat.
+    *elseif ((weather = "Snow") or (weather = "Sleet"))
+      Grey slush rings the base of the pillar, and your boots crunch on salt scattered across the flags. The water running from the lion's mouth is icy and clear, stinging your numb fingers but leaving you feeling sharp and alert.
+    *elseif ((temperature_band = "warm") or (temperature_band = "hot"))
+      The midday sun has baked the limestone basin warm, making the subterranean chill of the mountain runoff a welcome relief. The water is crisp and sweet with limestone minerals, washing road dust, forge grit, and parched dryness clean from your throat in a single long draught.
+    *else
+      *comment Mild, Clear, or Overcast
+      The mountain water is pure and refreshing, filtered through leagues of upland rock before reaching the ward's pipes. It rinses away the lingering taste of hearth smoke and street grit, leaving your mouth clean and your senses steady.
+
+    *comment Time of Day and Lighting Layer
+    *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+      Under the quiet night sky, the dark water in the basin mirrors the swaying amber lanterns hung along the rooftops. The steady, hollow echo of the splashing spouts fills the deserted square, a lonely and peaceful sound in the curfew hush.
+    *elseif (time_period = "Dusk")
+      As the evening bells carry down from Civic Heights and the ward packs away its tools, the cold mountain spring washes the day's accumulated grime from your hands: fine brass dust, wood shavings, and the sour grease of the road.
+    *else
+      *comment Daytime
+      You wipe your mouth with the back of your sleeve and step back from the fountain, feeling refreshed and grounded as the regular craft noise of the Middle Ward hums along the lanes around you.
+
     *page_break Step back from the conduit…
     *goto mw_conduit_square
   # Travel to another district in the city.
@@ -180,7 +278,7 @@ At the center of the square, an octagonal stone public fountain sends clear moun
 An arched stone passage opens into a clean courtyard paved with pale river stones. To the left hangs an iron sign shaped like an open padlock, reading [i]"Vael & Son, Locksmiths."[/i] Ahead rises the four-storey limestone front of [b]Terrace Lodgings[/b], its thick wooden door fitted with a teardrop-shaped metal knocker.
 
 *if (weather = "Rain")
-  Rain streams from the lead workshop gutters, pooling in the shallow drainage channels between the smooth river cobbles.
+  Rain streams from the workshop gutters, pooling in the shallow drainage channels between the smooth river cobbles.
 *elseif (weather = "Storm")
   Channel gusts whistle through the arched entryway, rattling the forged padlock signboard against its iron bracket.
 *elseif (weather = "Fog")
@@ -199,6 +297,8 @@ An arched stone passage opens into a clean courtyard paved with pale river stone
   *comment Daytime
   *if (day_of_week = "Hallowday")
     The workshop shutters are barred for the chapel holy day, though a small charcoal brazier burns low behind the forge bars to ward off the damp.
+  *elseif ((weather_severity >= 3) and (weather_cold))
+    The workshop is shuttered against the snow, and only a thin red glow shows behind the bars.
   *else
     A charcoal fire glows red behind protective grilles, and the sharp, steady ring of a work hammer echoes off the stone walls.
 
@@ -215,10 +315,10 @@ An arched stone passage opens into a clean courtyard paved with pale river stone
         *goto mw_lodgings_entry
 
   # Inspect the locksmith's workshop display.
-    *if (((time_period = "Night") or (time_period = "Pre-Dawn")) or (weather = "Blizzard")) or (day_of_week = "Hallowday")
+    *if (((time_period = "Night") or (time_period = "Pre-Dawn")) or ((weather_severity >= 3) and (weather_cold))) or (day_of_week = "Hallowday")
       Through the iron grille, the workshop is locked and dark. Heavy metal boxes and sample locks are chained to the workbenches, their polished parts catching the faint lantern light. A small slate sign behind the bars reads: [i]"Vael & Son. Locks Warranted Against Pick & Wedge. Open at Seventh Bell."[/i]
     *else
-      Through the protective grille, you watch Master Vael—a lean craftsman with measuring tools tucked into his leather apron and fine brass dust on his knuckles. With quick, steady strokes of a steel file, he smooths the brass pieces inside a heavy lock and tests it with a crisp [i]snick[/i]. A small slate sign on the counter reads: [i]"Locks Warranted Against Pick & Wedge. Replacement Keys: Three Copper Bits."[/i]
+      Through the protective grille, you watch Master Vael, a lean craftsman with measuring tools tucked into his leather apron and fine brass dust on his knuckles. With quick, steady strokes of a steel file, he smooths the brass pieces inside a heavy lock and tests it with a crisp [i]snick[/i]. A small slate sign on the counter reads: [i]"Locks Warranted Against Pick & Wedge. Replacement Keys: Three Copper Bits."[/i]
     *page_break Step away from the workshop window…
     *goto mw_locksmiths_close
 
@@ -277,7 +377,7 @@ Mistress Kess waits beside her book.
           *set mw_rent_active true
           *set mw_rent_paid_day campaign_day
           *set mw_rent_expiry_day (campaign_day + 7)
-        You count ten copper bits—a full silver mark—onto the sloped desk. Mistress Kess sweeps the coins into her palm, checks each rim against her thumbnail with practiced efficiency, and drops them into a locking tin.
+        You count ten copper bits, a full silver mark, onto the sloped desk. Mistress Kess sweeps the coins into her palm, checks each rim against her thumbnail with practiced efficiency, and drops them into a locking tin.
 
         From a brass peg beside her desk, she lifts a cold-hammered iron key on a loop of waxed cord and slides it across to you.
 
@@ -319,7 +419,7 @@ Mistress Kess waits beside her book.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label mw_room_hub
-[b]◈ YOUR CHAMBER — TERRACE LODGINGS[/b]
+[b]◈ YOUR CHAMBER: TERRACE LODGINGS[/b]
 *line_break
 You turn the key twice in the lock and step into your room. Directly beneath the slate roof, the attic room is quiet and sheltered, smelling of pine shavings and fresh whitewash. A low cot with a firm straw mattress and wool blanket rests against the inner wall. A tin basin and water jug sit beside the hinged window, and a three-legged stool stands beside the cold charcoal fire-pan.
 
@@ -371,6 +471,7 @@ You turn the key twice in the lock and step into your room. Directly beneath the
 
 *set sleep_location_id "terrace_lodgings"
 *set sleep_is_shared false
+*set sleep_is_permanent_home true
 *set sleep_tier_name "none"
 *set sleep_tier_stat1 "none"
 *set sleep_tier_bonus1 0
@@ -385,12 +486,12 @@ You turn the key twice in the lock and step into your room. Directly beneath the
 *if (character_class = "warlock")
   *set warlock_spell_slots 1
 
-You drop the door bar into its brackets, put out the smoking candle, and pull the coarse blanket over your shoulders. The straw mattress is firm, and the room is peaceful—no shouting officers, no drunken tavern brawlers, and no Watch patrol schedule waiting for you.
+You drop the door bar into its brackets, put out the smoking candle, and pull the coarse blanket over your shoulders. The straw mattress is firm, and the room is peaceful: no shouting officers, no drunken tavern brawlers, and no Watch patrol schedule waiting for you.
 
 *if ((time_period = "Morning") or (time_period = "Pre-Dawn"))
   The distant chime of cathedral bells and the warm aroma of hearth loaves drifting past the eaves stir you from sleep. Pale daylight washes over the floorboards, and your limbs feel rested and loose.
 *elseif (time_period = "Dusk")
-  By the time you open your eyes, the amber glow of twilight is fading along the roofline as curfew horns echo down from Civic Heights. Your body feels fully restored and refreshed.
+  By the time you open your eyes, the amber glow of twilight is fading along the roofline as curfew horns echo down from Civic Heights. Your limbs are loose and rested, though the ache of the road has only eased.
 *elseif (time_period = "Night")
   You stir in the cool darkness beneath the rafters, the city quiet under a vast sky. Your breathing is steady, and your fatigue has cleared.
 *else
@@ -420,8 +521,6 @@ For a full hour, you lie resting in the garret, listening to the wind over the s
 *set minutes_to_pass 10
 *set time_advance_call_id "mw_room_wash"
 *gosub_scene calendar advance_time
-*set routine_stage "Settled"
-*set nights_same_location 0
 
 You pour cold spring water from the ceramic jug into the battered tin basin. Using a harsh bar of caustic soap, you scrub road mud, sweat, and street grime from your hands, neck, and forearms.
 
@@ -447,7 +546,7 @@ You pull the stool up to the casement window and lean your forearms on the sill,
 *elseif (time_period = "Morning")
   Early sun catches the limestone buttresses of Civic Heights above, turning the limestone pale gold. Below in the lanes, water carriers with coopered pails and market carters with produce crates begin their morning haul up the switchbacks.
 *elseif (time_period = "Midday")
-  High sun beats down upon the crowded slate rooflines. Pigeons coo along the lead gutters, the steady ring of smiths' hammers echoes from the lower yard, and the smell of roasting pasties drifts up on the rising thermals.
+  High sun beats down upon the crowded slate rooflines. Pigeons coo along the gutters, the steady ring of smiths' hammers echoes from the lower yard, and the smell of roasting pasties drifts up on the rising thermals.
 *elseif (time_period = "Afternoon")
   Long shadows stretch across the cobbled lanes. Shopkeepers along Lantern Lane haul in their outdoor stock, and apprentices sweep brass filings from workshop stoops under the watchful eyes of their masters.
 *elseif (time_period = "Dusk")
@@ -469,8 +568,8 @@ Behind a bolted door, the silence belongs entirely to you.
 [b]◈ MOTHER MARDA'S COMMUNAL BAKEHOUSE[/b]
 *line_break
 
-*if ((time_period = "Night") or (weather = "Blizzard"))
-  *if (weather = "Blizzard")
+*if ((time_period = "Night") or ((weather_severity >= 3) and (weather_cold)))
+  *if (weather_cold)
     A howling upland blizzard scours Conduit Square, banking deep drifts of white powder against the bakehouse walls. The timber storm-shutters are dropped and secured with forged pins to protect the ovens from the freezing squall, and the awning is lashed flat against the rafters. High above, woodsmoke is torn instantly to shreds by the shrieking wind as the chimney flue vents into the whiteout.
     *page_break Turn back into Conduit Square…
     *goto mw_conduit_square
@@ -480,7 +579,7 @@ Behind a bolted door, the silence belongs entirely to you.
     *goto mw_conduit_square
 
 *elseif (time_period = "Pre-Dawn")
-  Early smoke from the oven fires rolls beneath the bakehouse awning, sweet with chopped wood. The shop shutters are unbolted and propped open. Inside, two yawning apprentices shovel glowing coals into the domed ovens, while Mother Marda—flour already dusting her wool apron—works a huge wooden trough of risen rye dough.
+  Early smoke from the oven fires rolls beneath the bakehouse awning, sweet with chopped wood. The shop shutters are unbolted and propped open. Inside, two yawning apprentices shovel glowing coals into the domed ovens, while Mother Marda, flour already dusting her wool apron, works a huge wooden trough of risen rye dough.
 
   On the side kettle, a small batch of morning caraway rolls and oatmeal bannocks warms over the ash coals.
 
@@ -530,13 +629,13 @@ Behind a bolted door, the silence belongs entirely to you.
       *goto mw_bakehouse
     # "Up before the bells, Mother Marda. What's the word in the ward?"
       *if (day_of_week = "Marketday")
-        Mother Marda glances toward the torchlit square with a floury chuckle. "Upland farmers have been rattling their carts through the lower gates since third watch, jockeying for stall space in the square before the morning gong sounds. Buy your rolls now, soldier—once the seventh chime strikes, the carters will crowd the counter three deep."
+        Mother Marda glances toward the torchlit square with a floury chuckle. "Upland farmers have been rattling their carts through the lower gates since third watch, jockeying for stall space in the square before the morning gong sounds. Buy your rolls now, soldier. Once the seventh chime strikes, the carters will crowd the counter three deep."
       *elseif (day_of_week = "Forgeday")
-        Mother Marda wipes her brow with her apron. "Coal wagons came up from the lower slips during the dark—good hard pit-coal for Master Vael and the tool-grinders. Once the day bell rings, this whole lane will be a shower of grinding sparks and filings. Best enjoy the peace while it lasts."
+        Mother Marda wipes her brow with her apron. "Coal wagons came up from the lower slips during the dark: good hard pit-coal for Master Vael and the tool-grinders. Once the day bell rings, this whole lane will be a shower of grinding sparks and filings. Best enjoy the peace while it lasts."
       *elseif (day_of_week = "Tideday")
         Mother Marda nods down toward the switchback road. "The ebb tide is turning at the quays. Down at the lower yard, the teamsters are already hitching two-horse teams and greasing axles by lantern light, getting ready to haul raw pig-iron up the cliff cut before midday."
       *elseif (day_of_week = "Greyday")
-        Mother Marda gestures with a baker's peel toward the steaming yard. "Washerwomen have been hauling coopered pails from the conduit since the fourth chime. They're lighting charcoal under their lye cauldrons now—river damp hangs heavy at dawn, and they want their smocks on the lines before the street dust rises."
+        Mother Marda gestures with a baker's peel toward the steaming yard. "Washerwomen have been hauling coopered pails from the conduit since the fourth chime. They're lighting charcoal under their lye cauldrons now. River damp hangs heavy at dawn, and they want their smocks on the lines before the street dust rises."
       *elseif (day_of_week = "Hallowday")
         Mother Marda speaks in a lowered, respectful tone. "Quiet hours across the terrace. Parish sexton's already lighting beeswax tapers over at Saint Dunstan's shrine. Craftsmen won't open their shutters today, but folks will be dropping their dinner pots off for my ovens before the first chapel service."
       *elseif (day_of_week = "Ironday")
@@ -619,7 +718,7 @@ Behind a bolted door, the silence belongs entirely to you.
 
 *else
   *comment Daytime: Morning, Midday, Afternoon -- Full active bakehouse
-  Heat washes over you from the massive hearth, where split hardwood burns down to glowing embers beneath twin domed bake-ovens. Milling dust floats in the air like pale snow. Behind a broad pine counter, Mother Marda—a round, red-cheeked woman in a linen apron with flour dusting her forearms—slides a long-handled baker's paddle into the oven, retrieving a row of dark caraway rye loaves. Tenement dwellers and apprentices bustle around the counter with proofing pans.
+  Heat washes over you from the massive hearth, where split hardwood burns down to glowing embers beneath twin domed bake-ovens. Milling dust floats in the air like pale snow. Behind a broad pine counter, Mother Marda, a round, red-cheeked woman in a linen apron with flour dusting her forearms, slides a long-handled baker's paddle into the oven, retrieving a row of dark caraway rye loaves. Tenement dwellers and apprentices bustle around the counter with proofing pans.
 
   On a side trestle beneath a propped awning, a kettle keeps a batch of savory mutton-and-leek pasties sizzling hot in their suet crusts.
 
@@ -660,7 +759,7 @@ Behind a bolted door, the silence belongs entirely to you.
       *if (day_of_week = "Marketday")
         Mother Marda wipes white dust from her brow with her apron and chuckles. "Marketday's always a mad scramble, soldier. Upland farmers bring damp grain down from the valley, argue over every sack of winter wheat, and Council tax officers poke measuring rods into flour barrels to collect their fee. Good thing I keep the pasties coming all afternoon, or the carters would leave the counter bare."
       *elseif (day_of_week = "Forgeday")
-        Mother Marda shakes her head, dusting flour from her hands. "Grinders and sharpeners take over the roofs today. Tool-grinders work their foot-powered wheels and throw sparks everywhere, so the apprentices keep water buckets ready—dry grain dust catches fast if hot metal lands on a sack. But Master Vael's smiths usually keep their sparks inside the lane."
+        Mother Marda shakes her head, dusting flour from her hands. "Grinders and sharpeners take over the roofs today. Tool-grinders work their foot-powered wheels and throw sparks everywhere, so the apprentices keep water buckets ready: dry grain dust catches fast if hot metal lands on a sack. But Master Vael's smiths usually keep their sparks inside the lane."
       *elseif (day_of_week = "Tideday")
         Mother Marda nods toward the lower road cut. "Freight traffic. Wagons haul rough iron bars and bolts of cloth up from the harbor. The wagon drivers always crowd the counter for pasties before they face the climb to Civic Heights, grumbling about broken axles and mud past the low dam."
       *elseif (day_of_week = "Greyday")
@@ -695,9 +794,9 @@ The lane climbs from Conduit Square in a slow curve. Deep timber eaves roof both
 
 Hollis & Daughters has the widest front, a bay of small glass panes under a board reading [i]"Hollis & Daughters. General Goods."[/i] Beside it are a cloth-and-boot counter, a candle-and-lamp-oil counter under a copper lantern sign, and a narrow stall selling paper, ink, and sealing wax.
 
-*if (((time_period = "Night") or (time_period = "Pre-Dawn")) or (time_period = "Dusk")) or ((weather = "Blizzard") or (day_of_week = "Hallowday"))
+*if (((time_period = "Night") or (time_period = "Pre-Dawn")) or (time_period = "Dusk")) or (((weather_severity >= 3) and (weather_cold)) or (day_of_week = "Hallowday"))
   *comment Closed: Night, Pre-Dawn, Dusk, Hallowday, or a Blizzard
-  *if (weather = "Blizzard")
+  *if (weather_cold)
     Snow drives sideways under the eaves. Every shutter is barred, and the lanterns swing on their brackets.
   *elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
     Every shutter is down and chained, but a lantern burns over each door, and the lane is the best-lit street in the ward.
@@ -822,6 +921,10 @@ Inside, the store is deeper than the bay window suggests. Shelves run to the raf
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment HERB-POUNDER CLOSE
+*comment Follows the standard craft ward schedule: open Morning through Afternoon;
+*comment closed at Dusk, Night, Pre-Dawn, Hallowday, and during Blizzards.
+*comment Neutral role-agnostic dialogue: Master Ambrose reads physical strain
+*comment and speaks of who buys his wares, never assuming the player's role.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label mw_herb_close
@@ -829,26 +932,48 @@ Inside, the store is deeper than the bay window suggests. Shelves run to the raf
 *line_break
 Tucked behind the main lane, this stone dead-end is sheltered by cedar roofs and lined with wicker drying racks covered with mountain angelica, dried wormwood, pine resin, and shredded willow bark. The air is sharp with crushed camphor, menthol, and roasted chicory beneath a painted mortar-and-pestle sign reading [i]"Ambrose's Still-Room & Physic."[/i]
 
-Through the timber shutters, two copper distilling pots hiss over charcoal fires while two apprentices grind herbs in deep stone bowls with a steady, hollow *chunk... chunk... chunk*.
-
-*choice
-  # Inspect the drying racks and distillation stills.
-    You examine the neat bundles of highland roots and dried riverbank herbs hanging under the eaves. Master Ambrose, an elderly herbalist with yellow-stained fingers, looks up from pouring pine medicine into small dark glass bottles. "Looking for wound salve or bitters, soldier?" he murmurs. "The army takes our best willow bark for its field surgeons, but a jar of warming rubbing salve does wonders for swollen marching joints."
-    *page_break Step away from the still-room…
-    *goto mw_herb_close
-  *if (mw_herb_seen)
-    # Ask Master Ambrose about his liniments.
-      Master Ambrose wipes a glass dropper on a clean linen rag. "The soldiers from the barracks swear by it," the old herbalist says, tapping a row of sealed stoneware pots. "Animal fat mixed with wintergreen, wild thyme, and crushed camphor. Rub it over strained knees or blistered heels before you lace your boots, and the swelling stays down through a fifteen-mile march."
-      *page_break "Good to keep in mind."…
-      *goto mw_herb_close
+*if (((time_period = "Night") or (time_period = "Pre-Dawn")) or (time_period = "Dusk")) or (((weather_severity >= 3) and (weather_cold)) or (day_of_week = "Hallowday"))
+  *comment Closed: Night, Pre-Dawn, Dusk, Hallowday, or Blizzard
+  *if (weather_cold)
+    Snow banks high against the workshop door. The cedar drying racks have been dragged indoors, the shutters are barred tight, and only the scent of bitter camphor leaks through the frozen cracks in the timber.
+  *elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    The dead-end is dark and silent under the overhanging roofs. The copper distilling pots are banked cold, the wicker racks are lashed away under canvas, and the workshop shutters are padlocked with heavy iron latches.
+  *elseif (time_period = "Dusk")
+    The still-room is closing for the evening. Apprentices are carrying the wicker drying trays inside out of the river damp, and Master Ambrose is dousing the charcoal fires beneath the copper pots with damp sand.
   *else
-    # Speak with the shopkeeper behind the counter.
-      *set mw_herb_seen true
-      Master Ambrose wipes an amber dropper on a clean linen rag and gestures toward the jars behind him. "Welcome to the herbal workshop, soldier. We make pine medicine, animal-fat salves, and dried fever herbs from the river bottoms. If your unit is marching on rough ground, you'll want our warming rubbing salve before the frost bites into your joints."
-      *page_break "Good to know."…
+    *comment Hallowday, daytime
+    The shutters are barred for the chapel holy day, and the lane is peaceful. Only the faint, medicinal tang of dried roots and resin clings to the quiet stone walls.
+
+  *choice
+    # Read the slate sign beside the shuttered counter.
+      A small slate board hangs beneath the mortar-and-pestle sign: [i]"Ambrose's Physic. Stills banked until Seventh Bell. Emergency Poultices: Inquire at the parish infirmary."[/i]
+      *page_break Step back from the shutters…
       *goto mw_herb_close
-  # Return to Conduit Square.
-    *goto mw_conduit_square
+    # Return to Conduit Square.
+      *goto mw_conduit_square
+
+*else
+  *comment Open: Morning, Midday, Afternoon
+  Through the propped timber shutters, two copper distilling pots hiss over charcoal fires while two apprentices grind dried roots in deep stone bowls with a steady, rhythmic thud.
+
+  *choice
+    # Inspect the drying racks and distillation stills.
+      You examine the neat bundles of highland roots and dried riverbank herbs hanging under the eaves. Master Ambrose, an elderly herbalist with yellow-stained fingers, looks up from pouring pine medicine into small dark glass bottles. "Looking for wound salve or bitter tonics?" he murmurs, his pale eyes taking in the road dust on your gear. "The garrison takes most of our willow bark for their surgeons, but a jar of warming rubbing salve does wonders for stiff knees or swollen ankles."
+      *page_break Step away from the still-room…
+      *goto mw_herb_close
+    *if (mw_herb_seen)
+      # Ask Master Ambrose about his liniments.
+        Master Ambrose wipes a glass dropper on a clean linen rag. "Carters, quarrymen, and dock porters all swear by it," the old herbalist says, tapping a row of sealed stoneware pots. "Rendered animal tallow infused with wintergreen, wild thyme, and crushed camphor. Rub it over strained joints or tender arches before you pull your boots on, and it keeps the swelling down through a full day on the cobbles."
+        *page_break "Good to keep in mind."…
+        *goto mw_herb_close
+    *else
+      # Speak with the shopkeeper behind the counter.
+        *set mw_herb_seen true
+        Master Ambrose wipes an amber dropper on a clean linen rag and gestures toward the clay pots behind him. "Welcome to the still-room," he says in a dry, calm voice. "We prepare pine distillates, tallow salves, and fever tonics from the river bottom. If you have been traveling the switchbacks or hauling heavy weight, our warming liniment will draw the ache out of your tendons before the damp gets into them."
+        *page_break "Good to know."…
+        *goto mw_herb_close
+    # Return to Conduit Square.
+      *goto mw_conduit_square
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment SMITHS' ROW
@@ -867,9 +992,9 @@ Through the timber shutters, two copper distilling pots hiss over charcoal fires
 *line_break
 Where the harbor road climbs into the ward, the lane opens into a broad cobbled yard. Three forges stand under open sheds around a stone water trough, with racks of finished blades, helmets, and tools along the walls and stacks of coal and iron bars by the gate. A board over the largest shed reads [i]"Halda's Forge. Steel Bought, Sold, and Mended."[/i] At the far end of the yard, a lone cooper's bench still turns out barrels for the ward.
 
-*if (((time_period = "Night") or (time_period = "Pre-Dawn")) or (time_period = "Dusk")) or ((weather = "Blizzard") or (day_of_week = "Hallowday"))
+*if (((time_period = "Night") or (time_period = "Pre-Dawn")) or (time_period = "Dusk")) or (((weather_severity >= 3) and (weather_cold)) or (day_of_week = "Hallowday"))
   *comment Closed: Night, Pre-Dawn, Dusk, Hallowday, or a Blizzard
-  *if (weather = "Blizzard")
+  *if (weather_cold)
     Snow drives across the yard. The sheds are barred, and a red glow shows only in the cracks around the doors.
   *elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
     The forges are banked and the sheds are barred. The yard smells of cold ash and iron.
@@ -1002,8 +1127,8 @@ The largest shed is open on the yard side, with a forge at the back and an anvil
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment THE CONDUIT WASH-HOUSE & BATHS
 *comment Added 2026-09-20 to give the ward a place to sit and talk that is not a bar (the game already
-*comment has two, and the Cleaved Keel and Rusty Anchor set that tone). It follows the ward's existing
-*comment washday content: mountain water comes down a lead pipe from the conduit, and the boilers are
+*comment has a few, and the Cleaved Keel sets that tone). It follows the ward's existing
+*comment washday content: mountain water comes down a pipe from the conduit, and the boilers are
 *comment built into the back wall of Mother Marda's ovens, so the bakers' fires heat the water. Merrin
 *comment keeps the baths. House rules make it neutral ground: steel goes on the rack at the door and
 *comment nobody quarrels in the steam, so people talk freely there (a natural rumor and contact spot).
@@ -1018,7 +1143,7 @@ The largest shed is open on the yard side, with a forge at the back and an anvil
 *set mw_wash_seen true
 [b]◈ THE CONDUIT WASH-HOUSE[/b]
 *line_break
-Behind Conduit Square, past the back wall of Mother Marda's ovens, a covered yard runs down the slope, and steam rolls out of it into the lanes. Copper tubs sit on charcoal fires under long shed roofs, with washing lines strung between the posts. A low stone building closes the far end, with a lead pipe from the conduit running into its wall and a board over the door reading [i]"Conduit Baths. Hot Water, One Copper Bit a Soak."[/i]
+Behind Conduit Square, past the back wall of Mother Marda's ovens, a covered yard runs down the slope, and steam rolls out of it into the lanes. Copper tubs sit on charcoal fires under long shed roofs, with washing lines strung between the posts. A low stone building closes the far end, with a bronze pipe from the conduit running into its wall and a board over the door reading [i]"Conduit Baths. Hot Water, One Copper Bit a Soak."[/i]
 
 *if ((time_period = "Night") or (time_period = "Pre-Dawn")) or (day_of_week = "Hallowday")
   *comment Closed: Night, Pre-Dawn, Hallowday
@@ -1077,7 +1202,7 @@ Behind Conduit Square, past the back wall of Mother Marda's ovens, a covered yar
       The washers stand in rows at the tubs, up to their elbows in grey suds, pounding shirts with wooden paddles and wringing them into baskets. The water is thick with lye and river soap, and the air smells sharp, clean, and faintly of wet wool.
       *page_break Step back from the tubs…
       *goto mw_wash_yard
-    # Follow the lead pipe along the wall.
+    # Follow the bronze pipe along the wall.
       The pipe runs from the conduit down the slope to a row of copper boilers built into the back wall of Mother Marda's ovens. The bakers' fires heat the water for the whole yard, and a stack of split wood by the boiler door is stamped with the bakehouse's mark.
       *page_break Step back into the yard…
       *goto mw_wash_yard
@@ -1131,7 +1256,7 @@ A short passage of wet flagstones opens into a long room lined with wooden tubs 
   *if (not(mw_merrin_water_talk))
     # Ask where the hot water comes from.
       *set mw_merrin_water_talk true
-      "Mountain water down the lead pipe from the cliff spring, and Marda's ovens heat it," Merrin says. "She burns the ward's bread, I burn her heat. I pay her in soaks. Her bakers come in free on Hearthday, and a baker who's had a soak makes better bread." She almost smiles. "Ask her. She'll tell you it was her idea."
+      "Mountain water down the pipe from the cliff spring, and Marda's ovens heat it," Merrin says. "She burns the ward's bread, I burn her heat. I pay her in soaks. Her bakers come in free on Hearthday, and a baker who's had a soak makes better bread." She almost smiles. "Ask her. She'll tell you it was her idea."
       *page_break "Good to know."…
       *goto mw_baths_inside
   # Step back out into the wash yard.

@@ -17,6 +17,15 @@
 *set current_district "upper_wharves"
 *set upper_wharves_seen true
 *gosub_scene calendar update_hub_condition
+*comment Layers (see port_valen_dredge_end.txt for the full rule): place, sky, street. Profile: a private
+*comment merchant quarter whose business runs indoors. Foul weather barely changes the offices, but at
+*comment severity 3 the avenue empties and the guards draw back into the porticos.
+*temp uw_night false
+*temp uw_workday false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set uw_night true
+*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+  *set uw_workday true
 [b]◈ THE UPPER WHARVES[/b]
 *line_break
 [b][⏳ Upper Wharves Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
@@ -26,13 +35,13 @@ The road climbs above the wet streets toward the merchant quarter. Here, the pav
 *if (weather = "Rain")
   Clean rain washes the granite gutters, streaming off painted merchant signs and drumming on the heavy slate roofs of the factoring houses.
 *elseif (weather = "Storm")
-  Driving wind howls up from the wharves below, rattling the heavy oak shutters of the counting houses and forcing private gate guards into stone porticos.
+  Driving wind howls up from the wharves below, rattling the heavy oak shutters of the counting houses and whipping the gilded serpent signs on their brackets.
 *elseif (weather = "Fog")
   Cold river mist creeps up the paved avenues, muffled by stone walls and turning private carriage lanterns into floating spheres of yellow light.
 *elseif ((weather = "Snow") or (weather = "Sleet"))
-  Apprentices in thick wool coats shovel grey slush from the counting house steps, scattering coarse salt across the clean flagstones.
+  Grey slush lies along the clean flagstones and on the counting house steps, and the gutters run thick with meltwater.
 *elseif (weather = "Blizzard")
-  A freezing gale sweeps the high merchant ridge, driving snow against barred windows and leaving the wide avenue deserted under howling gusts.
+  A freezing gale sweeps the high merchant ridge, driving snow against barred windows and howling along the wide avenue.
 *elseif (weather = "Clear")
   *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
     Clear starlight glistens on the swept paving stones, and private lanterns cast long shadows past iron-barred archways.
@@ -45,16 +54,22 @@ The road climbs above the wet streets toward the merchant quarter. Here, the pav
   *else
     A high, leaden overcast settles over the upper quarter, keeping the clean merchant avenue cold and grey.
 
-*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+*if ((street_life = "empty") and (not(uw_night)))
+  The avenue is deserted. The private gate guards have drawn back into the stone porticos, and the counting houses do their business behind barred shutters, where letters of credit go on changing hands.
+  *if ((uw_workday) and (day_of_week = "Hallowday"))
+    It is Hallowday, and the grilles stay padlocked while cathedral bells toll from Civic Heights above.
+*elseif (uw_night)
   Iron grilles are padlocked across the counting houses, and private lanterns burn behind barred office windows. The only noise on the clean cobblestones is the slow pacing of liveried guards with halberds and watchdogs.
 *elseif (time_period = "Dusk")
   Clerks hurry to padlock the guild awnings and shutter high windows before the light goes. Private gate guards take up their night posts while runners carry the last sealed account packets down the hill.
 *else
   *comment Daytime
   *if (day_of_week = "Hallowday")
-    The counting-house grilles remain padlocked for the church calendar, leaving the merchant avenue quiet while cathedral bells toll from Civic Heights above.
+    The counting-house grilles remain padlocked for the church calendar, leaving the merchant avenue quiet while cathedral bells toll from Civic Heights above. The only movement on the swept stones is the private gate guards shifting their halberds from shoulder to shoulder, and a scrivener hurrying toward the chapel with a prayer-book under his coat.
   *else
     Letters of credit change hands in quiet offices while petitioners wait beneath guild awnings. Bronze-faced factors receive merchants one at a time, while runners carry stacks of stamped vellum toward the council buildings.
+    *if (weather_cold)
+      Apprentices in thick wool coats shovel grey slush from the counting house steps, scattering coarse salt across the clean flagstones.
 *page_break Where to next…
 *goto_scene port_valen port_valen_travel
 

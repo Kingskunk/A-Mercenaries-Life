@@ -42,60 +42,37 @@
     *set taphouse_dice_bankroll taphouse_dice_bankroll_max
     *set keel_dice_bankroll keel_dice_bankroll_max
 
-    *comment Weather rolled once per calendar day, weighted by current_season
-    *comment (whatever it was set to as of the START of this call -- a season
-    *comment change and a weather roll landing on the exact same advance_time
-    *comment call would use yesterday's season weighting, a negligible one-
-    *comment day edge case, not worth a second pass to avoid). Inside the
-    *comment days_to_pass>0 guard on purpose: same replay-safety as the rest
-    *comment of this block, and "once per day" semantics for free.
-    *temp weather_roll 0
-    *rand weather_roll 1 100
-    *if (current_season = "Winter")
-      *if (weather_roll <= 30)
-        *set weather "Clear"
-      *elseif (weather_roll <= 55)
-        *set weather "Overcast"
-      *elseif (weather_roll <= 75)
-        *set weather "Snow"
-      *elseif (weather_roll <= 90)
-        *set weather "Sleet"
-      *else
-        *set weather "Blizzard"
-    *elseif (current_season = "Summer")
-      *if (weather_roll <= 45)
-        *set weather "Clear"
-      *elseif (weather_roll <= 65)
-        *set weather "Overcast"
-      *elseif (weather_roll <= 80)
-        *set weather "Rain"
-      *elseif (weather_roll <= 95)
-        *set weather "Storm"
-      *else
-        *set weather "Fog"
-    *elseif (current_season = "Spring")
-      *if (weather_roll <= 35)
-        *set weather "Clear"
-      *elseif (weather_roll <= 60)
-        *set weather "Overcast"
-      *elseif (weather_roll <= 85)
-        *set weather "Rain"
-      *elseif (weather_roll <= 95)
-        *set weather "Fog"
-      *else
-        *set weather "Storm"
+    *comment Weather is rolled a day ahead. Today's weather is yesterday's forecast
+    *comment (weather_tomorrow) about 80% of the time; otherwise the forecast missed and
+    *comment today is a fresh roll (forecast_missed, so an NPC can grumble about a wrong
+    *comment forecast). Then tomorrow is rolled, so weather_tomorrow is always one true day
+    *comment ahead. Rain and dry streaks are counted from the flags of the weather that just
+    *comment ended and drive ground_state. All of it sits inside the days_to_pass>0 guard on
+    *comment purpose: same replay-safety as the rest of this block and "once per day" for
+    *comment free. The season used is the one at the START of this call (a negligible one-day
+    *comment edge); fix_weather_season converts anything that season cannot produce.
+    *temp weather_input ""
+    *temp weather_rolled ""
+    *temp forecast_roll 0
+    *set weather_input weather
+    *if (weather_wet)
+      *set rain_streak + 1
+      *set dry_streak 0
     *else
-      *comment Autumn
-      *if (weather_roll <= 15)
-        *set weather "Clear"
-      *elseif (weather_roll <= 45)
-        *set weather "Overcast"
-      *elseif (weather_roll <= 70)
-        *set weather "Rain"
-      *elseif (weather_roll <= 90)
-        *set weather "Fog"
-      *else
-        *set weather "Storm"
+      *set dry_streak + 1
+      *set rain_streak 0
+    *rand forecast_roll 1 100
+    *if (forecast_roll <= 80)
+      *set forecast_missed false
+      *set weather_rolled weather_tomorrow
+      *gosub fix_weather_season
+    *else
+      *set forecast_missed true
+      *gosub roll_weather
+    *set weather weather_rolled
+    *set weather_input weather
+    *gosub roll_weather
+    *set weather_tomorrow weather_rolled
 
   *comment --- Buff timer decay (food / drink / unique boons 1-3) ---
   *comment Each channel decays independently by total_mins_this_call.
@@ -186,14 +163,20 @@
   *comment re-applying the (correctly skipped) drain, silently erasing it.
   *comment Recomputing from the derived debt totals afterward is immune to
   *comment that, exactly like recalculate_armor_class elsewhere.
+  *comment Exposure (cold, heat, foul weather while outdoors) makes the body burn through
+  *comment food and rest faster: exposure_extra_mins is extra minutes counted ONLY toward the
+  *comment hunger and fatigue clocks, never the game clock. A caller sets exposure_base_mins
+  *comment and *gosub_scene calendar calc_exposure before advance_time; this scene clears it
+  *comment again below, outside the guard, so a replayed page cannot leak it into a later call.
+  *temp neglect_mins (total_mins_this_call + exposure_extra_mins)
   *if (vane_independent_operative)
-    *set minutes_since_meal + total_mins_this_call
-    *set minutes_since_rest + total_mins_this_call
+    *set minutes_since_meal + neglect_mins
+    *set minutes_since_rest + neglect_mins
 
     *temp meal_over_before 0
     *temp meal_over_after 0
-    *if ((minutes_since_meal - total_mins_this_call) > 2160)
-      *set meal_over_before ((minutes_since_meal - total_mins_this_call) - 2160)
+    *if ((minutes_since_meal - neglect_mins) > 2160)
+      *set meal_over_before ((minutes_since_meal - neglect_mins) - 2160)
     *if (minutes_since_meal > 2160)
       *set meal_over_after (minutes_since_meal - 2160)
     *temp meal_ticks_before ((meal_over_before - (meal_over_before modulo 240)) / 240)
@@ -202,8 +185,8 @@
 
     *temp rest_over_before 0
     *temp rest_over_after 0
-    *if ((minutes_since_rest - total_mins_this_call) > 2400)
-      *set rest_over_before ((minutes_since_rest - total_mins_this_call) - 2400)
+    *if ((minutes_since_rest - neglect_mins) > 2400)
+      *set rest_over_before ((minutes_since_rest - neglect_mins) - 2400)
     *if (minutes_since_rest > 2400)
       *set rest_over_after (minutes_since_rest - 2400)
     *temp rest_ticks_before ((rest_over_before - (rest_over_before modulo 240)) / 240)
@@ -246,6 +229,8 @@
 *set minutes_to_pass 0
 *set hours_to_pass 0
 *set days_to_pass 0
+*set exposure_base_mins 0
+*set exposure_extra_mins 0
 
 *label check_calendar_month
 *temp month_max 30
@@ -390,17 +375,29 @@
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment REUSABLE PRIMITIVE: RECOMPUTE HP FROM NEGLECT DEBT
-*comment Fully derived, no lock needed -- safe to call unconditionally on
-*comment every replay, unlike a bare hp_current +/-N. Callers that also
-*comment want to clear a debt (a meal clearing neglect_damage_hunger, a
-*comment night's sleep clearing neglect_damage_fatigue) must *set that debt
-*comment to 0 themselves BEFORE this gosub, not after.
+*comment REUSABLE PRIMITIVE: APPLY HUNGER AND FATIGUE DEBT TO HP
+*comment In Port Valen hp_current is the real, persistent health: a wound from a fight stays
+*comment until it is healed, and sleep does not restore it (natural recovery is a small,
+*comment separate step in resolve_sleep). The two neglect debts are applied to it by DELTA:
+*comment hp_debt_applied remembers how much of the debts hp_current has already paid, so
+*comment when a debt grows the difference comes off, and when a meal or a night's sleep clears
+*comment one, exactly those points come back. Nothing else is touched, so a wound survives
+*comment every recalc, and healing (a poultice, a potion, a spell) persists.
+*comment Idempotent: a second call with unchanged debts changes nothing, which keeps it safe
+*comment to call unconditionally on every replay, unlike a bare hp_current +/-N. Callers that
+*comment also want to clear a debt (a meal clearing neglect_damage_hunger, a night's sleep
+*comment clearing neglect_damage_fatigue) must *set that debt to 0 themselves BEFORE this
+*comment gosub, not after. The prologue chapters (before Port Valen) never call this and keep
+*comment their simple direct-HP handling and instant scripted heals.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label recalc_hp_from_neglect
-*set hp_current (hp_max - neglect_damage_hunger) - neglect_damage_fatigue
+*temp hp_debt_total (neglect_damage_hunger + neglect_damage_fatigue)
+*set hp_current (hp_current - (hp_debt_total - hp_debt_applied))
+*set hp_debt_applied hp_debt_total
 *if (hp_current < 0)
   *set hp_current 0
+*if (hp_current > hp_max)
+  *set hp_current hp_max
 *gosub update_hub_condition
 *return
 
@@ -418,11 +415,20 @@
 *comment quicktest can reach a *gosub-only label directly this way):
 *comment   sleep_location_id       - unique id string for this exact spot,
 *comment                             e.g. "compound_barracks",
-*comment                             "rusty_anchor_loft"
+*comment                             "corve_chamber"
 *comment   sleep_is_shared         - true for communal/institutional spaces;
 *comment                             hard-zeroes any bonus below regardless
 *comment                             of the tier inputs, so a shared bunk can
 *comment                             never accidentally roll the upper tiers
+*comment   sleep_is_permanent_home - true only for a home the player actually
+*comment                             holds a lease or deed on (e.g. Terrace
+*comment                             Lodgings). Exempts the routine tracker
+*comment                             below entirely -- barracks bunks, inn
+*comment                             rooms, and other paid-per-night or
+*comment                             borrowed spots all leave this false, so
+*comment                             the player has a reason to chase down a
+*comment                             real home instead of re-renting the same
+*comment                             cot indefinitely.
 *comment   sleep_tier_name         - display name for the granted buff,
 *comment                             "none" if this tier grants nothing
 *comment   sleep_tier_stat1/bonus1 - first stat bonus ("none"/0 if unused).
@@ -443,7 +449,7 @@
 *set neglect_damage_fatigue 0
 *gosub recalc_hp_from_neglect
 
-*comment --- Routine tracker: a genuine relative +1, needs its own lock,
+*comment --- Routine tracker and natural recovery: genuine relative changes, need their own lock,
 *comment kept separate from stat_bump_locked so this never collides with
 *comment whatever else a caller's page already spent that shared flag on. ---
 *if (not(sleep_award_locked)) or (not(locked_sleep_award_page_id = choice_page_id))
@@ -452,10 +458,26 @@
   *else
     *set last_sleep_location sleep_location_id
     *set nights_same_location 1
+  *comment Natural recovery: slow on purpose. One night's sleep mends 1 HP, 2 in a private
+  *comment room (a shared barracks is 1), and only once per calendar day so napping and
+  *comment sleeping again cannot stack. Instant healing is for potions, spells and a healer.
+  *comment Tune sleep_heal here.
+  *if (campaign_day > last_sleep_heal_day)
+    *temp sleep_heal 1
+    *if (not(sleep_is_shared))
+      *set sleep_heal + 1
+    *set hp_current + sleep_heal
+    *if (hp_current > hp_max)
+      *set hp_current hp_max
+    *set last_sleep_heal_day campaign_day
   *set sleep_award_locked true
   *set locked_sleep_award_page_id choice_page_id
 
-*if (nights_same_location >= 6)
+*if (sleep_is_permanent_home)
+  *comment A real lease or deed never triggers cabin fever, no matter how
+  *comment many nights running the player sleeps there.
+  *set routine_stage "Settled"
+*elseif (nights_same_location >= 6)
   *set routine_stage "Rutted"
 *elseif (nights_same_location >= 3)
   *set routine_stage "Restless"
@@ -504,6 +526,24 @@
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment REUSABLE PRIMITIVE: EASE ROUTINE MALAISE
+*comment Call after the caller has already deducted its own cost (coin
+*comment and/or time via its own advance_time) -- this label spends
+*comment nothing itself. Wipes the current Restless/Rutted streak outright.
+*comment Exists for players who are stuck sleeping in one place (barracks
+*comment duty, a favorite cheap bed) and would rather pay to shake off the
+*comment cabin fever than relocate -- a recurring toll the caller has to
+*comment keep paying, not a permanent fix, unlike sleep_is_permanent_home.
+*comment last_sleep_location is left alone on purpose: the very next night
+*comment at the same spot starts a fresh count from 1, same as moving in.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label ease_routine_malaise
+*set nights_same_location 0
+*set routine_stage "Settled"
+*gosub update_hub_condition
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment REUSABLE PRIMITIVE: UPDATE HUB CONDITION STRING
 *comment Keeps the standardized district status line synchronized.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -515,4 +555,247 @@
     *set hub_condition_str "${hub_condition_str} | Routine: ${routine_stage}"
   *if (sleep_buff1_active)
     *set hub_condition_str "${hub_condition_str} | ${sleep_buff1_name}"
+*gosub update_weather_flags
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment REUSABLE PRIMITIVE: DERIVE WEATHER FLAGS AND street_life
+*comment Scenes ask about these flags, not about weather names, so a new
+*comment weather type only needs a row here instead of an edit in every district.
+*comment   weather_severity   0 calm, 1 foul, 2 harsh, 3 dangerous
+*comment   weather_visibility "clear", "reduced" or "poor"
+*comment   weather_wet / weather_cold   booleans
+*comment street_life is derived from those and time_period. Weather sets the
+*comment ceiling, time can only lower it:
+*comment   empty  = severity 3 (Storm/Blizzard). Nobody outdoors by choice.
+*comment   thin   = severity 1+, or Night/Pre-Dawn. Only people with a reason.
+*comment   normal = everything else. Day-of-week crowds are allowed.
+*comment Called from update_hub_condition, so every hub entry and every time
+*comment advance refreshes it. Districts read these and never set them.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label update_weather_flags
+*set weather_severity 0
+*set weather_visibility "clear"
+*set weather_wet false
+*set weather_cold false
+*if (weather = "Fog")
+  *set weather_severity 1
+  *set weather_visibility "poor"
+*if (weather = "Rain")
+  *set weather_severity 1
+  *set weather_visibility "reduced"
+  *set weather_wet true
+*if (weather = "Snow")
+  *set weather_severity 1
+  *set weather_visibility "reduced"
+  *set weather_cold true
+*if (weather = "Sleet")
+  *set weather_severity 2
+  *set weather_visibility "reduced"
+  *set weather_wet true
+  *set weather_cold true
+*if (weather = "Storm")
+  *set weather_severity 3
+  *set weather_visibility "poor"
+  *set weather_wet true
+*if (weather = "Blizzard")
+  *set weather_severity 3
+  *set weather_visibility "poor"
+  *set weather_cold true
+
+*set street_life "normal"
+*if ((weather_severity >= 1) or ((time_period = "Night") or (time_period = "Pre-Dawn")))
+  *set street_life "thin"
+*if (weather_severity >= 3)
+  *set street_life "empty"
+
+*comment The forecast, in a form other systems can read. tomorrow_severity uses the same 0-3
+*comment scale as weather_severity; forecast_str is a noun phrase for NPC lines
+*comment ("Expect ${forecast_str} tomorrow.").
+*set tomorrow_severity 0
+*set forecast_str "clear skies"
+*if (weather_tomorrow = "Overcast")
+  *set forecast_str "grey, dull weather"
+*if (weather_tomorrow = "Fog")
+  *set tomorrow_severity 1
+  *set forecast_str "fog off the water"
+*if (weather_tomorrow = "Rain")
+  *set tomorrow_severity 1
+  *set forecast_str "steady rain"
+*if (weather_tomorrow = "Snow")
+  *set tomorrow_severity 1
+  *set forecast_str "snow"
+*if (weather_tomorrow = "Sleet")
+  *set tomorrow_severity 2
+  *set forecast_str "sleet"
+*if (weather_tomorrow = "Storm")
+  *set tomorrow_severity 3
+  *set forecast_str "a storm"
+*if (weather_tomorrow = "Blizzard")
+  *set tomorrow_severity 3
+  *set forecast_str "a blizzard"
+
+*comment Temperature band. Season sets the base, the hour and the weather move it, and it is
+*comment clamped to 0 freezing, 1 cold, 2 cool, 3 mild, 4 warm, 5 hot. Winter nights and any
+*comment blizzard bottom out at freezing; a summer afternoon tops out at hot.
+*set temp_index 2
+*if (current_season = "Winter")
+  *set temp_index 1
+*elseif (current_season = "Summer")
+  *set temp_index 4
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set temp_index - 1
+*elseif ((time_period = "Midday") or (time_period = "Afternoon"))
+  *set temp_index + 1
+*if (weather_wet)
+  *set temp_index - 1
+*if (weather_cold)
+  *set temp_index - 1
+*if (weather = "Blizzard")
+  *set temp_index 0
+*if (temp_index < 0)
+  *set temp_index 0
+*if (temp_index > 5)
+  *set temp_index 5
+*if (temp_index = 0)
+  *set temperature_band "freezing"
+*elseif (temp_index = 1)
+  *set temperature_band "cold"
+*elseif (temp_index = 2)
+  *set temperature_band "cool"
+*elseif (temp_index = 3)
+  *set temperature_band "mild"
+*elseif (temp_index = 4)
+  *set temperature_band "warm"
+*else
+  *set temperature_band "hot"
+
+*comment Ground state, from the weather's memory. rain_streak counts COMPLETED wet days, so
+*comment the third wet day (two behind, one today) is already sodden.
+*set ground_state "dry"
+*if ((rain_streak >= 1) or (weather_wet))
+  *set ground_state "wet"
+*if ((rain_streak >= 3) or ((rain_streak >= 2) and (weather_wet)))
+  *set ground_state "sodden"
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment REUSABLE PRIMITIVE: ROLL ONE DAY OF WEATHER
+*comment Input weather_input (the weather to carry on from), output weather_rolled. Table
+*comment weighted by current_season, then persistence: about 55% of the time the input
+*comment carries over instead, with the extremes wearing down (Storm to Rain, Blizzard to Snow).
+*comment fix_weather_season then converts anything the season cannot produce. Tune the tables
+*comment and the 55 here. Only called from advance_time's daily-rollover block.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label roll_weather
+*temp wx_roll 0
+*temp wx_keep_roll 0
+*rand wx_roll 1 100
+*rand wx_keep_roll 1 100
+*if (current_season = "Winter")
+  *if (wx_roll <= 30)
+    *set weather_rolled "Clear"
+  *elseif (wx_roll <= 55)
+    *set weather_rolled "Overcast"
+  *elseif (wx_roll <= 75)
+    *set weather_rolled "Snow"
+  *elseif (wx_roll <= 90)
+    *set weather_rolled "Sleet"
+  *else
+    *set weather_rolled "Blizzard"
+*elseif (current_season = "Summer")
+  *if (wx_roll <= 45)
+    *set weather_rolled "Clear"
+  *elseif (wx_roll <= 65)
+    *set weather_rolled "Overcast"
+  *elseif (wx_roll <= 80)
+    *set weather_rolled "Rain"
+  *elseif (wx_roll <= 95)
+    *set weather_rolled "Storm"
+  *else
+    *set weather_rolled "Fog"
+*elseif (current_season = "Spring")
+  *if (wx_roll <= 35)
+    *set weather_rolled "Clear"
+  *elseif (wx_roll <= 60)
+    *set weather_rolled "Overcast"
+  *elseif (wx_roll <= 85)
+    *set weather_rolled "Rain"
+  *elseif (wx_roll <= 95)
+    *set weather_rolled "Fog"
+  *else
+    *set weather_rolled "Storm"
+*else
+  *comment Autumn
+  *if (wx_roll <= 15)
+    *set weather_rolled "Clear"
+  *elseif (wx_roll <= 45)
+    *set weather_rolled "Overcast"
+  *elseif (wx_roll <= 70)
+    *set weather_rolled "Rain"
+  *elseif (wx_roll <= 90)
+    *set weather_rolled "Fog"
+  *else
+    *set weather_rolled "Storm"
+*if (wx_keep_roll <= 55)
+  *if (weather_input = "Storm")
+    *set weather_rolled "Rain"
+  *elseif (weather_input = "Blizzard")
+    *set weather_rolled "Snow"
+  *else
+    *set weather_rolled weather_input
+*gosub fix_weather_season
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment REUSABLE PRIMITIVE: MAKE weather_rolled FIT THE SEASON
+*comment Winter turns Rain into Sleet, Fog into Overcast and Storm into Blizzard; every other
+*comment season turns Snow and Sleet into Rain and Blizzard into Storm.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label fix_weather_season
+*if (current_season = "Winter")
+  *if (weather_rolled = "Rain")
+    *set weather_rolled "Sleet"
+  *elseif (weather_rolled = "Fog")
+    *set weather_rolled "Overcast"
+  *elseif (weather_rolled = "Storm")
+    *set weather_rolled "Blizzard"
+*else
+  *if ((weather_rolled = "Snow") or (weather_rolled = "Sleet"))
+    *set weather_rolled "Rain"
+  *elseif (weather_rolled = "Blizzard")
+    *set weather_rolled "Storm"
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment REUSABLE PRIMITIVE: EXPOSURE (outdoor time costs hunger and fatigue)
+*comment Caller sets exposure_base_mins to the outdoor minutes it is about to spend, then
+*comment *gosub_scene calendar calc_exposure, then advance_time. Only outdoor time should call
+*comment this: travel legs, camps, marches, fishing, farming, caravans. Indoor time never does.
+*comment The numbers, all percent extra on top of the real minutes (tune here):
+*comment   freezing +60, cold +30, hot +30 (heat is not blocked by a cloak)
+*comment   dangerous weather (severity 3) +40, wet weather +10
+*comment   any cloak equipped halves the cold and weather part, not the heat
+*comment   capped at +100 (double burn). Extra minutes count toward the hunger and fatigue
+*comment   clocks only, never the game clock.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label calc_exposure
+*temp ex_prot 0
+*temp ex_pct 0
+*if (temp_index = 0)
+  *set ex_prot + 60
+*elseif (temp_index = 1)
+  *set ex_prot + 30
+*if (weather_severity >= 3)
+  *set ex_prot + 40
+*elseif (weather_wet)
+  *set ex_prot + 10
+*if (not(equipped_cloak_id = "none"))
+  *set ex_prot round(ex_prot / 2)
+*set ex_pct ex_prot
+*if (temp_index = 5)
+  *set ex_pct + 30
+*if (ex_pct > 100)
+  *set ex_pct 100
+*set exposure_extra_mins round((exposure_base_mins * ex_pct) / 100)
 *return

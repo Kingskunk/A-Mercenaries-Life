@@ -24,14 +24,6 @@
       active: function (s) { return s.silt_gate_quest_stage === "active"; }
     },
     {
-      id: "anchor_errand", title: "A Bowl for the Oar-Maker", place: "The Rusty Anchor",
-      active: function (s) { return s.anchor_errand_stage === "active"; }
-    },
-    {
-      id: "rusty_anchor", title: "The Low-Water Box", place: "The Rusty Anchor",
-      active: function (s) { return s.anchor_quest_stage === "active" || s.anchor_quest_stage === "offered"; }
-    },
-    {
       id: "rotten_rib", title: "The Rotten Rib", place: "Iron Wharves",
       active: function (s) { return s.rotten_rib_quest_stage === "active"; }
     },

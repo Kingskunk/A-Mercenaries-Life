@@ -17,22 +17,65 @@
 *set current_district "civic_heights"
 *set civic_heights_seen true
 *gosub_scene calendar update_hub_condition
+*comment Layers (see port_valen_dredge_end.txt for the full rule): place, sky, street. Profile: an
+*comment institutional plaza. Its offices and the records house run through bad weather, so foul
+*comment weather only thins the plaza; at severity 3 the petitioners withdraw under the colonnades
+*comment and the charity kitchens serve from inside the cathedral doors.
+*temp civ_night false
+*temp civ_workday false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set civ_night true
+*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+  *set civ_workday true
 [b]◈ CIVIC HEIGHTS & CATHEDRAL DISTRICT[/b]
 *line_break
 [b][⏳ Civic Heights Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
 *line_break
-The road from the Middle Ward ends at a broad plaza of cut limestone, and the buildings change from timber to stone. The Council Hall stands at its head, tall-windowed, with a bronze balance-scale taller than a man hung above its doors and the words [i]"The Free City of Port Valen"[/i] carved beneath it. Around the plaza stand the tax hall, the records house, and the magistrates' courts, each door carved with the city's three-masted seal. Painted boards mark the public windows, where petitioners wait beneath the eaves with cargo papers, tax notices, and residency tokens. Beside the windows, public scriveners sit at sloped pine desks, writing petitions and work contracts for anyone who cannot write their own. The Port Watch headquarters stands beside the courts, its yard crowded with seized goods and complaint scrolls.
+The road from the Middle Ward ends at a broad plaza of cut limestone, and the buildings change from timber to stone. The Council Hall stands at its head, tall-windowed, with a bronze balance-scale taller than a man hung above its doors and the words [i]"The Free City of Port Valen"[/i] carved beneath it. Around the plaza stand the tax hall, the records house, and the magistrates' courts, each door carved with the city's three-masted seal. Painted boards mark the public windows, with deep eaves above them for the petitioners who come with cargo papers, tax notices, and residency tokens. Beside the windows stand sloped pine desks where public scriveners write petitions and work contracts for anyone who cannot write their own. The Port Watch headquarters stands beside the courts, its yard crowded with seized goods and complaint scrolls.
 
-Two lines run at the tax hall. The long one, for householders and small traders, winds out the door and down the steps. The other is a side window with no line at all, where clerks in river-serpent colors hand in leather cases and take out stamped receipts.
+The tax hall keeps two windows. The long counter, for householders and small traders, is reached by a wide flight of worn steps. The other is a side window with a private door, where clerks in river-serpent colors hand in leather cases and take out stamped receipts.
 
-The cathedral rises above the courts on an older foundation, its bells carrying over every district. Charity kitchens cluster around its steps, and the sick, the displaced, and the people with nowhere else to ask for help gather there, within sight of the Council Hall and a long way from its side window.
+The cathedral rises above the courts on an older foundation, its bells carrying over every district. Charity kitchens cluster around its steps, and the sick, the displaced, and the people with nowhere else to ask for help come there, within sight of the Council Hall and a long way from its side window.
 
-*if (day_of_week = "Hallowday")
-  The cathedral's great iron bells toll over the district for the Hallowday services, and a long queue of displaced families winds down the steps toward the mender's soup kitchens.
-*if ((time_period = "Morning") or (time_period = "Midday"))
-  At the Watch yard, an officer argues with a clerk over a stack of complaint tablets. Near the cathedral steps, a woman in a patched blue cloak directs newcomers toward a charity kitchen as the bells call the first service.
+*comment LAYER 2: SKY. Weather and light only.
+*if (weather = "Rain")
+  Rain runs off the limestone in sheets, darkening the carved seal above every door and pooling in the shallow dishes worn into the plaza stones.
+*elseif (weather = "Storm")
+  A gale drives rain across the open plaza, snapping at the banners on the Council Hall and setting the great bronze balance-scale creaking on its bracket.
+*elseif (weather = "Fog")
+  Fog rises from the lower terraces until the cathedral buttresses and the Council Hall roofline float above a white plaza, and the bells sound from nowhere.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Grey slush lies over the limestone, and the bronze balance-scale wears a thin rime along its beam.
+*elseif (weather = "Blizzard")
+  A freezing gale sweeps the high terrace, driving snow against the tall windows and drifting it against the foot of the stair.
+*elseif (weather = "Clear")
+  *if (civ_workday)
+    Sharp light picks out the carved seal above every door, and the limestone glares pale under the bronze balance-scale.
+  *elseif (time_period = "Dusk")
+    The low sun turns the limestone gold and throws the long shadow of the balance-scale across the plaza.
+  *elseif (time_period = "Pre-Dawn")
+    The limestone is a grey shape against a greying sky, and the bronze balance-scale hangs perfectly still.
+  *else
+    A cold moon lights the plaza, and the balance-scale throws a black shadow across the doors of the Council Hall.
+*else
+  *comment Overcast
+  *if (civ_night)
+    Low cloud hides the sky, and the plaza lanterns burn in small halos of their own.
+  *else
+    Grey light lies flat on the limestone, and the carved seals above the doors have lost their edges.
+
+*comment LAYER 3: STREET. Working hours carry the queues; foul weather thins them, and severity 3 empties the plaza.
+*if ((day_of_week = "Hallowday") and (not(civ_night)))
+  *if (street_life = "empty")
+    The cathedral's great iron bells toll over the district for the Hallowday services, and the displaced families crowd the cathedral porch to get out of the weather.
+  *else
+    The cathedral's great iron bells toll over the district for the Hallowday services, and a long queue of displaced families winds down the steps toward the mender's soup kitchens.
+*if ((street_life = "empty") and (not(civ_night)))
+  The plaza is bare. Petitioners have withdrawn beneath the colonnades of the halls, the tax hall's lines have folded inside, and the charity kitchens serve from within the cathedral doors.
+*elseif ((time_period = "Morning") or (time_period = "Midday"))
+  At the Watch yard, an officer argues with a clerk over a stack of complaint tablets. Near the cathedral steps, a woman in a patched blue cloak directs newcomers toward a charity kitchen as the bells call the first service. The tax hall's long queue winds out the door and down the steps, and the side window has no line at all.
 *elseif (time_period = "Afternoon")
-  The Watch yard is thick with petitioners and seized goods. Near the cathedral steps, a woman in a patched blue cloak sends a family toward a charity kitchen, while the tax hall's long queue shuffles forward a step at a time.
+  The Watch yard is thick with petitioners and seized goods. Near the cathedral steps, a woman in a patched blue cloak sends a family toward a charity kitchen, while the tax hall's long queue shuffles forward a step at a time and the side window stands without a single person waiting.
 *elseif (time_period = "Dusk")
   The Watch yard is emptying by degrees, though complaint tablets still change hands. Near the cathedral steps, the charity kitchen serves its last bowls before the bells call the evening service.
 *else
@@ -96,7 +139,9 @@ The cathedral rises above the courts on an older foundation, its bells carrying 
 *line_break
 Inside the arch, a long hall of pale stone runs under a barrel roof. Wooden frames line both walls from floor to ceiling, each holding one posted sheet, sealed by the patron and stamped with the city's three-masted seal. At the far end, three windows in a low counter are marked [i]Postings[/i], [i]Claims[/i], and [i]Seals[/i]. Along the side wall a narrow desk is kept for clerks in river-serpent colors, who hand in bundles of contracts that are already sealed.
 
-*if (time_period = "Morning")
+*if (weather_severity >= 3)
+  Few hirers have braved the weather, and the hall is half full of job-seekers waiting it out along the walls under the frames that suit them.
+*elseif (time_period = "Morning")
   The hall is filling with hirers and job-seekers.
 *elseif (time_period = "Midday")
   The hall is packed. Sellswords, guards, drivers, and hired hands wait along the walls under the frames that suit them, and hirers push toward the windows.

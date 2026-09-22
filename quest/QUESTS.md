@@ -46,8 +46,6 @@ graph TD
     subgraph Chapter 3: Port Valen
         Q8["Quest 1: The Silt-Gate Contraband"]
         Q9["Harbor POI Rumors & Chart House Navigation"]
-        Q10a["Quest 2a: A Bowl for the Oar-Maker -- The Rusty Anchor (tier 1)"]
-        Q10["Quest 2: The Rusty Anchor -- The Low-Water Box (tier 2)"]
         Q11["Crane Three: Day-Labor"]
         Q12["Quest 3: The Rotten Rib -- Iron Wharves"]
         Q13["Quest 4: What the Bar Keeps -- The Pier"]
@@ -133,61 +131,11 @@ graph TD
 | Branch | Mechanics & Spells | Outcome & State |
 |---|---|---|
 | **Branch A: Ambush for the Watch** (`pv_silt_gate_ambush_watch`) | • `[STR DC 12]` / `[DEX DC 12]` / `[INT DC 11]`<br>• `[Cantrip: Shocking Grasp]` (Advantage, `INT DC 11`)<br>• `[Cantrip: Ray of Frost]` (Freeze rudder, `INT DC 11`)<br>• `[Spell: Magic Missile]` (1 Slot, Auto-Success) | Success: neutralizes drop, muscles barrow to Quayside.<br>`silt_gate_resolution = "watch_seized"`<br>+12 Silver bounty from Voss (`+1 port_watch_rep`).<br>**Failure (`pv_silt_gate_ambush_fail`): the drop gets away.** No cargo, no bounty, +2 or +3 fatigue, `black_tally_rep -1`, and `silt_gate_resolution = "failed"`. |
-| **Branch B: Parley & Bribe** (`pv_silt_gate_parley_tally`) | • `[CHA DC 12]` / `[WIS DC 11]` / `[INT DC 11]`<br>• `[Cantrip: Thaumaturgy]` (`CHA DC 10`, 30 Silver Marks)<br>• `[Spell: Charm Person]` (1 Slot, 25 Silver Marks)<br>• `[Spell: Disguise Self]` (1 Slot / Hexblood, 25 Silver Marks) | Success: shakes down independent contraband broker for a hush-money cut.<br>`silt_gate_resolution = "tally_bribed"`<br>+25–30 Silver Marks.<br>**Failure (`pv_silt_gate_parley_fail`): you are walked out with nothing.** No coin (the old 15-silver consolation is gone), `black_tally_rep -1`, `silt_gate_resolution = "failed"`, and no `anchor_broker_note`. |
+| **Branch B: Parley & Bribe** (`pv_silt_gate_parley_tally`) | • `[CHA DC 12]` / `[WIS DC 11]` / `[INT DC 11]`<br>• `[Cantrip: Thaumaturgy]` (`CHA DC 10`, 30 Silver Marks)<br>• `[Spell: Charm Person]` (1 Slot, 25 Silver Marks)<br>• `[Spell: Disguise Self]` (1 Slot / Hexblood, 25 Silver Marks) | Success: shakes down independent contraband broker for a hush-money cut.<br>`silt_gate_resolution = "tally_bribed"`<br>+25–30 Silver Marks.<br>**Failure (`pv_silt_gate_parley_fail`): you are walked out with nothing.** No coin (the old 15-silver consolation is gone), `black_tally_rep -1`, `silt_gate_resolution = "failed"`. |
 | **Branch C: Squeeze the Payroll** (`pv_silt_gate_divert_vane`) | • `[CHA DC 12]` / `[STR DC 12]` / `[WIS DC 11]`<br>• `[Cantrip: Thaumaturgy]` (`CHA DC 10`)<br>• `[Spell: Dissonant Whispers]` (1 Bard Slot, Auto-Intel) | Pins the broker for the names of the Watch sergeants he pays. The crates are left on the platform; the payout slip is the prize.<br>`silt_gate_resolution = "leverage"`<br>`has_silt_gate_payout_slip = true`<br>`silt_gate_full_intel = true / false` (a failed check costs the second name).<br>**Spend it once:** give it to Voss (`pv_silt_gate_slip_voss`: +8 silver with both names, +6 with one, `+1 port_watch_rep` only with both) **or** take it to Captain Vane (`port_valen_vane_slip_turnin`: `+1 vane_standing`, no coin, sets `vane_watch_leverage`). Or lie to Voss and keep it (`pv_silt_gate_slip_keep`). |
 
 * **Why Branch C is about the names, not the steel:** Vane's briefing asks for leverage and standing ("the Carrion holds the leverage when you wash your fingers"), and never mentions steel or an armory, so the branch no longer invents that goal. The payout slip is the strings he can pull, and it can only be spent once, the same shape as Rotten Rib's waybill.
 * **Loss state:** `silt_gate_resolution = "failed"` (from a failed ambush or parley). The dossier shows "The Drop Got Away", the flume revisit says the run is still going, and Voss's report (`pv_quays_voss_report`) closes the matter with no bounty. See `QUEST_DESIGN_RULES.md`, "Failure Must Cost Something".
-
----
-
-### Quest 2a: A Bowl for the Oar-Maker (tier 1 of The Rusty Anchor)
-* **Scene File:** `port_valen_dredge_end.txt` (`pv_anchor_counter`, `pv_anchor_hobb_walk`, `pv_anchor_hobb_after`, `pv_anchor_report`; hub gates at `pv_anchor_hub` / `pv_anchor_menu`).
-* **District:** Dredge-End, the Rusty Anchor and an oar-maker's shed three doors down the cut.
-* **Purpose:** a small, ordinary favor in an ordinary-looking taproom, so Sal's later trust in a stranger is earned before the box job is on the table. It also seeds the households in the box (Hobb's note) and the collector's runner.
-* **Briefing (player-initiated, no quest-giver approach):** the first visit is a talkative room with a covered bowl at an empty stool. The player chooses "Take a stool at the counter" and can ask about the pot and who drinks there (both optional, free). Asking about the bowl gets Hobb's name and a plain yes/no: carry it down the cut, or leave it. Sal never asks.
-* **Objective Flow:**
-  1. **Pick up the pot** (`pv_anchor_counter`): Sal hands over a pot and a loaf and says to bring the pot back. Handing it back later (no cost) returns the errand to unstarted.
-  2. **The runner at Hobb's door** (`pv_anchor_hobb_walk`, 20 min): a collector's runner is about to chalk Hobb's door for a mark and five. One obstacle, four approaches, all rejoining at `pv_anchor_hobb_after`.
-  3. **Report** (`pv_anchor_report`, 20 min): Sal reacts to the outcome; all state changes happen once here, behind `anchor_errand_resolved`.
-* **Approaches (Rule of Three plus a quiet option):**
-
-| Approach | Check | Outcome |
-| :--- | :--- | :--- |
-| Talk the runner into waiting | `[CHA DC 11]` | `talked`. Door stays clean. Sal pays 10 copper, `anchor_sal_trust +1` |
-| Read his tablet | `[INT DC 11]` | `read`. The figure was padded and drops to one mark. Same reward as `talked` |
-| Trip and put his chalk in the canal | `[DEX DC 11]` | `slipped`. Buys Hobb a week. Same reward as `talked`. Failure spills half the stew and is a `failed` outcome |
-| Pay the mark and five | 15 copper, no roll | `paid`. Door stays clean, `anchor_sal_trust +1`, no payback from Sal. Not offered once a roll has been failed |
-| Hand Hobb the pot and keep out | none | `stayed_out`. Door chalked, no reward, no rep change |
-
-* **Loss state:** `anchor_errand_resolution = "failed"` (any failed roll). Hobb's door is chalked, `black_tally_rep -1` (the runner remembers the player), no reward. It has its own dossier line and its own taproom rumor. A failed roll never leads to the pay route, and the pot is always returned, so failing never converts into the reward.
-* **Gate on the second tier:** any resolution finishes the errand. The box job only shows on a later day (`campaign_day > anchor_errand_day`), and even then only as a visible tell (the room turns tense) and a hub option the player chooses to take.
-* **Cross-hooks:** the box reveal (`pv_anchor_the_box`) adds "The oar-maker's note is signed Hobb." when `met_hobb`. Rumors: `anchor_errand_rumor` (clean door vs chalked door).
-* **Lorebook and sidebar:** `hobb` entry (unlock `met_hobb`), reactive Sal, Rusty Anchor and Dredge-End entries; sidebar quest `anchor_errand` in `web/mygame/quest-data.js`; dossier lines in `choicescript_stats.txt`.
-* **Variables:** `anchor_errand_stage` (`unstarted`, `active`, `resolved`), `anchor_errand_resolution` (`none`, `paid`, `talked`, `read`, `slipped`, `stayed_out`, `failed`), `anchor_errand_resolved`, `anchor_errand_day`, `anchor_errand_rumor`, `anchor_talk_1`, `anchor_talk_2`, `met_hobb`.
-
-### Quest 2: The Rusty Anchor — The Low-Water Box (tier 2)
-* **Scene File:** `port_valen.txt` (`pv_poi_rusty_anchor`, `pv_anchor_hub`, `pv_anchor_low_water`, `pv_anchor_bilge`, `pv_anchor_the_box`, `pv_anchor_choice`, `pv_anchor_aftermath`)
-* **District:** Dredge-End (reached from `port_valen_dredge_end`'s own `*choice`, alongside the Silt-Gate flume).
-* **Design doc:** `quest/RUSTY_ANCHOR_PLAN.md` — full rationale, the scrapped-draft postmortem, and the rescale-and-review history.
-* **Briefing:** once the tier-1 errand is finished, and on a later day, the room turns tense (two men who are not drinking, a man sounding the water under the deck) and the player chooses to take the stool at the end of the counter. Taphouse-keeper Big Sal then hires the player, having seen how they handled Hobb, to pull an iron-banded box out of a flooded barge void before the harbor-master's Forgeday lien stamp exposes it to inspection. She undersells the job and lies about the contents — catchable with a `[WIS DC 12]` Insight check at the offer, or buyable outright for an extra silver mark at the haggle.
-* **Objective Flow:**
-  1. **The hub (`pv_anchor_hub`):** a living taproom — rationed stew tab and a private loft, both gated behind actually earning Sal's trust (see Resolution below), taproom rumors, and the job hook.
-  2. **The descent (`pv_anchor_bilge`):** wait for the ebb or go in early (a real risk/reward tradeoff: going early saves hours, but every descent check is made at **disadvantage** because the water is still high, and the hint shows it). Five approaches at full archetype parity: `[STR DC 13]` force it, `[DEX DC 13]` thread it, `[INT DC 13]` read the hull first, `[CHA DC 13]` talk the sounding-man into holding the line, plus `[Cantrip: Mage Hand]`/`[Cantrip: Light]`/`[Cantrip: Thaumaturgy]` alternatives. **Failure is a permanent loss** (`pv_anchor_descent_botched`): the box goes into the silt, no fee is paid, and the quest closes.
-  3. **The reveal (`pv_anchor_the_box`):** three layers — Sal's lie, the district's actual debt paper (built from households already seeded in Dredge-End's own ambient prose), and a note of hand proving the Tally collector extorting the district is secretly in debt to the woman he collects from.
-* **Five Resolutions (`pv_anchor_choice`):**
-
-| Route | Coin | Standing | What it costs |
-|---|---|---|---|
-| Give it back to Sal | 2–3 silver (job fee) | — | Unlocks the tab and a private loft (a real `resolve_sleep` sleep-quality tier); the racket continues |
-| Carry it to Voss | 4 silver | `port_watch_rep +2`, `black_tally_rep -1` | Sal knows the player sold her to the city |
-| Sell to the Scales | 8 silver | `gilded_scales_rep +2`, `black_tally_rep -1` | Dredge-End's debt gets quietly consolidated |
-| Keep it | none | `black_tally_rep +1` | The player becomes the district's new paper-holder |
-| Burn the ledger | 2–3 silver | `black_tally_rep -2` | Sal is ruined; the debtors go genuinely free |
-
-* **Loss state:** a failed descent sets `anchor_quest_stage = "failed"` and `anchor_route = "lost"`, sets `anchor_tally_grudge` (the Tally saw), and zeroes Sal's trust. The job can't be re-offered, the dossier shows "The box is in the silt" instead of an active quest, the hub gains a line about the fresh lien stamp, and a taproom rumor (`anchor_rumor_failed`) follows.
-* **Cross-quest hook:** if the player shook down the Silt-Gate contraband broker via the CHA threat branch in `pv_silt_gate_parley_tally` (`anchor_broker_note = true`), a fresh note on the player's own name turns up in the box — Layer 2 gets personal.
-* **Variables:** `anchor_quest_stage`, `anchor_quest_resolved`, `anchor_route`, `anchor_cellar_read`, `anchor_lie_caught`, `anchor_sal_trust`, `anchor_descent`, `anchor_descent_failed`, `anchor_sounding_man`, `anchor_tab_unlocked`, `anchor_fee_paid`, `anchor_broker_note`, `anchor_fee`, `anchor_ebb_ready`, `anchor_watch_chit_recognized`, `anchor_knows_riker_note`, `anchor_knows_second_void`, `anchor_rumor_1`, `anchor_rumor_2`, `anchor_rumor_failed`, `anchor_tally_grudge`, `anchor_deposit`, `anchor_stew_used`, `anchor_stew_week_start_day`, `anchor_stew_cap`.
 
 ---
 
@@ -358,30 +306,6 @@ graph TD
 *create crane_last_shift_day 0                *comment campaign_day of last shift -- one shift/day
 *create crane_dell_regard 0                   *comment Dell's opinion -- future promotion gate
 
-*comment --- The Rusty Anchor / The Low-Water Box (see quest/RUSTY_ANCHOR_PLAN.md) ---
-*create anchor_quest_stage "unstarted"        *comment "unstarted", "offered", "active", "resolved", "declined", "failed" (the box sank; permanent)
-*create anchor_quest_resolved false           *comment one-time completion guard for the aftermath rep swings
-*create anchor_route "none"                   *comment "none", "sal", "watch", "scales", "kept", "burned", "walked", "lost"
-*create anchor_cellar_read "none"             *comment "none", "sounding_line" -- first-visit-seen guard
-*create anchor_lie_caught false               *comment WIS Insight catch in pv_anchor_low_water
-*create anchor_sal_trust 0                    *comment 0-2 -- tracked, not yet read anywhere
-*create anchor_descent "none"                 *comment "none", "forced", "threaded", "surveyed", "talked", "arcaned"
-*create anchor_descent_failed false           *comment the box went into the silt on a botched first attempt
-*create anchor_sounding_man "none"            *comment "none", "recruited", "dropped", "warned"
-*create anchor_tab_unlocked false             *comment Sal's tab and loft -- only the "sal" route grants this
-*create anchor_fee_paid false                 *comment the 2/3 silver job fee was actually paid out
-*create anchor_broker_note false              *comment set by the silt-gate broker shakedown if taken
-*create anchor_fee 2                          *comment 2 or 3 -- set at the offer or the haggle
-*create anchor_ebb_ready false                *comment waited for low water vs. went in early
-*create anchor_watch_chit_recognized false    *comment gated on silt_gate_full_intel, never asserted
-*create anchor_knows_riker_note false         *comment found Layer 3, Riker's note
-*create anchor_knows_second_void false        *comment read the sprung stern before stepping on it
-*create anchor_rumor_1 false                  *comment one-shot taproom rumours
-*create anchor_rumor_2 false
-*create anchor_rumor_failed false            *comment taproom rumor after a failed descent
-*create anchor_tally_grudge false             *comment the district remembers what the player did
-*create anchor_deposit 0                      *comment referenced in Sal's dialogue, no deposit UI yet
-
 *comment --- The Rotten Rib / Iron Wharves (see Quest 3 above) ---
 *create rotten_rib_quest_stage "unstarted"    *comment "unstarted", "active", "resolved"
 *create rotten_rib_resolution "none"          *comment "none", "lawful", "shakedown", "blackmail", "failed"
@@ -431,7 +355,4 @@ graph TD
 *create wenna_favor false                      *comment strategic route; RESERVED for future wholesale dealing
 *create pv_tavern_rumor_fish false             *comment Cleaved Keel pre-seed rumor
 *create pv_tavern_rumor_fish_after false       *comment Cleaved Keel post-resolution rumor
-*create anchor_stew_used 0                    *comment free tab -- rationed, mirrors the compound mess
-*create anchor_stew_week_start_day 0
-*create anchor_stew_cap 3
 ```

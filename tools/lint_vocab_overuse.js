@@ -56,6 +56,13 @@ const RESTRICTED_WORDS = [
   { word: 'peen', maxUses: 1 },
   { word: 'neatsfoot', maxUses: 1 },
   { word: 'dubbin', maxUses: 1 },
+  // Dredge-End texture pass: words that stacked up in one paragraph and made the district read as
+  // one long puddle. "mud", "silt" and "damp" are left alone on purpose because the Black Sinks
+  // marsh chapters use them honestly; these four are almost entirely Dredge-End wording.
+  { word: 'sludge', maxUses: 4 },
+  { word: 'brackish', maxUses: 2 },
+  { word: 'stagnant', maxUses: 2 },
+  { word: 'waterlogged', maxUses: 2 },
   // Everyday words that turned into crutches. Limits sit below today's counts on purpose, so each
   // run lists every use for review. "register" is mostly the Grey Waterway Toll Register item and
   // the parish register; "ledger" should be a real book a character handles, not a figure of speech.

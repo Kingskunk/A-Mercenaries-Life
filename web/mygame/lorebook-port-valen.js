@@ -223,62 +223,6 @@
       see: ["wenna", "auction_block", "fishmongers_slip"]
     },
 
-    /* ------------------------------------------------------ PEOPLE: THE RUSTY ANCHOR */
-
-    {
-      id: "sal", category: "people", title: "Sal",
-      sub: "Keeper of the Rusty Anchor",
-      role: "Keeper, The Rusty Anchor (Dredge-End)",
-      link: ["Sal"],
-      tags: ["Dredge-End"], aliases: ["cleaver", "tavern keeper", "anchor"],
-      unlock: "met_sal",
-      body: function (s) {
-        var out = [
-          "A woman broad across the shoulders, her hair gone salt and tied back with sail-twine, her forearms mapped with old rope-burns. She keeps a broad butcher's cleaver buried two inches in the chopping block and does not take her eyes off a stranger until she has measured him."
-        ];
-        if (truthy(s.anchor_rumor_2)) {
-          out.push("Dredge-End says she has held that hull since before the Black Tally started keeping count, and that she neither scares nor pays.");
-        }
-        if (truthy(s.anchor_talk_1)) {
-          out.push("She told you what goes in her pot: smoked eel heads, barley, whatever the carters leave on the tables, and peat smoke she cannot get out of the wall. The eels come from the woman with the awning on Marketday, who will short your scale but not Sal's pot. Sal weighs that herself.");
-        }
-        if (truthy(s.anchor_talk_2)) {
-          out.push("Her trade is carters when the road is bad, dredgers when it is good, and the ferrymen and whoever mends their oars. Nobody in the quarter pays in silver if it can be copper, she says, and nobody pays in copper if it can be a favor. She takes the copper.");
-        }
-        if (s.anchor_errand_resolution === "paid" || s.anchor_errand_resolution === "talked" || s.anchor_errand_resolution === "read" || s.anchor_errand_resolution === "slipped") {
-          out.push("She sent you down the cut with a pot of stew for Hobb the oar-maker, and you kept his door clear of the collector's runner. She noticed, and said so.");
-        } else if (s.anchor_errand_resolution === "stayed_out") {
-          out.push("She sent you down the cut with a pot of stew for Hobb the oar-maker. His door was chalked while you stood there. You brought the pot back and she said only that you had.");
-        } else if (s.anchor_errand_resolution === "failed") {
-          out.push("She sent you down the cut with a pot of stew for Hobb the oar-maker. His door was chalked, the runner has your face, and word reached her before you did.");
-        }
-        if (Number(s.anchor_fee) === 3) {
-          out.push("For three silver she told you what the box held: notes of hand, tallies and liens, every promise anyone in the quarter ever made to anyone. She keeps it, she said, because she is the only one the Watch, the Scales and the Tally will all let keep it.");
-        }
-        if (s.anchor_route === "walked" && truthy(s.anchor_backed_out)) {
-          out.push("You said yes, and then took it back. She did not argue or look up from her counter. She had already stopped counting on you, and she will not ask a second time.");
-        } else if (s.anchor_route === "walked" && truthy(s.anchor_reoffer_used)) {
-          out.push("You turned her job down, and when she asked once more on Forgeday, with the clerk's runner on the plank-walk, you turned it down again. She nodded, and went back behind her counter to stand on the stamped boards herself.");
-        } else if (s.anchor_route === "walked") {
-          out.push("You turned her job down and left. She did not argue or look up from her counter. Whatever she meant to pay a stranger for, she will pay someone else, and someone in the quarter will remember that she had to.");
-        } else if (s.anchor_route === "sal") {
-          out.push("You put the packets back the way you found them and slid the box across the boards to her boot. She asked whether you had read the bottom, and you had, and she did not thank you, because thanking someone in this quarter is how you start owing them. She set an iron key beside your cup instead and counted the fee out to the copper, the way a woman pays a debt rather than does a favor.");
-        } else if (s.anchor_route === "watch") {
-          out.push("You carried the district's paper out of her cellar to Dockmaster Voss. The Anchor stayed open and busy and she served you without comment, but something had gone out of that room that could not be put back.");
-        } else if (s.anchor_route === "scales") {
-          out.push("You sold Riker's note and the household debts to the Scales' factoring house on the Upper Wharves. The Anchor stayed open and she served you without comment. Neither you nor the factor was the one who would have to live with what the district became.");
-        } else if (s.anchor_route === "kept") {
-          out.push("You took the packets out of her box one at a time and left the empty box on her floor. She did not stop you, and she did not speak to you that evening, or the next week, or the one after. The pot stayed on her fire and the attic stayed dry, and none of it was the same as being welcome.");
-        } else if (s.anchor_route === "burned") {
-          out.push("You fed the collection book into her pot-stove. She watched the paper curl, said \"You've ruined me\" in a voice of complete calm, and went on wiping a counter that was already clean.");
-        } else if (s.anchor_quest_stage === "failed") {
-          out.push("The box is in the silt under her floor. She heard you come dripping through the taproom and did not look up from her cup, and she told you not to come to her again with your hand out. The cleaver has moved from the block to the counter beside her hand.");
-        }
-        return out;
-      },
-      see: ["rusty_anchor", "hobb", "dredge_end", "black_tally", "voss"]
-    },
-
     /* --------------------------------------------------------- PEOPLE: MIDDLE WARD */
 
     {
@@ -517,74 +461,6 @@
       ],
       see: ["auction_block", "wenna", "thale", "harbor_quayside"]
     },
-    {
-      id: "rusty_anchor", category: "places", title: "The Rusty Anchor",
-      sub: "A tavern on three barges",
-      tags: ["Dredge-End"], aliases: ["anchor", "tavern", "barges", "cellar hatch"],
-      link: ["Rusty Anchor"],
-      unlock: "codex_rusty_anchor",
-      body: function (s) {
-        var out = [
-          "A tavern built on three old barges tied end to end, so the whole floor rises and dips with the river. It smells of boiling fish heads, wet rope and peat smoke, and carters, dredgers and ferrymen argue wages down the long cedar tables."
-        ];
-        var stage = s.anchor_quest_stage;
-        if (s.anchor_errand_stage === "resolved" && (stage === "unstarted" || stage === "offered" || stage === "declined")) {
-          out.push("Two men in ink-stained leather with long gutting knives watch the door and the cellar hatch instead of the room, while a third lowers a knotted rope through the hatch and marks the depth of the water under the floor with his thumbnail.");
-        }
-        if (s.anchor_errand_stage === "unstarted" || s.anchor_errand_stage === "active") {
-          out.push(truthy(s.met_hobb)
-            ? "At the end of the counter a stool stands empty with a covered bowl set in front of it. It is kept for Hobb the oar-maker, who has not sat on it for three nights."
-            : "At the end of the counter a stool stands empty with a covered bowl set in front of it.");
-        }
-        if (truthy(s.anchor_knows_second_void)) {
-          out.push("Under the taproom floor the middle hull has been gutted stem to stern and re-ribbed in good oak, and the re-ribbing stops short of the stern by two frames. Past that line the old planking is sprung, and the grain has gone black and soft as tallow.");
-        }
-        if (truthy(s.anchor_tab_unlocked)) {
-          out.push("Up a ladder under the cedar shingles is a loft with a straw mattress, where the canal moves under the hulls and the hulls move under you. Sal's iron key opens it.");
-        }
-        if (stage === "failed") {
-          out.push("A fresh clerk's stamp is inked across the hatch boards now, and the box you lost lies in the silt beneath them.");
-        }
-        return out;
-      },
-      see: ["sal", "dredge_end", "black_tally"]
-    },
-    {
-      id: "hobb", category: "people", title: "Hobb",
-      sub: "Oar-maker, three sheds down the cut",
-      role: "Oar-maker (Dredge-End)",
-      link: ["Hobb"],
-      tags: ["Dredge-End"], aliases: ["oar-maker", "oars", "shed"],
-      unlock: "met_hobb",
-      body: function (s) {
-        var out = [
-          "Sal's oar-maker: he has had the end stool at the Rusty Anchor every night since before she tied the second barge, and it has been three nights since he sat on it. A man who owes, Sal says, does not drink where people can see him."
-        ];
-        var r = s.anchor_errand_resolution;
-        if (r && r !== "none") {
-          out.push("An older man in a leather apron with wood-dust in his eyebrows, working out of a raised shed on stilts three doors down the cut, with a rack of half-shaped ash oars under the eave. A collector's runner was chalking his door for a week's mark and five when you arrived.");
-        }
-        if (r === "paid") {
-          out.push("You paid the runner fifteen copper bits yourself. Hobb ate on his step and asked you to tell Sal the stool was still his.");
-        } else if (r === "talked") {
-          out.push("You talked the runner into waiting till next week. His door stayed clean.");
-        } else if (r === "read") {
-          out.push("You read the runner's tablet over his arm: Hobb's column had been scraped and rewritten twice, and the last figure sat a shade higher than the two under it. The runner came down to one mark and left.");
-        } else if (r === "slipped") {
-          out.push("You put the runner's chalk in the canal and he left to find more. It bought Hobb a week, no more.");
-        } else if (r === "stayed_out") {
-          out.push("You handed him the pot and stood by while the chalk went across his door. He left the marks where they were.");
-        } else if (r === "failed") {
-          out.push("The runner chalked his door in front of you, and remembers you for it.");
-        }
-        if (truthy(s.anchor_knows_riker_note)) {
-          out.push("His name is on one of the notes in Sal's box: an oar-maker's, two marks, with a margin note in a different hand about a boat he no longer owns.");
-        }
-        return out;
-      },
-      see: ["sal", "rusty_anchor", "dredge_end"]
-    },
-
     /* ----------------------------------------------------------- PLACES: DISTRICTS */
 
     {
@@ -595,26 +471,234 @@
       unlock: "dredge_end_seen",
       body: function (s) {
         var out = [
-          "The cobblestones give out at the drainage cut, replaced by greased timber duckboards and sunken mud tracks below the river's high-water mark. Dredge-End sits in the city's low silt-basin: rows of waterlogged tenements on black-greased pilings, joined by creaking rope gangways above stagnant canal trenches.",
+          "The city's paving stops at the drainage cut. Past it the lanes are broken stone and packed cinder, with planks laid over the low patches where the ground gives up. Dredge-End sits under the river's high-water line, its tenements standing on tarred pilings with rope gangways strung between them.",
           "It is Black Tally country. The Watch seldom comes down to the canals on a market day, and trade settles with sharp elbows and quick fingers."
         ];
-        if (s.anchor_errand_resolution && s.anchor_errand_resolution !== "none") {
-          out.push("A collector's runner walks the cut with a wax tablet and a stick of chalk, and chalks the door of any household that is a week behind. You watched one at an oar-maker's shed, three doors down from the Rusty Anchor.");
+        return out;
+      },
+      see: ["black_tally", "silt_gates", "duckboard_market", "upper_gangways", "boat_sheds", "dredge_landing", "lamp_stair", "corve", "alley_shrine", "flooded_steps", "port_valen"]
+    },
+
+    /* ----------------------------------------------- DREDGE-END: THE CUT (seven areas) */
+
+    {
+      id: "duckboard_market", category: "places", title: "Duckboard Market",
+      sub: "The market lane along the cut",
+      tags: ["Dredge-End"], aliases: ["market", "stalls", "chandler", "eel-seller", "awnings"],
+      link: ["Duckboard Market"],
+      unlock: "cut_seen_market",
+      body: function (s) {
+        var n = Number(s.cut_rumors_market) || 0;
+        var out = [
+          "The market lane along the cut: broken stone and packed cinder, with planks laid over the low patches where the water comes up. Stalls stand under patched oilskin awnings in yellow and red, punts nose in from the canal side, and the lane smells of frying eel, lamp oil and wet rope. At the landward end a chandler's shop sells wax, rope and lamp oil from behind a half-door, and an outside stair beside it climbs to a shut door on the upper floor."
+        ];
+        if (n >= 1) {
+          out.push("The eel-seller is said to keep a shaved coin under her pan. Hers are the only eels before noon, so the lane buys from her anyway.");
         }
-        if (truthy(s.anchor_rumor_1)) {
-          out.push("A carter at the Rusty Anchor put the rule of the quarter plainly: the Tally holds the paper, the harbor-master holds the stamp, and the two of them hold each other. To know who runs Dredge-End, look at who keeps the book.");
+        if (n >= 2) {
+          out.push("The chandler's upper room is said to have candles burning in it at all hours and has never been seen rented. The man on the bottom step of the stair calls it stores: wax and paper, not for rent.");
         }
-        if (truthy(s.anchor_quest_resolved)) {
-          out.push("It took the district about four hours to know what had happened to the box. Two men in heavy coats stood where no men had stood before, and neither of them was counting boats.");
-          if (s.anchor_route === "burned") {
-            out.push("For about a month the whole quarter was lighter on its feet. Then the collection started again out of a different doorway, with different men and a cleaner book.");
-          } else if (s.anchor_route === "kept") {
-            out.push("The syndicate ledgers got counting again, and the notes of hand began moving in your name instead of hers.");
-          }
+        if (n >= 3) {
+          out.push("A tailor's apprentice has had his purse lifted three Marketdays running, and still keeps it in the same pocket.");
         }
         return out;
       },
-      see: ["black_tally", "rusty_anchor", "silt_gates", "port_valen"]
+      see: ["dredge_end", "upper_gangways", "black_tally"]
+    },
+    {
+      id: "upper_gangways", category: "places", title: "Upper Gangways",
+      sub: "Rope bridges over the trenches",
+      tags: ["Dredge-End"], aliases: ["gangways", "rope bridges", "landings", "lookouts", "tin whistles"],
+      link: ["Upper Gangways"],
+      unlock: "cut_seen_gangways",
+      body: function (s) {
+        var n = Number(s.cut_rumors_gangways) || 0;
+        var out = [
+          "Walkways of plank and cord that run from stilt landing to stilt landing above the trenches, reached by ladder-stairs through the tenements' back walls. Lookouts sit on the larger landings with tin whistles hung at their belts, watching the lanes, the cut and the footbridge. From the lookout landing the whole district lies below, and above the seawall the city climbs in terraces to the pale limestone of Civic Heights."
+        ];
+        if (n >= 1) {
+          out.push("The lookouts pass word between landings in whistles, a long, a short, a long, and now and then a plain word across a gap: boat, face, watch. Asked what they watch for, one said boats, faces and the Watch, in that order on a good day.");
+        }
+        if (n >= 2) {
+          out.push("From a window below the gangways a woman's voice goes through a list of amounts while another voice answers yes to each. The counting stopped at one figure, and nobody answered that one.");
+        }
+        return out;
+      },
+      see: ["dredge_end", "duckboard_market", "lamp_stair"]
+    },
+    {
+      id: "boat_sheds", category: "places", title: "Boat-Sheds and Scrap Yard",
+      sub: "Oar sheds, scrap dealer and smith",
+      tags: ["Dredge-End"], aliases: ["boat-sheds", "boat sheds", "scrap yard", "smith", "oars", "chain"],
+      unlock: "cut_seen_sheds",
+      body: function (s) {
+        var n = Number(s.cut_rumors_scrap) || 0;
+        var out = [
+          "Sheds on stilts line the cut with their doors open to the water and racks of half-shaped ash oars under the eaves. The ground between them is trampled cinder scattered with wood shavings. Further along is a fenced scrap yard of salvaged stone, coiled chain and plate iron, and a smith's bench under a lean-to. On Forgeday the yard is busy with chain coming off punts, and the smith's hammer carries across the cut."
+        ];
+        if (n >= 1) {
+          out.push("The dealer buys chain, plate, oar-pins and anything with iron in it, and flat stone for paving, because somebody in the quarter is always relaying a lane.");
+        }
+        if (n >= 2) {
+          out.push("Some weeks chain comes in with the harbor-master's mark rasped off it. The dealer weighs it and does not ask.");
+        }
+        return out;
+      },
+      see: ["dredge_end", "dredge_landing"]
+    },
+    {
+      id: "dredge_landing", category: "places", title: "Dredge Landing",
+      sub: "Where the cut gives up its spoil",
+      tags: ["Dredge-End"], aliases: ["landing", "dredgers", "spoil", "barges", "foreman"],
+      link: ["Dredge Landing"],
+      unlock: "cut_seen_landing",
+      body: function (s) {
+        var n = Number(s.cut_rumors_landing) || 0;
+        var out = [
+          "A wide shelf of hard-packed cinder where the cut widens, with three low barges tied along its edge. Dredgers haul black spoil up in baskets with hooked poles and iron scoops on chains and tip it onto long mounds that dry to a crust on the bank. It can only be worked at low water."
+        ];
+        if (Number(s.cut_labor_day) > 0) {
+          out.push("The foreman pays three silver marks for four hours on the poles, and less for a spilled basket.");
+        }
+        if (n >= 1) {
+          out.push("The dredgers pull up iron oar-pins, chain and, once in a while, a single boot.");
+        }
+        if (n >= 2) {
+          out.push("Every basket that comes up goes onto the bank. It is dried, rammed hard and paved over with stone from the cut. The lanes of Dredge-End are made ground, laid down one basket at a time.");
+        }
+        return out;
+      },
+      see: ["dredge_end", "boat_sheds", "flooded_steps"]
+    },
+    {
+      id: "lamp_stair", category: "places", title: "Lamp Stair",
+      sub: "The red-lamp street under the seawall",
+      tags: ["Dredge-End", "Black Tally"], aliases: ["red lamps", "red-lamp street", "blue door", "dice cellar", "pawnbroker", "hedge-doctor", "drinking house"],
+      link: ["Lamp Stair"],
+      unlock: "cut_seen_lamp_stair",
+      body: function (s) {
+        var pawn = Number(s.cut_rumors_pawn) || 0;
+        var drink = Number(s.cut_rumors_drink) || 0;
+        var out = [
+          "A flagged street along the foot of the seawall, above the flood line, reached by a short flight of stone steps from the cut. The flags are worn into shallow bowls by a great many feet, and the doors along it are painted blue, green and a red gone brown, each with a red-shaded lamp over it. What is open depends on the hour: a pawnbroker's window and a hedge-doctor's stall by day, and from dusk a dice cellar, an all-night drinking house and the house with the blue door."
+        ];
+        if (pawn >= 1) {
+          out.push("The pawnbroker lends against tools before rings. A man can live without his ring.");
+        }
+        if (pawn >= 2) {
+          out.push("A woman is said to come on Hallowdays with a pouch of temple silver and leave with tincture vials nobody wrote down. The pawnbroker says he does not know her.");
+        }
+        if (drink >= 1) {
+          out.push("A ferryman in the drinking house says the Tally never has to raise a hand. You just wake up owing something you do not remember borrowing.");
+        }
+        if (drink >= 2) {
+          out.push("Two dredgers argued over whether it is worse to owe the Tally or the Scales. The Scales send a clerk, said one. The Tally sends someone you grew up with.");
+        }
+        return out;
+      },
+      see: ["dredge_end", "black_tally", "upper_gangways", "corve"]
+    },
+    {
+      id: "corve", category: "places", title: "Widow Corve's",
+      sub: "A private house beneath the seawall",
+      tags: ["Dredge-End"], aliases: ["the stews", "blue door", "house with the blue door"],
+      link: ["Widow Corve's"],
+      unlock: "codex_corve",
+      body: function (s) {
+        var out = [
+          "A private house built into the granite base of the seawall on Lamp Stair, marked by a small brass plate reading \"Widow Corve's\" and twin lanterns with deep red bullseye glass burning over the door. It keeps dusk-to-pre-dawn hours and stands barred through the day. Past the felt curtain, a heated parlor smells of dried lavender, applewood coals and spiced wine, and every woman working the floor does so under the house's own leasehold, not anyone else's.",
+          "A mug of hot wine by the stove costs little and buys company for the evening; an hour upstairs with one of the parlor's regulars costs more. Regulars say the wine does a man sleeping too many nights running in the same rough cot more good than it ever does his thirst. Whoever holds the leasehold is never seen and never named -- she doesn't need to know a customer's."
+        ];
+        return out;
+      },
+      see: ["dredge_end", "lamp_stair", "sable", "brinna"]
+    },
+    {
+      id: "sable", category: "people", title: "Sable",
+      sub: "Companion, Widow Corve's",
+      role: "Companion, Widow Corve's (Dredge-End)",
+      link: ["Sable"],
+      tags: ["Dredge-End"], aliases: ["the pale woman", "white-blonde woman"],
+      unlock: "met_corve_sable",
+      body: function (s) {
+        var out = [
+          "A pale, sharp-eyed companion at Widow Corve's, with white-blonde hair cropped cleanly at her jawline and an unhurried, measuring manner. She moves without a sound, and without seeming to try."
+        ];
+        if (truthy(s.sable_talk_1)) {
+          out.push("She grew up on the high-terrace grain lofts of Civic Heights, where her mother worked the drying racks. A girl who spends her childhood crossing cedar rafters fifty feet above a stone floor learns where to put her weight, or she learns what broken ribs feel like.");
+        }
+        if (truthy(s.sable_talk_2)) {
+          out.push("She has no patience for the Upper Wharves, where she says the merchants steal a purse with a legal writ instead of a knife and still call themselves honest. Down in Dredge-End, at least, nobody pretends to be noble.");
+        }
+        return out;
+      },
+      see: ["corve", "brinna", "dredge_end"]
+    },
+    {
+      id: "brinna", category: "people", title: "Brinna",
+      sub: "Companion, Widow Corve's",
+      role: "Companion, Widow Corve's (Dredge-End)",
+      link: ["Brinna"],
+      tags: ["Dredge-End"], aliases: ["the half-orc woman"],
+      unlock: "met_corve_brinna",
+      body: function (s) {
+        var out = [
+          "A broad-shouldered half-orc companion at Widow Corve's, built with formidable strength but light on her feet, with a wide, tusked smile and a booming, easy laugh."
+        ];
+        if (truthy(s.brinna_talk_1)) {
+          out.push("Her father was a smith in the highland foothills, and she grew up swinging sledges and working the leather bellows. She can still judge the heat of iron by the color of its glow, but she says sitting warm by a stove beats breathing coal smoke all day.");
+        }
+        if (truthy(s.brinna_talk_2)) {
+          out.push("She likes the music and the quiet hours best. Out in the streets, she says, people are shouting, bargaining or reaching for knives; by the hearth at Widow Corve's, they soften up and remember how to laugh without looking over their shoulder.");
+        }
+        return out;
+      },
+      see: ["corve", "sable", "dredge_end"]
+    },
+    {
+      id: "alley_shrine", category: "places", title: "Alley Shrine",
+      sub: "The tallow arch and the broth line",
+      tags: ["Dredge-End"], aliases: ["shrine", "friar", "broth", "tallow arch"],
+      link: ["Alley Shrine"],
+      unlock: "cut_seen_shrine",
+      body: function (s) {
+        var n = Number(s.cut_rumors_shrine) || 0;
+        var out = [
+          "A timber arch black with tallow smoke over a small carved figure in a veil, its face worn smooth by hands, with ALTHEA scratched into its base. Strips of old linen are tied along the arch, and a clay bowl at the figure's feet holds river pebbles and candle stubs. An iron hook holds a broth pot. On Hallowdays a friar in a patched habit of undyed wool ladles thin pea broth to the district's poorest, while men in boiled leather stand at the alley mouth checking faces against a scrap of vellum. The shrine is Saint Althea's, the mender the frontier prays to, and the district keeps it in tallow where the Middle Ward keeps its own saint's shrine in beeswax."
+        ];
+        if (n >= 1) {
+          out.push("The tin tray is emptier every month. People have no candles to spare, and light one for the ones who did not come back and none for themselves.");
+        }
+        if (n >= 2) {
+          out.push("The arch is older than the lanes. They were built around it, like everything else here that was already sinking. The bishops up the hill sing to Althea's father, an old man said. Down here they still pray to her: she mended things, and he only swears them.");
+        }
+        if (truthy(s.cut_shrine_gave)) {
+          out.push("A woman on the step said the friar does not keep what goes in the bowl. It goes to whoever is on the list that week, and she told you to ask him who.");
+        }
+        return out;
+      },
+      see: ["saint_althea", "dredge_end", "black_tally"]
+    },
+    {
+      id: "flooded_steps", category: "places", title: "Flooded Lower Steps",
+      sub: "The seawall stair and its cellars",
+      tags: ["Dredge-End"], aliases: ["lower steps", "cellars", "flophouse", "flophouses", "tide marks"],
+      link: ["Flooded Lower Steps"],
+      unlock: "cut_seen_lower_steps",
+      body: function (s) {
+        var n = Number(s.cut_rumors_steps) || 0;
+        var out = [
+          "A broad flight of stone steps down the side of the seawall into the canal. At low water the lower half stands out of the water, black and hung with green weed, with cellar doors opening off the landings, some boarded and some with a rag hung in the gap. It is under water when the tide is high."
+        ];
+        if (n >= 1) {
+          out.push("The cellars are flophouses. Behind one rag-hung door a dozen people sleep in shifts on the same straw, and whoever holds the wooden token at the door gets to sleep.");
+        }
+        if (n >= 2) {
+          out.push("Someone has painted a line on the stair wall at head height, with a date, and a second line above it. The second date is last year. The first line is what the landlord said the water would do.");
+        }
+        return out;
+      },
+      see: ["dredge_end", "dredge_landing"]
     },
     {
       id: "middle_ward", category: "places", title: "The Middle Ward",

@@ -576,7 +576,7 @@
         body: function (s) {
           var out = [
             "The syndicate that holds Port Valen's flooded water-streets. They are called the Tally because they rule by paper rather than blades: promissory notes, unbonded labor liens, and interest books kept on every punt, eel-trap, and tenement stilt below the high-water line. While the Gilded Scales control international trade at the high stone wharves, the Black Tally owns the debt of everyone too poor to leave the mud.",
-            "Their power rests on an uneasy truce with the city above: the Port Watch stays off the canal duckboards, the Scales buy up their distressed debt-paper at wholesale discount, and the Tally ensures the waterfront never boils over into open riot."
+            "Their power rests on an uneasy truce with the city above: the Port Watch stays off the canal lanes, the Scales buy up their distressed debt-paper at wholesale discount, and the Tally ensures the waterfront never boils over into open riot."
           ];
           if (truthy(s.pv_tavern_rumor_1)) {
             out.push("Their collectors work the canal footbridges with bare knives, checking faces against wax tablets. The advice along the quays is simple: do not flash silver past dark in that quarter, unless you mean to donate it.");
@@ -584,12 +584,9 @@
           if (truthy(s.silt_gate_full_intel) || truthy(s.has_silt_gate_payout_slip)) {
             out.push("Their smuggling lines penetrate the city's seawall through the storm flap-valves at the Silt-Gates, moving un-stamped highland shear-steel and illicit peat-spiritus right under the quays by paying off Harbor Watch sergeants six silver marks a week.");
           }
-          if (truthy(s.anchor_knows_riker_note)) {
-            out.push("Beneath the syndicate's disciplined arithmetic lies internal rot. Collector Garrick Riker had been skimming his own district collections for years, masking the deficit by secretly running an eleven-year debt scheme at interest with Big Sal under the floorboards of the Rusty Anchor.");
-          }
           return out;
         },
-        see: ["port_valen", "dredge_end", "gilded_scales", "port_watch", "sal"]
+        see: ["port_valen", "dredge_end", "gilded_scales", "port_watch"]
       },
       {
         id: "iron_bailiffs", category: "factions", title: "The Iron Bailiffs",
@@ -814,7 +811,7 @@
         body: [
           "Across the cold mud of the frontier marches, common folk, weavers, and watermen pray to <b>Saint Althea of the Shroud</b>, the daughter of the Sun-Father. She is the patroness of needle, loom, herb, and bandage, the saint of those who mend what violence tears apart. Rivermen leave river pebbles polished smooth by the current at her altar before they cast off on the downriver run, and trust her for safe passage."
         ],
-        see: ["sun_father", "sanctuary_charter", "weir_knots", "corbel"]
+        see: ["sun_father", "sanctuary_charter", "weir_knots", "corbel", "alley_shrine"]
       },
       {
         id: "sun_father", category: "lore", title: "The Sun-Father",

@@ -866,7 +866,7 @@ This is here so the trading simulator, the cathedral and the Chart House have so
 * **Upper Wharves (paper layer):** counting houses, the Gilded Scales headquarters, letters of credit, contracts. Sealed-writ access.
 * **The Pier (sea layer):** hulls, skiffs, and sea travel later. `marl_favor` is reserved for this.
 * **`wenna_favor`** is reserved for wholesale dealing at the Slip: buying direct from a boat before the block.
-* **Deferred:** the Chart House (tide tables, the ebb time for Rusty Anchor) goes into the customs area later. The Saint Althea shrine's rites move to the cathedral when it is built.
+* **Deferred:** the Chart House (tide tables) goes into the customs area later. The Saint Althea shrine's rites move to the cathedral when it is built.
 
 ---
 
