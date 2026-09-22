@@ -132,13 +132,13 @@
     {
       id: "tobin", category: "people", title: "Tobin",
       sub: "The watcher on the breakwater",
-      role: "Keeps the Black Oath's count of boats crossing the bar",
+      role: "Watches the bar for the Black Oath",
       link: ["Tobin"],
-      tags: ["Pier", "Black Oath"], aliases: ["watcher", "chalk", "count"],
+      tags: ["Pier", "Black Oath"], aliases: ["watcher", "knots", "the bar"],
       unlock: "bar_asked_who",
       body: [
-        "A thin man in a cloak stiff with old salt and a knit cap pulled to his eyebrows, with chalk ground into the creases of his fingers. He chalks a stroke on the base post of the jetty-head crane for every boat that goes over the bar after curfew, and another when it comes back.",
-        "He counts for the Black Oath and is not supposed to be seen talking to strangers."
+        "A thin man in a cloak stiff with old salt and a knit cap pulled to his eyebrows, with tar worked into the creases of his fingers. He ties a knot in the line on the base post of the jetty-head crane for every boat that goes over the bar after curfew, and cuts the knot out when it comes back.",
+        "He watches for the Black Oath and is not supposed to be seen talking to strangers."
       ],
       see: ["pier", "black_oath", "marl"]
     },
