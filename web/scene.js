@@ -856,10 +856,12 @@ Scene.prototype.execute = function execute() {
       this.save("");
       delete this.redirectingFromStats;
     }
-    // choice_ is a reserved prefix (see validateVariable), so scripts can
-    // read these but never *create/*set them themselves; make sure they
-    // exist before the very first page transition ever reads them.
-    if (typeof this.stats.choice_page_id !== "number") this.stats.choice_page_id = 0;
+    // page_id is a normal *created stat (see startup.txt) so the
+    // ChoiceScript VS Code extension's bundled stock engine -- which powers
+    // its linter and Quicktest/Run Game, and knows nothing about this
+    // file's modifications -- recognizes it too. Guard anyway in case a
+    // page transition happens before startup.txt's *create has run.
+    if (typeof this.stats.page_id !== "number") this.stats.page_id = 0;
     if (typeof this.stats.choice_page_start_line !== "number" || (!subsceneStack.length && this.stats.choice_page_start_scene && this.stats.choice_page_start_scene !== this.name)) {
       this.stats.choice_page_start_scene = this.name;
       this.stats.choice_page_start_line = this.lineNum;
@@ -1086,11 +1088,11 @@ Scene.prototype.resetPage = function resetPage() {
       // Bump a persistent page counter every time the player genuinely
       // advances (a real choice or a *page_break's Next), as opposed to a
       // refresh/Stats-screen round trip replaying the same page. Scene
-      // scripts can compare this (via choice_page_id) to tell "this is the
+      // scripts can compare this (via page_id) to tell "this is the
       // same page being replayed" apart from "this is a new occurrence of
       // the same line/choice," which a lock keyed only on stat values (e.g.
       // a repeated skill name) can't distinguish.
-      self.stats.choice_page_id = (self.stats.choice_page_id || 0) + 1;
+      self.stats.page_id = (self.stats.page_id || 0) + 1;
       // This is the one place a genuine new page begins (see execute()'s
       // comment on why it can't just be tracked there): remember where, so
       // refreshSavedProgress() has a safe line to resume/replay from even

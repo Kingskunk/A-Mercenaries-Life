@@ -459,7 +459,7 @@ The sawyer spits dark tobacco into the sawdust and wipes his mouth with the back
     *goto beat_3_investigation_hub
 
 *label beat_3_sawyers_charm
-*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
   *if (character_class = "bard")
     *set bard_spell_slots - 1
   *elseif (character_class = "wizard")
@@ -467,18 +467,18 @@ The sawyer spits dark tobacco into the sawdust and wipes his mouth with the back
   *else
     *set warlock_spell_slots - 1
   *set stat_bump_locked true
-  *set locked_stat_bump_page_id choice_page_id
+  *set locked_stat_bump_page_id page_id
 You trace a subtle spiral in the sawdust-laden air and speak with a gentle, hypnotic cadence. The enchantment settles over the sawyer's strained features like warm wine; his defensive scowl softens into easy camaraderie.
 
 "Two dray teams hitched up when the load cleared," he confides warmly, leaning over the saw handle as if speaking to an old shipmate. "Clerk Elric came down the stairs himself with a private waybill. Told the teamsters the heartwood was condemned for worm-rot and had them roll the logs behind the boiler shed to wait for an evening river barge. Check behind the cod crates by the boiler wall."
 *goto beat_3_find_stash
 
 *label beat_3_sawyers_bribe
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
   *set currency_add_amount 0 - 20
   *gosub_scene startup currency_add
   *set currency_txn_locked true
-  *set locked_currency_txn_page_id choice_page_id
+  *set locked_currency_txn_page_id page_id
 You slide two silver marks across the rough oak trunk. The sawyer's calloused palm covers them in an instant, sweeping the coins into his pocket.
 
 "Two dray teams hitched up when the load cleared," he grunts, keeping his voice beneath the hiss of the boiling tar. "Clerk Elric came down himself with a private waybill. Condemned the heartwood for worm-rot—three-winter cured oak, hard as iron—and had them roll the logs behind the boiler shed to wait for an evening river barge. Check behind the cod crates."
@@ -790,11 +790,11 @@ Hendryk turns his pale eyes to you.
   *set has_brant_iron_heel_boots true
   *gosub_scene equipment equip_feet "brant_iron_heel_boots"
 
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
   *set currency_add_amount 40
   *gosub_scene startup currency_add
   *set currency_txn_locked true
-  *set locked_currency_txn_page_id choice_page_id
+  *set locked_currency_txn_page_id page_id
 
 [b][⚖ Guild Standing: Gilded Scales Rep +1][/b]
 *line_break
@@ -836,14 +836,14 @@ You sweep the cloth purse from the desk into your pocket and push the folded del
   *set has_diverted_timber_waybill false
   *set has_rotten_rib_splinter false
 
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
   *if (elric_alerted)
     *set currency_add_amount 40
   *else
     *set currency_add_amount 80
   *gosub_scene startup currency_add
   *set currency_txn_locked true
-  *set locked_currency_txn_page_id choice_page_id
+  *set locked_currency_txn_page_id page_id
 
 *if (elric_alerted)
   [b][💰 Hush Money: +4 Silver Marks][/b]
@@ -871,7 +871,7 @@ Down on Slipway Two, Brant watches you pass the cradle toward the outer gates. H
 
 You weigh the pouch of silver in your palm, leaning in until Elric can smell the grit on your coat.
 
-"You're moving three massive oak beams to a private yard in the cut," you say in a low voice. "That's thirty silver marks on the low side, cash in hand before the barge clears the harbor chain. You want me to forget the boiler shed? Fourteen silver. Right now. Or I take this waybill to Hendryk and let the debtor hulks teach you how to saw spruce."
+"You're moving three massive oak beams to a private yard in Dredge-End," you say in a low voice. "That's thirty silver marks on the low side, cash in hand before the barge clears the harbor chain. You want me to forget the boiler shed? Fourteen silver. Right now. Or I take this waybill to Hendryk and let the debtor hulks teach you how to saw spruce."
 
 Elric stares at you with pure hatred. For a second, his knuckles whiten on the armrests of his stool. Then he reaches beneath the floorboards behind his desk and drags out a heavy iron lockbox. He counts six more heavy silver marks into your hand, his fingers trembling with rage, and snatches the waybill from your grip to burn in his brazier.
 
@@ -886,11 +886,11 @@ Elric stares at you with pure hatred. For a second, his knuckles whiten on the a
   *set has_diverted_timber_waybill false
   *set has_rotten_rib_splinter false
 
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
   *set currency_add_amount 140
   *gosub_scene startup currency_add
   *set currency_txn_locked true
-  *set locked_currency_txn_page_id choice_page_id
+  *set locked_currency_txn_page_id page_id
 
 [b][💰 Black-Market Cut: +14 Silver Marks][/b]
 
@@ -935,11 +935,11 @@ You look at the two thick-necked draymen through the window, then down at the sm
   *set has_diverted_timber_waybill false
   *set has_rotten_rib_splinter false
 
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
   *set currency_add_amount 40
   *gosub_scene startup currency_add
   *set currency_txn_locked true
-  *set locked_currency_txn_page_id choice_page_id
+  *set locked_currency_txn_page_id page_id
 
 [b][💰 Hush Money: +4 Silver Marks][/b]
 
@@ -970,11 +970,11 @@ Down on Slipway Two, Brant watches you pass the cradle with your head down. He t
   *set has_diverted_timber_waybill false
   *set has_rotten_rib_splinter false
 
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
   *set currency_add_amount 80
   *gosub_scene startup currency_add
   *set currency_txn_locked true
-  *set locked_currency_txn_page_id choice_page_id
+  *set locked_currency_txn_page_id page_id
 
 [b][💰 Hush Money: +8 Silver Marks][/b]
 
@@ -1086,18 +1086,18 @@ He folds the waybill into a neat square and slides it into a brass-cornered disp
 
 "Leverage like this buys the company six months of priority forage rights and silences the guild's complaints about our patrol logs," Vane says, opening his iron cash drawer. He counts five heavy silver marks onto the table. "You used your eyes and kept the paper intact. The company remembers initiative."
 
-*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = choice_page_id))
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
   *set vane_standing +1
   *set has_diverted_timber_waybill false
   *set vane_timber_turned_in true
   *set stat_bump_locked true
-  *set locked_stat_bump_page_id choice_page_id
+  *set locked_stat_bump_page_id page_id
 
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
   *set currency_add_amount 50
   *gosub_scene startup currency_add
   *set currency_txn_locked true
-  *set locked_currency_txn_page_id choice_page_id
+  *set locked_currency_txn_page_id page_id
 
 [b][🦅 Company Regard: Captain Vane's Regard +1][/b]
 *line_break
@@ -1136,7 +1136,7 @@ When he spots you walking the staging, the old shipwright lays down his blade an
     *goto pv_poi_brant_slipway_menu
   # Inquire about what he's hearing along the quays and river channel.
     *if (rotten_rib_resolution = "lawful")
-      Brant leans against his bench, dropping his voice below the noise of the yard. "The Gilded Scales factors are sweating. Word along the basin is the council's customs inspectors are auditing timber manifests up and down the cut. Hendryk's keeping his head down, and independent skippers are moving their freight before the bailiffs tighten the harbour chains."
+      Brant leans against his bench, dropping his voice below the noise of the yard. "The Gilded Scales factors are sweating. Word along the basin is the council's customs inspectors are auditing timber manifests up and down Dredge-End. Hendryk's keeping his head down, and independent skippers are moving their freight before the bailiffs tighten the harbour chains."
     *else
       *comment rotten_rib_resolution = "blackmail"
       Brant leans against his bench, dropping his voice below the noise of the yard. "Well, Elric's been quiet as a mouse up in that stilt office. Walks past my slipway with his eyes glued to the mud, and I haven't seen a stick of green spruce near Bay Four since. Whatever thumb you put on him, it's holding."

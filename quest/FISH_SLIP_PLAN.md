@@ -439,11 +439,11 @@ The warden fishes a small purse off his belt and counts three silver marks into 
   *set fish_resolved_day campaign_day
   *set port_watch_rep +1
 
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
   *set currency_add_amount 30
   *gosub_scene startup currency_add
   *set currency_txn_locked true
-  *set locked_currency_txn_page_id choice_page_id
+  *set locked_currency_txn_page_id page_id
 
 [b][⚖ Harbor Standing: Port Watch Rep +1][/b]
 *line_break
@@ -558,11 +558,11 @@ Down the ramp, Wenna has stopped tying her baskets. She watches you close your f
   *set fish_resolution "pragmatic"
   *set fish_resolved_day campaign_day
 
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
   *set currency_add_amount 50
   *gosub_scene startup currency_add
   *set currency_txn_locked true
-  *set locked_currency_txn_page_id choice_page_id
+  *set locked_currency_txn_page_id page_id
 
 [b][💰 The Ring's Cut: +5 Silver Marks][/b]
 
@@ -716,11 +716,11 @@ Wenna is standing at the foot of the ramp with her arms crossed. She has watched
   *set fish_resolution "failed"
   *set fish_resolved_day campaign_day
 
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = choice_page_id))
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
   *set currency_add_amount 0 - 40
   *gosub_scene startup currency_add
   *set currency_txn_locked true
-  *set locked_currency_txn_page_id choice_page_id
+  *set locked_currency_txn_page_id page_id
 
 [b][💰 Stake Forfeited: -4 Silver Marks][/b]
 

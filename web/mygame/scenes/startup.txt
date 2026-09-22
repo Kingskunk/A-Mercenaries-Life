@@ -13,6 +13,11 @@
 
 *create implicit_control_flow true
 
+*comment page_id is bumped by web/scene.js on every real page advance (not
+*comment on a refresh/Stats round trip); *created here so both the linter
+*comment and Quicktest/Run Game recognize it as a normal stat.
+*create page_id 0
+
 *comment --- SETTINGS ---
 *create mature_content true
 *create show_stat_hints true
@@ -277,7 +282,7 @@
 *create has_silt_gate_payout_slip false
 *comment vane_watch_leverage: Vane holds the names. RESERVED for future radiant Watch quests; nothing reads it yet.
 *create vane_watch_leverage false
-*comment --- Dredge-End: the cut (seven areas; see quest/DREDGE_END_EXPANSION_PLAN.md) ---
+*comment --- Dredge-End: the seven areas (see quest/QUESTS.md) ---
 *comment cut_seen_*: first-visit flags that unlock each area's lorebook entry.
 *comment cut_rumors_*: how many one-shot rumors have been heard in that place.
 *comment cut_*_day: campaign_day of the last use, so a repeatable activity is once per day.
@@ -1713,7 +1718,7 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
 *temp adv_label ""
 *temp guidance_roll 0
 
-*if (roll_locked) and (locked_page_id = choice_page_id)
+*if (roll_locked) and (locked_page_id = page_id)
   *set adv_label locked_adv_label
   *set guidance_roll locked_guidance_roll
 *else
@@ -1820,7 +1825,7 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
 
   *set roll_had_advantage ((advantage) and (not(disadvantage)))
   *set roll_locked true
-  *set locked_page_id choice_page_id
+  *set locked_page_id page_id
   *set locked_guidance_roll guidance_roll
   *set locked_adv_label adv_label
 
@@ -1878,7 +1883,7 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
 *comment Output: combat_player_dmg_dealt
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_player_hit
-*if (not(combat_player_hit_locked)) or (not(locked_combat_player_hit_page_id = choice_page_id))
+*if (not(combat_player_hit_locked)) or (not(locked_combat_player_hit_page_id = page_id))
   *temp cph_roll 0
   *rand cph_roll 1 combat_player_dmg_dice_sides
   *set combat_player_dmg_dealt (cph_roll + combat_player_dmg_bonus)
@@ -1890,7 +1895,7 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
   *if (combat_enemy_hp < 0)
     *set combat_enemy_hp 0
   *set combat_player_hit_locked true
-  *set locked_combat_player_hit_page_id choice_page_id
+  *set locked_combat_player_hit_page_id page_id
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1899,7 +1904,7 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
 *comment Outputs: combat_player_dmg_dealt, combat_sneak_attack_triggered
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_player_weapon_hit
-*if (not(combat_weapon_hit_locked)) or (not(locked_combat_weapon_hit_page_id = choice_page_id))
+*if (not(combat_weapon_hit_locked)) or (not(locked_combat_weapon_hit_page_id = page_id))
   *temp cwh_roll 0
   *rand cwh_roll 1 combat_player_dmg_dice_sides
   *if ((fighter_fighting_style = "great_weapon") and (weapon_hands = "two_handed"))
@@ -1920,7 +1925,7 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
   *if (combat_enemy_hp < 0)
     *set combat_enemy_hp 0
   *set combat_weapon_hit_locked true
-  *set locked_combat_weapon_hit_page_id choice_page_id
+  *set locked_combat_weapon_hit_page_id page_id
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1930,11 +1935,11 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
 *comment Outputs: combat_enemy_atk_total, combat_enemy_hit_success, combat_enemy_dmg_dealt, combat_shield_triggered, combat_agathys_triggered
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_enemy_attack
-*if (not(locked_combat_enemy_atk_page_id = choice_page_id))
+*if (not(locked_combat_enemy_atk_page_id = page_id))
   *set combat_enemy_atk_locked_1 false
   *set combat_enemy_atk_locked_2 false
   *set combat_enemy_atk_locked_3 false
-  *set locked_combat_enemy_atk_page_id choice_page_id
+  *set locked_combat_enemy_atk_page_id page_id
 *temp cea_already_locked false
 *if (combat_active_target = 1)
   *set cea_already_locked combat_enemy_atk_locked_1
@@ -2010,7 +2015,7 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
 *comment SPELL: MAGIC MISSILE (3d4 + 3 force damage)
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_magic_missile
-*if (not(combat_magic_missile_locked)) or (not(locked_combat_magic_missile_page_id = choice_page_id))
+*if (not(combat_magic_missile_locked)) or (not(locked_combat_magic_missile_page_id = page_id))
   *set wizard_spell_slots - 1
   *temp mm_dart_1 0
   *temp mm_dart_2 0
@@ -2027,40 +2032,40 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
   *if (combat_enemy_hp < 0)
     *set combat_enemy_hp 0
   *set combat_magic_missile_locked true
-  *set locked_combat_magic_missile_page_id choice_page_id
+  *set locked_combat_magic_missile_page_id page_id
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment SPELL: HEX (+1d6 necrotic damage on hits)
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_hex
-*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = choice_page_id))
+*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
   *if ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))
     *set hexblood_hex_used true
   *else
     *set warlock_spell_slots - 1
   *set hex_active true
   *set combat_cast_locked true
-  *set locked_combat_cast_page_id choice_page_id
+  *set locked_combat_cast_page_id page_id
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment SPELL: ARMOR OF AGATHYS (5 Temp HP + 5 Cold Retaliation)
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_agathys
-*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = choice_page_id))
+*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
   *set warlock_spell_slots - 1
   *set temp_hp 5
   *set agathys_active true
   *set combat_cast_locked true
-  *set locked_combat_cast_page_id choice_page_id
+  *set locked_combat_cast_page_id page_id
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment SPELL: FALSE LIFE (1d4 + 4 Temp HP)
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_false_life
-*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = choice_page_id))
+*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
   *if (character_class = "wizard")
     *set wizard_spell_slots - 1
   *else
@@ -2070,14 +2075,14 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
   *set combat_cast_result (fl_roll + 4)
   *set temp_hp combat_cast_result
   *set combat_cast_locked true
-  *set locked_combat_cast_page_id choice_page_id
+  *set locked_combat_cast_page_id page_id
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment SPELL: HEALING WORD (1d4 + CHA mod healing)
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_healing_word
-*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = choice_page_id))
+*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
   *set bard_spell_slots - 1
   *temp hw_roll 0
   *rand hw_roll 1 4
@@ -2088,14 +2093,14 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
   *if (hp_current > hp_max)
     *set hp_current hp_max
   *set combat_cast_locked true
-  *set locked_combat_cast_page_id choice_page_id
+  *set locked_combat_cast_page_id page_id
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment SPELL: DISSONANT WHISPERS (3d6 psychic, save for half)
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_dissonant_whispers
-*if (not(combat_dissonant_whispers_locked)) or (not(locked_combat_dissonant_whispers_page_id = choice_page_id))
+*if (not(combat_dissonant_whispers_locked)) or (not(locked_combat_dissonant_whispers_page_id = page_id))
   *set bard_spell_slots - 1
   *temp dw_d1 0
   *temp dw_d2 0
@@ -2112,7 +2117,7 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
   *if (combat_enemy_hp < 0)
     *set combat_enemy_hp 0
   *set combat_dissonant_whispers_locked true
-  *set locked_combat_dissonant_whispers_page_id choice_page_id
+  *set locked_combat_dissonant_whispers_page_id page_id
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2163,16 +2168,16 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
 *label resolve_wager
 *if (wager_bankroll_var = "")
   *set wager_bankroll_var "taphouse_dice_bankroll"
-*if (not(wager_ante_locked)) or (not(locked_wager_ante_page_id = choice_page_id))
+*if (not(wager_ante_locked)) or (not(locked_wager_ante_page_id = page_id))
   *set currency_add_amount 0 - wager_ante_copper
   *gosub currency_add
   *set {wager_bankroll_var} + wager_ante_copper
   *set wager_ante_locked true
-  *set locked_wager_ante_page_id choice_page_id
+  *set locked_wager_ante_page_id page_id
 *gosub roll_d20_check
 *set wager_bankroll_busted ({wager_bankroll_var} <= 0)
 *if (check_success)
-  *if (not(wager_win_locked)) or (not(locked_wager_win_page_id = choice_page_id))
+  *if (not(wager_win_locked)) or (not(locked_wager_win_page_id = page_id))
     *temp wager_payout wager_win_copper
     *if (wager_payout > {wager_bankroll_var})
       *set wager_payout {wager_bankroll_var}
@@ -2180,7 +2185,7 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
     *gosub currency_add
     *set {wager_bankroll_var} - wager_payout
     *set wager_win_locked true
-    *set locked_wager_win_page_id choice_page_id
+    *set locked_wager_win_page_id page_id
   *set wager_bankroll_busted ({wager_bankroll_var} <= 0)
 *return
 
@@ -2190,7 +2195,7 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
 *comment         tavern_item_buff_bonus, tavern_item_buff_name/desc/stat/minutes
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label buy_tavern_item
-*if (not(tavern_purchase_locked)) or (not(locked_tavern_purchase_page_id = choice_page_id))
+*if (not(tavern_purchase_locked)) or (not(locked_tavern_purchase_page_id = page_id))
   *set currency_add_amount 0 - tavern_item_cost_copper
   *gosub currency_add
   *if (tavern_item_hp_heal > 0)
@@ -2220,7 +2225,7 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
       *set drink_buff_bonus tavern_item_buff_bonus
       *set drink_buff_minutes_left tavern_item_buff_minutes
   *set tavern_purchase_locked true
-  *set locked_tavern_purchase_page_id choice_page_id
+  *set locked_tavern_purchase_page_id page_id
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2300,7 +2305,7 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
 *comment Bonus action, 1d10 + character_level HP, once per rest.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label second_wind
-*if (not(second_wind_locked)) or (not(locked_second_wind_page_id = choice_page_id))
+*if (not(second_wind_locked)) or (not(locked_second_wind_page_id = page_id))
   *if (fighter_second_wind_uses > 0)
     *set fighter_second_wind_uses - 1
     *rand second_wind_roll 1 10
@@ -2308,7 +2313,7 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
     *if (hp_current > hp_max)
       *set hp_current hp_max
   *set second_wind_locked true
-  *set locked_second_wind_page_id choice_page_id
+  *set locked_second_wind_page_id page_id
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2319,12 +2324,12 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
 *comment Sets is_raging true so a combat scene can check it.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label activate_rage
-*if (not(activate_rage_locked)) or (not(locked_activate_rage_page_id = choice_page_id))
+*if (not(activate_rage_locked)) or (not(locked_activate_rage_page_id = page_id))
   *if ((barbarian_rage_uses > 0) and (not(is_raging)))
     *set barbarian_rage_uses - 1
     *set is_raging true
   *set activate_rage_locked true
-  *set locked_activate_rage_page_id choice_page_id
+  *set locked_activate_rage_page_id page_id
 *return
 
 *label end_rage
@@ -2337,7 +2342,7 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
 *comment Replay-safe via althea_phial_locked and locked_heal_roll.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label use_althea_phial
-*if (not(althea_phial_locked)) or (not(locked_althea_phial_page_id = choice_page_id))
+*if (not(althea_phial_locked)) or (not(locked_althea_phial_page_id = page_id))
   *if (has_althea_phial)
     *set has_althea_phial false
     *temp phial_d1 0
@@ -2349,6 +2354,6 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
     *if (hp_current > hp_max)
       *set hp_current hp_max
   *set althea_phial_locked true
-  *set locked_althea_phial_page_id choice_page_id
+  *set locked_althea_phial_page_id page_id
 *return
 

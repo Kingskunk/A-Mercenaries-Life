@@ -479,18 +479,18 @@
       see: ["black_oath", "silt_gates", "duckboard_market", "upper_gangways", "boat_sheds", "dredge_landing", "lamp_stair", "corve", "alley_shrine", "flooded_steps", "port_valen"]
     },
 
-    /* ----------------------------------------------- DREDGE-END: THE CUT (seven areas) */
+    /* ----------------------------------------------- DREDGE-END: THE SEVEN AREAS */
 
     {
       id: "duckboard_market", category: "places", title: "Duckboard Market",
-      sub: "The market lane along the cut",
+      sub: "The market lane along the water-lane",
       tags: ["Dredge-End"], aliases: ["market", "stalls", "chandler", "eel-seller", "awnings"],
       link: ["Duckboard Market"],
       unlock: "cut_seen_market",
       body: function (s) {
         var n = Number(s.cut_rumors_market) || 0;
         var out = [
-          "The market lane along the cut: broken stone and packed cinder, with planks laid over the low patches where the water comes up. Stalls stand under patched oilskin awnings in yellow and red, punts nose in from the canal side, and the lane smells of frying eel, lamp oil and wet rope. At the landward end a chandler's shop sells wax, rope and lamp oil from behind a half-door, and an outside stair beside it climbs to a shut door on the upper floor."
+          "The market lane along the water-lane: broken stone and packed cinder, with planks laid over the low patches where the water comes up. Stalls stand under patched oilskin awnings in yellow and red, punts nose in from the canal side, and the lane smells of frying eel, lamp oil and wet rope. At the landward end a chandler's shop sells wax, rope and lamp oil from behind a half-door, and an outside stair beside it climbs to a shut door on the upper floor."
         ];
         if (n >= 1) {
           out.push("The eel-seller is said to keep a shaved coin under her pan. Hers are the only eels before noon, so the lane buys from her anyway.");
@@ -514,7 +514,7 @@
       body: function (s) {
         var n = Number(s.cut_rumors_gangways) || 0;
         var out = [
-          "Walkways of plank and cord that run from stilt landing to stilt landing above the trenches, reached by ladder-stairs through the tenements' back walls. Lookouts sit on the larger landings with tin whistles hung at their belts, watching the lanes, the cut and the footbridge. From the lookout landing the whole district lies below, and above the seawall the city climbs in terraces to the pale limestone of Civic Heights."
+          "Walkways of plank and cord that run from stilt landing to stilt landing above the trenches, reached by ladder-stairs through the tenements' back walls. Lookouts sit on the larger landings with tin whistles hung at their belts, watching the lanes, the water-lane and the footbridge. From the lookout landing the whole district lies below, and above the seawall the city climbs in terraces to the pale limestone of Civic Heights."
         ];
         if (n >= 1) {
           out.push("The lookouts pass word between landings in whistles, a long, a short, a long, and now and then a plain word across a gap: boat, face, watch. Asked what they watch for, one said boats, faces and the Watch, in that order on a good day.");
@@ -534,7 +534,7 @@
       body: function (s) {
         var n = Number(s.cut_rumors_scrap) || 0;
         var out = [
-          "Sheds on stilts line the cut with their doors open to the water and racks of half-shaped ash oars under the eaves. The ground between them is trampled cinder scattered with wood shavings. Further along is a fenced scrap yard of salvaged stone, coiled chain and plate iron, and a smith's bench under a lean-to. On Forgeday the yard is busy with chain coming off punts, and the smith's hammer carries across the cut."
+          "Sheds on stilts line the canal with their doors open to the water and racks of half-shaped ash oars under the eaves. The ground between them is trampled cinder scattered with wood shavings. Further along is a fenced scrap yard of salvaged stone, coiled chain and plate iron, and a smith's bench under a lean-to. On Forgeday the yard is busy with chain coming off punts, and the smith's hammer carries across the canal."
         ];
         if (n >= 1) {
           out.push("The dealer buys chain, plate, oar-pins and anything with iron in it, and flat stone for paving, because somebody in the quarter is always relaying a lane.");
@@ -548,14 +548,14 @@
     },
     {
       id: "dredge_landing", category: "places", title: "Dredge Landing",
-      sub: "Where the cut gives up its spoil",
+      sub: "Where the canal gives up its spoil",
       tags: ["Dredge-End"], aliases: ["landing", "dredgers", "spoil", "barges", "foreman"],
       link: ["Dredge Landing"],
       unlock: "cut_seen_landing",
       body: function (s) {
         var n = Number(s.cut_rumors_landing) || 0;
         var out = [
-          "A wide shelf of hard-packed cinder where the cut widens, with three low barges tied along its edge. Dredgers haul black spoil up in baskets with hooked poles and iron scoops on chains and tip it onto long mounds that dry to a crust on the bank. It can only be worked at low water."
+          "A wide shelf of hard-packed cinder where the canal widens, with three low barges tied along its edge. Dredgers haul black spoil up in baskets with hooked poles and iron scoops on chains and tip it onto long mounds that dry to a crust on the bank. It can only be worked at low water."
         ];
         if (Number(s.cut_labor_day) > 0) {
           out.push("The foreman pays three silver marks for four hours on the poles, and less for a spilled basket.");
@@ -564,7 +564,7 @@
           out.push("The dredgers pull up iron oar-pins, chain and, once in a while, a single boot.");
         }
         if (n >= 2) {
-          out.push("Every basket that comes up goes onto the bank. It is dried, rammed hard and paved over with stone from the cut. The lanes of Dredge-End are made ground, laid down one basket at a time.");
+          out.push("Every basket that comes up goes onto the bank. It is dried, rammed hard and paved over with stone from the canal. The lanes of Dredge-End are made ground, laid down one basket at a time.");
         }
         return out;
       },
@@ -580,7 +580,7 @@
         var pawn = Number(s.cut_rumors_pawn) || 0;
         var drink = Number(s.cut_rumors_drink) || 0;
         var out = [
-          "A flagged street along the foot of the seawall, above the flood line, reached by a short flight of stone steps from the cut. The flags are worn into shallow bowls by a great many feet, and the doors along it are painted blue, green and a red gone brown, each with a red-shaded lamp over it. What is open depends on the hour: a pawnbroker's window and a hedge-doctor's stall by day, and from dusk a dice cellar, an all-night drinking house and the house with the blue door."
+          "A flagged street along the foot of the seawall, above the flood line, reached by a short flight of stone steps from the canal. The flags are worn into shallow bowls by a great many feet, and the doors along it are painted blue, green and a red gone brown, each with a red-shaded lamp over it. What is open depends on the hour: a pawnbroker's window and a hedge-doctor's stall by day, and from dusk a dice cellar, an all-night drinking house and the house with the blue door."
         ];
         if (pawn >= 1) {
           out.push("The pawnbroker lends against tools before rings. A man can live without his ring.");
