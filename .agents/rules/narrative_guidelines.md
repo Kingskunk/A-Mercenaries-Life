@@ -1,4 +1,4 @@
----
+﻿---
 trigger: always_on
 ---
 
@@ -10,6 +10,8 @@ trigger: always_on
 * **No Telepathic NPC Insight:** Never state what an NPC thinks or feels omnisciently — only physical tells (voice pitch, posture, clenched jaws, avoided eye contact).
 * **Progressive Codex Discovery:** Factions, locations, and lore entries are gated behind their own `*if (codex_X)` and simply omitted from the list until in-world events set that flag — no locked/undiscovered placeholder is shown, to keep the codex from cluttering up with entries the player hasn't earned yet.
 * **Match Sensory Detail to the Scene's Established Vantage:** Once prose fixes the protagonist's physical distance from a place ("close enough to see, far enough to stay out of reach"), later beats in that same scene must stay within what that distance can actually reveal — sound carrying, a silhouette on a wall-walk, a lit window — not close-up dialogue or fine handwork happening behind a gate the protagonist isn't standing inside.
+**No Authorial Knowledge / No Telepathic NPC Insight**: The protagonist does not see an NPC's job title or role floating over their head. They only see physical posture, visible clothing, worn tools, and what the person's hands are actively doing.
+Unless backed by clear, visual, audiotory or compacting factors that made it obvious what a peron's role is Labeling generic crowd members as "off-duty lightermen, carters, and dredgers" also makes an unearned assumption about their trades. 
 
 ## 2. Ability-Specific Description (No Generic Combat Text)
 * **Name the Thing, Not the Category:** A resolving cantrip, spell, weapon attack, or class feature needs its own distinct visual/auditory/physical description — never a generic stand-in like "you use your magic."
