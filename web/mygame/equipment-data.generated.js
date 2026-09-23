@@ -542,6 +542,76 @@ window.EQUIPMENT_CATALOG = {
     },
     {
       "ids": [
+        "timber_axe"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "timber axe"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Slung Hewing Axe"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d8 slashing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "slashing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "hewing axe"
+        }
+      }
+    },
+    {
+      "ids": [
+        "stiletto"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "stiletto"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Sheathed Alderford Stiletto"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d4 piercing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "finesse"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "stiletto"
+        }
+      }
+    },
+    {
+      "ids": [
         "none"
       ],
       "fields": {
@@ -643,6 +713,29 @@ window.EQUIPMENT_CATALOG = {
         "armor_prose": {
           "type": "literal",
           "value": "chain shirt"
+        }
+      }
+    },
+    {
+      "ids": [
+        "plate_harness"
+      ],
+      "fields": {
+        "armor": {
+          "type": "literal",
+          "value": "plate-harness"
+        },
+        "armor_desc": {
+          "type": "literal",
+          "value": "Iron Plate Harness"
+        },
+        "armor_type": {
+          "type": "literal",
+          "value": "plate_harness"
+        },
+        "armor_prose": {
+          "type": "literal",
+          "value": "plate harness"
         }
       }
     },
@@ -829,29 +922,6 @@ window.EQUIPMENT_CATALOG = {
         "armor_prose": {
           "type": "literal",
           "value": "traveling robes"
-        }
-      }
-    },
-    {
-      "ids": [
-        "plate_harness"
-      ],
-      "fields": {
-        "armor": {
-          "type": "literal",
-          "value": "plate-harness"
-        },
-        "armor_desc": {
-          "type": "literal",
-          "value": "Iron Plate Harness"
-        },
-        "armor_type": {
-          "type": "literal",
-          "value": "plate_harness"
-        },
-        "armor_prose": {
-          "type": "literal",
-          "value": "plate harness"
         }
       }
     },

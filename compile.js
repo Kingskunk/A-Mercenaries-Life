@@ -21,6 +21,9 @@ if (typeof process != "undefined") {
   // Regenerate web/mygame/equipment-data.generated.js from equipment.txt before
   // bundling, so play_game.html never ships a stale equipment catalog -- see that
   // script's header comment for why this exists instead of a hand-maintained copy.
+  // tools/gen_gear.js first: it writes the item blocks (loadout branches, dossier and inventory lines,
+  // shop menus) from tools/gear_catalog.json into the scenes that gen_equipment_data.js then parses.
+  require(path.join(__dirname, 'tools', 'gen_gear.js'));
   require(path.join(__dirname, 'tools', 'gen_equipment_data.js'));
   load = function(file) {
     vm.runInThisContext(fs.readFileSync(file), file);

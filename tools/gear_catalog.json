@@ -1,0 +1,159 @@
+{
+  "_readme": [
+    "GEAR CATALOG: the single source for every tradeable item. Edit this file, then run `node tools/gen_gear.js`.",
+    "The generator rewrites the GEN:BEGIN/GEN:END blocks in the scenes, inventory-data.js and startup.txt.",
+    "Never edit inside a generated block by hand: the next run overwrites it.",
+    "",
+    "Item fields:",
+    "  id        internal id; the ownership flag is always has_<id> (set create:false if hand-created elsewhere)",
+    "  kind      armor | shield | weapon | head | tool | ring | salvage",
+    "  name      short lower-case noun used in menus and shop prose ('mail shirt')",
+    "  title     proper display name used by the dossier and the inventory panel",
+    "  retail    shop price in copper (10 copper = 1 silver)",
+    "  minutes   how long a fitting or handover takes when bought",
+    "  hint      the [stat hint] shown on a buy option when the player has hints on",
+    "  blurb     one neutral sentence describing the item, printed on purchase",
+    "  quotes    OPTIONAL per-shop dialogue printed after a purchase or sale. Keys are the gear_shop key each shop",
+    "            sets ('halda', 'halda_sell', 'pawn_sell'); values are full lines and may contain \\\" quotes.",
+    "  warn      OPTIONAL [{when, text}]: a ChoiceScript condition and a warning appended to the buy option",
+    "  tier      armor only: light | medium | heavy (proficiency tier); use 'shield' for shields",
+    "  sell      { smith: percent, pawn: percent, pawnFixed: copper, smithPiece: copper each, countVar: variable }",
+    "  loadout   slot fields for equipment.txt (weapon, armor and head items)",
+    "  sidearmDesc  weapon items: the description when carried in the sidearm slot",
+    "  dossier   { line, badgeOn, badgeOff, equipText } for the dossier list and its equip option",
+    "  inventory { category } for the inventory panel (defaults: weapon weapons, armor/head apparel, tool provisions)",
+    "  flags     create:false when the has_ flag is created by hand elsewhere; hand:true when the dossier and",
+    "            inventory entries are written by hand (shield, ring, salvage)"
+  ],
+
+  "items": [
+    {
+      "id": "timber_axe", "kind": "weapon", "name": "hewing axe", "title": "Highland Hewing Axe",
+      "retail": 25, "minutes": 10,
+      "hint": "1d8 Slashing, One-Handed",
+      "blurb": "A broad-bearded felling axe with the balance forward of the haft.",
+      "quotes": { "halda": "\"Alderford work,\" she says. \"A river trader brings me a few pieces each season, and the temper on them is honest.\"" },
+      "sell": { "smith": 50, "pawn": 35 },
+      "loadout": { "weapon": "timber axe", "desc": "Highland Hewing Axe", "damage": "1d8 slashing", "damageType": "slashing", "type": "melee", "hands": "one_handed", "prose": "hewing axe" },
+      "sidearmDesc": "Slung Hewing Axe",
+      "dossier": { "line": "Broad-bearded single-handed felling axe with a hardened wedge", "badgeOn": "Equipped", "badgeOff": "", "equipText": "Wield the Highland Hewing Axe instead [1d8 Slashing, One-Handed]." }
+    },
+    {
+      "id": "stiletto", "kind": "weapon", "name": "stiletto", "title": "Alderford Stiletto",
+      "retail": 15, "minutes": 10,
+      "hint": "1d4 Piercing, Finesse",
+      "blurb": "A slender, square-sided blade ground to a needle point from file-steel.",
+      "quotes": { "halda": "\"Made for one job,\" she says." },
+      "sell": { "smith": 50, "pawn": 35 },
+      "loadout": { "weapon": "stiletto", "desc": "Alderford Stiletto", "damage": "1d4 piercing", "damageType": "piercing", "type": "finesse", "hands": "one_handed", "prose": "stiletto" },
+      "sidearmDesc": "Sheathed Alderford Stiletto",
+      "dossier": { "line": "Slender square-section thrusting dagger ground from scrap file-steel", "badgeOn": "Equipped", "badgeOff": "", "equipText": "Wield the Alderford Stiletto instead [1d4 Piercing, One-Handed]." }
+    },
+    {
+      "id": "iron_crowbar", "kind": "tool", "name": "iron prybar", "title": "Pioneer's Iron Prybar",
+      "retail": 12, "minutes": 10,
+      "hint": "Advantage on Force and Pry Checks",
+      "blurb": "A three-foot bar of octagonal iron with a curved claw at one end and a chisel heel at the other.",
+      "quotes": { "halda": "\"Nothing pretty about it,\" she says. \"It opens what someone locked.\"" },
+      "sell": { "smith": 50, "pawn": 35 },
+      "dossier": { "line": "Cold-forged crowbar and tempered wedges for forcing stubborn locks and stone seams" }
+    },
+    {
+      "id": "torvald_iron_sallet", "kind": "head", "name": "iron skullcap", "title": "Cold-Hammered Skullcap",
+      "retail": 30, "minutes": 10,
+      "hint": "+1 AC, Counts as Armor",
+      "blurb": "A plain riveted iron skullcap with a small touchmark stamped into the brow.",
+      "quotes": { "halda": "\"It turns a glancing blow,\" she says." },
+      "warn": [ { "when": "((wizard_spell = \"mage_armor\") or (character_class = \"barbarian\"))", "text": "Counts as armor: ends Mage Armor and Unarmored Defense while worn" } ],
+      "sell": { "smith": 50, "pawn": 35 },
+      "loadout": { "desc": "Cold-Hammered Skullcap", "prose": "iron skullcap", "ac": 1, "isArmor": true },
+      "dossier": { "line": "Plain riveted steel skullcap, guild-stamped at Torvald's forge", "badgeOn": "Equipped, +1 AC", "badgeOff": "Stowed", "equipText": "Wear the Cold-Hammered Skullcap instead [+1 AC]." }
+    },
+    {
+      "id": "torvald_hide_cap", "kind": "head", "name": "hide cap", "title": "Boiled-Hide Watch Cap",
+      "retail": 8, "minutes": 10,
+      "sell": { "pawn": 35 },
+      "loadout": { "desc": "Boiled-Hide Watch Cap", "prose": "watch cap", "ac": 0, "isArmor": false },
+      "dossier": { "line": "Stiffened leather skullcap, cheap and close-fitting under a hood", "badgeOn": "Equipped", "badgeOff": "Stowed", "equipText": "Wear the Boiled-Hide Watch Cap instead." }
+    },
+    {
+      "id": "brigandine", "kind": "armor", "name": "studded gambeson", "title": "Iron-Studded Gambeson",
+      "retail": 70, "minutes": 20, "tier": "medium",
+      "hint": "Medium Armor: AC 13 + DEX, max +2",
+      "blurb": "A quilted coat with rows of small iron studs sewn between layers of wool and canvas.",
+      "quotes": { "halda": "\"It'll turn a blow,\" she says. \"It won't turn a bad decision.\"" },
+      "sell": { "smith": 50, "pawn": 35 },
+      "loadout": { "armor": "brigandine", "desc": "Iron-Studded Gambeson", "type": "brigandine", "prose": "gambeson" },
+      "dossier": { "line": "Quilted wool-and-canvas coat with rows of iron studs sewn between the layers", "badgeOn": "Worn, Medium Armor", "badgeOff": "Stowed", "equipText": "Wear the Iron-Studded Gambeson instead [Medium Armor: AC 13 + DEX, max +2]." }
+    },
+    {
+      "id": "chain_jack", "kind": "armor", "name": "mail shirt", "title": "Iron Chain Shirt",
+      "retail": 70, "minutes": 20, "tier": "medium",
+      "hint": "Medium Armor: AC 13 + DEX, max +2",
+      "blurb": "Every link is closed by hand, and the seams at the neck and hips are doubled.",
+      "quotes": { "halda": "\"Rings are honest,\" she says. \"I checked every one.\"" },
+      "sell": { "smith": 50, "pawn": 35 },
+      "loadout": { "armor": "chain-jack", "desc": "Iron Chain Shirt", "type": "chain_jack", "prose": "chain shirt" },
+      "dossier": { "line": "Hand-closed mail rings over a wool lining, with doubled seams at the neck and hips", "badgeOn": "Worn, Medium Armor", "badgeOff": "Stowed", "equipText": "Wear the Iron Chain Shirt instead [Medium Armor: AC 13 + DEX, max +2]." }
+    },
+    {
+      "id": "plate_harness", "kind": "armor", "name": "iron plate harness", "title": "Iron Plate Harness",
+      "retail": 150, "minutes": 40, "tier": "heavy",
+      "hint": "Heavy Armor: AC 16, no DEX bonus",
+      "blurb": "Overlapping iron plates over a mail coat, the shoulders hinged and the hip plates lapped like roof tiles.",
+      "quotes": { "halda": "\"Good for a bad day,\" she says. \"Bad for a long walk.\"" },
+      "sell": { "smith": 50, "pawn": 35 },
+      "loadout": { "armor": "plate-harness", "desc": "Iron Plate Harness", "type": "plate_harness", "prose": "plate harness" },
+      "dossier": { "line": "Overlapping iron plates riveted over a mail coat, with hinged shoulders and lapped hip plates", "badgeOn": "Worn, Heavy Armor", "badgeOff": "Stowed", "equipText": "Wear the Iron Plate Harness instead [Heavy Armor: AC 16, no DEX bonus]." }
+    },
+    {
+      "id": "shield", "kind": "shield", "name": "iron-bossed shield", "title": "Limestone Boss Shield",
+      "retail": 30, "minutes": 10, "tier": "shield",
+      "hint": "+2 Shield AC Bonus",
+      "blurb": "A round oak shield with an iron boss, oak from the valley and iron from the harbor wagons.",
+      "quotes": { "halda": "\"It'll take a hit that would break a wrist,\" she says." },
+      "sell": {},
+      "flags": { "create": false, "hand": true }
+    },
+    {
+      "id": "toll_seal_ring", "kind": "ring", "name": "signet ring", "title": "Customs Officer's Signet Ring",
+      "sell": { "pawnFixed": 80 },
+      "flags": { "create": false, "hand": true }
+    },
+    {
+      "id": "scrap_steel", "kind": "salvage", "name": "scrap steel", "title": "Scrap Steel",
+      "sell": { "smithPiece": 5, "countVar": "scrap_steel" },
+      "flags": { "create": false, "hand": true }
+    }
+  ],
+
+  "shops": [
+    {
+      "name": "halda_buy", "type": "buy", "file": "port_valen_middle_ward.txt", "prefix": "hb", "goto": "mw_halda_buy_do",
+      "items": [
+        { "id": "brigandine", "when": "halda_armor_ok" },
+        { "id": "chain_jack", "when": "halda_armor_ok" },
+        { "id": "plate_harness" },
+        { "id": "shield" },
+        { "id": "timber_axe" },
+        { "id": "stiletto" },
+        { "id": "torvald_iron_sallet" },
+        { "id": "iron_crowbar" }
+      ]
+    },
+    {
+      "name": "halda_sell", "type": "sell", "buyer": "smith", "file": "port_valen_middle_ward.txt", "prefix": "hs", "goto": "mw_halda_sell_do",
+      "items": [
+        { "id": "brigandine" }, { "id": "chain_jack" }, { "id": "plate_harness" }, { "id": "timber_axe" },
+        { "id": "stiletto" }, { "id": "torvald_iron_sallet" }, { "id": "iron_crowbar" }, { "id": "scrap_steel", "owned": "scrap_steel > 0" }
+      ]
+    },
+    {
+      "name": "pawn_sell", "type": "sell", "buyer": "pawn", "file": "port_valen_dredge_end.txt", "prefix": "ps", "goto": "cut_pawn_sell_do",
+      "items": [
+        { "id": "brigandine" }, { "id": "chain_jack" }, { "id": "plate_harness" }, { "id": "timber_axe" },
+        { "id": "stiletto" }, { "id": "torvald_iron_sallet" }, { "id": "torvald_hide_cap" }, { "id": "iron_crowbar" }, { "id": "toll_seal_ring" }
+      ]
+    }
+  ]
+}

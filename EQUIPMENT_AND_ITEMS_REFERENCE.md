@@ -6,6 +6,8 @@ A comprehensive developer and lore reference for every wearable, equippable, and
 
 ## ◈ How the Equipment System Works
 
+- **Tradeable items are defined in `tools/gear_catalog.json`.** Prices, names, hints, dossier text, optional seller quotes and shop stock live there, and `node tools/gen_gear.js` writes the loadout branches, dossier lines, inventory entries and shop menus from it (see `quest/GAMEPLAY_MECHANICS_RULES.md`). The tables below describe the items; the catalog is what the game is built from.
+
 - **Id-Driven State Machine:** All paper-doll slots and weapons derive their display and combat properties from persistent string IDs (e.g., `equipped_weapon_id`, `equipped_head_id`, `equipped_neck_id`).
 - **Idempotent Recomputations:** Changing equipment triggers idempotent recompute subroutines (`recalculate_armor_class`, `apply_weapon_loadout`, `apply_head_loadout`, etc.). No stat is nudged with bare `*set +N` operations, ensuring complete refresh and replay safety.
 - **Starting Snapshot Mechanism:** At enlistment/chargen, the player's initial weapon and armor choices are permanently saved to `starting_weapon_*` and `starting_armor_*`. Players can switch back to their starting equipment at any time from the dossier.
