@@ -15,6 +15,28 @@
 *comment the district hub and the Silt-Gate Contraband quest.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+*comment ARRIVAL: the two ways INTO the district from the travel menu (a real leg, and
+*comment "Stay in Dredge-End") land here first. Everything inside the district returns
+*comment to port_valen_dredge_end below instead, so wandering between its places never
+*comment re-rolls anything. At Night or Pre-Dawn, unless a storm has emptied the lanes,
+*comment there is a dredge_ambush_chance percent chance of a gang ambush (de_night_ambush),
+*comment rolled at most once per night. dredge_ambush_active outlives the roll, so a page
+*comment replay still lands on the ambush instead of quietly skipping it.
+*label port_valen_dredge_end_arrive
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *if (not(street_life = "empty"))
+    *temp de_night_id campaign_day
+    *if (clock_hour < 12)
+      *set de_night_id (campaign_day - 1)
+    *if (not(dredge_ambush_night = de_night_id))
+      *set dredge_ambush_night de_night_id
+      *temp de_ambush_roll 0
+      *rand de_ambush_roll 1 100
+      *if (de_ambush_roll <= dredge_ambush_chance)
+        *set dredge_ambush_active true
+*if (dredge_ambush_active)
+  *goto de_night_ambush
+
 *label port_valen_dredge_end
 *set current_district "dredge_end"
 *set dredge_end_seen true
@@ -221,6 +243,223 @@ The city's paving stops at the drainage cut. Past it the lanes are broken rock a
       *goto pv_dredge_silt_gates
   # [Travel: Head to another district]
     *goto_scene port_valen port_valen_travel
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment NIGHT AMBUSH (reached only from port_valen_dredge_end_arrive)
+*comment A bruiser blocks the boards while a sling-armed lookout watches from above
+*comment (combat.txt fight_dredge_ambush; the bruiser's weapon is random). Four ways out,
+*comment none of them free and none of them closed:
+*comment   pay      dredge_ambush_toll_copper, only offered if the purse covers it
+*comment   fight    balance-simmed at ~64% win overall, casters are the ones at risk
+*comment   slip     DEX or WIS DC 12, advantage if de_savvy. A failed slip does not escape:
+*comment            it starts the fight with the enemy's first attack at advantage and
+*comment            the player's first attack at disadvantage
+*comment   back out leaves for the travel menu and clears this night's roll, so the next
+*comment            arrival can roll again
+*comment Fight results: victory pays a little loot plus 1-3 pieces of scrap steel (sold to Halda), rescued (1 HP) loses half the purse,
+*comment fled loses up to one toll's worth and leaves the district. dredge_ambush_active
+*comment is cleared on every exit. One currency change and one advance_time per page.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label de_night_ambush
+*temp de_savvy_amb ((wisdom >= 13) or (origin = "outlaw"))
+*temp de_purse (((gold * 100) + (silver * 10)) + copper)
+*temp de_can_pay false
+*if (de_purse >= dredge_ambush_toll_copper)
+  *set de_can_pay true
+*temp de_toll_silver ((dredge_ambush_toll_copper - (dredge_ambush_toll_copper modulo 10)) / 10)
+*temp de_slip_hint " [DEX DC 12]"
+*if (wis_mod > dex_mod)
+  *set de_slip_hint " [WIS DC 12]"
+*if (de_savvy_amb)
+  *set de_slip_hint (de_slip_hint & " (Advantage)")
+The planks give a hollow tap under your boots, and the lantern light thins out a few steps ahead. You are a dozen paces onto the duckboards when a low whistle comes down the lane, two notes, then a third answering from somewhere behind you.
+
+Someone steps out from beneath a footbridge and stands square across the boards, something held low against their leg. Above them, a smaller shape leans over a gangway rail and spins a cord in slow circles. It makes a soft whirr in the dark.
+*if (de_savvy_amb)
+  The whistle does not surprise you. You had marked the shapes under the bridge posts a moment before they moved, and you know how a lane like this is worked: one blocks the way, one watches from above.
+
+"Lane's paid by the head," says the one on the planks, low and unhurried. "${de_toll_silver} silver, and you walk on."
+*if (not(de_can_pay))
+  You do not have that much on you.
+
+*choice
+  *if (de_can_pay)
+    # Pay the toll and walk on. [${de_toll_silver} Silver Marks]
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+        *set currency_add_amount (0 - dredge_ambush_toll_copper)
+        *gosub_scene startup currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id page_id
+      You count the coins into a waiting palm. The fingers close over them, and the figure steps aside just far enough for you to pass. Behind you the whistle goes round again in a different tune, handed down the lane from one bridge to the next.
+      *line_break
+      [b][💰 Paid: ${de_toll_silver} Silver Marks][/b]
+      *set dredge_ambush_active false
+      *set hours_to_pass 0
+      *set minutes_to_pass 15
+      *set time_advance_call_id "de_ambush_toll"
+      *gosub_scene calendar advance_time
+      *gosub_scene calendar recalc_hp_from_neglect
+      *if (hp_current <= 0)
+        *set death_cause "starvation"
+        *if (neglect_damage_fatigue > neglect_damage_hunger)
+          *set death_cause "exhaustion"
+        *goto_scene death death_screen
+      *page_break Walk on…
+      *goto port_valen_dredge_end
+  # Stand your ground and fight. [Combat: two foes]
+    You go still and meet the eyes of the one on the planks. The figure straightens, and overhead the cord stops spinning.
+    *goto de_ambush_fight
+  # Slip off the boards into the dark.${de_slip_hint}
+    *if (wis_mod > dex_mod)
+      *set check_stat "wis"
+    *else
+      *set check_stat "dex"
+    *set check_dc 12
+    *set check_skill "Slip the Lane"
+    *if (de_savvy_amb)
+      *set advantage true
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      You let your weight fall sideways off the plank edge and drop into the gap between two pilings. The dark closes over you. Boots cross the boards above your head, someone mutters, and after a while the whistle passes overhead and moves off down the lane. You climb out farther along, wet to the knee.
+      *set dredge_ambush_active false
+      *set hours_to_pass 0
+      *set minutes_to_pass 15
+      *set time_advance_call_id "de_ambush_slip"
+      *gosub_scene calendar advance_time
+      *gosub_scene calendar recalc_hp_from_neglect
+      *if (hp_current <= 0)
+        *set death_cause "starvation"
+        *if (neglect_damage_fatigue > neglect_damage_hunger)
+          *set death_cause "exhaustion"
+        *goto_scene death death_screen
+      *page_break Walk on…
+      *goto port_valen_dredge_end
+    *else
+      You drop toward the gap between the pilings, but your boot skids on slick wood and you hit the boards on one knee. A stone cracks off the rail beside your head. The one on the planks is already moving, and you scramble up with your guard only half raised.
+      *set combat_enemy_advantage true
+      *set disadvantage true
+      *goto de_ambush_fight
+  # Turn back toward the cinder path. [Leave the district]
+    You take one slow step backward, then another. Nobody follows. The whistle does, passed along the lane behind you until it fades out over the water.
+    *set dredge_ambush_active false
+    *set dredge_ambush_night 0
+    *set hours_to_pass 0
+    *set minutes_to_pass 15
+    *set time_advance_call_id "de_ambush_back"
+    *gosub_scene calendar advance_time
+    *gosub_scene calendar recalc_hp_from_neglect
+    *if (hp_current <= 0)
+      *set death_cause "starvation"
+      *if (neglect_damage_fatigue > neglect_damage_hunger)
+        *set death_cause "exhaustion"
+      *goto_scene death death_screen
+    *page_break Head for the cinder path…
+    *goto_scene port_valen port_valen_travel
+
+*label de_ambush_fight
+*gosub_scene combat fight_dredge_ambush
+*if (combat_outcome = "player_died")
+  *set death_cause "combat"
+  *set death_enemy_epithet "the gang on the duckboards"
+  *goto_scene death death_screen
+*if (combat_outcome = "victory")
+  *goto de_ambush_won
+*if (combat_outcome = "rescued")
+  *goto de_ambush_rescued
+*goto de_ambush_fled
+
+*label de_ambush_won
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *rand dredge_ambush_loot 15 45
+  *set currency_add_amount dredge_ambush_loot
+  *gosub_scene startup currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *rand dredge_ambush_salvage 1 3
+  *set scrap_steel + dredge_ambush_salvage
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+*temp de_loot_silver ((dredge_ambush_loot - (dredge_ambush_loot modulo 10)) / 10)
+*temp de_loot_copper (dredge_ambush_loot modulo 10)
+The lane goes quiet. The cord no longer whirrs overhead, and the whistle has stopped with nobody left to pass it on. A purse has split open on the planks, and you scoop out what is dry enough to keep. Bent blades and iron fittings lie in the wreckage, worth more to a smith than they were to their owners, and you gather what you can carry. You stand a moment with a hand on the rail while your breathing settles.
+*line_break
+[b][💰 Found: ${de_loot_silver} Silver Marks, ${de_loot_copper} Copper][/b]
+*line_break
+[b][⚙️ Found: ${dredge_ambush_salvage} Scrap Steel][/b]
+*set dredge_ambush_active false
+*set hours_to_pass 0
+*set minutes_to_pass 15
+*set time_advance_call_id "de_ambush_won"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Walk on…
+*goto port_valen_dredge_end
+
+*label de_ambush_rescued
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *temp de_purse_now (((gold * 100) + (silver * 10)) + copper)
+  *set dredge_ambush_lost ((de_purse_now - (de_purse_now modulo 2)) / 2)
+  *set currency_add_amount (0 - dredge_ambush_lost)
+  *gosub_scene startup currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*temp de_lost_silver ((dredge_ambush_lost - (dredge_ambush_lost modulo 10)) / 10)
+*temp de_lost_copper (dredge_ambush_lost modulo 10)
+A blow you never see puts you on the planks. The boards are cold against your cheek, and a boot rolls you onto your back. Hands go over you, quick and practiced, taking what they can find, and then the weight is gone from above you and the footsteps fade down the lane. The whistle passes overhead and someone else takes it up. It is a long time before you can get your knees under you.
+*if (dredge_ambush_lost > 0)
+  *line_break
+  [b][💰 Lost: ${de_lost_silver} Silver Marks, ${de_lost_copper} Copper][/b]
+*set dredge_ambush_active false
+*set hours_to_pass 0
+*set minutes_to_pass 45
+*set time_advance_call_id "de_ambush_rescued"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Get to your feet…
+*goto port_valen_dredge_end
+
+*label de_ambush_fled
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *temp de_purse_fled (((gold * 100) + (silver * 10)) + copper)
+  *set dredge_ambush_lost dredge_ambush_toll_copper
+  *if (de_purse_fled < dredge_ambush_lost)
+    *set dredge_ambush_lost de_purse_fled
+  *set currency_add_amount (0 - dredge_ambush_lost)
+  *gosub_scene startup currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*temp de_fled_silver ((dredge_ambush_lost - (dredge_ambush_lost modulo 10)) / 10)
+*temp de_fled_copper (dredge_ambush_lost modulo 10)
+You break off and run, boots hammering the planks until the lane bends and the lantern light falls behind. The whistle carries your passing from bridge to bridge. When you slow down, your purse is hanging open and lighter than it was.
+*if (dredge_ambush_lost > 0)
+  *line_break
+  [b][💰 Lost: ${de_fled_silver} Silver Marks, ${de_fled_copper} Copper][/b]
+*set dredge_ambush_active false
+*set dredge_ambush_night 0
+*set hours_to_pass 0
+*set minutes_to_pass 15
+*set time_advance_call_id "de_ambush_fled"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Catch your breath…
+*goto_scene port_valen port_valen_travel
 
 *label pv_dredge_silt_gates
 *set hours_to_pass 0
@@ -1021,7 +1260,7 @@ The market runs along the water-lane on broken stone and packed cinder, with pla
 *choice
   *if (not(cut_market_night))
     *if (not((food_buff_active) and (food_buff_stat = "int")))
-      # Buy vinegar eel from the frying stall. [3 Copper Bits]@{show_stat_hints  [+1 Temp HP, +1 INT Checks for 4h]|}
+      # Buy vinegar eel from the frying stall. [3 Copper Bits]@{show_stat_hints  [+1 Temp HP, +1 INT for 4h]|}
         *if ((((gold * 100) + (silver * 10)) + copper) < 3)
           You check your purse and find it a little short of three copper bits.
           *goto cut_market_hub
@@ -1030,14 +1269,14 @@ The market runs along the water-lane on broken stone and packed cinder, with pla
         *set tavern_item_temp_hp 1
         *set tavern_item_type "food"
         *set tavern_item_buff_name "Vinegar Eel"
-        *set tavern_item_buff_desc "+1 INT Checks"
+        *set tavern_item_buff_desc "+1 INT"
         *set tavern_item_buff_stat "int"
         *set tavern_item_buff_bonus 1
         *set tavern_item_buff_minutes 240
         *gosub_scene startup buy_tavern_item
         The cook lifts a skewer of eel out of black oil, shakes vinegar and coarse salt over it, and hands it across on a twist of paper. It is hot enough to hurt and sour enough to make your eyes water, and your head is clearer by the last bite.
 
-        [b][🍢 Vinegar Eel Consumed: +1 Temporary HP | Sharp Palate (+1 INT Checks for 4 Hours)][/b]
+        [b][🍢 Vinegar Eel Consumed: +1 Temporary HP | Sharp Palate (+1 INT for 4 Hours)][/b]
         *goto cut_market_hub
 
   *if (not(cut_market_night))
@@ -1586,7 +1825,13 @@ She points at whatever hurts, then works fast: a splash of sour tincture to clea
 An iron grille is set into the seawall stone under a low cedar lintel. Behind it, shelves climb to the ceiling: a chipped brass compass, chisels wrapped in greasy cloth, a coil of fishing cord, and a small pair of child's boots hung by their laces. A narrow man in a stained wool vest sits on a stool behind the wire, trimming a candle with a small knife, and he reads your face before he reads your boots.
 
 *label cut_pawn_hub
+*comment SELLING: he buys anything at 35% of retail and asks no questions (prices in equipment.txt
+*comment gear_sale_value). Nothing he cannot take is listed, and starting gear is never in the table.
+*temp pawn_has_sale (((((has_brigandine) or (has_chain_jack)) or ((has_timber_axe) or (has_stiletto))) or (((has_torvald_iron_sallet) or (has_torvald_hide_cap)) or ((has_iron_crowbar) or (has_toll_seal_ring)))) or (has_plate_harness))
 *choice
+  *if (pawn_has_sale)
+    # Slide something under the grille to sell.
+      *goto cut_pawn_sell
   *if (cut_rumors_pawn < 2)
     # Ask what he lends against.
       *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
@@ -1604,6 +1849,114 @@ An iron grille is set into the seawall stone under a low cedar lintel. Behind it
   # Step back out to the street.
     *page_break Back to the street…
     *goto cut_lamp_page
+*label cut_pawn_sell
+The narrow man sets down his candle knife and slides a wooden tray under the grille. "On the tray," he says. "Don't tell me where it's from."
+*temp ps_brig ""
+*temp ps_chain ""
+*temp ps_plate ""
+*temp ps_axe ""
+*temp ps_stil ""
+*temp ps_sallet ""
+*temp ps_hide ""
+*temp ps_bar ""
+*temp ps_ring ""
+*if (has_brigandine)
+  *gosub_scene equipment gear_sell_label "brigandine" "pawn"
+  *set ps_brig gear_label
+*if (has_chain_jack)
+  *gosub_scene equipment gear_sell_label "chain_jack" "pawn"
+  *set ps_chain gear_label
+*if (has_plate_harness)
+  *gosub_scene equipment gear_sell_label "plate_harness" "pawn"
+  *set ps_plate gear_label
+*if (has_timber_axe)
+  *gosub_scene equipment gear_sell_label "timber_axe" "pawn"
+  *set ps_axe gear_label
+*if (has_stiletto)
+  *gosub_scene equipment gear_sell_label "stiletto" "pawn"
+  *set ps_stil gear_label
+*if (has_torvald_iron_sallet)
+  *gosub_scene equipment gear_sell_label "torvald_iron_sallet" "pawn"
+  *set ps_sallet gear_label
+*if (has_torvald_hide_cap)
+  *gosub_scene equipment gear_sell_label "torvald_hide_cap" "pawn"
+  *set ps_hide gear_label
+*if (has_iron_crowbar)
+  *gosub_scene equipment gear_sell_label "iron_crowbar" "pawn"
+  *set ps_bar gear_label
+*if (has_toll_seal_ring)
+  *gosub_scene equipment gear_sell_label "toll_seal_ring" "pawn"
+  *set ps_ring gear_label
+
+*choice
+  *if (has_brigandine)
+    # ${ps_brig}
+      *set sell_item_id "brigandine"
+      *goto cut_pawn_sell_do
+  *if (has_chain_jack)
+    # ${ps_chain}
+      *set sell_item_id "chain_jack"
+      *goto cut_pawn_sell_do
+  *if (has_plate_harness)
+    # ${ps_plate}
+      *set sell_item_id "plate_harness"
+      *goto cut_pawn_sell_do
+  *if (has_timber_axe)
+    # ${ps_axe}
+      *set sell_item_id "timber_axe"
+      *goto cut_pawn_sell_do
+  *if (has_stiletto)
+    # ${ps_stil}
+      *set sell_item_id "stiletto"
+      *goto cut_pawn_sell_do
+  *if (has_torvald_iron_sallet)
+    # ${ps_sallet}
+      *set sell_item_id "torvald_iron_sallet"
+      *goto cut_pawn_sell_do
+  *if (has_torvald_hide_cap)
+    # ${ps_hide}
+      *set sell_item_id "torvald_hide_cap"
+      *goto cut_pawn_sell_do
+  *if (has_iron_crowbar)
+    # ${ps_bar}
+      *set sell_item_id "iron_crowbar"
+      *goto cut_pawn_sell_do
+  *if (has_toll_seal_ring)
+    # ${ps_ring}
+      *set sell_item_id "toll_seal_ring"
+      *goto cut_pawn_sell_do
+  # Take it back off the tray.
+    *goto cut_pawn_hub
+
+*comment The sale itself: price worked out inside the currency lock and kept in gear_sale_* so a
+*comment replayed page prints the same banner. One currency change and one advance_time per page.
+*label cut_pawn_sell_do
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment gear_sale_value sell_item_id "pawn"
+  *gosub_scene equipment sell_gear sell_item_id
+  *set currency_add_amount gear_sale_copper
+  *gosub_scene startup currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+He turns the ${gear_sale_name} once under the lamp, names a figure that leaves no room to argue, and slides the coins back across the tray.
+*if (not(gear_sold_note = ""))
+  *line_break
+  ${gear_sold_note}
+*line_break
+[b][💰 Sold: ${gear_sale_name} for ${gear_sale_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass 10
+*set time_advance_call_id "pawn_sell"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the grille…
+*goto cut_pawn_hub
+
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment ····· sub-location: the dice cellar
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1668,7 +2021,7 @@ The drinking house is a long low room with a bar made from a single ship's plank
 *label cut_drink_hub
 *choice
   *if (not((drink_buff_active) and (drink_buff_stat = "con")))
-    # Take a mug of black ale. [3 Copper Bits]@{show_stat_hints  [+1 CON Checks for 4h]|}
+    # Take a mug of black ale. [3 Copper Bits]@{show_stat_hints  [+1 CON for 4h]|}
       *if ((((gold * 100) + (silver * 10)) + copper) < 3)
         You check your purse and find it a little short of three copper bits.
         *goto cut_drink_hub
@@ -1677,14 +2030,14 @@ The drinking house is a long low room with a bar made from a single ship's plank
       *set tavern_item_temp_hp 0
       *set tavern_item_type "drink"
       *set tavern_item_buff_name "Black Ale"
-      *set tavern_item_buff_desc "+1 CON Checks"
+      *set tavern_item_buff_desc "+1 CON"
       *set tavern_item_buff_stat "con"
       *set tavern_item_buff_bonus 1
       *set tavern_item_buff_minutes 240
       *gosub_scene startup buy_tavern_item
       The ale is black, bitter and cold from the cellar, and it goes down like a hand on the back of the neck. Your shoulders settle, and the ache in them stops asking for attention.
 
-      [b][🍺 Black Ale Drunk: Steady Nerves (+1 CON Checks for 4 Hours)][/b]
+      [b][🍺 Black Ale Drunk: Steady Nerves (+1 CON for 4 Hours)][/b]
       *goto cut_drink_hub
   *if (cut_rumors_drink < 2)
     # Listen to the men along the bar.
@@ -2039,7 +2392,7 @@ You glance around the benches, and ${corve_generic_desc} catches your eye, setti
   *goto_scene death death_screen
 
 *set unique_buff_input_name "Carnal Warmth"
-*set unique_buff_input_desc "+1 CHA Checks (Relaxed & Confident)"
+*set unique_buff_input_desc "+1 CHA (Relaxed & Confident)"
 *set unique_buff_input_stat "cha"
 *set unique_buff_input_bonus 1
 *set unique_buff_input_minutes 240
@@ -2117,7 +2470,7 @@ followed by the rest of your kit, leaving you bare to the dim candlelight.
 
 Afterward, the room settles into thick, cooling stillness, broken only by the sound of heavy breathing and the distant wash of the canal against the stone pilings below. You rinse at the water basin with a wet cloth, washing away the sweat, and pull your garments back over your skin. Your muscles feel loose, the grinding tension has left your spine, and you carry an easy, grounded confidence as you unbolt the door and make your way back down the stairs to the parlor.
 
-[b][🕯️ Intimate Encounter: Carnal Warmth (+1 CHA Checks for 4 Hours) | Encounters: ${intimate_encounters}][/b]
+[b][🕯️ Intimate Encounter: Carnal Warmth (+1 CHA for 4 Hours) | Encounters: ${intimate_encounters}][/b]
 *page_break Return to the parlor…
 *goto cut_corve_parlor_menu
 
@@ -2290,51 +2643,107 @@ The alley pinches narrow between two leaning tenement foundations, opening into 
 *label cut_steps_page
 [b]◈ THE FLOODED LOWER STEPS[/b]
 *line_break
-A broad flight of stone steps goes down the side of the seawall into the canal, and at low water the lower half of it stands out of the water, black and hung with green weed. Cellar doors open off the landings, some boarded, some with a rag hung in the gap. The stone is cold through your boots, and the air smells of weed, old smoke and cold water.
+*comment ── LAYER 1: PLACE (Constant Geography, Architecture, & Smell) ──
+A broad, steep flight of granite steps is cut directly into the sheer face of the seawall, descending forty feet from the stone terrace into the canal trench. The lower half of the stairway is slick with black river sludge and draped in thick mats of green weed. Recessed into the masonry landings are low cellar vaults: warped oak hatches, iron ring-bolts caked in green verdigris, and doorways hung with dripping burlap sacking. The stone underfoot is damp and freezing through your boot leather, and the heavy air smells of rotting kelp, sulfur mud, wet soot, and stagnant bilge.
 
-*if (time_period = "Dusk")
-  The water is beginning to come back. Each landing is a little wetter than the one above it.
+*comment ── LAYER 2: SKY & ATMOSPHERIC LIGHT (Weather & Light Only, No People) ──
+*if (weather = "Rain")
+  Rain drums against the canal basin and streams down the stone treads in dark rivulets, turning the weed-grown landings treacherous.
+*elseif (weather = "Storm")
+  Channel gales howl down the water-trench, driving brown foam up the lower steps and slamming chop against the sheer seawall blocks.
+*elseif (weather = "Fog")
+  Thick river mist blankets the water-lane, swallowing the bottom landings and hiding where the stone ends and the black canal begins.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  A skin of grey slush coats the upper steps, and brittle ice fringes the waterline where the tide laps the weeds.
+*elseif (weather = "Blizzard")
+  A freezing coastal squall scours the stone face, driving snow flat across the exposed steps and icing the masonry into black glass.
+*elseif (weather = "Clear")
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    Cold starlight glints off the black water in the cut, silhouetting the granite landing posts against the open sky.
+  *elseif (time_period = "Dusk")
+    The last copper twilight angles across the canal walls, catching the wet sheen of the exposed kelp.
+  *else
+    Sharp daylight strikes the granite face, warming the upper stones and drying the high-water salt line to chalky white.
 *else
-  Grey light comes down the stair and stops at the water.
+  *comment Overcast
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    A starless, pitch-black sky sits low over the canal cut, deadening sound and swallowing the steps in murky gloom.
+  *else
+    A flat pewter sky hangs between the tenements, pressing chimney smoke low over the water-lane.
 
-*if (day_of_week = "Tideday")
-  It is Tideday. A diver in a greased cap slips through one of the cellar doors as you reach the bottom step, and the door closes behind him.
+*comment ── WEATHER MEMORY (calendar ground_state, strictly no people) ──
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  After days of rain, dark drainage water still bleeds heavily from the seawall weep-holes, cascading down the flights and leaving the middle landings awash.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The upper granite steps and cellar sills remain dark and slick from the recent rain.
 
-*if (weather_cold)
-  Ice skins the lowest landing, and your breath shows.
-*elseif (weather_wet)
-  Rain dimples the water at the foot of the stair, and every step is slick.
-*elseif (weather_visibility = "poor")
-  Fog sits on the water, and the bottom steps go down into it and out of sight.
+*comment ── LAYER 3: STREET LIFE (Activity Derived From street_life, Day, & Time) ──
+*if (street_life = "empty")
+  The stairway is completely deserted. Canal water churns high and violent against the lower vaults, storm runoff cascades down the stone flights, and every cellar hatch is bolted tight against the rising surge. No one lingers on the wet stones.
+
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  The flood tide has surged in from the estuary, drowning the bottom six landings beneath five feet of black canal water. Shuttered horn lanterns burn with dim yellow slits from overhead gangways, while solitary figures in greasecloth mantles pick their way down to the water's edge to check skiff lines or knock on the upper cellar hatches.
+
+*elseif (time_period = "Dusk")
+  The tide is turning. Slow, brown canal water creeps back up the lowest steps, reclaiming the landings inch by inch. Mud-scavengers scramble up the weed-slick stone with dripping baskets, while flophouse wardens light foul-smelling grease pots in the cellar doorways to guide night-laborers down from the wharves.
+
+*else
+  *comment Daytime Low Water (Morning, Midday, Afternoon)
+  With the tide drawn out, the full flight stands bare to the canal mud. Scavengers with short iron rakes pick through the weed-choked joints for dropped copper pins and scrap iron. Hollow-eyed laborers in sodden wool sit on the dry middle landings to mend grease-boots, scrape barnacles from bucket staves, or share pipe-weed out of the wind.
+  *if (day_of_week = "Tideday")
+    It is Tideday: divers in greased leather caps and wool waders work the lowest stone footings, hauling dripping bundles out of submerged cellar vaults before the tide turns.
+  *elseif (day_of_week = "Marketday")
+    Mud-larks haul baskets of salvaged chain links, lead sinkers, and brass fasteners up the flight to hawk at the duckboard market stalls.
+  *elseif (day_of_week = "Forgeday")
+    Discarded scrap and iron slag clatter down the drainage chute from the boatwrights above, sending scavengers scrambling into the mud.
+
+*comment ── LAYER 4: TELL (Scout / Outlaw Insight) ──
+*if (de_savvy)
+  You clock the darker machinery of the stairway: several cellar doors have heavy iron slide-bolts mounted on the [i]outside[/i], allowing flophouse masters to padlock the sleepers in during high water so no one slips away without paying their token. High on the masonry, two feet above the upper door lintels, a faint black waterline marks the spring flood mark. When the estuary surges in winter, every vault down here drowns to the ceiling; anyone trapped behind a jammed bolt dies in the dark.
 
 *label cut_steps_hub
-*choice
-  # Wade the bottom landings and search for scrap.@{show_stat_hints  [WIS DC 11, about an hour]|}
-    *set hours_to_pass 1
-    *set minutes_to_pass 0
-    *set time_advance_call_id "cut_steps_search_1"
-    *gosub_scene calendar advance_time
-    *set check_stat "wis"
-    *set check_dc 11
-    *set check_skill "Investigation"
-    *gosub_scene startup roll_d20_check
-    *if (check_success)
-      You wade along the bottom landings with your hands under the weed, feeling for shapes that aren't stone. Twice your fingers close on iron: an oar-pin, and a length of chain with two good links still in it.
-      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-        *set cut_scrap + 2
-        *set stat_bump_locked true
-        *set locked_stat_bump_page_id page_id
+*temp hint_steps_search ""
+*if (show_stat_hints)
+  *if (guidance_active)
+    *set hint_steps_search " [WIS DC 11 (+1d4 Guidance), ~1 hour]"
+  *else
+    *set hint_steps_search " [WIS DC 11, ~1 hour]"
 
-      [b][⛓ Scrap Found: 2 Pieces (the scrap yard pays for them)][/b]
-    *else
-      You work the lower steps for an hour and come up with weed, a broken clay pipe and a chill that reaches your knees.
-    *gosub_scene calendar recalc_hp_from_neglect
-    *if (hp_current <= 0)
-      *set death_cause "starvation"
-      *if (neglect_damage_fatigue > neglect_damage_hunger)
-        *set death_cause "exhaustion"
-      *goto_scene death death_screen
-    *goto cut_steps_hub
+*choice
+  *if (not((time_period = "Night") or (time_period = "Pre-Dawn")))
+    # Wade the weed-slick bottom landings and scavenge for scrap.${hint_steps_search}
+      *set hours_to_pass 1
+      *set minutes_to_pass 0
+      *set time_advance_call_id "cut_steps_search_1"
+      *gosub_scene calendar advance_time
+      *set check_stat "wis"
+      *set check_dc 11
+      *set check_skill "Scavenge the Mud"
+      *gosub_scene startup roll_d20_check
+      *if (check_success)
+        You roll your sleeves high and wade the frigid canal sludge along the bottom landing, working your fingers deep into the weed-choked masonry joints where heavy river wash settles. 
+        
+        Twice your calloused fingers close over cold metal: a heavy forged iron oar-pin, and a rusted three-link length of dredge-chain. You rinse the black mud from the iron in the canal current and haul your finds onto dry stone.
+        *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+          *set cut_scrap + 2
+          *set stat_bump_locked true
+          *set locked_stat_bump_page_id page_id
+
+        [b][⛓ Scrap Salvaged: 2 Pieces (The scrap yard pays for them)][/b]
+      *else
+        You spend an hour knee-deep in the freezing silt, tearing through slimy bladderwrack and scraping your knuckles raw on sharp oyster shells. You haul up only a broken clay pipe stem, a rotten heel-tap, and bone-deep river chill that settles into your joints.
+      *gosub_scene calendar recalc_hp_from_neglect
+      *if (hp_current <= 0)
+        *set death_cause "starvation"
+        *if (neglect_damage_fatigue > neglect_damage_hunger)
+          *set death_cause "exhaustion"
+        *goto_scene death death_screen
+      *goto cut_steps_hub
+
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    # [Tide Full] Look down at the flooded bottom landings.
+      The estuary tide has surged up the seawall face, submerging the bottom landings beneath several feet of murky canal water. Weeds sway like drowned hair beneath the surface, and any scrap buried in the masonry joints is lost to the dark until the next low tide.
+      *goto cut_steps_hub
 
   *if (cut_rumors_steps < 2)
     # Look into the flophouse cellars.
@@ -2343,11 +2752,21 @@ A broad flight of stone steps goes down the side of the seawall into the canal, 
         *set stat_bump_locked true
         *set locked_stat_bump_page_id page_id
       *if (cut_rumors_steps = 1)
-        You put your head to a cellar door with a rag hung in the gap. Inside, a dozen people are sleeping in shifts on the same straw, while a man at the door turns a wooden token over in his fingers. Whoever holds the token sleeps.
+        You duck your head past a damp burlap rag into one of the stone recesses. Inside the windowless vault, a dozen laborers sleep like cordwood on beds of damp, sour straw, their boots piled near the entrance. 
+        
+        By the doorframe, a scarred warden turns a notched wooden token over and over in his dirty fingers, keeping count of the hours. One token buys four hours on the straw; when the token flips, you give up your spot or get tossed onto the wet steps.
       *else
-        Someone has painted a line on the wall of the stair at head height, with a date beside it, and a second line above it. "That's how high it came," a woman on the landing says. "The first line is what the landlord said it would."
+        Two lines are chiseled into the granite wall at head height beside a rusted hinge. A date is notched beneath each mark. 
+        
+        An old woman sitting on an upturned nail-keg watches you inspect the stone. "The lower notch was the landlord's promise," she rasps, spitting into the sludge. "Told us the water never cleared the lintel. The upper mark was last winter's flood tide. Filled the vault to the ceiling beams. Three boys didn't wake up in time to beat down the door."
       *goto cut_steps_hub
 
-  # Climb back up the stair.
+  # Study the masonry joints and flood channels along the seawall base.
+    You run a hand across the ancient imperial stonework. The granite blocks are immense—four paces wide, dressed smooth and clamped with rusted iron staples that have defied centuries of tide and salt. 
+    
+    Beneath the green weed, small weep-holes bleed dark groundwater from beneath the higher terraces, draining the pressure of the upper city into the canal trench. Even as the wooden tenements of Dredge-End rot and shift on their stilts, the imperial foundation beneath them remains completely unmoved.
+    *goto cut_steps_hub
+
+  # Climb back up the steps to the district walkways.
     *page_break Back up to the lanes…
     *goto port_valen_dredge_end

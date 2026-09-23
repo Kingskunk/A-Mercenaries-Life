@@ -834,6 +834,29 @@ window.EQUIPMENT_CATALOG = {
     },
     {
       "ids": [
+        "plate_harness"
+      ],
+      "fields": {
+        "armor": {
+          "type": "literal",
+          "value": "plate-harness"
+        },
+        "armor_desc": {
+          "type": "literal",
+          "value": "Iron Plate Harness"
+        },
+        "armor_type": {
+          "type": "literal",
+          "value": "plate_harness"
+        },
+        "armor_prose": {
+          "type": "literal",
+          "value": "plate harness"
+        }
+      }
+    },
+    {
+      "ids": [
         "none"
       ],
       "fields": {

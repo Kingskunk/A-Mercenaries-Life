@@ -39,7 +39,8 @@ window.INVENTORY = {
   //   - Shield: a toggle (has_shield gates it, not ownership of an id).
   //   - Sidearm: no direct picker at all -- only the "swap with weapon" action (its own
   //     button below, not this per-slot control).
-  //   - Armor, Cloak, Hands, Waist, Feet, Neck, Rings: NO equip choice in the real menu
+  //   - Armor: "switch back to starting" + has_x alternates (Halda's Forge armor), as of the Port Valen forge.
+  //   - Cloak, Hands, Waist, Feet, Neck, Rings: NO equip choice in the real menu
   //     (apparel is explicitly commented "Cosmetic" there; accessories only ever gains
   //     Elspeth's Weir-Knot, one-way, which isn't modeled here yet -- manage it from the
   //     Dossier). Building a swap control for slots that were never a player-facing
@@ -54,7 +55,8 @@ window.INVENTORY = {
     { label: "Primary Weapon", shape: "weapon", desc: "weapon_desc", dmg: "weapon_damage", bucket: "weapon",
       swappable: true, always: function () { return ["starting"]; } },
     { label: "Sidearm", shape: "weapon", desc: "sidearm_desc", dmg: "sidearm_damage", bucket: "sidearm" },
-    { label: "Armor", shape: "armor", desc: "armor_desc", ac: "armor_class", bucket: "armor" },
+    { label: "Armor", shape: "armor", desc: "armor_desc", ac: "armor_class", bucket: "armor",
+      swappable: true, always: function () { return ["starting"]; } },
     { label: "Shield", shape: "shield", bucket: "shield", swappable: true },
     { label: "Head", shape: "headwear", desc: "head_desc", ac: "head_ac", isArmor: "head_is_armor", bucket: "head",
       swappable: true,
@@ -102,6 +104,27 @@ window.INVENTORY = {
       description: "Stiffened leather skullcap, cheap and close-fitting under a hood.",
       badge: function (s) { return s.equipped_head_id === "torvald_hide_cap" ? "Equipped" : "Stowed"; },
       equip: { slot: "head", id: "torvald_hide_cap" }
+    },
+    {
+      id: "brigandine", category: "apparel", owned: "has_brigandine",
+      name: "Iron-Studded Gambeson",
+      description: "Quilted wool-and-canvas coat with rows of iron studs sewn between the layers.",
+      badge: function (s) { return s.equipped_armor_id === "brigandine" ? "Worn, Medium Armor" : "Stowed"; },
+      equip: { slot: "armor", id: "brigandine" }
+    },
+    {
+      id: "plate_harness", category: "apparel", owned: "has_plate_harness",
+      name: "Iron Plate Harness",
+      description: "Overlapping iron plates riveted over a mail coat, with hinged shoulders and lapped hip plates.",
+      badge: function (s) { return s.equipped_armor_id === "plate_harness" ? "Worn, Heavy Armor" : "Stowed"; },
+      equip: { slot: "armor", id: "plate_harness" }
+    },
+    {
+      id: "chain_jack", category: "apparel", owned: "has_chain_jack",
+      name: "Iron Chain Shirt",
+      description: "Hand-closed mail rings over a wool lining, with doubled seams at the neck and hips.",
+      badge: function (s) { return s.equipped_armor_id === "chain_jack" ? "Worn, Medium Armor" : "Stowed"; },
+      equip: { slot: "armor", id: "chain_jack" }
     },
     {
       id: "talia_oiled_cloak", category: "apparel", owned: "has_talia_oiled_cloak",
@@ -173,6 +196,13 @@ window.INVENTORY = {
     },
 
     // ---- provisions & trail gear ----
+    {
+      id: "scrap_steel", category: "provisions",
+      owned: function (s) { return Number(s.scrap_steel) > 0; },
+      name: function (s) { return "Scrap Steel (" + Number(s.scrap_steel) + ")"; },
+      description: "Bent blades and iron fittings, worth a little to a smith by weight.",
+      badge: "Sells to a smith"
+    },
     {
       id: "odessa_salve", category: "provisions", owned: "prep_odessa_salve",
       name: "Tin of Camphor Fat",

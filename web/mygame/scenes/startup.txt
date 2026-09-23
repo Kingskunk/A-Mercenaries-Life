@@ -245,6 +245,41 @@
 *create charisma 10
 *comment Baseline CON before attuned magic item bonuses.
 *create base_constitution 10
+*create base_strength 10
+*create base_dexterity 10
+*create base_intelligence 10
+*create base_wisdom 10
+*create base_charisma 10
+*comment Timed ability-score boons (food, drink, unique and sleep buffs). A buff adds its bonus to the
+*comment ability SCORE, not to the d20 roll, so it only helps when it carries the score across an even
+*comment threshold (10-11 is +0, 12-13 is +1, and so on, capped at +3). buff_<stat>_bonus is the summed
+*comment bonus per stat, recomputed by recalculate_buff_stats whenever a buff starts or expires.
+*comment The six scores (strength ... charisma) HOLD the boosted number everywhere, so the sidebar, the
+*comment dossier, every modifier and every raw-score check see the same value. base_<stat> keeps the
+*comment unboosted score (chargen sets the scores, then update_dnd_stats snapshots them into base_<stat>),
+*comment and recalculate_buff_stats always rebuilds score = base + boon. Never write a score directly
+*comment after chargen: change base_<stat> and call recalculate_buff_stats.
+*create buff_str_bonus 0
+*create buff_dex_bonus 0
+*create buff_con_bonus 0
+*create buff_int_bonus 0
+*create buff_wis_bonus 0
+*create buff_cha_bonus 0
+*comment buff_<stat>_helps is true while a boon actually raises that stat's modifier (a +1 on an even score
+*comment or at the +3 cap does nothing). The dossier and the sidebar read it so a wasted boon looks wasted.
+*create buff_str_helps false
+*create buff_dex_helps false
+*create buff_con_helps false
+*create buff_int_helps false
+*create buff_wis_helps false
+*create buff_cha_helps false
+*create sm_mod 0
+*create bs_str 0
+*create bs_dex 0
+*create bs_con 0
+*create bs_int 0
+*create bs_wis 0
+*create bs_cha 0
 
 *create str_mod 0
 *create dex_mod 0
@@ -418,6 +453,20 @@
 *create codex_corve false
 *create codex_wreck_law false
 *create dredge_end_seen false
+*comment Dredge-End night ambush (port_valen_dredge_end.txt, de_night_ambush). Tunables:
+*comment dredge_ambush_chance is the percent chance per night that arriving rolls an
+*comment ambush, and dredge_ambush_toll_copper is the toll in copper (10 = 1 silver).
+*comment dredge_ambush_night is the night id last rolled (campaign_day, minus 1 between
+*comment midnight and noon so Pre-Dawn belongs to the night before), which caps it at
+*comment one roll per night. dredge_ambush_active marks an ambush still waiting on the
+*comment player's answer, so a page replay cannot roll it away. loot/lost feed the
+*comment coin banners so they read the same on a replay.
+*create dredge_ambush_chance 35
+*create dredge_ambush_toll_copper 30
+*create dredge_ambush_night 0
+*create dredge_ambush_active false
+*create dredge_ambush_loot 0
+*create dredge_ambush_lost 0
 *create upper_wharves_seen false
 *create civic_heights_seen false
 *comment Civic Heights records house: ch_records_seen is reaching the Open Roll and meeting Clerk
@@ -1117,6 +1166,49 @@
 *create has_iron_crowbar false
 *create has_torvald_iron_sallet false
 *create has_torvald_hide_cap false
+*comment Halda's Forge (Port Valen, port_valen_middle_ward.txt mw_smiths_forge): the two
+*comment medium-armor ids equipment.txt already defines, sold to every class except a build
+*comment that already starts in medium armor.
+*create has_brigandine false
+*create has_chain_jack false
+*create has_plate_harness false
+*comment Armor proficiency (equipment.txt armor_prof_check / recalculate_proficiency). armor_tier is derived from
+*comment armor_type; armor_nonprof is true while the worn armor is one the class is not trained in, which
+*comment costs disadvantage on STR and DEX rolls (roll_d20_check). apc_ok is the routine's output.
+*create armor_tier "none"
+*create armor_nonprof false
+*create apc_ok false
+*comment Shield proficiency: shield_nonprof is true while an equipped shield is one the class is not trained in.
+*comment A shield the character STARTED with is grandfathered (shield_grandfathered, snapshotted at loadout
+*comment init), like the starting armor, because the muster shield is picked by origin before class.
+*create shield_nonprof false
+*create shield_grandfathered false
+*comment Selling (equipment.txt gear_sale_value / sell_gear). scrap_steel counts pieces looted from
+*comment the Dredge-End ambush, sold to Halda by weight. sell_item_id is what the shop menu picked;
+*comment gear_sale_* are the price outputs and gear_sold_note is a line about what the player fell
+*comment back to when they sold something worn. All three stay set after the sale so a replayed
+*comment page prints the same banner.
+*create scrap_steel 0
+*comment The gear table (equipment.txt gear_info) and its outputs. An item's ownership flag is always
+*comment has_<id>, so the shared buy and sell routines reach it through gear_flag_var instead of a branch.
+*create gear_id ""
+*create gear_name ""
+*create gear_retail 0
+*create gear_kind ""
+*create gear_tier ""
+*create gear_hint ""
+*create gear_blurb ""
+*create gear_minutes 10
+*create gear_flag_var ""
+*create gear_label ""
+*create gear_grant_note ""
+*create buy_item_id ""
+*create dredge_ambush_salvage 0
+*create sell_item_id ""
+*create gear_sale_copper 0
+*create gear_sale_desc ""
+*create gear_sale_name ""
+*create gear_sold_note ""
 *create has_talia_provisions false
 *create has_talia_oiled_cloak false
 *create discussed_talia_craft false
@@ -1739,88 +1831,97 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
 *comment D&D 5E STAT & MODIFIER ENGINE
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label update_dnd_stats
-*if (strength <= 9)
+*comment Modifiers come from the scores, which already include any active boon (see the boon comment
+*comment beside the buff_<stat>_bonus creates), so a meal that lifts an odd score onto the next even
+*comment number raises the modifier for its duration.
+*temp eff_str strength
+*temp eff_dex dexterity
+*temp eff_int intelligence
+*temp eff_wis wisdom
+*temp eff_cha charisma
+*if (eff_str <= 9)
   *set str_mod 0 - 1
   *set str_mod_str "-1"
-*if (strength = 10) or (strength = 11)
+*if (eff_str = 10) or (eff_str = 11)
   *set str_mod 0
   *set str_mod_str "+0"
-*if (strength = 12) or (strength = 13)
+*if (eff_str = 12) or (eff_str = 13)
   *set str_mod 1
   *set str_mod_str "+1"
-*if (strength = 14) or (strength = 15)
+*if (eff_str = 14) or (eff_str = 15)
   *set str_mod 2
   *set str_mod_str "+2"
-*if (strength >= 16)
+*if (eff_str >= 16)
   *set str_mod 3
   *set str_mod_str "+3"
 
-*if (dexterity <= 9)
+*if (eff_dex <= 9)
   *set dex_mod 0 - 1
   *set dex_mod_str "-1"
-*if (dexterity = 10) or (dexterity = 11)
+*if (eff_dex = 10) or (eff_dex = 11)
   *set dex_mod 0
   *set dex_mod_str "+0"
-*if (dexterity = 12) or (dexterity = 13)
+*if (eff_dex = 12) or (eff_dex = 13)
   *set dex_mod 1
   *set dex_mod_str "+1"
-*if (dexterity = 14) or (dexterity = 15)
+*if (eff_dex = 14) or (eff_dex = 15)
   *set dex_mod 2
   *set dex_mod_str "+2"
-*if (dexterity >= 16)
+*if (eff_dex >= 16)
   *set dex_mod 3
   *set dex_mod_str "+3"
 
 *gosub recalculate_con_mod
 
-*if (intelligence <= 9)
+*if (eff_int <= 9)
   *set int_mod 0 - 1
   *set int_mod_str "-1"
-*if (intelligence = 10) or (intelligence = 11)
+*if (eff_int = 10) or (eff_int = 11)
   *set int_mod 0
   *set int_mod_str "+0"
-*if (intelligence = 12) or (intelligence = 13)
+*if (eff_int = 12) or (eff_int = 13)
   *set int_mod 1
   *set int_mod_str "+1"
-*if (intelligence = 14) or (intelligence = 15)
+*if (eff_int = 14) or (eff_int = 15)
   *set int_mod 2
   *set int_mod_str "+2"
-*if (intelligence >= 16)
+*if (eff_int >= 16)
   *set int_mod 3
   *set int_mod_str "+3"
 
-*if (wisdom <= 9)
+*if (eff_wis <= 9)
   *set wis_mod 0 - 1
   *set wis_mod_str "-1"
-*if (wisdom = 10) or (wisdom = 11)
+*if (eff_wis = 10) or (eff_wis = 11)
   *set wis_mod 0
   *set wis_mod_str "+0"
-*if (wisdom = 12) or (wisdom = 13)
+*if (eff_wis = 12) or (eff_wis = 13)
   *set wis_mod 1
   *set wis_mod_str "+1"
-*if (wisdom = 14) or (wisdom = 15)
+*if (eff_wis = 14) or (eff_wis = 15)
   *set wis_mod 2
   *set wis_mod_str "+2"
-*if (wisdom >= 16)
+*if (eff_wis >= 16)
   *set wis_mod 3
   *set wis_mod_str "+3"
 
-*if (charisma <= 9)
+*if (eff_cha <= 9)
   *set cha_mod 0 - 1
   *set cha_mod_str "-1"
-*if (charisma = 10) or (charisma = 11)
+*if (eff_cha = 10) or (eff_cha = 11)
   *set cha_mod 0
   *set cha_mod_str "+0"
-*if (charisma = 12) or (charisma = 13)
+*if (eff_cha = 12) or (eff_cha = 13)
   *set cha_mod 1
   *set cha_mod_str "+1"
-*if (charisma = 14) or (charisma = 15)
+*if (eff_cha = 14) or (eff_cha = 15)
   *set cha_mod 2
   *set cha_mod_str "+2"
-*if (charisma >= 16)
+*if (eff_cha >= 16)
   *set cha_mod 3
   *set cha_mod_str "+3"
 
+*gosub refresh_boon_flags
 *if (not(loadout_initialized))
   *set hp_max (hit_die_max + con_mod)
   *set hp_current hp_max
@@ -1847,6 +1948,12 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
   *set equipped_armor_id "starting"
   *set shield_equipped has_shield
   *set base_constitution constitution
+  *set base_strength strength
+  *set base_dexterity dexterity
+  *set base_intelligence intelligence
+  *set base_wisdom wisdom
+  *set base_charisma charisma
+  *set shield_grandfathered has_shield
   *set loadout_initialized true
 *gosub_scene equipment apply_all_loadouts
 *return
@@ -1855,28 +1962,130 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
 *comment RECALCULATE CON MODIFIER
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label recalculate_con_mod
-*if (constitution <= 9)
+*temp eff_con constitution
+*if (eff_con <= 9)
   *set con_mod 0 - 1
   *set con_mod_str "-1"
-*if (constitution = 10) or (constitution = 11)
+*if (eff_con = 10) or (eff_con = 11)
   *set con_mod 0
   *set con_mod_str "+0"
-*if (constitution = 12) or (constitution = 13)
+*if (eff_con = 12) or (eff_con = 13)
   *set con_mod 1
   *set con_mod_str "+1"
-*if (constitution = 14) or (constitution = 15)
+*if (eff_con = 14) or (eff_con = 15)
   *set con_mod 2
   *set con_mod_str "+2"
-*if (constitution >= 16)
+*if (eff_con >= 16)
   *set con_mod 3
   *set con_mod_str "+3"
+*return
+
+*comment score_to_mod: the modifier for one ability score (the same steps update_dnd_stats uses). Output sm_mod.
+*label score_to_mod
+*params sm_score
+*set sm_mod 0
+*if (sm_score <= 9)
+  *set sm_mod 0 - 1
+*if (sm_score >= 12)
+  *set sm_mod 1
+*if (sm_score >= 14)
+  *set sm_mod 2
+*if (sm_score >= 16)
+  *set sm_mod 3
+*return
+
+*comment refresh_boon_flags: a boon helps only if the modifier with it is higher than the modifier the
+*comment plain score gives. Call after the modifiers have been derived.
+*label refresh_boon_flags
+*gosub score_to_mod (strength - buff_str_bonus)
+*set buff_str_helps ((buff_str_bonus > 0) and (str_mod > sm_mod))
+*gosub score_to_mod (dexterity - buff_dex_bonus)
+*set buff_dex_helps ((buff_dex_bonus > 0) and (dex_mod > sm_mod))
+*gosub score_to_mod (constitution - buff_con_bonus)
+*set buff_con_helps ((buff_con_bonus > 0) and (con_mod > sm_mod))
+*gosub score_to_mod (intelligence - buff_int_bonus)
+*set buff_int_helps ((buff_int_bonus > 0) and (int_mod > sm_mod))
+*gosub score_to_mod (wisdom - buff_wis_bonus)
+*set buff_wis_helps ((buff_wis_bonus > 0) and (wis_mod > sm_mod))
+*gosub score_to_mod (charisma - buff_cha_bonus)
+*set buff_cha_helps ((buff_cha_bonus > 0) and (cha_mod > sm_mod))
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment TIMED ABILITY-SCORE BOONS
+*comment recalculate_buff_stats sums every active buff channel's bonus per stat and, only if a total changed,
+*comment re-derives the modifiers (update_dnd_stats also shifts max HP by the CON change, keeping wounds, and
+*comment recomputes AC). Fully derived from the buff variables, so calling it again changes nothing. Call it
+*comment after any buff starts and after buffs decay.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label recalculate_buff_stats
+*set bs_str 0
+*set bs_dex 0
+*set bs_con 0
+*set bs_int 0
+*set bs_wis 0
+*set bs_cha 0
+*gosub bs_add food_buff_active food_buff_stat food_buff_bonus
+*gosub bs_add drink_buff_active drink_buff_stat drink_buff_bonus
+*gosub bs_add unique_buff1_active unique_buff1_stat unique_buff1_bonus
+*gosub bs_add unique_buff2_active unique_buff2_stat unique_buff2_bonus
+*gosub bs_add unique_buff3_active unique_buff3_stat unique_buff3_bonus
+*gosub bs_add sleep_buff1_active sleep_buff1_stat sleep_buff1_bonus
+*gosub bs_add sleep_buff2_active sleep_buff2_stat sleep_buff2_bonus
+*temp bs_changed false
+*if (not(bs_str = buff_str_bonus))
+  *set bs_changed true
+*if (not(bs_dex = buff_dex_bonus))
+  *set bs_changed true
+*if (not(bs_con = buff_con_bonus))
+  *set bs_changed true
+*if (not(bs_int = buff_int_bonus))
+  *set bs_changed true
+*if (not(bs_wis = buff_wis_bonus))
+  *set bs_changed true
+*if (not(bs_cha = buff_cha_bonus))
+  *set bs_changed true
+*if ((bs_changed) and (loadout_initialized))
+  *set buff_str_bonus bs_str
+  *set buff_dex_bonus bs_dex
+  *set buff_con_bonus bs_con
+  *set buff_int_bonus bs_int
+  *set buff_wis_bonus bs_wis
+  *set buff_cha_bonus bs_cha
+  *set strength (base_strength + buff_str_bonus)
+  *set dexterity (base_dexterity + buff_dex_bonus)
+  *set constitution (base_constitution + buff_con_bonus)
+  *if (hearthstone_attuned)
+    *set constitution + 1
+  *set intelligence (base_intelligence + buff_int_bonus)
+  *set wisdom (base_wisdom + buff_wis_bonus)
+  *set charisma (base_charisma + buff_cha_bonus)
+  *gosub update_dnd_stats
+*gosub refresh_boon_flags
+*return
+
+*label bs_add
+*params bs_on bs_stat bs_amt
+*if (bs_on)
+  *if (bs_stat = "str")
+    *set bs_str + bs_amt
+  *if (bs_stat = "dex")
+    *set bs_dex + bs_amt
+  *if (bs_stat = "con")
+    *set bs_con + bs_amt
+  *if (bs_stat = "int")
+    *set bs_int + bs_amt
+  *if (bs_stat = "wis")
+    *set bs_wis + bs_amt
+  *if (bs_stat = "cha")
+    *set bs_cha + bs_amt
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment MAGIC ITEM ATTUNEMENT & RECOMPUTE
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label recalculate_attuned_bonuses
-*set constitution base_constitution
+*set constitution (base_constitution + buff_con_bonus)
 *if (hearthstone_attuned)
   *set constitution + 1
 *gosub recalculate_con_mod
@@ -1909,6 +2118,10 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
   *set adv_label locked_adv_label
   *set guidance_roll locked_guidance_roll
 *else
+  *comment Armor the class is not trained in: disadvantage on STR and DEX rolls (attacks included).
+  *comment It cancels against advantage like any other source, and the flag resets at the end of the roll.
+  *if (((armor_nonprof) or (shield_nonprof)) and ((check_stat = "str") or (check_stat = "dex")))
+    *set disadvantage true
   *if (advantage) and (not(disadvantage))
     *set adv_label " (Advantage)"
   *if (disadvantage) and (not(advantage))
@@ -1958,57 +2171,12 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
   *if (routine_stage = "Rutted")
     *set check_mod - 2
 
-  *comment Aggregate bonuses across all active buff channels
-  *temp buff_bonus 0
-  *temp buff_sign ""
-  *if (food_buff_active) and ((check_stat = food_buff_stat) or (food_buff_stat = "all"))
-    *set buff_bonus + food_buff_bonus
-    *set buff_sign ""
-    *if (food_buff_bonus > 0)
-      *set buff_sign "+"
-    *set adv_label "${adv_label} ${buff_sign}${food_buff_bonus} (${food_buff_name})"
-  *if (drink_buff_active) and ((check_stat = drink_buff_stat) or (drink_buff_stat = "all"))
-    *set buff_bonus + drink_buff_bonus
-    *set buff_sign ""
-    *if (drink_buff_bonus > 0)
-      *set buff_sign "+"
-    *set adv_label "${adv_label} ${buff_sign}${drink_buff_bonus} (${drink_buff_name})"
-  *if (unique_buff1_active) and ((check_stat = unique_buff1_stat) or (unique_buff1_stat = "all"))
-    *set buff_bonus + unique_buff1_bonus
-    *set buff_sign ""
-    *if (unique_buff1_bonus > 0)
-      *set buff_sign "+"
-    *set adv_label "${adv_label} ${buff_sign}${unique_buff1_bonus} (${unique_buff1_name})"
-  *if (unique_buff2_active) and ((check_stat = unique_buff2_stat) or (unique_buff2_stat = "all"))
-    *set buff_bonus + unique_buff2_bonus
-    *set buff_sign ""
-    *if (unique_buff2_bonus > 0)
-      *set buff_sign "+"
-    *set adv_label "${adv_label} ${buff_sign}${unique_buff2_bonus} (${unique_buff2_name})"
-  *if (unique_buff3_active) and ((check_stat = unique_buff3_stat) or (unique_buff3_stat = "all"))
-    *set buff_bonus + unique_buff3_bonus
-    *set buff_sign ""
-    *if (unique_buff3_bonus > 0)
-      *set buff_sign "+"
-    *set adv_label "${adv_label} ${buff_sign}${unique_buff3_bonus} (${unique_buff3_name})"
-  *if (sleep_buff1_active) and ((check_stat = sleep_buff1_stat) or (sleep_buff1_stat = "all"))
-    *set buff_bonus + sleep_buff1_bonus
-    *set buff_sign ""
-    *if (sleep_buff1_bonus > 0)
-      *set buff_sign "+"
-    *set adv_label "${adv_label} ${buff_sign}${sleep_buff1_bonus} (${sleep_buff1_name})"
-  *if (sleep_buff2_active) and ((check_stat = sleep_buff2_stat) or (sleep_buff2_stat = "all"))
-    *set buff_bonus + sleep_buff2_bonus
-    *set buff_sign ""
-    *if (sleep_buff2_bonus > 0)
-      *set buff_sign "+"
-    *set adv_label "${adv_label} ${buff_sign}${sleep_buff2_bonus} (${sleep_buff2_name})"
+  *comment Food, drink, unique and sleep buffs no longer add to the roll here: they raise the ability
+  *comment SCORE (recalculate_buff_stats), so they already sit inside check_mod via the modifier.
 
   *set check_total (d20_roll + check_mod)
   *if (guidance_active)
     *set check_total + guidance_roll
-  *if (not(buff_bonus = 0))
-    *set check_total + buff_bonus
 
   *set roll_had_advantage ((advantage) and (not(disadvantage)))
   *set roll_locked true
@@ -2502,6 +2670,7 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
       *set drink_buff_minutes_left tavern_item_buff_minutes
   *set tavern_purchase_locked true
   *set locked_tavern_purchase_page_id page_id
+*gosub recalculate_buff_stats
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2509,6 +2678,11 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
 *comment Inputs: unique_buff_input_name/desc/stat/bonus/minutes
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label apply_unique_buff
+*gosub apply_unique_buff_slot
+*gosub recalculate_buff_stats
+*return
+
+*label apply_unique_buff_slot
 *if (unique_buff1_active) and (unique_buff1_name = unique_buff_input_name)
   *set unique_buff1_desc unique_buff_input_desc
   *set unique_buff1_stat unique_buff_input_stat

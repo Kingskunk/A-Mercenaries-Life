@@ -92,6 +92,11 @@
       baseAc = 13;
       if (effectiveDexMod > 2) effectiveDexMod = 2;
     }
+    // Heavy armor: a flat 16 that ignores DEX (equipment.txt).
+    if (s.armor_type === "plate_harness") {
+      baseAc = 16;
+      effectiveDexMod = 0;
+    }
     var ac = baseAc + effectiveDexMod;
     if (truthy(s.head_is_armor) && Number(s.head_ac) > 0) ac += Number(s.head_ac);
     if (truthy(s.shield_equipped)) {
@@ -102,6 +107,28 @@
     }
     if (s.fighter_fighting_style === "defense") ac += 1;
     s.armor_class = ac;
+    EQ.recalcProficiency(s);
+  };
+
+  // Mirrors armor_tier (apply_armor_loadout), armor_prof_check and recalculate_proficiency in
+  // equipment.txt, so the sidebar's "not proficient" warning follows a panel swap immediately.
+  // The starting kit is grandfathered exactly as in the real label.
+  EQ.recalcProficiency = function recalcProficiency(s) {
+    var t = s.armor_type, tier = "none";
+    if (t === "leather" || t === "buff_coat") tier = "light";
+    if (t === "brigandine" || t === "chain_jack") tier = "medium";
+    if (t === "plate_harness") tier = "heavy";
+    s.armor_tier = tier;
+    var c = s.character_class, ok = false;
+    if (tier === "none" || c === "none") ok = true;
+    if (c === "fighter") ok = true;
+    if ((c === "barbarian" || c === "ranger") && tier !== "heavy") ok = true;
+    if ((c === "bard" || c === "rogue" || c === "warlock") && tier === "light") ok = true;
+    s.armor_nonprof = (s.equipped_armor_id !== "starting") && !ok;
+    // Shields: a starting shield is grandfathered (shield_grandfathered); fighter, barbarian and
+    // ranger are trained. Mirrors shield_prof_check in equipment.txt.
+    var shieldOk = c === "fighter" || c === "barbarian" || c === "ranger" || c === "none";
+    s.shield_nonprof = truthy(s.shield_equipped) && !truthy(s.shield_grandfathered) && !shieldOk;
   };
 
   // The slot-id stat each bucket's equip state lives in (mirrors equip_<slot>'s own

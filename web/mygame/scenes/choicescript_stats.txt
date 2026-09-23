@@ -164,17 +164,17 @@
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [b]◈ ABILITY SCORES & MODIFIERS[/b]
 *line_break
-• [b]Strength (STR):[/b] ${strength} (${str_mod_str})
+• [b]Strength (STR):[/b] ${strength}@{buff_str_helps  [includes +${buff_str_bonus} boon: raises modifier]|}@{((buff_str_bonus > 0) and (not(buff_str_helps)))  [includes +${buff_str_bonus} boon: no effect]|} (${str_mod_str})
 *line_break
-• [b]Dexterity (DEX):[/b] ${dexterity} (${dex_mod_str})
+• [b]Dexterity (DEX):[/b] ${dexterity}@{buff_dex_helps  [includes +${buff_dex_bonus} boon: raises modifier]|}@{((buff_dex_bonus > 0) and (not(buff_dex_helps)))  [includes +${buff_dex_bonus} boon: no effect]|} (${dex_mod_str})
 *line_break
-• [b]Constitution (CON):[/b] ${constitution} (${con_mod_str})
+• [b]Constitution (CON):[/b] ${constitution}@{buff_con_helps  [includes +${buff_con_bonus} boon: raises modifier]|}@{((buff_con_bonus > 0) and (not(buff_con_helps)))  [includes +${buff_con_bonus} boon: no effect]|} (${con_mod_str})
 *line_break
-• [b]Intelligence (INT):[/b] ${intelligence} (${int_mod_str})
+• [b]Intelligence (INT):[/b] ${intelligence}@{buff_int_helps  [includes +${buff_int_bonus} boon: raises modifier]|}@{((buff_int_bonus > 0) and (not(buff_int_helps)))  [includes +${buff_int_bonus} boon: no effect]|} (${int_mod_str})
 *line_break
-• [b]Wisdom (WIS):[/b] ${wisdom} (${wis_mod_str})
+• [b]Wisdom (WIS):[/b] ${wisdom}@{buff_wis_helps  [includes +${buff_wis_bonus} boon: raises modifier]|}@{((buff_wis_bonus > 0) and (not(buff_wis_helps)))  [includes +${buff_wis_bonus} boon: no effect]|} (${wis_mod_str})
 *line_break
-• [b]Charisma (CHA):[/b] ${charisma} (${cha_mod_str})
+• [b]Charisma (CHA):[/b] ${charisma}@{buff_cha_helps  [includes +${buff_cha_bonus} boon: raises modifier]|}@{((buff_cha_bonus > 0) and (not(buff_cha_helps)))  [includes +${buff_cha_bonus} boon: no effect]|} (${cha_mod_str})
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [b]◈ CARRIED GEAR & SATCHEL[/b]
@@ -207,6 +207,10 @@
   *set has_inventory_item true
   *line_break
   • [b]Waterproofing Grease Tins:[/b] Refined mutton wax and hoof oil for boots and bowstring seams
+*if (scrap_steel > 0)
+  *set has_inventory_item true
+  *line_break
+  • [b]Scrap Steel:[/b] ${scrap_steel} pieces of bent blades and iron fittings, worth a little to a smith by weight
 *if (has_talia_provisions)
   *set has_inventory_item true
   *line_break
@@ -231,6 +235,18 @@
   *set has_inventory_item true
   *line_break
   • [b]Boiled-Hide Watch Cap:[/b] Stiffened leather skullcap, cheap and close-fitting under a hood@{(equipped_head_id = "torvald_hide_cap")  [Equipped]| [Stowed]}
+*if (has_brigandine)
+  *set has_inventory_item true
+  *line_break
+  • [b]Iron-Studded Gambeson:[/b] Quilted wool-and-canvas coat with rows of iron studs sewn between the layers@{(equipped_armor_id = "brigandine")  [Worn, Medium Armor]| [Stowed]}
+*if (has_chain_jack)
+  *set has_inventory_item true
+  *line_break
+  • [b]Iron Chain Shirt:[/b] Hand-closed mail rings over a wool lining, with doubled seams at the neck and hips@{(equipped_armor_id = "chain_jack")  [Worn, Medium Armor]| [Stowed]}
+*if (has_plate_harness)
+  *set has_inventory_item true
+  *line_break
+  • [b]Iron Plate Harness:[/b] Overlapping iron plates riveted over a mail coat, with hinged shoulders and lapped hip plates@{(equipped_armor_id = "plate_harness")  [Worn, Heavy Armor]| [Stowed]}
 *if (has_talia_oiled_cloak)
   *set has_inventory_item true
   *line_break
@@ -374,8 +390,14 @@ Swapping a weapon, shield, or sidearm takes a moment out of camp or downtime, no
 • [b]Sidearm:[/b] ${sidearm_desc} [${sidearm_damage}]
 *line_break
 • [b]Off-Hand:[/b] ${off_hand_status}
+*if (shield_nonprof)
+  *line_break
+  [b][⚠️ Not proficient with a shield: disadvantage on STR and DEX rolls while it is equipped][/b]
 *line_break
 • [b]Armor:[/b] ${armor_desc} [Armor Class ${armor_class}]
+*if (armor_nonprof)
+  *line_break
+  [b][⚠️ Not proficient with this armor: disadvantage on STR and DEX rolls, attacks included][/b]
 *if (head_is_armor) and (head_ac > 0)
   *line_break
   • [b]Head:[/b] ${head_desc} [+${head_ac} AC]
@@ -416,6 +438,22 @@ Swapping a weapon, shield, or sidearm takes a moment out of camp or downtime, no
   *if ((has_torvald_hide_cap) and (not(equipped_head_id = "torvald_hide_cap")))
     # Wear the Boiled-Hide Watch Cap instead.
       *gosub_scene equipment equip_head "torvald_hide_cap"
+      *goto codex_equipment_weapons
+  *if ((((has_brigandine) or (has_chain_jack)) or (has_plate_harness)) and (not(equipped_armor_id = "starting")))
+    # Switch back to your ${starting_armor_desc}.
+      *gosub_scene equipment equip_armor "starting"
+      *goto codex_equipment_weapons
+  *if ((has_brigandine) and (not(equipped_armor_id = "brigandine")))
+    # Wear the Iron-Studded Gambeson instead [Medium Armor: AC 13 + DEX, max +2].
+      *gosub_scene equipment equip_armor "brigandine"
+      *goto codex_equipment_weapons
+  *if ((has_chain_jack) and (not(equipped_armor_id = "chain_jack")))
+    # Wear the Iron Chain Shirt instead [Medium Armor: AC 13 + DEX, max +2].
+      *gosub_scene equipment equip_armor "chain_jack"
+      *goto codex_equipment_weapons
+  *if ((has_plate_harness) and (not(equipped_armor_id = "plate_harness")))
+    # Wear the Iron Plate Harness instead [Heavy Armor: AC 16, no DEX bonus].
+      *gosub_scene equipment equip_armor "plate_harness"
       *goto codex_equipment_weapons
   *if (origin = "ruined") and (not(equipped_head_id = "arming_cap"))
     # Switch back to your Padded Linen Cap.

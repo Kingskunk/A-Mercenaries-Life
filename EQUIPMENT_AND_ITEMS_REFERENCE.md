@@ -35,8 +35,8 @@ Primary weapons and secondary sidearms can be equipped in the main-hand or store
 | `starting` (Disgraced) | **Iron-Shod Quarterstaff** | One-Handed / Versatile Melee | `1d6/1d8 bludgeoning` | Enlistment (Disgraced Scion) or Woodworker — **1s 5c** | Versatile blunt weapon (STR-based, 1d6/1d8). |
 | `starting` / `bodkin_dagger` | **Slim Dagger** | One-Handed Finesse | `1d4 piercing` | Enlistment (Disgraced Scion) or Cutler — **1s 5c** | Finesse (uses higher of STR or DEX). Triggers Rogue Sneak Attack (+1d6). |
 | `starting` (Disgraced) | **Compact Light Crossbow** | Two-Handed Ranged | `1d8 piercing` | Enlistment (Disgraced Scion) or Bowyer — **3s 0c** | Ranged weapon (DEX-based, 1d8). Two-handed. |
-| `timber_axe` | **Highland Hewing Axe** | One-Handed Melee | `1d8 slashing` | Master Torvald's Smithy (Alderford) — **2s 5c** | One-handed felling axe (STR-based). Compatible with off-hand shields and Dueling Fighting Style (+2 damage). |
-| `stiletto` | **Alderford Stiletto** | One-Handed Finesse | `1d4 piercing` | Master Torvald's Smithy (Alderford) — **1s 5c** | Refined file-steel thrusting blade. Finesse (STR or DEX). Triggers Rogue Sneak Attack (+1d6). |
+| `timber_axe` | **Highland Hewing Axe** | One-Handed Melee | `1d8 slashing` | Master Torvald's Smithy (Alderford) or Halda's Forge (Port Valen) — **2s 5c** | One-handed felling axe (STR-based). Compatible with off-hand shields and Dueling Fighting Style (+2 damage). |
+| `stiletto` | **Alderford Stiletto** | One-Handed Finesse | `1d4 piercing` | Master Torvald's Smithy (Alderford) or Halda's Forge (Port Valen) — **1s 5c** | Refined file-steel thrusting blade. Finesse (STR or DEX). Triggers Rogue Sneak Attack (+1d6). |
 
 ---
 
@@ -54,8 +54,9 @@ Torso armor sets the character's base AC calculation in `recalculate_armor_class
 
 | Item ID | Armor Name | Armor Class Category | Base AC Formula | Acquisition & Retail Cost | Mechanical Interaction & Rules |
 |---|---|---|---|---|---|
-| `brigandine` | **Iron-Studded Gambeson** | Medium Armor | `13 + DEX (max +2)` | Enlistment (Ashbrook) or Armorer — **7s 0c** | Solid protection against slashing and bludgeoning. Caps DEX contribution at +2. Identical mechanical tier to the Iron Chain Shirt. |
-| `chain_jack` | **Iron Chain Shirt** | Medium Armor | `13 + DEX (max +2)` | Enlistment (Ashbrook) or Armorer — **7s 0c** | Interlocking scrap iron rings over wool. Caps DEX contribution at +2. Identical mechanical tier to the Iron-Studded Gambeson. |
+| `brigandine` | **Iron-Studded Gambeson** | Medium Armor | `13 + DEX (max +2)` | Enlistment (Ashbrook), Armorer, or Halda's Forge (Port Valen, Middle Ward) — **7s 0c** | Solid protection against slashing and bludgeoning. Caps DEX contribution at +2. Identical mechanical tier to the Iron Chain Shirt. |
+| `chain_jack` | **Iron Chain Shirt** | Medium Armor | `13 + DEX (max +2)` | Enlistment (Ashbrook), Armorer, or Halda's Forge (Port Valen, Middle Ward) — **7s 0c** | Interlocking scrap iron rings over wool. Caps DEX contribution at +2. Identical mechanical tier to the Iron-Studded Gambeson. |
+| `plate_harness` | **Iron Plate Harness** | Heavy Armor | `16 (no DEX)` | Halda's Forge (Port Valen, Middle Ward) — **15s 0c** | Overlapping iron plates riveted over a mail coat. A flat AC 16 that ignores DEX entirely, so it beats medium armor unless DEX is high. Needs heavy-armor training (fighters only). |
 | `buff_coat` | **Scaled Oxhide Coat** | Light Armor | `11 + DEX (full)` | Enlistment (Ashbrook) or Tanner — **3s 0c** | Supple hide with scale reinforcement. Full DEX bonus applies. Identical mechanical tier to all Light Armors. |
 | `leather_cuirass` / `leather` | **Hardened Leather Armor** | Light Armor | `11 + DEX (full)` | Enlistment (Outlaw) or Leatherworker — **3s 0c** | Form-fitted hardened leather. Full DEX bonus applies. |
 | `thief_leather` | **Oiled Leather Jerkin** | Light Armor | `11 + DEX (full)` | Enlistment (Outlaw) or Black Market — **3s 0c** | Lined with hidden pockets and pouches for concealed carry. Full DEX bonus applies. |
@@ -73,7 +74,7 @@ Headwear is divided into physical armor (+1 AC) and non-armor headwear (0 AC, co
 
 | Item ID | Item Name | AC Bonus | Counts as Armor? | Acquisition & Retail Cost | Description & Mechanical Details |
 |---|---|---|---|---|---|
-| `torvald_iron_sallet` | **Cold-Hammered Skullcap** | **+1 AC** | **Yes** (`head_is_armor = true`) | Master Torvald's Smithy (Alderford) — **3s 0c** | Plain riveted steel skullcap with guild touchmark. Grants flat **+1 AC**. Because it counts as wearing real armor, it **suppresses** Wizard *Mage Armor* and Barbarian *Unarmored Defense*. |
+| `torvald_iron_sallet` | **Cold-Hammered Skullcap** | **+1 AC** | **Yes** (`head_is_armor = true`) | Master Torvald's Smithy (Alderford) or Halda's Forge (Port Valen) — **3s 0c** | Plain riveted steel skullcap with guild touchmark. Grants flat **+1 AC**. Because it counts as wearing real armor, it **suppresses** Wizard *Mage Armor* and Barbarian *Unarmored Defense*. |
 | `torvald_hide_cap` | **Boiled-Hide Watch Cap** | 0 AC | No | Master Torvald's Smithy (Alderford) — **8c** | Stiffened blackened leather cap. Cosmetic/warmth headwear. Does not interfere with unarmored/cloth abilities. |
 | `arming_cap` | **Padded Linen Cap** | 0 AC | No | Enlistment (Ashbrook) or Tailor — **8c** | Quilted linen and wool cap worn beneath iron helmets. Cosmetic headwear. |
 | `camo_hood` | **Shadowed Mottled Hood** | 0 AC | No | Enlistment (Outlaw) or Draper — **8c** | Mottled dark hood designed to break facial contours in brush and fog. Cosmetic headwear. |
@@ -168,9 +169,44 @@ These items are carried in the player's satchel/inventory and provide active mec
 
 | Variable | Item Name | Type | Acquisition Source / Retail Cost | Exact Mechanical Effect |
 |---|---|---|---|---|
-| `has_iron_crowbar` | **Pioneer's Iron Prybar** (Sapper's Pinch Crowbar) | Field Tool | Master Torvald's Smithy (Alderford) — **1s 2c** | Cold-forged crowbar and tempered climbing pegs. **Grants Advantage on Strength/Athletics and Force/Pry checks** (e.g., prying waterlogged timbers in Alderford's weir or forcing barred stone doors). |
+| `has_iron_crowbar` | **Pioneer's Iron Prybar** (Sapper's Pinch Crowbar) | Field Tool | Master Torvald's Smithy (Alderford) or Halda's Forge (Port Valen) — **1s 2c** | Cold-forged crowbar and tempered climbing pegs. **Grants Advantage on Strength/Athletics and Force/Pry checks** (e.g., prying waterlogged timbers in Alderford's weir or forcing barred stone doors). |
 | `has_althea_phial` | **Phial of Saint Althea's Water** | Consumable Holy Relic | Chapel of Saint Althea (Alderford / Valen) — Temple Offering (**1s 0c**) | Can be consumed in or out of combat to immediately **restore 2d4 + 2 Hit Points**. |
 | `prep_waterproof_gear` | **Waterproofing Dubbin Tins** | Gear Treatment | Talia's Shed (Reward) or Chandler / Cobbler — **7c** | Waterproofs boots, weapon frogs, and leather harness. Negates cold-water exposure hazards and prevents disadvantage during river barge transits. |
+| `unique_buff` (Warming Liniment) | **Warming Liniment** | Timed Boon | Ambrose's Still-Room (Port Valen, Herb-Pounder Close) — **3c** | **+1 STR for 8 hours** through `apply_unique_buff`. A +1 only raises the modifier when it lifts an odd score onto the next even number. Stacks with food and drink boons. Hidden while active. |
+| `unique_buff` (Clear-Head Draught) | **Clear-Head Draught** | Timed Boon | Ambrose's Still-Room (Port Valen, Herb-Pounder Close) — **5c** | **+1 WIS for 4 hours** through `apply_unique_buff`. Same parity rule as the liniment. Hidden while active. |
+| `scrap_steel` | **Scrap Steel** | Salvage (count) | Dredge-End night ambush victory: 1 to 3 pieces | Bent blades and iron fittings. Halda's Forge buys them by weight at **5c a piece** (all at once). Not sold by any shop. |
 | `has_talia_provisions` | **Hearth-Baked Travel Provisions** | Food Supply | Talia's Loft or Middle Ward Bakery — **5c** | Warm crusty bread and salt-cured river trout wrapped in greasecloth. Provides dense, sustaining nourishment. |
 | `has_letter_of_credit` | **Gilded Scales Letter of Credit** | Financial Note | Gilded Scales Factor (Alderford / Port Valen) | Certified draft for silver marks (`letter_of_credit_value`), redeemable at counting houses in Alderford or Port Valen. |
 | `has_silt_gate_payout_slip` | **Broker's Payout Slip** | Quest Evidence | Silt-Gate Contraband, Branch C (squeeze the broker) | Wax vellum listing the Watch night-sergeants who take weekly payoffs. Spend it once: sell it to the Dockmaster for silver and Watch standing, or hold it for Captain Vane as leverage (`vane_watch_leverage`). |
+
+---
+
+## 12. Selling Gear (Port Valen)
+
+Prices live in one place: `equipment.txt` `gear_sale_value` (retail in copper, per item), and `sell_gear` removes the item. A sale that would leave the player wearing something they no longer own puts them back in their starting gear (weapon, armor, or their origin's default cap); a weapon held in the sidearm slot is cleared to `none`.
+
+| Buyer | Where | Pays | Buys |
+|---|---|---|---|
+| Halda (smith) | Halda's Forge, Middle Ward | **50% of retail** | studded gambeson, mail shirt, hewing axe, stiletto, iron skullcap, iron prybar, and scrap steel (5c a piece) |
+| Pawnbroker | Dredge-End, Lamp Stair (daytime) | **35% of retail**, no questions | everything Halda buys except scrap steel, plus the hide cap and the signet ring (fixed **8s**) |
+
+Never sellable: starting gear (it is the fallback) and quest rewards (Talia's cloak and boots, Marl's belt, Brant's boots, the Hearthstone Talisman, Elspeth's keepsake, the Althea ring). Example sales: mail shirt 3s 5c to Halda or 2s 4c to the pawnbroker; skullcap 1s 5c or 1s.
+
+---
+
+## 13. Armor Tiers & Proficiency
+
+`armor_tier` is derived from `armor_type` every time armor loads (`apply_armor_loadout` in `equipment.txt`): **none** (cloth or unarmored), **light** (`leather`, `buff_coat`), **medium** (`brigandine`, `chain_jack`), **heavy** (`plate_harness`). A class is trained in these tiers (`armor_prof_check`):
+
+| Class | Trained in |
+|---|---|
+| Fighter | light, medium, heavy |
+| Barbarian, Ranger | light, medium |
+| Bard, Rogue, Warlock | light |
+| Wizard | nothing (cloth only) |
+
+Wearing an untrained tier sets `armor_nonprof`, which gives **disadvantage on STR and DEX rolls, attack rolls included** (`roll_d20_check`). It cancels against advantage. **Spellcasting is not blocked**, by design: spell attacks use INT/CHA and are unaffected. The starting kit is grandfathered (`equipped_armor_id = "starting"` never triggers it), because class is chosen after the muster armor and an Ashbrook wizard can start in a gambeson. Shops warn before a purchase but never refuse it. **Shields work the same way:** fighters, barbarians and rangers are trained; anyone else takes the same disadvantage on STR and DEX rolls while a shield is equipped (`shield_nonprof`). Nothing is hidden or refused by class, so shields can drop as loot for anyone. A shield the character started with is grandfathered (`shield_grandfathered`, snapshotted at loadout init, and lazily for older saves), because origin hands out the muster shield before class is chosen.
+
+Halda and Master Torvald both sell the shield (3s, `has_shield`) to every class that does not own one, and Halda buys the harness back at 50% of its 15s retail (pawnbroker 35%).
+
+Halda's buy menu is its own screen (`mw_halda_stock`, opened from "Look over the racks") so the forge hub stays short. Besides the armor and shield it stocks a few Alderford pieces (hewing axe, stiletto, iron skullcap, iron prybar) at Torvald's prices and with the same `has_` flags, so anyone who missed them in Alderford can buy them, and nothing shows once it is owned. The boiled-hide watch cap stays Alderford-only, since Halda deals in metal.

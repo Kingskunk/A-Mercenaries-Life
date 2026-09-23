@@ -184,11 +184,25 @@
   *set armor_desc "Oiled Traveling Robes"
   *set armor_type "cloth"
   *set armor_prose "traveling robes"
+*if (equipped_armor_id = "plate_harness")
+  *set armor "plate-harness"
+  *set armor_desc "Iron Plate Harness"
+  *set armor_type "plate_harness"
+  *set armor_prose "plate harness"
 *if (equipped_armor_id = "none")
   *set armor "none"
   *set armor_desc "None"
   *set armor_type "cloth"
   *set armor_prose "linen shirt"
+*comment armor_tier is derived from armor_type every time, so it can never drift: "none" is cloth or
+*comment unarmored, then light, medium and heavy. Proficiency (armor_prof_check) reads it.
+*set armor_tier "none"
+*if ((armor_type = "leather") or (armor_type = "buff_coat"))
+  *set armor_tier "light"
+*if ((armor_type = "brigandine") or (armor_type = "chain_jack"))
+  *set armor_tier "medium"
+*if (armor_type = "plate_harness")
+  *set armor_tier "heavy"
 *return
 
 *comment *gosub_scene equipment equip_armor <id>
@@ -512,6 +526,244 @@
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment THE GEAR TABLE, BUYING AND SELLING
+*comment gear_info is the ONE place an item is described for trade: display name, retail price (copper),
+*comment kind (armor, shield, weapon, head, ring, tool, salvage), proficiency tier, stat hint, blurb and how
+*comment long a fitting or handover takes. Adding an item to a shop is one entry here plus its normal
+*comment loadout branch. The ownership flag is always has_<id>, so nothing below branches per item.
+*comment BUYING: a shop option sets buy_item_id and goes to that shop's shared *_buy_do label, which calls
+*comment gear_info, takes the coin inside its own currency lock, and calls grant_gear. Menu label text comes
+*comment from gear_buy_label / gear_sell_label, so price, hint and proficiency warnings live only here.
+*comment SELLING: gear_sale_value prices it for a buyer, sell_gear removes it (and re-equips starting gear).
+*comment The smith pays half of retail and only for steel, armor, helmets and tools; the pawnbroker pays 35%
+*comment for anything and no questions. Rings are a fixed pawn value, scrap steel is smith-only at 5 copper a
+*comment piece. Starting gear and quest rewards are never in this table, so they cannot be bought or sold.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*comment *gosub_scene equipment gear_info <item_id>   (fills gear_name, gear_retail, gear_kind, gear_tier,
+*comment gear_hint, gear_blurb, gear_minutes; an unknown id leaves them blank)
+*label gear_info
+*params gi_item
+*set gear_id gi_item
+*set gear_name ""
+*set gear_retail 0
+*set gear_kind ""
+*set gear_tier ""
+*set gear_hint ""
+*set gear_blurb ""
+*set gear_minutes 10
+*if (gi_item = "brigandine")
+  *set gear_name "studded gambeson"
+  *set gear_retail 70
+  *set gear_kind "armor"
+  *set gear_tier "medium"
+  *set gear_hint "Medium Armor: AC 13 + DEX, max +2"
+  *set gear_blurb "A quilted coat with rows of small iron studs sewn between layers of wool and canvas."
+  *set gear_minutes 20
+*if (gi_item = "chain_jack")
+  *set gear_name "mail shirt"
+  *set gear_retail 70
+  *set gear_kind "armor"
+  *set gear_tier "medium"
+  *set gear_hint "Medium Armor: AC 13 + DEX, max +2"
+  *set gear_blurb "Every link is closed by hand, and the seams at the neck and hips are doubled."
+  *set gear_minutes 20
+*if (gi_item = "plate_harness")
+  *set gear_name "iron plate harness"
+  *set gear_retail 150
+  *set gear_kind "armor"
+  *set gear_tier "heavy"
+  *set gear_hint "Heavy Armor: AC 16, no DEX bonus"
+  *set gear_blurb "Overlapping iron plates over a mail coat, the shoulders hinged and the hip plates lapped like roof tiles."
+  *set gear_minutes 40
+*if (gi_item = "shield")
+  *set gear_name "iron-bossed shield"
+  *set gear_retail 30
+  *set gear_kind "shield"
+  *set gear_tier "shield"
+  *set gear_hint "+2 Shield AC Bonus"
+  *set gear_blurb "A round oak shield with an iron boss, oak from the valley and iron from the harbor wagons."
+*if (gi_item = "timber_axe")
+  *set gear_name "hewing axe"
+  *set gear_retail 25
+  *set gear_kind "weapon"
+  *set gear_hint "1d8 Slashing, One-Handed"
+  *set gear_blurb "A broad-bearded felling axe with the balance forward of the haft."
+*if (gi_item = "stiletto")
+  *set gear_name "stiletto"
+  *set gear_retail 15
+  *set gear_kind "weapon"
+  *set gear_hint "1d4 Piercing, Finesse"
+  *set gear_blurb "A slender, square-sided blade ground to a needle point from file-steel."
+*if (gi_item = "torvald_iron_sallet")
+  *set gear_name "iron skullcap"
+  *set gear_retail 30
+  *set gear_kind "head"
+  *set gear_hint "+1 AC, Counts as Armor"
+  *set gear_blurb "A plain riveted iron skullcap with a small touchmark stamped into the brow."
+*if (gi_item = "torvald_hide_cap")
+  *set gear_name "hide cap"
+  *set gear_retail 8
+  *set gear_kind "head"
+*if (gi_item = "iron_crowbar")
+  *set gear_name "iron prybar"
+  *set gear_retail 12
+  *set gear_kind "tool"
+  *set gear_hint "Advantage on Force and Pry Checks"
+  *set gear_blurb "A three-foot bar of octagonal iron with a curved claw at one end and a chisel heel at the other."
+*if (gi_item = "toll_seal_ring")
+  *set gear_name "signet ring"
+  *set gear_kind "ring"
+*if (gi_item = "scrap_steel")
+  *set gear_name "scrap steel"
+  *set gear_kind "salvage"
+*return
+
+*comment *gosub_scene equipment format_copper <amount>   (output gear_sale_desc, e.g. "3 Silver Marks, 5 Copper Bits")
+*label format_copper
+*params fc_amount
+*temp fc_silver ((fc_amount - (fc_amount modulo 10)) / 10)
+*temp fc_copper (fc_amount modulo 10)
+*temp fc_s_str ""
+*temp fc_c_str ""
+*if (fc_silver = 1)
+  *set fc_s_str "1 Silver Mark"
+*elseif (fc_silver > 1)
+  *set fc_s_str (fc_silver & " Silver Marks")
+*if (fc_copper = 1)
+  *set fc_c_str "1 Copper Bit"
+*elseif (fc_copper > 1)
+  *set fc_c_str (fc_copper & " Copper Bits")
+*if ((fc_silver > 0) and (fc_copper > 0))
+  *set gear_sale_desc ((fc_s_str & ", ") & fc_c_str)
+*elseif (fc_silver > 0)
+  *set gear_sale_desc fc_s_str
+*elseif (fc_copper > 0)
+  *set gear_sale_desc fc_c_str
+*else
+  *set gear_sale_desc "nothing"
+*return
+
+*comment *gosub_scene equipment gear_sale_value <item_id> <"smith"|"pawn">   (a price of 0 means this buyer declines)
+*label gear_sale_value
+*params gsv_item gsv_buyer
+*gosub gear_info gsv_item
+*set gear_sale_name gear_name
+*temp gsv_retail gear_retail
+*comment The shield is never sellable: some origins start with one, so a sale could not be told apart.
+*if (gsv_item = "shield")
+  *set gsv_retail 0
+*set gear_sale_copper 0
+*if (gsv_buyer = "smith")
+  *if (gsv_item = "torvald_hide_cap")
+    *set gsv_retail 0
+  *set gear_sale_copper ((gsv_retail - (gsv_retail modulo 2)) / 2)
+  *if (gsv_item = "scrap_steel")
+    *set gear_sale_copper (scrap_steel * 5)
+*else
+  *set gear_sale_copper (((gsv_retail * 35) - ((gsv_retail * 35) modulo 100)) / 100)
+  *if (gsv_item = "toll_seal_ring")
+    *set gear_sale_copper 80
+*gosub format_copper gear_sale_copper
+*return
+
+*comment *gosub_scene equipment gear_buy_label <item_id>   (output gear_label, the full option text)
+*label gear_buy_label
+*params gb_item
+*gosub gear_info gb_item
+*gosub format_copper gear_retail
+*set gear_label ("Buy the " & gear_name)
+*set gear_label ((gear_label & ". [") & gear_sale_desc)
+*set gear_label (gear_label & "]")
+*if ((show_stat_hints) and (not(gear_hint = "")))
+  *set gear_label (((gear_label & " [") & gear_hint) & "]")
+*comment Proficiency is a warning, never a gate.
+*if (gear_kind = "armor")
+  *gosub armor_prof_check gear_tier
+  *if (not(apc_ok))
+    *set gear_label (gear_label & " [Not proficient: disadvantage on STR and DEX rolls]")
+*if (gear_kind = "shield")
+  *gosub shield_prof_check
+  *if (not(apc_ok))
+    *set gear_label (gear_label & " [Not proficient: disadvantage on STR and DEX rolls while it is equipped]")
+*if (gb_item = "torvald_iron_sallet")
+  *if ((wizard_spell = "mage_armor") or (character_class = "barbarian"))
+    *set gear_label (gear_label & " [Counts as armor: ends Mage Armor and Unarmored Defense while worn]")
+*return
+
+*comment *gosub_scene equipment gear_sell_label <item_id> <"smith"|"pawn">   (output gear_label)
+*label gear_sell_label
+*params gl_item gl_buyer
+*gosub gear_sale_value gl_item gl_buyer
+*if (gl_item = "scrap_steel")
+  *set gear_label ((("Sell all your scrap steel (" & scrap_steel) & " pieces). [") & gear_sale_desc)
+*else
+  *set gear_label ((("Sell the " & gear_name) & ". [") & gear_sale_desc)
+*set gear_label (gear_label & "]")
+*return
+
+*comment *gosub_scene equipment grant_gear <item_id>   (sets has_<id>, wears armor, readies a shield;
+*comment output gear_grant_note). The caller takes the coin inside its own currency lock.
+*label grant_gear
+*params gg_item
+*gosub gear_info gg_item
+*set gear_flag_var ("has_" & gg_item)
+*set {gear_flag_var} true
+*set gear_grant_note ""
+*if (gear_kind = "armor")
+  *gosub equip_armor gg_item
+*if (gear_kind = "shield")
+  *if (not(weapon_hands = "two_handed"))
+    *set shield_equipped true
+    *set gear_grant_note "You slip your arm through the leather straps and it is tightened until the shield sits solid against your forearm."
+  *else
+    *set gear_grant_note "Both your hands are busy, so you sling the shield across your back. It can come onto your arm from the dossier once a hand is free."
+  *gosub recalculate_armor_class
+*return
+
+*comment *gosub_scene equipment sell_gear <item_id>   (clears has_<id>; if it was worn, back to starting gear)
+*label sell_gear
+*params sg_item
+*gosub gear_info sg_item
+*set gear_sold_note ""
+*if (sg_item = "scrap_steel")
+  *set scrap_steel 0
+*else
+  *set gear_flag_var ("has_" & sg_item)
+  *set {gear_flag_var} false
+  *if (gear_kind = "armor")
+    *if (equipped_armor_id = sg_item)
+      *gosub equip_armor "starting"
+      *set gear_sold_note "You are back in your ${armor_desc}."
+  *if (gear_kind = "weapon")
+    *if (equipped_weapon_id = sg_item)
+      *gosub equip_weapon "starting"
+      *set gear_sold_note "You are back to your ${weapon_prose}."
+    *comment A weapon can also sit in the sidearm slot, which has no ownership flag of its own.
+    *if (equipped_sidearm_id = sg_item)
+      *set equipped_sidearm_id "none"
+      *gosub apply_sidearm_loadout
+  *if (gear_kind = "head")
+    *if (equipped_head_id = sg_item)
+      *temp sg_head "none"
+      *if (origin = "ruined")
+        *set sg_head "arming_cap"
+      *if (origin = "outlaw")
+        *set sg_head "camo_hood"
+      *if (origin = "disgraced")
+        *set sg_head "scholar_coif"
+      *gosub equip_head sg_head
+      *set gear_sold_note "Your head is bare to the weather again."
+      *if (not(sg_head = "none"))
+        *set gear_sold_note "You settle your ${head_prose} back on."
+  *if (gear_kind = "ring")
+    *if (equipped_ring1_id = sg_item)
+      *gosub equip_ring "1" "none"
+    *if (equipped_ring2_id = sg_item)
+      *gosub equip_ring "2" "none"
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment ARMOR CLASS RECOMPUTE
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label recalculate_armor_class
@@ -531,6 +783,10 @@
   *set base_ac 13
   *if (effective_dex_mod > 2)
     *set effective_dex_mod 2
+*comment Heavy armor: a flat 16 that ignores DEX entirely.
+*if (armor_type = "plate_harness")
+  *set base_ac 16
+  *set effective_dex_mod 0
 
 *set armor_class (base_ac + effective_dex_mod)
 *if (head_is_armor) and (head_ac > 0)
@@ -546,4 +802,54 @@
 *if (fighter_fighting_style = "defense")
   *set armor_class + 1
 
+*gosub recalculate_proficiency
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment ARMOR PROFICIENCY
+*comment armor_prof_check: does the player's class train in armor tier apc_tier? Output apc_ok. Cloth and
+*comment unarmored ("none") is always fine. Fighters wear anything, barbarians and rangers light and
+*comment medium, bards, rogues and warlocks light only, wizards nothing.
+*comment recalculate_proficiency: sets armor_nonprof, which roll_d20_check turns into disadvantage on STR and
+*comment DEX rolls (attack rolls included). Spellcasting is deliberately NOT blocked. The starting kit is
+*comment grandfathered: class is picked after the muster armor, so an Ashbrook wizard can start in a
+*comment gambeson, and the penalty applies only to armor the player chooses to change into.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*comment *gosub_scene equipment armor_prof_check <"none"|"light"|"medium"|"heavy">
+*label armor_prof_check
+*params apc_tier
+*set apc_ok false
+*if ((apc_tier = "none") or (character_class = "none"))
+  *set apc_ok true
+*if (character_class = "fighter")
+  *set apc_ok true
+*if ((character_class = "barbarian") or (character_class = "ranger"))
+  *if (not(apc_tier = "heavy"))
+    *set apc_ok true
+*if (((character_class = "bard") or (character_class = "rogue")) or (character_class = "warlock"))
+  *if (apc_tier = "light")
+    *set apc_ok true
+*return
+
+*label recalculate_proficiency
+*set armor_nonprof false
+*if (not(equipped_armor_id = "starting"))
+  *gosub armor_prof_check armor_tier
+  *if (not(apc_ok))
+    *set armor_nonprof true
+*set shield_nonprof false
+*if ((shield_equipped) and (not(shield_grandfathered)))
+  *gosub shield_prof_check
+  *if (not(apc_ok))
+    *set shield_nonprof true
+*return
+
+*comment *gosub_scene equipment shield_prof_check   (output apc_ok)
+*comment Shields: fighters, barbarians and rangers are trained. Nothing is ever hidden or refused by class:
+*comment an untrained class simply takes the disadvantage while the shield is equipped.
+*label shield_prof_check
+*set apc_ok false
+*if (((character_class = "fighter") or (character_class = "barbarian")) or ((character_class = "ranger") or (character_class = "none")))
+  *set apc_ok true
 *return

@@ -427,25 +427,40 @@
 *label fight_round_hub
 *set combat_enemy_disadvantage false
 
+*comment Every [b][...] banner below sits on its own line (*line_break): ChoiceScript
+*comment merges consecutive source lines into one paragraph, so without these
+*comment the round header, the buff status lines, and the previous action's
+*comment banner all run together on one line. Round 1 opens with a break so the
+*comment header separates from whatever prose the calling scene ended on.
+*if (combat_round = 1)
+  *line_break
 *if (combat_enemy_count = 1)
   [b][⚔️ Round ${combat_round} — ${combat_enemy_name}: HP ${combat_enemy_hp}/${combat_enemy_max_hp} (AC ${combat_enemy_ac}) | You: HP ${hp_current}/${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|} (AC ${armor_class})][/b]
 *else
   [b][⚔️ Round ${combat_round}][/b]
+  *line_break
   [b][${combat_enemy1_name}: HP ${combat_enemy1_hp}/${combat_enemy1_max_hp}@{(combat_enemy1_hp <= 0)  (Down)|} (AC ${combat_enemy1_ac})][/b]
+  *line_break
   *if (combat_enemy_count >= 2)
     [b][${combat_enemy2_name}: HP ${combat_enemy2_hp}/${combat_enemy2_max_hp}@{(combat_enemy2_hp <= 0)  (Down)|} (AC ${combat_enemy2_ac})][/b]
+    *line_break
   *if (combat_enemy_count >= 3)
     [b][${combat_enemy3_name}: HP ${combat_enemy3_hp}/${combat_enemy3_max_hp}@{(combat_enemy3_hp <= 0)  (Down)|} (AC ${combat_enemy3_ac})][/b]
+    *line_break
   [b][You: HP ${hp_current}/${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|} (AC ${armor_class})][/b]
 *if (shield_armed)
+  *line_break
   [b][✨ Shield Armed — will trigger on the next hit][/b]
 *if (hex_active)
+  *line_break
   [b][🔮 Hex Active — +1d6 Necrotic Damage on all hits][/b]
 *if (agathys_active)
+  *line_break
   [b][❄️ Armor of Agathys Active — ${temp_hp} Temp HP | 5 Cold Damage Retaliation][/b]
 
 *if (player_stunned)
   *set player_stunned false
+  *line_break
   [b][${combat_enemy_stun_icon} ${combat_enemy_stun_name} — you lose this turn, still reeling from the blow.][/b]
   *goto fight_enemy_turn
 
@@ -529,6 +544,7 @@
             You loose your shot from an opening it never saw coming, your ${weapon} finding an exposed weak point for a vicious, precise finishing blow.
           *else
             You strike from an opening it never saw coming, driving your ${weapon} into an exposed weak point for a vicious, precise finishing blow.
+        *line_break
         *if (combat_enemy_hp <= 0)
           [b][🗡️ Sneak Attack | 💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
         *else
@@ -537,12 +553,15 @@
         *temp fdh ""
         *gosub pick_weapon_death_flavor
         ${fdh}
+        *line_break
         [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
       *else
         ${fwh}
+        *line_break
         [b][🩸 Hit: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
     *else
       ${fwm}
+      *line_break
       [b][💨 Miss][/b]
     *goto fight_check_enemy_hp
 
@@ -562,12 +581,15 @@
           *temp fdh ""
           *gosub pick_spell_death_flavor
           ${fdh}
+          *line_break
           [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Fire damage${combat_outgoing_dmg_suffix}][/b]
         *else
           A searing mote of fire snaps from your outstretched fingers and punches home in a violent flare and a hiss of steam.
+          *line_break
           [b][🔥 Fire Bolt: Hit | ${combat_player_dmg_dealt} Fire damage${combat_outgoing_dmg_suffix}][/b]
       *else
         The mote of fire streaks wide, scorching nothing but empty air.
+        *line_break
         [b][💨 Miss][/b]
       *goto fight_check_enemy_hp
 
@@ -588,12 +610,15 @@
           *temp fdh ""
           *gosub pick_spell_death_flavor
           ${fdh}
+          *line_break
           [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Cold damage${combat_outgoing_dmg_suffix}][/b]
         *else
           A pale ray of unnatural cold catches ${combat_enemy_epithet} square on, rime crackling across the point of impact and slowing its next strike to a sluggish crawl.
+          *line_break
           [b][❄️ Ray of Frost: Hit | ${combat_player_dmg_dealt} Cold damage${combat_outgoing_dmg_suffix} | ⚠️ Slowed — disadvantage on its next attack][/b]
       *else
         The ray splashes past, freezing nothing but the damp air.
+        *line_break
         [b][💨 Miss][/b]
       *goto fight_check_enemy_hp
 
@@ -619,15 +644,19 @@
           *temp fdh ""
           *gosub pick_spell_death_flavor
           ${fdh}
+          *line_break
           [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Lightning damage${combat_outgoing_dmg_suffix}][/b]
         *elseif (combat_enemy_metal_armor)
           Blue-white lightning discharges from your palm and leaps hungrily to the iron on ${combat_enemy_epithet}, arcing through every buckle and plate in one violent convulsion.
+          *line_break
           [b][⚡ Shocking Grasp: Hit | ${combat_player_dmg_dealt} Lightning damage${combat_outgoing_dmg_suffix} | 🔩 Metal-Seeking Advantage][/b]
         *else
           Blue-white lightning discharges from your palm, locking muscle and jaw alike in one violent convulsion.
+          *line_break
           [b][⚡ Shocking Grasp: Hit | ${combat_player_dmg_dealt} Lightning damage${combat_outgoing_dmg_suffix}][/b]
       *else
         The charge earths itself somewhere else entirely, dissipating in a shower of harmless sparks.
+        *line_break
         [b][💨 Miss][/b]
       *goto fight_check_enemy_hp
 
@@ -647,12 +676,15 @@
           *temp fdh ""
           *gosub pick_spell_death_flavor
           ${fdh}
+          *line_break
           [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Force damage${combat_outgoing_dmg_suffix}][/b]
         *else
           A jagged streak of violet force slams home with the concussive boom of a shattered timber.
+          *line_break
           [b][✨ Eldritch Blast: Hit | ${combat_player_dmg_dealt} Force damage${combat_outgoing_dmg_suffix}][/b]
       *else
         The beam tears past and shatters against whatever's unlucky enough to be standing behind it.
+        *line_break
         [b][💨 Miss][/b]
       *goto fight_check_enemy_hp
 
@@ -672,12 +704,15 @@
           *temp fdh ""
           *gosub pick_spell_death_flavor
           ${fdh}
+          *line_break
           [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Necrotic damage${combat_outgoing_dmg_suffix}][/b]
         *else
           A ghostly, translucent hand wreathed in necrotic mist closes around ${combat_enemy_epithet}, sapping the warmth and strength from the wound it leaves behind.
+          *line_break
           [b][💀 Chill Touch: Hit | ${combat_player_dmg_dealt} Necrotic damage${combat_outgoing_dmg_suffix}][/b]
       *else
         The spectral hand dissolves into harmless mist a hair's breadth short of its mark.
+        *line_break
         [b][💨 Miss][/b]
       *goto fight_check_enemy_hp
 
@@ -698,12 +733,15 @@
           *temp fdh ""
           *gosub pick_spell_death_flavor
           ${fdh}
+          *line_break
           [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Psychic damage${combat_outgoing_dmg_suffix}][/b]
         *else
           Your cutting cadence lands with surgical precision, needling straight at a nerve you didn't know was there — its balance and its nerve both falter in the same breath.
+          *line_break
           [b][🎭 Vicious Mockery: Hit | ${combat_player_dmg_dealt} Psychic damage${combat_outgoing_dmg_suffix} | ⚠️ Rattled — disadvantage on its next attack][/b]
       *else
         Whatever passes for pride in ${combat_enemy_epithet} shrugs the insult off without a flicker.
+        *line_break
         [b][💨 Resisted][/b]
       *goto fight_check_enemy_hp
 
@@ -715,9 +753,11 @@
         *temp fdh ""
         *gosub pick_spell_death_flavor
         ${fdh}
+        *line_break
         [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
       *else
         You speak three crisp syllables and snap your fingers forward. Three glowing, pale-blue darts of crackling arcane force burst from your fingertips, curving unerringly through the air to slam home.
+        *line_break
         [b][✨ Magic Missile: Automatic Hit | ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
       *goto fight_check_enemy_hp
 
@@ -725,13 +765,16 @@
     # [Spell: Hex] Lay a baleful eldritch curse upon ${combat_enemy_epithet}, marking it to suffer deeper wounds.
       *gosub_scene startup resolve_cast_hex
       You whisper a guttural syllable of ancient ruin. Dark, spectral runes flare briefly across ${combat_enemy_epithet}, tying its fate to your will—every strike you land will tear through it with extra necrotic fury!
+      *line_break
       [b][🔮 Hex Active — +1d6 Necrotic Damage on all hits][/b]
+      *line_break
       *goto fight_round_hub
 
   *if (((warlock_spell = "armor_of_agathys") and (warlock_spell_slots > 0)) and (not(agathys_active)))
     # [Spell: Armor of Agathys] Sheathe yourself in spectral frost that shields you and punishes melee strikes.
       *gosub_scene startup resolve_cast_agathys
       A brittle casing of translucent, jagged rime coats your leather harness and shoulders, radiating bone-chilling cold. Any creature foolish enough to strike you will feel the frost shatter against them.
+      *line_break
       [b][🛡️ Armor of Agathys: +5 Temp HP | 5 Cold Damage Retaliation on Hits][/b]
       *goto fight_enemy_turn
 
@@ -739,6 +782,7 @@
     # [Spell: False Life] Weave a necromantic shroud over your flesh for a protective buffer of vitality.
       *gosub_scene startup resolve_cast_false_life
       You murmur a dark necromantic rite. A numb, leathery vitality spreads beneath your skin, insulating your muscles against immediate harm.
+      *line_break
       [b][✨ False Life: +${combat_cast_result} Temporary Hit Points][/b]
       *goto fight_enemy_turn
 
@@ -754,12 +798,15 @@
         *temp fdh ""
         *gosub pick_spell_death_flavor
         ${fdh}
+        *line_break
         [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Psychic Damage${combat_outgoing_dmg_suffix}][/b]
       *elseif (check_success)
         ${combat_flavor_dissonant_hit}
+        *line_break
         [b][🧠 Dissonant Whispers: Failed Save | ${combat_player_dmg_dealt} Psychic Damage${combat_outgoing_dmg_suffix}][/b]
       *else
         ${combat_flavor_dissonant_miss}
+        *line_break
         [b][🧠 Dissonant Whispers: Saved | Half Damage: ${combat_player_dmg_dealt} Psychic Damage${combat_outgoing_dmg_suffix}][/b]
       *goto fight_check_enemy_hp
 
@@ -767,7 +814,9 @@
     # [Spell: Healing Word] Speak a resonant, curative syllable to knit your gashes and steady your footing.
       *gosub_scene startup resolve_cast_healing_word
       A sharp, ringing cadence leaves your lips. Warmth rushes through your marrow, knitting shut the worst of your wounds.
+      *line_break
       [b][🩸 Healing Word: Restored ${combat_cast_result} HP | HP: ${hp_current}/${hp_max}][/b]
+      *line_break
       *goto fight_round_hub
 
   # Brace and watch its strikes, giving ground instead of pressing the attack.
@@ -779,13 +828,16 @@
     # [Spell: Shield] Hold the barrier-spell coiled and ready, primed to snap into place the instant something connects.
       *set shield_armed true
       You murmur the first half of the somatic phrase under your breath, holding the working coiled and ready at your fingertips, costing you nothing to keep it there.
+      *line_break
       [b][✨ Shield Readied — will trigger automatically on the next hit][/b]
+      *line_break
       *goto fight_round_hub
 
   *if ((character_class = "fighter") and (fighter_second_wind_uses > 0))
     # [Second Wind] Grit your teeth through the pain and the fear, and keep going.
       *gosub_scene startup second_wind
       A surge of stubborn, practiced discipline steadies your breathing and closes the worst of your scrapes.
+      *line_break
       [b][🩸 Hit Points: ${hp_current} / ${hp_max}][/b]
       *goto fight_enemy_turn
 
@@ -799,6 +851,7 @@
     # [Item: Saint Althea's Phial] Unbung the clay flask and drink the consecrated cistern-water.
       *gosub_scene startup use_althea_phial
       You wrench the wax stopper free with your teeth and swallow the cold, herbal draught. Pure, radiant warmth floods through your marrow, knitting torn muscle and staunching fresh bleeding in an instant.
+      *line_break
       [b][🧪 Saint Althea's Water: Restored +${locked_heal_roll} HP | HP: ${hp_current} / ${hp_max}][/b]
       *goto fight_enemy_turn
 
@@ -910,37 +963,54 @@
   *else
     *set fnet_hit combat_flavor_enemy_move2_hit
     *set fnet_miss combat_flavor_enemy_move2_miss
+*comment Layout per attacker: a blank line before it (two breaks), then each
+*comment prose line and each [b][...] banner on its own line. ChoiceScript merges
+*comment consecutive source lines, so every prose/banner boundary needs an
+*comment explicit *line_break -- including the ones that only sometimes have a
+*comment neighbour (Agathys retaliation, condition/stun banners).
+*line_break
 *line_break
 *if (combat_shield_triggered)
   *if (combat_enemy_hit_success)
     A shimmering lattice of force flares to life around you on pure reflex, but the blow crashes through it anyway, striking home regardless.
+    *line_break
     [b][✨ Shield Broken Through | 🩸 ${combat_enemy_name} Hits: ${combat_enemy_dmg_dealt} damage${combat_incoming_dmg_suffix} | HP: ${hp_current} / ${hp_max}][/b]
   *else
     A shimmering lattice of force flares to life around you on pure reflex, deflecting the strike a hair's breadth away.
+    *line_break
     [b][✨ Shield Holds | 💨 ${combat_enemy_name} Misses][/b]
 *else
   *if (combat_enemy_hit_success)
     ${fnet_hit}
+    *line_break
     *if (combat_agathys_triggered)
       *if (combat_agathys_shattered)
         As the blow lands, your frost-sheathe shatters violently in a burst of crystalline rime, driving shards of biting cold deep into ${combat_enemy_epithet}!
+        *line_break
         [b][❄️ Armor of Agathys: ${combat_player_dmg_dealt} Cold Damage dealt to ${combat_enemy_name}${combat_outgoing_dmg_suffix} | Frost Armor Shattered][/b]
       *else
         As the blow lands, the rime holding across your harness pulses with bitter frost, biting into ${combat_enemy_epithet} while your armor holds!
+        *line_break
         [b][❄️ Armor of Agathys: ${combat_player_dmg_dealt} Cold Damage dealt to ${combat_enemy_name}${combat_outgoing_dmg_suffix} | ${temp_hp} Temp HP remaining][/b]
+      *line_break
       *if (combat_enemy_hp <= 0)
         *temp fdh ""
         *set combat_current_spell_id "armor_of_agathys"
         *gosub pick_spell_death_flavor
         ${fdh}
+        *line_break
         [b][💀 ${combat_enemy_name} Defeated — Killed by Its Own Strike][/b]
+        *line_break
     [b][🩸 ${combat_enemy_name} Hits: ${combat_enemy_dmg_dealt} damage${combat_incoming_dmg_suffix} | HP: ${hp_current} / ${hp_max}][/b]
     *if (combat_condition_inflicted)
+      *line_break
       [b][${combat_enemy_condition_icon} ${combat_enemy_condition_name} — disadvantage on your next attack][/b]
     *if (combat_stun_inflicted)
+      *line_break
       [b][${combat_enemy_stun_icon} ${combat_enemy_stun_name} — you lose your next turn][/b]
   *else
     ${fnet_miss}
+    *line_break
     [b][💨 ${combat_enemy_name} Misses][/b]
 *gosub fight_sync_target_out
 *return
@@ -1386,7 +1456,8 @@
 *comment fight_setup runs), so it never bleeds into a later fight or a
 *comment different slot reusing the same type.
 *comment
-*comment Available types: "gang_thug", "rennick_guard". Add a new one by
+*comment Available types: "gang_thug" (cudgel), "gang_knifeman", "gang_gaff",
+*comment "gang_hatchet", "dock_lookout", "rennick_guard". Add a new one by
 *comment writing an apply_type_<name> label following either as a template,
 *comment then one line in apply_enemy_type's dispatch below.
 *comment ══════════════════════════════════════════════════════════════
@@ -1394,6 +1465,14 @@
 *label apply_enemy_type
 *if (combat_apply_type = "gang_thug")
   *gosub apply_type_gang_thug
+*if (combat_apply_type = "gang_knifeman")
+  *gosub apply_type_gang_knifeman
+*if (combat_apply_type = "gang_gaff")
+  *gosub apply_type_gang_gaff
+*if (combat_apply_type = "gang_hatchet")
+  *gosub apply_type_gang_hatchet
+*if (combat_apply_type = "dock_lookout")
+  *gosub apply_type_dock_lookout
 *if (combat_apply_type = "rennick_guard")
   *gosub apply_type_rennick_guard
 *if (combat_apply_slot = 1)
@@ -1418,9 +1497,10 @@
 *return
 
 *label apply_type_gang_thug
-*comment Cudgel-swinging dockside enforcer with a 30% dirty-stab movepool
-*comment that inflicts Poisoned. See fight_gang_thug for this type flown
-*comment solo (single-enemy fight, no apply_enemy_type involved there).
+*comment Cudgel-swinging dockside enforcer. Move 2 (30%) is a two-handed overhead
+*comment skull-crack that leaves the player Dazed. (Poison used to live here via a
+*comment mid-fight swap to a knife; it belongs to apply_type_gang_knifeman now, so
+*comment each weapon carries a condition that fits it.)
 *if (combat_apply_slot = 1)
   *set combat_enemy_name "Dockside Gang Thug"
   *set combat_enemy_hp 10
@@ -1430,15 +1510,15 @@
   *set combat_enemy_dmg_dice_sides 6
   *set combat_enemy_dmg_bonus 1
   *set combat_enemy_epithet "the thug"
+  *set combat_enemy_dmg_type "bludgeoning"
   *set combat_enemy_move2_chance 30
   *set combat_enemy_move2_atk_bonus 2
   *set combat_enemy_move2_dmg_dice_sides 4
   *set combat_enemy_move2_dmg_bonus 0
-  *comment Move 2 drops the cudgel (bludgeoning, the default) for a knife.
-  *set combat_enemy_move2_dmg_type "piercing"
+  *set combat_enemy_move2_dmg_type "bludgeoning"
   *set combat_enemy_move2_inflicts_condition true
-  *set combat_enemy_move2_condition_name "Poisoned"
-  *set combat_enemy_move2_condition_icon "🤢"
+  *set combat_enemy_move2_condition_name "Dazed"
+  *set combat_enemy_move2_condition_icon "😵"
   *set combat_flavor_enemy_hit_1 "The thug swings a cudgel in a broad arc, and the iron-shod head catches you hard across the shoulder."
   *set combat_flavor_enemy_hit_2 "The thug closes fast, driving a knee into your side before following with a solid crack of the cudgel."
   *set combat_flavor_enemy_hit_3 "The thug feints toward your face, then drives the cudgel in low, catching you across the hip."
@@ -1449,8 +1529,8 @@
   *set combat_flavor_enemy_miss_3 "You read the swing early and step inside their reach, the cudgel cracking against empty cobblestone."
   *set combat_flavor_enemy_miss_4 "The thug hooks for your ankle with a boot, but you keep your footing and pivot clear."
   *set combat_flavor_enemy_miss_5 "The blow is telegraphed, and you duck beneath the arc as the cudgel splinters a nearby barrel."
-  *set combat_flavor_enemy_move2_hit "The thug abandons the cudgel mid-swing and drives a rusted knife up under your guard instead—the wound stings far worse than its size should allow."
-  *set combat_flavor_enemy_move2_miss "The thug's hand darts for a hidden knife, but you catch the motion and twist clear before the blade can find you."
+  *set combat_flavor_enemy_move2_hit "The thug stops trading blows, hauls the cudgel overhead in both hands, and brings it down on your skull with a crack that sets the whole lane ringing."
+  *set combat_flavor_enemy_move2_miss "The thug rears back for a skull-splitting overhead blow, but you throw yourself sideways and the cudgel cracks a paving stone instead."
 *if (combat_apply_slot = 2)
   *set combat_enemy2_name "Dockside Gang Thug"
   *set combat_enemy2_hp 10
@@ -1460,14 +1540,15 @@
   *set combat_enemy2_dmg_dice_sides 6
   *set combat_enemy2_dmg_bonus 1
   *set combat_enemy2_epithet "the thug"
+  *set combat_enemy2_dmg_type "bludgeoning"
   *set combat_enemy2_move2_chance 30
   *set combat_enemy2_move2_atk_bonus 2
   *set combat_enemy2_move2_dmg_dice_sides 4
   *set combat_enemy2_move2_dmg_bonus 0
-  *set combat_enemy2_move2_dmg_type "piercing"
+  *set combat_enemy2_move2_dmg_type "bludgeoning"
   *set combat_enemy2_move2_inflicts_condition true
-  *set combat_enemy2_move2_condition_name "Poisoned"
-  *set combat_enemy2_move2_condition_icon "🤢"
+  *set combat_enemy2_move2_condition_name "Dazed"
+  *set combat_enemy2_move2_condition_icon "😵"
   *set combat_flavor_enemy2_hit_1 "The thug swings a cudgel in a broad arc, and the iron-shod head catches you hard across the shoulder."
   *set combat_flavor_enemy2_hit_2 "The thug closes fast, driving a knee into your side before following with a solid crack of the cudgel."
   *set combat_flavor_enemy2_hit_3 "The thug feints toward your face, then drives the cudgel in low, catching you across the hip."
@@ -1478,8 +1559,8 @@
   *set combat_flavor_enemy2_miss_3 "You read the swing early and step inside their reach, the cudgel cracking against empty cobblestone."
   *set combat_flavor_enemy2_miss_4 "The thug hooks for your ankle with a boot, but you keep your footing and pivot clear."
   *set combat_flavor_enemy2_miss_5 "The blow is telegraphed, and you duck beneath the arc as the cudgel splinters a nearby barrel."
-  *set combat_flavor_enemy2_move2_hit "The thug abandons the cudgel mid-swing and drives a rusted knife up under your guard instead—the wound stings far worse than its size should allow."
-  *set combat_flavor_enemy2_move2_miss "The thug's hand darts for a hidden knife, but you catch the motion and twist clear before the blade can find you."
+  *set combat_flavor_enemy2_move2_hit "The thug stops trading blows, hauls the cudgel overhead in both hands, and brings it down on your skull with a crack that sets the whole lane ringing."
+  *set combat_flavor_enemy2_move2_miss "The thug rears back for a skull-splitting overhead blow, but you throw yourself sideways and the cudgel cracks a paving stone instead."
 *if (combat_apply_slot = 3)
   *set combat_enemy3_name "Dockside Gang Thug"
   *set combat_enemy3_hp 10
@@ -1489,14 +1570,15 @@
   *set combat_enemy3_dmg_dice_sides 6
   *set combat_enemy3_dmg_bonus 1
   *set combat_enemy3_epithet "the thug"
+  *set combat_enemy3_dmg_type "bludgeoning"
   *set combat_enemy3_move2_chance 30
   *set combat_enemy3_move2_atk_bonus 2
   *set combat_enemy3_move2_dmg_dice_sides 4
   *set combat_enemy3_move2_dmg_bonus 0
-  *set combat_enemy3_move2_dmg_type "piercing"
+  *set combat_enemy3_move2_dmg_type "bludgeoning"
   *set combat_enemy3_move2_inflicts_condition true
-  *set combat_enemy3_move2_condition_name "Poisoned"
-  *set combat_enemy3_move2_condition_icon "🤢"
+  *set combat_enemy3_move2_condition_name "Dazed"
+  *set combat_enemy3_move2_condition_icon "😵"
   *set combat_flavor_enemy3_hit_1 "The thug swings a cudgel in a broad arc, and the iron-shod head catches you hard across the shoulder."
   *set combat_flavor_enemy3_hit_2 "The thug closes fast, driving a knee into your side before following with a solid crack of the cudgel."
   *set combat_flavor_enemy3_hit_3 "The thug feints toward your face, then drives the cudgel in low, catching you across the hip."
@@ -1507,8 +1589,392 @@
   *set combat_flavor_enemy3_miss_3 "You read the swing early and step inside their reach, the cudgel cracking against empty cobblestone."
   *set combat_flavor_enemy3_miss_4 "The thug hooks for your ankle with a boot, but you keep your footing and pivot clear."
   *set combat_flavor_enemy3_miss_5 "The blow is telegraphed, and you duck beneath the arc as the cudgel splinters a nearby barrel."
-  *set combat_flavor_enemy3_move2_hit "The thug abandons the cudgel mid-swing and drives a rusted knife up under your guard instead—the wound stings far worse than its size should allow."
-  *set combat_flavor_enemy3_move2_miss "The thug's hand darts for a hidden knife, but you catch the motion and twist clear before the blade can find you."
+  *set combat_flavor_enemy3_move2_hit "The thug stops trading blows, hauls the cudgel overhead in both hands, and brings it down on your skull with a crack that sets the whole lane ringing."
+  *set combat_flavor_enemy3_move2_miss "The thug rears back for a skull-splitting overhead blow, but you throw yourself sideways and the cudgel cracks a paving stone instead."
+*return
+
+*label apply_type_gang_knifeman
+*comment Gutting-knife thug: quick, close, short-reach cuts. Move 2 (30%) is a blade
+*comment smeared with dark eel-gall (Dredge-End has plenty of drying eel to draw it
+*comment from) that leaves the player Poisoned. The only gang type that poisons.
+*if (combat_apply_slot = 1)
+  *set combat_enemy_name "Dockside Knifeman"
+  *set combat_enemy_hp 10
+  *set combat_enemy_max_hp 10
+  *set combat_enemy_ac 11
+  *set combat_enemy_atk_bonus 3
+  *set combat_enemy_dmg_dice_sides 6
+  *set combat_enemy_dmg_bonus 1
+  *set combat_enemy_epithet "the knifeman"
+  *set combat_enemy_dmg_type "piercing"
+  *set combat_enemy_move2_chance 30
+  *set combat_enemy_move2_atk_bonus 2
+  *set combat_enemy_move2_dmg_dice_sides 4
+  *set combat_enemy_move2_dmg_bonus 0
+  *set combat_enemy_move2_dmg_type "piercing"
+  *set combat_enemy_move2_inflicts_condition true
+  *set combat_enemy_move2_condition_name "Poisoned"
+  *set combat_enemy_move2_condition_icon "🤢"
+  *set combat_flavor_enemy_hit_1 "The knifeman jabs low and quick, and the point of a gutting knife skids along your ribs before you can turn it aside."
+  *set combat_flavor_enemy_hit_2 "A short, hooking slash from the knifeman opens your forearm as you raise it to block."
+  *set combat_flavor_enemy_hit_3 "The knifeman crowds inside your reach, and the blade bites through cloth and into your side in a flurry of quick cuts."
+  *set combat_flavor_enemy_hit_4 "The knifeman feints at your throat, then drives the knife into your thigh instead."
+  *set combat_flavor_enemy_hit_5 "The knifeman catches your sleeve with a free hand and drags you onto the blade, the point scoring across your hip."
+  *set combat_flavor_enemy_miss_1 "The knifeman lunges, but the blade only scrapes sparks from the cobblestones as you twist away."
+  *set combat_flavor_enemy_miss_2 "You catch the knifeman by the wrist mid-thrust and shove the point wide of your ribs."
+  *set combat_flavor_enemy_miss_3 "A quick slash from the knifeman cuts nothing but the hem of your cloak."
+  *set combat_flavor_enemy_miss_4 "The knifeman feints high and stabs low, but you have already stepped back out of the arc."
+  *set combat_flavor_enemy_miss_5 "The knifeman crowds in close, but the blade snags in the folds of your coat and you wrench free."
+  *set combat_flavor_enemy_move2_hit "The knifeman flicks a dark-smeared blade across your arm, a shallow cut, but the eel-gall on the steel burns like brine in a wound."
+  *set combat_flavor_enemy_move2_miss "The knifeman slashes with a blade slick with eel-gall, but you jerk your arm back and the reek of it passes a hand-width from your skin."
+*if (combat_apply_slot = 2)
+  *set combat_enemy2_name "Dockside Knifeman"
+  *set combat_enemy2_hp 10
+  *set combat_enemy2_max_hp 10
+  *set combat_enemy2_ac 11
+  *set combat_enemy2_atk_bonus 3
+  *set combat_enemy2_dmg_dice_sides 6
+  *set combat_enemy2_dmg_bonus 1
+  *set combat_enemy2_epithet "the knifeman"
+  *set combat_enemy2_dmg_type "piercing"
+  *set combat_enemy2_move2_chance 30
+  *set combat_enemy2_move2_atk_bonus 2
+  *set combat_enemy2_move2_dmg_dice_sides 4
+  *set combat_enemy2_move2_dmg_bonus 0
+  *set combat_enemy2_move2_dmg_type "piercing"
+  *set combat_enemy2_move2_inflicts_condition true
+  *set combat_enemy2_move2_condition_name "Poisoned"
+  *set combat_enemy2_move2_condition_icon "🤢"
+  *set combat_flavor_enemy2_hit_1 "The knifeman jabs low and quick, and the point of a gutting knife skids along your ribs before you can turn it aside."
+  *set combat_flavor_enemy2_hit_2 "A short, hooking slash from the knifeman opens your forearm as you raise it to block."
+  *set combat_flavor_enemy2_hit_3 "The knifeman crowds inside your reach, and the blade bites through cloth and into your side in a flurry of quick cuts."
+  *set combat_flavor_enemy2_hit_4 "The knifeman feints at your throat, then drives the knife into your thigh instead."
+  *set combat_flavor_enemy2_hit_5 "The knifeman catches your sleeve with a free hand and drags you onto the blade, the point scoring across your hip."
+  *set combat_flavor_enemy2_miss_1 "The knifeman lunges, but the blade only scrapes sparks from the cobblestones as you twist away."
+  *set combat_flavor_enemy2_miss_2 "You catch the knifeman by the wrist mid-thrust and shove the point wide of your ribs."
+  *set combat_flavor_enemy2_miss_3 "A quick slash from the knifeman cuts nothing but the hem of your cloak."
+  *set combat_flavor_enemy2_miss_4 "The knifeman feints high and stabs low, but you have already stepped back out of the arc."
+  *set combat_flavor_enemy2_miss_5 "The knifeman crowds in close, but the blade snags in the folds of your coat and you wrench free."
+  *set combat_flavor_enemy2_move2_hit "The knifeman flicks a dark-smeared blade across your arm, a shallow cut, but the eel-gall on the steel burns like brine in a wound."
+  *set combat_flavor_enemy2_move2_miss "The knifeman slashes with a blade slick with eel-gall, but you jerk your arm back and the reek of it passes a hand-width from your skin."
+*if (combat_apply_slot = 3)
+  *set combat_enemy3_name "Dockside Knifeman"
+  *set combat_enemy3_hp 10
+  *set combat_enemy3_max_hp 10
+  *set combat_enemy3_ac 11
+  *set combat_enemy3_atk_bonus 3
+  *set combat_enemy3_dmg_dice_sides 6
+  *set combat_enemy3_dmg_bonus 1
+  *set combat_enemy3_epithet "the knifeman"
+  *set combat_enemy3_dmg_type "piercing"
+  *set combat_enemy3_move2_chance 30
+  *set combat_enemy3_move2_atk_bonus 2
+  *set combat_enemy3_move2_dmg_dice_sides 4
+  *set combat_enemy3_move2_dmg_bonus 0
+  *set combat_enemy3_move2_dmg_type "piercing"
+  *set combat_enemy3_move2_inflicts_condition true
+  *set combat_enemy3_move2_condition_name "Poisoned"
+  *set combat_enemy3_move2_condition_icon "🤢"
+  *set combat_flavor_enemy3_hit_1 "The knifeman jabs low and quick, and the point of a gutting knife skids along your ribs before you can turn it aside."
+  *set combat_flavor_enemy3_hit_2 "A short, hooking slash from the knifeman opens your forearm as you raise it to block."
+  *set combat_flavor_enemy3_hit_3 "The knifeman crowds inside your reach, and the blade bites through cloth and into your side in a flurry of quick cuts."
+  *set combat_flavor_enemy3_hit_4 "The knifeman feints at your throat, then drives the knife into your thigh instead."
+  *set combat_flavor_enemy3_hit_5 "The knifeman catches your sleeve with a free hand and drags you onto the blade, the point scoring across your hip."
+  *set combat_flavor_enemy3_miss_1 "The knifeman lunges, but the blade only scrapes sparks from the cobblestones as you twist away."
+  *set combat_flavor_enemy3_miss_2 "You catch the knifeman by the wrist mid-thrust and shove the point wide of your ribs."
+  *set combat_flavor_enemy3_miss_3 "A quick slash from the knifeman cuts nothing but the hem of your cloak."
+  *set combat_flavor_enemy3_miss_4 "The knifeman feints high and stabs low, but you have already stepped back out of the arc."
+  *set combat_flavor_enemy3_miss_5 "The knifeman crowds in close, but the blade snags in the folds of your coat and you wrench free."
+  *set combat_flavor_enemy3_move2_hit "The knifeman flicks a dark-smeared blade across your arm, a shallow cut, but the eel-gall on the steel burns like brine in a wound."
+  *set combat_flavor_enemy3_move2_miss "The knifeman slashes with a blade slick with eel-gall, but you jerk your arm back and the reek of it passes a hand-width from your skin."
+*return
+
+*label apply_type_gang_gaff
+*comment Boat-hook thug: long reach, hooks and drags. Move 2 (30%) snags the player
+*comment and hauls them across the planks, leaving them Off-Balance.
+*if (combat_apply_slot = 1)
+  *set combat_enemy_name "Dockside Gaffman"
+  *set combat_enemy_hp 10
+  *set combat_enemy_max_hp 10
+  *set combat_enemy_ac 11
+  *set combat_enemy_atk_bonus 3
+  *set combat_enemy_dmg_dice_sides 6
+  *set combat_enemy_dmg_bonus 1
+  *set combat_enemy_epithet "the gaffman"
+  *set combat_enemy_dmg_type "piercing"
+  *set combat_enemy_move2_chance 30
+  *set combat_enemy_move2_atk_bonus 2
+  *set combat_enemy_move2_dmg_dice_sides 4
+  *set combat_enemy_move2_dmg_bonus 0
+  *set combat_enemy_move2_dmg_type "bludgeoning"
+  *set combat_enemy_move2_inflicts_condition true
+  *set combat_enemy_move2_condition_name "Off-Balance"
+  *set combat_enemy_move2_condition_icon "🌀"
+  *set combat_flavor_enemy_hit_1 "The gaffman thrusts the boat hook out at full reach, and the iron point punches into your shoulder before you can close the distance."
+  *set combat_flavor_enemy_hit_2 "The gaffman sweeps the hook low, and the curved iron rakes down your calf as you try to step in."
+  *set combat_flavor_enemy_hit_3 "The gaffman jabs the butt of the pole into your gut, then whips the hook around to catch your ribs."
+  *set combat_flavor_enemy_hit_4 "Choking up on the pole, the gaffman drives the hook point in beneath your arm."
+  *set combat_flavor_enemy_hit_5 "The hook comes down from overhead, and the iron beak bites into your back as you turn."
+  *set combat_flavor_enemy_miss_1 "The gaffman's thrust falls a hand short, the iron point scoring a bright line across a mooring post."
+  *set combat_flavor_enemy_miss_2 "You bat the boat hook aside with your forearm, and the point skids off the planks."
+  *set combat_flavor_enemy_miss_3 "The gaffman sweeps the pole low, but you hop the hook and step inside its length."
+  *set combat_flavor_enemy_miss_4 "The hook catches in a coil of rope on the gangway rail, and the gaffman wrenches it free a moment too late."
+  *set combat_flavor_enemy_miss_5 "The gaffman jabs at your face, but you slip your head aside and the iron whistles past your ear."
+  *set combat_flavor_enemy_move2_hit "The gaffman snags the hook in your collar and hauls, dragging you stumbling across the slick planks before letting go."
+  *set combat_flavor_enemy_move2_miss "The gaffman hooks for your collar, but the iron only snags a fold of your cloak, and you tear free before it can pull you off your feet."
+*if (combat_apply_slot = 2)
+  *set combat_enemy2_name "Dockside Gaffman"
+  *set combat_enemy2_hp 10
+  *set combat_enemy2_max_hp 10
+  *set combat_enemy2_ac 11
+  *set combat_enemy2_atk_bonus 3
+  *set combat_enemy2_dmg_dice_sides 6
+  *set combat_enemy2_dmg_bonus 1
+  *set combat_enemy2_epithet "the gaffman"
+  *set combat_enemy2_dmg_type "piercing"
+  *set combat_enemy2_move2_chance 30
+  *set combat_enemy2_move2_atk_bonus 2
+  *set combat_enemy2_move2_dmg_dice_sides 4
+  *set combat_enemy2_move2_dmg_bonus 0
+  *set combat_enemy2_move2_dmg_type "bludgeoning"
+  *set combat_enemy2_move2_inflicts_condition true
+  *set combat_enemy2_move2_condition_name "Off-Balance"
+  *set combat_enemy2_move2_condition_icon "🌀"
+  *set combat_flavor_enemy2_hit_1 "The gaffman thrusts the boat hook out at full reach, and the iron point punches into your shoulder before you can close the distance."
+  *set combat_flavor_enemy2_hit_2 "The gaffman sweeps the hook low, and the curved iron rakes down your calf as you try to step in."
+  *set combat_flavor_enemy2_hit_3 "The gaffman jabs the butt of the pole into your gut, then whips the hook around to catch your ribs."
+  *set combat_flavor_enemy2_hit_4 "Choking up on the pole, the gaffman drives the hook point in beneath your arm."
+  *set combat_flavor_enemy2_hit_5 "The hook comes down from overhead, and the iron beak bites into your back as you turn."
+  *set combat_flavor_enemy2_miss_1 "The gaffman's thrust falls a hand short, the iron point scoring a bright line across a mooring post."
+  *set combat_flavor_enemy2_miss_2 "You bat the boat hook aside with your forearm, and the point skids off the planks."
+  *set combat_flavor_enemy2_miss_3 "The gaffman sweeps the pole low, but you hop the hook and step inside its length."
+  *set combat_flavor_enemy2_miss_4 "The hook catches in a coil of rope on the gangway rail, and the gaffman wrenches it free a moment too late."
+  *set combat_flavor_enemy2_miss_5 "The gaffman jabs at your face, but you slip your head aside and the iron whistles past your ear."
+  *set combat_flavor_enemy2_move2_hit "The gaffman snags the hook in your collar and hauls, dragging you stumbling across the slick planks before letting go."
+  *set combat_flavor_enemy2_move2_miss "The gaffman hooks for your collar, but the iron only snags a fold of your cloak, and you tear free before it can pull you off your feet."
+*if (combat_apply_slot = 3)
+  *set combat_enemy3_name "Dockside Gaffman"
+  *set combat_enemy3_hp 10
+  *set combat_enemy3_max_hp 10
+  *set combat_enemy3_ac 11
+  *set combat_enemy3_atk_bonus 3
+  *set combat_enemy3_dmg_dice_sides 6
+  *set combat_enemy3_dmg_bonus 1
+  *set combat_enemy3_epithet "the gaffman"
+  *set combat_enemy3_dmg_type "piercing"
+  *set combat_enemy3_move2_chance 30
+  *set combat_enemy3_move2_atk_bonus 2
+  *set combat_enemy3_move2_dmg_dice_sides 4
+  *set combat_enemy3_move2_dmg_bonus 0
+  *set combat_enemy3_move2_dmg_type "bludgeoning"
+  *set combat_enemy3_move2_inflicts_condition true
+  *set combat_enemy3_move2_condition_name "Off-Balance"
+  *set combat_enemy3_move2_condition_icon "🌀"
+  *set combat_flavor_enemy3_hit_1 "The gaffman thrusts the boat hook out at full reach, and the iron point punches into your shoulder before you can close the distance."
+  *set combat_flavor_enemy3_hit_2 "The gaffman sweeps the hook low, and the curved iron rakes down your calf as you try to step in."
+  *set combat_flavor_enemy3_hit_3 "The gaffman jabs the butt of the pole into your gut, then whips the hook around to catch your ribs."
+  *set combat_flavor_enemy3_hit_4 "Choking up on the pole, the gaffman drives the hook point in beneath your arm."
+  *set combat_flavor_enemy3_hit_5 "The hook comes down from overhead, and the iron beak bites into your back as you turn."
+  *set combat_flavor_enemy3_miss_1 "The gaffman's thrust falls a hand short, the iron point scoring a bright line across a mooring post."
+  *set combat_flavor_enemy3_miss_2 "You bat the boat hook aside with your forearm, and the point skids off the planks."
+  *set combat_flavor_enemy3_miss_3 "The gaffman sweeps the pole low, but you hop the hook and step inside its length."
+  *set combat_flavor_enemy3_miss_4 "The hook catches in a coil of rope on the gangway rail, and the gaffman wrenches it free a moment too late."
+  *set combat_flavor_enemy3_miss_5 "The gaffman jabs at your face, but you slip your head aside and the iron whistles past your ear."
+  *set combat_flavor_enemy3_move2_hit "The gaffman snags the hook in your collar and hauls, dragging you stumbling across the slick planks before letting go."
+  *set combat_flavor_enemy3_move2_miss "The gaffman hooks for your collar, but the iron only snags a fold of your cloak, and you tear free before it can pull you off your feet."
+*return
+
+*label apply_type_gang_hatchet
+*comment Hatchet thug: short, brutal chops. Move 2 (30%) is a wild full-strength swing
+*comment that tears a deep gash and leaves the player Bleeding (disadvantage on the
+*comment next attack, like every condition-on-hit here -- the name is flavor).
+*if (combat_apply_slot = 1)
+  *set combat_enemy_name "Dockside Hatchet-Hand"
+  *set combat_enemy_hp 10
+  *set combat_enemy_max_hp 10
+  *set combat_enemy_ac 11
+  *set combat_enemy_atk_bonus 3
+  *set combat_enemy_dmg_dice_sides 6
+  *set combat_enemy_dmg_bonus 1
+  *set combat_enemy_epithet "the hatchet-hand"
+  *set combat_enemy_dmg_type "slashing"
+  *set combat_enemy_move2_chance 30
+  *set combat_enemy_move2_atk_bonus 2
+  *set combat_enemy_move2_dmg_dice_sides 4
+  *set combat_enemy_move2_dmg_bonus 0
+  *set combat_enemy_move2_dmg_type "slashing"
+  *set combat_enemy_move2_inflicts_condition true
+  *set combat_enemy_move2_condition_name "Bleeding"
+  *set combat_enemy_move2_condition_icon "🩸"
+  *set combat_flavor_enemy_hit_1 "The hatchet-hand chops down in a short, savage arc, and the axe bites into your shoulder through cloth and skin."
+  *set combat_flavor_enemy_hit_2 "A backhand swing of the hatchet opens a cut across your ribs before you can turn."
+  *set combat_flavor_enemy_hit_3 "The hatchet-hand hooks the beard of the axe over your guard and drags the edge along your forearm."
+  *set combat_flavor_enemy_hit_4 "The hatchet-hand feints high, then chops low at your thigh, and the edge finds you."
+  *set combat_flavor_enemy_hit_5 "A flat-footed overhand chop drives the hatchet into your side with a wet crunch of leather."
+  *set combat_flavor_enemy_miss_1 "The hatchet-hand chops wide, and the axe bites a wedge of splinters out of a piling."
+  *set combat_flavor_enemy_miss_2 "You lean back from a backhand swing, the edge whistling past your chin."
+  *set combat_flavor_enemy_miss_3 "The hatchet buries itself in a mooring post, and the hatchet-hand curses, wrenching it free."
+  *set combat_flavor_enemy_miss_4 "The hatchet-hand swings overhand, but you catch the haft against your forearm and shove it wide."
+  *set combat_flavor_enemy_miss_5 "The axe glances off the rim of a rain barrel as you pivot out of its path, staving in a stave."
+  *set combat_flavor_enemy_move2_hit "The hatchet-hand abandons finesse and swings with everything, and the edge tears a deep gash across your arm, blood running hot down your wrist."
+  *set combat_flavor_enemy_move2_miss "The hatchet-hand takes a wild two-handed swing meant to split you to the belt, but you drop under it and the axe-head buries itself in a bollard."
+*if (combat_apply_slot = 2)
+  *set combat_enemy2_name "Dockside Hatchet-Hand"
+  *set combat_enemy2_hp 10
+  *set combat_enemy2_max_hp 10
+  *set combat_enemy2_ac 11
+  *set combat_enemy2_atk_bonus 3
+  *set combat_enemy2_dmg_dice_sides 6
+  *set combat_enemy2_dmg_bonus 1
+  *set combat_enemy2_epithet "the hatchet-hand"
+  *set combat_enemy2_dmg_type "slashing"
+  *set combat_enemy2_move2_chance 30
+  *set combat_enemy2_move2_atk_bonus 2
+  *set combat_enemy2_move2_dmg_dice_sides 4
+  *set combat_enemy2_move2_dmg_bonus 0
+  *set combat_enemy2_move2_dmg_type "slashing"
+  *set combat_enemy2_move2_inflicts_condition true
+  *set combat_enemy2_move2_condition_name "Bleeding"
+  *set combat_enemy2_move2_condition_icon "🩸"
+  *set combat_flavor_enemy2_hit_1 "The hatchet-hand chops down in a short, savage arc, and the axe bites into your shoulder through cloth and skin."
+  *set combat_flavor_enemy2_hit_2 "A backhand swing of the hatchet opens a cut across your ribs before you can turn."
+  *set combat_flavor_enemy2_hit_3 "The hatchet-hand hooks the beard of the axe over your guard and drags the edge along your forearm."
+  *set combat_flavor_enemy2_hit_4 "The hatchet-hand feints high, then chops low at your thigh, and the edge finds you."
+  *set combat_flavor_enemy2_hit_5 "A flat-footed overhand chop drives the hatchet into your side with a wet crunch of leather."
+  *set combat_flavor_enemy2_miss_1 "The hatchet-hand chops wide, and the axe bites a wedge of splinters out of a piling."
+  *set combat_flavor_enemy2_miss_2 "You lean back from a backhand swing, the edge whistling past your chin."
+  *set combat_flavor_enemy2_miss_3 "The hatchet buries itself in a mooring post, and the hatchet-hand curses, wrenching it free."
+  *set combat_flavor_enemy2_miss_4 "The hatchet-hand swings overhand, but you catch the haft against your forearm and shove it wide."
+  *set combat_flavor_enemy2_miss_5 "The axe glances off the rim of a rain barrel as you pivot out of its path, staving in a stave."
+  *set combat_flavor_enemy2_move2_hit "The hatchet-hand abandons finesse and swings with everything, and the edge tears a deep gash across your arm, blood running hot down your wrist."
+  *set combat_flavor_enemy2_move2_miss "The hatchet-hand takes a wild two-handed swing meant to split you to the belt, but you drop under it and the axe-head buries itself in a bollard."
+*if (combat_apply_slot = 3)
+  *set combat_enemy3_name "Dockside Hatchet-Hand"
+  *set combat_enemy3_hp 10
+  *set combat_enemy3_max_hp 10
+  *set combat_enemy3_ac 11
+  *set combat_enemy3_atk_bonus 3
+  *set combat_enemy3_dmg_dice_sides 6
+  *set combat_enemy3_dmg_bonus 1
+  *set combat_enemy3_epithet "the hatchet-hand"
+  *set combat_enemy3_dmg_type "slashing"
+  *set combat_enemy3_move2_chance 30
+  *set combat_enemy3_move2_atk_bonus 2
+  *set combat_enemy3_move2_dmg_dice_sides 4
+  *set combat_enemy3_move2_dmg_bonus 0
+  *set combat_enemy3_move2_dmg_type "slashing"
+  *set combat_enemy3_move2_inflicts_condition true
+  *set combat_enemy3_move2_condition_name "Bleeding"
+  *set combat_enemy3_move2_condition_icon "🩸"
+  *set combat_flavor_enemy3_hit_1 "The hatchet-hand chops down in a short, savage arc, and the axe bites into your shoulder through cloth and skin."
+  *set combat_flavor_enemy3_hit_2 "A backhand swing of the hatchet opens a cut across your ribs before you can turn."
+  *set combat_flavor_enemy3_hit_3 "The hatchet-hand hooks the beard of the axe over your guard and drags the edge along your forearm."
+  *set combat_flavor_enemy3_hit_4 "The hatchet-hand feints high, then chops low at your thigh, and the edge finds you."
+  *set combat_flavor_enemy3_hit_5 "A flat-footed overhand chop drives the hatchet into your side with a wet crunch of leather."
+  *set combat_flavor_enemy3_miss_1 "The hatchet-hand chops wide, and the axe bites a wedge of splinters out of a piling."
+  *set combat_flavor_enemy3_miss_2 "You lean back from a backhand swing, the edge whistling past your chin."
+  *set combat_flavor_enemy3_miss_3 "The hatchet buries itself in a mooring post, and the hatchet-hand curses, wrenching it free."
+  *set combat_flavor_enemy3_miss_4 "The hatchet-hand swings overhand, but you catch the haft against your forearm and shove it wide."
+  *set combat_flavor_enemy3_miss_5 "The axe glances off the rim of a rain barrel as you pivot out of its path, staving in a stave."
+  *set combat_flavor_enemy3_move2_hit "The hatchet-hand abandons finesse and swings with everything, and the edge tears a deep gash across your arm, blood running hot down your wrist."
+  *set combat_flavor_enemy3_move2_miss "The hatchet-hand takes a wild two-handed swing meant to split you to the belt, but you drop under it and the axe-head buries itself in a bollard."
+*return
+
+*label apply_type_dock_lookout
+*comment The gang's eyes on the water-lanes: a sling-armed lookout, deliberately weak
+*comment (6 HP, AC 10, +2 for d4) so a "thug + lookout" ambush lands near the
+*comment Silt-Lurker's overall difficulty rather than a wipe for casters (see the
+*comment balance sim). Move 2 (25%) is a fistful of grit in the eyes -> Blinded.
+*if (combat_apply_slot = 1)
+  *set combat_enemy_name "Dock Lookout"
+  *set combat_enemy_hp 6
+  *set combat_enemy_max_hp 6
+  *set combat_enemy_ac 10
+  *set combat_enemy_atk_bonus 2
+  *set combat_enemy_dmg_dice_sides 4
+  *set combat_enemy_dmg_bonus 0
+  *set combat_enemy_epithet "the lookout"
+  *set combat_enemy_dmg_type "bludgeoning"
+  *set combat_enemy_move2_chance 25
+  *set combat_enemy_move2_atk_bonus 2
+  *set combat_enemy_move2_dmg_dice_sides 2
+  *set combat_enemy_move2_dmg_bonus 0
+  *set combat_enemy_move2_dmg_type "bludgeoning"
+  *set combat_enemy_move2_inflicts_condition true
+  *set combat_enemy_move2_condition_name "Blinded"
+  *set combat_enemy_move2_condition_icon "🌫️"
+  *set combat_flavor_enemy_hit_1 "A sling stone whips out of the dark and cracks against your collarbone before you see where it came from."
+  *set combat_flavor_enemy_hit_2 "The lookout's sling snaps, and a stone ricochets off a piling into the small of your back."
+  *set combat_flavor_enemy_hit_3 "The lookout darts closer and lets fly at short range, the stone catching you hard across the knuckles."
+  *set combat_flavor_enemy_hit_4 "Another stone cracks off your shin from the shadow of a gangway."
+  *set combat_flavor_enemy_hit_5 "The lookout spins the sling once and lets go, and the stone takes you in the ribs with a hollow thud."
+  *set combat_flavor_enemy_miss_1 "A sling stone whines past your ear and splashes into the canal."
+  *set combat_flavor_enemy_miss_2 "You hear the sling snap and duck, and the stone shatters a shutter behind you."
+  *set combat_flavor_enemy_miss_3 "The lookout hurls a stone that ricochets off the planks and skitters away into the dark."
+  *set combat_flavor_enemy_miss_4 "The lookout's stone clips a lamp-post with a bright clang, missing you by a hand."
+  *set combat_flavor_enemy_miss_5 "The stone thuds into a rain barrel beside you as you sidestep."
+  *set combat_flavor_enemy_move2_hit "The lookout flings a fistful of grit and cinder into your face, and the sting drags a hot, blinding tear down each cheek."
+  *set combat_flavor_enemy_move2_miss "The lookout hurls a handful of grit at your eyes, but you turn your face aside and it patters harmlessly off your shoulder."
+*if (combat_apply_slot = 2)
+  *set combat_enemy2_name "Dock Lookout"
+  *set combat_enemy2_hp 6
+  *set combat_enemy2_max_hp 6
+  *set combat_enemy2_ac 10
+  *set combat_enemy2_atk_bonus 2
+  *set combat_enemy2_dmg_dice_sides 4
+  *set combat_enemy2_dmg_bonus 0
+  *set combat_enemy2_epithet "the lookout"
+  *set combat_enemy2_dmg_type "bludgeoning"
+  *set combat_enemy2_move2_chance 25
+  *set combat_enemy2_move2_atk_bonus 2
+  *set combat_enemy2_move2_dmg_dice_sides 2
+  *set combat_enemy2_move2_dmg_bonus 0
+  *set combat_enemy2_move2_dmg_type "bludgeoning"
+  *set combat_enemy2_move2_inflicts_condition true
+  *set combat_enemy2_move2_condition_name "Blinded"
+  *set combat_enemy2_move2_condition_icon "🌫️"
+  *set combat_flavor_enemy2_hit_1 "A sling stone whips out of the dark and cracks against your collarbone before you see where it came from."
+  *set combat_flavor_enemy2_hit_2 "The lookout's sling snaps, and a stone ricochets off a piling into the small of your back."
+  *set combat_flavor_enemy2_hit_3 "The lookout darts closer and lets fly at short range, the stone catching you hard across the knuckles."
+  *set combat_flavor_enemy2_hit_4 "Another stone cracks off your shin from the shadow of a gangway."
+  *set combat_flavor_enemy2_hit_5 "The lookout spins the sling once and lets go, and the stone takes you in the ribs with a hollow thud."
+  *set combat_flavor_enemy2_miss_1 "A sling stone whines past your ear and splashes into the canal."
+  *set combat_flavor_enemy2_miss_2 "You hear the sling snap and duck, and the stone shatters a shutter behind you."
+  *set combat_flavor_enemy2_miss_3 "The lookout hurls a stone that ricochets off the planks and skitters away into the dark."
+  *set combat_flavor_enemy2_miss_4 "The lookout's stone clips a lamp-post with a bright clang, missing you by a hand."
+  *set combat_flavor_enemy2_miss_5 "The stone thuds into a rain barrel beside you as you sidestep."
+  *set combat_flavor_enemy2_move2_hit "The lookout flings a fistful of grit and cinder into your face, and the sting drags a hot, blinding tear down each cheek."
+  *set combat_flavor_enemy2_move2_miss "The lookout hurls a handful of grit at your eyes, but you turn your face aside and it patters harmlessly off your shoulder."
+*if (combat_apply_slot = 3)
+  *set combat_enemy3_name "Dock Lookout"
+  *set combat_enemy3_hp 6
+  *set combat_enemy3_max_hp 6
+  *set combat_enemy3_ac 10
+  *set combat_enemy3_atk_bonus 2
+  *set combat_enemy3_dmg_dice_sides 4
+  *set combat_enemy3_dmg_bonus 0
+  *set combat_enemy3_epithet "the lookout"
+  *set combat_enemy3_dmg_type "bludgeoning"
+  *set combat_enemy3_move2_chance 25
+  *set combat_enemy3_move2_atk_bonus 2
+  *set combat_enemy3_move2_dmg_dice_sides 2
+  *set combat_enemy3_move2_dmg_bonus 0
+  *set combat_enemy3_move2_dmg_type "bludgeoning"
+  *set combat_enemy3_move2_inflicts_condition true
+  *set combat_enemy3_move2_condition_name "Blinded"
+  *set combat_enemy3_move2_condition_icon "🌫️"
+  *set combat_flavor_enemy3_hit_1 "A sling stone whips out of the dark and cracks against your collarbone before you see where it came from."
+  *set combat_flavor_enemy3_hit_2 "The lookout's sling snaps, and a stone ricochets off a piling into the small of your back."
+  *set combat_flavor_enemy3_hit_3 "The lookout darts closer and lets fly at short range, the stone catching you hard across the knuckles."
+  *set combat_flavor_enemy3_hit_4 "Another stone cracks off your shin from the shadow of a gangway."
+  *set combat_flavor_enemy3_hit_5 "The lookout spins the sling once and lets go, and the stone takes you in the ribs with a hollow thud."
+  *set combat_flavor_enemy3_miss_1 "A sling stone whines past your ear and splashes into the canal."
+  *set combat_flavor_enemy3_miss_2 "You hear the sling snap and duck, and the stone shatters a shutter behind you."
+  *set combat_flavor_enemy3_miss_3 "The lookout hurls a stone that ricochets off the planks and skitters away into the dark."
+  *set combat_flavor_enemy3_miss_4 "The lookout's stone clips a lamp-post with a bright clang, missing you by a hand."
+  *set combat_flavor_enemy3_miss_5 "The stone thuds into a rain barrel beside you as you sidestep."
+  *set combat_flavor_enemy3_move2_hit "The lookout flings a fistful of grit and cinder into your face, and the sting drags a hot, blinding tear down each cheek."
+  *set combat_flavor_enemy3_move2_miss "The lookout hurls a handful of grit at your eyes, but you turn your face aside and it patters harmlessly off your shoulder."
 *return
 
 *label apply_type_rennick_guard
@@ -1887,5 +2353,36 @@
 *set combat_flavor_enemy_miss_5 "He telegraphs the blow, and you duck beneath the arc as the cudgel splinters a nearby barrel."
 *set combat_flavor_dissonant_hit "You plant a jarring, dissonant phrase straight behind the thug's eyes. He staggers, clutching his skull with a strangled groan."
 *set combat_flavor_dissonant_miss "The dissonant phrase lands, but the thug shakes it off with a pained grimace, more angry than hurt."
+*gosub fight_setup
+*goto fight_round_hub
+
+*label fight_dredge_ambush
+*comment Night ambush in Dredge-End: one gang bruiser (weapon picked at random
+*comment so repeat ambushes do not all read as the same cudgel swing) plus a
+*comment weak sling-armed lookout. Balance-simmed at level 1 against the ten
+*comment stock builds: ~64% overall win rate, on par with the Silt-Lurker --
+*comment casters are the ones at risk, which is why the calling scene offers a
+*comment toll / slip-away route instead of forcing this fight. Lethal fight,
+*comment reports combat_outcome like any other; the CALLER handles "rescued"
+*comment (robbed, 1 HP) and "player_died" per the fight_player_died contract.
+*set combat_is_nonlethal false
+*set combat_enemy_count 2
+*temp da_pick 0
+*rand da_pick 1 4
+*if (da_pick = 1)
+  *set combat_apply_type "gang_thug"
+*if (da_pick = 2)
+  *set combat_apply_type "gang_knifeman"
+*if (da_pick = 3)
+  *set combat_apply_type "gang_gaff"
+*if (da_pick = 4)
+  *set combat_apply_type "gang_hatchet"
+*set combat_apply_slot 1
+*gosub apply_enemy_type
+*set combat_apply_type "dock_lookout"
+*set combat_apply_slot 2
+*gosub apply_enemy_type
+*set combat_round 1
+*gosub apply_generic_weapon_flavor
 *gosub fight_setup
 *goto fight_round_hub

@@ -1914,6 +1914,10 @@ The air inside the timber forge is thick with the dry heat of burning pit-coal, 
 *if (character_class = "barbarian")
   *set iron_sallet_caster_note " And it'll dull that battle-sense of yours some—iron over the skin ends up thinking for you."
 
+*comment Shield proficiency is a warning and a penalty (equipment.txt shield_prof_check), never a class gate.
+*gosub_scene equipment shield_prof_check
+*temp smithy_prof_shield apc_ok
+
 *choice
   *if (not(has_timber_axe))
     # Purchase the Highland Hewing Axe (2 Silver, 5 Copper)@{show_stat_hints  [1d8 Slashing, One-Handed]|}
@@ -1943,8 +1947,8 @@ The air inside the timber forge is thick with the dry heat of burning pit-coal, 
       Janna pulls the slender, square-sectioned thrusting dagger from the tool bin. The refined tool-steel is ground to a needle-sharp armor-piercing bodkin point, balanced perfectly above a turned iron crossguard. You test the grip in your palm and slide the narrow leather sheath cleanly into the top of your marching boot.
       *goto smithy_shop_loop
 
-  *if ((not(has_shield)) and (((character_class = "fighter") or (character_class = "barbarian")) or (character_class = "ranger")))
-    # Purchase the Limestone Boss Shield (3 Silver Marks)@{show_stat_hints  [+2 Shield AC Bonus]|}
+  *if (not(has_shield))
+    # Purchase the Limestone Boss Shield (3 Silver Marks)@{show_stat_hints  [+2 Shield AC Bonus]|}@{(not(smithy_prof_shield))  [Not proficient: disadvantage on STR and DEX rolls while it is equipped]|}
       *if ((((gold * 100) + (silver * 10)) + copper) < 30)
         You count out your coin on the scarred workbench, but fall short of the three silver marks required for the oak-and-iron shield. Janna taps the boss with a reassuring grin: "It'll still be on the rack when your company pay packet lands, soldier."
         *goto smithy_shop_loop
@@ -2220,7 +2224,7 @@ You step up to the wide oak bar.
 *label taphouse_bar_loop
 *choice
   *if (not((food_buff_active) and (food_buff_stat = "con")))
-    # Order a bowl of Hot Mutton-and-Marrow Pottage (3 Copper Bits)@{show_stat_hints  [+3 Temp HP, +1 CON Checks for 4h]|}
+    # Order a bowl of Hot Mutton-and-Marrow Pottage (3 Copper Bits)@{show_stat_hints  [+3 Temp HP, +1 CON for 4h]|}
       *if ((((gold * 100) + (silver * 10)) + copper) < 3)
         You don't have enough copper for the pottage.
         *goto taphouse_bar_loop
@@ -2229,7 +2233,7 @@ You step up to the wide oak bar.
       *set tavern_item_temp_hp 3
       *set tavern_item_type "food"
       *set tavern_item_buff_name "Mutton Pottage"
-      *set tavern_item_buff_desc "+1 CON Checks"
+      *set tavern_item_buff_desc "+1 CON"
       *set tavern_item_buff_stat "con"
       *set tavern_item_buff_bonus 1
       *set tavern_item_buff_minutes 240
@@ -2237,19 +2241,19 @@ You step up to the wide oak bar.
       Maura ladles a steaming wooden bowl of thick mutton stew loaded with barley, root vegetables, and rich marrow broth, sliding a wooden spoon across the bar.
 
       You eat it right at the counter, the dense, savory broth spreading deep heat through your chest and limbs, completely banishing the road chill from your muscles.
-      [b][🍲 Hot Meal Consumed: +3 Temporary HP | Fortified Stamina (+1 CON Checks for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+      [b][🍲 Hot Meal Consumed: +3 Temporary HP | Fortified Stamina (+1 CON for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
       *goto taphouse_bar_loop
 
   *if (not((drink_buff_active) and (drink_buff_stat = "wis")))
     *if (has_free_taphouse_drink)
-      # [Minstrel's Free Drink] Claim your complimentary mug of Hot Spiced River Cider@{show_stat_hints  [+1 WIS Checks for 4h]|}
+      # [Minstrel's Free Drink] Claim your complimentary mug of Hot Spiced River Cider@{show_stat_hints  [+1 WIS for 4h]|}
         *set has_free_taphouse_drink false
         *set tavern_item_cost_copper 0
         *set tavern_item_hp_heal 0
         *set tavern_item_temp_hp 0
         *set tavern_item_type "drink"
         *set tavern_item_buff_name "Spiced River Cider"
-        *set tavern_item_buff_desc "+1 WIS Checks"
+        *set tavern_item_buff_desc "+1 WIS"
         *set tavern_item_buff_stat "wis"
         *set tavern_item_buff_bonus 1
         *set tavern_item_buff_minutes 240
@@ -2257,10 +2261,10 @@ You step up to the wide oak bar.
         Maura draws a foaming earthenware mug from the kettle simmered on the hearth embers and slides it across the bar with an appreciative wink. "Minstrel's tab is paid in full tonight."
 
         The hot cider warms your throat and clears the dull fog of the road from your mind, sharpening your focus and senses.
-        [b][🍎 Spiced Cider Consumed: Clearheaded Focus (+1 WIS Checks for 4 Hours)][/b]
+        [b][🍎 Spiced Cider Consumed: Clearheaded Focus (+1 WIS for 4 Hours)][/b]
         *goto taphouse_bar_loop
     *else
-      # Order a mug of Hot Spiced River Cider (2 Copper Bits)@{show_stat_hints  [+1 WIS Checks for 4h]|}
+      # Order a mug of Hot Spiced River Cider (2 Copper Bits)@{show_stat_hints  [+1 WIS for 4h]|}
         *if ((((gold * 100) + (silver * 10)) + copper) < 2)
           You don't have enough copper for the cider.
           *goto taphouse_bar_loop
@@ -2269,7 +2273,7 @@ You step up to the wide oak bar.
         *set tavern_item_temp_hp 0
         *set tavern_item_type "drink"
         *set tavern_item_buff_name "Spiced River Cider"
-        *set tavern_item_buff_desc "+1 WIS Checks"
+        *set tavern_item_buff_desc "+1 WIS"
         *set tavern_item_buff_stat "wis"
         *set tavern_item_buff_bonus 1
         *set tavern_item_buff_minutes 240
@@ -2277,11 +2281,11 @@ You step up to the wide oak bar.
         Maura draws a foaming earthenware mug from the kettle simmered on the hearth embers, the fragrant steam carrying scents of dried clove, wild ginger, and orchard honey.
 
         The hot cider warms your throat and clears the dull fog of the road from your mind, sharpening your focus and senses.
-        [b][🍎 Spiced Cider Consumed: Clearheaded Focus (+1 WIS Checks for 4 Hours)][/b]
+        [b][🍎 Spiced Cider Consumed: Clearheaded Focus (+1 WIS for 4 Hours)][/b]
         *goto taphouse_bar_loop
 
   *if (not((food_buff_active) and (food_buff_stat = "str")))
-    # Order a trencher of Smoked Peat-Herring & Rye Bread (3 Copper Bits)@{show_stat_hints  [+1 Temp HP, +1 STR Checks for 4h]|}
+    # Order a trencher of Smoked Peat-Herring & Rye Bread (3 Copper Bits)@{show_stat_hints  [+1 Temp HP, +1 STR for 4h]|}
       *if ((((gold * 100) + (silver * 10)) + copper) < 3)
         You don't have enough copper for the herring.
         *goto taphouse_bar_loop
@@ -2290,7 +2294,7 @@ You step up to the wide oak bar.
       *set tavern_item_temp_hp 1
       *set tavern_item_type "food"
       *set tavern_item_buff_name "Smoked Peat-Herring"
-      *set tavern_item_buff_desc "+1 STR Checks"
+      *set tavern_item_buff_desc "+1 STR"
       *set tavern_item_buff_stat "str"
       *set tavern_item_buff_bonus 1
       *set tavern_item_buff_minutes 240
@@ -2298,19 +2302,19 @@ You step up to the wide oak bar.
       Maura slides a wooden trencher across the counter bearing two salted river herring cured over fragrant peat smoke, accompanied by coarse stoneground mustard and a thick slice of dense rye bread.
 
       The oily, mineral-rich fish and hearty grain provide solid, enduring fuel for working muscles.
-      [b][🐟 Smoked Fish Consumed: +1 Temporary HP | Sustained Muscle (+1 STR Checks for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+      [b][🐟 Smoked Fish Consumed: +1 Temporary HP | Sustained Muscle (+1 STR for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
       *goto taphouse_bar_loop
 
   *if (not((drink_buff_active) and (drink_buff_stat = "cha")))
     *if (has_free_taphouse_drink)
-      # [Minstrel's Free Drink] Claim your complimentary dram of Old Marches Herbal Bitters@{show_stat_hints  [+1 CHA Checks for 4h]|}
+      # [Minstrel's Free Drink] Claim your complimentary dram of Old Marches Herbal Bitters@{show_stat_hints  [+1 CHA for 4h]|}
         *set has_free_taphouse_drink false
         *set tavern_item_cost_copper 0
         *set tavern_item_hp_heal 0
         *set tavern_item_temp_hp 0
         *set tavern_item_type "drink"
         *set tavern_item_buff_name "Herbal Bitters"
-        *set tavern_item_buff_desc "+1 CHA Checks"
+        *set tavern_item_buff_desc "+1 CHA"
         *set tavern_item_buff_stat "cha"
         *set tavern_item_buff_bonus 1
         *set tavern_item_buff_minutes 240
@@ -2318,10 +2322,10 @@ You step up to the wide oak bar.
         Maura unbungs the dark clay decanter and pours a single iron-thimble measure of dark, pungent liquor, sliding it across without taking a copper. "On the house for keeping the peace, minstrel," she smiles.
 
         You toss the measure back. A jolt of blistering, herbal fire hits the back of your throat, rushing warmth straight into your blood and putting a sharp, confident edge on your posture.
-        [b][🥃 Bitters Consumed: Iron Resolve (+1 CHA Checks for 4 Hours)][/b]
+        [b][🥃 Bitters Consumed: Iron Resolve (+1 CHA for 4 Hours)][/b]
         *goto taphouse_bar_loop
     *else
-      # Order a dram of Old Marches Herbal Bitters (2 Copper Bits)@{show_stat_hints  [+1 CHA Checks for 4h]|}
+      # Order a dram of Old Marches Herbal Bitters (2 Copper Bits)@{show_stat_hints  [+1 CHA for 4h]|}
         *if ((((gold * 100) + (silver * 10)) + copper) < 2)
           You don't have enough copper for the bitters.
           *goto taphouse_bar_loop
@@ -2330,7 +2334,7 @@ You step up to the wide oak bar.
         *set tavern_item_temp_hp 0
         *set tavern_item_type "drink"
         *set tavern_item_buff_name "Herbal Bitters"
-        *set tavern_item_buff_desc "+1 CHA Checks"
+        *set tavern_item_buff_desc "+1 CHA"
         *set tavern_item_buff_stat "cha"
         *set tavern_item_buff_bonus 1
         *set tavern_item_buff_minutes 240
@@ -2338,7 +2342,7 @@ You step up to the wide oak bar.
         Maura unbungs a dark clay decanter and pours a single iron-thimble measure of dark, pungent liquor. "Careful," she grins. "Distilled out of wormwood and wild angelica by the mountain rangers."
 
         You toss the measure back. A jolt of blistering, herbal fire hits the back of your throat, rushing warmth straight into your blood and putting a sharp, confident edge on your posture.
-        [b][🥃 Bitters Consumed: Iron Resolve (+1 CHA Checks for 4 Hours)][/b]
+        [b][🥃 Bitters Consumed: Iron Resolve (+1 CHA for 4 Hours)][/b]
         *goto taphouse_bar_loop
 
   *if (not(discussed_maura_past))
@@ -3322,7 +3326,7 @@ A deep, quiet clarity settles through your chest, easing the road-strain behind 
 
 *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
   *set unique_buff_input_name "Sanctuary Vigil"
-  *set unique_buff_input_desc "+1 WIS Checks (Inner Calm)"
+  *set unique_buff_input_desc "+1 WIS (Inner Calm)"
   *set unique_buff_input_stat "wis"
   *set unique_buff_input_bonus 1
   *set unique_buff_input_minutes 240
@@ -3334,7 +3338,7 @@ A deep, quiet clarity settles through your chest, easing the road-strain behind 
   *set stat_bump_locked true
   *set locked_stat_bump_page_id page_id
 
-[b][🕯️ Sanctuary Vigil: +1 WIS Checks for 4 Hours | +2 HP Restored | HP: ${hp_current}/${hp_max}][/b]
+[b][🕯️ Sanctuary Vigil: +1 WIS for 4 Hours | +2 HP Restored | HP: ${hp_current}/${hp_max}][/b]
 
 *goto chapel_menu
 

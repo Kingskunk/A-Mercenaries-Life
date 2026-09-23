@@ -115,8 +115,8 @@ Food sub-loop, patterned on the Keel's `pv_poi_tavern_bar_loop` (instant and coi
 
 | Item | Cost | Effect |
 |---|---|---|
-| Hot fried smelt on a cabbage leaf | 3 copper | +1 Temp HP, +1 DEX checks for 4h (food) |
-| Oysters shucked to order on a slate | 3 copper | +1 INT checks for 4h (food) |
+| Hot fried smelt on a cabbage leaf | 3 copper | +1 Temp HP, +1 DEX for 4h (food) |
+| Oysters shucked to order on a slate | 3 copper | +1 INT for 4h (food) |
 | Fish-and-onion pasty | 2 copper | Fills the belly. No buff |
 
 While `fish_slip_shunned` is true (see the loss state), every item costs one copper more.

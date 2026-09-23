@@ -107,6 +107,17 @@ var rootDir = "../";
   gap: 0.25em 0.5em;
   margin-top: 0.5em;
 }
+#statSidebar .boon {
+  font-size: 0.85em;
+  font-weight: bold;
+}
+#statSidebar .boonUp {
+  color: #3a9b4a;
+}
+#statSidebar .boonIdle {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
 #statSidebar .sectionDivider {
   margin: 0.65em 0 0.5em 0;
   border: none;
@@ -168,14 +179,15 @@ var rootDir = "../";
       "<div class=\"statRow\"><span>HP</span><span>" + hpHtml + "</span></div>" +
       "<div class=\"statRow\"><span>AC</span><span>" + fmt(s.armor_class) + "</span></div>" +
       "<div class=\"statRow\"><span>Proficiency</span><span>+" + fmt(s.prof_bonus) + "</span></div>" +
+      ((isTruthy(s.armor_nonprof) || isTruthy(s.shield_nonprof)) ? "<div class=\"timePeriod\" title=\"Your class is not trained in this gear: disadvantage on STR and DEX rolls\" style=\"color:#b5651d;font-style:normal;\">⚠ " + (isTruthy(s.armor_nonprof) && isTruthy(s.shield_nonprof) ? "Armor & shield" : (isTruthy(s.shield_nonprof) ? "Shield" : "Armor")) + ": not proficient</div>" : "") +
       resourceHtml +
       "<div class=\"abilityGrid\">" +
-        "<span>STR " + fmt(s.strength) + " (" + fmt(s.str_mod_str) + ")</span>" +
-        "<span>DEX " + fmt(s.dexterity) + " (" + fmt(s.dex_mod_str) + ")</span>" +
-        "<span>CON " + fmt(s.constitution) + " (" + fmt(s.con_mod_str) + ")</span>" +
-        "<span>INT " + fmt(s.intelligence) + " (" + fmt(s.int_mod_str) + ")</span>" +
-        "<span>WIS " + fmt(s.wisdom) + " (" + fmt(s.wis_mod_str) + ")</span>" +
-        "<span>CHA " + fmt(s.charisma) + " (" + fmt(s.cha_mod_str) + ")</span>" +
+        "<span>STR " + fmt(s.strength) + abilityBoon(s.buff_str_bonus, s.buff_str_helps) + " (" + fmt(s.str_mod_str) + ")</span>" +
+        "<span>DEX " + fmt(s.dexterity) + abilityBoon(s.buff_dex_bonus, s.buff_dex_helps) + " (" + fmt(s.dex_mod_str) + ")</span>" +
+        "<span>CON " + fmt(s.constitution) + abilityBoon(s.buff_con_bonus, s.buff_con_helps) + " (" + fmt(s.con_mod_str) + ")</span>" +
+        "<span>INT " + fmt(s.intelligence) + abilityBoon(s.buff_int_bonus, s.buff_int_helps) + " (" + fmt(s.int_mod_str) + ")</span>" +
+        "<span>WIS " + fmt(s.wisdom) + abilityBoon(s.buff_wis_bonus, s.buff_wis_helps) + " (" + fmt(s.wis_mod_str) + ")</span>" +
+        "<span>CHA " + fmt(s.charisma) + abilityBoon(s.buff_cha_bonus, s.buff_cha_helps) + " (" + fmt(s.cha_mod_str) + ")</span>" +
       "</div>" +
       "<hr class=\"sectionDivider\">" +
       "<div class=\"statRow\"><span>Day</span><span>" + dayDisplay + "</span></div>" +
@@ -186,15 +198,15 @@ var rootDir = "../";
       "<hr class=\"sectionDivider\">" +
       "<div class=\"statRow\"><span>Purse</span><span>" + fmt(s.gold) + "g " + fmt(s.silver) + "s " + fmt(s.copper) + "c</span></div>" +
       activeQuestHtml +
-      (isTruthy(s.food_buff_active) || isTruthy(s.drink_buff_active) || isTruthy(s.unique_buff1_active) || isTruthy(s.unique_buff2_active) || isTruthy(s.unique_buff3_active) ?
+      (isTruthy(s.food_buff_active) || isTruthy(s.drink_buff_active) || isTruthy(s.unique_buff1_active) || isTruthy(s.unique_buff2_active) || isTruthy(s.unique_buff3_active) || isTruthy(s.sleep_buff1_active) || isTruthy(s.sleep_buff2_active) ?
         "<hr class=\"sectionDivider\">" +
         (isTruthy(s.food_buff_active) ?
           "<div class=\"statRow\"><span>Meal</span><span>" + fmt(s.food_buff_name) + "</span></div>" +
-          "<div class=\"timePeriod\">+" + fmt(s.food_buff_bonus) + " " + fmt(s.food_buff_stat).toUpperCase() + " checks, " + fmt(s.food_buff_minutes_left) + "m left</div>"
+          "<div class=\"timePeriod\">+" + fmt(s.food_buff_bonus) + " " + fmt(s.food_buff_stat).toUpperCase() + ", " + fmt(s.food_buff_minutes_left) + "m left</div>"
           : "") +
         (isTruthy(s.drink_buff_active) ?
           "<div class=\"statRow\"><span>Drink</span><span>" + fmt(s.drink_buff_name) + "</span></div>" +
-          "<div class=\"timePeriod\">+" + fmt(s.drink_buff_bonus) + " " + fmt(s.drink_buff_stat).toUpperCase() + " checks, " + fmt(s.drink_buff_minutes_left) + "m left</div>"
+          "<div class=\"timePeriod\">+" + fmt(s.drink_buff_bonus) + " " + fmt(s.drink_buff_stat).toUpperCase() + ", " + fmt(s.drink_buff_minutes_left) + "m left</div>"
           : "") +
         (isTruthy(s.unique_buff1_active) ?
           "<div class=\"statRow\"><span>Boon</span><span>" + fmt(s.unique_buff1_name) + "</span></div>" +
@@ -207,10 +219,28 @@ var rootDir = "../";
         (isTruthy(s.unique_buff3_active) ?
           "<div class=\"statRow\"><span>Boon</span><span>" + fmt(s.unique_buff3_name) + "</span></div>" +
           "<div class=\"timePeriod\">+" + fmt(s.unique_buff3_bonus) + " " + fmt(s.unique_buff3_stat).toUpperCase() + ", " + fmt(s.unique_buff3_minutes_left) + "m left</div>"
+          : "") +
+        (isTruthy(s.sleep_buff1_active) ?
+          "<div class=\"statRow\"><span>Rest</span><span>" + fmt(s.sleep_buff1_name) + "</span></div>" +
+          "<div class=\"timePeriod\">+" + fmt(s.sleep_buff1_bonus) + " " + fmt(s.sleep_buff1_stat).toUpperCase() + ", " + fmt(s.sleep_buff1_minutes_left) + "m left</div>"
+          : "") +
+        (isTruthy(s.sleep_buff2_active) ?
+          "<div class=\"statRow\"><span>Rest</span><span>" + fmt(s.sleep_buff2_name) + "</span></div>" +
+          "<div class=\"timePeriod\">+" + fmt(s.sleep_buff2_bonus) + " " + fmt(s.sleep_buff2_stat).toUpperCase() + ", " + fmt(s.sleep_buff2_minutes_left) + "m left</div>"
           : "")
         : "");
   }
   function isTruthy(v) { return v === true || v === "true"; }
+  // The score shown already includes any boon. The small tag beside it says how much came from a boon:
+  // green when it raised the modifier, struck through and dim when it did not (a +1 on an even score, or
+  // at the +3 cap). buff_<stat>_helps comes from the game.
+  function abilityBoon(bonus, helps) {
+    var b = Number(bonus) || 0;
+    if (b <= 0) return "";
+    var cls = isTruthy(helps) ? "boon boonUp" : "boon boonIdle";
+    var tip = isTruthy(helps) ? "Includes +" + b + " from a boon, which raises the modifier" : "Includes +" + b + " from a boon, which does not change the modifier";
+    return " <span class=\"" + cls + "\" title=\"" + tip + "\">+" + b + "</span>";
+  }
   window.setInterval(renderStatSidebar, 400);
   document.addEventListener("DOMContentLoaded", renderStatSidebar);
 })();
