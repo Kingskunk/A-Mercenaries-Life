@@ -6,7 +6,9 @@
  *
  * Nothing here touches game state or save files. The only thing stored is which
  * entries the player has already opened (localStorage, key "lorebook_seen_v1"), so
- * the NEW badges survive a page reload.
+ * the NEW badges survive a page reload/resume. That store is reset by resetSeen(),
+ * called from web/util.js's restoreGame() only on a genuine new game/"Start Over"
+ * (not a resume), so a fresh playthrough sees NEW badges again.
  *
  * Open with the Lorebook button or the L key (search is focused on open). Inside the panel,
  * "/" jumps back to search. "/" is not bound globally because the game already uses it

@@ -194,25 +194,24 @@ The city's paving stops at the drainage cut. Past it the lanes are broken rock a
 *comment   cut_boats is false while visibility is "poor" (Fog, Storm, Blizzard): the barges
 *comment   stay tied up, so the dredge landing has nothing to unload.
 *choice
-  *if ((cut_low_water) and (cut_outdoors))
-    # Walk the market lane, where the stalls sit under patched awnings. [~15 min]
+  *if (cut_outdoors)
+    # Walk the duckboard market lane beneath the shuttered awnings. [~15 min]
       *goto cut_market
   *if (cut_outdoors)
-    # Climb the ladder-stairs to the rope bridges over the trenches. [~15 min]
+    # Climb the ladder-stairs to the rope bridges over the canal. [~15 min]
       *goto cut_gangways
   *if ((cut_day) and (cut_outdoors))
-    # Follow the canal lane to the boat-sheds and the scrap yard. [~15 min]
+    # Follow the water-lane to the boat-sheds and the scrap yard. [~15 min]
       *goto cut_sheds
   *if ((cut_low_water) and (cut_boats))
-    # Go down to the dredge landing, where the barges unload. [~15 min]
+    # Go down to the dredge landing where the barges unload. [~15 min]
       *goto cut_landing
   # Climb the granite steps to Lamp Stair beneath the seawall. [~15 min]
     *goto cut_lamp
-  *if (cut_low_water)
-    # Stop at the alley shrine under the timber arch. [~15 min]
-      *goto cut_shrine
+  # Stop at the alley shrine under the timber arch. [~15 min]
+    *goto cut_shrine
   *if ((cut_low_water) and (cut_outdoors))
-    # Go down the lower steps while the water is out. [~15 min]
+    # Go down the lower stone steps while the tide is out. [~15 min]
       *goto cut_steps
   *if (silt_gate_quest_stage = "active")
     # Investigate the Silt-Gate drainage channel. [~15–45 min]
@@ -946,6 +945,10 @@ The Silt-Gate run is not broken, only interrupted. What you hold is worth the mo
 *comment AREA 1 OF 7: DUCKBOARD MARKET
 *comment chandler's shop, stalls, rumors, the Marketday crowd, the foot of the outside stair
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment AREA 1 OF 7: DUCKBOARD MARKET
+*comment chandler's shop, stalls, rumors, the Marketday crowd, the foot of the outside stair
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label cut_market
 *set cut_seen_market true
 *set hours_to_pass 0
@@ -960,75 +963,100 @@ The Silt-Gate run is not broken, only interrupted. What you hold is worth the mo
   *goto_scene death death_screen
 
 *label cut_market_page
+*temp cut_market_night false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set cut_market_night true
+
 [b]◈ DUCKBOARD MARKET[/b]
 *line_break
-The market runs along the water-lane on broken stone and packed cinder, with planks laid over the low patches where the water comes up. Stalls stand under patched oilskin awnings in yellow and red: dried fish on strings, tar-stained rope, mended pots, hanks of wool. Punts nose in along the canal side, and the whole lane smells of frying eel, lamp oil and wet rope.
+*comment LAYER 1: PLACE (Constant geography and smell)
+The market runs along the water-lane on broken stone and packed cinder, with planks laid over the low patches where the water comes up. Stalls stand beneath oilskin awnings in faded yellow and red: dried fish on cord, coils of tarred hemp rope, mended iron pots, and hanks of coarse wool. Punts nose in along the canal bank, and the whole lane smells of frying oil, damp wood, and river mud.
 
-*if (time_period = "Dusk")
-  The stallholders are pulling canvas over their goods, and only the frying-eel stall still has a lit pan.
-*elseif (day_of_week = "Marketday")
-  *if (street_life = "normal")
-    It is Marketday, and the lane is packed shoulder to shoulder, with the eel-seller's awning the loudest thing in it.
-  *else
-    It is Marketday, and the stalls that opened are open under lashed canvas, with more stallholders than customers and the eel-seller's awning still the loudest thing in the lane.
-*else
-  *if (street_life = "normal")
-    Off market days the lane runs at half its width: a few stalls, and more parked barrows than customers.
-  *else
-    Off market days and in this weather the lane is nearly bare: two stalls under lashed canvas, and the barrows parked with their tarps tied down.
-
+*comment LAYER 2: SKY & WEATHER
 *if (weather_cold)
-  The cold has emptied half the stalls. A brazier at the end of the lane draws a knot of customers.
+  *if (cut_market_night)
+    Frost furs the lashed canvas awnings, and the wind whistles through the cracks in the dark stalls.
+  *else
+    The cold has thinned the crowd. A charcoal brazier at the lane corner draws a shivering knot of shoppers.
 *elseif (weather_wet)
   *if (weather_severity >= 3)
-    A gale rattles the awnings against their poles, and everything on the stalls has been tied down twice.
+    A gale rattles the canvas against the timber uprights, and every stall is tied down double.
   *else
-    Rain drums on the awnings and runs off their edges in strings, and the plank patches are slick underfoot.
+    Rain drums across the awnings and streams into the gutters, turning the plank patches slick underfoot.
 *elseif (weather_visibility = "poor")
-  Fog turns the far end of the lane into moving shapes and colored blurs where the awnings hang.
+  Fog sits thick between the leaning roofs, turning lanterns into fuzzy amber halos.
 *elseif (weather = "Clear")
-  The awnings glow red and yellow in the light, and the wet patches steam.
+  *if (cut_market_night)
+    Starlight glints off the black water of the canal, silvering the wet duckboards.
+  *else
+    Clean light slants beneath the awnings, and steam rises from the wet stones.
+*else
+  *comment Overcast
+  *if (cut_market_night)
+    A pitch-black sky hangs low over the roofs, swallowing the outlines of the dark stalls.
+  *else
+    A flat grey sky flattens the colors of the goods along the lane.
 
-At the landward end of the lane a chandler's shop sells wax, rope and lamp oil from behind a half-door. An outside stair climbs the wall beside it to a shut door on the upper floor, and a heavyset man sits on the bottom step.
+*comment LAYER 3: STREET LIFE & TIME CADENCE
+*if (cut_market_night)
+  The market is shuttered and deserted. Stalls are lashed beneath dark oilcloth tarpaulins, empty hand-barrows are chained to the pilings, and high flood tide slaps against the foundation timbers. The smell of cold rendered fat and stagnant canal weed hangs heavy in the air. Down at the landward end, the chandler's half-door is chained shut with a heavy padlock. Above it, a faint line of candlelight burns behind the closed shutters of the upper room, and at the foot of the outside stair, a heavyset man sits wrapped in a rough wool mantle, an iron-shod cudgel resting across his knees.
+
+*elseif (time_period = "Dusk")
+  The market is shutting down. Stallholders are pulling canvas over their displays and lashing crates to the posts, while only the frying-eel stall still has a glowing charcoal fire beneath its blackened oil pan.
+
+*elseif (day_of_week = "Marketday")
+  *if (street_life = "normal")
+    It is Marketday, and the duckboard lane is jammed shoulder to shoulder. Punts jostle along the canal edge with sweeps clattering, the eel-seller's awning is loud with shouting customers, and the lane hums with frantic bargaining.
+  *else
+    Marketday is thin under the weather. A few stubborn stalls trade beneath dripping canvas, with more vendors shouting than customers buying.
+
+*else
+  *comment Ordinary working day (Morning, Midday, Afternoon)
+  *if (street_life = "normal")
+    Off market days the lane runs at an easy pace: a steady trickle of neighborhood traffic, fishwives cleaning eels, and carters wheeling barrows down the central planks.
+  *else
+    Off market days in foul weather, the lane is nearly bare: two stalls open under lashed tarps, and the barrows parked with their covers tied down.
 
 *label cut_market_hub
 *choice
-  *if (not((food_buff_active) and (food_buff_stat = "int")))
-    # Buy vinegar eel from the frying stall. [3 Copper Bits]@{show_stat_hints  [+1 Temp HP, +1 INT Checks for 4h]|}
-      *if ((((gold * 100) + (silver * 10)) + copper) < 3)
-        You check your purse and find it a little short of three copper bits.
+  *if (not(cut_market_night))
+    *if (not((food_buff_active) and (food_buff_stat = "int")))
+      # Buy vinegar eel from the frying stall. [3 Copper Bits]@{show_stat_hints  [+1 Temp HP, +1 INT Checks for 4h]|}
+        *if ((((gold * 100) + (silver * 10)) + copper) < 3)
+          You check your purse and find it a little short of three copper bits.
+          *goto cut_market_hub
+        *set tavern_item_cost_copper 3
+        *set tavern_item_hp_heal 0
+        *set tavern_item_temp_hp 1
+        *set tavern_item_type "food"
+        *set tavern_item_buff_name "Vinegar Eel"
+        *set tavern_item_buff_desc "+1 INT Checks"
+        *set tavern_item_buff_stat "int"
+        *set tavern_item_buff_bonus 1
+        *set tavern_item_buff_minutes 240
+        *gosub_scene startup buy_tavern_item
+        The cook lifts a skewer of eel out of black oil, shakes vinegar and coarse salt over it, and hands it across on a twist of paper. It is hot enough to hurt and sour enough to make your eyes water, and your head is clearer by the last bite.
+
+        [b][🍢 Vinegar Eel Consumed: +1 Temporary HP | Sharp Palate (+1 INT Checks for 4 Hours)][/b]
         *goto cut_market_hub
-      *set tavern_item_cost_copper 3
-      *set tavern_item_hp_heal 0
-      *set tavern_item_temp_hp 1
-      *set tavern_item_type "food"
-      *set tavern_item_buff_name "Vinegar Eel"
-      *set tavern_item_buff_desc "+1 INT Checks"
-      *set tavern_item_buff_stat "int"
-      *set tavern_item_buff_bonus 1
-      *set tavern_item_buff_minutes 240
-      *gosub_scene startup buy_tavern_item
-      The cook lifts a skewer of eel out of black oil, shakes vinegar and coarse salt over it, and hands it across on a twist of paper. It is hot enough to hurt and sour enough to make your eyes water, and your head is clearer by the last bite.
 
-      [b][🍢 Vinegar Eel Consumed: +1 Temporary HP | Sharp Palate (+1 INT Checks for 4 Hours)][/b]
-      *goto cut_market_hub
+  *if (not(cut_market_night))
+    *if (cut_rumors_market < 3)
+      # Listen to the talk around the stalls.
+        *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+          *set cut_rumors_market + 1
+          *set stat_bump_locked true
+          *set locked_stat_bump_page_id page_id
+        *if (cut_rumors_market = 1)
+          Two women at the eel stall are arguing over a scale. "She keeps a shaved coin under the pan, everyone knows it," one says, and pays anyway. "Only stall with eels before noon."
+        *elseif (cut_rumors_market = 2)
+          A boy with a barrow tells his friend that the chandler's upper room has candles burning in it at all hours, and that nobody has ever seen it rented. "Ask the man on the stair," the friend says. "He'll say it's stores."
+        *else
+          A customer at a wool stall complains loudly that his purse was lifted two lanes over. The stallholder shrugs without looking up from her cord. "Keep your hand on your pouch like everyone else, then."
+        *goto cut_market_hub
 
-  *if (cut_rumors_market < 3)
-    # Listen to the talk around the stalls.
-      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-        *set cut_rumors_market + 1
-        *set stat_bump_locked true
-        *set locked_stat_bump_page_id page_id
-      *if (cut_rumors_market = 1)
-        Two women at the eel stall are arguing over a scale. "She keeps a shaved coin under the pan, everyone knows it," one says, and pays anyway. "Only stall with eels before noon."
-      *elseif (cut_rumors_market = 2)
-        A boy with a barrow tells his friend that the chandler's upper room has candles burning in it at all hours, and that nobody has ever seen it rented. "Ask the man on the stair," the friend says. "He'll say it's stores."
-      *else
-        A tailor's apprentice, one thumb hooked into a pocket he keeps touching, tells a stallholder his purse has been lifted three Marketdays running. "Same pocket?" she asks. "Where else would I keep it?" he says.
-      *goto cut_market_hub
-
-  *if ((day_of_week = "Marketday") and (cut_market_watch_day < campaign_day))
-    # Stand at the edge of the crowd and watch the wharf boys work.@{show_stat_hints  [WIS DC 12]|}
+  *if (((day_of_week = "Marketday") and (not(cut_market_night))) and (cut_market_watch_day < campaign_day))
+    # Stand at the edge of the crowd and watch the pickpockets work.@{show_stat_hints  [WIS DC 12]|}
       *set cut_market_watch_day campaign_day
       *set hours_to_pass 0
       *set minutes_to_pass 20
@@ -1039,7 +1067,7 @@ At the landward end of the lane a chandler's shop sells wax, rope and lamp oil f
       *set check_skill "Perception"
       *gosub_scene startup roll_d20_check
       *if (check_success)
-        You pick out the pattern in a minute: two boys drifting apart to bracket a mark, a third coming through the middle with his eyes on the sky. When the apprentice's pocket flexes open under a small hand, you catch the wrist. The boy squirms once and goes still, and the other two vanish between stalls. The apprentice, white to the ears, presses two copper bits into your hand and hurries away.
+        You pick out the pattern in a minute: two lads drifting apart to bracket a distracted mark, a third coming through the middle with eyes on the sky. When a hand dips toward an unguarded pocket, you catch the wrist in an iron grip. The boy squawks, twists free, and vanishes between the stalls with his crew. The mark, pale with sudden relief, presses two copper bits into your palm before hurrying off.
         *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
           *set currency_add_amount 2
           *gosub_scene startup currency_add
@@ -1048,7 +1076,7 @@ At the landward end of the lane a chandler's shop sells wax, rope and lamp oil f
 
         [b][💰 Purse Saved: +2 Copper Bits][/b]
       *else
-        You watch the crowd and see only a crowd. It is when you turn toward the eel stall that a shoulder hits yours, a hand goes into your pouch and out again, and the boy is gone under an awning before you have your breath back.
+        You watch the crowd, but the jostling bodies distract your eye. A shoulder bumps hard into yours, a quick hand slips into your belt pouch, and by the time you spin around, the thief has vanished beneath the canvas stalls.
         *if (((((gold * 100) + (silver * 10)) + copper) >= 3) and ((not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))))
           *set currency_add_amount 0 - 3
           *gosub_scene startup currency_add
@@ -1057,7 +1085,7 @@ At the landward end of the lane a chandler's shop sells wax, rope and lamp oil f
 
           [b][💰 Purse Lifted: -3 Copper Bits][/b]
         *else
-          There was little enough in it to take.
+          There was little enough in your purse to take.
       *gosub_scene calendar recalc_hp_from_neglect
       *if (hp_current <= 0)
         *set death_cause "starvation"
@@ -1066,14 +1094,23 @@ At the landward end of the lane a chandler's shop sells wax, rope and lamp oil f
         *goto_scene death death_screen
       *goto cut_market_hub
 
-  # Look over the chandler's shop and the stair beside it.
-    You take a turn through the chandler's shop: coils of rope, tallow candles by the crate, lamp oil in stoneware jars, and paper by the ream on a shelf behind the counter. Outside, the man on the bottom step of the stair looks at your boots, then up the stair.
+  *if (cut_market_night)
+    # Approach the chandler's shop and the man guarding the outside stair.
+      You step along the dark duckboards toward the shuttered chandler's shop. Padlocks hang heavy on the iron bar across the half-door. Above, a thin slit of yellow candlelight leaks between the warped shutters of the second floor.
+      
+      At the base of the wooden stair, the heavyset man shifts his weight, the iron-banded head of his mace clicking against the stone. He tracks your boots in the dark, his eyes dead and unblinking.
 
-    "Stores," he says, before you ask. "Wax and paper. Not for rent."
-    *goto cut_market_hub
+      "Stores," he says, his voice flat and hard. "Wax and tallow. Nobody up there wants to see you. Walk."
+      *goto cut_market_hub
+  *if (not(cut_market_night))
+    # Look over the chandler's shop and the stair beside it.
+      You take a turn through the chandler's shop: coils of rope, tallow candles by the crate, lamp oil in stoneware jars, and paper by the ream on a shelf behind the counter. Outside, the man on the bottom step of the stair looks at your boots, then up the stair.
 
-  # Head back down to the market lane.
-    *page_break Back down to the market lane…
+      "Stores," he says, before you ask. "Wax and paper. Not for rent."
+      *goto cut_market_hub
+
+  # Return to the district duckboards.
+    *page_break Back to the water-lanes…
     *goto port_valen_dredge_end
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1096,79 +1133,91 @@ At the landward end of the lane a chandler's shop sells wax, rope and lamp oil f
 *label cut_gangways_page
 [b]◈ THE UPPER GANGWAYS[/b]
 *line_break
-The ladder-stairs bring you up through the back walls of the tenements onto the gangways: walkways of plank and cord that run from stilt landing to stilt landing above the trenches. Laundry hangs along the rope rails, and the boards sway a little with every crossing. Lookouts sit on the larger landings with tin whistles hung at their belts, watching the lanes, the water-lane and the footbridge.
+*comment LAYER 1: PLACE (Constant geography, architecture, and smell)
+The ladder-stairs climb through the back timber framing of the tenements onto the gangways: a swaying network of plank catwalks and tarred hemp ropes slung between the upper stilt-landings, forty feet above the dark canals. Heavy rope rails border the walkways, and the narrow boards creak and flex with every footstep. The air up here is cleaner than in the cuts below, smelling of cedar shingles, peat smoke from the flues, and the salt draft coming off the bay.
 
-*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
-  *if (weather_severity = 0)
-    The wind and sun reach up here in a way they never do in the lanes. Gulls stand along the roof ridges and look down at the canals.
-  *else
-    The wind reaches up here in a way it never does in the lanes, and it does not carry the sounds of the district so much as scatter them.
-*elseif (time_period = "Dusk")
-  The lamps are being lit along the rail, landing after landing, and cooking smoke drifts across the walkways.
-*else
-  Shuttered lanterns hang at every landing and throw small yellow circles on the planks. Between them the gangway is dark, and the trench below is darker.
-
-*comment day-of-week noise belongs to the working day, the same window the hub intro uses
-*if (not((time_period = "Night") or (time_period = "Pre-Dawn")))
-  *if (day_of_week = "Greyday")
-    Down in the lanes someone is pounding on doors and shouting names from a list. It carries up here clearly.
-  *elseif (day_of_week = "Ironday")
-    Below, one of the Oath's men works the footbridges with a roll in his fist.
-
-*if (weather_cold)
-  Frost stiffens the ropes, and the wind finds every gap between the boards.
-*elseif (weather_wet)
-  The rope rails run with water, and every plank is slick.
-*elseif (weather_visibility = "poor")
-  Fog lies in the trenches below and the landings float above it like rafts.
+*comment LAYER 2: SKY & ATMOSPHERIC LIGHT (Weather and light only, no people)
+*if (weather = "Rain")
+  Steady rain drums across the sea of shingle roofs below, water cascading from wooden eaves and turning the narrow gangway planks slick and dark.
+*elseif (weather = "Storm")
+  Estuary gales howl across the exposed catwalks, groaning through the rope stays and whipping cold brine spray across the timber landings.
+*elseif (weather = "Fog")
+  Thick river fog blankets the canals below, swallowing the water-lanes entirely. The upper catwalks float like rafts above a silent, white void, with only the chimney pots showing through the mist.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Slush coats the narrow footboards, and cold mountain gusts whistle through the gaps, furring the guide-ropes in white rime.
+*elseif (weather = "Blizzard")
+  A freezing coastal squall scours the upper roofs, snow driving flat across the deserted gangways and banking against the tenement doorposts.
 *elseif (weather = "Clear")
   *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
-    The laundry snaps in the wind, and the whole district lies dark under the walkways, pricked with lamps.
+    Cold starlight glints off the black water in the cuts below, and the tangled rooflines of the district lie sharp against the open sky.
+  *elseif (time_period = "Dusk")
+    The low sun washes the high slate gables of Civic Heights in copper, while deep twilight pools in the canal cuts beneath the walkways.
   *else
-    The laundry snaps in the wind, and the whole district lies bright under the walkways.
+    Sharp daylight breaks over the rooftops, warming the cedar shingles and revealing the full maze of the lower water-lanes.
+*else
+  *comment Overcast
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    A starless, pitch-black sky sits low over the rooftops, trapping the bitter smoke of coal hearths around the upper walkways.
+  *else
+    A flat pewter sky hangs over the district, pressing the chimney smoke low across the swaying bridges.
+
+*comment LAYER 3: STREET LIFE & WALKWAY TRAFFIC
+*if (street_life = "empty")
+  The gangways are deserted. The swaying bridges creak violently in the wind, laundry has been hauled indoors, and nobody ventures onto the slick planks. Lookouts have abandoned the open platforms to shelter inside the stairhead hoods.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  Shuttered horn lanterns hang from the landing posts, casting small circles of amber light across the damp boards. Lookouts in dark, greased cloaks crouch silently in the corners of the platforms, tin whistles tucked inside their coats, watching the dark water below.
+*elseif (time_period = "Dusk")
+  Dusk brings residents out to pull the last dry laundry from the lines before the river damp rises. Cooking smoke rolls thick from the tenement transoms, and the platform lookouts lean on the railings, watching the evening skiffs tie off.
+*else
+  *comment Daytime active gangways (Morning, Midday, Afternoon)
+  The catwalks carry steady traffic between the tenements: residents hauling baskets of firewood across the swaying planks, messengers ducking beneath hanging lines, and quiet watchers stationed on the corner platforms, tracking every movement in the canals below.
+
+*comment LAYER 4: TELL (Scout / Outlaw Insight)
+*if (de_savvy)
+  From this height, the district's hidden machinery is laid bare. You clock the lookout arcs: every gangway platform covers the blind spots of the one below it, and a signal whistle sounded at the canal gates can echo across the entire quarter in three breaths. Beneath the third-story overhangs, you can spot where the canal channels tunnel under the tenements—routes invisible from the high city walls.
 
 *label cut_gangways_hub
 *choice
-  # Go out to the lookout landing and take in the view.
-    *if (weather_visibility = "poor")
-      From the landing you can make out the next two roofs and the suggestion of a third. The rest of the district is a grey sound: chains somewhere, a bell, water moving against the pilings.
-    *else
-      From the landing the whole district lies below you: the stone lanes, the plank patches, the tenement roofs, the canal running down to the seawall, the barges at the dredge landing. Above the wall the city climbs in terraces to the pale limestone of Civic Heights.
+  # Go out to the main lookout landing and survey the district below.
+    From the wide corner landing, the entire canal district spreads out beneath your boots: the dark water-lanes, the duckboard market, the low barge slips, and the massive granite seawall holding back the bay. Higher up, the city climbs in steep terraces toward the gleaming limestone porticos of Civic Heights.
     *if (((time_period = "Morning") or (time_period = "Midday")) or ((time_period = "Afternoon") or (time_period = "Dusk")))
-      The water is low, and dark banks show along both sides of the canal.
+      The tide is drawn out, leaving black mudbanks and green weed exposed beneath the stilt foundations.
     *else
-      The water is high and fills the trenches to the lowest planks.
+      The tide has surged in, black water filling the canal cuts right up to the lower floorboards.
     *if (time_period = "Night")
-      Under the seawall a strip of red lamps marks a street that is very much awake.
+      Beneath the sheer face of the seawall, a row of glowing red lanterns marks Lamp Stair, vibrant and awake in the curfew dark.
+    *page_break Step back from the railing…
     *goto cut_gangways_hub
 
   *if (cut_rumors_gangways < 2)
-    # Listen to what carries up from the lanes.
+    # Listen to the voices and signals carrying across the roofs.
       *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
         *set cut_rumors_gangways + 1
         *set stat_bump_locked true
         *set locked_stat_bump_page_id page_id
       *if (cut_rumors_gangways = 1)
-        Two lookouts pass word between landings in whistles: a long, a short, a long. Now and then one of them says a plain word across the gap. "Boat." "Face." "Watch." You count how few words the district needs.
+        Two lookouts pass word between landings using short, bird-like whistle notes: a sharp rise, a pause, and two flat drops. Across the gap, a watcher gives a low, answering whistle without looking up from his whittling. You count how few words the district needs to pass a warning.
       *else
-        From a window below comes a woman's voice going through a list of amounts, and another voice answering "yes" to each. The counting stops at one figure, and nobody answers that one.
+        From an open window beneath the walkway eaves, you catch the murmur of two voices tallying debts: numbers called out, coins clinking against wood, and a sharp, sudden silence that tells you when an account fell short.
+      *page_break Listen as the noise fades…
       *goto cut_gangways_hub
 
-  # Ask the lookout on the nearest landing what they are watching for.
-    "Boats, faces and the Watch," the lookout says, without turning. "In that order, on a good day."
+  # Study the lookout's sightlines along the canal cuts.
+    You lean against the rope railing a few paces back, watching the rhythm of the post. 
 
-    "And on a bad day?"
+    The lookout never tracks the ordinary tenants moving along the duckboards; his gaze sweeps in long, disciplined arcs—first the open water of the canal cut, then the blind spots beneath the footbridge, and finally the stone steps climbing toward the city wall. One hand stays tucked deep inside his wool mantle, fingers resting on the barrel of a tin whistle. 
 
-    "Same list. Different speed."
+    When an unlit skiff glides past the lower pilings, he doesn't sound an alarm; he simply shifts his weight, taps the timber rail twice with his boot-heel, and waits for the platform below to return the signal.
+    *page_break Step back from the platform…
     *goto cut_gangways_hub
 
-  # Climb back down to the lanes.
-    *page_break Back down to the lanes…
+  # Climb back down the wooden ladder-stairs to the lanes.
+    *page_break Back down to the district lanes…
     *goto port_valen_dredge_end
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment AREA 3 OF 7: THE BOAT-SHEDS AND SCRAP YARD
-*comment The scrap dealer and the smith's bench
+*comment Boatwrights, ash sweeps, and the scrap dealer
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label cut_sheds
 *set cut_seen_sheds true
@@ -1186,50 +1235,39 @@ The ladder-stairs bring you up through the back walls of the tenements onto the 
 *label cut_sheds_page
 [b]◈ THE BOAT-SHEDS AND SCRAP YARD[/b]
 *line_break
-The canal here is lined with sheds raised on stilts, their doors open to the water side. Racks of half-shaped ash oars lean under the eaves, pale as bone, and the ground between the sheds is trampled cinder scattered with wood shavings. Further along, the scrap yard is a fenced square of salvaged stone, coiled chain and pitted iron plate, rust-orange against the grey, and beyond it a smith's bench sits under a lean-to roof with a small fire going. It smells of cut ash wood, hot iron and tar.
+*comment LAYER 1: PLACE (Constant geography, architecture, and smell)
+The canal bank here is lined with open-fronted timber sheds raised on tarred stilts, their work-decks sloping down toward the water. Long racks of half-shaped ash sweeps and steering oars lean beneath the deep cedar eaves, the pale, fresh-planed wood bright against the weathered grey siding. Between the sheds, the ground is hard-packed cinder littered with curled wood shavings and dry pine sawdust. At the far end, enclosed by a low driftwood fence, sits the scrap yard: head-high mounds of salvaged canal paving stones, tangled coils of rusted mooring chain, and crates of bent iron oar-pins. The air smells of cut ash, damp wood shavings, and old river rust.
 
-*if (day_of_week = "Forgeday")
-  *if (street_life = "normal")
-    It is Forgeday, and the yard is busy: chain coming off a punt in loads, and the smith's hammer ringing across the canal in steady beats.
-  *else
-    It is Forgeday, and the yard is mostly idle in this weather. The smith works on under his shed roof, and the hammer rings across the canal with long gaps between the beats.
-*else
-  The yard is quiet between loads, and the smith works at an easy pace.
-
-*if (weather_cold)
-  Frost whitens the oars on their racks, and the smith's fire is the only warm thing in sight.
-*elseif (weather_wet)
-  Water drips from the eaves onto the racks, and the cinder between the sheds has gone black and soft.
-*elseif (weather_visibility = "poor")
-  Fog blurs the far sheds until only their open doors show, small and dark.
+*comment LAYER 2: SKY & ATMOSPHERIC LIGHT (Weather and light only, no people)
+*if (weather = "Rain")
+  Steady rain drums across the cedar roofs and streams from the eaves in dark cords, turning the cinder walkway soft and black.
+*elseif (weather = "Storm")
+  Channel gales howl down the water-lane, rattling loose shakes on the shed roofs and sending white wood curls tumbling across the yard.
+*elseif (weather = "Fog")
+  River mist blurs the canal edge into grey nothingness, muffling sound until only the nearest shed posts show dark against the murk.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  A dusting of frost furs the drying oar-blanks, and cold slush packs into the trampled cinders underfoot.
 *elseif (weather = "Clear")
-  Light comes low along the water-lane and turns the shavings gold.
+  Pale daylight slants beneath the eaves, catching the bright amber of fresh pine resin and turning the wood shavings gold.
+*else
+  *comment Overcast
+  A leaden pewter sky hangs over the water-lane, deadening the colors of the rusted iron stacks and grey shingles.
+
+*comment LAYER 3: STREET LIFE & WORK CADENCE
+*if (day_of_week = "Forgeday")
+  The yard is thick with salvage traffic: flat-bottomed punts nose into the bank to discharge tangled chain and sheared iron plates, while carters haul scrap barrows through the cinder lane.
+*else
+  The sheds run at an unhurried, steady pace. Boatwrights work along the benches with draw-knives, shaping ash poles with long, rhythmic strokes, while the scrap dealer sits beside his hanging scales watching the canal.
 
 *label cut_sheds_hub
-*choice
-  # Walk into the scrap yard and see what the dealer has.
-    *page_break Into the yard…
-    *goto cut_scrap_yard
-  # Go over to the smith's bench.
-    *page_break Over to the lean-to…
-    *goto cut_smith
-  # Head back along the canal.
-    *page_break Back along the canal…
-    *goto port_valen_dredge_end
-
-*comment ····· sub-location: the scrap dealer
-*label cut_scrap_yard
-[b]◈ THE SCRAP YARD[/b]
-*line_break
-A wide, slow man sits on an upturned bucket beside a pair of hanging scales, with a scrap of board on his knee and figures chalked on it in a column. Behind him the yard is stacked to head height: paving slabs, chain, plate iron, and iron oar-pins by the crate.
-
-*label cut_scrap_yard_hub
 *temp scrap_paid 0
 *choice
   *if (cut_scrap > 0)
-    # Put your finds on the scales.
+    # Step into the scrap pen and put your finds on the scales.
       *set scrap_paid (cut_scrap * 3)
-      He weighs your finds in the hanging pan, muttering a figure to himself, and counts the coppers out of a leather bag.
+      You cross into the fenced yard, where a wide, slow man in a greased canvas apron sits on an upturned nail-keg. He dumps your finds into a heavy iron balance pan, slides the lead counterweight along the arm with a calloused thumb, and nods once in agreement.
+
+      He counts the copper bits into your palm from a stained leather pouch.
       *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
         *set currency_add_amount scrap_paid
         *gosub_scene startup currency_add
@@ -1238,69 +1276,36 @@ A wide, slow man sits on an upturned bucket beside a pair of hanging scales, wit
         *set locked_currency_txn_page_id page_id
 
       [b][💰 Scrap Sold: +${scrap_paid} Copper Bits][/b]
-      *goto cut_scrap_yard_hub
+      *goto cut_sheds_hub
 
   *if (cut_rumors_scrap < 2)
-    # Ask what he is buying.
+    # Ask the scrap dealer what kinds of salvage he buys.
       *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
         *set cut_rumors_scrap + 1
         *set stat_bump_locked true
         *set locked_stat_bump_page_id page_id
       *if (cut_rumors_scrap = 1)
-        "Chain, plate, oar-pins, anything with iron in it that isn't nailed down," he says. "Stone, if it's flat." "Flat stone?" "Paving. Somebody in this quarter is always relaying a lane."
+        The dealer spits into the cinders without looking up from his scales. "Chain, plate iron, oar-pins—anything with weight in it that won't float," he grunts. "Paving stone, too, if the edges are square. Somebody in this quarter is always relaying a cellar threshold or patching a flooded lane."
       *else
-        "Some weeks the chain comes in with the harbor-master's mark rasped off it," he says. "I weigh it and I don't ask." He rubs a thumb across the board. "Everyone who doesn't ask lives a long time."
-      *goto cut_scrap_yard_hub
+        The dealer rests both hands flat on his knees and lowers his voice. "Some weeks, the chain dragged out of the channel has the harbor-master's proof-stamps freshly rasped away. I weigh the iron, I pay by the pound, and I don't ask what boat dropped it. Men who ask questions don't live long enough to buy a third barrel of coal."
+      *page_break Step away from the scales…
+      *goto cut_sheds_hub
 
-  # Leave the yard.
-    *page_break Back out to the sheds…
-    *goto cut_sheds_page
+  # Watch the boatwrights shaping oars beneath the open sheds.
+    You pause beneath an overhanging roof to watch two woodworkers at their bench. One holds an eight-foot ash pole clamped in a wooden vise while the other draws a curved blade along the grain, peeling off paper-thin ribbons of pale wood. 
 
-*comment ····· sub-location: the smith's bench
-*label cut_smith
-[b]◈ THE SMITH'S BENCH[/b]
-*line_break
-The smith works at a bench under a lean-to roof, with a small fire in a clay hearth beside him and a bucket of black water at his knee. He is a lean man with a leather patch on one forearm where the sparks land, and he looks over what you carry as a ferryman looks over a boat.
+    Their movements are practiced and silent; they test the flex against their knees, check the taper by eye, and rack the finished sweep among the dry cedar staves without a wasted word.
+    *page_break Step back into the lane…
+    *goto cut_sheds_hub
 
-*label cut_smith_hub
-*choice
-  # Have your gear looked over. [4 Copper Bits]@{show_stat_hints  [+1 STR Checks for 4h]|}
-    *if ((((gold * 100) + (silver * 10)) + copper) < 4)
-      "Four," the smith says, and holds up four fingers, and you find you are short.
-      *goto cut_smith_hub
-    *set hours_to_pass 0
-    *set minutes_to_pass 20
-    *set time_advance_call_id "cut_smith_1"
-    *gosub_scene calendar advance_time
-    He turns your ${weapon} over on the bench, dresses what is dull and tightens what is loose, then goes over your buckles and straps with small tongs and a drop of oil. You count four copper bits into his palm. Everything you carry sits a little more firmly on you afterward.
-    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-      *set currency_add_amount 0 - 4
-      *gosub_scene startup currency_add
-      *set unique_buff_input_name "Kit Tended"
-      *set unique_buff_input_desc "+1 STR Checks (Tightened Fittings)"
-      *set unique_buff_input_stat "str"
-      *set unique_buff_input_bonus 1
-      *set unique_buff_input_minutes 240
-      *gosub_scene startup apply_unique_buff
-      *set currency_txn_locked true
-      *set locked_currency_txn_page_id page_id
+  # Inspect the stacks of salvage chain and stone in the yard.
+    You look over the heaps of salvaged canal goods: coils of heavy dredge-chain encrusted with dried black silt, iron anchor rings pitted by salt, and stacks of chipped granite building blocks hauled up from collapsed foundations. Every piece has been dragged out of the mud below and beaten or scrubbed back into service.
+    *page_break Step back toward the sheds…
+    *goto cut_sheds_hub
 
-    [b][⚒ Kit Tended: +1 STR Checks for 4 Hours][/b]
-    *gosub_scene calendar recalc_hp_from_neglect
-    *if (hp_current <= 0)
-      *set death_cause "starvation"
-      *if (neglect_damage_fatigue > neglect_damage_hunger)
-        *set death_cause "exhaustion"
-      *goto_scene death death_screen
-    *goto cut_smith_hub
-
-  # Ask if he does more than tend kit.
-    "Oar-pins, hinges, chain links," he says. "Nobody in this quarter buys a new thing when an old thing can be beaten back into use."
-    *goto cut_smith_hub
-
-  # Step back out to the sheds.
-    *page_break Back out to the sheds…
-    *goto cut_sheds_page
+  # Head back along the canal bank.
+    *page_break Back along the canal…
+    *goto port_valen_dredge_end
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment AREA 4 OF 7: THE DREDGE LANDING
@@ -2053,9 +2058,64 @@ Upstairs, the private chamber beneath the seawall rafters is quiet and cedar-sce
 *else
   The room is temperate, sheltered from both wind and rain by the massive seawall foundations.
 
-She tends to you with unhurried warmth and practiced care: bolting the door against the hallway, pouring water to wash away the road sweat, and shedding the cold weight of the street. For three quarters of an hour, there is no pretense and no judgment between you, only uncomplicated comfort, physical release, and genuine human warmth beneath the quilts.
+The iron bolt shoots home into the doorframe with a solid, final click. There is no conversation to stall through.
 
-Afterward, you rinse at the basin and dress in the quiet room. Your muscles feel loose, the knots in your neck have softened, and you carry an easy, grounded confidence as you make your way back down the stairs to the parlor.
+*if (not(equipped_weapon_id = "none"))
+  Your ${weapon_prose} is laid across the timber bench within arm's reach of the bed, out of the way but close at hand.
+*if (not(equipped_cloak_id = "none"))
+  Your ${cloak_prose} joins it on the wood.
+
+She dips a linen cloth into the washstand basin, wringing out the water to wipe the salt grit and road dust from your throat and collar. Her hands work down to the fastenings of your ${armor_prose},
+*if ((armor_type = "brigandine") or (armor_type = "chain_jack"))
+  loosening the stiff iron-riveted straps and easing the dense harness over your shoulders. The metal hits the floorboards with a heavy, ringing thud,
+*elseif ((armor_type = "leather") or (armor_type = "buff_coat"))
+  unlacing the treated ties and peeling the stiffened leather from your ribs. It lands on the floorboards with a dull, hollow thump,
+*elseif (equipped_armor_id = "none")
+  pulling the salt-stained linen up and over your head,
+*else
+  untying the corded stays and drawing the damp weave away from your skin until it pools on the floorboards,
+followed by the rest of your kit, leaving you bare to the dim candlelight.
+
+*if (build = "broad")
+  Her palms smooth over the thick, heavy muscle of your shoulders and back, taking in the solid, anvil-dense weight of your frame.
+*elseif (build = "wiry")
+  Her fingers map the lean, corded muscle of your ribs and flanks, feeling the hard, whipcord tension coiled beneath your skin.
+*else
+  Her hands trace the long, clean lines of your torso and shoulders, taking in the reach and imposing height of your frame.
+
+*if (mark = "Iron-chafing scars on wrists")
+  Her thumbs brush lightly over the pale, faded rings where iron manacles once chewed into your wrists, smoothing away the ghost of old chains.
+*elseif (mark = "Heavily calloused laborer's hands")
+  She laces her fingers through yours, the rough, horn-hard callouses of your palms rasping with rough contrast against her softer skin.
+*elseif (mark = "Crooked nose and split brow")
+  Her fingertips trace the crook of your broken nose and the old tavern split along your brow before guiding your mouth down.
+*else
+  Her touch glides over your unbroken skin, her warm palms banishing the lingering chill of the river from your flesh.
+
+*temp enc_v 1
+*rand enc_v 1 5
+
+*if (enc_v = 1)
+  *comment ── VARIATION 1: MISSIONARY / CHEST-TO-CHEST ──
+  Her smock slides down over her shoulders in a rustle of coarse linen, pooling around her feet. She draws you down onto the firmness of the wool mattress, kneeling between your knees before pulling your weight over her. When she guides you inside her, the heat is sudden, tight, and wet, drawing a sharp hiss of breath through your teeth. You brace your palms against the rough cedar planks on either side of her head, finding a heavy, deliberate rhythm. Her heels lock tight behind your calves, tilting her pelvis to meet every drive of your hips with grinding friction. Sweat slicks the space between your chests as the pace quickens, the timber bedstead creaking rhythmically against the stone masonry behind you. Her fingers dig into the meat of your shoulders, dragging you down until her hot mouth finds your collarbone, her breath coming in ragged, broken gasps as you drive deep into her, chasing the coil of heat tighter and tighter until your hips buck in a fierce, shuddering surge that empties everything you have into her warmth.
+
+*elseif (enc_v = 2)
+  *comment ── VARIATION 2: EDGE OF MATTRESS / KNEES HAULED HIGH ──
+  She doesn't waste time shedding her smock, only hitching the linen skirts high around her waist as she pulls you back onto the bed ticking. Her hands guide you to her opening with urgent friction, slick and scalding, taking you all the way to the root in one hard, breathless thrust. The rhythm is rough and direct from the start. You haul her knees high over your hips, your fingers biting into the firm curve of her waist as you hammer into her, the bedposts knocking a steady, violent cadence against the seawall granite. She arches her spine off the quilts, her teeth grazing your jaw and her fingernails dragging hot tracks across your ribs with every impact. Her inner heat clamps down around you, relentless and wet, matching your cadence stroke for bruising stroke. The tension snaps like a parted tow-line; her thighs lock tight around your hips, shivering violently as your rhythm breaks into rapid, gasping drives, spilling thick and deep inside her while she buries her face into the crook of your neck.
+
+*elseif (enc_v = 3)
+  *comment ── VARIATION 3: COWGIRL / STRADDLING LAP ──
+  She sits astride your lap on the edge of the mattress, her bare thighs bracketing your hips, skin radiating dense warmth against your road-weary legs. When she sinks down onto you, she takes every inch with a low, ragged tremor that shakes her whole frame. Her hands press flat against your chest, steadying herself as she begins a slow, rolling grind, using her own weight to milk the friction deep in her core. You reach up, calloused hands gripping her hips and thighs to lift and drop her in time with your own upward thrusts. Her hair falls forward, curtaining both of your faces in the amber candlelight as the strokes turn wet and suffocatingly tight. The friction builds into an unbearable ache in your groin; you pull her down hard against you, thrusting upward with raw, unchecked momentum until her hips convulse around you, drawing out a long, breathless groan as your release floods through her.
+
+*elseif (enc_v = 4)
+  *comment ── VARIATION 4: FROM BEHIND / BENT OVER BOLSTER ──
+  She sheds her linen smock and turns away, dropping to her knees on the mattress and burying her elbows and chest into the stacked wool bolsters, her hips tilted high toward you in the amber lamplight. You climb onto the bed behind her, your palms finding the firm flare of her waist. When you slide into her from behind, she arches her lower spine with a sharp, choked gasp, the tight, scalding slide burying you to the hilt. The angle gives you punishing leverage. You clamp one hand over the curve of her hip, the other tangling into her hair to keep her pinned against the bedding as you establish a hard, driving rhythm. The wet, rhythmic impact of your pelvis against her thighs slaps loud in the quiet room. Her back bows under your weight; she shudders and pushes back against every thrust, her core clenching tightly around you until the heat becomes too sharp to hold, your hips driving forward in rapid, breathless hammer-strokes that break into a blinding, shuddering release.
+
+*else
+  *comment ── VARIATION 5: SIDE-LYING / TANGLED SPOONING ──
+  She draws you down sideways beneath the heavy wool blankets, turning her back to you and guiding your frame flush against hers. Reaching down, she hooks one bare leg high over your hip, tilting her pelvis to open herself completely. You ease forward into her warmth, sliding inside on your sides with a wet, seamless glide that draws a long shudder from her throat. Tucked behind her beneath the quilts, the heat is heavy and cocooned. You wrap one arm around her ribs, your palm resting flat against her lower stomach to anchor her tight against your groin as you begin a deep, rolling slide. The rhythm is steady, dragging out the friction with long, exhaustive strokes that bury you completely on each drive. Her head tilts back against your shoulder, breath feathering over your throat as her hips roll back against yours in quiet, desperate sync, chasing the pressure until her inner walls grip you in a tight, shivering spasm, pulling your seed out of you in a heavy, gasping pulse.
+
+Afterward, the room settles into thick, cooling stillness, broken only by the sound of heavy breathing and the distant wash of the canal against the stone pilings below. You rinse at the water basin with a wet cloth, washing away the sweat, and pull your garments back over your skin. Your muscles feel loose, the grinding tension has left your spine, and you carry an easy, grounded confidence as you unbolt the door and make your way back down the stairs to the parlor.
 
 [b][🕯️ Intimate Encounter: Carnal Warmth (+1 CHA Checks for 4 Hours) | Encounters: ${intimate_encounters}][/b]
 *page_break Return to the parlor…
@@ -2080,76 +2140,133 @@ Afterward, you rinse at the basin and dress in the quiet room. Your muscles feel
   *goto_scene death death_screen
 
 *label cut_shrine_page
+*temp cut_shrine_day false
+*temp cut_broth_serving false
+
+*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+  *set cut_shrine_day true
+
+*if ((day_of_week = "Hallowday") and (cut_shrine_day)) and (not(street_life = "empty"))
+  *set cut_broth_serving true
+
 [b]◈ THE ALLEY SHRINE[/b]
 *line_break
-The alley narrows to a timber arch black with tallow smoke. Under it stands a small carved figure in a veil, its face worn smooth by hands, with a name scratched into the base in a shaky hand: ALTHEA. Strips of old linen are tied along the arch, and a clay bowl at the figure's feet holds river pebbles and a few candle stubs guttering in a tin tray. An iron hook on the arch holds a pot when there is broth to give. The alley smells of tallow and boiled peas.
+*comment ── LAYER 1: PLACE (Constant Geography, Architecture, & Smell) ──
+The alley pinches narrow between two leaning tenement foundations, opening into a small stone pocket sheltered beneath a heavy cedar arch. The timber uprights are blackened by years of soot and woodsmoke. Set into a shallow niche in the seawall stone is a carved limestone figure draped in a veil, its features worn featureless by decades of touching fingers. Chiseled into the plinth in uneven letters is the name: [i]ALTHEA[/i]. Tattered strips of bleached linen and braided flax cords are knotted along the timber posts, and a shallow clay bowl at the figure's feet holds smooth river pebbles, copper pins, and beeswax candle stubs in an iron tray. An iron pot-hook hangs from the center of the arch. The close air smells of damp mortar, woodsmoke, river mud, and boiled grain.
 
-*if (day_of_week = "Hallowday")
-  *if (street_life = "empty")
-    It is Hallowday, and the district's poorest have crowded shoulder to shoulder under the arch to get out of the weather, bowls held close, while a friar in a patched habit of undyed wool ladles thin pea broth from the pot on its hook. Two men in boiled leather stand at the alley mouth all the same, checking faces against a scrap of vellum.
+*comment ── LAYER 2: SKY & ATMOSPHERIC LIGHT (Weather & Light Only, No People) ──
+*if (weather = "Rain")
+  Rain sheets off the cedar arch in a steady curtain, water streaming down the masonry joints and pooling between the uneven flagstones.
+*elseif (weather = "Storm")
+  Estuary gales scream down the narrow alley cut, rattling the timber stays and whipping cold spray across the dark stones.
+*elseif (weather = "Fog")
+  Thick sea-fog chokes the alley, turning the niche into a dim grey pocket and muffling footsteps from the water-lane outside.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Cold slush crusts the plinth and packs into the cracks between the paving flags, rime outlining the carved folds of the veil.
+*elseif (weather = "Blizzard")
+  Driving snow banks against the stone foundation steps, swirling in white drifts through the narrow passage.
+*elseif (weather = "Clear")
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    Cold starlight glints off the wet stones, leaving the arch in deep, quiet shadow.
+  *elseif (time_period = "Dusk")
+    The last copper twilight angles between the roofs, catching the wet sheen of the masonry.
   *else
-    It is Hallowday, and a long line of the district's poorest stands along the wall with bowls in their hands while a friar in a patched habit of undyed wool ladles thin pea broth from the pot on its hook. Two men in boiled leather stand at the alley mouth, checking faces against a scrap of vellum.
+    Sharp daylight cuts down the stone slot, warming the cedar timbers and picking out the flecks of river mica in the plinth.
 *else
-  Between broth days the arch is quiet. A few people sit on the step under it with their backs to the wall, and the candle stubs burn low.
+  *comment Overcast
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    A pitch-black sky sits over the alley mouth, swallowing the outlines of the upper roofs.
+  *else
+    A flat pewter sky hangs between the tenements, pressing chimney smoke low into the passage.
 
-*if (time_period = "Dusk")
-  The light through the alley has gone the color of weak tea.
-*if (weather_cold)
-  Snow has drifted against the step, and everyone near it has pulled their sacking over their heads.
-*elseif (weather_wet)
-  Rain runs off the arch in a curtain and spits into the tallow smoke.
-*elseif (weather_visibility = "poor")
-  Fog fills the alley, and the candles look like they are floating.
+*comment ── LAYER 3: STREET LIFE (Activity Derived From street_life, Day, & Time) ──
+*if (street_life = "empty")
+  The alley is deserted. The heavy iron broth-kettle has been unhooked and carried inside the cellars out of the storm, leaving the iron hook swinging bare in the draft. Shingle roofs rattle overhead, and brown runoff churns down the stone channel. No one lingers on the steps.
+  *if (de_savvy)
+    Even the bridge lookouts have abandoned the canal entrances; anything that moves through the passage stands out in plain view.
+
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  The shrine is quiet and shadow-drowned. A lone candle stub flickers in the tin tray, casting shivering amber light across the damp flagstones. Solitary figures duck through the cut with heads low, occasionally reaching up to touch the saint's feet in silence before melting into the gloom of the water-lanes.
+  *if (de_savvy)
+    The linen strips tied to the arch uprights aren't simple prayers; several carry small knots and dyed threads worked into the fringe, silent markers left between boat crews who don't risk putting words to paper.
+
+*elseif (day_of_week = "Hallowday")
+  *if (cut_broth_serving)
+    A quiet queue in patched smocks and burlap wraps lines the tenement wall, cracked earthenware and wooden trenchers in hand. Beneath the timber arch, a friar in an undyed, frayed wool habit ladles thin pea soup from a steaming iron kettle. At the alley mouth, two broad-shouldered men in boiled leather stand with folded arms, checking faces against a creased scrap of vellum.
+    *if (de_savvy)
+      You clock the men with the vellum: they aren't church beadles or Watch sentries. They are Black Oath runners checking names against harbor dues and debt rolls. A quiet tap on a shoulder is enough to pull someone out of the line before their bowl is even filled.
+  *else
+    *comment Dusk on Hallowday
+    The charity line has dispersed for the evening. The friar is scouring the bottom of the empty iron kettle with coarse sand, while a few stragglers sit against the wall scraping the dregs from their trenchers.
+
+*else
+  *comment Ordinary working day (Morning, Midday, Afternoon, Dusk)
+  Between broth days the arch is uncrowded. A few elderly spinners or injured dockers sit on the low stone foundation steps with their backs to the timber, resting out of the wind. Passing watermen pause to lay a palm against the carved veil or leave a river pebble in the bowl before heading down to the canals.
 
 *label cut_shrine_hub
 *choice
-  *if ((day_of_week = "Hallowday") and (cut_broth_day < campaign_day))
-    # Join the line and take a bowl of broth.
+  *if ((cut_broth_serving) and (cut_broth_day < campaign_day))
+    # Join the queue and take a bowl of broth. [~15 min]
       *set cut_broth_day campaign_day
+      *set hours_to_pass 0
+      *set minutes_to_pass 15
+      *set time_advance_call_id "cut_shrine_broth_time"
+      *gosub_scene calendar advance_time
       *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
         *set minutes_since_meal 0
         *set hunger_stage "Fed"
         *set neglect_damage_hunger 0
+        *gosub_scene calendar recalc_hp_from_neglect
         *set stat_bump_locked true
         *set locked_stat_bump_page_id page_id
-      The friar ladles a bowl of pea broth so thin you can see the bottom, and says a name under his breath as he hands it over. You cannot tell whether it is yours or hers. You drink it standing against the wall. It is hot, and there is a little salt in it.
+      You wait your turn along the wall and hold out your bowl. The friar ladles a measure of pea broth, thin and watery, with a pinch of coarse bay-salt and a few soft peas at the bottom. He murmurs a short prayer of mending as you take it. You drink it standing in the shelter of the timber posts; it is steaming hot, burning the numbness from your throat and putting warmth back into your ribs.
 
       [b][🍲 Broth Line: Hunger Eased][/b]
       *goto cut_shrine_hub
-  *if (day_of_week = "Hallowday")
-    # Speak with the friar while the line moves.
-      "Who is on the list?" you ask.
 
-      "Everyone who comes," the friar says, and fills the next bowl.
+  *if (cut_broth_serving)
+    # Speak with the friar while he tends the kettle.
+      You step to the side of the pot as he refills a wooden bowl. "Who is on the vellum roll?" you ask, gesturing toward the alley mouth.
 
-      "And who is off it?"
+      The friar does not look up from his ladle. "Those who live by the water," he murmurs evenly. "And those who owe."
 
-      "Everyone who stops coming." He hands the bowl down. "Some of them move. Some of them are moved."
+      "And who comes off it?"
+
+      "Those who pay, those who move inland, and those the tide takes." He passes the bowl to an old woman with crippled hands. "I feed whoever stands here. The Oath counts the boats."
       *goto cut_shrine_hub
+
+  # Lay a hand against the carved veil of Saint Althea.
+    You step up to the niche and press your palm flat against the cold limestone hem. Decades of salt spray, peat smoke, and passing hands have polished the surface like wet river slate. For a quiet moment away from the noise of the canal cuts, the stone feels solid beneath your grip, an anchor to an older faith that asked for bandages and needlework instead of gold and iron.
+    *goto cut_shrine_hub
+
   *if (cut_rumors_shrine < 2)
-    # Sit on the step and listen.
+    # Rest on the stone step and listen to the murmurs near the arch.
       *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
         *set cut_rumors_shrine + 1
         *set stat_bump_locked true
         *set locked_stat_bump_page_id page_id
       *if (cut_rumors_shrine = 1)
-        A woman with a baby on her hip tells the man beside her that the tin tray is emptier every month. "People have no candles to spare. They light one for the ones who didn't come back and none for themselves."
+        A woman with a child wrapped in coarse sacking speaks quietly to her neighbor: "The tin tray stays bare most weeks now. People have no wax to spare. They light a stub for the boats that never crossed the bar, and none for the ones still afloat."
       *else
-        An old man tells a boy that the arch is older than the lanes. "They built the lanes around it. Everything here got built around something that was already sinking." He nods up toward the terraces. "The bishops up the hill sing to her father. Down here we still pray to her. She mended things. He only swears them."
+        An old net-mender pauses on the step, speaking low to a young apprentice: "The arch is older than the tenements around it. The grand cathedral on the hill sings to her father, the Sun-Father, but up there they pray for merchant fleets and victory in the Marches. Down here in the silt, Althea is the only one who cares about a leaking hull."
       *goto cut_shrine_hub
+
   *if ((not(cut_shrine_gave)) and ((((gold * 100) + (silver * 10)) + copper) >= 1))
-    # Leave a copper bit in the clay bowl.
+    # Leave a copper bit in the earthenware bowl. [1 Copper Bit]
       *set cut_shrine_gave true
       *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
         *set currency_add_amount 0 - 1
         *gosub_scene startup currency_add
         *set currency_txn_locked true
         *set locked_currency_txn_page_id page_id
-      The coin rings in the bowl. A woman on the step touches your sleeve. "Not the bowl," she says quietly. "The friar doesn't keep it. The bowl goes to whoever is on the list that week. Ask him who."
+      The copper bit chimes softly against the smooth river pebbles in the clay bowl. 
 
-      [b][💰 Offering: -1 Copper Bit][/b]
+      An older woman resting against the foundation timber lifts her chin. "The friar doesn't keep what goes in the dish, traveler," she says in a raspy murmur. "It goes into the parish shroud-purse for whichever family lost their skiff to the bar this week. You've paid for somebody's burial shroud."
+
+      [b][💰 Offering Given: -1 Copper Bit][/b]
       *goto cut_shrine_hub
-  # Leave the arch.
+
+  # Leave the archway.
     *page_break Back out to the lanes…
     *goto port_valen_dredge_end
 

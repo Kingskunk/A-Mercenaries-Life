@@ -99,12 +99,14 @@
 *set combat_enemy1_dmg_bonus combat_enemy_dmg_bonus
 *set combat_enemy1_epithet combat_enemy_epithet
 *set combat_enemy1_metal_armor combat_enemy_metal_armor
-*comment Same snapshot for slot 1's condition/stun/movepool fields -- a
-*comment single-enemy fight just sets the no-number scratch vars directly
-*comment (fight_gang_thug does), same as it always has for atk_bonus/dmg/
-*comment epithet above. A multi-enemy fight that wants slot 2/3 to have
-*comment their OWN condition/stun/movepool sets combat_enemy2_/3_* directly
-*comment instead, same as it already does for combat_enemy2_name/epithet.
+*set combat_enemy1_dmg_type combat_enemy_dmg_type
+*comment Same snapshot for slot 1's condition/stun/movepool/resistance
+*comment fields -- a single-enemy fight just sets the no-number scratch vars
+*comment directly (fight_gang_thug does), same as it always has for atk_
+*comment bonus/dmg/epithet above. A multi-enemy fight that wants slot 2/3 to
+*comment have their OWN condition/stun/movepool/resistance sets combat_
+*comment enemy2_/3_* directly instead, same as it already does for combat_
+*comment enemy2_name/epithet.
 *set combat_enemy1_inflicts_condition combat_enemy_inflicts_condition
 *set combat_enemy1_condition_name combat_enemy_condition_name
 *set combat_enemy1_condition_icon combat_enemy_condition_icon
@@ -115,9 +117,14 @@
 *set combat_enemy1_move2_atk_bonus combat_enemy_move2_atk_bonus
 *set combat_enemy1_move2_dmg_dice_sides combat_enemy_move2_dmg_dice_sides
 *set combat_enemy1_move2_dmg_bonus combat_enemy_move2_dmg_bonus
+*set combat_enemy1_move2_dmg_type combat_enemy_move2_dmg_type
 *set combat_enemy1_move2_inflicts_condition combat_enemy_move2_inflicts_condition
 *set combat_enemy1_move2_condition_name combat_enemy_move2_condition_name
 *set combat_enemy1_move2_condition_icon combat_enemy_move2_condition_icon
+*set combat_enemy1_resist_type_1 combat_enemy_resist_type_1
+*set combat_enemy1_resist_type_2 combat_enemy_resist_type_2
+*set combat_enemy1_vulnerable_type_1 combat_enemy_vulnerable_type_1
+*set combat_enemy1_vulnerable_type_2 combat_enemy_vulnerable_type_2
 *set combat_active_target 1
 *return
 
@@ -134,10 +141,11 @@
 *comment skill check outside this fight.
 *set disadvantage false
 *set advantage false
-*comment Condition-on-hit, Stunned, and movepool are all opt-in per
-*comment fight_<name> label -- reset here (end of THIS fight, before the
-*comment NEXT fight's label ever runs) so an enemy that doesn't set them
-*comment never inherits the previous encounter's flag/name/icon/moveset.
+*comment Condition-on-hit, Stunned, movepool, and damage-type resistance are
+*comment all opt-in per fight_<name> label -- reset here (end of THIS fight,
+*comment before the NEXT fight's label ever runs) so an enemy that doesn't
+*comment set them never inherits the previous encounter's flag/name/icon/
+*comment moveset/resistance.
 *set combat_enemy_inflicts_condition false
 *set combat_enemy_condition_name ""
 *set combat_enemy_condition_icon ""
@@ -151,23 +159,21 @@
 *set combat_enemy_move2_atk_bonus 0
 *set combat_enemy_move2_dmg_dice_sides 4
 *set combat_enemy_move2_dmg_bonus 0
+*set combat_enemy_move2_dmg_type "bludgeoning"
 *set combat_enemy_move2_inflicts_condition false
 *set combat_enemy_move2_condition_name ""
 *set combat_enemy_move2_condition_icon ""
 *set combat_enemy_move2_used false
 *set combat_flavor_enemy_move2_hit ""
 *set combat_flavor_enemy_move2_miss ""
-*comment Enemy type library scratch -- consumed immediately by
-*comment apply_enemy_type in the normal case, but reset here too so a typo'd
-*comment combat_apply_type or an unclaimed override never lingers oddly.
-*set combat_apply_type ""
-*set combat_apply_slot 0
-*set combat_enemy_name_override ""
-*set combat_enemy_epithet_override ""
-*set combat_enemy2_name_override ""
-*set combat_enemy2_epithet_override ""
-*set combat_enemy3_name_override ""
-*set combat_enemy3_epithet_override ""
+*set combat_enemy_dmg_type "bludgeoning"
+*set combat_player_dmg_type "bludgeoning"
+*set combat_enemy_resist_type_1 ""
+*set combat_enemy_resist_type_2 ""
+*set combat_enemy_vulnerable_type_1 ""
+*set combat_enemy_vulnerable_type_2 ""
+*set combat_incoming_dmg_suffix ""
+*set combat_outgoing_dmg_suffix ""
 *comment The scratch resets above only clear the "active slot" mirror --
 *comment the persistent per-slot storage below also needs clearing, or a
 *comment future fight that gives slot 2 no movepool would silently inherit
@@ -182,9 +188,15 @@
 *set combat_enemy1_move2_atk_bonus 0
 *set combat_enemy1_move2_dmg_dice_sides 4
 *set combat_enemy1_move2_dmg_bonus 0
+*set combat_enemy1_move2_dmg_type "bludgeoning"
 *set combat_enemy1_move2_inflicts_condition false
 *set combat_enemy1_move2_condition_name ""
 *set combat_enemy1_move2_condition_icon ""
+*set combat_enemy1_dmg_type "bludgeoning"
+*set combat_enemy1_resist_type_1 ""
+*set combat_enemy1_resist_type_2 ""
+*set combat_enemy1_vulnerable_type_1 ""
+*set combat_enemy1_vulnerable_type_2 ""
 *set combat_enemy2_inflicts_condition false
 *set combat_enemy2_condition_name ""
 *set combat_enemy2_condition_icon ""
@@ -195,11 +207,17 @@
 *set combat_enemy2_move2_atk_bonus 0
 *set combat_enemy2_move2_dmg_dice_sides 4
 *set combat_enemy2_move2_dmg_bonus 0
+*set combat_enemy2_move2_dmg_type "bludgeoning"
 *set combat_enemy2_move2_inflicts_condition false
 *set combat_enemy2_move2_condition_name ""
 *set combat_enemy2_move2_condition_icon ""
 *set combat_flavor_enemy2_move2_hit ""
 *set combat_flavor_enemy2_move2_miss ""
+*set combat_enemy2_dmg_type "bludgeoning"
+*set combat_enemy2_resist_type_1 ""
+*set combat_enemy2_resist_type_2 ""
+*set combat_enemy2_vulnerable_type_1 ""
+*set combat_enemy2_vulnerable_type_2 ""
 *set combat_enemy3_inflicts_condition false
 *set combat_enemy3_condition_name ""
 *set combat_enemy3_condition_icon ""
@@ -210,11 +228,17 @@
 *set combat_enemy3_move2_atk_bonus 0
 *set combat_enemy3_move2_dmg_dice_sides 4
 *set combat_enemy3_move2_dmg_bonus 0
+*set combat_enemy3_move2_dmg_type "bludgeoning"
 *set combat_enemy3_move2_inflicts_condition false
 *set combat_enemy3_move2_condition_name ""
 *set combat_enemy3_move2_condition_icon ""
 *set combat_flavor_enemy3_move2_hit ""
 *set combat_flavor_enemy3_move2_miss ""
+*set combat_enemy3_dmg_type "bludgeoning"
+*set combat_enemy3_resist_type_1 ""
+*set combat_enemy3_resist_type_2 ""
+*set combat_enemy3_vulnerable_type_1 ""
+*set combat_enemy3_vulnerable_type_2 ""
 *comment Multi-enemy state must not leak into the next fight -- a future
 *comment single-enemy encounter defaults to slot 1 only via combat_enemy_count.
 *set combat_enemy_count 1
@@ -245,6 +269,7 @@
   *set combat_enemy_dmg_bonus combat_enemy1_dmg_bonus
   *set combat_enemy_epithet combat_enemy1_epithet
   *set combat_enemy_metal_armor combat_enemy1_metal_armor
+  *set combat_enemy_dmg_type combat_enemy1_dmg_type
   *set combat_enemy_inflicts_condition combat_enemy1_inflicts_condition
   *set combat_enemy_condition_name combat_enemy1_condition_name
   *set combat_enemy_condition_icon combat_enemy1_condition_icon
@@ -255,9 +280,14 @@
   *set combat_enemy_move2_atk_bonus combat_enemy1_move2_atk_bonus
   *set combat_enemy_move2_dmg_dice_sides combat_enemy1_move2_dmg_dice_sides
   *set combat_enemy_move2_dmg_bonus combat_enemy1_move2_dmg_bonus
+  *set combat_enemy_move2_dmg_type combat_enemy1_move2_dmg_type
   *set combat_enemy_move2_inflicts_condition combat_enemy1_move2_inflicts_condition
   *set combat_enemy_move2_condition_name combat_enemy1_move2_condition_name
   *set combat_enemy_move2_condition_icon combat_enemy1_move2_condition_icon
+  *set combat_enemy_resist_type_1 combat_enemy1_resist_type_1
+  *set combat_enemy_resist_type_2 combat_enemy1_resist_type_2
+  *set combat_enemy_vulnerable_type_1 combat_enemy1_vulnerable_type_1
+  *set combat_enemy_vulnerable_type_2 combat_enemy1_vulnerable_type_2
 *if (combat_active_target = 2)
   *set combat_enemy_name combat_enemy2_name
   *set combat_enemy_hp combat_enemy2_hp
@@ -268,6 +298,7 @@
   *set combat_enemy_dmg_bonus combat_enemy2_dmg_bonus
   *set combat_enemy_epithet combat_enemy2_epithet
   *set combat_enemy_metal_armor combat_enemy2_metal_armor
+  *set combat_enemy_dmg_type combat_enemy2_dmg_type
   *set combat_enemy_inflicts_condition combat_enemy2_inflicts_condition
   *set combat_enemy_condition_name combat_enemy2_condition_name
   *set combat_enemy_condition_icon combat_enemy2_condition_icon
@@ -278,9 +309,14 @@
   *set combat_enemy_move2_atk_bonus combat_enemy2_move2_atk_bonus
   *set combat_enemy_move2_dmg_dice_sides combat_enemy2_move2_dmg_dice_sides
   *set combat_enemy_move2_dmg_bonus combat_enemy2_move2_dmg_bonus
+  *set combat_enemy_move2_dmg_type combat_enemy2_move2_dmg_type
   *set combat_enemy_move2_inflicts_condition combat_enemy2_move2_inflicts_condition
   *set combat_enemy_move2_condition_name combat_enemy2_move2_condition_name
   *set combat_enemy_move2_condition_icon combat_enemy2_move2_condition_icon
+  *set combat_enemy_resist_type_1 combat_enemy2_resist_type_1
+  *set combat_enemy_resist_type_2 combat_enemy2_resist_type_2
+  *set combat_enemy_vulnerable_type_1 combat_enemy2_vulnerable_type_1
+  *set combat_enemy_vulnerable_type_2 combat_enemy2_vulnerable_type_2
 *if (combat_active_target = 3)
   *set combat_enemy_name combat_enemy3_name
   *set combat_enemy_hp combat_enemy3_hp
@@ -291,6 +327,7 @@
   *set combat_enemy_dmg_bonus combat_enemy3_dmg_bonus
   *set combat_enemy_epithet combat_enemy3_epithet
   *set combat_enemy_metal_armor combat_enemy3_metal_armor
+  *set combat_enemy_dmg_type combat_enemy3_dmg_type
   *set combat_enemy_inflicts_condition combat_enemy3_inflicts_condition
   *set combat_enemy_condition_name combat_enemy3_condition_name
   *set combat_enemy_condition_icon combat_enemy3_condition_icon
@@ -301,9 +338,14 @@
   *set combat_enemy_move2_atk_bonus combat_enemy3_move2_atk_bonus
   *set combat_enemy_move2_dmg_dice_sides combat_enemy3_move2_dmg_dice_sides
   *set combat_enemy_move2_dmg_bonus combat_enemy3_move2_dmg_bonus
+  *set combat_enemy_move2_dmg_type combat_enemy3_move2_dmg_type
   *set combat_enemy_move2_inflicts_condition combat_enemy3_move2_inflicts_condition
   *set combat_enemy_move2_condition_name combat_enemy3_move2_condition_name
   *set combat_enemy_move2_condition_icon combat_enemy3_move2_condition_icon
+  *set combat_enemy_resist_type_1 combat_enemy3_resist_type_1
+  *set combat_enemy_resist_type_2 combat_enemy3_resist_type_2
+  *set combat_enemy_vulnerable_type_1 combat_enemy3_vulnerable_type_1
+  *set combat_enemy_vulnerable_type_2 combat_enemy3_vulnerable_type_2
 *return
 
 *label fight_sync_target_out
@@ -431,6 +473,7 @@
     *gosub pick_weapon_flavor
     *gosub_scene startup roll_d20_check
     *if (check_success)
+      *set combat_player_dmg_type weapon_damage_type
       *if (weapon_type = "finesse")
         *set combat_player_dmg_dice_sides 4
         *comment Matches the STR-or-higher check above -- 5e uses the same
@@ -487,17 +530,17 @@
           *else
             You strike from an opening it never saw coming, driving your ${weapon} into an exposed weak point for a vicious, precise finishing blow.
         *if (combat_enemy_hp <= 0)
-          [b][🗡️ Sneak Attack | 💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage][/b]
+          [b][🗡️ Sneak Attack | 💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
         *else
-          [b][🗡️ Sneak Attack | 🩸 Hit: ${combat_player_dmg_dealt} damage][/b]
+          [b][🗡️ Sneak Attack | 🩸 Hit: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
       *elseif (combat_enemy_hp <= 0)
         *temp fdh ""
         *gosub pick_weapon_death_flavor
         ${fdh}
-        [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage][/b]
+        [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
       *else
         ${fwh}
-        [b][🩸 Hit: ${combat_player_dmg_dealt} damage][/b]
+        [b][🩸 Hit: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
     *else
       ${fwm}
       [b][💨 Miss][/b]
@@ -511,6 +554,7 @@
       *set check_skill "Fire Bolt"
       *gosub_scene startup roll_d20_check
       *if (check_success)
+        *set combat_player_dmg_type "fire"
         *set combat_player_dmg_dice_sides 10
         *set combat_player_dmg_bonus 0
         *gosub_scene startup resolve_player_hit
@@ -518,10 +562,10 @@
           *temp fdh ""
           *gosub pick_spell_death_flavor
           ${fdh}
-          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Fire damage][/b]
+          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Fire damage${combat_outgoing_dmg_suffix}][/b]
         *else
           A searing mote of fire snaps from your outstretched fingers and punches home in a violent flare and a hiss of steam.
-          [b][🔥 Fire Bolt: Hit | ${combat_player_dmg_dealt} Fire damage][/b]
+          [b][🔥 Fire Bolt: Hit | ${combat_player_dmg_dealt} Fire damage${combat_outgoing_dmg_suffix}][/b]
       *else
         The mote of fire streaks wide, scorching nothing but empty air.
         [b][💨 Miss][/b]
@@ -535,6 +579,7 @@
       *set check_skill "Ray of Frost"
       *gosub_scene startup roll_d20_check
       *if (check_success)
+        *set combat_player_dmg_type "cold"
         *set combat_player_dmg_dice_sides 8
         *set combat_player_dmg_bonus 0
         *gosub_scene startup resolve_player_hit
@@ -543,10 +588,10 @@
           *temp fdh ""
           *gosub pick_spell_death_flavor
           ${fdh}
-          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Cold damage][/b]
+          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Cold damage${combat_outgoing_dmg_suffix}][/b]
         *else
           A pale ray of unnatural cold catches ${combat_enemy_epithet} square on, rime crackling across the point of impact and slowing its next strike to a sluggish crawl.
-          [b][❄️ Ray of Frost: Hit | ${combat_player_dmg_dealt} Cold damage | ⚠️ Slowed — disadvantage on its next attack][/b]
+          [b][❄️ Ray of Frost: Hit | ${combat_player_dmg_dealt} Cold damage${combat_outgoing_dmg_suffix} | ⚠️ Slowed — disadvantage on its next attack][/b]
       *else
         The ray splashes past, freezing nothing but the damp air.
         [b][💨 Miss][/b]
@@ -566,6 +611,7 @@
       *set check_skill "Shocking Grasp"
       *gosub_scene startup roll_d20_check
       *if (check_success)
+        *set combat_player_dmg_type "lightning"
         *set combat_player_dmg_dice_sides 8
         *set combat_player_dmg_bonus 0
         *gosub_scene startup resolve_player_hit
@@ -573,13 +619,13 @@
           *temp fdh ""
           *gosub pick_spell_death_flavor
           ${fdh}
-          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Lightning damage][/b]
+          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Lightning damage${combat_outgoing_dmg_suffix}][/b]
         *elseif (combat_enemy_metal_armor)
           Blue-white lightning discharges from your palm and leaps hungrily to the iron on ${combat_enemy_epithet}, arcing through every buckle and plate in one violent convulsion.
-          [b][⚡ Shocking Grasp: Hit | ${combat_player_dmg_dealt} Lightning damage | 🔩 Metal-Seeking Advantage][/b]
+          [b][⚡ Shocking Grasp: Hit | ${combat_player_dmg_dealt} Lightning damage${combat_outgoing_dmg_suffix} | 🔩 Metal-Seeking Advantage][/b]
         *else
           Blue-white lightning discharges from your palm, locking muscle and jaw alike in one violent convulsion.
-          [b][⚡ Shocking Grasp: Hit | ${combat_player_dmg_dealt} Lightning damage][/b]
+          [b][⚡ Shocking Grasp: Hit | ${combat_player_dmg_dealt} Lightning damage${combat_outgoing_dmg_suffix}][/b]
       *else
         The charge earths itself somewhere else entirely, dissipating in a shower of harmless sparks.
         [b][💨 Miss][/b]
@@ -593,6 +639,7 @@
       *set check_skill "Eldritch Blast"
       *gosub_scene startup roll_d20_check
       *if (check_success)
+        *set combat_player_dmg_type "force"
         *set combat_player_dmg_dice_sides 10
         *set combat_player_dmg_bonus 0
         *gosub_scene startup resolve_player_hit
@@ -600,10 +647,10 @@
           *temp fdh ""
           *gosub pick_spell_death_flavor
           ${fdh}
-          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Force damage][/b]
+          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Force damage${combat_outgoing_dmg_suffix}][/b]
         *else
           A jagged streak of violet force slams home with the concussive boom of a shattered timber.
-          [b][✨ Eldritch Blast: Hit | ${combat_player_dmg_dealt} Force damage][/b]
+          [b][✨ Eldritch Blast: Hit | ${combat_player_dmg_dealt} Force damage${combat_outgoing_dmg_suffix}][/b]
       *else
         The beam tears past and shatters against whatever's unlucky enough to be standing behind it.
         [b][💨 Miss][/b]
@@ -617,6 +664,7 @@
       *set check_skill "Chill Touch"
       *gosub_scene startup roll_d20_check
       *if (check_success)
+        *set combat_player_dmg_type "necrotic"
         *set combat_player_dmg_dice_sides 8
         *set combat_player_dmg_bonus 0
         *gosub_scene startup resolve_player_hit
@@ -624,10 +672,10 @@
           *temp fdh ""
           *gosub pick_spell_death_flavor
           ${fdh}
-          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Necrotic damage][/b]
+          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Necrotic damage${combat_outgoing_dmg_suffix}][/b]
         *else
           A ghostly, translucent hand wreathed in necrotic mist closes around ${combat_enemy_epithet}, sapping the warmth and strength from the wound it leaves behind.
-          [b][💀 Chill Touch: Hit | ${combat_player_dmg_dealt} Necrotic damage][/b]
+          [b][💀 Chill Touch: Hit | ${combat_player_dmg_dealt} Necrotic damage${combat_outgoing_dmg_suffix}][/b]
       *else
         The spectral hand dissolves into harmless mist a hair's breadth short of its mark.
         [b][💨 Miss][/b]
@@ -641,6 +689,7 @@
       *set check_skill "Vicious Mockery"
       *gosub_scene startup roll_d20_check
       *if (check_success)
+        *set combat_player_dmg_type "psychic"
         *set combat_player_dmg_dice_sides 4
         *set combat_player_dmg_bonus 0
         *gosub_scene startup resolve_player_hit
@@ -649,10 +698,10 @@
           *temp fdh ""
           *gosub pick_spell_death_flavor
           ${fdh}
-          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Psychic damage][/b]
+          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Psychic damage${combat_outgoing_dmg_suffix}][/b]
         *else
           Your cutting cadence lands with surgical precision, needling straight at a nerve you didn't know was there — its balance and its nerve both falter in the same breath.
-          [b][🎭 Vicious Mockery: Hit | ${combat_player_dmg_dealt} Psychic damage | ⚠️ Rattled — disadvantage on its next attack][/b]
+          [b][🎭 Vicious Mockery: Hit | ${combat_player_dmg_dealt} Psychic damage${combat_outgoing_dmg_suffix} | ⚠️ Rattled — disadvantage on its next attack][/b]
       *else
         Whatever passes for pride in ${combat_enemy_epithet} shrugs the insult off without a flicker.
         [b][💨 Resisted][/b]
@@ -666,10 +715,10 @@
         *temp fdh ""
         *gosub pick_spell_death_flavor
         ${fdh}
-        [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage][/b]
+        [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
       *else
         You speak three crisp syllables and snap your fingers forward. Three glowing, pale-blue darts of crackling arcane force burst from your fingertips, curving unerringly through the air to slam home.
-        [b][✨ Magic Missile: Automatic Hit | ${combat_player_dmg_dealt} damage][/b]
+        [b][✨ Magic Missile: Automatic Hit | ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
       *goto fight_check_enemy_hp
 
   *if ((((warlock_spell = "hex") and (warlock_spell_slots > 0)) or ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))) and (not(hex_active)))
@@ -705,13 +754,13 @@
         *temp fdh ""
         *gosub pick_spell_death_flavor
         ${fdh}
-        [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Psychic Damage][/b]
+        [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Psychic Damage${combat_outgoing_dmg_suffix}][/b]
       *elseif (check_success)
         ${combat_flavor_dissonant_hit}
-        [b][🧠 Dissonant Whispers: Failed Save | ${combat_player_dmg_dealt} Psychic Damage][/b]
+        [b][🧠 Dissonant Whispers: Failed Save | ${combat_player_dmg_dealt} Psychic Damage${combat_outgoing_dmg_suffix}][/b]
       *else
         ${combat_flavor_dissonant_miss}
-        [b][🧠 Dissonant Whispers: Saved | Half Damage: ${combat_player_dmg_dealt} Psychic Damage][/b]
+        [b][🧠 Dissonant Whispers: Saved | Half Damage: ${combat_player_dmg_dealt} Psychic Damage${combat_outgoing_dmg_suffix}][/b]
       *goto fight_check_enemy_hp
 
   *if ((((bard_spell = "healing_word") or (bard_spell_2 = "healing_word")) and (bard_spell_slots > 0)) and (hp_current < hp_max))
@@ -865,7 +914,7 @@
 *if (combat_shield_triggered)
   *if (combat_enemy_hit_success)
     A shimmering lattice of force flares to life around you on pure reflex, but the blow crashes through it anyway, striking home regardless.
-    [b][✨ Shield Broken Through | 🩸 ${combat_enemy_name} Hits: ${combat_enemy_dmg_dealt} damage | HP: ${hp_current} / ${hp_max}][/b]
+    [b][✨ Shield Broken Through | 🩸 ${combat_enemy_name} Hits: ${combat_enemy_dmg_dealt} damage${combat_incoming_dmg_suffix} | HP: ${hp_current} / ${hp_max}][/b]
   *else
     A shimmering lattice of force flares to life around you on pure reflex, deflecting the strike a hair's breadth away.
     [b][✨ Shield Holds | 💨 ${combat_enemy_name} Misses][/b]
@@ -875,17 +924,17 @@
     *if (combat_agathys_triggered)
       *if (combat_agathys_shattered)
         As the blow lands, your frost-sheathe shatters violently in a burst of crystalline rime, driving shards of biting cold deep into ${combat_enemy_epithet}!
-        [b][❄️ Armor of Agathys: 5 Cold Damage dealt to ${combat_enemy_name} | Frost Armor Shattered][/b]
+        [b][❄️ Armor of Agathys: ${combat_player_dmg_dealt} Cold Damage dealt to ${combat_enemy_name}${combat_outgoing_dmg_suffix} | Frost Armor Shattered][/b]
       *else
         As the blow lands, the rime holding across your harness pulses with bitter frost, biting into ${combat_enemy_epithet} while your armor holds!
-        [b][❄️ Armor of Agathys: 5 Cold Damage dealt to ${combat_enemy_name} | ${temp_hp} Temp HP remaining][/b]
+        [b][❄️ Armor of Agathys: ${combat_player_dmg_dealt} Cold Damage dealt to ${combat_enemy_name}${combat_outgoing_dmg_suffix} | ${temp_hp} Temp HP remaining][/b]
       *if (combat_enemy_hp <= 0)
         *temp fdh ""
         *set combat_current_spell_id "armor_of_agathys"
         *gosub pick_spell_death_flavor
         ${fdh}
         [b][💀 ${combat_enemy_name} Defeated — Killed by Its Own Strike][/b]
-    [b][🩸 ${combat_enemy_name} Hits: ${combat_enemy_dmg_dealt} damage | HP: ${hp_current} / ${hp_max}][/b]
+    [b][🩸 ${combat_enemy_name} Hits: ${combat_enemy_dmg_dealt} damage${combat_incoming_dmg_suffix} | HP: ${hp_current} / ${hp_max}][/b]
     *if (combat_condition_inflicted)
       [b][${combat_enemy_condition_icon} ${combat_enemy_condition_name} — disadvantage on your next attack][/b]
     *if (combat_stun_inflicted)
@@ -1239,6 +1288,7 @@
     *set combat_enemy_atk_bonus combat_enemy_move2_atk_bonus
     *set combat_enemy_dmg_dice_sides combat_enemy_move2_dmg_dice_sides
     *set combat_enemy_dmg_bonus combat_enemy_move2_dmg_bonus
+    *set combat_enemy_dmg_type combat_enemy_move2_dmg_type
     *set combat_enemy_inflicts_condition combat_enemy_move2_inflicts_condition
     *set combat_enemy_condition_name combat_enemy_move2_condition_name
     *set combat_enemy_condition_icon combat_enemy_move2_condition_icon
@@ -1384,6 +1434,8 @@
   *set combat_enemy_move2_atk_bonus 2
   *set combat_enemy_move2_dmg_dice_sides 4
   *set combat_enemy_move2_dmg_bonus 0
+  *comment Move 2 drops the cudgel (bludgeoning, the default) for a knife.
+  *set combat_enemy_move2_dmg_type "piercing"
   *set combat_enemy_move2_inflicts_condition true
   *set combat_enemy_move2_condition_name "Poisoned"
   *set combat_enemy_move2_condition_icon "🤢"
@@ -1412,6 +1464,7 @@
   *set combat_enemy2_move2_atk_bonus 2
   *set combat_enemy2_move2_dmg_dice_sides 4
   *set combat_enemy2_move2_dmg_bonus 0
+  *set combat_enemy2_move2_dmg_type "piercing"
   *set combat_enemy2_move2_inflicts_condition true
   *set combat_enemy2_move2_condition_name "Poisoned"
   *set combat_enemy2_move2_condition_icon "🤢"
@@ -1440,6 +1493,7 @@
   *set combat_enemy3_move2_atk_bonus 2
   *set combat_enemy3_move2_dmg_dice_sides 4
   *set combat_enemy3_move2_dmg_bonus 0
+  *set combat_enemy3_move2_dmg_type "piercing"
   *set combat_enemy3_move2_inflicts_condition true
   *set combat_enemy3_move2_condition_name "Poisoned"
   *set combat_enemy3_move2_condition_icon "🤢"
@@ -1795,6 +1849,7 @@
 *set combat_enemy_move2_atk_bonus 2
 *set combat_enemy_move2_dmg_dice_sides 4
 *set combat_enemy_move2_dmg_bonus 0
+*set combat_enemy_move2_dmg_type "piercing"
 *set combat_enemy_move2_inflicts_condition true
 *set combat_enemy_move2_condition_name "Poisoned"
 *set combat_enemy_move2_condition_icon "🤢"

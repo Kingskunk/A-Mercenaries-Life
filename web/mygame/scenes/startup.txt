@@ -74,7 +74,7 @@
 *create family_title "Last of Your Line"
 *create family_desc "Untethered; no surviving kin or ties left behind."
 *create weapon "falchion"
-*create weapon_desc "Heavy falchion & iron buckler"
+*create weapon_desc "Heavy Falchion"
 *create weapon_damage "1d8 slashing"
 *create weapon_damage_type "slashing"
 *create weapon_type "melee"
@@ -84,17 +84,17 @@
 *comment Tracks stance preference; auto-restored when wielding a 1H weapon.
 *create wants_shield_equipped true
 *create armor "brigandine"
-*create armor_desc "Padded gambeson & leather brigandine"
+*create armor_desc "Iron-Studded Gambeson"
 *create armor_type "brigandine"
 *comment --- EQUIPMENT LOADOUT ---
 *create starting_weapon "falchion"
-*create starting_weapon_desc "Heavy falchion & iron buckler"
+*create starting_weapon_desc "Heavy Falchion"
 *create starting_weapon_damage "1d8 slashing"
 *create starting_weapon_damage_type "slashing"
 *create starting_weapon_type "melee"
 *create starting_weapon_hands "one_handed"
 *create starting_armor "brigandine"
-*create starting_armor_desc "Padded gambeson & leather brigandine"
+*create starting_armor_desc "Iron-Studded Gambeson"
 *create starting_armor_type "brigandine"
 *create equipped_weapon_id "starting"
 *create weapon_prose "falchion"
@@ -105,7 +105,7 @@
 
 *comment --- PAPER-DOLL SLOTS: HEAD / CLOAK / HANDS / WAIST / FEET ---
 *create equipped_head_id "none"
-*create head_desc "Bare head"
+*create head_desc "Bare Head"
 *create head_prose "bare head"
 *create head_ac 0
 *create head_is_armor false
@@ -119,14 +119,14 @@
 *create waist_desc "None"
 *create waist_prose "unbelted waist"
 *create equipped_feet_id "none"
-*create feet_desc "Bare feet"
+*create feet_desc "Bare Feet"
 *create feet_prose "bare feet"
 
 *comment --- SIDEARM (Swappable Secondary Weapon) ---
 *create equipped_sidearm_id "none"
 *create sidearm "none"
 *create sidearm_desc "None"
-*create sidearm_prose "none"
+*create sidearm_prose "empty hand"
 *create sidearm_damage "none"
 *create sidearm_damage_type "none"
 *create sidearm_type "none"
@@ -134,13 +134,13 @@
 
 *comment --- ACCESSORIES & ATTUNEMENT ---
 *create equipped_neck_id "none"
-*create neck_desc "Bare throat"
+*create neck_desc "Bare Throat"
 *create neck_prose "bare throat"
 *create equipped_ring1_id "none"
-*create ring1_desc "Bare finger"
+*create ring1_desc "Bare Finger"
 *create ring1_prose "bare finger"
 *create equipped_ring2_id "none"
-*create ring2_desc "Bare finger"
+*create ring2_desc "Bare Finger"
 *create ring2_prose "bare finger"
 *create max_attunement_slots 5
 *create attuned_count 0
@@ -224,6 +224,17 @@
 *create hp_current 12
 *create hp_max 12
 *create armor_class 13
+*comment Damage-type resistance/vulnerability -- up to two of each, set by
+*comment race (chargen) or a future attuned item (recalculate_attuned_bonuses),
+*comment same pattern as every other attuned bonus. Valid type tokens today:
+*comment bludgeoning/piercing/slashing/fire/cold/lightning/necrotic/psychic/
+*comment force/poison (matches weapon_damage_type's vocabulary, extended with
+*comment the types the spell list and race traits actually use). See
+*comment apply_incoming_damage_resist_vuln (below) for the resolution logic.
+*create player_resist_type_1 ""
+*create player_resist_type_2 ""
+*create player_vulnerable_type_1 ""
+*create player_vulnerable_type_2 ""
 
 *comment --- ABILITY SCORES & MODIFIERS (D&D 5E SYSTEM) ---
 *create strength 10
@@ -658,6 +669,35 @@
 *create combat_enemy_atk_bonus 0
 *create combat_enemy_dmg_dice_sides 4
 *create combat_enemy_dmg_bonus 0
+*comment Damage-type scratch (mirrors atk_bonus/dmg_dice_sides/dmg_bonus's
+*comment own scratch-then-per-slot-storage shape, see the comment block just
+*comment below). combat_enemy_dmg_type defaults "bludgeoning" -- every
+*comment existing enemy is unaffected until a fight/type deliberately sets it
+*comment to something else. combat_player_dmg_type is set by combat.txt's own
+*comment attack/spell *choice options (or hardcoded inside a spell's own
+*comment resolve_* primitive when that spell always deals one fixed type, e.g.
+*comment Magic Missile). combat_enemy_resist_type_1/_2 and _vulnerable_type_1/
+*comment _2 are this ENEMY's own resistances (set by apply_enemy_type or a
+*comment fight_<name> label, mirroring player_resist_type_1/_2's shape) --
+*comment see apply_outgoing_damage_resist_vuln.
+*create combat_enemy_dmg_type "bludgeoning"
+*create combat_player_dmg_type "bludgeoning"
+*create combat_enemy_resist_type_1 ""
+*create combat_enemy_resist_type_2 ""
+*create combat_enemy_vulnerable_type_1 ""
+*create combat_enemy_vulnerable_type_2 ""
+*comment Short banner tags set by apply_incoming_damage_resist_vuln (enemy
+*comment hits against the player) and apply_outgoing_damage_resist_vuln
+*comment (player-dealt damage, including Agathys retaliation) -- " | 🛡️
+*comment Resisted" / " | 💥 Vulnerable" / "" -- appended by combat.txt to the
+*comment end of every hit banner so a resisted/vulnerable hit is visible, not
+*comment just silently different math. Kept as two separate vars, not one
+*comment shared one, because resolve_enemy_attack can call both in the same
+*comment invocation (an enemy's own hit, then its Agathys retaliation) before
+*comment either banner has printed -- see apply_incoming_damage_resist_vuln's
+*comment header comment.
+*create combat_incoming_dmg_suffix ""
+*create combat_outgoing_dmg_suffix ""
 *create combat_enemy_disadvantage false
 *create combat_enemy_advantage false
 *comment Condition-on-hit (Frightened/Poisoned): a fight_<name> label sets
@@ -706,6 +746,7 @@
 *create combat_enemy_move2_atk_bonus 0
 *create combat_enemy_move2_dmg_dice_sides 4
 *create combat_enemy_move2_dmg_bonus 0
+*create combat_enemy_move2_dmg_type "bludgeoning"
 *create combat_enemy_move2_inflicts_condition false
 *create combat_enemy_move2_condition_name ""
 *create combat_enemy_move2_condition_icon ""
@@ -765,10 +806,12 @@
 *create combat_enemy1_dmg_bonus 0
 *create combat_enemy1_epithet "the creature"
 *create combat_enemy1_metal_armor false
-*comment Per-slot condition/stun/movepool storage -- see the scratch-var
-*comment comment block above. A slot that never sets these (every existing
-*comment enemy) keeps the same defaults, so this is a no-op until a fight
-*comment deliberately sets combat_enemy2_move2_chance etc. for one slot only.
+*create combat_enemy1_dmg_type "bludgeoning"
+*comment Per-slot condition/stun/movepool/resistance storage -- see the
+*comment scratch-var comment block above. A slot that never sets these (every
+*comment existing enemy) keeps the same defaults, so this is a no-op until a
+*comment fight deliberately sets combat_enemy2_move2_chance etc. for one slot
+*comment only.
 *create combat_enemy1_inflicts_condition false
 *create combat_enemy1_condition_name ""
 *create combat_enemy1_condition_icon ""
@@ -779,9 +822,14 @@
 *create combat_enemy1_move2_atk_bonus 0
 *create combat_enemy1_move2_dmg_dice_sides 4
 *create combat_enemy1_move2_dmg_bonus 0
+*create combat_enemy1_move2_dmg_type "bludgeoning"
 *create combat_enemy1_move2_inflicts_condition false
 *create combat_enemy1_move2_condition_name ""
 *create combat_enemy1_move2_condition_icon ""
+*create combat_enemy1_resist_type_1 ""
+*create combat_enemy1_resist_type_2 ""
+*create combat_enemy1_vulnerable_type_1 ""
+*create combat_enemy1_vulnerable_type_2 ""
 *create combat_enemy2_name "none"
 *create combat_enemy2_hp 0
 *create combat_enemy2_max_hp 0
@@ -791,6 +839,7 @@
 *create combat_enemy2_dmg_bonus 0
 *create combat_enemy2_epithet "the second creature"
 *create combat_enemy2_metal_armor false
+*create combat_enemy2_dmg_type "bludgeoning"
 *create combat_enemy2_inflicts_condition false
 *create combat_enemy2_condition_name ""
 *create combat_enemy2_condition_icon ""
@@ -801,9 +850,14 @@
 *create combat_enemy2_move2_atk_bonus 0
 *create combat_enemy2_move2_dmg_dice_sides 4
 *create combat_enemy2_move2_dmg_bonus 0
+*create combat_enemy2_move2_dmg_type "bludgeoning"
 *create combat_enemy2_move2_inflicts_condition false
 *create combat_enemy2_move2_condition_name ""
 *create combat_enemy2_move2_condition_icon ""
+*create combat_enemy2_resist_type_1 ""
+*create combat_enemy2_resist_type_2 ""
+*create combat_enemy2_vulnerable_type_1 ""
+*create combat_enemy2_vulnerable_type_2 ""
 *create combat_flavor_enemy2_move2_hit ""
 *create combat_flavor_enemy2_move2_miss ""
 *create combat_current_spell_id ""
@@ -827,6 +881,7 @@
 *create combat_enemy3_dmg_bonus 0
 *create combat_enemy3_epithet "the third creature"
 *create combat_enemy3_metal_armor false
+*create combat_enemy3_dmg_type "bludgeoning"
 *create combat_enemy3_inflicts_condition false
 *create combat_enemy3_condition_name ""
 *create combat_enemy3_condition_icon ""
@@ -837,9 +892,14 @@
 *create combat_enemy3_move2_atk_bonus 0
 *create combat_enemy3_move2_dmg_dice_sides 4
 *create combat_enemy3_move2_dmg_bonus 0
+*create combat_enemy3_move2_dmg_type "bludgeoning"
 *create combat_enemy3_move2_inflicts_condition false
 *create combat_enemy3_move2_condition_name ""
 *create combat_enemy3_move2_condition_icon ""
+*create combat_enemy3_resist_type_1 ""
+*create combat_enemy3_resist_type_2 ""
+*create combat_enemy3_vulnerable_type_1 ""
+*create combat_enemy3_vulnerable_type_2 ""
 *create combat_flavor_enemy3_move2_hit ""
 *create combat_flavor_enemy3_move2_miss ""
 *create combat_flavor_enemy3_hit_1 ""
@@ -1115,6 +1175,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set race_darkvision true
     *set race_trait_title "Hellish Resistance"
     *set race_trait_desc "Your infernal blood shrugs off fire; see in darkness."
+    *set player_resist_type_1 "fire"
     *set race_cantrip "thaumaturgy"
     *set race_cantrip_desc "Thaumaturgy—small, innate parlor tricks of infernal blood: voice booms, eyes flash, doors slam."
     *set character_class "wizard"
@@ -1141,11 +1202,11 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set wisdom 10
     *set strength 10
     *set armor "cloth"
-    *set armor_desc "Traveling robes & wool mantle"
+    *set armor_desc "Oiled Traveling Robes"
     *set armor_type "cloth"
     *set has_shield false
     *set weapon "quarterstaff"
-    *set weapon_desc "Iron-shod quarterstaff"
+    *set weapon_desc "Iron-Shod Quarterstaff"
     *set weapon_damage "1d6 bludgeoning"
     *set weapon_damage_type "bludgeoning"
     *set weapon_type "melee"
@@ -1202,11 +1263,11 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set charisma 12
     *set strength 10
     *set armor "cloth"
-    *set armor_desc "Traveling robes & wool mantle"
+    *set armor_desc "Oiled Traveling Robes"
     *set armor_type "cloth"
     *set has_shield false
     *set weapon "quarterstaff"
-    *set weapon_desc "Iron-shod quarterstaff"
+    *set weapon_desc "Iron-Shod Quarterstaff"
     *set weapon_damage "1d6 bludgeoning"
     *set weapon_damage_type "bludgeoning"
     *set weapon_type "melee"
@@ -1267,11 +1328,11 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set wisdom 10
     *set strength 10
     *set armor "leather"
-    *set armor_desc "Hardened leather jerkin"
+    *set armor_desc "Oiled Leather Jerkin"
     *set armor_type "leather"
     *set has_shield false
     *set weapon "dagger"
-    *set weapon_desc "Trench dagger"
+    *set weapon_desc "Trench Dagger"
     *set weapon_damage "1d4 piercing"
     *set weapon_damage_type "piercing"
     *set weapon_type "finesse"
@@ -1304,6 +1365,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set race_darkvision true
     *set race_trait_title "Hellish Resistance"
     *set race_trait_desc "Your infernal blood shrugs off fire; see in darkness."
+    *set player_resist_type_1 "fire"
     *set race_cantrip "thaumaturgy"
     *set race_cantrip_desc "Thaumaturgy—small, innate parlor tricks of infernal blood."
     *set character_class "warlock"
@@ -1331,11 +1393,11 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set wisdom 10
     *set strength 10
     *set armor "leather"
-    *set armor_desc "Hardened leather jerkin"
+    *set armor_desc "Oiled Leather Jerkin"
     *set armor_type "leather"
     *set has_shield false
     *set weapon "dagger"
-    *set weapon_desc "Trench dagger"
+    *set weapon_desc "Trench Dagger"
     *set weapon_damage "1d4 piercing"
     *set weapon_damage_type "piercing"
     *set weapon_type "melee"
@@ -1383,11 +1445,11 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set intelligence 10
     *set charisma 10
     *set armor "leather"
-    *set armor_desc "Hardened leather jerkin"
+    *set armor_desc "Oiled Leather Jerkin"
     *set armor_type "leather"
     *set has_shield false
     *set weapon "shortbow"
-    *set weapon_desc "Recurve shortbow & trench dirk"
+    *set weapon_desc "Recurve Shortbow"
     *set weapon_damage "1d6 piercing"
     *set weapon_damage_type "piercing"
     *set weapon_type "ranged"
@@ -1438,11 +1500,11 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set strength 10
     *set intelligence 10
     *set armor "leather"
-    *set armor_desc "Hardened leather jerkin"
+    *set armor_desc "Oiled Leather Jerkin"
     *set armor_type "leather"
     *set has_shield false
     *set weapon "shortbow"
-    *set weapon_desc "Recurve shortbow & trench dirk"
+    *set weapon_desc "Recurve Shortbow"
     *set weapon_damage "1d6 piercing"
     *set weapon_damage_type "piercing"
     *set weapon_type "ranged"
@@ -1475,6 +1537,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set race_darkvision true
     *set race_trait_title "Dwarven Resilience"
     *set race_trait_desc "Advantage on saves vs poison; poison damage resistance; see in darkness."
+    *set player_resist_type_1 "poison"
     *set character_class "fighter"
     *set class_title "Fighter"
     *set class_name "Fighter"
@@ -1492,11 +1555,11 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set intelligence 10
     *set charisma 10
     *set armor "brigandine"
-    *set armor_desc "Padded gambeson & leather brigandine"
+    *set armor_desc "Iron-Studded Gambeson"
     *set armor_type "brigandine"
     *set has_shield true
     *set weapon "longsword"
-    *set weapon_desc "Arming sword & iron buckler"
+    *set weapon_desc "Arming Sword"
     *set weapon_damage "1d8 slashing"
     *set weapon_damage_type "slashing"
     *set weapon_type "melee"
@@ -1545,11 +1608,11 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set charisma 10
     *set intelligence 8
     *set armor "traveling_cloak"
-    *set armor_desc "Oiled traveling cloak & chest straps"
+    *set armor_desc "Oiled Traveling Robes"
     *set armor_type "cloth"
     *set has_shield false
-    *set weapon "greataxe"
-    *set weapon_desc "Bearded greataxe"
+    *set weapon "heavy broadaxe"
+    *set weapon_desc "Heavy Hooked Broadaxe"
     *set weapon_damage "1d12 slashing"
     *set weapon_damage_type "slashing"
     *set weapon_type "melee"
@@ -2001,9 +2064,71 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment DAMAGE TYPE RESISTANCE / VULNERABILITY (both directions)
+*comment Pure math, no locking of their own -- both are only ever called from
+*comment inside an already-locked hit-resolution block below, so a replay
+*comment that skips the outer guard skips these too, for free. Resistance
+*comment halves (rounded down, RAW), vulnerability doubles; both present on
+*comment the SAME type cancel out to normal damage rather than compounding --
+*comment checked as one combined branch below, not two sequential halvings/
+*comment doublings, which would give the wrong answer when both apply.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment Adjusts combat_enemy_dmg_dealt (an enemy's hit against the player) by
+*comment combat_enemy_dmg_type against the player's own player_resist_type_1/
+*comment _2 and player_vulnerable_type_1/_2 (equipment/race-granted). Barbarian
+*comment Rage's RAW resistance to the three physical damage types folds into
+*comment this same check -- not a separate halving elsewhere -- so it
+*comment correctly cancels against an item-granted vulnerability to the same
+*comment type instead of silently compounding with it.
+*label apply_incoming_damage_resist_vuln
+*comment Own suffix var (combat_incoming_dmg_suffix), never combat_outgoing_
+*comment dmg_suffix -- resolve_enemy_attack can call BOTH this AND the
+*comment outgoing check in the same invocation (an enemy's own hit, then its
+*comment Agathys retaliation), and the enemy-hit banner (combat.txt) prints
+*comment after both have run. Sharing one suffix var would let the later
+*comment (outgoing/Agathys) call silently clobber the earlier (incoming/enemy
+*comment hit) one before its own banner ever reads it.
+*set combat_incoming_dmg_suffix ""
+*temp aidrv_resisted (((combat_enemy_dmg_type = player_resist_type_1) and (not(player_resist_type_1 = ""))) or ((combat_enemy_dmg_type = player_resist_type_2) and (not(player_resist_type_2 = ""))))
+*if ((character_class = "barbarian") and (is_raging))
+  *if (((combat_enemy_dmg_type = "bludgeoning") or (combat_enemy_dmg_type = "piercing")) or (combat_enemy_dmg_type = "slashing"))
+    *set aidrv_resisted true
+*temp aidrv_vulnerable (((combat_enemy_dmg_type = player_vulnerable_type_1) and (not(player_vulnerable_type_1 = ""))) or ((combat_enemy_dmg_type = player_vulnerable_type_2) and (not(player_vulnerable_type_2 = ""))))
+*if ((aidrv_resisted) and (aidrv_vulnerable))
+  *comment Cancel out -- normal damage, no banner tag.
+*elseif (aidrv_resisted)
+  *set combat_enemy_dmg_dealt (combat_enemy_dmg_dealt - (combat_enemy_dmg_dealt modulo 2)) / 2
+  *set combat_incoming_dmg_suffix " | 🛡️ Resisted"
+*elseif (aidrv_vulnerable)
+  *set combat_enemy_dmg_dealt combat_enemy_dmg_dealt * 2
+  *set combat_incoming_dmg_suffix " | 💥 Vulnerable"
+*return
+
+*comment Adjusts combat_player_dmg_dealt (damage the player just dealt) by
+*comment combat_player_dmg_type against the ACTIVE enemy's combat_enemy_
+*comment resist_type_1/_2 and combat_enemy_vulnerable_type_1/_2 --
+*comment fight_sync_target_in (combat.txt) already mirrored whichever slot is
+*comment active into these scratch names, same as every other combat_enemy_*
+*comment field, so this never needs to know which slot it's reading. Own
+*comment suffix var (combat_outgoing_dmg_suffix) for the same reason as above.
+*label apply_outgoing_damage_resist_vuln
+*set combat_outgoing_dmg_suffix ""
+*temp aodrv_resisted (((combat_player_dmg_type = combat_enemy_resist_type_1) and (not(combat_enemy_resist_type_1 = ""))) or ((combat_player_dmg_type = combat_enemy_resist_type_2) and (not(combat_enemy_resist_type_2 = ""))))
+*temp aodrv_vulnerable (((combat_player_dmg_type = combat_enemy_vulnerable_type_1) and (not(combat_enemy_vulnerable_type_1 = ""))) or ((combat_player_dmg_type = combat_enemy_vulnerable_type_2) and (not(combat_enemy_vulnerable_type_2 = ""))))
+*if ((aodrv_resisted) and (aodrv_vulnerable))
+  *comment Cancel out -- normal damage, no banner tag.
+*elseif (aodrv_resisted)
+  *set combat_player_dmg_dealt (combat_player_dmg_dealt - (combat_player_dmg_dealt modulo 2)) / 2
+  *set combat_outgoing_dmg_suffix " | 🛡️ Resisted"
+*elseif (aodrv_vulnerable)
+  *set combat_player_dmg_dealt combat_player_dmg_dealt * 2
+  *set combat_outgoing_dmg_suffix " | 💥 Vulnerable"
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment COMBAT: PLAYER HIT RESOLUTION
 *comment Applies generic player hit damage to combat_enemy_hp.
-*comment Inputs: combat_player_dmg_dice_sides, combat_player_dmg_bonus
+*comment Inputs: combat_player_dmg_dice_sides, combat_player_dmg_bonus, combat_player_dmg_type
 *comment Output: combat_player_dmg_dealt
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_player_hit
@@ -2015,6 +2140,7 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
     *temp cph_hex_die 0
     *rand cph_hex_die 1 6
     *set combat_player_dmg_dealt + cph_hex_die
+  *gosub apply_outgoing_damage_resist_vuln
   *set combat_enemy_hp - combat_player_dmg_dealt
   *if (combat_enemy_hp < 0)
     *set combat_enemy_hp 0
@@ -2045,6 +2171,7 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
     *temp cwh_hex_die 0
     *rand cwh_hex_die 1 6
     *set combat_player_dmg_dealt + cwh_hex_die
+  *gosub apply_outgoing_damage_resist_vuln
   *set combat_enemy_hp - combat_player_dmg_dealt
   *if (combat_enemy_hp < 0)
     *set combat_enemy_hp 0
@@ -2108,13 +2235,22 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
     *temp cea_dmg 0
     *rand cea_dmg 1 combat_enemy_dmg_dice_sides
     *set cea_dmg (cea_dmg + combat_enemy_dmg_bonus)
-    *if ((character_class = "barbarian") and (is_raging))
-      *comment Barbarian Rage: half damage rounded down
-      *set cea_dmg ((cea_dmg - (cea_dmg modulo 2)) / 2)
     *set combat_enemy_dmg_dealt cea_dmg
+    *comment Barbarian Rage's physical-damage resistance is folded into this
+    *comment same check now -- see apply_incoming_damage_resist_vuln's header.
+    *gosub apply_incoming_damage_resist_vuln
     *if ((agathys_active) and (temp_hp > 0))
       *set combat_agathys_triggered true
-      *set combat_enemy_hp - 5
+      *comment Agathys retaliation is the PLAYER's own damage output (5 Cold),
+      *comment so it reuses the outgoing (player-dealt) resist/vuln check
+      *comment against whatever the active enemy resists/is vulnerable to --
+      *comment combat_player_dmg_dealt is safe to reuse here: the round's
+      *comment actual player-attack banner (if any) already printed earlier
+      *comment this same page, before the enemy's turn ever begins.
+      *set combat_player_dmg_type "cold"
+      *set combat_player_dmg_dealt 5
+      *gosub apply_outgoing_damage_resist_vuln
+      *set combat_enemy_hp - combat_player_dmg_dealt
       *if (combat_enemy_hp < 0)
         *set combat_enemy_hp 0
     *if (temp_hp > 0)
@@ -2149,6 +2285,9 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
 *label resolve_magic_missile
 *if (not(combat_magic_missile_locked)) or (not(locked_combat_magic_missile_page_id = page_id))
   *set wizard_spell_slots - 1
+  *comment Always Force damage, RAW -- no per-caster variation, so it's set
+  *comment here rather than at combat.txt's call site.
+  *set combat_player_dmg_type "force"
   *temp mm_dart_1 0
   *temp mm_dart_2 0
   *temp mm_dart_3 0
@@ -2160,6 +2299,7 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
     *temp mm_hex_die 0
     *rand mm_hex_die 1 6
     *set combat_player_dmg_dealt + mm_hex_die
+  *gosub apply_outgoing_damage_resist_vuln
   *set combat_enemy_hp - combat_player_dmg_dealt
   *if (combat_enemy_hp < 0)
     *set combat_enemy_hp 0
@@ -2234,6 +2374,9 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
 *label resolve_dissonant_whispers
 *if (not(combat_dissonant_whispers_locked)) or (not(locked_combat_dissonant_whispers_page_id = page_id))
   *set bard_spell_slots - 1
+  *comment Always Psychic damage, RAW -- no per-caster variation, so it's set
+  *comment here rather than at combat.txt's call site.
+  *set combat_player_dmg_type "psychic"
   *temp dw_d1 0
   *temp dw_d2 0
   *temp dw_d3 0
@@ -2245,6 +2388,7 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
     *set combat_player_dmg_dealt dw_total
   *else
     *set combat_player_dmg_dealt ((dw_total - (dw_total modulo 2)) / 2)
+  *gosub apply_outgoing_damage_resist_vuln
   *set combat_enemy_hp - combat_player_dmg_dealt
   *if (combat_enemy_hp < 0)
     *set combat_enemy_hp 0

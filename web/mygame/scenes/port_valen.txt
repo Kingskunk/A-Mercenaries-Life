@@ -779,32 +779,34 @@ The port city climbs from the tideline in uneven tiers of granite, timber, canal
   *goto_scene port_valen_middle_ward port_valen_middle_ward
 
 *label port_valen_harbor
+*label port_valen_harbor_pois
 *set current_district "harbor"
 *set port_valen_harbor_seen true
 *gosub_scene calendar update_hub_condition
-*comment Layers (see port_valen_dredge_end.txt for the full rule). The harbor is a working
-*comment port: it keeps working through severity 1-2 under tarps, and stops at severity 3.
-[b]◈ HARBOR QUAYSIDE & IRON WHARVES[/b]
+
+[b]◈ HARBOR QUAYSIDE[/b]
 *line_break
-The Harbor Quayside is Port Valen's maritime gateway: stone customs arches, wooden cargo slips, granite wharves, and massive balance cranes jutting out over the estuary swell. Beyond the breakwater, deep-hulled merchant vessels ride at anchor in the outer roadstead, while closer to shore, flat-bottomed river barges and fishing smacks crowd the inner docks.
+[b][⏳ Quayside Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
+*line_break
+*comment LAYER 1: PLACE (Harbor Quayside only, constant geography and smell)
+The Harbor Quayside is Port Valen's maritime gateway: stone customs arches, wooden cargo slips, broad granite wharves, and massive balance cranes jutting out over the estuary swell. Beyond the sea breakwater, deep-hulled merchant vessels ride at anchor in the outer roadstead, while closer to shore, flat-bottomed river barges and fishing smacks crowd the inner docks. The air is thick with salt spray, coal smoke, and drying cod.
 
-Along the curved seawall, the Iron Wharves house the city's major shipbuilding drydocks and repair slipways. Beyond the deep channel, the debtor workhouse hulks ride the swell on massive mooring chains, while high above the shipyard yards, behind fortified palisade gates, sits the Carrion Company's fortified compound.
-
+*comment LAYER 2: SKY & WEATHER
 *if (weather = "Rain")
-  Steady rain sheets off the warehouse crane booms and slicks the paved quayside flagstones, drumming against thick oiled canvas tarpaulins lashed over freight stacks.
+  Steady rain sheets off the warehouse crane booms and drums against oiled canvas tarpaulins lashed over the freight stacks.
 *elseif (weather = "Storm")
-  A howling gale churns the outer roadstead into white froth. Foaming breakers slam into the sea breakwater, sending sheets of cold brine spray over the slipways while moored vessels strain violently against double-rigged hawsers.
+  A howling gale churns the outer roadstead into white froth. Foaming breakers smash against the sea breakwater, sending sheets of cold brine spray high over the slipways.
 *elseif (weather = "Fog")
   Thick, brackish sea-fog blankets the inner basin, turning masthead lanterns into dim yellow halos and muffling the slow, mournful tolling of fog bells riding the channel buoys.
 *elseif ((weather = "Snow") or (weather = "Sleet"))
-  Freezing slush slicks the pier bollards and gangplanks, while smoke from charcoal braziers drifts low over the damp waterfront flagstones.
+  Freezing slush slicks the pier bollards and gangplanks, while smoke from charcoal braziers drifts low over the damp flagstones.
 *elseif (weather = "Blizzard")
   A bitter squall drives freezing sea-spray and blinding snow across the piers, crusting mooring ropes in solid ice.
 *elseif (weather = "Clear")
   *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
     Cold starlight glints across the tidal basin, throwing the tangled rigging of merchant masts into sharp silhouette against the salt-scoured sky.
   *else
-    Pale daylight glints across the harbor basin, throwing the tangled rigging of merchant masts into sharp silhouette against the wind-scoured sky.
+    Sharp daylight glints across the harbor basin, throwing the tangled rigging of merchant masts into sharp silhouette against the wind-scoured sky.
 *else
   *comment Overcast
   *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
@@ -812,146 +814,30 @@ Along the curved seawall, the Iron Wharves house the city's major shipbuilding d
   *else
     A dull pewter sky hangs low over the bay mouth, trapping the smell of coal smoke, curing salt, and soaked logs across the shoreline.
 
+*comment WEATHER MEMORY
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  After days of rain, brown drainage runoff still cascades from the upper terraces, and pools of standing water choke the quayside gutters.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The granite flagstones and wooden slipways remain dark and slick from recent rain.
+
+*comment LAYER 3: STREET LIFE (Strictly mutually exclusive time/weather states)
 *if (weather_severity >= 3)
-  The harbor has stopped. Cranes are chained fast to the wharves, boats are hauled high and lashed down, and the warehouse doors are barred. Only the Port Watch on the customs wall and the hawser crews doubling mooring lines out on the piers are out in it.
+  The quayside has ground to an absolute halt. The balance cranes are chained fast to the granite piers, cargo hatches are battened down beneath heavy tarpaulins, and the warehouse doors are barred against the driving sea. Breakers crash over the lower slips in deafening sheets of white water. The only figures moving along the wharves are Port Watch sentries sheltering under the customs arches and hawser crews in streaming oilskins fighting to double the mooring lines before the surges snap them.
   *if (not((time_period = "Night") or ((time_period = "Pre-Dawn") or (time_period = "Dusk"))))
     *if (day_of_week = "Marketday")
-      The fish auction has been called off and the stalls stand boarded along the lower slips.
+      It is Marketday, but the quayside stalls stand boarded over and lashed with storm-lines; the fish auctions have been abandoned to the weather.
     *elseif (day_of_week = "Tideday")
-      The surge boils over the lower steps with nobody on the wharves to watch the mark.
+      It is Tideday, and the foaming storm-surge boils clear over the lower wharf steps, drowning the stone mooring bitts.
     *elseif (day_of_week = "Hallowday")
-      The salt-priest has taken his blessing indoors, leaving the Tide-Well shrine to the spray.
+      It is Hallowday, and the Tide-Well shrine is completely deserted, its votive alcove battered by sea-spray.
     *elseif (day_of_week = "Forgeday")
-      The Iron Wharves hearths are banked and the pitch kettles stand cold.
+      It is Forgeday, but the shipyard hearths are banked dead and the pitch kettles stand cold on the slipways.
     *elseif (day_of_week = "Greyday")
-      The coal barges and log rafts are riding it out in the outer roadstead, not one of them making for the slips.
+      It is Greyday, and the heavy coal scows and highland timber rafts are riding out the gale in the outer roads, none daring to risk the slips.
     *elseif (day_of_week = "Ironday")
-      The sailcloth has been hauled down from the loft racks and lashed under tarps.
+      It is Ironday, but the sail-lofts are shuttered tight and the drying racks have been stripped bare against the wind.
     *else
-      It is Hearthday, and the seawall taverns have their doors shut and their fires high, the berths empty of sailors.
-*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
-  The warehouse rows stand shuttered and padlocked under the seawall lanterns. Out on the water, the solitary lantern of a patrol skiff rocks on the swell, while the distant bronze wreck-bell on the outer bar tolls its slow, hollow count into the mist.
-  *if (day_of_week = "Marketday")
-    The empty fish-stalls stand hosed clean of scales and muck, rows of covered dray carts already lined up beside the slipways waiting for the morning's first boats.
-  *elseif (day_of_week = "Tideday")
-    The midnight flood tide rides at its highest mark, black seawater lapping near the upper quay steps and lifting unlit hulls level with the wooden piers.
-  *elseif (day_of_week = "Hallowday")
-    The waterfront is dead quiet under the curfew, save for a solitary tallow votive flickering inside the Tide-Well shrine by the landing steps.
-  *elseif (day_of_week = "Forgeday")
-    The shipyard hearths are banked under thick ash, their towering crane arms standing like gaunt gallows against the midnight sky.
-  *elseif (day_of_week = "Greyday")
-    Moored coal barges ride low at the granite wharves, their deck watchmen huddled over charcoal pot-braziers.
-  *elseif (day_of_week = "Ironday")
-    A stiff estuary breeze whistles through the bare rigging of the refit slips, slapping halyards against pine masts in rhythmic clatter.
-  *else
-    *comment Hearthday
-    The seawall taverns burn later than usual on Hearthday, off-duty dockers nursing one more round before the taprooms shutter.
-*elseif (time_period = "Dusk")
-  The waterfront is shutting down for dusk. Port watchmen unroll the curfew chain before the inner customs gate, warehouse locks click home, and yellow candlelight spills through the fogged bullseye windows of The Cleaved Keel taphouse.
-  *if (day_of_week = "Marketday")
-    Vendors pack up unsold salted sprats and sweep cabbage leaves into the gutter, while carters haul the remaining empty barrels toward the inland road.
-  *elseif (day_of_week = "Tideday")
-    The dusk flood tide surges against the stone wall, and wharf gangs scramble along the gangplanks to slacken mooring lines before the rise.
-  *elseif (day_of_week = "Hallowday")
-    Church bells toll vespers from Civic Heights above, and watermen gather by the dock steps to share a final pipe before the curfew watch.
-  *elseif (day_of_week = "Forgeday")
-    Blacksmiths bank their forge coals with wet turf, the evening's final red sparks drifting out over the basin as the hammer strikes taper off.
-  *elseif (day_of_week = "Greyday")
-    Boaters tie off the remaining logs before dark, checking binding chains before heading for the harbor taprooms.
-  *elseif (day_of_week = "Ironday")
-    Loft workers furl freshly stitched sailcloth into protective tarps, hoisting them clear of the damp floorboards before sundown.
-  *else
-    *comment Hearthday
-    Laborers knock off early for Hearthday, trading the dusk run for a warm meal and their own doorstep instead of the taproom.
-*else
-  *comment Daytime active harbor
-  *if (street_life = "normal")
-    The docks are thick with traffic: creaking balance derricks swinging cargo from hold to quay, barrows rattling over the flagstones, and hull clerks calling out registrations.
-  *else
-    The docks keep working through the weather: derricks swinging cargo under tarps, barrows rattling over the wet flagstones, and hull clerks calling out registrations from under oilcloth hoods.
-  *if (day_of_week = "Marketday")
-    Marketday brings a roaring open-air fish auction along the lower granite slips, with fishwives hawking salted cod and draymen shouting over jammed barrel carts.
-  *elseif (day_of_week = "Tideday")
-    The high water brings deep-draft ocean traders right alongside the piers, deckhands scrambling to discharge foreign goods before the basin begins to drop.
-  *elseif (day_of_week = "Forgeday")
-    The Iron Wharves run at full blast: pitch kettles boil black along the drydocks, steam rises from plank-bending trenches, and caulking hammers ring across the slips.
-  *elseif (day_of_week = "Hallowday")
-    Commercial traffic is subdued for the church calendar; a salt-priest stands at the Tide-Well shrine, sprinkling holy water over outgoing fishing smacks.
-  *elseif (day_of_week = "Greyday")
-    Immense highland log rafts and coal barges maneuver into the lower slips, their skippers sounding the mud banks with long spruce poles.
-  *elseif (day_of_week = "Ironday")
-    Sailmakers stretch massive bolts of flax canvas along the upper loft racks, while riggers haul thick hemp hawsers up the mainmasts of newly refitted caravels.
-  *else
-    *comment Hearthday
-    Traffic on the quay runs lighter for Hearthday, more than a few berths standing empty while their sailors take the day for their own.
-
-*comment Hourly dynamic quayside vignette: changes every hour the player walks the docks
-*if (not((time_period = "Night") or (time_period = "Pre-Dawn"))) and (weather_severity < 3)
-  *temp harbor_vignette (((campaign_day * 24) + clock_hour) modulo 6) + 1
-  *if (harbor_vignette = 1)
-    [i]A swarm of shrieking gulls dives violently over the stone coping as a fishmonger's boy heaves a bucket of crushed heads and guts into the dark tide.[/i]
-  *elseif (harbor_vignette = 2)
-    [i]Near the customs arch, a drayman hauls back hard on his lead lines, cursing furiously as an iron-rimmed barrel cart jams against a mooring bitt.[/i]
-  *elseif (harbor_vignette = 3)
-    [i]An immense wooden balance crane creaks directly overhead, its hemp cable groaning as a netted sling of cedar logs swings slowly out over the slipway.[/i]
-  *elseif (harbor_vignette = 4)
-    [i]Two foreign sailors in wool smocks argue with an open-air pie-seller beneath a canvas awning, waving unfamiliar copper coins in frustration.[/i]
-  *elseif (harbor_vignette = 5)
-    [i]A pair of Port Watch sentries in blue-and-brass surcoats stroll slowly past the slipway edge, their iron-banded cudgels tapping rhythmically against their boots.[/i]
-  *else
-    [i]Out on the water, a heavily laden river barge eases alongside the granite wharf, deckhands scrambling to drop heavy rope fenders before the hull strikes stone.[/i]
-
-*if (pv_pois_open)
-  *goto port_valen_harbor_pois
-*page_break Where to next…
-*goto port_valen_travel
-
-*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment HARBOR POI SUB-HUB
-*comment Five revisit-able locations inside the Harbor district, opened by
-*comment pv_pois_open (set at the Vane handoff alongside the district opens).
-*comment current_district stays "harbor" throughout -- these are inside the
-*comment district, so get_district_distance/port_valen_travel_to need no
-*comment changes and every leg pricing keeps working. Time model (see
-*comment narrative_guidelines.md "Time Costs Are Tiered"): ONE advance_time
-*comment call per entry (the visit itself), then the Keel's bar/dice/rumor
-*comment loops are instant and coin-limited -- the Drowned Oar's
-*comment taphouse_bar_loop pattern. Each POI keeps a pv_*_seen flag that
-*comment swaps in a first-visit intro and grants that POI's one-time codex/
-*comment rep seed (codex_black_oath/tavern, port_watch_rep/quays,
-*comment gilded_scales_rep/drydock, codex_port_valen/pier) -- no separate
-*comment arrival-night vignette;
-*comment landing goes straight to port_valen_hub and these seeds fire
-*comment whenever the player actually visits each place for the first time.
-*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-*label port_valen_harbor_pois
-*gosub_scene calendar update_hub_condition
-[b][⏳ Quayside Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
-*line_break
-*comment Re-entry line: prints on every return from a harbor place, so it is a pool of four
-*comment variants per state (pure prose, so a refresh re-rolling the pick is harmless). Every
-*comment variant follows the layer rules: weather-neutral except the empty state, no daylight
-*comment at night, no crowds when the harbor has stopped.
-*temp harbor_pick 0
-*rand harbor_pick 1 4
-*if (weather_severity >= 3)
-  The quayside has ground to an absolute halt. The balance cranes are chained fast to the granite piers, cargo hatches are battened down beneath heavy tarpaulins, and the warehouse doors are barred against the driving sea. Breakers crash over the lower slips in deafening sheets of white water. The only figures moving along the wharves are Port Watch sentries sheltering under the customs arches and hawser crews in streaming oilskins, leaning hard into the gale as they fight to double the mooring lines before the surges snap them.
-  *if (not((time_period = "Night") or ((time_period = "Pre-Dawn") or (time_period = "Dusk"))))
-    *if (day_of_week = "Marketday")
-      The quayside stalls stand boarded over and lashed with storm-lines; the fish auctions have been abandoned to the weather.
-    *elseif (day_of_week = "Tideday")
-      The foaming storm-surge boils clear over the lower wharf steps, drowning the stone mooring bitts.
-    *elseif (day_of_week = "Hallowday")
-      The Tide-Well shrine is completely deserted, its votive alcove battered by sea-spray.
-    *elseif (day_of_week = "Forgeday")
-      The shipyard hearths are banked dead and the pitch kettles stand cold on the slipways.
-    *elseif (day_of_week = "Greyday")
-      The heavy coal scows and highland timber rafts are riding out the gale in the outer roads, none daring to risk the slips.
-    *elseif (day_of_week = "Ironday")
-      The sail-lofts are shuttered tight and the drying racks have been stripped bare against the wind.
-    *else
-      The seawall taprooms have their storm-shutters bolted against the spray, thick peat smoke flattened against the roof-slates.
+      It is Hearthday, and the seawall taprooms have their storm-shutters bolted against the spray, thick peat smoke flattened against the roof-slates.
 
 *elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
   The warehouse rows stand locked and silent beneath the iron seawall lanterns. Along the darkened slips, heavy hulls creak against greased fenders with the heave of the tide. Out in the deep channel, the solitary lantern of a harbor patrol skiff rocks on the dark water, while the bronze wreck-bell out on the shoals tolls its hollow, measured warning into the salt mist.
@@ -988,17 +874,13 @@ Along the curved seawall, the Iron Wharves house the city's major shipbuilding d
   *else
     *comment Hearthday
     The waterfront empties early for Hearthday; the cranes stand deserted, and the docks settle into quiet rest well before the twilight fades.
-    *comment Weather memory: after days of rain, granite flagstones and slipways stay slick even in a dry spell
-  *if ((ground_state = "sodden") and (not(weather_wet)))
-    After days of rain, brown drainage runoff still cascades from higher areas, and pools of standing water choke the quayside gutters.
-  *elseif ((ground_state = "wet") and (not(weather_wet)))
-    The granite flagstones and wooden slipways remain dark and slick from the recent rain.
-  *else
-    *comment Daytime active harbor
+
+*else
+  *comment Daytime active harbor (Morning, Midday, Afternoon)
   *if (street_life = "normal")
-      The quayside runs at full industrial roar. Massive balance cranes swing crates from hold to wharf on groaning chains, iron-rimmed barrows clatter violently across the granite flagstones, and customs clerks call out registration numbers over the din of shouting draymen. Gulls scream and circle the fish-slips, diving at discarded bait.
+    The quayside runs at full industrial roar. Massive balance cranes swing crates from hold to wharf on groaning chains, iron-rimmed barrows clatter violently across the granite flagstones, and customs clerks call out registration numbers over the din of shouting draymen. Gulls scream and circle the fish-slips, diving at discarded bait.
   *else
-      The docks grind on through the weather. Cranes swing freight under lashed tarpaulins, barrows throw plumes of brown runoff across the wet stones, and hull clerks squint at damp daybooks from beneath greased leather cowls.
+    The docks grind on through the weather. Cranes swing freight under lashed tarpaulins, barrows throw plumes of brown runoff across the wet stones, and hull clerks squint at damp daybooks from beneath greased leather cowls.
   *if (day_of_week = "Marketday")
     Marketday jams the lower slips with frantic trade: open-air fish auctions crowd the stone ramps, fishwives hawk salt cod over the roar of the basin, and heavy dray carts jockey for space outside the customs gate.
   *elseif (day_of_week = "Tideday")
@@ -1014,6 +896,22 @@ Along the curved seawall, the Iron Wharves house the city's major shipbuilding d
   *else
     *comment Hearthday
     A lighter tempo settles over the piers; commercial loading slows as families and off-duty watermen take to the quayside walkways, sharing tobacco and watching the outer swell.
+
+*comment HOURLY ROTATING VIGNETTE (Runs only during fair daytime/dusk hours)
+*if (not((time_period = "Night") or (time_period = "Pre-Dawn"))) and (weather_severity < 3)
+  *temp harbor_vignette (((campaign_day * 24) + clock_hour) modulo 6) + 1
+  *if (harbor_vignette = 1)
+    [i]A swarm of shrieking gulls dives violently over the stone coping as a fishmonger's boy heaves a bucket of crushed heads and guts into the dark tide.[/i]
+  *elseif (harbor_vignette = 2)
+    [i]Near the customs arch, a drayman hauls back hard on his lead lines, cursing furiously as an iron-rimmed barrel cart jams against a mooring bitt.[/i]
+  *elseif (harbor_vignette = 3)
+    [i]An immense wooden balance crane creaks directly overhead, its hemp cable groaning as a netted sling of cedar logs swings slowly out over the slipway.[/i]
+  *elseif (harbor_vignette = 4)
+    [i]Two foreign sailors in wool smocks argue with an open-air pie-seller beneath a canvas awning, waving unfamiliar copper coins in frustration.[/i]
+  *elseif (harbor_vignette = 5)
+    [i]A pair of Port Watch sentries in blue-and-brass surcoats stroll slowly past the slipway edge, their iron-banded cudgels tapping rhythmically against their boots.[/i]
+  *else
+    [i]Out on the water, a heavily laden river barge eases alongside the granite wharf, deckhands scrambling to drop heavy rope fenders before the hull strikes stone.[/i]
 
 *choice
   # Push into The Cleaved Keel, where the porter crews drink their wages. [~20 min]
@@ -3191,7 +3089,7 @@ Hendryk turns his pale eyes to you.
 *line_break
 [b][💰 Finder's Fee: +4 Silver Marks][/b]
 *line_break
-[b][👢 Acquired: Brant's Iron-Heel Shipwright Boots][/b]
+[b][👢 Acquired: Brant's Iron-Heel Boots][/b]
 
 Down on Brant's slip, four draymen are already rolling the three highland oak beams down the skids. Brant watches the yard crane lower the dense wood into the cradle, and his rough face softens with relief. He hands you a pair of heavy bull-hide boots fitted with caulked iron heel-plates. "Tide mud ruined three pairs of apprentice shoes before I forged these heel-plates," he says. "They'll keep your feet sure on any slick planking or wet cobbles in this city. The slipway remembers who stood by her."
 
@@ -3403,7 +3301,7 @@ Brant watches the yard crane lower the dense oak into the ship's framing cradle.
 
 [b][📜 Retained: Stamped Timber Waybill][/b]
 *line_break
-[b][👢 Acquired: Brant's Iron-Heel Shipwright Boots][/b]
+[b][👢 Acquired: Brant's Iron-Heel Boots][/b]
 
 *page_break Back to the shipyard lane…
 *goto pv_poi_drydock_menu
@@ -3574,72 +3472,97 @@ When he spots you on the staging, the old shipwright lays down his blade and wip
 *if (not(pv_pier_seen))
   *set pv_pier_seen true
   *set codex_port_valen true
-  The stone breakwater runs out past the harbor arm to where the outer bar shows its teeth at low tide. At the seaward end, a weathered bronze bell hangs from a gallows-frame over the surf: the wreck-bell, worked by the surge itself, tolling its slow count over the shoals where the bar has been taking keels for as long as Port Valen has kept record of ships.
+  The stone breakwater runs far out past the harbor arm to where the outer bar bares its jagged teeth at low water. At the seaward head, a massive bronze bell hangs from a heavy timber gallows-frame over the surf: the wreck-bell, worked by the heave of the surge itself, tolling its slow count over the shoals where the reef has claimed hulls for as long as Port Valen has kept records.
   The bronze striker has no rope. No one rings it for the living.
-  Watermen passing along the jetty touch the frame post without breaking stride, an old habit, a toll paid to whatever the bar holds down there. You do it too, after watching them long enough to feel foolish not to.
+  Watermen passing along the stone jetty touch the weathered frame post without breaking stride—an old habit, a quiet toll paid to whatever the reef keeps below. You do it too, after watching enough scarred hands lay flat against the oak to feel foolish doing otherwise.
 *else
-  You walk the granite causeway to the head and return, salt spray on your lips, the wreck-bell keeping its slow count over the shoals.
+  You walk the long granite causeway to the jetty head and back, salt spray on your lips, the wreck-bell keeping its relentless count over the shoals.
 
+*comment LAYER 2: SKY & LIGHT AT THE BREAKWATER
 *if (weather_severity >= 3)
-  Massive breakers slam against the masonry breakwater, throwing walls of white brine into the air. The gallows-frame shudders under the wind, the heavy chime swinging violently and tolling in frantic, broken clangs over the churning shoals. You have to grip the rusted guide-cable to keep your footing against the gale.
+  Massive breakers slam against the seaward masonry, throwing walls of white brine thirty feet into the air. The gallows-frame shudders under the wind, the heavy bronze bell swinging violently and tolling in frantic, broken clangs over the boiling shoals. You have to grip the rusted iron guide-cable to keep your footing against the gale.
 *elseif (weather = "Rain")
-  Rain hammers the granite jetty, washing over the slick masonry edge and streaming from the bell's pitted rim. The tolling sounds dull and wet over the grey rollers.
+  Rain hammers the exposed causeway, streaming from the bell's pitted rim in steady cords and washing across the dark granite flagstones into the sea.
 *elseif (weather = "Fog")
-  The breakwater dissolves into dense coastal fog thirty paces from shore. Out in the blind white void, the warning toll sounds slow and hollow, warning skippers off the unseen rocks below.
+  The breakwater dissolves into dense coastal fog thirty paces out. In the blind white void, the warning chime rings slow and hollow, marking the unseen barrier reef.
 *elseif ((weather = "Snow") or (weather = "Sleet"))
-  Freezing spray and slush coat the flagstones in dangerous black ice. The weathered bronze wears a crust of frost, each strike shedding fine ice crystals into the dark tide.
+  Freezing spray and slush coat the flagstones in dangerous black ice. The bronze bell wears a thick crust of rime, each heavy swing shedding fine ice dust into the dark water.
 *elseif (weather = "Clear")
   *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
-    Starlight glints over the calm shoals, and the solitary chime carries for miles over the quiet estuary.
+    Cold starlight glints off the open roadstead, picking out the pale line of foam breaking over the submerged rocks.
   *else
-    Clean daylight lays bare the shipping bar: submerged black reefs showing beneath the pale green tide while gulls circle the gallows-frame.
+    Sharp daylight cuts across the shipping bar, laying bare the dark spine of the limestone reef beneath the pale green tide while gulls circle the gallows-frame.
 *else
   *comment Overcast
   *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
-    A low, starless overcast hangs over the bay roadstead, the dark swell lapping the breakwater pilings while the bronze toll rings into the murk.
+    A low, starless overcast hangs over the estuary mouth, the black swell heaving against the breakwater while the bell tolls into the murk.
   *else
-    Pewter skies press flat against the estuary horizon, the wreck-bell keeping its relentless rhythm over the grey swell.
+    Pewter skies press flat against the horizon, the wreck-bell keeping its slow, measured rhythm over the grey swell.
 
+*comment Weather memory at the exposed jetty
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  After days of storm, seawater and rain still pool deep in the hollows of the flagstones, and the granite remains slick with washed-up sea weed.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The granite causeway stays dark and salt-slick from the recent rains.
+
+*comment LAYER 3: BREAKWATER ROUTINES & TRAFFIC
 *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
   *if (weather_severity >= 3)
-    No unlit skiffs dare run the outer reef in this fury. The watchers have abandoned the exposed landing, sheltering deep beneath the vaulted arch of the customs tower where they can watch the shoreline in safety.
+    No small craft dare approach the outer reef in this fury. The jetty is completely deserted, its exposed flagstones washed clean by breakers while the bell shrieks in the gale.
   *else
     *if (bar_quest_stage = "unstarted")
       Under the jetty-head crane, two cloaked figures start to slip back into the shadows as you come out along the stones, but only one of them makes it. The other stays on the open breakwater, pacing the last stretch past the crane with a short line in his fist and his lips moving in time with the bell.
     *else
-      In the darkness beneath the jetty-head crane, a pair of cloaked figures slip into deep shadow as you approach, tracking unlit skiffs threading the barrier shoals after curfew.
+      In the shadows beneath the jetty-head crane, cloaked figures linger near the landing ladders, watching low, unlit hulls navigate the channel markers after curfew.
     *if (day_of_week = "Tideday")
-      High tide conceals the jagged reef-crests, and the watchers track the dark shapes of smuggling punts running the deep fairway with muffled sweeps.
+      High water conceals the jagged reef-crests, and watchful eyes track the dark silhouettes of small boats riding the deep fairway with muffled sweeps.
     *elseif (day_of_week = "Marketday")
-      Early coastal fishing smacks already hover near the harbor mouth, waiting for dawn clearance to reach the morning auction slips.
+      Early inshore fishing smacks already hover near the breakwater mouth, holding station in the darkness while waiting for dawn clearance at the slips.
     *else
-      The sound is lonely and dark, the ocean's slow respiration working the bell against the silence.
+      The causeway is lonely and cold, the ocean's slow surge working the bronze striker in heavy, solitary beats against the silence.
+
 *elseif (time_period = "Dusk")
   *if (weather_severity >= 3)
-    The last watermen are hauling their skiffs up the ladders ahead of the surf, and nobody lingers by the frame post.
+    The last linesmen have hauled their gear clear of the spray, and nobody lingers near the gallows-frame as twilight falls.
   *else
-    As daylight drains from the bay, coastal watermen tie off skiffs in the sheltered lee of the jetty. They pause by the gallows-post to lay a salt-crusted hand against the wood before turning toward the warmth of the quayside taverns.
+    As dusk drains from the bay, coastal watermen tie off skiffs in the sheltered lee of the jetty, hauling nets up the lower stone ladders. Most pause at the gallows-post to lay a hand against the seasoned wood before heading toward the quayside taverns.
+
 *else
   *comment Daytime (Morning, Midday, Afternoon)
   *if (weather_severity >= 3)
-    The seaward causeway is cleared of casual traffic, with only a few harbor skippers in greased oilskins watching the entrance from the lookout shelter.
+    The causeway is swept clear of casual foot traffic; only harbor watchmen in greased sheepskins venture onto the stones to check the integrity of the outer mooring rings.
   *else
-    Under the jetty-head crane, a pair of men stand out of the traffic's way, silently tracking what lands. They don't stop watching, and nobody makes them. Whatever the men who hold the water want with the bar, they want it watched.
+    Beneath the jetty-head crane, quiet watchers linger out of the wind, keeping steady count of every vessel that rounds the harbor arm. 
     *if (day_of_week = "Marketday")
-      Fishers and oyster-dredgers land their baskets along the lower stone ladders, porters hauling wet sacks directly toward the market.
+      Inshore fishing skiffs crowd the sheltered lee of the breakwater, crews hauling dripping wicker baskets up the lower stone ladders to waiting market hand-carts.
     *elseif (day_of_week = "Tideday")
-      Harbor skippers stand at the breakwater head with brass spyglasses, signaling incoming square-riggers through the navigable strait.
+      The deep flood tide brings tall merchantmen past the head; harbor pilots signal incoming ships through the fairway channel using signal flags from the crane platform.
     *elseif (day_of_week = "Hallowday")
-      A line of old mariners and widows walk the causeway in quiet contemplation, touching the weathered gallows-frame in silent tribute to lost ships.
+      A quiet solemnity marks the breakwater; watermen pausing at the gallows-frame linger longer than usual, touching the notched wood in silence before heading to the parish services.
     *elseif (day_of_week = "Forgeday")
-      Watch sentries inspect thick mooring chains and replace worn ring-bolts along the outer mooring posts.
+      Maintenance crews work along the causeway with iron bars and lead mallets, checking mooring bollards and clearing barnacles from the landing steps.
     *elseif (day_of_week = "Greyday")
-      Lumbering coal and freight transports crawl past the seaward head led in by small harbor skiffs.
+      Heavy timber rafts and coal lighters creep past the breakwater head under the guidance of small pilot skiffs, avoiding the shallow bar.
     *elseif (day_of_week = "Ironday")
-      Wharf menders tar the wooden decking and splice fresh hemp bumper-ropes along the granite landings.
+      The working week opens with steady traffic: harbor menders tar the wooden catwalks and replace chafed rope fenders along the granite steps.
     *else
       *comment Hearthday
-      The landing is quiet, only a few solitary linesmen fishing for flounder from the stone edge.
+      A calm pace settles over the jetty; solitary watermen sit along the sheltered inner wall with hand-lines, watching the tide roll across the outer rocks.
+
+    *comment Hourly rotating breakwater vignette
+    *temp pier_vignette (((campaign_day * 24) + clock_hour) modulo 6) + 1
+    *if (pier_vignette = 1)
+      [i]A solitary cormorant perched atop the gallows-frame spreads its oily black wings to dry in the wind, ignoring the heavy toll of the bell beneath it.[/i]
+    *elseif (pier_vignette = 2)
+      [i]A passing boatman in tall sea-boots lays his palm flat against the notched oak gallows-post, murmuring a word under his breath before heading up the causeway.[/i]
+    *elseif (pier_vignette = 3)
+      [i]Out along the reef line, a sudden swell breaks across a submerged limestone tooth, throwing a plume of white spray high into the salt air.[/i]
+    *elseif (pier_vignette = 4)
+      [i]A pilot skiff shoots past the jetty head under a single reefed lugsail, its helmsman leaning far out over the gunwale to gauge the current.[/i]
+    *elseif (pier_vignette = 5)
+      [i]Down on the slippery lower steps, two boys with wicker baskets scrape mussels from the granite blocks, keeping one eye on the rising surge.[/i]
+    *else
+      [i]A sudden gust off the open sea whips salt spray across the flagstones, the bronze striker ringing with a sharp, resonant chime that carries far over the basin.[/i]
 
 *if (bar_resolution = "lawful")
   A Watch lantern hangs from the crane arm now, and the line is gone from the crane's base post.

@@ -18,6 +18,10 @@ if (typeof process != "undefined") {
   fs = require('fs');
   path = require('path');
   vm = require('vm');
+  // Regenerate web/mygame/equipment-data.generated.js from equipment.txt before
+  // bundling, so play_game.html never ships a stale equipment catalog -- see that
+  // script's header comment for why this exists instead of a hand-maintained copy.
+  require(path.join(__dirname, 'tools', 'gen_equipment_data.js'));
   load = function(file) {
     vm.runInThisContext(fs.readFileSync(file), file);
   };
