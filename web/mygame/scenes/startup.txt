@@ -660,6 +660,58 @@
 *create combat_enemy_dmg_bonus 0
 *create combat_enemy_disadvantage false
 *create combat_enemy_advantage false
+*comment Condition-on-hit (Frightened/Poisoned): a fight_<name> label sets
+*comment these three to make its enemy's hit inflict disadvantage on the
+*comment player's next roll, purely for flavor/status-line naming -- the
+*comment mechanical effect just reuses the existing global disadvantage flag
+*comment roll_d20_check already reads for every check. These three plus the
+*comment Stunned and movepool vars right below are the SCRATCH copies --
+*comment same relationship as combat_enemy_atk_bonus to combat_enemy1_atk_
+*comment bonus -- fight_setup snapshots them into slot 1's permanent
+*comment combat_enemy1_* storage below, and fight_sync_target_in resyncs
+*comment whichever slot is active into these scratch names before its turn,
+*comment so resolve_enemy_attack/fight_pick_enemy_move never need to know
+*comment which slot they're reading. That's what lets a mixed fight give one
+*comment enemy type a movepool/condition and another type none at all.
+*create combat_enemy_inflicts_condition false
+*create combat_enemy_condition_name ""
+*create combat_enemy_condition_icon ""
+*create combat_condition_inflicted false
+*comment Stunned/Paralyzed: same opt-in pattern as the condition-on-hit
+*comment above, but costs the player their whole next turn instead of just
+*comment a disadvantage roll -- deliberately single-round only (consumed the
+*comment moment fight_round_hub sees it), never a multi-round lock, since a
+*comment solo-fight stun-lock isn't fun and this game has no way to cleanse
+*comment a condition early to compensate for one.
+*create combat_enemy_inflicts_stun false
+*create combat_enemy_stun_name ""
+*create combat_enemy_stun_icon ""
+*create combat_stun_inflicted false
+*create player_stunned false
+*comment Enemy movepool: opt-in second attack for an enemy that mixes up its
+*comment actions instead of throwing the same move every round.
+*comment combat_enemy_move2_chance is a 0-100 percent roll checked once per
+*comment enemy turn (fight_pick_enemy_move, combat.txt) -- 0 (the default)
+*comment means the enemy never has a second move and this whole block is a
+*comment no-op, so every existing single-move enemy is unaffected. When it
+*comment fires, these override the scratch combat_enemy_atk_bonus/dmg_dice_
+*comment sides/dmg_bonus/inflicts_condition/condition_name/condition_icon for
+*comment that one attack only -- fight_sync_target_in resyncs the base values
+*comment from combat_enemy1/2/3_* at the top of the next round regardless, so
+*comment nothing needs to explicitly restore them. A movepool enemy can't
+*comment also carry an always-on combat_enemy_inflicts_condition from
+*comment fight_setup -- fight_pick_enemy_move owns that flag once movepool is
+*comment active, so use move 2 to carry the condition instead.
+*create combat_enemy_move2_chance 0
+*create combat_enemy_move2_atk_bonus 0
+*create combat_enemy_move2_dmg_dice_sides 4
+*create combat_enemy_move2_dmg_bonus 0
+*create combat_enemy_move2_inflicts_condition false
+*create combat_enemy_move2_condition_name ""
+*create combat_enemy_move2_condition_icon ""
+*create combat_enemy_move2_used false
+*create combat_flavor_enemy_move2_hit ""
+*create combat_flavor_enemy_move2_miss ""
 *create combat_enemy_atk_total 0
 *create combat_enemy_hit_success false
 *create combat_enemy_dmg_dealt 0
@@ -673,6 +725,31 @@
 *comment Populated by combat.txt's fight_* labels for the calling scene to
 *comment read once *gosub_scene combat fight_<name> returns.
 *create combat_outcome ""
+*comment Named-NPC override: the CALLING scene sets these right before
+*comment *gosub_scene combat fight_<name> to reuse a common enemy type's
+*comment full stat block/movepool/flavor text under a unique name, without
+*comment forking a one-off copy of the fight_<name> label just to change a
+*comment string. fight_setup (combat.txt) applies and immediately clears
+*comment both, so a later call to the same fight_<name> without setting
+*comment these falls back to its normal generic name/epithet.
+*create combat_enemy_name_override ""
+*create combat_enemy_epithet_override ""
+*comment Slot 2/3 get their own name/epithet overrides -- slot 1 reuses the
+*comment two above since it already flows through fight_setup's scratch-var
+*comment snapshot, but slots 2/3 are written directly by apply_enemy_type
+*comment (below) with no equivalent snapshot step, so their overrides are
+*comment applied and cleared inside apply_enemy_type itself instead.
+*create combat_enemy2_name_override ""
+*create combat_enemy2_epithet_override ""
+*create combat_enemy3_name_override ""
+*create combat_enemy3_epithet_override ""
+*comment Enemy type library (combat.txt: apply_enemy_type) -- the calling
+*comment fight_<name> label sets these two, then *gosub apply_enemy_type, to
+*comment fill one slot (1/2/3) with a named reusable enemy type's full stat
+*comment block/movepool/flavor instead of hand-authoring it inline. See
+*comment apply_enemy_type's header comment for the list of available types.
+*create combat_apply_type ""
+*create combat_apply_slot 0
 *comment Multi-enemy fight support (combat.txt: slots 1-3)
 *create combat_enemy_count 1
 *create combat_active_target 1
@@ -688,6 +765,23 @@
 *create combat_enemy1_dmg_bonus 0
 *create combat_enemy1_epithet "the creature"
 *create combat_enemy1_metal_armor false
+*comment Per-slot condition/stun/movepool storage -- see the scratch-var
+*comment comment block above. A slot that never sets these (every existing
+*comment enemy) keeps the same defaults, so this is a no-op until a fight
+*comment deliberately sets combat_enemy2_move2_chance etc. for one slot only.
+*create combat_enemy1_inflicts_condition false
+*create combat_enemy1_condition_name ""
+*create combat_enemy1_condition_icon ""
+*create combat_enemy1_inflicts_stun false
+*create combat_enemy1_stun_name ""
+*create combat_enemy1_stun_icon ""
+*create combat_enemy1_move2_chance 0
+*create combat_enemy1_move2_atk_bonus 0
+*create combat_enemy1_move2_dmg_dice_sides 4
+*create combat_enemy1_move2_dmg_bonus 0
+*create combat_enemy1_move2_inflicts_condition false
+*create combat_enemy1_move2_condition_name ""
+*create combat_enemy1_move2_condition_icon ""
 *create combat_enemy2_name "none"
 *create combat_enemy2_hp 0
 *create combat_enemy2_max_hp 0
@@ -697,6 +791,21 @@
 *create combat_enemy2_dmg_bonus 0
 *create combat_enemy2_epithet "the second creature"
 *create combat_enemy2_metal_armor false
+*create combat_enemy2_inflicts_condition false
+*create combat_enemy2_condition_name ""
+*create combat_enemy2_condition_icon ""
+*create combat_enemy2_inflicts_stun false
+*create combat_enemy2_stun_name ""
+*create combat_enemy2_stun_icon ""
+*create combat_enemy2_move2_chance 0
+*create combat_enemy2_move2_atk_bonus 0
+*create combat_enemy2_move2_dmg_dice_sides 4
+*create combat_enemy2_move2_dmg_bonus 0
+*create combat_enemy2_move2_inflicts_condition false
+*create combat_enemy2_move2_condition_name ""
+*create combat_enemy2_move2_condition_icon ""
+*create combat_flavor_enemy2_move2_hit ""
+*create combat_flavor_enemy2_move2_miss ""
 *create combat_current_spell_id ""
 *comment Optional per-slot flavor overrides
 *create combat_flavor_enemy2_hit_1 ""
@@ -718,6 +827,21 @@
 *create combat_enemy3_dmg_bonus 0
 *create combat_enemy3_epithet "the third creature"
 *create combat_enemy3_metal_armor false
+*create combat_enemy3_inflicts_condition false
+*create combat_enemy3_condition_name ""
+*create combat_enemy3_condition_icon ""
+*create combat_enemy3_inflicts_stun false
+*create combat_enemy3_stun_name ""
+*create combat_enemy3_stun_icon ""
+*create combat_enemy3_move2_chance 0
+*create combat_enemy3_move2_atk_bonus 0
+*create combat_enemy3_move2_dmg_dice_sides 4
+*create combat_enemy3_move2_dmg_bonus 0
+*create combat_enemy3_move2_inflicts_condition false
+*create combat_enemy3_move2_condition_name ""
+*create combat_enemy3_move2_condition_icon ""
+*create combat_flavor_enemy3_move2_hit ""
+*create combat_flavor_enemy3_move2_miss ""
 *create combat_flavor_enemy3_hit_1 ""
 *create combat_flavor_enemy3_hit_2 ""
 *create combat_flavor_enemy3_hit_3 ""
@@ -1972,6 +2096,14 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
   *set combat_enemy_dmg_dealt 0
   *set combat_agathys_triggered false
   *set combat_agathys_shattered false
+  *set combat_condition_inflicted false
+  *if ((combat_enemy_hit_success) and (combat_enemy_inflicts_condition))
+    *set disadvantage true
+    *set combat_condition_inflicted true
+  *set combat_stun_inflicted false
+  *if ((combat_enemy_hit_success) and (combat_enemy_inflicts_stun))
+    *set player_stunned true
+    *set combat_stun_inflicted true
   *if (combat_enemy_hit_success)
     *temp cea_dmg 0
     *rand cea_dmg 1 combat_enemy_dmg_dice_sides

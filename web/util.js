@@ -881,6 +881,11 @@ function restoreGame(state, forcedScene, userRestored, forcedStats, forcedTemps)
         var startupScene = forcedScene ? forcedScene : _global.nav.getStartupScene();
         scene = new Scene(startupScene, _global.stats, _global.nav, {debugMode:_global.debug, secondaryMode:secondaryMode, saveSlot:saveSlot});
         trackEvent('game_start');
+        // A genuinely new game (not a resume) is starting -- the Lorebook's
+        // "already seen" tracking lives in localStorage, independent of the
+        // save file, so it survives page reloads mid-playthrough. Reset it
+        // here so a fresh playthrough gets NEW badges again.
+        if (window.LoreBook && typeof LoreBook.resetSeen === "function") LoreBook.resetSeen();
     } else {
       if (forcedScene) state.stats.sceneName = forcedScene;
       if (forcedStats) {

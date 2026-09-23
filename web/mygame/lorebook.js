@@ -208,6 +208,13 @@
     return core.unlocked(s).filter(function (r) { return !seen[r.id]; }).length;
   };
 
+  // Called on a genuine new game (see restoreGame() in web/util.js), not on every
+  // reload/resume -- that would spam NEW badges throughout an existing playthrough.
+  core.resetSeen = LB.resetSeen = function () {
+    seen = {};
+    saveSeen(seen);
+  };
+
   /* ---------------------------------------------------------------------- DOM */
 
   if (typeof document === "undefined") return; // node tests stop here

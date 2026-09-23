@@ -72,6 +72,19 @@
 *set combat_agathys_triggered false
 *set combat_agathys_shattered false
 *set combat_outcome ""
+*comment Condition-on-hit and movepool resets live in fight_cleanup, not
+*comment here -- every fight_<name> label sets its own opt-in fields THEN
+*comment calls *gosub fight_setup, so resetting them here would wipe out
+*comment the very values the fight label just set.
+*comment Named-NPC override -- apply and immediately consume it, before the
+*comment snapshot below locks the (possibly now-overridden) name/epithet
+*comment into slot 1. See startup.txt's combat_enemy_name_override comment.
+*if (not(combat_enemy_name_override = ""))
+  *set combat_enemy_name combat_enemy_name_override
+  *set combat_enemy_name_override ""
+*if (not(combat_enemy_epithet_override = ""))
+  *set combat_enemy_epithet combat_enemy_epithet_override
+  *set combat_enemy_epithet_override ""
 *comment Snapshot whatever the calling fight_<name> label just set on the
 *comment canonical combat_enemy_* names into slot 1's permanent storage --
 *comment a single-enemy fight (fight_silt_lurker) never touches slot 2/3 or
@@ -86,6 +99,25 @@
 *set combat_enemy1_dmg_bonus combat_enemy_dmg_bonus
 *set combat_enemy1_epithet combat_enemy_epithet
 *set combat_enemy1_metal_armor combat_enemy_metal_armor
+*comment Same snapshot for slot 1's condition/stun/movepool fields -- a
+*comment single-enemy fight just sets the no-number scratch vars directly
+*comment (fight_gang_thug does), same as it always has for atk_bonus/dmg/
+*comment epithet above. A multi-enemy fight that wants slot 2/3 to have
+*comment their OWN condition/stun/movepool sets combat_enemy2_/3_* directly
+*comment instead, same as it already does for combat_enemy2_name/epithet.
+*set combat_enemy1_inflicts_condition combat_enemy_inflicts_condition
+*set combat_enemy1_condition_name combat_enemy_condition_name
+*set combat_enemy1_condition_icon combat_enemy_condition_icon
+*set combat_enemy1_inflicts_stun combat_enemy_inflicts_stun
+*set combat_enemy1_stun_name combat_enemy_stun_name
+*set combat_enemy1_stun_icon combat_enemy_stun_icon
+*set combat_enemy1_move2_chance combat_enemy_move2_chance
+*set combat_enemy1_move2_atk_bonus combat_enemy_move2_atk_bonus
+*set combat_enemy1_move2_dmg_dice_sides combat_enemy_move2_dmg_dice_sides
+*set combat_enemy1_move2_dmg_bonus combat_enemy_move2_dmg_bonus
+*set combat_enemy1_move2_inflicts_condition combat_enemy_move2_inflicts_condition
+*set combat_enemy1_move2_condition_name combat_enemy_move2_condition_name
+*set combat_enemy1_move2_condition_icon combat_enemy_move2_condition_icon
 *set combat_active_target 1
 *return
 
@@ -97,6 +129,92 @@
 *set combat_agathys_triggered false
 *set combat_agathys_shattered false
 *set combat_is_nonlethal false
+*comment Guard against a condition-inflicted disadvantage the player never
+*comment burned (fled/won before their next roll) bleeding into an unrelated
+*comment skill check outside this fight.
+*set disadvantage false
+*set advantage false
+*comment Condition-on-hit, Stunned, and movepool are all opt-in per
+*comment fight_<name> label -- reset here (end of THIS fight, before the
+*comment NEXT fight's label ever runs) so an enemy that doesn't set them
+*comment never inherits the previous encounter's flag/name/icon/moveset.
+*set combat_enemy_inflicts_condition false
+*set combat_enemy_condition_name ""
+*set combat_enemy_condition_icon ""
+*set combat_condition_inflicted false
+*set combat_enemy_inflicts_stun false
+*set combat_enemy_stun_name ""
+*set combat_enemy_stun_icon ""
+*set combat_stun_inflicted false
+*set player_stunned false
+*set combat_enemy_move2_chance 0
+*set combat_enemy_move2_atk_bonus 0
+*set combat_enemy_move2_dmg_dice_sides 4
+*set combat_enemy_move2_dmg_bonus 0
+*set combat_enemy_move2_inflicts_condition false
+*set combat_enemy_move2_condition_name ""
+*set combat_enemy_move2_condition_icon ""
+*set combat_enemy_move2_used false
+*set combat_flavor_enemy_move2_hit ""
+*set combat_flavor_enemy_move2_miss ""
+*comment Enemy type library scratch -- consumed immediately by
+*comment apply_enemy_type in the normal case, but reset here too so a typo'd
+*comment combat_apply_type or an unclaimed override never lingers oddly.
+*set combat_apply_type ""
+*set combat_apply_slot 0
+*set combat_enemy_name_override ""
+*set combat_enemy_epithet_override ""
+*set combat_enemy2_name_override ""
+*set combat_enemy2_epithet_override ""
+*set combat_enemy3_name_override ""
+*set combat_enemy3_epithet_override ""
+*comment The scratch resets above only clear the "active slot" mirror --
+*comment the persistent per-slot storage below also needs clearing, or a
+*comment future fight that gives slot 2 no movepool would silently inherit
+*comment slot 2's leftover moveset from whichever earlier fight set it.
+*set combat_enemy1_inflicts_condition false
+*set combat_enemy1_condition_name ""
+*set combat_enemy1_condition_icon ""
+*set combat_enemy1_inflicts_stun false
+*set combat_enemy1_stun_name ""
+*set combat_enemy1_stun_icon ""
+*set combat_enemy1_move2_chance 0
+*set combat_enemy1_move2_atk_bonus 0
+*set combat_enemy1_move2_dmg_dice_sides 4
+*set combat_enemy1_move2_dmg_bonus 0
+*set combat_enemy1_move2_inflicts_condition false
+*set combat_enemy1_move2_condition_name ""
+*set combat_enemy1_move2_condition_icon ""
+*set combat_enemy2_inflicts_condition false
+*set combat_enemy2_condition_name ""
+*set combat_enemy2_condition_icon ""
+*set combat_enemy2_inflicts_stun false
+*set combat_enemy2_stun_name ""
+*set combat_enemy2_stun_icon ""
+*set combat_enemy2_move2_chance 0
+*set combat_enemy2_move2_atk_bonus 0
+*set combat_enemy2_move2_dmg_dice_sides 4
+*set combat_enemy2_move2_dmg_bonus 0
+*set combat_enemy2_move2_inflicts_condition false
+*set combat_enemy2_move2_condition_name ""
+*set combat_enemy2_move2_condition_icon ""
+*set combat_flavor_enemy2_move2_hit ""
+*set combat_flavor_enemy2_move2_miss ""
+*set combat_enemy3_inflicts_condition false
+*set combat_enemy3_condition_name ""
+*set combat_enemy3_condition_icon ""
+*set combat_enemy3_inflicts_stun false
+*set combat_enemy3_stun_name ""
+*set combat_enemy3_stun_icon ""
+*set combat_enemy3_move2_chance 0
+*set combat_enemy3_move2_atk_bonus 0
+*set combat_enemy3_move2_dmg_dice_sides 4
+*set combat_enemy3_move2_dmg_bonus 0
+*set combat_enemy3_move2_inflicts_condition false
+*set combat_enemy3_move2_condition_name ""
+*set combat_enemy3_move2_condition_icon ""
+*set combat_flavor_enemy3_move2_hit ""
+*set combat_flavor_enemy3_move2_miss ""
 *comment Multi-enemy state must not leak into the next fight -- a future
 *comment single-enemy encounter defaults to slot 1 only via combat_enemy_count.
 *set combat_enemy_count 1
@@ -127,6 +245,19 @@
   *set combat_enemy_dmg_bonus combat_enemy1_dmg_bonus
   *set combat_enemy_epithet combat_enemy1_epithet
   *set combat_enemy_metal_armor combat_enemy1_metal_armor
+  *set combat_enemy_inflicts_condition combat_enemy1_inflicts_condition
+  *set combat_enemy_condition_name combat_enemy1_condition_name
+  *set combat_enemy_condition_icon combat_enemy1_condition_icon
+  *set combat_enemy_inflicts_stun combat_enemy1_inflicts_stun
+  *set combat_enemy_stun_name combat_enemy1_stun_name
+  *set combat_enemy_stun_icon combat_enemy1_stun_icon
+  *set combat_enemy_move2_chance combat_enemy1_move2_chance
+  *set combat_enemy_move2_atk_bonus combat_enemy1_move2_atk_bonus
+  *set combat_enemy_move2_dmg_dice_sides combat_enemy1_move2_dmg_dice_sides
+  *set combat_enemy_move2_dmg_bonus combat_enemy1_move2_dmg_bonus
+  *set combat_enemy_move2_inflicts_condition combat_enemy1_move2_inflicts_condition
+  *set combat_enemy_move2_condition_name combat_enemy1_move2_condition_name
+  *set combat_enemy_move2_condition_icon combat_enemy1_move2_condition_icon
 *if (combat_active_target = 2)
   *set combat_enemy_name combat_enemy2_name
   *set combat_enemy_hp combat_enemy2_hp
@@ -137,6 +268,19 @@
   *set combat_enemy_dmg_bonus combat_enemy2_dmg_bonus
   *set combat_enemy_epithet combat_enemy2_epithet
   *set combat_enemy_metal_armor combat_enemy2_metal_armor
+  *set combat_enemy_inflicts_condition combat_enemy2_inflicts_condition
+  *set combat_enemy_condition_name combat_enemy2_condition_name
+  *set combat_enemy_condition_icon combat_enemy2_condition_icon
+  *set combat_enemy_inflicts_stun combat_enemy2_inflicts_stun
+  *set combat_enemy_stun_name combat_enemy2_stun_name
+  *set combat_enemy_stun_icon combat_enemy2_stun_icon
+  *set combat_enemy_move2_chance combat_enemy2_move2_chance
+  *set combat_enemy_move2_atk_bonus combat_enemy2_move2_atk_bonus
+  *set combat_enemy_move2_dmg_dice_sides combat_enemy2_move2_dmg_dice_sides
+  *set combat_enemy_move2_dmg_bonus combat_enemy2_move2_dmg_bonus
+  *set combat_enemy_move2_inflicts_condition combat_enemy2_move2_inflicts_condition
+  *set combat_enemy_move2_condition_name combat_enemy2_move2_condition_name
+  *set combat_enemy_move2_condition_icon combat_enemy2_move2_condition_icon
 *if (combat_active_target = 3)
   *set combat_enemy_name combat_enemy3_name
   *set combat_enemy_hp combat_enemy3_hp
@@ -147,6 +291,19 @@
   *set combat_enemy_dmg_bonus combat_enemy3_dmg_bonus
   *set combat_enemy_epithet combat_enemy3_epithet
   *set combat_enemy_metal_armor combat_enemy3_metal_armor
+  *set combat_enemy_inflicts_condition combat_enemy3_inflicts_condition
+  *set combat_enemy_condition_name combat_enemy3_condition_name
+  *set combat_enemy_condition_icon combat_enemy3_condition_icon
+  *set combat_enemy_inflicts_stun combat_enemy3_inflicts_stun
+  *set combat_enemy_stun_name combat_enemy3_stun_name
+  *set combat_enemy_stun_icon combat_enemy3_stun_icon
+  *set combat_enemy_move2_chance combat_enemy3_move2_chance
+  *set combat_enemy_move2_atk_bonus combat_enemy3_move2_atk_bonus
+  *set combat_enemy_move2_dmg_dice_sides combat_enemy3_move2_dmg_dice_sides
+  *set combat_enemy_move2_dmg_bonus combat_enemy3_move2_dmg_bonus
+  *set combat_enemy_move2_inflicts_condition combat_enemy3_move2_inflicts_condition
+  *set combat_enemy_move2_condition_name combat_enemy3_move2_condition_name
+  *set combat_enemy_move2_condition_icon combat_enemy3_move2_condition_icon
 *return
 
 *label fight_sync_target_out
@@ -244,6 +401,11 @@
   [b][🔮 Hex Active — +1d6 Necrotic Damage on all hits][/b]
 *if (agathys_active)
   [b][❄️ Armor of Agathys Active — ${temp_hp} Temp HP | 5 Cold Damage Retaliation][/b]
+
+*if (player_stunned)
+  *set player_stunned false
+  [b][${combat_enemy_stun_icon} ${combat_enemy_stun_name} — you lose this turn, still reeling from the blow.][/b]
+  *goto fight_enemy_turn
 
 *choice
   # Attack with your ${weapon}.
@@ -682,6 +844,23 @@
       *set fnet_miss combat_flavor_enemy3_miss_1
   *else
     *set fnet_miss combat_flavor_enemy_miss_1
+*comment Movepool override -- move 2 gets its own fixed (non-randomized)
+*comment line instead of the 5-variant pool above, since it fires far less
+*comment often per fight and doesn't need the same variety. Picked per-slot,
+*comment same as the base hit/miss override earlier in this label, so a
+*comment mixed fight's Thug (slot 3, say) uses its own move2 text and never
+*comment the Guards' (slot 1/2, no movepool -- combat_enemy_move2_used stays
+*comment false for them and this whole block is skipped).
+*if (combat_enemy_move2_used)
+  *if (combat_active_target = 2)
+    *set fnet_hit combat_flavor_enemy2_move2_hit
+    *set fnet_miss combat_flavor_enemy2_move2_miss
+  *elseif (combat_active_target = 3)
+    *set fnet_hit combat_flavor_enemy3_move2_hit
+    *set fnet_miss combat_flavor_enemy3_move2_miss
+  *else
+    *set fnet_hit combat_flavor_enemy_move2_hit
+    *set fnet_miss combat_flavor_enemy_move2_miss
 *line_break
 *if (combat_shield_triggered)
   *if (combat_enemy_hit_success)
@@ -707,6 +886,10 @@
         ${fdh}
         [b][💀 ${combat_enemy_name} Defeated — Killed by Its Own Strike][/b]
     [b][🩸 ${combat_enemy_name} Hits: ${combat_enemy_dmg_dealt} damage | HP: ${hp_current} / ${hp_max}][/b]
+    *if (combat_condition_inflicted)
+      [b][${combat_enemy_condition_icon} ${combat_enemy_condition_name} — disadvantage on your next attack][/b]
+    *if (combat_stun_inflicted)
+      [b][${combat_enemy_stun_icon} ${combat_enemy_stun_name} — you lose your next turn][/b]
   *else
     ${fnet_miss}
     [b][💨 ${combat_enemy_name} Misses][/b]
@@ -1029,6 +1212,38 @@
     *set fdh "There's no shaking this one off. The magic finds its mark clean, and whatever was standing a moment ago isn't standing anymore."
 *return
 
+*label fight_pick_enemy_move
+*comment Movepool: called once per living slot per turn, right after
+*comment fight_sync_target_in resyncs THAT SLOT's base stats/movepool/
+*comment condition fields into the scratch vars below and before
+*comment resolve_enemy_attack reads them -- so this label never needs to
+*comment know which slot is active, only what fight_sync_target_in just
+*comment loaded. That's what makes movepool per-enemy-type in a mixed
+*comment fight: a slot with combat_enemyN_move2_chance = 0 (every enemy
+*comment that's never opted in) makes the *if below a pure no-op for that
+*comment slot's turn, leaving combat_enemy_atk_bonus/dmg_dice_sides/
+*comment dmg_bonus exactly what fight_sync_target_in just set them to.
+*comment A slot with a movepool can't ALSO carry an always-on condition
+*comment from its combat_enemyN_inflicts_condition -- this label owns the
+*comment scratch condition flag once that slot's move2_chance > 0, so give
+*comment the condition to move 2 instead.
+*set combat_enemy_move2_used false
+*if (combat_enemy_move2_chance > 0)
+  *set combat_enemy_inflicts_condition false
+  *set combat_enemy_condition_name ""
+  *set combat_enemy_condition_icon ""
+  *temp fpm_roll 0
+  *rand fpm_roll 1 100
+  *if (fpm_roll <= combat_enemy_move2_chance)
+    *set combat_enemy_move2_used true
+    *set combat_enemy_atk_bonus combat_enemy_move2_atk_bonus
+    *set combat_enemy_dmg_dice_sides combat_enemy_move2_dmg_dice_sides
+    *set combat_enemy_dmg_bonus combat_enemy_move2_dmg_bonus
+    *set combat_enemy_inflicts_condition combat_enemy_move2_inflicts_condition
+    *set combat_enemy_condition_name combat_enemy_move2_condition_name
+    *set combat_enemy_condition_icon combat_enemy_move2_condition_icon
+*return
+
 *label fight_enemy_turn
 *comment Each living slot gets one attack this round, order 1/2/3. A dead
 *comment slot's turn is skipped entirely -- no attack roll, no prose. This
@@ -1044,6 +1259,7 @@
 *if (combat_enemy1_hp > 0)
   *set combat_active_target 1
   *gosub fight_sync_target_in
+  *gosub fight_pick_enemy_move
   *gosub_scene startup resolve_enemy_attack
   *gosub fight_narrate_enemy_turn
   *if (combat_player_can_die) and (hp_current <= 0)
@@ -1054,6 +1270,7 @@
   *if (combat_enemy2_hp > 0)
     *set combat_active_target 2
     *gosub fight_sync_target_in
+    *gosub fight_pick_enemy_move
     *gosub_scene startup resolve_enemy_attack
     *gosub fight_narrate_enemy_turn
     *if (combat_player_can_die) and (hp_current <= 0)
@@ -1064,6 +1281,7 @@
   *if (combat_enemy3_hp > 0)
     *set combat_active_target 3
     *gosub fight_sync_target_in
+    *gosub fight_pick_enemy_move
     *gosub_scene startup resolve_enemy_attack
     *gosub fight_narrate_enemy_turn
     *if (combat_player_can_die) and (hp_current <= 0)
@@ -1080,6 +1298,262 @@
   *set locked_stat_bump_page_id page_id
 *page_break Hold your ground...
 *goto fight_round_hub
+
+*comment ══════════════════════════════════════════════════════════════
+*comment ENEMY TYPE LIBRARY
+*comment A reusable alternative to hand-authoring a slot's stat block/
+*comment movepool/flavor inline: *set combat_apply_type "<type>", *set
+*comment combat_apply_slot <1/2/3>, *gosub apply_enemy_type. Lets a mixed
+*comment fight drop the same enemy type into more than one slot (or combine
+*comment different types) without forking a one-off copy of that type's
+*comment numbers into a new fight label just to change which slots it fills.
+*comment
+*comment IMPORTANT (verified against web/scene.js evaluateValueToken): a
+*comment ${var} inside a *set "..." string is resolved IMMEDIATELY, the
+*comment instant that *set line runs -- NOT deferred to whenever the stored
+*comment variable is later printed. So a type's flavor text can't embed
+*comment ${combat_enemy_epithet} and expect it to pick up whichever slot (or
+*comment rename) is active mid-fight -- it would just freeze in whatever the
+*comment scratch var happened to hold at setup time, which is wrong for
+*comment slot 2/3 and for any later rename either way. Each type's flavor
+*comment pool below is written with its own fixed, hardcoded epithet text
+*comment instead -- same convention every other fight in this file already
+*comment uses. Two copies of the same type in one fight (2 Guards) DO read
+*comment identically then, which is the accepted tradeoff from that
+*comment conversation -- they're mechanically identical goons, so sameness
+*comment isn't a real loss the way it would be between two different types.
+*comment
+*comment Optional per-instance rename: *set combat_enemy1/2/3_name_override
+*comment and/or _epithet_override before calling apply_enemy_type for that
+*comment slot (slot 1 instead uses the plain combat_enemy_name_override,
+*comment applied later by fight_setup -- see its own comment). This DOES
+*comment correctly rename the status banner, spell-targeting text, and
+*comment victory/defeat lines, since those interpolate ${combat_enemy_name}/
+*comment ${combat_enemy_epithet} live in directly-printed text, not through
+*comment a stored variable -- it just can't reach into the type's own
+*comment pre-authored flavor prose for the reason above. Consumed and cleared
+*comment the moment that slot's *gosub apply_enemy_type runs (slot 1 when
+*comment fight_setup runs), so it never bleeds into a later fight or a
+*comment different slot reusing the same type.
+*comment
+*comment Available types: "gang_thug", "rennick_guard". Add a new one by
+*comment writing an apply_type_<name> label following either as a template,
+*comment then one line in apply_enemy_type's dispatch below.
+*comment ══════════════════════════════════════════════════════════════
+
+*label apply_enemy_type
+*if (combat_apply_type = "gang_thug")
+  *gosub apply_type_gang_thug
+*if (combat_apply_type = "rennick_guard")
+  *gosub apply_type_rennick_guard
+*if (combat_apply_slot = 1)
+  *comment Slot 1's override is applied later, by fight_setup, once the
+  *comment calling fight_<name> label is done setting up every slot -- see
+  *comment combat_enemy_name_override's comment in startup.txt. Nothing to
+  *comment do here for slot 1.
+*if (combat_apply_slot = 2)
+  *if (not(combat_enemy2_name_override = ""))
+    *set combat_enemy2_name combat_enemy2_name_override
+    *set combat_enemy2_name_override ""
+  *if (not(combat_enemy2_epithet_override = ""))
+    *set combat_enemy2_epithet combat_enemy2_epithet_override
+    *set combat_enemy2_epithet_override ""
+*if (combat_apply_slot = 3)
+  *if (not(combat_enemy3_name_override = ""))
+    *set combat_enemy3_name combat_enemy3_name_override
+    *set combat_enemy3_name_override ""
+  *if (not(combat_enemy3_epithet_override = ""))
+    *set combat_enemy3_epithet combat_enemy3_epithet_override
+    *set combat_enemy3_epithet_override ""
+*return
+
+*label apply_type_gang_thug
+*comment Cudgel-swinging dockside enforcer with a 30% dirty-stab movepool
+*comment that inflicts Poisoned. See fight_gang_thug for this type flown
+*comment solo (single-enemy fight, no apply_enemy_type involved there).
+*if (combat_apply_slot = 1)
+  *set combat_enemy_name "Dockside Gang Thug"
+  *set combat_enemy_hp 10
+  *set combat_enemy_max_hp 10
+  *set combat_enemy_ac 11
+  *set combat_enemy_atk_bonus 3
+  *set combat_enemy_dmg_dice_sides 6
+  *set combat_enemy_dmg_bonus 1
+  *set combat_enemy_epithet "the thug"
+  *set combat_enemy_move2_chance 30
+  *set combat_enemy_move2_atk_bonus 2
+  *set combat_enemy_move2_dmg_dice_sides 4
+  *set combat_enemy_move2_dmg_bonus 0
+  *set combat_enemy_move2_inflicts_condition true
+  *set combat_enemy_move2_condition_name "Poisoned"
+  *set combat_enemy_move2_condition_icon "🤢"
+  *set combat_flavor_enemy_hit_1 "The thug swings a cudgel in a broad arc, and the iron-shod head catches you hard across the shoulder."
+  *set combat_flavor_enemy_hit_2 "The thug closes fast, driving a knee into your side before following with a solid crack of the cudgel."
+  *set combat_flavor_enemy_hit_3 "The thug feints toward your face, then drives the cudgel in low, catching you across the hip."
+  *set combat_flavor_enemy_hit_4 "The thug bulls forward with full weight, and the cudgel connects across your back before you can turn."
+  *set combat_flavor_enemy_hit_5 "A sweeping backhand blow from the thug catches you across the ribs, driving the wind from your lungs."
+  *set combat_flavor_enemy_miss_1 "The thug swings wide, and the cudgel splinters against a stack of crates instead."
+  *set combat_flavor_enemy_miss_2 "The thug overcommits to the strike, and you slip aside as the cudgel whistles past your ear."
+  *set combat_flavor_enemy_miss_3 "You read the swing early and step inside their reach, the cudgel cracking against empty cobblestone."
+  *set combat_flavor_enemy_miss_4 "The thug hooks for your ankle with a boot, but you keep your footing and pivot clear."
+  *set combat_flavor_enemy_miss_5 "The blow is telegraphed, and you duck beneath the arc as the cudgel splinters a nearby barrel."
+  *set combat_flavor_enemy_move2_hit "The thug abandons the cudgel mid-swing and drives a rusted knife up under your guard instead—the wound stings far worse than its size should allow."
+  *set combat_flavor_enemy_move2_miss "The thug's hand darts for a hidden knife, but you catch the motion and twist clear before the blade can find you."
+*if (combat_apply_slot = 2)
+  *set combat_enemy2_name "Dockside Gang Thug"
+  *set combat_enemy2_hp 10
+  *set combat_enemy2_max_hp 10
+  *set combat_enemy2_ac 11
+  *set combat_enemy2_atk_bonus 3
+  *set combat_enemy2_dmg_dice_sides 6
+  *set combat_enemy2_dmg_bonus 1
+  *set combat_enemy2_epithet "the thug"
+  *set combat_enemy2_move2_chance 30
+  *set combat_enemy2_move2_atk_bonus 2
+  *set combat_enemy2_move2_dmg_dice_sides 4
+  *set combat_enemy2_move2_dmg_bonus 0
+  *set combat_enemy2_move2_inflicts_condition true
+  *set combat_enemy2_move2_condition_name "Poisoned"
+  *set combat_enemy2_move2_condition_icon "🤢"
+  *set combat_flavor_enemy2_hit_1 "The thug swings a cudgel in a broad arc, and the iron-shod head catches you hard across the shoulder."
+  *set combat_flavor_enemy2_hit_2 "The thug closes fast, driving a knee into your side before following with a solid crack of the cudgel."
+  *set combat_flavor_enemy2_hit_3 "The thug feints toward your face, then drives the cudgel in low, catching you across the hip."
+  *set combat_flavor_enemy2_hit_4 "The thug bulls forward with full weight, and the cudgel connects across your back before you can turn."
+  *set combat_flavor_enemy2_hit_5 "A sweeping backhand blow from the thug catches you across the ribs, driving the wind from your lungs."
+  *set combat_flavor_enemy2_miss_1 "The thug swings wide, and the cudgel splinters against a stack of crates instead."
+  *set combat_flavor_enemy2_miss_2 "The thug overcommits to the strike, and you slip aside as the cudgel whistles past your ear."
+  *set combat_flavor_enemy2_miss_3 "You read the swing early and step inside their reach, the cudgel cracking against empty cobblestone."
+  *set combat_flavor_enemy2_miss_4 "The thug hooks for your ankle with a boot, but you keep your footing and pivot clear."
+  *set combat_flavor_enemy2_miss_5 "The blow is telegraphed, and you duck beneath the arc as the cudgel splinters a nearby barrel."
+  *set combat_flavor_enemy2_move2_hit "The thug abandons the cudgel mid-swing and drives a rusted knife up under your guard instead—the wound stings far worse than its size should allow."
+  *set combat_flavor_enemy2_move2_miss "The thug's hand darts for a hidden knife, but you catch the motion and twist clear before the blade can find you."
+*if (combat_apply_slot = 3)
+  *set combat_enemy3_name "Dockside Gang Thug"
+  *set combat_enemy3_hp 10
+  *set combat_enemy3_max_hp 10
+  *set combat_enemy3_ac 11
+  *set combat_enemy3_atk_bonus 3
+  *set combat_enemy3_dmg_dice_sides 6
+  *set combat_enemy3_dmg_bonus 1
+  *set combat_enemy3_epithet "the thug"
+  *set combat_enemy3_move2_chance 30
+  *set combat_enemy3_move2_atk_bonus 2
+  *set combat_enemy3_move2_dmg_dice_sides 4
+  *set combat_enemy3_move2_dmg_bonus 0
+  *set combat_enemy3_move2_inflicts_condition true
+  *set combat_enemy3_move2_condition_name "Poisoned"
+  *set combat_enemy3_move2_condition_icon "🤢"
+  *set combat_flavor_enemy3_hit_1 "The thug swings a cudgel in a broad arc, and the iron-shod head catches you hard across the shoulder."
+  *set combat_flavor_enemy3_hit_2 "The thug closes fast, driving a knee into your side before following with a solid crack of the cudgel."
+  *set combat_flavor_enemy3_hit_3 "The thug feints toward your face, then drives the cudgel in low, catching you across the hip."
+  *set combat_flavor_enemy3_hit_4 "The thug bulls forward with full weight, and the cudgel connects across your back before you can turn."
+  *set combat_flavor_enemy3_hit_5 "A sweeping backhand blow from the thug catches you across the ribs, driving the wind from your lungs."
+  *set combat_flavor_enemy3_miss_1 "The thug swings wide, and the cudgel splinters against a stack of crates instead."
+  *set combat_flavor_enemy3_miss_2 "The thug overcommits to the strike, and you slip aside as the cudgel whistles past your ear."
+  *set combat_flavor_enemy3_miss_3 "You read the swing early and step inside their reach, the cudgel cracking against empty cobblestone."
+  *set combat_flavor_enemy3_miss_4 "The thug hooks for your ankle with a boot, but you keep your footing and pivot clear."
+  *set combat_flavor_enemy3_miss_5 "The blow is telegraphed, and you duck beneath the arc as the cudgel splinters a nearby barrel."
+  *set combat_flavor_enemy3_move2_hit "The thug abandons the cudgel mid-swing and drives a rusted knife up under your guard instead—the wound stings far worse than its size should allow."
+  *set combat_flavor_enemy3_move2_miss "The thug's hand darts for a hidden knife, but you catch the motion and twist clear before the blade can find you."
+*return
+
+*label apply_type_rennick_guard
+*comment Plain cudgel-armed hired muscle, no movepool/condition -- matches
+*comment fight_rennick_guards' guards exactly, just reusable in any slot.
+*if (combat_apply_slot = 1)
+  *set combat_enemy_name "Dockside Guard"
+  *set combat_enemy_hp 8
+  *set combat_enemy_max_hp 8
+  *set combat_enemy_ac 12
+  *set combat_enemy_atk_bonus 2
+  *set combat_enemy_dmg_dice_sides 4
+  *set combat_enemy_dmg_bonus 0
+  *set combat_enemy_epithet "the guard"
+  *set combat_flavor_enemy_hit_1 "The guard drives a cudgel into you, the iron-banded head glancing off with a dull, ringing thud."
+  *set combat_flavor_enemy_hit_2 "The guard closes fast and gets a cudgel in low, catching you across the ribs before you can turn to meet the blow."
+  *set combat_flavor_enemy_hit_3 "The guard feints high, then drives the cudgel in beneath your guard with jarring force."
+  *set combat_flavor_enemy_hit_4 "The guard bull-rushes you with a shoulder, following up with a brutal kidney check from the cudgel."
+  *set combat_flavor_enemy_hit_5 "A sweeping backhand swing from the guard catches you across the chest, knocking the wind from your lungs."
+  *set combat_flavor_enemy_miss_1 "The guard swings wide, splintering a drying rack instead of your ribs."
+  *set combat_flavor_enemy_miss_2 "The guard overcommits to the swing, and you slip aside as the cudgel shatters an empty curing bench behind you."
+  *set combat_flavor_enemy_miss_3 "You read the attack a half-second early and step inside the swing, the cudgel whistling wide over your shoulder."
+  *set combat_flavor_enemy_miss_4 "The guard swings a heavy downward chop, but you duck beneath the arc as the cudgel splinters an empty fish box."
+  *set combat_flavor_enemy_miss_5 "The guard attempts to hook your ankle with a boot, but you keep your balance and pivot out of reach."
+*if (combat_apply_slot = 2)
+  *set combat_enemy2_name "Dockside Guard"
+  *set combat_enemy2_hp 8
+  *set combat_enemy2_max_hp 8
+  *set combat_enemy2_ac 12
+  *set combat_enemy2_atk_bonus 2
+  *set combat_enemy2_dmg_dice_sides 4
+  *set combat_enemy2_dmg_bonus 0
+  *set combat_enemy2_epithet "the guard"
+  *set combat_flavor_enemy2_hit_1 "The guard drives a cudgel into you, the iron-banded head glancing off with a dull, ringing thud."
+  *set combat_flavor_enemy2_hit_2 "The guard closes fast and gets a cudgel in low, catching you across the ribs before you can turn to meet the blow."
+  *set combat_flavor_enemy2_hit_3 "The guard feints high, then drives the cudgel in beneath your guard with jarring force."
+  *set combat_flavor_enemy2_hit_4 "The guard bull-rushes you with a shoulder, following up with a brutal kidney check from the cudgel."
+  *set combat_flavor_enemy2_hit_5 "A sweeping backhand swing from the guard catches you across the chest, knocking the wind from your lungs."
+  *set combat_flavor_enemy2_miss_1 "The guard swings wide, splintering a drying rack instead of your ribs."
+  *set combat_flavor_enemy2_miss_2 "The guard overcommits to the swing, and you slip aside as the cudgel shatters an empty curing bench behind you."
+  *set combat_flavor_enemy2_miss_3 "You read the attack a half-second early and step inside the swing, the cudgel whistling wide over your shoulder."
+  *set combat_flavor_enemy2_miss_4 "The guard swings a heavy downward chop, but you duck beneath the arc as the cudgel splinters an empty fish box."
+  *set combat_flavor_enemy2_miss_5 "The guard attempts to hook your ankle with a boot, but you keep your balance and pivot out of reach."
+*if (combat_apply_slot = 3)
+  *set combat_enemy3_name "Dockside Guard"
+  *set combat_enemy3_hp 8
+  *set combat_enemy3_max_hp 8
+  *set combat_enemy3_ac 12
+  *set combat_enemy3_atk_bonus 2
+  *set combat_enemy3_dmg_dice_sides 4
+  *set combat_enemy3_dmg_bonus 0
+  *set combat_enemy3_epithet "the guard"
+  *set combat_flavor_enemy3_hit_1 "The guard drives a cudgel into you, the iron-banded head glancing off with a dull, ringing thud."
+  *set combat_flavor_enemy3_hit_2 "The guard closes fast and gets a cudgel in low, catching you across the ribs before you can turn to meet the blow."
+  *set combat_flavor_enemy3_hit_3 "The guard feints high, then drives the cudgel in beneath your guard with jarring force."
+  *set combat_flavor_enemy3_hit_4 "The guard bull-rushes you with a shoulder, following up with a brutal kidney check from the cudgel."
+  *set combat_flavor_enemy3_hit_5 "A sweeping backhand swing from the guard catches you across the chest, knocking the wind from your lungs."
+  *set combat_flavor_enemy3_miss_1 "The guard swings wide, splintering a drying rack instead of your ribs."
+  *set combat_flavor_enemy3_miss_2 "The guard overcommits to the swing, and you slip aside as the cudgel shatters an empty curing bench behind you."
+  *set combat_flavor_enemy3_miss_3 "You read the attack a half-second early and step inside the swing, the cudgel whistling wide over your shoulder."
+  *set combat_flavor_enemy3_miss_4 "The guard swings a heavy downward chop, but you duck beneath the arc as the cudgel splinters an empty fish box."
+  *set combat_flavor_enemy3_miss_5 "The guard attempts to hook your ankle with a boot, but you keep your balance and pivot out of reach."
+*return
+
+*label apply_generic_weapon_flavor
+*comment Optional shared pool for the PLAYER's own attack landing on
+*comment whichever slot is active. Can't name the target the way the
+*comment enemy-type flavor above eventually might (that block explains why
+*comment ${combat_enemy_epithet} can't be baked into a stored *set string),
+*comment and doubly so here since this pool is written before any type is
+*comment even chosen -- so it stays deliberately name-free (they/them/their)
+*comment rather than freezing in a wrong or stale epithet. A fight/type-combo
+*comment calls this once (not per-slot, unlike apply_enemy_type -- this is
+*comment about the player's action, not any one enemy's). A fight can still
+*comment skip this and write its own bespoke combat_flavor_weapon_*/
+*comment dissonant_* lines instead, same as always.
+*set combat_flavor_weapon_hit_1 "Your ${weapon} connects solidly, and they reel back with a pained grunt."
+*set combat_flavor_weapon_hit_2 "You close the gap before they can reset their stance, and your ${weapon} catches home solid."
+*set combat_flavor_weapon_hit_3 "They telegraph the swing a half-second too early, and you punish it, your ${weapon} driving hard on the follow-through."
+*set combat_flavor_weapon_hit_4 "You sidestep the lunge and bring your ${weapon} down across an exposed shoulder, staggering them sideways."
+*set combat_flavor_weapon_hit_5 "A sharp, controlled strike from your ${weapon} catches them across the jaw."
+*set combat_flavor_weapon_miss_1 "Your ${weapon} whistles past as they duck low, cursing through gritted teeth."
+*set combat_flavor_weapon_miss_2 "They read the strike early and roll clear, your ${weapon} finding nothing but air."
+*set combat_flavor_weapon_miss_3 "They backpedal out of reach, and your ${weapon} falls short."
+*set combat_flavor_weapon_miss_4 "They catch your strike on a raised guard with a jarring clack."
+*set combat_flavor_weapon_miss_5 "A loose foothold robs your swing of its full weight, and your ${weapon} glances wide."
+*set combat_flavor_weapon_hit_ranged_1 "Your shot punches into their shoulder, spinning them half around with a pained shout."
+*set combat_flavor_weapon_hit_ranged_2 "You lead the stumbling retreat and put the shot square home before they can find their footing."
+*set combat_flavor_weapon_hit_ranged_3 "The shot catches them mid-motion, snapping their head back and dropping them a step."
+*set combat_flavor_weapon_hit_ranged_4 "Your shot drives through an exposed forearm, forcing them to drop their weapon with a sharp cry."
+*set combat_flavor_weapon_hit_ranged_5 "You loose on a low line—the missile clips their thigh, spoiling their charge."
+*set combat_flavor_weapon_miss_ranged_1 "Your shot skips wide as they duck behind cover."
+*set combat_flavor_weapon_miss_ranged_2 "They lunge sideways just as you loose, and the shot buries itself in the wall instead."
+*set combat_flavor_weapon_miss_ranged_3 "Your aim wavers, and the shot skitters wide of them entirely."
+*set combat_flavor_weapon_miss_ranged_4 "They duck behind cover, the shot thudding harmlessly past."
+*set combat_flavor_weapon_miss_ranged_5 "A gust throws your aim wide, the shot missing them clean."
+*set combat_flavor_dissonant_hit "You loose a jarring, discordant phrase straight into their mind, and they clutch at their skull with a strangled groan."
+*set combat_flavor_dissonant_miss "The dissonant phrase lands, but they shake it off with a pained grimace, more angry than hurt."
+*return
 
 *comment ══════════════════════════════════════════════════════════════
 *comment FIGHT LIBRARY
@@ -1296,5 +1770,67 @@
 *set combat_flavor_enemy3_miss_5 "The third mire-rat hesitates at the edge of the lantern light, hissing in frustration as you turn to face it."
 *set combat_flavor_dissonant_hit "You loose a jarring, discordant note into the dark undercroft. One of the mire-rats convulses with a ragged screech, scrabbling wildly at its own ears in the flour dust."
 *set combat_flavor_dissonant_miss "The sound scatters the mire-rats for a moment, but they're back at your heels before it fades."
+*gosub fight_setup
+*goto fight_round_hub
+
+*label fight_gang_thug
+*comment PROTOTYPE -- demonstrates the movepool system (fight_pick_enemy_move,
+*comment startup.txt's combat_enemy_move2_* vars) on a single enemy. Not
+*comment wired to any quest yet. Move 1 (70% of turns) is a plain cudgel
+*comment swing; move 2 (30%) drops the cudgel for a rusty knife that
+*comment inflicts Poisoned on a hit -- same condition-on-hit plumbing built
+*comment for Frightened/Poisoned/Stunned earlier, just armed per-move instead
+*comment of for the whole fight.
+*set combat_is_nonlethal false
+*set combat_enemy_name "Dockside Gang Thug"
+*set combat_enemy_hp 10
+*set combat_enemy_max_hp 10
+*set combat_enemy_ac 11
+*set combat_enemy_atk_bonus 3
+*set combat_enemy_dmg_dice_sides 6
+*set combat_enemy_dmg_bonus 1
+*set combat_round 1
+*set combat_enemy_epithet "the thug"
+*set combat_enemy_move2_chance 30
+*set combat_enemy_move2_atk_bonus 2
+*set combat_enemy_move2_dmg_dice_sides 4
+*set combat_enemy_move2_dmg_bonus 0
+*set combat_enemy_move2_inflicts_condition true
+*set combat_enemy_move2_condition_name "Poisoned"
+*set combat_enemy_move2_condition_icon "🤢"
+*set combat_flavor_enemy_move2_hit "The thug abandons his cudgel mid-swing and drives a rusted knife up under your guard instead—the wound stings far worse than its size should allow."
+*set combat_flavor_enemy_move2_miss "The thug's hand darts for a hidden knife, but you catch the motion and twist clear before the blade can find you."
+*set combat_flavor_weapon_hit_1 "Your ${weapon} connects hard, and the thug reels back with a startled curse, one hand flying to the fresh welt."
+*set combat_flavor_weapon_hit_2 "You close the gap before he can reset his stance, and your ${weapon} catches him solid across the ribs."
+*set combat_flavor_weapon_hit_3 "The thug telegraphs his swing a half-second too early, and you punish it, your ${weapon} driving him back on his heels."
+*set combat_flavor_weapon_hit_4 "You sidestep his lunge and bring your ${weapon} down across his shoulder, knocking him sideways into a stack of crates."
+*set combat_flavor_weapon_hit_5 "A sharp, controlled strike from your ${weapon} catches him across the jaw, and he staggers, spitting blood."
+*set combat_flavor_weapon_miss_1 "Your ${weapon} whistles past as the thug ducks low, cursing through his teeth."
+*set combat_flavor_weapon_miss_2 "He reads the strike early and rolls his shoulder clear, your ${weapon} finding nothing but night air."
+*set combat_flavor_weapon_miss_3 "The thug backpedals into the shadows of an alley stall, and your ${weapon} falls short."
+*set combat_flavor_weapon_miss_4 "He catches your strike on the flat of his cudgel with a jarring clack, sneering past the impact."
+*set combat_flavor_weapon_miss_5 "A loose cobblestone shifts underfoot, robbing your swing of its full weight."
+*set combat_flavor_weapon_hit_ranged_1 "Your shot punches into the thug's shoulder, spinning him half around with a pained shout."
+*set combat_flavor_weapon_hit_ranged_2 "You lead his stumbling retreat and put the shot square into him before he can find his footing."
+*set combat_flavor_weapon_hit_ranged_3 "The shot catches him mid-taunt, snapping his head back and dropping him a step."
+*set combat_flavor_weapon_hit_ranged_4 "Your shot drives through his forearm, forcing him to drop his cudgel with a sharp cry."
+*set combat_flavor_weapon_hit_ranged_5 "You loose on a low line—the missile clips his thigh, spoiling his charge."
+*set combat_flavor_weapon_miss_ranged_1 "Your shot skips off a rain barrel as the thug ducks behind a stacked crate."
+*set combat_flavor_weapon_miss_ranged_2 "He lunges sideways just as you loose, and the shot buries itself in a warehouse door instead."
+*set combat_flavor_weapon_miss_ranged_3 "Your aim wavers in the dockside gloom, and the shot skitters wide over the cobbles."
+*set combat_flavor_weapon_miss_ranged_4 "He ducks behind a swinging cargo net, the shot thudding harmlessly into rope and canvas."
+*set combat_flavor_weapon_miss_ranged_5 "A gust off the harbor throws your aim wide, the shot burying itself in a piling."
+*set combat_flavor_enemy_hit_1 "The thug swings his cudgel in a broad arc, and the iron-shod head catches you hard across the shoulder."
+*set combat_flavor_enemy_hit_2 "He closes fast, driving a knee into your side before following with a solid crack of his cudgel."
+*set combat_flavor_enemy_hit_3 "The thug feints toward your face, then drives the cudgel in low, catching you across the hip."
+*set combat_flavor_enemy_hit_4 "He bulls forward with his full weight, and the cudgel connects across your back before you can turn."
+*set combat_flavor_enemy_hit_5 "A sweeping backhand blow from the thug catches you across the ribs, driving the wind from your lungs."
+*set combat_flavor_enemy_miss_1 "The thug swings wide, and his cudgel splinters against a stack of crates instead."
+*set combat_flavor_enemy_miss_2 "He overcommits to the strike, and you slip aside as the cudgel whistles past your ear."
+*set combat_flavor_enemy_miss_3 "You read the swing early and step inside his reach, the cudgel cracking against empty cobblestone."
+*set combat_flavor_enemy_miss_4 "The thug hooks for your ankle with his boot, but you keep your footing and pivot clear."
+*set combat_flavor_enemy_miss_5 "He telegraphs the blow, and you duck beneath the arc as the cudgel splinters a nearby barrel."
+*set combat_flavor_dissonant_hit "You plant a jarring, dissonant phrase straight behind the thug's eyes. He staggers, clutching his skull with a strangled groan."
+*set combat_flavor_dissonant_miss "The dissonant phrase lands, but the thug shakes it off with a pained grimace, more angry than hurt."
 *gosub fight_setup
 *goto fight_round_hub
