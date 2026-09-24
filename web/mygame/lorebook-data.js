@@ -410,7 +410,7 @@
         body: function (s) {
           var out = [
             "The Gilded Scales' factor in Alderford: portly and jowled, wrapped in water-stained beaver furs, with a parchment-bound account book never far from his hand and the frank, assessing stare of a man who has spent his life weighing cargo by eye. He met the Carrion column at the town palisade the day it arrived, flanked by bailiffs in pewter scale badges. He took Captain Vane's brass baggage chits, reported that the causeway was cleared and the Sinks prisoners were in the iron cage wagons as contracted, then unrolled a stamped ledger, checked every seal, and signed the company's contract vouchers. Coin only moves when the seals satisfy him.",
-            "His counting house sits on the customs slip on blackened ironwood pilings. Inside, the whole wharf's business is weighed, sealed, and filed: clerks at their desks, brass balance pans clinking against lead weights, a vault counter issuing Letters of Credit good in Gold Crowns at the cartel's head house in Port Valen's Upper Wharves, and an iron-posted bounty board by the door. Chief Clerk Orlov runs the front of the house. The Factor keeps to the back office and has no inclination to come out for routine business."
+            "His counting house sits on the customs slip on blackened ironwood pilings. Inside, the whole wharf's business is weighed, sealed, and filed: clerks at their desks, brass balance pans clinking against lead weights, a vault counter issuing Letters of Credit good in Gold Crowns at the cartel's head house on Port Valen's Civic Heights, and an iron-posted bounty board by the door. Chief Clerk Orlov runs the front of the house. The Factor keeps to the back office and has no inclination to come out for routine business."
           ];
           if (truthy(s.rennick_reported)) {
             out.push("Report Rennick's skimming and the Factor answers: 'So you're the one. Word reached me a Carrion recruit walked into my own toll district's dispute and settled it without breaking a crate, and had the nerve to invoke my name doing it. A little bird already told me my bailiff's scales run light. Good instinct, chasing that up. I'll be having a word with Rennick myself.'");
@@ -444,10 +444,10 @@
             out.push("He gave the Grey Waterway Toll Register a closer look than anything else that crosses his desk. A junior clerk brought a jeweler's loupe and a black touchstone, the three-headed hawk was held to the lamplight, and the wax seal's edge was tested against the stone before Orlov rapped twice on the side door: 'Factor! The Black Sinks contract, the customs vellum's come in!' The Scales had wanted that register out of the flooded ruin for three seasons. 'Efficient work,' the Factor said, and the silver was counted onto the counter without further comment.");
           }
           if (truthy(s.discussed_orlov_past)) {
-            out.push("His debt bond was signed at the Gilded Scales head house in Port Valen's Upper Wharves against his father's debts before his beard came in, and it is renewed every quarter-day. The tavern story says the same books hold the debtor crews in the channel off the Iron Wharves. The counting house does not need chains for men whose names live in a book. 'Morzan is the third factor I have served in this room. The first died of marsh fever with the ledgers balanced to the copper. The second was recalled upward to the head house, which is how the Scales put a man somewhere he cannot spend money. Factors rotate. Clerks stay. Somebody has to remember which seals are real.'");
+            out.push("His debt bond was signed at the Gilded Scales head house on Port Valen's Civic Heights against his father's debts before his beard came in, and it is renewed every quarter-day. The tavern story says the same books hold the debtor crews in the channel off the Iron Wharves. The counting house does not need chains for men whose names live in a book. 'Morzan is the third factor I have served in this room. The first died of marsh fever with the ledgers balanced to the copper. The second was recalled upward to the head house, which is how the Scales put a man somewhere he cannot spend money. Factors rotate. Clerks stay. Somebody has to remember which seals are real.'");
           }
           if (truthy(s.discussed_orlov_quills)) {
-            out.push("Asked about the second quill scratching behind the Factor's door, he lays his pen down with exaggerated care. 'The Factor keeps his own accounts, as factors do. A chief clerk who counts what crosses the counter keeps his post to a comfortable old age. A chief clerk who wonders about the door wonders his way onto a river barge.' Unprompted, he adds that the head house sends auditors down from the Upper Wharves every quarter, and every quarter the books agree to the copper. He says it flat and exact, like a man reading a tide table.");
+            out.push("Asked about the second quill scratching behind the Factor's door, he lays his pen down with exaggerated care. 'The Factor keeps his own accounts, as factors do. A chief clerk who counts what crosses the counter keeps his post to a comfortable old age. A chief clerk who wonders about the door wonders his way onto a river barge.' Unprompted, he adds that the head house sends auditors down from Civic Heights every quarter, and every quarter the books agree to the copper. He says it flat and exact, like a man reading a tide table.");
           }
           return out;
         },
@@ -542,7 +542,7 @@
         unlock: "codex_gilded_scales",
         meter: { stat: "gilded_scales_rep", label: "Standing with the Gilded Scales" },
         body: [
-          "A cartel of river merchants and guild-masters based in Port Valen's Upper Wharves. They hold the timber trade, the grain barges, and the river toll-gates across the province, and they enforce their contracts with hired iron. A free company is a line in their ledgers like any other expense: hired when iron is needed, paid by the season, and dismissed the moment the road is open.",
+          "A cartel of river merchants and guild-masters based in Port Valen, with its head house on Civic Heights beside the Council Hall and its merchant houses' estates in the Patrician Quarter. They hold the timber trade, the grain barges, and the river toll-gates across the province, and they enforce their contracts with hired iron. A free company is a line in their ledgers like any other expense: hired when iron is needed, paid by the season, and dismissed the moment the road is open.",
           "The cartel is led by a <b>First Factor</b>, who speaks for the Scales on war, treaty, and city policy. The First Factor answers to the Council of Factors, the ruling council of Port Valen, made up of the senior merchant houses. Below them, appointed officers run records, taxes, courts, and the Port Watch. Port Valen holds the old imperial title of a free city, and no crown rules it."
         ],
         see: ["port_valen", "port_watch", "letters_of_credit", "alderford", "council", "upper_wharves", "debtor_crews"]
@@ -637,10 +637,10 @@
         id: "port_valen", category: "places", title: "Port Valen",
         link: ["Port Valen"],
         sub: "The port capital downriver",
-        tags: ["Port Valen"], aliases: ["Port Valen", "Dredge-End", "Upper Wharves", "free city", "Free City", "Council", "capital"],
+        tags: ["Port Valen"], aliases: ["Port Valen", "Dredge-End", "Patrician Quarter", "free city", "Free City", "Council", "capital"],
         unlock: "codex_port_valen",
         body: [
-          "The sprawling port capital downriver, a free city in the old imperial sense, answerable to no crown. Its Council rules the surrounding towns and villages of the river country, Alderford among them, through tolls, tax contracts, and factors instead of garrisons. The merchant palaces of the Gilded Scales stand in the Upper Wharves. Dredge-End is a maze of flooded canals and rotting tenements, and Black Oath territory."
+          "The sprawling port capital downriver, a free city in the old imperial sense, answerable to no crown. Its Council rules the surrounding towns and villages of the river country, Alderford among them, through tolls, tax contracts, and factors instead of garrisons. The merchant palaces of the Gilded Scales stand in the Patrician Quarter. Dredge-End is a maze of flooded canals and rotting tenements, and Black Oath territory."
         ],
         see: ["gilded_scales", "port_watch", "black_oath", "alderford", "iron_carrion", "harbor_quayside", "dredge_end", "middle_ward", "upper_wharves", "civic_heights", "council"]
       },

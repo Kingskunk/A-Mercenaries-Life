@@ -1,5 +1,6 @@
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment PORT VALEN: THE UPPER WHARVES
+*comment PORT VALEN: THE PATRICIAN QUARTER (renamed 2026-09-24 from "the Upper Wharves"; the file name,
+*comment labels and upper_wharves_* variables keep the old name on purpose, only player-facing prose changed)
 *comment Split out of port_valen.txt alongside Dredge-End and Civic Heights
 *comment so each district has its own home to grow into -- reached only via
 *comment *goto_scene from port_valen.txt's port_valen_travel_to, never
@@ -7,69 +8,493 @@
 *comment port_valen_dredge_end.txt's header for the full reasoning); told to
 *comment compile.js via its own hardcoded
 *comment verifyFileName("port_valen_upper_wharves.txt") entry.
-*comment Currently an ambient-only stub -- no POIs or quests wired in yet
-*comment (this is where the planned "Defaulted Timber Raft" quest belongs).
-*comment The "travel elsewhere" exit below is the only line that crosses
-*comment the file boundary, via *goto_scene back into port_valen.txt.
+*comment The "travel elsewhere" exit is the only line that crosses the file boundary, via *goto_scene back into
+*comment port_valen.txt.
+*comment
+*comment WHAT THE QUARTER IS (2026-09-24 retcon): the private enclave of the merchant lords, on high ground above the
+*comment Middle Ward. Great houses (a pale stone block with a courtyard, a counting room below and the family above)
+*comment line the avenue and walled estates climb the slope behind them. Cleaner streets, private house guards (not
+*comment the Watch), quiet. The Gilded Scales' HEAD HOUSE is NOT here: it moved to Civic Heights (banking is never
+*comment behind a paid gate). ENTRY needs a writ bought there (patrician_day_writ_day / patrician_reg_until, see
+*comment startup.txt). The arrival label checks it: no writ means the Inner Gate turns the player away at no cost
+*comment and points to the head house (fail-forward, never a dead end). A writ that lapses mid-visit is caught at the
+*comment avenue (pq_lapsed).
+*comment
+*comment PLACES: the Inner Gate (Gate-Captain Alys Threnn), the Avenue of Estates (Houses Halloran, Vantry and
+*comment Ostrand), the Terrace Walk (four views that fix the city's layout), and the Gilt Needle (tailor, Master Idris
+*comment Fenwick). Layers (see port_valen_dredge_end.txt): place, sky (pq_sky, shared), street, tell. Profile: private,
+*comment quiet, guard-heavy; foul weather barely changes it, but at severity 3 the avenue empties.
+*comment
+*comment HOOKS, not built: SHOP HOOK at the Gilt Needle (cloaks, belts, gloves, boots and finer clothing on the gear
+*comment catalog: add a tailor_buy shop with its GEN block and trade-panel key, like Halda's); QUEST SLOTS at each great
+*comment house and at the avenue (the planned "Defaulted Timber Raft" quest belongs with House Halloran); the guards'
+*comment side-gate gap (House Ostrand, the tell) for an outlaw route; writ revocation for a registered name that draws
+*comment steel. Lorebook: upper_wharves, pq_terrace_walk, pq_house_halloran, pq_house_vantry, pq_house_ostrand,
+*comment gilt_needle, idris_fenwick, alys_threnn.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label port_valen_upper_wharves
 *set current_district "upper_wharves"
 *set upper_wharves_seen true
 *gosub_scene calendar update_hub_condition
-*comment Layers (see port_valen_dredge_end.txt for the full rule): place, sky, street. Profile: a private
-*comment merchant quarter whose business runs indoors. Foul weather barely changes the offices, but at
-*comment severity 3 the avenue empties and the guards draw back into the porticos.
+*temp pq_writ false
+*if ((patrician_reg_until >= campaign_day) or (patrician_day_writ_day = campaign_day))
+  *set pq_writ true
+*if (pq_writ)
+  *goto pq_avenue
+*goto pq_gate_refused
+
+*comment ── SHARED PIECES ──
+
+*label pq_walk_time
+*comment Same routine as mw_walk_time in the Middle Ward. Callers set minutes_to_pass and a unique
+*comment time_advance_call_id first.
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return
+
+*label pq_sky
+*comment LAYER 2: SKY. Weather and light only, matched to time_period.
+*temp pq_night false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set pq_night true
+*if (weather = "Rain")
+  Clean rain washes the granite gutters, streaming off the painted crests and drumming on the heavy slate roofs of the great houses.
+*elseif (weather = "Storm")
+  Driving wind howls up from the harbor below, rattling the iron gates and whipping the crest banners on their poles.
+*elseif (weather = "Fog")
+  Cold river mist creeps up the paved avenue, muffled by stone walls and smudging the gilded crests into soft blurs of gold.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Grey slush lies along the clean flagstones and on the gate steps, and the gutters run thick with meltwater.
+*elseif (weather = "Blizzard")
+  A freezing gale sweeps the high ridge, driving snow against the barred gates and howling along the wide avenue.
+*elseif (weather = "Clear")
+  *if (pq_night)
+    Clear starlight glistens on the clean paving stones, and wall-lamps cast long shadows past iron-barred archways.
+  *elseif (time_period = "Dusk")
+    The low sun turns the gilded crests and the slate roofs to copper and lays the shadows of the estate walls long across the avenue.
+  *else
+    Crisp daylight gleams off the gilded crests and the polished brass of the gate-knockers.
+*else
+  *comment Overcast
+  *if (pq_night)
+    A heavy, starless night hangs over the high ridge, keeping the pale stone fronts cold and dark.
+  *else
+    A high, leaden overcast settles over the ridge, keeping the clean avenue cold and grey.
+*return
+
+*label pq_gate_place
+*comment LAYER 1 of the Inner Gate: constant geography and smell, shared by the refused and admitted views.
+The road climbs above the lower streets to an inner gatehouse of dressed stone, with a broad arch, iron-studded leaves, and a walkway along the top. A bronze plate beside the arch reads [i]"Entry by Sealed Writ."[/i] Past the arch the paving stones are whole and the gutters are cut from granite. The air smells of beeswax, cut lavender, and cold stone.
+*return
+
+*comment ── THE INNER GATE ──
+
+*label pq_gate_refused
+*temp pq_gate_state "day"
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set pq_gate_state "night"
+*elseif (time_period = "Dusk")
+  *set pq_gate_state "dusk"
+*temp pq_roll 1
+*rand pq_roll 1 3
+[b]◈ THE PATRICIAN QUARTER: THE INNER GATE[/b]
+*line_break
+[b][⏳ Patrician Quarter Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
+*line_break
+*gosub pq_gate_place
+
+*gosub pq_sky
+
+*if (pq_gate_state = "night")
+  *if (pq_roll = 1)
+    A lantern burns in the gatehouse arch, and two house guards stand under it in matching surcoats, halberds crossed over the way.
+  *elseif (pq_roll = 2)
+    The leaves are shut. A guard sits beside the wicket with a lamp between his boots and a mastiff lying across his feet.
+  *else
+    Two guards stand in the arch with their halberds crossed, and a third watches from the walkway above.
+*elseif (pq_gate_state = "dusk")
+  *if (pq_roll = 1)
+    A closed carriage waits at the arch while the guards read its passenger's writ by lantern light, and other callers hover behind it.
+  *elseif (pq_roll = 2)
+    Guards in matching surcoats stand either side of the arch, waving through the last few carriages before the night watch takes over.
+  *else
+    The last callers leave the avenue in twos and threes, and the guards watch each one pass with flat, unhurried care.
+*else
+  *if (pq_roll = 1)
+    Two house guards in matching surcoats stand either side of the arch, halberds crossed over the way whenever someone approaches on foot.
+  *elseif (pq_roll = 2)
+    A carriage rolls through with its writ held out of the window, and the guards are already crossing their halberds again before its wheels have cleared the arch.
+  *else
+    A guard with a book under his arm reads a caller's writ against the names on the page and waves a footman through behind him.
+
+A guard lowers his halberd across the arch as you approach. "Writ," he says. You have none. "Then you cannot pass," he says, with no heat in it. "The Gilded Scales head house on Civic Heights sells them, a Day Writ for the day or a Registered Writ for thirty. Nothing is written against you for asking."
+
+*choice
+  # Read the bronze plate beside the arch.
+    The plate is polished by many hands and reads in full: [i]"The Patrician Quarter. Entry by Sealed Writ Only. Writs Are Sold at the Gilded Scales Head House, Civic Heights. The House Guard Keeps This Gate."[/i]
+    *page_break Step back from the arch…
+    *goto pq_gate_refused
+  # [Travel: Head to another district]
+    *goto_scene port_valen port_valen_travel
+
+*label pq_lapsed
+*comment A writ can lapse while the player is inside (a Day Writ turns at midnight). Walk them out, no penalty.
+A guard steps out from a portico and holds up a hand. "Your writ has lapsed," he says. He and a second guard walk you the length of the avenue to the inner gate in a way that is polite and does not allow argument.
+*page_break Pass out through the arch…
+*goto pq_gate_refused
+
+*label pq_gate
+*comment The gate as seen from inside, for a player who holds a writ: Gate-Captain Alys Threnn and her book.
+*temp pq_gate_state "day"
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set pq_gate_state "night"
+*elseif (time_period = "Dusk")
+  *set pq_gate_state "dusk"
+*temp pq_roll 1
+*rand pq_roll 1 3
+*temp pq_first false
+*if (not(pq_gate_seen))
+  *set pq_first true
+*set pq_gate_seen true
+[b]◈ THE PATRICIAN QUARTER: THE INNER GATE[/b]
+*line_break
+*gosub pq_gate_place
+
+*gosub pq_sky
+
+*if (pq_first)
+  A woman in a steel-trimmed surcoat stands under the arch with a leather-bound book on a slanted desk beside her. She is tall and weathered, with grey at her temples and a duelist's stillness. "Alys Threnn," she says. "Gate-Captain. Your writ is in order, and your name is in the book, or will be by the bell."
+*else
+  Gate-Captain Threnn stands beside her slanted desk under the arch, reading the book.
+
+*if (pq_gate_state = "night")
+  *if (pq_roll = 1)
+    The house guards keep the arch in shifts, two at the crossed halberds and one on the walkway, and the mastiffs lie in the gatehouse lamplight.
+  *elseif (pq_roll = 2)
+    A single lantern lights the gate, and the guards' breath shows in it. Beyond the arch, the lower city is a dark bowl pricked with lamps.
+  *else
+    The guards change over on the bell, and the relief crosses the avenue in step, with the captain counting them through under her breath.
+*elseif (pq_gate_state = "dusk")
+  *if (pq_roll = 1)
+    The dusk callers are leaving. Each passes the desk and each is counted, and the captain's pen ticks the book.
+  *elseif (pq_roll = 2)
+    Grooms lead a string of horses out through the arch toward the lower stables, and the guards check the tally against the book.
+  *else
+    Carriages leave in a line with their lamps lit, and the guards stand back from the arch with their halberds grounded.
+*else
+  *if (pq_roll = 1)
+    Callers pass through in ones and twos. Each shows a slip or a card at the desk, and the guards cross their halberds and lift them again with a sound like a latch.
+  *elseif (pq_roll = 2)
+    A carriage waits while the captain reads its passenger's card against the book, and the coachman stares straight ahead with the patience of long practice.
+  *else
+    Two footmen carry a folded screen through the arch for one of the great houses while a guard walks alongside them, counting the pieces.
+
+*choice
+  # Look up at the gatehouse and the walkway.
+    The gatehouse is dressed stone from the footings to the merlons, with murder-holes above the arch and a walkway along the top where a guard paces in either direction. The leaves are iron-studded oak, hung on pins as thick as a man's arm.
+    *page_break Lower your gaze…
+    *goto pq_gate
+  *if (not(pq_gate_talk_guards))
+    # Ask Captain Threnn whose guards these are.
+      *set pq_gate_talk_guards true
+      "The houses'," Threnn says. "Not the Watch's. Every house pays its share to keep this gatehouse and this book, and every guard here wears the quartered livery of all of them." She turns a page. "The Watch walks the avenue when a house sends for it, and the houses do not often send. A house that wants its trouble settled quietly settles it itself."
+      *page_break "I see."…
+      *goto pq_gate
+  *if (not(pq_gate_talk_book))
+    # Ask Captain Threnn about the book.
+      *set pq_gate_talk_book true
+      "Two columns," Threnn says, and tilts the page so you can see. "Names that have a writ, and names that were turned away, with the reason. Nothing is written against a person for coming without a writ. You are sent to buy one, and that is all." Her finger rests on the second column. "The names that do not come back are the ones I remember."
+      *page_break "Good to know."…
+      *goto pq_gate
+  # Walk back into the avenue.
+    *goto pq_avenue
+
+*comment ── THE AVENUE (HUB) ──
+
+*label pq_avenue
+*comment Re-check the writ every time the hub prints: a Day Writ turns at midnight, so time spent inside can lapse it.
+*if ((patrician_reg_until < campaign_day) and (patrician_day_writ_day < campaign_day))
+  *goto pq_lapsed
+*set pq_inside_seen true
 *temp uw_night false
 *temp uw_workday false
+*temp pq_savvy false
 *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
   *set uw_night true
 *if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
   *set uw_workday true
-[b]◈ THE UPPER WHARVES[/b]
+*if ((wisdom >= 13) or (origin = "outlaw"))
+  *set pq_savvy true
+*temp pq_roll 1
+*rand pq_roll 1 3
+[b]◈ THE PATRICIAN QUARTER[/b]
 *line_break
-[b][⏳ Upper Wharves Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
+[b][⏳ Patrician Quarter Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
 *line_break
-The road climbs above the wet streets toward the merchant quarter. Here, the paving stones are whole, the gutters are swept, and every warehouse door bears a lock large enough to make a statement. Brass scales and gilded river-serpents hang above the counting houses, while liveried guards turn away anyone without a sealed writ.
+Past the inner gatehouse, the avenue runs straight and wide between the great houses of the merchant lords, each a block of pale stone behind an iron-studded gate, with a courtyard, a counting room on the ground floor, and the family's rooms above. The paving stones are whole, the gutters are cut from granite, and walled estates with their own gates climb the slope behind them. A stair of shallow steps at the head of the avenue climbs to the Terrace Walk, and a gilt needle threaded with red silk hangs over a narrow shopfront near the gatehouse. The air smells of beeswax, cut lavender, and cold stone.
 
-*if (weather = "Rain")
-  Clean rain washes the granite gutters, streaming off painted merchant signs and drumming on the heavy slate roofs of the factoring houses.
-*elseif (weather = "Storm")
-  Driving wind howls up from the wharves below, rattling the heavy oak shutters of the counting houses and whipping the gilded serpent signs on their brackets.
-*elseif (weather = "Fog")
-  Cold river mist creeps up the paved avenues, muffled by stone walls and turning private carriage lanterns into floating spheres of yellow light.
-*elseif ((weather = "Snow") or (weather = "Sleet"))
-  Grey slush lies along the clean flagstones and on the counting house steps, and the gutters run thick with meltwater.
-*elseif (weather = "Blizzard")
-  A freezing gale sweeps the high merchant ridge, driving snow against barred windows and howling along the wide avenue.
-*elseif (weather = "Clear")
-  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
-    Clear starlight glistens on the swept paving stones, and private lanterns cast long shadows past iron-barred archways.
-  *else
-    Crisp daylight gleams off brass balance scales and gilded serpent crests hanging above the merchant arcades.
-*else
-  *comment Overcast
-  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
-    A heavy, starless night hangs over the merchant ridge, keeping the high stone facades cold and dark.
-  *else
-    A high, leaden overcast settles over the upper quarter, keeping the clean merchant avenue cold and grey.
+*gosub pq_sky
 
+*comment LAYER 3: STREET, with LAYER 4: TELL appended for a wisdom 13+ or outlaw reading.
 *if ((street_life = "empty") and (not(uw_night)))
-  The avenue is deserted. The private gate guards have drawn back into the stone porticos, and the counting houses do their business behind barred shutters, where letters of credit go on changing hands.
+  The avenue is deserted. The house guards have drawn back into the stone porticos, carriages stand under the gate arches with their horses blanketed, and the only movement is a servant crossing between two houses under an oilskin cape.
   *if ((uw_workday) and (day_of_week = "Hallowday"))
-    It is Hallowday, and the grilles stay padlocked while cathedral bells toll from Civic Heights above.
+    It is Hallowday, and cathedral bells toll from Civic Heights above while the great houses keep their gates shut.
 *elseif (uw_night)
-  Iron grilles are padlocked across the counting houses, and private lanterns burn behind barred office windows. The only noise on the clean cobblestones is the slow pacing of liveried guards with halberds and watchdogs.
+  *if (pq_roll = 1)
+    Iron gates are shut across the great houses, and lamps burn in the estate walls. Guards with halberds and mastiffs pace the avenue in pairs, and behind one wall a single window glows where someone is still awake.
+  *elseif (pq_roll = 2)
+    The avenue is silent except for the slow tread of the night guards and the click of mastiff claws on the flags. A closed carriage waits at a side gate with its lamps dark.
+  *else
+    A house guard leans on his halberd under an arch while his mastiff sleeps across his boots, and somewhere above the walls a bell marks the hour.
 *elseif (time_period = "Dusk")
-  Clerks hurry to padlock the guild awnings and shutter high windows before the light goes. Private gate guards take up their night posts while runners carry the last sealed account packets down the hill.
+  *if (pq_roll = 1)
+    Footmen light the carriage lamps along the curb, and clerks in house colors hurry out of the great houses with sealed packets bound for the head house on the Heights. The guards take up their night posts.
+  *elseif (pq_roll = 2)
+    Gates swing shut along the avenue one after another, and the last callers' carriages roll away while grooms lead the horses to the mews.
+  *else
+    The great houses light their courtyards, and the smell of roasting meat drifts from the kitchen yards behind the walls. The guards change over at the gatehouse with the crisp precision of a drill.
 *else
   *comment Daytime
   *if (day_of_week = "Hallowday")
-    The counting-house grilles remain padlocked for the church calendar, leaving the merchant avenue quiet while cathedral bells toll from Civic Heights above. The only movement on the swept stones is the private gate guards shifting their halberds from shoulder to shoulder, and a scrivener hurrying toward the chapel with a prayer-book under his coat.
+    The great houses keep their gates shut for the church calendar, and cathedral bells toll from Civic Heights above. The only movement on the swept stones is a guard shifting his halberd from shoulder to shoulder, and a maidservant hurrying toward the chapel with a prayer-book under her arm.
+  *elseif (pq_roll = 1)
+    Enclosed carriages roll along the avenue behind matched horses, and liveried footmen run ahead to open the gates. A clerk in house colors crosses with a satchel of sealed papers, and a servant carrying a hamper slips through a side door.
+  *elseif (pq_roll = 2)
+    Gardeners trim the estate hedges above the walls, and a dressmaker's boy waits at a service gate with a hatbox while a porter checks a list. The house guards stand easy, halberds grounded, watching everyone who passes.
   *else
-    Letters of credit change hands in quiet offices while petitioners wait beneath guild awnings. Bronze-faced factors receive merchants one at a time, while runners carry stacks of stamped vellum toward the council buildings.
-    *if (weather_cold)
-      Apprentices in thick wool coats shovel grey slush from the counting house steps, scattering coarse salt across the clean flagstones.
-*page_break Where to next…
-*goto_scene port_valen port_valen_travel
+    A rider in house colors trots down the avenue with a leather dispatch case, and a small procession of servants carries a cased harp up toward one of the estate gates.
+*if (pq_savvy)
+  You notice that the guards change over at the bell, and that for a slow count of about forty the side gate of House Ostrand stands unwatched while the relief crosses the avenue.
 
+*comment Shops trade Morning through Afternoon, like Lantern Lane: closed at Dusk, Night, Pre-Dawn, Hallowday and in a Blizzard.
+*temp pq_shop_open true
+*if (((time_period = "Night") or (time_period = "Pre-Dawn")) or (time_period = "Dusk"))
+  *set pq_shop_open false
+*if ((day_of_week = "Hallowday") or ((weather_severity >= 3) and (weather_cold)))
+  *set pq_shop_open false
+
+*choice
+  # Walk the Avenue of Estates. [~5 min]
+    *set minutes_to_pass 5
+    *set time_advance_call_id "pq_walk_estates_1"
+    *gosub pq_walk_time
+    *goto pq_estates
+  # Climb the stair to the Terrace Walk. [~10 min]
+    *set minutes_to_pass 10
+    *set time_advance_call_id "pq_walk_terrace_1"
+    *gosub pq_walk_time
+    *goto pq_walk
+  *if (pq_shop_open)
+    *if (pq_tailor_seen)
+      # Step into the Gilt Needle to see Master Fenwick. [~5 min]
+        *set minutes_to_pass 5
+        *set time_advance_call_id "pq_walk_tailor_1"
+        *gosub pq_walk_time
+        *goto pq_tailor
+    *else
+      # Step into the narrow shop with the gilt needle sign. [~5 min]
+        *set minutes_to_pass 5
+        *set time_advance_call_id "pq_walk_tailor_1"
+        *gosub pq_walk_time
+        *goto pq_tailor
+  *else
+    # Read the card on the tailor's shuttered door.
+      A card in the bow-glass window reads: [i]"The Gilt Needle. Idris Fenwick, Tailor to the Quarter. Fittings by Appointment, Seventh Bell to the Evening Horn. Closed on Hallowday."[/i]
+      *page_break Step back from the door…
+      *goto pq_avenue
+  # Walk back to the Inner Gate and the gate-captain. [~5 min]
+    *set minutes_to_pass 5
+    *set time_advance_call_id "pq_walk_gate_1"
+    *gosub pq_walk_time
+    *goto pq_gate
+  # [Travel: Head to another district]
+    *goto_scene port_valen port_valen_travel
+
+*comment ── THE AVENUE OF ESTATES ──
+
+*label pq_estates
+*comment QUEST SLOT: a house quest opens here. The planned "Defaulted Timber Raft" quest belongs with House Halloran.
+*temp pq_night_e false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set pq_night_e true
+*temp pq_roll 1
+*rand pq_roll 1 2
+[b]◈ THE AVENUE OF ESTATES[/b]
+*line_break
+The avenue bends along the slope past three great houses, each with its own gate and crest. House Halloran's gate is green-painted iron under a gilt oak leaf coiled with a river-serpent. House Vantry's is blue and silver, with a silver barge under sail worked into the lintel. House Ostrand's is black iron, hung with a brass key crossed with a quill. Behind each gate a courtyard and a pale stone front rise to a slate roof, and behind those the walled estates step up the hill under their tall pines.
+
+*gosub pq_sky
+
+*if (pq_night_e)
+  *if (pq_roll = 1)
+    A guard stands under each crest with a lantern hung on his halberd, and beyond the black gate of House Ostrand a single light burns high in the house.
+  *else
+    The crests are dark shapes in the lamplight, and the only sound is the mastiffs' claws on the flags.
+*elseif (time_period = "Dusk")
+  *if (pq_roll = 1)
+    Footmen in green, in blue and silver, and in black call the last carriages to their gates, and the lamps come on along the walls house by house.
+  *else
+    The three gates close in turn as the lamps come on, and the guards at each take up their posts beneath the crest.
+*else
+  *if (pq_roll = 1)
+    A green-liveried footman polishes the knocker on the Halloran gate while two grooms in blue and silver walk a pair of matched greys down the avenue.
+  *else
+    A black-liveried clerk comes out of the Ostrand gate with a leather case and crosses the avenue, and the guard under the crest watches him the whole way.
+
+*choice
+  # Study the gate of House Halloran.
+    *set pq_seen_halloran true
+    The Halloran gate is a tall pair of green-painted leaves, each worked with a gilt oak leaf whose stem coils into a river-serpent. A porter's window is set into the wall beside it, with a brass bell-pull and a slate that reads [i]"At home to callers with the Halloran seal."[/i] Timber is the house's business: barge-poles are stacked in the yard beyond the gate, and the bundled tallies at the porter's window carry the ironwood mark of a raft-master.
+    *page_break Step back from the gate…
+    *goto pq_estates
+  # Study the gate of House Vantry.
+    *set pq_seen_vantry true
+    The Vantry gate is blue iron trimmed with silver, and the barge under sail in the lintel is so finely worked that the silver rigging catches the light. Grain and warehousing are the house's business. Wagons of sealed sacks are drawn up in the yard behind the gate, and a clerk sits on a stool by the porter's window, weighing samples in a brass pan and writing the figures on a slate.
+    *page_break Step back from the gate…
+    *goto pq_estates
+  # Study the gate of House Ostrand.
+    *set pq_seen_ostrand true
+    The Ostrand gate is black iron, and the brass key crossed with a quill above it has been polished until it is the brightest thing on the avenue. The house lends and insures, and writes the policy on many of the hulls that ride in the roadstead below. There is no slate at the porter's window, only a brass plate that reads [i]"By Appointment Only."[/i]
+    *page_break Step back from the gate…
+    *goto pq_estates
+  # Walk back along the avenue.
+    *goto pq_avenue
+
+*comment ── THE TERRACE WALK ──
+
+*label pq_walk
+*set pq_walk_seen true
+*temp pq_night_w false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set pq_night_w true
+*temp pq_roll 1
+*rand pq_roll 1 2
+[b]◈ THE TERRACE WALK[/b]
+*line_break
+A long promenade of pale paving runs along the crest of the ridge, edged on the outer side by a waist-high stone rail and shaded on the inner side by a row of clipped lindens. Stone benches stand at intervals along it, and iron lamp-standards mark every tenth pace. From the rail the city falls away in tiers to the bay. The air smells of cut grass and lime-blossom.
+
+*gosub pq_sky
+
+*if (pq_night_w)
+  *if (pq_roll = 1)
+    The walk is empty except for a guard at the far end, standing under a lamp with his halberd grounded, watching the dark bowl of the lower city.
+  *else
+    A single couple sit on a bench under a lamp-standard, talking low, and a guard walks slowly past with his mastiff, pretending not to listen.
+*elseif (time_period = "Dusk")
+  *if (pq_roll = 1)
+    Couples and small parties stroll the length of the walk in the last light, the ladies gathering their hems above the dew.
+  *else
+    A lamplighter works his way along the standards with a long taper, and the promenaders drift toward the avenue as each one comes on.
+*else
+  *if (pq_roll = 1)
+    Well-dressed callers stroll the walk in twos and threes, a maid a pace behind each with a parasol, and a boy sells sugared almonds from a tray by the stair.
+  *else
+    An elderly man in a fur-trimmed gown sits on a bench with a folded newssheet, watching the harbor through a brass spyglass.
+
+*choice
+  # Look south over the harbor. [~5 min]
+    *set minutes_to_pass 5
+    *set time_advance_call_id "pq_view_south_1"
+    *gosub pq_walk_time
+    *goto pq_view_south
+  # Look east along the trunk road. [~5 min]
+    *set minutes_to_pass 5
+    *set time_advance_call_id "pq_view_east_1"
+    *gosub pq_walk_time
+    *goto pq_view_east
+  # Look west toward the river. [~5 min]
+    *set minutes_to_pass 5
+    *set time_advance_call_id "pq_view_west_1"
+    *gosub pq_walk_time
+    *goto pq_view_west
+  # Look up at Civic Heights. [~5 min]
+    *set minutes_to_pass 5
+    *set time_advance_call_id "pq_view_up_1"
+    *gosub pq_walk_time
+    *goto pq_view_up
+  # Go back down the stair to the avenue.
+    *goto pq_avenue
+
+*label pq_view_south
+*if (weather_visibility = "poor")
+  The mist lies too thick to see past the nearest rooftops. Come back when it clears.
+  *page_break Step back from the rail…
+  *goto pq_walk
+Below the rail the whole city falls away in tiers to the bay. The Quayside's warehouse roofs and balance cranes crowd the waterline, and the shipwrights' slipways of the Iron Wharves smoke along the shore. The long finger of the Pier runs out over the shoals toward the wreck-bell on the reef, and beyond the breakwater the roadstead opens to the sea, with hulls riding at anchor. On a hillside shoulder above the harbor, the Carrion company's black raven banner snaps over its palisade.
+*page_break Step back from the rail…
+*goto pq_walk
+
+*label pq_view_east
+*if (weather_visibility = "poor")
+  The mist lies too thick to see past the nearest rooftops. Come back when it clears.
+  *page_break Step back from the rail…
+  *goto pq_walk
+Beneath the ridge the Middle Ward spreads across its broad shelf in a sea of slate roofs, and the trunk road runs east through it as a pale line, straight as a ruled edge, to the Charter Gate. There the newer limestone of the landward wall stands out against the hills, and beyond it the imperial road climbs away toward the Meridian country.
+*page_break Step back from the rail…
+*goto pq_walk
+
+*label pq_view_west
+*if (weather_visibility = "poor")
+  The mist lies too thick to see past the nearest rooftops. Come back when it clears.
+  *page_break Step back from the rail…
+  *goto pq_walk
+To the west the trunk road runs out to the River Gate in its grey wall, and past it the Grey River comes down from the uplands in long loops. Where the river meets the bay, the flooded cuts and stilted tenements of Dredge-End glint below the high-water line, a low crowded district under a haze of chimney smoke.
+*page_break Step back from the rail…
+*goto pq_walk
+
+*label pq_view_up
+*if (weather_visibility = "poor")
+  The mist lies too thick to see past the nearest rooftops. Come back when it clears.
+  *page_break Step back from the rail…
+  *goto pq_walk
+Behind and above the walk, the limestone of Civic Heights climbs against the sky: the Council Hall with its bronze balance-scale, the head house of the Gilded Scales facing it across the plaza, and above them both the buttresses and bells of the cathedral.
+*page_break Step back from the rail…
+*goto pq_walk
+
+*comment ── THE GILT NEEDLE (TAILOR) ──
+*comment SHOP HOOK: groundwork only. Fenwick's stock is "still on the cutting table", so the shop sells nothing yet.
+*comment When cloaks, belts, gloves, boots and finer clothing exist on the gear catalog, add a tailor_buy shop to
+*comment tools/gear_catalog.json (prefix, goto label, a GEN block here) and a trade-panel key, like Halda's forge and
+*comment Ambrose's still-room, keeping a plain menu underneath the panel. The slots already exist: equipped_head_id,
+*comment equipped_cloak_id, equipped_hands_id, equipped_waist_id, equipped_feet_id, equipped_neck_id. Note the cloak
+*comment has no mechanical effect yet (exposure only checks that one is worn).
+
+*label pq_tailor
+*temp pq_tailor_first false
+*if (not(pq_tailor_seen))
+  *set pq_tailor_first true
+*set pq_tailor_seen true
+[b]◈ THE GILT NEEDLE[/b]
+*line_break
+The Gilt Needle fills a narrow front of dark wood and bow glass near the gatehouse. Inside, bolts of cloth lean in racks to the ceiling, a fitting stool stands beneath a skylight, and a long cutting table is spread with paper patterns and brown paper parcels. The shop smells of steam, wool, and lavender water.
+
+*if (pq_tailor_first)
+  A slight, silver-haired man in a dove-grey coat stands at the cutting table with a tape measure looped about his neck and pins along his lapel. "Fenwick," he says. "Idris Fenwick, tailor to the Quarter. Everything here is cut to the wearer. There is no peg."
+*else
+  Master Fenwick works at the cutting table, a paper pattern held flat under the heel of his hand.
+
+*choice
+  # Look over the cloth and the patterns.
+    The racks hold wool in a dozen weights, from stout broadcloth to a grey so fine it looks like smoke, with bolts of linen, silk, and velvet in the deeper shelves. Paper patterns for cloaks, gloves, belts, and boots hang from a rail on wooden pegs, each labelled in Fenwick's small square hand.
+    *page_break Step back to the table…
+    *goto pq_tailor
+  # Ask about a fitting.
+    Fenwick spreads his hands over the cutting table, where cloaks, belts, gloves, and boots lie half cut in brown paper. "The season's pieces are still on the table," he says. "Come back when the last stitch is in, and I will fit you myself."
+    *page_break "I'll come back."…
+    *goto pq_tailor
+  *if (not(pq_tailor_talk_clients))
+    # Ask Master Fenwick whom he dresses.
+      *set pq_tailor_talk_clients true
+      "The houses," Fenwick says, and does not look up. "Their families, their clerks, their guards' officers, and the occasional captain who has done a house a service and wishes to be seen to have done it." He runs a thumbnail down a seam. "A coat here is not warmth. It is a way of saying whose door you came from, and I take that seriously."
+      *page_break "Fair enough."…
+      *goto pq_tailor
+  # Step back out into the avenue.
+    *goto pq_avenue

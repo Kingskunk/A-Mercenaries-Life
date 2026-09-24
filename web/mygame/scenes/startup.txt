@@ -474,6 +474,37 @@
 *create ch_records_seen false
 *create ch_roll_rules_talk false
 *create ch_roll_claims_talk false
+*comment Civic Heights: the Gilded Scales head house. ch_head_seen is entering the counting floor (meets Teller
+*comment Quillon), ch_head_writ_seen is reaching the Writs window (meets Registrar Ashe); the *_talk flags record
+*comment their answers (lorebook echoes them). ch_bank_last_desc and ch_credit_withdraw_amount are working values
+*comment for the banking window (ch_credit_deposit_amount is shared with Alderford's vault).
+*create ch_head_seen false
+*create ch_head_writ_seen false
+*create ch_head_contracts_talk false
+*create ch_head_writ_talk false
+*create ch_credit_withdraw_amount 0
+*create ch_bank_last_desc ""
+*comment Patrician Quarter entry writs, bought at the head house. A Day Writ is good on the day it was bought
+*comment (patrician_day_writ_day = campaign_day); a Registered Writ is good through patrician_reg_until (a
+*comment campaign day). The Inner Gate reads both. Prices are silver marks; patrician_reg_price_silver must stay 2
+*comment or more (the text says "Silver Marks"), and the Day Writ label pluralises itself.
+*create patrician_day_writ_day 0
+*create patrician_reg_until 0
+*create patrician_day_price_silver 1
+*create patrician_reg_price_silver 8
+*create patrician_reg_days 30
+*comment Patrician Quarter first-visit triggers (lorebook) and one-shot talks. pq_inside_seen is passing the Inner
+*comment Gate with a writ; the pq_seen_* flags are studying each great house's gate.
+*create pq_inside_seen false
+*create pq_gate_seen false
+*create pq_gate_talk_guards false
+*create pq_gate_talk_book false
+*create pq_walk_seen false
+*create pq_seen_halloran false
+*create pq_seen_vantry false
+*create pq_seen_ostrand false
+*create pq_tailor_seen false
+*create pq_tailor_talk_clients false
 *create keel_dice_bankroll 40
 *create keel_dice_bankroll_max 40
 *comment --- DISTRICT TRACKING ---
@@ -495,7 +526,7 @@
 *comment *_talk flags record conversations that add to lorebook entries). mw_rent_active/paid_day/
 *comment expiry_day/rate_silver track the player's Terrace Lodgings
 *comment lease; mw_vignette_roll is the dynamic ambient street event
-*comment tracker (1-6).
+*comment tracker (1-8).
 *create mw_seen false
 *create mw_lodgings_seen false
 *create mw_bakehouse_seen false
@@ -523,7 +554,24 @@
 *create mw_rent_active false
 *create mw_rent_paid_day 0
 *create mw_rent_expiry_day 0
-*create mw_rent_rate_silver 1
+*comment Kess's rent per seven days, in silver marks. Raised from 1 to 2 on 2026-09-24 (a week of rent was
+*comment cheaper than one day of meals). Keep it 2 or more: the rent text says "silver marks" (plural).
+*create mw_rent_rate_silver 2
+*comment The Wagoner's Rest (inn on the trunk road): a night's bed in copper bits (keep it 2 or more, the text says
+*comment "copper bits"), the first-visit trigger, whether the paid room is currently the player's, and two one-shot talks.
+*create mw_inn_rate_copper 5
+*create mw_inn_seen false
+*create mw_inn_room_active false
+*create mw_inn_talk_house false
+*create mw_inn_talk_road false
+*comment The trunk road and the two city gates: first-visit triggers and each warden's one-shot talks (lorebook).
+*create mw_gate_road_seen false
+*create mw_river_gate_seen false
+*create mw_charter_gate_seen false
+*create mw_river_talk_lanes false
+*create mw_river_talk_bell false
+*create mw_charter_talk_charter false
+*create mw_charter_talk_pilgrims false
 *create mw_vignette_roll 1
 *create port_valen_harbor_seen false
 *create port_valen_hub_seen false
@@ -546,6 +594,11 @@
 *create last_mundane_treatment_day 0
 *create hunger_stage "Fed"
 *create fatigue_stage "Rested"
+*comment Hygiene is the third neglect clock, but social only: it never costs HP. minutes_since_wash grows
+*comment with the hunger and fatigue clocks (Port Valen open-world only) and resets at the Conduit Baths.
+*comment Stages: Clean, Grubby (3 days, -1 to CHA checks), Foul (6 days, -2). See advance_time in calendar.txt.
+*create minutes_since_wash 0
+*create hygiene_stage "Clean"
 *create hub_condition_str ""
 *comment --- SLEEP QUALITY & ROUTINE ---
 *create sleep_buff1_active false
@@ -1042,6 +1095,8 @@
 *create unique_buff_input_stat ""
 *create unique_buff_input_bonus 0
 *create unique_buff_input_minutes 0
+*comment Set by apply_grooming_buff: false when a longer bathing boon was already running and the new one was skipped.
+*create grooming_boon_applied true
 *create time_advance_locked false
 *create locked_time_advance_page_id 0
 *create locked_time_advance_id ""
@@ -2276,6 +2331,13 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
   *if (routine_stage = "Rutted")
     *set check_mod - 2
 
+  *comment Grime is a social penalty only: it never touches a STR, DEX or spellcasting roll.
+  *if (check_stat = "cha")
+    *if (hygiene_stage = "Foul")
+      *set check_mod - 2
+    *elseif (hygiene_stage = "Grubby")
+      *set check_mod - 1
+
   *comment Food, drink, unique and sleep buffs no longer add to the roll here: they raise the ability
   *comment SCORE (recalculate_buff_stats), so they already sit inside check_mod via the modifier.
 
@@ -2853,6 +2915,55 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
   *set unique_buff3_stat unique_buff_input_stat
   *set unique_buff3_bonus unique_buff_input_bonus
   *set unique_buff3_minutes_left unique_buff_input_minutes
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment REUSABLE ENGINE PRIMITIVE: APPLY GROOMING BUFF
+*comment The two bathing boons (Freshly Bathed at the Conduit Baths, Carnal Warmth at the Corve parlor) never
+*comment stack with each other, unlike food and drink. Same inputs as apply_unique_buff. The longer one wins:
+*comment if the other boon has at least as much time left, the new one is skipped (grooming_boon_applied
+*comment false); otherwise the other is cleared and the new one applied. Refreshing the same boon needs no
+*comment special case, because apply_unique_buff already refreshes by name.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label apply_grooming_buff
+*temp gb_other "Carnal Warmth"
+*if (unique_buff_input_name = "Carnal Warmth")
+  *set gb_other "Freshly Bathed"
+*set grooming_boon_applied true
+*if (unique_buff1_active) and (unique_buff1_name = gb_other)
+  *if (unique_buff1_minutes_left >= unique_buff_input_minutes)
+    *set grooming_boon_applied false
+  *else
+    *set unique_buff1_minutes_left 0
+    *set unique_buff1_active false
+    *set unique_buff1_name "none"
+    *set unique_buff1_desc "none"
+    *set unique_buff1_stat "none"
+    *set unique_buff1_bonus 0
+*if (unique_buff2_active) and (unique_buff2_name = gb_other)
+  *if (unique_buff2_minutes_left >= unique_buff_input_minutes)
+    *set grooming_boon_applied false
+  *else
+    *set unique_buff2_minutes_left 0
+    *set unique_buff2_active false
+    *set unique_buff2_name "none"
+    *set unique_buff2_desc "none"
+    *set unique_buff2_stat "none"
+    *set unique_buff2_bonus 0
+*if (unique_buff3_active) and (unique_buff3_name = gb_other)
+  *if (unique_buff3_minutes_left >= unique_buff_input_minutes)
+    *set grooming_boon_applied false
+  *else
+    *set unique_buff3_minutes_left 0
+    *set unique_buff3_active false
+    *set unique_buff3_name "none"
+    *set unique_buff3_desc "none"
+    *set unique_buff3_stat "none"
+    *set unique_buff3_bonus 0
+*if (grooming_boon_applied)
+  *gosub apply_unique_buff
+*else
+  *gosub recalculate_buff_stats
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

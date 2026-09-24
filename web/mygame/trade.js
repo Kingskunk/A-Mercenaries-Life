@@ -317,10 +317,30 @@
   // The settle option is an implementation detail: hide it while the panel exists, show the Trade button, and
   // reopen the panel after a trade so several purchases in a row do not need a trip to the header each time.
   var scanQueued = false;
+
+  // style.css rounds the choice box with .choice > div:first-child / :last-child. Hiding the settle row leaves
+  // that row as a (hidden) first or last child, so the visible edge loses its border and rounding. Tag the
+  // first and last VISIBLE rows so trade.css can draw those edges instead.
+  function fixChoiceEdges(box) {
+    var rows = box ? box.children : [], first = null, last = null, i;
+    for (i = 0; i < rows.length; i++) {
+      if (rows[i].style.display === "none") continue;
+      if (!first) first = rows[i];
+      last = rows[i];
+    }
+    for (i = 0; i < rows.length; i++) {
+      rows[i].classList.toggle("trd-first-visible", rows[i] === first && rows[0] !== first);
+      rows[i].classList.toggle("trd-last-visible", rows[i] === last && rows[rows.length - 1] !== last);
+    }
+  }
+
   function scan() {
     scanQueued = false;
     var settle = findSettle(), s = statsNow();
-    if (settle && settle.parentNode && settle.parentNode.style.display !== "none") settle.parentNode.style.display = "none";
+    if (settle && settle.parentNode) {
+      if (settle.parentNode.style.display !== "none") settle.parentNode.style.display = "none";
+      fixChoiceEdges(settle.parentNode.parentNode);
+    }
     var active = !!(settle && currentTrade());
     var btn = document.getElementById("tradeButton");
     if (btn) btn.style.display = active ? "" : "none";

@@ -233,7 +233,7 @@
       tags: ["Middle Ward"], aliases: ["Kess", "landlady", "lodgings", "rent"],
       unlock: "mw_lodgings_seen",
       body: [
-        "A crisp, no-nonsense landlady. One silver mark buys seven days: clean straw, a dry roof, quiet stairs, and Master Vael's deadbolts on every door.",
+        "A crisp, no-nonsense landlady. Two silver marks buy seven days: clean straw, a dry roof, quiet stairs, and Master Vael's deadbolts on every door.",
         "No blood in her hallway, no thieves under her rafters, and no Watchmen asking questions, so long as the coin hits the tin on time."
       ],
       see: ["terrace_lodgings", "vael", "middle_ward"]
@@ -338,7 +338,7 @@
       unlock: "mw_baths_seen",
       body: function (s) {
         var out = [
-          "A tall, thin woman in a spotless grey apron, with hands red and cracked from lye. She keeps the Conduit Baths from a small desk inside the door, where a copper bit buys a soak and a clean towel. Whatever a visitor carries that cuts, crushes, or shoots goes on the rack by the door until they leave."
+          "A tall, thin woman in a spotless grey apron, with hands red and cracked from lye. She keeps the Conduit Baths from a small desk inside the door, where three copper bits buy a soak, a warm towel, and a cake of lavender soap. Whatever a visitor carries that cuts, crushes, or shoots goes on the rack by the door until they leave."
         ];
         if (truthy(s.mw_merrin_rules_talk)) {
           out.push("Her rules are three: steel on the rack, no quarrels in the steam, and nobody stays past the night bell. In twenty years she has had one fight, and both people left by the drain door without their clothes. People say things in the steam they would not say in the street, and anyone who repeats it outside does not come back.");
@@ -628,7 +628,7 @@
           out.push("She grew up on the high-terrace grain lofts of Civic Heights, where her mother worked the drying racks. A girl who spends her childhood crossing cedar rafters fifty feet above a stone floor learns where to put her weight, or she learns what broken ribs feel like.");
         }
         if (truthy(s.sable_talk_2)) {
-          out.push("She has no patience for the Upper Wharves, where she says the merchants steal a purse with a legal writ instead of a knife and still call themselves honest. Down in Dredge-End, at least, nobody pretends to be noble.");
+          out.push("She has no patience for the Patrician Quarter, where she says the merchants steal a purse with a legal writ instead of a knife and still call themselves honest. Down in Dredge-End, at least, nobody pretends to be noble.");
         }
         return out;
       },
@@ -702,14 +702,14 @@
     },
     {
       id: "middle_ward", category: "places", title: "The Middle Ward",
-      sub: "The craft terraces",
-      tags: ["Middle Ward"], aliases: ["terrace", "second terrace", "conduit square", "craftsmen", "workshops"],
+      sub: "The broad middle of the city",
+      tags: ["Middle Ward"], aliases: ["terrace", "second terrace", "conduit square", "craftsmen", "workshops", "trunk road"],
       link: ["Middle Ward"],
       unlock: "mw_seen",
       body: function (s) {
         var out = [
-          "The road climbs in turns from the docks and levels out on the broad stone terraces below the limestone cliffs of Civic Heights. Timber buildings lean over narrow lanes beneath steep slate roofs, their lower shutters open as shop counters, and the air smells of cooled iron, brass dust, cedar sawdust and warm caraway bread.",
-          "Conduit Square, with its octagonal fountain and four bronze lion-head spouts, is the crossroads. Lanes branch to the Locksmiths' Close, Herb-Pounder Close, Lantern Lane and Smiths' Row. A communal oven feeds the ward, and a public wash-house with baths stands behind the square."
+          "The road climbs in turns from the docks and levels out onto the Second Terrace, the broad shelf of flat ground that holds most of the city, with the lower streets falling away toward the harbor behind it and Civic Heights and the Patrician Quarter rising in tiers ahead. It is the largest ward in Port Valen. Timber buildings lean over narrow lanes beneath steep slate roofs, their lower shutters open as shop counters, and the air smells of cooled iron, brass dust, cedar sawdust and warm caraway bread.",
+          "Conduit Square, with its octagonal fountain and four bronze lion-head spouts, is the crossroads: the trunk road that carries the city's traffic runs through it, east and west toward the great gates in the landward wall, and down the switchbacks to the harbor. Lanes branch to the Locksmiths' Close, Lantern Lane and Smiths' Row, and Herb-Pounder Close is a dead-end at the head of Lantern Lane. A short way along the trunk road, an inn hangs a white wagon wheel over its door. A communal oven feeds the ward, and a public wash-house with baths stands behind the square."
         ];
         if (truthy(s.mw_rumor_grain)) {
           out.push("Rumor from the baths: a Council grain officer waves unlicensed flour wagons through Conduit Square on Marketdays for a small payment slip, so the licensed drivers end up paying twice, once in fees and once in waiting.");
@@ -726,7 +726,7 @@
       unlock: "mw_lantern_seen",
       body: function (s) {
         var out = [
-          "A curving lane that climbs from Conduit Square under deep timber eaves, with an iron bracket for a horn lantern over every shop door. Rope, tin pans, blankets, cloth, boots, candles, lamp oil, paper and ink are sold from small shops and open counters. Hollis & Daughters General Goods has the widest front.",
+          "A curving lane that climbs from Conduit Square under deep timber eaves, with an iron bracket for a horn lantern over every shop door. Rope, tin pans, blankets, cloth, boots, candles, lamp oil, paper and ink are sold from small shops and open counters. Hollis & Daughters General Goods has the widest front. At the head of the lane, a gap between two workshops leads into Herb-Pounder Close, where Master Ambrose keeps his still-room.",
           "The shops open in daylight and close at dusk. On the holy day and in a blizzard the shutters stay barred."
         ];
         if (truthy(s.mw_hollis_lane_talk)) {
@@ -762,7 +762,7 @@
       unlock: "mw_wash_seen",
       body: function (s) {
         var out = [
-          "A covered yard behind Conduit Square, where copper tubs sit on charcoal fires under long shed roofs and steam rolls out into the lanes. At the far end a low stone building holds the Conduit Baths, fed by a lead pipe from the conduit. A soak costs one copper bit.",
+          "A covered yard behind Conduit Square, where copper tubs sit on charcoal fires under long shed roofs and steam rolls out into the lanes. At the far end a low stone building holds the Conduit Baths, fed by a lead pipe from the conduit. A soak costs three copper bits, with a warm towel and scented soap.",
           "The yard is busiest on Greyday, which is washday. It stays open into the evening for people coming off work, and it is closed at night and on the holy day."
         ];
         if (truthy(s.mw_merrin_water_talk)) {
@@ -784,16 +784,296 @@
       see: ["kess", "vael", "middle_ward"]
     },
     {
-      id: "upper_wharves", category: "places", title: "The Upper Wharves",
-      sub: "The merchant quarter",
-      tags: ["Upper Wharves", "Gilded Scales", "Trade"], aliases: ["merchant quarter", "counting houses", "merchant avenue", "factoring houses"],
-      link: ["Upper Wharves"],
-      unlock: "upper_wharves_seen",
+      id: "wagoners_rest", category: "places", title: "The Wagoner's Rest",
+      sub: "An inn on the trunk road",
+      tags: ["Middle Ward"], aliases: ["inn", "wagoner's rest", "stables", "stable yard", "room for the night"],
+      link: ["The Wagoner's Rest", "Wagoner's Rest"],
+      unlock: "mw_inn_seen",
+      body: function (s) {
+        var out = [
+          "A long two-storey inn of grey stone and dark timber on the trunk road, marked by a white-painted wagon wheel over its door. It lets rooms by the night for " + (s.mw_inn_rate_copper || 5) + " copper bits, with a low beamed hall, a stair to the rooms above, and behind an archway a cobbled yard with a stable range and a cart shed."
+        ];
+        if (truthy(s.mw_inn_talk_house)) {
+          out.push("One guest to a room. The key is yours until you leave by the front door or wake in the morning, and anything left behind goes to the cathedral's poor-box.");
+        }
+        if (truthy(s.mw_inn_talk_road)) {
+          out.push("Its guests are mostly carters, drovers and factors' clerks off the trunk road, and few stay longer than a night.");
+        }
+        return out;
+      },
+      see: ["oswin", "terrace_lodgings", "middle_ward"]
+    },
+    {
+      id: "oswin", category: "people", title: "Oswin Hale",
+      sub: "Keeper of the Wagoner's Rest",
+      role: "Innkeeper, the Wagoner's Rest (trunk road)",
+      link: ["Oswin Hale", "Oswin"],
+      tags: ["Middle Ward"], aliases: ["Oswin", "Hale", "keeper of the inn"],
+      unlock: "mw_inn_seen",
+      body: function (s) {
+        var out = [
+          "A heavy man in a leather apron with forearms corded from years on a carter's box, who keeps a slate on his knee and chalks every guest's bed and reckoning himself."
+        ];
+        if (truthy(s.mw_inn_talk_house)) {
+          out.push("He runs his house for the traveler who is there one night and gone the next, and sends anyone staying longer to the landlady in the Locksmiths' Close, who lets by the week.");
+        }
+        if (truthy(s.mw_inn_talk_road)) {
+          out.push("He never sees most of his guests twice, and says that suits him: a house that sees the same faces every night starts to hear the same complaints.");
+        }
+        return out;
+      },
+      see: ["wagoners_rest", "kess", "middle_ward"]
+    },
+    {
+      id: "trunk_road", category: "places", title: "The Trunk Road",
+      sub: "The city's main road, gate to gate",
+      tags: ["Middle Ward"], aliases: ["trunk road", "gate road", "wagon road", "wheelwrights", "wagon yards"],
+      link: ["Trunk Road", "the trunk road"],
+      unlock: "mw_gate_road_seen",
       body: [
-        "The road climbs above the wet streets toward the merchant quarter. Here the paving stones are whole and the gutters swept, and every warehouse door bears a lock large enough to make a statement. Brass scales and gilded river-serpents hang above the counting houses, and liveried guards turn away anyone without a sealed writ.",
-        "The counting houses shut behind padlocked grilles on the church calendar, leaving the merchant avenue quiet."
+        "A broad paved way that crosses the Middle Ward from the River Gate in the west to the Charter Gate in the east, meeting Conduit Square at the middle and running on down the switchbacks to the harbor. Wheelwrights, farriers, harness-makers, chandlers and cheap cookshops line it, with wagon yards behind arched entries and the Wagoner's Rest a short way along.",
+        "Iron-tired wheels have worn two shallow grooves into the paving. The road belongs to carters, drovers and travelers, and the Watch patrols it in pairs."
       ],
-      see: ["gilded_scales", "letters_of_credit", "civic_heights"]
+      see: ["river_gate", "charter_gate", "wagoners_rest", "middle_ward"]
+    },
+    {
+      id: "river_gate", category: "places", title: "The River Gate",
+      sub: "The west gate in the landward wall",
+      tags: ["Middle Ward"], aliases: ["river gate", "west gate", "wicket", "toll-house", "wall levy"],
+      link: ["River Gate", "the River Gate"],
+      unlock: "mw_river_gate_seen",
+      body: function (s) {
+        var out = [
+          "The west gate in the landward wall: thirty feet of grey blocks, with the trunk road passing through a gatehouse of two round towers. The road beyond runs west along the river cuttings toward the Grey River, with carters' yards and cheap inns outside the wall. Traffic sorts itself into three lanes under the arch: foot to the left, wheels to the right, stamped goods through the center."
+        ];
+        if (truthy(s.mw_river_talk_lanes)) {
+          out.push("A stamp is a Gilded Scales seal on the bill of lading, and stamped goods skip the weighing. Everyone else waits for a Council officer's measuring rod, which takes its cut off the top of the load as the wall levy.");
+        }
+        if (truthy(s.mw_river_talk_bell)) {
+          out.push("The great leaves shut at the night bell and open at first bell. A wicket in the left-hand leaf stays open for anyone with a reason to be out or in, and the clerk behind it decides what counts.");
+        }
+        return out;
+      },
+      see: ["cobb_tarrow", "trunk_road", "charter_gate", "port_watch"]
+    },
+    {
+      id: "charter_gate", category: "places", title: "The Charter Gate",
+      sub: "The east gate in the landward wall",
+      tags: ["Middle Ward"], aliases: ["charter gate", "east gate", "imperial road", "wicket", "pilgrim hospices"],
+      link: ["Charter Gate", "the Charter Gate"],
+      unlock: "mw_charter_gate_seen",
+      body: function (s) {
+        var out = [
+          "The east gate in the landward wall: newer, higher and faced in pale limestone, with a single great arch, an iron grate in the gallery above and oak leaves hung from the towers. Carved across the arch: By the Old Charter. Open at First Bell, Shut at the Night Bell. Beyond it the imperial road runs east toward the Meridian country, with pilgrim hospices and salt-factors' yards outside the wall."
+        ];
+        if (truthy(s.mw_charter_talk_charter)) {
+          out.push("The gate is Port Valen's own by the old charter. No crown sends a garrison, and no crown sends money for the wall either, so the Council bills whoever comes under the arch.");
+        }
+        if (truthy(s.mw_charter_talk_pilgrims)) {
+          out.push("On feast days much of the road is pilgrims bound for the cathedral, who keep to the left-hand lane. The hospices outside the wall take in those who arrive after the bell.");
+        }
+        return out;
+      },
+      see: ["ilse_dornwell", "trunk_road", "river_gate", "port_watch"]
+    },
+    {
+      id: "cobb_tarrow", category: "people", title: "Cobb Tarrow",
+      sub: "Warden of the River Gate",
+      role: "Wall warden, River Gate (Port Watch)",
+      link: ["Cobb Tarrow", "Warden Tarrow", "Tarrow"],
+      tags: ["Middle Ward", "Law"], aliases: ["Tarrow", "Cobb", "wall warden"],
+      unlock: "mw_river_gate_seen",
+      body: [
+        "A stocky Watch warden with a broken nose and a tally-stick, who stands at the foot of the left-hand tower and keeps the three lanes straight. He says the contents of the wagons are the clerks' business, not his."
+      ],
+      see: ["river_gate", "port_watch"]
+    },
+    {
+      id: "ilse_dornwell", category: "people", title: "Ilse Dornwell",
+      sub: "Warden of the Charter Gate",
+      role: "Wall warden, Charter Gate (Port Watch)",
+      link: ["Ilse Dornwell", "Warden Dornwell", "Dornwell"],
+      tags: ["Middle Ward", "Law"], aliases: ["Dornwell", "Ilse", "wall warden"],
+      unlock: "mw_charter_gate_seen",
+      body: [
+        "A tall, grey-eyed woman in a blue-and-brass surcoat who stands under the arch with a writ-board on her arm and reads every traveler as they come. She leaves the pilgrims their lane and their songs, and keeps the salt wagons to the right."
+      ],
+      see: ["charter_gate", "port_watch"]
+    },
+    {
+      id: "scales_head_house", category: "places", title: "The Gilded Scales Head House",
+      sub: "The Scales' seat on Civic Heights",
+      tags: ["Civic Heights", "Gilded Scales", "Trade"], aliases: ["head house", "scales head house", "counting floor", "deposits", "dispatch board", "bank"],
+      link: ["Gilded Scales Head House", "the head house", "head house"],
+      unlock: "ch_head_seen",
+      body: function (s) {
+        var out = [
+          "The Gilded Scales' seat in Port Valen, facing the Council Hall across the plaza on Civic Heights. Brass balance-scales hang over its bronze-banded doors and a gilded river-serpent coils along the lintel. Inside, a vaulted counting floor holds four windows: Deposits and Letters, Writs and Registers, Dispatches, and a shuttered Contracts window.",
+          "It opens at Seventh Bell, shuts at the evening horn, and stays closed on Hallowday."
+        ];
+        if (truthy(s.ch_head_contracts_talk)) {
+          out.push("Contracts are let by appointment, to houses the Scales already trust and companies that have left nothing ugly on the Roll and nothing owing in the books.");
+        }
+        return out;
+      },
+      see: ["maris_quillon", "corwin_ashe", "entry_writs", "gilded_scales", "letters_of_credit", "civic_heights"]
+    },
+    {
+      id: "maris_quillon", category: "people", title: "Maris Quillon",
+      sub: "Teller of Deposits and Letters",
+      role: "Teller, Gilded Scales head house",
+      link: ["Maris Quillon", "Teller Quillon", "Quillon"],
+      tags: ["Civic Heights", "Gilded Scales"], aliases: ["Quillon", "Maris", "teller"],
+      unlock: "ch_head_seen",
+      body: [
+        "A lean woman in a black coat with river-serpent cuffs, who keeps the Deposits and Letters counter with a set of nested lead weights lined up beside her scale. She answers without looking up from her ledger, and her pen does not stop."
+      ],
+      see: ["scales_head_house", "letters_of_credit"]
+    },
+    {
+      id: "corwin_ashe", category: "people", title: "Corwin Ashe",
+      sub: "Registrar of Writs and Registers",
+      role: "Registrar, Gilded Scales head house",
+      link: ["Corwin Ashe", "Registrar Ashe", "Ashe"],
+      tags: ["Civic Heights", "Gilded Scales", "Law"], aliases: ["Ashe", "Corwin", "registrar"],
+      unlock: "ch_head_writ_seen",
+      body: function (s) {
+        var out = [
+          "A heavyset man in spectacles and a black coat, ink to the wrist, who keeps the Writs and Registers window. A small clerk in city grey sits beside him with the three-masted seal, so every writ he issues carries two seals."
+        ];
+        if (truthy(s.ch_head_writ_talk)) {
+          out.push("He says a registered name is a name the house will answer for, and that a registered name which draws steel in the Patrician Quarter is struck from the book the same hour.");
+        }
+        return out;
+      },
+      see: ["scales_head_house", "entry_writs"]
+    },
+    {
+      id: "entry_writs", category: "lore", title: "The Writs of Entry",
+      sub: "Passing the Inner Gate",
+      tags: ["Civic Heights", "Patrician Quarter", "Law"], aliases: ["writ", "writs", "day writ", "registered writ", "sealed writ", "inner gate"],
+      link: ["Writs of Entry", "Registered Writ", "Day Writ"],
+      unlock: "ch_head_writ_seen",
+      body: function (s) {
+        var out = [
+          "The Patrician Quarter admits only the holders of a writ, bought at the Gilded Scales head house and carrying both the Scales' seal and the city's three-masted seal. A Day Writ costs " + (s.patrician_day_price_silver || 1) + " silver mark and is good for the rest of the day it is bought. A Registered Writ costs " + (s.patrician_reg_price_silver || 8) + " silver marks, is good for " + (s.patrician_reg_days || 30) + " days, and enters the holder's name in the book at the Inner Gate."
+        ];
+        if (truthy(s.ch_head_writ_talk)) {
+          out.push("A registered name that draws steel in the Quarter is struck from the book the same hour. The Council likes its neighbors quiet.");
+        }
+        return out;
+      },
+      see: ["scales_head_house", "corwin_ashe", "upper_wharves"]
+    },
+    {
+      id: "upper_wharves", category: "places", title: "The Patrician Quarter",
+      sub: "The quarter of the merchant lords",
+      tags: ["Patrician Quarter", "Gilded Scales", "Trade"], aliases: ["merchant quarter", "great houses", "estates", "patricians", "inner gate", "avenue", "upper wharves"],
+      link: ["Patrician Quarter"],
+      unlock: "upper_wharves_seen",
+      body: function (s) {
+        var out = [
+          "The road climbs above the lower streets to an inner gatehouse of dressed stone, its arch held by house guards in matching surcoats. A bronze plate beside it reads Entry by Sealed Writ Only, and says that writs are sold at the Gilded Scales head house on Civic Heights."
+        ];
+        if (truthy(s.pq_inside_seen)) {
+          out.push("Past the gate the avenue runs straight and wide between the great houses of the merchant lords: pale stone blocks behind iron-studded gates, each with a courtyard, a counting room on the ground floor and the family's rooms above. Walled estates climb the slope behind them, and a stair at the head of the avenue climbs to the Terrace Walk.");
+        }
+        if (truthy(s.pq_gate_talk_guards)) {
+          out.push("The guards wear the quartered livery of all the houses, who share the cost of the gatehouse and its book. The Watch walks the avenue only when a house sends for it.");
+        }
+        if (truthy(s.pq_gate_talk_book)) {
+          out.push("The gate keeps a book of two columns: names that hold a writ, and names turned away with the reason. Nothing is written against anyone for coming without a writ.");
+        }
+        return out;
+      },
+      see: ["entry_writs", "scales_head_house", "alys_threnn", "pq_terrace_walk", "gilt_needle", "civic_heights"]
+    },
+    {
+      id: "alys_threnn", category: "people", title: "Alys Threnn",
+      sub: "Gate-Captain of the Inner Gate",
+      role: "Gate-Captain, Patrician Quarter (house guard)",
+      link: ["Alys Threnn", "Captain Threnn", "Threnn"],
+      tags: ["Patrician Quarter", "Law"], aliases: ["Threnn", "Alys", "gate-captain"],
+      unlock: "pq_gate_seen",
+      body: [
+        "A tall, weathered woman in a steel-trimmed surcoat, with grey at her temples and a duelist's stillness, who keeps the Inner Gate's book on a slanted desk under the arch. She serves the houses jointly, not the Watch."
+      ],
+      see: ["upper_wharves", "entry_writs"]
+    },
+    {
+      id: "pq_terrace_walk", category: "places", title: "The Terrace Walk",
+      sub: "A promenade on the ridge",
+      tags: ["Patrician Quarter"], aliases: ["terrace walk", "promenade", "the walk", "overlook", "lindens"],
+      link: ["Terrace Walk", "the Terrace Walk"],
+      unlock: "pq_walk_seen",
+      body: [
+        "A long promenade of pale paving along the crest of the ridge above the Middle Ward, with a waist-high stone rail on the outer side, a row of clipped lindens on the inner, and a lamp-standard every tenth pace. From the rail the city falls away in tiers to the bay, and on a clear day the whole of it can be seen: the harbor and its breakwater, the trunk road and the landward wall with its two gates, the river country beyond, and the heights above.",
+        "It is open to writ-holders only, and it is where the merchant families walk to be seen."
+      ],
+      see: ["upper_wharves", "trunk_road", "middle_ward"]
+    },
+    {
+      id: "pq_house_halloran", category: "factions", title: "House Halloran",
+      sub: "A great house of the Patrician Quarter",
+      tags: ["Patrician Quarter", "Trade"], aliases: ["Halloran", "green gate", "oak leaf"],
+      link: ["House Halloran", "Halloran"],
+      unlock: "pq_seen_halloran",
+      body: [
+        "A house whose business is timber. Its gate is green-painted iron under a gilt oak leaf coiled with a river-serpent, and barge-poles stand stacked in the yard behind it. The porter's slate reads: At home to callers with the Halloran seal."
+      ],
+      see: ["upper_wharves", "pq_house_vantry", "pq_house_ostrand"]
+    },
+    {
+      id: "pq_house_vantry", category: "factions", title: "House Vantry",
+      sub: "A great house of the Patrician Quarter",
+      tags: ["Patrician Quarter", "Trade"], aliases: ["Vantry", "blue gate", "silver barge"],
+      link: ["House Vantry", "Vantry"],
+      unlock: "pq_seen_vantry",
+      body: [
+        "A house whose business is grain and warehousing. Its gate is blue iron trimmed with silver, with a silver barge under sail worked into the lintel, and wagons of sealed sacks stand in the yard behind it while a clerk weighs samples at the porter's window."
+      ],
+      see: ["upper_wharves", "pq_house_halloran", "pq_house_ostrand"]
+    },
+    {
+      id: "pq_house_ostrand", category: "factions", title: "House Ostrand",
+      sub: "A great house of the Patrician Quarter",
+      tags: ["Patrician Quarter", "Trade"], aliases: ["Ostrand", "black gate", "brass key"],
+      link: ["House Ostrand", "Ostrand"],
+      unlock: "pq_seen_ostrand",
+      body: [
+        "A house that lends and insures, and writes the policy on many of the hulls in the roadstead. Its gate is black iron under a brass key crossed with a quill, and the plate at the porter's window reads: By Appointment Only."
+      ],
+      see: ["upper_wharves", "pq_house_halloran", "pq_house_vantry"]
+    },
+    {
+      id: "gilt_needle", category: "places", title: "The Gilt Needle",
+      sub: "Tailor to the Quarter",
+      tags: ["Patrician Quarter", "Trade"], aliases: ["tailor", "tailors shop", "fitting", "clothing"],
+      link: ["The Gilt Needle", "Gilt Needle"],
+      unlock: "pq_tailor_seen",
+      body: [
+        "A narrow shop of dark wood and bow glass near the Inner Gate, marked by a gilt needle threaded with red silk. Bolts of cloth lean in racks to the ceiling, and a long cutting table is spread with paper patterns. Everything is cut to the wearer, and fittings are by appointment.",
+        "Cloaks, belts, gloves and boots for the new season lie half cut on the table, not yet ready to sell."
+      ],
+      see: ["idris_fenwick", "upper_wharves"]
+    },
+    {
+      id: "idris_fenwick", category: "people", title: "Idris Fenwick",
+      sub: "Tailor to the Quarter",
+      role: "Master tailor, the Gilt Needle",
+      link: ["Idris Fenwick", "Master Fenwick", "Fenwick"],
+      tags: ["Patrician Quarter"], aliases: ["Fenwick", "Idris", "tailor"],
+      unlock: "pq_tailor_seen",
+      body: function (s) {
+        var out = [
+          "A slight, silver-haired man in a dove-grey coat, with a tape measure looped about his neck and pins along his lapel. He says there is no peg in his shop: everything is cut to the wearer."
+        ];
+        if (truthy(s.pq_tailor_talk_clients)) {
+          out.push("He dresses the great houses, their families, their clerks and their guards' officers, and the occasional captain who has done a house a service and wishes to be seen to have done it. To him a coat is a way of saying whose door you came from.");
+        }
+        return out;
+      },
+      see: ["gilt_needle", "upper_wharves"]
     },
     {
       id: "civic_heights", category: "places", title: "Civic Heights",

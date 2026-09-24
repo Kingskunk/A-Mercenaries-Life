@@ -1,15 +1,16 @@
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment PORT VALEN: CIVIC HEIGHTS & CATHEDRAL DISTRICT
-*comment Split out of port_valen.txt alongside Dredge-End and Upper Wharves
+*comment Split out of port_valen.txt alongside Dredge-End and Patrician Quarter
 *comment so each district has its own home to grow into -- reached only via
 *comment *goto_scene from port_valen.txt's port_valen_travel_to, never
 *comment *gosub_scene'd and never returns to it. NOT in *scene_list (see
 *comment port_valen_dredge_end.txt's header for the full reasoning); told to
 *comment compile.js via its own hardcoded
 *comment verifyFileName("port_valen_civic_heights.txt") entry.
-*comment One POI so far: the records house and its Open Roll (public contract
-*comment postings, described but not yet wired to quests); see the block at the
-*comment end of this file. The "travel elsewhere" exit below is the only line
+*comment Two POIs so far: the records house and its Open Roll (public contract
+*comment postings, described but not yet wired to quests), and the Gilded Scales head
+*comment house (banking, Patrician Quarter entry writs, dispatches); see the blocks
+*comment at the end of this file. The "travel elsewhere" exit below is the only line
 *comment that crosses the file boundary, via *goto_scene back into port_valen.txt.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -34,6 +35,8 @@
 The road from the Middle Ward ends at a broad plaza of cut limestone, and the buildings change from timber to stone. The Council Hall stands at its head, tall-windowed, with a bronze balance-scale taller than a man hung above its doors and the words [i]"The Free City of Port Valen"[/i] carved beneath it. Around the plaza stand the tax hall, the records house, and the magistrates' courts, each door carved with the city's three-masted seal. Painted boards mark the public windows, with deep eaves above them for the petitioners who come with cargo papers, tax notices, and residency tokens. Beside the windows stand sloped pine desks where public scriveners write petitions and work contracts for anyone who cannot write their own. The Port Watch headquarters stands beside the courts, its yard crowded with seized goods and complaint scrolls.
 
 The tax hall keeps two windows. The long counter, for householders and small traders, is reached by a wide flight of worn steps. The other is a side window with a private door, where clerks in river-serpent colors hand in leather cases and take out stamped receipts.
+
+Facing the Council Hall across the plaza stands the head house of the Gilded Scales, the tallest building on the plaza after the Hall itself, its bronze-banded doors hung with brass balance-scales and a gilded river-serpent coiled along the lintel.
 
 The cathedral rises above the courts on an older foundation, its bells carrying over every district. Charity kitchens cluster around its steps, and the sick, the displaced, and the people with nowhere else to ask for help come there, within sight of the Council Hall and a long way from its side window.
 
@@ -86,6 +89,11 @@ The cathedral rises above the courts on an older foundation, its bells carrying 
     *set time_advance_call_id "pv_ch_records_1"
     *gosub pv_ch_walk_time
     *goto pv_ch_records_door
+  # Cross the plaza to the Gilded Scales head house. [~5 min]
+    *set minutes_to_pass 5
+    *set time_advance_call_id "pv_ch_head_1"
+    *gosub pv_ch_walk_time
+    *goto pv_ch_head_door
   # [Travel: Head to another district]
     *goto_scene port_valen port_valen_travel
 
@@ -218,4 +226,314 @@ Every posting says what it pays and who to ask for.
   *if (neglect_damage_fatigue > neglect_damage_hunger)
     *set death_cause "exhaustion"
   *goto_scene death death_screen
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment THE GILDED SCALES HEAD HOUSE
+*comment Added 2026-09-24. The Scales' seat in Port Valen, facing the Council Hall across the plaza. The Scales are in
+*comment effect the government (the First Factor speaks for them on war, treaty and city policy, and the Council of
+*comment Factors is made of the senior merchant houses), so their head house belongs among the civic buildings. It is
+*comment the public, reachable end of the paper layer, and it was moved here from the Patrician Quarter so that banking
+*comment is never behind a paid gate. Three windows: BANKING (the same Letter of Credit ledger as Alderford's vault:
+*comment letter_of_credit_value in silver marks, has_letter_of_credit; deposits, draws and full redemption), ENTRY WRITS
+*comment for the Patrician Quarter (a Day Writ and a Registered Writ, see the patrician_* variables in startup.txt), and
+*comment the DISPATCH BOARD (news of the wider world, three of seven standing dispatches by day). Teller Maris Quillon
+*comment keeps Deposits and Letters; Registrar Corwin Ashe keeps Writs and Registers. Hours match the records house:
+*comment open Morning through Afternoon, closed at Dusk, Night, Pre-Dawn and Hallowday.
+*comment CONTRACTS HOOK: the Contracts window is described and shuttered; the Scales let contracts by appointment to
+*comment houses and companies they already trust (gilded_scales_rep). EVENT SLOT: pv_ch_dispatch takes news that
+*comment follows the player's own story. Lorebook: scales_head_house, maris_quillon, corwin_ashe, entry_writs.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label pv_ch_head_door
+*if (((time_period = "Dusk") or (time_period = "Night")) or (time_period = "Pre-Dawn")) or (day_of_week = "Hallowday")
+  *comment Closed: Dusk, Night, Pre-Dawn, Hallowday
+  [b]◈ THE GILDED SCALES HEAD HOUSE[/b]
+  *line_break
+  Brass balance-scales hang above the bronze-banded doors of the head house, and a gilded river-serpent coils along the lintel over a carved line of lettering: [i]"The Gilded Scales. Every Debt Recorded."[/i]
+  *if (day_of_week = "Hallowday")
+    The doors are shut for the holy day, and iron grilles are padlocked across the windows of the counting floor.
+  *elseif (time_period = "Dusk")
+    Clerks are drawing the iron grilles across the counting floor windows, and the last runners hurry out with sealed packets under their arms.
+  *else
+    The building is dark behind its padlocked grilles, but the gilded serpent along the lintel still catches the light of the plaza lanterns.
+
+  *choice
+    # Read the notice beside the door.
+      A brass plate beside the door reads: [i]"The Gilded Scales. Deposits and Letters, Writs and Registers, Dispatches. Open at Seventh Bell until the evening horn. Closed on Hallowday."[/i]
+      *page_break Step back from the door…
+      *goto pv_ch_head_door
+    # Return to the plaza.
+      *goto port_valen_civic_heights
+*else
+  *goto pv_ch_head_inside
+
+*label pv_ch_head_inside
+*if ((time_period = "Dusk") or (time_period = "Night")) or (time_period = "Pre-Dawn")
+  *comment Time passes in here (the counters, the board), so a visit can run into the evening horn.
+  The evening horn sounds from the Heights, and the clerks begin drawing the grilles. A guard in river-serpent livery steers the last customers out through the doors.
+  *page_break Step out onto the plaza…
+  *goto port_valen_civic_heights
+*temp hh_first false
+*if (not(ch_head_seen))
+  *set hh_first true
+*set ch_head_seen true
+*temp hh_roll 1
+*rand hh_roll 1 2
+[b]◈ THE GILDED SCALES HEAD HOUSE[/b]
+*line_break
+Inside the bronze-banded doors, a counting floor of pale stone runs under a vaulted ceiling hung with brass balance-scales the size of cart wheels. Long counters with brass grilles line both walls, each under a carved sign: [i]Deposits and Letters[/i], [i]Writs and Registers[/i], [i]Dispatches[/i], and, behind a permanent iron shutter, [i]Contracts[/i]. Account books lie open on sloped desks, and the air smells of sealing wax, sand, and beeswax.
+
+*if (hh_first)
+  Behind the Deposits and Letters counter sits a lean woman in a black coat with river-serpent cuffs, a set of nested lead weights lined up beside her scale. "Maris Quillon, Teller," she says, without looking up from her book. "Deposits, letters, withdrawals. If it is a writ you want, that is Registrar Ashe, two windows down."
+*else
+  Teller Quillon keeps the Deposits and Letters counter, and Registrar Ashe the Writs and Registers window two down.
+
+*if (time_period = "Morning")
+  *if (hh_roll = 1)
+    Runners in river-serpent livery queue at the Deposits counter with satchels of sealed packets, and the vaulted floor echoes with the scratch of a dozen pens.
+  *else
+    The counting floor is quiet at the first bells. Clerks trim quills and sand fresh pages while a porter mops the flags under the great scales.
+*elseif (time_period = "Midday")
+  *if (hh_roll = 1)
+    The floor is busy. Merchants, factors' agents, and householders queue at the counters, and runners cut between them with satchels held high.
+  *else
+    A pair of factors argue in low voices at the Dispatches counter over a bill of lading while a junior clerk waits beside them with the seal ready.
+*else
+  *comment Afternoon
+  *if (hh_roll = 1)
+    The crowd has thinned. A few late depositors wait at the grilles while clerks tot up the day's columns.
+  *else
+    Clerks total the day's columns under green-shaded lamps, and the flat crack of sealing wax being pressed carries across the floor.
+
+*choice
+  # Approach the Deposits and Letters counter.
+    *goto pv_ch_bank
+  # Approach the Writs and Registers window.
+    *goto pv_ch_writs
+  # Read the Dispatch board. [~10 min]
+    *goto pv_ch_dispatch
+  *if (not(ch_head_contracts_talk))
+    # Ask Teller Quillon about the shuttered Contracts window.
+      *set ch_head_contracts_talk true
+      "Contracts are let by appointment," Quillon says, and her pen does not stop moving. "To houses the Scales already trust, and to companies that have given us no reason to look twice. A free company reaches that window by leaving nothing ugly on the Roll and nothing owing in these books." She glances at the iron shutter, then back at her book. "Ask again when you have a name here worth writing down."
+      *page_break "I'll remember that."…
+      *goto pv_ch_head_inside
+  # Step back out onto the plaza.
+    *goto port_valen_civic_heights
+
+*comment ── BANKING ──
+
+*label pv_ch_bank
+*if (has_letter_of_credit)
+  *set silver_amount_to_describe letter_of_credit_value
+  *gosub_scene startup describe_silver_amount
+  Quillon draws your entry from the book, checks the Scales' wax seal in its corner, and turns the page so you can read it. "Standing balance of ${coin_amount_desc}," she says. "Deposit against it, draw on it, or redeem the whole letter."
+*else
+  "There is no entry under your name," Quillon says. "A deposit opens one. Gold Crowns only, one at the least, certified against river mishaps, camp thieves, and whatever else takes a purse."
+
+*choice
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 100)
+    # Deposit 1 Gold Crown against the letter.
+      *set ch_credit_deposit_amount 10
+      *goto pv_ch_bank_deposit
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 200)
+    # Deposit 2 Gold Crowns against the letter.
+      *set ch_credit_deposit_amount 20
+      *goto pv_ch_bank_deposit
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 500)
+    # Deposit 5 Gold Crowns against the letter.
+      *set ch_credit_deposit_amount 50
+      *goto pv_ch_bank_deposit
+  *if (letter_of_credit_value >= 10)
+    # Draw 1 Gold Crown from the letter.
+      *set ch_credit_withdraw_amount 10
+      *goto pv_ch_bank_withdraw
+  *if (has_letter_of_credit)
+    # Redeem the whole letter for coin.
+      *goto pv_ch_bank_redeem
+  # Step back from the counter.
+    *goto pv_ch_head_inside
+
+*label pv_ch_bank_deposit
+*temp hh_was_new not(has_letter_of_credit)
+*if (hh_was_new)
+  Quillon counts your coin twice against the standard weights, draws a stiff square of vellum from a locked drawer, fills in the sum in a tight, practiced hand, and presses the Gilded Scales' wax seal into the corner. "Every debt recorded," she says. "Including this one, which is owed to you."
+*else
+  Quillon counts your coin against the standard weights, draws your entry from the book, strikes through the old sum and inks in the new total, and presses the wax seal beside it again.
+*comment Currency is spent once per page (the refresh-safe lock). The display total is computed after the guard,
+*comment because the balance is already updated by then.
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount (0 - (ch_credit_deposit_amount * 10))
+  *gosub_scene startup currency_add
+  *set letter_of_credit_value + ch_credit_deposit_amount
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*set has_letter_of_credit true
+*set silver_amount_to_describe letter_of_credit_value
+*gosub_scene startup describe_silver_amount
+*if (hh_was_new)
+  [b][📜 Gilded Scales Letter of Credit Issued: ${coin_amount_desc}][/b]
+*else
+  [b][📜 Gilded Scales Letter of Credit Increased: ${coin_amount_desc} Total][/b]
+*set ch_credit_deposit_amount 0
+*set minutes_to_pass 5
+*set time_advance_call_id "pv_ch_bank_deposit_1"
+*gosub pv_ch_walk_time
+*page_break Step back from the counter…
+*goto pv_ch_bank
+
+*label pv_ch_bank_withdraw
+*comment The drawn amount is described INSIDE the guard and stored, so a refreshed page still shows it (the balance
+*comment has already dropped by then). ch_bank_last_desc holds it.
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set silver_amount_to_describe ch_credit_withdraw_amount
+  *gosub_scene startup describe_silver_amount
+  *set ch_bank_last_desc coin_amount_desc
+  *set currency_add_amount (ch_credit_withdraw_amount * 10)
+  *gosub_scene startup currency_add
+  *set letter_of_credit_value - ch_credit_withdraw_amount
+  *if (letter_of_credit_value <= 0)
+    *set letter_of_credit_value 0
+    *set has_letter_of_credit false
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+Quillon takes the coin from the vault behind her, counts it out onto the counter, strikes the sum from your entry, and initials the change.
+[b][💰 Drawn from the Letter: ${ch_bank_last_desc}][/b]
+*set minutes_to_pass 5
+*set time_advance_call_id "pv_ch_bank_withdraw_1"
+*gosub pv_ch_walk_time
+*page_break Step back from the counter…
+*goto pv_ch_bank
+
+*label pv_ch_bank_redeem
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set silver_amount_to_describe letter_of_credit_value
+  *gosub_scene startup describe_silver_amount
+  *set ch_bank_last_desc coin_amount_desc
+  *set currency_add_amount (letter_of_credit_value * 10)
+  *gosub_scene startup currency_add
+  *set letter_of_credit_value 0
+  *set has_letter_of_credit false
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+Quillon strikes a firm line through your entry, counts the coin out onto the counter, and drops the surrendered vellum onto the spike beside her scale. "Redeemed in full," she says. "Come back when you have more to keep."
+[b][💰 Letter Redeemed: ${ch_bank_last_desc}][/b]
+*set minutes_to_pass 5
+*set time_advance_call_id "pv_ch_bank_redeem_1"
+*gosub pv_ch_walk_time
+*page_break Step back from the counter…
+*goto pv_ch_bank
+
+*comment ── ENTRY WRITS ──
+
+*label pv_ch_writs
+*temp hw_days_left (patrician_reg_until - campaign_day)
+*if (not(ch_head_writ_seen))
+  *set ch_head_writ_seen true
+  Two windows down, a heavyset man in spectacles and a black coat sits with ink to the wrist, and beside him a small clerk in city grey holds the three-masted seal. "Ashe," the heavyset man says. "Registrar. Every writ here carries two seals, ours and the city's."
+*else
+  Registrar Ashe is at his window, with the city clerk and the three-masted seal at his elbow.
+
+*if (patrician_reg_until >= campaign_day)
+  [i]Your Registered Writ is good for ${hw_days_left} more days.[/i]
+*elseif (patrician_day_writ_day = campaign_day)
+  [i]Your Day Writ is good for the rest of today.[/i]
+*else
+  [i]You hold no writ for the Patrician Quarter.[/i]
+
+*choice
+  *if ((patrician_reg_until < campaign_day) and (patrician_day_writ_day < campaign_day))
+    *if ((((gold * 100) + (silver * 10)) + copper) >= (patrician_day_price_silver * 10))
+      # [${patrician_day_price_silver} @{(patrician_day_price_silver = 1) Silver Mark|Silver Marks}] Buy a Day Writ, good for the rest of today. [~5 min]
+        *goto pv_ch_writ_day
+  *if ((((gold * 100) + (silver * 10)) + copper) >= (patrician_reg_price_silver * 10))
+    *if (patrician_reg_until >= campaign_day)
+      # [${patrician_reg_price_silver} Silver Marks] Extend your Registered Writ by ${patrician_reg_days} days. [~15 min]
+        *goto pv_ch_writ_reg
+    *else
+      # [${patrician_reg_price_silver} Silver Marks] Take out a Registered Writ for ${patrician_reg_days} days. [~15 min]
+        *goto pv_ch_writ_reg
+  *if (not(ch_head_writ_talk))
+    # Ask Registrar Ashe how the writs work.
+      *set ch_head_writ_talk true
+      Ashe turns the book toward you. "Two writs," he says. "The Day Writ is for anyone with honest business on the avenue: good until the day turns, and no questions beyond the stamp. The Registered Writ is good for ${patrician_reg_days} days, and your name goes into the book at the Inner Gate, so the guards know your face before you reach it." He taps the page. "A registered name is a name the house will answer for. A registered name that draws steel in the Quarter is struck from the book the same hour. The Council likes its neighbors quiet."
+      *page_break "Understood."…
+      *goto pv_ch_writs
+  # Step back to the counting floor.
+    *goto pv_ch_head_inside
+
+*label pv_ch_writ_day
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount (0 - (patrician_day_price_silver * 10))
+  *gosub_scene startup currency_add
+  *set patrician_day_writ_day campaign_day
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+Ashe stamps a slip of pale vellum, the city clerk presses the three-masted seal over his wax, and he slides it across the counter. "Show it at the Inner Gate," he says. "It is good until the day turns, and not a minute after."
+[b][📜 Day Writ Issued: Good for the Rest of Today][/b]
+*set minutes_to_pass 5
+*set time_advance_call_id "pv_ch_writ_day_1"
+*gosub pv_ch_walk_time
+*page_break Step back from the window…
+*goto pv_ch_writs
+
+*label pv_ch_writ_reg
+*temp hw_was_reg (patrician_reg_until >= campaign_day)
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount (0 - (patrician_reg_price_silver * 10))
+  *gosub_scene startup currency_add
+  *if (patrician_reg_until >= campaign_day)
+    *set patrician_reg_until + patrician_reg_days
+  *else
+    *set patrician_reg_until (campaign_day + patrician_reg_days)
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*if (hw_was_reg)
+  Ashe finds your name in the book, strikes the old date, and enters the new one. The city clerk presses the three-masted seal beside the Scales' wax, and the entry is done.
+*else
+  Ashe opens the book, writes "${name}" into a column of other names, and dates the entry. The city clerk presses the three-masted seal beside the Scales' wax, and Ashe hands you a stamped card of pale vellum. "The Inner Gate will have your name by evening," he says.
+[b][📜 Registered Writ: Good for ${patrician_reg_days} Days][/b]
+*set minutes_to_pass 15
+*set time_advance_call_id "pv_ch_writ_reg_1"
+*gosub pv_ch_walk_time
+*page_break Step back from the window…
+*goto pv_ch_writs
+
+*comment ── DISPATCHES ──
+
+*label pv_ch_dispatch
+*set minutes_to_pass 10
+*set time_advance_call_id "pv_ch_dispatch_1"
+*gosub pv_ch_walk_time
+*comment EVENT SLOT: news that follows the player's own story goes here, ahead of the standing dispatches, each
+*comment guarded by its own flag.
+A long board of black-lacquered oak runs the length of the wall under a brass sign reading [i]Dispatches[/i]. It is hung with slips of paper in a dozen hands, each headed with a place-name and stamped with the day it arrived. Couriers in river-serpent livery pin fresh slips at one end while the oldest are taken down at the other.
+
+*temp dsp_a (campaign_day modulo 7)
+*temp dsp_b ((campaign_day + 3) modulo 7)
+*temp dsp_c ((campaign_day + 5) modulo 7)
+*gosub pv_ch_dispatch_text dsp_a
+*gosub pv_ch_dispatch_text dsp_b
+*gosub pv_ch_dispatch_text dsp_c
+*page_break Step back from the board…
+*goto pv_ch_head_inside
+
+*label pv_ch_dispatch_text
+*params dsp_n
+*if (dsp_n = 0)
+  [i]"FROM ALDERFORD. Timber contracts for the coming season are open at the counting house. River tolls unchanged. Barge masters report the weir gates working."[/i]
+*elseif (dsp_n = 1)
+  [i]"FROM THE GREY RIVER. Water runs high below the gorge and the boom crossing is under Watch guard. Barges sail in convoy only."[/i]
+*elseif (dsp_n = 2)
+  [i]"FROM THE IMPERIAL ROAD. Meridian couriers report the charter tolls at the eastern passes unchanged. Salt is dear and wine is cheap."[/i]
+*elseif (dsp_n = 3)
+  [i]"FROM THE COAST. The outer bar runs heavy. Two hulls were lost on the reef last month, and the head house now asks a surcharge on winter cargoes."[/i]
+*elseif (dsp_n = 4)
+  [i]"FROM THE UPLANDS. Highland shear-steel is scarce this season. Crag-steel smiths in the Middle Ward pay a premium for carts that reach the gates before dark."[/i]
+*elseif (dsp_n = 5)
+  [i]"FROM THE COUNCIL. Petitions for the next sitting must be on the Roll ten days before it. What is not on the Roll will not be heard."[/i]
+*else
+  [i]"FROM THE WALL. The Port Watch reminds carters that wicket fees are posted at each toll-house, and that no cart may stand in the trunk road after the night bell."[/i]
+
 *return

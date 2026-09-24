@@ -12,7 +12,7 @@ A small street-scale quest and a working market for **the Fishmongers' Slip**, t
 
 1. **What this replaces.** The shrine stop was 15 minutes of atmosphere with no mechanics, and a cathedral is planned for the city. The shrine button, its label, `pv_shrine_seen` and the shrine quest-table row are already removed. The two ambient hub lines about the Tide-Well shrine (`port_valen.txt`, waterfront curfew and church-day lines) stay as scenery. The pier quest's strategic ending now hides Marl and Pip in a net-drying loft above the smokehouses, which is a building on this slip.
 2. **Scope.** Rules Section 6 says minor street tasks get a small local reward, no district rewrites and no new systems. So this quest pays in coin, one point of Watch standing, or one ally flag. It does not add gear.
-3. **Why a market, not only a quest.** The Keel already sells hot food and drink (CON, STR, CHA and WIS buffs). The Slip sells the two stats the Keel does not (DEX and INT), plus a plain cheap bite. It is also the commoner economy that sits below the sealed-writ counting houses in Upper Wharves (see Section 6).
+3. **Why a market, not only a quest.** The Keel already sells hot food and drink (CON, STR, CHA and WIS buffs). The Slip sells the two stats the Keel does not (DEX and INT), plus a plain cheap bite. It is also the commoner economy that sits below the Gilded Scales head house on Civic Heights (see Section 6).
 4. **Names introduced in-story only.** The widow stays "the woman in the salt-stiff smock" until she gives her name. The lead buyer stays "the man in the good gloves" until she names him. The auctioneer and the slip-warden are never named.
 5. **Time-gated by design.** The market is open Pre-Dawn to Afternoon. The auction is a Pre-Dawn and Morning event. Dusk, Night, Storm and Blizzard close the slip (boats are hauled and lashed).
 6. **The Chart House is not in this plan.** You said it can go into the customs area later. Nothing here depends on it.
@@ -863,7 +863,7 @@ Each `advance_time` call sits on its own page: the entry label, `fish_watch`, an
 This is here so the trading simulator, the cathedral and the Chart House have somewhere to land:
 
 * **Quayside (physical layer):** warehouses, cranes, the fish market, the Slip. Small lots and day wages.
-* **Upper Wharves (paper layer):** counting houses, the Gilded Scales headquarters, letters of credit, contracts. Sealed-writ access.
+* **Civic Heights (paper layer):** the Gilded Scales head house beside the Council Hall: banking and letters of credit, entry writs for the Patrician Quarter, dispatches, and the (later) contracts window. Alderford's counting house and Hendryk's factor's office at the Iron Wharves are branches of this. The **Patrician Quarter** is the merchant lords' private enclave (great houses, walled estates, the Terrace Walk, a tailor), reached by a Day Writ or Registered Writ bought at the head house.
 * **The Pier (sea layer):** hulls, skiffs, and sea travel later. `marl_favor` is reserved for this.
 * **`wenna_favor`** is reserved for wholesale dealing at the Slip: buying direct from a boat before the block.
 * **Deferred:** the Chart House (tide tables) goes into the customs area later. The Saint Althea shrine's rites move to the cathedral when it is built.
