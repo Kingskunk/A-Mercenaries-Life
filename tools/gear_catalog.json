@@ -22,8 +22,20 @@
     "  sidearmDesc  weapon items: the description when carried in the sidearm slot",
     "  dossier   { line, badgeOn, badgeOff, equipText } for the dossier list and its equip option",
     "  inventory { category } for the inventory panel (defaults: weapon weapons, armor/head apparel, tool provisions)",
+    "  effect    consumable items: { type: 'heal', n, sides, bonus } or { type: 'boon', name, desc, stat, bonus, minutes }",
+    "  useVerb   consumables: the verb on the use option ('Drink', 'Rub in')",
+    "  useText   consumables: the sentence printed when the item is used",
+    "  combat    consumables: true if it can be used mid-fight (costs the turn)",
+    "  stack     OPTIONAL true/false: may the player own several copies? Default true for armor, shield, weapon, head and",
+    "            tool; false for ring and salvage. Copies beyond the first live in spare_<id> (has_<id> stays true while",
+    "            any copy is owned, so every older has_ check keeps working).",
     "  flags     create:false when the has_ flag is created by hand elsewhere; hand:true when the dossier and",
-    "            inventory entries are written by hand (shield, ring, salvage)"
+    "            inventory entries are written by hand (shield, ring, salvage)",
+    "",
+    "Trades: `trades` lists the shops that offer the trade panel (web/mygame/trade.js). Each names its scene file, its",
+    "  label prefix, a buyShop (optional) and a sellShop from `shops`, and the quote keys ('buyKey', 'sellKey') the shop",
+    "  sets in gear_shop. The generator writes <name>_cart_pass (and <name>_panel_rows for a buy side) and the",
+    "  trade-data.generated.js the panel reads."
   ],
 
   "items": [
@@ -121,9 +133,58 @@
       "flags": { "create": false, "hand": true }
     },
     {
+      "id": "warming_liniment", "kind": "consumable", "name": "warming liniment", "title": "Warming Liniment",
+      "retail": 10, "minutes": 10,
+      "hint": "+1 STR for 12h",
+      "blurb": "A thumb-length of grey camphor-and-thyme tallow twisted in waxed paper.",
+      "quotes": { "ambrose": "Master Ambrose shows you where to rub it in: wrists, knees, the small of the back, while it is still warm." },
+      "effect": { "type": "boon", "name": "Warming Liniment", "desc": "+1 STR (Loose Joints)", "stat": "str", "bonus": 1, "minutes": 720 },
+      "useVerb": "Rub in", "combat": true,
+      "useText": "You work the grey tallow into your wrists and knees. It smells of camphor and thyme, and it warms them within a few breaths. The stiffness goes out.",
+      "dossier": { "line": "Pot of grey camphor-and-thyme tallow for stiff joints" }
+    },
+    {
+      "id": "clear_head_draught", "kind": "consumable", "name": "clear-head draught", "title": "Clear-Head Draught",
+      "retail": 10, "minutes": 10,
+      "hint": "+1 WIS for 12h",
+      "blurb": "A stoppered measure of amber liquid, pine and mint with something bitter underneath.",
+      "quotes": { "ambrose": "Master Ambrose corks the bottle and tells you to drink it whole, not sip it." },
+      "effect": { "type": "boon", "name": "Clear-Head Draught", "desc": "+1 WIS (Clear Head)", "stat": "wis", "bonus": 1, "minutes": 720 },
+      "useVerb": "Drink", "combat": true,
+      "useText": "You drink the amber liquid: pine and mint, with something bitter underneath. It burns going down and leaves your head cool and quiet.",
+      "dossier": { "line": "Corked bottle of amber pine-and-mint tonic" }
+    },
+    {
+      "id": "althea_phial", "kind": "consumable", "name": "phial of Saint Althea's water", "title": "Phial of Saint Althea's Water",
+      "retail": 10, "minutes": 5,
+      "hint": "Restores 2d4+2 HP",
+      "blurb": "A wax-stoppered clay flask of blessed cistern-water steeped with wild angelica and mountain arnica.",
+      "effect": { "type": "heal", "n": 2, "sides": 4, "bonus": 2 },
+      "useVerb": "Drink", "combat": true,
+      "useText": "You wrench the wax stopper free and swallow the cold, herbal draught. Radiant warmth floods through you, knitting torn muscle and staunching fresh bleeding.",
+      "sell": {},
+      "dossier": { "line": "Wax-stoppered clay flask of blessed cistern-water steeped with wild angelica and mountain arnica" },
+      "flags": { "create": false }
+    },
+    {
       "id": "scrap_steel", "kind": "salvage", "name": "scrap steel", "title": "Scrap Steel",
       "sell": { "smithPiece": 5, "countVar": "scrap_steel" },
       "flags": { "create": false, "hand": true }
+    }
+  ],
+
+  "trades": [
+    {
+      "name": "halda", "title": "Halda's Forge", "file": "port_valen_middle_ward.txt", "labelPrefix": "mw_halda",
+      "buyShop": "halda_buy", "sellShop": "halda_sell", "buyKey": "halda", "sellKey": "halda_sell"
+    },
+    {
+      "name": "ambrose", "title": "Ambrose's Still-Room", "file": "port_valen_middle_ward.txt", "labelPrefix": "mw_ambrose",
+      "buyShop": "ambrose_buy", "buyKey": "ambrose"
+    },
+    {
+      "name": "pawn", "title": "The Pawnbroker's Window", "file": "port_valen_dredge_end.txt", "labelPrefix": "cut_pawn",
+      "sellShop": "pawn_sell", "sellKey": "pawn_sell"
     }
   ],
 
@@ -131,8 +192,8 @@
     {
       "name": "halda_buy", "type": "buy", "file": "port_valen_middle_ward.txt", "prefix": "hb", "goto": "mw_halda_buy_do",
       "items": [
-        { "id": "brigandine", "when": "halda_armor_ok" },
-        { "id": "chain_jack", "when": "halda_armor_ok" },
+        { "id": "brigandine" },
+        { "id": "chain_jack" },
         { "id": "plate_harness" },
         { "id": "shield" },
         { "id": "timber_axe" },
@@ -147,6 +208,10 @@
         { "id": "brigandine" }, { "id": "chain_jack" }, { "id": "plate_harness" }, { "id": "timber_axe" },
         { "id": "stiletto" }, { "id": "torvald_iron_sallet" }, { "id": "iron_crowbar" }, { "id": "scrap_steel", "owned": "scrap_steel > 0" }
       ]
+    },
+    {
+      "name": "ambrose_buy", "type": "buy", "file": "port_valen_middle_ward.txt", "prefix": "ab", "goto": "mw_ambrose_buy_do",
+      "items": [ { "id": "warming_liniment" }, { "id": "clear_head_draught" } ]
     },
     {
       "name": "pawn_sell", "type": "sell", "buyer": "pawn", "file": "port_valen_dredge_end.txt", "prefix": "ps", "goto": "cut_pawn_sell_do",

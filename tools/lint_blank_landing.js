@@ -208,6 +208,102 @@ function scanLanding(lines, startIdx) {
   return 'inconclusive';
 }
 
+// ---- Player-facing path: which choice option leads to a given line? ----
+
+function indentOf(line) {
+  const ws = /^[ \t]*/.exec(line)[0];
+  return ws.replace(/\t/g, '    ').length;
+}
+
+// Matches a *choice option line, allowing the usual modifiers in front of the
+// '#' (e.g. `*if (x) #Text`, `*hide_reuse #Text`, `*selectable_if (x) #Text`).
+const OPTION_LINE = /^(?:\*(?:if|selectable_if)\s*\(.*\)\s*)?(?:\*(?:hide_reuse|disable_reuse|allow_reuse)\s+)*#(.*)$/;
+
+function nearestLabelAbove(lines, idx) {
+  for (let j = idx; j >= 0; j--) {
+    const m = LABEL_DEF.exec(lines[j]);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+// Walk upward from `idx` looking for the *choice option whose body contains
+// that line. Each step must be less indented than the last, so sibling
+// options and unrelated earlier blocks are skipped.
+function enclosingOption(lines, idx) {
+  let limit = indentOf(lines[idx]);
+  for (let j = idx - 1; j >= 0 && limit > 0; j--) {
+    if (isBlank(lines[j]) || COMMENT_LINE.test(lines[j])) continue;
+    const ind = indentOf(lines[j]);
+    if (ind >= limit) continue;
+    const trimmed = lines[j].trim();
+    const om = OPTION_LINE.exec(trimmed);
+    if (om) {
+      // The *choice/*fake_choice header is the next less-indented line up.
+      // An option can sit inside an *if/*else wrapper, so climb through those.
+      let choiceLine = null;
+      let optIndent = ind;
+      for (let k = j - 1; k >= 0; k--) {
+        if (isBlank(lines[k]) || COMMENT_LINE.test(lines[k])) continue;
+        const kInd = indentOf(lines[k]);
+        if (kInd >= optIndent) continue;
+        if (CHOICE_LINE.test(lines[k])) {
+          choiceLine = k + 1;
+          break;
+        }
+        if (!/^\s*\*(if|elseif|else)\b/.test(lines[k])) break;
+        optIndent = kInd;
+      }
+      return { text: om[1].trim(), line: j + 1, choiceLine };
+    }
+    limit = ind; // an enclosing *if/*else block -- keep climbing
+  }
+  return null;
+}
+
+// Every *goto/*gosub/*goto_scene (fallthrough not modeled) that jumps to
+// `labelName` in `file`, so a page_break reached by a jump rather than by
+// being nested in an option can still be traced back to a player click.
+function findCallers(file, labelName) {
+  const callers = [];
+  const sceneName = file.replace(/\.txt$/, '');
+  for (const f of Object.keys(fileLines)) {
+    fileLines[f].forEach((raw, idx) => {
+      let hit = false;
+      if (f === file) {
+        const gm = /^\s*\*(?:goto|gosub)\s+([A-Za-z0-9_]+)/.exec(raw);
+        hit = !!gm && gm[1] === labelName;
+      }
+      const sm = /^\s*\*(?:goto_scene|gosub_scene)\s+([A-Za-z0-9_]+)\s+([A-Za-z0-9_]+)/.exec(raw);
+      if (sm && sm[1] === sceneName && sm[2] === labelName) hit = true;
+      if (hit) callers.push({ file: f, idx });
+    });
+  }
+  return callers;
+}
+
+// Describe the player-facing way into a *page_break: the option text that
+// contains it, or -- if it's reached by falling through / jumping to a label
+// -- the options that jump to that label.
+function describePath(file, idx) {
+  const lines = fileLines[file];
+  const own = enclosingOption(lines, idx);
+  const label = nearestLabelAbove(lines, idx);
+  if (own) return { via: [{ file, ...own }], label, direct: true };
+  const via = [];
+  if (label) {
+    for (const c of findCallers(file, label)) {
+      const opt = enclosingOption(fileLines[c.file], c.idx);
+      via.push(
+        opt
+          ? { file: c.file, ...opt }
+          : { file: c.file, text: null, line: c.idx + 1, choiceLine: null }
+      );
+    }
+  }
+  return { via, label, direct: false };
+}
+
 function lintFile(basename) {
   const lines = fileLines[basename];
   const blank = [];
@@ -226,6 +322,7 @@ function lintFile(basename) {
         targetFile: t.file,
         targetLine: t.line + 1,
         targetLabel: labelMatch ? labelMatch[1] : '?',
+        path: describePath(basename, i),
       };
       (verdict === 'blank' ? blank : bannerOnly).push(entry);
     }
@@ -245,7 +342,21 @@ for (const f of files) {
 
 function formatEntry(f) {
   const same = f.file === f.targetFile;
-  return `  ${f.file}:${f.line} *page_break -> ${same ? '' : f.targetFile + ':'}${f.targetLabel} (${f.targetFile}:${f.targetLine})`;
+  let out = `  ${f.file}:${f.line} *page_break -> ${same ? '' : f.targetFile + ':'}${f.targetLabel} (${f.targetFile}:${f.targetLine})`;
+  const { via, label, direct } = f.path;
+  if (via.length === 0) {
+    out += `\n      reached by: fall-through${label ? ` from *label ${label}` : ''} (no option or *goto found -- check the lines above)`;
+  } else {
+    out += `\n      player path${via.length > 1 ? 's' : ''}${!direct && label ? ` (via *label ${label})` : ''}:`;
+    for (const v of via) {
+      const where = `${v.file}:${v.line}`;
+      const choice = v.choiceLine ? `, *choice at ${v.file}:${v.choiceLine}` : '';
+      out += v.text !== null
+        ? `\n        - option "#${v.text}" (${where}${choice})`
+        : `\n        - jumped to from ${where} (not inside a choice option)`;
+    }
+  }
+  return out;
 }
 
 console.log(`Scanned ${files.length} file(s) for blank *page_break landings.\n`);

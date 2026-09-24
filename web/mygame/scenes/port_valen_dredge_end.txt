@@ -371,7 +371,7 @@ Someone steps out from beneath a footbridge and stands square across the boards,
 
 *label de_ambush_won
 *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-  *rand dredge_ambush_loot 15 45
+  *rand dredge_ambush_loot 5 25
   *set currency_add_amount dredge_ambush_loot
   *gosub_scene startup currency_add
   *set currency_txn_locked true
@@ -379,6 +379,18 @@ Someone steps out from beneath a footbridge and stands square across the boards,
 *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
   *rand dredge_ambush_salvage 1 3
   *set scrap_steel + dredge_ambush_salvage
+  *comment A gang blade can survive the fight intact: the same catalog item Halda sells (stackable, so a second
+  *comment stiletto is a spare to sell). dredge_ambush_bruiser (set by the fight) says what he carried.
+  *set dredge_ambush_drop ""
+  *temp de_drop_roll 0
+  *rand de_drop_roll 1 100
+  *if ((dredge_ambush_bruiser = "gang_knifeman") and (de_drop_roll <= 40))
+    *set dredge_ambush_drop "stiletto"
+  *if ((dredge_ambush_bruiser = "gang_hatchet") and (de_drop_roll <= 35))
+    *set dredge_ambush_drop "timber_axe"
+  *if (not(dredge_ambush_drop = ""))
+    *gosub_scene equipment grant_gear dredge_ambush_drop 1
+    *set dredge_ambush_drop_name gear_name
   *set stat_bump_locked true
   *set locked_stat_bump_page_id page_id
 *temp de_loot_silver ((dredge_ambush_loot - (dredge_ambush_loot modulo 10)) / 10)
@@ -388,6 +400,11 @@ The lane goes quiet. The cord no longer whirrs overhead, and the whistle has sto
 [b][💰 Found: ${de_loot_silver} Silver Marks, ${de_loot_copper} Copper][/b]
 *line_break
 [b][⚙️ Found: ${dredge_ambush_salvage} Scrap Steel][/b]
+*if (not(dredge_ambush_drop = ""))
+  *line_break
+  One blade in the wreckage is sound: no chip in the edge and a grip that has not been chewed. You slide it into your kit.
+  *line_break
+  [b][🗡️ Found: a ${dredge_ambush_drop_name}][/b]
 *set dredge_ambush_active false
 *set hours_to_pass 0
 *set minutes_to_pass 15
@@ -1425,7 +1442,6 @@ The ladder-stairs climb through the back timber framing of the tenements onto th
       The tide has surged in, black water filling the canal cuts right up to the lower floorboards.
     *if (time_period = "Night")
       Beneath the sheer face of the seawall, a row of glowing red lanterns marks Lamp Stair, vibrant and awake in the curfew dark.
-    *page_break Step back from the railing…
     *goto cut_gangways_hub
 
   *if (cut_rumors_gangways < 2)
@@ -1438,7 +1454,6 @@ The ladder-stairs climb through the back timber framing of the tenements onto th
         Two lookouts pass word between landings using short, bird-like whistle notes: a sharp rise, a pause, and two flat drops. Across the gap, a watcher gives a low, answering whistle without looking up from his whittling. You count how few words the district needs to pass a warning.
       *else
         From an open window beneath the walkway eaves, you catch the murmur of two voices tallying debts: numbers called out, coins clinking against wood, and a sharp, sudden silence that tells you when an account fell short.
-      *page_break Listen as the noise fades…
       *goto cut_gangways_hub
 
   # Study the lookout's sightlines along the canal cuts.
@@ -1447,7 +1462,6 @@ The ladder-stairs climb through the back timber framing of the tenements onto th
     The lookout never tracks the ordinary tenants moving along the duckboards; his gaze sweeps in long, disciplined arcs—first the open water of the canal cut, then the blind spots beneath the footbridge, and finally the stone steps climbing toward the city wall. One hand stays tucked deep inside his wool mantle, fingers resting on the barrel of a tin whistle. 
 
     When an unlit skiff glides past the lower pilings, he doesn't sound an alarm; he simply shifts his weight, taps the timber rail twice with his boot-heel, and waits for the platform below to return the signal.
-    *page_break Step back from the platform…
     *goto cut_gangways_hub
 
   # Climb back down the wooden ladder-stairs to the lanes.
@@ -1566,29 +1580,64 @@ The canal bank here is lined with open-fronted timber sheds raised on tarred sti
 *label cut_landing_page
 [b]◈ THE DREDGE LANDING[/b]
 *line_break
-The landing is a wide shelf of hard-packed cinder where the canal widens, with three low barges tied along its edge. Dredgers work the barges with hooked poles and iron scoops on chains, hauling black spoil up in baskets and tipping it onto long mounds that dry to a crust on the bank. Gulls walk the mounds. The air smells of wet clay and hot tar from a kettle on the shore.
+*comment ── LAYER 1: PLACE (Constant Geography, Architecture, & Smell) ──
+The landing is a wide, shelving bank of hard-packed cinder and river spoil where the canal widens into a turning basin. Along the timber revetment, three low, flat-bottomed scows lie moored to iron ring-bolts driven into the mud. Heaps of dredged canal silt stretch in long, grey ridges along the bank, drying to a pale crust under the open sky. Gulls pick along the mounds, leaving claw-tracks in the wet sludge. The air hangs thick with the smell of sulfur mud, rotting river kelp, riverbed clay, and boiled pitch from a bubbling iron kettle on the shore.
 
-*if (time_period = "Dusk")
-  The last baskets are going up, and the crews are coiling chain.
-*else
-  The chains rattle in time with the poles, and a foreman's shout carries over the noise.
-
-*if (day_of_week = "Tideday")
-  It is Tideday, and a boatman in tall oiled waders works a grapple along the pilings, lifting parcels that were tied there before the water fell.
-
-*if (weather_cold)
-  The crews work in sacking and steam, and ice rims the baskets.
-*elseif (weather_wet)
-  Rain pocks the mounds and runs black down their sides.
-*elseif (weather_visibility = "poor")
-  Fog swallows the far barge, and the chains sound louder for it.
+*comment ── LAYER 2: SKY & ATMOSPHERIC LIGHT (Weather & Light Only, No People) ──
+*if (weather = "Rain")
+  Steady rain pits the drying silt mounds, turning the crust into slick, grey slurry that runs in dark ribbons down the revetment.
+*elseif (weather = "Storm")
+  Estuary gales churn the basin into brown froth, whipping spray across the cinder banks and rattling the heavy mooring chains against the scow hulls.
+*elseif (weather = "Fog")
+  Dense sea-fog blankets the turning basin, swallowing the far barges and deadening the sound of water against the pilings.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Slush crusts the cinder banks and rims the iron dredge scoops in grey ice, the mud mounds freezing into solid black hummocks.
+*elseif (weather = "Blizzard")
+  A blinding coastal squall sweeps flat across the landing, driving snow into the frozen mud ruts and icing the mooring ropes stiff.
 *elseif (weather = "Clear")
-  The mounds crack and pale in the sun.
+  *if (time_period = "Dusk")
+    The low sun turns the canal water coppery, casting long shadows of the derrick booms across the cracked mud mounds.
+  *else
+    Clean daylight bakes the silt mounds, cracking the dark crust to chalky grey and drawing a slow, mineral steam off the banks.
+*else
+  *comment Overcast
+  *if (time_period = "Dusk")
+    A dull twilight settles over the canal, flattening the grey water and the cinder banks into uniform gloom.
+  *else
+    A flat pewter sky presses low over the basin, trapping the sour stench of sulfur and river damp along the waterline.
+
+*comment ── WEATHER MEMORY (calendar ground_state, strictly no people) ──
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  After days of rain, the cinder shelf remains waterlogged, deep puddles of brown runoff standing between the silt heaps.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The dredged mounds and cinder banks remain dark and heavy from recent rain.
+
+*comment ── LAYER 3: STREET LIFE & WORK CADENCE ──
+*if (street_life = "empty")
+  The landing is deserted. The dredge scows sit moored deep in the mud chutes with their scoop chains locked, the iron buckets dripping over empty barges. The pitch kettle sits cold and dead, and no crews brave the gale.
+
+*elseif (time_period = "Dusk")
+  The day shift is knocking off. Crews coil dripping winch chains, heave the last heavy baskets of spoil onto the bank, and scrape their waders with flat iron tools while the foreman notches his daybook by lantern light.
+
+*else
+  *comment Daytime Low Water (Morning, Midday, Afternoon)
+  The scows run at a steady, clanking rhythm. Crews in sacking aprons and tall greased waders heave on long ash levers, hauling dripping iron scoops of black mud from the channel floor and tipping them into wicker hampers. Winch chains rattle in time with the foreman's shouted count, and gulls scream overhead as each scoop spills onto the mound.
+  *if (day_of_week = "Tideday")
+    The low spring tide bares the channel bottom; watermen work grapples along the exposed pilings, hauling up lost gear and snagged timber before the flood returns.
+  *elseif (day_of_week = "Greyday")
+    Heavy spoil scows move in a line, transferring dried silt to dray-carts bound for the city's new road foundations.
+  *elseif (day_of_week = "Forgeday")
+    The clang of hammer-strokes carries from the boat-sheds, where broken scoop teeth and worn chain links are beaten straight on bench anvils.
+
+*comment ── LAYER 4: TELL (Scout / Outlaw Insight) ──
+*if (de_savvy)
+  You clock the foreman's tally stick: he carries two sets of notches on the pine wood. One records the city's spoil quota; the other marks what the iron scoops drag up that never goes onto the mud mounds—copper bolts, brass rowlocks, and lost lead weights that get slipped into a canvas bag behind his stool.
 
 *label cut_landing_hub
 *choice
-  # Ask the foreman about a place on the crew.
-    *goto cut_foreman
+  *if (not(street_life = "empty")) and (not(time_period = "Dusk"))
+    # Ask the foreman about a place on the dredge crew.
+      *goto cut_foreman
 
   *if (cut_rumors_landing < 2)
     # Listen to the dredgers as they work.
@@ -1597,56 +1646,74 @@ The landing is a wide shelf of hard-packed cinder where the canal widens, with t
         *set stat_bump_locked true
         *set locked_stat_bump_page_id page_id
       *if (cut_rumors_landing = 1)
-        Two dredgers on a barge talk across the water while they work. "Fourth oar-pin this month," one says. "And a boot." "Whose boot?" "Just a boot."
+        Two dredgers on a barge talk across the water while they heave on a chain. "Fourth oar-pin this month," one grunts. "And another boot." "Whose boot?" "Just a boot. Still had the foot in it."
       *else
-        A dredger with a broken tooth tells a boy where the lanes come from. "Every basket that comes up goes on the bank. Dry it, ram it, lay stone on it. The stone under your feet came out of this trench, lad, one basket at a time."
+        A dredger with a broken tooth tells a young boy where the district comes from. "Every basket that comes up goes on the bank. Dry it, ram it, lay stone on it. The stone under your boots came out of this trench, lad, one scoop at a time."
       *goto cut_landing_hub
 
   # Head back up the bank.
     *page_break Back up the bank…
     *goto port_valen_dredge_end
 
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment ····· sub-location: the foreman and the day shift
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label cut_foreman
-A short, thick foreman stands on an upturned basket with a stick notched for every load, and looks at your hands before he looks at your face.
+A thickset foreman in a stiff oxhide coat stands on an upturned nail-keg, whittling a fresh notch into a pine tally stick. He looks at your knuckles and shoulders before he ever looks at your face.
 
 *if (cut_labor_day = campaign_day)
-  "You've had your day," he says, and cuts a notch in the stick. "Come back tomorrow."
+  "You've had your shift today," he grunts without looking up from his knife. "Come back tomorrow when the tide turns."
   *goto cut_landing_hub
 
-"Four hours on the poles, eight copper bits at the end of it," he says. "Miss a basket, miss your coin. Nobody here is paid to look good."
+"Four hours on the pole levers, five copper bits at the end of it," he says, testing the notch with his thumb. "Spill a basket or slow the line, and you get docked two bits. Nobody here is paid to look pretty."
 
-You count it against what else the district has to offer. Eight copper for four hours of hard pulling is better than an empty belly.
+*temp hint_dredge_con ""
+*if (show_stat_hints)
+  *if (guidance_active)
+    *set hint_dredge_con " [CON DC 11 (+1d4 Guidance), 4 Hours, 5 Copper Bits]"
+  *else
+    *set hint_dredge_con " [CON DC 11, 4 Hours, 5 Copper Bits]"
 
 *choice
-  # Take the shift.@{show_stat_hints  [CON DC 11, 4 hours, 8 Copper Bits]|}
+  # Take the shift on the scoop poles.${hint_dredge_con}
     *set cut_labor_day campaign_day
     *set hours_to_pass 4
     *set minutes_to_pass 0
+    *set exposure_base_mins 240
+    *gosub_scene calendar calc_exposure
     *set time_advance_call_id "cut_landing_shift_1"
     *gosub_scene calendar advance_time
     *set check_stat "con"
     *set check_dc 11
-    *set check_skill "Endurance"
+    *set check_skill "Heave the Mud Scoops"
+    *if ((weather_cold) or (weather_wet))
+      *set disadvantage true
+    *if (not(equipped_hands_id = "none"))
+      *set advantage true
     *gosub_scene startup roll_d20_check
     *if (check_success)
-      By the fourth hour your hands have closed on the pole so many times that you can no longer feel the grip, but your baskets go up and the foreman's stick counts them without complaint. He pays you out on the shore: eight copper bits.
+      For four punishing hours, you heave against the ash levers, dragging iron scoops of black sludge out of the canal trench and tipping them into the wicker hampers. The sulfur mud burns your nostrils and the cold chain-links bite into your palms, but you keep pace with the crew, never spilling a basket.
+      
+      At the shift bell, the foreman inspects your station, cuts a clean check on his stick, and drops five copper bits into your hand.
       *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-        *set currency_add_amount 8
+        *set currency_add_amount 5
         *gosub_scene startup currency_add
         *set currency_txn_locked true
         *set locked_currency_txn_page_id page_id
 
-      [b][💰 Shift Paid: +8 Copper Bits][/b]
+      [b][💰 Shift Paid: +5 Copper Bits][/b]
     *else
-      Your grip slows in the third hour, and a basket goes over and spills its load across the bank. The foreman's stick cuts a fresh notch against you. He tosses four copper bits into your palm and holds back the rest for the spilled spoil.
+      By the third hour, your grip numbs against the slick ash wood. A heavy scoop swings wide, clipping the gunwale and spilling half its foul load back into the trench with a violent splash. The crew curses, and the foreman's knife instantly bites into his tally stick.
+      
+      "Docked for the spill," he barks, slapping two copper bits into your hand and pointing you toward the shore.
       *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-        *set currency_add_amount 4
+        *set currency_add_amount 2
+        *set neglect_damage_fatigue + 1
         *gosub_scene startup currency_add
         *set currency_txn_locked true
         *set locked_currency_txn_page_id page_id
 
-      [b][💰 Shift Docked: +4 Copper Bits][/b]
+      [b][💰 Shift Docked: +2 Copper Bits (Strained & Exhausted: +1 Fatigue)][/b]
     *gosub_scene calendar recalc_hp_from_neglect
     *if (hp_current <= 0)
       *set death_cause "starvation"
@@ -1654,8 +1721,9 @@ You count it against what else the district has to offer. Eight copper for four 
         *set death_cause "exhaustion"
       *goto_scene death death_screen
     *goto cut_landing_hub
-  # Not today.
-    "Suit yourself," the foreman says, and turns back to the barges.
+
+  # Step back from the scows.
+    "Suit yourself," the foreman grunts, turning his back to watch the scoops.
     *goto cut_landing_hub
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1827,6 +1895,7 @@ An iron grille is set into the seawall stone under a low cedar lintel. Behind it
 *label cut_pawn_hub
 *comment SELLING: he buys anything at 35% of retail and asks no questions (prices in equipment.txt
 *comment gear_sale_value). Nothing he cannot take is listed, and starting gear is never in the table.
+*gosub cut_pawn_open_panel
 *temp pawn_has_sale (((((has_brigandine) or (has_chain_jack)) or ((has_timber_axe) or (has_stiletto))) or (((has_torvald_iron_sallet) or (has_torvald_hide_cap)) or ((has_iron_crowbar) or (has_toll_seal_ring)))) or (has_plate_harness))
 *choice
   *if (pawn_has_sale)
@@ -1847,8 +1916,11 @@ An iron grille is set into the seawall stone under a low cedar lintel. Behind it
     Each thing on the shelves has a slip of paper tied to it with a date and a figure, and most of the dates are old. The boots have been here longest. A man does not leave a child's boots for that long unless he has stopped expecting to come back for them.
     *goto cut_pawn_hub
   # Step back out to the street.
+    *set shop_open ""
     *page_break Back to the street…
     *goto cut_lamp_page
+  # ⚖ Settle up the trade panel.
+    *goto cut_pawn_settle
 *label cut_pawn_sell
 The narrow man sets down his candle knife and slides a wooden tray under the grille. "On the tray," he says. "Don't tell me where it's from."
 *comment GEN:BEGIN pawn_sell_labels -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
@@ -1957,6 +2029,79 @@ He turns the ${gear_sale_name} once under the lamp, names a figure that leaves n
 *set hours_to_pass 0
 *set minutes_to_pass 10
 *set time_advance_call_id "pawn_sell"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the grille…
+*goto cut_pawn_hub
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment THE PAWNBROKER'S TRADE PANEL (sell only; a quality-of-life layer over the menus above, which stay as the
+*comment fallback). Same flow as Halda's forge in port_valen_middle_ward.txt: cut_pawn_open_panel announces the
+*comment trade, the panel sets carts and clicks the hidden "Settle up" option, and cut_pawn_settle re-checks and
+*comment carries it out through equipment.txt shop_*. cut_pawn_cart_pass is generated from the catalog.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label cut_pawn_open_panel
+*set shop_open "pawn"
+*set shop_rows ""
+*return
+
+*label cut_pawn_cart_pass
+*comment GEN:BEGIN pawn_cart_pass
+*set shop_buyer "pawn"
+*set gear_shop "pawn_sell"
+*gosub_scene equipment shop_cart_sell "brigandine"
+*gosub_scene equipment shop_cart_sell "chain_jack"
+*gosub_scene equipment shop_cart_sell "plate_harness"
+*gosub_scene equipment shop_cart_sell "timber_axe"
+*gosub_scene equipment shop_cart_sell "stiletto"
+*gosub_scene equipment shop_cart_sell "torvald_iron_sallet"
+*gosub_scene equipment shop_cart_sell "torvald_hide_cap"
+*gosub_scene equipment shop_cart_sell "iron_crowbar"
+*gosub_scene equipment shop_cart_sell "toll_seal_ring"
+*comment GEN:END pawn_cart_pass
+*return
+
+*label cut_pawn_settle
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment shop_begin
+  *gosub cut_pawn_cart_pass
+  *gosub_scene equipment shop_check
+  *if (shop_verdict = "ok")
+    *set shop_mode "apply"
+    *gosub cut_pawn_cart_pass
+    *set currency_add_amount (shop_tot_credit - shop_tot_cost)
+    *gosub_scene startup currency_add
+  *else
+    *set shop_mode "clear"
+    *gosub cut_pawn_cart_pass
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*if (shop_verdict = "empty")
+  The narrow man waits with his knife over the candle. "Nothing on the tray," he says, and goes back to trimming the wick.
+  *page_break Back to the grille…
+  *goto cut_pawn_hub
+*if (shop_verdict = "short")
+  *comment A sell-only trade cannot come up short; this only guards a tampered cart.
+  The narrow man pushes the tray back under the grille. "Not today," he says.
+  *page_break Back to the grille…
+  *goto cut_pawn_hub
+He works down the tray with two fingers, turning each piece once under the lamp, names one figure for the lot that leaves no room to argue, and slides the coins back across the tray.
+*if (not(shop_quote_line = ""))
+  *line_break
+  ${shop_quote_line}
+*if (not(shop_note_line = ""))
+  *line_break
+  ${shop_note_line}
+*line_break
+[b][💰 Sold: ${shop_sold_list} for ${shop_credit_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass 10
+*set time_advance_call_id "pawn_trade"
 *gosub_scene calendar advance_time
 *gosub_scene calendar recalc_hp_from_neglect
 *if (hp_current <= 0)

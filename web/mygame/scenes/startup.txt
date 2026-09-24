@@ -707,8 +707,6 @@
 *create locked_second_wind_page_id 0
 *create activate_rage_locked false
 *create locked_activate_rage_page_id 0
-*create althea_phial_locked false
-*create locked_althea_phial_page_id 0
 
 *comment --- COMBAT ENGINE STATE (combat.txt) ---
 *create combat_enemy_name "none"
@@ -1171,6 +1169,40 @@
 *create has_brigandine false
 *create has_chain_jack false
 *create has_plate_harness false
+*create has_warming_liniment false
+*create has_clear_head_draught false
+*create spare_timber_axe 0
+*create spare_stiletto 0
+*create spare_iron_crowbar 0
+*create spare_torvald_iron_sallet 0
+*create spare_torvald_hide_cap 0
+*create spare_brigandine 0
+*create spare_chain_jack 0
+*create spare_plate_harness 0
+*create spare_shield 0
+*create spare_warming_liniment 0
+*create spare_clear_head_draught 0
+*create spare_althea_phial 0
+*create cart_buy_timber_axe 0
+*create cart_buy_stiletto 0
+*create cart_buy_iron_crowbar 0
+*create cart_buy_torvald_iron_sallet 0
+*create cart_buy_brigandine 0
+*create cart_buy_chain_jack 0
+*create cart_buy_plate_harness 0
+*create cart_buy_shield 0
+*create cart_buy_warming_liniment 0
+*create cart_buy_clear_head_draught 0
+*create cart_sell_timber_axe 0
+*create cart_sell_stiletto 0
+*create cart_sell_iron_crowbar 0
+*create cart_sell_torvald_iron_sallet 0
+*create cart_sell_torvald_hide_cap 0
+*create cart_sell_brigandine 0
+*create cart_sell_chain_jack 0
+*create cart_sell_plate_harness 0
+*create cart_sell_toll_seal_ring 0
+*create cart_sell_scrap_steel 0
 *comment GEN:END gear_creates
 *comment Armor proficiency (equipment.txt armor_prof_check / recalculate_proficiency). armor_tier is derived from
 *comment armor_type; armor_nonprof is true while the worn armor is one the class is not trained in, which
@@ -1212,11 +1244,68 @@
 *create gear_grant_note ""
 *create buy_item_id ""
 *create dredge_ambush_salvage 0
+*create dredge_ambush_drop ""
+*create dredge_ambush_bruiser ""
+*create dredge_ambush_drop_name ""
 *create sell_item_id ""
 *create gear_sale_copper 0
 *create gear_sale_desc ""
 *create gear_sale_name ""
 *create gear_sold_note ""
+*comment Stacking: has_<id> means "at least one"; spare_<id> counts the copies beyond the first (created for every
+*comment stackable catalog item). gear_qty / gear_stack / gear_spare_var are gear_count and gear_info outputs.
+*create gear_stack false
+*create gear_qty 0
+*create gear_spare_var ""
+*create gear_unit_copper 0
+*create gear_warning ""
+*comment Consumables (equipment.txt use_consumable). gear_effect is "heal" or "boon"; the gear_eff_* and gear_heal_*
+*comment fields describe it. use_item_id / use_in_combat are the inputs, use_result ("ok" | "full" | "limit" | "none"),
+*comment use_text and use_banner the outputs (kept set so a replayed page prints the same result).
+*create gear_title ""
+*create gear_effect ""
+*create gear_use_text ""
+*create gear_use_verb "Use"
+*create gear_combat false
+*create gear_eff_summary ""
+*create gear_heal_n 0
+*create gear_heal_sides 0
+*create gear_heal_bonus 0
+*create gear_eff_name ""
+*create gear_eff_desc ""
+*create gear_eff_stat ""
+*create gear_eff_bonus 0
+*create gear_eff_minutes 0
+*create use_item_id ""
+*create use_in_combat false
+*create use_result ""
+*create use_text ""
+*create use_banner ""
+*create use_locked false
+*create locked_use_page_id 0
+*comment true from fight_setup until the fight ends; the dossier refuses to open the satchel mid-fight.
+*create combat_engaged false
+*comment The trade panel (web/mygame/trade.js). shop_open names the trade a page offers ("" when none) and shop_rows
+*comment lists the live buy rows as "id~warning|". The panel writes cart_buy_<id> / cart_sell_<id>, and equipment.txt
+*comment shop_begin .. shop_check runs the trade. The remaining shop_* variables are that routine's totals and receipt.
+*create shop_open ""
+*create shop_rows ""
+*create shop_mode ""
+*create shop_buyer ""
+*create shop_cart_var ""
+*create shop_verdict ""
+*create shop_tot_cost 0
+*create shop_tot_credit 0
+*create shop_tot_minutes 0
+*create shop_tot_bought 0
+*create shop_tot_sold 0
+*create shop_recv ""
+*create shop_sold_list ""
+*create shop_quote_line ""
+*create shop_note_line ""
+*create shop_fit false
+*create shop_cost_desc ""
+*create shop_credit_desc ""
 *create has_talia_provisions false
 *create has_talia_oiled_cloak false
 *create discussed_talia_craft false
@@ -1834,6 +1923,14 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
     *set codex_marsh_squatters true
     *set codex_alderford true
     *set codex_meridian_empire true
+    *set port_valen_hub_seen true
+    *set port_valen_first_patrol_complete true
+    *set vane_independent_operative true
+    *set civic_heights_open true
+    *set upper_wharves_open true
+    *set dredge_end_open true
+    *set middle_ward_open true
+    *set pv_pois_open true
     *goto_scene port_valen port_valen_hub
 
 *comment D&D 5E STAT & MODIFIER ENGINE
@@ -2794,24 +2891,5 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
 *set is_raging false
 *return
 
-*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment CONSUMABLE: SAINT ALTHEA'S WATER PHIAL
-*comment Restores 2d4 + 2 HP (4-10 HP), consumes the phial.
-*comment Replay-safe via althea_phial_locked and locked_heal_roll.
-*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*label use_althea_phial
-*if (not(althea_phial_locked)) or (not(locked_althea_phial_page_id = page_id))
-  *if (has_althea_phial)
-    *set has_althea_phial false
-    *temp phial_d1 0
-    *temp phial_d2 0
-    *rand phial_d1 1 4
-    *rand phial_d2 1 4
-    *set locked_heal_roll ((phial_d1 + phial_d2) + 2)
-    *set hp_current + locked_heal_roll
-    *if (hp_current > hp_max)
-      *set hp_current hp_max
-  *set althea_phial_locked true
-  *set locked_althea_phial_page_id page_id
-*return
-
+*comment Consumables (the Saint Althea's Water phial, Ambrose's liniment and draught) are catalog items used through
+*comment equipment.txt use_consumable; the old single-flag use_althea_phial routine is gone.

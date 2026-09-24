@@ -363,8 +363,44 @@ The Watch captain offers Vane a sealed parchment writ bearing the Council mark. 
 *line_break
 [b][⏳ Port Valen Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
 
+*temp pv_first_arrival false
 *if (not(port_valen_hub_seen))
   *set port_valen_hub_seen true
+  *set pv_first_arrival true
+  The stout reinforced oak gates open onto the Carrion Company's walled garrison grounds: a sprawling compound of wooden barracks, packed mud, and pitched canvas crowded behind the city's seawall. New barracks crowd against old ones, and fresh bedrolls spill from the stores awning while quartermasters argue over space. Two recruits drag a soaked baggage chest past the drill lines while a woman in the company's black-and-red colors carries a bundle of bloodied bandages to the infirmary, shouting for boiled water over the clatter of wagon wheels. Near the watchtower, scout runners pass messages from hand to hand; one peels away toward the lower tide gate, another heading for the inland road.
+
+  Captain Vane's voice carries from somewhere within the compound, drowned out by the forge-hammers. The words come in fragments: "…quarter the new intake…" then, "…Watch detail at dawn…" A moment later, Sergeant Varren appears on the catwalk and points three squads to separate sections of the grounds. The orders travel faster than the wagons. Men and women who have not yet found their bedrolls are already falling into place.
+
+  *if (squad = "vanguard")
+    The Vanguard has taken over the drill square. Sergeant Varren moves between two ranks of shield-bearers, thumping the rims of their bronze-rimmed shields when a grip slips or a strap hangs loose. Arming swords knock against bucklers as the soldiers turn together, the sound sharp and regular against the chime of the watchtower bells.
+
+    Lyra sits on an overturned brine cask at the edge of the square, her recurve bow resting over her knees and a whetstone working along the edge of a narrow dagger. Her damp cloak is folded beside her, and her quiver lies open while she checks each black-fletched arrow for a cracked shaft.
+
+    "You made it back with all your fingers," she says, looking up. "That puts you ahead of half the new intake. Varren's got us on wharf duty at dawn, so find somewhere dry before he decides wet boots are a discipline problem."
+
+    A veteran calls for the next shield turn. Varren slams his palm against a buckler. "Together! If one of you leaves a gap, the whole shield wall pays for it!"
+  *elseif (squad = "scouts")
+    The Scout Company has spread itself through the spaces other soldiers leave empty. Kestrel stands in the lee of a wagon, her weather-stained cloak pinned close against the coastal wind, while bowhands string recurve bows and test the weight of their arrows. Short daggers hang in open sheaths at their hips, ready for work where a bow cannot be drawn.
+
+    A pair of runners crouch over a charcoal map scratched on an upturned crate. One marks the quay with a burnt stick; the other traces the canal road toward the inland gates. Kestrel takes the map, folds it once, and sends them in opposite directions with a few quiet words.
+
+    She notices you before you reach the wagon. "Routes and rotations," she says, tapping the folded map. "The Watch wants eyes on ground its own people don't cover. Rest while you can. You won't get much once the rotation starts."
+
+    A bowstring snaps somewhere behind you. The scout holding it curses, checks the welt on her wrist, and reaches for a spare without waiting for help.
+  *elseif (squad = "cadre")
+    The Cadre has claimed a corner of the compound under the contract office, where canvas screens turn the worst of the wind. Ysolde sits at a trestle table in an ink-stained travelling coat, sorting navigation charts, wax tablets, and damp cargo slips into separate piles. Around her, staff-bearers in layered wool and leather cases work through small practical tasks: drying spell components, binding cracked satchels, and checking the brass fittings on their shod quarterstaffs.
+
+    A cadre recruit with a dagger at each hip holds a lantern over a cargo manifest copied onto wet parchment. Another steadies a stack of account books with one hand while keeping the other near the hilt of a short dagger. Nobody speaks loudly. The scrape of Ysolde's brass stylus carries farther than the murmurs.
+
+    Ysolde lifts her eyes when you approach. "Cargo manifests, customs tolls, and the Watch's own accounts: all three keep disagreeing with each other," she says. "We will make them agree before the week is out. Put your things somewhere the rain cannot reach them."
+
+    She rules a line down the parchment chart and sets a small brass weight on it. Outside the canvas, a runner calls for more lamp oil.
+  *else
+    *comment squad = "none" fallback
+    Unattached recruits and teamsters crowd into the overflow bays beneath the wagon sheds. File corporals pace the mud with lanterns, assigning straw paillasses and calling roll from notched pine boards. For tonight, the company is confined to the garrison grounds under strict orders from Vane: hold quarters, keep off the city streets, and prepare for tomorrow's dawn muster.
+
+  *if (not(vane_independent_operative))
+    [i]Under Captain Vane's orders, the gates to the city are barred to company personnel tonight. You are confined to quarters until tomorrow's dawn muster with the Watch.[/i]
 *else
   *comment ── LAYER 1: PLACE ──
   The iron-banded oak gates open onto the Carrion Company's walled garrison grounds: a sprawling compound of log barracks, packed mud, and pitched canvas crowded behind the city's seawall. The black raven banner snaps from the central watchtower above the stores awning. The air smells of coal smoke, damp wool, horse lather, and forge slag, and the packed earth is churned with wagon ruts and hobnailed boot prints.
@@ -456,8 +492,9 @@ The Watch captain offers Vane a sealed parchment writ bearing the Council mark. 
 *if (vane_independent_operative) and (pv_mess_rations_used >= pv_mess_ration_cap)
   The quartermaster's stores for the week are already spoken for. Anyone still hungry will need coin for the waterfront taverns instead.
 
-*comment Hourly dynamic camp vignette (Weather-safe)
-*if (not(pv_is_night)) and (weather_severity < 3)
+*comment Hourly dynamic camp vignette (Weather-safe). Skipped on the first
+*comment arrival so a slapstick line never sits under the muster scene.
+*if ((not(pv_first_arrival)) and ((not(pv_is_night)) and (weather_severity < 3)))
   *temp camp_vignette (((campaign_day * 24) + clock_hour) modulo 6) + 1
   *if (camp_vignette = 1)
     [i]Near the horse lines, two teamsters shout in conflicting dialects as a stubborn pack mule refuses to back into its harness shafts, kicking up clods of damp clay.[/i]

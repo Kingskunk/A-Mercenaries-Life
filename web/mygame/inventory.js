@@ -44,7 +44,9 @@
       category: item.category,
       name: evalField(item.name, s),
       description: evalField(item.description, s),
-      badge: evalField(item.badge, s) || ""
+      badge: evalField(item.badge, s) || "",
+      use: !!item.use,
+      useLabel: evalField(item.useLabel, s) || "Use"
     };
   }
 
@@ -179,6 +181,10 @@
         '<button type="button" class="inv-close" data-act="close" aria-label="Close inventory">×</button>' +
       "</div>" +
       '<div class="inv-body">' +
+        '<div class="inv-tradebar" id="invTradeBar" style="display:none">' +
+          '<span class="inv-tradebar-title"></span>' +
+          '<button type="button" data-act="trade">Open trade panel</button>' +
+        "</div>" +
         '<section class="inv-section">' +
           '<h3 class="inv-section-title">Equipped Loadout</h3>' +
           '<div class="inv-slots"></div>' +
@@ -235,6 +241,12 @@
 
   function render() {
     var s = statsNow();
+    var tradeBar = dlg.querySelector("#invTradeBar");
+    if (tradeBar) {
+      var trading = !!(window.TradePanel && window.TradePanel.isActive());
+      tradeBar.style.display = trading ? "" : "none";
+      if (trading) tradeBar.querySelector(".inv-tradebar-title").textContent = "Trading at " + window.TradePanel.title();
+    }
     elSlots.innerHTML = renderEquippedSlots(s);
 
     var current = owned(s);
@@ -258,6 +270,7 @@
           '<div class="inv-item-main">' +
             '<span class="inv-item-name">' + esc(r.name) + "</span>" +
             (r.badge ? '<span class="inv-item-badge">' + esc(r.badge) + "</span>" : "") +
+            (r.use ? '<button type="button" class="inv-use" data-use="' + esc(r.id) + '"' + (canUse() ? "" : " disabled") + ">" + esc(r.useLabel) + "</button>" : "") +
           "</div>" +
           (r.description ? '<div class="inv-item-desc">' + esc(r.description) + "</div>" : "") +
           "</div>";
@@ -266,13 +279,44 @@
     elList.innerHTML = html;
   }
 
+  // Consumables are used through the game's own dossier (real ChoiceScript: equipment.txt use_consumable is the only
+  // place an effect is written, so nothing is mirrored here). The Use button drops straight onto the result page
+  // (choicescript_stats codex_use_do); from there the satchel menu and the dossier are one tap away. Not offered
+  // mid-fight (the fight has its own item option) or while the dossier is already open.
+  function canUse() {
+    var btn = document.getElementById("statsButton");
+    if (btn && btn.getAttribute("data-return")) return false;
+    return !truthy(statsNow().combat_engaged) && typeof window.Scene === "function" && typeof window.clearScreen === "function" && !!window.nav;
+  }
+  function useItem(id) {
+    if (!canUse()) return;
+    statsNow().use_item_id = id;
+    close();
+    var scene = new window.Scene("choicescript_stats", window.stats, window.nav, { secondaryMode: "stats", saveSlot: "temp" });
+    scene.targetLabel = { label: "codex_use_do", origin: "url", originLine: 0 };
+    window.clearScreen(function () {
+      if (typeof window.setButtonTitles === "function") window.setButtonTitles();
+      scene.execute();
+    });
+  }
+
   function onClick(ev) {
     var t = ev.target;
     while (t && t !== dlg && !(t.getAttribute && (t.getAttribute("data-act") || t.hasAttribute("data-cat") ||
-      t.hasAttribute("data-shield-toggle") || t.hasAttribute("data-swap-sidearm")))) t = t.parentNode;
+      t.hasAttribute("data-shield-toggle") || t.hasAttribute("data-swap-sidearm") || t.hasAttribute("data-use")))) t = t.parentNode;
     if (!t || t === dlg) return;
     var act = t.getAttribute("data-act");
     if (act === "close") return close();
+    if (act === "trade") {
+      // The trade panel (trade.js) sits over the shop menus; from here it is one tap away.
+      close();
+      if (window.TradePanel) window.TradePanel.open();
+      return;
+    }
+    if (t.hasAttribute("data-use")) {
+      if (!t.disabled) useItem(t.getAttribute("data-use"));
+      return;
+    }
     if (t.hasAttribute("data-cat")) {
       view.category = t.getAttribute("data-cat");
       render();

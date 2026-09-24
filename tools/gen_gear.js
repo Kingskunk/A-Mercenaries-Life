@@ -13,6 +13,9 @@
  * and this script replaces everything between a pair. Indentation is taken from the BEGIN line, so a block
  * can sit inside a *choice. Anything outside the markers is hand-written and never touched.
  *
+ * It also writes the trade panel's inputs: each shop's cart pass and panel rows (the `trades` list in the catalog)
+ * and web/mygame/trade-data.generated.js, a whole file rather than a marker block.
+ *
  * Usage (from anywhere):
  *     node tools/gen_gear.js            rewrite the blocks
  *     node tools/gen_gear.js --check    exit 1 if any block is stale (for a lint or CI step)
@@ -43,6 +46,9 @@ function has(it, key) { return it[key] !== undefined && it[key] !== null && it[k
 function isHand(it) { return !!(it.flags && it.flags.hand); }
 function makesFlag(it) { return !(it.flags && it.flags.create === false); }
 
+var STACKABLE_KINDS = ["armor", "shield", "weapon", "head", "tool", "consumable"];
+function stackable(it) { return it.stack !== undefined ? !!it.stack : STACKABLE_KINDS.indexOf(it.kind) !== -1; }
+
 // ChoiceScript will not chain operators, so an OR of N terms is nested pairwise: (((a) or (b)) or (c)).
 function orChain(terms) {
   var out = "(" + terms[0] + ")";
@@ -57,8 +63,30 @@ function need(it, keys) {
 }
 
 // ---------------------------------------------------------------- block generators
+// Which items each side of a trade handles, so only those get cart variables.
+function tradeIds(field) {
+  var out = {};
+  (CATALOG.shops || []).forEach(function (sh) {
+    if (sh.type === field) sh.items.forEach(function (r) { out[r.id] = true; });
+  });
+  return out;
+}
+
 function genCreates() {
-  return items.filter(makesFlag).map(function (it) { return "*create " + flag(it) + " false"; });
+  var buys = tradeIds("buy"), sells = tradeIds("sell");
+  var L = items.filter(makesFlag).map(function (it) { return "*create " + flag(it) + " false"; });
+  items.forEach(function (it) { if (stackable(it)) L.push("*create spare_" + it.id + " 0"); });
+  items.forEach(function (it) { if (buys[it.id]) L.push("*create cart_buy_" + it.id + " 0"); });
+  items.forEach(function (it) { if (sells[it.id]) L.push("*create cart_sell_" + it.id + " 0"); });
+  return L;
+}
+
+// One line for menus and banners: what using the item does.
+function effectSummary(it) {
+  var ef = it.effect;
+  if (ef.type === "heal") return "Restores " + ef.n + "d" + ef.sides + (ef.bonus ? "+" + ef.bonus : "") + " HP";
+  var h = ef.minutes % 60 === 0 ? (ef.minutes / 60) + " hours" : ef.minutes + " minutes";
+  return "+" + ef.bonus + " " + ef.stat.toUpperCase() + " for " + h;
 }
 
 function genGearInfo() {
@@ -69,6 +97,30 @@ function genGearInfo() {
     L.push('  *set gear_name ' + q(it.name));
     if (it.retail) L.push('  *set gear_retail ' + it.retail);
     L.push('  *set gear_kind ' + q(it.kind));
+    L.push('  *set gear_title ' + q(it.title || it.name));
+    if (stackable(it)) L.push('  *set gear_stack true');
+    if (it.kind === "consumable") {
+      var ef = it.effect || {};
+      need(it, ["effect", "useText"]);
+      L.push('  *set gear_effect ' + q(ef.type));
+      L.push('  *set gear_use_text ' + q(it.useText));
+      L.push('  *set gear_use_verb ' + q(it.useVerb || "Use"));
+      if (it.combat) L.push('  *set gear_combat true');
+      L.push('  *set gear_eff_summary ' + q(effectSummary(it)));
+      if (ef.type === "heal") {
+        L.push('  *set gear_heal_n ' + ef.n);
+        L.push('  *set gear_heal_sides ' + ef.sides);
+        L.push('  *set gear_heal_bonus ' + (ef.bonus || 0));
+      } else if (ef.type === "boon") {
+        L.push('  *set gear_eff_name ' + q(ef.name));
+        L.push('  *set gear_eff_desc ' + q(ef.desc));
+        L.push('  *set gear_eff_stat ' + q(ef.stat));
+        L.push('  *set gear_eff_bonus ' + ef.bonus);
+        L.push('  *set gear_eff_minutes ' + ef.minutes);
+      } else {
+        throw new Error("item '" + it.id + "': unknown effect type " + ef.type);
+      }
+    }
     if (it.tier) L.push('  *set gear_tier ' + q(it.tier));
     if (it.hint) L.push('  *set gear_hint ' + q(it.hint));
     if (it.blurb) L.push('  *set gear_blurb ' + q(it.blurb));
@@ -156,7 +208,9 @@ function genDossierList() {
     L.push('*if (' + flag(it) + ')');
     L.push('  *set has_inventory_item true');
     L.push('  *line_break');
-    L.push('  • [b]' + it.title + ':[/b] ' + d.line + badge);
+    var qty = stackable(it) ? "@{(spare_" + it.id + " > 0)  [+${spare_" + it.id + "} spare]|}" : "";
+    if (it.kind === "consumable") badge = " [" + effectSummary(it) + "]";
+    L.push('  • [b]' + it.title + ':[/b] ' + d.line + badge + qty);
   });
   return L;
 }
@@ -192,7 +246,7 @@ function genEquipWorn() {
   return L;
 }
 
-var INV_CATEGORY = { weapon: "weapons", armor: "apparel", head: "apparel", tool: "provisions" };
+var INV_CATEGORY = { weapon: "weapons", armor: "apparel", head: "apparel", tool: "provisions", consumable: "consumables" };
 function genInventory() {
   var L = [];
   listed().forEach(function (it) {
@@ -202,8 +256,25 @@ function genInventory() {
     var desc = /[.!?]$/.test(d.line) ? d.line : d.line + ".";
     L.push('{');
     L.push('  id: ' + q(it.id) + ', category: ' + q(cat) + ', owned: ' + q(flag(it)) + ',');
-    L.push('  name: ' + q(it.title) + ',');
-    L.push('  description: ' + q(desc) + (EQUIPPED_VAR[it.kind] ? ',' : ''));
+    if (stackable(it)) {
+      L.push('  name: function (s) { var n = 1 + (Number(s.spare_' + it.id + ') || 0); return ' + q(it.title) + ' + (n > 1 ? " ×" + n : ""); },');
+    } else {
+      L.push('  name: ' + q(it.title) + ',');
+    }
+    var more = EQUIPPED_VAR[it.kind] || it.kind === "consumable";
+    L.push('  description: ' + q(desc) + (more ? ',' : ''));
+    if (it.kind === "consumable") {
+      if (it.effect.type === "boon") {
+        // The boon names are matched against the three unique-buff slots, like boonRunning() does for the menus.
+        var nm = q(it.effect.name);
+        var on = 'function (s) { for (var n = 1; n <= 3; n++) { var a = s["unique_buff" + n + "_active"]; if ((a === true || a === "true") && s["unique_buff" + n + "_name"] === ' + nm + ') return true; } return false; }';
+        L.push('  badge: function (s) { return ' + q(effectSummary(it)) + ' + (' + on + '(s) ? " · active, using it refreshes" : ""); },');
+        L.push('  useLabel: function (s) { return ' + on + '(s) ? "Refresh" : "Use"; },');
+      } else {
+        L.push('  badge: ' + q(effectSummary(it)) + ',');
+      }
+      L.push('  use: true');
+    }
     if (EQUIPPED_VAR[it.kind]) {
       var slot = it.kind;
       L.push('  badge: function (s) { return s.' + EQUIPPED_VAR[it.kind] + ' === ' + q(it.id) + ' ? ' + q(d.badgeOn || "Equipped") + ' : ' + q(d.badgeOff || "") + '; },');
@@ -222,23 +293,135 @@ function genShop(shop) {
     var t = shop.prefix + "_" + it.id;
     var cond, fn;
     if (shop.type === "buy") {
-      cond = "not(" + flag(it) + ")";
-      if (ref.when) cond = "(" + ref.when + ") and (" + cond + ")";
+      // A stackable item is always for sale; a one-of-a-kind item disappears once owned.
+      cond = stackable(it) ? "" : "not(" + flag(it) + ")";
+      if (ref.when) cond = cond ? "(" + ref.when + ") and (" + cond + ")" : ref.when;
       fn = 'gear_buy_label ' + q(it.id);
     } else {
       cond = ref.owned || flag(it);
       fn = 'gear_sell_label ' + q(it.id) + ' ' + q(shop.buyer);
     }
     temps.push('*temp ' + t + ' ""');
-    labels.push('*if (' + cond + ')');
-    labels.push('  *gosub_scene equipment ' + fn);
-    labels.push('  *set ' + t + ' gear_label');
-    options.push('*if (' + cond + ')');
-    options.push('  # ${' + t + '}');
-    options.push('    *set ' + (shop.type === "buy" ? "buy_item_id" : "sell_item_id") + ' ' + q(it.id));
-    options.push('    *goto ' + shop.goto);
+    var pad = cond ? "  " : "";
+    if (cond) labels.push('*if (' + cond + ')');
+    labels.push(pad + '*gosub_scene equipment ' + fn);
+    labels.push(pad + '*set ' + t + ' gear_label');
+    if (cond) options.push('*if (' + cond + ')');
+    options.push(pad + '# ${' + t + '}');
+    options.push(pad + '  *set ' + (shop.type === "buy" ? "buy_item_id" : "sell_item_id") + ' ' + q(it.id));
+    options.push(pad + '  *goto ' + shop.goto);
   });
   return { labels: temps.concat(labels), options: options };
+}
+
+// ---------------------------------------------------------------- consumables (use menus)
+function consumables(combatOnly) {
+  return items.filter(function (it) { return it.kind === "consumable" && (!combatOnly || it.combat); });
+}
+// True while a boon of this item's name is already running in one of the three unique-buff slots (a boon item only).
+function boonRunning(it) {
+  var terms = [1, 2, 3].map(function (n) { return "(unique_buff" + n + "_active) and (unique_buff" + n + "_name = " + q(it.effect.name) + ")"; });
+  return orChain(terms.map(function (t) { return "(" + t + ")"; }));
+}
+function useLabel(it) {
+  var verb = it.useVerb || "Use";
+  var tag = it.effect.type === "boon" ? "@{" + boonRunning(it) + "  [Already active: using it refreshes the timer]|}" : "";
+  return verb + " the " + it.name + ".@{show_stat_hints  [" + effectSummary(it) + "]|}" + tag;
+}
+// A one-line owned test: sets cu_any (a *temp the caller declares) when any listed consumable is owned.
+function genUseCheck(combatOnly) {
+  var L = [];
+  consumables(combatOnly).forEach(function (it) {
+    L.push('*if (' + flag(it) + ')');
+    L.push('  *set cu_any true');
+  });
+  return L;
+}
+function genUseOptions(goto, combatOnly) {
+  var L = [];
+  consumables(combatOnly).forEach(function (it) {
+    L.push('*if (' + flag(it) + ')');
+    L.push('  # ' + useLabel(it));
+    L.push('    *set use_item_id ' + q(it.id));
+    L.push('    *goto ' + goto);
+  });
+  return L;
+}
+
+// ---------------------------------------------------------------- trade panel (the QoL layer over the shop menus)
+var shopByName = {};
+(CATALOG.shops || []).forEach(function (sh) { shopByName[sh.name] = sh; });
+
+// One pass over every item the shop deals in. equipment.txt shop_cart_sell / shop_cart_buy read the cart_* variables
+// the trade panel wrote and, depending on shop_mode ("tally", "apply" or "clear"), add up, carry out or discard them.
+// Sales run before purchases so a worn suit that is sold is swapped out before its replacement is put on.
+function genCartPass(trade) {
+  var L = [];
+  var sell = trade.sellShop ? shopByName[trade.sellShop] : null, buy = trade.buyShop ? shopByName[trade.buyShop] : null;
+  if (trade.sellShop && !sell) throw new Error("trade " + trade.name + ": unknown sellShop " + trade.sellShop);
+  if (!sell && !buy) throw new Error("trade " + trade.name + " has neither a buyShop nor a sellShop");
+  if (sell) {
+    L.push('*set shop_buyer ' + q(sell.buyer));
+    L.push('*set gear_shop ' + q(trade.sellKey));
+    sell.items.forEach(function (r) {
+      if (!byId[r.id]) throw new Error("trade " + trade.name + " lists unknown item " + r.id);
+      L.push('*gosub_scene equipment shop_cart_sell ' + q(r.id));
+    });
+  }
+  if (buy) {
+    L.push('*set gear_shop ' + q(trade.buyKey));
+    buy.items.forEach(function (r) {
+      if (!byId[r.id]) throw new Error("trade " + trade.name + " lists unknown item " + r.id);
+      if (r.when) {
+        L.push('*if (' + r.when + ')');
+        L.push('  *gosub_scene equipment shop_cart_buy ' + q(r.id));
+      } else {
+        L.push('*gosub_scene equipment shop_cart_buy ' + q(r.id));
+      }
+    });
+  }
+  return L;
+}
+
+// The rows the panel shows for the buy side: every item currently for sale, with its live warning text.
+function genPanelRows(trade) {
+  var L = [];
+  shopByName[trade.buyShop].items.forEach(function (r) {
+    if (r.when) {
+      L.push('*if (' + r.when + ')');
+      L.push('  *gosub_scene equipment shop_row_add ' + q(r.id));
+    } else {
+      L.push('*gosub_scene equipment shop_row_add ' + q(r.id));
+    }
+  });
+  return L;
+}
+
+// Static facts for the panel (names, retail prices, sell rules). Live facts (warnings, availability) come from the game.
+function genTradeData() {
+  var data = { items: {}, trades: {} };
+  var ids = {};
+  (CATALOG.trades || []).forEach(function (t) {
+    var sell = t.sellShop ? shopByName[t.sellShop] : null, buy = t.buyShop ? shopByName[t.buyShop] : null;
+    if (sell) sell.items.forEach(function (r) { ids[r.id] = true; });
+    if (buy) buy.items.forEach(function (r) { ids[r.id] = true; });
+    data.trades[t.name] = {
+      title: t.title,
+      buyer: sell ? sell.buyer : "",
+      buy: buy ? buy.items.map(function (r) { return r.id; }) : [],
+      sell: sell ? sell.items.map(function (r) { return r.id; }) : []
+    };
+  });
+  Object.keys(ids).forEach(function (id) {
+    var it = byId[id], sl = it.sell || {};
+    data.items[id] = {
+      name: it.name, title: it.title || it.name, kind: it.kind, tier: it.tier || "", retail: it.retail || 0,
+      minutes: it.minutes || 10, hint: it.hint || "", stack: stackable(it),
+      sell: { smith: sl.smith || 0, pawn: sl.pawn || 0, pawnFixed: sl.pawnFixed || 0, smithPiece: sl.smithPiece || 0, countVar: sl.countVar || "" }
+    };
+  });
+  return "// GENERATED by tools/gen_gear.js from tools/gear_catalog.json -- do not edit; edit the catalog and run the generator." + String.fromCharCode(10) +
+    "window.TRADE_DATA = " + JSON.stringify(data, null, 1) + ";" + String.fromCharCode(10);
 }
 
 // ---------------------------------------------------------------- region replacement
@@ -271,6 +454,7 @@ var F = {
   startup: path.join(SCENES, "startup.txt"),
   equipment: path.join(SCENES, "equipment.txt"),
   stats: path.join(SCENES, "choicescript_stats.txt"),
+  combat: path.join(SCENES, "combat.txt"),
   inventory: path.join(GAME, "inventory-data.js")
 };
 
@@ -284,17 +468,28 @@ setRegion(F.stats, "gear_list", genDossierList());
 setRegion(F.stats, "gear_equip_weapons", genEquipWeapons());
 setRegion(F.stats, "gear_equip_worn", genEquipWorn());
 setRegion(F.inventory, "gear_items", genInventory());
+setRegion(F.stats, "codex_use_check", genUseCheck(false));
+setRegion(F.stats, "codex_use_check2", genUseCheck(false));   // the satchel page repeats the check
+setRegion(F.stats, "codex_use_options", genUseOptions("codex_use_do", false));
+setRegion(F.combat, "combat_use_check", genUseCheck(true));
+setRegion(F.combat, "combat_use_options", genUseOptions("fight_use_do", true));
 CATALOG.shops.forEach(function (shop) {
   var out = genShop(shop);
   var file = path.join(SCENES, shop.file);
   setRegion(file, shop.name + "_labels", out.labels);
   setRegion(file, shop.name + "_options", out.options);
 });
+(CATALOG.trades || []).forEach(function (t) {
+  var file = path.join(SCENES, t.file);
+  setRegion(file, t.name + "_cart_pass", genCartPass(t));
+  if (t.buyShop) setRegion(file, t.name + "_panel_rows", genPanelRows(t));
+});
+pending[path.join(GAME, "trade-data.generated.js")] = genTradeData();
 
 // ---------------------------------------------------------------- write or check
 var stale = [];
 Object.keys(pending).forEach(function (p) {
-  var current = fs.readFileSync(p, "utf8");
+  var current = fs.existsSync(p) ? fs.readFileSync(p, "utf8") : null;
   if (current !== pending[p]) {
     stale.push(path.relative(ROOT, p));
     if (!CHECK) fs.writeFileSync(p, pending[p]);

@@ -558,7 +558,7 @@
           "A wide shelf of hard-packed cinder where the canal widens, with three low barges tied along its edge. Dredgers haul black spoil up in baskets with hooked poles and iron scoops on chains and tip it onto long mounds that dry to a crust on the bank. It can only be worked at low water."
         ];
         if (Number(s.cut_labor_day) > 0) {
-          out.push("The foreman pays three silver marks for four hours on the poles, and less for a spilled basket.");
+          out.push("The foreman pays a few copper marks for four hours on the poles, and less for a spilled basket.");
         }
         if (n >= 1) {
           out.push("The dredgers pull up iron oar-pins, chain and, once in a while, a single boot.");
@@ -708,8 +708,8 @@
       unlock: "mw_seen",
       body: function (s) {
         var out = [
-        "The road climbs in turns from the docks and levels out on the broad stone terraces below the limestone cliffs of Civic Heights. Timber buildings lean over narrow lanes beneath steep slate roofs, their lower shutters open as shop counters, and the air smells of cooled iron, brass dust, cedar sawdust and warm caraway bread.",
-        "Conduit Square, with its octagonal fountain and four bronze lion-head spouts, is the crossroads. Lanes branch to the Locksmiths' Close, Herb-Pounder Close, Lantern Lane and Smiths' Row. A communal oven feeds the ward, and a public wash-house with baths stands behind the square."
+          "The road climbs in turns from the docks and levels out on the broad stone terraces below the limestone cliffs of Civic Heights. Timber buildings lean over narrow lanes beneath steep slate roofs, their lower shutters open as shop counters, and the air smells of cooled iron, brass dust, cedar sawdust and warm caraway bread.",
+          "Conduit Square, with its octagonal fountain and four bronze lion-head spouts, is the crossroads. Lanes branch to the Locksmiths' Close, Herb-Pounder Close, Lantern Lane and Smiths' Row. A communal oven feeds the ward, and a public wash-house with baths stands behind the square."
         ];
         if (truthy(s.mw_rumor_grain)) {
           out.push("Rumor from the baths: a Council grain officer waves unlicensed flour wagons through Conduit Square on Marketdays for a small payment slip, so the licensed drivers end up paying twice, once in fees and once in waiting.");
@@ -744,8 +744,8 @@
       unlock: "mw_smiths_seen",
       body: function (s) {
         var out = [
-        "A cobbled yard at the lower end of the Middle Ward, where the harbor road climbs in. Three forges stand under open sheds around a stone water trough, with racks of finished blades, helmets and tools along the walls. Iron bars and coal come up from the harbor by wagon. A cooper's bench at the far end still makes barrels for the ward.",
-        "The forges work in daylight and bank their fires at dusk. On the holy day and in a blizzard the sheds stay barred."
+          "A cobbled yard at the lower end of the Middle Ward, where the harbor road climbs in. Three forges stand under open sheds around a stone water trough, with racks of finished blades, helmets and tools along the walls. Iron bars and coal come up from the harbor by wagon. A cooper's bench at the far end still makes barrels for the ward.",
+          "The forges work in daylight and bank their fires at dusk. On the holy day and in a blizzard the sheds stay barred."
         ];
         if (truthy(s.mw_halda_forges_talk)) {
           out.push("Three forges, three masters, one water trough. Halda does edges, the middle shed does wheel rims and nails, and the far one hammers out tin pots and tools for the ward's trades.");
