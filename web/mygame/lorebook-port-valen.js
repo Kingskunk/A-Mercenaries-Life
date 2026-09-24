@@ -905,7 +905,7 @@
       sub: "The Scales' seat on Civic Heights",
       tags: ["Civic Heights", "Gilded Scales", "Trade"], aliases: ["head house", "scales head house", "counting floor", "deposits", "dispatch board", "bank"],
       link: ["Gilded Scales Head House", "the head house", "head house"],
-      unlock: "ch_head_seen",
+      unlock: "ch_head_named",
       body: function (s) {
         var out = [
           "The Gilded Scales' seat in Port Valen, facing the Council Hall across the plaza on Civic Heights. Brass balance-scales hang over its bronze-banded doors and a gilded river-serpent coils along the lintel. Inside, a vaulted counting floor holds four windows: Deposits and Letters, Writs and Registers, Dispatches, and a shuttered Contracts window.",
