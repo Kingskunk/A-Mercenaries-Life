@@ -2871,16 +2871,15 @@ A broad, steep flight of granite steps is cut directly into the sheer face of th
 *temp hint_steps_search ""
 *if (show_stat_hints)
   *if (guidance_active)
-    *set hint_steps_search " [WIS DC 11 (+1d4 Guidance), ~1 hour]"
+    *set hint_steps_search " [WIS DC 11 (+1d4 Guidance), ~3 hours]"
   *else
-    *set hint_steps_search " [WIS DC 11, ~1 hour]"
+    *set hint_steps_search " [WIS DC 11, ~3 hours]"
 
 *choice
   *if ((not((time_period = "Night") or (time_period = "Pre-Dawn"))) and (cut_scrap_wade_day < campaign_day))
     # Wade the weed-slick bottom landings and scavenge for scrap.${hint_steps_search}
       *set cut_scrap_wade_day campaign_day
-      *set cut_scrap_wade_count + 1
-      *set hours_to_pass 1
+      *set hours_to_pass 3
       *set minutes_to_pass 0
       *set time_advance_call_id "cut_steps_search_1"
       *gosub_scene calendar advance_time
@@ -2888,18 +2887,25 @@ A broad, steep flight of granite steps is cut directly into the sheer face of th
       *set check_dc 11
       *set check_skill "Scavenge the Mud"
       *gosub_scene startup roll_d20_check
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+        *set cut_scrap_wade_count + 1
+        *set minutes_since_wash + 300
+        *if (minutes_since_wash > 8640)
+          *set hygiene_stage "Foul"
+        *elseif (minutes_since_wash > 4320)
+          *set hygiene_stage "Grubby"
+        *if (check_success)
+          *set cut_scrap + 3
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id page_id
       *if (check_success)
-        You roll your sleeves high and wade the frigid canal sludge along the bottom landing, working your fingers deep into the weed-choked masonry joints where heavy river wash settles. 
-        
-        Twice your calloused fingers close over cold metal: a heavy forged iron oar-pin, and a rusted three-link length of dredge-chain. You rinse the black mud from the iron in the canal current and haul your finds onto dry stone.
-        *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-          *set cut_scrap + 2
-          *set stat_bump_locked true
-          *set locked_stat_bump_page_id page_id
+        You roll your sleeves high and wade the frigid canal sludge along the bottom landing for the better part of three hours, working your fingers deep into the weed-choked masonry joints where heavy river wash settles.
 
-        [b][⛓ Scrap Salvaged: 2 Pieces (The scrap yard pays for them)][/b]
+        Three times your calloused fingers close over cold metal: a heavy forged iron oar-pin, a rusted three-link length of dredge-chain, and a corroded strap-hinge crusted black with silt. You rinse the worst of the mud from the iron in the canal current and haul your finds onto dry stone, though the stink of the trench stays on your hands and clothes.
+
+        [b][⛓ Scrap Salvaged: 3 Pieces (The scrap yard pays for them)][/b]
       *else
-        You spend an hour knee-deep in the freezing silt, tearing through slimy bladderwrack and scraping your knuckles raw on sharp oyster shells. You haul up only a broken clay pipe stem, a rotten heel-tap, and bone-deep river chill that settles into your joints.
+        You spend three hours knee-deep in the freezing silt, tearing through slimy bladderwrack and scraping your knuckles raw on sharp oyster shells. You haul up only a broken clay pipe stem, a rotten heel-tap, and bone-deep river chill that settles into your joints, along with a stink of canal mud that clings to your clothes.
       *gosub_scene calendar recalc_hp_from_neglect
       *if (hp_current <= 0)
         *set death_cause "starvation"
