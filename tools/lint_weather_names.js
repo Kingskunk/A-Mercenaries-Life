@@ -6,7 +6,7 @@
  * that weather itself (the sky layer). Naming types elsewhere means a new weather type needs
  * an edit in every district.
  *
- * Four rules, all advisory:
+ * Five rules, all advisory:
  *   storm-blizzard-pair   a condition naming both Storm and Blizzard: use weather_severity >= 3
  *   weather-name-chain    a condition naming three or more weather types: use the flags
  *   weather-mixed         a condition mixing a weather-name test with another variable
@@ -16,6 +16,10 @@
  *   weather-in-prose      ${weather} printed inside a sentence ("With the Storm blowing"): it
  *                         prints the type name capitalised. A stat banner such as
  *                         [b]Weather:[/b] ${weather} is fine.
+ *   weather-memory-missing  a file that builds a sky chain but never reads ground_state: the
+ *                         weather-memory block narrative_guidelines.md section 10 requires at
+ *                         the foot of the sky layer is missing, so the ground turns dry the
+ *                         moment the sky does.
  *
  * A plain sky chain (*if (weather = "Rain") ... *elseif (weather = "Fog") ...) and pairs like
  * (weather = "Snow") or (weather = "Sleet") are allowed: that is the sky layer.
@@ -49,6 +53,9 @@ function lintFile(file) {
   const findings = [];
   if (path.basename(file) === 'calendar.txt') return findings;
   const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
+  // File-level state for the weather-memory rule at the end of this function.
+  let firstSkyLine = 0;
+  const hasGroundState = /\bground_state\b/.test(lines.join('\n'));
   for (let i = 0; i < lines.length; i++) {
     const trimmed = lines[i].trim();
     if (trimmed === '' || /^\*comment\b/.test(trimmed)) continue;
@@ -56,6 +63,7 @@ function lintFile(file) {
     if (CONDITION_LINE.test(trimmed)) {
       const tests = trimmed.match(WEATHER_TEST) || [];
       if (!tests.length) continue;
+      if (!firstSkyLine) firstSkyLine = i + 1;
       const names = tests.map((t) => /"([A-Za-z]+)"/.exec(t)[1]);
       let rule = null;
       if (names.includes('Storm') && names.includes('Blizzard')) {
@@ -85,6 +93,17 @@ function lintFile(file) {
       if (/[A-Za-z]/.test(before)) findings.push({ file, line: i + 1, rule: 'weather-in-prose', context: trimmed.slice(0, 110) });
     }
   }
+
+  // File-level: a file that builds a sky chain must also read the ground's memory, so rain
+  // outlives the rain (narrative_guidelines.md section 10, QUEST_DESIGN_RULES.md section 12).
+  if (firstSkyLine && !hasGroundState) {
+    findings.push({
+      file,
+      line: firstSkyLine,
+      rule: 'weather-memory-missing',
+      context: 'sky chain with no ground_state read: add the weather-memory block at the foot of the sky layer',
+    });
+  }
   return findings;
 }
 
@@ -94,9 +113,9 @@ for (const f of files) all = all.concat(lintFile(f));
 
 console.log(`Scanned ${files.length} file(s).\n`);
 if (!all.length) {
-  console.log('No weather-name issues found.');
+  console.log('No weather rule issues found.');
 } else {
-  console.log(`${all.length} weather-name issue(s):\n`);
+  console.log(`${all.length} weather rule issue(s):\n`);
   const byRule = {};
   for (const f of all) {
     byRule[f.rule] = (byRule[f.rule] || 0) + 1;

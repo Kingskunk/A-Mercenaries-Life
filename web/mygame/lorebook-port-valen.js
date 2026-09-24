@@ -33,7 +33,7 @@
         "A hawk-nosed man with ink-stained thumbs who stands on an upturned cargo crate with a brass seal pinned to his salt-crusted oilskin coat, calling hull numbers down to a runner. He keeps the harbor registry: every hull is logged, and manifests are sealed with red wax before cargo moves.",
         "He is a customs official, not a Watch officer. His lamp burns in the customs tower window long after the quay shuts, while he audits the next day's tide manifests."
       ],
-      see: ["cargo_quay", "port_watch", "dell"]
+      see: ["cargo_quay", "weigh_house", "port_watch", "dell"]
     },
     {
       id: "maret", category: "people", title: "Maret",
@@ -356,7 +356,7 @@
     {
       id: "tolliver", category: "people", title: "Clerk Tolliver",
       sub: "Clerk of the Open Roll",
-      role: "Clerk, Postings window, the Open Roll (Civic Heights records house)",
+      role: "Clerk, Postings window, the Open Roll (the Council Hall)",
       link: ["Clerk Tolliver"],
       tags: ["Civic Heights", "Law"], aliases: ["Tolliver", "clerk", "roll clerk", "postings"],
       unlock: "ch_records_seen",
@@ -365,7 +365,7 @@
           "A broad-shouldered clerk in a dark grey coat and a matching cap, with a straight back and the flat, carrying voice of a man who reads other people's terms aloud all day. He keeps the Postings window at the Open Roll. Reading the wall is free. Signing costs."
         ];
         if (truthy(s.ch_roll_rules_talk)) {
-          out.push("To him the Roll is the law and not a courtesy, and the words carved over the arch are there so nobody can say they did not see them.");
+          out.push("To him the Roll is the law and not a courtesy, and the words carved over the lintel are there so nobody can say they did not see them.");
         }
         if (truthy(s.ch_roll_claims_talk)) {
           out.push("He has a low opinion of people who reach the Claims window without reading the wall first. Most of them, he says, did not.");
@@ -391,13 +391,13 @@
     },
     {
       id: "harbor_quayside", category: "places", title: "Harbor Quayside",
-      sub: "Port Valen's maritime gateway",
+      sub: "The waterfront",
       tags: ["Quayside", "Port Valen"], aliases: ["quayside", "harbor", "docks", "waterfront"],
       link: ["Harbor Quayside"],
       unlock: "port_valen_harbor_seen",
       body: [
-        "Port Valen's maritime gateway: stone customs arches, wooden cargo slips, granite wharves, and massive balance cranes jutting out over the estuary swell. Deep-hulled merchant vessels ride at anchor in the outer roadstead, while flat-bottomed river barges and fishing smacks crowd the inner docks.",
-        "The quayside holds the Cleaved Keel, the Cargo Quay under the customs tower, the shipwrights' ways of the Iron Wharves, the long pier out to the wreck-bell, and the Fishmongers' Slip. Most of it shuts at dusk."
+        "One long line of stone and timber along the estuary: the fish market's granite ramp and the low wooden taverns at the western end, the cargo quay with its slips and massive balance cranes, a squat customs tower where the road down from the terraces meets the quay gate, then the shipyard wall and a long stone breakwater running out toward the bar. Deep-hulled merchant vessels ride at anchor in the outer roadstead, while flat-bottomed river barges and fishing smacks crowd the inner docks.",
+        "From west to east the quayside holds the Fishmongers' Slip, the Cleaved Keel, the Cargo Quay with its long grey hall under an iron beam-scale and the customs tower at its end, the shipwrights' ways of the Iron Wharves, and the long pier out to the wreck-bell. Most of it shuts at dusk."
       ],
       see: ["cleaved_keel", "cargo_quay", "iron_wharves", "pier", "fishmongers_slip", "port_valen"]
     },
@@ -415,15 +415,57 @@
     },
     {
       id: "cargo_quay", category: "places", title: "The Cargo Quay",
-      sub: "The harbor registry",
+      sub: "Under the customs tower",
       tags: ["Quayside", "Law", "Trade"], aliases: ["customs", "customs tower", "registry", "toll tower", "cargo line"],
       link: ["Cargo Quay"],
       unlock: "pv_quays_seen",
       body: [
-        "The cargo quay runs from the fish market toward the toll tower, and it is one long argument conducted in stamped parchment. Guild clerks in the river-serpent colors of the Gilded Scales move crate to crate with wax tablets, while Port Watch officers walk the line with cudgels slung but visible.",
-        "The registry box stands under the tower, where the dockmaster's lamp burns in the window. Crane three, on the cargo line, takes day labor."
+        "The cargo quay runs from the taverns by the fish market toward the customs tower, and it is one long argument conducted in stamped parchment. Guild clerks in the river-serpent colors of the Gilded Scales move crate to crate with wax tablets, while Port Watch officers walk the line with cudgels slung but visible.",
+        "Midway along it stands a long hall of grey stone under a great iron beam-scale. The registry box stands under the customs tower at its end, where the dockmaster's lamp burns in the window. Crane three, on the cargo line, takes day labor."
       ],
-      see: ["voss", "dell", "gilded_scales", "port_watch"]
+      see: ["voss", "dell", "gilded_scales", "port_watch", "weigh_house"]
+    },
+    {
+      id: "weigh_house", category: "places", title: "The Weigh House",
+      sub: "The city's scales on the cargo quay",
+      tags: ["Quayside", "Trade"], aliases: ["weigh house", "weigh-house", "beam-scale", "scale house", "slate", "price boards"],
+      link: ["The Weigh House", "Weigh House"],
+      unlock: "wh_named",
+      body: function (s) {
+        var out = [
+          "A long hall of grey stone midway along the cargo quay, with cart doors wide enough for a laden dray and a great iron beam-scale hung from its gable. Cut into the lintel is the line One Weight for All. Inside are platform scales sunk in the floor, racks of brass weights, and a wall of black boards ruled in columns, one for each good the port handles.",
+          "It opens at Seventh Bell, stays open in bad weather, and shuts at the evening horn and on Hallowday. A chalkboard on a post by the doors gives tomorrow's weather."
+        ];
+        if (truthy(s.wh_floor_talk)) {
+          out.push("Goods are weighed here by the load, on the city's standard weights, before they are bought or sold, and a load on a cart may be brought to the scale. Fresh fish is not weighed here: the Fishmongers' Slip keeps its own market.");
+        }
+        if (truthy(s.wh_slate_talk)) {
+          out.push("Wet wool and wet grain weigh heavier than dry, so a merchant who knows tomorrow's weather knows what his load will weigh. The same forecast is pinned to the board at the Gilded Scales head house on Civic Heights.");
+        }
+        if (truthy(s.ch_tax_licence_talk)) {
+          out.push("Selling goods by the load here needs a Trade Licence from the Council Hall's tax windows. Without one, the Weighmaster will weigh a cart and no more.");
+        }
+        return out;
+      },
+      see: ["odo_farrow", "cargo_quay", "voss", "fishmongers_slip", "scales_head_house", "harbor_quayside", "trade_licence"]
+    },
+    {
+      id: "odo_farrow", category: "people", title: "Odo Farrow",
+      sub: "Weighmaster of the Weigh House",
+      role: "Weighmaster, the Weigh House",
+      link: ["Odo Farrow", "Weighmaster Farrow", "Farrow"],
+      tags: ["Quayside", "Trade"], aliases: ["Farrow", "Odo", "weighmaster"],
+      unlock: "wh_seen",
+      body: function (s) {
+        var out = [
+          "A stout, bald man in a grey coat and a leather apron, with a brass plumb-bob on a cord at his belt and chalk to the elbows, who keeps the great scale from a low platform beside it. He says nothing leaves his floor unweighed and nothing on it is weighed twice."
+        ];
+        if (truthy(s.wh_hull_talk)) {
+          out.push("He leaves hulls, papers and duties to the Dockmaster at the customs tower and weighs what comes off them.");
+        }
+        return out;
+      },
+      see: ["weigh_house", "voss"]
     },
     {
       id: "iron_wharves", category: "places", title: "The Iron Wharves",
@@ -445,6 +487,7 @@
       unlock: "pv_pier_seen",
       body: [
         "A long stone breakwater that runs out over the shoals toward the outer bar. At its head stand a jetty crane and a gallows-frame, and beyond the last stone a bronze bell on the reef counts the surge in slow strokes.",
+        "At its landward end a small iron-hooded shrine, the Tide-Well, stands beside the landing stairs.",
         "Names of the lost are scratched into the frame post at every height a hand can reach, with no list and no keeper: whoever loses someone to the bar adds a mark, and whoever passes touches one. Skiffs tie off along the lower stone ladders."
       ],
       see: ["tobin", "marl", "harbor_quayside", "wreck_law"]
@@ -540,7 +583,7 @@
           out.push("The dealer buys chain, plate, oar-pins and anything with iron in it, and flat stone for paving, because somebody in the quarter is always relaying a lane.");
         }
         if (n >= 2) {
-          out.push("Some weeks chain comes in with the harbor-master's mark rasped off it. The dealer weighs it and does not ask.");
+          out.push("Some weeks chain comes in with the dockmaster's mark rasped off it. The dealer weighs it and does not ask.");
         }
         return out;
       },
@@ -901,6 +944,72 @@
       see: ["charter_gate", "port_watch"]
     },
     {
+      id: "cathedral", category: "places", title: "The Cathedral",
+      sub: "The Sun-Father's house above the Council Hall",
+      tags: ["Civic Heights", "Faith"], aliases: ["cathedral", "church", "kettles", "poor-box", "althea chapel", "side chapel"],
+      link: ["The Cathedral", "the cathedral"],
+      unlock: "cath_seen",
+      body: function (s) {
+        var out = [
+          "A church of pale limestone above the Council Hall, with three tall arched doors of black oak, two bell towers, and the line The Sun-Father's House. All Oaths Are Sworn in His Sight cut over the middle door. Iron soup kettles stand at the foot of the steps by day, one bowl to a head from First Bell until the pots are empty.",
+          "It is open to everyone. The great doors stand open from Morning through Dusk, and at night a small door in one leaf is left unlatched under a lantern while people sleep in the back pews."
+        ];
+        if (truthy(s.cath_hall_seen)) {
+          out.push("Inside, one long hall of limestone pillars runs to a great gilded figure of the Sun-Father in plate armor over the altar. Banners of the great houses hang on the pillars, with brass plates that grow larger the nearer they hang to the altar.");
+        }
+        if (truthy(s.cath_chapel_seen)) {
+          out.push("A small chapel at the end of the north aisle keeps a veiled limestone figure of Saint Althea, with linen strips tied along its rail and river pebbles, pins and candle stubs in a clay bowl. The poor-box stands there, and what is left in it is spent on the kettles. Over the arch is cut: Who Shelters Here Is Not Taken Here.");
+        }
+        return out;
+      },
+      see: ["sun_father", "saint_althea", "alley_shrine", "sanctuary_charter", "civic_heights"]
+    },
+    {
+      id: "port_watch_hq", category: "places", title: "The Port Watch Headquarters",
+      sub: "The Watch's gatehouse and yard beside the Council Hall",
+      tags: ["Civic Heights", "Law"], aliases: ["watch yard", "watch headquarters", "watch hq", "guardhouse", "notice board", "duty desk"],
+      link: ["Port Watch Headquarters", "the Watch yard", "Watch yard"],
+      unlock: "pw_seen",
+      body: function (s) {
+        var out = [
+          "A gatehouse passage beside the Council Hall's west wing, signed Port Watch, with a duty desk, a notice board under the eave and an iron inner gate. Through the bars a cobbled yard runs back to a long two-storey guardhouse of dark stone, sheds full of tagged crates and casks, and a barred stair going down to the cells.",
+          "The public goes no further than the gatehouse passage. The desk is kept from Morning through Afternoon, and after that only a hatch in the gatehouse wall stays open."
+        ];
+        if (truthy(s.pw_talk_rounds)) {
+          out.push("The Watch wants hands for the night rounds, paid by the week. The captain draws the rosters herself and signs no one she has not looked at twice.");
+        }
+        return out;
+      },
+      see: ["denna_brask", "gerrit_lund", "port_watch", "civic_heights"]
+    },
+    {
+      id: "denna_brask", category: "people", title: "Denna Brask",
+      sub: "A captain of the Port Watch",
+      role: "Captain, Port Watch (the quays and the lower city)",
+      link: ["Denna Brask", "Captain Brask", "Brask"],
+      tags: ["Civic Heights", "Law"], aliases: ["Brask", "Denna", "watch captain"],
+      unlock: "pw_captain_seen",
+      body: function (s) {
+        var out = [
+          "A short, square woman of about fifty with cropped iron-grey hair, a scar through one eyebrow and a blue-and-brass sash across a boiled-leather coat. She commands the Watch's patrols on the quays and in the lower city. She does not see walk-ups, and comes to the inner gate only for those whose names she knows."
+        ];
+        return out;
+      },
+      see: ["port_watch_hq", "port_watch"]
+    },
+    {
+      id: "gerrit_lund", category: "people", title: "Gerrit Lund",
+      sub: "Duty sergeant of the Port Watch",
+      role: "Duty sergeant, Port Watch",
+      link: ["Gerrit Lund", "Sergeant Lund", "Lund"],
+      tags: ["Civic Heights", "Law"], aliases: ["Lund", "Gerrit", "duty sergeant"],
+      unlock: "pw_desk_seen",
+      body: [
+        "A heavy man with a drooping moustache and a quill behind his ear, who keeps the duty desk in the gatehouse passage by day. Complaints go to his left and claims to his right, and he wants to hear first if there is blood. He is the public face of the Watch: the captain sees only those she knows."
+      ],
+      see: ["port_watch_hq"]
+    },
+    {
       id: "scales_head_house", category: "places", title: "The Gilded Scales Head House",
       sub: "The Scales' seat on Civic Heights",
       tags: ["Civic Heights", "Gilded Scales", "Trade"], aliases: ["head house", "scales head house", "counting floor", "deposits", "dispatch board", "bank"],
@@ -1082,20 +1191,49 @@
       link: ["Civic Heights"],
       unlock: "civic_heights_seen",
       body: [
-        "The road from the Middle Ward ends at a broad plaza of cut limestone, and the buildings change from timber to stone. The Council Hall stands at its head, with the tax hall, the records house and the magistrates' courts around the plaza and the Port Watch headquarters beside the courts. Painted boards mark the public windows, where petitioners wait beneath the eaves.",
-        "The cathedral rises above the courts on an older foundation, its bells carrying over every district. Charity kitchens cluster around its steps, and the sick and the displaced gather there."
+        "The road from the Middle Ward ends at a broad plaza of cut limestone, and the buildings change from timber to stone. The Council Hall stands at its head, tall-windowed and long-winged, with the tax windows and the Open Roll in its east wing and the Port Watch headquarters beside its west wing. Painted boards mark the public windows, where people wait beneath the eaves.",
+        "The cathedral rises above the Council Hall's roofline on an older foundation, its bells carrying over every district. Charity kitchens cluster around its steps, and people in thin, mended clothes queue there."
       ],
       see: ["open_roll", "council", "port_watch", "middle_ward"]
     },
     {
+      id: "magistrates_court", category: "places", title: "The Magistrates' Court",
+      sub: "The courtroom in the Council Hall's west wing",
+      tags: ["Civic Heights", "Law"], aliases: ["court", "courts", "courtroom", "magistrates", "magistrate", "dock", "bench"],
+      link: ["Magistrates' Court", "the courts"],
+      unlock: "ch_court_seen",
+      body: [
+        "A tall limestone courtroom behind the west arch of the Council Hall, with a raised bench of dark oak under the city's three-masted seal, a clerk's table, a railed witness stand, and a low railed dock beside a barred door at the top of a narrow stair that goes down into the dark. Rows of public benches face the bar.",
+        "It sits from Seventh Bell until noon, and in the afternoon the iron gate across the west arch is drawn shut. Cases are heard in the order they were filed, at the Open Roll or at the Watch's duty desk, and anyone may sit on the public benches and listen."
+      ],
+      see: ["council", "open_roll", "port_watch_hq"]
+    },
+    {
+      id: "trade_licence", category: "lore", title: "The Trade Licence",
+      sub: "Leave to sell by the load",
+      tags: ["Civic Heights", "Trade", "Law"], aliases: ["licence", "license", "trade licence", "tax windows", "long counter", "taxes"],
+      link: ["Trade Licence"],
+      unlock: "ch_tax_seen",
+      body: function (s) {
+        var out = [
+          "Two tax windows serve the Council Hall's east wing. The long counter, with its long queue in plain coats, sells and renews the Trade Licence, a paper entered on the city's records that lasts a set number of days and can be extended. The side window has its own private door, where clerks in river-serpent colors pass in leather cases and take out folded receipts."
+        ];
+        if (truthy(s.ch_tax_licence_talk)) {
+          out.push("The licence is the Council's leave to sell goods by the load at the Weigh House. Without one, the Weighmaster will weigh a cart and no more, and the holder's name goes on the records.");
+        }
+        return out;
+      },
+      see: ["council", "weigh_house", "entry_writs", "open_roll"]
+    },
+    {
       id: "open_roll", category: "places", title: "The Open Roll",
-      sub: "Public contracts at the records house",
+      sub: "Public contracts in the Council Hall",
       tags: ["Civic Heights", "Law", "Trade"], aliases: ["records house", "contracts", "postings", "hiring", "claims", "wages", "job board", "work"],
       link: ["Open Roll"],
       unlock: "ch_records_seen",
       body: function (s) {
         var out = [
-          "A long stone hall in the records house on the Civic Heights plaza. Hirers post the terms of their contracts on wooden frames along the walls, each sealed by the patron and stamped with the city's three-masted seal. Carved over the arch: What Is Not on the Roll Is Not Owed. Sellswords, guards, drivers and hired hands read the postings here and wait for the Postings, Claims and Seals windows.",
+          "A long stone hall in the east wing of the Council Hall on the Civic Heights plaza. Hirers post the terms of their contracts on wooden frames along the walls, each sealed by the patron and stamped with the city's three-masted seal. Carved over the lintel: <i>What is not in the records does not exist in the world.</i> Sellswords, guards, drivers and hired hands read the postings here and wait for the Postings, Claims and Seals windows.",
           "The hall is open by day and shuts when the evening horn sounds and on the holy day."
         ];
         if (truthy(s.ch_roll_rules_talk)) {
@@ -1103,6 +1241,9 @@
         }
         if (truthy(s.ch_roll_claims_talk)) {
           out.push("A worker who was not paid files a claim at the Claims window with a copy of the posting. If the terms are on the Roll, the court can order the patron to pay, and the city takes its fee out of what it wins back. If they are not on the Roll, there is nothing to file.");
+        }
+        if (truthy(s.ch_roll_deeds_talk)) {
+          out.push("A fourth window, Deeds, stands behind a permanent iron shutter. A house changes hands on the records or not at all, and the window opens when there is a sale to witness.");
         }
         return out;
       },
@@ -1142,11 +1283,27 @@
       tags: ["Civic Heights", "Gilded Scales", "Law"], aliases: ["council of factors", "free city", "Free City", "council hall", "plutocracy", "tax hall"],
       link: ["Council of Factors", "Council Hall", "Free City of Port Valen"],
       unlock: "civic_heights_seen",
-      body: [
-        "Port Valen calls itself a free city, and its ruling council sits in the Council Hall on Civic Heights, under a bronze balance-scale and the carved words <i>The Free City of Port Valen</i>. Each door on the plaza bears the city's three-masted seal.",
-        "Two lines run at the tax hall. The long one, for householders and small traders, winds out the door and down the steps. The other is a side window with no line at all, where clerks in river-serpent colors hand in leather cases and take out stamped receipts."
-      ],
-      see: ["gilded_scales", "civic_heights", "port_watch", "alderford"]
+      body: function (s) {
+        var out = [
+          "Port Valen calls itself a free city, and its ruling council sits in the Council Hall on Civic Heights, under a bronze balance-scale and the carved words <i>The Free City of Port Valen</i>. Each door on the plaza bears the city's three-masted seal.",
+          "Two lines run at the tax windows in the east wing. The long one winds out the door and down the steps. The other is a side window with no line at all, where clerks in river-serpent colors hand in leather cases and take out stamped receipts."
+        ];
+        if (truthy(s.ch_hall_seen)) {
+          out.push("The Council Hall is the one grand civic building on the plaza. Inside its bronze-banded doors a limestone concourse runs the width of the building, with the Open Roll through the arch at the east end, an iron-gated arch at the west end, and a stair to an upper floor behind a red cord. It is open from Seventh Bell until the evening horn, and shut on Hallowday.");
+        }
+        if (truthy(s.ch_court_seen)) {
+          out.push("The west arch opens on the magistrates' court, which sits from Seventh Bell until noon; in the afternoon the iron gate across the arch is drawn shut.");
+        }
+        if (truthy(s.ch_gal_board_seen)) {
+          out.push("The Council sits every tenth day, from Noon until the evening horn, and on the next day if the tenth falls on Hallowday. A board at the foot of the stair gives the next sitting, and petitions for a sitting must be on the Roll ten days before it.");
+          out.push("Twelve houses sit on the Council of Factors, each by its Factor and a deputy. The Chair of the Council passes to the next house each year, and the First Factor answers to the Council.");
+        }
+        if (truthy(s.ch_gal_seen)) {
+          out.push("A public gallery of dark oak runs around three sides of the round-ended chamber, over a horseshoe of high-backed chairs painted with the crests of the great houses, a long table on a dais, and a great carved balance-scale. A plain chair with no crest stands at the foot of the dais, where a person in a black coat with river-serpent cuffs sits apart from the rest. The public may sit and watch but not speak. Each petitioner at the rail gets a sand-glass, and a person in a heavy chain in the central chair answers with a word, often \"Heard.\"");
+        }
+        return out;
+      },
+      see: ["gilded_scales", "civic_heights", "port_watch", "alderford", "trade_licence", "magistrates_court"]
     },
     {
       id: "auction_block", category: "history", title: "The Auction Block",

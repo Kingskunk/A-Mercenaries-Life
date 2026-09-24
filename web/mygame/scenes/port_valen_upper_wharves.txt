@@ -22,7 +22,8 @@
 *comment
 *comment PLACES: the Inner Gate (Gate-Captain Alys Threnn), the Avenue of Estates (Houses Halloran, Vantry and
 *comment Ostrand), the Terrace Walk (four views that fix the city's layout), and the Gilt Needle (tailor, Master Idris
-*comment Fenwick). Layers (see port_valen_dredge_end.txt): place, sky (pq_sky, shared), street, tell. Profile: private,
+*comment Fenwick). Layers (see port_valen_dredge_end.txt): place, sky (pq_sky, shared, with weather memory from
+*comment ground_state at the end of it), street (reads street_life: normal, thin or empty), tell. Profile: private,
 *comment quiet, guard-heavy; foul weather barely changes it, but at severity 3 the avenue empties.
 *comment
 *comment HOOKS, not built: SHOP HOOK at the Gilt Needle (cloaks, belts, gloves, boots and finer clothing on the gear
@@ -87,11 +88,17 @@
     A heavy, starless night hangs over the high ridge, keeping the pale stone fronts cold and dark.
   *else
     A high, leaden overcast settles over the ridge, keeping the clean avenue cold and grey.
+
+*comment ── WEATHER MEMORY (calendar ground_state, strictly no people) ──
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  After days of rain, runoff still creeps down the estate walls and stands in the granite gutters, and the paving stays dark and wet underfoot.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The paving is still slick from the last rain, and a thin trickle of runoff works along the gutters.
 *return
 
 *label pq_gate_place
 *comment LAYER 1 of the Inner Gate: constant geography and smell, shared by the refused and admitted views.
-The road climbs above the lower streets to an inner gatehouse of dressed stone, with a broad arch, iron-studded leaves, and a walkway along the top. A bronze plate beside the arch reads [i]"Entry by Sealed Writ."[/i] Past the arch the paving stones are whole and the gutters are cut from granite. The air smells of beeswax, cut lavender, and cold stone.
+The road climbs above the lower streets to an inner gatehouse of dressed stone, with a broad arch, iron-studded leaves, and a walkway along the top. A bronze plate beside the arch reads [i]"Entry by Sealed Writ."[/i] Past the arch the paving stones are whole and the gutters are cut from granite.
 *return
 
 *comment ── THE INNER GATE ──
@@ -112,7 +119,12 @@ The road climbs above the lower streets to an inner gatehouse of dressed stone, 
 
 *gosub pq_sky
 
-*if (pq_gate_state = "night")
+*if ((street_life = "empty") and (not(pq_gate_state = "night")))
+  *if (weather_cold)
+    Snow drives across the road above the lower streets. The gate lamps burn small in it, and the guards stand deep in the lee of the arch with their collars up, watching a stretch of paving that nobody crosses.
+  *else
+    Rain sweeps the road above the lower streets in sheets. The gate lamps swing on their brackets, and the guards keep in under the arch out of the worst of it, halberds grounded, watching carriages that do not come.
+*elseif (pq_gate_state = "night")
   *if (pq_roll = 1)
     A lantern burns in the gatehouse arch, and two house guards stand under it in matching surcoats, halberds crossed over the way.
   *elseif (pq_roll = 2)
@@ -127,18 +139,24 @@ The road climbs above the lower streets to an inner gatehouse of dressed stone, 
   *else
     The last callers leave the avenue in twos and threes, and the guards watch each one pass with flat, unhurried care.
 *else
-  *if (pq_roll = 1)
-    Two house guards in matching surcoats stand either side of the arch, halberds crossed over the way whenever someone approaches on foot.
-  *elseif (pq_roll = 2)
-    A carriage rolls through with its writ held out of the window, and the guards are already crossing their halberds again before its wheels have cleared the arch.
+  *if (street_life = "normal")
+    *if (pq_roll = 1)
+      Two house guards in matching surcoats stand either side of the arch, halberds crossed over the way whenever someone approaches on foot.
+    *elseif (pq_roll = 2)
+      A carriage rolls through with its writ held out of the window, and the guards are already crossing their halberds again before its wheels have cleared the arch.
+    *else
+      A guard with a book under his arm reads a caller's writ against the names on the page and waves a footman through behind him.
   *else
-    A guard with a book under his arm reads a caller's writ against the names on the page and waves a footman through behind him.
+    *if (pq_roll = 1)
+      A caller stands under the arch with his writ held inside his coat while the guard reads it, and a cart waits behind him at the curb.
+    *else
+      The guards keep close to the shelter of the arch, and the callers come up the road one at a time and do not linger.
 
 A guard lowers his halberd across the arch as you approach. "Writ," he says. You have none. "Then you cannot pass," he says, with no heat in it. "The Gilded Scales head house on Civic Heights sells them, a Day Writ for the day or a Registered Writ for thirty. Nothing is written against you for asking."
 
 *choice
   # Read the bronze plate beside the arch.
-    The plate is polished by many hands and reads in full: [i]"The Patrician Quarter. Entry by Sealed Writ Only. Writs Are Sold at the Gilded Scales Head House, Civic Heights. The House Guard Keeps This Gate."[/i]
+    The plate is polished by many hands and reads in full: [i]"The Patrician Quarter. Entry by Sealed Writ Only. The House Guard Keeps This Gate."[/i]
     *page_break Step back from the arch…
     *goto pq_gate_refused
   # [Travel: Head to another district]
@@ -174,7 +192,12 @@ A guard steps out from a portico and holds up a hand. "Your writ has lapsed," he
 *else
   Gate-Captain Threnn stands beside her slanted desk under the arch, reading the book.
 
-*if (pq_gate_state = "night")
+*if ((street_life = "empty") and (not(pq_gate_state = "night")))
+  *if (weather_cold)
+    Snow drives in fine grains through the arch, and the captain's book is weighted flat against the wind. Beyond the arch the avenue lies white and empty, and the guards keep to the gatehouse.
+  *else
+    Rain hisses on the flagstones inside the arch, and the captain's book is weighted flat against the gusts. Beyond the arch the avenue stands empty and streaming, and the guards keep to the gatehouse.
+*elseif (pq_gate_state = "night")
   *if (pq_roll = 1)
     The house guards keep the arch in shifts, two at the crossed halberds and one on the walkway, and the mastiffs lie in the gatehouse lamplight.
   *elseif (pq_roll = 2)
@@ -189,12 +212,18 @@ A guard steps out from a portico and holds up a hand. "Your writ has lapsed," he
   *else
     Carriages leave in a line with their lamps lit, and the guards stand back from the arch with their halberds grounded.
 *else
-  *if (pq_roll = 1)
-    Callers pass through in ones and twos. Each shows a slip or a card at the desk, and the guards cross their halberds and lift them again with a sound like a latch.
-  *elseif (pq_roll = 2)
-    A carriage waits while the captain reads its passenger's card against the book, and the coachman stares straight ahead, the reins slack in his hands.
+  *if (street_life = "normal")
+    *if (pq_roll = 1)
+      Callers pass through in ones and twos. Each shows a slip or a card at the desk, and the guards cross their halberds and lift them again with a sound like a latch.
+    *elseif (pq_roll = 2)
+      A carriage waits while the captain reads its passenger's card against the book, and the coachman stares straight ahead, the reins slack in his hands.
+    *else
+      Two footmen carry a folded screen through the arch for one of the great houses while a guard walks alongside them, counting the pieces.
   *else
-    Two footmen carry a folded screen through the arch for one of the great houses while a guard walks alongside them, counting the pieces.
+    *if (pq_roll = 1)
+      Callers come through singly and keep moving, showing their slips at the desk without stopping to talk.
+    *else
+      The captain counts the few people through the arch and writes them into the book as they pass.
 
 *choice
   # Look up at the gatehouse and the walkway.
@@ -238,7 +267,7 @@ A guard steps out from a portico and holds up a hand. "Your writ has lapsed," he
 *line_break
 [b][⏳ Patrician Quarter Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
 *line_break
-Past the inner gatehouse, the avenue runs straight and wide between great houses, each a block of pale stone behind an iron-studded gate, with a courtyard behind it and rows of tall windows above. The paving stones are whole, the gutters are cut from granite, and walled estates with their own gates climb the slope behind them. A stair of shallow steps at the head of the avenue climbs to a tree-lined promenade, and a gilt needle threaded with red silk hangs over a narrow shopfront near the gatehouse. The air smells of beeswax, cut lavender, and cold stone.
+Past the inner gatehouse, the avenue runs straight and wide between great houses, each a block of pale stone behind an iron-studded gate, with a courtyard behind it and rows of tall windows above. Walled estates with their own gates climb the slope behind them. A stair of shallow steps at the head of the avenue climbs to a tree-lined promenade, and a gilt needle threaded with red silk hangs over a narrow shopfront near the gatehouse. The air smells of beeswax, cut lavender, and cold stone.
 
 *gosub pq_sky
 
@@ -246,7 +275,7 @@ Past the inner gatehouse, the avenue runs straight and wide between great houses
 *if ((street_life = "empty") and (not(uw_night)))
   The avenue is deserted. The house guards have drawn back into the stone porticos, carriages stand under the gate arches with their horses blanketed, and the only movement is a figure in an oilskin cape crossing between two houses.
   *if ((uw_workday) and (day_of_week = "Hallowday"))
-    Bells toll from the heights above, and the great houses keep their gates shut.
+    Bells toll from the heights above over an avenue that has shut itself in.
 *elseif (uw_night)
   *if (pq_roll = 1)
     Iron gates are shut across the great houses, and lamps burn in the estate walls. Guards with halberds and mastiffs pace the avenue in pairs, and high in one house a single window glows.
@@ -293,7 +322,7 @@ Past the inner gatehouse, the avenue runs straight and wide between great houses
     *gosub pq_walk_time
     *goto pq_walk
   *if (pq_shop_open)
-    *if (pq_tailor_seen)
+    *if ((pq_tailor_seen) or (pq_tailor_named))
       # Step into the Gilt Needle to see Master Fenwick. [~5 min]
         *set minutes_to_pass 5
         *set time_advance_call_id "pq_walk_tailor_1"
@@ -308,6 +337,7 @@ Past the inner gatehouse, the avenue runs straight and wide between great houses
   *else
     # Read the card on the tailor's shuttered door.
       A card in the bow-glass window reads: [i]"The Gilt Needle. Idris Fenwick, Tailor to the Quarter. Fittings by Appointment, Seventh Bell to the Evening Horn. Closed on Hallowday."[/i]
+      *set pq_tailor_named true
       *page_break Step back from the door…
       *goto pq_avenue
   # Walk back to the Inner Gate and the gate-captain. [~5 min]
@@ -333,7 +363,12 @@ The avenue bends along the slope past three great houses, each with its own gate
 
 *gosub pq_sky
 
-*if (pq_night_e)
+*if ((street_life = "empty") and (not(pq_night_e)))
+  *if (weather_cold)
+    Snow drives across the avenue and banks against the three gates. The crests stand white overhead, and no one comes out to sweep the steps.
+  *else
+    Rain sweeps the avenue past the three gates. The crests hang wet and dark overhead, and no one comes out to the flags.
+*elseif (pq_night_e)
   *if (pq_roll = 1)
     A guard stands under each crest with a lantern hung on his halberd, and beyond the black gate of House Ostrand a single light burns high in the house.
   *else
@@ -344,10 +379,16 @@ The avenue bends along the slope past three great houses, each with its own gate
   *else
     The three gates close in turn as the lamps come on, and the guards at each take up their posts beneath the crest.
 *else
-  *if (pq_roll = 1)
-    A man in green livery polishes the knocker on the Halloran gate while two men in blue and silver walk a pair of matched greys down the avenue.
+  *if (street_life = "normal")
+    *if (pq_roll = 1)
+      A man in green livery polishes the knocker on the Halloran gate while two men in blue and silver walk a pair of matched greys down the avenue.
+    *else
+      A man in black livery comes out of the Ostrand gate with a leather case and crosses the avenue, and the guard under the crest watches him the whole way.
   *else
-    A man in black livery comes out of the Ostrand gate with a leather case and crosses the avenue, and the guard under the crest watches him the whole way.
+    *if (pq_roll = 1)
+      A groom crosses the avenue at a run with a cloak over his head, and the guard under the Halloran crest watches him go.
+    *else
+      A porter works a hand-cart of sacks in through the Vantry gate with his hood up, and the porter's window shuts behind him.
 
 *choice
   # Study the gate of House Halloran.
@@ -383,7 +424,12 @@ A long promenade of pale paving runs along the crest of the ridge, edged on the 
 
 *gosub pq_sky
 
-*if (pq_night_w)
+*if ((street_life = "empty") and (not(pq_night_w)))
+  *if (weather_cold)
+    The wind comes over the rail hard enough to lean against, driving snow the length of the paving. The benches stand drifted white, and the walk runs empty to the far lamps.
+  *else
+    Rain drives slantwise across the walk, sheeting off the rail and standing in the hollows of the paving. The benches shine wet, and the paving is left to the weather.
+*elseif (pq_night_w)
   *if (pq_roll = 1)
     The walk is empty except for a guard at the far end, standing under a lamp with his halberd grounded, watching the dark bowl of the lower city.
   *else
@@ -394,10 +440,16 @@ A long promenade of pale paving runs along the crest of the ridge, edged on the 
   *else
     A lamplighter works his way along the standards with a long taper, and the promenaders drift toward the avenue as each one comes on.
 *else
-  *if (pq_roll = 1)
-    People in fine coats and gowns stroll the walk in twos and threes, a young woman a pace behind each with a parasol, and a boy sells sugared almonds from a tray by the stair.
+  *if (street_life = "normal")
+    *if (pq_roll = 1)
+      People in fine coats and gowns stroll the walk in twos and threes, a young woman a pace behind each with a parasol, and a boy sells sugared almonds from a tray by the stair.
+    *else
+      An elderly man in a fur-trimmed gown sits on a bench with a folded newssheet, watching the harbor through a brass spyglass.
   *else
-    An elderly man in a fur-trimmed gown sits on a bench with a folded newssheet, watching the harbor through a brass spyglass.
+    *if (pq_roll = 1)
+      A couple walk the length of the promenade under one cloak and turn back at the far end, and the benches stay empty behind them.
+    *else
+      A single guard walks the paving and stops at each lamp-standard, and the walk stays empty to its far end.
 
 *choice
   # Look south over the harbor. [~5 min]
@@ -428,7 +480,10 @@ A long promenade of pale paving runs along the crest of the ridge, edged on the 
   The mist lies too thick to see past the nearest rooftops. Come back when it clears.
   *page_break Step back from the rail…
   *goto pq_walk
-Below the rail the whole city falls away in tiers to the bay. Warehouse roofs and tall cranes crowd the waterline, and slipways smoke along the shore where hulls stand in their cradles. A long pier runs out over the shoals toward a bell hung on the reef, and beyond the breakwater the roadstead opens to the sea, with hulls riding at anchor. On a hillside shoulder above the harbor, a black raven banner snaps over a palisade.
+*elseif (weather_visibility = "reduced")
+  Below the rail the city shows in patches through the haze: warehouse roofs and the cranes along the waterline, and the long pier out over the shoals. The reef and the open sea beyond it are lost.
+*else
+  Below the rail the whole city falls away in tiers to the bay. Warehouse roofs and tall cranes crowd the waterline, and slipways smoke along the shore where hulls stand in their cradles. A long pier runs out over the shoals toward a bell hung on the reef, and beyond the breakwater the roadstead opens to the sea, with hulls riding at anchor. On a hillside shoulder above the harbor, a black raven banner snaps over a palisade.
 *page_break Step back from the rail…
 *goto pq_walk
 
@@ -437,7 +492,10 @@ Below the rail the whole city falls away in tiers to the bay. Warehouse roofs an
   The mist lies too thick to see past the nearest rooftops. Come back when it clears.
   *page_break Step back from the rail…
   *goto pq_walk
-Beneath the ridge the Middle Ward spreads across its broad shelf in a sea of slate roofs, and the road runs east through it as a pale line, straight as a ruled edge, to a gate in the landward wall. There the newer limestone stands out against the hills, and beyond it the road climbs away into the uplands.
+*elseif (weather_visibility = "reduced")
+  Beneath the ridge the Middle Ward shows as a spread of slate roofs, and the road east runs as a pale line to the landward wall. The gate and the uplands beyond it are lost in the haze.
+*else
+  Beneath the ridge the Middle Ward spreads across its broad shelf in a sea of slate roofs, and the road runs east through it as a pale line, straight as a ruled edge, to a gate in the landward wall. There the newer limestone stands out against the hills, and beyond it the road climbs away into the uplands.
 *page_break Step back from the rail…
 *goto pq_walk
 
@@ -446,7 +504,10 @@ Beneath the ridge the Middle Ward spreads across its broad shelf in a sea of sla
   The mist lies too thick to see past the nearest rooftops. Come back when it clears.
   *page_break Step back from the rail…
   *goto pq_walk
-To the west the road runs out to a second gate in the grey wall, and past it a river comes down from the uplands in long loops. Where the river meets the bay, flooded cuts and stilted tenements glint below the high-water line, a low crowded district under a haze of chimney smoke.
+*elseif (weather_visibility = "reduced")
+  To the west the road runs out through the haze to the wall, and past it the river shows in one long loop. The low district where it meets the bay is only chimney smoke and a few roofs.
+*else
+  To the west the road runs out to a second gate in the grey wall, and past it a river comes down from the uplands in long loops. Where the river meets the bay, flooded cuts and stilted tenements glint below the high-water line, a low crowded district under a haze of chimney smoke.
 *page_break Step back from the rail…
 *goto pq_walk
 
@@ -455,10 +516,16 @@ To the west the road runs out to a second gate in the grey wall, and past it a r
   The mist lies too thick to see past the nearest rooftops. Come back when it clears.
   *page_break Step back from the rail…
   *goto pq_walk
-*if (civic_heights_seen)
-  Behind and above the walk, the limestone of Civic Heights climbs against the sky: the Council Hall with its bronze balance-scale, @{ch_head_named the head house of the Gilded Scales|a tall stone house hung with brass scales} facing it across the plaza, and above them both the buttresses and bells of the cathedral.
+*elseif (weather_visibility = "reduced")
+  *if (civic_heights_seen)
+    Behind and above the walk, the limestone of Civic Heights shows through the haze: the Council Hall with its bronze balance-scale, @{ch_head_named the head house of the Gilded Scales|a tall stone house hung with brass scales} facing it across the plaza, and the cathedral buttresses above them both.
+  *else
+    Behind and above the walk, pale stone shows through the haze: a great hall with a bronze balance-scale above its doors, a tall house hung with brass scales across from it, and greater buttresses above them both.
 *else
-  Behind and above the walk, pale stone climbs against the sky: a great hall with a bronze balance-scale above its doors, a tall house hung with brass scales across from it, and above them both the buttresses of a cathedral with its bells.
+  *if (civic_heights_seen)
+    Behind and above the walk, the limestone of Civic Heights climbs against the sky: the Council Hall with its bronze balance-scale, @{ch_head_named the head house of the Gilded Scales|a tall stone house hung with brass scales} facing it across the plaza, and above them both the buttresses and bells of the cathedral.
+  *else
+    Behind and above the walk, pale stone climbs against the sky: a great hall with a bronze balance-scale above its doors, a tall house hung with brass scales across from it, and above them both the buttresses of a cathedral with its bells.
 *page_break Step back from the rail…
 *goto pq_walk
 

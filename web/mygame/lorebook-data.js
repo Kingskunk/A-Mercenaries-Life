@@ -564,7 +564,7 @@
           }
           return out;
         },
-        see: ["gilded_scales", "port_valen", "cargo_quay", "civic_heights", "silt_gates"]
+        see: ["gilded_scales", "port_valen", "cargo_quay", "civic_heights", "silt_gates", "port_watch_hq"]
       },
       {
         id: "black_oath", category: "factions", title: "The Black Oath",
@@ -820,7 +820,7 @@
         tags: ["Faith"], aliases: ["Sun-Father", "pantheon", "bishops", "cathedral"],
         unlock: "codex_saint_althea",
         body: [
-          "In the marble cathedrals of Port Valen, high bishops sing choral litanies to the <b>Sun-Father</b> in his golden plate. He is the sovereign god of emperors, oaths, and high justice. Out in the marches, common folk pray to his daughter, Saint Althea, instead."
+          "In the great limestone cathedral of Port Valen, high bishops sing choral litanies to the <b>Sun-Father</b> in his golden plate. He is the sovereign god of emperors, oaths, and high justice. Out in the marches, common folk pray to his daughter, Saint Althea, instead."
         ],
         see: ["saint_althea"]
       },
