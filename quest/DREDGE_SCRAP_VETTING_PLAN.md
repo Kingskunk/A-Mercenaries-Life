@@ -92,9 +92,9 @@ One mechanic, used two ways — the trust-test the first time, then its own repe
 * **Success, first time (the vetting job):**
   > By the last load your arms are dead and you're wrung out with sweat, but every barrow made it to the foot of the chandler's stair, and the man on the step took each one without a word.
   >
-  > Back at the sheds, Hask counts out real coin — more than two weeks of mudlarking, for one afternoon's work. "Come find me when you want another," he says, and for the first time he uses your name instead of just watching your boots.
+  > Back at the sheds, Hask counts out real coin — not a fortune, but honest weight for dishonest work, and more than you'd see wading a day of mud for it. "Come find me when you want another," he says, and for the first time he uses your name instead of just watching your boots.
 
-  * `[b][💰 Barrow Relay: +24 Copper Bits][/b]`
+  * `[b][💰 Barrow Relay: +15 Copper Bits][/b]`
   * `black_oath_rep +1`
   * `hask_trusts_you true`
   * `scrap_vetting_quest_stage "resolved"`
@@ -103,7 +103,7 @@ One mechanic, used two ways — the trust-test the first time, then its own repe
 * **Success, established (ordinary Quiet Work run):**
   > Same lane, same stair, load after load, and nobody looks at you twice anymore.
 
-  * `[b][💰 Barrow Relay: +24 Copper Bits][/b]`
+  * `[b][💰 Barrow Relay: +15 Copper Bits][/b]`
   * No further `black_oath_rep` change — that was the vetting job's reward specifically, so the loop doesn't quietly farm reputation the way Crane Three's old silver farmed the writ.
 
 * **Failure, first time (fail-forward, not a dead end):**
@@ -119,13 +119,13 @@ One mechanic, used two ways — the trust-test the first time, then its own repe
 * **Failure, established (ordinary Quiet Work run):** lower stakes once trust exists — nobody's testing the player anymore, just a rough shift.
   > One load runs late, and by the time you're back for the next the light's against you. Hask shrugs it off same as any other bad day at any other job.
 
-  * `[b][💰 Barrow Relay: +8 Copper Bits][/b]` (the loads still move, just slower — no `hask_wary`, no rep change, just a worse day's pay).
+  * `[b][💰 Barrow Relay: +5 Copper Bits][/b]` (the loads still move, just slower — no `hask_wary`, no rep change, just a worse day's pay; kept at roughly the same fraction of the (now lower) success payout as before).
 
 ---
 
 ## 5. Economics Check
 
-Quiet Work now pays 24 copper every 2 days on success (≈12 copper/day average) — meaningfully better than wading's 9 copper/3h, which is the point (dirty money should pay better than honest mudlarking), but it's rarer (every 2 days vs. daily) and it cost a real vetting job and a standing rep fact to unlock, not just showing up. Worth a sanity check against the wider economy before this ships, the same way Crane Three's numbers got checked against the Patrician writ earlier.
+Reverted from 24 back to 15 copper on success per your call. Quiet Work now pays 15 copper every 2 days (≈7.5 copper/day average) — barely ahead of wading's 3 copper/hour (15/4h = 3.75/hour), which is worth having open eyes about: the whole pitch was "real money," and at this rate the loop's actual draw is `black_oath_rep` and the door it opens, not the coin. That's a legitimate design choice (the reward is standing, not wages) — just flagging that the "real money" line in Hask's pitch (§3) may want a rewrite if the coin itself isn't meant to carry the sell.
 
 ---
 
