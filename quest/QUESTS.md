@@ -47,6 +47,7 @@ graph TD
         Q8["Quest 1: The Silt-Gate Contraband"]
         Q9["Harbor POI Rumors & Chart House Navigation"]
         Q11["Crane Three: Day-Labor"]
+        Q15["Hask's Real Money: Scrap Yard Courier Round"]
         Q12["Quest 3: The Rotten Rib -- Iron Wharves"]
         Q13["Quest 4: What the Bar Keeps -- The Pier"]
         Q14["Quest 5: The Quiet Block -- Fishmongers' Slip"]
@@ -244,10 +245,29 @@ graph TD
   * **DEX** (`Acrobatics DC 12`) — work the crane's guy-lines; failure damages a crate (bonus lost, base pay kept).
   * **INT** (`Investigation DC 11`) — re-sequence the lift order off the chalk-board; failure runs the shift late (bonus lost).
   * **CHA** (`Persuasion DC 11`) — talk the ship's mate into a grace window before lifting anything; failure wastes the time and the shift still runs late.
-* **Economics:** flat 4 silver marks (40 copper, "a copper a crate") base pay regardless of outcome, plus a 3-silver on-time/undamaged bonus that can be haggled to 4 silver at the offer (`CHA DC 11`, `crane_fee_bonus`) — the haggled rate persists to every future shift.
+* **Economics:** flat 3 copper base pay regardless of outcome, plus a matching 3-copper on-time/undamaged bonus (6 copper total) that can be haggled to 4 copper (7 total) at the offer (`CHA DC 11`, `crane_fee_bonus`) — the haggled rate persists to every future shift. Sized as a fraction of a full "day-shift" (§3's 20–40 copper/day manual-labor benchmark): the shift only simulates ~2.5 hours of a workday, not all of it.
 * **The repeatable loop:** once the first shift resolves, `crane_job_unlocked` opens ordinary day-labor at crane three — same archetype choice, same pay math, gated to one shift per `campaign_day` (`crane_last_shift_day`). No faction reputation changes; this is wage labor, not a municipal contract.
 * **Future work (not yet implemented):** `crane_shifts_completed` and `crane_dell_regard` are tracked from the first shift onward specifically so a later promotion ladder (better rate, standing crew role, etc.) has something to read.
 * **Variables:** `crane_quest_stage`, `crane_seen`, `crane_grievance_known`, `crane_fee_bonus`, `crane_first_shift_method`, `crane_shift_ontime`, `crane_shift_damaged`, `crane_job_unlocked`, `crane_shifts_completed`, `crane_last_shift_day`, `crane_dell_regard`, `crane_award_locked`, `locked_crane_award_page_id`.
+
+---
+
+### Hask's Real Money: The Scrap Yard Courier Round
+* **Scene File:** `port_valen_dredge_end.txt` (`cut_sheds_hub`, `scrap_vetting_approach`, `scrap_vetting_pitch`, `scrap_vetting_run`, `scrap_vetting_resolve`)
+* **District:** Dredge-End (the Boat-Sheds Scrap Yard).
+* **Design intent:** a Minor/Street Task (`QUEST_DESIGN_RULES.md` §6) that turns a repeatable day-job into a recruitment hook without a faction-shift climax, and deliberately without the full three-branch Mercenary Dilemma structure the bigger district quests use. Full design writeup: `quest/DREDGE_SCRAP_VETTING_PLAN.md`.
+* **Origin:** no new quest-giver — the scrap dealer the player has already been selling to for two weeks (`cut_scrap_sold_count`) makes the offer himself, and names himself (Hask) for the first time at that beat.
+* **Briefing:** Hask connects the player to "a man he does business with" who needs a runner to carry parcels and word between people around the quarter who'd rather not walk the lanes themselves. **The player never learns this is Black Oath work** — nothing carried is illegal or dangerous, and the text never names the association; `black_oath_rep` moves silently in the background on the first success only.
+* **The round (`scrap_vetting_run`):** one archetype choice resolves the whole afternoon (one roll standing in for several stops — the market stalls, the Gangways rail, the foot of Lamp Stair):
+  * **STR** (`DC 12`) — keep a hard, steady pace between every stop.
+  * **DEX** (`DC 12`) — take the fastest cuts and never double back.
+  * **CHA** (`DC 11`) — keep every hand-off brief and businesslike.
+  * Failure is fail-forward with no permanent penalty: nothing carried is illegal, so there's no authority to get more alert and no reason to raise the DC or lock the player out — a fumbled round just pays less and doesn't count toward the trust counter.
+* **Economics:** 12 copper on a successful round (partial 4 on failure), once per `campaign_day` (`scrap_vetting_day`) — a real day job (6 hours) rather than an errand, sized so the courier round and wading together eat most of the 14-hour working day if both are run the same day.
+* **The repeatable loop:** once the first round resolves, `hask_courier_unlocked` opens a standing "Ask Hask if there's a round to run" option at `cut_sheds_hub` — same mechanics as the first round, no further `black_oath_rep` change (that was the first round's reward specifically, so the loop can't farm reputation).
+* **Future work (not yet implemented):** `hask_courier_count` is tracked from the first round onward so a future "another job" hook (proposed gate: 12 successful rounds) has something to read — presumably the point where "not carrying anything illegal *yet*" stops being true. The chandler's upper-room stub at `cut_market_night` is a separate, bigger investigation-grade quest and is not wired to this one.
+* **Not yet added:** `lorebook-data.js` (Hask) and `quest-data.js` — skipped to match existing Port Valen practice: no POI-quest NPC (Dell, Wenna, Tobin, Marl, Elric, Brant, Hendryk) has a lorebook entry yet, and Crane Three's identically-shaped repeatable day-job isn't in the sidebar quest log either. Worth a dedicated pass across all of Port Valen's cast later rather than fixing it piecemeal for one NPC.
+* **Variables:** `cut_scrap_sold_count`, `scrap_vetting_offer_seen`, `scrap_vetting_quest_stage`, `scrap_vetting_day`, `hask_courier_unlocked`, `hask_courier_count`.
 
 ---
 
@@ -261,7 +281,7 @@ graph TD
 | **Harbor Chart House** | Tidal charts, channel navigation, barge clearance (deferred: planned for the customs area, not its own Quayside stop) | Requires `port_watch_rep >= 1` or `gilded_scales_rep >= 1` | Tidal navigation advantages |
 | **Iron Wharves** | The Rotten Rib investigation; allied contact on Slipway Two afterward | Daytime, fair weather only (gate closed at Dusk/Night/Pre-Dawn and in Storm/Blizzard) | Up to 14 Silver Marks, Brant's Iron-Heel Boots, `gilded_scales_rep +1` |
 | **The Pier** | What the Bar Keeps night rescue; Marl's skiff contact afterward (strategic route) | Hook only at Night/Pre-Dawn in fair weather; the rest of the pier is always open | Up to 12 Silver Marks, or a permanent ally and Marl's Tarred Rope Belt |
-| **Crane Three** | Repeatable dock day-labor for gang-boss Dell Ostrey | Daytime/Dusk only; first shift resolves a one-off headcount crisis | 4 Silver Marks base + up to 4 Silver Marks bonus per shift, once/day |
+| **Crane Three** | Repeatable dock day-labor for gang-boss Dell Ostrey | Daytime/Dusk only; first shift resolves a one-off headcount crisis | 3 Copper base + up to 4 Copper bonus per shift, once/day |
 
 > **Removed:** the Tide-Well / Saint Althea shrine stop (it had no mechanics and the Alderford chapel and a planned city cathedral cover the same ground). Its two ambient hub lines stay as scenery. The pier quest's strategic ending now hides Marl and Pip in a net-drying loft above the fish-market smokehouses.
 
@@ -298,7 +318,7 @@ graph TD
 *create crane_quest_stage "unstarted"         *comment "unstarted", "active", "resolved"
 *create crane_seen false                      *comment first-visit intro guard
 *create crane_grievance_known false           *comment heard the boycotting dockers' side
-*create crane_fee_bonus 3                     *comment 3 or 4 silver -- haggled once, persists every shift
+*create crane_fee_bonus 3                     *comment 3 or 4 copper -- haggled once, persists every shift
 *create crane_first_shift_method "none"       *comment "muscle", "rigging", "tally", "talked"
 *create crane_shift_ontime false              *comment recomputed every shift
 *create crane_shift_damaged false             *comment recomputed every shift
@@ -306,6 +326,14 @@ graph TD
 *create crane_shifts_completed 0              *comment lifetime counter -- future promotion ladder hook
 *create crane_last_shift_day 0                *comment campaign_day of last shift -- one shift/day
 *create crane_dell_regard 0                   *comment Dell's opinion -- future promotion gate
+
+*comment --- Hask's Real Money / Scrap Yard Courier Round (see full label list above) ---
+*create cut_scrap_sold_count 0                *comment times sold TO Hask specifically -- fires his offer at 14
+*create scrap_vetting_offer_seen false        *comment Hask has raised the offer at least once
+*create scrap_vetting_quest_stage "unstarted" *comment "unstarted", "active", "resolved"
+*create scrap_vetting_day 0                   *comment campaign_day of the last delivery-round attempt; once/day
+*create hask_courier_unlocked false           *comment first round resolved; unlocks the standing "run a round" option
+*create hask_courier_count 0                  *comment lifetime SUCCESSFUL rounds; RESERVED to gate a future "another job" hook
 
 *comment --- The Rotten Rib / Iron Wharves (see Quest 3 above) ---
 *create rotten_rib_quest_stage "unstarted"    *comment "unstarted", "active", "resolved"

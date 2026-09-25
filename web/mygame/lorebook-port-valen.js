@@ -587,7 +587,27 @@
         }
         return out;
       },
-      see: ["dredge_end", "dredge_landing"]
+      see: ["dredge_end", "dredge_landing", "hask"]
+    },
+    {
+      id: "hask", category: "people", title: "Hask",
+      sub: "Scrap dealer, the Boat-Sheds Scrap Yard",
+      role: "Scrap dealer, Boat-Sheds Scrap Yard (Dredge-End)",
+      link: ["Hask"],
+      tags: ["Dredge-End"], aliases: ["scrap dealer", "the dealer"],
+      // Same rule as Dell (crane three): his name stays hidden behind the same variable
+      // that unlocks it in the scrap-yard hub text.
+      unlock: "met_hask",
+      body: function (s) {
+        var out = [
+          "A wide, slow man in a greased canvas apron who runs the scrap pen at the boat-sheds, weighing salvaged iron by the pound and watching a seller's hands and boots before he ever looks at a face. Some weeks the chain that comes in has the harbor-master's mark rasped off it, and he pays for it the same as anything else."
+        ];
+        if (truthy(s.hask_courier_unlocked)) {
+          out.push("After enough honest sales, he put your name to a man he does business with, and now sends you out with a satchel of small parcels around the quarter — nothing heavy, nothing that would get you in trouble if you were stopped and asked to open one.");
+        }
+        return out;
+      },
+      see: ["boat_sheds", "dredge_end"]
     },
     {
       id: "dredge_landing", category: "places", title: "Dredge Landing",
