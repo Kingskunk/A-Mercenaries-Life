@@ -7,7 +7,7 @@ A minor, low-stakes recruitment quest for **the scrap yard** in Dredge-End. Answ
 ## 1. Overview & Cast
 
 * **Location:** The scrap yard at `cut_sheds_hub` (Dredge-End).
-* **Trigger:** the 14th time the player sells scrap to the dealer (`cut_scrap_sold_count`, a new counter — see §5). At roughly one wading trip and one sale per day, that's about two weeks of honest mudlarking before he decides this face is worn down enough to make the offer.
+* **Trigger:** the 14th time the player sells scrap to the dealer (`cut_scrap_sold_count`, a new counter — see §6). At roughly one wading trip and one sale per day, that's about two weeks of honest mudlarking before he decides this face is worn down enough to make the offer.
 * **Cast:**
   * **The Scrap Dealer (Hask):** currently unnamed in prose ("a wide, slow man in a greased canvas apron"). He gives his name at this exact beat, once he's decided the player is worth naming — matches the "names introduced in-story only" rule. Slow, unhurried, watches hands and boots before faces. Already established fencing hot chain with rasped-off harbor-master proof-stamps (his 2nd rumor line, `cut_rumors_scrap = 2`), so he's Oath-adjacent, not Oath leadership — a middleman, not a boss.
 
@@ -41,14 +41,14 @@ Declining is **not permanent** — once `scrap_vetting_offer_seen` is true, a st
 
 > He glances once down the row of sheds, though nobody's close enough to hear over the draw-knives. "Most weeks nobody official cares what's under a mud crust — you've seen that yourself by now. This week's different. A length of chain went missing off a barge two nights back, and somebody filed a loss on it. Description's going around that matches a barrow I've got sitting behind the pen too well for comfort. I can't be the one seen carrying it — every regular hand on this bank already owes somebody money or a favor, and half of them know exactly what's missing and from where." He shrugs, like it costs him nothing either way. "You don't. Not yet. That's worth something to him."
 >
-> "One run, before word of the loss gets stale. You'll know before you're halfway there whether you've got the stomach for the rest of it."
+> "It's not one barrow, it's the whole lot behind the pen — four or five loads, back and forth to the chandler's stair, before word of the loss gets stale. You'll know inside the first load whether you've got the stomach for the rest of it."
 
 ```choicescript
 *choice
   # Ask what happens if you're seen.
     "Then you put it down and walk away from it," he says, flat. "Sitting in a yard, it's just scrap nobody can prove anything about. Carried in the open with a description going around that matches, it's evidence. That's yours to lose, not mine."
     *goto scrap_vetting_pitch
-  # Take the barrow.${hint_scrap_vetting}
+  # Start hauling loads.${hint_scrap_vetting}
     *goto scrap_vetting_run
   # Walk away from it.
     *set scrap_vetting_offer_seen true
@@ -58,68 +58,74 @@ Declining is **not permanent** — once `scrap_vetting_offer_seen` is true, a st
 
 ---
 
-## 4. The Vetting Job — The Barrow Run (`scrap_vetting_run`)
+## 4. The Job — The Barrow Relay (`scrap_vetting_run` first time, `hask_work_run` after)
 
-One bottleneck beat, three archetype approaches converging on the same outcome (Branch-and-Bottleneck, `QUEST_DESIGN_RULES.md` §2) — this is a test, not a heist, so it's sized like the culvert pattern: one roll, real fail-forward, no separate climax beat.
+One mechanic, used two ways — the trust-test the first time, then its own repeatable form afterward — the same shape Crane Three already uses (its first shift and every repeat shift share identical mechanics, just different framing text). One bottleneck beat, three archetype approaches converging on the same outcome (Branch-and-Bottleneck, `QUEST_DESIGN_RULES.md` §2): this is one relay shift, not a multi-beat heist, so it's one roll standing in for the whole shift — the same abstraction Crane Three uses for its own multi-crate hold (one roll represents the whole 2.5-hour shift, not one roll per crate).
 
-* **Time cost:** 2 hours (`hours_to_pass 2`), once per attempt.
-* **Retry gate:** `scrap_vetting_day` (campaign_day of the last attempt) — Hask won't send the player out twice in the same day regardless of outcome ("things need to cool" after a failure; "the load isn't ready twice in a day" after a success that hasn't resolved yet — though success ends the quest, so this only matters for a failed retry).
+* **Time cost:** 4 hours (`hours_to_pass 4`).
+* **Trip count (flavor only, not a counted mechanic):** the scrap yard (Area 3) and the chandler's stair (Area 1) sit two area-lengths apart along the canal bank, with the Gangways (Area 2) between them — not adjacent, but not a cross-district haul either. At the ~15-20 minutes one-way this file already uses for a comparable short local move, a loaded barrow's round trip plus hand-off runs ~45-50 minutes, so **4-5 laps** fit a 4-hour shift. The prose should gesture at "a few loads" rather than making the player click through each one individually.
+* **Cadence:** once every 2 days, not daily — `scrap_vetting_day`/`hask_work_day` (campaign_day of the last attempt) checked as `(campaign_day - X_day) >= 2`, not `X_day < campaign_day`. Applies to both the vetting attempt's retry gate and the ongoing job.
 
-> The barrow's under a canvas tarp already, wheeled out from behind the scrap pen: real weight in it, iron by the feel, and nothing about it says where it came from.
+> The first barrow's already waiting under a canvas tarp behind the scrap pen: real weight in it, iron by the feel, and nothing about it says where it came from. There will be three or four more behind it before the lot's moved.
 
 ```choicescript
 *choice
-  # Haul it at a hard, fast pace through the back lanes and be past the risk window before anyone's looking twice.${hint_scrap_str}
+  # Haul at a hard, fast pace through the back lanes, load after load, and be past the risk window before anyone's looking twice.${hint_scrap_str}
     *set check_stat "str"
     *set check_dc 12
     *set check_skill "Force the Pace"
     *goto scrap_vetting_resolve
-  # Keep to the side cuts and blind corners, and time the gaps in foot traffic.${hint_scrap_dex}
+  # Keep to the side cuts and blind corners each trip, and time the gaps in foot traffic.${hint_scrap_dex}
     *set check_stat "dex"
     *set check_dc 12
     *set check_skill "Thread the Backstreets"
     *goto scrap_vetting_resolve
-  # Walk it straight down the open lane with a story about scrap for the boatwrights ready on your tongue.${hint_scrap_cha}
+  # Walk each load straight down the open lane with a story about scrap for the boatwrights ready on your tongue.${hint_scrap_cha}
     *set check_stat "cha"
     *set check_dc 11
     *set check_skill "Bluff the Lane"
     *goto scrap_vetting_resolve
 ```
 
-**Resolution (`scrap_vetting_resolve`):**
+**Resolution (`scrap_vetting_resolve`), branches on whether this is the first attempt (`scrap_vetting_quest_stage = "active"`) or an established run (`hask_trusts_you`):**
 
-* **Success:**
-  > You get the barrow to the foot of the chandler's stair with your pulse still your own. The man on the step doesn't say a word, just looks the tarp over once, jerks his chin, and takes it off your hands.
+* **Success, first time (the vetting job):**
+  > By the last load your arms are dead and you're wrung out with sweat, but every barrow made it to the foot of the chandler's stair, and the man on the step took each one without a word.
   >
-  > Back at the sheds, Hask counts out real coin — more than a week of mudlarking, for two hours' work. "Come find me when you want another," he says, and for the first time he uses your name instead of just watching your boots.
+  > Back at the sheds, Hask counts out real coin — more than two weeks of mudlarking, for one afternoon's work. "Come find me when you want another," he says, and for the first time he uses your name instead of just watching your boots.
 
-  * `[b][💰 Barrow Delivered: +15 Copper Bits][/b]`
+  * `[b][💰 Barrow Relay: +24 Copper Bits][/b]`
   * `black_oath_rep +1`
   * `hask_trusts_you true`
   * `scrap_vetting_quest_stage "resolved"`
-  * Unlocks the repeatable Quiet Work option (§5).
+  * Unlocks the standing "Ask Hask if there's a load moving" hub option.
 
-* **Failure (fail-forward, not a dead end):**
-  > Near the corner, a man stops and crouches by a length of chain poking loose from under the tarp, turning one link over between two fingers like he's checking it against something he's carrying in his head. You don't wait to find out what. You leave the barrow half a lane short of the stair and walk the other way, your heart going hard.
+* **Success, established (ordinary Quiet Work run):**
+  > Same lane, same stair, load after load, and nobody looks at you twice anymore.
+
+  * `[b][💰 Barrow Relay: +24 Copper Bits][/b]`
+  * No further `black_oath_rep` change — that was the vetting job's reward specifically, so the loop doesn't quietly farm reputation the way Crane Three's old silver farmed the writ.
+
+* **Failure, first time (fail-forward, not a dead end):**
+  > On one of the middle loads, a man stops near the corner and crouches by a length of chain poking loose from under the tarp, turning one link over between two fingers like he's checking it against something he's carrying in his head. You don't wait to find out what. You leave that barrow half a lane short of the stair and walk the other way, your heart going hard, the rest of the loads still sitting behind the pen.
   >
-  > Hask's face doesn't change when you come back with empty hands, but he doesn't offer you a second barrow today either. "Let it cool," is all he says.
+  > Hask's face doesn't change when you come back short, but he doesn't offer you another load today either. "Let it cool," is all he says.
 
   * No coin.
-  * `hask_wary true` (permanent, one-time) — the retry check's DC rises by 1 for every archetype.
-  * `scrap_vetting_day campaign_day` — locks out a same-day retry.
-  * `scrap_vetting_quest_stage` stays `"active"`; the player can come back another day and try again at the higher DC. There is no hard failure state here — see Design Notes.
+  * `hask_wary true` (permanent, one-time) — every retry archetype's DC rises by 1.
+  * `scrap_vetting_day campaign_day` — the 2-day cadence gate above blocks an immediate retry.
+  * `scrap_vetting_quest_stage` stays `"active"`. There is no hard failure state here — see Design Notes.
+
+* **Failure, established (ordinary Quiet Work run):** lower stakes once trust exists — nobody's testing the player anymore, just a rough shift.
+  > One load runs late, and by the time you're back for the next the light's against you. Hask shrugs it off same as any other bad day at any other job.
+
+  * `[b][💰 Barrow Relay: +8 Copper Bits][/b]` (the loads still move, just slower — no `hask_wary`, no rep change, just a worse day's pay).
 
 ---
 
-## 5. The Job It Opens — Quiet Work (repeatable, once `hask_trusts_you`)
+## 5. Economics Check
 
-This is the direct answer to "successful completion leads into a job": a new standing option at `cut_sheds_hub`, "Ask Hask if there's a load moving today," gated the same way Crane Three's repeatable loop is.
-
-* **Cadence:** once per `campaign_day` (`hask_work_day`).
-* **Time cost:** 2 hours — same shape as the vetting run, no separate roll variety needed since the tension was already spent proving trust; this is the payoff, not another test.
-* **Check:** a single roll, DC 11, rotating which stat it asks for by a `*rand` pick each time (STR/DEX/CHA) so it doesn't calcify into "always pick STR" — matches the flavor-variety expectation for a job meant to be run dozens of times, same principle as Crane Three's greeting-line pools.
-* **Pay:** flat 12 copper on success, 4 copper on a failed run (the load still moves, just late/rough — no combat, no alarm; this is a courier job, not a fight). No `black_oath_rep` change on ordinary runs — the rep bump was the vetting job's reward specifically, so the loop doesn't quietly farm reputation into irrelevance the way Crane Three's silver farmed the writ.
-* **Why it beats wading on paper and in fiction:** 12 copper/2h (6/hr) vs. wading's 9 copper/3h (3/hr) — better, but not absurdly so, and it costs something wading doesn't: `black_oath_rep` is now a real fact about the player, and Hask's dialogue can reference it. This is the "graduation" the player earned, not a strictly-better clone of the honest job.
+Quiet Work now pays 24 copper every 2 days on success (≈12 copper/day average) — meaningfully better than wading's 9 copper/3h, which is the point (dirty money should pay better than honest mudlarking), but it's rarer (every 2 days vs. daily) and it cost a real vetting job and a standing rep fact to unlock, not just showing up. Worth a sanity check against the wider economy before this ships, the same way Crane Three's numbers got checked against the Patrician writ earlier.
 
 ---
 
@@ -129,11 +135,13 @@ This is the direct answer to "successful completion leads into a job": a new sta
 *create cut_scrap_sold_count 0         *comment times sold TO Hask specifically -- fires the offer at 14
 *create scrap_vetting_offer_seen false *comment Hask has raised it at least once; makes the ask-again hub option available
 *create scrap_vetting_quest_stage "unstarted" *comment "unstarted", "active", "resolved"
-*create scrap_vetting_day 0            *comment campaign_day of the last barrow-run attempt; blocks a same-day retry
-*create hask_wary false                *comment set on a failed run; +1 DC on every retry archetype, permanent
-*create hask_trusts_you false          *comment quest resolved; unlocks the Quiet Work loop
-*create hask_work_day 0                *comment campaign_day of the last Quiet Work run; once/day like Crane Three
+*create scrap_vetting_day 0            *comment campaign_day of the last barrow-relay attempt (either stage); blocks a retry inside 2 days
+*create hask_wary false                *comment set on a failed FIRST attempt; +1 DC on every retry archetype, permanent
+*create hask_trusts_you false          *comment quest resolved; unlocks the standing Quiet Work hub option
+*create hask_work_day 0                *comment campaign_day of the last established run; same 2-day cadence as scrap_vetting_day
 ```
+
+`scrap_vetting_day` and `hask_work_day` are functionally the same clock (campaign_day of the last relay run, whichever stage) — kept as two names only because they read clearer at their two call sites; fold them into one variable if you'd rather not carry two names for one clock.
 
 `cut_scrap_wade_count` (added in the earlier exploit-fix pass) becomes unused once this ships, since the trigger moved to sales rather than wading attempts — recommend deleting it rather than leaving orphaned state, unless you want it kept for something else.
 
@@ -141,7 +149,7 @@ This is the direct answer to "successful completion leads into a job": a new sta
 
 ## 7. Design Notes / Open Questions
 
-* **No hard failure state on the vetting job.** `QUEST_DESIGN_RULES.md` §2 says every quest needs a genuine loss state, but that rule is written against the bigger climax-grade quests (Rotten Rib, the Pier). This is Minor/Street scope (§6) — like Crane Three, which also has no failure-ends-everything state. The retry-at-higher-DC-with-a-day-gate cost is the fail-forward teeth here. Flag if you'd rather this have a real "Hask writes you off for good" failure branch (e.g. two strikes, like Rotten Rib) — that's a straightforward addition if you want the harder version.
+* **No hard failure state on the vetting job.** `QUEST_DESIGN_RULES.md` §2 says every quest needs a genuine loss state, but that rule is written against the bigger climax-grade quests (Rotten Rib, the Pier). This is Minor/Street scope (§6) — like Crane Three, which also has no failure-ends-everything state. The retry-at-higher-DC-with-a-2-day-gate cost is the fail-forward teeth here. Flag if you'd rather this have a real "Hask writes you off for good" failure branch (e.g. two strikes, like Rotten Rib) — that's a straightforward addition if you want the harder version.
 * **Only three archetypes (STR/DEX/CHA), no INT/WIS option.** Kept to three since this is a single bottleneck beat, not a multi-beat investigation that needs a fourth angle. Could add "read the clerk's rounds schedule" as an INT option if you want full stat coverage here.
 * **Hask stays unnamed until this beat** — consistent with how Dell, Wenna, Marl and Tobin are all introduced in-story rather than up front.
 * **The chandler's upper-room stub is deliberately NOT wired into this plan.** That stays the separate, bigger investigation-grade quest we discussed earlier (loyal/discreet as the default path, Watch-report as the one path that costs Oath standing). `hask_trusts_you` and `black_oath_rep` are exactly the kind of state that quest would want to read as a prerequisite later, but nothing here commits to that shape yet.
