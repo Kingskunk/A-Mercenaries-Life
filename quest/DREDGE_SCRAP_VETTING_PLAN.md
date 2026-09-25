@@ -1,6 +1,6 @@
 # Quest Plan: The Dealer's Real Money (The Boat-Sheds Scrap Yard)
 
-A minor, low-stakes recruitment quest for **the scrap yard** in Dredge-End. Answers the question "what happens if you sell scrap to the same dealer for two weeks straight" — and hands the player their first taste of Black Oath work as a *reward*, not an obstacle to overcome. Scoped as a Minor/Street Task (`QUEST_DESIGN_RULES.md` §6): one recruitment test, no faction-shift climax, and it deliberately does not carry the full three-branch Mercenary Dilemma structure that the bigger district quests use — see the Design Notes at the end for why, and push back on that if you want the harder version instead.
+A minor, low-stakes recruitment quest for **the scrap yard** in Dredge-End. Answers the question "what happens if you sell scrap to the same dealer for two weeks straight" — and hands the player their first taste of Black Oath work as a *reward*, not an obstacle to overcome. **The player never learns it's Black Oath work at this stage** — Hask connects them to "a man he does business with" who needs a runner, and nothing carried is illegal or dangerous. `black_oath_rep` still ticks up in the background; the reveal is reserved for later content. Scoped as a Minor/Street Task (`QUEST_DESIGN_RULES.md` §6): no faction-shift climax, and it deliberately does not carry the full three-branch Mercenary Dilemma structure that the bigger district quests use — see the Design Notes at the end for why, and push back on that if you want the harder version instead.
 
 ---
 
@@ -21,7 +21,7 @@ Appended to the *existing* sale text at `cut_sheds_hub`, after the coins are cou
 >
 > "You're back again," he says. Not a question. "Same mud, same few coppers, week in and week out." He looks you over the way a man checks a rope before he trusts his weight to it — not your face, your hands and your boots. "Name's Hask. There's real money moves through this quarter. Not this." He nods at the empty balance pan. "But it's not weighed anywhere a man with clean hands gets to watch."
 >
-> He waits. Whatever comes next, he's not saying it until you ask.
+> He waits, watching you, and doesn't say anything more.
 
 ```choicescript
 *choice
@@ -39,16 +39,16 @@ Declining is **not permanent** — once `scrap_vetting_offer_seen` is true, a st
 
 ## 3. The Pitch (`scrap_vetting_pitch`)
 
-> He glances once down the row of sheds, though nobody's close enough to hear over the draw-knives. "Most weeks nobody official cares what's under a mud crust — you've seen that yourself by now. This week's different. A length of chain went missing off a barge two nights back, and somebody filed a loss on it. Description's going around that matches a barrow I've got sitting behind the pen too well for comfort. I can't be the one seen carrying it — every regular hand on this bank already owes somebody money or a favor, and half of them know exactly what's missing and from where." He shrugs, like it costs him nothing either way. "You don't. Not yet. That's worth something to him."
+> He glances once down the row of sheds, though nobody's close enough to hear over the draw-knives. "Man I do business with always needs somebody to carry word and small parcels between people who'd rather not walk the lanes themselves. Nothing heavy, nothing that'll get you in trouble if you're stopped and asked to open one. He just needs somebody who delivers what he's given, doesn't dawdle, and doesn't ask who anything's for." He shrugs. "I don't send him just anybody. You've shown up here often enough that I'm willing to put your name to him. Doesn't mean he'll trust you either, not yet."
 >
-> "It's not one barrow, it's the whole lot behind the pen — four or five loads, back and forth to the chandler's stair, before word of the loss gets stale. You'll know inside the first load whether you've got the stomach for the rest of it."
+> "It's a full afternoon of it — several stops, all over the quarter, before you're done. He'll know soon enough whether you're worth sending again."
 
 ```choicescript
 *choice
-  # Ask what happens if you're seen.
-    "Then you put it down and walk away from it," he says, flat. "Sitting in a yard, it's just scrap nobody can prove anything about. Carried in the open with a description going around that matches, it's evidence. That's yours to lose, not mine."
+  # Ask what's actually in the parcels.
+    "Whatever he's given me to hand you," he says. "I don't open them and neither do you. That's the whole job."
     *goto scrap_vetting_pitch
-  # Start hauling loads.${hint_scrap_vetting}
+  # Take the round.${hint_scrap_vetting}
     *goto scrap_vetting_run
   # Walk away from it.
     *set scrap_vetting_offer_seen true
@@ -58,74 +58,75 @@ Declining is **not permanent** — once `scrap_vetting_offer_seen` is true, a st
 
 ---
 
-## 4. The Job — The Barrow Relay (`scrap_vetting_run` first time, `hask_work_run` after)
+## 4. The Job — Running the Quarter (`scrap_vetting_run` first time, `hask_courier_run` after)
 
-One mechanic, used two ways — the trust-test the first time, then its own repeatable form afterward — the same shape Crane Three already uses (its first shift and every repeat shift share identical mechanics, just different framing text). One bottleneck beat, three archetype approaches converging on the same outcome (Branch-and-Bottleneck, `QUEST_DESIGN_RULES.md` §2): this is one relay shift, not a multi-beat heist, so it's one roll standing in for the whole shift — the same abstraction Crane Three uses for its own multi-crate hold (one roll represents the whole 2.5-hour shift, not one roll per crate).
+One mechanic used two ways — the first attempt, then its own repeatable form afterward — the same shape Crane Three already uses (its first shift and every repeat shift share identical mechanics, just different framing text). One bottleneck beat, three archetype approaches converging on the same outcome (Branch-and-Bottleneck, `QUEST_DESIGN_RULES.md` §2): this is one round of deliveries, not a multi-beat plot, so it's one roll standing in for the whole afternoon — the same abstraction Crane Three uses for its own multi-crate hold (one roll represents the whole 2.5-hour shift, not one roll per crate).
 
-* **Time cost:** 4 hours (`hours_to_pass 4`).
-* **Trip count (flavor only, not a counted mechanic):** the scrap yard (Area 3) and the chandler's stair (Area 1) sit two area-lengths apart along the canal bank, with the Gangways (Area 2) between them — not adjacent, but not a cross-district haul either. At the ~15-20 minutes one-way this file already uses for a comparable short local move, a loaded barrow's round trip plus hand-off runs ~45-50 minutes, so **4-5 laps** fit a 4-hour shift. The prose should gesture at "a few loads" rather than making the player click through each one individually.
-* **Cadence:** once every 2 days, not daily — `scrap_vetting_day`/`hask_work_day` (campaign_day of the last attempt) checked as `(campaign_day - X_day) >= 2`, not `X_day < campaign_day`. Applies to both the vetting attempt's retry gate and the ongoing job.
+**Nothing carried is illegal, and nothing about the risk is legal jeopardy.** The tension is entirely "can this person be trusted to do a plain job competently and keep quiet," not "will they get caught." That rules out any failure built around detection, an authority figure, or a description matching a report — all of that belongs to a different kind of story than this one.
 
-> The first barrow's already waiting under a canvas tarp behind the scrap pen: real weight in it, iron by the feel, and nothing about it says where it came from. There will be three or four more behind it before the lot's moved.
+* **Time cost:** 6 hours (`hours_to_pass 6`) — raised +2h across every day job in the district at once, see the Economics Check.
+* **Stops (flavor only, not a counted mechanic):** the round runs to several points across Dredge-End rather than one fixed destination — reuses locations and background figures the district already establishes rather than inventing new named characters: a parcel left with someone minding the market stalls near the chandler's stair (Area 1), word passed to one of the lookouts on the Gangways rail (Area 2, already established as a whistle-signal relay point — a natural fit for "somebody used to passing word along without being told why"), and a bundle handed off to someone waiting near the foot of Lamp Stair (Area 5). Three stops plus the return, at the ~15-20 minutes one-way this file already uses for a comparable short local move, is real walking time but not six hours of it on its own — the rest is waiting for the right moment at each hand-off rather than just barging up and thrusting a satchel at someone. The prose should gesture at "a full afternoon of it, more waiting than walking" rather than making the player click through each stop individually.
+* **Cadence:** once every 2 days — `scrap_vetting_day`/`hask_courier_day` (campaign_day of the last attempt) checked as `(campaign_day - X_day) >= 2`.
+
+> Hask hands over a canvas satchel, already packed: a few wrapped parcels, nothing heavy, nothing that rattles or clinks. "Market stall, the gangway rail, the foot of Lamp Stair. In that order, or don't bother going at all. Whoever's waiting will know you by the satchel, not your face."
 
 ```choicescript
 *choice
-  # Haul at a hard, fast pace through the back lanes, load after load, and be past the risk window before anyone's looking twice.${hint_scrap_str}
+  # Keep a hard, steady pace between stops and get the whole round done before the light turns.${hint_scrap_str}
     *set check_stat "str"
     *set check_dc 12
-    *set check_skill "Force the Pace"
+    *set check_skill "Keep the Pace"
     *goto scrap_vetting_resolve
-  # Keep to the side cuts and blind corners each trip, and time the gaps in foot traffic.${hint_scrap_dex}
+  # Take the fastest cuts between each stop, and don't waste a step doubling back.${hint_scrap_dex}
     *set check_stat "dex"
     *set check_dc 12
-    *set check_skill "Thread the Backstreets"
+    *set check_skill "Know the Shortest Way"
     *goto scrap_vetting_resolve
-  # Walk each load straight down the open lane with a story about scrap for the boatwrights ready on your tongue.${hint_scrap_cha}
+  # Keep every hand-off brief and businesslike, in and out without lingering to talk.${hint_scrap_cha}
     *set check_stat "cha"
     *set check_dc 11
-    *set check_skill "Bluff the Lane"
+    *set check_skill "Keep It Brief"
     *goto scrap_vetting_resolve
 ```
 
-**Resolution (`scrap_vetting_resolve`), branches on whether this is the first attempt (`scrap_vetting_quest_stage = "active"`) or an established run (`hask_trusts_you`):**
+**Resolution (`scrap_vetting_resolve`):**
 
-* **Success, first time (the vetting job):**
-  > By the last load your arms are dead and you're wrung out with sweat, but every barrow made it to the foot of the chandler's stair, and the man on the step took each one without a word.
+* **Success, first time only (one-time guard):**
+  > All three parcels change hands without a wasted word, and you're back at the sheds before the satchel's had time to go stiff with damp.
   >
-  > Back at the sheds, Hask counts out real coin — not a fortune, but honest weight for dishonest work, and more than you'd see wading a day of mud for it. "Come find me when you want another," he says, and for the first time he uses your name instead of just watching your boots.
+  > Hask counts out the coin without much comment, same flat count as every sale before it. "Same again in a couple of days, if you're still around," is all he says, and goes back to his scales.
 
-  * `[b][💰 Barrow Relay: +15 Copper Bits][/b]`
-  * `black_oath_rep +1`
-  * `hask_trusts_you true`
+  * `[b][💰 Deliveries Made: +15 Copper Bits][/b]`
+  * `black_oath_rep +1` (never named or explained on-screen — the player-character has no idea who they just did a favor for; see Design Notes)
+  * `hask_courier_unlocked true`
   * `scrap_vetting_quest_stage "resolved"`
-  * Unlocks the standing "Ask Hask if there's a load moving" hub option.
+  * `hask_courier_count + 1`
+  * Unlocks the standing "Ask Hask if there's a round to run" hub option.
 
-* **Success, established (ordinary Quiet Work run):**
-  > Same lane, same stair, load after load, and nobody looks at you twice anymore.
+* **Success, ordinary run:**
+  > Same three stops, same satchel, and nobody so much as looks at you twice by the third hand-off.
 
-  * `[b][💰 Barrow Relay: +15 Copper Bits][/b]`
-  * No further `black_oath_rep` change — that was the vetting job's reward specifically, so the loop doesn't quietly farm reputation the way Crane Three's old silver farmed the writ.
+  * `[b][💰 Deliveries Made: +15 Copper Bits][/b]`
+  * `hask_courier_count + 1`
+  * No further `black_oath_rep` change — that was the first run's reward specifically, so the loop doesn't quietly farm reputation the way Crane Three's old silver farmed the writ.
+  * Once `hask_courier_count` crosses a threshold (see Design Notes), this is where "another job" would start being offered — not built yet.
 
-* **Failure, first time (fail-forward, not a dead end):**
-  > On one of the middle loads, a man stops near the corner and crouches by a length of chain poking loose from under the tarp, turning one link over between two fingers like he's checking it against something he's carrying in his head. You don't wait to find out what. You leave that barrow half a lane short of the stair and walk the other way, your heart going hard, the rest of the loads still sitting behind the pen.
+* **Failure (fail-forward, every attempt — no permanent flag, no escalating DC, since nothing here is illegal and there's no authority to get more alert):**
+  > One hand-off runs long — a wrong turn, a slow crowd, a stop that keeps talking past when you'd rather be gone — and by the time you're back the satchel's a delivery short.
   >
-  > Hask's face doesn't change when you come back short, but he doesn't offer you another load today either. "Let it cool," is all he says.
+  > Hask's mouth flattens, but his hands don't stop moving over the scales. "Doesn't fill me with confidence," is all he says.
 
-  * No coin.
-  * `hask_wary true` (permanent, one-time) — every retry archetype's DC rises by 1.
-  * `scrap_vetting_day campaign_day` — the 2-day cadence gate above blocks an immediate retry.
-  * `scrap_vetting_quest_stage` stays `"active"`. There is no hard failure state here — see Design Notes.
-
-* **Failure, established (ordinary Quiet Work run):** lower stakes once trust exists — nobody's testing the player anymore, just a rough shift.
-  > One load runs late, and by the time you're back for the next the light's against you. Hask shrugs it off same as any other bad day at any other job.
-
-  * `[b][💰 Barrow Relay: +5 Copper Bits][/b]` (the loads still move, just slower — no `hask_wary`, no rep change, just a worse day's pay; kept at roughly the same fraction of the (now lower) success payout as before).
+  * `[b][💰 Deliveries Made: +5 Copper Bits][/b]` (partial — most of the round still got done)
+  * No `black_oath_rep` change, no `hask_courier_count` increment (a fumbled round doesn't count toward "enough of these").
+  * `scrap_vetting_quest_stage` stays `"active"` if this was the first attempt — no hard failure state here, see Design Notes.
 
 ---
 
 ## 5. Economics Check
 
-Reverted from 24 back to 15 copper on success per your call. Quiet Work now pays 15 copper every 2 days (≈7.5 copper/day average) — barely ahead of wading's 3 copper/hour (15/4h = 3.75/hour), which is worth having open eyes about: the whole pitch was "real money," and at this rate the loop's actual draw is `black_oath_rep` and the door it opens, not the coin. That's a legitimate design choice (the reward is standing, not wages) — just flagging that the "real money" line in Hask's pitch (§3) may want a rewrite if the coin itself isn't meant to carry the sell.
+**Every Dredge-End day job is getting +2 hours** (your call, applies district-wide, not just here): wading 3h→5h, the dredge-landing shift 4h→6h, and this courier round 4h→6h; Crane Three (Harbor) goes 2.5h→4.5h too. Intent: 2 jobs should eat most of a 14-hour working day (07:00-21:00, Morning through Dusk), and 3 shouldn't fit at all without spilling past the point where the later jobs' own "not Night/Pre-Dawn" gates close them out. Same-district 2-job math (e.g. wading + dredge shift) lands at 11h; a cross-district pairing with Crane Three (+~2.5h round-trip travel) lands at 12-13h; any 3-job combination clears 17h and doesn't fit in one calendar day.
+
+15 copper every 2 days (≈7.5 copper/day average) is now barely ahead of wading's 3 copper/hour (15/6h = 2.5/hour) — a touch worse per hour than wading, if anything. Worth having open eyes about: since nothing illegal ever gets said out loud, the *pitch* can't lean on "real money" quite as hard as the original draft did — the actual draw at this stage is being trusted with something at all, not the wage. The coin buys the player's time; `black_oath_rep` and the door to "another job" are the real prize, same conclusion as before, just for a cleaner reason this time (there's no smuggling premium to justify a bigger number).
 
 ---
 
@@ -135,13 +136,12 @@ Reverted from 24 back to 15 copper on success per your call. Quiet Work now pays
 *create cut_scrap_sold_count 0         *comment times sold TO Hask specifically -- fires the offer at 14
 *create scrap_vetting_offer_seen false *comment Hask has raised it at least once; makes the ask-again hub option available
 *create scrap_vetting_quest_stage "unstarted" *comment "unstarted", "active", "resolved"
-*create scrap_vetting_day 0            *comment campaign_day of the last barrow-relay attempt (either stage); blocks a retry inside 2 days
-*create hask_wary false                *comment set on a failed FIRST attempt; +1 DC on every retry archetype, permanent
-*create hask_trusts_you false          *comment quest resolved; unlocks the standing Quiet Work hub option
-*create hask_work_day 0                *comment campaign_day of the last established run; same 2-day cadence as scrap_vetting_day
+*create scrap_vetting_day 0            *comment campaign_day of the last delivery-round attempt (either stage); blocks a retry inside 2 days
+*create hask_courier_unlocked false    *comment first round resolved; unlocks the standing "run a round" hub option
+*create hask_courier_count 0           *comment lifetime SUCCESSFUL rounds; RESERVED to gate "another job" later (see Design Notes)
 ```
 
-`scrap_vetting_day` and `hask_work_day` are functionally the same clock (campaign_day of the last relay run, whichever stage) — kept as two names only because they read clearer at their two call sites; fold them into one variable if you'd rather not carry two names for one clock.
+`scrap_vetting_day` doubles as the ongoing job's cadence clock too (no separate `hask_work_day` needed now — one clock, one meaning, since first attempt and every later attempt share identical stakes).
 
 `cut_scrap_wade_count` (added in the earlier exploit-fix pass) becomes unused once this ships, since the trigger moved to sales rather than wading attempts — recommend deleting it rather than leaving orphaned state, unless you want it kept for something else.
 
@@ -149,7 +149,9 @@ Reverted from 24 back to 15 copper on success per your call. Quiet Work now pays
 
 ## 7. Design Notes / Open Questions
 
-* **No hard failure state on the vetting job.** `QUEST_DESIGN_RULES.md` §2 says every quest needs a genuine loss state, but that rule is written against the bigger climax-grade quests (Rotten Rib, the Pier). This is Minor/Street scope (§6) — like Crane Three, which also has no failure-ends-everything state. The retry-at-higher-DC-with-a-2-day-gate cost is the fail-forward teeth here. Flag if you'd rather this have a real "Hask writes you off for good" failure branch (e.g. two strikes, like Rotten Rib) — that's a straightforward addition if you want the harder version.
-* **Only three archetypes (STR/DEX/CHA), no INT/WIS option.** Kept to three since this is a single bottleneck beat, not a multi-beat investigation that needs a fourth angle. Could add "read the clerk's rounds schedule" as an INT option if you want full stat coverage here.
-* **Hask stays unnamed until this beat** — consistent with how Dell, Wenna, Marl and Tobin are all introduced in-story rather than up front.
-* **The chandler's upper-room stub is deliberately NOT wired into this plan.** That stays the separate, bigger investigation-grade quest we discussed earlier (loyal/discreet as the default path, Watch-report as the one path that costs Oath standing). `hask_trusts_you` and `black_oath_rep` are exactly the kind of state that quest would want to read as a prerequisite later, but nothing here commits to that shape yet.
+* **`black_oath_rep` moves without the player ever being told why.** This is deliberate — you said the player is unknowingly running for a Black Oath associate, so the text can never name them, and the protagonist has no way to know. Mechanically this is just a background stat change, same as any other; nothing in `narrative_guidelines.md` requires the *player-character* to understand every number that moves, only that the *narration* never asserts knowledge the character doesn't have. The reveal (if any) belongs to whatever later quest cashes this in.
+* **"Another job" is a future hook, not built here.** Proposed gate: `hask_courier_count >= 6` (at the 2-day cadence, that's about 12 days of reliable running — comparable in length to the ~2 weeks of mudlarking that got the player this far in the first place). What that job actually is stays open; presumably it's the first point where "not carrying anything illegal *yet*" stops being true.
+* **No hard failure state on the courier job.** `QUEST_DESIGN_RULES.md` §2 says every quest needs a genuine loss state, but that's written against the bigger climax-grade quests (Rotten Rib, the Pier). This is Minor/Street scope (§6) — like Crane Three, which also has no failure-ends-everything state, and there's even less reason for one here than in the old iron-hauling draft, since nothing failure-adjacent is remotely dangerous. A fumbled round just pays less and doesn't count toward the trust counter.
+* **Only three archetypes (STR/DEX/CHA), no INT/WIS option.** Kept to three since this is a single bottleneck beat, not a multi-beat investigation that needs a fourth angle.
+* **Hask stays unnamed until his own beat (§2)** — consistent with how Dell, Wenna, Marl and Tobin are all introduced in-story rather than up front. The associate at the other end of this job stays unnamed too, and should stay that way for as long as this quest exists on its own.
+* **The chandler's upper-room stub is deliberately NOT wired into this plan.** That stays the separate, bigger investigation-grade quest we discussed earlier. `black_oath_rep` and `hask_courier_count` are exactly the kind of state that quest (or "another job" above) would want to read as a prerequisite later, but nothing here commits to that shape yet.
