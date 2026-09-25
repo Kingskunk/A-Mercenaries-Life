@@ -448,35 +448,31 @@ A blow you never see puts you on the planks. The boards are cold against your ch
 *goto port_valen_dredge_end
 
 *label de_ambush_fled
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-  *temp de_purse_fled (((gold * 100) + (silver * 10)) + copper)
-  *set dredge_ambush_lost dredge_ambush_toll_copper
-  *if (de_purse_fled < dredge_ambush_lost)
-    *set dredge_ambush_lost de_purse_fled
-  *set currency_add_amount (0 - dredge_ambush_lost)
-  *gosub_scene startup currency_add
-  *set currency_txn_locked true
-  *set locked_currency_txn_page_id page_id
-*temp de_fled_silver ((dredge_ambush_lost - (dredge_ambush_lost modulo 10)) / 10)
-*temp de_fled_copper (dredge_ambush_lost modulo 10)
-You break off and run, boots hammering the planks until the lane bends and the lantern light falls behind. The whistle carries your passing from bridge to bridge. When you slow down, your purse is hanging open and lighter than it was.
-*if (dredge_ambush_lost > 0)
-  *line_break
-  [b][💰 Lost: ${de_fled_silver} Silver Marks, ${de_fled_copper} Copper][/b]
-*set dredge_ambush_active false
-*set dredge_ambush_night 0
-*set hours_to_pass 0
-*set minutes_to_pass 15
-*set time_advance_call_id "de_ambush_fled"
-*gosub_scene calendar advance_time
-*gosub_scene calendar recalc_hp_from_neglect
-*if (hp_current <= 0)
-  *set death_cause "starvation"
-  *if (neglect_damage_fatigue > neglect_damage_hunger)
-    *set death_cause "exhaustion"
-  *goto_scene death death_screen
-*page_break Catch your breath…
-*goto_scene port_valen port_valen_travel
+*set check_stat "dex"
+*set check_dc 14
+*set check_skill "Break Away"
+*gosub_scene startup roll_d20_check
+*if (check_success)
+  You twist sideways and bolt, shoulder-checking the rail as you cut through a gap between two pilings. Your boots hammer the planks, and the whistle passes overhead, but you are already around the bend before anyone closes the distance. No hands reach your belt. No fingers find your coin.
+  *set dredge_ambush_active false
+  *set dredge_ambush_night 0
+  *set hours_to_pass 0
+  *set minutes_to_pass 15
+  *set time_advance_call_id "de_ambush_fled"
+  *gosub_scene calendar advance_time
+  *gosub_scene calendar recalc_hp_from_neglect
+  *if (hp_current <= 0)
+    *set death_cause "starvation"
+    *if (neglect_damage_fatigue > neglect_damage_hunger)
+      *set death_cause "exhaustion"
+    *goto_scene death death_screen
+  *page_break Catch your breath…
+  *goto_scene port_valen port_valen_travel
+*else
+  You shove off the rail and try to run, but a boot hooks your ankle and you go down hard on the wet planks. By the time you roll over, the one from the bridge is already stepping down, and the lane is closed behind you.
+  *set combat_enemy_advantage true
+  *set disadvantage true
+  *goto de_ambush_fight
 
 *label pv_dredge_silt_gates
 *set hours_to_pass 0
