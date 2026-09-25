@@ -1528,9 +1528,23 @@ The draw-knives keep their steady rhythm under the eaves, and the scrap dealer k
         *set cut_scrap 0
         *set currency_txn_locked true
         *set locked_currency_txn_page_id page_id
+        *set cut_scrap_sold_count + 1
 
       [b][💰 Scrap Sold: +${scrap_paid} Copper Bits][/b]
+      *if ((cut_scrap_sold_count = 14) and (not(scrap_vetting_offer_seen)))
+        *goto scrap_vetting_approach
       *goto cut_sheds_hub
+
+  *if (hask_courier_unlocked) and (scrap_vetting_day < campaign_day)
+    # Ask Hask if there's a round to run.
+      *goto scrap_vetting_run
+  *if ((scrap_vetting_offer_seen) and (not(hask_courier_unlocked))) and (scrap_vetting_day < campaign_day)
+    *if (scrap_vetting_quest_stage = "active")
+      # Ask Hask if the round's still open.
+        *goto scrap_vetting_run
+    *else
+      # Ask Hask about the real money he mentioned.
+        *goto scrap_vetting_pitch
 
   *if (cut_rumors_scrap < 2)
     # Ask the scrap dealer what kinds of salvage he buys.
@@ -1560,6 +1574,139 @@ The draw-knives keep their steady rhythm under the eaves, and the scrap dealer k
   # Head back along the canal bank.
     *page_break Back along the canal…
     *goto port_valen_dredge_end
+
+*comment ····· sub-scene: Hask's recruitment offer, fires once on the 14th sale
+*label scrap_vetting_approach
+This time, though, his thumb stays closed over the last coin.
+
+"You're back again," he says. Not a question. "Same mud, same few coppers, week in and week out." He looks you over the way a man checks a rope before he trusts his weight to it—not your face, your hands and your boots. "Name's Hask. There's real money moves through this quarter. Not this." He nods at the empty balance pan. "But it's not weighed anywhere a man with clean hands gets to watch."
+
+He waits, watching you, and doesn't say anything more.
+*choice
+  # Ask him what he means.
+    *goto scrap_vetting_pitch
+  # Take your coin and go. Not today.
+    *set scrap_vetting_offer_seen true
+    "Suit yourself," he says, and goes back to his scales without another look.
+    *goto cut_sheds_hub
+
+*comment ····· sub-scene: the pitch, re-enterable any later visit until taken or resolved
+*label scrap_vetting_pitch
+He glances once down the row of sheds, though nobody's close enough to hear over the draw-knives. "Man I do business with always needs somebody to carry word and small parcels between people who'd rather not walk the lanes themselves. Nothing heavy, nothing that'll get you in trouble if you're stopped and asked to open one. He just needs somebody who delivers what he's given, doesn't dawdle, and doesn't ask who anything's for." He shrugs. "I don't send him just anybody. You've shown up here often enough that I'm willing to put your name to him. Doesn't mean he'll trust you either, not yet."
+
+"It's a full afternoon of it—several stops, all over the quarter, before you're done. He'll know soon enough whether you're worth sending again."
+*choice
+  # Ask what's actually in the parcels.
+    "Whatever he's given me to hand you," he says. "I don't open them and neither do you. That's the whole job."
+    *goto scrap_vetting_pitch
+  # Take the round.
+    *set scrap_vetting_offer_seen true
+    *if (scrap_vetting_quest_stage = "unstarted")
+      *set scrap_vetting_quest_stage "active"
+    *goto scrap_vetting_run
+  # Walk away from it.
+    *set scrap_vetting_offer_seen true
+    "Your loss," he says, and doesn't ask again today.
+    *goto cut_sheds_hub
+
+*comment ····· sub-scene: the delivery round itself, shared by the first attempt and every later one
+*label scrap_vetting_run
+*set scrap_vetting_day campaign_day
+Hask hands over a canvas satchel, already packed: a few wrapped parcels, nothing heavy, nothing that rattles or clinks. "Market stall, the gangway rail, the foot of Lamp Stair. In that order, or don't bother going at all. Whoever's waiting will know you by the satchel, not your face."
+
+*set hours_to_pass 6
+*set minutes_to_pass 0
+*set exposure_base_mins 360
+*gosub_scene calendar calc_exposure
+*set time_advance_call_id "scrap_vetting_run_1"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*temp hint_scrap_str ""
+*temp hint_scrap_dex ""
+*temp hint_scrap_cha ""
+*if (show_stat_hints)
+  *if (guidance_active)
+    *set hint_scrap_str " [STR DC 12 (+1d4 Guidance)]"
+    *set hint_scrap_dex " [DEX DC 12 (+1d4 Guidance)]"
+    *set hint_scrap_cha " [CHA DC 11 (+1d4 Guidance)]"
+  *else
+    *set hint_scrap_str " [STR DC 12]"
+    *set hint_scrap_dex " [DEX DC 12]"
+    *set hint_scrap_cha " [CHA DC 11]"
+
+*choice
+  # Keep a hard, steady pace between stops and get the whole round done before the light turns.${hint_scrap_str}
+    *set check_stat "str"
+    *set check_dc 12
+    *set check_skill "Keep the Pace"
+    *gosub_scene startup roll_d20_check
+    *goto scrap_vetting_resolve
+  # Take the fastest cuts between each stop, and don't waste a step doubling back.${hint_scrap_dex}
+    *set check_stat "dex"
+    *set check_dc 12
+    *set check_skill "Know the Shortest Way"
+    *gosub_scene startup roll_d20_check
+    *goto scrap_vetting_resolve
+  # Keep every hand-off brief and businesslike, in and out without lingering to talk.${hint_scrap_cha}
+    *set check_stat "cha"
+    *set check_dc 11
+    *set check_skill "Keep It Brief"
+    *gosub_scene startup roll_d20_check
+    *goto scrap_vetting_resolve
+
+*comment ····· sub-scene: resolution, branches once on whether this is the first-ever success
+*label scrap_vetting_resolve
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *if (check_success)
+    *set hask_courier_count + 1
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+
+*if (check_success)
+  *if (not(hask_courier_unlocked))
+    All three parcels change hands without a wasted word, and you're back at the sheds before the satchel's had time to go stiff with damp.
+
+    Hask counts out the coin without much comment, same flat count as every sale before it. "Same again tomorrow, if you're still around," is all he says, and goes back to his scales.
+
+    [b][💰 Deliveries Made: +12 Copper Bits][/b]
+    *set black_oath_rep +1
+    *set hask_courier_unlocked true
+    *set scrap_vetting_quest_stage "resolved"
+  *else
+    Same three stops, same satchel, and nobody so much as looks at you twice by the third hand-off.
+
+    [b][💰 Deliveries Made: +12 Copper Bits][/b]
+  *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+    *set currency_add_amount 12
+    *gosub_scene startup currency_add
+    *set currency_txn_locked true
+    *set locked_currency_txn_page_id page_id
+*else
+  One hand-off runs long—a wrong turn, a slow crowd, a stop that keeps talking past when you'd rather be gone—and by the time you're back the satchel's a delivery short.
+
+  Hask's mouth flattens, but his hands don't stop moving over the scales. "Doesn't fill me with confidence," is all he says.
+
+  [b][💰 Deliveries Made: +4 Copper Bits][/b]
+  *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+    *set currency_add_amount 4
+    *gosub_scene startup currency_add
+    *set currency_txn_locked true
+    *set locked_currency_txn_page_id page_id
+
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the scrap yard…
+*goto cut_sheds_hub
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment AREA 4 OF 7: THE DREDGE LANDING
@@ -2888,7 +3035,6 @@ A broad, steep flight of granite steps is cut directly into the sheer face of th
       *set check_skill "Scavenge the Mud"
       *gosub_scene startup roll_d20_check
       *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-        *set cut_scrap_wade_count + 1
         *set minutes_since_wash + 300
         *if (minutes_since_wash > 8640)
           *set hygiene_stage "Foul"
