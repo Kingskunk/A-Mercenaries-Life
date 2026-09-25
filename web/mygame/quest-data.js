@@ -28,6 +28,10 @@
       active: function (s) { return s.rotten_rib_quest_stage === "active"; }
     },
     {
+      id: "muffled_bell", title: "The Muffled Bell", place: "The Pier",
+      active: function (s) { return s.bell_quest_stage === "active"; }
+    },
+    {
       id: "quiet_block", title: "The Quiet Block", place: "Fishmongers' Slip",
       active: function (s) { return s.fish_quest_stage === "active"; }
     },

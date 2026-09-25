@@ -429,11 +429,21 @@
       tags: ["Pier", "Quayside"], aliases: ["pier", "breakwater", "wreck bell", "bell", "reef", "bar", "jetty"],
       link: ["Wreck-Bell", "wreck-bell"],
       unlock: "pv_pier_seen",
-      body: [
-        "A long stone breakwater that runs out over the shoals toward the outer bar. At its head stand a jetty crane and a gallows-frame, and beyond the last stone a bronze bell on the reef counts the surge in slow strokes.",
-        "At its landward end a small iron-hooded shrine, the Tide-Well, stands beside the landing stairs.",
-        "Names of the lost are scratched into the frame post at every height a hand can reach, with no list and no keeper: whoever loses someone to the bar adds a mark, and whoever passes touches one. Skiffs tie off along the lower stone ladders."
-      ],
+      body: function (s) {
+        var out = [
+          "A long stone breakwater that runs out over the shoals toward the outer bar. At its head stand a jetty crane and a gallows-frame, and beyond the last stone a bronze bell on the reef counts the surge in slow strokes.",
+          "At its landward end a small iron-hooded shrine, the Tide-Well, stands beside the landing stairs.",
+          "Names of the lost are scratched into the frame post at every height a hand can reach, with no list and no keeper: whoever loses someone to the bar adds a mark, and whoever passes touches one. Skiffs tie off along the lower stone ladders."
+        ];
+        if (s.bell_quest_stage === "resolved") {
+          out.push("One night wreckers packed the striker with greased wool so the bell could not ring, and waited below the ladder to strip a ketch on the reef. It rang in the end, and the ketch went by.");
+        } else if (s.bell_quest_stage === "failed") {
+          out.push("One night wreckers packed the striker with greased wool so the bell could not ring, and a ketch broke on the reef.");
+        } else if (truthy(s.bell_heard_story)) {
+          out.push("Watermen say the bell went silent once before, on a night a grain barge broke her back on the reef with nobody on the stone to hear it not ring.");
+        }
+        return out;
+      },
       see: ["harbor_quayside", "wreck_law"]
     },
     {

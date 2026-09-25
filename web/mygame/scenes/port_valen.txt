@@ -1278,6 +1278,28 @@ You find a bench against the wall with your back to it, a watchful habit, and le
     A yard drayman chuckles into his tankard. "Clerk Elric looked like he'd seen a ghost down in the sawpits. Rolled three beams of cured highland oak back to Brant's slipway with his own men, and hasn't said a word since."
   *page_break The talk moves on…
   *goto pv_poi_tavern_menu
+*elseif ((bell_quest_stage = "unstarted") and (not(pv_tavern_rumor_bell)))
+  *set pv_tavern_rumor_bell true
+  *set bell_heard_story true
+  A skiff hand with a salt-cracked lip tells the end of the bench about the night the bell went quiet. A grain barge, he says, feeling in through weather with her crew listening for it, and the bell never sounded. She broke her back on the reef before dawn. By first light the wool was gone from the striker, and the watchmen at the stairs had seen nothing. "Nobody was out on the stone that night," he says. "Nobody could have told you it wasn't ringing until she hit."
+  *page_break The talk moves on…
+  *goto pv_poi_tavern_menu
+*elseif (((bell_quest_stage = "resolved") or (bell_quest_stage = "failed")) and (not(pv_tavern_rumor_bell_after)))
+  *set pv_tavern_rumor_bell_after true
+  *if (bell_resolution = "reported")
+    A caulker with tar to the elbows shakes his head into his cup. "The bell went off at all hours the other night, no rhythm to it, like a man beating a pot. The watchmen came off the pier with a purse, they say, and there's a lantern on the stairs now."
+  *elseif (bell_resolution = "pocketed")
+    A porter lowers his voice. "The watchmen found the striker bare and the steps empty, and there's talk a purse went missing off the stone."
+  *elseif (bell_resolution = "bloodied")
+    An old net-mender turns her mug in her hands. "Somebody rang it. They found a stranger sitting against the frame post with a hatchet's work on them, and the boat that brought the wreckers was already gone."
+  *elseif (bell_walked_away)
+    *set codex_wreck_law true
+    A skiff hand looks into his beer. "Nobody was out on the stone again, same as the grain barge. The salvage crews were on her before the tide turned. She was wreck-goods by sunup."
+  *else
+    *set codex_wreck_law true
+    A drayman leans back on his stool. "A coaster broke on the outer reef. Somebody was seen up the frame trying to tear the wool off when she struck. By first light the salvage crews had stripped her, and there was nothing left for customs to count as wreck-goods."
+  *page_break The talk moves on…
+  *goto pv_poi_tavern_menu
 *elseif ((fish_quest_stage = "unstarted") and (not(pv_tavern_rumor_fish)))
   *set pv_tavern_rumor_fish true
   A sawyer with a herring wrapped in a leaf says the bass at the block go for half what they did last winter, and the fishwives have stopped asking why. His friend laughs into his beer. "Ask the smokehouse men why the fish soup is so cheap."
@@ -3764,6 +3786,20 @@ When he spots you on the staging, the old shipwright lays down his blade and wip
     *set death_cause "exhaustion"
   *goto_scene death death_screen
 
+*comment The Muffled Bell opens from here (see quest/MUFFLED_BELL_PLAN.md, section 1.3). It needs
+*comment the old wreck story (a Keel rumor or overheard skiff hands), a first visit already made
+*comment (so the silence is noticeable), Night or Pre-Dawn, weather a ship cannot see through but
+*comment not a storm, and then a percent chance (bell_hook_chance, tuned in startup.txt). The flags
+*comment are fresh: advance_time above refreshed update_weather_flags. bell_hook replaces the
+*comment normal arrival because that prose has the bell tolling on nearly every branch.
+*temp bell_roll 0
+*if ((bell_quest_stage = "unstarted") and (bell_heard_story and pv_pier_seen))
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    *if ((weather_severity < 3) and (not(weather_visibility = "clear")))
+      *rand bell_roll 1 100
+      *if (bell_roll <= bell_hook_chance)
+        *goto bell_hook
+
 *if (not(pv_pier_seen))
   *set pv_pier_seen true
   *set codex_port_valen true
@@ -3855,6 +3891,15 @@ When he spots you on the staging, the old shipwright lays down his blade and wip
       [i]Down on the slippery lower steps, two boys with wicker baskets scrape mussels from the granite blocks, keeping one eye on the rising surge.[/i]
     *else
       [i]A sudden gust off the open sea whips salt spray across the flagstones, the bronze striker ringing with a sharp, resonant chime that carries far over the basin.[/i]
+
+*comment World memory of The Muffled Bell. Timeless on purpose: nothing here goes false on a
+*comment later day, so no campaign_day arithmetic.
+*if (bell_quest_stage = "resolved")
+  A length of grease-stiff cord still hangs from the iron cleat at the foot of the frame post, and nobody has taken it down.
+  *if (bell_resolution = "reported")
+    A hooded lantern hangs on a hook by the landing stairs now, lit through the night.
+*elseif (bell_quest_stage = "failed")
+  More names than the post has room for are cut at hand height on the seaward side, crowded shoulder to shoulder.
 
 *goto pv_poi_pier_menu
 
@@ -3988,8 +4033,359 @@ When he spots you on the staging, the old shipwright lays down his blade and wip
   *comment Daytime (Morning, Midday, Afternoon)
   The lower steps are busy with routine river maintenance: watermen bailing bilge water with wooden scoops, mending torn seine nets along the staging, and hauling crates of fresh bait or shellfish up the narrow steps to the market carts above.
 
+*comment One of the two ways to hear the wreck story that opens The Muffled Bell (the other is
+*comment the Keel rumor). Daylight and Dusk only: the ladders are watchful, not chatty, at night.
+*if ((bell_quest_stage = "unstarted") and (not(bell_heard_story)))
+  *if (not((time_period = "Night") or (time_period = "Pre-Dawn")))
+    *set bell_heard_story true
+    Two skiff hands are coiling line on the lower planks, arguing about the grain barge that broke on the reef. "The striker was stuffed," says one. The other spits into the water. "Stuffed by who? Nobody saw a thing." "That's what I mean."
+
 *page_break Back up to the breakwater…
 *goto pv_poi_pier_menu
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment THE MUFFLED BELL (the Pier, see quest/MUFFLED_BELL_PLAN.md)
+*comment Opened by the gate in pv_poi_pier. Beat 1 bell_hook, Beat 2 bell_b2 (the climax roll: the
+*comment ketch is saved or wrecked), Beat 3 bell_b3 (the wreckers on the ladder; a failed roll
+*comment starts fight_wreckers in combat.txt), Beat 4 bell_b4 (the pouch). Nobody is named. The
+*comment player never arrests, hauls or hands anyone over; the Watch arrives and takes over. A
+*comment bribe buys not being noticed, and cannot cover a bell the whole harbor hears, which is
+*comment why the Watch turns up on every success route. Only one advance_time per page, so each
+*comment beat starts after a *page_break.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label bell_hook
+You walk the causeway out toward the head of the stone, and you know the sound this place makes: one slow stroke behind every heave of the sea.
+*if (weather = "Fog")
+  Fog has swallowed the harbor lamps behind you and laid a lid on the sea ahead.
+*elseif (weather = "Rain")
+  Rain slants across the stone and smears every light on the water.
+*elseif (weather = "Snow")
+  Snow drifts sideways across the stone and hides the far end of the reef.
+*else
+  Sleet ticks against the timber and freezes in the notches of the post.
+Tonight the sea heaves and no stroke follows.
+
+Ahead, the frame stands black in the murk at the head of the breakwater, and the bronze bell hangs in it over the surf, swinging with every swell. Something is wrong with the striker. Each swing ends in a dull thud, like a fist in a pillow, and the note that should roll out over the reef never leaves the timber.
+
+Below the head of the stone, a dull glow moves on the landing stage: a horn lantern with a rag stuffed in its shutter. A hooded figure is going down the ladder into a rowboat, where someone is already sitting on the oars. Neither of them looks up.
+
+Then you see the lights. Two yellow points hang low in the haze beyond the reef, one behind the other, slow and steady. A ship's mast lanterns, feeling their way in. They are lined up with the pale stripe of foam where the reef breaks.
+
+*comment lint-ok two-options: plain yes or no
+*choice
+  # Go out to the post and see what is wrong with the striker.
+    *set bell_quest_stage "active"
+    *goto bell_b2
+  # Turn back along the causeway.
+    *goto bell_turn_back
+
+*label bell_turn_back
+*set bell_quest_stage "failed"
+*set bell_resolution "wrecked"
+*set bell_walked_away true
+*set hours_to_pass 0
+*set minutes_to_pass 15
+*set time_advance_call_id "bell_turn_back_time"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+You put the frame behind you and walk the causeway back toward the quay. The lights out on the water do not stop. Somewhere past the halfway stone you hear a long, low grinding, like a keel dragged over gravel, and then a crack. Voices come after it, small across the water, and then the knock of oars. You keep walking until the stone under your boots is the quay. Behind you, long after it can matter, the bell finds its voice at last: one huge slow stroke, as if someone has climbed the frame and pulled the wool out.
+
+*page_break Back toward the docks…
+*goto port_valen_harbor_pois
+
+*label bell_b2
+*set hours_to_pass 0
+*set minutes_to_pass 15
+*set time_advance_call_id "bell_b2_time"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+You lay a hand on the frame post the way the watermen do. The timber is slick, and your fingers come away greasy and stinking of old lard. The wool is packed into the striker's head in a wad the size of a loaf, and a cord holds it there, run down the post to an iron cleat at its foot. Under the wad the striker swings and thuds. Out on the water the mast lanterns have not turned. You have a few minutes, and the bell has to ring.
+
+*label bell_b2_hub
+*temp hint_bell_str ""
+*temp hint_bell_dex ""
+*temp hint_bell_int ""
+*if (show_stat_hints)
+  *if (guidance_active)
+    *set hint_bell_str " [STR DC 12 (+1d4 Guidance)]"
+    *set hint_bell_dex " [DEX DC 12 (+1d4 Guidance)]"
+    *set hint_bell_int " [INT DC 12 (+1d4 Guidance)]"
+  *else
+    *set hint_bell_str " [STR DC 12]"
+    *set hint_bell_dex " [DEX DC 12]"
+    *set hint_bell_int " [INT DC 12]"
+  *if (weapon_type = "ranged")
+    *set hint_bell_dex (hint_bell_dex & " (Advantage)")
+
+*choice
+  *if ((((((((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) or (bard_cantrip = "guidance")) or (bard_cantrip_2 = "guidance")) or (warlock_cantrip = "guidance")) or (warlock_cantrip_2 = "guidance")) or (race_cantrip = "guidance")) or (race_cantrip_2 = "guidance")) and (not(guidance_active)))
+    # [Cantrip: Guidance] Murmur the focusing verse under the noise of the surf.
+      *set guidance_active true
+      You breathe the verse out through your teeth, and the shake goes out of your hands.
+      *goto bell_b2_hub
+  # Climb the frame and tear the wool off the striker by hand.${hint_bell_str}
+    *set check_stat "str"
+    *set check_dc 12
+    *set check_skill "Climb the Frame"
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      The timber is slick with lard, but the notches in the post are cut at every height of a hand, and you climb them like rungs. Halfway up you hook one arm round the beam, get your fingers into the wool, and heave. It comes away in a greasy rope, and the striker swings free. The bell answers at once, one huge flat note that shudders through the frame and rolls out over the reef.
+      *goto bell_b2_rung
+    *else
+      You get as high as the crossbeam before your hands slide on the lard. The wool is packed tighter than it looked, and you spend the moments you had hauling at it with fingers that will not close.
+      *goto bell_b2_wrecked
+  # Throw stones at the bronze until the harbor hears it.${hint_bell_dex}
+    *set check_stat "dex"
+    *set check_dc 12
+    *set check_skill "Ring the Bell"
+    *if (weapon_type = "ranged")
+      *set advantage true
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      *if (weapon_type = "ranged")
+        You skip the hunt for a stone and send your first shot from the ${weapon} into the bronze. It rings. You send the next one after it.
+      *else
+        The third stone hits the bronze dead center. The note goes out over the reef, raw and ugly and impossible to miss, and you keep throwing until your arm burns.
+      *goto bell_b2_rung
+    *else
+      The first stone skips off the granite. The second goes into the sea. The third clips the frame, and the wood only thuds. By the time you have a fourth in your hand, the mast lanterns are level with the foam.
+      *goto bell_b2_wrecked
+  # Follow the cord to the cleat and slip the hitch.${hint_bell_int}
+    *set check_stat "int"
+    *set check_dc 12
+    *set check_skill "Slip the Hitch"
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      You follow the cord down the post with your fingers to the cleat, where somebody has taken three neat turns and a hitch. It is tied to be untied by someone who knows the knot, and you do. A pull, a shake, and the striker throws the wad off on its next swing. The bell answers before the wool reaches the water.
+      *goto bell_b2_rung
+    *else
+      The cord is wet, the hitch has swollen, and in the dark you cannot find the end. You pull the wrong turn and lock it tighter, and by the time you find the right one, the lanterns are much closer.
+      *goto bell_b2_wrecked
+  *if ((((((((((wizard_cantrip = "mage_hand") or (wizard_cantrip_2 = "mage_hand")) or (wizard_cantrip_3 = "mage_hand")) or (bard_cantrip = "mage_hand")) or (bard_cantrip_2 = "mage_hand")) or (warlock_cantrip = "mage_hand")) or (warlock_cantrip_2 = "mage_hand")) or (race_cantrip = "mage_hand")) or (race_cantrip_2 = "mage_hand")))
+    # [Cantrip: Mage Hand] Send a pale hand up the frame to pull the wool free.
+      A hand of pale force rises along the post, closes on the wad of wool, and pulls. The wool comes away with a wet tearing sound, and the striker swings free. The bell rings.
+      *goto bell_b2_rung
+  *if ((((((((((wizard_cantrip = "minor_illusion") or (wizard_cantrip_2 = "minor_illusion")) or (wizard_cantrip_3 = "minor_illusion")) or (bard_cantrip = "minor_illusion")) or (bard_cantrip_2 = "minor_illusion")) or (warlock_cantrip = "minor_illusion")) or (warlock_cantrip_2 = "minor_illusion")) or (race_cantrip = "minor_illusion")) or (race_cantrip_2 = "minor_illusion")))
+    # [Cantrip: Minor Illusion] Throw the toll of a bell out over the reef.
+      You shape the sound in your mind, then let it go. A deep, slow stroke rolls out of the empty air above the reef, and then another, exactly where the real bell should be.
+      *goto bell_b2_rung
+
+*label bell_b2_rung
+Out on the water, the two mast lanterns swing hard to the left. A thin voice carries across the swell, someone on that deck shouting for a lead-line. The lights slide on past the foam and go steadily toward the harbor mouth until the haze takes them.
+
+*page_break The oars stop below the ladder…
+*goto bell_b3
+
+*label bell_b2_wrecked
+*set bell_quest_stage "failed"
+*set bell_resolution "wrecked"
+
+The lanterns do not turn. A long, tearing crack rolls across the water, and one of the mast lights swings, tilts and goes out. Voices carry over the swell, a lot of them, high and quick, and then fewer. Below the ladder a pair of oars begins to dip, and the rowboat you saw slides away into the murk toward the sound.
+
+Nobody comes along the causeway. You stay at the frame post because there is nothing else to do with your hands, and you keep at the wool until it tears loose and the striker swings free. The bell rolls out one huge slow stroke over a reef that already has its ship.
+
+*page_break Back toward the docks…
+*goto port_valen_harbor_pois
+
+*label bell_b3
+*temp bell_fought false
+*set hours_to_pass 0
+*set minutes_to_pass 15
+*set time_advance_call_id "bell_b3_time"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+Below the head of the stone, the oars stop. The boat bumps the foot of the ladder, and two men are coming up the steps fast. One has the rag-stuffed lantern swinging from his wrist. The other is broad in the shoulder, with a hatchet hanging from his fist, its head pitted with rust. They stop three steps down, breathing hard. The broad one looks at the bell, then at you, then along the causeway toward the harbor, and his eyes stay there a moment too long.
+
+"That wasn't yours to ring," he says.
+
+*label bell_b3_hub
+*temp hint_bell_cha ""
+*temp hint_bell_str2 ""
+*temp hint_bell_wis ""
+*if (show_stat_hints)
+  *if (guidance_active)
+    *set hint_bell_cha " [CHA DC 12 (+1d4 Guidance)]"
+    *set hint_bell_str2 " [STR DC 12 (+1d4 Guidance)]"
+    *set hint_bell_wis " [WIS DC 12 (+1d4 Guidance)]"
+  *else
+    *set hint_bell_cha " [CHA DC 12]"
+    *set hint_bell_str2 " [STR DC 12]"
+    *set hint_bell_wis " [WIS DC 12]"
+
+*choice
+  *if ((((((((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) or (bard_cantrip = "guidance")) or (bard_cantrip_2 = "guidance")) or (warlock_cantrip = "guidance")) or (warlock_cantrip_2 = "guidance")) or (race_cantrip = "guidance")) or (race_cantrip_2 = "guidance")) and (not(guidance_active)))
+    # [Cantrip: Guidance] Murmur the focusing verse and let your breathing slow.
+      *set guidance_active true
+      You breathe the verse out, and the pounding in your ears drops to something you can think through.
+      *goto bell_b3_hub
+  # Tell them the whole harbor heard that bell, and the Watch is coming.${hint_bell_cha}
+    *set check_stat "cha"
+    *set check_dc 12
+    *set check_skill "Warn Them Off"
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      "Every watchman between here and the customs tower heard that, and half the harbor with them," you say. "You've got as long as it takes to walk here from the stairs. Whatever is in that boat is worth less than what they'll do to you." The lantern man is already looking down the causeway. Out past the stairs, a light has started to bob.
+      *goto bell_b3_bribe
+    *else
+      "Nobody's coming," says the broad man. He has been listening to the same night you have, and there are no whistles in it yet. He comes up the last three steps with the hatchet swinging loose at his knee.
+      *set combat_enemy_advantage true
+      *goto bell_fight
+  # Plant yourself at the head of the steps and do not move.${hint_bell_str2}
+    *set check_stat "str"
+    *set check_dc 12
+    *set check_skill "Hold the Steps"
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      You plant your feet on the wet stone at the head of the steps, square across the only way up, and stay there. The lantern man stops. The broad one looks at the width of the steps, at the drop on either side, and at you, and he does not come up. Neither of you moves for the length of a long breath, and the sea works at the stone below.
+      *goto bell_b3_bribe
+    *else
+      The step under your left foot is green with weed, and it goes when you shift your weight. You catch the frame post with one hand and lose your footing on the other, and the broad man takes the step you gave him.
+      *set disadvantage true
+      *goto bell_fight
+  # Watch the broad man's eyes and give him a way out.${hint_bell_wis}
+    *set check_stat "wis"
+    *set check_dc 12
+    *set check_skill "Read the Broad Man"
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      You watch his eyes and not the hatchet. They go to the causeway again and again, and each time they come back a little slower. "You didn't see a face," you say. "All you saw was a bell that wanted ringing. Take your boat." It is the offer he was waiting for.
+      *goto bell_b3_bribe
+    *else
+      "You can take your boat and go," you say, and your voice comes out thin. The broad man hears how thin. The hatchet comes up.
+      *set combat_enemy_advantage true
+      *set disadvantage true
+      *goto bell_fight
+
+*label bell_b3_bribe
+The broad man swears through his teeth and drags a leather pouch off his belt. He throws it, and it lands on the step at your feet with a heavy clink. "For your trouble, bellringer," he says. "You never saw a face." Then he is going down the ladder, and the lantern man goes after him, and the oars bite. The boat slides off into the murk.
+
+The whistle comes down the causeway then, two long notes, and a lantern out past the stairs breaks into a run.
+
+*page_break The Watch reaches the stone…
+*goto bell_b4
+
+*label bell_fight
+*gosub_scene combat fight_wreckers
+*if (combat_outcome = "player_died")
+  *set death_cause "combat"
+  *set death_enemy_epithet "the wreckers on the breakwater"
+  *goto_scene death death_screen
+*if (combat_outcome = "victory")
+  *goto bell_won
+*if (combat_outcome = "rescued")
+  *goto bell_rescued
+*goto bell_fled
+
+*label bell_won
+*set bell_fought true
+The broad man goes down on the step and does not get up. The lantern man is sprawled at the foot of the ladder with his sling under him, and the boat is drifting away on its painter. A leather pouch has burst partway open on the stone where the broad man fell, and silver shows through the split. Along the causeway, a whistle sounds, two long notes.
+
+*page_break The Watch reaches the stone…
+*goto bell_b4
+
+*label bell_rescued
+Your knees go. The hatchet lifts, and a whistle shrieks along the causeway, two long notes, and it does not fall. The boat is already backing off the ladder when the lantern light reaches the head of the stone, and two watchmen find you sitting against the frame post with a hand pressed to your side. "Get down to the quay," the older one says, not unkindly. "We have this."
+
+*if (not(bell_resolved))
+  *set bell_resolved true
+  *set bell_quest_stage "resolved"
+  *set bell_resolution "bloodied"
+
+*page_break Back along the causeway…
+*goto pv_poi_pier_menu
+
+*label bell_fled
+You run. The causeway is a long dark road, and behind you the hatchet rings off the frame post where you were standing. Halfway to the stairs you meet two lanterns coming the other way at a run, and they part around you without slowing. The older watchman calls out as he passes. "Get on home. We have this."
+
+*if (not(bell_resolved))
+  *set bell_resolved true
+  *set bell_quest_stage "resolved"
+  *set bell_resolution "bloodied"
+
+*page_break Back toward the docks…
+*goto port_valen_harbor_pois
+
+*label bell_b4
+*set hours_to_pass 0
+*set minutes_to_pass 15
+*set time_advance_call_id "bell_b4_time"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*set codex_wreck_law true
+Two watchmen in greased sheepskins reach the head of the breakwater, a lantern swinging between them. The older man stops with both hands on his knees to get his breath back.
+*if (bell_fought)
+  The younger watchman crouches over the broad man, turns his head with two fingers, and straightens.
+*else
+  The younger man goes straight to the ladder and looks down at the water.
+
+"Half the harbor heard that," the older watchman says, between breaths. He looks at the bell, and at the post by the stairs he has just run past. "And nobody on it tonight. She'd have been wreck-goods by sunup, that ketch, and every hook on the quay out for her."
+
+*if (bell_fought)
+  The pouch lies split open on the step beside the broad man, and you are standing over it. The younger watchman is looking at the dead men, and the older is looking at the bell.
+*else
+  The pouch is at your feet. Both of them are looking somewhere else.
+
+*comment lint-ok two-options: take it or leave it
+*choice
+  # Leave the pouch where it lies.
+    You step back from it. The older watchman's eyes find it a moment later, and he nudges it with his boot, opens it, and tips silver into his palm under the lantern. He turns the coins over. Then he looks up at the bell, and at you. "You rang that," he says, flat.
+    *if (bell_fought)
+      His eyes go once to the dead men and the hatchet lying by the broad man's hand, and back to you.
+    "Go on down to the quay. We have this."
+    *if (not(bell_resolved))
+      *set bell_resolved true
+      *set bell_quest_stage "resolved"
+      *set bell_resolution "reported"
+      *set port_watch_rep +1
+    [b][⚖ Harbor Standing: Port Watch Rep +1][/b]
+    *page_break Back along the causeway…
+    *goto pv_poi_pier_menu
+  # Pick up the pouch.
+    You bend for the pouch and tuck it out of sight before either watchman turns. It is heavier than it looked. The older watchman comes to the gallows-frame and looks up at the striker, then looks you over once from boots to hat. "You rang that," he says.
+    *if (bell_fought)
+      His eyes go once to the dead men and the hatchet lying by the broad man's hand, and back to you.
+    "Go on down to the quay. We have this."
+    *if (not(bell_resolved))
+      *set bell_resolved true
+      *set bell_quest_stage "resolved"
+      *set bell_resolution "pocketed"
+    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+      *set currency_add_amount 50
+      *gosub_scene startup currency_add
+      *set currency_txn_locked true
+      *set locked_currency_txn_page_id page_id
+    [b][💰 Found: 5 Silver Marks][/b]
+    *page_break Back along the causeway…
+    *goto pv_poi_pier_menu
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment THE FISHMONGERS' SLIP -- THE QUIET BLOCK (see quest/FISH_SLIP_PLAN.md)
