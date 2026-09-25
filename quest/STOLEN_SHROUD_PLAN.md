@@ -21,7 +21,7 @@ The text in `cut_shrine` already explains:
 
 ## 2. The In-World Premise
 
-The clay bowl at the feet of Saint Althea's statue holds the weekly shroud-purse — a collection of hard-earned coppers gathered from the district's poorest residents to pay for simple linen shrouds and shallow cemetery plots for drowned watermen. A ruthless young thug from Lamp Stair kicked over the clay bowl, battered the elderly friar, and ran off with the entire purse. The family of a drowned net-mender is waiting at the shrine with an unburied body, unable to pay the gravedigger.
+The clay bowl at the feet of Saint Althea's statue holds the weekly shroud-purse — a collection of hard-earned coppers gathered from the district's poorest residents to pay for simple linen shrouds and shallow cemetery plots for the poor folk who can't afford a respectable funeral service. A ruthless young thug from Lamp Stair kicked over the clay bowl, battered the elderly friar, and ran off with the entire purse. The family of a dead net-mender is waiting at the shrine with an unburied body, unable to pay the gravedigger.
 
 ---
 
@@ -29,7 +29,7 @@ The clay bowl at the feet of Saint Althea's statue holds the weekly shroud-purse
 
 ### Beat 1: The Hook (Broken Clay and Blood)
 
-* **The Scene:** Entering the alley, you find the friar bleeding against the soot-blackened post, shards of the earthenware bowl scattered across the flagstones. A sobbing woman with three children is huddled by the saint's feet. The friar tells you a scarred tough named Crake tore the shroud-purse from his hands and fled toward the dice cellar on Lamp Stair.
+* **The Scene:** Entering the alley, you find the friar bleeding against the soot-blackened post, shards of the earthenware bowl scattered across the flagstones. A sobbing woman with three children is huddled by the saint's feet. The friar tells you a scarred Young man named tore the shroud-purse from his hands and fled toward the dice cellar.
 * **Convergence:** The player agrees to hunt down the thief and recover the parish silver.
 
 ### Beat 2: Tracking Crake (Urban Investigation)
