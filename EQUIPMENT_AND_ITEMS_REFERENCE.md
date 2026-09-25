@@ -123,7 +123,6 @@ Standard field belts and frogs share a flat **1s 0c** baseline.
 | `soldiers_belt` | **Heavy Soldier's Belt** | Enlistment (Ashbrook) or Harness-Maker — **1s 0c** | Broad harness-leather belt with forged iron buckle and heavy scabbard frog. Cosmetic belt. |
 | `scabbard_belt` | **Concealed Scabbard Belt** | Enlistment (Outlaw) or Black Market — **1s 0c** | Supple leather belt fitted with low-profile loops and hidden sheath slots. Cosmetic belt. |
 | `satchel_harness` | **Satchel Harness** | Enlistment (Disgraced) or Scribe — **1s 0c** | Cross-body shoulder and waist leather harness carrying document cylinders. Cosmetic belt. |
-| `marl_rope_belt` | **Marl's Tarred Rope Belt** | Port Valen — Marl Coyne's Rescue (Quest Reward, Priceless) | Thick tarred rope with a wooden toggle worn smooth, taken off a skipper who has crossed the bar for twenty years. Equippable cosmetic belt. |
 | `none` | **None** | Default / Unequipped | Bare waist. |
 
 ---
@@ -192,7 +191,7 @@ Prices live in one place: `equipment.txt` `gear_sale_value` (retail in copper, p
 | Halda (smith) | Halda's Forge, Middle Ward | **50% of retail** | studded gambeson, mail shirt, hewing axe, stiletto, iron skullcap, iron prybar, and scrap steel (5c a piece) |
 | Pawnbroker | Dredge-End, Lamp Stair (daytime) | **35% of retail**, no questions | everything Halda buys except scrap steel, plus the hide cap and the signet ring (fixed **8s**) |
 
-Never sellable: starting gear (it is the fallback) and quest rewards (Talia's cloak and boots, Marl's belt, Brant's boots, the Hearthstone Talisman, Elspeth's keepsake, the Althea ring). Example sales: mail shirt 3s 5c to Halda or 2s 4c to the pawnbroker; skullcap 1s 5c or 1s.
+Never sellable: starting gear (it is the fallback) and quest rewards (Talia's cloak and boots, Brant's boots, the Hearthstone Talisman, Elspeth's keepsake, the Althea ring). Example sales: mail shirt 3s 5c to Halda or 2s 4c to the pawnbroker; skullcap 1s 5c or 1s.
 
 ---
 

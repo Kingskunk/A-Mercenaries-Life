@@ -127,62 +127,6 @@
       see: ["brant", "hendryk", "iron_wharves"]
     },
 
-    /* ------------------------------------------------------------- PEOPLE: THE PIER */
-
-    {
-      id: "tobin", category: "people", title: "Tobin",
-      sub: "The watcher on the breakwater",
-      role: "Watches the bar for the Black Oath",
-      link: ["Tobin"],
-      tags: ["Pier", "Black Oath"], aliases: ["watcher", "knots", "the bar"],
-      unlock: "bar_asked_who",
-      body: [
-        "A thin man in a cloak stiff with old salt and a knit cap pulled to his eyebrows, with tar worked into the creases of his fingers. He ties a knot in the line on the base post of the jetty-head crane for every boat that goes over the bar after curfew, and cuts the knot out when it comes back.",
-        "He watches for the Black Oath and is not supposed to be seen talking to strangers."
-      ],
-      see: ["pier", "black_oath", "marl"]
-    },
-    {
-      id: "marl", category: "people", title: "Marl Coyne",
-      sub: "Skipper of the Gannet",
-      role: "Skipper, river-mouth skiff Gannet",
-      link: ["Marl Coyne", "Marl"],
-      tags: ["Pier", "Black Oath"], aliases: ["skipper", "Gannet", "skiff"],
-      unlock: "bar_asked_out",
-      body: function (s) {
-        var out = [
-          "Skipper of the Gannet, a twenty-foot river-mouth skiff that goes over the bar after curfew with no lamp, and her sister's boy in the bow. Tobin expected her back before the water bottomed out."
-        ];
-        if (s.bar_resolution === "lawful") {
-          out.push("The Watch fined her and impounded the Gannet.");
-        } else if (s.bar_resolution === "pragmatic") {
-          out.push("The Oath's men took her and the boy back under its thumb.");
-        } else if (s.bar_resolution === "strategic") {
-          out.push("The Black Oath's count lists the Gannet lost with all hands. She keeps a skiff on the lowest ladder at the pier, and she owes you a favor.");
-        } else if (s.bar_quest_stage === "declined") {
-          out.push("The Gannet never came back in.");
-        }
-        return out;
-      },
-      see: ["pier", "pip", "tobin", "black_oath"]
-    },
-    {
-      id: "pip", category: "people", title: "Pip",
-      sub: "Marl's sister's boy",
-      role: "Marl Coyne's nephew",
-      link: ["Pip"],
-      tags: ["Pier"], aliases: ["boy", "nephew"],
-      unlock: "met_pip",
-      body: function (s) {
-        var out = ["Eleven years old, wrapped in a tarp in the bow of Marl's skiff, and unable to swim a stroke."];
-        if (s.bar_resolution === "strategic") {
-          out.push("He is learning the sweep. Marl will not let him in the boat unless she is watching, and he asks about you.");
-        }
-        return out;
-      },
-      see: ["marl", "pier"]
-    },
-
     /* --------------------------------------------------- PEOPLE: FISHMONGERS' SLIP */
 
     {
@@ -490,7 +434,7 @@
         "At its landward end a small iron-hooded shrine, the Tide-Well, stands beside the landing stairs.",
         "Names of the lost are scratched into the frame post at every height a hand can reach, with no list and no keeper: whoever loses someone to the bar adds a mark, and whoever passes touches one. Skiffs tie off along the lower stone ladders."
       ],
-      see: ["tobin", "marl", "harbor_quayside", "wreck_law"]
+      see: ["harbor_quayside", "wreck_law"]
     },
     {
       id: "fishmongers_slip", category: "places", title: "The Fishmongers' Slip",

@@ -10,7 +10,7 @@ A small street-scale quest and a working market for **the Fishmongers' Slip**, t
 
 ## 0. Review Notes (read this first)
 
-1. **What this replaces.** The shrine stop was 15 minutes of atmosphere with no mechanics, and a cathedral is planned for the city. The shrine button, its label, `pv_shrine_seen` and the shrine quest-table row are already removed. The two ambient hub lines about the Tide-Well shrine (`port_valen.txt`, waterfront curfew and church-day lines) stay as scenery. The pier quest's strategic ending now hides Marl and Pip in a net-drying loft above the smokehouses, which is a building on this slip.
+1. **What this replaces.** The shrine stop was 15 minutes of atmosphere with no mechanics, and a cathedral is planned for the city. The shrine button, its label, `pv_shrine_seen` and the shrine quest-table row are already removed. The two ambient hub lines about the Tide-Well shrine (`port_valen.txt`, waterfront curfew and church-day lines) stay as scenery.
 2. **Scope.** Rules Section 6 says minor street tasks get a small local reward, no district rewrites and no new systems. So this quest pays in coin, one point of Watch standing, or one ally flag. It does not add gear.
 3. **Why a market, not only a quest.** The Keel already sells hot food and drink (CON, STR, CHA and WIS buffs). The Slip sells the two stats the Keel does not (DEX and INT), plus a plain cheap bite. It is also the commoner economy that sits below the Gilded Scales head house on Civic Heights (see Section 6).
 4. **Names introduced in-story only.** The widow stays "the woman in the salt-stiff smock" until she gives her name. The lead buyer stays "the man in the good gloves" until she names him. The auctioneer and the slip-warden are never named.
@@ -732,11 +732,11 @@ Wenna is standing at the foot of the ramp with her arms crossed. She has watched
 
 ## 3. Tavern Rumors (The Cleaved Keel)
 
-Pre-seed while the quest is unstarted, then one outcome-specific line. Add these as `*elseif` branches after the What the Bar Keeps branches and before `pv_tavern_rumor_1` in `pv_poi_tavern_rumors`.
+Pre-seed while the quest is unstarted, then one outcome-specific line. Add these as `*elseif` branches after the Rotten Rib branches and before `pv_tavern_rumor_1` in `pv_poi_tavern_rumors`.
 
 ```choicescript
 *comment Tavern rumor integration in port_valen.txt (pv_poi_tavern_rumors)
-*comment Add these as *elseif branches AFTER the What the Bar Keeps branches and BEFORE pv_tavern_rumor_1.
+*comment Add these as *elseif branches AFTER the Rotten Rib branches and BEFORE pv_tavern_rumor_1.
 *elseif ((fish_quest_stage = "unstarted") and (not(pv_tavern_rumor_fish)))
   *set pv_tavern_rumor_fish true
   A sawyer with a herring wrapped in a leaf says the bass at the block go for half what they did last winter, and the fishwives have stopped asking why. His friend laughs into his beer. "Ask the smokehouse men why the fish soup is so cheap."
@@ -763,7 +763,7 @@ Pre-seed while the quest is unstarted, then one outcome-specific line. Add these
 
 ### 4.1 Required variables in `startup.txt`
 
-Add after `pv_tavern_rumor_bar_after`. Use `*comment` lines for annotations.
+Add after `pv_tavern_rumor_3`. Use `*comment` lines for annotations.
 
 ```choicescript
 *comment --- THE QUIET BLOCK (the Fishmongers' Slip, see quest/FISH_SLIP_PLAN.md) ---
@@ -792,7 +792,7 @@ Add after `pv_tavern_rumor_bar_after`. Use `*comment` lines for annotations.
 No inventory items. Under CURRENT STATUS, next to the other quest lines:
 
 ```choicescript
-*comment Under CURRENT STATUS, next to the What the Bar Keeps lines:
+*comment Under CURRENT STATUS, next to the other quest lines:
 *if (fish_quest_stage = "active")
   *line_break
   • [b]Active Quest:[/b] The Quiet Block (The Fishmongers' Slip)
@@ -812,7 +812,7 @@ No inventory items. Under CURRENT STATUS, next to the other quest lines:
 
 ### 4.3 Reference documentation in `quest/QUESTS.md`
 
-Add under *Chapter 3: Port Valen*, after Quest 4 (What the Bar Keeps): a **Quest 5: The Quiet Block** section with the objective flow, the three-resolution table plus the loss state, the variables, and update the Fishmongers' Slip row in the *Harbor POIs* table. Note that the shrine was removed.
+Add under *Chapter 3: Port Valen*, after Quest 3 (The Rotten Rib): a **Quest 5: The Quiet Block** section with the objective flow, the three-resolution table plus the loss state, the variables, and update the Fishmongers' Slip row in the *Harbor POIs* table. Note that the shrine was removed.
 
 ### 4.4 Time costs
 
@@ -864,7 +864,7 @@ This is here so the trading simulator, the cathedral and the Chart House have so
 
 * **Quayside (physical layer):** warehouses, cranes, the fish market, the Slip. Small lots and day wages.
 * **Civic Heights (paper layer):** the Gilded Scales head house beside the Council Hall: banking and letters of credit, entry writs for the Patrician Quarter, dispatches, and the (later) contracts window. Alderford's counting house and Hendryk's factor's office at the Iron Wharves are branches of this. The **Patrician Quarter** is the merchant lords' private enclave (great houses, walled estates, the Terrace Walk, a tailor), reached by a Day Writ or Registered Writ bought at the head house.
-* **The Pier (sea layer):** hulls, skiffs, and sea travel later. `marl_favor` is reserved for this.
+* **The Pier (sea layer):** hulls, skiffs, and sea travel later.
 * **`wenna_favor`** is reserved for wholesale dealing at the Slip: buying direct from a boat before the block.
 * **Deferred:** the Chart House (tide tables) goes into the customs area later. The Saint Althea shrine's rites move to the cathedral when it is built.
 
@@ -896,4 +896,4 @@ This is here so the trading simulator, the cathedral and the Chart House have so
 2. **The three payouts:** lawful 3 silver and +1 Watch rep, pragmatic 5 silver, strategic no coin plus `wenna_favor`.
 3. **The failure costs:** lawful failure −1 Watch rep and stall prices +1 copper, pragmatic failure stall prices +1 copper, strategic failure a 4-silver forfeited stake.
 4. **Single-roll climax:** each route is one roll, and losing it ends the quest. The study check is the only softener.
-5. **`wenna_favor`:** reserved for wholesale, like `marl_favor` is for sea travel.
+5. **`wenna_favor`:** reserved for wholesale.

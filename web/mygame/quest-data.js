@@ -28,10 +28,6 @@
       active: function (s) { return s.rotten_rib_quest_stage === "active"; }
     },
     {
-      id: "what_the_bar_keeps", title: "What the Bar Keeps", place: "The Pier",
-      active: function (s) { return s.bar_quest_stage === "active"; }
-    },
-    {
       id: "quiet_block", title: "The Quiet Block", place: "Fishmongers' Slip",
       active: function (s) { return s.fish_quest_stage === "active"; }
     },

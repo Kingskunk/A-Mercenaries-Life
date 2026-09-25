@@ -177,13 +177,6 @@ window.INVENTORY = {
       badge: function (s) { return s.equipped_feet_id === "brant_iron_heel_boots" ? "Worn" : "Stowed"; },
       equip: { slot: "feet", id: "brant_iron_heel_boots" }
     },
-    {
-      id: "marl_rope_belt", category: "apparel", owned: "has_marl_rope_belt",
-      name: "Marl's Tarred Rope Belt",
-      description: "Thick tarred rope with a wooden toggle worn smooth, taken off a skipper who has crossed the bar for twenty years.",
-      badge: function (s) { return s.equipped_waist_id === "marl_rope_belt" ? "Worn" : "Stowed"; },
-      equip: { slot: "waist", id: "marl_rope_belt" }
-    },
 
     // ---- accessories & trinkets ----
     {

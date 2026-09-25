@@ -1318,21 +1318,6 @@ window.EQUIPMENT_CATALOG = {
           "value": "unbelted waist"
         }
       }
-    },
-    {
-      "ids": [
-        "marl_rope_belt"
-      ],
-      "fields": {
-        "waist_desc": {
-          "type": "literal",
-          "value": "Marl's Tarred Rope Belt"
-        },
-        "waist_prose": {
-          "type": "literal",
-          "value": "tarred rope belt"
-        }
-      }
     }
   ],
   "feet": [
