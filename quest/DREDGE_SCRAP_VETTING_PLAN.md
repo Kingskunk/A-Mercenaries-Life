@@ -66,7 +66,7 @@ One mechanic used two ways — the first attempt, then its own repeatable form a
 
 * **Time cost:** 6 hours (`hours_to_pass 6`) — raised +2h across every day job in the district at once, see the Economics Check.
 * **Stops (flavor only, not a counted mechanic):** the round runs to several points across Dredge-End rather than one fixed destination — reuses locations and background figures the district already establishes rather than inventing new named characters: a parcel left with someone minding the market stalls near the chandler's stair (Area 1), word passed to one of the lookouts on the Gangways rail (Area 2, already established as a whistle-signal relay point — a natural fit for "somebody used to passing word along without being told why"), and a bundle handed off to someone waiting near the foot of Lamp Stair (Area 5). Three stops plus the return, at the ~15-20 minutes one-way this file already uses for a comparable short local move, is real walking time but not six hours of it on its own — the rest is waiting for the right moment at each hand-off rather than just barging up and thrusting a satchel at someone. The prose should gesture at "a full afternoon of it, more waiting than walking" rather than making the player click through each stop individually.
-* **Cadence:** once every 2 days — `scrap_vetting_day`/`hask_courier_day` (campaign_day of the last attempt) checked as `(campaign_day - X_day) >= 2`.
+* **Cadence:** once per `campaign_day`, same as wading and the dredge-landing shift — `scrap_vetting_day` (campaign_day of the last attempt) checked as `scrap_vetting_day < campaign_day`.
 
 > Hask hands over a canvas satchel, already packed: a few wrapped parcels, nothing heavy, nothing that rattles or clinks. "Market stall, the gangway rail, the foot of Lamp Stair. In that order, or don't bother going at all. Whoever's waiting will know you by the satchel, not your face."
 
@@ -94,9 +94,9 @@ One mechanic used two ways — the first attempt, then its own repeatable form a
 * **Success, first time only (one-time guard):**
   > All three parcels change hands without a wasted word, and you're back at the sheds before the satchel's had time to go stiff with damp.
   >
-  > Hask counts out the coin without much comment, same flat count as every sale before it. "Same again in a couple of days, if you're still around," is all he says, and goes back to his scales.
+  > Hask counts out the coin without much comment, same flat count as every sale before it. "Same again tomorrow, if you're still around," is all he says, and goes back to his scales.
 
-  * `[b][💰 Deliveries Made: +15 Copper Bits][/b]`
+  * `[b][💰 Deliveries Made: +12 Copper Bits][/b]`
   * `black_oath_rep +1` (never named or explained on-screen — the player-character has no idea who they just did a favor for; see Design Notes)
   * `hask_courier_unlocked true`
   * `scrap_vetting_quest_stage "resolved"`
@@ -106,7 +106,7 @@ One mechanic used two ways — the first attempt, then its own repeatable form a
 * **Success, ordinary run:**
   > Same three stops, same satchel, and nobody so much as looks at you twice by the third hand-off.
 
-  * `[b][💰 Deliveries Made: +15 Copper Bits][/b]`
+  * `[b][💰 Deliveries Made: +12 Copper Bits][/b]`
   * `hask_courier_count + 1`
   * No further `black_oath_rep` change — that was the first run's reward specifically, so the loop doesn't quietly farm reputation the way Crane Three's old silver farmed the writ.
   * Once `hask_courier_count` crosses a threshold (see Design Notes), this is where "another job" would start being offered — not built yet.
@@ -116,7 +116,7 @@ One mechanic used two ways — the first attempt, then its own repeatable form a
   >
   > Hask's mouth flattens, but his hands don't stop moving over the scales. "Doesn't fill me with confidence," is all he says.
 
-  * `[b][💰 Deliveries Made: +5 Copper Bits][/b]` (partial — most of the round still got done)
+  * `[b][💰 Deliveries Made: +4 Copper Bits][/b]` (partial — most of the round still got done)
   * No `black_oath_rep` change, no `hask_courier_count` increment (a fumbled round doesn't count toward "enough of these").
   * `scrap_vetting_quest_stage` stays `"active"` if this was the first attempt — no hard failure state here, see Design Notes.
 
@@ -126,7 +126,9 @@ One mechanic used two ways — the first attempt, then its own repeatable form a
 
 **Every Dredge-End day job is getting +2 hours** (your call, applies district-wide, not just here): wading 3h→5h, the dredge-landing shift 4h→6h, and this courier round 4h→6h; Crane Three (Harbor) goes 2.5h→4.5h too. Intent: 2 jobs should eat most of a 14-hour working day (07:00-21:00, Morning through Dusk), and 3 shouldn't fit at all without spilling past the point where the later jobs' own "not Night/Pre-Dawn" gates close them out. Same-district 2-job math (e.g. wading + dredge shift) lands at 11h; a cross-district pairing with Crane Three (+~2.5h round-trip travel) lands at 12-13h; any 3-job combination clears 17h and doesn't fit in one calendar day.
 
-15 copper every 2 days (≈7.5 copper/day average) is now barely ahead of wading's 3 copper/hour (15/6h = 2.5/hour) — a touch worse per hour than wading, if anything. Worth having open eyes about: since nothing illegal ever gets said out loud, the *pitch* can't lean on "real money" quite as hard as the original draft did — the actual draw at this stage is being trusted with something at all, not the wage. The coin buys the player's time; `black_oath_rep` and the door to "another job" are the real prize, same conclusion as before, just for a cleaner reason this time (there's no smuggling premium to justify a bigger number).
+**Cadence changed again: once per day, not every 2 days**, and success pay is now a flat 12 copper (partial failure 4) — matches your framing of "roughly twice wading, doable daily." One thing worth flagging before this ships: wading's *current* success payout is 9 copper (bumped from the original 6 a few revisions back), so 12 is about 1.33x current wading, not quite double — true double would be 18. If "twice wading" was the harder constraint, this needs to be 18 instead of 12; if 12 was the actual target and "twice" was a rough gesture at the ratio, 12 is right as written. Flagging rather than guessing since it's a real fork.
+
+At 12 copper/day for 6 hours (2 copper/hour) against wading's 9 copper/day for 5 hours (1.8 copper/hour), courier is now a full daily option rather than an every-other-day one — a player doing both every day spends 11 of their 14 working hours on the two of them combined, which fits the "2 jobs = most of your day" intent directly rather than needing Crane Three or a cross-district trip to get there.
 
 ---
 
@@ -136,7 +138,7 @@ One mechanic used two ways — the first attempt, then its own repeatable form a
 *create cut_scrap_sold_count 0         *comment times sold TO Hask specifically -- fires the offer at 14
 *create scrap_vetting_offer_seen false *comment Hask has raised it at least once; makes the ask-again hub option available
 *create scrap_vetting_quest_stage "unstarted" *comment "unstarted", "active", "resolved"
-*create scrap_vetting_day 0            *comment campaign_day of the last delivery-round attempt (either stage); blocks a retry inside 2 days
+*create scrap_vetting_day 0            *comment campaign_day of the last delivery-round attempt (either stage); once per day, like wading and the dredge shift
 *create hask_courier_unlocked false    *comment first round resolved; unlocks the standing "run a round" hub option
 *create hask_courier_count 0           *comment lifetime SUCCESSFUL rounds; RESERVED to gate "another job" later (see Design Notes)
 ```
@@ -150,7 +152,7 @@ One mechanic used two ways — the first attempt, then its own repeatable form a
 ## 7. Design Notes / Open Questions
 
 * **`black_oath_rep` moves without the player ever being told why.** This is deliberate — you said the player is unknowingly running for a Black Oath associate, so the text can never name them, and the protagonist has no way to know. Mechanically this is just a background stat change, same as any other; nothing in `narrative_guidelines.md` requires the *player-character* to understand every number that moves, only that the *narration* never asserts knowledge the character doesn't have. The reveal (if any) belongs to whatever later quest cashes this in.
-* **"Another job" is a future hook, not built here.** Proposed gate: `hask_courier_count >= 6` (at the 2-day cadence, that's about 12 days of reliable running — comparable in length to the ~2 weeks of mudlarking that got the player this far in the first place). What that job actually is stays open; presumably it's the first point where "not carrying anything illegal *yet*" stops being true.
+* **"Another job" is a future hook, not built here.** Proposed gate: `hask_courier_count >= 12` (raised from the earlier draft's 6, since the cadence is now daily rather than every 2 days — 12 successful runs is about 12 days of reliable running, keeping it comparable in length to the ~2 weeks of mudlarking that got the player this far in the first place). What that job actually is stays open; presumably it's the first point where "not carrying anything illegal *yet*" stops being true.
 * **No hard failure state on the courier job.** `QUEST_DESIGN_RULES.md` §2 says every quest needs a genuine loss state, but that's written against the bigger climax-grade quests (Rotten Rib, the Pier). This is Minor/Street scope (§6) — like Crane Three, which also has no failure-ends-everything state, and there's even less reason for one here than in the old iron-hauling draft, since nothing failure-adjacent is remotely dangerous. A fumbled round just pays less and doesn't count toward the trust counter.
 * **Only three archetypes (STR/DEX/CHA), no INT/WIS option.** Kept to three since this is a single bottleneck beat, not a multi-beat investigation that needs a fourth angle.
 * **Hask stays unnamed until his own beat (§2)** — consistent with how Dell, Wenna, Marl and Tobin are all introduced in-story rather than up front. The associate at the other end of this job stays unnamed too, and should stay that way for as long as this quest exists on its own.
