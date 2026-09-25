@@ -32,6 +32,10 @@
       active: function (s) { return s.bell_quest_stage === "active"; }
     },
     {
+      id: "stolen_shroud", title: "The Stolen Shroud", place: "The Alley Shrine",
+      active: function (s) { return s.shroud_quest_stage === "active"; }
+    },
+    {
       id: "quiet_block", title: "The Quiet Block", place: "Fishmongers' Slip",
       active: function (s) { return s.fish_quest_stage === "active"; }
     },

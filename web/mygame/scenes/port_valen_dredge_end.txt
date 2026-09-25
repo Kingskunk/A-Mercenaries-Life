@@ -2881,10 +2881,53 @@ Afterward, the room settles into thick, cooling stillness, broken only by the so
 *if ((day_of_week = "Hallowday") and (cut_shrine_day)) and (not(street_life = "empty"))
   *set cut_broth_serving true
 
+*comment The Stolen Shroud (quest/QUESTS.md Quest 6). The hook, its revisit, the "trail went cold" ending and the
+*comment rest of the day of the theft (shroud_after) all replace layer 3. The scene needs a copper already left in the bowl and the friar at his kettle, and it
+*comment lasts shroud_deadline_days from the day it was first seen (a body cannot wait). shroud_bowl tells the
+*comment place layer and the ordinary-day line what state the bowl is in.
+*temp shroud_scene false
+*temp shroud_cold false
+*temp shroud_after false
+*temp shroud_bowl "clay"
+*if (shroud_quest_stage = "unstarted")
+  *if (shroud_seen)
+    *if ((campaign_day - shroud_start_day) < shroud_deadline_days)
+      *set shroud_scene true
+    *else
+      *set shroud_cold true
+  *elseif (cut_shrine_gave and cut_broth_serving)
+    *set shroud_scene true
+    *set shroud_seen true
+    *set shroud_start_day campaign_day
+*if (shroud_scene)
+  *set cut_broth_serving false
+  *set shroud_bowl "shards"
+*if (shroud_cold)
+  *set shroud_bowl "tin"
+*if ((shroud_resolution = "returned") or (shroud_resolution = "fee"))
+  *set shroud_bowl "new"
+*if (((shroud_resolution = "pocketed") or (shroud_resolution = "escaped")) or (shroud_resolution = "cold"))
+  *set shroud_bowl "tin"
+*comment The rest of the day of the theft, once the quest has ended one way or the other: no queue, no shop, and
+*comment the bowl is still in shards. The new bowl or the tin cup shows from the next visit.
+*if ((shroud_seen) and ((not(shroud_quest_stage = "unstarted")) and (campaign_day = shroud_start_day)))
+  *set shroud_after true
+  *set cut_broth_serving false
+  *set shroud_bowl "shards"
+
 [b]◈ THE ALLEY SHRINE[/b]
 *line_break
 *comment ── LAYER 1: PLACE (Constant Geography, Architecture, & Smell) ──
-The alley pinches narrow between two leaning tenement foundations, opening into a small stone pocket sheltered beneath a heavy cedar arch. The timber uprights are blackened by years of soot and woodsmoke. Set into a shallow niche in the seawall stone is a carved limestone figure draped in a veil, its features worn featureless by decades of touching fingers. Chiseled into the plinth in uneven letters is the name: [i]ALTHEA[/i]. Tattered strips of bleached linen and braided flax cords are knotted along the timber posts, and a shallow clay bowl at the figure's feet holds smooth river pebbles, copper pins, and beeswax candle stubs in an iron tray. An iron pot-hook hangs from the center of the arch. The close air smells of damp mortar, woodsmoke, river mud, and boiled grain.
+The alley pinches narrow between two leaning tenement foundations, opening into a small stone pocket sheltered beneath a heavy cedar arch. The timber uprights are blackened by years of soot and woodsmoke. Set into a shallow niche in the seawall stone is a carved limestone figure draped in a veil, its features worn featureless by decades of touching fingers. Chiseled into the plinth in uneven letters is the name: [i]ALTHEA[/i]. Tattered strips of bleached linen and braided flax cords are knotted along the timber posts, and
+*if (shroud_bowl = "shards")
+  the shards of a smashed clay bowl lie at the figure's feet among scattered river pebbles, copper pins, and beeswax candle stubs.
+*elseif (shroud_bowl = "tin")
+  a tin cup lashed to the plinth with linen strips holds smooth river pebbles, copper pins, and beeswax candle stubs in an iron tray.
+*elseif (shroud_bowl = "new")
+  a new clay bowl at the figure's feet, fired lopsided, holds fresh river pebbles, copper pins, and beeswax candle stubs in an iron tray.
+*else
+  a shallow clay bowl at the figure's feet holds smooth river pebbles, copper pins, and beeswax candle stubs in an iron tray.
+An iron pot-hook hangs from the center of the arch. The close air smells of damp mortar, woodsmoke, river mud, and boiled grain.
 
 *comment ── LAYER 2: SKY & ATMOSPHERIC LIGHT (Weather & Light Only, No People) ──
 *if (weather = "Rain")
@@ -2912,7 +2955,28 @@ The alley pinches narrow between two leaning tenement foundations, opening into 
     A flat pewter sky hangs between the tenements, pressing chimney smoke low into the passage.
 
 *comment ── LAYER 3: STREET LIFE (Activity Derived From street_life, Day, & Time) ──
-*if (street_life = "empty")
+*if (shroud_scene)
+  *if (campaign_day = shroud_start_day)
+    No queue lines the tenement wall. The iron kettle lies on its side under the arch, and pea soup is cooling in the cracks between the flags.
+
+    The friar sits against the blackened post with a rag held to his head. It has soaked red, and his lip is split so badly it has swollen his whole mouth. A woman crouches by the plinth with three children pulled in against her, and behind them lies a long shape under a fishing net, bare feet toward the saint. The older woman who spoke to you when you left your copper has a hand on the friar's shoulder. When she sees you, she lifts her chin.
+  *else
+    The kettle stands cold under the arch. The friar sits where he sat, the rag on his head gone brown. The woman and her three children have not left the plinth, and the net still covers the shape at their feet. The older woman meets your eye across the alley.
+  *comment lint-ok two-options: plain yes or no
+  *choice
+    # Kneel by the friar and ask what happened.
+      *goto shroud_ask
+    # Leave them to it.
+      *goto cut_shrine_hub
+*elseif (shroud_cold)
+  The family is gone from the plinth, and the flags where they sat have been swept clean. The older woman resting against the foundation timber lifts her chin as you come in. "They carried him to the pauper's ditch," she says. "The gravedigger would not wait on the parish." She nods at the tin cup lashed to the plinth where the bowl used to be. "The friar has said his prayers. Nobody blames the ones who stayed out of it."
+  *if (not(shroud_resolved))
+    *set shroud_resolved true
+    *set shroud_quest_stage "failed"
+    *set shroud_resolution "cold"
+*elseif (shroud_after)
+  No queue forms under the arch today. The kettle stands upright and cold, and the friar sits against the blackened post with the rag still held to his head.
+*elseif (street_life = "empty")
   The alley is deserted. The heavy iron broth-kettle has been unhooked and carried inside the cellars out of the storm, leaving the iron hook swinging bare in the draft. Shingle roofs rattle overhead, and brown runoff churns down the stone channel. No one lingers on the steps.
   *if (de_savvy)
     Even the bridge lookouts have abandoned the canal entrances; anything that moves through the passage stands out in plain view.
@@ -2933,9 +2997,29 @@ The alley pinches narrow between two leaning tenement foundations, opening into 
 
 *else
   *comment Ordinary working day (Morning, Midday, Afternoon, Dusk)
-  Between broth days the arch is uncrowded. A few elderly spinners or injured dockers sit on the low stone foundation steps with their backs to the timber, resting out of the wind. Passing watermen pause to lay a palm against the carved veil or leave a river pebble in the bowl before heading down to the canals.
+  Between broth days the arch is uncrowded. A few elderly spinners or injured dockers sit on the low stone foundation steps with their backs to the timber, resting out of the wind. Passing watermen pause to lay a palm against the carved veil or leave a river pebble in the
+  *if (shroud_bowl = "tin")
+    cup
+  *else
+    bowl
+  before heading down to the canals.
 
 *label cut_shrine_hub
+*comment The friar's phials (The Stolen Shroud): sold only after the purse was returned or quietly kept, only while
+*comment he is at his kettle, and one batch every shroud_phial_wait_days. After the "fee" ending he refuses.
+*temp shroud_shop_open false
+*temp shroud_shop_ready false
+*temp shroud_price_txt ""
+*temp shroud_wait_left 0
+*if (((shroud_resolution = "returned") or (shroud_resolution = "pocketed")) and cut_broth_serving)
+  *set shroud_shop_open true
+  *gosub_scene equipment gear_info "althea_phial"
+  *gosub_scene equipment format_copper gear_retail
+  *set shroud_price_txt gear_sale_desc
+  *if (campaign_day >= shroud_phial_ready_day)
+    *set shroud_shop_ready true
+  *else
+    *set shroud_wait_left (shroud_phial_ready_day - campaign_day)
 *choice
   *if ((cut_broth_serving) and (cut_broth_day < campaign_day))
     # Join the queue and take a bowl of broth. [~15 min]
@@ -2967,6 +3051,16 @@ The alley pinches narrow between two leaning tenement foundations, opening into 
       "Those who pay, those who move inland, and those the tide takes." He passes the bowl to an old woman with crippled hands. "I feed whoever stands here. The Oath counts the boats."
       *goto cut_shrine_hub
 
+  *if (shroud_shop_open)
+    *if (shroud_shop_ready)
+      # Ask the friar for a phial of Saint Althea's water. [${shroud_price_txt}]
+        *goto shroud_shop
+    *else
+      # Ask the friar for a phial of Saint Althea's water. [Ready in ${shroud_wait_left} @{(shroud_wait_left = 1) day|days}]
+        *goto shroud_shop
+  *if ((shroud_resolution = "fee") and cut_broth_serving)
+    # Ask the friar about the phials of Saint Althea's water.
+      *goto shroud_shop_refused
   # Lay a hand against the carved veil of Saint Althea.
     You step up to the niche and press your palm flat against the cold limestone hem. Decades of salt spray, peat smoke, and passing hands have polished the surface like wet river slate. For a quiet moment away from the noise of the canal cuts, the stone feels solid beneath your grip, an anchor to an older faith that asked for bandages and needlework instead of gold and iron.
     *goto cut_shrine_hub
@@ -3001,6 +3095,365 @@ The alley pinches narrow between two leaning tenement foundations, opening into 
   # Leave the archway.
     *page_break Back out to the lanes…
     *goto port_valen_dredge_end
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment THE STOLEN SHROUD (the Alley Shrine, see quest/QUESTS.md Quest 6)
+*comment Opened by the gate in cut_shrine_page (a Hallowday, the friar at his kettle, a copper already left in the
+*comment bowl). Beat 1 is the hook printed in layer 3, then shroud_ask; Beat 2 shroud_b2 (the trail, a failed roll
+*comment costs coin); Beat 3 shroud_b3 (the climax roll, a failed roll starts fight_shroud_thieves in combat.txt);
+*comment Beat 4 shroud_b4 (the purse: A returned, B fee, C pocketed). Only the friar is ever named. The thief is
+*comment described, never named. Nobody is hauled anywhere: the thieves are left where they fall. The friar
+*comment sells a phial after A or C (shroud_shop), and refuses after B. One advance_time per page, so each
+*comment beat starts after a *page_break.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label shroud_ask
+"Purse," the friar says. It comes out thick past the lip. "Forty coppers, this week's dish, meant for the gravedigger." His eyes go to the net and come back. "A young man came down the steps while the line was breaking up. Scar from ear to mouth, here." He touches his own cheek. "He tore the purse out of my hands and broke the bowl so I would not follow."
+
+The older woman tips her head toward the alley mouth. "Up the cut to Lamp Stair, and running. That's where his sort go to spend it." Her hand tightens on the friar's shoulder. "It will be half gone by nightfall."
+
+The friar bows his head over the rag, and his lips move in the saint's prayer for the drowned.
+
+*page_break Up the cut to Lamp Stair…
+*goto shroud_b2
+
+*label shroud_b2
+*set shroud_quest_stage "active"
+*set hours_to_pass 0
+*set minutes_to_pass 15
+*set time_advance_call_id "shroud_b2_time"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+You take the cut up to Lamp Stair at a jog.
+*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+  The night trade is shuttered and the red lanterns hang dark. The pawnbroker's window stands open, and people hauling laundry bundles move along the flags toward the upper stairs.
+*else
+  Shutter pins are pulling back, stools are being dragged onto thresholds, and tapers are touching the red lanterns one by one.
+Somewhere along it, a scarred young man is spending the parish's money.
+
+*label shroud_b2_hub
+*temp hint_shr_int ""
+*temp hint_shr_wis ""
+*temp hint_shr_cha ""
+*if (show_stat_hints)
+  *if (guidance_active)
+    *set hint_shr_int " [INT DC 12 (+1d4 Guidance)]"
+    *set hint_shr_wis " [WIS DC 12 (+1d4 Guidance)]"
+    *set hint_shr_cha " [CHA DC 12 (+1d4 Guidance)]"
+  *else
+    *set hint_shr_int " [INT DC 12]"
+    *set hint_shr_wis " [WIS DC 12]"
+    *set hint_shr_cha " [CHA DC 12]"
+
+*choice
+  *if ((((((((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) or (bard_cantrip = "guidance")) or (bard_cantrip_2 = "guidance")) or (warlock_cantrip = "guidance")) or (warlock_cantrip_2 = "guidance")) or (race_cantrip = "guidance")) or (race_cantrip_2 = "guidance")) and (not(guidance_active)))
+    # [Cantrip: Guidance] Murmur the focusing verse and let the street sort itself out.
+      *set guidance_active true
+      You breathe the verse out, and the noise of the terrace settles into things you can use.
+      *goto shroud_b2_hub
+  # Follow what he left behind.${hint_shr_int}
+    *set check_stat "int"
+    *set check_dc 12
+    *set check_skill "Follow the Trail"
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      Coppers lie where they bounced out of a torn seam: one on the bottom step, two in the gutter, one under the pawnbroker's lintel. Between them a brown smear on the iron handrail marks where a hand with the friar's blood on it took the turn. The trail runs past the green door and ends at the drinking house, where it turns down a side passage.
+      *goto shroud_b2_found
+    *else
+      You find one copper, then nothing. You walk the length of the terrace with your eyes on the flags until the smear you were chasing turns out to be tar.
+      *goto shroud_b2_lost
+  # Watch the doors.${hint_shr_wis}
+    *set check_stat "wis"
+    *set check_dc 12
+    *set check_skill "Read the Terrace"
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      *if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+        You stop under the pawnbroker's lintel as though the shelves interested you, and let the terrace go by. Most of the faces do not matter. One does: a lean young man with a hood pulled forward, one hand pressed flat over a heavy bag under his shirt. When he turns his head, the scar shows white. He is not going to the green door. He is going round the side of the drinking house.
+      *else
+        You lean on the rail across from the drinking house and let the crowd wash past. Most of the faces do not matter. One does: a lean young man with a hood pulled forward, one hand pressed flat over a heavy bag under his shirt. When he turns his head, the scar shows white. He slips round the side of the building.
+      *goto shroud_b2_found
+    *else
+      Every second man on Lamp Stair has a hand over his bag, because everyone here is guarding something. You follow the wrong one halfway to the drinking house before he turns and asks what you want, and by the time you have doubled back, the terrace has closed over whoever you were looking for.
+      *goto shroud_b2_lost
+  # Squeeze the man on the cellar steps.${hint_shr_cha}
+    *set check_stat "cha"
+    *set check_dc 12
+    *set check_skill "Lean on the Doorman"
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      A lean man sits on the cellar steps with a waxed slate on his knee and his eyes on the canal ladder, watching who comes and goes with the patience of someone paid to. You sit down a step below him and go still. "A man with a scar took a dead man's burial money up this street," you say, "and the friar's people know his face." You keep your voice level and your eyes on the terrace, and you make it clear you have all the time there is. The lean man looks at your hands, then at the street. "Side passage behind the drinking house," he says. "You didn't get it from me."
+      *goto shroud_b2_found
+    *else
+      "Never seen him," says the lean man, before you have finished describing the scar. He says it too fast. Then he is on his feet and through the cellar door, and you hear a bolt slide. Somewhere beyond the wall, a stool scrapes.
+      *goto shroud_b2_lost
+  # Give it up and walk back to the shrine.
+    *set shroud_quest_stage "unstarted"
+    *goto shroud_b2_back
+
+*label shroud_b2_back
+*set hours_to_pass 0
+*set minutes_to_pass 15
+*set time_advance_call_id "shroud_b2_back_time"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+You go back down the cut. The friar looks up, reads it in your face, and lowers his eyes to the rag again.
+
+*page_break Back under the arch…
+*goto cut_shrine_page
+
+*label shroud_b2_found
+The side passage behind the drinking house is one body wide and smells of old smoke. A slanted door stands propped open with a brick, and steps go down into the dark.
+
+*page_break Down into the smoke…
+*goto shroud_b3
+
+*label shroud_b2_lost
+*set shroud_purse 30
+You lose time you did not have. By the time you find the side passage behind the drinking house, whoever you are after has been spending for a while. It is one body wide and smells of old smoke, and a slanted door stands propped open with a brick over steps that go down into the dark.
+
+*page_break Down into the smoke…
+*goto shroud_b3
+
+*label shroud_b3
+*set hours_to_pass 0
+*set minutes_to_pass 30
+*set time_advance_call_id "shroud_b3_time"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+The steps end in a low cellar black with old smoke. Split eels still hang from the racks along the ceiling, and barrels stand against the walls. Under a hooded lamp, two men are dividing coins into piles on a barrel-head: a scarred young man, and a thin one with a sling coiled at his belt. Their hands stop when your boot finds the third step.
+
+The scarred one is already reaching under the barrel-head, and something long and dull comes up in his fist. A gutting knife. "Wrong cellar, friend," he says.
+
+*label shroud_b3_hub
+*temp hint_shr_str ""
+*temp hint_shr_dex ""
+*temp hint_shr_cha2 ""
+*if (show_stat_hints)
+  *if (guidance_active)
+    *set hint_shr_str " [STR DC 12 (+1d4 Guidance)]"
+    *set hint_shr_dex " [DEX DC 12 (+1d4 Guidance)]"
+    *set hint_shr_cha2 " [CHA DC 12 (+1d4 Guidance)]"
+  *else
+    *set hint_shr_str " [STR DC 12]"
+    *set hint_shr_dex " [DEX DC 12]"
+    *set hint_shr_cha2 " [CHA DC 12]"
+
+*choice
+  *if ((((((((((wizard_cantrip = "guidance") or (wizard_cantrip_2 = "guidance")) or (wizard_cantrip_3 = "guidance")) or (bard_cantrip = "guidance")) or (bard_cantrip_2 = "guidance")) or (warlock_cantrip = "guidance")) or (warlock_cantrip_2 = "guidance")) or (race_cantrip = "guidance")) or (race_cantrip_2 = "guidance")) and (not(guidance_active)))
+    # [Cantrip: Guidance] Murmur the focusing verse and let your breathing slow.
+      *set guidance_active true
+      You breathe the verse out, and the pounding in your ears drops to something you can think through.
+      *goto shroud_b3_hub
+  # Step inside the knife and put him into the barrels.${hint_shr_str}
+    *set check_stat "str"
+    *set check_dc 12
+    *set check_skill "Get Inside the Knife"
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      You close before the blade has finished coming up, catch his wrist against your hip, and drive him backward into the barrels. The staves boom. The knife rings off the flags, and the scarred man ends up on the floor with his breath gone and coins rolling under his boots. The thin one is already halfway up the far stairs.
+      *goto shroud_b3_take
+    *else
+      You step in, and the floor is greasy with eel oil. Your heel goes, your shoulder meets a barrel instead of a man, and he is already turning with the knife.
+      *set disadvantage true
+      *goto shroud_fight
+  # Feint, catch the wrist, and pin him.${hint_shr_dex}
+    *set check_stat "dex"
+    *set check_dc 12
+    *set check_skill "Feint and Pin"
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      You drop a shoulder as if to charge, and when the knife goes for the space you left, you are on the other side of it. Your hand closes on his wrist and twists, and the knife falls. You walk him back into the brick and hold him there with a forearm across his collarbone. The thin one drops a handful of coins and takes the far stairs three at a time.
+      *goto shroud_b3_take
+    *else
+      He reads the feint before it finishes. The point is already coming across your line.
+      *set combat_enemy_advantage true
+      *goto shroud_fight
+  # Tell him what stealing a dead man's shroud costs.${hint_shr_cha2}
+    *set check_stat "cha"
+    *set check_dc 12
+    *set check_skill "Name the Cost"
+    *gosub_scene startup roll_d20_check
+    *if (check_success)
+      You stop on the third step and let the smoke curl round you. "That was a burial," you say. "The family is sitting under an arch with a body and no money for the gravedigger. A man who takes that has stolen from the river, and the river keeps a long count." You keep your voice level and your body still. The knife hand begins to shake. The thin one behind him is already gone up the stairs, and the knife rings on the flags.
+      *goto shroud_b3_take
+    *else
+      "The river can wait its turn," says the scarred man, grinning around a broken tooth. You hear how it landed. He lifts the point to the height of your throat, and the thin one, quiet until now, uncoils his sling.
+      *set combat_enemy_advantage true
+      *set disadvantage true
+      *goto shroud_fight
+  *if (((wizard_cantrip = "shocking_grasp") or (wizard_cantrip_2 = "shocking_grasp")) or (wizard_cantrip_3 = "shocking_grasp"))
+    # [Cantrip: Shocking Grasp] Catch his wrist and let the charge go.
+      You catch his wrist as he lunges and let the charge go. His whole arm locks. The knife drops from fingers that have stopped listening, and he sits down hard among the barrels, shaking. The thin one takes the far stairs at a run.
+      *goto shroud_b3_take
+  *if ((bard_cantrip = "vicious_mockery") or (bard_cantrip_2 = "vicious_mockery"))
+    # [Cantrip: Vicious Mockery] Tell him, softly and in detail, what Lamp Stair will say.
+      You tell him, softly and in detail, what Lamp Stair will say when it learns a friar's bowl bought him one night of dice: the scar, the borrowed knife, the man who could not even hold on to what he stole. His eyes fill with rage and shame, and his hand opens. The thin one has already gone up the far stairs.
+      *goto shroud_b3_take
+
+*label shroud_fight
+*gosub_scene combat fight_shroud_thieves
+*if (combat_outcome = "player_died")
+  *set death_cause "combat"
+  *set death_enemy_epithet "the thieves in the smoking cellar"
+  *goto_scene death death_screen
+*if (combat_outcome = "victory")
+  *goto shroud_fight_won
+*goto shroud_escaped
+
+*label shroud_fight_won
+The scarred man lies still on the flags with his breath going in and out, and the thin one is folded over the third step with his sling under him. Neither is going anywhere soon.
+*goto shroud_b3_take
+
+*label shroud_b3_take
+The shroud-purse lies on the barrel-head, a scuffed leather bag no bigger than your fist with the friar's knot still tied in its neck. Beside it is a knotted rag that clinks: the thieves' own coin. You scoop up both and go up the steps and out of the smoke.
+
+*page_break Back down the cut to the arch…
+*goto shroud_b4
+
+*label shroud_escaped
+*set hours_to_pass 0
+*set minutes_to_pass 15
+*set time_advance_call_id "shroud_escaped_time"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*if (not(shroud_resolved))
+  *set shroud_resolved true
+  *set shroud_quest_stage "failed"
+  *set shroud_resolution "escaped"
+
+*if (combat_outcome = "rescued")
+  The knife comes up, and you are on the floor with your ribs on fire. The scarred man kicks the barrel-head over, sweeps the purse and the coins into his shirt, and is gone up the far stairs with the thin one after him. You lie in the reek of old smoke until you can stand.
+*else
+  You break off and take the steps two at a time. Behind you a barrel-head goes over and coins scatter, and by the time you look back down the passage, the scarred man and the thin one are gone up the far stairs with the purse.
+
+You go back to the shrine anyway. The friar reads it on you before you say a word. "You tried," he says. The widow keeps her face turned to the net.
+
+*page_break Back under the arch…
+*goto cut_shrine_page
+
+*label shroud_b4
+*set hours_to_pass 0
+*set minutes_to_pass 15
+*set time_advance_call_id "shroud_b4_time"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*temp sh_half 0
+*temp sh_take 0
+*set sh_half (shroud_purse / 2)
+*set sh_take (shroud_purse + 20)
+You come back down the cut with the purse and the rag heavy in your pouch. The friar is where you left him. The widow has drawn the net up over her husband's face. They all look up.
+
+*choice
+  # Put everything in the friar's hands.
+    You put the purse and the knotted rag into his hands without counting. He weighs them, opens the rag, and looks at the silver lying in the cloth. "This was not the parish's," he says. "It was on him," you say. The friar closes his fingers over it. "Then it belongs to the saint now, and it will bury him properly."
+
+    The widow crosses to the plinth, takes a wax-stoppered clay flask from the niche behind it, and puts it into your hand with both of hers. "Cistern water," the friar says, "steeped with angelica and arnica, a month in the dark. It is for those who go out on the river." He tries to smile with the ruined lip. "I am Anselm. Brother Anselm, on the days the parish remembers it has brothers."
+    *if (not(shroud_resolved))
+      *set shroud_resolved true
+      *set shroud_quest_stage "resolved"
+      *set shroud_resolution "returned"
+      *set met_anselm true
+      *set shroud_phial_ready_day (campaign_day + shroud_phial_wait_days)
+      *gosub_scene equipment grant_gear "althea_phial" 1
+    [b][🧪 Acquired: Phial of Saint Althea's Water][/b]
+    *page_break Back under the arch…
+    *goto cut_shrine_page
+  # Count out half for the burial, and keep the rest as your fee.
+    You count half the coppers onto the flags and push the thieves' rag across with them, and you put the rest away. "A recovery fee," you say. "That is how it is done." The friar turns the coins over with one finger, and his sad eyes come up to yours. "It will bury him," he says. "Mercy comes dear in Port Valen." The widow keeps her face turned to the net.
+    *if (not(shroud_resolved))
+      *set shroud_resolved true
+      *set shroud_quest_stage "resolved"
+      *set shroud_resolution "fee"
+    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+      *set currency_add_amount sh_half
+      *gosub_scene startup currency_add
+      *set currency_txn_locked true
+      *set locked_currency_txn_page_id page_id
+    *gosub_scene equipment format_copper sh_half
+    [b][💰 Found: ${gear_sale_desc}][/b]
+    *page_break Back under the arch…
+    *goto cut_shrine_page
+  # Tell them the trail went cold.
+    "He went to ground somewhere up the stairs," you tell them. "I lost him at the drinking house." You keep your voice level, and the purse and the rag stay where they are, heavy in your pouch. The friar looks at you for a long moment, then nods. "You tried," he says. "That is more than most on Lamp Stair would." The older woman spits into the gutter, though not at you. Behind the plinth, one of the children begins to cry again.
+    *if (not(shroud_resolved))
+      *set shroud_resolved true
+      *set shroud_quest_stage "resolved"
+      *set shroud_resolution "pocketed"
+    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+      *set currency_add_amount sh_take
+      *gosub_scene startup currency_add
+      *set currency_txn_locked true
+      *set locked_currency_txn_page_id page_id
+    *gosub_scene equipment format_copper sh_take
+    [b][💰 Found: ${gear_sale_desc}][/b]
+    *page_break Back under the arch…
+    *goto cut_shrine_page
+
+*label shroud_shop
+*if (campaign_day < shroud_phial_ready_day)
+  He shakes his head slowly. "The water has to sit a full month in the dark, with the angelica and the arnica, before it is fit to bottle. Come back when the cistern is ready."
+  *goto cut_shrine_hub
+*gosub_scene equipment gear_info "althea_phial"
+*temp shroud_price gear_retail
+*if ((((gold * 100) + (silver * 10)) + copper) < shroud_price)
+  He names the price, and you find your purse is a little short of it. "It will keep," he murmurs.
+  *goto cut_shrine_hub
+*if (not(met_anselm))
+  *set met_anselm true
+  He passes you the flask with a nod. "Anselm," he says, "if you are going to be a customer."
+*else
+  He unhooks a flask from the cord at his waist, and you count the coin into his hand. "Drink it when you need it," he says. "Not before."
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount (0 - shroud_price)
+  *gosub_scene startup currency_add
+  *gosub_scene equipment grant_gear "althea_phial" 1
+  *set shroud_phial_ready_day (campaign_day + shroud_phial_wait_days)
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*gosub_scene equipment format_copper shroud_price
+[b][🧪 Bought: Phial of Saint Althea's Water | -${gear_sale_desc}][/b]
+*goto cut_shrine_hub
+
+*label shroud_shop_refused
+He keeps his eyes on the kettle. "Not to you."
+*goto cut_shrine_hub
+
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment AREA 7 OF 7: THE FLOODED LOWER STEPS

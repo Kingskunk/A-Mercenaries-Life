@@ -512,12 +512,37 @@
         id: "baron_karr", category: "people", title: "Baron Aldous Karr",
         link: ["Baron Aldous Karr", "Baron Karr", "Aldous Karr"],
         sub: "Feudal lord of Karr's Keep",
-        tags: ["Karr", "Highlands"], aliases: ["Karr", "the Baron"],
+        tags: ["Karr", "Highlands"], aliases: ["Karr", "the Baron", "Baron of Stenmark"],
         unlock: "codex_baron_karr",
-        body: [
-          "Feudal lord of Karr's Keep in the Highland Crags. His bailiffs collect a grain tax from his highland tenants by force, and they burned Ashbrook during one such collection. Notices bearing his seal offer standing rewards for runaway bond-servants and deserters from his estates."
-        ],
-        see: ["karrs_keep", "iron_bailiffs", "ashbrook", "broken_crags"]
+        body: function (s) {
+          var out = [
+            "Feudal lord of Karr's Keep in the Highland Crags. His bailiffs collect a grain tax from his highland tenants by force, and they burned Ashbrook during one such collection. Notices bearing his seal offer standing rewards for runaway bond-servants and deserters from his estates."
+          ];
+          if (truthy(s.codex_stenmark)) {
+            out.push("His title is Baron of [[stenmark|Stenmark]], the valleys and passes under the southern Crags. Like most titles in the Marches, it rests on an imperial patent that nobody has renewed since the legions left. He keeps it with the Iron Bailiffs, who hold the toll gates on both roads out, and he taxes what crosses them: the tenants' grain in autumn and refined steel by the hundredweight all year.");
+          }
+          return out;
+        },
+        see: ["stenmark", "karrs_keep", "iron_bailiffs", "ashbrook", "broken_crags", "house_gault", "skell"]
+      },
+      {
+        id: "skell", category: "people", title: "Warlord Skell",
+        link: ["Warlord Skell", "Skell"],
+        sub: "Master of the Great Sedge",
+        role: "Warlord of the Great Sedge, holder of Gryke",
+        tags: ["Sedge"], aliases: ["Skell", "warlord", "Gryke", "Sinking Keep", "fen lord"],
+        unlock: "codex_warlord_skell",
+        body: function (s) {
+          var out = [
+            "The warlord who holds the [[great_sedge|Great Sedge]] from Gryke, an old legion fort in the fen that is slowly sinking into it. The legion there dissolved where it stood, as the others did, and its garrison stayed on. Skell is said to have been a sergeant in it.",
+            "Skell takes tribute in peat, eels and spearmen, since the fen has no coin to give. Outsiders cross the Sedge by brushwood tracks that only Skell's people can find, and the Black Sinks causeway runs along the edge of it."
+          ];
+          if (truthy(s.silt_gate_full_intel) || truthy(s.has_silt_gate_payout_slip)) {
+            out.push("The peat-spiritus that the Black Oath runs in through the Silt-Gates is a fen drink, made in the Sedge's towns and paid out to Skell in casks.");
+          }
+          return out;
+        },
+        see: ["great_sedge", "black_sinks", "silt_gates", "black_oath", "grey_marches", "meridian_empire"]
       },
 
       /* ---------------------------------------------------------------- FACTIONS */
@@ -594,10 +619,28 @@
         sub: "Baron Karr's tax collectors",
         tags: ["Karr", "Highlands"], aliases: ["bailiffs", "tax collectors"],
         unlock: "codex_iron_bailiffs",
+        body: function (s) {
+          var out = [
+            "Baron Aldous Karr's armed tax collectors and highland enforcers. They wear boiled leather and iron kettle-helms, hold the mountain toll passes, seize tenant harvests, and enforce Karr's edicts with fire and the noose. They also seize contraband along the border."
+          ];
+          if (truthy(s.codex_stenmark)) {
+            out.push("Two tolls close Stenmark, and the bailiffs man both: Black Pike Gate on the south road and Iron Gap on the west. Everything the barony sells goes out through one of them, and everything it cannot grow comes in through the other.");
+          }
+          return out;
+        },
+        see: ["baron_karr", "stenmark", "ashbrook", "torvald"]
+      },
+      {
+        id: "house_gault", category: "factions", title: "House Gault",
+        link: ["House Gault", "Gault"],
+        sub: "Lords of the Western Vale",
+        tags: ["Western Vale"], aliases: ["Gault", "Dunmow", "lord of Dunmow", "riders", "cavalry", "Western Vale"],
+        unlock: "codex_house_gault",
         body: [
-          "Baron Aldous Karr's armed tax collectors and highland enforcers. They wear boiled leather and iron kettle-helms, hold the mountain toll passes, seize tenant harvests, and enforce Karr's edicts with fire and the noose. They also seize contraband along the border."
+          "The noble house that holds the [[western_vale|Western Vale]] from its walled seat at Dunmow. When the legions left, Gault kept its granaries shut and its gates manned, and it has held Dunmow ever since. It fields mounted riders and archers, who are at home on the open downs and far less so in forest or bog. Coombe Gap, the road that brings the vale's wagons east to Alderford, is Gault's, and so is the grain that fills the Upper Weir Granary.",
+          "Gault keeps no harbor and no fleet. Its market is the coast, and the coast is reached over the weir at Alderford."
         ],
-        see: ["baron_karr", "ashbrook", "torvald"]
+        see: ["western_vale", "stenmark", "alderford", "grey_marches", "meridian_empire"]
       },
       {
         id: "squatters", category: "factions", title: "The Causeway Squatters",
@@ -627,11 +670,29 @@
         id: "grey_marches", category: "places", title: "The Grey Marches",
         link: ["Grey Marches"],
         sub: "The frontier borderland",
-        tags: ["Regional"], aliases: ["Marches", "frontier", "borderland", "map"],
-        body: [
-          "A misty frontier borderland between the coastal trade routes and the northern highlands. The Grey River, the Black Sinks causeway, Alderford, and Baron Karr's highland estates all lie within it."
-        ],
-        see: ["port_valen", "alderford", "black_sinks", "broken_crags", "karrs_keep", "ashbrook", "grey_river"]
+        tags: ["Regional", "Trade"], aliases: ["Marches", "frontier", "borderland", "map", "regions", "economy", "trade", "goods", "powers"],
+        body: function (s) {
+          var out = [
+            "A misty frontier borderland between the coastal trade routes and the northern highlands. Three kinds of country meet around one river: steep highland valleys in the north, chalk downland and farm country to the west, and peat bog and reed flats to the east. The Grey River runs down between them to Port Valen, and the Black Sinks causeway and Alderford's weir are where the roads reach it.",
+            "<b>Trade.</b> No part of the Marches feeds itself. The highlands have iron and coal and too little grain. The farm country has grain, hemp and horses and no iron. The bogs have fuel, eels and reeds, and no salt or timber. Alderford has salt and sawn timber, and boils its salt over peat from the bogs. Every road ends at the weir, and from there the barges carry it all down to Port Valen, which pays for it in coin."
+          ];
+          var held = [];
+          if (truthy(s.codex_stenmark)) {
+            held.push("In the north, Baron Karr holds the high valleys and passes of [[stenmark|Stenmark]], and with them the iron.");
+          }
+          if (truthy(s.codex_house_gault)) {
+            held.push("West of the river, [[house_gault|House Gault]] holds the [[western_vale|Western Vale]] from Dunmow, and with it the grain.");
+          }
+          if (truthy(s.codex_warlord_skell)) {
+            held.push("East of the causeway, [[skell|Warlord Skell]] holds the [[great_sedge|Great Sedge]] from the sinking fort at Gryke, and with it the fuel and the paths through the bog.");
+          }
+          if (held.length) { out.push(held.join(" ")); }
+          if (held.length === 3) {
+            out.push("Each of the three holds something the other two need: the iron, the grain, and the peat that boils the salt. Each also needs something the others hold, so none of them can close a road without going short. The Gilded Scales sit at the weir where the roads meet, and the factors say that is why Alderford has never needed a garrison.");
+          }
+          return out;
+        },
+        see: ["port_valen", "alderford", "black_sinks", "broken_crags", "stenmark", "karrs_keep", "ashbrook", "house_gault", "western_vale", "skell", "great_sedge", "grey_river"]
       },
       {
         id: "port_valen", category: "places", title: "Port Valen",
@@ -640,9 +701,10 @@
         tags: ["Port Valen"], aliases: ["Port Valen", "Dredge-End", "Patrician Quarter", "free city", "Free City", "Council", "capital"],
         unlock: "codex_port_valen",
         body: [
-          "The sprawling port capital downriver, a free city in the old imperial sense, answerable to no crown. Its Council rules the surrounding towns and villages of the river country, Alderford among them, through tolls, tax contracts, and factors instead of garrisons. The merchant palaces of the Gilded Scales stand in the Patrician Quarter. Dredge-End is a maze of flooded canals and rotting tenements, and Black Oath territory."
+          "The sprawling port capital downriver, a free city in the old imperial sense, answerable to no crown. Its Council rules the surrounding towns and villages of the river country, Alderford among them, through tolls, tax contracts, and factors instead of garrisons. The merchant palaces of the Gilded Scales stand in the Patrician Quarter. Dredge-End is a maze of flooded canals and rotting tenements, and Black Oath territory.",
+          "<b>Trade.</b> Port Valen builds ships and salts fish, and makes little else that it needs. Coal, timber and iron come down to it from the highlands, bread grain, canvas and rope from the farm country, and peat from the bogs. It pays in coin, in credit and in foreign freight. Everything the Marches sells to the wider world leaves through its harbor, so the city can afford to wait on any one road and cannot afford to lose them all."
         ],
-        see: ["gilded_scales", "port_watch", "black_oath", "alderford", "iron_carrion", "harbor_quayside", "dredge_end", "middle_ward", "upper_wharves", "civic_heights", "council"]
+        see: ["gilded_scales", "port_watch", "black_oath", "alderford", "iron_carrion", "harbor_quayside", "dredge_end", "middle_ward", "upper_wharves", "civic_heights", "council", "grey_marches"]
       },
       {
         id: "alderford", category: "places", title: "Alderford",
@@ -654,9 +716,10 @@
         body: [
           "A river town built around an old imperial limestone weir, where the highland road down from the Crags meets the Grey and the river drops away toward the gorge. Sawmills crowd the bank above the falls. Below them stand warehouses, drying sheds, salt lofts, and muddy wharves where the barges tie up to load for the downriver run. The brine trade is the town's spine: catches boiled in the riverfront pans, cured in the lofts above them, and packed downriver by watermen who know every shallow of the gorge.",
           "The stone is older than the town. The weir is legion work, imperial limestone with locks cut through it. Beneath the southern foundation is a flooded stone chamber where the release gear for a submerged anti-galley boom still sits, its plans carried off by the garrison that withdrew. Everything above the waterline is newer. Thirty winters ago Alderford was three timber sheds and a ferry rope. Then the loft piles went into the bank, the pans were fired, and the salt-steam that made the town rich hardened the lungs of the people who worked it.",
-          "Port Valen's Council holds Alderford as one of its river towns and has never seen fit to garrison it. The Gilded Scales collect their share through a resident factor and a stamped ledger, with bailiffs on the toll road who wear pewter scale badges and weigh goods against lead weights that do not always weigh what they are stamped. What protects the town is paper: free-wharf exemptions sealed under the old provincial charter, sanctuary behind the chapel lintel, and a river charter that still names ten lashes for extorting refugees."
+          "Port Valen's Council holds Alderford as one of its river towns and has never seen fit to garrison it. The Gilded Scales collect their share through a resident factor and a stamped ledger, with bailiffs on the toll road who wear pewter scale badges and weigh goods against lead weights that do not always weigh what they are stamped. What protects the town is paper: free-wharf exemptions sealed under the old provincial charter, sanctuary behind the chapel lintel, and a river charter that still names ten lashes for extorting refugees.",
+          "<b>Trade.</b> Alderford grows nothing. It makes salt, salted river fish, sawn timber and barge planks, and sends them downriver on Scales barges. Its winter rye comes in on carts from the western farm country, the iron for its forges comes down the highland road, and the peat under its brine pans comes across the Black Sinks from the eastern bogs. Each cart that reaches the weir carries something the town needs and goes back with salt or planks, and the Scales weigh and toll all of it. The factors say the town needs no garrison, because every neighbor depends on what crosses the weir and none would let another take it."
         ],
-        see: ["port_valen", "grey_river", "sanctuary_charter", "gilded_scales", "imperial_booms", "meridian_empire", "saint_althea", "iron_carrion"]
+        see: ["port_valen", "grey_river", "sanctuary_charter", "gilded_scales", "imperial_booms", "meridian_empire", "saint_althea", "iron_carrion", "grey_marches", "western_vale", "great_sedge", "stenmark"]
       },
       {
         id: "grey_river", category: "places", title: "The Grey River",
@@ -665,9 +728,10 @@
         tags: ["Grey River"], aliases: ["Grey River", "river gorge", "downriver", "waterway", "downriver run"],
         unlock: "codex_river_gorge",
         body: [
-          "A wide, navigable river running thirty miles between limestone bluffs and old imperial signal towers from Alderford down to Port Valen. The steady current makes a smooth downstream run for heavy grain barges and timber scows. The river damp, freezing autumn spray, and submerged imperial works like the anti-galley booms call for waterproofed gear and experienced watermen."
+          "A wide, navigable river running thirty miles between limestone bluffs and old imperial signal towers from Alderford down to Port Valen. The steady current makes a smooth downstream run for heavy grain barges and timber scows. The river damp, freezing autumn spray, and submerged imperial works like the anti-galley booms call for waterproofed gear and experienced watermen.",
+          "<b>Trade.</b> Downstream, the current carries a loaded barge from Alderford to Port Valen in a day. Upstream, the crew has to pole against it for days. So grain, salt, timber and coal ride down, and only light goods come back up: coin, cloth and finished wares. Barge owners fill the empty run home with whatever will pay a fee, and the Scales toll the river at both ends."
         ],
-        see: ["alderford", "port_valen", "imperial_booms"]
+        see: ["alderford", "port_valen", "imperial_booms", "grey_marches"]
       },
       {
         id: "black_sinks", category: "places", title: "The Black Sinks Causeway",
@@ -684,9 +748,10 @@
           } else {
             out.push("The gatehouse stands open. What held it is scattered into the reeds, dead on the flagstones, or riding downriver in the iron cage wagons as contracted, and traffic crosses the causeway again under the Carrion's raven banners.");
           }
+          out.push("<b>Trade.</b> Nothing is made on the causeway. It is a toll station on the only dry road between the highlands and the river, so highland steel, coal and timber pass over it going south, and peat from the eastern bogs comes in over it toward Alderford. When the gatehouse is held, both streams stop at once, which is why the Scales paid to have it cleared.");
           return out;
         },
-        see: ["squatters", "gilded_scales", "meridian_empire", "iron_carrion", "grey_river", "alderford"]
+        see: ["squatters", "gilded_scales", "meridian_empire", "iron_carrion", "grey_river", "alderford", "grey_marches", "great_sedge", "stenmark"]
       },
       {
         id: "broken_crags", category: "places", title: "The Highland Crags",
@@ -694,10 +759,34 @@
         sub: "A rugged northern highland region",
         tags: ["Karr", "Highlands"], aliases: ["Crags", "Broken Crags"],
         unlock: "codex_broken_crags",
-        body: [
-          "A northern highland region of steep granite ravines and scrub hills, hard on wagon axles. Baron Karr's bailiffs control it. Its narrow choke points and heavy morning fog make it good ground for an ambush against the company's advance."
-        ],
-        see: ["baron_karr", "iron_bailiffs", "torvald"]
+        body: function (s) {
+          var out = [
+            "A northern highland region of steep granite ravines and scrub hills, hard on wagon axles. Baron Karr's bailiffs control it. Its narrow choke points and heavy morning fog make it good ground for an ambush against the company's advance."
+          ];
+          if (truthy(s.codex_stenmark)) {
+            out.push("The Crags are the range. The southern valleys and passes under them are Karr's barony of [[stenmark|Stenmark]], and the furnaces lie deeper in.");
+          }
+          return out;
+        },
+        see: ["baron_karr", "stenmark", "iron_bailiffs", "torvald"]
+      },
+      {
+        id: "stenmark", category: "places", title: "Stenmark",
+        link: ["Stenmark"],
+        sub: "Baron Karr's barony in the Crags",
+        tags: ["Karr", "Highlands", "Trade"], aliases: ["barony", "Barony of Stenmark", "highland estates", "Karr's lands", "Brandreth", "Black Pike Gate", "Iron Gap", "iron", "steel", "coal", "Forge-Elders"],
+        unlock: "codex_stenmark",
+        body: function (s) {
+          var out = [
+            "The barony Baron Karr holds in the southern Crags: the valleys under the mountain face, the passes above them, and the forges in the deep valleys beyond. [[karrs_keep|Karr's Keep]] is the seat. Brandreth is the one market town, where the grain tax is measured out. Two roads leave it. The south road runs through Black Pike Gate and down to the Black Sinks. The west road climbs to Iron Gap and drops into the farm country beyond.",
+            "<b>Trade.</b> The Crags make pig iron, shear-steel, stone-coal, hard timber and upland wool. The valleys cannot feed the men who work them. Oats and barley ripen in a short summer, rye fails in a wet one, and the barony buys grain every year that it cannot grow. It buys salt, cloth and rope as well. Iron and coal pay for all of it, and both must go south through the Black Sinks and Alderford to reach a buyer. The Baron holds the north end of that road and the Gilded Scales hold the south end, so neither can move iron without the other. The Crag Forge-Elders' Council certifies the iron and keeps the deep furnaces going, and the bailiffs hold the roads the iron travels on."
+          ];
+          if (truthy(s.discussed_smiths_past)) {
+            out.push("The steel tax has emptied some of the highland shops. [[torvald|Torvald]] left over it: by his own account, the shops could no longer buy coal, feed their hammer-men or pay the ore carters.");
+          }
+          return out;
+        },
+        see: ["baron_karr", "karrs_keep", "iron_bailiffs", "broken_crags", "ashbrook", "torvald", "house_gault", "great_sedge", "black_sinks", "alderford", "grey_marches"]
       },
       {
         id: "karrs_keep", category: "places", title: "Karr's Keep",
@@ -705,10 +794,16 @@
         sub: "Seat of Baron Karr's rule",
         tags: ["Karr", "Highlands"], aliases: ["Keep", "fortress"],
         unlock: "codex_karrs_keep",
-        body: [
-          "A granite fortress perched in the Crags, the seat of Baron Aldous Karr's rule."
-        ],
-        see: ["baron_karr", "broken_crags"]
+        body: function (s) {
+          var out = [
+            "A granite fortress perched in the Crags, the seat of Baron Aldous Karr's rule."
+          ];
+          if (truthy(s.codex_stenmark)) {
+            out.push("It stands above Brandreth, in the barony of [[stenmark|Stenmark]].");
+          }
+          return out;
+        },
+        see: ["baron_karr", "stenmark", "broken_crags"]
       },
       {
         id: "ashbrook", category: "places", title: "Ashbrook",
@@ -719,7 +814,43 @@
         body: [
           "A poor tenant-farming village in the high valley foothills. Baron Karr's bailiffs burned it while collecting the grain tax by force, communal salting cellars and all."
         ],
-        see: ["baron_karr", "iron_bailiffs", "elspeth"]
+        see: ["baron_karr", "iron_bailiffs", "stenmark", "elspeth"]
+      },
+
+      /* --------------------------------------------- PLACES: THE VALE AND THE SEDGE */
+
+      {
+        id: "western_vale", category: "places", title: "The Western Vale",
+        link: ["Western Vale"],
+        sub: "The farm country west of the river",
+        tags: ["Western Vale", "Trade"], aliases: ["Vale", "the vale", "Dunmow", "Fallowfield", "Coombe Gap", "downs", "chalk downs", "farm country", "grain", "wheat", "hemp", "canvas", "horses"],
+        unlock: "codex_western_vale",
+        body: function (s) {
+          var karr = truthy(s.codex_baron_karr) ? "Baron Karr's" : "the highland lord's";
+          return [
+            "Long chalk downland and river-fed farm country west of the Grey, with old forest along its southern edge. [[house_gault|House Gault]] rules it from Dunmow. Fallowfield and the smaller market towns sit in the wheat land, and the villages of the downs run sheep. Two roads leave it. Coombe Gap takes carts east to Alderford and the river. Iron Gap climbs north into the Crags and " + karr + " tolls.",
+            "<b>Trade.</b> The vale is where the Marches' bread comes from. It grows the wheat and rye that fill Alderford's granary and feed Port Valen's ovens, and it sends out flax and hemp for canvas and rope, bacon fattened on acorns in the forest, pitch and tar from the pines, and horses bred on the downs. It has no iron and no coal. Plow blades, horseshoes and spearheads come down through Iron Gap, and the price is set at the gate. Salt comes up from Alderford. The downs' own wool is short and coarse and mostly stays in the vale's cloth halls, and the fine wool that Port Valen buys comes from the Crags. Everything the vale sells to the coast crosses the weir at Alderford, where the Scales weigh it."
+          ];
+        },
+        see: ["house_gault", "stenmark", "alderford", "grey_river", "grey_marches", "port_valen"]
+      },
+      {
+        id: "great_sedge", category: "places", title: "The Great Sedge",
+        link: ["Great Sedge"],
+        sub: "The bog country east of the causeway",
+        tags: ["Sedge", "Trade"], aliases: ["Sedge", "Gryke", "Sedgefleet", "Wulverston", "bog", "fen", "peat", "eels", "reeds", "bog-iron", "peat-spiritus"],
+        unlock: "codex_great_sedge",
+        body: function (s) {
+          var out = [
+            "A wide country of peat bog, reed beds and black meres, cut by slow channels and dotted with islands of firm ground. Waist-deep mud lies under most of what looks solid, and a wagon sinks to the axle within a dozen paces. [[skell|Warlord Skell]] holds it from Gryke, an old fort that is sinking into the fen. The towns are small and built on piles. Sedgefleet is where the eel boats and peat barges load, and Wulverston, in the south, has the bog-iron works. The only dry ways through are woven brushwood tracks laid across the mud, and only the fen people know where they run.",
+            "<b>Trade.</b> The Sedge's staple is peat, cut, dried and stacked by the cartload. It is what Alderford's brine pans burn, and Port Valen's taprooms and tenements burn it beside their coal. The fen also sends out smoked eels, wildfowl, reed thatch, and soft bog-iron for nails and cheap tools. Nothing grows well here and there is no timber, so grain, salt and sawn wood all come in. Without salt the eels rot in a week. Alderford has the salt and the Sedge has the peat that boils it, so each holds something the other cannot do without."
+          ];
+          if (truthy(s.silt_gate_full_intel) || truthy(s.has_silt_gate_payout_slip)) {
+            out.push("The fen towns also make a rough spirit called peat-spiritus. What reaches Port Valen comes in un-stamped with the Black Oath's smugglers, through the Silt-Gates.");
+          }
+          return out;
+        },
+        see: ["skell", "black_sinks", "alderford", "silt_gates", "grey_marches", "port_valen"]
       },
 
       /* --------------------------------------------------------- HISTORY & LAW */
@@ -734,7 +865,7 @@
           "Long before its collapse, the Meridian Empire was already failing, worn down by centuries of bureaucratic rot, warring client kingdoms, regional rebellions, and border wars. The huge stone causeways, fortified weirs, and river booms across the Marches are what it left behind. Its legions withdrew thirty years ago, and its center went silent without ever formally giving up its frontier holdings.",
           "Today the continent is a patchwork of ruined successor territories, and petty warlords, each carving a small kingdom out of the wreckage."
         ],
-        see: ["broken_crown_war", "imperial_booms", "sanctuary_charter", "baron_karr", "carrion_founding"]
+        see: ["broken_crown_war", "imperial_booms", "sanctuary_charter", "baron_karr", "house_gault", "skell", "carrion_founding"]
       },
       {
         id: "broken_crown_war", category: "history", title: "The Broken Crown War",

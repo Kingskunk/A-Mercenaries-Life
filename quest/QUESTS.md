@@ -51,6 +51,7 @@ graph TD
         Q12["Quest 3: The Rotten Rib -- Iron Wharves"]
         Q13["Quest 4: The Muffled Bell -- The Pier"]
         Q14["Quest 5: The Quiet Block -- Fishmongers' Slip"]
+        Q16["Quest 6: The Stolen Shroud -- The Alley Shrine"]
     end
 
     Q1 --> Q2
@@ -230,6 +231,36 @@ graph TD
 
 ---
 
+### Quest 6: The Stolen Shroud (The Alley Shrine)
+* **Scene File:** `port_valen_dredge_end.txt` (the gate at the top of `cut_shrine_page`, then `shroud_ask`, `shroud_b2` and `shroud_b2_*`, `shroud_b3` and `shroud_b3_hub`, `shroud_fight`, `shroud_fight_won`, `shroud_b3_take`, `shroud_escaped`, `shroud_b4`, `shroud_shop`, `shroud_shop_refused`) and `combat.txt` (`fight_shroud_thieves`, `pick_weapon_death_flavor_cellar`, `pick_spell_death_flavor_cellar`). Design and full prose: `quest/STOLEN_SHROUD_PLAN.md`.
+* **District:** Dredge-End, the Alley Shrine, with Lamp Stair (the pawnbroker's terrace, the drinking house) as the trail.
+* **Trigger:** nobody offers it. The player has already left a copper in the bowl (`cut_shrine_gave`) and arrives on a Hallowday while the friar is at his kettle (`cut_broth_serving`: Morning to Afternoon, not in a storm). The place layer's street-life text is replaced by the hook and `shroud_seen` and `shroud_start_day` are set. The friar's broth is not served on that day.
+* **Briefing:** the kettle lies on its side, the clay bowl is in shards, the friar holds a bloody rag to his head, and a widow and three children crouch by a body under a fishing net with its feet toward the saint. A scarred young man tore the week's dish (40 coppers, meant for the gravedigger) out of the friar's hands. The friar is named in dialogue only after the player helps (see Ending A) or buys a phial (Ending C). The thief is never named. The player chooses to kneel and ask, or leave them to it. Leaving is free and the scene comes back on later visits.
+* **Deadline:** three days from `shroud_start_day` (`shroud_deadline_days`). After that the older woman at the plinth tells the player the family has gone (the pauper's ditch), the bowl becomes a tin cup, and the quest closes as `failed` / `"cold"` with no cost beyond the missed reward.
+* **Objective Flow:**
+  1. **The hook (free):** kneel and ask (`shroud_ask`), or leave.
+  2. **The trail (`shroud_b2`, 15 min):** `[INT DC 12]` follow the coppers, `[WIS DC 12]` watch the doors, `[CHA DC 12]` squeeze the man on the cellar steps, `[Cantrip: Guidance]` (+1d4, loops back), or give it up and walk back (`shroud_b2_back`, no cost). Failure loses 10 coppers of the purse (`shroud_purse` 40 → 30) but still finds the cellar.
+  3. **The cellar (`shroud_b3`, 30 min, the climax roll):** the scarred man and a thin one with a sling divide coins on a barrel-head. `[STR DC 12]` step inside the knife, `[DEX DC 12]` feint and pin, `[CHA DC 12]` name the cost, `[Cantrip: Guidance]`, plus `[Cantrip: Shocking Grasp]` (wizards) and `[Cantrip: Vicious Mockery]` (bards), which succeed without a roll. Success: the thin one bolts, the scarred man is disarmed, and the player takes the purse and the thieves' rag. There is no fight button. A failed roll starts the fight, with a different cost per approach (STR: player disadvantage, DEX: enemy advantage, CHA: both).
+  4. **The fight (`fight_shroud_thieves`):** a Dockside Knifeman and a Dock Lookout from the shared enemy library, **non-lethal** (`combat_is_nonlethal`), with a cellar-only set of finishing-blow lines chosen by `combat_nonlethal_style = "cellar"` (reset in `fight_cleanup`). Same weight as the Dredge-End night ambush. Victory beats both senseless and the player takes the purse. HP floors at 1 (`rescued`) or the player can disengage (`fled`): the thieves keep everything and run, and the quest closes as `failed` / `"escaped"`. No one is arrested, hauled or handed over.
+  5. **The purse (`shroud_b4`, 15 min):** back at the arch, with the purse (`shroud_purse`) and the thieves' rag (20 coppers) in the pouch. Three choices, no rolls.
+* **Resolutions:**
+
+| Route | How | Outcome & State |
+|---|---|---|
+| **Returned** | Put everything in the friar's hands | `shroud_quest_stage = "resolved"`, `shroud_resolution = "returned"`. The friar gives a **Phial of Saint Althea's Water** (`althea_phial`) and gives his name (`met_anselm`). The shop opens and `shroud_phial_ready_day` is set 30 days out. No coin. |
+| **Fee** | Count out half for the burial, keep the rest | `"resolved"`, `"fee"`. Half of `shroud_purse` in coin (2 silver, or 1 silver 5 copper after a failed trail); the friar takes the other half and the rag. He **refuses to sell** afterward ("Not to you"). |
+| **Pocketed** | Say the trail went cold, keep everything | `"resolved"`, `"pocketed"`. The purse plus the rag (6 silver, or 5 after a failed trail). The friar believes the player only failed and **still sells**. He is named on the first sale. |
+| **Escaped** | Lose or flee the fight | `shroud_quest_stage = "failed"`, `"escaped"`. Nothing paid, no shop. |
+| **Cold** | Deadline passes | `"failed"`, `"cold"`. Nothing paid, no shop. |
+
+* **Fail-forward:** a failed trail roll costs coin, a failed cellar roll starts a fight with a per-approach handicap and losing it costs the whole reward, and a beaten player gets nothing. No failure converts into a reward.
+* **The shop (`shroud_shop`):** the friar sells one item only, the phial (`gear_info "althea_phial"`, 50 copper, restores 2d4+2 HP), and only after Returned or Pocketed, only on a Hallowday while he is at his kettle (`cut_broth_serving`), and one purchase per `shroud_phial_wait_days` (30 days: the water steeps a month in the dark). The hub shows `[Ready in N days]` while the batch is not ready. A player who tried and failed, or took the fee, never buys.
+* **World memory:** the place layer's bowl changes with the outcome (shards while the scene is live and for the rest of the theft day, then a new lopsided clay bowl after Returned or Fee, a tin cup after Pocketed, Escaped or Cold), and the ordinary-day line says "cup" for the tin one. For the rest of the theft day (`shroud_after`) the shrine prints "No queue forms under the arch today", with no broth and no phial shop. The beats' returns land on `cut_shrine_page` (a fresh render of the shrine), not on a bare menu. The lorebook `alley_shrine` entry gets gated lines and a new `anselm` people entry unlocks with `met_anselm`. No rumors (the Keel is a Quayside venue).
+* **Items:** Phial of Saint Althea's Water (Returned, or bought).
+* **Variables:** `shroud_quest_stage`, `shroud_resolution`, `shroud_resolved`, `shroud_seen`, `shroud_start_day`, `shroud_purse`, `shroud_phial_ready_day`, `shroud_deadline_days`, `shroud_phial_wait_days`, `met_anselm`, `combat_nonlethal_style`.
+
+---
+
 ### Crane Three: Dell Ostrey's Day-Labor
 * **Scene File:** `port_valen.txt` (`pv_poi_crane`, `pv_crane_menu`, `pv_crane_offer`, `pv_crane_shift_intro`, `pv_crane_shift_resolve`)
 * **District:** Harbor Quayside (`pv_poi_quays`, crane three on the cargo line).
@@ -277,6 +308,7 @@ graph TD
 | **Harbor Chart House** | Tidal charts, channel navigation, barge clearance (deferred: planned for the customs area, not its own Quayside stop) | Requires `port_watch_rep >= 1` or `gilded_scales_rep >= 1` | Tidal navigation advantages |
 | **Iron Wharves** | The Rotten Rib investigation; allied contact on Slipway Two afterward | Daytime, fair weather only (gate closed at Dusk/Night/Pre-Dawn and in Storm/Blizzard) | Up to 14 Silver Marks, Brant's Iron-Heel Boots, `gilded_scales_rep +1` |
 | **The Pier** | **The Muffled Bell** (see Quest 4 and `quest/MUFFLED_BELL_PLAN.md`): a night emergency at the wreck-bell. Plus the observe and lower-ladder scenes | The pier is open at any hour; the quest needs the wreck story, Night or Pre-Dawn, and Fog, Rain, Snow or Sleet | +5 silver, or `port_watch_rep +1`; a lost ketch on failure |
+| **The Alley Shrine** (Dredge-End) | **The Stolen Shroud** (see Quest 6 and `quest/STOLEN_SHROUD_PLAN.md`): a stolen burial purse, a trail up Lamp Stair, a cellar. Plus the Hallowday broth line, Saint Althea's phials, and rumors | The hook needs a copper left in the bowl and a Hallowday with the friar at his kettle; three days to act | A Phial of Saint Althea's Water, or 2 to 6 silver; the friar sells a phial (50 copper, one per 30 days) after Returned or Pocketed |
 | **Crane Three** | Repeatable dock day-labor for gang-boss Dell Ostrey | Daytime/Dusk only; first shift resolves a one-off headcount crisis | 3 Copper base + up to 4 Copper bonus per shift, once/day |
 
 > **Removed:** the Tide-Well / Saint Althea shrine stop (it had no mechanics and the Alderford chapel and a planned city cathedral cover the same ground). Its two ambient hub lines stay as scenery.
@@ -370,4 +402,17 @@ graph TD
 *create wenna_favor false                      *comment strategic route; RESERVED for future wholesale dealing
 *create pv_tavern_rumor_fish false             *comment Cleaved Keel pre-seed rumor
 *create pv_tavern_rumor_fish_after false       *comment Cleaved Keel post-resolution rumor
+
+*comment --- The Stolen Shroud / The Alley Shrine (see Quest 6 above) ---
+*create shroud_quest_stage "unstarted"         *comment "unstarted", "active", "resolved", "failed"
+*create shroud_resolution "none"               *comment "none", "returned", "fee", "pocketed", "escaped", "cold"
+*create shroud_resolved false                  *comment one-time completion guard
+*create shroud_seen false                      *comment the hook has been shown once
+*create shroud_start_day 0                     *comment campaign_day the hook first appeared; starts the deadline
+*create shroud_purse 40                        *comment coppers in the recovered purse; 30 after a failed trail roll
+*create shroud_phial_ready_day 0               *comment first campaign_day the friar has another phial
+*create shroud_deadline_days 3                 *comment days the family waits before the scene closes as "cold"
+*create shroud_phial_wait_days 30              *comment days between phial batches
+*create met_anselm false                       *comment the friar has given his name (Returned ending or first sale)
+*create combat_nonlethal_style ""              *comment "" or "cellar": which non-lethal finishing-blow lines a fight uses; reset in fight_cleanup
 ```

@@ -2,7 +2,14 @@
 
 A small, street-level Robin Hood dilemma at **the Alley Shrine** in Dredge-End (`cut_shrine`). On a Hallowday the parish's weekly shroud-purse is torn out of the friar's hands and his bowl is smashed. A family is waiting under the arch with an unburied body. The player can go after the thief, and then decide what happens to the money.
 
-**Status:** proposed. Nothing here is in the game yet. It replaces the earlier outline in this file, and it folds in the decisions settled in discussion (Section 0). Every code block below is a sketch to be spliced into the real scenes and then tested (Section 8).
+**Status:** implemented. The quest is in `port_valen_dredge_end.txt` and `combat.txt`, with the variables in `startup.txt`, the stats-sheet lines, the `quest-data.js` entry, the lorebook entries and `quest/QUESTS.md` Quest 6 all in place. The code blocks below are the design sketches, and the game has the final text. Where the two differ, the game wins, and the differences are listed here:
+
+* **The cold ending is told by the older woman, not the friar.** The friar is not at the shrine on the day the scene closes, so the woman at the foundation timber says the family is gone (Section 5.6 shows the shipped lines).
+* **The hook's revisit line is shorter.** The shards sentence moved into the place layer's bowl states, so the hook no longer repeats it (Section 5.1 shows the shipped lines).
+* **The shared-combat dispatch changes one existing line.** In the sneak-attack block the old `*if (combat_is_nonlethal)` became an `*elseif` behind the new `"cellar"` branch. The before-and-after recording of the Alderford fight and every existing finisher came out identical.
+* **The returns to the arch land on a fresh render of the shrine (`cut_shrine_page`), not on the bare hub.** The blank-landing linter flagged the bare hub, and the render shows the outcome.
+* **The rest of the theft day stays quiet (`shroud_after`).** Once the quest has ended, that same day the shrine prints one line ("No queue forms under the arch today...") in place of the queue, the bowl is still in shards, and neither the broth nor the phial shop is offered. The new bowl or tin cup shows from the next visit. Without this, walking out and back in the same Hallowday would bring the broth queue, and a ready shop after ending C, hours after the theft.
+* **The stats sheet's `@{...}` phrase takes its condition in parentheses** (Section 6.4).
 
 * **Inspiration:** *Thief: The Dark Project*, the classic street-level Robin Hood dilemma.
 * **Structure:** four beats on one spine (Branch-and-Bottleneck), a fight only after a failed roll, then a three-way ending and a real loss state.
@@ -23,12 +30,12 @@ A small, street-level Robin Hood dilemma at **the Alley Shrine** in Dredge-End (
 
    B is allowed to be the worst ending. Not every choice needs to be balanced.
 3. **The friar only knows what the player tells him.** In C nobody knows, so nobody treats the player differently. The earlier line "the shrine queue falls quiet when you pass" is cut. The player simply did not succeed, in everyone else's eyes.
-4. **The phial costs 50 copper and stays there.** Making it cheap would make healing cheap, and then sleeping might as well restore health. The catalog price of 50 copper (`tools/gear_catalog.json`, currently an uncommitted change) is the single source of the shop price.
+4. **The phial costs 50 copper and stays there.** Making it cheap would make healing cheap, and then sleeping might as well restore health. The catalog price of 50 copper (`tools/gear_catalog.json`) is the single source of the shop price.
 5. **The friar sells that one item and nothing else.** Only after ending A or C. A player who fails, ignores the quest, or ends on B never gets to buy.
 6. **One limit, and it is about time.** Phials take time to make, so it is not only a matter of cost. One purchase per 30 days. The friar sells on Hallowdays, when he is at the shrine (Section 4).
 7. **The thief is not named.** He is described by what the player sees. **The friar is named**, Brother Anselm, by his own mouth, once he becomes a shopkeeper.
 8. **No chain, no pawnbroker, no new items.** The extra silver in C is the thieves' own coin, and it is only ever a currency change.
-9. **The fight is a knifeman thief and a lookout accomplice.** It only follows a failed roll. There is no fight button.
+9. **The fight is a knifeman thief and a lookout accomplice, and it is non-lethal.** A victory leaves them beaten senseless in the cellar, breathing, and nobody is hauled anywhere. It only follows a failed roll. There is no fight button. This needs a small cellar-only finisher set (Section 6.3). The Alderford fight is not touched.
 10. **No rumors for now.** The Cleaved Keel is a Quayside taphouse, not a Dredge-End one. Dredge-End keeps its own shrine murmurs (`cut_rumors_shrine`) if a line is wanted later.
 11. **No faction tie-ins.** The Black Oath runners who check names at the alley mouth on broth mornings (a line only savvy players see) stay in the background.
 
@@ -140,12 +147,12 @@ A low cellar reeking of old smoke, split eels on the racks, barrels along the wa
 
 | Outcome | What happens | Result |
 |---|---|---|
-| `victory` | Both men are down. The purse and the rag lie on the barrel-head. | on to Beat 4 |
+| `victory` | Both men are beaten senseless on the cellar floor. The purse and the rag lie on the barrel-head. | on to Beat 4 |
 | `rescued` | HP floors at 1. The thieves kick the barrel-head over, take the purse and run rather than finish the fight. | **`escaped`** (failed) |
 | `fled` | The player breaks off and gets out. The thieves take the purse and go. | **`escaped`** (failed) |
 | `player_died` | The death screen, with the standard call-site check (`death_cause "combat"`). | |
 
-The fight is lethal, like the Dredge-End ambush and the pier's wreckers, because the engine's non-lethal finisher text is written for the Alderford guards.
+The fight is **non-lethal** (`combat_is_nonlethal true`, the mode the Alderford guards use). Nothing happens to the thieves afterward, and the player takes the purse and the rag and leaves them where they lie. The engine's shared non-lethal finisher text is written for the Alderford curing shed, so this fight gets its own small cellar-only set (Section 6.3) and the Alderford fight is left alone.
 
 ### Beat 4: The Purse
 
@@ -195,13 +202,13 @@ Drafts for review, written to the narrative guidelines: second person, present t
 
 First arrival:
 
-> No queue lines the tenement wall. The iron kettle lies on its side under the arch, and pea soup is cooling in the cracks between the flags. The clay bowl at the saint's feet has been smashed, and river pebbles lie scattered among the shards.
+> No queue lines the tenement wall. The iron kettle lies on its side under the arch, and pea soup is cooling in the cracks between the flags.
 >
 > The friar sits against the blackened post with a rag held to his head. It has soaked red, and his lip is split so badly it has swollen his whole mouth. A woman crouches by the plinth with three children pulled in against her, and behind them lies a long shape under a fishing net, bare feet toward the saint. The older woman who spoke to you when you left your copper has a hand on the friar's shoulder. When she sees you, she lifts her chin.
 
 Revisit (within the deadline):
 
-> The kettle stands cold under the arch, and the shards of the bowl have been swept into a heap against the post. The friar sits where he sat, the rag on his head gone brown. The woman and her three children have not left the plinth, and the net still covers the shape at their feet. The older woman meets your eye across the alley.
+> The kettle stands cold under the arch. The friar sits where he sat, the rag on his head gone brown. The woman and her three children have not left the plinth, and the net still covers the shape at their feet. The older woman meets your eye across the alley.
 
 Choice: `# Kneel by the friar and ask what happened.` / `# Leave them to it.`
 
@@ -266,7 +273,7 @@ Tail (all approaches, then `*page_break`):
 Success tail:
 > The shroud-purse lies on the barrel-head, a scuffed leather bag no bigger than your fist with the friar's knot still tied in its neck. Beside it is a knotted rag that clinks: the thieves' own coin. You scoop up both and go up the steps into the light.
 
-Fight victory: *the scarred man does not get up, and the thin one lies across the third step with his sling under him.* Then the same tail.
+Fight victory: *the scarred man lies still on the flags with his breath going in and out, and the thin one is folded over the third step with his sling under him. Neither is going anywhere soon.* Then the same tail.
 
 **Escaped** (rescued or fled):
 > The knife comes up, and you are on the floor with your ribs on fire. The scarred man kicks the barrel-head over, sweeps the purse and the coins into his shirt, and is gone up the far stairs with the thin one after him. You lie in the reek of old smoke until you can stand.
@@ -305,7 +312,7 @@ Option: `# Ask the friar for a phial of Saint Althea's water. [5 Silver Marks]` 
 
 ### 5.6 The cold ending
 
-> The friar is at the kettle, and the plinth beside him is empty. "They took him to the pauper's ditch at first light," he says. "The gravedigger would not wait on the parish." He turns the ladle in the pot. "You had every right to stay out of it."
+> The family is gone from the plinth, and the flags where they sat have been swept clean. The older woman resting against the foundation timber lifts her chin as you come in. "They carried him to the pauper's ditch," she says. "The gravedigger would not wait on the parish." She nods at the tin cup lashed to the plinth where the bowl used to be. "The friar has said his prayers. Nobody blames the ones who stayed out of it."
 
 ### 5.7 World memory at the shrine
 
@@ -368,7 +375,9 @@ Layer 3 then starts with `*if (shroud_scene)` to print the hook (first or revisi
 
 ### 6.3 The fight (`combat.txt`)
 
-New entry label `fight_shroud_thieves`, modeled on `fight_wreckers` and `fight_dredge_ambush`: `gang_knifeman` in slot 1, `dock_lookout` in slot 2, `combat_is_nonlethal false`, then the flavor overrides, `apply_generic_weapon_flavor`, `fight_setup`. The caller sets `combat_enemy_advantage` and/or `disadvantage` for a failed Beat 3 roll first.
+**Reuse.** The enemies are Dredge-End's own library types (`gang_knifeman`, `dock_lookout`), the same ones the night ambush uses, so no new enemy is written. `fight_shroud_thieves` is only a thin wrapper around them. It cannot simply call `fight_dredge_ambush`, because that label picks its bruiser's weapon at random, has street lines (a canal, a lamp-post), and is lethal.
+
+New entry label `fight_shroud_thieves`, modeled on `fight_wreckers` and `fight_dredge_ambush`: `gang_knifeman` in slot 1, `dock_lookout` in slot 2, `combat_is_nonlethal true` and `combat_nonlethal_style "cellar"`, then the flavor overrides, `apply_generic_weapon_flavor`, `fight_setup`. The caller sets `combat_enemy_advantage` and/or `disadvantage` for a failed Beat 3 roll first.
 
 **Lines to retune for a cellar** (set in this label only, so Dredge-End keeps the shared text):
 
@@ -376,6 +385,24 @@ New entry label `fight_shroud_thieves`, modeled on `fight_wreckers` and `fight_d
 * **Lookout (slot 2, the `combat_flavor_enemy2_*` names):** `hit_2` (a piling), `hit_4` (a gangway), and `miss_1` to `miss_5` (a canal, a shutter, planks, a lamp-post, a rain barrel).
 
 The cellar's props are barrels, split eels on racks, low beams, and greasy flags.
+
+**Why Alderford comes into it.** It has nothing to do with the story. `combat_is_nonlethal` is one shared engine mode, and the Alderford guards are the only fight that has ever used it (every Dredge-End fight, the ambush included, is lethal). The text that mode prints was written for that one scene, with its fish-curing props ("the guard's knee", "the cedar sawdust", "a curing bench"). **This quest does not touch it.**
+
+**The cellar's own finisher set (the one piece of shared-file work).** This fight gets its own compact set of finishing-blow lines, picked by a one-variable selector. No existing line of text is edited, and the Alderford fight's output does not change.
+
+* **The selector:** a new `combat_nonlethal_style`, created in `startup.txt` next to `combat_is_nonlethal` and reset to `""` in `fight_cleanup`. `fight_shroud_thieves` sets it to `"cellar"`. When it is empty, every finisher behaves exactly as it does today.
+* **The dispatch:** three small branches at the top of the shared code, each of which does nothing while the style is empty: at the top of `pick_weapon_death_flavor`, at the top of `pick_spell_death_flavor`, and in front of the sneak-attack finisher in `fight_round_hub`. Each sends a `"cellar"` fight to a new label and returns. In the two finisher labels these are pure additions. In the sneak-attack block one existing `*if (combat_is_nonlethal)` becomes an `*elseif` so the new branch can sit in front of it, and the lines under it are untouched. No other fight's output changes, and a before-and-after recording of the Alderford fight and every existing finisher proves it.
+* **The new labels**, appended to `combat.txt`:
+
+| Label | Lines | Covers |
+|---|---|---|
+| `pick_weapon_death_flavor_cellar` | 10 | two variants each for ranged, slashing, bludgeoning, piercing and the fallback |
+| `pick_spell_death_flavor_cellar` | 10 | one each for fire bolt, ray of frost, shocking grasp, eldritch blast, chill touch, vicious mockery, magic missile, dissonant whispers, armor of agathys and the fallback |
+| the sneak-attack finisher | 2 | ranged and melee |
+
+  That is about 22 lines. Two variants are enough because this fight happens once per game. The variety in the shared sets exists for repeatable fights.
+* **How to write them:** the props are the cellar's own (barrels, the barrel-head, low beams, racks of split eels, greasy flags, the hooded lamp). Name the foe with `${combat_enemy_epithet}` (`the knifeman` or `the lookout`, since either can take the last blow) and avoid pronouns. **Do not name a weapon:** the knifeman's knife and the lookout's sling are each wrong for the other target, and the shared set's cudgels are wrong for both. Each variant is a different physical action, and each spell gets its own description (narrative guidelines §2).
+* **Leave alone:** every existing finisher line, the lethal branches, the "💀 Defeated" banner (it is neutral), and every enemy's own attack text.
 
 **Balance.** A knifeman and a lookout is the same weight as the Dredge-End ambush, about a 64 to 67% win at level 1 against the ten stock builds (casters are the weak side). That is acceptable because the fight only follows a failed roll and the player cannot die by default (HP floors at 1). No new sim is needed unless the stats change.
 
@@ -386,8 +413,8 @@ Caller in `shroud_b3`: the same outcome handling as the other fights, with `vict
 | Where | Change |
 |---|---|
 | `port_valen_dredge_end.txt` | The gate, `shroud_hook`, `shroud_b2`, `shroud_b3`, the fight caller, `shroud_b4`, the two loss labels, the hub's shop and refusal options, and the bowl and cup branches in the place layer and the ordinary-day line. (The hub's "leave a copper" option needs no branch: it is hidden once `cut_shrine_gave` is true, and the gate requires that.) |
-| `combat.txt` | `fight_shroud_thieves` and its overrides. |
-| `startup.txt` | The variables (6.1). |
+| `combat.txt` | `fight_shroud_thieves` and its overrides, and the cellar-only finisher set with its three dispatch branches (about 22 lines, Section 6.3). |
+| `startup.txt` | The variables (6.1), and `combat_nonlethal_style` next to `combat_is_nonlethal`. |
 | `choicescript_stats.txt` | Quest lines (below). |
 | `quest-data.js` | One entry: `{ id: "stolen_shroud", title: "The Stolen Shroud", place: "The Alley Shrine", active: function (s) { return s.shroud_quest_stage === "active"; } }`. |
 | `lorebook-port-valen.js` | A new people entry for the friar (`id: "anselm"`, unlock `met_anselm`, link `Brother Anselm`), and gated lines on the existing `alley_shrine` entry. |
@@ -410,10 +437,10 @@ Caller in `shroud_b3`: the same outcome handling as the other fights, with `vict
     — [i]The Purse Kept, the Friar Told It Was Lost[/i]
 *if (shroud_quest_stage = "failed")
   *line_break
-  • [b]Closed Matter:[/b] The Stolen Shroud [i](@{shroud_resolution = "escaped" the thief got away|the trail went cold})[/i]
+  • [b]Closed Matter:[/b] The Stolen Shroud [i](@{(shroud_resolution = "escaped") the thief got away|the trail went cold})[/i]
 ```
 
-The `@{...}` form is sketched and needs checking against how the stats sheet writes its other conditional phrases.
+The sheet's other conditional phrase (`@{bell_walked_away you turned back|the bell rang too late}`) uses a bare boolean, so this one puts its comparison in parentheses.
 
 ### 6.5 Time costs
 
@@ -441,7 +468,7 @@ The shrine's own 15 minutes (existing), then 15 for the walk in Beat 2, 30 for B
 | §7, choices | Every option is real. The two binary gates are marked `lint-ok two-options`. |
 | §11, mechanics in brackets | DCs, prices and the wait appear in brackets only. |
 | §12, time and weather | One `advance_time` per page. The gate reads `cut_broth_serving`, which already reads the street-life flags. No weather modifier on rolls. |
-| §13, combat | A fight only after a failed roll, with an approach beat first. |
+| §13, combat | A fight only after a failed roll, with an approach beat first. Non-lethal, so no one dies over a purse. |
 | Narrative §1, §7 | No names but the friar's. No role labels. Intimidation is posture, not a hand on a weapon. |
 | Narrative §3, timelessness | The soft deadline exists so the family is not waiting on Day 100. World-memory lines are timeless. |
 | Slow healing | The phial is scarce by price and by time. It shares the once-a-day limit out of combat. |
@@ -455,7 +482,7 @@ Use the method that worked for the pier quest: a scripted driver on the real eng
 1. **Build:** `node compile.js`, then `node quicktest.js` passes with every new line reached.
 2. **The gate:** each of the three conditions blocking it alone, the revisit variant inside the deadline, and the `cold` ending once the deadline has passed.
 3. **Beat 2:** every option succeeding and failing (the purse drops to 30 on a failure), Guidance, and turning back.
-4. **Beat 3:** every option succeeding and failing (each failure sets the right fight flags), both cantrips visible only to the right casters, and the fight ending `victory`, `rescued` and `fled`.
+4. **Beat 3:** every option succeeding and failing (each failure sets the right fight flags), both cantrips visible only to the right casters, and the fight ending `victory`, `rescued` and `fled`. Also the cellar finishers: one victory per weapon category and per attack cantrip on this fight prints the cellar lines, no cellar line ever appears in another fight, and the Alderford curing-shed fight prints exactly what it printed before (same forced dice, compare a run before and after the change).
 5. **Beat 4:** all three endings, with exact coin changes for both purse sizes (A none, B 20 or 15 copper, C 60 or 50 copper), the phial gift in A only, and the friar's name unlocking in A.
 6. **The shop:** A and C can buy on a Hallowday and not on other days, B sees the refusal, anyone else sees no option, the price is 50, the 30-day wait holds, A's gift starts the clock, and the phial stacks.
 7. **World memory:** the bowl, the cup and the shards in every state and hour.
@@ -465,12 +492,12 @@ Use the method that worked for the pier quest: a scripted driver on the real eng
 
 ---
 
-## 9. Decisions to Confirm
+## 9. Decisions (all confirmed)
 
-Defaults are in brackets. Change any and the plan follows.
+Every item below was confirmed in discussion. They are kept here as a record.
 
 1. **Deadline** [3 days from the first sight, then `cold`]. Without it the family waits under the arch indefinitely.
-2. **Lethal fight** [yes, the thieves die on a victory].
+2. **Non-lethal fight** [settled: the thieves are beaten senseless and left in the cellar, using a small cellar-only finisher set. Alderford is not touched].
 3. **Purse and the bungled trail** [40 copper, minus 10 on a failed Beat 2].
 4. **The thieves' rag** [20 copper, always picked up, kept only in C].
 5. **Shop hours** [Hallowdays only, while the broth is served, so Dusk on Hallowday is closed].

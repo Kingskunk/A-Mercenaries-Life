@@ -692,9 +692,40 @@
         if (truthy(s.cut_shrine_gave)) {
           out.push("A woman on the step said the friar does not keep what goes in the bowl. It goes to whoever is on the list that week, and she told you to ask him who.");
         }
+        if (truthy(s.shroud_seen)) {
+          out.push("A scarred young man once tore the week's dish out of the friar's hands, forty coppers meant for the gravedigger, and broke the clay bowl so the friar could not follow. A dead man lay under a fishing net at the saint's feet while his widow and three children waited on it.");
+        }
+        if (s.shroud_resolution === "returned" || s.shroud_resolution === "fee") {
+          out.push("The bowl has been replaced with a new one, fired lopsided.");
+        } else if (s.shroud_resolution === "pocketed" || s.shroud_resolution === "escaped" || s.shroud_resolution === "cold") {
+          out.push("A tin cup lashed to the plinth with linen strips stands where the clay bowl used to be.");
+        }
         return out;
       },
-      see: ["saint_althea", "dredge_end", "black_oath"]
+      see: ["saint_althea", "dredge_end", "black_oath", "anselm"]
+    },
+    {
+      id: "anselm", category: "people", title: "Brother Anselm",
+      sub: "Friar of the Alley Shrine",
+      role: "Friar, Alley Shrine (Dredge-End)",
+      link: ["Brother Anselm", "Anselm"],
+      tags: ["Dredge-End"], aliases: ["the friar", "friar"],
+      // His name stays hidden until the shrine scene has him say it (met_anselm), which only
+      // the "returned" ending and a first phial sale do. The "fee" ending never learns it.
+      unlock: "met_anselm",
+      body: function (s) {
+        var out = [
+          "The friar of the Alley Shrine, a man in a patched habit of undyed wool who ladles thin pea broth to the district's poorest on Hallowdays. He answers to Brother Anselm \"on the days the parish remembers it has brothers.\""
+        ];
+        if (s.shroud_resolution === "returned") {
+          out.push("You brought back the purse and the silver knotted in the thieves' rag, and he said it belonged to the saint now and would bury the dead man properly.");
+        } else if (s.shroud_resolution === "pocketed") {
+          out.push("You told him the trail had gone cold. He thanked you for trying.");
+        }
+        out.push("He sells one kind of phial: cistern water steeped a month in the dark with angelica and arnica, made for those who go out on the river. A batch takes a full month, so he can spare one at a time.");
+        return out;
+      },
+      see: ["alley_shrine", "saint_althea", "dredge_end"]
     },
     {
       id: "flooded_steps", category: "places", title: "Flooded Lower Steps",

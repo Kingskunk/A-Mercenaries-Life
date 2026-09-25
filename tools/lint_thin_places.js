@@ -30,7 +30,11 @@ var show = parseInt(args.show || "3", 10);
 // name, scene, label, extra stats, kind, minimum words, picks (variants per random pool)
 // Minimums come from measuring the game as written (2026-09-21): hubs run 154 to 356 words at
 // their thinnest, point-of-interest entries 81 to 185, and re-entry lines 29 to 43.
+// render_hub.js starts straight at the entry's label, so a *temp the hub declares above it does not
+// exist. Dredge-End's points of interest read de_savvy, which the hub sets from wisdom or origin, so
+// they pass it here as false: savvy only adds lines, so false is always the thinnest render.
 var HUB = 100, POI = 75, REENTRY = 35;
+var DE = { de_savvy: false };
 var ENTRIES = [
   // districts and their hubs
   ["Dredge-End hub",          "port_valen_dredge_end",   "port_valen_dredge_end", {},                              "hub", HUB, 1],
@@ -41,12 +45,24 @@ var ENTRIES = [
   ["Upper Wharves hub",       "port_valen_upper_wharves","port_valen_upper_wharves", {},                          "hub", HUB, 1],
   // point-of-interest entries
   ["Dredge-End market",       "port_valen_dredge_end",   "cut_market",            {},                              "poi", POI, 1],
-  ["Dredge-End gangways",     "port_valen_dredge_end",   "cut_gangways",          {},                              "poi", POI, 1],
+  ["Dredge-End gangways",     "port_valen_dredge_end",   "cut_gangways",          DE,                              "poi", POI, 1],
   ["Dredge-End boat-sheds",   "port_valen_dredge_end",   "cut_sheds",             {},                              "poi", POI, 1],
-  ["Dredge-End landing",      "port_valen_dredge_end",   "cut_landing",           {},                              "poi", POI, 1],
+  ["Dredge-End landing",      "port_valen_dredge_end",   "cut_landing",           DE,                              "poi", POI, 1],
   ["Dredge-End lamp stair",   "port_valen_dredge_end",   "cut_lamp",              {},                              "poi", POI, 1],
-  ["Dredge-End shrine",       "port_valen_dredge_end",   "cut_shrine",            {},                              "poi", POI, 1],
-  ["Dredge-End lower steps",  "port_valen_dredge_end",   "cut_steps",             {},                              "poi", POI, 1],
+  ["Dredge-End shrine",       "port_valen_dredge_end",   "cut_shrine",            DE,                              "poi", POI, 1],
+  // The Stolen Shroud changes the shrine's street layer and bowl, so the same label is rendered in three
+  // quest states. render_hub keeps its variables from one render to the next, so each state moves on as
+  // the sweep runs: the hook entry shows the first-visit hook on the first Hallowday morning and the
+  // revisit on every later render, the cold entry (seen on day 0, already past the deadline) shows the
+  // cold ending once and then the tin cup, and the done entry shows the new bowl throughout.
+  ["Dredge-End shrine, hook and revisit", "port_valen_dredge_end", "cut_shrine",   { de_savvy: false, cut_shrine_gave: true },
+                                                                                                                   "poi", POI, 1],
+  ["Dredge-End shrine, cold ending and tin cup", "port_valen_dredge_end", "cut_shrine", { de_savvy: false, cut_shrine_gave: true, shroud_seen: true, shroud_start_day: 0 },
+                                                                                                                   "poi", POI, 1],
+  ["Dredge-End shrine, quest done", "port_valen_dredge_end", "cut_shrine",        { de_savvy: false, cut_shrine_gave: true, shroud_seen: true, shroud_start_day: 0,
+                                                                                    shroud_quest_stage: "resolved", shroud_resolution: "returned", shroud_resolved: true },
+                                                                                                                   "poi", POI, 1],
+  ["Dredge-End lower steps",  "port_valen_dredge_end",   "cut_steps",             DE,                              "poi", POI, 1],
   ["Locksmiths' Close",       "port_valen_middle_ward",  "mw_locksmiths_close",   {},                              "poi", POI, 1],
   ["Lantern Lane",            "port_valen_middle_ward",  "mw_lantern_lane",       {},                              "poi", POI, 1],
   ["Smiths' Row",             "port_valen_middle_ward",  "mw_smiths_row",         {},                              "poi", POI, 1],
@@ -71,9 +87,15 @@ ENTRIES.forEach(function (e) {
   if (args.only && e[0].toLowerCase().indexOf(args.only.toLowerCase()) < 0) return;
   var env = Object.assign({}, process.env, { STATS: JSON.stringify(e[3]) });
   if (e[6] > 1) env.PICKS = String(e[6]);
-  var out = cp.spawnSync("node", ["tools/render_hub.js", "", "", "", e[1], e[2]], { env: env, encoding: "utf-8", maxBuffer: 1 << 28 }).stdout || "";
+  var run = cp.spawnSync("node", ["tools/render_hub.js", "", "", "", e[1], e[2]], { env: env, encoding: "utf-8", maxBuffer: 1 << 28 });
+  var out = run.stdout || "";
   var blocks = out.split("=== ").slice(1);
-  if (!blocks.length) { console.log("!! " + e[0] + ": no output (label missing, or the render failed)"); return; }
+  if (!blocks.length) {
+    // Say why: the engine's message is on stderr (for example "Non-existent variable 'de_savvy'").
+    var why = /Error: .*/.exec(run.stderr || "");
+    console.log("!! " + e[0] + ": no output (label missing, or the render failed)" + (why ? "\n        " + why[0] : ""));
+    return;
+  }
   var results = blocks.map(function (b) { return { words: wordsOf(b), head: b.split("\n")[0].split(" | street_life")[0] + (/pick=\d+/.exec(b.split("\n")[0]) ? " " + /pick=\d+/.exec(b.split("\n")[0])[0] : "") }; });
   var min = Math.min.apply(null, results.map(function (r) { return r.words; }));
   var thin = results.filter(function (r) { return r.words < e[5]; }).sort(function (a, b) { return a.words - b.words; });

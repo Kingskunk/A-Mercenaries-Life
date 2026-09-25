@@ -138,6 +138,7 @@
 *set combat_agathys_triggered false
 *set combat_agathys_shattered false
 *set combat_is_nonlethal false
+*set combat_nonlethal_style ""
 *comment Guard against a condition-inflicted disadvantage the player never
 *comment burned (fled/won before their next roll) bleeding into an unrelated
 *comment skill check outside this fight.
@@ -549,7 +550,12 @@
         *comment reads as climactic regardless of lethality, so it keeps its
         *comment own fixed text rather than swapping to the generic finisher
         *comment lines below -- just the banner distinguishes an actual kill.
-        *if (combat_is_nonlethal)
+        *if (combat_nonlethal_style = "cellar")
+          *if (weapon_type = "ranged")
+            You loose your shot from a gap ${combat_enemy_epithet} never saw, and it clips an arm and slams ${combat_enemy_epithet} against the barrels, the fight knocked clean out.
+          *else
+            You strike from a blind spot ${combat_enemy_epithet} never covered, driving the butt of your ${weapon} into the jaw, and the legs fold, senseless, onto the greasy flags.
+        *elseif (combat_is_nonlethal)
           *if (weapon_type = "ranged")
             You loose your shot from an opening he never saw coming, your ${weapon} grazing his arm and shattering his grip on his cudgel.
           *else
@@ -1110,6 +1116,11 @@ ${use_text}
 *comment Sets the caller's already-*temp'd fdh to one of 5 randomized
 *comment finishing-blow variants tailored to weapon damage type (slashing,
 *comment bludgeoning, piercing, or ranged) with visceral low-fantasy grit.
+*comment A fight that sets combat_nonlethal_style hands off to its own set (see startup.txt); the
+*comment default, empty style, falls through to the original lines below unchanged.
+*if (combat_nonlethal_style = "cellar")
+  *gosub pick_weapon_death_flavor_cellar
+  *return
 *temp pdf_v 1
 *rand pdf_v 1 5
 *if (combat_is_nonlethal)
@@ -1228,6 +1239,11 @@ ${use_text}
 *label pick_spell_death_flavor
 *comment Element- and spell-specific death flavor for each cantrip and spell,
 *comment with a 3-variant pool per spell type and element-neutral fallback.
+*comment A fight that sets combat_nonlethal_style hands off to its own set (see startup.txt); the
+*comment default, empty style, falls through to the original lines below unchanged.
+*if (combat_nonlethal_style = "cellar")
+  *gosub pick_spell_death_flavor_cellar
+  *return
 *temp psdf_v 1
 *rand psdf_v 1 3
 *if (combat_is_nonlethal)
@@ -2458,6 +2474,99 @@ ${use_text}
 *set combat_flavor_enemy2_miss_3 "The lookout hurls a stone that ricochets off the granite and skitters away into the dark."
 *set combat_flavor_enemy2_miss_4 "The lookout's stone clips the frame post with a dull clang, missing you by a hand."
 *set combat_flavor_enemy2_miss_5 "The stone thuds into a coil of wet rope beside you as you sidestep."
+*set combat_round 1
+*gosub apply_generic_weapon_flavor
+*gosub fight_setup
+*goto fight_round_hub
+
+*label pick_weapon_death_flavor_cellar
+*comment The Stolen Shroud's smoking cellar (combat_nonlethal_style "cellar"): a compact set of non-lethal
+*comment finishing blows for pick_weapon_death_flavor to hand off to. Two variants per weapon category, because
+*comment that fight is seen once. It names no weapon of the foe (the knifeman's knife and the lookout's sling are
+*comment each wrong for the other target) and uses no pronoun for the foe. Sets the caller's already-*temp'd fdh.
+*temp pdfc_v 1
+*rand pdfc_v 1 2
+*if (weapon_type = "ranged")
+  *if (pdfc_v = 1)
+    *set fdh "You loose low, and the shot cracks across the shin of ${combat_enemy_epithet}. The leg folds, a barrel catches the fall, and the slide down the staves ends in a heap that does not try to rise."
+  *if (pdfc_v = 2)
+    *set fdh "Your shot punches into a shoulder and spins ${combat_enemy_epithet} into the barrels. The hooded lamp swings, the shadows lurch, and when they settle there is only a dazed heap and a groan."
+*elseif (weapon_damage_type = "slashing")
+  *if (pdfc_v = 1)
+    *set fdh "You turn your ${weapon} in your grip and bring the flat across the temple of ${combat_enemy_epithet}. The knees go at once, and the greasy flags take the rest of the fall."
+  *if (pdfc_v = 2)
+    *set fdh "You check the swing mid-arc and drive the butt of your ${weapon} into the chest of ${combat_enemy_epithet}. Breath leaves in one hard cough, the knees fold, and a barrel takes the slide down."
+*elseif (weapon_damage_type = "bludgeoning")
+  *if (pdfc_v = 1)
+    *set fdh "You bring the heavy end of your ${weapon} across the jaw of ${combat_enemy_epithet}. The head snaps sideways, the knees give, and the low beam is the last thing the eyes find on the way down."
+  *if (pdfc_v = 2)
+    *set fdh "You sweep the legs out from under ${combat_enemy_epithet} and lay the weight of your ${weapon} across the chest. The greasy flags hold the pin until the last of the fight drains away."
+*elseif (weapon_damage_type = "piercing")
+  *if (pdfc_v = 1)
+    *set fdh "You slip inside the reach of ${combat_enemy_epithet} and bring the butt of your ${weapon} down behind the ear. The lamp swings, the eyes roll up, and the knees drop among the barrels."
+  *if (pdfc_v = 2)
+    *set fdh "You hook the wrist of ${combat_enemy_epithet}, twist until the grip opens, and drive a knee into the gut. The breath goes out in a rush, and the slide down the wall ends sitting in the muck."
+*else
+  *if (pdfc_v = 1)
+    *set fdh "You drive a shoulder into the chest of ${combat_enemy_epithet} and carry the fight into the barrels. The staves boom, and when you straighten, the fight is over."
+  *if (pdfc_v = 2)
+    *set fdh "A hard, short blow catches ${combat_enemy_epithet} on the point of the chin. The head snaps back, the eyes go blank, and the knees give under the hooded lamp."
+*return
+
+*label pick_spell_death_flavor_cellar
+*comment The cellar set's spell finishers: one line per spell, plus a fallback. Same rules as the weapon set above.
+*if (combat_current_spell_id = "fire_bolt")
+  *set fdh "The fire-mote bursts at the feet of ${combat_enemy_epithet}, and the blast throws a singed, gasping heap back into the barrels, done with fighting."
+*elseif (combat_current_spell_id = "ray_of_frost")
+  *set fdh "The pale ray catches ${combat_enemy_epithet} across the shoulders. Rime crawls down the limbs, the stiffened legs give, and the fall onto the greasy flags ends in a shivering heap, too cold to rise."
+*elseif (combat_current_spell_id = "shocking_grasp")
+  *set fdh "You catch ${combat_enemy_epithet} by the wrist and let the charge go. The whole frame locks, jerks, and drops among the barrels, twitching and senseless."
+*elseif (combat_current_spell_id = "eldritch_blast")
+  *set fdh "The beam of eldritch force lifts ${combat_enemy_epithet} off the flags and drives a hard landing into the barrels. The staves burst, and what slumps down among them is senseless and breathing."
+*elseif (combat_current_spell_id = "chill_touch")
+  *set fdh "The spectral hand of grave-cold closes on the shoulder of ${combat_enemy_epithet}, and the chill goes in to the bone. The limbs seize, and the slide down a barrel ends in a huddle, teeth chattering, unable to fight."
+*elseif (combat_current_spell_id = "vicious_mockery")
+  *set fdh "The barbed words go in and lodge, and ${combat_enemy_epithet} reels with both hands clamped to the skull. The knees buckle, and the fight goes out in a furious groan."
+*elseif (combat_current_spell_id = "magic_missile")
+  *set fdh "Three darts of force strike the same spot on ${combat_enemy_epithet}, and the breath goes out in a whoop. The knees fold, and the slide down the staves ends senseless."
+*elseif (combat_current_spell_id = "dissonant_whispers")
+  *set fdh "The discordant phrase burrows into ${combat_enemy_epithet}, and the mind shudders and lets go. The knees give, and the fall to the flags under the lamp ends out cold."
+*elseif (combat_current_spell_id = "armor_of_agathys")
+  *set fdh "The frost-shell splinters as ${combat_enemy_epithet} strikes it, and the backlash of cold throws a numb, dazed heap against the barrels."
+*else
+  *set fdh "Your working takes ${combat_enemy_epithet} squarely, and the fight goes out all at once. The slide down among the barrels ends in a dazed heap."
+*return
+
+*label fight_shroud_thieves
+*comment The Stolen Shroud (port_valen_dredge_end.txt, shroud_b3): the scarred thief and his accomplice in the
+*comment smoking cellar behind the drinking house, a knifeman and a sling lookout from the same library the
+*comment Dredge-End ambush draws on. Only started after a failed Beat 3 roll, with combat_enemy_advantage /
+*comment disadvantage already set for that failure. Same weight as the ambush (about 64% overall win at level 1).
+*comment NON-LETHAL: victory leaves both beaten senseless, and combat_nonlethal_style "cellar" gives it its own
+*comment finishing-blow lines so it never prints the Alderford curing shed's. Reports combat_outcome like any other;
+*comment the CALLER handles "rescued" (the thieves take the purse and run) and "player_died".
+*set combat_is_nonlethal true
+*set combat_nonlethal_style "cellar"
+*set combat_enemy_count 2
+*set combat_apply_type "gang_knifeman"
+*set combat_apply_slot 1
+*gosub apply_enemy_type
+*set combat_apply_type "dock_lookout"
+*set combat_apply_slot 2
+*gosub apply_enemy_type
+*comment The shared types were written for streets and for a player in a cloak or coat. These lines mention
+*comment cobblestones, a cloak, a coat, a piling, a gangway, a canal, a shutter, a lamp-post and a rain barrel,
+*comment none of which are in a low smoke-black cellar, so they are retuned here for this fight only.
+*set combat_flavor_enemy_miss_1 "The knifeman lunges, but the blade only scrapes a line across the greasy flags as you twist away."
+*set combat_flavor_enemy_miss_3 "A quick slash from the knifeman cuts nothing but the smoky air in front of you."
+*set combat_flavor_enemy_miss_5 "The knifeman crowds in close, but the point catches the rim of a barrel instead and you wrench free."
+*set combat_flavor_enemy2_hit_2 "The lookout's sling snaps, and a stone ricochets off a barrel into the small of your back."
+*set combat_flavor_enemy2_hit_4 "Another stone cracks off your shin from the dark beyond the lamp."
+*set combat_flavor_enemy2_miss_1 "A sling stone whines past your ear and smacks into a barrel-stave."
+*set combat_flavor_enemy2_miss_2 "You hear the sling snap and duck, and the stone cracks off the wall behind you."
+*set combat_flavor_enemy2_miss_3 "The lookout hurls a stone that ricochets off the low beam and skitters away into the dark."
+*set combat_flavor_enemy2_miss_4 "The lookout's stone clips a hanging eel-rack with a dry rattle, missing you by a hand."
+*set combat_flavor_enemy2_miss_5 "The stone thuds into the side of a barrel as you sidestep."
 *set combat_round 1
 *gosub apply_generic_weapon_flavor
 *gosub fight_setup
