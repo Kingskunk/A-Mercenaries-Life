@@ -56,8 +56,8 @@ Only the friar is ever named.
 | Who | What the player sees | Combat type |
 |---|---|---|
 | **The friar (Brother Anselm)** | The friar the shrine already has: an undyed, frayed wool habit, murmured speech, a dry way of putting things. Battered, with a rag held to his head. | none |
-| **The scarred young man** | Lean, a scar from ear to mouth, a gutting knife. First seen at the barrel-head in the cellar. | `gang_knifeman` (10 HP, AC 11, slashing, 30% Poisoned) |
-| **His accomplice** | Thin, a sling coiled at his belt. Splits the coins with him. | `dock_lookout` (6 HP, AC 10, sling, 25% Blinded) |
+| **The scarred young man** | Lean, a scar from ear to mouth, a gutting knife. First seen at the barrel-head in the cellar. | `knifeman` (10 HP, AC 11, slashing, 30% Poisoned) |
+| **His accomplice** | Thin, a sling coiled at his belt. Splits the coins with him. | `slinger` (6 HP, AC 10, sling, 25% Blinded) |
 | **The widow** | A woman with three children pulled in against her, crouched by the plinth. Her husband, a net-mender, lies under a fishing net. | none |
 | **The older woman** | The same woman who spoke to the player when they left a copper (she rests against the foundation timber). Raspy, calls people "traveler". | none |
 
@@ -374,6 +374,8 @@ Every variable is read somewhere. `shroud_seen` and `shroud_start_day` drive the
 Layer 3 then starts with `*if (shroud_scene)` to print the hook (first or revisit variant) and go to its choice, or `*elseif (shroud_cold)` to print the cold scene and set the quest to `failed` and `cold` (behind the resolved guard). The bowl state is one more `*temp` (`"clay"`, `"shards"` or `"tin"`) read by the place layer and the ordinary-day line.
 
 ### 6.3 The fight (`combat.txt`)
+
+> **Superseded 2026-09-26.** The enemy library was made weapon-keyed and place-free, so `fight_shroud_thieves` is now `combat_lib_1 "knifeman"` and `combat_lib_2 "slinger"` (non-lethal) through `fight_library`. The cellar-only finisher set, its three dispatch branches, `combat_nonlethal_style` and the eight override lines described below were all removed; the default non-lethal finishing blows were rewritten place-free and pronoun-free. The type ids `gang_knifeman` and `dock_lookout` are now `knifeman` and `slinger`. The text below is the original design.
 
 **Reuse.** The enemies are Dredge-End's own library types (`gang_knifeman`, `dock_lookout`), the same ones the night ambush uses, so no new enemy is written. `fight_shroud_thieves` is only a thin wrapper around them. It cannot simply call `fight_dredge_ambush`, because that label picks its bruiser's weapon at random, has street lines (a canal, a lamp-post), and is lethal.
 

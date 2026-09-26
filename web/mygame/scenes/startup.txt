@@ -999,6 +999,22 @@
 *create combat_enemy2_epithet_override ""
 *create combat_enemy3_name_override ""
 *create combat_enemy3_epithet_override ""
+*comment Per-slot stat overrides (2026-09-26): set any of these before the fight is built and that slot is that tough,
+*comment whatever library type fills it -- a veteran, a captain, a drunk. hp sets current and max HP, ac is the number the
+*comment player must beat to hit it, atk is its to-hit bonus (its special move moves by the same amount). 999 means
+*comment "use the type's own number": it has to be a number (quicktest runs both sides of every *if, so the arithmetic in
+*comment fight_setup must never see a string) and a value no real HP, AC or to-hit bonus reaches, so 0 stays a legal
+*comment override. Consumed by fight_setup and put back to 999, and fight_cleanup resets them too, so one fight's
+*comment numbers never reach the next.
+*create combat_enemy_hp_override 999
+*create combat_enemy_ac_override 999
+*create combat_enemy_atk_override 999
+*create combat_enemy2_hp_override 999
+*create combat_enemy2_ac_override 999
+*create combat_enemy2_atk_override 999
+*create combat_enemy3_hp_override 999
+*create combat_enemy3_ac_override 999
+*create combat_enemy3_atk_override 999
 *comment Enemy type library (combat.txt: apply_enemy_type) -- the calling
 *comment fight_<name> label sets these two, then *gosub apply_enemy_type, to
 *comment fill one slot (1/2/3) with a named reusable enemy type's full stat
@@ -1011,10 +1027,6 @@
 *create combat_active_target 1
 *create combat_all_enemies_dead false
 *create combat_is_nonlethal false
-*comment combat_nonlethal_style picks which set of non-lethal finishing-blow lines a fight uses. "" (the default)
-*comment is the original set, written for the Alderford curing shed. A fight can name its own set ("cellar" is the
-*comment Stolen Shroud's smoking cellar), and combat.txt's finisher labels hand off to it. fight_cleanup resets it.
-*create combat_nonlethal_style ""
 *create combat_player_can_die false
 *create combat_enemy1_name "none"
 *create combat_enemy1_hp 0
@@ -1164,7 +1176,7 @@
 *create combat_flavor_enemy_miss_3 ""
 *create combat_flavor_enemy_miss_4 ""
 *create combat_flavor_enemy_miss_5 ""
-*comment Variants 6-8 of the shared player strike pool (apply_generic_weapon_flavor). A hand-authored fight has 1-5 only.
+*comment Variants 6-8 of the stored player strike pool, which the creature fights use (apply_creature_weapon_flavor). A hand-authored fight has 1-5 only.
 *create combat_flavor_weapon_hit_6 ""
 *create combat_flavor_weapon_hit_7 ""
 *create combat_flavor_weapon_hit_8 ""
@@ -1177,8 +1189,18 @@
 *create combat_flavor_weapon_miss_ranged_6 ""
 *create combat_flavor_weapon_miss_ranged_7 ""
 *create combat_flavor_weapon_miss_ranged_8 ""
+*comment True while the player's weapon lines come from combat.txt's flavor_player_<damage type> labels (a fight against
+*comment a human fighter) rather than the stored creature pool. Set by apply_generic_weapon_flavor, cleared by fight_cleanup.
+*create combat_player_keyed false
+*comment True when the foe is a creature (lacedon, mire_rat, beast) rather than a person: the player's lines then come from the
+*comment flavor_creature_ labels. Set with combat_player_keyed by apply_creature_weapon_flavor; cleared by fight_cleanup.
+*create combat_player_creature false
 *comment Enemy type library: which library type fills each slot ("" for a hand-authored slot), and the scratch fields
 *comment flavor_from_type (combat.txt) reads and writes. Plain variables rather than *params, like advance_time.
+*comment combat_lib_1/2/3: what a scene sets to call combat.txt fight_library (a library type id per slot); cleared by fight_cleanup.
+*create combat_lib_1 ""
+*create combat_lib_2 ""
+*create combat_lib_3 ""
 *create combat_enemy1_flavor_type ""
 *create combat_enemy2_flavor_type ""
 *create combat_enemy3_flavor_type ""
@@ -1189,9 +1211,6 @@
 *create fft_miss ""
 *create fft_m2hit ""
 *create fft_m2miss ""
-*comment Spell-specific combat attack flavor
-*create combat_flavor_dissonant_hit ""
-*create combat_flavor_dissonant_miss ""
 *create shield_armed false
 *create combat_shield_triggered false
 *create hex_active false

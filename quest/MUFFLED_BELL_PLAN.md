@@ -42,8 +42,8 @@ Nobody is named, by design (narrative guidelines §1 and §7).
 
 | Who | What the player sees | Combat type |
 |---|---|---|
-| **The lantern man** | Thin and hooded, a horn lantern with its shutter stuffed with cloth on his wrist, a sling coiled at his belt. First seen going down the ladder. | `dock_lookout` (6 HP, AC 10, sling, 25% Blinded) |
-| **The broad man** | Broad in the shoulder, cropped beard, a hatchet with a pitted head hanging from his fist. He sits on the oars, then comes up the steps. He is the one who throws the pouch. | `gang_hatchet` (10 HP, AC 11, slashing, 30% Bleeding) |
+| **The lantern man** | Thin and hooded, a horn lantern with its shutter stuffed with cloth on his wrist, a sling coiled at his belt. First seen going down the ladder. | `slinger` (6 HP, AC 10, sling, 25% Blinded) |
+| **The broad man** | Broad in the shoulder, cropped beard, a hatchet with a pitted head hanging from his fist. He sits on the oars, then comes up the steps. He is the one who throws the pouch. | `axeman` (10 HP, AC 11, slashing, 30% Bleeding) |
 | **The ketch** | Two mast lanterns in the haze, then a thin voice across the water. Never boarded, never named. | none |
 | **The watchmen** | Two, in greased sheepskins with a swinging lantern (the pier's storm-day prose already has watchmen in sheepskins). The older one runs out of breath. The younger goes straight to the ladder. | none |
 
@@ -364,6 +364,8 @@ Every variable is read somewhere (`bell_resolved` guards the rewards, `bell_walk
 `update_weather_flags` runs inside `advance_time`, which `pv_poi_pier` has just called, so the flags are fresh.
 
 ### 5.3 The fight (`combat.txt`)
+
+> **Superseded 2026-09-26.** The enemy library was made weapon-keyed and place-free, so `fight_wreckers` is now `combat_lib_1 "axeman"` and `combat_lib_2 "slinger"` through `fight_library`, and the seven breakwater override lines described below were removed. The type ids `gang_hatchet` and `dock_lookout` are now `axeman` and `slinger`. The text below is the original design.
 
 New entry label `fight_wreckers`, modeled on `fight_dredge_ambush`:
 
