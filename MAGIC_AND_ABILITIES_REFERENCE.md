@@ -92,13 +92,40 @@ None of these four classes are spellcasters, but they still have real level-1 cl
 | Class | Feature | Tagged? | Wired In? |
 |---|---|---|---|
 | Fighter | Fighting Style (player picks one: Defense, Dueling, Great Weapon Fighting, Protection) | `fighter_fighting_style` (chosen during `dawn_trial.txt`) | **Yes / Active** — chosen at dawn trial. `"defense"` gives +1 AC immediately in `update_dnd_stats`. All four styles also gate a dedicated, style-specific melee option (DC 12 STR) in `battle_black_sinks.txt`'s `beat_gatehouse_fight` — Fighter previously had zero class-specific combat choices there, unlike every other class. |
-| Fighter | Second Wind | `fighter_second_wind_uses` (starts at 1) | **Yes** — `*label second_wind` in `startup.txt` is a real, callable subroutine: restores `1d10 + character_level` HP (capped at `hp_max`) and consumes a use. Wired into `battle_black_sinks.txt` before the gatehouse melee. |
-| Barbarian | Rage | `barbarian_rage_uses` (starts at 2), `is_raging`, `barbarian_rage_damage_bonus` (2) | **Partially** — `*label activate_rage` / `*label end_rage` in `startup.txt` toggle `is_raging` and spend a use. Wired into `battle_black_sinks.txt` for pre-battle activation and gatehouse frenzy. |
+| Fighter | Second Wind | `fighter_second_wind_uses` (max `fighter_second_wind_max`: 2 at level 1) | **Yes** — `*label second_wind` in `startup.txt` is a real, callable subroutine: restores `1d10 + character_level` HP (capped at `hp_max`) and consumes a use. Wired into `battle_black_sinks.txt` before the gatehouse melee. |
+| Barbarian | Rage | `barbarian_rage_uses` (max `barbarian_rage_max`: 2 at level 1), `is_raging`, `barbarian_rage_damage_bonus` (2) | **Partially** — `*label activate_rage` / `*label end_rage` in `startup.txt` toggle `is_raging` and spend a use. Wired into `battle_black_sinks.txt` for pre-battle activation and gatehouse frenzy. |
 | Barbarian | Unarmored Defense | `class_feature_2_title`/`_desc` | No — and it's currently **unreachable**: Ashbrook-origin characters always pick real armor at muster, so "unarmored" never actually applies under the current gear flow. Flavor text says as much. |
 | Rogue | Sneak Attack | `rogue_sneak_attack_die` ("1d6") | No — static flag only. No attack-with-advantage system exists to trigger it. |
 | Rogue | Expertise (Stealth & Thieves' Tools) | `rogue_expertise_1` ("Stealth"), `rogue_expertise_2` ("Thieves' Tools") | **Yes** — `roll_d20_check` adds `prof_bonus * 2` (+4) to `check_mod` if `check_skill` matches either chosen skill *and* `character_class = "rogue"`. Active in `dawn_trial.txt`. |
 | Ranger | Favored Enemy (player picks a creature type) | `ranger_favored_enemy`, default `"none"` | No — the advantage/disadvantage engine now exists (see below), so once this is chosen, wiring it in is just a `*set save_vs`-style tag away. What's still missing is a creature-type context on checks — a future tracking/recall scene would need to set something like `*set check_context "goblin"` before the check so the engine knows what's being tracked. |
 | Ranger | Natural Explorer (player picks a terrain) | `ranger_favored_terrain`, default `"none"` | No — same shape as above; needs a terrain-context tag on checks, not an advantage mechanic (that part's solved). |
+
+---
+
+## Actions and Bonus Actions in a Fight
+
+The player has one action and one bonus action each round, and each round refills them (`combat.txt` `combat_begin_round`; the rule is written up in GAMEPLAY_MECHANICS_RULES.md section 6). **Bonus actions:** Second Wind, Rage, Hex and Healing Word. Using one keeps you in the same round with your action still to come, and a second bonus option is not offered until the next round. **Actions:** an attack, a damage spell or cantrip, Armor of Agathys, False Life, Brace, and using an item; the enemies answer once your action is spent. **Shield** is a reaction (an armed flag), not a budget. The limits are variables (`combat_player_actions_max`, `combat_player_bonus_max`), so an effect such as Haste or a feature that grants an extra bonus action only has to change a number for the length of the fight.
+
+---
+
+## Class Resource Maximums and Rests
+
+Every class pool has a `_max` variable, set in one place: `refresh_class_resource_maxs` in `startup.txt`, which `update_dnd_stats` calls, so the maximum follows `character_level`. No scene types a pool number. Levels not listed keep the value above them.
+
+| Pool | Level 1 | Steps up |
+|---|---|---|
+| Second Wind (Fighter, 2024 rules) | 2 | 3 at level 4, 4 at level 10 |
+| Rage (Barbarian) | 2 | 3 at level 3, 4 at 6, 5 at 12, 6 at 17 |
+| Pact Magic slots (Warlock) | 1 | 2 at level 2, 3 at 11, 4 at 17 |
+| First-level slots (Wizard, Bard) | 2 | 3 at level 2, 4 at level 3 |
+
+Wizard and Bard second-level slots (from level 3) and the Warlock's rising slot level are not built: nothing in the game is a second-level spell yet. When they are, each is a new pool added in the same few places (see GAMEPLAY_MECHANICS_RULES.md section 1, *Class Resources Live in One Place*), and no scene that sleeps changes.
+
+**Long rest.** One routine, `restore_class_resources`, refills every pool to its maximum, clears temp HP and readies the Hexblood's Hex. Hit points are not touched (healing stays slow). Every sleeping place calls `calendar.txt` `resolve_sleep`, which calls it, and the prologue rests call it directly.
+
+## Short Rest
+
+**Show Stats → Rest** and the **Rest card pinned at the top of the Inventory** open the dossier's Rest menu (`choicescript_stats.txt` `codex_rest`). A short rest takes one hour of the clock (`advance_time`, so it burns hunger and fatigue like any other hour) and gives back what a short rest gives back: a **Fighter regains one Second Wind use** (2024 rules; a long rest gives them all back) and a **Warlock's Pact Magic slots all come back** (`startup.txt` `short_rest_preview` reports it, `do_short_rest` applies it, guarded by `last_short_rest_stamp` so a replayed page cannot give twice). It does **not** heal: healing stays slow. Rage, Bard slots and Wizard slots come back with sleep. It is refused in a fight, and at 2 HP or less while Starving or Collapsing (an hour can tick a hunger or fatigue point off HP, and a death cannot be handled from inside the dossier). The Middle Ward garret's own one-hour rest (`mw_room_short_rest`) calls `do_short_rest` too and prints `short_rest_banner`, so a new short-rest give-back never touches the garret.
 
 ---
 
@@ -119,12 +146,12 @@ None of these four classes are spellcasters, but they still have real level-1 cl
 | Racial innate magic | `race_cantrip`, `race_cantrip_desc`, `race_cantrip_2`, `race_cantrip_2_desc` |
 | Class identity | `character_class`, `class_title`, `class_assigned`, `hit_die`, `hit_die_max` |
 | Generic class feature (auto-granted) | `class_feature_title`, `class_feature_desc`, `class_feature_2_title`, `class_feature_2_desc` |
-| Fighter | `fighter_fighting_style`, `fighter_second_wind_uses`, `second_wind` (subroutine, `startup.txt`) |
-| Barbarian | `barbarian_rage_uses`, `barbarian_rage_damage_bonus`, `is_raging`, `activate_rage`/`end_rage` (subroutines, `startup.txt`) |
+| Fighter | `fighter_fighting_style`, `fighter_second_wind_uses`, `fighter_second_wind_max`, `second_wind` (subroutine, `startup.txt`) |
+| Barbarian | `barbarian_rage_uses`, `barbarian_rage_max`, `barbarian_rage_damage_bonus`, `is_raging`, `activate_rage`/`end_rage` (subroutines, `startup.txt`) |
 | Rogue | `rogue_expertise_1`, `rogue_expertise_2`, `rogue_sneak_attack_die` |
 | Ranger | `ranger_favored_enemy`, `ranger_favored_terrain` |
-| Warlock | `warlock_patron`, `warlock_patron_title`, `warlock_patron_desc`, `warlock_cantrip(_2)`, `warlock_cantrip(_2)_desc`, `warlock_spell`, `warlock_spell_desc`, `warlock_spell_slots` |
-| Wizard | `wizard_cantrip(_2/_3)`, `wizard_cantrip(_2/_3)_desc`, `wizard_spell`, `wizard_spell_desc`, `wizard_spell_slots` |
-| Bard | `bard_cantrip(_2)`, `bard_cantrip(_2)_desc`, `bard_spell(_2)`, `bard_spell(_2)_desc`, `bard_spell_slots` |
+| Warlock | `warlock_patron`, `warlock_patron_title`, `warlock_patron_desc`, `warlock_cantrip(_2)`, `warlock_cantrip(_2)_desc`, `warlock_spell`, `warlock_spell_desc`, `warlock_spell_slots`, `warlock_spell_slots_max` |
+| Wizard | `wizard_cantrip(_2/_3)`, `wizard_cantrip(_2/_3)_desc`, `wizard_spell`, `wizard_spell_desc`, `wizard_spell_slots`, `wizard_spell_slots_max` |
+| Bard | `bard_cantrip(_2)`, `bard_cantrip(_2)_desc`, `bard_spell(_2)`, `bard_spell(_2)_desc`, `bard_spell_slots`, `bard_spell_slots_max` |
 
 All of these are `*create`d in `startup.txt` and set during `dawn_trial.txt` (class/magic) or `startup.txt`'s `choose_race` label (racial magic). Full dossier display (racial magic, patron, cantrips, spells) lives in `choicescript_stats.txt`'s Soldier Profile block and in `dawn_trial.txt`'s `trial_converge` summary. `camp_night.txt`'s `night_end` dossier only shows racial magic — class magic isn't known yet at that point in the story, since `dawn_trial` hasn't run.

@@ -1,0 +1,64 @@
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SHARED DEATH ENGINE
+*comment *goto_scene-only library scene, like combat.txt -- never
+*comment *gosub_scene'd, never returns (every path here ends in *ending).
+*comment NOT in *scene_list (it isn't "the next chapter" for anyone's
+*comment *finish chain); told to compile.js via its own hardcoded
+*comment verifyFileName("death.txt") entry instead, same treatment
+*comment combat.txt gets and for the same reason -- see
+*comment narrative_guidelines.md Section 23.
+*comment
+*comment Every caller sets `death_cause` ("starvation" | "exhaustion" |
+*comment "combat" | "drowning") and, for "combat", `death_enemy_epithet`
+*comment (how the closing line refers to what killed you -- reuse combat_
+*comment enemy_epithet if the fight already set one) before jumping here.
+*comment "drowning" needs no epithet. Also reads `death_location_name`
+*comment (defaults "Port Valen" in startup.txt) so a future town/village
+*comment just sets its own name first instead of this file needing a
+*comment hardcoded location per caller.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label death_screen
+[b]◈ ${death_location_name}[/b]
+*line_break
+
+*if (death_cause = "starvation")
+  The hunger stopped feeling like hunger days ago. What remains is a hollow, freezing ache behind your ribs, and limbs that no longer answer your will. There was always another goal to pursue, another coin to hoard, another mile of road to cross—until the reserves ran dry, your knees folded, and the ground rose up to take your weight.
+*elseif (death_cause = "exhaustion")
+  Your body stopped waiting for permission to rest days ago. The world had gone soft and distant at the edges, sight and sound filtering through a heavy, suffocating haze. There was always one more task that felt too urgent to put down, until your balance failed and the dark caught you where you fell.
+*elseif (death_cause = "drowning")
+  The water is far colder than the air, tearing the breath from your lungs before you can fight it. The pale light above fades into murky shadow and suffocating dark. Your fingers claw desperately for purchase, but there is no leverage in the deep, and no direction left that leads back to the surface.
+*else
+  *comment Combat
+  The lethal strike lands with sudden, brutal finality. There is no time to recover—only a sharp, concussive shock, a sudden failure of breath, and a split second of cold, detached clarity before your legs give out and the darkness rushes in.
+
+*if (death_cause = "starvation")
+  ${death_location_name} does not pause for a life that quietly guttered out. The living step past without looking down, the day's business grinds on, and the world moves forward without your footsteps.
+*elseif (death_cause = "exhaustion")
+  The hours turn just as they always do. The wind carries on, the living attend to their concerns, and ${death_location_name} forgets you were ever there.
+*elseif (death_cause = "drowning")
+  The current rolls on, carrying silt and debris into the depths. Beneath the surface, the water keeps its own silence.
+*else
+  *comment Combat
+  ${death_location_name} does not mourn another life lost to violence. The earth drinks what remains, the air grows still, and ${death_enemy_epithet} turns away, leaving your broken form behind to the quiet.
+
+*temp final_cause_text ""
+*if (death_cause = "starvation")
+  *set final_cause_text "Starvation"
+*elseif (death_cause = "exhaustion")
+  *set final_cause_text "Physical Exhaustion"
+*elseif (death_cause = "drowning")
+  *set final_cause_text "Drowned in the Deep"
+*else
+  *set final_cause_text "Fallen in Battle against ${death_enemy_epithet}"
+
+[b]◈ FINAL RECORD ◈[/b]
+*line_break
+• [b]Name:[/b] ${name} (${race_title} ${class_title})
+• [b]Origin:[/b] ${origin_title}
+• [b]Time of Passing:[/b] Day ${campaign_day}, Year ${calendar_year} (${day_of_week})
+• [b]Last Known Location:[/b] ${death_location_name}
+• [b]Cause of Death:[/b] ${final_cause_text}
+• [b]Estate Remaining:[/b] ${gold} Gold, ${silver} Silver, ${copper} Copper
+
+*ending

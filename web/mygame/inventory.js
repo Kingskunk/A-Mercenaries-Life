@@ -14,6 +14,9 @@
  * Dossier's Equipment menu -- see inventory-data.js's item entry for why.
  *
  * Open with the Inventory button or the I key.
+ *
+ * A Rest card is pinned at the top of "Carried Gear & Satchel" (see renderPinned): it is not a catalog item, and its button opens the
+ * dossier's Rest menu (choicescript_stats codex_rest).
  */
 (function () {
   "use strict";
@@ -185,7 +188,7 @@
 
   if (typeof document === "undefined") return; // node tests stop here (mirrors lorebook.js)
 
-  var dlg, elChips, elList, elCount, elSlots;
+  var dlg, elChips, elList, elCount, elSlots, elPinned;
   var view = { category: "" };
 
   function statsNow() { return window.stats || {}; }
@@ -212,6 +215,7 @@
         "</section>" +
         '<section class="inv-section">' +
           '<h3 class="inv-section-title">Carried Gear &amp; Satchel</h3>' +
+          '<div class="inv-pinned"></div>' +
           '<div class="inv-chips"></div>' +
           '<div class="inv-list"></div>' +
         "</section>" +
@@ -219,6 +223,7 @@
     document.body.appendChild(dlg);
 
     elSlots = dlg.querySelector(".inv-slots");
+    elPinned = dlg.querySelector(".inv-pinned");
     elChips = dlg.querySelector(".inv-chips");
     elList = dlg.querySelector(".inv-list");
     elCount = dlg.querySelector(".inv-count");
@@ -260,8 +265,29 @@
     elChips.innerHTML = html;
   }
 
+  // The Rest card: not an item you own, so it is not in the catalog and not counted. It is always drawn first, above the chips,
+  // and its button opens the dossier's Rest menu (choicescript_stats codex_rest), the same way Use opens the satchel. The badge
+  // shows the one number a short rest is for, so the card reads at a glance.
+  function restBadge(s) {
+    if (s.character_class === "fighter") return "Second Wind " + s.fighter_second_wind_uses + "/" + s.fighter_second_wind_max;
+    if (s.character_class === "warlock") return "Pact slot " + s.warlock_spell_slots + "/" + s.warlock_spell_slots_max;
+    return "";
+  }
+  function renderPinned(s) {
+    var badge = restBadge(s);
+    return '<div class="inv-item inv-item-pinned">' +
+      '<div class="inv-item-main">' +
+        '<span class="inv-item-name">Rest</span>' +
+        (badge ? '<span class="inv-item-badge">' + esc(badge) + "</span>" : "") +
+        '<button type="button" class="inv-use" data-rest' + (canUse() ? "" : " disabled") + ">Rest…</button>" +
+      "</div>" +
+      '<div class="inv-item-desc">Sit down for a short rest: about an hour, and it wins back what a short rest wins back.</div>' +
+      "</div>";
+  }
+
   function render() {
     var s = statsNow();
+    elPinned.innerHTML = renderPinned(s);
     var tradeBar = dlg.querySelector("#invTradeBar");
     if (tradeBar) {
       var trading = !!(window.TradePanel && window.TradePanel.isActive());
@@ -322,10 +348,22 @@
     });
   }
 
+  function openRest() {
+    if (!canUse()) return;
+    close();
+    var scene = new window.Scene("choicescript_stats", window.stats, window.nav, { secondaryMode: "stats", saveSlot: "temp" });
+    scene.targetLabel = { label: "codex_rest", origin: "url", originLine: 0 };
+    window.clearScreen(function () {
+      if (typeof window.setButtonTitles === "function") window.setButtonTitles();
+      scene.execute();
+    });
+  }
+
   function onClick(ev) {
     var t = ev.target;
     while (t && t !== dlg && !(t.getAttribute && (t.getAttribute("data-act") || t.hasAttribute("data-cat") ||
-      t.hasAttribute("data-shield-toggle") || t.hasAttribute("data-swap-sidearm") || t.hasAttribute("data-use")))) t = t.parentNode;
+      t.hasAttribute("data-shield-toggle") || t.hasAttribute("data-swap-sidearm") || t.hasAttribute("data-use") ||
+      t.hasAttribute("data-rest")))) t = t.parentNode;
     if (!t || t === dlg) return;
     var act = t.getAttribute("data-act");
     if (act === "close") return close();
@@ -333,6 +371,10 @@
       // The trade panel (trade.js) sits over the shop menus; from here it is one tap away.
       close();
       if (window.TradePanel) window.TradePanel.open();
+      return;
+    }
+    if (t.hasAttribute("data-rest")) {
+      if (!t.disabled) openRest();
       return;
     }
     if (t.hasAttribute("data-use")) {
