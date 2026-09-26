@@ -29,17 +29,22 @@ function harvest(lines) {
     if (m) out.push(m[1]);
     // The menu ends at the "head to another district" exit, which is spelled
     // "*goto port_valen_travel" in the harbour and "*goto_scene port_valen
-    // port_valen_travel" in the district files, so match both.
+    // port_valen_travel" in the district files, so match both. The city travel
+    // menu has no such exit, so also stop at the next top-level *label.
     if (/^\s*\*goto(?:_scene)?\s+(?:port_valen\s+)?port_valen_travel\s*$/.test(lines[i] || "")) break;
+    if (i > top && /^\*label\s/.test(lines[i] || "")) break;
   }
   return out;
 }
 
-// Rendered text: ChoiceScript markup is stripped before layout, so it costs no width.
+// Rendered text: ChoiceScript markup is stripped before layout, so it costs no
+// width. ${...} placeholders render as their value, so a two-digit sample is
+// used to get a realistic width (the longest district leg is ~95 min).
 function render(s) {
   return s
     .replace(/\[b\]/gi, "").replace(/\[\/b\]/gi, "")
-    .replace(/\[i\]/gi, "").replace(/\[\/i\]/gi, "");
+    .replace(/\[i\]/gi, "").replace(/\[\/i\]/gi, "")
+    .replace(/\$\{[^}]*\}/g, "75");
 }
 function words(s) { return s.trim().split(/\s+/).filter(Boolean).length; }
 

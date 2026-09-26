@@ -6,9 +6,11 @@ const fs = require("fs");
 
 const SCENES = [
   ["web/mygame/scenes/port_valen.txt", "harbour quay", "pv_poi_fish_slip"],
+  ["web/mygame/scenes/port_valen.txt", "city travel", "port_valen_travel_to"],
   ["web/mygame/scenes/port_valen_dredge_end.txt", "Dredge-End", "cut_market"],
   ["web/mygame/scenes/port_valen_middle_ward.txt", "Middle Ward", "mw_locksmiths_close"],
   ["web/mygame/scenes/port_valen_civic_heights.txt", "Civic Heights", "pv_ch_hall_door"],
+  ["web/mygame/scenes/port_valen_upper_wharves.txt", "Patrician Quarter", "pq_estates"],
 ];
 
 // The hub menu is the *choice block containing ANCHOR, ending at the
@@ -25,14 +27,22 @@ function hubMenu(lines, anchor) {
   for (let i = top; i < lines.length; i++) {
     const m = lines[i] && lines[i].match(/^\s+# (.+)$/);
     if (m) out.push(m[1]);
+    // Stop at the "head to another district" exit, or -- for the city travel
+    // menu, which has no such exit -- at the next top-level *label. Without the
+    // second stop the city travel scan runs to EOF and swallows the harbour
+    // menu too, double-counting its buttons.
     if (/^\s*\*goto(?:_scene)?\s+(?:port_valen\s+)?port_valen_travel\s*$/.test(lines[i] || "")) break;
+    if (i > top && /^\*label\s/.test(lines[i] || "")) break;
   }
   return out;
 }
 
 const build = fs.readFileSync("play_game.html", "utf8");
-// The compiler JSON-escapes non-ASCII, so normalise before comparing.
-const buildNoEsc = build.replace(/\\u2013/g, "\u2013");
+// The compiler JSON-escapes non-ASCII, and ${...} is left verbatim in the
+// scene data, so normalise both before comparing against source text.
+const buildNoEsc = build
+  .replace(/\\u2013/g, "\u2013")
+  .replace(/\\u2019/g, "\u2019");
 
 let problems = 0;
 
@@ -46,6 +56,7 @@ SCENES.forEach(function (p) {
   console.log("\n=== " + p[1] + " ===");
   console.log("  hub menu buttons: " + btns.length +
               "   bolded: " + bolded.length + "   plain: " + plain.length);
+  if (process.env.DEBUG_MENU) btns.forEach((b) => console.log("    | " + b.slice(0, 70)));
   console.log("  plain ones (expected: travel exit only): " + plain.join(" | "));
 
   bolded.forEach((b) => {

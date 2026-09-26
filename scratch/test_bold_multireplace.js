@@ -53,6 +53,7 @@ function boldedSpan(buttonLine, stats) {
 var WRAP = "[b]@{wh_named The Weigh House|the long grey hall under the iron beam-scale}[/b]: the city's scales. [~5 min]";
 var PERBRANCH = "[b]@{wh_named The Weigh House[/b]|[/b]The long grey hall under the iron beam-scale}: the city's scales. [~5 min]";
 var SCALES = "[b]@{ch_head_named The Gilded Scales Head House[/b]|[/b]the tall house with the brass scales}. [~5 min]";
+var TERRACE = "[b]@{pq_walk_seen The Terrace Walk[/b]|[/b]the promenade}. [~10 min]";
 
 module("bold + conditional in a choice button");
 
@@ -78,14 +79,22 @@ test("two spellings, both condition values", function () {
   console.log("      bolded: named=" + boldedSpan(SCALES, { ch_head_named: true }) +
               "  unnamed=" + boldedSpan(SCALES, { ch_head_named: false }));
 
-  // The rule the two conditional buttons must both satisfy: the named branch
-  // bolds exactly the name; the unnamed branch bolds nothing at all.
-  var ok = boldedSpan(SCALES, { ch_head_named: true }) === '"The Gilded Scales Head House"' &&
-           boldedSpan(SCALES, { ch_head_named: false }) === '""';
-  console.log("    C holds 'bold marks a name, never a description': " + (ok ? "yes" : "NO"));
-  // `doh` lives in tests/scenetest.js, not qunit.js, so when this file is loaded
-  // on its own it is undefined and any doh.is() call throws. Assert locally.
-  if (ok) { passed++; } else { failed++; }
+  // The rule the conditional buttons must all satisfy: the named branch bolds
+  // exactly the name; the unnamed branch bolds nothing at all.
+  var cases = [
+    ["Civic Heights Scales", SCALES, "ch_head_named", "The Gilded Scales Head House"],
+    ["Patrician Quarter Terrace Walk", TERRACE, "pq_walk_seen", "The Terrace Walk"],
+  ];
+  cases.forEach(function (c) {
+    show("   " + c[0] + " named  ", c[1], (function () { var o = {}; o[c[2]] = true; return o; })());
+    show("   " + c[0] + " unnamed", c[1], (function () { var o = {}; o[c[2]] = false; return o; })());
+    var named = boldedSpan(c[1], (function () { var o = {}; o[c[2]] = true; return o; })());
+    var unnamed = boldedSpan(c[1], (function () { var o = {}; o[c[2]] = false; return o; })());
+    var ok = named === JSON.stringify(c[3]) && unnamed === '""';
+    console.log("    -> bolds the name only when known: " + (ok ? "yes" : "NO") +
+                "   (named=" + named + " unnamed=" + unnamed + ")");
+    if (ok) { passed++; } else { failed++; }
+  });
   } catch (e) {
     failed++;
     console.log("    EXCEPTION: " + (e && e.stack ? e.stack.split("\n").slice(0, 4).join(" | ") : e));
