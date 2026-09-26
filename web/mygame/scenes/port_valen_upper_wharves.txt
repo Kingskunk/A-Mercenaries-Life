@@ -29,7 +29,8 @@
 *comment HOOKS, not built: SHOP HOOK at the Gilt Needle (cloaks, belts, gloves, boots and finer clothing on the gear
 *comment catalog: add a tailor_buy shop with its GEN block and trade-panel key, like Halda's); QUEST SLOTS at each great
 *comment house and at the avenue (the planned "Defaulted Timber Raft" quest belongs with House Halloran); the guards'
-*comment side-gate gap (House Ostrand, the tell) for an outlaw route; writ revocation for a registered name that draws
+*comment side-gate gap (House Ostrand, the tell) for an outlaw route -- the tell is one-shot and sets
+*comment pq_ostrand_gap_spotted, so the hook has something to key off; writ revocation for a registered name that draws
 *comment steel. Lorebook: upper_wharves, pq_terrace_walk, pq_house_halloran, pq_house_vantry, pq_house_ostrand,
 *comment gilt_needle, idris_fenwick, alys_threnn.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -271,7 +272,9 @@ Past the inner gatehouse, the avenue runs straight and wide between great houses
 
 *gosub pq_sky
 
-*comment LAYER 3: STREET, with LAYER 4: TELL appended for a wisdom 13+ or outlaw reading.
+*comment LAYER 3: STREET, with LAYER 4: TELL appended for a wisdom 13+ or outlaw reading. The TELL is printed
+*comment once only (pq_ostrand_gap_spotted): the guard relief is a perception a sharp eye keeps making, but the
+*comment unwatched side gate is a fact about the world, and re-narrating a fact the player already has reads badly.
 *if ((street_life = "empty") and (not(uw_night)))
   The avenue is deserted. The house guards have drawn back into the stone porticos, carriages stand under the gate arches with their horses blanketed, and the only movement is a figure in an oilskin cape crossing between two houses.
   *if ((uw_workday) and (day_of_week = "Hallowday"))
@@ -300,7 +303,8 @@ Past the inner gatehouse, the avenue runs straight and wide between great houses
     Men with long shears trim the estate hedges above the walls, and a boy waits at a service gate with a hatbox while a man in an apron checks a list. The house guards stand easy, halberds grounded, watching everyone who passes.
   *else
     A rider in house colors trots down the avenue with a leather case strapped across his back, and a small file of men in livery carries a cased harp up toward one of the estate gates.
-*if (pq_savvy)
+*if ((pq_savvy) and (not(pq_ostrand_gap_spotted)))
+  *set pq_ostrand_gap_spotted true
   You notice that the guards change over at the bell, and that for a slow count of about forty the side gate of House Ostrand stands unwatched while the relief crosses the avenue.
 
 *comment Shops trade Morning through Afternoon, like Lantern Lane: closed at Dusk, Night, Pre-Dawn, Hallowday and in a Blizzard.
@@ -352,6 +356,7 @@ Past the inner gatehouse, the avenue runs straight and wide between great houses
 
 *label pq_estates
 *comment QUEST SLOT: a house quest opens here. The planned "Defaulted Timber Raft" quest belongs with House Halloran.
+*set pq_estates_seen true
 *temp pq_night_e false
 *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
   *set pq_night_e true
@@ -534,8 +539,11 @@ A long promenade of pale paving runs along the crest of the ridge, edged on the 
 *comment When cloaks, belts, gloves, boots and finer clothing exist on the gear catalog, add a tailor_buy shop to
 *comment tools/gear_catalog.json (prefix, goto label, a GEN block here) and a trade-panel key, like Halda's forge and
 *comment Ambrose's still-room, keeping a plain menu underneath the panel. The slots already exist: equipped_head_id,
-*comment equipped_cloak_id, equipped_hands_id, equipped_waist_id, equipped_feet_id, equipped_neck_id. Note the cloak
-*comment has no mechanical effect yet (exposure only checks that one is worn).
+*comment equipped_cloak_id, equipped_hands_id, equipped_waist_id, equipped_feet_id, equipped_neck_id. Cloaks are
+*comment mechanical since 2026-09-26: each one takes a percentage off the cold and the wet part of outdoor exposure
+*comment (calendar.txt cloak_traits), and the dossier and inventory panel already swap them. A tailor's cloak needs a
+*comment row in cloak_traits, a block in equipment.txt apply_cloak_loadout, and (to sell it through the generator) a
+*comment new "cloak" catalog kind, since cloaks are not catalog items yet. Boots and gloves have no traits yet.
 
 *label pq_tailor
 *temp pq_tailor_first false

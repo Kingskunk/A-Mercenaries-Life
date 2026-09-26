@@ -944,21 +944,33 @@ The waterfront runs in one long line of stone and timber along the estuary. At i
 *comment quay gate (the road down from the terraces arrives here), Iron Wharves, breakwater and Pier. The hub stands on
 *comment the open quay near the middle, so walking times follow the distance: the Weigh House and the tower are 5
 *comment minutes away, the Keel and the Iron Wharves 10, the Slip and the Pier 15.
+*comment BUTTON FORMAT (2026-09-26): destination first, bold, then the flavour -- [b]Place[/b]: what it is like.
+*comment Six prose sentences all opening on a verb are hard to skim when you are only trying to work out where
+*comment each one goes, so the place name now leads and the [~N min] suffix is the scannable right-hand column.
+*comment Keep every line at or under the old longest (88 rendered chars, the Cargo Quay button) so nothing that
+*comment fitted on one line before starts wrapping. The Weigh House is the one conditional name here (wh_named), and
+*comment it closes the bold INSIDE each branch rather than around the whole @{...}: [b]@{cond Name[/b]|[/b]a
+*comment description}: tail. The point is that bold marks a NAME. Before the player has read the lintel the place has
+*comment no name, only a description, so the unnamed branch opens and closes bold immediately and renders nothing
+*comment bold. Wrapping the whole conditional instead would bold the description too, which reads as though the
+*comment player already had a name for it. Both spellings resolve and neither leaks a raw "@{"; this one is correct.
+*comment NB the story-linker already turns an unlocked place name in here into a codex link, so a bolded name can
+*comment render bold AND underlined once the player has been there; that is intended, not a styling bug.
 *choice
-  # Follow the smell of brine and woodsmoke down to the Fishmongers' Slip. [~15 min]
+  # [b]Fishmongers' Slip[/b]: follow the smell of brine and woodsmoke. [~15 min]
     *goto pv_poi_fish_slip
-  # Push into The Cleaved Keel, where the porter crews drink their wages. [~10 min]
+  # [b]The Cleaved Keel[/b]: where the porter crews drink their wages. [~10 min]
     *goto pv_poi_tavern
-  # Cross the quay to @{wh_named the Weigh House|the long grey hall under the iron beam-scale}. [~5 min]
+  # [b]@{wh_named The Weigh House[/b]|[/b]The long grey hall under the iron beam-scale}: the city's scales. [~5 min]
     *set minutes_to_pass 5
     *set time_advance_call_id "pv_wh_1"
     *gosub pv_wh_walk_time
     *goto pv_wh_door
-  # Walk the cargo quay to the customs tower, where the dockmaster logs every hull. [~5 min]
+  # [b]Cargo Quay[/b]: walk to the customs tower, where the dockmaster logs every hull. [~5 min]
     *goto pv_poi_quays
-  # Step down to the shipwrights' ways at the Iron Wharves. [~10 min]
+  # [b]Iron Wharves[/b]: step down to the shipwrights' ways. [~10 min]
     *goto pv_poi_drydock
-  # Walk out the long pier to the wreck-bell over the shoals. [~15 min]
+  # [b]The Pier[/b]: walk out the long pier to the wreck-bell over the shoals. [~15 min]
     *goto pv_poi_pier
   # Move on to the rest of the city.
     *goto port_valen_travel
@@ -1263,6 +1275,7 @@ You find a bench against the wall with your back to it, a watchful habit, and le
 
 *if ((rotten_rib_quest_stage = "unstarted") and (not(pv_tavern_rumor_rotten_rib)))
   *set pv_tavern_rumor_rotten_rib true
+  *set met_brant true
   Over by the rear hearth, a pair of sawyers talk over sour beer. The Gilded Scales are riding the shipwrights hard down on Brant's slipway, they say. The guild factor has the master builder under a brutal fine for every tide the cradle sits occupied, and the apprentices whisper that the spruce cleared through the gates has been weeping green sap instead of ringing true.
   *page_break The talk moves on…
   *goto pv_poi_tavern_menu
@@ -1291,7 +1304,8 @@ You find a bench against the wall with your back to it, a watchful habit, and le
   *elseif (bell_resolution = "pocketed")
     A porter lowers his voice. "The watchmen found the striker bare and the steps empty, and there's talk a purse went missing off the stone."
   *elseif (bell_resolution = "bloodied")
-    An old net-mender turns her mug in her hands. "Somebody rang it. They found a stranger sitting against the frame post with a hatchet's work on them, and the boat that brought the wreckers was already gone."
+    *set codex_wreck_law true
+    An old net-mender turns her mug in her hands. "Somebody rang it. They found a stranger sitting against the frame post with a hatchet's work on them, and the boat that brought the wreckers was already gone. Her hull was picked over before the tide turned, and customs entered her as wreck-goods after the fact."
   *elseif (bell_walked_away)
     *set codex_wreck_law true
     A skiff hand looks into his beer. "Nobody was out on the stone again, same as the grain barge. The salvage crews were on her before the tide turned. She was wreck-goods by sunup."
@@ -1334,6 +1348,21 @@ You find a bench against the wall with your back to it, a watchful habit, and le
   *set pv_tavern_rumor_3 true
   *set codex_gilded_scales true
   Someone by the hearth is telling the debtor workhouse story again: debtor crews chained out in the channel off the Iron Wharves, their bonds held in the Gilded Scales' counting houses, renewed every quarter-day. When the interest comes due, the old man insists, you can hear them singing to the tide.
+  *page_break The talk moves on…
+  *goto pv_poi_tavern_menu
+*elseif (not(pv_tavern_rumor_vale))
+  *set pv_tavern_rumor_vale true
+  *set codex_western_vale true
+  *set codex_house_gault true
+  *set codex_baron_karr true
+  Two men with rope-scarred palms share the next bench, and one of them jabs a spoon at the other's chest. "Hemp's up two coppers a coil again. The Western Vale wagons are stuck at Iron Gap. Karr's bailiffs want the toll and Gault's riders won't pay it, so nobody moves." His friend snorts into his mug. "Then canvas doubles, and it comes out of our wages."
+  *page_break The talk moves on…
+  *goto pv_poi_tavern_menu
+*elseif (not(pv_tavern_rumor_sedge))
+  *set pv_tavern_rumor_sedge true
+  *set codex_great_sedge true
+  *set codex_warlord_skell true
+  A boatman with peat stains to the elbow is losing an argument with his bench about what a sack of peat is worth. "I paid for every sack twice," he says. "Once to the cutters, and once to Warlord Skell's people for a guide through the reeds. Nobody takes a boat across the Great Sedge without one."
   *page_break The talk moves on…
   *goto pv_poi_tavern_menu
 *else
@@ -1529,6 +1558,16 @@ The floor goes on around you, with the great scale at its center and the boards 
       *set wh_hull_talk true
       "Hulls are the Dockmaster's," Farrow says, and points his chin down the quay toward the tower. "Papers, berths, duties. I weigh what comes off them. If a man wants to know why his ship is sitting, he asks Voss. If he wants to know why his cargo is worth less than his ship, he asks me."
       *page_break "Fair enough."…
+      *goto pv_wh_menu
+  *if (not(wh_origin_talk))
+    # Ask Farrow where the loads come from.
+      *set wh_origin_talk true
+      *set codex_stenmark true
+      *set codex_baron_karr true
+      *set codex_western_vale true
+      *set codex_great_sedge true
+      "Read the boards and you have your answer," Farrow says, and runs a finger down the columns. "Coal, timber, pig iron and shear-steel come down from Baron Karr's Stenmark, out of the Crags, and so does the highland wool. Hemp, flax canvas and pitch come from the Western Vale. The Great Sedge sends peat, but peat does not cross this floor. It goes by the cartload to whoever burns it." He taps the board headed salted cod. "That one is ours."
+      *page_break "Good to know."…
       *goto pv_wh_menu
   # Step back out onto the quay.
     *goto port_valen_harbor_pois
@@ -2555,6 +2594,7 @@ You walk the granite gate walkway above the lower basin. Heavy timber flood-gate
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label beat_1_discovery
+*set brant_saw_him true
 The air down on the shipwrights' ways is heavier than on the upper quays. It is thick with coal smoke from the forge hearths, boiling pine tar, and the sour green smell of steamed spruce. Across the basin, caulking irons ring against the planking of a pair of cargo vessels on the neighboring slips, and sawpit crews shout over the rasp of the frame-saws.
 
 On the slipway, the ribs of a seventy-foot merchant ship rise out of the granite cradle like the picked bones of a sea monster. Down in the mud beneath the keel, a pair of young apprentices sweep cedar shavings into wicker baskets and stack split oak offcuts. Up in the ribs, working alone in the half-light under the deck beams where the yard noise is muffled by curved frames, an old man in a tar-stained leather apron moves along the frames with a short-handled iron mallet.
@@ -4863,7 +4903,7 @@ At the next lull you step off the rail and into the half circle as if you had ev
     *set hint_fish_p_wis ((" [WIS DC " & fish_route_dc) & "]")
 
 *choice
-  # Introduce yourself as a buyer's agent from upriver, with a purse and a hand that knows the game.${hint_fish_p_cha}
+  # Introduce yourself as a buyer's agent from out of town, with a purse and a hand that knows the game.${hint_fish_p_cha}
     *set check_stat "cha"
     *set check_dc fish_route_dc
     *set check_skill "Play the Buyer"
@@ -5189,6 +5229,10 @@ The gravel yard outside keeps its steady rhythm: the thud of a sentry's hobnails
 *else
   *comment Midday / Afternoon / Dusk
   You wake with the day well underway. Sunlight cuts high through the roofboards, and the drill yard is loud with shield clatter and the rumble of iron-rimmed wagon wheels.
+
+*if (not(sleep_gear_note = ""))
+  *line_break
+  ${sleep_gear_note}
 
 *if (routine_stage = "Restless")
   It's another day waking to the same drafty corner of the barracks.

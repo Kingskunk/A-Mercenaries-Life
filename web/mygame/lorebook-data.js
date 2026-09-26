@@ -344,7 +344,7 @@
             out.push("Veteran Rorik, who swung sledge for him back in the Highland Crags, tells how the two of them framed the timber mill over the Alderford weir. Torvald swore he would drown before wading into freezing muck every time driftwood jammed the wheel, so he hid a bypass under the intake casing. Trip the catch and a counterweight backs the gear teeth off, and the river flushes the jam itself. He calls it 'preventative drainage' so the guild inspectors cannot fine him. His rule in the old shops was two taps to set the angle and one blow to draw the metal, kept to an exact three-count, or you caught hot tongs across your shins.");
           }
           if (truthy(s.discussed_smiths_past)) {
-            out.push("He left the Highland Crags after the bailiffs came with the baron's writs and thirty mounted men-at-arms, taxing three marks on every hundredweight of refined steel. The highland shops could no longer buy coal, feed their hammer-men, or pay the ore carters. He took his tools downriver, by his own account, to where the water runs free and no baron owns the current. Rorik had no coin to buy a weir of his own and took the Carrion's silver shilling instead. These days the two old highlanders close out most evenings side by side at the Drowned Oar's hearth over river ale and bone dice.");
+            out.push("He left the Highland Crags after the bailiffs came with the baron's writs and thirty mounted men-at-arms, taxing three marks on every hundredweight of refined steel. The highland shops could no longer buy coal, feed their hammer-men, or pay the ore carters. He took his tools down to the river, by his own account, where the water runs free and no baron owns the current. Rorik had no coin to buy a weir of his own and took the Carrion's silver shilling instead. These days the two old highlanders close out most evenings side by side at the Drowned Oar's hearth over river ale and bone dice.");
           }
           return out;
         },
@@ -637,10 +637,10 @@
         tags: ["Western Vale"], aliases: ["Gault", "Dunmow", "lord of Dunmow", "riders", "cavalry", "Western Vale"],
         unlock: "codex_house_gault",
         body: [
-          "The noble house that holds the [[western_vale|Western Vale]] from its walled seat at Dunmow. When the legions left, Gault kept its granaries shut and its gates manned, and it has held Dunmow ever since. It fields mounted riders and archers, who are at home on the open downs and far less so in forest or bog. Coombe Gap, the road that brings the vale's wagons east to Alderford, is Gault's, and so is the grain that fills the Upper Weir Granary.",
-          "Gault keeps no harbor and no fleet. Its market is the coast, and the coast is reached over the weir at Alderford."
+          "The noble house that holds the [[western_vale|Western Vale]] from its walled seat at Dunmow. When the legions left, Gault kept its granaries shut and its gates manned, and it has held Dunmow ever since. It fields mounted riders and archers, who are at home on the open downs and far less so in forest or bog. Coombe Gap, the road that takes the vale's wagons east toward the river, is Gault's.",
+          "Gault keeps no harbor and no fleet, so its grain and cloth reach the sea on Scales barges or not at all."
         ],
-        see: ["western_vale", "stenmark", "alderford", "grey_marches", "meridian_empire"]
+        see: ["western_vale", "stenmark", "grey_marches", "meridian_empire"]
       },
       {
         id: "squatters", category: "factions", title: "The Causeway Squatters",
@@ -673,8 +673,8 @@
         tags: ["Regional", "Trade"], aliases: ["Marches", "frontier", "borderland", "map", "regions", "economy", "trade", "goods", "powers"],
         body: function (s) {
           var out = [
-            "A misty frontier borderland between the coastal trade routes and the northern highlands. Three kinds of country meet around one river: steep highland valleys in the north, chalk downland and farm country to the west, and peat bog and reed flats to the east. The Grey River runs down between them to Port Valen, and the Black Sinks causeway and Alderford's weir are where the roads reach it.",
-            "<b>Trade.</b> No part of the Marches feeds itself. The highlands have iron and coal and too little grain. The farm country has grain, hemp and horses and no iron. The bogs have fuel, eels and reeds, and no salt or timber. Alderford has salt and sawn timber, and boils its salt over peat from the bogs. Every road ends at the weir, and from there the barges carry it all down to Port Valen, which pays for it in coin."
+            "A misty frontier borderland between the coastal trade routes and the northern highlands. Three kinds of country meet around one river: steep highland valleys in the north, chalk downland and farm country to the west, and peat bog and reed flats to the east. The Grey River runs down between them to Port Valen.",
+            "<b>Trade.</b> No part of the Marches feeds itself. The highlands have iron and coal and too little grain. The farm country has grain, hemp and horses and no iron. The bogs have fuel, eels and reeds, and no salt or timber. Salt comes in from the coast. Port Valen takes what the rest can spare and pays for it in coin."
           ];
           var held = [];
           if (truthy(s.codex_stenmark)) {
@@ -688,7 +688,7 @@
           }
           if (held.length) { out.push(held.join(" ")); }
           if (held.length === 3) {
-            out.push("Each of the three holds something the other two need: the iron, the grain, and the peat that boils the salt. Each also needs something the others hold, so none of them can close a road without going short. The Gilded Scales sit at the weir where the roads meet, and the factors say that is why Alderford has never needed a garrison.");
+            out.push("Each of the three holds something the other two need: the iron, the grain, and the fuel. Each also needs something the others hold, so none of them can close a road without going short.");
           }
           return out;
         },
@@ -714,12 +714,12 @@
         unlock: "codex_alderford",
         meter: { stat: "alderford_rep", label: "Standing in Alderford" },
         body: [
-          "A river town built around an old imperial limestone weir, where the highland road down from the Crags meets the Grey and the river drops away toward the gorge. Sawmills crowd the bank above the falls. Below them stand warehouses, drying sheds, salt lofts, and muddy wharves where the barges tie up to load for the downriver run. The brine trade is the town's spine: catches boiled in the riverfront pans, cured in the lofts above them, and packed downriver by watermen who know every shallow of the gorge.",
+          "A river town built around an old imperial limestone weir, where the highland road down from the Crags reaches the head of the Grey and the river drops away toward the gorge. Sawmills crowd the bank above the falls. Below them stand warehouses, drying sheds, salt lofts, and muddy wharves where the barges tie up to load for the downriver run. The brine trade is the town's spine: catches boiled in the riverfront pans, cured in the lofts above them, and packed downriver by watermen who know every shallow of the gorge.",
           "The stone is older than the town. The weir is legion work, imperial limestone with locks cut through it. Beneath the southern foundation is a flooded stone chamber where the release gear for a submerged anti-galley boom still sits, its plans carried off by the garrison that withdrew. Everything above the waterline is newer. Thirty winters ago Alderford was three timber sheds and a ferry rope. Then the loft piles went into the bank, the pans were fired, and the salt-steam that made the town rich hardened the lungs of the people who worked it.",
-          "Port Valen's Council holds Alderford as one of its river towns and has never seen fit to garrison it. The Gilded Scales collect their share through a resident factor and a stamped ledger, with bailiffs on the toll road who wear pewter scale badges and weigh goods against lead weights that do not always weigh what they are stamped. What protects the town is paper: free-wharf exemptions sealed under the old provincial charter, sanctuary behind the chapel lintel, and a river charter that still names ten lashes for extorting refugees.",
-          "<b>Trade.</b> Alderford grows nothing. It makes salt, salted river fish, sawn timber and barge planks, and sends them downriver on Scales barges. Its winter rye comes in on carts from the western farm country, the iron for its forges comes down the highland road, and the peat under its brine pans comes across the Black Sinks from the eastern bogs. Each cart that reaches the weir carries something the town needs and goes back with salt or planks, and the Scales weigh and toll all of it. The factors say the town needs no garrison, because every neighbor depends on what crosses the weir and none would let another take it."
+          "Port Valen's Council holds Alderford as its river town and has never seen fit to garrison it. The Gilded Scales collect their share through a resident factor and a stamped ledger, with bailiffs on the toll road who wear pewter scale badges and weigh goods against lead weights that do not always weigh what they are stamped. What protects the town is paper: free-wharf exemptions sealed under the old provincial charter, sanctuary behind the chapel lintel, and a river charter that still names ten lashes for extorting refugees.",
+          "<b>Trade.</b> Alderford grows nothing. It makes salt, salted river fish, sawn timber and barge planks, and sends them downriver on Scales barges. Its winter rye comes in on carts from the western farm country, the iron for its forges comes down the highland road, and the peat under its brine pans comes across the Black Sinks from the eastern bogs. The Scales weigh and toll what comes in and what goes out."
         ],
-        see: ["port_valen", "grey_river", "sanctuary_charter", "gilded_scales", "imperial_booms", "meridian_empire", "saint_althea", "iron_carrion", "grey_marches", "western_vale", "great_sedge", "stenmark"]
+        see: ["port_valen", "grey_river", "sanctuary_charter", "gilded_scales", "imperial_booms", "meridian_empire", "saint_althea", "iron_carrion", "grey_marches"]
       },
       {
         id: "grey_river", category: "places", title: "The Grey River",
@@ -728,7 +728,7 @@
         tags: ["Grey River"], aliases: ["Grey River", "river gorge", "downriver", "waterway", "downriver run"],
         unlock: "codex_river_gorge",
         body: [
-          "A wide, navigable river running thirty miles between limestone bluffs and old imperial signal towers from Alderford down to Port Valen. The steady current makes a smooth downstream run for heavy grain barges and timber scows. The river damp, freezing autumn spray, and submerged imperial works like the anti-galley booms call for waterproofed gear and experienced watermen.",
+          "A wide, navigable river running thirty miles between limestone bluffs and old imperial signal towers from Alderford down to Port Valen. It begins at the Alderford weir, where the hill streams gather into one channel. Above the weir there is only the highland road, with no barge water and no river town. The steady current makes a smooth downstream run for heavy grain barges and timber scows. The river damp, freezing autumn spray, and submerged imperial works like the anti-galley booms call for waterproofed gear and experienced watermen.",
           "<b>Trade.</b> Downstream, the current carries a loaded barge from Alderford to Port Valen in a day. Upstream, the crew has to pole against it for days. So grain, salt, timber and coal ride down, and only light goods come back up: coin, cloth and finished wares. Barge owners fill the empty run home with whatever will pay a fee, and the Scales toll the river at both ends."
         ],
         see: ["alderford", "port_valen", "imperial_booms", "grey_marches"]
@@ -741,14 +741,14 @@
         unlock: "codex_black_sinks",
         body: function (s) {
           var out = [
-            "An old imperial road built up on a dike across the Sinks, laid in fitted grey stone and wide enough for military freight wagons, then left to rot for decades. Sinking peat and seasonal floods have collapsed its outer edges, so only the raised center still carries wheels, single file, with waist-deep bog on both sides. Where the road widens onto a raised limestone platform, a squat stone gatehouse blocks the way. It is the last chokepoint on the river toll road between the highland Crags and the downriver run."
+            "An old imperial road built up on a dike across the Sinks, laid in fitted grey stone and wide enough for military freight wagons, then left to rot for decades. Sinking peat and seasonal floods have collapsed its outer edges, so only the raised center still carries wheels, single file, with waist-deep bog on both sides. Where the road widens onto a raised limestone platform, a squat stone gatehouse blocks the way. It is the last chokepoint on the toll road between the highland Crags and the Alderford weir."
           ];
           if (!truthy(s.codex_marsh_squatters)) {
             out.push("This autumn the gatehouse is held by deserters and displaced tenants out of the high valleys, with scythes, sickles, and fishing spears, and nowhere else to run. The Gilded Scales bought the road back and handed the contract to the Carrion.");
           } else {
             out.push("The gatehouse stands open. What held it is scattered into the reeds, dead on the flagstones, or riding downriver in the iron cage wagons as contracted, and traffic crosses the causeway again under the Carrion's raven banners.");
           }
-          out.push("<b>Trade.</b> Nothing is made on the causeway. It is a toll station on the only dry road between the highlands and the river, so highland steel, coal and timber pass over it going south, and peat from the eastern bogs comes in over it toward Alderford. When the gatehouse is held, both streams stop at once, which is why the Scales paid to have it cleared.");
+          out.push("<b>Trade.</b> Nothing is made on the causeway. It is a toll station on the only dry road between the highlands and the river, so highland steel, coal and timber pass over it going south, and peat from the eastern bogs comes in over it. When the gatehouse is held, both streams stop at once, which is why the Scales paid to have it cleared.");
           return out;
         },
         see: ["squatters", "gilded_scales", "meridian_empire", "iron_carrion", "grey_river", "alderford", "grey_marches", "great_sedge", "stenmark"]
@@ -779,14 +779,14 @@
         body: function (s) {
           var out = [
             "The barony Baron Karr holds in the southern Crags: the valleys under the mountain face, the passes above them, and the forges in the deep valleys beyond. [[karrs_keep|Karr's Keep]] is the seat. Brandreth is the one market town, where the grain tax is measured out. Two roads leave it. The south road runs through Black Pike Gate and down to the Black Sinks. The west road climbs to Iron Gap and drops into the farm country beyond.",
-            "<b>Trade.</b> The Crags make pig iron, shear-steel, stone-coal, hard timber and upland wool. The valleys cannot feed the men who work them. Oats and barley ripen in a short summer, rye fails in a wet one, and the barony buys grain every year that it cannot grow. It buys salt, cloth and rope as well. Iron and coal pay for all of it, and both must go south through the Black Sinks and Alderford to reach a buyer. The Baron holds the north end of that road and the Gilded Scales hold the south end, so neither can move iron without the other. The Crag Forge-Elders' Council certifies the iron and keeps the deep furnaces going, and the bailiffs hold the roads the iron travels on."
+            "<b>Trade.</b> The Crags make pig iron, shear-steel, stone-coal, hard timber and upland wool. The valleys cannot feed the men who work them. Oats and barley ripen in a short summer, rye fails in a wet one, and the barony buys grain every year that it cannot grow. It buys salt, cloth and rope as well. Iron and coal pay for all of it, and both must go south through the Black Sinks to reach a buyer. The Baron holds the north end of that road and the Gilded Scales hold the south end, so neither can move iron without the other. The Crag Forge-Elders' Council certifies the iron and keeps the deep furnaces going, and the bailiffs hold the roads the iron travels on."
           ];
           if (truthy(s.discussed_smiths_past)) {
             out.push("The steel tax has emptied some of the highland shops. [[torvald|Torvald]] left over it: by his own account, the shops could no longer buy coal, feed their hammer-men or pay the ore carters.");
           }
           return out;
         },
-        see: ["baron_karr", "karrs_keep", "iron_bailiffs", "broken_crags", "ashbrook", "torvald", "house_gault", "great_sedge", "black_sinks", "alderford", "grey_marches"]
+        see: ["baron_karr", "karrs_keep", "iron_bailiffs", "broken_crags", "ashbrook", "torvald", "house_gault", "great_sedge", "black_sinks", "grey_marches"]
       },
       {
         id: "karrs_keep", category: "places", title: "Karr's Keep",
@@ -827,12 +827,13 @@
         unlock: "codex_western_vale",
         body: function (s) {
           var karr = truthy(s.codex_baron_karr) ? "Baron Karr's" : "the highland lord's";
+          var lord = truthy(s.codex_house_gault) ? "[[house_gault|House Gault]]" : "A noble house";
           return [
-            "Long chalk downland and river-fed farm country west of the Grey, with old forest along its southern edge. [[house_gault|House Gault]] rules it from Dunmow. Fallowfield and the smaller market towns sit in the wheat land, and the villages of the downs run sheep. Two roads leave it. Coombe Gap takes carts east to Alderford and the river. Iron Gap climbs north into the Crags and " + karr + " tolls.",
-            "<b>Trade.</b> The vale is where the Marches' bread comes from. It grows the wheat and rye that fill Alderford's granary and feed Port Valen's ovens, and it sends out flax and hemp for canvas and rope, bacon fattened on acorns in the forest, pitch and tar from the pines, and horses bred on the downs. It has no iron and no coal. Plow blades, horseshoes and spearheads come down through Iron Gap, and the price is set at the gate. Salt comes up from Alderford. The downs' own wool is short and coarse and mostly stays in the vale's cloth halls, and the fine wool that Port Valen buys comes from the Crags. Everything the vale sells to the coast crosses the weir at Alderford, where the Scales weigh it."
+            "Long chalk downland and river-fed farm country west of the Grey, with old forest along its southern edge. " + lord + " rules it from Dunmow. Fallowfield and the smaller market towns sit in the wheat land, and the villages of the downs run sheep. Two roads leave it. Coombe Gap takes carts east toward the river. Iron Gap climbs north into the Crags and " + karr + " tolls.",
+            "<b>Trade.</b> The vale is where the Marches' bread comes from. It grows the wheat and rye that feed Port Valen's ovens, and it sends out flax and hemp for canvas and rope, bacon fattened on acorns in the forest, pitch and tar from the pines, and horses bred on the downs. It has no iron and no coal. Plow blades, horseshoes and spearheads come down through Iron Gap, and the price is set at the gate. Salt comes in from the coast. The downs' own wool is short and coarse and mostly stays in the vale's cloth halls, and the fine wool that Port Valen buys comes from the Crags. Everything the vale sells to the coast goes down the river on Scales barges, at the Scales' freight rate."
           ];
         },
-        see: ["house_gault", "stenmark", "alderford", "grey_river", "grey_marches", "port_valen"]
+        see: ["house_gault", "stenmark", "grey_river", "grey_marches", "port_valen"]
       },
       {
         id: "great_sedge", category: "places", title: "The Great Sedge",
@@ -841,16 +842,17 @@
         tags: ["Sedge", "Trade"], aliases: ["Sedge", "Gryke", "Sedgefleet", "Wulverston", "bog", "fen", "peat", "eels", "reeds", "bog-iron", "peat-spiritus"],
         unlock: "codex_great_sedge",
         body: function (s) {
+          var warlord = truthy(s.codex_warlord_skell) ? "[[skell|Warlord Skell]]" : "A warlord";
           var out = [
-            "A wide country of peat bog, reed beds and black meres, cut by slow channels and dotted with islands of firm ground. Waist-deep mud lies under most of what looks solid, and a wagon sinks to the axle within a dozen paces. [[skell|Warlord Skell]] holds it from Gryke, an old fort that is sinking into the fen. The towns are small and built on piles. Sedgefleet is where the eel boats and peat barges load, and Wulverston, in the south, has the bog-iron works. The only dry ways through are woven brushwood tracks laid across the mud, and only the fen people know where they run.",
-            "<b>Trade.</b> The Sedge's staple is peat, cut, dried and stacked by the cartload. It is what Alderford's brine pans burn, and Port Valen's taprooms and tenements burn it beside their coal. The fen also sends out smoked eels, wildfowl, reed thatch, and soft bog-iron for nails and cheap tools. Nothing grows well here and there is no timber, so grain, salt and sawn wood all come in. Without salt the eels rot in a week. Alderford has the salt and the Sedge has the peat that boils it, so each holds something the other cannot do without."
+            "A wide country of peat bog, reed beds and black meres, cut by slow channels and dotted with islands of firm ground. Waist-deep mud lies under most of what looks solid, and a wagon sinks to the axle within a dozen paces. " + warlord + " holds it from Gryke, an old fort that is sinking into the fen. The towns are small and built on piles. Sedgefleet is where the eel boats and peat barges load, and Wulverston, in the south, has the bog-iron works. The only dry ways through are woven brushwood tracks laid across the mud, and only the fen people know where they run.",
+            "<b>Trade.</b> The Sedge's staple is peat, cut, dried and stacked by the cartload. Port Valen's taprooms and tenements burn it beside their coal, and so do the salt-boilers on the coast. The fen also sends out smoked eels, wildfowl, reed thatch, and soft bog-iron for nails and cheap tools. Nothing grows well here and there is no timber, so grain, salt and sawn wood all come in. Without salt the eels rot in a week, so the boats that carry peat out bring salt back."
           ];
           if (truthy(s.silt_gate_full_intel) || truthy(s.has_silt_gate_payout_slip)) {
             out.push("The fen towns also make a rough spirit called peat-spiritus. What reaches Port Valen comes in un-stamped with the Black Oath's smugglers, through the Silt-Gates.");
           }
           return out;
         },
-        see: ["skell", "black_sinks", "alderford", "silt_gates", "grey_marches", "port_valen"]
+        see: ["skell", "black_sinks", "silt_gates", "grey_marches", "port_valen"]
       },
 
       /* --------------------------------------------------------- HISTORY & LAW */

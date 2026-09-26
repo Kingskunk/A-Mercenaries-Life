@@ -72,8 +72,9 @@ console.log("season-invalid days (expect 0):", invalid);
 console.log("ground_state days:", JSON.stringify(ground));
 console.log("temperature band at the daily sample hour, by season:", JSON.stringify(tempBySeason));
 
-// Exposure table: extra percent for a set of conditions, with and without a cloak.
+// Exposure table: extra minutes for a set of conditions, per cloak (calendar.txt cloak_traits), and with the oilcloth.
 console.log("\nexposure on 60 outdoor minutes (extra minutes counted toward hunger and fatigue):");
+var CLOAKS = [["none", "no cloak"], ["camo_cloak", "mottled"], ["weather_cloak", "weather"], ["wool_mantle", "wool"], ["talia_oiled_cloak", "Talia's"]];
 var cases = [
   ["mild, clear", { temp_index: 3, weather_severity: 0, weather_wet: false }],
   ["cool, rain", { temp_index: 2, weather_severity: 1, weather_wet: true }],
@@ -83,12 +84,17 @@ var cases = [
 ];
 cases.forEach(function (c) {
   var out = [];
-  ["none", "weather_cloak"].forEach(function (cloak) {
+  CLOAKS.forEach(function (cl) {
     Object.keys(c[1]).forEach(function (k) { stats[k] = c[1][k]; });
-    stats.equipped_cloak_id = cloak; stats.exposure_base_mins = 60; stats.exposure_extra_mins = 0;
+    stats.equipped_cloak_id = cl[0]; stats.exposure_base_mins = 60; stats.exposure_extra_mins = 0;
+    stats.has_waxed_oilcloth = false;
     runScene("simexposure");
-    out.push((cloak === "none" ? "no cloak " : "cloak ") + stats.exposure_extra_mins);
+    var plain = stats.exposure_extra_mins;
+    stats.exposure_base_mins = 60; stats.has_waxed_oilcloth = true;
+    runScene("simexposure");
+    out.push(cl[1] + " " + plain + (Number(stats.exposure_extra_mins) !== Number(plain) ? " (" + stats.exposure_extra_mins + " with oilcloth)" : ""));
   });
+  stats.has_waxed_oilcloth = false;
   console.log("  " + c[0] + ": " + out.join(", "));
 });
 
@@ -97,7 +103,7 @@ cases.forEach(function (c) {
 Object.keys({ temp_index: 0, weather_severity: 3, weather_wet: false }).forEach(function (k) { stats[k] = { temp_index: 0, weather_severity: 3, weather_wet: false }[k]; });
 stats.equipped_cloak_id = "none";
 stats.vane_independent_operative = true;
-stats.minutes_since_meal = 0; stats.minutes_since_rest = 0;
+stats.minutes_since_meal = 0; stats.minutes_since_rest = 0; stats.minutes_since_wash = 0;
 stats.clock_hour = 10; stats.clock_minute = 0;
 stats.hours_to_pass = 0; stats.minutes_to_pass = 60; stats.days_to_pass = 0;
 stats.exposure_base_mins = 60; stats.exposure_extra_mins = 0;
@@ -106,7 +112,8 @@ stats.time_advance_call_id = "sim_exposure_clock_1";
 runScene("simexposureday");
 var okClock = stats.clock_hour === 11 && stats.clock_minute === 0;
 var okMeal = stats.minutes_since_meal === 120 && stats.minutes_since_rest === 120;
+var okWash = Number(stats.minutes_since_wash) === 60;   // weather wear must not make you dirtier
 var okReset = Number(stats.exposure_extra_mins) === 0 && Number(stats.exposure_base_mins) === 0;
 console.log("\nexposure clock check: game clock " + stats.clock_hour + ":" + (stats.clock_minute < 10 ? "0" : "") + stats.clock_minute +
   " (expect 11:00) " + (okClock ? "OK" : "FAIL") + ", meal/rest clocks " + stats.minutes_since_meal + "/" + stats.minutes_since_rest +
-  " (expect 120/120) " + (okMeal ? "OK" : "FAIL") + ", inputs cleared " + (okReset ? "OK" : "FAIL (base " + stats.exposure_base_mins + ", extra " + stats.exposure_extra_mins + ")"));
+  " (expect 120/120) " + (okMeal ? "OK" : "FAIL") + ", wash clock " + stats.minutes_since_wash + " (expect 60) " + (okWash ? "OK" : "FAIL") + ", inputs cleared " + (okReset ? "OK" : "FAIL (base " + stats.exposure_base_mins + ", extra " + stats.exposure_extra_mins + ")"));

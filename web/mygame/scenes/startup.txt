@@ -112,6 +112,10 @@
 *create equipped_cloak_id "none"
 *create cloak_desc "None"
 *create cloak_prose "bare shoulders"
+*comment cloak_traits outputs (calendar.txt): percent a cloak takes off the cold and the wet part of exposure, plus a menu hint.
+*create cloak_trait_cold 0
+*create cloak_trait_wet 0
+*create cloak_trait_hint ""
 *create equipped_hands_id "none"
 *create hands_desc "None"
 *create hands_prose "bare hands"
@@ -409,6 +413,9 @@
 *create pv_tavern_rumor_1 false
 *create pv_tavern_rumor_2 false
 *create pv_tavern_rumor_3 false
+*comment Grey Marches rumors (unlock the Western Vale, House Gault and Great Sedge entries; see the unlock block near the codex flags).
+*create pv_tavern_rumor_vale false
+*create pv_tavern_rumor_sedge false
 *comment --- THE MUFFLED BELL (the Pier, see quest/MUFFLED_BELL_PLAN.md) ---
 *comment bell_quest_stage: "unstarted", "active", "resolved", "failed"
 *create bell_quest_stage "unstarted"
@@ -463,7 +470,10 @@
 *comment --- LOREBOOK UNLOCK TRIGGERS (Port Valen) ---
 *comment Each is set once, at the moment the player learns the name or reaches the place, and
 *comment only unlocks an entry in web/mygame/lorebook-port-valen.js. Setting them again is harmless.
+*comment brant_saw_him is watching the old man work at the cradle (beat_1_discovery). The name can be
+*comment learned earlier from the tavern rumor, so only the up-close description waits on this one.
 *create met_brant false
+*create brant_saw_him false
 *create met_hendryk false
 *create met_hendryk_office false
 *create met_elric false
@@ -523,6 +533,7 @@
 *create wh_floor_talk false
 *create wh_slate_talk false
 *create wh_hull_talk false
+*create wh_origin_talk false
 *comment Civic Heights, the Port Watch headquarters (see the block in port_valen_civic_heights.txt). pw_seen is passing the
 *comment gate; pw_captain_seen and pw_desk_seen meet Captain Brask and Sergeant Lund; pw_talk_rounds records his answer
 *comment about the night rounds (the lorebook echoes it).
@@ -552,10 +563,16 @@
 *create patrician_reg_price_silver 8
 *create patrician_reg_days 30
 *comment Patrician Quarter first-visit triggers (lorebook) and one-shot talks. pq_inside_seen is passing the Inner
-*comment Gate with a writ; the pq_seen_* flags are studying each great house's gate. pq_tailor_named is reading the
-*comment tailor's door card, which names the shop and its master (the avenue button stays unnamed until then); the
-*comment lorebook entries stay keyed to pq_tailor_seen, since the codex describes the inside.
+*comment Gate with a writ; pq_estates_seen is walking the Avenue of Estates, which names all three great
+*comment houses to everyone and so unlocks their three entries; the pq_seen_* flags are studying each house's
+*comment gate up close and only add that house's porter's-window detail. pq_ostrand_gap_spotted is the
+*comment wisdom-13/outlaw tell about House Ostrand's unwatched side gate: printed once only, because it is a
+*comment fact about the world rather than a perception, and the lorebook entry echoes it. pq_tailor_named is
+*comment reading the tailor's door card, which names the shop and its master (the avenue button stays unnamed
+*comment until then); the lorebook entries stay keyed to pq_tailor_seen, since the codex describes the inside.
 *create pq_inside_seen false
+*create pq_estates_seen false
+*create pq_ostrand_gap_spotted false
 *create pq_gate_seen false
 *create pq_gate_talk_guards false
 *create pq_gate_talk_book false
@@ -650,9 +667,17 @@
 *comment last_mundane_treatment_day: campaign_day a wound was last dressed by mundane (non-magical)
 *comment medicine. The limit is the patient's body, not the shop, so this is checked by every
 *comment hedge-doctor/apothecary/barber-surgeon in the world, not tracked per NPC.
+*comment dressing_on: a linen bandage is bound on and waits for the next sleep that heals (calendar.txt resolve_sleep
+*comment adds dressing_bonus HP, then clears it). sleep_gear_note is that sleep's line about the blanket and the
+*comment dressing, printed by the sleeping scenes after their wake-up prose ("" when neither helped).
 *create hp_debt_applied 0
 *create last_sleep_heal_day 0
 *create last_mundane_treatment_day 0
+*create dressing_on false
+*create dressing_bonus 0
+*comment water_ok is the output of equipment.txt water_at_hand (open water within reach; the lye soap needs it).
+*create water_ok false
+*create sleep_gear_note ""
 *create hunger_stage "Fed"
 *create fatigue_stage "Rested"
 *comment Hygiene is the third neglect clock, but social only: it never costs HP. minutes_since_wash grows
@@ -1175,6 +1200,7 @@
 *create visited_varren false
 *create visited_whetstone false
 *create visited_sentry false
+*create sentry_sedge_talk false
 *create visited_odessa_night false
 *create visited_mess false
 *create battle_ready false
@@ -1228,9 +1254,16 @@
 *create codex_silt_lurkers false
 *create codex_imperial_booms false
 *create codex_letters_of_credit false
-*comment Grey Marches powers (lorebook-data.js). Written 2026-09-25 but NOT set by any scene yet, so these entries stay hidden
-*comment until a scene speaks the name. Set codex_baron_karr together with codex_stenmark, and codex_western_vale together with
-*comment codex_house_gault (and codex_great_sedge with codex_warlord_skell), in the line where the name is first said.
+*comment --- LOREBOOK UNLOCK TRIGGERS (Grey Marches powers, lorebook-data.js) ---
+*comment Each is set in the line where a character first says the name. Every hook sets codex_baron_karr beside codex_stenmark,
+*comment because the Stenmark entry names the Baron. All are optional talk or rumors; none is set at game start.
+*comment   codex_stenmark      alderford.txt ch_notice_baron_karr (the notice heading), battle_black_sinks.txt (Kestrel's
+*comment                       briefing), port_valen.txt pv_wh_menu (Farrow, wh_origin_talk).
+*comment   codex_western_vale  port_valen.txt pv_poi_tavern_rumors (pv_tavern_rumor_vale), pv_wh_menu (wh_origin_talk).
+*comment   codex_house_gault   port_valen.txt pv_poi_tavern_rumors (pv_tavern_rumor_vale).
+*comment   codex_great_sedge   camp_night.txt sentry_choice_hub (sentry_sedge_talk), port_valen.txt pv_tavern_rumor_sedge,
+*comment                       pv_wh_menu (wh_origin_talk).
+*comment   codex_warlord_skell camp_night.txt sentry_choice_hub (sentry_sedge_talk), port_valen.txt pv_tavern_rumor_sedge.
 *create codex_stenmark false
 *create codex_house_gault false
 *create codex_western_vale false
@@ -1301,6 +1334,16 @@
 *create has_plate_harness false
 *create has_warming_liniment false
 *create has_clear_head_draught false
+*create has_linen_bandage false
+*create has_lye_soap false
+*create has_hemp_rope false
+*create has_pitch_torch false
+*create has_lamp_oil false
+*create has_hooded_lantern false
+*create has_tinderbox false
+*create has_chalk_sticks false
+*create has_wool_blanket false
+*create has_waxed_oilcloth false
 *create spare_timber_axe 0
 *create spare_stiletto 0
 *create spare_iron_crowbar 0
@@ -1313,6 +1356,16 @@
 *create spare_warming_liniment 0
 *create spare_clear_head_draught 0
 *create spare_althea_phial 0
+*create spare_linen_bandage 0
+*create spare_lye_soap 0
+*create spare_hemp_rope 0
+*create spare_pitch_torch 0
+*create spare_lamp_oil 0
+*create spare_hooded_lantern 0
+*create spare_tinderbox 0
+*create spare_chalk_sticks 0
+*create spare_wool_blanket 0
+*create spare_waxed_oilcloth 0
 *create cart_buy_timber_axe 0
 *create cart_buy_stiletto 0
 *create cart_buy_iron_crowbar 0
@@ -1323,6 +1376,16 @@
 *create cart_buy_shield 0
 *create cart_buy_warming_liniment 0
 *create cart_buy_clear_head_draught 0
+*create cart_buy_linen_bandage 0
+*create cart_buy_lye_soap 0
+*create cart_buy_hemp_rope 0
+*create cart_buy_pitch_torch 0
+*create cart_buy_lamp_oil 0
+*create cart_buy_hooded_lantern 0
+*create cart_buy_tinderbox 0
+*create cart_buy_chalk_sticks 0
+*create cart_buy_wool_blanket 0
+*create cart_buy_waxed_oilcloth 0
 *create cart_sell_timber_axe 0
 *create cart_sell_stiletto 0
 *create cart_sell_iron_crowbar 0
@@ -1332,6 +1395,15 @@
 *create cart_sell_chain_jack 0
 *create cart_sell_plate_harness 0
 *create cart_sell_toll_seal_ring 0
+*create cart_sell_lye_soap 0
+*create cart_sell_hemp_rope 0
+*create cart_sell_pitch_torch 0
+*create cart_sell_lamp_oil 0
+*create cart_sell_hooded_lantern 0
+*create cart_sell_tinderbox 0
+*create cart_sell_chalk_sticks 0
+*create cart_sell_wool_blanket 0
+*create cart_sell_waxed_oilcloth 0
 *create cart_sell_scrap_steel 0
 *comment GEN:END gear_creates
 *comment Armor proficiency (equipment.txt armor_prof_check / recalculate_proficiency). armor_tier is derived from
@@ -1356,6 +1428,7 @@
 *create gear_id ""
 *create gear_pct_smith 0
 *create gear_pct_pawn 0
+*create gear_pct_general 0
 *create gear_fixed_pawn 0
 *create gear_piece_smith 0
 *create gear_count_var ""
@@ -1389,7 +1462,7 @@
 *create gear_spare_var ""
 *create gear_unit_copper 0
 *create gear_warning ""
-*comment Consumables (equipment.txt use_consumable). gear_effect is "heal" or "boon"; the gear_eff_* and gear_heal_*
+*comment Consumables (equipment.txt use_consumable). gear_effect is "heal", "boon", "wash" or "dressing"; the gear_eff_* and gear_heal_*
 *comment fields describe it. use_item_id / use_in_combat are the inputs, use_result ("ok" | "full" | "limit" | "none"),
 *comment use_text and use_banner the outputs (kept set so a replayed page prints the same result).
 *create gear_title ""

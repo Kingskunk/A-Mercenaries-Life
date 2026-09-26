@@ -510,7 +510,7 @@ At the next lull you step off the rail and into the half circle as if you had ev
     *set hint_fish_p_wis ((" [WIS DC " & fish_route_dc) & "]")
 
 *choice
-  # Introduce yourself as a buyer's agent from upriver, with a purse and a hand that knows the game.${hint_fish_p_cha}
+  # Introduce yourself as a buyer's agent from out of town, with a purse and a hand that knows the game.${hint_fish_p_cha}
     *set check_stat "cha"
     *set check_dc fish_route_dc
     *set check_skill "Play the Buyer"

@@ -40,7 +40,10 @@ window.INVENTORY = {
   //   - Sidearm: no direct picker at all -- only the "swap with weapon" action (its own
   //     button below, not this per-slot control).
   //   - Armor: "switch back to starting" + has_x alternates (Halda's Forge armor), as of the Port Valen forge.
-  //   - Cloak, Hands, Waist, Feet, Neck, Rings: NO equip choice in the real menu
+  //   - Cloak: "switch back to your ORIGIN's cloak" (wool_mantle/camo_cloak/weather_cloak, ALWAYS
+  //     offered) + has_x alternates (Talia's oiled cloak), as of the exposure traits (calendar.txt
+  //     cloak_traits). Never offers "no cloak".
+  //   - Hands, Waist, Feet, Neck, Rings: NO equip choice in the real menu
   //     (apparel is explicitly commented "Cosmetic" there; accessories only ever gains
   //     Elspeth's Weir-Knot, one-way, which isn't modeled here yet -- manage it from the
   //     Dossier). Building a swap control for slots that were never a player-facing
@@ -64,7 +67,12 @@ window.INVENTORY = {
         var originDefault = { ruined: "arming_cap", outlaw: "camo_hood", disgraced: "scholar_coif" };
         return [originDefault[s.origin] || "arming_cap"];
       } },
-    { label: "Cloak", shape: "plain", desc: "cloak_desc", bucket: "cloak" },
+    { label: "Cloak", shape: "plain", desc: "cloak_desc", bucket: "cloak",
+      swappable: true,
+      always: function (s) {
+        var originDefault = { ruined: "wool_mantle", outlaw: "camo_cloak", disgraced: "weather_cloak" };
+        return [originDefault[s.origin] || "wool_mantle"];
+      } },
     { label: "Hands", shape: "plain", desc: "hands_desc", bucket: "hands" },
     { label: "Waist", shape: "plain", desc: "waist_desc", bucket: "waist" },
     { label: "Feet", shape: "plain", desc: "feet_desc", bucket: "feet" },
@@ -151,6 +159,60 @@ window.INVENTORY = {
       description: "Wax-stoppered clay flask of blessed cistern-water steeped with wild angelica and mountain arnica.",
       badge: "Restores 2d4+2 HP",
       use: true
+    },
+    {
+      id: "linen_bandage", category: "consumables", owned: "has_linen_bandage",
+      name: function (s) { var n = 1 + (Number(s.spare_linen_bandage) || 0); return "Linen Bandage" + (n > 1 ? " ×" + n : ""); },
+      description: "Boiled linen rolled around a pad of comfrey leaf, for binding a wound before sleep.",
+      badge: "+1 HP from your next sleep",
+      use: true
+    },
+    {
+      id: "lye_soap", category: "consumables", owned: "has_lye_soap",
+      name: function (s) { var n = 1 + (Number(s.spare_lye_soap) || 0); return "Twist of Lye Soap" + (n > 1 ? " ×" + n : ""); },
+      description: "Brown-paper twist of grey lye-soap shavings, enough for one wash by a stream or the shore.",
+      badge: "Hygiene back to Clean, with water at hand",
+      use: true
+    },
+    {
+      id: "hemp_rope", category: "provisions", owned: "has_hemp_rope",
+      name: function (s) { var n = 1 + (Number(s.spare_hemp_rope) || 0); return "Coil of Hemp Rope" + (n > 1 ? " ×" + n : ""); },
+      description: "Fifty feet of tarred hemp rope, coiled and tied off."
+    },
+    {
+      id: "pitch_torch", category: "provisions", owned: "has_pitch_torch",
+      name: function (s) { var n = 1 + (Number(s.spare_pitch_torch) || 0); return "Pitch-Dipped Torch" + (n > 1 ? " ×" + n : ""); },
+      description: "Pine stave wrapped in tarred rag and dipped in pitch."
+    },
+    {
+      id: "lamp_oil", category: "provisions", owned: "has_lamp_oil",
+      name: function (s) { var n = 1 + (Number(s.spare_lamp_oil) || 0); return "Flask of Lamp Oil" + (n > 1 ? " ×" + n : ""); },
+      description: "Stoppered tin flask of lamp oil."
+    },
+    {
+      id: "hooded_lantern", category: "provisions", owned: "has_hooded_lantern",
+      name: function (s) { var n = 1 + (Number(s.spare_hooded_lantern) || 0); return "Hooded Lantern" + (n > 1 ? " ×" + n : ""); },
+      description: "Iron lantern with horn windows and a sliding tin shutter."
+    },
+    {
+      id: "tinderbox", category: "provisions", owned: "has_tinderbox",
+      name: function (s) { var n = 1 + (Number(s.spare_tinderbox) || 0); return "Flint and Tinderbox" + (n > 1 ? " ×" + n : ""); },
+      description: "Dented tin box with a striker, flint and dry char-cloth."
+    },
+    {
+      id: "chalk_sticks", category: "provisions", owned: "has_chalk_sticks",
+      name: function (s) { var n = 1 + (Number(s.spare_chalk_sticks) || 0); return "Bundle of Chalk" + (n > 1 ? " ×" + n : ""); },
+      description: "Six sticks of soft white chalk tied with string."
+    },
+    {
+      id: "wool_blanket", category: "provisions", owned: "has_wool_blanket",
+      name: function (s) { var n = 1 + (Number(s.spare_wool_blanket) || 0); return "Grey Wool Blanket" + (n > 1 ? " ×" + n : ""); },
+      description: "Heavy grey wool blanket with a red stripe at each end."
+    },
+    {
+      id: "waxed_oilcloth", category: "provisions", owned: "has_waxed_oilcloth",
+      name: function (s) { var n = 1 + (Number(s.spare_waxed_oilcloth) || 0); return "Sheet of Waxed Oilcloth" + (n > 1 ? " ×" + n : ""); },
+      description: "Square of canvas soaked in linseed oil and wax, stiff and rain-proof."
     },
     // GEN:END gear_items
     // ---- weapons ----

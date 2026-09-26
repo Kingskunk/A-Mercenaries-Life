@@ -37,6 +37,8 @@
     | Hygiene: ${hygiene_stage}
   *if (not(routine_stage = "Settled"))
     | Routine: ${routine_stage}
+  *if (dressing_on)
+    | Wounds Dressed
 *if (silt_gate_quest_stage = "active")
   *line_break
   • [b]Active Quest:[/b] The Silt-Gate Contraband (Dredge-End)
@@ -277,6 +279,46 @@
   *set has_inventory_item true
   *line_break
   • [b]Phial of Saint Althea's Water:[/b] Wax-stoppered clay flask of blessed cistern-water steeped with wild angelica and mountain arnica [Restores 2d4+2 HP]@{(spare_althea_phial > 0)  [+${spare_althea_phial} spare]|}
+*if (has_linen_bandage)
+  *set has_inventory_item true
+  *line_break
+  • [b]Linen Bandage:[/b] Boiled linen rolled around a pad of comfrey leaf, for binding a wound before sleep [+1 HP from your next sleep]@{(spare_linen_bandage > 0)  [+${spare_linen_bandage} spare]|}
+*if (has_lye_soap)
+  *set has_inventory_item true
+  *line_break
+  • [b]Twist of Lye Soap:[/b] Brown-paper twist of grey lye-soap shavings, enough for one wash by a stream or the shore [Hygiene back to Clean, with water at hand]@{(spare_lye_soap > 0)  [+${spare_lye_soap} spare]|}
+*if (has_hemp_rope)
+  *set has_inventory_item true
+  *line_break
+  • [b]Coil of Hemp Rope:[/b] Fifty feet of tarred hemp rope, coiled and tied off@{(spare_hemp_rope > 0)  [+${spare_hemp_rope} spare]|}
+*if (has_pitch_torch)
+  *set has_inventory_item true
+  *line_break
+  • [b]Pitch-Dipped Torch:[/b] Pine stave wrapped in tarred rag and dipped in pitch@{(spare_pitch_torch > 0)  [+${spare_pitch_torch} spare]|}
+*if (has_lamp_oil)
+  *set has_inventory_item true
+  *line_break
+  • [b]Flask of Lamp Oil:[/b] Stoppered tin flask of lamp oil@{(spare_lamp_oil > 0)  [+${spare_lamp_oil} spare]|}
+*if (has_hooded_lantern)
+  *set has_inventory_item true
+  *line_break
+  • [b]Hooded Lantern:[/b] Iron lantern with horn windows and a sliding tin shutter@{(spare_hooded_lantern > 0)  [+${spare_hooded_lantern} spare]|}
+*if (has_tinderbox)
+  *set has_inventory_item true
+  *line_break
+  • [b]Flint and Tinderbox:[/b] Dented tin box with a striker, flint and dry char-cloth@{(spare_tinderbox > 0)  [+${spare_tinderbox} spare]|}
+*if (has_chalk_sticks)
+  *set has_inventory_item true
+  *line_break
+  • [b]Bundle of Chalk:[/b] Six sticks of soft white chalk tied with string@{(spare_chalk_sticks > 0)  [+${spare_chalk_sticks} spare]|}
+*if (has_wool_blanket)
+  *set has_inventory_item true
+  *line_break
+  • [b]Grey Wool Blanket:[/b] Heavy grey wool blanket with a red stripe at each end@{(spare_wool_blanket > 0)  [+${spare_wool_blanket} spare]|}
+*if (has_waxed_oilcloth)
+  *set has_inventory_item true
+  *line_break
+  • [b]Sheet of Waxed Oilcloth:[/b] Square of canvas soaked in linseed oil and wax, stiff and rain-proof@{(spare_waxed_oilcloth > 0)  [+${spare_waxed_oilcloth} spare]|}
 *comment GEN:END gear_list
 *if (has_talia_oiled_cloak)
   *set has_inventory_item true
@@ -362,6 +404,10 @@ Review loadout, grimoire, or interface settings. Known contacts, factions, place
   *set cu_any true
 *if (has_althea_phial)
   *set cu_any true
+*if (has_linen_bandage)
+  *set cu_any true
+*if (has_lye_soap)
+  *set cu_any true
 *comment GEN:END codex_use_check
 
 *choice
@@ -398,6 +444,10 @@ Review loadout, grimoire, or interface settings. Known contacts, factions, place
   *set cu_any true
 *if (has_althea_phial)
   *set cu_any true
+*if (has_linen_bandage)
+  *set cu_any true
+*if (has_lye_soap)
+  *set cu_any true
 *comment GEN:END codex_use_check2
 *if (not(cu_any))
   Nothing in your satchel is made to be used up.
@@ -417,6 +467,14 @@ Review loadout, grimoire, or interface settings. Known contacts, factions, place
   *if (has_althea_phial)
     # Drink the phial of Saint Althea's water.@{show_stat_hints  [Restores 2d4+2 HP]|}
       *set use_item_id "althea_phial"
+      *goto codex_use_do
+  *if (has_linen_bandage)
+    # Dress your wounds with the linen bandage.@{show_stat_hints  [+1 HP from your next sleep]|}
+      *set use_item_id "linen_bandage"
+      *goto codex_use_do
+  *if (has_lye_soap)
+    # Scrub with the twist of lye soap.@{show_stat_hints  [Hygiene back to Clean, with water at hand]|}
+      *set use_item_id "lye_soap"
       *goto codex_use_do
   *comment GEN:END codex_use_options
   # [Return to Dossier]
@@ -456,7 +514,7 @@ Swapping a weapon, shield, or sidearm takes a moment out of camp or downtime, no
 *choice
   # [Weapons & Armor: Main-Hand, Sidearm, Off-Hand & Chest]
     *goto codex_equipment_weapons
-  # [Apparel: Head, Cloak, Hands, Waist & Feet]
+  # [Apparel: Cloak Swaps, Head, Hands, Waist & Feet]
     *goto codex_equipment_apparel
   # [Accessories: Neck & Rings]
     *goto codex_equipment_accessories
@@ -570,14 +628,38 @@ Swapping a weapon, shield, or sidearm takes a moment out of camp or downtime, no
   # [Return to Equipment Hub]
     *goto codex_equipment
 
+*comment Cloaks swap here (they carry real exposure traits, see calendar.txt cloak_traits). The starting cloak follows
+*comment the origin (Ashbrook wool mantle, outlaw mottled cloak, disgraced weather cloak), like the head slot. Talia's
+*comment oiled cloak is the only other cloak so far; a tailor's stock would join the catalog later.
 *label codex_equipment_apparel
+*temp ap_origin_cloak "wool_mantle"
+*temp ap_origin_name "Iron Bull Wool Mantle"
+*if (origin = "outlaw")
+  *set ap_origin_cloak "camo_cloak"
+  *set ap_origin_name "Weathered Mottled Cloak"
+*if (origin = "disgraced")
+  *set ap_origin_cloak "weather_cloak"
+  *set ap_origin_name "Oiled Marcher Weather Cloak"
+*gosub_scene calendar cloak_traits ap_origin_cloak
+*temp ap_origin_hint cloak_trait_hint
+*temp ap_talia_hint ""
+*if (has_talia_oiled_cloak)
+  *gosub_scene calendar cloak_traits "talia_oiled_cloak"
+  *set ap_talia_hint cloak_trait_hint
+*gosub_scene calendar cloak_traits equipped_cloak_id
+*temp ap_worn_hint ""
+*if (not(equipped_cloak_id = "none"))
+  *set ap_worn_hint cloak_trait_hint
+
 [b]APPAREL[/b]
-[i]Cloak, Hands, Waist & Feet Are Cosmetic — Head Armor Swaps From Weapons & Armor[/i]
+[i]Cloaks Swap Here — Hands, Waist & Feet Are Cosmetic — Head Armor Swaps From Weapons & Armor[/i]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Cold, heat and foul weather wear you down faster outdoors: they burn through food and rest sooner. A cloak takes part of the cold and part of the rain off that wear, and each one is better at one than the other.
 
 • [b]Head:[/b] ${head_desc}
 *line_break
-• [b]Cloak:[/b] ${cloak_desc}
+• [b]Cloak:[/b] ${cloak_desc}@{(not(ap_worn_hint = ""))  [${ap_worn_hint}]|}
 *line_break
 • [b]Hands:[/b] ${hands_desc}
 *line_break
@@ -586,6 +668,14 @@ Swapping a weapon, shield, or sidearm takes a moment out of camp or downtime, no
 • [b]Feet:[/b] ${feet_desc}
 
 *choice
+  *if ((has_talia_oiled_cloak) and (not(equipped_cloak_id = "talia_oiled_cloak")))
+    # Wear Talia's Oiled Cloak instead [${ap_talia_hint}].
+      *gosub_scene equipment equip_cloak "talia_oiled_cloak"
+      *goto codex_equipment_apparel
+  *if (not(equipped_cloak_id = ap_origin_cloak))
+    # Switch back to your ${ap_origin_name} [${ap_origin_hint}].
+      *gosub_scene equipment equip_cloak ap_origin_cloak
+      *goto codex_equipment_apparel
   # [Return to Equipment Hub]
     *goto codex_equipment
 

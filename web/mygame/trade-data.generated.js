@@ -13,6 +13,7 @@ window.TRADE_DATA = {
    "sell": {
     "smith": 50,
     "pawn": 35,
+    "general": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
@@ -30,6 +31,7 @@ window.TRADE_DATA = {
    "sell": {
     "smith": 50,
     "pawn": 35,
+    "general": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
@@ -47,6 +49,7 @@ window.TRADE_DATA = {
    "sell": {
     "smith": 50,
     "pawn": 35,
+    "general": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
@@ -64,6 +67,7 @@ window.TRADE_DATA = {
    "sell": {
     "smith": 50,
     "pawn": 35,
+    "general": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
@@ -81,6 +85,7 @@ window.TRADE_DATA = {
    "sell": {
     "smith": 50,
     "pawn": 35,
+    "general": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
@@ -98,6 +103,7 @@ window.TRADE_DATA = {
    "sell": {
     "smith": 50,
     "pawn": 35,
+    "general": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
@@ -115,6 +121,7 @@ window.TRADE_DATA = {
    "sell": {
     "smith": 50,
     "pawn": 35,
+    "general": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
@@ -132,6 +139,7 @@ window.TRADE_DATA = {
    "sell": {
     "smith": 0,
     "pawn": 0,
+    "general": 0,
     "pawnFixed": 0,
     "smithPiece": 5,
     "countVar": "scrap_steel"
@@ -149,6 +157,7 @@ window.TRADE_DATA = {
    "sell": {
     "smith": 0,
     "pawn": 0,
+    "general": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
@@ -166,6 +175,7 @@ window.TRADE_DATA = {
    "sell": {
     "smith": 0,
     "pawn": 0,
+    "general": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
@@ -183,6 +193,187 @@ window.TRADE_DATA = {
    "sell": {
     "smith": 0,
     "pawn": 0,
+    "general": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "linen_bandage": {
+   "name": "linen bandage",
+   "title": "Linen Bandage",
+   "kind": "consumable",
+   "tier": "",
+   "retail": 5,
+   "minutes": 5,
+   "hint": "+1 HP from your next sleep",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "hemp_rope": {
+   "name": "coil of hemp rope",
+   "title": "Coil of Hemp Rope",
+   "kind": "tool",
+   "tier": "",
+   "retail": 8,
+   "minutes": 5,
+   "hint": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "pitch_torch": {
+   "name": "pitch-dipped torch",
+   "title": "Pitch-Dipped Torch",
+   "kind": "tool",
+   "tier": "",
+   "retail": 2,
+   "minutes": 5,
+   "hint": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "lamp_oil": {
+   "name": "flask of lamp oil",
+   "title": "Flask of Lamp Oil",
+   "kind": "tool",
+   "tier": "",
+   "retail": 3,
+   "minutes": 5,
+   "hint": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "hooded_lantern": {
+   "name": "hooded lantern",
+   "title": "Hooded Lantern",
+   "kind": "tool",
+   "tier": "",
+   "retail": 12,
+   "minutes": 5,
+   "hint": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "tinderbox": {
+   "name": "flint and tinderbox",
+   "title": "Flint and Tinderbox",
+   "kind": "tool",
+   "tier": "",
+   "retail": 4,
+   "minutes": 5,
+   "hint": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "chalk_sticks": {
+   "name": "bundle of chalk",
+   "title": "Bundle of Chalk",
+   "kind": "tool",
+   "tier": "",
+   "retail": 2,
+   "minutes": 5,
+   "hint": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "wool_blanket": {
+   "name": "wool blanket",
+   "title": "Grey Wool Blanket",
+   "kind": "tool",
+   "tier": "",
+   "retail": 6,
+   "minutes": 5,
+   "hint": "+1 HP from sleeping on a shared bunk",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "waxed_oilcloth": {
+   "name": "sheet of waxed oilcloth",
+   "title": "Sheet of Waxed Oilcloth",
+   "kind": "tool",
+   "tier": "",
+   "retail": 6,
+   "minutes": 5,
+   "hint": "Halves the wear of rain and storms on the road",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "lye_soap": {
+   "name": "twist of lye soap",
+   "title": "Twist of Lye Soap",
+   "kind": "consumable",
+   "tier": "",
+   "retail": 2,
+   "minutes": 5,
+   "hint": "Hygiene back to Clean, with water at hand",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
@@ -200,6 +391,7 @@ window.TRADE_DATA = {
    "sell": {
     "smith": 0,
     "pawn": 35,
+    "general": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
@@ -217,6 +409,7 @@ window.TRADE_DATA = {
    "sell": {
     "smith": 0,
     "pawn": 0,
+    "general": 0,
     "pawnFixed": 80,
     "smithPiece": 0,
     "countVar": ""
@@ -253,9 +446,36 @@ window.TRADE_DATA = {
    "buyer": "",
    "buy": [
     "warming_liniment",
-    "clear_head_draught"
+    "clear_head_draught",
+    "linen_bandage"
    ],
    "sell": []
+  },
+  "hollis": {
+   "title": "Hollis & Daughters",
+   "buyer": "general",
+   "buy": [
+    "hemp_rope",
+    "pitch_torch",
+    "lamp_oil",
+    "hooded_lantern",
+    "tinderbox",
+    "chalk_sticks",
+    "wool_blanket",
+    "waxed_oilcloth",
+    "lye_soap"
+   ],
+   "sell": [
+    "hemp_rope",
+    "pitch_torch",
+    "lamp_oil",
+    "hooded_lantern",
+    "tinderbox",
+    "chalk_sticks",
+    "wool_blanket",
+    "waxed_oilcloth",
+    "lye_soap"
+   ]
   },
   "pawn": {
    "title": "The Pawnbroker's Window",

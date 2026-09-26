@@ -2,7 +2,7 @@
  * TRADE PANEL -- a quality-of-life layer over the shop menus, not a replacement for them.
  *
  * A shop page that supports it tells us so through the game's own state: stats.shop_open names the trade
- * ("halda", "pawn"), stats.shop_rows lists the buy rows with their live warnings, and the page carries a hidden
+ * ("halda", "hollis", "pawn"), stats.shop_rows lists the buy rows with their live warnings, and the page carries a hidden
  * "settle" option (label starting with the balance-scale mark). While that option is on the page a Trade button
  * appears in the header. The panel collects a cart, writes it into cart_buy_<id> / cart_sell_<id>, and then
  * clicks the hidden option. equipment.txt (shop_begin .. shop_check) re-checks and carries out the trade, so
@@ -55,7 +55,7 @@
     var it = data().items[id];
     if (!it) return 0;
     var sl = it.sell;
-    var pct = buyer === "smith" ? sl.smith : sl.pawn;
+    var pct = buyer === "smith" ? sl.smith : (buyer === "general" ? sl.general : sl.pawn);
     var v = Math.floor((it.retail * pct) / 100);
     if (buyer === "pawn" && sl.pawnFixed > 0) v = sl.pawnFixed;
     if (buyer === "smith" && sl.smithPiece > 0) v = sl.smithPiece;

@@ -87,8 +87,11 @@
       unlock: "met_brant",
       body: function (s) {
         var out = [
-          "An old shipwright in a tar-stained leather apron who works Slipway Two, moving along the ribs of a seventy-foot merchant hull with a short-handled iron mallet and listening to each note. His apprentices call him Master Brant, and they fear the factor's fines."
+          "A master builder at the Iron Wharves, answerable to the Gilded Scales' factor, who is fined for every tide a cradle sits occupied. His apprentices call him Master Brant, and they fear those fines."
         ];
+        if (truthy(s.brant_saw_him)) {
+          out.push("He is an old shipwright in a tar-stained leather apron who works Slipway Two, moving along the ribs of a seventy-foot merchant hull with a short-handled iron mallet and listening to each note.");
+        }
         if (truthy(s.has_rotten_rib_splinter)) {
           out.push("Under his mallet the third rib rings clean iron and the fourth gives back a flat, sodden thud. The oak in Bay Four's delivery was green, and he wants somebody to know it before the ship is launched on it.");
         }
@@ -531,7 +534,7 @@
       body: function (s) {
         var n = Number(s.cut_rumors_scrap) || 0;
         var out = [
-          "Sheds on stilts line the canal with their doors open to the water and racks of half-shaped ash oars under the eaves. The ground between them is trampled cinder scattered with wood shavings. Further along is a fenced scrap yard of salvaged stone, coiled chain and plate iron, and a smith's bench under a lean-to. On Forgeday the yard is busy with chain coming off punts, and the smith's hammer carries across the canal."
+          "Sheds on stilts line the canal with their doors open to the water and racks of half-shaped ash oars under the eaves. The ground between them is trampled cinder scattered with wood shavings. Further along is a fenced scrap yard of salvaged stone, coiled chain and plate iron, and a smith's bench under a lean-to. On Forgeday the yard is busy with chain coming off punts, and the smith's hammer carries across the canal. The sheds keep daylight hours: the open fronts are boarded at dusk, in a gale the yard is lashed shut, and on Hearthday the gate stays chained."
         ];
         if (n >= 1) {
           out.push("The dealer buys chain, plate, oar-pins and anything with iron in it, and flat stone for paving, because somebody in the quarter is always relaying a lane.");
@@ -572,7 +575,7 @@
       body: function (s) {
         var n = Number(s.cut_rumors_landing) || 0;
         var out = [
-          "A wide shelf of hard-packed cinder where the canal widens, with three low barges tied along its edge. Dredgers haul black spoil up in baskets with hooked poles and iron scoops on chains and tip it onto long mounds that dry to a crust on the bank. It can only be worked at low water."
+          "A wide shelf of hard-packed cinder where the canal widens, with three low barges tied along its edge. Dredgers haul black spoil up in baskets with hooked poles and iron scoops on chains and tip it onto long mounds that dry to a crust on the bank. It can only be worked at low water, and the barges stay tied up in fog or a gale."
         ];
         if (Number(s.cut_labor_day) > 0) {
           out.push("The foreman pays a few copper marks for four hours on the poles, and less for a spilled basket.");
@@ -736,7 +739,7 @@
       body: function (s) {
         var n = Number(s.cut_rumors_steps) || 0;
         var out = [
-          "A broad flight of stone steps down the side of the seawall into the canal. At low water the lower half stands out of the water, black and hung with green weed, with cellar doors opening off the landings, some boarded and some with a rag hung in the gap. It is under water when the tide is high."
+          "A broad flight of stone steps down the side of the seawall into the canal. At low water the lower half stands out of the water, black and hung with green weed, with cellar doors opening off the landings, some boarded and some with a rag hung in the gap. The lower landings are under water when the tide is high, though the upper stair stays dry enough to walk."
         ];
         if (n >= 1) {
           out.push("The cellars are flophouses. Behind one rag-hung door a dozen people sleep in shifts on the same straw, and whoever holds the wooden token at the door gets to sleep.");
@@ -1056,7 +1059,7 @@
           "A heavyset man in spectacles and a black coat, ink to the wrist, who keeps the Writs and Registers window. A small clerk in city grey sits beside him with the three-masted seal, so every writ he issues carries two seals."
         ];
         if (truthy(s.ch_head_writ_talk)) {
-          out.push("He says a registered name is a name the house will answer for, and that a registered name which draws steel in the Patrician Quarter is struck from the book the same hour.");
+          out.push("He says a name in the book is one the house will answer for, and that drawing steel in the Quarter without good cause gets it struck from the book inside the hour, with the lockup and the shift bell after that.");
         }
         return out;
       },
@@ -1073,7 +1076,7 @@
           "The Patrician Quarter admits only the holders of a writ, bought at the Gilded Scales head house and carrying both the Scales' seal and the city's three-masted seal. A Day Writ costs " + (s.patrician_day_price_silver || 1) + " silver mark and is good for the rest of the day it is bought. A Registered Writ costs " + (s.patrician_reg_price_silver || 8) + " silver marks, is good for " + (s.patrician_reg_days || 30) + " days, and enters the holder's name in the book at the Inner Gate."
         ];
         if (truthy(s.ch_head_writ_talk)) {
-          out.push("A registered name that draws steel in the Quarter is struck from the book the same hour. The Council likes its neighbors quiet.");
+          out.push("A name in the book that draws steel in the Quarter without good cause is struck from it inside the hour, and the lockup keeps you until the shift bell. The Quarter's house guards make the arrests; the Council only reads about them.");
         }
         return out;
       },
@@ -1131,10 +1134,16 @@
       sub: "A great house of the Patrician Quarter",
       tags: ["Patrician Quarter", "Trade"], aliases: ["Halloran", "green gate", "oak leaf"],
       link: ["House Halloran", "Halloran"],
-      unlock: "pq_seen_halloran",
-      body: [
-        "A house whose business is timber. Its gate is green-painted iron under a gilt oak leaf coiled with a river-serpent, and barge-poles stand stacked in the yard behind it. The porter's slate reads: At home to callers with the Halloran seal."
-      ],
+      unlock: "pq_estates_seen",
+      body: function (s) {
+        var out = [
+          "One of the three great houses on the Avenue of Estates: a tall pair of green-painted iron gate leaves, each worked with a gilt oak leaf whose stem coils into a river-serpent."
+        ];
+        if (truthy(s.pq_seen_halloran)) {
+          out.push("The house's business is timber. Barge-poles stand stacked in the yard behind the gate, the bundled tally-sticks at the porter's window are burned with the same oak leaf, and the slate there reads: At home to callers with the Halloran seal.");
+        }
+        return out;
+      },
       see: ["upper_wharves", "pq_house_vantry", "pq_house_ostrand"]
     },
     {
@@ -1142,10 +1151,16 @@
       sub: "A great house of the Patrician Quarter",
       tags: ["Patrician Quarter", "Trade"], aliases: ["Vantry", "blue gate", "silver barge"],
       link: ["House Vantry", "Vantry"],
-      unlock: "pq_seen_vantry",
-      body: [
-        "A house whose business is grain and warehousing. Its gate is blue iron trimmed with silver, with a silver barge under sail worked into the lintel, and wagons of sealed sacks stand in the yard behind it while a clerk weighs samples at the porter's window."
-      ],
+      unlock: "pq_estates_seen",
+      body: function (s) {
+        var out = [
+          "One of the three great houses on the Avenue of Estates: a gate of blue iron trimmed with silver, with a silver barge under sail worked into the lintel, fine enough that the rigging catches the light."
+        ];
+        if (truthy(s.pq_seen_vantry)) {
+          out.push("The house's business is grain and warehousing. Wagons of sealed sacks are drawn up in the yard behind the gate, and a man sits on a stool by the porter's window, weighing samples in a brass pan and writing the figures on a slate.");
+        }
+        return out;
+      },
       see: ["upper_wharves", "pq_house_halloran", "pq_house_ostrand"]
     },
     {
@@ -1153,10 +1168,19 @@
       sub: "A great house of the Patrician Quarter",
       tags: ["Patrician Quarter", "Trade"], aliases: ["Ostrand", "black gate", "brass key"],
       link: ["House Ostrand", "Ostrand"],
-      unlock: "pq_seen_ostrand",
-      body: [
-        "A house that lends and insures, and writes the policy on many of the hulls in the roadstead. Its gate is black iron under a brass key crossed with a quill, and the plate at the porter's window reads: By Appointment Only."
-      ],
+      unlock: "pq_estates_seen",
+      body: function (s) {
+        var out = [
+          "One of the three great houses on the Avenue of Estates: a gate of black iron hung with a brass key crossed with a quill."
+        ];
+        if (truthy(s.pq_seen_ostrand)) {
+          out.push("The key and quill above the gate have been polished until they are the brightest thing on the avenue. The house lends and insures, and writes the policy on many of the hulls in the roadstead. There is no slate at its porter's window, only a brass plate: By Appointment Only, and under it, smaller: Loans against Cargo. Marine Policies.");
+        }
+        if (truthy(s.pq_ostrand_gap_spotted)) {
+          out.push("For the slow count of about forty the house's side gate stands unwatched while the guard relief crosses the avenue at the bell. Nobody on the stones remarks on it, and the house guards wear the quartered livery of all of them, so there is no one to ask.");
+        }
+        return out;
+      },
       see: ["upper_wharves", "pq_house_halloran", "pq_house_vantry"]
     },
     {

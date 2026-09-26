@@ -17,12 +17,19 @@
     "            sets ('halda', 'halda_sell', 'pawn_sell'); values are full lines and may contain \\\" quotes.",
     "  warn      OPTIONAL [{when, text}]: a ChoiceScript condition and a warning appended to the buy option",
     "  tier      armor only: light | medium | heavy (proficiency tier); use 'shield' for shields",
-    "  sell      { smith: percent, pawn: percent, pawnFixed: copper, smithPiece: copper each, countVar: variable }",
+    "  sell      { smith: percent, pawn: percent, general: percent, pawnFixed: copper, smithPiece: copper each, countVar: variable }",
+    "            (a shop's buyer is 'smith', 'pawn' or 'general'; general is the general store. Each price is floor(retail * pct),",
+    "            and a price of 0 means that buyer declines, so keep general-goods retail high enough that 50 percent is at least 1)",
     "  loadout   slot fields for equipment.txt (weapon, armor and head items)",
     "  sidearmDesc  weapon items: the description when carried in the sidearm slot",
     "  dossier   { line, badgeOn, badgeOff, equipText } for the dossier list and its equip option",
     "  inventory { category } for the inventory panel (defaults: weapon weapons, armor/head apparel, tool provisions)",
-    "  effect    consumable items: { type: 'heal', n, sides, bonus } or { type: 'boon', name, desc, stat, bonus, minutes }",
+    "  effect    consumable items: { type: 'heal', n, sides, bonus }, { type: 'boon', name, desc, stat, bonus, minutes },",
+    "            { type: 'wash' } (resets the hygiene clock to Clean; needs open water within reach, see equipment.txt",
+    "            water_at_hand, and is refused within 6 hours of the last wash) or",
+    "            { type: 'dressing', bonus } (binds a wound: +bonus HP on the next night's sleep that heals, then used up;",
+    "            refused while unhurt or while a dressing is already on). Add a new type in gen_gear.js effectSummary and",
+    "            genGearInfo, and in equipment.txt use_consumable.",
     "  useVerb   consumables: the verb on the use option ('Drink', 'Rub in')",
     "  useText   consumables: the sentence printed when the item is used",
     "  combat    consumables: true if it can be used mid-fight (costs the turn)",
@@ -167,6 +174,92 @@
       "flags": { "create": false }
     },
     {
+      "id": "linen_bandage", "kind": "consumable", "name": "linen bandage", "title": "Linen Bandage",
+      "retail": 5, "minutes": 5,
+      "hint": "+1 HP from your next sleep",
+      "blurb": "A clean strip of boiled linen, rolled tight around a pad of comfrey leaf and tied off with thread.",
+      "quotes": { "ambrose": "\"Boiled, then dried in the sun,\" Master Ambrose says. \"Clean linen does half the work. Bind it snug and leave it be until morning.\"" },
+      "effect": { "type": "dressing", "bonus": 1 },
+      "useVerb": "Dress your wounds with",
+      "useText": "You bind the linen over your worst wound, snug enough to hold the comfrey pad in place and loose enough to let the blood move. It will stay on until you have slept.",
+      "dossier": { "line": "Boiled linen rolled around a pad of comfrey leaf, for binding a wound before sleep" }
+    },
+    {
+      "id": "lye_soap", "kind": "consumable", "name": "twist of lye soap", "title": "Twist of Lye Soap",
+      "retail": 2, "minutes": 5,
+      "hint": "Hygiene back to Clean, with water at hand",
+      "blurb": "A twist of brown paper holding grey shavings of lye soap, enough for one good scrub.",
+      "quotes": { "hollis": "\"Grey soap, honest lye,\" Hollis says. \"You bring the water. A stream will do, or the shore. It'll take the skin off a bad conscience.\"" },
+      "sell": { "general": 50 },
+      "effect": { "type": "wash" },
+      "useVerb": "Scrub with",
+      "useText": "You crouch at the water's edge, tip the shavings into your palm, and work up a stinging grey lather. You scrub your hands, neck and face with it and rinse in the water, and the road comes away in streaks.",
+      "dossier": { "line": "Brown-paper twist of grey lye-soap shavings, enough for one wash by a stream or the shore" }
+    },
+    {
+      "id": "hemp_rope", "kind": "tool", "name": "coil of hemp rope", "title": "Coil of Hemp Rope",
+      "retail": 8, "minutes": 5,
+      "blurb": "Fifty feet of tarred hemp as thick as a thumb, coiled tight and tied off with a slip-knot.",
+      "quotes": { "hollis": "\"Tarred, so a wet cellar won't rot it,\" Hollis says. \"Test it before you trust it. I do.\"" },
+      "sell": { "general": 50 },
+      "dossier": { "line": "Fifty feet of tarred hemp rope, coiled and tied off" }
+    },
+    {
+      "id": "pitch_torch", "kind": "tool", "name": "pitch-dipped torch", "title": "Pitch-Dipped Torch",
+      "retail": 2, "minutes": 5,
+      "blurb": "A pine stave bound with tarred rag and dipped in pitch, good for about an hour of steady light.",
+      "sell": { "general": 50 },
+      "dossier": { "line": "Pine stave wrapped in tarred rag and dipped in pitch" }
+    },
+    {
+      "id": "lamp_oil", "kind": "tool", "name": "flask of lamp oil", "title": "Flask of Lamp Oil",
+      "retail": 3, "minutes": 5,
+      "blurb": "A stoppered tin flask of lamp oil, enough to keep a lantern burning through a long night.",
+      "sell": { "general": 50 },
+      "dossier": { "line": "Stoppered tin flask of lamp oil" }
+    },
+    {
+      "id": "hooded_lantern", "kind": "tool", "name": "hooded lantern", "title": "Hooded Lantern",
+      "retail": 12, "minutes": 5,
+      "blurb": "An iron lantern with horn windows and a sliding tin shutter, its oil pot filled through a hinged cap on top.",
+      "quotes": { "hollis": "\"Same as the ones over the doors, only this one goes where you go,\" Hollis says. \"Slide the shutter across and nobody sees the flame.\"" },
+      "sell": { "general": 50 },
+      "dossier": { "line": "Iron lantern with horn windows and a sliding tin shutter" }
+    },
+    {
+      "id": "tinderbox", "kind": "tool", "name": "flint and tinderbox", "title": "Flint and Tinderbox",
+      "retail": 4, "minutes": 5,
+      "blurb": "A dented tin box holding a striker, a lump of flint, and a wad of char-cloth that catches from a single spark.",
+      "sell": { "general": 50 },
+      "dossier": { "line": "Dented tin box with a striker, flint and dry char-cloth" }
+    },
+    {
+      "id": "chalk_sticks", "kind": "tool", "name": "bundle of chalk", "title": "Bundle of Chalk",
+      "retail": 2, "minutes": 5,
+      "blurb": "Six sticks of soft white chalk tied together with string, for marking a wall or a route.",
+      "quotes": { "hollis": "\"Same chalk that's on my slate,\" Hollis says, and taps the stub hanging from his apron. \"Mark your turns. It's the one thing in a tunnel that doesn't lie to you.\"" },
+      "sell": { "general": 50 },
+      "dossier": { "line": "Six sticks of soft white chalk tied with string" }
+    },
+    {
+      "id": "wool_blanket", "kind": "tool", "name": "wool blanket", "title": "Grey Wool Blanket",
+      "retail": 6, "minutes": 5,
+      "hint": "+1 HP from sleeping on a shared bunk",
+      "blurb": "A heavy grey blanket, tightly woven, with a red stripe dyed into each end.",
+      "quotes": { "hollis": "\"Off the valley carts,\" Hollis says. \"Wool that thick is warm wet or dry.\"" },
+      "sell": { "general": 50 },
+      "dossier": { "line": "Heavy grey wool blanket with a red stripe at each end" }
+    },
+    {
+      "id": "waxed_oilcloth", "kind": "tool", "name": "sheet of waxed oilcloth", "title": "Sheet of Waxed Oilcloth",
+      "retail": 6, "minutes": 5,
+      "hint": "Halves the wear of rain and storms on the road",
+      "blurb": "A square of canvas soaked in linseed oil and wax, stiff as a board when cold, that sheds rain like a roof.",
+      "quotes": { "hollis": "\"Drape it over your pack or over your head,\" Hollis says. \"Rain runs off it and you stay dry underneath.\"" },
+      "sell": { "general": 50 },
+      "dossier": { "line": "Square of canvas soaked in linseed oil and wax, stiff and rain-proof" }
+    },
+    {
       "id": "scrap_steel", "kind": "salvage", "name": "scrap steel", "title": "Scrap Steel",
       "sell": { "smithPiece": 5, "countVar": "scrap_steel" },
       "flags": { "create": false, "hand": true }
@@ -181,6 +274,10 @@
     {
       "name": "ambrose", "title": "Ambrose's Still-Room", "file": "port_valen_middle_ward.txt", "labelPrefix": "mw_ambrose",
       "buyShop": "ambrose_buy", "buyKey": "ambrose"
+    },
+    {
+      "name": "hollis", "title": "Hollis & Daughters", "file": "port_valen_middle_ward.txt", "labelPrefix": "mw_hollis",
+      "buyShop": "hollis_buy", "sellShop": "hollis_sell", "buyKey": "hollis", "sellKey": "hollis_sell"
     },
     {
       "name": "pawn", "title": "The Pawnbroker's Window", "file": "port_valen_dredge_end.txt", "labelPrefix": "cut_pawn",
@@ -211,7 +308,21 @@
     },
     {
       "name": "ambrose_buy", "type": "buy", "file": "port_valen_middle_ward.txt", "prefix": "ab", "goto": "mw_ambrose_buy_do",
-      "items": [ { "id": "warming_liniment" }, { "id": "clear_head_draught" } ]
+      "items": [ { "id": "warming_liniment" }, { "id": "clear_head_draught" }, { "id": "linen_bandage" } ]
+    },
+    {
+      "name": "hollis_buy", "type": "buy", "file": "port_valen_middle_ward.txt", "prefix": "gb", "goto": "mw_hollis_buy_do",
+      "items": [
+        { "id": "hemp_rope" }, { "id": "pitch_torch" }, { "id": "lamp_oil" }, { "id": "hooded_lantern" }, { "id": "tinderbox" },
+        { "id": "chalk_sticks" }, { "id": "wool_blanket" }, { "id": "waxed_oilcloth" }, { "id": "lye_soap" }
+      ]
+    },
+    {
+      "name": "hollis_sell", "type": "sell", "buyer": "general", "file": "port_valen_middle_ward.txt", "prefix": "gs", "goto": "mw_hollis_sell_do",
+      "items": [
+        { "id": "hemp_rope" }, { "id": "pitch_torch" }, { "id": "lamp_oil" }, { "id": "hooded_lantern" }, { "id": "tinderbox" },
+        { "id": "chalk_sticks" }, { "id": "wool_blanket" }, { "id": "waxed_oilcloth" }, { "id": "lye_soap" }
+      ]
     },
     {
       "name": "pawn_sell", "type": "sell", "buyer": "pawn", "file": "port_valen_dredge_end.txt", "prefix": "ps", "goto": "cut_pawn_sell_do",

@@ -56,6 +56,7 @@
 *temp cut_low_water false
 *temp cut_outdoors true
 *temp cut_boats true
+*temp cut_sheds_open false
 *temp de_savvy false
 *if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
   *set cut_day true
@@ -65,6 +66,9 @@
   *set cut_outdoors false
 *if (weather_visibility = "poor")
   *set cut_boats false
+*comment The boat-sheds work daylight hours and rest on Hearthday, when the hub's street layer has them shuttered.
+*if (((cut_day) and (cut_outdoors)) and (not(day_of_week = "Hearthday")))
+  *set cut_sheds_open true
 *if ((wisdom >= 13) or (origin = "outlaw"))
   *set de_savvy true
 
@@ -112,6 +116,12 @@ The city's paving stops at the drainage cut. Past it the lanes are broken rock a
   After days of rain the plank patches sit awash and the canals run high against the pilings.
 *elseif ((ground_state = "wet") and (not(weather_wet)))
   The planks are still dark and slick from the last rain.
+
+*comment Tide: low water runs Morning through Dusk, so at Night and Pre-Dawn the water is in. The water level is the
+*comment environment, so it sits at the foot of the sky layer with no people in it. Without this line nothing in the intro says
+*comment why the mudbanks, the barge landing and the lower stair change after dark.
+*if (not(cut_low_water))
+  The tide is in, and black water fills the canal cuts right up under the lowest planks.
 
 *comment ── LAYER 3: STREET (with LAYER 4: TELL) ──
 *if (street_life = "empty")
@@ -209,41 +219,141 @@ The city's paving stops at the drainage cut. Past it the lanes are broken rock a
 
 *comment The new areas are options here, like every other district's POIs. Open hours:
 *comment tide is a derived value (low water Morning to Dusk, high water at Night and
-*comment Pre-Dawn), the same rule the Silt-Gate quest uses. A closed place is not listed.
+*comment Pre-Dawn), the same rule the Silt-Gate quest uses.
+*comment A SHUT PLACE STAYS LISTED (2026-09-26). The button keeps its bold name and swaps the flavour for why the place
+*comment is shut (the weather, the hour, the rest day), and picking it plays a short closure page (cut_*_closed, below)
+*comment that costs no time and returns to the lanes, the way the Council Hall and the Conduit Wash-House do. A button
+*comment that vanishes reads as the place being deleted and never says why. A closed button carries no [~15 min] tag.
 *comment Dredge-End's weather profile, read from the calendar flags:
-*comment   cut_outdoors is false while street_life is "empty" (severity 3): the open-air
-*comment   areas close. Lamp stair and shrine arch are sheltered and stay open.
+*comment   cut_outdoors is false while street_life is "empty" (severity 3): the market, gangways, boat-sheds and lower
+*comment   steps shut. Lamp stair and shrine arch are sheltered and stay open.
 *comment   cut_boats is false while visibility is "poor" (Fog, Storm, Blizzard): the barges
 *comment   stay tied up, so the dredge landing has nothing to unload.
+*comment   cut_low_water is false at Night and Pre-Dawn: the tide is in and the dredgers are off, so the landing shuts.
+*comment   The lower steps stay OPEN at high water (their scene has a Night street layer and a [Tide Full] option); only
+*comment   the wading is lost, and the button says "tide in".
+*comment   cut_sheds_open needs daylight, no severe weather, and not Hearthday (the hub's street layer has them shuttered).
+*comment BUTTON FORMAT (2026-09-26), same convention as the harbour quay in port_valen.txt: destination first,
+*comment bold, then the flavour -- [b]Place[/b]: what it is like -- so the menu can be skimmed for "which is which".
+*comment Each bold name is the codex title for that area (web/mygame/lorebook-port-valen.js), so the button and its
+*comment lorebook entry agree and the story-linker can link the name. Keep every line at or under the old longest
+*comment (69 rendered chars) so nothing that fitted on one line starts wrapping. None of these eight names is
+*comment conditional, so no [b] and @{...} interleaving is needed here; the Weigh House button in port_valen.txt is
+*comment the one case where it is, because wh_named decides whether the player knows the name at all.
 *choice
   *if (cut_outdoors)
-    # Walk the duckboard market lane beneath the shuttered awnings. [~15 min]
+    # [b]Duckboard Market[/b]: the lane beneath the shuttered awnings. [~15 min]
       *goto cut_market
+  *if (not(cut_outdoors))
+    # [b]Duckboard Market[/b]: stalls lashed flat, the lane deserted.
+      *goto cut_market_closed
   *if (cut_outdoors)
-    # Climb the ladder-stairs to the rope bridges over the canal. [~15 min]
+    # [b]Upper Gangways[/b]: the rope bridges over the canal. [~15 min]
       *goto cut_gangways
-  *if ((cut_day) and (cut_outdoors))
-    # Follow the water-lane to the boat-sheds and the scrap yard. [~15 min]
+  *if (not(cut_outdoors))
+    # [b]Upper Gangways[/b]: the rope bridges swinging empty in the wind.
+      *goto cut_gangways_closed
+  *if (cut_sheds_open)
+    # [b]Boat-Sheds and Scrap Yard[/b]: the smith and the scrap dealer. [~15 min]
       *goto cut_sheds
+  *if (not(cut_outdoors))
+    # [b]Boat-Sheds and Scrap Yard[/b]: lashed shut against the weather.
+      *goto cut_sheds_closed
+  *if ((cut_outdoors) and (not(cut_day)))
+    # [b]Boat-Sheds and Scrap Yard[/b]: shut until the morning shift.
+      *goto cut_sheds_closed
+  *if (((cut_outdoors) and (cut_day)) and (day_of_week = "Hearthday"))
+    # [b]Boat-Sheds and Scrap Yard[/b]: shuttered for the rest day.
+      *goto cut_sheds_closed
   *if ((cut_low_water) and (cut_boats))
-    # Go down to the dredge landing where the barges unload. [~15 min]
+    # [b]Dredge Landing[/b]: where the barges unload. [~15 min]
       *goto cut_landing
-  # Climb the granite steps to Lamp Stair beneath the seawall. [~15 min]
+  *if (not(cut_low_water))
+    # [b]Dredge Landing[/b]: the basin full, the scows sitting idle.
+      *goto cut_landing_closed
+  *if ((cut_low_water) and (not(cut_boats)))
+    # [b]Dredge Landing[/b]: the scows tied up, the crews stood down.
+      *goto cut_landing_closed
+  # [b]Lamp Stair[/b]: the red-lamp street under the seawall. [~15 min]
     *goto cut_lamp
-  # Stop at the alley shrine under the timber arch. [~15 min]
+  # [b]Alley Shrine[/b]: the tallow arch and the broth line. [~15 min]
     *goto cut_shrine
-  *if ((cut_low_water) and (cut_outdoors))
-    # Go down the lower stone steps while the tide is out. [~15 min]
+  *if (not(cut_outdoors))
+    # [b]Flooded Lower Steps[/b]: the seawall stair, awash and deserted.
+      *goto cut_steps_closed
+  *if ((cut_outdoors) and (cut_low_water))
+    # [b]Flooded Lower Steps[/b]: the seawall stair, tide out. [~15 min]
+      *goto cut_steps
+  *if ((cut_outdoors) and (not(cut_low_water)))
+    # [b]Flooded Lower Steps[/b]: the seawall stair, tide in. [~15 min]
       *goto cut_steps
   *if (silt_gate_quest_stage = "active")
-    # Investigate the Silt-Gate drainage channel. [~15–45 min]
+    # [b]The Silt-Gates[/b]: the drainage channel under the slums. [~15–45 min]
       *goto pv_dredge_silt_gates
   *if (silt_gate_quest_stage = "resolved")
-    # Walk past the quiet Silt-Gate channel. [~15 min]
+    # [b]The Silt-Gates[/b]: walking past the quiet channel. [~15 min]
       *goto pv_dredge_silt_gates
   # [Travel: Head to another district]
     *goto_scene port_valen port_valen_travel
     
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment CLOSURE PAGES for the district menu above. Each is reached only from a button that says why the place is shut.
+*comment They cost no time and set no cut_seen_* flag (the player never reached the place, so no codex entry unlocks
+*comment from them). Each prints one short paragraph of weather, hour and sound, then returns to the lanes with no
+*comment *choice (QUEST_DESIGN_RULES.md section 7: no filler choices on a barrier). They read the derived flags, never
+*comment weather names; @{weather_cold ...} only separates a blizzard from a storm.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label cut_market_closed
+[b]◈ DUCKBOARD MARKET[/b]
+*line_break
+You walk down to the water-lane and find the market empty. Every stall has been stripped to its frame and tied down twice, the awnings lashed flat against the rails, and the hand-barrows are chained to the pilings with their covers knotted over them. @{weather_cold Snow has drifted along the duckboards and piled against the bare frames|Spray blows off the canal and runs between the planks}, and nobody is out in it. Down at the landward end the chandler's half-door is bolted from inside, and the frying stall's charcoal pan is cold. The whole lane smells of wet canvas and old fat.
+*page_break Back to the water-lanes…
+*goto port_valen_dredge_end
+
+*label cut_gangways_closed
+[b]◈ THE UPPER GANGWAYS[/b]
+*line_break
+At the foot of the ladder-stairs you stop and look up. The rope bridges swing in slow, heavy arcs with nobody on them, the laundry lines hauled in and the lookout platforms left bare. When the wind takes a span the planks knock together like a door slammed over and over, and @{weather_cold snow slides off the rails in sheets|spray from the canal patters down through the framing}. Whoever is keeping watch up there today is keeping it from inside the stairhead hoods.
+*page_break Back to the district lanes…
+*goto port_valen_dredge_end
+
+*label cut_sheds_closed
+[b]◈ THE BOAT-SHEDS AND SCRAP YARD[/b]
+*line_break
+*comment Reads the clock and weather directly, not the cut_* temps the district label sets, so the page also plays
+*comment when started at this label (render_hub, scripted_play) and needs no state carried in.
+*temp shed_high_water ((time_period = "Night") or (time_period = "Pre-Dawn"))
+*temp shed_after_hours ((shed_high_water) or (time_period = "Dusk"))
+*if (street_life = "empty")
+  The sheds stand with their front boards dropped and lashed, and the work-decks are awash with @{weather_cold drifted snow|blown spray}. The ash sweeps have been dragged in off the racks. The scrap yard's driftwood fence has gone down in one place and no dealer sits beside his scales, so the only sound is the wind working at the lashings.
+*elseif (shed_after_hours)
+  The open fronts of the sheds have been boarded up and the sweeps stacked inside, out of the wet. Beyond the driftwood fence the scrap dealer's scales hang still on their chain with a sack pulled over the pan, and the yard gate is chained. @{shed_high_water The tide is in, and black water laps at the stilts under the work-decks.|The smell of cut ash hangs cold under the eaves.}
+*else
+  The sheds are shuttered for the rest day. The benches are swept, the draw-knives hang on their nails, and the only smoke on this stretch of bank comes from the boatwrights' own chimneys further along. The scrap dealer's gate is chained, his scales are covered in sacking, and a dog sleeps in the gap under the fence.
+*page_break Back to the water-lanes…
+*goto port_valen_dredge_end
+
+*label cut_landing_closed
+[b]◈ THE DREDGE LANDING[/b]
+*line_break
+*comment Reads the clock and weather directly, like cut_sheds_closed: high water is Night and Pre-Dawn.
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  The basin is full to the revetment. The three scows ride high on their mooring chains with their scoop buckets hung up dry on the derrick booms, and the lowest of the spoil heaps are half under black water. Nobody works the channel with the tide in, and the pitch kettle on the shore stands cold. The air smells of wet clay and river weed.
+*elseif (weather_severity >= 3)
+  The wind has the basin in white froth, and @{weather_cold snow|spray} flies flat across the cinder shelf. The scows are moored deep in the mud chutes with their scoop chains locked and their buckets swinging empty. The pitch kettle is cold, and no crew has come out to the bank.
+*else
+  Fog sits on the basin so thick that the far scows show only as long shadows. The crews have tied up and stood down: the scoop chains are locked, and the derrick booms drip and turn a little on their pins. No barge will feel its way into the channel blind, and no foreman is calling a count.
+*page_break Head back up the bank…
+*goto port_valen_dredge_end
+
+*label cut_steps_closed
+[b]◈ THE FLOODED LOWER STEPS[/b]
+*line_break
+You get as far as the head of the seawall stair and look down. Brown water is heaving up the treads and breaking over the landings, and the lowest third of the stair has simply gone under the foam. Every cellar hatch on the way down is bolted, the burlap rags torn off the doorways and plastered across the stone, and nobody is lingering on the wet steps. @{weather_cold Snow is driving flat down the flight and glazing the upper stones with ice|Runoff pours down the flights from the terraces above}, and the wind carries the smell of sulfur mud and cold bilge up from the trench.
+*page_break Back to the district lanes…
+*goto port_valen_dredge_end
+
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment NIGHT AMBUSH (reached only from port_valen_dredge_end_arrive)
 *comment A bruiser blocks the boards while a sling-armed lookout watches from above
@@ -1184,8 +1294,8 @@ The Silt-Gate run is not broken, only interrupted. What you hold is worth the mo
 *comment   unless it is a real activity (a shift, a search, a game), which has its own
 *comment   time call;
 *comment - tide is derived from time_period (low water Morning to Dusk), the same rule
-*comment   the Silt-Gate quest uses; a closed place is simply not offered on the
-*comment   district page;
+*comment   the Silt-Gate quest uses; a closed place stays on the district page with a
+*comment   button worded for why it is shut, and plays a cut_*_closed page;
 *comment - rumor pools are ints (cut_rumors_*), bumped once per page behind the
 *comment   stat_bump_locked guard, and read after the bump.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1735,7 +1845,7 @@ Hask hands over a canvas satchel, already packed: a few wrapped parcels, nothing
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment AREA 4 OF 7: THE DREDGE LANDING
-*comment day shift with the dredgers, rumors (low water only)
+*comment day shift with the dredgers, rumors (low water and fair visibility only; otherwise cut_landing_closed)
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label cut_landing
 *set cut_seen_landing true
@@ -1922,6 +2032,8 @@ A thickset foreman in a stiff oxhide coat stands on an upturned nail-keg, whittl
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment AREA 5 OF 7: LAMP STAIR
 *comment hedge-doctor, pawnbroker, dice cellar, drinking house, the blue door
+*comment Hours: doctor and pawnbroker by day; dice cellar and drinking house at Dusk and Night; Widow Corve's Dusk
+*comment through Pre-Dawn. Every door stays on the menu; a shut one says why and plays a cut_*_closed page.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label cut_lamp
 *set cut_seen_lamp_stair true
@@ -2008,34 +2120,95 @@ A narrow stone terrace sits pinned between the sheer granite blocks of the seawa
     Two broad-shouldered figures in boiled leather lean against the stone newel at the top of the stair, their eyes tracking the hands and belts of anyone stepping up from the water-lane.
 *else
   *comment Pre-Dawn
-  The street is winding down. The oxblood taproom door stands barred, the barred service window is latched tight, and a few solitary figures pick their way down the steps toward the morning tide.
+  The street is winding down. The oxblood taproom door stands barred, the barred service window is latched tight, and a few solitary figures pick their way down the steps toward the morning tide. Only the blue door still shows a hand's width of red light.
   *if (lamp_savvy)
     Buckets of gray water are being sloshed over the doorsteps, dousing the threshold lamps and washing the flags clean before first light.
 
+*comment Hours (2026-09-26), matching the codex entries for Lamp Stair and Widow Corve's: the doctor and the pawnbroker
+*comment work by day (Morning to Afternoon); the dice cellar and the drinking house by lamplight (Dusk and Night); Widow
+*comment Corve's from Dusk through Pre-Dawn. A shut place stays listed with a button that says why, and plays a
+*comment closure page (cut_*_closed, below; Corve's own barred-door page is at the top of cut_corve). The doctor is
+*comment still only ever offered to a wounded player, by day or not, so an unhurt player is never shown her.
 *label cut_lamp_hub
 *choice
   *if ((lamp_day) and (hp_current < hp_max))
     # Let the hedge-doctor look you over. [5 Copper Bits]@{show_stat_hints  [Restores 4 HP]|}
       *goto cut_doctor
+  *if ((not(lamp_day)) and (hp_current < hp_max))
+    # Look for the hedge-doctor's trestle, packed away until daylight.
+      *goto cut_doctor_closed
   *if (lamp_day)
     # Look in at the pawnbroker's window.
       *page_break Up to the window…
       *goto cut_pawn
-  *if (lamp_evening)
+  *if (not(lamp_day))
+    # Look in at the pawnbroker's window, latched until morning.
+      *goto cut_pawn_closed
+  *if ((lamp_evening) or (lamp_night))
     # Go down the steps of the green door to the dice game.
       *page_break Down the cellar steps…
       *goto cut_dice
-  *if (lamp_evening)
+  *if ((lamp_day) or (lamp_predawn))
+    # Try the green door to the dice cellar, bolted until the lamps are lit.
+      *goto cut_dice_closed
+  *if ((lamp_evening) or (lamp_night))
     # Push into the all-night drinking house at the end of the street.
       *page_break Into the drinking house…
       *goto cut_drink
-  *if ((lamp_evening) or (lamp_night))
+  *if ((lamp_day) or (lamp_predawn))
+    # Try the drinking house at the end of the street, barred until dusk.
+      *goto cut_drink_closed
+  *if (not(lamp_day))
     # Step up to Widow Corve's door beneath the twin red lanterns.
       *page_break Along to the blue door…
+      *goto cut_corve
+  *if (lamp_day)
+    # Step up to Widow Corve's door, barred until the Sunset Bell.
       *goto cut_corve
   # Go back down the steps to the canal.
     *page_break Back down to the canal…
     *goto port_valen_dredge_end
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment CLOSURE PAGES for the Lamp Stair menu above, same rules as the district ones (cut_market_closed and the rest):
+*comment no time, no cut_seen_* or codex flag, one short paragraph, straight back to the street with no *choice. They read
+*comment time_period directly, not the lamp_* temps the street page sets, so they play from any label.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label cut_doctor_closed
+The canvas awning is rolled and lashed against the seawall, and the trestle that stood under it is gone. A scorched ring on the flags marks where the brazier sat, and the smell of vinegar and crushed herbs still hangs in the cold air. A woman filling a bucket at the canal ladder nods toward the empty spot without being asked.
+
+"Daylight only," she says. "She won't work by lamp. Says she can't tell a clean cut from a dirty one."
+*page_break Back to the street…
+*goto cut_lamp_page
+
+*label cut_pawn_closed
+[b]◈ THE PAWNBROKER'S WINDOW[/b]
+*line_break
+The barred window under the cedar lintel is shut fast, with a board dropped across the grille from the inside and a wedge of folded cloth pushed into the gap at the sill. Behind the wire the shelves are dark. A strip of paper is pinned under the sill with a small stone, and one corner lifts and settles in the draught off the water. Nothing about it invites a knock.
+*page_break Back to the street…
+*goto cut_lamp_page
+
+*label cut_dice_closed
+[b]◈ THE DICE CELLAR[/b]
+*line_break
+*if (time_period = "Pre-Dawn")
+  The green door is bolted from inside, and the steps below it are dark. The game has broken up for the night. A man sleeps sitting upright on the top step with his back against the door and his cap pulled down over his face, and nothing rattles in the cellar behind him.
+*else
+  The green door at the top of the cellar steps is bolted, and the steps below it have been swept and sanded for the day. Through the grate at the foot of the door there is a smell of old lamp oil and spilled ale, and nothing moves. Whatever is played down there is played after the lamps are lit.
+*page_break Back to the street…
+*goto cut_lamp_page
+
+*label cut_drink_closed
+[b]◈ THE DRINKING HOUSE[/b]
+*line_break
+*if (time_period = "Pre-Dawn")
+  The oxblood door is barred, and the last of the night's drinkers have been put out onto the flags. One sits against the wall with his boots across the step, humming a tune without any words, while a shutter rattles down over the serving hatch beside him.
+*else
+  The oxblood door at the end of the street is barred from inside, and the shutters over the taproom windows are closed. The step is scrubbed pale and still damp. Somewhere behind the wall a barrel is rolled across a stone floor, and nobody answers when you knock.
+*page_break Back to the street…
+*goto cut_lamp_page
+
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment ····· sub-location: the hedge-doctor's stall
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2385,8 +2558,6 @@ The drinking house is a long low room with a bar made from a single ship's plank
     *goto cut_drink_hub
 
   *if (not((drink_buff_active) and (drink_buff_stat = "con")))
-    # Take a mug of black ale (3 Copper Bits)@{show_stat_hints  [+1 CON for 4h]|}
-  *if (not((drink_buff_active) and (drink_buff_stat = "con")))
     # Take a mug of black ale. [3 Copper Bits]@{show_stat_hints  [+1 CON for 4h]|}
       *if ((((gold * 100) + (silver * 10)) + copper) < 3)
         You check your purse and find it a little short of three copper bits.
@@ -2423,11 +2594,13 @@ The drinking house is a long low room with a bar made from a single ship's plank
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment WIDOW CORVE'S (THE STEWS UNDER THE SEAWALL)
 *comment Open Dusk through Pre-Dawn. Closed during daylight.
+*comment The Lamp Stair menu lists the door at every hour (2026-09-26): by day the button says it is barred and this
+*comment scene plays the barred-door page below, with no time passing. codex_corve is set only once the player is past
+*comment the door, because the codex entry describes the parlor.
 *comment Table service, dynamic climate, live bard, and personal backgrounds.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label cut_corve
-*set codex_corve true
 [b]◈ WIDOW CORVE'S[/b]
 *line_break
 
@@ -2441,7 +2614,9 @@ The drinking house is a long low room with a bar made from a single ship's plank
   *goto cut_lamp_page
 
 *comment ── OPEN HOURS: DUSK TO PRE-DAWN ──
-A heavy oak door bound in polished iron studs sits propped open a hand's width against the granite base of the seawall. Overhead, twin horn lanterns fitted with deep red bullseye glass burn brightly, casting warm scarlet reflections across the wet threshold flags.
+*set codex_corve true
+*temp corve_low_lamps (time_period = "Pre-Dawn")
+A heavy oak door bound in polished iron studs sits propped open a hand's width against the granite base of the seawall. Overhead, twin horn lanterns fitted with deep red bullseye glass @{corve_low_lamps burn low, casting dull scarlet|burn brightly, casting warm scarlet} reflections across the wet threshold flags.
 
 Whenever the felt draft-curtain stirs, the scent of dried lavender, clean cedar shavings, and clove wine rolls out into the cold street.
 
@@ -3457,7 +3632,10 @@ He keeps his eyes on the kettle. "Not to you."
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment AREA 7 OF 7: THE FLOODED LOWER STEPS
-*comment scrap search, flophouse cellars (low water only)
+*comment scrap search, flophouse cellars. Open at high water too: the Night street layer and the [Tide Full]
+*comment option below are for the player who comes down after dark, and only the wading needs low water.
+*comment Shut only in severe weather (cut_steps_closed); the street_life = "empty" branch below is kept as a
+*comment guard for a day that rolls over to a storm while the player is on the stair.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label cut_steps
 *set cut_seen_lower_steps true
