@@ -688,6 +688,21 @@
   *set temp_index - 1
 *if (weather = "Blizzard")
   *set temp_index 0
+*comment Regions: shift the raw value, then measure how far the SHIFT alone pushes past the ends of the scale.
+*temp tx_base temp_index
+*temp tx_shifted (temp_index + climate_shift)
+*temp tx_ov_base 0
+*if (tx_base < 0)
+  *set tx_ov_base tx_base
+*if (tx_base > 5)
+  *set tx_ov_base (tx_base - 5)
+*temp tx_ov_shifted 0
+*if (tx_shifted < 0)
+  *set tx_ov_shifted tx_shifted
+*if (tx_shifted > 5)
+  *set tx_ov_shifted (tx_shifted - 5)
+*set temp_extreme (tx_ov_shifted - tx_ov_base)
+*set temp_index tx_shifted
 *if (temp_index < 0)
   *set temp_index 0
 *if (temp_index > 5)
@@ -809,9 +824,11 @@
 *comment this: travel legs, camps, marches, fishing, farming, caravans. Indoor time never does.
 *comment The numbers, all percent extra on top of the real minutes (tune here):
 *comment   COLD: freezing +60, cold +30. WET: dangerous weather (severity 3) +40, wet weather +10. HEAT: hot +30.
-*comment   The worn cloak takes a percentage off the cold part and a percentage off the wet part (cloak_traits
-*comment   below, one row per cloak; it does nothing for heat). An owned sheet of waxed oilcloth then halves
-*comment   what is left of the wet part. Nothing else touches heat yet.
+*comment   REGIONS: each step the climate shift (startup.txt climate_shift) pushes past freezing or hot adds +20 to
+*comment   that part (temp_extreme), so an arctic or desert region gets steeper without touching Port Valen.
+*comment   GEAR: every worn slot (armor, head, cloak, hands, waist, feet, neck) contributes percent cuts from
+*comment   equipment.txt garment_traits; the cuts add up per part, capped at 90 (a NEGATIVE heat cut, like a fur-lined
+*comment   cloak, adds heat wear). An owned sheet of waxed oilcloth then halves what is left of the wet part.
 *comment   Total capped at +100 (double burn). Extra minutes count toward the hunger and fatigue
 *comment   clocks only, never the game clock and never the hygiene clock.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -820,6 +837,9 @@
 *temp ex_wet 0
 *temp ex_heat 0
 *temp ex_pct 0
+*temp ex_cutc 0
+*temp ex_cutw 0
+*temp ex_cuth 0
 *if (temp_index = 0)
   *set ex_cold 60
 *elseif (temp_index = 1)
@@ -830,44 +850,53 @@
   *set ex_wet 10
 *if (temp_index = 5)
   *set ex_heat 30
-*gosub cloak_traits equipped_cloak_id
-*set ex_cold round((ex_cold * (100 - cloak_trait_cold)) / 100)
-*set ex_wet round((ex_wet * (100 - cloak_trait_wet)) / 100)
+*if (temp_extreme < 0)
+  *set ex_cold (ex_cold + ((0 - temp_extreme) * 20))
+*if (temp_extreme > 0)
+  *set ex_heat (ex_heat + (temp_extreme * 20))
+*gosub_scene equipment garment_traits equipped_armor_id
+*set ex_cutc (ex_cutc + garment_cold)
+*set ex_cutw (ex_cutw + garment_wet)
+*set ex_cuth (ex_cuth + garment_heat)
+*gosub_scene equipment garment_traits equipped_head_id
+*set ex_cutc (ex_cutc + garment_cold)
+*set ex_cutw (ex_cutw + garment_wet)
+*set ex_cuth (ex_cuth + garment_heat)
+*gosub_scene equipment garment_traits equipped_cloak_id
+*set ex_cutc (ex_cutc + garment_cold)
+*set ex_cutw (ex_cutw + garment_wet)
+*set ex_cuth (ex_cuth + garment_heat)
+*gosub_scene equipment garment_traits equipped_hands_id
+*set ex_cutc (ex_cutc + garment_cold)
+*set ex_cutw (ex_cutw + garment_wet)
+*set ex_cuth (ex_cuth + garment_heat)
+*gosub_scene equipment garment_traits equipped_waist_id
+*set ex_cutc (ex_cutc + garment_cold)
+*set ex_cutw (ex_cutw + garment_wet)
+*set ex_cuth (ex_cuth + garment_heat)
+*gosub_scene equipment garment_traits equipped_feet_id
+*set ex_cutc (ex_cutc + garment_cold)
+*set ex_cutw (ex_cutw + garment_wet)
+*set ex_cuth (ex_cuth + garment_heat)
+*gosub_scene equipment garment_traits equipped_neck_id
+*set ex_cutc (ex_cutc + garment_cold)
+*set ex_cutw (ex_cutw + garment_wet)
+*set ex_cuth (ex_cuth + garment_heat)
+*if (ex_cutc > 90)
+  *set ex_cutc 90
+*if (ex_cutw > 90)
+  *set ex_cutw 90
+*if (ex_cuth > 90)
+  *set ex_cuth 90
+*if (ex_cuth < (0 - 100))
+  *set ex_cuth (0 - 100)
+*set ex_cold round((ex_cold * (100 - ex_cutc)) / 100)
+*set ex_wet round((ex_wet * (100 - ex_cutw)) / 100)
+*set ex_heat round((ex_heat * (100 - ex_cuth)) / 100)
 *if (has_waxed_oilcloth)
   *set ex_wet round(ex_wet / 2)
 *set ex_pct ((ex_cold + ex_wet) + ex_heat)
 *if (ex_pct > 100)
   *set ex_pct 100
 *set exposure_extra_mins round((exposure_base_mins * ex_pct) / 100)
-*return
-
-*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment CLOAK TRAITS: what each cloak takes off the cold and the wet part of exposure
-*comment *gosub_scene calendar cloak_traits <cloak id>   (outputs cloak_trait_cold and cloak_trait_wet, each the
-*comment percent removed from that part, and cloak_trait_hint, the short text the dossier shows). The equipped cloak
-*comment is read at use time, so a swap never leaves a stale value. Tune the table here.
-*comment   wool_mantle        cold 65, wet 30   heavy wool: warm, and it stays warm when damp
-*comment   weather_cloak      cold 30, wet 65   pine-oiled against rain
-*comment   camo_cloak         cold 40, wet 40   thin, light wool: the weakest all-rounder
-*comment   talia_oiled_cloak  cold 50, wet 80   tallow-waxed and heavy: the best against wet
-*comment   none               0, 0
-*comment New cloaks (a tailor's stock) add a row here and to apply_cloak_loadout in equipment.txt.
-*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*label cloak_traits
-*params ct_id
-*set cloak_trait_cold 0
-*set cloak_trait_wet 0
-*if (ct_id = "wool_mantle")
-  *set cloak_trait_cold 65
-  *set cloak_trait_wet 30
-*if (ct_id = "weather_cloak")
-  *set cloak_trait_cold 30
-  *set cloak_trait_wet 65
-*if (ct_id = "camo_cloak")
-  *set cloak_trait_cold 40
-  *set cloak_trait_wet 40
-*if (ct_id = "talia_oiled_cloak")
-  *set cloak_trait_cold 50
-  *set cloak_trait_wet 80
-*set cloak_trait_hint "Weather wear: cold -${cloak_trait_cold}%, rain -${cloak_trait_wet}%"
 *return

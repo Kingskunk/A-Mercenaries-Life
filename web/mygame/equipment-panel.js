@@ -160,6 +160,9 @@
     }
     var idStat = ID_STAT[bucket];
     if (!idStat) return;
+    // Mirrors equip_hands / equip_waist: Rorik's camp gifts have no ownership flag, so note them before they are swapped out.
+    if (bucket === "hands" && s.equipped_hands_id === "rorik_grip_wraps" && id !== "rorik_grip_wraps") s.has_rorik_grip_wraps = true;
+    if (bucket === "waist" && s.equipped_waist_id === "rorik_campaign_belt" && id !== "rorik_campaign_belt") s.has_rorik_campaign_belt = true;
     // Mirrors equip_weapon's swap-instead-of-overwrite guard (equipment.txt): if this id is
     // already sitting in the sidearm slot, swap the two rather than duplicating it into both
     // and orphaning the old weapon -- sidearm items have no has_x flag to fall back on.

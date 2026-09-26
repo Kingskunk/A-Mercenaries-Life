@@ -129,7 +129,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "weapon_desc": {
           "type": "literal",
-          "value": "Seven-Foot Ash-Wood Spear"
+          "value": "Ash-Wood Spear"
         },
         "weapon_damage": {
           "type": "literal",
@@ -164,7 +164,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "weapon_desc": {
           "type": "literal",
-          "value": "Heavy Hooked Broadaxe"
+          "value": "Hooked Broadaxe"
         },
         "weapon_damage": {
           "type": "literal",
@@ -234,7 +234,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "weapon_desc": {
           "type": "literal",
-          "value": "Compact Hand Crossbow"
+          "value": "Hand Crossbow"
         },
         "weapon_damage": {
           "type": "literal",
@@ -681,7 +681,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "armor_desc": {
           "type": "literal",
-          "value": "Iron-Studded Gambeson"
+          "value": "Studded Gambeson"
         },
         "armor_type": {
           "type": "literal",
@@ -741,6 +741,29 @@ window.EQUIPMENT_CATALOG = {
     },
     {
       "ids": [
+        "court_coat"
+      ],
+      "fields": {
+        "armor": {
+          "type": "literal",
+          "value": "court-coat"
+        },
+        "armor_desc": {
+          "type": "literal",
+          "value": "Court Coat"
+        },
+        "armor_type": {
+          "type": "literal",
+          "value": "cloth"
+        },
+        "armor_prose": {
+          "type": "literal",
+          "value": "court coat"
+        }
+      }
+    },
+    {
+      "ids": [
         "buff_coat"
       ],
       "fields": {
@@ -750,7 +773,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "armor_desc": {
           "type": "literal",
-          "value": "Scaled Oxhide Coat"
+          "value": "Scaled Coat"
         },
         "armor_type": {
           "type": "literal",
@@ -774,7 +797,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "armor_desc": {
           "type": "literal",
-          "value": "Hardened Leather Armor"
+          "value": "Leather Armor"
         },
         "armor_type": {
           "type": "literal",
@@ -797,7 +820,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "armor_desc": {
           "type": "literal",
-          "value": "Oiled Leather Jerkin"
+          "value": "Leather Jerkin"
         },
         "armor_type": {
           "type": "literal",
@@ -820,7 +843,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "armor_desc": {
           "type": "literal",
-          "value": "Layered Leather Scout Wraps"
+          "value": "Scout Wraps"
         },
         "armor_type": {
           "type": "literal",
@@ -844,7 +867,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "armor_desc": {
           "type": "literal",
-          "value": "Quilted Scholar's Robe"
+          "value": "Scholar's Robe"
         },
         "armor_type": {
           "type": "literal",
@@ -867,7 +890,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "armor_desc": {
           "type": "literal",
-          "value": "Reinforced Canvas Jacket"
+          "value": "Canvas Jacket"
         },
         "armor_type": {
           "type": "literal",
@@ -890,7 +913,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "armor_desc": {
           "type": "literal",
-          "value": "Tailored Travel Coat"
+          "value": "Travel Coat"
         },
         "armor_type": {
           "type": "literal",
@@ -913,7 +936,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "armor_desc": {
           "type": "literal",
-          "value": "Oiled Traveling Robes"
+          "value": "Traveling Robes"
         },
         "armor_type": {
           "type": "literal",
@@ -957,7 +980,7 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "head_desc": {
           "type": "literal",
-          "value": "Padded Linen Cap"
+          "value": "Linen Cap"
         },
         "head_prose": {
           "type": "literal",
@@ -980,7 +1003,7 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "head_desc": {
           "type": "literal",
-          "value": "Shadowed Mottled Hood"
+          "value": "Mottled Hood"
         },
         "head_prose": {
           "type": "literal",
@@ -1003,7 +1026,7 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "head_desc": {
           "type": "literal",
-          "value": "Scholar's Linen Cap"
+          "value": "Scholar's Cap"
         },
         "head_prose": {
           "type": "literal",
@@ -1026,7 +1049,7 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "head_desc": {
           "type": "literal",
-          "value": "Cold-Hammered Skullcap"
+          "value": "Iron Skullcap"
         },
         "head_prose": {
           "type": "literal",
@@ -1049,11 +1072,57 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "head_desc": {
           "type": "literal",
-          "value": "Boiled-Hide Watch Cap"
+          "value": "Leather Watch Cap"
         },
         "head_prose": {
           "type": "literal",
           "value": "watch cap"
+        },
+        "head_ac": {
+          "type": "literal",
+          "value": 0
+        },
+        "head_is_armor": {
+          "type": "literal",
+          "value": false
+        }
+      }
+    },
+    {
+      "ids": [
+        "felt_hat"
+      ],
+      "fields": {
+        "head_desc": {
+          "type": "literal",
+          "value": "Felt Hat"
+        },
+        "head_prose": {
+          "type": "literal",
+          "value": "felt hat"
+        },
+        "head_ac": {
+          "type": "literal",
+          "value": 0
+        },
+        "head_is_armor": {
+          "type": "literal",
+          "value": false
+        }
+      }
+    },
+    {
+      "ids": [
+        "fur_cap"
+      ],
+      "fields": {
+        "head_desc": {
+          "type": "literal",
+          "value": "Fur Cap"
+        },
+        "head_prose": {
+          "type": "literal",
+          "value": "fur-trimmed cap"
         },
         "head_ac": {
           "type": "literal",
@@ -1097,7 +1166,7 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "cloak_desc": {
           "type": "literal",
-          "value": "Iron Bull Wool Mantle"
+          "value": "Wool Mantle"
         },
         "cloak_prose": {
           "type": "literal",
@@ -1112,7 +1181,7 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "cloak_desc": {
           "type": "literal",
-          "value": "Weathered Mottled Cloak"
+          "value": "Mottled Cloak"
         },
         "cloak_prose": {
           "type": "literal",
@@ -1127,7 +1196,7 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "cloak_desc": {
           "type": "literal",
-          "value": "Oiled Marcher Weather Cloak"
+          "value": "Marcher Weather Cloak"
         },
         "cloak_prose": {
           "type": "literal",
@@ -1142,11 +1211,71 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "cloak_desc": {
           "type": "literal",
-          "value": "Talia's Oiled Cloak"
+          "value": "Talia's Cloak"
         },
         "cloak_prose": {
           "type": "literal",
           "value": "oiled cloak"
+        }
+      }
+    },
+    {
+      "ids": [
+        "broadcloth_cloak"
+      ],
+      "fields": {
+        "cloak_desc": {
+          "type": "literal",
+          "value": "Traveler's Cloak"
+        },
+        "cloak_prose": {
+          "type": "literal",
+          "value": "broadcloth cloak"
+        }
+      }
+    },
+    {
+      "ids": [
+        "storm_cape"
+      ],
+      "fields": {
+        "cloak_desc": {
+          "type": "literal",
+          "value": "Storm Cape"
+        },
+        "cloak_prose": {
+          "type": "literal",
+          "value": "storm cape"
+        }
+      }
+    },
+    {
+      "ids": [
+        "winter_cloak"
+      ],
+      "fields": {
+        "cloak_desc": {
+          "type": "literal",
+          "value": "Winter Cloak"
+        },
+        "cloak_prose": {
+          "type": "literal",
+          "value": "winter cloak"
+        }
+      }
+    },
+    {
+      "ids": [
+        "summer_duster"
+      ],
+      "fields": {
+        "cloak_desc": {
+          "type": "literal",
+          "value": "Summer Duster"
+        },
+        "cloak_prose": {
+          "type": "literal",
+          "value": "linen duster"
         }
       }
     },
@@ -1174,7 +1303,7 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "hands_desc": {
           "type": "literal",
-          "value": "Hardened Leather Wraps"
+          "value": "Leather Wraps"
         },
         "hands_prose": {
           "type": "literal",
@@ -1189,7 +1318,7 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "hands_desc": {
           "type": "literal",
-          "value": "Supple Archer Bracers"
+          "value": "Archer Bracers"
         },
         "hands_prose": {
           "type": "literal",
@@ -1204,7 +1333,7 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "hands_desc": {
           "type": "literal",
-          "value": "Scribe's Writing Gloves"
+          "value": "Scribe's Gloves"
         },
         "hands_prose": {
           "type": "literal",
@@ -1219,11 +1348,56 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "hands_desc": {
           "type": "literal",
-          "value": "Tarred Grip Wraps"
+          "value": "Grip Wraps"
         },
         "hands_prose": {
           "type": "literal",
           "value": "grip wraps"
+        }
+      }
+    },
+    {
+      "ids": [
+        "lined_gloves"
+      ],
+      "fields": {
+        "hands_desc": {
+          "type": "literal",
+          "value": "Lined Gloves"
+        },
+        "hands_prose": {
+          "type": "literal",
+          "value": "fleece-lined gloves"
+        }
+      }
+    },
+    {
+      "ids": [
+        "scholar_gloves"
+      ],
+      "fields": {
+        "hands_desc": {
+          "type": "literal",
+          "value": "Scholar's Gloves"
+        },
+        "hands_prose": {
+          "type": "literal",
+          "value": "scholar's gloves"
+        }
+      }
+    },
+    {
+      "ids": [
+        "masters_gloves"
+      ],
+      "fields": {
+        "hands_desc": {
+          "type": "literal",
+          "value": "Master's Gloves"
+        },
+        "hands_prose": {
+          "type": "literal",
+          "value": "master's gloves"
         }
       }
     },
@@ -1251,7 +1425,7 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "waist_desc": {
           "type": "literal",
-          "value": "Heavy Soldier's Belt"
+          "value": "Soldier's Belt"
         },
         "waist_prose": {
           "type": "literal",
@@ -1266,7 +1440,7 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "waist_desc": {
           "type": "literal",
-          "value": "Concealed Scabbard Belt"
+          "value": "Scabbard Belt"
         },
         "waist_prose": {
           "type": "literal",
@@ -1296,7 +1470,7 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "waist_desc": {
           "type": "literal",
-          "value": "Iron-Riveted Campaign Belt"
+          "value": "Campaign Belt"
         },
         "waist_prose": {
           "type": "literal",
@@ -1328,7 +1502,7 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "feet_desc": {
           "type": "literal",
-          "value": "Iron-Nailed Marching Boots"
+          "value": "Marching Boots"
         },
         "feet_prose": {
           "type": "literal",
@@ -1343,11 +1517,11 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "feet_desc": {
           "type": "literal",
-          "value": "Soft-Soled Scout Wraps"
+          "value": "Scout Boots"
         },
         "feet_prose": {
           "type": "literal",
-          "value": "scout wraps"
+          "value": "scout boots"
         }
       }
     },
@@ -1358,7 +1532,7 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "feet_desc": {
           "type": "literal",
-          "value": "Travel Riding Boots"
+          "value": "Riding Boots"
         },
         "feet_prose": {
           "type": "literal",
@@ -1373,7 +1547,7 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "feet_desc": {
           "type": "literal",
-          "value": "Talia's Pitch-Sealed Deck Boots"
+          "value": "Talia's Deck Boots"
         },
         "feet_prose": {
           "type": "literal",
@@ -1398,6 +1572,51 @@ window.EQUIPMENT_CATALOG = {
     },
     {
       "ids": [
+        "waxed_boots"
+      ],
+      "fields": {
+        "feet_desc": {
+          "type": "literal",
+          "value": "Rain Boots"
+        },
+        "feet_prose": {
+          "type": "literal",
+          "value": "waxed riding boots"
+        }
+      }
+    },
+    {
+      "ids": [
+        "winter_boots"
+      ],
+      "fields": {
+        "feet_desc": {
+          "type": "literal",
+          "value": "Winter Boots"
+        },
+        "feet_prose": {
+          "type": "literal",
+          "value": "felt-lined boots"
+        }
+      }
+    },
+    {
+      "ids": [
+        "dancing_slippers"
+      ],
+      "fields": {
+        "feet_desc": {
+          "type": "literal",
+          "value": "Dancing Slippers"
+        },
+        "feet_prose": {
+          "type": "literal",
+          "value": "dancing slippers"
+        }
+      }
+    },
+    {
+      "ids": [
         "none"
       ],
       "fields": {
@@ -1413,6 +1632,36 @@ window.EQUIPMENT_CATALOG = {
     }
   ],
   "neck": [
+    {
+      "ids": [
+        "wool_muffler"
+      ],
+      "fields": {
+        "neck_desc": {
+          "type": "literal",
+          "value": "Wool Muffler"
+        },
+        "neck_prose": {
+          "type": "literal",
+          "value": "wool muffler"
+        }
+      }
+    },
+    {
+      "ids": [
+        "silk_neckcloth"
+      ],
+      "fields": {
+        "neck_desc": {
+          "type": "literal",
+          "value": "Silk Neckcloth"
+        },
+        "neck_prose": {
+          "type": "literal",
+          "value": "silk neckcloth"
+        }
+      }
+    },
     {
       "ids": [
         "none"
@@ -1450,7 +1699,7 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "neck_desc": {
           "type": "literal",
-          "value": "Elspeth's Braided Weir-Knot"
+          "value": "Elspeth's Weir-Knot"
         },
         "neck_prose": {
           "type": "literal",
@@ -1482,7 +1731,7 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "new_ring_desc": {
           "type": "literal",
-          "value": "Customs Officer's Signet Ring"
+          "value": "Officer's Signet Ring"
         },
         "new_ring_prose": {
           "type": "literal",
@@ -1497,7 +1746,7 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "new_ring_desc": {
           "type": "literal",
-          "value": "Saint Althea's River-Stone Ring"
+          "value": "Althea's Stone Ring"
         },
         "new_ring_prose": {
           "type": "literal",
@@ -1506,4 +1755,28 @@ window.EQUIPMENT_CATALOG = {
       }
     }
   ]
+};
+// id -> the short text for what a worn item does (weather cuts, score bonus), from equipment.txt garment_traits.
+window.GARMENT_HINTS = {
+  "wool_mantle": "Weather wear: cold -65%, rain -30%",
+  "weather_cloak": "Weather wear: cold -30%, rain -65%",
+  "camo_cloak": "Weather wear: cold -40%, rain -40%",
+  "talia_oiled_cloak": "Weather wear: cold -50%, rain -80%",
+  "talia_deck_boots": "Weather wear: rain -30%",
+  "brant_iron_heel_boots": "Weather wear: rain -20%",
+  "broadcloth_cloak": "Weather wear: cold -55%, rain -45%",
+  "storm_cape": "Weather wear: cold -30%, rain -75%",
+  "winter_cloak": "Weather wear: cold -90%, rain -40%, heat +40%",
+  "summer_duster": "Weather wear: cold -10%, rain -30%, heat -60%",
+  "felt_hat": "Weather wear: rain -15%, heat -25%",
+  "fur_cap": "Weather wear: cold -20%",
+  "lined_gloves": "Weather wear: cold -20%",
+  "scholar_gloves": "+1 INT",
+  "masters_gloves": "+2 INT",
+  "waxed_boots": "Weather wear: cold -10%, rain -25%",
+  "winter_boots": "Weather wear: cold -25%",
+  "dancing_slippers": "+1 DEX",
+  "wool_muffler": "Weather wear: cold -10%",
+  "silk_neckcloth": "+1 CHA",
+  "court_coat": "Weather wear: cold -25%, rain -10%; +2 CHA"
 };

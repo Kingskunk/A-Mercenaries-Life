@@ -127,6 +127,27 @@ function parseLoadoutLabel(lines, labelName, idVar) {
   return entries;
 }
 
+// equipment.txt garment_traits: one *if (gt_id = "<id>") block per worn item, each ending in *set garment_hint "<text>".
+// The panels show that text for whatever is worn (slot cards, the trade panel's "wearing" line), so it is read from the
+// same table the game uses and never written twice.
+function parseGarmentHints(lines) {
+  var body = extractLabelBody(lines, "garment_traits");
+  var hints = {}, current = null, m;
+  for (var i = 0; i < body.length; i++) {
+    var raw = body[i], t = raw.trim();
+    if (!t || t.indexOf("*comment") === 0) continue;
+    if (!/^\s/.test(raw)) {
+      m = /^\*if\s*\(\s*gt_id\s*=\s*"([^"]+)"\s*\)/.exec(t);
+      current = m ? m[1] : null;
+      if (/^\*return/.test(t)) break;
+      continue;
+    }
+    m = /^\*set\s+garment_hint\s+"((?:[^"\\]|\\.)*)"/.exec(t);
+    if (current && m) hints[current] = m[1].replace(/\\(.)/g, "$1");
+  }
+  return hints;
+}
+
 function generate() {
   var text = fs.readFileSync(SRC, "utf8");
   var lines = text.split(/\r?\n/);
@@ -135,6 +156,8 @@ function generate() {
     var info = LABELS[labelName];
     catalog[info.bucket] = parseLoadoutLabel(lines, labelName, info.idVar);
   });
+
+  var hints = parseGarmentHints(lines);
 
   var header =
     "/*\n" +
@@ -150,9 +173,11 @@ function generate() {
     " * instead of a fixed string). See equipment-panel.js's applyCatalogEntry for how\n" +
     " * these get resolved.\n" +
     " */\n";
-  var content = header + "window.EQUIPMENT_CATALOG = " + JSON.stringify(catalog, null, 2) + ";\n";
+  var content = header + "window.EQUIPMENT_CATALOG = " + JSON.stringify(catalog, null, 2) + ";\n" +
+    "// id -> the short text for what a worn item does (weather cuts, score bonus), from equipment.txt garment_traits.\n" +
+    "window.GARMENT_HINTS = " + JSON.stringify(hints, null, 2) + ";\n";
   fs.writeFileSync(OUT, content, "utf8");
-  console.log("Generated", OUT);
+  console.log("Generated", OUT, "(" + Object.keys(hints).length + " worn-item hints)");
   Object.keys(catalog).forEach(function (bucket) {
     console.log("  " + bucket + ": " + catalog[bucket].length + " entries");
   });

@@ -8,6 +8,7 @@ A comprehensive developer and lore reference for every wearable, equippable, and
 
 - **Tradeable items are defined in `tools/gear_catalog.json`.** Prices, names, hints, dossier text, optional seller quotes and shop stock live there, and `node tools/gen_gear.js` writes the loadout branches, dossier lines, inventory entries and shop menus from it (see `quest/GAMEPLAY_MECHANICS_RULES.md`). The tables below describe the items; the catalog is what the game is built from.
 
+- **Every worn slot has traits (`equipment.txt` `garment_traits`).** Percent cuts to the cold, rain and heat parts of outdoor exposure, and an optional ability-score bonus. Older hand-written worn items are listed first (only the ones whose own text promises weather protection have numbers: Talia's cloak and deck boots, Brant's boots, the four origin cloaks); catalog items are generated from `traits` in `tools/gear_catalog.json`. **Equipment bonuses to the same ability score do not stack**: `startup.txt` `recalculate_equipment_bonuses` keeps the highest one per stat (the attuned Hearthstone's +1 CON counts as one), and the six scores hold base + timed boon + equipment. See section 15.
 - **Id-Driven State Machine:** All paper-doll slots and weapons derive their display and combat properties from persistent string IDs (e.g., `equipped_weapon_id`, `equipped_head_id`, `equipped_neck_id`).
 - **Idempotent Recomputations:** Changing equipment triggers idempotent recompute subroutines (`recalculate_armor_class`, `apply_weapon_loadout`, `apply_head_loadout`, etc.). No stat is nudged with bare `*set +N` operations, ensuring complete refresh and replay safety.
 - **Starting Snapshot Mechanism:** At enlistment/chargen, the player's initial weapon and armor choices are permanently saved to `starting_weapon_*` and `starting_armor_*`. Players can switch back to their starting equipment at any time from the dossier.
@@ -29,10 +30,10 @@ Primary weapons and secondary sidearms can be equipped in the main-hand or store
 | Item ID | Item Name | Category & Grip | Base Damage | Acquisition & Retail Cost | Mechanical Effects |
 |---|---|---|---|---|---|
 | `starting` (Ashbrook) | **Heavy Falchion** | One-Handed Melee | `1d8 slashing` | Enlistment (Ashbrook) or Master Smith — **2s 5c** (Blade alone) | Standard 1d8 melee weapon (STR-based). Grants and pairs with the Limestone Boss Buckler (+2 AC when equipped). |
-| `starting` / `ash_spear` | **Seven-Foot Ash-Wood Spear** | One-Handed Reach Melee | `1d6/1d8 piercing` | Enlistment (Ashbrook / Outlaw) or Armorer — **2s 0c** | Reach weapon (STR-based). Versatile 1d8 profile in frontline combat. |
-| `starting` / `felling_axe` | **Heavy Hooked Broadaxe** | Two-Handed Heavy Melee | `1d12 slashing` | Enlistment (Ashbrook) or Master Smith — **5s 0c** | Heavy Two-Handed weapon (STR-based). Forces `weapon_hands = "two_handed"`, automatically stowing off-hand shields. Eligible for Great Weapon Fighting rerolls. Sidearm profile deals 1d8 slashing. |
+| `starting` / `ash_spear` | **Ash-Wood Spear** | One-Handed Reach Melee | `1d6/1d8 piercing` | Enlistment (Ashbrook / Outlaw) or Armorer — **2s 0c** | Reach weapon (STR-based). Versatile 1d8 profile in frontline combat. |
+| `starting` / `felling_axe` | **Hooked Broadaxe** | Two-Handed Heavy Melee | `1d12 slashing` | Enlistment (Ashbrook) or Master Smith — **5s 0c** | Heavy Two-Handed weapon (STR-based). Forces `weapon_hands = "two_handed"`, automatically stowing off-hand shields. Eligible for Great Weapon Fighting rerolls. Sidearm profile deals 1d8 slashing. |
 | `starting` / `matched_dagger` | **Twin Daggers** | One-Handed Finesse | `1d4 piercing` | Enlistment (Port Valen Outlaw) or Cutler — **1s 5c** (pair) | Finesse (uses higher of STR or DEX for attack and damage). Triggers Rogue Sneak Attack (+1d6). |
-| `starting` / `hand_crossbow` | **Compact Hand Crossbow** | One-Handed Ranged | `1d6 piercing` | Enlistment (Port Valen Outlaw) or Bowyer — **2s 5c** | Ranged weapon (DEX-based). Single-handed, concealable. Triggers Rogue Sneak Attack (+1d6). |
+| `starting` / `hand_crossbow` | **Hand Crossbow** | One-Handed Ranged | `1d6 piercing` | Enlistment (Port Valen Outlaw) or Bowyer — **2s 5c** | Ranged weapon (DEX-based). Single-handed, concealable. Triggers Rogue Sneak Attack (+1d6). |
 | `starting` (Scout) | **Recurve Shortbow** | Two-Handed Ranged | `1d6 piercing` | Enlistment (Outlaw Dev Preset) or Bowyer — **2s 5c** | Ranged weapon (DEX-based). Two-handed. Triggers Rogue Sneak Attack (+1d6). |
 | `starting` (Disgraced) | **Iron-Shod Quarterstaff** | One-Handed / Versatile Melee | `1d6/1d8 bludgeoning` | Enlistment (Disgraced Scion) or Woodworker — **1s 5c** | Versatile blunt weapon (STR-based, 1d6/1d8). |
 | `starting` / `bodkin_dagger` | **Slim Dagger** | One-Handed Finesse | `1d4 piercing` | Enlistment (Disgraced Scion) or Cutler — **1s 5c** | Finesse (uses higher of STR or DEX). Triggers Rogue Sneak Attack (+1d6). |
@@ -46,7 +47,7 @@ Primary weapons and secondary sidearms can be equipped in the main-hand or store
 
 | Item ID | Item Name | Slot | Acquisition / Cost | Mechanical Effects |
 |---|---|---|---|---|
-| `has_shield` / `shield_equipped` | **Limestone Boss Shield / Buckler** | Off-Hand | Enlistment (Ashbrook Falchion) or Torvald's Smithy (**3s 0c**) | **+2 Armor Class (AC)** when strapped on. Can be toggled on/off in the dossier. Automatically stows if a two-handed weapon is drawn. Enables Fighter *Protection* Fighting Style. |
+| `has_shield` / `shield_equipped` | **Oak Shield / Buckler** | Off-Hand | Enlistment (Ashbrook Falchion) or Torvald's Smithy (**3s 0c**) | **+2 Armor Class (AC)** when strapped on. Can be toggled on/off in the dossier. Automatically stows if a two-handed weapon is drawn. Enables Fighter *Protection* Fighting Style. |
 
 ---
 
@@ -56,17 +57,17 @@ Torso armor sets the character's base AC calculation in `recalculate_armor_class
 
 | Item ID | Armor Name | Armor Class Category | Base AC Formula | Acquisition & Retail Cost | Mechanical Interaction & Rules |
 |---|---|---|---|---|---|
-| `brigandine` | **Iron-Studded Gambeson** | Medium Armor | `13 + DEX (max +2)` | Enlistment (Ashbrook), Armorer, or Halda's Forge (Port Valen, Middle Ward) — **7s 0c** | Solid protection against slashing and bludgeoning. Caps DEX contribution at +2. Identical mechanical tier to the Iron Chain Shirt. |
-| `chain_jack` | **Iron Chain Shirt** | Medium Armor | `13 + DEX (max +2)` | Enlistment (Ashbrook), Armorer, or Halda's Forge (Port Valen, Middle Ward) — **7s 0c** | Interlocking scrap iron rings over wool. Caps DEX contribution at +2. Identical mechanical tier to the Iron-Studded Gambeson. |
+| `brigandine` | **Studded Gambeson** | Medium Armor | `13 + DEX (max +2)` | Enlistment (Ashbrook), Armorer, or Halda's Forge (Port Valen, Middle Ward) — **7s 0c** | Solid protection against slashing and bludgeoning. Caps DEX contribution at +2. Identical mechanical tier to the Iron Chain Shirt. |
+| `chain_jack` | **Iron Chain Shirt** | Medium Armor | `13 + DEX (max +2)` | Enlistment (Ashbrook), Armorer, or Halda's Forge (Port Valen, Middle Ward) — **7s 0c** | Interlocking scrap iron rings over wool. Caps DEX contribution at +2. Identical mechanical tier to the Studded Gambeson. |
 | `plate_harness` | **Iron Plate Harness** | Heavy Armor | `16 (no DEX)` | Halda's Forge (Port Valen, Middle Ward) — **15s 0c** | Overlapping iron plates riveted over a mail coat. A flat AC 16 that ignores DEX entirely, so it beats medium armor unless DEX is high. Needs heavy-armor training (fighters only). |
-| `buff_coat` | **Scaled Oxhide Coat** | Light Armor | `11 + DEX (full)` | Enlistment (Ashbrook) or Tanner — **3s 0c** | Supple hide with scale reinforcement. Full DEX bonus applies. Identical mechanical tier to all Light Armors. |
-| `leather_cuirass` / `leather` | **Hardened Leather Armor** | Light Armor | `11 + DEX (full)` | Enlistment (Outlaw) or Leatherworker — **3s 0c** | Form-fitted hardened leather. Full DEX bonus applies. |
-| `thief_leather` | **Oiled Leather Jerkin** | Light Armor | `11 + DEX (full)` | Enlistment (Outlaw) or Black Market — **3s 0c** | Lined with hidden pockets and pouches for concealed carry. Full DEX bonus applies. |
-| `scout_wraps` | **Layered Leather Scout Wraps** | Light Armor | `11 + DEX (full)` | Enlistment (Outlaw) or Tanner — **3s 0c** | Silent movement wraps. Full DEX bonus applies. |
-| `scholars_cassock` / `cloth` | **Quilted Scholar's Robe** | Cloth / Unarmored | `10 + DEX (full)` | Enlistment (Disgraced) or Tailor — **1s 0c** | Ordinary clothing. Qualifies for Wizard *Mage Armor* (`13 + DEX`) and Barbarian *Unarmored Defense* (`10 + DEX + CON`). |
-| `reinforced_doublet` | **Reinforced Canvas Jacket** | Cloth / Unarmored | `10 + DEX (full)` | Enlistment (Disgraced) or Draper — **1s 0c** | Stiffened canvas. Counts as cloth/unarmored. |
-| `tailored_vest` | **Tailored Travel Coat** | Cloth / Unarmored | `10 + DEX (full)` | Enlistment (Disgraced) or High Clothier — **1s 0c** | Noble travel garments. Counts as cloth/unarmored. |
-| `traveling_cloak` | **Oiled Traveling Robes** | Cloth / Unarmored | `10 + DEX (full)` | Outfitter / Chandler — **1s 0c** | Traveling mantle and robes. Counts as cloth/unarmored. |
+| `buff_coat` | **Scaled Coat** | Light Armor | `11 + DEX (full)` | Enlistment (Ashbrook) or Tanner — **3s 0c** | Supple hide with scale reinforcement. Full DEX bonus applies. Identical mechanical tier to all Light Armors. |
+| `leather_cuirass` / `leather` | **Leather Armor** | Light Armor | `11 + DEX (full)` | Enlistment (Outlaw) or Leatherworker — **3s 0c** | Form-fitted hardened leather. Full DEX bonus applies. |
+| `thief_leather` | **Leather Jerkin** | Light Armor | `11 + DEX (full)` | Enlistment (Outlaw) or Black Market — **3s 0c** | Lined with hidden pockets and pouches for concealed carry. Full DEX bonus applies. |
+| `scout_wraps` | **Scout Wraps** | Light Armor | `11 + DEX (full)` | Enlistment (Outlaw) or Tanner — **3s 0c** | Silent movement wraps. Full DEX bonus applies. |
+| `scholars_cassock` / `cloth` | **Scholar's Robe** | Cloth / Unarmored | `10 + DEX (full)` | Enlistment (Disgraced) or Tailor — **1s 0c** | Ordinary clothing. Qualifies for Wizard *Mage Armor* (`13 + DEX`) and Barbarian *Unarmored Defense* (`10 + DEX + CON`). |
+| `reinforced_doublet` | **Canvas Jacket** | Cloth / Unarmored | `10 + DEX (full)` | Enlistment (Disgraced) or Draper — **1s 0c** | Stiffened canvas. Counts as cloth/unarmored. |
+| `tailored_vest` | **Travel Coat** | Cloth / Unarmored | `10 + DEX (full)` | Enlistment (Disgraced) or High Clothier — **1s 0c** | Noble travel garments. Counts as cloth/unarmored. |
+| `traveling_cloak` | **Traveling Robes** | Cloth / Unarmored | `10 + DEX (full)` | Outfitter / Chandler — **1s 0c** | Traveling mantle and robes. Counts as cloth/unarmored. |
 
 ---
 
@@ -76,52 +77,52 @@ Headwear is divided into physical armor (+1 AC) and non-armor headwear (0 AC, co
 
 | Item ID | Item Name | AC Bonus | Counts as Armor? | Acquisition & Retail Cost | Description & Mechanical Details |
 |---|---|---|---|---|---|
-| `torvald_iron_sallet` | **Cold-Hammered Skullcap** | **+1 AC** | **Yes** (`head_is_armor = true`) | Master Torvald's Smithy (Alderford) or Halda's Forge (Port Valen) — **3s 0c** | Plain riveted steel skullcap with guild touchmark. Grants flat **+1 AC**. Because it counts as wearing real armor, it **suppresses** Wizard *Mage Armor* and Barbarian *Unarmored Defense*. |
-| `torvald_hide_cap` | **Boiled-Hide Watch Cap** | 0 AC | No | Master Torvald's Smithy (Alderford) — **8c** | Stiffened blackened leather cap. Cosmetic/warmth headwear. Does not interfere with unarmored/cloth abilities. |
-| `arming_cap` | **Padded Linen Cap** | 0 AC | No | Enlistment (Ashbrook) or Tailor — **8c** | Quilted linen and wool cap worn beneath iron helmets. Cosmetic headwear. |
-| `camo_hood` | **Shadowed Mottled Hood** | 0 AC | No | Enlistment (Outlaw) or Draper — **8c** | Mottled dark hood designed to break facial contours in brush and fog. Cosmetic headwear. |
-| `scholar_coif` | **Scholar's Linen Cap** | 0 AC | No | Enlistment (Disgraced) or Scribe Shop — **8c** | Tailored linen cap worn by academics, tutors, and scions. Cosmetic headwear. |
+| `torvald_iron_sallet` | **Iron Skullcap** | **+1 AC** | **Yes** (`head_is_armor = true`) | Master Torvald's Smithy (Alderford) or Halda's Forge (Port Valen) — **3s 0c** | Plain riveted steel skullcap with guild touchmark. Grants flat **+1 AC**. Because it counts as wearing real armor, it **suppresses** Wizard *Mage Armor* and Barbarian *Unarmored Defense*. |
+| `torvald_hide_cap` | **Leather Watch Cap** | 0 AC | No | Master Torvald's Smithy (Alderford) — **8c** | Stiffened blackened leather cap. Cosmetic/warmth headwear. Does not interfere with unarmored/cloth abilities. |
+| `arming_cap` | **Linen Cap** | 0 AC | No | Enlistment (Ashbrook) or Tailor — **8c** | Quilted linen and wool cap worn beneath iron helmets. Cosmetic headwear. |
+| `camo_hood` | **Mottled Hood** | 0 AC | No | Enlistment (Outlaw) or Draper — **8c** | Mottled dark hood designed to break facial contours in brush and fog. Cosmetic headwear. |
+| `scholar_coif` | **Scholar's Cap** | 0 AC | No | Enlistment (Disgraced) or Scribe Shop — **8c** | Tailored linen cap worn by academics, tutors, and scions. Cosmetic headwear. |
 | `none` | **Bare Head** | 0 AC | No | Default / Unequipped | No headgear worn. |
 
 ---
 
 ## 5. Cloaks Slot (`equipped_cloak_id`)
 
-Worn over the shoulders. Standard civilian and military mantles share a flat **1s 0c** baseline. **Cloaks are mechanical:** each one takes a different percentage off the cold part and the wet-weather part of outdoor exposure (`calendar.txt` `cloak_traits`, read by `calc_exposure`), which is how fast cold, heat and foul weather burn through food and rest on long outdoor stretches. A cloak does nothing for heat. The player swaps cloaks from the dossier (Equipment > Apparel) or the inventory panel's Cloak dropdown: the origin's own cloak is always on offer, plus any owned alternative such as Talia's.
+Worn over the shoulders. Standard civilian and military mantles share a flat **1s 0c** baseline. **Cloaks are mechanical:** each one carries percent cuts to the cold, wet-weather and (for some) heat parts of outdoor exposure (`equipment.txt` `garment_traits`, summed over every worn slot by `calendar.txt` `calc_exposure`), which is how fast cold, heat and foul weather burn through food and rest on long outdoor stretches. The Gilt Needle sells more cloaks (section 15). The player swaps cloaks from the dossier (Equipment > Apparel) or the inventory panel's Cloak dropdown: the origin's own cloak is always on offer, plus any owned alternative such as Talia's.
 
 | Item ID | Item Name | Acquisition & Retail Cost | Description & Mechanical Role |
 |---|---|---|---|
-| `talia_oiled_cloak` | **Talia's Oiled Cloak** | Talia's Shed (Alderford) — Quest Reward (Priceless) | Heavy oil-dark cloak saturated with mutton tallow and neatsfoot dubbin to repel salt spray and marsh rot. **Cold -50%, wet -80%** (the best against rain and storms). Awarded alongside the river crossing protection (`prep_waterproof_gear`). |
-| `wool_mantle` | **Iron Bull Wool Mantle** | Enlistment (Ashbrook) or Weaver — **1s 0c** | Coarse, heavy-spun wool cloak pinned with an iron brooch. **Cold -65%, wet -30%** (the warmest). |
-| `camo_cloak` | **Weathered Mottled Cloak** | Enlistment (Outlaw) or Dyer — **1s 0c** | Mottled marsh-green and brown wool cloak for blending into reeds and scrub. **Cold -40%, wet -40%** (thin, the weakest all-rounder). |
-| `weather_cloak` | **Oiled Marcher Weather Cloak** | Enlistment (Disgraced) or Outfitter — **1s 0c** | High-collared travel cloak treated with pine-oil against frontier rains. **Cold -30%, wet -65%** (rain-proof). |
+| `talia_oiled_cloak` | **Talia's Cloak** | Talia's Shed (Alderford) — Quest Reward (Priceless) | Heavy oil-dark cloak saturated with mutton tallow and neatsfoot dubbin to repel salt spray and marsh rot. **Cold -50%, wet -80%** (the best against rain and storms). Awarded alongside the river crossing protection (`prep_waterproof_gear`). |
+| `wool_mantle` | **Wool Mantle** | Enlistment (Ashbrook) or Weaver — **1s 0c** | Coarse, heavy-spun wool cloak pinned with an iron brooch. **Cold -65%, wet -30%** (the warmest). |
+| `camo_cloak` | **Mottled Cloak** | Enlistment (Outlaw) or Dyer — **1s 0c** | Mottled marsh-green and brown wool cloak for blending into reeds and scrub. **Cold -40%, wet -40%** (thin, the weakest all-rounder). |
+| `weather_cloak` | **Marcher Weather Cloak** | Enlistment (Disgraced) or Outfitter — **1s 0c** | High-collared travel cloak treated with pine-oil against frontier rains. **Cold -30%, wet -65%** (rain-proof). |
 | `none` | **None** | Default / Unequipped | Bare shoulders. |
 
 ---
 
 ## 6. Handwear Slot (`equipped_hands_id`)
 
-Cosmetic handwear and weapon wraps. All non-armor wraps share a flat **8c** baseline.
+Handwear and weapon wraps. The wraps below are cosmetic; the gloves sold at the Gilt Needle carry traits (section 15). Swap from the dossier (Equipment > Apparel) or the inventory panel: your origin's own piece is always on offer, and Rorik's wraps come back once you have swapped them out. All non-armor wraps share a flat **8c** baseline.
 
 | Item ID | Item Name | Acquisition & Retail Cost | Description & Mechanical Role |
 |---|---|---|---|
-| `rorik_grip_wraps` | **Tarred Grip Wraps** | Veteran Rorik (`camp_night.txt`) / Outfitter — **8c** | Dense coils of tarred linen wound around palms and knuckles to protect against blistering and wet hilt slippage. Equippable cosmetic handwear. |
-| `leather_wraps` | **Hardened Leather Wraps** | Enlistment (Ashbrook) or Cobbler — **8c** | Boiled-leather straps wrapped around wrists and forearms for weapon grip. Cosmetic handwear. |
-| `archer_bracers` | **Supple Archer Bracers** | Enlistment (Outlaw) or Bowyer / Tanner — **8c** | Flexible leather forearm bracers protecting against bowstring slap. Cosmetic handwear. |
-| `scribe_gloves` | **Scribe's Writing Gloves** | Enlistment (Disgraced) or Guild Stationer — **8c** | Supple fingerless calfskin writing gloves with tailored wrist supports. Cosmetic handwear. |
+| `rorik_grip_wraps` | **Grip Wraps** | Veteran Rorik (`camp_night.txt`) / Outfitter — **8c** | Dense coils of tarred linen wound around palms and knuckles to protect against blistering and wet hilt slippage. Equippable cosmetic handwear. |
+| `leather_wraps` | **Leather Wraps** | Enlistment (Ashbrook) or Cobbler — **8c** | Boiled-leather straps wrapped around wrists and forearms for weapon grip. Cosmetic handwear. |
+| `archer_bracers` | **Archer Bracers** | Enlistment (Outlaw) or Bowyer / Tanner — **8c** | Flexible leather forearm bracers protecting against bowstring slap. Cosmetic handwear. |
+| `scribe_gloves` | **Scribe's Gloves** | Enlistment (Disgraced) or Guild Stationer — **8c** | Supple fingerless calfskin writing gloves with tailored wrist supports. Cosmetic handwear. |
 | `none` | **Bare Hands** | Default / Unequipped | Unwrapped hands. |
 
 ---
 
 ## 7. Waist Slot (`equipped_waist_id`)
 
-Standard field belts and frogs share a flat **1s 0c** baseline.
+Standard field belts and frogs share a flat **1s 0c** baseline. Belts are cosmetic and swap the same way as gloves (origin belt, Rorik's campaign belt once swapped out).
 
 | Item ID | Item Name | Acquisition & Retail Cost | Description & Mechanical Role |
 |---|---|---|---|
-| `rorik_campaign_belt` | **Iron-Riveted Campaign Belt** | Veteran Rorik (`camp_night.txt`) — Veteran Gift (Priceless) | Worn, heavy leather field belt reinforced with hammered iron rivets and a reinforced frog. Equippable cosmetic belt. |
-| `soldiers_belt` | **Heavy Soldier's Belt** | Enlistment (Ashbrook) or Harness-Maker — **1s 0c** | Broad harness-leather belt with forged iron buckle and heavy scabbard frog. Cosmetic belt. |
-| `scabbard_belt` | **Concealed Scabbard Belt** | Enlistment (Outlaw) or Black Market — **1s 0c** | Supple leather belt fitted with low-profile loops and hidden sheath slots. Cosmetic belt. |
+| `rorik_campaign_belt` | **Campaign Belt** | Veteran Rorik (`camp_night.txt`) — Veteran Gift (Priceless) | Worn, heavy leather field belt reinforced with hammered iron rivets and a reinforced frog. Equippable cosmetic belt. |
+| `soldiers_belt` | **Soldier's Belt** | Enlistment (Ashbrook) or Harness-Maker — **1s 0c** | Broad harness-leather belt with forged iron buckle and heavy scabbard frog. Cosmetic belt. |
+| `scabbard_belt` | **Scabbard Belt** | Enlistment (Outlaw) or Black Market — **1s 0c** | Supple leather belt fitted with low-profile loops and hidden sheath slots. Cosmetic belt. |
 | `satchel_harness` | **Satchel Harness** | Enlistment (Disgraced) or Scribe — **1s 0c** | Cross-body shoulder and waist leather harness carrying document cylinders. Cosmetic belt. |
 | `none` | **None** | Default / Unequipped | Bare waist. |
 
@@ -129,15 +130,15 @@ Standard field belts and frogs share a flat **1s 0c** baseline.
 
 ## 8. Footwear Slot (`equipped_feet_id`)
 
-Standard travel and combat boots share a flat **1s 5c** baseline.
+Standard travel and combat boots share a flat **1s 5c** baseline. Two quest boots carry grandfathered weather traits because their own text promises it: **Talia's deck boots rain -30%** and **Brant's iron-heel boots rain -20%**; every other boot below is neutral. The Gilt Needle sells more (section 15).
 
 | Item ID | Item Name | Acquisition & Retail Cost | Description & Mechanical Role |
 |---|---|---|---|
-| `talia_deck_boots` | **Talia's Pitch-Sealed Deck Boots** | Talia's Shed (Alderford) — Quest Reward (Priceless) | Waterproofed leather deck boots, pitch- and wax-sealed river-tight against marsh damp. Equippable cosmetic boots; awarded alongside river crossing protection (`prep_waterproof_gear`). |
-| `brant_iron_heel_boots` | **Brant's Iron-Heel Boots** | Port Valen — Rotten Rib Quest (Brant), Quest Reward (Priceless) | Heavy bull-hide boots pitch-sealed against estuary damp, fitted with caulked iron heel-plates for slipway grip. Equippable cosmetic boots. |
-| `marching_boots` | **Iron-Nailed Marching Boots** | Enlistment (Ashbrook) or Cordwainer — **1s 5c** | Thick oxhide boots studded with iron nail-heads for traction in heavy clay mud. Cosmetic footwear. |
-| `scout_boots` | **Soft-Soled Scout Wraps** | Enlistment (Outlaw) or Tanner — **1s 5c** | Supple, silent moccasin boots lined with sheepskin for muffled footing. Cosmetic footwear. |
-| `riding_boots` | **Travel Riding Boots** | Enlistment (Disgraced) or Master Bootmaker — **1s 5c** | High-topped calfskin riding boots built for saddle stirrups and highway travel. Cosmetic footwear. |
+| `talia_deck_boots` | **Talia's Deck Boots** | Talia's Shed (Alderford) — Quest Reward (Priceless) | Waterproofed leather deck boots, pitch- and wax-sealed river-tight against marsh damp. Equippable boots (**rain -30%**); awarded alongside river crossing protection (`prep_waterproof_gear`). |
+| `brant_iron_heel_boots` | **Brant's Iron-Heel Boots** | Port Valen — Rotten Rib Quest (Brant), Quest Reward (Priceless) | Heavy bull-hide boots pitch-sealed against estuary damp, fitted with caulked iron heel-plates for slipway grip. Equippable boots (**rain -20%**). |
+| `marching_boots` | **Marching Boots** | Enlistment (Ashbrook) or Cordwainer — **1s 5c** | Thick oxhide boots studded with iron nail-heads for traction in heavy clay mud. Cosmetic footwear. |
+| `scout_boots` | **Scout Boots** | Enlistment (Outlaw) or Tanner — **1s 5c** | Supple, silent moccasin boots lined with sheepskin for muffled footing. Cosmetic footwear. |
+| `riding_boots` | **Riding Boots** | Enlistment (Disgraced) or Master Bootmaker — **1s 5c** | High-topped calfskin riding boots built for saddle stirrups and highway travel. Cosmetic footwear. |
 | `none` | **Bare Feet** | Default / Unequipped | Unshod feet. |
 
 ---
@@ -147,7 +148,7 @@ Standard travel and combat boots share a flat **1s 5c** baseline.
 | Item ID | Item Name | Attunement? | Acquisition & Retail Cost | Mechanical & Narrative Details |
 |---|---|---|---|---|
 | `hearthstone_talisman` | **Torvald's Hearthstone Talisman** | **Yes** (Consumes 1 Attunement Slot) | Master Torvald (Alderford) — Quest Reward (Priceless Artifact) | Ancient dark furnace lodestone banded in cold-hammered iron on oxhide cord. When attuned (`hearthstone_attuned = true`), grants **+1 Constitution** (`constitution + 1`), recalculating maximum HP and Constitution modifier. Automatically equips to Neck when attuned. |
-| `elspeth_weir_knot` | **Elspeth's Braided Weir-Knot** | No (Mundane Keepsake) | Elspeth (Alderford) — Sister's Keepsake (Priceless) | Flax cord braided with three polished river pebbles. A sister's protective keepsake. Can be worn in the Neck slot when not wearing an attuned magic talisman. |
+| `elspeth_weir_knot` | **Elspeth's Weir-Knot** | No (Mundane Keepsake) | Elspeth (Alderford) — Sister's Keepsake (Priceless) | Flax cord braided with three polished river pebbles. A sister's protective keepsake. Can be worn in the Neck slot when not wearing an attuned magic talisman. |
 | `none` | **Bare Throat** | No | Default / Unequipped | No necklace or talisman worn. |
 
 ---
@@ -158,8 +159,8 @@ Both Ring 1 and Ring 2 share the same item pool and can be equipped on either ha
 
 | Item ID | Item Name | Attunement? | Acquisition & Retail Cost | Mechanical & Narrative Details |
 |---|---|---|---|---|
-| `toll_seal_ring` | **Customs Officer's Signet Ring** | No | Black Sinks Strongbox — Loot (Pawn/Fence Value: **8s 0c**) | Tarnished silver signet ring stamped with the three-headed imperial hawk. Physical proof of the fallen Meridian Empire's provincial customs post. Equippable on either ring finger. |
-| `althea_votive_ring` | **Saint Althea's River-Stone Ring** | No | Chapel of Saint Althea — Pious Offering (**6c** temple donation) | Flat river stone drilled and bound in silver wire, offered by watermen before river crossings. Equippable on either ring finger. |
+| `toll_seal_ring` | **Officer's Signet Ring** | No | Black Sinks Strongbox — Loot (Pawn/Fence Value: **8s 0c**) | Tarnished silver signet ring stamped with the three-headed imperial hawk. Physical proof of the fallen Meridian Empire's provincial customs post. Equippable on either ring finger. |
+| `althea_votive_ring` | **Althea's Stone Ring** | No | Chapel of Saint Althea — Pious Offering (**6c** temple donation) | Flat river stone drilled and bound in silver wire, offered by watermen before river crossings. Equippable on either ring finger. |
 | `none` | **Bare Finger** | No | Default / Unequipped | Empty ring slot. |
 
 ---
@@ -170,21 +171,26 @@ These items are carried in the player's satchel/inventory and provide active mec
 
 | Variable | Item Name | Type | Acquisition Source / Retail Cost | Exact Mechanical Effect |
 |---|---|---|---|---|
-| `has_iron_crowbar` | **Pioneer's Iron Prybar** (Sapper's Pinch Crowbar) | Field Tool | Master Torvald's Smithy (Alderford) or Halda's Forge (Port Valen) — **1s 2c** | Cold-forged crowbar and tempered climbing pegs. **Grants Advantage on Strength/Athletics and Force/Pry checks** (e.g., prying waterlogged timbers in Alderford's weir or forcing barred stone doors). |
-| `has_althea_phial` | **Phial of Saint Althea's Water** | Consumable Holy Relic | Deacon Corbel (Alderford) — grain-delivery reward (`alderford.txt:3211`). No vendor stocks it and it has no sell rates. Retail **5s 0c** (`tools/gear_catalog.json`) | Stackable. Used at will (combat item option, the dossier's Satchel, or the inventory panel's **Use** button) to **restore 2d4 + 2 Hit Points**. In combat it costs the turn and has no limit; out of combat it shares the once-a-day instant-heal limit (`last_mundane_treatment_day`) with the Dredge-End hedge-doctor. Refused, and not consumed, at full HP. |
+| `has_iron_crowbar` | **Iron Prybar** (Sapper's Pinch Crowbar) | Field Tool | Master Torvald's Smithy (Alderford) or Halda's Forge (Port Valen) — **1s 2c** | Cold-forged crowbar and tempered climbing pegs. **Grants Advantage on Strength/Athletics and Force/Pry checks** (e.g., prying waterlogged timbers in Alderford's weir or forcing barred stone doors). |
+| `has_althea_phial` | **Saint Althea's Water** | Consumable Holy Relic | Deacon Corbel (Alderford) — grain-delivery reward (`alderford.txt:3211`). No vendor stocks it and it has no sell rates. Retail **5s 0c** (`tools/gear_catalog.json`) | Stackable. Used at will (combat item option, the dossier's Satchel, or the inventory panel's **Use** button) to **restore 2d4 + 2 Hit Points**. In combat it costs the turn and has no limit; out of combat it shares the once-a-day instant-heal limit (`last_mundane_treatment_day`) with the Dredge-End hedge-doctor. Refused, and not consumed, at full HP. |
 | `prep_waterproof_gear` | **Waterproofing Dubbin Tins** | Gear Treatment | Talia's Shed (Reward) or Chandler / Cobbler — **7c** | Waterproofs boots, weapon frogs, and leather harness. Negates cold-water exposure hazards and prevents disadvantage during river barge transits. |
 | `unique_buff` (Warming Liniment) | **Warming Liniment** | Timed Boon | Ambrose's Still-Room (Port Valen, Herb-Pounder Close) — **1s** | **+1 STR for 12 hours** through `apply_unique_buff`. A +1 only raises the modifier when it lifts an odd score onto the next even number. Takes one of the 3 unique-buff slots, so it stacks with food, drink, sleep and other unique boons. Hidden while active. |
 | `unique_buff` (Clear-Head Draught) | **Clear-Head Draught** | Timed Boon | Ambrose's Still-Room (Port Valen, Herb-Pounder Close) — **1s** | **+1 WIS for 12 hours** through `apply_unique_buff`. Same parity rule as the liniment. Hidden while active. |
 | `has_linen_bandage` | **Linen Bandage** | Consumable (dressing) | Ambrose's Still-Room (Port Valen) — **5c** | Stackable. Used from the Satchel or the inventory panel's **Use** button to bind a wound: **+1 HP from your next sleep that heals**, then it is used up (`dressing_on`, `dressing_bonus`; the status line shows "Wounds Dressed"). Refused, and not consumed, at full HP or while a dressing is already on. Not a healing item, so it has no once-a-day limit. Not buyable back. |
-| `has_lye_soap` | **Twist of Lye Soap** | Consumable (wash) | Hollis & Daughters (Lantern Lane) — **2c**; sells back for 1c | Stackable, and **one twist is used up per wash**. Used from the Satchel or the inventory panel: **hygiene back to Clean** (resets `minutes_since_wash`), no boon and no healing, like the room basins. **Needs a stream, river or shore within reach** (`equipment.txt` `water_at_hand`), and **that is false everywhere today, so it does nothing in Port Valen**: the city has the Conduit Baths, room basins and the Corve parlor for washing. It is for an adventurer on the road away from any other wash; set `water_ok` in that routine for overland camps by a stream or river when they exist. Refused, and not consumed, with no water at hand, within 6 hours of the last wash, or before the player is independent (when the clock is not running). |
-| `has_hemp_rope` | **Coil of Hemp Rope** | Field Tool (stock) | Hollis & Daughters — **8c**; sells back for 4c | Stackable. Fifty feet of tarred hemp. **No effect yet:** it exists so climbing, lowering and tying options can be added to quests later (spend one with `sell_gear`). |
-| `has_pitch_torch` | **Pitch-Dipped Torch** | Field Tool (stock) | Hollis & Daughters — **2c**; sells back for 1c | Stackable. About an hour of light. **No effect yet** (future dark-place options). |
-| `has_lamp_oil` | **Flask of Lamp Oil** | Field Tool (stock) | Hollis & Daughters — **3c**; sells back for 1c | Stackable. Fuel for the hooded lantern. **No effect yet.** |
+| `has_lye_soap` | **Lye Soap** | Consumable (wash) | Hollis & Daughters (Lantern Lane) — **2c**; sells back for 1c | Stackable, and **one twist is used up per wash**. Used from the Satchel or the inventory panel: **hygiene back to Clean** (resets `minutes_since_wash`), no boon and no healing, like the room basins. **Needs a stream, river or shore within reach** (`equipment.txt` `water_at_hand`), and **that is false everywhere today, so it does nothing in Port Valen**: the city has the Conduit Baths, room basins and the Corve parlor for washing. It is for an adventurer on the road away from any other wash; set `water_ok` in that routine for overland camps by a stream or river when they exist. Refused, and not consumed, with no water at hand, within 6 hours of the last wash, or before the player is independent (when the clock is not running). |
+| `has_hemp_rope` | **Hemp Rope** | Field Tool (stock) | Hollis & Daughters — **8c**; sells back for 4c | Stackable. Fifty feet of tarred hemp. **No effect yet:** it exists so climbing, lowering and tying options can be added to quests later (spend one with `sell_gear`). |
+| `has_pitch_torch` | **Torch** | Field Tool (stock) | Hollis & Daughters — **2c**; sells back for 1c | Stackable. About an hour of light. **No effect yet** (future dark-place options). |
+| `has_lamp_oil` | **Lamp Oil** | Field Tool (stock) | Hollis & Daughters — **3c**; sells back for 1c | Stackable. Fuel for the hooded lantern. **No effect yet.** |
 | `has_hooded_lantern` | **Hooded Lantern** | Field Tool (stock) | Hollis & Daughters — **12c**; sells back for 6c | Stackable. Iron lantern with horn windows and a sliding tin shutter. **No effect yet**; when light becomes a mechanic it is the lasting item and lamp oil is what gets used up. |
+| `has_tool_kit` | **Tool Kit** | Field Tool (stock) | Hollis & Daughters — **2s**; sells back for 1s | Stackable. Canvas roll with a hammer, chisel, awl, pliers, folding saw and wire. Its hint reads **"Advantage on repair and tinkering checks"**, but **no scene offers such a check yet**, so it does nothing today. The one general-purpose kit: the first quest that offers a repair, a dismantling, a build or a sabotage should gate the option on `has_tool_kit`, set `advantage`, and name the skill "Tinker's Tools". Additive only (a harder route exists without it). Deliberately not sold by Halda or Vael, whose stock is narrower. |
 | `has_tinderbox` | **Flint and Tinderbox** | Field Tool (stock) | Hollis & Daughters — **4c**; sells back for 2c | Stackable. Striker, flint and char-cloth. **No effect yet** (future fire-lighting options). |
-| `has_chalk_sticks` | **Bundle of Chalk** | Field Tool (stock) | Hollis & Daughters — **2c**; sells back for 1c | Stackable. Six sticks, for marking a wall or a route. **No effect yet.** |
-| `has_wool_blanket` | **Grey Wool Blanket** | Field Tool | Hollis & Daughters — **6c**; sells back for 3c | Stackable, but a second one does nothing. **+1 HP on a night's sleep in a shared bunk** (the compound barracks; `sleep_is_shared`) while there is a wound to mend. A private room brings its own bedding, so it adds nothing there. |
-| `has_waxed_oilcloth` | **Sheet of Waxed Oilcloth** | Field Tool | Hollis & Daughters — **6c**; sells back for 3c | Stackable, but a second one does nothing. **Halves whatever is left of the rain-and-storm part of outdoor exposure** in `calendar.txt` `calc_exposure`, after the worn cloak's wet cut (a storm's +40% becomes +20% with no cloak, and Talia's cloak's +8% becomes +4%). It does not touch cold or heat. |
+| `has_chalk_sticks` | **Chalk Sticks** | Field Tool (stock) | Hollis & Daughters — **2c**; sells back for 1c | Stackable. Six sticks, for marking a wall or a route. **No effect yet.** |
+| `has_wool_blanket` | **Wool Blanket** | Field Tool | Hollis & Daughters — **6c**; sells back for 3c | Stackable, but a second one does nothing. **+1 HP on a night's sleep in a shared bunk** (the compound barracks; `sleep_is_shared`) while there is a wound to mend. A private room brings its own bedding, so it adds nothing there. |
+| `has_waxed_oilcloth` | **Oilcloth Sheet** | Field Tool | Hollis & Daughters — **6c**; sells back for 3c | Stackable, but a second one does nothing. **Halves whatever is left of the rain-and-storm part of outdoor exposure** in `calendar.txt` `calc_exposure`, after the worn cloak's wet cut (a storm's +40% becomes +20% with no cloak, and Talia's cloak's +8% becomes +4%). It does not touch cold or heat. |
+| `has_lockpick_set` | **Lockpick Set** | Field Tool (stock) | Vael & Son, Locksmiths' Close — **3s**; sells back for 1s 5c | Stackable. A leather roll of picks, tension wrenches and a rake. Its hint reads **"Advantage on lock checks"**, but **no scene offers a lock check yet**, so it does nothing today. When one does, gate the option on `has_lockpick_set`, set `advantage` (the prybar does the same in Alderford) and name the skill "Thieves' Tools" so a rogue's expertise (`rogue_expertise_2`, double proficiency, applied in `roll_d20_check`) counts. The option must stay additive (a harder route exists without it). |
+| `has_padlock` | **Padlock and Key** | Field Tool (stock) | Vael & Son — **8c**; sells back for 4c | Stackable. Heavy brass padlock, two keys. **No effect yet** (future "lock it behind you" options; spend one with `sell_gear`). |
+| `has_door_bolt` | **Door Bolt** | Field Tool (stock) | Vael & Son — **5c**; sells back for 2c | Stackable. Forged slide-bolt with a keeper plate and screws, small enough to pack. **No effect yet** (future "bar the door" options in rooms and camps). |
+| `has_iron_manacles` | **Iron Manacles** | Field Tool (stock) | Vael & Son — **15c**; sells back for 7c | Stackable. Hinged cuffs on a short chain, one key. **No effect yet** (future "bind a captive" options). |
 | `scrap_steel` | **Scrap Steel** | Salvage (count) | Dredge-End night ambush victory: 1 to 3 pieces | Bent blades and iron fittings. Halda's Forge buys them by weight at **5c a piece** (all at once). Not sold by any shop. |
 | `has_talia_provisions` | **Hearth-Baked Travel Provisions** | Food Supply | Talia's Loft or Middle Ward Bakery — **5c** | Warm crusty bread and salt-cured river trout wrapped in greasecloth. Provides dense, sustaining nourishment. |
 | `has_letter_of_credit` | **Gilded Scales Letter of Credit** | Financial Note | Gilded Scales Factor (Alderford / Port Valen) | Certified draft for silver marks (`letter_of_credit_value`), redeemable at counting houses in Alderford or Port Valen. |
@@ -200,7 +206,9 @@ Prices live in one place: `equipment.txt` `gear_sale_value` (retail in copper, p
 |---|---|---|---|
 | Halda (smith) | Halda's Forge, Middle Ward | **50% of retail** | studded gambeson, mail shirt, hewing axe, stiletto, iron skullcap, iron prybar, and scrap steel (5c a piece) |
 | Pawnbroker | Dredge-End, Lamp Stair (daytime) | **35% of retail**, no questions | everything Halda buys except scrap steel, plus the hide cap and the signet ring (fixed **8s**) |
-| Hollis (general store) | Hollis & Daughters, Lantern Lane (Morning to Afternoon) | **50% of retail** | only what he stocks: rope, torch, lamp oil, tinderbox, chalk, wool blanket, waxed oilcloth and lye soap (buyer `general`; a 1c item like the torch pays 1c, since each price is floored) |
+| Fenwick (tailor) | The Gilt Needle, Patrician Quarter (Morning to Afternoon, needs a writ) | **40% of retail** | only what he stocks (section 15); the pawnbroker does not list these |
+| Hollis (general store) | Hollis & Daughters, Lantern Lane (Morning to Afternoon) | **50% of retail** | only what he stocks: rope, torch, lamp oil, hooded lantern, tool kit, tinderbox, chalk, wool blanket, waxed oilcloth and lye soap (buyer `general`; a 1c item like the torch pays 1c, since each price is floored) |
+| Vael (locksmith) | Vael & Son, Locksmiths' Close (Morning to Afternoon; shut at Dusk, on Hallowday and in a gale) | **50% of retail** | only what he stocks: lockpick set, padlock and key, door bolt and iron manacles (buyer `general`, the same flat counter as Hollis) |
 
 Never sellable: starting gear (it is the fallback) and quest rewards (Talia's cloak and boots, Brant's boots, the Hearthstone Talisman, Elspeth's keepsake, the Althea ring). Example sales: mail shirt 3s 5c to Halda or 2s 4c to the pawnbroker; skullcap 1s 5c or 1s.
 
@@ -229,10 +237,46 @@ Halda's buy menu is its own screen (`mw_halda_stock`, opened from "Look over the
 
 **Copies.** Armor, shields, weapons, headwear and tools are stackable: `has_<id>` means "at least one" and `spare_<id>` counts the extra copies, so every older `has_` check still works. `grant_gear <id> <copies>` adds them (the first copy wears the armor or readies the shield; extra copies change nothing worn), and `sell_gear` gives up a spare before it touches the copy in use. The dossier list shows `[+N spare]` and the inventory panel shows `×N`. A ring or a counted item (scrap steel keeps its own counter) is not stackable (`stack: false` in the catalog). Loot drops use the same `grant_gear`: a Dredge-End ambush bruiser with a knife can drop a stiletto (40%) and one with a hatchet a hewing axe (35%), which Halda or the pawnbroker will buy.
 
-**The trade panel** (`web/mygame/trade.js`, `trade.css`) is a tablet-friendly quality-of-life layer over the menus, never a replacement. Buy and Sell tabs with `-` / `+` steppers, a running total, and a Confirm button. It appears (a **Trade** button in the header, plus a bar at the top of the Inventory, or the T key) only on pages that offer it: Halda's forge and racks, Ambrose's shelves, Hollis's store and shelves, and the pawnbroker's window. The "Look over the racks" and "Put something on the bench" menus stay on every shop as the fallback.
+**The trade panel** (`web/mygame/trade.js`, `trade.css`) is a tablet-friendly quality-of-life layer over the menus, never a replacement. Buy and Sell tabs with `-` / `+` steppers, a running total, and a Confirm button. Each row names the equipment slot the item fills (Cloak, Hands, Feet, Body armor, Weapon and so on), and the plain shop menus and the inventory panel show the same tag; tools and consumables fill no slot and show none. It appears (a **Trade** button in the header, plus a bar at the top of the Inventory, or the T key) only on pages that offer it: Halda's forge and racks, Ambrose's shelves, Hollis's store and shelves, Vael's counter, the Gilt Needle's racks, and the pawnbroker's window. The "Look over the racks" and "Put something on the bench" menus stay on every shop as the fallback.
 
 How it stays honest: the panel only writes a cart (`cart_buy_<id>`, `cart_sell_<id>`) and clicks the shop's hidden `⚖ Settle up the trade panel.` option. `equipment.txt` (`shop_begin`, the shop's generated `*_cart_pass`, `shop_check`) re-prices, re-counts and re-checks the coin inside the shop's currency lock, so a tampered cart cannot buy what the menus could not. One `advance_time` covers the whole trade (each distinct purchase's fitting minutes, plus 10 for a sale).
 
 Adding a shop: give its scene the marker pairs `<name>_cart_pass` (and `<name>_panel_rows` for a buy side), an `*_open_panel` label that sets `shop_open` and `shop_rows`, a `*_settle` label copied from Halda's, the hidden settle option on its hub, and a `trades` entry in `tools/gear_catalog.json`. `web/mygame/trade-data.generated.js` is generated by `tools/gen_gear.js`.
 
-**Consumables** (kind `consumable` in the catalog: the Warming Liniment, Clear-Head Draught and Saint Althea's phial) are stackable and used at will. One routine, `equipment.txt` `use_consumable <id>`, applies the effect, takes one copy (a spare first) and is replay-safe; every route calls it: the fight's "Use an item from your satchel" option (`combat.txt`, costs the turn, generated from the catalog), the dossier's "Satchel: Use a Consumable" menu (`choicescript_stats.txt`, `codex_use`), and the inventory panel's **Use** button, which opens the dossier straight at `codex_use_do` so the effect is still written by ChoiceScript. Effects are `heal` (dice; free in combat, once a day out of combat), `boon` (goes through `apply_unique_buff`; no limit; stacks with food and other boons; using a second copy while one runs just refreshes the timer), `wash` (the lye soap: hygiene back to Clean) or `dressing` (Ambrose's linen bandage: +1 HP on the next sleep that heals). The last two are out-of-combat only and refuse without consuming. The dossier and inventory refuse mid-fight (`combat_engaged`). Ambrose's Still-Room is a catalog shop like Halda's (plain "Look over the shelves" menu plus the trade panel, buy only). Hollis & Daughters is a catalog shop with both sides: the same menus and panel, plus a counter where he buys back what he stocks at half retail.
+**Consumables** (kind `consumable` in the catalog: the Warming Liniment, Clear-Head Draught and Saint Althea's phial) are stackable and used at will. One routine, `equipment.txt` `use_consumable <id>`, applies the effect, takes one copy (a spare first) and is replay-safe; every route calls it: the fight's "Use an item from your satchel" option (`combat.txt`, costs the turn, generated from the catalog), the dossier's "Satchel: Use a Consumable" menu (`choicescript_stats.txt`, `codex_use`), and the inventory panel's **Use** button, which opens the dossier straight at `codex_use_do` so the effect is still written by ChoiceScript. Effects are `heal` (dice; free in combat, once a day out of combat), `boon` (goes through `apply_unique_buff`; no limit; stacks with food and other boons; using a second copy while one runs just refreshes the timer), `wash` (the lye soap: hygiene back to Clean) or `dressing` (Ambrose's linen bandage: +1 HP on the next sleep that heals). The last two are out-of-combat only and refuse without consuming. The dossier and inventory refuse mid-fight (`combat_engaged`). Ambrose's Still-Room is a catalog shop like Halda's (plain "Look over the shelves" menu plus the trade panel, buy only). Hollis & Daughters and Vael & Son are catalog shops with both sides: the same menus and panel, plus a counter where each buys back what he stocks at half retail.
+
+---
+
+## 15. The Gilt Needle (Tailor, Patrician Quarter)
+
+Master Idris Fenwick sells finished pieces "cut to the wearer" from three racks (cloaks and capes; hats, gloves, boots and mufflers; fine dress), and buys them back at **40% of retail** (buyer `tailor`) because each was cut to one person. The shop is inside the Quarter, so it needs a Day Writ, and it trades Morning to Afternoon. Everything is stackable. Clothing is **not worn on purchase** (wear it from the dossier: Equipment > Apparel, or Accessories for neckwear); the Court Coat is armor and is put on like any bought armor. A trade past Afternoon ends in the avenue.
+
+| Item ID | Item | Slot | Price | Buy-back | Effect |
+|---|---|---|---|---|---|
+| `broadcloth_cloak` | **Traveler's Cloak** | Cloak | 4s | 1s 6c | cold -55%, rain -45% |
+| `storm_cape` | **Storm Cape** | Cloak | 7s | 2s 8c | cold -30%, rain -75% |
+| `winter_cloak` | **Winter Cloak** | Cloak | 12s | 4s 8c | cold -90%, rain -40%, heat +40% (adds heat wear) |
+| `summer_duster` | **Summer Duster** | Cloak | 5s | 2s | cold -10%, rain -30%, heat -60% |
+| `felt_hat` | **Felt Hat** | Head | 2s |  8c | rain -15%, heat -25% |
+| `fur_cap` | **Fur Cap** | Head | 3s | 1s 2c | cold -20% |
+| `lined_gloves` | **Lined Gloves** | Hands | 3s | 1s 2c | cold -20% |
+| `waxed_boots` | **Rain Boots** | Feet | 6s | 2s 4c | cold -10%, rain -25% |
+| `winter_boots` | **Winter Boots** | Feet | 5s | 2s | cold -25% |
+| `wool_muffler` | **Wool Muffler** | Neck | 1s |  4c | cold -10% |
+| `silk_neckcloth` | **Silk Neckcloth** | Neck | 6s | 2s 4c | **+1 CHA** |
+| `scholar_gloves` | **Scholar's Gloves** | Hands | 8s | 3s 2c | **+1 INT** |
+| `dancing_slippers` | **Dancing Slippers** | Feet | 7s | 2s 8c | **+1 DEX** |
+| `masters_gloves` | **Master's Gloves** | Hands | 25s | 10s | **+2 INT** |
+| `court_coat` | **Court Coat** | Body (armor slot) | 18s | 7s 2c | cold -25%, rain -10%; **+2 CHA** |
+
+**Traits.** Cold, rain and heat are percent cuts to that part of outdoor exposure, summed over every worn slot (armor, head, cloak, hands, waist, feet, neck) and capped at 90% per part; a heat cut below zero adds heat wear (the winter cloak in summer costs more than going bare, so owning a second cloak is a real choice). An owned waxed oilcloth then halves the rain part. `tools/sim_weather.js` prints full kits.
+
+**Ability-score bonuses** are ordinary and modest: +1 or +2 to one score, derived and revocable while the piece is worn, and **only the highest equipment bonus to a stat applies** (the +2 Court Coat and the +1 neckcloth give +2 CHA together, not +3; different stats each count). A +1 raises the modifier only when it lifts an odd score onto the next even number; a +2 always raises it by 1. Nothing here adds to the d20 roll itself (that is reserved for powerful items, see `quest/GAMEPLAY_MECHANICS_RULES.md` section 2). The gloves, slippers and neckcloth compete with weatherproof pieces for the same slot.
+
+**Court Coat.** Cloth armor (`armor_type "cloth"`: AC 10 + DEX, Mage Armor and Barbarian Unarmored Defense still work), so it competes with mail for the body slot; the shop warns before it replaces armor you are wearing, and selling it puts you back in your starting armor.
+
+**Swapping.** The dossier's Apparel page offers, for each slot, the character's origin piece (`origin_clothing`: Ashbrook, outlaw and disgraced each start in their own cloak, gloves, belt and boots), the quest pieces they hold (Talia's cloak and boots, Brant's boots, Rorik's grip wraps and belt) and everything bought. The inventory panel's Cloak, Hands, Waist and Feet dropdowns do the same; a swap that changes an ability score is handed to the dossier (`codex_equip_do`) so ChoiceScript re-derives scores, max HP and AC. Neckwear swaps only from the dossier (the Hearthstone's attunement lives there).
+
+**Comparing with what you wear.** The inventory's slot cards show each worn piece's weather cuts and score bonus (or "No bonuses"), the dossier's worn-gear lists show the same text, and the trade panel adds a "Wearing:" line under each equipment row (your weapon's damage, your armor's AC, or the piece in that slot and what it does), so a purchase can be weighed against what is on. All of it reads the `garment_traits` table.
+
+**Regions.** `climate_shift` (startup.txt, 0 in Port Valen) moves the raw temperature before it is clamped into the six bands; each step it pushes past freezing or hot adds +20% to that part of exposure (`temp_extreme`). Port Valen's own numbers are unchanged. Set it per region when overland travel exists.

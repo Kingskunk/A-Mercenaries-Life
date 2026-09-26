@@ -98,6 +98,37 @@ cases.forEach(function (c) {
   console.log("  " + c[0] + ": " + out.join(", "));
 });
 
+// Full kits, and regions: the same 60 outdoor minutes under a whole worn set (garment_traits in equipment.txt), at Port
+// Valen's own extremes and at two regional ones (temp_extreme steps beyond freezing or hot, from climate_shift).
+console.log("\nfull kits on 60 outdoor minutes (each part is a percent cut, summed over every worn slot, capped at 90):");
+var KITS = [
+  ["bare", {}],
+  ["winter kit", { equipped_cloak_id: "winter_cloak", equipped_head_id: "fur_cap", equipped_hands_id: "lined_gloves", equipped_feet_id: "winter_boots", equipped_neck_id: "wool_muffler" }],
+  ["storm kit", { equipped_cloak_id: "storm_cape", equipped_head_id: "felt_hat", equipped_feet_id: "waxed_boots" }],
+  ["summer kit", { equipped_cloak_id: "summer_duster", equipped_head_id: "felt_hat" }],
+  ["winter cloak in the heat", { equipped_cloak_id: "winter_cloak" }]
+];
+var SLOTS = ["equipped_armor_id", "equipped_head_id", "equipped_cloak_id", "equipped_hands_id", "equipped_waist_id", "equipped_feet_id", "equipped_neck_id"];
+var REGIONS = [
+  ["Port Valen freezing blizzard", { temp_index: 0, weather_severity: 3, weather_wet: false, temp_extreme: 0 }],
+  ["arctic: 2 steps past freezing", { temp_index: 0, weather_severity: 3, weather_wet: false, temp_extreme: -2 }],
+  ["Port Valen hot, clear", { temp_index: 5, weather_severity: 0, weather_wet: false, temp_extreme: 0 }],
+  ["desert: 2 steps past hot", { temp_index: 5, weather_severity: 0, weather_wet: false, temp_extreme: 2 }]
+];
+REGIONS.forEach(function (r) {
+  var out = [];
+  KITS.forEach(function (k) {
+    SLOTS.forEach(function (sl) { stats[sl] = "none"; });
+    Object.keys(k[1]).forEach(function (sl) { stats[sl] = k[1][sl]; });
+    Object.keys(r[1]).forEach(function (key) { stats[key] = r[1][key]; });
+    stats.exposure_base_mins = 60; stats.exposure_extra_mins = 0; stats.has_waxed_oilcloth = false;
+    runScene("simexposure");
+    out.push(k[0] + " " + stats.exposure_extra_mins);
+  });
+  console.log("  " + r[0] + ": " + out.join(", "));
+});
+stats.temp_extreme = 0; SLOTS.forEach(function (sl) { stats[sl] = "none"; });
+
 // Clock check: exposure must speed up the hunger and fatigue clocks but not the game clock,
 // and must not leak into the next advance_time call.
 Object.keys({ temp_index: 0, weather_severity: 3, weather_wet: false }).forEach(function (k) { stats[k] = { temp_index: 0, weather_severity: 3, weather_wet: false }[k]; });

@@ -329,7 +329,7 @@ Past the inner gatehouse, the avenue runs straight and wide between great houses
     *set time_advance_call_id "pq_walk_estates_1"
     *gosub pq_walk_time
     *goto pq_estates
-  # [b]@{pq_walk_seen The Terrace Walk[/b]|[/b]the promenade}. [~10 min]
+  # [b]@{pq_walk_seen The Terrace Walk[/b]|[/b]The promenade}. [~10 min]
     *set minutes_to_pass 10
     *set time_advance_call_id "pq_walk_terrace_1"
     *gosub pq_walk_time
@@ -544,21 +544,24 @@ A long promenade of pale paving runs along the crest of the ridge, edged on the 
 *goto pq_walk
 
 *comment ── THE GILT NEEDLE (TAILOR) ──
-*comment SHOP HOOK: groundwork only. Fenwick's stock is "still on the cutting table", so the shop sells nothing yet.
-*comment When cloaks, belts, gloves, boots and finer clothing exist on the gear catalog, add a tailor_buy shop to
-*comment tools/gear_catalog.json (prefix, goto label, a GEN block here) and a trade-panel key, like Halda's forge and
-*comment Ambrose's still-room, keeping a plain menu underneath the panel. The slots already exist: equipped_head_id,
-*comment equipped_cloak_id, equipped_hands_id, equipped_waist_id, equipped_feet_id, equipped_neck_id. Cloaks are
-*comment mechanical since 2026-09-26: each one takes a percentage off the cold and the wet part of outdoor exposure
-*comment (calendar.txt cloak_traits), and the dossier and inventory panel already swap them. A tailor's cloak needs a
-*comment row in cloak_traits, a block in equipment.txt apply_cloak_loadout, and (to sell it through the generator) a
-*comment new "cloak" catalog kind, since cloaks are not catalog items yet. Boots and gloves have no traits yet.
+*comment SHOP (2026-09-26): Fenwick sells finished pieces cut to the wearer: cloaks, hats, gloves, boots, neckwear and fine
+*comment dress (catalog items in tools/gear_catalog.json, shops tailor_cloaks, tailor_wear and tailor_dress, all
+*comment listed together for the trade panel as tailor_buy) and BUYS THEM BACK at 40 percent of retail (buyer "tailor"),
+*comment since each piece was cut to one person. Weather pieces cut the cold, rain and heat wear of outdoor exposure;
+*comment the dress pieces add +1 or +2 to one ability score; the Court Coat is cloth armor and competes with mail. All of
+*comment it lives in equipment.txt garment_traits. Clothing is NOT worn on purchase (the player wears it from the
+*comment dossier's Apparel page), except the coat, which is armor and is put on like any bought armor. Shops trade
+*comment Morning through Afternoon: a trade can run the clock past that, so every trade exit ends in pq_tailor_after,
+*comment which hands over to the avenue once the shop has closed. Boots and gloves gained their weather traits in the
+*comment same pass; older worn pieces are grandfathered into the same table. Fenwick's voice is exact and dry.
 
 *label pq_tailor
 *temp pq_tailor_first false
 *if (not(pq_tailor_seen))
   *set pq_tailor_first true
 *set pq_tailor_seen true
+*gosub pq_tailor_open_panel
+*temp pq_tailor_has_sale (((((((((((((((has_broadcloth_cloak) or (has_storm_cape)) or (has_winter_cloak)) or (has_summer_duster)) or (has_felt_hat)) or (has_fur_cap)) or (has_lined_gloves)) or (has_waxed_boots)) or (has_winter_boots)) or (has_wool_muffler)) or (has_silk_neckcloth)) or (has_scholar_gloves)) or (has_dancing_slippers)) or (has_masters_gloves)) or (has_court_coat))
 [b]◈ THE GILT NEEDLE[/b]
 *line_break
 The Gilt Needle fills a narrow front of dark wood and bow glass near the gatehouse. Inside, bolts of cloth lean in racks to the ceiling, a fitting stool stands beneath a skylight, and a long cutting table is spread with paper patterns and brown paper parcels. The shop smells of steam, wool, and lavender water.
@@ -569,13 +572,18 @@ The Gilt Needle fills a narrow front of dark wood and bow glass near the gatehou
   Master Fenwick works at the cutting table, a paper pattern held flat under the heel of his hand.
 
 *choice
+  # Look over the finished pieces.
+    *goto pq_tailor_stock
+  *if (pq_tailor_has_sale)
+    # Put something on the cutting table to sell.
+      *goto pq_tailor_sell
   # Look over the cloth and the patterns.
     The racks hold wool in a dozen weights, from stout broadcloth to a grey so fine it looks like smoke, with bolts of linen, silk, and velvet in the deeper shelves. Paper patterns for cloaks, gloves, belts, and boots hang from a rail on wooden pegs, each labelled in Fenwick's small square hand.
     *page_break Step back to the table…
     *goto pq_tailor
   # Ask about a fitting.
-    Fenwick spreads his hands over the cutting table, where cloaks, belts, gloves, and boots lie half cut in brown paper. "The season's pieces are still on the table," he says. "Come back when the last stitch is in, and I will fit you myself."
-    *page_break "I'll come back."…
+    Fenwick lays the tape across your shoulders, reads it without comment, and writes three figures on the corner of a pattern. "Every piece on those racks was cut to a body and finished to a pattern," he says. "I adjust what needs adjusting while you wait. A cloak takes a quarter of an hour, a coat half of one." He caps the pencil. "Bring a piece back and I will buy it, for less than you paid. It was cut to you, and I will have to take it in for the next person."
+    *page_break "Fair enough."…
     *goto pq_tailor
   *if (not(pq_tailor_talk_clients))
     # Ask Master Fenwick whom he dresses.
@@ -584,4 +592,535 @@ The Gilt Needle fills a narrow front of dark wood and bow glass near the gatehou
       *page_break "Fair enough."…
       *goto pq_tailor
   # Step back out into the avenue.
+    *set shop_open ""
     *goto pq_avenue
+  # ⚖ Settle up the trade panel.
+    *goto pq_tailor_settle
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment THE RACKS (three plain menus by kind, the buy-back table, and the shared purchase and sale)
+*comment Same pieces as Halda's forge and Hollis's store: menus generated from the catalog, one purchase label and one sale
+*comment label each with the currency lock, and the trade panel on top (open_panel, cart_pass, settle). pq_tailor_back
+*comment remembers which rack a purchase came from so the player lands back on it.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label pq_tailor_stock
+*gosub pq_tailor_open_panel
+*set pq_tailor_back "stock"
+Finished pieces hang along the wall by kind. Cloaks and capes are on the long rail to the left. The small things, hats and gloves and boots and mufflers, sit in glass-fronted cases along the counter. The fine work stands on a dress form by the window, a charcoal coat pinned at the shoulder with a square of paper reading [i]"Cut, not yet sold."[/i]
+
+*choice
+  # Look at the cloaks and capes.
+    *goto pq_tailor_cloaks
+  # Look at the hats, gloves, boots, and mufflers.
+    *goto pq_tailor_wear
+  # Look at the fine dress.
+    *goto pq_tailor_dress
+  # Step back to the cutting table.
+    *goto pq_tailor
+  # ⚖ Settle up the trade panel.
+    *goto pq_tailor_settle
+
+*label pq_tailor_cloaks
+*gosub pq_tailor_open_panel
+*set pq_tailor_back "cloaks"
+*comment GEN:BEGIN tailor_cloaks_labels -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
+*temp tc_broadcloth_cloak ""
+*temp tc_storm_cape ""
+*temp tc_winter_cloak ""
+*temp tc_summer_duster ""
+*gosub_scene equipment gear_buy_label "broadcloth_cloak"
+*set tc_broadcloth_cloak gear_label
+*gosub_scene equipment gear_buy_label "storm_cape"
+*set tc_storm_cape gear_label
+*gosub_scene equipment gear_buy_label "winter_cloak"
+*set tc_winter_cloak gear_label
+*gosub_scene equipment gear_buy_label "summer_duster"
+*set tc_summer_duster gear_label
+*comment GEN:END tailor_cloaks_labels
+Four cloaks hang on the rail, each with a slip of paper pinned to the collar. A broad grey broadcloth, a short waxed cape that smells of beeswax, a heavy winter cloak with fur at the lining, and a long linen coat so light it moves when the door opens. Fenwick names each price without looking at the slips.
+
+*choice
+  *comment GEN:BEGIN tailor_cloaks_options -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
+  # ${tc_broadcloth_cloak}
+    *set buy_item_id "broadcloth_cloak"
+    *goto pq_tailor_buy_do
+  # ${tc_storm_cape}
+    *set buy_item_id "storm_cape"
+    *goto pq_tailor_buy_do
+  # ${tc_winter_cloak}
+    *set buy_item_id "winter_cloak"
+    *goto pq_tailor_buy_do
+  # ${tc_summer_duster}
+    *set buy_item_id "summer_duster"
+    *goto pq_tailor_buy_do
+  *comment GEN:END tailor_cloaks_options
+  # Step back to the racks.
+    *goto pq_tailor_stock
+  # ⚖ Settle up the trade panel.
+    *goto pq_tailor_settle
+
+*label pq_tailor_wear
+*gosub pq_tailor_open_panel
+*set pq_tailor_back "wear"
+*comment GEN:BEGIN tailor_wear_labels -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
+*temp tw_felt_hat ""
+*temp tw_fur_cap ""
+*temp tw_lined_gloves ""
+*temp tw_waxed_boots ""
+*temp tw_winter_boots ""
+*temp tw_wool_muffler ""
+*gosub_scene equipment gear_buy_label "felt_hat"
+*set tw_felt_hat gear_label
+*gosub_scene equipment gear_buy_label "fur_cap"
+*set tw_fur_cap gear_label
+*gosub_scene equipment gear_buy_label "lined_gloves"
+*set tw_lined_gloves gear_label
+*gosub_scene equipment gear_buy_label "waxed_boots"
+*set tw_waxed_boots gear_label
+*gosub_scene equipment gear_buy_label "winter_boots"
+*set tw_winter_boots gear_label
+*gosub_scene equipment gear_buy_label "wool_muffler"
+*set tw_wool_muffler gear_label
+*comment GEN:END tailor_wear_labels
+The glass cases hold the small pieces in rows: hats on wooden blocks, gloves laid palm-up in pairs, boots stood heel to heel on the lower shelf, and mufflers rolled like loaves at the end. A card in each case gives the price in Fenwick's small square hand.
+
+*choice
+  *comment GEN:BEGIN tailor_wear_options -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
+  # ${tw_felt_hat}
+    *set buy_item_id "felt_hat"
+    *goto pq_tailor_buy_do
+  # ${tw_fur_cap}
+    *set buy_item_id "fur_cap"
+    *goto pq_tailor_buy_do
+  # ${tw_lined_gloves}
+    *set buy_item_id "lined_gloves"
+    *goto pq_tailor_buy_do
+  # ${tw_waxed_boots}
+    *set buy_item_id "waxed_boots"
+    *goto pq_tailor_buy_do
+  # ${tw_winter_boots}
+    *set buy_item_id "winter_boots"
+    *goto pq_tailor_buy_do
+  # ${tw_wool_muffler}
+    *set buy_item_id "wool_muffler"
+    *goto pq_tailor_buy_do
+  *comment GEN:END tailor_wear_options
+  # Step back to the racks.
+    *goto pq_tailor_stock
+  # ⚖ Settle up the trade panel.
+    *goto pq_tailor_settle
+
+*label pq_tailor_dress
+*gosub pq_tailor_open_panel
+*set pq_tailor_back "dress"
+*comment GEN:BEGIN tailor_dress_labels -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
+*temp td_silk_neckcloth ""
+*temp td_scholar_gloves ""
+*temp td_dancing_slippers ""
+*temp td_masters_gloves ""
+*temp td_court_coat ""
+*gosub_scene equipment gear_buy_label "silk_neckcloth"
+*set td_silk_neckcloth gear_label
+*gosub_scene equipment gear_buy_label "scholar_gloves"
+*set td_scholar_gloves gear_label
+*gosub_scene equipment gear_buy_label "dancing_slippers"
+*set td_dancing_slippers gear_label
+*gosub_scene equipment gear_buy_label "masters_gloves"
+*set td_masters_gloves gear_label
+*gosub_scene equipment gear_buy_label "court_coat"
+*set td_court_coat gear_label
+*comment GEN:END tailor_dress_labels
+The fine work is kept apart, under the skylight. Dark kid gloves lie on a velvet pad, a pair of black slippers sit side by side on a stool, a grey silk neckcloth is folded on a stand, and the charcoal coat hangs from the dress form. Fenwick does not offer prices for these. They are written on a card beside each piece, and the card is not large.
+
+*choice
+  *comment GEN:BEGIN tailor_dress_options -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
+  # ${td_silk_neckcloth}
+    *set buy_item_id "silk_neckcloth"
+    *goto pq_tailor_buy_do
+  # ${td_scholar_gloves}
+    *set buy_item_id "scholar_gloves"
+    *goto pq_tailor_buy_do
+  # ${td_dancing_slippers}
+    *set buy_item_id "dancing_slippers"
+    *goto pq_tailor_buy_do
+  # ${td_masters_gloves}
+    *set buy_item_id "masters_gloves"
+    *goto pq_tailor_buy_do
+  # ${td_court_coat}
+    *set buy_item_id "court_coat"
+    *goto pq_tailor_buy_do
+  *comment GEN:END tailor_dress_options
+  # Step back to the racks.
+    *goto pq_tailor_stock
+  # ⚖ Settle up the trade panel.
+    *goto pq_tailor_settle
+
+*comment Which rack the shopper stood at, so a trade puts them back there. Falls back to the racks' front page.
+*label pq_tailor_return
+*if (pq_tailor_back = "cloaks")
+  *goto pq_tailor_cloaks
+*if (pq_tailor_back = "wear")
+  *goto pq_tailor_wear
+*if (pq_tailor_back = "dress")
+  *goto pq_tailor_dress
+*goto pq_tailor_stock
+
+*comment Shops trade Morning through Afternoon, like Lantern Lane: closed at Dusk, Night, Pre-Dawn, Hallowday and in a Blizzard.
+*label pq_tailor_open_check
+*set pq_tailor_open true
+*if (((time_period = "Night") or (time_period = "Pre-Dawn")) or (time_period = "Dusk"))
+  *set pq_tailor_open false
+*if ((day_of_week = "Hallowday") or ((weather_severity >= 3) and (weather_cold)))
+  *set pq_tailor_open false
+*return
+
+*comment Where a trade returns to: the rack the shopper came from while the shop is open, the avenue once it has closed.
+*label pq_tailor_after
+*gosub pq_tailor_open_check
+*if (pq_tailor_open)
+  *goto pq_tailor_return
+*set shop_open ""
+*goto pq_avenue
+
+*comment The purchase itself, shared by everything Fenwick sells. One currency change and one advance_time per page; the
+*comment price, name, blurb and quote come from equipment.txt gear_info, so a new piece needs no code here.
+*label pq_tailor_buy_do
+*set gear_shop "tailor"
+*gosub_scene equipment gear_info buy_item_id
+*temp pt_price gear_retail
+*if ((((gold * 100) + (silver * 10)) + copper) < pt_price)
+  You count your coin against the card and come up short. Fenwick lays the ${gear_name} back on its stand and squares it with two fingers. "It will keep," he says.
+  *page_break Back to the racks…
+  *goto pq_tailor_return
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount (0 - pt_price)
+  *gosub_scene startup currency_add
+  *gosub_scene equipment grant_gear buy_item_id 1
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+Fenwick lifts the ${gear_name} down, holds it against you, and makes one small adjustment with a pin. ${gear_blurb}
+*if (gear_kind = "armor")
+  *line_break
+  He helps you into it and has you stand while he checks the fall of the shoulders.
+*if (not(gear_quote = ""))
+  *line_break
+  ${gear_quote}
+*gosub_scene equipment format_copper pt_price
+*line_break
+[b][💰 Paid: ${gear_sale_desc}][/b]
+*if (gear_kind = "armor")
+  *line_break
+  [b][🛡️ Armor Class: ${armor_class}][/b]
+*else
+  *line_break
+  [i]It is yours to wear from your dossier, under Equipment and Apparel.[/i]
+*set hours_to_pass 0
+*set minutes_to_pass gear_minutes
+*set time_advance_call_id "pq_tailor_buy"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the racks…
+*goto pq_tailor_after
+
+*label pq_tailor_sell
+Fenwick clears a corner of the cutting table and lays a square of brown paper on it. "Set it down," he says. "I will look it over and tell you what it is worth to me. Forty in the hundred of what I asked, and the seams are checked."
+*comment GEN:BEGIN tailor_sell_labels -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
+*temp ts_broadcloth_cloak ""
+*temp ts_storm_cape ""
+*temp ts_winter_cloak ""
+*temp ts_summer_duster ""
+*temp ts_felt_hat ""
+*temp ts_fur_cap ""
+*temp ts_lined_gloves ""
+*temp ts_waxed_boots ""
+*temp ts_winter_boots ""
+*temp ts_wool_muffler ""
+*temp ts_silk_neckcloth ""
+*temp ts_scholar_gloves ""
+*temp ts_dancing_slippers ""
+*temp ts_masters_gloves ""
+*temp ts_court_coat ""
+*if (has_broadcloth_cloak)
+  *gosub_scene equipment gear_sell_label "broadcloth_cloak" "tailor"
+  *set ts_broadcloth_cloak gear_label
+*if (has_storm_cape)
+  *gosub_scene equipment gear_sell_label "storm_cape" "tailor"
+  *set ts_storm_cape gear_label
+*if (has_winter_cloak)
+  *gosub_scene equipment gear_sell_label "winter_cloak" "tailor"
+  *set ts_winter_cloak gear_label
+*if (has_summer_duster)
+  *gosub_scene equipment gear_sell_label "summer_duster" "tailor"
+  *set ts_summer_duster gear_label
+*if (has_felt_hat)
+  *gosub_scene equipment gear_sell_label "felt_hat" "tailor"
+  *set ts_felt_hat gear_label
+*if (has_fur_cap)
+  *gosub_scene equipment gear_sell_label "fur_cap" "tailor"
+  *set ts_fur_cap gear_label
+*if (has_lined_gloves)
+  *gosub_scene equipment gear_sell_label "lined_gloves" "tailor"
+  *set ts_lined_gloves gear_label
+*if (has_waxed_boots)
+  *gosub_scene equipment gear_sell_label "waxed_boots" "tailor"
+  *set ts_waxed_boots gear_label
+*if (has_winter_boots)
+  *gosub_scene equipment gear_sell_label "winter_boots" "tailor"
+  *set ts_winter_boots gear_label
+*if (has_wool_muffler)
+  *gosub_scene equipment gear_sell_label "wool_muffler" "tailor"
+  *set ts_wool_muffler gear_label
+*if (has_silk_neckcloth)
+  *gosub_scene equipment gear_sell_label "silk_neckcloth" "tailor"
+  *set ts_silk_neckcloth gear_label
+*if (has_scholar_gloves)
+  *gosub_scene equipment gear_sell_label "scholar_gloves" "tailor"
+  *set ts_scholar_gloves gear_label
+*if (has_dancing_slippers)
+  *gosub_scene equipment gear_sell_label "dancing_slippers" "tailor"
+  *set ts_dancing_slippers gear_label
+*if (has_masters_gloves)
+  *gosub_scene equipment gear_sell_label "masters_gloves" "tailor"
+  *set ts_masters_gloves gear_label
+*if (has_court_coat)
+  *gosub_scene equipment gear_sell_label "court_coat" "tailor"
+  *set ts_court_coat gear_label
+*comment GEN:END tailor_sell_labels
+
+*choice
+  *comment GEN:BEGIN tailor_sell_options -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
+  *if (has_broadcloth_cloak)
+    # ${ts_broadcloth_cloak}
+      *set sell_item_id "broadcloth_cloak"
+      *goto pq_tailor_sell_do
+  *if (has_storm_cape)
+    # ${ts_storm_cape}
+      *set sell_item_id "storm_cape"
+      *goto pq_tailor_sell_do
+  *if (has_winter_cloak)
+    # ${ts_winter_cloak}
+      *set sell_item_id "winter_cloak"
+      *goto pq_tailor_sell_do
+  *if (has_summer_duster)
+    # ${ts_summer_duster}
+      *set sell_item_id "summer_duster"
+      *goto pq_tailor_sell_do
+  *if (has_felt_hat)
+    # ${ts_felt_hat}
+      *set sell_item_id "felt_hat"
+      *goto pq_tailor_sell_do
+  *if (has_fur_cap)
+    # ${ts_fur_cap}
+      *set sell_item_id "fur_cap"
+      *goto pq_tailor_sell_do
+  *if (has_lined_gloves)
+    # ${ts_lined_gloves}
+      *set sell_item_id "lined_gloves"
+      *goto pq_tailor_sell_do
+  *if (has_waxed_boots)
+    # ${ts_waxed_boots}
+      *set sell_item_id "waxed_boots"
+      *goto pq_tailor_sell_do
+  *if (has_winter_boots)
+    # ${ts_winter_boots}
+      *set sell_item_id "winter_boots"
+      *goto pq_tailor_sell_do
+  *if (has_wool_muffler)
+    # ${ts_wool_muffler}
+      *set sell_item_id "wool_muffler"
+      *goto pq_tailor_sell_do
+  *if (has_silk_neckcloth)
+    # ${ts_silk_neckcloth}
+      *set sell_item_id "silk_neckcloth"
+      *goto pq_tailor_sell_do
+  *if (has_scholar_gloves)
+    # ${ts_scholar_gloves}
+      *set sell_item_id "scholar_gloves"
+      *goto pq_tailor_sell_do
+  *if (has_dancing_slippers)
+    # ${ts_dancing_slippers}
+      *set sell_item_id "dancing_slippers"
+      *goto pq_tailor_sell_do
+  *if (has_masters_gloves)
+    # ${ts_masters_gloves}
+      *set sell_item_id "masters_gloves"
+      *goto pq_tailor_sell_do
+  *if (has_court_coat)
+    # ${ts_court_coat}
+      *set sell_item_id "court_coat"
+      *goto pq_tailor_sell_do
+  *comment GEN:END tailor_sell_options
+  # Take it all back off the table.
+    *goto pq_tailor
+
+*comment The sale itself. The price is worked out inside the currency lock and kept in gear_sale_* so a replayed page
+*comment prints the same banner. One currency change and one advance_time per page.
+*label pq_tailor_sell_do
+*set gear_shop "tailor_sell"
+*gosub_scene equipment gear_info sell_item_id
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment gear_sale_value sell_item_id "tailor"
+  *gosub_scene equipment sell_gear sell_item_id
+  *set currency_add_amount gear_sale_copper
+  *gosub_scene startup currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+Fenwick turns the ${gear_sale_name} inside out, reads the seams, and folds it flat on the brown paper. He writes a figure in pencil and counts the coin out of a drawer.
+*if (not(gear_quote = ""))
+  *line_break
+  ${gear_quote}
+*if (not(gear_sold_note = ""))
+  *line_break
+  ${gear_sold_note}
+*line_break
+[b][💰 Sold: ${gear_sale_name} for ${gear_sale_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass 5
+*set time_advance_call_id "pq_tailor_sell"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the cutting table…
+*gosub pq_tailor_open_check
+*if (pq_tailor_open)
+  *goto pq_tailor
+*set shop_open ""
+*goto pq_avenue
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment THE TRADE PANEL (a quality-of-life layer over the menus above, which stay as the fallback)
+*comment The shop hub and every rack call pq_tailor_open_panel, which tells web/mygame/trade.js this page offers a trade
+*comment and lists the live rows. The panel sets carts, then clicks the hidden "Settle up" option, which lands on
+*comment pq_tailor_settle. Every price, count and coin is re-checked there in equipment.txt (shop_*).
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label pq_tailor_open_panel
+*set shop_open "tailor"
+*set shop_rows ""
+*comment GEN:BEGIN tailor_panel_rows -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
+*gosub_scene equipment shop_row_add "broadcloth_cloak"
+*gosub_scene equipment shop_row_add "storm_cape"
+*gosub_scene equipment shop_row_add "winter_cloak"
+*gosub_scene equipment shop_row_add "summer_duster"
+*gosub_scene equipment shop_row_add "felt_hat"
+*gosub_scene equipment shop_row_add "fur_cap"
+*gosub_scene equipment shop_row_add "lined_gloves"
+*gosub_scene equipment shop_row_add "waxed_boots"
+*gosub_scene equipment shop_row_add "winter_boots"
+*gosub_scene equipment shop_row_add "wool_muffler"
+*gosub_scene equipment shop_row_add "silk_neckcloth"
+*gosub_scene equipment shop_row_add "scholar_gloves"
+*gosub_scene equipment shop_row_add "dancing_slippers"
+*gosub_scene equipment shop_row_add "masters_gloves"
+*gosub_scene equipment shop_row_add "court_coat"
+*comment GEN:END tailor_panel_rows
+*return
+
+*label pq_tailor_cart_pass
+*comment GEN:BEGIN tailor_cart_pass -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
+*set shop_buyer "tailor"
+*set gear_shop "tailor_sell"
+*gosub_scene equipment shop_cart_sell "broadcloth_cloak"
+*gosub_scene equipment shop_cart_sell "storm_cape"
+*gosub_scene equipment shop_cart_sell "winter_cloak"
+*gosub_scene equipment shop_cart_sell "summer_duster"
+*gosub_scene equipment shop_cart_sell "felt_hat"
+*gosub_scene equipment shop_cart_sell "fur_cap"
+*gosub_scene equipment shop_cart_sell "lined_gloves"
+*gosub_scene equipment shop_cart_sell "waxed_boots"
+*gosub_scene equipment shop_cart_sell "winter_boots"
+*gosub_scene equipment shop_cart_sell "wool_muffler"
+*gosub_scene equipment shop_cart_sell "silk_neckcloth"
+*gosub_scene equipment shop_cart_sell "scholar_gloves"
+*gosub_scene equipment shop_cart_sell "dancing_slippers"
+*gosub_scene equipment shop_cart_sell "masters_gloves"
+*gosub_scene equipment shop_cart_sell "court_coat"
+*set gear_shop "tailor"
+*gosub_scene equipment shop_cart_buy "broadcloth_cloak"
+*gosub_scene equipment shop_cart_buy "storm_cape"
+*gosub_scene equipment shop_cart_buy "winter_cloak"
+*gosub_scene equipment shop_cart_buy "summer_duster"
+*gosub_scene equipment shop_cart_buy "felt_hat"
+*gosub_scene equipment shop_cart_buy "fur_cap"
+*gosub_scene equipment shop_cart_buy "lined_gloves"
+*gosub_scene equipment shop_cart_buy "waxed_boots"
+*gosub_scene equipment shop_cart_buy "winter_boots"
+*gosub_scene equipment shop_cart_buy "wool_muffler"
+*gosub_scene equipment shop_cart_buy "silk_neckcloth"
+*gosub_scene equipment shop_cart_buy "scholar_gloves"
+*gosub_scene equipment shop_cart_buy "dancing_slippers"
+*gosub_scene equipment shop_cart_buy "masters_gloves"
+*gosub_scene equipment shop_cart_buy "court_coat"
+*comment GEN:END tailor_cart_pass
+*return
+
+*label pq_tailor_settle
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment shop_begin
+  *gosub pq_tailor_cart_pass
+  *gosub_scene equipment shop_check
+  *if (shop_verdict = "ok")
+    *set shop_mode "apply"
+    *gosub pq_tailor_cart_pass
+    *set currency_add_amount (shop_tot_credit - shop_tot_cost)
+    *gosub_scene startup currency_add
+  *else
+    *set shop_mode "clear"
+    *gosub pq_tailor_cart_pass
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*if (shop_verdict = "empty")
+  Fenwick waits with the pencil over the pattern, finds nothing to write, and sets it down.
+  *page_break Back to the racks…
+  *goto pq_tailor_after
+*if (shop_verdict = "short")
+  You count your coin against the cards and come up short. Fenwick lays each piece back on its stand and squares it with two fingers. "It will keep," he says.
+  *page_break Back to the racks…
+  *goto pq_tailor_after
+*if ((shop_tot_bought > 0) and (shop_tot_sold > 0))
+  Fenwick reads the seams of each piece you put down, writes both columns in pencil, and settles the difference across the table.
+*elseif (shop_tot_bought > 0)
+  Fenwick lifts each piece down, holds it against you, and makes his small adjustments with a pin.
+*else
+  Fenwick turns each piece you put down inside out, reads the seams, and writes a figure in pencil.
+*if (shop_fit)
+  *line_break
+  He helps you into the coat and has you stand while he checks the fall of the shoulders.
+*if (not(shop_quote_line = ""))
+  *line_break
+  ${shop_quote_line}
+*if (not(shop_note_line = ""))
+  *line_break
+  ${shop_note_line}
+*if (shop_tot_sold > 0)
+  *line_break
+  [b][💰 Sold: ${shop_sold_list} for ${shop_credit_desc}][/b]
+*if (shop_tot_bought > 0)
+  *line_break
+  [b][🛒 Bought: ${shop_recv} for ${shop_cost_desc}][/b]
+*if (shop_fit)
+  *line_break
+  [b][🛡️ Armor Class: ${armor_class}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass shop_tot_minutes
+*if (shop_tot_sold > 0)
+  *set minutes_to_pass (minutes_to_pass + 5)
+*set time_advance_call_id "pq_tailor_trade"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the racks…
+*goto pq_tailor_after

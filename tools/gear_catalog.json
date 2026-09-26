@@ -6,9 +6,14 @@
     "",
     "Item fields:",
     "  id        internal id; the ownership flag is always has_<id> (set create:false if hand-created elsewhere)",
-    "  kind      armor | shield | weapon | head | tool | ring | salvage",
+    "  kind      armor | shield | weapon | head | cloak | hands | waist | feet | neck | tool | ring | consumable | salvage",
     "  name      short lower-case noun used in menus and shop prose ('mail shirt')",
-    "  title     proper display name used by the dossier and the inventory panel",
+    "            (the equipment slot an item fills, such as Cloak, Hands or Body armor, is derived from `kind` by gen_gear.js",
+    "            slotLabel and shown in the shop menus, the trade panel and the inventory; tools and consumables show none)",
+    "  title     proper display name used by the dossier and the inventory panel. Keep it to THREE WORDS OR FEWER (a longer",
+    "            title wraps to a second line in the panels) and leave treatment words (boiled, oiled, waxed, tarred, riveted,",
+    "            lined) and lore out of it: put those in `blurb` and the dossier `line` ('Leather Watch Cap', not",
+    "            'Boiled-Hide Watch Cap'). `name` is the lower-case noun for menu sentences and follows the same rule.",
     "  retail    shop price in copper (10 copper = 1 silver)",
     "  minutes   how long a fitting or handover takes when bought",
     "  hint      the [stat hint] shown on a buy option when the player has hints on",
@@ -17,10 +22,16 @@
     "            sets ('halda', 'halda_sell', 'pawn_sell'); values are full lines and may contain \\\" quotes.",
     "  warn      OPTIONAL [{when, text}]: a ChoiceScript condition and a warning appended to the buy option",
     "  tier      armor only: light | medium | heavy (proficiency tier); use 'shield' for shields",
-    "  sell      { smith: percent, pawn: percent, general: percent, pawnFixed: copper, smithPiece: copper each, countVar: variable }",
-    "            (a shop's buyer is 'smith', 'pawn' or 'general'; general is the general store. Each price is floor(retail * pct),",
+    "  sell      { smith: percent, pawn: percent, general: percent, tailor: percent, pawnFixed: copper, smithPiece: copper each, countVar: variable }",
+    "            (a shop's buyer is 'smith', 'pawn', 'general' or 'tailor'; general is the flat 50 percent counter that Hollis and Vael both use. Each price is floor(retail * pct),",
     "            and a price of 0 means that buyer declines, so keep general-goods retail high enough that 50 percent is at least 1)",
-    "  loadout   slot fields for equipment.txt (weapon, armor and head items)",
+    "  loadout   slot fields for equipment.txt (weapon, armor and head items; cloak, hands, waist, feet and neck take desc and prose)",
+    "  traits    OPTIONAL, any worn item: { cold, wet, heat, stat, bonus }. cold, wet and heat are PERCENT CUTS to that part of",
+    "            outdoor exposure (calendar.txt calc_exposure sums them over every worn slot, capped at 90; a NEGATIVE heat adds",
+    "            heat wear). stat ('str'..'cha') and bonus add to that ability SCORE while worn. Equipment bonuses to the same",
+    "            score do NOT stack (only the highest counts) and the Hearthstone counts as one. Generated into equipment.txt",
+    "            garment_traits; the menu hint text is built from the same numbers. Keep score bonuses to +1 and +2:",
+    "            a bonus on the d20 roll itself is not for shop gear (see GAMEPLAY_MECHANICS_RULES section 2).",
     "  sidearmDesc  weapon items: the description when carried in the sidearm slot",
     "  dossier   { line, badgeOn, badgeOff, equipText } for the dossier list and its equip option",
     "  inventory { category } for the inventory panel (defaults: weapon weapons, armor/head apparel, tool provisions)",
@@ -38,6 +49,8 @@
     "            any copy is owned, so every older has_ check keeps working).",
     "  flags     create:false when the has_ flag is created by hand elsewhere; hand:true when the dossier and",
     "            inventory entries are written by hand (shield, ring, salvage)",
+    "",
+    "Shops: a shop with \"menu\": false feeds only the trade panel (no plain menu labels); use it as a union of several category menus.",
     "",
     "Trades: `trades` lists the shops that offer the trade panel (web/mygame/trade.js). Each names its scene file, its",
     "  label prefix, a buyShop (optional) and a sellShop from `shops`, and the quote keys ('buyKey', 'sellKey') the shop",
@@ -69,7 +82,7 @@
       "dossier": { "line": "Slender square-section thrusting dagger ground from scrap file-steel", "badgeOn": "Equipped", "badgeOff": "", "equipText": "Wield the Alderford Stiletto instead [1d4 Piercing, One-Handed]." }
     },
     {
-      "id": "iron_crowbar", "kind": "tool", "name": "iron prybar", "title": "Pioneer's Iron Prybar",
+      "id": "iron_crowbar", "kind": "tool", "name": "iron prybar", "title": "Iron Prybar",
       "retail": 12, "minutes": 10,
       "hint": "Advantage on Force and Pry Checks",
       "blurb": "A three-foot bar of octagonal iron with a curved claw at one end and a chisel heel at the other.",
@@ -78,32 +91,32 @@
       "dossier": { "line": "Cold-forged crowbar and tempered wedges for forcing stubborn locks and stone seams" }
     },
     {
-      "id": "torvald_iron_sallet", "kind": "head", "name": "iron skullcap", "title": "Cold-Hammered Skullcap",
+      "id": "torvald_iron_sallet", "kind": "head", "name": "iron skullcap", "title": "Iron Skullcap",
       "retail": 30, "minutes": 10,
       "hint": "+1 AC, Counts as Armor",
       "blurb": "A plain riveted iron skullcap with a small touchmark stamped into the brow.",
       "quotes": { "halda": "\"It turns a glancing blow,\" she says." },
       "warn": [ { "when": "((wizard_spell = \"mage_armor\") or (character_class = \"barbarian\"))", "text": "Counts as armor: ends Mage Armor and Unarmored Defense while worn" } ],
       "sell": { "smith": 50, "pawn": 35 },
-      "loadout": { "desc": "Cold-Hammered Skullcap", "prose": "iron skullcap", "ac": 1, "isArmor": true },
-      "dossier": { "line": "Plain riveted steel skullcap, guild-stamped at Torvald's forge", "badgeOn": "Equipped, +1 AC", "badgeOff": "Stowed", "equipText": "Wear the Cold-Hammered Skullcap instead [+1 AC]." }
+      "loadout": { "desc": "Iron Skullcap", "prose": "iron skullcap", "ac": 1, "isArmor": true },
+      "dossier": { "line": "Plain riveted steel skullcap, guild-stamped at Torvald's forge", "badgeOn": "Equipped, +1 AC", "badgeOff": "Stowed", "equipText": "Wear the Iron Skullcap instead [+1 AC]." }
     },
     {
-      "id": "torvald_hide_cap", "kind": "head", "name": "hide cap", "title": "Boiled-Hide Watch Cap",
+      "id": "torvald_hide_cap", "kind": "head", "name": "watch cap", "title": "Leather Watch Cap",
       "retail": 8, "minutes": 10,
       "sell": { "pawn": 35 },
-      "loadout": { "desc": "Boiled-Hide Watch Cap", "prose": "watch cap", "ac": 0, "isArmor": false },
-      "dossier": { "line": "Stiffened leather skullcap, cheap and close-fitting under a hood", "badgeOn": "Equipped", "badgeOff": "Stowed", "equipText": "Wear the Boiled-Hide Watch Cap instead." }
+      "loadout": { "desc": "Leather Watch Cap", "prose": "watch cap", "ac": 0, "isArmor": false },
+      "dossier": { "line": "Stiffened leather skullcap, cheap and close-fitting under a hood", "badgeOn": "Equipped", "badgeOff": "Stowed", "equipText": "Wear the Leather Watch Cap instead." }
     },
     {
-      "id": "brigandine", "kind": "armor", "name": "studded gambeson", "title": "Iron-Studded Gambeson",
+      "id": "brigandine", "kind": "armor", "name": "studded gambeson", "title": "Studded Gambeson",
       "retail": 70, "minutes": 20, "tier": "medium",
       "hint": "Medium Armor: AC 13 + DEX, max +2",
       "blurb": "A quilted coat with rows of small iron studs sewn between layers of wool and canvas.",
       "quotes": { "halda": "\"It'll turn a blow,\" she says. \"It won't turn a bad decision.\"" },
       "sell": { "smith": 50, "pawn": 35 },
-      "loadout": { "armor": "brigandine", "desc": "Iron-Studded Gambeson", "type": "brigandine", "prose": "gambeson" },
-      "dossier": { "line": "Quilted wool-and-canvas coat with rows of iron studs sewn between the layers", "badgeOn": "Worn, Medium Armor", "badgeOff": "Stowed", "equipText": "Wear the Iron-Studded Gambeson instead [Medium Armor: AC 13 + DEX, max +2]." }
+      "loadout": { "armor": "brigandine", "desc": "Studded Gambeson", "type": "brigandine", "prose": "gambeson" },
+      "dossier": { "line": "Quilted wool-and-canvas coat with rows of iron studs sewn between the layers", "badgeOn": "Worn, Medium Armor", "badgeOff": "Stowed", "equipText": "Wear the Studded Gambeson instead [Medium Armor: AC 13 + DEX, max +2]." }
     },
     {
       "id": "chain_jack", "kind": "armor", "name": "mail shirt", "title": "Iron Chain Shirt",
@@ -126,7 +139,7 @@
       "dossier": { "line": "Overlapping iron plates riveted over a mail coat, with hinged shoulders and lapped hip plates", "badgeOn": "Worn, Heavy Armor", "badgeOff": "Stowed", "equipText": "Wear the Iron Plate Harness instead [Heavy Armor: AC 16, no DEX bonus]." }
     },
     {
-      "id": "shield", "kind": "shield", "name": "iron-bossed shield", "title": "Limestone Boss Shield",
+      "id": "shield", "kind": "shield", "name": "oak shield", "title": "Oak Shield",
       "retail": 30, "minutes": 10, "tier": "shield",
       "hint": "+2 Shield AC Bonus",
       "blurb": "A round oak shield with an iron boss, oak from the valley and iron from the harbor wagons.",
@@ -135,7 +148,7 @@
       "flags": { "create": false, "hand": true }
     },
     {
-      "id": "toll_seal_ring", "kind": "ring", "name": "signet ring", "title": "Customs Officer's Signet Ring",
+      "id": "toll_seal_ring", "kind": "ring", "name": "signet ring", "title": "Officer's Signet Ring",
       "sell": { "pawnFixed": 80 },
       "flags": { "create": false, "hand": true }
     },
@@ -162,7 +175,7 @@
       "dossier": { "line": "Corked bottle of amber pine-and-mint tonic" }
     },
     {
-      "id": "althea_phial", "kind": "consumable", "name": "phial of Saint Althea's water", "title": "Phial of Saint Althea's Water",
+      "id": "althea_phial", "kind": "consumable", "name": "phial of Saint Althea's water", "title": "Saint Althea's Water",
       "retail": 50, "minutes": 5,
       "hint": "Restores 2d4+2 HP",
       "blurb": "A wax-stoppered clay flask of blessed cistern-water steeped with wild angelica and mountain arnica.",
@@ -185,7 +198,7 @@
       "dossier": { "line": "Boiled linen rolled around a pad of comfrey leaf, for binding a wound before sleep" }
     },
     {
-      "id": "lye_soap", "kind": "consumable", "name": "twist of lye soap", "title": "Twist of Lye Soap",
+      "id": "lye_soap", "kind": "consumable", "name": "lye soap", "title": "Lye Soap",
       "retail": 2, "minutes": 5,
       "hint": "Hygiene back to Clean, with water at hand",
       "blurb": "A twist of brown paper holding grey shavings of lye soap, enough for one good scrub.",
@@ -197,7 +210,7 @@
       "dossier": { "line": "Brown-paper twist of grey lye-soap shavings, enough for one wash by a stream or the shore" }
     },
     {
-      "id": "hemp_rope", "kind": "tool", "name": "coil of hemp rope", "title": "Coil of Hemp Rope",
+      "id": "hemp_rope", "kind": "tool", "name": "hemp rope", "title": "Hemp Rope",
       "retail": 8, "minutes": 5,
       "blurb": "Fifty feet of tarred hemp as thick as a thumb, coiled tight and tied off with a slip-knot.",
       "quotes": { "hollis": "\"Tarred, so a wet cellar won't rot it,\" Hollis says. \"Test it before you trust it. I do.\"" },
@@ -205,14 +218,14 @@
       "dossier": { "line": "Fifty feet of tarred hemp rope, coiled and tied off" }
     },
     {
-      "id": "pitch_torch", "kind": "tool", "name": "pitch-dipped torch", "title": "Pitch-Dipped Torch",
+      "id": "pitch_torch", "kind": "tool", "name": "torch", "title": "Torch",
       "retail": 2, "minutes": 5,
       "blurb": "A pine stave bound with tarred rag and dipped in pitch, good for about an hour of steady light.",
       "sell": { "general": 50 },
       "dossier": { "line": "Pine stave wrapped in tarred rag and dipped in pitch" }
     },
     {
-      "id": "lamp_oil", "kind": "tool", "name": "flask of lamp oil", "title": "Flask of Lamp Oil",
+      "id": "lamp_oil", "kind": "tool", "name": "lamp oil", "title": "Lamp Oil",
       "retail": 3, "minutes": 5,
       "blurb": "A stoppered tin flask of lamp oil, enough to keep a lantern burning through a long night.",
       "sell": { "general": 50 },
@@ -227,6 +240,15 @@
       "dossier": { "line": "Iron lantern with horn windows and a sliding tin shutter" }
     },
     {
+      "id": "tool_kit", "kind": "tool", "name": "tool kit", "title": "Tool Kit",
+      "retail": 20, "minutes": 5,
+      "hint": "Advantage on repair and tinkering checks",
+      "blurb": "A canvas roll holding a claw hammer, a chisel, an awl, pliers, a folding saw, and a hank of soft wire, each in its own pocket.",
+      "quotes": { "hollis": "\"Nothing fancy,\" Hollis says. \"Anything that can be mended with a hammer and some patience, that roll will mend.\"" },
+      "sell": { "general": 50 },
+      "dossier": { "line": "Canvas roll of hammer, chisel, awl, pliers, folding saw and wire" }
+    },
+    {
       "id": "tinderbox", "kind": "tool", "name": "flint and tinderbox", "title": "Flint and Tinderbox",
       "retail": 4, "minutes": 5,
       "blurb": "A dented tin box holding a striker, a lump of flint, and a wad of char-cloth that catches from a single spark.",
@@ -234,7 +256,7 @@
       "dossier": { "line": "Dented tin box with a striker, flint and dry char-cloth" }
     },
     {
-      "id": "chalk_sticks", "kind": "tool", "name": "bundle of chalk", "title": "Bundle of Chalk",
+      "id": "chalk_sticks", "kind": "tool", "name": "chalk sticks", "title": "Chalk Sticks",
       "retail": 2, "minutes": 5,
       "blurb": "Six sticks of soft white chalk tied together with string, for marking a wall or a route.",
       "quotes": { "hollis": "\"Same chalk that's on my slate,\" Hollis says, and taps the stub hanging from his apron. \"Mark your turns. It's the one thing in a tunnel that doesn't lie to you.\"" },
@@ -242,7 +264,7 @@
       "dossier": { "line": "Six sticks of soft white chalk tied with string" }
     },
     {
-      "id": "wool_blanket", "kind": "tool", "name": "wool blanket", "title": "Grey Wool Blanket",
+      "id": "wool_blanket", "kind": "tool", "name": "wool blanket", "title": "Wool Blanket",
       "retail": 6, "minutes": 5,
       "hint": "+1 HP from sleeping on a shared bunk",
       "blurb": "A heavy grey blanket, tightly woven, with a red stripe dyed into each end.",
@@ -251,13 +273,457 @@
       "dossier": { "line": "Heavy grey wool blanket with a red stripe at each end" }
     },
     {
-      "id": "waxed_oilcloth", "kind": "tool", "name": "sheet of waxed oilcloth", "title": "Sheet of Waxed Oilcloth",
+      "id": "waxed_oilcloth", "kind": "tool", "name": "oilcloth sheet", "title": "Oilcloth Sheet",
       "retail": 6, "minutes": 5,
       "hint": "Halves the wear of rain and storms on the road",
       "blurb": "A square of canvas soaked in linseed oil and wax, stiff as a board when cold, that sheds rain like a roof.",
       "quotes": { "hollis": "\"Drape it over your pack or over your head,\" Hollis says. \"Rain runs off it and you stay dry underneath.\"" },
       "sell": { "general": 50 },
       "dossier": { "line": "Square of canvas soaked in linseed oil and wax, stiff and rain-proof" }
+    },
+    {
+      "id": "lockpick_set", "kind": "tool", "name": "lockpick set", "title": "Lockpick Set",
+      "retail": 30, "minutes": 5,
+      "hint": "Advantage on lock checks",
+      "blurb": "A leather roll holding a dozen slim steel picks, two tension wrenches, and a hooked rake, each in its own loop.",
+      "quotes": { "vael": "\"Every pick I sell shows me where the next lock has to be stronger,\" Vael says. \"So I sell them.\"" },
+      "sell": { "general": 50 },
+      "dossier": { "line": "Leather roll of slim steel picks, tension wrenches and a hooked rake" }
+    },
+    {
+      "id": "padlock", "kind": "tool", "name": "padlock and key", "title": "Padlock and Key",
+      "retail": 8, "minutes": 5,
+      "blurb": "A heavy brass padlock with a hardened steel shackle, hung on a loop of cord with its two keys.",
+      "quotes": { "vael": "\"Forged here, not bought in,\" Vael says. \"Two keys. Lose one and the sign over my counter says what a new one costs.\"" },
+      "sell": { "general": 50 },
+      "dossier": { "line": "Heavy brass padlock with a steel shackle and two keys" }
+    },
+    {
+      "id": "door_bolt", "kind": "tool", "name": "door bolt", "title": "Door Bolt",
+      "retail": 5, "minutes": 5,
+      "blurb": "A forged iron slide-bolt with its keeper plate and four wood screws wrapped in cloth, small enough to carry in a pack.",
+      "quotes": { "vael": "\"Screw it to any door and it holds against a shoulder,\" Vael says. \"Against a wedge, ask me for something bigger.\"" },
+      "sell": { "general": 50 },
+      "dossier": { "line": "Forged iron slide-bolt with a keeper plate and wood screws" }
+    },
+    {
+      "id": "iron_manacles", "kind": "tool", "name": "iron manacles", "title": "Iron Manacles",
+      "retail": 15, "minutes": 5,
+      "blurb": "A pair of hinged iron cuffs joined by a short chain, with a single key on a ring.",
+      "quotes": { "vael": "\"Hinged, keyed, and heavier than they look,\" Vael says. \"I don't ask who goes in them.\"" },
+      "sell": { "general": 50 },
+      "dossier": { "line": "Pair of hinged iron cuffs on a short chain, with one key" }
+    },
+    {
+          "id": "broadcloth_cloak",
+          "kind": "cloak",
+          "name": "traveler's cloak",
+          "title": "Traveler's Cloak",
+          "retail": 40,
+          "minutes": 20,
+          "blurb": "A full-length cloak of stout undyed broadcloth, cut wide enough to close over a pack, with a double-stitched hem.",
+          "quotes": {
+                "tailor": "\"Broadcloth,\" Fenwick says. \"It has no opinions about fashion, and it keeps its shape in the rain.\""
+          },
+          "sell": {
+                "tailor": 40
+          },
+          "traits": {
+                "cold": 55,
+                "wet": 45
+          },
+          "loadout": {
+                "desc": "Traveler's Cloak",
+                "prose": "broadcloth cloak"
+          },
+          "dossier": {
+                "line": "Full-length cloak of stout undyed broadcloth",
+                "equipText": "Wear the Traveler's Cloak instead."
+          }
+    },
+    {
+          "id": "storm_cape",
+          "kind": "cloak",
+          "name": "storm cape",
+          "title": "Storm Cape",
+          "retail": 70,
+          "minutes": 20,
+          "blurb": "A short cape of canvas-backed wool, rubbed with beeswax until water beads and rolls off it.",
+          "quotes": {
+                "tailor": "\"Waxed twice and left to cure,\" Fenwick says. \"The wax is what does the work, so keep it away from the fire.\""
+          },
+          "sell": {
+                "tailor": 40
+          },
+          "traits": {
+                "cold": 30,
+                "wet": 75
+          },
+          "loadout": {
+                "desc": "Storm Cape",
+                "prose": "storm cape"
+          },
+          "dossier": {
+                "line": "Short waxed cape that sheds rain like a slate roof",
+                "equipText": "Wear the Storm Cape instead."
+          }
+    },
+    {
+          "id": "winter_cloak",
+          "kind": "cloak",
+          "name": "winter cloak",
+          "title": "Winter Cloak",
+          "retail": 120,
+          "minutes": 30,
+          "blurb": "A heavy grey cloak lined edge to edge in marten fur, with a collar that stands up past the ears.",
+          "quotes": {
+                "tailor": "\"In January you will think of me kindly,\" Fenwick says. \"In August you will think of me less kindly. Own something lighter as well.\""
+          },
+          "sell": {
+                "tailor": 40
+          },
+          "traits": {
+                "cold": 90,
+                "wet": 40,
+                "heat": -40
+          },
+          "loadout": {
+                "desc": "Winter Cloak",
+                "prose": "winter cloak"
+          },
+          "dossier": {
+                "line": "Heavy grey cloak lined in marten fur, with a tall collar",
+                "equipText": "Wear the Winter Cloak instead."
+          }
+    },
+    {
+          "id": "summer_duster",
+          "kind": "cloak",
+          "name": "summer duster",
+          "title": "Summer Duster",
+          "retail": 50,
+          "minutes": 20,
+          "blurb": "A loose, ankle-length coat of bleached linen with wide sleeves and a back vent that lets the air through.",
+          "quotes": {
+                "tailor": "\"Linen is cooler than the sun,\" Fenwick says. \"Not by much, but by enough to matter on the road.\""
+          },
+          "sell": {
+                "tailor": 40
+          },
+          "traits": {
+                "cold": 10,
+                "wet": 30,
+                "heat": 60
+          },
+          "loadout": {
+                "desc": "Summer Duster",
+                "prose": "linen duster"
+          },
+          "dossier": {
+                "line": "Loose ankle-length linen coat with a vented back",
+                "equipText": "Wear the Summer Duster instead."
+          }
+    },
+    {
+          "id": "felt_hat",
+          "kind": "head",
+          "name": "felt hat",
+          "title": "Felt Hat",
+          "retail": 20,
+          "minutes": 15,
+          "blurb": "A pressed grey felt hat with a broad brim and a grosgrain band, the crown blocked to hold its shape.",
+          "sell": {
+                "tailor": 40
+          },
+          "traits": {
+                "wet": 15,
+                "heat": 25
+          },
+          "loadout": {
+                "desc": "Felt Hat",
+                "prose": "felt hat",
+                "ac": 0,
+                "isArmor": false
+          },
+          "dossier": {
+                "line": "Pressed grey felt hat with a broad brim",
+                "equipText": "Wear the Felt Hat instead.",
+                "badgeOn": "Worn",
+                "badgeOff": "Stowed"
+          }
+    },
+    {
+          "id": "fur_cap",
+          "kind": "head",
+          "name": "fur cap",
+          "title": "Fur Cap",
+          "retail": 30,
+          "minutes": 15,
+          "blurb": "A close wool cap with turn-down flaps trimmed in rabbit fur, tied under the chin with a leather lace.",
+          "sell": {
+                "tailor": 40
+          },
+          "traits": {
+                "cold": 20
+          },
+          "loadout": {
+                "desc": "Fur Cap",
+                "prose": "fur-trimmed cap",
+                "ac": 0,
+                "isArmor": false
+          },
+          "dossier": {
+                "line": "Close wool cap with fur-trimmed flaps",
+                "equipText": "Wear the Fur Cap instead.",
+                "badgeOn": "Worn",
+                "badgeOff": "Stowed"
+          }
+    },
+    {
+          "id": "lined_gloves",
+          "kind": "hands",
+          "name": "pair of lined gloves",
+          "title": "Lined Gloves",
+          "retail": 30,
+          "minutes": 15,
+          "blurb": "Supple leather gloves lined with combed fleece, with a long cuff that tucks under a sleeve.",
+          "sell": {
+                "tailor": 40
+          },
+          "traits": {
+                "cold": 20
+          },
+          "loadout": {
+                "desc": "Lined Gloves",
+                "prose": "fleece-lined gloves"
+          },
+          "dossier": {
+                "line": "Soft leather gloves lined with combed fleece",
+                "equipText": "Wear the Lined Gloves instead."
+          }
+    },
+    {
+          "id": "scholar_gloves",
+          "kind": "hands",
+          "name": "pair of scholar's gloves",
+          "title": "Scholar's Gloves",
+          "retail": 80,
+          "minutes": 15,
+          "blurb": "Fine black kid gloves, cut close across the knuckles so a quill or a page can be worked without taking them off.",
+          "quotes": {
+                "tailor": "\"For people who read for a living,\" Fenwick says. \"The fit is in the knuckle. Everything else is decoration.\""
+          },
+          "sell": {
+                "tailor": 40
+          },
+          "traits": {
+                "stat": "int",
+                "bonus": 1
+          },
+          "loadout": {
+                "desc": "Scholar's Gloves",
+                "prose": "scholar's gloves"
+          },
+          "dossier": {
+                "line": "Fine black kid gloves cut close for close work",
+                "equipText": "Wear the Scholar's Gloves instead."
+          }
+    },
+    {
+          "id": "masters_gloves",
+          "kind": "hands",
+          "name": "pair of master's gloves",
+          "title": "Master's Gloves",
+          "retail": 250,
+          "minutes": 30,
+          "blurb": "Black kid gloves cut from a single skin, each finger fitted to a plaster cast of the hand, and stitched in silk.",
+          "quotes": {
+                "tailor": "\"I measure each finger twice,\" Fenwick says. \"You will not thank me for it, but you will not think about them again either, and that is the point.\""
+          },
+          "sell": {
+                "tailor": 40
+          },
+          "traits": {
+                "stat": "int",
+                "bonus": 2
+          },
+          "loadout": {
+                "desc": "Master's Gloves",
+                "prose": "master's gloves"
+          },
+          "dossier": {
+                "line": "Black kid gloves fitted finger by finger and stitched in silk",
+                "equipText": "Wear the Master's Gloves instead."
+          }
+    },
+    {
+          "id": "waxed_boots",
+          "kind": "feet",
+          "name": "pair of rain boots",
+          "title": "Rain Boots",
+          "retail": 60,
+          "minutes": 20,
+          "blurb": "Knee-high boots of oiled calf with a stitched welt, the seams waxed shut and the tops cut to shed a rain-soaked cloak.",
+          "quotes": {
+                "tailor": "\"Waxed seams, sewn welt,\" Fenwick says. \"They will outlast the horse.\""
+          },
+          "sell": {
+                "tailor": 40
+          },
+          "traits": {
+                "wet": 25,
+                "cold": 10
+          },
+          "loadout": {
+                "desc": "Rain Boots",
+                "prose": "waxed riding boots"
+          },
+          "dossier": {
+                "line": "Knee-high oiled calf boots with waxed seams",
+                "equipText": "Wear the Rain Boots instead."
+          }
+    },
+    {
+          "id": "winter_boots",
+          "kind": "feet",
+          "name": "pair of winter boots",
+          "title": "Winter Boots",
+          "retail": 50,
+          "minutes": 20,
+          "blurb": "Thick-soled boots of stiff leather lined with pressed felt, laced high with a snow-cuff of wool.",
+          "sell": {
+                "tailor": 40
+          },
+          "traits": {
+                "cold": 25
+          },
+          "loadout": {
+                "desc": "Winter Boots",
+                "prose": "felt-lined boots"
+          },
+          "dossier": {
+                "line": "Thick-soled boots lined with pressed felt",
+                "equipText": "Wear the Winter Boots instead."
+          }
+    },
+    {
+          "id": "dancing_slippers",
+          "kind": "feet",
+          "name": "pair of dancing slippers",
+          "title": "Dancing Slippers",
+          "retail": 70,
+          "minutes": 15,
+          "blurb": "Flat black slippers of soft kid with a thin, flexible sole and a strap over the instep, made for a ballroom floor.",
+          "quotes": {
+                "tailor": "\"The sole is thin on purpose,\" Fenwick says. \"You will feel the floor, and so will your feet. It is not a road shoe.\""
+          },
+          "sell": {
+                "tailor": 40
+          },
+          "traits": {
+                "stat": "dex",
+                "bonus": 1
+          },
+          "loadout": {
+                "desc": "Dancing Slippers",
+                "prose": "dancing slippers"
+          },
+          "dossier": {
+                "line": "Flat black kid slippers with a thin flexible sole",
+                "equipText": "Wear the Dancing Slippers instead."
+          }
+    },
+    {
+          "id": "wool_muffler",
+          "kind": "neck",
+          "name": "wool muffler",
+          "title": "Wool Muffler",
+          "retail": 10,
+          "minutes": 10,
+          "blurb": "A long knitted muffler of thick grey wool, wound twice about the neck and tucked into the collar.",
+          "sell": {
+                "tailor": 40
+          },
+          "traits": {
+                "cold": 10
+          },
+          "loadout": {
+                "desc": "Wool Muffler",
+                "prose": "wool muffler"
+          },
+          "dossier": {
+                "line": "Long knitted grey wool muffler",
+                "equipText": "Wear the Wool Muffler instead."
+          }
+    },
+    {
+          "id": "silk_neckcloth",
+          "kind": "neck",
+          "name": "silk neckcloth",
+          "title": "Silk Neckcloth",
+          "retail": 60,
+          "minutes": 15,
+          "blurb": "A neckcloth of dove-grey silk, folded and pinned in the Quarter fashion so the knot sits under the chin.",
+          "quotes": {
+                "tailor": "\"The knot is the whole trick,\" Fenwick says, and folds it for you once, quickly, so you can see how."
+          },
+          "sell": {
+                "tailor": 40
+          },
+          "traits": {
+                "stat": "cha",
+                "bonus": 1
+          },
+          "loadout": {
+                "desc": "Silk Neckcloth",
+                "prose": "silk neckcloth"
+          },
+          "dossier": {
+                "line": "Dove-grey silk neckcloth folded in the Quarter fashion",
+                "equipText": "Wear the Silk Neckcloth instead."
+          }
+    },
+    {
+          "id": "court_coat",
+          "kind": "armor",
+          "name": "court coat",
+          "title": "Court Coat",
+          "retail": 180,
+          "minutes": 30,
+          "blurb": "A long-skirted coat in charcoal wool with a silk lining, cut close through the shoulder and finished with covered buttons.",
+          "quotes": {
+                "tailor": "\"Cut to you, not to a peg,\" Fenwick says. \"It is not armor. It is the reason a door opens.\"",
+                "tailor_sell": "Fenwick runs a thumb along the lapel and shakes his head slowly. \"Cut to you. It will need taking in for anyone else, and that costs me.\""
+          },
+          "sell": {
+                "tailor": 40
+          },
+          "traits": {
+                "cold": 25,
+                "wet": 10,
+                "stat": "cha",
+                "bonus": 2
+          },
+          "loadout": {
+                "armor": "court-coat",
+                "desc": "Court Coat",
+                "type": "cloth",
+                "prose": "court coat"
+          },
+          "dossier": {
+                "line": "Charcoal wool coat, silk-lined and cut close through the shoulder",
+                "equipText": "Wear the Court Coat instead [Cloth armor: AC 10 + DEX; +2 CHA].",
+                "badgeOn": "Worn, Cloth Armor",
+                "badgeOff": "Stowed"
+          },
+          "tier": "none",
+          "hint": "Cloth armor: AC 10 + DEX; cold -25%, rain -10%; +2 CHA",
+          "warn": [
+                {
+                      "when": "(not(armor_type = \"cloth\"))",
+                      "text": "Replaces the armor you are wearing"
+                }
+          ]
     },
     {
       "id": "scrap_steel", "kind": "salvage", "name": "scrap steel", "title": "Scrap Steel",
@@ -278,6 +744,14 @@
     {
       "name": "hollis", "title": "Hollis & Daughters", "file": "port_valen_middle_ward.txt", "labelPrefix": "mw_hollis",
       "buyShop": "hollis_buy", "sellShop": "hollis_sell", "buyKey": "hollis", "sellKey": "hollis_sell"
+    },
+    {
+      "name": "vael", "title": "Vael & Son", "file": "port_valen_middle_ward.txt", "labelPrefix": "mw_vael",
+      "buyShop": "vael_buy", "sellShop": "vael_sell", "buyKey": "vael", "sellKey": "vael_sell"
+    },
+    {
+      "name": "tailor", "title": "The Gilt Needle", "file": "port_valen_upper_wharves.txt", "labelPrefix": "pq_tailor",
+      "buyShop": "tailor_buy", "sellShop": "tailor_sell", "buyKey": "tailor", "sellKey": "tailor_sell"
     },
     {
       "name": "pawn", "title": "The Pawnbroker's Window", "file": "port_valen_dredge_end.txt", "labelPrefix": "cut_pawn",
@@ -313,16 +787,24 @@
     {
       "name": "hollis_buy", "type": "buy", "file": "port_valen_middle_ward.txt", "prefix": "gb", "goto": "mw_hollis_buy_do",
       "items": [
-        { "id": "hemp_rope" }, { "id": "pitch_torch" }, { "id": "lamp_oil" }, { "id": "hooded_lantern" }, { "id": "tinderbox" },
+        { "id": "hemp_rope" }, { "id": "pitch_torch" }, { "id": "lamp_oil" }, { "id": "hooded_lantern" }, { "id": "tool_kit" }, { "id": "tinderbox" },
         { "id": "chalk_sticks" }, { "id": "wool_blanket" }, { "id": "waxed_oilcloth" }, { "id": "lye_soap" }
       ]
     },
     {
       "name": "hollis_sell", "type": "sell", "buyer": "general", "file": "port_valen_middle_ward.txt", "prefix": "gs", "goto": "mw_hollis_sell_do",
       "items": [
-        { "id": "hemp_rope" }, { "id": "pitch_torch" }, { "id": "lamp_oil" }, { "id": "hooded_lantern" }, { "id": "tinderbox" },
+        { "id": "hemp_rope" }, { "id": "pitch_torch" }, { "id": "lamp_oil" }, { "id": "hooded_lantern" }, { "id": "tool_kit" }, { "id": "tinderbox" },
         { "id": "chalk_sticks" }, { "id": "wool_blanket" }, { "id": "waxed_oilcloth" }, { "id": "lye_soap" }
       ]
+    },
+    {
+      "name": "vael_buy", "type": "buy", "file": "port_valen_middle_ward.txt", "prefix": "vb", "goto": "mw_vael_buy_do",
+      "items": [ { "id": "lockpick_set" }, { "id": "padlock" }, { "id": "door_bolt" }, { "id": "iron_manacles" } ]
+    },
+    {
+      "name": "vael_sell", "type": "sell", "buyer": "general", "file": "port_valen_middle_ward.txt", "prefix": "vs", "goto": "mw_vael_sell_do",
+      "items": [ { "id": "lockpick_set" }, { "id": "padlock" }, { "id": "door_bolt" }, { "id": "iron_manacles" } ]
     },
     {
       "name": "pawn_sell", "type": "sell", "buyer": "pawn", "file": "port_valen_dredge_end.txt", "prefix": "ps", "goto": "cut_pawn_sell_do",
@@ -330,6 +812,26 @@
         { "id": "brigandine" }, { "id": "chain_jack" }, { "id": "plate_harness" }, { "id": "timber_axe" },
         { "id": "stiletto" }, { "id": "torvald_iron_sallet" }, { "id": "torvald_hide_cap" }, { "id": "iron_crowbar" }, { "id": "toll_seal_ring" }
       ]
+    },
+    {
+      "name": "tailor_cloaks", "type": "buy", "file": "port_valen_upper_wharves.txt", "prefix": "tc", "goto": "pq_tailor_buy_do",
+      "items": [ { "id": "broadcloth_cloak" }, { "id": "storm_cape" }, { "id": "winter_cloak" }, { "id": "summer_duster" } ]
+    },
+    {
+      "name": "tailor_wear", "type": "buy", "file": "port_valen_upper_wharves.txt", "prefix": "tw", "goto": "pq_tailor_buy_do",
+      "items": [ { "id": "felt_hat" }, { "id": "fur_cap" }, { "id": "lined_gloves" }, { "id": "waxed_boots" }, { "id": "winter_boots" }, { "id": "wool_muffler" } ]
+    },
+    {
+      "name": "tailor_dress", "type": "buy", "file": "port_valen_upper_wharves.txt", "prefix": "td", "goto": "pq_tailor_buy_do",
+      "items": [ { "id": "silk_neckcloth" }, { "id": "scholar_gloves" }, { "id": "dancing_slippers" }, { "id": "masters_gloves" }, { "id": "court_coat" } ]
+    },
+    {
+      "name": "tailor_buy", "type": "buy", "menu": false, "file": "port_valen_upper_wharves.txt", "prefix": "tb", "goto": "pq_tailor_buy_do",
+      "items": [ { "id": "broadcloth_cloak" }, { "id": "storm_cape" }, { "id": "winter_cloak" }, { "id": "summer_duster" }, { "id": "felt_hat" }, { "id": "fur_cap" }, { "id": "lined_gloves" }, { "id": "waxed_boots" }, { "id": "winter_boots" }, { "id": "wool_muffler" }, { "id": "silk_neckcloth" }, { "id": "scholar_gloves" }, { "id": "dancing_slippers" }, { "id": "masters_gloves" }, { "id": "court_coat" } ]
+    },
+    {
+      "name": "tailor_sell", "type": "sell", "buyer": "tailor", "file": "port_valen_upper_wharves.txt", "prefix": "ts", "goto": "pq_tailor_sell_do",
+      "items": [ { "id": "broadcloth_cloak" }, { "id": "storm_cape" }, { "id": "winter_cloak" }, { "id": "summer_duster" }, { "id": "felt_hat" }, { "id": "fur_cap" }, { "id": "lined_gloves" }, { "id": "waxed_boots" }, { "id": "winter_boots" }, { "id": "wool_muffler" }, { "id": "silk_neckcloth" }, { "id": "scholar_gloves" }, { "id": "dancing_slippers" }, { "id": "masters_gloves" }, { "id": "court_coat" } ]
     }
   ]
 }

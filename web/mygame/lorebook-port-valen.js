@@ -205,11 +205,23 @@
       link: ["Master Vael"],
       tags: ["Middle Ward"], aliases: ["Vael", "locksmith", "locks", "keys"],
       unlock: "met_vael",
-      body: [
-        "A lean craftsman with measuring tools tucked into his leather apron and fine brass dust on his knuckles, who files brass pieces inside a heavy lock and tests it with a crisp snick. His sign reads: Locks Warranted Against Pick and Wedge. Replacement Keys: Three Copper Bits.",
-        "The deadbolts on every door at Terrace Lodgings are his work."
-      ],
-      see: ["kess", "terrace_lodgings", "middle_ward"]
+      body: function (s) {
+        var out = [
+          "A lean craftsman with measuring tools tucked into his leather apron and fine brass dust on his knuckles, who files brass pieces inside a heavy lock and tests it with a crisp snick. His sign reads: Locks Warranted Against Pick and Wedge. Replacement Keys: Three Copper Bits.",
+          "The deadbolts on every door at Terrace Lodgings are his work."
+        ];
+        if (truthy(s.mw_vael_seen)) {
+          out.push("The workshop is one long room warm from a charcoal hearth, with sample locks on boards along one wall. The locks on the boards are samples, not stock. What he sells over the counter is small kit, priced on paper tags wired to each piece: lockpick sets, brass padlocks with two keys, door bolts, and iron manacles.");
+        }
+        if (truthy(s.mw_vael_sign_talk)) {
+          out.push("He sells picks himself, to whoever asks. \"A lock is only as good as the man who knows how it fails, and he learns that on a pick.\" His customers are owners who have lost a key, clerks shut out of their own strongboxes, and the Watch, twice a year, to see what he can do that they cannot. No one has picked one of his locks yet.");
+        }
+        if (truthy(s.mw_vael_customers_talk)) {
+          out.push("The customs wharf takes his cash-boxes by the dozen, the mint has a standing order for strongroom locks, and Kess has one of his deadbolts on every door in her house. Hollis gets his locks at cost, and Vael gets brass wire from Hollis at what Hollis calls cost.");
+        }
+        return out;
+      },
+      see: ["kess", "terrace_lodgings", "middle_ward", "hollis"]
     },
     {
       id: "ambrose", category: "people", title: "Master Ambrose",
@@ -1190,8 +1202,8 @@
       link: ["The Gilt Needle", "Gilt Needle"],
       unlock: "pq_tailor_seen",
       body: [
-        "A narrow shop of dark wood and bow glass near the Inner Gate, marked by a gilt needle threaded with red silk. Bolts of cloth lean in racks to the ceiling, and a long cutting table is spread with paper patterns. Everything is cut to the wearer, and fittings are by appointment.",
-        "Cloaks, belts, gloves and boots for the new season lie half cut on the table, not yet ready to sell."
+        "A narrow shop of dark wood and bow glass near the Inner Gate, marked by a gilt needle threaded with red silk. Bolts of cloth lean in racks to the ceiling, and a long cutting table is spread with paper patterns. Everything is cut to the wearer, and each piece is adjusted while you wait.",
+        "Finished cloaks, hats, gloves, boots and fine dress hang along the walls and sit in glass cases, each priced on a card in Fenwick's small square hand. He buys a piece back for about four in ten of what he asked, since it was cut to one person."
       ],
       see: ["idris_fenwick", "upper_wharves"]
     },

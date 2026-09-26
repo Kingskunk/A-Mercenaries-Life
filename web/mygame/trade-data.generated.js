@@ -3,17 +3,19 @@ window.TRADE_DATA = {
  "items": {
   "brigandine": {
    "name": "studded gambeson",
-   "title": "Iron-Studded Gambeson",
+   "title": "Studded Gambeson",
    "kind": "armor",
    "tier": "medium",
    "retail": 70,
    "minutes": 20,
    "hint": "Medium Armor: AC 13 + DEX, max +2",
+   "slot": "Body armor",
    "stack": true,
    "sell": {
     "smith": 50,
     "pawn": 35,
     "general": 0,
+    "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
@@ -27,11 +29,13 @@ window.TRADE_DATA = {
    "retail": 70,
    "minutes": 20,
    "hint": "Medium Armor: AC 13 + DEX, max +2",
+   "slot": "Body armor",
    "stack": true,
    "sell": {
     "smith": 50,
     "pawn": 35,
     "general": 0,
+    "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
@@ -45,11 +49,13 @@ window.TRADE_DATA = {
    "retail": 150,
    "minutes": 40,
    "hint": "Heavy Armor: AC 16, no DEX bonus",
+   "slot": "Body armor",
    "stack": true,
    "sell": {
     "smith": 50,
     "pawn": 35,
     "general": 0,
+    "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
@@ -63,11 +69,13 @@ window.TRADE_DATA = {
    "retail": 25,
    "minutes": 10,
    "hint": "1d8 Slashing, One-Handed",
+   "slot": "Weapon",
    "stack": true,
    "sell": {
     "smith": 50,
     "pawn": 35,
     "general": 0,
+    "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
@@ -81,11 +89,13 @@ window.TRADE_DATA = {
    "retail": 15,
    "minutes": 10,
    "hint": "1d4 Piercing, Finesse",
+   "slot": "Weapon",
    "stack": true,
    "sell": {
     "smith": 50,
     "pawn": 35,
     "general": 0,
+    "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
@@ -93,17 +103,19 @@ window.TRADE_DATA = {
   },
   "torvald_iron_sallet": {
    "name": "iron skullcap",
-   "title": "Cold-Hammered Skullcap",
+   "title": "Iron Skullcap",
    "kind": "head",
    "tier": "",
    "retail": 30,
    "minutes": 10,
    "hint": "+1 AC, Counts as Armor",
+   "slot": "Head",
    "stack": true,
    "sell": {
     "smith": 50,
     "pawn": 35,
     "general": 0,
+    "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
@@ -111,17 +123,19 @@ window.TRADE_DATA = {
   },
   "iron_crowbar": {
    "name": "iron prybar",
-   "title": "Pioneer's Iron Prybar",
+   "title": "Iron Prybar",
    "kind": "tool",
    "tier": "",
    "retail": 12,
    "minutes": 10,
    "hint": "Advantage on Force and Pry Checks",
+   "slot": "",
    "stack": true,
    "sell": {
     "smith": 50,
     "pawn": 35,
     "general": 0,
+    "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
@@ -135,29 +149,33 @@ window.TRADE_DATA = {
    "retail": 0,
    "minutes": 10,
    "hint": "",
+   "slot": "",
    "stack": false,
    "sell": {
     "smith": 0,
     "pawn": 0,
     "general": 0,
+    "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 5,
     "countVar": "scrap_steel"
    }
   },
   "shield": {
-   "name": "iron-bossed shield",
-   "title": "Limestone Boss Shield",
+   "name": "oak shield",
+   "title": "Oak Shield",
    "kind": "shield",
    "tier": "shield",
    "retail": 30,
    "minutes": 10,
    "hint": "+2 Shield AC Bonus",
+   "slot": "Off hand",
    "stack": true,
    "sell": {
     "smith": 0,
     "pawn": 0,
     "general": 0,
+    "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
@@ -171,11 +189,13 @@ window.TRADE_DATA = {
    "retail": 10,
    "minutes": 10,
    "hint": "+1 STR for 12h",
+   "slot": "",
    "stack": true,
    "sell": {
     "smith": 0,
     "pawn": 0,
     "general": 0,
+    "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
@@ -189,11 +209,13 @@ window.TRADE_DATA = {
    "retail": 10,
    "minutes": 10,
    "hint": "+1 WIS for 12h",
+   "slot": "",
    "stack": true,
    "sell": {
     "smith": 0,
     "pawn": 0,
     "general": 0,
+    "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
@@ -207,65 +229,73 @@ window.TRADE_DATA = {
    "retail": 5,
    "minutes": 5,
    "hint": "+1 HP from your next sleep",
+   "slot": "",
    "stack": true,
    "sell": {
     "smith": 0,
     "pawn": 0,
     "general": 0,
+    "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
    }
   },
   "hemp_rope": {
-   "name": "coil of hemp rope",
-   "title": "Coil of Hemp Rope",
+   "name": "hemp rope",
+   "title": "Hemp Rope",
    "kind": "tool",
    "tier": "",
    "retail": 8,
    "minutes": 5,
    "hint": "",
+   "slot": "",
    "stack": true,
    "sell": {
     "smith": 0,
     "pawn": 0,
     "general": 50,
+    "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
    }
   },
   "pitch_torch": {
-   "name": "pitch-dipped torch",
-   "title": "Pitch-Dipped Torch",
+   "name": "torch",
+   "title": "Torch",
    "kind": "tool",
    "tier": "",
    "retail": 2,
    "minutes": 5,
    "hint": "",
+   "slot": "",
    "stack": true,
    "sell": {
     "smith": 0,
     "pawn": 0,
     "general": 50,
+    "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
    }
   },
   "lamp_oil": {
-   "name": "flask of lamp oil",
-   "title": "Flask of Lamp Oil",
+   "name": "lamp oil",
+   "title": "Lamp Oil",
    "kind": "tool",
    "tier": "",
    "retail": 3,
    "minutes": 5,
    "hint": "",
+   "slot": "",
    "stack": true,
    "sell": {
     "smith": 0,
     "pawn": 0,
     "general": 50,
+    "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
@@ -279,11 +309,33 @@ window.TRADE_DATA = {
    "retail": 12,
    "minutes": 5,
    "hint": "",
+   "slot": "",
    "stack": true,
    "sell": {
     "smith": 0,
     "pawn": 0,
     "general": 50,
+    "tailor": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "tool_kit": {
+   "name": "tool kit",
+   "title": "Tool Kit",
+   "kind": "tool",
+   "tier": "",
+   "retail": 20,
+   "minutes": 5,
+   "hint": "Advantage on repair and tinkering checks",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
@@ -297,29 +349,33 @@ window.TRADE_DATA = {
    "retail": 4,
    "minutes": 5,
    "hint": "",
+   "slot": "",
    "stack": true,
    "sell": {
     "smith": 0,
     "pawn": 0,
     "general": 50,
+    "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
    }
   },
   "chalk_sticks": {
-   "name": "bundle of chalk",
-   "title": "Bundle of Chalk",
+   "name": "chalk sticks",
+   "title": "Chalk Sticks",
    "kind": "tool",
    "tier": "",
    "retail": 2,
    "minutes": 5,
    "hint": "",
+   "slot": "",
    "stack": true,
    "sell": {
     "smith": 0,
     "pawn": 0,
     "general": 50,
+    "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
@@ -327,71 +383,459 @@ window.TRADE_DATA = {
   },
   "wool_blanket": {
    "name": "wool blanket",
-   "title": "Grey Wool Blanket",
+   "title": "Wool Blanket",
    "kind": "tool",
    "tier": "",
    "retail": 6,
    "minutes": 5,
    "hint": "+1 HP from sleeping on a shared bunk",
+   "slot": "",
    "stack": true,
    "sell": {
     "smith": 0,
     "pawn": 0,
     "general": 50,
+    "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
    }
   },
   "waxed_oilcloth": {
-   "name": "sheet of waxed oilcloth",
-   "title": "Sheet of Waxed Oilcloth",
+   "name": "oilcloth sheet",
+   "title": "Oilcloth Sheet",
    "kind": "tool",
    "tier": "",
    "retail": 6,
    "minutes": 5,
    "hint": "Halves the wear of rain and storms on the road",
+   "slot": "",
    "stack": true,
    "sell": {
     "smith": 0,
     "pawn": 0,
     "general": 50,
+    "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
    }
   },
   "lye_soap": {
-   "name": "twist of lye soap",
-   "title": "Twist of Lye Soap",
+   "name": "lye soap",
+   "title": "Lye Soap",
    "kind": "consumable",
    "tier": "",
    "retail": 2,
    "minutes": 5,
    "hint": "Hygiene back to Clean, with water at hand",
+   "slot": "",
    "stack": true,
    "sell": {
     "smith": 0,
     "pawn": 0,
     "general": 50,
+    "tailor": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "lockpick_set": {
+   "name": "lockpick set",
+   "title": "Lockpick Set",
+   "kind": "tool",
+   "tier": "",
+   "retail": 30,
+   "minutes": 5,
+   "hint": "Advantage on lock checks",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "padlock": {
+   "name": "padlock and key",
+   "title": "Padlock and Key",
+   "kind": "tool",
+   "tier": "",
+   "retail": 8,
+   "minutes": 5,
+   "hint": "",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "door_bolt": {
+   "name": "door bolt",
+   "title": "Door Bolt",
+   "kind": "tool",
+   "tier": "",
+   "retail": 5,
+   "minutes": 5,
+   "hint": "",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "iron_manacles": {
+   "name": "iron manacles",
+   "title": "Iron Manacles",
+   "kind": "tool",
+   "tier": "",
+   "retail": 15,
+   "minutes": 5,
+   "hint": "",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "broadcloth_cloak": {
+   "name": "traveler's cloak",
+   "title": "Traveler's Cloak",
+   "kind": "cloak",
+   "tier": "",
+   "retail": 40,
+   "minutes": 20,
+   "hint": "Weather wear: cold -55%, rain -45%",
+   "slot": "Cloak",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 40,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "storm_cape": {
+   "name": "storm cape",
+   "title": "Storm Cape",
+   "kind": "cloak",
+   "tier": "",
+   "retail": 70,
+   "minutes": 20,
+   "hint": "Weather wear: cold -30%, rain -75%",
+   "slot": "Cloak",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 40,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "winter_cloak": {
+   "name": "winter cloak",
+   "title": "Winter Cloak",
+   "kind": "cloak",
+   "tier": "",
+   "retail": 120,
+   "minutes": 30,
+   "hint": "Weather wear: cold -90%, rain -40%, heat +40%",
+   "slot": "Cloak",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 40,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "summer_duster": {
+   "name": "summer duster",
+   "title": "Summer Duster",
+   "kind": "cloak",
+   "tier": "",
+   "retail": 50,
+   "minutes": 20,
+   "hint": "Weather wear: cold -10%, rain -30%, heat -60%",
+   "slot": "Cloak",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 40,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "felt_hat": {
+   "name": "felt hat",
+   "title": "Felt Hat",
+   "kind": "head",
+   "tier": "",
+   "retail": 20,
+   "minutes": 15,
+   "hint": "Weather wear: rain -15%, heat -25%",
+   "slot": "Head",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 40,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "fur_cap": {
+   "name": "fur cap",
+   "title": "Fur Cap",
+   "kind": "head",
+   "tier": "",
+   "retail": 30,
+   "minutes": 15,
+   "hint": "Weather wear: cold -20%",
+   "slot": "Head",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 40,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "lined_gloves": {
+   "name": "pair of lined gloves",
+   "title": "Lined Gloves",
+   "kind": "hands",
+   "tier": "",
+   "retail": 30,
+   "minutes": 15,
+   "hint": "Weather wear: cold -20%",
+   "slot": "Hands",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 40,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "waxed_boots": {
+   "name": "pair of rain boots",
+   "title": "Rain Boots",
+   "kind": "feet",
+   "tier": "",
+   "retail": 60,
+   "minutes": 20,
+   "hint": "Weather wear: cold -10%, rain -25%",
+   "slot": "Feet",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 40,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "winter_boots": {
+   "name": "pair of winter boots",
+   "title": "Winter Boots",
+   "kind": "feet",
+   "tier": "",
+   "retail": 50,
+   "minutes": 20,
+   "hint": "Weather wear: cold -25%",
+   "slot": "Feet",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 40,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "wool_muffler": {
+   "name": "wool muffler",
+   "title": "Wool Muffler",
+   "kind": "neck",
+   "tier": "",
+   "retail": 10,
+   "minutes": 10,
+   "hint": "Weather wear: cold -10%",
+   "slot": "Neck",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 40,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "silk_neckcloth": {
+   "name": "silk neckcloth",
+   "title": "Silk Neckcloth",
+   "kind": "neck",
+   "tier": "",
+   "retail": 60,
+   "minutes": 15,
+   "hint": "+1 CHA",
+   "slot": "Neck",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 40,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "scholar_gloves": {
+   "name": "pair of scholar's gloves",
+   "title": "Scholar's Gloves",
+   "kind": "hands",
+   "tier": "",
+   "retail": 80,
+   "minutes": 15,
+   "hint": "+1 INT",
+   "slot": "Hands",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 40,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "dancing_slippers": {
+   "name": "pair of dancing slippers",
+   "title": "Dancing Slippers",
+   "kind": "feet",
+   "tier": "",
+   "retail": 70,
+   "minutes": 15,
+   "hint": "+1 DEX",
+   "slot": "Feet",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 40,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "masters_gloves": {
+   "name": "pair of master's gloves",
+   "title": "Master's Gloves",
+   "kind": "hands",
+   "tier": "",
+   "retail": 250,
+   "minutes": 30,
+   "hint": "+2 INT",
+   "slot": "Hands",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 40,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "countVar": ""
+   }
+  },
+  "court_coat": {
+   "name": "court coat",
+   "title": "Court Coat",
+   "kind": "armor",
+   "tier": "none",
+   "retail": 180,
+   "minutes": 30,
+   "hint": "Cloth armor: AC 10 + DEX; cold -25%, rain -10%; +2 CHA",
+   "slot": "Body armor",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 40,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
    }
   },
   "torvald_hide_cap": {
-   "name": "hide cap",
-   "title": "Boiled-Hide Watch Cap",
+   "name": "watch cap",
+   "title": "Leather Watch Cap",
    "kind": "head",
    "tier": "",
    "retail": 8,
    "minutes": 10,
    "hint": "",
+   "slot": "Head",
    "stack": true,
    "sell": {
     "smith": 0,
     "pawn": 35,
     "general": 0,
+    "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
     "countVar": ""
@@ -399,17 +843,19 @@ window.TRADE_DATA = {
   },
   "toll_seal_ring": {
    "name": "signet ring",
-   "title": "Customs Officer's Signet Ring",
+   "title": "Officer's Signet Ring",
    "kind": "ring",
    "tier": "",
    "retail": 0,
    "minutes": 10,
    "hint": "",
+   "slot": "Ring",
    "stack": false,
    "sell": {
     "smith": 0,
     "pawn": 0,
     "general": 0,
+    "tailor": 0,
     "pawnFixed": 80,
     "smithPiece": 0,
     "countVar": ""
@@ -459,6 +905,7 @@ window.TRADE_DATA = {
     "pitch_torch",
     "lamp_oil",
     "hooded_lantern",
+    "tool_kit",
     "tinderbox",
     "chalk_sticks",
     "wool_blanket",
@@ -470,11 +917,66 @@ window.TRADE_DATA = {
     "pitch_torch",
     "lamp_oil",
     "hooded_lantern",
+    "tool_kit",
     "tinderbox",
     "chalk_sticks",
     "wool_blanket",
     "waxed_oilcloth",
     "lye_soap"
+   ]
+  },
+  "vael": {
+   "title": "Vael & Son",
+   "buyer": "general",
+   "buy": [
+    "lockpick_set",
+    "padlock",
+    "door_bolt",
+    "iron_manacles"
+   ],
+   "sell": [
+    "lockpick_set",
+    "padlock",
+    "door_bolt",
+    "iron_manacles"
+   ]
+  },
+  "tailor": {
+   "title": "The Gilt Needle",
+   "buyer": "tailor",
+   "buy": [
+    "broadcloth_cloak",
+    "storm_cape",
+    "winter_cloak",
+    "summer_duster",
+    "felt_hat",
+    "fur_cap",
+    "lined_gloves",
+    "waxed_boots",
+    "winter_boots",
+    "wool_muffler",
+    "silk_neckcloth",
+    "scholar_gloves",
+    "dancing_slippers",
+    "masters_gloves",
+    "court_coat"
+   ],
+   "sell": [
+    "broadcloth_cloak",
+    "storm_cape",
+    "winter_cloak",
+    "summer_duster",
+    "felt_hat",
+    "fur_cap",
+    "lined_gloves",
+    "waxed_boots",
+    "winter_boots",
+    "wool_muffler",
+    "silk_neckcloth",
+    "scholar_gloves",
+    "dancing_slippers",
+    "masters_gloves",
+    "court_coat"
    ]
   },
   "pawn": {

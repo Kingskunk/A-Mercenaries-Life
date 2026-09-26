@@ -84,7 +84,7 @@
 *comment Tracks stance preference; auto-restored when wielding a 1H weapon.
 *create wants_shield_equipped true
 *create armor "brigandine"
-*create armor_desc "Iron-Studded Gambeson"
+*create armor_desc "Studded Gambeson"
 *create armor_type "brigandine"
 *comment --- EQUIPMENT LOADOUT ---
 *create starting_weapon "falchion"
@@ -94,7 +94,7 @@
 *create starting_weapon_type "melee"
 *create starting_weapon_hands "one_handed"
 *create starting_armor "brigandine"
-*create starting_armor_desc "Iron-Studded Gambeson"
+*create starting_armor_desc "Studded Gambeson"
 *create starting_armor_type "brigandine"
 *create equipped_weapon_id "starting"
 *create weapon_prose "falchion"
@@ -112,10 +112,6 @@
 *create equipped_cloak_id "none"
 *create cloak_desc "None"
 *create cloak_prose "bare shoulders"
-*comment cloak_traits outputs (calendar.txt): percent a cloak takes off the cold and the wet part of exposure, plus a menu hint.
-*create cloak_trait_cold 0
-*create cloak_trait_wet 0
-*create cloak_trait_hint ""
 *create equipped_hands_id "none"
 *create hands_desc "None"
 *create hands_prose "bare hands"
@@ -217,6 +213,12 @@
 *create dry_streak 0
 *create ground_state "dry"
 *create temp_index 3
+*comment climate_shift moves the raw temperature before it is clamped into the six bands: 0 in Port Valen, negative for a
+*comment colder region (arctic, high mountains), positive for a hotter one (desert, tropics). temp_extreme is how many
+*comment steps the SHIFT pushed beyond freezing (negative) or hot (positive); calc_exposure adds 20 per step to that part.
+*comment Port Valen's own band overflow is ignored, so its numbers are exactly what they were before regions existed.
+*create climate_shift 0
+*create temp_extreme 0
 *create temperature_band "mild"
 *create exposure_base_mins 0
 *create exposure_extra_mins 0
@@ -263,6 +265,20 @@
 *comment unboosted score (chargen sets the scores, then update_dnd_stats snapshots them into base_<stat>),
 *comment and recalculate_buff_stats always rebuilds score = base + boon. Never write a score directly
 *comment after chargen: change base_<stat> and call recalculate_buff_stats.
+*comment Equipment ability-score bonuses (worn gear plus the attuned Hearthstone). Equipment bonuses to the SAME score do not
+*comment stack: recalculate_equipment_bonuses keeps the highest one per stat. Fully derived, so never write them directly.
+*create equip_str_bonus 0
+*create equip_dex_bonus 0
+*create equip_con_bonus 0
+*create equip_int_bonus 0
+*create equip_wis_bonus 0
+*create equip_cha_bonus 0
+*create eb_str 0
+*create eb_dex 0
+*create eb_con 0
+*create eb_int 0
+*create eb_wis 0
+*create eb_cha 0
 *create buff_str_bonus 0
 *create buff_dex_bonus 0
 *create buff_con_bonus 0
@@ -613,7 +629,20 @@
 *create mw_hollis_lane_talk false
 *create mw_hollis_stock_talk false
 *create mw_hollis_neighbors_talk false
+*comment mw_vael_seen is stepping inside the locksmith's workshop (the codex entry's shop paragraph unlocks on it);
+*comment the two *_talk flags record the counter conversations that add to Vael's codex entry.
+*create mw_vael_seen false
+*create mw_vael_sign_talk false
+*create mw_vael_customers_talk false
 *create mw_herb_seen false
+*comment mw_herb_seen is reaching the still-room (walks in, so the codex entry describing the inside
+*comment unlocks); mw_herb_named is learning the name off the sign in the close, which is enough for the
+*comment lane menu to call it Ambrose's. Same split as the Gilt Needle's pq_tailor_seen / pq_tailor_named
+*comment (startup.txt): the door card names the shop, entering it earns the codex.
+*create mw_herb_named false
+*comment mw_herb_talk records the first counter conversation, so the liniment speech is the revisit
+*comment variant rather than repeating the introduction (same shape as the *_talk flags elsewhere).
+*create mw_herb_talk false
 *create mw_smiths_seen false
 *create mw_forge_seen false
 *create mw_halda_trade_talk false
@@ -1135,6 +1164,31 @@
 *create combat_flavor_enemy_miss_3 ""
 *create combat_flavor_enemy_miss_4 ""
 *create combat_flavor_enemy_miss_5 ""
+*comment Variants 6-8 of the shared player strike pool (apply_generic_weapon_flavor). A hand-authored fight has 1-5 only.
+*create combat_flavor_weapon_hit_6 ""
+*create combat_flavor_weapon_hit_7 ""
+*create combat_flavor_weapon_hit_8 ""
+*create combat_flavor_weapon_miss_6 ""
+*create combat_flavor_weapon_miss_7 ""
+*create combat_flavor_weapon_miss_8 ""
+*create combat_flavor_weapon_hit_ranged_6 ""
+*create combat_flavor_weapon_hit_ranged_7 ""
+*create combat_flavor_weapon_hit_ranged_8 ""
+*create combat_flavor_weapon_miss_ranged_6 ""
+*create combat_flavor_weapon_miss_ranged_7 ""
+*create combat_flavor_weapon_miss_ranged_8 ""
+*comment Enemy type library: which library type fills each slot ("" for a hand-authored slot), and the scratch fields
+*comment flavor_from_type (combat.txt) reads and writes. Plain variables rather than *params, like advance_time.
+*create combat_enemy1_flavor_type ""
+*create combat_enemy2_flavor_type ""
+*create combat_enemy3_flavor_type ""
+*create fft_type ""
+*create fft_v 1
+*create fft_m2 1
+*create fft_hit ""
+*create fft_miss ""
+*create fft_m2hit ""
+*create fft_m2miss ""
 *comment Spell-specific combat attack flavor
 *create combat_flavor_dissonant_hit ""
 *create combat_flavor_dissonant_miss ""
@@ -1340,10 +1394,30 @@
 *create has_pitch_torch false
 *create has_lamp_oil false
 *create has_hooded_lantern false
+*create has_tool_kit false
 *create has_tinderbox false
 *create has_chalk_sticks false
 *create has_wool_blanket false
 *create has_waxed_oilcloth false
+*create has_lockpick_set false
+*create has_padlock false
+*create has_door_bolt false
+*create has_iron_manacles false
+*create has_broadcloth_cloak false
+*create has_storm_cape false
+*create has_winter_cloak false
+*create has_summer_duster false
+*create has_felt_hat false
+*create has_fur_cap false
+*create has_lined_gloves false
+*create has_scholar_gloves false
+*create has_masters_gloves false
+*create has_waxed_boots false
+*create has_winter_boots false
+*create has_dancing_slippers false
+*create has_wool_muffler false
+*create has_silk_neckcloth false
+*create has_court_coat false
 *create spare_timber_axe 0
 *create spare_stiletto 0
 *create spare_iron_crowbar 0
@@ -1362,10 +1436,30 @@
 *create spare_pitch_torch 0
 *create spare_lamp_oil 0
 *create spare_hooded_lantern 0
+*create spare_tool_kit 0
 *create spare_tinderbox 0
 *create spare_chalk_sticks 0
 *create spare_wool_blanket 0
 *create spare_waxed_oilcloth 0
+*create spare_lockpick_set 0
+*create spare_padlock 0
+*create spare_door_bolt 0
+*create spare_iron_manacles 0
+*create spare_broadcloth_cloak 0
+*create spare_storm_cape 0
+*create spare_winter_cloak 0
+*create spare_summer_duster 0
+*create spare_felt_hat 0
+*create spare_fur_cap 0
+*create spare_lined_gloves 0
+*create spare_scholar_gloves 0
+*create spare_masters_gloves 0
+*create spare_waxed_boots 0
+*create spare_winter_boots 0
+*create spare_dancing_slippers 0
+*create spare_wool_muffler 0
+*create spare_silk_neckcloth 0
+*create spare_court_coat 0
 *create cart_buy_timber_axe 0
 *create cart_buy_stiletto 0
 *create cart_buy_iron_crowbar 0
@@ -1382,10 +1476,30 @@
 *create cart_buy_pitch_torch 0
 *create cart_buy_lamp_oil 0
 *create cart_buy_hooded_lantern 0
+*create cart_buy_tool_kit 0
 *create cart_buy_tinderbox 0
 *create cart_buy_chalk_sticks 0
 *create cart_buy_wool_blanket 0
 *create cart_buy_waxed_oilcloth 0
+*create cart_buy_lockpick_set 0
+*create cart_buy_padlock 0
+*create cart_buy_door_bolt 0
+*create cart_buy_iron_manacles 0
+*create cart_buy_broadcloth_cloak 0
+*create cart_buy_storm_cape 0
+*create cart_buy_winter_cloak 0
+*create cart_buy_summer_duster 0
+*create cart_buy_felt_hat 0
+*create cart_buy_fur_cap 0
+*create cart_buy_lined_gloves 0
+*create cart_buy_scholar_gloves 0
+*create cart_buy_masters_gloves 0
+*create cart_buy_waxed_boots 0
+*create cart_buy_winter_boots 0
+*create cart_buy_dancing_slippers 0
+*create cart_buy_wool_muffler 0
+*create cart_buy_silk_neckcloth 0
+*create cart_buy_court_coat 0
 *create cart_sell_timber_axe 0
 *create cart_sell_stiletto 0
 *create cart_sell_iron_crowbar 0
@@ -1400,10 +1514,30 @@
 *create cart_sell_pitch_torch 0
 *create cart_sell_lamp_oil 0
 *create cart_sell_hooded_lantern 0
+*create cart_sell_tool_kit 0
 *create cart_sell_tinderbox 0
 *create cart_sell_chalk_sticks 0
 *create cart_sell_wool_blanket 0
 *create cart_sell_waxed_oilcloth 0
+*create cart_sell_lockpick_set 0
+*create cart_sell_padlock 0
+*create cart_sell_door_bolt 0
+*create cart_sell_iron_manacles 0
+*create cart_sell_broadcloth_cloak 0
+*create cart_sell_storm_cape 0
+*create cart_sell_winter_cloak 0
+*create cart_sell_summer_duster 0
+*create cart_sell_felt_hat 0
+*create cart_sell_fur_cap 0
+*create cart_sell_lined_gloves 0
+*create cart_sell_scholar_gloves 0
+*create cart_sell_masters_gloves 0
+*create cart_sell_waxed_boots 0
+*create cart_sell_winter_boots 0
+*create cart_sell_dancing_slippers 0
+*create cart_sell_wool_muffler 0
+*create cart_sell_silk_neckcloth 0
+*create cart_sell_court_coat 0
 *create cart_sell_scrap_steel 0
 *comment GEN:END gear_creates
 *comment Armor proficiency (equipment.txt armor_prof_check / recalculate_proficiency). armor_tier is derived from
@@ -1429,6 +1563,7 @@
 *create gear_pct_smith 0
 *create gear_pct_pawn 0
 *create gear_pct_general 0
+*create gear_pct_tailor 0
 *create gear_fixed_pawn 0
 *create gear_piece_smith 0
 *create gear_count_var ""
@@ -1438,6 +1573,8 @@
 *create gear_name ""
 *create gear_retail 0
 *create gear_kind ""
+*comment gear_slot: the equipment slot the item fills, as the player reads it ("Cloak", "Hands", "Weapon, one-handed"), or "" for a tool or consumable.
+*create gear_slot ""
 *create gear_tier ""
 *create gear_hint ""
 *create gear_blurb ""
@@ -1457,6 +1594,18 @@
 *create gear_sold_note ""
 *comment Stacking: has_<id> means "at least one"; spare_<id> counts the copies beyond the first (created for every
 *comment stackable catalog item). gear_qty / gear_stack / gear_spare_var are gear_count and gear_info outputs.
+*comment garment_traits outputs (equipment.txt): percent cuts to the cold, wet and heat parts of outdoor exposure, an
+*comment ability-score bonus, and the menu hint. origin_clothing outputs: the origin's own piece for a slot. sg_slot_var
+*comment is sell_gear's scratch name of a worn slot's id variable.
+*create garment_cold 0
+*create garment_wet 0
+*create garment_heat 0
+*create garment_stat "none"
+*create garment_bonus 0
+*create garment_hint ""
+*create origin_clothing_id "none"
+*create origin_clothing_name "nothing"
+*create sg_slot_var ""
 *create gear_stack false
 *create gear_qty 0
 *create gear_spare_var ""
@@ -1480,6 +1629,9 @@
 *create gear_eff_bonus 0
 *create gear_eff_minutes 0
 *create use_item_id ""
+*comment The inventory panel sets these before it opens choicescript_stats codex_equip_do (an equip that changes ability scores).
+*create equip_slot ""
+*create equip_item_id ""
 *create use_in_combat false
 *create use_result ""
 *create use_text ""
@@ -1492,6 +1644,9 @@
 *comment lists the live buy rows as "id~warning|". The panel writes cart_buy_<id> / cart_sell_<id>, and equipment.txt
 *comment shop_begin .. shop_check runs the trade. The remaining shop_* variables are that routine's totals and receipt.
 *create shop_open ""
+*comment The Gilt Needle: which rack the shopper stood at, and whether the shop is open this hour (pq_tailor_open_check).
+*create pq_tailor_back "stock"
+*create pq_tailor_open true
 *create shop_rows ""
 *create shop_mode ""
 *create shop_buyer ""
@@ -1515,6 +1670,9 @@
 *create discussed_talia_exemption false
 *create discussed_talia_nerve false
 *create has_talia_deck_boots false
+*comment Rorik's camp gifts have no ownership flag of their own; equipment.txt equip_hands and equip_waist set these when the piece is first swapped out.
+*create has_rorik_grip_wraps false
+*create has_rorik_campaign_belt false
 *create has_toll_seal_ring false
 *create has_elspeth_weir_knot false
 *create has_althea_votive_ring false
@@ -1594,7 +1752,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set wisdom 10
     *set strength 10
     *set armor "cloth"
-    *set armor_desc "Oiled Traveling Robes"
+    *set armor_desc "Traveling Robes"
     *set armor_type "cloth"
     *set has_shield false
     *set weapon "quarterstaff"
@@ -1655,7 +1813,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set charisma 12
     *set strength 10
     *set armor "cloth"
-    *set armor_desc "Oiled Traveling Robes"
+    *set armor_desc "Traveling Robes"
     *set armor_type "cloth"
     *set has_shield false
     *set weapon "quarterstaff"
@@ -1720,7 +1878,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set wisdom 10
     *set strength 10
     *set armor "leather"
-    *set armor_desc "Oiled Leather Jerkin"
+    *set armor_desc "Leather Jerkin"
     *set armor_type "leather"
     *set has_shield false
     *set weapon "dagger"
@@ -1785,7 +1943,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set wisdom 10
     *set strength 10
     *set armor "leather"
-    *set armor_desc "Oiled Leather Jerkin"
+    *set armor_desc "Leather Jerkin"
     *set armor_type "leather"
     *set has_shield false
     *set weapon "dagger"
@@ -1837,7 +1995,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set intelligence 10
     *set charisma 10
     *set armor "leather"
-    *set armor_desc "Oiled Leather Jerkin"
+    *set armor_desc "Leather Jerkin"
     *set armor_type "leather"
     *set has_shield false
     *set weapon "shortbow"
@@ -1892,7 +2050,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set strength 10
     *set intelligence 10
     *set armor "leather"
-    *set armor_desc "Oiled Leather Jerkin"
+    *set armor_desc "Leather Jerkin"
     *set armor_type "leather"
     *set has_shield false
     *set weapon "shortbow"
@@ -1947,7 +2105,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set intelligence 10
     *set charisma 10
     *set armor "brigandine"
-    *set armor_desc "Iron-Studded Gambeson"
+    *set armor_desc "Studded Gambeson"
     *set armor_type "brigandine"
     *set has_shield true
     *set weapon "longsword"
@@ -2000,11 +2158,11 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set charisma 10
     *set intelligence 8
     *set armor "traveling_cloak"
-    *set armor_desc "Oiled Traveling Robes"
+    *set armor_desc "Traveling Robes"
     *set armor_type "cloth"
     *set has_shield false
     *set weapon "heavy broadaxe"
-    *set weapon_desc "Heavy Hooked Broadaxe"
+    *set weapon_desc "Hooked Broadaxe"
     *set weapon_damage "1d12 slashing"
     *set weapon_damage_type "slashing"
     *set weapon_type "melee"
@@ -2360,14 +2518,12 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
   *set buff_int_bonus bs_int
   *set buff_wis_bonus bs_wis
   *set buff_cha_bonus bs_cha
-  *set strength (base_strength + buff_str_bonus)
-  *set dexterity (base_dexterity + buff_dex_bonus)
-  *set constitution (base_constitution + buff_con_bonus)
-  *if (hearthstone_attuned)
-    *set constitution + 1
-  *set intelligence (base_intelligence + buff_int_bonus)
-  *set wisdom (base_wisdom + buff_wis_bonus)
-  *set charisma (base_charisma + buff_cha_bonus)
+  *set strength ((base_strength + buff_str_bonus) + equip_str_bonus)
+  *set dexterity ((base_dexterity + buff_dex_bonus) + equip_dex_bonus)
+  *set constitution ((base_constitution + buff_con_bonus) + equip_con_bonus)
+  *set intelligence ((base_intelligence + buff_int_bonus) + equip_int_bonus)
+  *set wisdom ((base_wisdom + buff_wis_bonus) + equip_wis_bonus)
+  *set charisma ((base_charisma + buff_cha_bonus) + equip_cha_bonus)
   *gosub update_dnd_stats
 *gosub refresh_boon_flags
 *return
@@ -2392,19 +2548,88 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment MAGIC ITEM ATTUNEMENT & RECOMPUTE
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment Kept as the name attunement code knows; the work is recalculate_equipment_bonuses below.
 *label recalculate_attuned_bonuses
-*set constitution (base_constitution + buff_con_bonus)
+*gosub recalculate_equipment_bonuses
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment EQUIPMENT ABILITY-SCORE BONUSES
+*comment Worn gear can add to an ability score (equipment.txt garment_traits gives garment_stat and garment_bonus) and the
+*comment Hearthstone Talisman adds +1 CON while attuned. Equipment bonuses to the SAME score do NOT stack: only the
+*comment highest one counts (timed boons are a separate channel and still add, and different stats each count). This is
+*comment fully derived from what is worn, so calling it again changes nothing; every equip_* routine and attune_item
+*comment call it. The six scores hold the boosted number: base + boon + equipment. When a total changes it re-derives
+*comment the modifiers through update_dnd_stats, which shifts max HP by the CON change (wounds stay) and recomputes AC.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label recalculate_equipment_bonuses
+*set eb_str 0
+*set eb_dex 0
+*set eb_con 0
+*set eb_int 0
+*set eb_wis 0
+*set eb_cha 0
+*gosub_scene equipment garment_traits equipped_armor_id
+*gosub eb_take
+*gosub_scene equipment garment_traits equipped_head_id
+*gosub eb_take
+*gosub_scene equipment garment_traits equipped_cloak_id
+*gosub eb_take
+*gosub_scene equipment garment_traits equipped_hands_id
+*gosub eb_take
+*gosub_scene equipment garment_traits equipped_waist_id
+*gosub eb_take
+*gosub_scene equipment garment_traits equipped_feet_id
+*gosub eb_take
+*gosub_scene equipment garment_traits equipped_neck_id
+*gosub eb_take
 *if (hearthstone_attuned)
-  *set constitution + 1
-*gosub recalculate_con_mod
-*temp old_hp_max hp_max
-*set hp_max (hit_die_max + con_mod)
-*set hp_current (hp_current + (hp_max - old_hp_max))
-*if (hp_current > hp_max)
-  *set hp_current hp_max
-*if (hp_current < 1)
-  *set hp_current 1
-*gosub_scene equipment recalculate_armor_class
+  *if (eb_con < 1)
+    *set eb_con 1
+*temp eb_changed false
+*if (not(eb_str = equip_str_bonus))
+  *set eb_changed true
+*if (not(eb_dex = equip_dex_bonus))
+  *set eb_changed true
+*if (not(eb_con = equip_con_bonus))
+  *set eb_changed true
+*if (not(eb_int = equip_int_bonus))
+  *set eb_changed true
+*if (not(eb_wis = equip_wis_bonus))
+  *set eb_changed true
+*if (not(eb_cha = equip_cha_bonus))
+  *set eb_changed true
+*if ((eb_changed) and (loadout_initialized))
+  *set equip_str_bonus eb_str
+  *set equip_dex_bonus eb_dex
+  *set equip_con_bonus eb_con
+  *set equip_int_bonus eb_int
+  *set equip_wis_bonus eb_wis
+  *set equip_cha_bonus eb_cha
+  *set strength ((base_strength + buff_str_bonus) + equip_str_bonus)
+  *set dexterity ((base_dexterity + buff_dex_bonus) + equip_dex_bonus)
+  *set constitution ((base_constitution + buff_con_bonus) + equip_con_bonus)
+  *set intelligence ((base_intelligence + buff_int_bonus) + equip_int_bonus)
+  *set wisdom ((base_wisdom + buff_wis_bonus) + equip_wis_bonus)
+  *set charisma ((base_charisma + buff_cha_bonus) + equip_cha_bonus)
+  *gosub update_dnd_stats
+*return
+
+*comment eb_take: fold the garment_traits result just loaded into the running maximum for its stat.
+*label eb_take
+*if (garment_bonus > 0)
+  *if ((garment_stat = "str") and (garment_bonus > eb_str))
+    *set eb_str garment_bonus
+  *if ((garment_stat = "dex") and (garment_bonus > eb_dex))
+    *set eb_dex garment_bonus
+  *if ((garment_stat = "con") and (garment_bonus > eb_con))
+    *set eb_con garment_bonus
+  *if ((garment_stat = "int") and (garment_bonus > eb_int))
+    *set eb_int garment_bonus
+  *if ((garment_stat = "wis") and (garment_bonus > eb_wis))
+    *set eb_wis garment_bonus
+  *if ((garment_stat = "cha") and (garment_bonus > eb_cha))
+    *set eb_cha garment_bonus
 *return
 
 *comment Note: Equipment loadouts and AC calculations are in equipment.txt

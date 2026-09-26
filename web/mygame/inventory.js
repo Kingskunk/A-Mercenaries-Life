@@ -38,10 +38,14 @@
   }
 
   // Turns a catalog entry into plain, ready-to-render values for the current game state.
+  // Hand-written items name their slot through equip.slot; generated ones carry a ready label (item.slot).
+  var SLOT_NAMES = { weapon: "Weapon", armor: "Body armor", shield: "Off hand", head: "Head", cloak: "Cloak", hands: "Hands", waist: "Waist", feet: "Feet", neck: "Neck", ring: "Ring" };
   function resolve(item, s) {
     return {
       id: item.id,
       category: item.category,
+      slot: item.slot || (item.equip && SLOT_NAMES[item.equip.slot]) || "",
+      traits: evalField(item.traits, s) || "",
       name: evalField(item.name, s),
       description: evalField(item.description, s),
       badge: evalField(item.badge, s) || "",
@@ -64,6 +68,19 @@
   // "empty" governs the dimmed/placeholder styling for a slot with nothing worn.
   var EMPTY_DESCS = { "Bare head": 1, "None": 1, "Bare finger": 1, "Bare throat": 1, "Bare feet": 1, "none": 1 };
 
+  // What a worn piece does (weather cuts, ability-score bonus): the text comes from equipment.txt garment_traits through
+  // window.GARMENT_HINTS (generated), so the card can never disagree with the game. The attuned Hearthstone is the one
+  // worn piece that is not in that table.
+  var WORN_ID = { armor: "equipped_armor_id", head: "equipped_head_id", cloak: "equipped_cloak_id", hands: "equipped_hands_id",
+    waist: "equipped_waist_id", feet: "equipped_feet_id", neck: "equipped_neck_id" };
+  var PLAIN_WORN = { head: 1, cloak: 1, hands: 1, waist: 1, feet: 1, neck: 1 };
+  function wornTraits(bucket, s) {
+    var id = WORN_ID[bucket] ? s[WORN_ID[bucket]] : "";
+    if (!id) return "";
+    if (id === "hearthstone_talisman") return "+1 CON, attuned";
+    return (window.GARMENT_HINTS || {})[id] || "";
+  }
+
   function renderSlotValue(slot, s) {
     var desc = slot.desc ? (s[slot.desc] == null ? "" : String(s[slot.desc])) : "";
     var empty = !!EMPTY_DESCS[desc];
@@ -79,11 +96,14 @@
     } else if (slot.shape === "shield") {
       var hasShield = truthy(s.has_shield);
       var shieldOn = truthy(s.shield_equipped);
-      desc = hasShield ? "Limestone Boss Shield" : "No shield carried";
+      desc = hasShield ? "Oak Shield" : "No shield carried";
       empty = !hasShield || !shieldOn;
       meta = hasShield ? (shieldOn ? "Equipped, +2 AC" : "Stowed") : "";
     }
-    return { desc: desc, meta: meta, empty: empty };
+    // A worn piece with no weather cut or score bonus says so, so a plain slot reads as a choice, not as missing data.
+    var traits = wornTraits(slot.bucket, s), noBonus = false;
+    if (!traits && !meta && !empty && PLAIN_WORN[slot.bucket]) { traits = "No bonuses"; noBonus = true; }
+    return { desc: desc, meta: meta, empty: empty, traits: traits, noBonus: noBonus };
   }
 
   // Every catalog id for this bucket that the player currently owns (via a Satchel
@@ -151,6 +171,7 @@
         '<div class="inv-slot-label">' + esc(slot.label) + "</div>" +
         '<div class="inv-slot-desc">' + esc(v.desc) + "</div>" +
         (v.meta ? '<div class="inv-slot-meta">' + esc(v.meta) + "</div>" : "") +
+        (v.traits ? '<div class="inv-slot-meta inv-slot-traits' + (v.noBonus ? " inv-slot-nobonus" : "") + '">' + esc(v.traits) + "</div>" : "") +
         renderSlotControl(slot, s) +
         "</div>";
     });
@@ -268,11 +289,12 @@
         }
         html += '<div class="inv-item">' +
           '<div class="inv-item-main">' +
-            '<span class="inv-item-name">' + esc(r.name) + "</span>" +
+            '<span class="inv-item-name">' + esc(r.name) + (r.slot ? '<span class="inv-item-slot">' + esc(r.slot) + "</span>" : "") + "</span>" +
             (r.badge ? '<span class="inv-item-badge">' + esc(r.badge) + "</span>" : "") +
             (r.use ? '<button type="button" class="inv-use" data-use="' + esc(r.id) + '"' + (canUse() ? "" : " disabled") + ">" + esc(r.useLabel) + "</button>" : "") +
           "</div>" +
           (r.description ? '<div class="inv-item-desc">' + esc(r.description) + "</div>" : "") +
+          (r.traits ? '<div class="inv-item-traits">' + esc(r.traits) + "</div>" : "") +
           "</div>";
       });
     }
@@ -334,11 +356,38 @@
     }
   }
 
+  // A piece with an ability-score bonus (item.statBonus, from the catalog's traits) cannot be swapped here: the scores,
+  // max HP and AC are re-derived by ChoiceScript (startup.txt recalculate_equipment_bonuses), so the swap is handed to
+  // the dossier exactly like the Use button. Applies when the piece going on OR coming off carries a bonus.
+  function hasStatBonus(bucket, id) {
+    return data().items.some(function (item) {
+      return item.statBonus && item.equip && item.equip.slot === bucket && item.equip.id === id;
+    });
+  }
+  function equipViaDossier(bucket, id) {
+    if (!canUse()) { render(); return; }
+    var st = statsNow();
+    st.equip_slot = bucket;
+    st.equip_item_id = id;
+    close();
+    var scene = new window.Scene("choicescript_stats", window.stats, window.nav, { secondaryMode: "stats", saveSlot: "temp" });
+    scene.targetLabel = { label: "codex_equip_do", origin: "url", originLine: 0 };
+    window.clearScreen(function () {
+      if (typeof window.setButtonTitles === "function") window.setButtonTitles();
+      scene.execute();
+    });
+  }
+
   function onChange(ev) {
     var t = ev.target;
     if (!t.hasAttribute || !t.hasAttribute("data-bucket")) return;
     var bucket = t.getAttribute("data-bucket");
     var ringSlot = t.getAttribute("data-ring-slot") || undefined;
+    var current = window.EquipmentEngine.getEquippedId(bucket, ringSlot);
+    if (!ringSlot && (hasStatBonus(bucket, t.value) || hasStatBonus(bucket, current))) {
+      equipViaDossier(bucket, t.value);
+      return;
+    }
     window.EquipmentEngine.equipItem(bucket, t.value, ringSlot);
     render();
   }

@@ -46,7 +46,29 @@ function has(it, key) { return it[key] !== undefined && it[key] !== null && it[k
 function isHand(it) { return !!(it.flags && it.flags.hand); }
 function makesFlag(it) { return !(it.flags && it.flags.create === false); }
 
-var STACKABLE_KINDS = ["armor", "shield", "weapon", "head", "tool", "consumable"];
+var STACKABLE_KINDS = ["armor", "shield", "weapon", "head", "tool", "consumable", "cloak", "hands", "waist", "feet", "neck"];
+// Clothing kinds worn in their own slot. Each has equipped_<kind>_id, <kind>_desc and <kind>_prose in equipment.txt.
+var CLOTHING = ["cloak", "hands", "waist", "feet", "neck"];
+function isClothing(it) { return CLOTHING.indexOf(it.kind) !== -1; }
+var STAT_NAMES = { str: "STR", dex: "DEX", con: "CON", int: "INT", wis: "WIS", cha: "CHA" };
+// Which equipment slot an item occupies, as the player reads it (menus, the trade panel, the inventory). "" for things
+// that fill no slot (tools, consumables, salvage). A two-handed weapon says so (it stows the shield).
+var SLOT_LABEL = { armor: "Body armor", shield: "Off hand", head: "Head", cloak: "Cloak", hands: "Hands", waist: "Waist", feet: "Feet", neck: "Neck", ring: "Ring" };
+function slotLabel(it) {
+  if (it.kind === "weapon") return it.loadout && it.loadout.hands === "two_handed" ? "Weapon, two-handed" : "Weapon";
+  return SLOT_LABEL[it.kind] || "";
+}
+// One line describing what a garment's traits do, shown in menus, the dossier and the shop. The runtime copy is
+// generated into equipment.txt garment_traits (garment_hint), so the two can never disagree.
+function traitHint(it) {
+  var t = it.traits || {}, w = [], out = "";
+  if (t.cold) w.push("cold -" + t.cold + "%");
+  if (t.wet) w.push("rain -" + t.wet + "%");
+  if (t.heat) w.push(t.heat > 0 ? "heat -" + t.heat + "%" : "heat +" + (-t.heat) + "%");
+  if (w.length) out = "Weather wear: " + w.join(", ");
+  if (t.stat) out += (out ? "; " : "") + "+" + t.bonus + " " + STAT_NAMES[t.stat];
+  return out;
+}
 function stackable(it) { return it.stack !== undefined ? !!it.stack : STACKABLE_KINDS.indexOf(it.kind) !== -1; }
 
 // ChoiceScript will not chain operators, so an OR of N terms is nested pairwise: (((a) or (b)) or (c)).
@@ -99,6 +121,7 @@ function genGearInfo() {
     L.push('  *set gear_name ' + q(it.name));
     if (it.retail) L.push('  *set gear_retail ' + it.retail);
     L.push('  *set gear_kind ' + q(it.kind));
+    if (slotLabel(it)) L.push('  *set gear_slot ' + q(slotLabel(it)));
     L.push('  *set gear_title ' + q(it.title || it.name));
     if (stackable(it)) L.push('  *set gear_stack true');
     if (it.kind === "consumable") {
@@ -128,13 +151,15 @@ function genGearInfo() {
       }
     }
     if (it.tier) L.push('  *set gear_tier ' + q(it.tier));
-    if (it.hint) L.push('  *set gear_hint ' + q(it.hint));
+    var shownHint = it.hint || (it.traits ? traitHint(it) : "");
+    if (shownHint) L.push('  *set gear_hint ' + q(shownHint));
     if (it.blurb) L.push('  *set gear_blurb ' + q(it.blurb));
     if (it.minutes && it.minutes !== 10) L.push('  *set gear_minutes ' + it.minutes);
     var s = it.sell || {};
     if (s.smith) L.push('  *set gear_pct_smith ' + s.smith);
     if (s.pawn) L.push('  *set gear_pct_pawn ' + s.pawn);
     if (s.general) L.push('  *set gear_pct_general ' + s.general);
+    if (s.tailor) L.push('  *set gear_pct_tailor ' + s.tailor);
     if (s.pawnFixed) L.push('  *set gear_fixed_pawn ' + s.pawnFixed);
     if (s.smithPiece) L.push('  *set gear_piece_smith ' + s.smithPiece);
     if (s.countVar) L.push('  *set gear_count_var ' + q(s.countVar));
@@ -146,6 +171,26 @@ function genGearInfo() {
       L.push('  *if (gear_shop = ' + q(shopKey) + ')');
       L.push('    *set gear_quote ' + q(it.quotes[shopKey]));
     });
+  });
+  return L;
+}
+
+// One row per catalog item that carries traits: percent cuts to the cold, wet and heat parts of exposure (heat may be
+// negative, a heavy garment adds heat wear) and an optional ability-score bonus. Hand-written rows for older worn items
+// sit above the GEN block in equipment.txt garment_traits.
+function genGarmentTraits() {
+  var L = [];
+  items.filter(function (it) { return it.traits; }).forEach(function (it) {
+    var t = it.traits;
+    L.push('*if (gt_id = ' + q(it.id) + ')');
+    if (t.cold) L.push('  *set garment_cold ' + t.cold);
+    if (t.wet) L.push('  *set garment_wet ' + t.wet);
+    if (t.heat) L.push('  *set garment_heat ' + (t.heat < 0 ? "0 - " + (-t.heat) : t.heat));
+    if (t.stat) {
+      L.push('  *set garment_stat ' + q(t.stat));
+      L.push('  *set garment_bonus ' + t.bonus);
+    }
+    L.push('  *set garment_hint ' + q(traitHint(it)));
   });
   return L;
 }
@@ -171,6 +216,11 @@ function loadoutBlock(kind) {
       L.push('  *set weapon_type ' + q(o.type));
       L.push('  *set weapon_hands ' + q(o.hands));
       L.push('  *set weapon_prose ' + q(o.prose));
+    } else if (CLOTHING.indexOf(kind) !== -1) {
+      need(o, ["desc", "prose"]);
+      L.push('*if (equipped_' + kind + '_id = ' + q(it.id) + ')');
+      L.push('  *set ' + kind + '_desc ' + q(o.desc));
+      L.push('  *set ' + kind + '_prose ' + q(o.prose));
     } else if (kind === "head") {
       need(o, ["desc", "prose"]);
       L.push('*if (equipped_head_id = ' + q(it.id) + ')');
@@ -201,7 +251,8 @@ function genSidearms() {
   return L;
 }
 
-var EQUIPPED_VAR = { weapon: "equipped_weapon_id", head: "equipped_head_id", armor: "equipped_armor_id" };
+var EQUIPPED_VAR = { weapon: "equipped_weapon_id", head: "equipped_head_id", armor: "equipped_armor_id",
+  cloak: "equipped_cloak_id", hands: "equipped_hands_id", waist: "equipped_waist_id", feet: "equipped_feet_id", neck: "equipped_neck_id" };
 function listed() { return items.filter(function (it) { return it.dossier && !isHand(it); }); }
 
 function genDossierList() {
@@ -209,8 +260,9 @@ function genDossierList() {
   listed().forEach(function (it) {
     need(it.dossier, ["line"]);
     var d = it.dossier, badge = "";
-    if (EQUIPPED_VAR[it.kind] && d.badgeOn) {
-      badge = "@{(" + EQUIPPED_VAR[it.kind] + " = " + q(it.id) + ")  [" + d.badgeOn + "]|" + (d.badgeOff ? " [" + d.badgeOff + "]" : "") + "}";
+    var badgeOn = d.badgeOn || (isClothing(it) ? "Worn" : ""), badgeOff = d.badgeOff !== undefined ? d.badgeOff : (isClothing(it) ? "Stowed" : "");
+    if (EQUIPPED_VAR[it.kind] && badgeOn) {
+      badge = "@{(" + EQUIPPED_VAR[it.kind] + " = " + q(it.id) + ")  [" + badgeOn + "]|" + (badgeOff ? " [" + badgeOff + "]" : "") + "}";
     }
     L.push('*if (' + flag(it) + ')');
     L.push('  *set has_inventory_item true');
@@ -222,20 +274,30 @@ function genDossierList() {
   return L;
 }
 
-var EQUIP_LABEL = { weapon: "equip_weapon", head: "equip_head", armor: "equip_armor" };
-function equipOption(it) {
+var EQUIP_LABEL = { weapon: "equip_weapon", head: "equip_head", armor: "equip_armor", cloak: "equip_cloak", hands: "equip_hands", waist: "equip_waist", feet: "equip_feet", neck: "equip_neck" };
+// returnLabel: the dossier page the option came from (weapons and worn armor live on codex_equipment_weapons).
+function equipOption(it, returnLabel) {
   need(it.dossier, ["equipText"]);
+  var text = it.dossier.equipText;
+  if (it.traits && traitHint(it) && text.indexOf("[") === -1) text = text.replace(/\.$/, "") + " [" + traitHint(it) + "].";
   return [
     '*if ((' + flag(it) + ') and (not(' + EQUIPPED_VAR[it.kind] + ' = ' + q(it.id) + ')))',
-    '  # ' + it.dossier.equipText,
+    '  # ' + text,
     '    *gosub_scene equipment ' + EQUIP_LABEL[it.kind] + ' ' + q(it.id),
-    '    *goto codex_equipment_weapons'
+    '    *goto ' + (returnLabel || "codex_equipment_weapons")
   ];
 }
 
 function genEquipWeapons() {
   var L = [];
   listed().filter(function (it) { return it.kind === "weapon"; }).forEach(function (it) { L = L.concat(equipOption(it)); });
+  return L;
+}
+
+// Cloaks, gloves, belts and boots swap on the Apparel page, neckwear on the Accessories page.
+function genEquipClothing(kinds, returnLabel) {
+  var L = [];
+  listed().filter(function (it) { return kinds.indexOf(it.kind) !== -1; }).forEach(function (it) { L = L.concat(equipOption(it, returnLabel)); });
   return L;
 }
 
@@ -253,7 +315,8 @@ function genEquipWorn() {
   return L;
 }
 
-var INV_CATEGORY = { weapon: "weapons", armor: "apparel", head: "apparel", tool: "provisions", consumable: "consumables" };
+var INV_CATEGORY = { weapon: "weapons", armor: "apparel", head: "apparel", tool: "provisions", consumable: "consumables",
+  cloak: "apparel", hands: "apparel", waist: "apparel", feet: "apparel", neck: "apparel" };
 function genInventory() {
   var L = [];
   listed().forEach(function (it) {
@@ -262,14 +325,16 @@ function genInventory() {
     if (!cat) throw new Error("item '" + it.id + "' has no inventory category");
     var desc = /[.!?]$/.test(d.line) ? d.line : d.line + ".";
     L.push('{');
-    L.push('  id: ' + q(it.id) + ', category: ' + q(cat) + ', owned: ' + q(flag(it)) + ',');
+    L.push('  id: ' + q(it.id) + ', category: ' + q(cat) + ', owned: ' + q(flag(it)) + ',' + (slotLabel(it) ? ' slot: ' + q(slotLabel(it)) + ',' : ''));
     if (stackable(it)) {
       L.push('  name: function (s) { var n = 1 + (Number(s.spare_' + it.id + ') || 0); return ' + q(it.title) + ' + (n > 1 ? " ×" + n : ""); },');
     } else {
       L.push('  name: ' + q(it.title) + ',');
     }
+    var wornHint = it.hint || (it.traits ? traitHint(it) : "");
+    if (EQUIPPED_VAR[it.kind] && wornHint) { L.push('  description: ' + q(desc) + ','); L.push('  traits: ' + q(wornHint) + ','); }
     var more = EQUIPPED_VAR[it.kind] || it.kind === "consumable";
-    L.push('  description: ' + q(desc) + (more ? ',' : ''));
+    if (!(EQUIPPED_VAR[it.kind] && wornHint)) L.push('  description: ' + q(desc) + (more ? ',' : ''));
     if (it.kind === "consumable") {
       if (it.effect.type === "boon") {
         // The boon names are matched against the three unique-buff slots, like boonRunning() does for the menus.
@@ -284,8 +349,10 @@ function genInventory() {
     }
     if (EQUIPPED_VAR[it.kind]) {
       var slot = it.kind;
-      L.push('  badge: function (s) { return s.' + EQUIPPED_VAR[it.kind] + ' === ' + q(it.id) + ' ? ' + q(d.badgeOn || "Equipped") + ' : ' + q(d.badgeOff || "") + '; },');
-      L.push('  equip: { slot: ' + q(slot) + ', id: ' + q(it.id) + ' }');
+      L.push('  badge: function (s) { return s.' + EQUIPPED_VAR[it.kind] + ' === ' + q(it.id) + ' ? ' + q(d.badgeOn || (isClothing(it) ? "Worn" : "Equipped")) + ' : ' + q(d.badgeOff !== undefined ? d.badgeOff : (isClothing(it) ? "Stowed" : "")) + '; },');
+      // statBonus: the panel hands the swap to the dossier so ChoiceScript recomputes the ability scores.
+      L.push('  equip: { slot: ' + q(slot) + ', id: ' + q(it.id) + ' }' + (it.traits && it.traits.stat ? ',' : ''));
+      if (it.traits && it.traits.stat) L.push('  statBonus: true');
     }
     L.push('},');
   });
@@ -423,8 +490,8 @@ function genTradeData() {
     var it = byId[id], sl = it.sell || {};
     data.items[id] = {
       name: it.name, title: it.title || it.name, kind: it.kind, tier: it.tier || "", retail: it.retail || 0,
-      minutes: it.minutes || 10, hint: it.hint || "", stack: stackable(it),
-      sell: { smith: sl.smith || 0, pawn: sl.pawn || 0, general: sl.general || 0, pawnFixed: sl.pawnFixed || 0, smithPiece: sl.smithPiece || 0, countVar: sl.countVar || "" }
+      minutes: it.minutes || 10, hint: it.hint || (it.traits ? traitHint(it) : ""), slot: slotLabel(it), stack: stackable(it),
+      sell: { smith: sl.smith || 0, pawn: sl.pawn || 0, general: sl.general || 0, tailor: sl.tailor || 0, pawnFixed: sl.pawnFixed || 0, smithPiece: sl.smithPiece || 0, countVar: sl.countVar || "" }
     };
   });
   return "// GENERATED by tools/gen_gear.js from tools/gear_catalog.json -- do not edit; edit the catalog and run the generator." + String.fromCharCode(10) +
@@ -471,9 +538,13 @@ setRegion(F.equipment, "armor_items", loadoutBlock("armor"));
 setRegion(F.equipment, "weapon_items", loadoutBlock("weapon"));
 setRegion(F.equipment, "sidearm_items", genSidearms());
 setRegion(F.equipment, "head_items", loadoutBlock("head"));
+CLOTHING.forEach(function (k) { setRegion(F.equipment, k + "_items", loadoutBlock(k)); });
+setRegion(F.equipment, "garment_traits_items", genGarmentTraits());
 setRegion(F.stats, "gear_list", genDossierList());
 setRegion(F.stats, "gear_equip_weapons", genEquipWeapons());
 setRegion(F.stats, "gear_equip_worn", genEquipWorn());
+setRegion(F.stats, "gear_equip_apparel", genEquipClothing(["cloak", "hands", "waist", "feet"], "codex_equipment_apparel"));
+setRegion(F.stats, "gear_equip_neck", genEquipClothing(["neck"], "codex_equipment_accessories"));
 setRegion(F.inventory, "gear_items", genInventory());
 setRegion(F.stats, "codex_use_check", genUseCheck(false));
 setRegion(F.stats, "codex_use_check2", genUseCheck(false));   // the satchel page repeats the check
@@ -481,6 +552,7 @@ setRegion(F.stats, "codex_use_options", genUseOptions("codex_use_do", false));
 setRegion(F.combat, "combat_use_check", genUseCheck(true));
 setRegion(F.combat, "combat_use_options", genUseOptions("fight_use_do", true));
 CATALOG.shops.forEach(function (shop) {
+  if (shop.menu === false) return;   // a shop that only feeds the trade panel has no plain menu of its own
   var out = genShop(shop);
   var file = path.join(SCENES, shop.file);
   setRegion(file, shop.name + "_labels", out.labels);

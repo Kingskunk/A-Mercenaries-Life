@@ -2,7 +2,7 @@
  * TRADE PANEL -- a quality-of-life layer over the shop menus, not a replacement for them.
  *
  * A shop page that supports it tells us so through the game's own state: stats.shop_open names the trade
- * ("halda", "hollis", "pawn"), stats.shop_rows lists the buy rows with their live warnings, and the page carries a hidden
+ * ("halda", "hollis", "tailor", "pawn"), stats.shop_rows lists the buy rows with their live warnings, and the page carries a hidden
  * "settle" option (label starting with the balance-scale mark). While that option is on the page a Trade button
  * appears in the header. The panel collects a cart, writes it into cart_buy_<id> / cart_sell_<id>, and then
  * clicks the hidden option. equipment.txt (shop_begin .. shop_check) re-checks and carries out the trade, so
@@ -55,11 +55,34 @@
     var it = data().items[id];
     if (!it) return 0;
     var sl = it.sell;
-    var pct = buyer === "smith" ? sl.smith : (buyer === "general" ? sl.general : sl.pawn);
+    var pct = buyer === "smith" ? sl.smith : (buyer === "general" ? sl.general : (buyer === "tailor" ? sl.tailor : sl.pawn));
     var v = Math.floor((it.retail * pct) / 100);
     if (buyer === "pawn" && sl.pawnFixed > 0) v = sl.pawnFixed;
     if (buyer === "smith" && sl.smithPiece > 0) v = sl.smithPiece;
     return v;
+  }
+
+  // What the player has on in the slot an item would fill, so a purchase can be weighed against it. Worn names and stats
+  // come off window.stats, and what a piece does (weather cuts, score bonus) from window.GARMENT_HINTS, the same table
+  // the game uses. Returns "" when the slot is empty or the item is the one already worn.
+  var WEAR_SLOT = { armor: ["equipped_armor_id", "armor_desc"], head: ["equipped_head_id", "head_desc"], cloak: ["equipped_cloak_id", "cloak_desc"],
+    hands: ["equipped_hands_id", "hands_desc"], waist: ["equipped_waist_id", "waist_desc"], feet: ["equipped_feet_id", "feet_desc"], neck: ["equipped_neck_id", "neck_desc"] };
+  function wearingLine(id, it, s) {
+    var out;
+    if (it.kind === "weapon") {
+      var wd = s.weapon_desc;
+      if (!wd || wd === "Unarmed" || s.equipped_weapon_id === id) return "";
+      return "Wielding: " + wd + (s.weapon_damage && s.weapon_damage !== "none" ? " — " + s.weapon_damage : "");
+    }
+    var slot = WEAR_SLOT[it.kind];
+    if (!slot) return "";
+    var wid = s[slot[0]], name = s[slot[1]];
+    if (!name || /^(none|bare)/i.test(String(name)) || wid === id) return "";
+    var hint = wid === "hearthstone_talisman" ? "+1 CON, attuned" : ((window.GARMENT_HINTS || {})[wid] || "");
+    if (it.kind === "armor") hint = "AC " + s.armor_class + (hint ? "; " + hint : "");
+    if (it.kind === "head" && truthy(s.head_is_armor) && num(s.head_ac) > 0) hint = "+" + s.head_ac + " AC" + (hint ? "; " + hint : "");
+    out = "Wearing: " + name + " — " + (hint ? hint.replace(/^Weather wear: /, "") : "no bonuses");
+    return out;
   }
 
   var SLOT_VAR = { weapon: "equipped_weapon_id", armor: "equipped_armor_id", head: "equipped_head_id" };
@@ -216,9 +239,10 @@
         var it = data().items[r.id], have = owned(r.id, s), qty = cart.buy[r.id] || 0;
         html += '<div class="trd-row' + (qty ? " trd-row-on" : "") + '">' +
           '<div class="trd-main">' +
-            '<div class="trd-name">' + esc(it.title) + (have ? '<span class="trd-have">you have ' + have + "</span>" : "") + "</div>" +
+            '<div class="trd-name">' + esc(it.title) + (it.slot ? '<span class="trd-slot">' + esc(it.slot) + "</span>" : "") + (have ? '<span class="trd-have">you have ' + have + "</span>" : "") + "</div>" +
             (hints && it.hint ? '<div class="trd-meta">' + esc(it.hint) + "</div>" : "") +
             (r.warn ? '<div class="trd-warn">' + esc(r.warn) + "</div>" : "") +
+            (wearingLine(r.id, it, s) ? '<div class="trd-worn">' + esc(wearingLine(r.id, it, s)) + "</div>" : "") +
           "</div>" +
           '<div class="trd-price">' + fmt(it.retail) + "</div>" +
           renderStepper("buy", r.id, qty, 20) +
@@ -232,7 +256,7 @@
         if (worn && qty >= r.have && it.kind !== "salvage") note = "Selling your last one puts you back in your starting gear.";
         html += '<div class="trd-row' + (qty ? " trd-row-on" : "") + '">' +
           '<div class="trd-main">' +
-            '<div class="trd-name">' + esc(it.title) + '<span class="trd-have">you have ' + r.have + "</span>" +
+            '<div class="trd-name">' + esc(it.title) + (it.slot ? '<span class="trd-slot">' + esc(it.slot) + "</span>" : "") + '<span class="trd-have">you have ' + r.have + "</span>" +
               (worn ? '<span class="trd-badge">worn</span>' : "") + "</div>" +
             (note ? '<div class="trd-warn">' + esc(note) + "</div>" : "") +
           "</div>" +

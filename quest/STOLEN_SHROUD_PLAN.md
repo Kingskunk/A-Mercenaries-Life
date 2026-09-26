@@ -288,7 +288,7 @@ Fight victory: *the scarred man lies still on the flags with his breath going in
 > You put the purse and the knotted rag into his hands without counting. He weighs them, opens the rag, and looks at the silver lying in the cloth. "This was not the parish's," he says. "It was on him," you say. The friar closes his fingers over it. "Then it belongs to the saint now, and it will bury him properly."
 >
 > The widow crosses to the plinth, takes a wax-stoppered clay flask from the niche behind it, and puts it into your hand with both of hers. "Cistern water," the friar says, "steeped with angelica and arnica, a month in the dark. It is for those who go out on the river." He tries to smile with the ruined lip. "I am Anselm. Brother Anselm, on the days the parish remembers it has brothers."
-> *[b][🧪 Acquired: Phial of Saint Althea's Water][/b]*
+> *[b][🧪 Acquired: Saint Althea's Water][/b]*
 
 **B: Count out half, keep the rest as your fee.**
 > You count half the coppers onto the flags and push the thieves' rag across with them, and you put the rest away. "A recovery fee," you say. "That is how it is done." The friar turns the coins over with one finger, and his sad eyes come up to yours. "It will bury him," he says. "Mercy comes dear in Port Valen." The widow keeps her face turned to the net.

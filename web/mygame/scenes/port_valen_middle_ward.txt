@@ -12,7 +12,7 @@
 *comment targets labels in this same file via a plain *goto -- only the
 *comment "travel elsewhere" exit crosses the file boundary, via *goto_scene
 *comment back into port_valen.txt's own travel hub.
-*comment Contains the Conduit Square, Locksmiths' Close, Mother Marda's Bakehouse,
+*comment Contains the Conduit Square, Locksmiths' Close (Vael & Son's shop), Mother Marda's Bakehouse,
 *comment Lantern Lane (shops, with Hollis & Daughters General Goods), Herb-Pounder Close, Smiths' Row (Halda's Forge), the Conduit Wash-House and Baths,
 *comment and the Terrace Lodgings residential starter home run by Mistress Kess.
 *comment See quest/TERRACE_LODGINGS_PLAN.md for the full design spec.
@@ -293,6 +293,8 @@ At the center of the square, an octagonal stone public fountain sends clear moun
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment LOCKSMITHS' CLOSE & TERRACE LODGINGS
+*comment The close is the hub for two places: Terrace Lodgings (rooms by the week) and Vael & Son's workshop, which
+*comment became a shop on 2026-09-26 (mw_vael_shop, below the lodging menu). The close itself never sells anything.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label mw_locksmiths_close
@@ -354,6 +356,20 @@ An arched stone tunnel opens into a quiet, clean courtyard paved with smooth pal
 *if ((wisdom >= 13) or (origin = "outlaw"))
   You clock the security of the close: it is a clean acoustic trap with only one narrow stone tunnel leading out to Conduit Square, meaning anyone stepping in can be heard thirty paces off. Furthermore, the ground-floor windows of Terrace Lodgings aren't fitted with common slide-bolts; they carry Vael's heavy rim-locks with hardened iron inserts designed specifically to break a thief's wedge.
 
+*comment Vael & Son trades by day: shut at Dusk, Night, Pre-Dawn, on Hallowday and in a gale (street_life "empty",
+*comment the same test the close's own storm-shutter view uses). Shut, the workshop keeps its place on the menu as a
+*comment window view reworded for why (vael_shut_label), the way the other closed counters do.
+*temp vael_open true
+*temp vael_shut_label "The workshop is dark for the night. Read the slate sign behind the grille."
+*if (((time_period = "Night") or (time_period = "Pre-Dawn")) or (time_period = "Dusk")) or ((street_life = "empty") or (day_of_week = "Hallowday"))
+  *set vael_open false
+  *if (time_period = "Dusk")
+    *set vael_shut_label "The workshop is barring up for the night. Read the slate sign."
+  *if (street_life = "empty")
+    *set vael_shut_label "The workshop is shuttered against the gale. Read the slate sign."
+  *if (day_of_week = "Hallowday")
+    *set vael_shut_label "The workshop is shuttered for the holy day. Read the slate sign."
+
 *choice
   *if (mw_rent_active) and (campaign_day <= mw_rent_expiry_day)
     # Enter Terrace Lodgings.
@@ -366,13 +382,21 @@ An arched stone tunnel opens into a quiet, clean courtyard paved with smooth pal
       # Enter Terrace Lodgings to inquire about a room.
         *goto mw_lodgings_entry
 
-  # Inspect the locksmith's workshop display.
-    *if (((time_period = "Night") or (time_period = "Pre-Dawn")) or (street_life = "empty")) or (day_of_week = "Hallowday")
-      Through the iron grille, the workshop is dark and securely locked. Heavy banded cash-boxes, chest fittings, and sample padlocks are chained fast to the oak workbenches, their polished brass parts catching the faint light. A slate sign wired behind the bars reads: [i]"Vael & Son. Locks Warranted Against Pick & Wedge. Open at Seventh Bell."[/i]
-    *else
-      Through the protective grille, you watch Master Vael at his bench: a lean craftsman with measuring gauges tucked into his leather apron and fine brass dust coating his knuckles. With short, precise strokes of a needle file, he smooths the interior tumblers of a heavy chest-lock, testing the mechanism with a crisp, musical [i]snick[/i]. A slate sign on the counter reads: [i]"Locks Warranted Against Pick & Wedge. Replacement Keys: Three Copper Bits."[/i]
-    *page_break Step away from the workshop window…
-    *goto mw_locksmiths_close
+  *if (vael_open)
+    *if (mw_vael_seen)
+      # Step into [b]Vael & Son[/b] to see Master Vael.
+        *goto mw_vael_shop
+    *if (not(mw_vael_seen))
+      # Go into the locksmith's workshop.
+        *goto mw_vael_shop
+  *if (not(vael_open))
+    # ${vael_shut_label}
+      *if (time_period = "Dusk")
+        An apprentice has dropped the night-bars across the workshop door. Through the grille the benches are swept and the sample padlocks are being chained fast to the boards, their polished brass catching the last of the light. A slate sign wired behind the bars reads: [i]"Vael & Son. Locks Warranted Against Pick & Wedge. Open at Seventh Bell."[/i]
+      *else
+        Through the iron grille, the workshop is dark and securely locked. Heavy banded cash-boxes, chest fittings, and sample padlocks are chained fast to the oak workbenches, their polished brass parts catching the faint light. A slate sign wired behind the bars reads: [i]"Vael & Son. Locks Warranted Against Pick & Wedge. Open at Seventh Bell."[/i]
+      *page_break Step away from the workshop window…
+      *goto mw_locksmiths_close
 
   # Return to Conduit Square.
     *goto mw_conduit_square
@@ -472,6 +496,300 @@ Mistress Kess waits beside her daybook.
 
   # Step back out into the Locksmiths' Close.
     *goto mw_locksmiths_close
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment VAEL & SON, LOCKSMITHS
+*comment Reached from the Locksmiths' Close while the workshop is open (the close does the open-hours test and keeps a
+*comment reworded window view on the menu while it is shut). SHOP (2026-09-26): Vael sells a lockpick set, a padlock and
+*comment key, a door bolt and iron manacles (catalog items in tools/gear_catalog.json, shops vael_buy and vael_sell) and
+*comment BUYS THEM BACK at half retail (buyer "general", the same flat counter Hollis uses). Same shape as Hollis's
+*comment store: plain menus generated from the catalog, the trade panel on top, nothing on credit. Every trade ends in
+*comment the open-hours check, so a trade that runs past Afternoon drops the player back in the close (its shut view).
+*comment None of these goods has a scene that uses it yet, like rope and torches at Hollis: they wait for the quests
+*comment that offer a lock, a door to bar or a captive to hold (see QUEST_DESIGN_RULES, carried goods). Vael's voice
+*comment is role-agnostic: he sells to owners, clerks and the Watch alike and never assumes what the player is.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label mw_vael_shop
+[b]◈ VAEL & SON, LOCKSMITHS[/b]
+*line_break
+The workshop is one long room, warm from the charcoal hearth at the back. Oak benches run down both walls beneath racks of files and gauges, and the near wall is boards of sample locks, hung in rows from thumb-sized padlocks to iron-banded chest locks. The floor is swept, and the air smells of coal oil, hot brass, and cold iron.
+
+*if (not(mw_vael_seen))
+  *set mw_vael_seen true
+  Behind a scarred oak counter stands the man from the window: lean, with measuring gauges tucked into a leather apron and fine brass dust on his knuckles. He is smoothing the tumblers of a chest-lock with a needle file, and he tests the mechanism with a crisp, musical [i]snick[/i] before he looks up. A slate sign hangs above him: [i]"Locks Warranted Against Pick & Wedge. Replacement Keys: Three Copper Bits."[/i]
+
+  "Vael," he says, and nods at the boards. "Those are samples. A lock worth having is made for the door it goes on. The small kit is in the trays, and the price is on the tag."
+*else
+  Master Vael is at his bench with a needle file, and he sets it down when you step up.
+
+*gosub mw_vael_open_panel
+*temp vael_has_sale (((has_lockpick_set) or (has_padlock)) or ((has_door_bolt) or (has_iron_manacles)))
+
+*choice
+  # Look over the trays.
+    *goto mw_vael_stock
+  *if (vael_has_sale)
+    # Place something on the counter to sell.
+      *goto mw_vael_sell
+  *if (not(mw_vael_sign_talk))
+    # Ask about the sign.
+      *set mw_vael_sign_talk true
+      "It's a promise," Vael says, without looking up from the file. "Every lock in this ward is mine, and no one has picked one yet." A brass curl falls from the file onto the bench. "The sign doesn't say I won't sell the tools. A lock is only as good as the man who knows how it fails, and he learns that on a pick. Owners who've lost a key. Clerks shut out of their own strongboxes. The Watch, twice a year, to see what I can do that they can't." He blows the filings off the bench. "Same pick, whoever holds it."
+      *page_break "Fair enough."…
+      *goto mw_vael_shop
+  *if (not(mw_vael_customers_talk))
+    # Ask who buys his locks.
+      *set mw_vael_customers_talk true
+      Vael counts them off on a brass-dusted finger. "The customs wharf takes cash-boxes by the dozen. The mint has a standing order for strongroom locks, and I don't ask what goes in them. Mistress Kess has a deadbolt of mine on every door in her house." His mouth twitches. "Hollis gets his locks at cost, and I get my brass wire from him at what he calls cost."
+      *page_break "Fair enough."…
+      *goto mw_vael_shop
+  # Step back out into the Locksmiths' Close.
+    *set shop_open ""
+    *goto mw_locksmiths_close
+  # ⚖ Settle up the trade panel.
+    *goto mw_vael_settle
+
+*label mw_vael_stock
+*gosub mw_vael_open_panel
+*comment GEN:BEGIN vael_buy_labels
+*temp vb_lockpick_set ""
+*temp vb_padlock ""
+*temp vb_door_bolt ""
+*temp vb_iron_manacles ""
+*gosub_scene equipment gear_buy_label "lockpick_set"
+*set vb_lockpick_set gear_label
+*gosub_scene equipment gear_buy_label "padlock"
+*set vb_padlock gear_label
+*gosub_scene equipment gear_buy_label "door_bolt"
+*set vb_door_bolt gear_label
+*gosub_scene equipment gear_buy_label "iron_manacles"
+*set vb_iron_manacles gear_label
+*comment GEN:END vael_buy_labels
+You look along the trays. Small kit is laid out in a row: a leather roll of picks, hinged cuffs, forged bolts, and brass padlocks hung on cords with their keys. Every piece has a paper tag wired to it, with the price inked on it.
+
+*choice
+  *comment GEN:BEGIN vael_buy_options
+  # ${vb_lockpick_set}
+    *set buy_item_id "lockpick_set"
+    *goto mw_vael_buy_do
+  # ${vb_padlock}
+    *set buy_item_id "padlock"
+    *goto mw_vael_buy_do
+  # ${vb_door_bolt}
+    *set buy_item_id "door_bolt"
+    *goto mw_vael_buy_do
+  # ${vb_iron_manacles}
+    *set buy_item_id "iron_manacles"
+    *goto mw_vael_buy_do
+  *comment GEN:END vael_buy_options
+  # Step back to the counter.
+    *goto mw_vael_shop
+  # ⚖ Settle up the trade panel.
+    *goto mw_vael_settle
+
+*comment The purchase itself, shared by everything Vael sells: price and prose come from the catalog. One currency
+*comment change and one advance_time per page.
+*label mw_vael_buy_do
+*set gear_shop "vael"
+*gosub_scene equipment gear_info buy_item_id
+*temp vl_price gear_retail
+*if ((((gold * 100) + (silver * 10)) + copper) < vl_price)
+  You count your coin against the tag and come up short. Vael names the figure again, level, and slides the ${gear_name} back into its tray. "The tag doesn't change," he says.
+  *page_break Back to the trays…
+  *goto mw_vael_stock
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount (0 - vl_price)
+  *gosub_scene startup currency_add
+  *gosub_scene equipment grant_gear buy_item_id 1
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+Vael lifts the ${gear_name} from its tray, checks it once against the light, and sets it on the counter. ${gear_blurb}
+*if (not(gear_quote = ""))
+  *line_break
+  ${gear_quote}
+*gosub_scene equipment format_copper vl_price
+*line_break
+[b][💰 Paid: ${gear_sale_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass gear_minutes
+*set time_advance_call_id "vael_buy"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the trays…
+*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+  *goto mw_vael_stock
+*set shop_open ""
+*goto mw_locksmiths_close
+
+*label mw_vael_sell
+Vael wipes his hands on his apron and clears a space on the counter. "Put it down," he says. "I'll test the catch and the springs, and tell you what it's worth to me. Half of what I sell it for."
+*comment GEN:BEGIN vael_sell_labels
+*temp vs_lockpick_set ""
+*temp vs_padlock ""
+*temp vs_door_bolt ""
+*temp vs_iron_manacles ""
+*if (has_lockpick_set)
+  *gosub_scene equipment gear_sell_label "lockpick_set" "general"
+  *set vs_lockpick_set gear_label
+*if (has_padlock)
+  *gosub_scene equipment gear_sell_label "padlock" "general"
+  *set vs_padlock gear_label
+*if (has_door_bolt)
+  *gosub_scene equipment gear_sell_label "door_bolt" "general"
+  *set vs_door_bolt gear_label
+*if (has_iron_manacles)
+  *gosub_scene equipment gear_sell_label "iron_manacles" "general"
+  *set vs_iron_manacles gear_label
+*comment GEN:END vael_sell_labels
+
+*choice
+  *comment GEN:BEGIN vael_sell_options
+  *if (has_lockpick_set)
+    # ${vs_lockpick_set}
+      *set sell_item_id "lockpick_set"
+      *goto mw_vael_sell_do
+  *if (has_padlock)
+    # ${vs_padlock}
+      *set sell_item_id "padlock"
+      *goto mw_vael_sell_do
+  *if (has_door_bolt)
+    # ${vs_door_bolt}
+      *set sell_item_id "door_bolt"
+      *goto mw_vael_sell_do
+  *if (has_iron_manacles)
+    # ${vs_iron_manacles}
+      *set sell_item_id "iron_manacles"
+      *goto mw_vael_sell_do
+  *comment GEN:END vael_sell_options
+  # Take it back off the counter.
+    *goto mw_vael_shop
+
+*comment The sale itself. The price is worked out inside the currency lock and kept in gear_sale_* so a replayed
+*comment page prints the same banner. One currency change and one advance_time per page.
+*label mw_vael_sell_do
+*set gear_shop "vael_sell"
+*gosub_scene equipment gear_info sell_item_id
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment gear_sale_value sell_item_id "general"
+  *gosub_scene equipment sell_gear sell_item_id
+  *set currency_add_amount gear_sale_copper
+  *gosub_scene startup currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+Vael turns the ${gear_sale_name} over in his fingers, works the catch twice, and names a figure. He counts the coin out of a locked drawer under the counter.
+*if (not(gear_quote = ""))
+  *line_break
+  ${gear_quote}
+*line_break
+[b][💰 Sold: ${gear_sale_name} for ${gear_sale_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass 5
+*set time_advance_call_id "vael_sell"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the counter…
+*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+  *goto mw_vael_shop
+*set shop_open ""
+*goto mw_locksmiths_close
+
+*label mw_vael_open_panel
+*set shop_open "vael"
+*set shop_rows ""
+*comment GEN:BEGIN vael_panel_rows
+*gosub_scene equipment shop_row_add "lockpick_set"
+*gosub_scene equipment shop_row_add "padlock"
+*gosub_scene equipment shop_row_add "door_bolt"
+*gosub_scene equipment shop_row_add "iron_manacles"
+*comment GEN:END vael_panel_rows
+*return
+
+*label mw_vael_cart_pass
+*comment GEN:BEGIN vael_cart_pass
+*set shop_buyer "general"
+*set gear_shop "vael_sell"
+*gosub_scene equipment shop_cart_sell "lockpick_set"
+*gosub_scene equipment shop_cart_sell "padlock"
+*gosub_scene equipment shop_cart_sell "door_bolt"
+*gosub_scene equipment shop_cart_sell "iron_manacles"
+*set gear_shop "vael"
+*gosub_scene equipment shop_cart_buy "lockpick_set"
+*gosub_scene equipment shop_cart_buy "padlock"
+*gosub_scene equipment shop_cart_buy "door_bolt"
+*gosub_scene equipment shop_cart_buy "iron_manacles"
+*comment GEN:END vael_cart_pass
+*return
+
+*label mw_vael_settle
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment shop_begin
+  *gosub mw_vael_cart_pass
+  *gosub_scene equipment shop_check
+  *if (shop_verdict = "ok")
+    *set shop_mode "apply"
+    *gosub mw_vael_cart_pass
+    *set currency_add_amount (shop_tot_credit - shop_tot_cost)
+    *gosub_scene startup currency_add
+  *else
+    *set shop_mode "clear"
+    *gosub mw_vael_cart_pass
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*if (shop_verdict = "empty")
+  Vael waits with his stylus over the ledger, finds nothing to write, and sets it down.
+  *page_break Back to the counter…
+  *goto mw_vael_after
+*if (shop_verdict = "short")
+  You count your coin against the tags and come up short. Vael taps the figure in his ledger. "The tag doesn't change," he says.
+  *page_break Back to the counter…
+  *goto mw_vael_after
+*if ((shop_tot_bought > 0) and (shop_tot_sold > 0))
+  Vael tests each thing you put down, enters both columns in his ledger, and settles the difference across the counter.
+*elseif (shop_tot_bought > 0)
+  Vael lifts each piece from its tray, enters the figure in his ledger, and slides it across the counter.
+*else
+  Vael tests the catch and the springs on each thing you put down, and names a figure.
+*if (not(shop_quote_line = ""))
+  *line_break
+  ${shop_quote_line}
+*if (shop_tot_sold > 0)
+  *line_break
+  [b][💰 Sold: ${shop_sold_list} for ${shop_credit_desc}][/b]
+*if (shop_tot_bought > 0)
+  *line_break
+  [b][🛒 Bought: ${shop_recv} for ${shop_cost_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass shop_tot_minutes
+*if (shop_tot_sold > 0)
+  *set minutes_to_pass (minutes_to_pass + 5)
+*set time_advance_call_id "vael_trade"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the counter…
+*goto mw_vael_after
+
+*comment Where a trade returns to: the counter while the workshop is open, the close once the bars are down.
+*label mw_vael_after
+*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+  *goto mw_vael_shop
+*set shop_open ""
+*goto mw_locksmiths_close
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment THE STARTER ROOM (THIRD FLOOR GARRET)
@@ -1513,7 +1831,7 @@ Hollis & Daughters has the widest front, a bay of small glass panes under a boar
 
   *choice
     *if (mw_store_seen)
-      # Go into Hollis & Daughters to see Master Hollis.
+      # Go into [b]Hollis & Daughters[/b] to see Master Hollis.
         *goto mw_hollis_store
     *else
       # Go into the general store with the wide bay window.
@@ -1522,8 +1840,8 @@ Hollis & Daughters has the widest front, a bay of small glass panes under a boar
       The cloth-and-boot counter is stacked with bolts of wool and linen, and a row of resoled boots hangs by their laces from a rail above. Next door, the candle counter smells of tallow and lamp oil, with squat oil cans lined along the step. The paper stall is the smallest shop on the lane: a table under a canvas awning with sheets of paper, small pots of ink, and sticks of red sealing wax.
       *page_break Step back into the lane…
       *goto mw_lantern_lane
-    *if (mw_herb_seen)
-      # Follow the lane up to Ambrose's still-room in Herb-Pounder Close. [~5 min]
+    *if ((mw_herb_named) or (mw_herb_seen))
+      # Follow the lane up to [b]Ambrose's still-room[/b] in Herb-Pounder Close. [~5 min]
         *set minutes_to_pass 5
         *set time_advance_call_id "mw_walk_herb_1"
         *gosub mw_walk_time
@@ -1579,7 +1897,7 @@ Inside, the store is deeper than the bay window suggests. Shelves run to the raf
   Master Hollis is behind the long counter, working down the chalk figures on his slate.
 
 *gosub mw_hollis_open_panel
-*temp hollis_has_sale (((((has_hemp_rope) or (has_pitch_torch)) or ((has_lamp_oil) or (has_hooded_lantern))) or (((has_tinderbox) or (has_chalk_sticks)) or ((has_wool_blanket) or (has_waxed_oilcloth)))) or (has_lye_soap))
+*temp hollis_has_sale ((((((has_hemp_rope) or (has_pitch_torch)) or ((has_lamp_oil) or (has_hooded_lantern))) or (((has_tinderbox) or (has_chalk_sticks)) or ((has_wool_blanket) or (has_waxed_oilcloth)))) or (has_lye_soap)) or (has_tool_kit))
 
 *choice
   # Look over the shelves.
@@ -1628,6 +1946,7 @@ Inside, the store is deeper than the bay window suggests. Shelves run to the raf
 *temp gb_pitch_torch ""
 *temp gb_lamp_oil ""
 *temp gb_hooded_lantern ""
+*temp gb_tool_kit ""
 *temp gb_tinderbox ""
 *temp gb_chalk_sticks ""
 *temp gb_wool_blanket ""
@@ -1641,6 +1960,8 @@ Inside, the store is deeper than the bay window suggests. Shelves run to the raf
 *set gb_lamp_oil gear_label
 *gosub_scene equipment gear_buy_label "hooded_lantern"
 *set gb_hooded_lantern gear_label
+*gosub_scene equipment gear_buy_label "tool_kit"
+*set gb_tool_kit gear_label
 *gosub_scene equipment gear_buy_label "tinderbox"
 *set gb_tinderbox gear_label
 *gosub_scene equipment gear_buy_label "chalk_sticks"
@@ -1652,7 +1973,7 @@ Inside, the store is deeper than the bay window suggests. Shelves run to the raf
 *gosub_scene equipment gear_buy_label "lye_soap"
 *set gb_lye_soap gear_label
 *comment GEN:END hollis_buy_labels
-You walk the shelves. Rope hangs in coils by thickness, from cord thin enough for a bootlace to rope thick as your wrist. Tin pots and pans are stacked by size, and folded blankets and rolls of oilcloth fill the lower racks. Pitch-dipped torches stand in a barrel by the door, hooded lanterns hang from hooks over the counter, a jar of chalk sticks sits beside the till, and paper twists of lye soap and tin boxes of flint and steel line the counter. Waterskins, canvas sacks, needles and thread, and iron nails by the pound fill the rest. Every shelf has a chalk price marked on its edge.
+You walk the shelves. Rope hangs in coils by thickness, from cord thin enough for a bootlace to rope thick as your wrist. Tin pots and pans are stacked by size, and folded blankets and rolls of oilcloth fill the lower racks. Pitch-dipped torches stand in a barrel by the door, hooded lanterns and canvas tool rolls hang from hooks over the counter, a jar of chalk sticks sits beside the till, and paper twists of lye soap and tin boxes of flint and steel line the counter. Waterskins, canvas sacks, needles and thread, and iron nails by the pound fill the rest. Every shelf has a chalk price marked on its edge.
 
 *choice
   *comment GEN:BEGIN hollis_buy_options
@@ -1667,6 +1988,9 @@ You walk the shelves. Rope hangs in coils by thickness, from cord thin enough fo
     *goto mw_hollis_buy_do
   # ${gb_hooded_lantern}
     *set buy_item_id "hooded_lantern"
+    *goto mw_hollis_buy_do
+  # ${gb_tool_kit}
+    *set buy_item_id "tool_kit"
     *goto mw_hollis_buy_do
   # ${gb_tinderbox}
     *set buy_item_id "tinderbox"
@@ -1735,6 +2059,7 @@ Hollis pulls the slate toward him and clears a space on the counter. "Put it dow
 *temp gs_pitch_torch ""
 *temp gs_lamp_oil ""
 *temp gs_hooded_lantern ""
+*temp gs_tool_kit ""
 *temp gs_tinderbox ""
 *temp gs_chalk_sticks ""
 *temp gs_wool_blanket ""
@@ -1752,6 +2077,9 @@ Hollis pulls the slate toward him and clears a space on the counter. "Put it dow
 *if (has_hooded_lantern)
   *gosub_scene equipment gear_sell_label "hooded_lantern" "general"
   *set gs_hooded_lantern gear_label
+*if (has_tool_kit)
+  *gosub_scene equipment gear_sell_label "tool_kit" "general"
+  *set gs_tool_kit gear_label
 *if (has_tinderbox)
   *gosub_scene equipment gear_sell_label "tinderbox" "general"
   *set gs_tinderbox gear_label
@@ -1786,6 +2114,10 @@ Hollis pulls the slate toward him and clears a space on the counter. "Put it dow
   *if (has_hooded_lantern)
     # ${gs_hooded_lantern}
       *set sell_item_id "hooded_lantern"
+      *goto mw_hollis_sell_do
+  *if (has_tool_kit)
+    # ${gs_tool_kit}
+      *set sell_item_id "tool_kit"
       *goto mw_hollis_sell_do
   *if (has_tinderbox)
     # ${gs_tinderbox}
@@ -1853,6 +2185,7 @@ Hollis turns the ${gear_sale_name} over once in the light, checks it for wear, a
 *gosub_scene equipment shop_row_add "pitch_torch"
 *gosub_scene equipment shop_row_add "lamp_oil"
 *gosub_scene equipment shop_row_add "hooded_lantern"
+*gosub_scene equipment shop_row_add "tool_kit"
 *gosub_scene equipment shop_row_add "tinderbox"
 *gosub_scene equipment shop_row_add "chalk_sticks"
 *gosub_scene equipment shop_row_add "wool_blanket"
@@ -1869,6 +2202,7 @@ Hollis turns the ${gear_sale_name} over once in the light, checks it for wear, a
 *gosub_scene equipment shop_cart_sell "pitch_torch"
 *gosub_scene equipment shop_cart_sell "lamp_oil"
 *gosub_scene equipment shop_cart_sell "hooded_lantern"
+*gosub_scene equipment shop_cart_sell "tool_kit"
 *gosub_scene equipment shop_cart_sell "tinderbox"
 *gosub_scene equipment shop_cart_sell "chalk_sticks"
 *gosub_scene equipment shop_cart_sell "wool_blanket"
@@ -1879,6 +2213,7 @@ Hollis turns the ${gear_sale_name} over once in the light, checks it for wear, a
 *gosub_scene equipment shop_cart_buy "pitch_torch"
 *gosub_scene equipment shop_cart_buy "lamp_oil"
 *gosub_scene equipment shop_cart_buy "hooded_lantern"
+*gosub_scene equipment shop_cart_buy "tool_kit"
 *gosub_scene equipment shop_cart_buy "tinderbox"
 *gosub_scene equipment shop_cart_buy "chalk_sticks"
 *gosub_scene equipment shop_cart_buy "wool_blanket"
@@ -1958,6 +2293,13 @@ Hollis turns the ${gear_sale_name} over once in the light, checks it for wear, a
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label mw_herb_close
+*comment The painted sign over the door names the shop the moment the player reaches the close, and
+*comment the hub prose at the top of this label already shows it to them -- so reaching the place is
+*comment what earns the name, not choosing to speak to Ambrose. Set here rather than on the counter
+*comment option for the same reason the Gilt Needle sets pq_tailor_seen on entry: the lane menu and the
+*comment codex must both unlock for a player who looks in and leaves without talking to anyone.
+*if (not(mw_herb_named))
+  *set mw_herb_named true
 [b]◈ HERB-POUNDER CLOSE[/b]
 *line_break
 Tucked behind the main lane, this stone dead-end is sheltered by cedar roofs and lined with wicker drying racks covered with mountain angelica, dried wormwood, pine resin, and shredded willow bark. The air is sharp with crushed camphor, menthol, and roasted chicory beneath a painted mortar-and-pestle sign reading [i]"Ambrose's Still-Room & Physic."[/i]
@@ -1976,6 +2318,12 @@ Tucked behind the main lane, this stone dead-end is sheltered by cedar roofs and
 
   *choice
     # Read the slate sign beside the shuttered counter.
+      *comment The slate is Ambrose's own hand on his own door, so reading it counts as the same beat as
+      *comment speaking to him across the counter -- otherwise a player whose only visit is a night one
+      *comment meets him twice. Set here rather than at the top of the label because this is the player's
+      *comment own act of reading, and it should cost the same as the daylight conversation.
+      *if (not(mw_herb_talk))
+        *set mw_herb_talk true
       A small slate board hangs beneath the mortar-and-pestle sign: [i]"Ambrose's Physic. Stills banked until Seventh Bell. Emergency Poultices: Inquire at the parish infirmary."[/i]
       *page_break Step back from the shutters…
       *goto mw_herb_close
@@ -1993,6 +2341,12 @@ Tucked behind the main lane, this stone dead-end is sheltered by cedar roofs and
   *comment boons, and with food. Deliberately no healing item here: instant healing already has its own
   *comment once-a-day limit (last_mundane_treatment_day, see the Dredge-End hedge-doctor). Same shape as Halda's forge:
   *comment plain menu below, trade panel on top.
+  *comment Walking in is what unlocks the codex entry (lorebook ambrose is keyed to mw_herb_seen, and its
+  *comment body describes the stills, the racks and Ambrose himself), so it is set on entry here rather
+  *comment than on any one of the options below. It is a monotonic flag, so re-running this page on a
+  *comment refresh just re-sets it to the same value.
+  *if (not(mw_herb_seen))
+    *set mw_herb_seen true
   *gosub mw_ambrose_open_panel
 
   *choice
@@ -2002,14 +2356,15 @@ Tucked behind the main lane, this stone dead-end is sheltered by cedar roofs and
       You examine the neat bundles of highland roots and dried riverbank herbs hanging under the eaves. Master Ambrose, an elderly herbalist with yellow-stained fingers, looks up from pouring pine medicine into small dark glass bottles. "Looking for wound salve or bitter tonics?" he murmurs, his pale eyes taking in the road dust on your gear. "The garrison takes most of our willow bark for their surgeons, but a jar of warming rubbing salve does wonders for stiff knees or swollen ankles."
       *page_break Step away from the still-room…
       *goto mw_herb_close
-    *if (mw_herb_seen)
+    *if (mw_herb_talk)
       # Ask Master Ambrose about his liniments.
         Master Ambrose wipes a glass dropper on a clean linen rag. "Carters, quarrymen, and dock porters all swear by it," the old herbalist says, tapping a row of sealed stoneware pots. "Rendered animal tallow infused with wintergreen, wild thyme, and crushed camphor. Rub it over strained joints or tender arches before you pull your boots on, and it keeps the swelling down through a full day on the cobbles."
         *page_break "Good to keep in mind."…
         *goto mw_herb_close
     *else
       # Speak with the shopkeeper behind the counter.
-        *set mw_herb_seen true
+        *if (not(mw_herb_talk))
+          *set mw_herb_talk true
         Master Ambrose wipes an amber dropper on a clean linen rag and gestures toward the clay pots behind him. "Welcome to the still-room," he says in a dry, calm voice. "We prepare pine distillates, tallow salves, and fever tonics from the river bottom. If you have been traveling the switchbacks or hauling heavy weight, our warming liniment will draw the ache out of your tendons before the damp gets into them."
         *page_break "Good to know."…
         *goto mw_herb_close
