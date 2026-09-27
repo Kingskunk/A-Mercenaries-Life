@@ -342,10 +342,16 @@
       tags: ["Port Valen", "Iron Carrion"], aliases: ["compound", "barracks", "mess", "headquarters"],
       link: ["Carrion Compound"],
       unlock: "port_valen_hub_seen",
-      body: [
-        "The fortified compound the Iron Carrion rents near the Iron Wharves. The company returns here between contracts to collect pay, repair equipment, and recruit replacements. Recruits sleep on bedrolls in the barracks, and the company mess serves plain fare from the stores awning.",
-        "It is a headquarters, not a fief. The company owns no land and can be driven elsewhere whenever its contracts or enemies demand it."
-      ],
+      body: function (s) {
+        var out = [
+          "The fortified compound the Iron Carrion rents near the Iron Wharves. The company returns here between contracts to collect pay, repair equipment, and recruit replacements. Recruits sleep on bedrolls in the barracks, and the company mess serves plain fare from the stores awning.",
+          "It is a headquarters, not a fief. The company owns no land and can be driven elsewhere whenever its contracts or enemies demand it."
+        ];
+        if (truthy(s.pv_drill_seen)) {
+          out.push("Behind the barracks lies the drill square, a fenced stretch of packed ground with practice posts and a lean-to of wooden weapons. Each squad drills there under its own leader, one long shift a day at most, and the company asks nothing for it.");
+        }
+        return out;
+      },
       see: ["iron_carrion", "vane", "iron_wharves"]
     },
     {

@@ -330,10 +330,11 @@
   // Consumables are used through the game's own dossier (real ChoiceScript: equipment.txt use_consumable is the only
   // place an effect is written, so nothing is mirrored here). The Use button drops straight onto the result page
   // (choicescript_stats codex_use_do); from there the satchel menu and the dossier are one tap away. Not offered
-  // mid-fight (the fight has its own item option) or while the dossier is already open.
+  // mid-fight (the fight has its own item option) or while the dossier is already open. "Open" is the running scene being the stats
+  // scene, not the Show Stats button's data-return marker: closing the dossier from its own menu leaves that marker set.
   function canUse() {
-    var btn = document.getElementById("statsButton");
-    if (btn && btn.getAttribute("data-return")) return false;
+    var sc = statsNow().scene;
+    if (sc && sc.secondaryMode === "stats") return false;
     return !truthy(statsNow().combat_engaged) && typeof window.Scene === "function" && typeof window.clearScreen === "function" && !!window.nav;
   }
   function useItem(id) {

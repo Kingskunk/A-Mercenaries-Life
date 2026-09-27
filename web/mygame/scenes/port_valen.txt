@@ -525,6 +525,9 @@ The Watch captain offers Vane a sealed parchment writ bearing the Council mark. 
   *if (vane_independent_operative)
     # Travel to another part of the city.
       *goto port_valen_travel
+  *if ((vane_independent_operative) and (level_up_sessions_needed > 0))
+    # Cross to the drill square.
+      *goto pv_poi_carrion
   *if (pv_mess_rations_used < pv_mess_ration_cap)
     # Eat at the compound mess.
       *goto port_valen_eat_mess
@@ -5158,6 +5161,393 @@ You find a spot at the stores awning where a quartermaster is still ladling out 
 
 *page_break Return to the city overview…
 *goto port_valen_hub
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment THE DRILL SQUARE (pv_poi_carrion): the compound's training place for level 2
+*comment Free, 4 hours a session, once a day, and it cannot fail. It only ever gets a recruit to level 2; later levels have other
+*comment teachers. The counts live in startup.txt (training_preview, do_training_session, refresh_level_up_progress); this file only
+*comment prints the drill. The session's prose is picked from training_sessions (which do_training_session has already counted on
+*comment this page), never from the clock or *rand, so a replayed page prints the same words. Vanguard (Sergeant Varren) is written;
+*comment Scouts (Kestrel) and Cadre (Ysolde) use the file-corporal set until their own is written. To add a squad, add its six
+*comment vignettes and its talk lines here; nothing that trains ever needs to change.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label pv_poi_carrion
+*looplimit 100000
+*set current_district "compound"
+*set pv_drill_seen true
+*gosub_scene calendar update_hub_condition
+*gosub_scene startup training_preview
+*temp dr_day false
+*if ((time_period = "Morning") or ((time_period = "Midday") or (time_period = "Afternoon")))
+  *set dr_day true
+*temp dr_done false
+*if (training_sessions >= level_up_sessions_needed)
+  *set dr_done true
+*temp dr_open false
+*if ((not(dr_done)) and ((training_can_train) and ((dr_day) and (weather_severity < 3))))
+  *set dr_open true
+[b]◈ THE DRILL SQUARE[/b]
+*line_break
+[b][⏳ Port Valen Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
+
+*comment ── LAYER 1: PLACE ──
+A rail fence rings a wide square of packed ground behind the barracks, scuffed bare by years of boots. Practice posts stand in rows down the middle, their tops battered pale. A lean-to at the near end holds racks of wooden practice weapons, a stack of round wooden shields, and a water barrel gone green at the rim. The watchtower looks down on one corner and the seawall closes off the far side.
+
+*comment ── LAYER 2: SKY & LIGHT (no people) ──
+*if (weather = "Rain")
+  Rain drums on the lean-to roof and pocks the earth, and the whole yard has turned to dark slop that sucks at every step.
+*elseif (weather = "Storm")
+  Wind drives the rain across the yard in sheets, and the racks rattle against their posts.
+*elseif (weather = "Fog")
+  Sea-fog lies low over the yard, blurring the far posts to grey shapes and beading on every rail.
+*elseif (weather = "Snow")
+  Wet snow settles on the rails and the lean-to roof, and the earth under it has gone stiff and slick.
+*elseif (weather = "Sleet")
+  Sleet ticks on the lean-to roof and freezes in the ruts.
+*elseif (weather = "Blizzard")
+  Snow drives flat across the open earth until the far fence is gone.
+*elseif (weather = "Clear")
+  *if (time_period = "Night")
+    A cold moon stands over the seawall and lays the shadows of the posts across the earth.
+  *elseif (time_period = "Dusk")
+    The low sun turns the rail fence amber and throws the shadow of every post halfway across the yard.
+  *elseif (time_period = "Pre-Dawn")
+    The sky over the seawall is grey and cold, and the first light has not reached the earth.
+  *else
+    Clear daylight fills the yard and shows every scuff and boot-print in the earth.
+*else
+  *comment Overcast
+  *if (time_period = "Night")
+    Low cloud hides the stars, and the yard is dark beyond the reach of the gate braziers.
+  *elseif (time_period = "Pre-Dawn")
+    Low cloud keeps the sky black, and only the gate braziers light the edge of the yard.
+  *else
+    Low grey cloud sits over the yard, and the seawall beyond it fades into the same colour.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Days of rain have left the yard a churned bog, with standing water filling every rut.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The ground is still soft from the last rain, and it holds every boot-print.
+
+*comment ── LAYER 3: WHO IS ABOUT ──
+*if ((weather_severity >= 3) and ((dr_day) or (time_period = "Dusk")))
+  Drill has been called off. The racks are chained shut, the posts stand alone in the wind, and every squad has gone under cover in the barracks.
+*elseif (dr_day)
+  *if (squad = "vanguard")
+    Sergeant Varren has a file of shield-bearers drawn up along the far rail. He walks behind them with one heavy hand out, thumping the rim of any shield that sags, and the whole line shuffles a half-step in answer.
+  *elseif (squad = "scouts")
+    Kestrel crouches at the near rail with two recruits, tracing a line in the dirt with one finger. Past them, a line of Scouts nocks and looses at the posts in a steady, unhurried rhythm, and nobody is shouting anything at all.
+  *elseif (squad = "cadre")
+    Ysolde stands apart from the rest with a slate in one hand, watching a line of Cadre recruits hold a candle flame steady between two fingers. She marks the slate without looking up whenever one of them flinches.
+  *else
+    File corporals have the recruits strung out in ragged lines across the square, calling the count for stance drills and cuffing anyone who drifts off the mark.
+*elseif (time_period = "Dusk")
+  The day's drill is done. The last ranks file off toward the wash-troughs and the cookhouse smoke while a corporal chains the racks shut.
+*else
+  The yard lies empty. A brazier burns at the gate, and the posts and racks stand in the dark until the morning drill.
+
+*choice
+  *if (dr_open)
+    # Drill with your squad. [~4 Hours]
+      *goto pv_carrion_drill
+  *if (dr_done)
+    # Drill with your squad: nothing more the yard can teach you.
+      *goto pv_carrion_drill_done
+  *if ((not(dr_done)) and (not(training_can_train)))
+    # Drill with your squad: you have done your shift for the day.
+      *goto pv_carrion_drill_closed
+  *if (((not(dr_done)) and (training_can_train)) and (not(dr_day)))
+    # Drill with your squad: the yard is shut until morning.
+      *goto pv_carrion_drill_closed
+  *if ((((not(dr_done)) and (training_can_train)) and (dr_day)) and (weather_severity >= 3))
+    # Drill with your squad: called off for the weather.
+      *goto pv_carrion_drill_closed
+  # Ask your squad leader how you are coming along.
+    *goto pv_carrion_talk
+  # Head back across the compound.
+    *goto port_valen_hub
+
+*comment Closure page for the drill button above. It costs no time and sets nothing. It reads the clock and the derived flags directly
+*comment (not the temps the yard set), so it plays from any label.
+*label pv_carrion_drill_closed
+*gosub_scene calendar update_hub_condition
+*gosub_scene startup training_preview
+[b]◈ THE DRILL SQUARE[/b]
+*line_break
+*temp dr_day false
+*if ((time_period = "Morning") or ((time_period = "Midday") or (time_period = "Afternoon")))
+  *set dr_day true
+*if (not(training_can_train))
+  You have already put in a full shift on the yard today. The corporals are not handing out a second one, and a tired recruit is a hazard to everyone in the line.
+*elseif (time_period = "Dusk")
+  Drill is over for the day. The racks are chained shut and the last of the ranks are filing off toward the cookhouse.
+*elseif (not(dr_day))
+  The yard lies dark and the racks are chained shut. Drill begins with the light.
+*else
+  The yard is empty. Drill has been called off, the racks are chained shut, and nobody is going out onto the open earth until the weather eases.
+*page_break Back across the compound…
+*goto pv_poi_carrion
+
+*label pv_carrion_drill_done
+[b]◈ THE DRILL SQUARE[/b]
+*line_break
+*if (squad = "vanguard")
+  Sergeant Varren stops you at the rail with one hand flat against your chest. He looks you up and down, the milk-pale eye a beat behind the good one. "You've had the yard," he says. "Whatever I can put into you on it, you've got. What you do with it is your business."
+*elseif (squad = "scouts")
+  Kestrel doesn't look up from the line. "You've had the ground," she says. "What you do with it now is yours to carry."
+*elseif (squad = "cadre")
+  Ysolde marks her slate without looking up. "You have had the yard," she says. "What you carry from it now is your own risk."
+*else
+  The corporal at the rail waves you off the ground before you have crossed it. "You've had all the yard has," he says. "Nothing left here I can put you through."
+*page_break Back across the compound…
+*goto pv_poi_carrion
+
+*comment Talking to the squad leader: the words say how the training and the finished work are going, and the numbers stay in the bracket.
+*label pv_carrion_talk
+*gosub_scene startup refresh_level_up_progress
+[b]◈ THE DRILL SQUARE[/b]
+*line_break
+*if (squad = "vanguard")
+  Sergeant Varren stands at the rail with his arms folded over his chest, watching the ranks turn. He does not look round when you stop beside him.
+
+  *if (training_sessions = 0)
+    "You haven't been on my ground yet." He keeps his eyes on the ranks. "It's open in daylight. Come and stand in a file."
+  *elseif (training_sessions < 10)
+    "Your feet are learning," he grunts. "Your head isn't there yet. Keep coming."
+  *elseif (training_sessions < 20)
+    "Better." A short nod. "You hold a stance now without having to think about holding it."
+  *elseif (training_sessions < level_up_sessions_needed)
+    "Nearly. A file wants people who don't need telling twice, and you are getting to be one of them."
+  *else
+    "That's the yard finished with you."
+
+  *if (quests_finished < (level_up_quests_needed / 2))
+    "Drill's only half of it. The rest is work done off the ground and finished properly, and you've barely started on it."
+  *elseif (quests_finished < level_up_quests_needed)
+    "The other half is work done off the ground and finished properly. You've put in a fair share. Put in more."
+  *else
+    "And you've finished the work off the ground as well. There's nothing I'd hold you back for."
+
+  *if (level_up_ready)
+    "Then you're ready," he says at last, and turns back to the ranks. "Whenever you want the next step, it's yours to take."
+*elseif (squad = "scouts")
+  Kestrel crouches at the rail, watching the line without seeming to watch it, one arrow loose between two fingers. She does not look round when you stop beside her.
+
+  *if (training_sessions = 0)
+    "Haven't seen you out here." Her eyes stay on the posts. "Ground's open by day. Come and stand in it."
+  *elseif (training_sessions < 10)
+    "You still think with your feet," she says. "Most people do, at your stage."
+  *elseif (training_sessions < 20)
+    "Quieter," she says. "You're starting to move like the ground matters."
+  *elseif (training_sessions < level_up_sessions_needed)
+    "Close. A scout who has to think about being quiet has already failed at it. You're nearly past that."
+  *else
+    "That's what I have to teach."
+
+  *if (quests_finished < (level_up_quests_needed / 2))
+    "The ground's only half the job. The rest is work finished out past the gate, and you haven't brought back much of that yet."
+  *elseif (quests_finished < level_up_quests_needed)
+    "The rest is work finished out past the gate. You've brought back a fair share. Bring back more."
+  *else
+    "And you've brought back the rest of it too. There's nothing left here that a job wouldn't teach faster."
+
+  *if (level_up_ready)
+    "Then you're past what I can put in front of you," she says, and turns back to the line. "Whenever you want it, the next step is yours."
+*elseif (squad = "cadre")
+  Ysolde looks up from her slate before you have finished crossing the yard, mercury-silver eyes unhurried and entirely unsurprised to see you.
+
+  *if (training_sessions = 0)
+    "You have not been out here." She marks the slate. "The ground is open by day. Come and be counted."
+  *elseif (training_sessions < 10)
+    "You are still flinching," she says. "Expected, at this stage. Keep coming."
+  *elseif (training_sessions < 20)
+    "Better," she says. "Your hand held steady twice today. I noted both."
+  *elseif (training_sessions < level_up_sessions_needed)
+    "Nearly disciplined. I would trust you with a working now, and not stand quite so close while you held it."
+  *else
+    "There is nothing further the yard teaches you."
+
+  *if (quests_finished < (level_up_quests_needed / 2))
+    "The yard is half of it. The rest is work finished properly, out where I cannot mark it, and you have finished little of that."
+  *elseif (quests_finished < level_up_quests_needed)
+    "The rest is work finished properly, out where I cannot mark it. You have finished a fair share. Finish more."
+  *else
+    "And you have finished that as well. I have nothing left to withhold from you."
+
+  *if (level_up_ready)
+    "Then you are ready," she says, and returns to the slate. "Whenever you want the next step, take it."
+*else
+  The corporal at the rail is a lean man with a notched pine tally-board under one arm and a voice worn down to gravel. He looks you over before he answers.
+
+  *if (training_sessions = 0)
+    "Never seen you on my ground." He looks past you at the lines. "It's open in daylight. Come and stand in a line like everyone else."
+  *elseif (training_sessions < 10)
+    "You're learning to stand," he grunts. "Standing's most of it. Keep coming."
+  *elseif (training_sessions < 20)
+    "You've stopped falling over," he mutters. "That's more than I can say for some."
+  *elseif (training_sessions < level_up_sessions_needed)
+    "Nearly there. I'd put you in a line now without checking your feet first."
+  *else
+    "There's nothing more I can put you through," he admits. "You've had what the yard has."
+
+  *if (quests_finished < (level_up_quests_needed / 2))
+    "Drill's half of it, though. The rest is work done off the ground and finished properly, and you've barely started on it."
+  *elseif (quests_finished < level_up_quests_needed)
+    "The rest is work done off the ground and finished properly. You've put in a fair share. Put in more."
+  *else
+    "And you've finished the work off the ground as well. I've nothing to hold you back for."
+
+  *if (level_up_ready)
+    "So that's you ready," he says, and jerks his chin toward the barracks. "Whenever you want the next step, it's yours."
+*line_break
+[b][🎯 Training ${training_sessions} / ${level_up_sessions_needed} | Quests ${quests_finished} / ${level_up_quests_needed}][/b]
+*page_break Back across the square…
+*goto pv_poi_carrion
+
+*comment The session itself: 4 hours (training_hours) through the shared time engine, with outdoor exposure, then the shared counter.
+*comment do_training_session runs BEFORE any prose, so training_sessions is already this session's number: it picks the vignette
+*comment (a rotation of six, so no two sessions in a row match) and marks the first and last session. A replay finds the same number.
+*label pv_carrion_drill
+*set hours_to_pass training_hours
+*set minutes_to_pass 0
+*set exposure_base_mins (training_hours * 60)
+*gosub_scene calendar calc_exposure
+*set time_advance_call_id "pv_carrion_drill_1"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*gosub_scene startup do_training_session
+*temp dr_start (((clock_hour + 24) - training_hours) modulo 24)
+*temp dr_pick (training_sessions modulo 6)
+[b]◈ THE DRILL SQUARE[/b]
+*line_break
+*comment Opening line: the hour the session started (derived from the clock at its end) and whether it is wet.
+*if (dr_start <= 11)
+  *if (weather_wet)
+    Drill begins in a thin rain. The ground is already slick, and every step out onto it takes more thought than it should.
+  *else
+    You go out into the cold early light, your breath showing and the ground hard underfoot.
+*elseif (dr_start <= 13)
+  *if (weather_wet)
+    By the middle of the day you are wet through before the first order is out.
+  *else
+    The middle of the day finds the yard at its busiest, with the racks already half empty by the time you reach them.
+*else
+  *if (weather_wet)
+    The afternoon drips steadily from the rail and the lean-to eaves as you take your place.
+  *else
+    The noise from the rest of the compound thins behind you as other details finish, and you take your place in the afternoon light.
+
+*if (squad = "vanguard")
+  *if (training_sessions = 1)
+    Varren looks you over once, from your feet to your shoulders, and points to a place in the file. "Second rank," he says.
+
+  *if (dr_pick = 0)
+    Varren puts you in the second rank of a shield file and hands you a round wooden shield from the rack. On his word the front rank leans back into you, and you take their weight through your legs while a corporal walks behind with a pole, prodding any heel that slides. "Hold," Varren says, and then nothing more, until your thighs shake and your fingers have gone numb on the strap.
+    *if (character_class = "barbarian")
+      Every part of you wants to shove back and be done with it. You keep your feet planted and your weight low, and let the push burn out through your legs.
+    *else
+      You feel where the line is weakest before he says it, and lean your weight over to cover the gap.
+  *elseif (dr_pick = 1)
+    Two files lock shields against a weighted sledge and push it down the length of the square while Varren paces beside it. Sandbags shift under the runners, and the sledge slews sideways every time one rank pushes out of step. He does not shout. He stamps down on the heel of whoever is late, and the sledge straightens.
+    *if (character_class = "barbarian")
+      You push out of step twice, hard enough to slew the sledge, and his boot lands beside your heel both times until you find the beat.
+    *else
+      You settle into the count and stay on it, and after the second length the sledge slides as if it weighed nothing.
+  *elseif (dr_pick = 2)
+    Varren drags a heel through the ground to draw a straight line, then a second one a shield's length behind it. Your rank steps to the first, stops, steps back to the second, stops, over and over, until the ground between the lines is churned to powder. Halfway through he walks the length of the file and stands a pace behind you, watching your feet and not your face.
+    *if (character_class = "barbarian")
+      Stopping dead on a line is harder than charging past it. You learn how much harder around the twentieth time.
+    *else
+      After a while the lines stop being lines. Your feet find them without your eyes.
+  *elseif (dr_pick = 3)
+    The files break into pairs with wooden weapons from the rack, and Varren works his way along them, stopping each bout with a raised palm. He shows one corporal where an elbow drifted and a recruit where a shoulder dropped. When he reaches you the bout runs on for a long count before the palm comes up. "Again," he says.
+    *if (character_class = "barbarian")
+      Your partner backs off two paces and you go after them harder than the bout wants. The palm comes up sharp, and you draw back with your breath sawing.
+    *else
+      Your bout runs long, clean and dull, and the palm comes up at last with a grunt that might be approval.
+  *elseif (dr_pick = 4)
+    Varren sets a hard loop around the fence and hangs a sand-filled pack on every back. Once round, then twice, until the loop has stopped being a distance and become a length of time. Anyone who drops a pack picks it up and carries it a lap longer. Nobody argues.
+    *if (character_class = "barbarian")
+      Heat builds behind your ribs by the third lap, and you swallow it, one step and then the next.
+    *else
+      You settle the pack high, breathe on the steps, and let the laps count themselves.
+  *else
+    A corporal at the far rail hurls sacks of wet sand over the fence, and they slam into the shield rims like thrown stones. Varren calls the turns, and the rank swings its shields left, then right, then drops behind them together. Anyone who flinches takes the next sack in the ribs.
+    *if (character_class = "barbarian")
+      You take the first sack in the ribs and grunt and stay upright, and the second lands square on the rim.
+    *else
+      You keep the rim up and the knees bent, and the sacks stop landing on you and start landing on the shield.
+
+  *if ((training_sessions = level_up_sessions_needed) and (level_up_sessions_needed > 0))
+    When the file is dismissed, Varren stops you at the rail with a hand flat against your chest. He looks at you for a long moment, then nods once and turns back to the yard.
+*elseif (squad = "scouts")
+  *if (training_sessions = 1)
+    Kestrel looks at you once, head to boots, and jerks her chin at a gap at the end of the group.
+
+  *if (dr_pick = 0)
+    Kestrel has marked a run of flat stones across open ground and set two Scouts at the far end to listen for you. You cross them one at a time, weight settling before the next step, while a boot scrape somewhere behind you earns a flat, unimpressed look from the far end of the line.
+  *elseif (dr_pick = 1)
+    A row of straw-wrapped posts wait at range, and Kestrel calls a count under her breath while the row of Scouts looses in turn. Her only reaction to a center hit or a wide miss is the same small tick of her chalk against her tally.
+  *elseif (dr_pick = 2)
+    Kestrel walks a stretch of turned earth and stops, tapping a boot-print with the toe of her own boot. She waits while you read it back to her: which foot, how heavy, how long since it was made. Get it wrong, and she flattens it under her heel and makes a new one.
+  *elseif (dr_pick = 3)
+    You hold a crouch behind the water barrel while the rest of the line goes about its business around you, and Kestrel walks past twice without appearing to look. The third time she stops, studies you for a long moment, and moves on with the smallest nod.
+  *elseif (dr_pick = 4)
+    A pebble cracks against the fence rail somewhere behind the line, and every Scout drops flat before the sound has finished. Kestrel throws it again from a different spot each time, until dropping stops being a decision and starts being a reflex.
+  *else
+    Pairs work close with wooden practice knives, low and fast, nothing like the open bouts at the posts. Kestrel corrects a grip here, a stance there, without raising her voice above the scrape of wood on wood.
+
+  *if ((training_sessions = level_up_sessions_needed) and (level_up_sessions_needed > 0))
+    When the group breaks for the day, Kestrel catches your eye across the yard, gives a single short nod, and turns back to the posts.
+*elseif (squad = "cadre")
+  *if (training_sessions = 1)
+    Ysolde glances at your hands before your face, decides something from them, and directs you to an open space at the end of the line with two fingers.
+
+  *if (dr_pick = 0)
+    Ysolde sets a lit candle in front of you and has you hold the flame steady between two fingers without touching the wick. Every flicker earns a mark on her slate and nothing more, until the candle has burned down by a full inch.
+  *elseif (dr_pick = 1)
+    You recite a column of figures from Ysolde's ledger while a Cadre recruit beside you knocks a spoon against a tin cup without warning or rhythm. Losing the count means starting the column again from the top.
+  *elseif (dr_pick = 2)
+    You hold a small working steady while the recruit paired with you does everything short of touching you to break it: a shout, a shove at the shoulder, a hand waved close to your eyes. Ysolde watches both of you and marks only the one who breaks first.
+  *elseif (dr_pick = 3)
+    Ysolde hands you a warded sigil copied onto vellum and has you trace it again on a fresh sheet, line for line, stroke for stroke. A crooked line earns a fresh sheet and no comment. A clean one earns the next sigil in the stack.
+  *elseif (dr_pick = 4)
+    The same small cantrip, over and over, until your hands have stopped shaking from the cold and started shaking from the repetition instead. Ysolde does not tell you when to stop. She tells you when you may.
+  *else
+    Ysolde has you hold a working while walking an ordinary lap of the yard, exactly as if you were carrying nothing at all. A corporal you pass and greet must have no idea. Ysolde falls in beside you afterward and asks only whether he did.
+
+  *if ((training_sessions = level_up_sessions_needed) and (level_up_sessions_needed > 0))
+    When the line is dismissed, Ysolde marks something final on her slate, glances at you once, and closes the cover over it.
+*else
+  *if (training_sessions = 1)
+    A corporal with a notched pine tally-board runs a finger down it, finds a gap, and jerks his chin at the end of the nearest line. You fall in.
+
+  *if (dr_pick = 0)
+    A drill instructor calls the count for a stance drill, and the recruits bend and straighten together on his word. He lets it run until the ragged voices settle into a single grunt on every step, then makes them do it once more.
+  *elseif (dr_pick = 1)
+    Pairs spar with wooden practice weapons under a scarred veteran, who ends every bout with a raised fist and points out one thing. It is nearly always the same thing: your feet.
+  *elseif (dr_pick = 2)
+    The instructors set the recruits running the length of the fence with sand-filled packs. The slowest runners get a second pack on the next lap, and the pace picks up without anyone being told to.
+  *elseif (dr_pick = 3)
+    A veteran shows a knot of recruits how to fall: shoulder tucked, head off the ground, back on your feet before the fall has finished. Then he makes them do it until it stops being a lesson and becomes a habit.
+  *elseif (dr_pick = 4)
+    Sacks hang from the practice posts, and the line hits them until their arms shake. The corporals call "Again" whenever a strike lands soft, and it is a long time before anyone gets to stop.
+  *else
+    Two files form and pass heavy sacks of sand from hand to hand down the length of the yard, then back the other way, while an instructor walks alongside and counts the ones that hit the ground.
+
+  *if ((training_sessions = level_up_sessions_needed) and (level_up_sessions_needed > 0))
+    When the group is dismissed the corporal catches your eye across the yard and taps the tally-board twice. That is the last entry on it, and he draws a stroke through it.
+
+*line_break
+[b][🎯 Drill | ${training_hours} hours | Training ${training_sessions} / ${level_up_sessions_needed} | ${clock_time}][/b]
+*page_break Back across the square…
+*goto pv_poi_carrion
 
 *label port_valen_rest
 You unbuckle your harness, strip off your sweat-stiffened gambeson, and drop your pack beside your straw pallet.

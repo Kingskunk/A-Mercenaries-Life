@@ -182,6 +182,9 @@
 *create level_up_sessions_needed 30
 *create level_up_quests_needed 10
 *create level_up_ready false
+*comment Input of do_level_up: the level being left, set on the confirm page (dossier codex_levelup) so the apply page can set an exact
+*comment target level instead of adding one (a replayed apply page then sets the same level again).
+*create level_up_from 1
 *create rogue_expertise_1 "none"
 *create rogue_expertise_2 "none"
 *create rogue_sneak_attack_die "1d6"
@@ -446,6 +449,7 @@
 *comment --- HARBOR POI SUB-HUB ---
 *create pv_pois_open false
 *create pv_tavern_seen false
+*create pv_drill_seen false
 *create pv_drydock_seen false
 *create pv_pier_seen false
 *create pv_quays_seen false
@@ -3575,8 +3579,8 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
 *comment a new quest is one more line here. A quest counts only when it ended in a SUCCESSFUL completion: failed endings do not, and
 *comment radiant jobs (the crane shifts, the scrap round) never do. Silt-Gate and the Rotten Rib set their stage to resolved even on a
 *comment failed ending, so they also test the resolution. Rennick's curing sheds, the Cadre river chain and the Black Sinks assault
-*comment are deliberately not counted. Torvald, Talia and Morzan have dedicated flags; the two item flags are also accepted so a save
-*comment made before those flags existed keeps its credit (Morzan cannot be backfilled: met_morzan is also set on a plain visit).
+*comment are deliberately not counted. Every quest has its own completion flag: an item flag (a reward the player can hold, sell or lose)
+*comment and a flag another route also sets (turned_in_customs_vellum, met_morzan) are not markers.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label refresh_quests_finished
 *temp qf 0
@@ -3598,9 +3602,9 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
   *set qf + 1
 *if (delivered_chapel_grain)
   *set qf + 1
-*if ((torvald_wheel_saved) or (has_hearthstone_talisman))
+*if (torvald_wheel_saved)
   *set qf + 1
-*if ((talia_casks_saved) or (has_talia_oiled_cloak))
+*if (talia_casks_saved)
   *set qf + 1
 *if (morzan_vellum_delivered)
   *set qf + 1
@@ -3639,6 +3643,48 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
   *set training_sessions + 1
   *set last_training_stamp ts_end
   *set last_training_day ((ts_start - (ts_start modulo 1440)) / 1440)
+*return
+
+*comment Level up (called by the dossier page codex_levelup_do after the confirm page set level_up_from). character_level is set to an
+*comment EXACT target (level_up_from + 1), not incremented, and the two things that follow are worked out from state: update_dnd_stats
+*comment moves current HP by the change in max HP (so the level-up heals by that amount, as decided), and each pool rises by the change in
+*comment its maximum (5e: a new slot or use is available at once). A replayed page finds the level and the maxima already changed, so it
+*comment adds nothing. Class features for the new level plug in HERE, after update_dnd_stats, as one hook each; no place that
+*comment levels the player up ever lists them. Only a class's own pool has a max that changes, so no class checks are needed.
+*label do_level_up
+*temp old_sw fighter_second_wind_max
+*temp old_rage barbarian_rage_max
+*temp old_pact warlock_spell_slots_max
+*temp old_wiz wizard_spell_slots_max
+*temp old_bard bard_spell_slots_max
+*set character_level (level_up_from + 1)
+*gosub update_dnd_stats
+*set fighter_second_wind_uses (fighter_second_wind_uses + (fighter_second_wind_max - old_sw))
+*set barbarian_rage_uses (barbarian_rage_uses + (barbarian_rage_max - old_rage))
+*set warlock_spell_slots (warlock_spell_slots + (warlock_spell_slots_max - old_pact))
+*set wizard_spell_slots (wizard_spell_slots + (wizard_spell_slots_max - old_wiz))
+*set bard_spell_slots (bard_spell_slots + (bard_spell_slots_max - old_bard))
+*gosub refresh_level_up_progress
+*return
+
+*comment The class pool line the level-up page prints after the level is taken. It reads the pools, so a replay prints the same line,
+*comment and a new pool is added here and never on the page.
+*label level_up_banner
+*if (character_class = "fighter")
+  *line_break
+  [b][Second Wind ${fighter_second_wind_uses} / ${fighter_second_wind_max}][/b]
+*if (character_class = "barbarian")
+  *line_break
+  [b][Rage ${barbarian_rage_uses} / ${barbarian_rage_max}][/b]
+*if (character_class = "warlock")
+  *line_break
+  [b][Pact Magic slots ${warlock_spell_slots} / ${warlock_spell_slots_max}][/b]
+*if (character_class = "wizard")
+  *line_break
+  [b][Spell slots ${wizard_spell_slots} / ${wizard_spell_slots_max}][/b]
+*if (character_class = "bard")
+  *line_break
+  [b][Spell slots ${bard_spell_slots} / ${bard_spell_slots_max}][/b]
 *return
 
 *comment Consumables (the Saint Althea's Water phial, Ambrose's liniment and draught) are catalog items used through

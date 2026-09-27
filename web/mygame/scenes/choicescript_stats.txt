@@ -511,6 +511,9 @@ Review loadout, grimoire, or interface settings. Known contacts, factions, place
 *comment GEN:END codex_use_check
 
 *choice
+  *if (level_up_ready)
+    # [★ Level Up: You Have Earned It]
+      *goto codex_levelup
   # [Equipment: Manage Loadout]
     *goto codex_equipment
   *if (cu_any)
@@ -698,6 +701,48 @@ A short rest takes about an hour off the clock, so it costs the same hunger and 
 [b][🕐 Short Rest | 1 hour | ${cr_gave} restored | ${clock_time}][/b]
 *page_break Back to your rest…
 *goto codex_rest
+
+*label codex_levelup
+*if (combat_engaged)
+  You cannot take a level in the middle of a fight.
+  *page_break Back to the dossier…
+  *goto_scene choicescript_stats
+*gosub_scene startup refresh_level_up_progress
+*if (not(level_up_ready))
+  There is nothing to take yet. Keep training, and keep finishing what you start.
+  *page_break Back to the dossier…
+  *goto_scene choicescript_stats
+*set level_up_from character_level
+*temp lu_next (character_level + 1)
+*temp lu_hp_gain (hit_die_max + con_mod)
+*temp lu_hp_after (hp_max + lu_hp_gain)
+[b]LEVEL UP[/b]
+[i]The weeks of drilling and the work behind you have settled into something you can lean on[/i]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[b]◈ WHAT YOU HAVE EARNED[/b]
+*line_break
+• [b]Level:[/b] ${character_level} to ${lu_next}
+*line_break
+• [b]Maximum HP:[/b] +${lu_hp_gain} (${hp_max} to ${lu_hp_after}), and your current HP rises by the same amount
+
+*choice
+  # [Take the level.]
+    *goto codex_levelup_do
+  # [Not yet]
+    *goto_scene choicescript_stats
+  # [Close Dossier & Return]
+    *finish
+
+*label codex_levelup_do
+*gosub_scene startup do_level_up
+[b]LEVEL ${character_level}[/b]
+[i]It settles in the way a hard lesson does: the same road, the same weight, and less of it in your way[/i]
+*line_break
+[b][⭐ Level ${character_level} | Max HP ${hp_max} | HP ${hp_current} / ${hp_max} | Proficiency +${prof_bonus}][/b]
+*gosub_scene startup level_up_banner
+*page_break Back to the dossier…
+*goto_scene choicescript_stats
 
 *label codex_equipment
 [b]EQUIPMENT LOADOUT[/b]
