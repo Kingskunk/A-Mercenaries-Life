@@ -128,6 +128,50 @@ var rootDir = "../";
   border: none;
   border-top: 1px solid rgba(0,0,0,0.15);
 }
+/* Combat state (2026-09-27): the sidebar's own header gets a small badge, and date/time/weather/purse swap for
+   a live turn-order list (renderStatSidebar below) -- reusing combat_turn_kind_*/_slot_* the ChoiceScript engine
+   already builds, not a second panel, so this never fights the sidebar for space or attention. */
+#statSidebar h3 { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5em; }
+#statSidebar .combatBadge {
+  font-size: 0.7em;
+  font-weight: bold;
+  letter-spacing: 0.05em;
+  color: #a12b2b;
+  border: 1px solid #a12b2b;
+  border-radius: 3px;
+  padding: 0.1em 0.4em;
+  white-space: nowrap;
+  margin-left: auto;
+}
+#statSidebar .turnRow {
+  width: 100%;
+  border: none;
+  background: none;
+  font: inherit;
+  text-align: left;
+  padding: 0.15em 0.3em;
+  margin: 0 -0.3em;
+  border-radius: 3px;
+  color: inherit;
+}
+button#statSidebar .turnRow,
+#statSidebar button.turnRow {
+  cursor: pointer;
+}
+#statSidebar .turnRow:hover:not(:disabled),
+#statSidebar .turnRow:focus-visible:not(:disabled) {
+  background: rgba(0,0,0,0.06);
+}
+#statSidebar .turnRowPicked {
+  background: rgba(122,62,29,0.14);
+  font-weight: 600;
+}
+#statSidebar .turnRowPicked > span:first-child { color: #7a3e1d; }
+#statSidebar .turnRowDead {
+  opacity: 0.45;
+  cursor: default;
+}
+#statSidebar .turnRowSelf > span:first-child { font-weight: 600; }
 @media (max-width: 960px) {
   #statSidebar { display: none !important; }
 }
@@ -147,6 +191,7 @@ var rootDir = "../";
       return;
     }
     el.style.display = "";
+    var inCombat = isTruthy(s.combat_engaged);
     var hpHtml = fmt(s.hp_current) + " / " + fmt(s.hp_max);
     if (s.temp_hp && Number(s.temp_hp) > 0) {
       hpHtml += " (+" + fmt(s.temp_hp) + ")";
@@ -179,8 +224,51 @@ var rootDir = "../";
     var dateDisplay = fmt(s.calendar_date);
     var weatherDisplay = fmt(s.weather || "Clear");
 
+    // Combat state (2026-09-27): date/time/weather/purse give way to a live turn-order list, reusing
+    // combat_turn_kind_*/_slot_* (startup.txt/combat.txt) -- the exact order combat_roll_initiative built, not
+    // a separate rendering of who's "in the fight". A living enemy row is a real button: clicking it sets
+    // combat_player_chosen_target directly, no new ChoiceScript Scene needed for a plain data write like this
+    // one (contrast with the Level Up button, which opens a page because taking a level is a real action) --
+    // fight_pick_target (combat.txt) reads it before the player's next attack and clears it the instant that
+    // slot dies, so a fight with this sidebar hidden (the sub-960px breakpoint below) still plays exactly as it
+    // always has, picking the front-most living enemy on its own.
+    var combatBadgeHtml = inCombat ? "<span class=\"combatBadge\">COMBAT</span>" : "";
+    var bottomSectionHtml;
+    if (inCombat) {
+      var count = Number(s.combat_turn_count) || 0, chosen = Number(s.combat_player_chosen_target) || 0, rows = "";
+      for (var ti = 1; ti <= count; ti++) {
+        var kind = s["combat_turn_kind_" + ti], slot = Number(s["combat_turn_slot_" + ti]) || 0;
+        if (kind === "player") {
+          rows += "<div class=\"statRow turnRow turnRowSelf\"><span>" + fmt(s.name || "You") + "</span><span></span></div>";
+        } else if (kind === "enemy" || kind === "ally") {
+          var pfx = kind === "enemy" ? "combat_enemy" : "combat_ally";
+          var cName = fmt(s[pfx + slot + "_name"]) || (kind === "enemy" ? "Enemy" : "Ally");
+          var cHp = Number(s[pfx + slot + "_hp"]) || 0, cMax = Number(s[pfx + slot + "_max_hp"]) || 0;
+          var cDead = kind === "enemy" && cHp <= 0;
+          var cPicked = kind === "enemy" && !cDead && chosen === slot;
+          if (kind === "enemy" && !cDead) {
+            rows += "<button type=\"button\" class=\"statRow turnRow" + (cPicked ? " turnRowPicked" : "") +
+              "\" data-target=\"" + slot + "\"><span>" + cName + "</span><span>" + cHp + "/" + cMax + "</span></button>";
+          } else {
+            rows += "<div class=\"statRow turnRow" + (cDead ? " turnRowDead" : "") + "\"><span>" + cName +
+              "</span><span>" + (cDead ? "Down" : (cHp + "/" + cMax)) + "</span></div>";
+          }
+        }
+      }
+      bottomSectionHtml = rows;
+    } else {
+      bottomSectionHtml =
+        "<div class=\"statRow\"><span>Day</span><span>" + dayDisplay + "</span></div>" +
+        "<div class=\"statRow\"><span>Date</span><span>" + dateDisplay + "</span></div>" +
+        "<div class=\"statRow\"><span>Time</span><span>" + fmt(s.clock_time) + "</span></div>" +
+        "<div class=\"timePeriod\">" + fmt(s.time_period) + "</div>" +
+        "<div class=\"statRow\"><span>Weather</span><span>" + weatherDisplay + "</span></div>" +
+        "<hr class=\"sectionDivider\">" +
+        "<div class=\"statRow\"><span>Purse</span><span>" + fmt(s.gold) + "g " + fmt(s.silver) + "s " + fmt(s.copper) + "c</span></div>";
+    }
+
     el.innerHTML =
-      "<h3>" + fmt(s.name) + " — Lv" + fmt(s.character_level) + " " + fmt(s.class_name || "Recruit") + "</h3>" +
+      "<h3><span>" + fmt(s.name) + " — Lv" + fmt(s.character_level) + " " + fmt(s.class_name || "Recruit") + "</span>" + combatBadgeHtml + "</h3>" +
       "<div class=\"statRow\"><span>HP</span><span>" + hpHtml + "</span></div>" +
       "<div class=\"statRow\"><span>AC</span><span>" + fmt(s.armor_class) + "</span></div>" +
       "<div class=\"statRow\"><span>Proficiency</span><span>+" + fmt(s.prof_bonus) + "</span></div>" +
@@ -195,13 +283,7 @@ var rootDir = "../";
         "<span>CHA " + fmt(s.charisma) + abilityBoon(s.buff_cha_bonus, s.buff_cha_helps) + " (" + fmt(s.cha_mod_str) + ")</span>" +
       "</div>" +
       "<hr class=\"sectionDivider\">" +
-      "<div class=\"statRow\"><span>Day</span><span>" + dayDisplay + "</span></div>" +
-      "<div class=\"statRow\"><span>Date</span><span>" + dateDisplay + "</span></div>" +
-      "<div class=\"statRow\"><span>Time</span><span>" + fmt(s.clock_time) + "</span></div>" +
-      "<div class=\"timePeriod\">" + fmt(s.time_period) + "</div>" +
-      "<div class=\"statRow\"><span>Weather</span><span>" + weatherDisplay + "</span></div>" +
-      "<hr class=\"sectionDivider\">" +
-      "<div class=\"statRow\"><span>Purse</span><span>" + fmt(s.gold) + "g " + fmt(s.silver) + "s " + fmt(s.copper) + "c</span></div>" +
+      bottomSectionHtml +
       activeQuestHtml +
       (isTruthy(s.food_buff_active) || isTruthy(s.drink_buff_active) || isTruthy(s.unique_buff1_active) || isTruthy(s.unique_buff2_active) || isTruthy(s.unique_buff3_active) || isTruthy(s.sleep_buff1_active) || isTruthy(s.sleep_buff2_active) ?
         "<hr class=\"sectionDivider\">" +
@@ -246,6 +328,17 @@ var rootDir = "../";
     var tip = isTruthy(helps) ? "Includes +" + b + " from a boon, which raises the modifier" : "Includes +" + b + " from a boon, which does not change the modifier";
     return " <span class=\"" + cls + "\" title=\"" + tip + "\">+" + b + "</span>";
   }
+  // The #statSidebar div itself is never recreated (only its innerHTML, every render) -- one delegated listener
+  // on the stable element, not on the buttons inside it, which get destroyed and rebuilt every 400ms poll.
+  document.addEventListener("click", function (ev) {
+    var t = ev.target;
+    while (t && t.id !== "statSidebar" && !(t.getAttribute && t.hasAttribute("data-target"))) t = t.parentNode;
+    if (!t || !t.getAttribute || !t.hasAttribute("data-target")) return;
+    var slot = Number(t.getAttribute("data-target"));
+    if (!slot || !window.stats) return;
+    window.stats.combat_player_chosen_target = slot;
+    renderStatSidebar();
+  });
   window.setInterval(renderStatSidebar, 400);
   document.addEventListener("DOMContentLoaded", renderStatSidebar);
 })();
@@ -652,16 +745,18 @@ if (window.location.hostname === 'localhost') {
 <dialog id="keyboardShortcuts" onclick="event.target === this && this.close()">
 <header><span>Keyboard Shortcuts</span> <form method=dialog><button>X</button></form></header>
 <div class="table">
-  <div>Scroll Down</div>
+  <div>Select / Continue</div>
   <div><span class="key">Space</span></div>
+  <div>Next (Press and Hold)</div>
+  <div><span class="key">Enter</span></div>
+  <div>Scroll Down</div>
+  <div><span class="key">Page Down</span></div>
   <div>Scroll Up</div>
   <div><span class="key">Shift</span> + <span class="key">Space</span></div>
   <div>Next Option</div>
   <div><span class="key">J</span></div>
   <div>Previous Option</div>
   <div><span class="key">K</span></div>
-  <div>Next (Press and Hold)</div>
-  <div><span class="key">Enter</span></div>
   <div>Jump to Option</div>
   <div><span class="key">1</span> - <span class="key">9</span></div>
   <div>Show Stats</div>

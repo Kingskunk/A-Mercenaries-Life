@@ -915,6 +915,10 @@
 *create combat_enemy_atk_bonus 0
 *create combat_enemy_dmg_dice_sides 4
 *create combat_enemy_dmg_bonus 0
+*comment Flat monster proficiency bonus (2026-09-27), read by combat.txt's apply_derived_combat_bonuses --
+*comment every enemy type in the library so far is early, low-tier content, same tier the player starts at, so
+*comment there's no per-type/tier value yet. A tougher named enemy that needs more can still use atk_override.
+*create combat_enemy_prof_bonus 2
 *comment Damage-type scratch (mirrors atk_bonus/dmg_dice_sides/dmg_bonus's
 *comment own scratch-then-per-slot-storage shape, see the comment block just
 *comment below). combat_enemy_dmg_type defaults "bludgeoning" -- every
@@ -1157,6 +1161,32 @@
 *create combat_enemy6_intelligence_override 0
 *create combat_enemy6_wisdom_override 0
 *create combat_enemy6_charisma_override 0
+*comment Per-slot overrides for apply_derived_hp/apply_derived_ac's recipe inputs (2026-09-27, opt-in): same
+*comment pattern as the ability-score overrides just above, not the flat hp_override/ac_override further up --
+*comment those replace the FINAL computed number, these replace an INGREDIENT before the formula runs, so a
+*comment specific fight_<name> call can make one instance a tougher/squishier variant (2 hit dice instead of 1,
+*comment better armor) while still letting that instance's own rolled CON/DEX modifier apply on top, instead of
+*comment having to hand-compute and hardcode a final number. 0 means "use the type's own default" (a real hit
+*comment dice count, die size or base AC is never 0). Consumed and reset to 0 by the two labels themselves, same
+*comment as the ability-score overrides. Unused until a type opts into apply_derived_hp/apply_derived_ac.
+*create combat_enemy_hit_dice_count_override 0
+*create combat_enemy_hit_die_max_override 0
+*create combat_enemy_base_ac_override 0
+*create combat_enemy2_hit_dice_count_override 0
+*create combat_enemy2_hit_die_max_override 0
+*create combat_enemy2_base_ac_override 0
+*create combat_enemy3_hit_dice_count_override 0
+*create combat_enemy3_hit_die_max_override 0
+*create combat_enemy3_base_ac_override 0
+*create combat_enemy4_hit_dice_count_override 0
+*create combat_enemy4_hit_die_max_override 0
+*create combat_enemy4_base_ac_override 0
+*create combat_enemy5_hit_dice_count_override 0
+*create combat_enemy5_hit_die_max_override 0
+*create combat_enemy5_base_ac_override 0
+*create combat_enemy6_hit_dice_count_override 0
+*create combat_enemy6_hit_die_max_override 0
+*create combat_enemy6_base_ac_override 0
 *comment Enemy type library (combat.txt: apply_enemy_type) -- the calling
 *comment fight_<name> label sets these two, then *gosub apply_enemy_type, to
 *comment fill one slot (1/2/3) with a named reusable enemy type's full stat
@@ -1167,6 +1197,13 @@
 *comment Multi-enemy fight support (combat.txt: slots 1-3)
 *create combat_enemy_count 1
 *create combat_active_target 1
+*comment Target-selection HUD (2026-09-27): 0 means "no explicit choice, use the ordinary front-to-back
+*comment auto-pick"; a JS panel (combat-hud.js) sets this directly to an enemy slot number on click, no
+*comment ChoiceScript round-trip needed since it's read, not acted on, until the player's next attack.
+*comment fight_pick_target (combat.txt) checks this first and clears it back to 0 the instant that slot dies,
+*comment so it stays selected ("sticky") across rounds until then, exactly like a real fight would expect, and a
+*comment fight with no HUD attached (or nothing ever clicked) behaves identically to before this existed.
+*create combat_player_chosen_target 0
 *comment Total pre-declared enemy slots (widened from 3 to 6, 2026-09-27). ChoiceScript has no arrays, so this
 *comment is the real ceiling on how many enemies one fight can hold; every loop below reads it instead of a
 *comment literal, so raising it later is: bump this number, *create the new slot's variables (mirroring an

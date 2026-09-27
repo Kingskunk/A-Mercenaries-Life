@@ -3743,6 +3743,33 @@ window.onload=function() {
           value = availableValues[valueIndex - 1];
         }
         clickRadio(value);
+      } else if (key === ' ' || key === 'Spacebar') {
+        // Space is the quick "pick this / continue" key. Unlike Enter it fires on a
+        // single tap -- no press-and-hold. This branch must stay ABOVE the !isNaN(key)
+        // digit branch below: ev.key for space is " ", and Number(" ") === 0, so
+        // isNaN(" ") is false -- space would fall through to the digit branch and be
+        // silently swallowed there (clickRadio(-1) matches no input).
+        if (ev.repeat) return;              // holding Space must not rapid-fire pages
+        if (ev.shiftKey || ev.ctrlKey || ev.metaKey || ev.altKey) return; // Shift+Space still scrolls up
+        if (document.querySelector('dialog[open]')) return; // a panel owns the keyboard
+        // printButton() focuses the Next button, so without this the browser would also
+        // fire a native click on Space keyup and we'd advance two pages at once.
+        ev.preventDefault();
+        var checked = document.querySelector('input[type=radio]:checked');
+        if (checked) {
+          var label = document.querySelector('label[for="' + checked.id + '"]');
+          if (label && label.parentElement) {
+            label.parentElement.scrollIntoView({ block: "nearest", behavior: 'smooth' });
+            label.parentElement.classList.add('selectedKeyboard'); // flash what's being picked
+          }
+        }
+        var target;
+        if (ev.target && (ev.target.tagName === "BUTTON" || ev.target.tagName === "A")) {
+          target = ev.target;
+        } else {
+          target = document.querySelector('*[accesskey="n"]');
+        }
+        if (target) target.click();
       } else if (!isNaN(key)) {
         if (key === "0") {
           key = 10;

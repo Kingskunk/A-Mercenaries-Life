@@ -241,6 +241,90 @@
 *set {(aasr_ov_name)} 0
 *return
 
+*comment ──────────────────────────────────────────────────────────────
+*comment DERIVED DEFAULTS (2026-09-27, opt-in): three labels a NEW type can call instead of its own flat
+*comment *set lines, once apply_ability_score_range has rolled that slot's six scores. None of the 12 types in
+*comment this library call these yet -- every existing fight keeps its exact authored numbers, unchanged. The
+*comment formulas mirror the player's own math exactly rather than inventing new rules: attack/damage bonus off
+*comment score_to_mod the same way the player's weapon attacks already work, AC the same shape as equipment.txt's
+*comment recalculate_armor_class (base_ac + DEX mod), HP the same shape as startup.txt's hp_max (hit dice count *
+*comment (hit die max + CON mod)). apply_slot_stat_override's hp/ac/atk overrides still win afterward exactly as
+*comment before in every case -- they already treat whatever value is sitting there as the baseline to overwrite
+*comment or offset, so they don't care whether that baseline was a flat number or a computed one.
+*comment ──────────────────────────────────────────────────────────────
+
+*label apply_derived_combat_bonuses
+*comment A "ranged" weapon_type always attacks off DEX; everything else uses whichever of STR/DEX rolled
+*comment higher (the same rule the player's own finesse weapons use), so a DEX-leaning melee type needs no
+*comment extra flag to attack off DEX instead of STR. atk_bonus = key ability mod + combat_enemy_prof_bonus
+*comment (flat 2 for now -- every type in this library is early, low-tier content). dmg_bonus = key ability
+*comment mod alone: RAW, proficiency never adds to damage, matching how the player's own combat_player_dmg_bonus
+*comment is already just str_mod/dex_mod with no separate prof term.
+*params adcb_prefix
+*temp adcb_str {(adcb_prefix & "strength")}
+*temp adcb_dex {(adcb_prefix & "dexterity")}
+*gosub_scene startup score_to_mod adcb_str
+*temp adcb_str_mod sm_mod
+*gosub_scene startup score_to_mod adcb_dex
+*temp adcb_dex_mod sm_mod
+*temp adcb_key_mod adcb_str_mod
+*if ({(adcb_prefix & "weapon_type")} = "ranged")
+  *set adcb_key_mod adcb_dex_mod
+*elseif (adcb_dex_mod > adcb_str_mod)
+  *set adcb_key_mod adcb_dex_mod
+*set {(adcb_prefix & "atk_bonus")} (adcb_key_mod + combat_enemy_prof_bonus)
+*set {(adcb_prefix & "dmg_bonus")} adcb_key_mod
+*return
+
+*label apply_derived_ac
+*comment ada_base_ac is the type's own DEFAULT chassis number (armor/natural toughness), not a final answer --
+*comment same override pattern as apply_ability_score_range: a specific fight_<name> can pre-set
+*comment {prefix}base_ac_override before the fight starts (0 means "use the type's own default", a real base_ac
+*comment is never 0) to give one instance better or worse armor while still letting its own rolled DEX apply on
+*comment top, instead of hand-computing a final AC. Consumed and reset to 0 here, same as the score overrides.
+*comment DEX mod is then added either way, same shape as the player's own AC. No armor-tier DEX cap like the
+*comment player's medium/heavy armor: nothing in this library needs that distinction yet, and the FINAL
+*comment ac_override (apply_slot_stat_override) still remains for a DEX-blind heavy fighter if one ever shows up.
+*params ada_prefix ada_base_ac
+*temp ada_ov_name ((ada_prefix & "base_ac") & "_override")
+*temp ada_ov {(ada_ov_name)}
+*if (ada_ov > 0)
+  *set ada_base_ac ada_ov
+*set {(ada_ov_name)} 0
+*temp ada_dex {(ada_prefix & "dexterity")}
+*gosub_scene startup score_to_mod ada_dex
+*set {(ada_prefix & "ac")} (ada_base_ac + sm_mod)
+*return
+
+*label apply_derived_hp
+*comment adh_hit_dice_count/adh_hit_die_max are the type's own DEFAULTs, not a final answer -- same override
+*comment pattern as apply_ability_score_range: a specific fight_<name> can pre-set
+*comment {prefix}hit_dice_count_override/{prefix}hit_die_max_override before the fight starts (0 means "use the
+*comment type's own default", a real count or die size is never 0) to make one instance tougher or squishier
+*comment while still letting its own rolled CON apply on top, instead of hand-computing a final HP number.
+*comment Consumed and reset to 0 here, same as the score overrides. CON mod is then rolled in either way, the
+*comment same formula startup.txt's hp_max already uses. Clamped to a floor of 1 so a single-hit-die type with a
+*comment very low CON can never come out dead on arrival.
+*params adh_prefix adh_hit_dice_count adh_hit_die_max
+*temp adh_hdc_ov_name ((adh_prefix & "hit_dice_count") & "_override")
+*temp adh_hdc_ov {(adh_hdc_ov_name)}
+*if (adh_hdc_ov > 0)
+  *set adh_hit_dice_count adh_hdc_ov
+*set {(adh_hdc_ov_name)} 0
+*temp adh_hdm_ov_name ((adh_prefix & "hit_die_max") & "_override")
+*temp adh_hdm_ov {(adh_hdm_ov_name)}
+*if (adh_hdm_ov > 0)
+  *set adh_hit_die_max adh_hdm_ov
+*set {(adh_hdm_ov_name)} 0
+*temp adh_con {(adh_prefix & "constitution")}
+*gosub_scene startup score_to_mod adh_con
+*temp adh_hp (adh_hit_dice_count * (adh_hit_die_max + sm_mod))
+*if (adh_hp < 1)
+  *set adh_hp 1
+*set {(adh_prefix & "hp")} adh_hp
+*set {(adh_prefix & "max_hp")} adh_hp
+*return
+
 *label cri_is_better_than_best
 *comment Compares initiative candidate cri_ibt_a against candidate cri_ibt_b (params: 1-indexed positions into
 *comment the combat_init_* scratch arrays, startup.txt) for combat_roll_initiative's selection sort below. Output
@@ -560,6 +644,7 @@
 *set combat_current_turn_index 0
 *set combat_turn_needs_advance false
 *set combat_turn_advanced_this_page false
+*set combat_player_chosen_target 0
 *return
 
 *comment ──────────────────────────────────────────────────────────────
@@ -625,8 +710,18 @@
 *label fight_pick_target
 *comment First living slot, in ascending order -- a group is always fought down roughly front-to-back, never
 *comment picks a dead slot back up. A bounded loop over combat_enemy_count, via indirection, instead of one
-*comment hand-written branch per slot.
+*comment hand-written branch per slot. THIS is the fallback: a HUD-clicked target (2026-09-27, combat_player_
+*comment chosen_target, sticky until it dies -- see startup.txt) wins over it whenever one is set and still
+*comment alive, checked first, below. No HUD, or nothing clicked yet, and this behaves exactly as it always has.
 *set combat_active_target 0
+*if (combat_player_chosen_target > 0)
+  *temp fpt_chosen_hp {(("combat_enemy" & combat_player_chosen_target) & "_hp")}
+  *if ((combat_player_chosen_target <= combat_enemy_count) and (fpt_chosen_hp > 0))
+    *set combat_active_target combat_player_chosen_target
+  *else
+    *comment The chosen target just died (or the fight shrank under it) -- clear it so the HUD stops
+    *comment highlighting a dead slot, and fall through to the ordinary auto-pick below.
+    *set combat_player_chosen_target 0
 *temp fpt_i 1
 *label fight_pick_target_loop
 *if ((fpt_i <= combat_enemy_count) and (combat_active_target = 0))
@@ -769,6 +864,12 @@
 *if (combat_turn_needs_advance)
   *set combat_turn_needs_advance false
   *goto combat_next_turn
+*comment Re-sync here too (2026-09-27, target-selection HUD), not just at turn start via combat_next_turn/after
+*comment a kill via fight_check_enemy_hp -- those two leave a real gap: a non-damaging first action (Brace,
+*comment Second Wind, an item) never calls fight_check_enemy_hp, so a HUD click made between it and a second
+*comment action would otherwise sit unread until the NEXT full turn. Provably a no-op for the default (no HUD
+*comment click) case, since it just re-derives the identical already-correct target from unchanged data.
+*gosub fight_pick_target
 *comment (combat_enemy_disadvantage is cleared by combat_begin_round, once per round, not here: the hub is entered again
 *comment after a bonus action or an extra action, and that must not undo a Ray of Frost cast earlier in the same round.)
 
@@ -838,6 +939,12 @@
 
 *choice
   # Attack with your ${weapon}.
+    *comment Re-sync (2026-09-27, target-selection HUD): the menu may already have been showing when a HUD click
+    *comment changed combat_player_chosen_target, so re-reading it right here, at the moment this option is
+    *comment actually chosen, is the only way a click made while looking at an already-built page still lands on
+    *comment the new target -- fight_round_hub's own top-of-label sync (still there) only covers the OTHER case,
+    *comment a fresh page build. Provably a no-op for the default case, same reasoning as that other call site.
+    *gosub fight_pick_target
     *if (weapon_type = "ranged")
       *set check_stat "dex"
       *set check_skill "Ranged Attack"
@@ -941,6 +1048,8 @@
 
   *if ((((wizard_cantrip = "fire_bolt") or (wizard_cantrip_2 = "fire_bolt")) or (wizard_cantrip_3 = "fire_bolt")) or ((race_cantrip = "fire_bolt") or (race_cantrip_2 = "fire_bolt")))
     # [Cantrip: Fire Bolt] Hurl a mote of arcane flame at ${combat_enemy_epithet}.
+      *comment Re-sync (2026-09-27, target-selection HUD) -- see the weapon attack option's own comment above.
+      *gosub fight_pick_target
       *set combat_current_spell_id "fire_bolt"
       *temp fsh ""
       *temp fsm ""
@@ -972,6 +1081,8 @@
 
   *if ((((wizard_cantrip = "ray_of_frost") or (wizard_cantrip_2 = "ray_of_frost")) or (wizard_cantrip_3 = "ray_of_frost")) or ((race_cantrip = "ray_of_frost") or (race_cantrip_2 = "ray_of_frost")))
     # [Cantrip: Ray of Frost] Loose a beam of numbing cold at ${combat_enemy_epithet}.
+      *comment Re-sync (2026-09-27, target-selection HUD) -- see the weapon attack option's own comment above.
+      *gosub fight_pick_target
       *set combat_current_spell_id "ray_of_frost"
       *temp fsh ""
       *temp fsm ""
@@ -1004,6 +1115,8 @@
 
   *if ((((wizard_cantrip = "shocking_grasp") or (wizard_cantrip_2 = "shocking_grasp")) or (wizard_cantrip_3 = "shocking_grasp")) or ((race_cantrip = "shocking_grasp") or (race_cantrip_2 = "shocking_grasp")))
     # [Cantrip: Shocking Grasp] Drive a crackling jolt of lightning into ${combat_enemy_epithet}.
+      *comment Re-sync (2026-09-27, target-selection HUD) -- see the weapon attack option's own comment above.
+      *gosub fight_pick_target
       *set combat_current_spell_id "shocking_grasp"
       *temp fsh ""
       *temp fsm ""
@@ -1045,6 +1158,8 @@
 
   *if ((warlock_cantrip = "eldritch_blast") or (warlock_cantrip_2 = "eldritch_blast"))
     # [Cantrip: Eldritch Blast] Unleash a crackling beam of eldritch force at ${combat_enemy_epithet}.
+      *comment Re-sync (2026-09-27, target-selection HUD) -- see the weapon attack option's own comment above.
+      *gosub fight_pick_target
       *set combat_current_spell_id "eldritch_blast"
       *temp fsh ""
       *temp fsm ""
@@ -1076,6 +1191,8 @@
 
   *if ((warlock_cantrip = "chill_touch") or (warlock_cantrip_2 = "chill_touch"))
     # [Cantrip: Chill Touch] Conjure a skeletal hand of necrotic frost against ${combat_enemy_epithet}.
+      *comment Re-sync (2026-09-27, target-selection HUD) -- see the weapon attack option's own comment above.
+      *gosub fight_pick_target
       *set combat_current_spell_id "chill_touch"
       *temp fsh ""
       *temp fsm ""
@@ -1107,6 +1224,8 @@
 
   *if ((bard_cantrip = "vicious_mockery") or (bard_cantrip_2 = "vicious_mockery"))
     # [Cantrip: Vicious Mockery] Hurl a barbed, perfectly-aimed insult at ${combat_enemy_epithet}.
+      *comment Re-sync (2026-09-27, target-selection HUD) -- see the weapon attack option's own comment above.
+      *gosub fight_pick_target
       *set combat_current_spell_id "vicious_mockery"
       *temp fsh ""
       *temp fsm ""
@@ -1139,6 +1258,8 @@
 
   *if (((character_class = "wizard") and (wizard_spell = "magic_missile")) and (wizard_spell_slots > 0))
     # [Spell: Magic Missile] Unleash three darts of force that strike unerringly, bypassing the defenses of ${combat_enemy_epithet} entirely.
+      *comment Re-sync (2026-09-27, target-selection HUD) -- see the weapon attack option's own comment above.
+      *gosub fight_pick_target
       *set combat_current_spell_id "magic_missile"
       *temp fsh ""
       *temp fsm ""
@@ -1158,6 +1279,8 @@
 
   *if (((((warlock_spell = "hex") and (warlock_spell_slots > 0)) or ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))) and (not(hex_active))) and (combat_player_bonus_left > 0))
     # [Spell: Hex] Lay a baleful eldritch curse upon ${combat_enemy_epithet}, marking the foe to suffer deeper wounds.@{show_stat_hints  [Bonus Action]|}
+      *comment Re-sync (2026-09-27, target-selection HUD) -- see the weapon attack option's own comment above.
+      *gosub fight_pick_target
       *gosub_scene startup resolve_cast_hex
       You whisper a guttural syllable of ancient ruin. Dark, spectral runes flare briefly across ${combat_enemy_epithet} and sink in, binding the foe's fate to your will—every strike you land will tear in with extra necrotic fury!
       *line_break
@@ -1183,6 +1306,8 @@
 
   *if (((bard_spell = "dissonant_whispers") or (bard_spell_2 = "dissonant_whispers")) and (bard_spell_slots > 0))
     # [Spell: Dissonant Whispers] Utter a hideous, discordant psychic phrase that wracks the mind of ${combat_enemy_epithet}.
+      *comment Re-sync (2026-09-27, target-selection HUD) -- see the weapon attack option's own comment above.
+      *gosub fight_pick_target
       *set combat_current_spell_id "dissonant_whispers"
       *temp fsh ""
       *temp fsm ""
@@ -1218,6 +1343,8 @@
       *goto fight_bonus_spent
 
   # Brace and watch the strikes of ${combat_enemy_epithet}, giving ground instead of pressing the attack.
+    *comment Re-sync (2026-09-27, target-selection HUD) -- see the weapon attack option's own comment above.
+    *gosub fight_pick_target
     *set combat_enemy_disadvantage true
     You plant your feet and hold your ground, tracking the movement of ${combat_enemy_epithet} instead of swinging blind.
     *goto fight_action_spent
