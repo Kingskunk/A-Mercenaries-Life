@@ -14,13 +14,12 @@
 *comment when the calling quest scene writes both together, instead of a
 *comment jarring cut between this file's text and theirs.
 *comment
-*comment ALLY POOL (2026-09-27, step 2 of the turn-order/initiative rebuild -- see combat_enemy_slot_cap's comment
-*comment above for step 1): combat_ally1-4_* (startup.txt) is storage only, and fight_narrate_ally_attack below is
+*comment ALLY POOL: combat_ally1-4_* (startup.txt) is storage only, and fight_narrate_ally_attack below is
 *comment placeholder narration nothing calls yet -- no ally AI or turn queue exists. Not wired into any real fight.
-*comment Generalized the same day to narrate either direction (ally-vs-enemy or enemy-vs-ally), not just
-*comment ally-as-attacker -- both sides are named purely by epithet, so one label covers both.
+*comment It narrates either direction (ally-vs-enemy or enemy-vs-ally), not just ally-as-attacker -- both sides
+*comment are named purely by epithet, so one label covers both.
 *comment
-*comment ADDING A FIGHT (2026-09-26, widened to 6 slots 2026-09-27): use fight_library (near the end of this file). Set
+*comment ADDING A FIGHT: use fight_library (near the end of this file). Set
 *comment combat_lib_1 (and _2 through _6) to library type ids, set combat_is_nonlethal if it should end in surrender, then *gosub_scene combat fight_library.
 *comment Nothing in this file needs editing, and no prose is written per fight. Every fight in the game is built this way;
 *comment none is hand-authored. Only a foe no library type fits should be written out by hand, as below.
@@ -98,7 +97,7 @@
 *if (not(combat_enemy_epithet_override = ""))
   *set combat_enemy_epithet combat_enemy_epithet_override
   *set combat_enemy_epithet_override ""
-*comment Stat overrides (2026-09-26, see startup.txt): a scene that wants a tougher or weaker fighter than the library
+*comment Stat overrides (see startup.txt): a scene that wants a tougher or weaker fighter than the library
 *comment type sets combat_enemy_hp_override, _ac_override and _atk_override (and the combat_enemy2_ / combat_enemy3_
 *comment versions) before calling the fight. They are applied here, after every slot has been built and before slot 1 is
 *comment snapshotted, so they work on any type and on any fight label. The special move's to-hit bonus moves by the same
@@ -142,8 +141,8 @@
 *set combat_enemy1_metal_armor combat_enemy_metal_armor
 *set combat_enemy1_dmg_type combat_enemy_dmg_type
 *set combat_enemy1_weapon_type combat_enemy_weapon_type
-*comment Ability scores (2026-09-27): already rolled/overridden onto the bare names by apply_type_X (or set
-*comment directly by a hand-authored fight), same snapshot treatment as every field above.
+*comment Ability scores: already rolled/overridden onto the bare names by apply_type_X (or set directly by a
+*comment hand-authored fight), same snapshot treatment as every field above.
 *set combat_enemy1_strength combat_enemy_strength
 *set combat_enemy1_dexterity combat_enemy_dexterity
 *set combat_enemy1_constitution combat_enemy_constitution
@@ -176,18 +175,18 @@
 *set combat_enemy1_vulnerable_type_1 combat_enemy_vulnerable_type_1
 *set combat_enemy1_vulnerable_type_2 combat_enemy_vulnerable_type_2
 *set combat_active_target 1
-*comment Turn order (2026-09-27, steps 4-5): rolled once here, after every slot above is fully built, so the roll
-*comment sees the real combat_ally_count/combat_enemy_count and every slot's real DEX. combat_current_turn_index 0
-*comment plus the needs_advance flag means the very next *goto fight_round_hub (every fight_<name> label already
-*comment ends with this, unedited) dispatches through combat_next_turn instead of assuming the player goes first.
+*comment Turn order: rolled once here, after every slot above is fully built, so the roll sees the real
+*comment combat_ally_count/combat_enemy_count and every slot's real DEX. combat_current_turn_index 0 plus the
+*comment needs_advance flag means the very next *goto fight_round_hub (every fight_<name> label already ends with
+*comment this, unedited) dispatches through combat_next_turn instead of assuming the player goes first.
 *gosub combat_roll_initiative
 *set combat_current_turn_index 0
 *set combat_turn_needs_advance true
 *set combat_turn_advanced_this_page false
 *gosub combat_begin_round
-*comment Announced here, not inside fight_round_hub (step 6, 2026-09-27), so it's the very first thing shown even
-*comment when an enemy wins initiative and attacks before the player ever sees a menu -- fight_round_hub's own
-*comment banner might not print until after that first attack.
+*comment Announced here, not inside fight_round_hub, so it's the very first thing shown even when an enemy wins
+*comment initiative and attacks before the player ever sees a menu -- fight_round_hub's own banner might not
+*comment print until after that first attack.
 *gosub announce_turn_order
 *return
 
@@ -219,15 +218,14 @@
 *return
 
 *label apply_ability_score_range
-*comment Ability scores (2026-09-27, groundwork for initiative rolls and later saving throws): one score for one
-*comment slot. The manual per-slot override wins if set (nonzero, see startup.txt); otherwise this rolls within
-*comment [aasr_min, aasr_max], the calling type's own default range. Called six times (once per score) from BOTH
-*comment branches of every apply_type_X below: slot 1 passes the bare "combat_enemy_" prefix (the same bare names
-*comment fight_setup later snapshots into combat_enemy1_*, mirroring how hp/ac/atk_bonus already work for slot 1),
-*comment slot 2-and-beyond passes that type's own apt_p prefix directly, no separate slot-1-vs-N code path needed.
-*comment Resets its own override to 0 once consumed (fight_cleanup also resets every score and override as a
-*comment backstop, same treatment as the opt-in condition/movepool fields, so a hand-authored fight that never
-*comment touches ability scores at all can't inherit a leftover roll from an earlier type-library fight).
+*comment Ability scores, one score for one slot: rolls each of the six for a type-library enemy, feeding
+*comment initiative and the derived combat-bonus/AC/HP labels below. The manual per-slot override wins if set
+*comment (nonzero, see startup.txt); otherwise this rolls within [aasr_min, aasr_max], the calling type's own
+*comment default range. Called six times (once per score) from both branches of every apply_type_X below: slot 1
+*comment passes the bare "combat_enemy_" prefix (the same bare names fight_setup later snapshots into
+*comment combat_enemy1_*), slot 2-and-beyond passes that type's own apt_p prefix directly. Resets its own override
+*comment to 0 once consumed (fight_cleanup also resets every score and override as a backstop, so a hand-authored
+*comment fight that never touches ability scores can't inherit a leftover roll from an earlier fight).
 *params aasr_prefix aasr_field aasr_min aasr_max
 *temp aasr_ov_name ((aasr_prefix & aasr_field) & "_override")
 *temp aasr_target (aasr_prefix & aasr_field)
@@ -242,24 +240,24 @@
 *return
 
 *comment ──────────────────────────────────────────────────────────────
-*comment DERIVED DEFAULTS (2026-09-27, opt-in): three labels a NEW type can call instead of its own flat
-*comment *set lines, once apply_ability_score_range has rolled that slot's six scores. None of the 12 types in
-*comment this library call these yet -- every existing fight keeps its exact authored numbers, unchanged. The
-*comment formulas mirror the player's own math exactly rather than inventing new rules: attack/damage bonus off
-*comment score_to_mod the same way the player's weapon attacks already work, AC the same shape as equipment.txt's
-*comment recalculate_armor_class (base_ac + DEX mod), HP the same shape as startup.txt's hp_max (hit dice count *
-*comment (hit die max + CON mod)). apply_slot_stat_override's hp/ac/atk overrides still win afterward exactly as
-*comment before in every case -- they already treat whatever value is sitting there as the baseline to overwrite
-*comment or offset, so they don't care whether that baseline was a flat number or a computed one.
+*comment DERIVED DEFAULTS: three labels a type can call instead of its own flat *set lines, once
+*comment apply_ability_score_range has rolled that slot's six scores. apply_derived_combat_bonuses is wired into
+*comment every type in the library; apply_derived_ac/apply_derived_hp are opt-in and not yet called by any of
+*comment them, so HP and AC stay each type's own authored flat numbers unless a new type opts in. The formulas
+*comment mirror the player's own math rather than inventing new rules: attack/damage bonus off score_to_mod the
+*comment same way the player's weapon attacks work, AC the same shape as equipment.txt's recalculate_armor_class
+*comment (base_ac + DEX mod), HP the same shape as startup.txt's hp_max (hit dice count * (hit die max + CON
+*comment mod)). apply_slot_stat_override's hp/ac/atk overrides still win afterward in every case -- they already
+*comment treat whatever value is sitting there as the baseline to overwrite or offset, so they don't care whether
+*comment that baseline was a flat number or a computed one.
 *comment ──────────────────────────────────────────────────────────────
 
 *label apply_derived_combat_bonuses
-*comment A "ranged" weapon_type always attacks off DEX; everything else uses whichever of STR/DEX rolled
-*comment higher (the same rule the player's own finesse weapons use), so a DEX-leaning melee type needs no
-*comment extra flag to attack off DEX instead of STR. atk_bonus = key ability mod + combat_enemy_prof_bonus
-*comment (flat 2 for now -- every type in this library is early, low-tier content). dmg_bonus = key ability
-*comment mod alone: RAW, proficiency never adds to damage, matching how the player's own combat_player_dmg_bonus
-*comment is already just str_mod/dex_mod with no separate prof term.
+*comment A "ranged" weapon_type always attacks off DEX; everything else uses whichever of STR/DEX rolled higher
+*comment (the same rule the player's own finesse weapons use), so a DEX-leaning melee type needs no extra flag.
+*comment atk_bonus = key ability mod + combat_enemy_prof_bonus (flat 2 -- every type in this library is early,
+*comment low-tier content). dmg_bonus = key ability mod alone: RAW, proficiency never adds to damage, matching
+*comment how the player's own combat_player_dmg_bonus is already just str_mod/dex_mod with no separate prof term.
 *params adcb_prefix
 *temp adcb_str {(adcb_prefix & "strength")}
 *temp adcb_dex {(adcb_prefix & "dexterity")}
@@ -277,14 +275,11 @@
 *return
 
 *label apply_derived_ac
-*comment ada_base_ac is the type's own DEFAULT chassis number (armor/natural toughness), not a final answer --
-*comment same override pattern as apply_ability_score_range: a specific fight_<name> can pre-set
-*comment {prefix}base_ac_override before the fight starts (0 means "use the type's own default", a real base_ac
-*comment is never 0) to give one instance better or worse armor while still letting its own rolled DEX apply on
-*comment top, instead of hand-computing a final AC. Consumed and reset to 0 here, same as the score overrides.
-*comment DEX mod is then added either way, same shape as the player's own AC. No armor-tier DEX cap like the
-*comment player's medium/heavy armor: nothing in this library needs that distinction yet, and the FINAL
-*comment ac_override (apply_slot_stat_override) still remains for a DEX-blind heavy fighter if one ever shows up.
+*comment ada_base_ac is the type's own default chassis number (armor/natural toughness), not a final answer --
+*comment {prefix}base_ac_override (0 = "use the default") can raise or lower it per fight while still letting the
+*comment slot's own rolled DEX apply on top, instead of hand-computing a final AC. No armor-tier DEX cap like the
+*comment player's medium/heavy armor: nothing in this library needs that yet, and the final ac_override
+*comment (apply_slot_stat_override) still covers a DEX-blind heavy fighter if one ever shows up.
 *params ada_prefix ada_base_ac
 *temp ada_ov_name ((ada_prefix & "base_ac") & "_override")
 *temp ada_ov {(ada_ov_name)}
@@ -297,14 +292,10 @@
 *return
 
 *label apply_derived_hp
-*comment adh_hit_dice_count/adh_hit_die_max are the type's own DEFAULTs, not a final answer -- same override
-*comment pattern as apply_ability_score_range: a specific fight_<name> can pre-set
-*comment {prefix}hit_dice_count_override/{prefix}hit_die_max_override before the fight starts (0 means "use the
-*comment type's own default", a real count or die size is never 0) to make one instance tougher or squishier
-*comment while still letting its own rolled CON apply on top, instead of hand-computing a final HP number.
-*comment Consumed and reset to 0 here, same as the score overrides. CON mod is then rolled in either way, the
-*comment same formula startup.txt's hp_max already uses. Clamped to a floor of 1 so a single-hit-die type with a
-*comment very low CON can never come out dead on arrival.
+*comment adh_hit_dice_count/adh_hit_die_max are the type's own defaults, not a final answer -- the per-slot
+*comment overrides (0 = "use the default") can make one instance tougher or squishier while still letting its own
+*comment rolled CON apply on top. Same formula startup.txt's hp_max uses. Clamped to a floor of 1 so a
+*comment single-hit-die type with a very low CON can never come out dead on arrival.
 *params adh_prefix adh_hit_dice_count adh_hit_die_max
 *temp adh_hdc_ov_name ((adh_prefix & "hit_dice_count") & "_override")
 *temp adh_hdc_ov {(adh_hdc_ov_name)}
@@ -441,15 +432,22 @@
   *set {("combat_init_used_" & cri_best)} true
   *goto cri_sort_loop
 *set combat_turn_count combat_init_count
+*comment Reset every position's first-pass flag true for this fight (startup.txt) -- combat_next_turn clears one
+*comment for good the instant that position dispatches, so a stale "already went" from a previous fight can never
+*comment suppress this fight's surprise round.
+*temp cri_fp_i 1
+*label cri_fp_reset_loop
+*if (cri_fp_i <= 11)
+  *set {("combat_turn_first_pass_" & cri_fp_i)} true
+  *set cri_fp_i + 1
+  *goto cri_fp_reset_loop
 *return
 
 *label announce_turn_order
-*comment One line, once, right after combat_roll_initiative builds the order (2026-09-27, step 6) -- the only
-*comment player-visible confirmation the turn queue exists at all, since nothing else surfaces it. A real name
-*comment per position (bare "You" for the player, matching how the banner already says "You:" not the
-*comment character's own name), built via the same {}-indirection every other loop in this engine already uses.
-*comment Printed once because the order never changes for the rest of the fight -- a defeated combatant's turn
-*comment is simply skipped when reached, same as it always has been, with no need to update this line for it.
+*comment One line, once, right after combat_roll_initiative builds the order -- the only player-visible
+*comment confirmation the turn queue exists at all. A real name per position (bare "You" for the player, matching
+*comment how the banner already says "You:" not the character's own name). Printed once because the order never
+*comment changes for the rest of the fight -- a defeated combatant's turn is simply skipped when reached.
 *temp ato_line ""
 *temp ato_i 1
 *label announce_turn_order_loop
@@ -485,6 +483,10 @@
 *comment skill check outside this fight.
 *set disadvantage false
 *set advantage false
+*comment Same reason: only the calling scene's own stealth success sets this, for THIS fight -- it must not carry
+*comment into the next fight_<name> label and grant an unearned surprise round there.
+*set combat_player_surprise false
+*set player_movement_restricted false
 *comment Condition-on-hit, Stunned, movepool, and damage-type resistance are
 *comment all opt-in per fight_<name> label -- reset here (end of THIS fight,
 *comment before the NEXT fight's label ever runs) so an enemy that doesn't
@@ -553,6 +555,11 @@
   *set {(fc_p & "vulnerable_type_1")} ""
   *set {(fc_p & "vulnerable_type_2")} ""
   *set {(fc_p & "flavor_type")} ""
+  *comment Bane (see resolve_cast_bane, startup.txt): 0 means "not Baned." Reset per-slot here so a future fight's
+  *comment slot never inherits an earlier fight's still-ticking duration.
+  *set {(fc_p & "bane_expires_round")} 0
+  *comment Range: 0 means Engaged, every type's default -- reset per-slot for the same reason as Bane above.
+  *set {(fc_p & "range")} 0
   *set {("combat_lib_" & fc_i)} ""
   *comment Per-slot local-color hit/miss variants: any of the 5, via indirection, instead of one hand-written
   *comment line per variant per slot.
@@ -571,8 +578,8 @@
   *set {(fc_p & "hp_override")} 999
   *set {(fc_p & "ac_override")} 999
   *set {(fc_p & "atk_override")} 999
-  *comment Ability scores (2026-09-27) are opt-in like condition/movepool above, not always-set like hp/ac/atk_bonus
-  *comment -- a hand-authored fight can be silent about them entirely, so they need an explicit reset to "average
+  *comment Ability scores are opt-in like condition/movepool above, not always-set like hp/ac/atk_bonus -- a
+  *comment hand-authored fight can be silent about them entirely, so they need an explicit reset to "average
   *comment human" or a later fight in the same slot could otherwise inherit an earlier type-library fight's roll.
   *set {(fc_p & "strength")} 10
   *set {(fc_p & "dexterity")} 10
@@ -594,6 +601,8 @@
 *set combat_player_bonus_max 1
 *set combat_player_actions_left 1
 *set combat_player_bonus_left 1
+*set combat_player_attacks_max 1
+*set combat_player_attacks_left 1
 *set combat_enemy_hp_override 999
 *set combat_enemy_ac_override 999
 *set combat_enemy_atk_override 999
@@ -638,9 +647,9 @@
 *comment single-enemy encounter defaults to slot 1 only via combat_enemy_count.
 *set combat_enemy_count 1
 *set combat_active_target 1
-*comment Turn order (2026-09-27): fight_setup already resets these fresh at the start of every fight, so this is
-*comment a defensive backstop, not the real guarantee -- matching how the hp/ac/atk overrides above are reset in
-*comment two places for the same reason.
+*comment Turn order: fight_setup already resets these fresh at the start of every fight, so this is a defensive
+*comment backstop, not the real guarantee -- matching how the hp/ac/atk overrides above are reset in two places
+*comment for the same reason.
 *set combat_current_turn_index 0
 *set combat_turn_needs_advance false
 *set combat_turn_advanced_this_page false
@@ -693,14 +702,20 @@
 *set combat_enemy_resist_type_2 {(fti_p & "resist_type_2")}
 *set combat_enemy_vulnerable_type_1 {(fti_p & "vulnerable_type_1")}
 *set combat_enemy_vulnerable_type_2 {(fti_p & "vulnerable_type_2")}
-*comment Ability scores (2026-09-27): synced in like every other field above, so a future saving-throw check can
-*comment just read the bare combat_enemy_<score> for whichever slot is currently active, same as HP/AC/atk_bonus.
+*comment Ability scores: synced in like every other field above, so a saving-throw check (resolve_enemy_save)
+*comment can read the bare combat_enemy_<score> for whichever slot is currently active, same as HP/AC/atk_bonus.
 *set combat_enemy_strength {(fti_p & "strength")}
 *set combat_enemy_dexterity {(fti_p & "dexterity")}
 *set combat_enemy_constitution {(fti_p & "constitution")}
 *set combat_enemy_intelligence {(fti_p & "intelligence")}
 *set combat_enemy_wisdom {(fti_p & "wisdom")}
 *set combat_enemy_charisma {(fti_p & "charisma")}
+*comment Bane (see resolve_cast_bane, startup.txt): synced in the same way, so resolve_enemy_attack's Bane
+*comment penalty check reads the right slot's own expiry.
+*set combat_enemy_bane_expires_round {(fti_p & "bane_expires_round")}
+*comment Range: synced in the same way, read by the weapon-attack *choice gate and combat_next_turn's enemy
+*comment branch (both combat.txt).
+*set combat_enemy_range {(fti_p & "range")}
 *return
 
 *label fight_sync_target_out
@@ -710,9 +725,9 @@
 *label fight_pick_target
 *comment First living slot, in ascending order -- a group is always fought down roughly front-to-back, never
 *comment picks a dead slot back up. A bounded loop over combat_enemy_count, via indirection, instead of one
-*comment hand-written branch per slot. THIS is the fallback: a HUD-clicked target (2026-09-27, combat_player_
-*comment chosen_target, sticky until it dies -- see startup.txt) wins over it whenever one is set and still
-*comment alive, checked first, below. No HUD, or nothing clicked yet, and this behaves exactly as it always has.
+*comment hand-written branch per slot. THIS is the fallback: a HUD-clicked target (combat_player_chosen_target,
+*comment sticky until it dies -- see startup.txt) wins over it whenever one is set and still alive, checked first,
+*comment below. No HUD, or nothing clicked yet, and this behaves exactly as it always has.
 *set combat_active_target 0
 *if (combat_player_chosen_target > 0)
   *temp fpt_chosen_hp {(("combat_enemy" & combat_player_chosen_target) & "_hp")}
@@ -781,30 +796,44 @@
 *return
 
 *comment ──────────────────────────────────────────────────────────────
-*comment THE TURN BUDGET (2026-09-26)
-*comment The player has an action budget each round: combat_player_actions_left and combat_player_bonus_left, refilled from
-*comment combat_player_actions_max and combat_player_bonus_max (startup.txt, both 1 by default). A round is the player's turn plus the
-*comment enemies' turns today; when the fight becomes turn-ordered these become the acting creature's budget and combat_begin_round
-*comment becomes combat_begin_turn.
-*comment   ACTION (attack, a damage spell, Agathys, False Life, Brace, an item): leaves the hub through fight_action_spent, which
-*comment     spends one action and, if another is left, returns to the hub in the SAME round with no enemy turn.
-*comment   BONUS ACTION (Hex, Healing Word, Second Wind, Rage): gated on combat_player_bonus_left > 0 and left through fight_bonus_spent,
-*comment     which spends one and returns to the hub. The action is still to come.
+*comment THE TURN BUDGET
+*comment The player has three budgets each round: combat_player_actions_left, combat_player_bonus_left and
+*comment combat_player_attacks_left, each refilled from its own _max (startup.txt, all 1 by default). A round is
+*comment the player's turn plus the enemies' turns today; when the fight becomes turn-ordered these become the
+*comment acting creature's budget and combat_begin_round becomes combat_begin_turn.
+*comment   ATTACK (the weapon/sidearm options): gated on combat_player_attacks_left > 0, left through
+*comment     fight_attack_spent, which spends one attack and, only on the FIRST attack of the round, also spends
+*comment     one action (Attack IS your action; Extra Attack, a future level-5 feature, lets combat_player_
+*comment     attacks_max go above 1 so several swings come out of that one action instead of several actions).
+*comment   ACTION (a damage spell, Agathys, False Life, Brace, an item): leaves the hub through fight_action_spent,
+*comment     which spends one action.
+*comment   BONUS ACTION (Hex, Healing Word, Second Wind, Rage): gated on combat_player_bonus_left > 0 (plus its
+*comment     own combat_can_X availability flag, below) and left through fight_bonus_spent, which spends one.
 *comment   REACTION: not a budget yet. Shield is an "armed" flag that fires on the next hit, which is how a reaction behaves.
-*comment Extras: an ongoing effect changes the _max value (Haste: combat_player_actions_max 2, back to 1 when it ends; its extra action is
-*comment restricted in 5e to one weapon attack, Dash, Disengage, Hide or Use an Object, which a spell option can check with a flag when
-*comment it is built). A one-off extra is *gosub combat_grant_action or combat_grant_bonus (Action Surge). Extra Attack is NOT this: it
-*comment is more attacks inside one action.
-*comment Every spend and grant is replay-locked (the page is replayed when the Stats screen closes), and combat_begin_round is a set of
-*comment fixed values, so it is safe to repeat.
+*comment None of the three spends ends the turn by itself -- every spend just returns to the hub, regardless of
+*comment what's left. The hub itself auto-ends the turn once the action and attack budgets are gone AND nothing
+*comment bonus-gated is available either (see combat_bonus_available below) -- a new bonus-action feature needs
+*comment its own combat_can_X flag added there, same as Hex/Healing Word/Second Wind/Rage, or it silently blocks
+*comment auto-end from ever firing while it's on cooldown. The always-available "End Turn" option in the hub's
+*comment own *choice block remains the only way to end the turn early, on request, with resources still unspent.
+*comment Extras: an ongoing effect changes a _max value (Haste: combat_player_actions_max 2, back to 1 when it
+*comment ends; its extra action is restricted in 5e to one weapon attack, Dash, Disengage, Hide or Use an Object,
+*comment which a spell option can check with a flag when it is built). A one-off extra is *gosub combat_grant_
+*comment action, combat_grant_bonus or combat_grant_attack (Action Surge, etc.).
+*comment Every spend and grant is replay-locked (the page is replayed when the Stats screen closes), and
+*comment combat_begin_round is a set of fixed values, so it is safe to repeat.
 *comment ──────────────────────────────────────────────────────────────
 
 *label combat_begin_round
 *comment Start of a round: refill the budgets, and clear the enemy's disadvantage from the last one (Ray of Frost, Vicious Mockery
 *comment and Brace set it during the player's turn and it holds until the round is over, so it must not be cleared on every hub entry).
+*comment player_movement_restricted is round-scoped the same way -- see its own create comment (startup.txt) for
+*comment why it isn't tied to the player's next roll like disadvantage itself.
 *set combat_player_actions_left combat_player_actions_max
 *set combat_player_bonus_left combat_player_bonus_max
+*set combat_player_attacks_left combat_player_attacks_max
 *set combat_enemy_disadvantage false
+*set player_movement_restricted false
 *return
 
 *label combat_spend_action
@@ -823,6 +852,19 @@
   *set locked_combat_bonus_spend_page_id page_id
 *return
 
+*label combat_spend_attack
+*comment Same shape as combat_spend_action/_bonus, plus one extra rule: the FIRST attack of the round (attacks_
+*comment left still sitting at its max, i.e. nothing has spent from it yet) also spends the general action --
+*comment Attack is your action. Every attack after that, while attacks_left stays above 0, only spends an attack.
+*if (not(combat_attack_spend_locked)) or (not(locked_combat_attack_spend_page_id = page_id))
+  *if (combat_player_attacks_left = combat_player_attacks_max)
+    *gosub combat_spend_action
+  *if (combat_player_attacks_left > 0)
+    *set combat_player_attacks_left - 1
+  *set combat_attack_spend_locked true
+  *set locked_combat_attack_spend_page_id page_id
+*return
+
 *label combat_grant_action
 *if (not(combat_action_grant_locked)) or (not(locked_combat_action_grant_page_id = page_id))
   *set combat_player_actions_left + 1
@@ -837,15 +879,24 @@
   *set locked_combat_bonus_grant_page_id page_id
 *return
 
+*label combat_grant_attack
+*if (not(combat_attack_grant_locked)) or (not(locked_combat_attack_grant_page_id = page_id))
+  *set combat_player_attacks_left + 1
+  *set combat_attack_grant_locked true
+  *set locked_combat_attack_grant_page_id page_id
+*return
+
 *label fight_action_spent
-*comment Every option that costs an action ends here (damage actions arrive through fight_check_enemy_hp). Another action left means the
-*comment player acts again this round; none left means their turn is over -- combat_next_turn advances the queue
-*comment to whoever's next (an enemy, or straight to a new round if the player was last in the order).
+*comment Every option that costs an action ends here (Brace, spells, items, Agathys, False Life). Always returns
+*comment to the hub -- see THE TURN BUDGET above for why nothing auto-advances the turn.
 *gosub combat_spend_action
-*if (combat_player_actions_left > 0)
-  *goto fight_round_hub
-*set combat_turn_advanced_this_page false
-*goto combat_next_turn
+*goto fight_round_hub
+
+*label fight_attack_spent
+*comment Weapon/sidearm attacks end here instead of fight_action_spent (damage attacks arrive through
+*comment fight_check_enemy_hp first, to check for a kill). Always returns to the hub -- see THE TURN BUDGET above.
+*gosub combat_spend_attack
+*goto fight_round_hub
 
 *label fight_bonus_spent
 *gosub combat_spend_bonus
@@ -864,11 +915,9 @@
 *if (combat_turn_needs_advance)
   *set combat_turn_needs_advance false
   *goto combat_next_turn
-*comment Re-sync here too (2026-09-27, target-selection HUD), not just at turn start via combat_next_turn/after
-*comment a kill via fight_check_enemy_hp -- those two leave a real gap: a non-damaging first action (Brace,
-*comment Second Wind, an item) never calls fight_check_enemy_hp, so a HUD click made between it and a second
-*comment action would otherwise sit unread until the NEXT full turn. Provably a no-op for the default (no HUD
-*comment click) case, since it just re-derives the identical already-correct target from unchanged data.
+*comment Re-syncs the HUD-picked target here too, not just at turn start or after a kill (fight_check_enemy_hp) --
+*comment a non-damaging first action (Brace, Second Wind, an item) never calls fight_check_enemy_hp, so a HUD
+*comment click made between it and a second action would otherwise sit unread until the next full turn.
 *gosub fight_pick_target
 *comment (combat_enemy_disadvantage is cleared by combat_begin_round, once per round, not here: the hub is entered again
 *comment after a bonus action or an extra action, and that must not undo a Ray of Frost cast earlier in the same round.)
@@ -915,9 +964,15 @@
 *if (combat_player_bonus_left < combat_player_bonus_max)
   *line_break
   [b][⚡ Bonus action used | ${combat_player_bonus_left} left this round][/b]
-*if ((combat_player_actions_max > 1) or (combat_player_actions_left > 1))
+*comment Actions/attacks indicators: shown the same way the bonus one is, whenever left < max -- since the turn
+*comment doesn't auto-end anymore, this is the only thing telling the player why their spell/item options
+*comment disappeared.
+*if (combat_player_actions_left < combat_player_actions_max)
   *line_break
-  [b][⏱️ Actions left this round: ${combat_player_actions_left}][/b]
+  [b][⏱️ Action used | ${combat_player_actions_left} left this round][/b]
+*if (combat_player_attacks_left < combat_player_attacks_max)
+  *line_break
+  [b][🗡️ Attacks used | ${combat_player_attacks_left} left this round][/b]
 
 *if (player_stunned)
   *set player_stunned false
@@ -926,6 +981,18 @@
   *set combat_turn_advanced_this_page true
   *goto combat_next_turn
 
+*comment Whether the player can start (or continue) attacking this page. attacks_left alone isn't enough: the
+*comment first swing of the turn still has to spend the general action, so if something else already spent it
+*comment (Push Forward, a spell, an item, Brace) before any attack this turn, attacks_left sitting at its
+*comment untouched max must NOT be enough to start attacking -- there's no action left to spend on it. Once
+*comment attacking has started (attacks_left < max, action already committed), later swings from Extra Attack
+*comment don't need to re-check actions_left, matching RAW: Extra Attack is more attacks inside one action spent.
+*temp combat_can_attack false
+*if (combat_player_attacks_left > 0)
+  *if (combat_player_attacks_left < combat_player_attacks_max)
+    *set combat_can_attack true
+  *elseif (combat_player_actions_left > 0)
+    *set combat_can_attack true
 *comment Items: cu_any is true when the satchel holds anything usable mid-fight (generated from the catalog).
 *temp cu_any false
 *comment GEN:BEGIN combat_use_check -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
@@ -937,118 +1004,69 @@
   *set cu_any true
 *comment GEN:END combat_use_check
 
-*choice
-  # Attack with your ${weapon}.
-    *comment Re-sync (2026-09-27, target-selection HUD): the menu may already have been showing when a HUD click
-    *comment changed combat_player_chosen_target, so re-reading it right here, at the moment this option is
-    *comment actually chosen, is the only way a click made while looking at an already-built page still lands on
-    *comment the new target -- fight_round_hub's own top-of-label sync (still there) only covers the OTHER case,
-    *comment a fresh page build. Provably a no-op for the default case, same reasoning as that other call site.
-    *gosub fight_pick_target
-    *if (weapon_type = "ranged")
-      *set check_stat "dex"
-      *set check_skill "Ranged Attack"
-    *else
-      *if (weapon_type = "finesse")
-        *comment Finesse (RAW): the wielder's choice of STR or DEX, whichever
-        *comment is higher -- not a blanket DEX weapon.
-        *if (str_mod > dex_mod)
-          *set check_stat "str"
-        *else
-          *set check_stat "dex"
-      *else
-        *set check_stat "str"
-      *set check_skill "Melee Attack"
-    *set check_dc combat_enemy_ac
-    *comment fwh/fwm land on one of 3 randomized variants (melee or ranged
-    *comment per weapon_type) -- see pick_weapon_flavor below.
-    *temp fwh ""
-    *temp fwm ""
-    *gosub pick_weapon_flavor
-    *gosub_scene startup roll_d20_check
-    *if (check_success)
-      *set combat_player_dmg_type weapon_damage_type
-      *if (weapon_type = "finesse")
-        *set combat_player_dmg_dice_sides 4
-        *comment Matches the STR-or-higher check above -- 5e uses the same
-        *comment ability for a finesse weapon's attack and its damage.
-        *if (str_mod > dex_mod)
-          *set combat_player_dmg_bonus str_mod
-        *else
-          *set combat_player_dmg_bonus dex_mod
-      *else
-        *if (weapon_type = "ranged")
-          *set combat_player_dmg_dice_sides 6
-          *set combat_player_dmg_bonus dex_mod
-        *else
-          *comment Two-handedness lives in weapon_hands (the broadaxe is weapon_type "melee"); ranged and
-          *comment finesse are handled above, so a two-handed bow stays a d6.
-          *if (weapon_hands = "two_handed")
-            *set combat_player_dmg_dice_sides 12
-            *set combat_player_dmg_bonus str_mod
-          *else
-            *set combat_player_dmg_dice_sides 8
-            *set combat_player_dmg_bonus str_mod
-      *comment Fighting Style: Dueling -- +2 damage with a one-handed melee
-      *comment weapon (RAW excludes two-handed and ranged weapons). Both the
-      *comment finesse and plain-melee branches above are one-handed melee
-      *comment in this game's model.
-      *if (fighter_fighting_style = "dueling")
-        *if (not((weapon_type = "ranged") or (weapon_hands = "two_handed")))
-          *set combat_player_dmg_bonus + 2
-      *comment Rage: +barbarian_rage_damage_bonus on a melee weapon attack
-      *comment made using Strength (RAW excludes ranged attacks, and a
-      *comment finesse attack made with DEX instead of STR since the bonus
-      *comment specifically only fires "using Strength").
-      *if ((character_class = "barbarian") and (is_raging))
-        *if (not(weapon_type = "ranged"))
-          *if (weapon_type = "finesse")
-            *if (str_mod > dex_mod)
-              *set combat_player_dmg_bonus + barbarian_rage_damage_bonus
-          *else
-            *set combat_player_dmg_bonus + barbarian_rage_damage_bonus
-      *gosub_scene startup resolve_player_weapon_hit
-      *if (combat_sneak_attack_triggered)
-        *comment Sneak Attack RAW requires finesse or ranged (see the gate in
-        *comment startup.txt), so this line is at least as likely to be seen
-        *comment on a bow/crossbow build as a melee one -- needs both. Already
-        *comment reads as climactic regardless of lethality, so it keeps its
-        *comment own fixed text rather than swapping to the generic finisher
-        *comment lines below -- just the banner distinguishes an actual kill.
-        *if (combat_is_nonlethal)
-          *if (weapon_type = "ranged")
-            You loose your shot from an opening ${combat_enemy_epithet} never saw coming, and the shot grazes an arm and shatters the grip on the weapon.
-          *else
-            You strike from an opening ${combat_enemy_epithet} never saw coming, driving the weighted grip of your ${weapon} into the jaw, and ${combat_enemy_epithet} drops instantly unconscious.
-        *else
-          *if (weapon_type = "ranged")
-            You loose your shot from an opening ${combat_enemy_epithet} never saw coming, and the shot finds an exposed weak point for a vicious, precise finishing blow.
-          *else
-            You strike from an opening ${combat_enemy_epithet} never saw coming, driving your ${weapon} into an exposed weak point for a vicious, precise finishing blow.
-        *line_break
-        *if (combat_enemy_hp <= 0)
-          [b][🗡️ Sneak Attack | 💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
-        *else
-          [b][🗡️ Sneak Attack | 🩸 Hit: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
-      *elseif (combat_enemy_hp <= 0)
-        *temp fdh ""
-        *gosub pick_weapon_death_flavor
-        ${fdh}
-        *line_break
-        [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
-      *else
-        ${fwh}
-        *line_break
-        [b][🩸 Hit: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
-    *else
-      ${fwm}
-      *line_break
-      [b][💨 Miss][/b]
-    *goto fight_check_enemy_hp
+*comment Bonus-action availability: precomputed once, the same way combat_can_attack is, and reused by each
+*comment bonus option's own *if below. Needed because combat_player_bonus_left sitting at its full value means
+*comment two different things -- "nothing to spend it on this turn" or "something's available and the player just
+*comment hasn't chosen yet" -- and only the auto-end check downstream needs to tell them apart.
+*temp combat_can_hex false
+*if ((((warlock_spell = "hex") and (warlock_spell_slots > 0)) or ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))) and (not(hex_active)))
+  *set combat_can_hex true
+*temp combat_can_healing_word false
+*if ((((bard_spell = "healing_word") or (bard_spell_2 = "healing_word")) and (bard_spell_slots > 0)) and (hp_current < hp_max))
+  *set combat_can_healing_word true
+*temp combat_can_second_wind false
+*if ((character_class = "fighter") and (fighter_second_wind_uses > 0))
+  *set combat_can_second_wind true
+*temp combat_can_rage false
+*if (((character_class = "barbarian") and (not(is_raging))) and (barbarian_rage_uses > 0))
+  *set combat_can_rage true
+*temp combat_bonus_available false
+*if (((combat_can_hex) or (combat_can_healing_word)) or ((combat_can_second_wind) or (combat_can_rage)))
+  *set combat_bonus_available true
 
-  *if ((((wizard_cantrip = "fire_bolt") or (wizard_cantrip_2 = "fire_bolt")) or (wizard_cantrip_3 = "fire_bolt")) or ((race_cantrip = "fire_bolt") or (race_cantrip_2 = "fire_bolt")))
+*comment Auto-end: fires once there's truly nothing left to spend a resource on, not just once every pool
+*comment counter happens to read zero -- attacks_left and bonus_left both sit at their full value on a turn
+*comment that never touched them (a caster who casts instead of swinging, or any turn where no bonus feature
+*comment got used), so testing combat_can_attack and combat_bonus_available instead of the raw counters is what
+*comment tells "full because unavailable" apart from "full because unspent." Skips past "Break off and
+*comment disengage" and "Use an item" (neither is pool-gated) -- use them before running the tank dry, not after.
+*if (((combat_player_actions_left <= 0) and (not(combat_can_attack))) and ((combat_player_bonus_left <= 0) or (not(combat_bonus_available))))
+  *line_break
+  [b][⏱️ Nothing left to spend — your turn ends][/b]
+  *set combat_turn_advanced_this_page false
+  *goto combat_next_turn
+
+*choice
+  *if ((combat_can_attack) and ((weapon_type = "ranged") or (combat_enemy_range <= 0)))
+    # Attack with your ${weapon}.
+      *goto resolve_weapon_attack_choice
+
+  *if (((combat_can_attack) and (not(equipped_sidearm_id = "none"))) and ((sidearm_type = "ranged") or (combat_enemy_range <= 0)))
+    # Attack with your ${sidearm}.
+      *comment equip_weapon (equipment.txt) already swaps weapon<->sidearm when told to equip whatever is
+      *comment currently the sidearm -- calling it with equipped_sidearm_id draws the sidearm and holsters the
+      *comment primary in one step. It stays drawn afterward (a real equip); resolve_weapon_attack_choice then
+      *comment reads the now-current weapon fields exactly like the primary option always has.
+      *gosub_scene equipment equip_weapon equipped_sidearm_id
+      *goto resolve_weapon_attack_choice
+
+  *if ((combat_player_actions_left > 0) and (combat_enemy_range > 0))
+    # Push forward and close the distance on ${combat_enemy_epithet}.
+      *comment Dash, RAW: the whole action, no attack this turn -- same one-turn-flat simplification the
+      *comment enemy's own "closes the distance" branch already uses (combat_next_turn), so the two sides stay
+      *comment symmetric. A future bonus-action variant (Rogue Cunning Action, level 2 -- not built yet, see the
+      *comment Level 2 groundwork audit) would just be a second option reusing this same range-to-0 effect with
+      *comment *goto fight_bonus_spent instead of fight_action_spent; nothing here needs to change for that.
+      *gosub fight_pick_target
+      *set combat_enemy_range 0
+      *set {(("combat_enemy" & combat_active_target) & "_range")} 0
+      You break into a hard sprint, closing the distance before ${combat_enemy_epithet} can react.
+      *line_break
+      [b][🏃 You Push Forward — Engaged][/b]
+      *goto fight_action_spent
+
+  *if ((combat_player_actions_left > 0) and ((((wizard_cantrip = "fire_bolt") or (wizard_cantrip_2 = "fire_bolt")) or (wizard_cantrip_3 = "fire_bolt")) or ((race_cantrip = "fire_bolt") or (race_cantrip_2 = "fire_bolt"))))
     # [Cantrip: Fire Bolt] Hurl a mote of arcane flame at ${combat_enemy_epithet}.
-      *comment Re-sync (2026-09-27, target-selection HUD) -- see the weapon attack option's own comment above.
       *gosub fight_pick_target
       *set combat_current_spell_id "fire_bolt"
       *temp fsh ""
@@ -1079,9 +1097,8 @@
         [b][💨 Miss][/b]
       *goto fight_check_enemy_hp
 
-  *if ((((wizard_cantrip = "ray_of_frost") or (wizard_cantrip_2 = "ray_of_frost")) or (wizard_cantrip_3 = "ray_of_frost")) or ((race_cantrip = "ray_of_frost") or (race_cantrip_2 = "ray_of_frost")))
+  *if ((combat_player_actions_left > 0) and ((((wizard_cantrip = "ray_of_frost") or (wizard_cantrip_2 = "ray_of_frost")) or (wizard_cantrip_3 = "ray_of_frost")) or ((race_cantrip = "ray_of_frost") or (race_cantrip_2 = "ray_of_frost"))))
     # [Cantrip: Ray of Frost] Loose a beam of numbing cold at ${combat_enemy_epithet}.
-      *comment Re-sync (2026-09-27, target-selection HUD) -- see the weapon attack option's own comment above.
       *gosub fight_pick_target
       *set combat_current_spell_id "ray_of_frost"
       *temp fsh ""
@@ -1113,9 +1130,8 @@
         [b][💨 Miss][/b]
       *goto fight_check_enemy_hp
 
-  *if ((((wizard_cantrip = "shocking_grasp") or (wizard_cantrip_2 = "shocking_grasp")) or (wizard_cantrip_3 = "shocking_grasp")) or ((race_cantrip = "shocking_grasp") or (race_cantrip_2 = "shocking_grasp")))
+  *if ((combat_player_actions_left > 0) and ((((wizard_cantrip = "shocking_grasp") or (wizard_cantrip_2 = "shocking_grasp")) or (wizard_cantrip_3 = "shocking_grasp")) or ((race_cantrip = "shocking_grasp") or (race_cantrip_2 = "shocking_grasp"))))
     # [Cantrip: Shocking Grasp] Drive a crackling jolt of lightning into ${combat_enemy_epithet}.
-      *comment Re-sync (2026-09-27, target-selection HUD) -- see the weapon attack option's own comment above.
       *gosub fight_pick_target
       *set combat_current_spell_id "shocking_grasp"
       *temp fsh ""
@@ -1156,9 +1172,8 @@
         [b][💨 Miss][/b]
       *goto fight_check_enemy_hp
 
-  *if ((warlock_cantrip = "eldritch_blast") or (warlock_cantrip_2 = "eldritch_blast"))
+  *if ((combat_player_actions_left > 0) and ((warlock_cantrip = "eldritch_blast") or (warlock_cantrip_2 = "eldritch_blast")))
     # [Cantrip: Eldritch Blast] Unleash a crackling beam of eldritch force at ${combat_enemy_epithet}.
-      *comment Re-sync (2026-09-27, target-selection HUD) -- see the weapon attack option's own comment above.
       *gosub fight_pick_target
       *set combat_current_spell_id "eldritch_blast"
       *temp fsh ""
@@ -1189,9 +1204,8 @@
         [b][💨 Miss][/b]
       *goto fight_check_enemy_hp
 
-  *if ((warlock_cantrip = "chill_touch") or (warlock_cantrip_2 = "chill_touch"))
+  *if ((combat_player_actions_left > 0) and ((warlock_cantrip = "chill_touch") or (warlock_cantrip_2 = "chill_touch")))
     # [Cantrip: Chill Touch] Conjure a skeletal hand of necrotic frost against ${combat_enemy_epithet}.
-      *comment Re-sync (2026-09-27, target-selection HUD) -- see the weapon attack option's own comment above.
       *gosub fight_pick_target
       *set combat_current_spell_id "chill_touch"
       *temp fsh ""
@@ -1222,18 +1236,16 @@
         [b][💨 Miss][/b]
       *goto fight_check_enemy_hp
 
-  *if ((bard_cantrip = "vicious_mockery") or (bard_cantrip_2 = "vicious_mockery"))
+  *if ((combat_player_actions_left > 0) and ((bard_cantrip = "vicious_mockery") or (bard_cantrip_2 = "vicious_mockery")))
     # [Cantrip: Vicious Mockery] Hurl a barbed, perfectly-aimed insult at ${combat_enemy_epithet}.
-      *comment Re-sync (2026-09-27, target-selection HUD) -- see the weapon attack option's own comment above.
       *gosub fight_pick_target
       *set combat_current_spell_id "vicious_mockery"
       *temp fsh ""
       *temp fsm ""
       *gosub pick_spell_flavor
-      *set check_stat "cha"
-      *set check_dc 12
-      *set check_skill "Vicious Mockery"
-      *gosub_scene startup roll_d20_check
+      *comment Enemy saving throw against the player's own spell_save_dc -- Vicious Mockery is a Wisdom save, RAW.
+      *comment The target rolls here (resolve_enemy_save, startup.txt), not the player.
+      *gosub_scene startup resolve_enemy_save "combat_enemy_" "wisdom" "Wisdom" 0
       *if (check_success)
         *set combat_player_dmg_type "psychic"
         *set combat_player_dmg_dice_sides 4
@@ -1256,9 +1268,8 @@
         [b][💨 Resisted][/b]
       *goto fight_check_enemy_hp
 
-  *if (((character_class = "wizard") and (wizard_spell = "magic_missile")) and (wizard_spell_slots > 0))
+  *if ((combat_player_actions_left > 0) and (((character_class = "wizard") and (wizard_spell = "magic_missile")) and (wizard_spell_slots > 0)))
     # [Spell: Magic Missile] Unleash three darts of force that strike unerringly, bypassing the defenses of ${combat_enemy_epithet} entirely.
-      *comment Re-sync (2026-09-27, target-selection HUD) -- see the weapon attack option's own comment above.
       *gosub fight_pick_target
       *set combat_current_spell_id "magic_missile"
       *temp fsh ""
@@ -1277,9 +1288,8 @@
         [b][✨ Magic Missile: Automatic Hit | ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
       *goto fight_check_enemy_hp
 
-  *if (((((warlock_spell = "hex") and (warlock_spell_slots > 0)) or ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))) and (not(hex_active))) and (combat_player_bonus_left > 0))
+  *if ((combat_can_hex) and (combat_player_bonus_left > 0))
     # [Spell: Hex] Lay a baleful eldritch curse upon ${combat_enemy_epithet}, marking the foe to suffer deeper wounds.@{show_stat_hints  [Bonus Action]|}
-      *comment Re-sync (2026-09-27, target-selection HUD) -- see the weapon attack option's own comment above.
       *gosub fight_pick_target
       *gosub_scene startup resolve_cast_hex
       You whisper a guttural syllable of ancient ruin. Dark, spectral runes flare briefly across ${combat_enemy_epithet} and sink in, binding the foe's fate to your will—every strike you land will tear in with extra necrotic fury!
@@ -1288,7 +1298,7 @@
       *line_break
       *goto fight_bonus_spent
 
-  *if (((warlock_spell = "armor_of_agathys") and (warlock_spell_slots > 0)) and (not(agathys_active)))
+  *if ((combat_player_actions_left > 0) and (((warlock_spell = "armor_of_agathys") and (warlock_spell_slots > 0)) and (not(agathys_active))))
     # [Spell: Armor of Agathys] Sheathe yourself in spectral frost that shields you and punishes melee strikes.
       *gosub_scene startup resolve_cast_agathys
       A brittle casing of translucent, jagged rime coats your shoulders and arms, radiating bone-chilling cold. Any foe foolish enough to strike you will feel the frost shatter back against the blow.
@@ -1296,7 +1306,7 @@
       [b][🛡️ Armor of Agathys: +5 Temp HP | 5 Cold Damage Retaliation on Hits][/b]
       *goto fight_action_spent
 
-  *if (((((character_class = "wizard") and (wizard_spell = "false_life")) and (wizard_spell_slots > 0)) or (((character_class = "warlock") and (warlock_spell = "false_life")) and (warlock_spell_slots > 0))) and (temp_hp = 0))
+  *if ((combat_player_actions_left > 0) and (((((character_class = "wizard") and (wizard_spell = "false_life")) and (wizard_spell_slots > 0)) or (((character_class = "warlock") and (warlock_spell = "false_life")) and (warlock_spell_slots > 0))) and (temp_hp = 0)))
     # [Spell: False Life] Weave a necromantic shroud over your flesh for a protective buffer of vitality.
       *gosub_scene startup resolve_cast_false_life
       You murmur a dark necromantic rite. A numb, leathery vitality spreads beneath your skin, insulating your muscles against immediate harm.
@@ -1304,18 +1314,16 @@
       [b][✨ False Life: +${combat_cast_result} Temporary Hit Points][/b]
       *goto fight_action_spent
 
-  *if (((bard_spell = "dissonant_whispers") or (bard_spell_2 = "dissonant_whispers")) and (bard_spell_slots > 0))
+  *if ((combat_player_actions_left > 0) and (((bard_spell = "dissonant_whispers") or (bard_spell_2 = "dissonant_whispers")) and (bard_spell_slots > 0)))
     # [Spell: Dissonant Whispers] Utter a hideous, discordant psychic phrase that wracks the mind of ${combat_enemy_epithet}.
-      *comment Re-sync (2026-09-27, target-selection HUD) -- see the weapon attack option's own comment above.
       *gosub fight_pick_target
       *set combat_current_spell_id "dissonant_whispers"
       *temp fsh ""
       *temp fsm ""
       *gosub pick_spell_flavor
-      *set check_stat "cha"
-      *set check_dc 12
-      *set check_skill "Dissonant Whispers"
-      *gosub_scene startup roll_d20_check
+      *comment Enemy saving throw against the player's own spell_save_dc -- Dissonant Whispers is a Wisdom save,
+      *comment RAW. The target rolls here (resolve_enemy_save, startup.txt), not the player.
+      *gosub_scene startup resolve_enemy_save "combat_enemy_" "wisdom" "Wisdom" 0
       *gosub_scene startup resolve_dissonant_whispers
       *if (combat_enemy_hp <= 0)
         *temp fdh ""
@@ -1333,7 +1341,16 @@
         [b][🧠 Dissonant Whispers: Saved | Half Damage: ${combat_player_dmg_dealt} Psychic Damage${combat_outgoing_dmg_suffix}][/b]
       *goto fight_check_enemy_hp
 
-  *if (((((bard_spell = "healing_word") or (bard_spell_2 = "healing_word")) and (bard_spell_slots > 0)) and (hp_current < hp_max)) and (combat_player_bonus_left > 0))
+  *if ((combat_player_actions_left > 0) and (((bard_spell = "bane") or (bard_spell_2 = "bane")) and (bard_spell_slots > 0)))
+    # [Spell: Bane] Weave a thread of ill fortune through the fight, souring the aim and nerve of every foe still standing near you.
+      *comment No fight_pick_target re-sync here -- unlike every other targeted option, Bane doesn't act on the
+      *comment single "active" target at all; resolve_cast_bane picks its own up to three targets internally.
+      You let the curse spill out low and wide, ill fortune threading itself around throat after throat in the same breath.
+      *line_break
+      *gosub_scene startup resolve_cast_bane
+      *goto fight_action_spent
+
+  *if ((combat_can_healing_word) and (combat_player_bonus_left > 0))
     # [Spell: Healing Word] Speak a resonant, curative syllable to knit your gashes and steady your footing.@{show_stat_hints  [Bonus Action]|}
       *gosub_scene startup resolve_cast_healing_word
       A sharp, ringing cadence leaves your lips. Warmth rushes through your marrow, knitting shut the worst of your wounds.
@@ -1342,14 +1359,14 @@
       *line_break
       *goto fight_bonus_spent
 
-  # Brace and watch the strikes of ${combat_enemy_epithet}, giving ground instead of pressing the attack.
-    *comment Re-sync (2026-09-27, target-selection HUD) -- see the weapon attack option's own comment above.
-    *gosub fight_pick_target
-    *set combat_enemy_disadvantage true
-    You plant your feet and hold your ground, tracking the movement of ${combat_enemy_epithet} instead of swinging blind.
-    *goto fight_action_spent
+  *if (combat_player_actions_left > 0)
+    # Brace and watch the strikes of ${combat_enemy_epithet}, giving ground instead of pressing the attack.
+      *gosub fight_pick_target
+      *set combat_enemy_disadvantage true
+      You plant your feet and hold your ground, tracking the movement of ${combat_enemy_epithet} instead of swinging blind.
+      *goto fight_action_spent
 
-  *if ((((character_class = "wizard") and (wizard_spell = "shield")) and (wizard_spell_slots > 0)) and (not(shield_armed)))
+  *if ((combat_player_actions_left > 0) and ((((character_class = "wizard") and (wizard_spell = "shield")) and (wizard_spell_slots > 0)) and (not(shield_armed))))
     # [Spell: Shield] Hold the barrier-spell coiled and ready, primed to snap into place the instant something connects.
       *set shield_armed true
       You murmur the first half of the somatic phrase under your breath, holding the working coiled and ready at your fingertips, costing you nothing to keep it there.
@@ -1358,7 +1375,7 @@
       *line_break
       *goto fight_round_hub
 
-  *if (((character_class = "fighter") and (fighter_second_wind_uses > 0)) and (combat_player_bonus_left > 0))
+  *if ((combat_can_second_wind) and (combat_player_bonus_left > 0))
     # [Second Wind] Grit your teeth through the pain and the fear, and keep going.@{show_stat_hints  [Bonus Action]|}
       *gosub_scene startup second_wind
       A surge of stubborn, practiced discipline steadies your breathing and closes the worst of your scrapes.
@@ -1366,7 +1383,7 @@
       [b][🩸 Hit Points: ${hp_current} / ${hp_max}][/b]
       *goto fight_bonus_spent
 
-  *if ((((character_class = "barbarian") and (not(is_raging))) and (barbarian_rage_uses > 0)) and (combat_player_bonus_left > 0))
+  *if ((combat_can_rage) and (combat_player_bonus_left > 0))
     # [Rage] Let the fury take you.@{show_stat_hints  [Bonus Action]|}
       *gosub_scene startup activate_rage
       A hot, roaring pressure floods your chest, dulling the pain and the fear to nothing at all.
@@ -1376,8 +1393,18 @@
     # Use an item from your satchel.
       *goto fight_use_item
 
-  # Break off and disengage.
-    *goto fight_fled
+  *if (not(player_movement_restricted))
+    # Break off and disengage.
+      *comment Hidden, not reworded, while Pinned/Hobbled/Off-Balance holds -- same convention "Use an item" above
+      *comment uses when there's nothing to use. The condition's own banner (just printed) already explains why.
+      *goto fight_fled
+
+  # End your turn.
+    *comment The only thing that actually ends the player's turn -- see THE TURN BUDGET above. Always offered,
+    *comment whether or not anything is left to spend, so it stays correct as new resource types get added.
+    *comment Resets combat_turn_advanced_this_page so next round's page-break gating starts fresh.
+    *set combat_turn_advanced_this_page false
+    *goto combat_next_turn
 
 *comment Using an item costs the turn. The menu, the routine and every effect come from the catalog
 *comment (equipment.txt use_consumable); a heal while unhurt is refused and costs nothing.
@@ -1410,12 +1437,134 @@ ${use_text}
   *goto fight_action_spent
 *goto fight_round_hub
 
+*comment Shared by both "Attack with your ${weapon}" and "Attack with your ${sidearm}" -- reads the same bare
+*comment weapon_type/weapon_hands/weapon_damage_type/weapon fields either way, so it needs no parameterization:
+*comment the sidearm option swaps weapon<->sidearm via equip_weapon (equipment.txt) BEFORE *goto-ing here, so
+*comment "weapon" already means whichever is now active. pick_weapon_flavor and resolve_player_weapon_hit
+*comment downstream need no changes either, for the same reason.
+*label resolve_weapon_attack_choice
+*comment Every targeted option re-syncs the HUD-picked target here, at the moment it's chosen, not just when the
+*comment page was built -- a click made while the page was already open would otherwise land on the stale target.
+*gosub fight_pick_target
+*if (weapon_type = "ranged")
+  *set check_stat "dex"
+  *set check_skill "Ranged Attack"
+*else
+  *if (weapon_type = "finesse")
+    *comment Finesse (RAW): the wielder's choice of STR or DEX, whichever
+    *comment is higher -- not a blanket DEX weapon.
+    *if (str_mod > dex_mod)
+      *set check_stat "str"
+    *else
+      *set check_stat "dex"
+  *else
+    *set check_stat "str"
+  *set check_skill "Melee Attack"
+*set check_dc combat_enemy_ac
+*comment fwh/fwm land on one of 3 randomized variants (melee or ranged
+*comment per weapon_type) -- see pick_weapon_flavor below.
+*temp fwh ""
+*temp fwm ""
+*gosub pick_weapon_flavor
+*gosub_scene startup roll_d20_check
+*if (check_success)
+  *set combat_player_dmg_type weapon_damage_type
+  *if (weapon_type = "finesse")
+    *set combat_player_dmg_dice_sides 4
+    *comment Matches the STR-or-higher check above -- 5e uses the same
+    *comment ability for a finesse weapon's attack and its damage.
+    *if (str_mod > dex_mod)
+      *set combat_player_dmg_bonus str_mod
+    *else
+      *set combat_player_dmg_bonus dex_mod
+  *else
+    *if (weapon_type = "ranged")
+      *set combat_player_dmg_dice_sides 6
+      *set combat_player_dmg_bonus dex_mod
+    *else
+      *comment Two-handedness lives in weapon_hands (the broadaxe is weapon_type "melee"); ranged and
+      *comment finesse are handled above, so a two-handed bow stays a d6.
+      *if (weapon_hands = "two_handed")
+        *set combat_player_dmg_dice_sides 12
+        *set combat_player_dmg_bonus str_mod
+      *else
+        *set combat_player_dmg_dice_sides 8
+        *set combat_player_dmg_bonus str_mod
+  *comment Fighting Style: Dueling -- +2 damage with a one-handed melee
+  *comment weapon (RAW excludes two-handed and ranged weapons). Both the
+  *comment finesse and plain-melee branches above are one-handed melee
+  *comment in this game's model.
+  *if (fighter_fighting_style = "dueling")
+    *if (not((weapon_type = "ranged") or (weapon_hands = "two_handed")))
+      *set combat_player_dmg_bonus + 2
+  *comment Rage: +barbarian_rage_damage_bonus on a melee weapon attack
+  *comment made using Strength (RAW excludes ranged attacks, and a
+  *comment finesse attack made with DEX instead of STR since the bonus
+  *comment specifically only fires "using Strength").
+  *if ((character_class = "barbarian") and (is_raging))
+    *if (not(weapon_type = "ranged"))
+      *if (weapon_type = "finesse")
+        *if (str_mod > dex_mod)
+          *set combat_player_dmg_bonus + barbarian_rage_damage_bonus
+      *else
+        *set combat_player_dmg_bonus + barbarian_rage_damage_bonus
+  *gosub_scene startup resolve_player_weapon_hit
+  *if (combat_sneak_attack_triggered)
+    *comment Sneak Attack RAW requires finesse or ranged (see the gate in
+    *comment startup.txt), so this line is at least as likely to be seen
+    *comment on a bow/crossbow build as a melee one -- needs both. Already
+    *comment reads as climactic regardless of lethality, so it keeps its
+    *comment own fixed text rather than swapping to the generic finisher
+    *comment lines below -- just the banner distinguishes an actual kill.
+    *if (combat_is_nonlethal)
+      *if (weapon_type = "ranged")
+        You loose your shot from an opening ${combat_enemy_epithet} never saw coming, and the shot grazes an arm and shatters the grip on the weapon.
+      *else
+        You strike from an opening ${combat_enemy_epithet} never saw coming, driving the weighted grip of your ${weapon} into the jaw, and ${combat_enemy_epithet} drops instantly unconscious.
+    *else
+      *if (weapon_type = "ranged")
+        You loose your shot from an opening ${combat_enemy_epithet} never saw coming, and the shot finds an exposed weak point for a vicious, precise finishing blow.
+      *else
+        You strike from an opening ${combat_enemy_epithet} never saw coming, driving your ${weapon} into an exposed weak point for a vicious, precise finishing blow.
+    *line_break
+    *if (combat_enemy_hp <= 0)
+      [b][🗡️ Sneak Attack | 💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
+    *else
+      [b][🗡️ Sneak Attack | 🩸 Hit: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
+  *elseif (combat_enemy_hp <= 0)
+    *temp fdh ""
+    *gosub pick_weapon_death_flavor
+    ${fdh}
+    *line_break
+    [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
+  *else
+    ${fwh}
+    *line_break
+    [b][🩸 Hit: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
+*else
+  ${fwm}
+  *line_break
+  [b][💨 Miss][/b]
+*comment The one and only entry point for both weapon and sidearm attacks -- flagging it here, right before the
+*comment shared fight_check_enemy_hp tail every damage option uses, is how that tail knows to spend an ATTACK
+*comment instead of an action for this specific one.
+*set combat_pending_spend_is_attack true
+*goto fight_check_enemy_hp
+
 *label fight_check_enemy_hp
+*comment Shared tail for every damage-dealing option (weapon/sidearm attacks AND every damage spell/cantrip).
+*comment combat_pending_spend_is_attack is set true by resolve_weapon_attack_choice alone, just above, right
+*comment before it *goto's here -- read and reset immediately so it can never leak into whatever reaches this
+*comment label next (a spell, which must still spend the general action, not an attack).
+*temp fceh_is_attack combat_pending_spend_is_attack
+*set combat_pending_spend_is_attack false
 *gosub fight_sync_target_out
 *gosub fight_check_all_dead
 *if (combat_all_enemies_dead)
   *goto fight_victory
 *gosub fight_pick_target
+*if (fceh_is_attack)
+  *goto fight_attack_spent
 *goto fight_action_spent
 
 *label fight_narrate_enemy_turn
@@ -1526,13 +1675,11 @@ ${use_text}
     *set fnet_m2m fft_m2miss
   *set fnet_hit fnet_m2h
   *set fnet_miss fnet_m2m
-*comment Layout per attacker: a blank line before it (two breaks), then each
-*comment prose line and each [b][...] banner on its own line. ChoiceScript merges
-*comment consecutive source lines, so every prose/banner boundary needs an
-*comment explicit *line_break -- including the ones that only sometimes have a
+*comment Layout per attacker: the blank line before it (two breaks) leads resolve_enemy_attack's own roll banners
+*comment instead of leading here -- see that label's own comment for why. From here down, each prose line and
+*comment each [b][...] banner still needs its own line: ChoiceScript merges consecutive source lines, so every
+*comment prose/banner boundary needs an explicit *line_break, including the ones that only sometimes have a
 *comment neighbour (Agathys retaliation, condition/stun banners).
-*line_break
-*line_break
 *if (combat_shield_triggered)
   *if (combat_enemy_hit_success)
     A shimmering lattice of force flares to life around you on pure reflex, but the blow crashes through it anyway, striking home regardless.
@@ -1567,7 +1714,10 @@ ${use_text}
     [b][🩸 ${combat_enemy_name} Hits: ${combat_enemy_dmg_dealt} damage${combat_incoming_dmg_suffix} | HP: ${hp_current} / ${hp_max}][/b]
     *if (combat_condition_inflicted)
       *line_break
-      [b][${combat_enemy_condition_icon} ${combat_enemy_condition_name} — disadvantage on your next attack][/b]
+      *if (player_movement_restricted)
+        [b][${combat_enemy_condition_icon} ${combat_enemy_condition_name} — disadvantage on your next attack, and you can't disengage while it holds][/b]
+      *else
+        [b][${combat_enemy_condition_icon} ${combat_enemy_condition_name} — disadvantage on your next attack][/b]
     *if (combat_stun_inflicted)
       *line_break
       [b][${combat_enemy_stun_icon} ${combat_enemy_stun_name} — you lose your next turn][/b]
@@ -1579,17 +1729,13 @@ ${use_text}
 *return
 
 *label fight_narrate_ally_attack
-*comment PLACEHOLDER (2026-09-27, step 2 of the turn-order rebuild; generalized the same day to work in EITHER
-*comment direction) -- narrates one attack between an ally and an enemy, whichever side is attacking. Nothing
-*comment calls this yet in either direction: no ally AI picks a move, no turn queue exists, and no enemy targeting
-*comment logic can choose an ally over the player (combat_ally_count stays 0 in every real fight), so this is
-*comment future-facing plumbing only, exercised by a synthetic test, not real content. Deliberately generic prose
-*comment since no actual ally exists in the game yet to give this its own voice -- revisit the wording once one
-*comment does. Both sides are named purely by epithet, third person throughout, so the SAME text already works
-*comment for either direction -- only which prefix is "attacker" and which is "defender" changes; this is why the
-*comment fix for "we have no enemy-attacks-ally prose" wasn't a mirrored second label, just this generalization.
-*comment (The existing enemy-attacks-PLAYER prose, flavor_type_swordsman etc., can't be reused the same way --
-*comment it's hardcoded second-person, "your shoulder", which only makes sense when the player is the target.)
+*comment PLACEHOLDER: narrates one attack between an ally and an enemy, whichever side is attacking. Nothing
+*comment calls this yet: no ally AI picks a move, no turn queue exists, and combat_ally_count stays 0 in every
+*comment real fight. Deliberately generic prose since no actual ally exists yet to give this its own voice --
+*comment revisit the wording once one does. Both sides are named purely by epithet, third person throughout, so
+*comment the same text works for either direction; only which prefix is "attacker" and which is "defender"
+*comment changes. (The existing enemy-attacks-PLAYER prose, flavor_type_swordsman etc., can't be reused the same
+*comment way -- it's hardcoded second-person, "your shoulder", which only makes sense when the player is the target.)
 *comment Params: attacker's kind ("ally"/"enemy") and slot, defender's kind and slot, and whether the attack hit.
 *comment Pure narration -- no HP/damage is applied here; that's the caller's job once attack resolution exists
 *comment for this direction.
@@ -1790,7 +1936,7 @@ ${fnaa_line}
 *return
 
 *comment ══════════════════════════════════════════════════════════════
-*comment SPELL FLAVOR (2026-09-26)
+*comment SPELL FLAVOR
 *comment The attack spells used to print one fixed hit line and one fixed miss line each, and the finishers had three
 *comment variants and said "it", "their" and "its hide". They now work like the weapon lines: built at the moment of the
 *comment cast, from flavor_spell_<spell> (eight hit/miss pairs, set into the option's *temp fsh and fsm) and, for the killing
@@ -2385,19 +2531,16 @@ ${fnaa_line}
 *return
 
 *label combat_next_turn
-*comment The turn queue's dispatcher (2026-09-27, step 5 of the turn-order rebuild), replacing fight_enemy_turn's
-*comment old all-enemies-at-once batch: walks combat_turn_kind_*/_slot_* (startup.txt) one combatant at a time,
-*comment in the order combat_roll_initiative built, instead of always running the player fully first and then
-*comment every enemy in slot order. A dead enemy slot, or an "ally" entry (no AI exists yet -- see the ally pool's
-*comment own step 2/3), is a silent no-op that just advances past it -- same observable behavior as a defeated
-*comment slot always having its turn skipped. Reached three ways: fight_setup's very first *goto fight_round_hub
-*comment (every fight_<name> label already ends with this, unedited -- see fight_round_hub's own preamble below),
-*comment fight_action_spent once the player's turn is truly over, and the player_stunned check in fight_round_hub
-*comment (the player's turn skipped outright).
-*comment Wrapping past the last position starts a new round exactly like the old batch's tail did: combat_round
-*comment + 1 (replay-locked, same lock as before) and combat_begin_round (refills the player's budget, clears
-*comment enemy disadvantage) -- now triggered by "the index wrapped" instead of "every enemy went," but it can
-*comment only ever fire once per page either way, since the loop always stops the instant it reaches the player.
+*comment The turn queue's dispatcher: walks combat_turn_kind_*/_slot_* (startup.txt) one combatant at a time, in
+*comment the order combat_roll_initiative built. A dead enemy slot, or an "ally" entry (no ally AI exists yet), is
+*comment a silent no-op that just advances past it -- same observable behavior as a defeated slot always having
+*comment its turn skipped. Reached three ways: fight_setup's very first *goto fight_round_hub (every fight_<name>
+*comment label already ends with this, unedited -- see fight_round_hub's own preamble below), the "End Turn"
+*comment option, and the player_stunned check in fight_round_hub (the player's turn skipped outright).
+*comment Wrapping past the last position starts a new round: combat_round + 1 (replay-locked) and
+*comment combat_begin_round (refills the player's budgets, clears enemy disadvantage) -- triggered by "the index
+*comment wrapped," which can only ever fire once per page since the loop always stops the instant it reaches the
+*comment player.
 *comment combat_turn_advanced_this_page (set true the instant anything is actually narrated -- an enemy's attack,
 *comment or the player_stunned banner) gates the page_break right before the player's menu reappears, so a chain
 *comment that dispatches straight to the player with nothing having happened yet (round 1's first entry, most
@@ -2422,17 +2565,42 @@ ${fnaa_line}
   *if (cnt_hp > 0)
     *set combat_active_target cnt_slot
     *gosub fight_sync_target_in
-    *gosub fight_pick_enemy_move
-    *gosub_scene startup resolve_enemy_attack
-    *gosub fight_narrate_enemy_turn
-    *set combat_turn_advanced_this_page true
-    *if (combat_player_can_die) and (hp_current <= 0)
-      *goto fight_player_died
-    *if (not(combat_player_can_die)) and (hp_current <= 1)
-      *goto fight_rescued
-    *gosub fight_check_all_dead
-    *if (combat_all_enemies_dead)
-      *goto fight_victory
+    *comment Surprise round (5e RAW: a surprised creature takes no action and no move on its first turn in the
+    *comment order). combat_turn_first_pass_* (startup.txt) tracks whether THIS queue position has ever dispatched
+    *comment before -- read once, then cleared unconditionally, so an enemy that wins this check only loses its
+    *comment very first turn and fights normally every round after. combat_player_surprise is set by the calling
+    *comment scene alongside the player's own "advantage true" for a successful sneak (alderford.txt's silt-lurker
+    *comment and mire-rat approaches); it does nothing here for a pre-fight buff like the camp whetstone prep, which
+    *comment never touches this flag.
+    *comment Range: a melee-only enemy that isn't at range 0 spends its whole turn closing the distance instead
+    *comment of attacking -- one turn, straight to Engaged, no step-by-step approach simulation (kept to the
+    *comment cheap binary rule, same as the player's own weapon-attack gate above).
+    *temp cnt_first_pass {("combat_turn_first_pass_" & combat_current_turn_index)}
+    *set {("combat_turn_first_pass_" & combat_current_turn_index)} false
+    *if (combat_player_surprise) and (cnt_first_pass)
+      ${combat_enemy_epithet} hasn't marked you yet, giving no ground and no opening this turn.
+      *line_break
+      [b][😲 ${combat_enemy_name} Surprised — turn lost][/b]
+      *set combat_turn_advanced_this_page true
+    *elseif ((not(combat_enemy_weapon_type = "ranged")) and (combat_enemy_range > 0))
+      *set combat_enemy_range 0
+      *set {(("combat_enemy" & cnt_slot) & "_range")} 0
+      ${combat_enemy_epithet} closes the distance, covering the ground between you both in a rush.
+      *line_break
+      [b][🏃 ${combat_enemy_name} Closes to Engagement][/b]
+      *set combat_turn_advanced_this_page true
+    *else
+      *gosub fight_pick_enemy_move
+      *gosub_scene startup resolve_enemy_attack
+      *gosub fight_narrate_enemy_turn
+      *set combat_turn_advanced_this_page true
+      *if (combat_player_can_die) and (hp_current <= 0)
+        *goto fight_player_died
+      *if (not(combat_player_can_die)) and (hp_current <= 1)
+        *goto fight_rescued
+      *gosub fight_check_all_dead
+      *if (combat_all_enemies_dead)
+        *goto fight_victory
 *goto combat_next_turn
 
 *comment ══════════════════════════════════════════════════════════════
@@ -2444,7 +2612,7 @@ ${fnaa_line}
 *comment different types) without forking a one-off copy of that type's
 *comment numbers into a new fight label just to change which slots it fills.
 *comment
-*comment NAMING (2026-09-26): a type is a WEAPON, not a person. Its lines name the fighter through
+*comment NAMING: a type is a WEAPON, not a person. Its lines name the fighter through
 *comment combat_enemy_epithet, "$!{combat_enemy_epithet}" at the start of a sentence (the engine capitalizes it) and
 *comment "${combat_enemy_epithet}" inside one, so the same swordsman lines serve a knight, a bandit, a duelist or a
 *comment named captain. The epithet defaults to the type ("the swordsman") and a fight renames it: set
@@ -2478,7 +2646,7 @@ ${fnaa_line}
 *comment (written once, see ENEMY TYPE FLAVOR below). Add a new one with an apply_type_<name> label, one line in
 *comment apply_enemy_type's dispatch, and the prose label with its line in flavor_from_type.
 *comment
-*comment WRITING RULE (2026-09-26): every type's hit and miss lines, and the player's apply_generic_weapon_flavor
+*comment WRITING RULE: every type's hit and miss lines, and the player's apply_generic_weapon_flavor
 *comment pool, are written to work in any fight against human combatants, anywhere, so a new fight can call a type
 *comment with no retuning. That means no place (ground, walls, props, water, streets), no weather, lighting or
 *comment time of day, nothing the player may not have on (cloak, coat, cloth, leather, boots, armor, harness), and
@@ -2542,9 +2710,7 @@ ${fnaa_line}
   *set combat_enemy_hp 10
   *set combat_enemy_max_hp 10
   *set combat_enemy_ac 12
-  *set combat_enemy_atk_bonus 3
   *set combat_enemy_dmg_dice_sides 6
-  *set combat_enemy_dmg_bonus 1
   *set combat_enemy_epithet "the swordsman"
   *set combat_enemy_dmg_type "slashing"
   *set combat_enemy_move2_chance 30
@@ -2561,6 +2727,7 @@ ${fnaa_line}
   *gosub apply_ability_score_range "combat_enemy_" "intelligence" 8 10
   *gosub apply_ability_score_range "combat_enemy_" "wisdom" 9 11
   *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
 *else
   *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
   *comment (the same values as slot 1 above, by construction).
@@ -2569,9 +2736,7 @@ ${fnaa_line}
   *set {(apt_p & "hp")} 10
   *set {(apt_p & "max_hp")} 10
   *set {(apt_p & "ac")} 12
-  *set {(apt_p & "atk_bonus")} 3
   *set {(apt_p & "dmg_dice_sides")} 6
-  *set {(apt_p & "dmg_bonus")} 1
   *set {(apt_p & "epithet")} "the swordsman"
   *set {(apt_p & "dmg_type")} "slashing"
   *set {(apt_p & "move2_chance")} 30
@@ -2588,6 +2753,7 @@ ${fnaa_line}
   *gosub apply_ability_score_range apt_p "intelligence" 8 10
   *gosub apply_ability_score_range apt_p "wisdom" 9 11
   *gosub apply_ability_score_range apt_p "charisma" 8 10
+  *gosub apply_derived_combat_bonuses apt_p
 *return
 
 *label apply_type_axeman
@@ -2598,9 +2764,7 @@ ${fnaa_line}
   *set combat_enemy_hp 10
   *set combat_enemy_max_hp 10
   *set combat_enemy_ac 11
-  *set combat_enemy_atk_bonus 3
   *set combat_enemy_dmg_dice_sides 6
-  *set combat_enemy_dmg_bonus 1
   *set combat_enemy_epithet "the axeman"
   *set combat_enemy_dmg_type "slashing"
   *set combat_enemy_move2_chance 30
@@ -2617,6 +2781,7 @@ ${fnaa_line}
   *gosub apply_ability_score_range "combat_enemy_" "intelligence" 7 9
   *gosub apply_ability_score_range "combat_enemy_" "wisdom" 8 10
   *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
 *else
   *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
   *comment (the same values as slot 1 above, by construction).
@@ -2625,9 +2790,7 @@ ${fnaa_line}
   *set {(apt_p & "hp")} 10
   *set {(apt_p & "max_hp")} 10
   *set {(apt_p & "ac")} 11
-  *set {(apt_p & "atk_bonus")} 3
   *set {(apt_p & "dmg_dice_sides")} 6
-  *set {(apt_p & "dmg_bonus")} 1
   *set {(apt_p & "epithet")} "the axeman"
   *set {(apt_p & "dmg_type")} "slashing"
   *set {(apt_p & "move2_chance")} 30
@@ -2644,6 +2807,7 @@ ${fnaa_line}
   *gosub apply_ability_score_range apt_p "intelligence" 7 9
   *gosub apply_ability_score_range apt_p "wisdom" 8 10
   *gosub apply_ability_score_range apt_p "charisma" 8 10
+  *gosub apply_derived_combat_bonuses apt_p
 *return
 
 *label apply_type_knifeman
@@ -2654,9 +2818,7 @@ ${fnaa_line}
   *set combat_enemy_hp 10
   *set combat_enemy_max_hp 10
   *set combat_enemy_ac 11
-  *set combat_enemy_atk_bonus 3
   *set combat_enemy_dmg_dice_sides 6
-  *set combat_enemy_dmg_bonus 1
   *set combat_enemy_epithet "the knifeman"
   *set combat_enemy_dmg_type "piercing"
   *set combat_enemy_move2_chance 30
@@ -2673,6 +2835,7 @@ ${fnaa_line}
   *gosub apply_ability_score_range "combat_enemy_" "intelligence" 8 10
   *gosub apply_ability_score_range "combat_enemy_" "wisdom" 9 11
   *gosub apply_ability_score_range "combat_enemy_" "charisma" 9 11
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
 *else
   *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
   *comment (the same values as slot 1 above, by construction).
@@ -2681,9 +2844,7 @@ ${fnaa_line}
   *set {(apt_p & "hp")} 10
   *set {(apt_p & "max_hp")} 10
   *set {(apt_p & "ac")} 11
-  *set {(apt_p & "atk_bonus")} 3
   *set {(apt_p & "dmg_dice_sides")} 6
-  *set {(apt_p & "dmg_bonus")} 1
   *set {(apt_p & "epithet")} "the knifeman"
   *set {(apt_p & "dmg_type")} "piercing"
   *set {(apt_p & "move2_chance")} 30
@@ -2700,6 +2861,7 @@ ${fnaa_line}
   *gosub apply_ability_score_range apt_p "intelligence" 8 10
   *gosub apply_ability_score_range apt_p "wisdom" 9 11
   *gosub apply_ability_score_range apt_p "charisma" 9 11
+  *gosub apply_derived_combat_bonuses apt_p
 *return
 
 *label apply_type_maceman
@@ -2710,9 +2872,7 @@ ${fnaa_line}
   *set combat_enemy_hp 10
   *set combat_enemy_max_hp 10
   *set combat_enemy_ac 11
-  *set combat_enemy_atk_bonus 3
   *set combat_enemy_dmg_dice_sides 6
-  *set combat_enemy_dmg_bonus 1
   *set combat_enemy_epithet "the maceman"
   *set combat_enemy_dmg_type "bludgeoning"
   *set combat_enemy_move2_chance 30
@@ -2729,6 +2889,7 @@ ${fnaa_line}
   *gosub apply_ability_score_range "combat_enemy_" "intelligence" 7 9
   *gosub apply_ability_score_range "combat_enemy_" "wisdom" 8 10
   *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
 *else
   *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
   *comment (the same values as slot 1 above, by construction).
@@ -2737,9 +2898,7 @@ ${fnaa_line}
   *set {(apt_p & "hp")} 10
   *set {(apt_p & "max_hp")} 10
   *set {(apt_p & "ac")} 11
-  *set {(apt_p & "atk_bonus")} 3
   *set {(apt_p & "dmg_dice_sides")} 6
-  *set {(apt_p & "dmg_bonus")} 1
   *set {(apt_p & "epithet")} "the maceman"
   *set {(apt_p & "dmg_type")} "bludgeoning"
   *set {(apt_p & "move2_chance")} 30
@@ -2756,6 +2915,7 @@ ${fnaa_line}
   *gosub apply_ability_score_range apt_p "intelligence" 7 9
   *gosub apply_ability_score_range apt_p "wisdom" 8 10
   *gosub apply_ability_score_range apt_p "charisma" 8 10
+  *gosub apply_derived_combat_bonuses apt_p
 *return
 
 *label apply_type_spearman
@@ -2766,9 +2926,7 @@ ${fnaa_line}
   *set combat_enemy_hp 10
   *set combat_enemy_max_hp 10
   *set combat_enemy_ac 11
-  *set combat_enemy_atk_bonus 3
   *set combat_enemy_dmg_dice_sides 6
-  *set combat_enemy_dmg_bonus 1
   *set combat_enemy_epithet "the spearman"
   *set combat_enemy_dmg_type "piercing"
   *set combat_enemy_move2_chance 30
@@ -2785,6 +2943,7 @@ ${fnaa_line}
   *gosub apply_ability_score_range "combat_enemy_" "intelligence" 8 10
   *gosub apply_ability_score_range "combat_enemy_" "wisdom" 10 12
   *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
 *else
   *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
   *comment (the same values as slot 1 above, by construction).
@@ -2793,9 +2952,7 @@ ${fnaa_line}
   *set {(apt_p & "hp")} 10
   *set {(apt_p & "max_hp")} 10
   *set {(apt_p & "ac")} 11
-  *set {(apt_p & "atk_bonus")} 3
   *set {(apt_p & "dmg_dice_sides")} 6
-  *set {(apt_p & "dmg_bonus")} 1
   *set {(apt_p & "epithet")} "the spearman"
   *set {(apt_p & "dmg_type")} "piercing"
   *set {(apt_p & "move2_chance")} 30
@@ -2812,6 +2969,7 @@ ${fnaa_line}
   *gosub apply_ability_score_range apt_p "intelligence" 8 10
   *gosub apply_ability_score_range apt_p "wisdom" 10 12
   *gosub apply_ability_score_range apt_p "charisma" 8 10
+  *gosub apply_derived_combat_bonuses apt_p
 *return
 
 *label apply_type_hookman
@@ -2822,9 +2980,7 @@ ${fnaa_line}
   *set combat_enemy_hp 10
   *set combat_enemy_max_hp 10
   *set combat_enemy_ac 11
-  *set combat_enemy_atk_bonus 3
   *set combat_enemy_dmg_dice_sides 6
-  *set combat_enemy_dmg_bonus 1
   *set combat_enemy_epithet "the hookman"
   *set combat_enemy_dmg_type "piercing"
   *set combat_enemy_move2_chance 30
@@ -2841,6 +2997,7 @@ ${fnaa_line}
   *gosub apply_ability_score_range "combat_enemy_" "intelligence" 7 9
   *gosub apply_ability_score_range "combat_enemy_" "wisdom" 8 10
   *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
 *else
   *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
   *comment (the same values as slot 1 above, by construction).
@@ -2849,9 +3006,7 @@ ${fnaa_line}
   *set {(apt_p & "hp")} 10
   *set {(apt_p & "max_hp")} 10
   *set {(apt_p & "ac")} 11
-  *set {(apt_p & "atk_bonus")} 3
   *set {(apt_p & "dmg_dice_sides")} 6
-  *set {(apt_p & "dmg_bonus")} 1
   *set {(apt_p & "epithet")} "the hookman"
   *set {(apt_p & "dmg_type")} "piercing"
   *set {(apt_p & "move2_chance")} 30
@@ -2868,6 +3023,7 @@ ${fnaa_line}
   *gosub apply_ability_score_range apt_p "intelligence" 7 9
   *gosub apply_ability_score_range apt_p "wisdom" 8 10
   *gosub apply_ability_score_range apt_p "charisma" 8 10
+  *gosub apply_derived_combat_bonuses apt_p
 *return
 
 *label apply_type_archer
@@ -2878,9 +3034,7 @@ ${fnaa_line}
   *set combat_enemy_hp 7
   *set combat_enemy_max_hp 7
   *set combat_enemy_ac 10
-  *set combat_enemy_atk_bonus 3
   *set combat_enemy_dmg_dice_sides 6
-  *set combat_enemy_dmg_bonus 0
   *set combat_enemy_epithet "the archer"
   *set combat_enemy_dmg_type "piercing"
   *set combat_enemy_weapon_type "ranged"
@@ -2898,6 +3052,7 @@ ${fnaa_line}
   *gosub apply_ability_score_range "combat_enemy_" "intelligence" 9 11
   *gosub apply_ability_score_range "combat_enemy_" "wisdom" 11 13
   *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
 *else
   *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
   *comment (the same values as slot 1 above, by construction).
@@ -2906,9 +3061,7 @@ ${fnaa_line}
   *set {(apt_p & "hp")} 7
   *set {(apt_p & "max_hp")} 7
   *set {(apt_p & "ac")} 10
-  *set {(apt_p & "atk_bonus")} 3
   *set {(apt_p & "dmg_dice_sides")} 6
-  *set {(apt_p & "dmg_bonus")} 0
   *set {(apt_p & "epithet")} "the archer"
   *set {(apt_p & "dmg_type")} "piercing"
   *set {(apt_p & "weapon_type")} "ranged"
@@ -2926,6 +3079,7 @@ ${fnaa_line}
   *gosub apply_ability_score_range apt_p "intelligence" 9 11
   *gosub apply_ability_score_range apt_p "wisdom" 11 13
   *gosub apply_ability_score_range apt_p "charisma" 8 10
+  *gosub apply_derived_combat_bonuses apt_p
 *return
 
 *label apply_type_slinger
@@ -2937,9 +3091,7 @@ ${fnaa_line}
   *set combat_enemy_hp 6
   *set combat_enemy_max_hp 6
   *set combat_enemy_ac 10
-  *set combat_enemy_atk_bonus 2
   *set combat_enemy_dmg_dice_sides 4
-  *set combat_enemy_dmg_bonus 0
   *set combat_enemy_epithet "the slinger"
   *set combat_enemy_dmg_type "bludgeoning"
   *set combat_enemy_weapon_type "ranged"
@@ -2957,6 +3109,7 @@ ${fnaa_line}
   *gosub apply_ability_score_range "combat_enemy_" "intelligence" 7 9
   *gosub apply_ability_score_range "combat_enemy_" "wisdom" 8 10
   *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
 *else
   *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
   *comment (the same values as slot 1 above, by construction).
@@ -2965,9 +3118,7 @@ ${fnaa_line}
   *set {(apt_p & "hp")} 6
   *set {(apt_p & "max_hp")} 6
   *set {(apt_p & "ac")} 10
-  *set {(apt_p & "atk_bonus")} 2
   *set {(apt_p & "dmg_dice_sides")} 4
-  *set {(apt_p & "dmg_bonus")} 0
   *set {(apt_p & "epithet")} "the slinger"
   *set {(apt_p & "dmg_type")} "bludgeoning"
   *set {(apt_p & "weapon_type")} "ranged"
@@ -2985,6 +3136,7 @@ ${fnaa_line}
   *gosub apply_ability_score_range apt_p "intelligence" 7 9
   *gosub apply_ability_score_range apt_p "wisdom" 8 10
   *gosub apply_ability_score_range apt_p "charisma" 8 10
+  *gosub apply_derived_combat_bonuses apt_p
 *return
 
 *label apply_type_guard
@@ -2995,9 +3147,7 @@ ${fnaa_line}
   *set combat_enemy_hp 8
   *set combat_enemy_max_hp 8
   *set combat_enemy_ac 12
-  *set combat_enemy_atk_bonus 2
   *set combat_enemy_dmg_dice_sides 4
-  *set combat_enemy_dmg_bonus 0
   *set combat_enemy_epithet "the guard"
   *set combat_enemy_dmg_type "bludgeoning"
   *gosub apply_ability_score_range "combat_enemy_" "strength" 11 13
@@ -3006,6 +3156,7 @@ ${fnaa_line}
   *gosub apply_ability_score_range "combat_enemy_" "intelligence" 9 11
   *gosub apply_ability_score_range "combat_enemy_" "wisdom" 10 12
   *gosub apply_ability_score_range "combat_enemy_" "charisma" 9 11
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
 *else
   *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
   *comment (the same values as slot 1 above, by construction).
@@ -3014,9 +3165,7 @@ ${fnaa_line}
   *set {(apt_p & "hp")} 8
   *set {(apt_p & "max_hp")} 8
   *set {(apt_p & "ac")} 12
-  *set {(apt_p & "atk_bonus")} 2
   *set {(apt_p & "dmg_dice_sides")} 4
-  *set {(apt_p & "dmg_bonus")} 0
   *set {(apt_p & "epithet")} "the guard"
   *set {(apt_p & "dmg_type")} "bludgeoning"
   *gosub apply_ability_score_range apt_p "strength" 11 13
@@ -3025,6 +3174,7 @@ ${fnaa_line}
   *gosub apply_ability_score_range apt_p "intelligence" 9 11
   *gosub apply_ability_score_range apt_p "wisdom" 10 12
   *gosub apply_ability_score_range apt_p "charisma" 9 11
+  *gosub apply_derived_combat_bonuses apt_p
 *return
 
 *label apply_type_lacedon
@@ -3034,9 +3184,7 @@ ${fnaa_line}
   *set combat_enemy_hp 12
   *set combat_enemy_max_hp 12
   *set combat_enemy_ac 12
-  *set combat_enemy_atk_bonus 4
   *set combat_enemy_dmg_dice_sides 6
-  *set combat_enemy_dmg_bonus 2
   *set combat_enemy_epithet "the lacedon"
   *gosub apply_ability_score_range "combat_enemy_" "strength" 13 15
   *gosub apply_ability_score_range "combat_enemy_" "dexterity" 13 15
@@ -3044,6 +3192,7 @@ ${fnaa_line}
   *gosub apply_ability_score_range "combat_enemy_" "intelligence" 6 8
   *gosub apply_ability_score_range "combat_enemy_" "wisdom" 8 10
   *gosub apply_ability_score_range "combat_enemy_" "charisma" 6 8
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
 *else
   *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
   *comment (the same values as slot 1 above, by construction).
@@ -3052,9 +3201,7 @@ ${fnaa_line}
   *set {(apt_p & "hp")} 12
   *set {(apt_p & "max_hp")} 12
   *set {(apt_p & "ac")} 12
-  *set {(apt_p & "atk_bonus")} 4
   *set {(apt_p & "dmg_dice_sides")} 6
-  *set {(apt_p & "dmg_bonus")} 2
   *set {(apt_p & "epithet")} "the lacedon"
   *gosub apply_ability_score_range apt_p "strength" 13 15
   *gosub apply_ability_score_range apt_p "dexterity" 13 15
@@ -3062,6 +3209,7 @@ ${fnaa_line}
   *gosub apply_ability_score_range apt_p "intelligence" 6 8
   *gosub apply_ability_score_range apt_p "wisdom" 8 10
   *gosub apply_ability_score_range apt_p "charisma" 6 8
+  *gosub apply_derived_combat_bonuses apt_p
 *return
 
 *label apply_type_beast
@@ -3072,9 +3220,7 @@ ${fnaa_line}
   *set combat_enemy_hp 9
   *set combat_enemy_max_hp 9
   *set combat_enemy_ac 11
-  *set combat_enemy_atk_bonus 3
   *set combat_enemy_dmg_dice_sides 6
-  *set combat_enemy_dmg_bonus 1
   *set combat_enemy_epithet "the beast"
   *gosub apply_ability_score_range "combat_enemy_" "strength" 12 14
   *gosub apply_ability_score_range "combat_enemy_" "dexterity" 12 14
@@ -3082,6 +3228,7 @@ ${fnaa_line}
   *gosub apply_ability_score_range "combat_enemy_" "intelligence" 3 5
   *gosub apply_ability_score_range "combat_enemy_" "wisdom" 11 13
   *gosub apply_ability_score_range "combat_enemy_" "charisma" 5 7
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
 *else
   *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
   *comment (the same values as slot 1 above, by construction).
@@ -3090,9 +3237,7 @@ ${fnaa_line}
   *set {(apt_p & "hp")} 9
   *set {(apt_p & "max_hp")} 9
   *set {(apt_p & "ac")} 11
-  *set {(apt_p & "atk_bonus")} 3
   *set {(apt_p & "dmg_dice_sides")} 6
-  *set {(apt_p & "dmg_bonus")} 1
   *set {(apt_p & "epithet")} "the beast"
   *gosub apply_ability_score_range apt_p "strength" 12 14
   *gosub apply_ability_score_range apt_p "dexterity" 12 14
@@ -3100,6 +3245,7 @@ ${fnaa_line}
   *gosub apply_ability_score_range apt_p "intelligence" 3 5
   *gosub apply_ability_score_range apt_p "wisdom" 11 13
   *gosub apply_ability_score_range apt_p "charisma" 5 7
+  *gosub apply_derived_combat_bonuses apt_p
 *return
 
 *label apply_type_mire_rat
@@ -3109,9 +3255,7 @@ ${fnaa_line}
   *set combat_enemy_hp 4
   *set combat_enemy_max_hp 4
   *set combat_enemy_ac 9
-  *set combat_enemy_atk_bonus 2
   *set combat_enemy_dmg_dice_sides 4
-  *set combat_enemy_dmg_bonus 0
   *set combat_enemy_epithet "the mire-rat"
   *gosub apply_ability_score_range "combat_enemy_" "strength" 6 8
   *gosub apply_ability_score_range "combat_enemy_" "dexterity" 14 16
@@ -3119,6 +3263,7 @@ ${fnaa_line}
   *gosub apply_ability_score_range "combat_enemy_" "intelligence" 3 5
   *gosub apply_ability_score_range "combat_enemy_" "wisdom" 9 11
   *gosub apply_ability_score_range "combat_enemy_" "charisma" 4 6
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
 *else
   *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
   *comment (the same values as slot 1 above, by construction).
@@ -3127,9 +3272,7 @@ ${fnaa_line}
   *set {(apt_p & "hp")} 4
   *set {(apt_p & "max_hp")} 4
   *set {(apt_p & "ac")} 9
-  *set {(apt_p & "atk_bonus")} 2
   *set {(apt_p & "dmg_dice_sides")} 4
-  *set {(apt_p & "dmg_bonus")} 0
   *set {(apt_p & "epithet")} "the mire-rat"
   *gosub apply_ability_score_range apt_p "strength" 6 8
   *gosub apply_ability_score_range apt_p "dexterity" 14 16
@@ -3137,6 +3280,7 @@ ${fnaa_line}
   *gosub apply_ability_score_range apt_p "intelligence" 3 5
   *gosub apply_ability_score_range apt_p "wisdom" 9 11
   *gosub apply_ability_score_range apt_p "charisma" 4 6
+  *gosub apply_derived_combat_bonuses apt_p
 *return
 
 
@@ -3585,7 +3729,7 @@ ${fnaa_line}
 *return
 
 *comment ══════════════════════════════════════════════════════════════
-*comment PLAYER STRIKE FLAVOR (2026-09-26)
+*comment PLAYER STRIKE FLAVOR
 *comment The player's ordinary weapon lines against a human fighter, chosen by what the weapon does: slashing, piercing,
 *comment bludgeoning (weapon_damage_type) or a shot (weapon_type "ranged"). pick_weapon_flavor calls one of these at the
 *comment moment of the attack, before the roll, and each sets the caller's fwh (hit) and fwm (miss) to one of eight pairs,
@@ -3723,7 +3867,7 @@ ${fnaa_line}
 *return
 
 *comment ══════════════════════════════════════════════════════════════
-*comment PLAYER FINISHING BLOWS (2026-09-26)
+*comment PLAYER FINISHING BLOWS
 *comment The blow that ends a fight against a human fighter, chosen by the weapon's damage type the way the ordinary
 *comment strike lines above are. pick_weapon_death_flavor calls one of these at the moment of the kill and each sets the
 *comment caller's fdh to one of eight lines. flavor_kill_<type> is a death, flavor_yield_<type> is a fighter beaten into
@@ -3918,7 +4062,7 @@ ${fnaa_line}
 *return
 
 *comment ══════════════════════════════════════════════════════════════
-*comment PLAYER LINES AGAINST A CREATURE (2026-09-26)
+*comment PLAYER LINES AGAINST A CREATURE
 *comment The same arrangement as the human lines above, for any foe with a body and no special moves: a wolf, a boar, a
 *comment ghoul, a giant spider, a lacedon, a rat. flavor_creature_<type> is the ordinary hit and miss, flavor_creature_kill_<type>
 *comment the killing blow, chosen by the weapon's damage type, built at the moment of the attack, and named through
@@ -4169,8 +4313,7 @@ ${fnaa_line}
 *comment ══════════════════════════════════════════════════════════════
 
 *label fight_library
-*comment THE PLUG-IN ENTRY (2026-09-26, widened to 6 slots 2026-09-27). A scene that needs a fight, and has no
-*comment fight_<name> label of its own, sets
+*comment THE PLUG-IN ENTRY. A scene that needs a fight, and has no fight_<name> label of its own, sets
 *comment   combat_lib_1 (and optionally combat_lib_2 through combat_lib_6): a library type id for each slot, and
 *comment   combat_is_nonlethal true if the brawl should end in surrender rather than death (default false),
 *comment   plus, if it wants its own names, combat_enemy_name_override and combat_enemy_epithet_override for slot 1
@@ -4280,6 +4423,13 @@ ${fnaa_line}
 *comment Remembered for the caller: the slots shift as foes fall, so the bruiser cannot be read back afterwards.
 *set dredge_ambush_bruiser combat_lib_1
 *set combat_lib_2 "slinger"
+*comment Range: the slinger opens at Close (1) instead of the type-library default of Engaged (0) -- it keeps
+*comment its distance, matching its own flavor, while staying only one Push Forward action away so a melee-only
+*comment build isn't shut out for more than a turn. Close over Medium deliberately: this and the other two
+*comment fights sharing this comment are balance-simmed at ~64% overall win already, and Medium would cost a
+*comment melee build an extra turn of exposure the sim never accounted for. The bruiser slot (1) stays at the
+*comment default 0, engaged from turn one.
+*set combat_enemy2_range 1
 *goto fight_library
 
 *label fight_wreckers
@@ -4292,6 +4442,9 @@ ${fnaa_line}
 *set combat_is_nonlethal false
 *set combat_lib_1 "axeman"
 *set combat_lib_2 "slinger"
+*comment Range: the slinger opens at Close (1) instead of Engaged -- see fight_dredge_ambush's own copy of this
+*comment comment for the full reasoning.
+*set combat_enemy2_range 1
 *goto fight_library
 
 *label fight_shroud_thieves
@@ -4303,4 +4456,7 @@ ${fnaa_line}
 *set combat_is_nonlethal true
 *set combat_lib_1 "knifeman"
 *set combat_lib_2 "slinger"
+*comment Range: the slinger opens at Close (1) instead of Engaged -- see fight_dredge_ambush's own copy of this
+*comment comment for the full reasoning.
+*set combat_enemy2_range 1
 *goto fight_library

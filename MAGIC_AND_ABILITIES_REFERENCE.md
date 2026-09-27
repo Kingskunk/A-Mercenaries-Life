@@ -7,7 +7,7 @@ A developer reference for every racial trait, innate magic, class cantrip, and c
 ## How the system works
 
 - Nothing here uses a real spell-slot economy, prepared-spell tracking, or damage resolution. Every cantrip/spell is a **string flag + a flavor description**, the same pattern used for `class_title`/`race_trait_title` elsewhere.
-- "Slots" (`warlock_spell_slots`, `wizard_spell_slots`, `bard_spell_slots`) are tracked as numbers but **not currently decremented or checked anywhere** — they exist so a future "cast your spell" scene has something to reference, not because resource management is live today.
+- "Slots" (`warlock_spell_slots`, `wizard_spell_slots`, `bard_spell_slots`) are **live**: each holds the remaining count, has a `_max` written by `refresh_class_resource_maxs` (so the maximum follows `character_level`), is shown as `x / _max` in the dossier, and is spent at each cast site (`combat.txt` gates on `*_spell_slots > 0` and the `resolve_*` subroutine does the `- 1`). A long rest refills every pool via `restore_class_resources`; a short rest returns only the Warlock's Pact Magic slots, via `do_short_rest`. There is still no spell-slot *level* economy and no prepared-spell tracking — every spell in the game is first level, so one pool per class covers it.
 - Almost everything below is **flavor-only**: it sets a variable and prints a description, but doesn't alter any dice roll, check, or damage. Where something is a real, working mechanic, it's called out explicitly — don't assume any cantrip/spell "does" anything in code beyond existing as a flag unless it's flagged as MECHANICAL below.
 - All of it is gated behind `show_stat_hints` bracket tags in the choices, consistent with every other mechanical choice in the game.
 
@@ -53,11 +53,11 @@ Only three of the seven classes have any spellcasting at level 1 — this matche
 | Warlock | 1d8 | 2 (from a pool of 4) | 1 (from a pool of 4–5*) | 1, **short rest** (Pact Magic) |
 | Wizard | 1d6 | 3 (from a pool of 8) | 1 (from a pool of 7, always) | 2, long rest |
 
-\* **Bard's** and **Warlock's** spell pools shrink by one option for a Hexblood character, since Disguise Self (Bard) and Hex (Warlock) are hidden — the character already has them innately from `race_cantrip`/`race_cantrip_2`, so offering them again as a "new" class spell would be redundant. Dissonant Whispers (Bard) and Armor of Agathys / False Life (Warlock) keep the pool robust for Hexblood characters — see narrative_guidelines.md §5 (Three Is the Standard). Wizard's spell pool never overlaps with Hexblood's innate magic, so it's unaffected. See the `*if (not(race = "hexblood"))` guards in `dawn_trial.txt`.
+\* **Bard's** and **Warlock's** spell pools shrink by one option for a Hexblood character, since Disguise Self (Bard) and Hex (Warlock) are hidden — the character already has them innately from `race_cantrip`/`race_cantrip_2`, so offering them again as a "new" class spell would be redundant. Dissonant Whispers (Bard) and Armor of Agathys / False Life (Warlock) keep the pool robust for Hexblood characters. Wizard's spell pool never overlaps with Hexblood's innate magic, so it's unaffected. See the `*if (not(race = "hexblood"))` guards in `dawn_trial.txt`.
 
 ### Bard
 - **Cantrip pool** (`bard_cantrip`, `bard_cantrip_2` — pick 2, second pick excludes the first): `vicious_mockery`, `minor_illusion`, `message`, `mage_hand`, `mending`
-- **Spell pool** (`bard_spell`, `bard_spell_2` — pick 2, second excludes the first): `charm_person`, `healing_word`, `disguise_self` (hidden for Hexblood), `comprehend_languages`, `dissonant_whispers`
+- **Spell pool** (`bard_spell`, `bard_spell_2` — pick 2, second excludes the first): `charm_person`, `healing_word`, `disguise_self` (hidden for Hexblood), `comprehend_languages`, `dissonant_whispers`, `bane` (2026-09-27 — up to three targets, Charisma save vs `spell_save_dc`, -1d4 to a failed target's attack rolls and saving throws for 10 rounds; see `resolve_cast_bane`, startup.txt)
 - Framing: these are **not** newly discovered — the narration explicitly frames them as a lifelong knack the character always suspected was more than charm, finally admitted to under stress. Don't write future Bard content as "wow, I have magic now."
 
 ### Warlock
@@ -104,7 +104,7 @@ None of these four classes are spellcasters, but they still have real level-1 cl
 
 ## Actions and Bonus Actions in a Fight
 
-The player has one action and one bonus action each round, and each round refills them (`combat.txt` `combat_begin_round`; the rule is written up in GAMEPLAY_MECHANICS_RULES.md section 6). **Bonus actions:** Second Wind, Rage, Hex and Healing Word. Using one keeps you in the same round with your action still to come, and a second bonus option is not offered until the next round. **Actions:** an attack, a damage spell or cantrip, Armor of Agathys, False Life, Brace, and using an item; the enemies answer once your action is spent. **Shield** is a reaction (an armed flag), not a budget. The limits are variables (`combat_player_actions_max`, `combat_player_bonus_max`), so an effect such as Haste or a feature that grants an extra bonus action only has to change a number for the length of the fight.
+The player has one action and one bonus action each round, and each round refills them (`combat.txt` `combat_begin_round`; the rule is written up in quest/GAMEPLAY_MECHANICS_RULES.md section 6). **Bonus actions:** Second Wind, Rage, Hex and Healing Word. Using one keeps you in the same round with your action still to come, and a second bonus option is not offered until the next round. **Actions:** an attack, a damage spell or cantrip, Armor of Agathys, False Life, Brace, and using an item; the enemies answer once your action is spent. **Shield** is a reaction (an armed flag), not a budget. The limits are variables (`combat_player_actions_max`, `combat_player_bonus_max`), so an effect such as Haste or a feature that grants an extra bonus action only has to change a number for the length of the fight.
 
 ---
 
@@ -119,7 +119,7 @@ Every class pool has a `_max` variable, set in one place: `refresh_class_resourc
 | Pact Magic slots (Warlock) | 1 | 2 at level 2, 3 at 11, 4 at 17 |
 | First-level slots (Wizard, Bard) | 2 | 3 at level 2, 4 at level 3 |
 
-Wizard and Bard second-level slots (from level 3) and the Warlock's rising slot level are not built: nothing in the game is a second-level spell yet. When they are, each is a new pool added in the same few places (see GAMEPLAY_MECHANICS_RULES.md section 1, *Class Resources Live in One Place*), and no scene that sleeps changes.
+Wizard and Bard second-level slots (from level 3) and the Warlock's rising slot level are not built: nothing in the game is a second-level spell yet. When they are, each is a new pool added in the same few places (see quest/GAMEPLAY_MECHANICS_RULES.md section 1, *Class Resources Live in One Place*), and no scene that sleeps changes.
 
 **Long rest.** One routine, `restore_class_resources`, refills every pool to its maximum, clears temp HP and readies the Hexblood's Hex. Hit points are not touched (healing stays slow). Every sleeping place calls `calendar.txt` `resolve_sleep`, which calls it, and the prologue rests call it directly.
 
