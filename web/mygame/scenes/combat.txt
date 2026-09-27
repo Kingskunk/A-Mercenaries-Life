@@ -14,8 +14,14 @@
 *comment when the calling quest scene writes both together, instead of a
 *comment jarring cut between this file's text and theirs.
 *comment
-*comment ADDING A FIGHT (2026-09-26): use fight_library (near the end of this file). Set combat_lib_1 (and _2, _3) to
-*comment library type ids, set combat_is_nonlethal if it should end in surrender, then *gosub_scene combat fight_library.
+*comment ALLY POOL (2026-09-27, step 2 of the turn-order/initiative rebuild -- see combat_enemy_slot_cap's comment
+*comment above for step 1): combat_ally1-4_* (startup.txt) is storage only, and fight_narrate_ally_attack below is
+*comment placeholder narration nothing calls yet -- no ally AI or turn queue exists. Not wired into any real fight.
+*comment Generalized the same day to narrate either direction (ally-vs-enemy or enemy-vs-ally), not just
+*comment ally-as-attacker -- both sides are named purely by epithet, so one label covers both.
+*comment
+*comment ADDING A FIGHT (2026-09-26, widened to 6 slots 2026-09-27): use fight_library (near the end of this file). Set
+*comment combat_lib_1 (and _2 through _6) to library type ids, set combat_is_nonlethal if it should end in surrender, then *gosub_scene combat fight_library.
 *comment Nothing in this file needs editing, and no prose is written per fight. Every fight in the game is built this way;
 *comment none is hand-authored. Only a foe no library type fits should be written out by hand, as below.
 *comment
@@ -30,14 +36,13 @@
 *comment     (player, ranged -- needs its own wording, not melee text with
 *comment      ${weapon} swapped in, which reads wrong for a bow/crossbow)
 *comment   combat_flavor_enemy_hit_1/2/3, _miss_1/2/3         (enemy, slot 1
-*comment     and the default/fallback for slot 2/3)
+*comment     and the default/fallback for slot 2 and beyond)
 *comment All three variants for a given line should vary the actual PHYSICAL
 *comment ACTION (a thrust vs. a feint-and-cut vs. closing distance under a
 *comment guard), not just reshuffle adjectives around the same motion.
-*comment Optionally, a distinctly-named multi-enemy fight can also give slot
-*comment 2/3 their OWN triplets (combat_flavor_enemy2/3_hit/miss_1/2/3,
-*comment startup.txt) instead of falling back to the shared one -- see
-*comment fight_granary_rats' three rats. (The Dissonant Whispers lines are
+*comment Optionally, a distinctly-named multi-enemy fight can also give any slot 2 and beyond its OWN triplets
+*comment (combat_flavor_enemy2_hit/miss_1/2/3 through _enemy6_, startup.txt) instead of falling back to the shared
+*comment one -- see fight_granary_rats' three rats. (The Dissonant Whispers lines are
 *comment no longer per fight: the hub writes them, naming the foe.) Then
 *comment *gosub fight_setup and *goto fight_round_hub. Everything else -- every spell/cantrip/
 *comment ability option, the enemy's attack resolution, retreat/rescue
@@ -110,37 +115,17 @@
     *set so_delta - combat_enemy_atk_bonus
     *set combat_enemy_move2_atk_bonus + so_delta
   *set combat_enemy_atk_bonus combat_enemy_atk_override
-*if (not(combat_enemy2_hp_override = 999))
-  *set combat_enemy2_hp combat_enemy2_hp_override
-  *set combat_enemy2_max_hp combat_enemy2_hp_override
-*if (not(combat_enemy2_ac_override = 999))
-  *set combat_enemy2_ac combat_enemy2_ac_override
-*if (not(combat_enemy2_atk_override = 999))
-  *if (combat_enemy2_move2_chance > 0)
-    *set so_delta combat_enemy2_atk_override
-    *set so_delta - combat_enemy2_atk_bonus
-    *set combat_enemy2_move2_atk_bonus + so_delta
-  *set combat_enemy2_atk_bonus combat_enemy2_atk_override
-*if (not(combat_enemy3_hp_override = 999))
-  *set combat_enemy3_hp combat_enemy3_hp_override
-  *set combat_enemy3_max_hp combat_enemy3_hp_override
-*if (not(combat_enemy3_ac_override = 999))
-  *set combat_enemy3_ac combat_enemy3_ac_override
-*if (not(combat_enemy3_atk_override = 999))
-  *if (combat_enemy3_move2_chance > 0)
-    *set so_delta combat_enemy3_atk_override
-    *set so_delta - combat_enemy3_atk_bonus
-    *set combat_enemy3_move2_atk_bonus + so_delta
-  *set combat_enemy3_atk_bonus combat_enemy3_atk_override
 *set combat_enemy_hp_override 999
 *set combat_enemy_ac_override 999
 *set combat_enemy_atk_override 999
-*set combat_enemy2_hp_override 999
-*set combat_enemy2_ac_override 999
-*set combat_enemy2_atk_override 999
-*set combat_enemy3_hp_override 999
-*set combat_enemy3_ac_override 999
-*set combat_enemy3_atk_override 999
+*comment Slots 2 and beyond: one generic subroutine (apply_slot_stat_override, below) instead of a hand-copied
+*comment block per slot. Widening combat_enemy_slot_cap later needs no change here.
+*temp fs_ov_i 2
+*label fight_setup_override_loop
+*if (fs_ov_i <= combat_enemy_slot_cap)
+  *gosub apply_slot_stat_override fs_ov_i
+  *set fs_ov_i + 1
+  *goto fight_setup_override_loop
 *comment Snapshot whatever the calling fight_<name> label just set on the
 *comment canonical combat_enemy_* names into slot 1's permanent storage --
 *comment a single-enemy fight (fight_silt_lurker) never touches slot 2/3 or
@@ -156,6 +141,15 @@
 *set combat_enemy1_epithet combat_enemy_epithet
 *set combat_enemy1_metal_armor combat_enemy_metal_armor
 *set combat_enemy1_dmg_type combat_enemy_dmg_type
+*set combat_enemy1_weapon_type combat_enemy_weapon_type
+*comment Ability scores (2026-09-27): already rolled/overridden onto the bare names by apply_type_X (or set
+*comment directly by a hand-authored fight), same snapshot treatment as every field above.
+*set combat_enemy1_strength combat_enemy_strength
+*set combat_enemy1_dexterity combat_enemy_dexterity
+*set combat_enemy1_constitution combat_enemy_constitution
+*set combat_enemy1_intelligence combat_enemy_intelligence
+*set combat_enemy1_wisdom combat_enemy_wisdom
+*set combat_enemy1_charisma combat_enemy_charisma
 *comment Same snapshot for slot 1's condition/stun/movepool/resistance
 *comment fields -- a single-enemy fight just sets the no-number scratch vars
 *comment directly (fight_silt_lurker does), same as it always has for atk_
@@ -182,7 +176,215 @@
 *set combat_enemy1_vulnerable_type_1 combat_enemy_vulnerable_type_1
 *set combat_enemy1_vulnerable_type_2 combat_enemy_vulnerable_type_2
 *set combat_active_target 1
+*comment Turn order (2026-09-27, steps 4-5): rolled once here, after every slot above is fully built, so the roll
+*comment sees the real combat_ally_count/combat_enemy_count and every slot's real DEX. combat_current_turn_index 0
+*comment plus the needs_advance flag means the very next *goto fight_round_hub (every fight_<name> label already
+*comment ends with this, unedited) dispatches through combat_next_turn instead of assuming the player goes first.
+*gosub combat_roll_initiative
+*set combat_current_turn_index 0
+*set combat_turn_needs_advance true
+*set combat_turn_advanced_this_page false
 *gosub combat_begin_round
+*comment Announced here, not inside fight_round_hub (step 6, 2026-09-27), so it's the very first thing shown even
+*comment when an enemy wins initiative and attacks before the player ever sees a menu -- fight_round_hub's own
+*comment banner might not print until after that first attack.
+*gosub announce_turn_order
+*return
+
+*label apply_slot_stat_override
+*comment One slot's hp/ac/atk override, applied and reset, via name indirection instead of a hand-copied block
+*comment per slot (see fight_setup, which calls this for every slot from 2 to combat_enemy_slot_cap; slot 1 keeps
+*comment its own block there unchanged, since slot 1's override applies to the plain combat_enemy_* names, not a
+*comment numbered slot, until fight_setup snapshots it into combat_enemy1_* afterward).
+*params aso_slot
+*temp aso_p (("combat_enemy" & aso_slot) & "_")
+*temp aso_hp_ov {(aso_p & "hp_override")}
+*temp aso_ac_ov {(aso_p & "ac_override")}
+*temp aso_atk_ov {(aso_p & "atk_override")}
+*temp aso_delta 0
+*if (not(aso_hp_ov = 999))
+  *set {(aso_p & "hp")} aso_hp_ov
+  *set {(aso_p & "max_hp")} aso_hp_ov
+*if (not(aso_ac_ov = 999))
+  *set {(aso_p & "ac")} aso_ac_ov
+*if (not(aso_atk_ov = 999))
+  *if ({(aso_p & "move2_chance")} > 0)
+    *set aso_delta aso_atk_ov
+    *set aso_delta - {(aso_p & "atk_bonus")}
+    *set {(aso_p & "move2_atk_bonus")} ({(aso_p & "move2_atk_bonus")} + aso_delta)
+  *set {(aso_p & "atk_bonus")} aso_atk_ov
+*set {(aso_p & "hp_override")} 999
+*set {(aso_p & "ac_override")} 999
+*set {(aso_p & "atk_override")} 999
+*return
+
+*label apply_ability_score_range
+*comment Ability scores (2026-09-27, groundwork for initiative rolls and later saving throws): one score for one
+*comment slot. The manual per-slot override wins if set (nonzero, see startup.txt); otherwise this rolls within
+*comment [aasr_min, aasr_max], the calling type's own default range. Called six times (once per score) from BOTH
+*comment branches of every apply_type_X below: slot 1 passes the bare "combat_enemy_" prefix (the same bare names
+*comment fight_setup later snapshots into combat_enemy1_*, mirroring how hp/ac/atk_bonus already work for slot 1),
+*comment slot 2-and-beyond passes that type's own apt_p prefix directly, no separate slot-1-vs-N code path needed.
+*comment Resets its own override to 0 once consumed (fight_cleanup also resets every score and override as a
+*comment backstop, same treatment as the opt-in condition/movepool fields, so a hand-authored fight that never
+*comment touches ability scores at all can't inherit a leftover roll from an earlier type-library fight).
+*params aasr_prefix aasr_field aasr_min aasr_max
+*temp aasr_ov_name ((aasr_prefix & aasr_field) & "_override")
+*temp aasr_target (aasr_prefix & aasr_field)
+*temp aasr_ov {(aasr_ov_name)}
+*if (aasr_ov > 0)
+  *set {(aasr_target)} aasr_ov
+*else
+  *temp aasr_roll aasr_min
+  *rand aasr_roll aasr_min aasr_max
+  *set {(aasr_target)} aasr_roll
+*set {(aasr_ov_name)} 0
+*return
+
+*label cri_is_better_than_best
+*comment Compares initiative candidate cri_ibt_a against candidate cri_ibt_b (params: 1-indexed positions into
+*comment the combat_init_* scratch arrays, startup.txt) for combat_roll_initiative's selection sort below. Output
+*comment cri_ibt_result: true if A should be placed ahead of B. Tie-break order, all deterministic so it's
+*comment testable: higher initiative roll, then higher raw DEX score (5e's own tiebreak), then player over ally
+*comment over enemy, then ascending slot number.
+*params cri_ibt_a cri_ibt_b
+*temp cri_ibt_a_score {("combat_init_score_" & cri_ibt_a)}
+*temp cri_ibt_b_score {("combat_init_score_" & cri_ibt_b)}
+*set cri_ibt_result false
+*if (cri_ibt_a_score > cri_ibt_b_score)
+  *set cri_ibt_result true
+*elseif (cri_ibt_a_score = cri_ibt_b_score)
+  *temp cri_ibt_a_dex {("combat_init_dex_" & cri_ibt_a)}
+  *temp cri_ibt_b_dex {("combat_init_dex_" & cri_ibt_b)}
+  *if (cri_ibt_a_dex > cri_ibt_b_dex)
+    *set cri_ibt_result true
+  *elseif (cri_ibt_a_dex = cri_ibt_b_dex)
+    *temp cri_ibt_a_kind {("combat_init_kind_" & cri_ibt_a)}
+    *temp cri_ibt_b_kind {("combat_init_kind_" & cri_ibt_b)}
+    *temp cri_ibt_a_rank 1
+    *temp cri_ibt_b_rank 1
+    *if (cri_ibt_a_kind = "player")
+      *set cri_ibt_a_rank 3
+    *elseif (cri_ibt_a_kind = "ally")
+      *set cri_ibt_a_rank 2
+    *if (cri_ibt_b_kind = "player")
+      *set cri_ibt_b_rank 3
+    *elseif (cri_ibt_b_kind = "ally")
+      *set cri_ibt_b_rank 2
+    *if (cri_ibt_a_rank > cri_ibt_b_rank)
+      *set cri_ibt_result true
+    *elseif (cri_ibt_a_rank = cri_ibt_b_rank)
+      *temp cri_ibt_a_slot {("combat_init_slot_" & cri_ibt_a)}
+      *temp cri_ibt_b_slot {("combat_init_slot_" & cri_ibt_b)}
+      *if (cri_ibt_a_slot < cri_ibt_b_slot)
+        *set cri_ibt_result true
+*return
+
+*label combat_roll_initiative
+*comment Rolled ONCE per fight, from fight_setup after every slot is built -- not every round, 5e's own rule.
+*comment Candidates are the player plus every POPULATED ally slot (1..combat_ally_count) and enemy slot
+*comment (1..combat_enemy_count); an unpopulated slot beyond that never gets an entry, so a 1-enemy fight builds
+*comment a 2-long order (player + that one enemy), not an 11-long one padded with empty slots. Builds
+*comment combat_turn_kind_1..N/_slot_1..N (startup.txt), consumed by combat_next_turn below.
+*temp cri_n 0
+*set cri_n + 1
+*set combat_init_kind_1 "player"
+*set combat_init_slot_1 0
+*set combat_init_dex_1 dexterity
+*temp cri_roll 1
+*rand cri_roll 1 20
+*gosub_scene startup score_to_mod dexterity
+*set combat_init_score_1 (cri_roll + sm_mod)
+*temp cri_i 1
+*label cri_ally_loop
+*if (cri_i <= combat_ally_count)
+  *set cri_n + 1
+  *set {("combat_init_kind_" & cri_n)} "ally"
+  *set {("combat_init_slot_" & cri_n)} cri_i
+  *temp cri_a_dex {(("combat_ally" & cri_i) & "_dexterity")}
+  *set {("combat_init_dex_" & cri_n)} cri_a_dex
+  *temp cri_a_roll 1
+  *rand cri_a_roll 1 20
+  *gosub_scene startup score_to_mod cri_a_dex
+  *set {("combat_init_score_" & cri_n)} (cri_a_roll + sm_mod)
+  *set cri_i + 1
+  *goto cri_ally_loop
+*temp cri_j 1
+*label cri_enemy_loop
+*if (cri_j <= combat_enemy_count)
+  *set cri_n + 1
+  *set {("combat_init_kind_" & cri_n)} "enemy"
+  *set {("combat_init_slot_" & cri_n)} cri_j
+  *temp cri_e_dex {(("combat_enemy" & cri_j) & "_dexterity")}
+  *set {("combat_init_dex_" & cri_n)} cri_e_dex
+  *temp cri_e_roll 1
+  *rand cri_e_roll 1 20
+  *gosub_scene startup score_to_mod cri_e_dex
+  *set {("combat_init_score_" & cri_n)} (cri_e_roll + sm_mod)
+  *set cri_j + 1
+  *goto cri_enemy_loop
+*set combat_init_count cri_n
+*comment Stale "used" flags from an earlier fight's sort must be cleared before this one's -- these are
+*comment persistent *create'd storage, not fresh *temps, so they don't reset themselves between calls.
+*temp cri_reset_i 1
+*label cri_reset_loop
+*if (cri_reset_i <= 11)
+  *set {("combat_init_used_" & cri_reset_i)} false
+  *set cri_reset_i + 1
+  *goto cri_reset_loop
+*comment Selection sort, descending: repeatedly scan every not-yet-placed candidate for the best remaining one
+*comment (cri_is_better_than_best above), place it, mark it used. Simpler and safer than an insertion sort's
+*comment shifting step, and with at most 11 candidates the O(n^2) cost is nothing.
+*temp cri_placed 0
+*label cri_sort_loop
+*if (cri_placed < combat_init_count)
+  *temp cri_best 0
+  *temp cri_k 1
+  *label cri_scan_loop
+  *if (cri_k <= combat_init_count)
+    *if (not({("combat_init_used_" & cri_k)}))
+      *if (cri_best = 0)
+        *set cri_best cri_k
+      *else
+        *gosub cri_is_better_than_best cri_k cri_best
+        *if (cri_ibt_result)
+          *set cri_best cri_k
+    *set cri_k + 1
+    *goto cri_scan_loop
+  *set cri_placed + 1
+  *set {("combat_turn_kind_" & cri_placed)} {("combat_init_kind_" & cri_best)}
+  *set {("combat_turn_slot_" & cri_placed)} {("combat_init_slot_" & cri_best)}
+  *set {("combat_init_used_" & cri_best)} true
+  *goto cri_sort_loop
+*set combat_turn_count combat_init_count
+*return
+
+*label announce_turn_order
+*comment One line, once, right after combat_roll_initiative builds the order (2026-09-27, step 6) -- the only
+*comment player-visible confirmation the turn queue exists at all, since nothing else surfaces it. A real name
+*comment per position (bare "You" for the player, matching how the banner already says "You:" not the
+*comment character's own name), built via the same {}-indirection every other loop in this engine already uses.
+*comment Printed once because the order never changes for the rest of the fight -- a defeated combatant's turn
+*comment is simply skipped when reached, same as it always has been, with no need to update this line for it.
+*temp ato_line ""
+*temp ato_i 1
+*label announce_turn_order_loop
+*if (ato_i <= combat_turn_count)
+  *temp ato_kind {("combat_turn_kind_" & ato_i)}
+  *temp ato_slot {("combat_turn_slot_" & ato_i)}
+  *temp ato_name "You"
+  *if (ato_kind = "ally")
+    *set ato_name {(("combat_ally" & ato_slot) & "_name")}
+  *if (ato_kind = "enemy")
+    *set ato_name {(("combat_enemy" & ato_slot) & "_name")}
+  *if (ato_line = "")
+    *set ato_line ato_name
+  *else
+    *set ato_line ((ato_line & ", ") & ato_name)
+  *set ato_i + 1
+  *goto announce_turn_order_loop
+*line_break
+[b][⚡ Turn Order: ${ato_line}][/b]
 *return
 
 *label fight_cleanup
@@ -225,6 +427,7 @@
 *set combat_flavor_enemy_move2_hit ""
 *set combat_flavor_enemy_move2_miss ""
 *set combat_enemy_dmg_type "bludgeoning"
+*set combat_enemy_weapon_type "melee"
 *set combat_player_dmg_type "bludgeoning"
 *set combat_enemy_resist_type_1 ""
 *set combat_enemy_resist_type_2 ""
@@ -236,70 +439,71 @@
 *comment the persistent per-slot storage below also needs clearing, or a
 *comment future fight that gives slot 2 no movepool would silently inherit
 *comment slot 2's leftover moveset from whichever earlier fight set it.
-*set combat_enemy1_inflicts_condition false
-*set combat_enemy1_condition_name ""
-*set combat_enemy1_condition_icon ""
-*set combat_enemy1_inflicts_stun false
-*set combat_enemy1_stun_name ""
-*set combat_enemy1_stun_icon ""
-*set combat_enemy1_move2_chance 0
-*set combat_enemy1_move2_atk_bonus 0
-*set combat_enemy1_move2_dmg_dice_sides 4
-*set combat_enemy1_move2_dmg_bonus 0
-*set combat_enemy1_move2_dmg_type "bludgeoning"
-*set combat_enemy1_move2_inflicts_condition false
-*set combat_enemy1_move2_condition_name ""
-*set combat_enemy1_move2_condition_icon ""
-*set combat_enemy1_dmg_type "bludgeoning"
-*set combat_enemy1_resist_type_1 ""
-*set combat_enemy1_resist_type_2 ""
-*set combat_enemy1_vulnerable_type_1 ""
-*set combat_enemy1_vulnerable_type_2 ""
-*set combat_enemy2_inflicts_condition false
-*set combat_enemy2_condition_name ""
-*set combat_enemy2_condition_icon ""
-*set combat_enemy2_inflicts_stun false
-*set combat_enemy2_stun_name ""
-*set combat_enemy2_stun_icon ""
-*set combat_enemy2_move2_chance 0
-*set combat_enemy2_move2_atk_bonus 0
-*set combat_enemy2_move2_dmg_dice_sides 4
-*set combat_enemy2_move2_dmg_bonus 0
-*set combat_enemy2_move2_dmg_type "bludgeoning"
-*set combat_enemy2_move2_inflicts_condition false
-*set combat_enemy2_move2_condition_name ""
-*set combat_enemy2_move2_condition_icon ""
-*set combat_flavor_enemy2_move2_hit ""
-*set combat_flavor_enemy2_move2_miss ""
-*set combat_enemy2_dmg_type "bludgeoning"
-*set combat_enemy2_resist_type_1 ""
-*set combat_enemy2_resist_type_2 ""
-*set combat_enemy2_vulnerable_type_1 ""
-*set combat_enemy2_vulnerable_type_2 ""
-*set combat_enemy3_inflicts_condition false
-*set combat_enemy3_condition_name ""
-*set combat_enemy3_condition_icon ""
-*set combat_enemy3_inflicts_stun false
-*set combat_enemy3_stun_name ""
-*set combat_enemy3_stun_icon ""
-*set combat_enemy3_move2_chance 0
-*set combat_enemy3_move2_atk_bonus 0
-*set combat_enemy3_move2_dmg_dice_sides 4
-*set combat_enemy3_move2_dmg_bonus 0
-*set combat_enemy3_move2_dmg_type "bludgeoning"
-*set combat_enemy3_move2_inflicts_condition false
-*set combat_enemy3_move2_condition_name ""
-*set combat_enemy3_move2_condition_icon ""
-*set combat_flavor_enemy3_move2_hit ""
-*set combat_flavor_enemy3_move2_miss ""
-*set combat_enemy3_dmg_type "bludgeoning"
-*set combat_enemy3_resist_type_1 ""
-*set combat_enemy3_resist_type_2 ""
-*set combat_enemy3_vulnerable_type_1 ""
-*set combat_enemy3_vulnerable_type_2 ""
-*set combat_lib_1 ""
-*set combat_lib_2 ""
-*set combat_lib_3 ""
+*comment Bounded loop over every pre-declared slot (1..combat_enemy_slot_cap), via indirection, instead of one
+*comment hand-written block per slot -- this is also the fix for a real gap the widening found: slots 4-6's
+*comment condition/stun/movepool/resist state was never being cleared between fights before this loop existed.
+*temp fc_i 1
+*label fight_cleanup_slot_loop
+*if (fc_i <= combat_enemy_slot_cap)
+  *temp fc_p (("combat_enemy" & fc_i) & "_")
+  *set {(fc_p & "inflicts_condition")} false
+  *set {(fc_p & "condition_name")} ""
+  *set {(fc_p & "condition_icon")} ""
+  *set {(fc_p & "inflicts_stun")} false
+  *set {(fc_p & "stun_name")} ""
+  *set {(fc_p & "stun_icon")} ""
+  *set {(fc_p & "move2_chance")} 0
+  *set {(fc_p & "move2_atk_bonus")} 0
+  *set {(fc_p & "move2_dmg_dice_sides")} 4
+  *set {(fc_p & "move2_dmg_bonus")} 0
+  *set {(fc_p & "move2_dmg_type")} "bludgeoning"
+  *set {(fc_p & "move2_inflicts_condition")} false
+  *set {(fc_p & "move2_condition_name")} ""
+  *set {(fc_p & "move2_condition_icon")} ""
+  *set {(("combat_flavor_enemy" & fc_i) & "_move2_hit")} ""
+  *set {(("combat_flavor_enemy" & fc_i) & "_move2_miss")} ""
+  *set {(fc_p & "dmg_type")} "bludgeoning"
+  *set {(fc_p & "weapon_type")} "melee"
+  *set {(fc_p & "resist_type_1")} ""
+  *set {(fc_p & "resist_type_2")} ""
+  *set {(fc_p & "vulnerable_type_1")} ""
+  *set {(fc_p & "vulnerable_type_2")} ""
+  *set {(fc_p & "flavor_type")} ""
+  *set {("combat_lib_" & fc_i)} ""
+  *comment Per-slot local-color hit/miss variants: any of the 5, via indirection, instead of one hand-written
+  *comment line per variant per slot.
+  *temp fc_v 1
+  *label fight_cleanup_variant_loop
+  *if (fc_v <= 5)
+    *temp fc_fp ((("combat_flavor_enemy" & fc_i) & "_hit_") & fc_v)
+    *temp fc_mp ((("combat_flavor_enemy" & fc_i) & "_miss_") & fc_v)
+    *set {fc_fp} ""
+    *set {fc_mp} ""
+    *set fc_v + 1
+    *goto fight_cleanup_variant_loop
+  *comment Slot 1's numbered override variables (combat_enemy1_hp_override etc.) are never read or written
+  *comment by real code -- slot 1 uses the bare (unnumbered) names, reset separately below -- but they exist
+  *comment (see startup.txt) so this loop can stay unconditional across every slot.
+  *set {(fc_p & "hp_override")} 999
+  *set {(fc_p & "ac_override")} 999
+  *set {(fc_p & "atk_override")} 999
+  *comment Ability scores (2026-09-27) are opt-in like condition/movepool above, not always-set like hp/ac/atk_bonus
+  *comment -- a hand-authored fight can be silent about them entirely, so they need an explicit reset to "average
+  *comment human" or a later fight in the same slot could otherwise inherit an earlier type-library fight's roll.
+  *set {(fc_p & "strength")} 10
+  *set {(fc_p & "dexterity")} 10
+  *set {(fc_p & "constitution")} 10
+  *set {(fc_p & "intelligence")} 10
+  *set {(fc_p & "wisdom")} 10
+  *set {(fc_p & "charisma")} 10
+  *set {(fc_p & "strength_override")} 0
+  *set {(fc_p & "dexterity_override")} 0
+  *set {(fc_p & "constitution_override")} 0
+  *set {(fc_p & "intelligence_override")} 0
+  *set {(fc_p & "wisdom_override")} 0
+  *set {(fc_p & "charisma_override")} 0
+  *set fc_i + 1
+  *goto fight_cleanup_slot_loop
 *set combat_player_keyed false
 *set combat_player_creature false
 *set combat_player_actions_max 1
@@ -309,18 +513,21 @@
 *set combat_enemy_hp_override 999
 *set combat_enemy_ac_override 999
 *set combat_enemy_atk_override 999
-*set combat_enemy2_hp_override 999
-*set combat_enemy2_ac_override 999
-*set combat_enemy2_atk_override 999
-*set combat_enemy3_hp_override 999
-*set combat_enemy3_ac_override 999
-*set combat_enemy3_atk_override 999
-*comment Flavor state is per fight too. Each slot's library type, its per-slot hit/miss variables and the shared
-*comment player pool's variants 6-8 are cleared here: a library slot treats any non-empty per-slot line as a
+*comment Bare slot-1 ability scores, same opt-in reset as the numbered slots above.
+*set combat_enemy_strength 10
+*set combat_enemy_dexterity 10
+*set combat_enemy_constitution 10
+*set combat_enemy_intelligence 10
+*set combat_enemy_wisdom 10
+*set combat_enemy_charisma 10
+*set combat_enemy_strength_override 0
+*set combat_enemy_dexterity_override 0
+*set combat_enemy_constitution_override 0
+*set combat_enemy_intelligence_override 0
+*set combat_enemy_wisdom_override 0
+*set combat_enemy_charisma_override 0
+*comment The shared default pool (no slot number): a library slot treats any non-empty PER-SLOT line above as a
 *comment local-color override, and a hand-authored fight would otherwise draw variants 6-8 from the last fight.
-*set combat_enemy1_flavor_type ""
-*set combat_enemy2_flavor_type ""
-*set combat_enemy3_flavor_type ""
 *set combat_flavor_enemy_hit_1 ""
 *set combat_flavor_enemy_hit_2 ""
 *set combat_flavor_enemy_hit_3 ""
@@ -331,26 +538,6 @@
 *set combat_flavor_enemy_miss_3 ""
 *set combat_flavor_enemy_miss_4 ""
 *set combat_flavor_enemy_miss_5 ""
-*set combat_flavor_enemy2_hit_1 ""
-*set combat_flavor_enemy2_hit_2 ""
-*set combat_flavor_enemy2_hit_3 ""
-*set combat_flavor_enemy2_hit_4 ""
-*set combat_flavor_enemy2_hit_5 ""
-*set combat_flavor_enemy2_miss_1 ""
-*set combat_flavor_enemy2_miss_2 ""
-*set combat_flavor_enemy2_miss_3 ""
-*set combat_flavor_enemy2_miss_4 ""
-*set combat_flavor_enemy2_miss_5 ""
-*set combat_flavor_enemy3_hit_1 ""
-*set combat_flavor_enemy3_hit_2 ""
-*set combat_flavor_enemy3_hit_3 ""
-*set combat_flavor_enemy3_hit_4 ""
-*set combat_flavor_enemy3_hit_5 ""
-*set combat_flavor_enemy3_miss_1 ""
-*set combat_flavor_enemy3_miss_2 ""
-*set combat_flavor_enemy3_miss_3 ""
-*set combat_flavor_enemy3_miss_4 ""
-*set combat_flavor_enemy3_miss_5 ""
 *set combat_flavor_weapon_hit_6 ""
 *set combat_flavor_weapon_hit_7 ""
 *set combat_flavor_weapon_hit_8 ""
@@ -367,6 +554,12 @@
 *comment single-enemy encounter defaults to slot 1 only via combat_enemy_count.
 *set combat_enemy_count 1
 *set combat_active_target 1
+*comment Turn order (2026-09-27): fight_setup already resets these fresh at the start of every fight, so this is
+*comment a defensive backstop, not the real guarantee -- matching how the hp/ac/atk overrides above are reset in
+*comment two places for the same reason.
+*set combat_current_turn_index 0
+*set combat_turn_needs_advance false
+*set combat_turn_advanced_this_page false
 *return
 
 *comment ──────────────────────────────────────────────────────────────
@@ -383,132 +576,80 @@
 *comment ──────────────────────────────────────────────────────────────
 
 *label fight_sync_target_in
-*if (combat_active_target = 1)
-  *set combat_enemy_name combat_enemy1_name
-  *set combat_enemy_hp combat_enemy1_hp
-  *set combat_enemy_max_hp combat_enemy1_max_hp
-  *set combat_enemy_ac combat_enemy1_ac
-  *set combat_enemy_atk_bonus combat_enemy1_atk_bonus
-  *set combat_enemy_dmg_dice_sides combat_enemy1_dmg_dice_sides
-  *set combat_enemy_dmg_bonus combat_enemy1_dmg_bonus
-  *set combat_enemy_epithet combat_enemy1_epithet
-  *set combat_enemy_metal_armor combat_enemy1_metal_armor
-  *set combat_enemy_dmg_type combat_enemy1_dmg_type
-  *set combat_enemy_inflicts_condition combat_enemy1_inflicts_condition
-  *set combat_enemy_condition_name combat_enemy1_condition_name
-  *set combat_enemy_condition_icon combat_enemy1_condition_icon
-  *set combat_enemy_inflicts_stun combat_enemy1_inflicts_stun
-  *set combat_enemy_stun_name combat_enemy1_stun_name
-  *set combat_enemy_stun_icon combat_enemy1_stun_icon
-  *set combat_enemy_move2_chance combat_enemy1_move2_chance
-  *set combat_enemy_move2_atk_bonus combat_enemy1_move2_atk_bonus
-  *set combat_enemy_move2_dmg_dice_sides combat_enemy1_move2_dmg_dice_sides
-  *set combat_enemy_move2_dmg_bonus combat_enemy1_move2_dmg_bonus
-  *set combat_enemy_move2_dmg_type combat_enemy1_move2_dmg_type
-  *set combat_enemy_move2_inflicts_condition combat_enemy1_move2_inflicts_condition
-  *set combat_enemy_move2_condition_name combat_enemy1_move2_condition_name
-  *set combat_enemy_move2_condition_icon combat_enemy1_move2_condition_icon
-  *set combat_enemy_resist_type_1 combat_enemy1_resist_type_1
-  *set combat_enemy_resist_type_2 combat_enemy1_resist_type_2
-  *set combat_enemy_vulnerable_type_1 combat_enemy1_vulnerable_type_1
-  *set combat_enemy_vulnerable_type_2 combat_enemy1_vulnerable_type_2
-*if (combat_active_target = 2)
-  *set combat_enemy_name combat_enemy2_name
-  *set combat_enemy_hp combat_enemy2_hp
-  *set combat_enemy_max_hp combat_enemy2_max_hp
-  *set combat_enemy_ac combat_enemy2_ac
-  *set combat_enemy_atk_bonus combat_enemy2_atk_bonus
-  *set combat_enemy_dmg_dice_sides combat_enemy2_dmg_dice_sides
-  *set combat_enemy_dmg_bonus combat_enemy2_dmg_bonus
-  *set combat_enemy_epithet combat_enemy2_epithet
-  *set combat_enemy_metal_armor combat_enemy2_metal_armor
-  *set combat_enemy_dmg_type combat_enemy2_dmg_type
-  *set combat_enemy_inflicts_condition combat_enemy2_inflicts_condition
-  *set combat_enemy_condition_name combat_enemy2_condition_name
-  *set combat_enemy_condition_icon combat_enemy2_condition_icon
-  *set combat_enemy_inflicts_stun combat_enemy2_inflicts_stun
-  *set combat_enemy_stun_name combat_enemy2_stun_name
-  *set combat_enemy_stun_icon combat_enemy2_stun_icon
-  *set combat_enemy_move2_chance combat_enemy2_move2_chance
-  *set combat_enemy_move2_atk_bonus combat_enemy2_move2_atk_bonus
-  *set combat_enemy_move2_dmg_dice_sides combat_enemy2_move2_dmg_dice_sides
-  *set combat_enemy_move2_dmg_bonus combat_enemy2_move2_dmg_bonus
-  *set combat_enemy_move2_dmg_type combat_enemy2_move2_dmg_type
-  *set combat_enemy_move2_inflicts_condition combat_enemy2_move2_inflicts_condition
-  *set combat_enemy_move2_condition_name combat_enemy2_move2_condition_name
-  *set combat_enemy_move2_condition_icon combat_enemy2_move2_condition_icon
-  *set combat_enemy_resist_type_1 combat_enemy2_resist_type_1
-  *set combat_enemy_resist_type_2 combat_enemy2_resist_type_2
-  *set combat_enemy_vulnerable_type_1 combat_enemy2_vulnerable_type_1
-  *set combat_enemy_vulnerable_type_2 combat_enemy2_vulnerable_type_2
-*if (combat_active_target = 3)
-  *set combat_enemy_name combat_enemy3_name
-  *set combat_enemy_hp combat_enemy3_hp
-  *set combat_enemy_max_hp combat_enemy3_max_hp
-  *set combat_enemy_ac combat_enemy3_ac
-  *set combat_enemy_atk_bonus combat_enemy3_atk_bonus
-  *set combat_enemy_dmg_dice_sides combat_enemy3_dmg_dice_sides
-  *set combat_enemy_dmg_bonus combat_enemy3_dmg_bonus
-  *set combat_enemy_epithet combat_enemy3_epithet
-  *set combat_enemy_metal_armor combat_enemy3_metal_armor
-  *set combat_enemy_dmg_type combat_enemy3_dmg_type
-  *set combat_enemy_inflicts_condition combat_enemy3_inflicts_condition
-  *set combat_enemy_condition_name combat_enemy3_condition_name
-  *set combat_enemy_condition_icon combat_enemy3_condition_icon
-  *set combat_enemy_inflicts_stun combat_enemy3_inflicts_stun
-  *set combat_enemy_stun_name combat_enemy3_stun_name
-  *set combat_enemy_stun_icon combat_enemy3_stun_icon
-  *set combat_enemy_move2_chance combat_enemy3_move2_chance
-  *set combat_enemy_move2_atk_bonus combat_enemy3_move2_atk_bonus
-  *set combat_enemy_move2_dmg_dice_sides combat_enemy3_move2_dmg_dice_sides
-  *set combat_enemy_move2_dmg_bonus combat_enemy3_move2_dmg_bonus
-  *set combat_enemy_move2_dmg_type combat_enemy3_move2_dmg_type
-  *set combat_enemy_move2_inflicts_condition combat_enemy3_move2_inflicts_condition
-  *set combat_enemy_move2_condition_name combat_enemy3_move2_condition_name
-  *set combat_enemy_move2_condition_icon combat_enemy3_move2_condition_icon
-  *set combat_enemy_resist_type_1 combat_enemy3_resist_type_1
-  *set combat_enemy_resist_type_2 combat_enemy3_resist_type_2
-  *set combat_enemy_vulnerable_type_1 combat_enemy3_vulnerable_type_1
-  *set combat_enemy_vulnerable_type_2 combat_enemy3_vulnerable_type_2
+*comment Generic over any slot via combat_active_target and {}-name indirection instead of one hand-written
+*comment branch per slot. Widening combat_enemy_slot_cap needs no change here.
+*temp fti_p (("combat_enemy" & combat_active_target) & "_")
+*set combat_enemy_name {(fti_p & "name")}
+*set combat_enemy_hp {(fti_p & "hp")}
+*set combat_enemy_max_hp {(fti_p & "max_hp")}
+*set combat_enemy_ac {(fti_p & "ac")}
+*set combat_enemy_atk_bonus {(fti_p & "atk_bonus")}
+*set combat_enemy_dmg_dice_sides {(fti_p & "dmg_dice_sides")}
+*set combat_enemy_dmg_bonus {(fti_p & "dmg_bonus")}
+*set combat_enemy_epithet {(fti_p & "epithet")}
+*set combat_enemy_metal_armor {(fti_p & "metal_armor")}
+*set combat_enemy_dmg_type {(fti_p & "dmg_type")}
+*set combat_enemy_weapon_type {(fti_p & "weapon_type")}
+*set combat_enemy_inflicts_condition {(fti_p & "inflicts_condition")}
+*set combat_enemy_condition_name {(fti_p & "condition_name")}
+*set combat_enemy_condition_icon {(fti_p & "condition_icon")}
+*set combat_enemy_inflicts_stun {(fti_p & "inflicts_stun")}
+*set combat_enemy_stun_name {(fti_p & "stun_name")}
+*set combat_enemy_stun_icon {(fti_p & "stun_icon")}
+*set combat_enemy_move2_chance {(fti_p & "move2_chance")}
+*set combat_enemy_move2_atk_bonus {(fti_p & "move2_atk_bonus")}
+*set combat_enemy_move2_dmg_dice_sides {(fti_p & "move2_dmg_dice_sides")}
+*set combat_enemy_move2_dmg_bonus {(fti_p & "move2_dmg_bonus")}
+*set combat_enemy_move2_dmg_type {(fti_p & "move2_dmg_type")}
+*set combat_enemy_move2_inflicts_condition {(fti_p & "move2_inflicts_condition")}
+*set combat_enemy_move2_condition_name {(fti_p & "move2_condition_name")}
+*set combat_enemy_move2_condition_icon {(fti_p & "move2_condition_icon")}
+*set combat_enemy_resist_type_1 {(fti_p & "resist_type_1")}
+*set combat_enemy_resist_type_2 {(fti_p & "resist_type_2")}
+*set combat_enemy_vulnerable_type_1 {(fti_p & "vulnerable_type_1")}
+*set combat_enemy_vulnerable_type_2 {(fti_p & "vulnerable_type_2")}
+*comment Ability scores (2026-09-27): synced in like every other field above, so a future saving-throw check can
+*comment just read the bare combat_enemy_<score> for whichever slot is currently active, same as HP/AC/atk_bonus.
+*set combat_enemy_strength {(fti_p & "strength")}
+*set combat_enemy_dexterity {(fti_p & "dexterity")}
+*set combat_enemy_constitution {(fti_p & "constitution")}
+*set combat_enemy_intelligence {(fti_p & "intelligence")}
+*set combat_enemy_wisdom {(fti_p & "wisdom")}
+*set combat_enemy_charisma {(fti_p & "charisma")}
 *return
 
 *label fight_sync_target_out
-*if (combat_active_target = 1)
-  *set combat_enemy1_hp combat_enemy_hp
-*if (combat_active_target = 2)
-  *set combat_enemy2_hp combat_enemy_hp
-*if (combat_active_target = 3)
-  *set combat_enemy3_hp combat_enemy_hp
+*set {(("combat_enemy" & combat_active_target) & "_hp")} combat_enemy_hp
 *return
 
 *label fight_pick_target
-*comment First living slot, in order 1/2/3 -- a group is always fought
-*comment down roughly front-to-back, never picks a dead slot back up.
+*comment First living slot, in ascending order -- a group is always fought down roughly front-to-back, never
+*comment picks a dead slot back up. A bounded loop over combat_enemy_count, via indirection, instead of one
+*comment hand-written branch per slot.
 *set combat_active_target 0
-*if (combat_enemy1_hp > 0)
-  *set combat_active_target 1
-*if (combat_active_target = 0)
-  *if (combat_enemy_count >= 2)
-    *if (combat_enemy2_hp > 0)
-      *set combat_active_target 2
-*if (combat_active_target = 0)
-  *if (combat_enemy_count >= 3)
-    *if (combat_enemy3_hp > 0)
-      *set combat_active_target 3
+*temp fpt_i 1
+*label fight_pick_target_loop
+*if ((fpt_i <= combat_enemy_count) and (combat_active_target = 0))
+  *temp fpt_hp {(("combat_enemy" & fpt_i) & "_hp")}
+  *if (fpt_hp > 0)
+    *set combat_active_target fpt_i
+  *set fpt_i + 1
+  *goto fight_pick_target_loop
 *if (combat_active_target > 0)
   *gosub fight_sync_target_in
 *return
 
 *label fight_check_all_dead
+*comment A bounded loop over combat_enemy_count, via indirection, instead of one hand-written branch per slot.
 *set combat_all_enemies_dead true
-*if (combat_enemy1_hp > 0)
-  *set combat_all_enemies_dead false
-*if (combat_enemy_count >= 2)
-  *if (combat_enemy2_hp > 0)
+*temp fcd_i 1
+*label fight_check_all_dead_loop
+*if (fcd_i <= combat_enemy_count)
+  *temp fcd_hp {(("combat_enemy" & fcd_i) & "_hp")}
+  *if (fcd_hp > 0)
     *set combat_all_enemies_dead false
-*if (combat_enemy_count >= 3)
-  *if (combat_enemy3_hp > 0)
-    *set combat_all_enemies_dead false
+  *set fcd_i + 1
+  *goto fight_check_all_dead_loop
 *return
 
 *label fight_victory
@@ -603,11 +744,13 @@
 
 *label fight_action_spent
 *comment Every option that costs an action ends here (damage actions arrive through fight_check_enemy_hp). Another action left means the
-*comment player acts again this round; none left means the enemies answer.
+*comment player acts again this round; none left means their turn is over -- combat_next_turn advances the queue
+*comment to whoever's next (an enemy, or straight to a new round if the player was last in the order).
 *gosub combat_spend_action
 *if (combat_player_actions_left > 0)
   *goto fight_round_hub
-*goto fight_enemy_turn
+*set combat_turn_advanced_this_page false
+*goto combat_next_turn
 
 *label fight_bonus_spent
 *gosub combat_spend_bonus
@@ -618,6 +761,14 @@
 *comment ──────────────────────────────────────────────────────────────
 
 *label fight_round_hub
+*comment fight_setup sets combat_turn_needs_advance true, so THIS *goto fight_round_hub (every fight_<name>
+*comment label already ends with one after *gosub fight_setup, unedited) is the fight's very first dispatch --
+*comment through the queue, not straight to the player, since an enemy might win initiative and act first. Every
+*comment OTHER re-entry (a bonus/extra action, or the hub reopening because the player still has more to do this
+*comment turn) leaves the flag false and falls straight through to the banner below, exactly as before.
+*if (combat_turn_needs_advance)
+  *set combat_turn_needs_advance false
+  *goto combat_next_turn
 *comment (combat_enemy_disadvantage is cleared by combat_begin_round, once per round, not here: the hub is entered again
 *comment after a bonus action or an extra action, and that must not undo a Ray of Frost cast earlier in the same round.)
 
@@ -641,6 +792,15 @@
   *if (combat_enemy_count >= 3)
     [b][${combat_enemy3_name}: HP ${combat_enemy3_hp}/${combat_enemy3_max_hp}@{(combat_enemy3_hp <= 0)  (Down)|} (AC ${combat_enemy3_ac})][/b]
     *line_break
+  *if (combat_enemy_count >= 4)
+    [b][${combat_enemy4_name}: HP ${combat_enemy4_hp}/${combat_enemy4_max_hp}@{(combat_enemy4_hp <= 0)  (Down)|} (AC ${combat_enemy4_ac})][/b]
+    *line_break
+  *if (combat_enemy_count >= 5)
+    [b][${combat_enemy5_name}: HP ${combat_enemy5_hp}/${combat_enemy5_max_hp}@{(combat_enemy5_hp <= 0)  (Down)|} (AC ${combat_enemy5_ac})][/b]
+    *line_break
+  *if (combat_enemy_count >= 6)
+    [b][${combat_enemy6_name}: HP ${combat_enemy6_hp}/${combat_enemy6_max_hp}@{(combat_enemy6_hp <= 0)  (Down)|} (AC ${combat_enemy6_ac})][/b]
+    *line_break
   [b][You: HP ${hp_current}/${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|} (AC ${armor_class})][/b]
 *if (shield_armed)
   *line_break
@@ -662,7 +822,8 @@
   *set player_stunned false
   *line_break
   [b][${combat_enemy_stun_icon} ${combat_enemy_stun_name} — you lose this turn, still reeling from the blow.][/b]
-  *goto fight_enemy_turn
+  *set combat_turn_advanced_this_page true
+  *goto combat_next_turn
 
 *comment Items: cu_any is true when the satchel holds anything usable mid-fight (generated from the catalog).
 *temp cu_any false
@@ -1131,7 +1292,7 @@ ${use_text}
 *goto fight_action_spent
 
 *label fight_narrate_enemy_turn
-*comment Called once per attacking slot from fight_enemy_turn below, with
+*comment Called once per attacking slot from combat_next_turn below, with
 *comment combat_active_target/combat_enemy_* already synced to that slot
 *comment and resolve_enemy_attack already resolved against it.
 *comment Two sources of hit/miss prose:
@@ -1147,12 +1308,13 @@ ${use_text}
 *temp fnet_type ""
 *temp fnet_m2h ""
 *temp fnet_m2m ""
-*if (combat_active_target = 1)
-  *set fnet_type combat_enemy1_flavor_type
-*if (combat_active_target = 2)
-  *set fnet_type combat_enemy2_flavor_type
-*if (combat_active_target = 3)
-  *set fnet_type combat_enemy3_flavor_type
+*comment Generic over any slot via combat_active_target and {}-name indirection instead of one hand-written
+*comment branch per slot. Two DIFFERENT name prefixes matter here and must not be confused: the stat-field
+*comment prefix ("combat_enemy2_...", for _flavor_type) and the flavor-override prefix ("combat_flavor_enemy2_...",
+*comment for _hit_N/_miss_N/_move2_hit/_move2_miss) are not the same string.
+*temp fnet_ep (("combat_enemy" & combat_active_target) & "_")
+*temp fnet_fp (("combat_flavor_enemy" & combat_active_target) & "_")
+*set fnet_type {(fnet_ep & "flavor_type")}
 *if (fnet_type = "")
   *rand fnet_v 1 5
 *else
@@ -1162,45 +1324,32 @@ ${use_text}
   *rand fft_m2 1 3
   *gosub flavor_from_type
 *temp fnet_use_override false
-*if ((combat_active_target = 2) and (not(combat_flavor_enemy2_hit_1 = "")))
-  *set fnet_use_override true
-*if ((combat_active_target = 3) and (not(combat_flavor_enemy3_hit_1 = "")))
-  *set fnet_use_override true
+*comment Nested, not a compound "and": ChoiceScript evaluates both sides of "and" unconditionally (no short-circuit),
+*comment so an inline {} indirection read on the wrong side of one would look up combat_flavor_enemy1_hit_1 (which
+*comment does not exist -- slot 1 uses the bare, unnumbered pool) every time slot 1 is active, not just when the
+*comment slot-2-and-beyond branch is actually taken.
+*if (combat_active_target > 1)
+  *if (not({(fnet_fp & "hit_1")} = ""))
+    *set fnet_use_override true
 *if ((combat_active_target > 1) and (not(fnet_type = "")))
   *set fnet_use_override true
 *if (fnet_use_override)
-  *if (combat_active_target = 2)
+  *if (combat_active_target > 1)
     *if (fnet_v = 1)
-      *set fnet_hit combat_flavor_enemy2_hit_1
-      *set fnet_miss combat_flavor_enemy2_miss_1
+      *set fnet_hit {(fnet_fp & "hit_1")}
+      *set fnet_miss {(fnet_fp & "miss_1")}
     *if (fnet_v = 2)
-      *set fnet_hit combat_flavor_enemy2_hit_2
-      *set fnet_miss combat_flavor_enemy2_miss_2
+      *set fnet_hit {(fnet_fp & "hit_2")}
+      *set fnet_miss {(fnet_fp & "miss_2")}
     *if (fnet_v = 3)
-      *set fnet_hit combat_flavor_enemy2_hit_3
-      *set fnet_miss combat_flavor_enemy2_miss_3
+      *set fnet_hit {(fnet_fp & "hit_3")}
+      *set fnet_miss {(fnet_fp & "miss_3")}
     *if (fnet_v = 4)
-      *set fnet_hit combat_flavor_enemy2_hit_4
-      *set fnet_miss combat_flavor_enemy2_miss_4
+      *set fnet_hit {(fnet_fp & "hit_4")}
+      *set fnet_miss {(fnet_fp & "miss_4")}
     *if (fnet_v = 5)
-      *set fnet_hit combat_flavor_enemy2_hit_5
-      *set fnet_miss combat_flavor_enemy2_miss_5
-  *if (combat_active_target = 3)
-    *if (fnet_v = 1)
-      *set fnet_hit combat_flavor_enemy3_hit_1
-      *set fnet_miss combat_flavor_enemy3_miss_1
-    *if (fnet_v = 2)
-      *set fnet_hit combat_flavor_enemy3_hit_2
-      *set fnet_miss combat_flavor_enemy3_miss_2
-    *if (fnet_v = 3)
-      *set fnet_hit combat_flavor_enemy3_hit_3
-      *set fnet_miss combat_flavor_enemy3_miss_3
-    *if (fnet_v = 4)
-      *set fnet_hit combat_flavor_enemy3_hit_4
-      *set fnet_miss combat_flavor_enemy3_miss_4
-    *if (fnet_v = 5)
-      *set fnet_hit combat_flavor_enemy3_hit_5
-      *set fnet_miss combat_flavor_enemy3_miss_5
+      *set fnet_hit {(fnet_fp & "hit_5")}
+      *set fnet_miss {(fnet_fp & "miss_5")}
 *else
   *if (fnet_v = 1)
     *set fnet_hit combat_flavor_enemy_hit_1
@@ -1221,35 +1370,26 @@ ${use_text}
   *if (not(fnet_type = ""))
     *set fnet_hit fft_hit
   *elseif (fnet_use_override)
-    *if (combat_active_target = 2)
-      *set fnet_hit combat_flavor_enemy2_hit_1
-    *if (combat_active_target = 3)
-      *set fnet_hit combat_flavor_enemy3_hit_1
+    *set fnet_hit {(fnet_fp & "hit_1")}
   *else
     *set fnet_hit combat_flavor_enemy_hit_1
 *if (fnet_miss = "")
   *if (not(fnet_type = ""))
     *set fnet_miss fft_miss
   *elseif (fnet_use_override)
-    *if (combat_active_target = 2)
-      *set fnet_miss combat_flavor_enemy2_miss_1
-    *if (combat_active_target = 3)
-      *set fnet_miss combat_flavor_enemy3_miss_1
+    *set fnet_miss {(fnet_fp & "miss_1")}
   *else
     *set fnet_miss combat_flavor_enemy_miss_1
 *comment Movepool override -- move 2 gets its own line instead of the variant pool above, since it fires far less
 *comment often per fight. A library slot draws one of three pairs from flavor_from_type; a per-slot
 *comment combat_flavor_enemy*_move2_hit/miss (set by a hand-authored fight, or as local color) replaces it. Picked
 *comment per-slot, same as the base hit/miss override earlier in this label, so a mixed fight's third enemy
-*comment uses its own move2 text and never the Guards' (slot 1/2, no movepool -- combat_enemy_move2_used stays
-*comment false for them and this whole block is skipped).
+*comment uses its own move2 text and never an earlier slot's (a slot with no movepool -- combat_enemy_move2_used
+*comment stays false for it -- skips this whole block).
 *if (combat_enemy_move2_used)
-  *if (combat_active_target = 2)
-    *set fnet_m2h combat_flavor_enemy2_move2_hit
-    *set fnet_m2m combat_flavor_enemy2_move2_miss
-  *elseif (combat_active_target = 3)
-    *set fnet_m2h combat_flavor_enemy3_move2_hit
-    *set fnet_m2m combat_flavor_enemy3_move2_miss
+  *if (combat_active_target > 1)
+    *set fnet_m2h {(fnet_fp & "move2_hit")}
+    *set fnet_m2m {(fnet_fp & "move2_miss")}
   *else
     *set fnet_m2h combat_flavor_enemy_move2_hit
     *set fnet_m2m combat_flavor_enemy_move2_miss
@@ -1309,6 +1449,84 @@ ${use_text}
     *line_break
     [b][💨 ${combat_enemy_name} Misses][/b]
 *gosub fight_sync_target_out
+*return
+
+*label fight_narrate_ally_attack
+*comment PLACEHOLDER (2026-09-27, step 2 of the turn-order rebuild; generalized the same day to work in EITHER
+*comment direction) -- narrates one attack between an ally and an enemy, whichever side is attacking. Nothing
+*comment calls this yet in either direction: no ally AI picks a move, no turn queue exists, and no enemy targeting
+*comment logic can choose an ally over the player (combat_ally_count stays 0 in every real fight), so this is
+*comment future-facing plumbing only, exercised by a synthetic test, not real content. Deliberately generic prose
+*comment since no actual ally exists in the game yet to give this its own voice -- revisit the wording once one
+*comment does. Both sides are named purely by epithet, third person throughout, so the SAME text already works
+*comment for either direction -- only which prefix is "attacker" and which is "defender" changes; this is why the
+*comment fix for "we have no enemy-attacks-ally prose" wasn't a mirrored second label, just this generalization.
+*comment (The existing enemy-attacks-PLAYER prose, flavor_type_swordsman etc., can't be reused the same way --
+*comment it's hardcoded second-person, "your shoulder", which only makes sense when the player is the target.)
+*comment Params: attacker's kind ("ally"/"enemy") and slot, defender's kind and slot, and whether the attack hit.
+*comment Pure narration -- no HP/damage is applied here; that's the caller's job once attack resolution exists
+*comment for this direction.
+*comment The five variants per pool are built HERE, fresh, with ${} resolved against the just-synced epithets below
+*comment -- not stored as a *set string elsewhere and reused, because a stored string's ${} tokens resolve at that
+*comment *set (immediately), not later when the string is finally printed. Confirmed the hard way: an earlier draft
+*comment stored these once in startup.txt and every line came out with the epithet baked in blank.
+*params fnaa_attacker_kind fnaa_attacker_slot fnaa_defender_kind fnaa_defender_slot fnaa_hit
+*temp fnaa_ap ((("combat_" & fnaa_attacker_kind) & fnaa_attacker_slot) & "_")
+*set combat_attacker_name {(fnaa_ap & "name")}
+*set combat_attacker_epithet {(fnaa_ap & "epithet")}
+*temp fnaa_ranged ({(fnaa_ap & "weapon_type")} = "ranged")
+*temp fnaa_dp ((("combat_" & fnaa_defender_kind) & fnaa_defender_slot) & "_")
+*set combat_defender_name {(fnaa_dp & "name")}
+*set combat_defender_epithet {(fnaa_dp & "epithet")}
+*temp fnaa_v 1
+*rand fnaa_v 1 5
+*temp fnaa_line ""
+*if (fnaa_ranged)
+  *if (fnaa_v = 1)
+    *set fnaa_line "${combat_attacker_epithet} looses a shot that finds ${combat_defender_epithet}."
+  *if (fnaa_v = 2)
+    *set fnaa_line "A shot from ${combat_attacker_epithet} catches ${combat_defender_epithet} square on."
+  *if (fnaa_v = 3)
+    *set fnaa_line "${combat_attacker_epithet} puts a shot into ${combat_defender_epithet} from the flank."
+  *if (fnaa_v = 4)
+    *set fnaa_line "${combat_attacker_epithet} lets fly, and the shot lands true on ${combat_defender_epithet}."
+  *if (fnaa_v = 5)
+    *set fnaa_line "${combat_attacker_epithet}'s shot cuts through the din and strikes ${combat_defender_epithet}."
+  *if (not(fnaa_hit))
+    *if (fnaa_v = 1)
+      *set fnaa_line "${combat_attacker_epithet} looses a shot at ${combat_defender_epithet}, but it goes wide."
+    *if (fnaa_v = 2)
+      *set fnaa_line "${combat_attacker_epithet}'s shot sails past ${combat_defender_epithet} in the chaos."
+    *if (fnaa_v = 3)
+      *set fnaa_line "${combat_attacker_epithet} loses the shot as ${combat_defender_epithet} shifts clear."
+    *if (fnaa_v = 4)
+      *set fnaa_line "The shot from ${combat_attacker_epithet} clips nothing but air near ${combat_defender_epithet}."
+    *if (fnaa_v = 5)
+      *set fnaa_line "${combat_attacker_epithet} fires, but ${combat_defender_epithet} is already moving."
+*else
+  *if (fnaa_v = 1)
+    *set fnaa_line "${combat_attacker_epithet} closes in and lands a solid blow on ${combat_defender_epithet}."
+  *if (fnaa_v = 2)
+    *set fnaa_line "${combat_attacker_epithet} presses the attack, and the strike catches ${combat_defender_epithet} off guard."
+  *if (fnaa_v = 3)
+    *set fnaa_line "A quick exchange, and ${combat_attacker_epithet}'s blow connects, staggering ${combat_defender_epithet}."
+  *if (fnaa_v = 4)
+    *set fnaa_line "${combat_attacker_epithet} drives in past the guard, and the hit lands hard on ${combat_defender_epithet}."
+  *if (fnaa_v = 5)
+    *set fnaa_line "${combat_attacker_epithet} finds an opening, and the blow tells on ${combat_defender_epithet}."
+  *if (not(fnaa_hit))
+    *if (fnaa_v = 1)
+      *set fnaa_line "${combat_attacker_epithet} strikes at ${combat_defender_epithet}, but the blow is turned aside."
+    *if (fnaa_v = 2)
+      *set fnaa_line "${combat_attacker_epithet} presses in, but ${combat_defender_epithet} twists clear."
+    *if (fnaa_v = 3)
+      *set fnaa_line "${combat_attacker_epithet}'s attack goes wide of ${combat_defender_epithet}."
+    *if (fnaa_v = 4)
+      *set fnaa_line "${combat_attacker_epithet} overreaches, and ${combat_defender_epithet} slips the strike."
+    *if (fnaa_v = 5)
+      *set fnaa_line "${combat_attacker_epithet} can't find a way past ${combat_defender_epithet}'s guard this time."
+*line_break
+${fnaa_line}
 *return
 
 *label pick_weapon_flavor
@@ -2039,61 +2257,56 @@ ${use_text}
     *set combat_enemy_condition_icon combat_enemy_move2_condition_icon
 *return
 
-*label fight_enemy_turn
-*comment Each living slot gets one attack this round, order 1/2/3. A dead
-*comment slot's turn is skipped entirely -- no attack roll, no prose. This
-*comment collapses to the original single-enemy behavior automatically when
-*comment combat_enemy_count is 1 (the only value a single-enemy fight ever
-*comment sets), since the slot-2/3 blocks below never activate.
-*comment resolve_enemy_attack reads combat_active_target (set right below,
-*comment before each gosub) to know which of three independent per-slot
-*comment locks applies -- a single shared lock was tried first and broke on
-*comment refresh, since slot 2/3's attack this round would silently no-op
-*comment and just redisplay slot 1's stale roll/damage (see that label's
-*comment header comment in startup.txt).
-*if (combat_enemy1_hp > 0)
-  *set combat_active_target 1
-  *gosub fight_sync_target_in
-  *gosub fight_pick_enemy_move
-  *gosub_scene startup resolve_enemy_attack
-  *gosub fight_narrate_enemy_turn
-  *if (combat_player_can_die) and (hp_current <= 0)
-    *goto fight_player_died
-  *if (not(combat_player_can_die)) and (hp_current <= 1)
-    *goto fight_rescued
-*if (combat_enemy_count >= 2)
-  *if (combat_enemy2_hp > 0)
-    *set combat_active_target 2
+*label combat_next_turn
+*comment The turn queue's dispatcher (2026-09-27, step 5 of the turn-order rebuild), replacing fight_enemy_turn's
+*comment old all-enemies-at-once batch: walks combat_turn_kind_*/_slot_* (startup.txt) one combatant at a time,
+*comment in the order combat_roll_initiative built, instead of always running the player fully first and then
+*comment every enemy in slot order. A dead enemy slot, or an "ally" entry (no AI exists yet -- see the ally pool's
+*comment own step 2/3), is a silent no-op that just advances past it -- same observable behavior as a defeated
+*comment slot always having its turn skipped. Reached three ways: fight_setup's very first *goto fight_round_hub
+*comment (every fight_<name> label already ends with this, unedited -- see fight_round_hub's own preamble below),
+*comment fight_action_spent once the player's turn is truly over, and the player_stunned check in fight_round_hub
+*comment (the player's turn skipped outright).
+*comment Wrapping past the last position starts a new round exactly like the old batch's tail did: combat_round
+*comment + 1 (replay-locked, same lock as before) and combat_begin_round (refills the player's budget, clears
+*comment enemy disadvantage) -- now triggered by "the index wrapped" instead of "every enemy went," but it can
+*comment only ever fire once per page either way, since the loop always stops the instant it reaches the player.
+*comment combat_turn_advanced_this_page (set true the instant anything is actually narrated -- an enemy's attack,
+*comment or the player_stunned banner) gates the page_break right before the player's menu reappears, so a chain
+*comment that dispatches straight to the player with nothing having happened yet (round 1's first entry, most
+*comment commonly) reads with no break at all, exactly as it always did.
+*set combat_current_turn_index + 1
+*if (combat_current_turn_index > combat_turn_count)
+  *set combat_current_turn_index 1
+  *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+    *set combat_round + 1
+    *set stat_bump_locked true
+    *set locked_stat_bump_page_id page_id
+  *gosub combat_begin_round
+*temp cnt_kind {("combat_turn_kind_" & combat_current_turn_index)}
+*temp cnt_slot {("combat_turn_slot_" & combat_current_turn_index)}
+*if (cnt_kind = "player")
+  *gosub fight_pick_target
+  *if (combat_turn_advanced_this_page)
+    *page_break Hold your ground...
+  *goto fight_round_hub
+*if (cnt_kind = "enemy")
+  *temp cnt_hp {(("combat_enemy" & cnt_slot) & "_hp")}
+  *if (cnt_hp > 0)
+    *set combat_active_target cnt_slot
     *gosub fight_sync_target_in
     *gosub fight_pick_enemy_move
     *gosub_scene startup resolve_enemy_attack
     *gosub fight_narrate_enemy_turn
+    *set combat_turn_advanced_this_page true
     *if (combat_player_can_die) and (hp_current <= 0)
       *goto fight_player_died
     *if (not(combat_player_can_die)) and (hp_current <= 1)
       *goto fight_rescued
-*if (combat_enemy_count >= 3)
-  *if (combat_enemy3_hp > 0)
-    *set combat_active_target 3
-    *gosub fight_sync_target_in
-    *gosub fight_pick_enemy_move
-    *gosub_scene startup resolve_enemy_attack
-    *gosub fight_narrate_enemy_turn
-    *if (combat_player_can_die) and (hp_current <= 0)
-      *goto fight_player_died
-    *if (not(combat_player_can_die)) and (hp_current <= 1)
-      *goto fight_rescued
-*gosub fight_check_all_dead
-*if (combat_all_enemies_dead)
-  *goto fight_victory
-*gosub fight_pick_target
-*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-  *set combat_round + 1
-  *set stat_bump_locked true
-  *set locked_stat_bump_page_id page_id
-*gosub combat_begin_round
-*page_break Hold your ground...
-*goto fight_round_hub
+    *gosub fight_check_all_dead
+    *if (combat_all_enemies_dead)
+      *goto fight_victory
+*goto combat_next_turn
 
 *comment ══════════════════════════════════════════════════════════════
 *comment ENEMY TYPE LIBRARY
@@ -2174,31 +2387,24 @@ ${use_text}
   *gosub apply_type_beast
 *comment Which library type fills this slot. fight_narrate_enemy_turn reads the slot's hit, miss and move-2 prose from
 *comment flavor_from_type by this id, so each type's lines are written once (flavor_type_<name>), not once per slot.
+*comment Which library type fills this slot, for any slot, via indirection (fight_narrate_enemy_turn reads it
+*comment the same way to pick that slot's hit/miss prose from flavor_from_type).
+*set {(("combat_enemy" & combat_apply_slot) & "_flavor_type")} combat_apply_type
 *if (combat_apply_slot = 1)
-  *set combat_enemy1_flavor_type combat_apply_type
-*if (combat_apply_slot = 2)
-  *set combat_enemy2_flavor_type combat_apply_type
-*if (combat_apply_slot = 3)
-  *set combat_enemy3_flavor_type combat_apply_type
-*if (combat_apply_slot = 1)
-  *comment Slot 1's override is applied later, by fight_setup, once the
-  *comment calling fight_<name> label is done setting up every slot -- see
-  *comment combat_enemy_name_override's comment in startup.txt. Nothing to
-  *comment do here for slot 1.
-*if (combat_apply_slot = 2)
-  *if (not(combat_enemy2_name_override = ""))
-    *set combat_enemy2_name combat_enemy2_name_override
-    *set combat_enemy2_name_override ""
-  *if (not(combat_enemy2_epithet_override = ""))
-    *set combat_enemy2_epithet combat_enemy2_epithet_override
-    *set combat_enemy2_epithet_override ""
-*if (combat_apply_slot = 3)
-  *if (not(combat_enemy3_name_override = ""))
-    *set combat_enemy3_name combat_enemy3_name_override
-    *set combat_enemy3_name_override ""
-  *if (not(combat_enemy3_epithet_override = ""))
-    *set combat_enemy3_epithet combat_enemy3_epithet_override
-    *set combat_enemy3_epithet_override ""
+  *comment Slot 1's rename-override is applied later, by fight_setup, once the calling fight_<name> label is
+  *comment done setting up every slot -- see combat_enemy_name_override's comment in startup.txt. Nothing to do
+  *comment here for slot 1.
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-written branch per slot.
+  *temp aet_p (("combat_enemy" & combat_apply_slot) & "_")
+  *temp aet_name_ov {(aet_p & "name_override")}
+  *temp aet_epi_ov {(aet_p & "epithet_override")}
+  *if (not(aet_name_ov = ""))
+    *set {(aet_p & "name")} aet_name_ov
+    *set {(aet_p & "name_override")} ""
+  *if (not(aet_epi_ov = ""))
+    *set {(aet_p & "epithet")} aet_epi_ov
+    *set {(aet_p & "epithet_override")} ""
 *return
 
 *label apply_type_swordsman
@@ -2222,42 +2428,39 @@ ${use_text}
   *set combat_enemy_move2_inflicts_condition true
   *set combat_enemy_move2_condition_name "Off-Guard"
   *set combat_enemy_move2_condition_icon "🗡️"
-*if (combat_apply_slot = 2)
-  *set combat_enemy2_name "Swordsman"
-  *set combat_enemy2_hp 10
-  *set combat_enemy2_max_hp 10
-  *set combat_enemy2_ac 12
-  *set combat_enemy2_atk_bonus 3
-  *set combat_enemy2_dmg_dice_sides 6
-  *set combat_enemy2_dmg_bonus 1
-  *set combat_enemy2_epithet "the swordsman"
-  *set combat_enemy2_dmg_type "slashing"
-  *set combat_enemy2_move2_chance 30
-  *set combat_enemy2_move2_atk_bonus 2
-  *set combat_enemy2_move2_dmg_dice_sides 4
-  *set combat_enemy2_move2_dmg_bonus 0
-  *set combat_enemy2_move2_dmg_type "slashing"
-  *set combat_enemy2_move2_inflicts_condition true
-  *set combat_enemy2_move2_condition_name "Off-Guard"
-  *set combat_enemy2_move2_condition_icon "🗡️"
-*if (combat_apply_slot = 3)
-  *set combat_enemy3_name "Swordsman"
-  *set combat_enemy3_hp 10
-  *set combat_enemy3_max_hp 10
-  *set combat_enemy3_ac 12
-  *set combat_enemy3_atk_bonus 3
-  *set combat_enemy3_dmg_dice_sides 6
-  *set combat_enemy3_dmg_bonus 1
-  *set combat_enemy3_epithet "the swordsman"
-  *set combat_enemy3_dmg_type "slashing"
-  *set combat_enemy3_move2_chance 30
-  *set combat_enemy3_move2_atk_bonus 2
-  *set combat_enemy3_move2_dmg_dice_sides 4
-  *set combat_enemy3_move2_dmg_bonus 0
-  *set combat_enemy3_move2_dmg_type "slashing"
-  *set combat_enemy3_move2_inflicts_condition true
-  *set combat_enemy3_move2_condition_name "Off-Guard"
-  *set combat_enemy3_move2_condition_icon "🗡️"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 12 14
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 12 14
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 12 14
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 8 10
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 9 11
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
+  *comment (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Swordsman"
+  *set {(apt_p & "hp")} 10
+  *set {(apt_p & "max_hp")} 10
+  *set {(apt_p & "ac")} 12
+  *set {(apt_p & "atk_bonus")} 3
+  *set {(apt_p & "dmg_dice_sides")} 6
+  *set {(apt_p & "dmg_bonus")} 1
+  *set {(apt_p & "epithet")} "the swordsman"
+  *set {(apt_p & "dmg_type")} "slashing"
+  *set {(apt_p & "move2_chance")} 30
+  *set {(apt_p & "move2_atk_bonus")} 2
+  *set {(apt_p & "move2_dmg_dice_sides")} 4
+  *set {(apt_p & "move2_dmg_bonus")} 0
+  *set {(apt_p & "move2_dmg_type")} "slashing"
+  *set {(apt_p & "move2_inflicts_condition")} true
+  *set {(apt_p & "move2_condition_name")} "Off-Guard"
+  *set {(apt_p & "move2_condition_icon")} "🗡️"
+  *gosub apply_ability_score_range apt_p "strength" 12 14
+  *gosub apply_ability_score_range apt_p "dexterity" 12 14
+  *gosub apply_ability_score_range apt_p "constitution" 12 14
+  *gosub apply_ability_score_range apt_p "intelligence" 8 10
+  *gosub apply_ability_score_range apt_p "wisdom" 9 11
+  *gosub apply_ability_score_range apt_p "charisma" 8 10
 *return
 
 *label apply_type_axeman
@@ -2281,42 +2484,39 @@ ${use_text}
   *set combat_enemy_move2_inflicts_condition true
   *set combat_enemy_move2_condition_name "Bleeding"
   *set combat_enemy_move2_condition_icon "🩸"
-*if (combat_apply_slot = 2)
-  *set combat_enemy2_name "Axeman"
-  *set combat_enemy2_hp 10
-  *set combat_enemy2_max_hp 10
-  *set combat_enemy2_ac 11
-  *set combat_enemy2_atk_bonus 3
-  *set combat_enemy2_dmg_dice_sides 6
-  *set combat_enemy2_dmg_bonus 1
-  *set combat_enemy2_epithet "the axeman"
-  *set combat_enemy2_dmg_type "slashing"
-  *set combat_enemy2_move2_chance 30
-  *set combat_enemy2_move2_atk_bonus 2
-  *set combat_enemy2_move2_dmg_dice_sides 4
-  *set combat_enemy2_move2_dmg_bonus 0
-  *set combat_enemy2_move2_dmg_type "slashing"
-  *set combat_enemy2_move2_inflicts_condition true
-  *set combat_enemy2_move2_condition_name "Bleeding"
-  *set combat_enemy2_move2_condition_icon "🩸"
-*if (combat_apply_slot = 3)
-  *set combat_enemy3_name "Axeman"
-  *set combat_enemy3_hp 10
-  *set combat_enemy3_max_hp 10
-  *set combat_enemy3_ac 11
-  *set combat_enemy3_atk_bonus 3
-  *set combat_enemy3_dmg_dice_sides 6
-  *set combat_enemy3_dmg_bonus 1
-  *set combat_enemy3_epithet "the axeman"
-  *set combat_enemy3_dmg_type "slashing"
-  *set combat_enemy3_move2_chance 30
-  *set combat_enemy3_move2_atk_bonus 2
-  *set combat_enemy3_move2_dmg_dice_sides 4
-  *set combat_enemy3_move2_dmg_bonus 0
-  *set combat_enemy3_move2_dmg_type "slashing"
-  *set combat_enemy3_move2_inflicts_condition true
-  *set combat_enemy3_move2_condition_name "Bleeding"
-  *set combat_enemy3_move2_condition_icon "🩸"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 14 16
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 8 10
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 13 15
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 7 9
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 8 10
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
+  *comment (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Axeman"
+  *set {(apt_p & "hp")} 10
+  *set {(apt_p & "max_hp")} 10
+  *set {(apt_p & "ac")} 11
+  *set {(apt_p & "atk_bonus")} 3
+  *set {(apt_p & "dmg_dice_sides")} 6
+  *set {(apt_p & "dmg_bonus")} 1
+  *set {(apt_p & "epithet")} "the axeman"
+  *set {(apt_p & "dmg_type")} "slashing"
+  *set {(apt_p & "move2_chance")} 30
+  *set {(apt_p & "move2_atk_bonus")} 2
+  *set {(apt_p & "move2_dmg_dice_sides")} 4
+  *set {(apt_p & "move2_dmg_bonus")} 0
+  *set {(apt_p & "move2_dmg_type")} "slashing"
+  *set {(apt_p & "move2_inflicts_condition")} true
+  *set {(apt_p & "move2_condition_name")} "Bleeding"
+  *set {(apt_p & "move2_condition_icon")} "🩸"
+  *gosub apply_ability_score_range apt_p "strength" 14 16
+  *gosub apply_ability_score_range apt_p "dexterity" 8 10
+  *gosub apply_ability_score_range apt_p "constitution" 13 15
+  *gosub apply_ability_score_range apt_p "intelligence" 7 9
+  *gosub apply_ability_score_range apt_p "wisdom" 8 10
+  *gosub apply_ability_score_range apt_p "charisma" 8 10
 *return
 
 *label apply_type_knifeman
@@ -2340,42 +2540,39 @@ ${use_text}
   *set combat_enemy_move2_inflicts_condition true
   *set combat_enemy_move2_condition_name "Poisoned"
   *set combat_enemy_move2_condition_icon "🤢"
-*if (combat_apply_slot = 2)
-  *set combat_enemy2_name "Knifeman"
-  *set combat_enemy2_hp 10
-  *set combat_enemy2_max_hp 10
-  *set combat_enemy2_ac 11
-  *set combat_enemy2_atk_bonus 3
-  *set combat_enemy2_dmg_dice_sides 6
-  *set combat_enemy2_dmg_bonus 1
-  *set combat_enemy2_epithet "the knifeman"
-  *set combat_enemy2_dmg_type "piercing"
-  *set combat_enemy2_move2_chance 30
-  *set combat_enemy2_move2_atk_bonus 2
-  *set combat_enemy2_move2_dmg_dice_sides 4
-  *set combat_enemy2_move2_dmg_bonus 0
-  *set combat_enemy2_move2_dmg_type "piercing"
-  *set combat_enemy2_move2_inflicts_condition true
-  *set combat_enemy2_move2_condition_name "Poisoned"
-  *set combat_enemy2_move2_condition_icon "🤢"
-*if (combat_apply_slot = 3)
-  *set combat_enemy3_name "Knifeman"
-  *set combat_enemy3_hp 10
-  *set combat_enemy3_max_hp 10
-  *set combat_enemy3_ac 11
-  *set combat_enemy3_atk_bonus 3
-  *set combat_enemy3_dmg_dice_sides 6
-  *set combat_enemy3_dmg_bonus 1
-  *set combat_enemy3_epithet "the knifeman"
-  *set combat_enemy3_dmg_type "piercing"
-  *set combat_enemy3_move2_chance 30
-  *set combat_enemy3_move2_atk_bonus 2
-  *set combat_enemy3_move2_dmg_dice_sides 4
-  *set combat_enemy3_move2_dmg_bonus 0
-  *set combat_enemy3_move2_dmg_type "piercing"
-  *set combat_enemy3_move2_inflicts_condition true
-  *set combat_enemy3_move2_condition_name "Poisoned"
-  *set combat_enemy3_move2_condition_icon "🤢"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 9 11
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 14 16
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 10 12
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 8 10
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 9 11
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 9 11
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
+  *comment (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Knifeman"
+  *set {(apt_p & "hp")} 10
+  *set {(apt_p & "max_hp")} 10
+  *set {(apt_p & "ac")} 11
+  *set {(apt_p & "atk_bonus")} 3
+  *set {(apt_p & "dmg_dice_sides")} 6
+  *set {(apt_p & "dmg_bonus")} 1
+  *set {(apt_p & "epithet")} "the knifeman"
+  *set {(apt_p & "dmg_type")} "piercing"
+  *set {(apt_p & "move2_chance")} 30
+  *set {(apt_p & "move2_atk_bonus")} 2
+  *set {(apt_p & "move2_dmg_dice_sides")} 4
+  *set {(apt_p & "move2_dmg_bonus")} 0
+  *set {(apt_p & "move2_dmg_type")} "piercing"
+  *set {(apt_p & "move2_inflicts_condition")} true
+  *set {(apt_p & "move2_condition_name")} "Poisoned"
+  *set {(apt_p & "move2_condition_icon")} "🤢"
+  *gosub apply_ability_score_range apt_p "strength" 9 11
+  *gosub apply_ability_score_range apt_p "dexterity" 14 16
+  *gosub apply_ability_score_range apt_p "constitution" 10 12
+  *gosub apply_ability_score_range apt_p "intelligence" 8 10
+  *gosub apply_ability_score_range apt_p "wisdom" 9 11
+  *gosub apply_ability_score_range apt_p "charisma" 9 11
 *return
 
 *label apply_type_maceman
@@ -2399,42 +2596,39 @@ ${use_text}
   *set combat_enemy_move2_inflicts_condition true
   *set combat_enemy_move2_condition_name "Dazed"
   *set combat_enemy_move2_condition_icon "😵"
-*if (combat_apply_slot = 2)
-  *set combat_enemy2_name "Maceman"
-  *set combat_enemy2_hp 10
-  *set combat_enemy2_max_hp 10
-  *set combat_enemy2_ac 11
-  *set combat_enemy2_atk_bonus 3
-  *set combat_enemy2_dmg_dice_sides 6
-  *set combat_enemy2_dmg_bonus 1
-  *set combat_enemy2_epithet "the maceman"
-  *set combat_enemy2_dmg_type "bludgeoning"
-  *set combat_enemy2_move2_chance 30
-  *set combat_enemy2_move2_atk_bonus 2
-  *set combat_enemy2_move2_dmg_dice_sides 4
-  *set combat_enemy2_move2_dmg_bonus 0
-  *set combat_enemy2_move2_dmg_type "bludgeoning"
-  *set combat_enemy2_move2_inflicts_condition true
-  *set combat_enemy2_move2_condition_name "Dazed"
-  *set combat_enemy2_move2_condition_icon "😵"
-*if (combat_apply_slot = 3)
-  *set combat_enemy3_name "Maceman"
-  *set combat_enemy3_hp 10
-  *set combat_enemy3_max_hp 10
-  *set combat_enemy3_ac 11
-  *set combat_enemy3_atk_bonus 3
-  *set combat_enemy3_dmg_dice_sides 6
-  *set combat_enemy3_dmg_bonus 1
-  *set combat_enemy3_epithet "the maceman"
-  *set combat_enemy3_dmg_type "bludgeoning"
-  *set combat_enemy3_move2_chance 30
-  *set combat_enemy3_move2_atk_bonus 2
-  *set combat_enemy3_move2_dmg_dice_sides 4
-  *set combat_enemy3_move2_dmg_bonus 0
-  *set combat_enemy3_move2_dmg_type "bludgeoning"
-  *set combat_enemy3_move2_inflicts_condition true
-  *set combat_enemy3_move2_condition_name "Dazed"
-  *set combat_enemy3_move2_condition_icon "😵"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 14 16
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 8 10
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 13 15
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 7 9
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 8 10
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
+  *comment (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Maceman"
+  *set {(apt_p & "hp")} 10
+  *set {(apt_p & "max_hp")} 10
+  *set {(apt_p & "ac")} 11
+  *set {(apt_p & "atk_bonus")} 3
+  *set {(apt_p & "dmg_dice_sides")} 6
+  *set {(apt_p & "dmg_bonus")} 1
+  *set {(apt_p & "epithet")} "the maceman"
+  *set {(apt_p & "dmg_type")} "bludgeoning"
+  *set {(apt_p & "move2_chance")} 30
+  *set {(apt_p & "move2_atk_bonus")} 2
+  *set {(apt_p & "move2_dmg_dice_sides")} 4
+  *set {(apt_p & "move2_dmg_bonus")} 0
+  *set {(apt_p & "move2_dmg_type")} "bludgeoning"
+  *set {(apt_p & "move2_inflicts_condition")} true
+  *set {(apt_p & "move2_condition_name")} "Dazed"
+  *set {(apt_p & "move2_condition_icon")} "😵"
+  *gosub apply_ability_score_range apt_p "strength" 14 16
+  *gosub apply_ability_score_range apt_p "dexterity" 8 10
+  *gosub apply_ability_score_range apt_p "constitution" 13 15
+  *gosub apply_ability_score_range apt_p "intelligence" 7 9
+  *gosub apply_ability_score_range apt_p "wisdom" 8 10
+  *gosub apply_ability_score_range apt_p "charisma" 8 10
 *return
 
 *label apply_type_spearman
@@ -2458,42 +2652,39 @@ ${use_text}
   *set combat_enemy_move2_inflicts_condition true
   *set combat_enemy_move2_condition_name "Pinned"
   *set combat_enemy_move2_condition_icon "📌"
-*if (combat_apply_slot = 2)
-  *set combat_enemy2_name "Spearman"
-  *set combat_enemy2_hp 10
-  *set combat_enemy2_max_hp 10
-  *set combat_enemy2_ac 11
-  *set combat_enemy2_atk_bonus 3
-  *set combat_enemy2_dmg_dice_sides 6
-  *set combat_enemy2_dmg_bonus 1
-  *set combat_enemy2_epithet "the spearman"
-  *set combat_enemy2_dmg_type "piercing"
-  *set combat_enemy2_move2_chance 30
-  *set combat_enemy2_move2_atk_bonus 2
-  *set combat_enemy2_move2_dmg_dice_sides 4
-  *set combat_enemy2_move2_dmg_bonus 0
-  *set combat_enemy2_move2_dmg_type "piercing"
-  *set combat_enemy2_move2_inflicts_condition true
-  *set combat_enemy2_move2_condition_name "Pinned"
-  *set combat_enemy2_move2_condition_icon "📌"
-*if (combat_apply_slot = 3)
-  *set combat_enemy3_name "Spearman"
-  *set combat_enemy3_hp 10
-  *set combat_enemy3_max_hp 10
-  *set combat_enemy3_ac 11
-  *set combat_enemy3_atk_bonus 3
-  *set combat_enemy3_dmg_dice_sides 6
-  *set combat_enemy3_dmg_bonus 1
-  *set combat_enemy3_epithet "the spearman"
-  *set combat_enemy3_dmg_type "piercing"
-  *set combat_enemy3_move2_chance 30
-  *set combat_enemy3_move2_atk_bonus 2
-  *set combat_enemy3_move2_dmg_dice_sides 4
-  *set combat_enemy3_move2_dmg_bonus 0
-  *set combat_enemy3_move2_dmg_type "piercing"
-  *set combat_enemy3_move2_inflicts_condition true
-  *set combat_enemy3_move2_condition_name "Pinned"
-  *set combat_enemy3_move2_condition_icon "📌"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 12 14
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 11 13
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 12 14
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 8 10
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 10 12
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
+  *comment (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Spearman"
+  *set {(apt_p & "hp")} 10
+  *set {(apt_p & "max_hp")} 10
+  *set {(apt_p & "ac")} 11
+  *set {(apt_p & "atk_bonus")} 3
+  *set {(apt_p & "dmg_dice_sides")} 6
+  *set {(apt_p & "dmg_bonus")} 1
+  *set {(apt_p & "epithet")} "the spearman"
+  *set {(apt_p & "dmg_type")} "piercing"
+  *set {(apt_p & "move2_chance")} 30
+  *set {(apt_p & "move2_atk_bonus")} 2
+  *set {(apt_p & "move2_dmg_dice_sides")} 4
+  *set {(apt_p & "move2_dmg_bonus")} 0
+  *set {(apt_p & "move2_dmg_type")} "piercing"
+  *set {(apt_p & "move2_inflicts_condition")} true
+  *set {(apt_p & "move2_condition_name")} "Pinned"
+  *set {(apt_p & "move2_condition_icon")} "📌"
+  *gosub apply_ability_score_range apt_p "strength" 12 14
+  *gosub apply_ability_score_range apt_p "dexterity" 11 13
+  *gosub apply_ability_score_range apt_p "constitution" 12 14
+  *gosub apply_ability_score_range apt_p "intelligence" 8 10
+  *gosub apply_ability_score_range apt_p "wisdom" 10 12
+  *gosub apply_ability_score_range apt_p "charisma" 8 10
 *return
 
 *label apply_type_hookman
@@ -2517,42 +2708,39 @@ ${use_text}
   *set combat_enemy_move2_inflicts_condition true
   *set combat_enemy_move2_condition_name "Off-Balance"
   *set combat_enemy_move2_condition_icon "🌀"
-*if (combat_apply_slot = 2)
-  *set combat_enemy2_name "Hookman"
-  *set combat_enemy2_hp 10
-  *set combat_enemy2_max_hp 10
-  *set combat_enemy2_ac 11
-  *set combat_enemy2_atk_bonus 3
-  *set combat_enemy2_dmg_dice_sides 6
-  *set combat_enemy2_dmg_bonus 1
-  *set combat_enemy2_epithet "the hookman"
-  *set combat_enemy2_dmg_type "piercing"
-  *set combat_enemy2_move2_chance 30
-  *set combat_enemy2_move2_atk_bonus 2
-  *set combat_enemy2_move2_dmg_dice_sides 4
-  *set combat_enemy2_move2_dmg_bonus 0
-  *set combat_enemy2_move2_dmg_type "bludgeoning"
-  *set combat_enemy2_move2_inflicts_condition true
-  *set combat_enemy2_move2_condition_name "Off-Balance"
-  *set combat_enemy2_move2_condition_icon "🌀"
-*if (combat_apply_slot = 3)
-  *set combat_enemy3_name "Hookman"
-  *set combat_enemy3_hp 10
-  *set combat_enemy3_max_hp 10
-  *set combat_enemy3_ac 11
-  *set combat_enemy3_atk_bonus 3
-  *set combat_enemy3_dmg_dice_sides 6
-  *set combat_enemy3_dmg_bonus 1
-  *set combat_enemy3_epithet "the hookman"
-  *set combat_enemy3_dmg_type "piercing"
-  *set combat_enemy3_move2_chance 30
-  *set combat_enemy3_move2_atk_bonus 2
-  *set combat_enemy3_move2_dmg_dice_sides 4
-  *set combat_enemy3_move2_dmg_bonus 0
-  *set combat_enemy3_move2_dmg_type "bludgeoning"
-  *set combat_enemy3_move2_inflicts_condition true
-  *set combat_enemy3_move2_condition_name "Off-Balance"
-  *set combat_enemy3_move2_condition_icon "🌀"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 12 14
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 10 12
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 12 14
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 7 9
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 8 10
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
+  *comment (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Hookman"
+  *set {(apt_p & "hp")} 10
+  *set {(apt_p & "max_hp")} 10
+  *set {(apt_p & "ac")} 11
+  *set {(apt_p & "atk_bonus")} 3
+  *set {(apt_p & "dmg_dice_sides")} 6
+  *set {(apt_p & "dmg_bonus")} 1
+  *set {(apt_p & "epithet")} "the hookman"
+  *set {(apt_p & "dmg_type")} "piercing"
+  *set {(apt_p & "move2_chance")} 30
+  *set {(apt_p & "move2_atk_bonus")} 2
+  *set {(apt_p & "move2_dmg_dice_sides")} 4
+  *set {(apt_p & "move2_dmg_bonus")} 0
+  *set {(apt_p & "move2_dmg_type")} "bludgeoning"
+  *set {(apt_p & "move2_inflicts_condition")} true
+  *set {(apt_p & "move2_condition_name")} "Off-Balance"
+  *set {(apt_p & "move2_condition_icon")} "🌀"
+  *gosub apply_ability_score_range apt_p "strength" 12 14
+  *gosub apply_ability_score_range apt_p "dexterity" 10 12
+  *gosub apply_ability_score_range apt_p "constitution" 12 14
+  *gosub apply_ability_score_range apt_p "intelligence" 7 9
+  *gosub apply_ability_score_range apt_p "wisdom" 8 10
+  *gosub apply_ability_score_range apt_p "charisma" 8 10
 *return
 
 *label apply_type_archer
@@ -2568,6 +2756,7 @@ ${use_text}
   *set combat_enemy_dmg_bonus 0
   *set combat_enemy_epithet "the archer"
   *set combat_enemy_dmg_type "piercing"
+  *set combat_enemy_weapon_type "ranged"
   *set combat_enemy_move2_chance 25
   *set combat_enemy_move2_atk_bonus 2
   *set combat_enemy_move2_dmg_dice_sides 4
@@ -2576,42 +2765,40 @@ ${use_text}
   *set combat_enemy_move2_inflicts_condition true
   *set combat_enemy_move2_condition_name "Hobbled"
   *set combat_enemy_move2_condition_icon "🦵"
-*if (combat_apply_slot = 2)
-  *set combat_enemy2_name "Archer"
-  *set combat_enemy2_hp 7
-  *set combat_enemy2_max_hp 7
-  *set combat_enemy2_ac 10
-  *set combat_enemy2_atk_bonus 3
-  *set combat_enemy2_dmg_dice_sides 6
-  *set combat_enemy2_dmg_bonus 0
-  *set combat_enemy2_epithet "the archer"
-  *set combat_enemy2_dmg_type "piercing"
-  *set combat_enemy2_move2_chance 25
-  *set combat_enemy2_move2_atk_bonus 2
-  *set combat_enemy2_move2_dmg_dice_sides 4
-  *set combat_enemy2_move2_dmg_bonus 0
-  *set combat_enemy2_move2_dmg_type "piercing"
-  *set combat_enemy2_move2_inflicts_condition true
-  *set combat_enemy2_move2_condition_name "Hobbled"
-  *set combat_enemy2_move2_condition_icon "🦵"
-*if (combat_apply_slot = 3)
-  *set combat_enemy3_name "Archer"
-  *set combat_enemy3_hp 7
-  *set combat_enemy3_max_hp 7
-  *set combat_enemy3_ac 10
-  *set combat_enemy3_atk_bonus 3
-  *set combat_enemy3_dmg_dice_sides 6
-  *set combat_enemy3_dmg_bonus 0
-  *set combat_enemy3_epithet "the archer"
-  *set combat_enemy3_dmg_type "piercing"
-  *set combat_enemy3_move2_chance 25
-  *set combat_enemy3_move2_atk_bonus 2
-  *set combat_enemy3_move2_dmg_dice_sides 4
-  *set combat_enemy3_move2_dmg_bonus 0
-  *set combat_enemy3_move2_dmg_type "piercing"
-  *set combat_enemy3_move2_inflicts_condition true
-  *set combat_enemy3_move2_condition_name "Hobbled"
-  *set combat_enemy3_move2_condition_icon "🦵"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 9 11
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 15 16
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 10 12
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 9 11
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 11 13
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
+  *comment (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Archer"
+  *set {(apt_p & "hp")} 7
+  *set {(apt_p & "max_hp")} 7
+  *set {(apt_p & "ac")} 10
+  *set {(apt_p & "atk_bonus")} 3
+  *set {(apt_p & "dmg_dice_sides")} 6
+  *set {(apt_p & "dmg_bonus")} 0
+  *set {(apt_p & "epithet")} "the archer"
+  *set {(apt_p & "dmg_type")} "piercing"
+  *set {(apt_p & "weapon_type")} "ranged"
+  *set {(apt_p & "move2_chance")} 25
+  *set {(apt_p & "move2_atk_bonus")} 2
+  *set {(apt_p & "move2_dmg_dice_sides")} 4
+  *set {(apt_p & "move2_dmg_bonus")} 0
+  *set {(apt_p & "move2_dmg_type")} "piercing"
+  *set {(apt_p & "move2_inflicts_condition")} true
+  *set {(apt_p & "move2_condition_name")} "Hobbled"
+  *set {(apt_p & "move2_condition_icon")} "🦵"
+  *gosub apply_ability_score_range apt_p "strength" 9 11
+  *gosub apply_ability_score_range apt_p "dexterity" 15 16
+  *gosub apply_ability_score_range apt_p "constitution" 10 12
+  *gosub apply_ability_score_range apt_p "intelligence" 9 11
+  *gosub apply_ability_score_range apt_p "wisdom" 11 13
+  *gosub apply_ability_score_range apt_p "charisma" 8 10
 *return
 
 *label apply_type_slinger
@@ -2628,6 +2815,7 @@ ${use_text}
   *set combat_enemy_dmg_bonus 0
   *set combat_enemy_epithet "the slinger"
   *set combat_enemy_dmg_type "bludgeoning"
+  *set combat_enemy_weapon_type "ranged"
   *set combat_enemy_move2_chance 25
   *set combat_enemy_move2_atk_bonus 2
   *set combat_enemy_move2_dmg_dice_sides 2
@@ -2636,42 +2824,40 @@ ${use_text}
   *set combat_enemy_move2_inflicts_condition true
   *set combat_enemy_move2_condition_name "Blinded"
   *set combat_enemy_move2_condition_icon "🌫️"
-*if (combat_apply_slot = 2)
-  *set combat_enemy2_name "Slinger"
-  *set combat_enemy2_hp 6
-  *set combat_enemy2_max_hp 6
-  *set combat_enemy2_ac 10
-  *set combat_enemy2_atk_bonus 2
-  *set combat_enemy2_dmg_dice_sides 4
-  *set combat_enemy2_dmg_bonus 0
-  *set combat_enemy2_epithet "the slinger"
-  *set combat_enemy2_dmg_type "bludgeoning"
-  *set combat_enemy2_move2_chance 25
-  *set combat_enemy2_move2_atk_bonus 2
-  *set combat_enemy2_move2_dmg_dice_sides 2
-  *set combat_enemy2_move2_dmg_bonus 0
-  *set combat_enemy2_move2_dmg_type "bludgeoning"
-  *set combat_enemy2_move2_inflicts_condition true
-  *set combat_enemy2_move2_condition_name "Blinded"
-  *set combat_enemy2_move2_condition_icon "🌫️"
-*if (combat_apply_slot = 3)
-  *set combat_enemy3_name "Slinger"
-  *set combat_enemy3_hp 6
-  *set combat_enemy3_max_hp 6
-  *set combat_enemy3_ac 10
-  *set combat_enemy3_atk_bonus 2
-  *set combat_enemy3_dmg_dice_sides 4
-  *set combat_enemy3_dmg_bonus 0
-  *set combat_enemy3_epithet "the slinger"
-  *set combat_enemy3_dmg_type "bludgeoning"
-  *set combat_enemy3_move2_chance 25
-  *set combat_enemy3_move2_atk_bonus 2
-  *set combat_enemy3_move2_dmg_dice_sides 2
-  *set combat_enemy3_move2_dmg_bonus 0
-  *set combat_enemy3_move2_dmg_type "bludgeoning"
-  *set combat_enemy3_move2_inflicts_condition true
-  *set combat_enemy3_move2_condition_name "Blinded"
-  *set combat_enemy3_move2_condition_icon "🌫️"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 9 11
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 13 15
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 9 11
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 7 9
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 8 10
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
+  *comment (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Slinger"
+  *set {(apt_p & "hp")} 6
+  *set {(apt_p & "max_hp")} 6
+  *set {(apt_p & "ac")} 10
+  *set {(apt_p & "atk_bonus")} 2
+  *set {(apt_p & "dmg_dice_sides")} 4
+  *set {(apt_p & "dmg_bonus")} 0
+  *set {(apt_p & "epithet")} "the slinger"
+  *set {(apt_p & "dmg_type")} "bludgeoning"
+  *set {(apt_p & "weapon_type")} "ranged"
+  *set {(apt_p & "move2_chance")} 25
+  *set {(apt_p & "move2_atk_bonus")} 2
+  *set {(apt_p & "move2_dmg_dice_sides")} 2
+  *set {(apt_p & "move2_dmg_bonus")} 0
+  *set {(apt_p & "move2_dmg_type")} "bludgeoning"
+  *set {(apt_p & "move2_inflicts_condition")} true
+  *set {(apt_p & "move2_condition_name")} "Blinded"
+  *set {(apt_p & "move2_condition_icon")} "🌫️"
+  *gosub apply_ability_score_range apt_p "strength" 9 11
+  *gosub apply_ability_score_range apt_p "dexterity" 13 15
+  *gosub apply_ability_score_range apt_p "constitution" 9 11
+  *gosub apply_ability_score_range apt_p "intelligence" 7 9
+  *gosub apply_ability_score_range apt_p "wisdom" 8 10
+  *gosub apply_ability_score_range apt_p "charisma" 8 10
 *return
 
 *label apply_type_guard
@@ -2687,26 +2873,31 @@ ${use_text}
   *set combat_enemy_dmg_bonus 0
   *set combat_enemy_epithet "the guard"
   *set combat_enemy_dmg_type "bludgeoning"
-*if (combat_apply_slot = 2)
-  *set combat_enemy2_name "Guard"
-  *set combat_enemy2_hp 8
-  *set combat_enemy2_max_hp 8
-  *set combat_enemy2_ac 12
-  *set combat_enemy2_atk_bonus 2
-  *set combat_enemy2_dmg_dice_sides 4
-  *set combat_enemy2_dmg_bonus 0
-  *set combat_enemy2_epithet "the guard"
-  *set combat_enemy2_dmg_type "bludgeoning"
-*if (combat_apply_slot = 3)
-  *set combat_enemy3_name "Guard"
-  *set combat_enemy3_hp 8
-  *set combat_enemy3_max_hp 8
-  *set combat_enemy3_ac 12
-  *set combat_enemy3_atk_bonus 2
-  *set combat_enemy3_dmg_dice_sides 4
-  *set combat_enemy3_dmg_bonus 0
-  *set combat_enemy3_epithet "the guard"
-  *set combat_enemy3_dmg_type "bludgeoning"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 11 13
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 10 12
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 11 13
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 9 11
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 10 12
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 9 11
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
+  *comment (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Guard"
+  *set {(apt_p & "hp")} 8
+  *set {(apt_p & "max_hp")} 8
+  *set {(apt_p & "ac")} 12
+  *set {(apt_p & "atk_bonus")} 2
+  *set {(apt_p & "dmg_dice_sides")} 4
+  *set {(apt_p & "dmg_bonus")} 0
+  *set {(apt_p & "epithet")} "the guard"
+  *set {(apt_p & "dmg_type")} "bludgeoning"
+  *gosub apply_ability_score_range apt_p "strength" 11 13
+  *gosub apply_ability_score_range apt_p "dexterity" 10 12
+  *gosub apply_ability_score_range apt_p "constitution" 11 13
+  *gosub apply_ability_score_range apt_p "intelligence" 9 11
+  *gosub apply_ability_score_range apt_p "wisdom" 10 12
+  *gosub apply_ability_score_range apt_p "charisma" 9 11
 *return
 
 *label apply_type_lacedon
@@ -2720,24 +2911,30 @@ ${use_text}
   *set combat_enemy_dmg_dice_sides 6
   *set combat_enemy_dmg_bonus 2
   *set combat_enemy_epithet "the lacedon"
-*if (combat_apply_slot = 2)
-  *set combat_enemy2_name "Lacedon"
-  *set combat_enemy2_hp 12
-  *set combat_enemy2_max_hp 12
-  *set combat_enemy2_ac 12
-  *set combat_enemy2_atk_bonus 4
-  *set combat_enemy2_dmg_dice_sides 6
-  *set combat_enemy2_dmg_bonus 2
-  *set combat_enemy2_epithet "the lacedon"
-*if (combat_apply_slot = 3)
-  *set combat_enemy3_name "Lacedon"
-  *set combat_enemy3_hp 12
-  *set combat_enemy3_max_hp 12
-  *set combat_enemy3_ac 12
-  *set combat_enemy3_atk_bonus 4
-  *set combat_enemy3_dmg_dice_sides 6
-  *set combat_enemy3_dmg_bonus 2
-  *set combat_enemy3_epithet "the lacedon"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 13 15
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 13 15
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 14 16
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 6 8
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 8 10
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 6 8
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
+  *comment (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Lacedon"
+  *set {(apt_p & "hp")} 12
+  *set {(apt_p & "max_hp")} 12
+  *set {(apt_p & "ac")} 12
+  *set {(apt_p & "atk_bonus")} 4
+  *set {(apt_p & "dmg_dice_sides")} 6
+  *set {(apt_p & "dmg_bonus")} 2
+  *set {(apt_p & "epithet")} "the lacedon"
+  *gosub apply_ability_score_range apt_p "strength" 13 15
+  *gosub apply_ability_score_range apt_p "dexterity" 13 15
+  *gosub apply_ability_score_range apt_p "constitution" 14 16
+  *gosub apply_ability_score_range apt_p "intelligence" 6 8
+  *gosub apply_ability_score_range apt_p "wisdom" 8 10
+  *gosub apply_ability_score_range apt_p "charisma" 6 8
 *return
 
 *label apply_type_beast
@@ -2752,24 +2949,30 @@ ${use_text}
   *set combat_enemy_dmg_dice_sides 6
   *set combat_enemy_dmg_bonus 1
   *set combat_enemy_epithet "the beast"
-*if (combat_apply_slot = 2)
-  *set combat_enemy2_name "Beast"
-  *set combat_enemy2_hp 9
-  *set combat_enemy2_max_hp 9
-  *set combat_enemy2_ac 11
-  *set combat_enemy2_atk_bonus 3
-  *set combat_enemy2_dmg_dice_sides 6
-  *set combat_enemy2_dmg_bonus 1
-  *set combat_enemy2_epithet "the beast"
-*if (combat_apply_slot = 3)
-  *set combat_enemy3_name "Beast"
-  *set combat_enemy3_hp 9
-  *set combat_enemy3_max_hp 9
-  *set combat_enemy3_ac 11
-  *set combat_enemy3_atk_bonus 3
-  *set combat_enemy3_dmg_dice_sides 6
-  *set combat_enemy3_dmg_bonus 1
-  *set combat_enemy3_epithet "the beast"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 12 14
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 12 14
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 12 14
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 3 5
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 11 13
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 5 7
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
+  *comment (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Beast"
+  *set {(apt_p & "hp")} 9
+  *set {(apt_p & "max_hp")} 9
+  *set {(apt_p & "ac")} 11
+  *set {(apt_p & "atk_bonus")} 3
+  *set {(apt_p & "dmg_dice_sides")} 6
+  *set {(apt_p & "dmg_bonus")} 1
+  *set {(apt_p & "epithet")} "the beast"
+  *gosub apply_ability_score_range apt_p "strength" 12 14
+  *gosub apply_ability_score_range apt_p "dexterity" 12 14
+  *gosub apply_ability_score_range apt_p "constitution" 12 14
+  *gosub apply_ability_score_range apt_p "intelligence" 3 5
+  *gosub apply_ability_score_range apt_p "wisdom" 11 13
+  *gosub apply_ability_score_range apt_p "charisma" 5 7
 *return
 
 *label apply_type_mire_rat
@@ -2783,24 +2986,30 @@ ${use_text}
   *set combat_enemy_dmg_dice_sides 4
   *set combat_enemy_dmg_bonus 0
   *set combat_enemy_epithet "the mire-rat"
-*if (combat_apply_slot = 2)
-  *set combat_enemy2_name "Mire-Rat"
-  *set combat_enemy2_hp 4
-  *set combat_enemy2_max_hp 4
-  *set combat_enemy2_ac 9
-  *set combat_enemy2_atk_bonus 2
-  *set combat_enemy2_dmg_dice_sides 4
-  *set combat_enemy2_dmg_bonus 0
-  *set combat_enemy2_epithet "the mire-rat"
-*if (combat_apply_slot = 3)
-  *set combat_enemy3_name "Mire-Rat"
-  *set combat_enemy3_hp 4
-  *set combat_enemy3_max_hp 4
-  *set combat_enemy3_ac 9
-  *set combat_enemy3_atk_bonus 2
-  *set combat_enemy3_dmg_dice_sides 4
-  *set combat_enemy3_dmg_bonus 0
-  *set combat_enemy3_epithet "the mire-rat"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 6 8
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 14 16
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 8 10
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 3 5
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 9 11
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 4 6
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
+  *comment (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Mire-Rat"
+  *set {(apt_p & "hp")} 4
+  *set {(apt_p & "max_hp")} 4
+  *set {(apt_p & "ac")} 9
+  *set {(apt_p & "atk_bonus")} 2
+  *set {(apt_p & "dmg_dice_sides")} 4
+  *set {(apt_p & "dmg_bonus")} 0
+  *set {(apt_p & "epithet")} "the mire-rat"
+  *gosub apply_ability_score_range apt_p "strength" 6 8
+  *gosub apply_ability_score_range apt_p "dexterity" 14 16
+  *gosub apply_ability_score_range apt_p "constitution" 8 10
+  *gosub apply_ability_score_range apt_p "intelligence" 3 5
+  *gosub apply_ability_score_range apt_p "wisdom" 9 11
+  *gosub apply_ability_score_range apt_p "charisma" 4 6
 *return
 
 
@@ -3833,11 +4042,12 @@ ${use_text}
 *comment ══════════════════════════════════════════════════════════════
 
 *label fight_library
-*comment THE PLUG-IN ENTRY (2026-09-26). A scene that needs a fight, and has no fight_<name> label of its own, sets
-*comment   combat_lib_1 (and optionally combat_lib_2 and combat_lib_3): a library type id for each slot, and
+*comment THE PLUG-IN ENTRY (2026-09-26, widened to 6 slots 2026-09-27). A scene that needs a fight, and has no
+*comment fight_<name> label of its own, sets
+*comment   combat_lib_1 (and optionally combat_lib_2 through combat_lib_6): a library type id for each slot, and
 *comment   combat_is_nonlethal true if the brawl should end in surrender rather than death (default false),
 *comment   plus, if it wants its own names, combat_enemy_name_override and combat_enemy_epithet_override for slot 1
-*comment   and the combat_enemy2_ / combat_enemy3_ versions for the others,
+*comment   and the combat_enemy2_ / _3_ / _4_ / _5_ / _6_ versions for the others,
 *comment then *gosub_scene combat fight_library and reads combat_outcome afterwards like any fight. Call anything
 *comment humanoid by naming it, with no other change: a black knight with a sword and a bandit archer is
 *comment   *set combat_lib_1 "swordsman"   *set combat_enemy_name_override "Black Knight"
@@ -3846,7 +4056,7 @@ ${use_text}
 *comment   *set combat_enemy2_epithet_override "the bandit archer"
 *comment (a proper name works too: epithet "Captain Vane"). To make one fighter tougher or weaker than its type, set any
 *comment of combat_enemy_hp_override, combat_enemy_ac_override and combat_enemy_atk_override (hit points, the number the
-*comment player must beat to hit it, and its to-hit bonus; combat_enemy2_ / combat_enemy3_ for the other slots). Leave one
+*comment player must beat to hit it, and its to-hit bonus; combat_enemy2_ through combat_enemy6_ for the other slots). Leave one
 *comment alone and that number stays the type's own. Captain Vane, a swordsman with 24 HP, AC 14 and +5 to hit:
 *comment   *set combat_enemy_hp_override 24   *set combat_enemy_ac_override 14   *set combat_enemy_atk_override 5
 *comment The number of enemies is the number of combat_lib_ slots filled. Slot 1 decides the player's lines: creatures
@@ -3862,16 +4072,20 @@ ${use_text}
 *set combat_apply_slot 1
 *set combat_apply_type combat_lib_1
 *gosub apply_enemy_type
-*if (not(combat_lib_2 = ""))
-  *set combat_enemy_count 2
-  *set combat_apply_slot 2
-  *set combat_apply_type combat_lib_2
-  *gosub apply_enemy_type
-*if (not(combat_lib_3 = ""))
-  *set combat_enemy_count 3
-  *set combat_apply_slot 3
-  *set combat_apply_type combat_lib_3
-  *gosub apply_enemy_type
+*comment Slot 1 is mandatory; slots 2 and beyond are however many combat_lib_N the caller filled (up to
+*comment combat_enemy_slot_cap), checked via a bounded loop and indirection instead of one hand-written *if per
+*comment slot. Widening the slot cap needs no change here.
+*temp flb_i 2
+*label fight_library_slot_loop
+*if (flb_i <= combat_enemy_slot_cap)
+  *temp flb_lib {("combat_lib_" & flb_i)}
+  *if (not(flb_lib = ""))
+    *set combat_enemy_count flb_i
+    *set combat_apply_slot flb_i
+    *set combat_apply_type flb_lib
+    *gosub apply_enemy_type
+  *set flb_i + 1
+  *goto fight_library_slot_loop
 *set combat_round 1
 *if ((combat_lib_1 = "lacedon") or ((combat_lib_1 = "mire_rat") or (combat_lib_1 = "beast")))
   *gosub apply_creature_weapon_flavor

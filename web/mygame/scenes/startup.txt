@@ -320,6 +320,7 @@
 *create buff_wis_helps false
 *create buff_cha_helps false
 *create sm_mod 0
+*create sm_mod_str "+0"
 *create bs_str 0
 *create bs_dex 0
 *create bs_con 0
@@ -896,6 +897,9 @@
 *create combat_enemy_atk_locked_1 false
 *create combat_enemy_atk_locked_2 false
 *create combat_enemy_atk_locked_3 false
+*create combat_enemy_atk_locked_4 false
+*create combat_enemy_atk_locked_5 false
+*create combat_enemy_atk_locked_6 false
 *create combat_magic_missile_locked false
 *create locked_combat_magic_missile_page_id 0
 *create second_wind_locked false
@@ -923,11 +927,27 @@
 *comment fight_<name> label, mirroring player_resist_type_1/_2's shape) --
 *comment see apply_outgoing_damage_resist_vuln.
 *create combat_enemy_dmg_type "bludgeoning"
+*comment "melee"/"ranged" (2026-09-27, added alongside the enemy-vs-ally narration generalization below) --
+*comment mirrors combat_allyN_weapon_type's shape, set by every apply_enemy_type branch (never left to a
+*comment default that could leak an earlier fight's "ranged" onto a melee type in the same slot).
+*create combat_enemy_weapon_type "melee"
 *create combat_player_dmg_type "bludgeoning"
 *create combat_enemy_resist_type_1 ""
 *create combat_enemy_resist_type_2 ""
 *create combat_enemy_vulnerable_type_1 ""
 *create combat_enemy_vulnerable_type_2 ""
+*comment Ability scores (2026-09-27, groundwork for initiative rolls and later saving throws/stat-modifying
+*comment spells): same scratch-then-per-slot-storage shape as hp/ac/atk_bonus/dmg_type above. Default 10 (average,
+*comment +0 on score_to_mod's ladder) -- a hand-authored fight that never sets these gets an unremarkable human,
+*comment same as it already does for dmg_type. A type-library enemy gets them from apply_ability_score_range
+*comment (combat.txt, called from each apply_type_X): the type's own default range, or a manual per-slot override
+*comment below if one is set.
+*create combat_enemy_strength 10
+*create combat_enemy_dexterity 10
+*create combat_enemy_constitution 10
+*create combat_enemy_intelligence 10
+*create combat_enemy_wisdom 10
+*create combat_enemy_charisma 10
 *comment Short banner tags set by apply_incoming_damage_resist_vuln (enemy
 *comment hits against the player) and apply_outgoing_damage_resist_vuln
 *comment (player-dealt damage, including Agathys retaliation) -- " | 🛡️
@@ -1035,6 +1055,27 @@
 *comment these falls back to its normal generic name/epithet.
 *create combat_enemy_name_override ""
 *create combat_enemy_epithet_override ""
+*comment Never read or written by real code: slot 1's own rename-override is the plain names above, applied by
+*comment fight_setup (see its comment). These exist only so quicktest's line-coverage walk, which explores an *if's
+*comment untaken branch too, can safely indirection-read combat_enemy1_name_override from apply_enemy_type's generic
+*comment slots-2-and-beyond block on a pass where combat_apply_slot happens to still be 1.
+*create combat_enemy1_name_override ""
+*create combat_enemy1_epithet_override ""
+*create combat_enemy1_hp_override 999
+*create combat_enemy1_ac_override 999
+*create combat_enemy1_atk_override 999
+*create combat_flavor_enemy1_hit_1 ""
+*create combat_flavor_enemy1_hit_2 ""
+*create combat_flavor_enemy1_hit_3 ""
+*create combat_flavor_enemy1_hit_4 ""
+*create combat_flavor_enemy1_hit_5 ""
+*create combat_flavor_enemy1_miss_1 ""
+*create combat_flavor_enemy1_miss_2 ""
+*create combat_flavor_enemy1_miss_3 ""
+*create combat_flavor_enemy1_miss_4 ""
+*create combat_flavor_enemy1_miss_5 ""
+*create combat_flavor_enemy1_move2_hit ""
+*create combat_flavor_enemy1_move2_miss ""
 *comment Slot 2/3 get their own name/epithet overrides -- slot 1 reuses the
 *comment two above since it already flows through fight_setup's scratch-var
 *comment snapshot, but slots 2/3 are written directly by apply_enemy_type
@@ -1044,6 +1085,12 @@
 *create combat_enemy2_epithet_override ""
 *create combat_enemy3_name_override ""
 *create combat_enemy3_epithet_override ""
+*create combat_enemy4_name_override ""
+*create combat_enemy4_epithet_override ""
+*create combat_enemy5_name_override ""
+*create combat_enemy5_epithet_override ""
+*create combat_enemy6_name_override ""
+*create combat_enemy6_epithet_override ""
 *comment Per-slot stat overrides (2026-09-26): set any of these before the fight is built and that slot is that tough,
 *comment whatever library type fills it -- a veteran, a captain, a drunk. hp sets current and max HP, ac is the number the
 *comment player must beat to hit it, atk is its to-hit bonus (its special move moves by the same amount). 999 means
@@ -1060,6 +1107,56 @@
 *create combat_enemy3_hp_override 999
 *create combat_enemy3_ac_override 999
 *create combat_enemy3_atk_override 999
+*create combat_enemy4_hp_override 999
+*create combat_enemy4_ac_override 999
+*create combat_enemy4_atk_override 999
+*create combat_enemy5_hp_override 999
+*create combat_enemy5_ac_override 999
+*create combat_enemy5_atk_override 999
+*create combat_enemy6_hp_override 999
+*create combat_enemy6_ac_override 999
+*create combat_enemy6_atk_override 999
+*comment Per-slot ability-score overrides (2026-09-27): same pattern as hp/ac/atk above, but for the six scores
+*comment that feed initiative and (later) saving throws -- 0 means "use the type's own rolled range," since no
+*comment real ability score is ever 0. Consumed and reset to 0 by apply_ability_score_range (combat.txt, called
+*comment from each apply_type_X), so a hand-authored fight has no need for these at all -- it just *sets a score
+*comment directly, the same way it already sets hp/ac/atk_bonus directly with no override involved.
+*create combat_enemy_strength_override 0
+*create combat_enemy_dexterity_override 0
+*create combat_enemy_constitution_override 0
+*create combat_enemy_intelligence_override 0
+*create combat_enemy_wisdom_override 0
+*create combat_enemy_charisma_override 0
+*create combat_enemy2_strength_override 0
+*create combat_enemy2_dexterity_override 0
+*create combat_enemy2_constitution_override 0
+*create combat_enemy2_intelligence_override 0
+*create combat_enemy2_wisdom_override 0
+*create combat_enemy2_charisma_override 0
+*create combat_enemy3_strength_override 0
+*create combat_enemy3_dexterity_override 0
+*create combat_enemy3_constitution_override 0
+*create combat_enemy3_intelligence_override 0
+*create combat_enemy3_wisdom_override 0
+*create combat_enemy3_charisma_override 0
+*create combat_enemy4_strength_override 0
+*create combat_enemy4_dexterity_override 0
+*create combat_enemy4_constitution_override 0
+*create combat_enemy4_intelligence_override 0
+*create combat_enemy4_wisdom_override 0
+*create combat_enemy4_charisma_override 0
+*create combat_enemy5_strength_override 0
+*create combat_enemy5_dexterity_override 0
+*create combat_enemy5_constitution_override 0
+*create combat_enemy5_intelligence_override 0
+*create combat_enemy5_wisdom_override 0
+*create combat_enemy5_charisma_override 0
+*create combat_enemy6_strength_override 0
+*create combat_enemy6_dexterity_override 0
+*create combat_enemy6_constitution_override 0
+*create combat_enemy6_intelligence_override 0
+*create combat_enemy6_wisdom_override 0
+*create combat_enemy6_charisma_override 0
 *comment Enemy type library (combat.txt: apply_enemy_type) -- the calling
 *comment fight_<name> label sets these two, then *gosub apply_enemy_type, to
 *comment fill one slot (1/2/3) with a named reusable enemy type's full stat
@@ -1070,6 +1167,11 @@
 *comment Multi-enemy fight support (combat.txt: slots 1-3)
 *create combat_enemy_count 1
 *create combat_active_target 1
+*comment Total pre-declared enemy slots (widened from 3 to 6, 2026-09-27). ChoiceScript has no arrays, so this
+*comment is the real ceiling on how many enemies one fight can hold; every loop below reads it instead of a
+*comment literal, so raising it later is: bump this number, *create the new slot's variables (mirroring an
+*comment existing slot's block), done -- nothing that reads combat_enemy_slot_cap needs to change.
+*create combat_enemy_slot_cap 6
 *create combat_all_enemies_dead false
 *create combat_is_nonlethal false
 *create combat_player_can_die false
@@ -1083,6 +1185,7 @@
 *create combat_enemy1_epithet "the creature"
 *create combat_enemy1_metal_armor false
 *create combat_enemy1_dmg_type "bludgeoning"
+*create combat_enemy1_weapon_type "melee"
 *comment Per-slot condition/stun/movepool/resistance storage -- see the
 *comment scratch-var comment block above. A slot that never sets these (every
 *comment existing enemy) keeps the same defaults, so this is a no-op until a
@@ -1106,6 +1209,24 @@
 *create combat_enemy1_resist_type_2 ""
 *create combat_enemy1_vulnerable_type_1 ""
 *create combat_enemy1_vulnerable_type_2 ""
+*comment Ability scores (2026-09-27): slot 1's real, permanent storage (fight_setup snapshots the bare
+*comment combat_enemy_<score> names into these, same as every field above).
+*create combat_enemy1_strength 10
+*create combat_enemy1_dexterity 10
+*create combat_enemy1_constitution 10
+*create combat_enemy1_intelligence 10
+*create combat_enemy1_wisdom 10
+*create combat_enemy1_charisma 10
+*comment Slot 1's numbered ability-score overrides are never read or written by real logic -- slot 1 uses the
+*comment bare (unnumbered) override names just above, applied inside apply_ability_score_range -- but they exist
+*comment so fight_cleanup's generic per-slot loop can stay unconditional across every slot (same reasoning as
+*comment combat_enemy1_hp_override etc.).
+*create combat_enemy1_strength_override 0
+*create combat_enemy1_dexterity_override 0
+*create combat_enemy1_constitution_override 0
+*create combat_enemy1_intelligence_override 0
+*create combat_enemy1_wisdom_override 0
+*create combat_enemy1_charisma_override 0
 *create combat_enemy2_name "none"
 *create combat_enemy2_hp 0
 *create combat_enemy2_max_hp 0
@@ -1116,6 +1237,7 @@
 *create combat_enemy2_epithet "the second creature"
 *create combat_enemy2_metal_armor false
 *create combat_enemy2_dmg_type "bludgeoning"
+*create combat_enemy2_weapon_type "melee"
 *create combat_enemy2_inflicts_condition false
 *create combat_enemy2_condition_name ""
 *create combat_enemy2_condition_icon ""
@@ -1134,6 +1256,12 @@
 *create combat_enemy2_resist_type_2 ""
 *create combat_enemy2_vulnerable_type_1 ""
 *create combat_enemy2_vulnerable_type_2 ""
+*create combat_enemy2_strength 10
+*create combat_enemy2_dexterity 10
+*create combat_enemy2_constitution 10
+*create combat_enemy2_intelligence 10
+*create combat_enemy2_wisdom 10
+*create combat_enemy2_charisma 10
 *create combat_flavor_enemy2_move2_hit ""
 *create combat_flavor_enemy2_move2_miss ""
 *create combat_current_spell_id ""
@@ -1158,6 +1286,7 @@
 *create combat_enemy3_epithet "the third creature"
 *create combat_enemy3_metal_armor false
 *create combat_enemy3_dmg_type "bludgeoning"
+*create combat_enemy3_weapon_type "melee"
 *create combat_enemy3_inflicts_condition false
 *create combat_enemy3_condition_name ""
 *create combat_enemy3_condition_icon ""
@@ -1176,6 +1305,12 @@
 *create combat_enemy3_resist_type_2 ""
 *create combat_enemy3_vulnerable_type_1 ""
 *create combat_enemy3_vulnerable_type_2 ""
+*create combat_enemy3_strength 10
+*create combat_enemy3_dexterity 10
+*create combat_enemy3_constitution 10
+*create combat_enemy3_intelligence 10
+*create combat_enemy3_wisdom 10
+*create combat_enemy3_charisma 10
 *create combat_flavor_enemy3_move2_hit ""
 *create combat_flavor_enemy3_move2_miss ""
 *create combat_flavor_enemy3_hit_1 ""
@@ -1188,6 +1323,147 @@
 *create combat_flavor_enemy3_miss_3 ""
 *create combat_flavor_enemy3_miss_4 ""
 *create combat_flavor_enemy3_miss_5 ""
+*create combat_enemy4_name "none"
+*create combat_enemy4_hp 0
+*create combat_enemy4_max_hp 0
+*create combat_enemy4_ac 10
+*create combat_enemy4_atk_bonus 0
+*create combat_enemy4_dmg_dice_sides 4
+*create combat_enemy4_dmg_bonus 0
+*create combat_enemy4_epithet "the fourth creature"
+*create combat_enemy4_metal_armor false
+*create combat_enemy4_dmg_type "bludgeoning"
+*create combat_enemy4_weapon_type "melee"
+*create combat_enemy4_inflicts_condition false
+*create combat_enemy4_condition_name ""
+*create combat_enemy4_condition_icon ""
+*create combat_enemy4_inflicts_stun false
+*create combat_enemy4_stun_name ""
+*create combat_enemy4_stun_icon ""
+*create combat_enemy4_move2_chance 0
+*create combat_enemy4_move2_atk_bonus 0
+*create combat_enemy4_move2_dmg_dice_sides 4
+*create combat_enemy4_move2_dmg_bonus 0
+*create combat_enemy4_move2_dmg_type "bludgeoning"
+*create combat_enemy4_move2_inflicts_condition false
+*create combat_enemy4_move2_condition_name ""
+*create combat_enemy4_move2_condition_icon ""
+*create combat_enemy4_resist_type_1 ""
+*create combat_enemy4_resist_type_2 ""
+*create combat_enemy4_vulnerable_type_1 ""
+*create combat_enemy4_vulnerable_type_2 ""
+*create combat_enemy4_strength 10
+*create combat_enemy4_dexterity 10
+*create combat_enemy4_constitution 10
+*create combat_enemy4_intelligence 10
+*create combat_enemy4_wisdom 10
+*create combat_enemy4_charisma 10
+*create combat_flavor_enemy4_move2_hit ""
+*create combat_flavor_enemy4_move2_miss ""
+*create combat_flavor_enemy4_hit_1 ""
+*create combat_flavor_enemy4_hit_2 ""
+*create combat_flavor_enemy4_hit_3 ""
+*create combat_flavor_enemy4_hit_4 ""
+*create combat_flavor_enemy4_hit_5 ""
+*create combat_flavor_enemy4_miss_1 ""
+*create combat_flavor_enemy4_miss_2 ""
+*create combat_flavor_enemy4_miss_3 ""
+*create combat_flavor_enemy4_miss_4 ""
+*create combat_flavor_enemy4_miss_5 ""
+*create combat_enemy5_name "none"
+*create combat_enemy5_hp 0
+*create combat_enemy5_max_hp 0
+*create combat_enemy5_ac 10
+*create combat_enemy5_atk_bonus 0
+*create combat_enemy5_dmg_dice_sides 4
+*create combat_enemy5_dmg_bonus 0
+*create combat_enemy5_epithet "the fifth creature"
+*create combat_enemy5_metal_armor false
+*create combat_enemy5_dmg_type "bludgeoning"
+*create combat_enemy5_weapon_type "melee"
+*create combat_enemy5_inflicts_condition false
+*create combat_enemy5_condition_name ""
+*create combat_enemy5_condition_icon ""
+*create combat_enemy5_inflicts_stun false
+*create combat_enemy5_stun_name ""
+*create combat_enemy5_stun_icon ""
+*create combat_enemy5_move2_chance 0
+*create combat_enemy5_move2_atk_bonus 0
+*create combat_enemy5_move2_dmg_dice_sides 4
+*create combat_enemy5_move2_dmg_bonus 0
+*create combat_enemy5_move2_dmg_type "bludgeoning"
+*create combat_enemy5_move2_inflicts_condition false
+*create combat_enemy5_move2_condition_name ""
+*create combat_enemy5_move2_condition_icon ""
+*create combat_enemy5_resist_type_1 ""
+*create combat_enemy5_resist_type_2 ""
+*create combat_enemy5_vulnerable_type_1 ""
+*create combat_enemy5_vulnerable_type_2 ""
+*create combat_enemy5_strength 10
+*create combat_enemy5_dexterity 10
+*create combat_enemy5_constitution 10
+*create combat_enemy5_intelligence 10
+*create combat_enemy5_wisdom 10
+*create combat_enemy5_charisma 10
+*create combat_flavor_enemy5_move2_hit ""
+*create combat_flavor_enemy5_move2_miss ""
+*create combat_flavor_enemy5_hit_1 ""
+*create combat_flavor_enemy5_hit_2 ""
+*create combat_flavor_enemy5_hit_3 ""
+*create combat_flavor_enemy5_hit_4 ""
+*create combat_flavor_enemy5_hit_5 ""
+*create combat_flavor_enemy5_miss_1 ""
+*create combat_flavor_enemy5_miss_2 ""
+*create combat_flavor_enemy5_miss_3 ""
+*create combat_flavor_enemy5_miss_4 ""
+*create combat_flavor_enemy5_miss_5 ""
+*create combat_enemy6_name "none"
+*create combat_enemy6_hp 0
+*create combat_enemy6_max_hp 0
+*create combat_enemy6_ac 10
+*create combat_enemy6_atk_bonus 0
+*create combat_enemy6_dmg_dice_sides 4
+*create combat_enemy6_dmg_bonus 0
+*create combat_enemy6_epithet "the sixth creature"
+*create combat_enemy6_metal_armor false
+*create combat_enemy6_dmg_type "bludgeoning"
+*create combat_enemy6_weapon_type "melee"
+*create combat_enemy6_inflicts_condition false
+*create combat_enemy6_condition_name ""
+*create combat_enemy6_condition_icon ""
+*create combat_enemy6_inflicts_stun false
+*create combat_enemy6_stun_name ""
+*create combat_enemy6_stun_icon ""
+*create combat_enemy6_move2_chance 0
+*create combat_enemy6_move2_atk_bonus 0
+*create combat_enemy6_move2_dmg_dice_sides 4
+*create combat_enemy6_move2_dmg_bonus 0
+*create combat_enemy6_move2_dmg_type "bludgeoning"
+*create combat_enemy6_move2_inflicts_condition false
+*create combat_enemy6_move2_condition_name ""
+*create combat_enemy6_move2_condition_icon ""
+*create combat_enemy6_resist_type_1 ""
+*create combat_enemy6_resist_type_2 ""
+*create combat_enemy6_vulnerable_type_1 ""
+*create combat_enemy6_vulnerable_type_2 ""
+*create combat_enemy6_strength 10
+*create combat_enemy6_dexterity 10
+*create combat_enemy6_constitution 10
+*create combat_enemy6_intelligence 10
+*create combat_enemy6_wisdom 10
+*create combat_enemy6_charisma 10
+*create combat_flavor_enemy6_move2_hit ""
+*create combat_flavor_enemy6_move2_miss ""
+*create combat_flavor_enemy6_hit_1 ""
+*create combat_flavor_enemy6_hit_2 ""
+*create combat_flavor_enemy6_hit_3 ""
+*create combat_flavor_enemy6_hit_4 ""
+*create combat_flavor_enemy6_hit_5 ""
+*create combat_flavor_enemy6_miss_1 ""
+*create combat_flavor_enemy6_miss_2 ""
+*create combat_flavor_enemy6_miss_3 ""
+*create combat_flavor_enemy6_miss_4 ""
+*create combat_flavor_enemy6_miss_5 ""
 *create combat_enemy_epithet "the creature"
 *create combat_enemy_metal_armor false
 *comment Randomized 5-variant combat attack flavor pools
@@ -1221,6 +1497,252 @@
 *create combat_flavor_enemy_miss_3 ""
 *create combat_flavor_enemy_miss_4 ""
 *create combat_flavor_enemy_miss_5 ""
+*comment ══════════════════════════════════════════════════════════════
+*comment ALLY POOL (2026-09-27) -- storage plus a placeholder attack-narration pool. Step 2 of the turn-order/
+*comment initiative rebuild (see combat_enemy_slot_cap above for step 1, the enemy pool widening). Nothing
+*comment populates combat_ally_count yet, no AI picks a move, and nothing calls fight_narrate_ally_attack
+*comment (combat.txt) -- a fight can fill these fields, nothing acts on them yet. Mirrors the enemy pool's
+*comment basic fields only (name/hp/ac/attack/damage/epithet), not its condition/stun/movepool/resistance
+*comment machinery, since no ally AI exists to use any of that.
+*comment ══════════════════════════════════════════════════════════════
+*create combat_ally_slot_cap 4
+*create combat_ally_count 0
+*comment Same quicktest branch-coverage gotcha as combat_enemy0_* elsewhere in this file: announce_turn_order
+*comment (combat.txt) checks *if (cnt_kind = "ally") before reading combat_allyN_name via slot -- for an unused
+*comment turn-order position (kind "", slot 0), the walk visits that body anyway. Never read by real logic.
+*create combat_ally0_name ""
+*create combat_ally1_name "none"
+*create combat_ally1_epithet "your ally"
+*create combat_ally1_hp 0
+*create combat_ally1_max_hp 0
+*create combat_ally1_ac 10
+*create combat_ally1_atk_bonus 0
+*create combat_ally1_dmg_dice_sides 4
+*create combat_ally1_dmg_bonus 0
+*create combat_ally1_dmg_type "bludgeoning"
+*create combat_ally1_weapon_type "melee"
+*comment DEX only (2026-09-27, groundwork for initiative -- see combat_roll_initiative below), not the full six
+*comment ability scores enemies got: nothing but initiative needs an ally's stats yet, so the other five wait
+*comment for whichever real feature (ally saves, AI-picked attack bonus) actually needs them.
+*create combat_ally1_dexterity 10
+*create combat_ally2_name "none"
+*create combat_ally2_epithet "your second ally"
+*create combat_ally2_hp 0
+*create combat_ally2_max_hp 0
+*create combat_ally2_ac 10
+*create combat_ally2_atk_bonus 0
+*create combat_ally2_dmg_dice_sides 4
+*create combat_ally2_dmg_bonus 0
+*create combat_ally2_dmg_type "bludgeoning"
+*create combat_ally2_weapon_type "melee"
+*create combat_ally2_dexterity 10
+*create combat_ally3_name "none"
+*create combat_ally3_epithet "your third ally"
+*create combat_ally3_hp 0
+*create combat_ally3_max_hp 0
+*create combat_ally3_ac 10
+*create combat_ally3_atk_bonus 0
+*create combat_ally3_dmg_dice_sides 4
+*create combat_ally3_dmg_bonus 0
+*create combat_ally3_dmg_type "bludgeoning"
+*create combat_ally3_weapon_type "melee"
+*create combat_ally3_dexterity 10
+*create combat_ally4_name "none"
+*create combat_ally4_epithet "your fourth ally"
+*create combat_ally4_hp 0
+*create combat_ally4_max_hp 0
+*create combat_ally4_ac 10
+*create combat_ally4_atk_bonus 0
+*create combat_ally4_dmg_dice_sides 4
+*create combat_ally4_dmg_bonus 0
+*create combat_ally4_dmg_type "bludgeoning"
+*create combat_ally4_weapon_type "melee"
+*create combat_ally4_dexterity 10
+*comment Scratch copies fight_narrate_ally_attack (combat.txt) fills via {}-indirection right before printing --
+*comment the same pattern as combat_enemy_name/_epithet for the player's own target, but kept fully separate so
+*comment a narration call can never stomp the player's own in-progress attack-resolution state. Named for
+*comment "attacker"/"defender", not "ally"/"enemy" (renamed 2026-09-27 when the label was generalized to work in
+*comment either direction) -- either one can hold an ally's or an enemy's data depending on who's attacking whom.
+*create combat_attacker_name ""
+*create combat_attacker_epithet ""
+*create combat_defender_name ""
+*create combat_defender_epithet ""
+*comment ══════════════════════════════════════════════════════════════
+*comment TURN ORDER / INITIATIVE (2026-09-27) -- steps 4-5 of the turn-order rebuild. combat_roll_initiative
+*comment (combat.txt, called once from fight_setup, never per-round -- 5e rolls initiative once at the top of a
+*comment fight and keeps it for the whole thing) builds combat_turn_kind_1..11/_slot_1..11 below: the fixed order
+*comment every combatant in THIS fight acts in. 11 is 1 (player) + combat_ally_slot_cap (4) + combat_enemy_slot_cap
+*comment (6) -- a derived ceiling, not an independent tunable; bump it if either underlying cap grows.
+*comment combat_next_turn (combat.txt) is the dispatcher that actually walks this order, one combatant at a time,
+*comment replacing fight_enemy_turn's old all-enemies-at-once batch and fight_round_hub's exit point.
+*comment ══════════════════════════════════════════════════════════════
+*create combat_current_turn_index 0
+*comment True right after fight_setup, so the FIRST *goto fight_round_hub every fight_<name> label already ends
+*comment with (unchanged, no call site needed editing) dispatches through the queue instead of assuming the
+*comment player always goes first -- fight_round_hub's own preamble clears this the instant it's read. Nothing
+*comment else needs it: every OTHER transition into combat_next_turn (the player's turn ending, a stun skipping
+*comment it) goes there directly, since those are internal to combat.txt and don't have this many callers to avoid
+*comment touching.
+*create combat_turn_needs_advance false
+*comment True once anything has actually been narrated (an enemy's attack, a stun skipping the player's turn)
+*comment since the queue last handed control to the player -- gates whether combat_next_turn's page_break fires
+*comment before showing the next menu, so round 1 (and a mid-turn hub reopen) reads exactly as it always did, with
+*comment no break before anything has actually happened yet.
+*create combat_turn_advanced_this_page false
+*create combat_turn_count 0
+*create combat_turn_kind_1 ""
+*create combat_turn_slot_1 0
+*create combat_turn_kind_2 ""
+*create combat_turn_slot_2 0
+*create combat_turn_kind_3 ""
+*create combat_turn_slot_3 0
+*create combat_turn_kind_4 ""
+*create combat_turn_slot_4 0
+*create combat_turn_kind_5 ""
+*create combat_turn_slot_5 0
+*create combat_turn_kind_6 ""
+*create combat_turn_slot_6 0
+*create combat_turn_kind_7 ""
+*create combat_turn_slot_7 0
+*create combat_turn_kind_8 ""
+*create combat_turn_slot_8 0
+*create combat_turn_kind_9 ""
+*create combat_turn_slot_9 0
+*create combat_turn_kind_10 ""
+*create combat_turn_slot_10 0
+*create combat_turn_kind_11 ""
+*create combat_turn_slot_11 0
+*comment Scratch candidate list combat_roll_initiative builds and sorts FROM -- cleared and rebuilt every call,
+*comment never read outside it. Persistent *create'd storage (not *temp) so {}-indirection can target them the
+*comment same way every other scratch pool in this engine already does.
+*comment Index 0 is never a real candidate (cri_is_better_than_best is only ever called with a real 1-11 index) --
+*comment these five exist purely because quicktest's *if-branch-coverage walk visits cri_is_better_than_best's
+*comment *else branch even on the pass where cri_best is still 0 (a plain *if, same gotcha the enemy-widening work
+*comment already hit), so the indirected read needs somewhere to land without crashing. Never read by real logic.
+*create combat_init_kind_0 ""
+*create combat_init_slot_0 0
+*create combat_init_score_0 0
+*create combat_init_dex_0 0
+*create combat_init_used_0 false
+*comment Same gotcha, a different index: combat_next_turn (combat.txt) checks *if (cnt_kind = "enemy") before
+*comment reading combat_enemyN_* via cnt_slot -- for an unused turn-order position (kind "", slot 0, N beyond
+*comment combat_turn_count for this fight), quicktest's walk visits that body anyway with cnt_slot still 0, and
+*comment from there falls all the way through fight_sync_target_in/fight_narrate_enemy_turn's own indirected
+*comment reads -- so this needs a FULL inert slot 0, every field a real slot has (mirroring slot 6's own list),
+*comment not just combat_enemy0_hp. Never read by real logic; real data never pairs kind "enemy" with slot 0.
+*create combat_enemy_atk_locked_0 false
+*create combat_enemy0_name "none"
+*create combat_enemy0_hp 0
+*create combat_enemy0_max_hp 0
+*create combat_enemy0_ac 10
+*create combat_enemy0_atk_bonus 0
+*create combat_enemy0_dmg_dice_sides 4
+*create combat_enemy0_dmg_bonus 0
+*create combat_enemy0_epithet "the creature"
+*create combat_enemy0_metal_armor false
+*create combat_enemy0_dmg_type "bludgeoning"
+*create combat_enemy0_weapon_type "melee"
+*create combat_enemy0_inflicts_condition false
+*create combat_enemy0_condition_name ""
+*create combat_enemy0_condition_icon ""
+*create combat_enemy0_inflicts_stun false
+*create combat_enemy0_stun_name ""
+*create combat_enemy0_stun_icon ""
+*create combat_enemy0_move2_chance 0
+*create combat_enemy0_move2_atk_bonus 0
+*create combat_enemy0_move2_dmg_dice_sides 4
+*create combat_enemy0_move2_dmg_bonus 0
+*create combat_enemy0_move2_dmg_type "bludgeoning"
+*create combat_enemy0_move2_inflicts_condition false
+*create combat_enemy0_move2_condition_name ""
+*create combat_enemy0_move2_condition_icon ""
+*create combat_enemy0_resist_type_1 ""
+*create combat_enemy0_resist_type_2 ""
+*create combat_enemy0_vulnerable_type_1 ""
+*create combat_enemy0_vulnerable_type_2 ""
+*create combat_enemy0_strength 10
+*create combat_enemy0_dexterity 10
+*create combat_enemy0_constitution 10
+*create combat_enemy0_intelligence 10
+*create combat_enemy0_wisdom 10
+*create combat_enemy0_charisma 10
+*create combat_enemy0_flavor_type ""
+*create combat_flavor_enemy0_move2_hit ""
+*create combat_flavor_enemy0_move2_miss ""
+*create combat_flavor_enemy0_hit_1 ""
+*create combat_flavor_enemy0_hit_2 ""
+*create combat_flavor_enemy0_hit_3 ""
+*create combat_flavor_enemy0_hit_4 ""
+*create combat_flavor_enemy0_hit_5 ""
+*create combat_flavor_enemy0_miss_1 ""
+*create combat_flavor_enemy0_miss_2 ""
+*create combat_flavor_enemy0_miss_3 ""
+*create combat_flavor_enemy0_miss_4 ""
+*create combat_flavor_enemy0_miss_5 ""
+*create combat_init_count 0
+*create combat_init_kind_1 ""
+*create combat_init_slot_1 0
+*create combat_init_score_1 0
+*create combat_init_dex_1 0
+*create combat_init_used_1 false
+*create combat_init_kind_2 ""
+*create combat_init_slot_2 0
+*create combat_init_score_2 0
+*create combat_init_dex_2 0
+*create combat_init_used_2 false
+*create combat_init_kind_3 ""
+*create combat_init_slot_3 0
+*create combat_init_score_3 0
+*create combat_init_dex_3 0
+*create combat_init_used_3 false
+*create combat_init_kind_4 ""
+*create combat_init_slot_4 0
+*create combat_init_score_4 0
+*create combat_init_dex_4 0
+*create combat_init_used_4 false
+*create combat_init_kind_5 ""
+*create combat_init_slot_5 0
+*create combat_init_score_5 0
+*create combat_init_dex_5 0
+*create combat_init_used_5 false
+*create combat_init_kind_6 ""
+*create combat_init_slot_6 0
+*create combat_init_score_6 0
+*create combat_init_dex_6 0
+*create combat_init_used_6 false
+*create combat_init_kind_7 ""
+*create combat_init_slot_7 0
+*create combat_init_score_7 0
+*create combat_init_dex_7 0
+*create combat_init_used_7 false
+*create combat_init_kind_8 ""
+*create combat_init_slot_8 0
+*create combat_init_score_8 0
+*create combat_init_dex_8 0
+*create combat_init_used_8 false
+*create combat_init_kind_9 ""
+*create combat_init_slot_9 0
+*create combat_init_score_9 0
+*create combat_init_dex_9 0
+*create combat_init_used_9 false
+*create combat_init_kind_10 ""
+*create combat_init_slot_10 0
+*create combat_init_score_10 0
+*create combat_init_dex_10 0
+*create combat_init_used_10 false
+*create combat_init_kind_11 ""
+*create combat_init_slot_11 0
+*create combat_init_score_11 0
+*create combat_init_dex_11 0
+*create combat_init_used_11 false
+*comment cri_is_better_than_best's own output (combat.txt) -- persistent like sm_mod/sm_mod_str, read by the
+*comment caller right after *gosub returns.
+*create cri_ibt_result false
+*comment Placeholder flavor text for an ally-vs-enemy attack (either direction) lives in combat.txt (fight_narrate_ally_attack), built fresh
+*comment at call time rather than stored here -- a stored *set string's ${} tokens resolve immediately, at that
+*comment *set, not later when the string is finally printed, so a pool baked once at startup would freeze in
+*comment whatever epithet was live at game-start (empty), never the real attacker/target. Confirmed with a
+*comment synthetic test before shipping this, not assumed.
 *comment Variants 6-8 of the stored player strike pool, which the creature fights use (apply_creature_weapon_flavor). A hand-authored fight has 1-5 only.
 *create combat_flavor_weapon_hit_6 ""
 *create combat_flavor_weapon_hit_7 ""
@@ -1246,9 +1768,15 @@
 *create combat_lib_1 ""
 *create combat_lib_2 ""
 *create combat_lib_3 ""
+*create combat_lib_4 ""
+*create combat_lib_5 ""
+*create combat_lib_6 ""
 *create combat_enemy1_flavor_type ""
 *create combat_enemy2_flavor_type ""
 *create combat_enemy3_flavor_type ""
+*create combat_enemy4_flavor_type ""
+*create combat_enemy5_flavor_type ""
+*create combat_enemy6_flavor_type ""
 *create fft_type ""
 *create fft_v 1
 *create fft_m2 1
@@ -2374,87 +2902,25 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
 *temp eff_int intelligence
 *temp eff_wis wisdom
 *temp eff_cha charisma
-*if (eff_str <= 9)
-  *set str_mod 0 - 1
-  *set str_mod_str "-1"
-*if (eff_str = 10) or (eff_str = 11)
-  *set str_mod 0
-  *set str_mod_str "+0"
-*if (eff_str = 12) or (eff_str = 13)
-  *set str_mod 1
-  *set str_mod_str "+1"
-*if (eff_str = 14) or (eff_str = 15)
-  *set str_mod 2
-  *set str_mod_str "+2"
-*if (eff_str >= 16)
-  *set str_mod 3
-  *set str_mod_str "+3"
-
-*if (eff_dex <= 9)
-  *set dex_mod 0 - 1
-  *set dex_mod_str "-1"
-*if (eff_dex = 10) or (eff_dex = 11)
-  *set dex_mod 0
-  *set dex_mod_str "+0"
-*if (eff_dex = 12) or (eff_dex = 13)
-  *set dex_mod 1
-  *set dex_mod_str "+1"
-*if (eff_dex = 14) or (eff_dex = 15)
-  *set dex_mod 2
-  *set dex_mod_str "+2"
-*if (eff_dex >= 16)
-  *set dex_mod 3
-  *set dex_mod_str "+3"
-
+*comment Each hand-copied ladder below used to be ~15 lines duplicating score_to_mod's own math (2026-09-27,
+*comment see its header comment) -- now one *gosub each, so there is exactly one place this formula can go
+*comment wrong instead of six, and uncapping it (or ever changing it again) needs no changes here.
+*gosub score_to_mod eff_str
+*set str_mod sm_mod
+*set str_mod_str sm_mod_str
+*gosub score_to_mod eff_dex
+*set dex_mod sm_mod
+*set dex_mod_str sm_mod_str
 *gosub recalculate_con_mod
-
-*if (eff_int <= 9)
-  *set int_mod 0 - 1
-  *set int_mod_str "-1"
-*if (eff_int = 10) or (eff_int = 11)
-  *set int_mod 0
-  *set int_mod_str "+0"
-*if (eff_int = 12) or (eff_int = 13)
-  *set int_mod 1
-  *set int_mod_str "+1"
-*if (eff_int = 14) or (eff_int = 15)
-  *set int_mod 2
-  *set int_mod_str "+2"
-*if (eff_int >= 16)
-  *set int_mod 3
-  *set int_mod_str "+3"
-
-*if (eff_wis <= 9)
-  *set wis_mod 0 - 1
-  *set wis_mod_str "-1"
-*if (eff_wis = 10) or (eff_wis = 11)
-  *set wis_mod 0
-  *set wis_mod_str "+0"
-*if (eff_wis = 12) or (eff_wis = 13)
-  *set wis_mod 1
-  *set wis_mod_str "+1"
-*if (eff_wis = 14) or (eff_wis = 15)
-  *set wis_mod 2
-  *set wis_mod_str "+2"
-*if (eff_wis >= 16)
-  *set wis_mod 3
-  *set wis_mod_str "+3"
-
-*if (eff_cha <= 9)
-  *set cha_mod 0 - 1
-  *set cha_mod_str "-1"
-*if (eff_cha = 10) or (eff_cha = 11)
-  *set cha_mod 0
-  *set cha_mod_str "+0"
-*if (eff_cha = 12) or (eff_cha = 13)
-  *set cha_mod 1
-  *set cha_mod_str "+1"
-*if (eff_cha = 14) or (eff_cha = 15)
-  *set cha_mod 2
-  *set cha_mod_str "+2"
-*if (eff_cha >= 16)
-  *set cha_mod 3
-  *set cha_mod_str "+3"
+*gosub score_to_mod eff_int
+*set int_mod sm_mod
+*set int_mod_str sm_mod_str
+*gosub score_to_mod eff_wis
+*set wis_mod sm_mod
+*set wis_mod_str sm_mod_str
+*gosub score_to_mod eff_cha
+*set cha_mod sm_mod
+*set cha_mod_str sm_mod_str
 
 *gosub refresh_boon_flags
 *comment Proficiency bonus from level: +2 through level 4, +3 at 5-8, +4 at 9-12, and so on. The engine has no floor, and the plain
@@ -2505,36 +2971,63 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
 *comment RECALCULATE CON MODIFIER
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label recalculate_con_mod
+*comment Same consolidation as update_dnd_stats' other five (2026-09-27) -- was its own hand-copied capped
+*comment ladder, now one *gosub, so score_to_mod is the only place this math lives.
 *temp eff_con constitution
-*if (eff_con <= 9)
-  *set con_mod 0 - 1
-  *set con_mod_str "-1"
-*if (eff_con = 10) or (eff_con = 11)
-  *set con_mod 0
-  *set con_mod_str "+0"
-*if (eff_con = 12) or (eff_con = 13)
-  *set con_mod 1
-  *set con_mod_str "+1"
-*if (eff_con = 14) or (eff_con = 15)
-  *set con_mod 2
-  *set con_mod_str "+2"
-*if (eff_con >= 16)
-  *set con_mod 3
-  *set con_mod_str "+3"
+*gosub score_to_mod eff_con
+*set con_mod sm_mod
+*set con_mod_str sm_mod_str
 *return
 
-*comment score_to_mod: the modifier for one ability score (the same steps update_dnd_stats uses). Output sm_mod.
+*comment score_to_mod: the real 2014-rules ability modifier, floor((score-10)/2), uncapped in both directions
+*comment (2026-09-27) -- this used to flatline at -1 below 9 and cap at +3 above 16, an unintentional house rule
+*comment discovered while adding enemy ability scores (nothing above 16 bought anything), not a deliberate
+*comment balance choice, so it's corrected here rather than kept, for the player's own modifiers too --
+*comment update_dnd_stats/recalculate_con_mod below now call this instead of each keeping their own hand-copied
+*comment ladder, so there is exactly one place this math can go wrong instead of six. Written as a threshold
+*comment ladder, not division/modulo, to avoid any doubt about how this engine rounds negative division (never
+*comment verified, and unnecessary when a plain *if chain says exactly the same thing with zero ambiguity).
+*comment Covers the full legal 5e score range, 1-30. Thresholds are listed least-to-most-extreme in each
+*comment direction, so the most extreme applicable one, being the last to run, is the one left standing.
+*comment Output: sm_mod (number), sm_mod_str ("+4"/"-2"/... for display, same format the old hardcoded
+*comment _mod_str strings already used).
 *label score_to_mod
 *params sm_score
 *set sm_mod 0
 *if (sm_score <= 9)
   *set sm_mod 0 - 1
+*if (sm_score <= 7)
+  *set sm_mod 0 - 2
+*if (sm_score <= 5)
+  *set sm_mod 0 - 3
+*if (sm_score <= 3)
+  *set sm_mod 0 - 4
+*if (sm_score <= 1)
+  *set sm_mod 0 - 5
 *if (sm_score >= 12)
   *set sm_mod 1
 *if (sm_score >= 14)
   *set sm_mod 2
 *if (sm_score >= 16)
   *set sm_mod 3
+*if (sm_score >= 18)
+  *set sm_mod 4
+*if (sm_score >= 20)
+  *set sm_mod 5
+*if (sm_score >= 22)
+  *set sm_mod 6
+*if (sm_score >= 24)
+  *set sm_mod 7
+*if (sm_score >= 26)
+  *set sm_mod 8
+*if (sm_score >= 28)
+  *set sm_mod 9
+*if (sm_score >= 30)
+  *set sm_mod 10
+*if (sm_mod >= 0)
+  *set sm_mod_str ("+" & sm_mod)
+*else
+  *set sm_mod_str ("" & sm_mod)
 *return
 
 *comment refresh_boon_flags: a boon helps only if the modifier with it is higher than the modifier the
@@ -2971,18 +3464,19 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
 *comment Outputs: combat_enemy_atk_total, combat_enemy_hit_success, combat_enemy_dmg_dealt, combat_shield_triggered, combat_agathys_triggered
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_enemy_attack
+*comment One lock var per slot (combat_enemy_atk_locked_1..6, see startup.txt creates), read/written by name
+*comment built from combat_active_target instead of a hand-written *if per slot -- see fight_sync_target_in's
+*comment header comment in combat.txt for why a single shared lock breaks on refresh across several slots.
+*temp cea_lockname (("combat_enemy_atk_locked_" & combat_active_target))
 *if (not(locked_combat_enemy_atk_page_id = page_id))
   *set combat_enemy_atk_locked_1 false
   *set combat_enemy_atk_locked_2 false
   *set combat_enemy_atk_locked_3 false
+  *set combat_enemy_atk_locked_4 false
+  *set combat_enemy_atk_locked_5 false
+  *set combat_enemy_atk_locked_6 false
   *set locked_combat_enemy_atk_page_id page_id
-*temp cea_already_locked false
-*if (combat_active_target = 1)
-  *set cea_already_locked combat_enemy_atk_locked_1
-*if (combat_active_target = 2)
-  *set cea_already_locked combat_enemy_atk_locked_2
-*if (combat_active_target = 3)
-  *set cea_already_locked combat_enemy_atk_locked_3
+*temp cea_already_locked {cea_lockname}
 *if (not(cea_already_locked))
   *temp cea_roll 0
   *rand cea_roll 1 20
@@ -3056,12 +3550,7 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
     *else
       *if (hp_current < 1)
         *set hp_current 1
-  *if (combat_active_target = 1)
-    *set combat_enemy_atk_locked_1 true
-  *if (combat_active_target = 2)
-    *set combat_enemy_atk_locked_2 true
-  *if (combat_active_target = 3)
-    *set combat_enemy_atk_locked_3 true
+  *set {cea_lockname} true
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
