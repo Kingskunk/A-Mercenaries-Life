@@ -79,6 +79,8 @@
 *set hex_active false
 *set agathys_active false
 *set shield_armed false
+*set blade_ward_active false
+*set blade_ward_survived_a_turn false
 *set is_raging false
 *set combat_agathys_triggered false
 *set combat_agathys_shattered false
@@ -487,6 +489,8 @@
 *set hex_active false
 *set agathys_active false
 *set shield_armed false
+*set blade_ward_active false
+*set blade_ward_survived_a_turn false
 *set is_raging false
 *set combat_agathys_triggered false
 *set combat_agathys_shattered false
@@ -890,6 +894,35 @@
   *set locked_combat_bonus_spend_page_id page_id
 *return
 
+*label blade_ward_tick
+*comment Advances Blade Ward's "until the end of your next turn" by ONE player turn. Called from
+*comment fight_end_player_turn only, which is the whole point: combat_next_turn itself recurses once per
+*comment COMBATANT (the enemy branch *goto's back into it at the bottom of the label), so a tick placed
+*comment there would fire again after every single enemy attack and the ward would evaporate before the
+*comment second enemy ever swung. Survived-then-clear gives the RAW span exactly: the first player
+*comment turn-end after the cast sets survived, the second one clears.
+*comment A turn lost to a stun still counts as a turn (player_stunned routes through the same shim) --
+*comment agreed house rule, and the conservative reading.
+*comment Replay-locked on the page_id idiom: an unguarded *set here re-runs on page replay and would
+*comment expire the ward a full turn early.
+*if (not(blade_ward_tick_locked)) or (not(locked_blade_ward_tick_page_id = page_id))
+  *if (blade_ward_active)
+    *if (blade_ward_survived_a_turn)
+      *set blade_ward_active false
+    *else
+      *set blade_ward_survived_a_turn true
+  *set blade_ward_tick_locked true
+  *set locked_blade_ward_tick_page_id page_id
+*return
+
+*label fight_end_player_turn
+*comment The ONE place a player turn legitimately ends, so the tick that ages Blade Ward has exactly one
+*comment caller. Reached from the stun skip, the "nothing left to spend" auto-end, and the End your turn
+*comment option. Deliberately NOT the fight's opening dispatch (fight_round_hub's combat_turn_needs_advance
+*comment branch, where no turn has happened yet) and NOT the enemy branch's own recursion.
+*gosub blade_ward_tick
+*goto combat_next_turn
+
 *label combat_spend_attack
 *comment Same shape as combat_spend_action/_bonus, plus one extra rule: the FIRST attack of the round (attacks_
 *comment left still sitting at its max, i.e. nothing has spent from it yet) also spends the general action --
@@ -995,6 +1028,9 @@
 *if (shield_armed)
   *line_break
   [b][✨ Shield Armed — will trigger on the next hit][/b]
+*if (blade_ward_active)
+  *line_break
+  [b][🛡️ Blade Warded — slashing, piercing & bludgeoning attacks hit for half][/b]
 *if (hex_active)
   *line_break
   [b][🔮 Hex Active — +1d6 Necrotic Damage on all hits][/b]
@@ -1019,7 +1055,9 @@
   *line_break
   [b][${combat_enemy_stun_icon} ${combat_enemy_stun_name} — you lose this turn, still reeling from the blow.][/b]
   *set combat_turn_advanced_this_page true
-  *goto combat_next_turn
+  *comment A turn lost to a stun is still a turn for Blade Ward's duration -- it ages here like any
+  *comment other turn-end (agreed house rule), so the ward cannot be stalled indefinitely by stun.
+  *goto fight_end_player_turn
 
 *comment Whether the player can start (or continue) attacking this page. attacks_left alone isn't enough: the
 *comment first swing of the turn still has to spend the general action, so if something else already spent it
@@ -1059,8 +1097,21 @@
 *temp combat_can_rage false
 *if (((character_class = "barbarian") and (not(is_raging))) and (barbarian_rage_uses > 0))
   *set combat_can_rage true
+*comment Blade Ward: a cantrip, so no spell-slot gate (contrast Healing Word above) -- just "do you know
+*comment it" across the three caster cantrip families, which is why it is one long or-chain over seven
+*comment variables rather than a character_class test. Deliberately NOT gated on
+*comment not(blade_ward_active): RAW lets you re-cast to refresh the duration, and refusing that would
+*comment make the house rule (cheap enough to spend a bonus action on) strictly worse than RAW.
+*temp combat_can_blade_ward false
+*if (((((wizard_cantrip = "blade_ward") or (wizard_cantrip_2 = "blade_ward")) or (wizard_cantrip_3 = "blade_ward")) or (((bard_cantrip = "blade_ward") or (bard_cantrip_2 = "blade_ward")) or ((warlock_cantrip = "blade_ward") or (warlock_cantrip_2 = "blade_ward")))))
+  *set combat_can_blade_ward true
 *temp combat_bonus_available false
+*comment Blade Ward MUST be in this or-chain. It is what separates "bonus action still unspent" from
+*comment "nothing left to spend at all" for the auto-end check below -- leave it out and that check
+*comment concludes the turn is over, never shows the hub, and the option becomes unreachable forever.
 *if (((combat_can_hex) or (combat_can_healing_word)) or ((combat_can_second_wind) or (combat_can_rage)))
+  *set combat_bonus_available true
+*if (combat_can_blade_ward)
   *set combat_bonus_available true
 *comment Auto-end: silently loops back to the queue once there's truly nothing left to spend a resource on, not
 *comment just once every pool counter happens to read zero -- attacks_left and bonus_left both sit at their full
@@ -1070,7 +1121,9 @@
 *comment off and disengage" and "Use an item" (neither is pool-gated) -- use them before running the tank dry.
 *if (((combat_player_actions_left <= 0) and (not(combat_can_attack))) and ((combat_player_bonus_left <= 0) or (not(combat_bonus_available))))
   *set combat_turn_advanced_this_page false
-  *goto combat_next_turn
+  *comment Ends the player's turn for Blade Ward's duration too, exactly like the End your turn option
+  *comment -- running out of things to spend on IS a turn-end, so the ward must not sit un-aged.
+  *goto fight_end_player_turn
 
 *choice
   *if ((combat_can_attack) and ((weapon_type = "ranged") or (combat_enemy_range <= 0)))
@@ -1126,7 +1179,7 @@
         *set combat_player_dmg_type "fire"
         *set combat_player_dmg_dice_sides 10
         *set combat_player_dmg_bonus 0
-        *gosub_scene startup resolve_player_hit
+        *gosub_scene startup resolve_player_hit true
         *if (combat_enemy_hp <= 0)
           *temp fdh ""
           *gosub pick_spell_death_flavor
@@ -1158,7 +1211,7 @@
         *set combat_player_dmg_type "cold"
         *set combat_player_dmg_dice_sides 8
         *set combat_player_dmg_bonus 0
-        *gosub_scene startup resolve_player_hit
+        *gosub_scene startup resolve_player_hit true
         *set combat_enemy_disadvantage true
         *if (combat_enemy_hp <= 0)
           *temp fdh ""
@@ -1197,7 +1250,7 @@
         *set combat_player_dmg_type "lightning"
         *set combat_player_dmg_dice_sides 8
         *set combat_player_dmg_bonus 0
-        *gosub_scene startup resolve_player_hit
+        *gosub_scene startup resolve_player_hit true
         *if (combat_enemy_hp <= 0)
           *temp fdh ""
           *gosub pick_spell_death_flavor
@@ -1233,7 +1286,7 @@
         *set combat_player_dmg_type "force"
         *set combat_player_dmg_dice_sides 10
         *set combat_player_dmg_bonus 0
-        *gosub_scene startup resolve_player_hit
+        *gosub_scene startup resolve_player_hit true
         *if (combat_enemy_hp <= 0)
           *temp fdh ""
           *gosub pick_spell_death_flavor
@@ -1265,7 +1318,7 @@
         *set combat_player_dmg_type "necrotic"
         *set combat_player_dmg_dice_sides 8
         *set combat_player_dmg_bonus 0
-        *gosub_scene startup resolve_player_hit
+        *gosub_scene startup resolve_player_hit true
         *if (combat_enemy_hp <= 0)
           *temp fdh ""
           *gosub pick_spell_death_flavor
@@ -1296,7 +1349,9 @@
         *set combat_player_dmg_type "psychic"
         *set combat_player_dmg_dice_sides 4
         *set combat_player_dmg_bonus 0
-        *gosub_scene startup resolve_player_hit
+        *comment No attack roll here -- a failed save, not a hit -- so resolve_player_hit's Hex bonus must not
+        *comment fire (RAW: Hex triggers only when you hit with an attack).
+        *gosub_scene startup resolve_player_hit false
         *set combat_enemy_disadvantage true
         *if (combat_enemy_hp <= 0)
           *temp fdh ""
@@ -1436,6 +1491,20 @@
       A hot, roaring pressure floods your chest, dulling the pain and the fear to nothing at all.
       *goto fight_bonus_spent
 
+  *if ((combat_can_blade_ward) and (combat_player_bonus_left > 0))
+    # [Cantrip: Blade Ward] Trace a warding sigil in the air; blows land on the sigil instead of you.@{show_stat_hints  [Bonus Action — House Rule]|}
+      *comment Sets BOTH flags, not just active: a re-cast has to clear survived_a_ward-turn too, or
+      *comment casting on the turn after the ward goes up would spend the bonus action and change
+      *comment nothing -- the effect would still expire at the end of the turn the player just started.
+      *comment Idempotent, so this pair needs no replay lock (the tick, which is not idempotent, has
+      *comment one). No spell-slot cost: it is a cantrip.
+      *set blade_ward_active true
+      *set blade_ward_survived_a_turn false
+      You extend your hand and trace a sigil of warding in the air, and the blows that follow find the sigil instead of you.
+      *comment No banner here: the hub's own "Blade Warded" status line reopens with this same page
+      *comment and says the same thing, exactly as Shield does (see its option above).
+      *goto fight_bonus_spent
+
   *if (cu_any)
     # Use an item from your satchel.
       *goto fight_use_item
@@ -1451,7 +1520,7 @@
     *comment whether or not anything is left to spend, so it stays correct as new resource types get added.
     *comment Resets combat_turn_advanced_this_page so next round's page-break gating starts fresh.
     *set combat_turn_advanced_this_page false
-    *goto combat_next_turn
+    *goto fight_end_player_turn
 
 *comment Using an item costs the turn. The menu, the routine and every effect come from the catalog
 *comment (equipment.txt use_consumable); a heal while unhurt is refused and costs nothing.
@@ -2624,8 +2693,19 @@ ${fnaa_line}
     *comment Range costs it multiple turns too.
     *temp cnt_first_pass {("combat_turn_first_pass_" & combat_current_turn_index)}
     *set {("combat_turn_first_pass_" & combat_current_turn_index)} false
+    *comment cnt_rv: shared by both branches below that roll a 3-way flavor variant, declared once here instead
+    *comment of once per branch.
+    *temp cnt_rv 0
     *if (combat_player_surprise) and (cnt_first_pass)
-      ${combat_enemy_epithet} hasn't marked you yet, giving no ground and no opening this turn.
+      *comment Three variants, via *rand -- none lead with combat_enemy_epithet (usually a lowercase "the X"),
+      *comment so the printed sentence never opens on an uncapitalized word.
+      *rand cnt_rv 1 3
+      *if (cnt_rv = 1)
+        Still unaware of you, ${combat_enemy_epithet} gives no ground and finds no opening this turn.
+      *if (cnt_rv = 2)
+        You move before ${combat_enemy_epithet} ever marks you, and the whole turn slips by unspent.
+      *if (cnt_rv = 3)
+        Caught flat-footed, ${combat_enemy_epithet} loses the turn outright, never sensing you at all.
       *line_break
       [b][😲 ${combat_enemy_name} Surprised — turn lost][/b]
       *set combat_turn_advanced_this_page true
@@ -2634,13 +2714,25 @@ ${fnaa_line}
       *if (combat_enemy_range < 0)
         *set combat_enemy_range 0
       *set {(("combat_enemy" & cnt_slot) & "_range")} combat_enemy_range
+      *comment Same reasoning as the surprise-round variants above: three lines each, none epithet-first.
+      *rand cnt_rv 1 3
       *if (combat_enemy_range <= 0)
-        ${combat_enemy_epithet} closes the last of the distance, covering the ground between you both in a rush.
+        *if (cnt_rv = 1)
+          A last burst of speed closes the distance, and ${combat_enemy_epithet} is suddenly right on top of you.
+        *if (cnt_rv = 2)
+          In one hard rush, ${combat_enemy_epithet} crosses what ground was left and closes to melee range.
+        *if (cnt_rv = 3)
+          The last of the gap disappears fast, and ${combat_enemy_epithet} is finally within striking distance.
         *line_break
         [b][🏃 ${combat_enemy_name} Closes to Engagement][/b]
       *else
         *gosub combat_range_name combat_enemy_range
-        ${combat_enemy_epithet} closes ground, cutting down the distance between you both.
+        *if (cnt_rv = 1)
+          Ground vanishes underfoot as ${combat_enemy_epithet} presses in, cutting the distance between you.
+        *if (cnt_rv = 2)
+          In a burst of motion, ${combat_enemy_epithet} closes some of the gap, cutting down what's left between you.
+        *if (cnt_rv = 3)
+          Step by step, ${combat_enemy_epithet} narrows the distance, closing in fast.
         *line_break
         [b][🏃 ${combat_enemy_name} Closes to ${combat_range_display_name}][/b]
       *set combat_turn_advanced_this_page true

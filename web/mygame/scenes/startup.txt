@@ -1973,6 +1973,23 @@
 *create fft_m2miss ""
 *create shield_armed false
 *create combat_shield_triggered false
+*comment BLADE WARD (house rule: a bonus-action Blade Ward, not RAW's 1 action) -- a cantrip for
+*comment warlocks, wizards and bards. Until the end of your NEXT turn you have resistance to
+*comment bludgeoning, piercing and slashing from weapon attacks. Two flags because "end of your next
+*comment turn" is a duration measured in player turns, not rounds:
+*comment   blade_ward_active          the ward is up
+*comment   blade_ward_survived_a_turn set true by the FIRST player turn-end after the cast, which is
+*comment                                what makes the SECOND one expire it (see blade_ward_tick, combat.txt)
+*comment The re-cast resets survived_a_turn as well as active: without that, casting on the turn after
+*comment the ward looks like a no-op and the effect still dies a turn early. Idempotent, so it needs
+*comment no replay lock of its own (unlike the tick, which does).
+*create blade_ward_active false
+*create blade_ward_survived_a_turn false
+*comment Replay guard for blade_ward_tick: it mutates a fight-scoped flag, and a bare *set re-runs when
+*comment the page is replayed, which would expire the ward a whole turn early. Same page_id idiom as
+*comment combat_spend_bonus (create at startup.txt:1053-1054).
+*create blade_ward_tick_locked false
+*create locked_blade_ward_tick_page_id 0
 *create hex_active false
 *create hexblood_hex_used false
 *create temp_hp 0
@@ -2562,7 +2579,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *gosub update_dnd_stats
     *goto dev_scene_select
 
-  # 🛡️ Cadre Battle-Abjurer (Elf Wizard / Shield, Guidance, Ray of Frost & Fey Ancestry / INT 16, DEX 14 / The Cadre)
+  # 🛡️ Cadre Battle-Abjurer (Elf Wizard / Shield, Guidance, Ray of Frost & Blade Ward / INT 16, DEX 14 / The Cadre)
     *set name "Aelion"
     *set intake_completed true
     *set origin "disgraced"
@@ -2583,8 +2600,8 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set wizard_cantrip_desc "Guidance (+1d4 Check Bonus)"
     *set wizard_cantrip_2 "ray_of_frost"
     *set wizard_cantrip_2_desc "Ray of Frost (1d8 Cold, Slows Target)"
-    *set wizard_cantrip_3 "prestidigitation"
-    *set wizard_cantrip_3_desc "Prestidigitation (Minor Arcane Transmutation)"
+    *set wizard_cantrip_3 "blade_ward"
+    *set wizard_cantrip_3_desc "Blade Ward (Resist Bludgeoning/Piercing/Slashing, Bonus Action — House Rule)"
     *set wizard_spell "shield"
     *set wizard_spell_desc "Shield (+5 AC Reaction)"
     *set wizard_spell_slots 2
@@ -3708,6 +3725,17 @@ ${res_banner}
 *if ((character_class = "barbarian") and (is_raging))
   *if (((combat_enemy_dmg_type = "bludgeoning") or (combat_enemy_dmg_type = "piercing")) or (combat_enemy_dmg_type = "slashing"))
     *set aidrv_resisted true
+*comment Blade Ward (house rule bonus-action version) is the same three physical types, folded into
+*comment this same check rather than halving damage anywhere else, so it cancels correctly against a
+*comment same-type vulnerability and can never double-halve. It needs no "weapon attacks" gate of its
+*comment own: this label has exactly ONE caller (resolve_enemy_attack, the enemy hitting the player),
+*comment and bludgeoning/piercing/slashing only ever reach it from an enemy weapon -- every spell
+*comment damage type here is cold/fire/lightning/etc. The hunger debt (calendar.txt) and the scripted
+*comment hazard (battle_black_sinks.txt) apply their own `hp_current -` and bypass this label entirely,
+*comment which is exactly right for both.
+*if (blade_ward_active)
+  *if (((combat_enemy_dmg_type = "bludgeoning") or (combat_enemy_dmg_type = "piercing")) or (combat_enemy_dmg_type = "slashing"))
+    *set aidrv_resisted true
 *temp aidrv_vulnerable (((combat_enemy_dmg_type = player_vulnerable_type_1) and (not(player_vulnerable_type_1 = ""))) or ((combat_enemy_dmg_type = player_vulnerable_type_2) and (not(player_vulnerable_type_2 = ""))))
 *if ((aidrv_resisted) and (aidrv_vulnerable))
   *comment Cancel out -- normal damage, no banner tag.
@@ -3743,10 +3771,17 @@ ${res_banner}
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment COMBAT: PLAYER HIT RESOLUTION
 *comment Applies generic player hit damage to combat_enemy_hp.
-*comment Inputs: combat_player_dmg_dice_sides, combat_player_dmg_bonus, combat_player_dmg_type
+*comment Inputs: combat_player_dmg_dice_sides, combat_player_dmg_bonus, combat_player_dmg_type,
+*comment   rph_is_attack_roll (*params, below)
 *comment Output: combat_player_dmg_dealt
+*comment Every caller must pass true or false for rph_is_attack_roll: Hex (RAW) only adds its extra damage when
+*comment you hit with an ATTACK -- an attack roll that beat AC, not a save the target failed. The five attack-roll
+*comment cantrips (Fire Bolt, Ray of Frost, Shocking Grasp, Eldritch Blast, Chill Touch) pass true; Vicious
+*comment Mockery, a Wisdom save with no attack roll at all, passes false. A future caller has to pick one
+*comment explicitly -- there's no default that would silently let a save-based spell through.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_player_hit
+*params rph_is_attack_roll
 *if (not(combat_player_hit_locked)) or (not(locked_combat_player_hit_page_id = page_id))
   *temp cph_roll 0
   *rand cph_roll 1 combat_player_dmg_dice_sides
@@ -3758,7 +3793,7 @@ ${res_banner}
     *set cph_bonus_str "${combat_player_dmg_bonus}"
   *temp cph_extra_str ""
   *temp cph_running (cph_roll + combat_player_dmg_bonus)
-  *if (hex_active)
+  *if ((hex_active) and (rph_is_attack_roll))
     *temp cph_hex_die 0
     *rand cph_hex_die 1 6
     *set combat_player_dmg_dealt + cph_hex_die
@@ -3994,15 +4029,9 @@ ${combat_player_dmg_roll_banner}
   *rand mm_dart_2 1 4
   *rand mm_dart_3 1 4
   *set combat_player_dmg_dealt (((mm_dart_1 + mm_dart_2) + mm_dart_3) + 3)
-  *temp mm_extra_str ""
-  *temp mm_running combat_player_dmg_dealt
-  *if (hex_active)
-    *temp mm_hex_die 0
-    *rand mm_hex_die 1 6
-    *set combat_player_dmg_dealt + mm_hex_die
-    *set mm_extra_str "${mm_extra_str} +${mm_hex_die} (Hex)"
-    *set mm_running + mm_hex_die
-  *set combat_player_dmg_roll_banner "[b][🎲 Magic Missile: ${mm_dart_1}+${mm_dart_2}+${mm_dart_3} +3${mm_extra_str} = ${mm_running}][/b]"
+  *comment No Hex here, deliberately: the darts auto-hit with no attack roll (RAW, and per Sage Advice), so they
+  *comment don't satisfy Hex's "hit with an attack" trigger -- same reasoning as the save-based spells.
+  *set combat_player_dmg_roll_banner "[b][🎲 Magic Missile: ${mm_dart_1}+${mm_dart_2}+${mm_dart_3} +3 = ${combat_player_dmg_dealt}][/b]"
   *gosub apply_outgoing_damage_resist_vuln
   *set combat_enemy_hp - combat_player_dmg_dealt
   *if (combat_enemy_hp < 0)
@@ -4015,6 +4044,9 @@ ${combat_player_dmg_roll_banner}
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment SPELL: HEX (+1d6 necrotic damage on hits)
+*comment RAW: the bonus only fires on an attack roll that hits, never on a save (Vicious Mockery, Dissonant
+*comment Whispers) or an auto-hit with no attack roll (Magic Missile) -- see resolve_player_hit's own header
+*comment comment for how each caller declares which one it is.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_hex
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))

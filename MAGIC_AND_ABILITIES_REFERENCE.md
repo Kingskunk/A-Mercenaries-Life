@@ -56,18 +56,19 @@ Only three of the seven classes have any spellcasting at level 1 — this matche
 \* **Bard's** and **Warlock's** spell pools shrink by one option for a Hexblood character, since Disguise Self (Bard) and Hex (Warlock) are hidden — the character already has them innately from `race_cantrip`/`race_cantrip_2`, so offering them again as a "new" class spell would be redundant. Dissonant Whispers (Bard) and Armor of Agathys / False Life (Warlock) keep the pool robust for Hexblood characters. Wizard's spell pool never overlaps with Hexblood's innate magic, so it's unaffected. See the `*if (not(race = "hexblood"))` guards in `dawn_trial.txt`.
 
 ### Bard
-- **Cantrip pool** (`bard_cantrip`, `bard_cantrip_2` — pick 2, second pick excludes the first): `vicious_mockery`, `minor_illusion`, `message`, `mage_hand`, `mending`
+- **Cantrip pool** (`bard_cantrip`, `bard_cantrip_2` — pick 2, second pick excludes the first): `vicious_mockery`, `minor_illusion`, `message`, `blade_ward`, `mage_hand`, `mending`
+- **`blade_ward` (Blade Ward) is a HOUSE RULE, not RAW.** RAW's Blade Ward costs **1 action**; here it costs the **bonus action**, so it competes with Hex for `combat_player_bonus_max 1` (one bonus action per turn, already enforced by the engine). It is a cantrip, so it costs **no spell slot**. It gives resistance to bludgeoning, piercing and slashing from weapon attacks **until the end of your next turn** — implemented with `blade_ward_active` + `blade_ward_survived_a_turn` and aged by `blade_ward_tick` (`combat.txt`), which is called from exactly one place, `fight_end_player_turn`, because `combat_next_turn` recurses once per combatant. Re-casting is allowed (it refreshes the duration), and a turn lost to a stun still counts as a turn. Available to warlocks, wizards and bards.
 - **Spell pool** (`bard_spell`, `bard_spell_2` — pick 2, second excludes the first): `charm_person`, `healing_word`, `disguise_self` (hidden for Hexblood), `comprehend_languages`, `dissonant_whispers`, `bane` (2026-09-27 — up to three targets, Charisma save vs `spell_save_dc`, -1d4 to a failed target's attack rolls and saving throws for 10 rounds; see `resolve_cast_bane`, startup.txt)
 - Framing: these are **not** newly discovered — the narration explicitly frames them as a lifelong knack the character always suspected was more than charm, finally admitted to under stress. Don't write future Bard content as "wow, I have magic now."
 
 ### Warlock
 - **Patron** (`warlock_patron`): `archfey`, `fiend`, or `great_old_one` — flavor/identity only, doesn't gate anything else currently.
-- **Cantrip pool** (`warlock_cantrip`, `warlock_cantrip_2` — pick 2, second excludes the first): `eldritch_blast`, `minor_illusion`, `chill_touch`, `prestidigitation`
+- **Cantrip pool** (`warlock_cantrip`, `warlock_cantrip_2` — pick 2, second excludes the first): `eldritch_blast`, `minor_illusion`, `chill_touch`, `blade_ward`, `prestidigitation`
 - **Spell pool** (`warlock_spell`): `hex` (hidden for Hexblood), `comprehend_languages`, `unseen_servant`, `armor_of_agathys`, `false_life`
 - Framing: this **is** meant to read as sudden and new — a pact is a discrete origin event in 5e fiction, so "wow, I have powers now" is the correct tone here, unlike Bard/Wizard.
 
 ### Wizard
-- **Cantrip pool** (`wizard_cantrip`, `wizard_cantrip_2`, `wizard_cantrip_3` — pick 3, each pick excludes prior picks): `fire_bolt`, `ray_of_frost`, `shocking_grasp`, `mage_hand`, `guidance`, `mending`, `light`, `prestidigitation`
+- **Cantrip pool** (`wizard_cantrip`, `wizard_cantrip_2`, `wizard_cantrip_3` — pick 3, each pick excludes prior picks): `fire_bolt`, `ray_of_frost`, `shocking_grasp`, `blade_ward`, `mage_hand`, `guidance`, `mending`, `light`, `prestidigitation`
 - **Spell pool** (`wizard_spell`): `identify`, `feather_fall`, `comprehend_languages`, `mage_armor`, `shield`, `magic_missile`, `false_life`
 - Framing: same as Bard — these are years of secret, hidden practice (afraid of the scandal it'd cause if a lord's heir was caught dabbling in real theory), only just being admitted to under pressure, not invented on the spot.
 
