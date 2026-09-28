@@ -296,30 +296,38 @@ ${combat_player_dmg_roll_banner}
     *rand cea_bane_die 1 4
     *set combat_enemy_atk_total - cea_bane_die
     *set cea_bane_str " -${cea_bane_die} (Bane)"
-  *set combat_enemy_hit_success (combat_enemy_atk_total >= armor_class)
+  *comment Dodge (RAW +5 AC for the current turn) and Shield (RAW +5 AC when hit) are BOTH just additions to
+  *comment the AC an attack is tested against, and they stack. Building cea_dc ONCE, up front, and testing
+  *comment everything against it keeps the three things that must agree -- the hit check, Shield's re-check,
+  *comment and the printed DC -- from drifting apart, which is exactly the bug the Shield fix had to chase
+  *comment down. The banner also names which bonuses were live, so "+5 Dodge" or "+5 Dodge +5 Shield" tells the
+  *comment player why a number moved rather than leaving them to infer it.
+  *temp cea_dc armor_class
+  *if (dodge_active)
+    *set cea_dc (cea_dc + 5)
+  *set combat_enemy_hit_success (combat_enemy_atk_total >= cea_dc)
   *set combat_shield_triggered false
+  *comment Shield is a reaction "when you are hit", so it triggers off the hit as resolved above -- which now
+  *comment already accounts for Dodge -- and then re-tests one step higher. It is not itself dodge-blocked.
   *if ((combat_enemy_hit_success) and (shield_armed))
     *set shield_armed false
     *set wizard_spell_slots - 1
     *set combat_shield_triggered true
-    *set combat_enemy_hit_success (combat_enemy_atk_total >= (armor_class + 5))
-  *comment Attack-roll banner (2026-09-27): built here, now that combat_enemy_hit_success has its FINAL value
-  *comment (Shield can still flip it above) -- see the create comment for why this is per-slot, not shared.
-  *comment The DC printed must be the one the roll was ACTUALLY tested against (2026-09-28). When Shield
-  *comment triggered, the check above re-ran the comparison at armor_class + 5, but this banner still printed
-  *comment the bare armor_class -- so a Shield that did its job and correctly negated nothing looked exactly
-  *comment like a Shield that had been ignored. A 19 vs a Shielded AC 17 read as "vs AC 12 — HIT" and looked
-  *comment like a rules bug rather than a hit that legitimately beat the boosted DC. Prints the effective DC
-  *comment plus a "(Shield)" marker, so the +5 is visible whether Shield held the blow or broke through it.
+    *set cea_dc (cea_dc + 5)
+    *set combat_enemy_hit_success (combat_enemy_atk_total >= cea_dc)
+  *comment Banner (2026-09-27): built here, now that combat_enemy_hit_success has its FINAL value. The DC
+  *comment printed is cea_dc itself, the number the roll was actually compared against -- before the Shield
+  *comment fix this printed a bare armor_class even when the roll had just been re-tested at AC+5, so a
+  *comment working Shield looked identical to an ignored one.
   *temp cea_atk_verdict "MISS"
   *if (combat_enemy_hit_success)
     *set cea_atk_verdict "HIT"
-  *temp cea_dc armor_class
-  *temp cea_shield_str ""
+  *temp cea_ac_str ""
+  *if (dodge_active)
+    *set cea_ac_str " +5 Dodge"
   *if (combat_shield_triggered)
-    *set cea_dc (armor_class + 5)
-    *set cea_shield_str " (Shield)"
-  *set {(cea_atk_bannername)} "[b][🎲 ${combat_enemy_name} Attack Roll: ${cea_roll} ${cea_atk_bonus_str}${cea_adv_label}${cea_bane_str} = ${combat_enemy_atk_total} vs AC ${cea_dc}${cea_shield_str} — ${cea_atk_verdict}][/b]"
+    *set cea_ac_str "${cea_ac_str} +5 Shield"
+  *set {(cea_atk_bannername)} "[b][🎲 ${combat_enemy_name} Attack Roll: ${cea_roll} ${cea_atk_bonus_str}${cea_adv_label}${cea_bane_str} = ${combat_enemy_atk_total} vs AC ${cea_dc}${cea_ac_str} — ${cea_atk_verdict}][/b]"
   *set combat_enemy_dmg_dealt 0
   *set combat_agathys_triggered false
   *set combat_agathys_shattered false

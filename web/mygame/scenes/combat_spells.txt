@@ -24,9 +24,17 @@
 *comment ══════════════════════════════════════════════════════════════
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment SPELL: MAGIC MISSILE (3d4 + 3 force damage)
+*comment SPELL: MAGIC MISSILE (3 darts of 1d4, plus the caster's spellcasting ability modifier)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment The modifier was hardcoded to +3 until 2026-09-28. That happened to be right for the one character
+*comment who reported it (INT 16 = +3) and wrong for every other Wizard: an INT 18 caster under-paid by 1, an
+*comment INT 14 caster over-paid by 1, and it ignored the casting stat entirely. RAW Magic Missile is three darts
+*comment of 1d4 with the caster's modifier on EACH dart, which is the same total as 3d4 + mod, so it is applied
+*comment once to the sum here. Reads the durable spell_damage_mod (set in update_dnd_stats) rather than
+*comment re-deriving the class table, and deliberately does not touch the cantrips.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_magic_missile
+*comment The lock guard below is the engine's standard idiom and is unchanged; only the damage formula moved.
 *if (not(combat_magic_missile_locked)) or (not(locked_combat_magic_missile_page_id = page_id))
   *set wizard_spell_slots - 1
   *comment Always Force damage, RAW -- no per-caster variation, so it's set
@@ -38,10 +46,15 @@
   *rand mm_dart_1 1 4
   *rand mm_dart_2 1 4
   *rand mm_dart_3 1 4
-  *set combat_player_dmg_dealt (((mm_dart_1 + mm_dart_2) + mm_dart_3) + 3)
+  *temp mm_mod_str ""
+  *if (spell_damage_mod >= 0)
+    *set mm_mod_str "+${spell_damage_mod}"
+  *else
+    *set mm_mod_str "${spell_damage_mod}"
+  *set combat_player_dmg_dealt (((mm_dart_1 + mm_dart_2) + mm_dart_3) + spell_damage_mod)
   *comment No Hex here, deliberately: the darts auto-hit with no attack roll (RAW, and per Sage Advice), so they
   *comment don't satisfy Hex's "hit with an attack" trigger -- same reasoning as the save-based spells.
-  *set combat_player_dmg_roll_banner "[b][🎲 Magic Missile: ${mm_dart_1}+${mm_dart_2}+${mm_dart_3} +3 = ${combat_player_dmg_dealt}][/b]"
+  *set combat_player_dmg_roll_banner "[b][🎲 Magic Missile: ${mm_dart_1}+${mm_dart_2}+${mm_dart_3} ${mm_mod_str} = ${combat_player_dmg_dealt}][/b]"
   *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
   *set combat_enemy_hp - combat_player_dmg_dealt
   *if (combat_enemy_hp < 0)
@@ -155,7 +168,14 @@ ${combat_player_dmg_roll_banner}
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment SPELL: DISSONANT WHISPERS (3d6 psychic, save for half)
+*comment SPELL: DISSONANT WHISPERS (3d6 psychic + the caster's spellcasting ability modifier, save for half)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment The modifier was missing entirely until 2026-09-28 -- this was a flat 3d6 that did not scale with the
+*comment Bard's Charisma at all, while Magic Missile in the same file had a hardcoded +3. RAW "3d6" on a save-based
+*comment spell means 3d6 PLUS the casting modifier, and the halving applies to that total, not to the dice alone:
+*comment a successful save halves dice and modifier together, rounded down. check_success is already inverted
+*comment relative to its name (resolve_enemy_save: true = the enemy FAILED the save), so the full-damage branch
+*comment below is the one guarded by it, unchanged from before.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_dissonant_whispers
 *if (not(combat_dissonant_whispers_locked)) or (not(locked_combat_dissonant_whispers_page_id = page_id))
@@ -169,13 +189,23 @@ ${combat_player_dmg_roll_banner}
   *rand dw_d1 1 6
   *rand dw_d2 1 6
   *rand dw_d3 1 6
-  *temp dw_total ((dw_d1 + dw_d2) + dw_d3)
+  *temp dw_mod_str ""
+  *if (spell_damage_mod >= 0)
+    *set dw_mod_str "+${spell_damage_mod}"
+  *else
+    *set dw_mod_str "${spell_damage_mod}"
+  *temp dw_total 0
+  *set dw_total ((dw_d1 + dw_d2) + dw_d3)
+  *comment Modifier applied AFTER the dice and BEFORE the halving below, so a successful save halves dice
+  *comment and modifier together rather than halving 3d6 and handing back a full modifier (randomtest caught the
+  *comment first draft of this, which *set dw_total on a never-declared var instead of *temp-ing it).
+  *set dw_total + spell_damage_mod
   *if (check_success)
     *set combat_player_dmg_dealt dw_total
-    *set combat_player_dmg_roll_banner "[b][🎲 Dissonant Whispers: ${dw_d1}+${dw_d2}+${dw_d3} = ${dw_total}][/b]"
+    *set combat_player_dmg_roll_banner "[b][🎲 Dissonant Whispers: ${dw_d1}+${dw_d2}+${dw_d3} ${dw_mod_str} = ${dw_total}][/b]"
   *else
     *set combat_player_dmg_dealt ((dw_total - (dw_total modulo 2)) / 2)
-    *set combat_player_dmg_roll_banner "[b][🎲 Dissonant Whispers: ${dw_d1}+${dw_d2}+${dw_d3} = ${dw_total} — Halved (Saved): ${combat_player_dmg_dealt}][/b]"
+    *set combat_player_dmg_roll_banner "[b][🎲 Dissonant Whispers: ${dw_d1}+${dw_d2}+${dw_d3} ${dw_mod_str} = ${dw_total} — Halved (Saved): ${combat_player_dmg_dealt}][/b]"
   *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
   *set combat_enemy_hp - combat_player_dmg_dealt
   *if (combat_enemy_hp < 0)

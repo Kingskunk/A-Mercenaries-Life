@@ -257,6 +257,13 @@
 *comment the six ability mods it depends on. Read by combat.txt's enemy saving throws (resolve_enemy_save,
 *comment 2026-09-27) instead of the old hardcoded DC 12; also shown on the dossier (choicescript_stats.txt).
 *create spell_save_dc 8
+*comment The caster's own spellcasting ability modifier -- INT for Wizard, CHA for Warlock/Bard, 0 for a class
+*comment with no casting stat. Durable and separate from spell_save_dc's formula on purpose: that one is
+*comment `8 + prof + mod`, this one is the bare `mod`, because a LEVELED spell's damage adds only the modifier
+*comment (RAW). Set from the same uds_casting_mod branches in update_dnd_stats, so the class table that picks
+*comment the stat lives in exactly one place. Added 2026-09-28: Magic Missile had `+3` hardcoded (right only by
+*comment coincidence for INT 16) and Dissonant Whispers had no modifier at all, so neither scaled with the caster.
+*create spell_damage_mod 0
 *create hp_current 12
 *create hp_max 12
 *create armor_class 13
@@ -2262,19 +2269,27 @@
 *comment warlocks, wizards and bards. Until the end of your NEXT turn you have resistance to
 *comment bludgeoning, piercing and slashing from weapon attacks. Two flags because "end of your next
 *comment turn" is a duration measured in player turns, not rounds:
-*comment   blade_ward_active          the ward is up
-*comment   blade_ward_survived_a_turn set true by the FIRST player turn-end after the cast, which is
+*create blade_ward_active false
+*comment blade_ward_survived_a_turn set true by the FIRST player turn-end after the cast, which is
 *comment                                what makes the SECOND one expire it (see blade_ward_tick, combat.txt)
 *comment The re-cast resets survived_a_turn as well as active: without that, casting on the turn after
 *comment the ward looks like a no-op and the effect still dies a turn early. Idempotent, so it needs
 *comment no replay lock of its own (unlike the tick, which does).
-*create blade_ward_active false
 *create blade_ward_survived_a_turn false
 *comment Replay guard for blade_ward_tick: it mutates a fight-scoped flag, and a bare *set re-runs when
 *comment the page is replayed, which would expire the ward a whole turn early. Same page_id idiom as
 *comment combat_spend_bonus (create at startup.txt:1053-1054).
 *create blade_ward_tick_locked false
 *create locked_blade_ward_tick_page_id 0
+*comment ═══ DODGE (2026-09-28) ═══ RAW 2014 "Actions in Combat": +5 AC for the current turn, and you cannot
+*comment move. Replaces the homebrew "Brace" option (combat.txt), which tried to do the same job in a worse
+*comment way -- it made ONE chosen enemy roll at disadvantage for a whole action, where this covers every
+*comment attack from every enemy. Brace was also not a 5e action at all, and had never been documented as a
+*comment house rule. Kept as a plain durable flag rather than an AC offset written onto armor_class, so
+*comment equipment's recalculate_armor_class can never absorb a +5 that only lasts until the turn ends.
+*comment Reset in fight_setup and fight_cleanup, and -- per the RAW "for the current turn" wording -- at
+*comment fight_end_player_turn. The "cannot move" half is enforced in combat.txt's movement gates.
+*create dodge_active false
 *create hex_active false
 *create hexblood_hex_used false
 *create temp_hp 0

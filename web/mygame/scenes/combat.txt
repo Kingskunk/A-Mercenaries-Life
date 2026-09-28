@@ -88,6 +88,7 @@
 *set shield_armed false
 *set blade_ward_active false
 *set blade_ward_survived_a_turn false
+*set dodge_active false
 *set is_raging false
 *set combat_agathys_triggered false
 *set combat_agathys_shattered false
@@ -500,6 +501,7 @@
 *set shield_armed false
 *set blade_ward_active false
 *set blade_ward_survived_a_turn false
+*set dodge_active false
 *set is_raging false
 *set combat_agathys_triggered false
 *set combat_agathys_shattered false
@@ -1453,6 +1455,20 @@
 *temp combat_can_break_off false
 *if ((combat_player_moves_left > 0) and (not(player_movement_restricted)))
   *set combat_can_break_off true
+*comment Dodge (2026-09-28, RAW): +5 AC for the current turn AND "you cannot move". The movement half is
+*comment enforced through ONE flag rather than by editing each movement gate separately, so it cannot be
+*comment half-applied later -- every movement option below tests combat_can_move. movement-restricted
+*comment (Pinned/Hobbled/Off-Balance) already hides the options; this hides them for a different reason and
+*comment keeps the button text honest about why, so combat_can_move is true whenever neither applies.
+*temp combat_can_move false
+*if (not(dodge_active))
+  *set combat_can_move true
+*comment Dodge itself: an unspent action, and NOT re-offered while already dodging -- a second Dodge would
+*comment only overwrite the first with an identical +5, so charging for it would be a pure trap.
+*temp combat_can_dodge false
+*if (combat_player_actions_left > 0)
+  *if (not(dodge_active))
+    *set combat_can_dodge true
 *comment Nearest-eligible range per direction (2026-09-28, button projection): which tier the move will act on,
 *comment so the option text can state the result outright ("Close -> Engaged") instead of leaving the player to
 *comment do the arithmetic off the sidebar's range tag themselves.
@@ -1551,11 +1567,11 @@
 
 *choice
   *if ((combat_can_attack) and ((weapon_type = "ranged") or (combat_enemy_range <= 0)))
-    # Attack with your ${weapon}.
+    # [b][ACTION][/b] [b][Attack with your ${weapon}][/b].
       *goto resolve_weapon_attack_choice
 
   *if (((combat_can_attack) and (not(equipped_sidearm_id = "none"))) and ((sidearm_type = "ranged") or (combat_enemy_range <= 0)))
-    # Attack with your ${sidearm}.
+    # [b][ACTION][/b] [b][Attack with your ${sidearm}][/b].
       *comment equip_weapon (equipment.txt) already swaps weapon<->sidearm when told to equip whatever is
       *comment currently the sidearm -- calling it with equipped_sidearm_id draws the sidearm and holsters the
       *comment primary in one step. It stays drawn afterward (a real equip); resolve_weapon_attack_choice then
@@ -1564,7 +1580,7 @@
       *goto resolve_weapon_attack_choice
 
   *if ((combat_player_moves_left > 0) and (combat_can_push_forward))
-    # Push forward and close the distance on the nearest enemy. (${combat_push_from_name} → ${combat_push_to_name})@{show_stat_hints  [Free move]|}
+    # Push forward and close the distance on the nearest enemy. (${combat_push_from_name} → ${combat_push_to_name})
       *comment Free movement (2026-09-28, replaces the old "Dash, RAW: the whole action" one-tier move) -- spends
       *comment combat_player_moves_left, not the action, so a player who's exactly one tier out can push forward
       *comment AND still attack the same turn once Engaged, same as real 5e letting you move up to your speed and
@@ -1596,7 +1612,7 @@
       *goto fight_move_spent
 
   *if ((combat_player_moves_left > 0) and (combat_can_fall_back))
-    # Fall back and open the distance from the nearest enemy. (${combat_fall_from_name} → ${combat_fall_to_name})@{show_stat_hints  [Free move — an adjacent foe may strike as you leave]|}
+    # Fall back and open the distance from the nearest enemy. (${combat_fall_from_name} → ${combat_fall_to_name})
       *comment Symmetric with Push Forward just above: free movement (2026-09-28), spends combat_player_moves_left
       *comment not the action -- 5e's own speed budget doesn't care which direction you move in. Opens exactly one
       *comment range tier, not straight to Long Range. Distinct from "Break off and run" below, which ends the
@@ -1636,7 +1652,7 @@
       *goto fight_move_spent
 
   *if (combat_player_actions_left > 0)
-    # [Dash] Push yourself for extra ground this turn, giving up anything else you could do with it.@{show_stat_hints  [Action]|}
+    # [b][ACTION][/b] [b][Dash][/b] Push yourself for extra ground this turn, giving up anything else.
       *comment Dash, RAW (2026-09-28): spends the action, grants ONE extra combat_player_moves_left, so a player
       *comment starting more than one tier out can close/open two tiers this turn -- at the cost of the action, so
       *comment no attack (or spell, or item) alongside it. Doesn't move by itself -- Push Forward/Fall Back still
@@ -1649,7 +1665,7 @@
       *goto fight_action_spent
 
   *if ((combat_player_actions_left > 0) and ((((wizard_cantrip = "fire_bolt") or (wizard_cantrip_2 = "fire_bolt")) or (wizard_cantrip_3 = "fire_bolt")) or ((race_cantrip = "fire_bolt") or (race_cantrip_2 = "fire_bolt"))))
-    # [Cantrip: Fire Bolt] Hurl a mote of arcane flame at ${combat_enemy_epithet}.
+    # [b][ACTION][/b] [b][Fire Bolt][/b] Hurl a mote of arcane flame at ${combat_enemy_epithet}.
       *gosub fight_pick_target
       *set combat_current_spell_id "fire_bolt"
       *gosub_scene combat_prose pick_spell_flavor
@@ -1679,7 +1695,7 @@
       *goto fight_check_enemy_hp
 
   *if ((combat_player_actions_left > 0) and ((((wizard_cantrip = "ray_of_frost") or (wizard_cantrip_2 = "ray_of_frost")) or (wizard_cantrip_3 = "ray_of_frost")) or ((race_cantrip = "ray_of_frost") or (race_cantrip_2 = "ray_of_frost"))))
-    # [Cantrip: Ray of Frost] Loose a beam of numbing cold at ${combat_enemy_epithet}.
+    # [b][ACTION][/b] [b][Ray of Frost][/b] Loose a beam of numbing cold at ${combat_enemy_epithet}.
       *gosub fight_pick_target
       *set combat_current_spell_id "ray_of_frost"
       *gosub_scene combat_prose pick_spell_flavor
@@ -1710,7 +1726,7 @@
       *goto fight_check_enemy_hp
 
   *if ((combat_player_actions_left > 0) and ((((wizard_cantrip = "shocking_grasp") or (wizard_cantrip_2 = "shocking_grasp")) or (wizard_cantrip_3 = "shocking_grasp")) or ((race_cantrip = "shocking_grasp") or (race_cantrip_2 = "shocking_grasp"))))
-    # [Cantrip: Shocking Grasp] Drive a crackling jolt of lightning into ${combat_enemy_epithet}.
+    # [b][ACTION][/b] [b][Shocking Grasp][/b] Drive a crackling jolt of lightning into ${combat_enemy_epithet}.
       *gosub fight_pick_target
       *set combat_current_spell_id "shocking_grasp"
       *gosub_scene combat_prose pick_spell_flavor
@@ -1750,7 +1766,7 @@
       *goto fight_check_enemy_hp
 
   *if ((combat_player_actions_left > 0) and ((warlock_cantrip = "eldritch_blast") or (warlock_cantrip_2 = "eldritch_blast")))
-    # [Cantrip: Eldritch Blast] Unleash a crackling beam of eldritch force at ${combat_enemy_epithet}.
+    # [b][ACTION][/b] [b][Eldritch Blast][/b] Unleash a crackling beam of eldritch force at ${combat_enemy_epithet}.
       *gosub fight_pick_target
       *set combat_current_spell_id "eldritch_blast"
       *gosub_scene combat_prose pick_spell_flavor
@@ -1780,7 +1796,7 @@
       *goto fight_check_enemy_hp
 
   *if ((combat_player_actions_left > 0) and ((warlock_cantrip = "chill_touch") or (warlock_cantrip_2 = "chill_touch")))
-    # [Cantrip: Chill Touch] Conjure a skeletal hand of necrotic frost against ${combat_enemy_epithet}.
+    # [b][ACTION][/b] [b][Chill Touch][/b] Conjure a skeletal hand of necrotic frost against ${combat_enemy_epithet}.
       *gosub fight_pick_target
       *set combat_current_spell_id "chill_touch"
       *gosub_scene combat_prose pick_spell_flavor
@@ -1810,7 +1826,7 @@
       *goto fight_check_enemy_hp
 
   *if ((combat_player_actions_left > 0) and ((bard_cantrip = "vicious_mockery") or (bard_cantrip_2 = "vicious_mockery")))
-    # [Cantrip: Vicious Mockery] Hurl a barbed, perfectly-aimed insult at ${combat_enemy_epithet}.
+    # [b][ACTION][/b] [b][Vicious Mockery][/b] Hurl a barbed, perfectly-aimed insult at ${combat_enemy_epithet}.
       *gosub fight_pick_target
       *set combat_current_spell_id "vicious_mockery"
       *gosub_scene combat_prose pick_spell_flavor
@@ -1841,7 +1857,7 @@
       *goto fight_check_enemy_hp
 
   *if ((combat_player_actions_left > 0) and (((character_class = "wizard") and (wizard_spell = "magic_missile")) and (wizard_spell_slots > 0)))
-    # [Spell: Magic Missile] Unleash three darts of force that strike unerringly, bypassing the defenses of ${combat_enemy_epithet} entirely.
+    # [b][ACTION][/b] [b][Magic Missile][/b] Unleash three darts of force, bypassing the defenses of ${combat_enemy_epithet}.
       *gosub fight_pick_target
       *set combat_current_spell_id "magic_missile"
       *gosub_scene combat_prose pick_spell_flavor
@@ -1858,7 +1874,7 @@
       *goto fight_check_enemy_hp
 
   *if ((combat_can_hex) and (combat_player_bonus_left > 0))
-    # [Spell: Hex] Lay a baleful eldritch curse upon ${combat_enemy_epithet}, marking the foe to suffer deeper wounds.@{show_stat_hints  [Bonus Action]|}
+    # [b][BONUS ACTION][/b] [b][Hex][/b] Lay a baleful eldritch curse upon ${combat_enemy_epithet}.
       *gosub fight_pick_target
       *gosub_scene combat_spells resolve_cast_hex
       You whisper a guttural syllable of ancient ruin. Dark, spectral runes flare briefly across ${combat_enemy_epithet} and sink in, binding the foe's fate to your will—every strike you land will tear in with extra necrotic fury!
@@ -1868,7 +1884,7 @@
       *goto fight_bonus_spent
 
   *if ((combat_player_actions_left > 0) and (((warlock_spell = "armor_of_agathys") and (warlock_spell_slots > 0)) and (not(agathys_active))))
-    # [Spell: Armor of Agathys] Sheathe yourself in spectral frost that shields you and punishes melee strikes.
+    # [b][ACTION][/b] [b][Armor of Agathys][/b] Sheathe yourself in spectral frost that punishes melee strikes.
       *gosub_scene combat_spells resolve_cast_agathys
       A brittle casing of translucent, jagged rime coats your shoulders and arms, radiating bone-chilling cold. Any foe foolish enough to strike you will feel the frost shatter back against the blow.
       *comment No banner here -- the hub's own "Armor of Agathys Active" status line (fight_round_hub) says the
@@ -1877,7 +1893,7 @@
       *goto fight_action_spent
 
   *if ((combat_player_actions_left > 0) and (((((character_class = "wizard") and (wizard_spell = "false_life")) and (wizard_spell_slots > 0)) or (((character_class = "warlock") and (warlock_spell = "false_life")) and (warlock_spell_slots > 0))) and (temp_hp = 0)))
-    # [Spell: False Life] Weave a necromantic shroud over your flesh for a protective buffer of vitality.
+    # [b][ACTION][/b] [b][False Life][/b] Weave a necromantic shroud over your flesh.
       *gosub_scene combat_spells resolve_cast_false_life
       You murmur a dark necromantic rite. A numb, leathery vitality spreads beneath your skin, insulating your muscles against immediate harm.
       *line_break
@@ -1885,7 +1901,7 @@
       *goto fight_action_spent
 
   *if ((combat_player_actions_left > 0) and (((bard_spell = "dissonant_whispers") or (bard_spell_2 = "dissonant_whispers")) and (bard_spell_slots > 0)))
-    # [Spell: Dissonant Whispers] Utter a hideous, discordant psychic phrase that wracks the mind of ${combat_enemy_epithet}.
+    # [b][ACTION][/b] [b][Dissonant Whispers][/b] A discordant psychic phrase wracks ${combat_enemy_epithet}.
       *gosub fight_pick_target
       *set combat_current_spell_id "dissonant_whispers"
       *gosub_scene combat_prose pick_spell_flavor
@@ -1909,7 +1925,7 @@
       *goto fight_check_enemy_hp
 
   *if ((combat_player_actions_left > 0) and (((bard_spell = "bane") or (bard_spell_2 = "bane")) and (bard_spell_slots > 0)))
-    # [Spell: Bane] Weave a thread of ill fortune through the fight, souring the aim and nerve of every foe still standing near you.
+    # [b][ACTION][/b] [b][Bane][/b] Sour the aim and nerve of every foe still standing near you.
       *comment No fight_pick_target re-sync here -- unlike every other targeted option, Bane doesn't act on the
       *comment single "active" target at all; resolve_cast_bane picks its own up to three targets internally.
       You let the curse spill out low and wide, ill fortune threading itself around throat after throat in the same breath.
@@ -1918,7 +1934,7 @@
       *goto fight_action_spent
 
   *if ((combat_can_healing_word) and (combat_player_bonus_left > 0))
-    # [Spell: Healing Word] Speak a resonant, curative syllable to knit your gashes and steady your footing.@{show_stat_hints  [Bonus Action]|}
+    # [b][BONUS ACTION][/b] [b][Healing Word][/b] Speak a curative syllable to knit your gashes.
       *gosub_scene combat_spells resolve_cast_healing_word
       A sharp, ringing cadence leaves your lips. Warmth rushes through your marrow, knitting shut the worst of your wounds.
       *line_break
@@ -1926,15 +1942,25 @@
       *line_break
       *goto fight_bonus_spent
 
-  *if (combat_player_actions_left > 0)
-    # Brace and watch the strikes of ${combat_enemy_epithet}, giving ground instead of pressing the attack.
-      *gosub fight_pick_target
-      *set {(("combat_enemy" & combat_active_target) & "_disadvantage")} true
-      You plant your feet and hold your ground, tracking the movement of ${combat_enemy_epithet} instead of swinging blind.
+  *if (combat_can_dodge)
+    # [b][ACTION][/b] [b][Dodge][/b] +5 AC until your turn ends; you cannot move.
+      *comment DODGE, RAW 2014 "Actions in Combat": +5 AC for the current turn, and you cannot move. Replaces
+      *comment the homebrew "Brace" option, which was not a 5e action at all and was never documented as a
+      *comment house rule; mechanically it was also worse, making ONE chosen enemy roll at disadvantage for a
+      *comment whole action where this covers every attack from every enemy. Brace's own button text claimed it
+      *comment "giv[es] ground" when it moved nothing, had no cost label, and printed no banner -- so it read as
+      *comment a defensive option that did nothing, which is why it was never picked.
+      *comment RAW's "you cannot move" half is enforced in the movement gates below (Push Forward / Fall Back /
+      *comment Dash / Break off all test combat_can_move), so dodging genuinely costs mobility -- the trade that
+      *comment makes it a decision rather than a free defensive pick.
+      *comment No lock of its own needed, unlike the budget spends: `*set dodge_active true` is idempotent, so a
+      *comment Stats-screen page replay re-running it changes nothing. fight_action_spent handles the action
+      *comment cost with its own existing lock.
+      *set dodge_active true
       *goto fight_action_spent
 
   *if ((combat_player_actions_left > 0) and ((((character_class = "wizard") and (wizard_spell = "shield")) and (wizard_spell_slots > 0)) and (not(shield_armed))))
-    # [Spell: Shield] Hold the barrier-spell coiled and ready, primed to snap into place the instant something connects.
+    # [b][Shield][/b] Hold the barrier-spell coiled and ready, primed to snap into place.
       *set shield_armed true
       You murmur the first half of the somatic phrase under your breath, holding the working coiled and ready at your fingertips, costing you nothing to keep it there.
       *comment No banner here -- the hub's own "Shield Armed" status line (fight_round_hub) says the same thing
@@ -1943,7 +1969,7 @@
       *goto fight_round_hub
 
   *if ((combat_can_second_wind) and (combat_player_bonus_left > 0))
-    # [Second Wind] Grit your teeth through the pain and the fear, and keep going.@{show_stat_hints  [Bonus Action]|}
+    # [b][BONUS ACTION][/b] [b][Second Wind][/b] Grit your teeth through the pain, and keep going.
       *gosub_scene character_progression second_wind
       A surge of stubborn, practiced discipline steadies your breathing and closes the worst of your scrapes.
       *line_break
@@ -1951,13 +1977,13 @@
       *goto fight_bonus_spent
 
   *if ((combat_can_rage) and (combat_player_bonus_left > 0))
-    # [Rage] Let the fury take you.@{show_stat_hints  [Bonus Action]|}
+    # [b][BONUS ACTION][/b] [b][Rage][/b] Let the fury take you.
       *gosub_scene character_progression activate_rage
       A hot, roaring pressure floods your chest, dulling the pain and the fear to nothing at all.
       *goto fight_bonus_spent
 
   *if ((combat_can_blade_ward) and (combat_player_bonus_left > 0))
-    # [Cantrip: Blade Ward] Trace a warding sigil in the air; blows land on the sigil instead of you.@{show_stat_hints  [Bonus Action — House Rule]|}
+    # [b][BONUS ACTION][/b] [b][Blade Ward][/b] Blows land on the sigil, not on you.
       *comment Sets BOTH flags, not just active: a re-cast has to clear survived_a_ward-turn too, or
       *comment casting on the turn after the ward goes up would spend the bonus action and change
       *comment nothing -- the effect would still expire at the end of the turn the player just started.
@@ -1975,7 +2001,7 @@
       *goto fight_use_item
 
   *if (combat_can_disengage)
-    # [Disengage] Move without provoking a strike from anything standing next to you, for the rest of this round.@{show_stat_hints  [Action]|}
+    # [b][ACTION][/b] [b][Disengage][/b] Move without provoking a strike for the rest of this round.
       *comment DISENGAGE (2026-09-28). 5e makes this a 3rd-level Battle Master maneuver; there is no Battle Master
       *comment in this game, and building a whole class-resource system for one maneuver is not worth it, so it is
       *comment a universal ACTION instead -- which drops straight into the existing budget (combat_player_actions_left)
@@ -2024,15 +2050,15 @@
 *choice
   *comment GEN:BEGIN combat_use_options -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
   *if (has_warming_liniment)
-    # Rub in the warming liniment.@{show_stat_hints  [+1 STR for 12 hours]|}@{(((((unique_buff1_active) and (unique_buff1_name = "Warming Liniment"))) or (((unique_buff2_active) and (unique_buff2_name = "Warming Liniment")))) or (((unique_buff3_active) and (unique_buff3_name = "Warming Liniment"))))  [Already active: using it refreshes the timer]|}
+    # [b][ACTION][/b] [b][Rub in the warming liniment][/b].@{show_stat_hints  [+1 STR for 12 hours]|}@{(((((unique_buff1_active) and (unique_buff1_name = "Warming Liniment"))) or (((unique_buff2_active) and (unique_buff2_name = "Warming Liniment")))) or (((unique_buff3_active) and (unique_buff3_name = "Warming Liniment"))))  [Already active: using it refreshes the timer]|}
       *set use_item_id "warming_liniment"
       *goto fight_use_do
   *if (has_clear_head_draught)
-    # Drink the clear-head draught.@{show_stat_hints  [+1 WIS for 12 hours]|}@{(((((unique_buff1_active) and (unique_buff1_name = "Clear-Head Draught"))) or (((unique_buff2_active) and (unique_buff2_name = "Clear-Head Draught")))) or (((unique_buff3_active) and (unique_buff3_name = "Clear-Head Draught"))))  [Already active: using it refreshes the timer]|}
+    # [b][ACTION][/b] [b][Drink the clear-head draught][/b].@{show_stat_hints  [+1 WIS for 12 hours]|}@{(((((unique_buff1_active) and (unique_buff1_name = "Clear-Head Draught"))) or (((unique_buff2_active) and (unique_buff2_name = "Clear-Head Draught")))) or (((unique_buff3_active) and (unique_buff3_name = "Clear-Head Draught"))))  [Already active: using it refreshes the timer]|}
       *set use_item_id "clear_head_draught"
       *goto fight_use_do
   *if (has_althea_phial)
-    # Drink the phial of Saint Althea's water.@{show_stat_hints  [Restores 2d4+2 HP]|}
+    # [b][ACTION][/b] [b][Drink the phial of Saint Althea's water][/b].@{show_stat_hints  [Restores 2d4+2 HP]|}
       *set use_item_id "althea_phial"
       *goto fight_use_do
   *comment GEN:END combat_use_options

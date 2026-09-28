@@ -397,10 +397,19 @@ function boonRunning(it) {
   var terms = [1, 2, 3].map(function (n) { return "(unique_buff" + n + "_active) and (unique_buff" + n + "_name = " + q(it.effect.name) + ")"; });
   return orChain(terms.map(function (t) { return "(" + t + ")"; }));
 }
-function useLabel(it) {
+// `inCombat` adds the bold cost+name prefix used by the combat hub's label convention (2026-09-28):
+// [b]ACTION[/b][b]Rub in the warming liniment[/b]. The same function builds the out-of-combat satchel
+// menu, where using an item costs no combat action, so the prefix must be conditional rather than baked in.
+function useLabel(it, inCombat) {
   var verb = it.useVerb || "Use";
   var tag = it.effect.type === "boon" ? "@{" + boonRunning(it) + "  [Already active: using it refreshes the timer]|}" : "";
-  return verb + " the " + it.name + ".@{show_stat_hints  [" + effectSummary(it) + "]|}" + tag;
+  var text = verb + " the " + it.name + ".";
+  // NOTE the space after [/b], and the square brackets inside it: they render as visible text and are what
+  // makes the cost read as a tag rather than running into the name ("[ACTION] Blade Ward", not
+  // "ACTIONBlade Ward"). Same convention as the pre-2026-09-28 buttons, which wrote [Dash] and
+  // [Cantrip: Ray of Frost].
+  if (inCombat) text = "[b][ACTION][/b] [b][" + text.replace(/\.$/, "") + "][/b].";
+  return text + "@{show_stat_hints  [" + effectSummary(it) + "]|}" + tag;
 }
 // A one-line owned test: sets cu_any (a *temp the caller declares) when any listed consumable is owned.
 function genUseCheck(combatOnly) {
@@ -415,7 +424,7 @@ function genUseOptions(goto, combatOnly) {
   var L = [];
   consumables(combatOnly).forEach(function (it) {
     L.push('*if (' + flag(it) + ')');
-    L.push('  # ' + useLabel(it));
+    L.push('  # ' + useLabel(it, combatOnly));
     L.push('    *set use_item_id ' + q(it.id));
     L.push('    *goto ' + goto);
   });
