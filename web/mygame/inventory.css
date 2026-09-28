@@ -92,8 +92,32 @@ body.nightmode #inventory {
   border: 1px solid var(--inv-line);
   border-radius: 8px;
   padding: 0.55em 0.7em;
+  /* reserve the accent edge's width on EVERY card, buffed or not, so adding or losing a bonus never
+     reflows the text inside the card -- a 3px left border appearing would otherwise nudge "Heavy
+     Falchion" sideways. The edge is painted by .inv-slot-buffed as a colour change, not a width one. */
+  border-left: 3px solid transparent;
+  transition: border-color 0.14s ease, background-color 0.14s ease, box-shadow 0.14s ease, transform 0.14s ease;
 }
-#inventory .inv-slot-empty { opacity: 0.6; }
+#inventory .inv-slot:hover {
+  background: var(--inv-hover);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+  transform: translateY(-1px);
+}
+/* A slot that actually grants something wears the same accent edge the pinned Rest card uses, so the
+   eye can find the three or four cards that matter without reading twelve of them. */
+#inventory .inv-slot-buffed { border-left-color: var(--inv-accent); }
+
+/* An empty slot steps back instead of competing: no fill, a dashed outline to say "nothing here"
+   rather than "something subtle here", and well under half the opacity of a live card. */
+#inventory .inv-slot-empty {
+  background: none;
+  border-style: dashed;
+  opacity: 0.45;
+}
+#inventory .inv-slot-empty:hover { background: var(--inv-hover); }
+/* "No bonuses" is a real answer to "is this thing doing anything?", so it stays readable -- it just
+   stops competing for attention with the cards that do grant something. */
+#inventory .inv-slot-nobonus { opacity: 0.55; }
 #inventory .inv-slot-label {
   font-size: 0.68em;
   font-weight: 700;
@@ -116,7 +140,9 @@ body.nightmode #inventory {
   background: var(--inv-bg);
   border: 1px solid var(--inv-line);
   border-radius: 6px;
+  transition: border-color 0.14s ease;
 }
+#inventory .inv-slot-select:hover { border-color: var(--inv-muted); }
 #inventory .inv-slot-toggle {
   display: block;
   width: 100%;
@@ -127,6 +153,7 @@ body.nightmode #inventory {
   background: var(--inv-bg);
   border: 1px solid var(--inv-accent);
   border-radius: 6px;
+  transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease;
 }
 #inventory .inv-slot-toggle:hover { background: var(--inv-accent-soft); }
 #inventory .inv-slot-toggle[disabled] {
@@ -145,6 +172,7 @@ body.nightmode #inventory {
   background: var(--inv-panel);
   border: 1px solid var(--inv-line);
   border-radius: 8px;
+  transition: background-color 0.14s ease, border-color 0.14s ease;
 }
 #inventory .inv-swap-sidearm:hover { background: var(--inv-hover); }
 
@@ -156,6 +184,7 @@ body.nightmode #inventory {
   border-radius: 999px;
   padding: 0.2em 0.75em;
   font-size: 0.82em;
+  transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease;
 }
 #inventory .inv-chip:hover { background: var(--inv-hover); }
 #inventory .inv-chip[aria-pressed="true"] {
@@ -177,8 +206,15 @@ body.nightmode #inventory {
 #inventory .inv-item {
   padding: 0.5em 0.65em;
   border-radius: 7px;
+  transition: background-color 0.14s ease;
 }
 #inventory .inv-item:hover { background: var(--inv-hover); }
+/* align-items:baseline keeps the item name, its slot chip and its badge sitting on one text line, which
+   is what those small labels want. It cannot also hold a full-size control: baseline alignment puts
+   the BOTTOM of the tallest box on the shared baseline, so a 44px-tall button was shoved upward until
+   it overflowed the pinned Rest card's top border. Buttons are therefore pulled back to centre with
+   align-self, which overrides the row's baseline alignment for that one box and leaves the text alone.
+   This covers consumable Use buttons too, which share .inv-item-main. */
 #inventory .inv-item-main { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75em; }
 #inventory .inv-item-name { font-weight: 600; }
 #inventory .inv-item-slot {
@@ -206,11 +242,25 @@ body.nightmode #inventory {
 
 /* ---- the pinned Rest card, above the chips ---- */
 #inventory .inv-pinned { margin-bottom: 0.5em; }
+/* The Rest card is a grid rather than a plain block, so the button can be centred against the WHOLE
+   card -- title row plus description -- instead of only against the title row it happens to sit in.
+   As a plain flex row the button was pinned to the top 44px band while the card ran to 81px, which
+   left it 10px above the card's own centre and read as hugging the top edge. The button spans both
+   rows and `align-items:center` centres it on the card; the text keeps its own natural stacking.
+   The name and badge are baseline-aligned within their own row, which is all baseline is good for --
+   it is a poor choice for a full-size control sitting beside them. */
 #inventory .inv-item-pinned {
   border: 1px solid var(--inv-line);
   border-left: 3px solid var(--inv-accent);
   background: var(--inv-accent-soft);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 0.75em;
+  align-items: center;
 }
+#inventory .inv-item-pinned .inv-item-main { grid-column: 1; grid-row: 1; }
+#inventory .inv-item-pinned .inv-item-desc { grid-column: 1; grid-row: 2; }
+#inventory .inv-item-pinned .inv-use { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
 #inventory .inv-item-pinned:hover { background: var(--inv-accent-soft); }
 
 /* ---- header button (sits next to Lorebook) ---- */
@@ -231,5 +281,29 @@ body.nightmode #inventory {
   border: none;
   border-radius: 8px;
   font-weight: 600;
+  /* The 44px minimum is a deliberate touch target for tablets and is NOT to be trimmed for looks. */
+  transition: filter 0.14s ease, transform 0.14s ease;
 }
+#inventory .inv-use:not([disabled]):hover { filter: brightness(1.12); transform: translateY(-1px); }
+#inventory .inv-use:not([disabled]):active { transform: translateY(0); }
 #inventory .inv-use[disabled] { opacity: 0.4; cursor: default; }
+
+/* Honour the OS "reduce motion" setting: drop the hover lifts and colour fades, keep every colour and
+   border exactly as it is, so nothing looks broken -- the panel just stops moving. Only levelup.css
+   did this before; the panels did not. */
+@media (prefers-reduced-motion: reduce) {
+  #inventory .inv-slot,
+  #inventory .inv-slot:hover,
+  #inventory .inv-item,
+  #inventory .inv-chip,
+  #inventory .inv-slot-select,
+  #inventory .inv-slot-select:hover,
+  #inventory .inv-slot-toggle,
+  #inventory .inv-swap-sidearm,
+  #inventory .inv-use,
+  #inventory .inv-use:not([disabled]):hover,
+  #inventory .inv-use:not([disabled]):active {
+    transition: none;
+    transform: none;
+  }
+}

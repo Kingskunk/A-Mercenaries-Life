@@ -852,6 +852,40 @@
 *create advantage false
 *create disadvantage false
 *create guidance_active false
+*comment Same lifecycle as advantage/disadvantage/guidance_active above: a caller sets it true right before
+*comment *gosub_scene startup roll_d20_check, and roll_d20_check itself resets it false on every exit path, so
+*comment it can never bleed into the next, unrelated check. Weapon attacks and the five attack-roll cantrips set
+*comment it (a player is always proficient with their own equipped weapon and known spells); general skill
+*comment checks throughout the story don't, and stay exactly as they are today -- see update_dnd_stats' own
+*comment prof_bonus comment for why a blanket add would be wrong for those.
+*create check_add_prof_bonus false
+*comment ══════════════════════════════════════════════════════════════
+*comment SKILL PROFICIENCIES (5e's 18 skills). One boolean each, granted by class/background/race wherever
+*comment those get assigned (not yet wired into the 3 starting backgrounds -- next step after this). Read by
+*comment roll_skill_check below via {("skill_" & id)} indirection, so a new skill would only ever need a create
+*comment here, not a matching *if branch anywhere else.
+*comment ══════════════════════════════════════════════════════════════
+*create skill_acrobatics false
+*create skill_animal_handling false
+*create skill_arcana false
+*create skill_athletics false
+*create skill_deception false
+*create skill_history false
+*create skill_insight false
+*create skill_intimidation false
+*create skill_investigation false
+*create skill_medicine false
+*create skill_nature false
+*create skill_perception false
+*create skill_performance false
+*create skill_persuasion false
+*create skill_religion false
+*create skill_sleight_of_hand false
+*create skill_stealth false
+*create skill_survival false
+*comment Output of skill_lookup, below.
+*create skill_lookup_ability ""
+*create skill_lookup_display ""
 *create save_vs "none"
 *comment --- TEMPORARY BUFF SYSTEM (Food, Drink, Unique Boons) ---
 *create food_buff_active false
@@ -961,6 +995,25 @@
 *create combat_enemy_atk_locked_4 false
 *create combat_enemy_atk_locked_5 false
 *create combat_enemy_atk_locked_6 false
+*comment Ally attack (resolve_ally_attack, combat.txt): same per-slot lock/banner shape as the enemy-attack
+*comment block above, sized to combat_ally_slot_cap (4) instead of 6. combat_ally_atk_hit and combat_ally_
+*comment dmg_dealt are the routine's outputs, read by the caller after the *gosub_scene returns -- durable
+*comment globals, not a caller-declared *temp, since a value has to survive that scene-crossing round trip.
+*create locked_combat_ally_atk_page_id 0
+*create combat_ally_atk_locked_1 false
+*create combat_ally_atk_locked_2 false
+*create combat_ally_atk_locked_3 false
+*create combat_ally_atk_locked_4 false
+*create combat_ally_atk_banner_1 ""
+*create combat_ally_atk_banner_2 ""
+*create combat_ally_atk_banner_3 ""
+*create combat_ally_atk_banner_4 ""
+*create combat_ally_dmg_banner_1 ""
+*create combat_ally_dmg_banner_2 ""
+*create combat_ally_dmg_banner_3 ""
+*create combat_ally_dmg_banner_4 ""
+*create combat_ally_atk_hit false
+*create combat_ally_dmg_dealt 0
 *create combat_magic_missile_locked false
 *create locked_combat_magic_missile_page_id 0
 *create second_wind_locked false
@@ -1664,9 +1717,20 @@
 *create combat_ally_slot_cap 4
 *create combat_ally_count 0
 *comment Same quicktest branch-coverage gotcha as combat_enemy0_* elsewhere in this file: announce_turn_order
-*comment (combat.txt) checks *if (cnt_kind = "ally") before reading combat_allyN_name via slot -- for an unused
-*comment turn-order position (kind "", slot 0), the walk visits that body anyway. Never read by real logic.
+*comment and combat_next_turn's own ally branch (combat.txt) both check *if (cnt_kind = "ally") before reading
+*comment combat_allyN_* via slot -- for an unused turn-order position (kind "", slot 0), the walk visits that
+*comment body anyway. Never read by real logic.
 *create combat_ally0_name ""
+*create combat_ally0_epithet ""
+*create combat_ally0_hp 0
+*create combat_ally0_max_hp 0
+*create combat_ally0_ac 10
+*create combat_ally0_atk_bonus 0
+*create combat_ally0_dmg_dice_sides 4
+*create combat_ally0_dmg_bonus 0
+*create combat_ally0_dmg_type "bludgeoning"
+*create combat_ally0_weapon_type "melee"
+*create combat_ally0_dexterity 10
 *create combat_ally1_name "none"
 *create combat_ally1_epithet "your ally"
 *create combat_ally1_hp 0
@@ -2751,7 +2815,7 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set weapon_desc "Trench Dagger"
     *set weapon_damage "1d4 piercing"
     *set weapon_damage_type "piercing"
-    *set weapon_type "melee"
+    *set weapon_type "finesse"
     *set weapon_hands "one_handed"
     *set equipped_head_id "camo_hood"
     *set equipped_cloak_id "camo_cloak"
@@ -3136,6 +3200,9 @@ HP and every class resource are refilled to full before each one, so every fight
   # 🎯 Range Tiers Test -- 1 lacedon opened at Long Range, to play with Push Forward
     *set dctest_label "fight_dev_range_test"
     *goto dev_combat_test_run
+  # 🏹 Ally Ranged Test -- 1 lacedon + 1 ranged ally, to watch resolve_ally_attack
+    *set dctest_label "fight_dev_ally_ranged_test"
+    *goto dev_combat_test_run
   # Return to Developer Scene Select
     *goto dev_scene_select
 
@@ -3161,6 +3228,8 @@ HP and every class resource are refilled to full before each one, so every fight
   *gosub_scene combat fight_shroud_thieves
 *if (dctest_label = "fight_dev_range_test")
   *gosub_scene combat fight_dev_range_test
+*if (dctest_label = "fight_dev_ally_ranged_test")
+  *gosub_scene combat fight_dev_ally_ranged_test
 *temp dctest_hp_after hp_current
 *set hp_current hp_max
 *gosub restore_class_resources
@@ -3202,8 +3271,11 @@ HP and every class resource are refilled to full before each one, so every fight
 
 *gosub refresh_boon_flags
 *comment Proficiency bonus from level: +2 through level 4, +3 at 5-8, +4 at 9-12, and so on. The engine has no floor, and the plain
-*comment division or round() give the wrong numbers, so the remainder is taken off first and the division is exact. Only Rogue Expertise
-*comment and the dossier's spell DC and attack read it today (it is not added to attack rolls or other checks).
+*comment division or round() give the wrong numbers, so the remainder is taken off first and the division is exact. Rogue Expertise,
+*comment the dossier's spell DC and attack, and every weapon attack / attack-roll cantrip (roll_d20_check's own
+*comment check_add_prof_bonus flag, set by combat.txt) read it -- a player is always proficient with their own
+*comment weapon and known spells. General skill checks outside combat don't add it: that needs real per-skill
+*comment proficiency tracking, not a blanket add, so they're deliberately untouched for now.
 *set prof_bonus (2 + (((character_level - 1) - ((character_level - 1) modulo 4)) / 4))
 *comment Spell save DC (2026-09-27): 8 + proficiency + the caster's own spellcasting ability mod -- INT for
 *comment Wizard, CHA for Warlock/Bard, no bonus for a class with no spellcasting stat (matches the dossier's own
@@ -3252,6 +3324,82 @@ HP and every class resource are refilled to full before each one, so every fight
   *set loadout_initialized true
 *gosub_scene equipment apply_all_loadouts
 *gosub refresh_class_resource_maxs
+*gosub apply_background_skills
+*gosub apply_class_skills
+*gosub apply_race_skills
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment RACE SKILL PROFICIENCIES
+*comment Unlike the background/class grants above, this one IS straight RAW, not a house-rule fixed pick -- most
+*comment races grant no skill at all. Elf's Keen Senses gives Perception; Half-Orc's Menacing gives Intimidation.
+*comment Dwarf, Halfling, Human, Tiefling and this game's Hexblood template all grant real traits (Darkvision,
+*comment tool proficiencies, resistances, cantrip access) but none of them are a skill, so none of them get a
+*comment branch here -- that's accurate, not an omission.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label apply_race_skills
+*if (race = "elf")
+  *set skill_perception true
+*if (race = "half_orc")
+  *set skill_intimidation true
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment CLASS SKILL PROFICIENCIES
+*comment Fixed, not chosen from a list, same house rule as the background grant below -- and independent of it:
+*comment a class's list doesn't try to dodge overlap with any particular origin, since class and background are
+*comment picked separately and a skill granted twice by two sources is just proficient once, harmlessly. Count
+*comment matches 5e's own per-class total (2 for most, 3 for Bard/Ranger, 4 for Rogue) even though nothing here
+*comment is chosen from RAW's actual per-class list -- picked instead for fit with this game's own classes.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label apply_class_skills
+*if (character_class = "fighter")
+  *set skill_athletics true
+  *set skill_perception true
+*if (character_class = "barbarian")
+  *set skill_athletics true
+  *set skill_intimidation true
+*if (character_class = "rogue")
+  *set skill_stealth true
+  *set skill_sleight_of_hand true
+  *set skill_perception true
+  *set skill_deception true
+*if (character_class = "ranger")
+  *set skill_survival true
+  *set skill_perception true
+  *set skill_nature true
+*if (character_class = "wizard")
+  *set skill_arcana true
+  *set skill_investigation true
+*if (character_class = "warlock")
+  *set skill_arcana true
+  *set skill_religion true
+*if (character_class = "bard")
+  *set skill_persuasion true
+  *set skill_performance true
+  *set skill_deception true
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment BACKGROUND SKILL PROFICIENCIES
+*comment Fixed, not chosen -- this campaign's own house rule, not RAW's "pick 2 from a list". Called from
+*comment update_dnd_stats, so every path that sets origin (real chargen, every dev preset) grants the same
+*comment two skills for free, with nothing to duplicate at each of those call sites. A plain grant, not a lock:
+*comment setting an already-true flag true again is harmless, so this needs no replay guard.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label apply_background_skills
+*if (origin = "ruined")
+  *comment Ashbrook Survivor: fled the village's burning, hunted after by the Bailiff's hounds.
+  *set skill_survival true
+  *set skill_athletics true
+*if (origin = "outlaw")
+  *comment Port Valen Outlaw: "a quick-fingered rogue" on the run from a botched heist.
+  *set skill_stealth true
+  *set skill_sleight_of_hand true
+*if (origin = "disgraced")
+  *comment Disgraced Scion: a fallen noble hiding a ruined name under an alias.
+  *set skill_history true
+  *set skill_persuasion true
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -3560,6 +3708,152 @@ ${res_banner}
 *comment Note: Equipment loadouts and AC calculations are in equipment.txt
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SKILL LOOKUP -- 5e's fixed skill-to-ability mapping, plus a display name for the D20 Check banner.
+*comment *gosub skill_lookup "<skill id>", then read skill_lookup_ability / skill_lookup_display. The ability
+*comment is fixed per skill by RAW, not something a caller picks -- adding a new skill only ever means adding
+*comment one *create (above) and one branch here, never touching roll_skill_check or roll_d20_check themselves.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label skill_lookup
+*params skl_id
+*set skill_lookup_ability ""
+*set skill_lookup_display ""
+*if (skl_id = "acrobatics")
+  *set skill_lookup_ability "dex"
+  *set skill_lookup_display "Acrobatics"
+*if (skl_id = "animal_handling")
+  *set skill_lookup_ability "wis"
+  *set skill_lookup_display "Animal Handling"
+*if (skl_id = "arcana")
+  *set skill_lookup_ability "int"
+  *set skill_lookup_display "Arcana"
+*if (skl_id = "athletics")
+  *set skill_lookup_ability "str"
+  *set skill_lookup_display "Athletics"
+*if (skl_id = "deception")
+  *set skill_lookup_ability "cha"
+  *set skill_lookup_display "Deception"
+*if (skl_id = "history")
+  *set skill_lookup_ability "int"
+  *set skill_lookup_display "History"
+*if (skl_id = "insight")
+  *set skill_lookup_ability "wis"
+  *set skill_lookup_display "Insight"
+*if (skl_id = "intimidation")
+  *set skill_lookup_ability "cha"
+  *set skill_lookup_display "Intimidation"
+*if (skl_id = "investigation")
+  *set skill_lookup_ability "int"
+  *set skill_lookup_display "Investigation"
+*if (skl_id = "medicine")
+  *set skill_lookup_ability "wis"
+  *set skill_lookup_display "Medicine"
+*if (skl_id = "nature")
+  *set skill_lookup_ability "int"
+  *set skill_lookup_display "Nature"
+*if (skl_id = "perception")
+  *set skill_lookup_ability "wis"
+  *set skill_lookup_display "Perception"
+*if (skl_id = "performance")
+  *set skill_lookup_ability "cha"
+  *set skill_lookup_display "Performance"
+*if (skl_id = "persuasion")
+  *set skill_lookup_ability "cha"
+  *set skill_lookup_display "Persuasion"
+*if (skl_id = "religion")
+  *set skill_lookup_ability "int"
+  *set skill_lookup_display "Religion"
+*if (skl_id = "sleight_of_hand")
+  *set skill_lookup_ability "dex"
+  *set skill_lookup_display "Sleight of Hand"
+*if (skl_id = "stealth")
+  *set skill_lookup_ability "dex"
+  *set skill_lookup_display "Stealth"
+*if (skl_id = "survival")
+  *set skill_lookup_ability "wis"
+  *set skill_lookup_display "Survival"
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SKILL CHECK: up to 3 candidate skills, best of them wins
+*comment "Give me an Investigation or an Insight check, whichever is higher" -- computes each offered skill's
+*comment full modifier (ability mod, plus proficiency if trained in THAT skill), picks the best one, rolls ONE
+*comment d20 against it, and delegates to roll_d20_check for everything else (advantage, disadvantage, guidance,
+*comment fatigue, hygiene, armor-nonprof). Not two rolls kept-the-better -- one roll, the better bonus. An
+*comment untrained character's better ABILITY still fairly beats a worse ability they happen to be trained in,
+*comment same as a DM would allow at the table.
+*comment Call shape: *gosub_scene startup roll_skill_check <DC> "<skill 1>" "<ability override 1 or "">"
+*comment "<skill 2 or "">" "<override 2>" "<skill 3 or "">" "<override 3>" -- always exactly 7 args. An empty
+*comment skill slot ("" "") isn't offered. An empty override uses that skill's own normal ability from
+*comment skill_lookup; a non-empty override ("str"/"dex"/"con"/"int"/"wis"/"cha") forces that ability instead,
+*comment while STILL reading proficiency and the display name from the named skill -- for a check this campaign
+*comment lets resolve through more than one ability (Intimidation through physical menace OR force of
+*comment personality: two slots, same skill both times, "str" then ""), the same idea as a Finesse weapon
+*comment letting a melee attack use STR or DEX. Offer the same skill twice, once per ability, rather than
+*comment inventing a new skill id per pairing -- skill_lookup itself never needs a new entry for this.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label roll_skill_check
+*params rsc_dc rsc_skill_1 rsc_override_1 rsc_skill_2 rsc_override_2 rsc_skill_3 rsc_override_3
+*temp rsc_have_best false
+*temp rsc_best_bonus 0
+*temp rsc_best_skill ""
+*temp rsc_best_ability ""
+*temp rsc_best_display ""
+*temp rsc_best_prof false
+*temp rsc_i 1
+*temp rsc_candidate ""
+*temp rsc_override ""
+*temp rsc_ability ""
+*temp rsc_mod 0
+*temp rsc_prof false
+*label roll_skill_check_loop
+*if (rsc_i = 1)
+  *set rsc_candidate rsc_skill_1
+  *set rsc_override rsc_override_1
+*if (rsc_i = 2)
+  *set rsc_candidate rsc_skill_2
+  *set rsc_override rsc_override_2
+*if (rsc_i = 3)
+  *set rsc_candidate rsc_skill_3
+  *set rsc_override rsc_override_3
+*if (not(rsc_candidate = ""))
+  *gosub skill_lookup rsc_candidate
+  *set rsc_ability skill_lookup_ability
+  *if (not(rsc_override = ""))
+    *set rsc_ability rsc_override
+  *set rsc_mod 0
+  *if (rsc_ability = "str")
+    *set rsc_mod str_mod
+  *if (rsc_ability = "dex")
+    *set rsc_mod dex_mod
+  *if (rsc_ability = "con")
+    *set rsc_mod con_mod
+  *if (rsc_ability = "int")
+    *set rsc_mod int_mod
+  *if (rsc_ability = "wis")
+    *set rsc_mod wis_mod
+  *if (rsc_ability = "cha")
+    *set rsc_mod cha_mod
+  *set rsc_prof {("skill_" & rsc_candidate)}
+  *if (rsc_prof)
+    *set rsc_mod + prof_bonus
+  *if ((not(rsc_have_best)) or (rsc_mod > rsc_best_bonus))
+    *set rsc_have_best true
+    *set rsc_best_bonus rsc_mod
+    *set rsc_best_skill rsc_candidate
+    *set rsc_best_ability rsc_ability
+    *set rsc_best_display skill_lookup_display
+    *set rsc_best_prof rsc_prof
+*set rsc_i + 1
+*if (rsc_i <= 3)
+  *goto roll_skill_check_loop
+*set check_stat rsc_best_ability
+*set check_skill rsc_best_display
+*set check_dc rsc_dc
+*set check_add_prof_bonus rsc_best_prof
+*gosub roll_d20_check
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment D&D 5E D20 SKILL CHECK ENGINE
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label roll_d20_check
@@ -3616,8 +3910,19 @@ ${res_banner}
   *if (check_stat = "cha")
     *set check_mod cha_mod
 
+  *if (check_add_prof_bonus)
+    *set check_mod + prof_bonus
+
+  *comment Expertise doubles proficiency, it doesn't stack a second one on top: if check_add_prof_bonus already
+  *comment added one prof_bonus above (roll_skill_check, or any future caller that sets it), only one more is
+  *comment needed to reach double. An old-style caller that never sets the flag (check_stat/check_skill set by
+  *comment hand, no proficiency added yet) still needs the full double added here, same as always. Getting this
+  *comment wrong reads as +1x prof from the flag, then +2x more here = triple proficiency on an expertise skill.
   *if ((character_class = "rogue") and ((check_skill = rogue_expertise_1) or (check_skill = rogue_expertise_2)))
-    *set check_mod + (prof_bonus * 2)
+    *if (check_add_prof_bonus)
+      *set check_mod + prof_bonus
+    *else
+      *set check_mod + (prof_bonus * 2)
 
   *if (fatigue_stage = "Exhausted")
     *set check_mod - 1
@@ -3658,6 +3963,7 @@ ${res_banner}
   *set advantage false
   *set disadvantage false
   *set guidance_active false
+  *set check_add_prof_bonus false
   *set save_vs "none"
   *return
 
@@ -3670,6 +3976,7 @@ ${res_banner}
   *set advantage false
   *set disadvantage false
   *set guidance_active false
+  *set check_add_prof_bonus false
   *set save_vs "none"
   *return
 
@@ -3692,6 +3999,7 @@ ${res_banner}
 *set advantage false
 *set disadvantage false
 *set guidance_active false
+*set check_add_prof_bonus false
 *set save_vs "none"
 *return
 
@@ -4011,6 +4319,83 @@ ${combat_player_dmg_roll_banner}
 *if (not(cea_banner_text = ""))
   ${cea_banner_text}
   *line_break
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment COMBAT: ALLY ATTACK RESOLUTION (ranged only -- first pass)
+*comment An ally's attack against an enemy: roll to hit the target's AC, then damage on a hit. Deliberately as
+*comment plain as resolve_enemy_attack was before Shield/conditions/stun existed there -- no reactions, no
+*comment advantage/disadvantage, no movement (ranged always works regardless of range, so nothing here needs
+*comment to care about combat_enemy_range). Extend the same way resolve_enemy_attack grew, if/when an ally needs
+*comment any of that -- melee allies specifically need movement wired in combat_next_turn before this label
+*comment itself needs to change.
+*comment Targeting: reuses whatever fight_pick_target already resolved for the player (the caller's job, before
+*comment this *gosub_scene) -- the simplest "acts in the team's interest" rule there is, focusing the same enemy
+*comment the player is already fighting. Not a kill-priority search; that's a deliberate simplification for this
+*comment first pass, not a limit of the routine itself.
+*comment Inputs: raa_a_slot (1-4, which combat_allyN_*), raa_e_slot (1-6, which combat_enemyN_* it's attacking)
+*comment Outputs: combat_ally_atk_hit, combat_ally_dmg_dealt; combat_enemyN_hp is reduced directly
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_ally_attack
+*params raa_a_slot raa_e_slot
+*temp raa_ap (("combat_ally" & raa_a_slot) & "_")
+*temp raa_ep (("combat_enemy" & raa_e_slot) & "_")
+*temp raa_name {(raa_ap & "name")}
+*if (not(locked_combat_ally_atk_page_id = page_id))
+  *set combat_ally_atk_locked_1 false
+  *set combat_ally_atk_locked_2 false
+  *set combat_ally_atk_locked_3 false
+  *set combat_ally_atk_locked_4 false
+  *set locked_combat_ally_atk_page_id page_id
+*temp raa_lockname (("combat_ally_atk_locked_" & raa_a_slot))
+*temp raa_already_locked {raa_lockname}
+*temp raa_atk_bannername (("combat_ally_atk_banner_" & raa_a_slot))
+*temp raa_dmg_bannername (("combat_ally_dmg_banner_" & raa_a_slot))
+*if (not(raa_already_locked))
+  *temp raa_roll 0
+  *rand raa_roll 1 20
+  *temp raa_atk_bonus {(raa_ap & "atk_bonus")}
+  *temp raa_total (raa_roll + raa_atk_bonus)
+  *temp raa_target_ac {(raa_ep & "ac")}
+  *set combat_ally_atk_hit (raa_total >= raa_target_ac)
+  *temp raa_bonus_str ""
+  *if (raa_atk_bonus >= 0)
+    *set raa_bonus_str "+${raa_atk_bonus}"
+  *else
+    *set raa_bonus_str "${raa_atk_bonus}"
+  *temp raa_verdict "MISS"
+  *if (combat_ally_atk_hit)
+    *set raa_verdict "HIT"
+  *set {(raa_atk_bannername)} "[b][🎲 ${raa_name} Attack Roll: ${raa_roll} ${raa_bonus_str} = ${raa_total} vs AC ${raa_target_ac} — ${raa_verdict}][/b]"
+  *set {(raa_dmg_bannername)} ""
+  *set combat_ally_dmg_dealt 0
+  *if (combat_ally_atk_hit)
+    *temp raa_dmg 0
+    *rand raa_dmg 1 {(raa_ap & "dmg_dice_sides")}
+    *temp raa_dmg_bonus {(raa_ap & "dmg_bonus")}
+    *temp raa_dmg_bonus_str ""
+    *if (raa_dmg_bonus >= 0)
+      *set raa_dmg_bonus_str "+${raa_dmg_bonus}"
+    *else
+      *set raa_dmg_bonus_str "${raa_dmg_bonus}"
+    *temp raa_dmg_total (raa_dmg + raa_dmg_bonus)
+    *set {(raa_dmg_bannername)} "[b][🎲 ${raa_name} Damage: ${raa_dmg} ${raa_dmg_bonus_str} = ${raa_dmg_total}][/b]"
+    *set combat_ally_dmg_dealt raa_dmg_total
+    *set {(raa_ep & "hp")} - raa_dmg_total
+    *if ({(raa_ep & "hp")} < 0)
+      *set {(raa_ep & "hp")} 0
+  *set {(raa_lockname)} true
+*comment No trailing *line_break after the last banner here, deliberately -- fight_narrate_ally_attack (combat.txt),
+*comment the only caller, already opens with its own leading break. A break here too would stack into a full
+*comment blank line between the last banner and the narration, the same "empty buffer" class of gap this session
+*comment already found and fixed at resolve_enemy_attack and announce_turn_order.
+*temp raa_atk_banner_text {(raa_atk_bannername)}
+*temp raa_dmg_banner_text {(raa_dmg_bannername)}
+*if (not(raa_atk_banner_text = ""))
+  ${raa_atk_banner_text}
+*if (not(raa_dmg_banner_text = ""))
+  *line_break
+  ${raa_dmg_banner_text}
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

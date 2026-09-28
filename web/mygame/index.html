@@ -40,6 +40,8 @@ either express or implied.
 <script src="lorebook-port-valen.js"></script>
 <script src="lorebook.js"></script>
 <script src="quest-data.js"></script>
+<script src="spell-data.js"></script>
+<script src="spell-icons.js"></script>
 <script src="equipment-data.generated.js"></script>
 <script src="equipment-panel.js"></script>
 <script src="inventory-data.js"></script>
@@ -128,6 +130,133 @@ var rootDir = "../";
   border: none;
   border-top: 1px solid rgba(0,0,0,0.15);
 }
+
+/* ── Spellbook section (proof of concept, read-only) ──────────────────────────────────────────────────────
+   A collapsed <details> so it costs nothing until opened. Native <details>/<summary> rather than a
+   JS-driven collapse because the sidebar's innerHTML is replaced wholesale every 400ms: an
+   open/closed flag held in JS would be lost ~2.5x a second, whereas the browser tracks the open state
+   on the element itself, so writing the `open` attribute back into the markup each render restores it. */
+#statSidebar .spellbook {
+  border-top: 1px solid rgba(0,0,0,0.15);
+  margin-top: 0.65em;
+  padding-top: 0.35em;
+}
+#statSidebar .spellbook > summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.95em;
+  font-weight: 600;
+  color: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.15em 0;
+  user-select: none;
+}
+#statSidebar .spellbook > summary::-webkit-details-marker { display: none; }
+#statSidebar .spellbook > summary::before {
+  content: "\25B8";                 /* small right-pointing triangle */
+  font-size: 0.8em;
+  color: rgba(0,0,0,0.45);
+  transition: transform 0.12s ease;
+}
+#statSidebar .spellbook[open] > summary::before { transform: rotate(90deg); }
+#statSidebar .spellbook > summary:hover { color: rgba(0,0,0,0.9); }
+#statSidebar .spellTabs {
+  display: flex;
+  gap: 0.3em;
+  margin: 0.35em 0 0.5em 0;
+  flex-wrap: wrap;
+}
+#statSidebar .spellTab {
+  border: 1px solid rgba(0,0,0,0.2);
+  background: rgba(255,255,255,0.5);
+  border-radius: 4px;
+  padding: 0.15em 0.4em 0.15em 0.3em;
+  font: inherit;
+  font-size: 0.8em;
+  line-height: 1;
+  color: rgba(0,0,0,0.75);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+  /* Tabs with nothing under them are dimmed rather than removed, so the row keeps a stable shape and
+     does not reflow when a character learns a higher-level spell. */
+  opacity: 0.45;
+}
+/* A numbered tab is nothing but its orb, so the horizontal padding shrinks to roughly the border
+   plus a hair of breathing room. This is what buys the fifth tab its place on the row. */
+#statSidebar .spellTab:not([data-spell-label]) { padding: 0.15em 0.2em; }
+#statSidebar .spellTab:not(.spellTabEmpty) { opacity: 1; }
+#statSidebar .spellTab:hover { border-color: rgba(0,0,0,0.45); }
+#statSidebar .spellTab[aria-pressed="true"] {
+  background: #7a3e1d;              /* the sidebar's existing picked-target rust */
+  border-color: #7a3e1d;
+  color: #fff;
+}
+#statSidebar .spellTab img {
+  width: 17px; height: 17px;
+  object-fit: contain;
+  display: block;
+  /* The art is a full-detail 5e icon asset; at 17px it reads as noise, so lean on shape not detail. */
+  filter: saturate(0.85);
+}
+/* A numbered tab shows ONLY the orb, so it may be a touch larger than the tab that also has a word
+   beside it -- it is the sole thing identifying the level. */
+#statSidebar .spellTab:not([data-spell-label]) img { width: 19px; height: 19px; }
+#statSidebar .spellTab[aria-pressed="true"] img { filter: none; }
+#statSidebar .spellList { display: flex; flex-direction: column; gap: 0.15em; }
+#statSidebar .spellRow {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  width: 100%;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 0.85em;
+  text-align: left;
+  padding: 0.2em 0.3em;
+  margin: 0 -0.3em;
+  border-radius: 3px;
+  color: inherit;
+  cursor: pointer;
+}
+#statSidebar .spellRow:hover { background: rgba(0,0,0,0.06); }
+#statSidebar .spellRow[aria-pressed="true"] { background: rgba(122,62,29,0.14); font-weight: 600; }
+#statSidebar .spellRow img { width: 18px; height: 18px; object-fit: contain; flex: 0 0 auto; }
+/* Fallback for spells with no art in ICONS/ (and any spell outside the generated --batch set): an
+   initials chip, so the row still reads as a list item instead of a broken image. */
+#statSidebar .spellInitials {
+  width: 18px; height: 18px;
+  flex: 0 0 auto;
+  border-radius: 3px;
+  background: rgba(0,0,0,0.07);
+  border: 1px solid rgba(0,0,0,0.15);
+  color: rgba(0,0,0,0.6);
+  font-size: 8.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#statSidebar .spellName { flex: 1 1 auto; }
+#statSidebar .spellLvl { font-size: 0.8em; color: rgba(0,0,0,0.5); font-weight: 400; }
+#statSidebar .spellDetail {
+  margin-top: 0.4em;
+  padding: 0.4em 0.5em;
+  border-left: 2px solid rgba(122,62,29,0.45);
+  background: rgba(122,62,29,0.06);
+  font-size: 0.85em;
+  line-height: 1.5;
+  color: rgba(0,0,0,0.75);
+  border-radius: 0 3px 3px 0;
+}
+#statSidebar .spellDetail b { color: rgba(0,0,0,0.9); }
+#statSidebar .spellDetail .spellMeta { display: block; margin-top: 0.2em; font-size: 0.85em; color: rgba(0,0,0,0.55); }
+#statSidebar .spellEmpty { font-size: 0.85em; color: rgba(0,0,0,0.5); padding: 0.2em 0; }
+#statSidebar .spellNote { font-size: 0.78em; color: rgba(0,0,0,0.45); margin-top: 0.4em; line-height: 1.4; }
 /* Combat state (2026-09-27): the sidebar's own header gets a small badge, and date/time/weather/purse swap for
    a live turn-order list (renderStatSidebar below) -- reusing the combat_turn_kind_N/_slot_N stats the ChoiceScript
    engine already builds, not a second panel, so this never fights the sidebar for space or attention.
@@ -361,6 +490,7 @@ button#statSidebar .turnRow,
         "<span>WIS " + fmt(s.wisdom) + abilityBoon(s.buff_wis_bonus, s.buff_wis_helps) + " (" + fmt(s.wis_mod_str) + ")</span>" +
         "<span>CHA " + fmt(s.charisma) + abilityBoon(s.buff_cha_bonus, s.buff_cha_helps) + " (" + fmt(s.cha_mod_str) + ")</span>" +
       "</div>" +
+      spellSectionHtml() +
       "<hr class=\"sectionDivider\">" +
       bottomSectionHtml +
       activeQuestHtml +
@@ -557,16 +687,50 @@ button#statSidebar .turnRow,
     t.classList.add("on");
   }
   function hideTip() { tipKey = null; if (tipEl) tipEl.classList.remove("on"); }
+  // Renders whichever kind of card tipKey names. Split out of showTip so refreshTip can re-show a SPELL
+  // card without going through the combatant-only path -- the two share one #csTip element, so anything
+  // that re-renders it has to dispatch on the key's prefix. Known spells' art is deliberately NOT shown
+  // here: the card is a description popup, the icon lives on the row the pointer is already over.
+  function paintSpellCard(id) {
+    var meta = window.spellById && window.spellById(id);
+    if (!meta) return false;
+    var desc = "", spells = knownSpells(), i;
+    for (i = 0; i < spells.length; i++) if (spells[i].id === id) desc = spells[i].desc;
+    tipNode().innerHTML = "<div class=\"tHd\">" + esc(meta.name) + "</div>" +
+      "<div class=\"tMeta\">" + spellTabLabel(meta.level) +
+      (meta.schools ? " \u00b7 " + esc(meta.schools) : "") + "</div>" +
+      (desc ? "<div style=\"white-space:normal;max-width:230px\">" + esc(desc) + "</div>" : "");
+    return true;
+  }
   // Re-resolve the card against whatever is under the cursor NOW. renderStatSidebar rebuilds the rows
   // every 400ms, which detaches the hovered element and fires no mouseout -- so without this the card
   // would hang on a row that no longer exists (or that just became a downed row), and would never move.
+  // A spell key ("spell:<id>") resolves against the spellbook's own selector: spell rows are rebuilt on
+  // the same 400ms cycle, so they need the same treatment or their card would never track either.
   function refreshTip() {
     if (!tipKey) return;
+    var isSpell = tipKey.indexOf("spell:") === 0;
+    var bare = isSpell ? tipKey.slice(6) : tipKey;
     var el = document.elementFromPoint(tipX, tipY);
-    var row = el && el.closest ? el.closest("#statSidebar .turnRow[data-combatant]") : null;
+    var sel = isSpell ? "#statSidebar .spellRow[data-spell]" : "#statSidebar .turnRow[data-combatant]";
+    var row = el && el.closest ? el.closest(sel) : null;
     if (!row) return hideTip();
-    var key = row.getAttribute("data-combatant");
-    if (key !== tipKey) return showTip(key, tipX, tipY);
+    var key = isSpell ? row.getAttribute("data-spell") : row.getAttribute("data-combatant");
+    // Sliding onto a DIFFERENT row re-points the card at that row rather than dropping it -- otherwise
+    // the card vanishes the moment the pointer crosses a row boundary, since the 400ms rebuild fires
+    // no mouseout to re-trigger the hover handler. (Returning hideTip() here is an easy mistake: it
+    // makes the card flicker off on every row boundary and looks like the card failed to open.)
+    if (key !== bare) {
+      if (isSpell) {
+        var r = row.getBoundingClientRect();
+        showTip("spell:" + key, r.left + 30, r.top + r.height);
+        if (!paintSpellCard(key)) hideTip();
+      } else {
+        showTip(key, tipX, tipY);
+      }
+      return;
+    }
+    if (isSpell && !paintSpellCard(key)) return hideTip();
     placeTip();
   }
   function rowAt(ev) {
@@ -574,6 +738,151 @@ button#statSidebar .turnRow,
     if (!el || !el.closest) return null;
     return el.closest("#statSidebar .turnRow[data-combatant]");
   }
+
+  // ── Spellbook section (proof of concept) ──────────────────────────────────────────────────────────────────
+  // READ-ONLY. Lists the character's known workings under a collapsed <details>, behind a row of
+  // level-orb tabs; clicking a spell pins its description. Writes NOTHING to window.stats and calls no
+  // ChoiceScript code -- the interactive version (casting, spending the action/bonus pool) is
+  // deliberately not built yet. No game rule is duplicated either: every spell and its description
+  // come from stats the game already wrote (wizard_cantrip, bard_spell, and their _desc pairs); only
+  // the id -> level/name/school mapping is ours, from spell-data.js.
+  //
+  // Deliberately NOT gated on class or race: reading every SPELL_SLOTS field means a fighter simply
+  // gets "no workings known" (all of them are "none"), with no conditional at all.
+  var SPELL_TABS = [0, 1, 2, 3, 4];   // cantrip, L1..L4 -- the levels this game's pools reach
+  // These live in module scope rather than being read back off the live DOM because the sidebar's
+  // innerHTML is replaced wholesale every 400ms; the markup is re-rendered FROM these each time.
+  var spellOpen = false, spellTab = 0, spellPicked = null;
+  function knownSpells() {
+    var s = window.stats || {};
+    var out = [], slots = window.SPELL_SLOTS || [];
+    for (var i = 0; i < slots.length; i++) {
+      var id = String(s[slots[i]] || "");
+      if (!id || id === "none") continue;
+      var meta = window.spellById && window.spellById(id);
+      if (!meta) continue;                    // no spell-data entry: not ours to show
+      out.push({
+        id: id, meta: meta,
+        // The game's own _desc prose, preferred over a bare name when it says more than the
+        // placeholder the *_create defaults ship with.
+        desc: String(s[slots[i] + "_desc"] || "").trim()
+      });
+    }
+    return out;
+  }
+  function spellArt(id) {
+    var uri = window.SPELL_ICONS && window.SPELL_ICONS[id];
+    if (uri) return "<img src=\"" + uri + "\" alt=\"\">";
+    // No art: an initials chip, so the row still reads as a list item rather than a broken image.
+    var meta = window.spellById && window.spellById(id);
+    var nm = (meta ? meta.name : id).replace(/[^A-Za-z ]/g, "");
+    var ini = nm.split(/\s+/).map(function (w) { return w.charAt(0); }).join("").slice(0, 2).toUpperCase();
+    return "<span class=\"spellInitials\" aria-hidden=\"true\">" + esc(ini || "?") + "</span>";
+  }
+  function spellTabLabel(lvl) { return lvl === 0 ? "Cantrip" : "L" + lvl; }
+  // The orb already carries the level as a Roman numeral, so a numbered tab spells it out twice and
+  // costs 39px where a bare orb needs ~20px. With five tabs that difference is the whole budget --
+  // the labelled row measured 43px spare, and a fifth labelled tab needs 44px, i.e. it wrapped.
+  // Only the cantrip tab keeps its word, since "0" would not say what it means.
+  function spellTabText(lvl) { return lvl === 0 ? "Cantrip" : ""; }
+  function spellSectionHtml() {
+    var spells = knownSpells();
+    var orbs = window.SPELL_TAB_ORBS || {};
+    var tabs = "", byLevel = {}, t, list, i;
+    for (t = 0; t < SPELL_TABS.length; t++) {
+      var lvl = SPELL_TABS[t];
+      list = spells.filter(function (sp) { return sp.meta.level === lvl; });
+      byLevel[lvl] = list;
+      var orb = orbs[lvl] ? "<img src=\"" + orbs[lvl] + "\" alt=\"\">" : "";
+      tabs += "<button type=\"button\" class=\"spellTab" + (list.length ? "" : " spellTabEmpty") +
+              "\" data-spell-tab=\"" + lvl + "\" aria-pressed=\"" + (lvl === spellTab) + "\"" +
+              (lvl === 0 ? " data-spell-label=\"Cantrip\"" : "") +
+              // The orb IS the label for numbered tabs, so it doubles as the accessible name.
+              (lvl === 0 ? "" : " title=\"Level " + lvl + "\" aria-label=\"Level " + lvl + "\"") +
+              ">" + orb + spellTabText(lvl) + "</button>";
+    }
+    var shown = byLevel[spellTab] || [];
+    var body, pick = null;
+    if (!spells.length) {
+      body = "<div class=\"spellEmpty\">No workings known.</div>";
+    } else if (!shown.length) {
+      body = "<div class=\"spellEmpty\">Nothing at " + spellTabLabel(spellTab).toLowerCase() + ".</div>";
+    } else {
+      var rows = "";
+      for (i = 0; i < shown.length; i++) {
+        var sp = shown[i];
+        if (sp.id === spellPicked) pick = sp;
+        rows += "<button type=\"button\" class=\"spellRow\" data-spell=\"" + esc(sp.id) + "\"" +
+                " aria-pressed=\"" + (spellPicked === sp.id) + "\">" + spellArt(sp.id) +
+                "<span class=\"spellName\">" + esc(sp.meta.name) + "</span>" +
+                "<span class=\"spellLvl\">" + (sp.meta.level === 0 ? "C" : sp.meta.level) + "</span></button>";
+      }
+      body = "<div class=\"spellList\">" + rows + "</div>";
+      if (pick) {
+        // Many of the game's _desc fields already begin with the spell's name ("Blade Ward (Resist
+        // ...)"), so prefixing <b>name</b> would read as "Blade Ward Blade Ward (Resist ...)".
+        // Only bold the name when the description does NOT already start with it.
+        var lead = pick.desc.indexOf(pick.meta.name) === 0 ? "" : "<b>" + esc(pick.meta.name) + "</b> ";
+        body += "<div class=\"spellDetail\">" + lead + esc(pick.desc || pick.meta.name) +
+                "<span class=\"spellMeta\">" + spellTabLabel(pick.meta.level) +
+                (pick.meta.schools ? " \u00b7 " + esc(pick.meta.schools) : "") +
+                " \u00b7 read-only preview</span></div>";
+      }
+    }
+    return "<details class=\"spellbook\"" + (spellOpen ? " open" : "") + ">" +
+             "<summary>Spellbook" + (spells.length ? " (" + spells.length + ")" : "") + "</summary>" +
+             "<div class=\"spellTabs\">" + tabs + "</div>" + body +
+             "<div class=\"spellNote\">Preview only \u2014 nothing here casts yet.</div>" +
+           "</details>";
+  }
+  // Tab and spell clicks are delegated on the sidebar for the same reason the combatant card's are: the
+  // rows are destroyed and rebuilt every 400ms, so a listener bound to a row would die with it. These
+  // are separate listeners (not folded into the existing click handler) purely to keep the combat
+  // target-picking path untouched.
+  document.getElementById("statSidebar").addEventListener("click", function (ev) {
+    var el = ev.target;
+    if (!el || !el.closest) return;
+    var tabBtn = el.closest("[data-spell-tab]");
+    if (tabBtn) {
+      var lvl = Number(tabBtn.getAttribute("data-spell-tab"));
+      spellPicked = null;                    // a different level can't keep the old pin
+      spellTab = lvl;                        // always re-select; an empty level shows its own empty note
+      renderStatSidebar();
+      return;
+    }
+    var spBtn = el.closest("[data-spell]");
+    if (spBtn) {
+      var id = spBtn.getAttribute("data-spell");
+      spellPicked = spellPicked === id ? null : id;   // click again to unpin
+      renderStatSidebar();
+      return;
+    }
+    var sum = el.closest(".spellbook > summary");
+    if (sum) {
+      // Toggle through the module flag, because the 400ms re-render rebuilds the <details> element and
+      // would otherwise drop whatever the user had just opened/closed.
+      spellOpen = !spellOpen;
+      renderStatSidebar();
+    }
+  });
+  // Hovering a spell row reuses the stat card (showTip/placeTip) for its description, so both hover
+  // surfaces in the sidebar behave identically. Anchored to the row's own box rather than the cursor,
+  // since these rows are static -- unlike the combat turn-order list, which follows the pointer.
+  document.getElementById("statSidebar").addEventListener("mouseover", function (ev) {
+    var el = ev.target;
+    if (!el || !el.closest) return;
+    var row = el.closest("[data-spell]");
+    if (!row) {
+      if (tipKey && tipKey.indexOf("spell:") === 0) hideTip();
+      return;
+    }
+    if (tipKey && tipKey.indexOf("spell:") !== 0) return;   // never steal the combatant card
+    var id = row.getAttribute("data-spell");
+    var r = row.getBoundingClientRect();
+    showTip("spell:" + id, r.left + 30, r.top + r.height);
+    paintSpellCard(id);                   // same painter refreshTip uses, so the two can't drift
+  });
+
   // The #statSidebar div itself is never recreated (only its innerHTML, every render) -- one delegated listener
   // on the stable element, not on the buttons inside it, which get destroyed and rebuilt every 400ms poll.
   document.addEventListener("click", function (ev) {

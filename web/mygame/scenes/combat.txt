@@ -536,6 +536,10 @@
 *comment the next fight's own slot 1, via fight_setup's snapshot, before that fight ever gets a chance to set its
 *comment own starting range.
 *set combat_enemy_range 0
+*comment Ally pool: 0 means no ally is in this fight, the default every type-library fight relies on. A fight
+*comment that populates combat_ally_count without this reset would hand its allies to the next fight, the same
+*comment class of leftover-state bug the range reset just above exists to prevent.
+*set combat_ally_count 0
 *set combat_player_dmg_type "bludgeoning"
 *set combat_enemy_resist_type_1 ""
 *set combat_enemy_resist_type_2 ""
@@ -1174,6 +1178,7 @@
       *set check_stat "int"
       *set check_dc combat_enemy_ac
       *set check_skill "Fire Bolt"
+      *set check_add_prof_bonus true
       *gosub_scene startup roll_d20_check
       *if (check_success)
         *set combat_player_dmg_type "fire"
@@ -1206,6 +1211,7 @@
       *set check_stat "int"
       *set check_dc combat_enemy_ac
       *set check_skill "Ray of Frost"
+      *set check_add_prof_bonus true
       *gosub_scene startup roll_d20_check
       *if (check_success)
         *set combat_player_dmg_type "cold"
@@ -1245,6 +1251,7 @@
       *set check_stat "int"
       *set check_dc combat_enemy_ac
       *set check_skill "Shocking Grasp"
+      *set check_add_prof_bonus true
       *gosub_scene startup roll_d20_check
       *if (check_success)
         *set combat_player_dmg_type "lightning"
@@ -1281,6 +1288,7 @@
       *set check_stat "cha"
       *set check_dc combat_enemy_ac
       *set check_skill "Eldritch Blast"
+      *set check_add_prof_bonus true
       *gosub_scene startup roll_d20_check
       *if (check_success)
         *set combat_player_dmg_type "force"
@@ -1313,6 +1321,7 @@
       *set check_stat "cha"
       *set check_dc combat_enemy_ac
       *set check_skill "Chill Touch"
+      *set check_add_prof_bonus true
       *gosub_scene startup roll_d20_check
       *if (check_success)
         *set combat_player_dmg_type "necrotic"
@@ -1582,6 +1591,8 @@ ${use_text}
 *temp fwh ""
 *temp fwm ""
 *gosub pick_weapon_flavor
+*comment Always proficient with your own equipped weapon -- see roll_d20_check's own header (startup.txt).
+*set check_add_prof_bonus true
 *gosub_scene startup roll_d20_check
 *if (check_success)
   *set combat_player_dmg_type weapon_damage_type
@@ -2745,6 +2756,20 @@ ${fnaa_line}
         *goto fight_player_died
       *if (not(combat_player_can_die)) and (hp_current <= 1)
         *goto fight_rescued
+      *gosub fight_check_all_dead
+      *if (combat_all_enemies_dead)
+        *goto fight_victory
+*if (cnt_kind = "ally")
+  *comment Ranged only, first pass: no movement, so a dead check is all this needs before acting -- see
+  *comment resolve_ally_attack's own header comment (startup.txt) for the rest of what's deliberately not here
+  *comment yet (kill-priority targeting, melee positioning).
+  *temp cnt_a_hp {(("combat_ally" & cnt_slot) & "_hp")}
+  *if (cnt_a_hp > 0)
+    *gosub fight_pick_target
+    *if (combat_active_target > 0)
+      *gosub_scene startup resolve_ally_attack cnt_slot combat_active_target
+      *gosub fight_narrate_ally_attack "ally" cnt_slot "enemy" combat_active_target combat_ally_atk_hit
+      *set combat_turn_advanced_this_page true
       *gosub fight_check_all_dead
       *if (combat_all_enemies_dead)
         *goto fight_victory
@@ -4521,6 +4546,28 @@ ${fnaa_line}
 *set combat_lib_1 "lacedon"
 *set combat_enemy_name_override "Silt-Lurker Lacedon"
 *set combat_enemy_range 3
+*goto fight_library
+
+*label fight_dev_ally_ranged_test
+*comment Dev-hub only (startup.txt dev_combat_test_hub) -- no story scene calls this. One lacedon, plus one
+*comment ranged ally (a bow), to watch resolve_ally_attack in action: does it hit, does it roll damage, does it
+*comment help drop the enemy. Melee allies (movement/positioning) aren't wired yet -- ranged only, on purpose,
+*comment for this first pass; see resolve_ally_attack's own header comment (startup.txt).
+*set combat_is_nonlethal false
+*set combat_lib_1 "lacedon"
+*set combat_enemy_name_override "Silt-Lurker Lacedon"
+*set combat_ally_count 1
+*set combat_ally1_name "Kess"
+*set combat_ally1_epithet "Kess"
+*set combat_ally1_hp 10
+*set combat_ally1_max_hp 10
+*set combat_ally1_ac 13
+*set combat_ally1_atk_bonus 4
+*set combat_ally1_dmg_dice_sides 6
+*set combat_ally1_dmg_bonus 2
+*set combat_ally1_dmg_type "piercing"
+*set combat_ally1_weapon_type "ranged"
+*set combat_ally1_dexterity 14
 *goto fight_library
 
 *label fight_silt_lurker

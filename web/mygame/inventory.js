@@ -170,7 +170,11 @@
     var html = "";
     slots.forEach(function (slot) {
       var v = renderSlotValue(slot, s);
-      html += '<div class="inv-slot' + (v.empty ? " inv-slot-empty" : "") + '">' +
+      // A card counts as "buffed" when it carries a meta line that is NOT the "No bonuses"
+      // placeholder, i.e. the player actually has something doing something. That is the card the
+      // accent edge is drawn on, so the grid shows at a glance which slots are doing work.
+      var buffed = !!v.meta || (!!v.traits && !v.noBonus);
+      html += '<div class="inv-slot' + (v.empty ? " inv-slot-empty" : "") + (buffed ? " inv-slot-buffed" : "") + '">' +
         '<div class="inv-slot-label">' + esc(slot.label) + "</div>" +
         '<div class="inv-slot-desc">' + esc(v.desc) + "</div>" +
         (v.meta ? '<div class="inv-slot-meta">' + esc(v.meta) + "</div>" : "") +
@@ -275,13 +279,16 @@
   }
   function renderPinned(s) {
     var badge = restBadge(s);
+    // The button is a direct child of the card, NOT nested inside .inv-item-main: the card is a two
+    // column grid so the button can be centred against the whole card (title + description) rather
+    // than only against the title row. See the .inv-item-pinned rules in inventory.css.
     return '<div class="inv-item inv-item-pinned">' +
       '<div class="inv-item-main">' +
         '<span class="inv-item-name">Rest</span>' +
         (badge ? '<span class="inv-item-badge">' + esc(badge) + "</span>" : "") +
-        '<button type="button" class="inv-use" data-rest' + (canUse() ? "" : " disabled") + ">Rest…</button>" +
       "</div>" +
       '<div class="inv-item-desc">Sit down for a short rest: about an hour, and it wins back what a short rest wins back.</div>' +
+      '<button type="button" class="inv-use" data-rest' + (canUse() ? "" : " disabled") + ">Rest…</button>" +
       "</div>";
   }
 

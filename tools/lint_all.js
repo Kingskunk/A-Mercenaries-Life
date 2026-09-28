@@ -25,6 +25,7 @@ const cp = require('child_process');
 // One entry per linter. Order is the order the results are printed in.
 const LINTERS = [
   'lint_choices',
+  'lint_gosub_arity',
   'lint_blank_landing',
   'lint_prose_tics',
   'lint_anachronisms',
