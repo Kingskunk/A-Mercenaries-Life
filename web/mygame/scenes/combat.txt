@@ -141,6 +141,12 @@
 *set combat_enemy1_metal_armor combat_enemy_metal_armor
 *set combat_enemy1_dmg_type combat_enemy_dmg_type
 *set combat_enemy1_weapon_type combat_enemy_weapon_type
+*comment Range: same snapshot as every other field above -- without it, a fight that sets combat_enemy_range on
+*comment slot 1 (the sole or first enemy) before calling fight_library would have that value silently overwritten
+*comment back to 0 the first time fight_sync_target_in reads combat_enemy1_range, since nothing would ever have
+*comment written it. Every existing non-Engaged start (the three Slinger fights) uses slot 2, which never hit
+*comment this gap; a slot-1 enemy opened away from Engaged needs it.
+*set combat_enemy1_range combat_enemy_range
 *comment Ability scores: already rolled/overridden onto the bare names by apply_type_X (or set directly by a
 *comment hand-authored fight), same snapshot treatment as every field above.
 *set combat_enemy1_strength combat_enemy_strength
@@ -465,12 +471,19 @@
     *set ato_line ((ato_line & ", ") & ato_name)
   *set ato_i + 1
   *goto announce_turn_order_loop
-*line_break
+*comment A blank source line, not *line_break: this is always the very first thing combat.txt prints on a fresh
+*comment entry, so the engine's paragraph buffer is always empty here -- *line_break would take its "no open
+*comment paragraph" fallback (a bare <br> outside any <p>) every time, which stacks with the calling scene's own
+*comment closing <p> margin into a bigger gap than a normal paragraph break. A blank line just closes whatever's
+*comment open (a no-op when there's nothing to close), so the calling scene's last line and this banner get
+*comment ordinary, single-size paragraph spacing either way.
+
 [b][⚡ Turn Order: ${ato_line}][/b]
 *return
 
 *label fight_cleanup
 *set combat_engaged false
+*set combat_hub_shown_once false
 *set hex_active false
 *set agathys_active false
 *set shield_armed false
@@ -514,6 +527,11 @@
 *set combat_flavor_enemy_move2_miss ""
 *set combat_enemy_dmg_type "bludgeoning"
 *set combat_enemy_weapon_type "melee"
+*comment Bare slot-1 range, same reset as the numbered slots' range below -- without it, a fight that leaves
+*comment slot 1 short of Engaged (the player fled, or won before it closed) would hand that leftover distance to
+*comment the next fight's own slot 1, via fight_setup's snapshot, before that fight ever gets a chance to set its
+*comment own starting range.
+*set combat_enemy_range 0
 *set combat_player_dmg_type "bludgeoning"
 *set combat_enemy_resist_type_1 ""
 *set combat_enemy_resist_type_2 ""
@@ -722,6 +740,26 @@
 *set {(("combat_enemy" & combat_active_target) & "_hp")} combat_enemy_hp
 *return
 
+*comment Range tiers: 0 Engaged, 1 Close, 2 Mid-Range, 3 Long Range. A melee-only combatant closes exactly one
+*comment tier per Push Forward (player) or per turn (an enemy, combat_next_turn) -- never straight to Engaged --
+*comment so a fight that opens someone at Mid-Range or Long Range costs multiple turns to reach, not one. Ranged
+*comment attacks work at every tier alike (no accuracy penalty for range today), so nothing here ever needs a
+*comment ranged combatant to move.
+*label combat_range_name
+*comment *gosub combat_range_name <range number>, then read combat_range_display_name (startup.txt *create) --
+*comment a durable output var instead of a caller-pre-declared *temp, since this label sits above every caller
+*comment in file order. Anything past 3 still reads as Long Range, rather than falling through blank, in case a
+*comment future fight sets a range higher than today's four tiers.
+*params crn_n
+*set combat_range_display_name "Engaged"
+*if (crn_n = 1)
+  *set combat_range_display_name "Close"
+*if (crn_n = 2)
+  *set combat_range_display_name "Mid-Range"
+*if (crn_n >= 3)
+  *set combat_range_display_name "Long Range"
+*return
+
 *label fight_pick_target
 *comment First living slot, in ascending order -- a group is always fought down roughly front-to-back, never
 *comment picks a dead slot back up. A bounded loop over combat_enemy_count, via indirection, instead of one
@@ -921,13 +959,15 @@
 *gosub fight_pick_target
 *comment (combat_enemy_disadvantage is cleared by combat_begin_round, once per round, not here: the hub is entered again
 *comment after a bonus action or an extra action, and that must not undo a Ray of Frost cast earlier in the same round.)
-
 *comment Every [b][...] banner below sits on its own line (*line_break): ChoiceScript
 *comment merges consecutive source lines into one paragraph, so without these
 *comment the round header, the buff status lines, and the previous action's
-*comment banner all run together on one line. Round 1 opens with a break so the
-*comment header separates from whatever prose the calling scene ended on.
-*if (combat_round = 1)
+*comment banner all run together on one line. The very first time the hub prints for this fight, it opens with a
+*comment break so the header separates from whatever prose the calling scene (or Turn Order) ended on --
+*comment combat_hub_shown_once, not combat_round = 1, so a bonus/extra action reopening the hub within the same
+*comment round doesn't add that break again on every redisplay.
+*if (not(combat_hub_shown_once))
+  *set combat_hub_shown_once true
   *line_break
 *if (combat_enemy_count = 1)
   [b][⚔️ Round ${combat_round} — ${combat_enemy_name}: HP ${combat_enemy_hp}/${combat_enemy_max_hp} (AC ${combat_enemy_ac}) | You: HP ${hp_current}/${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|} (AC ${armor_class})][/b]
@@ -1003,11 +1043,10 @@
 *if (has_althea_phial)
   *set cu_any true
 *comment GEN:END combat_use_check
-
 *comment Bonus-action availability: precomputed once, the same way combat_can_attack is, and reused by each
 *comment bonus option's own *if below. Needed because combat_player_bonus_left sitting at its full value means
 *comment two different things -- "nothing to spend it on this turn" or "something's available and the player just
-*comment hasn't chosen yet" -- and only the auto-end check downstream needs to tell them apart.
+*comment hasn't chosen yet" -- and only the auto-end check below needs to tell them apart.
 *temp combat_can_hex false
 *if ((((warlock_spell = "hex") and (warlock_spell_slots > 0)) or ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))) and (not(hex_active)))
   *set combat_can_hex true
@@ -1023,16 +1062,13 @@
 *temp combat_bonus_available false
 *if (((combat_can_hex) or (combat_can_healing_word)) or ((combat_can_second_wind) or (combat_can_rage)))
   *set combat_bonus_available true
-
-*comment Auto-end: fires once there's truly nothing left to spend a resource on, not just once every pool
-*comment counter happens to read zero -- attacks_left and bonus_left both sit at their full value on a turn
-*comment that never touched them (a caster who casts instead of swinging, or any turn where no bonus feature
-*comment got used), so testing combat_can_attack and combat_bonus_available instead of the raw counters is what
-*comment tells "full because unavailable" apart from "full because unspent." Skips past "Break off and
-*comment disengage" and "Use an item" (neither is pool-gated) -- use them before running the tank dry, not after.
+*comment Auto-end: silently loops back to the queue once there's truly nothing left to spend a resource on, not
+*comment just once every pool counter happens to read zero -- attacks_left and bonus_left both sit at their full
+*comment value on a turn that never touched them (a caster who casts instead of swinging, or any turn where no
+*comment bonus feature got used), so testing combat_can_attack and combat_bonus_available instead of the raw
+*comment counters is what tells "full because unavailable" apart from "full because unspent." Skips past "Break
+*comment off and disengage" and "Use an item" (neither is pool-gated) -- use them before running the tank dry.
 *if (((combat_player_actions_left <= 0) and (not(combat_can_attack))) and ((combat_player_bonus_left <= 0) or (not(combat_bonus_available))))
-  *line_break
-  [b][⏱️ Nothing left to spend — your turn ends][/b]
   *set combat_turn_advanced_this_page false
   *goto combat_next_turn
 
@@ -1052,17 +1088,27 @@
 
   *if ((combat_player_actions_left > 0) and (combat_enemy_range > 0))
     # Push forward and close the distance on ${combat_enemy_epithet}.
-      *comment Dash, RAW: the whole action, no attack this turn -- same one-turn-flat simplification the
+      *comment Dash, RAW: the whole action, no attack this turn -- same one-tier-per-turn simplification the
       *comment enemy's own "closes the distance" branch already uses (combat_next_turn), so the two sides stay
-      *comment symmetric. A future bonus-action variant (Rogue Cunning Action, level 2 -- not built yet, see the
-      *comment Level 2 groundwork audit) would just be a second option reusing this same range-to-0 effect with
-      *comment *goto fight_bonus_spent instead of fight_action_spent; nothing here needs to change for that.
+      *comment symmetric. Closes exactly one range tier, not straight to Engaged -- a fight that opens someone at
+      *comment Mid-Range or Long Range costs multiple turns to close, same as it would cost the enemy to close on
+      *comment the player. A future bonus-action variant (Rogue Cunning Action, level 2 -- not built yet, see the
+      *comment Level 2 groundwork audit) would just be a second option reusing this same effect with *goto
+      *comment fight_bonus_spent instead of fight_action_spent; nothing here needs to change for that.
       *gosub fight_pick_target
-      *set combat_enemy_range 0
-      *set {(("combat_enemy" & combat_active_target) & "_range")} 0
-      You break into a hard sprint, closing the distance before ${combat_enemy_epithet} can react.
-      *line_break
-      [b][🏃 You Push Forward — Engaged][/b]
+      *set combat_enemy_range - 1
+      *if (combat_enemy_range < 0)
+        *set combat_enemy_range 0
+      *set {(("combat_enemy" & combat_active_target) & "_range")} combat_enemy_range
+      *if (combat_enemy_range <= 0)
+        You break into a hard sprint, closing the last of the distance before ${combat_enemy_epithet} can react.
+        *line_break
+        [b][🏃 You Push Forward — Engaged][/b]
+      *else
+        *gosub combat_range_name combat_enemy_range
+        You close ground on ${combat_enemy_epithet}, cutting down the distance between you.
+        *line_break
+        [b][🏃 You Push Forward — ${combat_range_display_name}][/b]
       *goto fight_action_spent
 
   *if ((combat_player_actions_left > 0) and ((((wizard_cantrip = "fire_bolt") or (wizard_cantrip_2 = "fire_bolt")) or (wizard_cantrip_3 = "fire_bolt")) or ((race_cantrip = "fire_bolt") or (race_cantrip_2 = "fire_bolt"))))
@@ -1293,8 +1339,8 @@
       *gosub fight_pick_target
       *gosub_scene startup resolve_cast_hex
       You whisper a guttural syllable of ancient ruin. Dark, spectral runes flare briefly across ${combat_enemy_epithet} and sink in, binding the foe's fate to your will—every strike you land will tear in with extra necrotic fury!
-      *line_break
-      [b][🔮 Hex Active — +1d6 Necrotic Damage on all hits][/b]
+      *comment No banner here -- the hub's own "Hex Active" status line (fight_round_hub) says the same thing the
+      *comment instant this reopens it, so a second copy here would just repeat it on the very same page.
       *line_break
       *goto fight_bonus_spent
 
@@ -1302,8 +1348,9 @@
     # [Spell: Armor of Agathys] Sheathe yourself in spectral frost that shields you and punishes melee strikes.
       *gosub_scene startup resolve_cast_agathys
       A brittle casing of translucent, jagged rime coats your shoulders and arms, radiating bone-chilling cold. Any foe foolish enough to strike you will feel the frost shatter back against the blow.
+      *comment No banner here -- the hub's own "Armor of Agathys Active" status line (fight_round_hub) says the
+      *comment same thing the instant this reopens it, so a second copy here would just repeat it on the same page.
       *line_break
-      [b][🛡️ Armor of Agathys: +5 Temp HP | 5 Cold Damage Retaliation on Hits][/b]
       *goto fight_action_spent
 
   *if ((combat_player_actions_left > 0) and (((((character_class = "wizard") and (wizard_spell = "false_life")) and (wizard_spell_slots > 0)) or (((character_class = "warlock") and (warlock_spell = "false_life")) and (warlock_spell_slots > 0))) and (temp_hp = 0)))
@@ -1370,8 +1417,8 @@
     # [Spell: Shield] Hold the barrier-spell coiled and ready, primed to snap into place the instant something connects.
       *set shield_armed true
       You murmur the first half of the somatic phrase under your breath, holding the working coiled and ready at your fingertips, costing you nothing to keep it there.
-      *line_break
-      [b][✨ Shield Readied — will trigger automatically on the next hit][/b]
+      *comment No banner here -- the hub's own "Shield Armed" status line (fight_round_hub) says the same thing
+      *comment the instant this reopens it, so a second copy here would just repeat it on the same page.
       *line_break
       *goto fight_round_hub
 
@@ -2572,9 +2619,9 @@ ${fnaa_line}
     *comment scene alongside the player's own "advantage true" for a successful sneak (alderford.txt's silt-lurker
     *comment and mire-rat approaches); it does nothing here for a pre-fight buff like the camp whetstone prep, which
     *comment never touches this flag.
-    *comment Range: a melee-only enemy that isn't at range 0 spends its whole turn closing the distance instead
-    *comment of attacking -- one turn, straight to Engaged, no step-by-step approach simulation (kept to the
-    *comment cheap binary rule, same as the player's own weapon-attack gate above).
+    *comment Range: a melee-only enemy that isn't at range 0 spends its whole turn closing one tier, same as the
+    *comment player's own Push Forward -- never straight to Engaged, so an enemy opened at Mid-Range or Long
+    *comment Range costs it multiple turns too.
     *temp cnt_first_pass {("combat_turn_first_pass_" & combat_current_turn_index)}
     *set {("combat_turn_first_pass_" & combat_current_turn_index)} false
     *if (combat_player_surprise) and (cnt_first_pass)
@@ -2583,11 +2630,19 @@ ${fnaa_line}
       [b][😲 ${combat_enemy_name} Surprised — turn lost][/b]
       *set combat_turn_advanced_this_page true
     *elseif ((not(combat_enemy_weapon_type = "ranged")) and (combat_enemy_range > 0))
-      *set combat_enemy_range 0
-      *set {(("combat_enemy" & cnt_slot) & "_range")} 0
-      ${combat_enemy_epithet} closes the distance, covering the ground between you both in a rush.
-      *line_break
-      [b][🏃 ${combat_enemy_name} Closes to Engagement][/b]
+      *set combat_enemy_range - 1
+      *if (combat_enemy_range < 0)
+        *set combat_enemy_range 0
+      *set {(("combat_enemy" & cnt_slot) & "_range")} combat_enemy_range
+      *if (combat_enemy_range <= 0)
+        ${combat_enemy_epithet} closes the last of the distance, covering the ground between you both in a rush.
+        *line_break
+        [b][🏃 ${combat_enemy_name} Closes to Engagement][/b]
+      *else
+        *gosub combat_range_name combat_enemy_range
+        ${combat_enemy_epithet} closes ground, cutting down the distance between you both.
+        *line_break
+        [b][🏃 ${combat_enemy_name} Closes to ${combat_range_display_name}][/b]
       *set combat_turn_advanced_this_page true
     *else
       *gosub fight_pick_enemy_move
@@ -4365,6 +4420,16 @@ ${fnaa_line}
 *goto fight_round_hub
 
 *comment The named fights below are thin callers of fight_library: they say who is in the fight and nothing else.
+
+*label fight_dev_range_test
+*comment Dev-hub only (startup.txt dev_combat_test_hub) -- no story scene calls this. One lacedon opened at Long
+*comment Range (3) instead of the type-library default of Engaged, to play with the range-tier system: watch it
+*comment close one tier a turn on its own, and Push Forward through Close and Mid-Range before it's in melee reach.
+*set combat_is_nonlethal false
+*set combat_lib_1 "lacedon"
+*set combat_enemy_name_override "Silt-Lurker Lacedon"
+*set combat_enemy_range 3
+*goto fight_library
 
 *label fight_silt_lurker
 *comment Used by alderford.txt's Maura cellar-nuisance quest: one lacedon.

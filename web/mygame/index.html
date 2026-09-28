@@ -129,9 +129,25 @@ var rootDir = "../";
   border-top: 1px solid rgba(0,0,0,0.15);
 }
 /* Combat state (2026-09-27): the sidebar's own header gets a small badge, and date/time/weather/purse swap for
-   a live turn-order list (renderStatSidebar below) -- reusing combat_turn_kind_*/_slot_* the ChoiceScript engine
-   already builds, not a second panel, so this never fights the sidebar for space or attention. */
-#statSidebar h3 { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5em; }
+   a live turn-order list (renderStatSidebar below) -- reusing the combat_turn_kind_N/_slot_N stats the ChoiceScript
+   engine already builds, not a second panel, so this never fights the sidebar for space or attention.
+   Do not join those two families with a star-then-slash inside a comment here: that pair closes
+   the comment early, the rest of the line is then parsed as a selector, and the next rule is
+   silently dropped from the CSSOM -- which is exactly how this h3 lost its display:flex. */
+/* Header layout: the name is the only element allowed to absorb slack -- flex:1 1 auto plus
+   min-width:0 lets it shrink and wrap in place (overflow-wrap guards an unbreakable generated
+   name) -- while the badge holds a fixed flex-basis of its own with the label centered inside
+   it, so COMBAT sits the same distance from the class name no matter how long the name gets.
+   Previously the badge was a plain flex sibling shoved over by `margin-left: auto`, so it landed
+   at whatever offset the leftover space happened to leave: 0.5em on a short name, and on its own
+   flush-right line once `flex-wrap: wrap` dropped it there, which is what read as COMBAT being
+   glued to the class name. flex-wrap is dropped for the same reason -- the name now wraps
+   internally and the badge never jumps to a second row.
+   The 6.5em basis is in the badge's own font (0.7em of the h3's 1.05em of the sidebar's 0.82em,
+   ~9.6px), so it measures ~63px of content width against ~45px of glyphs for "COMBAT". Nothing
+   in this game sets box-sizing:border-box, so the basis is content width, padding excluded. */
+#statSidebar h3 { display: flex; align-items: center; gap: 0.75em; }
+#statSidebar h3 > span:first-child { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
 #statSidebar .combatBadge {
   font-size: 0.7em;
   font-weight: bold;
@@ -141,6 +157,8 @@ var rootDir = "../";
   border-radius: 3px;
   padding: 0.1em 0.4em;
   white-space: nowrap;
+  flex: 0 0 6.5em;
+  text-align: center;
   margin-left: auto;
 }
 #statSidebar .turnRow {
@@ -157,6 +175,65 @@ var rootDir = "../";
 button#statSidebar .turnRow,
 #statSidebar button.turnRow {
   cursor: pointer;
+}
+/* ── Combatant stat card ──────────────────────────────────────────────────────────────────────────────────
+   A real DOM element, NOT a title attribute: the browser's own tooltip is an unstyleable OS widget
+   (that plain black-bordered box), so a sleek card is only possible by building one. #csTip is a
+   child of <body>, never of #statSidebar, because renderStatSidebar replaces the sidebar's innerHTML
+   every 400ms and would destroy a tooltip living inside it. */
+#csTip {
+  position: fixed;
+  z-index: 1200;
+  pointer-events: none;          /* so the row underneath keeps its :hover styling, and so
+                                    elementFromPoint (refreshTip) never finds the card instead */
+  opacity: 0;
+  transition: opacity 0.1s ease;
+  background: #211c19;           /* warm near-black, sits with the sidebar's browns */
+  color: #f2ece6;
+  border: 1px solid rgba(161,43,43,0.5);   /* rust, the same accent as the COMBAT badge */
+  border-radius: 7px;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.38), 0 1px 2px rgba(0,0,0,0.3);
+  padding: 8px 10px 9px;
+  font: 500 12px/1.4 Helvetica, Arial, sans-serif;
+  max-width: 280px;
+  white-space: nowrap;
+}
+#csTip.on { opacity: 1; }
+#csTip .tHd {                    /* the combatant's name */
+  font-weight: 700;
+  font-size: 12.5px;
+  color: #fff;
+  margin-bottom: 5px;
+}
+#csTip .tMeta {                  /* AC / attack bonus / damage dice */
+  font-size: 11px;
+  color: #a99d94;
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid rgba(255,255,255,0.09);
+}
+#csTip .tMeta b { color: #cbbdb2; font-weight: 600; }
+#csTip .tGrid {                  /* 2 columns x 3 rows: STR DEX / CON INT / WIS CHA. A real grid so the
+                                    columns align exactly -- the previous version padded with non-breaking
+                                    spaces, which only ever approximated this. */
+  display: grid;
+  grid-template-columns: auto auto;
+  column-gap: 15px;
+  row-gap: 2px;
+}
+#csTip .tAb { font-size: 11.5px; }
+#csTip .tAb b { color: #d98b7a; font-weight: 700; margin-right: 4px; }   /* ability label */
+#csTip .tAb s { color: #fff; font-weight: 600; text-decoration: none; }  /* the score */
+#csTip .tAb i { font-style: normal; margin-left: 3px; font-size: 10.5px; }
+#csTip .tAb i.pos { color: #86c295; }   /* positive modifier */
+#csTip .tAb i.neg { color: #e08a8a; }   /* negative modifier */
+#csTip .tAb i.zero { color: #8f837a; }
+#csTip .tDead { color: #8f837a; font-size: 10.5px; margin-top: 6px; }
+#statSidebar .turnRow[data-combatant] {
+  cursor: help;
+}
+#statSidebar .turnRowDead[data-combatant] {
+  cursor: help;
 }
 #statSidebar .turnRow:hover:not(:disabled),
 #statSidebar .turnRow:focus-visible:not(:disabled) {
@@ -248,9 +325,11 @@ button#statSidebar .turnRow,
           var cPicked = kind === "enemy" && !cDead && chosen === slot;
           if (kind === "enemy" && !cDead) {
             rows += "<button type=\"button\" class=\"statRow turnRow" + (cPicked ? " turnRowPicked" : "") +
-              "\" data-target=\"" + slot + "\"><span>" + cName + "</span><span>" + cHp + "/" + cMax + "</span></button>";
+              "\" data-target=\"" + slot + "\"" + combatantAttr(kind, slot) + "><span>" + cName + "</span><span>" + cHp + "/" + cMax + "</span></button>";
           } else {
-            rows += "<div class=\"statRow turnRow" + (cDead ? " turnRowDead" : "") + "\"><span>" + cName +
+            // A downed enemy still gets the card: its AC/Atk/abilities are what tell you whether the
+            // remaining target is worth finishing, and a dead row that shows nothing reads as broken.
+            rows += "<div class=\"statRow turnRow" + (cDead ? " turnRowDead" : "") + "\"" + combatantAttr(kind, slot) + "><span>" + cName +
               "</span><span>" + (cDead ? "Down" : (cHp + "/" + cMax)) + "</span></div>";
           }
         }
@@ -328,6 +407,173 @@ button#statSidebar .turnRow,
     var tip = isTruthy(helps) ? "Includes +" + b + " from a boon, which raises the modifier" : "Includes +" + b + " from a boon, which does not change the modifier";
     return " <span class=\"" + cls + "\" title=\"" + tip + "\">+" + b + "</span>";
   }
+  // ── Combatant stat tooltip ─────────────────────────────────────────────────────────────────────────────────
+  // Hovering a row in the combat turn order shows that combatant's numbers, so the whole targeting picture
+  // (who is soft, who hits hardest, who you can barely scratch) is in one place instead of spread across the
+  // round banner in combat.txt.
+  //
+  // All of this is READ-ONLY: the sidebar formats stats the game already wrote and never derives a rule of its
+  // own, the same contract the rest of renderStatSidebar follows (see the comment on combatBadgeHtml above).
+  // Nothing here is added to combat.txt or startup.txt.
+  //
+  // "AC" and "Atk" are NOT new information -- combat.txt already prints the enemy AC in the round banner
+  // (line 933, and 937-952 per slot) and its attack bonus in every attack-roll line (startup.txt:3881). They
+  // are repeated here only so one hover answers the whole question.
+  function esc(v) {
+    return String(v)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  // Mirrors score_to_mod (startup.txt:3250-3287). That label is a table of independent *if (score >= N)*
+  // steps, not an else-if chain, so the last matching threshold wins -- which is why it tops out at +10 for
+  // a 30 rather than the +5 a single-step reading would give. Reproduced as an explicit table (not a formula
+  // like Math.floor((n-10)/2)) precisely so a future rules change shows up here as a diff instead of quietly
+  // disagreeing with the game.
+  function modFromScore(n) {
+    if (n <= 1) return -5;                          // score_to_mod: <= 1 -> -5
+    if (n <= 3) return -4;
+    if (n <= 5) return -3;
+    if (n <= 7) return -2;
+    if (n <= 9) return -1;
+    if (n < 12) return 0;                           // 10 and 11 have no modifier
+    if (n < 14) return 1;
+    if (n < 16) return 2;
+    if (n < 18) return 3;
+    if (n < 20) return 4;
+    if (n < 22) return 5;
+    if (n < 24) return 6;
+    if (n < 26) return 7;
+    if (n < 28) return 8;
+    if (n < 30) return 9;
+    return 10;
+  }
+  // Same format as sm_mod_str and the abilityGrid above, so the two read identically.
+  function modStr(m) { return (m >= 0 ? "+" : "") + m; }
+  var ABILITY_KEYS = [
+    ["strength", "STR"], ["dexterity", "DEX"], ["constitution", "CON"],
+    ["intelligence", "INT"], ["wisdom", "WIS"], ["charisma", "CHA"]
+  ];
+  // A slot that never went through apply_ability_score_range keeps the declared defaults (startup.txt:
+  // 1356-1361), which are all 10 -- a flat, modifier-less row that is NOT the combatant's real profile.
+  // Printing "10 (0)" six times would look authoritative while being a fiction, so an all-defaults row is
+  // treated as absent and simply omitted. Anything with even one score off 10 is a real rolled profile.
+  function abilitiesRolled(p, s) {
+    var seen = 0, anyOff = false;
+    for (var i = 0; i < ABILITY_KEYS.length; i++) {
+      var v = Number(s[p + ABILITY_KEYS[i][0]]);
+      if (isFinite(v)) { seen++; if (v !== 10) anyOff = true; }
+    }
+    return seen > 0 && anyOff;
+  }
+  // Structured read of one combatant. Returns null when there is nothing honest to show (inert slot 0,
+  // a slot with no rolled scores), which is what keeps the card off rows it would only pad with lies.
+  // Allies only ever have a DEX (startup.txt:1679 is their one ability), so they get AC/Atk/damage and
+  // that single score rather than five fabricated zeroes.
+  function combatantInfo(kind, slot) {
+    var s = window.stats;
+    if (!s) return null;
+    var p = (kind === "enemy" ? "combat_enemy" : "combat_ally") + slot + "_";
+    function num(key) {
+      var v = Number(s[p + key]);
+      return isFinite(v) ? v : null;
+    }
+    var abilities = [], i;
+    if (abilitiesRolled(p, s)) {
+      for (i = 0; i < ABILITY_KEYS.length; i++) {
+        var raw = Number(s[p + ABILITY_KEYS[i][0]]);
+        if (isFinite(raw)) abilities.push({ label: ABILITY_KEYS[i][1], score: raw, mod: modFromScore(raw) });
+      }
+    } else if (kind !== "enemy") {
+      // Allies only ever have a DEX (startup.txt:1679), so a 10 there is simply their real score and
+      // there is no "never rolled" to detect -- show it. An ENEMY in this state has all six at their
+      // declared 10s, which is the absence of data rather than a profile, so it shows nothing instead
+      // of a lone "DEX 10 (+0)" that reads as a real measurement.
+      var dex = num("dexterity");
+      if (dex !== null) abilities.push({ label: "DEX", score: dex, mod: modFromScore(dex) });
+    }
+    var sides = num("dmg_dice_sides"), bonus = num("dmg_bonus");
+    var info = {
+      name: fmt(s[p + "name"]),
+      ac: num("ac"),
+      atk: num("atk_bonus"),
+      dmg: sides === null ? null : (sides > 1 ? "1d" + sides : "") + (bonus ? modStr(bonus) : ""),
+      hp: num("hp"), maxHp: num("max_hp"),
+      abilities: abilities
+    };
+    return (info.ac !== null || info.atk !== null || info.dmg !== null || abilities.length) ? info : null;
+  }
+  // Every value is escaped: the name and epithets come from game data, and this is innerHTML.
+  function tipHtml(info) {
+    var meta = [];
+    if (info.ac !== null) meta.push("<b>AC</b> " + esc(info.ac));
+    if (info.atk !== null) meta.push("<b>Atk</b> " + esc(modStr(info.atk)));
+    if (info.dmg) meta.push("<b>DMG</b> " + esc(info.dmg));
+    var grid = "";
+    for (var i = 0; i < info.abilities.length; i++) {
+      var a = info.abilities[i];
+      var cls = a.mod > 0 ? "pos" : (a.mod < 0 ? "neg" : "zero");
+      grid += "<div class=\"tAb\"><b>" + esc(a.label) + "</b><s>" + esc(a.score) +
+              "</s><i class=\"" + cls + "\">(" + esc(modStr(a.mod)) + ")</i></div>";
+    }
+    return "<div class=\"tHd\">" + esc(info.name) + "</div>" +
+           (meta.length ? "<div class=\"tMeta\">" + meta.join("&nbsp;&nbsp;·&nbsp;&nbsp;") + "</div>" : "") +
+           (grid ? "<div class=\"tGrid\">" + grid + "</div>" : "");
+  }
+  // The card is rebuilt on hover from window.stats, so the row only carries a "which combatant" pointer
+  // rather than a blob of HTML in an attribute that would have to be re-escaped every 400ms.
+  function combatantAttr(kind, slot) {
+    return combatantInfo(kind, slot) ? " data-combatant=\"" + kind + ":" + slot + "\"" : "";
+  }
+
+  // ── The card itself ──────────────────────────────────────────────────────────────────────────────────────
+  var tipEl = null, tipKey = null, tipX = 0, tipY = 0;
+  function tipNode() {
+    if (!tipEl) {
+      tipEl = document.createElement("div");
+      tipEl.id = "csTip";
+      document.body.appendChild(tipEl);   // NOT #statSidebar: its innerHTML is replaced every render
+    }
+    return tipEl;
+  }
+  function placeTip() {
+    var t = tipNode(), r = t.getBoundingClientRect();
+    var vw = window.innerWidth, vh = window.innerHeight, left, top;
+    left = tipX + 16;
+    if (left + r.width > vw - 8) left = tipX - r.width - 14;   // flip to the cursor's left near the edge
+    if (left < 8) left = 8;
+    top = tipY + 18;
+    if (top + r.height > vh - 8) top = tipY - r.height - 12;   // flip above near the bottom
+    if (top < 8) top = 8;
+    t.style.left = left + "px";
+    t.style.top = top + "px";
+  }
+  function showTip(key, x, y) {
+    var t = tipNode();
+    var bits = key.split(":"), info = combatantInfo(bits[0], bits[1]);
+    if (!info) return hideTip();
+    tipKey = key; tipX = x; tipY = y;
+    t.innerHTML = tipHtml(info);
+    placeTip();
+    t.classList.add("on");
+  }
+  function hideTip() { tipKey = null; if (tipEl) tipEl.classList.remove("on"); }
+  // Re-resolve the card against whatever is under the cursor NOW. renderStatSidebar rebuilds the rows
+  // every 400ms, which detaches the hovered element and fires no mouseout -- so without this the card
+  // would hang on a row that no longer exists (or that just became a downed row), and would never move.
+  function refreshTip() {
+    if (!tipKey) return;
+    var el = document.elementFromPoint(tipX, tipY);
+    var row = el && el.closest ? el.closest("#statSidebar .turnRow[data-combatant]") : null;
+    if (!row) return hideTip();
+    var key = row.getAttribute("data-combatant");
+    if (key !== tipKey) return showTip(key, tipX, tipY);
+    placeTip();
+  }
+  function rowAt(ev) {
+    var el = ev.target;
+    if (!el || !el.closest) return null;
+    return el.closest("#statSidebar .turnRow[data-combatant]");
+  }
   // The #statSidebar div itself is never recreated (only its innerHTML, every render) -- one delegated listener
   // on the stable element, not on the buttons inside it, which get destroyed and rebuilt every 400ms poll.
   document.addEventListener("click", function (ev) {
@@ -339,7 +585,31 @@ button#statSidebar .turnRow,
     window.stats.combat_player_chosen_target = slot;
     renderStatSidebar();
   });
-  window.setInterval(renderStatSidebar, 400);
+  // Hover/focus plumbing for the stat card. Delegated on #statSidebar -- the same stable element the
+  // click handler uses -- because the rows themselves are destroyed and rebuilt every 400ms, so any
+  // listener bound directly to a row would die with it. mouseleave (not mouseout) is the reliable
+  // "pointer left the panel" signal here; mouseout would fire on every internal move between the two
+  // <span>s inside a row.
+  document.getElementById("statSidebar").addEventListener("mouseover", function (ev) {
+    var row = rowAt(ev);
+    if (row) showTip(row.getAttribute("data-combatant"), ev.clientX, ev.clientY);
+  });
+  document.getElementById("statSidebar").addEventListener("mousemove", function (ev) {
+    if (!tipKey) return;
+    var row = rowAt(ev);
+    if (row && row.getAttribute("data-combatant") === tipKey) { tipX = ev.clientX; tipY = ev.clientY; placeTip(); }
+  });
+  document.getElementById("statSidebar").addEventListener("mouseleave", hideTip);
+  // Keyboard parity: the living-enemy rows are real <button>s, so they must show the card on focus too.
+  document.getElementById("statSidebar").addEventListener("focusin", function (ev) {
+    var row = rowAt(ev);
+    if (!row) return;
+    var r = row.getBoundingClientRect();
+    showTip(row.getAttribute("data-combatant"), r.left + 40, r.top + r.height);
+  });
+  document.getElementById("statSidebar").addEventListener("focusout", hideTip);
+  // refreshTip runs alongside every render so the card re-resolves against the rebuilt rows.
+  window.setInterval(function () { renderStatSidebar(); refreshTip(); }, 400);
   document.addEventListener("DOMContentLoaded", renderStatSidebar);
 })();
 </script>

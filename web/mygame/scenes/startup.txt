@@ -1409,6 +1409,10 @@
 *create combat_flavor_enemy2_move2_hit ""
 *create combat_flavor_enemy2_move2_miss ""
 *create combat_current_spell_id ""
+*comment Output of combat_range_name (combat.txt): the display name for whatever range number was just passed in
+*comment (Engaged/Close/Mid-Range/Long Range) -- a durable var instead of a caller-declared *temp, since that
+*comment label sits above its callers in combat.txt's own file order.
+*create combat_range_display_name ""
 *comment Optional per-slot flavor overrides
 *create combat_flavor_enemy2_hit_1 ""
 *create combat_flavor_enemy2_hit_2 ""
@@ -1741,6 +1745,11 @@
 *comment before showing the next menu, so round 1 (and a mid-turn hub reopen) reads exactly as it always did, with
 *comment no break before anything has actually happened yet.
 *create combat_turn_advanced_this_page false
+*comment True once fight_round_hub has printed its round banner for the first time this fight -- gates the
+*comment opening blank-line separator (combat.txt) so it fires once, leaving the calling scene's prose, rather
+*comment than every time the hub reopens within the same round (a bonus action, an extra action, a spell that
+*comment loops back without ending the turn).
+*create combat_hub_shown_once false
 *comment Set true by a calling scene (alongside its own "advantage true" for the player's first attack roll) when
 *comment a stealth check catches the whole enemy group unaware -- NOT set by a pre-fight buff like the camp
 *comment whetstone prep, which sharpens the blade but doesn't mean the enemy never saw the player coming. Combined
@@ -3107,6 +3116,9 @@ HP and every class resource are refilled to full before each one, so every fight
   # 🕸️ The Stolen Shroud Thieves (Dredge-End) -- knifeman + slinger, non-lethal
     *set dctest_label "fight_shroud_thieves"
     *goto dev_combat_test_run
+  # 🎯 Range Tiers Test -- 1 lacedon opened at Long Range, to play with Push Forward
+    *set dctest_label "fight_dev_range_test"
+    *goto dev_combat_test_run
   # Return to Developer Scene Select
     *goto dev_scene_select
 
@@ -3130,6 +3142,8 @@ HP and every class resource are refilled to full before each one, so every fight
   *gosub_scene combat fight_wreckers
 *if (dctest_label = "fight_shroud_thieves")
   *gosub_scene combat fight_shroud_thieves
+*if (dctest_label = "fight_dev_range_test")
+  *gosub_scene combat fight_dev_range_test
 *temp dctest_hp_after hp_current
 *set hp_current hp_max
 *gosub restore_class_resources
@@ -3657,7 +3671,6 @@ ${res_banner}
     [b][🎲 D20 Check: ${check_skill} (DC ${check_dc}) | Roll: ${d20_roll} +${check_mod}${adv_label} = ${check_total} — FAILURE][/b]
   *if (check_mod < 0)
     [b][🎲 D20 Check: ${check_skill} (DC ${check_dc}) | Roll: ${d20_roll} ${check_mod}${adv_label} = ${check_total} — FAILURE][/b]
-
 *line_break
 *set advantage false
 *set disadvantage false
@@ -3947,14 +3960,16 @@ ${combat_player_dmg_roll_banner}
   *set {cea_lockname} true
 *temp cea_atk_banner_text {(cea_atk_bannername)}
 *if (not(cea_atk_banner_text = ""))
-  *comment Layout per attacker (2026-09-27, moved here from fight_narrate_enemy_turn -- a designer catch: it used
-  *comment to sit at the top of that label instead, which put the blank-line gap AFTER these two roll banners
-  *comment instead of before them, visually detaching the dice from the prose they belong to and running them
-  *comment into whatever the PREVIOUS turn printed last. One blank line (two breaks) now leads the whole
-  *comment attacker block -- roll banners included -- exactly once, and nothing separates the dice from the prose
-  *comment that follows in fight_narrate_enemy_turn.
-  *line_break
-  *line_break
+  *comment Layout per attacker: a genuine blank source line, not *line_break, leads the whole attacker block --
+  *comment roll banners included. *line_break behaves two different ways depending on whether the engine still
+  *comment has an open paragraph: mid-paragraph it's a tight inline break, but once the previous content has
+  *comment already been flushed (true whenever a blank line sits upstream, like fight_round_hub's own status
+  *comment block) it falls back to a bare <br> outside any <p>, which then stacks with that <p>'s own margin on
+  *comment both sides into a much bigger gap than intended. A blank source line here always just closes the
+  *comment previous paragraph (a no-op if it's already closed) instead, so the gap is the same size either way --
+  *comment whether the previous attacker's text is still open (a second/third attacker on one page) or already
+  *comment flushed (nothing printed since fight_round_hub's own status lines, as after a silent auto-end).
+
   ${cea_atk_banner_text}
   *line_break
 *temp cea_banner_text {(cea_bannername)}
