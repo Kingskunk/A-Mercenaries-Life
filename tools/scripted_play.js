@@ -8,7 +8,7 @@
  * How it works
  *   - It loads the same engine and scene files the game uses (like render_hub.js and randomtest.js).
  *     Only the input handling is replaced: every *choice is answered from the script.
- *   - The character is built by picking one of the game's own dev-menu presets (startup.txt,
+ *   - The character is built by picking one of the game's own dev-menu presets (dev_hub.txt,
  *     dev_jump_menu), so class, stats and cantrips come from real character creation.
  *   - Then the world is overridden (weather, time, day, any variable), and the run starts at a label.
  *   - Math.random is forced, so dice and *rand pools are deterministic: "low" is the minimum roll (a
@@ -239,8 +239,8 @@ function newGame(preset) {
   boot.execute();
   printed.length = 0;
   D.mode = "drive"; D.steps = preset ? [{ pick: preset }] : [];
-  var dev = new Scene("startup", stats, nav, { debugMode: false });
-  dev.targetLabel = { label: "dev_jump_menu", origin: "startup", originLine: 0 };
+  var dev = new Scene("dev_hub", stats, nav, { debugMode: false });
+  dev.targetLabel = { label: "dev_jump_menu", origin: "dev_hub", originLine: 0 };
   runLoop(dev);
   if (!preset) return D.stopped || [];
   if (D.errors.length) throw new Error("preset '" + preset + "' failed: " + D.errors.join("; ") + " (list them with --presets)");

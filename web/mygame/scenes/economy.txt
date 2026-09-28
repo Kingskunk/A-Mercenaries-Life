@@ -1,0 +1,260 @@
+*comment ══════════════════════════════════════════════════════════════
+*comment ECONOMY PRIMITIVES (split out of startup.txt, 2026-09-28)
+*comment currency_add (the shared copper/silver/gold math every purchase and reward goes through),
+*comment describe_silver_amount (its display-string counterpart), resolve_wager (the gambling-table payout math),
+*comment buy_tavern_item (the reusable "spend coin, get a consumable/buff" subroutine used by every tavern/shop
+*comment menu in the game), and apply_unique_buff/apply_unique_buff_slot/apply_grooming_buff (the single-slot
+*comment timed-buff system a handful of purchasable effects use). The fifth and last of the originally-scoped
+*comment five categories, and the widest caller spread of any split so far by raw call-site count: currency_add
+*comment alone has roughly 140 call sites across 11 different quest files (every district's shops, quests and
+*comment rewards touch it), though every one was already *gosub_scene startup currency_add (already cross-file),
+*comment so converting them was a pure scene-name rename, not a verb or argument change.
+*comment
+*comment Two labels here call back into startup.txt, since they're staying there as more general primitives:
+*comment roll_d20_check (resolve_wager's own gambling roll -- general dice math, used far beyond combat or
+*comment economy) and recalculate_buff_stats (part of the character-stat/buff-recalculation cluster
+*comment (refresh_boon_flags/recalculate_buff_stats/bs_add/recalculate_attuned_bonuses/recalculate_equipment_bonuses/
+*comment eb_take) that was discovered while scoping this split -- narrow-footprint (0-1 external files each) but
+*comment out of scope for today's economy-focused pass; flagged as a future 6th split candidate, closer in theme to
+*comment character_stats.txt than to this file).
+*comment
+*comment A *gosub_scene-only library scene, same treatment as every other split file: NOT in *scene_list, told to
+*comment compile.js by its own verifyFileName("economy.txt") line instead, or a compiled build silently drops it
+*comment and only fails at runtime the first time a purchase, reward, or wager actually happens.
+*comment ══════════════════════════════════════════════════════════════
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment REUSABLE ENGINE PRIMITIVE: CURRENCY MATH
+*comment Adds or spends currency_add_amount (in copper-equivalent units: 10c = 1s, 10s = 1g).
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label currency_add
+*temp ca_total ((((gold * 100) + (silver * 10)) + copper) + currency_add_amount)
+*if (ca_total < 0)
+  *set ca_total 0
+*set gold (ca_total - (ca_total modulo 100)) / 100
+*temp ca_remainder (ca_total - (gold * 100))
+*set silver (ca_remainder - (ca_remainder modulo 10)) / 10
+*set copper (ca_remainder - (silver * 10))
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment FORMAT SILVER AMOUNT INTO DISPLAY STRING
+*comment Input: silver_amount_to_describe
+*comment Output: coin_amount_desc (e.g. "1 Gold Crown, 2 Silver Marks")
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label describe_silver_amount
+*temp dsa_gold ((silver_amount_to_describe - (silver_amount_to_describe modulo 10)) / 10)
+*temp dsa_silver (silver_amount_to_describe modulo 10)
+*temp dsa_gold_str ""
+*if (dsa_gold = 1)
+  *set dsa_gold_str "1 Gold Crown"
+*else
+  *set dsa_gold_str (dsa_gold & " Gold Crowns")
+*temp dsa_silver_str ""
+*if (dsa_silver = 1)
+  *set dsa_silver_str "1 Silver Mark"
+*else
+  *set dsa_silver_str (dsa_silver & " Silver Marks")
+*if ((dsa_gold > 0) and (dsa_silver > 0))
+  *set coin_amount_desc ((dsa_gold_str & ", ") & dsa_silver_str)
+*elseif (dsa_gold > 0)
+  *set coin_amount_desc dsa_gold_str
+*else
+  *set coin_amount_desc dsa_silver_str
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment REUSABLE ENGINE PRIMITIVE: GAMBLING WAGER
+*comment Inputs: wager_bankroll_var, wager_ante_copper, wager_win_copper, check_stat/dc/skill
+*comment Outputs: check_success, wager_bankroll_busted
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_wager
+*if (wager_bankroll_var = "")
+  *set wager_bankroll_var "taphouse_dice_bankroll"
+*if (not(wager_ante_locked)) or (not(locked_wager_ante_page_id = page_id))
+  *set currency_add_amount 0 - wager_ante_copper
+  *gosub currency_add
+  *set {wager_bankroll_var} + wager_ante_copper
+  *set wager_ante_locked true
+  *set locked_wager_ante_page_id page_id
+*gosub_scene dice_engine roll_d20_check
+*set wager_bankroll_busted ({wager_bankroll_var} <= 0)
+*if (check_success)
+  *if (not(wager_win_locked)) or (not(locked_wager_win_page_id = page_id))
+    *temp wager_payout wager_win_copper
+    *if (wager_payout > {wager_bankroll_var})
+      *set wager_payout {wager_bankroll_var}
+    *set currency_add_amount wager_payout
+    *gosub currency_add
+    *set {wager_bankroll_var} - wager_payout
+    *set wager_win_locked true
+    *set locked_wager_win_page_id page_id
+  *set wager_bankroll_busted ({wager_bankroll_var} <= 0)
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment REUSABLE ENGINE PRIMITIVE: TAVERN PURCHASE
+*comment Inputs: tavern_item_cost_copper, tavern_item_hp_heal, tavern_item_temp_hp, tavern_item_type,
+*comment         tavern_item_buff_bonus, tavern_item_buff_name/desc/stat/minutes
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label buy_tavern_item
+*if (not(tavern_purchase_locked)) or (not(locked_tavern_purchase_page_id = page_id))
+  *set currency_add_amount 0 - tavern_item_cost_copper
+  *gosub currency_add
+  *if (tavern_item_hp_heal > 0)
+    *set hp_current + tavern_item_hp_heal
+    *if (hp_current > hp_max)
+      *set hp_current hp_max
+  *if (tavern_item_temp_hp > 0)
+    *if (tavern_item_temp_hp > temp_hp)
+      *set temp_hp tavern_item_temp_hp
+  *if (tavern_item_type = "food")
+    *set minutes_since_meal 0
+    *set neglect_damage_hunger 0
+    *set hunger_stage "Fed"
+  *if (tavern_item_buff_bonus > 0)
+    *if (tavern_item_type = "food")
+      *set food_buff_active true
+      *set food_buff_name tavern_item_buff_name
+      *set food_buff_desc tavern_item_buff_desc
+      *set food_buff_stat tavern_item_buff_stat
+      *set food_buff_bonus tavern_item_buff_bonus
+      *set food_buff_minutes_left tavern_item_buff_minutes
+    *if (tavern_item_type = "drink")
+      *set drink_buff_active true
+      *set drink_buff_name tavern_item_buff_name
+      *set drink_buff_desc tavern_item_buff_desc
+      *set drink_buff_stat tavern_item_buff_stat
+      *set drink_buff_bonus tavern_item_buff_bonus
+      *set drink_buff_minutes_left tavern_item_buff_minutes
+  *set tavern_purchase_locked true
+  *set locked_tavern_purchase_page_id page_id
+*gosub_scene character_buffs recalculate_buff_stats
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment REUSABLE ENGINE PRIMITIVE: APPLY UNIQUE BUFF
+*comment Inputs: unique_buff_input_name/desc/stat/bonus/minutes
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label apply_unique_buff
+*gosub apply_unique_buff_slot
+*gosub_scene character_buffs recalculate_buff_stats
+*return
+
+*label apply_unique_buff_slot
+*if (unique_buff1_active) and (unique_buff1_name = unique_buff_input_name)
+  *set unique_buff1_desc unique_buff_input_desc
+  *set unique_buff1_stat unique_buff_input_stat
+  *set unique_buff1_bonus unique_buff_input_bonus
+  *set unique_buff1_minutes_left unique_buff_input_minutes
+  *return
+*if (unique_buff2_active) and (unique_buff2_name = unique_buff_input_name)
+  *set unique_buff2_desc unique_buff_input_desc
+  *set unique_buff2_stat unique_buff_input_stat
+  *set unique_buff2_bonus unique_buff_input_bonus
+  *set unique_buff2_minutes_left unique_buff_input_minutes
+  *return
+*if (unique_buff3_active) and (unique_buff3_name = unique_buff_input_name)
+  *set unique_buff3_desc unique_buff_input_desc
+  *set unique_buff3_stat unique_buff_input_stat
+  *set unique_buff3_bonus unique_buff_input_bonus
+  *set unique_buff3_minutes_left unique_buff_input_minutes
+  *return
+*if (not(unique_buff1_active))
+  *set unique_buff1_active true
+  *set unique_buff1_name unique_buff_input_name
+  *set unique_buff1_desc unique_buff_input_desc
+  *set unique_buff1_stat unique_buff_input_stat
+  *set unique_buff1_bonus unique_buff_input_bonus
+  *set unique_buff1_minutes_left unique_buff_input_minutes
+  *return
+*if (not(unique_buff2_active))
+  *set unique_buff2_active true
+  *set unique_buff2_name unique_buff_input_name
+  *set unique_buff2_desc unique_buff_input_desc
+  *set unique_buff2_stat unique_buff_input_stat
+  *set unique_buff2_bonus unique_buff_input_bonus
+  *set unique_buff2_minutes_left unique_buff_input_minutes
+  *return
+*if (not(unique_buff3_active))
+  *set unique_buff3_active true
+  *set unique_buff3_name unique_buff_input_name
+  *set unique_buff3_desc unique_buff_input_desc
+  *set unique_buff3_stat unique_buff_input_stat
+  *set unique_buff3_bonus unique_buff_input_bonus
+  *set unique_buff3_minutes_left unique_buff_input_minutes
+  *return
+*temp lowest_slot 1
+*if (unique_buff2_minutes_left < unique_buff1_minutes_left)
+  *set lowest_slot 2
+*if (unique_buff3_minutes_left < unique_buff1_minutes_left) and (unique_buff3_minutes_left < unique_buff2_minutes_left)
+  *set lowest_slot 3
+*if (lowest_slot = 1)
+  *set unique_buff1_name unique_buff_input_name
+  *set unique_buff1_desc unique_buff_input_desc
+  *set unique_buff1_stat unique_buff_input_stat
+  *set unique_buff1_bonus unique_buff_input_bonus
+  *set unique_buff1_minutes_left unique_buff_input_minutes
+*if (lowest_slot = 2)
+  *set unique_buff2_name unique_buff_input_name
+  *set unique_buff2_desc unique_buff_input_desc
+  *set unique_buff2_stat unique_buff_input_stat
+  *set unique_buff2_bonus unique_buff_input_bonus
+  *set unique_buff2_minutes_left unique_buff_input_minutes
+*if (lowest_slot = 3)
+  *set unique_buff3_name unique_buff_input_name
+  *set unique_buff3_desc unique_buff_input_desc
+  *set unique_buff3_stat unique_buff_input_stat
+  *set unique_buff3_bonus unique_buff_input_bonus
+  *set unique_buff3_minutes_left unique_buff_input_minutes
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment REUSABLE ENGINE PRIMITIVE: APPLY GROOMING BUFF
+*comment The two bathing boons (Freshly Bathed at the Conduit Baths, Carnal Warmth at the Corve parlor) never
+*comment stack with each other, unlike food and drink. Same inputs as apply_unique_buff. The longer one wins:
+*comment if the other boon has at least as much time left, the new one is skipped (grooming_boon_applied
+*comment false); otherwise the other is cleared and the new one applied. Refreshing the same boon needs no
+*comment special case, because apply_unique_buff already refreshes by name.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label apply_grooming_buff
+*temp gb_other "Carnal Warmth"
+*if (unique_buff_input_name = "Carnal Warmth")
+  *set gb_other "Freshly Bathed"
+*set grooming_boon_applied true
+*if (unique_buff1_active) and (unique_buff1_name = gb_other)
+  *if (unique_buff1_minutes_left >= unique_buff_input_minutes)
+    *set grooming_boon_applied false
+  *else
+    *set unique_buff1_minutes_left 0
+    *set unique_buff1_active false
+    *set unique_buff1_name "none"
+    *set unique_buff1_desc "none"
+    *set unique_buff1_stat "none"
+    *set unique_buff1_bonus 0
+*if (unique_buff2_active) and (unique_buff2_name = gb_other)
+  *if (unique_buff2_minutes_left >= unique_buff_input_minutes)
+    *set grooming_boon_applied false
+  *else
+    *set unique_buff2_minutes_left 0
+    *set unique_buff2_active false
+    *set unique_buff2_name "none"
+    *set unique_buff2_desc "none"
+    *set unique_buff2_stat "none"
+    *set unique_buff2_bonus 0
+*if (unique_buff3_active) and (unique_buff3_name = gb_other)
+  *if (unique_buff3_minutes_left >= unique_buff_input_minutes)
+    *set grooming_boon_applied false
+  *else
+    *set unique_buff3_minutes_left 0
+    *set unique_buff3_active false
+    *set unique_buff3_name "none"
+    *set unique_buff3_desc "none"
+    *set unique_buff3_stat "none"
+    *set unique_buff3_bonus 0
+*if (grooming_boon_applied)
+  *gosub apply_unique_buff
+*else
+  *gosub_scene character_buffs recalculate_buff_stats
+*return
+

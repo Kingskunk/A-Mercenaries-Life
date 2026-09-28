@@ -1,0 +1,598 @@
+*comment ══════════════════════════════════════════════════════════════
+*comment COMBAT ATTACK/DAMAGE RESOLUTION (split out of startup.txt, 2026-09-28)
+*comment Every combat-only attack-roll/damage primitive: resistance/vulnerability math
+*comment (apply_incoming_damage_resist_vuln/apply_outgoing_damage_resist_vuln), the player's own hit application
+*comment (resolve_player_hit, resolve_player_weapon_hit), and the three attack-roll-then-damage resolvers
+*comment (resolve_enemy_attack, resolve_enemy_attack_on_ally, resolve_ally_attack). Picked as the third category
+*comment to split off, the cleanest of the three done so far: zero back-references into startup.txt needed (every
+*comment *gosub between these seven labels stays same-file), and every *temp any of them declares uses a
+*comment label-specific prefix (aidrv_/aodrv_/cea_/cph_/cwh_/raa_/reao_) with zero leakage outside its own label --
+*comment checked directly against combat.txt/combat_prose.txt/combat_spells.txt, no matches.
+*comment
+*comment roll_d20_check and skill_lookup/roll_skill_check deliberately did NOT move here even though this file's
+*comment own labels are conceptually "dice resolution" too -- they're general-purpose, used far beyond combat
+*comment (any skill check anywhere in the story), with roughly 10 files calling into them versus 3
+*comment (combat.txt/combat_prose.txt/combat_spells.txt) for everything that DID move here. They stay in
+*comment startup.txt as shared primitives, same reasoning as score_to_mod staying behind for character_stats.txt.
+*comment
+*comment A *gosub_scene-only library scene, same treatment as the other combat_* files: NOT in *scene_list, told
+*comment to compile.js by its own verifyFileName("combat_dice.txt") line instead, or a compiled build silently
+*comment drops it and only fails at runtime the first time an attack actually resolves.
+*comment
+*comment Calling convention: combat.txt and combat_spells.txt reach every label here with *gosub_scene combat_dice
+*comment <label> -- all 12 external call sites were already *gosub_scene startup <label> (combat.txt and
+*comment startup.txt were already different files), so only the scene name changed, not the verb.
+*comment ══════════════════════════════════════════════════════════════
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment DAMAGE TYPE RESISTANCE / VULNERABILITY (both directions)
+*comment Pure math, no locking of their own -- both are only ever called from
+*comment inside an already-locked hit-resolution block below, so a replay
+*comment that skips the outer guard skips these too, for free. Resistance
+*comment halves (rounded down, RAW), vulnerability doubles; both present on
+*comment the SAME type cancel out to normal damage rather than compounding --
+*comment checked as one combined branch below, not two sequential halvings/
+*comment doublings, which would give the wrong answer when both apply.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment Adjusts combat_enemy_dmg_dealt (an enemy's hit against the player) by
+*comment combat_enemy_dmg_type against the player's own player_resist_type_1/
+*comment _2 and player_vulnerable_type_1/_2 (equipment/race-granted). Barbarian
+*comment Rage's RAW resistance to the three physical damage types folds into
+*comment this same check -- not a separate halving elsewhere -- so it
+*comment correctly cancels against an item-granted vulnerability to the same
+*comment type instead of silently compounding with it.
+*label apply_incoming_damage_resist_vuln
+*comment Own suffix var (combat_incoming_dmg_suffix), never combat_outgoing_
+*comment dmg_suffix -- resolve_enemy_attack can call BOTH this AND the
+*comment outgoing check in the same invocation (an enemy's own hit, then its
+*comment Agathys retaliation), and the enemy-hit banner (combat.txt) prints
+*comment after both have run. Sharing one suffix var would let the later
+*comment (outgoing/Agathys) call silently clobber the earlier (incoming/enemy
+*comment hit) one before its own banner ever reads it.
+*set combat_incoming_dmg_suffix ""
+*temp aidrv_resisted (((combat_enemy_dmg_type = player_resist_type_1) and (not(player_resist_type_1 = ""))) or ((combat_enemy_dmg_type = player_resist_type_2) and (not(player_resist_type_2 = ""))))
+*if ((character_class = "barbarian") and (is_raging))
+  *if (((combat_enemy_dmg_type = "bludgeoning") or (combat_enemy_dmg_type = "piercing")) or (combat_enemy_dmg_type = "slashing"))
+    *set aidrv_resisted true
+*comment Blade Ward (house rule bonus-action version) is the same three physical types, folded into
+*comment this same check rather than halving damage anywhere else, so it cancels correctly against a
+*comment same-type vulnerability and can never double-halve. It needs no "weapon attacks" gate of its
+*comment own: this label has exactly ONE caller (resolve_enemy_attack, the enemy hitting the player),
+*comment and bludgeoning/piercing/slashing only ever reach it from an enemy weapon -- every spell
+*comment damage type here is cold/fire/lightning/etc. The hunger debt (calendar.txt) and the scripted
+*comment hazard (battle_black_sinks.txt) apply their own `hp_current -` and bypass this label entirely,
+*comment which is exactly right for both.
+*if (blade_ward_active)
+  *if (((combat_enemy_dmg_type = "bludgeoning") or (combat_enemy_dmg_type = "piercing")) or (combat_enemy_dmg_type = "slashing"))
+    *set aidrv_resisted true
+*temp aidrv_vulnerable (((combat_enemy_dmg_type = player_vulnerable_type_1) and (not(player_vulnerable_type_1 = ""))) or ((combat_enemy_dmg_type = player_vulnerable_type_2) and (not(player_vulnerable_type_2 = ""))))
+*if ((aidrv_resisted) and (aidrv_vulnerable))
+  *comment Cancel out -- normal damage, no banner tag.
+*elseif (aidrv_resisted)
+  *set combat_enemy_dmg_dealt (combat_enemy_dmg_dealt - (combat_enemy_dmg_dealt modulo 2)) / 2
+  *set combat_incoming_dmg_suffix " | 🛡️ Resisted"
+*elseif (aidrv_vulnerable)
+  *set combat_enemy_dmg_dealt combat_enemy_dmg_dealt * 2
+  *set combat_incoming_dmg_suffix " | 💥 Vulnerable"
+*return
+
+*comment Adjusts combat_player_dmg_dealt (damage the player just dealt) by
+*comment combat_player_dmg_type against the ACTIVE enemy's combat_enemy_
+*comment resist_type_1/_2 and combat_enemy_vulnerable_type_1/_2 --
+*comment fight_sync_target_in (combat.txt) already mirrored whichever slot is
+*comment active into these scratch names, same as every other combat_enemy_*
+*comment field, so this never needs to know which slot it's reading. Own
+*comment suffix var (combat_outgoing_dmg_suffix) for the same reason as above.
+*label apply_outgoing_damage_resist_vuln
+*set combat_outgoing_dmg_suffix ""
+*temp aodrv_resisted (((combat_player_dmg_type = combat_enemy_resist_type_1) and (not(combat_enemy_resist_type_1 = ""))) or ((combat_player_dmg_type = combat_enemy_resist_type_2) and (not(combat_enemy_resist_type_2 = ""))))
+*temp aodrv_vulnerable (((combat_player_dmg_type = combat_enemy_vulnerable_type_1) and (not(combat_enemy_vulnerable_type_1 = ""))) or ((combat_player_dmg_type = combat_enemy_vulnerable_type_2) and (not(combat_enemy_vulnerable_type_2 = ""))))
+*if ((aodrv_resisted) and (aodrv_vulnerable))
+  *comment Cancel out -- normal damage, no banner tag.
+*elseif (aodrv_resisted)
+  *set combat_player_dmg_dealt (combat_player_dmg_dealt - (combat_player_dmg_dealt modulo 2)) / 2
+  *set combat_outgoing_dmg_suffix " | 🛡️ Resisted"
+*elseif (aodrv_vulnerable)
+  *set combat_player_dmg_dealt combat_player_dmg_dealt * 2
+  *set combat_outgoing_dmg_suffix " | 💥 Vulnerable"
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment COMBAT: PLAYER HIT RESOLUTION
+*comment Applies generic player hit damage to combat_enemy_hp.
+*comment Inputs: combat_player_dmg_dice_sides, combat_player_dmg_bonus, combat_player_dmg_type,
+*comment   rph_is_attack_roll (*params, below)
+*comment Output: combat_player_dmg_dealt
+*comment Every caller must pass true or false for rph_is_attack_roll: Hex (RAW) only adds its extra damage when
+*comment you hit with an ATTACK -- an attack roll that beat AC, not a save the target failed. The five attack-roll
+*comment cantrips (Fire Bolt, Ray of Frost, Shocking Grasp, Eldritch Blast, Chill Touch) pass true; Vicious
+*comment Mockery, a Wisdom save with no attack roll at all, passes false. A future caller has to pick one
+*comment explicitly -- there's no default that would silently let a save-based spell through.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_player_hit
+*params rph_is_attack_roll
+*if (not(combat_player_hit_locked)) or (not(locked_combat_player_hit_page_id = page_id))
+  *temp cph_roll 0
+  *rand cph_roll 1 combat_player_dmg_dice_sides
+  *set combat_player_dmg_dealt (cph_roll + combat_player_dmg_bonus)
+  *temp cph_bonus_str ""
+  *if (combat_player_dmg_bonus >= 0)
+    *set cph_bonus_str "+${combat_player_dmg_bonus}"
+  *else
+    *set cph_bonus_str "${combat_player_dmg_bonus}"
+  *temp cph_extra_str ""
+  *temp cph_running (cph_roll + combat_player_dmg_bonus)
+  *if ((hex_active) and (rph_is_attack_roll))
+    *temp cph_hex_die 0
+    *rand cph_hex_die 1 6
+    *set combat_player_dmg_dealt + cph_hex_die
+    *set cph_extra_str "${cph_extra_str} +${cph_hex_die} (Hex)"
+    *set cph_running + cph_hex_die
+  *set combat_player_dmg_roll_banner "[b][🎲 Damage: ${cph_roll} ${cph_bonus_str}${cph_extra_str} = ${cph_running}][/b]"
+  *gosub apply_outgoing_damage_resist_vuln
+  *set combat_enemy_hp - combat_player_dmg_dealt
+  *if (combat_enemy_hp < 0)
+    *set combat_enemy_hp 0
+  *set combat_player_hit_locked true
+  *set locked_combat_player_hit_page_id page_id
+${combat_player_dmg_roll_banner}
+*line_break
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment COMBAT: PLAYER WEAPON HIT RESOLUTION
+*comment Resolves weapon damage, Great Weapon Fighting rerolls, Sneak Attack, and Hex.
+*comment Outputs: combat_player_dmg_dealt, combat_sneak_attack_triggered
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_player_weapon_hit
+*if (not(combat_weapon_hit_locked)) or (not(locked_combat_weapon_hit_page_id = page_id))
+  *temp cwh_roll 0
+  *rand cwh_roll 1 combat_player_dmg_dice_sides
+  *if ((fighter_fighting_style = "great_weapon") and (weapon_hands = "two_handed"))
+    *if (cwh_roll <= 2)
+      *rand cwh_roll 1 combat_player_dmg_dice_sides
+  *set combat_player_dmg_dealt (cwh_roll + combat_player_dmg_bonus)
+  *comment Damage-roll banner (2026-09-27): built here, before Sneak/Hex are known, then extended below as each
+  *comment one fires -- see the create comment (startup.txt) for why this prints unconditionally after the gate
+  *comment instead of from here directly.
+  *temp cwh_bonus_str ""
+  *if (combat_player_dmg_bonus >= 0)
+    *set cwh_bonus_str "+${combat_player_dmg_bonus}"
+  *else
+    *set cwh_bonus_str "${combat_player_dmg_bonus}"
+  *temp cwh_extra_str ""
+  *temp cwh_running (cwh_roll + combat_player_dmg_bonus)
+  *set combat_sneak_attack_triggered false
+  *if (((character_class = "rogue") and ((weapon_type = "finesse") or (weapon_type = "ranged"))) and (roll_had_advantage))
+    *set combat_sneak_attack_triggered true
+    *temp cwh_sneak_die 0
+    *rand cwh_sneak_die 1 6
+    *set combat_player_dmg_dealt + cwh_sneak_die
+    *set cwh_extra_str "${cwh_extra_str} +${cwh_sneak_die} (Sneak Attack)"
+    *set cwh_running + cwh_sneak_die
+  *if (hex_active)
+    *temp cwh_hex_die 0
+    *rand cwh_hex_die 1 6
+    *set combat_player_dmg_dealt + cwh_hex_die
+    *set cwh_extra_str "${cwh_extra_str} +${cwh_hex_die} (Hex)"
+    *set cwh_running + cwh_hex_die
+  *set combat_player_dmg_roll_banner "[b][🎲 Weapon Damage: ${cwh_roll} ${cwh_bonus_str}${cwh_extra_str} = ${cwh_running}][/b]"
+  *gosub apply_outgoing_damage_resist_vuln
+  *set combat_enemy_hp - combat_player_dmg_dealt
+  *if (combat_enemy_hp < 0)
+    *set combat_enemy_hp 0
+  *set combat_weapon_hit_locked true
+  *set locked_combat_weapon_hit_page_id page_id
+${combat_player_dmg_roll_banner}
+*line_break
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment COMBAT: ENEMY ATTACK RESOLUTION
+*comment Resolves incoming attack vs AC, Shield reactions, Barbarian Rage, Temp HP & Agathys.
+*comment Inputs: combat_enemy_atk_bonus, combat_enemy_dmg_dice_sides, combat_enemy_dmg_bonus, combat_enemy_disadvantage
+*comment Outputs: combat_enemy_atk_total, combat_enemy_hit_success, combat_enemy_dmg_dealt, combat_shield_triggered, combat_agathys_triggered
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_enemy_attack
+*comment One lock var per slot (combat_enemy_atk_locked_1..6, see startup.txt creates), read/written by name
+*comment built from combat_active_target instead of a hand-written *if per slot -- see fight_sync_target_in's
+*comment header comment in combat.txt for why a single shared lock breaks on refresh across several slots.
+*temp cea_lockname (("combat_enemy_atk_locked_" & combat_active_target))
+*comment Damage-roll banner (2026-09-27): one field per slot, not shared -- see the create comment (startup.txt)
+*comment for why a shared field breaks across a multi-enemy round on the same page. Read/written by name built
+*comment from combat_active_target, same indirection cea_lockname already uses.
+*temp cea_bannername (("combat_enemy_dmg_banner_" & combat_active_target))
+*temp cea_atk_bannername (("combat_enemy_atk_banner_" & combat_active_target))
+*if (not(locked_combat_enemy_atk_page_id = page_id))
+  *set combat_enemy_atk_locked_1 false
+  *set combat_enemy_atk_locked_2 false
+  *set combat_enemy_atk_locked_3 false
+  *set combat_enemy_atk_locked_4 false
+  *set combat_enemy_atk_locked_5 false
+  *set combat_enemy_atk_locked_6 false
+  *set locked_combat_enemy_atk_page_id page_id
+*temp cea_already_locked {cea_lockname}
+*if (not(cea_already_locked))
+  *temp cea_roll 0
+  *rand cea_roll 1 20
+  *temp cea_adv_label ""
+  *if ((combat_enemy_disadvantage) and (not(combat_enemy_advantage)))
+    *temp cea_roll_2 0
+    *rand cea_roll_2 1 20
+    *if (cea_roll_2 < cea_roll)
+      *set cea_roll cea_roll_2
+    *set cea_adv_label " (Disadvantage)"
+  *if ((combat_enemy_advantage) and (not(combat_enemy_disadvantage)))
+    *temp cea_roll_2 0
+    *rand cea_roll_2 1 20
+    *if (cea_roll_2 > cea_roll)
+      *set cea_roll cea_roll_2
+    *set cea_adv_label " (Advantage)"
+  *comment Consumed on this actual roll (2026-09-28): reset both the bare scratch AND the per-slot field this
+  *comment enemy's own storage lives in, or fight_sync_target_in would just re-sync "still true" back onto the
+  *comment bare scratch the next time this same slot becomes active target.
+  *set combat_enemy_advantage false
+  *set combat_enemy_disadvantage false
+  *set {(("combat_enemy" & combat_active_target) & "_advantage")} false
+  *set {(("combat_enemy" & combat_active_target) & "_disadvantage")} false
+  *set combat_enemy_atk_total (cea_roll + combat_enemy_atk_bonus)
+  *temp cea_atk_bonus_str ""
+  *if (combat_enemy_atk_bonus >= 0)
+    *set cea_atk_bonus_str "+${combat_enemy_atk_bonus}"
+  *else
+    *set cea_atk_bonus_str "${combat_enemy_atk_bonus}"
+  *comment Bane (2026-09-27, dormant -- see resolve_cast_bane, combat_spells.txt): if this enemy's own bane_expires_round
+  *comment (synced in by fight_sync_target_in) hasn't passed, a fresh 1d4 comes off the attack total -- RAW,
+  *comment re-rolled every attack, never touching damage.
+  *temp cea_bane_str ""
+  *if (combat_enemy_bane_expires_round >= combat_round)
+    *temp cea_bane_die 0
+    *rand cea_bane_die 1 4
+    *set combat_enemy_atk_total - cea_bane_die
+    *set cea_bane_str " -${cea_bane_die} (Bane)"
+  *set combat_enemy_hit_success (combat_enemy_atk_total >= armor_class)
+  *set combat_shield_triggered false
+  *if ((combat_enemy_hit_success) and (shield_armed))
+    *set shield_armed false
+    *set wizard_spell_slots - 1
+    *set combat_shield_triggered true
+    *set combat_enemy_hit_success (combat_enemy_atk_total >= (armor_class + 5))
+  *comment Attack-roll banner (2026-09-27): built here, now that combat_enemy_hit_success has its FINAL value
+  *comment (Shield can still flip it above) -- see the create comment for why this is per-slot, not shared.
+  *temp cea_atk_verdict "MISS"
+  *if (combat_enemy_hit_success)
+    *set cea_atk_verdict "HIT"
+  *set {(cea_atk_bannername)} "[b][🎲 ${combat_enemy_name} Attack Roll: ${cea_roll} ${cea_atk_bonus_str}${cea_adv_label}${cea_bane_str} = ${combat_enemy_atk_total} vs AC ${armor_class} — ${cea_atk_verdict}][/b]"
+  *set combat_enemy_dmg_dealt 0
+  *set combat_agathys_triggered false
+  *set combat_agathys_shattered false
+  *set combat_condition_inflicted false
+  *if ((combat_enemy_hit_success) and (combat_enemy_inflicts_condition))
+    *set disadvantage true
+    *set combat_condition_inflicted true
+    *comment Movement conditions (2026-09-27): see the create comment (startup.txt) for which three names these
+    *comment are and why only these three. combat_enemy_condition_name is already synced for the active target by
+    *comment this point (fight_sync_target_in, combat.txt), same as every other field this label reads.
+    *if (((combat_enemy_condition_name = "Pinned") or (combat_enemy_condition_name = "Hobbled")) or (combat_enemy_condition_name = "Off-Balance"))
+      *set player_movement_restricted true
+  *set combat_stun_inflicted false
+  *if ((combat_enemy_hit_success) and (combat_enemy_inflicts_stun))
+    *set player_stunned true
+    *set combat_stun_inflicted true
+  *set {(cea_bannername)} ""
+  *if (combat_enemy_hit_success)
+    *temp cea_dmg 0
+    *rand cea_dmg 1 combat_enemy_dmg_dice_sides
+    *temp cea_bonus_str ""
+    *if (combat_enemy_dmg_bonus >= 0)
+      *set cea_bonus_str "+${combat_enemy_dmg_bonus}"
+    *else
+      *set cea_bonus_str "${combat_enemy_dmg_bonus}"
+    *temp cea_dmg_total (cea_dmg + combat_enemy_dmg_bonus)
+    *set {(cea_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${cea_dmg} ${cea_bonus_str} = ${cea_dmg_total}][/b]"
+    *set cea_dmg (cea_dmg + combat_enemy_dmg_bonus)
+    *set combat_enemy_dmg_dealt cea_dmg
+    *comment Barbarian Rage's physical-damage resistance is folded into this
+    *comment same check now -- see apply_incoming_damage_resist_vuln's header.
+    *gosub apply_incoming_damage_resist_vuln
+    *if ((agathys_active) and (temp_hp > 0))
+      *set combat_agathys_triggered true
+      *comment Agathys retaliation is the PLAYER's own damage output (5 Cold),
+      *comment so it reuses the outgoing (player-dealt) resist/vuln check
+      *comment against whatever the active enemy resists/is vulnerable to --
+      *comment combat_player_dmg_dealt is safe to reuse here: the round's
+      *comment actual player-attack banner (if any) already printed earlier
+      *comment this same page, before the enemy's turn ever begins.
+      *set combat_player_dmg_type "cold"
+      *set combat_player_dmg_dealt 5
+      *gosub apply_outgoing_damage_resist_vuln
+      *set combat_enemy_hp - combat_player_dmg_dealt
+      *if (combat_enemy_hp < 0)
+        *set combat_enemy_hp 0
+    *if (temp_hp > 0)
+      *if (temp_hp >= combat_enemy_dmg_dealt)
+        *set temp_hp - combat_enemy_dmg_dealt
+      *else
+        *temp cea_overflow (combat_enemy_dmg_dealt - temp_hp)
+        *set temp_hp 0
+        *set hp_current - cea_overflow
+    *else
+      *set hp_current - combat_enemy_dmg_dealt
+    *if ((temp_hp <= 0) and (agathys_active))
+      *set combat_agathys_shattered true
+      *set agathys_active false
+    *if (combat_player_can_die)
+      *if (hp_current < 0)
+        *set hp_current 0
+    *else
+      *if (hp_current < 1)
+        *set hp_current 1
+  *set {cea_lockname} true
+*temp cea_atk_banner_text {(cea_atk_bannername)}
+*if (not(cea_atk_banner_text = ""))
+  *comment Layout per attacker: a genuine blank source line, not *line_break, leads the whole attacker block --
+  *comment roll banners included. *line_break behaves two different ways depending on whether the engine still
+  *comment has an open paragraph: mid-paragraph it's a tight inline break, but once the previous content has
+  *comment already been flushed (true whenever a blank line sits upstream, like fight_round_hub's own status
+  *comment block) it falls back to a bare <br> outside any <p>, which then stacks with that <p>'s own margin on
+  *comment both sides into a much bigger gap than intended. A blank source line here always just closes the
+  *comment previous paragraph (a no-op if it's already closed) instead, so the gap is the same size either way --
+  *comment whether the previous attacker's text is still open (a second/third attacker on one page) or already
+  *comment flushed (nothing printed since fight_round_hub's own status lines, as after a silent auto-end).
+
+  ${cea_atk_banner_text}
+  *line_break
+*temp cea_banner_text {(cea_bannername)}
+*if (not(cea_banner_text = ""))
+  ${cea_banner_text}
+  *line_break
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment COMBAT: INTERCEPTION -- ENEMY ATTACKS AN ALLY (2026-09-28)
+*comment The enemy currently dispatching (combat_active_target, already synced by fight_sync_target_in the same
+*comment as resolve_enemy_attack above) attacks a living melee ally standing in its way instead of the player --
+*comment find_intercepting_ally (combat.txt) decides WHETHER this gets called at all; this label only resolves
+*comment the roll once it has. Reuses the SAME per-enemy-slot lock/banner fields as resolve_enemy_attack
+*comment (combat_enemy_atk_locked_N etc.) rather than adding a parallel set -- a given enemy only ever attacks
+*comment ONE side on its own turn, so there's no risk of the two directions colliding on the same lock within one
+*comment page. Advantage/disadvantage and Bane DO carry over -- they belong to the attacking enemy, not to
+*comment whichever side it ends up hitting, so a Vicious Mockery'd or Baned enemy rolls the same way here as it
+*comment would against the player (a real gap in the first draft of this label, caught by the designer asking
+*comment "if I Mockery an enemy and it gets intercepted, does disadvantage still apply?" -- it didn't, until this
+*comment fix). Still deliberately plain otherwise: no Shield/Agathys/conditions/stun -- none of that exists for an
+*comment ally target, so there's nothing to extend yet.
+*comment Inputs: reao_a_slot (1-4, which combat_allyN_* is being attacked)
+*comment Outputs: combat_enemy_atk_on_ally_hit, combat_enemy_dmg_on_ally_dealt; combat_allyN_hp is reduced directly
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_enemy_attack_on_ally
+*params reao_a_slot
+*temp reao_ap (("combat_ally" & reao_a_slot) & "_")
+*temp reao_lockname (("combat_enemy_atk_locked_" & combat_active_target))
+*temp reao_bannername (("combat_enemy_dmg_banner_" & combat_active_target))
+*temp reao_atk_bannername (("combat_enemy_atk_banner_" & combat_active_target))
+*if (not(locked_combat_enemy_atk_page_id = page_id))
+  *set combat_enemy_atk_locked_1 false
+  *set combat_enemy_atk_locked_2 false
+  *set combat_enemy_atk_locked_3 false
+  *set combat_enemy_atk_locked_4 false
+  *set combat_enemy_atk_locked_5 false
+  *set combat_enemy_atk_locked_6 false
+  *set locked_combat_enemy_atk_page_id page_id
+*temp reao_already_locked {reao_lockname}
+*if (not(reao_already_locked))
+  *temp reao_roll 0
+  *rand reao_roll 1 20
+  *temp reao_adv_label ""
+  *if ((combat_enemy_disadvantage) and (not(combat_enemy_advantage)))
+    *temp reao_roll_2 0
+    *rand reao_roll_2 1 20
+    *if (reao_roll_2 < reao_roll)
+      *set reao_roll reao_roll_2
+    *set reao_adv_label " (Disadvantage)"
+  *if ((combat_enemy_advantage) and (not(combat_enemy_disadvantage)))
+    *temp reao_roll_2 0
+    *rand reao_roll_2 1 20
+    *if (reao_roll_2 > reao_roll)
+      *set reao_roll reao_roll_2
+    *set reao_adv_label " (Advantage)"
+  *comment Consumed on this actual roll (2026-09-28): reset both the bare scratch AND the per-slot field this
+  *comment enemy's own storage lives in, or fight_sync_target_in would just re-sync "still true" back onto the
+  *comment bare scratch the next time this same slot becomes active target.
+  *set combat_enemy_advantage false
+  *set combat_enemy_disadvantage false
+  *set {(("combat_enemy" & combat_active_target) & "_advantage")} false
+  *set {(("combat_enemy" & combat_active_target) & "_disadvantage")} false
+  *temp reao_target_ac {(reao_ap & "ac")}
+  *temp reao_total (reao_roll + combat_enemy_atk_bonus)
+  *temp reao_bonus_str ""
+  *if (combat_enemy_atk_bonus >= 0)
+    *set reao_bonus_str "+${combat_enemy_atk_bonus}"
+  *else
+    *set reao_bonus_str "${combat_enemy_atk_bonus}"
+  *comment Bane (see resolve_cast_bane, combat_spells.txt): the same 1d4-off-the-roll penalty resolve_enemy_attack
+  *comment applies, reading the same already-synced combat_enemy_bane_expires_round (fight_sync_target_in ran for
+  *comment this exact enemy slot before combat_next_turn ever decided to redirect it here).
+  *temp reao_bane_str ""
+  *if (combat_enemy_bane_expires_round >= combat_round)
+    *temp reao_bane_die 0
+    *rand reao_bane_die 1 4
+    *set reao_total - reao_bane_die
+    *set reao_bane_str " -${reao_bane_die} (Bane)"
+  *set combat_enemy_atk_on_ally_hit (reao_total >= reao_target_ac)
+  *temp reao_verdict "MISS"
+  *if (combat_enemy_atk_on_ally_hit)
+    *set reao_verdict "HIT"
+  *set {(reao_atk_bannername)} "[b][🎲 ${combat_enemy_name} Attack Roll: ${reao_roll} ${reao_bonus_str}${reao_adv_label}${reao_bane_str} = ${reao_total} vs AC ${reao_target_ac} — ${reao_verdict}][/b]"
+  *set {(reao_bannername)} ""
+  *set combat_enemy_dmg_on_ally_dealt 0
+  *if (combat_enemy_atk_on_ally_hit)
+    *temp reao_dmg 0
+    *rand reao_dmg 1 combat_enemy_dmg_dice_sides
+    *temp reao_dmg_bonus_str ""
+    *if (combat_enemy_dmg_bonus >= 0)
+      *set reao_dmg_bonus_str "+${combat_enemy_dmg_bonus}"
+    *else
+      *set reao_dmg_bonus_str "${combat_enemy_dmg_bonus}"
+    *temp reao_dmg_total (reao_dmg + combat_enemy_dmg_bonus)
+    *set {(reao_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${reao_dmg} ${reao_dmg_bonus_str} = ${reao_dmg_total}][/b]"
+    *set combat_enemy_dmg_on_ally_dealt reao_dmg_total
+    *set {(reao_ap & "hp")} - reao_dmg_total
+    *if ({(reao_ap & "hp")} < 0)
+      *set {(reao_ap & "hp")} 0
+  *set {(reao_lockname)} true
+*temp reao_atk_banner_text {(reao_atk_bannername)}
+*temp reao_dmg_banner_text {(reao_bannername)}
+*if (not(reao_atk_banner_text = ""))
+  ${reao_atk_banner_text}
+*if (not(reao_dmg_banner_text = ""))
+  *line_break
+  ${reao_dmg_banner_text}
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment COMBAT: ALLY ATTACK RESOLUTION (ranged AND melee, plus interception above)
+*comment An ally's attack against an enemy: roll to hit the target's AC, then damage on a hit. Deliberately as
+*comment plain as resolve_enemy_attack was before Shield/conditions/stun existed there -- no reactions, no
+*comment advantage/disadvantage, no movement (ranged always works regardless of range, so nothing here needs
+*comment to care about combat_enemy_range). Extend the same way resolve_enemy_attack grew, if/when an ally needs
+*comment any of that -- melee allies specifically need movement wired in combat_next_turn before this label
+*comment itself needs to change.
+*comment Targeting: reuses whatever fight_pick_target already resolved for the player (the caller's job, before
+*comment this *gosub_scene) -- the simplest "acts in the team's interest" rule there is, focusing the same enemy
+*comment the player is already fighting. Not a kill-priority search; that's a deliberate simplification for this
+*comment first pass, not a limit of the routine itself.
+*comment Inputs: raa_a_slot (1-4, which combat_allyN_*), raa_e_slot (1-6, which combat_enemyN_* it's attacking)
+*comment Outputs: combat_ally_atk_hit, combat_ally_dmg_dealt; combat_enemyN_hp is reduced directly
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_ally_attack
+*params raa_a_slot raa_e_slot
+*temp raa_ap (("combat_ally" & raa_a_slot) & "_")
+*temp raa_ep (("combat_enemy" & raa_e_slot) & "_")
+*temp raa_name {(raa_ap & "name")}
+*if (not(locked_combat_ally_atk_page_id = page_id))
+  *set combat_ally_atk_locked_1 false
+  *set combat_ally_atk_locked_2 false
+  *set combat_ally_atk_locked_3 false
+  *set combat_ally_atk_locked_4 false
+  *set locked_combat_ally_atk_page_id page_id
+*temp raa_lockname (("combat_ally_atk_locked_" & raa_a_slot))
+*temp raa_already_locked {raa_lockname}
+*temp raa_atk_bannername (("combat_ally_atk_banner_" & raa_a_slot))
+*temp raa_dmg_bannername (("combat_ally_dmg_banner_" & raa_a_slot))
+*if (not(raa_already_locked))
+  *temp raa_roll 0
+  *rand raa_roll 1 20
+  *temp raa_atk_bonus {(raa_ap & "atk_bonus")}
+  *temp raa_total (raa_roll + raa_atk_bonus)
+  *temp raa_target_ac {(raa_ep & "ac")}
+  *set combat_ally_atk_hit (raa_total >= raa_target_ac)
+  *temp raa_bonus_str ""
+  *if (raa_atk_bonus >= 0)
+    *set raa_bonus_str "+${raa_atk_bonus}"
+  *else
+    *set raa_bonus_str "${raa_atk_bonus}"
+  *temp raa_verdict "MISS"
+  *if (combat_ally_atk_hit)
+    *set raa_verdict "HIT"
+  *set {(raa_atk_bannername)} "[b][🎲 ${raa_name} Attack Roll: ${raa_roll} ${raa_bonus_str} = ${raa_total} vs AC ${raa_target_ac} — ${raa_verdict}][/b]"
+  *set {(raa_dmg_bannername)} ""
+  *set combat_ally_dmg_dealt 0
+  *if (combat_ally_atk_hit)
+    *temp raa_dmg 0
+    *rand raa_dmg 1 {(raa_ap & "dmg_dice_sides")}
+    *temp raa_dmg_bonus {(raa_ap & "dmg_bonus")}
+    *temp raa_dmg_bonus_str ""
+    *if (raa_dmg_bonus >= 0)
+      *set raa_dmg_bonus_str "+${raa_dmg_bonus}"
+    *else
+      *set raa_dmg_bonus_str "${raa_dmg_bonus}"
+    *temp raa_dmg_total (raa_dmg + raa_dmg_bonus)
+    *set {(raa_dmg_bannername)} "[b][🎲 ${raa_name} Damage: ${raa_dmg} ${raa_dmg_bonus_str} = ${raa_dmg_total}][/b]"
+    *set combat_ally_dmg_dealt raa_dmg_total
+    *set {(raa_ep & "hp")} - raa_dmg_total
+    *if ({(raa_ep & "hp")} < 0)
+      *set {(raa_ep & "hp")} 0
+  *set {(raa_lockname)} true
+*comment No trailing *line_break after the last banner here, deliberately -- fight_narrate_ally_attack (combat.txt),
+*comment the only caller, already opens with its own leading break. A break here too would stack into a full
+*comment blank line between the last banner and the narration, the same "empty buffer" class of gap this session
+*comment already found and fixed at resolve_enemy_attack and announce_turn_order.
+*temp raa_atk_banner_text {(raa_atk_bannername)}
+*temp raa_dmg_banner_text {(raa_dmg_bannername)}
+*if (not(raa_atk_banner_text = ""))
+  ${raa_atk_banner_text}
+*if (not(raa_dmg_banner_text = ""))
+  *line_break
+  ${raa_dmg_banner_text}
+*return
+
+
+*comment resolve_enemy_save (2026-09-27): the enemy's own saving throw against the PLAYER's spell_save_dc -- the
+*comment D&D-correct direction (the target rolls, not the caster). Replaces Vicious Mockery/Dissonant Whispers'
+*comment old misuse of roll_d20_check, which had the PLAYER rolling their own CHA mod against a flat, hardcoded
+*comment DC 12 and calling it a "save." Reads the enemy's own rolled ability score off whichever field res_stat
+*comment names (apply_ability_score_range's groundwork, combat.txt) via score_to_mod above. No save-proficiency
+*comment bonus: none of this library's enemies have one declared yet, same "opt-in later" note as
+*comment apply_derived_combat_bonuses' combat_lib_prof_bonus. No nat-1/20 auto-fail/succeed either -- RAW gives
+*comment that shortcut to attack rolls and ability checks, never to saving throws. res_stat_label is the caller's
+*comment ready-to-print display string ("Wisdom"), same division of labor as roll_d20_check's own check_skill.
+*comment res_prefix (2026-09-27, generalized for Bane -- see resolve_cast_bane, combat_spells.txt) is which enemy to check,
+*comment same calling convention apply_derived_combat_bonuses/_ac/_hp already use: "combat_enemy_" for whichever
+*comment slot fight_pick_target/fight_sync_target_in have synced onto the active-target scratch (Vicious Mockery/
+*comment Dissonant Whispers' own use), or a specific "combat_enemyN_" directly (resolve_cast_bane checking
+*comment several different slots in one cast, none of which need to be "active" first).
+*comment Bane (2026-09-27, dormant): if this enemy's own {prefix}bane_expires_round hasn't passed, a fresh 1d4 is
+*comment rolled and subtracted from the total here too -- RAW, Bane's penalty hits saving throws as well as
+*comment attack rolls, including (correctly, and with no special-casing needed) a save against a second Bane cast
+*comment on an already-Baned target.
+*comment res_lock_index (2026-09-27) picks which of the 7 replay-lock slots above this call owns (see their own
+*comment header comment) -- 0 for Vicious Mockery/Dissonant Whispers' single-target call, 1-6 for resolve_cast_
+*comment bane checking a specific numbered slot. Needed for correctness even on the very first pass, not just a
+*comment Stats-and-back replay: without it, Bane's second and third targets in the same cast would see the first
+*comment target's roll already "locked" and silently reuse it instead of rolling their own.
+*comment Output: check_success (true = the enemy FAILED the save, the spell lands at full effect; false = the
+*comment enemy SAVED) -- the same variable and polarity resolve_dissonant_whispers and combat.txt's own Vicious
+*comment Mockery branch already read, so neither needed to change.
+*label resolve_enemy_save
+*params res_prefix res_stat res_stat_label res_lock_index
+*temp res_lockname ("combat_save_locked_" & res_lock_index)
+*temp res_bannername ("combat_save_banner_" & res_lock_index)
+*temp res_successname ("combat_save_success_" & res_lock_index)
+*temp res_banner ""
+*if ({(res_lockname)}) and (locked_combat_save_page_id = page_id)
+  *set check_success {(res_successname)}
+  *set res_banner {(res_bannername)}
+*else
+  *temp res_score {(res_prefix & res_stat)}
+  *gosub_scene startup score_to_mod res_score
+  *temp res_mod sm_mod
+  *temp res_roll 0
+  *rand res_roll 1 20
+  *temp res_total (res_roll + res_mod)
+  *temp res_bane_str ""
+  *temp res_bane_expires {(res_prefix & "bane_expires_round")}
+  *if (res_bane_expires >= combat_round)
+    *temp res_bane_die 0
+    *rand res_bane_die 1 4
+    *set res_total - res_bane_die
+    *set res_bane_str " -${res_bane_die} (Bane)"
+  *set check_success (res_total < spell_save_dc)
+  *temp res_mod_str ""
+  *if (res_mod >= 0)
+    *set res_mod_str "+${res_mod}"
+  *else
+    *set res_mod_str "${res_mod}"
+  *temp res_name {(res_prefix & "name")}
+  *temp res_verdict "SAVED"
+  *if (check_success)
+    *set res_verdict "FAILED"
+  *set res_banner "[b][🎲 ${res_name} Saving Throw: ${res_stat_label} (DC ${spell_save_dc}) | Roll: ${res_roll} ${res_mod_str}${res_bane_str} = ${res_total} — ${res_verdict}][/b]"
+  *set {(res_successname)} check_success
+  *set {(res_bannername)} res_banner
+  *set {(res_lockname)} true
+  *set locked_combat_save_page_id page_id
+${res_banner}
+*line_break
+*return
+

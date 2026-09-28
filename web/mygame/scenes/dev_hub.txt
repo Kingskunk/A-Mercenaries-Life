@@ -1,0 +1,702 @@
+*comment ══════════════════════════════════════════════════════════════
+*comment DEVELOPER MENU (split out of startup.txt, 2026-09-28)
+*comment mode_select (the game's real first choice -- Begin Campaign vs. Developer menu), dev_jump_menu (the 8
+*comment character presets and quick scene-jump list), dev_scene_select, and the combat dev-test hub
+*comment (dev_combat_test_hub/dev_combat_test_run). The eighth split, and a different KIND of move than the seven
+*comment before it: everything else this session was a *gosub_scene subroutine library (called from elsewhere,
+*comment returns). This is pure control flow instead -- reached once, via *goto_scene (one-way, no return), from
+*comment startup.txt's own GAME SETTINGS choice, the same pattern death.txt already uses. Nothing outside
+*comment startup.txt ever referenced this cluster (checked directly -- only 3 comment mentions in combat.txt,
+*comment zero real calls), and every *goto inside it targets another label in this same cluster; every
+*comment *gosub_scene inside it already targeted another file (character_stats.txt, character_progression.txt,
+*comment combat.txt) before this move, since those split off earlier today -- so this needed zero internal
+*comment call-site conversions, only the one inbound entry point.
+*comment
+*comment A *goto_scene-only entry point, same shape as death.txt: NOT in *scene_list (it isn't "the next chapter"
+*comment for anyone's *finish chain), told to compile.js by its own verifyFileName("dev_hub.txt") line instead,
+*comment or a compiled build silently drops it and only fails at runtime the moment a tester picks either GAME
+*comment SETTINGS option.
+*comment ══════════════════════════════════════════════════════════════
+
+*label mode_select
+*choice
+  # [Begin Campaign from Prologue]
+    *goto_scene company_intake
+  # 🛠️ [Developer: Quick Scene Jump & Character Presets]
+    *goto dev_jump_menu
+
+*label dev_jump_menu
+[b]🛠️ DEVELOPER TESTING: CHOOSE CHARACTER PRESET[/b]
+*line_break
+Select an archetype to automatically initialize stats, inventory, squad assignment, and codex lore:
+
+*choice
+  # 🔮 Cadre Force-Weaver (Tiefling Wizard / Magic Missile, Shocking Grasp, Mending & Thaumaturgy / INT 16, CHA 14 / The Cadre)
+    *set name "Malakor"
+    *set intake_completed true
+    *set origin "disgraced"
+    *set origin_title "Disgraced Scion"
+    *set origin_desc "A fallen scion of the Marches who traded a ruined crest for the anonymity of common sellswords."
+    *set race "tiefling"
+    *set race_title "Tiefling"
+    *set race_darkvision true
+    *set race_trait_title "Hellish Resistance"
+    *set race_trait_desc "Your infernal blood shrugs off fire; see in darkness."
+    *set player_resist_type_1 "fire"
+    *set race_cantrip "thaumaturgy"
+    *set race_cantrip_desc "Thaumaturgy—small, innate parlor tricks of infernal blood: voice booms, eyes flash, doors slam."
+    *set character_class "wizard"
+    *set class_title "Wizard"
+    *set class_name "Wizard"
+    *set class_assigned true
+    *set hit_die_max 6
+    *set hit_die "1d6"
+    *set wizard_cantrip "shocking_grasp"
+    *set wizard_cantrip_desc "Shocking Grasp (1d8 Lightning, Adv vs Metal)"
+    *set wizard_cantrip_2 "mending"
+    *set wizard_cantrip_2_desc "Mending (Object & Gear Repair)"
+    *set wizard_cantrip_3 "fire_bolt"
+    *set wizard_cantrip_3_desc "Fire Bolt (1d10 Fire)"
+    *set wizard_spell "magic_missile"
+    *set wizard_spell_desc "Magic Missile (Automatic Force Darts)"
+    *set wizard_spell_slots 2
+    *set squad "cadre"
+    *set squad_title "The Cadre"
+    *set intelligence 16
+    *set constitution 14
+    *set charisma 14
+    *set dexterity 12
+    *set wisdom 10
+    *set strength 10
+    *set armor "cloth"
+    *set armor_desc "Traveling Robes"
+    *set armor_type "cloth"
+    *set has_shield false
+    *set weapon "quarterstaff"
+    *set weapon_desc "Iron-Shod Quarterstaff"
+    *set weapon_damage "1d6 bludgeoning"
+    *set weapon_damage_type "bludgeoning"
+    *set weapon_type "melee"
+    *set weapon_hands "one_handed"
+    *set equipped_head_id "scholar_coif"
+    *set equipped_cloak_id "weather_cloak"
+    *set equipped_hands_id "scribe_gloves"
+    *set equipped_waist_id "satchel_harness"
+    *set equipped_feet_id "riding_boots"
+    *set equipped_sidearm_id "bodkin_dagger"
+    *set silver 25
+    *set met_varren true
+    *set met_lyra true
+    *set met_ysolde true
+    *set codex_karrs_keep true
+    *set codex_baron_karr true
+    *set codex_meridian_empire true
+    *set codex_black_sinks true
+    *gosub_scene character_stats update_dnd_stats
+    *goto dev_scene_select
+
+  # 🛡️ Cadre Battle-Abjurer (Elf Wizard / Shield, Guidance, Ray of Frost & Blade Ward / INT 16, DEX 14 / The Cadre)
+    *set name "Aelion"
+    *set intake_completed true
+    *set origin "disgraced"
+    *set origin_title "Disgraced Scion"
+    *set origin_desc "A fallen scion of the Marches who traded a ruined crest for the anonymity of common sellswords."
+    *set race "elf"
+    *set race_title "Elf"
+    *set race_darkvision true
+    *set race_trait_title "Fey Ancestry"
+    *set race_trait_desc "Advantage on saves vs charm; immune to magical sleep; see in darkness."
+    *set character_class "wizard"
+    *set class_title "Wizard"
+    *set class_name "Wizard"
+    *set class_assigned true
+    *set hit_die_max 6
+    *set hit_die "1d6"
+    *set wizard_cantrip "guidance"
+    *set wizard_cantrip_desc "Guidance (+1d4 Check Bonus)"
+    *set wizard_cantrip_2 "ray_of_frost"
+    *set wizard_cantrip_2_desc "Ray of Frost (1d8 Cold, Slows Target)"
+    *set wizard_cantrip_3 "blade_ward"
+    *set wizard_cantrip_3_desc "Blade Ward (Resist Bludgeoning/Piercing/Slashing, Bonus Action — House Rule)"
+    *set wizard_spell "shield"
+    *set wizard_spell_desc "Shield (+5 AC Reaction)"
+    *set wizard_spell_slots 2
+    *set squad "cadre"
+    *set squad_title "The Cadre"
+    *set intelligence 16
+    *set dexterity 14
+    *set constitution 12
+    *set wisdom 10
+    *set charisma 12
+    *set strength 10
+    *set armor "cloth"
+    *set armor_desc "Traveling Robes"
+    *set armor_type "cloth"
+    *set has_shield false
+    *set weapon "quarterstaff"
+    *set weapon_desc "Iron-Shod Quarterstaff"
+    *set weapon_damage "1d6 bludgeoning"
+    *set weapon_damage_type "bludgeoning"
+    *set weapon_type "melee"
+    *set weapon_hands "one_handed"
+    *set equipped_head_id "scholar_coif"
+    *set equipped_cloak_id "weather_cloak"
+    *set equipped_hands_id "scribe_gloves"
+    *set equipped_waist_id "satchel_harness"
+    *set equipped_feet_id "riding_boots"
+    *set equipped_sidearm_id "bodkin_dagger"
+    *set silver 25
+    *set met_varren true
+    *set met_lyra true
+    *set met_ysolde true
+    *set codex_karrs_keep true
+    *set codex_baron_karr true
+    *set codex_meridian_empire true
+    *set codex_black_sinks true
+    *gosub_scene character_stats update_dnd_stats
+    *goto dev_scene_select
+
+  # 🎭 Cadre Combat Skald (Hexblood Bard / Mending, Dissonant Whispers, Innate Hex & Disguise / CHA 16, DEX 14 / The Cadre)
+    *set name "Vesper"
+    *set intake_completed true
+    *set origin "disgraced"
+    *set origin_title "Disgraced Scion"
+    *set origin_desc "A fallen scion of the Marches who traded a ruined crest for the anonymity of common sellswords."
+    *set race "hexblood"
+    *set race_title "Hexblood"
+    *set race_darkvision true
+    *set race_trait_title "Hex Magic"
+    *set race_trait_desc "Innate hag craft: Disguise Self & Hex; see in darkness."
+    *set race_cantrip "disguise_self"
+    *set race_cantrip_desc "Disguise Self (Innate Hag Illusion)"
+    *set race_cantrip_2 "hex"
+    *set race_cantrip_2_desc "Hex (Innate Arcane Curse)"
+    *set character_class "bard"
+    *set class_title "Bard"
+    *set class_name "Bard"
+    *set class_assigned true
+    *set hit_die_max 8
+    *set hit_die "1d8"
+    *set bard_cantrip "vicious_mockery"
+    *set bard_cantrip_desc "Vicious Mockery (1d4 Psychic & Disadvantage)"
+    *set bard_cantrip_2 "mending"
+    *set bard_cantrip_2_desc "Mending (Object & Gear Repair)"
+    *set bard_spell "dissonant_whispers"
+    *set bard_spell_desc "Dissonant Whispers (3d6 Psychic & Flee)"
+    *set bard_spell_2 "healing_word"
+    *set bard_spell_2_desc "Healing Word (1d4+CHA Ranged Heal)"
+    *set bard_spell_slots 2
+    *set squad "cadre"
+    *set squad_title "The Cadre"
+    *set charisma 16
+    *set dexterity 14
+    *set constitution 12
+    *set intelligence 12
+    *set wisdom 10
+    *set strength 10
+    *set armor "leather"
+    *set armor_desc "Leather Jerkin"
+    *set armor_type "leather"
+    *set has_shield false
+    *set weapon "dagger"
+    *set weapon_desc "Trench Dagger"
+    *set weapon_damage "1d4 piercing"
+    *set weapon_damage_type "piercing"
+    *set weapon_type "finesse"
+    *set weapon_hands "one_handed"
+    *set equipped_head_id "scholar_coif"
+    *set equipped_cloak_id "weather_cloak"
+    *set equipped_hands_id "scribe_gloves"
+    *set equipped_waist_id "satchel_harness"
+    *set equipped_feet_id "riding_boots"
+    *set equipped_sidearm_id "bodkin_dagger"
+    *set silver 20
+    *set met_varren true
+    *set met_lyra true
+    *set met_ysolde true
+    *set codex_karrs_keep true
+    *set codex_baron_karr true
+    *set codex_meridian_empire true
+    *set codex_black_sinks true
+    *gosub_scene character_stats update_dnd_stats
+    *goto dev_scene_select
+
+  # 💀 Cadre Dread Warlock (Tiefling Warlock / False Life, Eldritch Blast & Drowned King / CHA 16, CON 14 / The Cadre)
+    *set name "Moros"
+    *set intake_completed true
+    *set origin "outlaw"
+    *set origin_title "Port Valen Outlaw"
+    *set origin_desc "A quick-fingered rogue fleeing the Black Oath's blood bounty in Port Valen under the Carrion banner."
+    *set race "tiefling"
+    *set race_title "Tiefling"
+    *set race_darkvision true
+    *set race_trait_title "Hellish Resistance"
+    *set race_trait_desc "Your infernal blood shrugs off fire; see in darkness."
+    *set player_resist_type_1 "fire"
+    *set race_cantrip "thaumaturgy"
+    *set race_cantrip_desc "Thaumaturgy—small, innate parlor tricks of infernal blood."
+    *set character_class "warlock"
+    *set class_title "Warlock"
+    *set class_name "Warlock"
+    *set class_assigned true
+    *set hit_die_max 8
+    *set hit_die "1d8"
+    *set warlock_patron "the_drowned"
+    *set warlock_patron_title "The Drowned King"
+    *set warlock_patron_desc "An ancient submerged consciousness bound beneath the Black Sinks."
+    *set warlock_cantrip "eldritch_blast"
+    *set warlock_cantrip_desc "Eldritch Blast (1d10 Force)"
+    *set warlock_cantrip_2 "minor_illusion"
+    *set warlock_cantrip_2_desc "Minor Illusion (Deceptive Sound & Image)"
+    *set warlock_spell "false_life"
+    *set warlock_spell_desc "False Life (+5 Temporary HP)"
+    *set warlock_spell_slots 1
+    *set squad "cadre"
+    *set squad_title "The Cadre"
+    *set charisma 16
+    *set constitution 14
+    *set dexterity 12
+    *set intelligence 12
+    *set wisdom 10
+    *set strength 10
+    *set armor "leather"
+    *set armor_desc "Leather Jerkin"
+    *set armor_type "leather"
+    *set has_shield false
+    *set weapon "dagger"
+    *set weapon_desc "Trench Dagger"
+    *set weapon_damage "1d4 piercing"
+    *set weapon_damage_type "piercing"
+    *set weapon_type "finesse"
+    *set weapon_hands "one_handed"
+    *set equipped_head_id "camo_hood"
+    *set equipped_cloak_id "camo_cloak"
+    *set equipped_hands_id "archer_bracers"
+    *set equipped_waist_id "scabbard_belt"
+    *set equipped_feet_id "scout_boots"
+    *set equipped_sidearm_id "matched_dagger"
+    *set silver 18
+    *set met_varren true
+    *set met_lyra true
+    *set met_ysolde true
+    *set codex_the_drowned true
+    *set codex_black_sinks true
+    *gosub_scene character_stats update_dnd_stats
+    *goto dev_scene_select
+
+  # 🌲 Scout Company Ranger (Elf Ranger / Longbow, Tracking & Natural Explorer / DEX 16, WIS 14 / Scout Company)
+    *set name "Silas"
+    *set intake_completed true
+    *set origin "outlaw"
+    *set origin_title "Port Valen Outlaw"
+    *set origin_desc "A quick-fingered rogue fleeing the Black Oath's blood bounty in Port Valen under the Carrion banner."
+    *set race "elf"
+    *set race_title "Elf"
+    *set race_darkvision true
+    *set race_trait_title "Fey Ancestry"
+    *set race_trait_desc "Advantage on saves vs charm; immune to magical sleep; see in darkness."
+    *set character_class "ranger"
+    *set class_title "Ranger"
+    *set class_name "Ranger"
+    *set class_assigned true
+    *set hit_die_max 10
+    *set hit_die "1d10"
+    *set ranger_favored_enemy "humanoids"
+    *set ranger_favored_terrain "swamp"
+    *set squad "scouts"
+    *set squad_title "Scout Company"
+    *set dexterity 16
+    *set wisdom 14
+    *set constitution 12
+    *set strength 10
+    *set intelligence 10
+    *set charisma 10
+    *set armor "leather"
+    *set armor_desc "Leather Jerkin"
+    *set armor_type "leather"
+    *set has_shield false
+    *set weapon "shortbow"
+    *set weapon_desc "Recurve Shortbow"
+    *set weapon_damage "1d6 piercing"
+    *set weapon_damage_type "piercing"
+    *set weapon_type "ranged"
+    *set weapon_hands "two_handed"
+    *set equipped_head_id "camo_hood"
+    *set equipped_cloak_id "camo_cloak"
+    *set equipped_hands_id "archer_bracers"
+    *set equipped_waist_id "scabbard_belt"
+    *set equipped_feet_id "scout_boots"
+    *set equipped_sidearm_id "matched_dagger"
+    *set silver 18
+    *set met_varren true
+    *set met_lyra true
+    *set met_kestrel true
+    *set codex_black_oath true
+    *set codex_port_valen true
+    *set codex_port_watch true
+    *set codex_black_sinks true
+    *gosub_scene character_stats update_dnd_stats
+    *goto dev_scene_select
+
+  # 🗡️ Scout Company Rogue (Halfling Rogue / Sneak Attack, Lucky Nat-1 Reroll & Bow / DEX 16, WIS 14 / Scout Company)
+    *set name "Finnick"
+    *set intake_completed true
+    *set origin "outlaw"
+    *set origin_title "Port Valen Outlaw"
+    *set origin_desc "A quick-fingered rogue fleeing the Black Oath's blood bounty in Port Valen under the Carrion banner."
+    *set race "halfling"
+    *set race_title "Halfling"
+    *set race_darkvision false
+    *set race_trait_title "Lucky"
+    *set race_trait_desc "Reroll any natural 1 on d20 checks; nimble evasion."
+    *set character_class "rogue"
+    *set class_title "Rogue"
+    *set class_name "Rogue"
+    *set class_assigned true
+    *set hit_die_max 8
+    *set hit_die "1d8"
+    *set rogue_sneak_attack_die "1d6"
+    *set rogue_expertise_1 "Stealth"
+    *set rogue_expertise_2 "Thieves' Tools"
+    *set squad "scouts"
+    *set squad_title "Scout Company"
+    *set dexterity 16
+    *set wisdom 14
+    *set charisma 12
+    *set constitution 12
+    *set strength 10
+    *set intelligence 10
+    *set armor "leather"
+    *set armor_desc "Leather Jerkin"
+    *set armor_type "leather"
+    *set has_shield false
+    *set weapon "shortbow"
+    *set weapon_desc "Recurve Shortbow"
+    *set weapon_damage "1d6 piercing"
+    *set weapon_damage_type "piercing"
+    *set weapon_type "ranged"
+    *set weapon_hands "two_handed"
+    *set equipped_head_id "camo_hood"
+    *set equipped_cloak_id "camo_cloak"
+    *set equipped_hands_id "archer_bracers"
+    *set equipped_waist_id "scabbard_belt"
+    *set equipped_feet_id "scout_boots"
+    *set equipped_sidearm_id "matched_dagger"
+    *set silver 18
+    *set met_varren true
+    *set met_lyra true
+    *set met_kestrel true
+    *set codex_black_oath true
+    *set codex_port_valen true
+    *set codex_port_watch true
+    *set codex_black_sinks true
+    *gosub_scene character_stats update_dnd_stats
+    *goto dev_scene_select
+
+  # 🛡️ Vanguard Line Fighter (Dwarf Fighter / Longsword & Buckler, Second Wind & Poison Resilience / STR 16, CON 16 / Vanguard)
+    *set name "Barek"
+    *set intake_completed true
+    *set origin "ruined"
+    *set origin_title "Ashbrook Survivor"
+    *set origin_desc "A survivor of the razed village of Ashbrook who traded a murderer's noose for a mercenary's sword."
+    *set race "dwarf"
+    *set race_title "Dwarf"
+    *set race_darkvision true
+    *set race_trait_title "Dwarven Resilience"
+    *set race_trait_desc "Advantage on saves vs poison; poison damage resistance; see in darkness."
+    *set player_resist_type_1 "poison"
+    *set character_class "fighter"
+    *set class_title "Fighter"
+    *set class_name "Fighter"
+    *set class_assigned true
+    *set hit_die_max 10
+    *set hit_die "1d10"
+    *set fighter_second_wind_uses 2
+    *set fighter_fighting_style "dueling"
+    *set squad "vanguard"
+    *set squad_title "Vanguard"
+    *set strength 16
+    *set constitution 16
+    *set wisdom 12
+    *set dexterity 10
+    *set intelligence 10
+    *set charisma 10
+    *set armor "brigandine"
+    *set armor_desc "Studded Gambeson"
+    *set armor_type "brigandine"
+    *set has_shield true
+    *set weapon "longsword"
+    *set weapon_desc "Arming Sword"
+    *set weapon_damage "1d8 slashing"
+    *set weapon_damage_type "slashing"
+    *set weapon_type "melee"
+    *set weapon_hands "one_handed"
+    *set equipped_head_id "arming_cap"
+    *set equipped_cloak_id "wool_mantle"
+    *set equipped_hands_id "leather_wraps"
+    *set equipped_waist_id "soldiers_belt"
+    *set equipped_feet_id "marching_boots"
+    *set equipped_sidearm_id "ash_spear"
+    *set silver 10
+    *set met_varren true
+    *set met_lyra true
+    *set codex_ashbrook true
+    *set codex_baron_karr true
+    *set codex_iron_bailiffs true
+    *set codex_black_sinks true
+    *gosub_scene character_stats update_dnd_stats
+    *goto dev_scene_select
+
+  # 🪓 Vanguard Berserker (Half-Orc Barbarian / Greataxe, Rage & Relentless Endurance / STR 16, CON 15 / Vanguard)
+    *set name "Thorgar"
+    *set intake_completed true
+    *set origin "ruined"
+    *set origin_title "Ashbrook Survivor"
+    *set origin_desc "A survivor of the razed village of Ashbrook who traded a murderer's noose for a mercenary's sword."
+    *set race "half_orc"
+    *set race_title "Half-Orc"
+    *set race_darkvision true
+    *set race_trait_title "Relentless Endurance"
+    *set race_trait_desc "Drop to 1 HP instead of 0 once per long rest; see in darkness."
+    *set character_class "barbarian"
+    *set class_title "Barbarian"
+    *set class_name "Barbarian"
+    *set class_assigned true
+    *set hit_die_max 12
+    *set hit_die "1d12"
+    *set barbarian_rage_uses 2
+    *set barbarian_rage_damage_bonus 2
+    *set squad "vanguard"
+    *set squad_title "Vanguard"
+    *set strength 16
+    *set constitution 15
+    *set dexterity 14
+    *set wisdom 10
+    *set charisma 10
+    *set intelligence 8
+    *set armor "traveling_cloak"
+    *set armor_desc "Traveling Robes"
+    *set armor_type "cloth"
+    *set has_shield false
+    *set weapon "heavy broadaxe"
+    *set weapon_desc "Hooked Broadaxe"
+    *set weapon_damage "1d12 slashing"
+    *set weapon_damage_type "slashing"
+    *set weapon_type "melee"
+    *set weapon_hands "two_handed"
+    *set equipped_head_id "arming_cap"
+    *set equipped_cloak_id "wool_mantle"
+    *set equipped_hands_id "leather_wraps"
+    *set equipped_waist_id "soldiers_belt"
+    *set equipped_feet_id "marching_boots"
+    *set equipped_sidearm_id "ash_spear"
+    *set silver 10
+    *set met_varren true
+    *set met_lyra true
+    *set codex_ashbrook true
+    *set codex_baron_karr true
+    *set codex_iron_bailiffs true
+    *set codex_black_sinks true
+    *gosub_scene character_stats update_dnd_stats
+    *goto dev_scene_select
+
+
+*label dev_scene_select
+[b]🛠️ DEVELOPER TESTING: CHOOSE TARGET SCENE[/b]
+*line_break
+Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${squad_title}). Select story milestone to jump into:
+
+*choice
+  # 🌧️ Jump to Company Intake / Munitions (company_intake.txt)
+    *goto_scene company_intake
+  # ⛺ Jump to Night 1 Campfire Hub (camp_night.txt)
+    *set campaign_day 1
+    *set calendar_date "14th of Scorpio, 428 IR"
+    *set clock_hour 19
+    *set clock_minute 0
+    *set clock_time "19:00"
+    *set time_period "Evening"
+    *set camp_actions_left 4
+    *goto_scene camp_night camp_hub
+
+  # ⚔️ Jump to Dawn Trial & Muster (dawn_trial.txt)
+    *set campaign_day 2
+    *set calendar_date "15th of Scorpio, 428 IR"
+    *set clock_hour 4
+    *set clock_minute 30
+    *set clock_time "04:30"
+    *set time_period "Pre-Dawn"
+    *goto_scene dawn_trial
+
+  # 🌊 Jump to Battle of Black Sinks: Causeway Skirmish (battle_black_sinks.txt)
+    *set campaign_day 2
+    *set calendar_date "15th of Scorpio, 428 IR"
+    *set clock_hour 4
+    *set clock_minute 30
+    *set clock_time "04:30"
+    *set time_period "Pre-Dawn"
+    *goto_scene battle_black_sinks battle_start
+
+  # 🏰 Jump to Battle of Black Sinks: Gatehouse Breach Melee (battle_black_sinks.txt)
+    *set campaign_day 2
+    *set calendar_date "15th of Scorpio, 428 IR"
+    *set clock_hour 13
+    *set clock_minute 45
+    *set clock_time "13:45"
+    *set time_period "Afternoon"
+    *set codex_black_sinks true
+    *goto_scene battle_black_sinks beat_gatehouse_fight
+
+  # 🔥 Jump to Bivouac Rest Hub: Gatehouse Night (battle_black_sinks.txt)
+    *set campaign_day 2
+    *set calendar_date "15th of Scorpio, 428 IR"
+    *set clock_hour 18
+    *set clock_minute 0
+    *set clock_time "18:00"
+    *set time_period "Dusk"
+    *set codex_black_sinks true
+    *set codex_gilded_scales true
+    *set codex_marsh_squatters true
+    *set bivouac_actions_left 3
+    *goto_scene battle_black_sinks bivouac
+
+  # 🌅 Jump to Bivouac Morning: Day 3 March (battle_black_sinks.txt)
+    *set campaign_day 2
+    *set calendar_date "15th of Scorpio, 428 IR"
+    *set clock_hour 21
+    *set clock_minute 0
+    *set clock_time "21:00"
+    *set time_period "Night"
+    *set codex_black_sinks true
+    *set codex_gilded_scales true
+    *set codex_marsh_squatters true
+    *goto_scene battle_black_sinks bivouac_end
+
+  # 🌊 Jump to Chapter 2: Alderford Evening Hub (alderford.txt)
+    *set campaign_day 3
+    *set calendar_day 16
+    *set calendar_date "16th of Scorpio, 428 IR"
+    *set clock_hour 17
+    *set clock_minute 30
+    *set clock_time "17:30"
+    *set time_period "Dusk"
+    *set alder_actions_left 6
+    *set codex_black_sinks true
+    *set codex_gilded_scales true
+    *set codex_marsh_squatters true
+    *set codex_alderford true
+    *goto_scene alderford alder_hub
+
+  # 🚢 Jump to Chapter 3: Port Valen City Hub (port_valen.txt)
+    *set campaign_day 4
+    *set calendar_day 17
+    *set calendar_date "17th of Scorpio, 428 IR"
+    *set clock_hour 10
+    *set clock_minute 30
+    *set clock_time "10:30"
+    *set time_period "Midday"
+    *set codex_black_sinks true
+    *set codex_gilded_scales true
+    *set codex_port_watch true
+    *set codex_marsh_squatters true
+    *set codex_alderford true
+    *set codex_meridian_empire true
+    *set port_valen_hub_seen true
+    *set port_valen_first_patrol_complete true
+    *set vane_independent_operative true
+    *set civic_heights_open true
+    *set upper_wharves_open true
+    *set dredge_end_open true
+    *set middle_ward_open true
+    *set pv_pois_open true
+    *goto_scene port_valen port_valen_hub
+
+  # 🥊 Test a Combat Fight (combat.txt) -- jump straight into a fight, return here when it ends
+    *goto dev_combat_test_hub
+
+*comment DEVELOPER TESTING: COMBAT FIGHT SELECT (2026-09-27)
+*comment Every fight_<name> label below is self-contained (no *params, no *temp the caller has to set up first --
+*comment each one just sets its own combat_lib_N/name/epithet overrides and *goto fight_library), so calling any
+*comment of them cold via *gosub_scene, with no story scene in between, is exactly as safe as how ~7 real scenes
+*comment already call them. Skipping the story scene means skipping ITS reward/consequence code too (XP, items,
+*comment flags) -- that code lives in the CALLER, not in the fight_<name> label itself, so this is pure mechanics
+*comment testing with zero side effects on the rest of the save, which is the whole point of a dev harness.
+*comment combat_player_can_die defaults false and none of these six set it themselves, so a "loss" here always
+*comment resolves as fight_rescued (HP floored at 1), never fight_player_died -- no death-screen risk while testing.
+*comment fight_archive_rats is the same label as fight_granary_rats (two *label lines, one body, used by two
+*comment different calling scenes) -- listing it once covers both.
+*label dev_combat_test_hub
+[b]🥊 DEVELOPER TESTING: COMBAT FIGHTS[/b]
+*line_break
+HP and every class resource are refilled to full before each one, so every fight starts clean regardless of what the last one did.
+
+*choice
+  # 🌊 Silt-Lurker (Alderford cellar) -- 1 lacedon
+    *set dctest_label "fight_silt_lurker"
+    *goto dev_combat_test_run
+  # 🥊 Rennick's Dock-Guards (Alderford curing shed) -- 2 guards, non-lethal
+    *set dctest_label "fight_rennick_guards"
+    *goto dev_combat_test_run
+  # 🐀 Granary Rats (Alderford undercroft) -- 3 mire-rats
+    *set dctest_label "fight_granary_rats"
+    *goto dev_combat_test_run
+  # 🌃 Dredge-End Night Ambush -- 1 random bruiser + 1 slinger
+    *set dctest_label "fight_dredge_ambush"
+    *goto dev_combat_test_run
+  # 🔔 The Muffled Bell Wreckers (Port Valen pier) -- axeman + slinger
+    *set dctest_label "fight_wreckers"
+    *goto dev_combat_test_run
+  # 🕸️ The Stolen Shroud Thieves (Dredge-End) -- knifeman + slinger, non-lethal
+    *set dctest_label "fight_shroud_thieves"
+    *goto dev_combat_test_run
+  # 🎯 Range Tiers Test -- 1 lacedon opened at Long Range, to play with Push Forward
+    *set dctest_label "fight_dev_range_test"
+    *goto dev_combat_test_run
+  # 🏹 Ally Ranged Test -- 1 lacedon + 1 ranged ally, to watch resolve_ally_attack
+    *set dctest_label "fight_dev_ally_ranged_test"
+    *goto dev_combat_test_run
+  # 🛡️ Ally Melee Test -- 1 lacedon opened at Mid-Range + 1 melee ally, to watch it close and strike
+    *set dctest_label "fight_dev_ally_melee_test"
+    *goto dev_combat_test_run
+  # 👥 Squad Test -- 2 enemies + 2 allies at different ranges, to play with nearest-enemy movement targeting
+    *set dctest_label "fight_dev_squad_test"
+    *goto dev_combat_test_run
+  # Return to Developer Scene Select
+    *goto dev_scene_select
+
+*label dev_combat_test_run
+*comment Healed BEFORE the fight (so every test starts clean, no matter what the last one did) and again AFTER
+*comment it (2026-09-27, on request) -- so the Result line itself reads full HP too, not just the next fight's
+*comment start. dctest_hp_after keeps the raw, un-healed HP the fight actually ended at, for the tester's own
+*comment read on how close it was, since restore_class_resources doesn't touch HP at all (healing stays slow in
+*comment real play -- this hub is the one place that's deliberately overridden).
+*set hp_current hp_max
+*gosub_scene character_progression restore_class_resources
+*if (dctest_label = "fight_silt_lurker")
+  *gosub_scene combat fight_silt_lurker
+*if (dctest_label = "fight_rennick_guards")
+  *gosub_scene combat fight_rennick_guards
+*if (dctest_label = "fight_granary_rats")
+  *gosub_scene combat fight_granary_rats
+*if (dctest_label = "fight_dredge_ambush")
+  *gosub_scene combat fight_dredge_ambush
+*if (dctest_label = "fight_wreckers")
+  *gosub_scene combat fight_wreckers
+*if (dctest_label = "fight_shroud_thieves")
+  *gosub_scene combat fight_shroud_thieves
+*if (dctest_label = "fight_dev_range_test")
+  *gosub_scene combat fight_dev_range_test
+*if (dctest_label = "fight_dev_ally_ranged_test")
+  *gosub_scene combat fight_dev_ally_ranged_test
+*if (dctest_label = "fight_dev_ally_melee_test")
+  *gosub_scene combat fight_dev_ally_melee_test
+*if (dctest_label = "fight_dev_squad_test")
+  *gosub_scene combat fight_dev_squad_test
+*temp dctest_hp_after hp_current
+*set hp_current hp_max
+*gosub_scene character_progression restore_class_resources
+*line_break
+[b]Result: ${combat_outcome}[/b] | Ended the fight at ${dctest_hp_after}/${hp_max} HP — healed to full
+*line_break
+*goto dev_combat_test_hub
+

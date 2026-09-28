@@ -67,7 +67,7 @@ var rootDir = "../";
   position: fixed;
   top: 0.75em;
   right: 0.75em;
-  width: 235px;
+  width: 290px;
   max-height: 92vh;
   overflow-y: auto;
   background: rgba(247,244,241,0.95);
@@ -361,6 +361,10 @@ button#statSidebar .turnRow,
 #statSidebar .turnRow[data-combatant] {
   cursor: help;
 }
+#statSidebar .turnRow > span:first-child {
+  white-space: normal;   /* a name plus its range tag can be longer than "HP"/"AC" etc. -- wrap instead of
+                             forcing the row (and the whole fixed-width sidebar) wider than it should be. */
+}
 #statSidebar .turnRowDead[data-combatant] {
   cursor: help;
 }
@@ -378,6 +382,15 @@ button#statSidebar .turnRow,
   cursor: default;
 }
 #statSidebar .turnRowSelf > span:first-child { font-weight: 600; }
+#statSidebar .enemyName { color: #a12b2b; }   /* same rust as the COMBAT badge */
+#statSidebar .allyName { color: #2a5f8f; }
+#statSidebar .rangeTag {                      /* distance tag beside a combatant's name */
+  font-weight: 400;
+  font-size: 0.9em;
+  color: rgba(0,0,0,0.5);
+  margin-left: 0.3em;
+}
+#statSidebar .turnRowPicked .enemyName { color: #7a3e1d; }   /* picked-target row already recolors the name; keep it */
 @media (max-width: 960px) {
   #statSidebar { display: none !important; }
 }
@@ -452,13 +465,21 @@ button#statSidebar .turnRow,
           var cHp = Number(s[pfx + slot + "_hp"]) || 0, cMax = Number(s[pfx + slot + "_max_hp"]) || 0;
           var cDead = kind === "enemy" && cHp <= 0;
           var cPicked = kind === "enemy" && !cDead && chosen === slot;
+          // Enemy ranges are your own distance to that enemy. Ally ranges are that ally's distance to
+          // WHATEVER ENEMY IT IS CURRENTLY FIGHTING, not to you -- the engine has no player-to-ally
+          // distance (see combat.txt), so the tag is titled differently for each so it isn't read as
+          // one it doesn't have.
+          var cRangeTag = cDead ? "" : " <span class=\"rangeTag\" title=\"" +
+            (kind === "ally" ? "Distance from its target" : "Distance from you") + "\">(" +
+            rangeTierName(Number(s[pfx + slot + "_range"]) || 0) + ")</span>";
+          var cNameHtml = "<span class=\"" + (kind === "enemy" ? "enemyName" : "allyName") + "\">" + cName + "</span>" + cRangeTag;
           if (kind === "enemy" && !cDead) {
             rows += "<button type=\"button\" class=\"statRow turnRow" + (cPicked ? " turnRowPicked" : "") +
-              "\" data-target=\"" + slot + "\"" + combatantAttr(kind, slot) + "><span>" + cName + "</span><span>" + cHp + "/" + cMax + "</span></button>";
+              "\" data-target=\"" + slot + "\"" + combatantAttr(kind, slot) + "><span>" + cNameHtml + "</span><span>" + cHp + "/" + cMax + "</span></button>";
           } else {
             // A downed enemy still gets the card: its AC/Atk/abilities are what tell you whether the
             // remaining target is worth finishing, and a dead row that shows nothing reads as broken.
-            rows += "<div class=\"statRow turnRow" + (cDead ? " turnRowDead" : "") + "\"" + combatantAttr(kind, slot) + "><span>" + cName +
+            rows += "<div class=\"statRow turnRow" + (cDead ? " turnRowDead" : "") + "\"" + combatantAttr(kind, slot) + "><span>" + cNameHtml +
               "</span><span>" + (cDead ? "Down" : (cHp + "/" + cMax)) + "</span></div>";
           }
         }
@@ -527,6 +548,13 @@ button#statSidebar .turnRow,
         : "");
   }
   function isTruthy(v) { return v === true || v === "true"; }
+  // Mirrors combat_range_name (combat.txt): 0 Engaged, 1 Close, 2 Mid-Range, 3+ Long Range.
+  function rangeTierName(n) {
+    if (n <= 0) return "Engaged";
+    if (n === 1) return "Close";
+    if (n === 2) return "Mid-Range";
+    return "Long Range";
+  }
   // The score shown already includes any boon. The small tag beside it says how much came from a boon:
   // green when it raised the modifier, struck through and dim when it did not (a +1 on an even score, or
   // at the +3 cap). buff_<stat>_helps comes from the game.

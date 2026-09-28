@@ -1,0 +1,293 @@
+*comment ══════════════════════════════════════════════════════════════
+*comment CHARACTER PROGRESSION: CLASS RESOURCES, REST, LEVELING (split out of startup.txt, 2026-09-28)
+*comment Class resource pools (second_wind, activate_rage/end_rage), their refresh math
+*comment (refresh_class_resource_maxs, restore_class_resources), short rest (short_rest_preview, do_short_rest,
+*comment short_rest_banner), and leveling (refresh_quests_finished, refresh_level_up_progress, training_preview,
+*comment do_training_session, do_level_up, level_up_banner). The fourth category split off, and the widest
+*comment caller spread yet -- 8 files reach into it (alderford.txt, battle_black_sinks.txt, calendar.txt,
+*comment character_stats.txt, choicescript_stats.txt, combat.txt, port_valen.txt, port_valen_middle_ward.txt) --
+*comment but every one of the 23 external call sites was already *gosub_scene startup <label> (all were already
+*comment cross-file calls), so only the scene name changed, never the verb or any arguments. Internally the
+*comment cleanest split so far: every *gosub between these fourteen labels stays same-file (all fourteen call only
+*comment each other or character_stats.txt's update_dnd_stats, itself already cross-file from before), and every
+*comment *temp any of them declares (old_bard/old_pact/old_rage/old_sw/old_wiz/qf/sr_stamp/ts_end/ts_start) is
+*comment fully self-contained -- checked directly, zero leakage outside its own label.
+*comment
+*comment A *gosub_scene-only library scene, same treatment as the other split files: NOT in *scene_list, told to
+*comment compile.js by its own verifyFileName("character_progression.txt") line instead, or a compiled build
+*comment silently drops it and only fails at runtime the first rest, level-up, or class-resource spend.
+*comment ══════════════════════════════════════════════════════════════
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment FIGHTER: SECOND WIND
+*comment Bonus action, 1d10 + character_level HP. Uses come from fighter_second_wind_max (2024 rules: a short rest returns one use, a long rest all).
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label second_wind
+*if (not(second_wind_locked)) or (not(locked_second_wind_page_id = page_id))
+  *if (fighter_second_wind_uses > 0)
+    *set fighter_second_wind_uses - 1
+    *rand second_wind_roll 1 10
+    *set hp_current + (second_wind_roll + character_level)
+    *if (hp_current > hp_max)
+      *set hp_current hp_max
+  *set second_wind_locked true
+  *set locked_second_wind_page_id page_id
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment BARBARIAN: RAGE
+*comment Bonus action, 2 uses per long rest at level 1, +2 melee STR damage
+*comment while raging, resistance to bludgeoning/piercing/slashing (halved
+*comment incoming damage -- see resolve_enemy_attack's is_raging check).
+*comment Sets is_raging true so a combat scene can check it.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label activate_rage
+*if (not(activate_rage_locked)) or (not(locked_activate_rage_page_id = page_id))
+  *if ((barbarian_rage_uses > 0) and (not(is_raging)))
+    *set barbarian_rage_uses - 1
+    *set is_raging true
+  *set activate_rage_locked true
+  *set locked_activate_rage_page_id page_id
+*return
+
+*label end_rage
+*set is_raging false
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment CLASS RESOURCES: MAXIMUMS AND LONG REST
+*comment Everything a class can spend, and how much of it there is at each level, is written down HERE and nowhere else. A scene
+*comment never types a pool number: every sleeping place calls calendar.txt resolve_sleep (which calls restore_class_resources), the
+*comment prologue rests call restore_class_resources directly, and the panels show "x / max" from the max variables. A new pool
+*comment (second-level slots, Action Surge, Arcane Recovery) is added in this section, in short_rest_preview / do_short_rest below and
+*comment in the displays, and no scene that sleeps ever has to change.
+*comment refresh_class_resource_maxs sets the maxima from character_class and character_level. Every line is a fixed-value set, so it
+*comment is safe to repeat and needs no replay lock. update_dnd_stats calls it, so a level change followed by update_dnd_stats keeps
+*comment the displays right. Each ladder sets the base value first and lets a higher level overwrite it.
+*comment Second Wind follows the 2024 rules: 2 uses, 3 from level 4, 4 from level 10 (a short rest returns one, a long rest all).
+*comment Rage: 2 uses, 3 from level 3, 4 from level 6, 5 from level 12, 6 from level 17. Wizard and Bard first-level slots: 2, then 3 at
+*comment level 2 and 4 from level 3 (second-level slots arrive with second-level spells). Warlock Pact Magic slots: 1, then 2 from
+*comment level 2, 3 from level 11, 4 from level 17.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label refresh_class_resource_maxs
+*if (character_class = "fighter")
+  *set fighter_second_wind_max 2
+  *if (character_level >= 4)
+    *set fighter_second_wind_max 3
+  *if (character_level >= 10)
+    *set fighter_second_wind_max 4
+*if (character_class = "barbarian")
+  *set barbarian_rage_max 2
+  *if (character_level >= 3)
+    *set barbarian_rage_max 3
+  *if (character_level >= 6)
+    *set barbarian_rage_max 4
+  *if (character_level >= 12)
+    *set barbarian_rage_max 5
+  *if (character_level >= 17)
+    *set barbarian_rage_max 6
+*if (character_class = "warlock")
+  *set warlock_spell_slots_max 1
+  *if (character_level >= 2)
+    *set warlock_spell_slots_max 2
+  *if (character_level >= 11)
+    *set warlock_spell_slots_max 3
+  *if (character_level >= 17)
+    *set warlock_spell_slots_max 4
+*if (character_class = "wizard")
+  *set wizard_spell_slots_max 2
+  *if (character_level >= 2)
+    *set wizard_spell_slots_max 3
+  *if (character_level >= 3)
+    *set wizard_spell_slots_max 4
+*if (character_class = "bard")
+  *set bard_spell_slots_max 2
+  *if (character_level >= 2)
+    *set bard_spell_slots_max 3
+  *if (character_level >= 3)
+    *set bard_spell_slots_max 4
+*return
+
+*comment A long rest: temp hit points go, every pool refills to its maximum, and the Hexblood's Hex is ready again. Hit points are NOT
+*comment touched here: healing stays slow (calendar.txt resolve_sleep). Fixed-value sets, so repeating it changes nothing.
+*label restore_class_resources
+*gosub refresh_class_resource_maxs
+*set temp_hp 0
+*if (character_class = "fighter")
+  *set fighter_second_wind_uses fighter_second_wind_max
+*if (character_class = "barbarian")
+  *set barbarian_rage_uses barbarian_rage_max
+*if (character_class = "warlock")
+  *set warlock_spell_slots warlock_spell_slots_max
+*if (character_class = "wizard")
+  *set wizard_spell_slots wizard_spell_slots_max
+*if (character_class = "bard")
+  *set bard_spell_slots bard_spell_slots_max
+*if (race = "hexblood")
+  *set hexblood_hex_used false
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SHORT REST
+*comment What a short rest gives back: a fighter regains ONE Second Wind use (2024 rules) and a warlock's Pact Magic slots all come
+*comment back. short_rest_preview only reports (rest_can_gain, rest_gave); do_short_rest applies it. The caller advances the hour
+*comment (advance_time) and prints the words (the dossier its own banner, the garret short_rest_banner).
+*comment Replay: the warlock refill is a fixed-value set, but the fighter's use is a genuine +1. A short rest always takes an hour, so
+*comment the clock at its end is unique to it: last_short_rest_stamp remembers it and a replayed page (same clock) gives nothing a
+*comment second time. That needs no page_id lock, which also means a dossier round trip cannot leave a stale lock behind.
+*comment Rage, Bard and Wizard slots and hit points are NOT restored: those come back with sleep, and healing stays slow.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label short_rest_preview
+*gosub refresh_class_resource_maxs
+*set rest_gave ""
+*set rest_can_gain false
+*if ((character_class = "fighter") and (fighter_second_wind_uses < fighter_second_wind_max))
+  *set rest_can_gain true
+  *set rest_gave "Second Wind"
+*if ((character_class = "warlock") and (warlock_spell_slots < warlock_spell_slots_max))
+  *set rest_can_gain true
+  *set rest_gave "Pact Magic slots"
+*return
+
+*label do_short_rest
+*gosub short_rest_preview
+*temp sr_stamp (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*if ((rest_can_gain) and (not(sr_stamp = last_short_rest_stamp)))
+  *if (character_class = "fighter")
+    *set fighter_second_wind_uses + 1
+  *if (character_class = "warlock")
+    *set warlock_spell_slots warlock_spell_slots_max
+  *set last_short_rest_stamp sr_stamp
+*comment The report variables are scratch: clear them once applied, so a replay of the calling page (which would find nothing left to gain) leaves the same values behind.
+*set rest_gave ""
+*set rest_can_gain false
+*return
+
+*comment The one-line banner a resting place prints after do_short_rest. It reads the pools, so a replay prints the same line, and a
+*comment new short-rest give-back is added here and never at the resting place.
+*label short_rest_banner
+*if (character_class = "fighter")
+  *line_break
+  [b][🕐 Short Rest | Second Wind ${fighter_second_wind_uses} / ${fighter_second_wind_max}][/b]
+*if (character_class = "warlock")
+  *line_break
+  [b][🕐 Short Rest | Pact Magic slots ${warlock_spell_slots} / ${warlock_spell_slots_max}][/b]
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment LEVEL-UP PROGRESS: THE QUEST POOL AND TRAINING SESSIONS
+*comment Level 2 needs training sessions and finished quests. Both are counts and nothing is spent, so there are no level points.
+*comment refresh_quests_finished derives the pool from flags that are set once and never cleared, so it needs no replay lock and
+*comment a new quest is one more line here. A quest counts only when it ended in a SUCCESSFUL completion: failed endings do not, and
+*comment radiant jobs (the crane shifts, the scrap round) never do. Silt-Gate and the Rotten Rib set their stage to resolved even on a
+*comment failed ending, so they also test the resolution. Rennick's curing sheds, the Cadre river chain and the Black Sinks assault
+*comment are deliberately not counted. Every quest has its own completion flag: an item flag (a reward the player can hold, sell or lose)
+*comment and a flag another route also sets (turned_in_customs_vellum, met_morzan) are not markers.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label refresh_quests_finished
+*temp qf 0
+*if ((silt_gate_quest_stage = "resolved") and (not(silt_gate_resolution = "failed")))
+  *set qf + 1
+*if ((rotten_rib_quest_stage = "resolved") and (not(rotten_rib_resolution = "failed")))
+  *set qf + 1
+*if (bell_quest_stage = "resolved")
+  *set qf + 1
+*if (fish_quest_stage = "resolved")
+  *set qf + 1
+*if (shroud_quest_stage = "resolved")
+  *set qf + 1
+*if (janna_pins_forged)
+  *set qf + 1
+*if (maura_cellar_cleared)
+  *set qf + 1
+*if (granary_rats_resolved)
+  *set qf + 1
+*if (delivered_chapel_grain)
+  *set qf + 1
+*if (torvald_wheel_saved)
+  *set qf + 1
+*if (talia_casks_saved)
+  *set qf + 1
+*if (morzan_vellum_delivered)
+  *set qf + 1
+*set quests_finished qf
+*return
+
+*comment The price of the next level: tune the numbers HERE. 0 means no next level is defined yet, so nothing shows and nothing is
+*comment ready. The same quest pool is meant to feed level 3 with a higher number. level_up_ready is derived, so it is safe to repeat.
+*label refresh_level_up_progress
+*gosub refresh_quests_finished
+*set level_up_sessions_needed 0
+*set level_up_quests_needed 0
+*if (character_level = 1)
+  *set level_up_sessions_needed 30
+  *set level_up_quests_needed 10
+*set level_up_ready false
+*if (level_up_sessions_needed > 0)
+  *if ((training_sessions >= level_up_sessions_needed) and (quests_finished >= level_up_quests_needed))
+    *set level_up_ready true
+*return
+
+*comment Training sessions: one a day, training_hours long, free, and they cannot fail. A missed day costs nothing.
+*comment A training place calls training_preview on the page BEFORE (training_can_train), then advances training_hours through
+*comment advance_time, then calls do_training_session, so the place never counts anything itself.
+*comment "A day" is the day the session STARTED, so an evening session that runs past midnight uses that evening and not the next day.
+*comment do_training_session is a genuine +1, guarded like do_short_rest: the clock at the end of a session is unique to it, so a
+*comment replayed page (same clock) counts nothing a second time. last_training_day is derived from that stamp, not from campaign_day.
+*label training_preview
+*set training_can_train (last_training_day < campaign_day)
+*return
+
+*label do_training_session
+*temp ts_end (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*temp ts_start (ts_end - (training_hours * 60))
+*if (not(ts_end = last_training_stamp))
+  *set training_sessions + 1
+  *set last_training_stamp ts_end
+  *set last_training_day ((ts_start - (ts_start modulo 1440)) / 1440)
+*return
+
+*comment Level up (called by the dossier page codex_levelup_do after the confirm page set level_up_from). character_level is set to an
+*comment EXACT target (level_up_from + 1), not incremented, and the two things that follow are worked out from state: update_dnd_stats
+*comment moves current HP by the change in max HP (so the level-up heals by that amount, as decided), and each pool rises by the change in
+*comment its maximum (5e: a new slot or use is available at once). A replayed page finds the level and the maxima already changed, so it
+*comment adds nothing. Class features for the new level plug in HERE, after update_dnd_stats, as one hook each; no place that
+*comment levels the player up ever lists them. Only a class's own pool has a max that changes, so no class checks are needed.
+*label do_level_up
+*temp old_sw fighter_second_wind_max
+*temp old_rage barbarian_rage_max
+*temp old_pact warlock_spell_slots_max
+*temp old_wiz wizard_spell_slots_max
+*temp old_bard bard_spell_slots_max
+*set character_level (level_up_from + 1)
+*gosub_scene character_stats update_dnd_stats
+*set fighter_second_wind_uses (fighter_second_wind_uses + (fighter_second_wind_max - old_sw))
+*set barbarian_rage_uses (barbarian_rage_uses + (barbarian_rage_max - old_rage))
+*set warlock_spell_slots (warlock_spell_slots + (warlock_spell_slots_max - old_pact))
+*set wizard_spell_slots (wizard_spell_slots + (wizard_spell_slots_max - old_wiz))
+*set bard_spell_slots (bard_spell_slots + (bard_spell_slots_max - old_bard))
+*gosub refresh_level_up_progress
+*return
+
+*comment The class pool line the level-up page prints after the level is taken. It reads the pools, so a replay prints the same line,
+*comment and a new pool is added here and never on the page.
+*label level_up_banner
+*if (character_class = "fighter")
+  *line_break
+  [b][Second Wind ${fighter_second_wind_uses} / ${fighter_second_wind_max}][/b]
+*if (character_class = "barbarian")
+  *line_break
+  [b][Rage ${barbarian_rage_uses} / ${barbarian_rage_max}][/b]
+*if (character_class = "warlock")
+  *line_break
+  [b][Pact Magic slots ${warlock_spell_slots} / ${warlock_spell_slots_max}][/b]
+*if (character_class = "wizard")
+  *line_break
+  [b][Spell slots ${wizard_spell_slots} / ${wizard_spell_slots_max}][/b]
+*if (character_class = "bard")
+  *line_break
+  [b][Spell slots ${bard_spell_slots} / ${bard_spell_slots_max}][/b]
+*return
+
+*comment Consumables (the Saint Althea's Water phial, Ambrose's liniment and draught) are catalog items used through
+*comment equipment.txt use_consumable; the old single-flag use_althea_phial routine is gone.

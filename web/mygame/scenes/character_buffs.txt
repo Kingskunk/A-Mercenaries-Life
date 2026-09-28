@@ -1,0 +1,193 @@
+*comment ══════════════════════════════════════════════════════════════
+*comment CHARACTER BUFFS & EQUIPMENT BONUSES (split out of startup.txt, 2026-09-28)
+*comment refresh_boon_flags/recalculate_buff_stats/bs_add (timed ability-score boons -- food, drink, unique
+*comment purchasable buffs, sleep) and recalculate_equipment_bonuses/eb_take/recalculate_attuned_bonuses (worn-gear
+*comment score bonuses). Both feed the same downstream pipeline character_stats.txt's update_dnd_stats reads from.
+*comment The seventh split, discovered while scoping economy.txt (apply_grooming_buff, now in economy.txt, calls
+*comment recalculate_buff_stats) but deliberately left out of that pass and picked up as its own deliberate step --
+*comment same "narrow footprint, do it properly rather than fold it in" reasoning as everything else this session.
+*comment Narrow by design: recalculate_buff_stats (calendar.txt, economy.txt), recalculate_equipment_bonuses
+*comment (equipment.txt, its only caller), refresh_boon_flags (character_stats.txt), recalculate_attuned_bonuses
+*comment (0 external callers -- only reached from within recalculate_equipment_bonuses, same file now).
+*comment
+*comment score_to_mod deliberately did NOT move here even though every one of these six labels calls it --
+*comment same reasoning as every other split this session (character_stats.txt, combat_dice.txt): it's a lower-
+*comment level, more widely shared primitive than any one category's own scope, so it stays in startup.txt,
+*comment reached from here with *gosub_scene startup score_to_mod.
+*comment
+*comment A *gosub_scene-only library scene, same treatment as every other split file: NOT in *scene_list, told to
+*comment compile.js by its own verifyFileName("character_buffs.txt") line instead, or a compiled build silently
+*comment drops it and only fails at runtime the first time a buff or equipment change actually recalculates.
+*comment ══════════════════════════════════════════════════════════════
+
+*comment refresh_boon_flags: a boon helps only if the modifier with it is higher than the modifier the
+*comment plain score gives. Call after the modifiers have been derived.
+*label refresh_boon_flags
+*gosub_scene startup score_to_mod (strength - buff_str_bonus)
+*set buff_str_helps ((buff_str_bonus > 0) and (str_mod > sm_mod))
+*gosub_scene startup score_to_mod (dexterity - buff_dex_bonus)
+*set buff_dex_helps ((buff_dex_bonus > 0) and (dex_mod > sm_mod))
+*gosub_scene startup score_to_mod (constitution - buff_con_bonus)
+*set buff_con_helps ((buff_con_bonus > 0) and (con_mod > sm_mod))
+*gosub_scene startup score_to_mod (intelligence - buff_int_bonus)
+*set buff_int_helps ((buff_int_bonus > 0) and (int_mod > sm_mod))
+*gosub_scene startup score_to_mod (wisdom - buff_wis_bonus)
+*set buff_wis_helps ((buff_wis_bonus > 0) and (wis_mod > sm_mod))
+*gosub_scene startup score_to_mod (charisma - buff_cha_bonus)
+*set buff_cha_helps ((buff_cha_bonus > 0) and (cha_mod > sm_mod))
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment TIMED ABILITY-SCORE BOONS
+*comment recalculate_buff_stats sums every active buff channel's bonus per stat and, only if a total changed,
+*comment re-derives the modifiers (update_dnd_stats also shifts max HP by the CON change, keeping wounds, and
+*comment recomputes AC). Fully derived from the buff variables, so calling it again changes nothing. Call it
+*comment after any buff starts and after buffs decay.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label recalculate_buff_stats
+*set bs_str 0
+*set bs_dex 0
+*set bs_con 0
+*set bs_int 0
+*set bs_wis 0
+*set bs_cha 0
+*gosub bs_add food_buff_active food_buff_stat food_buff_bonus
+*gosub bs_add drink_buff_active drink_buff_stat drink_buff_bonus
+*gosub bs_add unique_buff1_active unique_buff1_stat unique_buff1_bonus
+*gosub bs_add unique_buff2_active unique_buff2_stat unique_buff2_bonus
+*gosub bs_add unique_buff3_active unique_buff3_stat unique_buff3_bonus
+*gosub bs_add sleep_buff1_active sleep_buff1_stat sleep_buff1_bonus
+*gosub bs_add sleep_buff2_active sleep_buff2_stat sleep_buff2_bonus
+*temp bs_changed false
+*if (not(bs_str = buff_str_bonus))
+  *set bs_changed true
+*if (not(bs_dex = buff_dex_bonus))
+  *set bs_changed true
+*if (not(bs_con = buff_con_bonus))
+  *set bs_changed true
+*if (not(bs_int = buff_int_bonus))
+  *set bs_changed true
+*if (not(bs_wis = buff_wis_bonus))
+  *set bs_changed true
+*if (not(bs_cha = buff_cha_bonus))
+  *set bs_changed true
+*if ((bs_changed) and (loadout_initialized))
+  *set buff_str_bonus bs_str
+  *set buff_dex_bonus bs_dex
+  *set buff_con_bonus bs_con
+  *set buff_int_bonus bs_int
+  *set buff_wis_bonus bs_wis
+  *set buff_cha_bonus bs_cha
+  *set strength ((base_strength + buff_str_bonus) + equip_str_bonus)
+  *set dexterity ((base_dexterity + buff_dex_bonus) + equip_dex_bonus)
+  *set constitution ((base_constitution + buff_con_bonus) + equip_con_bonus)
+  *set intelligence ((base_intelligence + buff_int_bonus) + equip_int_bonus)
+  *set wisdom ((base_wisdom + buff_wis_bonus) + equip_wis_bonus)
+  *set charisma ((base_charisma + buff_cha_bonus) + equip_cha_bonus)
+  *gosub_scene character_stats update_dnd_stats
+*gosub refresh_boon_flags
+*return
+
+*label bs_add
+*params bs_on bs_stat bs_amt
+*if (bs_on)
+  *if (bs_stat = "str")
+    *set bs_str + bs_amt
+  *if (bs_stat = "dex")
+    *set bs_dex + bs_amt
+  *if (bs_stat = "con")
+    *set bs_con + bs_amt
+  *if (bs_stat = "int")
+    *set bs_int + bs_amt
+  *if (bs_stat = "wis")
+    *set bs_wis + bs_amt
+  *if (bs_stat = "cha")
+    *set bs_cha + bs_amt
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment MAGIC ITEM ATTUNEMENT & RECOMPUTE
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment Kept as the name attunement code knows; the work is recalculate_equipment_bonuses below.
+*label recalculate_attuned_bonuses
+*gosub recalculate_equipment_bonuses
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment EQUIPMENT ABILITY-SCORE BONUSES
+*comment Worn gear can add to an ability score (equipment.txt garment_traits gives garment_stat and garment_bonus) and the
+*comment Hearthstone Talisman adds +1 CON while attuned. Equipment bonuses to the SAME score do NOT stack: only the
+*comment highest one counts (timed boons are a separate channel and still add, and different stats each count). This is
+*comment fully derived from what is worn, so calling it again changes nothing; every equip_* routine and attune_item
+*comment call it. The six scores hold the boosted number: base + boon + equipment. When a total changes it re-derives
+*comment the modifiers through update_dnd_stats, which shifts max HP by the CON change (wounds stay) and recomputes AC.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label recalculate_equipment_bonuses
+*set eb_str 0
+*set eb_dex 0
+*set eb_con 0
+*set eb_int 0
+*set eb_wis 0
+*set eb_cha 0
+*gosub_scene equipment garment_traits equipped_armor_id
+*gosub eb_take
+*gosub_scene equipment garment_traits equipped_head_id
+*gosub eb_take
+*gosub_scene equipment garment_traits equipped_cloak_id
+*gosub eb_take
+*gosub_scene equipment garment_traits equipped_hands_id
+*gosub eb_take
+*gosub_scene equipment garment_traits equipped_waist_id
+*gosub eb_take
+*gosub_scene equipment garment_traits equipped_feet_id
+*gosub eb_take
+*gosub_scene equipment garment_traits equipped_neck_id
+*gosub eb_take
+*if (hearthstone_attuned)
+  *if (eb_con < 1)
+    *set eb_con 1
+*temp eb_changed false
+*if (not(eb_str = equip_str_bonus))
+  *set eb_changed true
+*if (not(eb_dex = equip_dex_bonus))
+  *set eb_changed true
+*if (not(eb_con = equip_con_bonus))
+  *set eb_changed true
+*if (not(eb_int = equip_int_bonus))
+  *set eb_changed true
+*if (not(eb_wis = equip_wis_bonus))
+  *set eb_changed true
+*if (not(eb_cha = equip_cha_bonus))
+  *set eb_changed true
+*if ((eb_changed) and (loadout_initialized))
+  *set equip_str_bonus eb_str
+  *set equip_dex_bonus eb_dex
+  *set equip_con_bonus eb_con
+  *set equip_int_bonus eb_int
+  *set equip_wis_bonus eb_wis
+  *set equip_cha_bonus eb_cha
+  *set strength ((base_strength + buff_str_bonus) + equip_str_bonus)
+  *set dexterity ((base_dexterity + buff_dex_bonus) + equip_dex_bonus)
+  *set constitution ((base_constitution + buff_con_bonus) + equip_con_bonus)
+  *set intelligence ((base_intelligence + buff_int_bonus) + equip_int_bonus)
+  *set wisdom ((base_wisdom + buff_wis_bonus) + equip_wis_bonus)
+  *set charisma ((base_charisma + buff_cha_bonus) + equip_cha_bonus)
+  *gosub_scene character_stats update_dnd_stats
+*return
+
+*comment eb_take: fold the garment_traits result just loaded into the running maximum for its stat.
+*label eb_take
+*if (garment_bonus > 0)
+  *if ((garment_stat = "str") and (garment_bonus > eb_str))
+    *set eb_str garment_bonus
+  *if ((garment_stat = "dex") and (garment_bonus > eb_dex))
+    *set eb_dex garment_bonus
+  *if ((garment_stat = "con") and (garment_bonus > eb_con))
+    *set eb_con garment_bonus
+  *if ((garment_stat = "int") and (garment_bonus > eb_int))
+    *set eb_int garment_bonus
+  *if ((garment_stat = "wis") and (garment_bonus > eb_wis))
+    *set eb_wis garment_bonus
+  *if ((garment_stat = "cha") and (garment_bonus > eb_cha))
+    *set eb_cha garment_bonus
+*return

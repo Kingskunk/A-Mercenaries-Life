@@ -183,11 +183,59 @@ function compile(){
   // *scene_list, so it needs its own line here or a compiled build fails with "scene doesn't exist" the moment
   // any fight tries to print a weapon hit, an enemy type's line, or a spell's flavor text.
   verifyFileName("combat_prose.txt");
+  // "combat_spells" holds the resolution logic for every named spell cast in combat, split out of startup.txt
+  // 2026-09-28 (see combat_spells.txt's own header comment) -- the first of startup.txt's subroutine categories
+  // to move, since it's the one actively growing. Same shape as combat_prose.txt just above: NOT in *scene_list,
+  // needs its own line here or a compiled build fails with "scene doesn't exist" the moment a player casts one.
+  verifyFileName("combat_spells.txt");
+  // "character_stats" holds the D&D 5e stat/modifier/skill-grant derivation (update_dnd_stats and its helpers),
+  // split out of startup.txt 2026-09-28 (see character_stats.txt's own header comment). Same shape as the two
+  // combat_* files above: NOT in *scene_list, needs its own line here or a compiled build fails with "scene
+  // doesn't exist" the moment chargen (or a dev preset, or a level-up) tries to derive stats.
+  verifyFileName("character_stats.txt");
+  // "combat_dice" holds the combat-only attack-roll/damage resolution primitives (resolve_enemy_attack,
+  // resolve_ally_attack, resolve_player_hit, resist/vuln math, etc.), split out of startup.txt 2026-09-28 (see
+  // combat_dice.txt's own header comment). roll_d20_check/roll_skill_check stayed in startup.txt since they're
+  // used well beyond combat. Same shape as the other combat_* files: NOT in *scene_list, needs its own line here
+  // or a compiled build fails with "scene doesn't exist" the moment any attack resolves.
+  verifyFileName("combat_dice.txt");
+  // "character_progression" holds class resource pools (Second Wind, Rage), rest recovery, and leveling (Second
+  // Wind, do_level_up, training, etc.), split out of startup.txt 2026-09-28 (see character_progression.txt's own
+  // header comment) -- the widest caller spread of any split so far (8 files). Same shape as the other split
+  // files: NOT in *scene_list, needs its own line here or a compiled build fails with "scene doesn't exist" the
+  // moment a rest, a level-up, or a class-resource spend actually happens.
+  verifyFileName("character_progression.txt");
+  // "economy" holds currency_add, describe_silver_amount, resolve_wager, buy_tavern_item and the unique/grooming
+  // buff system, split out of startup.txt 2026-09-28 (see economy.txt's own header comment) -- the widest split
+  // by raw call-site count (~146 sites across 11 quest files, though every one was already *gosub_scene startup
+  // <label>, so it was a pure rename). Same shape as the other split files: NOT in *scene_list, needs its own
+  // line here or a compiled build fails with "scene doesn't exist" the moment any purchase or reward happens.
+  verifyFileName("economy.txt");
+  // "dice_engine" holds the shared d20 roller (roll_d20_check) and the general skill-check system built on it
+  // (skill_lookup, roll_skill_check), split out of startup.txt 2026-09-28 (see dice_engine.txt's own header
+  // comment) -- the widest split by raw call-site count of all six (~195 sites across 10 quest files, since
+  // skill checks happen everywhere, not just combat). Same shape as the other split files: NOT in *scene_list,
+  // needs its own line here or a compiled build fails with "scene doesn't exist" the moment ANY d20 check
+  // happens anywhere in the game.
+  verifyFileName("dice_engine.txt");
+  // "character_buffs" holds timed ability-score boons (refresh_boon_flags/recalculate_buff_stats/bs_add) and
+  // worn-gear score bonuses (recalculate_equipment_bonuses/eb_take/recalculate_attuned_bonuses), split out of
+  // startup.txt 2026-09-28 (see character_buffs.txt's own header comment) -- the seventh and (for now) last
+  // split. Same shape as the other split files: NOT in *scene_list, needs its own line here or a compiled
+  // build fails with "scene doesn't exist" the moment a buff or equipment change recalculates.
+  verifyFileName("character_buffs.txt");
   // "death" is a *goto_scene-only shared death screen (see death.txt's own
   // header comment) and, same as combat.txt above, is deliberately NOT in
   // *scene_list -- it isn't "the next chapter" for anyone's *finish chain,
   // it's a jump target reached on death from any location's own scene.
   verifyFileName("death.txt");
+  // "dev_hub" is the developer menu (mode_select, dev_jump_menu, the combat dev-test hub), split out of
+  // startup.txt 2026-09-28 (see dev_hub.txt's own header comment) -- the eighth split, and a *goto_scene-only
+  // entry point (one-way, no return), same shape as death.txt just above rather than the *gosub_scene
+  // subroutine files: startup.txt's own GAME SETTINGS choice is the one caller, via *goto_scene dev_hub
+  // mode_select. NOT in *scene_list, needs its own line here or a compiled build fails with "scene doesn't
+  // exist" the moment either GAME SETTINGS option is picked -- which is every single playthrough.
+  verifyFileName("dev_hub.txt");
   // "equipment" is the paper-doll loadout library (equipment.txt's own header
   // comment), reached only via *gosub_scene equipment <label> -- from
   // startup.txt's update_dnd_stats at character creation and every dev-menu

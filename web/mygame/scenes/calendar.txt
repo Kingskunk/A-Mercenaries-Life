@@ -3,7 +3,7 @@
 *comment time_advance_locked in startup.txt for why page_id alone
 *comment isn't enough here) immediately before *gosub_scene calendar
 *comment advance_time, the same way roll_d20_check's caller sets check_skill
-*comment before *gosub_scene startup roll_d20_check. A plain *create'd
+*comment before *gosub_scene dice_engine roll_d20_check. A plain *create'd
 *comment variable rather than *params, deliberately: quicktest exercises
 *comment calendar.txt directly as its own scene (not only via gosub_scene),
 *comment where no gosub args are ever pushed, and *params errors out with
@@ -147,7 +147,7 @@
       *set sleep_buff2_stat "none"
       *set sleep_buff2_bonus 0
   *comment Buffs are ability-score boons now, so a buff that just ran out has to give its score back.
-  *gosub_scene startup recalculate_buff_stats
+  *gosub_scene character_buffs recalculate_buff_stats
 
   *comment --- Hunger & Fatigue neglect clock (Port Valen open-world only) ---
   *comment Only ticks once vane_independent_operative is true, so the clock
@@ -462,10 +462,10 @@
 *set neglect_damage_fatigue 0
 *gosub recalc_hp_from_neglect
 
-*comment --- Long rest: every class pool refills, temp HP goes and the Hexblood's Hex is ready again. All of it lives in startup.txt
+*comment --- Long rest: every class pool refills, temp HP goes and the Hexblood's Hex is ready again. All of it lives in character_progression.txt
 *comment restore_class_resources, so a sleeping place never lists pools and a new pool never has to be wired here or at a caller.
 *comment Fixed-value sets, idempotent under replay like the fatigue clear above, so no lock is needed. ---
-*gosub_scene startup restore_class_resources
+*gosub_scene character_progression restore_class_resources
 
 *comment --- Routine tracker and natural recovery: genuine relative changes, need their own lock,
 *comment kept separate from stat_bump_locked so this never collides with
@@ -557,7 +557,7 @@
   *set sleep_buff2_stat sleep_tier_stat2
   *set sleep_buff2_bonus sleep_tier_bonus2
   *set sleep_buff2_minutes_left 480
-*gosub_scene startup recalculate_buff_stats
+*gosub_scene character_buffs recalculate_buff_stats
 *gosub update_hub_condition
 *return
 
@@ -597,7 +597,7 @@
     *set hub_condition_str "${hub_condition_str} | Wounds Dressed"
 *comment Keeps level_up_ready (and so the top-bar Level Up button) current: advance_time ends by calling this, and the district hubs call it
 *comment on entry, so nearly every stretch of play passes through here and no place has to refresh it. Derived, fixed-value sets only.
-*gosub_scene startup refresh_level_up_progress
+*gosub_scene character_progression refresh_level_up_progress
 *gosub update_weather_flags
 *return
 

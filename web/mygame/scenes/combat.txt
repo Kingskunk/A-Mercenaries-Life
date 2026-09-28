@@ -270,9 +270,11 @@
 *label apply_derived_combat_bonuses
 *comment A "ranged" weapon_type always attacks off DEX; everything else uses whichever of STR/DEX rolled higher
 *comment (the same rule the player's own finesse weapons use), so a DEX-leaning melee type needs no extra flag.
-*comment atk_bonus = key ability mod + combat_enemy_prof_bonus (flat 2 -- every type in this library is early,
-*comment low-tier content). dmg_bonus = key ability mod alone: RAW, proficiency never adds to damage, matching
-*comment how the player's own combat_player_dmg_bonus is already just str_mod/dex_mod with no separate prof term.
+*comment atk_bonus = key ability mod + combat_lib_prof_bonus (flat 2 -- every type in either the enemy or ally
+*comment library is early, low-tier content). dmg_bonus = key ability mod alone: RAW, proficiency never adds to
+*comment damage, matching how the player's own combat_player_dmg_bonus is already just str_mod/dex_mod with no
+*comment separate prof term. Shared by both apply_enemy_type and apply_ally_type (2026-09-28) -- prefix-generic
+*comment already, nothing enemy-specific here except the constant it used to hardcode by name, not by parameter.
 *params adcb_prefix
 *temp adcb_str {(adcb_prefix & "strength")}
 *temp adcb_dex {(adcb_prefix & "dexterity")}
@@ -285,7 +287,7 @@
   *set adcb_key_mod adcb_dex_mod
 *elseif (adcb_dex_mod > adcb_str_mod)
   *set adcb_key_mod adcb_dex_mod
-*set {(adcb_prefix & "atk_bonus")} (adcb_key_mod + combat_enemy_prof_bonus)
+*set {(adcb_prefix & "atk_bonus")} (adcb_key_mod + combat_lib_prof_bonus)
 *set {(adcb_prefix & "dmg_bonus")} adcb_key_mod
 *return
 
@@ -592,7 +594,7 @@
   *set {(fc_p & "vulnerable_type_1")} ""
   *set {(fc_p & "vulnerable_type_2")} ""
   *set {(fc_p & "flavor_type")} ""
-  *comment Bane (see resolve_cast_bane, startup.txt): 0 means "not Baned." Reset per-slot here so a future fight's
+  *comment Bane (see resolve_cast_bane, combat_spells.txt): 0 means "not Baned." Reset per-slot here so a future fight's
   *comment slot never inherits an earlier fight's still-ticking duration.
   *set {(fc_p & "bane_expires_round")} 0
   *comment Disadvantage/advantage (2026-09-28): consumed on that slot's own next attack (resolve_enemy_attack/
@@ -662,6 +664,8 @@
 *set combat_player_bonus_left 1
 *set combat_player_attacks_max 1
 *set combat_player_attacks_left 1
+*set combat_player_moves_max 1
+*set combat_player_moves_left 1
 *set combat_enemy_hp_override 999
 *set combat_enemy_ac_override 999
 *set combat_enemy_atk_override 999
@@ -769,7 +773,7 @@
 *set combat_enemy_intelligence {(fti_p & "intelligence")}
 *set combat_enemy_wisdom {(fti_p & "wisdom")}
 *set combat_enemy_charisma {(fti_p & "charisma")}
-*comment Bane (see resolve_cast_bane, startup.txt): synced in the same way, so resolve_enemy_attack's Bane
+*comment Bane (see resolve_cast_bane, combat_spells.txt): synced in the same way, so resolve_enemy_attack's Bane
 *comment penalty check reads the right slot's own expiry.
 *set combat_enemy_bane_expires_round {(fti_p & "bane_expires_round")}
 *comment Disadvantage/advantage (2026-09-28, made per-slot -- previously a single shared bare flag that could
@@ -809,11 +813,12 @@
 *return
 
 *label fight_pick_target
-*comment First living slot, in ascending order -- a group is always fought down roughly front-to-back, never
-*comment picks a dead slot back up. A bounded loop over combat_enemy_count, via indirection, instead of one
-*comment hand-written branch per slot. THIS is the fallback: a HUD-clicked target (combat_player_chosen_target,
-*comment sticky until it dies -- see startup.txt) wins over it whenever one is set and still alive, checked first,
-*comment below. No HUD, or nothing clicked yet, and this behaves exactly as it always has.
+*comment Kill priority (2026-09-28): the lowest-HP living slot, not the lowest slot number -- finishes off
+*comment whichever enemy is already wounded instead of always working strictly front-to-back. Shared by the
+*comment player's own HUD-fallback targeting AND every ally's turn (combat_next_turn), so both get smarter from
+*comment one change, not duplicated per caller -- the first piece of a wider smarter-AI pass (see
+*comment GAMEPLAY_MECHANICS_RULES.md). A HUD-clicked target (combat_player_chosen_target, sticky until it dies --
+*comment see startup.txt) still wins over it whenever one is set and still alive, checked first, below.
 *set combat_active_target 0
 *if (combat_player_chosen_target > 0)
   *temp fpt_chosen_hp {(("combat_enemy" & combat_player_chosen_target) & "_hp")}
@@ -823,14 +828,64 @@
     *comment The chosen target just died (or the fight shrank under it) -- clear it so the HUD stops
     *comment highlighting a dead slot, and fall through to the ordinary auto-pick below.
     *set combat_player_chosen_target 0
-*temp fpt_i 1
-*label fight_pick_target_loop
-*if ((fpt_i <= combat_enemy_count) and (combat_active_target = 0))
-  *temp fpt_hp {(("combat_enemy" & fpt_i) & "_hp")}
-  *if (fpt_hp > 0)
-    *set combat_active_target fpt_i
-  *set fpt_i + 1
-  *goto fight_pick_target_loop
+*if (combat_active_target = 0)
+  *comment Scans every slot rather than stopping at the first living one (the old front-to-back pick's
+  *comment shortcut) -- the lowest-HP slot can be anywhere in the order, so every living slot needs comparing.
+  *temp fpt_i 1
+  *temp fpt_best_hp 0
+  *label fight_pick_target_loop
+  *if (fpt_i <= combat_enemy_count)
+    *temp fpt_hp {(("combat_enemy" & fpt_i) & "_hp")}
+    *if (fpt_hp > 0)
+      *if ((combat_active_target = 0) or (fpt_hp < fpt_best_hp))
+        *set combat_active_target fpt_i
+        *set fpt_best_hp fpt_hp
+    *set fpt_i + 1
+    *goto fight_pick_target_loop
+*if (combat_active_target > 0)
+  *gosub fight_sync_target_in
+*return
+
+*label fight_pick_nearest_target
+*comment Movement targeting (2026-09-28): the NEAREST living enemy that's actually eligible for this direction,
+*comment not kill-priority -- Push Forward/Fall Back are about closing or opening a specific gap, so "who's
+*comment already closest" is the sensible default, not "who's most wounded" (fight_pick_target above, used for
+*comment attacks and ally targeting instead). "push" wants the nearest enemy with range > 0 (nothing to gain
+*comment closing on one already Engaged); "fallback" wants the nearest with range < 3 (nothing to gain opening on
+*comment one already at Long Range) -- an enemy Engaged with you is a valid Fall Back candidate but never a valid
+*comment Push Forward one, so different enemies can legitimately win depending on direction. A HUD-clicked target
+*comment (combat_player_chosen_target, sticky until it dies) still wins over the auto-pick whenever it's alive
+*comment AND eligible for this direction; alive-but-ineligible falls through to the ordinary scan below rather
+*comment than silently doing nothing (the click stays sticky for its original purpose, attacks, either way).
+*params fpnt_direction
+*set combat_active_target 0
+*if (combat_player_chosen_target > 0)
+  *temp fpnt_chosen_hp {(("combat_enemy" & combat_player_chosen_target) & "_hp")}
+  *if ((combat_player_chosen_target <= combat_enemy_count) and (fpnt_chosen_hp > 0))
+    *temp fpnt_chosen_range {(("combat_enemy" & combat_player_chosen_target) & "_range")}
+    *if (((fpnt_direction = "push") and (fpnt_chosen_range > 0)) or ((fpnt_direction = "fallback") and (fpnt_chosen_range < 3)))
+      *set combat_active_target combat_player_chosen_target
+  *else
+    *set combat_player_chosen_target 0
+*if (combat_active_target = 0)
+  *temp fpnt_i 1
+  *temp fpnt_best_range 0
+  *label fight_pick_nearest_target_loop
+  *if (fpnt_i <= combat_enemy_count)
+    *temp fpnt_hp {(("combat_enemy" & fpnt_i) & "_hp")}
+    *if (fpnt_hp > 0)
+      *temp fpnt_range {(("combat_enemy" & fpnt_i) & "_range")}
+      *temp fpnt_ok false
+      *if ((fpnt_direction = "push") and (fpnt_range > 0))
+        *set fpnt_ok true
+      *if ((fpnt_direction = "fallback") and (fpnt_range < 3))
+        *set fpnt_ok true
+      *if (fpnt_ok)
+        *if ((combat_active_target = 0) or (fpnt_range < fpnt_best_range))
+          *set combat_active_target fpnt_i
+          *set fpnt_best_range fpnt_range
+    *set fpnt_i + 1
+    *goto fight_pick_nearest_target_loop
 *if (combat_active_target > 0)
   *gosub fight_sync_target_in
 *return
@@ -943,6 +998,7 @@
 *set combat_player_actions_left combat_player_actions_max
 *set combat_player_bonus_left combat_player_bonus_max
 *set combat_player_attacks_left combat_player_attacks_max
+*set combat_player_moves_left combat_player_moves_max
 *set player_movement_restricted false
 *return
 
@@ -960,6 +1016,21 @@
     *set combat_player_bonus_left - 1
   *set combat_bonus_spend_locked true
   *set locked_combat_bonus_spend_page_id page_id
+*return
+
+*label combat_spend_move
+*if (not(combat_move_spend_locked)) or (not(locked_combat_move_spend_page_id = page_id))
+  *if (combat_player_moves_left > 0)
+    *set combat_player_moves_left - 1
+  *set combat_move_spend_locked true
+  *set locked_combat_move_spend_page_id page_id
+*return
+
+*label combat_grant_move
+*if (not(combat_move_grant_locked)) or (not(locked_combat_move_grant_page_id = page_id))
+  *set combat_player_moves_left + 1
+  *set combat_move_grant_locked true
+  *set locked_combat_move_grant_page_id page_id
 *return
 
 *label blade_ward_tick
@@ -1041,6 +1112,12 @@
 *gosub combat_spend_bonus
 *goto fight_round_hub
 
+*label fight_move_spent
+*comment Push Forward/Fall Back end here (2026-09-28), not fight_action_spent -- movement is its own budget now,
+*comment not the action. Always returns to the hub, same as every other _spent label.
+*gosub combat_spend_move
+*goto fight_round_hub
+
 *comment ──────────────────────────────────────────────────────────────
 *comment THE ROUND HUB (shared choice skeleton)
 *comment ──────────────────────────────────────────────────────────────
@@ -1117,6 +1194,9 @@
 *if (combat_player_attacks_left < combat_player_attacks_max)
   *line_break
   [b][🗡️ Attacks used | ${combat_player_attacks_left} left this round][/b]
+*if (combat_player_moves_left < combat_player_moves_max)
+  *line_break
+  [b][👟 Movement used | ${combat_player_moves_left} left this round][/b]
 
 *if (player_stunned)
   *set player_stunned false
@@ -1181,13 +1261,38 @@
   *set combat_bonus_available true
 *if (combat_can_blade_ward)
   *set combat_bonus_available true
+*comment Movement option availability (2026-09-28): whether Push Forward/Fall Back should even show, checked
+*comment against EVERY living enemy, not just whichever one fight_pick_target (kill-priority, above) happened to
+*comment sync combat_enemy_range to -- those two can genuinely differ now that a multi-enemy fight can have
+*comment enemies at different ranges, and Push Forward/Fall Back target the NEAREST enemy (fight_pick_nearest_
+*comment target, below), not the most-wounded one. combat_enemy_range itself is deliberately left untouched here
+*comment (still whichever slot kill-priority last synced, for the weapon-attack gates just above) -- these are
+*comment two independent booleans, not a re-sync of the shared scratch.
+*temp combat_can_push_forward false
+*temp combat_can_fall_back false
+*temp cmc_i 1
+*label combat_movement_check_loop
+*if (cmc_i <= combat_enemy_count)
+  *temp cmc_hp {(("combat_enemy" & cmc_i) & "_hp")}
+  *if (cmc_hp > 0)
+    *temp cmc_range {(("combat_enemy" & cmc_i) & "_range")}
+    *if (cmc_range > 0)
+      *set combat_can_push_forward true
+    *if (cmc_range < 3)
+      *set combat_can_fall_back true
+  *set cmc_i + 1
+  *goto combat_movement_check_loop
 *comment Auto-end: silently loops back to the queue once there's truly nothing left to spend a resource on, not
 *comment just once every pool counter happens to read zero -- attacks_left and bonus_left both sit at their full
 *comment value on a turn that never touched them (a caster who casts instead of swinging, or any turn where no
 *comment bonus feature got used), so testing combat_can_attack and combat_bonus_available instead of the raw
-*comment counters is what tells "full because unavailable" apart from "full because unspent." Skips past "Break
-*comment off and disengage" and "Use an item" (neither is pool-gated) -- use them before running the tank dry.
-*if (((combat_player_actions_left <= 0) and (not(combat_can_attack))) and ((combat_player_bonus_left <= 0) or (not(combat_bonus_available))))
+*comment counters is what tells "full because unavailable" apart from "full because unspent." Movement
+*comment (2026-09-28) needs no such distinction -- unlike a bonus action, moves_left > 0 is ALWAYS usable: with
+*comment two or more enemies at different ranges, at least one of Push Forward/Fall Back is always legal for SOME
+*comment living enemy (proven: an enemy can't be simultaneously at range 0 and range 3), so a plain
+*comment moves_left <= 0 check is sufficient. Skips past "Break off and disengage" and "Use an item" (neither is
+*comment pool-gated) -- use them before running the tank dry.
+*if ((((combat_player_actions_left <= 0) and (not(combat_can_attack))) and ((combat_player_bonus_left <= 0) or (not(combat_bonus_available)))) and (combat_player_moves_left <= 0))
   *set combat_turn_advanced_this_page false
   *comment Ends the player's turn for Blade Ward's duration too, exactly like the End your turn option
   *comment -- running out of things to spend on IS a turn-end, so the ward must not sit un-aged.
@@ -1207,16 +1312,19 @@
       *gosub_scene equipment equip_weapon equipped_sidearm_id
       *goto resolve_weapon_attack_choice
 
-  *if ((combat_player_actions_left > 0) and (combat_enemy_range > 0))
-    # Push forward and close the distance on ${combat_enemy_epithet}.
-      *comment Dash, RAW: the whole action, no attack this turn -- same one-tier-per-turn simplification the
-      *comment enemy's own "closes the distance" branch already uses (combat_next_turn), so the two sides stay
-      *comment symmetric. Closes exactly one range tier, not straight to Engaged -- a fight that opens someone at
-      *comment Mid-Range or Long Range costs multiple turns to close, same as it would cost the enemy to close on
-      *comment the player. A future bonus-action variant (Rogue Cunning Action, level 2 -- not built yet, see the
-      *comment Level 2 groundwork audit) would just be a second option reusing this same effect with *goto
-      *comment fight_bonus_spent instead of fight_action_spent; nothing here needs to change for that.
-      *gosub fight_pick_target
+  *if ((combat_player_moves_left > 0) and (combat_can_push_forward))
+    # Push forward and close the distance on the nearest enemy.
+      *comment Free movement (2026-09-28, replaces the old "Dash, RAW: the whole action" one-tier move) -- spends
+      *comment combat_player_moves_left, not the action, so a player who's exactly one tier out can push forward
+      *comment AND still attack the same turn once Engaged, same as real 5e letting you move up to your speed and
+      *comment still take your action. Closes exactly one range tier, not straight to Engaged -- a fight that opens
+      *comment someone at Mid-Range or Long Range still costs multiple moves to close (Dash, below, grants a
+      *comment second one per turn if there's an action to spare). The enemy's own closing turn (combat_next_turn)
+      *comment mirrors this exact free-move-then-Dash-if-still-short shape. Targets the nearest ELIGIBLE enemy
+      *comment (fight_pick_nearest_target "push"), not kill-priority -- button text stays generic on purpose since
+      *comment which specific enemy that is can change turn to turn in a multi-enemy fight; the confirmation banner
+      *comment below names it once resolved.
+      *gosub fight_pick_nearest_target "push"
       *set combat_enemy_range - 1
       *if (combat_enemy_range < 0)
         *set combat_enemy_range 0
@@ -1230,16 +1338,17 @@
         You close ground on ${combat_enemy_epithet}, cutting down the distance between you.
         *line_break
         [b][🏃 You Push Forward — ${combat_range_display_name}][/b]
-      *goto fight_action_spent
+      *goto fight_move_spent
 
-  *if ((combat_player_actions_left > 0) and (combat_enemy_range < 3))
-    # Fall back and open the distance from ${combat_enemy_epithet}.
-      *comment Symmetric with Push Forward just above: Dash, RAW -- the whole action, no attack this turn. Opens
-      *comment exactly one range tier, not straight to Long Range, same one-tier-per-turn simplification, and
-      *comment still no Attack of Opportunity (out of scope, same as Push Forward and the enemy's own closing
-      *comment logic). Distinct from "Break off and disengage" below, which ends the fight outright -- this stays
-      *comment in it, same as Push Forward does.
-      *gosub fight_pick_target
+  *if ((combat_player_moves_left > 0) and (combat_can_fall_back))
+    # Fall back and open the distance from the nearest enemy.
+      *comment Symmetric with Push Forward just above: free movement (2026-09-28), spends combat_player_moves_left
+      *comment not the action -- 5e's own speed budget doesn't care which direction you move in. Opens exactly one
+      *comment range tier, not straight to Long Range; still no Attack of Opportunity (out of scope). Distinct from
+      *comment "Break off and disengage" below, which ends the fight outright -- this stays in it, same as Push
+      *comment Forward does. Targets the nearest ELIGIBLE enemy (fight_pick_nearest_target "fallback") -- the one
+      *comment already closest, and so the most urgent to retreat from, not kill-priority.
+      *gosub fight_pick_nearest_target "fallback"
       *set combat_enemy_range + 1
       *if (combat_enemy_range > 3)
         *set combat_enemy_range 3
@@ -1253,6 +1362,19 @@
         You give ground, putting distance between yourself and ${combat_enemy_epithet}.
         *line_break
         [b][🏃 You Fall Back — ${combat_range_display_name}][/b]
+      *goto fight_move_spent
+
+  *if (combat_player_actions_left > 0)
+    # [Dash] Push yourself for extra ground this turn, giving up anything else you could do with it.@{show_stat_hints  [Action]|}
+      *comment Dash, RAW (2026-09-28): spends the action, grants ONE extra combat_player_moves_left, so a player
+      *comment starting more than one tier out can close/open two tiers this turn -- at the cost of the action, so
+      *comment no attack (or spell, or item) alongside it. Doesn't move by itself -- Push Forward/Fall Back still
+      *comment do the actual moving, this just buys a second one. Always offered regardless of current range: worth
+      *comment it even from Engaged, to Fall Back twice and put real distance between you and a melee threat.
+      *gosub combat_grant_move
+      You suck in a breath and drive yourself harder, burning the whole of your effort into speed and nothing else.
+      *line_break
+      [b][💨 You Dash — one extra move this turn][/b]
       *goto fight_action_spent
 
   *if ((combat_player_actions_left > 0) and ((((wizard_cantrip = "fire_bolt") or (wizard_cantrip_2 = "fire_bolt")) or (wizard_cantrip_3 = "fire_bolt")) or ((race_cantrip = "fire_bolt") or (race_cantrip_2 = "fire_bolt"))))
@@ -1264,12 +1386,12 @@
       *set check_dc combat_enemy_ac
       *set check_skill "Fire Bolt"
       *set check_add_prof_bonus true
-      *gosub_scene startup roll_d20_check
+      *gosub_scene dice_engine roll_d20_check
       *if (check_success)
         *set combat_player_dmg_type "fire"
         *set combat_player_dmg_dice_sides 10
         *set combat_player_dmg_bonus 0
-        *gosub_scene startup resolve_player_hit true
+        *gosub_scene combat_dice resolve_player_hit true
         *if (combat_enemy_hp <= 0)
           *gosub_scene combat_prose pick_spell_death_flavor
           ${fdh}
@@ -1294,12 +1416,12 @@
       *set check_dc combat_enemy_ac
       *set check_skill "Ray of Frost"
       *set check_add_prof_bonus true
-      *gosub_scene startup roll_d20_check
+      *gosub_scene dice_engine roll_d20_check
       *if (check_success)
         *set combat_player_dmg_type "cold"
         *set combat_player_dmg_dice_sides 8
         *set combat_player_dmg_bonus 0
-        *gosub_scene startup resolve_player_hit true
+        *gosub_scene combat_dice resolve_player_hit true
         *set {(("combat_enemy" & combat_active_target) & "_disadvantage")} true
         *if (combat_enemy_hp <= 0)
           *gosub_scene combat_prose pick_spell_death_flavor
@@ -1331,12 +1453,12 @@
       *set check_dc combat_enemy_ac
       *set check_skill "Shocking Grasp"
       *set check_add_prof_bonus true
-      *gosub_scene startup roll_d20_check
+      *gosub_scene dice_engine roll_d20_check
       *if (check_success)
         *set combat_player_dmg_type "lightning"
         *set combat_player_dmg_dice_sides 8
         *set combat_player_dmg_bonus 0
-        *gosub_scene startup resolve_player_hit true
+        *gosub_scene combat_dice resolve_player_hit true
         *if (combat_enemy_hp <= 0)
           *gosub_scene combat_prose pick_spell_death_flavor
           ${fdh}
@@ -1365,12 +1487,12 @@
       *set check_dc combat_enemy_ac
       *set check_skill "Eldritch Blast"
       *set check_add_prof_bonus true
-      *gosub_scene startup roll_d20_check
+      *gosub_scene dice_engine roll_d20_check
       *if (check_success)
         *set combat_player_dmg_type "force"
         *set combat_player_dmg_dice_sides 10
         *set combat_player_dmg_bonus 0
-        *gosub_scene startup resolve_player_hit true
+        *gosub_scene combat_dice resolve_player_hit true
         *if (combat_enemy_hp <= 0)
           *gosub_scene combat_prose pick_spell_death_flavor
           ${fdh}
@@ -1395,12 +1517,12 @@
       *set check_dc combat_enemy_ac
       *set check_skill "Chill Touch"
       *set check_add_prof_bonus true
-      *gosub_scene startup roll_d20_check
+      *gosub_scene dice_engine roll_d20_check
       *if (check_success)
         *set combat_player_dmg_type "necrotic"
         *set combat_player_dmg_dice_sides 8
         *set combat_player_dmg_bonus 0
-        *gosub_scene startup resolve_player_hit true
+        *gosub_scene combat_dice resolve_player_hit true
         *if (combat_enemy_hp <= 0)
           *gosub_scene combat_prose pick_spell_death_flavor
           ${fdh}
@@ -1422,15 +1544,15 @@
       *set combat_current_spell_id "vicious_mockery"
       *gosub_scene combat_prose pick_spell_flavor
       *comment Enemy saving throw against the player's own spell_save_dc -- Vicious Mockery is a Wisdom save, RAW.
-      *comment The target rolls here (resolve_enemy_save, startup.txt), not the player.
-      *gosub_scene startup resolve_enemy_save "combat_enemy_" "wisdom" "Wisdom" 0
+      *comment The target rolls here (resolve_enemy_save, combat_dice.txt), not the player.
+      *gosub_scene combat_dice resolve_enemy_save "combat_enemy_" "wisdom" "Wisdom" 0
       *if (check_success)
         *set combat_player_dmg_type "psychic"
         *set combat_player_dmg_dice_sides 4
         *set combat_player_dmg_bonus 0
         *comment No attack roll here -- a failed save, not a hit -- so resolve_player_hit's Hex bonus must not
         *comment fire (RAW: Hex triggers only when you hit with an attack).
-        *gosub_scene startup resolve_player_hit false
+        *gosub_scene combat_dice resolve_player_hit false
         *set {(("combat_enemy" & combat_active_target) & "_disadvantage")} true
         *if (combat_enemy_hp <= 0)
           *gosub_scene combat_prose pick_spell_death_flavor
@@ -1452,7 +1574,7 @@
       *gosub fight_pick_target
       *set combat_current_spell_id "magic_missile"
       *gosub_scene combat_prose pick_spell_flavor
-      *gosub_scene startup resolve_magic_missile
+      *gosub_scene combat_spells resolve_magic_missile
       *if (combat_enemy_hp <= 0)
         *gosub_scene combat_prose pick_spell_death_flavor
         ${fdh}
@@ -1467,7 +1589,7 @@
   *if ((combat_can_hex) and (combat_player_bonus_left > 0))
     # [Spell: Hex] Lay a baleful eldritch curse upon ${combat_enemy_epithet}, marking the foe to suffer deeper wounds.@{show_stat_hints  [Bonus Action]|}
       *gosub fight_pick_target
-      *gosub_scene startup resolve_cast_hex
+      *gosub_scene combat_spells resolve_cast_hex
       You whisper a guttural syllable of ancient ruin. Dark, spectral runes flare briefly across ${combat_enemy_epithet} and sink in, binding the foe's fate to your will—every strike you land will tear in with extra necrotic fury!
       *comment No banner here -- the hub's own "Hex Active" status line (fight_round_hub) says the same thing the
       *comment instant this reopens it, so a second copy here would just repeat it on the very same page.
@@ -1476,7 +1598,7 @@
 
   *if ((combat_player_actions_left > 0) and (((warlock_spell = "armor_of_agathys") and (warlock_spell_slots > 0)) and (not(agathys_active))))
     # [Spell: Armor of Agathys] Sheathe yourself in spectral frost that shields you and punishes melee strikes.
-      *gosub_scene startup resolve_cast_agathys
+      *gosub_scene combat_spells resolve_cast_agathys
       A brittle casing of translucent, jagged rime coats your shoulders and arms, radiating bone-chilling cold. Any foe foolish enough to strike you will feel the frost shatter back against the blow.
       *comment No banner here -- the hub's own "Armor of Agathys Active" status line (fight_round_hub) says the
       *comment same thing the instant this reopens it, so a second copy here would just repeat it on the same page.
@@ -1485,7 +1607,7 @@
 
   *if ((combat_player_actions_left > 0) and (((((character_class = "wizard") and (wizard_spell = "false_life")) and (wizard_spell_slots > 0)) or (((character_class = "warlock") and (warlock_spell = "false_life")) and (warlock_spell_slots > 0))) and (temp_hp = 0)))
     # [Spell: False Life] Weave a necromantic shroud over your flesh for a protective buffer of vitality.
-      *gosub_scene startup resolve_cast_false_life
+      *gosub_scene combat_spells resolve_cast_false_life
       You murmur a dark necromantic rite. A numb, leathery vitality spreads beneath your skin, insulating your muscles against immediate harm.
       *line_break
       [b][✨ False Life: +${combat_cast_result} Temporary Hit Points][/b]
@@ -1497,9 +1619,9 @@
       *set combat_current_spell_id "dissonant_whispers"
       *gosub_scene combat_prose pick_spell_flavor
       *comment Enemy saving throw against the player's own spell_save_dc -- Dissonant Whispers is a Wisdom save,
-      *comment RAW. The target rolls here (resolve_enemy_save, startup.txt), not the player.
-      *gosub_scene startup resolve_enemy_save "combat_enemy_" "wisdom" "Wisdom" 0
-      *gosub_scene startup resolve_dissonant_whispers
+      *comment RAW. The target rolls here (resolve_enemy_save, combat_dice.txt), not the player.
+      *gosub_scene combat_dice resolve_enemy_save "combat_enemy_" "wisdom" "Wisdom" 0
+      *gosub_scene combat_spells resolve_dissonant_whispers
       *if (combat_enemy_hp <= 0)
         *gosub_scene combat_prose pick_spell_death_flavor
         ${fdh}
@@ -1521,12 +1643,12 @@
       *comment single "active" target at all; resolve_cast_bane picks its own up to three targets internally.
       You let the curse spill out low and wide, ill fortune threading itself around throat after throat in the same breath.
       *line_break
-      *gosub_scene startup resolve_cast_bane
+      *gosub_scene combat_spells resolve_cast_bane
       *goto fight_action_spent
 
   *if ((combat_can_healing_word) and (combat_player_bonus_left > 0))
     # [Spell: Healing Word] Speak a resonant, curative syllable to knit your gashes and steady your footing.@{show_stat_hints  [Bonus Action]|}
-      *gosub_scene startup resolve_cast_healing_word
+      *gosub_scene combat_spells resolve_cast_healing_word
       A sharp, ringing cadence leaves your lips. Warmth rushes through your marrow, knitting shut the worst of your wounds.
       *line_break
       [b][🩸 Healing Word: Restored ${combat_cast_result} HP | HP: ${hp_current}/${hp_max}][/b]
@@ -1551,7 +1673,7 @@
 
   *if ((combat_can_second_wind) and (combat_player_bonus_left > 0))
     # [Second Wind] Grit your teeth through the pain and the fear, and keep going.@{show_stat_hints  [Bonus Action]|}
-      *gosub_scene startup second_wind
+      *gosub_scene character_progression second_wind
       A surge of stubborn, practiced discipline steadies your breathing and closes the worst of your scrapes.
       *line_break
       [b][🩸 Hit Points: ${hp_current} / ${hp_max}][/b]
@@ -1559,7 +1681,7 @@
 
   *if ((combat_can_rage) and (combat_player_bonus_left > 0))
     # [Rage] Let the fury take you.@{show_stat_hints  [Bonus Action]|}
-      *gosub_scene startup activate_rage
+      *gosub_scene character_progression activate_rage
       A hot, roaring pressure floods your chest, dulling the pain and the fear to nothing at all.
       *goto fight_bonus_spent
 
@@ -1652,9 +1774,9 @@ ${use_text}
 *comment fwh/fwm land on one of 3 randomized variants (melee or ranged
 *comment per weapon_type) -- see pick_weapon_flavor below.
 *gosub_scene combat_prose pick_weapon_flavor
-*comment Always proficient with your own equipped weapon -- see roll_d20_check's own header (startup.txt).
+*comment Always proficient with your own equipped weapon -- see roll_d20_check's own header (dice_engine.txt).
 *set check_add_prof_bonus true
-*gosub_scene startup roll_d20_check
+*gosub_scene dice_engine roll_d20_check
 *if (check_success)
   *set combat_player_dmg_type weapon_damage_type
   *if (weapon_type = "finesse")
@@ -1696,7 +1818,7 @@ ${use_text}
           *set combat_player_dmg_bonus + barbarian_rage_damage_bonus
       *else
         *set combat_player_dmg_bonus + barbarian_rage_damage_bonus
-  *gosub_scene startup resolve_player_weapon_hit
+  *gosub_scene combat_dice resolve_player_weapon_hit
   *if (combat_sneak_attack_triggered)
     *comment Sneak Attack RAW requires finesse or ranged (see the gate in
     *comment startup.txt), so this line is at least as likely to be seen
@@ -1855,14 +1977,26 @@ ${use_text}
       *comment Interception (2026-09-28): a melee ally is standing between this specific enemy and the player --
       *comment it fights the ally instead, regardless of its own combat_enemy_range to the player (which might
       *comment still be > 0; the ally caught up independently). No closing, no player-targeted attack this turn.
-      *gosub_scene startup resolve_enemy_attack_on_ally combat_intercepting_ally
+      *gosub_scene combat_dice resolve_enemy_attack_on_ally combat_intercepting_ally
       *gosub_scene combat_prose fight_narrate_ally_attack "enemy" cnt_slot "ally" combat_intercepting_ally combat_enemy_atk_on_ally_hit
       *set combat_turn_advanced_this_page true
     *elseif ((not(combat_enemy_weapon_type = "ranged")) and (combat_enemy_range > 0))
+      *comment Free movement + Dash (2026-09-28, mirrors the player's own Push Forward/Dash exactly): closes one
+      *comment tier for free. If that's still not enough, it Dashes too -- closes a SECOND tier -- since there's
+      *comment no attack to give up by spending its "action" on movement when it couldn't have reached melee range
+      *comment this turn regardless. Only when the free move alone reaches Engaged (started exactly one tier out,
+      *comment action still unspent) does it also attack this same turn, below.
       *set combat_enemy_range - 1
       *if (combat_enemy_range < 0)
         *set combat_enemy_range 0
       *set {(("combat_enemy" & cnt_slot) & "_range")} combat_enemy_range
+      *temp cnt_dashed false
+      *if (combat_enemy_range > 0)
+        *set combat_enemy_range - 1
+        *if (combat_enemy_range < 0)
+          *set combat_enemy_range 0
+        *set {(("combat_enemy" & cnt_slot) & "_range")} combat_enemy_range
+        *set cnt_dashed true
       *comment Same reasoning as the surprise-round variants above: three lines each, none epithet-first.
       *rand cnt_rv 1 3
       *if (combat_enemy_range <= 0)
@@ -1885,9 +2019,20 @@ ${use_text}
         *line_break
         [b][🏃 ${combat_enemy_name} Closes to ${combat_range_display_name}][/b]
       *set combat_turn_advanced_this_page true
+      *if ((combat_enemy_range <= 0) and (not(cnt_dashed)))
+        *gosub fight_pick_enemy_move
+        *gosub_scene combat_dice resolve_enemy_attack
+        *gosub_scene combat_prose fight_narrate_enemy_turn
+        *if (combat_player_can_die) and (hp_current <= 0)
+          *goto fight_player_died
+        *if (not(combat_player_can_die)) and (hp_current <= 1)
+          *goto fight_rescued
+        *gosub fight_check_all_dead
+        *if (combat_all_enemies_dead)
+          *goto fight_victory
     *else
       *gosub fight_pick_enemy_move
-      *gosub_scene startup resolve_enemy_attack
+      *gosub_scene combat_dice resolve_enemy_attack
       *gosub_scene combat_prose fight_narrate_enemy_turn
       *set combat_turn_advanced_this_page true
       *if (combat_player_can_die) and (hp_current <= 0)
@@ -1898,8 +2043,9 @@ ${use_text}
       *if (combat_all_enemies_dead)
         *goto fight_victory
 *if (cnt_kind = "ally")
-  *comment Kill-priority targeting still isn't here -- fight_pick_target is the same lowest-living-slot fallback
-  *comment the player's own HUD uses (see its header comment).
+  *comment fight_pick_target picks the lowest-HP living enemy (kill priority, 2026-09-28), same fallback the
+  *comment player's own HUD uses (see its header comment) -- so every ally already focus-fires the most wounded
+  *comment target without any ally-specific logic here.
   *temp cnt_a_hp {(("combat_ally" & cnt_slot) & "_hp")}
   *if (cnt_a_hp > 0)
     *gosub fight_pick_target
@@ -1913,21 +2059,29 @@ ${use_text}
       *temp cnt_a_weapon {(("combat_ally" & cnt_slot) & "_weapon_type")}
       *temp cnt_a_range {(("combat_ally" & cnt_slot) & "_range")}
       *if ((cnt_a_weapon = "ranged") or (cnt_a_range <= 0))
-        *gosub_scene startup resolve_ally_attack cnt_slot combat_active_target
+        *gosub_scene combat_dice resolve_ally_attack cnt_slot combat_active_target
         *gosub_scene combat_prose fight_narrate_ally_attack "ally" cnt_slot "enemy" combat_active_target combat_ally_atk_hit
         *set combat_turn_advanced_this_page true
         *gosub fight_check_all_dead
         *if (combat_all_enemies_dead)
           *goto fight_victory
       *else
-        *comment Melee ally, not yet in range: spends the whole turn closing its OWN combat_ally<N>_range one
-        *comment tier, same as the player's Push Forward and an enemy's own closing turn just above --
-        *comment independent of combat_enemy_range, so this ally can be nearer to (or farther from) the target
-        *comment than the player is.
+        *comment Free movement + Dash (2026-09-28, mirrors the player's own Push Forward/Dash and the enemy
+        *comment branch just above): closes its OWN combat_ally<N>_range one tier for free, independent of
+        *comment combat_enemy_range, so this ally can be nearer to (or farther from) the target than the player is.
+        *comment Dashes (closes a second tier) if the free move alone still doesn't reach -- no attack to give up
+        *comment either way this turn -- and only attacks this same turn if the free move alone was enough.
         *set cnt_a_range - 1
         *if (cnt_a_range < 0)
           *set cnt_a_range 0
         *set {(("combat_ally" & cnt_slot) & "_range")} cnt_a_range
+        *temp cnt_a_dashed false
+        *if (cnt_a_range > 0)
+          *set cnt_a_range - 1
+          *if (cnt_a_range < 0)
+            *set cnt_a_range 0
+          *set {(("combat_ally" & cnt_slot) & "_range")} cnt_a_range
+          *set cnt_a_dashed true
         *temp cnt_arv 1
         *rand cnt_arv 1 3
         *if (cnt_a_range <= 0)
@@ -1950,6 +2104,12 @@ ${use_text}
           *line_break
           [b][🏃 ${combat_attacker_name} Closes to ${combat_range_display_name}][/b]
         *set combat_turn_advanced_this_page true
+        *if ((cnt_a_range <= 0) and (not(cnt_a_dashed)))
+          *gosub_scene combat_dice resolve_ally_attack cnt_slot combat_active_target
+          *gosub_scene combat_prose fight_narrate_ally_attack "ally" cnt_slot "enemy" combat_active_target combat_ally_atk_hit
+          *gosub fight_check_all_dead
+          *if (combat_all_enemies_dead)
+            *goto fight_victory
 *goto combat_next_turn
 
 *comment ══════════════════════════════════════════════════════════════
@@ -2715,38 +2875,55 @@ ${use_text}
 
 *label apply_allytype_archer
 *comment Ranged skirmisher: a bow at range, keeps its distance. resolve_ally_attack never checks range for a
-*comment weapon_type "ranged" ally, so this one attacks every turn regardless of combat_ally1_range. These are
-*comment Kess's original dev-test numbers, now the library default for the archetype instead of a one-off.
+*comment weapon_type "ranged" ally, so this one attacks every turn regardless of combat_ally1_range. HP/AC/damage
+*comment dice stay flat authored numbers (same convention every enemy type still uses -- apply_derived_hp/_ac
+*comment exist but nothing opts into them yet). atk_bonus/dmg_bonus (2026-09-28) derive from rolled ability
+*comment scores through the SAME apply_ability_score_range/apply_derived_combat_bonuses the enemy library uses,
+*comment replacing Kess's original fixed +4/+2 -- DEX 14-16 keeps the roll centered close to those original
+*comment numbers rather than a from-scratch retune. weapon_type must be set before apply_derived_combat_bonuses
+*comment runs, since it reads {prefix & "weapon_type"} to pick DEX over STR.
 *temp aaa_p (("combat_ally" & combat_apply_ally_slot) & "_")
 *set {(aaa_p & "name")} "Archer"
 *set {(aaa_p & "epithet")} "the archer"
 *set {(aaa_p & "hp")} 10
 *set {(aaa_p & "max_hp")} 10
 *set {(aaa_p & "ac")} 13
-*set {(aaa_p & "atk_bonus")} 4
 *set {(aaa_p & "dmg_dice_sides")} 6
-*set {(aaa_p & "dmg_bonus")} 2
 *set {(aaa_p & "dmg_type")} "piercing"
 *set {(aaa_p & "weapon_type")} "ranged"
-*set {(aaa_p & "dexterity")} 14
+*gosub apply_ability_score_range aaa_p "strength" 8 10
+*gosub apply_ability_score_range aaa_p "dexterity" 14 16
+*gosub apply_ability_score_range aaa_p "constitution" 10 12
+*gosub apply_ability_score_range aaa_p "intelligence" 8 10
+*gosub apply_ability_score_range aaa_p "wisdom" 10 12
+*gosub apply_ability_score_range aaa_p "charisma" 8 10
+*gosub apply_derived_combat_bonuses aaa_p
 *return
 
 *label apply_allytype_guard
 *comment Melee bruiser: sword and shield, holds the line. First melee archetype -- exercises resolve_ally_attack's
 *comment melee path end to end, gated on this ally's OWN combat_ally<N>_range (combat_next_turn's ally branch)
-*comment reaching 0 before it swings.
+*comment reaching 0 before it swings. HP/AC/damage dice stay flat authored numbers, same convention as every
+*comment enemy type. atk_bonus/dmg_bonus (2026-09-28) derive from rolled ability scores the same way the archer
+*comment archetype's do -- STR 14-16 keeps the roll centered close to the original fixed +4/+2, and STR/DEX
+*comment "whichever rolled higher" (apply_derived_combat_bonuses' own rule) never actually picks DEX here since
+*comment its 10-12 range can't out-roll STR's 14-16.
 *temp aag_p (("combat_ally" & combat_apply_ally_slot) & "_")
 *set {(aag_p & "name")} "Guard"
 *set {(aag_p & "epithet")} "the guard"
 *set {(aag_p & "hp")} 13
 *set {(aag_p & "max_hp")} 13
 *set {(aag_p & "ac")} 15
-*set {(aag_p & "atk_bonus")} 4
 *set {(aag_p & "dmg_dice_sides")} 8
-*set {(aag_p & "dmg_bonus")} 2
 *set {(aag_p & "dmg_type")} "slashing"
 *set {(aag_p & "weapon_type")} "melee"
-*set {(aag_p & "dexterity")} 12
+*gosub apply_ability_score_range aag_p "strength" 14 16
+*gosub apply_ability_score_range aag_p "dexterity" 10 12
+*gosub apply_ability_score_range aag_p "constitution" 12 14
+*gosub apply_ability_score_range aag_p "intelligence" 8 10
+*gosub apply_ability_score_range aag_p "wisdom" 10 12
+*gosub apply_ability_score_range aag_p "charisma" 8 10
+*gosub apply_derived_combat_bonuses aag_p
 *return
 
 *comment ══════════════════════════════════════════════════════════════
@@ -2811,7 +2988,7 @@ ${use_text}
 *comment The named fights below are thin callers of fight_library: they say who is in the fight and nothing else.
 
 *label fight_dev_range_test
-*comment Dev-hub only (startup.txt dev_combat_test_hub) -- no story scene calls this. One lacedon opened at Long
+*comment Dev-hub only (dev_hub.txt dev_combat_test_hub) -- no story scene calls this. One lacedon opened at Long
 *comment Range (3) instead of the type-library default of Engaged, to play with the range-tier system: watch it
 *comment close one tier a turn on its own, and Push Forward through Close and Mid-Range before it's in melee reach.
 *set combat_is_nonlethal false
@@ -2821,7 +2998,7 @@ ${use_text}
 *goto fight_library
 
 *label fight_dev_ally_ranged_test
-*comment Dev-hub only (startup.txt dev_combat_test_hub) -- no story scene calls this. One lacedon, plus one
+*comment Dev-hub only (dev_hub.txt dev_combat_test_hub) -- no story scene calls this. One lacedon, plus one
 *comment ranged ally (the "archer" library type, renamed "Kess" via the override fields), to watch
 *comment resolve_ally_attack in action: does it hit, does it roll damage, does it help drop the enemy. Also the
 *comment first real caller of apply_ally_roster/apply_ally_type -- was hand-set stats before the ally type
@@ -2835,7 +3012,7 @@ ${use_text}
 *goto fight_library
 
 *label fight_dev_ally_melee_test
-*comment Dev-hub only (startup.txt dev_combat_test_hub) -- no story scene calls this. One lacedon opened at
+*comment Dev-hub only (dev_hub.txt dev_combat_test_hub) -- no story scene calls this. One lacedon opened at
 *comment Mid-Range (2), plus one melee ally (the "guard" library type), to watch a melee ally's own
 *comment combat_ally1_range close independently over a couple of rounds before it lands its first swing.
 *set combat_is_nonlethal false
@@ -2846,6 +3023,32 @@ ${use_text}
 *set combat_ally1_range 2
 *set combat_ally1_name_override "Rook"
 *set combat_ally1_epithet_override "Rook"
+*goto fight_library
+
+*label fight_dev_squad_test
+*comment Dev-hub only (dev_hub.txt dev_combat_test_hub) -- no story scene calls this. Two enemies and two allies
+*comment together, each opened at a different range, to play-test the nearest-enemy movement targeting
+*comment (fight_pick_nearest_target), kill-priority attack targeting (fight_pick_target), free movement/Dash, and
+*comment ally AI all at once instead of in isolation. The Vanguard Swordsman (Close, 1) is nearer than the
+*comment Rearguard Archer (Long Range, 3) -- Push Forward/Fall Back should resolve against whichever of the two
+*comment is actually nearest for that direction, not whichever has less HP. Rook (melee ally, Mid-Range, 2) has
+*comment to close on its own target over a couple of rounds; Kess (ranged ally) attacks every turn regardless of
+*comment range, same as fight_dev_ally_ranged_test.
+*set combat_is_nonlethal false
+*set combat_lib_1 "swordsman"
+*set combat_enemy_name_override "Vanguard Swordsman"
+*set combat_enemy_range 1
+*set combat_lib_2 "archer"
+*set combat_enemy2_name_override "Rearguard Archer"
+*set combat_enemy2_epithet_override "the rearguard archer"
+*set combat_enemy2_range 3
+*set combat_ally_lib_1 "guard"
+*set combat_ally1_name_override "Rook"
+*set combat_ally1_epithet_override "Rook"
+*set combat_ally1_range 2
+*set combat_ally_lib_2 "archer"
+*set combat_ally2_name_override "Kess"
+*set combat_ally2_epithet_override "Kess"
 *goto fight_library
 
 *label fight_silt_lurker

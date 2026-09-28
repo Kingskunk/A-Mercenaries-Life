@@ -1,0 +1,359 @@
+*comment ══════════════════════════════════════════════════════════════
+*comment DICE / SKILL-CHECK ENGINE (split out of startup.txt, 2026-09-28)
+*comment The shared d20 roller (roll_d20_check) and the general 5e proficiency skill-check system built on top of
+*comment it (skill_lookup, roll_skill_check, roll_skill_check_loop). This is the sixth split and by far the widest
+*comment by raw call-site count -- roughly 195 external call sites (110 roll_skill_check, 85 roll_d20_check) across
+*comment every quest file that has ever needed a skill check or an attack roll, not just combat. It was
+*comment deliberately left behind through five earlier splits (score_to_mod stayed for the same reason when
+*comment character_stats.txt/combat_dice.txt split off) because of that spread, and only tackled now with a
+*comment proper per-label caller audit: every one of the ~195 sites was already *gosub_scene startup <label>
+*comment (already cross-file), so converting them was a pure scene-name rename, never a verb or argument change --
+*comment confirmed by grep against every call site before touching anything, not assumed.
+*comment
+*comment Fully self-contained: every *gosub between skill_lookup/roll_skill_check/roll_skill_check_loop/
+*comment roll_d20_check stays same-file (checked directly -- zero back-references into startup.txt needed), and
+*comment every *temp any of them declares (adv_label, guidance_roll, the rsc_* family) was checked line-by-line
+*comment against the WHOLE game for any occurrence outside this block's own line range -- zero found.
+*comment
+*comment A *gosub_scene-only library scene, same treatment as every other split file: NOT in *scene_list, told to
+*comment compile.js by its own verifyFileName("dice_engine.txt") line instead, or a compiled build silently drops
+*comment it and only fails at runtime the first time ANY d20 check happens anywhere in the game -- combat or not.
+*comment
+*comment roll_d20_check is placed FIRST in the file, ahead of skill_lookup/roll_skill_check, deliberately --
+*comment quicktest's coverage walker runs every scene file "from the top" as one of its passes, with no real
+*comment *gosub/*gosub_scene ever having set up an argument list, and skill_lookup's very first real command is
+*comment *params -- reading this.temps.param.length on an undefined param list crashed the WHOLE quicktest run
+*comment outright ("Cannot read properties of undefined"), not just marked those lines untested. roll_d20_check
+*comment takes no *params at all (its inputs are plain globals: check_stat/check_dc/check_skill/
+*comment check_add_prof_bonus, same convention as advance_time), so it runs harmlessly to completion as the
+*comment file's top-to-bottom entry point instead. Confirmed this was the actual cause (not a real bug in the
+*comment split) by first driving a real skill check through an actual caller (camp_night.txt's lyra_choice_hub),
+*comment which worked perfectly -- the crash only ever happened via a direct, argument-less jump into a
+*comment *params-led label, the exact same test-harness gotcha already documented for fight_victory/fight_rescued
+*comment (see GAMEPLAY_MECHANICS_RULES.md) -- and then confirming the reorder alone fixed quicktest.
+*comment ══════════════════════════════════════════════════════════════
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment D&D 5E D20 SKILL CHECK ENGINE
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label roll_d20_check
+*comment Racial saves that grant advantage — a calling scene sets save_vs before gosubbing in
+*if ((race = "elf") and ((save_vs = "charmed") or (save_vs = "sleep")))
+  *set advantage true
+*if ((race = "dwarf") and (save_vs = "poison"))
+  *set advantage true
+
+*temp adv_label ""
+*temp guidance_roll 0
+
+*if (roll_locked) and (locked_page_id = page_id)
+  *set adv_label locked_adv_label
+  *set guidance_roll locked_guidance_roll
+*else
+  *comment Armor the class is not trained in: disadvantage on STR and DEX rolls (attacks included).
+  *comment It cancels against advantage like any other source, and the flag resets at the end of the roll.
+  *if (((armor_nonprof) or (shield_nonprof)) and ((check_stat = "str") or (check_stat = "dex")))
+    *set disadvantage true
+  *if (advantage) and (not(disadvantage))
+    *set adv_label " (Advantage)"
+  *if (disadvantage) and (not(advantage))
+    *set adv_label " (Disadvantage)"
+
+  *if (guidance_active)
+    *rand guidance_roll 1 4
+    *set adv_label "${adv_label} +${guidance_roll} (Guidance)"
+
+  *rand d20_roll 1 20
+  *if (advantage) and (not(disadvantage))
+    *rand d20_roll_2 1 20
+    *if (d20_roll_2 > d20_roll)
+      *set d20_roll d20_roll_2
+  *if (disadvantage) and (not(advantage))
+    *rand d20_roll_2 1 20
+    *if (d20_roll_2 < d20_roll)
+      *set d20_roll d20_roll_2
+
+  *if ((race = "halfling") and (d20_roll = 1))
+    *comment Halfling Lucky: reroll natural 1
+    *rand d20_roll 1 20
+
+  *if (check_stat = "str")
+    *set check_mod str_mod
+  *if (check_stat = "dex")
+    *set check_mod dex_mod
+  *if (check_stat = "con")
+    *set check_mod con_mod
+  *if (check_stat = "int")
+    *set check_mod int_mod
+  *if (check_stat = "wis")
+    *set check_mod wis_mod
+  *if (check_stat = "cha")
+    *set check_mod cha_mod
+
+  *if (check_add_prof_bonus)
+    *set check_mod + prof_bonus
+
+  *comment Expertise doubles proficiency, it doesn't stack a second one on top: if check_add_prof_bonus already
+  *comment added one prof_bonus above (roll_skill_check, or any future caller that sets it), only one more is
+  *comment needed to reach double. An old-style caller that never sets the flag (check_stat/check_skill set by
+  *comment hand, no proficiency added yet) still needs the full double added here, same as always. Getting this
+  *comment wrong reads as +1x prof from the flag, then +2x more here = triple proficiency on an expertise skill.
+  *if ((character_class = "rogue") and ((check_skill = rogue_expertise_1) or (check_skill = rogue_expertise_2)))
+    *if (check_add_prof_bonus)
+      *set check_mod + prof_bonus
+    *else
+      *set check_mod + (prof_bonus * 2)
+
+  *if (fatigue_stage = "Exhausted")
+    *set check_mod - 1
+  *if (fatigue_stage = "Collapsing")
+    *set check_mod - 2
+
+  *if (routine_stage = "Restless")
+    *set check_mod - 1
+  *if (routine_stage = "Rutted")
+    *set check_mod - 2
+
+  *comment Grime is a social penalty only: it never touches a STR, DEX or spellcasting roll.
+  *if (check_stat = "cha")
+    *if (hygiene_stage = "Foul")
+      *set check_mod - 2
+    *elseif (hygiene_stage = "Grubby")
+      *set check_mod - 1
+
+  *comment Food, drink, unique and sleep buffs no longer add to the roll here: they raise the ability
+  *comment SCORE (recalculate_buff_stats), so they already sit inside check_mod via the modifier.
+
+  *set check_total (d20_roll + check_mod)
+  *if (guidance_active)
+    *set check_total + guidance_roll
+
+  *set roll_had_advantage ((advantage) and (not(disadvantage)))
+  *set roll_locked true
+  *set locked_page_id page_id
+  *set locked_guidance_roll guidance_roll
+  *set locked_adv_label adv_label
+
+*if (d20_roll = 20)
+  *set is_nat_20 true
+  *set is_nat_1 false
+  *set check_success true
+  [b][🎲 D20 Check: ${check_skill} (DC ${check_dc}) | Natural 20!${adv_label} Total: ${check_total} — CRITICAL SUCCESS][/b]
+  *line_break
+  *set advantage false
+  *set disadvantage false
+  *set guidance_active false
+  *set check_add_prof_bonus false
+  *set save_vs "none"
+  *return
+
+*if (d20_roll = 1)
+  *set is_nat_1 true
+  *set is_nat_20 false
+  *set check_success false
+  [b][🎲 D20 Check: ${check_skill} (DC ${check_dc}) | Natural 1!${adv_label} Total: ${check_total} — CRITICAL FAILURE][/b]
+  *line_break
+  *set advantage false
+  *set disadvantage false
+  *set guidance_active false
+  *set check_add_prof_bonus false
+  *set save_vs "none"
+  *return
+
+*set is_nat_20 false
+*set is_nat_1 false
+
+*if (check_total >= check_dc)
+  *set check_success true
+  *if (check_mod >= 0)
+    [b][🎲 D20 Check: ${check_skill} (DC ${check_dc}) | Roll: ${d20_roll} +${check_mod}${adv_label} = ${check_total} — SUCCESS][/b]
+  *if (check_mod < 0)
+    [b][🎲 D20 Check: ${check_skill} (DC ${check_dc}) | Roll: ${d20_roll} ${check_mod}${adv_label} = ${check_total} — SUCCESS][/b]
+*if (check_total < check_dc)
+  *set check_success false
+  *if (check_mod >= 0)
+    [b][🎲 D20 Check: ${check_skill} (DC ${check_dc}) | Roll: ${d20_roll} +${check_mod}${adv_label} = ${check_total} — FAILURE][/b]
+  *if (check_mod < 0)
+    [b][🎲 D20 Check: ${check_skill} (DC ${check_dc}) | Roll: ${d20_roll} ${check_mod}${adv_label} = ${check_total} — FAILURE][/b]
+*line_break
+*set advantage false
+*set disadvantage false
+*set guidance_active false
+*set check_add_prof_bonus false
+*set save_vs "none"
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SKILL LOOKUP -- 5e's fixed skill-to-ability mapping, plus a display name for the D20 Check banner.
+*comment *gosub skill_lookup "<skill id>", then read skill_lookup_ability / skill_lookup_display. The ability
+*comment is fixed per skill by RAW, not something a caller picks -- adding a new skill only ever means adding
+*comment one *create (above) and one branch here, never touching roll_skill_check or roll_d20_check themselves.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label skill_lookup
+*params skl_id
+*set skill_lookup_ability ""
+*set skill_lookup_display ""
+*if (skl_id = "acrobatics")
+  *set skill_lookup_ability "dex"
+  *set skill_lookup_display "Acrobatics"
+*if (skl_id = "animal_handling")
+  *set skill_lookup_ability "wis"
+  *set skill_lookup_display "Animal Handling"
+*if (skl_id = "arcana")
+  *set skill_lookup_ability "int"
+  *set skill_lookup_display "Arcana"
+*if (skl_id = "athletics")
+  *set skill_lookup_ability "str"
+  *set skill_lookup_display "Athletics"
+*if (skl_id = "deception")
+  *set skill_lookup_ability "cha"
+  *set skill_lookup_display "Deception"
+*if (skl_id = "history")
+  *set skill_lookup_ability "int"
+  *set skill_lookup_display "History"
+*if (skl_id = "insight")
+  *set skill_lookup_ability "wis"
+  *set skill_lookup_display "Insight"
+*if (skl_id = "intimidation")
+  *set skill_lookup_ability "cha"
+  *set skill_lookup_display "Intimidation"
+*if (skl_id = "investigation")
+  *set skill_lookup_ability "int"
+  *set skill_lookup_display "Investigation"
+*if (skl_id = "medicine")
+  *set skill_lookup_ability "wis"
+  *set skill_lookup_display "Medicine"
+*if (skl_id = "nature")
+  *set skill_lookup_ability "int"
+  *set skill_lookup_display "Nature"
+*if (skl_id = "perception")
+  *set skill_lookup_ability "wis"
+  *set skill_lookup_display "Perception"
+*if (skl_id = "performance")
+  *set skill_lookup_ability "cha"
+  *set skill_lookup_display "Performance"
+*if (skl_id = "persuasion")
+  *set skill_lookup_ability "cha"
+  *set skill_lookup_display "Persuasion"
+*if (skl_id = "religion")
+  *set skill_lookup_ability "int"
+  *set skill_lookup_display "Religion"
+*if (skl_id = "sleight_of_hand")
+  *set skill_lookup_ability "dex"
+  *set skill_lookup_display "Sleight of Hand"
+*if (skl_id = "stealth")
+  *set skill_lookup_ability "dex"
+  *set skill_lookup_display "Stealth"
+*if (skl_id = "survival")
+  *set skill_lookup_ability "wis"
+  *set skill_lookup_display "Survival"
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SKILL CHECK: up to 3 candidate skills, best of them wins
+*comment "Give me an Investigation or an Insight check, whichever is higher" -- computes each offered skill's
+*comment full modifier (ability mod, plus proficiency if trained in THAT skill), picks the best one, rolls ONE
+*comment d20 against it, and delegates to roll_d20_check for everything else (advantage, disadvantage, guidance,
+*comment fatigue, hygiene, armor-nonprof). Not two rolls kept-the-better -- one roll, the better bonus. An
+*comment untrained character's better ABILITY still fairly beats a worse ability they happen to be trained in,
+*comment same as a DM would allow at the table.
+*comment Call shape: *gosub_scene dice_engine roll_skill_check <DC> "<skill 1>" "<ability override 1 or "">"
+*comment "<skill 2 or "">" "<override 2>" "<skill 3 or "">" "<override 3>" -- always exactly 7 args. An empty
+*comment skill slot ("" "") isn't offered. An empty override uses that skill's own normal ability from
+*comment skill_lookup; a non-empty override ("str"/"dex"/"con"/"int"/"wis"/"cha") forces that ability instead,
+*comment while STILL reading proficiency and the display name from the named skill -- for a check this campaign
+*comment lets resolve through more than one ability (Intimidation through physical menace OR force of
+*comment personality: two slots, same skill both times, "str" then ""), the same idea as a Finesse weapon
+*comment letting a melee attack use STR or DEX. Offer the same skill twice, once per ability, rather than
+*comment inventing a new skill id per pairing -- skill_lookup itself never needs a new entry for this.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label roll_skill_check
+*params rsc_dc rsc_skill_1 rsc_override_1 rsc_skill_2 rsc_override_2 rsc_skill_3 rsc_override_3
+*temp rsc_have_best false
+*temp rsc_best_bonus 0
+*temp rsc_best_skill ""
+*temp rsc_best_ability ""
+*temp rsc_best_display ""
+*temp rsc_best_prof false
+*temp rsc_i 1
+*temp rsc_candidate ""
+*temp rsc_override ""
+*temp rsc_ability ""
+*temp rsc_ability_ok false
+*temp rsc_mod 0
+*temp rsc_prof false
+*label roll_skill_check_loop
+*if (rsc_i = 1)
+  *set rsc_candidate rsc_skill_1
+  *set rsc_override rsc_override_1
+*if (rsc_i = 2)
+  *set rsc_candidate rsc_skill_2
+  *set rsc_override rsc_override_2
+*if (rsc_i = 3)
+  *set rsc_candidate rsc_skill_3
+  *set rsc_override rsc_override_3
+*if (not(rsc_candidate = ""))
+  *gosub skill_lookup rsc_candidate
+  *set rsc_ability skill_lookup_ability
+  *if (not(rsc_override = ""))
+    *set rsc_ability rsc_override
+  *set rsc_mod 0
+  *if (rsc_ability = "str")
+    *set rsc_mod str_mod
+  *if (rsc_ability = "dex")
+    *set rsc_mod dex_mod
+  *if (rsc_ability = "con")
+    *set rsc_mod con_mod
+  *if (rsc_ability = "int")
+    *set rsc_mod int_mod
+  *if (rsc_ability = "wis")
+    *set rsc_mod wis_mod
+  *if (rsc_ability = "cha")
+    *set rsc_mod cha_mod
+  *set rsc_prof {("skill_" & rsc_candidate)}
+  *if (rsc_prof)
+    *set rsc_mod + prof_bonus
+  *comment Fail loudly instead of rolling garbage. A typo'd ability override ("st") sets
+  *comment rsc_ability to something none of the six branches above match, so rsc_mod stays 0 and
+  *comment rsc_best_ability reaches roll_d20_check as a value it has no branch for. check_mod is
+  *comment *create'd once and only ever assigned inside those six branches, never reset per roll, so
+  *comment the roll would silently reuse whatever the PREVIOUS check left in it -- a plausible-looking
+  *comment wrong roll with no crash, and an empty skill name in the banner. A bad skill ID is already
+  *comment caught louder and earlier by the engine ("Non-existent variable 'skill_<id>'") when the
+  *comment dynamic rsc_prof lookup below resolves; this covers the override path, which nothing else does.
+  *comment One operator per *if, as everywhere else in this file -- chained "and" inside a single
+  *comment paren group is a parse error in ChoiceScript.
+  *if (rsc_ability = "str")
+    *set rsc_ability_ok true
+  *if (rsc_ability = "dex")
+    *set rsc_ability_ok true
+  *if (rsc_ability = "con")
+    *set rsc_ability_ok true
+  *if (rsc_ability = "int")
+    *set rsc_ability_ok true
+  *if (rsc_ability = "wis")
+    *set rsc_ability_ok true
+  *if (rsc_ability = "cha")
+    *set rsc_ability_ok true
+  *if (not(rsc_ability_ok))
+    *bug "roll_skill_check: ability override '${rsc_override}' did not resolve to a real ability (got '${rsc_ability}') -- check the override at the call site"
+  *if ((not(rsc_have_best)) or (rsc_mod > rsc_best_bonus))
+    *set rsc_have_best true
+    *set rsc_best_bonus rsc_mod
+    *set rsc_best_skill rsc_candidate
+    *set rsc_best_ability rsc_ability
+    *set rsc_best_display skill_lookup_display
+    *set rsc_best_prof rsc_prof
+*set rsc_i + 1
+*if (rsc_i <= 3)
+  *goto roll_skill_check_loop
+*comment The loop above only runs for a non-empty skill slot, so a caller who passed "" in all three
+*comment never reaches the per-slot check and would otherwise fall through with check_stat set to "".
+*if (rsc_best_ability = "")
+  *bug "roll_skill_check: no skill was offered -- all three skill slots were empty"
+*set check_stat rsc_best_ability
+*set check_skill rsc_best_display
+*set check_dc rsc_dc
+*set check_add_prof_bonus rsc_best_prof
+*gosub roll_d20_check
+*return

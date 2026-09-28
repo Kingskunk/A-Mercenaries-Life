@@ -1,0 +1,188 @@
+*comment ══════════════════════════════════════════════════════════════
+*comment COMBAT SPELL/ABILITY RESOLUTION (split out of startup.txt, 2026-09-28)
+*comment The dice/effect resolution for every named spell a player casts in combat (Magic Missile, Hex, Bane,
+*comment Armor of Agathys, False Life, Healing Word, Dissonant Whispers) -- split out first among startup.txt's
+*comment subroutines because it's the category actively growing (every new spell adds another label here), unlike
+*comment startup.txt's *create preamble, which can never move (ChoiceScript hardcodes *create to startup.txt --
+*comment see GAMEPLAY_MECHANICS_RULES.md). Attack-roll cantrips (Fire Bolt, Ray of Frost, Eldritch Blast, Chill
+*comment Touch, Vicious Mockery, Shocking Grasp) are NOT here -- they resolve inline in combat.txt through
+*comment roll_d20_check (dice_engine.txt)/resolve_player_hit (combat_dice.txt) and combat_prose.txt's flavor_spell_* text, since they
+*comment don't need a dedicated effect label of their own the way a save-based or buff spell does.
+*comment
+*comment A *gosub_scene-only library scene, same treatment as combat.txt/combat_prose.txt/death.txt/equipment.txt:
+*comment NOT in *scene_list, told to compile.js by its own verifyFileName("combat_spells.txt") line instead, or a
+*comment compiled build silently drops it and only fails at runtime the first time a spell is cast.
+*comment
+*comment Calling convention: combat.txt reaches every label here with *gosub_scene combat_spells <label> (these
+*comment were already *gosub_scene startup <label> before the split, since combat.txt and startup.txt were
+*comment already different files -- only the scene name changed, not the verb). Labels here that still need
+*comment combat_dice.txt's own primitives (apply_outgoing_damage_resist_vuln, resolve_enemy_save) reach back the
+*comment same way, *gosub_scene combat_dice <label> -- *temp doesn't cross a *gosub_scene boundary in either direction, but
+*comment every value these labels pass or receive is already a *create'd global (combat_player_dmg_dealt,
+*comment combat_cast_result, check_success, etc.), so this split needed no new globals the way combat_prose.txt's
+*comment fsh/fsm/fwh/fwm/fdh did.
+*comment ══════════════════════════════════════════════════════════════
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPELL: MAGIC MISSILE (3d4 + 3 force damage)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_magic_missile
+*if (not(combat_magic_missile_locked)) or (not(locked_combat_magic_missile_page_id = page_id))
+  *set wizard_spell_slots - 1
+  *comment Always Force damage, RAW -- no per-caster variation, so it's set
+  *comment here rather than at combat.txt's call site.
+  *set combat_player_dmg_type "force"
+  *temp mm_dart_1 0
+  *temp mm_dart_2 0
+  *temp mm_dart_3 0
+  *rand mm_dart_1 1 4
+  *rand mm_dart_2 1 4
+  *rand mm_dart_3 1 4
+  *set combat_player_dmg_dealt (((mm_dart_1 + mm_dart_2) + mm_dart_3) + 3)
+  *comment No Hex here, deliberately: the darts auto-hit with no attack roll (RAW, and per Sage Advice), so they
+  *comment don't satisfy Hex's "hit with an attack" trigger -- same reasoning as the save-based spells.
+  *set combat_player_dmg_roll_banner "[b][🎲 Magic Missile: ${mm_dart_1}+${mm_dart_2}+${mm_dart_3} +3 = ${combat_player_dmg_dealt}][/b]"
+  *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
+  *set combat_enemy_hp - combat_player_dmg_dealt
+  *if (combat_enemy_hp < 0)
+    *set combat_enemy_hp 0
+  *set combat_magic_missile_locked true
+  *set locked_combat_magic_missile_page_id page_id
+${combat_player_dmg_roll_banner}
+*line_break
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPELL: HEX (+1d6 necrotic damage on hits)
+*comment RAW: the bonus only fires on an attack roll that hits, never on a save (Vicious Mockery, Dissonant
+*comment Whispers) or an auto-hit with no attack roll (Magic Missile) -- see resolve_player_hit's own header
+*comment comment for how each caller declares which one it is.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_cast_hex
+*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
+  *if ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))
+    *set hexblood_hex_used true
+  *else
+    *set warlock_spell_slots - 1
+  *set hex_active true
+  *set combat_cast_locked true
+  *set locked_combat_cast_page_id page_id
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPELL: BANE (Bard, 1st level -- wired into the bard_spell/bard_spell_2 pool, 2026-09-27)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment Up to three living enemies, front-to-back (the same order everything else in this engine already
+*comment fights a group down in -- fight_pick_target, fight_check_all_dead, the initiative roll), each make a
+*comment Charisma save against the player's own spell_save_dc via resolve_enemy_save above -- called directly
+*comment against each target's own numbered slot (lock indices 1-6) rather than the "active target" scratch
+*comment copy, since Bane's targets have no need to be the current target at all.
+*comment Whichever fails is Baned for 10 rounds (1 minute at 6 seconds/round): combat_round already advances
+*comment reliably once per round with its own replay lock (combat_next_turn, combat.txt), so bane_expires_round =
+*comment combat_round + 9 covers exactly ten rounds inclusive of the casting round. This is a flat, deliberate
+*comment stand-in for concentration -- the designer's explicit call (2026-09-27): nothing in this engine tracks
+*comment concentration for any spell, and Bane isn't getting an exception. resolve_enemy_attack and resolve_enemy_
+*comment save both already check it themselves (see their own Bane comments), so nothing else needs to read this
+*comment label's own output.
+*comment Spell-slot cost lives here, inside the same guarded block as everything else (bard_spell_slots - 1) --
+*comment same reasoning as resolve_dissonant_whispers/resolve_cast_hex: putting it in the bare *choice body
+*comment instead would let a Stats-screen replay double-spend it.
+*label resolve_cast_bane
+*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
+  *set bard_spell_slots - 1
+  *temp rcb_targeted 0
+  *temp rcb_i 1
+  *label resolve_cast_bane_loop
+  *if (rcb_i <= combat_enemy_count) and (rcb_targeted < 3)
+    *temp rcb_p (("combat_enemy" & rcb_i) & "_")
+    *temp rcb_hp {(rcb_p & "hp")}
+    *if (rcb_hp > 0)
+      *set rcb_targeted + 1
+      *gosub_scene combat_dice resolve_enemy_save rcb_p "charisma" "Charisma" rcb_i
+      *if (check_success)
+        *set {(rcb_p & "bane_expires_round")} (combat_round + 9)
+    *set rcb_i + 1
+    *goto resolve_cast_bane_loop
+  *set combat_cast_locked true
+  *set locked_combat_cast_page_id page_id
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPELL: ARMOR OF AGATHYS (5 Temp HP + 5 Cold Retaliation)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_cast_agathys
+*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
+  *set warlock_spell_slots - 1
+  *set temp_hp 5
+  *set agathys_active true
+  *set combat_cast_locked true
+  *set locked_combat_cast_page_id page_id
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPELL: FALSE LIFE (1d4 + 4 Temp HP)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_cast_false_life
+*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
+  *if (character_class = "wizard")
+    *set wizard_spell_slots - 1
+  *else
+    *set warlock_spell_slots - 1
+  *temp fl_roll 0
+  *rand fl_roll 1 4
+  *set combat_cast_result (fl_roll + 4)
+  *set temp_hp combat_cast_result
+  *set combat_cast_locked true
+  *set locked_combat_cast_page_id page_id
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPELL: HEALING WORD (1d4 + CHA mod healing)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_cast_healing_word
+*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
+  *set bard_spell_slots - 1
+  *temp hw_roll 0
+  *rand hw_roll 1 4
+  *set combat_cast_result (hw_roll + cha_mod)
+  *if (combat_cast_result < 1)
+    *set combat_cast_result 1
+  *set hp_current + combat_cast_result
+  *if (hp_current > hp_max)
+    *set hp_current hp_max
+  *set combat_cast_locked true
+  *set locked_combat_cast_page_id page_id
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPELL: DISSONANT WHISPERS (3d6 psychic, save for half)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_dissonant_whispers
+*if (not(combat_dissonant_whispers_locked)) or (not(locked_combat_dissonant_whispers_page_id = page_id))
+  *set bard_spell_slots - 1
+  *comment Always Psychic damage, RAW -- no per-caster variation, so it's set
+  *comment here rather than at combat.txt's call site.
+  *set combat_player_dmg_type "psychic"
+  *temp dw_d1 0
+  *temp dw_d2 0
+  *temp dw_d3 0
+  *rand dw_d1 1 6
+  *rand dw_d2 1 6
+  *rand dw_d3 1 6
+  *temp dw_total ((dw_d1 + dw_d2) + dw_d3)
+  *if (check_success)
+    *set combat_player_dmg_dealt dw_total
+    *set combat_player_dmg_roll_banner "[b][🎲 Dissonant Whispers: ${dw_d1}+${dw_d2}+${dw_d3} = ${dw_total}][/b]"
+  *else
+    *set combat_player_dmg_dealt ((dw_total - (dw_total modulo 2)) / 2)
+    *set combat_player_dmg_roll_banner "[b][🎲 Dissonant Whispers: ${dw_d1}+${dw_d2}+${dw_d3} = ${dw_total} — Halved (Saved): ${combat_player_dmg_dealt}][/b]"
+  *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
+  *set combat_enemy_hp - combat_player_dmg_dealt
+  *if (combat_enemy_hp < 0)
+    *set combat_enemy_hp 0
+  *set combat_dissonant_whispers_locked true
+  *set locked_combat_dissonant_whispers_page_id page_id
+${combat_player_dmg_roll_banner}
+*line_break
+*return
+

@@ -1,0 +1,214 @@
+*comment ══════════════════════════════════════════════════════════════
+*comment CHARACTER STAT/SKILL ENGINE (split out of startup.txt, 2026-09-28)
+*comment update_dnd_stats (the full D&D 5e stat/modifier/proficiency-bonus/AC/HP/spell-save-DC derivation, run at
+*comment character creation and whenever a preset or stat override needs to re-derive everything downstream of a
+*comment raw ability score) and its three skill-grant subroutines (apply_background_skills, apply_class_skills,
+*comment apply_race_skills) plus recalculate_con_mod (the CON-only path, used when only CON changes and a full
+*comment re-derive would be wasteful). Picked as the second category to split off, after combat_spells.txt,
+*comment because it's the most self-contained of what's left -- only 3 files outside startup.txt ever called into
+*comment it (combat.txt, company_intake.txt, dawn_trial.txt), versus 7-10 for the other candidates (class
+*comment resources/rest/leveling, the economy primitives).
+*comment
+*comment score_to_mod (the bare ability-score-to-modifier primitive, floor((score-10)/2)) deliberately did NOT
+*comment move here even though update_dnd_stats/recalculate_con_mod call it constantly -- it's a lower-level,
+*comment more widely shared primitive than any one category's own scope (also called from combat_dice.txt's
+*comment resolve_enemy_save, character_buffs.txt's refresh_boon_flags, and from combat.txt directly), so it stays
+*comment in startup.txt as shared math, reached from here with *gosub_scene startup score_to_mod.
+*comment refresh_boon_flags itself, also called from update_dnd_stats, has since moved to character_buffs.txt
+*comment (2026-09-28) -- reached from here with *gosub_scene character_buffs refresh_boon_flags.
+*comment refresh_class_resource_maxs, also called from update_dnd_stats, has since moved to
+*comment character_progression.txt (2026-09-28) -- reached from here with *gosub_scene character_progression
+*comment refresh_class_resource_maxs.
+*comment
+*comment A *gosub_scene-only library scene, same treatment as combat.txt/combat_prose.txt/combat_spells.txt/
+*comment death.txt/equipment.txt: NOT in *scene_list, told to compile.js by its own
+*comment verifyFileName("character_stats.txt") line instead, or a compiled build silently drops it and only fails
+*comment at runtime the first time chargen (or a dev preset) actually runs.
+*comment
+*comment Calling convention: every caller -- dev_hub.txt's own dev-menu presets, character_progression.txt's
+*comment do_level_up, plus company_intake.txt and dawn_trial.txt -- reaches update_dnd_stats with *gosub_scene
+*comment character_stats update_dnd_stats. All were already cross-file calls in company_intake.txt/dawn_trial.txt's
+*comment case (just a scene-name change); the dev-menu/do_level_up sites were same-file *gosub, inside startup.txt
+*comment itself at the time this split happened, and needed the verb changed too -- both have since moved to their
+*comment own files as well. No new *create'd globals were needed for this split -- every
+*comment *temp this file's labels declare stays fully self-contained within them (checked directly: none of
+*comment eff_str/eff_dex/eff_con/eff_int/eff_wis/eff_cha/old_hp_max/uds_casting_mod appear anywhere outside this
+*comment file), unlike combat_prose.txt's fsh/fsm/fwh/fwm/fdh.
+*comment ══════════════════════════════════════════════════════════════
+
+*comment D&D 5E STAT & MODIFIER ENGINE
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label update_dnd_stats
+*comment Modifiers come from the scores, which already include any active boon (see the boon comment
+*comment beside the buff_<stat>_bonus creates), so a meal that lifts an odd score onto the next even
+*comment number raises the modifier for its duration.
+*temp eff_str strength
+*temp eff_dex dexterity
+*temp eff_int intelligence
+*temp eff_wis wisdom
+*temp eff_cha charisma
+*comment Each hand-copied ladder below used to be ~15 lines duplicating score_to_mod's own math (2026-09-27,
+*comment see its header comment) -- now one *gosub each, so there is exactly one place this formula can go
+*comment wrong instead of six, and uncapping it (or ever changing it again) needs no changes here.
+*gosub_scene startup score_to_mod eff_str
+*set str_mod sm_mod
+*set str_mod_str sm_mod_str
+*gosub_scene startup score_to_mod eff_dex
+*set dex_mod sm_mod
+*set dex_mod_str sm_mod_str
+*gosub recalculate_con_mod
+*gosub_scene startup score_to_mod eff_int
+*set int_mod sm_mod
+*set int_mod_str sm_mod_str
+*gosub_scene startup score_to_mod eff_wis
+*set wis_mod sm_mod
+*set wis_mod_str sm_mod_str
+*gosub_scene startup score_to_mod eff_cha
+*set cha_mod sm_mod
+*set cha_mod_str sm_mod_str
+
+*gosub_scene character_buffs refresh_boon_flags
+*comment Proficiency bonus from level: +2 through level 4, +3 at 5-8, +4 at 9-12, and so on. The engine has no floor, and the plain
+*comment division or round() give the wrong numbers, so the remainder is taken off first and the division is exact. Rogue Expertise,
+*comment the dossier's spell DC and attack, and every weapon attack / attack-roll cantrip (roll_d20_check's own
+*comment check_add_prof_bonus flag, set by combat.txt) read it -- a player is always proficient with their own
+*comment weapon and known spells. General skill checks outside combat don't add it: that needs real per-skill
+*comment proficiency tracking, not a blanket add, so they're deliberately untouched for now.
+*set prof_bonus (2 + (((character_level - 1) - ((character_level - 1) modulo 4)) / 4))
+*comment Spell save DC (2026-09-27): 8 + proficiency + the caster's own spellcasting ability mod -- INT for
+*comment Wizard, CHA for Warlock/Bard, no bonus for a class with no spellcasting stat (matches the dossier's own
+*comment ab_spell_dc, now the one durable place this formula lives instead of two).
+*temp uds_casting_mod 0
+*if (character_class = "wizard")
+  *set uds_casting_mod int_mod
+*if ((character_class = "warlock") or (character_class = "bard"))
+  *set uds_casting_mod cha_mod
+*set spell_save_dc ((8 + prof_bonus) + uds_casting_mod)
+*comment House rule (solo campaign): every level gives the MAXIMUM of the hit die, so max HP is character_level * (die + CON modifier).
+*comment Level 1 is unchanged. It is derived, so it needs no replay lock, and a CON change applies to every level, as in 5e. The
+*comment else branch moves current HP by the change in max HP, so a level-up (and a CON buff) raises current HP by the same amount.
+*if (not(loadout_initialized))
+  *set hp_max (character_level * (hit_die_max + con_mod))
+  *set hp_current hp_max
+*else
+  *temp old_hp_max hp_max
+  *set hp_max (character_level * (hit_die_max + con_mod))
+  *set hp_current (hp_current + (hp_max - old_hp_max))
+  *if (hp_current > hp_max)
+    *set hp_current hp_max
+  *if (hp_current < 1)
+    *set hp_current 1
+
+*if (not(loadout_initialized))
+  *set starting_weapon weapon
+  *set starting_weapon_desc weapon_desc
+  *set starting_weapon_damage weapon_damage
+  *set starting_weapon_damage_type weapon_damage_type
+  *set starting_weapon_type weapon_type
+  *set starting_weapon_hands weapon_hands
+  *set equipped_weapon_id "starting"
+  *set starting_armor armor
+  *set starting_armor_desc armor_desc
+  *set starting_armor_type armor_type
+  *set equipped_armor_id "starting"
+  *set shield_equipped has_shield
+  *set base_constitution constitution
+  *set base_strength strength
+  *set base_dexterity dexterity
+  *set base_intelligence intelligence
+  *set base_wisdom wisdom
+  *set base_charisma charisma
+  *set shield_grandfathered has_shield
+  *set loadout_initialized true
+*gosub_scene equipment apply_all_loadouts
+*gosub_scene character_progression refresh_class_resource_maxs
+*gosub apply_background_skills
+*gosub apply_class_skills
+*gosub apply_race_skills
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment RACE SKILL PROFICIENCIES
+*comment Unlike the background/class grants above, this one IS straight RAW, not a house-rule fixed pick -- most
+*comment races grant no skill at all. Elf's Keen Senses gives Perception; Half-Orc's Menacing gives Intimidation.
+*comment Dwarf, Halfling, Human, Tiefling and this game's Hexblood template all grant real traits (Darkvision,
+*comment tool proficiencies, resistances, cantrip access) but none of them are a skill, so none of them get a
+*comment branch here -- that's accurate, not an omission.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label apply_race_skills
+*if (race = "elf")
+  *set skill_perception true
+*if (race = "half_orc")
+  *set skill_intimidation true
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment CLASS SKILL PROFICIENCIES
+*comment Fixed, not chosen from a list, same house rule as the background grant below -- and independent of it:
+*comment a class's list doesn't try to dodge overlap with any particular origin, since class and background are
+*comment picked separately and a skill granted twice by two sources is just proficient once, harmlessly. Count
+*comment matches 5e's own per-class total (2 for most, 3 for Bard/Ranger, 4 for Rogue) even though nothing here
+*comment is chosen from RAW's actual per-class list -- picked instead for fit with this game's own classes.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label apply_class_skills
+*if (character_class = "fighter")
+  *set skill_athletics true
+  *set skill_perception true
+*if (character_class = "barbarian")
+  *set skill_athletics true
+  *set skill_intimidation true
+*if (character_class = "rogue")
+  *set skill_stealth true
+  *set skill_sleight_of_hand true
+  *set skill_perception true
+  *set skill_deception true
+*if (character_class = "ranger")
+  *set skill_survival true
+  *set skill_perception true
+  *set skill_nature true
+*if (character_class = "wizard")
+  *set skill_arcana true
+  *set skill_investigation true
+*if (character_class = "warlock")
+  *set skill_arcana true
+  *set skill_religion true
+*if (character_class = "bard")
+  *set skill_persuasion true
+  *set skill_performance true
+  *set skill_deception true
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment BACKGROUND SKILL PROFICIENCIES
+*comment Fixed, not chosen -- this campaign's own house rule, not RAW's "pick 2 from a list". Called from
+*comment update_dnd_stats, so every path that sets origin (real chargen, every dev preset) grants the same
+*comment two skills for free, with nothing to duplicate at each of those call sites. A plain grant, not a lock:
+*comment setting an already-true flag true again is harmless, so this needs no replay guard.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label apply_background_skills
+*if (origin = "ruined")
+  *comment Ashbrook Survivor: fled the village's burning, hunted after by the Bailiff's hounds.
+  *set skill_survival true
+  *set skill_athletics true
+*if (origin = "outlaw")
+  *comment Port Valen Outlaw: "a quick-fingered rogue" on the run from a botched heist.
+  *set skill_stealth true
+  *set skill_sleight_of_hand true
+*if (origin = "disgraced")
+  *comment Disgraced Scion: a fallen noble hiding a ruined name under an alias.
+  *set skill_history true
+  *set skill_persuasion true
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment RECALCULATE CON MODIFIER
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label recalculate_con_mod
+*comment Same consolidation as update_dnd_stats' other five (2026-09-27) -- was its own hand-copied capped
+*comment ladder, now one *gosub, so score_to_mod is the only place this math lives.
+*temp eff_con constitution
+*gosub_scene startup score_to_mod eff_con
+*set con_mod sm_mod
+*set con_mod_str sm_mod_str
+*return
+
