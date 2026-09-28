@@ -390,6 +390,27 @@ button#statSidebar .turnRow,
   color: rgba(0,0,0,0.5);
   margin-left: 0.3em;
 }
+#statSidebar .alertRow {                      /* derived "who's next / who's in reach" rows, above the turn list */
+  font-size: 0.92em;
+  padding: 2px 0;
+}
+#statSidebar .alertReach {                    /* enemies at range 0 -- the ones actually hitting you this round */
+  color: #a12b2b;
+  font-weight: 600;
+}
+#statSidebar .turnMain {                      /* a turn row's first cell: name line, plus an optional sub-line */
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+#statSidebar .turnSub {                       /* "fighting <enemy>" under an ally's name. Same visual idiom as
+                                                .timePeriod (smaller, italic, dim), but without its standalone
+                                                margins, and wrapping freely since the panel is fixed-width. */
+  font-size: 0.88em;
+  font-style: italic;
+  color: rgba(0,0,0,0.55);
+  overflow-wrap: anywhere;
+}
 #statSidebar .turnRowPicked .enemyName { color: #7a3e1d; }   /* picked-target row already recolors the name; keep it */
 @media (max-width: 960px) {
   #statSidebar { display: none !important; }
@@ -467,12 +488,17 @@ button#statSidebar .turnRow,
           var cPicked = kind === "enemy" && !cDead && chosen === slot;
           // Enemy ranges are your own distance to that enemy. Ally ranges are that ally's distance to
           // WHATEVER ENEMY IT IS CURRENTLY FIGHTING, not to you -- the engine has no player-to-ally
-          // distance (see combat.txt), so the tag is titled differently for each so it isn't read as
-          // one it doesn't have.
+          // distance (see combat.txt). An ally therefore gets a different tier WORD (allyTierName, so tier 0
+          // reads "in melee" rather than the misleading "Engaged") and a dim sub-line naming who it is
+          // actually locked up with, rather than leaving that to a hover tooltip nobody is obliged to find.
           var cRangeTag = cDead ? "" : " <span class=\"rangeTag\" title=\"" +
-            (kind === "ally" ? "Distance from its target" : "Distance from you") + "\">(" +
-            rangeTierName(Number(s[pfx + slot + "_range"]) || 0) + ")</span>";
-          var cNameHtml = "<span class=\"" + (kind === "enemy" ? "enemyName" : "allyName") + "\">" + cName + "</span>" + cRangeTag;
+            (kind === "ally" ? "Distance from its own target" : "Distance from you") + "\">(" +
+            (kind === "ally" ? allyTierName(s[pfx + slot + "_range"])
+                             : rangeTierName(Number(s[pfx + slot + "_range"]) || 0)) + ")</span>";
+          var cSub = kind === "ally" ? allyTargetLine(s, slot) : "";
+          var cNameHtml = "<span class=\"turnMain\"><span><span class=\"" +
+            (kind === "enemy" ? "enemyName" : "allyName") + "\">" + esc(cName) + "</span>" + cRangeTag +
+            "</span>" + (cSub ? "<span class=\"turnSub\">" + cSub + "</span>" : "") + "</span>";
           if (kind === "enemy" && !cDead) {
             rows += "<button type=\"button\" class=\"statRow turnRow" + (cPicked ? " turnRowPicked" : "") +
               "\" data-target=\"" + slot + "\"" + combatantAttr(kind, slot) + "><span>" + cNameHtml + "</span><span>" + cHp + "/" + cMax + "</span></button>";
@@ -484,6 +510,45 @@ button#statSidebar .turnRow,
           }
         }
       }
+      // Derived awareness rows (2026-09-28): the list below already prints every combatant's range and
+      // already prints initiative order, but never pairs the two -- and order alone says nothing about who
+      // is standing in your reach, which is the question a player actually asks mid-round ("is the one
+      // acting next already next to me?"). Both facts are already in stats, so this stays read-only like the
+      // rest of renderStatSidebar: it formats what the game wrote and derives no rule of its own.
+      var alertHtml = "", engaged = [], nextAfter = null, firstAny = null, sawPlayer = false;
+      for (var ai = 1; ai <= count; ai++) {
+        var akind = s["combat_turn_kind_" + ai], aslot = Number(s["combat_turn_slot_" + ai]) || 0;
+        if (akind === "player") { sawPlayer = true; continue; }
+        if (akind !== "enemy" && akind !== "ally") continue;
+        var apfx = akind === "enemy" ? "combat_enemy" : "combat_ally";
+        var arange = Number(s[apfx + aslot + "_range"]) || 0;
+        var alive = akind === "ally" || (Number(s[apfx + aslot + "_hp"]) || 0) > 0;   // allies carry no downed state
+        if (!alive) continue;
+        if (akind === "enemy" && arange <= 0) engaged.push(fmt(s["combat_enemy" + aslot + "_name"]) || "Enemy");
+        var who = { name: fmt(s[apfx + aslot + "_name"]) || (akind === "enemy" ? "Enemy" : "Ally"),
+                    enemy: akind === "enemy", tier: rangeTierName(arange), tierNum: arange, slot: aslot };
+        if (!firstAny) firstAny = who;
+        if (sawPlayer && !nextAfter) nextAfter = who;
+      }
+      // The player is always somewhere in the order, so "who acts next" is the first combatant after their
+      // own row; if they happen to be last, fall back to the round's first so the row is never blank.
+      var upcoming = nextAfter || firstAny;
+      if (upcoming) {
+        // Same disambiguation the turn rows use: an ally's tier is about ITS target, not about you, so it
+        // gets the ally wording plus the sub-line naming who. Only an enemy gets a bare "(tier)".
+        var atag = "<span class=\"rangeTag\" title=\"" +
+          (upcoming.enemy ? "Distance from you" : "Distance from its own target") + "\">(" +
+          (upcoming.enemy ? esc(upcoming.tier) : allyTierName(upcoming.tierNum)) + ")</span>";
+        var asub = upcoming.enemy ? "" : allyTargetLine(s, upcoming.slot);
+        alertHtml += "<div class=\"statRow alertRow\"><span>Acting next</span><span class=\"turnMain\"><span><span class=\"" +
+          (upcoming.enemy ? "enemyName" : "allyName") + "\">" + esc(upcoming.name) + "</span> " + atag +
+          "</span>" + (asub ? "<span class=\"turnSub\">" + asub + "</span>" : "") + "</span></div>";
+      }
+      if (engaged.length) {
+        alertHtml += "<div class=\"statRow alertRow\"><span>In your reach</span><span class=\"alertReach\">" +
+          esc(engaged.join(", ")) + "</span></div>";
+      }
+      rows = alertHtml + rows;
       bottomSectionHtml = rows;
     } else {
       bottomSectionHtml =
@@ -499,7 +564,7 @@ button#statSidebar .turnRow,
     el.innerHTML =
       "<h3><span>" + fmt(s.name) + " — Lv" + fmt(s.character_level) + " " + fmt(s.class_name || "Recruit") + "</span>" + combatBadgeHtml + "</h3>" +
       "<div class=\"statRow\"><span>HP</span><span>" + hpHtml + "</span></div>" +
-      "<div class=\"statRow\"><span>AC</span><span>" + fmt(s.armor_class) + "</span></div>" +
+      "<div class=\"statRow\"><span>AC</span><span>" + effectiveAc(s) + shieldAcTag(s) + "</span></div>" +
       "<div class=\"statRow\"><span>Proficiency</span><span>+" + fmt(s.prof_bonus) + "</span></div>" +
       ((isTruthy(s.armor_nonprof) || isTruthy(s.shield_nonprof)) ? "<div class=\"timePeriod\" title=\"Your class is not trained in this gear: disadvantage on STR and DEX rolls\" style=\"color:#b5651d;font-style:normal;\">⚠ " + (isTruthy(s.armor_nonprof) && isTruthy(s.shield_nonprof) ? "Armor & shield" : (isTruthy(s.shield_nonprof) ? "Shield" : "Armor")) + ": not proficient</div>" : "") +
       resourceHtml +
@@ -548,12 +613,44 @@ button#statSidebar .turnRow,
         : "");
   }
   function isTruthy(v) { return v === true || v === "true"; }
+  // The player's AC as the enemy actually rolls against it. Shield adds +5 for as long as it stays armed
+  // (combat_dice.txt:253-259: the hit is judged at the bare AC, then re-judged at AC+5 and the Shield is
+  // spent either way), so the sidebar has to show the effective value or it contradicts the
+  // "vs AC 17 (Shield)" in the enemy attack banner. Deliberately a display-only computation: armor_class
+  // itself is untouched, so nothing that derives the real AC (equipment, recalculate_armor_class) can
+  // accidentally pick up a +5 that only exists while a spell is up. Inert out of combat, since
+  // fight_cleanup clears shield_armed between fights.
+  function effectiveAc(s) { return fmt(Number(s.armor_class) + (isTruthy(s.shield_armed) ? 5 : 0)); }
+  // The green "+5 Shield" tag beside it, in the same visual idiom abilityBoon already uses for the
+  // ability grid: the number shown is the real one, the tag says where the bonus came from.
+  function shieldAcTag(s) {
+    if (!isTruthy(s.shield_armed)) return "";
+    return " <span class=\"boon boonUp\" title=\"Shield: +5 AC until the next hit that gets through it\">+5 Shield</span>";
+  }
   // Mirrors combat_range_name (combat.txt): 0 Engaged, 1 Close, 2 Mid-Range, 3+ Long Range.
   function rangeTierName(n) {
     if (n <= 0) return "Engaged";
     if (n === 1) return "Close";
     if (n === 2) return "Mid-Range";
     return "Long Range";
+  }
+  // An ally's tier 0 reads "in melee" rather than "Engaged" (2026-09-28). "Engaged" normally means locked in
+  // with YOU; on an ally row it actually means locked in with whatever THAT ally picked, which may be an enemy
+  // you aren't even looking at. Same word, two meanings, in the same list -- which made a plain "Kess (Engaged)"
+  // genuinely unreadable. Only tier 0 is renamed: the other three are not misleading enough to be worth
+  // changing, and leaving them alone keeps one vocabulary across the whole panel.
+  function allyTierName(n) { return (Number(n) || 0) <= 0 ? "in melee" : rangeTierName(n); }
+  // The dim second line under an ally's name, naming the enemy it is actually locked up with.
+  // combat_ally<N>_target is the slot that ally last picked -- set in combat_next_turn's ally branch and read
+  // by find_intercepting_ally (combat.txt) -- so the engine already knows this; no new state is needed and this
+  // stays read-only. Returns "" for the inert slot 0 and for an ally that hasn't picked a target yet this fight.
+  // An enemy name is escaped here because this line is built from stats the same way the row above is.
+  function allyTargetLine(s, slot) {
+    var t = Number(s["combat_ally" + slot + "_target"]) || 0;
+    if (t <= 0) return "";
+    var name = fmt(s["combat_enemy" + t + "_name"]) || "an enemy";
+    var down = (Number(s["combat_enemy" + t + "_hp"]) || 0) <= 0;
+    return "fighting " + esc(name) + (down ? " (down)" : "");
   }
   // The score shown already includes any boon. The small tag beside it says how much came from a boon:
   // green when it raised the modifier, struck through and dim when it did not (a +1 on an even score, or

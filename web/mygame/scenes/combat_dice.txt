@@ -213,16 +213,62 @@ ${combat_player_dmg_roll_banner}
   *set locked_combat_enemy_atk_page_id page_id
 *temp cea_already_locked {cea_lockname}
 *if (not(cea_already_locked))
+  *comment Ranged-at-closerange penalty (2026-09-28): a ranged attack made against a creature within 5 feet
+  *comment of the attacker has disadvantage. **This is a 2024-rules house rule, NOT 2014** -- this game models
+  *comment 2014 (see GAMEPLAY_MECHANICS_RULES.md), and combat.txt:798's "no accuracy penalty for range today"
+  *comment predates it. Adopted deliberately, because it is the only change that does all three of:
+  *comment   (a) gives closing on a ranged enemy a payoff -- a melee weapon needs range 0 to swing at all
+  *comment       (combat.txt's attack gate), so a Long Range archer is otherwise 3 turns of free damage;
+  *comment   (b) lets a melee ally SUPPRESS an archer by body-blocking it, instead of being a pure HP sponge
+  *comment       that the archer shoots past at full accuracy;
+  *comment   (c) gives ranged enemies a reason to fall back, which is the one piece of positioning they never
+  *comment       do -- the closing branch is gated to non-ranged, so they currently only ever advance.
+  *comment No new durable state: combat_enemy_range IS this enemy's distance to the player (its only target,
+  *comment since interception only ever redirects it to a MELEE ally), so "within reach of the creature it is
+  *comment shooting" is simply `range <= 0`. **Deliberately a *temp derived here rather than a write to
+  *comment combat_enemy_disadvantage**, which is the CONDITION-based flag (Ray of Frost and friends set it
+  *comment per-slot at combat.txt:1564/1695/1800) and is consumed on this very roll eleven lines below --
+  *comment writing to it would silently eat a debuff that is still owed. OR'd in at roll time so the two
+  *comment causes compose, and the advantage branch is gated on it too, so advantage still cancels it.
+  *comment KNOWN LIMIT: this does not cover resolve_enemy_attack_on_ally. find_intercepting_ally gates on the
+  *comment ALLY's weapon_type, not the enemy's, so a RANGED enemy can attack an engaged melee ally -- and since
+  *comment there is no enemy-to-ally distance in this model, an archer shooting an ally gets no penalty here.
+  *comment That is the cost of treating melee as a shared adjacency bucket; a real per-pair distance would
+  *comment close both this gap and the interception looseness documented in find_intercepting_ally.
+  *temp cea_ranged_pinned false
+  *if ((combat_enemy_weapon_type = "ranged") and (combat_enemy_range <= 0))
+    *set cea_ranged_pinned true
   *temp cea_roll 0
   *rand cea_roll 1 20
   *temp cea_adv_label ""
-  *if ((combat_enemy_disadvantage) and (not(combat_enemy_advantage)))
+  *temp cea_dis false
+  *comment Both disadvantage sources are precomputed into one flag rather than written as a mixed
+  *comment `((A) or (B)) and (C)` condition. ChoiceScript's parser requires binary operators to be strictly
+  *comment left-nested with each partial result parenthesized (the shape choicescript_stats.txt:669 and :1086 use),
+  *comment so the flat mixed form is a hard PARSE error, not a wrong answer -- and it failed that way at runtime
+  *comment even though node compile.js reported a clean build. Flat and self-documenting beats clever here, and it
+  *comment matches how the movement check precomputes its own cmc_* flags for the same reason.
+  *if ((combat_enemy_disadvantage) or (cea_ranged_pinned))
+    *if (not(combat_enemy_advantage))
+      *set cea_dis true
+  *temp cea_adv false
+  *if (combat_enemy_advantage)
+    *if (not(combat_enemy_disadvantage))
+      *if (not(cea_ranged_pinned))
+        *set cea_adv true
+  *if (cea_dis)
     *temp cea_roll_2 0
     *rand cea_roll_2 1 20
     *if (cea_roll_2 < cea_roll)
       *set cea_roll cea_roll_2
-    *set cea_adv_label " (Disadvantage)"
-  *if ((combat_enemy_advantage) and (not(combat_enemy_disadvantage)))
+    *comment Named separately from a debuff on purpose: the player cast nothing, so a bare "(Disadvantage)"
+    *comment against an archer they simply walked up to would read as a bug -- the same class of confusion as
+    *comment the Shield banner printing a stale AC. Same reason the shield fix names its own cause.
+    *if (cea_ranged_pinned)
+      *set cea_adv_label " (Disadvantage — in reach)"
+    *else
+      *set cea_adv_label " (Disadvantage)"
+  *if (cea_adv)
     *temp cea_roll_2 0
     *rand cea_roll_2 1 20
     *if (cea_roll_2 > cea_roll)
@@ -259,10 +305,21 @@ ${combat_player_dmg_roll_banner}
     *set combat_enemy_hit_success (combat_enemy_atk_total >= (armor_class + 5))
   *comment Attack-roll banner (2026-09-27): built here, now that combat_enemy_hit_success has its FINAL value
   *comment (Shield can still flip it above) -- see the create comment for why this is per-slot, not shared.
+  *comment The DC printed must be the one the roll was ACTUALLY tested against (2026-09-28). When Shield
+  *comment triggered, the check above re-ran the comparison at armor_class + 5, but this banner still printed
+  *comment the bare armor_class -- so a Shield that did its job and correctly negated nothing looked exactly
+  *comment like a Shield that had been ignored. A 19 vs a Shielded AC 17 read as "vs AC 12 — HIT" and looked
+  *comment like a rules bug rather than a hit that legitimately beat the boosted DC. Prints the effective DC
+  *comment plus a "(Shield)" marker, so the +5 is visible whether Shield held the blow or broke through it.
   *temp cea_atk_verdict "MISS"
   *if (combat_enemy_hit_success)
     *set cea_atk_verdict "HIT"
-  *set {(cea_atk_bannername)} "[b][🎲 ${combat_enemy_name} Attack Roll: ${cea_roll} ${cea_atk_bonus_str}${cea_adv_label}${cea_bane_str} = ${combat_enemy_atk_total} vs AC ${armor_class} — ${cea_atk_verdict}][/b]"
+  *temp cea_dc armor_class
+  *temp cea_shield_str ""
+  *if (combat_shield_triggered)
+    *set cea_dc (armor_class + 5)
+    *set cea_shield_str " (Shield)"
+  *set {(cea_atk_bannername)} "[b][🎲 ${combat_enemy_name} Attack Roll: ${cea_roll} ${cea_atk_bonus_str}${cea_adv_label}${cea_bane_str} = ${combat_enemy_atk_total} vs AC ${cea_dc}${cea_shield_str} — ${cea_atk_verdict}][/b]"
   *set combat_enemy_dmg_dealt 0
   *set combat_agathys_triggered false
   *set combat_agathys_shattered false

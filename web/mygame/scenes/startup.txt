@@ -1067,6 +1067,23 @@
 *comment (both combat.txt) for the two sides of that rule. This is the "active target" scratch copy, synced in
 *comment from the slot's own combat_enemyN_range by fight_sync_target_in, same as hp/ac/atk_bonus above.
 *create combat_enemy_range 0
+*comment Opportunity attacks (2026-09-28), the bare "active target" scratch copy, synced by fight_sync_target_in
+*comment from combat_enemyN_oa_used exactly like the range line above. True means THIS enemy has already spent
+*comment its one opportunity attack this round. The player-side mirror of the same idea is
+*comment combat_player_disengaged below, which is the single flag that suppresses provoked attacks entirely.
+*create combat_enemy_oa_used false
+*comment combat_oa_candidate is the OUTPUT of find_opportunity_attacker and the INPUT to
+*comment resolve_opportunity_attack (both combat.txt) -- deliberately a separate var rather than overloading
+*comment combat_active_target, which is transient shared scratch and would be clobbered by the very movement that
+*comment provoked the attack. Held for the length of one move: found before the tier opens, spent after.
+*create combat_oa_candidate 0
+*comment Disengage (2026-09-28): set when the player spends their action on it, cleared every round in
+*comment combat_begin_round. Deliberately a plain boolean rather than a budget, because it is used at most once
+*comment per round and gating it on combat_player_actions_left is the action economy doing the work already --
+*comment the same pattern Second Wind and Brace use. Covers a whole round, not a single move, because 5e's
+*comment Disengage says "your movement doesn't provoke opportunity attacks" for the turn and the player may
+*comment still have a second move (Dash) after using it.
+*create combat_player_disengaged false
 *create combat_player_dmg_type "bludgeoning"
 *create combat_enemy_resist_type_1 ""
 *create combat_enemy_resist_type_2 ""
@@ -1416,6 +1433,19 @@
 *create combat_enemy1_bane_expires_round 0
 *create combat_enemy1_disadvantage false
 *create combat_enemy1_advantage false
+*comment Opportunity attack (2026-09-28), per slot 1-6, mirroring disadvantage/advantage right above: has THIS
+*comment enemy already spent its one opportunity attack on the player this round? 5e gives each creature one
+*comment reaction per round, and since only enemies react to the player's movement, that is exactly one OA per
+*comment enemy per round -- a single shared counter would be wrong the other way, letting one enemy punish every
+*comment Fall Back you ever make. **This flag is also what keeps the replay lock honest**: resolve_enemy_attack
+*comment keys its lock on combat_enemy_atk_locked_<slot> vs page_id, so a second attack by the same slot on the
+*comment same page would silently reuse the first roll and do nothing at all. One OA per enemy per round means
+*comment flag and lock can never disagree. Reset in combat_begin_round (the round boundary) and again in
+*comment fight_cleanup (leftover state into the next fight) -- the same two-place convention as disadvantage.
+*comment Melee only, never ranged: a 5e opportunity attack is a MELEE attack, and an archer you walk past should
+*comment not get a free parting shot -- especially now that a ranged enemy already at range 0 shoots at
+*comment disadvantage (resolve_enemy_attack, combat_dice.txt). Both reasons point the same way.
+*create combat_enemy1_oa_used false
 *create combat_enemy1_range 0
 *comment Per-slot condition/stun/movepool/resistance storage -- see the
 *comment scratch-var comment block above. A slot that never sets these (every
@@ -1472,6 +1502,7 @@
 *create combat_enemy2_bane_expires_round 0
 *create combat_enemy2_disadvantage false
 *create combat_enemy2_advantage false
+*create combat_enemy2_oa_used false
 *create combat_enemy2_range 0
 *create combat_enemy2_inflicts_condition false
 *create combat_enemy2_condition_name ""
@@ -1529,6 +1560,7 @@
 *create combat_enemy3_bane_expires_round 0
 *create combat_enemy3_disadvantage false
 *create combat_enemy3_advantage false
+*create combat_enemy3_oa_used false
 *create combat_enemy3_range 0
 *create combat_enemy3_inflicts_condition false
 *create combat_enemy3_condition_name ""
@@ -1580,6 +1612,7 @@
 *create combat_enemy4_bane_expires_round 0
 *create combat_enemy4_disadvantage false
 *create combat_enemy4_advantage false
+*create combat_enemy4_oa_used false
 *create combat_enemy4_range 0
 *create combat_enemy4_inflicts_condition false
 *create combat_enemy4_condition_name ""
@@ -1631,6 +1664,7 @@
 *create combat_enemy5_bane_expires_round 0
 *create combat_enemy5_disadvantage false
 *create combat_enemy5_advantage false
+*create combat_enemy5_oa_used false
 *create combat_enemy5_range 0
 *create combat_enemy5_inflicts_condition false
 *create combat_enemy5_condition_name ""
@@ -1682,6 +1716,7 @@
 *create combat_enemy6_bane_expires_round 0
 *create combat_enemy6_disadvantage false
 *create combat_enemy6_advantage false
+*create combat_enemy6_oa_used false
 *create combat_enemy6_range 0
 *create combat_enemy6_inflicts_condition false
 *create combat_enemy6_condition_name ""
@@ -1904,10 +1939,17 @@
 *comment Interception (2026-09-28): which enemy slot (1-6, 0 = none) this ally last picked as its target, set
 *comment durably in combat_next_turn's ally branch right after fight_pick_target -- unlike combat_active_target
 *comment (a shared scratch value overwritten by whoever's turn is currently running), this survives on the ally's
-*comment own slot until it picks again. find_intercepting_ally (combat.txt) reads it, alongside combat_ally<N>_range
-*comment and weapon_type, to decide whether a melee ally is standing between a SPECIFIC enemy and the player.
-*comment Reset to 0 by fight_cleanup, same leftover-state reason as combat_ally<N>_range -- without it, an ally
-*comment who hasn't picked a target yet this fight could still match a stale target slot number from the last one.
+*comment own slot until it picks again. Reset to 0 by fight_cleanup, same leftover-state reason as
+*comment combat_ally<N>_range -- without it, an ally who hasn't picked a target yet this fight could still match a
+*comment stale target slot number from the last one.
+*comment READERS, and only two. (1) The sidebar's "fighting <enemy>" sub-line (web/mygame/index.html) -- this is now
+*comment the field's main job. (2) Nothing else: find_intercepting_ally USED to require
+*comment combat_ally<N>_target = combat_active_target, but that was dropped the same day, because allies pick by
+*comment kill-priority rather than by adjacency, so the whole party converged on one wounded enemy and every other
+*comment enemy ignored the tank entirely. **This field therefore cannot be used to recover real adjacency** -- it
+*comment records intent, not position. A genuine per-pair "is this ally next to this enemy" test needs a
+*comment player-to-ally or ally-to-ally distance that does not exist in this model, which is why interception
+*comment settled on treating melee as one shared bucket instead.
 *create combat_ally0_target 0
 *create combat_ally1_target 0
 *create combat_ally2_target 0
@@ -2070,6 +2112,7 @@
 *create combat_enemy0_bane_expires_round 0
 *create combat_enemy0_disadvantage false
 *create combat_enemy0_advantage false
+*create combat_enemy0_oa_used false
 *create combat_enemy0_range 0
 *create combat_enemy0_inflicts_condition false
 *create combat_enemy0_condition_name ""

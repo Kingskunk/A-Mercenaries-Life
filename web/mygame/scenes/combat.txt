@@ -605,6 +605,9 @@
   *set {(fc_p & "advantage")} false
   *comment Range: 0 means Engaged, every type's default -- reset per-slot for the same reason as Bane above.
   *set {(fc_p & "range")} 0
+  *comment Opportunity attack (2026-09-28): same leftover-state reason. Without this an enemy that got one in a
+  *comment previous fight would start the next one unable to use its reaction at all.
+  *set {(fc_p & "oa_used")} false
   *set {("combat_lib_" & fc_i)} ""
   *comment Per-slot local-color hit/miss variants: any of the 5, via indirection, instead of one hand-written
   *comment line per variant per slot.
@@ -786,6 +789,9 @@
 *comment Range: synced in the same way, read by the weapon-attack *choice gate and combat_next_turn's enemy
 *comment branch (both combat.txt).
 *set combat_enemy_range {(fti_p & "range")}
+*comment Opportunity attacks (2026-09-28): synced the same way, so find_opportunity_attacker and the OA
+*comment resolution read a bare scratch like every other field here rather than re-doing slot indirection.
+*set combat_enemy_oa_used {(fti_p & "oa_used")}
 *return
 
 *label fight_sync_target_out
@@ -795,8 +801,11 @@
 *comment Range tiers: 0 Engaged, 1 Close, 2 Mid-Range, 3 Long Range. A melee-only combatant closes exactly one
 *comment tier per Push Forward (player) or per turn (an enemy, combat_next_turn) -- never straight to Engaged --
 *comment so a fight that opens someone at Mid-Range or Long Range costs multiple turns to reach, not one. Ranged
-*comment attacks work at every tier alike (no accuracy penalty for range today), so nothing here ever needs a
-*comment ranged combatant to move.
+*comment attacks otherwise work at every tier alike, which is why nothing here ever needs a ranged combatant to
+*comment move. **The one exception, added 2026-09-28: a ranged enemy at range 0 shoots at disadvantage**
+*comment (resolve_enemy_attack, combat_dice.txt -- a 2024-rules house rule, not 2014). So a ranged combatant now
+*comment has a reason to want distance it previously had no use for, and closing on one is no longer pure
+*comment punishment for the player. See that label's header for the full reasoning.
 *label combat_range_name
 *comment *gosub combat_range_name <range number>, then read combat_range_display_name (startup.txt *create) --
 *comment a durable output var instead of a caller-pre-declared *temp, since this label sits above every caller
@@ -861,12 +870,23 @@
 *set combat_active_target 0
 *if (combat_player_chosen_target > 0)
   *temp fpnt_chosen_hp {(("combat_enemy" & combat_player_chosen_target) & "_hp")}
-  *if ((combat_player_chosen_target <= combat_enemy_count) and (fpnt_chosen_hp > 0))
+  *if ((combat_player_chosen_target > combat_enemy_count) or (fpnt_chosen_hp <= 0))
+    *comment Dead, or the fight shrank under the click -- clear it for the same reason fight_pick_target
+    *comment does, so the HUD stops highlighting a slot that no longer holds anything.
+    *set combat_player_chosen_target 0
+  *else
+    *comment Alive and in range. Eligibility is checked here but must NEVER clear the click (2026-09-28).
+    *comment **This branch used to be written as an inner *if for eligibility with the *else bound to THAT
+    *comment if**, so being ineligible for one movement direction silently wiped combat_player_chosen_target
+    *comment -- meaning "click the swordsman, then Push forward" forgot who you were attacking, and your next
+    *comment swing reverted to kill-priority. The header comment above already promised the opposite ("the
+    *comment click stays sticky for its original purpose, attacks, either way"); the code just didn't do it.
+    *comment Inverting the test puts the *else back on the liveness check, which is the only thing that
+    *comment should ever clear a click. It became materially more reachable once the movement buttons started
+    *comment advertising a from/to tier, which invites exactly that click-then-move sequence.
     *temp fpnt_chosen_range {(("combat_enemy" & combat_player_chosen_target) & "_range")}
     *if (((fpnt_direction = "push") and (fpnt_chosen_range > 0)) or ((fpnt_direction = "fallback") and (fpnt_chosen_range < 3)))
       *set combat_active_target combat_player_chosen_target
-  *else
-    *set combat_player_chosen_target 0
 *if (combat_active_target = 0)
   *temp fpnt_i 1
   *temp fpnt_best_range 0
@@ -890,6 +910,110 @@
   *gosub fight_sync_target_in
 *return
 
+*label combat_shift_all_ranges
+*comment Applies one range tier to EVERY living enemy at once, not just the nearest eligible one (2026-09-28).
+*comment A single step back physically moves you away from the whole fight, so the old single-slot write was
+*comment only correct for the one enemy the move was narrated against: with two enemies Engaged, falling back
+*comment left one reading Close and the other Engaged. That was invisible while nothing rendered range, and read
+*comment as the engine disagreeing with itself the moment the sidebar began printing a range tag per row. It also
+*comment brings the effect in line with the availability gates, which have always been computed across every
+*comment living enemy (an enemy can't be simultaneously at range 0 and range 3, so with two or more living
+*comment enemies one of Push Forward/Fall Back is always legal for somebody).
+*comment Calling convention: *gosub combat_shift_all_ranges "push" / "fallback" -- a direction string rather than
+*comment a numeric delta, matching fight_pick_nearest_target above, so no caller has to hand this a negative
+*comment literal. Clamps every slot to the 0-3 tier scale and skips dead ones.
+*comment Writes the slots directly by indirection and deliberately does NOT re-sync the active-target scratch:
+*comment each caller has just picked its narration target with fight_pick_nearest_target, so it re-syncs once
+*comment with fight_sync_target_in after this returns, to pick up the nearest enemy's new value.
+*params csar_direction
+*temp csar_delta 1
+*if (csar_direction = "push")
+  *set csar_delta -1
+*temp csar_i 1
+*label combat_shift_all_ranges_loop
+*if (csar_i <= combat_enemy_count)
+  *temp csar_hp {(("combat_enemy" & csar_i) & "_hp")}
+  *if (csar_hp > 0)
+    *temp csar_from {(("combat_enemy" & csar_i) & "_range")}
+    *temp csar_to (csar_from + csar_delta)
+    *if (csar_to < 0)
+      *set csar_to 0
+    *if (csar_to > 3)
+      *set csar_to 3
+    *set {(("combat_enemy" & csar_i) & "_range")} csar_to
+  *set csar_i + 1
+  *goto combat_shift_all_ranges_loop
+*return
+
+*label find_opportunity_attacker
+*comment Opportunity attacks (2026-09-28). Sets combat_oa_candidate to the enemy that gets to swing as the
+*comment player leaves, or 0 for none. Must be called BEFORE the move that opens the tier, while every enemy
+*comment is still at its pre-move range -- checked afterwards, range 1 cannot tell "just left melee" apart
+*comment from "was never in melee", and both look identical.
+*comment
+*comment THE CAP IS THE WHOLE POINT. combat_shift_all_ranges moves EVERY enemy at once, so a Fall Back from three
+*comment engaged enemies opens a tier on all three and RAW would fire three separate opportunity attacks. The
+*comment engine has no player reaction budget at all (see the turn-budget comment: "REACTION: not a budget
+*comment yet"), so that is roughly eighteen damage for one retreat step and an unwinnable spiral. **One OA per
+*comment move, maximum**, which is also the most defensible reading -- you only have to get past one of them.
+*comment This is the same decision as the per-round cap on combat_enemyN_oa_used, and the two together mean a
+*comment single enemy can hurt you at most once per round no matter how much you move around it.
+*comment
+*comment CANDIDATE RULES, all four required: living; melee weapon_type (a 5e opportunity attack is a MELEE
+*comment attack, and a ranged enemy already at melee suffers the close-range disadvantage penalty instead, so
+*comment giving it a parting shot too would double-punish the same approach); range 0, i.e. actually in reach of
+*comment the player, which is the entire trigger; and oa_used false, its reaction for this round still spare.
+*comment Lowest HP wins, mirroring find_intercepting_ally's tiebreak for consistency -- finish off whoever is
+*comment nearly down rather than whoever stands nearest, and ties fall to the lowest slot via a strict <.
+*comment
+*comment Suppressed by combat_player_disengaged at the CALL SITE, not here, so the two departure options (Fall
+*comment Back and Break off) cannot drift apart on when the suppression applies.
+*set combat_oa_candidate 0
+*temp foa_best_hp 0
+*temp foa_i 1
+*label find_opportunity_attacker_loop
+*if (foa_i <= combat_enemy_count)
+  *temp foa_hp {(("combat_enemy" & foa_i) & "_hp")}
+  *temp foa_weapon {(("combat_enemy" & foa_i) & "_weapon_type")}
+  *temp foa_range {(("combat_enemy" & foa_i) & "_range")}
+  *temp foa_oa {(("combat_enemy" & foa_i) & "_oa_used")}
+  *if ((((foa_hp > 0) and (foa_weapon = "melee")) and (foa_range <= 0)) and (foa_oa = false))
+    *if ((combat_oa_candidate = 0) or (foa_hp < foa_best_hp))
+      *set combat_oa_candidate foa_i
+      *set foa_best_hp foa_hp
+  *set foa_i + 1
+  *goto find_opportunity_attacker_loop
+*return
+
+*label resolve_opportunity_attack
+*comment Resolves the swing find_opportunity_attacker picked, called AFTER the tier has actually opened and only
+*comment when combat_oa_candidate is non-zero.
+*comment
+*comment **Deliberately reuses resolve_enemy_attack and fight_narrate_enemy_turn whole, with no parallel path.**
+*comment That is what makes an opportunity attack behave like every other hit the player takes, for free: Shield
+*comment can still break through it, Armor of Agathys still bites back, Blade Ward still halves it, resistance,
+*comment vulnerability, temp HP, conditions and stun all still apply, and the death and rescue checks still run.
+*comment Writing a "simpler" OA resolver would have quietly forked all of that. fight_narrate_enemy_turn is
+*comment equally safe to reuse: it narrates "this enemy attacks you" and nothing about closing distance, which
+*comment lives in combat_next_turn's own branch instead.
+*comment
+*comment Deliberately does NOT call fight_pick_enemy_move, so no move-2 proc -- a reaction is a basic attack.
+*comment
+*comment Clears combat_oa_candidate and spends the enemy's oa_used BEFORE rolling, so a second departure later on
+*comment the same page can never reach the roll at all. That also keeps it clear of the replay lock, which would
+*comment otherwise find combat_enemy_atk_locked_<slot> already set from a first swing this page.
+*temp roa_candidate combat_oa_candidate
+*set combat_oa_candidate 0
+*if (roa_candidate > 0)
+  *set {(("combat_enemy" & roa_candidate) & "_oa_used")} true
+  *set combat_active_target roa_candidate
+  *gosub fight_sync_target_in
+  *comment An opportunity attack is a reaction to movement, so it lands before the player has done anything else
+  *comment on this page -- including picking a new target. The sync above is what makes that safe.
+  *gosub_scene combat_dice resolve_enemy_attack
+  *gosub_scene combat_prose fight_narrate_enemy_turn "enemy" roa_candidate
+*return
+
 *label fight_check_all_dead
 *comment A bounded loop over combat_enemy_count, via indirection, instead of one hand-written branch per slot.
 *set combat_all_enemies_dead true
@@ -904,23 +1028,47 @@
 *return
 
 *label find_intercepting_ally
-*comment Interception (2026-09-28): sets combat_intercepting_ally to the first living melee ally slot engaged
-*comment (range 0) with the enemy CURRENTLY dispatching (combat_active_target, already synced by
-*comment fight_sync_target_in same as every other field combat_next_turn's enemy branch reads), or 0 if none.
-*comment combat_ally<N>_target is set durably whenever an ally picks a target (combat_next_turn's ally branch),
-*comment so this survives across turns even though combat_active_target itself is a shared, transient scratch
-*comment value overwritten by whoever's turn is currently running. A ranged ally never intercepts -- it isn't
+*comment Interception (2026-09-28; broadened 2026-09-28 again): sets combat_intercepting_ally to the living melee
+*comment ally this enemy will actually swing at, or 0 for none. It is called by combat_next_turn's enemy branch
+*comment right after fight_sync_target_in, so combat_active_target is the slot currently dispatching.
+*comment
+*comment WHAT CHANGED. The original rule required combat_ally<N>_target = combat_active_target as well -- i.e. the
+*comment ally had to have picked THIS enemy AND already closed to range 0. That reads as "physically correct" but
+*comment is far too strict in practice, because allies pick targets by kill-priority (fight_pick_target, lowest HP)
+*comment rather than by who they happen to be standing next to. So the whole party converges on one wounded enemy,
+*comment and every OTHER enemy in the fight walked straight past the tank to hit the player. The mechanic existed but
+*comment almost never fired, which is why enemy targeting read as 100% player-focused.
+*comment
+*comment Melee is therefore now a SHARED adjacency bucket: any living melee ally already at range 0 is a legal target
+*comment for whichever enemy is dispatching, whoever the ally's own _target says. That is the loosest thing the
+*comment 0-3 tier model can honestly express -- there is no player-to-ally or ally-to-ally distance to test against,
+*comment so "in melee" is the only adjacency fact that exists. It is looser than reality and deliberately so; the
+*comment alternative is a real per-pair distance, which is a much larger change (see startup.txt's
+*comment combat_ally<N>_target create for why _target cannot supply one).
+*comment
+*comment Spreading the aggro (2026-09-28) is the other half, and it is NOT optional. With the tiebreak gone, every
+*comment enemy would otherwise match the same lowest-numbered engaged ally and three of them would pile onto slot 1
+*comment -- turning a tank into an unkillable meat wall that the player never has to think about. Picking the
+*comment LOWEST-HP engaged ally instead spreads the damage the same way the player side already does it
+*comment (fight_pick_target is kill-priority for exactly this reason): the focus walks the allies down in sequence
+*comment rather than dogpiling one. Ties fall to the lowest slot, because the comparison is a strict <.
+*comment
+*comment combat_ally<N>_target is deliberately NOT read here any more. It keeps its other job -- recording which
+*comment enemy an ally is locked onto, for the sidebar's "fighting <enemy>" sub-line (web/mygame/index.html) and the
+*comment prose -- and is set in combat_next_turn's ally branch. A ranged ally still never intercepts: it isn't
 *comment standing in the way, it's shooting from wherever it already is.
 *set combat_intercepting_ally 0
+*temp fia_best_hp 0
 *temp fia_i 1
 *label find_intercepting_ally_loop
-*if ((fia_i <= combat_ally_slot_cap) and (combat_intercepting_ally = 0))
+*if (fia_i <= combat_ally_slot_cap)
   *temp fia_hp {(("combat_ally" & fia_i) & "_hp")}
   *temp fia_weapon {(("combat_ally" & fia_i) & "_weapon_type")}
-  *temp fia_target {(("combat_ally" & fia_i) & "_target")}
   *temp fia_range {(("combat_ally" & fia_i) & "_range")}
-  *if ((((fia_hp > 0) and (fia_weapon = "melee")) and (fia_target = combat_active_target)) and (fia_range <= 0))
-    *set combat_intercepting_ally fia_i
+  *if (((fia_hp > 0) and (fia_weapon = "melee")) and (fia_range <= 0))
+    *if ((combat_intercepting_ally = 0) or (fia_hp < fia_best_hp))
+      *set combat_intercepting_ally fia_i
+      *set fia_best_hp fia_hp
   *set fia_i + 1
   *goto find_intercepting_ally_loop
 *return
@@ -988,6 +1136,16 @@
 *comment ──────────────────────────────────────────────────────────────
 
 *label combat_begin_round
+*comment Opportunity attacks (2026-09-28): each enemy regains its one reaction for the new round, exactly like
+*comment the advantage/disadvantage reset below -- same per-slot loop, and deliberately NOT the round-start
+*comment player_movement_restricted clear, which is a condition expiring rather than a budget refreshing.
+*temp cbr_oa_i 1
+*label combat_begin_round_oa_loop
+*if (cbr_oa_i <= combat_enemy_count)
+  *set {(("combat_enemy" & cbr_oa_i) & "_oa_used")} false
+  *set cbr_oa_i + 1
+  *goto combat_begin_round_oa_loop
+*set combat_player_disengaged false
 *comment Start of a round: refill the budgets. Enemy disadvantage/advantage (Ray of Frost, Vicious Mockery, Brace,
 *comment pre-fight ambush) is no longer cleared here (2026-09-28) -- now that it's stored per-slot
 *comment (combat_enemy<N>_disadvantage/_advantage, see fight_sync_target_in/apply_enemy_type/resolve_enemy_attack),
@@ -1147,8 +1305,19 @@
 *if (not(combat_hub_shown_once))
   *set combat_hub_shown_once true
   *line_break
+*comment Shield's +5 has to reach the player's PRINTED AC, not just the enemy's attack check
+*comment (resolve_enemy_attack, combat_dice.txt:253-259). Without this the round banner below reads "AC 12"
+*comment while the attack banner that follows it reads "vs AC 17 (Shield)", and the sidebar's AC row
+*comment (effectiveAc, web/mygame/index.html) would be the odd one out. Computed once here because both the
+*comment single-enemy and multi-enemy banner lines need it. Display-only: armor_class itself is never
+*comment written, so equipment's recalculate_armor_class can't pick up a +5 that only exists while a spell
+*comment is up. The separate "Shield Armed" status line below is left as it is -- that's a different fact
+*comment (it's still up) than this one (what you're rolling against right now).
+*temp ac_shown armor_class
+*if (shield_armed)
+  *set ac_shown (armor_class + 5)
 *if (combat_enemy_count = 1)
-  [b][⚔️ Round ${combat_round} — ${combat_enemy_name}: HP ${combat_enemy_hp}/${combat_enemy_max_hp} (AC ${combat_enemy_ac}) | You: HP ${hp_current}/${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|} (AC ${armor_class})][/b]
+  [b][⚔️ Round ${combat_round} — ${combat_enemy_name}: HP ${combat_enemy_hp}/${combat_enemy_max_hp} (AC ${combat_enemy_ac}) | You: HP ${hp_current}/${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|} (AC ${ac_shown}@{(shield_armed)  (Shield)|})][/b]
 *else
   [b][⚔️ Round ${combat_round}][/b]
   *line_break
@@ -1169,7 +1338,7 @@
   *if (combat_enemy_count >= 6)
     [b][${combat_enemy6_name}: HP ${combat_enemy6_hp}/${combat_enemy6_max_hp}@{(combat_enemy6_hp <= 0)  (Down)|} (AC ${combat_enemy6_ac})][/b]
     *line_break
-  [b][You: HP ${hp_current}/${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|} (AC ${armor_class})][/b]
+  [b][You: HP ${hp_current}/${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|} (AC ${ac_shown}@{(shield_armed)  (Shield)|})][/b]
 *if (shield_armed)
   *line_break
   [b][✨ Shield Armed — will trigger on the next hit][/b]
@@ -1270,6 +1439,56 @@
 *comment two independent booleans, not a re-sync of the shared scratch.
 *temp combat_can_push_forward false
 *temp combat_can_fall_back false
+*comment Opportunity attacks (2026-09-28): the two options that let a provoked attack happen, gated here rather
+*comment than inlined at each site. Disengage needs an unspent action and must not already be active this round.
+*comment Break off needs a movement tier, because leaving reach is leaving reach whether you mean to keep fighting
+*comment or not -- it used to be free, which made running away strictly better than standing. Neither is offered
+*comment while Pinned/Hobbled/Off-Balance holds, the same hiding convention "Use an item" already uses.
+*temp combat_can_disengage false
+*comment Nested rather than flat: ChoiceScript needs each partial result of a multi-operator condition
+*comment parenthesized (choicescript_stats.txt:1086 has the same 3-term shape written as ((A) and (B)) and (C)),
+*comment and a flat three-way `and` chain is a parse error, not a wrong answer.
+*if (((combat_player_actions_left > 0) and (not(combat_player_disengaged))) and (not(player_movement_restricted)))
+  *set combat_can_disengage true
+*temp combat_can_break_off false
+*if ((combat_player_moves_left > 0) and (not(player_movement_restricted)))
+  *set combat_can_break_off true
+*comment Nearest-eligible range per direction (2026-09-28, button projection): which tier the move will act on,
+*comment so the option text can state the result outright ("Close -> Engaged") instead of leaving the player to
+*comment do the arithmetic off the sidebar's range tag themselves.
+*comment Deliberately does NOT call fight_pick_nearest_target to work this out. That label is the right authority
+*comment for actually performing the move, but it cannot serve as a read-only preview: it overwrites
+*comment combat_active_target and re-syncs the scratch the weapon-attack gates at the top of this choice have
+*comment already read, and its *else clears combat_player_chosen_target when the clicked slot is alive but
+*comment ineligible for that direction -- so previewing "push" while your clicked target is Engaged would
+*comment silently drop that click and change who the next attack goes to. The eligibility rules are mirrored here
+*comment as plain arithmetic over the slots instead, and the option bodies still call fight_pick_nearest_target
+*comment as the single authority that performs the move.
+*comment The chosen-target precedence is the subtle part and must match that label exactly: when
+*comment combat_player_chosen_target is alive AND eligible, fight_pick_nearest_target takes it and SKIPS the
+*comment nearest-scan outright (guarded by `*if (combat_active_target = 0)`). Taking the minimum anyway would
+*comment mislabel the button whenever a clicked target sat at a wider tier than some other enemy -- e.g. clicking
+*comment the Long Range archer while a swordsman is Close reads as pushable-from-Close, when the move that actually
+*comment fires is on the archer. So the *_lock temps freeze the projection at the chosen target's tier and stop
+*comment the scan from touching that direction, exactly reproducing the skip.
+*comment Sentinel is 4, one above the widest real tier (3), so it can never collide with a live range value and
+*comment the projection guard is a plain `< 4` rather than a negative-literal comparison.
+*temp cmc_chosen_push 4
+*temp cmc_chosen_fall 4
+*temp cmc_lock_push false
+*temp cmc_lock_fall false
+*if (combat_player_chosen_target > 0)
+  *temp cmc_chosen_slot combat_player_chosen_target
+  *if (cmc_chosen_slot <= combat_enemy_count)
+    *temp cmc_chosen_hp {(("combat_enemy" & cmc_chosen_slot) & "_hp")}
+    *if (cmc_chosen_hp > 0)
+      *temp cmc_chosen_range {(("combat_enemy" & cmc_chosen_slot) & "_range")}
+      *if (cmc_chosen_range > 0)
+        *set cmc_chosen_push cmc_chosen_range
+        *set cmc_lock_push true
+      *if (cmc_chosen_range < 3)
+        *set cmc_chosen_fall cmc_chosen_range
+        *set cmc_lock_fall true
 *temp cmc_i 1
 *label combat_movement_check_loop
 *if (cmc_i <= combat_enemy_count)
@@ -1278,10 +1497,38 @@
     *temp cmc_range {(("combat_enemy" & cmc_i) & "_range")}
     *if (cmc_range > 0)
       *set combat_can_push_forward true
+      *if ((cmc_lock_push = false) and ((cmc_chosen_push = 4) or (cmc_range < cmc_chosen_push)))
+        *set cmc_chosen_push cmc_range
     *if (cmc_range < 3)
       *set combat_can_fall_back true
+      *if ((cmc_lock_fall = false) and ((cmc_chosen_fall = 4) or (cmc_range < cmc_chosen_fall)))
+        *set cmc_chosen_fall cmc_range
   *set cmc_i + 1
   *goto combat_movement_check_loop
+*comment Turn each direction's from/to pair into display text. combat_range_name writes the single shared
+*comment combat_range_display_name, so every call is copied out immediately before the next overwrites it -- four
+*comment separate temps rather than one reused name. Left as "" when that direction isn't available, which can't
+*comment reach the button text anyway (each option is gated on its own combat_can_ flag).
+*temp combat_push_from_name ""
+*temp combat_push_to_name ""
+*temp combat_fall_from_name ""
+*temp combat_fall_to_name ""
+*if (cmc_chosen_push < 4)
+  *gosub combat_range_name cmc_chosen_push
+  *set combat_push_from_name combat_range_display_name
+  *temp cmc_push_to (cmc_chosen_push - 1)
+  *if (cmc_push_to < 0)
+    *set cmc_push_to 0
+  *gosub combat_range_name cmc_push_to
+  *set combat_push_to_name combat_range_display_name
+*if (cmc_chosen_fall < 4)
+  *gosub combat_range_name cmc_chosen_fall
+  *set combat_fall_from_name combat_range_display_name
+  *temp cmc_fall_to (cmc_chosen_fall + 1)
+  *if (cmc_fall_to > 3)
+    *set cmc_fall_to 3
+  *gosub combat_range_name cmc_fall_to
+  *set combat_fall_to_name combat_range_display_name
 *comment Auto-end: silently loops back to the queue once there's truly nothing left to spend a resource on, not
 *comment just once every pool counter happens to read zero -- attacks_left and bonus_left both sit at their full
 *comment value on a turn that never touched them (a caster who casts instead of swinging, or any turn where no
@@ -1290,8 +1537,12 @@
 *comment (2026-09-28) needs no such distinction -- unlike a bonus action, moves_left > 0 is ALWAYS usable: with
 *comment two or more enemies at different ranges, at least one of Push Forward/Fall Back is always legal for SOME
 *comment living enemy (proven: an enemy can't be simultaneously at range 0 and range 3), so a plain
-*comment moves_left <= 0 check is sufficient. Skips past "Break off and disengage" and "Use an item" (neither is
-*comment pool-gated) -- use them before running the tank dry.
+*comment moves_left <= 0 check is sufficient. Skips past "Use an item" (not pool-gated) -- use it before running
+*comment the tank dry. "Break off and run" was also skipped by that reasoning while it cost nothing at all
+*comment (2026-09-28); it now costs a movement tier like any other departure and provokes an opportunity attack, so
+*comment the same plain moves_left <= 0 check covers it and no separate flag is needed in that *if. Disengage is
+*comment gated on the ACTION budget instead, which keeps the turn alive on its own -- and correctly so, since the
+*comment *if already refuses to auto-end while actions_left > 0.
 *if ((((combat_player_actions_left <= 0) and (not(combat_can_attack))) and ((combat_player_bonus_left <= 0) or (not(combat_bonus_available)))) and (combat_player_moves_left <= 0))
   *set combat_turn_advanced_this_page false
   *comment Ends the player's turn for Blade Ward's duration too, exactly like the End your turn option
@@ -1313,7 +1564,7 @@
       *goto resolve_weapon_attack_choice
 
   *if ((combat_player_moves_left > 0) and (combat_can_push_forward))
-    # Push forward and close the distance on the nearest enemy.
+    # Push forward and close the distance on the nearest enemy. (${combat_push_from_name} → ${combat_push_to_name})@{show_stat_hints  [Free move]|}
       *comment Free movement (2026-09-28, replaces the old "Dash, RAW: the whole action" one-tier move) -- spends
       *comment combat_player_moves_left, not the action, so a player who's exactly one tier out can push forward
       *comment AND still attack the same turn once Engaged, same as real 5e letting you move up to your speed and
@@ -1321,14 +1572,18 @@
       *comment someone at Mid-Range or Long Range still costs multiple moves to close (Dash, below, grants a
       *comment second one per turn if there's an action to spare). The enemy's own closing turn (combat_next_turn)
       *comment mirrors this exact free-move-then-Dash-if-still-short shape. Targets the nearest ELIGIBLE enemy
-      *comment (fight_pick_nearest_target "push"), not kill-priority -- button text stays generic on purpose since
-      *comment which specific enemy that is can change turn to turn in a multi-enemy fight; the confirmation banner
-      *comment below names it once resolved.
+      *comment (fight_pick_nearest_target "push"), not kill-priority. The button still names no specific enemy, on
+      *comment purpose: which enemy is nearest can change turn to turn in a multi-enemy fight. What the button now
+      *comment DOES state is the from/to pair of tiers the move produces, which doesn't require naming anyone -- the
+      *comment confirmation banner below names the enemy once resolved.
       *gosub fight_pick_nearest_target "push"
-      *set combat_enemy_range - 1
-      *if (combat_enemy_range < 0)
-        *set combat_enemy_range 0
-      *set {(("combat_enemy" & combat_active_target) & "_range")} combat_enemy_range
+      *comment The tier change itself is GLOBAL (combat_shift_all_ranges) -- stepping toward one enemy in a
+      *comment multi-enemy fight is a step toward all of them, and the old single-slot write made the sidebar's
+      *comment per-row range tags contradict each other. The nearest eligible enemy is still what gets NARRATED
+      *comment (fight_pick_nearest_target above), so the epithet and the "now Engaged" banner below read exactly
+      *comment as before; fight_sync_target_in then refreshes the scratch off that same slot.
+      *gosub combat_shift_all_ranges "push"
+      *gosub fight_sync_target_in
       *if (combat_enemy_range <= 0)
         You break into a hard sprint, closing the last of the distance before ${combat_enemy_epithet} can react.
         *line_break
@@ -1341,18 +1596,30 @@
       *goto fight_move_spent
 
   *if ((combat_player_moves_left > 0) and (combat_can_fall_back))
-    # Fall back and open the distance from the nearest enemy.
+    # Fall back and open the distance from the nearest enemy. (${combat_fall_from_name} → ${combat_fall_to_name})@{show_stat_hints  [Free move — an adjacent foe may strike as you leave]|}
       *comment Symmetric with Push Forward just above: free movement (2026-09-28), spends combat_player_moves_left
       *comment not the action -- 5e's own speed budget doesn't care which direction you move in. Opens exactly one
-      *comment range tier, not straight to Long Range; still no Attack of Opportunity (out of scope). Distinct from
-      *comment "Break off and disengage" below, which ends the fight outright -- this stays in it, same as Push
-      *comment Forward does. Targets the nearest ELIGIBLE enemy (fight_pick_nearest_target "fallback") -- the one
-      *comment already closest, and so the most urgent to retreat from, not kill-priority.
+      *comment range tier, not straight to Long Range. Distinct from "Break off and run" below, which ends the
+      *comment fight outright -- this stays in it, same as Push Forward does. Targets the nearest ELIGIBLE enemy
+      *comment (fight_pick_nearest_target "fallback") -- the one already closest, and so the most urgent to retreat
+      *comment from, not kill-priority.
+      *comment
+      *comment OPPORTUNITY ATTACKS (2026-09-28). This used to say "still no Attack of Opportunity (out of scope)".
+      *comment Falling back is precisely the trigger 5e defines -- you leave a creature's reach -- so it is now the
+      *comment FIRST place the rule bites, and "retreat is free" stops being true. Order matters: the candidate has
+      *comment to be chosen while everyone is still at their pre-move range (find_opportunity_attacker's own
+      *comment header explains why), which is why this runs BEFORE the shift rather than after.
+      *if (combat_player_disengaged)
+        *comment Disengage covers the whole round, not just one move, so a Dash afterwards stays covered too.
+        *goto fall_back_no_oa
+      *gosub find_opportunity_attacker
+      *label fall_back_no_oa
       *gosub fight_pick_nearest_target "fallback"
-      *set combat_enemy_range + 1
-      *if (combat_enemy_range > 3)
-        *set combat_enemy_range 3
-      *set {(("combat_enemy" & combat_active_target) & "_range")} combat_enemy_range
+      *comment Symmetric with Push Forward: the tier change is GLOBAL (combat_shift_all_ranges), for the same
+      *comment reason -- backing off from one enemy is backing off from all of them, and the nearest eligible one
+      *comment is still what the epithet below names, so the narration is unchanged.
+      *gosub combat_shift_all_ranges "fallback"
+      *gosub fight_sync_target_in
       *if (combat_enemy_range >= 3)
         You break away hard, opening the last of the distance until ${combat_enemy_epithet} is barely in reach.
         *line_break
@@ -1362,6 +1629,10 @@
         You give ground, putting distance between yourself and ${combat_enemy_epithet}.
         *line_break
         [b][🏃 You Fall Back — ${combat_range_display_name}][/b]
+      *comment The opportunity attack lands AFTER the retreat is narrated, so the player sees the consequence of
+      *comment their own move rather than an attack appearing before the thing that caused it. No-op when
+      *comment find_opportunity_attacker found nobody, or when Disengage covered the round.
+      *gosub resolve_opportunity_attack
       *goto fight_move_spent
 
   *if (combat_player_actions_left > 0)
@@ -1703,10 +1974,41 @@
     # Use an item from your satchel.
       *goto fight_use_item
 
-  *if (not(player_movement_restricted))
-    # Break off and disengage.
-      *comment Hidden, not reworded, while Pinned/Hobbled/Off-Balance holds -- same convention "Use an item" above
-      *comment uses when there's nothing to use. The condition's own banner (just printed) already explains why.
+  *if (combat_can_disengage)
+    # [Disengage] Move without provoking a strike from anything standing next to you, for the rest of this round.@{show_stat_hints  [Action]|}
+      *comment DISENGAGE (2026-09-28). 5e makes this a 3rd-level Battle Master maneuver; there is no Battle Master
+      *comment in this game, and building a whole class-resource system for one maneuver is not worth it, so it is
+      *comment a universal ACTION instead -- which drops straight into the existing budget (combat_player_actions_left)
+      *comment and needs no new economy of any kind. The cost is the interesting part: retreat now provokes an
+      *comment opportunity attack (Fall Back, and Break off below), so without this the answer to being caught in
+      *comment melee is "you may leave, and eat a hit for it" with no way to decline. Now there is a real choice --
+      *comment spend the action and leave clean, or keep the action and take your chances.
+      *comment Covers the WHOLE round rather than one move, matching 5e's "your movement doesn't provoke opportunity
+      *comment attacks" for the turn: Dash afterwards is still covered. Once per round, and the round boundary is
+      *comment combat_begin_round, which clears it alongside the enemies' own reaction flags.
+      *set combat_player_disengaged true
+      You shift your weight off the line and square up, refusing to give anyone a clean angle on you.
+      *line_break
+      [b][🌀 Disengaged — nothing can strike you as you move for the rest of this round][/b]
+      *goto fight_action_spent
+
+  *if (combat_can_break_off)
+    # Break off and run, out of the fight for good.
+      *comment Renamed from "Break off and disengage" (2026-09-28) purely because the new Disengage action above
+      *comment now owns that word and two different options answering to it is worse than a reword.
+      *comment
+      *comment No longer free (2026-09-28). It used to cost nothing at all -- no action, no movement -- and simply
+      *comment jumped to fight_fled, which made running away strictly better than fighting. It now costs one
+      *comment movement tier, like any other departure, and provokes an opportunity attack from anything that was
+      *comment in reach: leaving reach is leaving reach whether you intend to keep fighting or not, and 5e is
+      *comment explicit that it is. It is NOT suppressed by Disengage above -- that says your movement doesn't
+      *comment provoke, and this is still movement -- so a player surrounded by melee has a real decision here:
+      *comment eat the swing to escape, or accept you can't break contact on your own.
+      *if (not(combat_player_disengaged))
+        *gosub find_opportunity_attacker
+      *gosub combat_shift_all_ranges "fallback"
+      *label break_off_resolve_oa
+      *gosub resolve_opportunity_attack
       *goto fight_fled
 
   # End your turn.
@@ -1974,9 +2276,12 @@ ${use_text}
       [b][😲 ${combat_enemy_name} Surprised — turn lost][/b]
       *set combat_turn_advanced_this_page true
     *elseif (combat_intercepting_ally > 0)
-      *comment Interception (2026-09-28): a melee ally is standing between this specific enemy and the player --
-      *comment it fights the ally instead, regardless of its own combat_enemy_range to the player (which might
-      *comment still be > 0; the ally caught up independently). No closing, no player-targeted attack this turn.
+      *comment Interception (2026-09-28; broadened later the same day): a living melee ally is in melee range --
+      *comment any living melee ally at range 0, NOT one that happens to be targeting this enemy. See
+      *comment find_intercepting_ally's own header for why the old tiebreak made this branch almost dead, and for
+      *comment why the weakest engaged ally is chosen so several enemies don't dogpile one slot. This enemy therefore
+      *comment never closes and never attacks the player this turn, and its own combat_enemy_range to the player is
+      *comment irrelevant (it may still be > 0 -- the ally closed on its own initiative, independently of this enemy).
       *gosub_scene combat_dice resolve_enemy_attack_on_ally combat_intercepting_ally
       *gosub_scene combat_prose fight_narrate_ally_attack "enemy" cnt_slot "ally" combat_intercepting_ally combat_enemy_atk_on_ally_hit
       *set combat_turn_advanced_this_page true
@@ -3030,10 +3335,14 @@ ${use_text}
 *comment together, each opened at a different range, to play-test the nearest-enemy movement targeting
 *comment (fight_pick_nearest_target), kill-priority attack targeting (fight_pick_target), free movement/Dash, and
 *comment ally AI all at once instead of in isolation. The Vanguard Swordsman (Close, 1) is nearer than the
-*comment Rearguard Archer (Long Range, 3) -- Push Forward/Fall Back should resolve against whichever of the two
-*comment is actually nearest for that direction, not whichever has less HP. Rook (melee ally, Mid-Range, 2) has
-*comment to close on its own target over a couple of rounds; Kess (ranged ally) attacks every turn regardless of
-*comment range, same as fight_dev_ally_ranged_test.
+*comment Rearguard Archer (Long Range, 3) -- Push Forward/Fall Back should NARRATE against whichever of the two is
+*comment actually nearest for that direction rather than whichever has less HP, and the button text should preview
+*comment that same tier pair ("Close -> Engaged"). **Watch the two ranges after a single Push Forward:** this pair is
+*comment also the check for combat_shift_all_ranges, which moves EVERY living enemy, so they must go 0 and 2. A 0 and
+*comment 3 result means the tier change went to a single slot again -- the pre-2026-09-28 behaviour, and the reason
+*comment this probe's original note only claimed to test "movement targeting." Rook (melee ally, Mid-Range, 2) has to
+*comment close on its own target over a couple of rounds; Kess (ranged ally) attacks every turn regardless of range,
+*comment same as fight_dev_ally_ranged_test.
 *set combat_is_nonlethal false
 *set combat_lib_1 "swordsman"
 *set combat_enemy_name_override "Vanguard Swordsman"
