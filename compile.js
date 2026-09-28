@@ -177,6 +177,12 @@ function compile(){
   // allScenes object and every *gosub_scene combat ... call fails at runtime
   // with "scene doesn't exist" the moment a player actually reaches a fight.
   verifyFileName("combat.txt");
+  // "combat_prose" holds combat.txt's static narration text pools, split out 2026-09-28 to keep combat.txt
+  // mechanics-focused (see combat_prose.txt's own header comment). Reached only via *gosub_scene combat_prose
+  // <label>, never *goto_scene/*finish, same shape as combat.txt/death.txt/equipment.txt -- deliberately NOT in
+  // *scene_list, so it needs its own line here or a compiled build fails with "scene doesn't exist" the moment
+  // any fight tries to print a weapon hit, an enemy type's line, or a spell's flavor text.
+  verifyFileName("combat_prose.txt");
   // "death" is a *goto_scene-only shared death screen (see death.txt's own
   // header comment) and, same as combat.txt above, is deliberately NOT in
   // *scene_list -- it isn't "the next chapter" for anyone's *finish chain,

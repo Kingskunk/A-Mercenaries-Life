@@ -34,11 +34,14 @@ function autotester(sceneText, nav, sceneName, extraLabels) {
     if (this.testFinish) this.testFinish();
   }
 
-  // Don't test for *bugs; *if cheating makes *bugs fake-reachable
+  // *bug is a hard error in the real engine (web/scene.js throws), so it must be one here too: a
+  // *bug that only stopped the walk would let the run report PASSED while silently abandoning the
+  // rest of that path -- which is how a broken branch stays invisible. Safe to enforce: the scenes
+  // currently contain no *bug calls at all, so nothing existing changes behaviour.
   Scene.prototype.bug = function test_bug(msg) {
     // skip over *bug choice_beta; it likely appears at the top of startup, to prevent pushes
     if (msg === "choice_beta") return;
-    this.finished = true;
+    throw new Error((this.lineMsg ? this.lineMsg() : "") + "Bug: " + msg);
   };
 
   Scene.prototype.page_break = function(buttonName) {

@@ -1014,6 +1014,10 @@
 *create combat_ally_dmg_banner_4 ""
 *create combat_ally_atk_hit false
 *create combat_ally_dmg_dealt 0
+*comment Interception outputs (2026-09-28): resolve_enemy_attack_on_ally's own hit flag/damage total, same
+*comment naming convention as combat_ally_atk_hit/_dmg_dealt just above but for the reverse direction.
+*create combat_enemy_atk_on_ally_hit false
+*create combat_enemy_dmg_on_ally_dealt 0
 *create combat_magic_missile_locked false
 *create locked_combat_magic_missile_page_id 0
 *create second_wind_locked false
@@ -1090,6 +1094,9 @@
 *comment header comment.
 *create combat_incoming_dmg_suffix ""
 *create combat_outgoing_dmg_suffix ""
+*comment Per-slot now (2026-09-28, combat_enemy1_disadvantage etc. below) -- this bare copy is purely the
+*comment "active target" scratch, synced in by fight_sync_target_in and consumed on that slot's own next attack
+*comment (resolve_enemy_attack/resolve_enemy_attack_on_ally), same pattern as combat_enemy_bane_expires_round.
 *create combat_enemy_disadvantage false
 *comment The player's action budget for a turn (2026-09-26). One action and one bonus action by default. combat_player_actions_max and
 *comment combat_player_bonus_max are what an ONGOING effect changes (Haste would make the first 2 while it lasts and put it back to 1 when
@@ -1126,6 +1133,12 @@
 *create locked_combat_attack_spend_page_id 0
 *create combat_attack_grant_locked false
 *create locked_combat_attack_grant_page_id 0
+*comment Per-slot now (2026-09-28, combat_enemy1_advantage etc. below), same "active target" scratch pattern as
+*comment combat_enemy_disadvantage just above -- EXCEPT this bare copy also doubles as a pending pre-fight
+*comment ambush flag: a scene sets it true before calling the fight ("the creature strikes first," several
+*comment sites in alderford.txt/port_valen.txt/port_valen_dredge_end.txt), and apply_enemy_type (combat.txt)
+*comment copies it onto every slot as each is built, so a multi-enemy ambush grants it to all of them, not just
+*comment slot 1. fight_cleanup clears this bare copy afterward so it can't leak into a fight that never set it.
 *create combat_enemy_advantage false
 *comment Condition-on-hit (Frightened/Poisoned): a fight_<name> label sets
 *comment these three to make its enemy's hit inflict disadvantage on the
@@ -1360,6 +1373,10 @@
 *comment so it stays selected ("sticky") across rounds until then, exactly like a real fight would expect, and a
 *comment fight with no HUD attached (or nothing ever clicked) behaves identically to before this existed.
 *create combat_player_chosen_target 0
+*comment Interception (2026-09-28): which ally slot (1-4, 0 = none) is blocking the enemy CURRENTLY dispatching
+*comment in combat_next_turn's enemy branch -- set fresh by find_intercepting_ally (combat.txt) every time that
+*comment branch runs, so it never needs an external reset the way combat_ally<N>_target below does.
+*create combat_intercepting_ally 0
 *comment Total pre-declared enemy slots (widened from 3 to 6, 2026-09-27). ChoiceScript has no arrays, so this
 *comment is the real ceiling on how many enemies one fight can hold; every loop below reads it instead of a
 *comment literal, so raising it later is: bump this number, *create the new slot's variables (mirroring an
@@ -1380,6 +1397,8 @@
 *create combat_enemy1_dmg_type "bludgeoning"
 *create combat_enemy1_weapon_type "melee"
 *create combat_enemy1_bane_expires_round 0
+*create combat_enemy1_disadvantage false
+*create combat_enemy1_advantage false
 *create combat_enemy1_range 0
 *comment Per-slot condition/stun/movepool/resistance storage -- see the
 *comment scratch-var comment block above. A slot that never sets these (every
@@ -1434,6 +1453,8 @@
 *create combat_enemy2_dmg_type "bludgeoning"
 *create combat_enemy2_weapon_type "melee"
 *create combat_enemy2_bane_expires_round 0
+*create combat_enemy2_disadvantage false
+*create combat_enemy2_advantage false
 *create combat_enemy2_range 0
 *create combat_enemy2_inflicts_condition false
 *create combat_enemy2_condition_name ""
@@ -1489,6 +1510,8 @@
 *create combat_enemy3_dmg_type "bludgeoning"
 *create combat_enemy3_weapon_type "melee"
 *create combat_enemy3_bane_expires_round 0
+*create combat_enemy3_disadvantage false
+*create combat_enemy3_advantage false
 *create combat_enemy3_range 0
 *create combat_enemy3_inflicts_condition false
 *create combat_enemy3_condition_name ""
@@ -1538,6 +1561,8 @@
 *create combat_enemy4_dmg_type "bludgeoning"
 *create combat_enemy4_weapon_type "melee"
 *create combat_enemy4_bane_expires_round 0
+*create combat_enemy4_disadvantage false
+*create combat_enemy4_advantage false
 *create combat_enemy4_range 0
 *create combat_enemy4_inflicts_condition false
 *create combat_enemy4_condition_name ""
@@ -1587,6 +1612,8 @@
 *create combat_enemy5_dmg_type "bludgeoning"
 *create combat_enemy5_weapon_type "melee"
 *create combat_enemy5_bane_expires_round 0
+*create combat_enemy5_disadvantage false
+*create combat_enemy5_advantage false
 *create combat_enemy5_range 0
 *create combat_enemy5_inflicts_condition false
 *create combat_enemy5_condition_name ""
@@ -1636,6 +1663,8 @@
 *create combat_enemy6_dmg_type "bludgeoning"
 *create combat_enemy6_weapon_type "melee"
 *create combat_enemy6_bane_expires_round 0
+*create combat_enemy6_disadvantage false
+*create combat_enemy6_advantage false
 *create combat_enemy6_range 0
 *create combat_enemy6_inflicts_condition false
 *create combat_enemy6_condition_name ""
@@ -1707,12 +1736,14 @@
 *create combat_flavor_enemy_miss_4 ""
 *create combat_flavor_enemy_miss_5 ""
 *comment ══════════════════════════════════════════════════════════════
-*comment ALLY POOL (2026-09-27) -- storage plus a placeholder attack-narration pool. Step 2 of the turn-order/
-*comment initiative rebuild (see combat_enemy_slot_cap above for step 1, the enemy pool widening). Nothing
-*comment populates combat_ally_count yet, no AI picks a move, and nothing calls fight_narrate_ally_attack
-*comment (combat.txt) -- a fight can fill these fields, nothing acts on them yet. Mirrors the enemy pool's
-*comment basic fields only (name/hp/ac/attack/damage/epithet), not its condition/stun/movepool/resistance
-*comment machinery, since no ally AI exists to use any of that.
+*comment ALLY POOL (2026-09-27, ranged AI + type library + independent position 2026-09-28) -- storage, a
+*comment reusable type library (apply_ally_type/apply_ally_roster, combat.txt, mirroring apply_enemy_type/
+*comment fight_library), and real turn-taking AI (combat_next_turn's ally branch, combat.txt): ranged allies
+*comment attack every turn regardless of distance; melee allies close their OWN range (below) one tier per turn
+*comment until it reaches 0, then attack -- independent of combat_enemy_range, so a melee ally can be ahead of or
+*comment behind the player, not glued to the player's own distance from the target. Mirrors the enemy pool's
+*comment basic fields (name/hp/ac/attack/damage/epithet), not its condition/stun/movepool/resistance machinery,
+*comment since ally AI doesn't use any of that yet.
 *comment ══════════════════════════════════════════════════════════════
 *create combat_ally_slot_cap 4
 *create combat_ally_count 0
@@ -1778,7 +1809,56 @@
 *create combat_ally4_dmg_type "bludgeoning"
 *create combat_ally4_weapon_type "melee"
 *create combat_ally4_dexterity 10
-*comment Scratch copies fight_narrate_ally_attack (combat.txt) fills via {}-indirection right before printing --
+*comment Independent position (2026-09-28): each ally's OWN distance to whatever it's currently fighting, same
+*comment 0-3 tier scale as combat_enemy_range (0 Engaged .. 3 Long Range) but tracked separately per ally, not
+*comment shared with the player's own range to that enemy -- a melee ally closes it on its own turn (see
+*comment combat_next_turn's ally branch, combat.txt) and can be nearer or farther than the player is. Left at the
+*comment type's default (0, Engaged) unless the calling fight_<name> label overrides it before calling
+*comment fight_library, same convention as combat_enemy_range. Never read for weapon_type "ranged" -- a ranged
+*comment ally still attacks regardless of distance, unchanged.
+*create combat_ally0_range 0
+*create combat_ally1_range 0
+*create combat_ally2_range 0
+*create combat_ally3_range 0
+*create combat_ally4_range 0
+*comment Interception (2026-09-28): which enemy slot (1-6, 0 = none) this ally last picked as its target, set
+*comment durably in combat_next_turn's ally branch right after fight_pick_target -- unlike combat_active_target
+*comment (a shared scratch value overwritten by whoever's turn is currently running), this survives on the ally's
+*comment own slot until it picks again. find_intercepting_ally (combat.txt) reads it, alongside combat_ally<N>_range
+*comment and weapon_type, to decide whether a melee ally is standing between a SPECIFIC enemy and the player.
+*comment Reset to 0 by fight_cleanup, same leftover-state reason as combat_ally<N>_range -- without it, an ally
+*comment who hasn't picked a target yet this fight could still match a stale target slot number from the last one.
+*create combat_ally0_target 0
+*create combat_ally1_target 0
+*create combat_ally2_target 0
+*create combat_ally3_target 0
+*create combat_ally4_target 0
+*comment Ally type library (combat.txt: apply_ally_type/apply_ally_roster), mirroring the enemy one just above --
+*comment a scene sets combat_ally_lib_1 (and optionally _2/_3/_4) to a library type id ("archer", "guard") before
+*comment calling fight_library, instead of hand-authoring every ally stat inline. combat_apply_ally_slot/_type are
+*comment the same kind of caller-set scratch pair as combat_apply_slot/combat_apply_type; cleared by nothing since
+*comment apply_ally_roster always overwrites both before every apply_ally_type call. combat_ally_lib_N is cleared
+*comment by fight_cleanup, same as combat_lib_N.
+*create combat_ally_lib_1 ""
+*create combat_ally_lib_2 ""
+*create combat_ally_lib_3 ""
+*create combat_ally_lib_4 ""
+*create combat_apply_ally_slot 0
+*create combat_apply_ally_type ""
+*comment Name/epithet override, same convention as combat_enemy2_name_override etc.: set before calling
+*comment fight_library to reuse a type under a unique name ("Kess" instead of the archer type's generic
+*comment "Archer"). Applied and cleared inside apply_ally_type itself, since -- like enemy slots 2 and beyond --
+*comment every ally slot is written directly via indirection with no snapshot step to hang an enemy-slot-1-style
+*comment reuse off of instead.
+*create combat_ally1_name_override ""
+*create combat_ally1_epithet_override ""
+*create combat_ally2_name_override ""
+*create combat_ally2_epithet_override ""
+*create combat_ally3_name_override ""
+*create combat_ally3_epithet_override ""
+*create combat_ally4_name_override ""
+*create combat_ally4_epithet_override ""
+*comment Scratch copies fight_narrate_ally_attack (combat_prose.txt) fills via {}-indirection right before printing --
 *comment the same pattern as combat_enemy_name/_epithet for the player's own target, but kept fully separate so
 *comment a narration call can never stomp the player's own in-progress attack-resolution state. Named for
 *comment "attacker"/"defender", not "ally"/"enemy" (renamed 2026-09-27 when the label was generalized to work in
@@ -1787,6 +1867,22 @@
 *create combat_attacker_epithet ""
 *create combat_defender_name ""
 *create combat_defender_epithet ""
+*comment Weapon/spell/death-blow flavor pass-through (2026-09-28, made durable when combat_prose.txt split out of
+*comment combat.txt): combat.txt declares the caller's side of a prose pick with *temp, e.g. *temp fsh "" before
+*comment *gosub_scene combat_prose pick_spell_flavor, then prints ${fsh} after the call returns -- but *temp does
+*comment NOT cross a *gosub_scene file boundary (confirmed the hard way: quicktest immediately failed with
+*comment "Non-existent variable 'fsh'" the moment pick_spell_flavor, now in a different file, tried to *set it).
+*comment These five have to be real *create'd globals instead, exactly like combat_attacker_name/etc. just above
+*comment for the same reason. fsh/fsm: spell hit/miss text (pick_spell_flavor). fwh/fwm: weapon hit/miss text
+*comment (pick_weapon_flavor). fdh: any finishing-blow/death line (pick_spell_death_flavor,
+*comment pick_weapon_death_flavor, and fight_narrate_enemy_turn's own Agathys-retaliation kill, all funnel through
+*comment this one name). Always fully overwritten before being read, same as any other scratch pass-through in
+*comment this file -- the "" default only matters before the very first fight ever runs.
+*create fsh ""
+*create fsm ""
+*create fwh ""
+*create fwm ""
+*create fdh ""
 *comment ══════════════════════════════════════════════════════════════
 *comment TURN ORDER / INITIATIVE (2026-09-27) -- steps 4-5 of the turn-order rebuild. combat_roll_initiative
 *comment (combat.txt, called once from fight_setup, never per-round -- 5e rolls initiative once at the top of a
@@ -1892,6 +1988,8 @@
 *create combat_enemy0_dmg_type "bludgeoning"
 *create combat_enemy0_weapon_type "melee"
 *create combat_enemy0_bane_expires_round 0
+*create combat_enemy0_disadvantage false
+*create combat_enemy0_advantage false
 *create combat_enemy0_range 0
 *create combat_enemy0_inflicts_condition false
 *create combat_enemy0_condition_name ""
@@ -3203,6 +3301,9 @@ HP and every class resource are refilled to full before each one, so every fight
   # 🏹 Ally Ranged Test -- 1 lacedon + 1 ranged ally, to watch resolve_ally_attack
     *set dctest_label "fight_dev_ally_ranged_test"
     *goto dev_combat_test_run
+  # 🛡️ Ally Melee Test -- 1 lacedon opened at Mid-Range + 1 melee ally, to watch it close and strike
+    *set dctest_label "fight_dev_ally_melee_test"
+    *goto dev_combat_test_run
   # Return to Developer Scene Select
     *goto dev_scene_select
 
@@ -3230,6 +3331,8 @@ HP and every class resource are refilled to full before each one, so every fight
   *gosub_scene combat fight_dev_range_test
 *if (dctest_label = "fight_dev_ally_ranged_test")
   *gosub_scene combat fight_dev_ally_ranged_test
+*if (dctest_label = "fight_dev_ally_melee_test")
+  *gosub_scene combat fight_dev_ally_melee_test
 *temp dctest_hp_after hp_current
 *set hp_current hp_max
 *gosub restore_class_resources
@@ -3803,6 +3906,7 @@ ${res_banner}
 *temp rsc_candidate ""
 *temp rsc_override ""
 *temp rsc_ability ""
+*temp rsc_ability_ok false
 *temp rsc_mod 0
 *temp rsc_prof false
 *label roll_skill_check_loop
@@ -3836,6 +3940,30 @@ ${res_banner}
   *set rsc_prof {("skill_" & rsc_candidate)}
   *if (rsc_prof)
     *set rsc_mod + prof_bonus
+  *comment Fail loudly instead of rolling garbage. A typo'd ability override ("st") sets
+  *comment rsc_ability to something none of the six branches above match, so rsc_mod stays 0 and
+  *comment rsc_best_ability reaches roll_d20_check as a value it has no branch for. check_mod is
+  *comment *create'd once and only ever assigned inside those six branches, never reset per roll, so
+  *comment the roll would silently reuse whatever the PREVIOUS check left in it -- a plausible-looking
+  *comment wrong roll with no crash, and an empty skill name in the banner. A bad skill ID is already
+  *comment caught louder and earlier by the engine ("Non-existent variable 'skill_<id>'") when the
+  *comment dynamic rsc_prof lookup below resolves; this covers the override path, which nothing else does.
+  *comment One operator per *if, as everywhere else in this file -- chained "and" inside a single
+  *comment paren group is a parse error in ChoiceScript.
+  *if (rsc_ability = "str")
+    *set rsc_ability_ok true
+  *if (rsc_ability = "dex")
+    *set rsc_ability_ok true
+  *if (rsc_ability = "con")
+    *set rsc_ability_ok true
+  *if (rsc_ability = "int")
+    *set rsc_ability_ok true
+  *if (rsc_ability = "wis")
+    *set rsc_ability_ok true
+  *if (rsc_ability = "cha")
+    *set rsc_ability_ok true
+  *if (not(rsc_ability_ok))
+    *bug "roll_skill_check: ability override '${rsc_override}' did not resolve to a real ability (got '${rsc_ability}') -- check the override at the call site"
   *if ((not(rsc_have_best)) or (rsc_mod > rsc_best_bonus))
     *set rsc_have_best true
     *set rsc_best_bonus rsc_mod
@@ -3846,6 +3974,10 @@ ${res_banner}
 *set rsc_i + 1
 *if (rsc_i <= 3)
   *goto roll_skill_check_loop
+*comment The loop above only runs for a non-empty skill slot, so a caller who passed "" in all three
+*comment never reaches the per-slot check and would otherwise fall through with check_stat set to "".
+*if (rsc_best_ability = "")
+  *bug "roll_skill_check: no skill was offered -- all three skill slots were empty"
 *set check_stat rsc_best_ability
 *set check_skill rsc_best_display
 *set check_dc rsc_dc
@@ -4207,7 +4339,13 @@ ${combat_player_dmg_roll_banner}
     *if (cea_roll_2 > cea_roll)
       *set cea_roll cea_roll_2
     *set cea_adv_label " (Advantage)"
+  *comment Consumed on this actual roll (2026-09-28): reset both the bare scratch AND the per-slot field this
+  *comment enemy's own storage lives in, or fight_sync_target_in would just re-sync "still true" back onto the
+  *comment bare scratch the next time this same slot becomes active target.
   *set combat_enemy_advantage false
+  *set combat_enemy_disadvantage false
+  *set {(("combat_enemy" & combat_active_target) & "_advantage")} false
+  *set {(("combat_enemy" & combat_active_target) & "_disadvantage")} false
   *set combat_enemy_atk_total (cea_roll + combat_enemy_atk_bonus)
   *temp cea_atk_bonus_str ""
   *if (combat_enemy_atk_bonus >= 0)
@@ -4322,7 +4460,109 @@ ${combat_player_dmg_roll_banner}
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment COMBAT: ALLY ATTACK RESOLUTION (ranged only -- first pass)
+*comment COMBAT: INTERCEPTION -- ENEMY ATTACKS AN ALLY (2026-09-28)
+*comment The enemy currently dispatching (combat_active_target, already synced by fight_sync_target_in the same
+*comment as resolve_enemy_attack above) attacks a living melee ally standing in its way instead of the player --
+*comment find_intercepting_ally (combat.txt) decides WHETHER this gets called at all; this label only resolves
+*comment the roll once it has. Reuses the SAME per-enemy-slot lock/banner fields as resolve_enemy_attack
+*comment (combat_enemy_atk_locked_N etc.) rather than adding a parallel set -- a given enemy only ever attacks
+*comment ONE side on its own turn, so there's no risk of the two directions colliding on the same lock within one
+*comment page. Advantage/disadvantage and Bane DO carry over -- they belong to the attacking enemy, not to
+*comment whichever side it ends up hitting, so a Vicious Mockery'd or Baned enemy rolls the same way here as it
+*comment would against the player (a real gap in the first draft of this label, caught by the designer asking
+*comment "if I Mockery an enemy and it gets intercepted, does disadvantage still apply?" -- it didn't, until this
+*comment fix). Still deliberately plain otherwise: no Shield/Agathys/conditions/stun -- none of that exists for an
+*comment ally target, so there's nothing to extend yet.
+*comment Inputs: reao_a_slot (1-4, which combat_allyN_* is being attacked)
+*comment Outputs: combat_enemy_atk_on_ally_hit, combat_enemy_dmg_on_ally_dealt; combat_allyN_hp is reduced directly
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_enemy_attack_on_ally
+*params reao_a_slot
+*temp reao_ap (("combat_ally" & reao_a_slot) & "_")
+*temp reao_lockname (("combat_enemy_atk_locked_" & combat_active_target))
+*temp reao_bannername (("combat_enemy_dmg_banner_" & combat_active_target))
+*temp reao_atk_bannername (("combat_enemy_atk_banner_" & combat_active_target))
+*if (not(locked_combat_enemy_atk_page_id = page_id))
+  *set combat_enemy_atk_locked_1 false
+  *set combat_enemy_atk_locked_2 false
+  *set combat_enemy_atk_locked_3 false
+  *set combat_enemy_atk_locked_4 false
+  *set combat_enemy_atk_locked_5 false
+  *set combat_enemy_atk_locked_6 false
+  *set locked_combat_enemy_atk_page_id page_id
+*temp reao_already_locked {reao_lockname}
+*if (not(reao_already_locked))
+  *temp reao_roll 0
+  *rand reao_roll 1 20
+  *temp reao_adv_label ""
+  *if ((combat_enemy_disadvantage) and (not(combat_enemy_advantage)))
+    *temp reao_roll_2 0
+    *rand reao_roll_2 1 20
+    *if (reao_roll_2 < reao_roll)
+      *set reao_roll reao_roll_2
+    *set reao_adv_label " (Disadvantage)"
+  *if ((combat_enemy_advantage) and (not(combat_enemy_disadvantage)))
+    *temp reao_roll_2 0
+    *rand reao_roll_2 1 20
+    *if (reao_roll_2 > reao_roll)
+      *set reao_roll reao_roll_2
+    *set reao_adv_label " (Advantage)"
+  *comment Consumed on this actual roll (2026-09-28): reset both the bare scratch AND the per-slot field this
+  *comment enemy's own storage lives in, or fight_sync_target_in would just re-sync "still true" back onto the
+  *comment bare scratch the next time this same slot becomes active target.
+  *set combat_enemy_advantage false
+  *set combat_enemy_disadvantage false
+  *set {(("combat_enemy" & combat_active_target) & "_advantage")} false
+  *set {(("combat_enemy" & combat_active_target) & "_disadvantage")} false
+  *temp reao_target_ac {(reao_ap & "ac")}
+  *temp reao_total (reao_roll + combat_enemy_atk_bonus)
+  *temp reao_bonus_str ""
+  *if (combat_enemy_atk_bonus >= 0)
+    *set reao_bonus_str "+${combat_enemy_atk_bonus}"
+  *else
+    *set reao_bonus_str "${combat_enemy_atk_bonus}"
+  *comment Bane (see resolve_cast_bane, startup.txt): the same 1d4-off-the-roll penalty resolve_enemy_attack
+  *comment applies, reading the same already-synced combat_enemy_bane_expires_round (fight_sync_target_in ran for
+  *comment this exact enemy slot before combat_next_turn ever decided to redirect it here).
+  *temp reao_bane_str ""
+  *if (combat_enemy_bane_expires_round >= combat_round)
+    *temp reao_bane_die 0
+    *rand reao_bane_die 1 4
+    *set reao_total - reao_bane_die
+    *set reao_bane_str " -${reao_bane_die} (Bane)"
+  *set combat_enemy_atk_on_ally_hit (reao_total >= reao_target_ac)
+  *temp reao_verdict "MISS"
+  *if (combat_enemy_atk_on_ally_hit)
+    *set reao_verdict "HIT"
+  *set {(reao_atk_bannername)} "[b][🎲 ${combat_enemy_name} Attack Roll: ${reao_roll} ${reao_bonus_str}${reao_adv_label}${reao_bane_str} = ${reao_total} vs AC ${reao_target_ac} — ${reao_verdict}][/b]"
+  *set {(reao_bannername)} ""
+  *set combat_enemy_dmg_on_ally_dealt 0
+  *if (combat_enemy_atk_on_ally_hit)
+    *temp reao_dmg 0
+    *rand reao_dmg 1 combat_enemy_dmg_dice_sides
+    *temp reao_dmg_bonus_str ""
+    *if (combat_enemy_dmg_bonus >= 0)
+      *set reao_dmg_bonus_str "+${combat_enemy_dmg_bonus}"
+    *else
+      *set reao_dmg_bonus_str "${combat_enemy_dmg_bonus}"
+    *temp reao_dmg_total (reao_dmg + combat_enemy_dmg_bonus)
+    *set {(reao_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${reao_dmg} ${reao_dmg_bonus_str} = ${reao_dmg_total}][/b]"
+    *set combat_enemy_dmg_on_ally_dealt reao_dmg_total
+    *set {(reao_ap & "hp")} - reao_dmg_total
+    *if ({(reao_ap & "hp")} < 0)
+      *set {(reao_ap & "hp")} 0
+  *set {(reao_lockname)} true
+*temp reao_atk_banner_text {(reao_atk_bannername)}
+*temp reao_dmg_banner_text {(reao_bannername)}
+*if (not(reao_atk_banner_text = ""))
+  ${reao_atk_banner_text}
+*if (not(reao_dmg_banner_text = ""))
+  *line_break
+  ${reao_dmg_banner_text}
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment COMBAT: ALLY ATTACK RESOLUTION (ranged AND melee, plus interception above)
 *comment An ally's attack against an enemy: roll to hit the target's AC, then damage on a hit. Deliberately as
 *comment plain as resolve_enemy_attack was before Shield/conditions/stun existed there -- no reactions, no
 *comment advantage/disadvantage, no movement (ranged always works regardless of range, so nothing here needs

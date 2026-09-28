@@ -227,7 +227,15 @@ if (fullGame) {
               var match = /(\S+)\s+(\S+)\s*(.*)/.exec(data);
               if (match) {
                 if (match[3]) {
-                  // parameters; print warning?
+                  // A parameterized call. Deliberately NOT registered as an extraLabel: the
+                  // extraLabels jump-start below sets targetLabel and executes with NO argument
+                  // list, so this.temps.param is undefined and the target's *params throws
+                  // "Cannot read properties of undefined". Registering these made quicktest fail
+                  // outright (e.g. *gosub_scene startup roll_skill_check ... -> *label
+                  // roll_skill_check). Argument validation is static work, not the runtime walker's:
+                  // tools/lint_gosub_arity.js checks the count against the target's own *params, and
+                  // now also the roll_skill_check skill ids and ability overrides, none of which
+                  // needs the call site to ever be reached.
                 } else {
                   addFile(match[1]+".txt");
                   if (!gotoSceneLabels[match[1]]) gotoSceneLabels[match[1]] = [];

@@ -166,6 +166,89 @@ const scanFiles = collectScenes(target);
 const tooFew = [];
 const tooMany = [];
 
+// ---------------------------------------------------------------------------
+// roll_skill_check argument CONTENT validation.
+//
+// Counting arguments is only half the job for this one call. Its signature is
+// <DC> "<skill 1>" "<override 1>" "<skill 2>" "<override 2>" "<skill 3>" "<override 3>",
+// and the engine validates NONE of that: an unknown skill id or a typo'd override
+// resolves to an empty/garbage ability, no ability branch fires in roll_d20_check,
+// and because check_mod is *create'd once and never reset per roll, the roll
+// silently reuses the previous check's modifier. No crash, no wrong-looking
+// number, an empty skill name in the banner. Arity checking cannot see any of
+// it, so check the values here, statically, for every call in the repo.
+// ---------------------------------------------------------------------------
+
+// The 18 valid ids are read out of startup.txt's skill_lookup itself rather than
+// hardcoded, so adding a skill to that table automatically makes it legal here.
+const SKILL_LOOKUP_ID = /^\s*\*if\s*\(\s*skl_id\s*=\s*"([^"]+)"\s*\)/;
+const RSC_ABILITY_ID = /^\s*\*if\s*\(\s*rsc_ability\s*=\s*"([^"]+)"\s*\)/;
+
+function idsFromLabel(basename, labelName, re) {
+  const lines = fileLines[basename];
+  const labels = labelIndex[basename];
+  if (!lines || !labels || !(labelName in labels)) return null;
+  const out = new Set();
+  for (let i = labels[labelName]; i < lines.length; i++) {
+    const m = re.exec(lines[i]);
+    if (m) out.add(m[1]);
+    if (/^\s*\*label\b/.test(lines[i]) && i > labels[labelName]) break;
+  }
+  return out.size ? out : null;
+}
+
+const validSkills =
+  idsFromLabel('startup.txt', 'skill_lookup', SKILL_LOOKUP_ID) ||
+  new Set(['acrobatics', 'animal_handling', 'arcana', 'athletics', 'deception', 'history',
+    'insight', 'intimidation', 'investigation', 'medicine', 'nature', 'perception',
+    'performance', 'persuasion', 'religion', 'sleight_of_hand', 'stealth', 'survival']);
+const validAbilities =
+  idsFromLabel('startup.txt', 'roll_skill_check', RSC_ABILITY_ID) ||
+  new Set(['str', 'dex', 'con', 'int', 'wis', 'cha']);
+
+const unquote = (s) => s.trim().replace(/^"(.*)"$/, '$1');
+const badArgs = [];
+
+for (const basename of scanFiles) {
+  if (!(basename in fileLines)) continue;
+  const lines = fileLines[basename];
+  lines.forEach((raw, idx) => {
+    const m = /^\s*\*gosub_scene\s+startup\s+roll_skill_check\s*(.*)$/.exec(raw);
+    if (!m) return;
+    const args = splitArgs(m[1]);
+    if (args.length !== 7) return; // arity is this tool's other job; don't double-report
+
+    const problems = [];
+    // The DC may be a literal (the common case) or a variable holding a computed one --
+    // port_valen.txt scales several checks off climax_dc / fish_route_dc / hendryk_*_dc, and
+    // the engine resolves a bare identifier in this position just fine. Only reject things
+    // that can be neither.
+    const dc = args[0].trim();
+    if (!/^\d+$/.test(dc) && !/^[A-Za-z_]\w*$/.test(dc)) {
+      problems.push(`arg 1 (the DC) is "${dc}", expected a plain number or a variable name`);
+    }
+    for (const [dcSlot, skillIdx, ovrIdx] of [[2, 1, 2], [3, 3, 4], [4, 5, 6]]) {
+      const skill = unquote(args[skillIdx]);
+      const ovr = unquote(args[ovrIdx]);
+      if (skill !== '' && !validSkills.has(skill)) {
+        problems.push(`slot ${dcSlot - 1} skill id "${skill}" is not one of the ${validSkills.size} skills in skill_lookup`);
+      }
+      if (ovr !== '' && !validAbilities.has(ovr)) {
+        problems.push(`slot ${dcSlot - 1} ability override "${ovr}" is not one of ${[...validAbilities].join('/')} (or "" for the skill's own ability)`);
+      }
+      // A filled override on an empty skill slot is discarded without a word: the loop
+      // only ever reads the override for a non-empty skill, so this is dead config
+      // that reads as though it does something.
+      if (skill === '' && ovr !== '') {
+        problems.push(`slot ${dcSlot - 1} has override "${ovr}" but an empty skill slot — the override is silently discarded`);
+      }
+    }
+    if (problems.length) {
+      badArgs.push({ file: basename, line: idx + 1, problems, text: raw.trim() });
+    }
+  });
+}
+
 for (const basename of scanFiles) {
   if (!(basename in fileLines)) continue;
   const sceneName = basename.replace(/\.txt$/, '');
@@ -227,6 +310,17 @@ if (tooFew.length === 0 && tooMany.length === 0) {
     console.log(`\n${tooMany.length} TOO MANY argument(s) — not a crash (the engine silently drops the extras), but likely a stale call after a *params list shrank:\n`);
     for (const e of tooMany) console.log(formatEntry(e));
   }
+}
+
+if (badArgs.length > 0) {
+  console.log(`\n${badArgs.length} roll_skill_check call(s) with INVALID argument values — these do NOT crash; they roll with a wrong (often stale) modifier and print an empty skill name:\n`);
+  for (const e of badArgs) {
+    console.log(`  ${e.file}:${e.line}`);
+    for (const p of e.problems) console.log(`      - ${p}`);
+    console.log(`      ${e.text}`);
+  }
+} else {
+  console.log(`\nAll roll_skill_check calls use valid skill ids and ability overrides.`);
 }
 
 process.exit(0);

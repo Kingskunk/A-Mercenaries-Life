@@ -3,7 +3,11 @@
 *comment All dice math (attack rolls, damage, spell slots, temp HP, locks)
 *comment lives in startup.txt -- this file just wires those primitives into
 *comment a playable round-by-round loop and owns the mechanical shell every
-*comment fight shares (the choice skeleton, the enemy-turn resolution).
+*comment fight shares (the choice skeleton, the enemy-turn resolution). Every static narration text pool this
+*comment file selects from (weapon hits/misses/finishers, enemy type flavor, spell flavor) lives in
+*comment combat_prose.txt instead (split out 2026-09-28 to keep this file mechanics-focused) -- reached with
+*comment *gosub_scene combat_prose <label>, never a bare *gosub, same as every other cross-file call in this
+*comment codebase. See combat_prose.txt's own header for the full list and the calling convention.
 *comment
 *comment Calling convention: a scene starts a fight with
 *comment   *gosub_scene combat fight_<name>
@@ -14,10 +18,13 @@
 *comment when the calling quest scene writes both together, instead of a
 *comment jarring cut between this file's text and theirs.
 *comment
-*comment ALLY POOL: combat_ally1-4_* (startup.txt) is storage only, and fight_narrate_ally_attack below is
-*comment placeholder narration nothing calls yet -- no ally AI or turn queue exists. Not wired into any real fight.
-*comment It narrates either direction (ally-vs-enemy or enemy-vs-ally), not just ally-as-attacker -- both sides
-*comment are named purely by epithet, so one label covers both.
+*comment ALLY POOL: combat_ally1-4_* (startup.txt) plus a reusable type library (apply_ally_type/
+*comment apply_ally_roster, near fight_library below) -- a scene sets combat_ally_lib_1 (and optionally _2/_3/_4)
+*comment to a type id ("archer", "guard") before calling fight_library, same convention as combat_lib_1 for
+*comment enemies. Ranged allies attack every turn regardless of distance; melee allies close their own
+*comment combat_ally<N>_range (independent of the player's combat_enemy_range) one tier a turn before they can
+*comment strike. fight_narrate_ally_attack narrates either direction (ally-vs-enemy or enemy-vs-ally, though only
+*comment ally-as-attacker is wired up so far) -- both sides are named purely by epithet, so one label covers both.
 *comment
 *comment ADDING A FIGHT: use fight_library (near the end of this file). Set
 *comment combat_lib_1 (and _2 through _6) to library type ids, set combat_is_nonlethal if it should end in surrender, then *gosub_scene combat fight_library.
@@ -540,6 +547,10 @@
 *comment that populates combat_ally_count without this reset would hand its allies to the next fight, the same
 *comment class of leftover-state bug the range reset just above exists to prevent.
 *set combat_ally_count 0
+*comment Pre-fight ambush advantage: the bare pending flag a scene sets before calling the fight (see
+*comment apply_enemy_type's own comment) -- cleared here so a fight that never sets it doesn't inherit a leftover
+*comment true from whatever earlier fight used it last.
+*set combat_enemy_advantage false
 *set combat_player_dmg_type "bludgeoning"
 *set combat_enemy_resist_type_1 ""
 *set combat_enemy_resist_type_2 ""
@@ -584,6 +595,12 @@
   *comment Bane (see resolve_cast_bane, startup.txt): 0 means "not Baned." Reset per-slot here so a future fight's
   *comment slot never inherits an earlier fight's still-ticking duration.
   *set {(fc_p & "bane_expires_round")} 0
+  *comment Disadvantage/advantage (2026-09-28): consumed on that slot's own next attack (resolve_enemy_attack/
+  *comment resolve_enemy_attack_on_ally), but reset here too as a backstop -- an enemy that dies (or the fight
+  *comment ends) before it ever gets to act with the debuff/buff applied would otherwise leave it sitting true for
+  *comment whatever fight reuses this slot number next.
+  *set {(fc_p & "disadvantage")} false
+  *set {(fc_p & "advantage")} false
   *comment Range: 0 means Engaged, every type's default -- reset per-slot for the same reason as Bane above.
   *set {(fc_p & "range")} 0
   *set {("combat_lib_" & fc_i)} ""
@@ -621,6 +638,22 @@
   *set {(fc_p & "charisma_override")} 0
   *set fc_i + 1
   *goto fight_cleanup_slot_loop
+*comment Ally pool: reset per-slot range, target and library id, the same leftover-state guard as the enemy
+*comment range/lib resets in the loop just above. combat_ally_count 0 (already set) stops anything from reading
+*comment a stale slot's other fields -- apply_ally_type always fully rewrites name/hp/ac/etc. for any slot a
+*comment future fight actually uses -- but range and target are deliberately left untouched by apply_ally_type
+*comment (range is caller-optional, same as combat_enemy_range; target has no "type default" at all), so without
+*comment this an ally slot that ended one fight mid-approach would start its next fight already closed in, and a
+*comment stale target slot number could wrongly satisfy find_intercepting_ally before this fight's ally ever
+*comment picks a target of its own.
+*temp fc_a_i 1
+*label fight_cleanup_ally_loop
+*if (fc_a_i <= combat_ally_slot_cap)
+  *set {(("combat_ally" & fc_a_i) & "_range")} 0
+  *set {(("combat_ally" & fc_a_i) & "_target")} 0
+  *set {("combat_ally_lib_" & fc_a_i)} ""
+  *set fc_a_i + 1
+  *goto fight_cleanup_ally_loop
 *set combat_player_keyed false
 *set combat_player_creature false
 *set combat_player_actions_max 1
@@ -739,6 +772,13 @@
 *comment Bane (see resolve_cast_bane, startup.txt): synced in the same way, so resolve_enemy_attack's Bane
 *comment penalty check reads the right slot's own expiry.
 *set combat_enemy_bane_expires_round {(fti_p & "bane_expires_round")}
+*comment Disadvantage/advantage (2026-09-28, made per-slot -- previously a single shared bare flag that could
+*comment wrongly land on whichever enemy attacked next, not the one actually targeted): synced in the same way as
+*comment Bane, so a Mockery'd/Ray-of-Frost'd/Braced-against enemy (or one seated with pre-fight ambush advantage,
+*comment see apply_enemy_type) carries its own penalty regardless of which slot's turn comes up next, or how many
+*comment rounds it takes an enemy that's still closing distance to actually get an attack in.
+*set combat_enemy_disadvantage {(fti_p & "disadvantage")}
+*set combat_enemy_advantage {(fti_p & "advantage")}
 *comment Range: synced in the same way, read by the weapon-attack *choice gate and combat_next_turn's enemy
 *comment branch (both combat.txt).
 *set combat_enemy_range {(fti_p & "range")}
@@ -808,6 +848,28 @@
   *goto fight_check_all_dead_loop
 *return
 
+*label find_intercepting_ally
+*comment Interception (2026-09-28): sets combat_intercepting_ally to the first living melee ally slot engaged
+*comment (range 0) with the enemy CURRENTLY dispatching (combat_active_target, already synced by
+*comment fight_sync_target_in same as every other field combat_next_turn's enemy branch reads), or 0 if none.
+*comment combat_ally<N>_target is set durably whenever an ally picks a target (combat_next_turn's ally branch),
+*comment so this survives across turns even though combat_active_target itself is a shared, transient scratch
+*comment value overwritten by whoever's turn is currently running. A ranged ally never intercepts -- it isn't
+*comment standing in the way, it's shooting from wherever it already is.
+*set combat_intercepting_ally 0
+*temp fia_i 1
+*label find_intercepting_ally_loop
+*if ((fia_i <= combat_ally_slot_cap) and (combat_intercepting_ally = 0))
+  *temp fia_hp {(("combat_ally" & fia_i) & "_hp")}
+  *temp fia_weapon {(("combat_ally" & fia_i) & "_weapon_type")}
+  *temp fia_target {(("combat_ally" & fia_i) & "_target")}
+  *temp fia_range {(("combat_ally" & fia_i) & "_range")}
+  *if ((((fia_hp > 0) and (fia_weapon = "melee")) and (fia_target = combat_active_target)) and (fia_range <= 0))
+    *set combat_intercepting_ally fia_i
+  *set fia_i + 1
+  *goto find_intercepting_ally_loop
+*return
+
 *label fight_victory
 *line_break
 *set combat_enemy_hp 0
@@ -871,14 +933,16 @@
 *comment ──────────────────────────────────────────────────────────────
 
 *label combat_begin_round
-*comment Start of a round: refill the budgets, and clear the enemy's disadvantage from the last one (Ray of Frost, Vicious Mockery
-*comment and Brace set it during the player's turn and it holds until the round is over, so it must not be cleared on every hub entry).
-*comment player_movement_restricted is round-scoped the same way -- see its own create comment (startup.txt) for
-*comment why it isn't tied to the player's next roll like disadvantage itself.
+*comment Start of a round: refill the budgets. Enemy disadvantage/advantage (Ray of Frost, Vicious Mockery, Brace,
+*comment pre-fight ambush) is no longer cleared here (2026-09-28) -- now that it's stored per-slot
+*comment (combat_enemy<N>_disadvantage/_advantage, see fight_sync_target_in/apply_enemy_type/resolve_enemy_attack),
+*comment it's tied to that specific enemy's own next attack roll, RAW, and is consumed there instead -- a fight
+*comment where the targeted enemy spends a round or two just closing distance (the range-tier system) no longer
+*comment loses the debuff before that enemy ever actually attacks. player_movement_restricted stays round-scoped
+*comment on purpose, for its own separate reason -- see its own create comment (startup.txt).
 *set combat_player_actions_left combat_player_actions_max
 *set combat_player_bonus_left combat_player_bonus_max
 *set combat_player_attacks_left combat_player_attacks_max
-*set combat_enemy_disadvantage false
 *set player_movement_restricted false
 *return
 
@@ -1168,13 +1232,34 @@
         [b][🏃 You Push Forward — ${combat_range_display_name}][/b]
       *goto fight_action_spent
 
+  *if ((combat_player_actions_left > 0) and (combat_enemy_range < 3))
+    # Fall back and open the distance from ${combat_enemy_epithet}.
+      *comment Symmetric with Push Forward just above: Dash, RAW -- the whole action, no attack this turn. Opens
+      *comment exactly one range tier, not straight to Long Range, same one-tier-per-turn simplification, and
+      *comment still no Attack of Opportunity (out of scope, same as Push Forward and the enemy's own closing
+      *comment logic). Distinct from "Break off and disengage" below, which ends the fight outright -- this stays
+      *comment in it, same as Push Forward does.
+      *gosub fight_pick_target
+      *set combat_enemy_range + 1
+      *if (combat_enemy_range > 3)
+        *set combat_enemy_range 3
+      *set {(("combat_enemy" & combat_active_target) & "_range")} combat_enemy_range
+      *if (combat_enemy_range >= 3)
+        You break away hard, opening the last of the distance until ${combat_enemy_epithet} is barely in reach.
+        *line_break
+        [b][🏃 You Fall Back — Long Range][/b]
+      *else
+        *gosub combat_range_name combat_enemy_range
+        You give ground, putting distance between yourself and ${combat_enemy_epithet}.
+        *line_break
+        [b][🏃 You Fall Back — ${combat_range_display_name}][/b]
+      *goto fight_action_spent
+
   *if ((combat_player_actions_left > 0) and ((((wizard_cantrip = "fire_bolt") or (wizard_cantrip_2 = "fire_bolt")) or (wizard_cantrip_3 = "fire_bolt")) or ((race_cantrip = "fire_bolt") or (race_cantrip_2 = "fire_bolt"))))
     # [Cantrip: Fire Bolt] Hurl a mote of arcane flame at ${combat_enemy_epithet}.
       *gosub fight_pick_target
       *set combat_current_spell_id "fire_bolt"
-      *temp fsh ""
-      *temp fsm ""
-      *gosub pick_spell_flavor
+      *gosub_scene combat_prose pick_spell_flavor
       *set check_stat "int"
       *set check_dc combat_enemy_ac
       *set check_skill "Fire Bolt"
@@ -1186,8 +1271,7 @@
         *set combat_player_dmg_bonus 0
         *gosub_scene startup resolve_player_hit true
         *if (combat_enemy_hp <= 0)
-          *temp fdh ""
-          *gosub pick_spell_death_flavor
+          *gosub_scene combat_prose pick_spell_death_flavor
           ${fdh}
           *line_break
           [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Fire damage${combat_outgoing_dmg_suffix}][/b]
@@ -1205,9 +1289,7 @@
     # [Cantrip: Ray of Frost] Loose a beam of numbing cold at ${combat_enemy_epithet}.
       *gosub fight_pick_target
       *set combat_current_spell_id "ray_of_frost"
-      *temp fsh ""
-      *temp fsm ""
-      *gosub pick_spell_flavor
+      *gosub_scene combat_prose pick_spell_flavor
       *set check_stat "int"
       *set check_dc combat_enemy_ac
       *set check_skill "Ray of Frost"
@@ -1218,10 +1300,9 @@
         *set combat_player_dmg_dice_sides 8
         *set combat_player_dmg_bonus 0
         *gosub_scene startup resolve_player_hit true
-        *set combat_enemy_disadvantage true
+        *set {(("combat_enemy" & combat_active_target) & "_disadvantage")} true
         *if (combat_enemy_hp <= 0)
-          *temp fdh ""
-          *gosub pick_spell_death_flavor
+          *gosub_scene combat_prose pick_spell_death_flavor
           ${fdh}
           *line_break
           [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Cold damage${combat_outgoing_dmg_suffix}][/b]
@@ -1239,9 +1320,7 @@
     # [Cantrip: Shocking Grasp] Drive a crackling jolt of lightning into ${combat_enemy_epithet}.
       *gosub fight_pick_target
       *set combat_current_spell_id "shocking_grasp"
-      *temp fsh ""
-      *temp fsm ""
-      *gosub pick_spell_flavor
+      *gosub_scene combat_prose pick_spell_flavor
       *comment RAW: advantage on the attack roll if the target wears metal
       *comment armor. combat_enemy_metal_armor defaults false (see startup.txt)
       *comment -- only true for a fight that explicitly sets it on an armored
@@ -1259,8 +1338,7 @@
         *set combat_player_dmg_bonus 0
         *gosub_scene startup resolve_player_hit true
         *if (combat_enemy_hp <= 0)
-          *temp fdh ""
-          *gosub pick_spell_death_flavor
+          *gosub_scene combat_prose pick_spell_death_flavor
           ${fdh}
           *line_break
           [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Lightning damage${combat_outgoing_dmg_suffix}][/b]
@@ -1282,9 +1360,7 @@
     # [Cantrip: Eldritch Blast] Unleash a crackling beam of eldritch force at ${combat_enemy_epithet}.
       *gosub fight_pick_target
       *set combat_current_spell_id "eldritch_blast"
-      *temp fsh ""
-      *temp fsm ""
-      *gosub pick_spell_flavor
+      *gosub_scene combat_prose pick_spell_flavor
       *set check_stat "cha"
       *set check_dc combat_enemy_ac
       *set check_skill "Eldritch Blast"
@@ -1296,8 +1372,7 @@
         *set combat_player_dmg_bonus 0
         *gosub_scene startup resolve_player_hit true
         *if (combat_enemy_hp <= 0)
-          *temp fdh ""
-          *gosub pick_spell_death_flavor
+          *gosub_scene combat_prose pick_spell_death_flavor
           ${fdh}
           *line_break
           [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Force damage${combat_outgoing_dmg_suffix}][/b]
@@ -1315,9 +1390,7 @@
     # [Cantrip: Chill Touch] Conjure a skeletal hand of necrotic frost against ${combat_enemy_epithet}.
       *gosub fight_pick_target
       *set combat_current_spell_id "chill_touch"
-      *temp fsh ""
-      *temp fsm ""
-      *gosub pick_spell_flavor
+      *gosub_scene combat_prose pick_spell_flavor
       *set check_stat "cha"
       *set check_dc combat_enemy_ac
       *set check_skill "Chill Touch"
@@ -1329,8 +1402,7 @@
         *set combat_player_dmg_bonus 0
         *gosub_scene startup resolve_player_hit true
         *if (combat_enemy_hp <= 0)
-          *temp fdh ""
-          *gosub pick_spell_death_flavor
+          *gosub_scene combat_prose pick_spell_death_flavor
           ${fdh}
           *line_break
           [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Necrotic damage${combat_outgoing_dmg_suffix}][/b]
@@ -1348,9 +1420,7 @@
     # [Cantrip: Vicious Mockery] Hurl a barbed, perfectly-aimed insult at ${combat_enemy_epithet}.
       *gosub fight_pick_target
       *set combat_current_spell_id "vicious_mockery"
-      *temp fsh ""
-      *temp fsm ""
-      *gosub pick_spell_flavor
+      *gosub_scene combat_prose pick_spell_flavor
       *comment Enemy saving throw against the player's own spell_save_dc -- Vicious Mockery is a Wisdom save, RAW.
       *comment The target rolls here (resolve_enemy_save, startup.txt), not the player.
       *gosub_scene startup resolve_enemy_save "combat_enemy_" "wisdom" "Wisdom" 0
@@ -1361,10 +1431,9 @@
         *comment No attack roll here -- a failed save, not a hit -- so resolve_player_hit's Hex bonus must not
         *comment fire (RAW: Hex triggers only when you hit with an attack).
         *gosub_scene startup resolve_player_hit false
-        *set combat_enemy_disadvantage true
+        *set {(("combat_enemy" & combat_active_target) & "_disadvantage")} true
         *if (combat_enemy_hp <= 0)
-          *temp fdh ""
-          *gosub pick_spell_death_flavor
+          *gosub_scene combat_prose pick_spell_death_flavor
           ${fdh}
           *line_break
           [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Psychic damage${combat_outgoing_dmg_suffix}][/b]
@@ -1382,13 +1451,10 @@
     # [Spell: Magic Missile] Unleash three darts of force that strike unerringly, bypassing the defenses of ${combat_enemy_epithet} entirely.
       *gosub fight_pick_target
       *set combat_current_spell_id "magic_missile"
-      *temp fsh ""
-      *temp fsm ""
-      *gosub pick_spell_flavor
+      *gosub_scene combat_prose pick_spell_flavor
       *gosub_scene startup resolve_magic_missile
       *if (combat_enemy_hp <= 0)
-        *temp fdh ""
-        *gosub pick_spell_death_flavor
+        *gosub_scene combat_prose pick_spell_death_flavor
         ${fdh}
         *line_break
         [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
@@ -1429,16 +1495,13 @@
     # [Spell: Dissonant Whispers] Utter a hideous, discordant psychic phrase that wracks the mind of ${combat_enemy_epithet}.
       *gosub fight_pick_target
       *set combat_current_spell_id "dissonant_whispers"
-      *temp fsh ""
-      *temp fsm ""
-      *gosub pick_spell_flavor
+      *gosub_scene combat_prose pick_spell_flavor
       *comment Enemy saving throw against the player's own spell_save_dc -- Dissonant Whispers is a Wisdom save,
       *comment RAW. The target rolls here (resolve_enemy_save, startup.txt), not the player.
       *gosub_scene startup resolve_enemy_save "combat_enemy_" "wisdom" "Wisdom" 0
       *gosub_scene startup resolve_dissonant_whispers
       *if (combat_enemy_hp <= 0)
-        *temp fdh ""
-        *gosub pick_spell_death_flavor
+        *gosub_scene combat_prose pick_spell_death_flavor
         ${fdh}
         *line_break
         [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Psychic Damage${combat_outgoing_dmg_suffix}][/b]
@@ -1473,7 +1536,7 @@
   *if (combat_player_actions_left > 0)
     # Brace and watch the strikes of ${combat_enemy_epithet}, giving ground instead of pressing the attack.
       *gosub fight_pick_target
-      *set combat_enemy_disadvantage true
+      *set {(("combat_enemy" & combat_active_target) & "_disadvantage")} true
       You plant your feet and hold your ground, tracking the movement of ${combat_enemy_epithet} instead of swinging blind.
       *goto fight_action_spent
 
@@ -1588,9 +1651,7 @@ ${use_text}
 *set check_dc combat_enemy_ac
 *comment fwh/fwm land on one of 3 randomized variants (melee or ranged
 *comment per weapon_type) -- see pick_weapon_flavor below.
-*temp fwh ""
-*temp fwm ""
-*gosub pick_weapon_flavor
+*gosub_scene combat_prose pick_weapon_flavor
 *comment Always proficient with your own equipped weapon -- see roll_d20_check's own header (startup.txt).
 *set check_add_prof_bonus true
 *gosub_scene startup roll_d20_check
@@ -1659,8 +1720,7 @@ ${use_text}
     *else
       [b][🗡️ Sneak Attack | 🩸 Hit: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
   *elseif (combat_enemy_hp <= 0)
-    *temp fdh ""
-    *gosub pick_weapon_death_flavor
+    *gosub_scene combat_prose pick_weapon_death_flavor
     ${fdh}
     *line_break
     [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
@@ -1693,936 +1753,6 @@ ${use_text}
 *if (fceh_is_attack)
   *goto fight_attack_spent
 *goto fight_action_spent
-
-*label fight_narrate_enemy_turn
-*comment Called once per attacking slot from combat_next_turn below, with
-*comment combat_active_target/combat_enemy_* already synced to that slot
-*comment and resolve_enemy_attack already resolved against it.
-*comment Two sources of hit/miss prose:
-*comment   1. A slot filled from the enemy type library (combat_enemy1/2/3_flavor_type, set by apply_enemy_type) takes
-*comment      its line from flavor_from_type: one of EIGHT variants, written once per type. A fight can still set
-*comment      the per-slot combat_flavor_enemy*_hit/miss_N variable for a variant 1-5 to replace that one line with
-*comment      local color; an empty variable leaves the library line in place. (fight_cleanup clears them.)
-*comment   2. A slot with no type (a hand-authored fight) uses its own combat_flavor_enemy*_hit/miss_1-5 as always,
-*comment      one of five variants, with fallback to variant 1 if a variant was left blank.
-*temp fnet_hit ""
-*temp fnet_miss ""
-*temp fnet_v 1
-*temp fnet_type ""
-*temp fnet_m2h ""
-*temp fnet_m2m ""
-*comment Generic over any slot via combat_active_target and {}-name indirection instead of one hand-written
-*comment branch per slot. Two DIFFERENT name prefixes matter here and must not be confused: the stat-field
-*comment prefix ("combat_enemy2_...", for _flavor_type) and the flavor-override prefix ("combat_flavor_enemy2_...",
-*comment for _hit_N/_miss_N/_move2_hit/_move2_miss) are not the same string.
-*temp fnet_ep (("combat_enemy" & combat_active_target) & "_")
-*temp fnet_fp (("combat_flavor_enemy" & combat_active_target) & "_")
-*set fnet_type {(fnet_ep & "flavor_type")}
-*if (fnet_type = "")
-  *rand fnet_v 1 5
-*else
-  *rand fft_v 1 8
-  *set fnet_v fft_v
-  *set fft_type fnet_type
-  *rand fft_m2 1 3
-  *gosub flavor_from_type
-*temp fnet_use_override false
-*comment Nested, not a compound "and": ChoiceScript evaluates both sides of "and" unconditionally (no short-circuit),
-*comment so an inline {} indirection read on the wrong side of one would look up combat_flavor_enemy1_hit_1 (which
-*comment does not exist -- slot 1 uses the bare, unnumbered pool) every time slot 1 is active, not just when the
-*comment slot-2-and-beyond branch is actually taken.
-*if (combat_active_target > 1)
-  *if (not({(fnet_fp & "hit_1")} = ""))
-    *set fnet_use_override true
-*if ((combat_active_target > 1) and (not(fnet_type = "")))
-  *set fnet_use_override true
-*if (fnet_use_override)
-  *if (combat_active_target > 1)
-    *if (fnet_v = 1)
-      *set fnet_hit {(fnet_fp & "hit_1")}
-      *set fnet_miss {(fnet_fp & "miss_1")}
-    *if (fnet_v = 2)
-      *set fnet_hit {(fnet_fp & "hit_2")}
-      *set fnet_miss {(fnet_fp & "miss_2")}
-    *if (fnet_v = 3)
-      *set fnet_hit {(fnet_fp & "hit_3")}
-      *set fnet_miss {(fnet_fp & "miss_3")}
-    *if (fnet_v = 4)
-      *set fnet_hit {(fnet_fp & "hit_4")}
-      *set fnet_miss {(fnet_fp & "miss_4")}
-    *if (fnet_v = 5)
-      *set fnet_hit {(fnet_fp & "hit_5")}
-      *set fnet_miss {(fnet_fp & "miss_5")}
-*else
-  *if (fnet_v = 1)
-    *set fnet_hit combat_flavor_enemy_hit_1
-    *set fnet_miss combat_flavor_enemy_miss_1
-  *if (fnet_v = 2)
-    *set fnet_hit combat_flavor_enemy_hit_2
-    *set fnet_miss combat_flavor_enemy_miss_2
-  *if (fnet_v = 3)
-    *set fnet_hit combat_flavor_enemy_hit_3
-    *set fnet_miss combat_flavor_enemy_miss_3
-  *if (fnet_v = 4)
-    *set fnet_hit combat_flavor_enemy_hit_4
-    *set fnet_miss combat_flavor_enemy_miss_4
-  *if (fnet_v = 5)
-    *set fnet_hit combat_flavor_enemy_hit_5
-    *set fnet_miss combat_flavor_enemy_miss_5
-*if (fnet_hit = "")
-  *if (not(fnet_type = ""))
-    *set fnet_hit fft_hit
-  *elseif (fnet_use_override)
-    *set fnet_hit {(fnet_fp & "hit_1")}
-  *else
-    *set fnet_hit combat_flavor_enemy_hit_1
-*if (fnet_miss = "")
-  *if (not(fnet_type = ""))
-    *set fnet_miss fft_miss
-  *elseif (fnet_use_override)
-    *set fnet_miss {(fnet_fp & "miss_1")}
-  *else
-    *set fnet_miss combat_flavor_enemy_miss_1
-*comment Movepool override -- move 2 gets its own line instead of the variant pool above, since it fires far less
-*comment often per fight. A library slot draws one of three pairs from flavor_from_type; a per-slot
-*comment combat_flavor_enemy*_move2_hit/miss (set by a hand-authored fight, or as local color) replaces it. Picked
-*comment per-slot, same as the base hit/miss override earlier in this label, so a mixed fight's third enemy
-*comment uses its own move2 text and never an earlier slot's (a slot with no movepool -- combat_enemy_move2_used
-*comment stays false for it -- skips this whole block).
-*if (combat_enemy_move2_used)
-  *if (combat_active_target > 1)
-    *set fnet_m2h {(fnet_fp & "move2_hit")}
-    *set fnet_m2m {(fnet_fp & "move2_miss")}
-  *else
-    *set fnet_m2h combat_flavor_enemy_move2_hit
-    *set fnet_m2m combat_flavor_enemy_move2_miss
-  *if ((fnet_m2h = "") and (not(fnet_type = "")))
-    *set fnet_m2h fft_m2hit
-  *if ((fnet_m2m = "") and (not(fnet_type = "")))
-    *set fnet_m2m fft_m2miss
-  *set fnet_hit fnet_m2h
-  *set fnet_miss fnet_m2m
-*comment Layout per attacker: the blank line before it (two breaks) leads resolve_enemy_attack's own roll banners
-*comment instead of leading here -- see that label's own comment for why. From here down, each prose line and
-*comment each [b][...] banner still needs its own line: ChoiceScript merges consecutive source lines, so every
-*comment prose/banner boundary needs an explicit *line_break, including the ones that only sometimes have a
-*comment neighbour (Agathys retaliation, condition/stun banners).
-*if (combat_shield_triggered)
-  *if (combat_enemy_hit_success)
-    A shimmering lattice of force flares to life around you on pure reflex, but the blow crashes through it anyway, striking home regardless.
-    *line_break
-    [b][✨ Shield Broken Through | 🩸 ${combat_enemy_name} Hits: ${combat_enemy_dmg_dealt} damage${combat_incoming_dmg_suffix} | HP: ${hp_current} / ${hp_max}][/b]
-  *else
-    A shimmering lattice of force flares to life around you on pure reflex, deflecting the strike a hair's breadth away.
-    *line_break
-    [b][✨ Shield Holds | 💨 ${combat_enemy_name} Misses][/b]
-*else
-  *if (combat_enemy_hit_success)
-    ${fnet_hit}
-    *line_break
-    *if (combat_agathys_triggered)
-      *if (combat_agathys_shattered)
-        As the blow lands, your frost-sheathe shatters violently in a burst of crystalline rime, driving shards of biting cold deep into ${combat_enemy_epithet}!
-        *line_break
-        [b][❄️ Armor of Agathys: ${combat_player_dmg_dealt} Cold Damage dealt to ${combat_enemy_name}${combat_outgoing_dmg_suffix} | Frost Armor Shattered][/b]
-      *else
-        As the blow lands, the rime clinging to you pulses with bitter frost, biting into ${combat_enemy_epithet} while the shell holds!
-        *line_break
-        [b][❄️ Armor of Agathys: ${combat_player_dmg_dealt} Cold Damage dealt to ${combat_enemy_name}${combat_outgoing_dmg_suffix} | ${temp_hp} Temp HP remaining][/b]
-      *line_break
-      *if (combat_enemy_hp <= 0)
-        *temp fdh ""
-        *set combat_current_spell_id "armor_of_agathys"
-        *gosub pick_spell_death_flavor
-        ${fdh}
-        *line_break
-        [b][💀 ${combat_enemy_name} Defeated — Killed by Its Own Strike][/b]
-        *line_break
-    [b][🩸 ${combat_enemy_name} Hits: ${combat_enemy_dmg_dealt} damage${combat_incoming_dmg_suffix} | HP: ${hp_current} / ${hp_max}][/b]
-    *if (combat_condition_inflicted)
-      *line_break
-      *if (player_movement_restricted)
-        [b][${combat_enemy_condition_icon} ${combat_enemy_condition_name} — disadvantage on your next attack, and you can't disengage while it holds][/b]
-      *else
-        [b][${combat_enemy_condition_icon} ${combat_enemy_condition_name} — disadvantage on your next attack][/b]
-    *if (combat_stun_inflicted)
-      *line_break
-      [b][${combat_enemy_stun_icon} ${combat_enemy_stun_name} — you lose your next turn][/b]
-  *else
-    ${fnet_miss}
-    *line_break
-    [b][💨 ${combat_enemy_name} Misses][/b]
-*gosub fight_sync_target_out
-*return
-
-*label fight_narrate_ally_attack
-*comment PLACEHOLDER: narrates one attack between an ally and an enemy, whichever side is attacking. Nothing
-*comment calls this yet: no ally AI picks a move, no turn queue exists, and combat_ally_count stays 0 in every
-*comment real fight. Deliberately generic prose since no actual ally exists yet to give this its own voice --
-*comment revisit the wording once one does. Both sides are named purely by epithet, third person throughout, so
-*comment the same text works for either direction; only which prefix is "attacker" and which is "defender"
-*comment changes. (The existing enemy-attacks-PLAYER prose, flavor_type_swordsman etc., can't be reused the same
-*comment way -- it's hardcoded second-person, "your shoulder", which only makes sense when the player is the target.)
-*comment Params: attacker's kind ("ally"/"enemy") and slot, defender's kind and slot, and whether the attack hit.
-*comment Pure narration -- no HP/damage is applied here; that's the caller's job once attack resolution exists
-*comment for this direction.
-*comment The five variants per pool are built HERE, fresh, with ${} resolved against the just-synced epithets below
-*comment -- not stored as a *set string elsewhere and reused, because a stored string's ${} tokens resolve at that
-*comment *set (immediately), not later when the string is finally printed. Confirmed the hard way: an earlier draft
-*comment stored these once in startup.txt and every line came out with the epithet baked in blank.
-*params fnaa_attacker_kind fnaa_attacker_slot fnaa_defender_kind fnaa_defender_slot fnaa_hit
-*temp fnaa_ap ((("combat_" & fnaa_attacker_kind) & fnaa_attacker_slot) & "_")
-*set combat_attacker_name {(fnaa_ap & "name")}
-*set combat_attacker_epithet {(fnaa_ap & "epithet")}
-*temp fnaa_ranged ({(fnaa_ap & "weapon_type")} = "ranged")
-*temp fnaa_dp ((("combat_" & fnaa_defender_kind) & fnaa_defender_slot) & "_")
-*set combat_defender_name {(fnaa_dp & "name")}
-*set combat_defender_epithet {(fnaa_dp & "epithet")}
-*temp fnaa_v 1
-*rand fnaa_v 1 5
-*temp fnaa_line ""
-*if (fnaa_ranged)
-  *if (fnaa_v = 1)
-    *set fnaa_line "${combat_attacker_epithet} looses a shot that finds ${combat_defender_epithet}."
-  *if (fnaa_v = 2)
-    *set fnaa_line "A shot from ${combat_attacker_epithet} catches ${combat_defender_epithet} square on."
-  *if (fnaa_v = 3)
-    *set fnaa_line "${combat_attacker_epithet} puts a shot into ${combat_defender_epithet} from the flank."
-  *if (fnaa_v = 4)
-    *set fnaa_line "${combat_attacker_epithet} lets fly, and the shot lands true on ${combat_defender_epithet}."
-  *if (fnaa_v = 5)
-    *set fnaa_line "${combat_attacker_epithet}'s shot cuts through the din and strikes ${combat_defender_epithet}."
-  *if (not(fnaa_hit))
-    *if (fnaa_v = 1)
-      *set fnaa_line "${combat_attacker_epithet} looses a shot at ${combat_defender_epithet}, but it goes wide."
-    *if (fnaa_v = 2)
-      *set fnaa_line "${combat_attacker_epithet}'s shot sails past ${combat_defender_epithet} in the chaos."
-    *if (fnaa_v = 3)
-      *set fnaa_line "${combat_attacker_epithet} loses the shot as ${combat_defender_epithet} shifts clear."
-    *if (fnaa_v = 4)
-      *set fnaa_line "The shot from ${combat_attacker_epithet} clips nothing but air near ${combat_defender_epithet}."
-    *if (fnaa_v = 5)
-      *set fnaa_line "${combat_attacker_epithet} fires, but ${combat_defender_epithet} is already moving."
-*else
-  *if (fnaa_v = 1)
-    *set fnaa_line "${combat_attacker_epithet} closes in and lands a solid blow on ${combat_defender_epithet}."
-  *if (fnaa_v = 2)
-    *set fnaa_line "${combat_attacker_epithet} presses the attack, and the strike catches ${combat_defender_epithet} off guard."
-  *if (fnaa_v = 3)
-    *set fnaa_line "A quick exchange, and ${combat_attacker_epithet}'s blow connects, staggering ${combat_defender_epithet}."
-  *if (fnaa_v = 4)
-    *set fnaa_line "${combat_attacker_epithet} drives in past the guard, and the hit lands hard on ${combat_defender_epithet}."
-  *if (fnaa_v = 5)
-    *set fnaa_line "${combat_attacker_epithet} finds an opening, and the blow tells on ${combat_defender_epithet}."
-  *if (not(fnaa_hit))
-    *if (fnaa_v = 1)
-      *set fnaa_line "${combat_attacker_epithet} strikes at ${combat_defender_epithet}, but the blow is turned aside."
-    *if (fnaa_v = 2)
-      *set fnaa_line "${combat_attacker_epithet} presses in, but ${combat_defender_epithet} twists clear."
-    *if (fnaa_v = 3)
-      *set fnaa_line "${combat_attacker_epithet}'s attack goes wide of ${combat_defender_epithet}."
-    *if (fnaa_v = 4)
-      *set fnaa_line "${combat_attacker_epithet} overreaches, and ${combat_defender_epithet} slips the strike."
-    *if (fnaa_v = 5)
-      *set fnaa_line "${combat_attacker_epithet} can't find a way past ${combat_defender_epithet}'s guard this time."
-*line_break
-${fnaa_line}
-*return
-
-*label pick_weapon_flavor
-*comment In every library fight (combat_player_keyed) the lines come from flavor_player_<damage type> against a person or
-*comment flavor_creature_<damage type> against a creature (combat_player_creature), built now, at the moment of the attack,
-*comment so they follow the weapon and name the fighter struck. The rest of this label is the stored pool, for a
-*comment hand-authored fight only (none is shipped).
-*if (combat_player_keyed)
-  *if (combat_player_creature)
-    *if (weapon_type = "ranged")
-      *gosub flavor_creature_ranged
-    *elseif (weapon_damage_type = "slashing")
-      *gosub flavor_creature_slashing
-    *elseif (weapon_damage_type = "piercing")
-      *gosub flavor_creature_piercing
-    *else
-      *gosub flavor_creature_bludgeoning
-  *else
-    *if (weapon_type = "ranged")
-      *gosub flavor_player_ranged
-    *elseif (weapon_damage_type = "slashing")
-      *gosub flavor_player_slashing
-    *elseif (weapon_damage_type = "piercing")
-      *gosub flavor_player_piercing
-    *else
-      *gosub flavor_player_bludgeoning
-  *return
-*comment Randomly selects one of up to 8 variants for the caller's already-*temp'd
-*comment fwh/fwm (melee or ranged, per weapon_type). A hand-authored fight defines variants 1-5 (6-8 are only ever the
-*comment library's), so a roll it cannot answer is rerolled among the five it has. Falls back to variant 1 if a variant is blank.
-*temp pwf_v 1
-*rand pwf_v 1 8
-*if (pwf_v > 5)
-  *if (weapon_type = "ranged")
-    *if (combat_flavor_weapon_hit_ranged_8 = "")
-      *rand pwf_v 1 5
-  *else
-    *if (combat_flavor_weapon_hit_8 = "")
-      *rand pwf_v 1 5
-*if (weapon_type = "ranged")
-  *if (pwf_v = 1)
-    *set fwh combat_flavor_weapon_hit_ranged_1
-    *set fwm combat_flavor_weapon_miss_ranged_1
-  *if (pwf_v = 2)
-    *set fwh combat_flavor_weapon_hit_ranged_2
-    *set fwm combat_flavor_weapon_miss_ranged_2
-  *if (pwf_v = 3)
-    *set fwh combat_flavor_weapon_hit_ranged_3
-    *set fwm combat_flavor_weapon_miss_ranged_3
-  *if (pwf_v = 4)
-    *set fwh combat_flavor_weapon_hit_ranged_4
-    *set fwm combat_flavor_weapon_miss_ranged_4
-  *if (pwf_v = 5)
-    *set fwh combat_flavor_weapon_hit_ranged_5
-    *set fwm combat_flavor_weapon_miss_ranged_5
-  *if (pwf_v = 6)
-    *set fwh combat_flavor_weapon_hit_ranged_6
-    *set fwm combat_flavor_weapon_miss_ranged_6
-  *if (pwf_v = 7)
-    *set fwh combat_flavor_weapon_hit_ranged_7
-    *set fwm combat_flavor_weapon_miss_ranged_7
-  *if (pwf_v = 8)
-    *set fwh combat_flavor_weapon_hit_ranged_8
-    *set fwm combat_flavor_weapon_miss_ranged_8
-*else
-  *if (pwf_v = 1)
-    *set fwh combat_flavor_weapon_hit_1
-    *set fwm combat_flavor_weapon_miss_1
-  *if (pwf_v = 2)
-    *set fwh combat_flavor_weapon_hit_2
-    *set fwm combat_flavor_weapon_miss_2
-  *if (pwf_v = 3)
-    *set fwh combat_flavor_weapon_hit_3
-    *set fwm combat_flavor_weapon_miss_3
-  *if (pwf_v = 4)
-    *set fwh combat_flavor_weapon_hit_4
-    *set fwm combat_flavor_weapon_miss_4
-  *if (pwf_v = 5)
-    *set fwh combat_flavor_weapon_hit_5
-    *set fwm combat_flavor_weapon_miss_5
-  *if (pwf_v = 6)
-    *set fwh combat_flavor_weapon_hit_6
-    *set fwm combat_flavor_weapon_miss_6
-  *if (pwf_v = 7)
-    *set fwh combat_flavor_weapon_hit_7
-    *set fwm combat_flavor_weapon_miss_7
-  *if (pwf_v = 8)
-    *set fwh combat_flavor_weapon_hit_8
-    *set fwm combat_flavor_weapon_miss_8
-*if (fwh = "")
-  *if (weapon_type = "ranged")
-    *set fwh combat_flavor_weapon_hit_ranged_1
-  *else
-    *set fwh combat_flavor_weapon_hit_1
-*if (fwm = "")
-  *if (weapon_type = "ranged")
-    *set fwm combat_flavor_weapon_miss_ranged_1
-  *else
-    *set fwm combat_flavor_weapon_miss_1
-*return
-
-*label pick_weapon_death_flavor
-*comment Sets the caller's already-*temp'd fdh to the finishing blow of a weapon attack, built now, at the moment of the
-*comment kill, from the weapon's damage type and naming the fighter through its epithet (PLAYER FINISHING BLOWS and
-*comment PLAYER LINES AGAINST A CREATURE, above): flavor_yield_<type> when the fight is non-lethal (a person beaten into
-*comment surrender or a stupor), flavor_kill_<type> against a person, flavor_creature_kill_<type> against a creature.
-*if (combat_is_nonlethal)
-  *if (weapon_type = "ranged")
-    *gosub flavor_yield_ranged
-  *elseif (weapon_damage_type = "slashing")
-    *gosub flavor_yield_slashing
-  *elseif (weapon_damage_type = "piercing")
-    *gosub flavor_yield_piercing
-  *else
-    *gosub flavor_yield_bludgeoning
-*elseif (combat_player_creature)
-  *if (weapon_type = "ranged")
-    *gosub flavor_creature_kill_ranged
-  *elseif (weapon_damage_type = "slashing")
-    *gosub flavor_creature_kill_slashing
-  *elseif (weapon_damage_type = "piercing")
-    *gosub flavor_creature_kill_piercing
-  *else
-    *gosub flavor_creature_kill_bludgeoning
-*else
-  *if (weapon_type = "ranged")
-    *gosub flavor_kill_ranged
-  *elseif (weapon_damage_type = "slashing")
-    *gosub flavor_kill_slashing
-  *elseif (weapon_damage_type = "piercing")
-    *gosub flavor_kill_piercing
-  *else
-    *gosub flavor_kill_bludgeoning
-*return
-
-*comment ══════════════════════════════════════════════════════════════
-*comment SPELL FLAVOR
-*comment The attack spells used to print one fixed hit line and one fixed miss line each, and the finishers had three
-*comment variants and said "it", "their" and "its hide". They now work like the weapon lines: built at the moment of the
-*comment cast, from flavor_spell_<spell> (eight hit/miss pairs, set into the option's *temp fsh and fsm) and, for the killing
-*comment or surrendering blow, flavor_spell_end_<spell> (five lines each, lethal or non-lethal, set into fdh). They name the
-*comment foe through combat_enemy_epithet and assume nothing about it: the foe is the epithet or, to refer back, singular "they" with a plural verb ("they slow", "they fold"), never he, she or it; no place or weather ("the damp air"), no
-*comment scenery behind the target, and, for a hit, miss or kill, only a body with a head, shoulder, chest, flank, legs and
-*comment a reaching limb, so the same line serves a person or a monster. The non-lethal lines (a person beaten into surrender)
-*comment may use hands, weapons and knees. The spell keeps its own outcome text (the effect and the banner); this is the prose.
-*comment pick_spell_flavor reads combat_current_spell_id, which each spell option already sets.
-*comment ══════════════════════════════════════════════════════════════
-
-*label pick_spell_flavor
-*if (combat_current_spell_id = "fire_bolt")
-  *gosub flavor_spell_fire_bolt
-*elseif (combat_current_spell_id = "ray_of_frost")
-  *gosub flavor_spell_ray_of_frost
-*elseif (combat_current_spell_id = "shocking_grasp")
-  *gosub flavor_spell_shocking_grasp
-*elseif (combat_current_spell_id = "eldritch_blast")
-  *gosub flavor_spell_eldritch_blast
-*elseif (combat_current_spell_id = "chill_touch")
-  *gosub flavor_spell_chill_touch
-*elseif (combat_current_spell_id = "vicious_mockery")
-  *gosub flavor_spell_vicious_mockery
-*elseif (combat_current_spell_id = "magic_missile")
-  *gosub flavor_spell_magic_missile
-*elseif (combat_current_spell_id = "dissonant_whispers")
-  *gosub flavor_spell_dissonant_whispers
-*return
-
-*label flavor_spell_fire_bolt
-*comment Fire Bolt.
-*temp fsp_v 1
-*rand fsp_v 1 8
-*if (fsp_v = 1)
-  *set fsh "A searing mote of fire snaps from your outstretched fingers and punches into ${combat_enemy_epithet} in a violent flare and a hiss of steam."
-  *set fsm "The mote of fire streaks wide, scorching nothing but empty air."
-*if (fsp_v = 2)
-  *set fsh "You flick your fingers, and a bead of white-hot flame lances into ${combat_enemy_epithet}'s chest and bursts in a spray of sparks."
-  *set fsm "You loose the flame a heartbeat late, and ${combat_enemy_epithet} is already moving, and the mote sizzles past and gutters out."
-*if (fsp_v = 3)
-  *set fsh "The fire mote takes ${combat_enemy_epithet} across the shoulder, and the flare spreads outward in a ring of scorching heat, and ${combat_enemy_epithet} flinches from the burn."
-  *set fsm "$!{combat_enemy_epithet} twists aside, and the bolt of fire whips past close enough to singe the air, and dies in a puff of smoke."
-*if (fsp_v = 4)
-  *set fsh "You throw the flame low, and the fire ignites at ${combat_enemy_epithet}'s legs in a roaring gout, and ${combat_enemy_epithet} stumbles back from the heat."
-  *set fsm "The spark leaps from your fingers but curls off course, and the flare fizzles out short of ${combat_enemy_epithet}."
-*if (fsp_v = 5)
-  *set fsh "A whip-crack of orange fire lashes from your palm and licks across ${combat_enemy_epithet}'s flank, leaving a smoking, blackened line."
-  *set fsm "You throw the flame high, and the mote flies over ${combat_enemy_epithet}'s head in a bright arc and burns out."
-*if (fsp_v = 6)
-  *set fsh "You cup the flame and pitch the mote underhand, and the blast lands square on ${combat_enemy_epithet} and blooms into a fist of heat that rocks ${combat_enemy_epithet} back a pace."
-  *set fsm "$!{combat_enemy_epithet} ducks under the streak, and the heat of the bolt rolls harmlessly overhead."
-*if (fsp_v = 7)
-  *set fsh "The bolt streaks in fast and spits a fan of embers on impact, and ${combat_enemy_epithet} recoils from the scorch, a plume of smoke rising."
-  *set fsm "The mote strikes nothing and bursts a few paces beyond ${combat_enemy_epithet} in a soundless flash."
-*if (fsp_v = 8)
-  *set fsh "You snap the working forward, and a lance of fire strikes ${combat_enemy_epithet} high and hard, and the flash leaves the head reeling in a haze of smoke."
-  *set fsm "You fumble the last syllable, and the flame stutters and dies in your palm, leaving only a curl of smoke."
-*return
-
-*label flavor_spell_ray_of_frost
-*comment Ray of Frost.
-*temp fsp_v 1
-*rand fsp_v 1 8
-*if (fsp_v = 1)
-  *set fsh "A pale ray of unnatural cold catches ${combat_enemy_epithet} square on, rime crackling across the point of impact and slowing the next strike to a sluggish crawl."
-  *set fsm "The ray hisses past ${combat_enemy_epithet} and sheds a brief flurry of frost, freezing nothing."
-*if (fsp_v = 2)
-  *set fsh "The ray lances into ${combat_enemy_epithet}'s shoulder, and frost blooms outward in white ferns, and every motion comes slow and stiff."
-  *set fsm "$!{combat_enemy_epithet} shifts at the last instant, and the beam grazes empty air and leaves a fading line of frost."
-*if (fsp_v = 3)
-  *set fsh "You sweep the beam low, and the ray strikes ${combat_enemy_epithet}'s legs, and rime climbs in a cracking sheet, and every step turns to a drag."
-  *set fsm "You aim high, and the ray skims over ${combat_enemy_epithet}'s head and bursts into a cloud of glittering ice."
-*if (fsp_v = 4)
-  *set fsh "The beam hits ${combat_enemy_epithet} in the chest with a sound like ice splitting, and a ring of hoarfrost spreads outward, stiffening every limb."
-  *set fsm "The beam wavers as you draw breath, and the ray sweeps wide of ${combat_enemy_epithet}, trailing a thin, useless mist of cold."
-*if (fsp_v = 5)
-  *set fsh "A thread of numbing cold stitches across ${combat_enemy_epithet}'s flank, and they slow, breath smoking, the motions gone thick and dull."
-  *set fsm "The ray strikes a hand's width short and bursts in a spray of frost."
-*if (fsp_v = 6)
-  *set fsh "The ray takes ${combat_enemy_epithet} across the shoulders, and rime crusts thick, and the next strike will come as if through cold tar."
-  *set fsm "$!{combat_enemy_epithet} dodges, and the ray splinters into a burst of ice crystals that scatter harmlessly."
-*if (fsp_v = 7)
-  *set fsh "You loose the ray at the head, and rime crusts thick over the head, and ${combat_enemy_epithet} reels, sluggish and slow to recover."
-  *set fsm "You loose the cold a moment too soon, and the ray streaks past ${combat_enemy_epithet} and vanishes in a puff of white."
-*if (fsp_v = 8)
-  *set fsh "The beam strikes and holds, and frost spreads across ${combat_enemy_epithet} in a widening crust, dragging every motion to half speed."
-  *set fsm "The ray catches only the very edge of ${combat_enemy_epithet}, and the frost fades from the spot almost at once."
-*return
-
-*label flavor_spell_shocking_grasp
-*comment Shocking Grasp.
-*temp fsp_v 1
-*rand fsp_v 1 8
-*if (fsp_v = 1)
-  *set fsh "Blue-white lightning discharges from your palm into ${combat_enemy_epithet}, locking every muscle in one violent convulsion."
-  *set fsm "The charge finds nothing to grip and dissipates in a shower of harmless sparks."
-*if (fsp_v = 2)
-  *set fsh "You close your hand on ${combat_enemy_epithet}, and a fork of lightning leaps between you, and they arch, every muscle jerking taut."
-  *set fsm "You lunge for a touch, but ${combat_enemy_epithet} jerks away, and the arc spits at empty air and dies."
-*if (fsp_v = 3)
-  *set fsh "Your fingers brush ${combat_enemy_epithet}'s shoulder, and a spitting arc jumps across, and ${combat_enemy_epithet} spasms and staggers, smoke curling from the point of contact."
-  *set fsm "Your fingers close on nothing as ${combat_enemy_epithet} slips aside, and the stored lightning snaps and fades."
-*if (fsp_v = 4)
-  *set fsh "You slap your palm against ${combat_enemy_epithet}'s chest, and the discharge cracks like a whip, and the breath is driven out in a jolt."
-  *set fsm "$!{combat_enemy_epithet} knocks your reaching hand aside, and the discharge sparks harmlessly off into nothing."
-*if (fsp_v = 5)
-  *set fsh "Lightning rides your hand into ${combat_enemy_epithet}'s side, and the crackle runs through every limb, and ${combat_enemy_epithet} judders and stumbles."
-  *set fsm "The crackle leaps from your palm a moment early and gutters out a hand's width short of ${combat_enemy_epithet}."
-*if (fsp_v = 6)
-  *set fsh "A snap of raw current leaps as your fingertips graze ${combat_enemy_epithet}, and every limb kicks out of true for a stunned instant."
-  *set fsm "You overreach, and ${combat_enemy_epithet} twists out of range, and the lightning skitters up your arm and vanishes in a prickle of static."
-*if (fsp_v = 7)
-  *set fsh "You clamp on, and the current roars through ${combat_enemy_epithet} in a blinding jolt, and you feel them buck before ${combat_enemy_epithet} tears free."
-  *set fsm "The grasp glances off ${combat_enemy_epithet}'s side without taking hold, and the spark that jumps is a weak, harmless thing."
-*if (fsp_v = 8)
-  *set fsh "The arc leaps past ${combat_enemy_epithet}'s defenses and finds the neck, and they convulse, crackling."
-  *set fsm "$!{combat_enemy_epithet} recoils from your hand at the last instant, and the arc snaps shut on empty air with a sound like a cracked whip."
-*return
-
-*label flavor_spell_eldritch_blast
-*comment Eldritch Blast.
-*temp fsp_v 1
-*rand fsp_v 1 8
-*if (fsp_v = 1)
-  *set fsh "A jagged streak of violet force slams into ${combat_enemy_epithet} with the concussive boom of a shattered timber."
-  *set fsm "The beam tears past ${combat_enemy_epithet} and dissolves in a spatter of violet sparks."
-*if (fsp_v = 2)
-  *set fsh "The beam crackles from your outstretched hand and strikes ${combat_enemy_epithet} full in the chest with a sound like a dropped anvil, and ${combat_enemy_epithet} is thrown a step back."
-  *set fsm "$!{combat_enemy_epithet} lurches aside, and the blast cracks through the air where the chest had been."
-*if (fsp_v = 3)
-  *set fsh "You cast the force low, and the blast takes ${combat_enemy_epithet} across the legs with a flat, heavy crack, and they buckle."
-  *set fsm "The violet lance goes wide, and only the thunder of the beam's passing touches ${combat_enemy_epithet}."
-*if (fsp_v = 4)
-  *set fsh "The violet lance hammers into ${combat_enemy_epithet}'s shoulder and spins them half around, the air rippling in the wake of the beam."
-  *set fsm "You loose the beam a hair off line, and the violet light hums past ${combat_enemy_epithet}'s head and gutters out."
-*if (fsp_v = 5)
-  *set fsh "A rope of crackling force lashes out and wraps ${combat_enemy_epithet}'s side, and the impact drives the breath out in a grunt."
-  *set fsm "The force strikes nothing, and the report cracks harmlessly through the air."
-*if (fsp_v = 6)
-  *set fsh "You loose the blast, and the force strikes with the thud of a battering ram, and ${combat_enemy_epithet} is shoved bodily backward, off balance and staggering."
-  *set fsm "$!{combat_enemy_epithet} drops low, and the beam sweeps overhead in a snarl of violet light."
-*if (fsp_v = 7)
-  *set fsh "The beam slams into ${combat_enemy_epithet}'s head, and a sharp report rolls out, and ${combat_enemy_epithet} reels, dazed."
-  *set fsm "The blast fizzles a pace short of ${combat_enemy_epithet}, and the crackle dies in your ears."
-*if (fsp_v = 8)
-  *set fsh "You thrust your hand forward, and the eldritch force hits ${combat_enemy_epithet} like a swung beam of timber, and they lurch under the blow."
-  *set fsm "Your aim slips as the working peaks, and the beam skews away, tearing a crackling line through the air and fading."
-*return
-
-*label flavor_spell_chill_touch
-*comment Chill Touch.
-*temp fsp_v 1
-*rand fsp_v 1 8
-*if (fsp_v = 1)
-  *set fsh "A ghostly, translucent hand wreathed in necrotic mist closes around ${combat_enemy_epithet}, sapping the warmth and strength from the wound left behind."
-  *set fsm "The spectral hand dissolves into harmless mist a hair's breadth short of the mark."
-*if (fsp_v = 2)
-  *set fsh "The skeletal hand rakes across ${combat_enemy_epithet}'s chest, and where the fingers pass the color drains to a bruised grey, and they shudder with the cold."
-  *set fsm "You send the hand at ${combat_enemy_epithet}, but the fingers close on nothing as ${combat_enemy_epithet} jerks away, and the mist thins to nothing."
-*if (fsp_v = 3)
-  *set fsh "You fling the spectral hand at ${combat_enemy_epithet}, and the fingers seize the shoulder and squeeze, and ${combat_enemy_epithet} pulls back, staggered by the grave-chill."
-  *set fsm "The ghostly fingers snatch at ${combat_enemy_epithet} and slip through, chilling nothing but the air."
-*if (fsp_v = 4)
-  *set fsh "A pale hand rises out of nothing and clamps onto ${combat_enemy_epithet}'s shoulder, and the limb below goes slack and grey where the fingers close."
-  *set fsm "$!{combat_enemy_epithet} tears free of the reaching hand, and the hand withers into a wisp of grey."
-*if (fsp_v = 5)
-  *set fsh "The ghostly fingers slip past ${combat_enemy_epithet}'s defenses and settle over the heart, and ${combat_enemy_epithet} chokes at the sudden cold that spreads from the touch."
-  *set fsm "The hand lunges, and ${combat_enemy_epithet} ducks, and the cold passes overhead in a brief, biting breath."
-*if (fsp_v = 6)
-  *set fsh "The wraith-hand grips ${combat_enemy_epithet} by the neck for one long heartbeat, and ${combat_enemy_epithet} tears free, gasping, gone waxy and pale."
-  *set fsm "You lose your grip on the working, and the pale hand unravels midair in a curl of necrotic smoke."
-*if (fsp_v = 7)
-  *set fsh "You send the touch low, and the hand closes around ${combat_enemy_epithet}'s leg, and the leg dulls to a numb, dragging weight."
-  *set fsm "The skeletal hand rakes at the space ${combat_enemy_epithet} just left, and the grave-chill fades unspent."
-*if (fsp_v = 8)
-  *set fsh "The spectral hand presses against ${combat_enemy_epithet}'s side, and the cold that pours from the palm is not the cold of any winter, and ${combat_enemy_epithet} staggers, a little of the life gone out."
-  *set fsm "The touch glances off ${combat_enemy_epithet} and gutters out, leaving only a faint, fading chill on the air."
-*return
-
-*label flavor_spell_vicious_mockery
-*comment Vicious Mockery (a miss is a resisted insult).
-*temp fsp_v 1
-*rand fsp_v 1 8
-*if (fsp_v = 1)
-  *set fsh "Your cutting cadence lands with surgical precision, needling straight at a nerve ${combat_enemy_epithet} didn't know was there, and both balance and nerve falter in the same breath."
-  *set fsm "Whatever passes for pride in ${combat_enemy_epithet} shrugs the insult off without a flicker."
-*if (fsp_v = 2)
-  *set fsh "You sneer out a verse so pointed that ${combat_enemy_epithet} actually flinches, and the next strike will come wild and unsure."
-  *set fsm "The jibe lands, but ${combat_enemy_epithet} does not so much as blink."
-*if (fsp_v = 3)
-  *set fsh "The insult strikes home like a slap, and ${combat_enemy_epithet} rocks back, every motion hesitating."
-  *set fsm "You deliver the verse with all the venom you have, and ${combat_enemy_epithet} simply waits for the verse to end."
-*if (fsp_v = 4)
-  *set fsh "You croon a taunt in a voice pitched to carry into the bones, and ${combat_enemy_epithet} shudders, attention wrenched away."
-  *set fsm "The taunt bounces off ${combat_enemy_epithet} without leaving a mark."
-*if (fsp_v = 5)
-  *set fsh "A single barbed word, perfectly placed, and ${combat_enemy_epithet} stumbles over the next step, rattled and furious."
-  *set fsm "$!{combat_enemy_epithet} hears the insult, and the gaze narrows, but nothing in the look wavers."
-*if (fsp_v = 6)
-  *set fsh "Your mockery skewers the last thing ${combat_enemy_epithet} felt sure of, and the poise cracks."
-  *set fsm "You land the barb, and ${combat_enemy_epithet} answers with a long, flat stare that takes the wind out of the performance."
-*if (fsp_v = 7)
-  *set fsh "You dissect ${combat_enemy_epithet} in a dozen acid syllables, and the words find every soft place, and ${combat_enemy_epithet} falters, shaken."
-  *set fsm "The mockery is clever, and utterly wasted; ${combat_enemy_epithet} is beyond being stung."
-*if (fsp_v = 8)
-  *set fsh "The jeer comes out in a rhythm ${combat_enemy_epithet} cannot shake, and the beat rings in the head, and the next strike will land wrong-footed."
-  *set fsm "Your jibe finds only a hard, indifferent calm, and slides off."
-*return
-
-*label flavor_spell_magic_missile
-*comment Magic Missile (never misses).
-*temp fsp_v 1
-*rand fsp_v 1 8
-*if (fsp_v = 1)
-  *set fsh "You speak three crisp syllables and snap your fingers forward. Three glowing, pale-blue darts of crackling arcane force burst from your fingertips, curving unerringly through the air to slam into ${combat_enemy_epithet}."
-*if (fsp_v = 2)
-  *set fsh "Three darts of pale light leave your fingers in a hissing fan, and each curves in to strike ${combat_enemy_epithet} from a different angle, the impacts landing like three thrown stones."
-*if (fsp_v = 3)
-  *set fsh "You point, and the missiles peel away from your hand in a shimmering spiral, and the missiles strike ${combat_enemy_epithet} in the chest, the shoulder and the flank, one after another."
-*if (fsp_v = 4)
-  *set fsh "Blue-white darts streak from your hand and bend around every attempt to dodge, and all three sting into ${combat_enemy_epithet} in a rapid, thudding rhythm."
-*if (fsp_v = 5)
-  *set fsh "You murmur the word, and three needles of force hum across the distance and stitch a line of hammer-blows up ${combat_enemy_epithet}'s side."
-*if (fsp_v = 6)
-  *set fsh "The darts flicker from your fingertips and hit ${combat_enemy_epithet} in a tight cluster over the ribs, each with a dull thump, and they fold around the impact."
-*if (fsp_v = 7)
-  *set fsh "Three bright motes chase ${combat_enemy_epithet} through a twisting turn and strike as one, and the crack of the impact rocks ${combat_enemy_epithet} back."
-*if (fsp_v = 8)
-  *set fsh "A spray of glowing force leaves your hand, and the darts slam home one, two, three, and ${combat_enemy_epithet} staggers under the succession of blows."
-*return
-
-*label flavor_spell_dissonant_whispers
-*comment Dissonant Whispers (a hit is a failed save, a miss a save for half damage).
-*temp fsp_v 1
-*rand fsp_v 1 8
-*if (fsp_v = 1)
-  *set fsh "You loose a jarring, discordant phrase straight into the mind of ${combat_enemy_epithet}, and they jerk, their head snapping aside as though struck."
-  *set fsm "The dissonant phrase lands, but ${combat_enemy_epithet} shudders the worst off, more angry than hurt."
-*if (fsp_v = 2)
-  *set fsh "The phrase you speak has no meaning and no mercy, and ${combat_enemy_epithet} staggers with a strangled sound, the head jerking as though pierced."
-  *set fsm "The whisper finds ${combat_enemy_epithet}'s mind, and ${combat_enemy_epithet} staggers, but the terror slides away half-formed, and the attention comes back to you, furious."
-*if (fsp_v = 3)
-  *set fsh "A whisper too high and too wrong to be a word threads into ${combat_enemy_epithet}'s thoughts, and ${combat_enemy_epithet} recoils from something that is not there."
-  *set fsm "You send the discordant phrase in, and ${combat_enemy_epithet} winces, but stands firm against the worst of the assault."
-*if (fsp_v = 4)
-  *set fsh "You breathe out a chord of dissonance, and ${combat_enemy_epithet} flinches from the sound as though from a blow, twisting away."
-  *set fsm "The phrase catches ${combat_enemy_epithet} only glancingly, and ${combat_enemy_epithet} shudders hard, as if to clear a buzzing."
-*if (fsp_v = 5)
-  *set fsh "The syllables scrape across ${combat_enemy_epithet}'s mind like a splintering chord, and ${combat_enemy_epithet} reels, wild and unmoored, the fight forgotten for a moment."
-  *set fsm "A hint of the wrong sound reaches ${combat_enemy_epithet}, and a shiver runs through them, but ${combat_enemy_epithet} steadies and comes on."
-*if (fsp_v = 6)
-  *set fsh "You hiss a broken lullaby into ${combat_enemy_epithet}'s mind, and ${combat_enemy_epithet} shudders and turns from you, lashing at a sound that is inside the head."
-  *set fsm "$!{combat_enemy_epithet} grits through the dissonance and answers with a low, angry sound, hurt but unbroken."
-*if (fsp_v = 7)
-  *set fsh "The whisper coils into ${combat_enemy_epithet}'s thoughts and tightens, and ${combat_enemy_epithet} sways, twisting in something like pain."
-  *set fsm "The whisper bites, but not deeply, and ${combat_enemy_epithet} pushes through the sound, slowed and furious."
-*if (fsp_v = 8)
-  *set fsh "You speak the wrong word at the wrong pitch, and ${combat_enemy_epithet} lurches away, gripped by a terror with no shape."
-  *set fsm "You feel the phrase strike and slide, and ${combat_enemy_epithet} wavers for an instant and then steadies, the worst spent."
-*return
-
-*label pick_spell_death_flavor
-*comment The finishing blow of a spell, built at the moment of the kill (or the surrender, when the fight is non-lethal) from
-*comment flavor_spell_end_<spell> (SPELL FLAVOR, below), which names the foe through combat_enemy_epithet. Armor of Agathys
-*comment is here too: its frost kills an attacker on the enemy's turn. Any other spell id falls to the generic set.
-*if (combat_current_spell_id = "fire_bolt")
-  *gosub flavor_spell_end_fire_bolt
-*elseif (combat_current_spell_id = "ray_of_frost")
-  *gosub flavor_spell_end_ray_of_frost
-*elseif (combat_current_spell_id = "shocking_grasp")
-  *gosub flavor_spell_end_shocking_grasp
-*elseif (combat_current_spell_id = "eldritch_blast")
-  *gosub flavor_spell_end_eldritch_blast
-*elseif (combat_current_spell_id = "chill_touch")
-  *gosub flavor_spell_end_chill_touch
-*elseif (combat_current_spell_id = "vicious_mockery")
-  *gosub flavor_spell_end_vicious_mockery
-*elseif (combat_current_spell_id = "magic_missile")
-  *gosub flavor_spell_end_magic_missile
-*elseif (combat_current_spell_id = "dissonant_whispers")
-  *gosub flavor_spell_end_dissonant_whispers
-*elseif (combat_current_spell_id = "armor_of_agathys")
-  *gosub flavor_spell_end_armor_of_agathys
-*else
-  *gosub flavor_spell_end_generic
-*return
-
-*label flavor_spell_end_fire_bolt
-*comment Finishing blow of fire bolt: five lethal lines, five for a foe beaten into surrender.
-*temp fse_v 1
-*rand fse_v 1 5
-*if (combat_is_nonlethal)
-  *if (fse_v = 1)
-    *set fdh "The concussive heat of the flame blasts the weapon from ${combat_enemy_epithet}'s grip and throws ${combat_enemy_epithet} backward, slumping unconscious."
-  *if (fse_v = 2)
-    *set fdh "The flash detonates at ${combat_enemy_epithet}'s feet, knocking ${combat_enemy_epithet} off stride and down, dazed and defeated."
-  *if (fse_v = 3)
-    *set fdh "A scorching blast of superheated air knocks the wind out of ${combat_enemy_epithet} and drops ${combat_enemy_epithet} to the knees, hands thrown up in surrender."
-  *if (fse_v = 4)
-    *set fdh "You throw the flame wide on purpose, and the roar of heat alone is enough, and ${combat_enemy_epithet} sinks down, letting the weapon fall in surrender."
-  *if (fse_v = 5)
-    *set fdh "The fire mote strikes the weapon in ${combat_enemy_epithet}'s grip and heats the weapon past bearing, and ${combat_enemy_epithet} flings the weapon down with a cry and yields."
-*else
-  *if (fse_v = 1)
-    *set fdh "The arcane fire punches through the chest in a blinding flash, and ${combat_enemy_epithet} drops in a shower of smoldering sparks."
-  *if (fse_v = 2)
-    *set fdh "A violent bloom of flame sears across the flank, and ${combat_enemy_epithet} collapses motionless with a hiss of steam and a curl of smoke."
-  *if (fse_v = 3)
-    *set fdh "The searing mote erupts with furnace heat and burns clean through, and ${combat_enemy_epithet} drops motionless."
-  *if (fse_v = 4)
-    *set fdh "You hurl the flame point-blank, and the flash swallows ${combat_enemy_epithet} whole, and what comes out of the blaze is a smoking shape that folds and does not rise."
-  *if (fse_v = 5)
-    *set fdh "The fire takes ${combat_enemy_epithet} full in the head, and the flare snuffs the fight out in a heartbeat, and they drop in a coil of smoke."
-*return
-
-*label flavor_spell_end_ray_of_frost
-*comment Finishing blow of ray of frost: five lethal lines, five for a foe beaten into surrender.
-*temp fse_v 1
-*rand fse_v 1 5
-*if (combat_is_nonlethal)
-  *if (fse_v = 1)
-    *set fdh "The pale ray numbs ${combat_enemy_epithet}'s limbs to the bone, and the legs lock rigid with frost as ${combat_enemy_epithet} topples, shivering violently and unable to fight."
-  *if (fse_v = 2)
-    *set fdh "Rime washes over ${combat_enemy_epithet}'s shoulders with a concussive chill, sapping the strength from the arms until the weapon clatters free and ${combat_enemy_epithet} sinks down shivering."
-  *if (fse_v = 3)
-    *set fdh "The bitter cold stops ${combat_enemy_epithet}'s charge dead and drops ${combat_enemy_epithet} to the knees, teeth chattering too violently to rise."
-  *if (fse_v = 4)
-    *set fdh "You lay the beam across ${combat_enemy_epithet}'s hands, and the fingers whiten and freeze around the weapon, and ${combat_enemy_epithet} lets the weapon fall in surrender."
-  *if (fse_v = 5)
-    *set fdh "The ray freezes the breath in ${combat_enemy_epithet}'s chest, and ${combat_enemy_epithet} folds over, gasping, too numb to stand or fight."
-*else
-  *if (fse_v = 1)
-    *set fdh "The pale ray strikes deep into the flank, and rime rushes outward in jagged crystals until the limbs lock rigid and ${combat_enemy_epithet} topples with a brittle crack."
-  *if (fse_v = 2)
-    *set fdh "Bitter cold surges through every limb at once, and ${combat_enemy_epithet} freezes mid-motion, then topples like brittle ice."
-  *if (fse_v = 3)
-    *set fdh "The numbing freeze claims the heart in a single shuddering beat, and ${combat_enemy_epithet} stands a moment longer as a frost-crusted husk, then falls."
-  *if (fse_v = 4)
-    *set fdh "The ray hits, and the frost does not stop spreading, and ${combat_enemy_epithet} stiffens into a white statue and topples, cracking at the joints."
-  *if (fse_v = 5)
-    *set fdh "You hold the beam on ${combat_enemy_epithet} a heartbeat longer, and the last warmth leaves them in a long breath of vapor, and ${combat_enemy_epithet} sags and does not stir."
-*return
-
-*label flavor_spell_end_shocking_grasp
-*comment Finishing blow of shocking grasp: five lethal lines, five for a foe beaten into surrender.
-*temp fse_v 1
-*rand fse_v 1 5
-*if (combat_is_nonlethal)
-  *if (fse_v = 1)
-    *set fdh "Blue-white fulmination courses through ${combat_enemy_epithet}'s arms, seizing the muscles in a violent jolt that leaves ${combat_enemy_epithet} sprawled unconscious."
-  *if (fse_v = 2)
-    *set fdh "The electric shock snaps through ${combat_enemy_epithet}'s spine, locking every joint for a stunned heartbeat before ${combat_enemy_epithet} crumples limp."
-  *if (fse_v = 3)
-    *set fdh "A sudden arc of lightning numbs ${combat_enemy_epithet}'s limbs completely, and the shock throws ${combat_enemy_epithet} back, groaning and paralyzed."
-  *if (fse_v = 4)
-    *set fdh "You hold the touch just long enough, and the jolt leaves ${combat_enemy_epithet} twitching and dazed, the weapon dropped and the fight gone."
-  *if (fse_v = 5)
-    *set fdh "The discharge runs down ${combat_enemy_epithet}'s weapon arm, and the fingers spring open, and ${combat_enemy_epithet} folds to the knees, shaking."
-*else
-  *if (fse_v = 1)
-    *set fdh "Blue-white lightning arcs through skull and spine, and violent spasms snap every limb rigid before ${combat_enemy_epithet} drops limp."
-  *if (fse_v = 2)
-    *set fdh "The electric arc detonates with a deafening crack, burning through muscle and sinew, and ${combat_enemy_epithet} crashes down."
-  *if (fse_v = 3)
-    *set fdh "A web of crackling fulmination floods the chest, and the pulse stops dead in a haze of ozone and smoke, and ${combat_enemy_epithet} falls."
-  *if (fse_v = 4)
-    *set fdh "You hold on through the first convulsion and the second, and the third is the last, and ${combat_enemy_epithet} goes slack in your grip and drops."
-  *if (fse_v = 5)
-    *set fdh "The current finds the heart and seizes the beat, and ${combat_enemy_epithet} stops mid-motion with a strangled sound and falls, smoke rising from the point of contact."
-*return
-
-*label flavor_spell_end_eldritch_blast
-*comment Finishing blow of eldritch blast: five lethal lines, five for a foe beaten into surrender.
-*temp fse_v 1
-*rand fse_v 1 5
-*if (combat_is_nonlethal)
-  *if (fse_v = 1)
-    *set fdh "A concussive shockwave of arcane force lifts ${combat_enemy_epithet} clean off the feet and slams them down, out cold."
-  *if (fse_v = 2)
-    *set fdh "The force bolt punches into ${combat_enemy_epithet}'s chest like a battering ram, knocking all the breath out as ${combat_enemy_epithet} crashes down unconscious."
-  *if (fse_v = 3)
-    *set fdh "Pure kinetic thunder catches ${combat_enemy_epithet} mid-stride and hurls ${combat_enemy_epithet} sideways into stunned, motionless defeat."
-  *if (fse_v = 4)
-    *set fdh "You shape the blast to a blow, and the force strikes ${combat_enemy_epithet}'s weapon hand and rips the weapon away, and ${combat_enemy_epithet} sinks down, cradling the wrist."
-  *if (fse_v = 5)
-    *set fdh "The beam takes ${combat_enemy_epithet} at the knees and folds the legs out from under, and ${combat_enemy_epithet} sits down hard, dazed, the fight gone."
-*else
-  *if (fse_v = 1)
-    *set fdh "The violet beam detonates against the torso with concussive thunder, and ${combat_enemy_epithet} is hurled backward, broken and dead before landing."
-  *if (fse_v = 2)
-    *set fdh "Pure eldritch force punches through like a siege engine's bolt, and whatever was holding ${combat_enemy_epithet} together lets go all at once."
-  *if (fse_v = 3)
-    *set fdh "A violent pressure wave fractures the air, and the concussive impact lifts ${combat_enemy_epithet} bodily and drops them motionless."
-  *if (fse_v = 4)
-    *set fdh "The blast takes ${combat_enemy_epithet} full on, and the sound is the sound of a great bell struck once, and ${combat_enemy_epithet} does not get up."
-  *if (fse_v = 5)
-    *set fdh "You put everything into the beam, and the force strikes ${combat_enemy_epithet} in the chest with the weight of a falling tree, and the fight ends in the same instant."
-*return
-
-*label flavor_spell_end_chill_touch
-*comment Finishing blow of chill touch: five lethal lines, five for a foe beaten into surrender.
-*temp fse_v 1
-*rand fse_v 1 5
-*if (combat_is_nonlethal)
-  *if (fse_v = 1)
-    *set fdh "The spectral grip drains the warmth and vigor from ${combat_enemy_epithet}'s limbs, and they collapse limp, too weak to stand."
-  *if (fse_v = 2)
-    *set fdh "A sudden wave of numbing grave-chill saps all the strength from ${combat_enemy_epithet}'s frame and drops ${combat_enemy_epithet}, shivering and exhausted."
-  *if (fse_v = 3)
-    *set fdh "The icy touch numbs ${combat_enemy_epithet}'s hands to lead; the weapon falls from limp fingers as ${combat_enemy_epithet} sinks down in complete surrender."
-  *if (fse_v = 4)
-    *set fdh "The pale hand closes on ${combat_enemy_epithet}'s weapon arm, and the strength drains out, and the weapon slips free as ${combat_enemy_epithet} slumps, drained."
-  *if (fse_v = 5)
-    *set fdh "The chill settles into ${combat_enemy_epithet}'s chest and takes the breath, and ${combat_enemy_epithet} folds down, grey and gasping, the fight gone."
-*else
-  *if (fse_v = 1)
-    *set fdh "The spectral hand squeezes tight around the throat, drawing out the last motes of warmth in a pallid wisp of necrotic vapor, and ${combat_enemy_epithet} collapses."
-  *if (fse_v = 2)
-    *set fdh "Grey necrosis spreads instantly from the ghostly grip, and ${combat_enemy_epithet} withers and drops lifeless."
-  *if (fse_v = 3)
-    *set fdh "The grave-chill pulls the last of the life out through the touch, and ${combat_enemy_epithet} drops rigid, gone the color of ash."
-  *if (fse_v = 4)
-    *set fdh "The hand closes over the heart and squeezes once, and ${combat_enemy_epithet} stops as a candle stops when a palm closes over the flame."
-  *if (fse_v = 5)
-    *set fdh "You feel the last spark go out under the cold grip, and ${combat_enemy_epithet} sags and settles, a husk with nothing left inside."
-*return
-
-*label flavor_spell_end_vicious_mockery
-*comment Finishing blow of vicious mockery: five lethal lines, five for a foe beaten into surrender.
-*temp fse_v 1
-*rand fse_v 1 5
-*if (combat_is_nonlethal)
-  *if (fse_v = 1)
-    *set fdh "The stinging psychic insult breaks ${combat_enemy_epithet}'s nerve completely, and the weapon drops with a groan of despair as ${combat_enemy_epithet} slumps, head in hands."
-  *if (fse_v = 2)
-    *set fdh "The cruel cadence rings behind ${combat_enemy_epithet}'s eyes with unbearable pressure, driving ${combat_enemy_epithet} to both knees, clutching a pounding skull in defeat."
-  *if (fse_v = 3)
-    *set fdh "The barbed words shatter whatever bluster ${combat_enemy_epithet} had left, leaving ${combat_enemy_epithet} trembling and defeated."
-  *if (fse_v = 4)
-    *set fdh "You strike the last raw nerve, and ${combat_enemy_epithet} breaks, the weapon falling, the shoulders shaking with something between rage and tears."
-  *if (fse_v = 5)
-    *set fdh "The insult lands like a slap, and ${combat_enemy_epithet} folds down, shamed and spent, and does not try to rise."
-*else
-  *if (fse_v = 1)
-    *set fdh "The razor-sharp insult cuts deeper than any wound, rupturing the last of ${combat_enemy_epithet}'s nerve until the legs buckle and ${combat_enemy_epithet} slumps lifeless."
-  *if (fse_v = 2)
-    *set fdh "The cruel cadence resonates in ${combat_enemy_epithet}'s head like a hammer on glass, shattering the last focus, and ${combat_enemy_epithet} collapses motionless."
-  *if (fse_v = 3)
-    *set fdh "Your barbed words tear through whatever scrap of spirit sustained ${combat_enemy_epithet}, and ${combat_enemy_epithet} crumples without another twitch."
-  *if (fse_v = 4)
-    *set fdh "The last taunt goes in and does not come out, and something in ${combat_enemy_epithet} simply gives, and the rest follows."
-  *if (fse_v = 5)
-    *set fdh "You finish the verse, and the silence after the verse is total, and ${combat_enemy_epithet} sags where standing and does not rise."
-*return
-
-*label flavor_spell_end_magic_missile
-*comment Finishing blow of magic missile: five lethal lines, five for a foe beaten into surrender.
-*temp fse_v 1
-*rand fse_v 1 5
-*if (combat_is_nonlethal)
-  *if (fse_v = 1)
-    *set fdh "Three glowing darts of force strike ${combat_enemy_epithet}'s chest with concussive thuds, knocking ${combat_enemy_epithet} flat on the back, stunned and breathless."
-  *if (fse_v = 2)
-    *set fdh "The force missiles impact in rapid succession, bowling ${combat_enemy_epithet} backward and knocking ${combat_enemy_epithet} cold."
-  *if (fse_v = 3)
-    *set fdh "Arcane force punches into ${combat_enemy_epithet}'s shoulders, spinning them around and dropping ${combat_enemy_epithet} limp."
-  *if (fse_v = 4)
-    *set fdh "The darts sting into ${combat_enemy_epithet}'s weapon arm and hand, and the weapon spins away as ${combat_enemy_epithet} sinks down, cradling the arm, beaten."
-  *if (fse_v = 5)
-    *set fdh "You aim low, and the three darts take the legs out from under ${combat_enemy_epithet} in thumping strikes, and ${combat_enemy_epithet} sits down hard, dazed."
-*else
-  *if (fse_v = 1)
-    *set fdh "All three glowing force-darts strike the same vital point in rapid succession, punching through and dropping ${combat_enemy_epithet} dead."
-  *if (fse_v = 2)
-    *set fdh "The arcane missiles curve unerringly through the air and slam home with dull thuds, snuffing out the life of ${combat_enemy_epithet} in an instant."
-  *if (fse_v = 3)
-    *set fdh "The force darts bore clean through ${combat_enemy_epithet}'s defenses, leaving smoking blue punctures as ${combat_enemy_epithet} collapses limp."
-  *if (fse_v = 4)
-    *set fdh "Three darts of force hit in the space of a heartbeat, and ${combat_enemy_epithet} takes two steps, looks down, and falls."
-  *if (fse_v = 5)
-    *set fdh "You hold the last syllable, and the darts stack into a single blow at the chest, and ${combat_enemy_epithet} drops as if cut from a rope."
-*return
-
-*label flavor_spell_end_dissonant_whispers
-*comment Finishing blow of dissonant whispers: five lethal lines, five for a foe beaten into surrender.
-*temp fse_v 1
-*rand fse_v 1 5
-*if (combat_is_nonlethal)
-  *if (fse_v = 1)
-    *set fdh "The discordant screech behind ${combat_enemy_epithet}'s eyes overwhelms the senses, and the weapon falls as the knees give, the head clutched in agony until ${combat_enemy_epithet} slumps unconscious."
-  *if (fse_v = 2)
-    *set fdh "A violent psychic spike scrambles ${combat_enemy_epithet}'s thoughts completely; ${combat_enemy_epithet} stumbles backward, disoriented, and sinks down in dazed defeat."
-  *if (fse_v = 3)
-    *set fdh "The psychic assault shatters ${combat_enemy_epithet}'s resolve in an instant, leaving ${combat_enemy_epithet} groaning with all the fight driven out."
-  *if (fse_v = 4)
-    *set fdh "The whisper finds every fear ${combat_enemy_epithet} owns and wakes every one at once, and ${combat_enemy_epithet} drops the weapon and cowers, begging for the noise to stop."
-  *if (fse_v = 5)
-    *set fdh "You feed the dissonance in a little longer, and ${combat_enemy_epithet} crumples, hands over the ears, all resistance gone."
-*else
-  *if (fse_v = 1)
-    *set fdh "The discordant psychic agony shatters ${combat_enemy_epithet}'s mind from the inside out, and ${combat_enemy_epithet} gasps once and goes limp."
-  *if (fse_v = 2)
-    *set fdh "The hideous psychic phrase tears through ${combat_enemy_epithet}'s thoughts like a jagged shard, and the mind goes out in a single violent convulsion."
-  *if (fse_v = 3)
-    *set fdh "An unbearable psychic shriek ruptures the skull, and ${combat_enemy_epithet} drops dead, clutching at nothing."
-  *if (fse_v = 4)
-    *set fdh "The whisper finds the thing that keeps them going and simply unpicks the thread, and ${combat_enemy_epithet} stops where standing and falls, still."
-  *if (fse_v = 5)
-    *set fdh "You speak the last dreadful syllable, and terror seizes ${combat_enemy_epithet} whole, and they drop before the terror can end."
-*return
-
-*label flavor_spell_end_armor_of_agathys
-*comment Finishing blow of armor of agathys: five lethal lines, five for a foe beaten into surrender.
-*temp fse_v 1
-*rand fse_v 1 5
-*if (combat_is_nonlethal)
-  *if (fse_v = 1)
-    *set fdh "The bitter frost surging from your frost-shell numbs ${combat_enemy_epithet}'s striking arm and knocks ${combat_enemy_epithet} backward, shivering and incapacitated."
-  *if (fse_v = 2)
-    *set fdh "The frost-rime rebounding off your ward shocks ${combat_enemy_epithet}'s muscles into stillness and sends ${combat_enemy_epithet} sprawling, too chilled to rise."
-  *if (fse_v = 3)
-    *set fdh "A cold shockwave repels ${combat_enemy_epithet}'s strike, throwing ${combat_enemy_epithet} off balance and down in shivering defeat."
-  *if (fse_v = 4)
-    *set fdh "$!{combat_enemy_epithet} swings, and the rime leaps up the weapon and across the hands, and ${combat_enemy_epithet} lets go with a cry, frozen and beaten."
-  *if (fse_v = 5)
-    *set fdh "The shell flares at the blow, and the cold that answers the strike takes ${combat_enemy_epithet}'s legs, and ${combat_enemy_epithet} sinks down, shivering, the fight gone."
-*else
-  *if (fse_v = 1)
-    *set fdh "The frost retaliates in a blinding burst of rime, driving shards of biting cold through ${combat_enemy_epithet}'s chest and freezing the heart solid."
-  *if (fse_v = 2)
-    *set fdh "The bitter cold rebounding off your barrier snaps through ${combat_enemy_epithet}'s frame, freezing them solid where standing, and ${combat_enemy_epithet} topples."
-  *if (fse_v = 3)
-    *set fdh "Spectral frost surges backward along the strike, and ${combat_enemy_epithet} freezes rigid and collapses."
-  *if (fse_v = 4)
-    *set fdh "$!{combat_enemy_epithet} strikes, and the rime on your shoulders answers with a crack like breaking ice, and ${combat_enemy_epithet} falls a white, frozen shape."
-  *if (fse_v = 5)
-    *set fdh "The frost-shell flares as the blow lands, and the cold that lashes back stills ${combat_enemy_epithet} in a heartbeat."
-*return
-
-*label flavor_spell_end_generic
-*comment Any spell without its own set: three lethal lines, three non-lethal.
-*temp fse_v 1
-*rand fse_v 1 3
-*if (combat_is_nonlethal)
-  *if (fse_v = 1)
-    *set fdh "The working catches ${combat_enemy_epithet} with concussive force and tosses ${combat_enemy_epithet} back, slumping motionless and out of the fight."
-  *if (fse_v = 2)
-    *set fdh "The magic overwhelms ${combat_enemy_epithet}'s senses, dropping ${combat_enemy_epithet} dazed and unable to continue."
-  *if (fse_v = 3)
-    *set fdh "The spell saps the last of ${combat_enemy_epithet}'s fight, and ${combat_enemy_epithet} collapses in total defeat."
-*else
-  *if (fse_v = 1)
-    *set fdh "The working lands with finality this time, and whatever was still animating ${combat_enemy_epithet} goes out all at once."
-  *if (fse_v = 2)
-    *set fdh "You feel the spell take hold completely. Whatever fight was left drains out of ${combat_enemy_epithet} in a single shuddering breath, and then there is nothing."
-  *if (fse_v = 3)
-    *set fdh "There is no shaking this one off. The magic finds the mark clean, and ${combat_enemy_epithet} is not standing anymore."
-*return
 
 *label fight_pick_enemy_move
 *comment Movepool: called once per living slot per turn, right after
@@ -2692,6 +1822,7 @@ ${fnaa_line}
   *if (cnt_hp > 0)
     *set combat_active_target cnt_slot
     *gosub fight_sync_target_in
+    *gosub find_intercepting_ally
     *comment Surprise round (5e RAW: a surprised creature takes no action and no move on its first turn in the
     *comment order). combat_turn_first_pass_* (startup.txt) tracks whether THIS queue position has ever dispatched
     *comment before -- read once, then cleared unconditionally, so an enemy that wins this check only loses its
@@ -2719,6 +1850,13 @@ ${fnaa_line}
         Caught flat-footed, ${combat_enemy_epithet} loses the turn outright, never sensing you at all.
       *line_break
       [b][😲 ${combat_enemy_name} Surprised — turn lost][/b]
+      *set combat_turn_advanced_this_page true
+    *elseif (combat_intercepting_ally > 0)
+      *comment Interception (2026-09-28): a melee ally is standing between this specific enemy and the player --
+      *comment it fights the ally instead, regardless of its own combat_enemy_range to the player (which might
+      *comment still be > 0; the ally caught up independently). No closing, no player-targeted attack this turn.
+      *gosub_scene startup resolve_enemy_attack_on_ally combat_intercepting_ally
+      *gosub_scene combat_prose fight_narrate_ally_attack "enemy" cnt_slot "ally" combat_intercepting_ally combat_enemy_atk_on_ally_hit
       *set combat_turn_advanced_this_page true
     *elseif ((not(combat_enemy_weapon_type = "ranged")) and (combat_enemy_range > 0))
       *set combat_enemy_range - 1
@@ -2750,7 +1888,7 @@ ${fnaa_line}
     *else
       *gosub fight_pick_enemy_move
       *gosub_scene startup resolve_enemy_attack
-      *gosub fight_narrate_enemy_turn
+      *gosub_scene combat_prose fight_narrate_enemy_turn
       *set combat_turn_advanced_this_page true
       *if (combat_player_can_die) and (hp_current <= 0)
         *goto fight_player_died
@@ -2760,19 +1898,58 @@ ${fnaa_line}
       *if (combat_all_enemies_dead)
         *goto fight_victory
 *if (cnt_kind = "ally")
-  *comment Ranged only, first pass: no movement, so a dead check is all this needs before acting -- see
-  *comment resolve_ally_attack's own header comment (startup.txt) for the rest of what's deliberately not here
-  *comment yet (kill-priority targeting, melee positioning).
+  *comment Kill-priority targeting still isn't here -- fight_pick_target is the same lowest-living-slot fallback
+  *comment the player's own HUD uses (see its header comment).
   *temp cnt_a_hp {(("combat_ally" & cnt_slot) & "_hp")}
   *if (cnt_a_hp > 0)
     *gosub fight_pick_target
     *if (combat_active_target > 0)
-      *gosub_scene startup resolve_ally_attack cnt_slot combat_active_target
-      *gosub fight_narrate_ally_attack "ally" cnt_slot "enemy" combat_active_target combat_ally_atk_hit
-      *set combat_turn_advanced_this_page true
-      *gosub fight_check_all_dead
-      *if (combat_all_enemies_dead)
-        *goto fight_victory
+      *comment Stored durably (not just left in the shared/transient combat_active_target) so
+      *comment find_intercepting_ally can still tell, on a LATER turn (this enemy's, possibly several turn-order
+      *comment positions from now), which specific enemy this ally is engaged with.
+      *set {(("combat_ally" & cnt_slot) & "_target")} combat_active_target
+      *set combat_attacker_name {(("combat_ally" & cnt_slot) & "_name")}
+      *set combat_attacker_epithet {(("combat_ally" & cnt_slot) & "_epithet")}
+      *temp cnt_a_weapon {(("combat_ally" & cnt_slot) & "_weapon_type")}
+      *temp cnt_a_range {(("combat_ally" & cnt_slot) & "_range")}
+      *if ((cnt_a_weapon = "ranged") or (cnt_a_range <= 0))
+        *gosub_scene startup resolve_ally_attack cnt_slot combat_active_target
+        *gosub_scene combat_prose fight_narrate_ally_attack "ally" cnt_slot "enemy" combat_active_target combat_ally_atk_hit
+        *set combat_turn_advanced_this_page true
+        *gosub fight_check_all_dead
+        *if (combat_all_enemies_dead)
+          *goto fight_victory
+      *else
+        *comment Melee ally, not yet in range: spends the whole turn closing its OWN combat_ally<N>_range one
+        *comment tier, same as the player's Push Forward and an enemy's own closing turn just above --
+        *comment independent of combat_enemy_range, so this ally can be nearer to (or farther from) the target
+        *comment than the player is.
+        *set cnt_a_range - 1
+        *if (cnt_a_range < 0)
+          *set cnt_a_range 0
+        *set {(("combat_ally" & cnt_slot) & "_range")} cnt_a_range
+        *temp cnt_arv 1
+        *rand cnt_arv 1 3
+        *if (cnt_a_range <= 0)
+          *if (cnt_arv = 1)
+            A last burst of speed closes the distance, and ${combat_attacker_epithet} is suddenly right on top of the fight.
+          *if (cnt_arv = 2)
+            In one hard rush, ${combat_attacker_epithet} crosses what ground was left and closes to melee range.
+          *if (cnt_arv = 3)
+            The last of the gap disappears fast, and ${combat_attacker_epithet} is finally within striking distance.
+          *line_break
+          [b][🏃 ${combat_attacker_name} Closes to Engagement][/b]
+        *else
+          *gosub combat_range_name cnt_a_range
+          *if (cnt_arv = 1)
+            Ground vanishes underfoot as ${combat_attacker_epithet} presses in, cutting down the distance to the fight.
+          *if (cnt_arv = 2)
+            In a burst of motion, ${combat_attacker_epithet} closes some of the gap, cutting down what's left.
+          *if (cnt_arv = 3)
+            Step by step, ${combat_attacker_epithet} narrows the distance, closing in fast.
+          *line_break
+          [b][🏃 ${combat_attacker_name} Closes to ${combat_range_display_name}][/b]
+        *set combat_turn_advanced_this_page true
 *goto combat_next_turn
 
 *comment ══════════════════════════════════════════════════════════════
@@ -2814,9 +1991,10 @@ ${fnaa_line}
 *comment "beast" (a generic natural-attack monster; the player's lines against them are flavor_creature_<slashing|piercing|
 *comment bludgeoning|ranged>, where against the human types they are flavor_player_<...>, both built per attack by the
 *comment player's weapon). A scene reaches any of them through fight_library, below, with no edit to this
-*comment file. A type is stats and movepool in apply_type_<name> (one block per slot) plus prose in flavor_type_<name>
-*comment (written once, see ENEMY TYPE FLAVOR below). Add a new one with an apply_type_<name> label, one line in
-*comment apply_enemy_type's dispatch, and the prose label with its line in flavor_from_type.
+*comment file. A type is stats and movepool in apply_type_<name> (one block per slot, here) plus prose in
+*comment flavor_type_<name> (written once, see ENEMY TYPE FLAVOR in combat_prose.txt). Add a new one with an
+*comment apply_type_<name> label here, one line in apply_enemy_type's dispatch, and the prose label with its line
+*comment in flavor_from_type (combat_prose.txt).
 *comment
 *comment WRITING RULE: every type's hit and miss lines, and the player's apply_generic_weapon_flavor
 *comment pool, are written to work in any fight against human combatants, anywhere, so a new fight can call a type
@@ -2857,6 +2035,16 @@ ${fnaa_line}
 *comment Which library type fills this slot, for any slot, via indirection (fight_narrate_enemy_turn reads it
 *comment the same way to pick that slot's hit/miss prose from flavor_from_type).
 *set {(("combat_enemy" & combat_apply_slot) & "_flavor_type")} combat_apply_type
+*comment Pre-fight ambush advantage (2026-09-28): a scene that sets the bare combat_enemy_advantage true BEFORE
+*comment calling the fight ("the creature strikes first" -- several sites in alderford.txt/port_valen.txt/
+*comment port_valen_dredge_end.txt) means every enemy the fight is about to seat gets it, not just slot 1 --
+*comment applied here, once per slot as each is built, so a 3-enemy ambush (fight_granary_rats) grants it to all
+*comment three, not only the first. fight_cleanup clears the bare pending flag afterward so it can't leak into a
+*comment later fight that never set it. Mid-fight, per-target grants (Vicious Mockery, Ray of Frost, Brace,
+*comment below) work differently -- they write directly to one already-built slot's own field via
+*comment combat_active_target indirection, not through this pending mechanism.
+*if (combat_enemy_advantage)
+  *set {(("combat_enemy" & combat_apply_slot) & "_advantage")} true
 *if (combat_apply_slot = 1)
   *comment Slot 1's rename-override is applied later, by fight_setup, once the calling fight_<name> label is
   *comment done setting up every slot -- see combat_enemy_name_override's comment in startup.txt. Nothing to do
@@ -3456,1013 +2644,10 @@ ${fnaa_line}
 *return
 
 
-*comment ──────────────────────────────────────────────────────────────
-*comment ENEMY TYPE FLAVOR (written once per type)
-*comment An enemy filled from the type library keeps no prose in its slot. fight_narrate_enemy_turn sets
-*comment fft_type to that slot's type and rolls fft_v (1-8, one hit line and one miss line) and fft_m2 (1-3, one
-*comment move-2 hit and miss pair), then *gosub flavor_from_type, which fills fft_hit, fft_miss, fft_m2hit and
-*comment fft_m2miss. Plain *create'd variables, not *params, for the same reason advance_time uses them.
-*comment To add a type: an apply_type_<name> label (stats), one dispatch line in apply_enemy_type, one line in
-*comment flavor_from_type, and a flavor_type_<name> label with eight hit/miss pairs and three move-2 pairs.
-*comment Follow the WRITING RULE above: no place, weather or light, nothing the player may not have on, no
-*comment he, she or it for the enemy; the fighter is named through $!{combat_enemy_epithet} or
-*comment ${combat_enemy_epithet} (see NAMING above), never by a fixed noun. These labels run at the moment of the
-*comment attack, which is what lets a ${var} in the *set string see the attacker.
-*comment ──────────────────────────────────────────────────────────────
-
-*label flavor_from_type
-*set fft_hit ""
-*set fft_miss ""
-*set fft_m2hit ""
-*set fft_m2miss ""
-*if (fft_type = "swordsman")
-  *gosub flavor_type_swordsman
-*if (fft_type = "axeman")
-  *gosub flavor_type_axeman
-*if (fft_type = "knifeman")
-  *gosub flavor_type_knifeman
-*if (fft_type = "maceman")
-  *gosub flavor_type_maceman
-*if (fft_type = "spearman")
-  *gosub flavor_type_spearman
-*if (fft_type = "hookman")
-  *gosub flavor_type_hookman
-*if (fft_type = "archer")
-  *gosub flavor_type_archer
-*if (fft_type = "slinger")
-  *gosub flavor_type_slinger
-*if (fft_type = "guard")
-  *gosub flavor_type_guard
-*if (fft_type = "lacedon")
-  *gosub flavor_type_lacedon
-*if (fft_type = "mire_rat")
-  *gosub flavor_type_mire_rat
-*if (fft_type = "beast")
-  *gosub flavor_type_beast
-*return
-
-*label flavor_type_maceman
-*if (fft_v = 1)
-  *set fft_hit "$!{combat_enemy_epithet} swings the mace in a flat, brutal arc, and the flanged head slams across your shoulder hard enough to numb the arm to the fingertips."
-  *set fft_miss "$!{combat_enemy_epithet} swings wide and hard, and the mace's own weight drags the blow past you, leaving ${combat_enemy_epithet} stumbling half a step off balance."
-*if (fft_v = 2)
-  *set fft_hit "$!{combat_enemy_epithet} closes inside your reach and drives a knee into your side, and the mace follows before you can recover, cracking down on the same ribs with a dull, meaty sound."
-  *set fft_miss "$!{combat_enemy_epithet} overcommits to the strike, and you slip aside as the mace whistles past your ear, close enough to stir your hair."
-*if (fft_v = 3)
-  *set fft_hit "$!{combat_enemy_epithet} feints at your face, and when you flinch the mace comes in low instead, hammering across your hip and nearly folding your leg beneath you."
-  *set fft_miss "You read the swing early and step inside its arc, and the mace cracks the empty air behind your shoulder while ${combat_enemy_epithet}'s wrist slaps harmlessly against your arm."
-*if (fft_v = 4)
-  *set fft_hit "Bulling forward behind the full weight of a heavy body, ${combat_enemy_epithet} catches you mid-turn, and the mace lands across your back with a crack that empties your lungs."
-  *set fft_miss "$!{combat_enemy_epithet} hooks a foot around your ankle, but you feel it coming, lift your leg clear, and pivot out of reach, leaving the kick to scythe through nothing."
-*if (fft_v = 5)
-  *set fft_hit "A sweeping backhand swing catches you across the ribs, and the wind leaves you in one ragged, wheezing gasp as ${combat_enemy_epithet}'s grip resets for another."
-  *set fft_miss "The blow is telegraphed from the first shift of weight, and you duck beneath the arc, the mace's wind hot across the top of your head."
-*if (fft_v = 6)
-  *set fft_hit "$!{combat_enemy_epithet} hammers a short, chopping blow onto the point of your shoulder, and the joint grinds as your arm sags under it."
-  *set fft_miss "$!{combat_enemy_epithet}'s overhand blow comes down hard, but you throw up your guard at the last instant and turn it aside with a jolt that rattles your teeth."
-*if (fft_v = 7)
-  *set fft_hit "Catching your guard high, ${combat_enemy_epithet} sweeps the mace beneath it in a tight arc, and the flanged head cracks into your thigh with force enough to nearly take the leg out from under you."
-  *set fft_miss "$!{combat_enemy_epithet} lunges in behind a wild swing, but you roll your shoulder away from the mace, and the flanged head only brushes the edge of your guard."
-*if (fft_v = 8)
-  *set fft_hit "$!{combat_enemy_epithet} slams an elbow into your jaw, and while your head is still ringing the mace thuds across your ribs, twice, before you can turn."
-  *set fft_miss "You step off the line as ${combat_enemy_epithet} charges, and the mace swings through the space you left with a low, ugly whoosh."
-*if (fft_m2 = 1)
-  *set fft_m2hit "$!{combat_enemy_epithet} stops trading blows, hauls the mace overhead in both hands, and brings it down on your skull with a crack that rings through your whole head and sets the world swimming."
-  *set fft_m2miss "$!{combat_enemy_epithet} rears back for a skull-splitting overhead blow, but you throw yourself sideways, and the mace comes down on nothing with a force that jars ${combat_enemy_epithet} to the shoulders."
-*if (fft_m2 = 2)
-  *set fft_m2hit "$!{combat_enemy_epithet} swings the mace down like a hammer, a two-handed blow onto the crown of your skull, and the world flashes white and rings like a struck bell."
-  *set fft_m2miss "$!{combat_enemy_epithet} hauls the mace up for a two-handed skull-crusher, but you slip out from under it, and the blow lands on nothing, dragging ${combat_enemy_epithet} half a step past you."
-*if (fft_m2 = 3)
-  *set fft_m2hit "Snarling, ${combat_enemy_epithet} whips the mace around in both hands, and it lands on the side of your head with a crack that sends everything tilting sideways."
-  *set fft_m2miss "$!{combat_enemy_epithet} winds up for a crushing overhead blow, and you throw your weight backward, the mace splitting the air a hand's width from your face."
-*return
-
-*label flavor_type_knifeman
-*if (fft_v = 1)
-  *set fft_hit "$!{combat_enemy_epithet} jabs low and quick, and the point of a gutting knife skids along your ribs, opening a hot line before you can turn it aside."
-  *set fft_miss "$!{combat_enemy_epithet} lunges in a long, low thrust, but you twist away and the point passes a finger's width from your belly."
-*if (fft_v = 2)
-  *set fft_hit "A short, hooking slash from ${combat_enemy_epithet} opens your forearm as you raise it to block, the cut clean and far deeper than it looked."
-  *set fft_miss "You catch ${combat_enemy_epithet} by the wrist mid-thrust and shove, sending the point wide of your ribs and ${combat_enemy_epithet} stumbling past."
-*if (fft_v = 3)
-  *set fft_hit "$!{combat_enemy_epithet} crowds inside your reach and works the blade in a flurry of short, ugly cuts, and one of them finds your side and bites."
-  *set fft_miss "A quick slash sweeps toward your face, but you sway back from the waist and the edge cuts nothing but the air an inch from your nose."
-*if (fft_v = 4)
-  *set fft_hit "$!{combat_enemy_epithet} feints at your throat, and as your head snaps back the knife drives into your thigh instead, twisting as it withdraws."
-  *set fft_miss "$!{combat_enemy_epithet} feints high and stabs low, but you have already stepped out of the arc, and the point finds nothing but air."
-*if (fft_v = 5)
-  *set fft_hit "A free hand seizes your arm and hauls you onto the blade, and the point scores a burning line across your hip before you wrench loose."
-  *set fft_miss "$!{combat_enemy_epithet} crowds in close and grabs, but you drive an elbow into the reaching arm and wrench free before the point can find you."
-*if (fft_v = 6)
-  *set fft_hit "$!{combat_enemy_epithet} jinks left, comes in right, and the knife rips across your ribs in a quick, flat slash that you feel a heartbeat before you see the blood."
-  *set fft_miss "$!{combat_enemy_epithet} stabs for your kidney, but you feel the shift and turn your back away, and the point skates off empty air."
-*if (fft_v = 7)
-  *set fft_hit "A short thrust slips beneath your guard, and the point pricks into your side, deep enough to make your whole body flinch away."
-  *set fft_miss "You knock the knife arm wide with the flat of your hand, and the blade flashes past your throat close enough to raise the hair on your neck."
-*if (fft_v = 8)
-  *set fft_hit "$!{combat_enemy_epithet} hammers the pommel into your wrist to break your guard, and the blade follows across your forearm before you can pull back."
-  *set fft_miss "$!{combat_enemy_epithet} darts in and out with a flicker of steel, but you stay light on your feet, and every cut ends a finger short."
-*if (fft_m2 = 1)
-  *set fft_m2hit "$!{combat_enemy_epithet} flicks a dark-smeared blade across your arm, a shallow cut, but whatever is on the steel burns like salt in a wound and sends a sick, creeping chill toward your shoulder."
-  *set fft_m2miss "$!{combat_enemy_epithet} slashes with a blade slick with something dark and foul, but you jerk your arm back, and the reek of it passes a hand's width from your skin."
-*if (fft_m2 = 2)
-  *set fft_m2hit "$!{combat_enemy_epithet} rakes the smeared blade down your forearm, barely a scratch, but the wound goes hot and numb at once, and a sour taste climbs the back of your throat."
-  *set fft_m2miss "$!{combat_enemy_epithet} jabs with a blade that gleams with something dark, but you knock the arm aside, and the stink of the stuff turns your stomach without a touch."
-*if (fft_m2 = 3)
-  *set fft_m2hit "A shallow nick across your ribs is all ${combat_enemy_epithet} gets, but the smear on the steel is already burning under your skin, and your stomach turns over."
-  *set fft_m2miss "$!{combat_enemy_epithet} weaves the tainted blade at your face, but you catch the wrist and turn the point away, gagging on the sour reek that rolls off it."
-*return
-
-*label flavor_type_hookman
-*if (fft_v = 1)
-  *set fft_hit "$!{combat_enemy_epithet} thrusts the hooked pole out at full reach, and the iron point punches into your shoulder before you can close the distance."
-  *set fft_miss "$!{combat_enemy_epithet}'s thrust falls a hand short, the iron point sliding through the air in front of your chest as you sway back."
-*if (fft_v = 2)
-  *set fft_hit "$!{combat_enemy_epithet} sweeps the hook low, and the curved iron rakes down your calf as you try to step in, tearing skin and drawing a hot line of blood."
-  *set fft_miss "You bat the hooked pole aside with your forearm, and the point glances off and away, leaving ${combat_enemy_epithet} scrambling to recover the reach."
-*if (fft_v = 3)
-  *set fft_hit "$!{combat_enemy_epithet} jabs the butt of the pole into your gut, doubling you over, then whips the hook around to rake your ribs."
-  *set fft_miss "$!{combat_enemy_epithet} sweeps the pole low, but you hop the hook and step inside its length, where the long weapon is nearly useless."
-*if (fft_v = 4)
-  *set fft_hit "Choking up on the pole, ${combat_enemy_epithet} drives the hook in beneath your raised arm and wrenches, tearing a ragged cut as it comes free."
-  *set fft_miss "The hook snags nothing but air as ${combat_enemy_epithet} overreaches, and the pole has to be hauled back, a moment too slowly to follow up."
-*if (fft_v = 5)
-  *set fft_hit "The hook comes down from overhead, and the iron beak bites into your back as you turn, dragging a line of fire across your shoulder blade."
-  *set fft_miss "$!{combat_enemy_epithet} jabs at your face, but you slip your head aside and the iron whistles past your ear, close enough that you hear the wind in the hook."
-*if (fft_v = 6)
-  *set fft_hit "$!{combat_enemy_epithet} snaps the pole around in a short, vicious jab, and the iron point punches into your thigh and tears free as you stumble."
-  *set fft_miss "$!{combat_enemy_epithet} hooks for your arm, but you pull it back, and the iron passes through the space where your elbow had been."
-*if (fft_v = 7)
-  *set fft_hit "The hook slides past your guard and bites into your side, and ${combat_enemy_epithet} hauls it out with a jerk that leaves a ragged, burning line."
-  *set fft_miss "You slide along the shaft of the pole as ${combat_enemy_epithet} thrusts, and the point stabs uselessly past your hip."
-*if (fft_v = 8)
-  *set fft_hit "With a two-handed thrust, ${combat_enemy_epithet} drives the pole's iron point into your chest, and the blow lifts you onto your toes before you can catch your breath."
-  *set fft_miss "$!{combat_enemy_epithet} whips the pole up in a sweeping arc, but you drop beneath it, and the hook cuts the air over your head with a thin, angry hiss."
-*if (fft_m2 = 1)
-  *set fft_m2hit "$!{combat_enemy_epithet} sinks the hook in behind your shoulder and heaves, dragging you stumbling forward, feet scrabbling for purchase, before letting go."
-  *set fft_m2miss "$!{combat_enemy_epithet} hooks for you and heaves, but you drop your weight and turn with the pull, and the iron slips its hold before it can drag you off your feet."
-*if (fft_m2 = 2)
-  *set fft_m2hit "The hook catches your arm and ${combat_enemy_epithet} heaves, hauling you a full step forward onto your toes, then lets go and leaves you reeling."
-  *set fft_m2miss "$!{combat_enemy_epithet} hooks at your side and pulls, but you go with it instead of against it, and the iron slides free without dragging you anywhere."
-*if (fft_m2 = 3)
-  *set fft_m2hit "$!{combat_enemy_epithet} hooks your side and wrenches, and the sudden pull spins you half around before the iron tears free, leaving you staggering."
-  *set fft_m2miss "The hook fastens on you and you feel the heave begin, but you twist out of it, and the iron tears loose before you can be pulled off balance."
-*return
-
-*label flavor_type_axeman
-*if (fft_v = 1)
-  *set fft_hit "$!{combat_enemy_epithet} chops down in a short, savage arc, and the axe bites into your shoulder with a wet, heavy sound before the edge tears free."
-  *set fft_miss "$!{combat_enemy_epithet} chops wide in a hard, ugly swing, and the axe's weight drags the arm past you, leaving the head hanging out of line for a moment."
-*if (fft_v = 2)
-  *set fft_hit "A backhand swing of the axe opens a cut across your ribs before you can turn, and the sting arrives a heartbeat after the blow."
-  *set fft_miss "You lean back from a backhand swing, and the edge whistles past your chin close enough to stir the hair at your jaw."
-*if (fft_v = 3)
-  *set fft_hit "$!{combat_enemy_epithet} hooks the beard of the axe over your guard and drags the edge along your forearm, peeling a ragged strip."
-  *set fft_miss "$!{combat_enemy_epithet} chops for your head, but you turn your shoulder, and the axe hums past your ear, carrying the swinger half a step forward."
-*if (fft_v = 4)
-  *set fft_hit "$!{combat_enemy_epithet} feints high, and when your guard rises, the axe chops low at your thigh and the edge finds you."
-  *set fft_miss "$!{combat_enemy_epithet} swings overhand, but you catch the haft against your forearm and shove it wide before the head can come down."
-*if (fft_v = 5)
-  *set fft_hit "A flat-footed overhand chop drives the axe into your side, and the impact rocks you back on your heels with the breath knocked out of you."
-  *set fft_miss "The axe sweeps in low, and you skip back out of range as the edge cuts through the air where your knees had been."
-*if (fft_v = 6)
-  *set fft_hit "$!{combat_enemy_epithet} hacks at your arm in a quick, chopping backhand, and the edge sinks into the meat of your forearm before you can wrench away."
-  *set fft_miss "$!{combat_enemy_epithet} chops for your neck, but you duck under the arc, and the axe whirls past close enough that you feel the breeze of it on your scalp."
-*if (fft_v = 7)
-  *set fft_hit "A vicious downward chop catches you between neck and shoulder, and the axe thuds home hard enough to drive the breath out of you."
-  *set fft_miss "You catch ${combat_enemy_epithet}'s wrist as the axe comes down and hold on, and the blow stops short with a jolt that judders through both of you."
-*if (fft_v = 8)
-  *set fft_hit "$!{combat_enemy_epithet} rushes in behind a short, sharp swing, and the edge rakes across your hip, opening a long, ugly cut."
-  *set fft_miss "The axe-head hooks toward your side, but you twist away, and the edge merely combs the air beside your ribs."
-*if (fft_m2 = 1)
-  *set fft_m2hit "$!{combat_enemy_epithet} abandons finesse and swings with everything, and the edge tears a deep gash across your arm, blood running hot down your wrist."
-  *set fft_m2miss "$!{combat_enemy_epithet} takes a wild two-handed swing meant to split you to the belt, but you drop beneath it, and the axe-head whips through empty air, dragging the swinger half around."
-*if (fft_m2 = 2)
-  *set fft_m2hit "$!{combat_enemy_epithet} puts everything into a wild overhand chop, and the axe bites deep into your shoulder, blood soaking down your arm in a hot rush."
-  *set fft_m2miss "$!{combat_enemy_epithet} heaves the axe overhead for a brutal, wild chop, but you dive aside, and the blow lands on empty air, dragging the swinger off balance."
-*if (fft_m2 = 3)
-  *set fft_m2hit "With a roar, ${combat_enemy_epithet} swings the axe in a full, wild arc, and the edge opens your side in a deep, bleeding gash."
-  *set fft_m2miss "$!{combat_enemy_epithet} swings with all the strength in both arms, but you drop and roll clear, and the axe whistles through the space where your head had been."
-*return
-
-*label flavor_type_slinger
-*if (fft_v = 1)
-  *set fft_hit "A sling stone whips in from outside your guard and cracks against your collarbone before you see where it came from."
-  *set fft_miss "A sling stone whines past your ear close enough that you feel its wake, and is gone."
-*if (fft_v = 2)
-  *set fft_hit "The sling snaps, and the stone takes you in the small of the back with a bruising thump that steals your breath."
-  *set fft_miss "You hear the sling snap and duck, and the stone tears through the space where your head had been."
-*if (fft_v = 3)
-  *set fft_hit "$!{combat_enemy_epithet} darts closer and lets fly at short range, and the stone catches you hard across the knuckles, numbing the whole hand."
-  *set fft_miss "$!{combat_enemy_epithet} sends a low, hard shot at your legs, but you catch the flick of the wrist and shift your hip, and the stone sings past."
-*if (fft_v = 4)
-  *set fft_hit "Another stone cracks off your shin, sharp enough to make the leg buckle, before you have found the sling's angle."
-  *set fft_miss "$!{combat_enemy_epithet}'s stone flies a hand wide of your shoulder, spinning on its way with a thin, angry whistle."
-*if (fft_v = 5)
-  *set fft_hit "$!{combat_enemy_epithet} spins the sling once and lets go, and the stone takes you in the ribs with a hollow thud."
-  *set fft_miss "You shift your feet as the sling whirls, and the stone hisses past, missing by a hand."
-*if (fft_v = 6)
-  *set fft_hit "$!{combat_enemy_epithet}'s sling cracks, and the stone slams into your shoulder blade before you hear it coming, numbing the arm to the elbow."
-  *set fft_miss "The stone whips past your shoulder with a sharp whirr, and you feel the sting of its passing wind."
-*if (fft_v = 7)
-  *set fft_hit "A stone comes in low and fast and takes you across the hip, a sharp, bruising blow that pulls a grunt out of you."
-  *set fft_miss "You catch the wink of movement at the sling and lean out of the line, and the stone hums through the space where your chest had been."
-*if (fft_v = 8)
-  *set fft_hit "$!{combat_enemy_epithet} circles wide and lets go a hard, flat shot, and the stone clips the side of your head, setting your ears ringing."
-  *set fft_miss "$!{combat_enemy_epithet}'s shot is quick and mean, but you step aside at the last instant, and the stone flies on into nothing."
-*if (fft_m2 = 1)
-  *set fft_m2hit "$!{combat_enemy_epithet} flings a fistful of grit and cinder into your face, and the sting drags a hot, blinding tear down each cheek."
-  *set fft_m2miss "$!{combat_enemy_epithet} hurls a handful of grit at your eyes, but you turn your face aside and it patters harmlessly off your shoulder."
-*if (fft_m2 = 2)
-  *set fft_m2hit "$!{combat_enemy_epithet} scoops up a handful of grit and flings it at your face, and it stings your eyes into a hot, blurring blindness."
-  *set fft_m2miss "$!{combat_enemy_epithet} throws a cloud of grit at your face, but you snap your head aside and squeeze your eyes shut, and it rattles off your cheek."
-*if (fft_m2 = 3)
-  *set fft_m2hit "A spray of grit and ash catches you square in the eyes, and you stagger back, blinking through tears, half blind."
-  *set fft_m2miss "You see ${combat_enemy_epithet}'s hand swing up full of grit and duck your face away, and the stinging spray hits only the side of your head."
-*return
-
-*label flavor_type_guard
-*if (fft_v = 1)
-  *set fft_hit "$!{combat_enemy_epithet} drives a mace into you, the flanged head glancing off with a dull, ringing thud you feel in your teeth."
-  *set fft_miss "$!{combat_enemy_epithet} swings wide, and the mace cuts a hard arc through the space your ribs occupied a moment before."
-*if (fft_v = 2)
-  *set fft_hit "$!{combat_enemy_epithet} closes fast and gets the mace in low, catching you across the ribs before you can turn to meet the blow."
-  *set fft_miss "$!{combat_enemy_epithet} overcommits to the swing, and you slip aside as the mace's momentum drags ${combat_enemy_epithet} half around."
-*if (fft_v = 3)
-  *set fft_hit "$!{combat_enemy_epithet} feints high, then drives the mace in beneath your guard with jarring force."
-  *set fft_miss "You read the attack a half-second early and step inside the swing, and the mace whistles wide over your shoulder."
-*if (fft_v = 4)
-  *set fft_hit "$!{combat_enemy_epithet} bull-rushes you with a shoulder and follows up with a brutal blow from the mace to the small of your back."
-  *set fft_miss "$!{combat_enemy_epithet} swings a heavy downward chop, but you duck beneath the arc and the flanged head meets nothing."
-*if (fft_v = 5)
-  *set fft_hit "A sweeping backhand swing from ${combat_enemy_epithet} catches you across the chest, knocking the wind clean out of you."
-  *set fft_miss "$!{combat_enemy_epithet} tries to hook your ankle with a foot, but you keep your balance and pivot out of reach."
-*if (fft_v = 6)
-  *set fft_hit "$!{combat_enemy_epithet} batters your guard aside with the mace and rams it into your stomach, doubling you over with a hoarse gasp."
-  *set fft_miss "$!{combat_enemy_epithet} swings the mace at your head, but you duck under it, and the flanged head passes over you with a sullen whistle."
-*if (fft_v = 7)
-  *set fft_hit "The mace comes down on your forearm as you raise it to block, and the jarring crack runs up through your whole arm."
-  *set fft_miss "You catch the mace on a raised guard, and the blow jars to a halt, leaving ${combat_enemy_epithet} scrambling to recover."
-*if (fft_v = 8)
-  *set fft_hit "A short, choppy blow from ${combat_enemy_epithet} lands high on your shoulder, and the numbness spreads down to your fingers."
-  *set fft_miss "$!{combat_enemy_epithet} drives forward with a shoulder, but you sidestep, and ${combat_enemy_epithet} blunders past, mace swinging at nothing."
-*return
-
-*label flavor_type_swordsman
-*if (fft_v = 1)
-  *set fft_hit "$!{combat_enemy_epithet} cuts in from the high line, and the edge slides across your shoulder before you can bring your guard across."
-  *set fft_miss "$!{combat_enemy_epithet} cuts from the high line, but you catch the blow on a raised guard and turn it aside with a shrieking scrape of steel."
-*if (fft_v = 2)
-  *set fft_hit "A quick thrust from ${combat_enemy_epithet} slips past your guard, and the point punches into your side and is gone again before you can strike back."
-  *set fft_miss "$!{combat_enemy_epithet} thrusts for your ribs, but you turn sideways, and the point slides past your belly with a hair to spare."
-*if (fft_v = 3)
-  *set fft_hit "$!{combat_enemy_epithet} beats your guard aside with a ringing clash and cuts back across your forearm, and the edge bites deep."
-  *set fft_miss "You beat ${combat_enemy_epithet}'s blade aside and step off the line, and the cut chops the empty air where you had been."
-*if (fft_v = 4)
-  *set fft_hit "$!{combat_enemy_epithet} feints at your face, and when you flinch, the blade whips low and opens your thigh in a long, stinging cut."
-  *set fft_miss "$!{combat_enemy_epithet} feints high and cuts low, but you read it and step back, and the edge sweeps through nothing."
-*if (fft_v = 5)
-  *set fft_hit "Stepping in close, ${combat_enemy_epithet} drives the pommel into your ribs, and the blade comes around to score your back as you double over."
-  *set fft_miss "$!{combat_enemy_epithet} lunges, but you turn the blade wide, and ${combat_enemy_epithet} recovers with a quick, tight step."
-*if (fft_v = 6)
-  *set fft_hit "$!{combat_enemy_epithet}'s cut takes you across the chest, shallow and vicious, and the follow-through drives you back a step."
-  *set fft_miss "A sweeping cut comes for your neck, and you duck beneath it, the wind of the blade lifting the hair on your head."
-*if (fft_v = 7)
-  *set fft_hit "A rising cut from ${combat_enemy_epithet} catches your arm below the elbow, and the edge grates on bone before it tears free."
-  *set fft_miss "$!{combat_enemy_epithet} binds your weapon and tries to slip past it, but you break the bind and shove clear."
-*if (fft_v = 8)
-  *set fft_hit "$!{combat_enemy_epithet} binds your weapon and pivots, and the blade slides free and opens your hip before you can disengage."
-  *set fft_miss "$!{combat_enemy_epithet} presses with a flurry of quick cuts, but you fall back a step at a time and turn each one aside, and none finds you."
-*if (fft_m2 = 1)
-  *set fft_m2hit "$!{combat_enemy_epithet} sweeps your guard wide with a sharp beat and cuts back through the opening, and the blade opens your side while your arm is still ringing."
-  *set fft_m2miss "$!{combat_enemy_epithet} sweeps at your guard to force it wide, but you hold your line, and the beat rings off harmlessly."
-*if (fft_m2 = 2)
-  *set fft_m2hit "$!{combat_enemy_epithet} lashes out with a double cut, high and then low, and the second stroke lands hard on your thigh as you scramble to answer the first."
-  *set fft_m2miss "$!{combat_enemy_epithet} lashes out with a double cut, but you turn the first and step clear of the second, and neither draws blood."
-*if (fft_m2 = 3)
-  *set fft_m2hit "A feint, a cut, and a second cut behind it drive you off your line, and the last stroke scores your ribs as you stumble."
-  *set fft_m2miss "A feint, a cut, and a second cut behind it, but you take a half step back and let both sweep past your chest."
-*return
-
-*label flavor_type_spearman
-*if (fft_v = 1)
-  *set fft_hit "$!{combat_enemy_epithet} thrusts out at full reach, and the point punches into your shoulder before you can close the distance."
-  *set fft_miss "$!{combat_enemy_epithet}'s thrust falls a hand short, the point sliding through the air before your chest as you sway back."
-*if (fft_v = 2)
-  *set fft_hit "$!{combat_enemy_epithet} sweeps the shaft low, and the blade tears across your calf as you try to step in."
-  *set fft_miss "You bat the shaft aside with your forearm, and the point glances off and away, leaving ${combat_enemy_epithet} scrambling to recover the reach."
-*if (fft_v = 3)
-  *set fft_hit "$!{combat_enemy_epithet} jabs the butt of the shaft into your gut, and while you are doubled over the point flicks up and scores your ribs."
-  *set fft_miss "$!{combat_enemy_epithet} sweeps the shaft low, but you hop it and step inside the length of the spear, where the long weapon is nearly useless."
-*if (fft_v = 4)
-  *set fft_hit "Choking up on the shaft, ${combat_enemy_epithet} drives the point in beneath your raised arm and twists it out, tearing a ragged cut."
-  *set fft_miss "$!{combat_enemy_epithet} jabs at your face, but you slip your head aside, and the point whistles past your ear."
-*if (fft_v = 5)
-  *set fft_hit "$!{combat_enemy_epithet}'s thrust comes fast and straight, and the point slides into your thigh and out again before you can knock the shaft aside."
-  *set fft_miss "$!{combat_enemy_epithet} lunges, and you turn sideways so the point passes along your ribs and takes nothing with it."
-*if (fft_v = 6)
-  *set fft_hit "A short, stabbing jab takes you in the side, and ${combat_enemy_epithet} wrenches the point free with a jerk that leaves a burning line."
-  *set fft_miss "You slide along the shaft as ${combat_enemy_epithet} thrusts, and the point stabs uselessly past your hip."
-*if (fft_v = 7)
-  *set fft_hit "$!{combat_enemy_epithet} brings the shaft down across your arm like a bar, and the blade follows through and opens your forearm."
-  *set fft_miss "$!{combat_enemy_epithet} whips the spear up in a sweeping arc, but you drop beneath it, and the point cuts the air over your head."
-*if (fft_v = 8)
-  *set fft_hit "$!{combat_enemy_epithet} steps in behind a hard, low thrust, and the point takes you across the hip and tears free."
-  *set fft_miss "$!{combat_enemy_epithet} drives forward behind a stabbing jab, but you shove the shaft wide and ${combat_enemy_epithet} stumbles past."
-*if (fft_m2 = 1)
-  *set fft_m2hit "$!{combat_enemy_epithet} drives the point through the gap at your guard and pins your arm to your side, and you strain against the shaft, unable to swing."
-  *set fft_m2miss "$!{combat_enemy_epithet} lunges to pin your arm, but you twist out of the line, and the point scrapes past your side."
-*if (fft_m2 = 2)
-  *set fft_m2hit "$!{combat_enemy_epithet} lunges and wedges the shaft against your weapon arm, pinning it, and the point stabs into your shoulder while you fight to free it."
-  *set fft_m2miss "$!{combat_enemy_epithet} wedges the shaft against you, but you shove it off with the flat of your hand, and the pin never takes."
-*if (fft_m2 = 3)
-  *set fft_m2hit "The point takes you through the meat of the forearm and ${combat_enemy_epithet} bears down, pinning the arm where it hangs for a long, painful moment."
-  *set fft_m2miss "$!{combat_enemy_epithet} drives for your weapon arm, and you turn with the thrust and let it slide past, breaking free."
-*return
-
-*label flavor_type_archer
-*if (fft_v = 1)
-  *set fft_hit "$!{combat_enemy_epithet} draws and looses in one smooth motion, and the arrow punches into your shoulder before you hear the string."
-  *set fft_miss "$!{combat_enemy_epithet} looses, but you see the draw and throw yourself sideways, and the arrow whips past your shoulder."
-*if (fft_v = 2)
-  *set fft_hit "An arrow whips out of ${combat_enemy_epithet}'s draw and takes you in the thigh, a hard, deep sting that nearly folds the leg."
-  *set fft_miss "An arrow hisses toward your chest, and you twist aside, and it flies on past without touching you."
-*if (fft_v = 3)
-  *set fft_hit "$!{combat_enemy_epithet}'s shot comes low and fast, and the arrow rakes your ribs in a burning line as you twist."
-  *set fft_miss "$!{combat_enemy_epithet}'s shot comes low, but you leap the line of it, and the arrow skims past your shins."
-*if (fft_v = 4)
-  *set fft_hit "You see ${combat_enemy_epithet}'s arm come back and start to move, and the arrow finds your side anyway, cutting the wind out of you."
-  *set fft_miss "You drop as ${combat_enemy_epithet} looses, and the arrow passes so close overhead that you feel the wind of the fletching."
-*if (fft_v = 5)
-  *set fft_hit "The arrow takes you high on the arm as you raise it, and the shaft snaps off as you grab at it, leaving the head buried in the muscle."
-  *set fft_miss "$!{combat_enemy_epithet} takes a breath and looses, but you break your line at the last instant, and the arrow flies wide."
-*if (fft_v = 6)
-  *set fft_hit "$!{combat_enemy_epithet} looses on the turn, and the arrow slices across your back and sends you stumbling."
-  *set fft_miss "A hurried shot from ${combat_enemy_epithet} goes wide of your head by a hand's breadth."
-*if (fft_v = 7)
-  *set fft_hit "A fast second shot from ${combat_enemy_epithet} takes you across the hip, the arrowhead scoring flesh as it goes past."
-  *set fft_miss "You keep moving, and ${combat_enemy_epithet}'s arrows chase you, always half a step behind."
-*if (fft_v = 8)
-  *set fft_hit "$!{combat_enemy_epithet} steadies and looses, and the arrow takes you high in the chest and glances off the bone with a jolt that knocks your breath out."
-  *set fft_miss "$!{combat_enemy_epithet} looses on your first step, and you cut the other way, and the arrow buries nothing but air."
-*if (fft_m2 = 1)
-  *set fft_m2hit "$!{combat_enemy_epithet} drops the aim to your legs and looses, and the arrow punches through the meat of your calf, and every step after that is a limp."
-  *set fft_m2miss "$!{combat_enemy_epithet} drops the aim to your legs and looses, but you hop the arrow, and it goes past your knee."
-*if (fft_m2 = 2)
-  *set fft_m2hit "A shot low and to the side takes you in the knee, and the leg gives, and you stagger as ${combat_enemy_epithet} nocks another."
-  *set fft_m2miss "A low shot skips at your feet, and you stamp aside from it, and the arrow flies on."
-*if (fft_m2 = 3)
-  *set fft_m2hit "$!{combat_enemy_epithet} looses at your feet, and the arrow rips through your ankle, dragging your weight sideways."
-  *set fft_m2miss "$!{combat_enemy_epithet} looses at your leg, and you feel it coming and shift your weight, and the arrow scores the air at your calf."
-*return
-
-*label flavor_type_lacedon
-*if (fft_v = 1)
-  *set fft_hit "$!{combat_enemy_epithet} lunges with a wet, ragged scream, and its claws rake for your ribs before you can turn."
-  *set fft_miss "$!{combat_enemy_epithet} lunges, but you are already moving, and its claws rake nothing but air."
-*if (fft_v = 2)
-  *set fft_hit "$!{combat_enemy_epithet} closes the gap in a single thrashing rush, and its claws catch you across the shoulder before you can set your feet."
-  *set fft_miss "You throw your weight back as ${combat_enemy_epithet} surges at you, and its claws rake past a hair's breadth from your throat."
-*if (fft_v = 3)
-  *set fft_hit "$!{combat_enemy_epithet} drops low and comes up inside your reach, and its claws find purchase in your thigh before you can twist away."
-  *set fft_miss "$!{combat_enemy_epithet} overreaches and overshoots its lunge, and you sidestep into the space it just vacated."
-*if (fft_v = 4)
-  *set fft_hit "$!{combat_enemy_epithet} whips its tail around and knocks your footing askew, and cold claws rake your leg as you stagger."
-  *set fft_miss "$!{combat_enemy_epithet} lunges with dripping jaws, but you shove clear, and the teeth snap shut on nothing."
-*if (fft_v = 5)
-  *set fft_hit "A sudden surge of motion, and ${combat_enemy_epithet}'s jagged teeth clamp down hard on your forearm, worrying at it before you wrench free."
-  *set fft_miss "$!{combat_enemy_epithet} leaps, and you turn your shoulder into it and knock it aside, and it lands sprawling and hissing."
-*if (fft_v = 6)
-  *set fft_hit "$!{combat_enemy_epithet} hooks a hand around your arm and drags you in, and its teeth tear a ragged strip from your side."
-  *set fft_miss "$!{combat_enemy_epithet}'s tail sweeps for your legs, but you hop it and keep your footing."
-*if (fft_v = 7)
-  *set fft_hit "$!{combat_enemy_epithet} lashes out with both hands, and the clawed fingers score four burning lines across your chest."
-  *set fft_miss "A clawed hand snaps out for your face, but you catch the wrist and twist it aside, and the thing shrieks in rage."
-*if (fft_v = 8)
-  *set fft_hit "$!{combat_enemy_epithet} lunges for your throat, and you get an arm up in time to take the bite there instead, teeth grinding on bone."
-  *set fft_miss "$!{combat_enemy_epithet} lunges from a crouch, but you raise your guard, and the claws skid off it and away."
-*return
-
-*label flavor_type_mire_rat
-*if (fft_v = 1)
-  *set fft_hit "$!{combat_enemy_epithet} darts in low and gets a claw across your leg, a thin, stinging scratch that burns."
-  *set fft_miss "$!{combat_enemy_epithet} lunges for your ankle, but you lift your foot clear, and it lands short, claws scrabbling at nothing."
-*if (fft_v = 2)
-  *set fft_hit "$!{combat_enemy_epithet} springs from a crouch and catches your forearm before you can pull it clear, needle teeth sinking in."
-  *set fft_miss "$!{combat_enemy_epithet} springs for your hand, and you snatch it back just in time, the teeth clicking shut on empty air."
-*if (fft_v = 3)
-  *set fft_hit "$!{combat_enemy_epithet} darts between your feet and sinks in at the ankle, quick and vicious."
-  *set fft_miss "$!{combat_enemy_epithet} scrabbles up your leg, but you kick your heel back hard, shaking it loose to tumble away."
-*if (fft_v = 4)
-  *set fft_hit "$!{combat_enemy_epithet} launches itself at your hand and buries its incisors in the meat of your palm."
-  *set fft_miss "$!{combat_enemy_epithet} snaps at your fingers, but you smack it aside with the flat of your guard."
-*if (fft_v = 5)
-  *set fft_hit "$!{combat_enemy_epithet} lunges straight forward, and its claws tear a sharp welt across your forearm before you rip it away."
-  *set fft_miss "$!{combat_enemy_epithet} darts in from the side, but you are already turning, and it skids past, snapping at nothing."
-*if (fft_v = 6)
-  *set fft_hit "$!{combat_enemy_epithet} scrambles up your leg in a flash and bites at your hip before you can knock it loose."
-  *set fft_miss "$!{combat_enemy_epithet} leaps for your face, and you swat it out of the air mid-flight."
-*if (fft_v = 7)
-  *set fft_hit "$!{combat_enemy_epithet} leaps for your throat, and you get an arm up just in time, and needle teeth score your wrist instead."
-  *set fft_miss "$!{combat_enemy_epithet} lunges for your calf, and you kick it clear before the teeth can close."
-*if (fft_v = 8)
-  *set fft_hit "A frantic rush from ${combat_enemy_epithet} catches your off hand, sharp claws tearing skin."
-  *set fft_miss "$!{combat_enemy_epithet} hesitates, whiskers twitching, and hisses in frustration as you turn to face it."
-*return
-
-*label flavor_type_beast
-*comment A generic natural-attack monster with no special move: a wolf, a boar, a bear, a giant spider, a ghoul. Its lines say
-*comment lunge, spring, rush, snap, bite, rake and slam, and never name a species part (no tail, whiskers, horns, fur), so
-*comment a scene calls it whatever it needs with combat_enemy_name_override and combat_enemy_epithet_override.
-*if (fft_v = 1)
-  *set fft_hit "$!{combat_enemy_epithet} springs from a crouch and slams into you, and the impact rocks you back a step before you can set your feet."
-  *set fft_miss "$!{combat_enemy_epithet} springs at you, but you turn aside, and they sail past, the wind of the rush stinging your face."
-*if (fft_v = 2)
-  *set fft_hit "$!{combat_enemy_epithet} lunges low and snaps at your leg, and the bite tears deep before you can pull clear."
-  *set fft_miss "$!{combat_enemy_epithet} lunges for your leg, but you lift it clear, and the jaws snap shut on nothing."
-*if (fft_v = 3)
-  *set fft_hit "$!{combat_enemy_epithet} bowls into your side with a rush of raw weight, and the breath leaves you as you stagger."
-  *set fft_miss "You throw your weight back as ${combat_enemy_epithet} charges, and the rush thunders past a hair's breadth from your ribs."
-*if (fft_v = 4)
-  *set fft_hit "$!{combat_enemy_epithet} rakes at your forearm as you raise it, and the strike opens burning furrows before you wrench clear."
-  *set fft_miss "$!{combat_enemy_epithet} rakes at your face, but you get a shoulder up, and the swipe skids off and away."
-*if (fft_v = 5)
-  *set fft_hit "A sudden surge of motion, and ${combat_enemy_epithet} clamps down hard on your arm, worrying at it before you wrench free."
-  *set fft_miss "$!{combat_enemy_epithet} snaps at your arm, but you snatch it back, and the jaws clash shut on empty air."
-*if (fft_v = 6)
-  *set fft_hit "$!{combat_enemy_epithet} closes in a single thrashing rush and drags you off balance, and a savage bite tears a ragged strip from your side."
-  *set fft_miss "$!{combat_enemy_epithet} circles for an opening and rushes, but you turn with the rush and keep your footing."
-*if (fft_v = 7)
-  *set fft_hit "$!{combat_enemy_epithet} darts inside your reach and strikes at your thigh, and the wound burns as you stumble back."
-  *set fft_miss "$!{combat_enemy_epithet} darts in low, but you get a foot forward and turn the rush aside, and they skid past."
-*if (fft_v = 8)
-  *set fft_hit "$!{combat_enemy_epithet} lunges for your throat, and you get an arm up in time to take the strike there instead, and pain flares to the shoulder."
-  *set fft_miss "$!{combat_enemy_epithet} lunges from a crouch, but you raise your weapon, and the strike skids off it and away."
-*return
-
-*comment ══════════════════════════════════════════════════════════════
-*comment PLAYER STRIKE FLAVOR
-*comment The player's ordinary weapon lines against a human fighter, chosen by what the weapon does: slashing, piercing,
-*comment bludgeoning (weapon_damage_type) or a shot (weapon_type "ranged"). pick_weapon_flavor calls one of these at the
-*comment moment of the attack, before the roll, and each sets the caller's fwh (hit) and fwm (miss) to one of eight pairs,
-*comment so a longsword cuts, a dagger or spear thrusts, a quarterstaff cracks and a bow looses, whoever holds it.
-*comment Built at the moment of the attack, so the lines can name the fighter being struck through
-*comment combat_enemy_epithet (already the active slot's), the same way the enemy lines do: with two guards the player
-*comment reads "the left guard", and a later mention in the same line may be singular "they", never he, she, it or "the body". Rules for a line: the player is the subject and the weapon is only ever an
-*comment object ("your ${weapon}"), so a plural name ("twin daggers", "bare fists") never breaks the verb; no he, she or it for
-*comment the enemy, no place, weather or light, nothing worn; one physical action per line. Creatures have their own
-*comment lines (PLAYER LINES AGAINST A CREATURE), and the finishing blows are PLAYER FINISHING BLOWS.
-*comment ══════════════════════════════════════════════════════════════
-
-*label flavor_player_slashing
-*comment Slashing (longsword, axes): cuts, chops and drags of the edge.
-*temp fps_v 1
-*rand fps_v 1 8
-*if (fps_v = 1)
-  *set fwh "You bring your ${weapon} down at a slant, and the edge bites deep into ${combat_enemy_epithet}'s shoulder before it drags free."
-  *set fwm "You swing wide, and ${combat_enemy_epithet} sways back out of the arc, your ${weapon} slicing nothing but air."
-*if (fps_v = 2)
-  *set fwh "You sweep your ${weapon} round in a flat arc, and the edge opens ${combat_enemy_epithet} across the ribs and drives the breath out in a grunt."
-  *set fwm "$!{combat_enemy_epithet} catches the edge of your ${weapon} on a hard parry, and the shock of it runs up through your wrist."
-*if (fps_v = 3)
-  *set fwh "$!{combat_enemy_epithet} brings the weapon up a beat too slow, and you cut under it, laying a forearm open to the bone with the edge of your ${weapon}."
-  *set fwm "You chop down, but ${combat_enemy_epithet} slips aside, and the edge of your ${weapon} bites only the air where a shoulder had been."
-*if (fps_v = 4)
-  *set fwh "You chop hard at ${combat_enemy_epithet}'s weapon arm, and the edge bites deep and comes away wet."
-  *set fwm "You cut low at the knees, but ${combat_enemy_epithet} hops the stroke, and the edge of your ${weapon} whips past beneath."
-*if (fps_v = 5)
-  *set fwh "You step in past a wild swing and drag the edge of your ${weapon} across ${combat_enemy_epithet}'s thigh, a long, ugly cut that buckles the leg."
-  *set fwm "$!{combat_enemy_epithet} ducks under the sweep, and you spin half around on the momentum, your ${weapon} carving a wasted circle."
-*if (fps_v = 6)
-  *set fwh "You feint high and cut low, and the edge of your ${weapon} rakes ${combat_enemy_epithet} across the hip, wrenching a half-turn out of the stagger."
-  *set fwm "You cut at ${combat_enemy_epithet}'s neck, and the stroke skims off a hasty parry and away without biting."
-*if (fps_v = 7)
-  *set fwh "You hack at the hand that holds the weapon, and the edge of your ${weapon} bites the knuckles, and the grip loosens in a flash of red."
-  *set fwm "Your cut goes in flat and true, but ${combat_enemy_epithet} jerks backward, and the edge of your ${weapon} stops a finger's width short."
-*if (fps_v = 8)
-  *set fwh "You land a hard, short chop on ${combat_enemy_epithet}'s collarbone with your ${weapon}, and a ragged shout tears loose."
-  *set fwm "You cut down in a heavy stroke, but ${combat_enemy_epithet} steps in and crowds the swing, and it dies against a shoulder with no edge behind it."
-*return
-
-*label flavor_player_piercing
-*comment Piercing (daggers, stiletto, spear): thrusts, stabs and points.
-*temp fpp_v 1
-*rand fpp_v 1 8
-*if (fpp_v = 1)
-  *set fwh "You drive your ${weapon} straight in past ${combat_enemy_epithet}'s defenses, and the point punches deep into the flank and stops there."
-  *set fwm "You thrust at the chest, but ${combat_enemy_epithet} turns sideways, and the point of your ${weapon} goes past, whispering through empty air."
-*if (fpp_v = 2)
-  *set fwh "You slip past a clumsy parry and thrust your ${weapon} into ${combat_enemy_epithet}'s thigh, and the leg buckles."
-  *set fwm "$!{combat_enemy_epithet} beats your ${weapon} aside with a hard rap, and the thrust runs off into nothing."
-*if (fpp_v = 3)
-  *set fwh "You lunge, and the point of your ${weapon} finds the gap at ${combat_enemy_epithet}'s ribs, going in a hand's breadth before you wrench free."
-  *set fwm "You lunge deep, but ${combat_enemy_epithet} hops back out of range, and you have to catch yourself before the overreach pitches you forward."
-*if (fpp_v = 4)
-  *set fwh "You take a quick step off the line and stab into ${combat_enemy_epithet}'s upper arm, and the fingers spasm around the grip."
-  *set fwm "You stab low, but ${combat_enemy_epithet} twists, and the point of your ${weapon} slides past the hip, leaving you stretched out and open."
-*if (fpp_v = 5)
-  *set fwh "You thrust low, and the point of your ${weapon} sinks into ${combat_enemy_epithet}'s hip and comes out slick."
-  *set fwm "You go for the throat, but ${combat_enemy_epithet} slips aside, and the point of your ${weapon} finds only the air where the throat had been."
-*if (fpp_v = 6)
-  *set fwh "You feint at the face, and when ${combat_enemy_epithet} flinches back, the point of your ${weapon} goes in below the collarbone, quick and neat."
-  *set fwm "The thrust is quick, but ${combat_enemy_epithet} reads it and sweeps a forearm across, and the point skids off to the side."
-*if (fpp_v = 7)
-  *set fwh "You turn a wild swing aside and stab your ${weapon} into ${combat_enemy_epithet}'s forearm, and a hoarse cry tears loose."
-  *set fwm "You feint and drive in, but ${combat_enemy_epithet} does not bite, and the point of your ${weapon} goes through the space where a body had been."
-*if (fpp_v = 8)
-  *set fwh "You put your ${weapon} into the soft place under ${combat_enemy_epithet}'s arm as a swing goes wide, and the point goes in with a short, wet sound."
-  *set fwm "You stab for the belly, but ${combat_enemy_epithet} sucks the gut in and slides back a half-step, and the point stops short by a whisker."
-*return
-
-*label flavor_player_bludgeoning
-*comment Bludgeoning (quarterstaff, bare fists, anything blunt). A player with nothing equipped has the weapon noun
-*comment "unarmed", which cannot follow "your", so it reads as bare fists here.
-*temp fpb_v 1
-*temp fpb_w weapon
-*if (weapon = "unarmed")
-  *set fpb_w "bare fists"
-*rand fpb_v 1 8
-*if (fpb_v = 1)
-  *set fwh "You swing your ${fpb_w} in a hard, rising arc, and the blow cracks against ${combat_enemy_epithet}'s jaw and snaps the head round."
-  *set fwm "You swing for the head, but ${combat_enemy_epithet} ducks, and the blow whips through the air where the skull had been."
-*if (fpb_v = 2)
-  *set fwh "You bring your ${fpb_w} down on ${combat_enemy_epithet}'s shoulder with your whole weight, and the blow rings through the bone."
-  *set fwm "$!{combat_enemy_epithet} takes the blow on a raised forearm and shrugs it off, and the jolt of it rattles up your arm."
-*if (fpb_v = 3)
-  *set fwh "You step in and drive your ${fpb_w} into ${combat_enemy_epithet}'s belly, and the breath leaves in a rush."
-  *set fwm "You lunge in with your ${fpb_w}, but ${combat_enemy_epithet} slides out of reach, and you stumble as the swing meets nothing."
-*if (fpb_v = 4)
-  *set fwh "You catch ${combat_enemy_epithet}'s knee with a low, hard sweep of your ${fpb_w}, and the leg buckles."
-  *set fwm "You bring your ${fpb_w} down hard, but ${combat_enemy_epithet} rolls a shoulder, and the blow slides off with nothing behind it."
-*if (fpb_v = 5)
-  *set fwh "You crack your ${fpb_w} across ${combat_enemy_epithet}'s ribs with a flat, hollow sound, and they fold around the blow."
-  *set fwm "$!{combat_enemy_epithet} steps inside your swing and crowds it, and the blow lands as a weak shove with no weight behind it."
-*if (fpb_v = 6)
-  *set fwh "You feint at the head and hammer your ${fpb_w} into ${combat_enemy_epithet}'s side, and the air goes out with a heavy grunt."
-  *set fwm "You aim low at the knee, but ${combat_enemy_epithet} hops clear, and the swing whistles through empty air."
-*if (fpb_v = 7)
-  *set fwh "You turn a clumsy swing aside and rap ${combat_enemy_epithet} across the back of the hand with your ${fpb_w}, and the fingers spasm around the grip."
-  *set fwm "The blow is right on target, but ${combat_enemy_epithet} rolls with it, and it glances off with nothing to show for it."
-*if (fpb_v = 8)
-  *set fwh "You hammer your ${fpb_w} up under ${combat_enemy_epithet}'s chin, and the head snaps back and the teeth clack shut."
-  *set fwm "You swing too eagerly, and ${combat_enemy_epithet} simply steps aside, letting the swing carry you past and half around."
-*return
-
-*label flavor_player_ranged
-*comment A shot from a bow or crossbow: the missile, not the weapon, does the work.
-*temp fpr_v 1
-*rand fpr_v 1 8
-*if (fpr_v = 1)
-  *set fwh "Your shot punches into ${combat_enemy_epithet}'s shoulder and spins them half around, a pained shout tearing loose, and the arm hangs useless a moment before it comes back up."
-  *set fwm "Your shot skips wide as ${combat_enemy_epithet} twists aside at the last instant, the missile passing close enough to make the fighter flinch."
-*if (fpr_v = 2)
-  *set fwh "You lead a stumbling retreat and put the shot square home before ${combat_enemy_epithet} can find footing, and the breath goes out in a grunt."
-  *set fwm "$!{combat_enemy_epithet} lunges sideways just as you loose, and the shot flies through the space where a chest had been."
-*if (fpr_v = 3)
-  *set fwh "The shot catches ${combat_enemy_epithet} mid-motion and snaps the head back, and the fight goes out of the stance."
-  *set fwm "Your aim wavers as your breath catches, and the shot skitters wide of ${combat_enemy_epithet} entirely."
-*if (fpr_v = 4)
-  *set fwh "Your shot drives through ${combat_enemy_epithet}'s exposed forearm, and the grip is lost with a sharp cry."
-  *set fwm "$!{combat_enemy_epithet} drops low just as you release, and the shot passes harmlessly overhead with a thin, ugly whistle."
-*if (fpr_v = 5)
-  *set fwh "You loose on a low line, and the missile clips ${combat_enemy_epithet}'s thigh, spoiling the charge and sending the fighter lurching sideways."
-  *set fwm "You snatch at the release a moment too soon, and the shot sails wide of its mark, a wasted chance that leaves you cursing under your breath."
-*if (fpr_v = 6)
-  *set fwh "The shot takes ${combat_enemy_epithet} low in the side, and they double around it with a hiss, one hand clamped to the wound."
-  *set fwm "You loose on ${combat_enemy_epithet}'s first step, but the fighter cuts sideways, and the shot goes wide and is lost."
-*if (fpr_v = 7)
-  *set fwh "Your shot snaps ${combat_enemy_epithet}'s arm back, and the weapon swings wildly wide as a yelp tears out."
-  *set fwm "The shot leaves you a heartbeat early and falls short of ${combat_enemy_epithet} entirely, a wasted effort."
-*if (fpr_v = 8)
-  *set fwh "You loose the instant ${combat_enemy_epithet} commits, and the missile takes the chest square and stops the charge cold."
-  *set fwm "$!{combat_enemy_epithet} flinches aside as you release, and the shot passes so close it stirs the hair before it is gone."
-*return
-
-*comment ══════════════════════════════════════════════════════════════
-*comment PLAYER FINISHING BLOWS
-*comment The blow that ends a fight against a human fighter, chosen by the weapon's damage type the way the ordinary
-*comment strike lines above are. pick_weapon_death_flavor calls one of these at the moment of the kill and each sets the
-*comment caller's fdh to one of eight lines. flavor_kill_<type> is a death, flavor_yield_<type> is a fighter beaten into
-*comment surrender or a stupor (combat_is_nonlethal). Same rules as the strike lines: the player is the subject, the
-*comment weapon is only an object or "the point/edge of your ${weapon}", the fighter is named through
-*comment combat_enemy_epithet (singular "they" to refer back, never he, she or it), no place, nothing worn, and no weapon anatomy the whole family
-*comment does not share: no crossguard, pommel, hilt, haft, ferrule or blade, since an axe, a spear, a dagger and a
-*comment staff are all slashing, piercing or bludgeoning here. A slashing weapon has an edge and a flat, a piercing one a
-*comment point, a blunt one is simply swung; the rest is the fighter's body (elbow, knee, shoulder).
-*comment ══════════════════════════════════════════════════════════════
-
-*label flavor_kill_slashing
-*comment Slashing kill: cleaves, chops and cuts of the edge.
-*temp fks_v 1
-*rand fks_v 1 8
-*if (fks_v = 1)
-  *set fdh "You step into the arc and bring the edge of your ${weapon} down in a violent cleave, and the stroke bites clean through the collarbone and deep into the chest, and ${combat_enemy_epithet} drops without a sound."
-*if (fks_v = 2)
-  *set fdh "You pivot hard, putting your whole weight behind the stroke, and the edge of your ${weapon} takes ${combat_enemy_epithet} across the throat, and both hands fly up to a wound no hand can close before ${combat_enemy_epithet} drops."
-*if (fks_v = 3)
-  *set fdh "A brutal downward chop from your ${weapon} splits ${combat_enemy_epithet} at the shoulder, and you wrench the edge free with a wet, tearing sound as ${combat_enemy_epithet} folds and does not move again."
-*if (fks_v = 4)
-  *set fdh "You cut through ${combat_enemy_epithet}'s defenses, and the edge of your ${weapon} carves deep along the ribs, and ${combat_enemy_epithet} looks down at the wound, then up at you, and falls."
-*if (fks_v = 5)
-  *set fdh "You drive a low, sweeping cut through ${combat_enemy_epithet}'s thigh, and the leg gives, and the backstroke of your ${weapon} ends the fight before the fall is finished."
-*if (fks_v = 6)
-  *set fdh "You hew at the neck with your whole back in the stroke, and the edge of your ${weapon} goes through, and ${combat_enemy_epithet} is finished before the fall begins."
-*if (fks_v = 7)
-  *set fdh "You bring your ${weapon} round in a flat, brutal sweep across ${combat_enemy_epithet}'s belly, and ${combat_enemy_epithet} doubles over the opened wound and slides down, dying."
-*if (fks_v = 8)
-  *set fdh "You catch a raised arm with the edge of your ${weapon} and cut clean through, and drive the backstroke into ${combat_enemy_epithet}'s side, and ${combat_enemy_epithet} drops with a grunt and lies still."
-*return
-
-*label flavor_kill_piercing
-*comment Piercing kill: the point, driven home.
-*temp fkp_v 1
-*rand fkp_v 1 8
-*if (fkp_v = 1)
-  *set fdh "You step inside ${combat_enemy_epithet}'s reach and drive the point of your ${weapon} up beneath the ribs, twisting once before wrenching free, and ${combat_enemy_epithet} folds around the wound."
-*if (fkp_v = 2)
-  *set fdh "A lightning-fast thrust of your ${weapon} punches clean through ${combat_enemy_epithet}'s throat, and ${combat_enemy_epithet} clutches at the wound in choking disbelief as the legs fold."
-*if (fkp_v = 3)
-  *set fdh "You turn a swing aside and put the point of your ${weapon} through the eye, and ${combat_enemy_epithet} drops instantly without another sound."
-*if (fkp_v = 4)
-  *set fdh "The point of your ${weapon} finds the gap under ${combat_enemy_epithet}'s arm and drives deep into the lung, and ${combat_enemy_epithet} sits down with a wet gasp and topples."
-*if (fkp_v = 5)
-  *set fdh "You lunge, and the point of your ${weapon} goes in beneath the breastbone, and ${combat_enemy_epithet} stiffens, stares, and falls."
-*if (fkp_v = 6)
-  *set fdh "You drive the point of your ${weapon} into the base of ${combat_enemy_epithet}'s neck, and ${combat_enemy_epithet} goes rigid in a single violent tremor before falling limp."
-*if (fkp_v = 7)
-  *set fdh "You stab up under the jaw, and the point of your ${weapon} goes deep, and ${combat_enemy_epithet} is dead before the knees give."
-*if (fkp_v = 8)
-  *set fdh "You run ${combat_enemy_epithet} through the belly and shove, and ${combat_enemy_epithet} slides off the point and drops, clutching at the ruin."
-*return
-
-*label flavor_kill_bludgeoning
-*comment Bludgeoning kill. Bare fists read as such when the weapon noun is "unarmed".
-*temp fkb_v 1
-*temp fkb_w weapon
-*if (weapon = "unarmed")
-  *set fkb_w "bare fists"
-*rand fkb_v 1 8
-*if (fkb_v = 1)
-  *set fdh "You drive your ${fkb_w} into ${combat_enemy_epithet}'s temple with sickening momentum, and bone gives with a wet crack, and ${combat_enemy_epithet} drops like an unstrung puppet."
-*if (fkb_v = 2)
-  *set fdh "A brutal sweep of your ${fkb_w}, with your whole weight in the blow, takes ${combat_enemy_epithet} square across the ribs, and bone shatters inward with a concussive crunch that drives the air out in a bloody spray."
-*if (fkb_v = 3)
-  *set fdh "You plant your back foot and drive your ${fkb_w} hard into ${combat_enemy_epithet}'s sternum, and the chest caves with a dull, sickening thud that stops the heart on the spot."
-*if (fkb_v = 4)
-  *set fdh "You bring your ${fkb_w} down with brutal leverage, and ${combat_enemy_epithet}'s neck snaps sideways with a sharp, dry fracture before they drop dead."
-*if (fkb_v = 5)
-  *set fdh "You swing your ${fkb_w} around in an overhand smash that caves in ${combat_enemy_epithet}'s shoulder and drives them down in a motionless, broken heap."
-*if (fkb_v = 6)
-  *set fdh "You hammer your ${fkb_w} into ${combat_enemy_epithet}'s face, and the skull gives with a wet, final crunch, and ${combat_enemy_epithet} is dead before the knees hit."
-*if (fkb_v = 7)
-  *set fdh "You beat ${combat_enemy_epithet}'s weapon aside and put your ${fkb_w} through the ribs with your whole weight, and ${combat_enemy_epithet} folds without a sound and does not rise."
-*if (fkb_v = 8)
-  *set fdh "You strike the back of ${combat_enemy_epithet}'s head as ${combat_enemy_epithet} turns, and the blow lands with a hollow crack, and ${combat_enemy_epithet} drops without another breath."
-*return
-
-*label flavor_kill_ranged
-*comment Ranged kill: the shot does the work.
-*temp fkr_v 1
-*rand fkr_v 1 8
-*if (fkr_v = 1)
-  *set fdh "The shot punches straight through ${combat_enemy_epithet}'s breastbone with a dull, hollow thud, and ${combat_enemy_epithet} drops in a spray of crimson."
-*if (fkr_v = 2)
-  *set fdh "You track ${combat_enemy_epithet}'s frantic movement and loose on the exhale, and the shot takes ${combat_enemy_epithet} clean through the eye, snapping the head back before the knees buckle."
-*if (fkr_v = 3)
-  *set fdh "The missile strikes with devastating punch and tears through ${combat_enemy_epithet}'s throat, and ${combat_enemy_epithet} folds and goes limp."
-*if (fkr_v = 4)
-  *set fdh "A clinical, center-mass shot drives deep into ${combat_enemy_epithet}'s vitals, and ${combat_enemy_epithet} collapses with a wet, ragged gasp."
-*if (fkr_v = 5)
-  *set fdh "You loose from close range, and the shot shatters through collarbone and spine, killing all forward momentum as ${combat_enemy_epithet} crumples lifeless."
-*if (fkr_v = 6)
-  *set fdh "You loose as ${combat_enemy_epithet} charges, and the shot takes ${combat_enemy_epithet} high in the chest, and the charge dies in three staggering steps."
-*if (fkr_v = 7)
-  *set fdh "The shot takes ${combat_enemy_epithet} just under the ribs, and ${combat_enemy_epithet} looks down at the wound, then up, and falls."
-*if (fkr_v = 8)
-  *set fdh "You loose at the neck, and the shot takes ${combat_enemy_epithet} through the throat, and ${combat_enemy_epithet} claws at the wound, drowning in the blood, and drops."
-*return
-
-*label flavor_yield_slashing
-*comment Slashing, non-lethal: the flat, the edge held at the throat, a cut that ends the fight.
-*temp fys_v 1
-*rand fys_v 1 8
-*if (fys_v = 1)
-  *set fdh "You turn the edge away at the last instant and lay the flat of your ${weapon} across ${combat_enemy_epithet}'s temple, and the head snaps round as ${combat_enemy_epithet} drops unconscious."
-*if (fys_v = 2)
-  *set fdh "You cut ${combat_enemy_epithet}'s weapon arm just deep enough to open the fingers, then drive a shoulder into the chest, and ${combat_enemy_epithet} goes down and stays down, clutching the wound."
-*if (fys_v = 3)
-  *set fdh "You sweep the flat of your ${weapon} into ${combat_enemy_epithet}'s lead knee and shove, and ${combat_enemy_epithet} crashes down, dazed and unable to rise."
-*if (fys_v = 4)
-  *set fdh "You beat ${combat_enemy_epithet}'s weapon wide with a heavy stroke, step through and lay the edge of your ${weapon} against the throat, and ${combat_enemy_epithet} freezes, then lets the weapon fall in surrender."
-*if (fys_v = 5)
-  *set fdh "You arrest the stroke mid-swing and slam a shoulder into ${combat_enemy_epithet}'s chest, and the breath goes out as ${combat_enemy_epithet} sits down hard, beaten."
-*if (fys_v = 6)
-  *set fdh "You hook ${combat_enemy_epithet}'s weapon aside with the edge of your ${weapon} and slap the flat across the jaw, and ${combat_enemy_epithet} crumples, out cold."
-*if (fys_v = 7)
-  *set fdh "You cut low, and ${combat_enemy_epithet}'s leg folds at the hamstring, and ${combat_enemy_epithet} drops to a knee and throws the weapon down in surrender."
-*if (fys_v = 8)
-  *set fdh "You rap ${combat_enemy_epithet}'s weapon hand with the flat of your ${weapon} until the fingers open, then drive a knee into the belly, and ${combat_enemy_epithet} folds and stays folded, gasping."
-*return
-
-*label flavor_yield_piercing
-*comment Piercing, non-lethal: the point held at the throat, a wound that ends the fight, an elbow or a knee.
-*temp fyp_v 1
-*rand fyp_v 1 8
-*if (fyp_v = 1)
-  *set fdh "You feint with the point of your ${weapon}, slip past a clumsy swing and drive an elbow behind ${combat_enemy_epithet}'s ear, and ${combat_enemy_epithet} drops cold."
-*if (fyp_v = 2)
-  *set fdh "You lay the point of your ${weapon} against ${combat_enemy_epithet}'s throat, and ${combat_enemy_epithet} goes very still, then lets the weapon fall in surrender."
-*if (fyp_v = 3)
-  *set fdh "You pin ${combat_enemy_epithet}'s weapon arm with a quick stab through the meat of the forearm, and the grip opens, and ${combat_enemy_epithet} sinks to the knees, beaten."
-*if (fyp_v = 4)
-  *set fdh "You drive the point of your ${weapon} through the meat of ${combat_enemy_epithet}'s thigh and twist free, and ${combat_enemy_epithet} goes down hard, howling and unable to rise."
-*if (fyp_v = 5)
-  *set fdh "You catch ${combat_enemy_epithet}'s wrist against the swing, wrench the weapon free and drive a knee into the gut, and ${combat_enemy_epithet} sinks down gasping."
-*if (fyp_v = 6)
-  *set fdh "You slip the point of your ${weapon} past ${combat_enemy_epithet}'s defenses and prick the belly, and the fight goes out of ${combat_enemy_epithet} with a gasp, both hands thrown up."
-*if (fyp_v = 7)
-  *set fdh "You trap ${combat_enemy_epithet}'s lead arm and slam ${combat_enemy_epithet} backward, and the breath knocks out and ${combat_enemy_epithet} slumps, motionless in defeat."
-*if (fyp_v = 8)
-  *set fdh "You go low and stab through the calf, and the leg folds, and ${combat_enemy_epithet} pitches forward with a sob, unable to stand."
-*return
-
-*label flavor_yield_bludgeoning
-*comment Bludgeoning, non-lethal. Bare fists read as such when the weapon noun is "unarmed".
-*temp fyb_v 1
-*temp fyb_w weapon
-*if (weapon = "unarmed")
-  *set fyb_w "bare fists"
-*rand fyb_v 1 8
-*if (fyb_v = 1)
-  *set fdh "You crack your ${fyb_w} across ${combat_enemy_epithet}'s jaw, and the knees give out, and ${combat_enemy_epithet} drops limp."
-*if (fyb_v = 2)
-  *set fdh "You drive your ${fyb_w} hard into ${combat_enemy_epithet}'s solar plexus, and the air explodes out in a choked rasp as ${combat_enemy_epithet} folds up and crashes down unconscious."
-*if (fyb_v = 3)
-  *set fdh "You snap your ${fyb_w} across ${combat_enemy_epithet}'s collarbone, and the stance shatters, and ${combat_enemy_epithet} drops sideways, groaning in surrender."
-*if (fyb_v = 4)
-  *set fdh "You hook a foot behind ${combat_enemy_epithet}'s ankle and shove, and ${combat_enemy_epithet} goes down hard and stays there, both hands going up in defeat."
-*if (fyb_v = 5)
-  *set fdh "You bring your ${fyb_w} down overhand across ${combat_enemy_epithet}'s shoulder and drive ${combat_enemy_epithet} to both knees, the fight battered clean out."
-*if (fyb_v = 6)
-  *set fdh "You rap ${combat_enemy_epithet}'s weapon hand with your ${fyb_w} until the fingers open, then follow with a hammering blow to the ribs, and ${combat_enemy_epithet} folds and stays folded."
-*if (fyb_v = 7)
-  *set fdh "You feint at the head and put your ${fyb_w} into ${combat_enemy_epithet}'s knee instead, and the leg goes, and ${combat_enemy_epithet} drops and does not try to rise."
-*if (fyb_v = 8)
-  *set fdh "You bring your ${fyb_w} up under ${combat_enemy_epithet}'s chin, and the head snaps back, and ${combat_enemy_epithet} goes over stiff and out cold."
-*return
-
-*label flavor_yield_ranged
-*comment Ranged, non-lethal: a shot to the hand, knee or ankle.
-*temp fyr_v 1
-*rand fyr_v 1 8
-*if (fyr_v = 1)
-  *set fdh "You loose on a low trajectory, and the shot clips ${combat_enemy_epithet}'s knee and drops ${combat_enemy_epithet} hard, all the fight knocked clean out."
-*if (fyr_v = 2)
-  *set fdh "Your shot slams into ${combat_enemy_epithet}'s weapon hand, wrenching the grip open and spinning them half around, and ${combat_enemy_epithet} sinks to the knees, groaning in defeat."
-*if (fyr_v = 3)
-  *set fdh "The missile strikes ${combat_enemy_epithet}'s shoulder with jarring force and spins ${combat_enemy_epithet} around, and ${combat_enemy_epithet} collapses dazed and unable to rise."
-*if (fyr_v = 4)
-  *set fdh "A precise shot grazes ${combat_enemy_epithet}'s shoulder with a concussive knock and spins ${combat_enemy_epithet} off balance and down, and ${combat_enemy_epithet} lies motionless."
-*if (fyr_v = 5)
-  *set fdh "Your shot splinters the weapon in ${combat_enemy_epithet}'s grip, and the shock numbs the arm and drops ${combat_enemy_epithet} to the knees in stunned surrender."
-*if (fyr_v = 6)
-  *set fdh "You loose at the thigh, and the shot punches in and out, and ${combat_enemy_epithet} goes down on one leg, cursing, and throws the weapon aside."
-*if (fyr_v = 7)
-  *set fdh "You loose at the ankle, and the shot takes the leg out from under ${combat_enemy_epithet}, and ${combat_enemy_epithet} goes down hard, the weapon flying loose."
-*if (fyr_v = 8)
-  *set fdh "You loose across ${combat_enemy_epithet}'s knuckles, and the weapon flies from the grip, and ${combat_enemy_epithet} clutches the ruined hand and yields."
-*return
-
-*comment ══════════════════════════════════════════════════════════════
-*comment PLAYER LINES AGAINST A CREATURE
-*comment The same arrangement as the human lines above, for any foe with a body and no special moves: a wolf, a boar, a
-*comment ghoul, a giant spider, a lacedon, a rat. flavor_creature_<type> is the ordinary hit and miss, flavor_creature_kill_<type>
-*comment the killing blow, chosen by the weapon's damage type, built at the moment of the attack, and named through
-*comment combat_enemy_epithet, so the same lines serve whatever a scene calls its monster ("the wolf", "the ghoul"). The
-*comment body they assume is only a head, neck, shoulder, flank, side, ribs, legs and a reaching limb, so they read on
-*comment anything from a wolf to a skeleton. The foe is the epithet or singular "they", never he, she or it ("it" is wrong for a named foe, and "the body" as a stand-in reads as someone else's), no hide,
-*comment blood, claws, teeth, tail, fur or scales, no sound the foe may not make, no place, and the weapon only ever an
-*comment object or "the point/edge of your ${weapon}". A creature fight has no surrender, so there is no yield set.
-*comment ══════════════════════════════════════════════════════════════
-
-*label flavor_creature_slashing
-*comment Slashing against a creature: cuts across the flank, shoulder and neck.
-*temp fcs_v 1
-*rand fcs_v 1 8
-*if (fcs_v = 1)
-  *set fwh "You cut down as ${combat_enemy_epithet} lunges, and the edge of your ${weapon} opens the flank in a long, ragged gash."
-  *set fwm "You cut at the flank, but ${combat_enemy_epithet} twists aside, and the edge of your ${weapon} slices through empty air."
-*if (fcs_v = 2)
-  *set fwh "You sidestep ${combat_enemy_epithet}'s rush and drag the edge of your ${weapon} along the shoulder as they thunder past, and the cut checks the charge."
-  *set fwm "$!{combat_enemy_epithet} drops low under the stroke, and the edge of your ${weapon} whips over the back, and you have to recover your footing."
-*if (fcs_v = 3)
-  *set fwh "You chop at the leg as ${combat_enemy_epithet} closes, and the edge bites deep, and the leg buckles under the weight."
-  *set fwm "You chop down, but ${combat_enemy_epithet} scuttles out of reach, and the edge of your ${weapon} bites nothing."
-*if (fcs_v = 4)
-  *set fwh "You sweep your ${weapon} across ${combat_enemy_epithet}'s side in a wide arc, and the edge tears a deep furrow that staggers them sideways."
-  *set fwm "You overreach with a wide cut, and ${combat_enemy_epithet} slips inside the arc, and the edge of your ${weapon} passes harmlessly behind the shoulder."
-*if (fcs_v = 5)
-  *set fwh "You step in under a wild lunge and cut up along the flank, and ${combat_enemy_epithet} recoils from the wound, backing off a pace."
-  *set fwm "$!{combat_enemy_epithet} lunges as you swing, and the two motions cross, and the edge of your ${weapon} finds only the space where the head had been."
-*if (fcs_v = 6)
-  *set fwh "You time the stroke to ${combat_enemy_epithet}'s rush, and the edge of your ${weapon} clips the head in passing, and the charge slews sideways."
-  *set fwm "You slash at the neck, but ${combat_enemy_epithet} rocks back, and the edge stops a hand's width short."
-*if (fcs_v = 7)
-  *set fwh "You hew down on the reaching limb, and the edge of your ${weapon} bites through to the bone, and ${combat_enemy_epithet} recoils, shaking."
-  *set fwm "The stroke lands squarely, but ${combat_enemy_epithet} turns the edge aside with a lowered shoulder, and the cut glances away, doing nothing."
-*if (fcs_v = 8)
-  *set fwh "You slash at the neck as ${combat_enemy_epithet} rears up, and the cut goes deep, and ${combat_enemy_epithet} reels, thrashing."
-  *set fwm "You cut at the reaching limb, but ${combat_enemy_epithet} pulls back, and the edge of your ${weapon} carves an empty arc."
-*return
-
-*label flavor_creature_piercing
-*comment Piercing against a creature: thrusts and the point.
-*temp fcp_v 1
-*rand fcp_v 1 8
-*if (fcp_v = 1)
-  *set fwh "You drive your ${weapon} into ${combat_enemy_epithet}'s flank as they lunge past, and the point goes deep, and ${combat_enemy_epithet} reels."
-  *set fwm "You thrust at the flank, but ${combat_enemy_epithet} twists away, and the point of your ${weapon} finds only air."
-*if (fcp_v = 2)
-  *set fwh "You wait for ${combat_enemy_epithet} to commit and thrust into the chest, and the point of your ${weapon} stops the rush dead."
-  *set fwm "$!{combat_enemy_epithet} lunges as you thrust, and the point of your ${weapon} skims past the shoulder, and you have to catch your balance."
-*if (fcp_v = 3)
-  *set fwh "You stab at the shoulder, and the point of your ${weapon} sinks in, and ${combat_enemy_epithet} lurches sideways, thrown off stride."
-  *set fwm "You stab at the head, but ${combat_enemy_epithet} jerks aside, and the point stops short by a hand's width."
-*if (fcp_v = 4)
-  *set fwh "You lean into the thrust as ${combat_enemy_epithet} closes, and the point of your ${weapon} goes in under the jaw, and the head snaps up."
-  *set fwm "You lunge, and ${combat_enemy_epithet} slides out of line, and the point of your ${weapon} pierces nothing but the space where they had been."
-*if (fcp_v = 5)
-  *set fwh "You catch ${combat_enemy_epithet}'s lunge on the point of your ${weapon}, and the point bites in and holds while ${combat_enemy_epithet} thrashes, then tears free."
-  *set fwm "$!{combat_enemy_epithet} bats the point aside with a sweep of a limb, and the thrust runs off into nothing."
-*if (fcp_v = 6)
-  *set fwh "You jab low at the leg, and the point of your ${weapon} punches through, and ${combat_enemy_epithet} stumbles."
-  *set fwm "You jab at the leg, but ${combat_enemy_epithet} skips back, and the point of your ${weapon} scratches at empty air."
-*if (fcp_v = 7)
-  *set fwh "You put the point of your ${weapon} into the side as ${combat_enemy_epithet} turns, and the thrust goes in a full hand's breadth, and ${combat_enemy_epithet} whirls, shaking."
-  *set fwm "You thrust as ${combat_enemy_epithet} rushes, but they sweep past the point of your ${weapon}, and the thrust finds nothing."
-*if (fcp_v = 8)
-  *set fwh "You thrust past a snapping lunge and take ${combat_enemy_epithet} in the neck, and the point comes out slick, and ${combat_enemy_epithet} recoils."
-  *set fwm "Your thrust is quick, but ${combat_enemy_epithet} drops flat, and the point of your ${weapon} whispers over the back."
-*return
-
-*label flavor_creature_bludgeoning
-*comment Bludgeoning against a creature. Bare fists read as such when the weapon noun is "unarmed".
-*temp fcb_v 1
-*temp fcb_w weapon
-*if (weapon = "unarmed")
-  *set fcb_w "bare fists"
-*rand fcb_v 1 8
-*if (fcb_v = 1)
-  *set fwh "You swing your ${fcb_w} into ${combat_enemy_epithet}'s flank as the charge comes in, and the blow rocks them sideways."
-  *set fwm "You swing at the head, but ${combat_enemy_epithet} ducks, and the blow whips through empty air."
-*if (fcb_v = 2)
-  *set fwh "You bring your ${fcb_w} down on the shoulder, and the blow lands with a heavy thud, and ${combat_enemy_epithet} staggers."
-  *set fwm "$!{combat_enemy_epithet} rears back from your swing, and the blow of your ${fcb_w} thumps only the air where the shoulder had been."
-*if (fcb_v = 3)
-  *set fwh "You catch ${combat_enemy_epithet} across the side with a hard, sweeping blow of your ${fcb_w}, and ${combat_enemy_epithet} reels."
-  *set fwm "You bring your ${fcb_w} down, but ${combat_enemy_epithet} skips aside, and the swing throws you off balance."
-*if (fcb_v = 4)
-  *set fwh "You time the blow to ${combat_enemy_epithet}'s lunge and crack your ${fcb_w} against the head, and ${combat_enemy_epithet} recoils, stunned."
-  *set fwm "The blow catches ${combat_enemy_epithet} on a lowered head and skids away, doing nothing, and the jolt runs up your arm."
-*if (fcb_v = 5)
-  *set fwh "You drive your ${fcb_w} into the leg, and ${combat_enemy_epithet} goes down on that side, scrabbling."
-  *set fwm "You swing low at the leg, but ${combat_enemy_epithet} hops the blow, and the swing carves a wasted circle."
-*if (fcb_v = 6)
-  *set fwh "You smash your ${fcb_w} across the reaching limb, and ${combat_enemy_epithet} recoils, shaking."
-  *set fwm "$!{combat_enemy_epithet} surges inside your swing, and the blow lands as a weak shove, with no weight behind the swing."
-*if (fcb_v = 7)
-  *set fwh "You duck under a wild swipe and hammer your ${fcb_w} up into the ribs, and ${combat_enemy_epithet} folds and lurches back, winded."
-  *set fwm "You overreach, and ${combat_enemy_epithet} slips aside, and the swing carries you half around."
-*if (fcb_v = 8)
-  *set fwh "You bring your ${fcb_w} round in a hard arc, and the blow takes ${combat_enemy_epithet} in the ribs, and something cracks, and ${combat_enemy_epithet} shudders."
-  *set fwm "You strike at the flank, but ${combat_enemy_epithet} spins away, and the blow glances off nothing."
-*return
-
-*label flavor_creature_ranged
-*comment A shot at a creature.
-*temp fcr_v 1
-*rand fcr_v 1 8
-*if (fcr_v = 1)
-  *set fwh "Your shot takes ${combat_enemy_epithet} in the flank with a heavy thud, and ${combat_enemy_epithet} recoils."
-  *set fwm "Your shot skips wide as ${combat_enemy_epithet} twists aside at the last instant."
-*if (fcr_v = 2)
-  *set fwh "You track the motion and loose on the turn, and the missile catches ${combat_enemy_epithet} mid-lunge and knocks them backward."
-  *set fwm "You loose on the rush, but ${combat_enemy_epithet} changes direction, and the shot flies through the space where they had been."
-*if (fcr_v = 3)
-  *set fwh "You put the shot into the shoulder as ${combat_enemy_epithet} rears, and ${combat_enemy_epithet} reels, and the charge falters."
-  *set fwm "The shot flies a hand short as ${combat_enemy_epithet} scuttles aside."
-*if (fcr_v = 4)
-  *set fwh "The shot takes ${combat_enemy_epithet} between the shoulders and checks the movement for a crucial moment."
-  *set fwm "$!{combat_enemy_epithet} drops low as you loose, and the missile grazes only air."
-*if (fcr_v = 5)
-  *set fwh "You lead ${combat_enemy_epithet}'s frantic zigzag and put the shot clean through the side, and ${combat_enemy_epithet} shudders."
-  *set fwm "You lead ${combat_enemy_epithet}'s zigzag and miss the mark by a hair, and the shot is lost."
-*if (fcr_v = 6)
-  *set fwh "The missile hits ${combat_enemy_epithet} square in the chest and stops the rush dead for a heartbeat."
-  *set fwm "Your shot skims past the head and is gone."
-*if (fcr_v = 7)
-  *set fwh "You loose at the leg, and the shot punches in, and ${combat_enemy_epithet} lurches and goes down on that side."
-  *set fwm "Your aim wavers as ${combat_enemy_epithet} bolts, and the shot goes wide."
-*if (fcr_v = 8)
-  *set fwh "You loose as ${combat_enemy_epithet} closes, and the shot clips the head in passing, and ${combat_enemy_epithet} veers off course."
-  *set fwm "You loose too early, and ${combat_enemy_epithet} is already moving, and the shot falls short."
-*return
-
-*label flavor_creature_kill_slashing
-*comment Slashing killing blow against a creature.
-*temp fcks_v 1
-*rand fcks_v 1 8
-*if (fcks_v = 1)
-  *set fdh "You step into the arc and bring the edge of your ${weapon} down in a violent cleave, and the stroke bites clean through the neck, and ${combat_enemy_epithet} drops in a heap."
-*if (fcks_v = 2)
-  *set fdh "You pivot hard with your whole weight behind the stroke, and the edge of your ${weapon} takes ${combat_enemy_epithet} across the flank, and ${combat_enemy_epithet} folds and does not rise."
-*if (fcks_v = 3)
-  *set fdh "A brutal downward chop splits the shoulder, and you wrench your ${weapon} free as ${combat_enemy_epithet} collapses in a shuddering heap."
-*if (fcks_v = 4)
-  *set fdh "You cut through the lunge, and the edge of your ${weapon} carves deep along the flank, and ${combat_enemy_epithet} drops mid-rush, sliding to a stop."
-*if (fcks_v = 5)
-  *set fdh "You drive a low cut through the leg, and the backstroke of your ${weapon} ends the fight before ${combat_enemy_epithet} can rise."
-*if (fcks_v = 6)
-  *set fdh "You hew at the neck with your whole back in the stroke, and the edge of your ${weapon} goes through, and ${combat_enemy_epithet} is finished before the fall begins."
-*if (fcks_v = 7)
-  *set fdh "You bring your ${weapon} round in a flat, brutal sweep across the flank, and ${combat_enemy_epithet} doubles over the wound and slumps, and lies still."
-*if (fcks_v = 8)
-  *set fdh "You catch the reaching limb with the edge of your ${weapon} and cut clean through, and drive the backstroke into the side, and ${combat_enemy_epithet} drops with a shudder and lies still."
-*return
-
-*label flavor_creature_kill_piercing
-*comment Piercing killing blow against a creature.
-*temp fckp_v 1
-*rand fckp_v 1 8
-*if (fckp_v = 1)
-  *set fdh "You step inside ${combat_enemy_epithet}'s lunge and drive the point of your ${weapon} up beneath the ribs, twisting once before wrenching free, and ${combat_enemy_epithet} folds around the wound."
-*if (fckp_v = 2)
-  *set fdh "A lightning-fast thrust of your ${weapon} punches clean through the neck, and ${combat_enemy_epithet} thrashes once and goes slack."
-*if (fckp_v = 3)
-  *set fdh "You catch the lunge on the point of your ${weapon} and put your weight behind the thrust, and the point drives home, and ${combat_enemy_epithet} stiffens and topples."
-*if (fckp_v = 4)
-  *set fdh "The point of your ${weapon} finds the gap behind the shoulder and drives deep, and ${combat_enemy_epithet} sits down heavily and topples."
-*if (fckp_v = 5)
-  *set fdh "You lunge, and the point of your ${weapon} goes in beneath the breastbone, and ${combat_enemy_epithet} stiffens, shudders, and falls."
-*if (fckp_v = 6)
-  *set fdh "You drive the point of your ${weapon} into the base of the skull, and ${combat_enemy_epithet} goes rigid in a single violent tremor before falling limp."
-*if (fckp_v = 7)
-  *set fdh "You stab up under the jaw, and the point of your ${weapon} goes deep, and ${combat_enemy_epithet} is dead before the legs give."
-*if (fckp_v = 8)
-  *set fdh "You skewer ${combat_enemy_epithet} through the flank and shove, and ${combat_enemy_epithet} slides off the point and drops, shuddering."
-*return
-
-*label flavor_creature_kill_bludgeoning
-*comment Bludgeoning killing blow against a creature. Bare fists read as such when the weapon noun is "unarmed".
-*temp fckb_v 1
-*temp fckb_w weapon
-*if (weapon = "unarmed")
-  *set fckb_w "bare fists"
-*rand fckb_v 1 8
-*if (fckb_v = 1)
-  *set fdh "You drive your ${fckb_w} into the skull with sickening momentum, and bone gives with a wet crack, and ${combat_enemy_epithet} drops like an unstrung puppet."
-*if (fckb_v = 2)
-  *set fdh "A brutal sweep of your ${fckb_w}, with your whole weight in the blow, takes ${combat_enemy_epithet} square across the ribs, and bone shatters inward with a concussive crunch."
-*if (fckb_v = 3)
-  *set fdh "You plant your back foot and drive your ${fckb_w} hard into the chest, and the whole chest caves with a dull, sickening thud, and ${combat_enemy_epithet} drops."
-*if (fckb_v = 4)
-  *set fdh "You bring your ${fckb_w} down with brutal leverage, and the neck snaps sideways with a sharp, dry fracture before ${combat_enemy_epithet} drops dead."
-*if (fckb_v = 5)
-  *set fdh "You swing your ${fckb_w} around in an overhand smash that caves in the shoulder and drives ${combat_enemy_epithet} down in a motionless, broken heap."
-*if (fckb_v = 6)
-  *set fdh "You hammer your ${fckb_w} into the head, and the skull gives with a wet, final crunch, and ${combat_enemy_epithet} is dead before the legs fold."
-*if (fckb_v = 7)
-  *set fdh "You beat the lunge aside and put your ${fckb_w} through the ribs with your whole weight, and ${combat_enemy_epithet} folds without a sound and does not rise."
-*if (fckb_v = 8)
-  *set fdh "You strike the back of the head as ${combat_enemy_epithet} turns, and the blow lands with a hollow crack, and ${combat_enemy_epithet} drops without another breath."
-*return
-
-*label flavor_creature_kill_ranged
-*comment A killing shot at a creature.
-*temp fckr_v 1
-*rand fckr_v 1 8
-*if (fckr_v = 1)
-  *set fdh "The shot punches straight through the chest with a dull, hollow thud, and ${combat_enemy_epithet} drops mid-stride."
-*if (fckr_v = 2)
-  *set fdh "You track the frantic movement and loose on the exhale, and the shot takes ${combat_enemy_epithet} clean through the skull, snapping the head back before the legs buckle."
-*if (fckr_v = 3)
-  *set fdh "The missile strikes with devastating punch and tears through the neck, and ${combat_enemy_epithet} folds and goes limp."
-*if (fckr_v = 4)
-  *set fdh "A clinical, center-mass shot drives deep into the vitals, and ${combat_enemy_epithet} collapses with a ragged shudder."
-*if (fckr_v = 5)
-  *set fdh "You loose from close range, and the shot shatters through shoulder and spine, killing all forward momentum as ${combat_enemy_epithet} crumples."
-*if (fckr_v = 6)
-  *set fdh "You loose as ${combat_enemy_epithet} charges, and the shot takes the chest high, and the charge dies in three staggering steps."
-*if (fckr_v = 7)
-  *set fdh "The shot takes ${combat_enemy_epithet} just behind the shoulder, and the legs go, and ${combat_enemy_epithet} tumbles and lies still."
-*if (fckr_v = 8)
-  *set fdh "You loose at the neck, and the shot takes ${combat_enemy_epithet} clean through, and ${combat_enemy_epithet} thrashes once and drops."
-*return
-
 *label apply_generic_weapon_flavor
 *comment The player's side of a fight against a human fighter. Nothing is stored: every weapon line, finishing blow and
 *comment the Dissonant Whispers pair is built at the moment it is needed, from flavor_player_<damage type> and
-*comment flavor_kill_/flavor_yield_<damage type> (PLAYER STRIKE FLAVOR and PLAYER FINISHING BLOWS, above), which is what lets
+*comment flavor_kill_/flavor_yield_<damage type> (PLAYER STRIKE FLAVOR and PLAYER FINISHING BLOWS, combat_prose.txt), which is what lets
 *comment them follow the weapon's damage type and name the fighter through its epithet. This label only raises the flags
 *comment pick_weapon_flavor and pick_weapon_death_flavor read. A hand-authored fight can still leave combat_player_keyed
 *comment false and write its own combat_flavor_* lines instead.
@@ -4473,9 +2658,95 @@ ${fnaa_line}
 *label apply_creature_weapon_flavor
 *comment The player's side of a fight against a creature (a lacedon, a rat, a beast). The same as
 *comment apply_generic_weapon_flavor, but pick_weapon_flavor and pick_weapon_death_flavor use the flavor_creature_ labels
-*comment (PLAYER LINES AGAINST A CREATURE, above), which assume only a body with a head, shoulders, flank and legs.
+*comment (PLAYER LINES AGAINST A CREATURE, combat_prose.txt), which assume only a body with a head, shoulders, flank and legs.
 *set combat_player_keyed true
 *set combat_player_creature true
+*return
+
+*comment ══════════════════════════════════════════════════════════════
+*comment ALLY TYPE LIBRARY (2026-09-28)
+*comment A reusable alternative to hand-authoring an ally's stat block inline, mirroring ENEMY TYPE LIBRARY below:
+*comment a scene sets combat_ally_lib_1 (and optionally _2/_3/_4) to a type id before calling fight_library, and
+*comment optionally combat_ally1_name_override/_epithet_override (and the _2/_3/_4 versions) to reuse a type under
+*comment a unique name -- "Kess" instead of the archer type's generic "Archer" -- with no other change. Unlike
+*comment enemy slot 1, every ally slot (1-4) is written directly via indirection; there's no "bare" canonical slot
+*comment to special-case. combat_ally1_range (and _2/_3/_4) is deliberately untouched here -- like
+*comment combat_enemy_range, it's caller-optional: leave it at the type's default (0, Engaged) or set it before
+*comment calling fight_library to open a melee ally away from Engaged, same as combat_enemy_range 3 in
+*comment fight_dev_range_test.
+*comment Available types: "archer" (ranged, keeps its distance) and "guard" (melee, closes and strikes).
+*comment combat_ally_lib_* is cleared by fight_cleanup.
+*comment ══════════════════════════════════════════════════════════════
+
+*label apply_ally_roster
+*comment Called from fight_library, before fight_setup. Applies every filled combat_ally_lib_N (1..
+*comment combat_ally_slot_cap) via apply_ally_type, the same bounded-loop-plus-indirection pattern fight_library's
+*comment own slot loop uses for enemies, and sets combat_ally_count to the highest filled slot. A fight with no
+*comment allies at all (combat_ally_lib_1 through _4 all "") leaves combat_ally_count at 0, same as ever.
+*set combat_ally_count 0
+*temp aar_i 1
+*label apply_ally_roster_loop
+*if (aar_i <= combat_ally_slot_cap)
+  *temp aar_lib {("combat_ally_lib_" & aar_i)}
+  *if (not(aar_lib = ""))
+    *set combat_ally_count aar_i
+    *set combat_apply_ally_slot aar_i
+    *set combat_apply_ally_type aar_lib
+    *gosub apply_ally_type
+  *set aar_i + 1
+  *goto apply_ally_roster_loop
+*return
+
+*label apply_ally_type
+*if (combat_apply_ally_type = "archer")
+  *gosub apply_allytype_archer
+*if (combat_apply_ally_type = "guard")
+  *gosub apply_allytype_guard
+*temp aat_p (("combat_ally" & combat_apply_ally_slot) & "_")
+*temp aat_name_ov {(aat_p & "name_override")}
+*temp aat_epi_ov {(aat_p & "epithet_override")}
+*if (not(aat_name_ov = ""))
+  *set {(aat_p & "name")} aat_name_ov
+  *set {(aat_p & "name_override")} ""
+*if (not(aat_epi_ov = ""))
+  *set {(aat_p & "epithet")} aat_epi_ov
+  *set {(aat_p & "epithet_override")} ""
+*return
+
+*label apply_allytype_archer
+*comment Ranged skirmisher: a bow at range, keeps its distance. resolve_ally_attack never checks range for a
+*comment weapon_type "ranged" ally, so this one attacks every turn regardless of combat_ally1_range. These are
+*comment Kess's original dev-test numbers, now the library default for the archetype instead of a one-off.
+*temp aaa_p (("combat_ally" & combat_apply_ally_slot) & "_")
+*set {(aaa_p & "name")} "Archer"
+*set {(aaa_p & "epithet")} "the archer"
+*set {(aaa_p & "hp")} 10
+*set {(aaa_p & "max_hp")} 10
+*set {(aaa_p & "ac")} 13
+*set {(aaa_p & "atk_bonus")} 4
+*set {(aaa_p & "dmg_dice_sides")} 6
+*set {(aaa_p & "dmg_bonus")} 2
+*set {(aaa_p & "dmg_type")} "piercing"
+*set {(aaa_p & "weapon_type")} "ranged"
+*set {(aaa_p & "dexterity")} 14
+*return
+
+*label apply_allytype_guard
+*comment Melee bruiser: sword and shield, holds the line. First melee archetype -- exercises resolve_ally_attack's
+*comment melee path end to end, gated on this ally's OWN combat_ally<N>_range (combat_next_turn's ally branch)
+*comment reaching 0 before it swings.
+*temp aag_p (("combat_ally" & combat_apply_ally_slot) & "_")
+*set {(aag_p & "name")} "Guard"
+*set {(aag_p & "epithet")} "the guard"
+*set {(aag_p & "hp")} 13
+*set {(aag_p & "max_hp")} 13
+*set {(aag_p & "ac")} 15
+*set {(aag_p & "atk_bonus")} 4
+*set {(aag_p & "dmg_dice_sides")} 8
+*set {(aag_p & "dmg_bonus")} 2
+*set {(aag_p & "dmg_type")} "slashing"
+*set {(aag_p & "weapon_type")} "melee"
+*set {(aag_p & "dexterity")} 12
 *return
 
 *comment ══════════════════════════════════════════════════════════════
@@ -4533,6 +2804,7 @@ ${fnaa_line}
   *gosub apply_creature_weapon_flavor
 *else
   *gosub apply_generic_weapon_flavor
+*gosub apply_ally_roster
 *gosub fight_setup
 *goto fight_round_hub
 
@@ -4550,24 +2822,30 @@ ${fnaa_line}
 
 *label fight_dev_ally_ranged_test
 *comment Dev-hub only (startup.txt dev_combat_test_hub) -- no story scene calls this. One lacedon, plus one
-*comment ranged ally (a bow), to watch resolve_ally_attack in action: does it hit, does it roll damage, does it
-*comment help drop the enemy. Melee allies (movement/positioning) aren't wired yet -- ranged only, on purpose,
-*comment for this first pass; see resolve_ally_attack's own header comment (startup.txt).
+*comment ranged ally (the "archer" library type, renamed "Kess" via the override fields), to watch
+*comment resolve_ally_attack in action: does it hit, does it roll damage, does it help drop the enemy. Also the
+*comment first real caller of apply_ally_roster/apply_ally_type -- was hand-set stats before the ally type
+*comment library existed (2026-09-28).
 *set combat_is_nonlethal false
 *set combat_lib_1 "lacedon"
 *set combat_enemy_name_override "Silt-Lurker Lacedon"
-*set combat_ally_count 1
-*set combat_ally1_name "Kess"
-*set combat_ally1_epithet "Kess"
-*set combat_ally1_hp 10
-*set combat_ally1_max_hp 10
-*set combat_ally1_ac 13
-*set combat_ally1_atk_bonus 4
-*set combat_ally1_dmg_dice_sides 6
-*set combat_ally1_dmg_bonus 2
-*set combat_ally1_dmg_type "piercing"
-*set combat_ally1_weapon_type "ranged"
-*set combat_ally1_dexterity 14
+*set combat_ally_lib_1 "archer"
+*set combat_ally1_name_override "Kess"
+*set combat_ally1_epithet_override "Kess"
+*goto fight_library
+
+*label fight_dev_ally_melee_test
+*comment Dev-hub only (startup.txt dev_combat_test_hub) -- no story scene calls this. One lacedon opened at
+*comment Mid-Range (2), plus one melee ally (the "guard" library type), to watch a melee ally's own
+*comment combat_ally1_range close independently over a couple of rounds before it lands its first swing.
+*set combat_is_nonlethal false
+*set combat_lib_1 "lacedon"
+*set combat_enemy_name_override "Silt-Lurker Lacedon"
+*set combat_enemy_range 2
+*set combat_ally_lib_1 "guard"
+*set combat_ally1_range 2
+*set combat_ally1_name_override "Rook"
+*set combat_ally1_epithet_override "Rook"
 *goto fight_library
 
 *label fight_silt_lurker
