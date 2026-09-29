@@ -24,45 +24,116 @@
 *comment ══════════════════════════════════════════════════════════════
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment SPELL: MAGIC MISSILE (3 darts of 1d4, plus the caster's spellcasting ability modifier)
+*comment SPELL: MAGIC MISSILE (3 darts, each 1d4 + 1 -- a flat bonus, NOT the caster's spellcasting modifier --
+*comment split across up to 3 targets via the sidebar, see fight_target_magic_missile in combat.txt)
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment The modifier was hardcoded to +3 until 2026-09-28. That happened to be right for the one character
-*comment who reported it (INT 16 = +3) and wrong for every other Wizard: an INT 18 caster under-paid by 1, an
-*comment INT 14 caster over-paid by 1, and it ignored the casting stat entirely. RAW Magic Missile is three darts
-*comment of 1d4 with the caster's modifier on EACH dart, which is the same total as 3d4 + mod, so it is applied
-*comment once to the sum here. Reads the durable spell_damage_mod (set in update_dnd_stats) rather than
-*comment re-deriving the class table, and deliberately does not touch the cantrips.
-*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment The +1-per-dart fix (2026-09-28, designer catch): RAW Magic Missile is "each dart deals 1d4 + 1 force
+*comment damage", a flat +1 per dart that is the SAME for every caster regardless of ability score, because the
+*comment spell has no attack roll for a modifier to apply to (an automatic hit). Never spell_damage_mod.
+*comment The split-targeting rewrite (2026-09-28, same day): reads the per-slot combat_mm_darts_N counts the
+*comment player assigned via the sidebar instead of always firing all three at fight_pick_target's single
+*comment kill-priority pick. Each dart is still its own 1d4+1, but summed once PER TARGET before applying
+*comment resist/vuln and subtracting HP -- not dart-by-dart -- which sidesteps a genuine RAW ambiguity (does a
+*comment second dart on a target the first dart already killed still "count") by making the question moot: the
+*comment whole allocation to one target lands as a single combined hit.
+*comment Owns its full narration now (flavor line, then one banner per hit target) rather than splitting it with
+*comment the caller the way the single-target version did, since a caller can no longer print one flavor line
+*comment and one hit banner when there may be up to three targets. A single target still gets the existing,
+*comment richer flavor_spell_magic_missile (all eight variants assume one epithet takes every dart, true only
+*comment here); two or three targets get flavor_spell_magic_missile_split instead (combat_prose.txt), since none
+*comment of the single-target lines can honestly describe a scattered cast. Flavor text is picked fresh every
+*comment time this label runs, same as every other spell (a page replay may show a different random variant) --
+*comment only the damage numbers below are protected by the replay lock, via the per-slot combat_mm_banner_N
+*comment durable strings (startup.txt), same shape combat_player_dmg_roll_banner used before the split.
 *label resolve_magic_missile
-*comment The lock guard below is the engine's standard idiom and is unchanged; only the damage formula moved.
+*comment How many DISTINCT enemies have at least one dart -- decides which flavor line prints, not the total
+*comment dart count (1-3 either way).
+*temp mm_targets 0
+*temp mm_ci 1
+*label resolve_magic_missile_count_loop
+*if (mm_ci <= combat_enemy_slot_cap)
+  *temp mm_cn {(("combat_mm_darts_" & mm_ci))}
+  *if (mm_cn > 0)
+    *set mm_targets + 1
+  *set mm_ci + 1
+  *goto resolve_magic_missile_count_loop
+*if (mm_targets <= 1)
+  *comment Find the one slot with darts on it directly -- it may not be the slot fight_pick_target's
+  *comment kill-priority would pick, so that picker can't be reused here.
+  *set combat_active_target 0
+  *set mm_ci 1
+  *label resolve_magic_missile_find_loop
+  *if (mm_ci <= combat_enemy_slot_cap)
+    *temp mm_fn {(("combat_mm_darts_" & mm_ci))}
+    *if (mm_fn > 0)
+      *set combat_active_target mm_ci
+    *set mm_ci + 1
+    *goto resolve_magic_missile_find_loop
+  *gosub_scene combat fight_sync_target_in
+  *set combat_current_spell_id "magic_missile"
+  *gosub_scene combat_prose pick_spell_flavor
+*else
+  *gosub_scene combat_prose flavor_spell_magic_missile_split
+${fsh}
+*line_break
 *if (not(combat_magic_missile_locked)) or (not(locked_combat_magic_missile_page_id = page_id))
   *set wizard_spell_slots - 1
-  *comment Always Force damage, RAW -- no per-caster variation, so it's set
-  *comment here rather than at combat.txt's call site.
+  *comment Always Force damage, RAW -- no per-caster variation.
   *set combat_player_dmg_type "force"
-  *temp mm_dart_1 0
-  *temp mm_dart_2 0
-  *temp mm_dart_3 0
-  *rand mm_dart_1 1 4
-  *rand mm_dart_2 1 4
-  *rand mm_dart_3 1 4
-  *temp mm_mod_str ""
-  *if (spell_damage_mod >= 0)
-    *set mm_mod_str "+${spell_damage_mod}"
-  *else
-    *set mm_mod_str "${spell_damage_mod}"
-  *set combat_player_dmg_dealt (((mm_dart_1 + mm_dart_2) + mm_dart_3) + spell_damage_mod)
-  *comment No Hex here, deliberately: the darts auto-hit with no attack roll (RAW, and per Sage Advice), so they
-  *comment don't satisfy Hex's "hit with an attack" trigger -- same reasoning as the save-based spells.
-  *set combat_player_dmg_roll_banner "[b][🎲 Magic Missile: ${mm_dart_1}+${mm_dart_2}+${mm_dart_3} ${mm_mod_str} = ${combat_player_dmg_dealt}][/b]"
-  *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
-  *set combat_enemy_hp - combat_player_dmg_dealt
-  *if (combat_enemy_hp < 0)
-    *set combat_enemy_hp 0
+  *set combat_mm_banner_1 ""
+  *set combat_mm_banner_2 ""
+  *set combat_mm_banner_3 ""
+  *set combat_mm_banner_4 ""
+  *set combat_mm_banner_5 ""
+  *set combat_mm_banner_6 ""
+  *temp mm_i 1
+  *label resolve_magic_missile_dmg_loop
+  *if (mm_i <= combat_enemy_slot_cap)
+    *temp mm_n {(("combat_mm_darts_" & mm_i))}
+    *if (mm_n > 0)
+      *set combat_active_target mm_i
+      *gosub_scene combat fight_sync_target_in
+      *temp mm_roll 0
+      *temp mm_dice_str ""
+      *temp mm_j 1
+      *label resolve_magic_missile_dart_loop
+      *if (mm_j <= mm_n)
+        *temp mm_die 0
+        *rand mm_die 1 4
+        *set mm_roll + mm_die
+        *if (mm_j = 1)
+          *set mm_dice_str "${mm_die}"
+        *else
+          *set mm_dice_str "${mm_dice_str}+${mm_die}"
+        *set mm_j + 1
+        *goto resolve_magic_missile_dart_loop
+      *comment No Hex here, deliberately: the darts auto-hit with no attack roll (RAW, and per Sage Advice), so
+      *comment they don't satisfy Hex's "hit with an attack" trigger -- same reasoning as the save-based spells.
+      *set combat_player_dmg_dealt (mm_roll + mm_n)
+      *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
+      *set combat_enemy_hp - combat_player_dmg_dealt
+      *if (combat_enemy_hp < 0)
+        *set combat_enemy_hp 0
+      *gosub_scene combat fight_sync_target_out
+      *temp mm_banner_val ""
+      *if (combat_enemy_hp <= 0)
+        *set mm_banner_val "[b][💀 ${combat_enemy_name} Defeated: ${mm_dice_str} +${mm_n} = ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]"
+      *else
+        *set mm_banner_val "[b][✨ ${combat_enemy_name}: ${mm_dice_str} +${mm_n} = ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]"
+      *set {(("combat_mm_banner_" & mm_i))} mm_banner_val
+    *set mm_i + 1
+    *goto resolve_magic_missile_dmg_loop
   *set combat_magic_missile_locked true
   *set locked_combat_magic_missile_page_id page_id
-${combat_player_dmg_roll_banner}
-*line_break
+*temp mm_pi 1
+*label resolve_magic_missile_print_loop
+*if (mm_pi <= combat_enemy_slot_cap)
+  *temp mm_pval {(("combat_mm_banner_" & mm_pi))}
+  *if (not(mm_pval = ""))
+    ${mm_pval}
+    *line_break
+  *set mm_pi + 1
+  *goto resolve_magic_missile_print_loop
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

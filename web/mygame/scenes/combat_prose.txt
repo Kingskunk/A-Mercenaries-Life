@@ -181,6 +181,13 @@
     ${fnet_miss}
     *line_break
     [b][💨 ${combat_enemy_name} Misses][/b]
+*comment Trailing line_break (2026-09-28): this label's last printed line is always a bracketed banner (a
+*comment hit, a condition/stun tag, or a miss), never followed by one of its own -- and combat_next_turn's
+*comment very next thing, for a different combatant, is plain prose with no LEADING line_break of its own
+*comment (see its ally-closing/attack blocks below). Without this, that prose ran on directly after the
+*comment banner with no visual break at all -- e.g. an Off-Guard tag butting straight into the next
+*comment combatant's own opening sentence.
+*line_break
 *comment fight_sync_target_out is combat.txt's own mechanics (writes the active target's HP back to its
 *comment permanent per-slot storage), not prose -- reached with *gosub_scene since it's a different file now.
 *gosub_scene combat fight_sync_target_out
@@ -192,13 +199,15 @@
 *comment ally's once its own range closes to 0. Deliberately generic prose, not per-archetype, since ally voice
 *comment isn't differentiated yet -- revisit the wording if that changes. Both sides are named purely by epithet,
 *comment third person throughout, so the same text works for either direction; only which prefix is "attacker" and
-*comment which is "defender" changes, and only ally-as-attacker is wired up so far (enemy-vs-ally has no caller
-*comment yet: enemies still only ever target the player). (The existing enemy-attacks-PLAYER prose,
-*comment flavor_type_swordsman etc., can't be reused the same way -- it's hardcoded second-person, "your shoulder",
-*comment which only makes sense when the player is the target.)
+*comment which is "defender" changes. Both directions are wired up: ally-as-attacker from combat_next_turn's ally
+*comment branch (below), and enemy-as-attacker from the interception branch (combat_next_turn's enemy branch,
+*comment combat_intercepting_ally > 0 -- combat.txt, 2026-09-28) via resolve_enemy_attack_on_ally, when a melee
+*comment ally at range 0 draws the attack instead of the enemy reaching the player. (The existing
+*comment enemy-attacks-PLAYER prose, flavor_type_swordsman etc., can't be reused the same way -- it's hardcoded
+*comment second-person, "your shoulder", which only makes sense when the player is the target.)
 *comment Params: attacker's kind ("ally"/"enemy") and slot, defender's kind and slot, and whether the attack hit.
-*comment Pure narration -- no HP/damage is applied here; that's the caller's job once attack resolution exists
-*comment for this direction.
+*comment Pure narration -- no HP/damage is applied here; that's the caller's job (resolve_ally_attack or
+*comment resolve_enemy_attack_on_ally, run just before this).
 *comment The five variants per pool are built HERE, fresh, with ${} resolved against the just-synced epithets below
 *comment -- not stored as a *set string elsewhere and reused, because a stored string's ${} tokens resolve at that
 *comment *set (immediately), not later when the string is finally printed. Confirmed the hard way: an earlier draft
@@ -216,50 +225,55 @@
 *temp fnaa_line ""
 *if (fnaa_ranged)
   *if (fnaa_v = 1)
-    *set fnaa_line "${combat_attacker_epithet} looses a shot that finds ${combat_defender_epithet}."
+    *set fnaa_line "$!{combat_attacker_epithet} looses a shot that finds ${combat_defender_epithet}."
   *if (fnaa_v = 2)
     *set fnaa_line "A shot from ${combat_attacker_epithet} catches ${combat_defender_epithet} square on."
   *if (fnaa_v = 3)
-    *set fnaa_line "${combat_attacker_epithet} puts a shot into ${combat_defender_epithet} from the flank."
+    *set fnaa_line "$!{combat_attacker_epithet} puts a shot into ${combat_defender_epithet} from the flank."
   *if (fnaa_v = 4)
-    *set fnaa_line "${combat_attacker_epithet} lets fly, and the shot lands true on ${combat_defender_epithet}."
+    *set fnaa_line "$!{combat_attacker_epithet} lets fly, and the shot lands true on ${combat_defender_epithet}."
   *if (fnaa_v = 5)
-    *set fnaa_line "${combat_attacker_epithet}'s shot cuts through the din and strikes ${combat_defender_epithet}."
+    *set fnaa_line "$!{combat_attacker_epithet}'s shot cuts through the din and strikes ${combat_defender_epithet}."
   *if (not(fnaa_hit))
     *if (fnaa_v = 1)
-      *set fnaa_line "${combat_attacker_epithet} looses a shot at ${combat_defender_epithet}, but it goes wide."
+      *set fnaa_line "$!{combat_attacker_epithet} looses a shot at ${combat_defender_epithet}, but it goes wide."
     *if (fnaa_v = 2)
-      *set fnaa_line "${combat_attacker_epithet}'s shot sails past ${combat_defender_epithet} in the chaos."
+      *set fnaa_line "$!{combat_attacker_epithet}'s shot sails past ${combat_defender_epithet} in the chaos."
     *if (fnaa_v = 3)
-      *set fnaa_line "${combat_attacker_epithet} loses the shot as ${combat_defender_epithet} shifts clear."
+      *set fnaa_line "$!{combat_attacker_epithet} loses the shot as ${combat_defender_epithet} shifts clear."
     *if (fnaa_v = 4)
       *set fnaa_line "The shot from ${combat_attacker_epithet} clips nothing but air near ${combat_defender_epithet}."
     *if (fnaa_v = 5)
-      *set fnaa_line "${combat_attacker_epithet} fires, but ${combat_defender_epithet} is already moving."
+      *set fnaa_line "$!{combat_attacker_epithet} fires, but ${combat_defender_epithet} is already moving."
 *else
   *if (fnaa_v = 1)
-    *set fnaa_line "${combat_attacker_epithet} closes in and lands a solid blow on ${combat_defender_epithet}."
+    *set fnaa_line "$!{combat_attacker_epithet} closes in and lands a solid blow on ${combat_defender_epithet}."
   *if (fnaa_v = 2)
-    *set fnaa_line "${combat_attacker_epithet} presses the attack, and the strike catches ${combat_defender_epithet} off guard."
+    *set fnaa_line "$!{combat_attacker_epithet} presses the attack, and the strike catches ${combat_defender_epithet} off guard."
   *if (fnaa_v = 3)
     *set fnaa_line "A quick exchange, and ${combat_attacker_epithet}'s blow connects, staggering ${combat_defender_epithet}."
   *if (fnaa_v = 4)
-    *set fnaa_line "${combat_attacker_epithet} drives in past the guard, and the hit lands hard on ${combat_defender_epithet}."
+    *set fnaa_line "$!{combat_attacker_epithet} drives in past the guard, and the hit lands hard on ${combat_defender_epithet}."
   *if (fnaa_v = 5)
-    *set fnaa_line "${combat_attacker_epithet} finds an opening, and the blow tells on ${combat_defender_epithet}."
+    *set fnaa_line "$!{combat_attacker_epithet} finds an opening, and the blow tells on ${combat_defender_epithet}."
   *if (not(fnaa_hit))
     *if (fnaa_v = 1)
-      *set fnaa_line "${combat_attacker_epithet} strikes at ${combat_defender_epithet}, but the blow is turned aside."
+      *set fnaa_line "$!{combat_attacker_epithet} strikes at ${combat_defender_epithet}, but the blow is turned aside."
     *if (fnaa_v = 2)
-      *set fnaa_line "${combat_attacker_epithet} presses in, but ${combat_defender_epithet} twists clear."
+      *set fnaa_line "$!{combat_attacker_epithet} presses in, but ${combat_defender_epithet} twists clear."
     *if (fnaa_v = 3)
-      *set fnaa_line "${combat_attacker_epithet}'s attack goes wide of ${combat_defender_epithet}."
+      *set fnaa_line "$!{combat_attacker_epithet}'s attack goes wide of ${combat_defender_epithet}."
     *if (fnaa_v = 4)
-      *set fnaa_line "${combat_attacker_epithet} overreaches, and ${combat_defender_epithet} slips the strike."
+      *set fnaa_line "$!{combat_attacker_epithet} overreaches, and ${combat_defender_epithet} slips the strike."
     *if (fnaa_v = 5)
-      *set fnaa_line "${combat_attacker_epithet} can't find a way past ${combat_defender_epithet}'s guard this time."
+      *set fnaa_line "$!{combat_attacker_epithet} can't find a way past ${combat_defender_epithet}'s guard this time."
 *line_break
 ${fnaa_line}
+*comment Trailing line_break (2026-09-28, same reasoning as fight_narrate_enemy_turn above): this label's
+*comment last print is always the bare prose sentence, never followed by one of its own, and whatever
+*comment combat_next_turn dispatches to next (another combatant's dice-roll banners, or its own opening
+*comment prose) has no LEADING line_break either -- so the two ran together on one line without this.
+*line_break
 *return
 
 *label pick_weapon_flavor
@@ -627,6 +641,22 @@ ${fnaa_line}
   *set fsh "Three bright motes chase ${combat_enemy_epithet} through a twisting turn and strike as one, and the crack of the impact rocks ${combat_enemy_epithet} back."
 *if (fsp_v = 8)
   *set fsh "A spray of glowing force leaves your hand, and the darts slam home one, two, three, and ${combat_enemy_epithet} staggers under the succession of blows."
+*return
+
+*label flavor_spell_magic_missile_split
+*comment Magic Missile darts split across more than one target (2026-09-28) -- none of flavor_spell_magic_
+*comment missile's eight variants above can honestly describe this, since every one names a single
+*comment ${combat_enemy_epithet} taking every dart. Three variants, not eight, and none name an epithet: this
+*comment is the "how the spell was cast" line, not a per-target hit line -- which enemy took how much is the
+*comment per-target banner that follows in resolve_magic_missile (combat_spells.txt), not this sentence's job.
+*temp fspms_v 1
+*rand fspms_v 1 3
+*if (fspms_v = 1)
+  *set fsh "You speak the words and snap your fingers forward, and the three darts of force peel apart in flight, each one curving toward a different mark."
+*if (fspms_v = 2)
+  *set fsh "Three motes of pale, crackling light burst from your hand and fan out at once, breaking toward more than one foe before any of them land."
+*if (fspms_v = 3)
+  *set fsh "You point, and the missiles scatter the instant they leave your hand, each one finding its own separate target."
 *return
 
 *label flavor_spell_dissonant_whispers

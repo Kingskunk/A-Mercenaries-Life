@@ -187,9 +187,32 @@
 *create level_up_from 1
 *create rogue_expertise_1 "none"
 *create rogue_expertise_2 "none"
+*comment Canny (Ranger, Tasha's Deft Explorer -- replaces Natural Explorer, 2026-09-29): same double-proficiency
+*comment mechanic as Rogue's Expertise just above, one skill instead of two, hardcoded at chargen the same way
+*comment rogue_expertise_1/2 already are (dawn_trial.txt never offered a real picker for those either -- see
+*comment roll_d20_check, dice_engine.txt, for the shared gate).
+*create ranger_expertise_1 "none"
 *create rogue_sneak_attack_die "1d6"
 *create ranger_favored_enemy "none"
 *create ranger_favored_terrain "none"
+*comment FAVORED FOE (2026-09-29): Tasha's Cauldron optional rule, replacing RAW Favored Enemy for this game's
+*comment Ranger -- the designer's explicit call (matches how Blade Ward's bonus-action change and Bane's flat
+*comment 10-round duration are both already-documented house rules). RAW: no action cost, mark a target you just
+*comment hit (uses = proficiency bonus, long rest), first hit against the mark each of your turns adds a die
+*comment (favored_foe_die_sides: 1d4 at level 1, 1d6 at 6, 1d8 at 14). Only one mark can be live at a time --
+*comment target_slot/expires_round hold it directly rather than one field per enemy slot (contrast Bane, which
+*comment can hit up to three targets AT ONCE and needs a field per slot; Favored Foe never does). Duration is
+*comment 10 rounds (1 minute), the same flat stand-in for concentration Bane already uses -- nothing in this
+*comment engine tracks concentration, and Favored Foe isn't getting an exception either.
+*create favored_foe_uses 0
+*create favored_foe_max 0
+*create favored_foe_die_sides 4
+*create favored_foe_target_slot 0
+*create favored_foe_expires_round 0
+*comment Set true by the "Mark Favored Foe" attack option (combat.txt), read-and-cleared at the top of
+*comment resolve_weapon_attack_choice so it can never leak into a later, unrelated attack (a miss on the marking
+*comment swing spends nothing, matching RAW -- the mark only takes if the hit actually lands).
+*create combat_attempt_favored_foe_mark false
 *create barbarian_rage_uses 2
 *create barbarian_rage_damage_bonus 2
 *create is_raging false
@@ -2265,6 +2288,33 @@
 *create fft_m2miss ""
 *create shield_armed false
 *create combat_shield_triggered false
+*comment MAGIC MISSILE TARGETING (2026-09-28): sidebar-driven multi-target dart allocation, the first spell
+*comment built this way and meant as a reusable shape for future multi-target spells -- see fight_target_magic_
+*comment missile (combat.txt). combat_mm_targeting_active gates the sidebar's click handler (web/mygame/
+*comment index.html): while true, clicking an enemy row raises or lowers THAT slot's own combat_mm_darts_N
+*comment instead of the usual single-target combat_player_chosen_target. combat_mm_darts_max is set once, when
+*comment the spell is armed (3 for Magic Missile), not hardcoded in the JS, so a future spell with a different
+*comment count can reuse the same click handler untouched. One field per enemy slot, same convention as
+*comment combat_enemy<N>_* -- combat_enemy_slot_cap (6) is the bound both the JS and the ChoiceScript loops use.
+*create combat_mm_targeting_active false
+*create combat_mm_darts_max 0
+*create combat_mm_darts_total 0
+*create combat_mm_darts_1 0
+*create combat_mm_darts_2 0
+*create combat_mm_darts_3 0
+*create combat_mm_darts_4 0
+*create combat_mm_darts_5 0
+*create combat_mm_darts_6 0
+*comment Per-target result banners (2026-09-28, real damage split): one durable string per enemy slot, set
+*comment inside resolve_magic_missile's replay lock and printed outside it, same shape as
+*comment combat_player_dmg_roll_banner used before the split -- a page replay re-prints the same banners
+*comment without re-rolling. Empty string for any slot that took no darts this cast.
+*create combat_mm_banner_1 ""
+*create combat_mm_banner_2 ""
+*create combat_mm_banner_3 ""
+*create combat_mm_banner_4 ""
+*create combat_mm_banner_5 ""
+*create combat_mm_banner_6 ""
 *comment BLADE WARD (house rule: a bonus-action Blade Ward, not RAW's 1 action) -- a cantrip for
 *comment warlocks, wizards and bards. Until the end of your NEXT turn you have resistance to
 *comment bludgeoning, piercing and slashing from weapon attacks. Two flags because "end of your next

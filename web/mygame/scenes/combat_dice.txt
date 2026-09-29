@@ -176,6 +176,18 @@ ${combat_player_dmg_roll_banner}
     *set combat_player_dmg_dealt + cwh_hex_die
     *set cwh_extra_str "${cwh_extra_str} +${cwh_hex_die} (Hex)"
     *set cwh_running + cwh_hex_die
+  *comment Favored Foe (Tasha's, replacing Favored Enemy -- see startup.txt's *create comment): only the
+  *comment CURRENTLY marked slot benefits, unlike Hex's global flag, since only one enemy can be marked at a
+  *comment time. favored_foe_target_slot > 0 rules out the unmarked default (slot 0 never exists);
+  *comment expires_round >= combat_round is the flat 10-round/no-concentration duration check. The marking hit
+  *comment itself is included -- resolve_weapon_attack_choice (combat.txt) sets target_slot/expires_round
+  *comment BEFORE calling this label, so a fresh mark already reads as live here on the very same swing.
+  *if (((favored_foe_target_slot > 0) and (favored_foe_target_slot = combat_active_target)) and (favored_foe_expires_round >= combat_round))
+    *temp cwh_ff_die 0
+    *rand cwh_ff_die 1 favored_foe_die_sides
+    *set combat_player_dmg_dealt + cwh_ff_die
+    *set cwh_extra_str "${cwh_extra_str} +${cwh_ff_die} (Favored Foe)"
+    *set cwh_running + cwh_ff_die
   *set combat_player_dmg_roll_banner "[b][🎲 Weapon Damage: ${cwh_roll} ${cwh_bonus_str}${cwh_extra_str} = ${cwh_running}][/b]"
   *gosub apply_outgoing_damage_resist_vuln
   *set combat_enemy_hp - combat_player_dmg_dealt

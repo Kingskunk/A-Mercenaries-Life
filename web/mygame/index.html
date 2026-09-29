@@ -390,6 +390,11 @@ button#statSidebar .turnRow,
   color: rgba(0,0,0,0.5);
   margin-left: 0.3em;
 }
+#statSidebar .dartsTag {                      /* Magic Missile dart count, prefixed before the name */
+  font-weight: 700;
+  color: #2a5f8f;
+  margin-right: 0.2em;
+}
 #statSidebar .alertRow {                      /* derived "who's next / who's in reach" rows, above the turn list */
   font-size: 0.92em;
   padding: 2px 0;
@@ -447,6 +452,8 @@ button#statSidebar .turnRow,
       resourceHtml = "<div class=\"statRow\"><span>Second Wind</span><span>" + fmt(s.fighter_second_wind_uses) + " / " + fmt(s.fighter_second_wind_max) + "</span></div>";
     } else if (s.character_class === "barbarian") {
       resourceHtml = "<div class=\"statRow\"><span>Rage</span><span>" + fmt(s.barbarian_rage_uses) + " / " + fmt(s.barbarian_rage_max) + "</span></div>";
+    } else if (s.character_class === "ranger") {
+      resourceHtml = "<div class=\"statRow\"><span>Favored Foe</span><span>" + fmt(s.favored_foe_uses) + " / " + fmt(s.favored_foe_max) + "</span></div>";
     }
 
     // Every quest listed in quest-data.js whose active(stats) is true.
@@ -496,7 +503,13 @@ button#statSidebar .turnRow,
             (kind === "ally" ? allyTierName(s[pfx + slot + "_range"])
                              : rangeTierName(Number(s[pfx + slot + "_range"]) || 0)) + ")</span>";
           var cSub = kind === "ally" ? allyTargetLine(s, slot) : "";
-          var cNameHtml = "<span class=\"turnMain\"><span><span class=\"" +
+          // Magic Missile dart allocation (2026-09-28): a "(N)" prefix on any enemy with darts currently
+          // assigned, live while combat_mm_targeting_active -- the click handler (assignMultiTargetDart)
+          // writes combat_mm_darts_<slot> directly, and this poll (renderStatSidebar runs every 400ms
+          // regardless of ChoiceScript page state) is what makes the count visible without a page reload.
+          var cDarts = kind === "enemy" ? Number(s["combat_mm_darts_" + slot]) || 0 : 0;
+          var cDartsTag = cDarts > 0 ? "<span class=\"dartsTag\" title=\"Darts assigned\">(" + cDarts + ")</span> " : "";
+          var cNameHtml = "<span class=\"turnMain\"><span>" + cDartsTag + "<span class=\"" +
             (kind === "enemy" ? "enemyName" : "allyName") + "\">" + esc(cName) + "</span>" + cRangeTag +
             "</span>" + (cSub ? "<span class=\"turnSub\">" + cSub + "</span>" : "") + "</span>";
           if (kind === "enemy" && !cDead) {
@@ -1016,9 +1029,35 @@ button#statSidebar .turnRow,
     if (!t || !t.getAttribute || !t.hasAttribute("data-target")) return;
     var slot = Number(t.getAttribute("data-target"));
     if (!slot || !window.stats) return;
+    if (isTruthy(window.stats.combat_mm_targeting_active)) {
+      assignMultiTargetDart(slot);
+      return;
+    }
     window.stats.combat_player_chosen_target = slot;
     renderStatSidebar();
   });
+  // Multi-target dart/beam allocation (2026-09-28), first used by Magic Missile, meant to be reusable by any
+  // future spell of this shape -- combat_mm_darts_max is set once by whichever spell armed targeting
+  // (combat.txt), not hardcoded here, so a different dart/beam count needs no JS change. Clicking a row with
+  // room left in the pool raises that slot's own count; clicking a row that already has darts once the pool
+  // is full lowers it instead, freeing capacity to place on a different enemy -- never touches any OTHER
+  // slot's count. Purely a window.stats write + re-render, like the single-target click above: no ChoiceScript
+  // page navigation happens, so the "Cast"/"Cancel" choice screen underneath is untouched by any of this.
+  function assignMultiTargetDart(slot) {
+    var s = window.stats;
+    var cap = Number(s.combat_enemy_slot_cap) || 6;
+    var maxDarts = Number(s.combat_mm_darts_max) || 0;
+    var key = "combat_mm_darts_" + slot;
+    var cur = Number(s[key]) || 0;
+    var total = 0;
+    for (var i = 1; i <= cap; i++) total += Number(s["combat_mm_darts_" + i]) || 0;
+    if (cur > 0 && total >= maxDarts) {
+      s[key] = cur - 1;
+    } else if (total < maxDarts) {
+      s[key] = cur + 1;
+    }
+    renderStatSidebar();
+  }
   // Hover/focus plumbing for the stat card. Delegated on #statSidebar -- the same stable element the
   // click handler uses -- because the rows themselves are destroyed and rebuilt every 400ms, so any
   // listener bound directly to a row would die with it. mouseleave (not mouseout) is the reliable

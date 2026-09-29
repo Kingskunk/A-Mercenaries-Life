@@ -23,8 +23,8 @@
 *comment to a type id ("archer", "guard") before calling fight_library, same convention as combat_lib_1 for
 *comment enemies. Ranged allies attack every turn regardless of distance; melee allies close their own
 *comment combat_ally<N>_range (independent of the player's combat_enemy_range) one tier a turn before they can
-*comment strike. fight_narrate_ally_attack narrates either direction (ally-vs-enemy or enemy-vs-ally, though only
-*comment ally-as-attacker is wired up so far) -- both sides are named purely by epithet, so one label covers both.
+*comment strike. fight_narrate_ally_attack narrates either direction (ally-vs-enemy, and enemy-vs-ally via
+*comment interception below) -- both sides are named purely by epithet, so one label covers both.
 *comment
 *comment ADDING A FIGHT: use fight_library (near the end of this file). Set
 *comment combat_lib_1 (and _2 through _6) to library type ids, set combat_is_nonlethal if it should end in surrender, then *gosub_scene combat fight_library.
@@ -92,6 +92,24 @@
 *set is_raging false
 *set combat_agathys_triggered false
 *set combat_agathys_shattered false
+*set combat_mm_targeting_active false
+*set combat_mm_darts_max 0
+*set combat_mm_darts_total 0
+*set combat_mm_darts_1 0
+*set combat_mm_darts_2 0
+*set combat_mm_darts_3 0
+*set combat_mm_darts_4 0
+*set combat_mm_darts_5 0
+*set combat_mm_darts_6 0
+*set combat_mm_banner_1 ""
+*set combat_mm_banner_2 ""
+*set combat_mm_banner_3 ""
+*set combat_mm_banner_4 ""
+*set combat_mm_banner_5 ""
+*set combat_mm_banner_6 ""
+*set favored_foe_target_slot 0
+*set favored_foe_expires_round 0
+*set combat_attempt_favored_foe_mark false
 *set combat_outcome ""
 *set combat_engaged true
 *comment Condition-on-hit and movepool resets live in fight_cleanup, not
@@ -491,6 +509,7 @@
 *comment ordinary, single-size paragraph spacing either way.
 
 [b][⚡ Turn Order: ${ato_line}][/b]
+*line_break
 *return
 
 *label fight_cleanup
@@ -505,6 +524,24 @@
 *set is_raging false
 *set combat_agathys_triggered false
 *set combat_agathys_shattered false
+*set combat_mm_targeting_active false
+*set combat_mm_darts_max 0
+*set combat_mm_darts_total 0
+*set combat_mm_darts_1 0
+*set combat_mm_darts_2 0
+*set combat_mm_darts_3 0
+*set combat_mm_darts_4 0
+*set combat_mm_darts_5 0
+*set combat_mm_darts_6 0
+*set combat_mm_banner_1 ""
+*set combat_mm_banner_2 ""
+*set combat_mm_banner_3 ""
+*set combat_mm_banner_4 ""
+*set combat_mm_banner_5 ""
+*set combat_mm_banner_6 ""
+*set favored_foe_target_slot 0
+*set favored_foe_expires_round 0
+*set combat_attempt_favored_foe_mark false
 *set combat_is_nonlethal false
 *comment Guard against a condition-inflicted disadvantage the player never
 *comment burned (fled/won before their next roll) bleeding into an unrelated
@@ -821,6 +858,20 @@
   *set combat_range_display_name "Mid-Range"
 *if (crn_n >= 3)
   *set combat_range_display_name "Long Range"
+*return
+
+*label combat_mm_recount_darts
+*comment Sums every enemy slot's combat_mm_darts_N into the durable combat_mm_darts_total (startup.txt
+*comment *create), read by fight_target_magic_missile's Cast option. The sidebar (web/mygame/index.html) writes
+*comment the per-slot fields directly via window.stats and never touches this total itself -- it's a
+*comment ChoiceScript-side convenience so callers don't each write their own bounded loop.
+*set combat_mm_darts_total 0
+*temp cmrd_i 1
+*label combat_mm_recount_darts_loop
+*if (cmrd_i <= combat_enemy_slot_cap)
+  *set combat_mm_darts_total + {(("combat_mm_darts_" & cmrd_i))}
+  *set cmrd_i + 1
+  *goto combat_mm_recount_darts_loop
 *return
 
 *label fight_pick_target
@@ -1346,7 +1397,15 @@
   [b][✨ Shield Armed — will trigger on the next hit][/b]
 *if (blade_ward_active)
   *line_break
-  [b][🛡️ Blade Warded — slashing, piercing & bludgeoning attacks hit for half][/b]
+  *comment blade_ward_survived_a_turn true means this is its SECOND displayed round -- the tick
+  *comment (blade_ward_tick, above) clears blade_ward_active the moment this turn ends, before that
+  *comment round's own attacks resolve, so the plain banner would claim protection for a round that's
+  *comment already spent. Recasting (the Blade Ward option, below) resets both flags and buys a fresh
+  *comment two rounds, same as RAW re-casting to refresh the duration.
+  *if (blade_ward_survived_a_turn)
+    [b][🛡️ Blade Warded — fading, clears when you end this turn][/b]
+  *else
+    [b][🛡️ Blade Warded — slashing, piercing & bludgeoning attacks hit for half][/b]
 *if (hex_active)
   *line_break
   [b][🔮 Hex Active — +1d6 Necrotic Damage on all hits][/b]
@@ -1570,6 +1629,15 @@
     # [b][ACTION][/b] [b][Attack with your ${weapon}][/b].
       *goto resolve_weapon_attack_choice
 
+  *if ((((combat_can_attack) and ((weapon_type = "ranged") or (combat_enemy_range <= 0))) and (character_class = "ranger")) and (favored_foe_uses > 0))
+    # [b][ACTION][/b] [b][Mark Favored Foe][/b] Attack with your ${weapon}, marking the wound as a hunter's claim.
+      *comment Favored Foe (Tasha's -- see startup.txt's *create comment): no separate action cost, the mark is a
+      *comment free side effect of a hit you're already making, so this spends the same attack/action budget as
+      *comment the plain attack option above, nothing extra. Reads and clears at the top of resolve_weapon_attack_
+      *comment choice; a miss spends nothing, matching RAW ("when you hit").
+      *set combat_attempt_favored_foe_mark true
+      *goto resolve_weapon_attack_choice
+
   *if (((combat_can_attack) and (not(equipped_sidearm_id = "none"))) and ((sidearm_type = "ranged") or (combat_enemy_range <= 0)))
     # [b][ACTION][/b] [b][Attack with your ${sidearm}][/b].
       *comment equip_weapon (equipment.txt) already swaps weapon<->sidearm when told to equip whatever is
@@ -1609,6 +1677,7 @@
         You close ground on ${combat_enemy_epithet}, cutting down the distance between you.
         *line_break
         [b][🏃 You Push Forward — ${combat_range_display_name}][/b]
+      *line_break
       *goto fight_move_spent
 
   *if ((combat_player_moves_left > 0) and (combat_can_fall_back))
@@ -1645,6 +1714,7 @@
         You give ground, putting distance between yourself and ${combat_enemy_epithet}.
         *line_break
         [b][🏃 You Fall Back — ${combat_range_display_name}][/b]
+      *line_break
       *comment The opportunity attack lands AFTER the retreat is narrated, so the player sees the consequence of
       *comment their own move rather than an attack appearing before the thing that caused it. No-op when
       *comment find_opportunity_attacker found nobody, or when Disengage covered the round.
@@ -1662,6 +1732,7 @@
       You suck in a breath and drive yourself harder, burning the whole of your effort into speed and nothing else.
       *line_break
       [b][💨 You Dash — one extra move this turn][/b]
+      *line_break
       *goto fight_action_spent
 
   *if ((combat_player_actions_left > 0) and ((((wizard_cantrip = "fire_bolt") or (wizard_cantrip_2 = "fire_bolt")) or (wizard_cantrip_3 = "fire_bolt")) or ((race_cantrip = "fire_bolt") or (race_cantrip_2 = "fire_bolt"))))
@@ -1692,6 +1763,7 @@
         ${fsm}
         *line_break
         [b][💨 Miss][/b]
+      *line_break
       *goto fight_check_enemy_hp
 
   *if ((combat_player_actions_left > 0) and ((((wizard_cantrip = "ray_of_frost") or (wizard_cantrip_2 = "ray_of_frost")) or (wizard_cantrip_3 = "ray_of_frost")) or ((race_cantrip = "ray_of_frost") or (race_cantrip_2 = "ray_of_frost"))))
@@ -1723,6 +1795,7 @@
         ${fsm}
         *line_break
         [b][💨 Miss][/b]
+      *line_break
       *goto fight_check_enemy_hp
 
   *if ((combat_player_actions_left > 0) and ((((wizard_cantrip = "shocking_grasp") or (wizard_cantrip_2 = "shocking_grasp")) or (wizard_cantrip_3 = "shocking_grasp")) or ((race_cantrip = "shocking_grasp") or (race_cantrip_2 = "shocking_grasp"))))
@@ -1763,6 +1836,7 @@
         ${fsm}
         *line_break
         [b][💨 Miss][/b]
+      *line_break
       *goto fight_check_enemy_hp
 
   *if ((combat_player_actions_left > 0) and ((warlock_cantrip = "eldritch_blast") or (warlock_cantrip_2 = "eldritch_blast")))
@@ -1793,6 +1867,7 @@
         ${fsm}
         *line_break
         [b][💨 Miss][/b]
+      *line_break
       *goto fight_check_enemy_hp
 
   *if ((combat_player_actions_left > 0) and ((warlock_cantrip = "chill_touch") or (warlock_cantrip_2 = "chill_touch")))
@@ -1823,6 +1898,7 @@
         ${fsm}
         *line_break
         [b][💨 Miss][/b]
+      *line_break
       *goto fight_check_enemy_hp
 
   *if ((combat_player_actions_left > 0) and ((bard_cantrip = "vicious_mockery") or (bard_cantrip_2 = "vicious_mockery")))
@@ -1854,24 +1930,24 @@
         ${fsm}
         *line_break
         [b][💨 Resisted][/b]
+      *line_break
       *goto fight_check_enemy_hp
 
   *if ((combat_player_actions_left > 0) and (((character_class = "wizard") and (wizard_spell = "magic_missile")) and (wizard_spell_slots > 0)))
-    # [b][ACTION][/b] [b][Magic Missile][/b] Unleash three darts of force, bypassing the defenses of ${combat_enemy_epithet}.
-      *gosub fight_pick_target
-      *set combat_current_spell_id "magic_missile"
-      *gosub_scene combat_prose pick_spell_flavor
-      *gosub_scene combat_spells resolve_magic_missile
-      *if (combat_enemy_hp <= 0)
-        *gosub_scene combat_prose pick_spell_death_flavor
-        ${fdh}
-        *line_break
-        [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
-      *else
-        ${fsh}
-        *line_break
-        [b][✨ Magic Missile: Automatic Hit | ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
-      *goto fight_check_enemy_hp
+    # [b][ACTION][/b] [b][Magic Missile][/b] Loose three darts of force at targets you choose in the sidebar.
+      *comment Arms targeting mode instead of casting immediately (2026-09-28) -- RAW lets the three darts be
+      *comment split across up to three targets, not forced onto whichever single enemy fight_pick_target's
+      *comment kill-priority happens to favor. See fight_target_magic_missile's own header for the full shape;
+      *comment this option's only job is to enter it with a clean slate.
+      *set combat_mm_targeting_active true
+      *set combat_mm_darts_max 3
+      *set combat_mm_darts_1 0
+      *set combat_mm_darts_2 0
+      *set combat_mm_darts_3 0
+      *set combat_mm_darts_4 0
+      *set combat_mm_darts_5 0
+      *set combat_mm_darts_6 0
+      *goto fight_target_magic_missile
 
   *if ((combat_can_hex) and (combat_player_bonus_left > 0))
     # [b][BONUS ACTION][/b] [b][Hex][/b] Lay a baleful eldritch curse upon ${combat_enemy_epithet}.
@@ -1898,6 +1974,7 @@
       You murmur a dark necromantic rite. A numb, leathery vitality spreads beneath your skin, insulating your muscles against immediate harm.
       *line_break
       [b][✨ False Life: +${combat_cast_result} Temporary Hit Points][/b]
+      *line_break
       *goto fight_action_spent
 
   *if ((combat_player_actions_left > 0) and (((bard_spell = "dissonant_whispers") or (bard_spell_2 = "dissonant_whispers")) and (bard_spell_slots > 0)))
@@ -1922,6 +1999,7 @@
         ${fsm}
         *line_break
         [b][🧠 Dissonant Whispers: Saved | Half Damage: ${combat_player_dmg_dealt} Psychic Damage${combat_outgoing_dmg_suffix}][/b]
+      *line_break
       *goto fight_check_enemy_hp
 
   *if ((combat_player_actions_left > 0) and (((bard_spell = "bane") or (bard_spell_2 = "bane")) and (bard_spell_slots > 0)))
@@ -1974,12 +2052,14 @@
       A surge of stubborn, practiced discipline steadies your breathing and closes the worst of your scrapes.
       *line_break
       [b][🩸 Hit Points: ${hp_current} / ${hp_max}][/b]
+      *line_break
       *goto fight_bonus_spent
 
   *if ((combat_can_rage) and (combat_player_bonus_left > 0))
     # [b][BONUS ACTION][/b] [b][Rage][/b] Let the fury take you.
       *gosub_scene character_progression activate_rage
       A hot, roaring pressure floods your chest, dulling the pain and the fear to nothing at all.
+      *line_break
       *goto fight_bonus_spent
 
   *if ((combat_can_blade_ward) and (combat_player_bonus_left > 0))
@@ -1994,6 +2074,7 @@
       You extend your hand and trace a sigil of warding in the air, and the blows that follow find the sigil instead of you.
       *comment No banner here: the hub's own "Blade Warded" status line reopens with this same page
       *comment and says the same thing, exactly as Shield does (see its option above).
+      *line_break
       *goto fight_bonus_spent
 
   *if (cu_any)
@@ -2016,6 +2097,7 @@
       You shift your weight off the line and square up, refusing to give anyone a clean angle on you.
       *line_break
       [b][🌀 Disengaged — nothing can strike you as you move for the rest of this round][/b]
+      *line_break
       *goto fight_action_spent
 
   *if (combat_can_break_off)
@@ -2072,8 +2154,57 @@ ${use_text}
 *if (use_result = "ok")
   *line_break
   [b][${use_banner}][/b]
+  *line_break
   *goto fight_action_spent
+*line_break
 *goto fight_round_hub
+
+*comment Sidebar-driven multi-target dart allocation (2026-09-28) -- the first spell built this way, meant as a
+*comment reusable shape for future multi-target spells too (a second one should generalize this, not fork it).
+*comment Same overall shape as fight_use_item just above: a completely separate *choice, so arming Magic Missile
+*comment needs no changes to any of the other ~20 options in the main hub -- they simply aren't in this list.
+*comment While this screen is up, the player clicks enemies in #statSidebar (JS, no ChoiceScript page reload --
+*comment see web/mygame/index.html's click handler, gated on combat_mm_targeting_active) to raise or lower that
+*comment slot's own combat_mm_darts_N; the sidebar's existing 400ms poll shows the running "(N)" tag live, so
+*comment this page never needs to refresh itself just to reflect a new count.
+*comment "Cast" is always offered, never gated on darts already assigned: a *choice's own *if is evaluated once
+*comment when the page is built, and would go stale the instant a sidebar click changed the count afterward.
+*comment Its body re-sums the per-slot counts fresh at the moment it's actually picked, which is what matters --
+*comment casting with nothing assigned just explains why and loops back rather than silently doing nothing.
+*label fight_target_magic_missile
+*choice
+  # Cast Magic Missile.
+    *gosub combat_mm_recount_darts
+    *if (combat_mm_darts_total <= 0)
+      No darts are assigned yet. Click an enemy in the sidebar to place one, then cast.
+      *line_break
+      *goto fight_target_magic_missile
+    *comment resolve_magic_missile now owns its full narration (flavor line, then one banner per hit target),
+    *comment reading the per-slot combat_mm_darts_N allocation directly -- nothing left for this option to print.
+    *set combat_mm_targeting_active false
+    *gosub_scene combat_spells resolve_magic_missile
+    *comment Clear every slot's allocation now that the cast has resolved -- the sidebar's (N) tags must not
+    *comment linger once targeting mode is off; only a fresh arm should ever show them again.
+    *set combat_mm_darts_1 0
+    *set combat_mm_darts_2 0
+    *set combat_mm_darts_3 0
+    *set combat_mm_darts_4 0
+    *set combat_mm_darts_5 0
+    *set combat_mm_darts_6 0
+    *goto fight_check_enemy_hp
+  # Cancel targeting.
+    *comment Free -- arming and allocating cost nothing; only an actual cast does (fight_pick_target above
+    *comment hasn't run yet, wizard_spell_slots hasn't been spent, no action or bonus action was touched).
+    *set combat_mm_targeting_active false
+    *set combat_mm_darts_1 0
+    *set combat_mm_darts_2 0
+    *set combat_mm_darts_3 0
+    *set combat_mm_darts_4 0
+    *set combat_mm_darts_5 0
+    *set combat_mm_darts_6 0
+    You let the working dissolve, unspent.
+    *line_break
+    *goto fight_round_hub
 
 *comment Shared by both "Attack with your ${weapon}" and "Attack with your ${sidearm}" -- reads the same bare
 *comment weapon_type/weapon_hands/weapon_damage_type/weapon fields either way, so it needs no parameterization:
@@ -2084,6 +2215,10 @@ ${use_text}
 *comment Every targeted option re-syncs the HUD-picked target here, at the moment it's chosen, not just when the
 *comment page was built -- a click made while the page was already open would otherwise land on the stale target.
 *gosub fight_pick_target
+*comment Favored Foe: read-and-clear immediately, before the roll -- a *temp local to this call, so a miss (or
+*comment any other exit) can never leave the durable flag set for some later, unrelated attack to pick up.
+*temp rwac_favored_foe_mark combat_attempt_favored_foe_mark
+*set combat_attempt_favored_foe_mark false
 *if (weapon_type = "ranged")
   *set check_stat "dex"
   *set check_skill "Ranged Attack"
@@ -2146,6 +2281,15 @@ ${use_text}
           *set combat_player_dmg_bonus + barbarian_rage_damage_bonus
       *else
         *set combat_player_dmg_bonus + barbarian_rage_damage_bonus
+  *comment Favored Foe: the mark lands here, BEFORE resolve_player_weapon_hit, not after -- RAW explicitly
+  *comment includes the marking hit itself in the bonus damage ("the first time... you hit the favored enemy
+  *comment and deal damage to it, INCLUDING when you mark it"), so the flag has to be live before that label
+  *comment reads it. Moves/refreshes the mark if one was already live on a different target -- only one mark
+  *comment exists at a time, RAW.
+  *if (rwac_favored_foe_mark)
+    *set favored_foe_target_slot combat_active_target
+    *set favored_foe_expires_round (combat_round + 9)
+    *set favored_foe_uses - 1
   *gosub_scene combat_dice resolve_player_weapon_hit
   *if (combat_sneak_attack_triggered)
     *comment Sneak Attack RAW requires finesse or ranged (see the gate in
@@ -2182,6 +2326,7 @@ ${use_text}
   ${fwm}
   *line_break
   [b][💨 Miss][/b]
+*line_break
 *comment The one and only entry point for both weapon and sidearm attacks -- flagging it here, right before the
 *comment shared fight_check_enemy_hp tail every damage option uses, is how that tail knows to spend an ATTACK
 *comment instead of an action for this specific one.
@@ -2270,6 +2415,13 @@ ${use_text}
 *if (cnt_kind = "enemy")
   *temp cnt_hp {(("combat_enemy" & cnt_slot) & "_hp")}
   *if (cnt_hp > 0)
+    *comment Turn divider (2026-09-28): a light rule before every acting combatant's own turn, so a busier
+    *comment fight (several enemies/allies in one round) reads as a sequence of distinct turns instead of one
+    *comment run-on block -- readability request from a live multi-combatant transcript. Printed here, at the
+    *comment top of a LIVING slot's dispatch, so a dead slot's silent skip (no comment above lied) still prints
+    *comment nothing at all.
+    ────────────────────
+    *line_break
     *set combat_active_target cnt_slot
     *gosub fight_sync_target_in
     *gosub find_intercepting_ally
@@ -2300,6 +2452,7 @@ ${use_text}
         Caught flat-footed, ${combat_enemy_epithet} loses the turn outright, never sensing you at all.
       *line_break
       [b][😲 ${combat_enemy_name} Surprised — turn lost][/b]
+      *line_break
       *set combat_turn_advanced_this_page true
     *elseif (combat_intercepting_ally > 0)
       *comment Interception (2026-09-28; broadened later the same day): a living melee ally is in melee range --
@@ -2338,7 +2491,7 @@ ${use_text}
         *if (cnt_rv = 3)
           The last of the gap disappears fast, and ${combat_enemy_epithet} is finally within striking distance.
         *line_break
-        [b][🏃 ${combat_enemy_name} Closes to Engagement][/b]
+        [b][🏃 ${combat_enemy_name} Closes to Engagement@{cnt_dashed  (Dashed the extra distance)|}][/b]
       *else
         *gosub combat_range_name combat_enemy_range
         *if (cnt_rv = 1)
@@ -2348,7 +2501,8 @@ ${use_text}
         *if (cnt_rv = 3)
           Step by step, ${combat_enemy_epithet} narrows the distance, closing in fast.
         *line_break
-        [b][🏃 ${combat_enemy_name} Closes to ${combat_range_display_name}][/b]
+        [b][🏃 ${combat_enemy_name} Closes to ${combat_range_display_name}@{cnt_dashed  (Dashed the extra distance)|}][/b]
+      *line_break
       *set combat_turn_advanced_this_page true
       *if ((combat_enemy_range <= 0) and (not(cnt_dashed)))
         *gosub fight_pick_enemy_move
@@ -2379,6 +2533,9 @@ ${use_text}
   *comment target without any ally-specific logic here.
   *temp cnt_a_hp {(("combat_ally" & cnt_slot) & "_hp")}
   *if (cnt_a_hp > 0)
+    *comment Turn divider -- see the matching comment in the enemy branch above.
+    ────────────────────
+    *line_break
     *gosub fight_pick_target
     *if (combat_active_target > 0)
       *comment Stored durably (not just left in the shared/transient combat_active_target) so
@@ -2423,7 +2580,7 @@ ${use_text}
           *if (cnt_arv = 3)
             The last of the gap disappears fast, and ${combat_attacker_epithet} is finally within striking distance.
           *line_break
-          [b][🏃 ${combat_attacker_name} Closes to Engagement][/b]
+          [b][🏃 ${combat_attacker_name} Closes to Engagement@{cnt_a_dashed  (Dashed the extra distance)|}][/b]
         *else
           *gosub combat_range_name cnt_a_range
           *if (cnt_arv = 1)
@@ -2433,7 +2590,8 @@ ${use_text}
           *if (cnt_arv = 3)
             Step by step, ${combat_attacker_epithet} narrows the distance, closing in fast.
           *line_break
-          [b][🏃 ${combat_attacker_name} Closes to ${combat_range_display_name}][/b]
+          [b][🏃 ${combat_attacker_name} Closes to ${combat_range_display_name}@{cnt_a_dashed  (Dashed the extra distance)|}][/b]
+        *line_break
         *set combat_turn_advanced_this_page true
         *if ((cnt_a_range <= 0) and (not(cnt_a_dashed)))
           *gosub_scene combat_dice resolve_ally_attack cnt_slot combat_active_target

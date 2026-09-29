@@ -40,10 +40,12 @@
     { id: "thaumaturgy",        name: "Thaumaturgy",        level: 0, schools: "Transmutation" },
 
     // ── 1st-level spells ──
+    { id: "alarm",              name: "Alarm",              level: 1, schools: "Abjuration" },
     { id: "armor_of_agathys",   name: "Armor of Agathys",   level: 1, schools: "Abjuration" },
     { id: "bane",               name: "Bane",               level: 1, schools: "Enchantment" },
     { id: "charm_person",       name: "Charm Person",       level: 1, schools: "Enchantment" },
     { id: "comprehend_languages", name: "Comprehend Languages", level: 1, schools: "Divination" },
+    { id: "detect_magic",       name: "Detect Magic",       level: 1, schools: "Divination" },
     { id: "disguise_self",      name: "Disguise Self",      level: 1, schools: "Illusion" },
     { id: "dissonant_whispers", name: "Dissonant Whispers", level: 1, schools: "Enchantment" },
     { id: "false_life",         name: "False Life",         level: 1, schools: "Necromancy" },
@@ -51,9 +53,11 @@
     { id: "healing_word",       name: "Healing Word",       level: 1, schools: "Evocation" },
     { id: "hex",                name: "Hex",                level: 1, schools: "Enchantment" },
     { id: "identify",           name: "Identify",           level: 1, schools: "Divination" },
+    { id: "jump",               name: "Jump",               level: 1, schools: "Transmutation" },
     { id: "mage_armor",         name: "Mage Armor",         level: 1, schools: "Abjuration" },
     { id: "magic_missile",      name: "Magic Missile",      level: 1, schools: "Evocation" },
     { id: "shield",             name: "Shield",             level: 1, schools: "Abjuration" },
+    { id: "speak_with_animals", name: "Speak with Animals", level: 1, schools: "Divination" },
     { id: "unseen_servant",     name: "Unseen Servant",     level: 1, schools: "Conjuration" }
   ];
 
