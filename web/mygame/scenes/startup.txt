@@ -1085,6 +1085,42 @@
 *comment mirrors combat_allyN_weapon_type's shape, set by every apply_enemy_type branch (never left to a
 *comment default that could leak an earlier fight's "ranged" onto a melee type in the same slot).
 *create combat_enemy_weapon_type "melee"
+*comment Sidearm (2026-09-29, Ranged-AI Position Awareness plan §4.1): a cornered ranged type's one-off melee
+*comment fallback -- see combat_enemyN_sidearm_weapon_type's own comment (its first real *create, slot 1 below)
+*comment for the full rule. Bare/active-target copy, synced in by fight_sync_target_in like every field above it.
+*create combat_enemy_sidearm_weapon_type ""
+*create combat_enemy_sidearm_atk_bonus 0
+*create combat_enemy_sidearm_dmg_dice_sides 4
+*create combat_enemy_sidearm_dmg_bonus 0
+*create combat_enemy_sidearm_dmg_type "piercing"
+*comment Commit-and-chase (2026-09-29, Ranged-AI Position Awareness plan §11.3/6a): bare/active-target copy of
+*comment this slot's chase state, synced in by fight_sync_target_in like every field above. See
+*comment combat_enemy1_chase_target's own comment (first real *create, below) for the full rule.
+*create combat_enemy_chase_target 0
+*create combat_enemy_chase_range 0
+*create combat_enemy_chase_roll_done false
+*create combat_enemy_chase_hp_snapshot 0
+*comment Per-type tunability (2026-09-29, on request): the commit roll's own odds (0-100, "0 means never" --
+*comment same convention as combat_enemy_move2_chance) used to be a bare 33 inside roll_enemy_chase_commit
+*comment itself. Made a per-type field, set by apply_type_<name>, so a tactical humanoid type (swordsman, guard,
+*comment ...) can break formation to chase a squishy target while a mindless creature type (lacedon, mire_rat,
+*comment beast) simply never does -- the type never sets this field, so it stays at the *create default below and
+*comment the roll can never succeed (*rand always returns >= 1). See RANGED_AI_PLAN.md's Phase 4 retrofit note.
+*create combat_enemy_chase_chance 0
+*comment Retreat (2026-09-29, plan §4.5/Phase 5): per-type opt-in, same "must be set explicitly" shape as
+*comment chase_chance right above -- a cornered ranged type only retreats if its own type set this true.
+*comment Archer/slinger (the only ranged types today, both tactical humanoids) set it; a future non-tactical
+*comment ranged creature simply wouldn't, and would fall back to row 2's quick-draw instead (or nothing, if it
+*comment has no sidearm either) whenever a melee ally would otherwise have been its excuse to fall back.
+*create combat_enemy_can_retreat false
+*comment Disengage (2026-09-29, plan §4.6/§4.7/Phase 6): the wounded threshold that splits row 3 (Retreat) from
+*comment row 4 (Disengage) -- both share combat_enemy_can_retreat as their gate (a type tactically capable of
+*comment falling back at all is capable of picking the safer variant when hurt), so this field only ever matters
+*comment for a type that already has can_retreat true. 0-100, compared as a percentage of max HP; a type that
+*comment never sets it (default 0) can never actually reach it (HP is never negative), so it silently only ever
+*comment takes row 3 -- "always retreat, never the extra-safe disengage" is a safe, non-broken default for an
+*comment unconfigured type, same "0 means never" shape chase_chance/move2_chance already use.
+*create combat_enemy_flee_hp_pct 0
 *comment Bane (2026-09-27, dormant -- see resolve_cast_bane, combat_spells.txt): the round number this slot's Bane
 *comment penalty expires on (0 = not Baned). This is the "active target" scratch copy, synced in from the
 *comment slot's own combat_enemyN_bane_expires_round by fight_sync_target_in, same as hp/ac/atk_bonus above.
@@ -1102,6 +1138,16 @@
 *comment its one opportunity attack this round. The player-side mirror of the same idea is
 *comment combat_player_disengaged below, which is the single flag that suppresses provoked attacks entirely.
 *create combat_enemy_oa_used false
+*comment Reaction asymmetry closed (2026-09-29, Ranged-AI Position Awareness plan §4.5/Phase 5): the player and
+*comment every ally now have their own reaction too, so an enemy that retreats can be punished the same way the
+*comment player already can be. player_oa_used is singular (one player, no slot indirection needed);
+*comment combat_ally<N>_oa_used mirrors combat_enemy<N>_oa_used exactly, per ally slot. Both reset in
+*comment combat_begin_round alongside the existing enemy loop.
+*create player_oa_used false
+*comment Outputs of find_opportunity_attacker_against (combat.txt): who reacts to the enemy currently retreating
+*comment -- "player"/"ally"/"" and, for "ally", which slot (0 = n/a).
+*create combat_oa_against_kind ""
+*create combat_oa_against_slot 0
 *comment combat_oa_candidate is the OUTPUT of find_opportunity_attacker and the INPUT to
 *comment resolve_opportunity_attack (both combat.txt) -- deliberately a separate var rather than overloading
 *comment combat_active_target, which is transient shared scratch and would be clobbered by the very movement that
@@ -1263,6 +1309,14 @@
 *create combat_enemy_move2_condition_name ""
 *create combat_enemy_move2_condition_icon ""
 *create combat_enemy_move2_used false
+*comment Quick-draw (2026-09-29, Ranged-AI Position Awareness plan §4.2/§4.8): set for one turn, by
+*comment combat_next_turn's row-2 decision, right before it overwrites the active-target scratch's weapon/damage
+*comment fields with this slot's own sidearm fields and calls resolve_enemy_attack as normal. Read by
+*comment fight_narrate_enemy_turn (combat_prose.txt) to pick the type's *_dagger flavor pool instead of its usual
+*comment one, and cleared again immediately after narration so it can never bleed into a later turn. Same
+*comment transient-scratch shape as every other per-turn override here (move2, Bane) -- nothing durable changes,
+*comment so this slot goes back to shooting normally next turn with no restore step needed.
+*create combat_enemy_used_sidearm false
 *create combat_flavor_enemy_move2_hit ""
 *create combat_flavor_enemy_move2_miss ""
 *create combat_enemy_atk_total 0
@@ -1460,6 +1514,38 @@
 *create combat_enemy1_metal_armor false
 *create combat_enemy1_dmg_type "bludgeoning"
 *create combat_enemy1_weapon_type "melee"
+*comment Sidearm (2026-09-29, Ranged-AI Position Awareness plan §4.1): a cornered ranged type's one-off melee
+*comment fallback -- NOT a persistent equip, never overwrites weapon_type/dmg_* above. "" weapon_type means no
+*comment sidearm (every melee type's default; they never read these fields). apply_type_archer/apply_type_slinger
+*comment set them to a dagger; combat_next_turn's row-2 quick-draw decision (combat.txt) reads them only when this
+*comment slot's own weapon_type is "ranged" and its range is 0, and only for the one attack that turn -- the
+*comment slot's real weapon_type field above is never touched, so the type reverts to shooting normally next turn.
+*create combat_enemy1_sidearm_weapon_type ""
+*create combat_enemy1_sidearm_atk_bonus 0
+*create combat_enemy1_sidearm_dmg_dice_sides 4
+*create combat_enemy1_sidearm_dmg_bonus 0
+*create combat_enemy1_sidearm_dmg_type "piercing"
+*comment Commit-and-chase (2026-09-29, plan §11.3/6a): combat_enemy<N>_chase_target is which living ALLY slot
+*comment (1-4, 0 = not chasing) this enemy has committed to hunting instead of its usual default (the player),
+*comment set at most once per fight by roll_enemy_chase_commit (combat.txt) and cleared the moment the chase
+*comment target dies, this enemy takes any damage, or it actually reaches melee with its target (Layer 1's
+*comment ordinary target selection takes back over from there -- see find_intercepting_ally/RANGED_AI_PLAN.md
+*comment §11.3). combat_enemy<N>_chase_range is a SEPARATE field from this slot's own _range (which stays
+*comment untouched, still tracking distance to the player, the whole time) -- deliberately not reused, so
+*comment breaking off a chase needs no reset step at all: _range was simply never touched, and normal behavior
+*comment resumes exactly where it left off. _chase_roll_done is a one-shot flag (per fight, not per round) so a
+*comment declined chase is never re-offered later just because the same ranged ally is still visible.
+*comment _chase_hp_snapshot is this enemy's own HP at the moment the chase committed, compared against its
+*comment current HP every turn after -- any drop means "something hurt me," and self-preservation ends the
+*comment chase (deliberately not source-tracked; see RANGED_AI_PLAN.md §11.3 for why a blanket check beats
+*comment attributing the hit to a specific attacker).
+*create combat_enemy1_chase_target 0
+*create combat_enemy1_chase_range 0
+*create combat_enemy1_chase_roll_done false
+*create combat_enemy1_chase_hp_snapshot 0
+*create combat_enemy1_chase_chance 0
+*create combat_enemy1_can_retreat false
+*create combat_enemy1_flee_hp_pct 0
 *create combat_enemy1_bane_expires_round 0
 *create combat_enemy1_disadvantage false
 *create combat_enemy1_advantage false
@@ -1529,6 +1615,18 @@
 *create combat_enemy2_metal_armor false
 *create combat_enemy2_dmg_type "bludgeoning"
 *create combat_enemy2_weapon_type "melee"
+*create combat_enemy2_sidearm_weapon_type ""
+*create combat_enemy2_sidearm_atk_bonus 0
+*create combat_enemy2_sidearm_dmg_dice_sides 4
+*create combat_enemy2_sidearm_dmg_bonus 0
+*create combat_enemy2_sidearm_dmg_type "piercing"
+*create combat_enemy2_chase_target 0
+*create combat_enemy2_chase_range 0
+*create combat_enemy2_chase_roll_done false
+*create combat_enemy2_chase_hp_snapshot 0
+*create combat_enemy2_chase_chance 0
+*create combat_enemy2_can_retreat false
+*create combat_enemy2_flee_hp_pct 0
 *create combat_enemy2_bane_expires_round 0
 *create combat_enemy2_disadvantage false
 *create combat_enemy2_advantage false
@@ -1565,6 +1663,18 @@
 *comment (Engaged/Close/Mid-Range/Long Range) -- a durable var instead of a caller-declared *temp, since that
 *comment label sits above its callers in combat.txt's own file order.
 *create combat_range_display_name ""
+*comment Outputs of spell_range_of (combat.txt, generated block from tools/spell_catalog.json): whether the caster
+*comment can reach the current target at this range, and whether the close-combat ranged penalty applies.
+*comment Durable rather than *temp because the label's callers are option bodies that read these AFTER it
+*comment returns, across *goto boundaries. Both are copied from the label's *temps because ChoiceScript's *set
+*comment takes a literal and cannot interpolate.
+*create spell_reach_result true
+*create spell_penalty_result false
+*comment Set true by an attack that took the close-combat ranged penalty, so dice_engine.txt's roll banner can
+*comment print "(Disadvantage - in reach)" instead of a bare "(Disadvantage)" and the player is told why. Mirrors
+*comment the enemy-side cea_ranged_pinned in combat_dice.txt. Cleared inside roll_d20_check on every call, so a
+*comment flag left set by an abandoned option can never bleed into a later check.
+*create combat_reach_pinned false
 *comment Optional per-slot flavor overrides
 *create combat_flavor_enemy2_hit_1 ""
 *create combat_flavor_enemy2_hit_2 ""
@@ -1587,6 +1697,18 @@
 *create combat_enemy3_metal_armor false
 *create combat_enemy3_dmg_type "bludgeoning"
 *create combat_enemy3_weapon_type "melee"
+*create combat_enemy3_sidearm_weapon_type ""
+*create combat_enemy3_sidearm_atk_bonus 0
+*create combat_enemy3_sidearm_dmg_dice_sides 4
+*create combat_enemy3_sidearm_dmg_bonus 0
+*create combat_enemy3_sidearm_dmg_type "piercing"
+*create combat_enemy3_chase_target 0
+*create combat_enemy3_chase_range 0
+*create combat_enemy3_chase_roll_done false
+*create combat_enemy3_chase_hp_snapshot 0
+*create combat_enemy3_chase_chance 0
+*create combat_enemy3_can_retreat false
+*create combat_enemy3_flee_hp_pct 0
 *create combat_enemy3_bane_expires_round 0
 *create combat_enemy3_disadvantage false
 *create combat_enemy3_advantage false
@@ -1639,6 +1761,18 @@
 *create combat_enemy4_metal_armor false
 *create combat_enemy4_dmg_type "bludgeoning"
 *create combat_enemy4_weapon_type "melee"
+*create combat_enemy4_sidearm_weapon_type ""
+*create combat_enemy4_sidearm_atk_bonus 0
+*create combat_enemy4_sidearm_dmg_dice_sides 4
+*create combat_enemy4_sidearm_dmg_bonus 0
+*create combat_enemy4_sidearm_dmg_type "piercing"
+*create combat_enemy4_chase_target 0
+*create combat_enemy4_chase_range 0
+*create combat_enemy4_chase_roll_done false
+*create combat_enemy4_chase_hp_snapshot 0
+*create combat_enemy4_chase_chance 0
+*create combat_enemy4_can_retreat false
+*create combat_enemy4_flee_hp_pct 0
 *create combat_enemy4_bane_expires_round 0
 *create combat_enemy4_disadvantage false
 *create combat_enemy4_advantage false
@@ -1691,6 +1825,18 @@
 *create combat_enemy5_metal_armor false
 *create combat_enemy5_dmg_type "bludgeoning"
 *create combat_enemy5_weapon_type "melee"
+*create combat_enemy5_sidearm_weapon_type ""
+*create combat_enemy5_sidearm_atk_bonus 0
+*create combat_enemy5_sidearm_dmg_dice_sides 4
+*create combat_enemy5_sidearm_dmg_bonus 0
+*create combat_enemy5_sidearm_dmg_type "piercing"
+*create combat_enemy5_chase_target 0
+*create combat_enemy5_chase_range 0
+*create combat_enemy5_chase_roll_done false
+*create combat_enemy5_chase_hp_snapshot 0
+*create combat_enemy5_chase_chance 0
+*create combat_enemy5_can_retreat false
+*create combat_enemy5_flee_hp_pct 0
 *create combat_enemy5_bane_expires_round 0
 *create combat_enemy5_disadvantage false
 *create combat_enemy5_advantage false
@@ -1743,6 +1889,18 @@
 *create combat_enemy6_metal_armor false
 *create combat_enemy6_dmg_type "bludgeoning"
 *create combat_enemy6_weapon_type "melee"
+*create combat_enemy6_sidearm_weapon_type ""
+*create combat_enemy6_sidearm_atk_bonus 0
+*create combat_enemy6_sidearm_dmg_dice_sides 4
+*create combat_enemy6_sidearm_dmg_bonus 0
+*create combat_enemy6_sidearm_dmg_type "piercing"
+*create combat_enemy6_chase_target 0
+*create combat_enemy6_chase_range 0
+*create combat_enemy6_chase_roll_done false
+*create combat_enemy6_chase_hp_snapshot 0
+*create combat_enemy6_chase_chance 0
+*create combat_enemy6_can_retreat false
+*create combat_enemy6_flee_hp_pct 0
 *create combat_enemy6_bane_expires_round 0
 *create combat_enemy6_disadvantage false
 *create combat_enemy6_advantage false
@@ -1843,6 +2001,16 @@
 *create combat_ally0_dmg_bonus 0
 *create combat_ally0_dmg_type "bludgeoning"
 *create combat_ally0_weapon_type "melee"
+*comment Sidearm (2026-09-29, Ranged-AI Position Awareness plan §4.1, extended to allies on request -- Kess is
+*comment the "archer" ally type, and gets one for the same reason the enemy archer does): "" weapon_type means no
+*comment sidearm (every melee ally's default). Unlike the enemy pool, resolve_ally_attack (combat_dice.txt) reads
+*comment combat_ally<N>_* fields directly by slot, with no bare active-target scratch copy to also maintain --
+*comment so there's no fight_setup-style snapshot step for allies, and no equivalent trap to fall into.
+*create combat_ally0_sidearm_weapon_type ""
+*create combat_ally0_sidearm_atk_bonus 0
+*create combat_ally0_sidearm_dmg_dice_sides 4
+*create combat_ally0_sidearm_dmg_bonus 0
+*create combat_ally0_sidearm_dmg_type "piercing"
 *create combat_ally0_dexterity 10
 *comment Full six ability scores (2026-09-28) -- DEX above was initiative-only groundwork (2026-09-27); the other
 *comment five were added when the ally type library started sharing apply_ability_score_range/
@@ -1872,6 +2040,12 @@
 *create combat_ally1_dmg_bonus 0
 *create combat_ally1_dmg_type "bludgeoning"
 *create combat_ally1_weapon_type "melee"
+*comment Sidearm -- see combat_ally0_sidearm_weapon_type's own comment for the full rule.
+*create combat_ally1_sidearm_weapon_type ""
+*create combat_ally1_sidearm_atk_bonus 0
+*create combat_ally1_sidearm_dmg_dice_sides 4
+*create combat_ally1_sidearm_dmg_bonus 0
+*create combat_ally1_sidearm_dmg_type "piercing"
 *comment DEX (2026-09-27, groundwork for initiative -- see combat_roll_initiative below) plus the other five
 *comment (2026-09-28, once atk_bonus/dmg_bonus started deriving from them the same way an enemy's do). Ally
 *comment saving throws would still need their own resolve_ally_save the way resolve_enemy_save exists for
@@ -1898,6 +2072,11 @@
 *create combat_ally2_dmg_bonus 0
 *create combat_ally2_dmg_type "bludgeoning"
 *create combat_ally2_weapon_type "melee"
+*create combat_ally2_sidearm_weapon_type ""
+*create combat_ally2_sidearm_atk_bonus 0
+*create combat_ally2_sidearm_dmg_dice_sides 4
+*create combat_ally2_sidearm_dmg_bonus 0
+*create combat_ally2_sidearm_dmg_type "piercing"
 *create combat_ally2_dexterity 10
 *create combat_ally2_strength 10
 *create combat_ally2_constitution 10
@@ -1920,6 +2099,11 @@
 *create combat_ally3_dmg_bonus 0
 *create combat_ally3_dmg_type "bludgeoning"
 *create combat_ally3_weapon_type "melee"
+*create combat_ally3_sidearm_weapon_type ""
+*create combat_ally3_sidearm_atk_bonus 0
+*create combat_ally3_sidearm_dmg_dice_sides 4
+*create combat_ally3_sidearm_dmg_bonus 0
+*create combat_ally3_sidearm_dmg_type "piercing"
 *create combat_ally3_dexterity 10
 *create combat_ally3_strength 10
 *create combat_ally3_constitution 10
@@ -1942,6 +2126,11 @@
 *create combat_ally4_dmg_bonus 0
 *create combat_ally4_dmg_type "bludgeoning"
 *create combat_ally4_weapon_type "melee"
+*create combat_ally4_sidearm_weapon_type ""
+*create combat_ally4_sidearm_atk_bonus 0
+*create combat_ally4_sidearm_dmg_dice_sides 4
+*create combat_ally4_sidearm_dmg_bonus 0
+*create combat_ally4_sidearm_dmg_type "piercing"
 *create combat_ally4_dexterity 10
 *create combat_ally4_strength 10
 *create combat_ally4_constitution 10
@@ -1966,6 +2155,13 @@
 *create combat_ally2_range 0
 *create combat_ally3_range 0
 *create combat_ally4_range 0
+*comment Reaction asymmetry closed (2026-09-29, plan §4.5/Phase 5) -- mirrors combat_enemy<N>_oa_used exactly,
+*comment reset in combat_begin_round's own per-slot loop.
+*create combat_ally0_oa_used false
+*create combat_ally1_oa_used false
+*create combat_ally2_oa_used false
+*create combat_ally3_oa_used false
+*create combat_ally4_oa_used false
 *comment Interception (2026-09-28): which enemy slot (1-6, 0 = none) this ally last picked as its target, set
 *comment durably in combat_next_turn's ally branch right after fight_pick_target -- unlike combat_active_target
 *comment (a shared scratch value overwritten by whoever's turn is currently running), this survives on the ally's
@@ -1985,6 +2181,43 @@
 *create combat_ally2_target 0
 *create combat_ally3_target 0
 *create combat_ally4_target 0
+*comment Commit-and-chase, ally side (2026-09-29, Ranged-AI Position Awareness plan §11.3/6a, mirroring the
+*comment enemy-side combat_enemy<N>_chase_* fields, startup.txt): combat_ally<N>_chase_target is which living
+*comment ENEMY slot (1-6, 0 = not chasing) a melee ally has committed to hunting instead of whatever
+*comment select_ally_attack_target would otherwise have picked, set at most once per fight by
+*comment roll_ally_chase_commit (combat.txt) and cleared the moment the chase target dies, this ally takes any
+*comment damage, or it actually reaches melee with its target (Layer 1's ordinary select_ally_attack_target takes
+*comment back over from there). combat_ally<N>_chase_range is a SEPARATE field from this slot's own _range
+*comment (untouched the whole time it's chasing, so breaking off needs no reset step) -- same reasoning as the
+*comment enemy side's own _chase_range, see its comment for the full rule. No bare active-target scratch copy
+*comment needed here, unlike the enemy side -- the ally system has no sync layer at all (select_ally_attack_target
+*comment and resolve_ally_attack already read combat_ally<N>_* directly via slot indirection), so these fields are
+*comment read/written the same direct way throughout.
+*create combat_ally0_chase_target 0
+*create combat_ally0_chase_range 0
+*create combat_ally0_chase_roll_done false
+*create combat_ally0_chase_hp_snapshot 0
+*create combat_ally0_chase_chance 0
+*create combat_ally1_chase_target 0
+*create combat_ally1_chase_range 0
+*create combat_ally1_chase_roll_done false
+*create combat_ally1_chase_hp_snapshot 0
+*create combat_ally1_chase_chance 0
+*create combat_ally2_chase_target 0
+*create combat_ally2_chase_range 0
+*create combat_ally2_chase_roll_done false
+*create combat_ally2_chase_hp_snapshot 0
+*create combat_ally2_chase_chance 0
+*create combat_ally3_chase_target 0
+*create combat_ally3_chase_range 0
+*create combat_ally3_chase_roll_done false
+*create combat_ally3_chase_hp_snapshot 0
+*create combat_ally3_chase_chance 0
+*create combat_ally4_chase_target 0
+*create combat_ally4_chase_range 0
+*create combat_ally4_chase_roll_done false
+*create combat_ally4_chase_hp_snapshot 0
+*create combat_ally4_chase_chance 0
 *comment Ally type library (combat.txt: apply_ally_type/apply_ally_roster), mirroring the enemy one just above --
 *comment a scene sets combat_ally_lib_1 (and optionally _2/_3/_4) to a library type id ("archer", "guard") before
 *comment calling fight_library, instead of hand-authoring every ally stat inline. combat_apply_ally_slot/_type are
@@ -2139,6 +2372,18 @@
 *create combat_enemy0_metal_armor false
 *create combat_enemy0_dmg_type "bludgeoning"
 *create combat_enemy0_weapon_type "melee"
+*create combat_enemy0_sidearm_weapon_type ""
+*create combat_enemy0_sidearm_atk_bonus 0
+*create combat_enemy0_sidearm_dmg_dice_sides 4
+*create combat_enemy0_sidearm_dmg_bonus 0
+*create combat_enemy0_sidearm_dmg_type "piercing"
+*create combat_enemy0_chase_target 0
+*create combat_enemy0_chase_range 0
+*create combat_enemy0_chase_roll_done false
+*create combat_enemy0_chase_hp_snapshot 0
+*create combat_enemy0_chase_chance 0
+*create combat_enemy0_can_retreat false
+*create combat_enemy0_flee_hp_pct 0
 *create combat_enemy0_bane_expires_round 0
 *create combat_enemy0_disadvantage false
 *create combat_enemy0_advantage false

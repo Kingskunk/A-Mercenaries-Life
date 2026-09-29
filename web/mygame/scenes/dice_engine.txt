@@ -58,6 +58,14 @@
     *set adv_label " (Advantage)"
   *if (disadvantage) and (not(advantage))
     *set adv_label " (Disadvantage)"
+  *comment When the disadvantage came from shooting into melee, name the cause rather than leaving the player to
+  *comment wonder what they did wrong -- the enemy-side roll prints "(Disadvantage - in reach)" for the same
+  *comment reason (combat_dice.txt's cea_adv_label). combat_reach_pinned is set true by the caller right before
+  *comment calling, and cleared on every roll here so it can never leak into a later, unrelated check.
+  *if (combat_reach_pinned)
+    *if (disadvantage) and (not(advantage))
+      *set adv_label " (Disadvantage — in reach)"
+  *set combat_reach_pinned false
 
   *if (guidance_active)
     *rand guidance_roll 1 4

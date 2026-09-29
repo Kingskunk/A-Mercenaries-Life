@@ -48,6 +48,13 @@
 *temp fnet_ep (("combat_enemy" & combat_active_target) & "_")
 *temp fnet_fp (("combat_flavor_enemy" & combat_active_target) & "_")
 *set fnet_type {(fnet_ep & "flavor_type")}
+*comment Quick-draw (2026-09-29, Ranged-AI plan §4.8): combat_enemy_used_sidearm is set for this one turn only,
+*comment by combat_next_turn's row-2 decision, right before it calls resolve_enemy_attack with this slot's sidearm
+*comment fields swapped in. Redirecting the TYPE ID here (never the per-slot flavor_type field itself, which stays
+*comment "archer"/"slinger" so the type reverts to its normal bow/sling lines next turn) is enough to pull the
+*comment dagger pool instead of the bow/sling one below, with no other change to this label's own logic.
+*if (combat_enemy_used_sidearm) and (not(fnet_type = ""))
+  *set fnet_type "${fnet_type}_dagger"
 *if (fnet_type = "")
   *rand fnet_v 1 5
 *else
@@ -1021,8 +1028,12 @@ ${fnaa_line}
   *gosub flavor_type_hookman
 *if (fft_type = "archer")
   *gosub flavor_type_archer
+*if (fft_type = "archer_dagger")
+  *gosub flavor_type_archer_dagger
 *if (fft_type = "slinger")
   *gosub flavor_type_slinger
+*if (fft_type = "slinger_dagger")
+  *gosub flavor_type_slinger_dagger
 *if (fft_type = "guard")
   *gosub flavor_type_guard
 *if (fft_type = "lacedon")
@@ -1346,6 +1357,69 @@ ${fnaa_line}
 *if (fft_m2 = 3)
   *set fft_m2hit "$!{combat_enemy_epithet} looses at your feet, and the arrow rips through your ankle, dragging your weight sideways."
   *set fft_m2miss "$!{combat_enemy_epithet} looses at your leg, and you feel it coming and shift your weight, and the arrow scores the air at your calf."
+*return
+
+*comment Quick-draw dagger (2026-09-29, Ranged-AI Position Awareness plan §4.8): a cornered archer's one-off
+*comment melee fallback -- see combat_next_turn's row-2 decision (combat.txt) and this file's fight_narrate_enemy_
+*comment turn for how a turn gets routed here instead of flavor_type_archer above. A genuinely different physical
+*comment action from the bow pool (a thrust, a slash, a grapple-and-stab), not the same lines with a noun swapped
+*comment in -- reusing bow text here would read wrong, per this file's own WRITING RULE. No move2 pool: the
+*comment quick-draw never rolls the bow's own special move (combat_next_turn zeroes move2_chance for this turn).
+*label flavor_type_archer_dagger
+*if (fft_v = 1)
+  *set fft_hit "$!{combat_enemy_epithet} drops the bow and drives a knife up under your guard, the point catching you low in the side before you can turn away."
+  *set fft_miss "$!{combat_enemy_epithet} lunges in with a hastily drawn knife, but the reach is wrong for it, and the blade skims past without finding you."
+*if (fft_v = 2)
+  *set fft_hit "Abandoning the bow, ${combat_enemy_epithet} closes the last step and rakes the knife across your forearm as you raise it to block."
+  *set fft_miss "$!{combat_enemy_epithet} stabs in close and fast, but you twist your hips clear, and the blade only catches your sleeve."
+*if (fft_v = 3)
+  *set fft_hit "$!{combat_enemy_epithet} grabs a fistful of your collar and drives the knife in low, a short, ugly stab that doubles you over."
+  *set fft_miss "$!{combat_enemy_epithet} grabs for your collar to hold you still for the knife, but you wrench free before the point ever lands."
+*if (fft_v = 4)
+  *set fft_hit "The bow forgotten, ${combat_enemy_epithet} slashes in close, and the short blade opens a line across your ribs."
+  *set fft_miss "$!{combat_enemy_epithet} slashes wildly with the drawn knife, and you catch the wrist and turn the blade wide."
+*if (fft_v = 5)
+  *set fft_hit "$!{combat_enemy_epithet} drives the knife in underhand, aiming for the gap in your guard, and finds it."
+  *set fft_miss "$!{combat_enemy_epithet} drives the knife in underhand, but you read the angle and knock the arm aside before it lands."
+*if (fft_v = 6)
+  *set fft_hit "Cornered, ${combat_enemy_epithet} goes for a fast overhand stab, and the point punches through your sleeve into the meat beneath."
+  *set fft_miss "Cornered, ${combat_enemy_epithet} goes for a fast overhand stab, but you get a forearm up in time, and the blade skids off bone instead of flesh."
+*if (fft_v = 7)
+  *set fft_hit "$!{combat_enemy_epithet} grapples for a handhold and stabs in close, the knife finding your hip before you can shove free."
+  *set fft_miss "$!{combat_enemy_epithet} grapples for a handhold, but you break the grip before the knife ever clears its arc."
+*if (fft_v = 8)
+  *set fft_hit "With no room left to loose an arrow, ${combat_enemy_epithet} slashes in a short, desperate arc, and the edge bites into your shoulder."
+  *set fft_miss "With no room left to loose an arrow, ${combat_enemy_epithet} slashes in a short, desperate arc, and you step back just far enough for it to cut nothing but air."
+*return
+
+*comment Quick-draw dagger (2026-09-29): the slinger's own version of flavor_type_archer_dagger above -- same
+*comment mechanism, a distinct pool per this file's WRITING RULE. "the sling" replaces "the bow" as the abandoned
+*comment weapon; the physical actions are written separately, not shared with the archer's pool.
+*label flavor_type_slinger_dagger
+*if (fft_v = 1)
+  *set fft_hit "$!{combat_enemy_epithet} lets the sling drop and drives a knife into your side before you can close the gap yourself."
+  *set fft_miss "$!{combat_enemy_epithet} lets the sling drop and stabs in fast, but the blade catches only air as you twist clear."
+*if (fft_v = 2)
+  *set fft_hit "Abandoning the sling, ${combat_enemy_epithet} slashes in low, and the edge opens a shallow cut across your thigh."
+  *set fft_miss "$!{combat_enemy_epithet} slashes in low with the drawn knife, and you hop the blade clean, boots skidding on the ground."
+*if (fft_v = 3)
+  *set fft_hit "$!{combat_enemy_epithet} shoves in close and drives the knife up under your ribs in one short, mean thrust."
+  *set fft_miss "$!{combat_enemy_epithet} shoves in close for the knife, but you brace and knock the thrust wide before it lands."
+*if (fft_v = 4)
+  *set fft_hit "$!{combat_enemy_epithet} grabs your sleeve to hold you in reach, and the knife finds your forearm before you can pull free."
+  *set fft_miss "$!{combat_enemy_epithet} grabs for your sleeve to hold you in reach, but the cloth tears free in ${combat_enemy_epithet}'s hand and the knife never follows."
+*if (fft_v = 5)
+  *set fft_hit "With the sling useless this close, ${combat_enemy_epithet} stabs in overhand, and the point catches you high on the chest."
+  *set fft_miss "With the sling useless this close, ${combat_enemy_epithet} stabs in overhand, but you turn your shoulder into the strike and the blade only grazes leather."
+*if (fft_v = 6)
+  *set fft_hit "$!{combat_enemy_epithet} slips inside your reach and rakes the knife across your hip, quick and vicious."
+  *set fft_miss "$!{combat_enemy_epithet} slips inside your reach, but you shove clear before the knife ever gets there."
+*if (fft_v = 7)
+  *set fft_hit "Cornered, ${combat_enemy_epithet} lunges with the knife low, and the point finds the back of your knee."
+  *set fft_miss "Cornered, ${combat_enemy_epithet} lunges with the knife low, and you plant your weight and let the point skid off your boot instead."
+*if (fft_v = 8)
+  *set fft_hit "$!{combat_enemy_epithet} grapples for balance and drags the knife across your arm as you break free."
+  *set fft_miss "$!{combat_enemy_epithet} grapples for balance, but loses the hold before the knife ever clears, and you shove clear untouched."
 *return
 
 *label flavor_type_lacedon

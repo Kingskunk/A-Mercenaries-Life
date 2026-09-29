@@ -225,10 +225,15 @@ ${combat_player_dmg_roll_banner}
   *set locked_combat_enemy_atk_page_id page_id
 *temp cea_already_locked {cea_lockname}
 *if (not(cea_already_locked))
-  *comment Ranged-at-closerange penalty (2026-09-28): a ranged attack made against a creature within 5 feet
-  *comment of the attacker has disadvantage. **This is a 2024-rules house rule, NOT 2014** -- this game models
-  *comment 2014 (see GAMEPLAY_MECHANICS_RULES.md), and combat.txt:798's "no accuracy penalty for range today"
-  *comment predates it. Adopted deliberately, because it is the only change that does all three of:
+  *comment Ranged-at-closerange penalty: a ranged attack made against a creature within 5 feet of the attacker
+  *comment has disadvantage -- "Ranged Attacks in Close Combat". It applies to a weapon, a spell, or any other
+  *comment means, and it is UNCONDITIONAL: being surrounded by one foe or eight is the same single instance of
+  *comment disadvantage, never more. MELEE attacks are never penalised for being in melee; that is the other
+  *comment half of the rule and this game does not implement it (unarmed strikes are melee too, so they are
+  *comment unaffected). The player's own ranged attacks, ranged spells and cantrips take the same penalty
+  *comment (combat.txt's resolve_weapon_attack_choice and the six cantrip options, via spell_range_of).
+  *comment
+  *comment Adopted deliberately, because it is the only change that does all three of:
   *comment   (a) gives closing on a ranged enemy a payoff -- a melee weapon needs range 0 to swing at all
   *comment       (combat.txt's attack gate), so a Long Range archer is otherwise 3 turns of free damage;
   *comment   (b) lets a melee ally SUPPRESS an archer by body-blocking it, instead of being a pure HP sponge
@@ -239,9 +244,9 @@ ${combat_player_dmg_roll_banner}
   *comment since interception only ever redirects it to a MELEE ally), so "within reach of the creature it is
   *comment shooting" is simply `range <= 0`. **Deliberately a *temp derived here rather than a write to
   *comment combat_enemy_disadvantage**, which is the CONDITION-based flag (Ray of Frost and friends set it
-  *comment per-slot at combat.txt:1564/1695/1800) and is consumed on this very roll eleven lines below --
-  *comment writing to it would silently eat a debuff that is still owed. OR'd in at roll time so the two
-  *comment causes compose, and the advantage branch is gated on it too, so advantage still cancels it.
+  *comment per-slot) and is consumed on this very roll eleven lines below -- writing to it would silently eat a
+  *comment debuff that is still owed. OR'd in at roll time so the two causes compose, and the advantage branch is
+  *comment gated on it too, so advantage still cancels it.
   *comment KNOWN LIMIT: this does not cover resolve_enemy_attack_on_ally. find_intercepting_ally gates on the
   *comment ALLY's weapon_type, not the enemy's, so a RANGED enemy can attack an engaged melee ally -- and since
   *comment there is no enemy-to-ally distance in this model, an archer shooting an ally gets no penalty here.
@@ -531,10 +536,21 @@ ${combat_player_dmg_roll_banner}
 *comment COMBAT: ALLY ATTACK RESOLUTION (ranged AND melee, plus interception above)
 *comment An ally's attack against an enemy: roll to hit the target's AC, then damage on a hit. Deliberately as
 *comment plain as resolve_enemy_attack was before Shield/conditions/stun existed there -- no reactions, no
-*comment advantage/disadvantage, no movement (ranged always works regardless of range, so nothing here needs
+*comment advantage, no Bane, no movement (ranged always works regardless of range, so nothing here needs
 *comment to care about combat_enemy_range). Extend the same way resolve_enemy_attack grew, if/when an ally needs
 *comment any of that -- melee allies specifically need movement wired in combat_next_turn before this label
 *comment itself needs to change.
+*comment Ranged-at-close-range disadvantage (2026-09-29, Ranged-AI Position Awareness plan §4.4): the ally-side
+*comment half of resolve_enemy_attack's own rule (combat.txt's "Ranged Attacks in Close Combat" comment has the
+*comment full citation) -- closes the known limit this label used to carry, that a ranged ally shooting from
+*comment inside an enemy's reach took no penalty at all. Reads THIS ally's own weapon_type/range (raa_ap, already
+*comment in scope below), never combat_enemy_range, which is the PLAYER's distance to a target and has nothing to
+*comment do with where this ally is standing. No advantage/Bane counterpart yet -- nothing grants either to an
+*comment ally today, so cea_ranged_pinned's fuller OR'd-together shape (combat_dice.txt's resolve_enemy_attack)
+*comment would be dead code here; add it if/when something does. Currently dormant in practice: no real fight
+*comment sets combat_ally<N>_range low for a ranged ally yet (the field defaults to, and a ranged ally never needs
+*comment to close, so it never moves off, 0) -- groundwork for whenever a scene opens one already engaged, same
+*comment "wired but not yet exercised" shape as Bane or pre-fight ambush advantage.
 *comment Targeting: reuses whatever fight_pick_target already resolved for the player (the caller's job, before
 *comment this *gosub_scene) -- the simplest "acts in the team's interest" rule there is, focusing the same enemy
 *comment the player is already fighting. Not a kill-priority search; that's a deliberate simplification for this
@@ -558,8 +574,20 @@ ${combat_player_dmg_roll_banner}
 *temp raa_atk_bannername (("combat_ally_atk_banner_" & raa_a_slot))
 *temp raa_dmg_bannername (("combat_ally_dmg_banner_" & raa_a_slot))
 *if (not(raa_already_locked))
+  *temp raa_weapon {(raa_ap & "weapon_type")}
+  *temp raa_range {(raa_ap & "range")}
+  *temp raa_ranged_pinned false
+  *if ((raa_weapon = "ranged") and (raa_range <= 0))
+    *set raa_ranged_pinned true
   *temp raa_roll 0
   *rand raa_roll 1 20
+  *temp raa_adv_label ""
+  *if (raa_ranged_pinned)
+    *temp raa_roll_2 0
+    *rand raa_roll_2 1 20
+    *if (raa_roll_2 < raa_roll)
+      *set raa_roll raa_roll_2
+    *set raa_adv_label " (Disadvantage — in reach)"
   *temp raa_atk_bonus {(raa_ap & "atk_bonus")}
   *temp raa_total (raa_roll + raa_atk_bonus)
   *temp raa_target_ac {(raa_ep & "ac")}
@@ -572,7 +600,7 @@ ${combat_player_dmg_roll_banner}
   *temp raa_verdict "MISS"
   *if (combat_ally_atk_hit)
     *set raa_verdict "HIT"
-  *set {(raa_atk_bannername)} "[b][🎲 ${raa_name} Attack Roll: ${raa_roll} ${raa_bonus_str} = ${raa_total} vs AC ${raa_target_ac} — ${raa_verdict}][/b]"
+  *set {(raa_atk_bannername)} "[b][🎲 ${raa_name} Attack Roll: ${raa_roll} ${raa_bonus_str}${raa_adv_label} = ${raa_total} vs AC ${raa_target_ac} — ${raa_verdict}][/b]"
   *set {(raa_dmg_bannername)} ""
   *set combat_ally_dmg_dealt 0
   *if (combat_ally_atk_hit)

@@ -169,6 +169,25 @@
 *set combat_enemy1_metal_armor combat_enemy_metal_armor
 *set combat_enemy1_dmg_type combat_enemy_dmg_type
 *set combat_enemy1_weapon_type combat_enemy_weapon_type
+*comment Sidearm (2026-09-29, plan §4.1): same snapshot as weapon_type above -- apply_type_archer/apply_type_
+*comment slinger only ever write the BARE combat_enemy_sidearm_* names for slot 1 (same as every other field
+*comment here), so without this line slot 1's real combat_enemy1_sidearm_weapon_type would stay "" forever and
+*comment row-2 quick-draw could never fire for a slot-1 archer or slinger -- exactly the bug a live scripted_play
+*comment run of fight_dev_quickdraw_test caught (the archer kept shooting at disadvantage on its very first turn).
+*set combat_enemy1_sidearm_weapon_type combat_enemy_sidearm_weapon_type
+*set combat_enemy1_sidearm_atk_bonus combat_enemy_sidearm_atk_bonus
+*set combat_enemy1_sidearm_dmg_dice_sides combat_enemy_sidearm_dmg_dice_sides
+*set combat_enemy1_sidearm_dmg_bonus combat_enemy_sidearm_dmg_bonus
+*set combat_enemy1_sidearm_dmg_type combat_enemy_sidearm_dmg_type
+*comment Commit-and-chase's per-type odds (2026-09-29, plan §11.3/6a retrofit): same snapshot, same reason,
+*comment same bug shape as sidearm above -- every apply_type_<name> slot-1 branch that sets a tactical type's
+*comment chase odds only ever writes the BARE combat_enemy_chase_chance, so without this line a slot-1 tactical
+*comment enemy (swordsman, guard, ...) would never actually chase, silently indistinguishable from a mindless
+*comment creature type that deliberately never sets it. Caught the same way as the sidearm gap -- a live
+*comment scripted_play.js run with rand=low still showed the swordsman closing on the player instead of Kess.
+*set combat_enemy1_chase_chance combat_enemy_chase_chance
+*set combat_enemy1_can_retreat combat_enemy_can_retreat
+*set combat_enemy1_flee_hp_pct combat_enemy_flee_hp_pct
 *comment Range: same snapshot as every other field above -- without it, a fight that sets combat_enemy_range on
 *comment slot 1 (the sole or first enemy) before calling fight_library would have that value silently overwritten
 *comment back to 0 the first time fight_sync_target_in reads combat_enemy1_range, since nothing would ever have
@@ -513,6 +532,10 @@
 *return
 
 *label fight_cleanup
+*comment Reaction asymmetry (2026-09-29, plan §4.5/Phase 5): same leftover-state reason as the enemy-side
+*comment oa_used reset below -- combat_begin_round already covers this at the start of every fight (via
+*comment fight_setup), but double-coverage matches that field's own established pattern.
+*set player_oa_used false
 *set combat_engaged false
 *set combat_hub_shown_once false
 *set hex_active false
@@ -575,10 +598,26 @@
 *set combat_enemy_move2_condition_name ""
 *set combat_enemy_move2_condition_icon ""
 *set combat_enemy_move2_used false
+*set combat_enemy_used_sidearm false
 *set combat_flavor_enemy_move2_hit ""
 *set combat_flavor_enemy_move2_miss ""
 *set combat_enemy_dmg_type "bludgeoning"
 *set combat_enemy_weapon_type "melee"
+*comment Sidearm (2026-09-29, plan §4.1): bare/active-target reset, same place and reason as weapon_type above.
+*set combat_enemy_sidearm_weapon_type ""
+*set combat_enemy_sidearm_atk_bonus 0
+*set combat_enemy_sidearm_dmg_dice_sides 4
+*set combat_enemy_sidearm_dmg_bonus 0
+*set combat_enemy_sidearm_dmg_type "piercing"
+*comment Commit-and-chase (2026-09-29, plan §11.3/6a): bare/active-target reset, same place and reason as
+*comment weapon_type above.
+*set combat_enemy_chase_target 0
+*set combat_enemy_chase_range 0
+*set combat_enemy_chase_roll_done false
+*set combat_enemy_chase_hp_snapshot 0
+*set combat_enemy_chase_chance 0
+*set combat_enemy_can_retreat false
+*set combat_enemy_flee_hp_pct 0
 *comment Bare slot-1 range, same reset as the numbered slots' range below -- without it, a fight that leaves
 *comment slot 1 short of Engaged (the player fled, or won before it closed) would hand that leftover distance to
 *comment the next fight's own slot 1, via fight_setup's snapshot, before that fight ever gets a chance to set its
@@ -628,6 +667,22 @@
   *set {(("combat_flavor_enemy" & fc_i) & "_move2_miss")} ""
   *set {(fc_p & "dmg_type")} "bludgeoning"
   *set {(fc_p & "weapon_type")} "melee"
+  *comment Sidearm (2026-09-29, plan §4.1): per-slot reset, same leftover-state reason as weapon_type above -- a
+  *comment slot 2 dressed as a plain guard should never inherit a dagger from whichever archer used it last.
+  *set {(fc_p & "sidearm_weapon_type")} ""
+  *set {(fc_p & "sidearm_atk_bonus")} 0
+  *set {(fc_p & "sidearm_dmg_dice_sides")} 4
+  *set {(fc_p & "sidearm_dmg_bonus")} 0
+  *set {(fc_p & "sidearm_dmg_type")} "piercing"
+  *comment Commit-and-chase (2026-09-29, plan §11.3/6a): per-slot reset, same leftover-state reason as every
+  *comment other field in this loop -- a fresh fight's slot 2 must never inherit a chase already in progress.
+  *set {(fc_p & "chase_target")} 0
+  *set {(fc_p & "chase_range")} 0
+  *set {(fc_p & "chase_roll_done")} false
+  *set {(fc_p & "chase_hp_snapshot")} 0
+  *set {(fc_p & "chase_chance")} 0
+  *set {(fc_p & "can_retreat")} false
+  *set {(fc_p & "flee_hp_pct")} 0
   *set {(fc_p & "resist_type_1")} ""
   *set {(fc_p & "resist_type_2")} ""
   *set {(fc_p & "vulnerable_type_1")} ""
@@ -696,6 +751,16 @@
   *set {(("combat_ally" & fc_a_i) & "_range")} 0
   *set {(("combat_ally" & fc_a_i) & "_target")} 0
   *set {("combat_ally_lib_" & fc_a_i)} ""
+  *comment Reaction asymmetry (2026-09-29, plan §4.5/Phase 5) -- same leftover-state reason as the enemy-side
+  *comment oa_used reset above.
+  *set {(("combat_ally" & fc_a_i) & "_oa_used")} false
+  *comment Commit-and-chase, ally side (2026-09-29, plan §11.3/6a) -- same leftover-state reason as _range/_target
+  *comment just above.
+  *set {(("combat_ally" & fc_a_i) & "_chase_target")} 0
+  *set {(("combat_ally" & fc_a_i) & "_chase_range")} 0
+  *set {(("combat_ally" & fc_a_i) & "_chase_roll_done")} false
+  *set {(("combat_ally" & fc_a_i) & "_chase_hp_snapshot")} 0
+  *set {(("combat_ally" & fc_a_i) & "_chase_chance")} 0
   *set fc_a_i + 1
   *goto fight_cleanup_ally_loop
 *set combat_player_keyed false
@@ -789,6 +854,22 @@
 *set combat_enemy_metal_armor {(fti_p & "metal_armor")}
 *set combat_enemy_dmg_type {(fti_p & "dmg_type")}
 *set combat_enemy_weapon_type {(fti_p & "weapon_type")}
+*comment Sidearm (2026-09-29, Ranged-AI Position Awareness plan §4.1): synced the same way as every field above --
+*comment "" weapon_type (every melee type, and every ranged type not yet given one) means combat_next_turn's row-2
+*comment quick-draw decision never fires for this slot.
+*set combat_enemy_sidearm_weapon_type {(fti_p & "sidearm_weapon_type")}
+*set combat_enemy_sidearm_atk_bonus {(fti_p & "sidearm_atk_bonus")}
+*set combat_enemy_sidearm_dmg_dice_sides {(fti_p & "sidearm_dmg_dice_sides")}
+*set combat_enemy_sidearm_dmg_bonus {(fti_p & "sidearm_dmg_bonus")}
+*set combat_enemy_sidearm_dmg_type {(fti_p & "sidearm_dmg_type")}
+*comment Commit-and-chase (2026-09-29, plan §11.3/6a): synced the same way as every field above.
+*set combat_enemy_chase_target {(fti_p & "chase_target")}
+*set combat_enemy_chase_range {(fti_p & "chase_range")}
+*set combat_enemy_chase_roll_done {(fti_p & "chase_roll_done")}
+*set combat_enemy_chase_hp_snapshot {(fti_p & "chase_hp_snapshot")}
+*set combat_enemy_chase_chance {(fti_p & "chase_chance")}
+*set combat_enemy_can_retreat {(fti_p & "can_retreat")}
+*set combat_enemy_flee_hp_pct {(fti_p & "flee_hp_pct")}
 *set combat_enemy_inflicts_condition {(fti_p & "inflicts_condition")}
 *set combat_enemy_condition_name {(fti_p & "condition_name")}
 *set combat_enemy_condition_icon {(fti_p & "condition_icon")}
@@ -841,10 +922,13 @@
 *comment tier per Push Forward (player) or per turn (an enemy, combat_next_turn) -- never straight to Engaged --
 *comment so a fight that opens someone at Mid-Range or Long Range costs multiple turns to reach, not one. Ranged
 *comment attacks otherwise work at every tier alike, which is why nothing here ever needs a ranged combatant to
-*comment move. **The one exception, added 2026-09-28: a ranged enemy at range 0 shoots at disadvantage**
-*comment (resolve_enemy_attack, combat_dice.txt -- a 2024-rules house rule, not 2014). So a ranged combatant now
-*comment has a reason to want distance it previously had no use for, and closing on one is no longer pure
-*comment punishment for the player. See that label's header for the full reasoning.
+*comment move. **The one exception: a ranged attack against a target at range 0 is made at disadvantage** ("Ranged
+*comment Attacks in Close Combat"). It applies to a weapon, a spell, or any other means, to the ENEMY
+*comment (resolve_enemy_attack, combat_dice.txt) and to the PLAYER (resolve_weapon_attack_choice below and the
+*comment cantrip options, via spell_range_of) alike, and it is unconditional -- one foe or eight is the same
+*comment single disadvantage. Melee attacks are never penalised for being in melee, so closing on an archer is no
+*comment longer pure punishment for the player, and a ranged combatant finally has a reason to want distance.
+*comment See resolve_enemy_attack's header for the full reasoning.
 *label combat_range_name
 *comment *gosub combat_range_name <range number>, then read combat_range_display_name (startup.txt *create) --
 *comment a durable output var instead of a caller-pre-declared *temp, since this label sits above every caller
@@ -858,6 +942,77 @@
   *set combat_range_display_name "Mid-Range"
 *if (crn_n >= 3)
   *set combat_range_display_name "Long Range"
+*return
+
+*label spell_range_of
+*comment ───────────────────────────────────────────────────────────────
+*comment SPELL REACH TAG LOOKUP
+*comment Resolves a spell's reach from check_skill, the variable every attack option already sets to the
+*comment spell's display name before it rolls. Generated from tools/spell_catalog.json -- edit the catalog,
+*comment never this block (node tools/gen_spells.js regenerates it).
+*comment
+*comment WHY resolve from check_skill: the tag answers two DIFFERENT questions, and combat.txt asks them
+*comment separately. Collapsing them is a real bug -- a touch spell at Mid-Range must be UNAVAILABLE, not
+*comment offered at a disadvantage.
+*comment   can the caster reach the target at all?  -> spell_reach_result gates whether the option is offered
+*comment   is the shot spoiled by a hostile in reach? -> spell_penalty_result sets disadvantage
+*comment
+*comment TAGS (three, so the first spell needing close or touch costs nothing to add later):
+*comment   ranged  any tier; DISADVANTAGE at Engaged (the close-combat ranged penalty, same for a weapon, a
+*comment           thrown weapon, or a spell). This is the ONLY tag that can take a penalty.
+*comment   close   Close (1) or Mid-Range (2) only -- never Engaged. A melee enemy closing on the caster takes
+*comment           the spell away entirely, which is the whole point. No penalty of its own: the target is
+*comment           never adjacent. Reserved; no spell uses it yet.
+*comment   touch   Engaged (0) only. No penalty -- a touch spell IS a melee attack, and melee attacks are never
+*comment           penalised for being in melee.
+*comment
+*comment MELEE ATTACKS ARE NEVER PENALISED. The rule is one-directional: a ranged attack made against a
+*comment creature in reach is spoiled; a melee attack made by someone in reach is not. Unarmed strikes are
+*comment melee (equipment.txt's "unarmed" weapon_type), so they are never penalised either.
+*comment
+*comment Reads combat_enemy_range -- the ACTIVE enemy's distance to the player, kept current by
+*comment fight_sync_target_in. KNOWN LIMIT: that is one distance, relative to the PLAYER. A spell that hit
+*comment every enemy near a point (a cone, a burst) would need a real per-enemy distance; no spell does that
+*comment yet, so nothing needs it, and a later cone spell must not be quietly given this same shortcut.
+*comment Defaults are the common case (ranged, in range, no penalty) so an unlisted name -- a leveled spell
+*comment not yet catalogued -- behaves like a ranged spell rather than silently disabling the option.
+*comment GEN:BEGIN spell_range_lookup -- generated by tools/gen_spells.js from tools/spell_catalog.json; edit the catalog, not this block
+*temp spell_range_tag "ranged"
+*temp spell_in_range true
+*temp spell_disadv false
+*comment Read the TARGET's live distance, not the shared combat_enemy_range scratch. fight_round_hub calls
+*comment fight_pick_target (setting combat_active_target) but not fight_sync_target_in, so that scratch is
+*comment STALE at menu-build time -- a fight opened at Long Range still read 0 on its first page. The option
+*comment bodies below call fight_pick_target first, so combat_active_target is the slot this cast will hit;
+*comment combat_target_range is that slot's own range, computed fresh in the hub (see the block above the
+*comment *choice). The scratch is only the fallback for a call made before the hub has run.
+*temp spell_range_at combat_enemy_range
+*if (combat_target_range >= 0)
+  *set spell_range_at combat_target_range
+*if (check_skill = "Fire Bolt")
+  *set spell_range_tag "ranged"
+*if (check_skill = "Ray of Frost")
+  *set spell_range_tag "ranged"
+*if (check_skill = "Eldritch Blast")
+  *set spell_range_tag "ranged"
+*if (check_skill = "Chill Touch")
+  *set spell_range_tag "ranged"
+*if (check_skill = "Vicious Mockery")
+  *set spell_range_tag "ranged"
+*if (check_skill = "Shocking Grasp")
+  *set spell_range_tag "touch"
+*if (spell_range_tag = "close")
+  *if (spell_range_at <= 0)
+    *set spell_in_range false
+*if (spell_range_tag = "touch")
+  *if (spell_range_at > 0)
+    *set spell_in_range false
+*if (spell_range_tag = "ranged")
+  *if (spell_range_at <= 0)
+    *set spell_disadv true
+*set spell_reach_result spell_in_range
+*set spell_penalty_result spell_disadv
+*comment GEN:END spell_range_lookup
 *return
 
 *label combat_mm_recount_darts
@@ -1067,6 +1222,128 @@
   *gosub_scene combat_prose fight_narrate_enemy_turn "enemy" roa_candidate
 *return
 
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment COMBAT: REVERSE OPPORTUNITY ATTACKS (2026-09-29, Ranged-AI Position Awareness plan §4.5, Phase 5)
+*comment The reaction asymmetry closed: an enemy that Retreats can now be punished, the same way the player
+*comment already can be by find_opportunity_attacker/resolve_opportunity_attack above. Two-part split (finder,
+*comment then one resolver per reactor type) mirrors that pair's own shape exactly.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label find_opportunity_attacker_against
+*comment Sets combat_oa_against_kind ("player"/"ally"/"") and combat_oa_against_slot (0 for player, else ally
+*comment slot) -- who punishes the enemy CURRENTLY dispatching as it opens the tier to retreat. Must be called
+*comment BEFORE that enemy's own range changes, while combat_enemy_range/_ac are still this specific enemy's
+*comment pre-move values (already synced by fight_sync_target_in earlier this turn, same precondition
+*comment find_intercepting_ally and the quick-draw/chase logic already rely on).
+*comment
+*comment PLAYER FIRST, mirroring find_opportunity_attacker's own candidate rules in reverse: a melee or finesse
+*comment weapon (RAW -- an opportunity attack is a melee attack; a bow-armed player simply never qualifies),
+*comment combat_enemy_range <= 0 (this enemy is actually in the player's reach), and not(player_oa_used). Falls
+*comment back to the lowest-HP eligible melee ally (same tiebreak as everywhere else in this file) only if the
+*comment player itself isn't eligible -- "whoever's pool is left," per the plan's own framing, not a competition
+*comment between them.
+*set combat_oa_against_kind ""
+*set combat_oa_against_slot 0
+*if ((((weapon_type = "melee") or (weapon_type = "finesse")) and (combat_enemy_range <= 0)) and (not(player_oa_used)))
+  *set combat_oa_against_kind "player"
+*else
+  *temp foaa_best_hp 0
+  *temp foaa_i 1
+  *label find_opportunity_attacker_against_loop
+  *if (foaa_i <= combat_ally_slot_cap)
+    *temp foaa_hp {(("combat_ally" & foaa_i) & "_hp")}
+    *temp foaa_weapon {(("combat_ally" & foaa_i) & "_weapon_type")}
+    *temp foaa_range {(("combat_ally" & foaa_i) & "_range")}
+    *temp foaa_oa {(("combat_ally" & foaa_i) & "_oa_used")}
+    *if ((((foaa_hp > 0) and (foaa_weapon = "melee")) and (foaa_range <= 0)) and (not(foaa_oa)))
+      *if ((combat_oa_against_slot = 0) or (foaa_hp < foaa_best_hp))
+        *set combat_oa_against_slot foaa_i
+        *set foaa_best_hp foaa_hp
+    *set foaa_i + 1
+    *goto find_opportunity_attacker_against_loop
+  *if (combat_oa_against_slot > 0)
+    *set combat_oa_against_kind "ally"
+*return
+
+*label resolve_reverse_oa_player
+*comment The player's own opportunity attack against the enemy currently retreating (combat_active_target is
+*comment already that enemy -- fight_sync_target_in already ran for this slot this turn, so combat_enemy_ac etc.
+*comment are already correct). No close-range disadvantage check: an opportunity attack is inherently melee, the
+*comment penalty never applies regardless of the player's own primary weapon_type.
+*comment
+*comment Cannot reuse resolve_weapon_attack_choice for this -- it always *goto's away at the end (spending the
+*comment player's own attack budget via fight_check_enemy_hp/fight_attack_spent), correct only for the player's
+*comment own turn, never a mid-enemy-turn reaction. Attack roll and the finesse/two-handed/Dueling/Rage damage
+*comment math are replicated here instead (mirroring that label's own melee branch exactly); the actual roll,
+*comment resistance/vulnerability and HP application reuse resolve_player_weapon_hit whole, so Sneak Attack and
+*comment Hex still apply for free -- both already live inside that label, not duplicated here. Favored Foe
+*comment marking is deliberately NOT offered on a reaction: RAW ties it to the player's own declared attack, and
+*comment combat_attempt_favored_foe_mark is only ever set by the player's own menu choice, never true here.
+*comment
+*comment Deliberately simpler than the player's own turn for flavor: a short, dedicated line rather than
+*comment reusing pick_weapon_flavor's full per-weapon-type variant pools, which are only reachable through
+*comment resolve_weapon_attack_choice's own setup. Caller checks for a kill (combat_enemy_hp <= 0) afterward,
+*comment same convention as every other attack resolution call site in this file.
+*if (weapon_type = "finesse")
+  *if (str_mod > dex_mod)
+    *set check_stat "str"
+  *else
+    *set check_stat "dex"
+*else
+  *set check_stat "str"
+*set check_skill "Opportunity Attack"
+*set check_dc combat_enemy_ac
+*set check_add_prof_bonus true
+*gosub_scene dice_engine roll_d20_check
+*if (check_success)
+  *set combat_player_dmg_type weapon_damage_type
+  *if (weapon_type = "finesse")
+    *set combat_player_dmg_dice_sides 4
+    *if (str_mod > dex_mod)
+      *set combat_player_dmg_bonus str_mod
+    *else
+      *set combat_player_dmg_bonus dex_mod
+  *elseif (weapon_hands = "two_handed")
+    *set combat_player_dmg_dice_sides 12
+    *set combat_player_dmg_bonus str_mod
+  *else
+    *set combat_player_dmg_dice_sides 8
+    *set combat_player_dmg_bonus str_mod
+  *if (fighter_fighting_style = "dueling")
+    *if (not(weapon_hands = "two_handed"))
+      *set combat_player_dmg_bonus + 2
+  *if ((character_class = "barbarian") and (is_raging))
+    *if (weapon_type = "finesse")
+      *if (str_mod > dex_mod)
+        *set combat_player_dmg_bonus + barbarian_rage_damage_bonus
+    *else
+      *set combat_player_dmg_bonus + barbarian_rage_damage_bonus
+  *gosub_scene combat_dice resolve_player_weapon_hit
+  *if (combat_enemy_hp <= 0)
+    $!{combat_enemy_epithet} takes the opening and drops, cut down mid-retreat.
+    *line_break
+    [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
+  *else
+    You catch ${combat_enemy_epithet} pulling back, and the opening costs it.
+    *line_break
+    [b][🩸 Opportunity Attack Hits: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
+*else
+  $!{combat_enemy_epithet} breaks away before you can make the opening count.
+  *line_break
+  [b][💨 Opportunity Attack Misses][/b]
+*line_break
+*return
+
+*label resolve_reverse_oa_ally
+*params droa_ally_slot
+*comment An ally's own opportunity attack against the enemy currently retreating (2026-09-29). Reuses
+*comment resolve_ally_attack and fight_narrate_ally_attack whole -- same reasoning as the player version reusing
+*comment resolve_player_weapon_hit, and the enemy-side's own resolve_opportunity_attack reusing
+*comment resolve_enemy_attack: a reaction should hit exactly like that combatant's normal attack does, no forked
+*comment math or parallel narration path.
+*gosub_scene combat_dice resolve_ally_attack droa_ally_slot combat_active_target
+*gosub_scene combat_prose fight_narrate_ally_attack "ally" droa_ally_slot "enemy" combat_active_target combat_ally_atk_hit
+*return
+
 *label fight_check_all_dead
 *comment A bounded loop over combat_enemy_count, via indirection, instead of one hand-written branch per slot.
 *set combat_all_enemies_dead true
@@ -1081,49 +1358,374 @@
 *return
 
 *label find_intercepting_ally
-*comment Interception (2026-09-28; broadened 2026-09-28 again): sets combat_intercepting_ally to the living melee
-*comment ally this enemy will actually swing at, or 0 for none. It is called by combat_next_turn's enemy branch
-*comment right after fight_sync_target_in, so combat_active_target is the slot currently dispatching.
+*comment Interception (2026-09-28; broadened 2026-09-28 again; widened into full target selection 2026-09-29,
+*comment Ranged-AI Position Awareness plan §11.1 "Mechanism A"): sets combat_intercepting_ally to the living ally
+*comment this enemy will actually attack instead of the player, or 0 for none (attack the player, unchanged
+*comment default). Called by combat_next_turn's enemy branch right after fight_sync_target_in, so
+*comment combat_active_target is the slot currently dispatching and combat_enemy_weapon_type is already synced to
+*comment it.
 *comment
-*comment WHAT CHANGED. The original rule required combat_ally<N>_target = combat_active_target as well -- i.e. the
-*comment ally had to have picked THIS enemy AND already closed to range 0. That reads as "physically correct" but
-*comment is far too strict in practice, because allies pick targets by kill-priority (fight_pick_target, lowest HP)
-*comment rather than by who they happen to be standing next to. So the whole party converges on one wounded enemy,
-*comment and every OTHER enemy in the fight walked straight past the tank to hit the player. The mechanic existed but
-*comment almost never fired, which is why enemy targeting read as 100% player-focused.
+*comment WHAT CHANGED (2026-09-28). The original rule required combat_ally<N>_target = combat_active_target as
+*comment well -- i.e. the ally had to have picked THIS enemy AND already closed to range 0. That reads as
+*comment "physically correct" but is far too strict in practice, because allies pick targets by kill-priority
+*comment (fight_pick_target, lowest HP) rather than by who they happen to be standing next to. So the whole party
+*comment converges on one wounded enemy, and every OTHER enemy in the fight walked straight past the tank to hit
+*comment the player. The mechanic existed but almost never fired, which is why enemy targeting read as 100%
+*comment player-focused.
 *comment
-*comment Melee is therefore now a SHARED adjacency bucket: any living melee ally already at range 0 is a legal target
-*comment for whichever enemy is dispatching, whoever the ally's own _target says. That is the loosest thing the
-*comment 0-3 tier model can honestly express -- there is no player-to-ally or ally-to-ally distance to test against,
-*comment so "in melee" is the only adjacency fact that exists. It is looser than reality and deliberately so; the
-*comment alternative is a real per-pair distance, which is a much larger change (see startup.txt's
-*comment combat_ally<N>_target create for why _target cannot supply one).
+*comment MECHANISM A (2026-09-28, widened 2026-09-29): any living ally already at range 0 is a legal target for
+*comment whichever enemy is dispatching -- melee OR ranged ally alike now (was melee-only; a ranged ally can only
+*comment ever be at range 0 if a scene deliberately opens her there, since nothing moves a ranged ally's own range
+*comment during a fight -- see startup.txt's combat_ally<N>_range comment). Shared adjacency bucket, not real
+*comment per-pair distance -- the loosest thing the 0-3 tier model can honestly express; combat_ally<N>_target
+*comment cannot supply a real one (see its own *create comment).
 *comment
-*comment Spreading the aggro (2026-09-28) is the other half, and it is NOT optional. With the tiebreak gone, every
-*comment enemy would otherwise match the same lowest-numbered engaged ally and three of them would pile onto slot 1
-*comment -- turning a tank into an unkillable meat wall that the player never has to think about. Picking the
-*comment LOWEST-HP engaged ally instead spreads the damage the same way the player side already does it
-*comment (fight_pick_target is kill-priority for exactly this reason): the focus walks the allies down in sequence
-*comment rather than dogpiling one. Ties fall to the lowest slot, because the comparison is a strict <.
+*comment MECHANISM B (2026-09-29, new): if Mechanism A found no one already in reach, and the ACTING enemy is
+*comment itself ranged, it would otherwise unconditionally default to the player -- prefer sniping a living
+*comment ranged-classified ally instead, wherever she is (ranged attacks don't care about distance, so no range
+*comment check here, unlike Mechanism A). An ally standing in melee reach is a more obvious, more urgent target
+*comment than a hypothetical snipe, which is why B only runs when A found nothing, never as a tiebreak against it.
+*comment Nothing here lets a ranged enemy target a MELEE ally outside Mechanism A's range-0 bucket -- that would
+*comment need Layer 2's commit-and-chase (dynamic redirect, see RANGED_AI_PLAN.md §11.3), not this phase.
 *comment
-*comment combat_ally<N>_target is deliberately NOT read here any more. It keeps its other job -- recording which
-*comment enemy an ally is locked onto, for the sidebar's "fighting <enemy>" sub-line (web/mygame/index.html) and the
-*comment prose -- and is set in combat_next_turn's ally branch. A ranged ally still never intercepts: it isn't
-*comment standing in the way, it's shooting from wherever it already is.
+*comment Spreading the aggro (2026-09-28) is the other half of Mechanism A, and it is NOT optional. With the
+*comment tiebreak gone, every enemy would otherwise match the same lowest-numbered engaged ally and three of them
+*comment would pile onto slot 1 -- turning a tank into an unkillable meat wall the player never has to think
+*comment about. Picking the LOWEST-HP eligible ally instead spreads the damage the same way the player side
+*comment already does it (fight_pick_target is kill-priority for exactly this reason): the focus walks the allies
+*comment down in sequence rather than dogpiling one. Ties fall to the lowest slot, because the comparison is a
+*comment strict <. Mechanism B uses the same tiebreak, scoped to ranged allies only.
+*comment
+*comment combat_ally<N>_target is deliberately NOT read here. It keeps its other job -- recording which enemy an
+*comment ally is locked onto, for the sidebar's "fighting <enemy>" sub-line (web/mygame/index.html) and the prose
+*comment -- and is set in combat_next_turn's ally branch.
 *set combat_intercepting_ally 0
 *temp fia_best_hp 0
 *temp fia_i 1
 *label find_intercepting_ally_loop
 *if (fia_i <= combat_ally_slot_cap)
   *temp fia_hp {(("combat_ally" & fia_i) & "_hp")}
-  *temp fia_weapon {(("combat_ally" & fia_i) & "_weapon_type")}
   *temp fia_range {(("combat_ally" & fia_i) & "_range")}
-  *if (((fia_hp > 0) and (fia_weapon = "melee")) and (fia_range <= 0))
+  *if ((fia_hp > 0) and (fia_range <= 0))
     *if ((combat_intercepting_ally = 0) or (fia_hp < fia_best_hp))
       *set combat_intercepting_ally fia_i
       *set fia_best_hp fia_hp
   *set fia_i + 1
   *goto find_intercepting_ally_loop
+*if ((combat_intercepting_ally = 0) and (combat_enemy_weapon_type = "ranged"))
+  *temp fia_snipe_best_hp 0
+  *temp fia_j 1
+  *label find_intercepting_ally_snipe_loop
+  *if (fia_j <= combat_ally_slot_cap)
+    *temp fia_snipe_hp {(("combat_ally" & fia_j) & "_hp")}
+    *temp fia_snipe_weapon {(("combat_ally" & fia_j) & "_weapon_type")}
+    *if ((fia_snipe_hp > 0) and (fia_snipe_weapon = "ranged"))
+      *if ((combat_intercepting_ally = 0) or (fia_snipe_hp < fia_snipe_best_hp))
+        *set combat_intercepting_ally fia_j
+        *set fia_snipe_best_hp fia_snipe_hp
+    *set fia_j + 1
+    *goto find_intercepting_ally_snipe_loop
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment COMBAT: ALLY ATTACK TARGET SELECTION (2026-09-29, Ranged-AI Position Awareness plan §11.1)
+*comment The ally-side mirror of find_intercepting_ally's Mechanisms A/B above, called from combat_next_turn's
+*comment ally branch in place of a bare *gosub fight_pick_target. fight_pick_target itself is NOT touched --
+*comment 13 call sites share it (every player weapon/spell option, the player's own auto-target, and this one),
+*comment too much blast radius to parameterize -- so this wraps it instead, adding a preference layer only this
+*comment one call site needs, and falling back to fight_pick_target's own plain kill-priority scan whenever that
+*comment layer finds nothing to prefer.
+*comment
+*comment HUD CLICK ALWAYS WINS, checked first and unconditionally -- exactly fight_pick_target's own existing
+*comment precedence, which every ally already shares with the player's own attacks (a manual click focuses the
+*comment WHOLE team, not just the player -- pre-existing behavior, not new). This label does not duplicate that
+*comment logic; it just defers to fight_pick_target immediately whenever a click might be active, letting that
+*comment routine's own liveness re-check run exactly as it always has.
+*comment
+*comment RANGED ally (Kess): prefers a living ranged-classified enemy anywhere on the field (no range check --
+*comment ranged attacks don't care about distance, same reasoning as Mechanism B above) over
+*comment fight_pick_target's plain lowest-HP-among-everyone scan. Falls back to that scan if no enemy is
+*comment ranged-classified. Does NOT check whether Kess herself is personally threatened -- that's the ally-side
+*comment equivalent of rows 2-4 (quick-draw/retreat/disengage), explicitly out of scope for this phase (see
+*comment RANGED_AI_PLAN.md §11.5's "Ally-side rows 2-4 are still unscoped").
+*comment
+*comment MELEE ally (Rook): prefers the CLOSEST TIER PRESENT among living enemies (lowest combat_enemy<N>_range),
+*comment kill priority as the tiebreak only within that tier -- so a nearby healthy enemy is chosen over a
+*comment distant wounded one, rather than ignoring what's actually in front of the party to chase a kill
+*comment somewhere else. Reads combat_enemy<N>_range as "how close to the fight's front this enemy is," the same
+*comment shared-bucket reasoning as Mechanism A above -- not this specific ally's own real distance, which
+*comment doesn't exist as data. Since every living enemy sits at SOME tier, this branch always finds a pick; the
+*comment fight_pick_target fallback below it is unreachable in practice but kept for defensive completeness.
+*comment
+*comment Known limit, carried from RANGED_AI_PLAN.md §9: a melee ally's own combat_ally<N>_range (its progress
+*comment toward whichever target it's approaching) is never reset when the picked target changes turn to turn --
+*comment pre-existing, not introduced here (fight_pick_target's plain kill-priority already had the same gap).
+*comment Layer 2's commit-and-chase is where a real reset rule lives, for the actively-redirecting case; this
+*comment phase only ever picks among what's already reachable, so it never needs one.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label select_ally_attack_target
+*params saat_slot
+*if (combat_player_chosen_target > 0)
+  *gosub fight_pick_target
+  *return
+*temp saat_weapon {(("combat_ally" & saat_slot) & "_weapon_type")}
+*temp saat_pref_target 0
+*if (saat_weapon = "ranged")
+  *temp saat_best_hp 0
+  *temp saat_i 1
+  *label select_ally_ranged_loop
+  *if (saat_i <= combat_enemy_count)
+    *temp saat_hp {(("combat_enemy" & saat_i) & "_hp")}
+    *temp saat_wt {(("combat_enemy" & saat_i) & "_weapon_type")}
+    *if ((saat_hp > 0) and (saat_wt = "ranged"))
+      *if ((saat_pref_target = 0) or (saat_hp < saat_best_hp))
+        *set saat_pref_target saat_i
+        *set saat_best_hp saat_hp
+    *set saat_i + 1
+    *goto select_ally_ranged_loop
+*else
+  *temp saat_min_range 999
+  *temp saat_i 1
+  *label select_ally_minrange_loop
+  *if (saat_i <= combat_enemy_count)
+    *temp saat_hp {(("combat_enemy" & saat_i) & "_hp")}
+    *if (saat_hp > 0)
+      *temp saat_range {(("combat_enemy" & saat_i) & "_range")}
+      *if (saat_range < saat_min_range)
+        *set saat_min_range saat_range
+    *set saat_i + 1
+    *goto select_ally_minrange_loop
+  *temp saat_best_hp 0
+  *set saat_i 1
+  *label select_ally_tierpick_loop
+  *if (saat_i <= combat_enemy_count)
+    *temp saat_hp {(("combat_enemy" & saat_i) & "_hp")}
+    *if (saat_hp > 0)
+      *temp saat_range {(("combat_enemy" & saat_i) & "_range")}
+      *if ((saat_range = saat_min_range) and ((saat_pref_target = 0) or (saat_hp < saat_best_hp)))
+        *set saat_pref_target saat_i
+        *set saat_best_hp saat_hp
+    *set saat_i + 1
+    *goto select_ally_tierpick_loop
+*if (saat_pref_target > 0)
+  *set combat_active_target saat_pref_target
+  *gosub fight_sync_target_in
+*else
+  *gosub fight_pick_target
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment COMBAT: COMMIT-AND-CHASE (2026-09-29, Ranged-AI Position Awareness plan §11.3, Phase "6a")
+*comment Enemy-side only in this pass -- the melee-ally mirror (a melee ally breaking off to chase a farther
+*comment enemy caster/archer) is deliberately deferred to its own follow-up increment rather than shipped
+*comment unverified alongside this. Both routines below take the acting slot as an explicit param (rec_slot/
+*comment decs_slot) rather than reading combat_next_turn's own *temp cnt_slot implicitly -- same-file *gosub
+*comment does share the caller's *temp scope in this engine (only *gosub_scene starts a fresh one), but this
+*comment file's own linter flags a *temp referenced from a label positioned earlier in the file than its
+*comment declaring line as "used before created," so an explicit param sidesteps the question entirely and
+*comment matches how every OTHER caller-supplied value in this file (resolve_enemy_attack_on_ally's
+*comment reao_a_slot, apply_derived_combat_bonuses's prefix, etc.) is already passed.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label roll_enemy_chase_commit
+*params rec_slot
+*comment The one-shot decision. Called once, at the top of the closing-toward-the-player branch, only when this
+*comment enemy hasn't already committed to (or already tried and declined) a chase this fight -- callers outside
+*comment that branch never reach this, so "not already engaged with the default target" doesn't need its own
+*comment check here. Scans living allies for a ranged-classified one at Close or Mid (1 or 2): Long (3) is
+*comment deliberately out of reach ("she's not reachable easily," plan §11.3), and 0 is Layer 1's own job
+*comment (Mechanism A already claims an ally already standing in melee -- see find_intercepting_ally). Lowest HP
+*comment among eligible candidates wins, the same tiebreak every other target pick in this file uses.
+*comment Per-type tunable (2026-09-29, on request): gated on combat_enemy_chase_chance > 0 -- a type that never
+*comment set it (every creature type: lacedon, mire_rat, beast) skips the whole scan, the same "0 means never"
+*comment shape combat_enemy_move2_chance already uses, rather than relying on the roll below happening to always
+*comment fail (*rand can never return 0, so it would have anyway -- this just skips the wasted scan too).
+*if (((combat_enemy_chase_target = 0) and (not(combat_enemy_chase_roll_done))) and (combat_enemy_chase_chance > 0))
+  *temp recc_candidate 0
+  *temp recc_candidate_range 0
+  *temp recc_best_hp 0
+  *temp recc_i 1
+  *label roll_enemy_chase_commit_scan
+  *if (recc_i <= combat_ally_slot_cap)
+    *temp recc_hp {(("combat_ally" & recc_i) & "_hp")}
+    *temp recc_weapon {(("combat_ally" & recc_i) & "_weapon_type")}
+    *temp recc_range {(("combat_ally" & recc_i) & "_range")}
+    *if (((recc_hp > 0) and (recc_weapon = "ranged")) and ((recc_range = 1) or (recc_range = 2)))
+      *if ((recc_candidate = 0) or (recc_hp < recc_best_hp))
+        *set recc_candidate recc_i
+        *set recc_candidate_range recc_range
+        *set recc_best_hp recc_hp
+    *set recc_i + 1
+    *goto roll_enemy_chase_commit_scan
+  *if (recc_candidate > 0)
+    *comment No tuned odds yet (RANGED_AI_PLAN.md §11.5) -- combat_enemy_chase_chance, per-type (33 for tactical
+    *comment humanoids as a sensible starting point, the same pending-playtesting shape flee_hp_pct used).
+    *temp recc_roll 0
+    *rand recc_roll 1 100
+    *if (recc_roll <= combat_enemy_chase_chance)
+      *comment Bounded-by-range-and-reset-the-same-way (plan §11.3): the candidate's own range becomes this
+      *comment enemy's new tracked pursuit distance -- not combat_enemy_range itself (that keeps tracking
+      *comment distance to the player, untouched, so breaking off later needs no restore step at all).
+      *set combat_enemy_chase_target recc_candidate
+      *set combat_enemy_chase_range recc_candidate_range
+      *set combat_enemy_chase_hp_snapshot combat_enemy_hp
+      *set {(("combat_enemy" & rec_slot) & "_chase_target")} recc_candidate
+      *set {(("combat_enemy" & rec_slot) & "_chase_range")} recc_candidate_range
+      *set {(("combat_enemy" & rec_slot) & "_chase_hp_snapshot")} combat_enemy_hp
+    *set combat_enemy_chase_roll_done true
+    *set {(("combat_enemy" & rec_slot) & "_chase_roll_done")} true
+*return
+
+*label do_enemy_chase_step
+*params decs_slot
+*comment The shared movement step, called both the turn a chase is freshly committed (from the closing-toward-
+*comment player branch, immediately after roll_enemy_chase_commit succeeds) and every turn after (from
+*comment combat_next_turn's chase-continuation *elseif) -- same step either way. Closes ONE tier per turn toward
+*comment combat_enemy_chase_target, no Dash-equivalent -- deliberately simpler than the player-closing branch's
+*comment free-move-plus-dash shape: a chasing enemy trades away some of its aggressive tempo for breaking
+*comment formation, which is both a reasonable in-fiction cost and avoids a third copy of that logic.
+*set combat_enemy_chase_range - 1
+*if (combat_enemy_chase_range < 0)
+  *set combat_enemy_chase_range 0
+*set {(("combat_enemy" & decs_slot) & "_chase_range")} combat_enemy_chase_range
+*temp decs_ally_name {(("combat_ally" & combat_enemy_chase_target) & "_name")}
+*temp decs_ally_epithet {(("combat_ally" & combat_enemy_chase_target) & "_epithet")}
+*temp decs_rv 0
+*rand decs_rv 1 3
+*if (combat_enemy_chase_range <= 0)
+  *comment Dedicated new prose (2026-09-29, on request) -- never the existing closing-toward-player lines, which
+  *comment are hardcoded second-person ("right on top of YOU") and would be flatly wrong for a chase that never
+  *comment involves the player at all.
+  *if (decs_rv = 1)
+    $!{combat_enemy_epithet} finally closes the last of the distance, and ${decs_ally_epithet} has nowhere left to retreat.
+  *if (decs_rv = 2)
+    A last hard burst of speed, and ${combat_enemy_epithet} is suddenly right on top of ${decs_ally_epithet}.
+  *if (decs_rv = 3)
+    The gap disappears, and ${combat_enemy_epithet} is finally within striking distance of ${decs_ally_epithet}.
+  *line_break
+  [b][🏃 ${combat_enemy_name} Closes on ${decs_ally_name}][/b]
+  *line_break
+  *set combat_turn_advanced_this_page true
+  *gosub fight_pick_enemy_move
+  *gosub_scene combat_dice resolve_enemy_attack_on_ally combat_enemy_chase_target
+  *gosub_scene combat_prose fight_narrate_ally_attack "enemy" decs_slot "ally" combat_enemy_chase_target combat_enemy_atk_on_ally_hit
+  *comment Arrived and fought -- Layer 1's ordinary target selection takes back over from here (plan §11.3:
+  *comment "it's not chasing anymore, it's fighting"), not locked onto this one ally for the rest of the fight.
+  *set combat_enemy_chase_target 0
+  *set {(("combat_enemy" & decs_slot) & "_chase_target")} 0
+*else
+  *if (decs_rv = 1)
+    Breaking off from the fight in front of it, ${combat_enemy_epithet} cuts hard toward ${decs_ally_epithet}, closing the gap fast.
+  *if (decs_rv = 2)
+    $!{combat_enemy_epithet} shoulders past the melee and bears down on ${decs_ally_epithet}, ground vanishing underfoot.
+  *if (decs_rv = 3)
+    Ignoring everything else, ${combat_enemy_epithet} presses toward ${decs_ally_epithet}, closing the distance step by hard step.
+  *line_break
+  [b][🏃 ${combat_enemy_name} Closes on ${decs_ally_name}][/b]
+  *line_break
+  *set combat_turn_advanced_this_page true
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment COMBAT: COMMIT-AND-CHASE, ALLY SIDE (2026-09-29, Ranged-AI Position Awareness plan §11.3, "6a" mirror)
+*comment A melee ally's version of roll_enemy_chase_commit/do_enemy_chase_step above -- same rule, same shape,
+*comment but written against the ally system's own conventions rather than copied verbatim: no bare active-target
+*comment scratch exists on this side (select_ally_attack_target and resolve_ally_attack already read
+*comment combat_ally<N>_* directly via slot indirection, no sync step), so both routines take the acting slot as
+*comment an explicit param and read/write the durable per-slot fields throughout, never a bare mirror.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label roll_ally_chase_commit
+*params rac_slot
+*comment The one-shot decision. Called once, at the top of the closing-toward-its-target branch, only when this
+*comment ally hasn't already committed to (or already tried and declined) a chase this fight. Scans living
+*comment ENEMIES for a ranged-classified one at Close or Mid (1 or 2) -- reading combat_enemy<N>_range as the
+*comment proxy for "how far back that enemy is standing," the same reuse-the-target's-own-range logic the enemy
+*comment side's roll_enemy_chase_commit already relies on. Lowest HP among eligible candidates wins.
+*temp rac_p (("combat_ally" & rac_slot) & "_")
+*comment Per-type tunable (2026-09-29, on request) -- see roll_enemy_chase_commit's own comment for the full
+*comment reasoning; Rook's own guard type sets this, a future non-tactical melee ally simply wouldn't.
+*if ((({(rac_p & "chase_target")} = 0) and (not({(rac_p & "chase_roll_done")}))) and ({(rac_p & "chase_chance")} > 0))
+  *temp racc_candidate 0
+  *temp racc_candidate_range 0
+  *temp racc_best_hp 0
+  *temp racc_i 1
+  *label roll_ally_chase_commit_scan
+  *if (racc_i <= combat_enemy_count)
+    *temp racc_hp {(("combat_enemy" & racc_i) & "_hp")}
+    *temp racc_weapon {(("combat_enemy" & racc_i) & "_weapon_type")}
+    *temp racc_range {(("combat_enemy" & racc_i) & "_range")}
+    *if (((racc_hp > 0) and (racc_weapon = "ranged")) and ((racc_range = 1) or (racc_range = 2)))
+      *if ((racc_candidate = 0) or (racc_hp < racc_best_hp))
+        *set racc_candidate racc_i
+        *set racc_candidate_range racc_range
+        *set racc_best_hp racc_hp
+    *set racc_i + 1
+    *goto roll_ally_chase_commit_scan
+  *if (racc_candidate > 0)
+    *comment combat_ally<N>_chase_chance, per-type, same untuned-starting-point shape as the enemy side
+    *comment (RANGED_AI_PLAN.md §11.5). Bounded by, and reset to, the candidate's own range -- see
+    *comment roll_enemy_chase_commit's own comment for the full reasoning; identical here, just read from the
+    *comment enemy-side fields instead of the ally-side ones.
+    *temp racc_roll 0
+    *rand racc_roll 1 100
+    *if (racc_roll <= {(rac_p & "chase_chance")})
+      *set {(rac_p & "chase_target")} racc_candidate
+      *set {(rac_p & "chase_range")} racc_candidate_range
+      *set {(rac_p & "chase_hp_snapshot")} {(rac_p & "hp")}
+    *set {(rac_p & "chase_roll_done")} true
+*return
+
+*label do_ally_chase_step
+*params dacs_slot
+*comment The shared movement step, called both the turn a chase is freshly committed and every turn after -- same
+*comment step either way. Closes ONE tier per turn toward this ally's chase target, no Dash-equivalent, same
+*comment deliberate simplification as the enemy side's own do_enemy_chase_step.
+*temp dacs_p (("combat_ally" & dacs_slot) & "_")
+*temp dacs_target {(dacs_p & "chase_target")}
+*temp dacs_range {(dacs_p & "chase_range")}
+*set dacs_range - 1
+*if (dacs_range < 0)
+  *set dacs_range 0
+*set {(dacs_p & "chase_range")} dacs_range
+*set combat_attacker_name {(dacs_p & "name")}
+*set combat_attacker_epithet {(dacs_p & "epithet")}
+*temp dacs_enemy_name {(("combat_enemy" & dacs_target) & "_name")}
+*temp dacs_enemy_epithet {(("combat_enemy" & dacs_target) & "_epithet")}
+*temp dacs_rv 0
+*rand dacs_rv 1 3
+*if (dacs_range <= 0)
+  *comment Dedicated new prose (2026-09-29) -- a genuinely different set of lines from the enemy-side pool above,
+  *comment not the same wording with the variable names swapped.
+  *if (dacs_rv = 1)
+    $!{combat_attacker_epithet} finally runs ${dacs_enemy_epithet} down, closing the last of the gap.
+  *if (dacs_rv = 2)
+    The distance disappears, and ${combat_attacker_epithet} is on ${dacs_enemy_epithet} before it can retreat.
+  *if (dacs_rv = 3)
+    $!{combat_attacker_epithet} arrives hard, and ${dacs_enemy_epithet} has nowhere left to go.
+  *line_break
+  [b][🏃 ${combat_attacker_name} Closes on ${dacs_enemy_name}][/b]
+  *line_break
+  *set combat_turn_advanced_this_page true
+  *gosub_scene combat_dice resolve_ally_attack dacs_slot dacs_target
+  *gosub_scene combat_prose fight_narrate_ally_attack "ally" dacs_slot "enemy" dacs_target combat_ally_atk_hit
+  *comment Arrived and fought -- Layer 1's ordinary select_ally_attack_target takes back over from here, not
+  *comment locked onto this one enemy for the rest of the fight. Unlike the enemy side's own chase (which only
+  *comment ever attacks an ally, never changing the enemy count), this attack CAN kill an enemy, so the usual
+  *comment death/victory check applies here.
+  *set {(dacs_p & "chase_target")} 0
+  *gosub fight_check_all_dead
+  *if (combat_all_enemies_dead)
+    *goto fight_victory
+*else
+  *if (dacs_rv = 1)
+    $!{combat_attacker_epithet} peels away from the melee, driving hard toward ${dacs_enemy_epithet} instead.
+  *if (dacs_rv = 2)
+    Choosing a different fight, ${combat_attacker_epithet} bulls past what's in front of it and closes on ${dacs_enemy_epithet}.
+  *if (dacs_rv = 3)
+    $!{combat_attacker_epithet} breaks formation and cuts a straight line for ${dacs_enemy_epithet}, closing fast.
+  *line_break
+  [b][🏃 ${combat_attacker_name} Closes on ${dacs_enemy_name}][/b]
+  *line_break
+  *set combat_turn_advanced_this_page true
 *return
 
 *label fight_victory
@@ -1198,6 +1800,15 @@
   *set {(("combat_enemy" & cbr_oa_i) & "_oa_used")} false
   *set cbr_oa_i + 1
   *goto combat_begin_round_oa_loop
+*comment Reaction asymmetry closed (2026-09-29, plan §4.5/Phase 5): the player and every ally regain their own
+*comment reaction the same way, same round boundary.
+*set player_oa_used false
+*temp cbr_a_oa_i 1
+*label combat_begin_round_ally_oa_loop
+*if (cbr_a_oa_i <= combat_ally_slot_cap)
+  *set {(("combat_ally" & cbr_a_oa_i) & "_oa_used")} false
+  *set cbr_a_oa_i + 1
+  *goto combat_begin_round_ally_oa_loop
 *set combat_player_disengaged false
 *comment Start of a round: refill the budgets. Enemy disadvantage/advantage (Ray of Frost, Vicious Mockery, Brace,
 *comment pre-fight ambush) is no longer cleared here (2026-09-28) -- now that it's stored per-slot
@@ -1552,6 +2163,22 @@
 *temp cmc_chosen_fall 4
 *temp cmc_lock_push false
 *temp cmc_lock_fall false
+*comment Fresh distance to the slot the NEXT action will actually target, resolved HERE (before the *choice) so
+*comment reach-gated options have a current number to test. The shared combat_enemy_range scratch cannot be used
+*comment for that: fight_round_hub calls fight_pick_target (which sets combat_active_target) but not
+*comment fight_sync_target_in, so combat_enemy_range still holds whatever the last sync left there -- a fight opened
+*comment at Long Range read 0 on its first page, which offered a TOUCH spell against a foe three tiers away. Same
+*comment staleness the movement projection above already had to work around for the same reason.
+*comment combat_active_target is what fight_pick_target resolves to on the next action, so that is the slot to read.
+*comment Falls back to combat_enemy_range when no target resolves, so a gate is never tested against 0 by default.
+*temp combat_target_range 0
+*if (combat_active_target > 0)
+  *if (combat_active_target <= combat_enemy_count)
+    *temp ctr_hp {(("combat_enemy" & combat_active_target) & "_hp")}
+    *if (ctr_hp > 0)
+      *set combat_target_range {(("combat_enemy" & combat_active_target) & "_range")}
+*if (combat_active_target = 0)
+  *set combat_target_range combat_enemy_range
 *if (combat_player_chosen_target > 0)
   *temp cmc_chosen_slot combat_player_chosen_target
   *if (cmc_chosen_slot <= combat_enemy_count)
@@ -1744,6 +2371,10 @@
       *set check_dc combat_enemy_ac
       *set check_skill "Fire Bolt"
       *set check_add_prof_bonus true
+      *gosub spell_range_of
+      *if (spell_penalty_result)
+        *set disadvantage true
+        *set combat_reach_pinned true
       *gosub_scene dice_engine roll_d20_check
       *if (check_success)
         *set combat_player_dmg_type "fire"
@@ -1775,6 +2406,10 @@
       *set check_dc combat_enemy_ac
       *set check_skill "Ray of Frost"
       *set check_add_prof_bonus true
+      *gosub spell_range_of
+      *if (spell_penalty_result)
+        *set disadvantage true
+        *set combat_reach_pinned true
       *gosub_scene dice_engine roll_d20_check
       *if (check_success)
         *set combat_player_dmg_type "cold"
@@ -1798,7 +2433,17 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if ((combat_player_actions_left > 0) and ((((wizard_cantrip = "shocking_grasp") or (wizard_cantrip_2 = "shocking_grasp")) or (wizard_cantrip_3 = "shocking_grasp")) or ((race_cantrip = "shocking_grasp") or (race_cantrip_2 = "shocking_grasp"))))
+  *if (((combat_player_actions_left > 0) and (combat_target_range <= 0)) and ((((wizard_cantrip = "shocking_grasp") or (wizard_cantrip_2 = "shocking_grasp")) or (wizard_cantrip_3 = "shocking_grasp")) or ((race_cantrip = "shocking_grasp") or (race_cantrip_2 = "shocking_grasp"))))
+    *comment TOUCH reach (tools/spell_catalog.json: "shocking_grasp" is range "touch"), so it is only usable against
+    *comment a target you are actually touching -- a spell you cannot reach is not offered at a penalty, it is simply
+    *comment not offered. This is the REACH gate, a DIFFERENT question from spell_range_of's disadvantage below: a
+    *comment touch spell out of reach is UNAVAILABLE, never merely penalised.
+    *comment Tests combat_target_range, not the shared combat_enemy_range scratch, because the scratch is stale when
+    *comment this menu is built (fight_round_hub calls fight_pick_target but not fight_sync_target_in) -- reading it
+    *comment here offered a touch spell against a foe three tiers away on a fight opened at Long Range. See the
+    *comment combat_target_range block above the *choice for the full reasoning.
+    *comment Nested rather than flat, because ChoiceScript needs each partial result of a multi-operator condition
+    *comment parenthesized (the same shape the weapon options at the top of this *choice use).
     # [b][ACTION][/b] [b][Shocking Grasp][/b] Drive a crackling jolt of lightning into ${combat_enemy_epithet}.
       *gosub fight_pick_target
       *set combat_current_spell_id "shocking_grasp"
@@ -1813,6 +2458,7 @@
       *set check_dc combat_enemy_ac
       *set check_skill "Shocking Grasp"
       *set check_add_prof_bonus true
+      *gosub spell_range_of
       *gosub_scene dice_engine roll_d20_check
       *if (check_success)
         *set combat_player_dmg_type "lightning"
@@ -1848,6 +2494,10 @@
       *set check_dc combat_enemy_ac
       *set check_skill "Eldritch Blast"
       *set check_add_prof_bonus true
+      *gosub spell_range_of
+      *if (spell_penalty_result)
+        *set disadvantage true
+        *set combat_reach_pinned true
       *gosub_scene dice_engine roll_d20_check
       *if (check_success)
         *set combat_player_dmg_type "force"
@@ -1879,6 +2529,10 @@
       *set check_dc combat_enemy_ac
       *set check_skill "Chill Touch"
       *set check_add_prof_bonus true
+      *gosub spell_range_of
+      *if (spell_penalty_result)
+        *set disadvantage true
+        *set combat_reach_pinned true
       *gosub_scene dice_engine roll_d20_check
       *if (check_success)
         *set combat_player_dmg_type "necrotic"
@@ -1902,6 +2556,13 @@
       *goto fight_check_enemy_hp
 
   *if ((combat_player_actions_left > 0) and ((bard_cantrip = "vicious_mockery") or (bard_cantrip_2 = "vicious_mockery")))
+    *comment Tagged "ranged" in tools/spell_catalog.json, but deliberately NOT wired to spell_range_of's penalty
+    *comment and deliberately NOT gated on reach: Vicious Mockery resolves as a Wisdom SAVE (below), so the
+    *comment player never makes an attack roll to spoil. The close-combat penalty is a penalty on the ATTACK
+    *comment roll; applying it here would penalise the ENEMY's save instead, which is the wrong die entirely.
+    *comment A ranged spell's reach tier is not a restriction either, so there is nothing for spell_reach_result
+    *comment to gate. It stays in the catalog so the tag is visible to a future RAW "it must be within 60 feet"
+    *comment implementation, not so this option behaves differently from the others.
     # [b][ACTION][/b] [b][Vicious Mockery][/b] Hurl a barbed, perfectly-aimed insult at ${combat_enemy_epithet}.
       *gosub fight_pick_target
       *set combat_current_spell_id "vicious_mockery"
@@ -2239,6 +2900,21 @@ ${use_text}
 *gosub_scene combat_prose pick_weapon_flavor
 *comment Always proficient with your own equipped weapon -- see roll_d20_check's own header (dice_engine.txt).
 *set check_add_prof_bonus true
+*comment Close-combat ranged penalty: a ranged attack made against a creature within 5 feet of the attacker has
+*comment disadvantage. Set HERE, after the stat/skill above and before the roll, and gated on `= "ranged"`
+*comment rather than `!= "melee"` on purpose -- finesse, reach and the unarmed "melee" type are all melee
+*comment attacks, which are NEVER penalised for being in melee. The rule is one-directional.
+*comment This single site covers the main hand AND the sidearm: the sidearm option in the round hub *gosubs
+*comment equip_weapon first, which swaps the sidearm into weapon/weapon_type, so by here both are the same roll.
+*comment Reads combat_target_range, not the shared combat_enemy_range scratch, because fight_pick_target above sets
+*comment combat_active_target but does not re-sync that scratch -- the penalty would otherwise be decided by a
+*comment range left over from a previous turn (see the combat_target_range block in the hub).
+*if (weapon_type = "ranged")
+  *if (combat_target_range <= 0)
+    *set disadvantage true
+    *comment dice_engine.txt reads this to print " (Disadvantage - in reach)" rather than a bare
+    *comment "(Disadvantage)", so the player is told WHY. Cleared inside roll_d20_check on every call.
+    *set combat_reach_pinned true
 *gosub_scene dice_engine roll_d20_check
 *if (check_success)
   *set combat_player_dmg_type weapon_damage_type
@@ -2454,6 +3130,83 @@ ${use_text}
       [b][😲 ${combat_enemy_name} Surprised — turn lost][/b]
       *line_break
       *set combat_turn_advanced_this_page true
+    *elseif ((((combat_enemy_weapon_type = "ranged") and (combat_enemy_range <= 0)) and (combat_intercepting_ally > 0)) and (combat_enemy_can_retreat))
+      *comment Rows 3-4: a melee ally is already in the shared adjacency bucket (combat_intercepting_ally,
+      *comment computed above by find_intercepting_ally) -- normally that claims this enemy's turn outright, the
+      *comment *elseif just below. A cornered RANGED type that opted in (combat_enemy_can_retreat) preempts that
+      *comment instead, and picks between two responses by its own current wounds (2026-09-29, plan §3/§4.5-4.7,
+      *comment Phases 5-6): cross-multiplied rather than divided, to sidestep this engine's integer-only /
+      *comment (GAMEPLAY_MECHANICS_RULES.md's own note on modulo/round() applies equally to a raw percentage
+      *comment comparison).
+      *if ((combat_enemy_hp * 100) <= (combat_enemy_max_hp * combat_enemy_flee_hp_pct))
+        *comment Row 4: Disengage (2026-09-29, plan §4.6, Phase 6). Wounded, so the extra-safe option: falls back
+        *comment the same one tier as Retreat, but takes NO opportunity attack at all (RAW: Disengage suppresses
+        *comment it entirely, unlike ordinary movement) and gets no shot this turn either -- the whole turn is
+        *comment spent surviving, not attacking. No separate "action spent" bookkeeping needed: enemies have no
+        *comment explicit action budget in this engine, this IS the whole turn.
+        *set combat_enemy_range + 1
+        *if (combat_enemy_range > 3)
+          *set combat_enemy_range 3
+        *set {(("combat_enemy" & cnt_slot) & "_range")} combat_enemy_range
+        *gosub combat_range_name combat_enemy_range
+        *rand cnt_rv 1 3
+        *if (cnt_rv = 1)
+          Hurt, ${combat_enemy_epithet} breaks away clean, giving up the shot to put real distance behind it.
+        *if (cnt_rv = 2)
+          $!{combat_enemy_epithet} disengages, more interested in surviving the next few seconds than in another shot.
+        *if (cnt_rv = 3)
+          Too battered to press its luck, ${combat_enemy_epithet} pulls back and leaves the fight to its ally.
+        *line_break
+        [b][🏃💨 ${combat_enemy_name} Disengages to ${combat_range_display_name}][/b]
+        *line_break
+        *set combat_turn_advanced_this_page true
+      *else
+        *comment Row 3: Retreat + shoot. Healthy enough to risk the reaction: falls back one tier, provoking
+        *comment exactly one reversed opportunity attack (find_opportunity_attacker_against), and still gets its
+        *comment normal shot this turn -- no longer pinned, since it's no longer at range 0 once it's moved.
+        *gosub find_opportunity_attacker_against
+        *if (combat_oa_against_kind = "player")
+          *set player_oa_used true
+          *gosub resolve_reverse_oa_player
+          *gosub fight_check_all_dead
+          *if (combat_all_enemies_dead)
+            *goto fight_victory
+        *elseif (combat_oa_against_kind = "ally")
+          *set {(("combat_ally" & combat_oa_against_slot) & "_oa_used")} true
+          *gosub resolve_reverse_oa_ally combat_oa_against_slot
+          *gosub fight_check_all_dead
+          *if (combat_all_enemies_dead)
+            *goto fight_victory
+        *comment If the reaction killed it, combat_enemy_hp (bare scratch) already reflects the kill -- nothing
+        *comment left to retreat or shoot with, and fight_check_all_dead/fight_victory above already handled the
+        *comment page. Skip the rest of this branch entirely rather than narrating a dead enemy falling back.
+        *if (combat_enemy_hp > 0)
+          *set combat_enemy_range + 1
+          *if (combat_enemy_range > 3)
+            *set combat_enemy_range 3
+          *set {(("combat_enemy" & cnt_slot) & "_range")} combat_enemy_range
+          *gosub combat_range_name combat_enemy_range
+          *rand cnt_rv 1 3
+          *if (cnt_rv = 1)
+            $!{combat_enemy_epithet} breaks off, falling back a step to put ground between itself and the fight.
+          *if (cnt_rv = 2)
+            Backing away fast, ${combat_enemy_epithet} puts a step of distance between itself and the blade at its throat.
+          *if (cnt_rv = 3)
+            $!{combat_enemy_epithet} gives ground, retreating just far enough to loose a clean shot.
+          *line_break
+          [b][🏃 ${combat_enemy_name} Falls Back to ${combat_range_display_name}][/b]
+          *line_break
+          *set combat_turn_advanced_this_page true
+          *gosub fight_pick_enemy_move
+          *gosub_scene combat_dice resolve_enemy_attack
+          *gosub_scene combat_prose fight_narrate_enemy_turn
+          *if (combat_player_can_die) and (hp_current <= 0)
+            *goto fight_player_died
+          *if (not(combat_player_can_die)) and (hp_current <= 1)
+            *goto fight_rescued
+          *gosub fight_check_all_dead
+          *if (combat_all_enemies_dead)
+            *goto fight_victory
     *elseif (combat_intercepting_ally > 0)
       *comment Interception (2026-09-28; broadened later the same day): a living melee ally is in melee range --
       *comment any living melee ally at range 0, NOT one that happens to be targeting this enemy. See
@@ -2464,61 +3217,115 @@ ${use_text}
       *gosub_scene combat_dice resolve_enemy_attack_on_ally combat_intercepting_ally
       *gosub_scene combat_prose fight_narrate_ally_attack "enemy" cnt_slot "ally" combat_intercepting_ally combat_enemy_atk_on_ally_hit
       *set combat_turn_advanced_this_page true
+    *elseif (combat_enemy_chase_target > 0)
+      *comment Commit-and-chase continuation (2026-09-29, Ranged-AI Position Awareness plan §11.3, "6a") --
+      *comment checked ahead of the ordinary closing branch below, since a chasing enemy ignores its own
+      *comment combat_enemy_range (distance to the player, frozen and untouched the whole time it's chasing) in
+      *comment favor of combat_enemy_chase_range instead. Interception above still takes priority even over an
+      *comment active chase -- something standing in melee reach right now is a more urgent target than a
+      *comment pursuit in progress, and being forced into that fight does NOT itself break the chase (only taking
+      *comment damage does, checked below); it simply waits its turn.
+      *temp cnt_chase_target_hp {(("combat_ally" & combat_enemy_chase_target) & "_hp")}
+      *if (cnt_chase_target_hp <= 0)
+        *comment Target died. No restore step needed for combat_enemy_range -- it was never touched.
+        *set combat_enemy_chase_target 0
+        *set {(("combat_enemy" & cnt_slot) & "_chase_target")} 0
+        $!{combat_enemy_epithet} pulls up short, the target already down, and looks for a new line of attack.
+        *line_break
+        [b][${combat_enemy_name} Breaks Off Its Chase (target down)][/b]
+        *line_break
+        *set combat_turn_advanced_this_page true
+      *elseif (combat_enemy_hp < combat_enemy_chase_hp_snapshot)
+        *comment Took damage since its last turn, from any source -- immediate self-defense wins; see
+        *comment RANGED_AI_PLAN.md §11.3 for why this is deliberately not source-tracked.
+        *set combat_enemy_chase_target 0
+        *set {(("combat_enemy" & cnt_slot) & "_chase_target")} 0
+        Stung, ${combat_enemy_epithet} abandons the chase and turns to face the more immediate threat.
+        *line_break
+        [b][${combat_enemy_name} Breaks Off Its Chase (took a hit)][/b]
+        *line_break
+        *set combat_turn_advanced_this_page true
+      *else
+        *gosub do_enemy_chase_step cnt_slot
     *elseif ((not(combat_enemy_weapon_type = "ranged")) and (combat_enemy_range > 0))
       *comment Free movement + Dash (2026-09-28, mirrors the player's own Push Forward/Dash exactly): closes one
       *comment tier for free. If that's still not enough, it Dashes too -- closes a SECOND tier -- since there's
       *comment no attack to give up by spending its "action" on movement when it couldn't have reached melee range
       *comment this turn regardless. Only when the free move alone reaches Engaged (started exactly one tier out,
       *comment action still unspent) does it also attack this same turn, below.
-      *set combat_enemy_range - 1
-      *if (combat_enemy_range < 0)
-        *set combat_enemy_range 0
-      *set {(("combat_enemy" & cnt_slot) & "_range")} combat_enemy_range
-      *temp cnt_dashed false
-      *if (combat_enemy_range > 0)
+      *gosub roll_enemy_chase_commit cnt_slot
+      *if (combat_enemy_chase_target > 0)
+        *gosub do_enemy_chase_step cnt_slot
+      *else
         *set combat_enemy_range - 1
         *if (combat_enemy_range < 0)
           *set combat_enemy_range 0
         *set {(("combat_enemy" & cnt_slot) & "_range")} combat_enemy_range
-        *set cnt_dashed true
-      *comment Same reasoning as the surprise-round variants above: three lines each, none epithet-first.
-      *rand cnt_rv 1 3
-      *if (combat_enemy_range <= 0)
-        *if (cnt_rv = 1)
-          A last burst of speed closes the distance, and ${combat_enemy_epithet} is suddenly right on top of you.
-        *if (cnt_rv = 2)
-          In one hard rush, ${combat_enemy_epithet} crosses what ground was left and closes to melee range.
-        *if (cnt_rv = 3)
-          The last of the gap disappears fast, and ${combat_enemy_epithet} is finally within striking distance.
+        *temp cnt_dashed false
+        *if (combat_enemy_range > 0)
+          *set combat_enemy_range - 1
+          *if (combat_enemy_range < 0)
+            *set combat_enemy_range 0
+          *set {(("combat_enemy" & cnt_slot) & "_range")} combat_enemy_range
+          *set cnt_dashed true
+        *comment Same reasoning as the surprise-round variants above: three lines each, none epithet-first.
+        *rand cnt_rv 1 3
+        *if (combat_enemy_range <= 0)
+          *if (cnt_rv = 1)
+            A last burst of speed closes the distance, and ${combat_enemy_epithet} is suddenly right on top of you.
+          *if (cnt_rv = 2)
+            In one hard rush, ${combat_enemy_epithet} crosses what ground was left and closes to melee range.
+          *if (cnt_rv = 3)
+            The last of the gap disappears fast, and ${combat_enemy_epithet} is finally within striking distance.
+          *line_break
+          [b][🏃 ${combat_enemy_name} Closes to Engagement@{cnt_dashed  (Dashed the extra distance)|}][/b]
+        *else
+          *gosub combat_range_name combat_enemy_range
+          *if (cnt_rv = 1)
+            Ground vanishes underfoot as ${combat_enemy_epithet} presses in, cutting the distance between you.
+          *if (cnt_rv = 2)
+            In a burst of motion, ${combat_enemy_epithet} closes some of the gap, cutting down what's left between you.
+          *if (cnt_rv = 3)
+            Step by step, ${combat_enemy_epithet} narrows the distance, closing in fast.
+          *line_break
+          [b][🏃 ${combat_enemy_name} Closes to ${combat_range_display_name}@{cnt_dashed  (Dashed the extra distance)|}][/b]
         *line_break
-        [b][🏃 ${combat_enemy_name} Closes to Engagement@{cnt_dashed  (Dashed the extra distance)|}][/b]
-      *else
-        *gosub combat_range_name combat_enemy_range
-        *if (cnt_rv = 1)
-          Ground vanishes underfoot as ${combat_enemy_epithet} presses in, cutting the distance between you.
-        *if (cnt_rv = 2)
-          In a burst of motion, ${combat_enemy_epithet} closes some of the gap, cutting down what's left between you.
-        *if (cnt_rv = 3)
-          Step by step, ${combat_enemy_epithet} narrows the distance, closing in fast.
-        *line_break
-        [b][🏃 ${combat_enemy_name} Closes to ${combat_range_display_name}@{cnt_dashed  (Dashed the extra distance)|}][/b]
-      *line_break
-      *set combat_turn_advanced_this_page true
-      *if ((combat_enemy_range <= 0) and (not(cnt_dashed)))
-        *gosub fight_pick_enemy_move
-        *gosub_scene combat_dice resolve_enemy_attack
-        *gosub_scene combat_prose fight_narrate_enemy_turn
-        *if (combat_player_can_die) and (hp_current <= 0)
-          *goto fight_player_died
-        *if (not(combat_player_can_die)) and (hp_current <= 1)
-          *goto fight_rescued
-        *gosub fight_check_all_dead
-        *if (combat_all_enemies_dead)
-          *goto fight_victory
+        *set combat_turn_advanced_this_page true
+        *if ((combat_enemy_range <= 0) and (not(cnt_dashed)))
+          *gosub fight_pick_enemy_move
+          *gosub_scene combat_dice resolve_enemy_attack
+          *gosub_scene combat_prose fight_narrate_enemy_turn
+          *if (combat_player_can_die) and (hp_current <= 0)
+            *goto fight_player_died
+          *if (not(combat_player_can_die)) and (hp_current <= 1)
+            *goto fight_rescued
+          *gosub fight_check_all_dead
+          *if (combat_all_enemies_dead)
+            *goto fight_victory
     *else
+      *comment Row-2 quick-draw (2026-09-29, Ranged-AI Position Awareness plan §3/§4.2): a cornered ranged type
+      *comment (range 0) with no melee ally in the shared adjacency bucket -- guaranteed here, since the
+      *comment interception *elseif above already claims that case for any enemy it applies to -- draws its
+      *comment sidearm for this one attack instead of shooting its primary at the close-range disadvantage penalty
+      *comment (resolve_enemy_attack, combat_dice.txt). "" sidearm_weapon_type (every melee type, and any ranged
+      *comment type not yet given one) leaves this a no-op, so nothing changes for a type that hasn't opted in.
+      *comment Overwrites only the active-target SCRATCH fields fight_sync_target_in just populated, never this
+      *comment slot's own durable combat_enemyN_* storage, so the type is back to shooting its primary next turn
+      *comment with no restore step needed -- the same transient-override shape Bane and conditions already use.
+      *comment move2_chance is zeroed too: the special move belongs to the primary weapon, and a quick-drawn
+      *comment dagger has none of its own (see flavor_type_archer_dagger/_slinger_dagger, combat_prose.txt).
+      *if (((combat_enemy_weapon_type = "ranged") and (combat_enemy_range <= 0)) and (not(combat_enemy_sidearm_weapon_type = "")))
+        *set combat_enemy_weapon_type combat_enemy_sidearm_weapon_type
+        *set combat_enemy_atk_bonus combat_enemy_sidearm_atk_bonus
+        *set combat_enemy_dmg_dice_sides combat_enemy_sidearm_dmg_dice_sides
+        *set combat_enemy_dmg_bonus combat_enemy_sidearm_dmg_bonus
+        *set combat_enemy_dmg_type combat_enemy_sidearm_dmg_type
+        *set combat_enemy_move2_chance 0
+        *set combat_enemy_used_sidearm true
       *gosub fight_pick_enemy_move
       *gosub_scene combat_dice resolve_enemy_attack
       *gosub_scene combat_prose fight_narrate_enemy_turn
+      *set combat_enemy_used_sidearm false
       *set combat_turn_advanced_this_page true
       *if (combat_player_can_die) and (hp_current <= 0)
         *goto fight_player_died
@@ -2528,77 +3335,106 @@ ${use_text}
       *if (combat_all_enemies_dead)
         *goto fight_victory
 *if (cnt_kind = "ally")
-  *comment fight_pick_target picks the lowest-HP living enemy (kill priority, 2026-09-28), same fallback the
-  *comment player's own HUD uses (see its header comment) -- so every ally already focus-fires the most wounded
-  *comment target without any ally-specific logic here.
+  *comment select_ally_attack_target (2026-09-29, plan §11.1) picks this ally's target: ranged-prefers-ranged or
+  *comment melee-prefers-closest-tier, falling back to fight_pick_target's own plain kill-priority (2026-09-28)
+  *comment whenever there's no preferred candidate -- see that label's own header for the full rule.
   *temp cnt_a_hp {(("combat_ally" & cnt_slot) & "_hp")}
   *if (cnt_a_hp > 0)
     *comment Turn divider -- see the matching comment in the enemy branch above.
     ────────────────────
     *line_break
-    *gosub fight_pick_target
-    *if (combat_active_target > 0)
-      *comment Stored durably (not just left in the shared/transient combat_active_target) so
-      *comment find_intercepting_ally can still tell, on a LATER turn (this enemy's, possibly several turn-order
-      *comment positions from now), which specific enemy this ally is engaged with.
-      *set {(("combat_ally" & cnt_slot) & "_target")} combat_active_target
+    *temp cnt_a_chase_target {(("combat_ally" & cnt_slot) & "_chase_target")}
+    *if (cnt_a_chase_target > 0)
+      *comment Commit-and-chase continuation, ally side (2026-09-29, plan §11.3, "6a" mirror) -- checked before
+      *comment select_ally_attack_target even runs, since an active chase overrides its ordinary pick entirely.
       *set combat_attacker_name {(("combat_ally" & cnt_slot) & "_name")}
       *set combat_attacker_epithet {(("combat_ally" & cnt_slot) & "_epithet")}
-      *temp cnt_a_weapon {(("combat_ally" & cnt_slot) & "_weapon_type")}
-      *temp cnt_a_range {(("combat_ally" & cnt_slot) & "_range")}
-      *if ((cnt_a_weapon = "ranged") or (cnt_a_range <= 0))
-        *gosub_scene combat_dice resolve_ally_attack cnt_slot combat_active_target
-        *gosub_scene combat_prose fight_narrate_ally_attack "ally" cnt_slot "enemy" combat_active_target combat_ally_atk_hit
-        *set combat_turn_advanced_this_page true
-        *gosub fight_check_all_dead
-        *if (combat_all_enemies_dead)
-          *goto fight_victory
-      *else
-        *comment Free movement + Dash (2026-09-28, mirrors the player's own Push Forward/Dash and the enemy
-        *comment branch just above): closes its OWN combat_ally<N>_range one tier for free, independent of
-        *comment combat_enemy_range, so this ally can be nearer to (or farther from) the target than the player is.
-        *comment Dashes (closes a second tier) if the free move alone still doesn't reach -- no attack to give up
-        *comment either way this turn -- and only attacks this same turn if the free move alone was enough.
-        *set cnt_a_range - 1
-        *if (cnt_a_range < 0)
-          *set cnt_a_range 0
-        *set {(("combat_ally" & cnt_slot) & "_range")} cnt_a_range
-        *temp cnt_a_dashed false
-        *if (cnt_a_range > 0)
-          *set cnt_a_range - 1
-          *if (cnt_a_range < 0)
-            *set cnt_a_range 0
-          *set {(("combat_ally" & cnt_slot) & "_range")} cnt_a_range
-          *set cnt_a_dashed true
-        *temp cnt_arv 1
-        *rand cnt_arv 1 3
-        *if (cnt_a_range <= 0)
-          *if (cnt_arv = 1)
-            A last burst of speed closes the distance, and ${combat_attacker_epithet} is suddenly right on top of the fight.
-          *if (cnt_arv = 2)
-            In one hard rush, ${combat_attacker_epithet} crosses what ground was left and closes to melee range.
-          *if (cnt_arv = 3)
-            The last of the gap disappears fast, and ${combat_attacker_epithet} is finally within striking distance.
-          *line_break
-          [b][🏃 ${combat_attacker_name} Closes to Engagement@{cnt_a_dashed  (Dashed the extra distance)|}][/b]
-        *else
-          *gosub combat_range_name cnt_a_range
-          *if (cnt_arv = 1)
-            Ground vanishes underfoot as ${combat_attacker_epithet} presses in, cutting down the distance to the fight.
-          *if (cnt_arv = 2)
-            In a burst of motion, ${combat_attacker_epithet} closes some of the gap, cutting down what's left.
-          *if (cnt_arv = 3)
-            Step by step, ${combat_attacker_epithet} narrows the distance, closing in fast.
-          *line_break
-          [b][🏃 ${combat_attacker_name} Closes to ${combat_range_display_name}@{cnt_a_dashed  (Dashed the extra distance)|}][/b]
+      *temp cnt_a_chase_target_hp {(("combat_enemy" & cnt_a_chase_target) & "_hp")}
+      *temp cnt_a_chase_hp_snapshot {(("combat_ally" & cnt_slot) & "_chase_hp_snapshot")}
+      *if (cnt_a_chase_target_hp <= 0)
+        *set {(("combat_ally" & cnt_slot) & "_chase_target")} 0
+        $!{combat_attacker_epithet} eases off, the target already down, and looks for someone else to fight.
+        *line_break
+        [b][${combat_attacker_name} Breaks Off Its Chase (target down)][/b]
         *line_break
         *set combat_turn_advanced_this_page true
-        *if ((cnt_a_range <= 0) and (not(cnt_a_dashed)))
+      *elseif (cnt_a_hp < cnt_a_chase_hp_snapshot)
+        Hurt, ${combat_attacker_epithet} lets the chase go and turns to deal with the more immediate threat.
+        *set {(("combat_ally" & cnt_slot) & "_chase_target")} 0
+        *line_break
+        [b][${combat_attacker_name} Breaks Off Its Chase (took a hit)][/b]
+        *line_break
+        *set combat_turn_advanced_this_page true
+      *else
+        *gosub do_ally_chase_step cnt_slot
+    *else
+      *gosub select_ally_attack_target cnt_slot
+      *if (combat_active_target > 0)
+        *comment Stored durably (not just left in the shared/transient combat_active_target) so
+        *comment find_intercepting_ally can still tell, on a LATER turn (this enemy's, possibly several turn-order
+        *comment positions from now), which specific enemy this ally is engaged with.
+        *set {(("combat_ally" & cnt_slot) & "_target")} combat_active_target
+        *set combat_attacker_name {(("combat_ally" & cnt_slot) & "_name")}
+        *set combat_attacker_epithet {(("combat_ally" & cnt_slot) & "_epithet")}
+        *temp cnt_a_weapon {(("combat_ally" & cnt_slot) & "_weapon_type")}
+        *temp cnt_a_range {(("combat_ally" & cnt_slot) & "_range")}
+        *if ((cnt_a_weapon = "ranged") or (cnt_a_range <= 0))
           *gosub_scene combat_dice resolve_ally_attack cnt_slot combat_active_target
           *gosub_scene combat_prose fight_narrate_ally_attack "ally" cnt_slot "enemy" combat_active_target combat_ally_atk_hit
+          *set combat_turn_advanced_this_page true
           *gosub fight_check_all_dead
           *if (combat_all_enemies_dead)
             *goto fight_victory
+        *else
+          *comment Free movement + Dash (2026-09-28, mirrors the player's own Push Forward/Dash and the enemy
+          *comment branch just above): closes its OWN combat_ally<N>_range one tier for free, independent of
+          *comment combat_enemy_range, so this ally can be nearer to (or farther from) the target than the player is.
+          *comment Dashes (closes a second tier) if the free move alone still doesn't reach -- no attack to give up
+          *comment either way this turn -- and only attacks this same turn if the free move alone was enough.
+          *gosub roll_ally_chase_commit cnt_slot
+          *if ({(("combat_ally" & cnt_slot) & "_chase_target")} > 0)
+            *gosub do_ally_chase_step cnt_slot
+          *else
+            *set cnt_a_range - 1
+            *if (cnt_a_range < 0)
+              *set cnt_a_range 0
+            *set {(("combat_ally" & cnt_slot) & "_range")} cnt_a_range
+            *temp cnt_a_dashed false
+            *if (cnt_a_range > 0)
+              *set cnt_a_range - 1
+              *if (cnt_a_range < 0)
+                *set cnt_a_range 0
+              *set {(("combat_ally" & cnt_slot) & "_range")} cnt_a_range
+              *set cnt_a_dashed true
+            *temp cnt_arv 1
+            *rand cnt_arv 1 3
+            *if (cnt_a_range <= 0)
+              *if (cnt_arv = 1)
+                A last burst of speed closes the distance, and ${combat_attacker_epithet} is suddenly right on top of the fight.
+              *if (cnt_arv = 2)
+                In one hard rush, ${combat_attacker_epithet} crosses what ground was left and closes to melee range.
+              *if (cnt_arv = 3)
+                The last of the gap disappears fast, and ${combat_attacker_epithet} is finally within striking distance.
+              *line_break
+              [b][🏃 ${combat_attacker_name} Closes to Engagement@{cnt_a_dashed  (Dashed the extra distance)|}][/b]
+            *else
+              *gosub combat_range_name cnt_a_range
+              *if (cnt_arv = 1)
+                Ground vanishes underfoot as ${combat_attacker_epithet} presses in, cutting down the distance to the fight.
+              *if (cnt_arv = 2)
+                In a burst of motion, ${combat_attacker_epithet} closes some of the gap, cutting down what's left.
+              *if (cnt_arv = 3)
+                Step by step, ${combat_attacker_epithet} narrows the distance, closing in fast.
+              *line_break
+              [b][🏃 ${combat_attacker_name} Closes to ${combat_range_display_name}@{cnt_a_dashed  (Dashed the extra distance)|}][/b]
+            *line_break
+            *set combat_turn_advanced_this_page true
+            *if ((cnt_a_range <= 0) and (not(cnt_a_dashed)))
+              *gosub_scene combat_dice resolve_ally_attack cnt_slot combat_active_target
+              *gosub_scene combat_prose fight_narrate_ally_attack "ally" cnt_slot "enemy" combat_active_target combat_ally_atk_hit
+              *gosub fight_check_all_dead
+              *if (combat_all_enemies_dead)
+                *goto fight_victory
 *goto combat_next_turn
 
 *comment ══════════════════════════════════════════════════════════════
@@ -2737,6 +3573,8 @@ ${use_text}
   *gosub apply_ability_score_range "combat_enemy_" "wisdom" 9 11
   *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
   *gosub apply_derived_combat_bonuses "combat_enemy_"
+  *comment Tactical/human -- breaks formation to chase a squishy target sometimes (2026-09-29, on request).
+  *set combat_enemy_chase_chance 33
 *else
   *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
   *comment (the same values as slot 1 above, by construction).
@@ -2763,6 +3601,7 @@ ${use_text}
   *gosub apply_ability_score_range apt_p "wisdom" 9 11
   *gosub apply_ability_score_range apt_p "charisma" 8 10
   *gosub apply_derived_combat_bonuses apt_p
+  *set {(apt_p & "chase_chance")} 33
 *return
 
 *label apply_type_axeman
@@ -2791,6 +3630,7 @@ ${use_text}
   *gosub apply_ability_score_range "combat_enemy_" "wisdom" 8 10
   *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
   *gosub apply_derived_combat_bonuses "combat_enemy_"
+  *set combat_enemy_chase_chance 33
 *else
   *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
   *comment (the same values as slot 1 above, by construction).
@@ -2817,6 +3657,7 @@ ${use_text}
   *gosub apply_ability_score_range apt_p "wisdom" 8 10
   *gosub apply_ability_score_range apt_p "charisma" 8 10
   *gosub apply_derived_combat_bonuses apt_p
+  *set {(apt_p & "chase_chance")} 33
 *return
 
 *label apply_type_knifeman
@@ -2845,6 +3686,7 @@ ${use_text}
   *gosub apply_ability_score_range "combat_enemy_" "wisdom" 9 11
   *gosub apply_ability_score_range "combat_enemy_" "charisma" 9 11
   *gosub apply_derived_combat_bonuses "combat_enemy_"
+  *set combat_enemy_chase_chance 33
 *else
   *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
   *comment (the same values as slot 1 above, by construction).
@@ -2871,6 +3713,7 @@ ${use_text}
   *gosub apply_ability_score_range apt_p "wisdom" 9 11
   *gosub apply_ability_score_range apt_p "charisma" 9 11
   *gosub apply_derived_combat_bonuses apt_p
+  *set {(apt_p & "chase_chance")} 33
 *return
 
 *label apply_type_maceman
@@ -2899,6 +3742,7 @@ ${use_text}
   *gosub apply_ability_score_range "combat_enemy_" "wisdom" 8 10
   *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
   *gosub apply_derived_combat_bonuses "combat_enemy_"
+  *set combat_enemy_chase_chance 33
 *else
   *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
   *comment (the same values as slot 1 above, by construction).
@@ -2925,6 +3769,7 @@ ${use_text}
   *gosub apply_ability_score_range apt_p "wisdom" 8 10
   *gosub apply_ability_score_range apt_p "charisma" 8 10
   *gosub apply_derived_combat_bonuses apt_p
+  *set {(apt_p & "chase_chance")} 33
 *return
 
 *label apply_type_spearman
@@ -2953,6 +3798,7 @@ ${use_text}
   *gosub apply_ability_score_range "combat_enemy_" "wisdom" 10 12
   *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
   *gosub apply_derived_combat_bonuses "combat_enemy_"
+  *set combat_enemy_chase_chance 33
 *else
   *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
   *comment (the same values as slot 1 above, by construction).
@@ -2979,6 +3825,7 @@ ${use_text}
   *gosub apply_ability_score_range apt_p "wisdom" 10 12
   *gosub apply_ability_score_range apt_p "charisma" 8 10
   *gosub apply_derived_combat_bonuses apt_p
+  *set {(apt_p & "chase_chance")} 33
 *return
 
 *label apply_type_hookman
@@ -3007,6 +3854,7 @@ ${use_text}
   *gosub apply_ability_score_range "combat_enemy_" "wisdom" 8 10
   *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
   *gosub apply_derived_combat_bonuses "combat_enemy_"
+  *set combat_enemy_chase_chance 33
 *else
   *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
   *comment (the same values as slot 1 above, by construction).
@@ -3033,6 +3881,7 @@ ${use_text}
   *gosub apply_ability_score_range apt_p "wisdom" 8 10
   *gosub apply_ability_score_range apt_p "charisma" 8 10
   *gosub apply_derived_combat_bonuses apt_p
+  *set {(apt_p & "chase_chance")} 33
 *return
 
 *label apply_type_archer
@@ -3062,6 +3911,23 @@ ${use_text}
   *gosub apply_ability_score_range "combat_enemy_" "wisdom" 11 13
   *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
   *gosub apply_derived_combat_bonuses "combat_enemy_"
+  *comment Sidearm (2026-09-29, Ranged-AI Position Awareness plan §4.1/§4.2): a dagger, drawn only when
+  *comment combat_next_turn's row-2 decision fires (cornered, no melee ally in the shared adjacency bucket --
+  *comment see find_intercepting_ally). Same DEX-based to-hit/damage bonus as the bow just above (a dagger is
+  *comment finesse, same ability either way), only the die shrinks -- 1d4 piercing instead of 1d6, "weaker
+  *comment damage" per the plan's own decision table (§3, row 2) -- and it takes no ranged-at-close-range
+  *comment disadvantage, since a dagger swing is a melee attack.
+  *set combat_enemy_sidearm_weapon_type "melee"
+  *set combat_enemy_sidearm_atk_bonus combat_enemy_atk_bonus
+  *set combat_enemy_sidearm_dmg_dice_sides 4
+  *set combat_enemy_sidearm_dmg_bonus combat_enemy_dmg_bonus
+  *set combat_enemy_sidearm_dmg_type "piercing"
+  *comment Retreat (2026-09-29, plan §4.5/Phase 5): tactical humanoid, can fall back when cornered with a melee
+  *comment ally to cover it -- see combat_enemy_can_retreat's own *create comment for the full rule.
+  *set combat_enemy_can_retreat true
+  *comment Disengage's wounded threshold (2026-09-29, plan §4.7/Phase 6): 33%, the same sensible-default-
+  *comment pending-playtesting starting point every other untuned percentage in this plan used.
+  *set combat_enemy_flee_hp_pct 33
 *else
   *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
   *comment (the same values as slot 1 above, by construction).
@@ -3089,6 +3955,14 @@ ${use_text}
   *gosub apply_ability_score_range apt_p "wisdom" 11 13
   *gosub apply_ability_score_range apt_p "charisma" 8 10
   *gosub apply_derived_combat_bonuses apt_p
+  *comment Sidearm -- see slot 1's own comment above for the full rule.
+  *set {(apt_p & "sidearm_weapon_type")} "melee"
+  *set {(apt_p & "sidearm_atk_bonus")} {(apt_p & "atk_bonus")}
+  *set {(apt_p & "sidearm_dmg_dice_sides")} 4
+  *set {(apt_p & "sidearm_dmg_bonus")} {(apt_p & "dmg_bonus")}
+  *set {(apt_p & "sidearm_dmg_type")} "piercing"
+  *set {(apt_p & "can_retreat")} true
+  *set {(apt_p & "flee_hp_pct")} 33
 *return
 
 *label apply_type_slinger
@@ -3119,6 +3993,17 @@ ${use_text}
   *gosub apply_ability_score_range "combat_enemy_" "wisdom" 8 10
   *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
   *gosub apply_derived_combat_bonuses "combat_enemy_"
+  *comment Sidearm -- see apply_type_archer's slot-1 comment for the full rule. Same die as the sling itself
+  *comment (both 1d4), so "weaker damage" here comes entirely from losing the ranged-at-close-range disadvantage
+  *comment tradeoff being moot, not from a smaller die -- still the correct choice per the plan's row 2, since a
+  *comment clean dagger swing beats a disadvantaged sling shot on average.
+  *set combat_enemy_sidearm_weapon_type "melee"
+  *set combat_enemy_sidearm_atk_bonus combat_enemy_atk_bonus
+  *set combat_enemy_sidearm_dmg_dice_sides 4
+  *set combat_enemy_sidearm_dmg_bonus combat_enemy_dmg_bonus
+  *set combat_enemy_sidearm_dmg_type "piercing"
+  *set combat_enemy_can_retreat true
+  *set combat_enemy_flee_hp_pct 33
 *else
   *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
   *comment (the same values as slot 1 above, by construction).
@@ -3146,6 +4031,14 @@ ${use_text}
   *gosub apply_ability_score_range apt_p "wisdom" 8 10
   *gosub apply_ability_score_range apt_p "charisma" 8 10
   *gosub apply_derived_combat_bonuses apt_p
+  *comment Sidearm -- see apply_type_archer's slot-1 comment for the full rule.
+  *set {(apt_p & "sidearm_weapon_type")} "melee"
+  *set {(apt_p & "sidearm_atk_bonus")} {(apt_p & "atk_bonus")}
+  *set {(apt_p & "sidearm_dmg_dice_sides")} 4
+  *set {(apt_p & "sidearm_dmg_bonus")} {(apt_p & "dmg_bonus")}
+  *set {(apt_p & "sidearm_dmg_type")} "piercing"
+  *set {(apt_p & "can_retreat")} true
+  *set {(apt_p & "flee_hp_pct")} 33
 *return
 
 *label apply_type_guard
@@ -3166,6 +4059,7 @@ ${use_text}
   *gosub apply_ability_score_range "combat_enemy_" "wisdom" 10 12
   *gosub apply_ability_score_range "combat_enemy_" "charisma" 9 11
   *gosub apply_derived_combat_bonuses "combat_enemy_"
+  *set combat_enemy_chase_chance 33
 *else
   *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
   *comment (the same values as slot 1 above, by construction).
@@ -3184,10 +4078,15 @@ ${use_text}
   *gosub apply_ability_score_range apt_p "wisdom" 10 12
   *gosub apply_ability_score_range apt_p "charisma" 9 11
   *gosub apply_derived_combat_bonuses apt_p
+  *set {(apt_p & "chase_chance")} 33
 *return
 
 *label apply_type_lacedon
 *comment A drowned, clawing undead: quick, close, hard to hold. Stats are the Silt-Lurker of Alderford's cellar quest.
+*comment Mindless -- never sets combat_enemy_chase_chance (2026-09-29), so it stays at the *create default of 0
+*comment and roll_enemy_chase_commit's own >0 gate always skips it. It fights whatever's in front of it and
+*comment never breaks formation to hunt a squishier target; that's a human, tactical judgment call this undead
+*comment doesn't make.
 *if (combat_apply_slot = 1)
   *set combat_enemy_name "Lacedon"
   *set combat_enemy_hp 12
@@ -3224,6 +4123,8 @@ ${use_text}
 *label apply_type_beast
 *comment A generic natural-attack monster with no special move: 9 HP, AC 11, +3 to hit, d6+1. A scene makes it a wolf, a
 *comment boar or a ghoul by naming it, and a tougher or weaker one with the hp, ac and atk overrides. Not balance-simmed.
+*comment Mindless -- same reasoning as apply_type_lacedon's own comment: never sets combat_enemy_chase_chance,
+*comment stays at 0, never breaks formation.
 *if (combat_apply_slot = 1)
   *set combat_enemy_name "Beast"
   *set combat_enemy_hp 9
@@ -3259,6 +4160,8 @@ ${use_text}
 
 *label apply_type_mire_rat
 *comment Big-as-a-cat vermin: fragile and fast, meant to come in threes. Stats are Alderford's granary rats.
+*comment Mindless -- same reasoning as apply_type_lacedon's own comment: never sets combat_enemy_chase_chance,
+*comment stays at 0, never breaks formation.
 *if (combat_apply_slot = 1)
   *set combat_enemy_name "Mire-Rat"
   *set combat_enemy_hp 4
@@ -3387,6 +4290,18 @@ ${use_text}
 *gosub apply_ability_score_range aaa_p "wisdom" 10 12
 *gosub apply_ability_score_range aaa_p "charisma" 8 10
 *gosub apply_derived_combat_bonuses aaa_p
+*comment Sidearm (2026-09-29, Ranged-AI Position Awareness plan §4.1, extended to allies on request -- Kess is
+*comment this type, given one for the same reason the enemy archer is): a dagger, same DEX-based to-hit/damage
+*comment bonus as the bow just above, only the die drops to 1d4. Data only for now -- no runtime decision reads
+*comment it yet (combat_next_turn's ally branch has no quick-draw logic; that's gated on resolve_ally_attack
+*comment actually having a close-range penalty to dodge, plan §4.4, still Phase 2). "Always fully rewrites" per
+*comment this label's own header, so apply_allytype_guard clears it explicitly rather than relying on a reset
+*comment loop -- there isn't one for ally fields (see fight_cleanup_ally_loop's own comment).
+*set {(aaa_p & "sidearm_weapon_type")} "melee"
+*set {(aaa_p & "sidearm_atk_bonus")} {(aaa_p & "atk_bonus")}
+*set {(aaa_p & "sidearm_dmg_dice_sides")} 4
+*set {(aaa_p & "sidearm_dmg_bonus")} {(aaa_p & "dmg_bonus")}
+*set {(aaa_p & "sidearm_dmg_type")} "piercing"
 *return
 
 *label apply_allytype_guard
@@ -3413,6 +4328,16 @@ ${use_text}
 *gosub apply_ability_score_range aag_p "wisdom" 10 12
 *gosub apply_ability_score_range aag_p "charisma" 8 10
 *gosub apply_derived_combat_bonuses aag_p
+*comment Sidearm: guard carries none -- see apply_allytype_archer's own comment for why this is cleared
+*comment explicitly rather than reset by a loop.
+*set {(aag_p & "sidearm_weapon_type")} ""
+*set {(aag_p & "sidearm_atk_bonus")} 0
+*set {(aag_p & "sidearm_dmg_dice_sides")} 4
+*set {(aag_p & "sidearm_dmg_bonus")} 0
+*set {(aag_p & "sidearm_dmg_type")} "piercing"
+*comment Tactical/human -- same reasoning as the enemy-side humanoid melee types (2026-09-29, on request): Rook
+*comment can break off to chase a squishy enemy caster/archer sometimes.
+*set {(aag_p & "chase_chance")} 33
 *return
 
 *comment ══════════════════════════════════════════════════════════════
@@ -3492,12 +4417,21 @@ ${use_text}
 *comment resolve_ally_attack in action: does it hit, does it roll damage, does it help drop the enemy. Also the
 *comment first real caller of apply_ally_roster/apply_ally_type -- was hand-set stats before the ally type
 *comment library existed (2026-09-28).
+*comment Range (2026-09-29): explicitly Close (1), never left at the combat_ally1_range *create default of 0 --
+*comment apply_allytype_archer, like apply_type_archer on the enemy side, never sets range itself, so a fight
+*comment that doesn't set it is implicitly claiming its archer is standing in melee. Every real enemy-side ranged
+*comment fight (fight_wreckers, fight_shroud_thieves, fight_dredge_ambush) already follows this same rule
+*comment explicitly, for the same reason: since the close-range disadvantage penalty (§4.4, resolve_ally_attack)
+*comment now reads this field, leaving it at 0 would falsely show Kess fighting at disadvantage on a shot that
+*comment was always meant to be clean, in every fight that ever recruits her -- caught live via scripted_play.js
+*comment before this fixture, and every ranged-ally fixture, would have silently shipped that regression.
 *set combat_is_nonlethal false
 *set combat_lib_1 "lacedon"
 *set combat_enemy_name_override "Silt-Lurker Lacedon"
 *set combat_ally_lib_1 "archer"
 *set combat_ally1_name_override "Kess"
 *set combat_ally1_epithet_override "Kess"
+*set combat_ally1_range 1
 *goto fight_library
 
 *label fight_dev_ally_melee_test
@@ -3512,6 +4446,44 @@ ${use_text}
 *set combat_ally1_range 2
 *set combat_ally1_name_override "Rook"
 *set combat_ally1_epithet_override "Rook"
+*goto fight_library
+
+*label fight_dev_reach_test
+*comment Dev-hub only (dev_hub.txt dev_combat_test_hub) -- no story scene calls this. THE test for the
+*comment close-combat ranged penalty and the three spell reach tags (tools/spell_catalog.json, spell_range_of).
+*comment Two enemies, one Engaged and one at Long Range, so a single page shows BOTH sides of every rule at once.
+*comment
+*comment What to check, as the fight runs (a caster with a ranged cantrip and a touch cantrip is the useful
+*comment character here -- Cadre Force-Weaver has Fire Bolt and Shocking Grasp):
+*comment   Engaged + ranged spell  -> the roll banner reads "(Disadvantage - in reach)"
+*comment   Long Range + ranged spell -> no such banner
+*comment   Engaged + melee weapon or touch spell -> never penalised, at any range
+*comment   touch spell (Shocking Grasp) -> OFFERED only while a target is Engaged. It must VANISH from the menu
+*comment     at Long Range rather than appear at a penalty -- that is the reach question, distinct from the
+*comment     disadvantage question, and confusing the two is the bug this probe exists to catch.
+*comment   melee weapon at Long Range -> not offered at all (the existing "needs range 0 to swing" gate)
+*comment KNOWN LIMIT, unchanged: a RANGED ALLY still takes no penalty at all. resolve_ally_attack has no
+*comment advantage/disadvantage concept yet (see its own header), and the per-pair distance an ally would need
+*comment does not exist in this model. That path is unwired on purpose, not forgotten -- see GAMEPLAY_MECHANICS_RULES.
+*set combat_is_nonlethal false
+*set combat_lib_1 "lacedon"
+*set combat_enemy_name_override "Silt-Lurker Lacedon"
+*set combat_lib_2 "lacedon"
+*set combat_enemy2_name_override "Second Silt-Lurker"
+*set combat_enemy_range 0
+*set combat_enemy2_range 3
+*goto fight_library
+
+*label fight_dev_quickdraw_test
+*comment Dev-hub only (dev_hub.txt dev_combat_test_hub) -- no story scene calls this. Ranged-AI Position
+*comment Awareness plan, Phase 1 (2026-09-29): one archer, opened already cornered (range 0) with NO ally in the
+*comment fight at all, so combat_intercepting_ally is always 0 and combat_next_turn's row-2 decision (combat.txt)
+*comment fires on the archer's very first turn -- watch for "the archer drops the bow" dagger prose instead of a
+*comment disadvantaged bow shot, and confirm the roll banner carries no "(Disadvantage" tag.
+*set combat_is_nonlethal false
+*set combat_lib_1 "archer"
+*set combat_enemy_name_override "Cornered Archer"
+*set combat_enemy_range 0
 *goto fight_library
 
 *label fight_dev_squad_test
@@ -3542,6 +4514,9 @@ ${use_text}
 *set combat_ally_lib_2 "archer"
 *set combat_ally2_name_override "Kess"
 *set combat_ally2_epithet_override "Kess"
+*comment Range: explicitly Close (1), same reason as fight_dev_ally_ranged_test's own comment -- left at the
+*comment default 0 here would show Kess fighting at the new close-range disadvantage for no in-fiction reason.
+*set combat_ally2_range 1
 *goto fight_library
 
 *label fight_silt_lurker
