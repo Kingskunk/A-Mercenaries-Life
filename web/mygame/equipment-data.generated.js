@@ -1691,21 +1691,6 @@ window.EQUIPMENT_CATALOG = {
           "value": "hearthstone talisman"
         }
       }
-    },
-    {
-      "ids": [
-        "elspeth_weir_knot"
-      ],
-      "fields": {
-        "neck_desc": {
-          "type": "literal",
-          "value": "Elspeth's Weir-Knot"
-        },
-        "neck_prose": {
-          "type": "literal",
-          "value": "weir-knot"
-        }
-      }
     }
   ],
   "ring": [

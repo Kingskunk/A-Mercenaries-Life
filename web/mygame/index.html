@@ -342,6 +342,7 @@ button#statSidebar .turnRow,
   border-bottom: 1px solid rgba(255,255,255,0.09);
 }
 #csTip .tMeta b { color: #cbbdb2; font-weight: 600; }
+#csTip .tCond { margin-top: 4px; color: #9ad0e8; font-size: 12px; }   /* active conditions, one line */
 #csTip .tGrid {                  /* 2 columns x 3 rows: STR DEX / CON INT / WIS CHA. A real grid so the
                                     columns align exactly -- the previous version padded with non-breaking
                                     spaces, which only ever approximated this. */
@@ -450,12 +451,21 @@ button#statSidebar .turnRow,
       resourceHtml = "<div class=\"statRow\"><span>Pact Slots</span><span>" + fmt(s.warlock_spell_slots) + " / " + fmt(s.warlock_spell_slots_max) + "</span></div>";
     } else if (s.character_class === "bard") {
       resourceHtml = "<div class=\"statRow\"><span>Spell Slots</span><span>" + fmt(s.bard_spell_slots) + " / " + fmt(s.bard_spell_slots_max) + "</span></div>";
+      if (Number(s.bard_inspiration_max) > 0 && true) {
+        resourceHtml += "<div class=\"statRow\"><span>Inspiration</span><span>" + fmt(s.bard_inspiration_uses) + " / " + fmt(s.bard_inspiration_max) + "</span></div>";
+      }
     } else if (s.character_class === "fighter") {
       resourceHtml = "<div class=\"statRow\"><span>Second Wind</span><span>" + fmt(s.fighter_second_wind_uses) + " / " + fmt(s.fighter_second_wind_max) + "</span></div>";
+      if (Number(s.fighter_action_surge_max) > 0) {
+        resourceHtml += "<div class=\"statRow\"><span>Action Surge</span><span>" + fmt(s.fighter_action_surge_uses) + " / " + fmt(s.fighter_action_surge_max) + "</span></div>";
+      }
     } else if (s.character_class === "barbarian") {
       resourceHtml = "<div class=\"statRow\"><span>Rage</span><span>" + fmt(s.barbarian_rage_uses) + " / " + fmt(s.barbarian_rage_max) + "</span></div>";
     } else if (s.character_class === "ranger") {
-      resourceHtml = "<div class=\"statRow\"><span>Favored Foe</span><span>" + fmt(s.favored_foe_uses) + " / " + fmt(s.favored_foe_max) + "</span></div>";
+      resourceHtml = "<div class=\"statRow\"><span>Hunter's Mark</span><span>" + fmt(s.favored_foe_uses) + " / " + fmt(s.favored_foe_max) + "</span></div>";
+      if (Number(s.ranger_spell_slots_max) > 0) {
+        resourceHtml += "<div class=\"statRow\"><span>Spell Slots</span><span>" + fmt(s.ranger_spell_slots) + " / " + fmt(s.ranger_spell_slots_max) + "</span></div>";
+      }
     }
 
     // Every quest listed in quest-data.js whose active(stats) is true.
@@ -782,6 +792,17 @@ button#statSidebar .turnRow,
     }
     return seen > 0 && anyOff;
   }
+  // Active conditions on one combatant, read from per-slot "rounds left" variables (0 = none). To show a new
+  // condition, add its variable suffix and label here; the game writes the value, this only reads it.
+  var CONDITION_KEYS = [["slowed", "Slowed"]];
+  function conditionsOf(p, s) {
+    var out = [];
+    for (var i = 0; i < CONDITION_KEYS.length; i++) {
+      var left = Number(s[p + CONDITION_KEYS[i][0]]);
+      if (isFinite(left) && left > 0) out.push(CONDITION_KEYS[i][1]);
+    }
+    return out;
+  }
   // Structured read of one combatant. Returns null when there is nothing honest to show (inert slot 0,
   // a slot with no rolled scores), which is what keeps the card off rows it would only pad with lies.
   // Allies only ever have a DEX (startup.txt:1679 is their one ability), so they get AC/Atk/damage and
@@ -815,7 +836,8 @@ button#statSidebar .turnRow,
       atk: num("atk_bonus"),
       dmg: sides === null ? null : (sides > 1 ? "1d" + sides : "") + (bonus ? modStr(bonus) : ""),
       hp: num("hp"), maxHp: num("max_hp"),
-      abilities: abilities
+      abilities: abilities,
+      conditions: conditionsOf(p, s)
     };
     return (info.ac !== null || info.atk !== null || info.dmg !== null || abilities.length) ? info : null;
   }
@@ -834,7 +856,8 @@ button#statSidebar .turnRow,
     }
     return "<div class=\"tHd\">" + esc(info.name) + "</div>" +
            (meta.length ? "<div class=\"tMeta\">" + meta.join("&nbsp;&nbsp;·&nbsp;&nbsp;") + "</div>" : "") +
-           (grid ? "<div class=\"tGrid\">" + grid + "</div>" : "");
+           (grid ? "<div class=\"tGrid\">" + grid + "</div>" : "") +
+           (info.conditions.length ? "<div class=\"tCond\">" + esc(info.conditions.join(", ")) + "</div>" : "");
   }
   // The card is rebuilt on hover from window.stats, so the row only carries a "which combatant" pointer
   // rather than a blob of HTML in an attribute that would have to be re-escaped every 400ms.

@@ -51,7 +51,7 @@
  *
  *   Names. Unlock an entry at the moment the player learns the name, and check that the base text
  *   does not name anyone the player may not have met on that route. Give a person's role or
- *   route-dependent detail (Elspeth's whereabouts) its own branch instead of naming every route.
+ *   route-dependent detail (a person's whereabouts) its own branch instead of naming every route.
  *
  *   Voice. Plain words a 20-25 year old knows: no trade or period jargon (dubbin, hogshead,
  *   windlass, ashlar, barbel) unless the scene already taught it. No verdict adjectives (grasping,
@@ -123,9 +123,6 @@
           }
           if (s.squad === "vanguard") {
             out.push("Those who stood in his file knew the terms: front line, shield to shield, first to bleed and first to get paid for it. His praise ran to a single grunt or a nod, and remember that stance tomorrow was as warm as it ever got.");
-          }
-          if (s.elspeth_role === "baggage_train") {
-            out.push("At Alderford he wrote your sister onto the second file's camp roll himself, weighing her mending and harness work as worth two drunken teamsters. She rode the fourth grain barge and ate from the company kettle, treated as crew under his eye, not cargo.");
           }
           return out;
         },
@@ -243,12 +240,9 @@
           if (truthy(s.prep_odessa_salve)) {
             out.push("The tin she pressed into your hands at the triage cart: camphor fat, rubbed into the joints to seal out the damp and boot-chafe on a long march, and to ward off marsh sickness. Dirty water, she told you, kills more soldiers than steel.");
           }
-          if (s.elspeth_role === "odessa_apprentice") {
-            out.push("At Alderford your sister boiled linen at her table, folded bandage strips, and steeped willow-bark wash under her eye. Odessa fed her from the company kettle and bedded her on the hospital transport. Her test was short: hands that do not shake, eyes that stay clear, and sense enough to keep her head down when arrows fly.");
-          }
           return out;
         },
-        see: ["iron_carrion", "vane", "elspeth", "alderford", "port_valen"]
+        see: ["iron_carrion", "vane", "alderford", "port_valen"]
       },
       {
         id: "rorik", category: "people", title: "Veteran Rorik",
@@ -264,41 +258,6 @@
         ],
         see: ["iron_carrion", "torvald", "alderford"]
       },
-      {
-        id: "elspeth", category: "people", title: "Elspeth",
-        link: ["Elspeth"],
-        sub: "Your younger sister",
-        role: function (s) {
-          if (s.elspeth_role === "odessa_apprentice") return "Iron Carrion — Surgeon's Assistant & Apprentice, Logistics & Baggage Train";
-          if (s.elspeth_role === "baggage_train") return "Iron Carrion — Camp Seamstress & Carter, Baggage Train";
-          if (s.elspeth_role === "chapel_sanctuary") return "Alderford — Weaver Novice, Ecclesiastical Sanctuary (Upper Chapel)";
-          return "";
-        },
-        tags: ["Family"], aliases: ["sister", "kin", "Ashbrook"],
-        unlock: "elspeth_safe",
-        meter: { stat: "elspeth_bond", label: "Sibling Bond with Elspeth" },
-        body: function (s) {
-          var race = s.race, looks;
-          if (race === "tiefling") looks = "small curling ram-horns budding beneath her dark fringe, glowing eyes, and the salt-crusted tail she keeps wrapped tightly around her waist beneath her linen apron";
-          else if (race === "half_orc") looks = "a strong jawline, small lower tusks, and green-tinted skin gone pale with exhaustion and soot";
-          else if (race === "elf") looks = "delicate, tapered ears peeking beneath her coarse linen cowl and almond eyes";
-          else if (race === "dwarf") looks = "sturdy dwarven shoulders, thick braided hair, and work-scarred hands";
-          else if (race === "halfling") looks = "a nimble, compact frame barely chest-high to the brine vats and round cheeks hollowed by weeks of meager rations";
-          else if (race === "hexblood") looks = "cool, grey-toned skin, subtle elder-braids, and eerie, calm irises";
-          else looks = "dark hair dusted with coarse salt and valley-born eyes";
-          var where;
-          if (s.elspeth_role === "odessa_apprentice") where = "boiling linen at Surgeon Odessa's table";
-          else if (s.elspeth_role === "baggage_train") where = "mending and carting with the baggage train";
-          else if (s.elspeth_role === "chapel_sanctuary") where = "sheltered with the weavers under the chapel eaves";
-          else where = "wherever you have left her";
-          return [
-            "<i>\"Your younger sister and sole surviving kin from the burning of Ashbrook. Resilient, observant, and hardened by weeks of grueling labor in the riverfront salt sheds, she carries the trauma of your family's loss with quiet courage. Whether " + where + ", she trusts your strength and skill to see you both through the Marches.\"</i>",
-            "Thinner and paler than when you last saw her in the Marches, but unmistakably kin: " + looks + "."
-          ];
-        },
-        see: ["ashbrook", "saint_althea"]
-      },
-
       /* ------------------------------------------------------ PEOPLE: ALDERFORD */
 
       {
@@ -437,7 +396,7 @@
           }
           return out;
         },
-        see: ["gilded_scales", "morzan", "alderford", "talia", "elspeth"]
+        see: ["gilded_scales", "morzan", "alderford", "talia"]
       },
       {
         id: "morzan", category: "people", title: "Factor Morzan",
@@ -515,7 +474,7 @@
           }
           return out;
         },
-        see: ["saint_althea", "sanctuary_charter", "orlov", "elspeth", "alderford"]
+        see: ["saint_althea", "sanctuary_charter", "orlov", "alderford"]
       },
       {
         id: "bran", category: "people", title: "Overseer Bran",
@@ -854,7 +813,7 @@
         body: [
           "A poor tenant-farming village in the high valley foothills. Baron Karr's bailiffs burned it while collecting the grain tax by force, communal salting cellars and all."
         ],
-        see: ["baron_karr", "iron_bailiffs", "stenmark", "elspeth"]
+        see: ["baron_karr", "iron_bailiffs", "stenmark"]
       },
 
       /* --------------------------------------------- PLACES: THE VALE AND THE SEDGE */
@@ -984,7 +943,7 @@
         body: [
           "Across the cold mud of the frontier marches, common folk, weavers, and watermen pray to <b>Saint Althea of the Shroud</b>, the daughter of the Sun-Father. She is the patroness of needle, loom, herb, and bandage, the saint of those who mend what violence tears apart. Rivermen leave river pebbles polished smooth by the current at her altar before they cast off on the downriver run, and trust her for safe passage."
         ],
-        see: ["sun_father", "sanctuary_charter", "weir_knots", "corbel", "alley_shrine"]
+        see: ["sun_father", "sanctuary_charter", "corbel", "alley_shrine"]
       },
       {
         id: "sun_father", category: "lore", title: "The Sun-Father",
@@ -1005,17 +964,6 @@
         body: [
           "{{warlock_patron_desc}} You carry a cold, unspoken weight behind your ribs that wasn't there before the Dawn Trial, a debt to something that has not yet named its price."
         ]
-      },
-      {
-        id: "weir_knots", category: "lore", title: "Weir-Knots",
-        link: ["weir-knots", "weir-knot"],
-        sub: "A waterman's charm",
-        tags: ["Folklore", "Grey River"], aliases: ["weir-knot", "talisman", "charm", "flax cord", "river pebbles"],
-        unlock: "codex_weir_knots",
-        body: [
-          "A traveler's charm made by river barge skippers and parish weavers: flax cord braided tight around three river pebbles polished smooth by the current. Watermen along the Grey carry one to stay steady against the river's cold damp and sudden changes in the current."
-        ],
-        see: ["saint_althea"]
       },
       {
         id: "silt_lurkers", category: "lore", title: "Silt Lurkers of the Culvert",

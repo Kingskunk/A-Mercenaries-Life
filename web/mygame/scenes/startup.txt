@@ -60,6 +60,15 @@
 *create bard_spell_2 "none"
 *create bard_spell_2_desc "You have no second verse bound to magic yet."
 *create bard_spell_slots 2
+*comment Ranger spellcasting (level 2, 2026-10-02): Wisdom casts. ranger_spell is Hunter's Mark, granted by the level-up (it is the level 1 feature, now castable with a slot too);
+*comment ranger_spell_2 and ranger_spell_3 are the two level-up picks from the narrative spells. Slots follow the half-caster table (0 at level 1, 2 at level 2, 3 at level 3).
+*create ranger_spell "none"
+*create ranger_spell_desc "You have no spell bound to your hunter's craft yet."
+*create ranger_spell_2 "none"
+*create ranger_spell_2_desc "You have no second working learned from the wild yet."
+*create ranger_spell_3 "none"
+*create ranger_spell_3_desc "You have no third working learned from the wild yet."
+*create ranger_spell_slots 0
 *create gender "man"
 *create age 19
 *create age_desc "Nineteen winters (A green youth)"
@@ -70,10 +79,6 @@
 *create build_desc "Broad-shouldered and heavy-set"
 *create hair_eyes "Shaved scalp, flint-grey eyes"
 *create skin_tone "Sun-darkened, weathered skin"
-*create family_tie "none"
-*create family_name "None"
-*create family_title "Last of Your Line"
-*create family_desc "Untethered; no surviving kin or ties left behind."
 *create weapon "falchion"
 *create weapon_desc "Heavy Falchion"
 *create weapon_damage "1d8 slashing"
@@ -157,9 +162,16 @@
 *create class_feature_desc "You have not yet manifested a defining class feature."
 *create class_feature_2_title "None"
 *create class_feature_2_desc "You have no second defining class feature."
-*create fighter_fighting_style "none"
+*comment Fighting Style (2026-10-02), shared by every class that can take one (the Fighter at the Dawn Trial, the Ranger at level 2). One id: archery, close_combat,
+*comment defense, dueling, great_weapon, protection. fighting_style_info (character_progression.txt) is the one place the names and descriptions live; it fills
+*comment fs_label and fs_desc for whoever prints them.
+*create fighting_style "none"
+*create fs_label ""
+*create fs_desc ""
 *create fighter_second_wind_uses 2
 *create second_wind_roll 0
+*comment Action Surge (Fighter, level 2): uses left. Its maximum is fighter_action_surge_max below; both are 0 until the level that grants it.
+*create fighter_action_surge_uses 0
 *comment Short rest (character_progression.txt short_rest_preview / do_short_rest): rest_gave names what a short rest gives back to this class right now
 *comment ("" when nothing), rest_can_gain is true when there is something to win back.
 *create rest_gave ""
@@ -167,10 +179,12 @@
 *comment Class resource MAXIMUMS. refresh_class_resource_maxs (character_progression.txt) is the only place a maximum is written down, and
 *comment update_dnd_stats calls it, so they follow character_level. These are the level 1 numbers; nothing else may hard-code them.
 *create fighter_second_wind_max 2
+*create fighter_action_surge_max 0
 *create barbarian_rage_max 2
 *create warlock_spell_slots_max 1
 *create wizard_spell_slots_max 2
 *create bard_spell_slots_max 2
+*create ranger_spell_slots_max 0
 *comment Clock stamp of the last short rest that gave something back (do_short_rest uses it so a replayed page cannot give twice).
 *create last_short_rest_stamp 0
 *comment Level-up progress (character_progression.txt refresh_quests_finished, refresh_level_up_progress, training_preview, do_training_session).
@@ -194,26 +208,52 @@
 *comment roll_d20_check, dice_engine.txt, for the shared gate).
 *create ranger_expertise_1 "none"
 *create rogue_sneak_attack_die "1d6"
-*create ranger_favored_enemy "none"
-*create ranger_favored_terrain "none"
-*comment FAVORED FOE (2026-09-29): Tasha's Cauldron optional rule, replacing RAW Favored Enemy for this game's
-*comment Ranger -- the designer's explicit call (matches how Blade Ward's bonus-action change and Bane's flat
-*comment 10-round duration are both already-documented house rules). RAW: no action cost, mark a target you just
-*comment hit (uses = proficiency bonus, long rest), first hit against the mark each of your turns adds a die
-*comment (favored_foe_die_sides: 1d4 at level 1, 1d6 at 6, 1d8 at 14). Only one mark can be live at a time --
-*comment target_slot/expires_round hold it directly rather than one field per enemy slot (contrast Bane, which
-*comment can hit up to three targets AT ONCE and needs a field per slot; Favored Foe never does). Duration is
-*comment 10 rounds (1 minute), the same flat stand-in for concentration Bane already uses -- nothing in this
-*comment engine tracks concentration, and Favored Foe isn't getting an exception either.
+*comment HUNTER'S MARK (2026-10-02), the Ranger's level 1 feature. It replaces Tasha's Favored Foe (2026-09-29) and follows the 2024 rules,
+*comment where Favored Enemy IS free castings of Hunter's Mark: a BONUS ACTION marks one creature as your quarry, and for 10 rounds every weapon
+*comment hit you land on it adds 1d6 force. The free castings are favored_foe_uses (proficiency bonus, long rest); a level 2 Ranger's spell slots
+*comment will pay for more. If the marked creature drops, the mark waits and can be moved to a new creature with another bonus action at no cost.
+*comment Only one mark can be live at a time, so target_slot/expires_round hold it directly (contrast Bane, which needs a field per slot). Duration is
+*comment a flat 10 rounds, the same stand-in for concentration Bane uses: nothing in this engine tracks concentration. The variable names keep
+*comment "favored_foe" so no saved variable had to change; the player sees "Hunter's Mark" everywhere.
 *create favored_foe_uses 0
 *create favored_foe_max 0
-*create favored_foe_die_sides 4
+*create favored_foe_die_sides 6
 *create favored_foe_target_slot 0
 *create favored_foe_expires_round 0
-*comment Set true by the "Mark Favored Foe" attack option (combat.txt), read-and-cleared at the top of
-*comment resolve_weapon_attack_choice so it can never leak into a later, unrelated attack (a miss on the marking
-*comment swing spends nothing, matching RAW -- the mark only takes if the hit actually lands).
-*create combat_attempt_favored_foe_mark false
+*comment Set each time the combat hub opens (combat_hm_state, combat.txt): combat_hm_live is true while the mark is on a living creature,
+*comment combat_hm_orphaned while it is unexpired but its creature has dropped (a bonus action moves it free), combat_hm_name the creature's name.
+*create combat_hm_live false
+*create combat_hm_orphaned false
+*create combat_hm_name ""
+*comment DUAL SHOT (2026-10-02, the Grim Hollow fighting style): two shots from one Attack action, at two different creatures at the same range, both with disadvantage.
+*comment The player assigns them in the sidebar, reusing Magic Missile's dart allocation with a maximum of 2. combat_dual_pair_ok says a legal pair exists (the option is
+*comment offered), combat_dual_valid/combat_dual_a/_b/_why report what the player assigned. combat_dual_shot_active marks the two-shot sequence (disadvantage on each);
+*comment combat_dual_second_slot holds the second target between the shots, and fight_check_enemy_hp starts the second shot on its own page from it.
+*create combat_dual_shot_active false
+*create combat_dual_second_slot 0
+*create combat_dual_pair_ok false
+*create combat_dual_valid false
+*create combat_dual_a 0
+*create combat_dual_b 0
+*create combat_dual_why ""
+*comment RECKLESS ATTACK (Barbarian level 2, 2026-10-02): true from the moment the player declares it, before their first attack of a turn, until their next turn
+*comment begins (combat_next_turn clears it when the queue reaches the player). While true: the player's Strength attack rolls have advantage, and every enemy attack
+*comment roll against the player has advantage too (resolve_enemy_attack and the reverse opportunity attack, combat_dice.txt). Reset false with the other fight flags.
+*create combat_reckless_active false
+*comment BARDIC INSPIRATION (2026-10-02, built; it was only dossier text before). A bonus action spends one use (bard_inspiration_uses, maximum = the Charisma modifier, at
+*comment least 1; refresh_class_resource_maxs sets it, and a short or long rest returns every use, the short-rest rule being a house rule). The die is bard_inspiration_die_sides
+*comment (d6, d8 at level 5, d10 at 10, d12 at 15). An ally in the fight is inspired when there is one (combat_inspired_ally = its slot); otherwise the Bard inspires
+*comment themselves (combat_inspired_self), as a house rule so the feature is not dead in solo fights. The Bard's held die is applied in roll_d20_check (dice_engine.txt), so it
+*comment covers every player attack roll (weapon and spell), ability check and saving throw: rolled only when the roll would FAIL and added to it, deciding after the d20 like 5e, and lost
+*comment whether or not it is enough. It lasts through the fight (5e's 10 minutes is not modelled). An inspired ally's die is applied in resolve_ally_attack (combat_dice.txt).
+*comment bard_inspiration_started is false until the first refresh_class_resource_maxs of a Bard, which fills the uses to the maximum once.
+*create bard_inspiration_uses 0
+*create bard_inspiration_started false
+*create bard_inspiration_max 0
+*create bard_inspiration_die_sides 6
+*create combat_inspired_self false
+*create combat_inspired_ally 0
+*create combat_inspire_ally_pick 0
 *create barbarian_rage_uses 2
 *create barbarian_rage_damage_bonus 2
 *create is_raging false
@@ -871,8 +911,6 @@
 *create corbel_healed_player false
 *create corbel_charter_argument false
 *create has_althea_phial false
-*create visited_elspeth_chapel false
-*create discussed_ashbrook_elspeth false
 
 *comment --- D&D D20 DICE & SKILL CHECK ENGINE ---
 *create d20_roll 10
@@ -891,9 +929,8 @@
 *comment Same lifecycle as advantage/disadvantage/guidance_active above: a caller sets it true right before
 *comment *gosub_scene dice_engine roll_d20_check, and roll_d20_check itself resets it false on every exit path, so
 *comment it can never bleed into the next, unrelated check. Weapon attacks and the five attack-roll cantrips set
-*comment it (a player is always proficient with their own equipped weapon and known spells); general skill
-*comment checks throughout the story don't, and stay exactly as they are today -- see update_dnd_stats' own
-*comment prof_bonus comment for why a blanket add would be wrong for those.
+*comment it (a player is always proficient with their own equipped weapon and known spells). Skill checks go through roll_skill_check, which
+*comment sets it from the skill's own skill_<id> flag (a proficient skill only), so a skill check is never a blanket add either.
 *create check_add_prof_bonus false
 *comment ══════════════════════════════════════════════════════════════
 *comment SKILL PROFICIENCIES (5e's 18 skills). One boolean each, granted by class/background/race wherever
@@ -963,6 +1000,19 @@
 *create locked_guidance_roll 0
 *create locked_adv_label ""
 *create roll_had_advantage false
+*comment True when the last d20 roll had disadvantage (set beside roll_had_advantage in roll_d20_check). Sneak Attack's ally
+*comment trigger reads it, because 5e denies that trigger on a roll made with disadvantage, even when advantage cancelled it.
+*create roll_had_disadvantage false
+*comment A flat bonus a caller wants on THIS roll (Archery, +2 on a ranged weapon attack). roll_d20_check adds it and clears it; the caller clears it again after the roll.
+*create check_flat_bonus 0
+*comment Sneak Attack's second trigger (2026-10-01): a living ally is in melee, so the target is flanked. combat_flank_ally is the
+*comment slot found by combat_find_flanking_ally (0 = none). combat_sneak_via_ally is true when THIS hit was sneak-attacking
+*comment through the ally and not through advantage, and combat_sneak_ally_name is who, for the hit prose (combat.txt).
+*create combat_flank_ally 0
+*comment Sneak Attack is once per turn (2026-10-01): true once it has fired, cleared with the other per-turn budgets in combat_begin_round.
+*create combat_sneak_spent false
+*create combat_sneak_via_ally false
+*create combat_sneak_ally_name ""
 *create damage_roll_locked false
 *create locked_damage_page_id 0
 *comment Damage-roll breakdown banners (2026-09-27, on request -- "I only see attack rolls, not damage rolls"):
@@ -1104,6 +1154,8 @@
 *create locked_combat_magic_missile_page_id 0
 *create second_wind_locked false
 *create locked_second_wind_page_id 0
+*create action_surge_locked false
+*create locked_action_surge_page_id 0
 *create activate_rage_locked false
 *create locked_activate_rage_page_id 0
 
@@ -1395,7 +1447,7 @@
 *comment Whole-body lock for resolve_weapon_attack_choice (combat.txt, 2026-09-30) -- separate from
 *comment combat_weapon_hit_locked just above, which only guards resolve_player_weapon_hit's OWN dice/HP math.
 *comment This one guards everything AROUND it too: fight_pick_target's kill-priority re-scan, pick_weapon_flavor's
-*comment *rand, and the Favored Foe mark -- see that label's own header comment for the bug this caught.
+*comment *rand, and the Hunter's Mark bookkeeping -- see that label's own header comment for the bug this caught.
 *create combat_weapon_attack_locked false
 *create locked_combat_weapon_attack_page_id 0
 *create combat_sneak_attack_triggered false
@@ -1619,6 +1671,8 @@
 *create combat_enemy1_flee_hp_pct 0
 *create combat_enemy1_bane_expires_round 0
 *create combat_enemy1_disadvantage false
+*comment Slowed (2026-10-01): rounds left, 0 = none. Set by Ray of Frost, read by combat_next_turn (a Slowed enemy cannot Dash) and shown on the hover card (index.html). Consumed at the end of that enemy's own next turn.
+*create combat_enemy1_slowed 0
 *create combat_enemy1_advantage false
 *comment Opportunity attack (2026-09-28), per slot 1-6, mirroring disadvantage/advantage right above: has THIS
 *comment enemy already spent its one opportunity attack on the player this round? 5e gives each creature one
@@ -1700,6 +1754,7 @@
 *create combat_enemy2_flee_hp_pct 0
 *create combat_enemy2_bane_expires_round 0
 *create combat_enemy2_disadvantage false
+*create combat_enemy2_slowed 0
 *create combat_enemy2_advantage false
 *create combat_enemy2_oa_used false
 *create combat_enemy2_range 0
@@ -1782,6 +1837,7 @@
 *create combat_enemy3_flee_hp_pct 0
 *create combat_enemy3_bane_expires_round 0
 *create combat_enemy3_disadvantage false
+*create combat_enemy3_slowed 0
 *create combat_enemy3_advantage false
 *create combat_enemy3_oa_used false
 *create combat_enemy3_range 0
@@ -1846,6 +1902,7 @@
 *create combat_enemy4_flee_hp_pct 0
 *create combat_enemy4_bane_expires_round 0
 *create combat_enemy4_disadvantage false
+*create combat_enemy4_slowed 0
 *create combat_enemy4_advantage false
 *create combat_enemy4_oa_used false
 *create combat_enemy4_range 0
@@ -1910,6 +1967,7 @@
 *create combat_enemy5_flee_hp_pct 0
 *create combat_enemy5_bane_expires_round 0
 *create combat_enemy5_disadvantage false
+*create combat_enemy5_slowed 0
 *create combat_enemy5_advantage false
 *create combat_enemy5_oa_used false
 *create combat_enemy5_range 0
@@ -1974,6 +2032,7 @@
 *create combat_enemy6_flee_hp_pct 0
 *create combat_enemy6_bane_expires_round 0
 *create combat_enemy6_disadvantage false
+*create combat_enemy6_slowed 0
 *create combat_enemy6_advantage false
 *create combat_enemy6_oa_used false
 *create combat_enemy6_range 0
@@ -2405,6 +2464,15 @@
 *comment enemy that won initiative still swings first. Reset false in fight_cleanup (combat.txt) like every other
 *comment fight-scoped flag.
 *create combat_player_surprise false
+*comment Hidden (2026-10-01): true while the player is concealed from every enemy. Armed by a successful Hide (not built yet),
+*comment it gives advantage on the NEXT attack roll -- weapon or spell, which is what switches Sneak Attack on -- and is spent
+*comment by making that roll, hit or miss (combat_hidden_attack_roll, combat.txt). Also ends when the player takes damage
+*comment (resolve_enemy_attack). Reset false in fight_cleanup like every other fight-scoped flag.
+*create combat_player_hidden false
+*comment Output of combat_check_hide (combat.txt): true when a living enemy is at Close or Engaged, so Hide is not offered.
+*create combat_hide_blocked false
+*comment True once an enemy has had its one spot check against a hidden player this round (combat_hidden_enemy_turn, combat.txt); cleared each round.
+*create combat_hide_checked false
 *create combat_turn_count 0
 *create combat_turn_kind_1 ""
 *create combat_turn_slot_1 0
@@ -2465,6 +2533,7 @@
 *create combat_enemy_atk_locked_0 false
 *create combat_enemy0_name "none"
 *create combat_enemy0_hp 0
+*create combat_enemy0_slowed 0
 *create combat_enemy0_max_hp 0
 *create combat_enemy0_ac 10
 *create combat_enemy0_atk_bonus 0
@@ -2813,7 +2882,6 @@
 *create codex_sanctuary_charter false
 *create codex_iron_bull false
 *create codex_river_gorge false
-*create codex_weir_knots false
 *create codex_silt_lurkers false
 *create codex_imperial_booms false
 *create codex_letters_of_credit false
@@ -2885,6 +2953,9 @@
 *create lyra_refused_day 0
 *create lyra_epi_seen false
 *create lyra_scars_told false
+*create lyra_epi_day 0
+*create lyra_repay_days 14
+*create lyra_repaid false
 *create alder_actions_left 6
 *create turned_in_customs_vellum false
 *comment Completion flags for the level-up quest pool (character_progression.txt refresh_quests_finished). Each is set once, in its quest's success
@@ -2894,10 +2965,6 @@
 *create morzan_vellum_delivered false
 *create studied_customs_vellum false
 *create alder_river_chain_cleared false
-*create elspeth_safe false
-*create elspeth_with_company false
-*create elspeth_role "none"
-*create elspeth_bond 55
 *create weaver_gratitude false
 *create gilded_scales_leverage false
 *create alder_wager_won false
@@ -3203,7 +3270,6 @@
 *create has_rorik_grip_wraps false
 *create has_rorik_campaign_belt false
 *create has_toll_seal_ring false
-*create has_elspeth_weir_knot false
 *create has_althea_votive_ring false
 *create intimate_encounters 0
 *comment Widow Corve's: daily companion roster and encounter state

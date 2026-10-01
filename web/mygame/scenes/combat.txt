@@ -79,6 +79,7 @@
 *comment ══════════════════════════════════════════════════════════════
 
 *label fight_setup
+*gosub_scene character_progression refresh_class_resource_maxs
 *comment Resets every ephemeral combat flag so encounter N+1 never inherits
 *comment leftover state from encounter N (or a Shield/Hex left armed from a
 *comment fight the player fled). Pre-existing temp_hp from meals or prep spells
@@ -109,7 +110,11 @@
 *set combat_mm_banner_6 ""
 *set favored_foe_target_slot 0
 *set favored_foe_expires_round 0
-*set combat_attempt_favored_foe_mark false
+*set combat_dual_shot_active false
+*set combat_dual_second_slot 0
+*set combat_reckless_active false
+*set combat_inspired_self false
+*set combat_inspired_ally 0
 *set combat_outcome ""
 *set combat_engaged true
 *comment Condition-on-hit and movepool resets live in fight_cleanup, not
@@ -600,7 +605,11 @@
 *set combat_mm_banner_6 ""
 *set favored_foe_target_slot 0
 *set favored_foe_expires_round 0
-*set combat_attempt_favored_foe_mark false
+*set combat_dual_shot_active false
+*set combat_dual_second_slot 0
+*set combat_reckless_active false
+*set combat_inspired_self false
+*set combat_inspired_ally 0
 *set combat_is_nonlethal false
 *comment Guard against a condition-inflicted disadvantage the player never
 *comment burned (fled/won before their next roll) bleeding into an unrelated
@@ -610,6 +619,8 @@
 *comment Same reason: only the calling scene's own stealth success sets this, for THIS fight -- it must not carry
 *comment into the next fight_<name> label and grant an unearned surprise round there.
 *set combat_player_surprise false
+*comment Same reason for hiding: cover from one fight must not arm advantage in the next.
+*set combat_player_hidden false
 *set player_movement_restricted false
 *comment Condition-on-hit, Stunned, movepool, and damage-type resistance are
 *comment all opt-in per fight_<name> label -- reset here (end of THIS fight,
@@ -731,6 +742,7 @@
   *comment resolve_enemy_attack_on_ally), but reset here too as a backstop -- an enemy that dies (or the fight
   *comment ends) before it ever gets to act with the debuff/buff applied would otherwise leave it sitting true for
   *comment whatever fight reuses this slot number next.
+  *set {(fc_p & "slowed")} 0
   *set {(fc_p & "disadvantage")} false
   *set {(fc_p & "advantage")} false
   *comment Range: 0 means Engaged, every type's default -- reset per-slot for the same reason as Bane above.
@@ -1069,6 +1081,139 @@
   *goto combat_mm_recount_darts_loop
 *return
 
+*label find_flanking_ally
+*comment Sets combat_flank_ally to a living ally at range 0, or 0 for none. Used by Sneak Attack's ally trigger
+*comment (resolve_player_weapon_hit, combat_dice.txt). Lowest slot wins; it only needs to know whether one exists.
+*set combat_flank_ally 0
+*temp ffa_i 1
+*label find_flanking_ally_loop
+*if (ffa_i <= combat_ally_slot_cap)
+  *temp ffa_hp {(("combat_ally" & ffa_i) & "_hp")}
+  *temp ffa_range {(("combat_ally" & ffa_i) & "_range")}
+  *if ((combat_flank_ally = 0) and ((ffa_hp > 0) and (ffa_range <= 0)))
+    *set combat_flank_ally ffa_i
+  *set ffa_i + 1
+  *goto find_flanking_ally_loop
+*return
+
+*label combat_hidden_attack_roll
+*comment Called immediately before every player attack roll (the weapon roll and each spell attack's roll). A hidden player
+*comment attacks with advantage, and making the attack gives the position away whether it hits or misses, so the flag is
+*comment spent here, before the roll, not after it. That is the only place advantage is applied, so a new attack option
+*comment adds this one line and nothing else. Advantage still cancels against any disadvantage already set (reach, etc.),
+*comment same as everywhere else. Sneak Attack reads roll_had_advantage, so it fires on its own from here.
+*if (combat_player_hidden)
+  *set combat_player_hidden false
+  *set advantage true
+  [b][👤 You strike from hiding, and your cover breaks.][/b]
+  *line_break
+*return
+
+*label combat_check_hide
+*comment Hide needs open ground between you and every living enemy (2026-10-01): no enemy at Close (1) or Engaged (0).
+*comment Reads each slot's own range, not the shared combat_enemy_range scratch, which only follows one slot.
+*set combat_hide_blocked false
+*temp cch_i 1
+*label combat_check_hide_loop
+*if (cch_i <= combat_enemy_count)
+  *temp cch_hp {(("combat_enemy" & cch_i) & "_hp")}
+  *temp cch_range {(("combat_enemy" & cch_i) & "_range")}
+  *if ((cch_hp > 0) and (cch_range <= 1))
+    *set combat_hide_blocked true
+  *set cch_i + 1
+  *goto combat_check_hide_loop
+*return
+
+*label combat_inspire_pick
+*comment Bardic Inspiration: the first living ally, or 0 when the Bard stands alone (then the die goes to the Bard).
+*set combat_inspire_ally_pick 0
+*temp cip_i 1
+*label combat_inspire_pick_loop
+*if (cip_i <= combat_ally_slot_cap)
+  *temp cip_hp {(("combat_ally" & cip_i) & "_hp")}
+  *if ((cip_hp > 0) and (combat_inspire_ally_pick = 0))
+    *set combat_inspire_ally_pick cip_i
+  *set cip_i + 1
+  *goto combat_inspire_pick_loop
+*return
+
+*label combat_dual_shot_check
+*comment Dual Shot (2026-10-02): sets combat_dual_pair_ok when two living enemies stand at the same range tier. The engine has no distance between two
+*comment particular creatures, so "within 10 feet of the first target" is approximated as "the same range tier", the same shared-bucket idea the interception
+*comment and flanking checks use.
+*set combat_dual_pair_ok false
+*temp cdc_i 1
+*label combat_dual_shot_check_i
+*if (cdc_i <= combat_enemy_count)
+  *temp cdc_ihp {(("combat_enemy" & cdc_i) & "_hp")}
+  *temp cdc_irange {(("combat_enemy" & cdc_i) & "_range")}
+  *if (cdc_ihp > 0)
+    *temp cdc_j (cdc_i + 1)
+    *label combat_dual_shot_check_j
+    *if (cdc_j <= combat_enemy_count)
+      *temp cdc_jhp {(("combat_enemy" & cdc_j) & "_hp")}
+      *temp cdc_jrange {(("combat_enemy" & cdc_j) & "_range")}
+      *if ((cdc_jhp > 0) and (cdc_jrange = cdc_irange))
+        *set combat_dual_pair_ok true
+      *set cdc_j + 1
+      *goto combat_dual_shot_check_j
+  *set cdc_i + 1
+  *goto combat_dual_shot_check_i
+*return
+
+*label combat_dual_shot_validate
+*comment Reads what the player assigned in the sidebar (combat_mm_darts_N, max 2). Valid means exactly two different living enemies with one shot each, at the same
+*comment range tier. Sets combat_dual_a/_b to those slots, or combat_dual_why to the reason it is not.
+*set combat_dual_valid false
+*set combat_dual_a 0
+*set combat_dual_b 0
+*set combat_dual_why ""
+*gosub combat_mm_recount_darts
+*temp cdv_i 1
+*temp cdv_slots 0
+*temp cdv_over false
+*label combat_dual_shot_validate_loop
+*if (cdv_i <= combat_enemy_slot_cap)
+  *temp cdv_n {(("combat_mm_darts_" & cdv_i))}
+  *if (cdv_n > 0)
+    *set cdv_slots + 1
+    *if (cdv_n > 1)
+      *set cdv_over true
+    *if (combat_dual_a = 0)
+      *set combat_dual_a cdv_i
+    *else
+      *set combat_dual_b cdv_i
+  *set cdv_i + 1
+  *goto combat_dual_shot_validate_loop
+*if (combat_mm_darts_total < 2)
+  *set combat_dual_why "Place both shots first: click an enemy in the sidebar for each."
+*elseif (cdv_over)
+  *set combat_dual_why "The two shots must go to two different creatures."
+*else
+  *temp cdv_arange {(("combat_enemy" & combat_dual_a) & "_range")}
+  *temp cdv_brange {(("combat_enemy" & combat_dual_b) & "_range")}
+  *if (not(cdv_arange = cdv_brange))
+    *set combat_dual_why "The two targets must be at the same range, close enough together to bracket with one draw."
+  *else
+    *set combat_dual_valid true
+*return
+
+*label combat_hm_state
+*comment Hunter's Mark state, refreshed every time the hub opens (see startup.txt's *create comment). Live: the mark is unexpired and its
+*comment creature still stands. Orphaned: unexpired, but that creature has dropped, so the mark can be moved with a free bonus action.
+*set combat_hm_live false
+*set combat_hm_orphaned false
+*set combat_hm_name ""
+*if (character_class = "ranger")
+  *if ((favored_foe_target_slot > 0) and (favored_foe_expires_round >= combat_round))
+    *temp chs_hp {(("combat_enemy" & favored_foe_target_slot) & "_hp")}
+    *if (chs_hp > 0)
+      *set combat_hm_live true
+      *set combat_hm_name {(("combat_enemy" & favored_foe_target_slot) & "_name")}
+    *else
+      *set combat_hm_orphaned true
+*return
+
 *label fight_pick_target
 *comment Kill priority (2026-09-28): the lowest-HP living slot, not the lowest slot number -- finishes off
 *comment whichever enemy is already wounded instead of always working strictly front-to-back. Shared by the
@@ -1346,9 +1491,7 @@
 *comment own turn, never a mid-enemy-turn reaction. Attack roll and the finesse/two-handed/Dueling/Rage damage
 *comment math are replicated here instead (mirroring that label's own melee branch exactly); the actual roll,
 *comment resistance/vulnerability and HP application reuse resolve_player_weapon_hit whole, so Sneak Attack and
-*comment Hex still apply for free -- both already live inside that label, not duplicated here. Favored Foe
-*comment marking is deliberately NOT offered on a reaction: RAW ties it to the player's own declared attack, and
-*comment combat_attempt_favored_foe_mark is only ever set by the player's own menu choice, never true here.
+*comment Hex and Hunter's Mark still apply for free -- both already live inside that label, not duplicated here.
 *comment
 *comment Deliberately simpler than the player's own turn for flavor: a short, dedicated line rather than
 *comment reusing pick_weapon_flavor's full per-weapon-type variant pools, which are only reachable through
@@ -1379,7 +1522,7 @@
   *else
     *set combat_player_dmg_dice_sides 8
     *set combat_player_dmg_bonus str_mod
-  *if (fighter_fighting_style = "dueling")
+  *if (fighting_style = "dueling")
     *if (not(weapon_hands = "two_handed"))
       *set combat_player_dmg_bonus + 2
   *if ((character_class = "barbarian") and (is_raging))
@@ -1903,6 +2046,7 @@
   *set cbr_a_oa_i + 1
   *goto combat_begin_round_ally_oa_loop
 *set combat_player_disengaged false
+*set combat_hide_checked false
 *comment Start of a round: refill the budgets. Enemy disadvantage/advantage (Ray of Frost, Vicious Mockery, Brace,
 *comment pre-fight ambush) is no longer cleared here (2026-09-28) -- now that it's stored per-slot
 *comment (combat_enemy<N>_disadvantage/_advantage, see fight_sync_target_in/apply_enemy_type/resolve_enemy_attack),
@@ -1914,6 +2058,7 @@
 *set combat_player_bonus_left combat_player_bonus_max
 *set combat_player_attacks_left combat_player_attacks_max
 *set combat_player_moves_left combat_player_moves_max
+*set combat_sneak_spent false
 *set player_movement_restricted false
 *return
 
@@ -2099,17 +2244,37 @@
 *if (shield_armed)
   *line_break
   [b][✨ Shield Armed — will trigger on the next hit][/b]
+*if (combat_player_hidden)
+  *line_break
+  [b][👤 Hidden: your next attack has advantage][/b]
 *if (blade_ward_active)
   *line_break
   *comment blade_ward_survived_a_turn true means this is its SECOND displayed round -- the tick
   *comment (blade_ward_tick, above) clears blade_ward_active the moment this turn ends, before that
   *comment round's own attacks resolve, so the plain banner would claim protection for a round that's
-  *comment already spent. Recasting (the Blade Ward option, below) resets both flags and buys a fresh
-  *comment two rounds, same as RAW re-casting to refresh the duration.
+  *comment already spent. Blade Ward cannot be recast while it is up or fading (see combat_can_blade_ward), so
+  *comment the ward is only ever protecting on alternating rounds.
   *if (blade_ward_survived_a_turn)
     [b][🛡️ Blade Warded — fading, clears when you end this turn][/b]
   *else
     [b][🛡️ Blade Warded — slashing, piercing & bludgeoning attacks hit for half][/b]
+*if (combat_inspired_self)
+  *line_break
+  [b][🎵 Inspired: a 1d${bard_inspiration_die_sides} waits to save a failed roll][/b]
+*if (combat_inspired_ally > 0)
+  *line_break
+  *temp cbi_aname {(("combat_ally" & combat_inspired_ally) & "_name")}
+  [b][🎵 ${cbi_aname} is inspired: a 1d${bard_inspiration_die_sides} waits to save a missed attack][/b]
+*if (combat_reckless_active)
+  *line_break
+  [b][⚔️ Reckless: advantage on your Strength attacks, and advantage against you, until your next turn][/b]
+*gosub combat_hm_state
+*if (combat_hm_live)
+  *line_break
+  [b][🎯 Hunter's Mark on ${combat_hm_name}: +1d6 force on your weapon hits][/b]
+*elseif (combat_hm_orphaned)
+  *line_break
+  [b][🎯 Hunter's Mark has no quarry: move it with a bonus action][/b]
 *if (hex_active)
   *line_break
   [b][🔮 Hex Active — +1d6 Necrotic Damage on all hits][/b]
@@ -2176,17 +2341,71 @@
 *temp combat_can_second_wind false
 *if ((character_class = "fighter") and (fighter_second_wind_uses > 0))
   *set combat_can_second_wind true
+*comment Action Surge (2026-10-01): free (no action, no bonus), once the action is spent. Offered only after the action is gone, so the
+*comment extra one is never wasted, and the turn does not auto-end while it is still available (see the auto-end test below).
+*temp combat_can_action_surge false
+*if (((character_class = "fighter") and (fighter_action_surge_uses > 0)) and (combat_player_actions_left <= 0))
+  *set combat_can_action_surge true
+*comment Hunter's Mark (2026-10-02): a bonus action. Offered when the mark is orphaned (moving it is free), or when a free cast is left and the
+*comment active target is not already the live quarry. combat_hm_orphaned/combat_hm_live come from combat_hm_state, called where the hub banner prints.
+*comment Dual Shot: the style, a ranged weapon, an attack to spend, and a legal pair of targets on the field.
+*comment Bardic Inspiration: a bonus action. An ally in the fight is the target when there is one (once, while it still holds no die); the Bard inspires themselves
+*comment only when no ally is on the field and they hold no die already.
+*temp combat_can_inspiration false
+*temp cbi_name ""
+*if ((character_class = "bard") and (bard_inspiration_uses > 0))
+  *gosub combat_inspire_pick
+  *if (combat_inspire_ally_pick > 0)
+    *if (combat_inspired_ally = 0)
+      *set combat_can_inspiration true
+      *set cbi_name {(("combat_ally" & combat_inspire_ally_pick) & "_name")}
+  *elseif (not(combat_inspired_self))
+    *set combat_can_inspiration true
+    *set cbi_name "yourself"
+*comment Reckless Attack (Barbarian level 2): free, declared before the first attack of the turn, once per turn (it lasts until the next one).
+*temp combat_can_reckless false
+*if ((((character_class = "barbarian") and (character_level >= 2)) and (not(combat_reckless_active))) and (combat_player_attacks_left = combat_player_attacks_max))
+  *set combat_can_reckless true
+*temp combat_can_dual_shot false
+*if (((combat_can_attack) and (fighting_style = "dual_shot")) and (weapon_type = "ranged"))
+  *gosub combat_dual_shot_check
+  *if (combat_dual_pair_ok)
+    *set combat_can_dual_shot true
+*temp combat_can_hunters_mark false
+*if (character_class = "ranger")
+  *if (combat_hm_orphaned)
+    *set combat_can_hunters_mark true
+  *elseif (((favored_foe_uses > 0) or (ranger_spell_slots > 0)) and (not((combat_hm_live) and (favored_foe_target_slot = combat_active_target))))
+    *set combat_can_hunters_mark true
+*comment What the cast costs, for the button text: nothing to move an orphaned mark, a free cast while any are left, otherwise a spell slot.
+*temp chm_cost_text ""
+*if (combat_hm_orphaned)
+  *set chm_cost_text ""
+*elseif (favored_foe_uses > 0)
+  *set chm_cost_text ", ${favored_foe_uses} free casts left"
+*else
+  *set chm_cost_text ", spending a spell slot (${ranger_spell_slots} left)"
 *temp combat_can_rage false
 *if (((character_class = "barbarian") and (not(is_raging))) and (barbarian_rage_uses > 0))
   *set combat_can_rage true
 *comment Blade Ward: a cantrip, so no spell-slot gate (contrast Healing Word above) -- just "do you know
 *comment it" across the three caster cantrip families, which is why it is one long or-chain over seven
-*comment variables rather than a character_class test. Deliberately NOT gated on
-*comment not(blade_ward_active): RAW lets you re-cast to refresh the duration, and refusing that would
-*comment make the house rule (cheap enough to spend a bonus action on) strictly worse than RAW.
+*comment variables rather than a character_class test. Gated on not(blade_ward_active) (2026-10-01): RAW lets you
+*comment re-cast to refresh, but recasting while it was fading kept the ward up every round, so a caster could trade
+*comment blows with a fighter. It can now only be cast again once it has fully expired, which is every other round.
 *temp combat_can_blade_ward false
 *if (((((wizard_cantrip = "blade_ward") or (wizard_cantrip_2 = "blade_ward")) or (wizard_cantrip_3 = "blade_ward")) or (((bard_cantrip = "blade_ward") or (bard_cantrip_2 = "blade_ward")) or ((warlock_cantrip = "blade_ward") or (warlock_cantrip_2 = "blade_ward")))))
   *set combat_can_blade_ward true
+*if (blade_ward_active)
+  *set combat_can_blade_ward false
+*comment Cunning Action (2026-10-01, built as a level 1 house rule, then moved back to 5e's level 2 the same day): a level 2+ rogue can Dash, Disengage or Hide as a
+*comment BONUS action. combat_cunning is true while a level 2+ rogue still has the bonus action, and it switches those three options from
+*comment the action budget to the bonus budget (label, gate and spend all read it). With the bonus spent a rogue falls back to
+*comment the ordinary action version, like anyone. Because Dash is always usable, a rogue with an unspent bonus action always
+*comment has something to spend it on, so the turn does not auto-end for them until the bonus is gone or they choose End Turn.
+*temp combat_cunning false
+*if (((character_class = "rogue") and (character_level >= 2)) and (combat_player_bonus_left > 0))
+  *set combat_cunning true
 *temp combat_bonus_available false
 *comment Blade Ward MUST be in this or-chain. It is what separates "bonus action still unspent" from
 *comment "nothing left to spend at all" for the auto-end check below -- leave it out and that check
@@ -2194,6 +2413,12 @@
 *if (((combat_can_hex) or (combat_can_healing_word)) or ((combat_can_second_wind) or (combat_can_rage)))
   *set combat_bonus_available true
 *if (combat_can_blade_ward)
+  *set combat_bonus_available true
+*if (combat_can_hunters_mark)
+  *set combat_bonus_available true
+*if (combat_can_inspiration)
+  *set combat_bonus_available true
+*if (combat_cunning)
   *set combat_bonus_available true
 *comment Movement option availability (2026-09-28): whether Push Forward/Fall Back should even show, checked
 *comment against EVERY living enemy, not just whichever one fight_pick_target (kill-priority, above) happened to
@@ -2213,7 +2438,7 @@
 *comment Nested rather than flat: ChoiceScript needs each partial result of a multi-operator condition
 *comment parenthesized (choicescript_stats.txt:1086 has the same 3-term shape written as ((A) and (B)) and (C)),
 *comment and a flat three-way `and` chain is a parse error, not a wrong answer.
-*if (((combat_player_actions_left > 0) and (not(combat_player_disengaged))) and (not(player_movement_restricted)))
+*if ((((combat_player_actions_left > 0) or (combat_cunning)) and (not(combat_player_disengaged))) and (not(player_movement_restricted)))
   *set combat_can_disengage true
 *temp combat_can_break_off false
 *if ((combat_player_moves_left > 0) and (not(player_movement_restricted)))
@@ -2232,6 +2457,13 @@
 *if (combat_player_actions_left > 0)
   *if (not(dodge_active))
     *set combat_can_dodge true
+*comment Hide (2026-10-01): an unspent action, not already hidden, and no living enemy at Close or Engaged. An
+*comment enemy range is read per slot by combat_check_hide, so a far-off group does not block it.
+*temp combat_can_hide false
+*if (((combat_player_actions_left > 0) or (combat_cunning)) and (not(combat_player_hidden)))
+  *gosub combat_check_hide
+  *if (not(combat_hide_blocked))
+    *set combat_can_hide true
 *comment Nearest-eligible range per direction (2026-09-28, button projection): which tier the move will act on,
 *comment so the option text can state the result outright ("Close -> Engaged") instead of leaving the player to
 *comment do the arithmetic off the sidebar's range tag themselves.
@@ -2338,7 +2570,7 @@
 *comment the same plain moves_left <= 0 check covers it and no separate flag is needed in that *if. Disengage is
 *comment gated on the ACTION budget instead, which keeps the turn alive on its own -- and correctly so, since the
 *comment *if already refuses to auto-end while actions_left > 0.
-*if ((((combat_player_actions_left <= 0) and (not(combat_can_attack))) and ((combat_player_bonus_left <= 0) or (not(combat_bonus_available)))) and (combat_player_moves_left <= 0))
+*if (((((combat_player_actions_left <= 0) and (not(combat_can_attack))) and ((combat_player_bonus_left <= 0) or (not(combat_bonus_available)))) and (combat_player_moves_left <= 0)) and (not(combat_can_action_surge)))
   *set combat_turn_advanced_this_page false
   *comment Ends the player's turn for Blade Ward's duration too, exactly like the End your turn option
   *comment -- running out of things to spend on IS a turn-end, so the ward must not sit un-aged.
@@ -2349,14 +2581,37 @@
     # [b][ACTION][/b] [b][Attack with your ${weapon}][/b].
       *goto resolve_weapon_attack_choice
 
-  *if ((((combat_can_attack) and ((weapon_type = "ranged") or (combat_enemy_range <= 0))) and (character_class = "ranger")) and (favored_foe_uses > 0))
-    # [b][ACTION][/b] [b][Mark Favored Foe][/b] Attack with your ${weapon}, marking the wound as a hunter's claim.
-      *comment Favored Foe (Tasha's -- see startup.txt's *create comment): no separate action cost, the mark is a
-      *comment free side effect of a hit you're already making, so this spends the same attack/action budget as
-      *comment the plain attack option above, nothing extra. Reads and clears at the top of resolve_weapon_attack_
-      *comment choice; a miss spends nothing, matching RAW ("when you hit").
-      *set combat_attempt_favored_foe_mark true
-      *goto resolve_weapon_attack_choice
+  *if ((combat_can_inspiration) and (combat_player_bonus_left > 0))
+    # [b][BONUS ACTION][/b] [b][Bardic Inspiration][/b] Inspire ${cbi_name} with a 1d${bard_inspiration_die_sides} to save a failed roll, ${bard_inspiration_uses} left.
+      *gosub combat_inspire_pick
+      *gosub_scene combat_spells resolve_bardic_inspiration
+      *if (combat_inspire_ally_pick > 0)
+        You call a rallying line across the fight, and ${cbi_name} straightens, the tune settling in their step.
+      *else
+        You throw a few stirring bars into the air for no one but yourself, and the tune settles in your pulse.
+      *comment No banner here: the hub's own "Inspired" status line says the same thing the instant it reopens.
+      *line_break
+      *goto fight_bonus_spent
+
+  *if (combat_can_reckless)
+    # [b][NO COST][/b] [b][Reckless Attack][/b] Strength attacks have advantage until your next turn, but attacks against you do too.
+      *set combat_reckless_active true
+      You throw aside every thought of guarding yourself and put everything you have into the next blow.
+      *line_break
+      *goto fight_round_hub
+
+  *if (combat_can_dual_shot)
+    # [b][ACTION][/b] [b][Dual Shot][/b] Loose two shots at two nearby creatures, both at disadvantage.
+      *comment Arms the sidebar's dart allocation (Magic Missile's, reused) with a maximum of 2. See fight_target_dual_shot.
+      *set combat_mm_targeting_active true
+      *set combat_mm_darts_max 2
+      *set combat_mm_darts_1 0
+      *set combat_mm_darts_2 0
+      *set combat_mm_darts_3 0
+      *set combat_mm_darts_4 0
+      *set combat_mm_darts_5 0
+      *set combat_mm_darts_6 0
+      *goto fight_target_dual_shot
 
   *if (((combat_can_attack) and (not(equipped_sidearm_id = "none"))) and ((sidearm_type = "ranged") or (combat_enemy_range <= 0)))
     # [b][ACTION][/b] [b][Attack with your ${sidearm}][/b].
@@ -2448,18 +2703,23 @@
       *gosub resolve_opportunity_attack
       *goto fight_move_spent
 
-  *if (combat_player_actions_left > 0)
-    # [b][ACTION][/b] [b][Dash][/b] Push yourself for extra ground this turn, giving up anything else.
+  *if ((combat_player_actions_left > 0) or (combat_cunning))
+    # [b][@{combat_cunning BONUS ACTION|ACTION}][/b] [b][Dash][/b] Push yourself for extra ground this turn@{combat_cunning .|, giving up anything else.}
       *comment Dash, RAW (2026-09-28): spends the action, grants ONE extra combat_player_moves_left, so a player
       *comment starting more than one tier out can close/open two tiers this turn -- at the cost of the action, so
       *comment no attack (or spell, or item) alongside it. Doesn't move by itself -- Push Forward/Fall Back still
       *comment do the actual moving, this just buys a second one. Always offered regardless of current range: worth
       *comment it even from Engaged, to Fall Back twice and put real distance between you and a melee threat.
       *gosub combat_grant_move
-      You suck in a breath and drive yourself harder, burning the whole of your effort into speed and nothing else.
+      *if (combat_cunning)
+        You read the ground in a glance and put on a burst of speed, quick feet, quicker thinking.
+      *else
+        You suck in a breath and drive yourself harder, burning the whole of your effort into speed and nothing else.
       *line_break
       [b][💨 You Dash — one extra move this turn][/b]
       *line_break
+      *if (combat_cunning)
+        *goto fight_bonus_spent
       *goto fight_action_spent
 
   *if ((combat_player_actions_left > 0) and ((((wizard_cantrip = "fire_bolt") or (wizard_cantrip_2 = "fire_bolt")) or (wizard_cantrip_3 = "fire_bolt")) or ((race_cantrip = "fire_bolt") or (race_cantrip_2 = "fire_bolt"))))
@@ -2484,6 +2744,7 @@
         *if (spell_penalty_result)
           *set disadvantage true
           *set combat_reach_pinned true
+        *gosub combat_hidden_attack_roll
         *gosub_scene dice_engine roll_d20_check
         *if (check_success)
           *set combat_player_dmg_type "fire"
@@ -2526,13 +2787,15 @@
         *if (spell_penalty_result)
           *set disadvantage true
           *set combat_reach_pinned true
+        *gosub combat_hidden_attack_roll
         *gosub_scene dice_engine roll_d20_check
         *if (check_success)
           *set combat_player_dmg_type "cold"
           *set combat_player_dmg_dice_sides 8
           *set combat_player_dmg_bonus 0
           *gosub_scene combat_dice resolve_player_hit true
-          *set {(("combat_enemy" & combat_active_target) & "_disadvantage")} true
+          *comment Slowed, not disadvantage (2026-10-01): the slow is a movement effect now. See combat_next_turn's closing branch.
+          *set {(("combat_enemy" & combat_active_target) & "_slowed")} 1
           *if (combat_enemy_hp <= 0)
             *gosub_scene combat_prose pick_spell_death_flavor
         *set combat_cantrip_choice_locked true
@@ -2545,7 +2808,7 @@
         *else
           ${fsh}
           *line_break
-          [b][❄️ Ray of Frost: Hit | ${combat_player_dmg_dealt} Cold damage${combat_outgoing_dmg_suffix} | ⚠️ Slowed — disadvantage on ${combat_enemy_epithet}'s next attack][/b]
+          [b][❄️ Ray of Frost: Hit | ${combat_player_dmg_dealt} Cold damage${combat_outgoing_dmg_suffix} | ⚠️ Slowed — ${combat_enemy_epithet} can't Dash on its next turn][/b]
       *else
         ${fsm}
         *line_break
@@ -2582,6 +2845,7 @@
         *set check_skill "Shocking Grasp"
         *set check_add_prof_bonus true
         *gosub spell_range_of
+        *gosub combat_hidden_attack_roll
         *gosub_scene dice_engine roll_d20_check
         *if (check_success)
           *set combat_player_dmg_type "lightning"
@@ -2628,6 +2892,7 @@
         *if (spell_penalty_result)
           *set disadvantage true
           *set combat_reach_pinned true
+        *gosub combat_hidden_attack_roll
         *gosub_scene dice_engine roll_d20_check
         *if (check_success)
           *set combat_player_dmg_type "force"
@@ -2670,6 +2935,7 @@
         *if (spell_penalty_result)
           *set disadvantage true
           *set combat_reach_pinned true
+        *gosub combat_hidden_attack_roll
         *gosub_scene dice_engine roll_d20_check
         *if (check_success)
           *set combat_player_dmg_type "necrotic"
@@ -2861,6 +3127,27 @@
       *set dodge_active true
       *goto fight_action_spent
 
+  *if (combat_can_hide)
+    # [b][@{combat_cunning BONUS ACTION|ACTION}][/b] [b][Hide][/b] Slip out of sight; your next attack has advantage.@{show_stat_hints  [Stealth Check (DC 15)]|}
+      *comment HIDE (2026-10-01). Universal ACTION; a rogue's Cunning Action makes it a BONUS action (combat_cunning, above).
+      *comment Success arms combat_player_hidden, which combat_hidden_attack_roll spends on the next attack roll. A
+      *comment failure still spends the action: you tried and were seen. roll_skill_check applies proficiency and
+      *comment Rogue Expertise to Stealth like any other check.
+      *gosub_scene dice_engine roll_skill_check 15 "stealth" "" "" "" "" ""
+      *if (check_success)
+        *set combat_player_hidden true
+        *gosub_scene combat_prose flavor_hide_success
+        *line_break
+        [b][👤 Hidden: your next attack has advantage][/b]
+      *else
+        *gosub_scene combat_prose flavor_hide_fail
+        *line_break
+        [b][👁️ Spotted: no cover found][/b]
+      *line_break
+      *if (combat_cunning)
+        *goto fight_bonus_spent
+      *goto fight_action_spent
+
   *if ((combat_player_actions_left > 0) and ((((character_class = "wizard") and (wizard_spell = "shield")) and (wizard_spell_slots > 0)) and (not(shield_armed))))
     # [b][Shield][/b] Hold the barrier-spell coiled and ready, primed to snap into place.
       *set shield_armed true
@@ -2879,6 +3166,29 @@
       *line_break
       *goto fight_bonus_spent
 
+  *if ((combat_can_hunters_mark) and (combat_player_bonus_left > 0))
+    # [b][BONUS ACTION][/b] [b][Hunter's Mark][/b] @{combat_hm_orphaned Move your mark to|Mark} ${combat_enemy_epithet} as your quarry${chm_cost_text}.
+      *gosub fight_pick_target
+      *gosub_scene combat_spells resolve_cast_hunters_mark
+      *gosub_scene combat_prose flavor_hunters_mark combat_hm_orphaned
+      *comment No banner here: the hub's own "Hunter's Mark" status line says the same thing the instant it reopens.
+      *line_break
+      *goto fight_bonus_spent
+
+  *if (combat_can_action_surge)
+    # [b][NO ACTION][/b] [b][Action Surge][/b] Push past your limit and take one more action this turn.
+      *gosub_scene character_progression action_surge
+      *gosub combat_grant_action
+      *comment If the attack was already spent, grant one back too, or the new action could not be used to swing. Granting it while attacks
+      *comment are still unspent would push attacks_left over its maximum and make the next swing skip spending the action.
+      *if (combat_player_attacks_left < combat_player_attacks_max)
+        *gosub combat_grant_attack
+      You set your jaw and call on everything you have left, and the moment stretches, giving you room for one more move.
+      *line_break
+      [b][⚡ Action Surge: one additional action this turn | ${fighter_action_surge_uses} / ${fighter_action_surge_max} left][/b]
+      *line_break
+      *goto fight_round_hub
+
   *if ((combat_can_rage) and (combat_player_bonus_left > 0))
     # [b][BONUS ACTION][/b] [b][Rage][/b] Let the fury take you.
       *gosub_scene character_progression activate_rage
@@ -2888,9 +3198,7 @@
 
   *if ((combat_can_blade_ward) and (combat_player_bonus_left > 0))
     # [b][BONUS ACTION][/b] [b][Blade Ward][/b] Blows land on the sigil, not on you.
-      *comment Sets BOTH flags, not just active: a re-cast has to clear survived_a_ward-turn too, or
-      *comment casting on the turn after the ward goes up would spend the bonus action and change
-      *comment nothing -- the effect would still expire at the end of the turn the player just started.
+      *comment Sets BOTH flags so a fresh cast always starts clean. Only offered when no ward is up or fading.
       *comment Idempotent, so this pair needs no replay lock (the tick, which is not idempotent, has
       *comment one). No spell-slot cost: it is a cantrip.
       *set blade_ward_active true
@@ -2906,7 +3214,7 @@
       *goto fight_use_item
 
   *if (combat_can_disengage)
-    # [b][ACTION][/b] [b][Disengage][/b] Move without provoking a strike for the rest of this round.
+    # [b][@{combat_cunning BONUS ACTION|ACTION}][/b] [b][Disengage][/b] Move without provoking a strike for the rest of this round.
       *comment DISENGAGE (2026-09-28). 5e makes this a 3rd-level Battle Master maneuver; there is no Battle Master
       *comment in this game, and building a whole class-resource system for one maneuver is not worth it, so it is
       *comment a universal ACTION instead -- which drops straight into the existing budget (combat_player_actions_left)
@@ -2922,6 +3230,8 @@
       *line_break
       [b][🌀 Disengaged — nothing can strike you as you move for the rest of this round][/b]
       *line_break
+      *if (combat_cunning)
+        *goto fight_bonus_spent
       *goto fight_action_spent
 
   *if (combat_can_break_off)
@@ -2995,6 +3305,42 @@ ${use_text}
 *comment when the page is built, and would go stale the instant a sidebar click changed the count afterward.
 *comment Its body re-sums the per-slot counts fresh at the moment it's actually picked, which is what matters --
 *comment casting with nothing assigned just explains why and loops back rather than silently doing nothing.
+*label fight_target_dual_shot
+*choice
+  # Loose both shots.
+    *gosub combat_dual_shot_validate
+    *if (not(combat_dual_valid))
+      ${combat_dual_why}
+      *line_break
+      *goto fight_target_dual_shot
+    *set combat_mm_targeting_active false
+    *set combat_mm_darts_1 0
+    *set combat_mm_darts_2 0
+    *set combat_mm_darts_3 0
+    *set combat_mm_darts_4 0
+    *set combat_mm_darts_5 0
+    *set combat_mm_darts_6 0
+    *comment The first shot goes to the first target through the ordinary weapon attack, with disadvantage (resolve_weapon_attack_choice reads
+    *comment combat_dual_shot_active). fight_check_enemy_hp then starts the second shot on its own page, so each roll has its own replay lock.
+    *set combat_dual_shot_active true
+    *set combat_dual_second_slot combat_dual_b
+    *set combat_player_chosen_target combat_dual_a
+    You draw two arrows at once and settle your aim between two marks.
+    *line_break
+    *goto resolve_weapon_attack_choice
+  # Cancel.
+    *comment Free, like Magic Missile's cancel: nothing was spent.
+    *set combat_mm_targeting_active false
+    *set combat_mm_darts_1 0
+    *set combat_mm_darts_2 0
+    *set combat_mm_darts_3 0
+    *set combat_mm_darts_4 0
+    *set combat_mm_darts_5 0
+    *set combat_mm_darts_6 0
+    You ease the string back, unspent.
+    *line_break
+    *goto fight_round_hub
+
 *label fight_target_magic_missile
 *choice
   # Cast Magic Missile.
@@ -3037,13 +3383,12 @@ ${use_text}
 *comment downstream need no changes either, for the same reason.
 *label resolve_weapon_attack_choice
 *comment Whole-body replay lock (2026-09-30, real bug caught live via refresh_fuzz_test.js): fight_pick_target's
-*comment kill-priority scan, pick_weapon_flavor's *rand pick, the roll, the damage, and the Favored Foe mark were
+*comment kill-priority scan, pick_weapon_flavor's *rand pick, the roll, the damage, and the Hunter's Mark bookkeeping were
 *comment all unguarded -- a same-page replay (this *choice reached a second time within one page_id, e.g. the
 *comment SAME menu redisplaying once this resolves, exactly what a refresh simulates) reran fight_pick_target
 *comment against the ALREADY-POST-DAMAGE HP snapshot, which silently swapped targets the instant the original one
 *comment died (the only living enemy left wins kill-priority), cascading into a different check_dc/
-*comment combat_reach_pinned/fwh/fwm AND a second, bogus favored_foe_uses decrement on top of it -- caught live: a
-*comment 2-enemy fight where "Mark Favored Foe" killed the first target relocked onto the second one on replay.
+*comment combat_reach_pinned/fwh/fwm -- caught live: a 2-enemy fight where a kill relocked onto the second target on replay.
 *comment roll_d20_check and resolve_player_weapon_hit already lock their OWN dice math (roll_locked/
 *comment combat_weapon_hit_locked, page_id-keyed) -- this outer lock is what stops them from even being CALLED a
 *comment second time with a different check_dc/target to begin with. Only one genuine player attack can happen per
@@ -3053,13 +3398,6 @@ ${use_text}
 *comment branch below), so a kill's flavor text is exactly as protected as a live hit's -- the branch+print section
 *comment after the lock stays unconditional (a real refresh reprints the page, it just must not re-mutate), reading
 *comment only the now-guaranteed-consistent persisted stats.
-*comment Favored Foe read-and-clear stays OUTSIDE the lock, unlike everything else here: combat_attempt_favored_foe_mark
-*comment is set by the CHOICE OPTION body itself (still outside this label, re-executed on every replay same as any
-*comment other option pick), so it must be re-cleared every pass too, or a locked replay leaves it stuck true --
-*comment a *temp local to this call either way, so a miss (or any other exit) can never leave the durable flag set
-*comment for some later, unrelated attack to pick up.
-*temp rwac_favored_foe_mark combat_attempt_favored_foe_mark
-*set combat_attempt_favored_foe_mark false
 *if (not(combat_weapon_attack_locked)) or (not(locked_combat_weapon_attack_page_id = page_id))
   *comment Every targeted option re-syncs the HUD-picked target here, at the moment it's chosen, not just when the
   *comment page was built -- a click made while the page was already open would otherwise land on the stale target.
@@ -3093,13 +3431,24 @@ ${use_text}
   *comment Reads combat_target_range, not the shared combat_enemy_range scratch, because fight_pick_target above sets
   *comment combat_active_target but does not re-sync that scratch -- the penalty would otherwise be decided by a
   *comment range left over from a previous turn (see the combat_target_range block in the hub).
+  *comment Close Combat Shooter removes the penalty; Archery adds +2 to the roll (a ranged weapon only, never a spell).
   *if (weapon_type = "ranged")
-    *if (combat_target_range <= 0)
+    *if (fighting_style = "archery")
+      *set check_flat_bonus 2
+    *if ((combat_target_range <= 0) and (not(fighting_style = "close_combat")))
       *set disadvantage true
       *comment dice_engine.txt reads this to print " (Disadvantage - in reach)" rather than a bare
       *comment "(Disadvantage)", so the player is told WHY. Cleared inside roll_d20_check on every call.
       *set combat_reach_pinned true
+  *comment Reckless Attack: advantage on attack rolls made with Strength (a finesse weapon only when STR was the stat used).
+  *if ((combat_reckless_active) and (check_stat = "str"))
+    *set advantage true
+  *comment Dual Shot: both shots are made with disadvantage.
+  *if (combat_dual_shot_active)
+    *set disadvantage true
+  *gosub combat_hidden_attack_roll
   *gosub_scene dice_engine roll_d20_check
+  *set check_flat_bonus 0
   *if (check_success)
     *set combat_player_dmg_type weapon_damage_type
     *if (weapon_type = "finesse")
@@ -3127,9 +3476,12 @@ ${use_text}
     *comment weapon (RAW excludes two-handed and ranged weapons). Both the
     *comment finesse and plain-melee branches above are one-handed melee
     *comment in this game's model.
-    *if (fighter_fighting_style = "dueling")
+    *if (fighting_style = "dueling")
       *if (not((weapon_type = "ranged") or (weapon_hands = "two_handed")))
         *set combat_player_dmg_bonus + 2
+    *comment Close Combat Shooter: +2 damage on a ranged hit against a creature within 5 feet (Engaged).
+    *if (((fighting_style = "close_combat") and (weapon_type = "ranged")) and (combat_target_range <= 0))
+      *set combat_player_dmg_bonus + 2
     *comment Rage: +barbarian_rage_damage_bonus on a melee weapon attack
     *comment made using Strength (RAW excludes ranged attacks, and a
     *comment finesse attack made with DEX instead of STR since the bonus
@@ -3141,15 +3493,6 @@ ${use_text}
             *set combat_player_dmg_bonus + barbarian_rage_damage_bonus
         *else
           *set combat_player_dmg_bonus + barbarian_rage_damage_bonus
-    *comment Favored Foe: the mark lands here, BEFORE resolve_player_weapon_hit, not after -- RAW explicitly
-    *comment includes the marking hit itself in the bonus damage ("the first time... you hit the favored enemy
-    *comment and deal damage to it, INCLUDING when you mark it"), so the flag has to be live before that label
-    *comment reads it. Moves/refreshes the mark if one was already live on a different target -- only one mark
-    *comment exists at a time, RAW.
-    *if (rwac_favored_foe_mark)
-      *set favored_foe_target_slot combat_active_target
-      *set favored_foe_expires_round (combat_round + 9)
-      *set favored_foe_uses - 1
     *gosub_scene combat_dice resolve_player_weapon_hit
     *if ((not(combat_sneak_attack_triggered)) and (combat_enemy_hp <= 0))
       *gosub_scene combat_prose pick_weapon_death_flavor
@@ -3163,16 +3506,47 @@ ${use_text}
     *comment reads as climactic regardless of lethality, so it keeps its
     *comment own fixed text rather than swapping to the generic finisher
     *comment lines below -- just the banner distinguishes an actual kill.
-    *if (combat_is_nonlethal)
-      *if (weapon_type = "ranged")
-        You loose your shot from an opening ${combat_enemy_epithet} never saw coming, and the shot grazes an arm and shatters the grip on the weapon.
+    *if (combat_sneak_via_ally)
+      *comment Sneak Attack through an ally in melee (no advantage): the opening is the ally holding the target's attention.
+      *if (combat_is_nonlethal)
+        *if (weapon_type = "ranged")
+          While ${combat_sneak_ally_name} holds ${combat_enemy_epithet}'s attention, you loose your shot, and it grazes an arm and shatters the grip on the weapon.
+        *else
+          *if (combat_enemy_hp <= 0)
+            While ${combat_sneak_ally_name} holds ${combat_enemy_epithet}'s attention, you step in and drive the weighted grip of your ${weapon} into the jaw, and ${combat_enemy_epithet} drops instantly unconscious.
+          *else
+            While ${combat_sneak_ally_name} holds ${combat_enemy_epithet}'s attention, you step in and drive the weighted grip of your ${weapon} into the jaw, and ${combat_enemy_epithet} reels, dazed and swaying.
       *else
-        You strike from an opening ${combat_enemy_epithet} never saw coming, driving the weighted grip of your ${weapon} into the jaw, and ${combat_enemy_epithet} drops instantly unconscious.
+        *if (weapon_type = "ranged")
+          *if (combat_enemy_hp <= 0)
+            While ${combat_sneak_ally_name} holds ${combat_enemy_epithet}'s attention, you loose your shot, and it finds an exposed weak point for a vicious, precise finishing blow.
+          *else
+            While ${combat_sneak_ally_name} holds ${combat_enemy_epithet}'s attention, you loose your shot, and it finds an exposed weak point and bites deep.
+        *else
+          *if (combat_enemy_hp <= 0)
+            While ${combat_sneak_ally_name} holds ${combat_enemy_epithet}'s attention, you slip in and drive your ${weapon} into an exposed weak point for a vicious, precise finishing blow.
+          *else
+            While ${combat_sneak_ally_name} holds ${combat_enemy_epithet}'s attention, you slip in and drive your ${weapon} into an exposed weak point for a vicious, precise strike.
     *else
-      *if (weapon_type = "ranged")
-        You loose your shot from an opening ${combat_enemy_epithet} never saw coming, and the shot finds an exposed weak point for a vicious, precise finishing blow.
+      *if (combat_is_nonlethal)
+        *if (weapon_type = "ranged")
+          You loose your shot from an opening ${combat_enemy_epithet} never saw coming, and the shot grazes an arm and shatters the grip on the weapon.
+        *else
+          *if (combat_enemy_hp <= 0)
+            You strike from an opening ${combat_enemy_epithet} never saw coming, driving the weighted grip of your ${weapon} into the jaw, and ${combat_enemy_epithet} drops instantly unconscious.
+          *else
+            You strike from an opening ${combat_enemy_epithet} never saw coming, driving the weighted grip of your ${weapon} into the jaw, and ${combat_enemy_epithet} reels, dazed and swaying.
       *else
-        You strike from an opening ${combat_enemy_epithet} never saw coming, driving your ${weapon} into an exposed weak point for a vicious, precise finishing blow.
+        *if (weapon_type = "ranged")
+          *if (combat_enemy_hp <= 0)
+            You loose your shot from an opening ${combat_enemy_epithet} never saw coming, and the shot finds an exposed weak point for a vicious, precise finishing blow.
+          *else
+            You loose your shot from an opening ${combat_enemy_epithet} never saw coming, and the shot finds an exposed weak point and bites deep.
+        *else
+          *if (combat_enemy_hp <= 0)
+            You strike from an opening ${combat_enemy_epithet} never saw coming, driving your ${weapon} into an exposed weak point for a vicious, precise finishing blow.
+          *else
+            You strike from an opening ${combat_enemy_epithet} never saw coming, driving your ${weapon} into an exposed weak point for a vicious, precise strike.
     *line_break
     *if (combat_enemy_hp <= 0)
       [b][🗡️ Sneak Attack | 💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
@@ -3209,6 +3583,19 @@ ${use_text}
 *if (combat_all_enemies_dead)
   *goto fight_victory
 *gosub fight_pick_target
+*if (combat_dual_shot_active)
+  *comment Dual Shot: the first shot is done. Start the second one, on its own page, at the second target. The shot spends the one attack once the
+  *comment second shot comes back through here (the second pass has combat_dual_second_slot cleared and falls through to the spend below).
+  *if (combat_dual_second_slot > 0)
+    *temp fceh_dual_slot combat_dual_second_slot
+    *temp fceh_dual_hp {(("combat_enemy" & fceh_dual_slot) & "_hp")}
+    *set combat_dual_second_slot 0
+    *if (fceh_dual_hp > 0)
+      *set combat_player_chosen_target fceh_dual_slot
+      *page_break Loose the second shot...
+      *goto resolve_weapon_attack_choice
+  *set combat_dual_shot_active false
+  *set combat_player_chosen_target 0
 *if (fceh_is_attack)
   *goto fight_attack_spent
 *goto fight_action_spent
@@ -3282,6 +3669,54 @@ ${use_text}
     *set combat_enemy_condition_icon combat_enemy_move2_condition_icon
 *return
 
+*label combat_hidden_enemy_turn
+*comment One enemy's turn against a hidden player (2026-10-01). Reads the active slot's scratch fields, like every enemy-turn
+*comment branch. The enemy never attacks the player: a melee type closes one tier toward where it last saw them (no Dash, no
+*comment attack at the end), a ranged type holds and searches. It loses the player if it ends its own move at Close or
+*comment Engaged (no roll), and otherwise the player rolls ONE Stealth check per round, DC 15, when an enemy has moved or
+*comment any living enemy is at Close or Engaged (disadvantage then, for being that near). The one check is spent by the first
+*comment enemy that triggers it, so a group does not mean a roll each; combat_begin_round clears it.
+*temp chet_moved false
+*if ((not(combat_enemy_weapon_type = "ranged")) and (combat_enemy_range > 0))
+  *set combat_enemy_range - 1
+  *set {(("combat_enemy" & combat_active_target) & "_range")} combat_enemy_range
+  *set chet_moved true
+*gosub combat_range_name combat_enemy_range
+*gosub_scene combat_prose flavor_hidden_enemy_turn chet_moved
+*line_break
+*if (chet_moved)
+  [b][🏃 ${combat_enemy_name} searches, closing to ${combat_range_display_name}][/b]
+  *line_break
+*else
+  [b][🔎 ${combat_enemy_name} searches for you][/b]
+  *line_break
+*if ((chet_moved) and (combat_enemy_range <= 1))
+  *set combat_player_hidden false
+  *gosub_scene combat_prose flavor_hidden_found_auto
+  *line_break
+  [b][👁️ ${combat_enemy_name} spots you][/b]
+  *line_break
+*elseif (not(combat_hide_checked))
+  *gosub combat_check_hide
+  *if ((chet_moved) or (combat_hide_blocked))
+    *set combat_hide_checked true
+    *if (combat_hide_blocked)
+      *set disadvantage true
+    *gosub_scene dice_engine roll_skill_check 15 "stealth" "" "" "" "" ""
+    *if (check_success)
+      *gosub_scene combat_prose flavor_hidden_holds
+      *line_break
+      [b][👤 Still hidden][/b]
+      *line_break
+    *else
+      *set combat_player_hidden false
+      *gosub_scene combat_prose flavor_hidden_found_check
+      *line_break
+      [b][👁️ ${combat_enemy_name} spots you][/b]
+      *line_break
+*set combat_turn_advanced_this_page true
+*return
+
 *label combat_next_turn
 *comment The turn queue's dispatcher: walks combat_turn_kind_*/_slot_* (startup.txt) one combatant at a time, in
 *comment the order combat_roll_initiative built. A dead enemy slot, or an "ally" entry (no ally AI exists yet), is
@@ -3308,6 +3743,8 @@ ${use_text}
 *temp cnt_kind {("combat_turn_kind_" & combat_current_turn_index)}
 *temp cnt_slot {("combat_turn_slot_" & combat_current_turn_index)}
 *if (cnt_kind = "player")
+  *comment Reckless Attack lasts until the start of the player's next turn, which is right here.
+  *set combat_reckless_active false
   *gosub fight_pick_target
   *if (combat_turn_advanced_this_page)
     *page_break Hold your ground...
@@ -3336,6 +3773,7 @@ ${use_text}
     *comment player's own Push Forward -- never straight to Engaged, so an enemy opened at Mid-Range or Long
     *comment Range costs it multiple turns too.
     *temp cnt_first_pass {("combat_turn_first_pass_" & combat_current_turn_index)}
+    *temp cnt_slowed {(("combat_enemy" & cnt_slot) & "_slowed")}
     *set {("combat_turn_first_pass_" & combat_current_turn_index)} false
     *comment cnt_rv: shared by both branches below that roll a 3-way flavor variant, declared once here instead
     *comment of once per branch.
@@ -3441,6 +3879,11 @@ ${use_text}
       *gosub_scene combat_dice resolve_enemy_attack_on_ally combat_intercepting_ally
       *gosub_scene combat_prose fight_narrate_ally_attack "enemy" cnt_slot "ally" combat_intercepting_ally combat_enemy_atk_on_ally_hit
       *set combat_turn_advanced_this_page true
+    *elseif (combat_player_hidden)
+      *comment A hidden player (2026-10-01) is not a target: this enemy does not attack the player at all. It is placed AFTER
+      *comment the interception branch above, because an ally in melee reach is still a target whether or not the player is
+      *comment hidden. See combat_hidden_enemy_turn for what the enemy does instead.
+      *gosub combat_hidden_enemy_turn
     *elseif (combat_enemy_chase_target > 0)
       *comment Commit-and-chase continuation (2026-09-29, Ranged-AI Position Awareness plan §11.3, "6a") --
       *comment checked ahead of the ordinary closing branch below, since a chasing enemy ignores its own
@@ -3486,7 +3929,8 @@ ${use_text}
           *set combat_enemy_range 0
         *set {(("combat_enemy" & cnt_slot) & "_range")} combat_enemy_range
         *temp cnt_dashed false
-        *if (combat_enemy_range > 0)
+        *comment A Slowed enemy (Ray of Frost) cannot Dash: it closes the one free tier and no more.
+        *if ((combat_enemy_range > 0) and (cnt_slowed <= 0))
           *set combat_enemy_range - 1
           *if (combat_enemy_range < 0)
             *set combat_enemy_range 0
@@ -3558,6 +4002,9 @@ ${use_text}
       *gosub fight_check_all_dead
       *if (combat_all_enemies_dead)
         *goto fight_victory
+    *comment Slowed lasts until this enemy has taken its next turn: spent here, after the turn, whichever branch it took.
+    *if (cnt_slowed > 0)
+      *set {(("combat_enemy" & cnt_slot) & "_slowed")} (cnt_slowed - 1)
 *if (cnt_kind = "ally")
   *comment select_ally_attack_target (2026-09-29, plan §11.1) picks this ally's target: ranged-prefers-ranged or
   *comment melee-prefers-closest-tier, falling back to fight_pick_target's own plain kill-priority (2026-09-28)
@@ -4818,33 +5265,6 @@ ${use_text}
 *set combat_ally1_epithet_override "Rook"
 *goto fight_library
 
-*label fight_dev_ally_retreat_test
-*comment Dev-hub only (dev_hub.txt dev_combat_test_hub) -- no story scene calls this. Ally-side rows 3-4 mirror
-*comment (2026-09-29, on request): Kess (archer, cornered at range 0, can_retreat/flee_hp_pct true/33 from her own
-*comment type) with Rook (guard, melee, also at range 0) present so combat_melee_ally_present is true, and a melee
-*comment lacedon also at range 0 so there's a real opponent capable of taking an opportunity attack when she falls
-*comment back. At full HP, watch Kess Retreat on her turn (one OA against her from the lacedon, then a clean shot
-*comment with no "(Disadvantage" tag). Reduce her HP below a third of max (watch=combat_ally1_hp, or override via
-*comment stats -- there is no combat_ally<N>_hp_override field, unlike the enemy side) and she should Disengage
-*comment instead: no OA at all, no shot, just the fall-back banner. HP override bumped well past the lacedon's own
-*comment 12 -- Kess and Rook attacking the same target in the same round can otherwise drop it before the fight
-*comment ever reaches a page break, which is fine in real play but leaves nothing to inspect from a direct
-*comment scripted_play.js entry (no real *gosub frame to return through once the fight concludes that fast).
-*set combat_is_nonlethal false
-*set combat_lib_1 "lacedon"
-*set combat_enemy_name_override "Test Lacedon"
-*set combat_enemy_hp_override 40
-*set combat_enemy_range 0
-*set combat_ally_lib_1 "archer"
-*set combat_ally1_name_override "Kess"
-*set combat_ally1_epithet_override "Kess"
-*set combat_ally1_range 0
-*set combat_ally_lib_2 "guard"
-*set combat_ally2_name_override "Rook"
-*set combat_ally2_epithet_override "Rook"
-*set combat_ally2_range 0
-*goto fight_library
-
 *label fight_dev_reach_test
 *comment Dev-hub only (dev_hub.txt dev_combat_test_hub) -- no story scene calls this. THE test for the
 *comment close-combat ranged penalty and the three spell reach tags (tools/spell_catalog.json, spell_range_of).
@@ -4869,18 +5289,6 @@ ${use_text}
 *set combat_enemy2_name_override "Second Silt-Lurker"
 *set combat_enemy_range 0
 *set combat_enemy2_range 3
-*goto fight_library
-
-*label fight_dev_quickdraw_test
-*comment Dev-hub only (dev_hub.txt dev_combat_test_hub) -- no story scene calls this. Ranged-AI Position
-*comment Awareness plan, Phase 1 (2026-09-29): one archer, opened already cornered (range 0) with NO ally in the
-*comment fight at all, so combat_intercepting_ally is always 0 and combat_next_turn's row-2 decision (combat.txt)
-*comment fires on the archer's very first turn -- watch for "the archer drops the bow" dagger prose instead of a
-*comment disadvantaged bow shot, and confirm the roll banner carries no "(Disadvantage" tag.
-*set combat_is_nonlethal false
-*set combat_lib_1 "archer"
-*set combat_enemy_name_override "Cornered Archer"
-*set combat_enemy_range 0
 *goto fight_library
 
 *label fight_dev_squad_test
@@ -4924,7 +5332,7 @@ ${use_text}
 *goto fight_library
 
 *label fight_rennick_guards
-*comment Used by alderford.txt's curing-shed standoff (defending Talia/Elspeth from Rennick), when a physical or
+*comment Used by alderford.txt's curing-shed standoff (defending Talia from Rennick), when a physical or
 *comment intimidation approach fails and his two dock-guards close in. Hired muscle looking to rough someone up and
 *comment drag them to the toll-post, not to murder anyone, so the fight is non-lethal whatever the player carries.
 *comment Two guards renamed Left and Right for the banners.

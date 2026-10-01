@@ -47,7 +47,7 @@ window.INVENTORY = {
   //     tailor's stock, Talia's and Brant's boots, Rorik's camp gifts), as of the Gilt Needle. Never "bare".
   //   - Neck, Rings: NO equip choice in the real menu
   //     (apparel is explicitly commented "Cosmetic" there; accessories only ever gains
-  //     Elspeth's Weir-Knot, one-way, which isn't modeled here yet -- manage it from the
+  //     one-way neck pieces, which aren't modeled here yet -- manage it from the
   //     Dossier). Building a swap control for slots that were never a player-facing
   //     ability produced a real dead end (a slot with only one candidate collapses to no
   //     control at all once you leave that candidate) -- see the git history on this file
@@ -434,13 +434,6 @@ window.INVENTORY = {
       description: "Tarnished silver band from a customs officer, stamped with a three-headed imperial hawk.",
       badge: function (s) { return (s.equipped_ring1_id === "toll_seal_ring" || s.equipped_ring2_id === "toll_seal_ring") ? "Worn" : ""; },
       equip: { slot: "ring", id: "toll_seal_ring" }
-    },
-    {
-      id: "elspeth_weir_knot", category: "accessories", owned: "has_elspeth_weir_knot",
-      name: "Elspeth's Weir-Knot",
-      description: "Flax cord knotted with three river stones, a sister's keepsake.",
-      badge: function (s) { return s.equipped_neck_id === "elspeth_weir_knot" ? "Worn" : "Stowed"; },
-      equip: { slot: "neck", id: "elspeth_weir_knot" }
     },
     {
       id: "althea_votive_ring", category: "accessories", owned: "has_althea_votive_ring",

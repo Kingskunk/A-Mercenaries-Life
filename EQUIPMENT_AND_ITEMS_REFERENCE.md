@@ -148,7 +148,6 @@ Standard travel and combat boots share a flat **1s 5c** baseline. Two quest boot
 | Item ID | Item Name | Attunement? | Acquisition & Retail Cost | Mechanical & Narrative Details |
 |---|---|---|---|---|
 | `hearthstone_talisman` | **Torvald's Hearthstone Talisman** | **Yes** (Consumes 1 Attunement Slot) | Master Torvald (Alderford) — Quest Reward (Priceless Artifact) | Ancient dark furnace lodestone banded in cold-hammered iron on oxhide cord. When attuned (`hearthstone_attuned = true`), grants **+1 Constitution** (`constitution + 1`), recalculating maximum HP and Constitution modifier. Automatically equips to Neck when attuned. |
-| `elspeth_weir_knot` | **Elspeth's Weir-Knot** | No (Mundane Keepsake) | Elspeth (Alderford) — Sister's Keepsake (Priceless) | Flax cord braided with three polished river pebbles. A sister's protective keepsake. Can be worn in the Neck slot when not wearing an attuned magic talisman. |
 | `none` | **Bare Throat** | No | Default / Unequipped | No necklace or talisman worn. |
 
 ---
@@ -210,7 +209,7 @@ Prices live in one place: `equipment.txt` `gear_sale_value` (retail in copper, p
 | Hollis (general store) | Hollis & Daughters, Lantern Lane (Morning to Afternoon) | **50% of retail** | only what he stocks: rope, torch, lamp oil, hooded lantern, tool kit, tinderbox, chalk, wool blanket, waxed oilcloth and lye soap (buyer `general`; a 1c item like the torch pays 1c, since each price is floored) |
 | Vael (locksmith) | Vael & Son, Locksmiths' Close (Morning to Afternoon; shut at Dusk, on Hallowday and in a gale) | **50% of retail** | only what he stocks: lockpick set, padlock and key, door bolt and iron manacles (buyer `general`, the same flat counter as Hollis) |
 
-Never sellable: starting gear (it is the fallback) and quest rewards (Talia's cloak and boots, Brant's boots, the Hearthstone Talisman, Elspeth's keepsake, the Althea ring). Example sales: mail shirt 3s 5c to Halda or 2s 4c to the pawnbroker; skullcap 1s 5c or 1s.
+Never sellable: starting gear (it is the fallback) and quest rewards (Talia's cloak and boots, Brant's boots, the Hearthstone Talisman, the Althea ring). Example sales: mail shirt 3s 5c to Halda or 2s 4c to the pawnbroker; skullcap 1s 5c or 1s.
 
 ---
 

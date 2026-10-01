@@ -35,6 +35,19 @@
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment FIGHTER: ACTION SURGE (level 2)
+*comment Spends one use. The extra action itself is granted in combat (combat.txt, the Action Surge option), because it is a combat budget.
+*comment Replay-locked on the page_id idiom, like second_wind.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label action_surge
+*if (not(action_surge_locked)) or (not(locked_action_surge_page_id = page_id))
+  *if (fighter_action_surge_uses > 0)
+    *set fighter_action_surge_uses - 1
+  *set action_surge_locked true
+  *set locked_action_surge_page_id page_id
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment BARBARIAN: RAGE
 *comment Bonus action, 2 uses per long rest at level 1, +2 melee STR damage
 *comment while raging, resistance to bludgeoning/piercing/slashing (halved
@@ -76,6 +89,12 @@
     *set fighter_second_wind_max 3
   *if (character_level >= 10)
     *set fighter_second_wind_max 4
+  *comment Action Surge: 1 use from level 2, 2 from level 17 (a short or long rest returns every use).
+  *set fighter_action_surge_max 0
+  *if (character_level >= 2)
+    *set fighter_action_surge_max 1
+  *if (character_level >= 17)
+    *set fighter_action_surge_max 2
 *if (character_class = "barbarian")
   *set barbarian_rage_max 2
   *if (character_level >= 3)
@@ -101,21 +120,40 @@
   *if (character_level >= 3)
     *set wizard_spell_slots_max 4
 *if (character_class = "bard")
+  *comment Bardic Inspiration: Charisma-modifier uses (at least 1); the die grows with level. See startup.txt's *create comment.
+  *set bard_inspiration_max cha_mod
+  *if (bard_inspiration_max < 1)
+    *set bard_inspiration_max 1
+  *set bard_inspiration_die_sides 6
+  *if (character_level >= 5)
+    *set bard_inspiration_die_sides 8
+  *if (character_level >= 10)
+    *set bard_inspiration_die_sides 10
+  *if (character_level >= 15)
+    *set bard_inspiration_die_sides 12
+  *if (not(bard_inspiration_started))
+    *set bard_inspiration_uses bard_inspiration_max
+    *set bard_inspiration_started true
+  *if (bard_inspiration_uses > bard_inspiration_max)
+    *set bard_inspiration_uses bard_inspiration_max
   *set bard_spell_slots_max 2
   *if (character_level >= 2)
     *set bard_spell_slots_max 3
   *if (character_level >= 3)
     *set bard_spell_slots_max 4
 *if (character_class = "ranger")
-  *comment Favored Foe (Tasha's, replacing Favored Enemy -- see its *create comment, startup.txt): uses equal to
+  *comment Hunter's Mark free casts (the 2024 Favored Enemy -- see its *create comment, startup.txt): uses equal to
   *comment proficiency bonus, RAW, so this reads the existing prof_bonus rather than a level-threshold ladder
-  *comment like the pools above. The bonus die itself steps up at 6 and 14, same RAW table as Sneak Attack's die.
+  *comment like the pools above.
   *set favored_foe_max prof_bonus
-  *set favored_foe_die_sides 4
-  *if (character_level >= 6)
-    *set favored_foe_die_sides 6
-  *if (character_level >= 14)
-    *set favored_foe_die_sides 8
+  *comment Hunter's Mark is always 1d6 (2024 rules), so there is no die ladder any more.
+  *set favored_foe_die_sides 6
+  *comment Spell slots (half caster): none at level 1, 2 at level 2, 3 at level 3.
+  *set ranger_spell_slots_max 0
+  *if (character_level >= 2)
+    *set ranger_spell_slots_max 2
+  *if (character_level >= 3)
+    *set ranger_spell_slots_max 3
 *return
 
 *comment A long rest: temp hit points go, every pool refills to its maximum, and the Hexblood's Hex is ready again. Hit points are NOT
@@ -125,6 +163,7 @@
 *set temp_hp 0
 *if (character_class = "fighter")
   *set fighter_second_wind_uses fighter_second_wind_max
+  *set fighter_action_surge_uses fighter_action_surge_max
 *if (character_class = "barbarian")
   *set barbarian_rage_uses barbarian_rage_max
 *if (character_class = "warlock")
@@ -133,8 +172,10 @@
   *set wizard_spell_slots wizard_spell_slots_max
 *if (character_class = "bard")
   *set bard_spell_slots bard_spell_slots_max
+  *set bard_inspiration_uses bard_inspiration_max
 *if (character_class = "ranger")
   *set favored_foe_uses favored_foe_max
+  *set ranger_spell_slots ranger_spell_slots_max
 *if (race = "hexblood")
   *set hexblood_hex_used false
 *return
@@ -153,12 +194,22 @@
 *gosub refresh_class_resource_maxs
 *set rest_gave ""
 *set rest_can_gain false
-*if ((character_class = "fighter") and (fighter_second_wind_uses < fighter_second_wind_max))
-  *set rest_can_gain true
-  *set rest_gave "Second Wind"
+*if (character_class = "fighter")
+  *if (fighter_second_wind_uses < fighter_second_wind_max)
+    *set rest_can_gain true
+    *set rest_gave "Second Wind"
+  *if (fighter_action_surge_uses < fighter_action_surge_max)
+    *set rest_can_gain true
+    *if (rest_gave = "")
+      *set rest_gave "Action Surge"
+    *else
+      *set rest_gave "Second Wind and Action Surge"
 *if ((character_class = "warlock") and (warlock_spell_slots < warlock_spell_slots_max))
   *set rest_can_gain true
   *set rest_gave "Pact Magic slots"
+*if ((character_class = "bard") and (bard_inspiration_uses < bard_inspiration_max))
+  *set rest_can_gain true
+  *set rest_gave "Bardic Inspiration"
 *return
 
 *label do_short_rest
@@ -166,9 +217,13 @@
 *temp sr_stamp (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
 *if ((rest_can_gain) and (not(sr_stamp = last_short_rest_stamp)))
   *if (character_class = "fighter")
-    *set fighter_second_wind_uses + 1
+    *if (fighter_second_wind_uses < fighter_second_wind_max)
+      *set fighter_second_wind_uses + 1
+    *set fighter_action_surge_uses fighter_action_surge_max
   *if (character_class = "warlock")
     *set warlock_spell_slots warlock_spell_slots_max
+  *if (character_class = "bard")
+    *set bard_inspiration_uses bard_inspiration_max
   *set last_short_rest_stamp sr_stamp
 *comment The report variables are scratch: clear them once applied, so a replay of the calling page (which would find nothing left to gain) leaves the same values behind.
 *set rest_gave ""
@@ -180,49 +235,31 @@
 *label short_rest_banner
 *if (character_class = "fighter")
   *line_break
-  [b][🕐 Short Rest | Second Wind ${fighter_second_wind_uses} / ${fighter_second_wind_max}][/b]
+  [b][🕐 Short Rest | Second Wind ${fighter_second_wind_uses} / ${fighter_second_wind_max}@{(fighter_action_surge_max > 0)  · Action Surge ${fighter_action_surge_uses} / ${fighter_action_surge_max}|}][/b]
 *if (character_class = "warlock")
   *line_break
   [b][🕐 Short Rest | Pact Magic slots ${warlock_spell_slots} / ${warlock_spell_slots_max}][/b]
+*if (character_class = "bard")
+  *line_break
+  [b][🕐 Short Rest | Bardic Inspiration ${bard_inspiration_uses} / ${bard_inspiration_max}][/b]
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment LEVEL-UP PROGRESS: THE QUEST POOL AND TRAINING SESSIONS
 *comment Level 2 needs training sessions and finished quests. Both are counts and nothing is spent, so there are no level points.
-*comment refresh_quests_finished derives the pool from flags that are set once and never cleared, so it needs no replay lock and
-*comment a new quest is one more line here. A quest counts only when it ended in a SUCCESSFUL completion: failed endings do not, and
+*comment refresh_quests_finished derives the pool from flags that are set once and never cleared, so it needs no replay lock. Each quest
+*comment file keeps its own count_finished_<place> label (bottom of the file) and this one only calls them, so a new quest is one more
+*comment line in ITS file, and a new quest file is one more gosub_scene here. A quest counts only when it ended in a SUCCESSFUL completion: failed endings do not, and
 *comment radiant jobs (the crane shifts, the scrap round) never do. Silt-Gate and the Rotten Rib set their stage to resolved even on a
 *comment failed ending, so they also test the resolution. Rennick's curing sheds, the Cadre river chain and the Black Sinks assault
 *comment are deliberately not counted. Every quest has its own completion flag: an item flag (a reward the player can hold, sell or lose)
 *comment and a flag another route also sets (turned_in_customs_vellum, met_morzan) are not markers.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label refresh_quests_finished
-*temp qf 0
-*if ((silt_gate_quest_stage = "resolved") and (not(silt_gate_resolution = "failed")))
-  *set qf + 1
-*if ((rotten_rib_quest_stage = "resolved") and (not(rotten_rib_resolution = "failed")))
-  *set qf + 1
-*if (bell_quest_stage = "resolved")
-  *set qf + 1
-*if (fish_quest_stage = "resolved")
-  *set qf + 1
-*if (shroud_quest_stage = "resolved")
-  *set qf + 1
-*if (janna_pins_forged)
-  *set qf + 1
-*if (maura_cellar_cleared)
-  *set qf + 1
-*if (granary_rats_resolved)
-  *set qf + 1
-*if (delivered_chapel_grain)
-  *set qf + 1
-*if (torvald_wheel_saved)
-  *set qf + 1
-*if (talia_casks_saved)
-  *set qf + 1
-*if (morzan_vellum_delivered)
-  *set qf + 1
-*set quests_finished qf
+*set quests_finished 0
+*gosub_scene prologue/alderford count_finished_alderford
+*gosub_scene port_valen/port_valen count_finished_port_valen
+*gosub_scene port_valen/port_valen_dredge_end count_finished_dredge_end
 *return
 
 *comment The price of the next level: tune the numbers HERE. 0 means no next level is defined yet, so nothing shows and nothing is
@@ -267,26 +304,162 @@
 *comment levels the player up ever lists them. Only a class's own pool has a max that changes, so no class checks are needed.
 *label do_level_up
 *temp old_sw fighter_second_wind_max
+*temp old_as fighter_action_surge_max
 *temp old_rage barbarian_rage_max
 *temp old_pact warlock_spell_slots_max
 *temp old_wiz wizard_spell_slots_max
 *temp old_bard bard_spell_slots_max
+*temp old_ranger ranger_spell_slots_max
 *set character_level (level_up_from + 1)
 *gosub_scene character_stats update_dnd_stats
 *set fighter_second_wind_uses (fighter_second_wind_uses + (fighter_second_wind_max - old_sw))
+*set fighter_action_surge_uses (fighter_action_surge_uses + (fighter_action_surge_max - old_as))
 *set barbarian_rage_uses (barbarian_rage_uses + (barbarian_rage_max - old_rage))
 *set warlock_spell_slots (warlock_spell_slots + (warlock_spell_slots_max - old_pact))
 *set wizard_spell_slots (wizard_spell_slots + (wizard_spell_slots_max - old_wiz))
 *set bard_spell_slots (bard_spell_slots + (bard_spell_slots_max - old_bard))
+*set ranger_spell_slots (ranger_spell_slots + (ranger_spell_slots_max - old_ranger))
 *gosub refresh_level_up_progress
 *return
 
 *comment The class pool line the level-up page prints after the level is taken. It reads the pools, so a replay prints the same line,
 *comment and a new pool is added here and never on the page.
+*label level_up_features
+*comment What the character just GAINED at the level they reached, printed by the dossier's level-up page (choicescript_stats codex_levelup_do)
+*comment right after the level is taken. It reads character_class and character_level only, so a replay prints the same text. A new class
+*comment feature is one *if here, plus its own pool or flag where it lives. A feature that needs a CHOICE (a spell, an invocation, a style) will
+*comment be a short pick step added to this same label, using the pools dawn_trial.txt already offers, never a new page.
+*if ((character_class = "fighter") and (character_level = 2))
+  *line_break
+  [b][⭐ New: Action Surge][/b] Once per rest, push past your limit and take one more action on your turn. It appears in a fight once your action is spent.
+*if ((character_class = "bard") and (character_level = 2))
+  *line_break
+  [b][⭐ New: Jack of All Trades][/b] Half your proficiency bonus, rounded down, now goes on every skill check you are not already proficient in.
+*if ((character_class = "ranger") and (character_level = 2))
+  *gosub level_up_ranger_2
+*if ((character_class = "barbarian") and (character_level = 2))
+  *line_break
+  [b][⭐ New: Reckless Attack][/b] Before your first attack of a turn you can throw caution aside: your Strength attacks have advantage until your next turn, but so do all attacks against you. It appears in a fight as a free option.
+  *line_break
+  [b][⭐ New: Danger Sense][/b] An uncanny sense of when things are not as they should be gives you advantage on Dexterity saving throws.
+*if ((character_class = "rogue") and (character_level = 2))
+  *line_break
+  [b][⭐ New: Cunning Action][/b] Dash, Disengage and Hide are now bonus actions, so you can slip away or vanish and still strike in the same turn.
+*return
+
+*comment RANGER LEVEL 2: spellcasting. Hunter's Mark is granted (it is already the level 1 feature, and a slot can now pay for it), and the two level-up
+*comment picks come from the narrative spells already built. This is the first pick step on the level-up page, so it is the pattern for the rest: a
+*comment *choice per pick, the second excluding the first, each *set a plain value, so a refresh of the page changes nothing.
+*label level_up_ranger_2
+*set ranger_spell "hunters_mark"
+*set ranger_spell_desc "Hunter's Mark—a long look, and one creature becomes your quarry. For a time every weapon hit on it lands truer, and you can pick the mark up and set it on a new quarry the moment the first one falls."
+*line_break
+[b][⭐ New: Spellcasting][/b] Wisdom is your casting ability, and you now have ${ranger_spell_slots} first-level spell slots (they return with a long rest). Hunter's Mark is always ready, and once your free casts are gone a slot can pay for it.
+*line_break
+Two more workings come to you from long hours reading the wild. Choose the first.
+
+*choice
+  # Alarm. A quiet ward laid over a doorway or a stretch of ground, silent to everyone but you the instant it is crossed.@{show_stat_hints  [Spell: Alarm]|}
+    *set ranger_spell_2 "alarm"
+    *set ranger_spell_2_desc "Alarm—a quiet ward laid over a doorway, a tent flap, or a stretch of open ground, silent to everyone but you the instant an uninvited step crosses it."
+    *goto level_up_ranger_2_second
+  # Detect Magic. A moment's focus, and every working nearby reveals itself as a shimmer only you can see.@{show_stat_hints  [Spell: Detect Magic]|}
+    *set ranger_spell_2 "detect_magic"
+    *set ranger_spell_2_desc "Detect Magic—a moment's focus, and every active working nearby—wards, curses, blessings, enchanted steel—reveals itself as a faint shimmer only you can see."
+    *goto level_up_ranger_2_second
+  # Jump. A word and a touch, and a stride carries three times as far as it should.@{show_stat_hints  [Spell: Jump]|}
+    *set ranger_spell_2 "jump"
+    *set ranger_spell_2_desc "Jump—a word and a touch to yourself or another, and a single stride carries three times as far as it should, gravity forgetting the leaper for one heartbeat."
+    *goto level_up_ranger_2_second
+  # Speak with Animals. For a short while, every beast's chatter and posture resolves into something close enough to words.@{show_stat_hints  [Spell: Speak with Animals]|}
+    *set ranger_spell_2 "speak_with_animals"
+    *set ranger_spell_2_desc "Speak with Animals—for a short while, every beast's chatter, posture, and warning call resolves into something close enough to words to actually understand."
+    *goto level_up_ranger_2_second
+
+*label level_up_ranger_2_second
+*line_break
+And a second.
+
+*choice
+  *if (not(ranger_spell_2 = "alarm"))
+    # Alarm. A quiet ward laid over a doorway or a stretch of ground, silent to everyone but you the instant it is crossed.@{show_stat_hints  [Spell: Alarm]|}
+      *set ranger_spell_3 "alarm"
+      *set ranger_spell_3_desc "Alarm—a quiet ward laid over a doorway, a tent flap, or a stretch of open ground, silent to everyone but you the instant an uninvited step crosses it."
+      *goto level_up_ranger_2_style
+  *if (not(ranger_spell_2 = "detect_magic"))
+    # Detect Magic. A moment's focus, and every working nearby reveals itself as a shimmer only you can see.@{show_stat_hints  [Spell: Detect Magic]|}
+      *set ranger_spell_3 "detect_magic"
+      *set ranger_spell_3_desc "Detect Magic—a moment's focus, and every active working nearby—wards, curses, blessings, enchanted steel—reveals itself as a faint shimmer only you can see."
+      *goto level_up_ranger_2_style
+  *if (not(ranger_spell_2 = "jump"))
+    # Jump. A word and a touch, and a stride carries three times as far as it should.@{show_stat_hints  [Spell: Jump]|}
+      *set ranger_spell_3 "jump"
+      *set ranger_spell_3_desc "Jump—a word and a touch to yourself or another, and a single stride carries three times as far as it should, gravity forgetting the leaper for one heartbeat."
+      *goto level_up_ranger_2_style
+  *if (not(ranger_spell_2 = "speak_with_animals"))
+    # Speak with Animals. For a short while, every beast's chatter and posture resolves into something close enough to words.@{show_stat_hints  [Spell: Speak with Animals]|}
+      *set ranger_spell_3 "speak_with_animals"
+      *set ranger_spell_3_desc "Speak with Animals—for a short while, every beast's chatter, posture, and warning call resolves into something close enough to words to actually understand."
+      *goto level_up_ranger_2_style
+
+*label level_up_ranger_2_style
+*line_break
+[b][⭐ New: Fighting Style][/b] Years on the trail have settled into a habit. Choose how you fight.
+
+*choice
+  # Archery. +2 to attack rolls with ranged weapons.@{show_stat_hints  [+2 to Ranged Attack Rolls]|}
+    *set fighting_style "archery"
+    *goto level_up_ranger_2_done
+  # Close Combat Shooter. Shooting in melee: being within 5 feet of an enemy no longer gives disadvantage on your ranged weapon attacks, and a ranged hit on a creature within 5 feet deals +2 damage.@{show_stat_hints  [Shoot in Melee, +2 Point-Blank Damage]|}
+    *set fighting_style "close_combat"
+    *goto level_up_ranger_2_done
+  # Defense. +1 Armor Class while wearing armor.@{show_stat_hints  [+1 Armor Class]|}
+    *set fighting_style "defense"
+    *goto level_up_ranger_2_done
+  # Dual Shot. Loose two shots at two creatures at the same range, both at disadvantage.@{show_stat_hints  [Two Shots, Two Targets, Disadvantage]|}
+    *set fighting_style "dual_shot"
+    *goto level_up_ranger_2_done
+  # Great Weapon Fighting. Reroll any 1 or 2 on a damage die from a two-handed melee weapon, once per die.@{show_stat_hints  [Reroll Low Damage Dice on Heavy Weapons]|}
+    *set fighting_style "great_weapon"
+    *goto level_up_ranger_2_done
+
+*label level_up_ranger_2_done
+*return
+
+*comment FIGHTING STYLES: the one place a style's name and description live. Reads fighting_style and fills fs_label and fs_desc ("" when there is none), so the
+*comment dossier and any level-up page print the same words. A new style is one block here, its mechanic where it applies, and a line in the pool of each
+*comment class that may take it. Archery is a flat bonus on the attack roll (check_flat_bonus, dice_engine.txt), Close Combat Shooter drops the in-reach
+*comment disadvantage and adds point-blank damage (combat.txt), Defense is in equipment.txt, Great Weapon Fighting in combat_dice.txt, Dueling in combat.txt.
+*label fighting_style_info
+*set fs_label ""
+*set fs_desc ""
+*if (fighting_style = "archery")
+  *set fs_label "Archery"
+  *set fs_desc "+2 to attack rolls with ranged weapons."
+*if (fighting_style = "close_combat")
+  *set fs_label "Close Combat Shooter"
+  *set fs_desc "Shooting in melee: being within 5 feet of an enemy no longer gives disadvantage on your ranged weapon attacks, and a ranged hit on a creature within 5 feet deals +2 damage."
+*if (fighting_style = "defense")
+  *set fs_label "Defense"
+  *set fs_desc "+1 Armor Class while wearing armor."
+*if (fighting_style = "dueling")
+  *set fs_label "Dueling"
+  *set fs_desc "+2 damage on hits with a one-handed melee weapon, so long as you're wielding nothing else in your other hand."
+*if (fighting_style = "dual_shot")
+  *set fs_label "Dual Shot"
+  *set fs_desc "When you attack with a bow or crossbow, you may instead loose two shots, one at each of two creatures at the same range. Both shots are made with disadvantage."
+*if (fighting_style = "great_weapon")
+  *set fs_label "Great Weapon Fighting"
+  *set fs_desc "Reroll any 1 or 2 on a damage die from a two-handed melee weapon, once per die."
+*if (fighting_style = "protection")
+  *set fs_label "Protection"
+  *set fs_desc "Impose Disadvantage on an attack against a nearby ally when you're wielding a shield."
+*return
+
 *label level_up_banner
 *if (character_class = "fighter")
   *line_break
-  [b][Second Wind ${fighter_second_wind_uses} / ${fighter_second_wind_max}][/b]
+  [b][Second Wind ${fighter_second_wind_uses} / ${fighter_second_wind_max}@{(fighter_action_surge_max > 0)  · Action Surge ${fighter_action_surge_uses} / ${fighter_action_surge_max}|}][/b]
 *if (character_class = "barbarian")
   *line_break
   [b][Rage ${barbarian_rage_uses} / ${barbarian_rage_max}][/b]
@@ -299,6 +472,9 @@
 *if (character_class = "bard")
   *line_break
   [b][Spell slots ${bard_spell_slots} / ${bard_spell_slots_max}][/b]
+*if ((character_class = "ranger") and (ranger_spell_slots_max > 0))
+  *line_break
+  [b][Spell slots ${ranger_spell_slots} / ${ranger_spell_slots_max}][/b]
 *return
 
 *comment Consumables (the Saint Althea's Water phial, Ambrose's liniment and draught) are catalog items used through

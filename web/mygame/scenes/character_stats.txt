@@ -72,17 +72,20 @@
 *comment division or round() give the wrong numbers, so the remainder is taken off first and the division is exact. Rogue Expertise,
 *comment the dossier's spell DC and attack, and every weapon attack / attack-roll cantrip (roll_d20_check's own
 *comment check_add_prof_bonus flag, set by combat.txt) read it -- a player is always proficient with their own
-*comment weapon and known spells. General skill checks outside combat don't add it: that needs real per-skill
-*comment proficiency tracking, not a blanket add, so they're deliberately untouched for now.
+*comment weapon and known spells. Skill checks add it too, per skill: roll_skill_check (dice_engine.txt) adds prof_bonus when the skill's own
+*comment skill_<id> flag is true (those flags are set further down this file, from class, race, origin and squad), and Rogue/Ranger Expertise
+*comment doubles it. A hand-set check_stat/check_skill pair that never goes through roll_skill_check adds nothing, so skill checks go through it.
 *set prof_bonus (2 + (((character_level - 1) - ((character_level - 1) modulo 4)) / 4))
 *comment Spell save DC (2026-09-27): 8 + proficiency + the caster's own spellcasting ability mod -- INT for
-*comment Wizard, CHA for Warlock/Bard, no bonus for a class with no spellcasting stat (matches the dossier's own
+*comment Wizard, WIS for Ranger, CHA for Warlock/Bard, no bonus for a class with no spellcasting stat (matches the dossier's own
 *comment ab_spell_dc, now the one durable place this formula lives instead of two).
 *temp uds_casting_mod 0
 *if (character_class = "wizard")
   *set uds_casting_mod int_mod
 *if ((character_class = "warlock") or (character_class = "bard"))
   *set uds_casting_mod cha_mod
+*if (character_class = "ranger")
+  *set uds_casting_mod wis_mod
 *set spell_save_dc ((8 + prof_bonus) + uds_casting_mod)
 *comment The bare modifier, kept as its own durable stat (2026-09-28) rather than being recomputed at each
 *comment spell site or read from uds_casting_mod -- that one is a *temp local to this label, and the spells that

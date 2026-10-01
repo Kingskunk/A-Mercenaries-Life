@@ -105,7 +105,7 @@
     } else {
       s.shield_prose = "free off-hand";
     }
-    if (s.fighter_fighting_style === "defense") ac += 1;
+    if (s.fighting_style === "defense") ac += 1;
     s.armor_class = ac;
     EQ.recalcProficiency(s);
   };

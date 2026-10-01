@@ -17,7 +17,7 @@ The short version: the game is a clean level 1. `character_level` exists but is 
 | Area | Today | Where |
 |---|---|---|
 | Level | `character_level` = 1, never changes. Read by Second Wind (`1d10 + level`) and the dossier text only. | startup.txt:227, 3370 |
-| Proficiency | `prof_bonus` = 2, static. Used for spell save DC / spell attack and Rogue Expertise (`prof_bonus * 2`). **Not added to attack rolls or any other check**: `check_mod` is the ability modifier alone. | startup.txt:229, 2698-2714; choicescript_stats.txt:966 |
+| Proficiency | `prof_bonus` = 2, static. Used for spell save DC / spell attack and Rogue Expertise (`prof_bonus * 2`). **It IS added to weapon and attack-cantrip rolls (`check_add_prof_bonus`) and to skill checks for a proficient skill (`roll_skill_check` reads the `skill_<id>` flags, which `character_stats.txt` sets from class, race, origin and squad).** *(This row said it was added to nothing; that was stale, corrected 2026-10-02.)* | startup.txt:229, 2698-2714; choicescript_stats.txt:966 |
 | HP | `hp_max = hit_die_max + con_mod`, recomputed on every `update_dnd_stats` (current HP moves by the delta, so CON buffs already work). Level 1 max-die formula only. | startup.txt:2411-2418 |
 | Class data | Set twice: once per class in `dawn_trial.txt` (7 classes) and once per dev preset in `startup.txt` (8 presets). Each sets `hit_die`, `hit_die_max`, resource counts, feature text. | dawn_trial.txt:40-374; startup.txt:1736-2152 |
 | Spell slots | `wizard_/bard_/warlock_spell_slots` hold the **remaining** count only. **Done (2026-09-26):** each has a `_max` variable, written by `refresh_class_resource_maxs` (called from `update_dnd_stats`). | startup.txt `refresh_class_resource_maxs` |
@@ -70,7 +70,7 @@ Level 2 hit points for all seven classes: `+ hit_die_max + con_mod` (the maximum
 - **Hooks that exist:** `advantage` and `combat_enemy_advantage` are both live.
 
 ### Rogue
-- **5e:** Cunning Action (bonus Dash, Disengage or Hide).
+- **5e:** Cunning Action (bonus Dash, Disengage or Hide). **Built (2026-10-01): `combat_cunning` in combat.txt is gated on `character_level >= 2`, so the level-up only has to raise the level.**
 - **Have:** Sneak Attack (needs advantage), Expertise, a Disengage option in the hub.
 - **Need:** a bonus-action rule (plumbing 6); a "Hide" option that gives advantage on the next attack, which is what turns Sneak Attack on; Dash is flavor in combat. Also make the sneak die read `rogue_sneak_attack_die` (it is fixed at d6 today, which is correct for levels 1-2 and wrong from 3).
 - **Watch:** without proficiency in attack rolls, Hide-for-advantage is a very large swing. Playtest before shipping.
@@ -159,7 +159,7 @@ Still open: whether an early ability score increase is wanted at level 4 (5e giv
 - **A bonus-action slot in the round hub.** There is none.
 - **Missing level-2 features.** Reckless Attack, Jack of All Trades, Song of Rest, Eldritch Invocations, Arcane Tradition, the Ranger's Fighting Style, and every slot and spells-known increase are not in its list. Section 3 has them.
 - **HP.** It stored a `level_up_hp_bonus` set by training. Deriving the whole term from `character_level` gives the same numbers, needs no stored bonus and no lock, and keeps CON changes retroactive (plumbing 2).
-- **Bardic Inspiration** is a level-1 feature that is described but not implemented; it is not new at level 2.
+- **Bardic Inspiration** is built (2026-10-02, see `resolve_bardic_inspiration`).
 - **Its rest table** lists only Second Wind and Rage for most sites; the code also refills class slots at three of them, and misses wizard and bard slots only at the two Middle Ward sites (section 6). Its line numbers have drifted.
 
 ---

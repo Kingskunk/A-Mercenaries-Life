@@ -99,9 +99,6 @@ You cannot see the chain. You can see what the current does around it: a flat pa
 
 "Eyes on the channel!" the skipper shouts down the line, fighting the current with both hands on the tiller. "Anyone who's ever read river or reef, I want you at the rail *now*!"
 
-*if ((family_name = "Elspeth") and (elspeth_role = "none"))
-  Your eyes keep snagging on the rail where she should be standing, and the skipper's shouts reach you half a beat late.
-
 *temp hint_boom_str ""
 *temp hint_boom_dex ""
 *temp hint_boom_wis ""
@@ -119,10 +116,7 @@ You cannot see the chain. You can see what the current does around it: a flat pa
 *comment check already reads, just gated on *if (weather = "X") instead of a
 *comment prep flag or racial trait -- no new engine mechanism. Physical
 *comment (STR/DEX) checks care about a slick, violent deck; the visual (WIS)
-*comment check cares about being able to see the current at all. Both can
-*comment stack with the existing Elspeth-distraction disadvantage below;
-*comment roll_d20_check only tracks advantage/disadvantage as booleans, so
-*comment setting either true twice from two different sources is harmless.
+*comment check cares about being able to see the current at all.
 *temp weather_hazard_physical false
 *temp weather_hazard_visual false
 *if ((weather_wet) or (weather_cold))
@@ -138,8 +132,6 @@ You cannot see the chain. You can see what the current does around it: a flat pa
       *goto transit_boom_hazard
 
   # Grab a boat-pole and brace to shove off the submerged boom the instant the hull grinds close.${hint_boom_str}
-    *if ((family_name = "Elspeth") and (elspeth_role = "none"))
-      *set disadvantage true
     *if (weather_hazard_physical)
       *set disadvantage true
     *gosub_scene dice_engine roll_skill_check 12 "athletics" "" "" "" "" ""
@@ -151,8 +143,6 @@ You cannot see the chain. You can see what the current does around it: a flat pa
     *goto transit_cold_approach
 
   # Watch the surface for the telltale flatness where the current breaks over something old and hidden, and call the line.${hint_boom_wis}
-    *if ((family_name = "Elspeth") and (elspeth_role = "none"))
-      *set disadvantage true
     *if (weather_hazard_visual)
       *set disadvantage true
     *gosub_scene dice_engine roll_skill_check 13 "survival" "" "" "" "" ""
@@ -164,8 +154,6 @@ You cannot see the chain. You can see what the current does around it: a flat pa
     *goto transit_cold_approach
 
   # Work along the gunwale to the bow, relaying the skipper's corrections down the line of poling crew before the current can outrun them.${hint_boom_dex}
-    *if ((family_name = "Elspeth") and (elspeth_role = "none"))
-      *set disadvantage true
     *if (weather_hazard_physical)
       *set disadvantage true
     *gosub_scene dice_engine roll_skill_check 11 "acrobatics" "" "" "" "" ""
@@ -310,13 +298,6 @@ The Watch captain offers Vane a sealed parchment writ bearing the Council mark. 
   You come off the gangplank dry-hulled but hollowed out by the cold, glad beyond words to feel solid ground underfoot again.
 *else
   You make landfall clean and dry, the crossing behind you without a single mark to show for it.
-
-*if (elspeth_with_company)
-  Further down the pier, Elspeth climbs off the barge alongside the rest of her placement, craning her neck at the size of the anchorage with wide, disbelieving eyes. She catches sight of you and lifts a hand in an exhausted, grateful wave.
-*elseif (elspeth_role = "chapel_sanctuary")
-  Somewhere behind you now, up a ridge above a river you won't see again for a while, Elspeth is safe behind Saint Althea's walls. It's not nothing, knowing that.
-*elseif ((family_name = "Elspeth") and (elspeth_role = "none"))
-  You find yourself scanning the crowded quay out of old habit, the same way you did leaving Alderford, before you remember, again, that she isn't here to find.
 
 [b]◈ PORT VALEN: HARBOR QUAYSIDE[/b]
 *line_break
@@ -468,12 +449,6 @@ The Watch captain offers Vane a sealed parchment writ bearing the Council mark. 
       *comment Greyday / Hallowday
       Routine maintenance carries the yard: pack mules are led to water, wood-details split cedar logs behind the stables, and runners carry dispatches between the squad rooms.
 
-  *if (elspeth_with_company)
-    *if ((pv_is_night) or (weather_severity >= 3))
-      Inside the sheltered warmth of the infirmary lean-to, lantern light shows orderly rows of rolled bandages and drying herb bundles, your sister settled into the steady rhythm of the company's baggage train.
-    *else
-      Over by the logistics wagons, you catch a familiar glimpse of dark hair and a plain linen apron among the carters and surgeons, your sister busy at the work that keeps the company on its feet.
-
 *if ((campaign_day - pv_mess_week_start_day) >= 7)
   *set pv_mess_week_start_day campaign_day
   *set pv_mess_rations_used 0
@@ -535,6 +510,13 @@ The Watch captain offers Vane a sealed parchment writ bearing the Council mark. 
   *if ((lyra_quest_stage = "resolved") and (not(lyra_epi_seen)))
     # Lyra in the barracks, and she gets up when she sees you.
       *goto_scene port_valen/lyra_quests/lyra_quest lyra_epi
+  *comment The repayment. Same countdown shape as port_valen.txt:3793 and
+  *comment port_valen_dredge_end.txt:3082. The button only appears once the window has actually
+  *comment opened, so the player is never shown a date they cannot act on. lyra_repaid closes it
+  *comment permanently, which is what makes her leaving land.
+  *if ((lyra_paid) and ((lyra_epi_seen) and ((not(lyra_repaid)) and ((campaign_day - lyra_epi_day) >= lyra_repay_days))))
+    # Lyra on the end cot, with her kit already rolled.
+      *goto_scene port_valen/lyra_quests/lyra_quest lyra_repay
   # Turn in to your bedroll inside the barracks for the night.
     *goto port_valen_rest
 
@@ -5757,3 +5739,16 @@ Vane pulls the next dispatch toward him before you've fully turned for the door.
 *page_break Step out into the yard, off every roster but your own…
 *goto port_valen_hub
 
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment LEVEL-UP QUEST COUNT: this file's quests (called by character_progression.txt refresh_quests_finished)
+*comment A new quest in this file adds one *if line here. Rules for what counts are in character_progression.txt.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label count_finished_port_valen
+*if ((rotten_rib_quest_stage = "resolved") and (not(rotten_rib_resolution = "failed")))
+  *set quests_finished + 1
+*if (bell_quest_stage = "resolved")
+  *set quests_finished + 1
+*if (fish_quest_stage = "resolved")
+  *set quests_finished + 1
+*return

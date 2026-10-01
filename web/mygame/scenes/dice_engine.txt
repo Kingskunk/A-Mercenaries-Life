@@ -42,6 +42,10 @@
   *set advantage true
 *if ((race = "dwarf") and (save_vs = "poison"))
   *set advantage true
+*comment Danger Sense (Barbarian level 2, 2026-10-02): advantage on Dexterity saving throws. A scene making a DEX saving throw sets save_vs "dex" first, the same
+*comment convention as the racial saves above (no scene makes one yet, so this is ready and has no caller). The 5e exception for being Incapacitated is not modelled.
+*if (((character_class = "barbarian") and (character_level >= 2)) and ((check_stat = "dex") and (save_vs = "dex")))
+  *set advantage true
 
 *temp adv_label ""
 *temp guidance_roll 0
@@ -100,6 +104,8 @@
 
   *if (check_add_prof_bonus)
     *set check_mod + prof_bonus
+  *set check_mod + check_flat_bonus
+  *set check_flat_bonus 0
 
   *comment Expertise doubles proficiency, it doesn't stack a second one on top: if check_add_prof_bonus already
   *comment added one prof_bonus above (roll_skill_check, or any future caller that sets it), only one more is
@@ -144,7 +150,19 @@
   *if (guidance_active)
     *set check_total + guidance_roll
 
+  *comment Bardic Inspiration (the Bard's own die, see startup.txt): added to ANY roll through here (attack roll, ability check or saving throw) that would
+  *comment otherwise fail, deciding after the d20 like 5e. Never on a natural 1 (an automatic failure) or a natural 20 (already a success). It is rolled and
+  *comment lost whether or not it is enough. This sits inside the roll's own lock, so a page refresh can neither re-roll it nor spend a second one.
+  *if ((combat_inspired_self) and (check_total < check_dc))
+    *if ((not(d20_roll = 1)) and (not(d20_roll = 20)))
+      *set combat_inspired_self false
+      *temp ins_die 0
+      *rand ins_die 1 bard_inspiration_die_sides
+      *set check_total + ins_die
+      *set adv_label "${adv_label} +${ins_die} (Inspiration)"
+
   *set roll_had_advantage ((advantage) and (not(disadvantage)))
+  *set roll_had_disadvantage disadvantage
   *set roll_locked true
   *set locked_page_id page_id
   *set locked_guidance_roll guidance_roll
@@ -329,6 +347,10 @@
   *set rsc_prof {("skill_" & rsc_candidate)}
   *if (rsc_prof)
     *set rsc_mod + prof_bonus
+  *elseif ((character_class = "bard") and (character_level >= 2))
+    *comment Jack of All Trades (Bard, level 2): half the proficiency bonus, rounded down, on a skill the Bard is NOT proficient in. Counted here so the best-of-three
+    *comment pick sees it, and carried into the roll itself below (check_flat_bonus), because roll_d20_check rebuilds the modifier from the ability score.
+    *set rsc_mod + ((prof_bonus - (prof_bonus modulo 2)) / 2)
   *comment Fail loudly instead of rolling garbage. A typo'd ability override ("st") sets
   *comment rsc_ability to something none of the six branches above match, so rsc_mod stays 0 and
   *comment rsc_best_ability reaches roll_d20_check as a value it has no branch for. check_mod is
@@ -371,5 +393,10 @@
 *set check_skill rsc_best_display
 *set check_dc rsc_dc
 *set check_add_prof_bonus rsc_best_prof
+*comment Jack of All Trades: the half-proficiency bonus for a non-proficient best skill rides on check_flat_bonus (added and cleared by roll_d20_check). It is cleared
+*comment again after the roll, as at every other caller, so a replayed page that skips the roll cannot leave it set for the next one.
+*if (((character_class = "bard") and (character_level >= 2)) and (not(rsc_best_prof)))
+  *set check_flat_bonus ((prof_bonus - (prof_bonus modulo 2)) / 2)
 *gosub roll_d20_check
+*set check_flat_bonus 0
 *return

@@ -273,7 +273,10 @@
   // and its button opens the dossier's Rest menu (choicescript_stats codex_rest), the same way Use opens the satchel. The badge
   // shows the one number a short rest is for, so the card reads at a glance.
   function restBadge(s) {
-    if (s.character_class === "fighter") return "Second Wind " + s.fighter_second_wind_uses + "/" + s.fighter_second_wind_max;
+    if (s.character_class === "fighter") {
+      return "Second Wind " + s.fighter_second_wind_uses + "/" + s.fighter_second_wind_max +
+        (Number(s.fighter_action_surge_max) > 0 ? " · Action Surge " + s.fighter_action_surge_uses + "/" + s.fighter_action_surge_max : "");
+    }
     if (s.character_class === "warlock") return "Pact slot " + s.warlock_spell_slots + "/" + s.warlock_spell_slots_max;
     return "";
   }

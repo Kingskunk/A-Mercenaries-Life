@@ -32,7 +32,8 @@ const checkOnly = process.argv.includes("--check");
 // `--batch` inlines ONLY the three cantrips the Cadre Battle-Abjurer preset already knows, for a
 // proof-of-concept pass before committing to the whole set: 97 KB base64 vs 645 KB. The spell LIST
 // (spell-data.js) is unchanged either way, so the UI is identical -- spells with no inlined art just
-// take the initials-chip fallback, which is also how the 6 spells with no art in the library render.
+// take the initials-chip fallback. Every spell in spell-data.js now resolves to art, though three are
+// deliberate stand-ins (see RENAMES) rather than the spell itself.
 // Drop the flag once the feature is kept and the full set costs little more than the batch does.
 const batchOnly = process.argv.includes("--batch");
 const BATCH_IDS = ["guidance", "ray_of_frost", "blade_ward"];
@@ -66,7 +67,29 @@ const RENAMES = {
   // No Message art exists in the library. This is a silent-speech cantrip, and the closest available
   // art is the sentient amulet's "talk" action -- a figure speaking, which is a reasonable read for
   // a spell whose whole point is projecting a message. Another deliberate stand-in, not a match.
-  message: "Action/Talk_to_the_Sentient_Amulet_Icon.webp"   // relative to ICONS/, not ICONS/Spell/
+  message: "Action/Talk_to_the_Sentient_Amulet_Icon.webp",   // relative to ICONS/, not ICONS/Spell/
+
+  // The three spells added alongside the narrative-only abilities (2026-09-28). Each needs naming
+  // explicitly because there is no art in ICONS/Spell for any of them, so the fuzzy scorer in step 3
+  // has nothing to match against and returns null -- the initials chip, not a wrong picture.
+  //
+  // detect_magic DOES have real art in the library (Spell_Divination_DetectMagic, arriving as .DDS
+  // alongside its Prestidigitation/UnseenServant siblings), but not in a form a browser can show. The
+  // converted .webp sibling is what gets used; see tools/dds2png.js for the DDS path.
+  detect_magic: "Spell/Spell_Divination_DetectMagic.webp",
+
+  // Deliberate stand-ins, same rationale as chill_touch and message above -- the name in the UI still
+  // comes from spell-data.js, so only the picture is affected.
+  //
+  // alarm: no alarm art exists anywhere in the library. The library's other Watch art
+  // (Gondian_Steel_Watcher) is three mechanical gears and reads as a construct rather than a spell, so
+  // the hooded sentinel on a vigil is the better read for a spell about warding an area and raising
+  // the alarm.
+  alarm: "Action/The_Watch_Icon.webp",
+
+  // jump: no Jump spell art either, but ICONS/Action/ has a leaping figure whose Jump_Icon reads as
+  // the spell directly.
+  jump: "Action/Jump_Icon.webp"
 };
 
 // The level-orb tab icons, by level. 0 is the cantrip row. The library ships Ico_knownSpells_lvl_01

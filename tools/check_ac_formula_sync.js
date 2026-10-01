@@ -99,7 +99,7 @@ for (var i = 0; i < iterations; i++) {
       seed: i + randomSeed, real: realAc, mirrored: mirroredAc,
       armor_type: stats.armor_type, character_class: stats.character_class,
       head_is_armor: stats.head_is_armor, head_ac: stats.head_ac,
-      shield_equipped: stats.shield_equipped, fighter_fighting_style: stats.fighter_fighting_style,
+      shield_equipped: stats.shield_equipped, fighting_style: stats.fighting_style,
       wizard_spell: stats.wizard_spell, dex_mod: stats.dex_mod, con_mod: stats.con_mod
     });
   }
@@ -116,7 +116,7 @@ if (!mismatches.length) {
     console.log("  seed=" + m.seed + " real=" + m.real + " mirrored=" + m.mirrored +
       " | armor_type=" + m.armor_type + " class=" + m.character_class +
       " head_is_armor=" + m.head_is_armor + " head_ac=" + m.head_ac +
-      " shield_equipped=" + m.shield_equipped + " fighting_style=" + m.fighter_fighting_style +
+      " shield_equipped=" + m.shield_equipped + " fighting_style=" + m.fighting_style +
       " wizard_spell=" + m.wizard_spell + " dex_mod=" + m.dex_mod + " con_mod=" + m.con_mod);
   });
   if (mismatches.length > 10) console.log("  ... and " + (mismatches.length - 10) + " more.");

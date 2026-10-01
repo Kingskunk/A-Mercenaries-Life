@@ -282,9 +282,13 @@ She buckles her belt and steps past you toward the yard without looking back.
 
 *label lyra_epi
 
+*comment The repayment clock starts HERE, when the player actually reads the coda, not when the
+*comment quest resolved. A player who never opened the coda would otherwise find the window shut.
+
 *if (lyra_epi_seen)
   *goto lyra_epi_brief
 
+*set lyra_epi_day campaign_day
 *set lyra_epi_seen true
 
 *if (lyra_resolution = "paid")
@@ -322,6 +326,63 @@ She sits on the end cot with her back against the timber wall, bow resting acros
 *goto lyra_epi_return
 
 *comment ====================================================================================
+*comment THE REPAYMENT — lyra_repay. Two weeks after the coda.
+*comment
+*comment This is the payoff the coda promises: "When I've squared my debt with you, I'm moving
+*comment on." She said it in front of the player, so it is paid here or not at all.
+*comment
+*comment The wait is (campaign_day - lyra_epi_day) >= lyra_repay_days, the same shape as
+*comment port_valen.txt:3793 and port_valen_dredge_end.txt:3082. The button is NOT shown before
+*comment the window opens, so the player is never told a number they cannot act on.
+*comment
+*comment Five Silver Marks back, the same 50 copper the player paid out, so the errand is coin-
+*comment neutral. lyra_repaid is the guard that stops a second payment; currency_txn_locked is the belt.
+*comment ====================================================================================
+
+*label lyra_repay
+
+*if (lyra_repaid)
+  *goto lyra_repay_return
+
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount 50
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+
+*set lyra_repaid true
+*set lyra_bond lyra_bond + 2
+
+She sits on the end cot with her kit already packed: bedroll corded tight, travel pack buckled at her boots, and her recurve cased in oiled leather. The straw pallet beside her has been stripped down to bare timber.
+
+"${name}."
+
+She gestures toward the rough grey wool of the mattress. Laid out in an even row are five heavy silver marks, dull in the barracks gloom.
+
+"Square," she says simply.
+
+"You promised a fortnight," you say, looking at the silver.
+
+"And you got it," she replies, meeting your gaze dead-on. "Vane's pay-chest opened this morning. I held your cut out of the purse. Wanted to put it in your hand myself rather than trust some file corporal to carry it across the yard. Pick it up."
+
+You gather the five silver marks from the wool, feeling the cold, honest weight of the metal before sliding them into your pouch. The debt is clear, paid to the exact copper she took from you in this same aisle.
+
+*if (show_stat_hints)
+  *line_break
+  [b][Debt cleared. Five Silver Marks recovered, Comradeship with Lyra +2.][/b]
+
+"Then I'm off before the watch changes," she says, getting to her feet and hoisting her pack over one shoulder. 
+
+She pauses at the end of the aisle, one calloused hand resting against the rough doorframe, and looks back the length of the sleeping bay.
+
+"If you ever need an archer who keeps her head down, and you can stomach the company, you know where to send word. The kids have a dry roof now."
+
+She ducks through the doorway into the yard. The end cot stands stripped and empty, the depression in the straw mattress rising slowly where she sat.
+
+*page_break Back to the compound…
+*goto lyra_repay_return
+
+*comment ====================================================================================
 *comment RETURNS. *goto_scene does not come back, so each beat hands the player to its own hub.
 *comment ====================================================================================
 
@@ -334,5 +395,9 @@ She sits on the end cot with her back against the timber wall, bow resting acros
 *goto_scene port_valen/port_valen port_valen_hub
 
 *label lyra_epi_return
+
+*goto_scene port_valen/port_valen port_valen_hub
+
+*label lyra_repay_return
 
 *goto_scene port_valen/port_valen port_valen_hub

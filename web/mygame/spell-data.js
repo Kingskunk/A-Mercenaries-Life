@@ -52,6 +52,7 @@
     { id: "feather_fall",       name: "Feather Fall",       level: 1, schools: "Transmutation" },
     { id: "healing_word",       name: "Healing Word",       level: 1, schools: "Evocation" },
     { id: "hex",                name: "Hex",                level: 1, schools: "Enchantment" },
+    { id: "hunters_mark",       name: "Hunter's Mark",      level: 1, schools: "Divination" },
     { id: "identify",           name: "Identify",           level: 1, schools: "Divination" },
     { id: "jump",               name: "Jump",               level: 1, schools: "Transmutation" },
     { id: "mage_armor",         name: "Mage Armor",         level: 1, schools: "Abjuration" },
@@ -68,7 +69,8 @@
     "race_cantrip", "race_cantrip_2",
     "warlock_cantrip", "warlock_cantrip_2", "warlock_spell",
     "wizard_cantrip", "wizard_cantrip_2", "wizard_cantrip_3", "wizard_spell",
-    "bard_cantrip", "bard_cantrip_2", "bard_spell", "bard_spell_2"
+    "bard_cantrip", "bard_cantrip_2", "bard_spell", "bard_spell_2",
+    "ranger_spell", "ranger_spell_2", "ranger_spell_3"
   ];
 
   var byId = {};
