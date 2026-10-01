@@ -100,7 +100,7 @@ for (var i = 0; i < iterations; i++) {
       armor_type: stats.armor_type, character_class: stats.character_class,
       head_is_armor: stats.head_is_armor, head_ac: stats.head_ac,
       shield_equipped: stats.shield_equipped, fighting_style: stats.fighting_style,
-      wizard_spell: stats.wizard_spell, dex_mod: stats.dex_mod, con_mod: stats.con_mod
+      known_mage_armor: stats.known_mage_armor, inv_armor_of_shadows: stats.inv_armor_of_shadows, dex_mod: stats.dex_mod, con_mod: stats.con_mod
     });
   }
 }
@@ -117,7 +117,7 @@ if (!mismatches.length) {
       " | armor_type=" + m.armor_type + " class=" + m.character_class +
       " head_is_armor=" + m.head_is_armor + " head_ac=" + m.head_ac +
       " shield_equipped=" + m.shield_equipped + " fighting_style=" + m.fighting_style +
-      " wizard_spell=" + m.wizard_spell + " dex_mod=" + m.dex_mod + " con_mod=" + m.con_mod);
+      " known_mage_armor=" + m.known_mage_armor + " dex_mod=" + m.dex_mod + " con_mod=" + m.con_mod);
   });
   if (mismatches.length > 10) console.log("  ... and " + (mismatches.length - 10) + " more.");
   process.exit(1);

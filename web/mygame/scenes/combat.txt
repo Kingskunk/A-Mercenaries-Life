@@ -80,6 +80,7 @@
 
 *label fight_setup
 *gosub_scene character_progression refresh_class_resource_maxs
+*gosub_scene character_progression refresh_known_spells
 *comment Resets every ephemeral combat flag so encounter N+1 never inherits
 *comment leftover state from encounter N (or a Shield/Hex left armed from a
 *comment fight the player fled). Pre-existing temp_hp from meals or prep spells
@@ -87,6 +88,8 @@
 *set hex_active false
 *set agathys_active false
 *set shield_armed false
+*set rebuke_armed false
+*set combat_save_quiet false
 *set blade_ward_active false
 *set blade_ward_survived_a_turn false
 *set dodge_active false
@@ -115,6 +118,8 @@
 *set combat_reckless_active false
 *set combat_inspired_self false
 *set combat_inspired_ally 0
+*set combat_friendly_targeting_active false
+*set combat_friendly_target 0
 *set combat_outcome ""
 *set combat_engaged true
 *comment Condition-on-hit and movepool resets live in fight_cleanup, not
@@ -582,6 +587,8 @@
 *set hex_active false
 *set agathys_active false
 *set shield_armed false
+*set rebuke_armed false
+*set combat_save_quiet false
 *set blade_ward_active false
 *set blade_ward_survived_a_turn false
 *set dodge_active false
@@ -610,6 +617,8 @@
 *set combat_reckless_active false
 *set combat_inspired_self false
 *set combat_inspired_ally 0
+*set combat_friendly_targeting_active false
+*set combat_friendly_target 0
 *set combat_is_nonlethal false
 *comment Guard against a condition-inflicted disadvantage the player never
 *comment burned (fled/won before their next roll) bleeding into an unrelated
@@ -743,6 +752,7 @@
   *comment ends) before it ever gets to act with the debuff/buff applied would otherwise leave it sitting true for
   *comment whatever fight reuses this slot number next.
   *set {(fc_p & "slowed")} 0
+  *set {(fc_p & "frightened")} 0
   *set {(fc_p & "disadvantage")} false
   *set {(fc_p & "advantage")} false
   *comment Range: 0 means Engaged, every type's default -- reset per-slot for the same reason as Bane above.
@@ -1124,6 +1134,77 @@
   *goto combat_check_hide_loop
 *return
 
+*label combat_refresh_ally_distances
+*comment Each ally's distance from the PLAYER, as a tier 0-3, into combat_ally<N>_distance. Derived the same way the sidebar derives the number it prints (index.html allyDistanceToPlayer, which
+*comment this mirrors): the ally knows how far it is from the enemy it picked (its own range, or its chase range while it chases), and the player's distance to that same enemy is known, so
+*comment the gap between the two is how far apart the ally and the player stand. With no target yet, the ally's own range stands in. Called when the hub opens and by friendly targeting.
+*temp crad_i 1
+*label combat_refresh_ally_distances_loop
+*if (crad_i <= combat_ally_slot_cap)
+  *temp crad_chase {(("combat_ally" & crad_i) & "_chase_target")}
+  *temp crad_target {(("combat_ally" & crad_i) & "_target")}
+  *temp crad_range {(("combat_ally" & crad_i) & "_range")}
+  *if (crad_chase > 0)
+    *set crad_target crad_chase
+    *set crad_range {(("combat_ally" & crad_i) & "_chase_range")}
+  *temp crad_dist crad_range
+  *if (crad_target > 0)
+    *temp crad_prange {(("combat_enemy" & crad_target) & "_range")}
+    *set crad_dist (crad_prange - crad_range)
+    *if (crad_dist < 0)
+      *set crad_dist (0 - crad_dist)
+  *set {(("combat_ally" & crad_i) & "_distance")} crad_dist
+  *set crad_i + 1
+  *goto combat_refresh_ally_distances_loop
+*return
+
+*label combat_ally_hurt_check
+*comment Sets combat_ally_alive_exists (any living ally), combat_ally_hurt_exists (a living ally below its maximum) and combat_ally_hurt_first (the first such slot, 0 for none).
+*set combat_ally_alive_exists false
+*set combat_ally_hurt_exists false
+*set combat_ally_hurt_first 0
+*temp cah_i 1
+*label combat_ally_hurt_check_loop
+*if (cah_i <= combat_ally_slot_cap)
+  *temp cah_hp {(("combat_ally" & cah_i) & "_hp")}
+  *temp cah_max {(("combat_ally" & cah_i) & "_max_hp")}
+  *if (cah_hp > 0)
+    *set combat_ally_alive_exists true
+    *if (cah_hp < cah_max)
+      *set combat_ally_hurt_exists true
+      *if (combat_ally_hurt_first = 0)
+        *set combat_ally_hurt_first cah_i
+  *set cah_i + 1
+  *goto combat_ally_hurt_check_loop
+*return
+
+*label combat_friendly_validate
+*comment Checks the friendly target the player picked in the sidebar: it must be alive, wounded, and within combat_friendly_reach of the player. Sets combat_friendly_ok, combat_friendly_why
+*comment (the reason it is not) and combat_friendly_name (who it is, for the cast text).
+*set combat_friendly_ok false
+*set combat_friendly_why ""
+*set combat_friendly_name "you"
+*gosub combat_refresh_ally_distances
+*if (combat_friendly_target = 0)
+  *if (hp_current >= hp_max)
+    *set combat_friendly_why "You are not wounded."
+  *else
+    *set combat_friendly_ok true
+*else
+  *temp cfv_hp {(("combat_ally" & combat_friendly_target) & "_hp")}
+  *temp cfv_max {(("combat_ally" & combat_friendly_target) & "_max_hp")}
+  *temp cfv_dist {(("combat_ally" & combat_friendly_target) & "_distance")}
+  *set combat_friendly_name {(("combat_ally" & combat_friendly_target) & "_name")}
+  *if (cfv_hp <= 0)
+    *set combat_friendly_why "${combat_friendly_name} is down, and this will not reach them."
+  *elseif (cfv_hp >= cfv_max)
+    *set combat_friendly_why "${combat_friendly_name} is not wounded."
+  *elseif (cfv_dist > combat_friendly_reach)
+    *set combat_friendly_why "${combat_friendly_name} is too far away."
+  *else
+    *set combat_friendly_ok true
+*return
+
 *label combat_inspire_pick
 *comment Bardic Inspiration: the first living ally, or 0 when the Bard stands alone (then the die goes to the Bard).
 *set combat_inspire_ally_pick 0
@@ -1135,6 +1216,20 @@
     *set combat_inspire_ally_pick cip_i
   *set cip_i + 1
   *goto combat_inspire_pick_loop
+*return
+
+*label combat_hadar_check
+*comment Arms of Hadar (Warlock): sets combat_hadar_ok when a living enemy is Engaged (range 0), i.e. within the 10 foot emanation.
+*set combat_hadar_ok false
+*temp chk_i 1
+*label combat_hadar_check_loop
+*if (chk_i <= combat_enemy_count)
+  *temp chk_hp {(("combat_enemy" & chk_i) & "_hp")}
+  *temp chk_range {(("combat_enemy" & chk_i) & "_range")}
+  *if ((chk_hp > 0) and (chk_range <= 0))
+    *set combat_hadar_ok true
+  *set chk_i + 1
+  *goto combat_hadar_check_loop
 *return
 
 *label combat_dual_shot_check
@@ -2241,6 +2336,9 @@
     [b][${combat_enemy6_name}: HP ${combat_enemy6_hp}/${combat_enemy6_max_hp}@{(combat_enemy6_hp <= 0)  (Down)|} (AC ${combat_enemy6_ac})][/b]
     *line_break
   [b][You: HP ${hp_current}/${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|} (AC ${ac_shown}@{(shield_armed)  (Shield)|})][/b]
+*if (rebuke_armed)
+  *line_break
+  [b][🔥 Hellish Rebuke Armed — will trigger when a foe wounds you][/b]
 *if (shield_armed)
   *line_break
   [b][✨ Shield Armed — will trigger on the next hit][/b]
@@ -2268,6 +2366,7 @@
 *if (combat_reckless_active)
   *line_break
   [b][⚔️ Reckless: advantage on your Strength attacks, and advantage against you, until your next turn][/b]
+*gosub combat_refresh_ally_distances
 *gosub combat_hm_state
 *if (combat_hm_live)
   *line_break
@@ -2333,11 +2432,13 @@
 *comment two different things -- "nothing to spend it on this turn" or "something's available and the player just
 *comment hasn't chosen yet" -- and only the auto-end check below needs to tell them apart.
 *temp combat_can_hex false
-*if ((((warlock_spell = "hex") and (warlock_spell_slots > 0)) or ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))) and (not(hex_active)))
+*if (((((warlock_spell = "hex") or (warlock_spell_2 = "hex")) and (warlock_spell_slots > 0)) or ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))) and (not(hex_active)))
   *set combat_can_hex true
+*gosub combat_ally_hurt_check
 *temp combat_can_healing_word false
-*if ((((bard_spell = "healing_word") or (bard_spell_2 = "healing_word")) and (bard_spell_slots > 0)) and (hp_current < hp_max))
-  *set combat_can_healing_word true
+*if ((known_healing_word) and (bard_spell_slots > 0))
+  *if ((hp_current < hp_max) or (combat_ally_hurt_exists))
+    *set combat_can_healing_word true
 *temp combat_can_second_wind false
 *if ((character_class = "fighter") and (fighter_second_wind_uses > 0))
   *set combat_can_second_wind true
@@ -2366,6 +2467,23 @@
 *temp combat_can_reckless false
 *if ((((character_class = "barbarian") and (character_level >= 2)) and (not(combat_reckless_active))) and (combat_player_attacks_left = combat_player_attacks_max))
   *set combat_can_reckless true
+*comment Arms of Hadar (Warlock): a Pact Magic slot, the spell known, and a living enemy within reach.
+*temp combat_can_hadar false
+*if ((((character_class = "warlock") and (known_arms_of_hadar)) and (warlock_spell_slots > 0)) and (combat_player_actions_left > 0))
+  *gosub combat_hadar_check
+  *if (combat_hadar_ok)
+    *set combat_can_hadar true
+*comment Cause Fear (Wizard or Warlock): a slot of the caster's own pool, an unspent action, and a target that is not already frightened.
+*temp combat_can_fear false
+*if ((combat_player_actions_left > 0) and (known_cause_fear))
+  *temp ccf_slots 0
+  *if (character_class = "wizard")
+    *set ccf_slots wizard_spell_slots
+  *if (character_class = "warlock")
+    *set ccf_slots warlock_spell_slots
+  *temp ccf_now {(("combat_enemy" & combat_active_target) & "_frightened")}
+  *if ((ccf_slots > 0) and (ccf_now <= 0))
+    *set combat_can_fear true
 *temp combat_can_dual_shot false
 *if (((combat_can_attack) and (fighting_style = "dual_shot")) and (weapon_type = "ranged"))
   *gosub combat_dual_shot_check
@@ -2394,7 +2512,7 @@
 *comment re-cast to refresh, but recasting while it was fading kept the ward up every round, so a caster could trade
 *comment blows with a fighter. It can now only be cast again once it has fully expired, which is every other round.
 *temp combat_can_blade_ward false
-*if (((((wizard_cantrip = "blade_ward") or (wizard_cantrip_2 = "blade_ward")) or (wizard_cantrip_3 = "blade_ward")) or (((bard_cantrip = "blade_ward") or (bard_cantrip_2 = "blade_ward")) or ((warlock_cantrip = "blade_ward") or (warlock_cantrip_2 = "blade_ward")))))
+*if (known_blade_ward)
   *set combat_can_blade_ward true
 *if (blade_ward_active)
   *set combat_can_blade_ward false
@@ -2722,7 +2840,7 @@
         *goto fight_bonus_spent
       *goto fight_action_spent
 
-  *if ((combat_player_actions_left > 0) and ((((wizard_cantrip = "fire_bolt") or (wizard_cantrip_2 = "fire_bolt")) or (wizard_cantrip_3 = "fire_bolt")) or ((race_cantrip = "fire_bolt") or (race_cantrip_2 = "fire_bolt"))))
+  *if ((combat_player_actions_left > 0) and (known_fire_bolt))
     # [b][ACTION][/b] [b][Fire Bolt][/b] Hurl a mote of arcane flame at ${combat_enemy_epithet}.
       *comment Whole-body replay lock (2026-09-30, shared by every attack-roll cantrip option below -- Ray of
       *comment Frost/Shocking Grasp/Eldritch Blast/Chill Touch -- plus Vicious Mockery just past them, one shared
@@ -2771,7 +2889,7 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if ((combat_player_actions_left > 0) and ((((wizard_cantrip = "ray_of_frost") or (wizard_cantrip_2 = "ray_of_frost")) or (wizard_cantrip_3 = "ray_of_frost")) or ((race_cantrip = "ray_of_frost") or (race_cantrip_2 = "ray_of_frost"))))
+  *if ((combat_player_actions_left > 0) and (known_ray_of_frost))
     # [b][ACTION][/b] [b][Ray of Frost][/b] Loose a beam of numbing cold at ${combat_enemy_epithet}.
       *comment Shares Fire Bolt's own whole-body replay lock (combat_cantrip_choice_locked, its own comment above
       *comment has the full explanation) -- same bug shape, same one-action-per-page exclusivity.
@@ -2816,7 +2934,7 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if (((combat_player_actions_left > 0) and (combat_target_range <= 0)) and ((((wizard_cantrip = "shocking_grasp") or (wizard_cantrip_2 = "shocking_grasp")) or (wizard_cantrip_3 = "shocking_grasp")) or ((race_cantrip = "shocking_grasp") or (race_cantrip_2 = "shocking_grasp"))))
+  *if (((combat_player_actions_left > 0) and (combat_target_range <= 0)) and (known_shocking_grasp))
     *comment TOUCH reach (tools/spell_catalog.json: "shocking_grasp" is range "touch"), so it is only usable against
     *comment a target you are actually touching -- a spell you cannot reach is not offered at a penalty, it is simply
     *comment not offered. This is the REACH gate, a DIFFERENT question from spell_range_of's disadvantage below: a
@@ -2876,7 +2994,7 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if ((combat_player_actions_left > 0) and ((warlock_cantrip = "eldritch_blast") or (warlock_cantrip_2 = "eldritch_blast")))
+  *if ((combat_player_actions_left > 0) and (known_eldritch_blast))
     # [b][ACTION][/b] [b][Eldritch Blast][/b] Unleash a crackling beam of eldritch force at ${combat_enemy_epithet}.
       *comment Shares Fire Bolt's own whole-body replay lock (combat_cantrip_choice_locked, its own comment above
       *comment has the full explanation) -- same bug shape, same one-action-per-page exclusivity.
@@ -2898,6 +3016,9 @@
           *set combat_player_dmg_type "force"
           *set combat_player_dmg_dice_sides 10
           *set combat_player_dmg_bonus 0
+          *comment Agonizing Blast (Warlock invocation): the Charisma modifier is added to Eldritch Blast damage.
+          *if ((inv_agonizing_blast) and (cha_mod > 0))
+            *set combat_player_dmg_bonus cha_mod
           *gosub_scene combat_dice resolve_player_hit true
           *if (combat_enemy_hp <= 0)
             *gosub_scene combat_prose pick_spell_death_flavor
@@ -2919,7 +3040,7 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if ((combat_player_actions_left > 0) and ((warlock_cantrip = "chill_touch") or (warlock_cantrip_2 = "chill_touch")))
+  *if ((combat_player_actions_left > 0) and (known_chill_touch))
     # [b][ACTION][/b] [b][Chill Touch][/b] Conjure a skeletal hand of necrotic frost against ${combat_enemy_epithet}.
       *comment Shares Fire Bolt's own whole-body replay lock (combat_cantrip_choice_locked, its own comment above
       *comment has the full explanation) -- same bug shape, same one-action-per-page exclusivity.
@@ -2962,7 +3083,7 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if ((combat_player_actions_left > 0) and ((bard_cantrip = "vicious_mockery") or (bard_cantrip_2 = "vicious_mockery")))
+  *if ((combat_player_actions_left > 0) and (known_vicious_mockery))
     *comment Tagged "ranged" in tools/spell_catalog.json, but deliberately NOT wired to spell_range_of's penalty
     *comment and deliberately NOT gated on reach: Vicious Mockery resolves as a Wisdom SAVE (below), so the
     *comment player never makes an attack roll to spoil. The close-combat penalty is a penalty on the ATTACK
@@ -3012,7 +3133,7 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if ((combat_player_actions_left > 0) and (((character_class = "wizard") and (wizard_spell = "magic_missile")) and (wizard_spell_slots > 0)))
+  *if ((combat_player_actions_left > 0) and (((character_class = "wizard") and (known_magic_missile)) and (wizard_spell_slots > 0)))
     # [b][ACTION][/b] [b][Magic Missile][/b] Loose three darts of force at targets you choose in the sidebar.
       *comment Arms targeting mode instead of casting immediately (2026-09-28) -- RAW lets the three darts be
       *comment split across up to three targets, not forced onto whichever single enemy fight_pick_target's
@@ -3038,7 +3159,7 @@
       *line_break
       *goto fight_bonus_spent
 
-  *if ((combat_player_actions_left > 0) and (((warlock_spell = "armor_of_agathys") and (warlock_spell_slots > 0)) and (not(agathys_active))))
+  *if ((combat_player_actions_left > 0) and (((known_armor_of_agathys) and (warlock_spell_slots > 0)) and (not(agathys_active))))
     # [b][ACTION][/b] [b][Armor of Agathys][/b] Sheathe yourself in spectral frost that punishes melee strikes.
       *gosub_scene combat_spells resolve_cast_agathys
       A brittle casing of translucent, jagged rime coats your shoulders and arms, radiating bone-chilling cold. Any foe foolish enough to strike you will feel the frost shatter back against the blow.
@@ -3047,7 +3168,7 @@
       *line_break
       *goto fight_action_spent
 
-  *if ((combat_player_actions_left > 0) and (((((character_class = "wizard") and (wizard_spell = "false_life")) and (wizard_spell_slots > 0)) or (((character_class = "warlock") and (warlock_spell = "false_life")) and (warlock_spell_slots > 0))) and (temp_hp = 0)))
+  *if ((combat_player_actions_left > 0) and ((((((character_class = "wizard") and (known_false_life)) and (wizard_spell_slots > 0)) or (((character_class = "warlock") and (known_false_life)) and (warlock_spell_slots > 0))) or (inv_fiendish_vigor)) and (temp_hp = 0)))
     # [b][ACTION][/b] [b][False Life][/b] Weave a necromantic shroud over your flesh.
       *gosub_scene combat_spells resolve_cast_false_life
       You murmur a dark necromantic rite. A numb, leathery vitality spreads beneath your skin, insulating your muscles against immediate harm.
@@ -3056,7 +3177,7 @@
       *line_break
       *goto fight_action_spent
 
-  *if ((combat_player_actions_left > 0) and (((bard_spell = "dissonant_whispers") or (bard_spell_2 = "dissonant_whispers")) and (bard_spell_slots > 0)))
+  *if ((combat_player_actions_left > 0) and ((known_dissonant_whispers) and (bard_spell_slots > 0)))
     # [b][ACTION][/b] [b][Dissonant Whispers][/b] A discordant psychic phrase wracks ${combat_enemy_epithet}.
       *comment Whole-body replay lock (2026-09-30, same bug/shape as resolve_weapon_attack_choice's own header
       *comment comment above): fight_pick_target's kill-priority re-scan and pick_spell_flavor's *rand pick were
@@ -3092,7 +3213,22 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if ((combat_player_actions_left > 0) and (((bard_spell = "bane") or (bard_spell_2 = "bane")) and (bard_spell_slots > 0)))
+  *if (combat_can_fear)
+    # [b][ACTION][/b] [b][Cause Fear][/b] Plant a whispered dread in ${combat_enemy_epithet}.@{show_stat_hints  [Wisdom Save]|}
+      *gosub fight_pick_target
+      *gosub_scene combat_prose flavor_cause_fear
+      *line_break
+      *gosub_scene combat_spells resolve_cast_cause_fear
+      *goto fight_action_spent
+
+  *if (combat_can_hadar)
+    # [b][ACTION][/b] [b][Arms of Hadar][/b] Black arms lash every foe within reach, and what they catch cannot strike back.@{show_stat_hints  [Strength Save, 2d6 Necrotic]|}
+      *gosub_scene combat_prose flavor_arms_of_hadar
+      *line_break
+      *gosub_scene combat_spells resolve_arms_of_hadar
+      *goto fight_check_enemy_hp
+
+  *if ((combat_player_actions_left > 0) and ((known_bane) and (bard_spell_slots > 0)))
     # [b][ACTION][/b] [b][Bane][/b] Sour the aim and nerve of every foe still standing near you.
       *comment No fight_pick_target re-sync here -- unlike every other targeted option, Bane doesn't act on the
       *comment single "active" target at all; resolve_cast_bane picks its own up to three targets internally.
@@ -3102,7 +3238,17 @@
       *goto fight_action_spent
 
   *if ((combat_can_healing_word) and (combat_player_bonus_left > 0))
-    # [b][BONUS ACTION][/b] [b][Healing Word][/b] Speak a curative syllable to knit your gashes.
+    # [b][BONUS ACTION][/b] [b][Healing Word][/b] @{combat_ally_alive_exists Speak a curative word across the fight, to you or an ally.|Speak a curative syllable to knit your gashes.}
+      *comment With an ally on the field the player picks who is healed in the sidebar (fight_target_friendly_healing_word); alone, it heals the caster at once, as it always did.
+      *set combat_friendly_target 0
+      *if (combat_ally_alive_exists)
+        *set combat_friendly_reach 3
+        *if (hp_current < hp_max)
+          *set combat_friendly_target 0
+        *else
+          *set combat_friendly_target combat_ally_hurt_first
+        *set combat_friendly_targeting_active true
+        *goto fight_target_friendly_healing_word
       *gosub_scene combat_spells resolve_cast_healing_word
       A sharp, ringing cadence leaves your lips. Warmth rushes through your marrow, knitting shut the worst of your wounds.
       *line_break
@@ -3148,12 +3294,21 @@
         *goto fight_bonus_spent
       *goto fight_action_spent
 
-  *if ((combat_player_actions_left > 0) and ((((character_class = "wizard") and (wizard_spell = "shield")) and (wizard_spell_slots > 0)) and (not(shield_armed))))
+  *if ((combat_player_actions_left > 0) and ((((character_class = "wizard") and (known_shield)) and (wizard_spell_slots > 0)) and (not(shield_armed))))
     # [b][Shield][/b] Hold the barrier-spell coiled and ready, primed to snap into place.
       *set shield_armed true
       You murmur the first half of the somatic phrase under your breath, holding the working coiled and ready at your fingertips, costing you nothing to keep it there.
       *comment No banner here -- the hub's own "Shield Armed" status line (fight_round_hub) says the same thing
       *comment the instant this reopens it, so a second copy here would just repeat it on the same page.
+      *line_break
+      *goto fight_round_hub
+
+  *if (((((combat_player_actions_left > 0) and (character_class = "warlock")) and (known_hellish_rebuke)) and (warlock_spell_slots > 0)) and ((not(rebuke_armed)) and (not(player_oa_used))))
+    # [b][Hellish Rebuke][/b] Hold a vengeful retort ready, to scorch whoever next wounds you.
+      *set rebuke_armed true
+      You bite down on a retort and hold it there, hot behind your teeth, ready to spit back at whoever next draws your blood.
+      *comment No banner here -- the hub's own "Hellish Rebuke Armed" status line says the same thing the instant it reopens. Arming is free, like Shield: the slot and the reaction are spent
+      *comment only if it fires (resolve_enemy_attack, combat_dice.txt).
       *line_break
       *goto fight_round_hub
 
@@ -3305,6 +3460,46 @@ ${use_text}
 *comment when the page is built, and would go stale the instant a sidebar click changed the count afterward.
 *comment Its body re-sums the per-slot counts fresh at the moment it's actually picked, which is what matters --
 *comment casting with nothing assigned just explains why and loops back rather than silently doing nothing.
+*label fight_target_friendly_healing_word
+*comment Healing Word aimed in the sidebar: click yourself or an ally, then cast. The pick is combat_friendly_target (0 = you); it defaults to you when you are hurt, otherwise to the first wounded ally.
+*comment Validation runs only before the cast, never on a replay of the finished page (the cast has already healed them, so a second check would wrongly call them unwounded).
+*choice
+  # Cast Healing Word on the one you picked in the sidebar.
+    *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
+      *gosub combat_friendly_validate
+      *if (not(combat_friendly_ok))
+        ${combat_friendly_why}
+        *line_break
+        Click yourself or a wounded ally in the sidebar, then cast.
+        *line_break
+        *goto fight_target_friendly_healing_word
+    *set combat_friendly_targeting_active false
+    *gosub_scene combat_spells resolve_cast_healing_word
+    *gosub combat_friendly_cast_text
+    *goto fight_bonus_spent
+  # Cancel.
+    *set combat_friendly_targeting_active false
+    You let the word die on your tongue, unspent.
+    *line_break
+    *goto fight_round_hub
+
+*label combat_friendly_cast_text
+*comment The text after a friendly Healing Word, for whoever it landed on. Reads the persisted result, so a replay prints the same thing.
+*if (combat_friendly_target = 0)
+  A sharp, ringing cadence leaves your lips. Warmth rushes through your marrow, knitting shut the worst of your wounds.
+  *line_break
+  [b][🩸 Healing Word: Restored ${combat_cast_result} HP | HP: ${hp_current}/${hp_max}][/b]
+  *line_break
+*else
+  *temp cfct_name {(("combat_ally" & combat_friendly_target) & "_name")}
+  *temp cfct_hp {(("combat_ally" & combat_friendly_target) & "_hp")}
+  *temp cfct_max {(("combat_ally" & combat_friendly_target) & "_max_hp")}
+  You call a ringing word across the fight, and ${cfct_name} straightens as the worst of their wounds knit shut.
+  *line_break
+  [b][🩸 Healing Word on ${cfct_name}: Restored ${combat_cast_result} HP | HP: ${cfct_hp}/${cfct_max}][/b]
+  *line_break
+*return
+
 *label fight_target_dual_shot
 *choice
   # Loose both shots.
@@ -3774,6 +3969,7 @@ ${use_text}
     *comment Range costs it multiple turns too.
     *temp cnt_first_pass {("combat_turn_first_pass_" & combat_current_turn_index)}
     *temp cnt_slowed {(("combat_enemy" & cnt_slot) & "_slowed")}
+    *temp cnt_frightened {(("combat_enemy" & cnt_slot) & "_frightened")}
     *set {("combat_turn_first_pass_" & combat_current_turn_index)} false
     *comment cnt_rv: shared by both branches below that roll a 3-way flavor variant, declared once here instead
     *comment of once per branch.
@@ -3914,6 +4110,13 @@ ${use_text}
         *set combat_turn_advanced_this_page true
       *else
         *gosub do_enemy_chase_step cnt_slot
+    *elseif (((cnt_frightened > 0) and (not(combat_enemy_weapon_type = "ranged"))) and (combat_enemy_range > 0))
+      *comment Frightened (Cause Fear): it cannot willingly move closer to the source of its fear, so it spends the turn holding back. (Once it is within reach it can still attack, with disadvantage.)
+      *gosub_scene combat_prose flavor_cause_fear_holds
+      *line_break
+      [b][😨 ${combat_enemy_name} holds back, too frightened to close][/b]
+      *line_break
+      *set combat_turn_advanced_this_page true
     *elseif ((not(combat_enemy_weapon_type = "ranged")) and (combat_enemy_range > 0))
       *comment Free movement + Dash (2026-09-28, mirrors the player's own Push Forward/Dash exactly): closes one
       *comment tier for free. If that's still not enough, it Dashes too -- closes a SECOND tier -- since there's
@@ -4005,6 +4208,17 @@ ${use_text}
     *comment Slowed lasts until this enemy has taken its next turn: spent here, after the turn, whichever branch it took.
     *if (cnt_slowed > 0)
       *set {(("combat_enemy" & cnt_slot) & "_slowed")} (cnt_slowed - 1)
+    *comment Frightened: the enemy repeats its Wisdom save at the end of its turn, and the fear ends on a success. If it died during its own turn (a Rebuke, Armor of Agathys) there is nothing to roll for.
+    *if ((cnt_frightened > 0) and (combat_enemy_hp > 0))
+      *temp cnt_fp (("combat_enemy" & cnt_slot) & "_")
+      *gosub_scene combat_dice resolve_enemy_save cnt_fp "wisdom" "Wisdom" cnt_slot
+      *comment check_success is inverted: true = the enemy FAILED, so the fear holds (and runs down one round).
+      *if (check_success)
+        *set {(("combat_enemy" & cnt_slot) & "_frightened")} (cnt_frightened - 1)
+      *else
+        *set {(("combat_enemy" & cnt_slot) & "_frightened")} 0
+        [b][😌 ${combat_enemy_name} shakes off the fear][/b]
+        *line_break
 *if (cnt_kind = "ally")
   *comment select_ally_attack_target (2026-09-29, plan §11.1) picks this ally's target: ranged-prefers-ranged or
   *comment melee-prefers-closest-tier, falling back to fight_pick_target's own plain kill-priority (2026-09-28)

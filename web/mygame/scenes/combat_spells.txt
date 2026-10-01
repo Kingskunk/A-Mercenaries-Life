@@ -188,6 +188,100 @@ ${fsh}
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPELL: ARMS OF HADAR (Warlock, 1st level, 2026-10-02): 2d6 necrotic to every living enemy within 10 feet (Engaged), Strength save for half
+*comment RAW (PHB'24): one 2d6 roll shared by every target; a target that FAILS the save takes it all and cannot take reactions until the start of its next turn; one that saves takes
+*comment half and keeps its reactions. The "no reactions" half is the existing per-slot reaction flag (combat_enemyN_oa_used, which combat_begin_round clears every round). Costs a Pact Magic
+*comment slot. Replay-locked (combat_cast_locked); the per-target result lines are kept in combat_mm_banner_1..6, Magic Missile's per-slot banner fields, and printed after the lock.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_arms_of_hadar
+*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
+  *set warlock_spell_slots - 1
+  *temp aoh_d1 0
+  *temp aoh_d2 0
+  *rand aoh_d1 1 6
+  *rand aoh_d2 1 6
+  *temp aoh_total (aoh_d1 + aoh_d2)
+  *set combat_player_dmg_roll_banner "[b][🎲 Arms of Hadar: ${aoh_d1}+${aoh_d2} = ${aoh_total} necrotic][/b]"
+  *set combat_player_dmg_type "necrotic"
+  *set combat_mm_banner_1 ""
+  *set combat_mm_banner_2 ""
+  *set combat_mm_banner_3 ""
+  *set combat_mm_banner_4 ""
+  *set combat_mm_banner_5 ""
+  *set combat_mm_banner_6 ""
+  *temp aoh_i 1
+  *label resolve_arms_of_hadar_loop
+  *if (aoh_i <= combat_enemy_count)
+    *temp aoh_p (("combat_enemy" & aoh_i) & "_")
+    *temp aoh_hp {(aoh_p & "hp")}
+    *temp aoh_range {(aoh_p & "range")}
+    *if ((aoh_hp > 0) and (aoh_range <= 0))
+      *gosub_scene combat_dice resolve_enemy_save aoh_p "strength" "Strength" aoh_i
+      *comment check_success is inverted here (resolve_enemy_save: true = the enemy FAILED the save).
+      *temp aoh_failed check_success
+      *if (aoh_failed)
+        *set combat_player_dmg_dealt aoh_total
+        *set {(aoh_p & "oa_used")} true
+      *else
+        *set combat_player_dmg_dealt ((aoh_total - (aoh_total modulo 2)) / 2)
+      *set combat_active_target aoh_i
+      *gosub_scene combat fight_sync_target_in
+      *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
+      *set combat_enemy_hp - combat_player_dmg_dealt
+      *if (combat_enemy_hp < 0)
+        *set combat_enemy_hp 0
+      *gosub_scene combat fight_sync_target_out
+      *temp aoh_line ""
+      *if (aoh_failed)
+        *set aoh_line "${combat_enemy_name}: ${combat_player_dmg_dealt} necrotic damage${combat_outgoing_dmg_suffix}, and it cannot take reactions until its next turn"
+      *else
+        *set aoh_line "${combat_enemy_name}: ${combat_player_dmg_dealt} necrotic damage${combat_outgoing_dmg_suffix} (saved, half)"
+      *if (combat_enemy_hp <= 0)
+        *set aoh_line "${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} necrotic damage${combat_outgoing_dmg_suffix}"
+      *set {(("combat_mm_banner_" & aoh_i))} "[b][🖤 ${aoh_line}][/b]"
+    *set aoh_i + 1
+    *goto resolve_arms_of_hadar_loop
+  *set combat_cast_locked true
+  *set locked_combat_cast_page_id page_id
+${combat_player_dmg_roll_banner}
+*line_break
+*temp aoh_pi 1
+*label resolve_arms_of_hadar_print_loop
+*if (aoh_pi <= combat_enemy_slot_cap)
+  *temp aoh_pval {(("combat_mm_banner_" & aoh_pi))}
+  *if (not(aoh_pval = ""))
+    ${aoh_pval}
+    *line_break
+  *set aoh_pi + 1
+  *goto resolve_arms_of_hadar_print_loop
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPELL: CAUSE FEAR (Wizard and Warlock, 1st level, 2026-10-02): the active target makes a Wisdom save against spell_save_dc; on a failure it is Frightened for up to 10 rounds, the engine's flat
+*comment stand-in for concentration (nothing here tracks concentration, as with Bane). A frightened enemy attacks with disadvantage and will not close the distance, and it repeats its Wisdom save at
+*comment the end of each of its turns, ending the fear on a success (combat_next_turn, combat.txt). Costs a slot of the caster's own pool. Replay-locked (combat_cast_locked).
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_cast_cause_fear
+*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
+  *if (character_class = "wizard")
+    *set wizard_spell_slots - 1
+  *else
+    *set warlock_spell_slots - 1
+  *temp rcf_p (("combat_enemy" & combat_active_target) & "_")
+  *gosub_scene combat_dice resolve_enemy_save rcf_p "wisdom" "Wisdom" combat_active_target
+  *comment check_success is inverted here (resolve_enemy_save: true = the enemy FAILED the save).
+  *if (check_success)
+    *set {(rcf_p & "frightened")} 10
+    *set combat_fear_banner "[b][😨 ${combat_enemy_name} is Frightened: its attacks have disadvantage and it will not come closer][/b]"
+  *else
+    *set combat_fear_banner "[b][💨 ${combat_enemy_name} fights off the dread][/b]"
+  *set combat_cast_locked true
+  *set locked_combat_cast_page_id page_id
+${combat_fear_banner}
+*line_break
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment SPELL: BANE (Bard, 1st level -- wired into the bard_spell/bard_spell_2 pool, 2026-09-27)
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment Up to three living enemies, front-to-back (the same order everything else in this engine already
@@ -242,10 +336,12 @@ ${fsh}
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_false_life
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *if (character_class = "wizard")
-    *set wizard_spell_slots - 1
-  *else
-    *set warlock_spell_slots - 1
+  *comment Fiendish Vigor (Warlock invocation) casts False Life at will, so it costs no slot.
+  *if (not(inv_fiendish_vigor))
+    *if (character_class = "wizard")
+      *set wizard_spell_slots - 1
+    *else
+      *set warlock_spell_slots - 1
   *temp fl_roll 0
   *rand fl_roll 1 4
   *set combat_cast_result (fl_roll + 4)
@@ -258,6 +354,7 @@ ${fsh}
 *comment SPELL: HEALING WORD (1d4 + CHA mod healing)
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_healing_word
+*comment Heals the player when combat_friendly_target is 0, otherwise the ally in that slot (chosen in the sidebar, see fight_target_friendly_healing_word).
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
   *set bard_spell_slots - 1
   *temp hw_roll 0
@@ -265,9 +362,17 @@ ${fsh}
   *set combat_cast_result (hw_roll + cha_mod)
   *if (combat_cast_result < 1)
     *set combat_cast_result 1
-  *set hp_current + combat_cast_result
-  *if (hp_current > hp_max)
-    *set hp_current hp_max
+  *if (combat_friendly_target = 0)
+    *set hp_current + combat_cast_result
+    *if (hp_current > hp_max)
+      *set hp_current hp_max
+  *else
+    *temp hw_hp {(("combat_ally" & combat_friendly_target) & "_hp")}
+    *temp hw_max {(("combat_ally" & combat_friendly_target) & "_max_hp")}
+    *set hw_hp + combat_cast_result
+    *if (hw_hp > hw_max)
+      *set hw_hp hw_max
+    *set {(("combat_ally" & combat_friendly_target) & "_hp")} hw_hp
   *set combat_cast_locked true
   *set locked_combat_cast_page_id page_id
 *return

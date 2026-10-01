@@ -59,7 +59,72 @@
 *create bard_spell_desc "You have no verse bound to magic yet."
 *create bard_spell_2 "none"
 *create bard_spell_2_desc "You have no second verse bound to magic yet."
+*comment The Bard's level 2 spell pick (2026-10-02): a third spell slot, filled on the level-up page (level_up_bard_2_spell). Every gate that asks "does the Bard know X" checks all three.
+*create bard_spell_3 "none"
+*create bard_spell_3_desc "You have no third verse bound to magic yet."
+*comment The Warlock's level 2 spell pick (2026-10-02): a second spell slot, filled on the level-up page (level_up_warlock_2_spell). Every gate asks known_<id>, or both slots for the Hex innate-magic case.
+*create warlock_spell_2 "none"
+*create warlock_spell_2_desc "You have no second bound spell yet."
+*comment ELDRITCH INVOCATIONS (Warlock, 2026-10-02): one at level 1 (picked at the Dawn Trial), three by level 2 (two more on the level-up page). warlock_invocation_1/2/3 hold ids; every effect reads a derived
+*comment inv_<id> flag instead (refresh_invocations, character_progression.txt, run by refresh_known_spells), so a new slot or invocation is one edit there. invocation_info fills inv_label/inv_desc for the dossier.
+*comment sees_in_dark is the one flag a scene should ask for "can this character see in the dark": darkvision from race OR Devil's Sight.
+*create warlock_invocation_1 "none"
+*create warlock_invocation_2 "none"
+*create warlock_invocation_3 "none"
+*create inv_label ""
+*create inv_desc ""
+*create inv_agonizing_blast false
+*create inv_armor_of_shadows false
+*create inv_fiendish_vigor false
+*create inv_mask_of_many_faces false
+*create inv_devils_sight false
+*create inv_otherworldly_leap false
+*create sees_in_dark false
+*comment KNOWN SPELLS (2026-10-02): known_<id> is true when the character knows that spell or cantrip by ANY route (class pick, level-up pick, innate race magic). It is DERIVED by
+*comment refresh_known_spells (character_progression.txt), which update_dnd_stats, fight_setup and the level-up page call, so a gate that asks "does the character know X" reads one flag and
+*comment never has to list the spell slots. A new slot (a fourth Bard spell, a fourth cantrip) is added to that one label and no gate changes. One flag per spell in spell-data.js.
+*create known_blade_ward false
+*create known_chill_touch false
+*create known_eldritch_blast false
+*create known_fire_bolt false
+*create known_guidance false
+*create known_light false
+*create known_mage_hand false
+*create known_message false
+*create known_mending false
+*create known_minor_illusion false
+*create known_prestidigitation false
+*create known_ray_of_frost false
+*create known_shocking_grasp false
+*create known_vicious_mockery false
+*create known_thaumaturgy false
+*create known_alarm false
+*create known_arms_of_hadar false
+*create known_hellish_rebuke false
+*create known_cause_fear false
+*create known_armor_of_agathys false
+*create known_bane false
+*create known_charm_person false
+*create known_comprehend_languages false
+*create known_detect_magic false
+*create known_disguise_self false
+*create known_dissonant_whispers false
+*create known_false_life false
+*create known_feather_fall false
+*create known_healing_word false
+*create known_hex false
+*create known_hunters_mark false
+*create known_identify false
+*create known_jump false
+*create known_mage_armor false
+*create known_magic_missile false
+*create known_shield false
+*create known_speak_with_animals false
+*create known_unseen_servant false
 *create bard_spell_slots 2
+*comment Bard Expertise (level 2, 2026-10-02): two skills the Bard is already proficient in, as display names ("Persuasion"), matching check_skill the way rogue_expertise_1/2 do.
+*create bard_expertise_1 "none"
+*create bard_expertise_2 "none"
 *comment Ranger spellcasting (level 2, 2026-10-02): Wisdom casts. ranger_spell is Hunter's Mark, granted by the level-up (it is the level 1 feature, now castable with a slot too);
 *comment ranger_spell_2 and ranger_spell_3 are the two level-up picks from the narrative spells. Slots follow the half-caster table (0 at level 1, 2 at level 2, 3 at level 3).
 *create ranger_spell "none"
@@ -182,6 +247,18 @@
 *create fighter_action_surge_max 0
 *create barbarian_rage_max 2
 *create warlock_spell_slots_max 1
+*comment ARCANE RECOVERY (Wizard, 2026-10-02): true once it has been used since the last long rest. A short rest returns expended spell slots whose combined level is up to half the Wizard's level,
+*comment rounded up (all slots are first level here, so that many slots), once between long rests. restore_class_resources clears it. See do_short_rest in character_progression.txt.
+*create wizard_arcane_recovery_used false
+*comment SCHOLAR (Wizard, level 2, 2026-10-02): Expertise in one skill the Wizard is already proficient in, chosen from Arcana, History, Investigation, Medicine, Nature and Religion. Stored as the
+*comment display name ("Arcana"), matching check_skill, like the other Expertise picks. A Wizard's own proficiencies are fixed at level 1 (character_stats.txt apply_class_skills), so the pick
+*comment only offers the ones whose skill_<id> flag is true.
+*create wizard_expertise_1 "none"
+*comment The Wizard's level 2 spell picks (2026-10-02): two more spells in the book, filled on the level-up page (level_up_wizard_2_spell1/2). Every gate asks known_<id>, never these slots.
+*create wizard_spell_2 "none"
+*create wizard_spell_2_desc "You have copied no second spell into your book yet."
+*create wizard_spell_3 "none"
+*create wizard_spell_3_desc "You have copied no third spell into your book yet."
 *create wizard_spell_slots_max 2
 *create bard_spell_slots_max 2
 *create ranger_spell_slots_max 0
@@ -240,6 +317,37 @@
 *comment begins (combat_next_turn clears it when the queue reaches the player). While true: the player's Strength attack rolls have advantage, and every enemy attack
 *comment roll against the player has advantage too (resolve_enemy_attack and the reverse opportunity attack, combat_dice.txt). Reset false with the other fight flags.
 *create combat_reckless_active false
+*comment ARMS OF HADAR (Warlock, 2026-10-02): combat_hadar_ok is true when the spell is castable right now (a living enemy is Engaged, within the 10 foot emanation).
+*create combat_hadar_ok false
+*comment HELLISH REBUKE (Warlock, 2026-10-02), modelled on Shield: rebuke_armed is a free declaration (the hub option) that fires on the next enemy attack that actually DAMAGES the player. When it
+*comment fires it spends a Pact Magic slot and the player's reaction (player_oa_used, which combat_begin_round clears each round), the attacker makes a Dexterity save against spell_save_dc, and takes
+*comment 2d10 fire (half on a save). The result is kept in combat_rebuke_* so the attack's narration prints it in order (resolve_enemy_attack, combat_dice.txt; fight_narrate_enemy_turn, combat_prose.txt).
+*comment combat_save_quiet makes resolve_enemy_save keep its banner to itself (stored in combat_save_banner_<slot>) instead of printing it where it is called.
+*create rebuke_armed false
+*create combat_rebuke_triggered false
+*create combat_rebuke_save_banner ""
+*create combat_rebuke_banner ""
+*create combat_save_quiet false
+*create combat_fear_banner ""
+*comment FRIENDLY TARGETING (2026-10-02): a friendly spell (Healing Word first) lets the player pick who it lands on in the sidebar, the way Magic Missile picks its targets. While
+*comment combat_friendly_targeting_active is true the sidebar makes the player's own row and every living ally's row clickable, and a click writes combat_friendly_target (0 = the player,
+*comment otherwise the ally's slot). combat_friendly_reach is the farthest ally distance the spell allows (a tier 0-3; 3 = anywhere, which is what a 60 foot range comes to in this
+*comment tier model, 0 would be a touch spell). combat_allyN_distance is the ally's distance from the player, refreshed by combat_refresh_ally_distances.
+*create combat_friendly_targeting_active false
+*create combat_friendly_target 0
+*create combat_friendly_reach 3
+*create combat_friendly_ok false
+*create combat_friendly_why ""
+*create combat_friendly_name ""
+*create combat_ally_alive_exists false
+*create combat_ally_hurt_exists false
+*create combat_ally_hurt_first 0
+*create combat_ally1_distance 0
+*create combat_ally2_distance 0
+*create combat_ally3_distance 0
+*create combat_ally4_distance 0
+*comment Slot 0 is the inert placeholder quicktest's branch walk needs (see combat_enemy0_*); it is never read by a real turn.
+*create combat_ally0_distance 0
 *comment BARDIC INSPIRATION (2026-10-02, built; it was only dossier text before). A bonus action spends one use (bard_inspiration_uses, maximum = the Charisma modifier, at
 *comment least 1; refresh_class_resource_maxs sets it, and a short or long rest returns every use, the short-rest rule being a house rule). The die is bard_inspiration_die_sides
 *comment (d6, d8 at level 5, d10 at 10, d12 at 15). An ally in the fight is inspired when there is one (combat_inspired_ally = its slot); otherwise the Bard inspires
@@ -1673,6 +1781,8 @@
 *create combat_enemy1_disadvantage false
 *comment Slowed (2026-10-01): rounds left, 0 = none. Set by Ray of Frost, read by combat_next_turn (a Slowed enemy cannot Dash) and shown on the hover card (index.html). Consumed at the end of that enemy's own next turn.
 *create combat_enemy1_slowed 0
+*comment Frightened (2026-10-02, Cause Fear): rounds left, 0 = none. A frightened enemy attacks with disadvantage, will not close the distance (combat_next_turn), and repeats its Wisdom save at the end of each of its turns, ending the fear on a success. Shown on the hover card (index.html CONDITION_KEYS). Cleared in fight_cleanup.
+*create combat_enemy1_frightened 0
 *create combat_enemy1_advantage false
 *comment Opportunity attack (2026-09-28), per slot 1-6, mirroring disadvantage/advantage right above: has THIS
 *comment enemy already spent its one opportunity attack on the player this round? 5e gives each creature one
@@ -1755,6 +1865,7 @@
 *create combat_enemy2_bane_expires_round 0
 *create combat_enemy2_disadvantage false
 *create combat_enemy2_slowed 0
+*create combat_enemy2_frightened 0
 *create combat_enemy2_advantage false
 *create combat_enemy2_oa_used false
 *create combat_enemy2_range 0
@@ -1838,6 +1949,7 @@
 *create combat_enemy3_bane_expires_round 0
 *create combat_enemy3_disadvantage false
 *create combat_enemy3_slowed 0
+*create combat_enemy3_frightened 0
 *create combat_enemy3_advantage false
 *create combat_enemy3_oa_used false
 *create combat_enemy3_range 0
@@ -1903,6 +2015,7 @@
 *create combat_enemy4_bane_expires_round 0
 *create combat_enemy4_disadvantage false
 *create combat_enemy4_slowed 0
+*create combat_enemy4_frightened 0
 *create combat_enemy4_advantage false
 *create combat_enemy4_oa_used false
 *create combat_enemy4_range 0
@@ -1968,6 +2081,7 @@
 *create combat_enemy5_bane_expires_round 0
 *create combat_enemy5_disadvantage false
 *create combat_enemy5_slowed 0
+*create combat_enemy5_frightened 0
 *create combat_enemy5_advantage false
 *create combat_enemy5_oa_used false
 *create combat_enemy5_range 0
@@ -2033,6 +2147,7 @@
 *create combat_enemy6_bane_expires_round 0
 *create combat_enemy6_disadvantage false
 *create combat_enemy6_slowed 0
+*create combat_enemy6_frightened 0
 *create combat_enemy6_advantage false
 *create combat_enemy6_oa_used false
 *create combat_enemy6_range 0
@@ -2534,6 +2649,7 @@
 *create combat_enemy0_name "none"
 *create combat_enemy0_hp 0
 *create combat_enemy0_slowed 0
+*create combat_enemy0_frightened 0
 *create combat_enemy0_max_hp 0
 *create combat_enemy0_ac 10
 *create combat_enemy0_atk_bonus 0

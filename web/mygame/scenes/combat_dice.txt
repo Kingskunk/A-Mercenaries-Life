@@ -273,6 +273,10 @@ ${combat_player_dmg_roll_banner}
   *comment Reckless Attack (the Barbarian's, until their next turn): every attack roll against the player has advantage.
   *if (combat_reckless_active)
     *set combat_enemy_advantage true
+  *comment Frightened (Cause Fear): a frightened enemy attacks with disadvantage.
+  *temp cea_fright {(("combat_enemy" & combat_active_target) & "_frightened")}
+  *if (cea_fright > 0)
+    *set combat_enemy_disadvantage true
   *temp cea_dis false
   *comment Both disadvantage sources are precomputed into one flag rather than written as a mixed
   *comment `((A) or (B)) and (C)` condition. ChoiceScript's parser requires binary operators to be strictly
@@ -363,6 +367,7 @@ ${combat_player_dmg_roll_banner}
   *set combat_enemy_dmg_dealt 0
   *set combat_agathys_triggered false
   *set combat_agathys_shattered false
+  *set combat_rebuke_triggered false
   *set combat_condition_inflicted false
   *if ((combat_enemy_hit_success) and (combat_enemy_inflicts_condition))
     *set disadvantage true
@@ -426,6 +431,43 @@ ${combat_player_dmg_roll_banner}
     *else
       *if (hp_current < 1)
         *set hp_current 1
+    *comment HELLISH REBUKE (Warlock): armed earlier, it fires on the first hit that actually damages the player, spending a Pact Magic slot and the reaction. The attacker makes a
+    *comment Dexterity save; 2d10 fire, half on a save. Anything that resists or is vulnerable to fire is handled by the same outgoing check as every other player damage.
+    *if (((rebuke_armed) and (combat_enemy_dmg_dealt > 0)) and (not(player_oa_used)))
+      *set rebuke_armed false
+      *set warlock_spell_slots - 1
+      *set player_oa_used true
+      *set combat_rebuke_triggered true
+      *temp rb_d1 0
+      *temp rb_d2 0
+      *rand rb_d1 1 10
+      *rand rb_d2 1 10
+      *temp rb_total (rb_d1 + rb_d2)
+      *temp rb_prefix (("combat_enemy" & combat_active_target) & "_")
+      *set combat_save_quiet true
+      *comment Lock index 0, not the attacker's slot: the attacker may also make a repeat Wisdom save (Frightened) later on this very page, and a shared index would hand it this save back.
+      *gosub resolve_enemy_save rb_prefix "dexterity" "Dexterity" 0
+      *set combat_save_quiet false
+      *temp rb_failed check_success
+      *set combat_rebuke_save_banner combat_save_banner_0
+      *set combat_player_dmg_type "fire"
+      *if (rb_failed)
+        *set combat_player_dmg_dealt rb_total
+      *else
+        *set combat_player_dmg_dealt ((rb_total - (rb_total modulo 2)) / 2)
+      *gosub apply_outgoing_damage_resist_vuln
+      *set combat_enemy_hp - combat_player_dmg_dealt
+      *if (combat_enemy_hp < 0)
+        *set combat_enemy_hp 0
+      *temp rb_note ""
+      *if (rb_failed)
+        *set rb_note ""
+      *else
+        *set rb_note " (saved, half)"
+      *if (combat_enemy_hp <= 0)
+        *set combat_rebuke_banner "[b][🔥 Hellish Rebuke: ${rb_d1}+${rb_d2} = ${rb_total}, ${combat_player_dmg_dealt} fire damage${combat_outgoing_dmg_suffix}${rb_note} | 💀 ${combat_enemy_name} Defeated][/b]"
+      *else
+        *set combat_rebuke_banner "[b][🔥 Hellish Rebuke: ${rb_d1}+${rb_d2} = ${rb_total}, ${combat_player_dmg_dealt} fire damage${combat_outgoing_dmg_suffix}${rb_note}][/b]"
   *set {cea_lockname} true
 *temp cea_atk_banner_text {(cea_atk_bannername)}
 *if (not(cea_atk_banner_text = ""))
@@ -732,6 +774,18 @@ ${combat_player_dmg_roll_banner}
 *temp res_bannername ("combat_save_banner_" & res_lock_index)
 *temp res_successname ("combat_save_success_" & res_lock_index)
 *temp res_banner ""
+*comment Per-page reset of every slot's "already rolled" flag (2026-10-02, a real bug): the flags were never cleared, so a slot that saved on an earlier page read as already rolled on a later one the
+*comment moment ANOTHER slot stamped the current page id (locked_combat_save_page_id), returning that slot's stale roll. Bane and Arms of Hadar (several targets in one cast) hit it. Same shape
+*comment as resolve_ally_attack's own reset.
+*if (not(locked_combat_save_page_id = page_id))
+  *set combat_save_locked_0 false
+  *set combat_save_locked_1 false
+  *set combat_save_locked_2 false
+  *set combat_save_locked_3 false
+  *set combat_save_locked_4 false
+  *set combat_save_locked_5 false
+  *set combat_save_locked_6 false
+  *set locked_combat_save_page_id page_id
 *if ({(res_lockname)}) and (locked_combat_save_page_id = page_id)
   *set check_success {(res_successname)}
   *set res_banner {(res_bannername)}
@@ -764,7 +818,9 @@ ${combat_player_dmg_roll_banner}
   *set {(res_bannername)} res_banner
   *set {(res_lockname)} true
   *set locked_combat_save_page_id page_id
-${res_banner}
-*line_break
+*comment combat_save_quiet (Hellish Rebuke): the caller prints the banner itself, in order, so it is only stored here.
+*if (not(combat_save_quiet))
+  ${res_banner}
+  *line_break
 *return
 

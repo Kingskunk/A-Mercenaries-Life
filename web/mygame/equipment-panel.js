@@ -84,7 +84,7 @@
     var effectiveDexMod = Number(s.dex_mod) || 0;
     if (s.armor_type === "cloth") {
       baseAc = 10;
-      if (s.wizard_spell === "mage_armor" && !truthy(s.head_is_armor)) baseAc = 13;
+      if ((truthy(s.known_mage_armor) || truthy(s.inv_armor_of_shadows)) && !truthy(s.head_is_armor)) baseAc = 13;
       if (s.character_class === "barbarian" && !truthy(s.head_is_armor)) baseAc = 10 + (Number(s.con_mod) || 0);
     }
     if (s.armor_type === "leather" || s.armor_type === "buff_coat") baseAc = 11;

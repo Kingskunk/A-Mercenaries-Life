@@ -1,0 +1,282 @@
+/**
+ * D&D 5e CPR Actions Auto-Populate
+ * Handles auto-population of CPR (Chris's Premades) actions to the quick access container
+ */
+
+import { createLogger } from '/modules/bg3-hud-core/scripts/utils/logger.js';
+import { getCPRConfig } from '../constants/cprBlockedHotbarActions.js';
+
+const log = createLogger('bg3-hud-dnd5e');
+
+const MODULE_ID = 'bg3-hud-dnd5e';
+
+/**
+ * D&D 5e CPR Auto-Populate Implementation
+ * Provides CPR-specific action population logic for quick access container
+ */
+export class DnD5eCPRAutoPopulate {
+    /**
+     * Get CPR configuration based on D&D 5e rules version.
+     * @returns {{packName: string, packId: string, defaultActions: string[], isModern: boolean, settingsKey: string}}
+     */
+    getCPRConfig() {
+        return getCPRConfig();
+    }
+
+    /**
+     * Check if CPR module is active
+     * @returns {boolean}
+     */
+    isCPRActive() {
+        return game.modules.get('chris-premades')?.active ?? false;
+    }
+
+    /**
+     * Initialize default CPR actions based on rules version
+     * Only sets defaults if the versioned selectedCPRActions setting is empty
+     * @returns {Promise<void>}
+     */
+    async initializeDefaultActions() {
+        if (!this.isCPRActive()) {
+            return;
+        }
+
+        const cprConfig = this.getCPRConfig();
+
+        // Check if already set for this rules version
+        const currentSelection = game.settings.get(MODULE_ID, cprConfig.settingsKey);
+        if (currentSelection && currentSelection.length > 0) {
+            return; // Already configured for this rules version
+        }
+
+        try {
+            const pack = game.packs.get(cprConfig.packId);
+            if (!pack) {
+                log.warn(`CPR pack ${cprConfig.packId} not found`);
+                return;
+            }
+
+            // Get pack index
+            const index = await pack.getIndex();
+
+            // Find UUIDs for default actions
+            const defaultUuids = [];
+            for (const actionName of cprConfig.defaultActions) {
+                const entry = Array.from(index.entries()).find(([id, data]) =>
+                    data.name === actionName
+                );
+                if (entry) {
+                    const [id] = entry;
+                    defaultUuids.push(`Compendium.${cprConfig.packId}.Item.${id}`);
+                }
+            }
+
+            // Set defaults if we found any
+            if (defaultUuids.length > 0) {
+                await game.settings.set(MODULE_ID, cprConfig.settingsKey, defaultUuids);
+                log.info(`Initialized default CPR actions (${cprConfig.isModern ? '2024' : '2014'}): ${defaultUuids.length} actions`);
+            }
+        } catch (error) {
+            log.warn('Failed to initialize default CPR actions:', error);
+        }
+    }
+
+    /**
+     * Populate quick access grid with CPR actions
+     * Creates items on actor first (if not present), then stores embedded item UUIDs
+     * @param {Actor} actor - The actor
+     * @param {Array<string>} actionUuids - Array of CPR action compendium UUIDs (max 6)
+     * @param {PersistenceManager} [providedPersistence] - Optional persistence manager from core (prevents race conditions)
+     * @returns {Promise<void>}
+     */
+    async populateQuickAccess(actor, actionUuids, providedPersistence = null) {
+        if (!actor || !actionUuids || actionUuids.length === 0) {
+            log.debug('CPR AutoPopulate: Skipping - no actor or action UUIDs');
+            return;
+        }
+
+        try {
+            // Use provided persistence manager or create a new one
+            let tempPersistence = providedPersistence;
+            if (!tempPersistence) {
+                const { PersistenceManager } = await import('/modules/bg3-hud-core/scripts/managers/PersistenceManager.js');
+                tempPersistence = PersistenceManager.forActor(actor);
+            } else {
+                tempPersistence.setToken(actor);
+            }
+
+            // Load current state
+            let state = await tempPersistence.loadState();
+
+            // Check if quickAccess already has items (don't overwrite user data or other auto-populations)
+            const existingItems = state.quickAccess?.grids?.[0]?.items || {};
+            const hasExistingItems = Object.keys(existingItems).length > 0;
+
+            if (hasExistingItems) {
+                log.debug(`CPR AutoPopulate: Skipping - quickAccess already has ${Object.keys(existingItems).length} items`);
+                return; // Don't overwrite existing items
+            }
+
+            log.debug(`CPR AutoPopulate: Populating with ${actionUuids.length} CPR actions for actor ${actor.name}`);
+
+            // For each compendium UUID, ensure item exists on actor and collect embedded UUIDs
+            const embeddedActions = [];
+            for (const compendiumUuid of actionUuids) {
+                const compendiumItem = await fromUuid(compendiumUuid);
+                if (!compendiumItem) {
+                    log.warn(`CPR AutoPopulate: Could not resolve ${compendiumUuid}`);
+                    continue;
+                }
+
+                // Check if actor already has this item by name
+                let actorItem = actor.items.find(i => i.name === compendiumItem.name);
+
+                if (!actorItem) {
+                    // Create the item on the actor - it stays permanently for midi-qol/active effects
+                    // Use noBG3AutoAdd to prevent ItemUpdateManager from auto-adding to main hotbar
+                    const data = foundry.utils.deepClone(compendiumItem.toObject());
+                    delete data._id; // Let Foundry assign a new ID
+                    const created = await actor.createEmbeddedDocuments('Item', [data], { noBG3AutoAdd: true });
+                    actorItem = created?.[0];
+
+                    if (actorItem) {
+                        log.debug(`CPR AutoPopulate: Created item ${actorItem.name} on actor`);
+                    }
+                }
+
+                if (actorItem) {
+                    // Store embedded item UUID (Actor.XXXX.Item.YYYY format)
+                    embeddedActions.push({ uuid: actorItem.uuid, name: actorItem.name });
+                }
+            }
+
+            if (embeddedActions.length === 0) {
+                log.warn('CPR AutoPopulate: No items could be created/found on actor');
+                return;
+            }
+
+            // Sort alphabetically by name
+            embeddedActions.sort((a, b) => a.name.localeCompare(b.name));
+
+            // Ensure quickAccess structure exists
+            if (!state.quickAccess || !Array.isArray(state.quickAccess.grids)) {
+                state.quickAccess = { grids: [{ rows: 2, cols: 3, items: {} }] };
+            }
+
+            const grid = state.quickAccess.grids[0];
+            if (!grid.items) {
+                grid.items = {};
+            }
+
+            // Populate grid cells with EMBEDDED item UUIDs (up to 6, filling left to right, top to bottom)
+            // Slot keys use format "col-row" (e.g., "0-0", "1-0", "2-0", "0-1", "1-1", "2-1")
+            const maxActions = Math.min(embeddedActions.length, 6);
+            const populatedSlots = [];
+            for (let i = 0; i < maxActions; i++) {
+                const row = Math.floor(i / grid.cols);
+                const col = i % grid.cols;
+                const slotKey = `${col}-${row}`; // Format: col-row (not row-col!)
+
+                // Store cell data with embedded item UUID (not compendium UUID)
+                grid.items[slotKey] = {
+                    uuid: embeddedActions[i].uuid,
+                    type: 'Item',
+                };
+                populatedSlots.push(slotKey);
+            }
+
+            // Save updated state
+            await tempPersistence.saveState(state);
+
+            log.debug(`Populated quickAccess with ${maxActions} CPR actions (embedded) in slots: ${populatedSlots.join(', ')}`);
+
+            // Delay before refreshing HUD (50ms after quickAccess population)
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            // Refresh HUD if it's currently showing this actor
+            if (ui.BG3HUD_APP?.currentActor?.id === actor.id) {
+                await ui.BG3HUD_APP.refresh();
+            }
+        } catch (error) {
+            log.error('Error populating quickAccess with CPR actions:', error);
+        }
+    }
+
+    /**
+     * Handle token creation - populate quick access with CPR actions
+     * @param {Actor} actor - The actor for the newly created token
+     * @param {PersistenceManager} [persistenceManager] - Optional persistence manager from core (prevents race conditions)
+     * @returns {Promise<void>}
+     */
+    async onTokenCreation(actor, persistenceManager = null) {
+        if (!actor) return;
+
+        // Check if CPR actions auto-populate is enabled
+        const enableAutoPopulate = game.settings.get(MODULE_ID, 'enableCPRActionsAutoPopulate');
+        if (!enableAutoPopulate) return;
+
+        // Check if CPR module is active
+        if (!this.isCPRActive()) return;
+
+        // NOTE: No delay needed here - when called via core's onTokenCreationComplete,
+        // all grids have already been populated and saved
+
+        try {
+            // Get CPR config for current rules version
+            const cprConfig = this.getCPRConfig();
+
+            // Get selected CPR actions for this rules version (these are the ones the GM chose)
+            const selectedActions = game.settings.get(MODULE_ID, cprConfig.settingsKey) || [];
+            if (selectedActions.length === 0) {
+                // If no actions selected, get actions based on rules version (fallback)
+                const pack = game.packs.get(cprConfig.packId);
+                if (!pack) {
+                    log.warn(`${cprConfig.packName} pack not found`);
+                    return;
+                }
+
+                const index = await pack.getIndex();
+                const actions = Array.from(index.entries())
+                    .map(([id, entry]) => ({
+                        id,
+                        uuid: `Compendium.${cprConfig.packId}.Item.${id}`,
+                        name: entry.name
+                    }))
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .slice(0, 6);
+
+                const actionUuids = actions.map(a => a.uuid);
+                await this.populateQuickAccess(actor, actionUuids, persistenceManager);
+            } else {
+                // Use selected actions (respects GM's choices)
+                await this.populateQuickAccess(actor, selectedActions.slice(0, 6), persistenceManager);
+            }
+        } catch (error) {
+            log.error('Error populating CPR actions on token creation:', error);
+        }
+    }
+
+    /**
+     * Handle token change - populate quick access with CPR actions if empty
+     * @param {Token} token - The token that was changed to
+     * @returns {Promise<void>}
+     */
+    async onTokenChange(token) {
+        if (!token?.actor) return;
+
+        const actor = token.actor;
+
+        // Check if CPR module is active
+        if (!this.isCPRActive()) return;
+
+        // Get CPR config for current rules version
+        const cprConfig = this.getCPRConfig();
+
+        // Get selected CPR actions for this rules version
+        const selectedActions = game.settings.get(MODULE_ID, cprConfig.settingsKey) || [];
+        if (selectedActions.length === 0) return;
+
+        // Use populateQuickAccess which checks for existing items
+        await this.populateQuickAccess(actor, selectedActions.slice(0, 6));
+    }
+}

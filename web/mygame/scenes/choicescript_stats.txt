@@ -1201,16 +1201,37 @@ Cold, heat and foul weather wear you down faster outdoors: they burn through foo
     *if (character_level >= 2)
       *line_break
       • [b]Jack of All Trades: Half your proficiency bonus, rounded down, on skill checks you are not proficient in.[/b]
+      *if (not(bard_expertise_1 = "none"))
+        *line_break
+        *if (bard_expertise_2 = "none")
+          • [b]Expertise:[/b] Double proficiency bonus on ${bard_expertise_1} checks.
+        *else
+          • [b]Expertise:[/b] Double proficiency bonus on ${bard_expertise_1} and ${bard_expertise_2} checks.
   *if (character_class = "wizard")
     *line_break
-    • [b]Arcane Recovery (Short Rest, 1/Day): Recover one expended spell slot.[/b]
+    • [b]Arcane Recovery (on a Short Rest, once per Long Rest): Recover expended spell slots whose combined level is up to half your Wizard level, rounded up.@{wizard_arcane_recovery_used  [Used]| [Ready]}[/b]
     *line_break
     • [b]Ritual Casting:[/b] You can cast any known wizard spell tagged as a ritual without expending a spell slot, taking 10 extra minutes to cast.
+    *if ((character_level >= 2) and (not(wizard_expertise_1 = "none")))
+      *line_break
+      • [b]Scholar:[/b] Double proficiency bonus on ${wizard_expertise_1} checks.
     *line_break
     • [b]Spellbook:[/b] Your spells are inscribed in a bound spellbook — losing it without a backup would cost you every spell you haven't already memorized for the day.
   *if (character_class = "warlock")
     *line_break
     • [b]Pact Magic:[/b] Your spell slots recharge on a Short Rest instead of a Long Rest.
+    *gosub_scene character_progression invocation_info warlock_invocation_1
+    *if (not(inv_label = ""))
+      *line_break
+      • [b]Eldritch Invocation — ${inv_label}:[/b] ${inv_desc}
+    *gosub_scene character_progression invocation_info warlock_invocation_2
+    *if (not(inv_label = ""))
+      *line_break
+      • [b]Eldritch Invocation — ${inv_label}:[/b] ${inv_desc}
+    *gosub_scene character_progression invocation_info warlock_invocation_3
+    *if (not(inv_label = ""))
+      *line_break
+      • [b]Eldritch Invocation — ${inv_label}:[/b] ${inv_desc}
     *if (not(warlock_patron = "none"))
       *line_break
       • [b]Otherworldly Patron — ${warlock_patron_title}:[/b] ${warlock_patron_desc}
@@ -1251,11 +1272,19 @@ Cold, heat and foul weather wear you down faster outdoors: they burn through foo
 *temp ab_has_spells false
 *if (not(wizard_spell = "none"))
   *set ab_has_spells true
+*if (not(wizard_spell_2 = "none"))
+  *set ab_has_spells true
+*if (not(wizard_spell_3 = "none"))
+  *set ab_has_spells true
 *if (not(warlock_spell = "none"))
+  *set ab_has_spells true
+*if (not(warlock_spell_2 = "none"))
   *set ab_has_spells true
 *if (not(bard_spell = "none"))
   *set ab_has_spells true
 *if (not(bard_spell_2 = "none"))
+  *set ab_has_spells true
+*if (not(bard_spell_3 = "none"))
   *set ab_has_spells true
 *if (not(ranger_spell = "none"))
   *set ab_has_spells true
@@ -1268,7 +1297,7 @@ Cold, heat and foul weather wear you down faster outdoors: they burn through foo
   *if (not(warlock_spell = "none"))
     *line_break
     • [b]Warlock Spell Slots Remaining: ${warlock_spell_slots} (Short Rest)[/b]
-  *if ((not(bard_spell = "none")) or (not(bard_spell_2 = "none")))
+  *if (((not(bard_spell = "none")) or (not(bard_spell_2 = "none"))) or (not(bard_spell_3 = "none")))
     *line_break
     • [b]Bard Spell Slots Remaining: ${bard_spell_slots} (Long Rest)[/b]
   *if (not(ranger_spell = "none"))
@@ -1276,12 +1305,20 @@ Cold, heat and foul weather wear you down faster outdoors: they burn through foo
     • [b]Ranger Spell Slots Remaining: ${ranger_spell_slots} / ${ranger_spell_slots_max} (Long Rest)[/b]
   *if (not(wizard_spell = "none"))
     *gosub print_ability_card wizard_spell
+  *if (not(wizard_spell_2 = "none"))
+    *gosub print_ability_card wizard_spell_2
+  *if (not(wizard_spell_3 = "none"))
+    *gosub print_ability_card wizard_spell_3
   *if (not(warlock_spell = "none"))
     *gosub print_ability_card warlock_spell
+  *if (not(warlock_spell_2 = "none"))
+    *gosub print_ability_card warlock_spell_2
   *if (not(bard_spell = "none"))
     *gosub print_ability_card bard_spell
   *if (not(bard_spell_2 = "none"))
     *gosub print_ability_card bard_spell_2
+  *if (not(bard_spell_3 = "none"))
+    *gosub print_ability_card bard_spell_3
   *if (not(ranger_spell = "none"))
     *gosub print_ability_card ranger_spell
   *if (not(ranger_spell_2 = "none"))
@@ -1437,6 +1474,18 @@ Cold, heat and foul weather wear you down faster outdoors: they burn through foo
   *line_break
   • [b]Hunter's Mark — Bonus Action, 90 ft, 10 rounds:[/b] Mark one creature as your quarry. Each weapon hit you land on it deals +1d6 force damage. If it drops, move the mark to a new creature with a bonus action at no cost. Cast with a free cast (proficiency bonus per long rest) or, once those are gone, a spell slot.
   One creature becomes the point the whole fight turns on, and you do not lose it.
+*if (ability_id = "cause_fear")
+  *line_break
+  • [b]Cause Fear — Action, 60 ft, Wisdom Save (DC ${spell_save_dc}), up to 10 rounds:[/b] On a failed save the target is frightened: its attacks have disadvantage and it will not move closer. It repeats the save at the end of each of its turns, and the fear ends on a success.
+  A whispered dread, planted straight into one mind.
+*if (ability_id = "hellish_rebuke")
+  *line_break
+  • [b]Hellish Rebuke — Reaction, 60 ft, Dexterity Save (DC ${spell_save_dc}):[/b] Arm it as a free declaration. When a foe's attack next wounds you, it takes 2d10 fire damage (half on a successful save), at the cost of a Pact Magic slot and your reaction for the round.
+  A vengeful retort held ready behind your teeth, burned back the moment you are hurt.
+*if (ability_id = "arms_of_hadar")
+  *line_break
+  • [b]Arms of Hadar — Action, Self (10 ft emanation), Strength Save (DC ${spell_save_dc}):[/b] Every foe within reach takes 2d6 necrotic damage, or half on a successful save, and one that fails cannot take reactions until its next turn.
+  Black, cold arms of force burst out around you and lash everything close enough to touch.
 *if (ability_id = "speak_with_animals")
   *line_break
   • [b]Speak with Animals — Action (Ritual), Self, 10 Minutes:[/b] Understand and verbally communicate with beasts for the duration.

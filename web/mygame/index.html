@@ -494,11 +494,18 @@ button#statSidebar .turnRow,
     var combatBadgeHtml = inCombat ? "<span class=\"combatBadge\">COMBAT</span>" : "";
     var bottomSectionHtml;
     if (inCombat) {
-      var count = Number(s.combat_turn_count) || 0, chosen = Number(s.combat_player_chosen_target) || 0, rows = "";
+      var count = Number(s.combat_turn_count) || 0, chosen = Number(s.combat_player_chosen_target) || 0, rows = "",
+          friendlyOn = isTruthy(s.combat_friendly_targeting_active), friendlyPick = Number(s.combat_friendly_target) || 0;
       for (var ti = 1; ti <= count; ti++) {
         var kind = s["combat_turn_kind_" + ti], slot = Number(s["combat_turn_slot_" + ti]) || 0;
         if (kind === "player") {
-          rows += "<div class=\"statRow turnRow turnRowSelf\"><span>" + fmt(s.name || "You") + "</span><span></span></div>";
+          if (friendlyOn) {
+            // Friendly targeting (Healing Word and its kin): your own row is a button too, 0 = you. Picked highlight reuses the enemy one.
+            rows += "<button type=\"button\" class=\"statRow turnRow turnRowSelf" + (friendlyPick === 0 ? " turnRowPicked" : "") +
+              "\" data-friendly=\"0\"><span>" + fmt(s.name || "You") + "</span><span>" + (Number(s.hp_current) || 0) + "/" + (Number(s.hp_max) || 0) + "</span></button>";
+          } else {
+            rows += "<div class=\"statRow turnRow turnRowSelf\"><span>" + fmt(s.name || "You") + "</span><span></span></div>";
+          }
         } else if (kind === "enemy" || kind === "ally") {
           var pfx = kind === "enemy" ? "combat_enemy" : "combat_ally";
           var cName = fmt(s[pfx + slot + "_name"]) || (kind === "enemy" ? "Enemy" : "Ally");
@@ -523,7 +530,10 @@ button#statSidebar .turnRow,
           var cNameHtml = "<span class=\"turnMain\"><span>" + cDartsTag + "<span class=\"" +
             (kind === "enemy" ? "enemyName" : "allyName") + "\">" + esc(cName) + "</span>" + cRangeTag +
             "</span>" + (cSub ? "<span class=\"turnSub\">" + cSub + "</span>" : "") + "</span>";
-          if (kind === "enemy" && !cDead) {
+          if (friendlyOn && kind === "ally" && cHp > 0) {
+            rows += "<button type=\"button\" class=\"statRow turnRow" + (friendlyPick === slot ? " turnRowPicked" : "") +
+              "\" data-friendly=\"" + slot + "\"" + combatantAttr(kind, slot) + "><span>" + cNameHtml + "</span><span>" + cHp + "/" + cMax + "</span></button>";
+          } else if (kind === "enemy" && !cDead) {
             rows += "<button type=\"button\" class=\"statRow turnRow" + (cPicked ? " turnRowPicked" : "") +
               "\" data-target=\"" + slot + "\"" + combatantAttr(kind, slot) + "><span>" + cNameHtml + "</span><span>" + cHp + "/" + cMax + "</span></button>";
           } else {
@@ -794,7 +804,7 @@ button#statSidebar .turnRow,
   }
   // Active conditions on one combatant, read from per-slot "rounds left" variables (0 = none). To show a new
   // condition, add its variable suffix and label here; the game writes the value, this only reads it.
-  var CONDITION_KEYS = [["slowed", "Slowed"]];
+  var CONDITION_KEYS = [["slowed", "Slowed"], ["frightened", "Frightened"]];
   function conditionsOf(p, s) {
     var out = [];
     for (var i = 0; i < CONDITION_KEYS.length; i++) {
@@ -1101,11 +1111,24 @@ button#statSidebar .turnRow,
     if (!t || !t.getAttribute || !t.hasAttribute("data-target")) return;
     var slot = Number(t.getAttribute("data-target"));
     if (!slot || !window.stats) return;
+    if (isTruthy(window.stats.combat_friendly_targeting_active)) return;   // choosing who to help, not who to hit
     if (isTruthy(window.stats.combat_mm_targeting_active)) {
       assignMultiTargetDart(slot);
       return;
     }
     window.stats.combat_player_chosen_target = slot;
+    renderStatSidebar();
+  });
+  // Friendly targeting (2026-10-02): while a friendly spell has armed combat_friendly_targeting_active, the player's own row
+  // (data-friendly="0") and each living ally's row (data-friendly="<slot>") are buttons, and a click records who the spell lands on
+  // in window.stats.combat_friendly_target, read by the game's own "Cast" choice. Like the dart allocation it is a stats write and
+  // a re-render only; no ChoiceScript page navigation happens here.
+  document.addEventListener("click", function (ev) {
+    var t = ev.target;
+    while (t && t.id !== "statSidebar" && !(t.getAttribute && t.hasAttribute("data-friendly"))) t = t.parentNode;
+    if (!t || !t.getAttribute || !t.hasAttribute("data-friendly")) return;
+    if (!window.stats || !isTruthy(window.stats.combat_friendly_targeting_active)) return;
+    window.stats.combat_friendly_target = Number(t.getAttribute("data-friendly")) || 0;
     renderStatSidebar();
   });
   // Multi-target dart/beam allocation (2026-09-28), first used by Magic Missile, meant to be reusable by any

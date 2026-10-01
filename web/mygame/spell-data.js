@@ -41,8 +41,10 @@
 
     // ── 1st-level spells ──
     { id: "alarm",              name: "Alarm",              level: 1, schools: "Abjuration" },
+    { id: "arms_of_hadar",       name: "Arms of Hadar",      level: 1, schools: "Conjuration" },
     { id: "armor_of_agathys",   name: "Armor of Agathys",   level: 1, schools: "Abjuration" },
     { id: "bane",               name: "Bane",               level: 1, schools: "Enchantment" },
+    { id: "cause_fear",          name: "Cause Fear",         level: 1, schools: "Necromancy" },
     { id: "charm_person",       name: "Charm Person",       level: 1, schools: "Enchantment" },
     { id: "comprehend_languages", name: "Comprehend Languages", level: 1, schools: "Divination" },
     { id: "detect_magic",       name: "Detect Magic",       level: 1, schools: "Divination" },
@@ -51,6 +53,7 @@
     { id: "false_life",         name: "False Life",         level: 1, schools: "Necromancy" },
     { id: "feather_fall",       name: "Feather Fall",       level: 1, schools: "Transmutation" },
     { id: "healing_word",       name: "Healing Word",       level: 1, schools: "Evocation" },
+    { id: "hellish_rebuke",      name: "Hellish Rebuke",     level: 1, schools: "Evocation" },
     { id: "hex",                name: "Hex",                level: 1, schools: "Enchantment" },
     { id: "hunters_mark",       name: "Hunter's Mark",      level: 1, schools: "Divination" },
     { id: "identify",           name: "Identify",           level: 1, schools: "Divination" },
@@ -67,9 +70,9 @@
   // (a Hexblood's innate race_cantrip_2 sits alongside their class picks, exactly as combat reads it).
   var SPELL_SLOTS = [
     "race_cantrip", "race_cantrip_2",
-    "warlock_cantrip", "warlock_cantrip_2", "warlock_spell",
-    "wizard_cantrip", "wizard_cantrip_2", "wizard_cantrip_3", "wizard_spell",
-    "bard_cantrip", "bard_cantrip_2", "bard_spell", "bard_spell_2",
+    "warlock_cantrip", "warlock_cantrip_2", "warlock_spell", "warlock_spell_2",
+    "wizard_cantrip", "wizard_cantrip_2", "wizard_cantrip_3", "wizard_spell", "wizard_spell_2", "wizard_spell_3",
+    "bard_cantrip", "bard_cantrip_2", "bard_spell", "bard_spell_2", "bard_spell_3",
     "ranger_spell", "ranger_spell_2", "ranger_spell_3"
   ];
 
