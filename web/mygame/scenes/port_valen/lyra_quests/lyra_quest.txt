@@ -1,0 +1,338 @@
+*comment ====================================================================================
+*comment LYRA'S ERRAND — Five Silver. Everything, in one file.
+*comment
+*comment Entered by *goto_scene from two hubs only:
+*comment   port_valen_dredge_end.txt : port_valen_dredge_end -> lyra_hook
+*comment   port_valen.txt            : port_valen_hub        -> lyra_b2, lyra_epi
+*comment The hubs do nothing but *goto_scene in. Every label below is reached with a plain *goto,
+*comment the way pv_dredge_silt_gates works inside port_valen_dredge_end.txt.
+*comment
+*comment Design: quest/LYRA_PLAN.md. Three labels, two decisions, one clock.
+*comment   lyra_hook  overhear the steward, learn of the two children and the number, choose.
+*comment   lyra_b2    pay her, or admit you have not got it. Time-gated: she is on the roster
+*comment              Morning/Midday/Afternoon and off it Dusk/Night/Pre-Dawn.
+*comment   lyra_epi   she is grateful, promises repayment, and says something about herself.
+*comment
+*comment No skill checks anywhere in this file. A check is only worth rolling when failure changes
+*comment what the player can do, and the only two decisions here are whether to help and whether
+*comment the money arrives in time. Both are the player's choice, not a dice roll.
+*comment
+*comment Gating lives in the hub buttons. This file is only entered when a hub has already decided
+*comment the errand is live, so nothing at the top re-checks it.
+*comment
+*comment *goto_scene switches scenes permanently and does not come back, so each beat hands the
+*comment player to the hub it was entered from: lyra_hook_return goes to Dredge-End, and
+*comment lyra_b2_return and lyra_epi_return go to the compound hub.
+*comment ====================================================================================
+
+*label lyra_hook
+
+Past the red lanterns, the lanes pinch narrow and the timber tenements lean out over the canal on dark shored piles. You take the outside stair with the evening foot traffic, boots hollow on the weathered treads. The walkway at the top sags underfoot, and as you step past the stairhead landing, voices cut through the lapping of the canal below.
+
+A lean man in a steward's apron, grease-stained and grey at the seams, stands blocking Lyra near the railing. Her recurve bow is slung over one shoulder, her arms crossed tight across her chest. In the steward's hand is a folded parchment, creased soft along the edges from being opened and refolded a dozen times.
+
+"Your aunt died four months back, Lyra." His tone is flat, delivered with the dull patience of an eviction speech recited all week. "She was the tenant on the roll. The lease is in her name, the arrears keep piling up, and by city law the rent-office can't clear the rooms while the term is live. The landlord made me check. I checked in spring, I checked last month, and my hands are tied."
+
+"I understand." Her jaw sets hard.
+
+"You think I want to turn two bairns into the mud?" He stuffs the paper into his apron pocket. "Half the canal is sleeping under duckboards as it is. I asked the clerk for leniency on the arrears. They told me no. A dead spinner off the lower terraces isn't their balance sheet."
+
+"How long?"
+
+"Term's up at month's end." He looks her square in the face. "You want those rooms kept, find the silver yourself. I won't carry another petition down from the heights."
+
+He turns and heads down the wooden stairs, his boots thumping in a steady rhythm until the lane swallows him.
+
+*choice
+  # Step up and say her name.
+    *goto lyra_hook_greet
+  # Keep walking.
+    *goto lyra_hook_walk_on
+
+*comment ====================================================================================
+*comment THE GREETING, TIERED BY lyra_bond
+*comment ====================================================================================
+
+*label lyra_hook_greet
+
+*if (lyra_bond >= 20)
+  *goto lyra_hook_greet_warm
+
+*if (lyra_bond >= 8)
+  *goto lyra_hook_greet_neutral
+
+*goto lyra_hook_greet_cold
+
+*comment -------------------------------------------------------------------------------
+
+*label lyra_hook_greet_warm
+
+You step onto the landing as the steward's footsteps fade down the stair.
+
+"${name}."
+
+The tension around her eyes gives way to a guarded flicker of relief, though her chin stays up. "Heard all of that, did you?"
+
+"Enough of it."
+
+She turns the riser of her bow between her palms, fingers tracing the worn grip-leather. Her gaze comes up to yours, direct and unflinching.
+
+"I don't have the silver. I'm five marks short of what clears the ledger. I'm not asking for pity, and I'm not making a speech. Just giving you the arithmetic before you piece it together yourself."
+
+*goto lyra_hook_offer
+
+*comment -------------------------------------------------------------------------------
+
+*label lyra_hook_greet_neutral
+
+You reach the landing as the steward rounds the corner below. Lyra tracks his coat into the gloom before turning your way, her posture guarded, bow gripped tight against her shoulder.
+
+"${name}." Her eyes narrow slightly, measuring. "What are you doing out past the lamps?"
+
+"Heard the steward."
+
+She watches you for a beat, unmoving. Her knuckles tighten on the bow stave, then ease a fraction.
+
+"Family business," she says, her tone flat and final. "Nothing that concerns the file."
+
+*goto lyra_hook_declined
+
+*comment -------------------------------------------------------------------------------
+
+*label lyra_hook_greet_cold
+
+You come up the last steps as the steward clears the bottom landing. Lyra stands rigid by the rail, watching your boots reach the timber before she glances up. Her gaze is cold, her jaw set hard.
+
+"${name}."
+
+You stop a few paces back. "Heard your business."
+
+"Then keep walking," she cuts in, her tone level and sharp. "Don't loiter on my account."
+
+*page_break Back to the Dredge-End lanes…
+*goto lyra_hook_return
+
+*comment ====================================================================================
+*comment THE TWO WALK-AWAYS
+*comment ====================================================================================
+
+*label lyra_hook_walk_on
+
+You keep your head down and move along the sagging gangway, leaving her alone on the landing above the dark canal.
+
+*page_break Back to the Dredge-End lanes…
+*goto lyra_hook_return
+
+*comment -------------------------------------------------------------------------------
+
+*label lyra_hook_declined
+
+*page_break Back to the Dredge-End lanes…
+*goto lyra_hook_return
+
+*comment ====================================================================================
+*comment THE DECISION — only lyra_hook_greet_warm reaches this label.
+*comment ====================================================================================
+
+*label lyra_hook_offer
+
+*choice
+  # Say you'll help.
+    *goto lyra_hook_accept
+  # Say you wish you could do more.
+    *goto lyra_hook_no
+
+*comment -------------------------------------------------------------------------------
+
+*label lyra_hook_accept
+
+*if (not(lyra_active_set))
+  *set lyra_active_set true
+  *set lyra_start_day campaign_day
+  *set lyra_quest_stage "active"
+
+"You'll have it," you tell her. "Five silver before the term's out."
+
+She studies your face, waiting for the mockery or the catch. When neither comes, she exhales slowly through her teeth, her shoulders easing a fraction, though her voice stays clipped.
+
+"All right," she says. "Don't herald it across the yard when you have it. Just find me in quarters. And no speeches when you hand it over—I don't have the stomach for ceremonies."
+
+She turns and heads along the upper gangway toward the compound gate, her boots rapping quick and sure across the creaking boards.
+
+*page_break Back to the Dredge-End lanes…
+*goto lyra_hook_return
+
+*comment -------------------------------------------------------------------------------
+
+*label lyra_hook_no
+
+*if (not(lyra_refused))
+  *set lyra_refused true
+  *set lyra_refused_day campaign_day
+
+"That's a rough hand," you say quietly. "I wish I had the coin to spare, Lyra. I don't."
+
+She nods once, slow and deliberate, her features settling back into guarded stillness.
+
+"Aye. Well." She hitches the bowstrap higher on her shoulder and glances toward the rooftops. "Most bastards invent excuses. You said it straight. I can respect that."
+
+She pushes off the rail and heads toward the compound, swallowed by the evening mist without looking back.
+
+*page_break Back to the Dredge-End lanes…
+*goto lyra_hook_return
+
+*comment ====================================================================================
+*comment BEAT 2 — lyra_b2: THE HANDING OVER. The Vanguard barracks in Valen.
+*comment ====================================================================================
+
+*label lyra_b2
+
+*if ((time_period = "Morning") or ((time_period = "Midday") or (time_period = "Afternoon")))
+  *goto lyra_b2_absent
+
+*goto lyra_b2_offduty
+
+*comment -------------------------------------------------------------------------------
+
+*label lyra_b2_absent
+
+The barracks bunks are empty, blanket rolls squared away and kit-racks cleared for the day's shifts. The end cot near the door stands vacant, its straw bare and the wall pegs cleared.
+
+"Vanguard file's out on harbor detail while the sun's up," an off-duty carter mutters as he passes with a grease bucket. "She won't be back before the dusk horn. No use warming her pallet."
+
+*page_break Back to the compound…
+*goto lyra_b2_return
+
+*comment -------------------------------------------------------------------------------
+
+*label lyra_b2_offduty
+
+*if ((((gold * 100) + (silver * 10)) + copper) >= 50)
+  *goto lyra_b2_paid
+
+*goto lyra_b2_unpaid
+
+*comment -------------------------------------------------------------------------------
+
+*label lyra_b2_paid
+
+*if (lyra_paid)
+  *goto lyra_b2_return
+
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount -50
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+
+*set lyra_paid true
+*set lyra_resolution "paid"
+*set lyra_quest_stage "resolved"
+*set lyra_bond lyra_bond + 6
+
+You move down the barracks aisle, keeping the coin pouch shielded in your ${hands_prose}; flashing silver in a crowded ward only draws eyes.
+
+Lyra sits on the end cot with her bow laid across her lap, checking the goose-feather fletching on an arrow with her thumbnail. She spots your approach and straightens, hands stilling on the shaft.
+
+"${name}."
+
+You step to the foot of her cot and draw the five heavy silver marks from your pouch, pressing them into her open palm.
+
+"Five silver," you say quietly. "For the lease."
+
+Her fingers close over the metal, weighing the coin in her palm with a soldier's practiced touch. Her breath hitches, and her gaze drops to the straw.
+
+"That's four months of back rent," she murmurs, her voice thick, keeping her eyes fixed on the coins. "A fortnight's wages I couldn't wring from Vane if I bled for him. You didn't owe me this. You didn't have to do it."
+
+A few bunks down, an infantryman grinds a notched billhook against an oilstone, the metallic rasp covering your quiet exchange. Near the woodstove, two teamsters bicker in hushed grunts over a pot of chicory, while a tired scout snores on an unrolled wool blanket.
+
+The rest of the room stays buried in its own noise.
+
+Lyra slips the silver deep inside her arming doublet, lacing the leather tight.
+
+"It's a debt," she says, looking up, her gaze steady and fierce. "I square what I owe, ${name}. Find me in a fortnight, and I'll have your coin."
+
+*page_break Back to the compound…
+*goto lyra_b2_return
+
+*comment -------------------------------------------------------------------------------
+
+*label lyra_b2_unpaid
+
+*if (not(lyra_paid))
+  *set lyra_resolution "unpaid"
+  *set lyra_quest_stage "resolved"
+
+You make your way down the barracks aisle and stop beside the end cot, your hands empty at your sides.
+
+"I couldn't pull the silver together, Lyra," you say quietly. "Not before the term ran out."
+
+She looks up from her bow, her gaze dropping to your empty hands before lifting back to your face. Her jaw tightens, the brief hope draining away until only a guarded, flat calm remains.
+
+"Right," she says, rising from the straw and slinging the quiver over her shoulder. "Another way, then."
+
+She buckles her belt and steps past you toward the yard without looking back.
+
+*page_break Back to the compound…
+*goto lyra_b2_return
+
+*comment ====================================================================================
+*comment THE CODA — lyra_epi. The Vanguard barracks, days later.
+*comment ====================================================================================
+
+*label lyra_epi
+
+*if (lyra_epi_seen)
+  *goto lyra_epi_brief
+
+*set lyra_epi_seen true
+
+*if (lyra_resolution = "paid")
+  "You're the reason those two are sleeping under a dry roof. I won't pretend otherwise, and I'm not going to kneel about it either." She keeps her hands steady on her kit, looking straight at you. "That's yours to keep or talk about as you like. Makes no difference to me."
+
+  "And I'm paying it back. I don't know how yet, but it'll be in silver. I want you to hear that from me now—not because I'm trying to sound noble, but because I don't leave debts hanging if I can help it."
+
+*if (lyra_resolution = "unpaid")
+  "You never came back with it." She says it without heat, her fingers busy checking the binding on her quiver. "That's all right. I found another way. Ask me how and you'll be bored."
+
+*if (not(lyra_scars_told))
+  *set lyra_scars_told true
+  Her sleeves are pushed back past the elbow. Pale scars run across the inside of both forearms, flat and white, too clean to be old skirmish cuts.
+
+  She catches you looking and turns one wrist over, letting the lantern light catch the faded ridges.
+
+  "Three winters back I was working for the Black Oath, as a thief," she says. "Six months ago, just before the company left Port Valen, I broke their oath and they collected. That is what this is." She pulls her sleeve back down, covering the pale marks. "That is the whole of it."
+
+  *if (lyra_paid)
+    "I haven't told anyone else in the company," she adds, her voice dropping lower into the quiet of the aisle. "There's been a change at the head of the Oath, and I'd rather nobody in this barracks started asking questions. As much as I like some of the folk here, the mercenary life isn't for me. When I've squared my debt with you, I'm moving on. Might see you around before I go."
+
+*page_break Back to the compound…
+*goto lyra_epi_return
+
+*label lyra_epi_brief
+
+She sits on the end cot with her back against the timber wall, bow resting across her knees. She tracks your approach across the floorboards, looking up before you reach her pallet.
+
+*if (lyra_resolution = "paid")
+  "Still here," she says, a faint, wry smirk touching her mouth. "Still owing."
+*else
+  "Still here," she says, looking up from her kit. "Still breathing."
+
+*page_break Back to the compound…
+*goto lyra_epi_return
+
+*comment ====================================================================================
+*comment RETURNS. *goto_scene does not come back, so each beat hands the player to its own hub.
+*comment ====================================================================================
+
+*label lyra_hook_return
+
+*goto_scene port_valen/port_valen_dredge_end port_valen_dredge_end
+
+*label lyra_b2_return
+
+*goto_scene port_valen/port_valen port_valen_hub
+
+*label lyra_epi_return
+
+*goto_scene port_valen/port_valen port_valen_hub

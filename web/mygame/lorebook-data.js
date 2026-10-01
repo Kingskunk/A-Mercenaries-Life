@@ -179,11 +179,50 @@
         tags: ["Iron Carrion"], aliases: ["archer", "rookie"],
         unlock: "met_lyra",
         meter: { stat: "lyra_bond", label: "Comradeship with Lyra" },
-        body: [
-          "A fellow rookie who claimed her recurve bow beside you at the munitions cart. Sharp-eyed, guarded, and determined to survive her first campaign under the Carrion.",
-          "<i>\"Lean and sharp-featured, raven-dark hair tied back in rough cord that never quite stays neat, with quick, watchful eyes that catch every movement in a room before settling on you. Quiet scars along both forearms that she's never once explained. A downriver survivor who took the iron shilling to outrun starvation—guarded, lethal with a shortbow, and watching your back whether you asked her to or not.\"</i>"
-        ],
-        see: ["iron_carrion"]
+        body: function (s) {
+          var out = [];
+          out.push("A fellow rookie who claimed her recurve bow beside you at the munitions cart. Sharp-eyed, guarded, and determined to survive her first campaign under the Carrion.");
+          // The appearance line carries "quiet scars along both forearms that she's never once
+          // explained" UNTIL lyra_scars_told, at which point that sentence is no longer true and
+          // the explained version replaces it. Both must not print at once, so this is an if/else
+          // and not two unconditional pushes.
+          if (truthy(s.lyra_scars_told)) {
+            out.push("<i>\"Lean and sharp-featured, raven-dark hair tied back in rough cord that never quite stays neat, with quick, watchful eyes that catch every movement in a room before settling on you. Pale scars run along both forearms, and she has told you where they came from. A downriver survivor who took the iron shilling to outrun starvation—guarded, lethal with a shortbow, and watching your back whether you asked her to or not.\"</i>");
+          } else {
+            out.push("<i>\"Lean and sharp-featured, raven-dark hair tied back in rough cord that never quite stays neat, with quick, watchful eyes that catch every movement in a room before settling on you. Quiet scars along both forearms that she's never once explained. A downriver survivor who took the iron shilling to outrun starvation—guarded, lethal with a shortbow, and watching your back whether you asked her to or not.\"</i>");
+          }
+          // Two separate moments, and they must not be read as one.
+          //
+          // (a) What Lyra SAID at Alderford, believing her aunt was still alive. She had no way to
+          //     know — she left three winters back (alderford.txt:2096) and left no address on the
+          //     lease, so no word reached her. This is her errand as she meant it.
+          if (truthy(s.lyra_pay_generous)) {
+            out.push("<i>\"First thing? Buy a pair of lined leather boots that don't split at the welt. Then track down my aunt in the lower tenements, see how she's doing since I've been gone.\"</i>");
+          }
+          // (b) What she knows once the steward has told her. This is the quest's reward and it is
+          //     not gated on bond: anyone who takes the errand has heard all of it.
+          if ((s.lyra_quest_stage === "active") || (s.lyra_quest_stage === "resolved")) {
+            out.push("Her aunt held an apartment in Dredge-End until she died, leaving her two younger cousins with back rent owing and a lease in a dead woman's name. She had left no address, so no word reached Lyra until the block steward found her. The law would not let the children be put out while the term ran, but the term ends at the month, and the owner wants five Silver Marks in due rent for the apartment.");
+          }
+          // Where the errand stands.
+          if (s.lyra_quest_stage === "active") {
+            out.push("The block steward wants five Silver Marks or the two rooms, and Lyra has told you she is five short of everything. She asked for nothing and said so out loud, which is why you are involved at all.");
+          }
+          if (s.lyra_resolution === "paid") {
+            out.push("You paid it. She counted the silver over once and promised to pay it back in coin.");
+          }
+          if (s.lyra_resolution === "unpaid") {
+            out.push("You did not get the money to her in time. She found it herself and never mentioned it twice.");
+          }
+          // The payoff. The appearance line above carries "she's never once explained" UNTIL this
+          // flag; the two must not print at once, hence the if/else up there.
+          if (truthy(s.lyra_scars_told)) {
+            out.push("<i>\"Three winters back I was working for the Black Oath, as a thief. Six months ago, just before the company left Port Valen, I broke their oath and they collected. That is what this is.\"</i>");
+            out.push("She told you because you never asked. She has said it to no one else in the company, there has been a change at the head of the Oath, and when she has paid you back she means to leave the mercenary life entirely.");
+          }
+          return out;
+        },
+        see: ["iron_carrion", "black_oath"]
       },
       {
         id: "odessa", category: "people", title: "Surgeon Odessa",
@@ -600,12 +639,12 @@
         meter: { stat: "black_oath_rep", label: "Standing with the Black Oath" },
         body: function (s) {
           var out = [
-            "The sworn brotherhood of the flooded quarter. Down here they say it began as a burial club: puntmen and dredgers paying into a common purse so their drowned got a grave and their families ate. It kept its own room behind a chandler's for the oaths and the roll of sworn names, and that is where they still are.",
+            "The sworn brotherhood of the low quarter. Down here they say it began as a burial club: puntmen and dredgers paying into a common purse so their drowned got a grave and their families ate. It kept its own room behind a chandler's for the oaths and the roll of sworn names, and that is where they still are.",
             "Swear to it and it feeds you when the water takes your boat. Break it and it finds you, and there is no buying your way clear, only the work you said you would do. It holds what the Watch does not reach: the punt berths, the eel-traps, the night barges, and the narrow alleys. The city above leaves it alone, and in exchange the waterfront does not boil over.",
             "They have nothing to do with the friar at Althea's arch. Both of them feed the same quarter and neither will say so in the other's hearing, which is the only thing the district keeps strictly to."
           ];
           if (truthy(s.pv_tavern_rumor_1)) {
-            out.push("Their men work the canal footbridges with bare knives and no Watch badge, reading the faces that come past. The advice along the quays is simple: do not flash silver past dark in that quarter, unless you mean to donate it.");
+            out.push("Their men work the upper walkways and the lane corners with bare knives and no Watch badge, reading the faces that come past. The advice along the quays is simple: do not flash silver past dark in that quarter, unless you mean to donate it.");
           }
           if (truthy(s.silt_gate_full_intel) || truthy(s.has_silt_gate_payout_slip)) {
             out.push("Their smuggling lines penetrate the city's seawall through the storm flap-valves at the Silt-Gates, moving un-stamped highland shear-steel and illicit peat-spiritus right under the quays by paying off Harbor Watch sergeants six silver marks a week.");
@@ -702,7 +741,7 @@
         tags: ["Port Valen"], aliases: ["Port Valen", "Dredge-End", "Patrician Quarter", "free city", "Free City", "Council", "capital"],
         unlock: "codex_port_valen",
         body: [
-          "The sprawling port capital downriver, a free city in the old imperial sense, answerable to no crown. Its Council rules the surrounding towns and villages of the river country, Alderford among them, through tolls, tax contracts, and factors instead of garrisons. The merchant palaces of the Gilded Scales stand in the Patrician Quarter. Dredge-End is a maze of flooded canals and rotting tenements, and Black Oath territory.",
+          "The sprawling port capital downriver, a free city in the old imperial sense, answerable to no crown. Its Council rules the surrounding towns and villages of the river country, Alderford among them, through tolls, tax contracts, and factors instead of garrisons. The merchant palaces of the Gilded Scales stand in the Patrician Quarter. Dredge-End is a cramped warren of leaning terraces and broken lanes on the canal's edge, and Black Oath territory.",
           "<b>Trade.</b> Port Valen builds ships and salts fish, and makes little else that it needs. Coal, timber and iron come down to it from the highlands, bread grain, canvas and rope from the farm country, and peat from the bogs. It pays in coin, in credit and in foreign freight. Everything the Marches sells to the wider world leaves through its harbor, so the city can afford to wait on any one road and cannot afford to lose them all."
         ],
         see: ["gilded_scales", "port_watch", "black_oath", "alderford", "iron_carrion", "harbor_quayside", "dredge_end", "middle_ward", "upper_wharves", "civic_heights", "council", "grey_marches"]

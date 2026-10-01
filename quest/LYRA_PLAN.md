@@ -1,29 +1,27 @@
-# Quest Plan: The Winter Errand (Lyra's Cousins, Dredge-End)
+# Quest Plan: Five Silver (Lyra's Aunt's Rooms, Dredge-End and Valen)
 
-**A small errand, not a campaign.** Lyra's aunt died leaving two months of rent owed, and the children in those rooms lose them at the end of the month unless the arrears are cleared. Lyra cannot clear them. The player can. That is the whole quest.
+**A small errand, not a campaign.** Lyra's aunt was the tenant. She died four months ago and the rent is still running on her name, and the term ends at the month. The two children living in those rooms are on nothing — no lease, no book, no list — so when the term lapses they have nothing holding them there. Lyra cannot pay the five silver it takes to stop that. The player can.
 
-**Status: designed, not implemented.** Nothing here is built. Line numbers were read from the working tree on 2026-09-30; the Port Valen scene files have since moved into `web/mygame/scenes/port_valen/`, so every `port_valen_*.txt` below means the file in that folder. Re-grep for labels before editing.
+**Status: designed, not implemented.** Nothing here is built. Line numbers were read from the working tree on 2026-09-30; the Port Valen scene files have since moved into `web/mygame/scenes/port_valen/`, so every `port_valen_*.txt` below means the file in that folder. Re-grep for labels before editing. **Updated after the Dredge-End retcon of the same date** (the district is no longer built on pilings; it is leaning terraces on ordinary footings, with plank walkways slung between the *upper storeys*). The staging was relocated to those walkways and the 2026-09-30 line citations were re-grepped and corrected.
 
 ---
 
 ## 0. The Whole Thing, In One Paragraph
 
-The player sees Lyra talking to a block steward on an upper walkway in Dredge-End. He is telling her that her dead aunt owed rent, that the law protects the two children in those rooms only until the end of the term, and that he has already asked for leniency and been refused. Lyra has nothing, and a fortnight's pay her captain will not release before the contract ends. She needs **five silver by the month's end**.
+The player sees Lyra talking to a block steward on an upper walkway in Dredge-End. The aunt was the tenant; she died four months ago, and the lease is still in her name with the rent still running on it. The law will not let anyone be put out of a room for arrears while the term is live — but the term ends at the month, and after that the debt is just a debt with nobody attached to it, and the block will want the money or it will want the rooms. The two children are on nothing: not the lease, not the steward's book, not the friar's list. Lyra has none of the five silver. The steward leaves and does not come back. The player chooses whether to help, goes and finds the silver, and hands it to her on the drill square at the compound after dark.
 
-The player says yes or no. If yes, they go and find it — **using the game's existing money** — and hand it over. The children stay in the rooms.
+**Eight steps, one deadline, one choice that matters: whether to help at all.**
 
 1. The player sees Lyra, approaches, finds her talking to the steward.
 2. The player finds out about the dead aunt, and the two children.
 3. The player finds out how much is owed.
 4. Lyra returns to the Compound.
-5. The player can go back and ask the steward questions.
+5. The steward is gone and cannot be questioned again. **A closed door, not a puzzle.**
 6. The player chooses to help Lyra or not. If yes, they must find the silver.
-7. The player pays Lyra, and finds her back at the Compound.
+7. The player visits Lyra at the compound, after dark, and pays — or admits they could not.
 8. Lyra is grateful, promises to pay it back, and tells the player something more about herself.
 
-**Five beats, one deadline, one choice that matters: whether to help at all.**
-
-**Rewards:** `lyra_bond`, the scars at `lyra_bond >= 20`, and one line that opens the next thing. Nothing else.
+**Rewards:** `lyra_bond`, the scars (ungated — finishing the errand is the unlock), and one line that opens the next thing. Nothing else.
 
 ---
 
@@ -32,27 +30,34 @@ The player says yes or no. If yes, they go and find it — **using the game's ex
 1. **It's about money.** The player is a sellsword; finding coin is what they do. The quest gives them a *reason* to earn the silver the game already pays out, and a *person* to spend it on.
 2. **The steward says everything in one conversation, in the street.** No institution, no records, no puzzle to solve.
 3. **Lyra is available to all three squads.** She is the company-wide rookie, and the quest has no squad-gated content.
-4. **The gate is `lyra_pay_generous`** (`alderford.txt:2121`) — a flag already in the game that is currently set and read nowhere else. The player must have earned the honest version of her story to trigger this.
+4. **The hook is not gated on bond.** `lyra_pay_generous` (`alderford.txt:2121`, `lyra_bond >= 15`) would have made the 8-19 and under-8 tiers dead code: below 15 the button never appears, so the greeting could only ever run its warm branch. The gate is `met_lyra` — not a bond gate, just that the player has been in the same room as her — and the greeting does the filtering.
 5. **The clock is 10 days**, standing in for the end of the term. Long enough to run two or three other errands.
 6. **No fight.** The steward is a tired man doing a job he dislikes, not a villain.
 7. **The refusal is final and costs the player nothing but the story.** The children are put out. Lyra never mentions it again, and the coda has one line for it.
-8. **The scars are the reward.** `lorebook-data.js` has said "quiet scars along both forearms that she's never once explained" since the entry was written. They get explained here, at `lyra_bond >= 20`, and only then.
-9. **The Black Oath is not in this quest.** It has its own room behind a chandler's, its own roll and its own oaths, separate from the friar at Althea's arch. Nothing here needs it.
+8. **The scars are the reward, and they are not gated on bond.** `lorebook-data.js` has said "quiet scars along both forearms that she's never once explained" since the entry was written. Finishing the errand is what unlocks them: any player who reaches the coda sees the explanation, whatever `lyra_bond` is. The only guard left is `lyra_scars_told`, so a replayed coda does not reprint the reveal.
+9. **The Black Oath is only backstory, and it is Lyra's history, not a live thread.** She tells the player in the coda that she worked for them as a thief and broke their oath; that is where the scars come from. Nothing else in this quest touches the Oath — no roll, no standing, no favour called in. They keep their own room behind a chandler's and their own oaths, separate from the friar at Althea's arch, and this quest does not open either.
 
 ---
 
 ## 2. The Spine
 
-| Beat | Label | Where | What happens | Roll |
+| Step | Label | Where | What happens | Roll |
 |---|---|---|---|---|
-| 1. The Ask | `lyra_hook` | Dredge-End, the Ribs walkway | The player overhears the steward. Lyra asks. Yes or no. | none |
-| 2. The Asking About | `lyra_b2` | Dredge-End, the Ribs landing | The steward answers three questions. Optional. | one |
-| 3. The Handing Over | `lyra_b3` | Dredge-End, the Ribs landing | The player gives her the silver, or admits they don't have it. | none |
-| Coda | `lyra_epi` | Valen, the compound drill square | She is grateful, and tells the player something. | none |
+| 1. Overhear | `lyra_hook` | Dredge-End, the sagging walkway | The player comes up the gangway and finds Lyra talking to the steward. | none |
+| 2. The two children | `lyra_hook` | same | The rooms, the aunt, the children who are on no list. | none |
+| 3. The number | `lyra_hook` | same | Five silver, four months, term ends at the month's end. | none |
+| 4. She leaves | `lyra_hook` | same | She goes up the walkway to the compound. | none |
+| 5. No steward | none | none | He has gone for good. The door on that is closed. | none |
+| 6. The choice | `lyra_hook` | same | Help her or do not. | none |
+| 7. The paying | `lyra_b2` | Valen, the compound drill square | The player brings the silver, or admits they have not got it. | none |
+| 8. The coda | `lyra_epi` | same | She is grateful, promises repayment, and says something about herself. | none |
+**The two decisions are step 6 and step 7.** Whether to help, and whether the money arrives before the term does.
 
-**Beat 2 is optional and the player can skip it.** Everything needed was said in Beat 1. It exists so a careful player can confirm, not so a hasty one is punished. Every path gets the same three answers.
+**Two hubs, and that is deliberate.** The errand opens in Dredge-End and resolves in Valen, because that is the shape of the problem: her life is in the district and her work is at the compound, and the errand is the distance between the two. The Silt-Gate quest already moves across districts this way.
 
-**Beat 3 is not a choice list.** It is one moment, and the prose branches on whether the player has the money.
+**Step 5 is a closed door, not a puzzle.** There is no second visit to the steward, no legal research, no record to find. He said everything he is permitted to say and he went down the outside stair. A player who wants more information cannot get it, and this is said once, plainly, and never again.
+
+**Step 7 is time-gated, because she is a soldier on duty.** See §3.2.
 
 ---
 
@@ -62,108 +67,196 @@ Drafts are written to the narrative guidelines: second person, present tense, pl
 
 ### Beat 1: The Ask (`lyra_hook`)
 
-*Past the red lamps the lanes narrow and the buildings lean out over the canal on their shored timbers. The walkway here sags in the middle and you take it in two strides without thinking about it, and that is the only reason you hear the man on the landing, because you are already past him and have to stop.*
+*Past the red lamps the lanes narrow and the buildings lean out over the canal on their shored timbers. You go up the outside stair with the rest of the foot traffic, and the walkway at the top sags in the middle. You take it in two strides without thinking about it, and that is the only reason you hear the man on the landing, because you are already past him and have to stop.*
+
+He is lean, in a steward's apron gone grey at the seams, and he is talking to a woman with a recurve bow over her shoulder. He has a folded paper in his hand that he keeps folding and unfolding, which is what people do with a document they have already had returned twice.
+
+"Your aunt died four months ago, Lyra." He says it without emotion. "She was the tenant. The lease is still in her name and the rent's still running on it, and by law the city won't let a soul put anybody out of a room for arrears while the term's live. My boss made me check. I checked it in the spring and I checked it again last month, and I'm afraid there isn't much I can do."
+
+"I understand." Lyra's voice is tight.
+
+"You think I want to put two children out in the street? That's how it starts, and this city has enough of it as it is." He says it without heat. "I've asked for leniency on this lease for the sake of the children and I've been told no. You know why? Because a woman dying in a room off the terraces isn't the business of anyone else."
+
+"How long?"
+
+"Term's up at the end of the month." He looks at her. "You want to do something about it, you go and find the money yourself, because I'm not walking anywhere again for you and I shouldn't have to."
+
+He goes down the outside stair. The boards creak twice under his weight and then stop moving.
+
+**Step 5 is right here and it is a hard close.** He does not come back, he is not findable, and there is no second conversation with him, no record to look up, and no one at the compound who can say more than he has already said. The game does not repeat this and does not grey out anything to advertise it. The player finds out by walking away and finding the door shut.
+
+**The player says something.** Every beat in this quest has the protagonist in the room and reacting. The dialogue is the player's, and the steward and Lyra answer it. Two options, as the game writes two-option gates:
+
+* **Step up and say her name.**
+  *comment lint-ok two-options: plain yes or no*
+* **Keep walking.**
+  *comment lint-ok two-options: plain yes or no*
+
+**Button text stays under fifteen words.** That is a hard constraint on every option in this quest, not only this one.
+
+#### `lyra_bond >= 20` — she knows you
+
+*You come up onto the landing behind him and say her name before he has finished the sentence, and she turns before the steward does.*
+
+"${name}."
+
+Lyra smiles when she hears a familiar voice. "You heard all of that?"
+
+#### `lyra_bond >= 8` and under 20 — you fought together, and that is all
+
+*You come up the last flight and stop, and she sees you and does not turn, and finishes what she is saying. Only when the steward is gone does she look over.*
+
+"${name}." What are you doing here?
+
+"You heard all of that."
+
+*She has not said whether she is glad you are here. She is deciding.*
+
+#### Under 8 — she has no reason to owe you anything
+
+*You come up the last flight and she sees you and does not turn, and finishes what she is saying. Only when the steward is gone does she look over, and she looks at you the way she looks at a colleague who has come to ask a favour.*
+
+"${name}."
+
+"Aye. I heard it." She does not soften it. "Go on down the walkway."
+
+*She is not hostile. She has simply decided that this is hers and that you are company on the way past, and she is not wrong to think that. A failed check at the camp brazier put the player here, and nothing since has made her think otherwise.*
+
+**This is a colder no than the one at 20, and it should read that way.** At 20 she has decided the player is worth something and the kindness is mutual; under 8 she is dismissing someone who stopped to listen. Neither path loses bond and neither sets `lyra_refused`, because the player never got as far as being asked.
 
 
-#### Asking her about it
+#### The three facts, and only now
 
-She waits until he is out of earshot, which on a plank walkway is about four steps.
+**Nobody tells the player anything in this quest for free, and the tiering is the mechanism.** What follows is the `>= 20` case, where she has decided the player is worth talking to. Each lower tier gets less.
 
-"Two rooms," she says. "Bed alcove and a box room off it. That was my mother's. Twenty years in those rooms and she never once had it in writing that we were in it, and now she's dead and it's all in his book and not in ours."
+*fact 1 — the two rooms*
 
-She is not asking for sympathy and she does not want it.
-
-"Five silver. That's what four months of that block comes to, and it's owed on the rooms, not on the children, though you'll hear him say otherwise if you ask him in front of anyone." A beat, flat. "I've got none of it. Vane owes me a fortnight's pay and he won't release it before the contract's done, and a fortnight's pay is four silver, so I'm five short of everything. I've been standing on this walkway on market days for a month hoping he'd say something different."
+"I overheard what was said."
 
 She turns her bow a quarter turn in her hand, the way people do with a thing they are holding while they think.
 
-"You can ask him. He's on the landing most days and he won't lie to you, he's just tired, and if you're going to do this then it's better that you know the whole of it before you decide."
+"I've not got all the silver. I'm five short of everything." She looks at you, and this is the first time she has. 
 
-"I'm not asking you to feel anything about it," she says. "I'm telling you the arithmetic, because you're going to work it out on your own in about a minute and I'd rather you had the figures than the speech."
+#### The two options
 
-* **Help her.** The clock starts.
-* **Leave it.** Nothing happens, and nothing is lost yet.
+* **Say you'll help.**
+  *comment Sets `lyra_quest_stage "active"` and `lyra_start_day`, inside `*if (not(lyra_active_set))` and the page lock (§5.4).*
+* **Say you wish you could do more.**
+  *comment Sets `lyra_refused true` and `lyra_refused_day campaign_day`, same lock. The stage stays `"unstarted"`.*
 
-#### Helping
+#### Saying you'll help
 
-*comment Sets `lyra_quest_stage "active"`, `lyra_start_day`, and the three squad-agnostic flags, all inside `*if (not(lyra_active_set))` and the page lock (§5.4).*
+**The button is the action, not the line.** `Say you'll help` tells the engine what to do; the player's actual words are prose underneath, exactly as in the kind no. Every branch of this quest gives the player a spoken line.
 
-She nods once. That is all she does, and it is a long moment.
+"You'll get it," you say. "I'll have it before the term's out."
 
-"Right," she says. "Then don't tell me when you've got it, come and find me, and don't make a speech about it when you do, because I'll only be embarrassed."
+She has made this decision before, and the last time did not go well, so she gives you the arrangement and none of the relief.
+
+"All right," she says. "Don't tell me when you've got it. Come and find me. And don't make a speech about it when you do, because I'll only be embarrassed."
 
 She goes up the walkway toward the compound, and the sag in the middle of it takes her weight the same way it took yours.
 
-#### Leaving it
+#### The kind no
 
-She does not call after you. She goes up the walkway the other way, and you are left holding a piece of information you did not ask for.
+**The second option is not a brush-off and the prose must not punish it.** The player is not walking away from two children; the player is declining to put their hand in someone else's pocket, and Lyra — who has been telling the player her arithmetic rather than asking for a speech — respects that more than she would a performance of sympathy. She never asked. Being told no is the outcome she was already braced for.
 
-*comment Sets `lyra_refused true` and `lyra_refused_day campaign_day`, same lock as above. The stage stays `"unstarted"`.*
+> "That's a bad business," you say. "I wish I could do more, and I can't."
+>
+> She nods, and it is not disappointed. "Aye. Well." She turns the bow a quarter turn in her hand and looks back up the walkway. "Everyone says they can't. You're the first one who said it straight, though, and I'll remember that."
+>
+> She goes up toward the compound, and does not look back.
 
-### Beat 2: The Asking About (`lyra_b2`) — optional
+**The button names the kindness, not the leaving.** "Leave it on the walkway" told the player what the engine was about to do to them. The new text tells them what they are choosing to be.
 
-The player can go back to the landing later. The steward is there, and he has already said all of this once, so he is brief about it.
+**`lyra_refused` stays.** The stage remains `"unstarted"`, so if `lyra_bond` later rises past 20 the hub option returns on its own and the player can take the errand then. A kind no is not a lock, and the plan does not treat it as one. The coda carries a line for this branch (§3).
 
-**Option A — "Is five the whole of it?" `[WIS DC 10]`**
+### Beat 2: The Handing Over (`lyra_b2`)
 
-*Success.* He is not offended by the question, which is a surprise.
+**Location: the company barracks in Valen, not Dredge-End and not the drill square.** She is a soldier and she sleeps in a bunk like everyone else in the company. `port_valen.txt:365` puts her on the drill square at first arrival inside the `squad = "vanguard"` branch, which is the only place in the game she is named, and Beat 1 ends with her walking up toward the compound, so the errand resolving inside the walls is the only version that is not a contradiction.
 
-"Four months, same as hers. Four months is four silver and there's a copper on it for the water, because the block always adds the water, and the water is what takes them." He folds the paper. "It's five. It was five last month and it'll be five next month, and it isn't going down, and if you're waiting for a factor's man to come down here and take it off her — he isn't coming, because he's never come, and the block's worth less to him than the trouble of the stairs."
+**The cask is first-arrival prose and must not be leaned on.** `port_valen.txt:365` renders inside `*if (not(port_valen_hub_seen))` (line 355), which sets the flag on the walk from the ship and never runs again. By the time this quest opens the player has been to Valen many times and the overturned brine cask was described to them once, days earlier, and forgotten. **Do not name the cask or the whetstone in a recurring option.**
 
-*Failure.* "It's five."
+**There is no barracks interior scene to reuse.** `port_valen_rest` (line 522) is the player's own bedroll and `port_valen_eat_mess` (line 5098) is the stores awning. Neither is a room with other soldiers in it, so this scene is written fresh and locates her the way a soldier would: the end bunk nearest the door, and her quiver, which is the object that is conspicuously missing when she is on duty.
 
-*comment One line either way. Fails forward (rules §13). The failed variant is terse and a little cold, and that is the whole difference.*
+#### 3.2 The working-hours gate
 
-**Option B — "Who else is owed?" `[INT DC 10]`**
+`calendar.txt:375-385` sets `time_period` to one of six values. She is on duty for three of them:
 
-*Success.* This is the one he has not been asked.
+| `time_period` | Lyra | The player gets |
+|---|---|---|
+| `"Morning"` | on duty | the absent line |
+| `"Midday"` | on duty | the absent line |
+| `"Afternoon"` | on duty | the absent line |
+| `"Dusk"` | off duty | the scene |
+| `"Night"` | off duty | the scene |
+| `"Pre-Dawn"` | off duty | the scene |
 
-"Nobody." He looks mildly surprised at himself. "There's no factor to argue with, and that's the trouble with it. The block's owned off a ledger in a counting room three hundred steps and four hundred feet above the water, and nobody from that ledger has set foot down here since my predecessor died, and he was a drunk." He taps the paper. "So I collect for a man I've never seen, and there's nobody to complain to, and that's the whole reason I've stopped trying."
+**The absent line must be a person, not a system.** It is second person, it explains itself in the fiction, and it tells the player when to come back without printing a clock or a word like `time_period`. The player should leave knowing she is about after dark, not knowing that `"Dusk"` is when the variable flips.
 
-*Failure.* "Nobody that matters."
+*Dusk, off duty:*
 
-**Option C — "What happens to the rooms?" `[CHA DC 10]`**
+The bunks are made up and her gear is not on the rack. Her quiver is not hanging off the end of the bunk nearest the door, where it lives when she is off the roster, and the straw by that bunk has been kicked about by somebody who was not waiting.
 
-*Success.* He is almost grateful.
+"The company do their field work while there is light," a scout passing tells you, not unkindly. "She'll be back after dark. No point sitting in the barracks waiting on her."
 
+*Dusk, the scene:*
 
-### Beat 3: The Handing Over (`lyra_b3`)
+She is on the end bunk in the barracks with a blanket over her knees and the bow stood against the frame, and the light has gone the colour of a knife.
 
-The player comes up the walkway with the money, or without it. **There is no menu.** One moment on the landing, and the prose branches on `lyra_have_silver`.
+**There is no `lyra_b2` scene during working hours and this costs the player nothing.** The option stays on the hub all day, the player can click it and be told where she is, and the errand never becomes something the player is locked out of. The absent line costs no time and sets nothing.
 
 #### With the money
 
-She is sitting on the bottom step with the bow across her knees, doing something to a fletching with her thumbnail. She sees you and starts to stand and then does not, which is somehow the loudest thing in the scene.
+You come down the barracks aisle with the weight of it against your `${hands_prose}`, counting nothing out loud, because a man who counts silver in a barracks is a man telling the room what he has.
 
-You put the five silver in her hand.
+She is sitting on the end bunk with the bow across her knees, working a fletching with her thumbnail. She sees you and starts to stand and then does not, which is somehow the loudest thing in the scene.
 
-She does not count it in front of you straight away. She turns it over once, feels the weight, and does the arithmetic herself, and you can watch her do it. It comes to five.
+"${name}." She sets the arrow down. "You did find it."
 
-"Right," she says. Then, to the paper and not to you: "That's a fortnight's pay I can't get out of the captain, and four months of a dead woman's back rent, and you found it in nine days, and I'm not going to make a thing of it, because you'd only be polite about it and I'd only be worse."
+"Five," you say. "It was five."
 
-She stands up. She does not thank you, and she does not apologise for not thanking you.
+You put the silver in her hand.
 
-"I'll pay it back. That isn't politeness, that's a debt, and I'll pay it back whether or not we've—" she stops, starts again, and picks a smaller sentence. "I'll pay it back. Ask me in a fortnight and I'll have a number."
+She does not count it in front of you straight away. She turns it over once, feels the weight, and does the math herself, and you can watch her do it.
 
-*comment `lyra_paid true`, `lyra_resolution "paid"`, `lyra_bond +6`, and the 5-silver transaction — all inside `*if (not(lyra_paid))` plus the currency and page locks (§5.4).*
+"Right," she says, once, and does not say it again. Then, to the ground and not to you: "That's a fortnight's pay I can't get out of the captain, and four months my aunt's back rent. Thank you. You're a real one. You didn't have to do that."
 
-Then she goes up to the steward and pays him, and the player is not there for that, which is correct.
+Two bunks down a man grinds the edge off a shield boss with a whetstone and blows the filings off his own thumbnail to see whether they stick to it. Someone has a kettle on a footlocker and is arguing with another man about whose turn it is to feed it. A third is asleep on his back with one boot still on and a sock trailing over the frame.
+
+Nobody looks over.
+
+"I'll pay it back. Of course that's a debt, and I'll pay it back whether or not we've—" she stops, starts again, and picks a smaller sentence. "I'll pay it back. Ask me in a fortnight and I'll have a number."
+
+*comment `lyra_paid true`, `lyra_resolution "paid"`, `lyra_bond +6`, and the 5-silver transaction — all inside the currency and page locks (§5.4). `lyra_paid` also guards re-entry at the top of the label.*
 
 #### Without it
 
-She looks at your face, and then at the absence of coin in your hand, and she does not ask and she does not look disappointed.
+You come down the barracks aisle and stop at the end bunk with your hands empty, and you have already worked out the sentence on the walk over and it does not come out the way you planned it.
 
-"Right," she says, and stands up, and goes up the walkway toward the compound. She finds another way. The player hears about it later, or does not.
+"I could not get it," you say. "Not in time."
+
+She looks at your face, and then at the absence of coin in your hand.
+
+She takes the measure of you in about a second, files the answer, and leaves you to it.
+
+"Another month, then," she says, and stands, and shoulders the bow.
+
+She finds another way. The player hears about it later, or does not.
+
+She looks at your face, and then at the absence of coin in your hand.
+
+She takes the measure of you in about a second, files the answer, and leaves you to it.
+
+"Another month, then," she says, and stands, and shoulders the bow.
 
 *comment `lyra_resolution "unpaid"`, stage `"resolved"`. No `lyra_paid`, no coin, no bond change. The coda has one line for this (§3).*
-
 ### The Coda (`lyra_epi`)
 
-One scene at the compound drill square, in Valen, days later. The existing arrival prose (`port_valen.txt:365`) already puts Lyra on a brine cask with a whetstone. This adds a standing option and touches that paragraph not at all.
+One scene in the company barracks in Valen, days later. It adds a standing option and touches `port_valen.txt` not at all. **The coda is its own scene and names nothing from the first-arrival paragraph** — the cask and the whetstone are not in this scene, because the player has no reason to remember them (see §3.2).
 
 **She is grateful first, because that is what the player is owed.**
 
-"You're the reason those two are sleeping in a dry room, and I'm not going to pretend otherwise, and I'm not going to kneel about it either." She works the whetstone. "That's yours to spend how you like. I don't care if you tell people or don't."
+"You're the reason those two are sleeping in a dry room, and I'm not going to pretend otherwise, and I'm not going to kneel about it either." She does not stop what she is doing. "That's yours to spend how you like. I don't care if you tell people or don't."
 
 **Then she promises to pay it back, which is the thread into the next one.**
 
@@ -175,8 +268,7 @@ One scene at the compound drill square, in Valen, days later. The existing arriv
 |---|---|
 | `paid` | Nothing more. The two passages above have already spent it. |
 | `unpaid` | "You never came back with it." She says it without heat. "That's all right. I found it. Ask me how and you'll be bored." |
-| Refused at the walkway | "I've got them somewhere dry for now. Up the canal, with a woman who doesn't ask questions." She does not explain further, because explaining would be asking for credit. |
-
+| The kind no | **Not reachable.** The kind no leaves the stage at `"unstarted"`, and only `lyra_b2` sets `"resolved"`, so a player who declines never sees the coda. There is no coda line for them, by design. |
 
 ## 4. Outcomes
 
@@ -188,35 +280,9 @@ One scene at the compound drill square, in Valen, days later. The existing arriv
 
 **No gold ending, no best ending, no reputation moves, no items, no buffs.** The whole reward is `lyra_bond` and one conversation at the drill square. If the player walks away, nothing happens to them and the children are out, and the game never tells them they were wrong.
 
-"Four copper. That's the bed frame and the box and the tin pot, and I'd have told you that for nothing, but you didn't ask, which tells me you'd been standing up there doing arithmetic about furniture, and I felt sorry for you." He does not look away. "Nobody's coming for the rooms. They're coming for the children, and the rooms are only where the children are."
-
-*Failure.* "They're cleared. That's what clearing a room means."
-
-**All three succeed, all three fail, and none of them is a fight, a coin, or a consequence.** The player leaves this beat knowing exactly what they knew at the end of Beat 1, having spent up to three checks to confirm it. That is the point of an optional beat.
-
-*comment `lyra_asked_steward true` on entry, so the hub option hides itself (§5.2).*
-
-He is lean, in a steward's apron gone grey at the seams, and he is talking to a woman with a recurve bow over her shoulder. He has a folded paper in his hand that he keeps folding and unfolding, which is what people do with a document they have already had returned twice.
-
-"Your aunt died four months ago, Lyra." He says it without emotion. "There's two children in those rooms, and by law the city won't let a soul put them out until the end of the term. My boss made me check. I checked it in the spring and I checked it again last month, and I'm afraid there isn't much we can do."
-
-"I understand." Lyra's voice is tight.
-
-"You think I want to put two children out in the street? That's how it starts, and this city has enough of it as it is." He says it without heat. "I've asked for leniency on this lease for the sake of the children and I've been told no. You know why? Because a woman dying in a room off the Ribs isn't the business of anyone else."
-
-"How long?"
-
-"Term's up at the end of the month." He looks at her. "You want to do something about it, you go and find the money yourself, because I'm not walking anywhere again for you and I shouldn't have to."
-
-He goes down the walkway. The rope creaks twice under his weight and then stops moving. Lyra does not watch him go. She watches the player, because the player stopped.
-
-* **Ask her about it.**
-* **Go on down the walkway.** She does not call after you.
-  *comment lint-ok two-options: plain yes or no*
-
 ## 4a. Scope
 
-The quest is: **three hub options, four labels, thirteen variables, two files of prose, one line in the lorebook, one line in the stats sheet, one line in the backstory.**
+The quest is: **two hub options, three labels, eleven variables, two files of prose, one line in the lorebook, one line in the stats sheet, one line in the backstory.**
 
 Not in it: a new district, a new POI, a new place layer, a new combat call, a new file in the build, an item, a buff, a unique weapon, a reputation move, a romance flag, or any change to her Chapter 1 arc — anxious before the gate, steady after, which is already written in `camp_night.txt` and `battle_black_sinks.txt`.
 
@@ -224,10 +290,10 @@ Not in it: a new district, a new POI, a new place layer, a new combat call, a ne
 
 ### 5.1 Variables (`startup.txt`)
 
-Thirteen, in one block after the Chapter 3 quest variables.
+Eleven, in one block after the Chapter 3 quest variables.
 
 ```choicescript
-*comment --- THE WINTER ERRAND (Lyra's cousins, Dredge-End; see quest/LYRA_PLAN.md) ---
+
 *create lyra_quest_stage "unstarted"   *comment "unstarted", "active", "resolved", "failed"
 *create lyra_resolution "none"        *comment "none", "paid", "unpaid"
 *create lyra_start_day 0              *comment campaign_day the player accepted; the clock runs from here
@@ -235,43 +301,51 @@ Thirteen, in one block after the Chapter 3 quest variables.
 *create lyra_arrears_silver 5         *comment what the rooms cost; one month of a private's pay
 *comment guards -- each is set once, inside the page_id lock (5.4)
 *create lyra_paid false               *comment the player handed the silver over
-*create lyra_have_silver false        *comment computed at Beat 3 from the player's purse
-*create lyra_refused false            *comment the player walked past at the walkway
-*create lyra_moved_on false           *comment the coda's refusal line
+*create lyra_have_silver false        *comment computed at Beat 2 from the player's purse
+*create lyra_refused false            *comment the player gave a kind no on the walkway
+*comment (lyra_moved_on is gone: the coda has no line for the kind no, because that player never reaches it)
 *create lyra_epi_seen false           *comment the coda has played
 *create lyra_scars_told false         *comment the scars have been explained
-*create lyra_asked_steward false      *comment Beat 2 has been seen; hides the hub option
 *create lyra_active_set false         *comment guards the clock assignment at accept
 ```
 
 **`mygame.js` is generated — do not hand-edit it.** It regenerates from `startup.txt` on every build and the mirror is overwritten.
 
-### 5.2 The hub options (`port_valen_dredge_end.txt`)
+### 5.2 The two hub options
 
-All three go on the district hub's `*choice`, after `cut_market`. Nothing else in that file changes except one sentence in the layer-3 street prose.
+**They go on two different hubs in two different files**, because step 1 is in Dredge-End and steps 7 and 8 are in Valen.
+
+**Beat 1 goes on the Dredge-End district hub** (`port_valen_dredge_end.txt`), after `cut_market` and before the Silt-Gate options at line 290:
 
 ```choicescript
-*if ((lyra_pay_generous) and (lyra_quest_stage = "unstarted")
-     and (not(lyra_refused)) and (vane_independent_operative)
-     and (street_life != "empty") and dredge_end_seen)
-  # The lanes past the lanterns, where the walkway sags and a man is talking to Lyra. [~15 min]
-    *goto lyra_hook
-*if ((lyra_quest_stage = "active") and (not(lyra_asked_steward)))
-  # The Ribs landing: the steward is there, and he has already answered everything once. [~15 min]
-    *goto lyra_b2
-*if (lyra_quest_stage = "active")
-  # The Ribs landing, and Lyra, and the end of the term. [~15 min]
-    *goto lyra_b3
+*if (met_lyra)
+  *if ((lyra_quest_stage = "unstarted") and ((not(lyra_refused)) and ((vane_independent_operative) and ((street_life != "empty") and dredge_end_seen))))
+    # A man in a steward's apron talking to Lyra, past the lamps.
+      *goto_scene port_valen/lyra_quests/lyra_quest lyra_hook
 ```
 
-`street_life != "empty"` closes the beat in a Storm or Blizzard (`calendar.txt:652`) — the steward is not standing in a gale. Correct per rules §12: weather closes a place, never a quest option.
+Twelve words, and no `[b]` like the eight districts, because it is a scene and not a place. It carries **no time tag**: this quest advances no clock, so any `[~N min]` on these buttons would be a lie.
+
+**Beat 2 goes on the Valen compound hub** (`port_valen.txt`), where she actually is:
+
+```choicescript
+*if ((lyra_quest_stage = "active") and (squad = "vanguard"))
+  # Lyra on the end bunk in the company barracks. [~15 min]
+    *goto lyra_b2
+```
+
+Eight words. `squad = "vanguard"` matches the only branch in the game that describes her (`port_valen.txt:362-369`). This button is **not** time-gated — `lyra_b2` itself handles the working-hours case and gives the absent line, so the player is never locked out of the errand and always knows it is live.
+
+`street_life != "empty"` closes the hook in a Storm or Blizzard (`calendar.txt:652`) — the steward is not standing in a gale. Correct per rules §12: weather closes a place, never a quest option.
+
+**The hook is deliberately not gated on `lyra_bond`.** A player below 20 still walks past the conversation and still hears part of it, because a quest that is invisible to a player is worse than one that is refused. The tiering happens inside `lyra_hook`: the greeting and the facts are gated, and at under 20 the `Say you'll help` option never renders. The player learns the errand exists and is not offered it, which is the intended failure state and is reachable by anyone who was cold at the camp brazier.
 
 ### 5.3 Everything that changes
 
 | Where | Change |
 |---|---|
 | `startup.txt` | The block above. |
-| `port_valen_dredge_end.txt` | Three hub options; `lyra_hook`, `lyra_aftermath`, `lyra_b2`, `lyra_b3`; one sentence in the layer-3 street prose. **No existing label's prose is edited.** |
+| `port_valen_dredge_end.txt` | Two hub options; `lyra_hook`, `lyra_b2`, `lyra_epi`; one sentence in the layer-3 street prose. **No existing label's prose is edited.** |
 | `port_valen.txt` | One standing option on `pv_poi_carrion` for the coda, gated on the stage. **Nothing else.** |
 | `alderford.txt` | One sentence added to `discussed_lyra_archery`, and a flour clause dropped from the pay conversation (5.5). |
 | `quest-data.js` | One object. |
@@ -285,7 +359,7 @@ All three go on the district hub's `*choice`, after `cut_market`. Nothing else i
 
 ```js
 {
-  id: "winter_errand", title: "The Winter Errand", place: "Dredge-End",
+  id: "lyra_errand", title: "Five Silver", place: "Dredge-End",
   active: function (s) { return s.lyra_quest_stage === "active"; }
 },
 ```
@@ -295,15 +369,14 @@ All three go on the district hub's `*choice`, after `cut_market`. Nothing else i
 ```choicescript
 *if (lyra_quest_stage = "active")
   *line_break
-  • [b]Active Errand:[/b] The Winter Errand — five silver by the end of the month
+  • [b]Active Errand:[/b] Five Silver — pay Lyra before the term is out
 *if (lyra_quest_stage = "resolved")
   *line_break
-  • [b]Closed Errand:[/b] The Winter Errand [i](@{lyra_paid the children kept the rooms|somebody else found the money})[/i]
+  • [b]Closed Errand:[/b] Five Silver [i](@{lyra_paid the children kept the rooms|somebody else found the money})[/i]
 *if (lyra_quest_stage = "failed")
   *line_break
-  • [b]Closed Errand:[/b] The Winter Errand [i](the children went out on the canal)[/i]
+  • [b]Closed Errand:[/b] Five Silver [i](the children went out on the canal)[/i]
 ```
-
 
 ### 5.4 Replay safety
 
@@ -313,10 +386,10 @@ The class of bug that matters is a `*set` on a choice path that doubles on a pag
 |---|---|
 | The 5-silver payment | `*if (not(lyra_paid))` → `currency_add_amount 0-50` + `currency_txn_locked` + `economy currency_add`, inside `stat_bump_locked` / `locked_stat_bump_page_id = page_id`. **`lyra_paid` is the lock; the page lock is the belt.** |
 | `lyra_quest_stage "active"`, `lyra_start_day`, `lyra_refused` | `*if (not(lyra_active_set))`. **This is the one that will bite**: without it, replaying the accept page resets the clock to today and silently extends the deadline. |
-| `lyra_asked_steward` | Once, at the top of `lyra_b2`, behind its own boolean. |
+
 | `lyra_scars_told` | In the same block that plays the scars scene, so flag and prose cannot disagree. |
 | `lyra_epi_seen` | `*if (not(lyra_epi_seen))`. The coda is a standing option and gets walked into repeatedly. |
-| `lyra_moved_on` | Set once, in the refusal branch of the coda. |
+*comment (no lyra_moved_on: the coda never plays for a player who gave a kind no)
 
 **The currency idiom is not optional.** `*set silver - 5` is a hard fail; it goes through `economy currency_add` with the amount in copper (50) inside the transaction lock.
 
@@ -332,7 +405,7 @@ The ridge estates and Dredge-End are two stages of one history in the existing t
 
 **And the "cousins" / "aunt's kids" slip is fixed** by naming them once, in the archery beat, and leaving `:2129` as it stands.
 
-**Lorebook** — Lyra's entry becomes `body: function (s)` with pushes gated on `lyra_pay_generous` (the aunt, the two children, the arrears), on `lyra_quest_stage` (where the errand stands), and on `lyra_scars_told` (**the payoff**). Add `baron_karr` to her `see` array so the story-linker cross-links from the baron's entry.
+**Lorebook** — Lyra's entry becomes `body: function (s)` with pushes gated on `lyra_pay_generous` (the aunt, the two children, the arrears, her history with the Oath), on `lyra_quest_stage` (where the errand stands), and on `lyra_scars_told` (**the payoff**). Add `baron_karr` to her `see` array so the story-linker cross-links from the baron's entry.
 
 ---
 
@@ -356,32 +429,40 @@ No district rewrite. `port_valen_dredge_end.txt` is 243 KB of layered prose and 
 2. **The gate:** each condition blocked alone; never on the first Dredge-End arrival; a Storm closing it; and the option returning once the weather eases.
 3. **The clock:** accept on day N with `lyra_deadline_days 10`, visit N+1 through N+10, and N+11 for `failed`. **Replay the accept page on N+3 and confirm `lyra_start_day` did not move.**
 4. **Beat 1:** both options; the accept sets the stage and the clock together, the refusal sets only the refusal.
-5. **Beat 2:** all three questions, each passing and failing; the hub option hiding itself on entry; and confirm the player can walk straight from Beat 1 to Beat 3 without it.
-6. **Beat 3:** with the money and without it; **replay the page and confirm the silver is not taken twice.**
-7. **The coda:** all three resolution lines, the scars at `lyra_bond >= 20` and their absence below 20, and repeated visits.
-8. **The Alderford lines:** play the taproom at `lyra_bond` 7, 14, 15 and 20; the new sentence appears only at 15+, `:2129` loses the flour clause, and `battle_black_sinks.txt` is byte-identical.
-9. **Replay safety:** `node refresh_fuzz_test.js num=30 seed=3 mode=smart`, plus a positive control.
-10. **Linters:** `node tools/lint_all.js` on the changed scene files. Expect `lint_choices` to report the one intentional binary gate.
-11. **Render:** `node tools/render_hub.js` for Dredge-End across weather × time × day.
+5. **Beat 2:** with the money and without it; **replay the page and confirm the silver is not taken twice.**
+6. **The coda:** all three resolution lines, the scars reveal on first visit and its absence on a repeat, at any `lyra_bond`.
+7. **The Alderford lines:** play the taproom at `lyra_bond` 7, 14, 15 and 20; the new sentence appears only at 15+, `:2129` loses the flour clause, and `battle_black_sinks.txt` is byte-identical.
+8. **Replay safety:** `node refresh_fuzz_test.js num=30 seed=3 mode=smart`, plus a positive control.
+9. **Linters:** `node tools/lint_all.js` on the changed scene files. Expect `lint_choices` to report the one intentional binary gate.
+10. **Render:** `node tools/render_hub.js` for Dredge-End across weather x time x day.
 
 ---
 
 ## 9. Decisions to Confirm
 
+### Lyra's squad: leave it, and fix the one label
+
+**She is not in the Vanguard, and moving her is a retcon this quest does not need.** `camp_night.txt:1064` prints her as **`Lyra (Vanguard Scout)`**, which is already the contradiction the user spotted: she fights with a recurve bow, and `dawn_trial.txt:585` puts rogues and rangers in the Scout Company. So a bow-using player gets the Scout Company and still reads "Vanguard Scout" beside her name.
+
+**But `squad` is the player's unit, not hers.** `dawn_trial.txt:580-592` assigns it from `character_class` — fighter and barbarian to vanguard, rogue and ranger to scouts, bard and warlock and wizard to cadre. Nothing sets it for Lyra, because she is an NPC and the variable was never meant to describe her.
+
+**Therefore:** do **not** move her prose out of the `squad = "vanguard"` branch at `port_valen.txt:362-369`. Doing so means editing the player's own arrival scene and inventing a new home for her in the scouts text, for a quest that plays identically either way. **The quest gates on `lyra_quest_stage` and `squad = "vanguard"` only because that is the branch where the game already puts her**, not because the Vanguard is correct.
+
+**The cheap fix, if wanted:** change `camp_night.txt:1064` to `Lyra (Vanguard)` — one line, no scene edit, and the bow/label mismatch disappears. Not required for this quest.
+
+**Consequence for the plan:** every reference to her unit in this document is descriptive only. No mechanic keys off "she is Vanguard." The barracks location is justified by her being a soldier in the company, not by her squad assignment.
+
 1. **Five silver** is one month of a private's pay (rules §3: ~6/month) and about fourteen shifts of crane work, or one small contract. The player can earn it inside the ten-day window. Still check against `randomtest` output before locking it.
 2. **Ten days.** Enough for two or three errands. Two days is a scramble that looks like a quest; twenty is a chore.
-3. **Should Beat 2 exist at all?** It is the most cuttable thing in the plan. The player already knows the number from Beat 1, so it is confirmation rather than discovery. Cut it and the quest is two beats and a coda.
-4. **Should the coda's refusal line play for a player who walked away?** It is the only trace a refusing player gets. One sentence. Keep it, but it is the first thing to cut if the coda feels crowded.
-
+3. **Should the coda's refusal line play for a player who walked away?** It is the only trace a refusing player gets. One sentence. Keep it, but it is the first thing to cut if the coda feels crowded.
 
 * **The Oath's oaths and roll moved** out of the Alley Shrine into *its own room behind a chandler's* — *"It kept its own room behind a chandler's for the oaths and the roll of sworn names, and that is where they still are."*
 * **A third line added to the Oath's entry:** *"They have nothing to do with the friar at Althea's arch. Both of them feed the same quarter and neither will say so in the other's hearing."*
 * **The Alley Shrine entry** now says the friar feeds whoever is hungry and asks nothing, the men in boiled leather are there to find out who has stopped turning up, and the two are not connected.
-* **The two savvy-player lines in `port_valen_dredge_end.txt`** (`:197`, `:3149`) lost the "who gets pulled out of the line" and "Black Oath runners" language. The men now tap a shoulder, say two words, and walk off up the lane.
+* **The two savvy-player lines in `port_valen_dredge_end.txt`** (`:197`, `:3158`) lost the "who gets pulled out of the line" and "Black Oath runners" language. The men now tap a shoulder, say two words, and walk off up the lane.
 * **The friar's `alley_shrine` lore push** changed from *"whoever is on the list that week"* to *"whoever he has it for that week"*.
 * **The Oath's `see` array** no longer cross-links `alley_shrine`.
 
-**What this buys beyond this quest:** a room behind a chandler's that nobody rents is already in the fiction (`port_valen_dredge_end.txt:1409` — *"the chandler's upper room has candles burning in it at all hours, and that nobody has ever seen it rented"*). It is now the Oath's, which is a real location a later quest can put a door on. **The Stolen Shroud is untouched** — it runs entirely on the friar, the bowl and the gravedigger.
+**What this buys beyond this quest:** a room behind a chandler's that nobody rents is already in the fiction (`port_valen_dredge_end.txt:1418` — *"the chandler's upper room has candles burning in it at all hours, and that nobody has ever seen it rented"*). It is now the Oath's, which is a real location a later quest can put a door on. **The Stolen Shroud is untouched** — it runs entirely on the friar, the bowl and the gravedigger.
 
 The second line's `@{...}` takes a **bare boolean** — `lyra_paid` is one, and nested parentheses are not supported in that position (`STOLEN_SHROUD_PLAN.md` §6.4).
-

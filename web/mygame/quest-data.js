@@ -42,6 +42,10 @@
     {
       id: "toll_register", title: "Toll Register Delivery", place: "Gilded Scales",
       active: function (s) { return truthy(s.found_customs_vellum) && !truthy(s.turned_in_customs_vellum); }
+    },
+    {
+      id: "lyra_errand", title: "Five Silver", place: "Dredge-End & the Compound",
+      active: function (s) { return s.lyra_quest_stage === "active"; }
     }
   ];
 })();
