@@ -483,14 +483,14 @@
 
     {
       id: "dredge_end", category: "places", title: "Dredge-End",
-      sub: "The flooded low district",
-      tags: ["Dredge-End", "Black Oath"], aliases: ["slums", "canals", "silt basin", "tenements"],
+      sub: "The low crowded quarter",
+      tags: ["Dredge-End", "Black Oath"], aliases: ["slums", "canals", "silt basin", "terraces", "lanes"],
       link: ["Dredge-End"],
       unlock: "dredge_end_seen",
       body: function (s) {
         var out = [
-          "The city's paving stops at the drainage cut. Past it the lanes are broken stone and packed cinder, with planks laid over the low patches where the ground gives up. Dredge-End sits under the river's high-water line, its tenements standing on tarred pilings with rope gangways strung between them.",
-          "It is Black Oath country. The Watch seldom comes down to the canals on a market day, and trade settles with sharp elbows and quick fingers."
+          "The city's paving stops at the drainage cut. Past it the lanes are broken stone and packed cinder, with planks laid over the low patches where the ground gives up. Dredge-End is a low, cramped district of leaning terraces, brick and timber shored together with whatever the river gave back, built close enough that you can cross a lane without raising your voice.",
+          "It is Black Oath country. The Watch seldom comes into the quarter on a market day, and trade settles with sharp elbows and quick fingers."
         ];
         return out;
       },
@@ -501,14 +501,14 @@
 
     {
       id: "duckboard_market", category: "places", title: "Duckboard Market",
-      sub: "The market lane along the water-lane",
+      sub: "The old market lane along the canal",
       tags: ["Dredge-End"], aliases: ["market", "stalls", "chandler", "eel-seller", "awnings"],
       link: ["Duckboard Market"],
       unlock: "cut_seen_market",
       body: function (s) {
         var n = Number(s.cut_rumors_market) || 0;
         var out = [
-          "The market lane along the water-lane: broken stone and packed cinder, with planks laid over the low patches where the water comes up. Stalls stand under patched oilskin awnings in yellow and red, punts nose in from the canal side, and the lane smells of frying eel, lamp oil and wet rope. At the landward end a chandler's shop sells wax, rope and lamp oil from behind a half-door, and an outside stair beside it climbs to a shut door on the upper floor."
+          "The market lane along the canal: broken stone and packed cinder, with planks laid over the low patches where the ground gives up. Stalls stand under patched oilskin awnings in yellow and red, punts nose in from the canal side, and the lane smells of frying eel, lamp oil and wet rope. At the landward end a chandler's shop sells wax, rope and lamp oil from behind a half-door, and an outside stair beside it climbs to a shut door on the upper floor."
         ];
         if (n >= 1) {
           out.push("The eel-seller is said to keep a shaved coin under her pan. Hers are the only eels before noon, so the lane buys from her anyway.");
@@ -525,20 +525,20 @@
     },
     {
       id: "upper_gangways", category: "places", title: "Upper Gangways",
-      sub: "Rope bridges over the trenches",
-      tags: ["Dredge-End"], aliases: ["gangways", "rope bridges", "landings", "lookouts", "tin whistles"],
+      sub: "The upper walkways",
+      tags: ["Dredge-End"], aliases: ["gangways", "walkways", "rope bridges", "lookouts", "tin whistles"],
       link: ["Upper Gangways"],
       unlock: "cut_seen_gangways",
       body: function (s) {
         var n = Number(s.cut_rumors_gangways) || 0;
         var out = [
-          "Walkways of plank and cord that run from stilt landing to stilt landing above the trenches, reached by ladder-stairs through the tenements' back walls. Lookouts sit on the larger landings with tin whistles hung at their belts, watching the lanes, the water-lane and the footbridge. From the lookout landing the whole district lies below, and above the seawall the city climbs in terraces to the pale limestone of Civic Heights."
+          "Walkways of plank and cord slung between the upper storeys, reached by outside stairs. Lookouts sit on the larger platforms with tin whistles hung at their belts, watching the lanes, the canal and the street mouths. From the corner platform the whole district lies below, and above the seawall the city climbs in terraces to the pale limestone of Civic Heights."
         ];
         if (n >= 1) {
           out.push("The lookouts pass word between landings in whistles, a long, a short, a long, and now and then a plain word across a gap: boat, face, watch. Asked what they watch for, one said boats, faces and the Watch, in that order on a good day.");
         }
         if (n >= 2) {
-          out.push("From a window below the gangways a woman's voice goes through a list of amounts while another voice answers yes to each. The counting stopped at one figure, and nobody answered that one.");
+          out.push("From a window below the walkways a woman's voice goes through a list of amounts while another voice answers yes to each. The counting stopped at one figure, and nobody answered that one.");
         }
         return out;
       },
@@ -552,7 +552,7 @@
       body: function (s) {
         var n = Number(s.cut_rumors_scrap) || 0;
         var out = [
-          "Sheds on stilts line the canal with their doors open to the water and racks of half-shaped ash oars under the eaves. The ground between them is trampled cinder scattered with wood shavings. Further along is a fenced scrap yard of salvaged stone, coiled chain and plate iron, and a smith's bench under a lean-to. On Forgeday the yard is busy with chain coming off punts, and the smith's hammer carries across the canal. The sheds keep daylight hours: the open fronts are boarded at dusk, in a gale the yard is lashed shut, and on Hearthday the gate stays chained."
+          "Sheds built out over the canal kerb line the bank with their doors open to the water and racks of half-shaped ash oars under the eaves. The ground between them is trampled cinder scattered with wood shavings. Further along is a fenced scrap yard of salvaged stone, coiled chain and plate iron, and a smith's bench under a lean-to. On Forgeday the yard is busy with chain coming off punts, and the smith's hammer carries across the canal. The sheds keep daylight hours: the open fronts are boarded at dusk, in a gale the yard is lashed shut, and on Hearthday the gate stays chained."
         ];
         if (n >= 1) {
           out.push("The dealer buys chain, plate, oar-pins and anything with iron in it, and flat stone for paving, because somebody in the quarter is always relaying a lane.");
@@ -702,7 +702,8 @@
       body: function (s) {
         var n = Number(s.cut_rumors_shrine) || 0;
         var out = [
-          "A timber arch black with tallow smoke over a small carved figure in a veil, its face worn smooth by hands, with ALTHEA scratched into its base. Strips of old linen are tied along the arch, and a clay bowl at the figure's feet holds river pebbles and candle stubs. An iron hook holds a broth pot. On Hallowdays a friar in a patched habit of undyed wool ladles thin pea broth to the district's poorest, while men in boiled leather stand at the alley mouth checking faces against a roll of names. The shrine is Saint Althea's, the mender the frontier prays to, and the district keeps it in tallow where the Middle Ward keeps its own saint's shrine in beeswax."
+          "A timber arch black with tallow smoke over a small carved figure in a veil, its face worn smooth by hands, with ALTHEA scratched into its base. Strips of old linen are tied along the arch, and a clay bowl at the figure's feet holds river pebbles and candle stubs. An iron hook holds a broth pot. On Hallowdays a friar in a patched habit of undyed wool ladles thin pea broth to the district's poorest, and the line is kept in order by two broad-shouldered men in boiled leather who stand at the alley mouth with a creased scrap of vellum. The shrine is Saint Althea's, the mender the frontier prays to, and the district keeps it in tallow where the Middle Ward keeps its own saint's shrine in beeswax.",
+          "The men at the alley mouth are not friars. The friar feeds whoever is hungry and asks nothing; the men in boiled leather are there to find out who has stopped turning up, and the quiet tap on a shoulder at the back of the line is how a name gets carried up to the room behind the chandler's. The arch and that room have nothing to do with each other, and everyone below the drainage cut would rather you did not put the two together in front of the wrong person."
         ];
         if (n >= 1) {
           out.push("The tin tray is emptier every month. People have no candles to spare, and light one for the ones who did not come back and none for themselves.");
@@ -711,7 +712,7 @@
           out.push("The arch is older than the lanes. They were built around it, like everything else here that was already sinking. The bishops up the hill sing to Althea's father, an old man said. Down here they still pray to her: she mended things, and he only swears them.");
         }
         if (truthy(s.cut_shrine_gave)) {
-          out.push("A woman on the step said the friar does not keep what goes in the bowl. It goes to whoever is on the list that week, and she told you to ask him who.");
+          out.push("A woman on the step said the friar does not keep what goes in the bowl. It goes to whoever he has it for that week, and she told you to ask him who.");
         }
         if (truthy(s.shroud_seen)) {
           out.push("A scarred young man once tore the week's dish out of the friar's hands, forty coppers meant for the gravedigger, and broke the clay bowl so the friar could not follow. A dead man lay under a fishing net at the saint's feet while his widow and three children waited on it.");

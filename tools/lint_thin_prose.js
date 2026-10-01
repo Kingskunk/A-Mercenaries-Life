@@ -91,14 +91,7 @@ for (const arg of process.argv.slice(2)) {
   }
 }
 
-function collectScenes(target) {
-  const stat = fs.statSync(target);
-  if (stat.isFile()) return [target];
-  return fs
-    .readdirSync(target)
-    .filter((f) => f.endsWith('.txt'))
-    .map((f) => path.join(target, f));
-}
+const { collectSceneFiles: collectScenes } = require('./lib/collect_scene_files');
 
 function indentOf(line) {
   const match = /^(\s*)/.exec(line);

@@ -600,8 +600,9 @@
         meter: { stat: "black_oath_rep", label: "Standing with the Black Oath" },
         body: function (s) {
           var out = [
-            "The sworn brotherhood of the flooded quarter. Down here they say it began as a burial club: puntmen and dredgers paying into a common purse so their drowned got a grave and their families ate. The oaths are sworn at the shrine, and the roll of sworn names is kept there still.",
-            "Swear to it and it feeds you when the water takes your boat. Break it and it finds you, and there is no buying your way clear, only the work you said you would do. It holds what the Watch does not reach: the punt berths, the eel-traps, the night barges, and the narrow alleys. The city above leaves it alone, and in exchange the waterfront does not boil over."
+            "The sworn brotherhood of the flooded quarter. Down here they say it began as a burial club: puntmen and dredgers paying into a common purse so their drowned got a grave and their families ate. It kept its own room behind a chandler's for the oaths and the roll of sworn names, and that is where they still are.",
+            "Swear to it and it feeds you when the water takes your boat. Break it and it finds you, and there is no buying your way clear, only the work you said you would do. It holds what the Watch does not reach: the punt berths, the eel-traps, the night barges, and the narrow alleys. The city above leaves it alone, and in exchange the waterfront does not boil over.",
+            "They have nothing to do with the friar at Althea's arch. Both of them feed the same quarter and neither will say so in the other's hearing, which is the only thing the district keeps strictly to."
           ];
           if (truthy(s.pv_tavern_rumor_1)) {
             out.push("Their men work the canal footbridges with bare knives and no Watch badge, reading the faces that come past. The advice along the quays is simple: do not flash silver past dark in that quarter, unless you mean to donate it.");
@@ -611,7 +612,7 @@
           }
           return out;
         },
-        see: ["port_valen", "dredge_end", "gilded_scales", "port_watch", "alley_shrine"]
+        see: ["port_valen", "dredge_end", "gilded_scales", "port_watch", "duckboard_market"]
       },
       {
         id: "iron_bailiffs", category: "factions", title: "The Iron Bailiffs",

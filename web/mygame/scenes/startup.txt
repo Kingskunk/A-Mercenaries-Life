@@ -8,7 +8,7 @@
   dawn_trial
   battle_black_sinks
   alderford
-  port_valen
+  port_valen/port_valen
 *comment Note: combat and calendar are subroutine libraries called via *gosub_scene and compiled separately.
 
 *create implicit_control_flow true
@@ -480,6 +480,11 @@
 *create crane_dell_regard 0
 *create crane_award_locked false
 *create locked_crane_award_page_id 0
+*comment Middle Ward hot-room gossip ladder (mw_baths_gossip, port_valen_middle_ward.txt), 2026-09-30: caches
+*comment which one-shot rumor rung a visit picked, so a refresh reproduces the same rung instead of the ladder
+*comment advancing an extra step -- see that label's own comment for the bug this closed.
+*create locked_mw_gossip_page_id 0
+*create mw_gossip_pick_cached 0
 
 *comment --- HARBOR POI SUB-HUB ---
 *create pv_pois_open false
@@ -1025,6 +1030,52 @@
 *create combat_enemy_atk_locked_4 false
 *create combat_enemy_atk_locked_5 false
 *create combat_enemy_atk_locked_6 false
+*comment Enemy turn narration (fight_narrate_enemy_turn, combat_prose.txt), 2026-09-30: a separate per-slot lock
+*comment from the attack-resolution one just above, deliberately -- an opportunity attack and a normal attack on
+*comment the same slot within one page would otherwise share (and collide on) one lock namespace. Caches the
+*comment RANDOM SEED only (narrate_v/narrate_m2), not the derived hit/miss text, since flavor_from_type is a pure
+*comment function of that seed plus the type -- see that label's own comment for the real bug this closed.
+*create locked_combat_enemy_narrate_page_id 0
+*create combat_enemy_narrate_locked_1 false
+*create combat_enemy_narrate_locked_2 false
+*create combat_enemy_narrate_locked_3 false
+*create combat_enemy_narrate_locked_4 false
+*create combat_enemy_narrate_locked_5 false
+*create combat_enemy_narrate_locked_6 false
+*create combat_enemy1_narrate_v 0
+*create combat_enemy1_narrate_m2 0
+*create combat_enemy2_narrate_v 0
+*create combat_enemy2_narrate_m2 0
+*create combat_enemy3_narrate_v 0
+*create combat_enemy3_narrate_m2 0
+*create combat_enemy4_narrate_v 0
+*create combat_enemy4_narrate_m2 0
+*create combat_enemy5_narrate_v 0
+*create combat_enemy5_narrate_m2 0
+*create combat_enemy6_narrate_v 0
+*create combat_enemy6_narrate_m2 0
+*comment Movepool roll (fight_pick_enemy_move, combat.txt), 2026-09-30: same per-slot lock/cache shape as the
+*comment attack and narration locks just above -- see that label's own comment for the real bug this closed.
+*comment combat_enemy_move2_locked_0/combat_enemy0_move2_picked are inert placeholders, never meaningfully read
+*comment or written at runtime (the label's own combat_active_target > 0 guard sees to that) -- quicktest's
+*comment coverage walk visits an *if body's lines regardless of whether the guard is true for its own simulated
+*comment state (GAMEPLAY_MECHANICS_RULES.md's own "Sharp edge" note on this), so the indirected name still has
+*comment to resolve to something real for slot 0, same fix shape as any other slot-1-only field's own placeholder.
+*create locked_combat_enemy_move2_page_id 0
+*create combat_enemy_move2_locked_0 false
+*create combat_enemy0_move2_picked false
+*create combat_enemy_move2_locked_1 false
+*create combat_enemy_move2_locked_2 false
+*create combat_enemy_move2_locked_3 false
+*create combat_enemy_move2_locked_4 false
+*create combat_enemy_move2_locked_5 false
+*create combat_enemy_move2_locked_6 false
+*create combat_enemy1_move2_picked false
+*create combat_enemy2_move2_picked false
+*create combat_enemy3_move2_picked false
+*create combat_enemy4_move2_picked false
+*create combat_enemy5_move2_picked false
+*create combat_enemy6_move2_picked false
 *comment Ally attack (resolve_ally_attack, combat_dice.txt): same per-slot lock/banner shape as the enemy-attack
 *comment block above, sized to combat_ally_slot_cap (4) instead of 6. combat_ally_atk_hit and combat_ally_
 *comment dmg_dealt are the routine's outputs, read by the caller after the *gosub_scene returns -- durable
@@ -1153,6 +1204,14 @@
 *comment combat_active_target, which is transient shared scratch and would be clobbered by the very movement that
 *comment provoked the attack. Held for the length of one move: found before the tier opens, spent after.
 *create combat_oa_candidate 0
+*comment Ally-side rows 3-4 mirror (2026-09-29, on request -- see combat_ally0_can_retreat below for the fields
+*comment this gates): OUTPUT of find_melee_ally_present (combat.txt), recomputed fresh on every ally's turn.
+*comment True if a living ally with weapon_type "melee" is at range 0 -- the only kind of ally Mechanism A
+*comment (find_intercepting_ally) can ever redirect an attack onto, since it never redirects onto the player. A
+*comment cornered ranged ally only bothers falling back when this is true, same reason the enemy side requires
+*comment combat_intercepting_ally > 0 for its own rows 3-4 (design decision #5, RANGED_AI_PLAN.md: a melee ally
+*comment doesn't eat the reaction, it gives the chaser something else to hit instead).
+*create combat_melee_ally_present false
 *comment Disengage (2026-09-28): set when the player spends their action on it, cleared every round in
 *comment combat_begin_round. Deliberately a plain boolean rather than a budget, because it is used at most once
 *comment per round and gating it on combat_player_actions_left is the action economy doing the work already --
@@ -1160,6 +1219,11 @@
 *comment Disengage says "your movement doesn't provoke opportunity attacks" for the turn and the player may
 *comment still have a second move (Dash) after using it.
 *create combat_player_disengaged false
+*comment Self-lock for combat_shift_all_ranges (2026-09-30, real refresh-duplication bug found via
+*comment refresh_fuzz_test.js): its three call sites (Push Forward/Fall Back/Break off and run) are mutually
+*comment exclusive *choice options, so one page-id lock covers all three -- see that label's own comment.
+*create combat_range_shift_locked false
+*create locked_combat_range_shift_page_id 0
 *create combat_player_dmg_type "bludgeoning"
 *create combat_enemy_resist_type_1 ""
 *create combat_enemy_resist_type_2 ""
@@ -1327,6 +1391,12 @@
 *create combat_player_dmg_dealt 0
 *create combat_weapon_hit_locked false
 *create locked_combat_weapon_hit_page_id 0
+*comment Whole-body lock for resolve_weapon_attack_choice (combat.txt, 2026-09-30) -- separate from
+*comment combat_weapon_hit_locked just above, which only guards resolve_player_weapon_hit's OWN dice/HP math.
+*comment This one guards everything AROUND it too: fight_pick_target's kill-priority re-scan, pick_weapon_flavor's
+*comment *rand, and the Favored Foe mark -- see that label's own header comment for the bug this caught.
+*create combat_weapon_attack_locked false
+*create locked_combat_weapon_attack_page_id 0
 *create combat_sneak_attack_triggered false
 *create combat_round 0
 *comment Populated by combat.txt's fight_* labels for the calling scene to
@@ -2046,6 +2116,17 @@
 *create combat_ally1_sidearm_dmg_dice_sides 4
 *create combat_ally1_sidearm_dmg_bonus 0
 *create combat_ally1_sidearm_dmg_type "piercing"
+*comment Set for ONE turn by resolve_ally_attack when a ranged ally quick-draws its sidearm, and read by
+*comment fight_narrate_ally_attack to pick the knife pool instead of the bow one. The enemy-side twin of this
+*comment is combat_enemy_used_sidearm (startup.txt), and it is deliberately TURN-SCOPED on both sides: the
+*comment sidearm is a one-off for that attack, never a persistent equip, so a drawn dagger can never leave an
+*comment archer disarmed. Cleared by the caller right after the narration, exactly as combat.txt's enemy quick-draw
+*comment clears combat_enemy_used_sidearm -- a cornered archer re-reads the situation every turn and is a knife
+*comment fighter while adjacent and a bow fighter the moment she has room, with no restore step.
+*comment NOT gated on attacker kind at the write site; the READER (fight_narrate_ally_attack) gates on it, because
+*comment that label is shared with the enemy-as-attacker paths (interception and chase), and a flag left true from
+*comment an ally's turn would otherwise narrate an ENEMY's swing as a knife attack.
+*create combat_ally_atk_used_sidearm false
 *comment DEX (2026-09-27, groundwork for initiative -- see combat_roll_initiative below) plus the other five
 *comment (2026-09-28, once atk_bonus/dmg_bonus started deriving from them the same way an enemy's do). Ally
 *comment saving throws would still need their own resolve_ally_save the way resolve_enemy_save exists for
@@ -2218,6 +2299,26 @@
 *create combat_ally4_chase_roll_done false
 *create combat_ally4_chase_hp_snapshot 0
 *create combat_ally4_chase_chance 0
+*comment Ally-side rows 3-4 mirror (2026-09-29, on request): combat_ally<N>_can_retreat/_flee_hp_pct are the exact
+*comment mirror of combat_enemy<N>_can_retreat/_flee_hp_pct (startup.txt, near combat_enemy_can_retreat) -- same
+*comment "0/false means never" per-type opt-in shape chase_chance already uses. Set true/33 by apply_allytype_archer
+*comment and apply_allytype_slinger (combat.txt), the two ranged ally types today; apply_allytype_guard clears both
+*comment explicitly, same as it clears the sidearm fields, since there's no reset loop for ally fields (see
+*comment fight_cleanup_ally_loop's own comment) to fall back on between fights that reuse a slot. Gates the new
+*comment elseif in combat_next_turn's ally branch: a cornered ranged ally (weapon_type "ranged", own range <= 0)
+*comment that opted in falls back instead of standing and quick-drawing, same two-way split as the enemy side
+*comment (Retreat if healthy, Disengage if wounded below flee_hp_pct) -- gated ALSO on combat_melee_ally_present
+*comment (just above), since a melee ally is what makes falling back worth the risk, not just being cornered.
+*create combat_ally0_can_retreat false
+*create combat_ally0_flee_hp_pct 0
+*create combat_ally1_can_retreat false
+*create combat_ally1_flee_hp_pct 0
+*create combat_ally2_can_retreat false
+*create combat_ally2_flee_hp_pct 0
+*create combat_ally3_can_retreat false
+*create combat_ally3_flee_hp_pct 0
+*create combat_ally4_can_retreat false
+*create combat_ally4_flee_hp_pct 0
 *comment Ally type library (combat.txt: apply_ally_type/apply_ally_roster), mirroring the enemy one just above --
 *comment a scene sets combat_ally_lib_1 (and optionally _2/_3/_4) to a library type id ("archer", "guard") before
 *comment calling fight_library, instead of hand-authoring every ally stat inline. combat_apply_ally_slot/_type are
@@ -2426,6 +2527,10 @@
 *create combat_flavor_enemy0_miss_3 ""
 *create combat_flavor_enemy0_miss_4 ""
 *create combat_flavor_enemy0_miss_5 ""
+*comment Whole-body lock (2026-09-30) for combat_roll_initiative itself (combat.txt) -- see that *label's own
+*comment header comment for the reroll-the-whole-turn-order bug this caught.
+*create combat_init_locked false
+*create locked_combat_init_page_id 0
 *create combat_init_count 0
 *create combat_init_kind_1 ""
 *create combat_init_slot_1 0
@@ -2596,6 +2701,18 @@
 *create combat_cast_result 0
 *create combat_dissonant_whispers_locked false
 *create locked_combat_dissonant_whispers_page_id 0
+*comment Whole-choice-body lock (2026-09-30) for the Dissonant Whispers option itself (combat.txt), separate from
+*comment combat_dissonant_whispers_locked above (which only guards resolve_dissonant_whispers's own damage math) --
+*comment same fight_pick_target-rerun bug as combat_weapon_attack_locked, see that *create's own comment.
+*create combat_dw_choice_locked false
+*create locked_combat_dw_choice_page_id 0
+*comment Whole-choice-body lock (2026-09-30), shared by all six cantrip options (Fire Bolt/Ray of Frost/Shocking
+*comment Grasp/Eldritch Blast/Chill Touch/Vicious Mockery, combat.txt) -- one flag covers all of them since they
+*comment cost the same ACTION budget and so are mutually exclusive within any one page, the same reasoning
+*comment resolve_player_hit's own single shared lock (combat_dice.txt) already relies on for the same five/six
+*comment callers. See Fire Bolt's own comment (combat.txt) for the fight_pick_target-rerun bug this caught.
+*create combat_cantrip_choice_locked false
+*create locked_combat_cantrip_choice_page_id 0
 
 *comment --- REPLAY LOCKS & SUBROUTINE PARAMETERS ---
 *create currency_txn_locked false

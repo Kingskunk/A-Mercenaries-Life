@@ -55,14 +55,47 @@
 *comment dagger pool instead of the bow/sling one below, with no other change to this label's own logic.
 *if (combat_enemy_used_sidearm) and (not(fnet_type = ""))
   *set fnet_type "${fnet_type}_dagger"
+*comment Per-slot replay lock (2026-09-30, real bug caught live via refresh_fuzz_test.js): this label is called
+*comment once per acting enemy per turn, and several enemies can act within one page before the player's next
+*comment choice -- same "shared subroutine called multiple times on one page" shape as resolve_enemy_attack's own
+*comment combat_enemy_atk_locked_N (combat_dice.txt), which is why a single shared flag would be wrong here too
+*comment (it would suppress the SECOND enemy's narration on the same page, not just protect against a replay).
+*comment Caches only the RANDOM SEED (fnet_v for the untyped path, fft_v/fft_m2 for the typed path) rather than
+*comment every derived hit/miss string -- flavor_from_type has no randomness of its own, so re-running it against
+*comment the same cached seed reproduces the exact same text deterministically. Without this, a refresh replaying
+*comment the page re-rolled the flavor pick fresh each time, silently changing which line (or even, in a
+*comment multi-enemy fight, which ENEMY's pool) narrated an attack whose actual hit/miss/damage was already locked.
+*temp fnet_narrate_lockname (("combat_enemy_narrate_locked_" & combat_active_target))
+*if (not(locked_combat_enemy_narrate_page_id = page_id))
+  *set combat_enemy_narrate_locked_1 false
+  *set combat_enemy_narrate_locked_2 false
+  *set combat_enemy_narrate_locked_3 false
+  *set combat_enemy_narrate_locked_4 false
+  *set combat_enemy_narrate_locked_5 false
+  *set combat_enemy_narrate_locked_6 false
+  *set locked_combat_enemy_narrate_page_id page_id
+*temp fnet_narrate_already_locked {fnet_narrate_lockname}
+*temp fnet_vname (("combat_enemy" & combat_active_target) & "_narrate_v")
+*temp fnet_m2name (("combat_enemy" & combat_active_target) & "_narrate_m2")
 *if (fnet_type = "")
-  *rand fnet_v 1 5
+  *if (fnet_narrate_already_locked)
+    *set fnet_v {fnet_vname}
+  *else
+    *rand fnet_v 1 5
+    *set {fnet_vname} fnet_v
 *else
-  *rand fft_v 1 8
+  *if (fnet_narrate_already_locked)
+    *set fft_v {fnet_vname}
+    *set fft_m2 {fnet_m2name}
+  *else
+    *rand fft_v 1 8
+    *rand fft_m2 1 3
+    *set {fnet_vname} fft_v
+    *set {fnet_m2name} fft_m2
   *set fnet_v fft_v
   *set fft_type fnet_type
-  *rand fft_m2 1 3
   *gosub flavor_from_type
+*set {fnet_narrate_lockname} true
 *temp fnet_use_override false
 *comment Nested, not a compound "and": ChoiceScript evaluates both sides of "and" unconditionally (no short-circuit),
 *comment so an inline {} indirection read on the wrong side of one would look up combat_flavor_enemy1_hit_1 (which
@@ -224,13 +257,23 @@
 *set combat_attacker_name {(fnaa_ap & "name")}
 *set combat_attacker_epithet {(fnaa_ap & "epithet")}
 *temp fnaa_ranged ({(fnaa_ap & "weapon_type")} = "ranged")
+*comment Quick-draw (2026-09-29, Ranged-AI plan §4.8): a ranged ally at range 0 attacks with its sidearm
+*comment instead, and resolve_ally_attack (combat_dice.txt) sets combat_ally_atk_used_sidearm for that turn.
+*comment WITHOUT that flag the branch below reads fnaa_ranged -- still "ranged", because the sidearm is a separate
+*comment field and the override is turn-scoped -- and narrates a knife thrust as "looses a shot". The attacker-kind
+*comment test is not optional: this label is also the enemy-as-attacker narration for interception and chase
+*comment (combat.txt's three "enemy" call sites), so a flag left true from an ally's turn would otherwise narrate an
+*comment ENEMY's sword swing as a knife attack.
+*temp fnaa_knife ((fnaa_attacker_kind = "ally") and (combat_ally_atk_used_sidearm))
 *temp fnaa_dp ((("combat_" & fnaa_defender_kind) & fnaa_defender_slot) & "_")
 *set combat_defender_name {(fnaa_dp & "name")}
 *set combat_defender_epithet {(fnaa_dp & "epithet")}
 *temp fnaa_v 1
 *rand fnaa_v 1 5
 *temp fnaa_line ""
-*if (fnaa_ranged)
+*if (fnaa_knife)
+  *gosub flavor_ally_dagger
+*elseif (fnaa_ranged)
   *if (fnaa_v = 1)
     *set fnaa_line "$!{combat_attacker_epithet} looses a shot that finds ${combat_defender_epithet}."
   *if (fnaa_v = 2)
@@ -1042,6 +1085,40 @@ ${fnaa_line}
   *gosub flavor_type_mire_rat
 *if (fft_type = "beast")
   *gosub flavor_type_beast
+*return
+
+*label flavor_ally_dagger
+*comment Quick-draw knife (2026-09-29, Ranged-AI plan §4.8): the ranged ALLY's version of
+*comment flavor_type_archer_dagger/_slinger_dagger. Same physical actions, rewritten THIRD person -- the enemy pools
+*comment address the player as "your shoulder", which cannot be reused verbatim because this label names both
+*comment combatants by epithet and serves either attack direction. FIVE variants, matching this label's existing
+*comment *rand 1 5 rather than the enemy pools' 8, so an ally's turn keeps its rhythm. Variants vary the PHYSICAL
+*comment ACTION (a thrust, a grab-and-stab, a slash across a raised arm), not the adjectives, per this file's writing
+*comment rule. No weapon anatomy -- an edge, a point, a hand, never a hilt or pommel. The bow is named as abandoned
+*comment because that is the readable tell: it tells the player the archer is cornered and responded, without a
+*comment separate "draws steel" line the turn-scoped reset would then leave unbalanced (the dagger goes back in the
+*comment sheath silently, exactly as combat_enemy_used_sidearm does).
+*if (fnaa_v = 1)
+  *set fnaa_line "$!{combat_attacker_epithet} drops the bow and drives a knife in low, and the point catches ${combat_defender_epithet} in the side."
+*if (fnaa_v = 2)
+  *set fnaa_line "Abandoning the bow, ${combat_attacker_epithet} rakes the knife across ${combat_defender_epithet}'s forearm."
+*if (fnaa_v = 3)
+  *set fnaa_line "$!{combat_attacker_epithet} grabs a fistful of ${combat_defender_epithet}'s collar and drives the knife home, a short ugly stab."
+*if (fnaa_v = 4)
+  *set fnaa_line "The bow forgotten, ${combat_attacker_epithet} slashes in close, and the short edge opens a line."
+*if (fnaa_v = 5)
+  *set fnaa_line "With no room left to loose an arrow, ${combat_attacker_epithet} goes for a fast overhand stab and finds the gap."
+*if (not(fnaa_hit))
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} lunges in with a hastily drawn knife, but the reach is wrong for it, and it skims past."
+  *if (fnaa_v = 2)
+    *set fnaa_line "$!{combat_attacker_epithet} stabs in close and fast, but ${combat_defender_epithet} twists clear, and the blade catches nothing."
+  *if (fnaa_v = 3)
+    *set fnaa_line "$!{combat_attacker_epithet} grabs for a hold to steady the knife, but ${combat_defender_epithet} wrenches free before the point lands."
+  *if (fnaa_v = 4)
+    *set fnaa_line "$!{combat_attacker_epithet} slashes wildly with the drawn knife, and the swing goes wide of ${combat_defender_epithet}."
+  *if (fnaa_v = 5)
+    *set fnaa_line "$!{combat_attacker_epithet} goes for a fast overhand stab, but ${combat_defender_epithet} gets an arm up, and the blade skids off."
 *return
 
 *label flavor_type_maceman

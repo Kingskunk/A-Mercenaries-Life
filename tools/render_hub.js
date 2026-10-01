@@ -70,7 +70,7 @@ var fw = process.argv[2], ft = process.argv[3], fd = process.argv[4];
 var PICKS = process.env.PICKS ? Math.max(1, parseInt(process.env.PICKS, 10)) : 0;
 var pickIndex = 0;
 if (PICKS) Math.random = function () { return (pickIndex + 0.5) / PICKS; };
-var scene = process.argv[5] || "port_valen_dredge_end";
+var scene = process.argv[5] || "port_valen/port_valen_dredge_end";
 var label = process.argv[6] || "port_valen_dredge_end";
 W.forEach(function (w) {
   Object.keys(T).forEach(function (t) {

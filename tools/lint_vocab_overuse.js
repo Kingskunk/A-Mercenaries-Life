@@ -95,14 +95,9 @@ for (const arg of process.argv.slice(2)) {
   else if (!arg.startsWith('--')) target = path.resolve(arg);
 }
 
+const { collectSceneFiles } = require('./lib/collect_scene_files');
 function collectScenes(targetPath) {
-  if (!fs.existsSync(targetPath)) return [];
-  const stat = fs.statSync(targetPath);
-  if (stat.isFile()) return [targetPath];
-  return fs
-    .readdirSync(targetPath)
-    .filter((f) => f.endsWith('.txt') || f.endsWith('.md'))
-    .map((f) => path.join(targetPath, f));
+  return collectSceneFiles(targetPath, ['.txt', '.md']);
 }
 
 const BOLD_BANNER_SPAN = /\[b\][\s\S]*?\[\/b\]/gi;

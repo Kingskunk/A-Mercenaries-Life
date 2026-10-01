@@ -58,29 +58,37 @@
 
 const fs = require('fs');
 const path = require('path');
+const { collectSceneRelativePaths } = require('./lib/collect_scene_files');
 
-let target = path.resolve(__dirname, '..', 'web', 'mygame', 'scenes');
+const scenesRoot = path.resolve(__dirname, '..', 'web', 'mygame', 'scenes');
+let target = scenesRoot;
 for (const arg of process.argv.slice(2)) {
   target = path.resolve(arg);
 }
-
-const sceneDir = fs.statSync(target).isFile() ? path.dirname(target) : target;
+// The label index is always built from scenesRoot, the true top of the tree -- NOT path.dirname(target), which
+// used to be equivalent back when every scene lived flat in one directory, but would silently narrow to just
+// one subfolder now that scenes/ can nest (a *gosub/*gosub_scene call inside that single-file target could
+// legitimately point at a label in startup.txt or anywhere else in the tree).
 
 const LABEL_DEF = /^\*label\s+([A-Za-z0-9_]+)/;
 const COMMENT_LINE = /^\s*\*comment\b/;
 const PARAMS_LINE = /^\*params\s+(.+)$/;
 const GOSUB_LINE = /^\s*\*gosub\s+([A-Za-z_]\w*)\s*(.*)$/;
-const GOSUB_SCENE_LINE = /^\s*\*gosub_scene\s+([A-Za-z_]\w*)(?:\s+([A-Za-z_]\w*))?\s*(.*)$/;
+// Scene name (group 1) allows "/" (scenes/ subfolder support, 2026-09-30) -- a label never contains one (it's
+// a same-file identifier), so only the scene-name group needs the wider class; the label group (2) stays as-is.
+const GOSUB_SCENE_LINE = /^\s*\*gosub_scene\s+([A-Za-z_][\w/]*)(?:\s+([A-Za-z_]\w*))?\s*(.*)$/;
 
 function isBlank(line) {
   return line.trim() === '';
 }
 
-// Whole-directory index: every scene's lines, and its label -> line-index map.
-const fileLines = {}; // basename -> lines[]
-const labelIndex = {}; // basename -> { labelName -> lineIndex }
-for (const f of fs.readdirSync(sceneDir).filter((f) => f.endsWith('.txt'))) {
-  const text = fs.readFileSync(path.join(sceneDir, f), 'utf8');
+// Whole-directory index: every scene's lines, and its label -> line-index map. Keyed by path RELATIVE to
+// scenesRoot (e.g. "port_valen/port_valen_dredge_end.txt"), not a bare basename -- a bare basename would
+// collide the moment two subfolders ever hold a same-named file.
+const fileLines = {}; // relative path -> lines[]
+const labelIndex = {}; // relative path -> { labelName -> lineIndex }
+for (const f of collectSceneRelativePaths(scenesRoot)) {
+  const text = fs.readFileSync(path.join(scenesRoot, f), 'utf8');
   const lines = text.split(/\r?\n/);
   fileLines[f] = lines;
   const labels = {};
@@ -154,15 +162,11 @@ for (const f of Object.keys(fileLines)) {
   paramCounts[f] = counts;
 }
 
-function collectScenes(dir) {
-  const stat = fs.statSync(dir);
-  if (stat.isFile()) return [path.basename(dir)];
-  return fs
-    .readdirSync(dir)
-    .filter((f) => f.endsWith('.txt'));
-}
-
-const scanFiles = collectScenes(target);
+// Call-site scan scope: target may be narrower than scenesRoot (a single file or subfolder), but its entries
+// must stay keyed relative to scenesRoot to match fileLines/labelIndex/paramCounts above.
+const scanFiles = require('./lib/collect_scene_files')
+  .collectSceneFiles(target)
+  .map((p) => path.relative(scenesRoot, p).split(path.sep).join('/'));
 const tooFew = [];
 const tooMany = [];
 

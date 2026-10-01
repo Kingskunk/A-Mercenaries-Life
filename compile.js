@@ -249,10 +249,10 @@ function compile(){
   // comment). Same shape as combat.txt/death.txt above -- reached only via
   // *goto_scene from port_valen.txt's port_valen_travel_to, never part of
   // anyone's *finish chain, so deliberately NOT in *scene_list either.
-  verifyFileName("port_valen_dredge_end.txt");
-  verifyFileName("port_valen_civic_heights.txt");
-  verifyFileName("port_valen_upper_wharves.txt");
-  verifyFileName("port_valen_middle_ward.txt");
+  verifyFileName("port_valen/port_valen_dredge_end.txt");
+  verifyFileName("port_valen/port_valen_civic_heights.txt");
+  verifyFileName("port_valen/port_valen_upper_wharves.txt");
+  verifyFileName("port_valen/port_valen_middle_ward.txt");
 
   //Check startup.txt for a *scene_list
   var sceneList = false;

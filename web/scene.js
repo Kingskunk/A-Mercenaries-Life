@@ -630,12 +630,23 @@ Scene.prototype.loadFile = function loadFile() {
         }
 
         var startup = startupCandidates[0];
-        var rootDirTest = new RegExp("^" + startup.webkitRelativePath.replace(/\/startup.txt$/, "/[^/]+$"));
+        // scenes/ may contain subdirectories (2026-09-30), so this can no longer require a file to be a
+        // DIRECT sibling of startup.txt ("/[^/]+$", one level only) -- it now matches anything under the
+        // same root, any depth, the same way loadScene()'s own networked fetch (Scene.baseUrl + "/" +
+        // this.name + ".txt") already does. rootDirPrefix keeps its trailing slash so a match can never
+        // cross a sibling directory boundary (e.g. "scenes2/").
+        var rootDirPrefix = startup.webkitRelativePath.replace(/startup\.txt$/, "");
+        var rootDirTest = new RegExp("^" + rootDirPrefix);
         var sceneFiles = {};
         for (var i = 0; i < numFiles; i++) {
           var file = input.files[i];
           if (rootDirTest.test(file.webkitRelativePath)) {
-            sceneFiles[file.name] = file;
+            // Keyed by path RELATIVE TO the scenes root (e.g. "port_valen/port_valen_dredge_end.txt"), not
+            // the bare file.name, to match how loadFile()'s own lookup below builds its key from this.name
+            // (which already carries any subfolder prefix a scene name like "port_valen/..." implies) --
+            // a bare name would also collide the moment two subfolders held a same-named file.
+            var relativePath = file.webkitRelativePath.slice(rootDirPrefix.length);
+            sceneFiles[relativePath] = file;
           }
         }
         window.uploadedFiles = sceneFiles;

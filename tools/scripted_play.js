@@ -21,7 +21,7 @@
  *
  * Usage, from any folder (it finds the repo from its own location and never changes your working folder):
  *   node tools/scripted_play.js <script.json | ->  [key=value ...] [flags]
- *   node tools/scripted_play.js scene=port_valen_dredge_end label=cut_shrine weather=Clear time=Morning \
+ *   node tools/scripted_play.js scene=port_valen/port_valen_dredge_end label=cut_shrine weather=Clear time=Morning \
  *        day=Hallowday stats='{"cut_shrine_gave":true,"de_savvy":false}' \
  *        picks="Kneel by the friar;Follow what he left behind@high;Step inside the knife@high"
  *   node tools/scripted_play.js --presets              list the character presets
@@ -288,7 +288,7 @@ function play(scn) {
   resetRun();
   D.mode = "drive"; D.steps = scn.steps || []; D.rand = parseRand(scn.rand0 !== undefined ? scn.rand0 : (scn.rand !== undefined ? scn.rand : "mid"));
   D.refreshAll = !!scn.refresh; D.sabotage = scn.sabotage || [];
-  var sc = new Scene(scn.scene || "port_valen", stats, nav, { debugMode: false });
+  var sc = new Scene(scn.scene || "port_valen/port_valen", stats, nav, { debugMode: false });
   if (scn.label) sc.targetLabel = { label: scn.label, origin: "startup", originLine: 0 };
   runLoop(sc);
 
@@ -343,7 +343,7 @@ function errorHints(errors) {
 function formatText(scn, r, opts) {
   var clean = opts.raw ? function (t) { return t; } : stripMarkup;
   var out = [];
-  out.push("=== " + (scn.scene || "port_valen") + (scn.label ? " : " + scn.label : "") + " | " + (scn.preset || DEFAULT_PRESET) +
+  out.push("=== " + (scn.scene || "port_valen/port_valen") + (scn.label ? " : " + scn.label : "") + " | " + (scn.preset || DEFAULT_PRESET) +
     [scn.weather, scn.time, scn.day].filter(Boolean).map(function (x) { return " | " + x; }).join(""));
   out.push("");
   r.events.forEach(function (e) {

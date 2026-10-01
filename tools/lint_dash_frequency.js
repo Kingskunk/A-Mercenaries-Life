@@ -41,11 +41,7 @@ const BOLD_BANNER_SPAN = /\[b\][\s\S]*?\[\/b\]/gi;
 const BRACKET_SPAN = /\[[^\[\]]*\]/g;
 const INTERP_SPAN = /\$\{[^}]*\}/g;
 
-function collectScenes(t) {
-  const stat = fs.statSync(t);
-  if (stat.isFile()) return [t];
-  return fs.readdirSync(t).filter((f) => f.endsWith('.txt')).map((f) => path.join(t, f));
-}
+const { collectSceneFiles: collectScenes } = require('./lib/collect_scene_files');
 
 function analyse(file) {
   const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);

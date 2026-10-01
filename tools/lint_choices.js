@@ -85,19 +85,11 @@
 
 const fs = require('fs');
 const path = require('path');
+const { collectSceneFiles: collectScenes } = require('./lib/collect_scene_files');
 
 const target = process.argv[2]
   ? path.resolve(process.argv[2])
   : path.resolve(__dirname, '..', 'web', 'mygame', 'scenes');
-
-function collectScenes(target) {
-  const stat = fs.statSync(target);
-  if (stat.isFile()) return [target];
-  return fs
-    .readdirSync(target)
-    .filter((f) => f.endsWith('.txt'))
-    .map((f) => path.join(target, f));
-}
 
 function indentOf(line) {
   const match = /^(\s*)/.exec(line);

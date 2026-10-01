@@ -34,11 +34,7 @@ process.argv.slice(2).forEach((a) => {
 });
 if (!target) target = path.resolve(__dirname, '..', 'web', 'mygame', 'scenes');
 
-function collectScenes(t) {
-  const stat = fs.statSync(t);
-  if (stat.isFile()) return [t];
-  return fs.readdirSync(t).filter((f) => f.endsWith('.txt')).map((f) => path.join(t, f));
-}
+const { collectSceneFiles: collectScenes } = require('./lib/collect_scene_files');
 
 const FULL_RESTORE = /\b(?:fully (?:restored|healed|recovered)|wounds? (?:have |has )?(?:healed|mended|closed|knit)|as good as new|feels? whole again|body (?:is|feels) (?:fully )?(?:restored|healed))\b/i;
 const BOLD_BANNER_SPAN = /\[b\][\s\S]*?\[\/b\]/gi;

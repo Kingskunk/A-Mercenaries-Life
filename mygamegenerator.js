@@ -171,9 +171,27 @@ function generateMygame(gameDir = "mygame", beta, fs) {
   }
 
   if (fs) {
-    var sceneDir = fs.readdirSync("web/" + gameDir + "/scenes");
-    for (i = 0; i < sceneDir.length; i++) {
-      var lines = slurpFileLines("web/" + gameDir + "/scenes/" + sceneDir[i]);
+    // Recursive walk (2026-09-30, scenes/ subfolder support): scenes/ may now contain subdirectories, so a
+    // flat readdirSync can no longer assume every entry is a file -- reading a directory entry as a file
+    // throws EISDIR. Collects every file's path RELATIVE TO scenes/ (e.g. "port_valen/dredge_end.txt"), so
+    // slurpFileLines below gets the same "web/<game>/scenes/<relative path>" shape it always has, just with
+    // a possible subfolder in the middle. Must recurse fully, not just skip directories -- skipping would
+    // silently stop detecting *check_purchase/*delay_ending in any scene moved into a subfolder.
+    var sceneRoot = "web/" + gameDir + "/scenes";
+    var sceneFiles = [];
+    (function collectSceneFiles(dir) {
+      var entries = fs.readdirSync(dir);
+      for (var k = 0; k < entries.length; k++) {
+        var entryPath = dir + "/" + entries[k];
+        if (fs.statSync(entryPath).isDirectory()) {
+          collectSceneFiles(entryPath);
+        } else {
+          sceneFiles.push(entryPath);
+        }
+      }
+    })(sceneRoot);
+    for (i = 0; i < sceneFiles.length; i++) {
+      var lines = slurpFileLines(sceneFiles[i]);
       for (var j = 0; j < lines.length; j++) {
         var line = ("" + lines[j]).trim();
         if (!line) { continue; }

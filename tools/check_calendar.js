@@ -65,10 +65,10 @@ global.safeTimeout = function (fn) { safeCall(null, fn); };
 load(`web/${gameName}/mygame.js`);
 
 global.allScenes = {};
-fs.readdirSync(path.join(root, 'web', gameName, 'scenes')).forEach((file) => {
-  if (!/\.txt$/.test(file)) return;
-  const name = file.replace(/\.txt$/, '');
-  const text = fs.readFileSync(path.join(root, 'web', gameName, 'scenes', file), 'utf8');
+const { collectSceneRelativePaths } = require('./lib/collect_scene_files');
+collectSceneRelativePaths(path.join(root, 'web', gameName, 'scenes')).forEach((relPath) => {
+  const name = relPath.replace(/\.txt$/, '');
+  const text = fs.readFileSync(path.join(root, 'web', gameName, 'scenes', relPath), 'utf8');
   const tmp = new Scene();
   tmp.loadLines(text);
   global.allScenes[name] = { crc: tmp.crc, lines: tmp.lines, labels: tmp.labels };

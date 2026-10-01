@@ -12,6 +12,8 @@ A comprehensive guide and rule-set for authoring quests, side contracts, investi
 * **Table-Facing DM Voice:** Write as though describing the scene aloud to one player at the table. Keep immediate senses and physical actions in the foreground. Let NPC dialogue and discovered details drive the plot without omniscient exposition.
 * **Strict Subjective POV:** Never name an unfamiliar NPC, reveal secret gang allegiances, or explain hidden motives until discovered through in-universe dialogue, documents, or direct investigation.
 * **Global Worldbuilding Compatibility (The Wider World Standard):** Content will span multiple continents, varied cultures, and disparate biomes—including arid desert wastes, sub-zero mountain passes, inland agricultural river-valleys, and untamed borderlands. Never write quest lore, legal institutions, or environmental descriptions that assume the whole world operates like a single province or climate. Keep regional lore grounded in its immediate geography without breaking broader world logic.
+* **Avoid Jargon:** Simplify the lanuage, avoid words that arment commonly used in today's lanuage. I don't want to force myself to understand things that I may have never interacted with in my life, modern day life and need a look up context on words to understand the story, this rule superseeds any anachronisms rule, if a modern day word is much more understandable and fitting, use that instead! 
+
 
 ---
 

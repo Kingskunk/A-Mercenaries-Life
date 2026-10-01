@@ -280,16 +280,28 @@
 *comment to 0 once consumed (fight_cleanup also resets every score and override as a backstop, so a hand-authored
 *comment fight that never touches ability scores can't inherit a leftover roll from an earlier fight).
 *params aasr_prefix aasr_field aasr_min aasr_max
-*temp aasr_ov_name ((aasr_prefix & aasr_field) & "_override")
-*temp aasr_target (aasr_prefix & aasr_field)
-*temp aasr_ov {(aasr_ov_name)}
-*if (aasr_ov > 0)
-  *set {(aasr_target)} aasr_ov
-*else
-  *temp aasr_roll aasr_min
-  *rand aasr_roll aasr_min aasr_max
-  *set {(aasr_target)} aasr_roll
-*set {(aasr_ov_name)} 0
+*comment Shares combat_roll_initiative's own whole-fight lock (combat_init_locked/locked_combat_init_page_id,
+*comment this file, 2026-09-30) rather than a lock of its own: called many times per fight (once per ability score
+*comment per slot) from apply_enemy_type/apply_ally_type, always BEFORE combat_roll_initiative in the same
+*comment fight_setup call, on the same first page -- one shared "has this fight's whole setup phase already run
+*comment for this page" flag covers both correctly, since a real execution always does both together and a replay
+*comment must skip both together. Unlocked, a same-page refresh (fight entry through the first real pause, however
+*comment many surprise-round turns deep) rerolled every slot's ability scores from scratch -- a slightly different
+*comment STR/DEX cascading into a different combat_enemy_atk_bonus/dmg_bonus (apply_derived_combat_bonuses) even
+*comment though nothing about the fight's actual events changed. The one-time manual-override reset below is safe
+*comment to skip on a locked replay too -- already consumed down to 0 by the original run, which the snapshot
+*comment already reflects.
+*if (not(combat_init_locked)) or (not(locked_combat_init_page_id = page_id))
+  *temp aasr_ov_name ((aasr_prefix & aasr_field) & "_override")
+  *temp aasr_target (aasr_prefix & aasr_field)
+  *temp aasr_ov {(aasr_ov_name)}
+  *if (aasr_ov > 0)
+    *set {(aasr_target)} aasr_ov
+  *else
+    *temp aasr_roll aasr_min
+    *rand aasr_roll aasr_min aasr_max
+    *set {(aasr_target)} aasr_roll
+  *set {(aasr_ov_name)} 0
 *return
 
 *comment ──────────────────────────────────────────────────────────────
@@ -313,20 +325,29 @@
 *comment damage, matching how the player's own combat_player_dmg_bonus is already just str_mod/dex_mod with no
 *comment separate prof term. Shared by both apply_enemy_type and apply_ally_type (2026-09-28) -- prefix-generic
 *comment already, nothing enemy-specific here except the constant it used to hardcode by name, not by parameter.
+*comment Shares combat_roll_initiative's own whole-fight lock (combat_init_locked/locked_combat_init_page_id,
+*comment 2026-09-30) -- same reasoning as apply_ability_score_range's own lock (its *create comment, startup.txt,
+*comment has the full explanation): called only once per slot, always during the same one-time fight_setup phase.
+*comment Reads/writes the SHARED sm_mod/sm_mod_str scratch (score_to_mod) alongside every other caller in the
+*comment whole game, not just combat -- an unlocked replay recomputing it here on a page that spans a whole
+*comment surprise round (no real pause in between) clobbers atk_bonus/dmg_bonus with a fresh mod even though the
+*comment ability score it reads is itself already correctly preserved, since RECOMPUTING is not free of side
+*comment effects when the computation itself writes through a shared global.
 *params adcb_prefix
-*temp adcb_str {(adcb_prefix & "strength")}
-*temp adcb_dex {(adcb_prefix & "dexterity")}
-*gosub_scene startup score_to_mod adcb_str
-*temp adcb_str_mod sm_mod
-*gosub_scene startup score_to_mod adcb_dex
-*temp adcb_dex_mod sm_mod
-*temp adcb_key_mod adcb_str_mod
-*if ({(adcb_prefix & "weapon_type")} = "ranged")
-  *set adcb_key_mod adcb_dex_mod
-*elseif (adcb_dex_mod > adcb_str_mod)
-  *set adcb_key_mod adcb_dex_mod
-*set {(adcb_prefix & "atk_bonus")} (adcb_key_mod + combat_lib_prof_bonus)
-*set {(adcb_prefix & "dmg_bonus")} adcb_key_mod
+*if (not(combat_init_locked)) or (not(locked_combat_init_page_id = page_id))
+  *temp adcb_str {(adcb_prefix & "strength")}
+  *temp adcb_dex {(adcb_prefix & "dexterity")}
+  *gosub_scene startup score_to_mod adcb_str
+  *temp adcb_str_mod sm_mod
+  *gosub_scene startup score_to_mod adcb_dex
+  *temp adcb_dex_mod sm_mod
+  *temp adcb_key_mod adcb_str_mod
+  *if ({(adcb_prefix & "weapon_type")} = "ranged")
+    *set adcb_key_mod adcb_dex_mod
+  *elseif (adcb_dex_mod > adcb_str_mod)
+    *set adcb_key_mod adcb_dex_mod
+  *set {(adcb_prefix & "atk_bonus")} (adcb_key_mod + combat_lib_prof_bonus)
+  *set {(adcb_prefix & "dmg_bonus")} adcb_key_mod
 *return
 
 *label apply_derived_ac
@@ -416,86 +437,101 @@
 *comment (1..combat_enemy_count); an unpopulated slot beyond that never gets an entry, so a 1-enemy fight builds
 *comment a 2-long order (player + that one enemy), not an 11-long one padded with empty slots. Builds
 *comment combat_turn_kind_1..N/_slot_1..N (startup.txt), consumed by combat_next_turn below.
-*temp cri_n 0
-*set cri_n + 1
-*set combat_init_kind_1 "player"
-*set combat_init_slot_1 0
-*set combat_init_dex_1 dexterity
-*temp cri_roll 1
-*rand cri_roll 1 20
-*gosub_scene startup score_to_mod dexterity
-*set combat_init_score_1 (cri_roll + sm_mod)
-*temp cri_i 1
-*label cri_ally_loop
-*if (cri_i <= combat_ally_count)
+*comment Whole-body replay lock (2026-09-30, real bug caught live via refresh_fuzz_test.js on a fresh random seed):
+*comment completely unguarded until now -- fight_setup calls this once, up front, then falls straight through
+*comment combat_begin_round/announce_turn_order into combat_next_turn's own dispatch of everyone who acts before
+*comment the player, all on the SAME page (no *choice pause yet). A refresh at the first REAL pause (however many
+*comment turns deep that surprise round went) replays from the fight's own entry point and reaches this call
+*comment again, rerolling every combatant's initiative from scratch -- a completely different turn order, which
+*comment cascades into different attackers, different targets, different damage, the works. Structurally this
+*comment already only runs once per fight in normal forward play (nothing else ever calls it again mid-fight), so
+*comment the standard whole-body self-lock (combat_weapon_attack_locked's shape, this file) is exactly right: no
+*comment per-slot index needed, and once a fight moves past its first page this lock is simply never consulted
+*comment again, harmlessly. announce_turn_order (below) stays unlocked -- it only reads combat_turn_kind_N/
+*comment _slot_N back and prints them, so it reprints correctly off whatever this lock preserved.
+*if (not(combat_init_locked)) or (not(locked_combat_init_page_id = page_id))
+  *temp cri_n 0
   *set cri_n + 1
-  *set {("combat_init_kind_" & cri_n)} "ally"
-  *set {("combat_init_slot_" & cri_n)} cri_i
-  *temp cri_a_dex {(("combat_ally" & cri_i) & "_dexterity")}
-  *set {("combat_init_dex_" & cri_n)} cri_a_dex
-  *temp cri_a_roll 1
-  *rand cri_a_roll 1 20
-  *gosub_scene startup score_to_mod cri_a_dex
-  *set {("combat_init_score_" & cri_n)} (cri_a_roll + sm_mod)
-  *set cri_i + 1
-  *goto cri_ally_loop
-*temp cri_j 1
-*label cri_enemy_loop
-*if (cri_j <= combat_enemy_count)
-  *set cri_n + 1
-  *set {("combat_init_kind_" & cri_n)} "enemy"
-  *set {("combat_init_slot_" & cri_n)} cri_j
-  *temp cri_e_dex {(("combat_enemy" & cri_j) & "_dexterity")}
-  *set {("combat_init_dex_" & cri_n)} cri_e_dex
-  *temp cri_e_roll 1
-  *rand cri_e_roll 1 20
-  *gosub_scene startup score_to_mod cri_e_dex
-  *set {("combat_init_score_" & cri_n)} (cri_e_roll + sm_mod)
-  *set cri_j + 1
-  *goto cri_enemy_loop
-*set combat_init_count cri_n
-*comment Stale "used" flags from an earlier fight's sort must be cleared before this one's -- these are
-*comment persistent *create'd storage, not fresh *temps, so they don't reset themselves between calls.
-*temp cri_reset_i 1
-*label cri_reset_loop
-*if (cri_reset_i <= 11)
-  *set {("combat_init_used_" & cri_reset_i)} false
-  *set cri_reset_i + 1
-  *goto cri_reset_loop
-*comment Selection sort, descending: repeatedly scan every not-yet-placed candidate for the best remaining one
-*comment (cri_is_better_than_best above), place it, mark it used. Simpler and safer than an insertion sort's
-*comment shifting step, and with at most 11 candidates the O(n^2) cost is nothing.
-*temp cri_placed 0
-*label cri_sort_loop
-*if (cri_placed < combat_init_count)
-  *temp cri_best 0
-  *temp cri_k 1
-  *label cri_scan_loop
-  *if (cri_k <= combat_init_count)
-    *if (not({("combat_init_used_" & cri_k)}))
-      *if (cri_best = 0)
-        *set cri_best cri_k
-      *else
-        *gosub cri_is_better_than_best cri_k cri_best
-        *if (cri_ibt_result)
+  *set combat_init_kind_1 "player"
+  *set combat_init_slot_1 0
+  *set combat_init_dex_1 dexterity
+  *temp cri_roll 1
+  *rand cri_roll 1 20
+  *gosub_scene startup score_to_mod dexterity
+  *set combat_init_score_1 (cri_roll + sm_mod)
+  *temp cri_i 1
+  *label cri_ally_loop
+  *if (cri_i <= combat_ally_count)
+    *set cri_n + 1
+    *set {("combat_init_kind_" & cri_n)} "ally"
+    *set {("combat_init_slot_" & cri_n)} cri_i
+    *temp cri_a_dex {(("combat_ally" & cri_i) & "_dexterity")}
+    *set {("combat_init_dex_" & cri_n)} cri_a_dex
+    *temp cri_a_roll 1
+    *rand cri_a_roll 1 20
+    *gosub_scene startup score_to_mod cri_a_dex
+    *set {("combat_init_score_" & cri_n)} (cri_a_roll + sm_mod)
+    *set cri_i + 1
+    *goto cri_ally_loop
+  *temp cri_j 1
+  *label cri_enemy_loop
+  *if (cri_j <= combat_enemy_count)
+    *set cri_n + 1
+    *set {("combat_init_kind_" & cri_n)} "enemy"
+    *set {("combat_init_slot_" & cri_n)} cri_j
+    *temp cri_e_dex {(("combat_enemy" & cri_j) & "_dexterity")}
+    *set {("combat_init_dex_" & cri_n)} cri_e_dex
+    *temp cri_e_roll 1
+    *rand cri_e_roll 1 20
+    *gosub_scene startup score_to_mod cri_e_dex
+    *set {("combat_init_score_" & cri_n)} (cri_e_roll + sm_mod)
+    *set cri_j + 1
+    *goto cri_enemy_loop
+  *set combat_init_count cri_n
+  *comment Stale "used" flags from an earlier fight's sort must be cleared before this one's -- these are
+  *comment persistent *create'd storage, not fresh *temps, so they don't reset themselves between calls.
+  *temp cri_reset_i 1
+  *label cri_reset_loop
+  *if (cri_reset_i <= 11)
+    *set {("combat_init_used_" & cri_reset_i)} false
+    *set cri_reset_i + 1
+    *goto cri_reset_loop
+  *comment Selection sort, descending: repeatedly scan every not-yet-placed candidate for the best remaining one
+  *comment (cri_is_better_than_best above), place it, mark it used. Simpler and safer than an insertion sort's
+  *comment shifting step, and with at most 11 candidates the O(n^2) cost is nothing.
+  *temp cri_placed 0
+  *label cri_sort_loop
+  *if (cri_placed < combat_init_count)
+    *temp cri_best 0
+    *temp cri_k 1
+    *label cri_scan_loop
+    *if (cri_k <= combat_init_count)
+      *if (not({("combat_init_used_" & cri_k)}))
+        *if (cri_best = 0)
           *set cri_best cri_k
-    *set cri_k + 1
-    *goto cri_scan_loop
-  *set cri_placed + 1
-  *set {("combat_turn_kind_" & cri_placed)} {("combat_init_kind_" & cri_best)}
-  *set {("combat_turn_slot_" & cri_placed)} {("combat_init_slot_" & cri_best)}
-  *set {("combat_init_used_" & cri_best)} true
-  *goto cri_sort_loop
-*set combat_turn_count combat_init_count
-*comment Reset every position's first-pass flag true for this fight (startup.txt) -- combat_next_turn clears one
-*comment for good the instant that position dispatches, so a stale "already went" from a previous fight can never
-*comment suppress this fight's surprise round.
-*temp cri_fp_i 1
-*label cri_fp_reset_loop
-*if (cri_fp_i <= 11)
-  *set {("combat_turn_first_pass_" & cri_fp_i)} true
-  *set cri_fp_i + 1
-  *goto cri_fp_reset_loop
+        *else
+          *gosub cri_is_better_than_best cri_k cri_best
+          *if (cri_ibt_result)
+            *set cri_best cri_k
+      *set cri_k + 1
+      *goto cri_scan_loop
+    *set cri_placed + 1
+    *set {("combat_turn_kind_" & cri_placed)} {("combat_init_kind_" & cri_best)}
+    *set {("combat_turn_slot_" & cri_placed)} {("combat_init_slot_" & cri_best)}
+    *set {("combat_init_used_" & cri_best)} true
+    *goto cri_sort_loop
+  *set combat_turn_count combat_init_count
+  *comment Reset every position's first-pass flag true for this fight (startup.txt) -- combat_next_turn clears one
+  *comment for good the instant that position dispatches, so a stale "already went" from a previous fight can never
+  *comment suppress this fight's surprise round.
+  *temp cri_fp_i 1
+  *label cri_fp_reset_loop
+  *if (cri_fp_i <= 11)
+    *set {("combat_turn_first_pass_" & cri_fp_i)} true
+    *set cri_fp_i + 1
+    *goto cri_fp_reset_loop
+  *set combat_init_locked true
+  *set locked_combat_init_page_id page_id
 *return
 
 *label announce_turn_order
@@ -761,6 +797,10 @@
   *set {(("combat_ally" & fc_a_i) & "_chase_roll_done")} false
   *set {(("combat_ally" & fc_a_i) & "_chase_hp_snapshot")} 0
   *set {(("combat_ally" & fc_a_i) & "_chase_chance")} 0
+  *comment Ally-side rows 3-4 mirror (2026-09-29, on request) -- same leftover-state reason as chase_chance
+  *comment just above: a guard reusing a slot an archer used last fight must not inherit her retreat fields.
+  *set {(("combat_ally" & fc_a_i) & "_can_retreat")} false
+  *set {(("combat_ally" & fc_a_i) & "_flee_hp_pct")} 0
   *set fc_a_i + 1
   *goto fight_cleanup_ally_loop
 *set combat_player_keyed false
@@ -1134,23 +1174,33 @@
 *comment each caller has just picked its narration target with fight_pick_nearest_target, so it re-syncs once
 *comment with fight_sync_target_in after this returns, to pick up the nearest enemy's new value.
 *params csar_direction
-*temp csar_delta 1
-*if (csar_direction = "push")
-  *set csar_delta -1
-*temp csar_i 1
-*label combat_shift_all_ranges_loop
-*if (csar_i <= combat_enemy_count)
-  *temp csar_hp {(("combat_enemy" & csar_i) & "_hp")}
-  *if (csar_hp > 0)
-    *temp csar_from {(("combat_enemy" & csar_i) & "_range")}
-    *temp csar_to (csar_from + csar_delta)
-    *if (csar_to < 0)
-      *set csar_to 0
-    *if (csar_to > 3)
-      *set csar_to 3
-    *set {(("combat_enemy" & csar_i) & "_range")} csar_to
-  *set csar_i + 1
-  *goto combat_shift_all_ranges_loop
+*comment Self-locked (2026-09-30, real bug caught live via refresh_fuzz_test.js): a bare per-slot mutation with
+*comment no guard at all -- Push Forward/Fall Back/Break-off-and-run (its three call sites) are mutually
+*comment exclusive *choice options, so a page-id lock alone is sufficient, no per-call-site id needed the way
+*comment a subroutine genuinely called twice on one page would (see GAMEPLAY_MECHANICS_RULES.md). Without this, a
+*comment refresh replaying the current page from its start re-shifted every living enemy's range a second time --
+*comment found via combat_enemy_range/combat_range_display_name diverging on refresh, symptomatic of the same
+*comment root cause as every other bare *set var +N in this codebase's history.
+*if (not(combat_range_shift_locked)) or (not(locked_combat_range_shift_page_id = page_id))
+  *temp csar_delta 1
+  *if (csar_direction = "push")
+    *set csar_delta -1
+  *temp csar_i 1
+  *label combat_shift_all_ranges_loop
+  *if (csar_i <= combat_enemy_count)
+    *temp csar_hp {(("combat_enemy" & csar_i) & "_hp")}
+    *if (csar_hp > 0)
+      *temp csar_from {(("combat_enemy" & csar_i) & "_range")}
+      *temp csar_to (csar_from + csar_delta)
+      *if (csar_to < 0)
+        *set csar_to 0
+      *if (csar_to > 3)
+        *set csar_to 3
+      *set {(("combat_enemy" & csar_i) & "_range")} csar_to
+    *set csar_i + 1
+    *goto combat_shift_all_ranges_loop
+  *set combat_range_shift_locked true
+  *set locked_combat_range_shift_page_id page_id
 *return
 
 *label find_opportunity_attacker
@@ -1220,6 +1270,27 @@
   *comment on this page -- including picking a new target. The sync above is what makes that safe.
   *gosub_scene combat_dice resolve_enemy_attack
   *gosub_scene combat_prose fight_narrate_enemy_turn "enemy" roa_candidate
+*return
+
+*label resolve_opportunity_attack_on_ally
+*comment Ally-side rows 3-4 mirror (2026-09-29, on request). Resolves the swing find_opportunity_attacker picked,
+*comment targeting a RETREATING ALLY instead of the player. The finder's own eligibility rules (living, melee
+*comment weapon_type, range 0, oa_used unspent) don't depend on who's leaving, only on which enemy has a reaction
+*comment spare -- so unlike the reverse-OA pair below (which needed a genuinely new finder, find_opportunity_
+*comment attacker_against, because ITS eligibility rules differ by reactor kind), find_opportunity_attacker itself
+*comment is reused completely unchanged. Only the resolver differs, calling resolve_enemy_attack_on_ally/
+*comment fight_narrate_ally_attack instead of resolve_opportunity_attack's player-target versions -- same shape as
+*comment the ordinary interception call site (combat_next_turn), which this is really just a delayed reaction
+*comment version of.
+*params roaa_ally_slot
+*temp roaa_candidate combat_oa_candidate
+*set combat_oa_candidate 0
+*if (roaa_candidate > 0)
+  *set {(("combat_enemy" & roaa_candidate) & "_oa_used")} true
+  *set combat_active_target roaa_candidate
+  *gosub fight_sync_target_in
+  *gosub_scene combat_dice resolve_enemy_attack_on_ally roaa_ally_slot
+  *gosub_scene combat_prose fight_narrate_ally_attack "enemy" roaa_candidate "ally" roaa_ally_slot combat_enemy_atk_on_ally_hit
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1425,6 +1496,28 @@
         *set fia_snipe_best_hp fia_snipe_hp
     *set fia_j + 1
     *goto find_intercepting_ally_snipe_loop
+*return
+
+*label find_melee_ally_present
+*comment Ally-side rows 3-4 mirror (2026-09-29, on request). Sets combat_melee_ally_present true if any living
+*comment ally with weapon_type "melee" is at range 0. Deliberately does NOT check the player -- Mechanism A
+*comment above (find_intercepting_ally) never redirects an enemy's attack onto the player, only onto an ally, so
+*comment a melee-engaged player alone creates none of the payoff a melee ally does (design decision #5,
+*comment RANGED_AI_PLAN.md: a melee ally doesn't eat the reaction, it gives whatever's chasing a ranged ally
+*comment something else worth hitting instead). No exclude-slot param, unlike find_intercepting_ally's own
+*comment candidate loop -- the only caller (combat_next_turn's ally branch) only ever runs this for a RANGED
+*comment ally, which can never itself match weapon_type = "melee", so self-counting is structurally impossible.
+*set combat_melee_ally_present false
+*temp fmap_i 1
+*label find_melee_ally_present_loop
+*if (fmap_i <= combat_ally_slot_cap)
+  *temp fmap_hp {(("combat_ally" & fmap_i) & "_hp")}
+  *temp fmap_weapon {(("combat_ally" & fmap_i) & "_weapon_type")}
+  *temp fmap_range {(("combat_ally" & fmap_i) & "_range")}
+  *if (((fmap_hp > 0) and (fmap_weapon = "melee")) and (fmap_range <= 0))
+    *set combat_melee_ally_present true
+  *set fmap_i + 1
+  *goto find_melee_ally_present_loop
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2271,7 +2364,14 @@
       *comment currently the sidearm -- calling it with equipped_sidearm_id draws the sidearm and holsters the
       *comment primary in one step. It stays drawn afterward (a real equip); resolve_weapon_attack_choice then
       *comment reads the now-current weapon fields exactly like the primary option always has.
-      *gosub_scene equipment equip_weapon equipped_sidearm_id
+      *comment Shares resolve_weapon_attack_choice's own whole-body lock (combat_weapon_attack_locked, its header
+      *comment comment has the full explanation) -- the swap is part of that same one-shot attack, not a separate
+      *comment event, so it needs the same guard. Unlocked, a same-page replay called equip_weapon a SECOND time
+      *comment with equipped_sidearm_id's ALREADY-POST-SWAP value (the old primary), which is itself now the
+      *comment sidearm again -- equip_weapon's own swap-if-matches check fires again and swaps back, reversing
+      *comment weapon<->sidearm (found live: a refresh handed the player back their starting dagger mid-fight).
+      *if (not(combat_weapon_attack_locked)) or (not(locked_combat_weapon_attack_page_id = page_id))
+        *gosub_scene equipment equip_weapon equipped_sidearm_id
       *goto resolve_weapon_attack_choice
 
   *if ((combat_player_moves_left > 0) and (combat_can_push_forward))
@@ -2364,25 +2464,38 @@
 
   *if ((combat_player_actions_left > 0) and ((((wizard_cantrip = "fire_bolt") or (wizard_cantrip_2 = "fire_bolt")) or (wizard_cantrip_3 = "fire_bolt")) or ((race_cantrip = "fire_bolt") or (race_cantrip_2 = "fire_bolt"))))
     # [b][ACTION][/b] [b][Fire Bolt][/b] Hurl a mote of arcane flame at ${combat_enemy_epithet}.
-      *gosub fight_pick_target
-      *set combat_current_spell_id "fire_bolt"
-      *gosub_scene combat_prose pick_spell_flavor
-      *set check_stat "int"
-      *set check_dc combat_enemy_ac
-      *set check_skill "Fire Bolt"
-      *set check_add_prof_bonus true
-      *gosub spell_range_of
-      *if (spell_penalty_result)
-        *set disadvantage true
-        *set combat_reach_pinned true
-      *gosub_scene dice_engine roll_d20_check
+      *comment Whole-body replay lock (2026-09-30, shared by every attack-roll cantrip option below -- Ray of
+      *comment Frost/Shocking Grasp/Eldritch Blast/Chill Touch -- plus Vicious Mockery just past them, one shared
+      *comment flag since all six cost the ACTION and so are mutually exclusive within any one page, exactly like
+      *comment resolve_player_hit's own single shared lock (combat_dice.txt) already assumes for all of them).
+      *comment Same bug/shape as resolve_weapon_attack_choice's own header comment (above): fight_pick_target's
+      *comment kill-priority re-scan and pick_spell_flavor's *rand pick were unguarded, so a same-page replay that
+      *comment killed this spell's own target could re-derive a DIFFERENT living target and reprint fsh/fsm/check_dc
+      *comment for the wrong enemy, even though roll_d20_check/resolve_player_hit already lock their own dice math.
+      *if (not(combat_cantrip_choice_locked)) or (not(locked_combat_cantrip_choice_page_id = page_id))
+        *gosub fight_pick_target
+        *set combat_current_spell_id "fire_bolt"
+        *gosub_scene combat_prose pick_spell_flavor
+        *set check_stat "int"
+        *set check_dc combat_enemy_ac
+        *set check_skill "Fire Bolt"
+        *set check_add_prof_bonus true
+        *gosub spell_range_of
+        *if (spell_penalty_result)
+          *set disadvantage true
+          *set combat_reach_pinned true
+        *gosub_scene dice_engine roll_d20_check
+        *if (check_success)
+          *set combat_player_dmg_type "fire"
+          *set combat_player_dmg_dice_sides 10
+          *set combat_player_dmg_bonus 0
+          *gosub_scene combat_dice resolve_player_hit true
+          *if (combat_enemy_hp <= 0)
+            *gosub_scene combat_prose pick_spell_death_flavor
+        *set combat_cantrip_choice_locked true
+        *set locked_combat_cantrip_choice_page_id page_id
       *if (check_success)
-        *set combat_player_dmg_type "fire"
-        *set combat_player_dmg_dice_sides 10
-        *set combat_player_dmg_bonus 0
-        *gosub_scene combat_dice resolve_player_hit true
         *if (combat_enemy_hp <= 0)
-          *gosub_scene combat_prose pick_spell_death_flavor
           ${fdh}
           *line_break
           [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Fire damage${combat_outgoing_dmg_suffix}][/b]
@@ -2399,26 +2512,33 @@
 
   *if ((combat_player_actions_left > 0) and ((((wizard_cantrip = "ray_of_frost") or (wizard_cantrip_2 = "ray_of_frost")) or (wizard_cantrip_3 = "ray_of_frost")) or ((race_cantrip = "ray_of_frost") or (race_cantrip_2 = "ray_of_frost"))))
     # [b][ACTION][/b] [b][Ray of Frost][/b] Loose a beam of numbing cold at ${combat_enemy_epithet}.
-      *gosub fight_pick_target
-      *set combat_current_spell_id "ray_of_frost"
-      *gosub_scene combat_prose pick_spell_flavor
-      *set check_stat "int"
-      *set check_dc combat_enemy_ac
-      *set check_skill "Ray of Frost"
-      *set check_add_prof_bonus true
-      *gosub spell_range_of
-      *if (spell_penalty_result)
-        *set disadvantage true
-        *set combat_reach_pinned true
-      *gosub_scene dice_engine roll_d20_check
+      *comment Shares Fire Bolt's own whole-body replay lock (combat_cantrip_choice_locked, its own comment above
+      *comment has the full explanation) -- same bug shape, same one-action-per-page exclusivity.
+      *if (not(combat_cantrip_choice_locked)) or (not(locked_combat_cantrip_choice_page_id = page_id))
+        *gosub fight_pick_target
+        *set combat_current_spell_id "ray_of_frost"
+        *gosub_scene combat_prose pick_spell_flavor
+        *set check_stat "int"
+        *set check_dc combat_enemy_ac
+        *set check_skill "Ray of Frost"
+        *set check_add_prof_bonus true
+        *gosub spell_range_of
+        *if (spell_penalty_result)
+          *set disadvantage true
+          *set combat_reach_pinned true
+        *gosub_scene dice_engine roll_d20_check
+        *if (check_success)
+          *set combat_player_dmg_type "cold"
+          *set combat_player_dmg_dice_sides 8
+          *set combat_player_dmg_bonus 0
+          *gosub_scene combat_dice resolve_player_hit true
+          *set {(("combat_enemy" & combat_active_target) & "_disadvantage")} true
+          *if (combat_enemy_hp <= 0)
+            *gosub_scene combat_prose pick_spell_death_flavor
+        *set combat_cantrip_choice_locked true
+        *set locked_combat_cantrip_choice_page_id page_id
       *if (check_success)
-        *set combat_player_dmg_type "cold"
-        *set combat_player_dmg_dice_sides 8
-        *set combat_player_dmg_bonus 0
-        *gosub_scene combat_dice resolve_player_hit true
-        *set {(("combat_enemy" & combat_active_target) & "_disadvantage")} true
         *if (combat_enemy_hp <= 0)
-          *gosub_scene combat_prose pick_spell_death_flavor
           ${fdh}
           *line_break
           [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Cold damage${combat_outgoing_dmg_suffix}][/b]
@@ -2445,28 +2565,35 @@
     *comment Nested rather than flat, because ChoiceScript needs each partial result of a multi-operator condition
     *comment parenthesized (the same shape the weapon options at the top of this *choice use).
     # [b][ACTION][/b] [b][Shocking Grasp][/b] Drive a crackling jolt of lightning into ${combat_enemy_epithet}.
-      *gosub fight_pick_target
-      *set combat_current_spell_id "shocking_grasp"
-      *gosub_scene combat_prose pick_spell_flavor
-      *comment RAW: advantage on the attack roll if the target wears metal
-      *comment armor. combat_enemy_metal_armor defaults false (see startup.txt)
-      *comment -- only true for a fight that explicitly sets it on an armored
-      *comment enemy, so this is a no-op for every fight so far.
-      *if (combat_enemy_metal_armor)
-        *set advantage true
-      *set check_stat "int"
-      *set check_dc combat_enemy_ac
-      *set check_skill "Shocking Grasp"
-      *set check_add_prof_bonus true
-      *gosub spell_range_of
-      *gosub_scene dice_engine roll_d20_check
+      *comment Shares Fire Bolt's own whole-body replay lock (combat_cantrip_choice_locked, its own comment above
+      *comment has the full explanation) -- same bug shape, same one-action-per-page exclusivity.
+      *if (not(combat_cantrip_choice_locked)) or (not(locked_combat_cantrip_choice_page_id = page_id))
+        *gosub fight_pick_target
+        *set combat_current_spell_id "shocking_grasp"
+        *gosub_scene combat_prose pick_spell_flavor
+        *comment RAW: advantage on the attack roll if the target wears metal
+        *comment armor. combat_enemy_metal_armor defaults false (see startup.txt)
+        *comment -- only true for a fight that explicitly sets it on an armored
+        *comment enemy, so this is a no-op for every fight so far.
+        *if (combat_enemy_metal_armor)
+          *set advantage true
+        *set check_stat "int"
+        *set check_dc combat_enemy_ac
+        *set check_skill "Shocking Grasp"
+        *set check_add_prof_bonus true
+        *gosub spell_range_of
+        *gosub_scene dice_engine roll_d20_check
+        *if (check_success)
+          *set combat_player_dmg_type "lightning"
+          *set combat_player_dmg_dice_sides 8
+          *set combat_player_dmg_bonus 0
+          *gosub_scene combat_dice resolve_player_hit true
+          *if (combat_enemy_hp <= 0)
+            *gosub_scene combat_prose pick_spell_death_flavor
+        *set combat_cantrip_choice_locked true
+        *set locked_combat_cantrip_choice_page_id page_id
       *if (check_success)
-        *set combat_player_dmg_type "lightning"
-        *set combat_player_dmg_dice_sides 8
-        *set combat_player_dmg_bonus 0
-        *gosub_scene combat_dice resolve_player_hit true
         *if (combat_enemy_hp <= 0)
-          *gosub_scene combat_prose pick_spell_death_flavor
           ${fdh}
           *line_break
           [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Lightning damage${combat_outgoing_dmg_suffix}][/b]
@@ -2487,25 +2614,32 @@
 
   *if ((combat_player_actions_left > 0) and ((warlock_cantrip = "eldritch_blast") or (warlock_cantrip_2 = "eldritch_blast")))
     # [b][ACTION][/b] [b][Eldritch Blast][/b] Unleash a crackling beam of eldritch force at ${combat_enemy_epithet}.
-      *gosub fight_pick_target
-      *set combat_current_spell_id "eldritch_blast"
-      *gosub_scene combat_prose pick_spell_flavor
-      *set check_stat "cha"
-      *set check_dc combat_enemy_ac
-      *set check_skill "Eldritch Blast"
-      *set check_add_prof_bonus true
-      *gosub spell_range_of
-      *if (spell_penalty_result)
-        *set disadvantage true
-        *set combat_reach_pinned true
-      *gosub_scene dice_engine roll_d20_check
+      *comment Shares Fire Bolt's own whole-body replay lock (combat_cantrip_choice_locked, its own comment above
+      *comment has the full explanation) -- same bug shape, same one-action-per-page exclusivity.
+      *if (not(combat_cantrip_choice_locked)) or (not(locked_combat_cantrip_choice_page_id = page_id))
+        *gosub fight_pick_target
+        *set combat_current_spell_id "eldritch_blast"
+        *gosub_scene combat_prose pick_spell_flavor
+        *set check_stat "cha"
+        *set check_dc combat_enemy_ac
+        *set check_skill "Eldritch Blast"
+        *set check_add_prof_bonus true
+        *gosub spell_range_of
+        *if (spell_penalty_result)
+          *set disadvantage true
+          *set combat_reach_pinned true
+        *gosub_scene dice_engine roll_d20_check
+        *if (check_success)
+          *set combat_player_dmg_type "force"
+          *set combat_player_dmg_dice_sides 10
+          *set combat_player_dmg_bonus 0
+          *gosub_scene combat_dice resolve_player_hit true
+          *if (combat_enemy_hp <= 0)
+            *gosub_scene combat_prose pick_spell_death_flavor
+        *set combat_cantrip_choice_locked true
+        *set locked_combat_cantrip_choice_page_id page_id
       *if (check_success)
-        *set combat_player_dmg_type "force"
-        *set combat_player_dmg_dice_sides 10
-        *set combat_player_dmg_bonus 0
-        *gosub_scene combat_dice resolve_player_hit true
         *if (combat_enemy_hp <= 0)
-          *gosub_scene combat_prose pick_spell_death_flavor
           ${fdh}
           *line_break
           [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Force damage${combat_outgoing_dmg_suffix}][/b]
@@ -2522,25 +2656,32 @@
 
   *if ((combat_player_actions_left > 0) and ((warlock_cantrip = "chill_touch") or (warlock_cantrip_2 = "chill_touch")))
     # [b][ACTION][/b] [b][Chill Touch][/b] Conjure a skeletal hand of necrotic frost against ${combat_enemy_epithet}.
-      *gosub fight_pick_target
-      *set combat_current_spell_id "chill_touch"
-      *gosub_scene combat_prose pick_spell_flavor
-      *set check_stat "cha"
-      *set check_dc combat_enemy_ac
-      *set check_skill "Chill Touch"
-      *set check_add_prof_bonus true
-      *gosub spell_range_of
-      *if (spell_penalty_result)
-        *set disadvantage true
-        *set combat_reach_pinned true
-      *gosub_scene dice_engine roll_d20_check
+      *comment Shares Fire Bolt's own whole-body replay lock (combat_cantrip_choice_locked, its own comment above
+      *comment has the full explanation) -- same bug shape, same one-action-per-page exclusivity.
+      *if (not(combat_cantrip_choice_locked)) or (not(locked_combat_cantrip_choice_page_id = page_id))
+        *gosub fight_pick_target
+        *set combat_current_spell_id "chill_touch"
+        *gosub_scene combat_prose pick_spell_flavor
+        *set check_stat "cha"
+        *set check_dc combat_enemy_ac
+        *set check_skill "Chill Touch"
+        *set check_add_prof_bonus true
+        *gosub spell_range_of
+        *if (spell_penalty_result)
+          *set disadvantage true
+          *set combat_reach_pinned true
+        *gosub_scene dice_engine roll_d20_check
+        *if (check_success)
+          *set combat_player_dmg_type "necrotic"
+          *set combat_player_dmg_dice_sides 8
+          *set combat_player_dmg_bonus 0
+          *gosub_scene combat_dice resolve_player_hit true
+          *if (combat_enemy_hp <= 0)
+            *gosub_scene combat_prose pick_spell_death_flavor
+        *set combat_cantrip_choice_locked true
+        *set locked_combat_cantrip_choice_page_id page_id
       *if (check_success)
-        *set combat_player_dmg_type "necrotic"
-        *set combat_player_dmg_dice_sides 8
-        *set combat_player_dmg_bonus 0
-        *gosub_scene combat_dice resolve_player_hit true
         *if (combat_enemy_hp <= 0)
-          *gosub_scene combat_prose pick_spell_death_flavor
           ${fdh}
           *line_break
           [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Necrotic damage${combat_outgoing_dmg_suffix}][/b]
@@ -2564,22 +2705,33 @@
     *comment to gate. It stays in the catalog so the tag is visible to a future RAW "it must be within 60 feet"
     *comment implementation, not so this option behaves differently from the others.
     # [b][ACTION][/b] [b][Vicious Mockery][/b] Hurl a barbed, perfectly-aimed insult at ${combat_enemy_epithet}.
-      *gosub fight_pick_target
-      *set combat_current_spell_id "vicious_mockery"
-      *gosub_scene combat_prose pick_spell_flavor
-      *comment Enemy saving throw against the player's own spell_save_dc -- Vicious Mockery is a Wisdom save, RAW.
-      *comment The target rolls here (resolve_enemy_save, combat_dice.txt), not the player.
-      *gosub_scene combat_dice resolve_enemy_save "combat_enemy_" "wisdom" "Wisdom" 0
+      *comment Shares Fire Bolt's own whole-body replay lock (combat_cantrip_choice_locked, its own comment above
+      *comment has the full explanation) -- same bug shape, same one-action-per-page exclusivity. resolve_enemy_save
+      *comment already locks its own roll (per-lock-index, page_id-keyed, shared with Dissonant Whispers via the
+      *comment same index 0 -- also mutually exclusive with this by the same one-action-per-page reasoning), but
+      *comment fight_pick_target/pick_spell_flavor/the disadvantage mark/resolve_player_hit still need the outer
+      *comment guard for the same reason as every other option here.
+      *if (not(combat_cantrip_choice_locked)) or (not(locked_combat_cantrip_choice_page_id = page_id))
+        *gosub fight_pick_target
+        *set combat_current_spell_id "vicious_mockery"
+        *gosub_scene combat_prose pick_spell_flavor
+        *comment Enemy saving throw against the player's own spell_save_dc -- Vicious Mockery is a Wisdom save, RAW.
+        *comment The target rolls here (resolve_enemy_save, combat_dice.txt), not the player.
+        *gosub_scene combat_dice resolve_enemy_save "combat_enemy_" "wisdom" "Wisdom" 0
+        *if (check_success)
+          *set combat_player_dmg_type "psychic"
+          *set combat_player_dmg_dice_sides 4
+          *set combat_player_dmg_bonus 0
+          *comment No attack roll here -- a failed save, not a hit -- so resolve_player_hit's Hex bonus must not
+          *comment fire (RAW: Hex triggers only when you hit with an attack).
+          *gosub_scene combat_dice resolve_player_hit false
+          *set {(("combat_enemy" & combat_active_target) & "_disadvantage")} true
+          *if (combat_enemy_hp <= 0)
+            *gosub_scene combat_prose pick_spell_death_flavor
+        *set combat_cantrip_choice_locked true
+        *set locked_combat_cantrip_choice_page_id page_id
       *if (check_success)
-        *set combat_player_dmg_type "psychic"
-        *set combat_player_dmg_dice_sides 4
-        *set combat_player_dmg_bonus 0
-        *comment No attack roll here -- a failed save, not a hit -- so resolve_player_hit's Hex bonus must not
-        *comment fire (RAW: Hex triggers only when you hit with an attack).
-        *gosub_scene combat_dice resolve_player_hit false
-        *set {(("combat_enemy" & combat_active_target) & "_disadvantage")} true
         *if (combat_enemy_hp <= 0)
-          *gosub_scene combat_prose pick_spell_death_flavor
           ${fdh}
           *line_break
           [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Psychic damage${combat_outgoing_dmg_suffix}][/b]
@@ -2640,15 +2792,26 @@
 
   *if ((combat_player_actions_left > 0) and (((bard_spell = "dissonant_whispers") or (bard_spell_2 = "dissonant_whispers")) and (bard_spell_slots > 0)))
     # [b][ACTION][/b] [b][Dissonant Whispers][/b] A discordant psychic phrase wracks ${combat_enemy_epithet}.
-      *gosub fight_pick_target
-      *set combat_current_spell_id "dissonant_whispers"
-      *gosub_scene combat_prose pick_spell_flavor
-      *comment Enemy saving throw against the player's own spell_save_dc -- Dissonant Whispers is a Wisdom save,
-      *comment RAW. The target rolls here (resolve_enemy_save, combat_dice.txt), not the player.
-      *gosub_scene combat_dice resolve_enemy_save "combat_enemy_" "wisdom" "Wisdom" 0
-      *gosub_scene combat_spells resolve_dissonant_whispers
+      *comment Whole-body replay lock (2026-09-30, same bug/shape as resolve_weapon_attack_choice's own header
+      *comment comment above): fight_pick_target's kill-priority re-scan and pick_spell_flavor's *rand pick were
+      *comment unguarded here too, so a same-page replay that killed this spell's own target could re-derive a
+      *comment DIFFERENT living target and reprint fsh/fsm for the wrong enemy, even though resolve_enemy_save/
+      *comment resolve_dissonant_whispers already lock their own roll/damage math. Not its own *label (this whole
+      *comment option is inline, never *gosub'd), so the lock lives here directly instead of being named for a
+      *comment callable subroutine.
+      *if (not(combat_dw_choice_locked)) or (not(locked_combat_dw_choice_page_id = page_id))
+        *gosub fight_pick_target
+        *set combat_current_spell_id "dissonant_whispers"
+        *gosub_scene combat_prose pick_spell_flavor
+        *comment Enemy saving throw against the player's own spell_save_dc -- Dissonant Whispers is a Wisdom save,
+        *comment RAW. The target rolls here (resolve_enemy_save, combat_dice.txt), not the player.
+        *gosub_scene combat_dice resolve_enemy_save "combat_enemy_" "wisdom" "Wisdom" 0
+        *gosub_scene combat_spells resolve_dissonant_whispers
+        *if (combat_enemy_hp <= 0)
+          *gosub_scene combat_prose pick_spell_death_flavor
+        *set combat_dw_choice_locked true
+        *set locked_combat_dw_choice_page_id page_id
       *if (combat_enemy_hp <= 0)
-        *gosub_scene combat_prose pick_spell_death_flavor
         ${fdh}
         *line_break
         [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Psychic Damage${combat_outgoing_dmg_suffix}][/b]
@@ -2873,100 +3036,126 @@ ${use_text}
 *comment "weapon" already means whichever is now active. pick_weapon_flavor and resolve_player_weapon_hit
 *comment downstream need no changes either, for the same reason.
 *label resolve_weapon_attack_choice
-*comment Every targeted option re-syncs the HUD-picked target here, at the moment it's chosen, not just when the
-*comment page was built -- a click made while the page was already open would otherwise land on the stale target.
-*gosub fight_pick_target
-*comment Favored Foe: read-and-clear immediately, before the roll -- a *temp local to this call, so a miss (or
-*comment any other exit) can never leave the durable flag set for some later, unrelated attack to pick up.
+*comment Whole-body replay lock (2026-09-30, real bug caught live via refresh_fuzz_test.js): fight_pick_target's
+*comment kill-priority scan, pick_weapon_flavor's *rand pick, the roll, the damage, and the Favored Foe mark were
+*comment all unguarded -- a same-page replay (this *choice reached a second time within one page_id, e.g. the
+*comment SAME menu redisplaying once this resolves, exactly what a refresh simulates) reran fight_pick_target
+*comment against the ALREADY-POST-DAMAGE HP snapshot, which silently swapped targets the instant the original one
+*comment died (the only living enemy left wins kill-priority), cascading into a different check_dc/
+*comment combat_reach_pinned/fwh/fwm AND a second, bogus favored_foe_uses decrement on top of it -- caught live: a
+*comment 2-enemy fight where "Mark Favored Foe" killed the first target relocked onto the second one on replay.
+*comment roll_d20_check and resolve_player_weapon_hit already lock their OWN dice math (roll_locked/
+*comment combat_weapon_hit_locked, page_id-keyed) -- this outer lock is what stops them from even being CALLED a
+*comment second time with a different check_dc/target to begin with. Only one genuine player attack can happen per
+*comment page (every *choice pick bumps page_id -- see web/scene.js's resetPage), so this needs no per-slot index,
+*comment just the shared X_locked/locked_X_page_id shape (combat_range_shift_locked, this file, is the same shape
+*comment for the same reason). pick_weapon_death_flavor's own *rand is folded in here too (moved up from the print
+*comment branch below), so a kill's flavor text is exactly as protected as a live hit's -- the branch+print section
+*comment after the lock stays unconditional (a real refresh reprints the page, it just must not re-mutate), reading
+*comment only the now-guaranteed-consistent persisted stats.
+*comment Favored Foe read-and-clear stays OUTSIDE the lock, unlike everything else here: combat_attempt_favored_foe_mark
+*comment is set by the CHOICE OPTION body itself (still outside this label, re-executed on every replay same as any
+*comment other option pick), so it must be re-cleared every pass too, or a locked replay leaves it stuck true --
+*comment a *temp local to this call either way, so a miss (or any other exit) can never leave the durable flag set
+*comment for some later, unrelated attack to pick up.
 *temp rwac_favored_foe_mark combat_attempt_favored_foe_mark
 *set combat_attempt_favored_foe_mark false
-*if (weapon_type = "ranged")
-  *set check_stat "dex"
-  *set check_skill "Ranged Attack"
-*else
-  *if (weapon_type = "finesse")
-    *comment Finesse (RAW): the wielder's choice of STR or DEX, whichever
-    *comment is higher -- not a blanket DEX weapon.
-    *if (str_mod > dex_mod)
+*if (not(combat_weapon_attack_locked)) or (not(locked_combat_weapon_attack_page_id = page_id))
+  *comment Every targeted option re-syncs the HUD-picked target here, at the moment it's chosen, not just when the
+  *comment page was built -- a click made while the page was already open would otherwise land on the stale target.
+  *gosub fight_pick_target
+  *if (weapon_type = "ranged")
+    *set check_stat "dex"
+    *set check_skill "Ranged Attack"
+  *else
+    *if (weapon_type = "finesse")
+      *comment Finesse (RAW): the wielder's choice of STR or DEX, whichever
+      *comment is higher -- not a blanket DEX weapon.
+      *if (str_mod > dex_mod)
+        *set check_stat "str"
+      *else
+        *set check_stat "dex"
+    *else
       *set check_stat "str"
-    *else
-      *set check_stat "dex"
-  *else
-    *set check_stat "str"
-  *set check_skill "Melee Attack"
-*set check_dc combat_enemy_ac
-*comment fwh/fwm land on one of 3 randomized variants (melee or ranged
-*comment per weapon_type) -- see pick_weapon_flavor below.
-*gosub_scene combat_prose pick_weapon_flavor
-*comment Always proficient with your own equipped weapon -- see roll_d20_check's own header (dice_engine.txt).
-*set check_add_prof_bonus true
-*comment Close-combat ranged penalty: a ranged attack made against a creature within 5 feet of the attacker has
-*comment disadvantage. Set HERE, after the stat/skill above and before the roll, and gated on `= "ranged"`
-*comment rather than `!= "melee"` on purpose -- finesse, reach and the unarmed "melee" type are all melee
-*comment attacks, which are NEVER penalised for being in melee. The rule is one-directional.
-*comment This single site covers the main hand AND the sidearm: the sidearm option in the round hub *gosubs
-*comment equip_weapon first, which swaps the sidearm into weapon/weapon_type, so by here both are the same roll.
-*comment Reads combat_target_range, not the shared combat_enemy_range scratch, because fight_pick_target above sets
-*comment combat_active_target but does not re-sync that scratch -- the penalty would otherwise be decided by a
-*comment range left over from a previous turn (see the combat_target_range block in the hub).
-*if (weapon_type = "ranged")
-  *if (combat_target_range <= 0)
-    *set disadvantage true
-    *comment dice_engine.txt reads this to print " (Disadvantage - in reach)" rather than a bare
-    *comment "(Disadvantage)", so the player is told WHY. Cleared inside roll_d20_check on every call.
-    *set combat_reach_pinned true
-*gosub_scene dice_engine roll_d20_check
-*if (check_success)
-  *set combat_player_dmg_type weapon_damage_type
-  *if (weapon_type = "finesse")
-    *set combat_player_dmg_dice_sides 4
-    *comment Matches the STR-or-higher check above -- 5e uses the same
-    *comment ability for a finesse weapon's attack and its damage.
-    *if (str_mod > dex_mod)
-      *set combat_player_dmg_bonus str_mod
-    *else
-      *set combat_player_dmg_bonus dex_mod
-  *else
-    *if (weapon_type = "ranged")
-      *set combat_player_dmg_dice_sides 6
-      *set combat_player_dmg_bonus dex_mod
-    *else
-      *comment Two-handedness lives in weapon_hands (the broadaxe is weapon_type "melee"); ranged and
-      *comment finesse are handled above, so a two-handed bow stays a d6.
-      *if (weapon_hands = "two_handed")
-        *set combat_player_dmg_dice_sides 12
+    *set check_skill "Melee Attack"
+  *set check_dc combat_enemy_ac
+  *comment fwh/fwm land on one of 3 randomized variants (melee or ranged
+  *comment per weapon_type) -- see pick_weapon_flavor below.
+  *gosub_scene combat_prose pick_weapon_flavor
+  *comment Always proficient with your own equipped weapon -- see roll_d20_check's own header (dice_engine.txt).
+  *set check_add_prof_bonus true
+  *comment Close-combat ranged penalty: a ranged attack made against a creature within 5 feet of the attacker has
+  *comment disadvantage. Set HERE, after the stat/skill above and before the roll, and gated on `= "ranged"`
+  *comment rather than `!= "melee"` on purpose -- finesse, reach and the unarmed "melee" type are all melee
+  *comment attacks, which are NEVER penalised for being in melee. The rule is one-directional.
+  *comment This single site covers the main hand AND the sidearm: the sidearm option in the round hub *gosubs
+  *comment equip_weapon first, which swaps the sidearm into weapon/weapon_type, so by here both are the same roll.
+  *comment Reads combat_target_range, not the shared combat_enemy_range scratch, because fight_pick_target above sets
+  *comment combat_active_target but does not re-sync that scratch -- the penalty would otherwise be decided by a
+  *comment range left over from a previous turn (see the combat_target_range block in the hub).
+  *if (weapon_type = "ranged")
+    *if (combat_target_range <= 0)
+      *set disadvantage true
+      *comment dice_engine.txt reads this to print " (Disadvantage - in reach)" rather than a bare
+      *comment "(Disadvantage)", so the player is told WHY. Cleared inside roll_d20_check on every call.
+      *set combat_reach_pinned true
+  *gosub_scene dice_engine roll_d20_check
+  *if (check_success)
+    *set combat_player_dmg_type weapon_damage_type
+    *if (weapon_type = "finesse")
+      *set combat_player_dmg_dice_sides 4
+      *comment Matches the STR-or-higher check above -- 5e uses the same
+      *comment ability for a finesse weapon's attack and its damage.
+      *if (str_mod > dex_mod)
         *set combat_player_dmg_bonus str_mod
       *else
-        *set combat_player_dmg_dice_sides 8
-        *set combat_player_dmg_bonus str_mod
-  *comment Fighting Style: Dueling -- +2 damage with a one-handed melee
-  *comment weapon (RAW excludes two-handed and ranged weapons). Both the
-  *comment finesse and plain-melee branches above are one-handed melee
-  *comment in this game's model.
-  *if (fighter_fighting_style = "dueling")
-    *if (not((weapon_type = "ranged") or (weapon_hands = "two_handed")))
-      *set combat_player_dmg_bonus + 2
-  *comment Rage: +barbarian_rage_damage_bonus on a melee weapon attack
-  *comment made using Strength (RAW excludes ranged attacks, and a
-  *comment finesse attack made with DEX instead of STR since the bonus
-  *comment specifically only fires "using Strength").
-  *if ((character_class = "barbarian") and (is_raging))
-    *if (not(weapon_type = "ranged"))
-      *if (weapon_type = "finesse")
-        *if (str_mod > dex_mod)
+        *set combat_player_dmg_bonus dex_mod
+    *else
+      *if (weapon_type = "ranged")
+        *set combat_player_dmg_dice_sides 6
+        *set combat_player_dmg_bonus dex_mod
+      *else
+        *comment Two-handedness lives in weapon_hands (the broadaxe is weapon_type "melee"); ranged and
+        *comment finesse are handled above, so a two-handed bow stays a d6.
+        *if (weapon_hands = "two_handed")
+          *set combat_player_dmg_dice_sides 12
+          *set combat_player_dmg_bonus str_mod
+        *else
+          *set combat_player_dmg_dice_sides 8
+          *set combat_player_dmg_bonus str_mod
+    *comment Fighting Style: Dueling -- +2 damage with a one-handed melee
+    *comment weapon (RAW excludes two-handed and ranged weapons). Both the
+    *comment finesse and plain-melee branches above are one-handed melee
+    *comment in this game's model.
+    *if (fighter_fighting_style = "dueling")
+      *if (not((weapon_type = "ranged") or (weapon_hands = "two_handed")))
+        *set combat_player_dmg_bonus + 2
+    *comment Rage: +barbarian_rage_damage_bonus on a melee weapon attack
+    *comment made using Strength (RAW excludes ranged attacks, and a
+    *comment finesse attack made with DEX instead of STR since the bonus
+    *comment specifically only fires "using Strength").
+    *if ((character_class = "barbarian") and (is_raging))
+      *if (not(weapon_type = "ranged"))
+        *if (weapon_type = "finesse")
+          *if (str_mod > dex_mod)
+            *set combat_player_dmg_bonus + barbarian_rage_damage_bonus
+        *else
           *set combat_player_dmg_bonus + barbarian_rage_damage_bonus
-      *else
-        *set combat_player_dmg_bonus + barbarian_rage_damage_bonus
-  *comment Favored Foe: the mark lands here, BEFORE resolve_player_weapon_hit, not after -- RAW explicitly
-  *comment includes the marking hit itself in the bonus damage ("the first time... you hit the favored enemy
-  *comment and deal damage to it, INCLUDING when you mark it"), so the flag has to be live before that label
-  *comment reads it. Moves/refreshes the mark if one was already live on a different target -- only one mark
-  *comment exists at a time, RAW.
-  *if (rwac_favored_foe_mark)
-    *set favored_foe_target_slot combat_active_target
-    *set favored_foe_expires_round (combat_round + 9)
-    *set favored_foe_uses - 1
-  *gosub_scene combat_dice resolve_player_weapon_hit
+    *comment Favored Foe: the mark lands here, BEFORE resolve_player_weapon_hit, not after -- RAW explicitly
+    *comment includes the marking hit itself in the bonus damage ("the first time... you hit the favored enemy
+    *comment and deal damage to it, INCLUDING when you mark it"), so the flag has to be live before that label
+    *comment reads it. Moves/refreshes the mark if one was already live on a different target -- only one mark
+    *comment exists at a time, RAW.
+    *if (rwac_favored_foe_mark)
+      *set favored_foe_target_slot combat_active_target
+      *set favored_foe_expires_round (combat_round + 9)
+      *set favored_foe_uses - 1
+    *gosub_scene combat_dice resolve_player_weapon_hit
+    *if ((not(combat_sneak_attack_triggered)) and (combat_enemy_hp <= 0))
+      *gosub_scene combat_prose pick_weapon_death_flavor
+  *set combat_weapon_attack_locked true
+  *set locked_combat_weapon_attack_page_id page_id
+*if (check_success)
   *if (combat_sneak_attack_triggered)
     *comment Sneak Attack RAW requires finesse or ranged (see the gate in
     *comment startup.txt), so this line is at least as likely to be seen
@@ -2990,7 +3179,6 @@ ${use_text}
     *else
       [b][🗡️ Sneak Attack | 🩸 Hit: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
   *elseif (combat_enemy_hp <= 0)
-    *gosub_scene combat_prose pick_weapon_death_flavor
     ${fdh}
     *line_break
     [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
@@ -3040,15 +3228,51 @@ ${use_text}
 *comment from its combat_enemyN_inflicts_condition -- this label owns the
 *comment scratch condition flag once that slot's move2_chance > 0, so give
 *comment the condition to move 2 instead.
+*comment Per-slot replay lock (2026-09-30, real bug caught live via refresh_fuzz_test.js): a bare *rand with no
+*comment guard at all, re-rolled on every refresh -- the exact "dice-reroll-on-refresh" class that tool's own
+*comment header names. This picks which attack variant (and dmg_type/condition) an enemy uses, so a reroll could
+*comment silently change a hit into a miss or swap the damage type on nothing more than a Stats round trip. Same
+*comment per-slot shape as combat_enemy_atk_locked_N/combat_enemy_narrate_locked_N (this file/combat_dice.txt) --
+*comment several enemies can act within one page, so a single shared flag would suppress the SECOND enemy's own
+*comment roll, not just protect against a replay. Caches only the boolean OUTCOME, not the derived fields it sets
+*comment -- those are stable per-slot data, so re-deriving them from the cached boolean is exact, not an
+*comment approximation.
+*comment combat_active_target > 0 guards the lock/cache indirection itself, not just the roll -- quicktest's
+*comment coverage walk reaches this label with combat_active_target still at its 0 default along at least one
+*comment path (found live: "Non-existent variable 'combat_enemy_move2_locked_0'", slot 0 was never *create'd
+*comment since it isn't a real enemy slot). Falls back to a plain, unlocked roll for that edge case, matching
+*comment this label's own pre-fix behavior there -- never reached by a real turn dispatch (fight_sync_target_in
+*comment always sets a real slot first), so it doesn't need the replay protection a real slot does.
 *set combat_enemy_move2_used false
 *if (combat_enemy_move2_chance > 0)
   *set combat_enemy_inflicts_condition false
   *set combat_enemy_condition_name ""
   *set combat_enemy_condition_icon ""
-  *temp fpm_roll 0
-  *rand fpm_roll 1 100
-  *if (fpm_roll <= combat_enemy_move2_chance)
-    *set combat_enemy_move2_used true
+  *if (combat_active_target > 0)
+    *temp fpm_lockname (("combat_enemy_move2_locked_" & combat_active_target))
+    *if (not(locked_combat_enemy_move2_page_id = page_id))
+      *set combat_enemy_move2_locked_1 false
+      *set combat_enemy_move2_locked_2 false
+      *set combat_enemy_move2_locked_3 false
+      *set combat_enemy_move2_locked_4 false
+      *set combat_enemy_move2_locked_5 false
+      *set combat_enemy_move2_locked_6 false
+      *set locked_combat_enemy_move2_page_id page_id
+    *temp fpm_already_locked {fpm_lockname}
+    *temp fpm_vname (("combat_enemy" & combat_active_target) & "_move2_picked")
+    *if (fpm_already_locked)
+      *set combat_enemy_move2_used {fpm_vname}
+    *else
+      *temp fpm_roll 0
+      *rand fpm_roll 1 100
+      *set combat_enemy_move2_used (fpm_roll <= combat_enemy_move2_chance)
+      *set {fpm_vname} combat_enemy_move2_used
+      *set {fpm_lockname} true
+  *else
+    *temp fpm_roll 0
+    *rand fpm_roll 1 100
+    *set combat_enemy_move2_used (fpm_roll <= combat_enemy_move2_chance)
+  *if (combat_enemy_move2_used)
     *set combat_enemy_atk_bonus combat_enemy_move2_atk_bonus
     *set combat_enemy_dmg_dice_sides combat_enemy_move2_dmg_dice_sides
     *set combat_enemy_dmg_bonus combat_enemy_move2_dmg_bonus
@@ -3344,6 +3568,16 @@ ${use_text}
     ────────────────────
     *line_break
     *temp cnt_a_chase_target {(("combat_ally" & cnt_slot) & "_chase_target")}
+    *comment Ally-side rows 3-4 mirror (2026-09-29, on request): read fresh, before the chase check, since a
+    *comment retreat/disengage decision needs this ally's OWN weapon/range/can_retreat -- unlike the shot-resolution
+    *comment temps of the same name further below, which are only ever declared inside the "picked a target"
+    *comment branch and so can't be read this early. find_melee_ally_present is likewise computed unconditionally
+    *comment here (cheap, a 4-slot loop) rather than gated behind a pre-check, the same tolerance
+    *comment find_intercepting_ally's own unconditional call (top of the enemy branch) already relies on.
+    *temp cnt_ar_weapon {(("combat_ally" & cnt_slot) & "_weapon_type")}
+    *temp cnt_ar_range {(("combat_ally" & cnt_slot) & "_range")}
+    *temp cnt_ar_can_retreat {(("combat_ally" & cnt_slot) & "_can_retreat")}
+    *gosub find_melee_ally_present
     *if (cnt_a_chase_target > 0)
       *comment Commit-and-chase continuation, ally side (2026-09-29, plan §11.3, "6a" mirror) -- checked before
       *comment select_ally_attack_target even runs, since an active chase overrides its ordinary pick entirely.
@@ -3367,6 +3601,81 @@ ${use_text}
         *set combat_turn_advanced_this_page true
       *else
         *gosub do_ally_chase_step cnt_slot
+    *elseif ((((cnt_ar_weapon = "ranged") and (cnt_ar_range <= 0)) and (cnt_ar_can_retreat)) and (combat_melee_ally_present))
+      *comment Ally-side rows 3-4 mirror (2026-09-29, on request): a cornered ranged ally (weapon_type "ranged",
+      *comment own range <= 0) that opted in (combat_ally<N>_can_retreat) with a melee ally already at range 0 to
+      *comment give whatever's threatening her something else to hit (combat_melee_ally_present, computed above)
+      *comment picks between falling back cleanly or bailing out entirely, gated on her own wounds -- same
+      *comment cross-multiplied percentage comparison as the enemy side (this engine's / and round() have no floor,
+      *comment see GAMEPLAY_MECHANICS_RULES.md), same reused flee_hp_pct shape.
+      *set combat_attacker_name {(("combat_ally" & cnt_slot) & "_name")}
+      *set combat_attacker_epithet {(("combat_ally" & cnt_slot) & "_epithet")}
+      *temp cnt_ar_maxhp {(("combat_ally" & cnt_slot) & "_max_hp")}
+      *temp cnt_ar_flee_pct {(("combat_ally" & cnt_slot) & "_flee_hp_pct")}
+      *temp cnt_ar_rv 1
+      *if ((cnt_a_hp * 100) <= (cnt_ar_maxhp * cnt_ar_flee_pct))
+        *comment Disengage mirror: no opportunity attack at all (RAW: Disengage suppresses it entirely, a
+        *comment stronger guarantee than Retreat's "provokes but the shot is worth it"), and no shot this turn --
+        *comment the whole turn spent surviving, same as the enemy side's own Disengage.
+        *set cnt_ar_range + 1
+        *if (cnt_ar_range > 3)
+          *set cnt_ar_range 3
+        *set {(("combat_ally" & cnt_slot) & "_range")} cnt_ar_range
+        *gosub combat_range_name cnt_ar_range
+        *rand cnt_ar_rv 1 3
+        *if (cnt_ar_rv = 1)
+          Hurt, ${combat_attacker_epithet} breaks off clean, giving up the shot to put real distance behind it.
+        *if (cnt_ar_rv = 2)
+          $!{combat_attacker_epithet} disengages, more interested in surviving the next few seconds than another shot.
+        *if (cnt_ar_rv = 3)
+          Too battered to press its luck, ${combat_attacker_epithet} pulls back and leaves the fight to its ally.
+        *line_break
+        [b][🏃💨 ${combat_attacker_name} Disengages to ${combat_range_display_name}][/b]
+        *line_break
+        *set combat_turn_advanced_this_page true
+      *else
+        *comment Retreat mirror: exactly one opportunity attack against HER, from whichever eligible enemy still
+        *comment has a reaction spare -- find_opportunity_attacker is reused unchanged (see
+        *comment resolve_opportunity_attack_on_ally's own header for why), then she still gets her normal shot
+        *comment this turn if the reaction didn't kill her.
+        *gosub find_opportunity_attacker
+        *gosub resolve_opportunity_attack_on_ally cnt_slot
+        *gosub fight_check_all_dead
+        *if (combat_all_enemies_dead)
+          *goto fight_victory
+        *temp cnt_ar_hp_after {(("combat_ally" & cnt_slot) & "_hp")}
+        *if (cnt_ar_hp_after > 0)
+          *comment Re-set (2026-09-29, real bug caught live): resolve_opportunity_attack_on_ally just called
+          *comment fight_narrate_ally_attack for the REACTING enemy's swing, which overwrites combat_attacker_name/
+          *comment _epithet with ITS name/epithet as a side effect (that label's own job, shared globally) -- without
+          *comment this re-set the "Falls Back" line below would print the enemy's own name breaking off, not hers.
+          *set combat_attacker_name {(("combat_ally" & cnt_slot) & "_name")}
+          *set combat_attacker_epithet {(("combat_ally" & cnt_slot) & "_epithet")}
+          *set cnt_ar_range + 1
+          *if (cnt_ar_range > 3)
+            *set cnt_ar_range 3
+          *set {(("combat_ally" & cnt_slot) & "_range")} cnt_ar_range
+          *gosub combat_range_name cnt_ar_range
+          *rand cnt_ar_rv 1 3
+          *if (cnt_ar_rv = 1)
+            $!{combat_attacker_epithet} breaks off, falling back a step to open a clean line.
+          *if (cnt_ar_rv = 2)
+            Backing away fast, ${combat_attacker_epithet} puts a step of distance between itself and the blade at its side.
+          *if (cnt_ar_rv = 3)
+            $!{combat_attacker_epithet} gives ground, retreating just far enough to loose a clean shot.
+          *line_break
+          [b][🏃 ${combat_attacker_name} Falls Back to ${combat_range_display_name}][/b]
+          *line_break
+          *set combat_turn_advanced_this_page true
+          *gosub select_ally_attack_target cnt_slot
+          *if (combat_active_target > 0)
+            *set {(("combat_ally" & cnt_slot) & "_target")} combat_active_target
+            *gosub_scene combat_dice resolve_ally_attack cnt_slot combat_active_target
+            *gosub_scene combat_prose fight_narrate_ally_attack "ally" cnt_slot "enemy" combat_active_target combat_ally_atk_hit
+            *set combat_ally_atk_used_sidearm false
+            *gosub fight_check_all_dead
+            *if (combat_all_enemies_dead)
+              *goto fight_victory
     *else
       *gosub select_ally_attack_target cnt_slot
       *if (combat_active_target > 0)
@@ -3381,6 +3690,13 @@ ${use_text}
         *if ((cnt_a_weapon = "ranged") or (cnt_a_range <= 0))
           *gosub_scene combat_dice resolve_ally_attack cnt_slot combat_active_target
           *gosub_scene combat_prose fight_narrate_ally_attack "ally" cnt_slot "enemy" combat_active_target combat_ally_atk_hit
+          *comment Clear the quick-draw flag right after the narration, mirroring the enemy side's clear of
+          *comment combat_enemy_used_sidearm in the same turn position. The turn-scoped rule is what keeps an archer from
+          *comment being left permanently knife-armed: the durable combat_ally<N>_weapon_type was never changed, only
+          *comment the flag, so next turn she reads as ranged again and the bow pool returns. Resetting it HERE rather
+          *comment than inside fight_narrate_ally_attack keeps that label purely a narrator, and matters because the
+          *comment enemy-as-attacker paths (interception/chase) reuse the label without clearing anything.
+          *set combat_ally_atk_used_sidearm false
           *set combat_turn_advanced_this_page true
           *gosub fight_check_all_dead
           *if (combat_all_enemies_dead)
@@ -3432,6 +3748,13 @@ ${use_text}
             *if ((cnt_a_range <= 0) and (not(cnt_a_dashed)))
               *gosub_scene combat_dice resolve_ally_attack cnt_slot combat_active_target
               *gosub_scene combat_prose fight_narrate_ally_attack "ally" cnt_slot "enemy" combat_active_target combat_ally_atk_hit
+              *comment Clear the quick-draw flag right after the narration, mirroring the enemy side's clear of
+              *comment combat_enemy_used_sidearm in the same turn position. The turn-scoped rule is what keeps an archer
+              *comment from being left permanently knife-armed: the durable combat_ally<N>_weapon_type was never changed,
+              *comment only the flag, so next turn she reads as ranged again and the bow pool returns. Resetting it HERE
+              *comment rather than inside fight_narrate_ally_attack keeps that label purely a narrator, and matters
+              *comment because the enemy-as-attacker paths (interception/chase) reuse the label without clearing anything.
+              *set combat_ally_atk_used_sidearm false
               *gosub fight_check_all_dead
               *if (combat_all_enemies_dead)
                 *goto fight_victory
@@ -4226,7 +4549,8 @@ ${use_text}
 *comment combat_enemy_range, it's caller-optional: leave it at the type's default (0, Engaged) or set it before
 *comment calling fight_library to open a melee ally away from Engaged, same as combat_enemy_range 3 in
 *comment fight_dev_range_test.
-*comment Available types: "archer" (ranged, keeps its distance) and "guard" (melee, closes and strikes).
+*comment Available types: "archer" and "slinger" (both ranged, keep their distance, both quick-draw a dagger when a
+*comment target closes to range 0), and "guard" (melee, closes and strikes).
 *comment combat_ally_lib_* is cleared by fight_cleanup.
 *comment ══════════════════════════════════════════════════════════════
 
@@ -4252,6 +4576,8 @@ ${use_text}
 *label apply_ally_type
 *if (combat_apply_ally_type = "archer")
   *gosub apply_allytype_archer
+*if (combat_apply_ally_type = "slinger")
+  *gosub apply_allytype_slinger
 *if (combat_apply_ally_type = "guard")
   *gosub apply_allytype_guard
 *temp aat_p (("combat_ally" & combat_apply_ally_slot) & "_")
@@ -4292,16 +4618,56 @@ ${use_text}
 *gosub apply_derived_combat_bonuses aaa_p
 *comment Sidearm (2026-09-29, Ranged-AI Position Awareness plan §4.1, extended to allies on request -- Kess is
 *comment this type, given one for the same reason the enemy archer is): a dagger, same DEX-based to-hit/damage
-*comment bonus as the bow just above, only the die drops to 1d4. Data only for now -- no runtime decision reads
-*comment it yet (combat_next_turn's ally branch has no quick-draw logic; that's gated on resolve_ally_attack
-*comment actually having a close-range penalty to dodge, plan §4.4, still Phase 2). "Always fully rewrites" per
-*comment this label's own header, so apply_allytype_guard clears it explicitly rather than relying on a reset
-*comment loop -- there isn't one for ally fields (see fight_cleanup_ally_loop's own comment).
+*comment bonus as the bow just above, only the die drops to 1d4. Read by resolve_ally_attack (combat_dice.txt),
+*comment which quick-draws it for the ONE attack a ranged ally makes while a target is at range 0 -- shooting from
+*comment inside a foe's reach costs disadvantage, and the knife does not. Turn-scoped, never a persistent equip.
+*comment "Always fully rewrites" per this label's own header, so apply_allytype_guard clears it explicitly rather
+*comment than relying on a reset loop -- there isn't one for ally fields (see fight_cleanup_ally_loop's comment).
 *set {(aaa_p & "sidearm_weapon_type")} "melee"
 *set {(aaa_p & "sidearm_atk_bonus")} {(aaa_p & "atk_bonus")}
 *set {(aaa_p & "sidearm_dmg_dice_sides")} 4
 *set {(aaa_p & "sidearm_dmg_bonus")} {(aaa_p & "dmg_bonus")}
 *set {(aaa_p & "sidearm_dmg_type")} "piercing"
+*comment Retreat/Disengage (2026-09-29, ally-side rows 3-4 mirror, on request): same per-type opt-in as the
+*comment enemy archer/slinger. 33% max HP untuned starting point, same as the enemy side -- see
+*comment RANGED_AI_PLAN.md §4.7 for why this hasn't been balance-simmed either.
+*set {(aaa_p & "can_retreat")} true
+*set {(aaa_p & "flee_hp_pct")} 33
+*return
+
+*label apply_allytype_slinger
+*comment Ranged skirmisher variant: a sling rather than a bow. Unlike the enemy library, fight_narrate_ally_attack
+*comment (combat_prose.txt) has no per-type flavor dispatch for allies -- fnaa_ranged is one generic "shot" pool
+*comment shared by every ranged ally, so this reads mechanically identical to apply_allytype_archer at range (same
+*comment DEX-based derived bonuses, same close-range quick-draw) and narrates the same as any other ranged ally shot.
+*comment The die is smaller (1d6, not the archer's), and the HP/AC are nudged a little softer to reflect a thrown
+*comment stone being a poor answer to a shield.
+*temp asl_p (("combat_ally" & combat_apply_ally_slot) & "_")
+*set {(asl_p & "name")} "Slinger"
+*set {(asl_p & "epithet")} "the slinger"
+*set {(asl_p & "hp")} 9
+*set {(asl_p & "max_hp")} 9
+*set {(asl_p & "ac")} 12
+*set {(asl_p & "dmg_dice_sides")} 6
+*set {(asl_p & "dmg_type")} "bludgeoning"
+*set {(asl_p & "weapon_type")} "ranged"
+*gosub apply_ability_score_range asl_p "strength" 8 10
+*gosub apply_ability_score_range asl_p "dexterity" 14 16
+*gosub apply_ability_score_range asl_p "constitution" 10 12
+*gosub apply_ability_score_range asl_p "intelligence" 8 10
+*gosub apply_ability_score_range asl_p "wisdom" 10 12
+*gosub apply_ability_score_range asl_p "charisma" 8 10
+*gosub apply_derived_combat_bonuses asl_p
+*comment Sidearm: a dagger, same DEX-based bonuses as the sling above, die dropped to 1d4 -- the same data shape
+*comment apply_allytype_archer writes. Written explicitly rather than relying on a reset loop, per that label's header.
+*set {(asl_p & "sidearm_weapon_type")} "melee"
+*set {(asl_p & "sidearm_atk_bonus")} {(asl_p & "atk_bonus")}
+*set {(asl_p & "sidearm_dmg_dice_sides")} 4
+*set {(asl_p & "sidearm_dmg_bonus")} {(asl_p & "dmg_bonus")}
+*set {(asl_p & "sidearm_dmg_type")} "piercing"
+*comment Retreat/Disengage: same as apply_allytype_archer's own field, same untuned 33%.
+*set {(asl_p & "can_retreat")} true
+*set {(asl_p & "flee_hp_pct")} 33
 *return
 
 *label apply_allytype_guard
@@ -4338,6 +4704,10 @@ ${use_text}
 *comment Tactical/human -- same reasoning as the enemy-side humanoid melee types (2026-09-29, on request): Rook
 *comment can break off to chase a squishy enemy caster/archer sometimes.
 *set {(aag_p & "chase_chance")} 33
+*comment Retreat/Disengage: a melee bruiser holds the line, it doesn't fall back from one -- cleared explicitly
+*comment for the same reason sidearm is cleared above rather than left to a reset loop that doesn't exist.
+*set {(aag_p & "can_retreat")} false
+*set {(aag_p & "flee_hp_pct")} 0
 *return
 
 *comment ══════════════════════════════════════════════════════════════
@@ -4446,6 +4816,33 @@ ${use_text}
 *set combat_ally1_range 2
 *set combat_ally1_name_override "Rook"
 *set combat_ally1_epithet_override "Rook"
+*goto fight_library
+
+*label fight_dev_ally_retreat_test
+*comment Dev-hub only (dev_hub.txt dev_combat_test_hub) -- no story scene calls this. Ally-side rows 3-4 mirror
+*comment (2026-09-29, on request): Kess (archer, cornered at range 0, can_retreat/flee_hp_pct true/33 from her own
+*comment type) with Rook (guard, melee, also at range 0) present so combat_melee_ally_present is true, and a melee
+*comment lacedon also at range 0 so there's a real opponent capable of taking an opportunity attack when she falls
+*comment back. At full HP, watch Kess Retreat on her turn (one OA against her from the lacedon, then a clean shot
+*comment with no "(Disadvantage" tag). Reduce her HP below a third of max (watch=combat_ally1_hp, or override via
+*comment stats -- there is no combat_ally<N>_hp_override field, unlike the enemy side) and she should Disengage
+*comment instead: no OA at all, no shot, just the fall-back banner. HP override bumped well past the lacedon's own
+*comment 12 -- Kess and Rook attacking the same target in the same round can otherwise drop it before the fight
+*comment ever reaches a page break, which is fine in real play but leaves nothing to inspect from a direct
+*comment scripted_play.js entry (no real *gosub frame to return through once the fight concludes that fast).
+*set combat_is_nonlethal false
+*set combat_lib_1 "lacedon"
+*set combat_enemy_name_override "Test Lacedon"
+*set combat_enemy_hp_override 40
+*set combat_enemy_range 0
+*set combat_ally_lib_1 "archer"
+*set combat_ally1_name_override "Kess"
+*set combat_ally1_epithet_override "Kess"
+*set combat_ally1_range 0
+*set combat_ally_lib_2 "guard"
+*set combat_ally2_name_override "Rook"
+*set combat_ally2_epithet_override "Rook"
+*set combat_ally2_range 0
 *goto fight_library
 
 *label fight_dev_reach_test
@@ -4563,18 +4960,31 @@ ${use_text}
 *comment toll / slip-away route instead of forcing this fight. Lethal fight, reports combat_outcome like any other;
 *comment the CALLER handles "rescued" (robbed, 1 HP) and "player_died" per the fight_player_died contract.
 *set combat_is_nonlethal false
-*temp da_pick 0
-*rand da_pick 1 4
-*if (da_pick = 1)
-  *set combat_lib_1 "maceman"
-*if (da_pick = 2)
-  *set combat_lib_1 "knifeman"
-*if (da_pick = 3)
-  *set combat_lib_1 "hookman"
-*if (da_pick = 4)
-  *set combat_lib_1 "axeman"
-*comment Remembered for the caller: the slots shift as foes fall, so the bruiser cannot be read back afterwards.
-*set dredge_ambush_bruiser combat_lib_1
+*comment Shares combat_roll_initiative's own whole-fight lock (combat_init_locked/locked_combat_init_page_id,
+*comment this file, 2026-09-30) -- this roll happens before *goto fight_library even reaches fight_setup, but on
+*comment the same first page as everything fight_setup itself locks with that flag, so the same guard covers it.
+*comment Unlocked, a same-page refresh picked a DIFFERENT bruiser weapon type entirely (not just a different roll
+*comment of the SAME type's ability scores, which apply_ability_score_range's own lock already covers) -- each
+*comment type carries its own atk_bonus/dmg_bonus, so this alone reproduced as a drifting combat_enemy_atk_bonus/
+*comment dmg_bonus even after that fix.
+*if (not(combat_init_locked)) or (not(locked_combat_init_page_id = page_id))
+  *temp da_pick 0
+  *rand da_pick 1 4
+  *if (da_pick = 1)
+    *set combat_lib_1 "maceman"
+  *if (da_pick = 2)
+    *set combat_lib_1 "knifeman"
+  *if (da_pick = 3)
+    *set combat_lib_1 "hookman"
+  *if (da_pick = 4)
+    *set combat_lib_1 "axeman"
+  *comment Remembered for the caller: the slots shift as foes fall, so the bruiser cannot be read back afterwards.
+  *comment MUST be captured here, inside the lock, not as a later unconditional line -- combat_lib_1 itself is a
+  *comment transient, CONSUMED value (fight_library/apply_enemy_type clear it once read), so a locked replay that
+  *comment skips the roll above would otherwise copy whatever combat_lib_1 had already been reset to by the END of
+  *comment the original run (empty), not the type it actually rolled (found live: dredge_ambush_bruiser came back
+  *comment "" on refresh instead of the real pick).
+  *set dredge_ambush_bruiser combat_lib_1
 *set combat_lib_2 "slinger"
 *comment Range: the slinger opens at Close (1) instead of the type-library default of Engaged (0) -- it keeps
 *comment its distance, matching its own flavor, while staying only one Push Forward action away so a melee-only

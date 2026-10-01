@@ -608,15 +608,15 @@ The port city climbs from the tideline in uneven tiers of granite, timber, canal
 
 *elseif (current_district = "dredge_end")
   *if (weather_severity >= 3)
-    From the edge of Dredge-End, the water-lanes are shuttered and bare. The canal water churns high against the stilt foundations, duckboards lie awash, and skiffs are hauled up with their keels lashed to the railings.
+    From the edge of Dredge-End, the lanes are shuttered and bare. Runoff sheets down the broken paving into the canal, the market awnings are lashed flat, and skiffs are hauled up with their keels lashed to the railings.
   *elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
-    From the canal landing, the water-lanes below are pitch black. Unlit skiffs glide silently beneath the sagging footbridges, and quiet bird-whistles echo between the stilt foundations as lookouts track the crossings.
+    From the canal landing, the lanes below are pitch black. Unlit skiffs glide silently along the dark cuts, and quiet bird-whistles echo between the leaning walls as lookouts track the crossings.
   *elseif (time_period = "Dusk")
-    From Dredge-End's wooden ramps, the smell of peat smoke and frying fish rolls out from beneath the low eaves. Lanterns glow red behind bullseye glass along the leaning tenements, and crews crowd the duckboards as the working boats tie off.
+    From Dredge-End's canal ramp, the smell of peat smoke and frying fish rolls out from beneath the low eaves. Lanterns glow red behind bullseye glass along the leaning tenements, and crews crowd the lane mouth as the working boats tie off.
   *elseif (street_life = "thin")
-    From the canal walkways, the lanes are half-empty under the rain. Puntmen pole slowly along the slimy pilings, while residents move in single file along the wet planks with heads tucked into their collars.
+    From the canal walkways, the lanes are half-empty under the rain. Puntmen pole slowly along the slick stone kerbs, while residents move in single file down the wet lanes with heads tucked into their collars.
   *else
-    From Dredge-End, the narrow duckboard lanes are packed with rough traffic. Flat-bottomed punts jostle in the cuts, barrows of scrap iron and cured fish rattle over the boards, and the air hangs thick with river silt and coal smoke.
+    From Dredge-End, the narrow lanes are packed with rough traffic. Flat-bottomed punts jostle in the cuts, barrows of scrap iron and cured fish rattle over the broken paving, and the air hangs thick with river silt and coal smoke.
 
 *elseif (current_district = "middle_ward")
   *if (weather_severity >= 3)
@@ -714,16 +714,16 @@ The port city climbs from the tideline in uneven tiers of granite, timber, canal
       *goto port_valen_harbor_pois
   *if (current_district = "civic_heights")
     # [b]Civic Heights[/b]: stay here. [0 min]
-      *goto_scene port_valen_civic_heights port_valen_civic_heights
+      *goto_scene port_valen/port_valen_civic_heights port_valen_civic_heights
   *if (current_district = "upper_wharves")
     # [b]The Patrician Quarter[/b]: stay here. [0 min]
-      *goto_scene port_valen_upper_wharves port_valen_upper_wharves
+      *goto_scene port_valen/port_valen_upper_wharves port_valen_upper_wharves
   *if (current_district = "dredge_end")
     # [b]Dredge-End[/b]: stay here. [0 min]
-      *goto_scene port_valen_dredge_end port_valen_dredge_end_arrive
+      *goto_scene port_valen/port_valen_dredge_end port_valen_dredge_end_arrive
   *if (current_district = "middle_ward")
     # [b]The Middle Ward[/b]: stay here. [0 min]
-      *goto_scene port_valen_middle_ward port_valen_middle_ward
+      *goto_scene port_valen/port_valen_middle_ward port_valen_middle_ward
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment SHARED TRAVEL PRIMITIVES
@@ -796,13 +796,13 @@ The port city climbs from the tideline in uneven tiers of granite, timber, canal
 *if (pv_travel_dest = "harbor")
   *goto port_valen_harbor
 *if (pv_travel_dest = "civic_heights")
-  *goto_scene port_valen_civic_heights port_valen_civic_heights
+  *goto_scene port_valen/port_valen_civic_heights port_valen_civic_heights
 *if (pv_travel_dest = "upper_wharves")
-  *goto_scene port_valen_upper_wharves port_valen_upper_wharves
+  *goto_scene port_valen/port_valen_upper_wharves port_valen_upper_wharves
 *if (pv_travel_dest = "dredge_end")
-  *goto_scene port_valen_dredge_end port_valen_dredge_end_arrive
+  *goto_scene port_valen/port_valen_dredge_end port_valen_dredge_end_arrive
 *if (pv_travel_dest = "middle_ward")
-  *goto_scene port_valen_middle_ward port_valen_middle_ward
+  *goto_scene port_valen/port_valen_middle_ward port_valen_middle_ward
 
 *label port_valen_harbor
 *label port_valen_harbor_pois
@@ -2293,6 +2293,14 @@ He looks you over again, more carefully this time.
     *set minutes_since_meal 0
     *set neglect_damage_hunger 0
     *set hunger_stage "Fed"
+    *comment Reconcile hp_debt_applied against the just-lowered debt immediately, per
+    *comment recalc_hp_from_neglect's own caller contract (calendar.txt) -- clearing a debt without this
+    *comment leaves hp_debt_applied stale until whatever page happens to call recalc next, which then
+    *comment shows an unexplained "free" HP jump on a page that did nothing to earn it. Caught live via
+    *comment refresh_fuzz_test.js: the desync was visible the instant this same page's own EARLIER
+    *comment recalc_hp_from_neglect call (line 2141) got replayed against a snapshot where the debt had
+    *comment already been cleared but never reconciled.
+    *gosub_scene calendar recalc_hp_from_neglect
     *line_break
     [b][🍲 Shift Perk: Galley Skilly & Hard Bread Consumed (Fed)][/b]
   Dell points a blunt thumb toward the barge's forward hatch, where the ship's cook is dishing out tin plates of steaming skilly and salt pork ends for the unloading gang. "Galley pot's part of the day's wage," Dell grunts. "Eat your fill before the deckhands clean out the kettle."
@@ -2306,6 +2314,10 @@ He looks you over again, more carefully this time.
 *if (crane_quest_stage = "active")
   *set crane_quest_stage "resolved"
   *set crane_job_unlocked true
+  *comment quests_finished staleness (2026-09-30) -- same gap as port_valen's own beat_4_branch_b header comment
+  *comment explains in full: this page's own advance_time (pv_crane_shift_cha) already recomputed it once, before
+  *comment crane_quest_stage became "resolved" just above. Re-run it now that the dependency changed.
+  *gosub_scene calendar update_hub_condition
   Dell counts your coppers into your palm directly, keeping his board balanced against his hip.
 
   "Half my crew won't touch this hull, one's laid up, and the factor doesn't care whose fault that is," he says. "If you're still looking for honest pay some mornings, come find crane three. I can't promise every day, but most of them."
@@ -3383,6 +3395,10 @@ Hendryk turns his pale eyes to you.
   *set has_rotten_rib_splinter false
   *set has_brant_iron_heel_boots true
   *gosub_scene equipment equip_feet "brant_iron_heel_boots"
+  *comment quests_finished staleness (2026-09-30) -- same gap as the "shakedown" branch below (beat_4_branch_b's
+  *comment own header comment has the full explanation): this page's own advance_time already recomputed it once,
+  *comment before rotten_rib_quest_stage became "resolved" just above. Re-run it now that the dependency changed.
+  *gosub_scene calendar update_hub_condition
 
 *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
   *set currency_add_amount 40
@@ -3450,6 +3466,10 @@ You sweep the cloth purse into your pouch and push the folded waybill across the
   *set brant_favor false
   *set has_diverted_timber_waybill false
   *set has_rotten_rib_splinter false
+  *comment quests_finished staleness (2026-09-30) -- same gap as beat_4_branch_b's own header comment below explains
+  *comment in full: this page's own advance_time already recomputed it once, before rotten_rib_quest_stage became
+  *comment "resolved" just above. Re-run it now that the dependency changed.
+  *gosub_scene calendar update_hub_condition
 
 *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
   *if (elric_alerted)
@@ -3499,6 +3519,20 @@ Elric stares at you with pure hatred. For a second his knuckles whiten on the ed
   *set brant_favor false
   *set has_diverted_timber_waybill false
   *set has_rotten_rib_splinter false
+  *comment Real bug caught live via refresh_fuzz_test.js + a targeted scripted_play.js repro (2026-09-30):
+  *comment quests_finished/level_up_ready are derived, recomputed by update_hub_condition (calendar.txt) --
+  *comment already-called once, early in this branch, via this same page's own advance_time. That call ran
+  *comment BEFORE rotten_rib_quest_stage became "resolved" just above, so quests_finished stays stale at
+  *comment whatever it read then for the rest of THIS page, not reflecting the completion until the player's
+  *comment next action anywhere calls update_hub_condition again. A refresh replaying this page exposed the
+  *comment gap rather than causing it: its snapshot already has the quest resolved, so its own early
+  *comment advance_time call sees a DIFFERENT (fresher) state than the original run's did, at the exact same
+  *comment point in the code -- the two runs disagree not because either double-applied anything, but because
+  *comment "derived, so any *gosub is fine" quietly assumed the LAST recompute in a page is always the freshest,
+  *comment which isn't true once something the recompute depends on changes mid-page. Re-run it here,
+  *comment immediately after the state it depends on actually changed, so the page's own remaining span (and any
+  *comment replay of it) sees the same settled value everywhere.
+  *gosub_scene calendar update_hub_condition
 
 *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
   *set currency_add_amount 140
@@ -3541,6 +3575,10 @@ Brant has seen the cart too. He stands on the staging with the mallet hanging fr
   *set brant_favor false
   *set has_diverted_timber_waybill false
   *set has_rotten_rib_splinter false
+  *comment quests_finished staleness (2026-09-30) -- same gap as beat_4_branch_b's own header comment below explains
+  *comment in full: this page's own advance_time already recomputed it once, before rotten_rib_quest_stage became
+  *comment "resolved" just above. Re-run it now that the dependency changed.
+  *gosub_scene calendar update_hub_condition
 
 The ship will launch on schedule with the green rib bolted over. Nobody with a stamp will look at it, and nobody who looked has a stamp.
 
@@ -3603,6 +3641,10 @@ Brant watches the yard crane lower the dense oak into the ship's framing cradle.
   *set has_rotten_rib_splinter false
   *set has_brant_iron_heel_boots true
   *gosub_scene equipment equip_feet "brant_iron_heel_boots"
+  *comment quests_finished staleness (2026-09-30) -- same gap as beat_4_branch_b's own header comment below explains
+  *comment in full: this page's own advance_time already recomputed it once, before rotten_rib_quest_stage became
+  *comment "resolved" just above. Re-run it now that the dependency changed.
+  *gosub_scene calendar update_hub_condition
 
 [b][📜 Retained: Stamped Timber Waybill][/b]
 *line_break
@@ -4766,6 +4808,10 @@ The warden fishes a small purse off his belt and counts three silver marks into 
   *set fish_resolution "lawful"
   *set fish_resolved_day campaign_day
   *set port_watch_rep +1
+  *comment quests_finished staleness (2026-09-30) -- same gap as port_valen's own beat_4_branch_b header comment
+  *comment explains in full: this page's own advance_time already recomputed it once, before fish_quest_stage became
+  *comment "resolved" just above. Re-run it now that the dependency changed.
+  *gosub_scene calendar update_hub_condition
 
 *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
   *set currency_add_amount 30
@@ -4804,6 +4850,10 @@ He does, in front of you, and the chalk leaves a small hard mark. Down at the bl
   *set fish_resolved_day campaign_day
   *set port_watch_rep -1
   *set fish_slip_shunned true
+  *comment quests_finished staleness (2026-09-30) -- same gap as port_valen's own beat_4_branch_b header comment
+  *comment explains in full: this page's own advance_time already recomputed it once, before fish_quest_stage became
+  *comment "failed" just above. Re-run it now that the dependency changed.
+  *gosub_scene calendar update_hub_condition
 
 [b][⚖ Harbor Standing: Port Watch Rep -1][/b]
 *line_break
@@ -4871,6 +4921,10 @@ Down the ramp, Wenna has stopped tying her baskets. She watches you close your f
   *set fish_quest_stage "resolved"
   *set fish_resolution "pragmatic"
   *set fish_resolved_day campaign_day
+  *comment quests_finished staleness (2026-09-30) -- same gap as port_valen's own beat_4_branch_b header comment
+  *comment explains in full: this page's own advance_time already recomputed it once, before fish_quest_stage became
+  *comment "resolved" just above. Re-run it now that the dependency changed.
+  *gosub_scene calendar update_hub_condition
 
 *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
   *set currency_add_amount 50
@@ -4906,6 +4960,10 @@ The bell falls on Wenna's baskets at the ring's price. When you look for her, sh
   *set fish_resolution "failed"
   *set fish_resolved_day campaign_day
   *set fish_slip_shunned true
+  *comment quests_finished staleness (2026-09-30) -- same gap as port_valen's own beat_4_branch_b header comment
+  *comment explains in full: this page's own advance_time already recomputed it once, before fish_quest_stage became
+  *comment "failed" just above. Re-run it now that the dependency changed.
+  *gosub_scene calendar update_hub_condition
 
 [b][🐟 The Slip Remembers: Stall Prices +1 Copper][/b]
 
@@ -4985,6 +5043,10 @@ Nobody in the half circle looks at you now. The buyers who used to stand a yard 
   *set fish_resolution "strategic"
   *set fish_resolved_day campaign_day
   *set wenna_favor true
+  *comment quests_finished staleness (2026-09-30) -- same gap as port_valen's own beat_4_branch_b header comment
+  *comment explains in full: this page's own advance_time already recomputed it once, before fish_quest_stage became
+  *comment "resolved" just above. Re-run it now that the dependency changed.
+  *gosub_scene calendar update_hub_condition
 
 [b][🤝 Ally: Wenna Rusk, Fishwife (Will Sell to You First)][/b]
 
@@ -5017,6 +5079,10 @@ Wenna is standing at the foot of the ramp with her arms crossed. She has watched
   *set fish_quest_stage "failed"
   *set fish_resolution "failed"
   *set fish_resolved_day campaign_day
+  *comment quests_finished staleness (2026-09-30) -- same gap as port_valen's own beat_4_branch_b header comment
+  *comment explains in full: this page's own advance_time already recomputed it once, before fish_quest_stage became
+  *comment "failed" just above. Re-run it now that the dependency changed.
+  *gosub_scene calendar update_hub_condition
 
 *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
   *set currency_add_amount 0 - 40

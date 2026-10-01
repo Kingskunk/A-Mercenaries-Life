@@ -37,42 +37,42 @@ var HUB = 100, POI = 75, REENTRY = 35;
 var DE = { de_savvy: false };
 var ENTRIES = [
   // districts and their hubs
-  ["Dredge-End hub",          "port_valen_dredge_end",   "port_valen_dredge_end", {},                              "hub", HUB, 1],
-  ["Carrion Compound hub",    "port_valen",              "port_valen_hub",        { port_valen_hub_seen: true },   "hub", HUB, 1],
-  ["Harbor intro",            "port_valen",              "port_valen_harbor",     {},                              "hub", HUB, 1],
-  ["Middle Ward hub",         "port_valen_middle_ward",  "mw_conduit_square",     {},                              "hub", HUB, 1],
-  ["Civic Heights hub",       "port_valen_civic_heights","port_valen_civic_heights", {},                          "hub", HUB, 1],
-  ["Upper Wharves hub",       "port_valen_upper_wharves","port_valen_upper_wharves", {},                          "hub", HUB, 1],
+  ["Dredge-End hub",          "port_valen/port_valen_dredge_end",   "port_valen_dredge_end", {},                              "hub", HUB, 1],
+  ["Carrion Compound hub",    "port_valen/port_valen",              "port_valen_hub",        { port_valen_hub_seen: true },   "hub", HUB, 1],
+  ["Harbor intro",            "port_valen/port_valen",              "port_valen_harbor",     {},                              "hub", HUB, 1],
+  ["Middle Ward hub",         "port_valen/port_valen_middle_ward",  "mw_conduit_square",     {},                              "hub", HUB, 1],
+  ["Civic Heights hub",       "port_valen/port_valen_civic_heights","port_valen_civic_heights", {},                          "hub", HUB, 1],
+  ["Upper Wharves hub",       "port_valen/port_valen_upper_wharves","port_valen_upper_wharves", {},                          "hub", HUB, 1],
   // point-of-interest entries
-  ["Dredge-End market",       "port_valen_dredge_end",   "cut_market",            {},                              "poi", POI, 1],
-  ["Dredge-End gangways",     "port_valen_dredge_end",   "cut_gangways",          DE,                              "poi", POI, 1],
-  ["Dredge-End boat-sheds",   "port_valen_dredge_end",   "cut_sheds",             {},                              "poi", POI, 1],
-  ["Dredge-End landing",      "port_valen_dredge_end",   "cut_landing",           DE,                              "poi", POI, 1],
-  ["Dredge-End lamp stair",   "port_valen_dredge_end",   "cut_lamp",              {},                              "poi", POI, 1],
-  ["Dredge-End shrine",       "port_valen_dredge_end",   "cut_shrine",            DE,                              "poi", POI, 1],
+  ["Dredge-End market",       "port_valen/port_valen_dredge_end",   "cut_market",            {},                              "poi", POI, 1],
+  ["Dredge-End gangways",     "port_valen/port_valen_dredge_end",   "cut_gangways",          DE,                              "poi", POI, 1],
+  ["Dredge-End boat-sheds",   "port_valen/port_valen_dredge_end",   "cut_sheds",             {},                              "poi", POI, 1],
+  ["Dredge-End landing",      "port_valen/port_valen_dredge_end",   "cut_landing",           DE,                              "poi", POI, 1],
+  ["Dredge-End lamp stair",   "port_valen/port_valen_dredge_end",   "cut_lamp",              {},                              "poi", POI, 1],
+  ["Dredge-End shrine",       "port_valen/port_valen_dredge_end",   "cut_shrine",            DE,                              "poi", POI, 1],
   // The Stolen Shroud changes the shrine's street layer and bowl, so the same label is rendered in three
   // quest states. render_hub keeps its variables from one render to the next, so each state moves on as
   // the sweep runs: the hook entry shows the first-visit hook on the first Hallowday morning and the
   // revisit on every later render, the cold entry (seen on day 0, already past the deadline) shows the
   // cold ending once and then the tin cup, and the done entry shows the new bowl throughout.
-  ["Dredge-End shrine, hook and revisit", "port_valen_dredge_end", "cut_shrine",   { de_savvy: false, cut_shrine_gave: true },
+  ["Dredge-End shrine, hook and revisit", "port_valen/port_valen_dredge_end", "cut_shrine",   { de_savvy: false, cut_shrine_gave: true },
                                                                                                                    "poi", POI, 1],
-  ["Dredge-End shrine, cold ending and tin cup", "port_valen_dredge_end", "cut_shrine", { de_savvy: false, cut_shrine_gave: true, shroud_seen: true, shroud_start_day: 0 },
+  ["Dredge-End shrine, cold ending and tin cup", "port_valen/port_valen_dredge_end", "cut_shrine", { de_savvy: false, cut_shrine_gave: true, shroud_seen: true, shroud_start_day: 0 },
                                                                                                                    "poi", POI, 1],
-  ["Dredge-End shrine, quest done", "port_valen_dredge_end", "cut_shrine",        { de_savvy: false, cut_shrine_gave: true, shroud_seen: true, shroud_start_day: 0,
+  ["Dredge-End shrine, quest done", "port_valen/port_valen_dredge_end", "cut_shrine",        { de_savvy: false, cut_shrine_gave: true, shroud_seen: true, shroud_start_day: 0,
                                                                                     shroud_quest_stage: "resolved", shroud_resolution: "returned", shroud_resolved: true },
                                                                                                                    "poi", POI, 1],
-  ["Dredge-End lower steps",  "port_valen_dredge_end",   "cut_steps",             DE,                              "poi", POI, 1],
-  ["Locksmiths' Close",       "port_valen_middle_ward",  "mw_locksmiths_close",   {},                              "poi", POI, 1],
-  ["Lantern Lane",            "port_valen_middle_ward",  "mw_lantern_lane",       {},                              "poi", POI, 1],
-  ["Smiths' Row",             "port_valen_middle_ward",  "mw_smiths_row",         {},                              "poi", POI, 1],
-  ["Conduit Wash-House",      "port_valen_middle_ward",  "mw_wash_yard",          {},                              "poi", POI, 1],
-  ["Harbor quays observe",    "port_valen",              "pv_quays_observe",      {},                              "poi", POI, 1],
+  ["Dredge-End lower steps",  "port_valen/port_valen_dredge_end",   "cut_steps",             DE,                              "poi", POI, 1],
+  ["Locksmiths' Close",       "port_valen/port_valen_middle_ward",  "mw_locksmiths_close",   {},                              "poi", POI, 1],
+  ["Lantern Lane",            "port_valen/port_valen_middle_ward",  "mw_lantern_lane",       {},                              "poi", POI, 1],
+  ["Smiths' Row",             "port_valen/port_valen_middle_ward",  "mw_smiths_row",         {},                              "poi", POI, 1],
+  ["Conduit Wash-House",      "port_valen/port_valen_middle_ward",  "mw_wash_yard",          {},                              "poi", POI, 1],
+  ["Harbor quays observe",    "port_valen/port_valen",              "pv_quays_observe",      {},                              "poi", POI, 1],
   // re-entry lines
-  ["Harbor sub-hub line",     "port_valen",              "port_valen_harbor_pois", {},                             "reentry", REENTRY, 4],
-  ["Pier menu line",          "port_valen",              "pv_poi_pier_menu",      {},                              "reentry", REENTRY, 3],
-  ["Fish slip menu line",     "port_valen",              "pv_poi_fish_slip_menu", {},                              "reentry", REENTRY, 3],
-  ["Drydock menu line",       "port_valen",              "pv_poi_drydock_menu",   {},                              "reentry", REENTRY, 3]
+  ["Harbor sub-hub line",     "port_valen/port_valen",              "port_valen_harbor_pois", {},                             "reentry", REENTRY, 4],
+  ["Pier menu line",          "port_valen/port_valen",              "pv_poi_pier_menu",      {},                              "reentry", REENTRY, 3],
+  ["Fish slip menu line",     "port_valen/port_valen",              "pv_poi_fish_slip_menu", {},                              "reentry", REENTRY, 3],
+  ["Drydock menu line",       "port_valen/port_valen",              "pv_poi_drydock_menu",   {},                              "reentry", REENTRY, 3]
 ];
 
 function wordsOf(block) {

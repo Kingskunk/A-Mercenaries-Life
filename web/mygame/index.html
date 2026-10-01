@@ -408,9 +408,11 @@ button#statSidebar .turnRow,
   flex-direction: column;
   min-width: 0;
 }
-#statSidebar .turnSub {                       /* "fighting <enemy>" under an ally's name. Same visual idiom as
-                                                .timePeriod (smaller, italic, dim), but without its standalone
-                                                margins, and wrapping freely since the panel is fixed-width. */
+#statSidebar .turnSub {                       /* "fighting <enemy>" under an ally's name, or "chasing <X>" under
+                                                either side's while a commit-and-chase is active. Same visual
+                                                idiom as .timePeriod (smaller, italic, dim), but without its
+                                                standalone margins, and wrapping freely since the panel is
+                                                fixed-width. */
   font-size: 0.88em;
   font-style: italic;
   color: rgba(0,0,0,0.55);
@@ -493,16 +495,15 @@ button#statSidebar .turnRow,
           var cHp = Number(s[pfx + slot + "_hp"]) || 0, cMax = Number(s[pfx + slot + "_max_hp"]) || 0;
           var cDead = kind === "enemy" && cHp <= 0;
           var cPicked = kind === "enemy" && !cDead && chosen === slot;
-          // Enemy ranges are your own distance to that enemy. Ally ranges are that ally's distance to
-          // WHATEVER ENEMY IT IS CURRENTLY FIGHTING, not to you -- the engine has no player-to-ally
-          // distance (see combat.txt). An ally therefore gets a different tier WORD (allyTierName, so tier 0
-          // reads "in melee" rather than the misleading "Engaged") and a dim sub-line naming who it is
-          // actually locked up with, rather than leaving that to a hover tooltip nobody is obliged to find.
-          var cRangeTag = cDead ? "" : " <span class=\"rangeTag\" title=\"" +
-            (kind === "ally" ? "Distance from its own target" : "Distance from you") + "\">(" +
-            (kind === "ally" ? allyTierName(s[pfx + slot + "_range"])
-                             : rangeTierName(Number(s[pfx + slot + "_range"]) || 0)) + ")</span>";
-          var cSub = kind === "ally" ? allyTargetLine(s, slot) : "";
+          // Enemy ranges are your own distance to that enemy, straightforwardly. An ally's distance to YOU
+          // (2026-09-30, on request) is derived, not read directly -- see allyDistanceToPlayer's own header for
+          // the geometry. Both now show as a plain tier word; the ally's OWN distance to its target (the number
+          // this tag used to double as) moved into the sub-line below instead, per combatantSubLine, so neither
+          // fact is lost.
+          var cEffRange = kind === "ally" ? allyDistanceToPlayer(s, slot) : effectiveRange(s, kind, slot);
+          var cRangeTag = cDead ? "" : " <span class=\"rangeTag\" title=\"Distance from you\">(" +
+            rangeTierName(cEffRange) + ")</span>";
+          var cSub = combatantSubLine(s, kind, slot);
           // Magic Missile dart allocation (2026-09-28): a "(N)" prefix on any enemy with darts currently
           // assigned, live while combat_mm_targeting_active -- the click handler (assignMultiTargetDart)
           // writes combat_mm_darts_<slot> directly, and this poll (renderStatSidebar runs every 400ms
@@ -534,12 +535,17 @@ button#statSidebar .turnRow,
         if (akind === "player") { sawPlayer = true; continue; }
         if (akind !== "enemy" && akind !== "ally") continue;
         var apfx = akind === "enemy" ? "combat_enemy" : "combat_ally";
+        // "In your reach" means engaged with the PLAYER specifically -- an actively-chasing combatant's plain
+        // range stays whatever it was the moment it broke off (chase never touches it, only chase_range), and
+        // commit-and-chase only ever fires for someone not already engaged with their default target, so this
+        // stays a true read of "currently at range 0 with you" without needing the chase-aware value here.
         var arange = Number(s[apfx + aslot + "_range"]) || 0;
         var alive = akind === "ally" || (Number(s[apfx + aslot + "_hp"]) || 0) > 0;   // allies carry no downed state
         if (!alive) continue;
         if (akind === "enemy" && arange <= 0) engaged.push(fmt(s["combat_enemy" + aslot + "_name"]) || "Enemy");
+        var aDispRange = akind === "ally" ? allyDistanceToPlayer(s, aslot) : effectiveRange(s, akind, aslot);
         var who = { name: fmt(s[apfx + aslot + "_name"]) || (akind === "enemy" ? "Enemy" : "Ally"),
-                    enemy: akind === "enemy", tier: rangeTierName(arange), tierNum: arange, slot: aslot };
+                    enemy: akind === "enemy", tier: rangeTierName(aDispRange), slot: aslot, kind: akind };
         if (!firstAny) firstAny = who;
         if (sawPlayer && !nextAfter) nextAfter = who;
       }
@@ -547,12 +553,8 @@ button#statSidebar .turnRow,
       // own row; if they happen to be last, fall back to the round's first so the row is never blank.
       var upcoming = nextAfter || firstAny;
       if (upcoming) {
-        // Same disambiguation the turn rows use: an ally's tier is about ITS target, not about you, so it
-        // gets the ally wording plus the sub-line naming who. Only an enemy gets a bare "(tier)".
-        var atag = "<span class=\"rangeTag\" title=\"" +
-          (upcoming.enemy ? "Distance from you" : "Distance from its own target") + "\">(" +
-          (upcoming.enemy ? esc(upcoming.tier) : allyTierName(upcoming.tierNum)) + ")</span>";
-        var asub = upcoming.enemy ? "" : allyTargetLine(s, upcoming.slot);
+        var atag = "<span class=\"rangeTag\" title=\"Distance from you\">(" + esc(upcoming.tier) + ")</span>";
+        var asub = combatantSubLine(s, upcoming.kind, upcoming.slot);
         alertHtml += "<div class=\"statRow alertRow\"><span>Acting next</span><span class=\"turnMain\"><span><span class=\"" +
           (upcoming.enemy ? "enemyName" : "allyName") + "\">" + esc(upcoming.name) + "</span> " + atag +
           "</span>" + (asub ? "<span class=\"turnSub\">" + asub + "</span>" : "") + "</span></div>";
@@ -653,17 +655,64 @@ button#statSidebar .turnRow,
   // genuinely unreadable. Only tier 0 is renamed: the other three are not misleading enough to be worth
   // changing, and leaving them alone keeps one vocabulary across the whole panel.
   function allyTierName(n) { return (Number(n) || 0) <= 0 ? "in melee" : rangeTierName(n); }
-  // The dim second line under an ally's name, naming the enemy it is actually locked up with.
-  // combat_ally<N>_target is the slot that ally last picked -- set in combat_next_turn's ally branch and read
-  // by find_intercepting_ally (combat.txt) -- so the engine already knows this; no new state is needed and this
-  // stays read-only. Returns "" for the inert slot 0 and for an ally that hasn't picked a target yet this fight.
-  // An enemy name is escaped here because this line is built from stats the same way the row above is.
-  function allyTargetLine(s, slot) {
+  // Commit-and-chase (combat.txt, Ranged-AI Position Awareness plan §11.3/6a) freezes a combatant's own
+  // range the moment it commits, and tracks live progress toward its quarry in a separate chase_range field
+  // instead (deliberately, so breaking off needs no reset step -- see that field's own comment in startup.txt).
+  // A plain read of _range during an active chase is therefore stale for the whole chase, not just briefly --
+  // this is the one number both sides agree is "how far this combatant actually is from where it's headed,"
+  // ally-to-player included: see GAMEPLAY_MECHANICS_RULES.md on why _range/_chase_range double as that.
+  function effectiveRange(s, kind, slot) {
+    var pfx = kind === "enemy" ? "combat_enemy" : "combat_ally";
+    var chaseTarget = Number(s[pfx + slot + "_chase_target"]) || 0;
+    if (chaseTarget > 0) return Number(s[pfx + slot + "_chase_range"]) || 0;
+    return Number(s[pfx + slot + "_range"]) || 0;
+  }
+  // An ally's distance to the PLAYER specifically (2026-09-30, on request), derived rather than read directly --
+  // this engine tracks no such number on its own. The insight that makes it possible: combat_enemy<T>_range is
+  // tracked per enemy SLOT, independent of which enemy the player happens to be personally attacking, so the
+  // player's own distance to whichever enemy T this ally is fighting is always available, not just for a
+  // "shared current target." Treating the player and the ally as approaching enemy T from the same general
+  // direction (the same assumption the rest of this tier system already leans on -- one shared depth axis, not
+  // real coordinates) makes |distance(player, T) - distance(ally, T)| an honest estimate of distance(player,
+  // ally): if the ally is dug in well short of the enemy while the player is already engaged with it, that gap
+  // IS roughly how far back the ally is standing. Read the absolute difference, not a floored subtraction --
+  // an ally reported as FARTHER from its target than the player is (a support archer sniping a foe the player
+  // has since closed on) is still that far from the player too, not "basically adjacent." Falls back to the
+  // ally's own effectiveRange, unchanged, before it has picked a target this fight (nothing to difference yet).
+  function allyDistanceToPlayer(s, slot) {
+    var chaseTarget = Number(s["combat_ally" + slot + "_chase_target"]) || 0;
+    var target = chaseTarget > 0 ? chaseTarget : (Number(s["combat_ally" + slot + "_target"]) || 0);
+    var allyRangeToTarget = effectiveRange(s, "ally", slot);
+    if (target <= 0) return allyRangeToTarget;
+    var playerRangeToTarget = Number(s["combat_enemy" + target + "_range"]) || 0;
+    return Math.abs(playerRangeToTarget - allyRangeToTarget);
+  }
+  // The dim second line under a combatant's name. An active chase (either side) takes priority over the
+  // ordinary "locked onto" line -- combat_ally<N>_target/combat_enemy<N>_target are never set while chasing
+  // (only chase_target is), so without this an actively-chasing combatant's row went blank, looking idle
+  // during the one moment it's doing something dramatic. combat_ally<N>_target is otherwise the enemy slot
+  // that ally last picked (combat_next_turn's ally branch); an enemy gets no ordinary line at all outside a
+  // chase, since attacking the player is its unremarkable default and needs no callout. An ally's own distance
+  // to ITS target (allyTierName -- "in melee" rather than "Engaged," which now reads as locked in with the
+  // PLAYER since the main tag moved to allyDistanceToPlayer) rides along in parentheses, so that fact isn't
+  // lost now that the headline tag answers a different question. Returns "" for the inert slot 0 and for a
+  // combatant with nothing current to report. Names are escaped here because this line is built from stats the
+  // same way the row above is.
+  function combatantSubLine(s, kind, slot) {
+    var pfx = kind === "enemy" ? "combat_enemy" : "combat_ally";
+    var oppPfx = kind === "enemy" ? "combat_ally" : "combat_enemy";
+    var chaseTarget = Number(s[pfx + slot + "_chase_target"]) || 0;
+    if (chaseTarget > 0) {
+      var chaseName = fmt(s[oppPfx + chaseTarget + "_name"]) || (kind === "enemy" ? "an ally" : "an enemy");
+      var chaseTier = kind === "ally" ? " (" + allyTierName(effectiveRange(s, "ally", slot)) + ")" : "";
+      return "chasing " + esc(chaseName) + chaseTier;
+    }
+    if (kind !== "ally") return "";
     var t = Number(s["combat_ally" + slot + "_target"]) || 0;
     if (t <= 0) return "";
     var name = fmt(s["combat_enemy" + t + "_name"]) || "an enemy";
     var down = (Number(s["combat_enemy" + t + "_hp"]) || 0) <= 0;
-    return "fighting " + esc(name) + (down ? " (down)" : "");
+    return "fighting " + esc(name) + (down ? " (down)" : " (" + allyTierName(effectiveRange(s, "ally", slot)) + ")");
   }
   // The score shown already includes any boon. The small tag beside it says how much came from a boon:
   // green when it raised the modifier, struck through and dim when it did not (a +1 on an even score, or

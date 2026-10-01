@@ -576,9 +576,46 @@ ${combat_player_dmg_roll_banner}
 *if (not(raa_already_locked))
   *temp raa_weapon {(raa_ap & "weapon_type")}
   *temp raa_range {(raa_ap & "range")}
+  *comment Quick-draw (2026-09-29, Ranged-AI plan §4.4): a RANGED ally at range 0 attacks with its sidearm
+  *comment instead, because shooting from inside a foe's reach costs disadvantage (raa_ranged_pinned, below)
+  *comment and a knife closes at no penalty. Turn-scoped, never a persistent equip -- the durable per-slot
+  *comment weapon_type stays "ranged" and the bow is still in hand next turn, the same transient-override shape the
+  *comment enemy side uses (combat.txt's row-2 quick-draw overwrites scratch, never combat_enemyN_* storage).
+  *comment Allies have no active-target scratch of their own to overwrite, so the override lives HERE instead, inside
+  *comment the not(raa_already_locked) guard: every caller already routes through this label, so a decision made
+  *comment here cannot be bypassed by a call site, and it cannot be re-applied on a refresh that skips the roll.
+  *comment A retreat needs no special case -- the range shifts to 1 BEFORE this runs, so range <= 0 is simply false
+  *comment and a retreating archer shoots her bow normally.
+  *temp raa_knifed false
+  *if (raa_range <= 0)
+    *temp raa_sidearm {(raa_ap & "sidearm_weapon_type")}
+    *if (raa_sidearm = "melee")
+      *set raa_knifed true
+  *comment Nested, not "*set flag raa_knifed": *set takes a LITERAL, so that form would store the string
+  *comment "raa_knifed" rather than the boolean. Same trap as spell_range_of's *set lines (combat.txt).
+  *if (raa_knifed)
+    *set combat_ally_atk_used_sidearm true
+  *else
+    *set combat_ally_atk_used_sidearm false
   *temp raa_ranged_pinned false
-  *if ((raa_weapon = "ranged") and (raa_range <= 0))
-    *set raa_ranged_pinned true
+  *if (raa_knifed)
+    *comment The close-range penalty is specifically a RANGED penalty, so a quick-draw SUPPRESSES it rather than
+    *comment being weighed against it: the whole point of drawing steel is that the shot's problem is the reach,
+    *comment and the knife no longer has that problem. Gated on raa_knifed, never on raa_weapon alone -- that
+    *comment still reads "ranged" after a quick-draw, so testing it directly would penalise the dagger for the
+    *comment archery problem the dagger just solved.
+    *set raa_ranged_pinned false
+  *else
+    *if ((raa_weapon = "ranged") and (raa_range <= 0))
+      *set raa_ranged_pinned true
+  *comment Weapon selection. Each branch does its OWN indirection read of the field it needs rather than picking
+  *comment a "selected" temp first: {a_temp} is indirection (it looks up a variable NAMED by that temp), so
+  *comment stashing a value in a temp and then bracing it would look up a variable called "raa_dmg_sides_sel",
+  *comment which does not exist. Reading the field directly is the shape every other line in this file uses.
+  *if (raa_knifed)
+    *temp raa_atk_bonus {(raa_ap & "sidearm_atk_bonus")}
+  *else
+    *temp raa_atk_bonus {(raa_ap & "atk_bonus")}
   *temp raa_roll 0
   *rand raa_roll 1 20
   *temp raa_adv_label ""
@@ -588,7 +625,6 @@ ${combat_player_dmg_roll_banner}
     *if (raa_roll_2 < raa_roll)
       *set raa_roll raa_roll_2
     *set raa_adv_label " (Disadvantage — in reach)"
-  *temp raa_atk_bonus {(raa_ap & "atk_bonus")}
   *temp raa_total (raa_roll + raa_atk_bonus)
   *temp raa_target_ac {(raa_ep & "ac")}
   *set combat_ally_atk_hit (raa_total >= raa_target_ac)
@@ -605,8 +641,12 @@ ${combat_player_dmg_roll_banner}
   *set combat_ally_dmg_dealt 0
   *if (combat_ally_atk_hit)
     *temp raa_dmg 0
-    *rand raa_dmg 1 {(raa_ap & "dmg_dice_sides")}
-    *temp raa_dmg_bonus {(raa_ap & "dmg_bonus")}
+    *if (raa_knifed)
+      *rand raa_dmg 1 {(raa_ap & "sidearm_dmg_dice_sides")}
+      *temp raa_dmg_bonus {(raa_ap & "sidearm_dmg_bonus")}
+    *else
+      *rand raa_dmg 1 {(raa_ap & "dmg_dice_sides")}
+      *temp raa_dmg_bonus {(raa_ap & "dmg_bonus")}
     *temp raa_dmg_bonus_str ""
     *if (raa_dmg_bonus >= 0)
       *set raa_dmg_bonus_str "+${raa_dmg_bonus}"

@@ -263,7 +263,7 @@ At the center of the square, an octagonal stone public fountain sends clear moun
     *page_break Step back from the conduit…
     *goto mw_conduit_square
   # Travel to another district in the city.
-    *goto_scene port_valen port_valen_travel
+    *goto_scene port_valen/port_valen port_valen_travel
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment WALKING TIME
@@ -1829,7 +1829,7 @@ Hollis & Daughters has the widest front, a bay of small glass panes under a boar
     *else
       # Go into the general store with the wide bay window.
         *goto mw_hollis_store
-    # Look over the other counters.
+    # Walk past the other shops on the street.
       The cloth-and-boot counter is stacked with bolts of wool and linen, and a row of resoled boots hangs by their laces from a rail above. Next door, the candle counter smells of tallow and lamp oil, with squat oil cans lined along the step. The paper stall is the smallest shop on the lane: a table under a canvas awning with sheets of paper, small pots of ink, and sticks of red sealing wax.
       *page_break Step back into the lane…
       *goto mw_lantern_lane
@@ -3213,16 +3213,40 @@ A short passage of wet flagstones opens into a long room lined with cedar tubs a
 You take a bench in the hot room, where the steam is so thick that faces are only shapes and voices are all you have.
 
 *comment QUEST SLOT: pre-seed and aftermath rumors from quests go here, ahead of the ward rumors.
-*if (not(mw_rumor_grain))
+*comment Replay lock (2026-09-30, real bug caught live via refresh_fuzz_test.js): this is a sequential reveal
+*comment ladder over four one-shot flags, each *elseif picking the first still-false one. A bare re-evaluation on
+*comment refresh isn't just a harmless re-set (the individual *set true lines ARE idempotent on their own) -- the
+*comment real problem is that the ladder itself advances an EXTRA rung on replay, because the flag the first pass
+*comment just set true is no longer the first false one, so the SECOND pass falls through to the NEXT rumor
+*comment instead of repeating the same one. That let one sit in the hot room surface two (or, with repeated
+*comment refreshes, all four) one-shot rumors instead of one. Fixed by picking the rung ONCE per page and caching
+*comment which one, not by locking each flag individually.
+*temp mw_gossip_pick 0
+*if (not(locked_mw_gossip_page_id = page_id))
+  *if (not(mw_rumor_grain))
+    *set mw_gossip_pick 1
+  *elseif (not(mw_rumor_steel))
+    *set mw_gossip_pick 2
+  *elseif (not(mw_rumor_steam))
+    *set mw_gossip_pick 3
+  *elseif (not(mw_rumor_daughters))
+    *set mw_gossip_pick 4
+  *else
+    *set mw_gossip_pick 5
+  *set mw_gossip_pick_cached mw_gossip_pick
+  *set locked_mw_gossip_page_id page_id
+*else
+  *set mw_gossip_pick mw_gossip_pick_cached
+*if (mw_gossip_pick = 1)
   *set mw_rumor_grain true
   Two voices on the bench beside you keep it low. "That Council officer with the measuring rod is waving unlicensed flour wagons through the square on Marketdays," says one. "For a payment slip, folded small." The other snorts. "So the licensed drivers pay twice. The Council's fee, and the wait."
-*elseif (not(mw_rumor_steel))
+*elseif (mw_gossip_pick = 2)
   *set mw_rumor_steel true
   A voice with a smith's rasp complains to the steam. "Half a wagon-load of Crag steel is sitting in a shed in Alderford, and no carter will haul it down while the bailiffs work the highway." "Whose is it?" someone asks. "Whoever's brave enough to fetch it."
-*elseif (not(mw_rumor_steam))
+*elseif (mw_gossip_pick = 3)
   *set mw_rumor_steam true
   The talk dies for a moment, and a woman's voice fills the gap. "Somebody in this room has been repeating what's said in the steam." "How do you know?" "A regular stopped coming, and Merrin doesn't lose a regular for nothing." The benches shift, and someone changes the subject to the price of soap.
-*elseif (not(mw_rumor_daughters))
+*elseif (mw_gossip_pick = 4)
   *set mw_rumor_daughters true
   A pair of voices compare notes on the shops up the lane. "The general store's girls came back from the quay with an empty cart again," says one. "Third time this season." "Somebody's buying ahead of them," says the other. "Somebody who knows their hours."
 *else

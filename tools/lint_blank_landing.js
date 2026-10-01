@@ -62,8 +62,10 @@
 
 const fs = require('fs');
 const path = require('path');
+const { collectSceneFiles, collectSceneRelativePaths } = require('./lib/collect_scene_files');
 
-let target = path.resolve(__dirname, '..', 'web', 'mygame', 'scenes');
+const scenesRoot = path.resolve(__dirname, '..', 'web', 'mygame', 'scenes');
+let target = scenesRoot;
 let maxScan = 50;
 for (const arg of process.argv.slice(2)) {
   const scanMatch = /^maxScan=(\d+)$/.exec(arg);
@@ -72,15 +74,6 @@ for (const arg of process.argv.slice(2)) {
   } else {
     target = path.resolve(arg);
   }
-}
-
-function collectScenes(dir) {
-  const stat = fs.statSync(dir);
-  if (stat.isFile()) return [dir];
-  return fs
-    .readdirSync(dir)
-    .filter((f) => f.endsWith('.txt'))
-    .map((f) => path.join(dir, f));
 }
 
 function isBlank(line) {
@@ -94,16 +87,18 @@ const COMMENT_LINE = /^\s*\*comment\b/;
 const CHOICE_LINE = /^\s*\*(choice|fake_choice)\b/;
 const LABEL_DEF = /^\*label\s+([A-Za-z0-9_]+)/;
 const GOTO_LINE = /^\s*\*goto\s+([A-Za-z0-9_]+)/;
-const GOTO_SCENE_LINE = /^\s*\*goto_scene\s+([A-Za-z0-9_]+)(?:\s+([A-Za-z0-9_]+))?/;
+// Scene name (group 1) allows "/" (scenes/ subfolder support, 2026-09-30); the label group (2) never does.
+const GOTO_SCENE_LINE = /^\s*\*goto_scene\s+([A-Za-z0-9_][\w/]*)(?:\s+([A-Za-z0-9_]+))?/;
 
-const sceneDir = fs.statSync(target).isFile() ? path.dirname(target) : target;
-
-// Build a whole-directory label map so *goto_scene can resolve into any
-// scene file, not just the one currently being scanned.
-const fileLines = {}; // basename -> lines[]
-const labelIndex = {}; // basename -> { labelName -> lineIndex }
-for (const f of fs.readdirSync(sceneDir).filter((f) => f.endsWith('.txt'))) {
-  const text = fs.readFileSync(path.join(sceneDir, f), 'utf8');
+// Build a whole-TREE label map (always scenesRoot, not path.dirname(target) -- see lint_gosub_arity.js's
+// identical comment for why that would silently narrow to one subfolder now that scenes/ can nest) so
+// *goto_scene can resolve into any scene file, not just the one currently being scanned. Keyed by path
+// RELATIVE to scenesRoot (e.g. "port_valen/port_valen_dredge_end.txt"), not a bare basename, so two
+// same-named files in different subfolders can never collide.
+const fileLines = {}; // relative path -> lines[]
+const labelIndex = {}; // relative path -> { labelName -> lineIndex }
+for (const f of collectSceneRelativePaths(scenesRoot)) {
+  const text = fs.readFileSync(path.join(scenesRoot, f), 'utf8');
   const lines = text.split(/\r?\n/);
   fileLines[f] = lines;
   const labels = {};
@@ -330,7 +325,8 @@ function lintFile(basename) {
   return { blank, bannerOnly };
 }
 
-const files = collectScenes(target).map((f) => path.basename(f));
+// Relative to scenesRoot, not a bare basename, to match fileLines/labelIndex's key space (see above).
+const files = collectSceneFiles(target).map((f) => path.relative(scenesRoot, f).split(path.sep).join('/'));
 let allBlank = [];
 let allBannerOnly = [];
 for (const f of files) {

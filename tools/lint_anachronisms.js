@@ -32,14 +32,9 @@ const defaultTargets = [
 
 const targets = targetArg ? [path.resolve(targetArg)] : defaultTargets;
 
+const { collectSceneFiles } = require('./lib/collect_scene_files');
 function collectFiles(targetPath) {
-  if (!fs.existsSync(targetPath)) return [];
-  const stat = fs.statSync(targetPath);
-  if (stat.isFile()) return [targetPath];
-  return fs
-    .readdirSync(targetPath)
-    .filter((f) => f.endsWith('.txt') || f.endsWith('.md'))
-    .map((f) => path.join(targetPath, f));
+  return collectSceneFiles(targetPath, ['.txt', '.md']);
 }
 
 const PATTERNS = [

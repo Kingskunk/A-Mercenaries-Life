@@ -160,10 +160,10 @@ load("web/" + gameName + "/mygame.js");
 // crossing into a scene we haven't executed yet already has its lines ready,
 // same as the game itself pre-warms them.
 global.allScenes = {};
-fs.readdirSync("web/" + gameName + "/scenes").forEach(function (file) {
-  if (!/\.txt$/.test(file)) return;
-  var name = file.replace(/\.txt$/, "");
-  var text = fs.readFileSync("web/" + gameName + "/scenes/" + file, "utf8");
+var collectSceneRelativePaths = require("./tools/lib/collect_scene_files").collectSceneRelativePaths;
+collectSceneRelativePaths("web/" + gameName + "/scenes").forEach(function (relPath) {
+  var name = relPath.replace(/\.txt$/, "");
+  var text = fs.readFileSync("web/" + gameName + "/scenes/" + relPath, "utf8");
   var tmp = new Scene();
   tmp.loadLines(text);
   global.allScenes[name] = { crc: tmp.crc, lines: tmp.lines, labels: tmp.labels };

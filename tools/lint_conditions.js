@@ -25,7 +25,9 @@ var fs = require("fs");
 var path = require("path");
 
 var dir = process.argv[2] || "web/mygame/scenes";
-var files = fs.readdirSync(dir).filter(function (f) { return /\.txt$/.test(f); });
+// Relative paths (e.g. "port_valen/port_valen_dredge_end.txt"), not bare basenames -- line 67 below
+// reconstructs the real path via path.join(dir, f), which needs the subfolder segment to still be there.
+var files = require("./lib/collect_scene_files").collectSceneRelativePaths(dir);
 
 // Returns the depth (1-based) of the first group holding 2+ operators, or 0 if every group is fine.
 function firstBadGroup(cond) {

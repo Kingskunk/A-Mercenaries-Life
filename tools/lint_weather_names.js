@@ -39,11 +39,7 @@ const target = process.argv[2] && !/=/.test(process.argv[2])
   ? path.resolve(process.argv[2])
   : path.resolve(__dirname, '..', 'web', 'mygame', 'scenes');
 
-function collectScenes(t) {
-  const stat = fs.statSync(t);
-  if (stat.isFile()) return [t];
-  return fs.readdirSync(t).filter((f) => f.endsWith('.txt')).map((f) => path.join(t, f));
-}
+const { collectSceneFiles: collectScenes } = require('./lib/collect_scene_files');
 
 const CONDITION_LINE = /^\*(?:if|elseif|selectable_if|hide_reveal_if|disable_reveal_if)\b/;
 const WEATHER_TEST = /\bweather\s*(?:=|!=)\s*"[A-Za-z]+"/g;
