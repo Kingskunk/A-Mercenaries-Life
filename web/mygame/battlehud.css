@@ -1,0 +1,146 @@
+/* Battle HUD (prototype). Same palette and night-mode behaviour as inventory.css / trade.css. The dock is pinned to the bottom of the window;
+   JS publishes its height as --bhud-h and the page is padded by that much, so it never sits on top of the story. */
+
+:root { --bhud-h: 0px; }
+
+#battleHud {
+  --bh-bg: #2c2a27;
+  --bh-edge: #8c2a2a;
+  --bh-line: #4a4640;
+  --bh-text: #f0ece6;
+  --bh-muted: #b5ada1;
+  --bh-slot: #1d1b19;
+  --bh-hover: #5a4630;
+  --bh-action: #c0453d;
+  --bh-bonus: #d99a3a;
+  --bh-free: #5fa36d;
+  --bh-move: #5f8fc7;
+  --bh-other: #8d857a;
+
+  --bh-slot-size: 44px;
+  --bh-gap: 4px;
+
+  /* A compact box centred under the story, not a bar across the window: it keeps clear of the TTS button at the bottom right and leaves
+     room at either side for the weapon and rest clusters to come. */
+  position: fixed;
+  left: 50%; bottom: 10px;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100vw - 220px);
+  overflow-x: auto;
+  z-index: 30;
+  padding: 9px 12px 10px;
+  background: var(--bh-bg);
+  border: 1px solid var(--bh-line);
+  border-top: 2px solid var(--bh-edge);
+  border-radius: 10px;
+  box-shadow: 0 6px 26px rgba(0, 0, 0, 0.4);
+  color: var(--bh-text);
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.3;
+}
+#battleHud * { box-sizing: border-box; }
+
+#battleHud .bhud-bar { display: flex; align-items: stretch; gap: 12px; }
+
+/* left cluster: turn budget and the classic-list switch */
+#battleHud .bhud-side { flex: 0 0 112px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+#battleHud .bhud-budget { display: flex; align-items: center; justify-content: space-between; color: var(--bh-muted); font-size: 12px; }
+#battleHud .bhud-budget b { font-weight: 600; color: var(--bh-text); }
+#battleHud .bhud-pip { display: inline-block; width: 10px; height: 10px; margin-left: 3px; border-radius: 50%; border: 2px solid var(--bh-muted); }
+#battleHud .bhud-pip.act.on { background: var(--bh-action); border-color: var(--bh-action); }
+#battleHud .bhud-pip.bon.on { background: var(--bh-bonus); border-color: var(--bh-bonus); }
+#battleHud .bhud-toggle { margin-top: 2px; font-size: 11px; padding: 3px 6px; background: none; border: 1px solid var(--bh-line); border-radius: 5px; color: var(--bh-muted); cursor: pointer; }
+#battleHud .bhud-toggle:hover { background: var(--bh-hover); color: var(--bh-text); }
+
+/* the weapon in hand and the sidearm: two larger buttons above the turn budget */
+#battleHud .bhud-weapons { display: flex; gap: var(--bh-gap); margin-bottom: 4px; }
+#battleHud .bhud-weapon {
+  position: relative; flex: 1 1 0; min-width: 0; height: 58px; padding: 4px 0 3px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  background: var(--bh-slot); border: 1px solid var(--bh-line); border-bottom: 3px solid var(--bh-action);
+  border-radius: 6px; color: var(--bh-text); cursor: pointer;
+}
+#battleHud .bhud-weapon:hover, #battleHud .bhud-weapon:focus-visible { background: var(--bh-hover); outline: none; }
+#battleHud .bhud-weapon:active { transform: translateY(1px); }
+#battleHud .bhud-weapon.off { cursor: not-allowed; filter: grayscale(1); opacity: 0.38; }
+#battleHud .bhud-weapon.off:hover { background: var(--bh-slot); }
+#battleHud .bhud-wglyph { font-size: 22px; line-height: 1; pointer-events: none; }
+#battleHud .bhud-wlabel { font-size: 10px; color: var(--bh-muted); text-transform: uppercase; letter-spacing: 0.04em; pointer-events: none; }
+#battleHud .bhud-weapon .bhud-key { position: absolute; top: 1px; left: 3px; font-size: 9px; color: var(--bh-muted); }
+
+/* Advance / Retreat: a tall pair, one above the other, lettered downwards */
+#battleHud .bhud-moves { flex: 0 0 30px; display: flex; flex-direction: column; gap: var(--bh-gap); }
+#battleHud .bhud-adv {
+  flex: 1 1 0; min-height: 0; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bh-slot); border: 1px solid var(--bh-line); border-bottom: 3px solid var(--bh-move);
+  border-radius: 6px; color: var(--bh-text); cursor: pointer;
+  font: 600 11px Helvetica, Arial, sans-serif; letter-spacing: 0.04em;
+}
+#battleHud .bhud-adv span { writing-mode: vertical-rl; text-orientation: upright; }
+#battleHud .bhud-adv:hover, #battleHud .bhud-adv:focus-visible { background: var(--bh-hover); outline: none; }
+#battleHud .bhud-adv.off { cursor: not-allowed; filter: grayscale(1); opacity: 0.38; }
+#battleHud .bhud-adv.off:hover { background: var(--bh-slot); }
+
+/* grids: divided by a red rule like the reference bar; at most four rows show before a grid scrolls */
+#battleHud .bhud-section { padding-left: 12px; border-left: 2px solid var(--bh-edge); }
+#battleHud .bhud-grid {
+  display: grid; gap: var(--bh-gap);
+  max-height: calc(var(--bh-slot-size) * 4 + var(--bh-gap) * 3 + 2px);
+  overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--bh-line) transparent;
+}
+
+#battleHud .bhud-slot, #battleHud .bhud-empty {
+  width: var(--bh-slot-size); height: var(--bh-slot-size);
+  border-radius: 6px;
+  background: var(--bh-slot);
+  border: 1px solid var(--bh-line);
+}
+#battleHud .bhud-empty { opacity: 0.45; }
+#battleHud .bhud-slot {
+  position: relative;
+  padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--bh-text);
+  cursor: pointer;
+  border-bottom: 3px solid var(--bh-other);
+  overflow: hidden;
+}
+#battleHud .bhud-slot.bhud-action { border-bottom-color: var(--bh-action); }
+#battleHud .bhud-slot.bhud-bonus { border-bottom-color: var(--bh-bonus); }
+#battleHud .bhud-slot.bhud-free { border-bottom-color: var(--bh-free); }
+#battleHud .bhud-slot:hover, #battleHud .bhud-slot:focus-visible { background: var(--bh-hover); outline: none; }
+#battleHud .bhud-slot:active { transform: translateY(1px); }
+#battleHud .bhud-icon { width: 36px; height: 36px; border-radius: 4px; object-fit: cover; pointer-events: none; }
+#battleHud .bhud-glyph { font-size: 19px; font-weight: 600; color: var(--bh-muted); pointer-events: none; }
+#battleHud .bhud-key { position: absolute; top: 1px; left: 3px; font-size: 9px; color: var(--bh-muted); text-shadow: 0 0 3px #000; z-index: 1; pointer-events: none; }
+
+/* an action the hub is not offering right now: kept in its place, dimmed, cannot be pressed */
+#battleHud .bhud-slot.off { cursor: not-allowed; filter: grayscale(1); opacity: 0.38; }
+#battleHud .bhud-slot.off:hover { background: var(--bh-slot); }
+#battleHud .bhud-slot.off:active { transform: none; }
+
+/* hover card */
+#battleHudTip {
+  position: fixed; z-index: 40; max-width: 300px; padding: 8px 11px;
+  background: #1d1b19; color: #f0ece6; border: 1px solid #8c2a2a; border-radius: 7px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.5);
+  font-family: Helvetica, Arial, sans-serif; font-size: 13px; line-height: 1.35;
+  pointer-events: none; opacity: 0; visibility: hidden;
+}
+#battleHudTip.on { opacity: 1; visibility: visible; }
+#battleHudTip .bt-name { font-weight: 700; font-size: 14px; }
+#battleHudTip .bt-kind { color: #b5ada1; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+#battleHudTip .bt-text { color: #ddd5ca; }
+#battleHudTip .bt-off { margin-top: 5px; color: #e58a8a; font-weight: 600; }
+
+#battleHudBack { margin: 0.5rem 0; font-size: 12px; padding: 2px 8px; background: none; border: 1px solid #ddd5ca; border-radius: 5px; cursor: pointer; }
+
+/* While the dock is up: the plain list and its Next button are put away, the page leaves room under the story, and the stat sidebar
+   (fixed at the top right) is kept above the dock. */
+body.battleHudOn { padding-bottom: calc(var(--bhud-h) + 30px); }
+body.battleHudOn #main form .choice,
+body.battleHudOn #main button.next { display: none; }
+body.battleHudOn #statSidebar { max-height: calc(100vh - var(--bhud-h) - 3em); }

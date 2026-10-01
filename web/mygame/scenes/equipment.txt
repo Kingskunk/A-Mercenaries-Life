@@ -893,7 +893,7 @@
   *set gear_blurb "A plain riveted iron skullcap with a small touchmark stamped into the brow."
   *set gear_pct_smith 50
   *set gear_pct_pawn 35
-  *if (((known_mage_armor) or (inv_armor_of_shadows)) or (character_class = "barbarian"))
+  *if ((mage_armor_minutes_left > 0) or (character_class = "barbarian"))
     *set gear_warn "Counts as armor: ends Mage Armor and Unarmored Defense while worn"
   *if (gear_shop = "halda")
     *set gear_quote "\"It turns a glancing blow,\" she says."
@@ -1849,12 +1849,16 @@
 *comment ARMOR CLASS RECOMPUTE
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label recalculate_armor_class
+*comment Armor that stops Mage Armor applying ends it (5e): any body armor, or a head piece that counts as armor. Idempotent, so safe wherever this runs.
+*if (mage_armor_minutes_left > 0)
+  *if ((not(armor_type = "cloth")) or (head_is_armor))
+    *set mage_armor_minutes_left 0
 *temp base_ac 11
 *temp effective_dex_mod dex_mod
 *if (armor_type = "cloth")
   *set base_ac 10
-  *comment Mage Armor: 13 + DEX while not wearing armor
-  *if (((known_mage_armor) or (inv_armor_of_shadows)) and (not(head_is_armor)))
+  *comment Mage Armor: 13 + DEX while not wearing armor, for as long as the cast lasts (mage_armor_minutes_left, 24 hours from the cast).
+  *if ((mage_armor_minutes_left > 0) and (not(head_is_armor)))
     *set base_ac 13
   *comment Barbarian Unarmored Defense: 10 + DEX + CON while not wearing armor
   *if (character_class = "barbarian") and (not(head_is_armor))
@@ -1885,6 +1889,65 @@
   *set armor_class + 1
 
 *gosub recalculate_proficiency
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment MAGE ARMOR: THE CAST (2026-10-02)
+*comment A 24-hour spell. A Wizard, Bard, Ranger or Warlock who knows the spell pays one spell slot from their own pool; the Warlock's Armor of Shadows invocation (and an innate
+*comment Mage Armor from a race) casts it free. mage_armor_cast_check reports what a cast would cost and, when it cannot happen, why; cast_mage_armor does it. Both live
+*comment here, beside recalculate_armor_class, and are called across scenes by the dossier (choicescript_stats.txt codex_cast), so what they report goes through globals.
+*comment Replay: the slot spend is a bare -1, so it is guarded by a per-page lock (mage_armor_cast_locked / locked_mage_armor_cast_page_id); the cast itself is a fixed set.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label mage_armor_cast_check
+*set mage_armor_can_cast false
+*set mage_armor_cost "none"
+*set mage_armor_why ""
+*if (((inv_armor_of_shadows) or (race_cantrip = "mage_armor")) or (race_cantrip_2 = "mage_armor"))
+  *set mage_armor_cost "free"
+*elseif (known_mage_armor)
+  *set mage_armor_cost "slot"
+*if (mage_armor_cost = "none")
+  *set mage_armor_why "You do not know Mage Armor."
+  *return
+*if ((not(armor_type = "cloth")) or (head_is_armor))
+  *set mage_armor_why "You are wearing armor, which the ward cannot sit over."
+  *return
+*if (mage_armor_minutes_left > 0)
+  *set mage_armor_why "The ward is already on you."
+  *return
+*if (mage_armor_cost = "slot")
+  *temp mac_slots 0
+  *if (character_class = "wizard")
+    *set mac_slots wizard_spell_slots
+  *if (character_class = "bard")
+    *set mac_slots bard_spell_slots
+  *if (character_class = "warlock")
+    *set mac_slots warlock_spell_slots
+  *if (character_class = "ranger")
+    *set mac_slots ranger_spell_slots
+  *if (mac_slots <= 0)
+    *set mage_armor_why "You have no spell slot left to spend on it."
+    *return
+*set mage_armor_can_cast true
+*return
+
+*label cast_mage_armor
+*gosub mage_armor_cast_check
+*if (mage_armor_can_cast)
+  *if (not(mage_armor_cast_locked)) or (not(locked_mage_armor_cast_page_id = page_id))
+    *if (mage_armor_cost = "slot")
+      *if (character_class = "wizard")
+        *set wizard_spell_slots - 1
+      *if (character_class = "bard")
+        *set bard_spell_slots - 1
+      *if (character_class = "warlock")
+        *set warlock_spell_slots - 1
+      *if (character_class = "ranger")
+        *set ranger_spell_slots - 1
+    *set mage_armor_minutes_left 1440
+    *gosub recalculate_armor_class
+    *set mage_armor_cast_locked true
+    *set locked_mage_armor_cast_page_id page_id
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

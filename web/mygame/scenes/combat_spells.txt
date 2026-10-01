@@ -334,20 +334,65 @@ ${combat_fear_banner}
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment SPELL: FALSE LIFE (1d4 + 4 Temp HP)
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment It lasts 12 hours now (2026-10-02, a solo campaign's reading of the 1 hour in the book) and can be cast outside a fight. One routine does it either way: false_life_cast_check reports what a cast would
+*comment cost and why it cannot happen, cast_false_life does it, and resolve_cast_false_life (the fight's call) is just cast_false_life. A Wizard, Bard, Ranger or Warlock who knows the spell pays one slot from
+*comment their own pool; the Warlock's Fiendish Vigor invocation casts it free. It is only castable with no temporary hit points (they do not stack), which is the rule the fight's option always had.
+*comment Replay: the slot spend is a bare -1, so a per-page lock (false_life_cast_locked / locked_false_life_cast_page_id) guards the whole body, the roll included.
+*label false_life_cast_check
+*set false_life_can_cast false
+*set false_life_cost "none"
+*set false_life_why ""
+*if (inv_fiendish_vigor)
+  *set false_life_cost "free"
+*elseif (known_false_life)
+  *set false_life_cost "slot"
+*if (false_life_cost = "none")
+  *set false_life_why "You do not know False Life."
+  *return
+*if (temp_hp > 0)
+  *set false_life_why "You already have temporary hit points, and they do not stack."
+  *return
+*if (false_life_cost = "slot")
+  *temp flc_slots 0
+  *if (character_class = "wizard")
+    *set flc_slots wizard_spell_slots
+  *if (character_class = "bard")
+    *set flc_slots bard_spell_slots
+  *if (character_class = "warlock")
+    *set flc_slots warlock_spell_slots
+  *if (character_class = "ranger")
+    *set flc_slots ranger_spell_slots
+  *if (flc_slots <= 0)
+    *set false_life_why "You have no spell slot left to spend on it."
+    *return
+*set false_life_can_cast true
+*return
+
+*label cast_false_life
+*gosub false_life_cast_check
+*if (false_life_can_cast)
+  *if (not(false_life_cast_locked)) or (not(locked_false_life_cast_page_id = page_id))
+    *if (false_life_cost = "slot")
+      *if (character_class = "wizard")
+        *set wizard_spell_slots - 1
+      *if (character_class = "bard")
+        *set bard_spell_slots - 1
+      *if (character_class = "warlock")
+        *set warlock_spell_slots - 1
+      *if (character_class = "ranger")
+        *set ranger_spell_slots - 1
+    *temp fl_roll 0
+    *rand fl_roll 1 4
+    *set combat_cast_result (fl_roll + 4)
+    *set temp_hp combat_cast_result
+    *set false_life_hp combat_cast_result
+    *set false_life_minutes_left 720
+    *set false_life_cast_locked true
+    *set locked_false_life_cast_page_id page_id
+*return
+
 *label resolve_cast_false_life
-*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *comment Fiendish Vigor (Warlock invocation) casts False Life at will, so it costs no slot.
-  *if (not(inv_fiendish_vigor))
-    *if (character_class = "wizard")
-      *set wizard_spell_slots - 1
-    *else
-      *set warlock_spell_slots - 1
-  *temp fl_roll 0
-  *rand fl_roll 1 4
-  *set combat_cast_result (fl_roll + 4)
-  *set temp_hp combat_cast_result
-  *set combat_cast_locked true
-  *set locked_combat_cast_page_id page_id
+*gosub cast_false_life
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

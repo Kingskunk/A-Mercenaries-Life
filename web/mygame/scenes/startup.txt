@@ -117,6 +117,26 @@
 *create known_identify false
 *create known_jump false
 *create known_mage_armor false
+*comment MAGE ARMOR (2026-10-02, made a real cast): minutes left on the spell, 24 hours (1440) from the cast, counted down by calendar.txt advance_time. recalculate_armor_class (equipment.txt)
+*comment reads this, not known_mage_armor, so the spell only protects while it is up. The Warlock's Armor of Shadows casts the same effect for free. Donning armor that stops it applying ends it.
+*create mage_armor_minutes_left 0
+*comment cast_mage_armor (equipment.txt): the per-page lock that keeps a replayed page from spending the slot twice, and the scratch its check reports through (globals, because the dossier calls it across scenes).
+*create mage_armor_cast_locked false
+*create locked_mage_armor_cast_page_id 0
+*create mage_armor_can_cast false
+*create mage_armor_cost "none"
+*create mage_armor_why ""
+*comment FALSE LIFE (2026-10-02, now castable outside a fight and lasting 12 hours): false_life_minutes_left counts down with the clock (calendar.txt advance_time); false_life_hp is what it granted, so
+*comment that expiry removes only what the spell gave. cast_false_life (combat_spells.txt) is the one routine, called by the fight's option and by the dossier; its check reports through the globals below.
+*create false_life_minutes_left 0
+*create false_life_hp 0
+*create false_life_cast_locked false
+*create locked_false_life_cast_page_id 0
+*create false_life_can_cast false
+*create false_life_cost "none"
+*create false_life_why ""
+*comment The one-line result a one-shot spellbook cast leaves for the sidebar to show as a toast after the dossier hands you back to the page you were on (choicescript_stats.txt codex_cast_now_*; index.html).
+*create spell_cast_toast ""
 *create known_magic_missile false
 *create known_shield false
 *create known_speak_with_animals false
@@ -241,6 +261,16 @@
 *comment ("" when nothing), rest_can_gain is true when there is something to win back.
 *create rest_gave ""
 *create rest_can_gain false
+*comment SHORT REST CAP (2026-10-02): how many short rests may be taken between long sleeps, for EVERY class. short_rests_max is the one number to change (2 now). A short rest that gives something
+*comment back spends one of short_rests_left; restore_class_resources (a long rest) refills it. Short rests still take an hour and never touch the hunger or tiredness clocks, so they are not a way around sleep.
+*create short_rests_max 2
+*create short_rests_left 2
+*comment codex_rest_short (choicescript_stats.txt): the per-page lock that keeps a replay of the rest's result page from taking a SECOND rest (another hour, another give-back, another short rest spent), and the two
+*comment values that page prints, kept in stats so the replay can print the same page it printed the first time.
+*create short_rest_page_locked false
+*create locked_short_rest_page_id 0
+*create short_rest_gave_text ""
+*create short_rest_pick 1
 *comment Class resource MAXIMUMS. refresh_class_resource_maxs (character_progression.txt) is the only place a maximum is written down, and
 *comment update_dnd_stats calls it, so they follow character_level. These are the level 1 numbers; nothing else may hard-code them.
 *create fighter_second_wind_max 2
@@ -327,6 +357,9 @@
 *create combat_rebuke_triggered false
 *create combat_rebuke_save_banner ""
 *create combat_rebuke_banner ""
+*comment fight_reach_check (combat.txt): set by the reach check that melee attacks and Shocking Grasp run when chosen.
+*create combat_reach_ok true
+*create combat_reach_msg ""
 *create combat_save_quiet false
 *create combat_fear_banner ""
 *comment FRIENDLY TARGETING (2026-10-02): a friendly spell (Healing Word first) lets the player pick who it lands on in the sidebar, the way Magic Missile picks its targets. While

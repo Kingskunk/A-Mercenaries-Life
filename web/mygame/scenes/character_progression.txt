@@ -161,6 +161,9 @@
 *label restore_class_resources
 *gosub refresh_class_resource_maxs
 *set temp_hp 0
+*set false_life_minutes_left 0
+*set false_life_hp 0
+*set short_rests_left short_rests_max
 *if (character_class = "fighter")
   *set fighter_second_wind_uses fighter_second_wind_max
   *set fighter_action_surge_uses fighter_action_surge_max
@@ -183,6 +186,10 @@
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment SHORT REST
+*comment SHORT REST CAP (2026-10-02): only short_rests_max (2) short rests may be taken between long sleeps, for every class; one that gives something spends one of short_rests_left, and a long
+*comment rest (restore_class_resources) refills them. With none left, short_rest_preview reports nothing to gain, which is what every caller already tests.
+*comment SLOTS: a Wizard, Bard or Ranger gets back HALF of their spell slots, rounded up, each short rest; a Warlock's Pact Magic slots all come back. A Wizard's Arcane Recovery is a bonus on top, once
+*comment between long rests (slots whose combined level is up to half the Wizard level, rounded up), so a Wizard who is nearly drained comes back fuller than a Bard does.
 *comment What a short rest gives back: a fighter regains ONE Second Wind use (2024 rules) and a warlock's Pact Magic slots all come
 *comment back. short_rest_preview only reports (rest_can_gain, rest_gave); do_short_rest applies it. The caller advances the hour
 *comment (advance_time) and prints the words (the dossier its own banner, the garret short_rest_banner).
@@ -195,25 +202,40 @@
 *gosub refresh_class_resource_maxs
 *set rest_gave ""
 *set rest_can_gain false
+*if (short_rests_left <= 0)
+  *return
+*temp sr_piece ""
 *if (character_class = "fighter")
   *if (fighter_second_wind_uses < fighter_second_wind_max)
-    *set rest_can_gain true
-    *set rest_gave "Second Wind"
+    *set sr_piece "Second Wind"
+    *gosub short_rest_add_piece
   *if (fighter_action_surge_uses < fighter_action_surge_max)
-    *set rest_can_gain true
-    *if (rest_gave = "")
-      *set rest_gave "Action Surge"
-    *else
-      *set rest_gave "Second Wind and Action Surge"
+    *set sr_piece "Action Surge"
+    *gosub short_rest_add_piece
 *if ((character_class = "warlock") and (warlock_spell_slots < warlock_spell_slots_max))
-  *set rest_can_gain true
-  *set rest_gave "Pact Magic slots"
+  *set sr_piece "Pact Magic slots"
+  *gosub short_rest_add_piece
 *if ((character_class = "bard") and (bard_inspiration_uses < bard_inspiration_max))
-  *set rest_can_gain true
-  *set rest_gave "Bardic Inspiration"
-*if (((character_class = "wizard") and (not(wizard_arcane_recovery_used))) and (wizard_spell_slots < wizard_spell_slots_max))
-  *set rest_can_gain true
-  *set rest_gave "Arcane Recovery"
+  *set sr_piece "Bardic Inspiration"
+  *gosub short_rest_add_piece
+*if ((character_class = "bard") and (bard_spell_slots < bard_spell_slots_max))
+  *set sr_piece "spell slots"
+  *gosub short_rest_add_piece
+*if ((character_class = "wizard") and (wizard_spell_slots < wizard_spell_slots_max))
+  *set sr_piece "spell slots"
+  *gosub short_rest_add_piece
+*if ((character_class = "ranger") and (ranger_spell_slots < ranger_spell_slots_max))
+  *set sr_piece "spell slots"
+  *gosub short_rest_add_piece
+*return
+
+*comment Joins what a short rest gives back into one phrase: "Second Wind", then "Second Wind and Action Surge", then "... and spell slots". Reads sr_piece, set by short_rest_preview just before.
+*label short_rest_add_piece
+*set rest_can_gain true
+*if (rest_gave = "")
+  *set rest_gave sr_piece
+*else
+  *set rest_gave (rest_gave & (" and " & sr_piece))
 *return
 
 *label do_short_rest
@@ -228,14 +250,33 @@
     *set warlock_spell_slots warlock_spell_slots_max
   *if (character_class = "bard")
     *set bard_inspiration_uses bard_inspiration_max
+  *comment Half of the spell slots, rounded up (all slots are first level here, so that many slots), capped at what is missing. Each pool is written out by name: the quicktest walks every branch,
+  *comment so a variable name built from the class (it would be "none_spell_slots" for a class-less character) fails there.
+  *temp sr_half 0
+  *if (character_class = "wizard")
+    *set sr_half ((wizard_spell_slots_max + (wizard_spell_slots_max modulo 2)) / 2)
+    *if (sr_half > (wizard_spell_slots_max - wizard_spell_slots))
+      *set sr_half (wizard_spell_slots_max - wizard_spell_slots)
+    *set wizard_spell_slots + sr_half
+  *if (character_class = "bard")
+    *set sr_half ((bard_spell_slots_max + (bard_spell_slots_max modulo 2)) / 2)
+    *if (sr_half > (bard_spell_slots_max - bard_spell_slots))
+      *set sr_half (bard_spell_slots_max - bard_spell_slots)
+    *set bard_spell_slots + sr_half
+  *if (character_class = "ranger")
+    *set sr_half ((ranger_spell_slots_max + (ranger_spell_slots_max modulo 2)) / 2)
+    *if (sr_half > (ranger_spell_slots_max - ranger_spell_slots))
+      *set sr_half (ranger_spell_slots_max - ranger_spell_slots)
+    *set ranger_spell_slots + sr_half
   *if (((character_class = "wizard") and (not(wizard_arcane_recovery_used))) and (wizard_spell_slots < wizard_spell_slots_max))
-    *comment Arcane Recovery: slots whose combined level is up to half the Wizard level, rounded up. Every slot is first level, so that is this many slots, capped at what is missing.
+    *comment Arcane Recovery, on top of the half above: slots whose combined level is up to half the Wizard level, rounded up. Every slot is first level, so that is this many slots, capped at what is still missing.
     *temp sr_ar ((character_level + (character_level modulo 2)) / 2)
     *temp sr_missing (wizard_spell_slots_max - wizard_spell_slots)
     *if (sr_ar > sr_missing)
       *set sr_ar sr_missing
     *set wizard_spell_slots + sr_ar
     *set wizard_arcane_recovery_used true
+  *set short_rests_left - 1
   *set last_short_rest_stamp sr_stamp
 *comment The report variables are scratch: clear them once applied, so a replay of the calling page (which would find nothing left to gain) leaves the same values behind.
 *set rest_gave ""
@@ -253,10 +294,15 @@
   [b][🕐 Short Rest | Pact Magic slots ${warlock_spell_slots} / ${warlock_spell_slots_max}][/b]
 *if (character_class = "bard")
   *line_break
-  [b][🕐 Short Rest | Bardic Inspiration ${bard_inspiration_uses} / ${bard_inspiration_max}][/b]
+  [b][🕐 Short Rest | Bardic Inspiration ${bard_inspiration_uses} / ${bard_inspiration_max} | Spell slots ${bard_spell_slots} / ${bard_spell_slots_max}][/b]
 *if (character_class = "wizard")
   *line_break
   [b][🕐 Short Rest | Spell slots ${wizard_spell_slots} / ${wizard_spell_slots_max}][/b]
+*if ((character_class = "ranger") and (ranger_spell_slots_max > 0))
+  *line_break
+  [b][🕐 Short Rest | Spell slots ${ranger_spell_slots} / ${ranger_spell_slots_max}][/b]
+*line_break
+[b][🕐 Short rests left before you sleep | ${short_rests_left} / ${short_rests_max}][/b]
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

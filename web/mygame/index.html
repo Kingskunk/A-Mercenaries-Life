@@ -42,6 +42,7 @@ either express or implied.
 <script src="quest-data.js"></script>
 <script src="spell-data.js"></script>
 <script src="spell-icons.js"></script>
+<script src="action-icons.js"></script>
 <script src="equipment-data.generated.js"></script>
 <script src="equipment-panel.js"></script>
 <script src="inventory-data.js"></script>
@@ -49,11 +50,13 @@ either express or implied.
 <script src="trade-data.generated.js"></script>
 <script src="trade.js"></script>
 <script src="levelup.js"></script>
+<script src="battlehud.js"></script>
 <link href="../alertify.css" rel="stylesheet" type="text/css">
 <link href="lorebook.css" rel="stylesheet" type="text/css">
 <link href="inventory.css" rel="stylesheet" type="text/css">
 <link href="trade.css" rel="stylesheet" type="text/css">
 <link href="levelup.css" rel="stylesheet" type="text/css">
+<link href="battlehud.css" rel="stylesheet" type="text/css">
 <!--[if IE 6]><style>.alertify-logs { position: absolute; }</style><![endif]-->
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <script>
@@ -256,6 +259,21 @@ var rootDir = "../";
 #statSidebar .spellDetail b { color: rgba(0,0,0,0.9); }
 #statSidebar .spellDetail .spellMeta { display: block; margin-top: 0.2em; font-size: 0.85em; color: rgba(0,0,0,0.55); }
 #statSidebar .spellEmpty { font-size: 0.85em; color: rgba(0,0,0,0.5); padding: 0.2em 0; }
+#spellCastToast {
+  position: fixed; left: 50%; bottom: 1.2rem; transform: translateX(-50%) translateY(20px);
+  z-index: 60; max-width: min(520px, calc(100vw - 2rem)); padding: 0.6rem 1rem;
+  background: #2c2c2c; color: #f0ece6; border-left: 4px solid #b8791f; border-radius: 6px;
+  font-family: Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.4;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.4); opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s;
+}
+#spellCastToast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#statSidebar .spellCast {
+  display: block; width: 100%; margin-top: 0.5em; padding: 0.35em 0.5em;
+  font: inherit; font-size: 0.95em; font-weight: 600; cursor: pointer;
+  color: #fff; background: rgba(122,62,29,0.9); border: 1px solid rgba(122,62,29,1); border-radius: 4px;
+}
+#statSidebar .spellCast:hover:not(:disabled) { background: rgba(122,62,29,1); }
+#statSidebar .spellCast:disabled { cursor: not-allowed; color: rgba(0,0,0,0.45); background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.15); font-weight: 400; }
 #statSidebar .spellNote { font-size: 0.78em; color: rgba(0,0,0,0.45); margin-top: 0.4em; line-height: 1.4; }
 /* Combat state (2026-09-27): the sidebar's own header gets a small badge, and date/time/weather/purse swap for
    a live turn-order list (renderStatSidebar below) -- reusing the combat_turn_kind_N/_slot_N stats the ChoiceScript
@@ -433,6 +451,7 @@ button#statSidebar .turnRow,
   function renderStatSidebar() {
     var el = document.getElementById("statSidebar");
     if (!el) return;
+    showSpellToast();
     var s = window.stats;
     if (!s || !s.intake_completed || s.intake_completed === "false") {
       el.style.display = "none";
@@ -443,6 +462,10 @@ button#statSidebar .turnRow,
     var hpHtml = fmt(s.hp_current) + " / " + fmt(s.hp_max);
     if (s.temp_hp && Number(s.temp_hp) > 0) {
       hpHtml += " (+" + fmt(s.temp_hp) + ")";
+    }
+    // False Life (12 hours, 2026-10-02): a tag with the hours left while the spell's temporary hit points are running.
+    if (Number(s.false_life_minutes_left) > 0 && Number(s.temp_hp) > 0) {
+      hpHtml += " <span class=\"boon boonUp\" title=\"False Life: temporary hit points that fade after about " + Math.ceil(Number(s.false_life_minutes_left) / 60) + " more hours, or when you sleep.\">False Life " + Math.ceil(Number(s.false_life_minutes_left) / 60) + "h</span>";
     }
     var resourceHtml = "";
     if (s.character_class === "wizard") {
@@ -466,6 +489,11 @@ button#statSidebar .turnRow,
       if (Number(s.ranger_spell_slots_max) > 0) {
         resourceHtml += "<div class=\"statRow\"><span>Spell Slots</span><span>" + fmt(s.ranger_spell_slots) + " / " + fmt(s.ranger_spell_slots_max) + "</span></div>";
       }
+    }
+
+    // Short rests left before the next long sleep (2026-10-02), for every class. Only shown once a short rest has been spent, so the row is not noise at full.
+    if (Number(s.short_rests_max) > 0 && Number(s.short_rests_left) < Number(s.short_rests_max)) {
+      resourceHtml += "<div class=\"statRow\"><span>Short Rests</span><span>" + fmt(s.short_rests_left) + " / " + fmt(s.short_rests_max) + "</span></div>";
     }
 
     // Every quest listed in quest-data.js whose active(stats) is true.
@@ -599,7 +627,7 @@ button#statSidebar .turnRow,
     el.innerHTML =
       "<h3><span>" + fmt(s.name) + " — Lv" + fmt(s.character_level) + " " + fmt(s.class_name || "Recruit") + "</span>" + combatBadgeHtml + "</h3>" +
       "<div class=\"statRow\"><span>HP</span><span>" + hpHtml + "</span></div>" +
-      "<div class=\"statRow\"><span>AC</span><span>" + effectiveAc(s) + shieldAcTag(s) + "</span></div>" +
+      "<div class=\"statRow\"><span>AC</span><span>" + effectiveAc(s) + mageArmorTag(s) + shieldAcTag(s) + "</span></div>" +
       "<div class=\"statRow\"><span>Proficiency</span><span>+" + fmt(s.prof_bonus) + "</span></div>" +
       ((isTruthy(s.armor_nonprof) || isTruthy(s.shield_nonprof)) ? "<div class=\"timePeriod\" title=\"Your class is not trained in this gear: disadvantage on STR and DEX rolls\" style=\"color:#b5651d;font-style:normal;\">⚠ " + (isTruthy(s.armor_nonprof) && isTruthy(s.shield_nonprof) ? "Armor & shield" : (isTruthy(s.shield_nonprof) ? "Shield" : "Armor")) + ": not proficient</div>" : "") +
       resourceHtml +
@@ -658,6 +686,12 @@ button#statSidebar .turnRow,
   function effectiveAc(s) { return fmt(Number(s.armor_class) + (isTruthy(s.shield_armed) ? 5 : 0)); }
   // The green "+5 Shield" tag beside it, in the same visual idiom abilityBoon already uses for the
   // ability grid: the number shown is the real one, the tag says where the bonus came from.
+  // Mage Armor (24-hour cast, 2026-10-02): a tag beside the AC while the ward is up, with the hours left, rounded up.
+  function mageArmorTag(s) {
+    var m = Number(s.mage_armor_minutes_left) || 0;
+    if (m <= 0) return "";
+    return " <span class=\"boon boonUp\" title=\"Mage Armor: base AC 13 + Dexterity while you wear no armor. Ends in about " + Math.ceil(m / 60) + " hours, or if you put on armor.\">Mage Armor " + Math.ceil(m / 60) + "h</span>";
+  }
   function shieldAcTag(s) {
     if (!isTruthy(s.shield_armed)) return "";
     return " <span class=\"boon boonUp\" title=\"Shield: +5 AC until the next hit that gets through it\">+5 Shield</span>";
@@ -960,10 +994,10 @@ button#statSidebar .turnRow,
   }
 
   // ── Spellbook section (proof of concept) ──────────────────────────────────────────────────────────────────
-  // READ-ONLY. Lists the character's known workings under a collapsed <details>, behind a row of
-  // level-orb tabs; clicking a spell pins its description. Writes NOTHING to window.stats and calls no
-  // ChoiceScript code -- the interactive version (casting, spending the action/bonus pool) is
-  // deliberately not built yet. No game rule is duplicated either: every spell and its description
+  // Lists the character's known workings under a collapsed <details>, behind a row of level-orb tabs;
+  // clicking a spell pins its description. It writes NOTHING to window.stats and runs no game rules itself.
+  // A spell with an out-of-combat cast (CASTABLE_OUT_OF_COMBAT, below) gets a Cast button, which only OPENS the
+  // dossier's own Cast menu -- the cast is ChoiceScript, never done here (2026-10-02, Mage Armor first). No game rule is duplicated either: every spell and its description
   // come from stats the game already wrote (wizard_cantrip, bard_spell, and their _desc pairs); only
   // the id -> level/name/school mapping is ours, from spell-data.js.
   //
@@ -1005,6 +1039,42 @@ button#statSidebar .turnRow,
   // the labelled row measured 43px spare, and a fifth labelled tab needs 44px, i.e. it wrapped.
   // Only the cantrip tab keeps its word, since "0" would not say what it means.
   function spellTabText(lvl) { return lvl === 0 ? "Cantrip" : ""; }
+  // Spells that can be cast out of a fight, and the dossier label that does it (choicescript_stats.txt). The sidebar only writes stats, so a cast cannot run from here: the Cast
+  // button opens the dossier's own Cast menu, real ChoiceScript with the slot spend and replay locks, the same route the inventory's Rest card takes. A spell is added here when
+  // the dossier gains an entry for it. Not offered mid-fight (the fight has its own options) or while the dossier is already open.
+  var CASTABLE_OUT_OF_COMBAT = { mage_armor: "codex_cast_now_mage_armor", false_life: "codex_cast_now_false_life" };
+  function canOpenDossier() {
+    var s = window.stats || {};
+    if (s.scene && s.scene.secondaryMode === "stats") return false;
+    return !isTruthy(s.combat_engaged) && typeof window.Scene === "function" && typeof window.clearScreen === "function" && !!window.nav;
+  }
+  function openDossierAt(label) {
+    if (!canOpenDossier()) return;
+    var scene = new window.Scene("choicescript_stats", window.stats, window.nav, { secondaryMode: "stats", saveSlot: "temp" });
+    scene.targetLabel = { label: label, origin: "url", originLine: 0 };
+    window.clearScreen(function () {
+      if (typeof window.setButtonTitles === "function") window.setButtonTitles();
+      scene.execute();
+    });
+  }
+  // One-shot casts (CASTABLE_OUT_OF_COMBAT) leave a one-line result in stats.spell_cast_toast just before the game hands the player back to their page; this shows it and clears it.
+  function showSpellToast() {
+    var s = window.stats || {};
+    var msg = String(s.spell_cast_toast || "");
+    if (!msg) return;
+    s.spell_cast_toast = "";
+    var el = document.getElementById("spellCastToast");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "spellCastToast";
+      el.setAttribute("role", "status");
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.className = "show";
+    clearTimeout(el._t);
+    el._t = setTimeout(function () { el.className = ""; }, 5000);
+  }
   function spellSectionHtml() {
     var spells = knownSpells();
     var orbs = window.SPELL_TAB_ORBS || {};
@@ -1046,13 +1116,19 @@ button#statSidebar .turnRow,
         body += "<div class=\"spellDetail\">" + lead + esc(pick.desc || pick.meta.name) +
                 "<span class=\"spellMeta\">" + spellTabLabel(pick.meta.level) +
                 (pick.meta.schools ? " \u00b7 " + esc(pick.meta.schools) : "") +
-                " \u00b7 read-only preview</span></div>";
+                "</span></div>";
+        var castLabel = CASTABLE_OUT_OF_COMBAT[pick.id];
+        if (castLabel) {
+          var can = canOpenDossier();
+          body += "<button type=\"button\" class=\"spellCast\" data-spell-cast=\"" + esc(castLabel) + "\"" + (can ? "" : " disabled") + ">" +
+                  (can ? "Cast\u2026" : (isTruthy((window.stats || {}).combat_engaged) ? "Cannot cast in a fight here" : "Close the dossier to cast")) + "</button>";
+        }
       }
     }
     return "<details class=\"spellbook\"" + (spellOpen ? " open" : "") + ">" +
              "<summary>Spellbook" + (spells.length ? " (" + spells.length + ")" : "") + "</summary>" +
              "<div class=\"spellTabs\">" + tabs + "</div>" + body +
-             "<div class=\"spellNote\">Preview only \u2014 nothing here casts yet.</div>" +
+             "<div class=\"spellNote\">Select a spell to read it. Spells that can be cast outside a fight have a Cast button.</div>" +
            "</details>";
   }
   // Tab and spell clicks are delegated on the sidebar for the same reason the combatant card's are: the
@@ -1068,6 +1144,11 @@ button#statSidebar .turnRow,
       spellPicked = null;                    // a different level can't keep the old pin
       spellTab = lvl;                        // always re-select; an empty level shows its own empty note
       renderStatSidebar();
+      return;
+    }
+    var castBtn = el.closest("[data-spell-cast]");
+    if (castBtn) {
+      if (!castBtn.disabled) openDossierAt(castBtn.getAttribute("data-spell-cast"));
       return;
     }
     var spBtn = el.closest("[data-spell]");
@@ -1116,7 +1197,10 @@ button#statSidebar .turnRow,
       assignMultiTargetDart(slot);
       return;
     }
-    window.stats.combat_player_chosen_target = slot;
+    // Clicking the enemy that is already picked clears the pick (2026-10-02), so a target can be given up and not only swapped for another:
+    // with none picked the game goes back to its own choice (the lowest-HP enemy, or one in reach for a melee attack). A pick is otherwise
+    // sticky until that enemy dies. The hub list that is already on screen is not rebuilt by this; the choices that run from it read the new state.
+    window.stats.combat_player_chosen_target = (Number(window.stats.combat_player_chosen_target) === slot) ? 0 : slot;
     renderStatSidebar();
   });
   // Friendly targeting (2026-10-02): while a friendly spell has armed combat_friendly_targeting_active, the player's own row

@@ -96,6 +96,22 @@
       *set drink_buff_desc "none"
       *set drink_buff_stat "none"
       *set drink_buff_bonus 0
+  *comment Mage Armor (24 hours from the cast): counted down with the clock; when it runs out the AC is recomputed without it.
+  *if (mage_armor_minutes_left > 0) and (total_mins_this_call > 0)
+    *if (mage_armor_minutes_left > total_mins_this_call)
+      *set mage_armor_minutes_left - total_mins_this_call
+    *else
+      *set mage_armor_minutes_left 0
+      *gosub_scene equipment recalculate_armor_class
+  *comment False Life (12 hours from the cast): counted down with the clock. When it runs out, what it granted goes, unless something else has since replaced it with a larger amount.
+  *if (false_life_minutes_left > 0) and (total_mins_this_call > 0)
+    *if (false_life_minutes_left > total_mins_this_call)
+      *set false_life_minutes_left - total_mins_this_call
+    *else
+      *set false_life_minutes_left 0
+      *if (temp_hp <= false_life_hp)
+        *set temp_hp 0
+      *set false_life_hp 0
   *if (unique_buff1_active) and (total_mins_this_call > 0)
     *if (unique_buff1_minutes_left > total_mins_this_call)
       *set unique_buff1_minutes_left - total_mins_this_call

@@ -89,7 +89,11 @@ const RENAMES = {
 
   // jump: no Jump spell art either, but ICONS/Action/ has a leaping figure whose Jump_Icon reads as
   // the spell directly.
-  jump: "Action/Jump_Icon.webp"
+  jump: "Action/Jump_Icon.webp",
+
+  // cause_fear: the library has no Cause Fear art, but its plain Fear spell is the same idea (a dread laid on a creature), so
+  // this is a stand-in for the picture only.
+  cause_fear: "Spell/Fear_Icon.webp"
 };
 
 // The level-orb tab icons, by level. 0 is the cantrip row. The library ships Ico_knownSpells_lvl_01
