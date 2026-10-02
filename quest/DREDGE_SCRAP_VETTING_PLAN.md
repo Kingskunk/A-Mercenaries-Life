@@ -1,19 +1,19 @@
 # Quest Plan: The Dealer's Real Money (The Boat-Sheds Scrap Yard)
 
-A minor, low-stakes recruitment quest for **the scrap yard** in Dredge-End. Answers the question "what happens if you sell scrap to the same dealer for two weeks straight" — and hands the player their first taste of Black Oath work as a *reward*, not an obstacle to overcome. **The player never learns it's Black Oath work at this stage** — Hask connects them to "a man he does business with" who needs a runner, and nothing carried is illegal or dangerous. `black_oath_rep` still ticks up in the background; the reveal is reserved for later content. Scoped as a Minor/Street Task (`QUEST_DESIGN_RULES.md` §6): no faction-shift climax, and it deliberately does not carry the full three-branch Mercenary Dilemma structure that the bigger district quests use — see the Design Notes at the end for why, and push back on that if you want the harder version instead.
+A minor, low-stakes recruitment quest for **the scrap yard** in Dredge-End. Three repeat sales earn Hask's first offer, and three successful courier rounds earn the truth: the player has been carrying for the Black Oath. Hask can then sponsor the player as an associate, meaning named paid work without a sworn oath. Scoped as a Minor/Street Task (`QUEST_DESIGN_RULES.md` §6): no faction-shift climax, and it deliberately does not carry the full three-branch Mercenary Dilemma structure that the bigger district quests use.
 
 ---
 
 ## 1. Overview & Cast
 
 * **Location:** The scrap yard at `cut_sheds_hub` (Dredge-End).
-* **Trigger:** the 14th time the player sells scrap to the dealer (`cut_scrap_sold_count`, a new counter — see §6). At roughly one wading trip and one sale per day, that's about two weeks of honest mudlarking before he decides this face is worn down enough to make the offer.
+* **Trigger:** the 3rd time the player sells scrap to the dealer (`cut_scrap_sold_count`). Three transactions are enough for Hask to recognize a reliable repeat seller without forcing two weeks of repeated labor before the story begins.
 * **Cast:**
   * **The Scrap Dealer (Hask):** currently unnamed in prose ("a wide, slow man in a greased canvas apron"). He gives his name at this exact beat, once he's decided the player is worth naming — matches the "names introduced in-story only" rule. Slow, unhurried, watches hands and boots before faces. Already established fencing hot chain with rasped-off harbor-master proof-stamps (his 2nd rumor line, `cut_rumors_scrap = 2`), so he's Oath-adjacent, not Oath leadership — a middleman, not a boss.
 
 ---
 
-## 2. The Approach (fires once, on the 14th sale)
+## 2. The Approach (fires once, on the 3rd sale)
 
 Appended to the *existing* sale text at `cut_sheds_hub`, after the coins are counted out — same beat, not a new hub option:
 
@@ -109,7 +109,7 @@ One mechanic used two ways — the first attempt, then its own repeatable form a
   * `[b][💰 Deliveries Made: +12 Copper Bits][/b]`
   * `hask_courier_count + 1`
   * No further `black_oath_rep` change — that was the first run's reward specifically, so the loop doesn't quietly farm reputation the way Crane Three's old silver farmed the writ.
-  * Once `hask_courier_count` crosses a threshold (see Design Notes), this is where "another job" would start being offered — not built yet.
+  * At `hask_courier_count >= 3`, the associate reveal becomes available at Hask's yard.
 
 * **Failure (fail-forward, every attempt — no permanent flag, no escalating DC, since nothing here is illegal and there's no authority to get more alert):**
   > One hand-off runs long — a wrong turn, a slow crowd, a stop that keeps talking past when you'd rather be gone — and by the time you're back the satchel's a delivery short.
@@ -135,12 +135,14 @@ At 12 copper/day for 6 hours (2 copper/hour) against wading's 6 copper/day for 5
 ## 6. Variables
 
 ```choicescript
-*create cut_scrap_sold_count 0         *comment times sold TO Hask specifically -- fires the offer at 14
+*create cut_scrap_sold_count 0         *comment times sold TO Hask specifically -- fires the offer at 3
 *create scrap_vetting_offer_seen false *comment Hask has raised it at least once; makes the ask-again hub option available
 *create scrap_vetting_quest_stage "unstarted" *comment "unstarted", "active", "resolved"
 *create scrap_vetting_day 0            *comment campaign_day of the last delivery-round attempt (either stage); once per day, like wading and the dredge shift
 *create hask_courier_unlocked false    *comment first round resolved; unlocks the standing "run a round" hub option
-*create hask_courier_count 0           *comment lifetime SUCCESSFUL rounds; RESERVED to gate "another job" later (see Design Notes)
+*create hask_courier_count 0           *comment lifetime SUCCESSFUL rounds; 3 opens named Black Oath work
+*create hask_associate_offer_seen false *comment Hask has revealed the employer
+*create hask_associate_joined false     *comment one-time associate/rep award guard
 ```
 
 `scrap_vetting_day` doubles as the ongoing job's cadence clock too (no separate `hask_work_day` needed now — one clock, one meaning, since first attempt and every later attempt share identical stakes).
@@ -151,9 +153,20 @@ At 12 copper/day for 6 hours (2 copper/hour) against wading's 6 copper/day for 5
 
 ## 7. Design Notes / Open Questions
 
-* **`black_oath_rep` moves without the player ever being told why.** This is deliberate — you said the player is unknowingly running for a Black Oath associate, so the text can never name them, and the protagonist has no way to know. Mechanically this is just a background stat change, same as any other; nothing in `narrative_guidelines.md` requires the *player-character* to understand every number that moves, only that the *narration* never asserts knowledge the character doesn't have. The reveal (if any) belongs to whatever later quest cashes this in.
-* **"Another job" is a future hook, not built here.** Proposed gate: `hask_courier_count >= 12` (raised from the earlier draft's 6, since the cadence is now daily rather than every 2 days — 12 successful runs is about 12 days of reliable running, keeping it comparable in length to the ~2 weeks of mudlarking that got the player this far in the first place). What that job actually is stays open; presumably it's the first point where "not carrying anything illegal *yet*" stops being true.
+* **The first `black_oath_rep` move remains hidden.** The player is unknowingly running for a Black Oath contact, so the first successful round cannot name the faction. Hask cashes that secrecy in after three successful rounds by revealing the employer and offering named associate work.
+* **Named work opens after three successful rounds.** Hask reveals that the deliveries belong to the Black Oath and offers associate standing. Association means paid work with Hask's name attached; it is deliberately not a sworn oath.
+* **The outlaw origin is not silently forgiven.** It starts with `black_oath_rep = -3` and `black_oath_heat = 3`. Hask explicitly calls his cord a ceasefire within his ward, not forgiveness for the stolen strongbox or dead collector.
 * **No hard failure state on the courier job.** `QUEST_DESIGN_RULES.md` §2 says every quest needs a genuine loss state, but that's written against the bigger climax-grade quests (Rotten Rib, the Pier). This is Minor/Street scope (§6) — like Crane Three, which also has no failure-ends-everything state, and there's even less reason for one here than in the old iron-hauling draft, since nothing failure-adjacent is remotely dangerous. A fumbled round just pays less and doesn't count toward the trust counter.
 * **Only three archetypes (STR/DEX/CHA), no INT/WIS option.** Kept to three since this is a single bottleneck beat, not a multi-beat investigation that needs a fourth angle.
 * **Hask stays unnamed until his own beat (§2)** — consistent with how Dell and Wenna are both introduced in-story rather than up front. The associate at the other end of this job stays unnamed too, and should stay that way for as long as this quest exists on its own.
-* **The chandler's upper-room stub is deliberately NOT wired into this plan.** That stays the separate, bigger investigation-grade quest we discussed earlier. `black_oath_rep` and `hask_courier_count` are exactly the kind of state that quest (or "another job" above) would want to read as a prerequisite later, but nothing here commits to that shape yet.
+* **The rope-and-oil house's upper room is a ward office, not a headquarters.** One Black Oath ward keeper uses it for local accounts, disputes and introductions after dark. The brotherhood itself is distributed across crews and ward rooms throughout Dredge-End, leaving room for a later, larger central location.
+
+---
+
+## 8. Hask's Place in the Faction Ladder
+
+The implemented associate offer is the end of Hask's **recruitment** ladder, not the end of his content. He sponsors the player because he has seen their work, then puts their name forward for a real night contract with a ward keeper. The player meets that keeper during the contract briefing, rather than being sent upstairs only for an introduction. Hask can recommend, warn, or provide local color, but he should not become the permanent source of increasingly important faction quests.
+
+The first night contract is *The Night List*: ordinary collections and a sealed delivery from the rope-and-oil house after dark. *The Short Purse* follows as the keeper's next job: a burial purse is short before a drowned puntman's funeral, and the keeper needs the shortage handled without involving the Watch. Resolving it earns a ward-level relationship; later successful named work earns a referral to a still higher operational figure. The rope-and-oil house remains a ward door, never a headquarters.
+
+This is deliberately provisional. See `BLACK_OATH_FACTION_PLAN.md` for the rough authority ladder, level-gate policy, and future Lyra crossover. The first named job should read `black_oath_rep`, `black_oath_heat`, `silt_gate_resolution`, `origin`, and Lyra's `lyra_scars_told`/`lyra_repaid` state. High standing changes the keeper's tone; high heat adds scrutiny; an outlaw history produces recognition; Lyra can become the personal reason the player needs access beyond the ward room.

@@ -137,6 +137,8 @@
     if (e.group === "move") return e.id === "push_forward" ? "Nothing to advance on, or you cannot move now" : "You are not in melee reach, or you cannot move now";
     if (e.group === "action" && num(s.combat_player_actions_left) <= 0) return "No action left this turn";
     if (e.group === "bonus" && num(s.combat_player_bonus_left) <= 0) return "No bonus action left this turn";
+    // A melee weapon can only strike an enemy in reach; fights now open at Close range, so this is the usual reason on the first turn.
+    if ((e.id === "primary_attack" || e.id === "sidearm_attack") && (e.id === "primary_attack" ? s.weapon_type : s.sidearm_type) !== "ranged") return "Out of reach. Advance (free movement) to close in, then strike";
     if (e.group === "free" && truthy(s.player_oa_used) && /shield|rebuke/.test(e.id)) return "Reaction already used this round";
     return "Not available right now";
   }
@@ -230,6 +232,23 @@
     return el;
   }
   function hideTip() { var el = document.getElementById(TIP_ID); if (el) el.className = ""; tipFor = null; }
+  // The card for the Primary and Sidearm buttons: what is actually in that hand. The weapon_* and sidearm_* variables are written by equipment.txt
+  // (the description, the damage with its type, melee/finesse/ranged, one or two hands), so this only formats them.
+  var ATTACK_KIND = { melee: "Melee", finesse: "Finesse melee", ranged: "Ranged" };
+  function weaponCard(id) {
+    var s = statsNow(), pre = id === "primary_attack" ? "weapon" : (id === "sidearm_attack" ? "sidearm" : "");
+    if (!pre) return "";
+    var desc = s[pre + "_desc"], dmg = s[pre + "_damage"], type = s[pre + "_type"], hands = s[pre + "_hands"];
+    if (!desc || desc === "None" || desc === "none") return "";
+    var bits = [];
+    if (dmg && dmg !== "none") bits.push("Damage: " + dmg);
+    if (type && ATTACK_KIND[type]) bits.push(ATTACK_KIND[type]);
+    if (hands) bits.push(hands === "two_handed" ? "Two-handed" : "One-handed");
+    return "<div class=\"bt-name\">" + esc(desc) + "</div>" +
+      "<div class=\"bt-kind\">" + (pre === "weapon" ? "Primary weapon" : "Sidearm") + "</div>" +
+      (bits.length ? "<div class=\"bt-text\">" + esc(bits.join(" · ")) + "</div>" : "");
+  }
+
   function showTip(slot) {
     var id = slot.getAttribute("data-id");
     var e = null;
@@ -237,16 +256,22 @@
     if (!e) return;
     var on = !!offered[id];
     var el = tipEl();
+    var wc = weaponCard(id);
+    if (wc) {
+      el.innerHTML = wc + (on ? "" : "<div class=\"bt-off\">" + esc(reasonFor(e)) + "</div>");
+    } else
     el.innerHTML = "<div class=\"bt-name\">" + esc(e.name) + "</div>" +
       (KIND[e.group] ? "<div class=\"bt-kind\">" + KIND[e.group] + "</div>" : "") +
       (e.blurb && e.blurb.replace(/[^A-Za-z]/g, "").length > 2 && e.blurb !== e.name ? "<div class=\"bt-text\">" + esc(e.blurb) + "</div>" : "") +
       (on ? "" : "<div class=\"bt-off\">" + esc(reasonFor(e)) + "</div>");
     el.className = "on";
-    var r = slot.getBoundingClientRect();
-    var w = el.offsetWidth, h = el.offsetHeight;
-    var left = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), window.innerWidth - w - 8);
-    el.style.left = left + "px";
-    el.style.top = Math.max(8, r.top - h - 10) + "px";
+    // Rects are in viewport pixels; the card is positioned in CSS pixels, which the screen-fit zoom (index.html, window.UI_ZOOM) scales. So measure
+    // everything in viewport pixels, then divide by the zoom to set left/top.
+    var z = window.UI_ZOOM || 1;
+    var r = slot.getBoundingClientRect(), tr = el.getBoundingClientRect();
+    var left = Math.min(Math.max(8, r.left + r.width / 2 - tr.width / 2), window.innerWidth - tr.width - 8);
+    el.style.left = (left / z) + "px";
+    el.style.top = (Math.max(8, r.top - tr.height - 10) / z) + "px";
     tipFor = id;
   }
 
@@ -318,7 +343,7 @@
     else if (act === "hud") { classic = false; scan(); }
   });
 
-  function slotOf(el) { return el && el.closest ? el.closest("#" + HUD_ID + " .bhud-slot, #" + HUD_ID + " .bhud-adv") : null; }
+  function slotOf(el) { return el && el.closest ? el.closest("#" + HUD_ID + " .bhud-slot, #" + HUD_ID + " .bhud-adv, #" + HUD_ID + " .bhud-weapon") : null; }
   document.addEventListener("mouseover", function (ev) { var sl = slotOf(ev.target); if (sl) showTip(sl); else if (tipFor) hideTip(); });
   document.addEventListener("focusin", function (ev) { var sl = slotOf(ev.target); if (sl) showTip(sl); });
   document.addEventListener("focusout", function () { hideTip(); });

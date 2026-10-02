@@ -93,9 +93,13 @@ window.INVENTORY = {
         var originDefault = { ruined: "marching_boots", outlaw: "scout_boots", disgraced: "riding_boots" };
         return [originDefault[s.origin] || "marching_boots"];
       } },
-    { label: "Neck", shape: "plain", desc: "neck_desc", bucket: "neck" },
-    { label: "Ring (1)", shape: "plain", desc: "ring1_desc", bucket: "ring", ringSlot: "1" },
-    { label: "Ring (2)", shape: "plain", desc: "ring2_desc", bucket: "ring", ringSlot: "2" }
+    // Neck and rings became swappable 2026-10-02 (the dossier already offers neck pieces; rings had no menu at all and were only ever put on by the story).
+    // Both can be taken off: "none" is a bare throat or finger. A neck is not offered the way back while the Hearthstone is attuned (that is broken with its
+    // own option, which ChoiceScript carries out because it changes CON and max HP).
+    { label: "Neck", shape: "plain", desc: "neck_desc", bucket: "neck", swappable: true,
+      always: function (s) { return truthy(s.hearthstone_attuned) ? [] : ["none"]; } },
+    { label: "Ring (1)", shape: "plain", desc: "ring1_desc", bucket: "ring", ringSlot: "1", swappable: true, always: function () { return ["none"]; } },
+    { label: "Ring (2)", shape: "plain", desc: "ring2_desc", bucket: "ring", ringSlot: "2", swappable: true, always: function () { return ["none"]; } }
   ],
 
   items: [
@@ -436,6 +440,13 @@ window.INVENTORY = {
       equip: { slot: "ring", id: "toll_seal_ring" }
     },
     {
+      id: "night_eye_ring", category: "accessories", owned: "has_night_eye_ring",
+      name: "Night-Eye Ring",
+      description: "Black horn polished smooth by many thumbs, a smuggler's ring from the Silt-Gate Vault. Worn, you see in the dark: no light needed, and none of the penalties of fighting blind.",
+      badge: function (s) { return (s.equipped_ring1_id === "night_eye_ring" || s.equipped_ring2_id === "night_eye_ring") ? "Worn" : "Stowed"; },
+      equip: { slot: "ring", id: "night_eye_ring" }
+    },
+    {
       id: "althea_votive_ring", category: "accessories", owned: "has_althea_votive_ring",
       name: "Althea's Stone Ring",
       description: "Flat river stone, silver-wired, taken from Saint Althea's altar offerings.",
@@ -446,11 +457,10 @@ window.INVENTORY = {
       id: "hearthstone_talisman", category: "accessories", owned: "has_hearthstone_talisman",
       name: "Torvald's Hearthstone Talisman",
       description: "Ancient highland furnace lodestone on braided oxhide.",
-      badge: function (s) { return truthy(s.hearthstone_attuned) ? "Attuned, +1 Constitution" : "Not Attuned"; }
-      // Deliberately no `equip` here -- attuning/unattuning cascades into
-      // recalculate_attuned_bonuses (startup.txt), which touches CON and HP max, not
-      // just AC/flavor text. Out of scope for the interactive panel for now; stays
-      // read-only. Manage it from the Dossier's Equipment menu.
+      badge: function (s) { return truthy(s.hearthstone_attuned) ? "Attuned, +1 Constitution" : "Not Attuned"; },
+      // Attuning cascades into recalculate_attuned_bonuses (startup.txt), which touches CON and max HP, so the panel never writes it itself: inventory.js hands
+      // it to ChoiceScript (choicescript_stats codex_attune_do), the same way a piece with an ability-score bonus is handed to codex_equip_do.
+      equip: { slot: "neck", id: "hearthstone_talisman", attune: true }
     },
     {
       id: "shield", category: "accessories", owned: "has_shield",
@@ -467,6 +477,34 @@ window.INVENTORY = {
       name: function (s) { return "Scrap Steel (" + Number(s.scrap_steel) + ")"; },
       description: "Bent blades and iron fittings, worth a little to a smith by weight.",
       badge: "Sells to a smith"
+    },
+    {
+      id: "frog_slime", category: "provisions",
+      owned: function (s) { return Number(s.frog_slime) > 0; },
+      name: function (s) { return "Frog Slime (" + Number(s.frog_slime) + ")"; },
+      description: "Cold, clear slime scraped from a giant frog. Ambrose buys it by the jar.",
+      badge: "Sells to a herbalist"
+    },
+    {
+      id: "centipede_gland", category: "provisions",
+      owned: function (s) { return Number(s.centipede_gland) > 0; },
+      name: function (s) { return "Centipede Gland (" + Number(s.centipede_gland) + ")"; },
+      description: "A venom gland cut from a giant centipede. Ambrose buys it by the piece.",
+      badge: "Sells to a herbalist"
+    },
+    {
+      id: "viper_venom", category: "provisions",
+      owned: function (s) { return Number(s.viper_venom) > 0; },
+      name: function (s) { return "Viper Venom (" + Number(s.viper_venom) + ")"; },
+      description: "Venom milked from a giant viper. Ambrose buys it by the vial.",
+      badge: "Sells to a herbalist"
+    },
+    {
+      id: "grave_ichor", category: "provisions",
+      owned: function (s) { return Number(s.grave_ichor) > 0; },
+      name: function (s) { return "Grave Ichor (" + Number(s.grave_ichor) + ")"; },
+      description: "Black fluid drawn from the drowned dead. Ambrose buys it by the phial.",
+      badge: "Sells to a herbalist"
     },
     {
       id: "odessa_salve", category: "provisions", owned: "prep_odessa_salve",

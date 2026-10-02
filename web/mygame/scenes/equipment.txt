@@ -773,6 +773,9 @@
 *if (item_id = "althea_votive_ring")
   *set new_ring_desc "Althea's Stone Ring"
   *set new_ring_prose "river-stone ring"
+*if (item_id = "night_eye_ring")
+  *set new_ring_desc "Night-Eye Ring"
+  *set new_ring_prose "black horn ring"
 *if (ring_slot = "1")
   *set ring1_desc new_ring_desc
   *set ring1_prose new_ring_prose
@@ -840,6 +843,7 @@
 *set gear_pct_tailor 0
 *set gear_fixed_pawn 0
 *set gear_piece_smith 0
+*set gear_piece_herbalist 0
 *set gear_count_var ""
 *set gear_warn ""
 *set gear_quote ""
@@ -1103,7 +1107,7 @@
   *set gear_kind "tool"
   *set gear_title "Tool Kit"
   *set gear_stack true
-  *set gear_hint "Advantage on repair and tinkering checks"
+  *set gear_hint "Advantage on repair, tinkering and harvest checks"
   *set gear_blurb "A canvas roll holding a claw hammer, a chisel, an awl, pliers, a folding saw, and a hank of soft wire, each in its own pocket."
   *set gear_minutes 5
   *set gear_pct_general 50
@@ -1124,6 +1128,7 @@
   *set gear_kind "tool"
   *set gear_title "Chalk Sticks"
   *set gear_stack true
+  *set gear_hint "Six chalk marks for a dungeon map"
   *set gear_blurb "Six sticks of soft white chalk tied together with string, for marking a wall or a route."
   *set gear_minutes 5
   *set gear_pct_general 50
@@ -1393,6 +1398,30 @@
   *set gear_title "Scrap Steel"
   *set gear_piece_smith 5
   *set gear_count_var "scrap_steel"
+*if (gi_item = "frog_slime")
+  *set gear_name "frog slime"
+  *set gear_kind "salvage"
+  *set gear_title "Frog Slime"
+  *set gear_piece_herbalist 4
+  *set gear_count_var "frog_slime"
+*if (gi_item = "centipede_gland")
+  *set gear_name "centipede gland"
+  *set gear_kind "salvage"
+  *set gear_title "Centipede Gland"
+  *set gear_piece_herbalist 8
+  *set gear_count_var "centipede_gland"
+*if (gi_item = "viper_venom")
+  *set gear_name "viper venom"
+  *set gear_kind "salvage"
+  *set gear_title "Viper Venom"
+  *set gear_piece_herbalist 10
+  *set gear_count_var "viper_venom"
+*if (gi_item = "grave_ichor")
+  *set gear_name "grave ichor"
+  *set gear_kind "salvage"
+  *set gear_title "Grave Ichor"
+  *set gear_piece_herbalist 15
+  *set gear_count_var "grave_ichor"
 *comment GEN:END gear_info_items
 *return
 
@@ -1435,11 +1464,16 @@
   *set guv_pct gear_pct_general
 *if (guv_buyer = "tailor")
   *set guv_pct gear_pct_tailor
+*comment The herbalist buys only counted ingredients, by the piece, so any other item is 0 for him (not the pawn percentage the default above starts from).
+*if (guv_buyer = "herbalist")
+  *set guv_pct 0
 *set gear_unit_copper (((gear_retail * guv_pct) - ((gear_retail * guv_pct) modulo 100)) / 100)
 *if ((guv_buyer = "pawn") and (gear_fixed_pawn > 0))
   *set gear_unit_copper gear_fixed_pawn
 *if ((guv_buyer = "smith") and (gear_piece_smith > 0))
   *set gear_unit_copper gear_piece_smith
+*if ((guv_buyer = "herbalist") and (gear_piece_herbalist > 0))
+  *set gear_unit_copper gear_piece_herbalist
 *return
 
 *comment *gosub_scene equipment gear_sale_value <item_id> <"smith"|"pawn"|"general"|"tailor">   (a price of 0 means this buyer declines)
@@ -1451,6 +1485,8 @@
 *set gear_sale_copper gear_unit_copper
 *if ((gsv_buyer = "smith") and (gear_piece_smith > 0))
   *set gear_sale_copper (gear_piece_smith * {gear_count_var})
+*if ((gsv_buyer = "herbalist") and (gear_piece_herbalist > 0))
+  *set gear_sale_copper (gear_piece_herbalist * {gear_count_var})
 *gosub format_copper gear_sale_copper
 *return
 
@@ -1527,7 +1563,10 @@
 *if (gear_kind = "salvage")
   *set gear_label ("Sell all your " & gear_name)
   *set gear_label ((gear_label & " (") & {gear_count_var})
-  *set gear_label ((gear_label & " pieces). [") & gear_sale_desc)
+  *if ({gear_count_var} = 1)
+    *set gear_label ((gear_label & " piece). [") & gear_sale_desc)
+  *else
+    *set gear_label ((gear_label & " pieces). [") & gear_sale_desc)
 *else
   *set gear_label ((("Sell the " & gear_name) & ". [") & gear_sale_desc)
 *set gear_label (gear_label & "]")

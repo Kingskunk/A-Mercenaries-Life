@@ -1,0 +1,671 @@
+*comment ══════════════════════════════════════════════════════════════
+*comment DUNGEON ENGINE: the random-encounter picker (2026-10-02)
+*comment A *gosub_scene-only library scene, same shape as combat.txt/death.txt/equipment.txt: NOT in *scene_list, listed in compile.js (verifyFileName).
+*comment
+*comment WHAT IT DOES. A dungeon rolls once per room transition against a TABLE of encounters. Each row has an id and two weights, one for low tide and one
+*comment for high tide; the pick is weighted, never repeats an id within one run, and returns the id in dg_encounter ("none" when every row is used up or
+*comment weighted 0). What an id MEANS (a fight, a check, a find) is the dungeon's own business: this file only chooses. Fights go through combat.txt's
+*comment fight_library as usual, so a new encounter never edits an old room.
+*comment
+*comment USE (the caller sets two globals, then calls):
+*comment   *gosub_scene dungeon dg_run_begin             once, at the mouth of the dungeon (clears the no-repeat history)
+*comment   *set dg_table "silt_conduits"                  which table to roll on
+*comment   *set dg_call_id "room2_exit"                   a plain string that is unique for this call site (the replay guard, see below)
+*comment   *gosub_scene dungeon dg_pick                   then read dg_encounter
+*comment
+*comment TIDE. dg_tide is derived from time_period, the same rule Dredge-End and the Silt-Gate quest already use: low water Morning through Dusk, high water at
+*comment Night and Pre-Dawn. Hours spent inside the dungeon go through advance_time as always, so the tide turns by itself as the run goes on.
+*comment
+*comment ADDING A TABLE: write a dg_table_<name> label (rows are one *gosub dg_row line each) and add one dispatch line to dg_run_table. ADDING A ROW: one line.
+*comment
+*comment REPLAY SAFETY. dg_pick makes a *rand roll and adds to scratch totals, so the whole pick sits inside one lock keyed on page_id AND dg_call_id (a refresh
+*comment replays the page with the same pair and skips it, leaving the stored result; two picks on one page with no *choice between them need different call
+*comment ids). The history is dg_pick_1..8 (eight is more transitions than any run has), recorded inside the same lock.
+*comment ══════════════════════════════════════════════════════════════
+
+*comment THE RESPAWN (2026-10-02). Going in does not refill the dungeon, or leaving and coming back would be a way to farm it. What is in it is kept between runs: the hallway steps whose encounter has been
+*comment rolled (dg_done_<node>) and what was done in each room. Every dg_respawn_days days (3, about twice a week) the next entry refills all of it. Two things survive a refill: the map, and chalk, which is permanent;
+*comment a CHALKED junction still rolls no encounter after a refill, so chalk is the way to keep a route quiet. Fleeing a fight does not bring the creature back: the step stays rolled.
+*label dg_run_begin
+*if (dg_reset_day = 0)
+  *set dg_reset_day campaign_day
+*if ((campaign_day - dg_reset_day) >= dg_respawn_days)
+  *gosub dg_respawn
+*set dg_in_run true
+*set dg_pos "none"
+*set dg_steps 0
+*set dg_prev_enc false
+*set dg_enc_now false
+*set dg_light_kind "none"
+*set dg_light_left 0
+*set dg_light_out_now false
+*set dg_pick_count 0
+*set dg_pick_1 "none"
+*set dg_pick_2 "none"
+*set dg_pick_3 "none"
+*set dg_pick_4 "none"
+*set dg_pick_5 "none"
+*set dg_pick_6 "none"
+*set dg_pick_7 "none"
+*set dg_pick_8 "none"
+*set dg_encounter "none"
+*gosub dg_dark_check
+*return
+
+*comment Refills the dungeon: every encounter roll and every room is new again. The map and the chalk are not touched.
+*label dg_respawn
+*set dg_reset_day campaign_day
+*set dg_done_x1 false
+*set dg_done_x2 false
+*set dg_done_x3 false
+*set dg_done_j1 false
+*set dg_done_j2 false
+*set dg_done_j3 false
+*set dg_done_j4 false
+*set dg_done_j5 false
+*set dg_done_j6 false
+*set dg_done_j7 false
+*set dg_done_j8 false
+*set dg_done_r1 false
+*set dg_done_r2 false
+*set dg_done_r3 false
+*set dg_done_r4 false
+*set dg_done_r5 false
+*set dg_done_none false
+*set dg_r1_tally false
+*set dg_r1_tally_ok false
+*set dg_r1_search false
+*set dg_r1_steps false
+*set dg_r2_cross false
+*set dg_r2_found false
+*set dg_r2_climb false
+*set dg_r2_lacedon_dead false
+*set dg_r5_crates false
+*set dg_r5_box false
+*set dg_r5_opened false
+*set dg_r4_brood_dead false
+*set dg_r4_quiet false
+*set dg_r3_clear false
+*set dg_r3_found false
+*set dg_r3_viper_dead false
+*set dg_camp_looted false
+*return
+
+*comment The run is over (the player climbed out): clears the darkness debuff and the run flag.
+*label dg_run_end
+*set dg_in_run false
+*set dg_light_kind "none"
+*set dg_light_left 0
+*gosub dg_dark_check
+*return
+
+*label dg_tide_check
+*set dg_tide "low"
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set dg_tide "high"
+*return
+
+*label dg_pick
+*if (not(dg_pick_locked)) or (not((locked_dg_pick_page_id = page_id) and (locked_dg_pick_id = dg_call_id)))
+  *gosub dg_tide_check
+  *comment Pass 1 adds up the weight of every row still in play; pass 2 walks the same rows and stops at the one the roll lands in.
+  *set dg_pass 1
+  *set dg_total 0
+  *gosub dg_run_table
+  *comment The roll's range is clamped to at least 2 because *rand rejects an empty range (and Quicktest runs every branch, so even an empty table reaches it); the roll
+  *comment is then clamped back down to the total. An empty total finds nothing and leaves dg_encounter "none".
+  *temp dgp_hi dg_total
+  *if (dgp_hi < 2)
+    *set dgp_hi 2
+  *rand dg_roll 1 dgp_hi
+  *if (dg_roll > dg_total)
+    *set dg_roll dg_total
+  *set dg_pass 2
+  *set dg_cursor 0
+  *set dg_found "none"
+  *gosub dg_run_table
+  *set dg_encounter dg_found
+  *if (dg_encounter = "none")
+    *comment nothing left in play: no history slot is used
+  *else
+    *if (dg_pick_count < 8)
+      *set dg_pick_count + 1
+      *if (dg_pick_count = 1)
+        *set dg_pick_1 dg_encounter
+      *if (dg_pick_count = 2)
+        *set dg_pick_2 dg_encounter
+      *if (dg_pick_count = 3)
+        *set dg_pick_3 dg_encounter
+      *if (dg_pick_count = 4)
+        *set dg_pick_4 dg_encounter
+      *if (dg_pick_count = 5)
+        *set dg_pick_5 dg_encounter
+      *if (dg_pick_count = 6)
+        *set dg_pick_6 dg_encounter
+      *if (dg_pick_count = 7)
+        *set dg_pick_7 dg_encounter
+      *if (dg_pick_count = 8)
+        *set dg_pick_8 dg_encounter
+  *set dg_pick_locked true
+  *set locked_dg_pick_page_id page_id
+  *set locked_dg_pick_id dg_call_id
+*return
+
+*comment One row of a table, called in both passes. A row's weight is its low-tide or high-tide number, or 0 when its id is already in the run's history.
+*label dg_row
+*params dgr_id dgr_low dgr_high
+*temp dgr_w dgr_low
+*if (dg_tide = "high")
+  *set dgr_w dgr_high
+*if ((((((((dgr_id = dg_pick_1) or (dgr_id = dg_pick_2)) or (dgr_id = dg_pick_3)) or (dgr_id = dg_pick_4)) or (dgr_id = dg_pick_5)) or (dgr_id = dg_pick_6)) or (dgr_id = dg_pick_7)) or (dgr_id = dg_pick_8))
+  *set dgr_w 0
+*if (dg_pass = 1)
+  *set dg_total + dgr_w
+*else
+  *if ((dgr_w > 0) and (dg_found = "none"))
+    *set dg_cursor + dgr_w
+    *if (dg_cursor >= dg_roll)
+      *set dg_found dgr_id
+*return
+
+*label dg_run_table
+*if (dg_table = "silt_conduits")
+  *gosub dg_table_silt_conduits
+*return
+
+*comment ──────────────────────────────────────────────────────────────
+*comment TABLE: the Silt-Gate conduits and the canals under Dredge-End. Columns: id, low-tide weight, high-tide weight.
+*comment The ids are what the dungeon dispatches on (port_valen/port_valen_silt_conduits.txt, pvsc_enc_<id>). Fights:
+*comment mire_rats, lacedon, centipede, viper, frog (the last three are the library "beast" with name, hit point, armor and attack overrides). Not fights: ledge (a check, fail-forward), rising_water (a check with a
+*comment time and soak cost), cache (a find), camp (an abandoned camp with a small find; a mouse to talk to for a character who can cast Speak with Animals). Human crews are held back until the Black Oath rivalry is linked; they are new rows.
+*comment Low-tide total 24, high-tide total 27.
+*comment ──────────────────────────────────────────────────────────────
+*label dg_table_silt_conduits
+*gosub dg_row "mire_rats" 3 6
+*gosub dg_row "lacedon" 0 4
+*gosub dg_row "centipede" 4 2
+*gosub dg_row "frog" 4 2
+*gosub dg_row "viper" 4 2
+*gosub dg_row "ledge" 3 3
+*gosub dg_row "rising_water" 0 5
+*gosub dg_row "cache" 4 1
+*gosub dg_row "camp" 2 2
+*return
+
+*comment ──────────────────────────────────────────────────────────────
+*comment HARVESTING (2026-10-02). After a kill the player may butcher the creature for an ingredient Ambrose buys (the catalog's counted salvage). It is an OPTION a
+*comment dungeon offers, never automatic; the caller prints the button ("Harvest ... [~15 min, Survival DC n]" from dg_harvest_info) and calls dg_harvest when it is taken.
+*comment   *set dg_hv_creature "frog"                 frog, centipede, viper or lacedon (mire-rats and anything else drop nothing)
+*comment   *gosub_scene dungeon dg_harvest_info         dg_hv_dc, dg_hv_name (the ingredient), dg_hv_var (its counter), dg_hv_sting (a failure nicks you); dc 0 = drops nothing
+*comment   *gosub_scene dungeon dg_harvest              the Survival check, the prose, the ingredient and 15 minutes
+*comment A Tool Kit gives advantage. A fail costs the time and the ingredient, and a venomous creature also nicks you for 1 HP (never below 1). One piece on a pass,
+*comment two when the total beats the DC by 5 or more. The counter and the nick share stat_bump_locked, so a replay of the page changes nothing a second time.
+*comment ──────────────────────────────────────────────────────────────
+*label dg_harvest_info
+*set dg_hv_dc 0
+*set dg_hv_var ""
+*set dg_hv_name ""
+*set dg_hv_sting false
+*if (dg_hv_creature = "frog")
+  *set dg_hv_dc 10
+  *set dg_hv_var "frog_slime"
+  *set dg_hv_name "frog slime"
+*if (dg_hv_creature = "centipede")
+  *set dg_hv_dc 12
+  *set dg_hv_var "centipede_gland"
+  *set dg_hv_name "centipede gland"
+  *set dg_hv_sting true
+*if (dg_hv_creature = "viper")
+  *set dg_hv_dc 13
+  *set dg_hv_var "viper_venom"
+  *set dg_hv_name "viper venom"
+  *set dg_hv_sting true
+*if (dg_hv_creature = "lacedon")
+  *set dg_hv_dc 14
+  *set dg_hv_var "grave_ichor"
+  *set dg_hv_name "grave ichor"
+*return
+
+*label dg_harvest
+*gosub dg_harvest_info
+*if (dg_hv_dc = 0)
+  There is nothing on it worth the knife.
+  *return
+*if (has_tool_kit)
+  *set advantage true
+*gosub_scene dice_engine roll_skill_check dg_hv_dc "survival" "" "" "" "" ""
+*temp dgh_n 0
+*if (check_success)
+  *set dgh_n 1
+*if (check_total >= (dg_hv_dc + 5))
+  *set dgh_n 2
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set {dg_hv_var} (({dg_hv_var}) + dgh_n)
+  *if (((dgh_n = 0) and (dg_hv_sting)) and (hp_current > 1))
+    *set hp_current (hp_current - 1)
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+*if (dgh_n = 0)
+  *if (dg_hv_creature = "frog")
+    *line_break
+    The slime sours and sloughs off into the muck before you can get it into a jar. You have only a cold, wet hand to show for the work.
+  *if (dg_hv_creature = "centipede")
+    *line_break
+    The gland bursts under the knife and the venom stings the back of your hand. Nothing worth keeping is left in the husk.
+  *if (dg_hv_creature = "viper")
+    *line_break
+    A fang slips through your grip and scratches your wrist, and the vial tips and spills. There is nothing left to milk.
+  *if (dg_hv_creature = "lacedon")
+    *line_break
+    The black fluid fouls the moment it meets the air and runs away between the stones. You breathe through your sleeve and get nothing.
+*else
+  *if (dg_hv_creature = "frog")
+    *line_break
+    You slit the glossy back and scrape the cold slime into a jar, keeping your fingers clear of the rest.
+  *if (dg_hv_creature = "centipede")
+    *line_break
+    You cut the venom gland free along the jaw, careful of the drip, and wrap it in a scrap of oilcloth.
+  *if (dg_hv_creature = "viper")
+    *line_break
+    You pin the head and milk each fang into a stoppered vial, one slow drop at a time.
+  *if (dg_hv_creature = "lacedon")
+    *line_break
+    You draw the black fluid off into a phial with your face turned away, and stopper it before it can foul.
+  *line_break
+  [b][🌿 Harvested: ${dgh_n} ${dg_hv_name}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass 15
+*set time_advance_call_id "dg_harvest"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return
+
+*comment ──────────────────────────────────────────────────────────────
+*comment WALKING A DUNGEON (2026-10-02). The dungeon's own scene owns its map (nodes, exits, prose); this file owns what every dungeon shares.
+*comment   dg_step         one move: the caller sets dg_dest (the node id) and dg_dest_hall (true for a hallway). It moves dg_pos, counts the step, spends 10 minutes
+*comment                   (advance_time), burns one step of light, and on a hallway step rolls a 40% chance of an encounter from dg_table (never twice running; the
+*comment                   no-repeat history is dg_pick's). Results: dg_enc_now and dg_encounter, dg_light_out_now. One lock for the whole step.
+*comment   dg_light_prompt a choice to light a torch (about an hour, 6 steps) or the lantern (a flask of lamp oil, 24 steps), or go on in the dark; skipped when the
+*comment                   player sees in the dark, is already lit, or has nothing to light. Asked at the mouth and whenever the light dies.
+*comment   dg_dark_check  derives dg_dark (in a run, not sees_in_dark, no light left). Dark means disadvantage on every d20 roll (roll_d20_check) and enemy advantage in a
+*comment                   fight (dg_fight_prep sets combat_enemy_advantage; call it before fight_library). A debuff, never a gate.
+*comment   dg_status_line the one-line light banner.
+*comment A torch or a flask is used up with equipment.txt sell_gear, which is just "remove one copy" (spare first), the way a sale does.
+*comment ──────────────────────────────────────────────────────────────
+
+*label dg_dark_check
+*set dg_dark false
+*if (dg_in_run)
+  *comment sees_in_dark also depends on the worn rings, which the inventory panel changes without running any ChoiceScript, so it is recomputed here.
+  *gosub_scene character_progression refresh_invocations
+  *if (not(sees_in_dark))
+    *if (dg_light_left <= 0)
+      *set dg_dark true
+*return
+
+*label dg_fight_prep
+*gosub dg_dark_check
+*if (dg_dark)
+  *set combat_enemy_advantage true
+*return
+
+*label dg_status_line
+*gosub dg_dark_check
+*temp dgsl_marked {(("dg_mark_" & dg_pos))}
+*if (dgsl_marked)
+  *line_break
+  [b][A chalk cross is drawn on the wall here][/b]
+*line_break
+*if (sees_in_dark)
+  [b][You see in the dark: no light needed][/b]
+*elseif (dg_light_left > 0)
+  [b][Light: ${dg_light_kind}, ${dg_light_left} @{(dg_light_left = 1) step|steps} left][/b]
+*else
+  [b][No light: disadvantage on every roll, and enemies strike first][/b]
+*return
+
+*label dg_step
+*if (not(dg_step_locked)) or (not(locked_dg_step_page_id = page_id))
+  *set dg_from dg_pos
+  *set dg_pos dg_dest
+  *set dg_steps + 1
+  *set dg_enc_now false
+  *set dg_light_out_now false
+  *set hours_to_pass 0
+  *set minutes_to_pass 10
+  *set time_advance_call_id "dg_step"
+  *gosub_scene calendar advance_time
+  *gosub_scene calendar recalc_hp_from_neglect
+  *if (hp_current <= 0)
+    *set death_cause "starvation"
+    *if (neglect_damage_fatigue > neglect_damage_hunger)
+      *set death_cause "exhaustion"
+    *goto_scene death death_screen
+  *comment The map learns this node only if the player could see it on arrival (judged before this step's light burns: a torch that dies on arrival still lit the way in).
+  *gosub dg_note_seen
+  *if (not(sees_in_dark))
+    *if (dg_light_left > 0)
+      *set dg_light_left - 1
+      *if (dg_light_left = 0)
+        *set dg_light_out_now true
+        *set dg_light_kind "none"
+  *gosub dg_dark_check
+  *if (dg_dest_hall)
+    *comment No encounter roll on a chalked junction (a stretch the player knows) or on one whose roll has already been made since the last refill (dg_done_<node>): walking back over ground does not find
+    *comment anything new. The roll that is made is remembered, whatever it found; a step right after an encounter makes no roll and is not remembered.
+    *temp dgs_marked {(("dg_mark_" & dg_dest))}
+    *temp dgs_done {(("dg_done_" & dg_dest))}
+    *if ((dgs_marked) or (dgs_done))
+      *set dg_prev_enc false
+    *else
+      *if (dg_prev_enc)
+        *set dg_prev_enc false
+      *else
+        *rand dg_walk_roll 1 100
+        *set {(("dg_done_" & dg_dest))} true
+        *if (dg_walk_roll <= 40)
+          *set dg_call_id ("walk_" & dg_steps)
+          *gosub dg_pick
+          *if (not(dg_encounter = "none"))
+            *set dg_enc_now true
+            *set dg_prev_enc true
+  *else
+    *set dg_prev_enc false
+  *set dg_step_locked true
+  *set locked_dg_step_page_id page_id
+*return
+
+*label dg_light_prompt
+*gosub dg_dark_check
+*if (not(dg_dark))
+  *return
+*gosub_scene equipment gear_count "pitch_torch"
+*temp dgl_torches gear_qty
+*gosub_scene equipment gear_count "lamp_oil"
+*temp dgl_oil gear_qty
+*temp dgl_can_lantern false
+*if (has_hooded_lantern)
+  *if (dgl_oil > 0)
+    *set dgl_can_lantern true
+*temp dgl_any dgl_can_lantern
+*if (dgl_torches > 0)
+  *set dgl_any true
+*if (not(dgl_any))
+  You have nothing to light. You go on feeling along the wall.
+  *line_break
+  *return
+*choice
+  *if (dgl_torches > 0)
+    # Light a torch. (${dgl_torches} in your pack, about an hour of light)
+      *if (not(dg_light_locked)) or (not(locked_dg_light_page_id = page_id))
+        *gosub_scene equipment sell_gear "pitch_torch"
+        *set dg_light_kind "torch"
+        *set dg_light_left 6
+        *set dg_light_locked true
+        *set locked_dg_light_page_id page_id
+      The tarred rag catches and the dark pulls back to the edge of the flame.
+  *if (dgl_can_lantern)
+    # Light the lantern with a flask of oil. (${dgl_oil} in your pack, a long burn)
+      *if (not(dg_light_locked)) or (not(locked_dg_light_page_id = page_id))
+        *gosub_scene equipment sell_gear "lamp_oil"
+        *set dg_light_kind "lantern"
+        *set dg_light_left 24
+        *set dg_light_locked true
+        *set locked_dg_light_page_id page_id
+      You fill the oil pot, trim the wick, and slide the horn shutter back. A steady yellow light fills the passage.
+  # Go on in the dark.
+    You go on with one hand on the wall.
+*line_break
+*gosub dg_dark_check
+*return
+
+*comment The player went down in a fight and came to later (combat_outcome "rescued", HP already floored at 1): an hour is gone, six steps of light have burned, and the
+*comment player is back on the node they came from. The encounter stays in the run's history, so it will not roll again.
+*label dg_blackout
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set hours_to_pass 1
+  *set minutes_to_pass 0
+  *set time_advance_call_id "dg_blackout"
+  *gosub_scene calendar advance_time
+  *gosub_scene calendar recalc_hp_from_neglect
+  *if (hp_current <= 0)
+    *set death_cause "starvation"
+    *if (neglect_damage_fatigue > neglect_damage_hunger)
+      *set death_cause "exhaustion"
+    *goto_scene death death_screen
+  *if (not(sees_in_dark))
+    *if (dg_light_left > 0)
+      *set dg_light_left (dg_light_left - 6)
+      *if (dg_light_left <= 0)
+        *set dg_light_left 0
+        *set dg_light_kind "none"
+  *set dg_pos dg_from
+  *set dg_prev_enc false
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+*gosub dg_dark_check
+*return
+
+*comment ──────────────────────────────────────────────────────────────
+*comment THE MAP AND THE CHALK (2026-10-02). The map panel (dungeonmap.js) reads dg_seen_<node> and dg_mark_<node>; this file writes them.
+*comment   dg_note_seen    records dg_pos as seen, but only if the player can see (darkvision, or light left): in the dark the map does not update. Idempotent.
+*comment   dg_chalk_check  dg_chalk_avail = marks the player can still make (the bundle in use plus six per bundle in the pack); dg_chalk_ok = there is chalk AND this node is not marked.
+*comment   dg_chalk_mark   marks dg_pos: one mark is one of a bundle's six sticks (opening a new bundle uses it up), five minutes, forever. Replay-locked like a step.
+*comment   dg_forget_map   clears every seen and marked flag and the open bundle (for the Developer menu).
+*comment A marked node also counts as seen (the mark is proof the player was there), and a chalked hallway junction skips its encounter roll on arrival (dg_step).
+*comment ──────────────────────────────────────────────────────────────
+
+*label dg_lit_check
+*set dg_lit_now false
+*if (sees_in_dark)
+  *set dg_lit_now true
+*if (dg_light_left > 0)
+  *set dg_lit_now true
+*return
+
+*label dg_note_seen
+*gosub dg_lit_check
+*if (dg_lit_now)
+  *set {(("dg_seen_" & dg_pos))} true
+*return
+
+*label dg_chalk_check
+*set dg_chalk_ok false
+*gosub_scene equipment gear_count "chalk_sticks"
+*set dg_chalk_avail (dg_chalk_left + (6 * gear_qty))
+*temp dgc_marked {(("dg_mark_" & dg_pos))}
+*if ((dg_chalk_avail > 0) and (not(dgc_marked)))
+  *set dg_chalk_ok true
+*return
+
+*label dg_chalk_mark
+*if (not(dg_chalk_locked)) or (not(locked_dg_chalk_page_id = page_id))
+  *if (dg_chalk_left <= 0)
+    *gosub_scene equipment sell_gear "chalk_sticks"
+    *set dg_chalk_left 6
+  *set dg_chalk_left - 1
+  *set {(("dg_mark_" & dg_pos))} true
+  *set {(("dg_seen_" & dg_pos))} true
+  *set hours_to_pass 0
+  *set minutes_to_pass 5
+  *set time_advance_call_id "dg_chalk"
+  *gosub_scene calendar advance_time
+  *gosub_scene calendar recalc_hp_from_neglect
+  *if (hp_current <= 0)
+    *set death_cause "starvation"
+    *if (neglect_damage_fatigue > neglect_damage_hunger)
+      *set death_cause "exhaustion"
+    *goto_scene death death_screen
+  *set dg_chalk_locked true
+  *set locked_dg_chalk_page_id page_id
+*return
+
+*label dg_forget_map
+*set dg_seen_x1 false
+*set dg_seen_x2 false
+*set dg_seen_x3 false
+*set dg_seen_j1 false
+*set dg_seen_j2 false
+*set dg_seen_j3 false
+*set dg_seen_j4 false
+*set dg_seen_j5 false
+*set dg_seen_j6 false
+*set dg_seen_j7 false
+*set dg_seen_j8 false
+*set dg_seen_r1 false
+*set dg_seen_r2 false
+*set dg_seen_r3 false
+*set dg_seen_r4 false
+*set dg_seen_r5 false
+*set dg_mark_x1 false
+*set dg_mark_x2 false
+*set dg_mark_x3 false
+*set dg_mark_j1 false
+*set dg_mark_j2 false
+*set dg_mark_j3 false
+*set dg_mark_j4 false
+*set dg_mark_j5 false
+*set dg_mark_j6 false
+*set dg_mark_j7 false
+*set dg_mark_j8 false
+*set dg_mark_r1 false
+*set dg_mark_r2 false
+*set dg_mark_r3 false
+*set dg_mark_r4 false
+*set dg_mark_r5 false
+*set dg_chalk_left 0
+*return
+
+*comment Time spent inside a room (reading a wall, searching, climbing down): dg_mins minutes through advance_time, with the same starvation check a step makes. The caller sets dg_mins and
+*comment dg_time_id (unique for that call site on its page). Light is per STEP, not per minute, so this burns none.
+*label dg_time
+*set hours_to_pass 0
+*set minutes_to_pass dg_mins
+*set time_advance_call_id dg_time_id
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return
+
+*comment ──────────────────────────────────────────────────────────────
+*comment THE ENVIRONMENT LAYER (2026-10-02). A place in a dungeon is read many times, so its text is built in layers rather than written as one long block. A node's own prose (a lit
+*comment version and a by-touch version for the dark) says what the place IS; this routine adds the two layers every place shares, in one line below it:
+*comment   the tide    how the water stands here, by how low the place sits: set dg_wet first (0 dry, 1 damp, 2 wet floor); dg_tide comes from dg_tide_check;
+*comment   an ambient detail  one of eight sounds, smells or sights that rotates with dg_steps, so walking on changes it but a page refresh does not; the dark gets the version heard and felt.
+*comment The sentences use no sight except in the lit pool, so the tide lines read the same with or without a light.
+*comment ──────────────────────────────────────────────────────────────
+*label dg_env
+*gosub dg_tide_check
+*line_break
+*if (dg_tide = "high")
+  *if (dg_wet = 2)
+    The tide is in. Black water stands over your ankles here and drags at your boots as it moves.
+  *if (dg_wet = 1)
+    The tide is in. A skin of water has crept across the floor and sits in the seams between the bricks.
+  *if (dg_wet = 0)
+    The tide is in, though the floor stays dry. You can feel the weight of water close below, a slow pressure in the walls.
+*else
+  *if (dg_wet = 2)
+    The tide is out. The floor is a slick of grey silt over brick, ribbed where the water left it.
+  *if (dg_wet = 1)
+    The tide is out. Puddles sit in the low spots, and a thin trickle runs down the middle of the floor.
+  *if (dg_wet = 0)
+    The tide is out, and the floor is dry and gritty underfoot.
+*goto dg_env_ambient
+
+*comment Just the ambient detail, for a room that writes its own tide text (the caller prints a *line_break first).
+*label dg_env_ambient
+*gosub dg_dark_check
+*temp dge_pick (dg_steps modulo 8)
+*if (dg_dark)
+  *if (dge_pick = 0)
+    Water drips somewhere ahead, slow and loud in the dark.
+  *if (dge_pick = 1)
+    Small claws scratch along the wall and stop when you do.
+  *if (dge_pick = 2)
+    A cold draught touches your face and smells of wet rope.
+  *if (dge_pick = 3)
+    The wall under your hand is slick and gritty, and your fingers come away dark.
+  *if (dge_pick = 4)
+    Far off, something heavy settles with a wet creak.
+  *if (dge_pick = 5)
+    The dark presses close, and your own breathing is the loudest sound in it.
+  *if (dge_pick = 6)
+    Your boots find a shallow groove worn down the middle of the floor.
+  *if (dge_pick = 7)
+    Something soft brushes your cheek. Roots, you decide, hanging from the ceiling.
+*else
+  *if (dge_pick = 0)
+    Somewhere ahead water drips, steady as a slow clock.
+  *if (dge_pick = 1)
+    A rat skitters along the foot of the wall and is gone.
+  *if (dge_pick = 2)
+    A thin draught comes through the brick and smells of river mud and old rope.
+  *if (dge_pick = 3)
+    The wall sweats wherever your light touches it, and the beads run down in crooked lines.
+  *if (dge_pick = 4)
+    Far off, something heavy settles with a wet creak, like a ship at her moorings.
+  *if (dge_pick = 5)
+    Old lamp soot streaks the ceiling where other lights have burned here.
+  *if (dge_pick = 6)
+    The brick underfoot has worn into a shallow groove down the middle, walked by a hundred years of boots.
+  *if (dge_pick = 7)
+    Pale roots hang through a crack in the ceiling, from the street far above.
+*return
+
+
+*comment Speaking with a beast (2026-10-02): what casting Speak with Animals would cost this character, for an encounter that offers it. dg_swa_check reports it and dg_swa_cast pays it, so an
+*comment encounter never repeats the rules. A racial Speak with Animals (race_cantrip) is innate and free. A Wizard who knows it casts it as a ritual: no slot, and ten extra minutes (the rule in
+*comment MAGIC_AND_ABILITIES_REFERENCE.md). A Bard, Ranger or Warlock pays one slot from their own pool. Outputs: dg_swa_can, dg_swa_cost ("none", "free", "ritual", "slot") and dg_swa_why (what
+*comment is missing when it cannot be cast). The caller adds the casting time itself (5 minutes, 15 for a ritual) with dg_time.
+*label dg_swa_check
+*set dg_swa_can false
+*set dg_swa_cost "none"
+*set dg_swa_why ""
+*if (not(known_speak_with_animals))
+  *return
+*if ((race_cantrip = "speak_with_animals") or (race_cantrip_2 = "speak_with_animals"))
+  *set dg_swa_cost "free"
+  *set dg_swa_can true
+  *return
+*if (character_class = "wizard")
+  *set dg_swa_cost "ritual"
+  *set dg_swa_can true
+  *return
+*set dg_swa_cost "slot"
+*temp dgsw_slots 0
+*if (character_class = "bard")
+  *set dgsw_slots bard_spell_slots
+*if (character_class = "warlock")
+  *set dgsw_slots warlock_spell_slots
+*if (character_class = "ranger")
+  *set dgsw_slots ranger_spell_slots
+*if (dgsw_slots <= 0)
+  *set dg_swa_why "You have no spell slot left to cast it."
+  *return
+*set dg_swa_can true
+*return
+
+*comment Pays the slot (a bare -1, so it is guarded by dg_swa_locked / locked_dg_swa_page_id like every other spend). Call dg_swa_check first.
+*label dg_swa_cast
+*if (dg_swa_can)
+  *if (not(dg_swa_locked)) or (not(locked_dg_swa_page_id = page_id))
+    *if (dg_swa_cost = "slot")
+      *if (character_class = "bard")
+        *set bard_spell_slots - 1
+      *if (character_class = "warlock")
+        *set warlock_spell_slots - 1
+      *if (character_class = "ranger")
+        *set ranger_spell_slots - 1
+    *set dg_swa_locked true
+    *set locked_dg_swa_page_id page_id
+*return

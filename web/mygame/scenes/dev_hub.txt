@@ -228,6 +228,8 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set origin "outlaw"
     *set origin_title "Port Valen Outlaw"
     *set origin_desc "A quick-fingered rogue fleeing the Black Oath's blood bounty in Port Valen under the Carrion banner."
+    *set black_oath_rep (0 - 3)
+    *set black_oath_heat 3
     *set race "tiefling"
     *set race_title "Tiefling"
     *set race_darkvision true
@@ -292,6 +294,8 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set origin "outlaw"
     *set origin_title "Port Valen Outlaw"
     *set origin_desc "A quick-fingered rogue fleeing the Black Oath's blood bounty in Port Valen under the Carrion banner."
+    *set black_oath_rep (0 - 3)
+    *set black_oath_heat 3
     *set race "elf"
     *set race_title "Elf"
     *set race_darkvision true
@@ -346,6 +350,8 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
     *set origin "outlaw"
     *set origin_title "Port Valen Outlaw"
     *set origin_desc "A quick-fingered rogue fleeing the Black Oath's blood bounty in Port Valen under the Carrion banner."
+    *set black_oath_rep (0 - 3)
+    *set black_oath_heat 3
     *set race "halfling"
     *set race_title "Halfling"
     *set race_darkvision false
@@ -655,6 +661,8 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
 
   # 🥊 Test a Combat Fight (combat.txt) -- jump straight into a fight, return here when it ends
     *goto dev_combat_test_hub
+  # 🕳️ Test the Dungeon Encounter Picker (dungeon.txt) -- roll the Silt-Gate conduit table at low or high tide
+    *goto dev_dungeon_test_hub
 
 *comment DEVELOPER TESTING: COMBAT FIGHT SELECT (2026-09-27)
 *comment Every fight_<name> label below is self-contained (no *params, no *temp the caller has to set up first --
@@ -668,6 +676,7 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
 *comment fight_archive_rats is the same label as fight_granary_rats (two *label lines, one body, used by two
 *comment different calling scenes) -- listing it once covers both.
 *label dev_combat_test_hub
+*set dg_dev_fight_id "none"
 [b]🥊 DEVELOPER TESTING: COMBAT FIGHTS[/b]
 *line_break
 HP and every class resource are refilled to full before each one, so every fight starts clean regardless of what the last one did.
@@ -704,21 +713,38 @@ HP and every class resource are refilled to full before each one, so every fight
   # 🕸️ The Stolen Shroud Thieves (Dredge-End) -- knifeman + slinger, non-lethal
     *set dctest_label "fight_shroud_thieves"
     *goto dev_combat_test_run
-  # 🎯 Range Tiers Test -- 1 lacedon opened at Long Range, to play with Push Forward
-    *set dctest_label "fight_dev_range_test"
-    *goto dev_combat_test_run
-  # 🏹 Ally Ranged Test -- 1 lacedon + 1 ranged ally, to watch resolve_ally_attack
-    *set dctest_label "fight_dev_ally_ranged_test"
-    *goto dev_combat_test_run
-  # 🛡️ Ally Melee Test -- 1 lacedon opened at Mid-Range + 1 melee ally, to watch it close and strike
-    *set dctest_label "fight_dev_ally_melee_test"
-    *goto dev_combat_test_run
-  # 🎯 Reach & Ranged-Penalty Test -- 1 lacedon Engaged + 1 at Long Range, for the close-combat penalty and spell reach
-    *set dctest_label "fight_dev_reach_test"
-    *goto dev_combat_test_run
   # 👥 Squad Test -- 2 enemies + 2 allies at different ranges, to play with nearest-enemy movement targeting
     *set dctest_label "fight_dev_squad_test"
     *goto dev_combat_test_run
+  # 🐀 Silt-Gate Mire-Rats (conduits) -- 2 mire-rats, lethal
+    *set dctest_label "dg_rats"
+    *set dg_dev_fight_id "rats"
+    *goto dev_combat_test_run
+  # 🌊 Silt-Gate Lacedon (conduits, the Gate Hall walkway) -- 1 lacedon, lethal
+    *set dctest_label "dg_lacedon"
+    *set dg_dev_fight_id "lacedon"
+    *goto dev_combat_test_run
+  # 🦂 Giant Centipede (conduits) -- 1 beast, 9 HP AC 13 +4, lethal
+    *set dctest_label "dg_centipede"
+    *set dg_dev_fight_id "centipede"
+    *goto dev_combat_test_run
+  # 🐍 Giant Viper (conduits) -- 1 beast, 6 HP AC 13 +5, lethal
+    *set dctest_label "dg_viper"
+    *set dg_dev_fight_id "viper"
+    *goto dev_combat_test_run
+  # 🐸 Giant Frog (conduits) -- 1 beast, lethal
+    *set dctest_label "dg_frog"
+    *set dg_dev_fight_id "frog"
+    *goto dev_combat_test_run
+  # 🕷️ The Centipede Brood (the Lair) -- Brood-Mother 12 HP + Young 5 HP, lethal
+    *set dctest_label "dg_brood"
+    *set dg_dev_fight_id "brood"
+    *goto dev_combat_test_run
+  # 🍖 Prepare for the fight -- food, drink and temporary HP (the fights above start from whatever you have on you)
+    *goto dev_combat_prep
+  # 📊 Export the fight log (fightlog.js: every fight you have played, as a .json file)
+    *set fightlog_export_req true
+    *goto dev_combat_test_hub
   # Return to Developer Scene Select
     *goto dev_scene_select
 
@@ -753,8 +779,14 @@ HP and every class resource are refilled to full before each one, so every fight
 *comment start. dctest_hp_after keeps the raw, un-healed HP the fight actually ended at, for the tester's own
 *comment read on how close it was, since restore_class_resources doesn't touch HP at all (healing stays slow in
 *comment real play -- this hub is the one place that's deliberately overridden).
+*comment The refill is a long rest, which also drops temporary HP; a meal eaten in the prep menu (dev_combat_prep) must reach the fight, so temp HP is put back after it.
+*temp dctest_temp temp_hp
 *set hp_current hp_max
 *gosub_scene character_progression restore_class_resources
+*set temp_hp dctest_temp
+*comment The Silt-Gate creature fights live in the conduits scene (their real setup); it hands back to dev_dungeon_fight_done below.
+*if (not(dg_dev_fight_id = "none"))
+  *goto_scene port_valen/port_valen_silt_conduits pvsc_dev_fight
 *if (dctest_label = "fight_silt_lurker")
   *gosub_scene combat fight_silt_lurker
 *if (dctest_label = "fight_rennick_guards")
@@ -767,17 +799,7 @@ HP and every class resource are refilled to full before each one, so every fight
   *gosub_scene combat fight_wreckers
 *if (dctest_label = "fight_shroud_thieves")
   *gosub_scene combat fight_shroud_thieves
-*if (dctest_label = "fight_dev_range_test")
-  *gosub_scene combat fight_dev_range_test
-*if (dctest_label = "fight_dev_ally_ranged_test")
-  *gosub_scene combat fight_dev_ally_ranged_test
-*if (dctest_label = "fight_dev_ally_melee_test")
-  *gosub_scene combat fight_dev_ally_melee_test
-*comment fight_dev_reach_test had a menu option (above) but no dispatch line here -- selecting it silently ran
-*comment no fight at all and printed the previous test's leftover combat_outcome. Pre-existing gap, found and
-*comment fixed in passing (2026-09-29) while wiring this dispatch chain's newest entry just below.
-*if (dctest_label = "fight_dev_reach_test")
-  *gosub_scene combat fight_dev_reach_test
+*comment (2026-10-02: the Range Tiers, Ally Ranged, Ally Melee and Reach tests were taken off this menu at the user's request; their fight_dev_* labels are still in combat.txt.)
 *if (dctest_label = "fight_dev_squad_test")
   *gosub_scene combat fight_dev_squad_test
 *temp dctest_hp_after hp_current
@@ -788,3 +810,362 @@ HP and every class resource are refilled to full before each one, so every fight
 *line_break
 *goto dev_combat_test_hub
 
+*label dev_dungeon_fight_done
+*comment The end of a Silt-Gate creature fight started from the combat menu: the same result line and heal-to-full as dev_combat_test_run.
+*set dg_dev_fight_id "none"
+*temp dctest_hp_after hp_current
+*set hp_current hp_max
+*gosub_scene character_progression restore_class_resources
+*line_break
+[b]Result: ${combat_outcome}[/b] | Ended the fight at ${dctest_hp_after}/${hp_max} HP — healed to full
+*line_break
+*goto dev_combat_test_hub
+
+*comment ──────────────────────────────────────────────────────────────
+*comment DEVELOPER TESTING: DUNGEON ENCOUNTER PICKER (2026-10-02)
+*comment Rolls dungeon.txt's silt_conduits table by hand (one pick at a time, the no-repeat history on show), sets the clock to a low-tide or high-tide hour,
+*comment and samples 100 fresh-run rolls so the weights can be read against what they should give. Touches only the dg_ variables and the clock.
+*comment ──────────────────────────────────────────────────────────────
+*label dev_dungeon_test_hub
+*gosub_scene dungeon dg_tide_check
+[b]🕳️ DEVELOPER TESTING: DUNGEON ENCOUNTER PICKER[/b]
+*line_break
+Table: the Silt-Gate conduits (silt_conduits). It is ${clock_time} (${time_period}), so the tide is [b]${dg_tide}[/b]. Low water is Morning through Dusk; high water is Night and Pre-Dawn.
+*line_break
+Last roll: [b]${dg_encounter}[/b]. Rolled this run: ${dg_pick_count}.
+*if (dg_pick_count >= 1)
+  *line_break
+  History: ${dg_pick_1}
+  *if (dg_pick_count >= 2)
+    , ${dg_pick_2}
+  *if (dg_pick_count >= 3)
+    , ${dg_pick_3}
+  *if (dg_pick_count >= 4)
+    , ${dg_pick_4}
+  *if (dg_pick_count >= 5)
+    , ${dg_pick_5}
+  *if (dg_pick_count >= 6)
+    , ${dg_pick_6}
+  *if (dg_pick_count >= 7)
+    , ${dg_pick_7}
+  *if (dg_pick_count >= 8)
+    , ${dg_pick_8}
+
+*choice
+  # Roll an encounter at this tide
+    *set dg_table "silt_conduits"
+    *set dg_call_id "dev_roll"
+    *gosub_scene dungeon dg_pick
+    *goto dev_dungeon_test_hub
+  # Set the clock to 10:00 (Morning, low tide)
+    *set clock_hour 10
+    *set clock_minute 0
+    *set clock_time "10:00"
+    *set time_period "Morning"
+    *goto dev_dungeon_test_hub
+  # Set the clock to 23:00 (Night, high tide)
+    *set clock_hour 23
+    *set clock_minute 0
+    *set clock_time "23:00"
+    *set time_period "Night"
+    *goto dev_dungeon_test_hub
+  # Start a fresh run (clear the history)
+    *gosub_scene dungeon dg_run_begin
+    *goto dev_dungeon_test_hub
+  # Sample 100 rolls at this tide (a fresh run for each)
+    *goto dev_dungeon_sample
+  # Harvest a kill (Survival check; ingredients are sold to Ambrose)
+    *goto dev_dungeon_harvest
+  # Walk the Silt-Gate conduits (the 8-junction map, light, darkness and encounter rolls)
+    *goto dev_dungeon_walk_menu
+  # Back to the Developer Scene Select
+    *goto dev_scene_select
+
+*label dev_dungeon_sample
+*temp ds_i 0
+*temp ds_rats 0
+*temp ds_lacedon 0
+*temp ds_centipede 0
+*temp ds_viper 0
+*temp ds_frog 0
+*temp ds_ledge 0
+*temp ds_water 0
+*temp ds_cache 0
+*temp ds_camp 0
+*temp ds_none 0
+*gosub_scene dungeon dg_tide_check
+*label dev_dungeon_sample_loop
+*set ds_i + 1
+*gosub_scene dungeon dg_run_begin
+*set dg_table "silt_conduits"
+*set dg_call_id ("sample_" & ds_i)
+*gosub_scene dungeon dg_pick
+*if (dg_encounter = "mire_rats")
+  *set ds_rats + 1
+*if (dg_encounter = "lacedon")
+  *set ds_lacedon + 1
+*if (dg_encounter = "centipede")
+  *set ds_centipede + 1
+*if (dg_encounter = "viper")
+  *set ds_viper + 1
+*if (dg_encounter = "frog")
+  *set ds_frog + 1
+*if (dg_encounter = "ledge")
+  *set ds_ledge + 1
+*if (dg_encounter = "rising_water")
+  *set ds_water + 1
+*if (dg_encounter = "cache")
+  *set ds_cache + 1
+*if (dg_encounter = "camp")
+  *set ds_camp + 1
+*if (dg_encounter = "none")
+  *set ds_none + 1
+*if (ds_i < 100)
+  *goto dev_dungeon_sample_loop
+*gosub_scene dungeon dg_run_begin
+[b]100 rolls at ${dg_tide} tide[/b] (got / should be about):
+*if (dg_tide = "low")
+  *line_break
+  mire_rats ${ds_rats} / 13, lacedon ${ds_lacedon} / 0, centipede ${ds_centipede} / 17, viper ${ds_viper} / 17, frog ${ds_frog} / 17, ledge ${ds_ledge} / 13, rising_water ${ds_water} / 0, cache ${ds_cache} / 17, camp ${ds_camp} / 8, none ${ds_none} / 0
+*else
+  *line_break
+  mire_rats ${ds_rats} / 22, lacedon ${ds_lacedon} / 15, centipede ${ds_centipede} / 7, viper ${ds_viper} / 7, frog ${ds_frog} / 7, ledge ${ds_ledge} / 11, rising_water ${ds_water} / 19, cache ${ds_cache} / 4, camp ${ds_camp} / 7, none ${ds_none} / 0
+*page_break Back to the picker...
+*goto dev_dungeon_test_hub
+
+*label dev_dungeon_harvest
+[b]🌿 DEVELOPER TESTING: HARVESTING[/b]
+*line_break
+Survival check after a kill (frog 10, centipede 12, viper 13, lacedon 14). A Tool Kit gives advantage (you @{has_tool_kit have|do not have} one). Ingredients on hand: frog slime ${frog_slime}, centipede gland ${centipede_gland}, viper venom ${viper_venom}, grave ichor ${grave_ichor}. HP ${hp_current}/${hp_max}.
+
+*choice
+  # Harvest a giant frog
+    *set dg_hv_creature "frog"
+    *gosub_scene dungeon dg_harvest
+    *page_break Back to the harvest test...
+    *goto dev_dungeon_harvest
+  # Harvest a giant centipede (a failure stings)
+    *set dg_hv_creature "centipede"
+    *gosub_scene dungeon dg_harvest
+    *page_break Back to the harvest test...
+    *goto dev_dungeon_harvest
+  # Harvest a giant viper (a failure stings)
+    *set dg_hv_creature "viper"
+    *gosub_scene dungeon dg_harvest
+    *page_break Back to the harvest test...
+    *goto dev_dungeon_harvest
+  # Harvest a lacedon
+    *set dg_hv_creature "lacedon"
+    *gosub_scene dungeon dg_harvest
+    *page_break Back to the harvest test...
+    *goto dev_dungeon_harvest
+  # Harvest a mire-rat (drops nothing)
+    *set dg_hv_creature "mire_rat"
+    *gosub_scene dungeon dg_harvest
+    *page_break Back to the harvest test...
+    *goto dev_dungeon_harvest
+  # Toggle the Tool Kit
+    *set has_tool_kit (not(has_tool_kit))
+    *goto dev_dungeon_harvest
+  # Back to the picker
+    *goto dev_dungeon_test_hub
+
+*label dev_dungeon_walk_menu
+[b]🕯 DEVELOPER TESTING: WALK THE SILT-GATE CONDUITS[/b]
+*line_break
+Pick the way in. The map is in port_valen/port_valen_silt_conduits.txt: 8 hallway junctions, 5 rooms (the Landing and the Gate Hall are written, the other three are stubs) and 3 dead-end exits. It is ${clock_time} (${time_period}). You @{sees_in_dark see|do not see} in the dark.
+*gosub_scene equipment gear_count "pitch_torch"
+*temp dwm_torches gear_qty
+*gosub_scene equipment gear_count "lamp_oil"
+*temp dwm_oil gear_qty
+*line_break
+*gosub_scene equipment gear_count "chalk_sticks"
+*temp dwm_chalk gear_qty
+Light in your pack: ${dwm_torches} torches, @{has_hooded_lantern a lantern|no lantern}, ${dwm_oil} flasks of lamp oil. Chalk: ${dwm_chalk} bundles, plus ${dg_chalk_left} marks left on the one in use.
+*line_break
+The dungeon was last refilled on day ${dg_reset_day} (it is day ${campaign_day}) and refills every ${dg_respawn_days} days on the next entry.
+
+*choice
+  # Go in by the channel mouth
+    *set dg_start "x1"
+    *gosub_scene dungeon dg_run_begin
+    *goto_scene port_valen/port_valen_silt_conduits pvsc_begin
+  # Go in by the cellar ladder
+    *set dg_start "x2"
+    *gosub_scene dungeon dg_run_begin
+    *goto_scene port_valen/port_valen_silt_conduits pvsc_begin
+  # Go in by the cistern ladder
+    *set dg_start "x3"
+    *gosub_scene dungeon dg_run_begin
+    *goto_scene port_valen/port_valen_silt_conduits pvsc_begin
+  # Fill the pack for the test (3 torches, a lantern, 2 flasks of oil, 2 bundles of chalk)
+    *set has_chalk_sticks true
+    *set spare_chalk_sticks 1
+    *set has_pitch_torch true
+    *set spare_pitch_torch 2
+    *set has_hooded_lantern true
+    *set has_lamp_oil true
+    *set spare_lamp_oil 1
+    *goto dev_dungeon_walk_menu
+  # Empty the pack of light (no torches, no lantern, no oil)
+    *set has_pitch_torch false
+    *set spare_pitch_torch 0
+    *set has_hooded_lantern false
+    *set has_lamp_oil false
+    *set spare_lamp_oil 0
+    *goto dev_dungeon_walk_menu
+  # Add a bundle of chalk to the pack (six marks)
+    *if (has_chalk_sticks)
+      *set spare_chalk_sticks + 1
+    *else
+      *set has_chalk_sticks true
+    *goto dev_dungeon_walk_menu
+  # Give the Night-Eye Ring (the Vault's find; wear it from the inventory) and clear the ledger flag
+    *set has_night_eye_ring true
+    *set dg_ledger_read false
+    *goto dev_dungeon_walk_menu
+  # Refill the dungeon now (new encounter rolls, rooms new again; the map and chalk stay)
+    *gosub_scene dungeon dg_respawn
+    *goto dev_dungeon_walk_menu
+  # Forget the map and every chalk mark (and empty the open bundle)
+    *gosub_scene dungeon dg_forget_map
+    *goto dev_dungeon_walk_menu
+  # Back to the picker
+    *goto dev_dungeon_test_hub
+
+*comment ──────────────────────────────────────────────────────────────
+*comment DEVELOPER TESTING: PREPARE FOR THE FIGHT (2026-10-02)
+*comment A real player eats and drinks before a fight, so the combat tests should be able to start that way. Each option is the real stall food or drink (the same
+*comment values the market stalls sell, +1 to a score for 4 hours and 1 to 3 temporary HP) put through economy.txt's buy_tavern_item at a cost of 0, so the food and drink
+*comment slots, the hunger clock and recalculate_buff_stats behave exactly as in play. One food and one drink at a time (a second replaces the first).
+*comment ──────────────────────────────────────────────────────────────
+*label dev_combat_prep
+[b]🍖 DEVELOPER TESTING: PREPARE FOR THE FIGHT[/b]
+*line_break
+You are ${name}, a level ${character_level} ${class_name}. Temporary HP: ${temp_hp}.
+*line_break
+Food: @{food_buff_active ${food_buff_name} (${food_buff_desc}, ${food_buff_minutes_left} minutes left)|none}. Drink: @{drink_buff_active ${drink_buff_name} (${drink_buff_desc}, ${drink_buff_minutes_left} minutes left)|none}.
+*if (unique_buff1_active)
+  *line_break
+  Boon: ${unique_buff1_name} (${unique_buff1_desc}).
+*if (unique_buff2_active)
+  *line_break
+  Boon: ${unique_buff2_name} (${unique_buff2_desc}).
+*if (unique_buff3_active)
+  *line_break
+  Boon: ${unique_buff3_name} (${unique_buff3_desc}).
+
+*choice
+  # Eat Mutton Pottage -- 3 Temp HP, +1 CON for 4 hours
+    *set tavern_item_cost_copper 0
+    *set tavern_item_hp_heal 0
+    *set tavern_item_temp_hp 3
+    *set tavern_item_type "food"
+    *set tavern_item_buff_name "Mutton Pottage"
+    *set tavern_item_buff_desc "+1 CON"
+    *set tavern_item_buff_stat "con"
+    *set tavern_item_buff_bonus 1
+    *set tavern_item_buff_minutes 240
+    *gosub_scene economy buy_tavern_item
+    *goto dev_combat_prep
+  # Eat Smoked Peat-Herring -- 1 Temp HP, +1 STR for 4 hours
+    *set tavern_item_cost_copper 0
+    *set tavern_item_hp_heal 0
+    *set tavern_item_temp_hp 1
+    *set tavern_item_type "food"
+    *set tavern_item_buff_name "Smoked Peat-Herring"
+    *set tavern_item_buff_desc "+1 STR"
+    *set tavern_item_buff_stat "str"
+    *set tavern_item_buff_bonus 1
+    *set tavern_item_buff_minutes 240
+    *gosub_scene economy buy_tavern_item
+    *goto dev_combat_prep
+  # Eat a Mutton Pasty -- 1 Temp HP, +1 DEX for 4 hours
+    *set tavern_item_cost_copper 0
+    *set tavern_item_hp_heal 0
+    *set tavern_item_temp_hp 1
+    *set tavern_item_type "food"
+    *set tavern_item_buff_name "Mutton Pasty"
+    *set tavern_item_buff_desc "+1 DEX"
+    *set tavern_item_buff_stat "dex"
+    *set tavern_item_buff_bonus 1
+    *set tavern_item_buff_minutes 240
+    *gosub_scene economy buy_tavern_item
+    *goto dev_combat_prep
+  # Eat Vinegar Eel -- 1 Temp HP, +1 INT for 4 hours
+    *set tavern_item_cost_copper 0
+    *set tavern_item_hp_heal 0
+    *set tavern_item_temp_hp 1
+    *set tavern_item_type "food"
+    *set tavern_item_buff_name "Vinegar Eel"
+    *set tavern_item_buff_desc "+1 INT"
+    *set tavern_item_buff_stat "int"
+    *set tavern_item_buff_bonus 1
+    *set tavern_item_buff_minutes 240
+    *gosub_scene economy buy_tavern_item
+    *goto dev_combat_prep
+  # Drink Black Ale -- +1 CON for 4 hours
+    *set tavern_item_cost_copper 0
+    *set tavern_item_hp_heal 0
+    *set tavern_item_temp_hp 0
+    *set tavern_item_type "drink"
+    *set tavern_item_buff_name "Black Ale"
+    *set tavern_item_buff_desc "+1 CON"
+    *set tavern_item_buff_stat "con"
+    *set tavern_item_buff_bonus 1
+    *set tavern_item_buff_minutes 240
+    *gosub_scene economy buy_tavern_item
+    *goto dev_combat_prep
+  # Drink Spiced Grog -- +1 WIS for 4 hours
+    *set tavern_item_cost_copper 0
+    *set tavern_item_hp_heal 0
+    *set tavern_item_temp_hp 0
+    *set tavern_item_type "drink"
+    *set tavern_item_buff_name "Spiced Grog"
+    *set tavern_item_buff_desc "+1 WIS"
+    *set tavern_item_buff_stat "wis"
+    *set tavern_item_buff_bonus 1
+    *set tavern_item_buff_minutes 240
+    *gosub_scene economy buy_tavern_item
+    *goto dev_combat_prep
+  # Drink Black Porter -- +1 CHA for 4 hours
+    *set tavern_item_cost_copper 0
+    *set tavern_item_hp_heal 0
+    *set tavern_item_temp_hp 0
+    *set tavern_item_type "drink"
+    *set tavern_item_buff_name "Black Porter"
+    *set tavern_item_buff_desc "+1 CHA"
+    *set tavern_item_buff_stat "cha"
+    *set tavern_item_buff_bonus 1
+    *set tavern_item_buff_minutes 240
+    *gosub_scene economy buy_tavern_item
+    *goto dev_combat_prep
+  # Rub in Warming Liniment -- +1 STR for 12 hours (a free copy from Ambrose's shelf; stacks with food and drink)
+    *if (not(use_locked)) or (not(locked_use_page_id = page_id))
+      *gosub_scene equipment grant_gear "warming_liniment" 1
+    *gosub_scene equipment use_consumable "warming_liniment"
+    ${use_text}
+    *line_break
+    [b]${use_banner}[/b]
+    *page_break Back to the preparations...
+    *goto dev_combat_prep
+  # Drink Clear-Head Draught -- +1 WIS for 12 hours (a free copy from Ambrose's shelf; stacks with food and drink)
+    *if (not(use_locked)) or (not(locked_use_page_id = page_id))
+      *gosub_scene equipment grant_gear "clear_head_draught" 1
+    *gosub_scene equipment use_consumable "clear_head_draught"
+    ${use_text}
+    *line_break
+    [b]${use_banner}[/b]
+    *page_break Back to the preparations...
+    *goto dev_combat_prep
+  # Go in with nothing: clear the food, the drink, the boons and any temporary HP
+    *set food_buff_active false
+    *set drink_buff_active false
+    *set unique_buff1_active false
+    *set unique_buff2_active false
+    *set unique_buff3_active false
+    *set temp_hp 0
+    *gosub_scene character_buffs recalculate_buff_stats
+    *goto dev_combat_prep
+  # Done -- back to the fights
+    *goto dev_combat_test_hub

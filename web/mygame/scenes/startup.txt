@@ -265,10 +265,11 @@
 *comment back spends one of short_rests_left; restore_class_resources (a long rest) refills it. Short rests still take an hour and never touch the hunger or tiredness clocks, so they are not a way around sleep.
 *create short_rests_max 2
 *create short_rests_left 2
-*comment codex_rest_short (choicescript_stats.txt): the per-page lock that keeps a replay of the rest's result page from taking a SECOND rest (another hour, another give-back, another short rest spent), and the two
-*comment values that page prints, kept in stats so the replay can print the same page it printed the first time.
-*create short_rest_page_locked false
-*create locked_short_rest_page_id 0
+*comment codex_rest_short (choicescript_stats.txt): short_rest_applied is true once the rest's result page has done its work, and it keeps a REPLAY of that page from taking a second rest (another hour, another give-back,
+*comment another short rest spent). It is cleared by the Rest MENU (codex_rest) every time that is shown, so a new rest chosen from the menu always runs. It is deliberately not keyed on page_id: the dossier's page numbers
+*comment restart from the game page's own when it closes, so a page_id lock from one dossier visit collides with the next and skips a real rest (found 2026-10-02). short_rest_gave_text and short_rest_pick are the two values the
+*comment result page prints, kept in stats so a replay prints the same page it printed the first time.
+*create short_rest_applied false
 *create short_rest_gave_text ""
 *create short_rest_pick 1
 *comment Class resource MAXIMUMS. refresh_class_resource_maxs (character_progression.txt) is the only place a maximum is written down, and
@@ -358,6 +359,8 @@
 *create combat_rebuke_save_banner ""
 *create combat_rebuke_banner ""
 *comment fight_reach_check (combat.txt): set by the reach check that melee attacks and Shocking Grasp run when chosen.
+*comment combat_any_engaged: set by combat_check_engaged (combat.txt): true when ANY living enemy is at range 0, which spoils every ranged attack the player makes (5e: a hostile within 5 feet), whoever the target is.
+*create combat_any_engaged false
 *create combat_reach_ok true
 *create combat_reach_msg ""
 *create combat_save_quiet false
@@ -577,6 +580,10 @@
 *create port_watch_rep 0
 *create gilded_scales_rep 0
 *create black_oath_rep 0
+*comment black_oath_heat is attention and danger, separate from reputation: the Oath can respect a useful operator and still be watching them closely.
+*create black_oath_heat 0
+*comment "outsider", "contact", "associate". Association is paid named work, not a sworn oath.
+*create black_oath_status "outsider"
 *comment --- PORT VALEN OPEN-WORLD STATE ---
 *create silt_gate_quest_stage "unstarted"
 *create silt_gate_resolution "none"
@@ -615,7 +622,7 @@
 *create cut_labor_day 0
 *create cut_scrap_wade_day 0
 *comment --- HASK'S COURIER WORK (scrap yard recruitment quest) ---
-*comment times sold TO Hask specifically -- fires his offer at 14
+*comment times sold TO Hask specifically -- fires his offer at 3
 *create cut_scrap_sold_count 0
 *comment Hask has raised the offer at least once
 *create scrap_vetting_offer_seen false
@@ -625,8 +632,18 @@
 *create scrap_vetting_day 0
 *comment first round resolved; unlocks the standing "run a round" option
 *create hask_courier_unlocked false
-*comment lifetime SUCCESSFUL rounds; RESERVED to gate a future "another job" hook
+*comment lifetime SUCCESSFUL rounds; 3 opens Hask's named Black Oath work
 *create hask_courier_count 0
+*comment Hask has told the player who has really employed them
+*create hask_associate_offer_seen false
+*comment one-time guard for formal associate standing and its reputation award
+*create hask_associate_joined false
+*comment --- BLACK OATH: THE NIGHT LIST (port_valen/black_oath/black_oath_night_list.txt) ---
+*comment The first named night contract. The keeper is met during its briefing, not before.
+*create black_oath_keeper_met false
+*create black_oath_night_list_stage "unstarted"
+*create black_oath_night_list_resolution "none"
+*create black_oath_night_list_paid false
 *create cut_dice_day 0
 *create cut_broth_day 0
 *create cut_shrine_gave false
@@ -1377,6 +1394,8 @@
 *comment needs range 0 to land a hit; see the weapon-attack *choice gate and combat_next_turn's enemy branch
 *comment (both combat.txt) for the two sides of that rule. This is the "active target" scratch copy, synced in
 *comment from the slot's own combat_enemyN_range by fight_sync_target_in, same as hp/ac/atk_bonus above.
+*comment combat_opens_engaged: a caller sets this true for a fight that is already hand to hand (see the OPENING DISTANCE note in combat_roll_initiative); fight_cleanup clears it.
+*create combat_opens_engaged false
 *create combat_enemy_range 0
 *comment Opportunity attacks (2026-09-28), the bare "active target" scratch copy, synced by fight_sync_target_in
 *comment from combat_enemyN_oa_used exactly like the range line above. True means THIS enemy has already spent
@@ -1745,6 +1764,157 @@
 *comment preamble regardless of which file reads it -- this engine only accepts *create before the first real
 *comment command, and only in startup.txt (see GAMEPLAY_MECHANICS_RULES.md).
 *create dctest_label ""
+*comment fightlog_export_req: set by the Developer menu's "Export the fight log" option; fightlog.js turns it into a download and clears it.
+*create fightlog_export_req false
+*comment Dungeon engine (2026-10-02, dungeon.txt): the random-encounter picker. dg_table and dg_call_id are set by the caller; dg_encounter is the result
+*comment ("none" when nothing is left to roll); dg_pick_1..8 are the run's no-repeat history; dg_tide is derived from time_period (low Morning-Dusk, high Night and
+*comment Pre-Dawn); the rest is scratch for one pick, and the lock pair makes a replay of the same page skip the roll.
+*create dg_table ""
+*create dg_call_id ""
+*create dg_encounter "none"
+*create dg_tide "low"
+*create dg_pick_count 0
+*create dg_pick_1 "none"
+*create dg_pick_2 "none"
+*create dg_pick_3 "none"
+*create dg_pick_4 "none"
+*create dg_pick_5 "none"
+*create dg_pick_6 "none"
+*create dg_pick_7 "none"
+*create dg_pick_8 "none"
+*create dg_pass 0
+*create dg_total 0
+*create dg_roll 0
+*create dg_cursor 0
+*create dg_found "none"
+*create dg_pick_locked false
+*create locked_dg_pick_page_id 0
+*create locked_dg_pick_id ""
+*comment Harvesting a kill (dungeon.txt dg_harvest): the caller sets dg_hv_creature ("frog", "centipede", "viper" or "lacedon"); dg_harvest_info fills the rest.
+*create dg_hv_creature ""
+*create dg_hv_dc 0
+*create dg_hv_var ""
+*create dg_hv_name ""
+*create dg_hv_sting false
+*comment Dungeon walking (dungeon.txt dg_step, dg_light_prompt, dg_dark_check; the map is port_valen/port_valen_silt_conduits.txt). dg_dark is derived, never set by hand:
+*comment true in a run with no light left and no darkvision, and the one thing that reads it is roll_d20_check (disadvantage) and dg_fight_prep (enemy advantage).
+*create dg_in_run false
+*create dg_start "x1"
+*create dg_pos "none"
+*create dg_dest "none"
+*create dg_dest_hall false
+*create dg_steps 0
+*comment THE RESPAWN (dungeon.txt dg_respawn). What a dungeon holds is kept BETWEEN runs and refilled every dg_respawn_days days (about twice a week): dg_done_<node> says a hallway step's encounter has been rolled
+*comment (arriving there again rolls nothing), and the room flags below say what the player already did in a room. dg_reset_day is the campaign_day of the last refill (0 = never). Chalked junctions stay quiet after a refill.
+*create dg_respawn_days 3
+*create dg_reset_day 0
+*create dg_done_x1 false
+*create dg_done_x2 false
+*create dg_done_x3 false
+*create dg_done_j1 false
+*create dg_done_j2 false
+*create dg_done_j3 false
+*create dg_done_j4 false
+*create dg_done_j5 false
+*create dg_done_j6 false
+*create dg_done_j7 false
+*create dg_done_j8 false
+*create dg_done_r1 false
+*create dg_done_r2 false
+*create dg_done_r3 false
+*create dg_done_r4 false
+*create dg_done_r5 false
+*create dg_done_none false
+*create dg_prev_enc false
+*create dg_enc_now false
+*create dg_light_kind "none"
+*create dg_light_left 0
+*create dg_light_out_now false
+*create dg_dark false
+*create dg_from "none"
+*comment The map and the chalk (dungeon.txt, the map panel is dungeonmap.js). dg_seen_<node> is true once the player has stood on that node WITH LIGHT (a character in the dark
+*comment cannot see to update the map); dg_mark_<node> is true once they chalked it. Both outlive a run on purpose: the map keeps what was explored and a chalk mark stays
+*comment forever. The node ids are x1 x2 x3 (the three ways in), j1..j8 (hallway junctions) and r1..r5 (rooms); the "none" pair exists so reading the flag of a position that is
+*comment not a node yet ("none") is never an error. dg_chalk_left is the marks left on the bundle in use (a bundle of six sticks is one mark each).
+*create dg_seen_x1 false
+*create dg_seen_x2 false
+*create dg_seen_x3 false
+*create dg_seen_j1 false
+*create dg_seen_j2 false
+*create dg_seen_j3 false
+*create dg_seen_j4 false
+*create dg_seen_j5 false
+*create dg_seen_j6 false
+*create dg_seen_j7 false
+*create dg_seen_j8 false
+*create dg_seen_r1 false
+*create dg_seen_r2 false
+*create dg_seen_r3 false
+*create dg_seen_r4 false
+*create dg_seen_r5 false
+*create dg_seen_none false
+*create dg_mark_x1 false
+*create dg_mark_x2 false
+*create dg_mark_x3 false
+*create dg_mark_j1 false
+*create dg_mark_j2 false
+*create dg_mark_j3 false
+*create dg_mark_j4 false
+*create dg_mark_j5 false
+*create dg_mark_j6 false
+*create dg_mark_j7 false
+*create dg_mark_j8 false
+*create dg_mark_r1 false
+*create dg_mark_r2 false
+*create dg_mark_r3 false
+*create dg_mark_r4 false
+*create dg_mark_r5 false
+*create dg_mark_none false
+*comment Room state (port_valen/port_valen_silt_conduits.txt): what the player has already done in a room since the dungeon last refilled. dungeon.txt dg_respawn clears these every dg_respawn_days days,
+*comment not every run, and the map and the chalk are never cleared. dg_mins and dg_time_id are the inputs of dungeon.txt dg_time.
+*create dg_r1_tally false
+*create dg_r1_tally_ok false
+*create dg_r1_search false
+*create dg_r1_steps false
+*create dg_r2_cross false
+*create dg_r3_clear false
+*create dg_r4_brood_dead false
+*create dg_r5_crates false
+*create dg_r5_box false
+*create dg_r5_opened false
+*create dg_r5_ring_now false
+*create dg_r5_ledger_now false
+*create dg_ledger_read false
+*create dg_r4_quiet false
+*create dg_r3_found false
+*create dg_r3_viper_dead false
+*create dg_r2_found false
+*create dg_r2_climb false
+*create dg_r2_lacedon_dead false
+*create dg_mins 5
+*create dg_time_id ""
+*create dg_chalk_left 0
+*create dg_chalk_avail 0
+*create dg_chalk_ok false
+*create dg_chalk_locked false
+*create locked_dg_chalk_page_id 0
+*create dg_lit_now false
+*create dg_hurt 0
+*create dg_wet 0
+*create dg_mouse_met false
+*create dg_dev_fight false
+*create dg_dev_fight_id "none"
+*create dg_camp_looted false
+*create dg_swa_can false
+*create dg_swa_cost "none"
+*create dg_swa_why ""
+*create dg_swa_locked false
+*create locked_dg_swa_page_id 0
+*create dg_walk_roll 0
+*create dg_step_locked false
+*create locked_dg_step_page_id 0
+*create dg_light_locked false
+*create locked_dg_light_page_id 0
 *comment Multi-enemy fight support (combat.txt: slots 1-3)
 *create combat_enemy_count 1
 *create combat_active_target 1
@@ -2855,7 +3025,10 @@
 *create fft_miss ""
 *create fft_m2hit ""
 *create fft_m2miss ""
+*comment Shield (RAW, reworked 2026-10-02): shield_armed is the held reaction (free to keep, a slot is spent only when it fires). When it fires on a hit, shield_active holds the +5 AC for EVERY attack made
+*comment against the player until the start of the player's next turn; it is not destroyed by a hit. Both are cleared by fight_cleanup, and shield_active also at the start of each player turn.
 *create shield_armed false
+*create shield_active false
 *create combat_shield_triggered false
 *comment MAGIC MISSILE TARGETING (2026-09-28): sidebar-driven multi-target dart allocation, the first spell
 *comment built this way and meant as a reusable shape for future multi-target spells -- see fight_target_magic_
@@ -3284,6 +3457,10 @@
 *create cart_sell_silk_neckcloth 0
 *create cart_sell_court_coat 0
 *create cart_sell_scrap_steel 0
+*create cart_sell_frog_slime 0
+*create cart_sell_centipede_gland 0
+*create cart_sell_viper_venom 0
+*create cart_sell_grave_ichor 0
 *comment GEN:END gear_creates
 *comment Armor proficiency (equipment.txt armor_prof_check / recalculate_proficiency). armor_tier is derived from
 *comment armor_type; armor_nonprof is true while the worn armor is one the class is not trained in, which
@@ -3302,6 +3479,11 @@
 *comment back to when they sold something worn. All three stay set after the sale so a replayed
 *comment page prints the same banner.
 *create scrap_steel 0
+*comment Ingredients (2026-10-02, the dungeon's harvesting, dungeon.txt dg_harvest): counted salvage like scrap_steel, sold to Ambrose by the piece (catalog herbalistPiece).
+*create frog_slime 0
+*create centipede_gland 0
+*create viper_venom 0
+*create grave_ichor 0
 *comment The gear table (equipment.txt gear_info) and its outputs. An item's ownership flag is always
 *comment has_<id>, so the shared buy and sell routines reach it through gear_flag_var instead of a branch.
 *create gear_id ""
@@ -3311,6 +3493,7 @@
 *create gear_pct_tailor 0
 *create gear_fixed_pawn 0
 *create gear_piece_smith 0
+*create gear_piece_herbalist 0
 *create gear_count_var ""
 *create gear_warn ""
 *create gear_quote ""
@@ -3377,6 +3560,8 @@
 *comment The inventory panel sets these before it opens choicescript_stats codex_equip_do (an equip that changes ability scores).
 *create equip_slot ""
 *create equip_item_id ""
+*comment attune_action: "attune" or "break", set by the inventory panel before it runs choicescript_stats codex_attune_do.
+*create attune_action ""
 *create use_in_combat false
 *create use_result ""
 *create use_text ""
@@ -3420,6 +3605,8 @@
 *create has_rorik_campaign_belt false
 *create has_toll_seal_ring false
 *create has_althea_votive_ring false
+*comment The Night-Eye Ring (2026-10-02): found in the Silt-Gate Vault, once ever. Worn in a ring slot, it lets the wearer see in the dark (character_progression.txt refresh_invocations).
+*create has_night_eye_ring false
 *create intimate_encounters 0
 *comment Widow Corve's: daily companion roster and encounter state
 *create corve_roster_day 0

@@ -341,12 +341,16 @@ ${combat_player_dmg_roll_banner}
   *temp cea_dc armor_class
   *if (dodge_active)
     *set cea_dc (cea_dc + 5)
+  *comment A Shield that already fired this round (shield_active) is simply +5 AC for this attack too (RAW: until the start of the caster's next turn).
+  *if (shield_active)
+    *set cea_dc (cea_dc + 5)
   *set combat_enemy_hit_success (combat_enemy_atk_total >= cea_dc)
   *set combat_shield_triggered false
   *comment Shield is a reaction "when you are hit", so it triggers off the hit as resolved above -- which now
   *comment already accounts for Dodge -- and then re-tests one step higher. It is not itself dodge-blocked.
-  *if ((combat_enemy_hit_success) and (shield_armed))
+  *if (((combat_enemy_hit_success) and (shield_armed)) and (not(shield_active)))
     *set shield_armed false
+    *set shield_active true
     *set wizard_spell_slots - 1
     *set combat_shield_triggered true
     *set cea_dc (cea_dc + 5)
@@ -358,11 +362,18 @@ ${combat_player_dmg_roll_banner}
   *temp cea_atk_verdict "MISS"
   *if (combat_enemy_hit_success)
     *set cea_atk_verdict "HIT"
+  *comment The AC printed is the final number the roll was compared against (cea_dc), so a bonus is shown as a breakdown in brackets, "vs AC 17 (12 +5 Shield)", not appended to it
+  *comment ("AC 17 +5 Shield" read as 22, because the 17 already includes the +5). An armed Shield that did not fire (the attack missed the plain AC) says so.
   *temp cea_ac_str ""
-  *if (dodge_active)
-    *set cea_ac_str " +5 Dodge"
-  *if (combat_shield_triggered)
-    *set cea_ac_str "${cea_ac_str} +5 Shield"
+  *if ((dodge_active) or (shield_active))
+    *set cea_ac_str " (${armor_class}"
+    *if (dodge_active)
+      *set cea_ac_str "${cea_ac_str} +5 Dodge"
+    *if (shield_active)
+      *set cea_ac_str "${cea_ac_str} +5 Shield"
+    *set cea_ac_str "${cea_ac_str})"
+  *elseif ((shield_armed) and (not(combat_shield_triggered)))
+    *set cea_ac_str " (Shield not needed)"
   *set {(cea_atk_bannername)} "[b][🎲 ${combat_enemy_name} Attack Roll: ${cea_roll} ${cea_atk_bonus_str}${cea_adv_label}${cea_bane_str} = ${combat_enemy_atk_total} vs AC ${cea_dc}${cea_ac_str} — ${cea_atk_verdict}][/b]"
   *set combat_enemy_dmg_dealt 0
   *set combat_agathys_triggered false

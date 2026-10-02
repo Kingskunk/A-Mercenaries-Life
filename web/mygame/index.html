@@ -45,18 +45,26 @@ either express or implied.
 <script src="action-icons.js"></script>
 <script src="equipment-data.generated.js"></script>
 <script src="equipment-panel.js"></script>
+<script src="item-icons.js"></script>
 <script src="inventory-data.js"></script>
 <script src="inventory.js"></script>
 <script src="trade-data.generated.js"></script>
 <script src="trade.js"></script>
 <script src="levelup.js"></script>
 <script src="battlehud.js"></script>
+<script src="dungeonmap.js"></script>
+<script src="fightlog.js"></script>
+<script src="shell.js"></script>
 <link href="../alertify.css" rel="stylesheet" type="text/css">
+<link href="uiart.css" rel="stylesheet" type="text/css">
+<link href="theme.css" rel="stylesheet" type="text/css">
 <link href="lorebook.css" rel="stylesheet" type="text/css">
 <link href="inventory.css" rel="stylesheet" type="text/css">
 <link href="trade.css" rel="stylesheet" type="text/css">
 <link href="levelup.css" rel="stylesheet" type="text/css">
 <link href="battlehud.css" rel="stylesheet" type="text/css">
+<link href="dungeonmap.css" rel="stylesheet" type="text/css">
+<link href="shell.css" rel="stylesheet" type="text/css">
 <!--[if IE 6]><style>.alertify-logs { position: absolute; }</style><![endif]-->
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <script>
@@ -68,27 +76,22 @@ var rootDir = "../";
 <style>
 #statSidebar {
   position: fixed;
-  top: 0.75em;
-  right: 0.75em;
-  width: 290px;
-  max-height: 92vh;
+  top: 14px;
+  right: 14px;
+  bottom: 18px;
+  width: 308px;
+  display: flex;                      /* a column of panels; shell.js and renderStatSidebar still toggle display:none until the character exists */
+  flex-direction: column;
+  gap: 12px;
   overflow-y: auto;
-  background: rgba(247,244,241,0.95);
-  border: 1px solid rgba(0,0,0,0.25);
-  border-radius: 6px;
-  padding: 0.75em 1em;
-  font-family: Helvetica, Arial, sans-serif;
-  font-size: 0.82em;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ch-line-hi) transparent;
+  font-family: var(--ch-font-ui);
+  font-size: 0.86em;
   line-height: 1.6;
-  color: rgba(0,0,0,0.85);
+  color: var(--ch-text);
   z-index: 999;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
-}
-#statSidebar h3 {
-  margin: 0 0 0.5em 0;
-  font-size: 1.05em;
-  border-bottom: 1px solid rgba(0,0,0,0.2);
-  padding-bottom: 0.35em;
 }
 #statSidebar .statRow {
   display: flex;
@@ -96,7 +99,7 @@ var rootDir = "../";
   gap: 0.75em;
 }
 #statSidebar .statRow > span:first-child {
-  color: rgba(0,0,0,0.6);
+  color: var(--ch-dim);
   white-space: nowrap;
 }
 #statSidebar .statRow > span:last-child {
@@ -108,7 +111,7 @@ var rootDir = "../";
   margin-bottom: 0.2em;
   font-size: 0.92em;
   font-style: italic;
-  color: rgba(0,0,0,0.55);
+  color: var(--ch-dim);
   text-align: right;
 }
 #statSidebar .abilityGrid {
@@ -122,7 +125,7 @@ var rootDir = "../";
   font-weight: bold;
 }
 #statSidebar .boonUp {
-  color: #3a9b4a;
+  color: var(--ch-good);
 }
 #statSidebar .boonIdle {
   opacity: 0.5;
@@ -131,7 +134,7 @@ var rootDir = "../";
 #statSidebar .sectionDivider {
   margin: 0.65em 0 0.5em 0;
   border: none;
-  border-top: 1px solid rgba(0,0,0,0.15);
+  border-top: 1px solid var(--ch-line);
 }
 
 /* ── Spellbook section (proof of concept, read-only) ──────────────────────────────────────────────────────
@@ -140,7 +143,7 @@ var rootDir = "../";
    open/closed flag held in JS would be lost ~2.5x a second, whereas the browser tracks the open state
    on the element itself, so writing the `open` attribute back into the markup each render restores it. */
 #statSidebar .spellbook {
-  border-top: 1px solid rgba(0,0,0,0.15);
+  border-top: 1px solid var(--ch-line);
   margin-top: 0.65em;
   padding-top: 0.35em;
 }
@@ -149,7 +152,7 @@ var rootDir = "../";
   list-style: none;
   font-size: 0.95em;
   font-weight: 600;
-  color: rgba(0,0,0,0.7);
+  color: var(--ch-text);
   display: flex;
   align-items: center;
   gap: 0.35em;
@@ -160,11 +163,11 @@ var rootDir = "../";
 #statSidebar .spellbook > summary::before {
   content: "\25B8";                 /* small right-pointing triangle */
   font-size: 0.8em;
-  color: rgba(0,0,0,0.45);
+  color: var(--ch-dim);
   transition: transform 0.12s ease;
 }
 #statSidebar .spellbook[open] > summary::before { transform: rotate(90deg); }
-#statSidebar .spellbook > summary:hover { color: rgba(0,0,0,0.9); }
+#statSidebar .spellbook > summary:hover { color: var(--ch-text); }
 #statSidebar .spellTabs {
   display: flex;
   gap: 0.3em;
@@ -172,14 +175,14 @@ var rootDir = "../";
   flex-wrap: wrap;
 }
 #statSidebar .spellTab {
-  border: 1px solid rgba(0,0,0,0.2);
-  background: rgba(255,255,255,0.5);
+  border: 1px solid var(--ch-line);
+  background: var(--ch-card);
   border-radius: 4px;
   padding: 0.15em 0.4em 0.15em 0.3em;
   font: inherit;
   font-size: 0.8em;
   line-height: 1;
-  color: rgba(0,0,0,0.75);
+  color: var(--ch-text);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -192,10 +195,10 @@ var rootDir = "../";
    plus a hair of breathing room. This is what buys the fifth tab its place on the row. */
 #statSidebar .spellTab:not([data-spell-label]) { padding: 0.15em 0.2em; }
 #statSidebar .spellTab:not(.spellTabEmpty) { opacity: 1; }
-#statSidebar .spellTab:hover { border-color: rgba(0,0,0,0.45); }
+#statSidebar .spellTab:hover { border-color: var(--ch-line-hi); }
 #statSidebar .spellTab[aria-pressed="true"] {
-  background: #7a3e1d;              /* the sidebar's existing picked-target rust */
-  border-color: #7a3e1d;
+  background: var(--ch-crimson);              /* the sidebar's existing picked-target rust */
+  border-color: var(--ch-crimson);
   color: #fff;
 }
 #statSidebar .spellTab img {
@@ -226,8 +229,8 @@ var rootDir = "../";
   color: inherit;
   cursor: pointer;
 }
-#statSidebar .spellRow:hover { background: rgba(0,0,0,0.06); }
-#statSidebar .spellRow[aria-pressed="true"] { background: rgba(122,62,29,0.14); font-weight: 600; }
+#statSidebar .spellRow:hover { background: var(--ch-hover); }
+#statSidebar .spellRow[aria-pressed="true"] { background: var(--ch-crimson-soft); font-weight: 600; }
 #statSidebar .spellRow img { width: 18px; height: 18px; object-fit: contain; flex: 0 0 auto; }
 /* Fallback for spells with no art in ICONS/ (and any spell outside the generated --batch set): an
    initials chip, so the row still reads as a list item instead of a broken image. */
@@ -235,9 +238,9 @@ var rootDir = "../";
   width: 18px; height: 18px;
   flex: 0 0 auto;
   border-radius: 3px;
-  background: rgba(0,0,0,0.07);
-  border: 1px solid rgba(0,0,0,0.15);
-  color: rgba(0,0,0,0.6);
+  background: var(--ch-hover);
+  border: 1px solid var(--ch-line);
+  color: var(--ch-dim);
   font-size: 8.5px;
   font-weight: 700;
   display: flex;
@@ -245,24 +248,24 @@ var rootDir = "../";
   justify-content: center;
 }
 #statSidebar .spellName { flex: 1 1 auto; }
-#statSidebar .spellLvl { font-size: 0.8em; color: rgba(0,0,0,0.5); font-weight: 400; }
+#statSidebar .spellLvl { font-size: 0.8em; color: var(--ch-dim); font-weight: 400; }
 #statSidebar .spellDetail {
   margin-top: 0.4em;
   padding: 0.4em 0.5em;
-  border-left: 2px solid rgba(122,62,29,0.45);
-  background: rgba(122,62,29,0.06);
+  border-left: 2px solid var(--ch-crimson-hi);
+  background: var(--ch-crimson-soft);
   font-size: 0.85em;
   line-height: 1.5;
-  color: rgba(0,0,0,0.75);
+  color: var(--ch-text);
   border-radius: 0 3px 3px 0;
 }
-#statSidebar .spellDetail b { color: rgba(0,0,0,0.9); }
-#statSidebar .spellDetail .spellMeta { display: block; margin-top: 0.2em; font-size: 0.85em; color: rgba(0,0,0,0.55); }
-#statSidebar .spellEmpty { font-size: 0.85em; color: rgba(0,0,0,0.5); padding: 0.2em 0; }
+#statSidebar .spellDetail b { color: var(--ch-text); }
+#statSidebar .spellDetail .spellMeta { display: block; margin-top: 0.2em; font-size: 0.85em; color: var(--ch-dim); }
+#statSidebar .spellEmpty { font-size: 0.85em; color: var(--ch-dim); padding: 0.2em 0; }
 #spellCastToast {
   position: fixed; left: 50%; bottom: 1.2rem; transform: translateX(-50%) translateY(20px);
-  z-index: 60; max-width: min(520px, calc(100vw - 2rem)); padding: 0.6rem 1rem;
-  background: #2c2c2c; color: #f0ece6; border-left: 4px solid #b8791f; border-radius: 6px;
+  z-index: 60; max-width: min(520px, calc(100vw / var(--z, 1) - 2rem)); padding: 0.6rem 1rem;
+  background: var(--ch-head); color: var(--ch-head-text); border-left: 4px solid var(--ch-warn); border-radius: 6px;
   font-family: Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.4;
   box-shadow: 0 6px 24px rgba(0,0,0,0.4); opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s;
 }
@@ -270,11 +273,11 @@ var rootDir = "../";
 #statSidebar .spellCast {
   display: block; width: 100%; margin-top: 0.5em; padding: 0.35em 0.5em;
   font: inherit; font-size: 0.95em; font-weight: 600; cursor: pointer;
-  color: #fff; background: rgba(122,62,29,0.9); border: 1px solid rgba(122,62,29,1); border-radius: 4px;
+  color: #fff; background: var(--ch-crimson); border: 1px solid var(--ch-crimson-hi); border-radius: 4px;
 }
-#statSidebar .spellCast:hover:not(:disabled) { background: rgba(122,62,29,1); }
-#statSidebar .spellCast:disabled { cursor: not-allowed; color: rgba(0,0,0,0.45); background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.15); font-weight: 400; }
-#statSidebar .spellNote { font-size: 0.78em; color: rgba(0,0,0,0.45); margin-top: 0.4em; line-height: 1.4; }
+#statSidebar .spellCast:hover:not(:disabled) { background: var(--ch-crimson); }
+#statSidebar .spellCast:disabled { cursor: not-allowed; color: var(--ch-dim); background: var(--ch-hover); border-color: var(--ch-line); font-weight: 400; }
+#statSidebar .spellNote { font-size: 0.78em; color: var(--ch-dim); margin-top: 0.4em; line-height: 1.4; }
 /* Combat state (2026-09-27): the sidebar's own header gets a small badge, and date/time/weather/purse swap for
    a live turn-order list (renderStatSidebar below) -- reusing the combat_turn_kind_N/_slot_N stats the ChoiceScript
    engine already builds, not a second panel, so this never fights the sidebar for space or attention.
@@ -299,8 +302,8 @@ var rootDir = "../";
   font-size: 0.7em;
   font-weight: bold;
   letter-spacing: 0.05em;
-  color: #a12b2b;
-  border: 1px solid #a12b2b;
+  color: var(--ch-bad);
+  border: 1px solid var(--ch-bad);
   border-radius: 3px;
   padding: 0.1em 0.4em;
   white-space: nowrap;
@@ -335,9 +338,9 @@ button#statSidebar .turnRow,
                                     elementFromPoint (refreshTip) never finds the card instead */
   opacity: 0;
   transition: opacity 0.1s ease;
-  background: #211c19;           /* warm near-black, sits with the sidebar's browns */
-  color: #f2ece6;
-  border: 1px solid rgba(161,43,43,0.5);   /* rust, the same accent as the COMBAT badge */
+  background: var(--ch-head);           /* warm near-black, sits with the sidebar's browns */
+  color: var(--ch-head-text);
+  border: 1px solid var(--ch-bad);   /* rust, the same accent as the COMBAT badge */
   border-radius: 7px;
   box-shadow: 0 8px 22px rgba(0,0,0,0.38), 0 1px 2px rgba(0,0,0,0.3);
   padding: 8px 10px 9px;
@@ -354,13 +357,13 @@ button#statSidebar .turnRow,
 }
 #csTip .tMeta {                  /* AC / attack bonus / damage dice */
   font-size: 11px;
-  color: #a99d94;
+  color: var(--ch-dim);
   padding-bottom: 6px;
   margin-bottom: 6px;
   border-bottom: 1px solid rgba(255,255,255,0.09);
 }
-#csTip .tMeta b { color: #cbbdb2; font-weight: 600; }
-#csTip .tCond { margin-top: 4px; color: #9ad0e8; font-size: 12px; }   /* active conditions, one line */
+#csTip .tMeta b { color: var(--ch-dim); font-weight: 600; }
+#csTip .tCond { margin-top: 4px; color: var(--ch-info); font-size: 12px; }   /* active conditions, one line */
 #csTip .tGrid {                  /* 2 columns x 3 rows: STR DEX / CON INT / WIS CHA. A real grid so the
                                     columns align exactly -- the previous version padded with non-breaking
                                     spaces, which only ever approximated this. */
@@ -370,13 +373,13 @@ button#statSidebar .turnRow,
   row-gap: 2px;
 }
 #csTip .tAb { font-size: 11.5px; }
-#csTip .tAb b { color: #d98b7a; font-weight: 700; margin-right: 4px; }   /* ability label */
+#csTip .tAb b { color: var(--ch-bad); font-weight: 700; margin-right: 4px; }   /* ability label */
 #csTip .tAb s { color: #fff; font-weight: 600; text-decoration: none; }  /* the score */
 #csTip .tAb i { font-style: normal; margin-left: 3px; font-size: 10.5px; }
-#csTip .tAb i.pos { color: #86c295; }   /* positive modifier */
-#csTip .tAb i.neg { color: #e08a8a; }   /* negative modifier */
-#csTip .tAb i.zero { color: #8f837a; }
-#csTip .tDead { color: #8f837a; font-size: 10.5px; margin-top: 6px; }
+#csTip .tAb i.pos { color: var(--ch-good); }   /* positive modifier */
+#csTip .tAb i.neg { color: var(--ch-bad); }   /* negative modifier */
+#csTip .tAb i.zero { color: var(--ch-dim); }
+#csTip .tDead { color: var(--ch-dim); font-size: 10.5px; margin-top: 6px; }
 #statSidebar .turnRow[data-combatant] {
   cursor: help;
 }
@@ -389,29 +392,29 @@ button#statSidebar .turnRow,
 }
 #statSidebar .turnRow:hover:not(:disabled),
 #statSidebar .turnRow:focus-visible:not(:disabled) {
-  background: rgba(0,0,0,0.06);
+  background: var(--ch-hover);
 }
 #statSidebar .turnRowPicked {
-  background: rgba(122,62,29,0.14);
+  background: var(--ch-crimson-soft);
   font-weight: 600;
 }
-#statSidebar .turnRowPicked > span:first-child { color: #7a3e1d; }
+#statSidebar .turnRowPicked > span:first-child { color: var(--ch-brass); }
 #statSidebar .turnRowDead {
   opacity: 0.45;
   cursor: default;
 }
 #statSidebar .turnRowSelf > span:first-child { font-weight: 600; }
-#statSidebar .enemyName { color: #a12b2b; }   /* same rust as the COMBAT badge */
-#statSidebar .allyName { color: #2a5f8f; }
+#statSidebar .enemyName { color: var(--ch-bad); }   /* same rust as the COMBAT badge */
+#statSidebar .allyName { color: var(--ch-info); }
 #statSidebar .rangeTag {                      /* distance tag beside a combatant's name */
   font-weight: 400;
   font-size: 0.9em;
-  color: rgba(0,0,0,0.5);
+  color: var(--ch-dim);
   margin-left: 0.3em;
 }
 #statSidebar .dartsTag {                      /* Magic Missile dart count, prefixed before the name */
   font-weight: 700;
-  color: #2a5f8f;
+  color: var(--ch-info);
   margin-right: 0.2em;
 }
 #statSidebar .alertRow {                      /* derived "who's next / who's in reach" rows, above the turn list */
@@ -419,7 +422,7 @@ button#statSidebar .turnRow,
   padding: 2px 0;
 }
 #statSidebar .alertReach {                    /* enemies at range 0 -- the ones actually hitting you this round */
-  color: #a12b2b;
+  color: var(--ch-bad);
   font-weight: 600;
 }
 #statSidebar .turnMain {                      /* a turn row's first cell: name line, plus an optional sub-line */
@@ -434,20 +437,152 @@ button#statSidebar .turnRow,
                                                 fixed-width. */
   font-size: 0.88em;
   font-style: italic;
-  color: rgba(0,0,0,0.55);
+  color: var(--ch-dim);
   overflow-wrap: anywhere;
 }
-#statSidebar .turnRowPicked .enemyName { color: #7a3e1d; }   /* picked-target row already recolors the name; keep it */
-@media (max-width: 960px) {
+#statSidebar .turnRowPicked .enemyName { color: var(--ch-brass); }   /* picked-target row already recolors the name; keep it */
+/* ── STAGE 3 (2026-10-02): the sidebar as the stacked panels of the design mock ──────────────────────────────
+   Appended after the older rules on purpose: where a selector appears twice, this block wins. The data hooks (.turnRow with data-target / data-friendly /
+   data-combatant, and the whole .spellbook component) are untouched; only what surrounds them changed. */
+#statSidebar .sbPanel {
+  flex: none; padding: 14px 16px 16px; border: 1px solid var(--ch-line-hi); border-radius: 6px;
+  background: linear-gradient(rgba(14, 12, 11, 0.9), rgba(14, 12, 11, 0.92)), var(--art-stone) center / cover;
+  box-shadow: inset 0 0 0 1px #000, 0 6px 20px var(--ch-shadow);
+}
+#statSidebar .shead {
+  margin: 0 0 8px; display: flex; align-items: center; gap: 8px;
+  font: 600 12px var(--ch-font-head); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ch-brass);
+}
+#statSidebar .shead::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--ch-line-hi), transparent); }
+#statSidebar .sbPanel .statRow:not(.turnRow) { padding: 3px 0; border-bottom: 1px dotted var(--ch-line); }
+#statSidebar .sbPanel .statRow:not(.turnRow) > span:first-child { color: var(--ch-dim); }
+
+/* identity: portrait ring and the name on a crimson banner */
+#statSidebar .sbPortrait { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+#statSidebar .sbRing { position: relative; flex: 0 0 66px; height: 66px; border-radius: 50%; background: #0c0a09; display: grid; place-items: center; }
+#statSidebar .sbRing::after { content: ""; position: absolute; inset: -6px; background: var(--art-roundbig) center / 100% 100% no-repeat; pointer-events: none; }
+#statSidebar .sbRing i { width: 44px; height: 44px; background: center / contain no-repeat; filter: invert(0.85) sepia(0.3); }
+#statSidebar .sbName {
+  flex: 1; min-width: 0; padding: 8px 28px 8px 14px; overflow-wrap: anywhere;
+  background: var(--art-banner2) left center / 100% 100% no-repeat;
+  font: 600 15px/1.15 var(--ch-font-head); letter-spacing: 0.06em; color: #f1e4cf; text-shadow: 0 1px 2px #000;
+}
+#statSidebar .sbName small { display: block; font: 11px var(--ch-font-ui); letter-spacing: 0.04em; color: #d6b9a8; text-shadow: none; }
+#statSidebar .sbName .combatBadge {
+  display: inline-block; margin: 3px 0 0; flex: none; margin-left: 0; font-size: 9.5px; padding: 0 5px;
+  color: #ffd9d4; border-color: var(--ch-crimson-hi); background: rgba(0, 0, 0, 0.3); text-shadow: none;
+}
+
+/* HP bar over the frame art */
+#statSidebar .sbHp { position: relative; height: 24px; margin: 4px 0 8px; background: var(--art-hpframe) center / 100% 100% no-repeat; }
+#statSidebar .sbHp .fill { position: absolute; left: 5px; top: 5px; bottom: 5px; border-radius: 3px; background: linear-gradient(#c24a43, #7d1f1f); box-shadow: 0 0 6px rgba(181, 58, 53, 0.5); }
+#statSidebar .sbHp .num { position: absolute; inset: 0; display: grid; place-items: center; font: 700 12px var(--ch-font-ui); color: #fff; text-shadow: 0 1px 2px #000; }
+
+/* spell slots as orbs */
+#statSidebar .orbs { display: inline-flex; gap: 5px; align-items: center; }
+#statSidebar .orb { width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #8fd0ff, #2b6aa8 60%, #123556); border: 1px solid #0b2036; }
+#statSidebar .orb.pact { background: radial-gradient(circle at 35% 30%, #e6b8ff, #8a3fb8 60%, #3b1458); border-color: #25093a; }
+#statSidebar .orb.used { background: #1a1a1a; border-color: var(--ch-line); }
+
+/* the six scores as boxed tiles */
+#statSidebar .sbAbil { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 10px 0 2px; }
+#statSidebar .sbAbil > div { text-align: center; padding: 5px 2px; border: 1px solid var(--ch-line); border-radius: 4px; background: rgba(0, 0, 0, 0.3); font-size: 11px; color: var(--ch-dim); }
+#statSidebar .sbAbil b { display: block; font: 700 16px var(--ch-font-ui); color: var(--ch-text); }
+#statSidebar .sbAbil .boon { display: block; font-size: 10px; line-height: 1.1; margin-bottom: 1px; }
+
+/* the turn order as cards, each with a little HP bar */
+#statSidebar .turnRow {
+  box-sizing: border-box; position: relative; flex-wrap: wrap; width: 100%; margin: 0 0 6px; padding: 6px 8px 14px; text-align: left; font: inherit; color: inherit; cursor: default;
+  border: 1px solid var(--ch-line); border-left: 3px solid var(--ch-crimson-hi); border-radius: 4px; background: rgba(0, 0, 0, 0.3);
+}
+#statSidebar .turnRow:has(.allyName) { border-left-color: var(--ch-info); }
+#statSidebar .turnRow.turnRowSelf { border-left-color: var(--ch-brass); background: var(--ch-brass-soft); padding-bottom: 6px; }
+#statSidebar .turnRow::after {
+  content: ""; position: absolute; left: 8px; right: 8px; bottom: 5px; height: 5px; border-radius: 3px;
+  background: linear-gradient(90deg, var(--ch-crimson-hi) var(--hp, 0%), #1a1412 var(--hp, 0%));
+}
+#statSidebar .turnRow:has(.allyName)::after { background: linear-gradient(90deg, var(--ch-good) var(--hp, 0%), #1a1412 var(--hp, 0%)); }
+#statSidebar .turnRow.turnRowSelf::after, #statSidebar .turnRow.turnRowDead::after { display: none; }
+#statSidebar button.turnRow { cursor: pointer; }
+#statSidebar .turnRow[data-combatant] { cursor: help; }
+#statSidebar button.turnRow[data-target] { cursor: pointer; }
+#statSidebar .turnRow:hover:not(:disabled), #statSidebar .turnRow:focus-visible:not(:disabled) { background: var(--ch-hover); }
+#statSidebar .turnRowPicked { background: var(--ch-crimson-soft); box-shadow: inset 0 0 0 1px var(--ch-brass); }
+#statSidebar .turnRowDead { padding-bottom: 6px; }
+
+/* folding sections (Stats, Today): the same header look as the spellbook, with a short summary kept on the line while closed */
+#statSidebar .sbFold > summary {
+  cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; padding: 2px 0 6px; user-select: none;
+  font: 600 12px var(--ch-font-head); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ch-brass);
+}
+#statSidebar .sbFold > summary::-webkit-details-marker { display: none; }
+#statSidebar .sbFold > summary::before { content: "\25B8"; font-size: 0.8em; transition: transform 0.12s ease; }
+#statSidebar .sbFold[open] > summary::before { transform: rotate(90deg); }
+#statSidebar .sbFold > summary:hover { color: var(--ch-head-text); }
+#statSidebar .sbFold > summary .sbSum { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; font: 600 12px var(--ch-font-ui); letter-spacing: 0; text-transform: none; color: var(--ch-text); }
+#statSidebar .sbFold > summary .sbSum .orb { width: 11px; height: 11px; }
+#statSidebar .sbFold[open] > summary .sbSum { display: none; }          /* the detail is on show, so the one-line summary is not needed */
+#statSidebar .sbFold:not([open]) > summary { padding-bottom: 0; }
+/* the spellbook keeps its tabs, icons, detail and Cast button; it only loses its own divider and gets a panel header */
+#statSidebar .sbSpells .spellbook { border-top: none; margin-top: 0; padding-top: 0; }
+#statSidebar .sbSpells .spellbook > summary { font: 600 12px var(--ch-font-head); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ch-brass); padding: 0 0 4px; }
+#statSidebar .sbSpells .spellbook > summary::before { color: var(--ch-brass); }
+#statSidebar .sbSpells .spellbook > summary:hover { color: var(--ch-head-text); }
+@media (max-width: 1100px) {
   #statSidebar { display: none !important; }
 }
 </style>
 </head>
-<body>
+<body class="nightmode" data-theme="a">
+<script>
+// SCREEN FIT (stage 1 of the interface redesign, 2026-10-02). The interface is drawn for about 1920 x 1080. On a bigger screen (the user's 4K TV) the whole page
+// is zoomed by the same factor, so it fills the screen instead of sitting small in the middle of it. Never below 1 (laptops are untouched), capped at 2.4.
+// --z is published on <html> because every viewport unit in the stylesheets is divided by it (zoom multiplies them), and window.UI_ZOOM is for script that
+// positions things from mouse or element coordinates.
+(function () {
+  function fit() {
+    var z = Math.max(1, Math.min(2.4, Math.min(window.innerWidth / 1920, window.innerHeight / 1080)));
+    z = Math.round(z * 100) / 100;
+    window.UI_ZOOM = z;
+    document.documentElement.style.setProperty("--z", z);
+    document.documentElement.style.zoom = z === 1 ? "" : z;
+  }
+  fit();
+  window.addEventListener("resize", fit);
+})();
+</script>
 <div id="statSidebar"></div>
 <script>
 (function() {
   function fmt(v) { return (v === undefined || v === null) ? "" : v; }
+  // A row of spell-slot orbs, lit for slots left and dark for spent ones (the count stays in the title). More than 9 falls back to the plain number.
+  function slotRow(label, now, max, extra) {
+    now = Number(now) || 0; max = Number(max) || 0;
+    var body;
+    if (max > 9 || max <= 0) {
+      body = now + " / " + max;
+    } else {
+      body = "<span class=\"orbs\" title=\"" + now + " / " + max + "\">";
+      for (var i = 0; i < max; i++) body += "<i class=\"orb" + (extra || "") + (i < now ? "" : " used") + "\"></i>";
+      body += "</span>";
+    }
+    return "<div class=\"statRow\"><span>" + label + "</span><span>" + body + "</span></div>";
+  }
+  // Sidebar sections that fold away like the spellbook (2026-10-02): Stats under the name, and Today. The open/closed flags live here, not on the <details>, because
+  // the sidebar's innerHTML is rebuilt every 400ms; the summary click flips the flag (see the sidebar click handler). Both start closed; the HP bar, the name and
+  // the turn order stay in view, and the folded Stats header still shows AC and the spell orbs.
+  var sbOpen = { stats: false, today: false, effects: true };   // Effects starts open (it only exists while something is active) and can be folded
+  function foldHtml(id, label, summary, body) {
+    return "<details class=\"sbFold\" data-fold=\"" + id + "\"" + (sbOpen[id] ? " open" : "") + "><summary><span>" + label + "</span><span class=\"sbSum\">" + summary + "</span></summary>" + body + "</details>";
+  }
+  function miniOrbs(now, max, extra) {
+    now = Number(now) || 0; max = Number(max) || 0;
+    if (max <= 0 || max > 9) return "";
+    var h = "<span class=\"orbs\" title=\"" + now + " / " + max + "\">";
+    for (var i = 0; i < max; i++) h += "<i class=\"orb" + (extra || "") + (i < now ? "" : " used") + "\"></i>";
+    return h + "</span>";
+  }
+  var SB_CLASSES = { fighter: 1, barbarian: 1, bard: 1, ranger: 1, rogue: 1, warlock: 1, wizard: 1 };
   function renderStatSidebar() {
     var el = document.getElementById("statSidebar");
     if (!el) return;
@@ -459,21 +594,26 @@ button#statSidebar .turnRow,
     }
     el.style.display = "";
     var inCombat = isTruthy(s.combat_engaged);
-    var hpHtml = fmt(s.hp_current) + " / " + fmt(s.hp_max);
+    // HP as a bar over the frame art (stage 3 of the interface redesign), with the temporary hit points and False Life's timer on a row of their own.
+    var hpNow = Number(s.hp_current) || 0, hpMax = Number(s.hp_max) || 0;
+    var hpPct = hpMax > 0 ? Math.max(0, Math.min(1, hpNow / hpMax)) : 0;
+    var hpBarHtml = "<div class=\"sbHp\"><div class=\"fill\" style=\"width: calc((100% - 10px) * " + hpPct.toFixed(3) + ")\"></div><div class=\"num\">" + fmt(s.hp_current) + " / " + fmt(s.hp_max) + "</div></div>";
+    var tempHpHtml = "";
     if (s.temp_hp && Number(s.temp_hp) > 0) {
-      hpHtml += " (+" + fmt(s.temp_hp) + ")";
-    }
-    // False Life (12 hours, 2026-10-02): a tag with the hours left while the spell's temporary hit points are running.
-    if (Number(s.false_life_minutes_left) > 0 && Number(s.temp_hp) > 0) {
-      hpHtml += " <span class=\"boon boonUp\" title=\"False Life: temporary hit points that fade after about " + Math.ceil(Number(s.false_life_minutes_left) / 60) + " more hours, or when you sleep.\">False Life " + Math.ceil(Number(s.false_life_minutes_left) / 60) + "h</span>";
+      tempHpHtml = "<div class=\"statRow\"><span>Temporary HP</span><span>+" + fmt(s.temp_hp);
+      // False Life (12 hours, 2026-10-02): a tag with the hours left while the spell's temporary hit points are running.
+      if (Number(s.false_life_minutes_left) > 0) {
+        tempHpHtml += " <span class=\"boon boonUp\" title=\"False Life: temporary hit points that fade after about " + Math.ceil(Number(s.false_life_minutes_left) / 60) + " more hours, or when you sleep.\">False Life " + Math.ceil(Number(s.false_life_minutes_left) / 60) + "h</span>";
+      }
+      tempHpHtml += "</span></div>";
     }
     var resourceHtml = "";
     if (s.character_class === "wizard") {
-      resourceHtml = "<div class=\"statRow\"><span>Spell Slots</span><span>" + fmt(s.wizard_spell_slots) + " / " + fmt(s.wizard_spell_slots_max) + "</span></div>";
+      resourceHtml = slotRow("Spell Slots", s.wizard_spell_slots, s.wizard_spell_slots_max, "");
     } else if (s.character_class === "warlock") {
-      resourceHtml = "<div class=\"statRow\"><span>Pact Slots</span><span>" + fmt(s.warlock_spell_slots) + " / " + fmt(s.warlock_spell_slots_max) + "</span></div>";
+      resourceHtml = slotRow("Pact Slots", s.warlock_spell_slots, s.warlock_spell_slots_max, " pact");
     } else if (s.character_class === "bard") {
-      resourceHtml = "<div class=\"statRow\"><span>Spell Slots</span><span>" + fmt(s.bard_spell_slots) + " / " + fmt(s.bard_spell_slots_max) + "</span></div>";
+      resourceHtml = slotRow("Spell Slots", s.bard_spell_slots, s.bard_spell_slots_max, "");
       if (Number(s.bard_inspiration_max) > 0 && true) {
         resourceHtml += "<div class=\"statRow\"><span>Inspiration</span><span>" + fmt(s.bard_inspiration_uses) + " / " + fmt(s.bard_inspiration_max) + "</span></div>";
       }
@@ -487,7 +627,7 @@ button#statSidebar .turnRow,
     } else if (s.character_class === "ranger") {
       resourceHtml = "<div class=\"statRow\"><span>Hunter's Mark</span><span>" + fmt(s.favored_foe_uses) + " / " + fmt(s.favored_foe_max) + "</span></div>";
       if (Number(s.ranger_spell_slots_max) > 0) {
-        resourceHtml += "<div class=\"statRow\"><span>Spell Slots</span><span>" + fmt(s.ranger_spell_slots) + " / " + fmt(s.ranger_spell_slots_max) + "</span></div>";
+        resourceHtml += slotRow("Spell Slots", s.ranger_spell_slots, s.ranger_spell_slots_max, "");
       }
     }
 
@@ -502,9 +642,9 @@ button#statSidebar .turnRow,
       try { return q.active(s); } catch (e) { return false; }
     });
     if (activeQuests.length) {
-      activeQuestHtml = "<hr class=\"sectionDivider\">" + activeQuests.map(function (q) {
+      activeQuestHtml = "<div class=\"sbPanel\"><div class=\"shead\">" + (activeQuests.length > 1 ? "Quests" : "Active quest") + "</div>" + activeQuests.map(function (q) {
         return "<div class=\"statRow\"><span>" + (activeQuests.length > 1 ? "Quest" : "Active Quest") + "</span><span style=\"font-size:0.9em;\">" + q.title + "</span></div><div class=\"timePeriod\">" + q.place + "</div>";
-      }).join("");
+      }).join("") + "</div>";
     }
 
     var dayDisplay = s.day_of_week ? fmt(s.day_of_week) : ("Day " + fmt(s.campaign_day || "1"));
@@ -540,6 +680,8 @@ button#statSidebar .turnRow,
           var cHp = Number(s[pfx + slot + "_hp"]) || 0, cMax = Number(s[pfx + slot + "_max_hp"]) || 0;
           var cDead = kind === "enemy" && cHp <= 0;
           var cPicked = kind === "enemy" && !cDead && chosen === slot;
+          var cPct = cMax > 0 ? Math.max(0, Math.min(100, Math.round(100 * cHp / cMax))) : 0;
+          var cBar = " style=\"--hp: " + cPct + "%\"";
           // Enemy ranges are your own distance to that enemy, straightforwardly. An ally's distance to YOU
           // (2026-09-30, on request) is derived, not read directly -- see allyDistanceToPlayer's own header for
           // the geometry. Both now show as a plain tier word; the ally's OWN distance to its target (the number
@@ -560,14 +702,14 @@ button#statSidebar .turnRow,
             "</span>" + (cSub ? "<span class=\"turnSub\">" + cSub + "</span>" : "") + "</span>";
           if (friendlyOn && kind === "ally" && cHp > 0) {
             rows += "<button type=\"button\" class=\"statRow turnRow" + (friendlyPick === slot ? " turnRowPicked" : "") +
-              "\" data-friendly=\"" + slot + "\"" + combatantAttr(kind, slot) + "><span>" + cNameHtml + "</span><span>" + cHp + "/" + cMax + "</span></button>";
+              "\" data-friendly=\"" + slot + "\"" + cBar + combatantAttr(kind, slot) + "><span>" + cNameHtml + "</span><span>" + cHp + "/" + cMax + "</span></button>";
           } else if (kind === "enemy" && !cDead) {
             rows += "<button type=\"button\" class=\"statRow turnRow" + (cPicked ? " turnRowPicked" : "") +
-              "\" data-target=\"" + slot + "\"" + combatantAttr(kind, slot) + "><span>" + cNameHtml + "</span><span>" + cHp + "/" + cMax + "</span></button>";
+              "\" data-target=\"" + slot + "\"" + cBar + combatantAttr(kind, slot) + "><span>" + cNameHtml + "</span><span>" + cHp + "/" + cMax + "</span></button>";
           } else {
             // A downed enemy still gets the card: its AC/Atk/abilities are what tell you whether the
             // remaining target is worth finishing, and a dead row that shows nothing reads as broken.
-            rows += "<div class=\"statRow turnRow" + (cDead ? " turnRowDead" : "") + "\"" + combatantAttr(kind, slot) + "><span>" + cNameHtml +
+            rows += "<div class=\"statRow turnRow" + (cDead ? " turnRowDead" : "") + "\"" + cBar + combatantAttr(kind, slot) + "><span>" + cNameHtml +
               "</span><span>" + (cDead ? "Down" : (cHp + "/" + cMax)) + "</span></div>";
           }
         }
@@ -624,27 +766,44 @@ button#statSidebar .turnRow,
         "<div class=\"statRow\"><span>Purse</span><span>" + fmt(s.gold) + "g " + fmt(s.silver) + "s " + fmt(s.copper) + "c</span></div>";
     }
 
+    // The sidebar as the stacked panels of the design mock (stage 3): identity (portrait ring, name banner, HP bar, the numbers, the ability tiles), then Today or
+    // Turn Order, then the spellbook (unchanged inside), then quests and effects. Every class and data attribute the click, hover and spellbook code reads is kept.
+    var sbClass = SB_CLASSES[s.character_class] ? s.character_class : "";
+    var statsOrbs = "";
+    if (s.character_class === "wizard") statsOrbs = miniOrbs(s.wizard_spell_slots, s.wizard_spell_slots_max, "");
+    else if (s.character_class === "bard") statsOrbs = miniOrbs(s.bard_spell_slots, s.bard_spell_slots_max, "");
+    else if (s.character_class === "warlock") statsOrbs = miniOrbs(s.warlock_spell_slots, s.warlock_spell_slots_max, " pact");
+    else if (s.character_class === "ranger") statsOrbs = miniOrbs(s.ranger_spell_slots, s.ranger_spell_slots_max, "");
+    var nonprofHtml = (isTruthy(s.armor_nonprof) || isTruthy(s.shield_nonprof)) ? "<div class=\"timePeriod\" title=\"Your class is not trained in this gear: disadvantage on STR and DEX rolls\" style=\"color:var(--ch-warn);font-style:normal;\">&#9888; " + (isTruthy(s.armor_nonprof) && isTruthy(s.shield_nonprof) ? "Armor &amp; shield" : (isTruthy(s.shield_nonprof) ? "Shield" : "Armor")) + ": not proficient</div>" : "";
+    function abilTile(label, score, boon, mod) { return "<div>" + label + "<b>" + fmt(score) + "</b>" + boon + "<span>" + fmt(mod) + "</span></div>"; }
     el.innerHTML =
-      "<h3><span>" + fmt(s.name) + " — Lv" + fmt(s.character_level) + " " + fmt(s.class_name || "Recruit") + "</span>" + combatBadgeHtml + "</h3>" +
-      "<div class=\"statRow\"><span>HP</span><span>" + hpHtml + "</span></div>" +
-      "<div class=\"statRow\"><span>AC</span><span>" + effectiveAc(s) + mageArmorTag(s) + shieldAcTag(s) + "</span></div>" +
-      "<div class=\"statRow\"><span>Proficiency</span><span>+" + fmt(s.prof_bonus) + "</span></div>" +
-      ((isTruthy(s.armor_nonprof) || isTruthy(s.shield_nonprof)) ? "<div class=\"timePeriod\" title=\"Your class is not trained in this gear: disadvantage on STR and DEX rolls\" style=\"color:#b5651d;font-style:normal;\">⚠ " + (isTruthy(s.armor_nonprof) && isTruthy(s.shield_nonprof) ? "Armor & shield" : (isTruthy(s.shield_nonprof) ? "Shield" : "Armor")) + ": not proficient</div>" : "") +
-      resourceHtml +
-      "<div class=\"abilityGrid\">" +
-        "<span>STR " + fmt(s.strength) + abilityBoon(s.buff_str_bonus, s.buff_str_helps) + " (" + fmt(s.str_mod_str) + ")</span>" +
-        "<span>DEX " + fmt(s.dexterity) + abilityBoon(s.buff_dex_bonus, s.buff_dex_helps) + " (" + fmt(s.dex_mod_str) + ")</span>" +
-        "<span>CON " + fmt(s.constitution) + abilityBoon(s.buff_con_bonus, s.buff_con_helps) + " (" + fmt(s.con_mod_str) + ")</span>" +
-        "<span>INT " + fmt(s.intelligence) + abilityBoon(s.buff_int_bonus, s.buff_int_helps) + " (" + fmt(s.int_mod_str) + ")</span>" +
-        "<span>WIS " + fmt(s.wisdom) + abilityBoon(s.buff_wis_bonus, s.buff_wis_helps) + " (" + fmt(s.wis_mod_str) + ")</span>" +
-        "<span>CHA " + fmt(s.charisma) + abilityBoon(s.buff_cha_bonus, s.buff_cha_helps) + " (" + fmt(s.cha_mod_str) + ")</span>" +
+      "<div class=\"sbPanel\">" +
+        "<div class=\"sbPortrait\">" +
+          "<div class=\"sbRing\">" + (sbClass ? "<i style=\"background-image: var(--art-c_" + sbClass + ")\"></i>" : "") + "</div>" +
+          "<div class=\"sbName\">" + fmt(s.name) + "<small>Level " + fmt(s.character_level) + " " + fmt(s.class_name || "Recruit") + "</small>" + combatBadgeHtml + "</div>" +
+        "</div>" +
+        hpBarHtml +
+        tempHpHtml +
+        foldHtml("stats", "Stats", "AC " + effectiveAc(s) + (statsOrbs ? " " + statsOrbs : ""),
+          "<div class=\"statRow\"><span>Armor Class</span><span>" + effectiveAc(s) + mageArmorTag(s) + shieldAcTag(s) + "</span></div>" +
+          "<div class=\"statRow\"><span>Proficiency</span><span>+" + fmt(s.prof_bonus) + "</span></div>" +
+          nonprofHtml +
+          resourceHtml +
+          "<div class=\"sbAbil\">" +
+            abilTile("STR", s.strength, abilityBoon(s.buff_str_bonus, s.buff_str_helps), s.str_mod_str) +
+            abilTile("DEX", s.dexterity, abilityBoon(s.buff_dex_bonus, s.buff_dex_helps), s.dex_mod_str) +
+            abilTile("CON", s.constitution, abilityBoon(s.buff_con_bonus, s.buff_con_helps), s.con_mod_str) +
+            abilTile("INT", s.intelligence, abilityBoon(s.buff_int_bonus, s.buff_int_helps), s.int_mod_str) +
+            abilTile("WIS", s.wisdom, abilityBoon(s.buff_wis_bonus, s.buff_wis_helps), s.wis_mod_str) +
+            abilTile("CHA", s.charisma, abilityBoon(s.buff_cha_bonus, s.buff_cha_helps), s.cha_mod_str) +
+          "</div>") +
       "</div>" +
-      spellSectionHtml() +
-      "<hr class=\"sectionDivider\">" +
-      bottomSectionHtml +
+      (inCombat ? "<div class=\"sbPanel\"><div class=\"shead\">Turn order</div>" + bottomSectionHtml + "</div>"
+                : "<div class=\"sbPanel\">" + foldHtml("today", "Today", fmt(s.clock_time) + " &middot; " + dayDisplay, bottomSectionHtml) + "</div>") +
+      "<div class=\"sbPanel sbSpells\">" + spellSectionHtml() + "</div>" +
       activeQuestHtml +
       (isTruthy(s.food_buff_active) || isTruthy(s.drink_buff_active) || isTruthy(s.unique_buff1_active) || isTruthy(s.unique_buff2_active) || isTruthy(s.unique_buff3_active) || isTruthy(s.sleep_buff1_active) || isTruthy(s.sleep_buff2_active) ?
-        "<hr class=\"sectionDivider\">" +
+        "<div class=\"sbPanel\">" + foldHtml("effects", "Effects", effectsSummary(s),
         (isTruthy(s.food_buff_active) ?
           "<div class=\"statRow\"><span>Meal</span><span>" + fmt(s.food_buff_name) + "</span></div>" +
           "<div class=\"timePeriod\">+" + fmt(s.food_buff_bonus) + " " + fmt(s.food_buff_stat).toUpperCase() + ", " + fmt(s.food_buff_minutes_left) + "m left</div>"
@@ -672,8 +831,15 @@ button#statSidebar .turnRow,
         (isTruthy(s.sleep_buff2_active) ?
           "<div class=\"statRow\"><span>Rest</span><span>" + fmt(s.sleep_buff2_name) + "</span></div>" +
           "<div class=\"timePeriod\">+" + fmt(s.sleep_buff2_bonus) + " " + fmt(s.sleep_buff2_stat).toUpperCase() + ", " + fmt(s.sleep_buff2_minutes_left) + "m left</div>"
-          : "")
+          : "")) +
+        "</div>"
         : "");
+  }
+  // "3 active" for the folded Effects header: meals, drinks, boons and rest bonuses that are running.
+  function effectsSummary(s) {
+    var n = 0;
+    ["food_buff_active", "drink_buff_active", "unique_buff1_active", "unique_buff2_active", "unique_buff3_active", "sleep_buff1_active", "sleep_buff2_active"].forEach(function (k) { if (isTruthy(s[k])) n++; });
+    return n + " active";
   }
   function isTruthy(v) { return v === true || v === "true"; }
   // The player's AC as the enemy actually rolls against it. Shield adds +5 for as long as it stays armed
@@ -683,7 +849,7 @@ button#statSidebar .turnRow,
   // itself is untouched, so nothing that derives the real AC (equipment, recalculate_armor_class) can
   // accidentally pick up a +5 that only exists while a spell is up. Inert out of combat, since
   // fight_cleanup clears shield_armed between fights.
-  function effectiveAc(s) { return fmt(Number(s.armor_class) + (isTruthy(s.shield_armed) ? 5 : 0)); }
+  function effectiveAc(s) { return fmt(Number(s.armor_class) + ((isTruthy(s.shield_armed) || isTruthy(s.shield_active)) ? 5 : 0)); }
   // The green "+5 Shield" tag beside it, in the same visual idiom abilityBoon already uses for the
   // ability grid: the number shown is the real one, the tag says where the bonus came from.
   // Mage Armor (24-hour cast, 2026-10-02): a tag beside the AC while the ward is up, with the hours left, rounded up.
@@ -693,8 +859,8 @@ button#statSidebar .turnRow,
     return " <span class=\"boon boonUp\" title=\"Mage Armor: base AC 13 + Dexterity while you wear no armor. Ends in about " + Math.ceil(m / 60) + " hours, or if you put on armor.\">Mage Armor " + Math.ceil(m / 60) + "h</span>";
   }
   function shieldAcTag(s) {
-    if (!isTruthy(s.shield_armed)) return "";
-    return " <span class=\"boon boonUp\" title=\"Shield: +5 AC until the next hit that gets through it\">+5 Shield</span>";
+    if (!(isTruthy(s.shield_armed) || isTruthy(s.shield_active))) return "";
+    return " <span class=\"boon boonUp\" title=\"Shield: +5 AC against every attack, from the first hit until the start of your next turn. A slot is spent when it fires.\">+5 Shield</span>";
   }
   // Mirrors combat_range_name (combat.txt): 0 Engaged, 1 Close, 2 Mid-Range, 3+ Long Range.
   function rangeTierName(n) {
@@ -928,8 +1094,10 @@ button#statSidebar .turnRow,
     top = tipY + 18;
     if (top + r.height > vh - 8) top = tipY - r.height - 12;   // flip above near the bottom
     if (top < 8) top = 8;
-    t.style.left = left + "px";
-    t.style.top = top + "px";
+    // left/top are in viewport pixels here (rects and mouse coordinates are); the card is positioned in CSS pixels, which the screen-fit zoom scales.
+    var z = window.UI_ZOOM || 1;
+    t.style.left = (left / z) + "px";
+    t.style.top = (top / z) + "px";
   }
   function showTip(key, x, y) {
     var t = tipNode();
@@ -1158,6 +1326,13 @@ button#statSidebar .turnRow,
       renderStatSidebar();
       return;
     }
+    var fold = el.closest(".sbFold > summary");
+    if (fold) {
+      ev.preventDefault();                        // the flag decides, not the browser's own toggle
+      var fid = fold.parentNode.getAttribute("data-fold");
+      if (fid in sbOpen) { sbOpen[fid] = !sbOpen[fid]; renderStatSidebar(); }
+      return;
+    }
     var sum = el.closest(".spellbook > summary");
     if (sum) {
       // Toggle through the module flag, because the 400ms re-render rebuilds the <details> element and
@@ -1333,11 +1508,11 @@ if (window.location.hostname === 'localhost') {
   border-radius: 10px;
   padding: 0;
   max-width: 560px;
-  width: calc(100vw - 2rem);
+  width: calc(100vw / var(--z, 1) - 2rem);
   box-shadow: 0 8px 40px rgba(0,0,0,0.35);
   font-family: Helvetica, Arial, sans-serif;
-  color: #1a1a1a;
-  background: #f9f6f2;
+  color: var(--ch-text);
+  background: var(--ch-bg);
 }
 #ampSLModal::backdrop {
   background: rgba(0,0,0,0.55);
@@ -1347,10 +1522,10 @@ if (window.location.hostname === 'localhost') {
   align-items: center;
   justify-content: space-between;
   padding: 1em 1.25em 0.75em;
-  border-bottom: 1px solid #ddd;
-  background: #2c2c2c;
+  border-bottom: 1px solid var(--ch-line);
+  background: var(--ch-head);
   border-radius: 10px 10px 0 0;
-  color: #f0ece6;
+  color: var(--ch-head-text);
 }
 #ampSLModal header h2 {
   margin: 0;
@@ -1361,13 +1536,13 @@ if (window.location.hostname === 'localhost') {
 #ampSLModal header button.ampClose {
   background: none;
   border: none;
-  color: #aaa;
+  color: var(--ch-dim);
   font-size: 1.3em;
   cursor: pointer;
   line-height: 1;
   padding: 0 0.2em;
 }
-#ampSLModal header button.ampClose:hover { color: #fff; }
+#ampSLModal header button.ampClose:hover { color: var(--ch-head-text); }
 .ampSlotList {
   padding: 0.75em 1em;
   display: flex;
@@ -1378,17 +1553,17 @@ if (window.location.hostname === 'localhost') {
   display: flex;
   align-items: center;
   gap: 0.5em;
-  background: #fff;
-  border: 1px solid #ddd;
+  background: var(--ch-card);
+  border: 1px solid var(--ch-line);
   border-radius: 7px;
   padding: 0.55em 0.75em;
   transition: border-color 0.15s;
 }
-.ampSlot:hover { border-color: #8b6a3e; }
+.ampSlot:hover { border-color: var(--ch-brass); }
 .ampSlotNum {
   font-size: 0.78em;
   font-weight: 700;
-  color: #888;
+  color: var(--ch-dim);
   min-width: 2em;
   text-align: center;
 }
@@ -1396,13 +1571,13 @@ if (window.location.hostname === 'localhost') {
   flex: 1;
   font-size: 0.85em;
   line-height: 1.4;
-  color: #333;
+  color: var(--ch-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.ampSlotLabel.empty { color: #aaa; font-style: italic; }
-.ampSlotLabel small { display: block; font-size: 0.85em; color: #999; }
+.ampSlotLabel.empty { color: var(--ch-dim); font-style: italic; }
+.ampSlotLabel small { display: block; font-size: 0.85em; color: var(--ch-dim); }
 .ampSlotBtns {
   display: flex;
   gap: 0.3em;
@@ -1411,42 +1586,49 @@ if (window.location.hostname === 'localhost') {
 .ampSlotBtns button {
   font-size: 0.78em;
   padding: 0.3em 0.6em;
-  border: 1px solid #ccc;
+  border: 1px solid var(--ch-line-hi);
   border-radius: 5px;
-  background: #f4f0eb;
+  background: var(--ch-card);
   cursor: pointer;
   transition: background 0.12s, border-color 0.12s;
 }
-.ampSlotBtns button:hover { background: #e8e0d4; border-color: #8b6a3e; }
-.ampSlotBtns button.ampBtnSave { border-color: #5a8a5a; color: #2d5a2d; }
-.ampSlotBtns button.ampBtnSave:hover { background: #ddf0dd; }
-.ampSlotBtns button.ampBtnLoad { border-color: #5a6e8a; color: #1e3a5a; }
-.ampSlotBtns button.ampBtnLoad:hover { background: #dde8f5; }
-.ampSlotBtns button.ampBtnDel  { border-color: #cc4444; color: #882222; }
-.ampSlotBtns button.ampBtnDel:hover  { background: #ffe0e0; }
+.ampSlotBtns button:hover { background: var(--ch-hover); border-color: var(--ch-brass); }
+.ampSlotBtns button.ampBtnSave { border-color: var(--ch-good); color: var(--ch-good); }
+.ampSlotBtns button.ampBtnSave:hover { background: var(--ch-hover); }
+.ampSlotBtns button.ampBtnLoad { border-color: var(--ch-info); color: var(--ch-info); }
+.ampSlotBtns button.ampBtnLoad:hover { background: var(--ch-hover); }
+.ampSlotBtns button.ampBtnDel  { border-color: var(--ch-bad); color: var(--ch-bad); }
+.ampSlotBtns button.ampBtnDel:hover  { background: var(--ch-crimson-soft); }
 #ampSLModal footer {
   display: flex;
   justify-content: flex-end;
   gap: 0.5em;
   padding: 0.6em 1em 0.8em;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--ch-line);
 }
 #ampSLModal footer button {
   font-size: 0.8em;
   padding: 0.35em 0.85em;
-  border: 1px solid #bbb;
+  border: 1px solid var(--ch-line-hi);
   border-radius: 5px;
-  background: #f4f0eb;
+  background: var(--ch-card);
   cursor: pointer;
 }
-#ampSLModal footer button:hover { background: #e8e0d4; border-color: #8b6a3e; }
+#ampSLModal footer button:hover { background: var(--ch-hover); border-color: var(--ch-brass); }
+/* THEME (2026-10-02): the buttons and fields in these dialogs inherit the dark panel's text instead of the browser's black. */
+#ampSLModal button { color: var(--ch-text); }
+#ampSLModal .ampSlotBtns button.ampBtnSave { color: var(--ch-good); }
+#ampSLModal .ampSlotBtns button.ampBtnLoad { color: var(--ch-info); }
+#ampSLModal .ampSlotBtns button.ampBtnDel { color: var(--ch-bad); }
+#ampSLModal header button.ampClose { color: var(--ch-dim); }
+#ampSLModal header button.ampClose:hover { color: var(--ch-head-text); }
 .ampToast {
   position: fixed;
   bottom: 1.5em;
   left: 50%;
   transform: translateX(-50%) translateY(2em);
-  background: #2c2c2c;
-  color: #f0ece6;
+  background: var(--ch-head);
+  color: var(--ch-head-text);
   padding: 0.55em 1.2em;
   border-radius: 6px;
   font-size: 0.87em;
@@ -1708,11 +1890,11 @@ if (window.location.hostname === 'localhost') {
   border-radius: 10px;
   padding: 0;
   max-width: 420px;
-  width: calc(100vw - 2rem);
+  width: calc(100vw / var(--z, 1) - 2rem);
   box-shadow: 0 8px 40px rgba(0,0,0,0.35);
   font-family: Helvetica, Arial, sans-serif;
-  color: #1a1a1a;
-  background: #f9f6f2;
+  color: var(--ch-text);
+  background: var(--ch-bg);
 }
 #ttsSettingsModal::backdrop { background: rgba(0,0,0,0.55); }
 #ttsSettingsModal header {
@@ -1720,10 +1902,10 @@ if (window.location.hostname === 'localhost') {
   align-items: center;
   justify-content: space-between;
   padding: 1em 1.25em 0.75em;
-  border-bottom: 1px solid #ddd;
-  background: #2c2c2c;
+  border-bottom: 1px solid var(--ch-line);
+  background: var(--ch-head);
   border-radius: 10px 10px 0 0;
-  color: #f0ece6;
+  color: var(--ch-head-text);
 }
 #ttsSettingsModal header h2 { margin: 0; font-size: 1.05em; letter-spacing: 0.04em; font-weight: 600; }
 #ttsSettingsModal .ttsBody { padding: 1em 1.25em; }
@@ -1731,22 +1913,26 @@ if (window.location.hostname === 'localhost') {
 #ttsSettingsModal label:first-child { margin-top: 0; }
 #ttsSettingsModal input[type="text"], #ttsSettingsModal select {
   width: 100%; box-sizing: border-box; padding: 0.4em 0.55em; font-size: 0.85em;
-  border: 1px solid #ccc; border-radius: 5px;
+  border: 1px solid var(--ch-line-hi); border-radius: 5px;
 }
 #ttsSettingsModal input[type="range"] { width: 100%; }
 #ttsSettingsModal .ttsCheckRow { display: flex; align-items: center; gap: 0.5em; margin-top: 1em; }
 #ttsSettingsModal .ttsCheckRow label { margin: 0; font-weight: normal; }
 #ttsSettingsModal footer {
   display: flex; justify-content: flex-end; gap: 0.5em;
-  padding: 0.6em 1em 0.8em; border-top: 1px solid #eee;
+  padding: 0.6em 1em 0.8em; border-top: 1px solid var(--ch-line);
 }
 #ttsSettingsModal footer button {
-  font-size: 0.8em; padding: 0.35em 0.85em; border: 1px solid #bbb;
-  border-radius: 5px; background: #f4f0eb; cursor: pointer;
+  font-size: 0.8em; padding: 0.35em 0.85em; border: 1px solid var(--ch-line-hi);
+  border-radius: 5px; background: var(--ch-card); cursor: pointer;
 }
-#ttsSettingsModal footer button:hover { background: #e8e0d4; border-color: #8b6a3e; }
-#ttsSettingsModal header button.ampClose { background: none; border: none; color: #aaa; font-size: 1.3em; cursor: pointer; line-height: 1; padding: 0 0.2em; }
-#ttsSettingsModal header button.ampClose:hover { color: #fff; }
+#ttsSettingsModal footer button:hover { background: var(--ch-hover); border-color: var(--ch-brass); }
+#ttsSettingsModal header button.ampClose { background: none; border: none; color: var(--ch-dim); font-size: 1.3em; cursor: pointer; line-height: 1; padding: 0 0.2em; }
+#ttsSettingsModal header button.ampClose:hover { color: var(--ch-head-text); }
+
+/* THEME (2026-10-02): themed fields and buttons for the dark panel. */
+#ttsSettingsModal input[type="text"], #ttsSettingsModal select { background: var(--ch-bg-deep); color: var(--ch-text); }
+#ttsSettingsModal footer button { color: var(--ch-text); }
 
 .ttsHighlight {
   background: rgba(255, 213, 79, 0.55);
@@ -1759,8 +1945,8 @@ if (window.location.hostname === 'localhost') {
   right: 24px;
   bottom: 24px;
   z-index: 9999;
-  background: #1e1e24;
-  color: #f0f0f0;
+  background: var(--ch-head);
+  color: var(--ch-head-text);
   border-radius: 12px;
   padding: 10px 12px;
   font-family: Helvetica, Arial, sans-serif;
@@ -1772,19 +1958,19 @@ if (window.location.hostname === 'localhost') {
   user-select: none;
 }
 #ttsPanel button {
-  background: #33333d; color: #f0f0f0; border: none; border-radius: 8px;
+  background: var(--ch-card); color: var(--ch-head-text); border: none; border-radius: 8px;
   width: 32px; height: 32px; font-size: 15px; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
 }
-#ttsPanel button:hover { background: #46465a; }
+#ttsPanel button:hover { background: var(--ch-hover); }
 #ttsStatus { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: 0.85; }
 #ttsLauncher {
   position: fixed; right: 24px; bottom: 24px; z-index: 9999;
-  background: #1e1e24; color: #f0f0f0; border: none; border-radius: 50%;
+  background: var(--ch-head); color: var(--ch-head-text); border: 1px solid var(--ch-line-hi); border-radius: 50%;
   width: 48px; height: 48px; font-size: 20px; cursor: pointer;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
 }
-#ttsLauncher:hover { background: #33333d; }
+#ttsLauncher:hover { background: var(--ch-card); }
 </style>
 
 <dialog id="ttsSettingsModal">

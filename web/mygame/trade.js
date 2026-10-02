@@ -59,6 +59,7 @@
     var v = Math.floor((it.retail * pct) / 100);
     if (buyer === "pawn" && sl.pawnFixed > 0) v = sl.pawnFixed;
     if (buyer === "smith" && sl.smithPiece > 0) v = sl.smithPiece;
+    if (buyer === "herbalist") v = sl.herbalistPiece > 0 ? sl.herbalistPiece : 0;
     return v;
   }
 

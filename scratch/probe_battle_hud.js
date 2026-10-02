@@ -29,7 +29,7 @@ const NEXT = `(() => { const b = Array.from(document.querySelectorAll("#main but
 
 (async () => {
   const chrome = spawn(CHROME, ["--headless=new", `--remote-debugging-port=${PORT}`, "--disable-gpu", "--no-first-run",
-    "--no-default-browser-check", "--user-data-dir=" + path.join(os.tmpdir(), "cs-hud-probe-" + Date.now()), "--window-size=1500,1000", target], { stdio: "ignore" });
+    "--no-default-browser-check", "--user-data-dir=" + path.join(os.tmpdir(), "cs-hud-probe-" + Date.now()), "--window-size=" + (process.env.HUD_WINDOW || "1500,1000"), target], { stdio: "ignore" });
   let ws = null;
   try {
     let list = null;
@@ -111,6 +111,12 @@ const NEXT = `(() => { const b = Array.from(document.querySelectorAll("#main but
       }
     }
     if (process.env.HUD_EVAL) console.log("EVAL:", JSON.stringify(await evaluate(process.env.HUD_EVAL)));
+    if (process.env.HUD_SHOT) {
+      await sleep(1200);
+      const shot3 = await send("Page.captureScreenshot", { format: "png", clip: process.env.HUD_CLIP ? (function(c){return {x:c[0],y:c[1],width:c[2],height:c[3],scale:c[4]||1};})(process.env.HUD_CLIP.split(",").map(Number)) : undefined });
+      fs.writeFileSync(path.resolve(process.env.HUD_SHOT), Buffer.from(shot3.result.data, "base64"));
+      console.log("SHOT:", process.env.HUD_SHOT);
+    }
     if (process.env.HUD_PRESS) {
       const out = await evaluate(`(async () => { const t = document.querySelector("#battleHud [data-key='${process.env.HUD_PRESS}']"); if (!t) return "no tile"; const name = t.getAttribute("aria-label"); t.click(); await new Promise(r => setTimeout(r, 1500)); return name + " -> " + document.getElementById("text").innerText.slice(-500); })()`);
       console.log("PRESS:", out);

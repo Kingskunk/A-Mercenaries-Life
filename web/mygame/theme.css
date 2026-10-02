@@ -1,0 +1,118 @@
+/*
+ * THEME (stage 1 of the interface redesign, 2026-10-02) -- the one place the game's colours live.
+ *
+ * Two themes, picked in the game's own Settings (Menu > Change settings > background), stored by the engine as "preferredBackground":
+ *   A  dark stone page   body[data-theme="a"]   the default. Stored as "black" (the engine's old name for it; it also sets body.nightmode so the
+ *                                                engine's own night-mode rules, e.g. the Next button, keep working).
+ *   B  parchment page    body[data-theme="b"]   a lighter reading page. Stored as "sepia".
+ *
+ * Two kinds of token, because the design has dark "chrome" around a page that can be dark or light:
+ *   --ch-*   CHROME: the panels, dialogs, sidebar, rail and HUD. The SAME in both themes, always dark stone with bronze and crimson.
+ *   --pg-*   PAGE: the reading page itself (the story text, the choice list, links). This is what A and B change.
+ * Every panel stylesheet reads --ch-* (and nothing else); nothing outside this file should contain a raw colour for these roles.
+ *
+ * The art for frames, banners and backgrounds lives in ICONS/UiElements and is brought in at the shell stage; this stage is colours only.
+ */
+
+:root { --z: 1; }   /* set by the screen-fit script in index.html; viewport units elsewhere are divided by it */
+
+body {
+  /* ------------------------------------------------------------ chrome (both themes) */
+  --ch-bg: #1b1816;          /* panel and dialog body */
+  --ch-bg-deep: #12100f;     /* wells, inputs, the deepest surface */
+  --ch-card: #221e1b;        /* a card or row sitting on --ch-bg */
+  --ch-hover: #2e2723;       /* hover / selected row */
+  --ch-line: #4b3d31;        /* hairlines and borders */
+  --ch-line-hi: #6b5a4a;     /* outer borders, stronger edges */
+  --ch-text: #e8e0d2;
+  --ch-dim: #a99f90;         /* secondary text */
+  --ch-head: #0f0d0c;        /* dialog header bar */
+  --ch-head-text: #f0ece6;
+  --ch-brass: #d9a441;       /* accent: headings, highlights */
+  --ch-brass-soft: rgba(217, 164, 65, 0.16);
+  --ch-crimson: #7d1f1f;     /* accent: banners, primary actions */
+  --ch-crimson-hi: #b53a35;
+  --ch-crimson-soft: rgba(125, 31, 31, 0.28);
+  --ch-good: #8fca9b;
+  --ch-bad: #e58a8a;
+  --ch-warn: #e2a25f;
+  --ch-info: #8fb3de;
+  --ch-shadow: rgba(0, 0, 0, 0.55);
+  --ch-overlay: rgba(0, 0, 0, 0.66);
+  --ch-font-head: "Cinzel", "Trajan Pro", "Palatino Linotype", Palatino, Georgia, serif;   /* placeholder until the heading font is chosen */
+  --ch-font-ui: "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+/* ---------------------------------------------------------------- page, theme A: dark stone */
+body[data-theme="a"] {
+  --pg-bg: #14110f;
+  --pg-text: #e8e0d2;
+  --pg-dim: #a99f90;
+  --pg-line: #4b3d31;
+  --pg-link: #e0b86a;
+  --pg-accent: #d9a441;
+  --pg-choice-bg: rgba(0, 0, 0, 0.30);
+  --pg-choice-hover: rgba(125, 31, 31, 0.45);
+  --pg-choice-selected: rgba(125, 31, 31, 0.62);
+  --pg-next-bg: #7d1f1f;
+  --pg-next-text: #f6ead6;
+  --pg-next-hover: #a02a29;
+  --pg-disabled: #7d7468;
+  --pg-bar: #8a7461;          /* the bronze edge on a choice row */
+  --pg-panel-bg: linear-gradient(rgba(14, 12, 11, 0.9), rgba(14, 12, 11, 0.92)), var(--art-stone) center / cover;   /* the panel the story is written on */
+  --pg-panel-shadow: inset 0 0 40px rgba(0, 0, 0, 0.5);
+}
+
+/* ---------------------------------------------------------------- page, theme B: parchment */
+body[data-theme="b"] {
+  --pg-bg: #e5d8bc;
+  --pg-text: #2a2016;
+  --pg-dim: #5a4630;
+  --pg-line: #9b8460;
+  --pg-link: #7d1f1f;
+  --pg-accent: #7d1f1f;
+  --pg-choice-bg: rgba(255, 255, 255, 0.30);
+  --pg-choice-hover: rgba(125, 31, 31, 0.18);
+  --pg-choice-selected: rgba(125, 31, 31, 0.30);
+  --pg-next-bg: #7d1f1f;
+  --pg-next-text: #f6ead6;
+  --pg-next-hover: #a02a29;
+  --pg-disabled: #8a7c66;
+  --pg-bar: #8a6a3a;
+  /* parchment: a warm gradient with a fine paper grain (an inline SVG noise, multiplied into the colour) */
+  --pg-panel-bg:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.35  0 0 0 0 0.25  0 0 0 0 0.12  0 0 0 0.5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
+    radial-gradient(ellipse at 20% 10%, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 55%),
+    radial-gradient(ellipse at 85% 90%, rgba(120, 80, 30, 0.22), rgba(120, 80, 30, 0) 60%),
+    linear-gradient(#e9dcc0, #dfcea9);
+  --pg-panel-shadow: inset 0 0 60px rgba(90, 60, 20, 0.35);
+}
+
+/* ---------------------------------------------------------------- the page itself and the engine's own controls */
+body[data-theme] {
+  background-color: var(--pg-bg);
+  color: var(--pg-text);
+}
+body[data-theme] a { color: var(--pg-link); }
+
+/* the choice list: the engine draws it as bordered rows inside .choice */
+body[data-theme] .choice > div { border-color: var(--pg-line); background-color: var(--pg-choice-bg); }
+body[data-theme] .choice .disabled { color: var(--pg-disabled); }
+body[data-theme] .choice > div:hover { background-color: var(--pg-choice-hover); }
+body[data-theme] .selected,
+body[data-theme] .selectedKeyboard,
+body[data-theme] .choice > div.selectedKeyboard:hover,
+body[data-theme] .next.selectedKeyboard { color: var(--pg-next-text); background-color: var(--pg-choice-selected); }
+
+/* the Next / Continue button, and the slide-to-choose shuttle */
+body[data-theme] .next { color: var(--pg-next-text); background-color: var(--pg-next-bg); }
+body[data-theme] .next:hover { color: var(--pg-next-text); background-color: var(--pg-next-hover); }
+body[data-theme] .shuttle { background-color: var(--pg-next-bg); }
+
+/* the engine's header buttons (Show Stats, Menu, ...) and its pop-up notices */
+body[data-theme] #header button, body[data-theme] .spacedLink {
+  color: var(--ch-text); background-color: var(--ch-card); border: 1px solid var(--ch-line-hi); border-radius: 4px;
+}
+body[data-theme] #header button:hover, body[data-theme] .spacedLink:hover { background-color: var(--ch-hover); }
+body[data-theme] .alertify { color: var(--ch-text); background-color: var(--ch-bg); border: 1px solid var(--ch-line-hi); }
+body[data-theme] a.alertify-button { color: var(--ch-head-text); }

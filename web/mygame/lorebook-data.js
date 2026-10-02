@@ -214,8 +214,8 @@
           // The payoff. The appearance line above carries "she's never once explained" UNTIL this
           // flag; the two must not print at once, hence the if/else up there.
           if (truthy(s.lyra_scars_told)) {
-            out.push("<i>\"Three winters back I was working for the Black Oath, as a thief. Six months ago, just before the company left Port Valen, I broke their oath and they collected. That is what this is.\"</i>");
-            out.push("She told you because you never asked. She has said it to no one else in the company, there has been a change at the head of the Oath, and when she has paid you back she means to leave the mercenary life entirely.");
+            out.push("<i>\"Three winters back I was working for the Black Oath, as a thief. Six months ago, just before the company left Port Valen, I broke their oath. They started collecting. They never finished, and I never told them where I put what I carried out.\"</i>");
+            out.push("She told you because you never asked. She has said it to no one else in the company. There has been a change at the head of the Oath, and after clearing her debt to you she means to return to Dredge-End long enough to learn what the new leadership wants.");
           }
           return out;
         },
@@ -598,15 +598,28 @@
         meter: { stat: "black_oath_rep", label: "Standing with the Black Oath" },
         body: function (s) {
           var out = [
-            "The sworn brotherhood of the low quarter. Down here they say it began as a burial club: puntmen and dredgers paying into a common purse so their drowned got a grave and their families ate. It kept its own room behind a chandler's for the oaths and the roll of sworn names, and that is where they still are.",
-            "Swear to it and it feeds you when the water takes your boat. Break it and it finds you, and there is no buying your way clear, only the work you said you would do. It holds what the Watch does not reach: the punt berths, the eel-traps, the night barges, and the narrow alleys. The city above leaves it alone, and in exchange the waterfront does not boil over.",
-            "They have nothing to do with the friar at Althea's arch. Both of them feed the same quarter and neither will say so in the other's hearing, which is the only thing the district keeps strictly to."
+            "An oath-bound group Hask works for in Dredge-End. He called them the Black Oath, but did not explain how they are organized or who gives their orders.",
+            "Hask said that accepting his backing makes you an associate, not a sworn member. It means he can put you forward for paid work; it does not mean he can answer every question about the people above him."
           ];
           if (truthy(s.pv_tavern_rumor_1)) {
             out.push("Their men work the upper walkways and the lane corners with bare knives and no Watch badge, reading the faces that come past. The advice along the quays is simple: do not flash silver past dark in that quarter, unless you mean to donate it.");
           }
           if (truthy(s.silt_gate_full_intel) || truthy(s.has_silt_gate_payout_slip)) {
             out.push("Their smuggling lines penetrate the city's seawall through the storm flap-valves at the Silt-Gates, moving un-stamped highland shear-steel and illicit peat-spiritus right under the quays by paying off Harbor Watch sergeants six silver marks a week.");
+          }
+          if (s.black_oath_status === "contact") {
+            out.push("Someone in their outer network has begun accepting your work, though nobody has yet named the brotherhood to you as your employer.");
+          }
+          if (s.black_oath_status === "associate") {
+            out.push("Hask has put his name behind yours as an associate of the Black Oath. You may be offered paid work, but you are not sworn and have no claim on the brotherhood's burial purse.");
+          }
+          if (truthy(s.black_oath_keeper_met)) {
+            out.push("Above the Duckboard Market rope-and-oil house, you met a woman who handles work in that room. She gave you no name and no explanation beyond the job in front of you.");
+          }
+          if ((Number(s.black_oath_heat) || 0) >= 2) {
+            out.push("Your face has also drawn dangerous attention in the cut. Standing and safety are not the same thing here: some Oath hands may respect your usefulness while others remember the damage you caused.");
+          } else if ((Number(s.black_oath_heat) || 0) >= 1) {
+            out.push("At least one Oath crew has reason to remember your face.");
           }
           return out;
         },

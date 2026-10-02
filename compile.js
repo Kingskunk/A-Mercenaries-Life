@@ -236,6 +236,11 @@ function compile(){
   // mode_select. NOT in *scene_list, needs its own line here or a compiled build fails with "scene doesn't
   // exist" the moment either GAME SETTINGS option is picked -- which is every single playthrough.
   verifyFileName("dev_hub.txt");
+  // "dungeon" is the dungeon engine's random-encounter picker (see dungeon.txt's own header comment), reached only via
+  // *gosub_scene dungeon <label> (dev_hub.txt's dungeon test now, a dungeon's rooms later). Same shape as the other
+  // *gosub_scene libraries: NOT in *scene_list, needs its own line here or a compiled build fails with "scene doesn't
+  // exist" the moment a dungeon rolls an encounter.
+  verifyFileName("dungeon.txt");
   // "equipment" is the paper-doll loadout library (equipment.txt's own header
   // comment), reached only via *gosub_scene equipment <label> -- from
   // startup.txt's update_dnd_stats at character creation and every dev-menu
@@ -253,6 +258,9 @@ function compile(){
   verifyFileName("port_valen/port_valen_civic_heights.txt");
   verifyFileName("port_valen/port_valen_upper_wharves.txt");
   verifyFileName("port_valen/port_valen_middle_ward.txt");
+  // The Silt-Gate conduits dungeon (see its own header comment): a *goto_scene-only scene entered from the Developer menu for now,
+  // so it needs its own line here or a compiled build fails with "scene doesn't exist" the moment the walk starts.
+  verifyFileName("port_valen/port_valen_silt_conduits.txt");
 
   //Check startup.txt for a *scene_list
   var sceneList = false;

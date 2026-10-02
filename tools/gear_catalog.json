@@ -22,8 +22,8 @@
     "            sets ('halda', 'halda_sell', 'pawn_sell'); values are full lines and may contain \\\" quotes.",
     "  warn      OPTIONAL [{when, text}]: a ChoiceScript condition and a warning appended to the buy option",
     "  tier      armor only: light | medium | heavy (proficiency tier); use 'shield' for shields",
-    "  sell      { smith: percent, pawn: percent, general: percent, tailor: percent, pawnFixed: copper, smithPiece: copper each, countVar: variable }",
-    "            (a shop's buyer is 'smith', 'pawn', 'general' or 'tailor'; general is the flat 50 percent counter that Hollis and Vael both use. Each price is floor(retail * pct),",
+    "  sell      { smith: percent, pawn: percent, general: percent, tailor: percent, pawnFixed: copper, smithPiece: copper each, herbalistPiece: copper each, countVar: variable }",
+    "            (a shop's buyer is 'smith', 'pawn', 'general', 'tailor' or 'herbalist', which buys counted salvage by the piece (herbalistPiece) and nothing else; general is the flat 50 percent counter that Hollis and Vael both use. Each price is floor(retail * pct),",
     "            and a price of 0 means that buyer declines, so keep general-goods retail high enough that 50 percent is at least 1)",
     "  loadout   slot fields for equipment.txt (weapon, armor and head items; cloak, hands, waist, feet and neck take desc and prose)",
     "  traits    OPTIONAL, any worn item: { cold, wet, heat, stat, bonus }. cold, wet and heat are PERCENT CUTS to that part of",
@@ -242,7 +242,7 @@
     {
       "id": "tool_kit", "kind": "tool", "name": "tool kit", "title": "Tool Kit",
       "retail": 20, "minutes": 5,
-      "hint": "Advantage on repair and tinkering checks",
+      "hint": "Advantage on repair, tinkering and harvest checks",
       "blurb": "A canvas roll holding a claw hammer, a chisel, an awl, pliers, a folding saw, and a hank of soft wire, each in its own pocket.",
       "quotes": { "hollis": "\"Nothing fancy,\" Hollis says. \"Anything that can be mended with a hammer and some patience, that roll will mend.\"" },
       "sell": { "general": 50 },
@@ -258,6 +258,7 @@
     {
       "id": "chalk_sticks", "kind": "tool", "name": "chalk sticks", "title": "Chalk Sticks",
       "retail": 2, "minutes": 5,
+      "hint": "Six chalk marks for a dungeon map",
       "blurb": "Six sticks of soft white chalk tied together with string, for marking a wall or a route.",
       "quotes": { "hollis": "\"Same chalk that's on my slate,\" Hollis says, and taps the stub hanging from his apron. \"Mark your turns. It's the one thing in a tunnel that doesn't lie to you.\"" },
       "sell": { "general": 50 },
@@ -729,6 +730,26 @@
       "id": "scrap_steel", "kind": "salvage", "name": "scrap steel", "title": "Scrap Steel",
       "sell": { "smithPiece": 5, "countVar": "scrap_steel" },
       "flags": { "create": false, "hand": true }
+    },
+    {
+      "id": "frog_slime", "kind": "salvage", "name": "frog slime", "title": "Frog Slime",
+      "sell": { "herbalistPiece": 4, "countVar": "frog_slime" },
+      "flags": { "create": false, "hand": true }
+    },
+    {
+      "id": "centipede_gland", "kind": "salvage", "name": "centipede gland", "title": "Centipede Gland",
+      "sell": { "herbalistPiece": 8, "countVar": "centipede_gland" },
+      "flags": { "create": false, "hand": true }
+    },
+    {
+      "id": "viper_venom", "kind": "salvage", "name": "viper venom", "title": "Viper Venom",
+      "sell": { "herbalistPiece": 10, "countVar": "viper_venom" },
+      "flags": { "create": false, "hand": true }
+    },
+    {
+      "id": "grave_ichor", "kind": "salvage", "name": "grave ichor", "title": "Grave Ichor",
+      "sell": { "herbalistPiece": 15, "countVar": "grave_ichor" },
+      "flags": { "create": false, "hand": true }
     }
   ],
 
@@ -739,7 +760,7 @@
     },
     {
       "name": "ambrose", "title": "Ambrose's Still-Room", "file": "port_valen/port_valen_middle_ward.txt", "labelPrefix": "mw_ambrose",
-      "buyShop": "ambrose_buy", "buyKey": "ambrose"
+      "buyShop": "ambrose_buy", "sellShop": "ambrose_sell", "buyKey": "ambrose", "sellKey": "ambrose_sell"
     },
     {
       "name": "hollis", "title": "Hollis & Daughters", "file": "port_valen/port_valen_middle_ward.txt", "labelPrefix": "mw_hollis",
@@ -783,6 +804,13 @@
     {
       "name": "ambrose_buy", "type": "buy", "file": "port_valen/port_valen_middle_ward.txt", "prefix": "ab", "goto": "mw_ambrose_buy_do",
       "items": [ { "id": "warming_liniment" }, { "id": "clear_head_draught" }, { "id": "linen_bandage" } ]
+    },
+    {
+      "name": "ambrose_sell", "type": "sell", "buyer": "herbalist", "file": "port_valen/port_valen_middle_ward.txt", "prefix": "as", "goto": "mw_ambrose_sell_do",
+      "items": [
+        { "id": "frog_slime", "owned": "frog_slime > 0" }, { "id": "centipede_gland", "owned": "centipede_gland > 0" },
+        { "id": "viper_venom", "owned": "viper_venom > 0" }, { "id": "grave_ichor", "owned": "grave_ichor > 0" }
+      ]
     },
     {
       "name": "hollis_buy", "type": "buy", "file": "port_valen/port_valen_middle_ward.txt", "prefix": "gb", "goto": "mw_hollis_buy_do",

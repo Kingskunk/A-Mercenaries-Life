@@ -132,9 +132,9 @@ graph TD
 
 | Branch | Mechanics & Spells | Outcome & State |
 |---|---|---|
-| **Branch A: Ambush for the Watch** (`pv_silt_gate_ambush_watch`) | • `[STR DC 12]` / `[DEX DC 12]` / `[INT DC 11]`<br>• `[Cantrip: Shocking Grasp]` (Advantage, `INT DC 11`)<br>• `[Cantrip: Ray of Frost]` (Freeze rudder, `INT DC 11`)<br>• `[Spell: Magic Missile]` (1 Slot, Auto-Success) | Success: neutralizes drop, muscles barrow to Quayside.<br>`silt_gate_resolution = "watch_seized"`<br>+12 Silver bounty from Voss (`+1 port_watch_rep`).<br>**Failure (`pv_silt_gate_ambush_fail`): the drop gets away.** No cargo, no bounty, +2 or +3 fatigue, `black_oath_rep -1`, and `silt_gate_resolution = "failed"`. |
-| **Branch B: Parley & Bribe** (`pv_silt_gate_parley_oath`) | • `[CHA DC 12]` / `[WIS DC 11]` / `[INT DC 11]`<br>• `[Cantrip: Thaumaturgy]` (`CHA DC 10`, 30 Silver Marks)<br>• `[Spell: Charm Person]` (1 Slot, 25 Silver Marks)<br>• `[Spell: Disguise Self]` (1 Slot / Hexblood, 25 Silver Marks) | Success: shakes down independent contraband broker for a hush-money cut.<br>`silt_gate_resolution = "hush_money"`<br>+25–30 Silver Marks.<br>**Failure (`pv_silt_gate_parley_fail`): you are walked out with nothing.** No coin (the old 15-silver consolation is gone), `black_oath_rep -1`, `silt_gate_resolution = "failed"`. |
-| **Branch C: Squeeze the Payroll** (`pv_silt_gate_divert_vane`) | • `[CHA DC 12]` / `[STR DC 12]` / `[WIS DC 11]`<br>• `[Cantrip: Thaumaturgy]` (`CHA DC 10`)<br>• `[Spell: Dissonant Whispers]` (1 Bard Slot, Auto-Intel) | Pins the broker for the names of the Watch sergeants he pays. The crates are left on the platform; the payout slip is the prize.<br>`silt_gate_resolution = "leverage"`<br>`has_silt_gate_payout_slip = true`<br>`silt_gate_full_intel = true / false` (a failed check costs the second name).<br>**Spend it once:** give it to Voss (`pv_silt_gate_slip_voss`: +8 silver with both names, +6 with one, `+1 port_watch_rep` only with both) **or** take it to Captain Vane (`port_valen_vane_slip_turnin`: `+1 vane_standing`, no coin, sets `vane_watch_leverage`). Or lie to Voss and keep it (`pv_silt_gate_slip_keep`). |
+| **Branch A: Ambush for the Watch** (`pv_silt_gate_ambush_watch`) | • `[STR DC 12]` / `[DEX DC 12]` / `[INT DC 11]`<br>• `[Cantrip: Shocking Grasp]` (Advantage, `INT DC 11`)<br>• `[Cantrip: Ray of Frost]` (Freeze rudder, `INT DC 11`)<br>• `[Spell: Magic Missile]` (1 Slot, Auto-Success) | Success: neutralizes drop, muscles barrow to Quayside.<br>`silt_gate_resolution = "watch_seized"`<br>+12 Silver bounty from Voss (`+1 port_watch_rep`), `black_oath_rep -2`, `black_oath_heat +2`.<br>**Failure (`pv_silt_gate_ambush_fail`): the drop gets away.** No cargo, no bounty, +2 or +3 fatigue, `black_oath_rep -1`, `black_oath_heat +1`, and `silt_gate_resolution = "failed"`. |
+| **Branch B: Parley & Bribe** (`pv_silt_gate_parley_oath`) | • `[CHA DC 12]` / `[WIS DC 11]` / `[INT DC 11]`<br>• `[Cantrip: Thaumaturgy]` (`CHA DC 10`, 30 Silver Marks)<br>• `[Spell: Charm Person]` (1 Slot, 25 Silver Marks)<br>• `[Spell: Disguise Self]` (1 Slot / Hexblood, 25 Silver Marks) | Success: shakes down independent contraband broker for a hush-money cut.<br>`silt_gate_resolution = "hush_money"`<br>+25–30 Silver Marks, `black_oath_rep +1`, `black_oath_heat +1`.<br>**Failure (`pv_silt_gate_parley_fail`): you are walked out with nothing.** No coin, `black_oath_rep -1`, `black_oath_heat +1`, `silt_gate_resolution = "failed"`. |
+| **Branch C: Squeeze the Payroll** (`pv_silt_gate_divert_vane`) | • `[CHA DC 12]` / `[STR DC 12]` / `[WIS DC 11]`<br>• `[Cantrip: Thaumaturgy]` (`CHA DC 10`)<br>• `[Spell: Dissonant Whispers]` (1 Bard Slot, Auto-Intel) | Pins the broker for the names of the Watch sergeants he pays. The crates are left on the platform; the payout slip is the prize.<br>`silt_gate_resolution = "leverage"`, `black_oath_heat +1`<br>`has_silt_gate_payout_slip = true`<br>`silt_gate_full_intel = true / false` (a failed check costs the second name).<br>**Spend it once:** give it to Voss (`pv_silt_gate_slip_voss`: +8 silver with both names, +6 with one, `+1 port_watch_rep` only with both) **or** take it to Captain Vane (`port_valen_vane_slip_turnin`: `+1 vane_standing`, no coin, sets `vane_watch_leverage`). Or lie to Voss and keep it (`pv_silt_gate_slip_keep`). |
 
 * **Why Branch C is about the names, not the steel:** Vane's briefing asks for leverage and standing ("the Carrion holds the leverage when you wash your fingers"), and never mentions steel or an armory, so the branch no longer invents that goal. The payout slip is the strings he can pull, and it can only be spent once, the same shape as Rotten Rib's waybill.
 * **Loss state:** `silt_gate_resolution = "failed"` (from a failed ambush or parley). The dossier shows "The Drop Got Away", the flume revisit says the run is still going, and Voss's report (`pv_quays_voss_report`) closes the matter with no bounty. See `QUEST_DESIGN_RULES.md`, "Failure Must Cost Something".
@@ -283,7 +283,7 @@ graph TD
 * **Scene File:** `port_valen_dredge_end.txt` (`cut_sheds_hub`, `scrap_vetting_approach`, `scrap_vetting_pitch`, `scrap_vetting_run`, `scrap_vetting_resolve`)
 * **District:** Dredge-End (the Boat-Sheds Scrap Yard).
 * **Design intent:** a Minor/Street Task (`QUEST_DESIGN_RULES.md` §6) that turns a repeatable day-job into a recruitment hook without a faction-shift climax, and deliberately without the full three-branch Mercenary Dilemma structure the bigger district quests use. Full design writeup: `quest/DREDGE_SCRAP_VETTING_PLAN.md`.
-* **Origin:** no new quest-giver — the scrap dealer the player has already been selling to for two weeks (`cut_scrap_sold_count`) makes the offer himself, and names himself (Hask) for the first time at that beat.
+* **Origin:** no new quest-giver — the scrap dealer makes the offer after three sales (`cut_scrap_sold_count`) and names himself (Hask) for the first time at that beat.
 * **Briefing:** Hask connects the player to "a man he does business with" who needs a runner to carry parcels and word between people around the quarter who'd rather not walk the lanes themselves. **The player never learns this is Black Oath work** — nothing carried is illegal or dangerous, and the text never names the association; `black_oath_rep` moves silently in the background on the first success only.
 * **The round (`scrap_vetting_run`):** one archetype choice resolves the whole afternoon (one roll standing in for several stops — the market stalls, the Gangways rail, the foot of Lamp Stair):
   * **STR** (`DC 12`) — keep a hard, steady pace between every stop.
@@ -292,9 +292,21 @@ graph TD
   * Failure is fail-forward with no permanent penalty: nothing carried is illegal, so there's no authority to get more alert and no reason to raise the DC or lock the player out — a fumbled round just pays less and doesn't count toward the trust counter.
 * **Economics:** 12 copper on a successful round (partial 4 on failure), once per `campaign_day` (`scrap_vetting_day`) — a real day job (6 hours) rather than an errand, sized so the courier round and wading together eat most of the 14-hour working day if both are run the same day.
 * **The repeatable loop:** once the first round resolves, `hask_courier_unlocked` opens a standing "Ask Hask if there's a round to run" option at `cut_sheds_hub` — same mechanics as the first round, no further `black_oath_rep` change (that was the first round's reward specifically, so the loop can't farm reputation).
-* **Future work (not yet implemented):** `hask_courier_count` is tracked from the first round onward so a future "another job" hook (proposed gate: 12 successful rounds) has something to read — presumably the point where "not carrying anything illegal *yet*" stops being true. The chandler's upper-room stub at `cut_market_night` is a separate, bigger investigation-grade quest and is not wired to this one.
-* **Not yet added:** `lorebook-data.js` (Hask) and `quest-data.js` — skipped to match existing Port Valen practice: no POI-quest NPC (Dell, Wenna, Elric, Brant, Hendryk) has a lorebook entry yet, and Crane Three's identically-shaped repeatable day-job isn't in the sidebar quest log either. Worth a dedicated pass across all of Port Valen's cast later rather than fixing it piecemeal for one NPC.
-* **Variables:** `cut_scrap_sold_count`, `scrap_vetting_offer_seen`, `scrap_vetting_quest_stage`, `scrap_vetting_day`, `hask_courier_unlocked`, `hask_courier_count`.
+* **Associate reveal:** after three successful rounds, Hask names the employer as the Black Oath and offers to put his name behind the player. Accepting sets `black_oath_status = "associate"` and awards `black_oath_rep +2`. This is named paid work, not a sworn oath; Hask puts the player forward for a night contract upstairs. Refusal is reversible and leaves the ordinary courier loop open.
+* **Outlaw origin:** begins at `black_oath_rep = -3` and `black_oath_heat = 3`, matching the existing six-hundred-mark theft and blood bounty. Hask's sponsorship may create a ward-level opening for paid work, but it does not erase the debt or make the rest of the organization forget the dead collector.
+* **The rope-and-oil house:** by day it sells cordage, hooks, lamp oil, tallow and sail patches. After dark, its upper room is a Black Oath contact point for local work. The player is not told whether it is a headquarters or how it fits into the wider organization.
+* **Lore and log:** Hask has a gated people entry in `lorebook-port-valen.js`; the repeatable day-job remains out of `quest-data.js`, matching Crane Three's treatment.
+* **Variables:** `cut_scrap_sold_count`, `scrap_vetting_offer_seen`, `scrap_vetting_quest_stage`, `scrap_vetting_day`, `hask_courier_unlocked`, `hask_courier_count`, `hask_associate_offer_seen`, `hask_associate_joined`, `black_oath_status`, and `black_oath_heat`.
+
+### The Night List
+* **Scene File:** `port_valen/black_oath/black_oath_night_list.txt` (`night_list_briefing` through `night_list_failed`).
+* **District:** Dredge-End, entered from the Duckboard Market rope-and-oil house at Night or Pre-Dawn.
+* **Requirements:** `hask_associate_joined` and `black_oath_night_list_stage = "unstarted"`.
+* **Briefing:** the player meets the unnamed woman upstairs during a real job briefing, not a social audience. Three stops exchange two purses and an oilcloth packet; the player may ask what is in the packet before accepting.
+* **Route:** after the three hand-offs, three approaches resolve a street interception: STR (`Athletics DC 12`), DEX (`Acrobatics DC 12`), or CHA (`Persuasion DC 11`).
+* **Success:** `black_oath_night_list_resolution = "completed"`; 18 copper, `black_oath_rep +1`, and the quest counts toward level progress.
+* **Failure:** `black_oath_night_list_resolution = "failed"`; no pay, `black_oath_rep -1`, `black_oath_heat +1`, and no level-progress credit.
+* **Variables:** `black_oath_keeper_met`, `black_oath_night_list_stage`, `black_oath_night_list_resolution`, and `black_oath_night_list_paid`.
 
 ---
 
@@ -339,6 +351,8 @@ graph TD
 *create vane_watch_leverage false             *comment Vane holds the names; RESERVED for future radiant Watch quests
 *create port_watch_rep 0                      *comment municipal guard standing
 *create black_oath_rep 0                     *comment canal smuggling network standing
+*create black_oath_heat 0                    *comment attention/danger, separate from respect
+*create black_oath_status "outsider"          *comment "outsider", "contact", "associate"
 *create gilded_scales_rep 0                   *comment merchant guild monopoly standing
 *create vane_standing 0                       *comment mercenary company captain regard
 
@@ -356,12 +370,14 @@ graph TD
 *create crane_dell_regard 0                   *comment Dell's opinion -- future promotion gate
 
 *comment --- Hask's Real Money / Scrap Yard Courier Round (see full label list above) ---
-*create cut_scrap_sold_count 0                *comment times sold TO Hask specifically -- fires his offer at 14
+*create cut_scrap_sold_count 0                *comment times sold TO Hask specifically -- fires his offer at 3
 *create scrap_vetting_offer_seen false        *comment Hask has raised the offer at least once
 *create scrap_vetting_quest_stage "unstarted" *comment "unstarted", "active", "resolved"
 *create scrap_vetting_day 0                   *comment campaign_day of the last delivery-round attempt; once/day
 *create hask_courier_unlocked false           *comment first round resolved; unlocks the standing "run a round" option
-*create hask_courier_count 0                  *comment lifetime SUCCESSFUL rounds; RESERVED to gate a future "another job" hook
+*create hask_courier_count 0                  *comment lifetime SUCCESSFUL rounds; 3 opens named Oath work
+*create hask_associate_offer_seen false       *comment Hask has revealed the employer
+*create hask_associate_joined false           *comment one-time associate/rep award guard
 
 *comment --- The Rotten Rib / Iron Wharves (see Quest 3 above) ---
 *create rotten_rib_quest_stage "unstarted"    *comment "unstarted", "active", "resolved"

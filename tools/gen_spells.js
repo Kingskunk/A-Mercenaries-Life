@@ -9,7 +9,7 @@
  *
  * The tag answers two separate questions, and combat.txt asks them separately:
  *   spell_in_range  -- can the caster reach the target at all? (close/touch cannot)
- *   spell_disadv    -- is the shot spoiled by a hostile in reach? (ranged only, at Engaged only)
+ *   spell_disadv    -- is the shot spoiled by a hostile in reach? (ranged only, while ANY enemy is Engaged with the caster)
  * Collapsing those is a real bug: a touch spell at Mid-Range must be UNAVAILABLE, not offered at
  * disadvantage.
  *
@@ -81,7 +81,8 @@ function genLookup() {
   L.push("  *if (spell_range_at > 0)");
   L.push("    *set spell_in_range false");
   L.push("*if (spell_range_tag = \"ranged\")");
-  L.push("  *if (spell_range_at <= 0)");
+  L.push("  *gosub combat_check_engaged");
+  L.push("  *if ((spell_range_at <= 0) or (combat_any_engaged))");
   L.push("    *set spell_disadv true");
   L.push("*set spell_reach_result spell_in_range");
   L.push("*set spell_penalty_result spell_disadv");

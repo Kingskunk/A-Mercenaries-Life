@@ -46,6 +46,10 @@
     {
       id: "lyra_errand", title: "Five Silver", place: "Dredge-End & the Compound",
       active: function (s) { return s.lyra_quest_stage === "active"; }
+    },
+    {
+      id: "black_oath_night_list", title: "The Night List", place: "Dredge-End",
+      active: function (s) { return s.black_oath_night_list_stage === "active"; }
     }
   ];
 })();

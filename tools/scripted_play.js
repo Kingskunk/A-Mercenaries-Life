@@ -17,7 +17,9 @@
  *   - The same script always gives the same output, so a viewer can keep a list of picks and re-run it
  *     from the start on every click. That makes it a stateless "play from this label" backend.
  *
- * It shows prose. It does not judge it, lay it out like the game screen, or change any file.
+ * It shows prose and lays it out the way the screen does: a paragraph break is a blank line, a *line_break is a new line, and a plain source newline joins into one
+ * paragraph. A place heading ("◈ ...") or status banner that runs on from the sentence before it is flagged with "!! LAYOUT" (a label reached by *goto needs a blank
+ * line under it). It does not judge the writing or change any file. Read the output as a player would: look at where lines break, not only at the words.
  *
  * Usage, from any folder (it finds the repo from its own location and never changes your working folder):
  *   node tools/scripted_play.js <script.json | ->  [key=value ...] [flags]
@@ -102,8 +104,18 @@ function flush() {
   var text = printed.join("")
     .replace(/<\/p>/g, "\n").replace(/<p>/g, "").replace(/<br>/g, "\n")
     .replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/\n{3,}/g, "\n\n");
+  // The screen's layout: a paragraph break is a blank line (the page puts a gap there), a *line_break is only a new line, and a plain newline in the
+  // source joins into one paragraph. `text` above flattens both to one newline for the scenario tests; `shown` keeps the difference for people.
+  var shown = printed.join("")
+    .replace(/<\/p>/g, "\n\n").replace(/<p>/g, "").replace(/<br>/g, "\n")
+    .replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/\n{3,}/g, "\n\n");
   printed.length = 0;
-  if (text.trim()) D.events.push({ type: "prose", text: text.trim() });
+  if (text.trim()) {
+    // A banner or place heading that starts partway along a line is glued to the sentence before it: the label was reached by a *goto, which never runs
+    // the blank line above it, so the engine kept one paragraph going.
+    var glued = /[.!?,;:"”’')] +(◈ |\[(?:You see|Light:|No light|A chalk))/.exec(stripMarkup(shown));
+    D.events.push({ type: "prose", text: text.trim(), shown: shown.trim(), glued: glued ? glued[1].trim() : "" });
+  }
 }
 
 Scene.prototype.choice = function (data, isFakeChoice) {
@@ -342,12 +354,15 @@ function errorHints(errors) {
 
 function formatText(scn, r, opts) {
   var clean = opts.raw ? function (t) { return t; } : stripMarkup;
-  var out = [];
+  var out = [], layoutWarnings = 0;
   out.push("=== " + (scn.scene || "port_valen/port_valen") + (scn.label ? " : " + scn.label : "") + " | " + (scn.preset || DEFAULT_PRESET) +
     [scn.weather, scn.time, scn.day].filter(Boolean).map(function (x) { return " | " + x; }).join(""));
   out.push("");
   r.events.forEach(function (e) {
-    if (e.type === "prose") out.push(clean(e.text), "");
+    if (e.type === "prose") {
+      out.push(clean(e.shown || e.text), "");
+      if (e.glued) { layoutWarnings++; out.push("  !! LAYOUT: \"" + e.glued + "\" runs on from the sentence before it. The label was reached by *goto, so put a blank line under it.", ""); }
+    }
     else if (e.type === "menu") {
       if (opts.menus || e.picked === null) {
         out.push("  Choices:");
@@ -368,6 +383,7 @@ function formatText(scn, r, opts) {
     out.push("Refresh check: " + r.refreshChecks + " pages replayed, " + r.refreshSkipped + " skipped (started in another scene), " + diffs.length + " differences" + (known.length ? " (+" + known.length + " known engine difference)" : ""));
     diffs.slice(0, 12).forEach(function (d) { out.push("  - " + d); });
   }
+  if (layoutWarnings) out.push("LAYOUT: " + layoutWarnings + " page(s) show a heading glued to the sentence before it (see !! above)");
   r.errors.forEach(function (e) { out.push("ERROR: " + e); });
   errorHints(r.errors).forEach(function (h) { out.push("  hint: " + h); });
   return out.join("\n");
@@ -376,7 +392,7 @@ function formatText(scn, r, opts) {
 function formatJson(scn, r) {
   var events = r.events.map(function (e) {
     if (e.type !== "prose") return e;
-    return { type: "prose", text: e.text, rolls: rollsIn(e.text) };
+    return { type: "prose", text: e.text, shown: e.shown, glued: e.glued || undefined, rolls: rollsIn(e.text) };
   });
   return JSON.stringify({
     status: r.status, events: events, stopped: r.stopped, exits: r.exits, errors: r.errors, hints: errorHints(r.errors),

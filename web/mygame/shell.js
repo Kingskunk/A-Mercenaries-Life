@@ -1,0 +1,139 @@
+/*
+ * SHELL: the left rail (stage 2 of the interface redesign, 2026-10-02).
+ *
+ * The page's own button row (Show Stats, Lorebook, Inventory, Trade, Save / Load, Menu, Level Up) sits inside the engine's page container, which the engine copies and
+ * animates on every page turn, so it cannot be moved or restyled safely. It stays in the page, hidden (shell.css), and this builds a persistent rail OUTSIDE the
+ * containers whose buttons click the real ones. Nothing is duplicated in logic: the real buttons still do everything, and the rail only mirrors their state -- whether
+ * each is showing (Trade and Level Up appear and vanish), the Lorebook's unread badge, and "Return" while the dossier or menu is open.
+ *
+ * Every real button is looked up by id on every click and every poll, never cached, for the reason levelup.js gives: the engine can rebuild the button bar.
+ */
+(function () {
+  "use strict";
+
+  // [real button id, icon key, rail label]
+  var ITEMS = [
+    ["statsButton", "stats", "Stats"],
+    ["lorebookButton", "lore", "Lore"],
+    ["inventoryButton", "pack", "Pack"],
+    ["tradeButton", "trade", "Trade"],
+    ["saveLoadButton", "save", "Save"]
+  ];
+  var rail = null, entries = [], level = null, menu = null;
+
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;"); }
+
+  function realClick(id) {
+    var real = document.getElementById(id);
+    if (real) real.click();
+  }
+
+  function build() {
+    rail = document.createElement("nav");
+    rail.id = "rail";
+    rail.setAttribute("aria-label", "Game menu");
+    var html = "";
+    ITEMS.forEach(function (it) {
+      html += "<button type=\"button\" class=\"rbtn\" data-real=\"" + it[0] + "\" data-i=\"" + it[1] + "\" title=\"" + esc(it[2]) + "\"><i></i><span class=\"rbadge\" hidden></span></button>" +
+              "<div class=\"rlabel\" data-for=\"" + it[0] + "\">" + esc(it[2]) + "</div>";
+    });
+    // The dungeon map: not a mirror of a page button, it opens dungeonmap.js. Hidden until the player has mapped something (see sync).
+    html += "<button type=\"button\" class=\"rbtn\" data-open=\"dungeonmap\" data-i=\"map\" title=\"Map (M)\" hidden><i></i></button>" +
+            "<div class=\"rlabel\" data-for=\"dungeonmap\" hidden>Map</div>";
+    html += "<div class=\"rspacer\"></div>" +
+            "<button type=\"button\" class=\"rlevel\" data-real=\"levelUpButton\" title=\"You have earned a level\" hidden>&#9733;<br>LEVEL<br>UP</button>" +
+            "<button type=\"button\" class=\"rbtn\" data-real=\"menuButton\" data-i=\"menu\" title=\"Menu\"><i></i><span class=\"rbadge\" hidden></span></button>" +
+            "<div class=\"rlabel\" data-for=\"menuButton\">Menu</div>";
+    rail.innerHTML = html;
+    document.body.appendChild(rail);
+    rail.addEventListener("click", function (ev) {
+      var t = ev.target;
+      while (t && t !== rail && !(t.getAttribute && (t.getAttribute("data-real") || t.getAttribute("data-open")))) t = t.parentNode;
+      if (t && t !== rail) {
+        if (t.getAttribute("data-open") === "dungeonmap") { if (window.DungeonMap) window.DungeonMap.toggle(); }
+        else realClick(t.getAttribute("data-real"));
+      }
+    });
+  }
+
+  // The real button is "showing" unless the page (or a panel script) has display:none'd it. Trade and Level Up start hidden.
+  function showing(real) { return !!real && real.style.display !== "none"; }
+
+  function sync() {
+    if (!rail) return;
+    var s = window.stats || {};
+    var btns = rail.querySelectorAll("[data-real]");
+    for (var i = 0; i < btns.length; i++) {
+      var b = btns[i], id = b.getAttribute("data-real"), real = document.getElementById(id);
+      var on = showing(real);
+      // The Stats and Menu buttons turn into "Return to the Game" while their screen is open: show it as a lit ring.
+      b.classList.toggle("back", !!(real && real.getAttribute("data-return")));
+      if (id === "tradeButton" || id === "levelUpButton") {
+        if (b.hidden === on) b.hidden = !on;
+        var lab = rail.querySelector(".rlabel[data-for=\"" + id + "\"]");
+        if (lab && lab.hidden === on) lab.hidden = !on;
+      }
+      var badge = b.querySelector(".rbadge");
+      if (badge) {
+        var src = real && real.querySelector(".lb-badge");
+        var txt = src ? src.textContent : "";
+        if (txt) { if (badge.textContent !== txt) badge.textContent = txt; if (badge.hidden) badge.hidden = false; }
+        else if (!badge.hidden) badge.hidden = true;
+      }
+      // the real button's own title carries the unread count ("3 new lorebook entries"), so the rail shows it too
+      var rt = real ? (real.getAttribute("title") || "") : "";
+      if (rt && b.getAttribute("title") !== rt) b.setAttribute("title", rt);
+    }
+    // the map button shows once something has been mapped
+    var mapBtn = rail.querySelector("[data-open=\"dungeonmap\"]"), mapLab = rail.querySelector(".rlabel[data-for=\"dungeonmap\"]");
+    var haveMap = !!(window.DungeonMap && window.DungeonMap.hasAny());
+    if (mapBtn && mapBtn.hidden === haveMap) mapBtn.hidden = !haveMap;
+    if (mapLab && mapLab.hidden === haveMap) mapLab.hidden = !haveMap;
+    // room is reserved for the sidebar only while it is showing (it hides itself until the character exists)
+    var sb = document.getElementById("statSidebar");
+    var side = !!(sb && sb.style.display !== "none");
+    if (document.documentElement.classList.contains("hasSidebar") !== side) document.documentElement.classList.toggle("hasSidebar", side);
+  }
+
+  var queued = false;
+  function queue() { if (!queued) { queued = true; window.requestAnimationFrame(function () { queued = false; sync(); }); } }
+
+  // The window used to scroll, and the browser opened every new page at the top by itself. The story scrolls inside its frame now, and replacing its contents
+  // keeps the old scroll position, so every page turn resets it. clearScreen is the engine's single page-turn entry point (ui.js).
+  function resetStoryScroll() {
+    var m = document.getElementById("main");
+    if (m) m.scrollTop = 0;
+  }
+  function hookPageTurns() {
+    var orig = window.clearScreen;
+    if (typeof orig !== "function" || orig.__shellHooked) return;
+    var wrapped = function () {
+      var r = orig.apply(this, arguments);
+      resetStoryScroll();
+      return r;
+    };
+    wrapped.__shellHooked = true;
+    window.clearScreen = wrapped;
+  }
+
+  // Double-clicking a choice takes it (choose and go), so a mouse player does not need the Next button. Single click still only selects; Enter and Space and the
+  // Next button are unchanged. The Next button is looked up at the moment, because the engine rebuilds it on every page.
+  document.addEventListener("dblclick", function (ev) {
+    var row = ev.target && ev.target.closest ? ev.target.closest("#main .choice > div") : null;
+    if (!row) return;
+    var radio = row.querySelector("input[type=radio]");
+    if (!radio || radio.disabled) return;
+    radio.checked = true;
+    var next = document.querySelector("#main button.next, #main .next");
+    if (next) { ev.preventDefault(); next.click(); }
+  });
+
+  function start() {
+    hookPageTurns();
+    build();
+    sync();
+    if (window.MutationObserver) new MutationObserver(queue).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["style", "data-return", "title"] });
+    window.setInterval(sync, 500);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
+})();

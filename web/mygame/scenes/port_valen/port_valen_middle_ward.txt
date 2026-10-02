@@ -2341,10 +2341,14 @@ Tucked behind the main lane, this stone dead-end is sheltered by cedar roofs and
   *if (not(mw_herb_seen))
     *set mw_herb_seen true
   *gosub mw_ambrose_open_panel
+  *temp ambrose_has_sale ((((frog_slime > 0) or (centipede_gland > 0)) or (viper_venom > 0)) or (grave_ichor > 0))
 
   *choice
     # Look over the shelves.
       *goto mw_ambrose_stock
+    *if (ambrose_has_sale)
+      # Lay out the ingredients you have brought.
+        *goto mw_ambrose_sell
     # Inspect the drying racks and distillation stills.
       You examine the neat bundles of highland roots and dried riverbank herbs hanging under the eaves. Master Ambrose, an elderly herbalist with yellow-stained fingers, looks up from pouring pine medicine into small dark glass bottles. "Looking for wound salve or bitter tonics?" he murmurs, his pale eyes taking in the road dust on your gear. "The garrison takes most of our willow bark for their surgeons, but a jar of warming rubbing salve does wonders for stiff knees or swollen ankles."
       *page_break Step away from the still-room…
@@ -2440,6 +2444,81 @@ ${gear_blurb}
 *page_break Back to the counter…
 *goto mw_ambrose_stock
 
+*comment THE BUY-BACK (2026-10-02). Ambrose buys the dungeon's ingredients (frog slime, centipede gland, viper venom, grave ichor) by the piece, a counted-salvage
+*comment sell like Halda's scrap steel; the catalog's ambrose_sell shop feeds the menu below and the trade panel's Sell tab, and he buys nothing else.
+*label mw_ambrose_sell
+Master Ambrose pushes his spectacles up his nose and clears a square of the counter. "Lay them out, each by its kind," he says. "I weigh by the piece, and I do not haggle over a clean cut."
+*comment GEN:BEGIN ambrose_sell_labels
+*temp as_frog_slime ""
+*temp as_centipede_gland ""
+*temp as_viper_venom ""
+*temp as_grave_ichor ""
+*if (frog_slime > 0)
+  *gosub_scene equipment gear_sell_label "frog_slime" "herbalist"
+  *set as_frog_slime gear_label
+*if (centipede_gland > 0)
+  *gosub_scene equipment gear_sell_label "centipede_gland" "herbalist"
+  *set as_centipede_gland gear_label
+*if (viper_venom > 0)
+  *gosub_scene equipment gear_sell_label "viper_venom" "herbalist"
+  *set as_viper_venom gear_label
+*if (grave_ichor > 0)
+  *gosub_scene equipment gear_sell_label "grave_ichor" "herbalist"
+  *set as_grave_ichor gear_label
+*comment GEN:END ambrose_sell_labels
+
+*choice
+  *comment GEN:BEGIN ambrose_sell_options
+  *if (frog_slime > 0)
+    # ${as_frog_slime}
+      *set sell_item_id "frog_slime"
+      *goto mw_ambrose_sell_do
+  *if (centipede_gland > 0)
+    # ${as_centipede_gland}
+      *set sell_item_id "centipede_gland"
+      *goto mw_ambrose_sell_do
+  *if (viper_venom > 0)
+    # ${as_viper_venom}
+      *set sell_item_id "viper_venom"
+      *goto mw_ambrose_sell_do
+  *if (grave_ichor > 0)
+    # ${as_grave_ichor}
+      *set sell_item_id "grave_ichor"
+      *goto mw_ambrose_sell_do
+  *comment GEN:END ambrose_sell_options
+  # Put them back in your satchel.
+    *goto mw_herb_close
+
+*comment The sale itself. The price is worked out inside the currency lock and kept in gear_sale_* so a replayed page prints the same banner.
+*label mw_ambrose_sell_do
+*set gear_shop "ambrose_sell"
+*gosub_scene equipment gear_info sell_item_id
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment gear_sale_value sell_item_id "herbalist"
+  *gosub_scene equipment sell_gear sell_item_id
+  *set currency_add_amount gear_sale_copper
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+Master Ambrose weighs the ${gear_sale_name} in a brass pan, nods once, and counts the coin out of a tin box under the counter.
+*if (not(gear_quote = ""))
+  *line_break
+  ${gear_quote}
+*line_break
+[b][💰 Sold: ${gear_sale_name} for ${gear_sale_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass 5
+*set time_advance_call_id "ambrose_sell"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the counter…
+*goto mw_herb_close
+
 *label mw_ambrose_open_panel
 *set shop_open "ambrose"
 *set shop_rows ""
@@ -2452,6 +2531,12 @@ ${gear_blurb}
 
 *label mw_ambrose_cart_pass
 *comment GEN:BEGIN ambrose_cart_pass
+*set shop_buyer "herbalist"
+*set gear_shop "ambrose_sell"
+*gosub_scene equipment shop_cart_sell "frog_slime"
+*gosub_scene equipment shop_cart_sell "centipede_gland"
+*gosub_scene equipment shop_cart_sell "viper_venom"
+*gosub_scene equipment shop_cart_sell "grave_ichor"
 *set gear_shop "ambrose"
 *gosub_scene equipment shop_cart_buy "warming_liniment"
 *gosub_scene equipment shop_cart_buy "clear_head_draught"
@@ -2482,14 +2567,25 @@ ${gear_blurb}
   You count your coin against the chalked prices and come up short. Ambrose caps the bottles and slides them back into their row. "The stock keeps," he says.
   *page_break Back to the counter…
   *goto mw_herb_close
-Master Ambrose wraps each purchase in waxed paper and ties it with twine, naming the price as he goes.
+*if ((shop_tot_bought > 0) and (shop_tot_sold > 0))
+  Master Ambrose weighs each thing you put down, wraps what you chose in waxed paper and twine, and settles the difference across the counter.
+*elseif (shop_tot_bought > 0)
+  Master Ambrose wraps each purchase in waxed paper and ties it with twine, naming the price as he goes.
+*else
+  Master Ambrose weighs each ingredient in a brass pan and names a figure.
 *if (not(shop_quote_line = ""))
   *line_break
   ${shop_quote_line}
-*line_break
-[b][🛒 Bought: ${shop_recv} for ${shop_cost_desc}][/b]
+*if (shop_tot_sold > 0)
+  *line_break
+  [b][💰 Sold: ${shop_sold_list} for ${shop_credit_desc}][/b]
+*if (shop_tot_bought > 0)
+  *line_break
+  [b][🛒 Bought: ${shop_recv} for ${shop_cost_desc}][/b]
 *set hours_to_pass 0
 *set minutes_to_pass shop_tot_minutes
+*if (shop_tot_sold > 0)
+  *set minutes_to_pass (minutes_to_pass + 5)
 *set time_advance_call_id "ambrose_trade"
 *gosub_scene calendar advance_time
 *gosub_scene calendar recalc_hp_from_neglect

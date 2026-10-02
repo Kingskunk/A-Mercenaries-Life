@@ -366,9 +366,8 @@ function textOptionsMenu(categories) {
       if (oldFontFamily !== "dyslexia") options.push({ name: "Use a dyslexia-friendly font.", group: "choice", family: "dyslexia" });
     }
     if (categories.color) options.push(
-      {name:"Use a black background.", group:"choice", color:"black"},
-      {name:"Use a sepia background.", group:"choice", color:"sepia"},
-      {name:"Use a white background.", group:"choice", color:"white"}
+      {name:"Use the dark stone theme.", group:"choice", color:"black"},
+      {name:"Use the parchment theme.", group:"choice", color:"sepia"}
     );
     if (categories.animation) {
       if (window.animateEnabled) {
@@ -454,17 +453,19 @@ function changeFontFamily(family) {
   if (initStore()) store.set("preferredFamily", family);
 }
 
+// THEME (2026-10-02, stage 1 of the interface redesign; mygame/theme.css). The engine's Background setting now picks the game's theme:
+// "black" is theme A (dark stone, the default) and also sets body.nightmode so the engine's own night rules keep working; "sepia" is
+// theme B (parchment); the old "white" is treated as B. The value stored is still the engine's own preferredBackground.
+function applyBackground(color) {
+  var theme = (color === "sepia" || color === "white") ? "b" : "a";
+  document.body.classList.remove("nightmode");
+  document.body.classList.remove("whitemode");
+  if (theme === "a") document.body.classList.add("nightmode");
+  document.body.setAttribute("data-theme", theme);
+}
+
 function changeBackgroundColor(color) {
-  if (color === "sepia") {
-    document.body.classList.remove("nightmode");
-    document.body.classList.remove("whitemode");
-  } else if (color === "black") {
-    document.body.classList.remove("whitemode");
-    document.body.classList.add("nightmode");
-  } else if (color === "white") {
-    document.body.classList.remove("nightmode");
-    document.body.classList.add("whitemode");
-  }
+  applyBackground(color);
   if (initStore()) store.set("preferredBackground", color);
 }
 
@@ -3270,6 +3271,9 @@ function showPassword(target, password) {
 }
 
 function changeTitle(title) {
+  // After a refresh restores a save, document.title is empty (only the startup scene's *title sets it) while the header still shows the name; the Menu page calls
+  // changeTitle(document.title), which used to blank the header banner until the next refresh. An empty title changes nothing.
+  if (!title) return;
   document.title = title;
   var titleTag = document.getElementById("title");
   if (titleTag) {
@@ -3401,14 +3405,11 @@ function loadPreferences() {
       }
     });
     store.get("preferredBackground", function(ok, preferredBackground) {
+      // No stored choice means theme A, the dark stone default (it used to fall back to sepia).
       if (!/^(sepia|black|white)$/.test(preferredBackground)) {
-        preferredBackground = "sepia";
+        preferredBackground = "black";
       }
-      if (preferredBackground === "black") {
-        document.body.classList.add("nightmode");
-      } else if (preferredBackground === "white") {
-        document.body.classList.add("whitemode");
-      }
+      applyBackground(preferredBackground);
     });
     store.get("preferredFamily", function (ok, preferredFontFamily) {
       if (preferredFontFamily === "sans") {

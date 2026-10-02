@@ -22,7 +22,7 @@ The short version: the game is a clean level 1. `character_level` exists but is 
 | Class data | Set twice: once per class in `dawn_trial.txt` (7 classes) and once per dev preset in `startup.txt` (8 presets). Each sets `hit_die`, `hit_die_max`, resource counts, feature text. | dawn_trial.txt:40-374; startup.txt:1736-2152 |
 | Spell slots | `wizard_/bard_/warlock_spell_slots` hold the **remaining** count only. **Done (2026-09-26):** each has a `_max` variable, written by `refresh_class_resource_maxs` (called from `update_dnd_stats`). | startup.txt `refresh_class_resource_maxs` |
 | Class resource refill | **Done (2026-09-26):** one routine, `restore_class_resources`, called from `calendar.txt` `resolve_sleep` (so every sleeping place gets it) and directly by the two prologue rests. The copied blocks are gone. The initial values are still set in the `*create` block and the dev presets. | startup.txt `restore_class_resources` |
-| Short rest | **Done (2026-09-26):** the dossier's Rest menu (Show Stats → Rest, and a Rest card pinned in the Inventory) takes one hour and restores Second Wind and the Pact Magic slot (`do_short_rest`). The Middle Ward garret's one-hour rest (`mw_room_short_rest`) calls it too. Rage, Bard and Wizard slots come back only on sleep. | choicescript_stats.txt `codex_rest`; startup.txt `do_short_rest`; port_valen_middle_ward.txt:881 |
+| Short rest | **Done (2026-09-26):** the dossier's Rest menu (Show Stats → Rest, and a Rest card pinned in the Inventory) takes one hour and restores Second Wind, Action Surge, Bardic Inspiration, the Pact Magic slots, and half a Wizard's, Bard's or Ranger's spell slots (`do_short_rest`); a Wizard's Arcane Recovery adds more. **Capped for every class at 2 short rests between long sleeps** (`short_rests_max`, 2026-10-02). The Middle Ward garret's one-hour rest (`mw_room_short_rest`) calls it too. Rage comes back only on sleep, and a long sleep refills the short-rest count. | choicescript_stats.txt `codex_rest`; startup.txt `do_short_rest`; port_valen_middle_ward.txt:881 |
 | Slot spending | Class checks and `- 1` are written out at each cast site. | startup.txt:2947-3103; port_valen.txt:2951-2967; port_valen_dredge_end.txt:868, 1030-1060, 1209-1212 |
 | Action economy | One action per round. There is no bonus-action tracking. Second Wind and Rage end the round (`*goto fight_enemy_turn`); Hex and Healing Word are free (`*goto fight_round_hub`) and can be repeated as long as they can be paid for. | combat.txt:898-1042 |
 | Advantage | `advantage` / `disadvantage` on the player roll; `combat_enemy_advantage` / `_disadvantage` on the enemy roll; `roll_had_advantage` gates Sneak Attack. All auto-reset. | startup.txt:917, 2915-2936 |
@@ -89,13 +89,13 @@ Level 2 hit points for all seven classes: `+ hit_die_max + con_mod` (the maximum
 
 ### Warlock
 - **5e:** Eldritch Invocations (2), 2 slots, one more spell known.
-- **Have:** 1 slot on a short rest (game and 5e), Eldritch Blast, Hex, Armor of Agathys, False Life, patron as text.
+- **Have:** 1 slot on a short rest (game and 5e), Eldritch Blast, Hex, Armor of Agathys, False Life (castable outside a fight, 12 hours), patron as text.
 - **Need:** an invocation pick of two from a pool of about three to five, slots 1 → 2, one more spell pick.
-- **Hooks that exist:** Agonizing Blast is one line at the Eldritch Blast damage (`+ cha_mod`, currently `combat_player_dmg_bonus 0`); Armor of Shadows reuses the Mage Armor line in `update_dnd_stats`; Fiendish Vigor reuses the False Life / `temp_hp` engine; Mask of Many Faces removes the slot cost of the Disguise Self option in Dredge-End; Devil's Sight would need night hooks (only `camp_night.txt` reads darkvision today).
+- **Hooks that exist:** Agonizing Blast is one line at the Eldritch Blast damage (`+ cha_mod`, currently `combat_player_dmg_bonus 0`); Armor of Shadows casts Mage Armor free (built; Mage Armor is a 24-hour cast, `cast_mage_armor` in `equipment.txt`); Fiendish Vigor reuses the False Life / `temp_hp` engine; Mask of Many Faces removes the slot cost of the Disguise Self option in Dredge-End; Devil's Sight would need night hooks (only `camp_night.txt` reads darkvision today).
 
 ### Wizard
 - **5e:** Arcane Tradition (a school), 3 slots, two more spells in the spellbook.
-- **Have:** 2 slots, 3 cantrips, one spell (game; 5e is six in the book), Magic Missile, Shield, Mage Armor, False Life; Arcane Recovery and Ritual Casting are text only.
+- **Have:** 2 slots, 3 cantrips, one spell (game; 5e is six in the book), Magic Missile, Shield, Mage Armor (24-hour cast), False Life (12 hours); Arcane Recovery is built (a short-rest bonus once between long rests); Ritual Casting is still text only.
 - **Need:** slots 2 → 3, a school pick, one or two more spell picks, and a decision on Arcane Recovery (at level 2 it recovers one slot level, which is the reason the dossier already names it).
 - **Hooks that exist:** Abjuration's Arcane Ward can reuse `temp_hp` (twice level + INT); Necromancy's Grim Harvest and Divination's Portent would each need one small hook (a heal on a spell kill; a stored pair of rolls, close to Halfling Lucky). The Battle-Abjurer preset already implies Abjuration.
 
@@ -109,7 +109,7 @@ Level 2 hit points for all seven classes: `+ hit_die_max + con_mod` (the maximum
 2. **Where (decided).** Training is at the Carrion compound (Varren's camp) and nowhere else for level 2: the Middle Ward room is not a training site. It is free, and it only ever gets you to level 2. Later levels use other teachers and places, some paid, some gated behind quests.
 3. **Flavor (decided).** The training prose depends on your class and squad: your squad leader trains you where that fits, otherwise it is regular training. Squads are Vanguard, Scouts, Cadre, and independent recruits.
 4. **The Level Up button (decided).** When both counts are met, a Level Up choice appears in the Show Stats (dossier) hub menu, and a fancy Level Up button appears at the end of the top bar (Show Stats, Lorebook, Inventory, Save / Load, Level Up) as a quality-of-life shortcut. If a button that appears and disappears with those conditions proves a problem, the dossier entry and the progress line are the fallback. The dossier's Level line shows the progress (for example "Training 12/30, Quests 6/10"), so a player can see why the button is missing.
-5. House rule: a short rest restores Action Surge, Bardic Inspiration (5e says long rest) and the other short-rest resources.
+5. House rule: a short rest restores Action Surge, Bardic Inspiration (5e says long rest) and the other short-rest resources, and half of a caster's spell slots, with at most 2 short rests between long sleeps.
 6. The rest refactor comes first.
 
 Still open: whether an early ability score increase is wanted at level 4 (5e gives it there), and the exact prose for each squad's training.

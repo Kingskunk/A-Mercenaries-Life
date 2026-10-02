@@ -18,6 +18,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -38,6 +39,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -58,6 +60,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -78,6 +81,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -98,6 +102,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -118,6 +123,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -138,6 +144,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -158,6 +165,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 5,
+    "herbalistPiece": 0,
     "countVar": "scrap_steel"
    }
   },
@@ -178,7 +186,92 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
+   }
+  },
+  "frog_slime": {
+   "name": "frog slime",
+   "title": "Frog Slime",
+   "kind": "salvage",
+   "tier": "",
+   "retail": 0,
+   "minutes": 10,
+   "hint": "",
+   "slot": "",
+   "stack": false,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 4,
+    "countVar": "frog_slime"
+   }
+  },
+  "centipede_gland": {
+   "name": "centipede gland",
+   "title": "Centipede Gland",
+   "kind": "salvage",
+   "tier": "",
+   "retail": 0,
+   "minutes": 10,
+   "hint": "",
+   "slot": "",
+   "stack": false,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 8,
+    "countVar": "centipede_gland"
+   }
+  },
+  "viper_venom": {
+   "name": "viper venom",
+   "title": "Viper Venom",
+   "kind": "salvage",
+   "tier": "",
+   "retail": 0,
+   "minutes": 10,
+   "hint": "",
+   "slot": "",
+   "stack": false,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 10,
+    "countVar": "viper_venom"
+   }
+  },
+  "grave_ichor": {
+   "name": "grave ichor",
+   "title": "Grave Ichor",
+   "kind": "salvage",
+   "tier": "",
+   "retail": 0,
+   "minutes": 10,
+   "hint": "",
+   "slot": "",
+   "stack": false,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 15,
+    "countVar": "grave_ichor"
    }
   },
   "warming_liniment": {
@@ -198,6 +291,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -218,6 +312,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -238,6 +333,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -258,6 +354,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -278,6 +375,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -298,6 +396,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -318,6 +417,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -328,7 +428,7 @@ window.TRADE_DATA = {
    "tier": "",
    "retail": 20,
    "minutes": 5,
-   "hint": "Advantage on repair and tinkering checks",
+   "hint": "Advantage on repair, tinkering and harvest checks",
    "slot": "",
    "stack": true,
    "sell": {
@@ -338,6 +438,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -358,6 +459,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -368,7 +470,7 @@ window.TRADE_DATA = {
    "tier": "",
    "retail": 2,
    "minutes": 5,
-   "hint": "",
+   "hint": "Six chalk marks for a dungeon map",
    "slot": "",
    "stack": true,
    "sell": {
@@ -378,6 +480,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -398,6 +501,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -418,6 +522,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -438,6 +543,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -458,6 +564,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -478,6 +585,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -498,6 +606,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -518,6 +627,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -538,6 +648,7 @@ window.TRADE_DATA = {
     "tailor": 40,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -558,6 +669,7 @@ window.TRADE_DATA = {
     "tailor": 40,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -578,6 +690,7 @@ window.TRADE_DATA = {
     "tailor": 40,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -598,6 +711,7 @@ window.TRADE_DATA = {
     "tailor": 40,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -618,6 +732,7 @@ window.TRADE_DATA = {
     "tailor": 40,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -638,6 +753,7 @@ window.TRADE_DATA = {
     "tailor": 40,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -658,6 +774,7 @@ window.TRADE_DATA = {
     "tailor": 40,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -678,6 +795,7 @@ window.TRADE_DATA = {
     "tailor": 40,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -698,6 +816,7 @@ window.TRADE_DATA = {
     "tailor": 40,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -718,6 +837,7 @@ window.TRADE_DATA = {
     "tailor": 40,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -738,6 +858,7 @@ window.TRADE_DATA = {
     "tailor": 40,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -758,6 +879,7 @@ window.TRADE_DATA = {
     "tailor": 40,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -778,6 +900,7 @@ window.TRADE_DATA = {
     "tailor": 40,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -798,6 +921,7 @@ window.TRADE_DATA = {
     "tailor": 40,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -818,6 +942,7 @@ window.TRADE_DATA = {
     "tailor": 40,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -838,6 +963,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 0,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   },
@@ -858,6 +984,7 @@ window.TRADE_DATA = {
     "tailor": 0,
     "pawnFixed": 80,
     "smithPiece": 0,
+    "herbalistPiece": 0,
     "countVar": ""
    }
   }
@@ -889,13 +1016,18 @@ window.TRADE_DATA = {
   },
   "ambrose": {
    "title": "Ambrose's Still-Room",
-   "buyer": "",
+   "buyer": "herbalist",
    "buy": [
     "warming_liniment",
     "clear_head_draught",
     "linen_bandage"
    ],
-   "sell": []
+   "sell": [
+    "frog_slime",
+    "centipede_gland",
+    "viper_venom",
+    "grave_ichor"
+   ]
   },
   "hollis": {
    "title": "Hollis & Daughters",

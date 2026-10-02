@@ -1,0 +1,161 @@
+*comment ====================================================================================================
+*comment BLACK OATH: THE NIGHT LIST
+*comment
+*comment First named Black Oath contract. Entered only from the Duckboard Market rope-and-oil house after
+*comment dark. Hask puts the player forward; the woman upstairs meets them during the briefing and gives the job.
+*comment This scene returns to the Dredge-End market hub and is intentionally outside the main district file so
+*comment later Black Oath contracts can live beside it.
+*comment ====================================================================================================
+
+*label night_list_briefing
+*if (not(hask_associate_joined))
+  *goto_scene port_valen/port_valen_dredge_end cut_market_page
+*if (not(black_oath_night_list_stage = "unstarted"))
+  *goto_scene port_valen/port_valen_dredge_end cut_market_page
+
+*set black_oath_keeper_met true
+
+Someone below waves you up in silence. The steps end at a low room above the shop, warmer than the lane and close with the smell of lamp oil, wet hemp, and old wax. Coils of rope sit against the far wall. A slate table holds a small leather wallet and a short strip of paper marked with neat columns.
+
+A woman in a plain dark coat sits at the table, counting its contents before she knots it shut. She looks up only after finishing.
+
+"Hask's runner. Sit, or don't."
+
+*choice
+  # Tell her Hask said you would run the list, stay quiet, and bring the payment home.
+    "Hask said there was work," you say. "He said I could carry a list and not ask questions."
+    *goto night_list_offer
+  # Ask who she is.
+    "Who are you?"
+    "I handle work upstairs. That is enough for tonight."
+    *goto night_list_briefing
+  # Leave the room.
+    She gives a small nod and resumes her count. The person below is waiting when you come down.
+    *goto_scene port_valen/port_valen_dredge_end cut_market_page
+
+*label night_list_offer
+
+She pulls the marked strip closer and puts a finger beside each line as she speaks.
+
+"First, the boat-sheds. Leave this shop by the waterside. Go past the scrap yard's driftwood fence and find the net-maker's shed just beyond it. Knock twice on the back plank. Two tied leather purses will be waiting."
+
+Her finger moves to the next mark. "Then head toward the alley shrine, but do not go through its arch. Follow the waterside and go down the steps below it. Someone will be waiting. Give them the first; they will give you a wrapped parcel."
+
+"Last, Lamp Stair. Go up by the shrine and follow the seawall with it to your left until the red lamps start. Use the service passage behind the cookshop. Parcel for the other. Bring it all here."
+
+*choice
+  # Accept the list and make the run.
+    *set black_oath_night_list_stage "active"
+    *goto night_list_route
+  # Ask what is in the packet.
+    "What is in the packet?"
+    "Not your concern. If you can carry it without knowing, carry it. If not, leave it on the table."
+    *goto night_list_offer
+  # Decline the work tonight.
+    "Not tonight," you say.
+    "That's fine. I'll get someone else."
+    *goto_scene port_valen/port_valen_dredge_end cut_market_page
+
+*label night_list_route
+
+*temp night_list_str ""
+*temp night_list_dex ""
+*temp night_list_cha ""
+*if (show_stat_hints)
+  *set night_list_str " [STR DC 12]"
+  *set night_list_dex " [DEX DC 12]"
+  *set night_list_cha " [CHA DC 11]"
+
+You leave the rope-and-oil house by the waterside. The noise from Duckboard fades, and the boat-sheds stand closed beyond the scrap yard's driftwood fence. At the back plank she described, you knock twice. Someone reaches through a gap and sets two tied purses on the sill before withdrawing.
+
+*page_break Continue to the alley shrine…
+*goto night_list_shrine_stop
+
+*label night_list_shrine_stop
+
+You follow the waterside until the alley shrine comes into view. Rather than pass under its arch, you use the slick steps below it. A hooded figure waits beside the water. They accept the first and put the oilcloth packet in your palm. Neither of you speaks.
+
+*page_break Go up toward Lamp Stair…
+*goto night_list_lamp_stop
+
+*label night_list_lamp_stop
+
+You climb beside the shrine and follow the seawall until the red lamps begin. The service passage behind the cookshop is narrow and smells of old grease. A shape stands in the dark beside the back door. You pass over the packet; a purse is pressed into your palm.
+
+When you turn toward the rope-and-oil house, the lane has thinned to rainwater, locked doors, and water moving under the planks. The weight pulls at your palm.
+
+Two figures step out from the dark ahead. Neither carries a lantern. The taller of them looks at you, then at what you carry.
+
+*set hours_to_pass 3
+*set minutes_to_pass 0
+*set exposure_base_mins 180
+*gosub_scene calendar calc_exposure
+*set time_advance_call_id "black_oath_night_list_route"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*choice
+  # Keep walking and shoulder through the narrow gap between them.${night_list_str}
+    *gosub_scene dice_engine roll_skill_check 12 "athletics" "" "" "" "" ""
+    *goto night_list_check
+  # Slip back through the side lane before they can close it off.${night_list_dex}
+    *gosub_scene dice_engine roll_skill_check 12 "acrobatics" "" "" "" "" ""
+    *goto night_list_check
+  # Tell them the load belongs upstairs and see whether they move aside.${night_list_cha}
+    "That belongs upstairs," you say. "Get out of the way."
+    *gosub_scene dice_engine roll_skill_check 11 "persuasion" "" "" "" "" ""
+    *goto night_list_check
+
+*label night_list_check
+*if (check_success)
+  *goto night_list_success
+*goto night_list_failed
+
+*label night_list_success
+
+The pair give way before the moment turns into a fight. You do not look over your shoulder until the yellow light of the shop is ahead.
+
+The person below lets you through the half-door and locks it behind you. Upstairs, she checks both money bags and the parcel against her marked strip, then separates their contents into piles.
+
+"All there. Hask judged you right."
+
+*if (not(black_oath_night_list_paid))
+  *set black_oath_night_list_paid true
+  *set black_oath_night_list_stage "resolved"
+  *set black_oath_night_list_resolution "completed"
+  *set black_oath_rep +1
+  *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+    *set currency_add_amount 18
+    *gosub_scene economy currency_add
+    *set currency_txn_locked true
+    *set locked_currency_txn_page_id page_id
+
+[b][The Night List Completed | Black Oath Standing +1 | 18 Copper Bits][/b]
+
+"That is one night's work. Do another when I send for you."
+
+*goto_scene port_valen/port_valen_dredge_end cut_market_page
+
+*label night_list_failed
+
+They move faster than you expect. The nearer figure catches your arm while the other wrenches a purse free. By the time you wrench loose, both are gone into the lanes with the night's takings.
+
+She listens without interrupting when you return. Then she crosses a line from her paper and folds the remaining parcel away.
+
+"One bag short. No payment. Hask will hear you lost it."
+
+*if (not(black_oath_night_list_paid))
+  *set black_oath_night_list_paid true
+  *set black_oath_night_list_stage "resolved"
+  *set black_oath_night_list_resolution "failed"
+  *set black_oath_rep -1
+  *set black_oath_heat +1
+
+[b][The Night List Failed | Black Oath Standing -1 | Black Oath Heat +1][/b]
+
+*goto_scene port_valen/port_valen_dredge_end cut_market_page

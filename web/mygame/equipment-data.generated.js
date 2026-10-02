@@ -1738,6 +1738,21 @@ window.EQUIPMENT_CATALOG = {
           "value": "river-stone ring"
         }
       }
+    },
+    {
+      "ids": [
+        "night_eye_ring"
+      ],
+      "fields": {
+        "new_ring_desc": {
+          "type": "literal",
+          "value": "Night-Eye Ring"
+        },
+        "new_ring_prose": {
+          "type": "literal",
+          "value": "black horn ring"
+        }
+      }
     }
   ]
 };

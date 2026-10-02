@@ -502,22 +502,28 @@
     {
       id: "duckboard_market", category: "places", title: "Duckboard Market",
       sub: "The old market lane along the canal",
-      tags: ["Dredge-End"], aliases: ["market", "stalls", "chandler", "eel-seller", "awnings"],
+      tags: ["Dredge-End"], aliases: ["market", "stalls", "rope-and-oil house", "rope shop", "eel-seller", "awnings"],
       link: ["Duckboard Market"],
       unlock: "cut_seen_market",
       body: function (s) {
         var n = Number(s.cut_rumors_market) || 0;
         var out = [
-          "The market lane along the canal: broken stone and packed cinder, with planks laid over the low patches where the ground gives up. Stalls stand under patched oilskin awnings in yellow and red, punts nose in from the canal side, and the lane smells of frying eel, lamp oil and wet rope. At the landward end a chandler's shop sells wax, rope and lamp oil from behind a half-door, and an outside stair beside it climbs to a shut door on the upper floor."
+          "The market lane along the canal: broken stone and packed cinder, with planks laid over the low patches where the ground gives up. Stalls stand under patched oilskin awnings in yellow and red, punts nose in from the canal side, and the lane smells of frying eel, lamp oil and wet rope. At the landward end a rope-and-oil house sells cordage, hooks, lamp oil, tallow and sail patches from behind a half-door, and an outside stair beside it climbs to a shut door on the upper floor."
         ];
         if (n >= 1) {
           out.push("The eel-seller is said to keep a shaved coin under her pan. Hers are the only eels before noon, so the lane buys from her anyway.");
         }
         if (n >= 2) {
-          out.push("The chandler's upper room is said to have candles burning in it at all hours and has never been seen rented. The man on the bottom step of the stair calls it stores: wax and paper, not for rent.");
+          out.push("The rope-and-oil house has a room upstairs with candles burning at all hours, though nobody has seen it rented. The man on the bottom step of the stair calls it stores: rope and oil, not for rent.");
         }
         if (n >= 3) {
           out.push("A tailor's apprentice has had his purse lifted three Marketdays running, and still keeps it in the same pocket.");
+        }
+        if (truthy(s.hask_associate_joined)) {
+          out.push("Hask sent you to the upper floor after dark when he had work for you. He did not say who was waiting upstairs or how the room fits into the Black Oath.");
+        }
+        if (truthy(s.black_oath_keeper_met)) {
+          out.push("Upstairs, a woman handles the night's work from a slate table. She gave no name and did not explain what lies beyond that room.");
         }
         return out;
       },
@@ -580,9 +586,15 @@
         if (truthy(s.hask_courier_unlocked)) {
           out.push("After enough honest sales, he put your name to a man he does business with, and now sends you out with a satchel of small parcels around the quarter — nothing heavy, nothing that would get you in trouble if you were stopped and asked to open one.");
         }
+        if (truthy(s.hask_associate_offer_seen)) {
+          out.push("After three clean rounds he finally named the employer: the Black Oath. He said he would put word of a capable runner upstairs.");
+        }
+        if (truthy(s.hask_associate_joined)) {
+          out.push("He has put his own name behind yours. That makes you an associate who may be trusted with named paid work, not a sworn member of the brotherhood.");
+        }
         return out;
       },
-      see: ["boat_sheds", "dredge_end"]
+      see: ["boat_sheds", "dredge_end", "black_oath", "duckboard_market"]
     },
     {
       id: "dredge_landing", category: "places", title: "Dredge Landing",
