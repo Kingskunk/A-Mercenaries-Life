@@ -2381,6 +2381,12 @@
 *if (combat_turn_needs_advance)
   *set combat_turn_needs_advance false
   *goto combat_next_turn
+*comment Shield is only a held reaction while the caster still has both resources it needs. A slot or reaction can
+*comment be spent after arming (for example, Magic Missile or an opportunity attack), so retire the stale arm before
+*comment the hub advertises +5 AC or decides which free options remain available.
+*if (shield_armed)
+  *if ((wizard_spell_slots <= 0) or (player_oa_used))
+    *set shield_armed false
 *comment Re-syncs the HUD-picked target here too, not just at turn start or after a kill (fight_check_enemy_hp) --
 *comment a non-damaging first action (Brace, Second Wind, an item) never calls fight_check_enemy_hp, so a HUD
 *comment click made between it and a second action would otherwise sit unread until the next full turn.
@@ -2554,6 +2560,12 @@
 *temp combat_can_action_surge false
 *if (((character_class = "fighter") and (fighter_action_surge_uses > 0)) and (combat_player_actions_left <= 0))
   *set combat_can_action_surge true
+*comment Shield is a reaction, not an action. It remains available after Ray of Frost or any other action, provided
+*comment the wizard still knows it and has both a spell slot and their reaction. shield_active is excluded because
+*comment the existing cast already lasts until the start of the wizard's next turn.
+*temp combat_can_shield false
+*if ((((((character_class = "wizard") and (known_shield)) and (wizard_spell_slots > 0)) and (not(shield_armed))) and (not(shield_active))) and (not(player_oa_used)))
+  *set combat_can_shield true
 *comment Hunter's Mark (2026-10-02): a bonus action. Offered when the mark is orphaned (moving it is free), or when a free cast is left and the
 *comment active target is not already the live quarry. combat_hm_orphaned/combat_hm_live come from combat_hm_state, called where the hub banner prints.
 *comment Dual Shot: the style, a ranged weapon, an attack to spend, and a legal pair of targets on the field.
@@ -2830,7 +2842,7 @@
 *comment the same plain moves_left <= 0 check covers it and no separate flag is needed in that *if. Disengage is
 *comment gated on the ACTION budget instead, which keeps the turn alive on its own -- and correctly so, since the
 *comment *if already refuses to auto-end while actions_left > 0.
-*if (((((combat_player_actions_left <= 0) and (not(combat_can_attack))) and ((combat_player_bonus_left <= 0) or (not(combat_bonus_available)))) and (combat_player_moves_left <= 0)) and (not(combat_can_action_surge)))
+*if ((((((combat_player_actions_left <= 0) and (not(combat_can_attack))) and ((combat_player_bonus_left <= 0) or (not(combat_bonus_available)))) and (combat_player_moves_left <= 0)) and (not(combat_can_action_surge))) and (not(combat_can_shield)))
   *set combat_turn_advanced_this_page false
   *comment Ends the player's turn for Blade Ward's duration too, exactly like the End your turn option
   *comment -- running out of things to spend on IS a turn-end, so the ward must not sit un-aged.
@@ -3468,7 +3480,7 @@
         *goto fight_bonus_spent
       *goto fight_action_spent
 
-  *if ((combat_player_actions_left > 0) and ((((character_class = "wizard") and (known_shield)) and (wizard_spell_slots > 0)) and (not(shield_armed))))
+  *if (combat_can_shield)
     # [b][Shield][/b] Hold the barrier-spell coiled and ready, primed to snap into place.
       *set shield_armed true
       You murmur the first half of the somatic phrase under your breath, holding the working coiled and ready at your fingertips, costing you nothing to keep it there.
@@ -4115,8 +4127,10 @@ ${use_text}
 *temp cnt_kind {("combat_turn_kind_" & combat_current_turn_index)}
 *temp cnt_slot {("combat_turn_slot_" & combat_current_turn_index)}
 *if (cnt_kind = "player")
-  *comment Reckless Attack lasts until the start of the player's next turn, which is right here. So does a fired Shield (RAW: +5 AC until the start of your next turn).
+  *comment Reckless Attack lasts until the start of the player's next turn, which is right here. So do both Shield
+  *comment states: a fired Shield's +5 expires, and an unused held reaction must be declared again for the new turn.
   *set combat_reckless_active false
+  *set shield_armed false
   *set shield_active false
   *gosub fight_pick_target
   *if (combat_turn_advanced_this_page)

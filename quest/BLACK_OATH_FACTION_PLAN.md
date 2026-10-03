@@ -1,6 +1,6 @@
 # Black Oath Faction Quest Plan
 
-> **Prototype notice — not concrete story canon.** This is a rough direction for the Black Oath arc, not a locked quest list, rank structure, cast, or location map. Names, requirements, outcomes, and even the number of tiers should change as the game and its level system grow. Its purpose is to protect the intended shape: the player earns access through work, and each step takes them to someone with more authority than the last.
+> **Prototype notice — not concrete story canon.** This is a rough direction for the Black Oath arc, not a locked quest list, rank structure, cast, or location map. Names, requirements, outcomes, and even the number of tiers could change as the game and its level system grow. Its purpose is to protect the intended shape: the player earns access through work, and each step takes them to someone with more authority than the last.
 
 ## Core Direction
 

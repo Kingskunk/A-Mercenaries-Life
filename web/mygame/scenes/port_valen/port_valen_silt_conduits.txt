@@ -864,9 +864,8 @@ You cross the mud with your weapon ready. Halfway to the mound the heap splits o
 *comment   the crates   a no-roll cache, ten minutes: two flasks of lamp oil and a pitch torch, enough to cover much of the light spent getting here.
 *comment   the strongbox   the main prize. Pick the padlock (Sleight of Hand DC 13, ADVANTAGE with a lockpick set, which Vael sells and nothing had used until now; listed closed with the reason without
 *comment   one) or break it off (Athletics DC 14, a fail cuts you). One try per refill; a failed try costs the time and leaves the box shut until the refill, and never turns into the reward.
-*comment   Open, it always holds 20 copper (two silver marks). Twice only, ever, it also holds what is kept in the player's save between refills: the Night-Eye Ring (until has_night_eye_ring) and the crews' tally
-*comment   book (until dg_ledger_read), which needs light to read. The ring is worn in a ring slot and lets the wearer see in the dark (character_progression.txt refresh_invocations). The ledger changes nothing
-*comment   yet: it is the flag a later Lyra or Black Oath quest reads. dg_r5_ring_now and dg_r5_ledger_now are set inside the page's lock so a refresh prints the same prose.
+*comment   Open, it always holds 20 copper (two silver marks). Only the first time it is ever opened it also holds the Night-Eye Ring (until has_night_eye_ring). The ring is worn in a ring slot and lets the wearer see in the
+*comment   dark (character_progression.txt refresh_invocations). dg_r5_ring_now is set inside the page's lock so a refresh prints the same prose.
 *label pvsc_n_r5
 
 *gosub_scene dungeon dg_tide_check
@@ -882,10 +881,7 @@ You cross the mud with your weapon ready. Halfway to the mound the heap splits o
   The crates stand open, their lids pried off and lying beside them.
 *if (dg_r5_opened)
   *line_break
-  *if (dg_ledger_read)
-    The strongbox lies open and empty.
-  *else
-    The strongbox lies open, with only a thick book left in it.
+  The strongbox lies open and empty.
 *elseif (dg_r5_box)
   *line_break
   The strongbox is still shut, its padlock jammed.
@@ -974,14 +970,10 @@ You work the lids up with the point of a blade, and the nails shriek. Under sail
 
 *label pvsc_r5_open
 *comment The strongbox is open. Everything granted sits inside one lock, with the once-ever pieces decided inside it, so a refresh of this page prints the same text.
-*gosub_scene dungeon dg_dark_check
 *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
   *set dg_r5_ring_now (not(has_night_eye_ring))
-  *set dg_r5_ledger_now ((not(dg_ledger_read)) and (not(dg_dark)))
   *if (dg_r5_ring_now)
     *set has_night_eye_ring true
-  *if (dg_r5_ledger_now)
-    *set dg_ledger_read true
   *set currency_add_amount 20
   *gosub_scene economy currency_add
   *set dg_r5_opened true
@@ -995,14 +987,6 @@ Under a folded cloth lies a small leather purse, heavy with coin.
   In a pocket sewn into the lining is a ring of black horn, polished smooth by many thumbs. When you hold it up to your eye the dark in the corners of the vault seems thinner.
   *line_break
   [b][Found: a Night-Eye Ring. Wear it from your inventory, and you can see in the dark.][/b]
-*if (dg_r5_ledger_now)
-  *line_break
-  Beneath the cloth lies a thick tally book bound in oilcloth. It is a crew's own count of the channel runs: boat names, tide-nights, a mark for the cargo and a sum against each, in three different hands. The last page is a month old, and the sums were paid only in part. What was not paid is carried forward in red.
-  *line_break
-  [b][You have read the crews' tally book][/b]
-*elseif ((not(dg_ledger_read)) and (dg_dark))
-  *line_break
-  A thick book lies under the cloth, too. It is too dark to read, so you leave it where it is.
 *set dg_mins 15
 *set dg_time_id "r5_open"
 *gosub_scene dungeon dg_time
@@ -1013,7 +997,11 @@ Under a folded cloth lies a small leather purse, heavy with coin.
 *comment FIGHTS
 *comment ──────────────────────────────────────────────────────────────
 *label pvsc_enc_mire_rats
-A wet scrabbling comes out of the dark ahead, and two black rats the size of cats pour out of a drain with their teeth bared.
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  A wet scrabbling comes out of the dark ahead, close to the floor, and a thin chorus of squeals rises with it. Something furry and heavy hits your boot and is gone, and then there are claws on your leg, and the small, sharp stink of rats wraps round you.
+*else
+  A dry rattle of claws comes from the drain-mouths along the wall, and then a chorus of thin squeals. Two black rats the size of cats pour out of the nearest drain and stop in the middle of the floor, noses working, their wet fur slick and shining. The larger one has an ear torn to ribbons. They look at you, and at each other, and then they come.
 *set combat_is_nonlethal false
 *set combat_lib_1 "mire_rat"
 *set combat_enemy_name_override "Black Mire-Rat (Lead)"
@@ -1025,7 +1013,13 @@ A wet scrabbling comes out of the dark ahead, and two black rats the size of cat
 *goto pvsc_fight_go
 
 *label pvsc_enc_lacedon
-The black water in the channel parts, and a grey, hairless figure drags itself onto the walkway, its claws clicking on the stone.
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  In the dark the water gives one long, slow slap, and the stillness after it is worse. Something wet drags itself over the stone toward you, claws clicking, and a smell of grave-rot rolls over you, cold and sweet.
+*elseif (dg_pos = "r2")
+  The black water parts, and a grey, hairless figure drags itself up onto the walkway, streaming. Its claws click on the stone. Its eyes are white as boiled eggs, and they find you at once.
+*else
+  The water standing in the passage goes flat and still, the way water does when something under it is holding its breath. Then a grey, hairless figure rises out of it, streaming, its lipless mouth open and its arms hanging long. It drags itself onto the dry brick at the water's edge, claws clicking. Its eyes are white as boiled eggs, and they find you at once.
 *set combat_is_nonlethal false
 *set combat_lib_1 "lacedon"
 *set combat_enemy_name_override "Drowned Lacedon"
@@ -1034,7 +1028,11 @@ The black water in the channel parts, and a grey, hairless figure drags itself o
 *goto pvsc_fight_go
 
 *label pvsc_enc_centipede
-Something rustles along the wall, and a centipede as long as your arm drops from a crack in the roof, its legs scrabbling on the brick.
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  A dry whispering runs along the wall above you, like a hand drawn slowly over paper. Something lands on the floor in front of you with a click, and then comes the fast ticking of many legs on stone, and a sharp, sour smell like crushed beetles.
+*else
+  A dry whispering runs along the wall above you, like a hand drawn slowly over paper. A centipede as long as your arm drops from a crack in the roof and lands on the brick with a click, a hundred legs rippling. Its body is the dull red of old rust. It rears up its front end, feelers sweeping, its jaws opening and shutting.
 *set combat_is_nonlethal false
 *set combat_lib_1 "beast"
 *set combat_enemy_name_override "Giant Centipede"
@@ -1046,7 +1044,11 @@ Something rustles along the wall, and a centipede as long as your arm drops from
 *goto pvsc_fight_go
 
 *label pvsc_enc_viper
-A coil of something thick lifts from a heap of rotted rags in the corner, and a broad, flat head turns toward you, tongue flickering.
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  A dry, rising hiss comes out of the dark to one side, the sound of a leaking bellows, and it stops you where you stand. Something thick moves in the rags there, slow and heavy, and a cold, sour smell comes off it like a wet cellar.
+*else
+  A heap of rotted rags lies in the corner where the wall meets the floor. One of the rags is thicker than the rest, and it lifts. A viper as thick as your forearm unwinds from the heap, the colour of wet slate, with a broad, flat head that turns toward you. Its tongue flickers once, twice, tasting the air, and then it flattens its neck and hisses.
 *comment pvsc_viper_fight is the viper's setup on its own, for a room that tells its own lead-in (the Collapsed Run).
 *label pvsc_viper_fight
 *set combat_is_nonlethal false
@@ -1060,7 +1062,11 @@ A coil of something thick lifts from a heap of rotted rags in the corner, and a 
 *goto pvsc_fight_go
 
 *label pvsc_enc_frog
-Something heavy shifts in the shallows ahead, and a frog as big as a hound hauls itself onto the brick, its throat swelling.
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  Water laps against the stone ahead of you where it should lie still. Something heavy shifts in the shallows, a wet flop and a drag, and a deep, wet croak rolls down the passage and stops you in your tracks. The smell of pond mud is thick on the air.
+*else
+  The passage floods to a shallow pool here, and a ripple crosses it that did not come from your boots. Something heavy shifts in the shallows ahead, and a frog as big as a hound hauls itself onto the brick, mottled green and brown, its wet skin shining. Its throat swells like a bellows, and a low croak rolls down the passage. A long tongue flicks out and curls back.
 *set combat_is_nonlethal false
 *set combat_lib_1 "beast"
 *set combat_enemy_name_override "Giant Frog"
@@ -1189,21 +1195,29 @@ You turn back the way you came.
 *comment CHECKS AND FINDS
 *comment ──────────────────────────────────────────────────────────────
 *label pvsc_enc_ledge
-The floor ends in a crumbling lip above a drop into black water. Only a narrow rim of brick runs across the gap.
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The floor ends under your boot, and a pebble you kick goes over the edge and lands in water a long moment later, far below. Your hand finds a narrow rim of brick running along the wall, one boot wide, and above it a rusted iron ring-bolt set in the stone.
+*else
+  The floor ends in a crumbling lip above a drop into black water. Only a narrow rim of brick, one boot wide, runs across the gap along the wall, with old iron ring-bolts rusting at intervals just within reach. The water below moves slowly, and you cannot tell how deep it is.
 *choice
   # Edge across the rim.@{show_stat_hints  [Acrobatics DC 12]|}
     *gosub_scene dice_engine roll_skill_check 12 "acrobatics" "" "" "" "" ""
     *if (check_success)
-      You keep your weight low and one hand on the wall, and cross without a slip.
+      You keep your weight low and one hand on the wall, working from ring-bolt to ring-bolt, and cross the gap without a slip.
     *else
-      Your foot skids on the wet brick, and you catch the edge and drag yourself back up.
+      Your foot skids on the wet brick and you drop to your chest, fingers clawing at the rim. You haul yourself up, scraped and shaking, and finish the crossing on your hands and knees.
       *gosub pvsc_hurt
     *goto pvsc_here
   # Turn back.
     *goto pvsc_retreat
 
 *label pvsc_enc_rising_water
-The passage dips ahead, and the tide has backed up into it. Black water stands to the knee and is still climbing.
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The floor tips down under your boots, and cold water closes over them, then your ankles, then your knees, and it is still rising. Far ahead the sound of it changes, where the passage must climb out again.
+*else
+  The passage dips ahead, and the tide has backed up into the low place. Black water stands to the knee under a skin of old foam and floating straw, and it is still climbing: you can see it creep up the brick as you watch. The far side is a dozen strides away.
 *choice
   # Wade through.@{show_stat_hints  [Athletics DC 12]|}
     *gosub_scene dice_engine roll_skill_check 12 "athletics" "" "" "" "" ""
@@ -1232,7 +1246,11 @@ The passage dips ahead, and the tide has backed up into it. Black water stands t
     *goto pvsc_retreat
 
 *label pvsc_enc_cache
-Behind a loose block in the wall is a dry nook, and in it a sack tied shut with cord.
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  Your hand, trailing along the wall, finds one block that sits loose. Behind it is a dry hollow, and in the hollow a sack tied shut with cord.
+*else
+  One block in the wall sits a finger's width proud of the rest, and the brick around it is clean of damp. Behind it is a dry nook, and in the nook a sack tied shut with cord. Someone chose this spot carefully.
 *choice
   # Take what is in it.
     *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))

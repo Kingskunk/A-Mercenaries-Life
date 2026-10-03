@@ -346,12 +346,18 @@ ${combat_player_dmg_roll_banner}
     *set cea_dc (cea_dc + 5)
   *set combat_enemy_hit_success (combat_enemy_atk_total >= cea_dc)
   *set combat_shield_triggered false
+  *comment Arming reserves neither resource. If the wizard spent their last slot on another spell or used their
+  *comment reaction on an opportunity attack after arming, the held Shield is no longer executable.
+  *if (shield_armed)
+    *if ((wizard_spell_slots <= 0) or (player_oa_used))
+      *set shield_armed false
   *comment Shield is a reaction "when you are hit", so it triggers off the hit as resolved above -- which now
   *comment already accounts for Dodge -- and then re-tests one step higher. It is not itself dodge-blocked.
-  *if (((combat_enemy_hit_success) and (shield_armed)) and (not(shield_active)))
+  *if (((((combat_enemy_hit_success) and (shield_armed)) and (not(shield_active))) and (not(player_oa_used))) and (wizard_spell_slots > 0))
     *set shield_armed false
     *set shield_active true
     *set wizard_spell_slots - 1
+    *set player_oa_used true
     *set combat_shield_triggered true
     *set cea_dc (cea_dc + 5)
     *set combat_enemy_hit_success (combat_enemy_atk_total >= cea_dc)

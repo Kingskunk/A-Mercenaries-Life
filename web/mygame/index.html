@@ -842,14 +842,17 @@ button#statSidebar .turnRow,
     return n + " active";
   }
   function isTruthy(v) { return v === true || v === "true"; }
-  // The player's AC as the enemy actually rolls against it. Shield adds +5 for as long as it stays armed
-  // (combat_dice.txt:253-259: the hit is judged at the bare AC, then re-judged at AC+5 and the Shield is
-  // spent either way), so the sidebar has to show the effective value or it contradicts the
+  // The player's AC as the enemy actually rolls against it. A held Shield counts only while the caster still
+  // has the slot and reaction needed to fire it; shield_active is the already-cast spell lasting to the next turn.
+  // The sidebar has to show the effective value or it contradicts the
   // "vs AC 17 (Shield)" in the enemy attack banner. Deliberately a display-only computation: armor_class
   // itself is untouched, so nothing that derives the real AC (equipment, recalculate_armor_class) can
   // accidentally pick up a +5 that only exists while a spell is up. Inert out of combat, since
   // fight_cleanup clears shield_armed between fights.
-  function effectiveAc(s) { return fmt(Number(s.armor_class) + ((isTruthy(s.shield_armed) || isTruthy(s.shield_active)) ? 5 : 0)); }
+  function shieldReady(s) {
+    return isTruthy(s.shield_active) || (isTruthy(s.shield_armed) && Number(s.wizard_spell_slots) > 0 && !isTruthy(s.player_oa_used));
+  }
+  function effectiveAc(s) { return fmt(Number(s.armor_class) + (shieldReady(s) ? 5 : 0)); }
   // The green "+5 Shield" tag beside it, in the same visual idiom abilityBoon already uses for the
   // ability grid: the number shown is the real one, the tag says where the bonus came from.
   // Mage Armor (24-hour cast, 2026-10-02): a tag beside the AC while the ward is up, with the hours left, rounded up.
@@ -859,7 +862,7 @@ button#statSidebar .turnRow,
     return " <span class=\"boon boonUp\" title=\"Mage Armor: base AC 13 + Dexterity while you wear no armor. Ends in about " + Math.ceil(m / 60) + " hours, or if you put on armor.\">Mage Armor " + Math.ceil(m / 60) + "h</span>";
   }
   function shieldAcTag(s) {
-    if (!(isTruthy(s.shield_armed) || isTruthy(s.shield_active))) return "";
+    if (!shieldReady(s)) return "";
     return " <span class=\"boon boonUp\" title=\"Shield: +5 AC against every attack, from the first hit until the start of your next turn. A slot is spent when it fires.\">+5 Shield</span>";
   }
   // Mirrors combat_range_name (combat.txt): 0 Engaged, 1 Close, 2 Mid-Range, 3+ Long Range.
