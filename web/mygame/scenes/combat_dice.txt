@@ -351,9 +351,20 @@ ${combat_player_dmg_roll_banner}
   *if (shield_armed)
     *if ((wizard_spell_slots <= 0) or (player_oa_used))
       *set shield_armed false
-  *comment Shield is a reaction "when you are hit", so it triggers off the hit as resolved above -- which now
-  *comment already accounts for Dodge -- and then re-tests one step higher. It is not itself dodge-blocked.
-  *if (((((combat_enemy_hit_success) and (shield_armed)) and (not(shield_active))) and (not(player_oa_used))) and (wizard_spell_slots > 0))
+  *comment Shield is a reaction "when you are hit", but it should only spend its slot when the +5 can actually
+  *comment change that hit to a miss. A hit that still meets the Shielded AC (or a natural 20) leaves Shield
+  *comment armed for a later attack instead of wasting the caster's reaction and spell slot.
+  *temp cea_shield_can_block false
+  *temp cea_shield_cannot_block false
+  *if (shield_armed)
+    *if (combat_enemy_hit_success)
+      *if (cea_roll = 20)
+        *set cea_shield_cannot_block true
+      *elseif (combat_enemy_atk_total >= (cea_dc + 5))
+        *set cea_shield_cannot_block true
+      *else
+        *set cea_shield_can_block true
+  *if (((((cea_shield_can_block) and (shield_armed)) and (not(shield_active))) and (not(player_oa_used))) and (wizard_spell_slots > 0))
     *set shield_armed false
     *set shield_active true
     *set wizard_spell_slots - 1
@@ -369,7 +380,8 @@ ${combat_player_dmg_roll_banner}
   *if (combat_enemy_hit_success)
     *set cea_atk_verdict "HIT"
   *comment The AC printed is the final number the roll was compared against (cea_dc), so a bonus is shown as a breakdown in brackets, "vs AC 17 (12 +5 Shield)", not appended to it
-  *comment ("AC 17 +5 Shield" read as 22, because the 17 already includes the +5). An armed Shield that did not fire (the attack missed the plain AC) says so.
+  *comment ("AC 17 +5 Shield" read as 22, because the 17 already includes the +5). An armed Shield that did not
+  *comment fire says whether the attack already missed or was too high for +5 to deflect.
   *temp cea_ac_str ""
   *if ((dodge_active) or (shield_active))
     *set cea_ac_str " (${armor_class}"
@@ -379,7 +391,10 @@ ${combat_player_dmg_roll_banner}
       *set cea_ac_str "${cea_ac_str} +5 Shield"
     *set cea_ac_str "${cea_ac_str})"
   *elseif ((shield_armed) and (not(combat_shield_triggered)))
-    *set cea_ac_str " (Shield not needed)"
+    *if (cea_shield_cannot_block)
+      *set cea_ac_str " (Shield cannot stop this hit)"
+    *else
+      *set cea_ac_str " (Shield not needed)"
   *set {(cea_atk_bannername)} "[b][🎲 ${combat_enemy_name} Attack Roll: ${cea_roll} ${cea_atk_bonus_str}${cea_adv_label}${cea_bane_str} = ${combat_enemy_atk_total} vs AC ${cea_dc}${cea_ac_str} — ${cea_atk_verdict}][/b]"
   *set combat_enemy_dmg_dealt 0
   *set combat_agathys_triggered false

@@ -2409,19 +2409,15 @@
 *if (not(combat_hub_shown_once))
   *set combat_hub_shown_once true
   *line_break
-*comment Shield's +5 has to reach the player's PRINTED AC, not just the enemy's attack check
-*comment (resolve_enemy_attack, combat_dice.txt:253-259). Without this the round banner below reads "AC 12"
-*comment while the attack banner that follows it reads "vs AC 17 (Shield)", and the sidebar's AC row
-*comment (effectiveAc, web/mygame/index.html) would be the odd one out. Computed once here because both the
-*comment single-enemy and multi-enemy banner lines need it. Display-only: armor_class itself is never
-*comment written, so equipment's recalculate_armor_class can't pick up a +5 that only exists while a spell
-*comment is up. The separate "Shield Armed" status line below is left as it is -- that's a different fact
-*comment (it's still up) than this one (what you're rolling against right now).
+*comment Shield's +5 reaches the player's printed AC only after the reaction has actually fired. While it is
+*comment merely armed, the caster is still on their ordinary AC and is waiting to see a hit that the +5 can
+*comment deflect. This keeps the round banner and sidebar honest without writing the temporary bonus into
+*comment armor_class itself.
 *temp ac_shown armor_class
-*if ((shield_armed) or (shield_active))
+*if (shield_active)
   *set ac_shown (armor_class + 5)
 *if (combat_enemy_count = 1)
-  [b][⚔️ Round ${combat_round} — ${combat_enemy_name}: HP ${combat_enemy_hp}/${combat_enemy_max_hp} (AC ${combat_enemy_ac}) | You: HP ${hp_current}/${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|} (AC ${ac_shown}@{((shield_armed) or (shield_active))  (Shield)|})][/b]
+  [b][⚔️ Round ${combat_round} — ${combat_enemy_name}: HP ${combat_enemy_hp}/${combat_enemy_max_hp} (AC ${combat_enemy_ac}) | You: HP ${hp_current}/${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|} (AC ${ac_shown}@{shield_active  (Shield)|})][/b]
 *else
   [b][⚔️ Round ${combat_round}][/b]
   *line_break
@@ -2442,13 +2438,13 @@
   *if (combat_enemy_count >= 6)
     [b][${combat_enemy6_name}: HP ${combat_enemy6_hp}/${combat_enemy6_max_hp}@{(combat_enemy6_hp <= 0)  (Down)|} (AC ${combat_enemy6_ac})][/b]
     *line_break
-  [b][You: HP ${hp_current}/${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|} (AC ${ac_shown}@{((shield_armed) or (shield_active))  (Shield)|})][/b]
+  [b][You: HP ${hp_current}/${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|} (AC ${ac_shown}@{shield_active  (Shield)|})][/b]
 *if (rebuke_armed)
   *line_break
   [b][🔥 Hellish Rebuke Armed — will trigger when a foe wounds you][/b]
 *if (shield_armed)
   *line_break
-  [b][✨ Shield Armed — fires on the first hit, then +5 AC against every attack until your next turn][/b]
+  [b][✨ Shield Ready — fires only when +5 AC can deflect a hit, then protects you until your next turn][/b]
 *if (combat_player_hidden)
   *line_break
   [b][👤 Hidden: your next attack has advantage][/b]
@@ -3487,7 +3483,7 @@
       *goto fight_action_spent
 
   *if (combat_can_shield)
-    # [b][Shield][/b] Hold the barrier-spell coiled and ready, primed to snap into place.
+    # [b][Shield][/b] Hold the barrier-spell ready to snap into place when it can deflect a hit.
       *set shield_armed true
       You murmur the first half of the somatic phrase under your breath, holding the working coiled and ready at your fingertips, costing you nothing to keep it there.
       *comment No banner here -- the hub's own "Shield Armed" status line (fight_round_hub) says the same thing
@@ -5838,6 +5834,23 @@ ${use_text}
 *comment failure. Same weight as the ambush (about 64% overall win at level 1). NON-LETHAL: victory leaves both beaten
 *comment senseless, using the default non-lethal finishing blows. Reports combat_outcome like any other; the CALLER handles
 *comment "rescued" (the thieves take the purse and run) and "player_died".
+*set combat_is_nonlethal true
+*set combat_lib_1 "knifeman"
+*set combat_lib_2 "slinger"
+*comment Range: the slinger opens at Close (1) instead of Engaged -- see fight_dredge_ambush's own copy of this
+*comment comment for the full reasoning.
+*set combat_enemy2_range 1
+*goto fight_library
+
+*label fight_night_list_thugs
+*comment Black Oath: The Night List (black_oath_night_list.txt, night_list_fight). The two who step out of the
+*comment lane to take the takings -- a knifeman and a slinger, the same pairing as the Stolen Shroud's pair, so
+*comment it inherits that fight's balance-simmed ~64% level-1 win rate. Only ever started after a failed
+*comment approach roll, and the caller sets combat_enemy_advantage first, so the real number is worse than that.
+*comment NON-LETHAL. The errand's worst case is a stolen purse and a line crossed with Hask's people, not a
+*comment corpse on a courier run, and these are street thugs in a scene about carrying a bag -- the same reason
+*comment fight_shroud_thieves is non-lethal. Reports combat_outcome like any other; the CALLER handles "rescued"
+*comment and "fled" (the existing robbery prose) and "player_died" per the fight_player_died contract.
 *set combat_is_nonlethal true
 *set combat_lib_1 "knifeman"
 *set combat_lib_2 "slinger"

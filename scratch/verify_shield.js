@@ -1,7 +1,7 @@
 // Walks resolve_enemy_attack's Shield logic (combat_dice.txt:253-276) for every combination of
 // attack total, armor_class and shield_armed, and checks three things the attack banner depends on:
-//   1. the hit is first judged at the BARE AC (Shield cannot help a blow that already missed),
-//   2. a Shield that triggers re-judges the same roll at AC+5 and can flip the result,
+//   1. the hit is first judged at the current AC (Shield cannot help a blow that already missed),
+//   2. a readied Shield triggers only if its +5 can flip that same roll to a miss,
 //   3. the DC printed is the one the roll was actually tested against.
 // (The other two places the player's AC is displayed -- sidebar and round banner -- are covered by
 // verify_ac_display.js.)
@@ -9,18 +9,21 @@
 "use strict";
 
 // Transcribed verbatim from combat_dice.txt.
-function resolve(total, armorClass, shieldArmed) {
-  var hit = total >= armorClass;
+function resolve(total, armorClass, shieldArmed, shieldActive, natural20) {
+  var dc = armorClass + (shieldActive ? 5 : 0);
+  var hit = total >= dc;
   var shieldTriggered = false;
-  if (hit && shieldArmed) {
+  var shieldCanBlock = hit && shieldArmed && !shieldActive && !natural20 && total < (dc + 5);
+  if (shieldCanBlock) {
     shieldTriggered = true;          // shield_armed is cleared here in the real label
-    hit = total >= (armorClass + 5);
+    dc += 5;
+    hit = total >= dc;
   }
   var verdict = hit ? "HIT" : "MISS";
-  var dc = armorClass;               // the NEW banner lines
   var shieldStr = "";
-  if (shieldTriggered) { dc = armorClass + 5; shieldStr = " (Shield)"; }
-  return { hit: hit, triggered: shieldTriggered, dc: dc, verdict: verdict, shieldStr: shieldStr };
+  if (shieldTriggered || shieldActive) { shieldStr = " (Shield)"; }
+  return { hit: hit, triggered: shieldTriggered, retained: shieldArmed && !shieldTriggered,
+           dc: dc, verdict: verdict, shieldStr: shieldStr };
 }
 
 var fails = 0;
@@ -29,20 +32,20 @@ function check(label, cond, extra) {
   else console.log("  PASS  " + label);
 }
 
-console.log("--- the reported fight: Rearguard Archer 14+5=19, AC 12, Shield armed ---");
+console.log("--- the reported fight: Rearguard Archer 14+5=19, AC 12, Shield ready ---");
 var r = resolve(19, 12, true);
 console.log("  -> " + r.verdict + " vs AC " + r.dc + r.shieldStr);
-check("19 beats the bare AC 12, so the blow lands and Shield triggers",
-      r.triggered === true, "triggered=" + r.triggered);
-check("19 also beats the Shielded AC 17, so Shield is broken through", r.hit === true);
-check("banner prints the Shielded DC 17, not the bare 12", r.dc === 17, "printed AC " + r.dc);
-check("banner is marked as a Shield check", r.shieldStr === " (Shield)");
-console.log("  (RAW-correct: Shield adds +5 AC, it does not simply cancel a hit. 19 >= 17, so the hit stands.)\n");
+check("19 beats the bare AC 12, but Shield is not cast because 19 also beats AC 17",
+      r.triggered === false, "triggered=" + r.triggered);
+check("19 lands against the bare AC", r.hit === true);
+check("banner prints the bare AC 12", r.dc === 12, "printed AC " + r.dc);
+check("Shield remains ready for a later attack", r.retained === true);
+console.log("  (Shield is not wasted on a hit it cannot prevent.)\n");
 
 console.log("--- Shield actually working: 14 vs AC 12, Shield armed ---");
 var h = resolve(14, 12, true);
 console.log("  -> " + h.verdict + " vs AC " + h.dc + h.shieldStr);
-check("14 beats bare AC 12, Shield triggers", h.triggered === true);
+check("14 beats bare AC 12 and Shield triggers", h.triggered === true);
 check("14 does NOT beat Shielded AC 17, so Shield negates the hit", h.hit === false);
 check("verdict reads MISS", h.verdict === "MISS");
 check("banner shows the Shielded DC 17", h.dc === 17);
@@ -53,6 +56,15 @@ console.log("--- Shield must not help a blow that already missed ---");
 var m = resolve(8, 12, true);
 check("8 vs AC 12 misses outright, Shield never triggers", m.triggered === false && m.hit === false);
 check("banner shows the bare AC 12 (no Shield marker)", m.dc === 12 && m.shieldStr === "");
+
+console.log("--- Shield remains active after it deflects its first attack ---");
+var active = resolve(16, 12, false, true);
+check("active Shield makes 16 miss against AC 17", active.hit === false && active.dc === 17);
+check("active Shield is shown on the attack banner", active.shieldStr === " (Shield)");
+
+console.log("--- Shield cannot stop a natural 20 ---");
+var crit = resolve(14, 12, true, false, true);
+check("a natural 20 does not spend Shield", crit.triggered === false && crit.retained === true);
 
 console.log("--- no Shield armed: unchanged behaviour ---");
 var n = resolve(19, 12, false);
@@ -67,7 +79,7 @@ for (var ac = 5; ac <= 25; ac++) {
     for (var armed = 0; armed <= 1; armed++) {
       var res = resolve(total, ac, armed === 1);
       cases++;
-      // The printed DC must be the higher of the two only when Shield actually triggered.
+      // The printed DC must be the higher one only when Shield actually triggered.
       var expectedDc = res.triggered ? ac + 5 : ac;
       if (res.dc !== expectedDc) exhaustiveFails++;
       // And the verdict must be exactly "total >= printed DC".
@@ -76,6 +88,9 @@ for (var ac = 5; ac <= 25; ac++) {
       // Shield can only ever turn a hit into a miss, never the reverse.
       var bare = total >= ac;
       if (res.hit && !bare) exhaustiveFails++;
+      // It only triggers in the five-point interval where it can make a difference.
+      var expectedTrigger = armed === 1 && total >= ac && total < ac + 5;
+      if (res.triggered !== expectedTrigger) exhaustiveFails++;
     }
   }
 }

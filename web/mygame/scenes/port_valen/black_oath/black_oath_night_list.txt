@@ -5,6 +5,13 @@
 *comment dark. Hask puts the player forward; the woman upstairs meets them during the briefing and gives the job.
 *comment This scene returns to the Dredge-End market hub and is intentionally outside the main district file so
 *comment later Black Oath contracts can live beside it.
+*comment
+*comment THE THREE-OPTION BLOCK AT THE END IS AN ESCALATION LADDER, not three parallel checks. All three
+*comment approach rolls land on night_list_check; a pass walks straight through, and a failure sets
+*comment combat_enemy_advantage and hands the player a fight (night_list_fight). Winning that fight pays
+*comment exactly what a clean pass pays. Losing it -- or fleeing, or being "rescued" at 1 HP -- lands on
+*comment night_list_failed, whose prose was always written as a fight that went badly. A failed roll is
+*comment therefore never a dead end: it is a second route to the same errand, priced in blood.
 *comment ====================================================================================================
 
 *label night_list_briefing
@@ -112,17 +119,59 @@ Two figures step out from the dark ahead. Neither carries a lantern. The taller 
     *goto night_list_check
 
 *label night_list_check
+*comment A failed approach is not a closed loss. They are already awake, hostile and standing in the dark,
+*comment so they get initiative advantage -- the engine's ambush path, see combat_roll_initiative -- and the
+*comment player gets a fight for it. fight_cleanup resets combat_enemy_advantage, so it cannot leak into a
+*comment later encounter.
 *if (check_success)
   *goto night_list_success
+*set combat_enemy_advantage true
+*goto night_list_fight
+
+*comment -------------------------------------------------------------------------------
+
+*label night_list_fight
+*gosub_scene combat fight_night_list_thugs
+*if (combat_outcome = "player_died")
+  *set death_cause "combat"
+  *set death_enemy_epithet "the two in the lane"
+  *goto_scene death death_screen
+*if (combat_outcome = "victory")
+  *goto night_list_fight_won
+*comment "rescued" (robbed, hp floored at 1) and "fled" both land on the robbery prose below, which is
+*comment already written as a fight that went badly: the nearer figure gets your arm, the other takes a purse.
 *goto night_list_failed
+
+*comment -------------------------------------------------------------------------------
 
 *label night_list_success
 
 The pair give way before the moment turns into a fight. You do not look over your shoulder until the yellow light of the shop is ahead.
 
+*goto night_list_payout
+
+*comment -------------------------------------------------------------------------------
+
+*label night_list_fight_won
+
+The nearer one gets a fistful of your sleeve and loses his leverage when you turn him into the rail. The taller one weighs it a moment, decides the purse is not worth a knife on a wet lane, and stands off into the dark to let you walk past.
+
+*comment heat records the noise, not a price: this branch pays the player in full, and the ambush
+*comment advantage plus the blood already priced the fight. black_oath_heat is silent by design
+*comment (see its *create comment in startup.txt), so nothing announces it. Guarded on the same flag
+*comment the payout sets, matching how night_list_failed does the same bump.
+*if (not(black_oath_night_list_paid))
+  *set black_oath_heat +1
+
+*goto night_list_payout
+
+*comment -------------------------------------------------------------------------------
+
+*label night_list_payout
+
 The person below lets you through the half-door and locks it behind you. Upstairs, she checks both money bags and the parcel against her marked strip, then separates their contents into piles.
 
-"All there. Hask judged you right."
+"All there. Good job."
 
 *if (not(black_oath_night_list_paid))
   *set black_oath_night_list_paid true
@@ -147,7 +196,7 @@ They move faster than you expect. The nearer figure catches your arm while the o
 
 She listens without interrupting when you return. Then she crosses a line from her paper and folds the remaining parcel away.
 
-"One bag short. No payment. Hask will hear you lost it."
+"One bag short. No payment."
 
 *if (not(black_oath_night_list_paid))
   *set black_oath_night_list_paid true
@@ -156,6 +205,6 @@ She listens without interrupting when you return. Then she crosses a line from h
   *set black_oath_rep -1
   *set black_oath_heat +1
 
-[b][The Night List Failed | Black Oath Standing -1 | Black Oath Heat +1][/b]
+[b][The Night List Failed | Black Oath Standing -1][/b]
 
 *goto_scene port_valen/port_valen_dredge_end cut_market_page
