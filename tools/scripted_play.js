@@ -46,6 +46,8 @@
  *   refresh   true: after every page, replay it on a copy (what opening Stats and returning does) and
  *             report any variable that changes; a reward or a time advance that is not guarded shows up here
  *   sabotage  variables forced false on the replay copy, to prove the refresh check can see a double apply
+ *   replaySet object of variables forced to a value on the replay copy, standing for what the dossier wrote before it closed (a spell cast from the sidebar); the
+ *             refresh check reports any of them the replayed page then changed again, e.g. {"guidance_active":true} when a roll on the page wipes a fresh Guidance
  *   game      game folder under web/ (default mygame)
  *
  * Flags: --json (machine-readable events), --raw (keep [b]/[n/] markup), --no-menus (only the picks).
@@ -89,7 +91,7 @@ Scene.prototype.ending = function () { this.paragraph(); this.finished = true; }
 Scene.prototype.finish = Scene.prototype.autofinish = function () { this.paragraph(); this.finished = true; };
 
 var D = { mode: "boot", steps: [], stepIdx: 0, rand: 0, events: [], log: [], exits: [], errors: [], stopped: null,
-  refreshAll: false, sabotage: [], refreshDiffs: [], refreshChecks: 0, refreshSkipped: 0 };
+  refreshAll: false, sabotage: [], replaySet: {}, refreshDiffs: [], refreshChecks: 0, refreshSkipped: 0 };
 
 function parseRand(v) {
   if (v === "low") return 0;
@@ -209,6 +211,7 @@ function refreshCheck(sc, where) {
   var indent = (typeof stats.choice_page_start_indent === "number" && (!stats.choice_page_start_scene || stats.choice_page_start_scene === sc.name)) ? stats.choice_page_start_indent : sc.indent;
   var replayStats = deep(snapStats);
   D.sabotage.forEach(function (k) { replayStats[k] = false; });
+  Object.keys(D.replaySet).forEach(function (k) { replayStats[k] = D.replaySet[k]; });
   var savedPrinted = printed.slice(), savedTimeout = timeout, savedMode = D.mode, savedStats = stats;
   D.mode = "replay"; printed.length = 0; timeout = null; D.refreshChecks++;
   var rs = new Scene(replayStats.sceneName || startScene, replayStats, nav, { debugMode: false });
@@ -216,8 +219,11 @@ function refreshCheck(sc, where) {
   try { rs.execute(); } catch (e) { D.refreshDiffs.push(where + " @ " + startScene + ":" + line + ": EXCEPTION " + e.message); }
   D.mode = savedMode; timeout = savedTimeout; stats = savedStats;
   printed.length = 0; Array.prototype.push.apply(printed, savedPrinted);
+  Object.keys(D.replaySet).forEach(function (k) {
+    if (JSON.stringify(replayStats[k]) !== JSON.stringify(D.replaySet[k])) D.refreshDiffs.push(where + " @ " + startScene + ":" + line + ": replaySet " + k + " was forced to " + JSON.stringify(D.replaySet[k]) + " and the replay left it " + JSON.stringify(replayStats[k]));
+  });
   Object.keys(snapStats).forEach(function (k) {
-    if (IGNORE[k]) return;
+    if (IGNORE[k] || D.replaySet.hasOwnProperty(k)) return;
     if (JSON.stringify(snapStats[k]) !== JSON.stringify(replayStats[k])) D.refreshDiffs.push(where + " @ " + startScene + ":" + line + ": " + k + " " + JSON.stringify(snapStats[k]) + " -> " + JSON.stringify(replayStats[k]));
   });
 }
@@ -237,7 +243,7 @@ function runLoop(sc) {
 
 function resetRun() {
   D.steps = []; D.stepIdx = 0; D.rand = 0; D.events = []; D.log = []; D.exits = []; D.errors = []; D.stopped = null;
-  D.refreshAll = false; D.sabotage = []; D.refreshDiffs = []; D.refreshChecks = 0; D.refreshSkipped = 0;
+  D.refreshAll = false; D.sabotage = []; D.replaySet = {}; D.refreshDiffs = []; D.refreshChecks = 0; D.refreshSkipped = 0;
 }
 
 // Builds a character by picking a dev-menu preset. With no preset, returns the menu's option texts instead.
@@ -299,7 +305,7 @@ function play(scn) {
   var purseBefore = purse(), repBefore = stats.port_watch_rep, hpBefore = stats.hp_current;
   resetRun();
   D.mode = "drive"; D.steps = scn.steps || []; D.rand = parseRand(scn.rand0 !== undefined ? scn.rand0 : (scn.rand !== undefined ? scn.rand : "mid"));
-  D.refreshAll = !!scn.refresh; D.sabotage = scn.sabotage || [];
+  D.refreshAll = !!scn.refresh; D.sabotage = scn.sabotage || []; D.replaySet = scn.replaySet || {};
   var sc = new Scene(scn.scene || "port_valen/port_valen", stats, nav, { debugMode: false });
   if (scn.label) sc.targetLabel = { label: scn.label, origin: "startup", originLine: 0 };
   runLoop(sc);
@@ -450,7 +456,7 @@ function main(argv) {
   }
   Object.keys(kv).forEach(function (k) {
     var v = kv[k];
-    if (k === "stats" || k === "steps") scn[k] = JSON.parse(v);
+    if (k === "stats" || k === "steps" || k === "replaySet") scn[k] = JSON.parse(v);
     else if (k === "picks") scn.steps = parsePicks(v);
     else if (k === "watch" || k === "sabotage") scn[k] = v.split(",").map(function (x) { return x.trim(); }).filter(Boolean);
     else if (k === "refresh") scn.refresh = v === "true";

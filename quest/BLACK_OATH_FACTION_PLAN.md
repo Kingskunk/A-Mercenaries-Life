@@ -15,7 +15,9 @@ The upper room of the Duckboard Market rope-and-oil house is a place for local a
 ## Current Foundation (Implemented)
 
 - Scrap sales lead to Hask's courier work; successful rounds establish a hidden early connection.
+- Hask's recruitment ladder is deliberately slow: six successful five-hour scavenges produce six separate scrap sales, then six successful six-hour courier rounds earn his sponsorship.
 - After enough successful rounds, Hask identifies the Black Oath by name and can sponsor the player as an **associate**, not a sworn member.
+- *The Night List* is repeatable night work after association: one run per campaign day, 18 copper per successful route, and a lifetime-success counter. The first run always has the lane confrontation; later runs roll a hidden 1-in-8 chance for it. Its first success grants standing; later runs do not farm it.
 - `black_oath_rep`, `black_oath_heat`, and `black_oath_status` provide a small foundation for how the network receives the player.
 - The Silt-Gate outcome can improve or damage that reception, while an outlaw origin begins with both poor standing and active heat.
 - Lyra's current aftermath points toward unfinished Black Oath business rather than treating the Five Silver plot as a full resolution.
@@ -58,6 +60,8 @@ The player enters the rope-and-oil house only after dark. The man on the stair a
 The player may ask only the questions needed to decide whether to take the work: what is in the packet, what is kept upstairs, and who the woman is. No complete map of the Black Oath, its leadership, or its other locations is volunteered.
 
 The route is a night-only test of ordinary Oath work: carrying money and a sealed item for people who do not want either on their person. It ends with a street challenge and has a genuine loss state. Success records that the player has met the woman upstairs and can handle a named contract; failure costs the purse, standing, and safety.
+
+After the first list, this becomes a **radiant contract** rather than a one-off quest. A new list can be accepted after dark once per campaign day. `black_oath_night_list_count` records successful runs for future progression gates. The first success carries the standing reward and level-progress credit; later successes pay the same 18 copper, but do not add standing. A failed run still loses the route's money, standing, and cover.
 
 ### 2. Second named work: *The Short Purse*
 

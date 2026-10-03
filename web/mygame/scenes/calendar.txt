@@ -112,6 +112,13 @@
       *if (temp_hp <= false_life_hp)
         *set temp_hp 0
       *set false_life_hp 0
+  *comment Guidance cast ahead from the spellbook: counted down with the clock; when the time is up it is gone unused. A timer of 0 means an old in-scene cast, which has no time limit.
+  *if (guidance_minutes_left > 0) and (total_mins_this_call > 0)
+    *if (guidance_minutes_left > total_mins_this_call)
+      *set guidance_minutes_left - total_mins_this_call
+    *else
+      *set guidance_minutes_left 0
+      *set guidance_active false
   *if (unique_buff1_active) and (total_mins_this_call > 0)
     *if (unique_buff1_minutes_left > total_mins_this_call)
       *set unique_buff1_minutes_left - total_mins_this_call
@@ -476,6 +483,8 @@
 *comment lock is needed for these two lines. ---
 *set minutes_since_rest 0
 *set neglect_damage_fatigue 0
+*comment The stage word is derived in advance_time (which every sleeping place calls BEFORE this label), so it is stale here; the sidebar chip reads it.
+*set fatigue_stage "Rested"
 *gosub recalc_hp_from_neglect
 
 *comment --- Long rest: every class pool refills, temp HP goes and the Hexblood's Hex is ready again. All of it lives in character_progression.txt

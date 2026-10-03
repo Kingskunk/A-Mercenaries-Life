@@ -741,6 +741,23 @@ ${use_text}
   *set spell_cast_toast false_life_why
 *finish
 
+*comment Guidance (2026-10-03): cast ahead from the spellbook so no scene needs its own "[Cantrip: Guidance]" option. A cantrip, so it costs nothing and takes no time. Fixed-value sets, so the page
+*comment underneath replaying when the dossier closes cannot double anything. guidance_duration_minutes (startup.txt) is how long it waits for a check; the clock counts it down (calendar.txt).
+*label codex_cast_now_guidance
+*if (combat_engaged)
+  *set spell_cast_toast "You cannot work a spell like this in the middle of a fight."
+  *finish
+*if (not(known_guidance))
+  *set spell_cast_toast "You do not know Guidance."
+  *finish
+*if (guidance_active)
+  *set spell_cast_toast "Guidance is already on you. Your next ability check gets +1d4."
+  *finish
+*set guidance_active true
+*set guidance_minutes_left guidance_duration_minutes
+*set spell_cast_toast "Guidance: your next ability check gets +1d4, if it comes within ${guidance_duration_minutes} minute(s)."
+*finish
+
 *label codex_cast_mage_armor
 *if (combat_engaged)
   You cannot work a spell like this in the middle of a fight.
@@ -1577,7 +1594,7 @@ Cold, heat and foul weather wear you down faster outdoors: they burn through foo
   A cruel, perfectly-aimed insult that rattles its target enough to genuinely throw off their next strike.
 *if (ability_id = "guidance")
   *line_break
-  • [b]Guidance — Action, Touch, Concentration (up to 1 minute): Add 1d4 to one ability check of your choice before it's rolled.[/b]
+  • [b]Guidance — Action, Touch, up to 1 minute: Add 1d4 to your next ability check. Cast it from the spellbook on the page that offers the check; it does not help in a fight, and it fades if time passes before the roll.[/b]
   A soft, murmured focusing working that steadies your hand or sharpens your mind for one task.
 *if (ability_id = "mending")
   *line_break

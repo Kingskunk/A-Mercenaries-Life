@@ -37,7 +37,16 @@
       html += "<button type=\"button\" class=\"rbtn\" data-real=\"" + it[0] + "\" data-i=\"" + it[1] + "\" title=\"" + esc(it[2]) + "\"><i></i><span class=\"rbadge\" hidden></span></button>" +
               "<div class=\"rlabel\" data-for=\"" + it[0] + "\">" + esc(it[2]) + "</div>";
     });
-    // The dungeon map: not a mirror of a page button, it opens dungeonmap.js. Hidden until the player has mapped something (see sync).
+    // Read aloud (the TTS reader in index.html). Its own floating launcher and control strip are hidden (shell.css); these buttons click them, like every other rail
+    // button. Read starts the reader, then becomes play / pause; Stop and Settings and a one-line status appear once it is on. Hidden if the reader is not on the page.
+    html += "<button type=\"button\" class=\"rbtn\" data-tts=\"read\" data-i=\"read\" title=\"Read this story aloud\" hidden><i></i></button>" +
+            "<div class=\"rlabel\" data-tts-label=\"read\" hidden>Read</div>" +
+            "<div class=\"rtts\" hidden>" +
+              "<button type=\"button\" class=\"rmini\" data-tts=\"stop\" title=\"Stop reading\">&#9632;</button>" +
+              "<button type=\"button\" class=\"rmini\" data-tts=\"gear\" title=\"Reader settings\">&#9881;</button>" +
+            "</div>" +
+            "<div class=\"rlabel rstatus\" data-tts-label=\"status\" hidden></div>";
+    // The dungeon map: not a mirror of a page button, it opens dungeonmap.js. Hidden unless a dungeon run is on and something has been mapped (see sync).
     html += "<button type=\"button\" class=\"rbtn\" data-open=\"dungeonmap\" data-i=\"map\" title=\"Map (M)\" hidden><i></i></button>" +
             "<div class=\"rlabel\" data-for=\"dungeonmap\" hidden>Map</div>";
     html += "<div class=\"rspacer\"></div>" +
@@ -48,12 +57,51 @@
     document.body.appendChild(rail);
     rail.addEventListener("click", function (ev) {
       var t = ev.target;
-      while (t && t !== rail && !(t.getAttribute && (t.getAttribute("data-real") || t.getAttribute("data-open")))) t = t.parentNode;
+      while (t && t !== rail && !(t.getAttribute && (t.getAttribute("data-real") || t.getAttribute("data-open") || t.getAttribute("data-tts")))) t = t.parentNode;
       if (t && t !== rail) {
-        if (t.getAttribute("data-open") === "dungeonmap") { if (window.DungeonMap) window.DungeonMap.toggle(); }
+        if (t.getAttribute("data-tts")) ttsClick(t.getAttribute("data-tts"));
+        else if (t.getAttribute("data-open") === "dungeonmap") { if (window.DungeonMap) window.DungeonMap.toggle(); }
         else realClick(t.getAttribute("data-real"));
       }
     });
+  }
+
+  // The reader is on once its launcher has been clicked (that click hides the launcher); it is playing while its play / pause button shows the pause glyph.
+  function ttsState() {
+    var launcher = document.getElementById("ttsLauncher");
+    if (!launcher) return { present: false, on: false, playing: false, status: "" };
+    var pp = document.getElementById("ttsPlayPause"), st = document.getElementById("ttsStatus");
+    var r = window.TTSReader;
+    return { present: true, on: launcher.style.display === "none", playing: !!pp && pp.textContent.indexOf("❚") >= 0, status: st ? st.textContent : "",
+             idle: !!(r && r.isIdle && r.isIdle()) };
+  }
+  function ttsClick(what) {
+    var st = ttsState();
+    if (!st.present) return;
+    if (what === "read") realClick(st.on ? "ttsPlayPause" : "ttsLauncher");
+    // Stop stops; once nothing is playing or queued it becomes the off switch (its glyph turns to a cross).
+    else if (what === "stop") { if (st.idle && window.TTSReader.turnOff) window.TTSReader.turnOff(); else realClick("ttsStop"); }
+    else if (what === "gear") realClick("ttsGear");
+  }
+  function setHidden(el, hide) { if (el && el.hidden !== hide) el.hidden = hide; }
+  function syncTts() {
+    var st = ttsState();
+    var btn = rail.querySelector("[data-tts=\"read\"]"), lab = rail.querySelector("[data-tts-label=\"read\"]");
+    var minis = rail.querySelector(".rtts"), stat = rail.querySelector("[data-tts-label=\"status\"]");
+    setHidden(btn, !st.present); setHidden(lab, !st.present);
+    setHidden(minis, !(st.present && st.on)); setHidden(stat, !(st.present && st.on));
+    if (!st.present) return;
+    btn.classList.toggle("back", st.playing);
+    var word = !st.on ? "Read" : (st.playing ? "Pause" : "Play");
+    if (lab.textContent !== word) lab.textContent = word;
+    var tip = !st.on ? "Read this story aloud" : (st.playing ? "Pause reading" : "Play reading");
+    if (btn.getAttribute("title") !== tip) btn.setAttribute("title", tip);
+    var stopBtn = rail.querySelector("[data-tts=\"stop\"]");
+    var stopGlyph = st.idle ? "✕" : "■", stopTip = st.idle ? "Turn the reader off" : "Stop reading";
+    if (stopBtn.textContent !== stopGlyph) stopBtn.textContent = stopGlyph;
+    if (stopBtn.getAttribute("title") !== stopTip) stopBtn.setAttribute("title", stopTip);
+    if (stat.textContent !== st.status) stat.textContent = st.status;
+    if (stat.getAttribute("title") !== st.status) stat.setAttribute("title", st.status);
   }
 
   // The real button is "showing" unless the page (or a panel script) has display:none'd it. Trade and Level Up start hidden.
@@ -84,9 +132,10 @@
       var rt = real ? (real.getAttribute("title") || "") : "";
       if (rt && b.getAttribute("title") !== rt) b.setAttribute("title", rt);
     }
-    // the map button shows once something has been mapped
+    syncTts();
+    // the map button shows inside a dungeon run, once something has been mapped
     var mapBtn = rail.querySelector("[data-open=\"dungeonmap\"]"), mapLab = rail.querySelector(".rlabel[data-for=\"dungeonmap\"]");
-    var haveMap = !!(window.DungeonMap && window.DungeonMap.hasAny());
+    var haveMap = !!(window.DungeonMap && window.DungeonMap.available());
     if (mapBtn && mapBtn.hidden === haveMap) mapBtn.hidden = !haveMap;
     if (mapLab && mapLab.hidden === haveMap) mapLab.hidden = !haveMap;
     // room is reserved for the sidebar only while it is showing (it hides itself until the character exists)

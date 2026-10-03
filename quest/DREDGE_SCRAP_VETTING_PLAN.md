@@ -1,19 +1,19 @@
 # Quest Plan: The Dealer's Real Money (The Boat-Sheds Scrap Yard)
 
-A minor, low-stakes recruitment quest for **the scrap yard** in Dredge-End. Three repeat sales earn Hask's first offer, and three successful courier rounds earn the truth: the player has been carrying for the Black Oath. Hask can then sponsor the player as an associate, meaning named paid work without a sworn oath. Scoped as a Minor/Street Task (`QUEST_DESIGN_RULES.md` §6): no faction-shift climax, and it deliberately does not carry the full three-branch Mercenary Dilemma structure that the bigger district quests use.
+A minor, low-stakes recruitment quest for **the scrap yard** in Dredge-End. Six repeat sales earn Hask's first offer, and six successful courier rounds earn the truth: the player has been carrying for the Black Oath. Hask can then sponsor the player as an associate, meaning named paid work without a sworn oath. Scoped as a Minor/Street Task (`QUEST_DESIGN_RULES.md` §6): no faction-shift climax, and it deliberately does not carry the full three-branch Mercenary Dilemma structure that the bigger district quests use.
 
 ---
 
 ## 1. Overview & Cast
 
 * **Location:** The scrap yard at `cut_sheds_hub` (Dredge-End).
-* **Trigger:** the 3rd time the player sells scrap to the dealer (`cut_scrap_sold_count`). Three transactions are enough for Hask to recognize a reliable repeat seller without forcing two weeks of repeated labor before the story begins.
+* **Trigger:** the 6th time the player sells scrap to the dealer (`cut_scrap_sold_count`). Six separate sales require six successful five-hour scavenging trips, making Hask's attention something earned over roughly three weeks rather than a quick introduction.
 * **Cast:**
   * **The Scrap Dealer (Hask):** currently unnamed in prose ("a wide, slow man in a greased canvas apron"). He gives his name at this exact beat, once he's decided the player is worth naming — matches the "names introduced in-story only" rule. Slow, unhurried, watches hands and boots before faces. Already established fencing hot chain with rasped-off harbor-master proof-stamps (his 2nd rumor line, `cut_rumors_scrap = 2`), so he's Oath-adjacent, not Oath leadership — a middleman, not a boss.
 
 ---
 
-## 2. The Approach (fires once, on the 3rd sale)
+## 2. The Approach (fires once, on the 6th sale)
 
 Appended to the *existing* sale text at `cut_sheds_hub`, after the coins are counted out — same beat, not a new hub option:
 
@@ -109,7 +109,7 @@ One mechanic used two ways — the first attempt, then its own repeatable form a
   * `[b][💰 Deliveries Made: +12 Copper Bits][/b]`
   * `hask_courier_count + 1`
   * No further `black_oath_rep` change — that was the first run's reward specifically, so the loop doesn't quietly farm reputation the way Crane Three's old silver farmed the writ.
-  * At `hask_courier_count >= 3`, the associate reveal becomes available at Hask's yard.
+* At `hask_courier_count >= 6`, the associate reveal becomes available at Hask's yard.
 
 * **Failure (fail-forward, every attempt — no permanent flag, no escalating DC, since nothing here is illegal and there's no authority to get more alert):**
   > One hand-off runs long — a wrong turn, a slow crowd, a stop that keeps talking past when you'd rather be gone — and by the time you're back the satchel's a delivery short.
@@ -135,12 +135,12 @@ At 12 copper/day for 6 hours (2 copper/hour) against wading's 6 copper/day for 5
 ## 6. Variables
 
 ```choicescript
-*create cut_scrap_sold_count 0         *comment times sold TO Hask specifically -- fires the offer at 3
+*create cut_scrap_sold_count 0         *comment times sold TO Hask specifically -- fires the offer at 6
 *create scrap_vetting_offer_seen false *comment Hask has raised it at least once; makes the ask-again hub option available
 *create scrap_vetting_quest_stage "unstarted" *comment "unstarted", "active", "resolved"
 *create scrap_vetting_day 0            *comment campaign_day of the last delivery-round attempt (either stage); once per day, like wading and the dredge shift
 *create hask_courier_unlocked false    *comment first round resolved; unlocks the standing "run a round" hub option
-*create hask_courier_count 0           *comment lifetime SUCCESSFUL rounds; 3 opens named Black Oath work
+*create hask_courier_count 0           *comment lifetime SUCCESSFUL rounds; 6 opens named Black Oath work
 *create hask_associate_offer_seen false *comment Hask has revealed the employer
 *create hask_associate_joined false     *comment one-time associate/rep award guard
 ```
@@ -153,8 +153,8 @@ At 12 copper/day for 6 hours (2 copper/hour) against wading's 6 copper/day for 5
 
 ## 7. Design Notes / Open Questions
 
-* **The first `black_oath_rep` move remains hidden.** The player is unknowingly running for a Black Oath contact, so the first successful round cannot name the faction. Hask cashes that secrecy in after three successful rounds by revealing the employer and offering named associate work.
-* **Named work opens after three successful rounds.** Hask reveals that the deliveries belong to the Black Oath and offers associate standing. Association means paid work with Hask's name attached; it is deliberately not a sworn oath.
+* **The first `black_oath_rep` move remains hidden.** The player is unknowingly running for a Black Oath contact, so the first successful round cannot name the faction. Hask cashes that secrecy in after six successful rounds by revealing the employer and offering named associate work.
+* **Named work opens after six successful rounds.** Hask reveals that the deliveries belong to the Black Oath and offers associate standing. Association means paid work with Hask's name attached; it is deliberately not a sworn oath.
 * **The outlaw origin is not silently forgiven.** It starts with `black_oath_rep = -3` and `black_oath_heat = 3`. Hask explicitly calls his cord a ceasefire within his ward, not forgiveness for the stolen strongbox or dead collector.
 * **No hard failure state on the courier job.** `QUEST_DESIGN_RULES.md` §2 says every quest needs a genuine loss state, but that's written against the bigger climax-grade quests (Rotten Rib, the Pier). This is Minor/Street scope (§6) — like Crane Three, which also has no failure-ends-everything state, and there's even less reason for one here than in the old iron-hauling draft, since nothing failure-adjacent is remotely dangerous. A fumbled round just pays less and doesn't count toward the trust counter.
 * **Only three archetypes (STR/DEX/CHA), no INT/WIS option.** Kept to three since this is a single bottleneck beat, not a multi-beat investigation that needs a fourth angle.

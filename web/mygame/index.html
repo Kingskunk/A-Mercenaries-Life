@@ -464,7 +464,7 @@ button#statSidebar .turnRow,
 #statSidebar .sbRing::after { content: ""; position: absolute; inset: -6px; background: var(--art-roundbig) center / 100% 100% no-repeat; pointer-events: none; }
 #statSidebar .sbRing i { width: 44px; height: 44px; background: center / contain no-repeat; filter: invert(0.85) sepia(0.3); }
 #statSidebar .sbName {
-  flex: 1; min-width: 0; padding: 8px 28px 8px 14px; overflow-wrap: anywhere;
+  flex: 1; min-width: 0; padding: 8px 18px; overflow-wrap: anywhere; text-align: center;
   background: var(--art-banner2) left center / 100% 100% no-repeat;
   font: 600 15px/1.15 var(--ch-font-head); letter-spacing: 0.06em; color: #f1e4cf; text-shadow: 0 1px 2px #000;
 }
@@ -478,6 +478,31 @@ button#statSidebar .turnRow,
 #statSidebar .sbHp { position: relative; height: 24px; margin: 4px 0 8px; background: var(--art-hpframe) center / 100% 100% no-repeat; }
 #statSidebar .sbHp .fill { position: absolute; left: 5px; top: 5px; bottom: 5px; border-radius: 3px; background: linear-gradient(#c24a43, #7d1f1f); box-shadow: 0 0 6px rgba(181, 58, 53, 0.5); }
 #statSidebar .sbHp .num { position: absolute; inset: 0; display: grid; place-items: center; font: 700 12px var(--ch-font-ui); color: #fff; text-shadow: 0 1px 2px #000; }
+
+/* the name banner is the Status / Stats switch */
+#statSidebar .sbNameBtn { cursor: pointer; }
+#statSidebar .sbNameBtn:hover { filter: brightness(1.15); }
+#statSidebar .sbName .sbHint { color: var(--ch-brass); letter-spacing: 0.06em; text-transform: uppercase; font-size: 10px; }
+/* Stats view: every skill with its total modifier */
+#statSidebar .sbSkills { display: flex; flex-direction: column; }
+#statSidebar .sbSkill { display: grid; grid-template-columns: 16px 1fr auto 34px; align-items: baseline; gap: 6px; padding: 3px 0; border-bottom: 1px dotted var(--ch-line); font-size: 13px; color: var(--ch-dim); cursor: help; }
+#statSidebar .sbSkill i { font-style: normal; font-size: 10px; text-align: center; }
+#statSidebar .sbSkill em { font: 600 9.5px var(--ch-font-ui); letter-spacing: 0.08em; color: var(--ch-dim); opacity: 0.7; }
+#statSidebar .sbSkill b { text-align: right; font: 700 14px var(--ch-font-ui); color: var(--ch-text); }
+#statSidebar .sbSkill.trained { color: var(--ch-text); }
+#statSidebar .sbSkill.trained i { color: var(--ch-brass); }
+#statSidebar .sbSkill.expert { color: var(--ch-text); }
+#statSidebar .sbSkill.expert i, #statSidebar .sbSkill.expert b { color: var(--ch-brass); }
+#statSidebar .sbSkillNote { color: var(--ch-warn); }
+
+/* hunger / fatigue / hygiene chips: quiet while healthy, amber then red as the stage worsens */
+#statSidebar .sbConds { display: flex; gap: 6px; margin: 0 0 8px; }
+#statSidebar .sbCond {
+  flex: 1; text-align: center; padding: 2px 4px; border: 1px solid var(--ch-line); border-radius: 10px; cursor: help;
+  background: rgba(0, 0, 0, 0.3); font: 600 11px var(--ch-font-ui); letter-spacing: 0.03em; color: var(--ch-dim);
+}
+#statSidebar .sbCond.warn { color: var(--ch-warn); border-color: var(--ch-warn); }
+#statSidebar .sbCond.bad { color: var(--ch-bad); border-color: var(--ch-bad); background: rgba(181, 58, 53, 0.18); }
 
 /* spell slots as orbs */
 #statSidebar .orbs { display: inline-flex; gap: 5px; align-items: center; }
@@ -521,6 +546,8 @@ button#statSidebar .turnRow,
 #statSidebar .sbFold[open] > summary::before { transform: rotate(90deg); }
 #statSidebar .sbFold > summary:hover { color: var(--ch-head-text); }
 #statSidebar .sbFold > summary .sbSum { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; font: 600 12px var(--ch-font-ui); letter-spacing: 0; text-transform: none; color: var(--ch-text); }
+#statSidebar .sbFold > summary .sbSum .sbSumStack { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.25; }
+#statSidebar .sbFold > summary .sbSum .sbSumStack small { font: 11px var(--ch-font-ui); color: var(--ch-dim); }
 #statSidebar .sbFold > summary .sbSum .orb { width: 11px; height: 11px; }
 #statSidebar .sbFold[open] > summary .sbSum { display: none; }          /* the detail is on show, so the one-line summary is not needed */
 #statSidebar .sbFold:not([open]) > summary { padding-bottom: 0; }
@@ -572,7 +599,55 @@ button#statSidebar .turnRow,
   // Sidebar sections that fold away like the spellbook (2026-10-02): Stats under the name, and Today. The open/closed flags live here, not on the <details>, because
   // the sidebar's innerHTML is rebuilt every 400ms; the summary click flips the flag (see the sidebar click handler). Both start closed; the HP bar, the name and
   // the turn order stay in view, and the folded Stats header still shows AC and the spell orbs.
-  var sbOpen = { stats: false, today: false, effects: true };   // Effects starts open (it only exists while something is active) and can be folded
+  var sbOpen = { stats: false, today: false, effects: true, abilities: true, profs: true, skills: true };   // the three Stats-view sections start open: opening Stats is asking to look   // Effects starts open (it only exists while something is active) and can be folded
+  // The sidebar has two views of the same column: "status" (HP, condition, Today / Turn Order, spellbook, quests, effects) and "stats" (the six scores, every skill's
+  // modifier, proficiency): the things that rarely change. The name banner toggles it. Held here, not in the DOM, because the sidebar is rebuilt every 400ms.
+  var sbView = "status";
+  // Display name and default ability of every skill, in skill_lookup's (dice_engine.txt) terms. The flag a skill reads is "skill_" + its name in lower snake case.
+  var SB_SKILLS = [["Acrobatics", "dex"], ["Animal Handling", "wis"], ["Arcana", "int"], ["Athletics", "str"], ["Deception", "cha"], ["History", "int"],
+    ["Insight", "wis"], ["Intimidation", "cha"], ["Investigation", "int"], ["Medicine", "wis"], ["Nature", "int"], ["Perception", "wis"], ["Performance", "cha"],
+    ["Persuasion", "cha"], ["Religion", "int"], ["Sleight of Hand", "dex"], ["Stealth", "dex"], ["Survival", "wis"]];
+  // The skills a class has doubled (expertise), by display name, as roll_d20_check reads them. Only the class that owns the variable counts.
+  function sbExpertSkills(s) {
+    var c = s.character_class;
+    if (c === "rogue") return [s.rogue_expertise_1, s.rogue_expertise_2];
+    if (c === "ranger") return [s.ranger_expertise_1];
+    if (c === "wizard") return [s.wizard_expertise_1];
+    if (c === "bard") return [s.bard_expertise_1, s.bard_expertise_2];
+    return [];
+  }
+  // "5 trained" for the folded Skills header: proficient skills (expertise ones are proficient too).
+  function skillsSummary(s) {
+    var n = SB_SKILLS.filter(function (sk) { return isTruthy(s["skill_" + sk[0].toLowerCase().replace(/ /g, "_")]); }).length;
+    return n + " trained";
+  }
+  function signed(n) { return (n < 0 ? "−" : "+") + Math.abs(n); }
+  // The Skills list. Each total is what roll_skill_check would use: the ability modifier, plus proficiency, doubled for expertise, or half (rounded down) for a Bard of
+  // level 2+ on a skill they are not trained in (Jack of All Trades). Fatigue, hygiene and routine penalties are applied at the roll, so they are named in a note and
+  // not folded into the numbers.
+  function skillsHtml(s) {
+    var p = Number(s.prof_bonus) || 0, experts = sbExpertSkills(s), jack = s.character_class === "bard" && Number(s.character_level) >= 2;
+    var all = [], cha = [];
+    if (s.fatigue_stage === "Exhausted") all.push("−1 to every check (Exhausted)");
+    if (s.fatigue_stage === "Collapsing") all.push("−2 to every check (Collapsing)");
+    if (s.routine_stage === "Restless") all.push("−1 to every check (Restless)");
+    if (s.routine_stage === "Rutted") all.push("−2 to every check (Rutted)");
+    if (s.hygiene_stage === "Foul") cha.push("−2 more on Charisma (Foul)");
+    if (s.hygiene_stage === "Grubby") cha.push("−1 more on Charisma (Grubby)");
+    var note = all.concat(cha);
+    var rows = SB_SKILLS.map(function (sk) {
+      var name = sk[0], ab = sk[1], trained = isTruthy(s["skill_" + name.toLowerCase().replace(/ /g, "_")]);
+      var expert = experts.indexOf(name) >= 0;
+      var bonus = expert ? 2 * p : (trained ? p : (jack ? Math.floor(p / 2) : 0));
+      var mark = expert ? "◆" : (trained ? "●" : (bonus ? "½" : "○"));
+      var tip = expert ? "Expertise: double proficiency" : (trained ? "Proficient" : (bonus ? "Jack of All Trades: half proficiency" : "Not proficient"));
+      return "<div class=\"sbSkill" + (expert ? " expert" : (trained ? " trained" : "")) + "\" title=\"" + tip + "\"><i>" + mark + "</i><span>" + name + "</span><em>" + ab.toUpperCase() +
+        "</em><b>" + signed((Number(s[ab + "_mod"]) || 0) + bonus) + "</b></div>";
+    }).join("");
+    return "<div class=\"sbSkills\">" + rows + "</div>" +
+      "<div class=\"timePeriod\">● proficient &nbsp;◆ expertise &nbsp;½ half &nbsp;○ none</div>" +
+      (note.length ? "<div class=\"timePeriod sbSkillNote\">Right now: " + note.join("; ") + ".</div>" : "");
+  }
   function foldHtml(id, label, summary, body) {
     return "<details class=\"sbFold\" data-fold=\"" + id + "\"" + (sbOpen[id] ? " open" : "") + "><summary><span>" + label + "</span><span class=\"sbSum\">" + summary + "</span></summary>" + body + "</details>";
   }
@@ -607,6 +682,32 @@ button#statSidebar .turnRow,
         tempHpHtml += " <span class=\"boon boonUp\" title=\"False Life: temporary hit points that fade after about " + Math.ceil(Number(s.false_life_minutes_left) / 60) + " more hours, or when you sleep.\">False Life " + Math.ceil(Number(s.false_life_minutes_left) / 60) + "h</span>";
       }
       tempHpHtml += "</span></div>";
+    }
+    // Hunger, fatigue and hygiene as three chips under the HP bar. They exist only once the player is loose in Port Valen (the same flag advance_time ticks the clocks
+    // on). A healthy stage is dim; the first bad stage is amber, the worst is red. The tooltip says what the stage costs, mirroring advance_time / roll_d20_check.
+    var condChipsHtml = "";
+    if (isTruthy(s.vane_independent_operative)) {
+      var condChip = function (stage, warn, bad, tips) {
+        var cls = stage === bad ? " bad" : (stage === warn ? " warn" : "");
+        return "<span class=\"sbCond" + cls + "\" title=\"" + (tips[stage] || "") + "\">" + esc(stage) + "</span>";
+      };
+      condChipsHtml = "<div class=\"sbConds\">" +
+        condChip(fmt(s.hunger_stage), "Hungry", "Starving", {
+          Fed: "Fed. Past 18 hours without a meal you are Hungry.",
+          Hungry: "Hungry: no penalty yet. Past 36 hours without a meal you are Starving.",
+          Starving: "Starving: you lose HP every 4 hours until you eat."
+        }) +
+        condChip(fmt(s.fatigue_stage), "Exhausted", "Collapsing", {
+          Rested: "Rested. Past 20 hours awake you are Exhausted.",
+          Exhausted: "Exhausted: -1 to every check. Sleep to clear it.",
+          Collapsing: "Collapsing: -2 to every check and you lose HP every 4 hours. Sleep to clear it."
+        }) +
+        condChip(fmt(s.hygiene_stage), "Grubby", "Foul", {
+          Clean: "Clean. After 3 days without a wash you are Grubby.",
+          Grubby: "Grubby: -1 to Charisma checks. A wash or the Conduit Baths clears it.",
+          Foul: "Foul: -2 to Charisma checks. A wash or the Conduit Baths clears it."
+        }) +
+        "</div>";
     }
     var resourceHtml = "";
     if (s.character_class === "wizard") {
@@ -777,19 +878,22 @@ button#statSidebar .turnRow,
     else if (s.character_class === "ranger") statsOrbs = miniOrbs(s.ranger_spell_slots, s.ranger_spell_slots_max, "");
     var nonprofHtml = (isTruthy(s.armor_nonprof) || isTruthy(s.shield_nonprof)) ? "<div class=\"timePeriod\" title=\"Your class is not trained in this gear: disadvantage on STR and DEX rolls\" style=\"color:var(--ch-warn);font-style:normal;\">&#9888; " + (isTruthy(s.armor_nonprof) && isTruthy(s.shield_nonprof) ? "Armor &amp; shield" : (isTruthy(s.shield_nonprof) ? "Shield" : "Armor")) + ": not proficient</div>" : "";
     function abilTile(label, score, boon, mod) { return "<div>" + label + "<b>" + fmt(score) + "</b>" + boon + "<span>" + fmt(mod) + "</span></div>"; }
-    el.innerHTML =
-      "<div class=\"sbPanel\">" +
-        "<div class=\"sbPortrait\">" +
-          "<div class=\"sbRing\">" + (sbClass ? "<i style=\"background-image: var(--art-c_" + sbClass + ")\"></i>" : "") + "</div>" +
-          "<div class=\"sbName\">" + fmt(s.name) + "<small>Level " + fmt(s.character_level) + " " + fmt(s.class_name || "Recruit") + "</small>" + combatBadgeHtml + "</div>" +
-        "</div>" +
-        hpBarHtml +
-        tempHpHtml +
-        foldHtml("stats", "Stats", "AC " + effectiveAc(s) + (statsOrbs ? " " + statsOrbs : ""),
-          "<div class=\"statRow\"><span>Armor Class</span><span>" + effectiveAc(s) + mageArmorTag(s) + shieldAcTag(s) + "</span></div>" +
-          "<div class=\"statRow\"><span>Proficiency</span><span>+" + fmt(s.prof_bonus) + "</span></div>" +
-          nonprofHtml +
-          resourceHtml +
+    // The name banner is the switch between the two views. In combat the sidebar stays on Status (the turn order and click-to-target live there), so the banner is
+    // plain then and a Stats view left open is put back.
+    if (inCombat) sbView = "status";
+    var inStats = sbView === "stats";
+    var bannerAttr = inCombat ? "" : " data-sb-view=\"" + (inStats ? "status" : "stats") + "\" title=\"" + (inStats ? "Back to Status" : "Open Stats: ability scores, skills, proficiency") + "\"";
+    var bannerHint = inCombat ? "" : "<small class=\"sbHint\">" + (inStats ? "← Status" : "Stats →") + "</small>";
+    var portraitHtml =
+      "<div class=\"sbPortrait\">" +
+        "<div class=\"sbRing\">" + (sbClass ? "<i style=\"background-image: var(--art-c_" + sbClass + ")\"></i>" : "") + "</div>" +
+        "<div class=\"sbName" + (inCombat ? "" : " sbNameBtn") + "\"" + bannerAttr + ">" + fmt(s.name) + "<small>Level " + fmt(s.character_level) + " " + fmt(s.class_name || "Recruit") + "</small>" + bannerHint + combatBadgeHtml + "</div>" +
+      "</div>";
+    if (inStats) {
+      var armorNote = (isTruthy(s.armor_nonprof) || isTruthy(s.shield_nonprof)) ? nonprofHtml : "<div class=\"timePeriod\">Trained for the gear you wear.</div>";
+      el.innerHTML =
+        "<div class=\"sbPanel\">" + portraitHtml + "</div>" +
+        "<div class=\"sbPanel\">" + foldHtml("abilities", "Abilities", fmt(s.str_mod_str) + " " + fmt(s.dex_mod_str) + " " + fmt(s.con_mod_str) + " " + fmt(s.int_mod_str) + " " + fmt(s.wis_mod_str) + " " + fmt(s.cha_mod_str),
           "<div class=\"sbAbil\">" +
             abilTile("STR", s.strength, abilityBoon(s.buff_str_bonus, s.buff_str_helps), s.str_mod_str) +
             abilTile("DEX", s.dexterity, abilityBoon(s.buff_dex_bonus, s.buff_dex_helps), s.dex_mod_str) +
@@ -797,14 +901,35 @@ button#statSidebar .turnRow,
             abilTile("INT", s.intelligence, abilityBoon(s.buff_int_bonus, s.buff_int_helps), s.int_mod_str) +
             abilTile("WIS", s.wisdom, abilityBoon(s.buff_wis_bonus, s.buff_wis_helps), s.wis_mod_str) +
             abilTile("CHA", s.charisma, abilityBoon(s.buff_cha_bonus, s.buff_cha_helps), s.cha_mod_str) +
-          "</div>") +
+          "</div>") + "</div>" +
+        "<div class=\"sbPanel\">" + foldHtml("profs", "Proficiency", "Lv " + fmt(s.character_level) + " &middot; +" + fmt(s.prof_bonus),
+          "<div class=\"statRow\"><span>Level</span><span>" + fmt(s.character_level) + "</span></div>" +
+          "<div class=\"statRow\"><span>Proficiency bonus</span><span>+" + fmt(s.prof_bonus) + "</span></div>" +
+          armorNote) + "</div>" +
+        "<div class=\"sbPanel\">" + foldHtml("skills", "Skills", skillsSummary(s), skillsHtml(s)) + "</div>";
+      return;
+    }
+    el.innerHTML =
+      "<div class=\"sbPanel\">" +
+        portraitHtml +
+        hpBarHtml +
+        tempHpHtml +
+        condChipsHtml +
+        foldHtml("stats", "Resources", "AC " + effectiveAc(s) + (statsOrbs ? " " + statsOrbs : ""),
+          "<div class=\"statRow\"><span>Armor Class</span><span>" + effectiveAc(s) + mageArmorTag(s) + shieldAcTag(s) + "</span></div>" +
+          nonprofHtml +
+          resourceHtml) +
       "</div>" +
       (inCombat ? "<div class=\"sbPanel\"><div class=\"shead\">Turn order</div>" + bottomSectionHtml + "</div>"
-                : "<div class=\"sbPanel\">" + foldHtml("today", "Today", fmt(s.clock_time) + " &middot; " + dayDisplay, bottomSectionHtml) + "</div>") +
+                : "<div class=\"sbPanel\">" + foldHtml("today", "Today", "<span class=\"sbSumStack\"><span>" + fmt(s.clock_time) + " &middot; " + dayDisplay + "</span><small>" + fmt(s.time_period) + " &middot; " + weatherDisplay + "</small></span>", bottomSectionHtml) + "</div>") +
       "<div class=\"sbPanel sbSpells\">" + spellSectionHtml() + "</div>" +
       activeQuestHtml +
-      (isTruthy(s.food_buff_active) || isTruthy(s.drink_buff_active) || isTruthy(s.unique_buff1_active) || isTruthy(s.unique_buff2_active) || isTruthy(s.unique_buff3_active) || isTruthy(s.sleep_buff1_active) || isTruthy(s.sleep_buff2_active) ?
+      (isTruthy(s.food_buff_active) || isTruthy(s.drink_buff_active) || isTruthy(s.unique_buff1_active) || isTruthy(s.unique_buff2_active) || isTruthy(s.unique_buff3_active) || isTruthy(s.sleep_buff1_active) || isTruthy(s.sleep_buff2_active) || isTruthy(s.guidance_active) ?
         "<div class=\"sbPanel\">" + foldHtml("effects", "Effects", effectsSummary(s),
+        (isTruthy(s.guidance_active) ?
+          "<div class=\"statRow\"><span>Guidance</span><span>+1d4</span></div>" +
+          "<div class=\"timePeriod\">next ability check" + (Number(s.guidance_minutes_left) > 0 ? ", " + fmt(s.guidance_minutes_left) + "m left" : "") + "</div>"
+          : "") +
         (isTruthy(s.food_buff_active) ?
           "<div class=\"statRow\"><span>Meal</span><span>" + fmt(s.food_buff_name) + "</span></div>" +
           "<div class=\"timePeriod\">+" + fmt(s.food_buff_bonus) + " " + fmt(s.food_buff_stat).toUpperCase() + ", " + fmt(s.food_buff_minutes_left) + "m left</div>"
@@ -839,7 +964,7 @@ button#statSidebar .turnRow,
   // "3 active" for the folded Effects header: meals, drinks, boons and rest bonuses that are running.
   function effectsSummary(s) {
     var n = 0;
-    ["food_buff_active", "drink_buff_active", "unique_buff1_active", "unique_buff2_active", "unique_buff3_active", "sleep_buff1_active", "sleep_buff2_active"].forEach(function (k) { if (isTruthy(s[k])) n++; });
+    ["food_buff_active", "drink_buff_active", "unique_buff1_active", "unique_buff2_active", "unique_buff3_active", "sleep_buff1_active", "sleep_buff2_active", "guidance_active"].forEach(function (k) { if (isTruthy(s[k])) n++; });
     return n + " active";
   }
   function isTruthy(v) { return v === true || v === "true"; }
@@ -1218,7 +1343,7 @@ button#statSidebar .turnRow,
   // Spells that can be cast out of a fight, and the dossier label that does it (choicescript_stats.txt). The sidebar only writes stats, so a cast cannot run from here: the Cast
   // button opens the dossier's own Cast menu, real ChoiceScript with the slot spend and replay locks, the same route the inventory's Rest card takes. A spell is added here when
   // the dossier gains an entry for it. Not offered mid-fight (the fight has its own options) or while the dossier is already open.
-  var CASTABLE_OUT_OF_COMBAT = { mage_armor: "codex_cast_now_mage_armor", false_life: "codex_cast_now_false_life" };
+  var CASTABLE_OUT_OF_COMBAT = { mage_armor: "codex_cast_now_mage_armor", false_life: "codex_cast_now_false_life", guidance: "codex_cast_now_guidance" };
   function canOpenDossier() {
     var s = window.stats || {};
     if (s.scene && s.scene.secondaryMode === "stats") return false;
@@ -1314,6 +1439,12 @@ button#statSidebar .turnRow,
   document.getElementById("statSidebar").addEventListener("click", function (ev) {
     var el = ev.target;
     if (!el || !el.closest) return;
+    var viewBtn = el.closest("[data-sb-view]");
+    if (viewBtn) {
+      sbView = viewBtn.getAttribute("data-sb-view") === "stats" ? "stats" : "status";
+      renderStatSidebar();
+      return;
+    }
     var tabBtn = el.closest("[data-spell-tab]");
     if (tabBtn) {
       var lvl = Number(tabBtn.getAttribute("data-spell-tab"));
@@ -2136,6 +2267,13 @@ if (window.location.hostname === 'localhost') {
     <label for="ttsServerUrl">Server URL (ngrok tunnel)</label>
     <input type="text" id="ttsServerUrl" placeholder="https://xxxx.ngrok-free.app">
 
+    <label for="ttsEngine">Voice</label>
+    <select id="ttsEngine">
+      <option value="kokoro_fast">Kokoro, with Edge reading the opening until Kokoro is ready (fast start)</option>
+      <option value="kokoro">Kokoro only (waits for it at the start of every page)</option>
+      <option value="edge">Edge only (no Kokoro, no waiting)</option>
+    </select>
+
     <label for="ttsKokoroVoice">Kokoro voice (preferred)</label>
     <select id="ttsKokoroVoice">
       <option value="">Auto (server default)</option>
@@ -2148,7 +2286,7 @@ if (window.location.hostname === 'localhost') {
       <option value="bm_george">bm_george (UK Male)</option>
     </select>
 
-    <label for="ttsEdgeVoice">Edge TTS fallback voice</label>
+    <label for="ttsEdgeVoice">Edge TTS voice (the opening, or everything when Edge only)</label>
     <select id="ttsEdgeVoice">
       <option value="en-US-AriaNeural">en-US-AriaNeural (Female)</option>
       <option value="en-US-GuyNeural">en-US-GuyNeural (Male)</option>
@@ -2164,10 +2302,6 @@ if (window.location.hostname === 'localhost') {
       <label for="ttsAutoAdvance">Keep reading automatically after each choice</label>
     </div>
 
-    <div class="ttsCheckRow">
-      <input type="checkbox" id="ttsFastStart">
-      <label for="ttsFastStart">Fast start: use Edge TTS for a page's opening line, then Kokoro</label>
-    </div>
   </div>
   <footer>
     <button onclick="TTSReader.saveSettings()">Save</button>
@@ -2196,7 +2330,9 @@ if (window.location.hostname === 'localhost') {
     edgeVoice: savedSettings.edgeVoice || 'en-US-AriaNeural',
     speed: savedSettings.speed || 1.0,
     autoAdvance: !!savedSettings.autoAdvance,
-    fastStart: savedSettings.fastStart !== false // default on
+    // Which voice reads: 'kokoro_fast' (Kokoro, with Edge covering the opening of a page until Kokoro is ready), 'kokoro' (Kokoro only) or 'edge' (Edge only).
+    // fastStart was the earlier on/off setting for the first of those, so a saved "off" keeps meaning Kokoro only.
+    engine: savedSettings.engine || (savedSettings.fastStart === false ? 'kokoro' : 'kokoro_fast')
   };
 
   var state = {
@@ -2205,6 +2341,9 @@ if (window.location.hostname === 'localhost') {
     playing: false,
     enabled: false,
     cache: new Map(), // idx -> { status, promise, url }
+    edgeCache: new Map(), // idx -> same, Edge versions of chunks Kokoro was not ready for (the bridge, see playFrom)
+    coveredIdx: -1,   // highest chunk Edge has read in place of a Kokoro clip this page; Kokoro skips those and works on what is still ahead
+    warm: false,      // true from a fresh page until its first Kokoro clip starts playing: while true, an unready Kokoro chunk is covered by Edge
     inflight: new Set(), // AbortControllers for requests currently on the wire
     sessionId: 0,
     listenMode: false,
@@ -2264,6 +2403,7 @@ if (window.location.hostname === 'localhost') {
     kokoroQueue.forEach(function (job, i) {
       var d = job.idx - state.index;
       var score = d >= 0 ? d : 10000 - d; // chunks ahead of the playhead first, nearest first
+      if (job.idx <= state.coveredIdx) score += 100000;   // Edge already read this one (or is): only worth doing if nothing ahead is waiting
       if (score < bestScore) { best = i; bestScore = score; }
     });
     var next = kokoroQueue.splice(best, 1)[0];
@@ -2281,17 +2421,16 @@ if (window.location.hostname === 'localhost') {
     });
   }
 
-  function ensureFetched(idx) {
-    if (idx < 0 || idx >= state.paragraphs.length) return;
-    if (state.cache.has(idx)) return;
+  // One request for chunk idx, Kokoro (queued behind the one job at a time) or Edge (straight out). Returns the cache entry; its promise resolves to a blob URL,
+  // or null when the page was turned or the request failed.
+  function startRequest(idx, forceEdge) {
     var entry = { status: 'pending', url: null };
-    state.cache.set(idx, entry);
     var mySession = state.sessionId;
     var p = state.paragraphs[idx];
     var controller = new AbortController();
     var send = function () {
       state.inflight.add(controller);
-      return fetchTTS(p.text, p.hash, p.forceEdge, controller.signal).then(function (url) {
+      return fetchTTS(p.text, p.hash, forceEdge, controller.signal).then(function (url) {
         state.inflight.delete(controller);
         return url;
       }, function (e) {
@@ -2299,7 +2438,7 @@ if (window.location.hostname === 'localhost') {
         throw e;
       });
     };
-    var request = p.forceEdge ? send() : scheduleKokoro(idx, mySession, send);
+    var request = forceEdge ? send() : scheduleKokoro(idx, mySession, send);
     entry.promise = request.then(function (url) {
       if (mySession !== state.sessionId) { if (url) URL.revokeObjectURL(url); return null; }
       entry.status = 'ready';
@@ -2312,10 +2451,29 @@ if (window.location.hostname === 'localhost') {
       setStatus('TTS error: ' + e.message);
       return null;
     });
+    return entry;
+  }
+
+  function ensureFetched(idx) {
+    if (idx < 0 || idx >= state.paragraphs.length) return;
+    if (state.cache.has(idx)) return;
+    var forceEdge = !!state.paragraphs[idx].forceEdge;
+    state.cache.set(idx, startRequest(idx, forceEdge));
+  }
+
+  // The Edge version of a chunk that normally goes to Kokoro: only asked for while the page is warming up (state.warm), so Edge can cover for a Kokoro clip that is
+  // not ready yet. A chunk that is Edge anyway just uses its normal entry.
+  function ensureEdge(idx) {
+    if (idx < 0 || idx >= state.paragraphs.length) return null;
+    if (state.paragraphs[idx].forceEdge) { ensureFetched(idx); return state.cache.get(idx); }
+    if (!state.edgeCache.has(idx)) state.edgeCache.set(idx, startRequest(idx, true));
+    return state.edgeCache.get(idx);
   }
 
   function prefetchWindow(idx) {
     for (var i = idx; i <= idx + LOOKAHEAD; i++) ensureFetched(i);
+    // While warming up, the next two chunks also get an Edge version in advance (no CPU cost, no queue), so a bridge never waits on a fresh request.
+    if (state.warm) { ensureEdge(idx); ensureEdge(idx + 1); }
   }
 
   function highlight(idx) {
@@ -2348,14 +2506,30 @@ if (window.location.hostname === 'localhost') {
     prefetchWindow(idx);
     setStatus('Loading ' + (idx + 1) + '/' + state.paragraphs.length + '…');
 
+    // Kokoro is the voice, but it is slow to start. While the page is warming up, a chunk whose Kokoro clip is not fully loaded when its turn comes is read by Edge
+    // instead (Edge fills the gap); the first chunk whose Kokoro clip IS ready at its turn ends the warm-up, and the rest of the page stays on Kokoro. A Kokoro clip
+    // never starts before it has fully arrived: the server sends each one whole.
     var entry = state.cache.get(idx);
-    entry.promise.then(function (url) {
+    var p = state.paragraphs[idx];
+    var bridge = state.warm && !p.forceEdge && entry.status !== 'ready';
+    var begin = function (url, isKokoro) {
       if (mySession !== state.sessionId) return;
       if (!url) { playFrom(idx + 1); return; }
+      if (isKokoro) state.warm = false;
+      else if (!p.forceEdge) state.coveredIdx = idx;
       setStatus('Reading ' + (idx + 1) + '/' + state.paragraphs.length);
       state.audio.src = url;
       state.audio.play().catch(function (e) { console.warn('[TTS Reader] play() failed', e); });
-    });
+    };
+    if (bridge) {
+      ensureEdge(idx).promise.then(function (edgeUrl) {
+        if (mySession !== state.sessionId) return;
+        if (edgeUrl) begin(edgeUrl, false);
+        else entry.promise.then(function (kUrl) { begin(kUrl, true); });   // Edge failed too: wait for Kokoro after all
+      });
+    } else {
+      entry.promise.then(function (url) { begin(url, !p.forceEdge); });
+    }
   }
 
   state.audio.addEventListener('ended', function () {
@@ -2404,6 +2578,9 @@ if (window.location.hostname === 'localhost') {
     clearHighlight();
     state.cache.forEach(function (e) { if (e.url) URL.revokeObjectURL(e.url); });
     state.cache.clear();
+    state.edgeCache.forEach(function (e) { if (e.url) URL.revokeObjectURL(e.url); });
+    state.edgeCache.clear();
+    state.coveredIdx = -1;
     // Cancel requests still on the wire so the next page's first Kokoro job
     // isn't stuck behind a stale one, then drop this session's queued jobs.
     // (sessionId was bumped above, so the aborts read as cancellations.)
@@ -2495,7 +2672,15 @@ if (window.location.hostname === 'localhost') {
     if (!text || isHudLine(text)) return;
 
     var isPageOpener = state.paragraphs.length === 0;
-    var chunks = isPageOpener ? splitOpeningSentence(text) : [text];
+    var edgeOnly = settings.engine === 'edge';
+    var fastStart = settings.engine === 'kokoro_fast';
+    var chunks = (isPageOpener && !edgeOnly) ? splitOpeningSentence(text) : [text];
+    if (isPageOpener) {
+      state.warm = fastStart;
+      // With Edge covering the opening, Kokoro's first piece is ONE sentence (the second), not the whole rest of the paragraph: a short clip arrives sooner, so the
+      // switch to Kokoro comes sooner and less Kokoro work is thrown away when Edge covers a piece.
+      if (state.warm && chunks.length === 2) chunks = [chunks[0]].concat(splitOpeningSentence(chunks[1]));
+    }
 
     var firstIdx = -1;
     chunks.forEach(function (chunkText, chunkIdx) {
@@ -2503,14 +2688,20 @@ if (window.location.hostname === 'localhost') {
       // the one thing blocking any audio at all, and Edge has no CPU cost or
       // concurrency cap. Everything else (including the rest of this same
       // paragraph) still uses Kokoro.
-      var useEdge = settings.fastStart && isPageOpener && chunkIdx === 0;
+      var useEdge = edgeOnly || (fastStart && isPageOpener && chunkIdx === 0);
       var idx = pushParagraphChunk(pEl, chunkText, useEdge);
       if (firstIdx === -1) firstIdx = idx;
     });
 
+    // One listener per paragraph element, reading its first chunk from the element itself: the reader can be turned off and on again on the same page (turnOff),
+    // and a second listener with the old session's index would jump to the wrong chunk. A turned-off reader ignores the click.
+    pEl._ttsFirstIdx = firstIdx;
     pEl.style.cursor = 'pointer';
     pEl.title = 'Click to read from here';
-    pEl.addEventListener('click', function () { jumpTo(firstIdx); });
+    if (!pEl._ttsBound) {
+      pEl._ttsBound = true;
+      pEl.addEventListener('click', function () { if (state.enabled) jumpTo(pEl._ttsFirstIdx); });
+    }
 
     if (isPageOpener && state.autoResumeNextPage) {
       state.autoResumeNextPage = false;
@@ -2554,7 +2745,7 @@ if (window.location.hostname === 'localhost') {
     document.getElementById('ttsSpeed').value = settings.speed;
     document.getElementById('ttsSpeedLabel').textContent = Number(settings.speed).toFixed(2) + 'x';
     document.getElementById('ttsAutoAdvance').checked = settings.autoAdvance;
-    document.getElementById('ttsFastStart').checked = settings.fastStart;
+    document.getElementById('ttsEngine').value = settings.engine;
     document.getElementById('ttsSettingsModal').showModal();
   });
   document.getElementById('ttsSpeed').addEventListener('input', function (e) {
@@ -2562,13 +2753,30 @@ if (window.location.hostname === 'localhost') {
   });
 
   window.TTSReader = {
+    // Nothing playing, paused or queued to continue: the state in which the rail's Stop button becomes "turn the reader off".
+    isIdle: function () { return state.enabled && !state.playing && !state.listenMode && state.index === -1; },
+    // Switches the reader fully off: audio and requests dropped, the paragraphs no longer clickable, the launcher back (the rail's Read button shows again).
+    turnOff: function () {
+      stop();   // silences the audio, cancels requests, clears the highlight (needs state.paragraphs, so it runs first)
+      state.enabled = false;
+      state.listenMode = false;
+      state.autoResumeNextPage = false;
+      state.warm = false;
+      Array.prototype.forEach.call(document.querySelectorAll('#text > p'), function (pEl) {
+        if (pEl._ttsBound) { pEl.style.cursor = ''; pEl.removeAttribute('title'); }
+      });
+      state.paragraphs = [];
+      panel.style.display = 'none';
+      launcher.style.display = '';
+      setStatus('Ready');
+    },
     saveSettings: function () {
       settings.serverUrl = document.getElementById('ttsServerUrl').value.trim();
       settings.kokoroVoice = document.getElementById('ttsKokoroVoice').value;
       settings.edgeVoice = document.getElementById('ttsEdgeVoice').value;
       settings.speed = parseFloat(document.getElementById('ttsSpeed').value);
       settings.autoAdvance = document.getElementById('ttsAutoAdvance').checked;
-      settings.fastStart = document.getElementById('ttsFastStart').checked;
+      settings.engine = document.getElementById('ttsEngine').value;
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch (e) {}
       document.getElementById('ttsSettingsModal').close();
     }

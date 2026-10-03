@@ -10,7 +10,7 @@
  * The LAYOUT of each dungeon (positions in grid cells, east and south positive, and the list of ways between places) is the one thing the map owns that ChoiceScript also knows: the scene files' exits.
  * It lives in web/mygame/dungeons/<id>.js, and tools/check_dungeon_map.js compares it with the scene, so a changed exit that is not changed there fails that check.
  *
- * Open with the Map button on the rail (it appears once something has been mapped) or the M key.
+ * Open with the Map button on the rail or the M key. Both are there only while a dungeon run is on (stats.dg_in_run) and something has been mapped; the map itself is kept for the next visit.
  */
 (function () {
   "use strict";
@@ -31,13 +31,16 @@
   function marked(s, id) { return truthy(s["dg_mark_" + id]); }
   function seen(s, id) { return truthy(s["dg_seen_" + id]) || marked(s, id); }
 
-  // Has the player mapped anything at all? (The rail button appears then.)
+  // Has the player mapped anything at all in this dungeon?
   DM.hasAny = function () {
     var s = statsNow(), m = mapFor(s);
     if (!m) return false;
     for (var id in m.nodes) if (seen(s, id)) return true;
     return false;
   };
+  // Is the map there to open? Only inside a dungeon run, and once something has been mapped: this is what the rail button and the M key follow. dg_in_run is cleared by every
+  // way out of a dungeon (dungeon.txt dg_run_end), so the button goes when the player climbs out, while the map itself stays for the next run.
+  DM.available = function () { return truthy(statsNow().dg_in_run) && DM.hasAny(); };
 
   /* ---------------------------------------------------------------- drawing */
 
@@ -152,6 +155,6 @@
     if (dlg && dlg.open) return;
     if (isTextTarget(ev.target)) return;
     if (document.querySelector("dialog[open]")) return;
-    if ((ev.key === "m" || ev.key === "M") && DM.hasAny()) { ev.preventDefault(); open(); }
+    if ((ev.key === "m" || ev.key === "M") && DM.available()) { ev.preventDefault(); open(); }
   });
 })();

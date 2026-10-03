@@ -587,7 +587,7 @@
           out.push("After enough honest sales, he put your name to a man he does business with, and now sends you out with a satchel of small parcels around the quarter — nothing heavy, nothing that would get you in trouble if you were stopped and asked to open one.");
         }
         if (truthy(s.hask_associate_offer_seen)) {
-          out.push("After three clean rounds he finally named the employer: the Black Oath. He said he would put word of a capable runner upstairs.");
+          out.push("After six clean rounds he finally named the employer: the Black Oath. He said he would put word of a capable runner upstairs.");
         }
         if (truthy(s.hask_associate_joined)) {
           out.push("He has put his own name behind yours. That makes you an associate who may be trusted with named paid work, not a sworn member of the brotherhood.");

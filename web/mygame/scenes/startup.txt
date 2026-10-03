@@ -632,7 +632,7 @@
 *create cut_labor_day 0
 *create cut_scrap_wade_day 0
 *comment --- HASK'S COURIER WORK (scrap yard recruitment quest) ---
-*comment times sold TO Hask specifically -- fires his offer at 3
+*comment times sold TO Hask specifically -- fires his offer at 6
 *create cut_scrap_sold_count 0
 *comment Hask has raised the offer at least once
 *create scrap_vetting_offer_seen false
@@ -642,18 +642,23 @@
 *create scrap_vetting_day 0
 *comment first round resolved; unlocks the standing "run a round" option
 *create hask_courier_unlocked false
-*comment lifetime SUCCESSFUL rounds; 3 opens Hask's named Black Oath work
+*comment lifetime SUCCESSFUL rounds; 6 opens Hask's named Black Oath work
 *create hask_courier_count 0
 *comment Hask has told the player who has really employed them
 *create hask_associate_offer_seen false
 *comment one-time guard for formal associate standing and its reputation award
 *create hask_associate_joined false
 *comment --- BLACK OATH: THE NIGHT LIST (port_valen/black_oath/black_oath_night_list.txt) ---
-*comment The first named night contract. The keeper is met during its briefing, not before.
+*comment First named night contract and repeatable radiant work. The woman upstairs is met during its briefing.
 *create black_oath_keeper_met false
 *create black_oath_night_list_stage "unstarted"
 *create black_oath_night_list_resolution "none"
+*comment Per-run resolution and payout guard; reset when a new night list is accepted.
 *create black_oath_night_list_paid false
+*comment Lifetime successful night-list runs; the first completion grants faction standing, later runs pay coin only.
+*create black_oath_night_list_count 0
+*comment Campaign day on which the current or last night list was accepted; at most one run per day.
+*create black_oath_night_list_day 0
 *create cut_dice_day 0
 *create cut_broth_day 0
 *create cut_shrine_gave false
@@ -1094,6 +1099,14 @@
 *create advantage false
 *create disadvantage false
 *create guidance_active false
+*comment GUIDANCE CAST AHEAD (2026-10-03): the sidebar spellbook's Cast button (choicescript_stats.txt codex_cast_now_guidance) sets guidance_active true and guidance_minutes_left to
+*comment guidance_duration_minutes, so no scene needs its own "[Cantrip: Guidance]" option. The clock counts the minutes down (calendar.txt advance_time) and drops guidance_active at zero;
+*comment the next ability check uses it up (dice_engine.txt) and clears the timer. The old in-scene casts set guidance_active alone, with no timer, and behave as they always did. Guidance is
+*comment ignored while combat_engaged, so an attack roll or a fight save can never eat it. 1 is 5e's duration: cast on the page that offers the check, it holds until the roll unless the chosen
+*comment option itself spends time first (a 20-minute watch, a 6-hour shift: 4 spots in port_valen_dredge_end.txt when measured 2026-10-03), which is when it lapses. Raise it to be more forgiving
+*comment (10 survives a short walk, 60 an hour); nothing else reads the number.
+*create guidance_minutes_left 0
+*create guidance_duration_minutes 1
 *comment Same lifecycle as advantage/disadvantage/guidance_active above: a caller sets it true right before
 *comment *gosub_scene dice_engine roll_d20_check, and roll_d20_check itself resets it false on every exit path, so
 *comment it can never bleed into the next, unrelated check. Weapon attacks and the five attack-roll cantrips set
@@ -3198,6 +3211,8 @@
 *create unique_buff_input_minutes 0
 *comment Set by apply_grooming_buff: false when a longer bathing boon was already running and the new one was skipped.
 *create grooming_boon_applied true
+*comment Set by clear_grooming_buff: true when a grooming boon was stripped by foul sludge or mud.
+*create grooming_buff_cleared false
 *create time_advance_locked false
 *create locked_time_advance_page_id 0
 *create locked_time_advance_id ""
@@ -3676,6 +3691,7 @@
 *create brinna_talk_1 false
 *create brinna_talk_2 false
 *create corve_approach_name "none"
+*create corve_stay_overnight false
 
 
 *comment --- GAME SETTINGS ---

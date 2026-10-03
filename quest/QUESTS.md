@@ -283,7 +283,7 @@ graph TD
 * **Scene File:** `port_valen_dredge_end.txt` (`cut_sheds_hub`, `scrap_vetting_approach`, `scrap_vetting_pitch`, `scrap_vetting_run`, `scrap_vetting_resolve`)
 * **District:** Dredge-End (the Boat-Sheds Scrap Yard).
 * **Design intent:** a Minor/Street Task (`QUEST_DESIGN_RULES.md` §6) that turns a repeatable day-job into a recruitment hook without a faction-shift climax, and deliberately without the full three-branch Mercenary Dilemma structure the bigger district quests use. Full design writeup: `quest/DREDGE_SCRAP_VETTING_PLAN.md`.
-* **Origin:** no new quest-giver — the scrap dealer makes the offer after three sales (`cut_scrap_sold_count`) and names himself (Hask) for the first time at that beat.
+* **Origin:** no new quest-giver — the scrap dealer makes the offer after six sales (`cut_scrap_sold_count`) and names himself (Hask) for the first time at that beat. Since each successful five-hour mud-scavenge yields one sale, this takes six successful trips.
 * **Briefing:** Hask connects the player to "a man he does business with" who needs a runner to carry parcels and word between people around the quarter who'd rather not walk the lanes themselves. **The player never learns this is Black Oath work** — nothing carried is illegal or dangerous, and the text never names the association; `black_oath_rep` moves silently in the background on the first success only.
 * **The round (`scrap_vetting_run`):** one archetype choice resolves the whole afternoon (one roll standing in for several stops — the market stalls, the Gangways rail, the foot of Lamp Stair):
   * **STR** (`DC 12`) — keep a hard, steady pace between every stop.
@@ -292,7 +292,7 @@ graph TD
   * Failure is fail-forward with no permanent penalty: nothing carried is illegal, so there's no authority to get more alert and no reason to raise the DC or lock the player out — a fumbled round just pays less and doesn't count toward the trust counter.
 * **Economics:** 12 copper on a successful round (partial 4 on failure), once per `campaign_day` (`scrap_vetting_day`) — a real day job (6 hours) rather than an errand, sized so the courier round and wading together eat most of the 14-hour working day if both are run the same day.
 * **The repeatable loop:** once the first round resolves, `hask_courier_unlocked` opens a standing "Ask Hask if there's a round to run" option at `cut_sheds_hub` — same mechanics as the first round, no further `black_oath_rep` change (that was the first round's reward specifically, so the loop can't farm reputation).
-* **Associate reveal:** after three successful rounds, Hask names the employer as the Black Oath and offers to put his name behind the player. Accepting sets `black_oath_status = "associate"` and awards `black_oath_rep +2`. This is named paid work, not a sworn oath; Hask puts the player forward for a night contract upstairs. Refusal is reversible and leaves the ordinary courier loop open.
+* **Associate reveal:** after six successful rounds, Hask names the employer as the Black Oath and offers to put his name behind the player. Accepting sets `black_oath_status = "associate"` and awards `black_oath_rep +2`. This is named paid work, not a sworn oath; Hask puts the player forward for a night contract upstairs. Refusal is reversible and leaves the ordinary courier loop open.
 * **Outlaw origin:** begins at `black_oath_rep = -3` and `black_oath_heat = 3`, matching the existing six-hundred-mark theft and blood bounty. Hask's sponsorship may create a ward-level opening for paid work, but it does not erase the debt or make the rest of the organization forget the dead collector.
 * **The rope-and-oil house:** by day it sells cordage, hooks, lamp oil, tallow and sail patches. After dark, its upper room is a Black Oath contact point for local work. The player is not told whether it is a headquarters or how it fits into the wider organization.
 * **Lore and log:** Hask has a gated people entry in `lorebook-port-valen.js`; the repeatable day-job remains out of `quest-data.js`, matching Crane Three's treatment.
@@ -301,12 +301,12 @@ graph TD
 ### The Night List
 * **Scene File:** `port_valen/black_oath/black_oath_night_list.txt` (`night_list_briefing` through `night_list_failed`).
 * **District:** Dredge-End, entered from the Duckboard Market rope-and-oil house at Night or Pre-Dawn.
-* **Requirements:** `hask_associate_joined` and `black_oath_night_list_stage = "unstarted"`.
+* **Requirements:** `hask_associate_joined`, no active Night List, and no accepted list earlier that campaign day.
 * **Briefing:** the player meets the unnamed woman upstairs during a real job briefing, not a social audience. Three stops exchange two purses and an oilcloth packet; the player may ask what is in the packet before accepting.
 * **Route:** after the three hand-offs, three approaches resolve a street interception: STR (`Athletics DC 12`), DEX (`Acrobatics DC 12`), or CHA (`Persuasion DC 11`).
-* **Success:** `black_oath_night_list_resolution = "completed"`; 18 copper, `black_oath_rep +1`, and the quest counts toward level progress.
+* **Radiant cadence:** after the introductory run, the woman upstairs can offer one fresh list each campaign day. The first always ends with the lane confrontation; later runs make a hidden 1-in-8 roll for it. `black_oath_night_list_count` records successful runs; the first success grants `black_oath_rep +1` and level-progress credit, while later successes pay 18 copper without farming standing.
 * **Failure:** `black_oath_night_list_resolution = "failed"`; no pay, `black_oath_rep -1`, `black_oath_heat +1`, and no level-progress credit.
-* **Variables:** `black_oath_keeper_met`, `black_oath_night_list_stage`, `black_oath_night_list_resolution`, and `black_oath_night_list_paid`.
+* **Variables:** `black_oath_keeper_met`, `black_oath_night_list_stage`, `black_oath_night_list_resolution`, `black_oath_night_list_paid`, `black_oath_night_list_count`, and `black_oath_night_list_day`.
 
 ---
 
@@ -370,12 +370,12 @@ graph TD
 *create crane_dell_regard 0                   *comment Dell's opinion -- future promotion gate
 
 *comment --- Hask's Real Money / Scrap Yard Courier Round (see full label list above) ---
-*create cut_scrap_sold_count 0                *comment times sold TO Hask specifically -- fires his offer at 3
+*create cut_scrap_sold_count 0                *comment times sold TO Hask specifically -- fires his offer at 6
 *create scrap_vetting_offer_seen false        *comment Hask has raised the offer at least once
 *create scrap_vetting_quest_stage "unstarted" *comment "unstarted", "active", "resolved"
 *create scrap_vetting_day 0                   *comment campaign_day of the last delivery-round attempt; once/day
 *create hask_courier_unlocked false           *comment first round resolved; unlocks the standing "run a round" option
-*create hask_courier_count 0                  *comment lifetime SUCCESSFUL rounds; 3 opens named Oath work
+*create hask_courier_count 0                  *comment lifetime SUCCESSFUL rounds; 6 opens named Oath work
 *create hask_associate_offer_seen false       *comment Hask has revealed the employer
 *create hask_associate_joined false           *comment one-time associate/rep award guard
 

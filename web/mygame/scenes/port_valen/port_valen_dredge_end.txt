@@ -320,7 +320,8 @@ The city's paving stops at the drainage cut. Past it the lanes are broken rock a
   *comment street_life != "empty" closes it in a Storm or Blizzard (calendar.txt:652) — the steward is
   *comment not standing in a gale. Weather closes a place, never a quest option.
   *if (met_lyra)
-    *if ((lyra_quest_stage = "unstarted") and ((not(lyra_refused)) and ((vane_independent_operative) and ((street_life != "empty") and dredge_end_seen))))
+    *comment The steward makes his rounds at Dusk; Storm and Blizzard still close the encounter.
+    *if ((lyra_quest_stage = "unstarted") and ((not(lyra_refused)) and ((vane_independent_operative) and (((time_period = "Dusk") and (street_life != "empty")) and dredge_end_seen))))
       # A man in a steward's apron talking to Lyra, past the lamps.
         *goto_scene port_valen/lyra_quests/lyra_quest lyra_hook
   # [Travel: Head to another district]
@@ -1506,11 +1507,11 @@ The market runs along the lane on broken stone and packed cinder, with planks la
       
       At the base of the wooden stair, the heavyset man shifts his weight, the iron-banded head of his mace clicking against the stone. He tracks your boots in the dark, his eyes dead and unblinking.
 
-      *if ((hask_associate_joined) and (black_oath_night_list_stage = "unstarted"))
+      *if (((hask_associate_joined) and (not(black_oath_night_list_stage = "active"))) and (black_oath_night_list_day < campaign_day))
         The man gives you one look, then moves his mace clear of the stair. "Hask put your name up. She has a list. Go on."
         *goto_scene port_valen/black_oath/black_oath_night_list night_list_briefing
       *elseif (hask_associate_joined)
-        The man looks you over, then gives a single nod. "Hask said you might come. She has nothing for you. Not tonight."
+        The man looks you over, then gives a single nod. "You have had your run. Nothing else tonight."
       *else
         "Stores," he says, his voice flat and hard. "Rope and oil. Nobody up there wants to see you. Walk."
       *goto cut_market_hub
@@ -1694,11 +1695,11 @@ The canal bank here is lined with open-fronted timber sheds built out over the s
         *set cut_scrap_sold_count + 1
 
       [b][💰 Scrap Sold: +${scrap_paid} Copper Bits][/b]
-      *if ((cut_scrap_sold_count >= 3) and (not(scrap_vetting_offer_seen)))
+      *if ((cut_scrap_sold_count >= 6) and (not(scrap_vetting_offer_seen)))
         *goto scrap_vetting_approach
       *goto cut_sheds_hub
 
-  *if ((hask_courier_count >= 3) and (not(hask_associate_joined)))
+  *if ((hask_courier_count >= 6) and (not(hask_associate_joined)))
     *if (not(hask_associate_offer_seen))
       # Hask has put away his scales and is waiting for you.
         *goto hask_associate_offer
@@ -1750,7 +1751,7 @@ The canal bank here is lined with open-fronted timber sheds built out over the s
     *page_break Back along the canal…
     *goto port_valen_dredge_end
 
-*comment ····· sub-scene: Hask's recruitment offer, fires once on the 3rd sale
+*comment ····· sub-scene: Hask's recruitment offer, fires once on the 6th sale
 *label scrap_vetting_approach
 *set met_hask true
 This time, though, his thumb stays closed over the last coin.
@@ -1880,14 +1881,14 @@ Hask hands over a canvas satchel, already packed: a few wrapped parcels, nothing
 *goto cut_sheds_hub
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment ····· sub-scene: after three successful rounds, Hask names the employer and offers associate standing
+*comment ····· sub-scene: after six successful rounds, Hask names the employer and offers associate standing
 *label hask_associate_offer
 *set hask_associate_offer_seen true
 *set met_hask true
 
 Hask has taken the balance pans off their hook and laid them beneath the bench. Without the scales between you, the scrap pen feels smaller.
 
-"Three clean rounds," he says. "You did the work. You did not pry. That's enough."
+"Six clean rounds," he says. "You did the work. You did not pry. That's enough."
 
 "The work came from the Black Oath," Hask says. "I can keep you on the runs, if that's all you want. Or I can put your name to my boss. They decide if you get anything else."
 
@@ -2054,16 +2055,24 @@ A thickset foreman in a stiff oxhide coat stands on an upturned nail-keg, whittl
         *set locked_currency_txn_page_id page_id
 
       *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-        *comment Accelerated grime from handling sulfur canal sludge:
-        *set minutes_since_wash + 360
+        *comment Acute grime from handling sulfur canal sludge: immediately pushes to Grubby at minimum
+        *if (minutes_since_wash < 4321)
+          *set minutes_since_wash 4321
+        *else
+          *set minutes_since_wash + 1440
         *if (minutes_since_wash > 8640)
           *set hygiene_stage "Foul"
-        *elseif (minutes_since_wash > 4320)
+        *else
           *set hygiene_stage "Grubby"
+        *gosub_scene economy clear_grooming_buff
+        *gosub_scene calendar update_hub_condition
         *set stat_bump_locked true
         *set locked_stat_bump_page_id page_id
 
-      [b][💰 Shift Paid: +5 Copper Bits (Soiled with Canal Sludge)][/b]
+      *if (grooming_buff_cleared)
+        [b][💰 Shift Paid: +5 Copper Bits | Soiled in Canal Sludge: Hygiene Grubby (Grooming Boon Cleared)][/b]
+      *else
+        [b][💰 Shift Paid: +5 Copper Bits | Soiled in Canal Sludge: Hygiene Grubby][/b]
     *else
       By the fifth hour, your grip numbs against the slick ash wood. A heavy scoop swings wide, clipping the gunwale and spilling half its foul load back into the trench with a violent splash. The crew curses as dark sludge spatters across your clothes, and the foreman's knife instantly bites into his tally stick.
       
@@ -2076,16 +2085,21 @@ A thickset foreman in a stiff oxhide coat stands on an upturned nail-keg, whittl
         *set locked_currency_txn_page_id page_id
 
       *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-        *comment Extra heavy grime from being splashed in sludge:
-        *set minutes_since_wash + 540
-        *if (minutes_since_wash > 8640)
-          *set hygiene_stage "Foul"
-        *elseif (minutes_since_wash > 4320)
-          *set hygiene_stage "Grubby"
+        *comment Acute heavy grime from being splashed head-to-toe in canal sludge: immediately Foul
+        *if (minutes_since_wash < 8641)
+          *set minutes_since_wash 8641
+        *else
+          *set minutes_since_wash + 1440
+        *set hygiene_stage "Foul"
+        *gosub_scene economy clear_grooming_buff
+        *gosub_scene calendar update_hub_condition
         *set stat_bump_locked true
         *set locked_stat_bump_page_id page_id
 
-      [b][💰 Shift Docked: +2 Copper Bits (Strained & Covered in Sludge: +1 Fatigue)][/b]
+      *if (grooming_buff_cleared)
+        [b][💰 Shift Docked: +2 Copper Bits | Drenched in Canal Sludge: Hygiene Foul (Grooming Boon Cleared) | +1 Fatigue][/b]
+      *else
+        [b][💰 Shift Docked: +2 Copper Bits | Drenched in Canal Sludge: Hygiene Foul | +1 Fatigue][/b]
     *gosub_scene calendar recalc_hp_from_neglect
     *if (hp_current <= 0)
       *set death_cause "starvation"
@@ -2865,6 +2879,13 @@ From your bench, you can see several women attending to patrons across the parlo
   *if ((((gold * 100) + (silver * 10)) + copper) >= 10)
     # [1 Silver Mark] Go upstairs to a private chamber with Sable. [~45 min]
       *set corve_approach_name "Sable"
+      *set corve_stay_overnight false
+      *goto cut_corve_encounter
+
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 20)
+    # [2 Silver Marks] Spend the night upstairs in a private chamber with Sable. [~8 Hours]
+      *set corve_approach_name "Sable"
+      *set corve_stay_overnight true
       *goto cut_corve_encounter
 
   # Thank her and look back over the room.
@@ -2933,6 +2954,13 @@ From your bench, you can see several women attending to patrons across the parlo
   *if ((((gold * 100) + (silver * 10)) + copper) >= 10)
     # [1 Silver Mark] Go upstairs to a private chamber with Brinna. [~45 min]
       *set corve_approach_name "Brinna"
+      *set corve_stay_overnight false
+      *goto cut_corve_encounter
+
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 20)
+    # [2 Silver Marks] Spend the night upstairs in a private chamber with Brinna. [~8 Hours]
+      *set corve_approach_name "Brinna"
+      *set corve_stay_overnight true
       *goto cut_corve_encounter
 
   # Thank her and look back over the room.
@@ -2994,25 +3022,40 @@ You glance around the benches, and ${corve_generic_desc} catches your eye, setti
   *if ((((gold * 100) + (silver * 10)) + copper) >= 10)
     # [1 Silver Mark] Go upstairs to a private chamber with her. [~45 min]
       *set corve_approach_name "she"
+      *set corve_stay_overnight false
+      *goto cut_corve_encounter
+
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 20)
+    # [2 Silver Marks] Spend the night upstairs in a private chamber with her. [~8 Hours]
+      *set corve_approach_name "she"
+      *set corve_stay_overnight true
       *goto cut_corve_encounter
 
   # Nod politely and look back over the room.
     *goto cut_corve_parlor_menu
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment ENCOUNTER EXECUTION (45 MINS, BUFF, RESETS HYGIENE, NO SLEEP)
+*comment ENCOUNTER EXECUTION (45 MINS OR 8-HOUR OVERNIGHT, BUFF, RESETS HYGIENE)
 *comment Shared by all three parlor-bench paths above.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label cut_corve_encounter
 *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-  *set currency_add_amount 0 - 10
+  *if (corve_stay_overnight)
+    *set currency_add_amount 0 - 20
+  *else
+    *set currency_add_amount 0 - 10
   *gosub_scene economy currency_add
   *set currency_txn_locked true
   *set locked_currency_txn_page_id page_id
 
-*set hours_to_pass 0
-*set minutes_to_pass 45
-*set time_advance_call_id "cut_corve_private_time"
+*if (corve_stay_overnight)
+  *set hours_to_pass 8
+  *set minutes_to_pass 0
+  *set time_advance_call_id "cut_corve_overnight"
+*else
+  *set hours_to_pass 0
+  *set minutes_to_pass 45
+  *set time_advance_call_id "cut_corve_private_time"
 *gosub_scene calendar advance_time
 *gosub_scene calendar recalc_hp_from_neglect
 
@@ -3021,6 +3064,17 @@ You glance around the benches, and ${corve_generic_desc} catches your eye, setti
   *if (neglect_damage_fatigue > neglect_damage_hunger)
     *set death_cause "exhaustion"
   *goto_scene death death_screen
+
+*if (corve_stay_overnight)
+  *set sleep_location_id "corve_chamber"
+  *set sleep_is_shared false
+  *set sleep_is_permanent_home false
+  *set sleep_tier_name "none"
+  *set sleep_tier_stat1 "none"
+  *set sleep_tier_bonus1 0
+  *set sleep_tier_stat2 "none"
+  *set sleep_tier_bonus2 0
+  *gosub_scene calendar resolve_sleep
 
 *set unique_buff_input_name "Carnal Warmth"
 *set unique_buff_input_desc "+1 CHA (Relaxed & Confident)"
@@ -3043,7 +3097,10 @@ You glance around the benches, and ${corve_generic_desc} catches your eye, setti
   *set stat_bump_locked true
   *set locked_stat_bump_page_id page_id
 
-You leave a silver mark on the side tray, and ${corve_approach_name} leads you away from the parlor tables toward the narrow timber staircase behind the tapestry.
+*if (corve_stay_overnight)
+  You leave two silver marks on the side tray, and ${corve_approach_name} leads you away from the parlor tables toward the narrow timber staircase behind the tapestry.
+*else
+  You leave a silver mark on the side tray, and ${corve_approach_name} leads you away from the parlor tables toward the narrow timber staircase behind the tapestry.
 
 Upstairs, the private chamber beneath the seawall rafters is quiet and cedar-scented. A ceramic pitcher of fresh water sits on a washstand beside a low bed piled with clean wool blankets.
 
@@ -3113,11 +3170,55 @@ followed by the rest of your kit, leaving you bare to the dim candlelight.
   *comment ── VARIATION 5: SIDE-LYING / TANGLED SPOONING ──
   She draws you down sideways beneath the heavy wool blankets, turning her back to you and guiding your frame flush against hers. Reaching down, she hooks one bare leg high over your hip, tilting her pelvis to open herself completely. You ease forward into her warmth, sliding inside on your sides with a wet, seamless glide that draws a long shudder from her throat. Tucked behind her beneath the quilts, the heat is heavy and cocooned. You wrap one arm around her ribs, your palm resting flat against her lower stomach to anchor her tight against your groin as you begin a deep, rolling slide. The rhythm is steady, dragging out the friction with long, exhaustive strokes that bury you completely on each drive. Her head tilts back against your shoulder, breath feathering over your throat as her hips roll back against yours in quiet, desperate sync, chasing the pressure until her inner walls grip you in a tight, shivering spasm, pulling your seed out of you in a heavy, gasping pulse.
 
-Afterward, the room settles into thick, cooling stillness, broken only by the sound of heavy breathing and the distant wash of the canal against the stone kerb below. You wash at the basin with the cloth and a cake of plain soap, scrubbing off the road grime along with the sweat, and pull your garments back over your skin. Your muscles feel loose, the grinding tension has left your spine, and you carry an easy, grounded confidence as you unbolt the door and make your way back down the stairs to the parlor.
+*if (not(corve_stay_overnight))
+  Afterward, the room settles into thick, cooling stillness, broken only by the sound of heavy breathing and the distant wash of the canal against the stone kerb below. You wash at the basin with the cloth and a cake of plain soap, scrubbing off the road grime along with the sweat, and pull your garments back over your skin. Your muscles feel loose, the grinding tension has left your spine, and you carry an easy, grounded confidence as you unbolt the door and make your way back down the stairs to the parlor.
 
-[b][🕯️ Intimate Encounter: Carnal Warmth (+1 CHA for 10 Hours 40 Minutes) | Hygiene Restored to Clean | Encounters: ${intimate_encounters}][/b]
-*page_break Return to the parlor…
-*goto cut_corve_parlor_menu
+  [b][🕯️ Intimate Encounter: Carnal Warmth (+1 CHA for 10 Hours 40 Minutes) | Hygiene Restored to Clean | Encounters: ${intimate_encounters}][/b]
+  *page_break Return to the parlor…
+  *goto cut_corve_parlor_menu
+*else
+  Afterward, neither of you reaches for clothes or stays. The cedar room settles into a thick, comfortable quiet, broken only by the slow catch of your breathing and the muffled lap of the canal against the stone foundations below. She draws the heavy wool blankets up over both of you, sealing off the chill of the seawall. Curled together against the mattress, the dense warmth of her skin and the weariness of the road pull you under, and you drift into a deep, unbroken sleep.
+
+  *if ((time_period = "Morning") or (time_period = "Midday"))
+    Daylight filters through the high stone transom, casting pale bars across the floorboards.
+  *elseif (time_period = "Pre-Dawn")
+    The room is still dark, lit only by a thin slit of grey twilight through the transom.
+  *else
+    The dim room is quiet, the candle long since burned down on the washstand.
+
+  *if (weather_severity >= 3)
+    Outside, a heavy gale howls against the thick seawall masonry, muffled to a low vibration in the floorboards.
+  *elseif (weather = "Rain")
+    Muffled rain drums a steady, rhythmic pulse against the slates far above.
+  *elseif (weather_cold)
+    Cold air presses against the glass of the high transom, but beneath the blankets the bed holds its warmth.
+
+  *if (corve_approach_name = "Sable")
+    When you stir, Sable is already awake beside you, propped on one pale elbow with her white-blonde hair tumbling across her neck. Her cool green eyes watch you with calm composure. "You sleep heavily," she murmurs, the ghost of a smile touching her mouth. "The bells will be ringing along the wharves soon."
+  *elseif (corve_approach_name = "Brinna")
+    Brinna lies on her back beside you, one thick, muscular arm resting across the quilts and a slow rumble in her chest. When you shift, she blinks open her amber eyes, stretching her heavy frame with a wide, tusked grin. "Still with us?" she rumbles, knuckling sleep from her brow. "Good. Bed's warm enough to stay half the day, but the house has hours."
+  *else
+    The woman beside you rests quietly on her side, breathing in slow, peaceful measure. When you stir, she blinks awake, pulling the wool blanket up to her chin and offering a sleepy, pleasant nod of parting.
+
+  *if (not(sleep_gear_note = ""))
+    *line_break
+    ${sleep_gear_note}
+
+  You swing your legs out from the blankets onto the cedar floorboards. At the washstand, you dip the linen cloth into cold, clean water from the pitcher, scrubbing off the sleep and dried sweat with the cake of plain soap. Your limbs are loose and well rested, the grinding stiffness has left your back, and your mind is clear. You pull on your clothes,
+  *if (not(equipped_armor_id = "none"))
+    fastening your ${armor_prose},
+  *if (not(equipped_weapon_id = "none"))
+    gathering your ${weapon_prose},
+  *if (not(equipped_cloak_id = "none"))
+    and clasping your ${cloak_prose},
+  before heading down the narrow staircase.
+
+  Downstairs, the parlor is shuttered and quiet for the daylight hours. The central stove is banked to low embers, the benches are empty, and only the door-guard stirs by the entrance. He lifts the heavy iron drop-bar with a dull clatter, holding the felt curtain aside to let you step out into the stone terrace of Lamp Stair.
+
+  [b][🛏️ Long Rest Resolved: Class Resources Restored | Rested | Carnal Warmth (+1 CHA for 10 Hours 40 Minutes) | Hygiene Restored to Clean | Encounters: ${intimate_encounters}][/b]
+  *set corve_stay_overnight false
+  *page_break Step out onto Lamp Stair…
+  *goto cut_lamp_page
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment AREA 6 OF 7: THE ALLEY SHRINE
@@ -3809,11 +3910,17 @@ A broad, steep flight of granite steps is cut directly into the sheer face of th
       *set cut_scrap_wade_day campaign_day
       *gosub_scene dice_engine roll_skill_check 11 "survival" "" "" "" "" ""
       *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-        *set minutes_since_wash + 300
+        *comment Acute grime from wading in canal silt and kelp for 5 hours: immediately pushes to Grubby at minimum
+        *if (minutes_since_wash < 4321)
+          *set minutes_since_wash 4321
+        *else
+          *set minutes_since_wash + 720
         *if (minutes_since_wash > 8640)
           *set hygiene_stage "Foul"
-        *elseif (minutes_since_wash > 4320)
+        *else
           *set hygiene_stage "Grubby"
+        *gosub_scene economy clear_grooming_buff
+        *gosub_scene calendar update_hub_condition
         *if (check_success)
           *set cut_scrap + 2
         *set stat_bump_locked true
@@ -3823,9 +3930,17 @@ A broad, steep flight of granite steps is cut directly into the sheer face of th
 
         Twice your calloused fingers close over cold metal: a heavy forged iron oar-pin, and a rusted three-link length of dredge-chain. You rinse the worst of the mud from the iron in the canal current and haul your finds onto dry stone, though the stink of the trench stays on you.
 
-        [b][⛓ Scrap Salvaged: 2 Pieces (The scrap yard pays for them)][/b]
+        *if (grooming_buff_cleared)
+          [b][⛓ Scrap Salvaged: 2 Pieces | Waded in Canal Sludge: Hygiene Grubby (Grooming Boon Cleared)][/b]
+        *else
+          [b][⛓ Scrap Salvaged: 2 Pieces (The scrap yard pays for them) | Hygiene: Grubby][/b]
       *else
         You spend five hours knee-deep in the freezing silt, tearing through slimy bladderwrack and scraping your knuckles raw on sharp oyster shells. You haul up only a broken clay pipe stem, a rotten heel-tap, and bone-deep river chill that settles into your joints, along with a stink of canal mud that clings to you.
+
+        *if (grooming_buff_cleared)
+          [b][🌊 Nothing Found | Waded in Canal Sludge: Hygiene Grubby (Grooming Boon Cleared)][/b]
+        *else
+          [b][🌊 Nothing Found | Waded in Canal Sludge: Hygiene Grubby][/b]
       *gosub_scene calendar recalc_hp_from_neglect
       *if (hp_current <= 0)
         *set death_cause "starvation"
