@@ -2,7 +2,7 @@
 
 **A small errand, not a campaign.** Lyra's aunt was the tenant. She died four months ago and the rent is still running on her name, and the term ends at the month. The two children living in those rooms are on nothing — no lease, no book, no list — so when the term lapses they have nothing holding them there. Lyra cannot pay the five silver it takes to stop that. The player can.
 
-**Status: designed, not implemented.** Nothing here is built. Line numbers were read from the working tree on 2026-09-30; the Port Valen scene files have since moved into `web/mygame/scenes/port_valen/`, so every `port_valen_*.txt` below means the file in that folder. Re-grep for labels before editing. **Updated after the Dredge-End retcon of the same date** (the district is no longer built on pilings; it is leaning terraces on ordinary footings, with plank walkways slung between the *upper storeys*). The staging was relocated to those walkways and the 2026-09-30 line citations were re-grepped and corrected.
+**Status: implemented.** The quest shipped in `web/mygame/scenes/port_valen/lyra_quests/lyra_quest.txt`, with hub entries in `port_valen_dredge_end.txt` and `port_valen.txt`. This document is kept as the design record and is updated where the build has since diverged from it. Line numbers were read from the working tree on 2026-09-30; the Port Valen scene files have since moved into `web/mygame/scenes/port_valen/`, so every `port_valen_*.txt` below means the file in that folder. Re-grep for labels before editing. **Updated after the Dredge-End retcon of the same date** (the district is no longer built on pilings; it is leaning terraces on ordinary footings, with plank walkways slung between the *upper storeys*). The staging was relocated to those walkways and the 2026-09-30 line citations were re-grepped and corrected.
 
 ---
 
@@ -30,7 +30,7 @@ The player sees Lyra talking to a block steward on an upper walkway in Dredge-En
 1. **It's about money.** The player is a sellsword; finding coin is what they do. The quest gives them a *reason* to earn the silver the game already pays out, and a *person* to spend it on.
 2. **The steward says everything in one conversation, in the street.** No institution, no records, no puzzle to solve.
 3. **Lyra is available to all three squads.** She is the company-wide rookie, and the quest has no squad-gated content.
-4. **The hook is not gated on bond.** `lyra_pay_generous` (`alderford.txt:2121`, `lyra_bond >= 15`) would have made the 8-19 and under-8 tiers dead code: below 15 the button never appears, so the greeting could only ever run its warm branch. The gate is `met_lyra` — not a bond gate, just that the player has been in the same room as her — and the greeting does the filtering.
+4. **The hook is not gated on bond.** `lyra_pay_generous` (`alderford.txt:2121`, `lyra_bond >= 15`) was tried here and made every lower tier dead code: below 15 the button never appears. The gate is `met_lyra` — not a bond gate, just that the player has been in the same room as her. The greeting sets her **tone**; it does not decide whether the player may take the errand.
 5. **The clock is 10 days**, standing in for the end of the term. Long enough to run two or three other errands.
 6. **No fight.** The steward is a tired man doing a job he dislikes, not a villain.
 7. **The refusal is final and costs the player nothing but the story.** The children are put out. Lyra never mentions it again, and the coda has one line for it.
@@ -102,7 +102,7 @@ He goes down the outside stair. The boards creak twice under his weight and then
 
 Lyra smiles when she hears a familiar voice. "You heard all of that?"
 
-#### `lyra_bond >= 8` and under 20 — you fought together, and that is all
+#### Under 20 — you fought together, and that is all
 
 *You come up the last flight and stop, and she sees you and does not turn, and finishes what she is saying. Only when the steward is gone does she look over.*
 
@@ -110,24 +110,18 @@ Lyra smiles when she hears a familiar voice. "You heard all of that?"
 
 "You heard all of that."
 
-*She has not said whether she is glad you are here. She is deciding.*
+*She has not said whether she is glad you are here. She is deciding. Then she stays on the landing instead of walking off, and gives you the same arithmetic she gives a friend — flatter, and without the relief, but all of it.*
 
-#### Under 8 — she has no reason to owe you anything
+"Term's up at month's end, and after that the arrears are just a debt with nobody attached to it." She turns the bow a quarter turn in her hand. "Five silver keeps two children in rooms they can sleep in. I've not got it."
 
-*You come up the last flight and she sees you and does not turn, and finishes what she is saying. Only when the steward is gone does she look over, and she looks at you the way she looks at a colleague who has come to ask a favour.*
+**This tier is colder than the one at 20 and should read that way, but it is not a wall.** At 20 she has decided the player is worth something and the kindness is mutual; under 20 she is still measuring them, and she gives them the number anyway rather than pretending the errand is not happening.
 
-"${name}."
-
-"Aye. I heard it." She does not soften it. "Go on down the walkway."
-
-*She is not hostile. She has simply decided that this is hers and that you are company on the way past, and she is not wrong to think that. A failed check at the camp brazier put the player here, and nothing since has made her think otherwise.*
-
-**This is a colder no than the one at 20, and it should read that way.** At 20 she has decided the player is worth something and the kindness is mutual; under 8 she is dismissing someone who stopped to listen. Neither path loses bond and neither sets `lyra_refused`, because the player never got as far as being asked.
+**Both tiers reach the same two options. That is the entire point of the revision.** The tiering sets her tone, not the player's access. An earlier build ran three tiers and only the warmest reached `lyra_hook_offer`, with the two lower ones falling into `lyra_hook_greet_cold` and `lyra_hook_declined` — labels that set no flag and returned the player to the hub with the button still live. A player under 20 walked the identical scene indefinitely and could neither take nor refuse the errand. The third tier is deleted and the second now ends at the decision.
 
 
 #### The three facts, and only now
 
-**Nobody tells the player anything in this quest for free, and the tiering is the mechanism.** What follows is the `>= 20` case, where she has decided the player is worth talking to. Each lower tier gets less.
+**Nobody tells the player anything in this quest for free, and the tiering is the mechanism.** What follows is the `>= 20` case, where she has decided the player is worth talking to. The lower tier is the same information in a flatter voice — because a player who cannot take the errand is not being protected, only stalled.
 
 *fact 1 — the two rooms*
 
@@ -168,7 +162,7 @@ She goes up the walkway toward the compound, and the sag in the middle of it tak
 
 **The button names the kindness, not the leaving.** "Leave it on the walkway" told the player what the engine was about to do to them. The new text tells them what they are choosing to be.
 
-**`lyra_refused` stays.** The stage remains `"unstarted"`, so if `lyra_bond` later rises past 20 the hub option returns on its own and the player can take the errand then. A kind no is not a lock, and the plan does not treat it as one. The coda carries a line for this branch (§3).
+**`lyra_refused` closes the errand for good.** The stage remains `"unstarted"`, but `port_valen_dredge_end.txt` gates the button on `not(lyra_refused)`, so a kind no ends the quest. **This corrects an earlier claim in this plan**, that the option "returns on its own once `lyra_bond` rises past 20": nothing in `port_valen/` ever raises `lyra_bond`. Every gain is in `camp_night.txt`, `battle_black_sinks.txt` and `alderford.txt`, plus the two lines downstream of paying and repaying — all of it upstream of Port Valen or downstream of having already accepted. A player who says no in Port Valen stays said, which is the right outcome regardless (§1.7 makes the refusal final). The coda carries a line for this branch (§3).
 
 ### Beat 2: The Handing Over (`lyra_b2`)
 

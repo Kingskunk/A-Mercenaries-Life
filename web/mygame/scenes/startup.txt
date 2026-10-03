@@ -14,6 +14,10 @@
 
 *create implicit_control_flow true
 
+*comment Save-data format version, separate from the public game version. web/util.js owns migrations and stamps
+*comment the same number at the top level of every live, manual, rolling, and checkpoint save.
+*create save_schema_version 1
+
 *comment page_id is bumped by web/scene.js on every real page advance (not
 *comment on a refresh/Stats round trip); *created here so both the linter
 *comment and Quicktest/Run Game recognize it as a normal stat.
@@ -1769,7 +1773,7 @@
 *comment Dungeon engine (2026-10-02, dungeon.txt): the random-encounter picker. dg_table and dg_call_id are set by the caller; dg_encounter is the result
 *comment ("none" when nothing is left to roll); dg_pick_1..8 are the run's no-repeat history; dg_tide is derived from time_period (low Morning-Dusk, high Night and
 *comment Pre-Dawn); the rest is scratch for one pick, and the lock pair makes a replay of the same page skip the roll.
-*create dg_table ""
+*create dg_table "silt_conduits"
 *create dg_call_id ""
 *create dg_encounter "none"
 *create dg_tide "low"
@@ -1799,31 +1803,70 @@
 *comment Dungeon walking (dungeon.txt dg_step, dg_light_prompt, dg_dark_check; the map is port_valen/port_valen_silt_conduits.txt). dg_dark is derived, never set by hand:
 *comment true in a run with no light left and no darkvision, and the one thing that reads it is roll_d20_check (disadvantage) and dg_fight_prep (enemy advantage).
 *create dg_in_run false
-*create dg_start "x1"
+*create dg_start "silt_x1"
 *create dg_pos "none"
 *create dg_dest "none"
 *create dg_dest_hall false
 *create dg_steps 0
 *comment THE RESPAWN (dungeon.txt dg_respawn). What a dungeon holds is kept BETWEEN runs and refilled every dg_respawn_days days (about twice a week): dg_done_<node> says a hallway step's encounter has been rolled
-*comment (arriving there again rolls nothing), and the room flags below say what the player already did in a room. dg_reset_day is the campaign_day of the last refill (0 = never). Chalked junctions stay quiet after a refill.
+*comment (arriving there again rolls nothing), and the room flags below say what the player already did in a room. dg_reset_day_<dg_table> is the campaign_day of that dungeon's last refill (0 = never); the room flags are dg_<dungeon>_r<N>_* (dg_silt_r1_*...), so two dungeons never share one. Chalked junctions stay quiet after a refill.
+*comment THE TABLE ROWS (dungeon.txt dg_run_table): a dungeon's table label FILLS these slots and the engine walks them, so a pick makes one scene call per pass, not one per row (a scene call nests in the
+*comment headless engine). dg_trow_count rows at most 12, each an id and its low-tide and high-tide weight.
+*create dg_trow_count 0
+*create dg_trow_id_1 "none"
+*create dg_trow_lo_1 0
+*create dg_trow_hi_1 0
+*create dg_trow_id_2 "none"
+*create dg_trow_lo_2 0
+*create dg_trow_hi_2 0
+*create dg_trow_id_3 "none"
+*create dg_trow_lo_3 0
+*create dg_trow_hi_3 0
+*create dg_trow_id_4 "none"
+*create dg_trow_lo_4 0
+*create dg_trow_hi_4 0
+*create dg_trow_id_5 "none"
+*create dg_trow_lo_5 0
+*create dg_trow_hi_5 0
+*create dg_trow_id_6 "none"
+*create dg_trow_lo_6 0
+*create dg_trow_hi_6 0
+*create dg_trow_id_7 "none"
+*create dg_trow_lo_7 0
+*create dg_trow_hi_7 0
+*create dg_trow_id_8 "none"
+*create dg_trow_lo_8 0
+*create dg_trow_hi_8 0
+*create dg_trow_id_9 "none"
+*create dg_trow_lo_9 0
+*create dg_trow_hi_9 0
+*create dg_trow_id_10 "none"
+*create dg_trow_lo_10 0
+*create dg_trow_hi_10 0
+*create dg_trow_id_11 "none"
+*create dg_trow_lo_11 0
+*create dg_trow_hi_11 0
+*create dg_trow_id_12 "none"
+*create dg_trow_lo_12 0
+*create dg_trow_hi_12 0
 *create dg_respawn_days 3
-*create dg_reset_day 0
-*create dg_done_x1 false
-*create dg_done_x2 false
-*create dg_done_x3 false
-*create dg_done_j1 false
-*create dg_done_j2 false
-*create dg_done_j3 false
-*create dg_done_j4 false
-*create dg_done_j5 false
-*create dg_done_j6 false
-*create dg_done_j7 false
-*create dg_done_j8 false
-*create dg_done_r1 false
-*create dg_done_r2 false
-*create dg_done_r3 false
-*create dg_done_r4 false
-*create dg_done_r5 false
+*create dg_reset_day_silt_conduits 0
+*create dg_done_silt_x1 false
+*create dg_done_silt_x2 false
+*create dg_done_silt_x3 false
+*create dg_done_silt_j1 false
+*create dg_done_silt_j2 false
+*create dg_done_silt_j3 false
+*create dg_done_silt_j4 false
+*create dg_done_silt_j5 false
+*create dg_done_silt_j6 false
+*create dg_done_silt_j7 false
+*create dg_done_silt_j8 false
+*create dg_done_silt_r1 false
+*create dg_done_silt_r2 false
+*create dg_done_silt_r3 false
+*create dg_done_silt_r4 false
+*create dg_done_silt_r5 false
 *create dg_done_none false
 *create dg_prev_enc false
 *create dg_enc_now false
@@ -1836,59 +1879,59 @@
 *comment cannot see to update the map); dg_mark_<node> is true once they chalked it. Both outlive a run on purpose: the map keeps what was explored and a chalk mark stays
 *comment forever. The node ids are x1 x2 x3 (the three ways in), j1..j8 (hallway junctions) and r1..r5 (rooms); the "none" pair exists so reading the flag of a position that is
 *comment not a node yet ("none") is never an error. dg_chalk_left is the marks left on the bundle in use (a bundle of six sticks is one mark each).
-*create dg_seen_x1 false
-*create dg_seen_x2 false
-*create dg_seen_x3 false
-*create dg_seen_j1 false
-*create dg_seen_j2 false
-*create dg_seen_j3 false
-*create dg_seen_j4 false
-*create dg_seen_j5 false
-*create dg_seen_j6 false
-*create dg_seen_j7 false
-*create dg_seen_j8 false
-*create dg_seen_r1 false
-*create dg_seen_r2 false
-*create dg_seen_r3 false
-*create dg_seen_r4 false
-*create dg_seen_r5 false
+*create dg_seen_silt_x1 false
+*create dg_seen_silt_x2 false
+*create dg_seen_silt_x3 false
+*create dg_seen_silt_j1 false
+*create dg_seen_silt_j2 false
+*create dg_seen_silt_j3 false
+*create dg_seen_silt_j4 false
+*create dg_seen_silt_j5 false
+*create dg_seen_silt_j6 false
+*create dg_seen_silt_j7 false
+*create dg_seen_silt_j8 false
+*create dg_seen_silt_r1 false
+*create dg_seen_silt_r2 false
+*create dg_seen_silt_r3 false
+*create dg_seen_silt_r4 false
+*create dg_seen_silt_r5 false
 *create dg_seen_none false
-*create dg_mark_x1 false
-*create dg_mark_x2 false
-*create dg_mark_x3 false
-*create dg_mark_j1 false
-*create dg_mark_j2 false
-*create dg_mark_j3 false
-*create dg_mark_j4 false
-*create dg_mark_j5 false
-*create dg_mark_j6 false
-*create dg_mark_j7 false
-*create dg_mark_j8 false
-*create dg_mark_r1 false
-*create dg_mark_r2 false
-*create dg_mark_r3 false
-*create dg_mark_r4 false
-*create dg_mark_r5 false
+*create dg_mark_silt_x1 false
+*create dg_mark_silt_x2 false
+*create dg_mark_silt_x3 false
+*create dg_mark_silt_j1 false
+*create dg_mark_silt_j2 false
+*create dg_mark_silt_j3 false
+*create dg_mark_silt_j4 false
+*create dg_mark_silt_j5 false
+*create dg_mark_silt_j6 false
+*create dg_mark_silt_j7 false
+*create dg_mark_silt_j8 false
+*create dg_mark_silt_r1 false
+*create dg_mark_silt_r2 false
+*create dg_mark_silt_r3 false
+*create dg_mark_silt_r4 false
+*create dg_mark_silt_r5 false
 *create dg_mark_none false
 *comment Room state (port_valen/port_valen_silt_conduits.txt): what the player has already done in a room since the dungeon last refilled. dungeon.txt dg_respawn clears these every dg_respawn_days days,
 *comment not every run, and the map and the chalk are never cleared. dg_mins and dg_time_id are the inputs of dungeon.txt dg_time.
-*create dg_r1_tally false
-*create dg_r1_tally_ok false
-*create dg_r1_search false
-*create dg_r1_steps false
-*create dg_r2_cross false
-*create dg_r3_clear false
-*create dg_r4_brood_dead false
-*create dg_r5_crates false
-*create dg_r5_box false
-*create dg_r5_opened false
-*create dg_r5_ring_now false
-*create dg_r4_quiet false
-*create dg_r3_found false
-*create dg_r3_viper_dead false
-*create dg_r2_found false
-*create dg_r2_climb false
-*create dg_r2_lacedon_dead false
+*create dg_silt_r1_tally false
+*create dg_silt_r1_tally_ok false
+*create dg_silt_r1_search false
+*create dg_silt_r1_steps false
+*create dg_silt_r2_cross false
+*create dg_silt_r3_clear false
+*create dg_silt_r4_brood_dead false
+*create dg_silt_r5_crates false
+*create dg_silt_r5_box false
+*create dg_silt_r5_opened false
+*create dg_silt_r5_ring_now false
+*create dg_silt_r4_quiet false
+*create dg_silt_r3_found false
+*create dg_silt_r3_viper_dead false
+*create dg_silt_r2_found false
+*create dg_silt_r2_climb false
+*create dg_silt_r2_lacedon_dead false
 *create dg_mins 5
 *create dg_time_id ""
 *create dg_chalk_left 0
@@ -1899,10 +1942,19 @@
 *create dg_lit_now false
 *create dg_hurt 0
 *create dg_wet 0
-*create dg_mouse_met false
+*create dg_silt_mouse_met false
 *create dg_dev_fight false
+*comment dg_dev_entry: this run was started from the Developer menu, so every exit goes back to it. The street entrances (pvsc_enter_*) set it false.
+*create dg_dev_entry false
+*comment mw_cistern_open: the stone cover in the Middle Ward wash-house yard is barred from above (an iron bar across it) until the player has come UP through it from the dungeon once; that first climb knocks the bar free for good.
+*comment Until then the yard's cover option is closed, so the first trip must be in at the Dredge-End Silt-Gates (open only once the Contraband quest is resolved) and out at the cistern ladder.
+*comment dg_cistern_first is set inside the exit page's lock so a refresh prints the same prose.
+*create mw_cistern_open false
+*create dg_cistern_first false
+*create dg_cistern_locked false
+*create locked_dg_cistern_page_id 0
 *create dg_dev_fight_id "none"
-*create dg_camp_looted false
+*create dg_silt_camp_looted false
 *create dg_swa_can false
 *create dg_swa_cost "none"
 *create dg_swa_why ""

@@ -7,8 +7,8 @@
  *   - the player's own position is ringed while a run is on (stats.dg_in_run).
  * Nothing about an unexplored place is drawn, not even its name, and the picture only grows as the player explores.
  *
- * The LAYOUT below (positions in grid cells, east and south positive) and the list of ways between places are the one thing this file owns that ChoiceScript also knows:
- * the scene files' exits. tools/check_dungeon_map.js compares them, so a changed exit that is not changed here fails that check.
+ * The LAYOUT of each dungeon (positions in grid cells, east and south positive, and the list of ways between places) is the one thing the map owns that ChoiceScript also knows: the scene files' exits.
+ * It lives in web/mygame/dungeons/<id>.js, and tools/check_dungeon_map.js compares it with the scene, so a changed exit that is not changed there fails that check.
  *
  * Open with the Map button on the rail (it appears once something has been mapped) or the M key.
  */
@@ -17,34 +17,8 @@
 
   var DM = window.DungeonMap = window.DungeonMap || {};
 
-  // key is the value of stats.dg_table. kind: "hall" (a junction, can be chalked), "room" (named), "exit" (a way in or out).
-  var MAPS = {
-    silt_conduits: {
-      title: "The Silt-Gate Conduits",
-      scene: "port_valen/port_valen_silt_conduits.txt",
-      nodes: {
-        x1: { x: 0, y: 0, kind: "exit", name: "Channel" },
-        j1: { x: 1, y: 0, kind: "hall" },
-        j2: { x: 2, y: 0, kind: "hall" },
-        j3: { x: 3, y: 0, kind: "hall" },
-        j5: { x: 4, y: 0, kind: "hall" },
-        r1: { x: 1, y: 1, kind: "room", name: "Landing" },
-        j4: { x: 2, y: 1, kind: "hall" },
-        j6: { x: 3, y: 1, kind: "hall" },
-        j7: { x: 4, y: 1, kind: "hall" },
-        r2: { x: 3, y: -1, kind: "room", name: "Gate Hall" },
-        r3: { x: 4, y: -1, kind: "room", name: "Collapsed Run" },
-        x2: { x: 2, y: 2, kind: "exit", name: "Cellar" },
-        x3: { x: 3, y: 2, kind: "exit", name: "Cistern" },
-        j8: { x: 4, y: 2, kind: "hall" },
-        r4: { x: 5, y: 2, kind: "room", name: "Lair" },
-        r5: { x: 6, y: 2, kind: "room", name: "Vault" }
-      },
-      edges: [["x1", "j1"], ["j1", "r1"], ["j1", "j2"], ["j2", "j3"], ["j2", "j4"], ["j3", "r2"], ["j3", "j5"], ["j4", "x2"], ["j4", "j6"],
-              ["j5", "r3"], ["j5", "j7"], ["j6", "x3"], ["j6", "j7"], ["j7", "j8"], ["j8", "r4"], ["r4", "r5"]]
-    }
-  };
-  DM.maps = MAPS;
+  // The layouts live one per dungeon in web/mygame/dungeons/<id>.js, which add themselves to DM.maps under the value of stats.dg_table. This file never names a dungeon.
+  var MAPS = DM.maps = DM.maps || {};
 
   var CELL = 120;   // SVG units per grid cell
 
@@ -53,13 +27,14 @@
   function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
   function statsNow() { return window.stats || {}; }
 
-  function mapFor(s) { return MAPS[s.dg_table] || MAPS.silt_conduits; }
+  function mapFor(s) { return MAPS[s.dg_table] || null; }
   function marked(s, id) { return truthy(s["dg_mark_" + id]); }
   function seen(s, id) { return truthy(s["dg_seen_" + id]) || marked(s, id); }
 
   // Has the player mapped anything at all? (The rail button appears then.)
   DM.hasAny = function () {
     var s = statsNow(), m = mapFor(s);
+    if (!m) return false;
     for (var id in m.nodes) if (seen(s, id)) return true;
     return false;
   };
@@ -67,7 +42,9 @@
   /* ---------------------------------------------------------------- drawing */
 
   function svgFor(s) {
-    var m = mapFor(s), here = truthy(s.dg_in_run) ? s.dg_pos : "";
+    var m = mapFor(s);
+    if (!m) return "";
+    var here = truthy(s.dg_in_run) ? s.dg_pos : "";
     var show = {};
     Object.keys(m.nodes).forEach(function (id) { if (seen(s, id)) show[id] = true; });
     var edgesHtml = "", stubsHtml = "", nodesHtml = "", pts = [];
@@ -149,7 +126,7 @@
 
   function render() {
     var s = statsNow(), m = mapFor(s), svg = svgFor(s);
-    dlg.querySelector(".dm-title").textContent = m.title;
+    dlg.querySelector(".dm-title").textContent = m ? m.title : "";
     dlg.querySelector(".dm-body").innerHTML = svg || '<div class="dm-empty">You have not mapped anything here yet. A place goes on the map when you reach it with a light to see by.</div>';
     dlg.querySelector(".dm-chalk-left").textContent = chalkLine(s);
   }

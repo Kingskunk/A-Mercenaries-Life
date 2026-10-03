@@ -129,8 +129,8 @@ Scene.prototype.printLoop = function printLoop() {
     if (!this.finished) {
         this.autofinish();
     }
-    // Refresh the resumable "" save's stats/temps here, at the moment the
-    // screen actually pauses (not just when the player next clicks a
+    // When a visible screen actually pauses, refresh the resumable "" save's
+    // stats/temps (not just when the player next clicks a
     // choice/Next). We deliberately keep "" pointed at the page's start line
     // (stats.choice_page_start_line, set by resetPage() -- see
     // refreshSavedProgress()) rather than this.lineNum: by the time a
@@ -142,11 +142,16 @@ Scene.prototype.printLoop = function printLoop() {
     // screen in between (both of which restore from "" and replay from its
     // line) would replay the page from before this pause and could re-fire
     // *rand.
-    this.refreshSavedProgress();
-    this.save("temp");
     if (this.skipFooter) {
+        // *goto_scene and both halves of a cross-scene *gosub_scene return
+        // finish one Scene instance only so execution can continue in
+        // another. No player-visible page has paused yet. Saving here used
+        // to serialize the full game state twice at every internal hop (and
+        // put transient, half-executed states into the recovery history).
         this.skipFooter = false;
     } else {
+        this.refreshSavedProgress();
+        this.save("temp");
         printFooter();
     }
 };
@@ -821,6 +826,63 @@ Scene.prototype.resumeFromLabelAnchor = function resumeFromLabelAnchor() {
   return true;
 };
 
+// A restored raw line number is only safe to execute when the first real
+// instruction at or after it can be reached from the saved indentation.
+// This guard also protects legacy saves that have no CRC/anchor metadata:
+// without it, a line shifted into an indented *choice body fails later with
+// the opaque "increasing indent not allowed" error from printLoop().
+Scene.prototype.isResumePositionStructurallyValid = function isResumePositionStructurallyValid(lineNum, indent) {
+  if (typeof lineNum !== "number" || lineNum < 0 || lineNum >= this.lines.length) return false;
+  if (typeof indent !== "number" || indent < 0) return false;
+  for (var i = lineNum; i < this.lines.length; i++) {
+    var line = this.lines[i];
+    if (!trim(line)) continue;
+    // printLoop deliberately permits a more-indented comment, so it cannot
+    // be the line used to decide whether execution can safely begin here.
+    if (/^\s*\*comment\b/.test(line)) continue;
+    return this.getIndent(line) <= indent;
+  }
+  return true;
+};
+
+// Resolve a saved *gosub return address without ever trusting a stale raw
+// line merely because the fingerprinted line was edited away. Future saves
+// always carry an anchor. Legacy unanchored frames may use their raw address
+// only when the structural guard proves it cannot jump into deeper nesting.
+Scene.prototype.resolveReturnFrameLine = function resolveReturnFrameLine(stackFrame) {
+  var resolved = this.resolveAnchoredLineNum(stackFrame.resumeLabel, stackFrame.resumeOffset, stackFrame.resumeLineText);
+  if (resolved !== null) return resolved;
+  var hadAnchor = !!(stackFrame.resumeLabel || stackFrame.resumeLineText);
+  if (stackFrame.resumeLabel && typeof this.labels[stackFrame.resumeLabel] !== "undefined") {
+    return this.labels[stackFrame.resumeLabel];
+  }
+  if (!hadAnchor && this.isResumePositionStructurallyValid(stackFrame.lineNum, stackFrame.indent)) {
+    return stackFrame.lineNum;
+  }
+  return null;
+};
+
+// Stop the current execution before it can run an invalid continuation and
+// use the engine's existing chapter backup. Keeping this in one helper makes
+// checksum, direct-load and return-stack failures follow the same policy.
+Scene.prototype.recoverFromInvalidResume = function recoverFromInvalidResume() {
+  if (typeof alertify !== "undefined") {
+    alertify.log("The game has updated. Restarting from the last safe checkpoint.");
+  }
+  this.finished = true;
+  this.skipFooter = true;
+  safeTimeout(function () {
+    var fallback = function () {
+      clearScreen(function () {
+        loadAndRestoreGame("backup");
+      });
+    };
+    if (typeof loadNextSafeAutosave === "function") loadNextSafeAutosave(fallback);
+    else fallback();
+  }, 0);
+  return false;
+};
+
 Scene.prototype.loadLines = function loadLines(str) {
     this.crc = crc32(str);
     this.lines = str.split(/\r?\n/);
@@ -840,6 +902,10 @@ Scene.prototype.execute = function execute() {
         return;
     }
     if (!this.checkSum()) {
+      return;
+    }
+    if (!this.isResumePositionStructurallyValid(this.lineNum, this.indent)) {
+      this.recoverFromInvalidResume();
       return;
     }
     if (this.nav) this.nav.repairStats(stats);
@@ -1177,7 +1243,12 @@ Scene.prototype.refreshSavedProgress = function refreshSavedProgress() {
         this.stats[key] = tempStatWrites[key];
       }
     }
-    saveCookie(function() {}, "", this.stats, this.temps, lineNum, indent);
+    // Reaching this point means the page rendered and paused successfully,
+    // making its page-start continuation safe enough for the rolling history.
+    if (typeof markSafeAutosaveRecoverySucceeded === "function") markSafeAutosaveRecoverySucceeded();
+    var value = computeCookie(this.stats, this.temps, lineNum, indent);
+    writeCookie(value, "", function() {});
+    if (typeof recordSafeAutosave === "function") recordSafeAutosave(value);
 };
 
 // *goto labelName
@@ -1293,16 +1364,22 @@ Scene.prototype["return"] = function scene_return() {
       // the *gosub call and now (e.g. a save made mid-gosub, edited, then
       // reloaded) by re-resolving against the label it was nearest to,
       // rather than trusting a raw line number that may since have shifted.
-      var resolvedGosubLine = this.resolveAnchoredLineNum(stackFrame.resumeLabel, stackFrame.resumeOffset, stackFrame.resumeLineText);
-      if (resolvedGosubLine === null) resolvedGosubLine = stackFrame.lineNum;
+      var resolvedGosubLine = this.resolveReturnFrameLine(stackFrame);
+      if (resolvedGosubLine === null) {
+        this.recoverFromInvalidResume();
+        return;
+      }
       this.indent = (resolvedGosubLine === stackFrame.lineNum) ? stackFrame.indent : this.getIndent(this.lines[resolvedGosubLine]);
       this.lineNum = resolvedGosubLine;
     } else if (this.stats.choice_subscene_stack && this.stats.choice_subscene_stack.length) {
       stackFrame = this.stats.choice_subscene_stack.pop();
       if (stackFrame.name == this.name) {
         this.temps = stackFrame.temps;
-        var resolvedSameSceneLine = this.resolveAnchoredLineNum(stackFrame.resumeLabel, stackFrame.resumeOffset, stackFrame.resumeLineText);
-        if (resolvedSameSceneLine === null) resolvedSameSceneLine = stackFrame.lineNum;
+        var resolvedSameSceneLine = this.resolveReturnFrameLine(stackFrame);
+        if (resolvedSameSceneLine === null) {
+          this.recoverFromInvalidResume();
+          return;
+        }
         this.indent = (resolvedSameSceneLine === stackFrame.lineNum) ? stackFrame.indent : this.getIndent(this.lines[resolvedSameSceneLine]);
         this.lineNum = resolvedSameSceneLine-1;
         return;

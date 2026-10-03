@@ -18,6 +18,66 @@
 *comment layout and its list of exits live in dungeonmap.js and must match this file: tools/check_dungeon_map.js compares them.
 *comment ══════════════════════════════════════════════════════════════
 
+*comment ENTRANCES AND EXITS (2026-10-02). Two ways in from the street: the Silt-Gates in Dredge-End (once the Contraband quest is resolved) lead to the channel mouth (x1), and the Conduit Wash-House yard in the
+*comment Middle Ward leads to the cistern ladder (x3), but only AFTER the player has come up through that cover from below once (mw_cistern_open): until then a bar lies across it from above. So the first trip is always in
+*comment through the Silt-Gates, which is only open after Voss's quest. The cellar ladder (x2) is bolted from above for now: it stays on the map, listed closed with the reason. The exits climb out where the
+*comment ladder goes, so the dungeon is a risky way between the two wards, paid for in time, light and encounters. Going out at the Silt-Gates lands on the Dredge-End hub, which never re-rolls the night
+*comment arrival ambush (see port_valen_dredge_end.txt), so arriving that way skips it. dg_dev_entry (set by the Developer menu's entries) sends every exit back to the Developer menu instead.
+*label pvsc_enter_silt_gates
+You keep to the shadow of the arch and work your way down the slick timbers to its foot. A low iron grating is set into the brick just above the waterline, its padlock long since rusted through. It swings inward on a squeal of hinges, and wet stone steps lead down into a brick hall that breathes cold air onto your face. You pull the grating shut behind you.
+*line_break
+*set dg_mins 10
+*set dg_time_id "enter_silt_gates"
+*gosub_scene dungeon dg_time
+*set dg_table "silt_conduits"
+*set dg_start "silt_x1"
+*set dg_dev_entry false
+*gosub_scene dungeon dg_run_begin
+*goto pvsc_begin
+
+*label pvsc_enter_cistern
+*if ((time_period = "Night") or ((time_period = "Pre-Dawn") or (day_of_week = "Hallowday")))
+  The yard is empty, and the stone cover at the foot of the bakery wall is yours alone.
+*else
+  You stand by the bakery wall with the air of someone who belongs there and wait for the nearest washer to turn her back.
+It is a round slab, heavy, but its rim is worn bright where it has been levered up before. You work a bar under it and walk it aside a hand's width at a time. A breath of cold, wet air comes up out of the dark, with a thread of woodsmoke in it from the bakery flues. You find the first iron rung with your boot, let yourself down, and draw the cover back over your head.
+*line_break
+*set dg_mins 10
+*set dg_time_id "enter_cistern"
+*gosub_scene dungeon dg_time
+*set dg_table "silt_conduits"
+*set dg_start "silt_x3"
+*set dg_dev_entry false
+*gosub_scene dungeon dg_run_begin
+*goto pvsc_begin
+
+*label pvsc_exit_silt_gates
+You climb the wet steps, put your shoulder to the grating and step out onto the timber walkway, blinking in the open air with the channel muttering behind you. You pull the grating shut.
+*page_break Step out onto the walkway…
+*goto_scene port_valen/port_valen_dredge_end port_valen_dredge_end
+
+*label pvsc_exit_cistern
+*if (not(dg_cistern_locked)) or (not(locked_dg_cistern_page_id = page_id))
+  *set dg_cistern_first (not(mw_cistern_open))
+  *set mw_cistern_open true
+  *set dg_cistern_locked true
+  *set locked_dg_cistern_page_id page_id
+*if (dg_cistern_first)
+  You climb the iron rungs and set your shoulder under the cover. It will not lift: something heavy lies across it on the far side. You brace your legs and heave, and an iron bar rattles out of its brackets and clangs on the flags above, and the cover rises. From now on it will lift from either side. Steam and woodsmoke wash over you.
+*else
+  You climb the iron rungs, set your shoulder under the cover and heave it aside. Steam and woodsmoke wash over you.
+*if ((time_period = "Night") or ((time_period = "Pre-Dawn") or (day_of_week = "Hallowday")))
+  The yard is empty and the tubs stand turned over. You slide out and ease the stone back into its ring.
+*else
+  You lift it a finger's width and wait for the nearest washer to look away, then slide out and ease the stone back into its ring. Nobody looks twice at one more figure by the bakery wall.
+*page_break Step into the yard…
+*goto_scene port_valen/port_valen_middle_ward mw_wash_yard
+
+*label pvsc_x2_bolted
+You climb to the trapdoor and push with your shoulder. It lifts a thumb's width and stops against a bolt on the far side. Whatever is above is not for you to open from here.
+*line_break
+*goto pvsc_n_x2
+
 *label pvsc_begin
 *set dg_pos dg_start
 *set dg_table "silt_conduits"
@@ -97,37 +157,40 @@ You scrape a bold cross into the brick at head height, so you will know this jun
 
 *label pvsc_here
 *gosub_scene dungeon dg_chalk_check
-*if (dg_pos = "x1")
+*comment Stable dungeon recovery point: the last move/encounter is complete and dg_pos can safely dispatch the room again.
+*comment Saving here covers every room and junction entrance without checkpointing a light prompt, roll, or fight mid-flow.
+*save_checkpoint autosafe_checkpoint
+*if (dg_pos = "silt_x1")
   *goto pvsc_n_x1
-*if (dg_pos = "j1")
+*if (dg_pos = "silt_j1")
   *goto pvsc_n_j1
-*if (dg_pos = "r1")
+*if (dg_pos = "silt_r1")
   *goto pvsc_n_r1
-*if (dg_pos = "j2")
+*if (dg_pos = "silt_j2")
   *goto pvsc_n_j2
-*if (dg_pos = "j3")
+*if (dg_pos = "silt_j3")
   *goto pvsc_n_j3
-*if (dg_pos = "r2")
+*if (dg_pos = "silt_r2")
   *goto pvsc_n_r2
-*if (dg_pos = "j4")
+*if (dg_pos = "silt_j4")
   *goto pvsc_n_j4
-*if (dg_pos = "x2")
+*if (dg_pos = "silt_x2")
   *goto pvsc_n_x2
-*if (dg_pos = "j5")
+*if (dg_pos = "silt_j5")
   *goto pvsc_n_j5
-*if (dg_pos = "r3")
+*if (dg_pos = "silt_r3")
   *goto pvsc_n_r3
-*if (dg_pos = "j6")
+*if (dg_pos = "silt_j6")
   *goto pvsc_n_j6
-*if (dg_pos = "x3")
+*if (dg_pos = "silt_x3")
   *goto pvsc_n_x3
-*if (dg_pos = "j7")
+*if (dg_pos = "silt_j7")
   *goto pvsc_n_j7
-*if (dg_pos = "j8")
+*if (dg_pos = "silt_j8")
   *goto pvsc_n_j8
-*if (dg_pos = "r4")
+*if (dg_pos = "silt_r4")
   *goto pvsc_n_r4
-*if (dg_pos = "r5")
+*if (dg_pos = "silt_r5")
   *goto pvsc_n_r5
 *goto pvsc_n_x1
 
@@ -144,11 +207,13 @@ You scrape a bold cross into the brick at head height, so you will know this jun
 *gosub_scene dungeon dg_env
 *gosub_scene dungeon dg_status_line
 *choice
-  # Climb out to the street.
+  # Go up the steps and out through the grating.
     *gosub_scene dungeon dg_run_end
-    *goto_scene dev_hub dev_dungeon_test_hub
+    *if (dg_dev_entry)
+      *goto_scene dev_hub dev_dungeon_test_hub
+    *goto pvsc_exit_silt_gates
   # Go east, back along the hall.
-    *set dg_dest "j1"
+    *set dg_dest "silt_j1"
     *set dg_dest_hall true
     *goto pvsc_move
 
@@ -166,15 +231,15 @@ You scrape a bold cross into the brick at head height, so you will know this jun
 *gosub_scene dungeon dg_status_line
 *choice
   # Go west to the channel steps.
-    *set dg_dest "x1"
+    *set dg_dest "silt_x1"
     *set dg_dest_hall false
     *goto pvsc_move
   # Go south into the wide room.
-    *set dg_dest "r1"
+    *set dg_dest "silt_r1"
     *set dg_dest_hall false
     *goto pvsc_move
   # Go east along the hall.
-    *set dg_dest "j2"
+    *set dg_dest "silt_j2"
     *set dg_dest_hall true
     *goto pvsc_move
   *if (dg_chalk_ok)
@@ -183,8 +248,8 @@ You scrape a bold cross into the brick at head height, so you will know this jun
       *goto pvsc_chalked
 
 
-*comment THE LANDING (r1, south of J1). A room with nothing living in it: three things to do, each once per run (dg_r1_*, cleared by dg_run_begin), each with a real cost or
-*comment reward from systems that already exist, none of them invented. Reading the tally needs light and fills in the map (dg_seen_j2 and j3); searching can give a torch and four
+*comment THE LANDING (r1, south of J1). A room with nothing living in it: three things to do, each once per run (dg_silt_r1_*, cleared by dg_run_begin), each with a real cost or
+*comment reward from systems that already exist, none of them invented. Reading the tally needs light and fills in the map (dg_seen_silt_j2 and j3); searching can give a torch and four
 *comment copper bits and can cut the hand; the climb down to the bare stones is open only at low tide and can give a bundle of chalk and can cost a fall. A failed roll costs and never
 *comment turns into the reward. Lines are the room's own; nothing here names a person.
 *label pvsc_n_r1
@@ -213,36 +278,36 @@ You scrape a bold cross into the brick at head height, so you will know this jun
 *else
   *line_break
   Along the wall above the water, tally marks have been chalked, five strokes with a bar through them, over and over, hundreds of times. The lower rows have faded to grey.
-*if ((dg_r1_tally_ok) and (not(dg_dark)))
+*if ((dg_silt_r1_tally_ok) and (not(dg_dark)))
   *line_break
   The rows come in twelves, one for each night's boats on the flood, and the last row stops short. Beside it a rough sketch is scratched into the plaster: a line of junctions, and a cross at each.
-*if (dg_r1_search)
+*if (dg_silt_r1_search)
   *line_break
   The hollow behind the loosest ring bolt is empty now.
-*if (dg_r1_steps)
+*if (dg_silt_r1_steps)
   *line_break
   The mud on the bare stones is churned where you went down.
 *line_break
 *gosub_scene dungeon dg_env_ambient
 *gosub_scene dungeon dg_status_line
 *choice
-  *if ((not(dg_r1_tally)) and (not(dg_dark)))
+  *if ((not(dg_silt_r1_tally)) and (not(dg_dark)))
     # Read the tally on the wall. [~10 min]@{show_stat_hints  [INT DC 10]|}
       *goto pvsc_r1_tally
-  *if ((not(dg_r1_tally)) and (dg_dark))
+  *if ((not(dg_silt_r1_tally)) and (dg_dark))
     # (The marks are too faint to read without a light.)
       *goto pvsc_r1_too_dark
-  *if (not(dg_r1_search))
+  *if (not(dg_silt_r1_search))
     # Feel along the ring bolts and the drift against the wall. [~10 min]@{show_stat_hints  [WIS DC 11]|}
       *goto pvsc_r1_search
-  *if ((not(dg_r1_steps)) and (dg_tide = "low"))
+  *if ((not(dg_silt_r1_steps)) and (dg_tide = "low"))
     # Climb down the weedy steps to the bare stones. [~15 min]@{show_stat_hints  [STR DC 10]|}
       *goto pvsc_r1_steps
-  *if ((not(dg_r1_steps)) and (dg_tide = "high"))
+  *if ((not(dg_silt_r1_steps)) and (dg_tide = "high"))
     # (The tide is over the lowest steps.)
       *goto pvsc_r1_steps_closed
   # Go north, back to the hall.
-    *set dg_dest "j1"
+    *set dg_dest "silt_j1"
     *set dg_dest_hall true
     *goto pvsc_move
 
@@ -260,15 +325,15 @@ The water is over the lowest steps and still rising at the edges. Whatever is do
 *gosub_scene dice_engine roll_skill_check 10 "investigation" "" "" "" "" ""
 *if (check_success)
   You trace the rows with a finger, row by row, until the pattern comes clear, and under the grey at the end you find something scratched into the plaster.
-  *set dg_r1_tally true
-  *set dg_r1_tally_ok true
-  *set dg_seen_j2 true
-  *set dg_seen_j3 true
+  *set dg_silt_r1_tally true
+  *set dg_silt_r1_tally_ok true
+  *set dg_seen_silt_j2 true
+  *set dg_seen_silt_j3 true
   *line_break
   [b][The map now shows the next two junctions][/b]
 *else
   The rows blur together. Every group of strokes looks like the last, and you lose count twice before you give it up.
-  *set dg_r1_tally true
+  *set dg_silt_r1_tally true
 *set dg_mins 10
 *set dg_time_id "r1_tally"
 *gosub_scene dungeon dg_time
@@ -290,7 +355,7 @@ The water is over the lowest steps and still rising at the edges. Whatever is do
 *else
   You work your hand into the gap behind a ring bolt and a rusted edge opens your palm. There is nothing in there but silt.
   *gosub pvsc_hurt
-*set dg_r1_search true
+*set dg_silt_r1_search true
 *set dg_mins 10
 *set dg_time_id "r1_search"
 *gosub_scene dungeon dg_time
@@ -310,7 +375,7 @@ The water is over the lowest steps and still rising at the edges. Whatever is do
 *else
   Your boot skids on the weed on the third step and you go down hard on the stone below. You climb back up bruised and muddy, with nothing to show for it.
   *gosub pvsc_hurt
-*set dg_r1_steps true
+*set dg_silt_r1_steps true
 *set dg_mins 15
 *set dg_time_id "r1_steps"
 *gosub_scene dungeon dg_time
@@ -331,15 +396,15 @@ The water is over the lowest steps and still rising at the edges. Whatever is do
 *gosub_scene dungeon dg_status_line
 *choice
   # Go west.
-    *set dg_dest "j1"
+    *set dg_dest "silt_j1"
     *set dg_dest_hall true
     *goto pvsc_move
   # Go east.
-    *set dg_dest "j3"
+    *set dg_dest "silt_j3"
     *set dg_dest_hall true
     *goto pvsc_move
   # Go south.
-    *set dg_dest "j4"
+    *set dg_dest "silt_j4"
     *set dg_dest_hall true
     *goto pvsc_move
   *if (dg_chalk_ok)
@@ -362,15 +427,15 @@ The water is over the lowest steps and still rising at the edges. Whatever is do
 *gosub_scene dungeon dg_status_line
 *choice
   # Go west.
-    *set dg_dest "j2"
+    *set dg_dest "silt_j2"
     *set dg_dest_hall true
     *goto pvsc_move
   # Go north through the doorway.
-    *set dg_dest "r2"
+    *set dg_dest "silt_r2"
     *set dg_dest_hall false
     *goto pvsc_move
   # Go east.
-    *set dg_dest "j5"
+    *set dg_dest "silt_j5"
     *set dg_dest_hall true
     *goto pvsc_move
   *if (dg_chalk_ok)
@@ -379,8 +444,8 @@ The water is over the lowest steps and still rising at the edges. Whatever is do
       *goto pvsc_chalked
 
 
-*comment THE GATE HALL (r2, north of J3). Two things to do, each once per run (dg_r2_*, cleared by dg_run_begin), plus the water's own danger. Crossing the walkway to the gatekeeper's booth is an
-*comment Acrobatics check (DC 11, DC 13 at high tide). At high tide, with the lacedon not yet dead this run (dg_r2_lacedon_dead, set by pvsc_won), the first step out puts the lacedon fight on the walkway
+*comment THE GATE HALL (r2, north of J3). Two things to do, each once per run (dg_silt_r2_*, cleared by dg_run_begin), plus the water's own danger. Crossing the walkway to the gatekeeper's booth is an
+*comment Acrobatics check (DC 11, DC 13 at high tide). At high tide, with the lacedon not yet dead this run (dg_silt_r2_lacedon_dead, set by pvsc_won), the first step out puts the lacedon fight on the walkway
 *comment (the shared pvsc_enc_lacedon); after a win the crossing is tried again. A pass finds an oilcloth sheet on the booth's peg rack; a fall into the basin puts a torch out and costs twenty minutes.
 *comment The climb to the hoist beam needs light and shows the Collapsed Run and J5 on the map; a failed hold drops you onto the stones (pvsc_hurt). A failed roll costs and never turns into the reward.
 *label pvsc_n_r2
@@ -405,33 +470,33 @@ The water is over the lowest steps and still rising at the edges. Whatever is do
     The tide is out. The water sounds far below you, sucking and muttering round the piers.
   *else
     The tide is out. The basin has sunk to a black pool well below the walkway, and the water sucks and mutters round the stone piers.
-*if (dg_r2_lacedon_dead)
+*if (dg_silt_r2_lacedon_dead)
   *line_break
   A grey shape lies in the shallows by the walkway and does not move.
-*if (dg_r2_found)
+*if (dg_silt_r2_found)
   *line_break
   The peg rack in the booth is bare now.
-*if (dg_r2_climb)
+*if (dg_silt_r2_climb)
   *line_break
   One chain still sways where you climbed it.
 *line_break
 *gosub_scene dungeon dg_env_ambient
 *gosub_scene dungeon dg_status_line
 *choice
-  *if ((not(dg_r2_cross)) and (dg_tide = "low"))
+  *if ((not(dg_silt_r2_cross)) and (dg_tide = "low"))
     # Cross the walkway to the gatekeeper's booth. [~10 min]@{show_stat_hints  [Acrobatics DC 11]|}
       *goto pvsc_r2_cross
-  *if ((not(dg_r2_cross)) and (dg_tide = "high"))
+  *if ((not(dg_silt_r2_cross)) and (dg_tide = "high"))
     # Cross the walkway, through the water over the middle. [~10 min]@{show_stat_hints  [Acrobatics DC 13]|}
       *goto pvsc_r2_cross
-  *if ((not(dg_r2_climb)) and (not(dg_dark)))
+  *if ((not(dg_silt_r2_climb)) and (not(dg_dark)))
     # Climb a hanging chain to the hoist beam. [~15 min]@{show_stat_hints  [Athletics DC 12]|}
       *goto pvsc_r2_climb
-  *if ((not(dg_r2_climb)) and (dg_dark))
+  *if ((not(dg_silt_r2_climb)) and (dg_dark))
     # (It is too dark to see which chain would hold.)
       *goto pvsc_r2_climb_dark
   # Go south, back to the passage.
-    *set dg_dest "j3"
+    *set dg_dest "silt_j3"
     *set dg_dest_hall true
     *goto pvsc_move
 
@@ -442,7 +507,7 @@ You hear the chains clink above you, but you cannot tell where they lead or whic
 
 *label pvsc_r2_cross
 *gosub_scene dungeon dg_tide_check
-*if ((dg_tide = "high") and (not(dg_r2_lacedon_dead)))
+*if ((dg_tide = "high") and (not(dg_silt_r2_lacedon_dead)))
   You are halfway across, with the water sliding over the stones round your boots, when the surface ahead of you swells.
   *line_break
   *goto pvsc_enc_lacedon
@@ -456,7 +521,7 @@ You hear the chains clink above you, but you cannot tell where they lead or whic
     *gosub_scene equipment grant_gear "waxed_oilcloth" 1
     *set stat_bump_locked true
     *set locked_stat_bump_page_id page_id
-  *set dg_r2_found true
+  *set dg_silt_r2_found true
   *line_break
   [b][Found: an oilcloth sheet][/b]
 *else
@@ -478,7 +543,7 @@ You hear the chains clink above you, but you cannot tell where they lead or whic
     Your light is out, and you have lost twenty minutes getting your breath back.
   *else
     You have lost twenty minutes getting your breath back.
-*set dg_r2_cross true
+*set dg_silt_r2_cross true
 *set dg_mins 10
 *set dg_time_id "r2_cross"
 *gosub_scene dungeon dg_time
@@ -489,14 +554,14 @@ You hear the chains clink above you, but you cannot tell where they lead or whic
 *gosub_scene dice_engine roll_skill_check 12 "athletics" "" "" "" "" ""
 *if (check_success)
   You climb a chain hand over hand, the links clinking, until you can swing a leg over a roof beam. From up here a gap in the east wall shows the next stretch of passage, where the roof has come down in a heap of broken blocks with a path winding through them. A broken arch opens off it onto a hall to the south.
-  *set dg_seen_r3 true
-  *set dg_seen_j5 true
+  *set dg_seen_silt_r3 true
+  *set dg_seen_silt_j5 true
   *line_break
   [b][The map now shows the Collapsed Run and the junction beside it][/b]
 *else
   A link shifts and your grip goes. You drop onto the stones with the chain whipping past you, and lie there winded.
   *gosub pvsc_hurt
-*set dg_r2_climb true
+*set dg_silt_r2_climb true
 *set dg_mins 15
 *set dg_time_id "r2_climb"
 *gosub_scene dungeon dg_time
@@ -517,15 +582,15 @@ You hear the chains clink above you, but you cannot tell where they lead or whic
 *gosub_scene dungeon dg_status_line
 *choice
   # Go north.
-    *set dg_dest "j2"
+    *set dg_dest "silt_j2"
     *set dg_dest_hall true
     *goto pvsc_move
   # Go south to the cellar steps.
-    *set dg_dest "x2"
+    *set dg_dest "silt_x2"
     *set dg_dest_hall false
     *goto pvsc_move
   # Go east.
-    *set dg_dest "j6"
+    *set dg_dest "silt_j6"
     *set dg_dest_hall true
     *goto pvsc_move
   *if (dg_chalk_ok)
@@ -547,11 +612,15 @@ You hear the chains clink above you, but you cannot tell where they lead or whic
 *gosub_scene dungeon dg_env
 *gosub_scene dungeon dg_status_line
 *choice
-  # Climb up to the cellar above.
-    *gosub_scene dungeon dg_run_end
-    *goto_scene dev_hub dev_dungeon_test_hub
+  *if (dg_dev_entry)
+    # Climb up to the cellar above (developer exit to the Developer menu).
+      *gosub_scene dungeon dg_run_end
+      *goto_scene dev_hub dev_dungeon_test_hub
+  *if (not(dg_dev_entry))
+    # (The trapdoor above is bolted from above and will not budge.)
+      *goto pvsc_x2_bolted
   # Go north, back along the hall.
-    *set dg_dest "j4"
+    *set dg_dest "silt_j4"
     *set dg_dest_hall true
     *goto pvsc_move
 
@@ -569,15 +638,15 @@ You hear the chains clink above you, but you cannot tell where they lead or whic
 *gosub_scene dungeon dg_status_line
 *choice
   # Go west.
-    *set dg_dest "j3"
+    *set dg_dest "silt_j3"
     *set dg_dest_hall true
     *goto pvsc_move
   # Go north through the broken arch.
-    *set dg_dest "r3"
+    *set dg_dest "silt_r3"
     *set dg_dest_hall false
     *goto pvsc_move
   # Go south.
-    *set dg_dest "j7"
+    *set dg_dest "silt_j7"
     *set dg_dest_hall true
     *goto pvsc_move
   *if (dg_chalk_ok)
@@ -586,8 +655,8 @@ You hear the chains clink above you, but you cannot tell where they lead or whic
       *goto pvsc_chalked
 
 
-*comment THE COLLAPSED RUN (r3, north of the Loose Bricks; a dead end). One action, once per refill (dg_r3_*, cleared by dg_respawn): work along the rubble path to the far end, where a crew's bundle is buried. A giant
-*comment viper lies in the stones. Until it is dead (dg_r3_viper_dead, set in pvsc_won) the first step in is a Perception check, DC 12: a pass sees it first and the fight begins normally; a fail and it strikes
+*comment THE COLLAPSED RUN (r3, north of the Loose Bricks; a dead end). One action, once per refill (dg_silt_r3_*, cleared by dg_respawn): work along the rubble path to the far end, where a crew's bundle is buried. A giant
+*comment viper lies in the stones. Until it is dead (dg_silt_r3_viper_dead, set in pvsc_won) the first step in is a Perception check, DC 12: a pass sees it first and the fight begins normally; a fail and it strikes
 *comment from the gap, with the enemy going first (combat_enemy_advantage). The darkness debuff makes that check harder; it is never a gate. After the viper the same action digs the bundle out: Athletics DC 11,
 *comment thirty minutes. A pass finds a coil of hemp rope and eight copper bits; a failure pins your hand (pvsc_hurt) and the bundle stays buried until the refill. A failed roll costs and never turns into the reward.
 *label pvsc_n_r3
@@ -600,27 +669,27 @@ You hear the chains clink above you, but you cannot tell where they lead or whic
   The floor is a heap of loose stone, and your hands find blocks as big as cart wheels with narrow gaps between them. Dust hangs in the air and catches in your throat. Far ahead you feel a draught, and something that may be a timber post holds up what is left of the roof.
 *else
   A long gallery where the roof has come down and been half cleared, long ago, by someone who gave up. A narrow path winds between fallen blocks the size of cart wheels, and pale dust lies over everything, unmarked but for the tracks of small animals. A crack far above lets in a thin white line of daylight that lies along the floor. At the far end a timber props what is left of the roof, and beside it a scrap of canvas and the stub of a strap stick out from under the stones.
-*if (dg_r3_viper_dead)
+*if (dg_silt_r3_viper_dead)
   *line_break
   The viper lies where it fell, among the broken stone.
-*if (dg_r3_found)
+*if (dg_silt_r3_found)
   *line_break
   The hollow under the blocks at the far end is empty now.
-*if ((dg_r3_clear) and (not(dg_r3_found)))
+*if ((dg_silt_r3_clear) and (not(dg_silt_r3_found)))
   *line_break
   You have shifted what you can, and the far end is still buried.
 *set dg_wet 0
 *gosub_scene dungeon dg_env
 *gosub_scene dungeon dg_status_line
 *choice
-  *if (not(dg_r3_clear))
+  *if (not(dg_silt_r3_clear))
     # Work your way along the path to the far end. [~30 min]@{show_stat_hints  [Perception DC 12, then Athletics DC 11]|}
       *goto pvsc_r3_clear
-  *if (dg_r3_clear)
+  *if (dg_silt_r3_clear)
     # (You have already worked the path to the far end.)
       *goto pvsc_r3_done
   # Go south, back to the hall.
-    *set dg_dest "j5"
+    *set dg_dest "silt_j5"
     *set dg_dest_hall true
     *goto pvsc_move
 
@@ -630,7 +699,7 @@ Nothing more can be shifted without bringing the rest of the roof down.
 *goto pvsc_n_r3
 
 *label pvsc_r3_clear
-*if (not(dg_r3_viper_dead))
+*if (not(dg_silt_r3_viper_dead))
   *gosub_scene dice_engine roll_skill_check 12 "perception" "" "" "" "" ""
   *if (check_success)
     Halfway along the path a flat, broad head lifts from between two blocks, and you see it before it moves. It has been lying in the warm gap under the stone, and now it is awake and watching you.
@@ -650,13 +719,13 @@ Nothing more can be shifted without bringing the rest of the roof down.
     *gosub_scene economy currency_add
     *set currency_txn_locked true
     *set locked_currency_txn_page_id page_id
-  *set dg_r3_found true
+  *set dg_silt_r3_found true
   *line_break
   [b][Found: a coil of hemp rope and 8 copper bits][/b]
 *else
   A block slides under your hands and pins them against its neighbour. You drag them free, skinned and bleeding, and the stones settle into the gap again with a sound like a long sigh.
   *gosub pvsc_hurt
-*set dg_r3_clear true
+*set dg_silt_r3_clear true
 *set dg_mins 30
 *set dg_time_id "r3_clear"
 *gosub_scene dungeon dg_time
@@ -677,15 +746,15 @@ Nothing more can be shifted without bringing the rest of the roof down.
 *gosub_scene dungeon dg_status_line
 *choice
   # Go west.
-    *set dg_dest "j4"
+    *set dg_dest "silt_j4"
     *set dg_dest_hall true
     *goto pvsc_move
   # Go south to the ladder.
-    *set dg_dest "x3"
+    *set dg_dest "silt_x3"
     *set dg_dest_hall false
     *goto pvsc_move
   # Go east.
-    *set dg_dest "j7"
+    *set dg_dest "silt_j7"
     *set dg_dest_hall true
     *goto pvsc_move
   *if (dg_chalk_ok)
@@ -702,16 +771,18 @@ Nothing more can be shifted without bringing the rest of the roof down.
 *if (dg_dark)
   Your hand finds cold iron rungs in a round shaft of brick. Fresh air drifts down from above, smelling of wet stone and, faintly, of smoke.
 *else
-  An iron ladder climbs a round brick shaft to a stone cover. Fresh air drifts down it, and a coin of grey light shows where the cover does not quite fit. The rungs are red with rust but worn bright where hands have gripped them.
+  An iron ladder climbs a round brick shaft to a stone cover. Fresh air drifts down it, and a coin of grey light shows where the cover does not quite fit. The rungs are red with rust but worn bright where hands have gripped them, and at the top the cover rests in its ring with something heavy lying across it.
 *set dg_wet 0
 *gosub_scene dungeon dg_env
 *gosub_scene dungeon dg_status_line
 *choice
   # Climb up to the cistern above.
     *gosub_scene dungeon dg_run_end
-    *goto_scene dev_hub dev_dungeon_test_hub
+    *if (dg_dev_entry)
+      *goto_scene dev_hub dev_dungeon_test_hub
+    *goto pvsc_exit_cistern
   # Go north, back along the tunnel.
-    *set dg_dest "j6"
+    *set dg_dest "silt_j6"
     *set dg_dest_hall true
     *goto pvsc_move
 
@@ -729,15 +800,15 @@ Nothing more can be shifted without bringing the rest of the roof down.
 *gosub_scene dungeon dg_status_line
 *choice
   # Go west.
-    *set dg_dest "j6"
+    *set dg_dest "silt_j6"
     *set dg_dest_hall true
     *goto pvsc_move
   # Go north.
-    *set dg_dest "j5"
+    *set dg_dest "silt_j5"
     *set dg_dest_hall true
     *goto pvsc_move
   # Go south.
-    *set dg_dest "j8"
+    *set dg_dest "silt_j8"
     *set dg_dest_hall true
     *goto pvsc_move
   *if (dg_chalk_ok)
@@ -760,11 +831,11 @@ Nothing more can be shifted without bringing the rest of the roof down.
 *gosub_scene dungeon dg_status_line
 *choice
   # Go north.
-    *set dg_dest "j7"
+    *set dg_dest "silt_j7"
     *set dg_dest_hall true
     *goto pvsc_move
   # Go east into the opening.
-    *set dg_dest "r4"
+    *set dg_dest "silt_r4"
     *set dg_dest_hall false
     *goto pvsc_move
   *if (dg_chalk_ok)
@@ -774,8 +845,8 @@ Nothing more can be shifted without bringing the rest of the roof down.
 
 
 *comment THE LAIR (r4, east of the Sour Passage). The fixed fight of the dungeon: a centipede brood, a Brood-Mother (12 HP, AC 13, +4) and one Young Centipede (5 HP, AC 12, +3), library "beast" with overrides.
-*comment Not balance-simmed. The only way to the Vault (r5) goes through this room, so there are two ways past: kill the brood (dg_r4_brood_dead, set in pvsc_won) or creep round the edge of the room to the narrow arch,
-*comment a Stealth check, DC 13, ten minutes (the darkness debuff makes it harder). A pass leaves the brood asleep and the path known (dg_r4_quiet) so the arch stays open both ways until the refill; a fail wakes
+*comment Not balance-simmed. The only way to the Vault (r5) goes through this room, so there are two ways past: kill the brood (dg_silt_r4_brood_dead, set in pvsc_won) or creep round the edge of the room to the narrow arch,
+*comment a Stealth check, DC 13, ten minutes (the darkness debuff makes it harder). A pass leaves the brood asleep and the path known (dg_silt_r4_quiet) so the arch stays open both ways until the refill; a fail wakes
 *comment the brood and it strikes first (combat_enemy_advantage). A fight lost or fled leaves the brood alive. Both flags are cleared by dg_respawn. A failed roll costs and never turns into the reward.
 *label pvsc_n_r4
 
@@ -787,10 +858,10 @@ Nothing more can be shifted without bringing the rest of the roof down.
   The air is thick and sour, and the floor is a churned mud that sucks at your boots. Dry, light things crunch under your feet, shells or bones, you cannot tell which. Somewhere ahead something large shifts slowly in the dark, a long dry rubbing like a sack being dragged. Across the room you feel a cooler draught from a narrow arch.
 *else
   A wide, low chamber, the roof so close you feel it above your hair. The floor has been churned to a grey mud laced with bones, small and large, heaped in the corners and trodden flat in the middle. Pale husks of shed shell lie everywhere, as long as your forearm and curled like dry leaves. Near the middle a mound of mud and rubbish has been scraped together, and the mound moves. At the far side a narrow arch leads on, and the air that comes through it is dry and cold.
-*if (dg_r4_brood_dead)
+*if (dg_silt_r4_brood_dead)
   *line_break
   The brood-mother lies split and still, with her legs curled under her, and the mound has stopped moving.
-*elseif (dg_r4_quiet)
+*elseif (dg_silt_r4_quiet)
   *line_break
   You know the way round the edge of the room now, along the wall where the mud is firmest.
 *comment The Lair writes its own tide and ambient lines: the shared ones talk of brick, trickles and soot, and this floor is mud over bone.
@@ -800,25 +871,25 @@ Nothing more can be shifted without bringing the rest of the roof down.
   The tide is in, and the mud has gone loose and watery, so that every step pulls.
 *else
   The tide is out, but the mud is still cold and wet, and it holds the print of your boot.
-*if (dg_r4_brood_dead)
+*if (dg_silt_r4_brood_dead)
   The only sound is water, dripping somewhere far off.
 *else
   Something dry ticks in the corner, like a fingernail on a table.
 *gosub_scene dungeon dg_status_line
 *choice
-  *if ((not(dg_r4_brood_dead)) and (not(dg_r4_quiet)))
+  *if ((not(dg_silt_r4_brood_dead)) and (not(dg_silt_r4_quiet)))
     # Go for the mound and kill what lives in it.
       *goto pvsc_r4_attack
-  *if ((not(dg_r4_brood_dead)) and (not(dg_r4_quiet)))
+  *if ((not(dg_silt_r4_brood_dead)) and (not(dg_silt_r4_quiet)))
     # Creep round the edge of the room to the narrow arch. [~10 min]@{show_stat_hints  [Stealth DC 13]|}
       *goto pvsc_r4_creep
-  *if ((dg_r4_brood_dead) or (dg_r4_quiet))
+  *if ((dg_silt_r4_brood_dead) or (dg_silt_r4_quiet))
     # Go east through the narrow arch.
-      *set dg_dest "r5"
+      *set dg_dest "silt_r5"
       *set dg_dest_hall false
       *goto pvsc_move
   # Go west, back to the hall.
-    *set dg_dest "j8"
+    *set dg_dest "silt_j8"
     *set dg_dest_hall true
     *goto pvsc_move
 
@@ -831,7 +902,7 @@ You cross the mud with your weapon ready. Halfway to the mound the heap splits o
 *gosub_scene dice_engine roll_skill_check 13 "stealth" "" "" "" "" ""
 *if (check_success)
   You go heel to toe along the wall where the mud is firmest, stepping over the husks and never onto them, and you hold your breath each time the mound stirs. It does not wake. At the narrow arch you stop and let your heart slow.
-  *set dg_r4_quiet true
+  *set dg_silt_r4_quiet true
   *set dg_mins 10
   *set dg_time_id "r4_creep"
   *gosub_scene dungeon dg_time
@@ -860,12 +931,12 @@ You cross the mud with your weapon ready. Halfway to the mound the heap splits o
 *set dg_hv_creature "centipede"
 *goto pvsc_fight_go
 
-*comment THE VAULT (r5, east of the Lair; the end of the dungeon). The crews' dry store. Two things to do, each once per refill (dg_r5_*, cleared by dg_respawn):
+*comment THE VAULT (r5, east of the Lair; the end of the dungeon). The crews' dry store. Two things to do, each once per refill (dg_silt_r5_*, cleared by dg_respawn):
 *comment   the crates   a no-roll cache, ten minutes: two flasks of lamp oil and a pitch torch, enough to cover much of the light spent getting here.
 *comment   the strongbox   the main prize. Pick the padlock (Sleight of Hand DC 13, ADVANTAGE with a lockpick set, which Vael sells and nothing had used until now; listed closed with the reason without
 *comment   one) or break it off (Athletics DC 14, a fail cuts you). One try per refill; a failed try costs the time and leaves the box shut until the refill, and never turns into the reward.
 *comment   Open, it always holds 20 copper (two silver marks). Only the first time it is ever opened it also holds the Night-Eye Ring (until has_night_eye_ring). The ring is worn in a ring slot and lets the wearer see in the
-*comment   dark (character_progression.txt refresh_invocations). dg_r5_ring_now is set inside the page's lock so a refresh prints the same prose.
+*comment   dark (character_progression.txt refresh_invocations). dg_silt_r5_ring_now is set inside the page's lock so a refresh prints the same prose.
 *label pvsc_n_r5
 
 *gosub_scene dungeon dg_tide_check
@@ -876,13 +947,13 @@ You cross the mud with your weapon ready. Halfway to the mound the heap splits o
   Three worn steps climb out of the mud, and at the top the air turns dry and cold, smelling of tar and old canvas. Your hand finds nailed crates stacked against a wall, and farther along a long stone shelf with something squat and iron-bound on it, a padlock cold and flaking under your thumb.
 *else
   Three worn steps climb out of the mud, and the air at the top is dry and cold and smells of tar and old canvas. A barrel vault of tight-set brick arches overhead, black with lamp soot from the crews who worked here. Crates are stacked against the north wall with their lids nailed down. Along the east wall a long stone shelf holds a squat iron-bound strongbox, its padlock red with rust, and beside it lie a sleeping mat and a cold brazier where someone waited out the tides.
-*if (dg_r5_crates)
+*if (dg_silt_r5_crates)
   *line_break
   The crates stand open, their lids pried off and lying beside them.
-*if (dg_r5_opened)
+*if (dg_silt_r5_opened)
   *line_break
   The strongbox lies open and empty.
-*elseif (dg_r5_box)
+*elseif (dg_silt_r5_box)
   *line_break
   The strongbox is still shut, its padlock jammed.
 *line_break
@@ -896,20 +967,20 @@ You cross the mud with your weapon ready. Halfway to the mound the heap splits o
   Dust lies thick on everything except the shelf, where something has been moved often.
 *gosub_scene dungeon dg_status_line
 *choice
-  *if (not(dg_r5_crates))
+  *if (not(dg_silt_r5_crates))
     # Prise open the crates. [~10 min]
       *goto pvsc_r5_crates
-  *if ((not(dg_r5_box)) and (has_lockpick_set))
+  *if ((not(dg_silt_r5_box)) and (has_lockpick_set))
     # Pick the padlock with your lockpick set. [~15 min]@{show_stat_hints  [Sleight of Hand DC 13, advantage]|}
       *goto pvsc_r5_pick
-  *if ((not(dg_r5_box)) and (not(has_lockpick_set)))
+  *if ((not(dg_silt_r5_box)) and (not(has_lockpick_set)))
     # (You have nothing fine enough to pick the padlock with.)
       *goto pvsc_r5_no_picks
-  *if (not(dg_r5_box))
+  *if (not(dg_silt_r5_box))
     # Break the padlock off the box. [~15 min]@{show_stat_hints  [Athletics DC 14]|}
       *goto pvsc_r5_force
   # Go west, back to the Lair.
-    *set dg_dest "r4"
+    *set dg_dest "silt_r4"
     *set dg_dest_hall false
     *goto pvsc_move
 
@@ -925,7 +996,7 @@ You work the lids up with the point of a blade, and the nails shriek. Under sail
   *gosub_scene equipment grant_gear "pitch_torch" 1
   *set stat_bump_locked true
   *set locked_stat_bump_page_id page_id
-*set dg_r5_crates true
+*set dg_silt_r5_crates true
 *line_break
 [b][Found: two flasks of lamp oil and a pitch torch][/b]
 *set dg_mins 10
@@ -939,12 +1010,12 @@ You work the lids up with the point of a blade, and the nails shriek. Under sail
 *gosub_scene dice_engine roll_skill_check 13 "sleight_of_hand" "" "" "" "" ""
 *if (check_success)
   You work the picks into the lock a pin at a time, listening for each one to set, and the shackle springs open with a small, rusty click.
-  *set dg_r5_box true
+  *set dg_silt_r5_box true
   *line_break
   *goto pvsc_r5_open
 *else
   A pin slips, then another, and something gives way inside the lock with a dull snap. The shackle will not move now, and the picks will not go back in.
-  *set dg_r5_box true
+  *set dg_silt_r5_box true
   *set dg_mins 15
   *set dg_time_id "r5_pick"
   *gosub_scene dungeon dg_time
@@ -955,13 +1026,13 @@ You work the lids up with the point of a blade, and the nails shriek. Under sail
 *gosub_scene dice_engine roll_skill_check 14 "athletics" "" "" "" "" ""
 *if (check_success)
   You wedge the point of a blade under the hasp and lean on it with your whole weight, and the old padlock tears out of the wood with a crack that rings round the vault.
-  *set dg_r5_box true
+  *set dg_silt_r5_box true
   *line_break
   *goto pvsc_r5_open
 *else
   The blade slips off the hasp and the rusted edge of the lid slams down across your hand. The padlock does not move.
   *gosub pvsc_hurt
-  *set dg_r5_box true
+  *set dg_silt_r5_box true
   *set dg_mins 15
   *set dg_time_id "r5_force"
   *gosub_scene dungeon dg_time
@@ -971,18 +1042,18 @@ You work the lids up with the point of a blade, and the nails shriek. Under sail
 *label pvsc_r5_open
 *comment The strongbox is open. Everything granted sits inside one lock, with the once-ever pieces decided inside it, so a refresh of this page prints the same text.
 *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-  *set dg_r5_ring_now (not(has_night_eye_ring))
-  *if (dg_r5_ring_now)
+  *set dg_silt_r5_ring_now (not(has_night_eye_ring))
+  *if (dg_silt_r5_ring_now)
     *set has_night_eye_ring true
   *set currency_add_amount 20
   *gosub_scene economy currency_add
-  *set dg_r5_opened true
+  *set dg_silt_r5_opened true
   *set stat_bump_locked true
   *set locked_stat_bump_page_id page_id
 Under a folded cloth lies a small leather purse, heavy with coin.
 *line_break
 [b][Found: 20 copper bits][/b]
-*if (dg_r5_ring_now)
+*if (dg_silt_r5_ring_now)
   *line_break
   In a pocket sewn into the lining is a ring of black horn, polished smooth by many thumbs. When you hold it up to your eye the dark in the corners of the vault seems thinner.
   *line_break
@@ -1016,7 +1087,7 @@ Under a folded cloth lies a small leather purse, heavy with coin.
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
   In the dark the water gives one long, slow slap, and the stillness after it is worse. Something wet drags itself over the stone toward you, claws clicking, and a smell of grave-rot rolls over you, cold and sweet.
-*elseif (dg_pos = "r2")
+*elseif (dg_pos = "silt_r2")
   The black water parts, and a grey, hairless figure drags itself up onto the walkway, streaming. Its claws click on the stone. Its eyes are white as boiled eggs, and they find you at once.
 *else
   The water standing in the passage goes flat and still, the way water does when something under it is holding its breath. Then a grey, hairless figure rises out of it, streaming, its lipless mouth open and its arms hanging long. It drags itself onto the dry brick at the water's edge, claws clicking. Its eyes are white as boiled eggs, and they find you at once.
@@ -1130,16 +1201,16 @@ Under a folded cloth lies a small leather purse, heavy with coin.
   The last rat goes still, and the scrabbling stops. There is nothing on them worth the knife.
 *if (dg_hv_creature = "lacedon")
   The lacedon folds onto the stone and does not rise again, and the black water settles behind it.
-  *if (dg_pos = "r2")
-    *set dg_r2_lacedon_dead true
+  *if (dg_pos = "silt_r2")
+    *set dg_silt_r2_lacedon_dead true
 *if (dg_hv_creature = "centipede")
   The centipede curls in on itself and its legs go slack.
-  *if (dg_pos = "r4")
-    *set dg_r4_brood_dead true
+  *if (dg_pos = "silt_r4")
+    *set dg_silt_r4_brood_dead true
 *if (dg_hv_creature = "viper")
   The viper slackens across the brick, its head still.
-  *if (dg_pos = "r3")
-    *set dg_r3_viper_dead true
+  *if (dg_pos = "silt_r3")
+    *set dg_silt_r3_viper_dead true
 *if (dg_hv_creature = "frog")
   The frog sags with a wet sigh and lies still in the shallows.
 *gosub_scene dungeon dg_harvest_info
@@ -1266,7 +1337,7 @@ You turn back the way you came.
     *goto pvsc_here
 
 *comment THE CAMP (2026-10-02, replaced the lantern boy). An abandoned camp, a small find (a linen bandage, searched once per run, not in the dark) and a mouse. A character who knows Speak with Animals
-*comment can ask the mouse what to expect, ONCE EVER (dg_mouse_met, kept between runs like the map): dungeon.txt dg_swa_check / dg_swa_cast work out the cost (free for a racial knack, a ritual with no slot and
+*comment can ask the mouse what to expect, ONCE EVER (dg_silt_mouse_met, kept between runs like the map): dungeon.txt dg_swa_check / dg_swa_cast work out the cost (free for a racial knack, a ritual with no slot and
 *comment ten extra minutes for a Wizard, one slot for a Bard, Ranger or Warlock). With no slot the option stays listed and says why. The mouse's hints are true: they point at the encounters and rooms below.
 *label pvsc_enc_camp
 
@@ -1279,31 +1350,31 @@ You turn back the way you came.
 *gosub_scene dungeon dg_dark_check
 *gosub_scene dungeon dg_swa_check
 *choice
-  *if ((not(dg_camp_looted)) and (not(dg_dark)))
+  *if ((not(dg_silt_camp_looted)) and (not(dg_dark)))
     # Search the camp. [~10 min]
       *goto pvsc_camp_search
-  *if ((not(dg_camp_looted)) and (dg_dark))
+  *if ((not(dg_silt_camp_looted)) and (dg_dark))
     # (It is too dark to search the camp.)
       You feel along the wall, but you cannot tell a tin from a stone without a light.
       *goto pvsc_camp_menu
-  *if (dg_camp_looted)
+  *if (dg_silt_camp_looted)
     # (You have already searched the camp.)
       Nothing is left in it but the bricks, the candle and the rotten bedroll.
       *goto pvsc_camp_menu
-  *if (((known_speak_with_animals) and (not(dg_mouse_met))) and ((dg_swa_can) and (dg_swa_cost = "slot")))
+  *if (((known_speak_with_animals) and (not(dg_silt_mouse_met))) and ((dg_swa_can) and (dg_swa_cost = "slot")))
     # Speak with the mouse. [Speak with Animals, uses a spell slot, ~5 min]
       *goto pvsc_camp_mouse
-  *if (((known_speak_with_animals) and (not(dg_mouse_met))) and ((dg_swa_can) and (dg_swa_cost = "ritual")))
+  *if (((known_speak_with_animals) and (not(dg_silt_mouse_met))) and ((dg_swa_can) and (dg_swa_cost = "ritual")))
     # Speak with the mouse. [Speak with Animals as a ritual, no slot, ~15 min]
       *goto pvsc_camp_mouse
-  *if (((known_speak_with_animals) and (not(dg_mouse_met))) and ((dg_swa_can) and (dg_swa_cost = "free")))
+  *if (((known_speak_with_animals) and (not(dg_silt_mouse_met))) and ((dg_swa_can) and (dg_swa_cost = "free")))
     # Speak with the mouse. [Speak with Animals, ~5 min]
       *goto pvsc_camp_mouse
-  *if (((known_speak_with_animals) and (not(dg_mouse_met))) and (not(dg_swa_can)))
+  *if (((known_speak_with_animals) and (not(dg_silt_mouse_met))) and (not(dg_swa_can)))
     # (You have no spell slot left to speak with the mouse.)
       The mouse watches you mouth the words and nothing comes of them. You have nothing left to cast it with.
       *goto pvsc_camp_menu
-  *if ((known_speak_with_animals) and (dg_mouse_met))
+  *if ((known_speak_with_animals) and (dg_silt_mouse_met))
     # (The mouse has told you all it knows.)
       The mouse is washing its face again and does not look up.
       *goto pvsc_camp_menu
@@ -1316,7 +1387,7 @@ You turn the bedroll over with a boot. Under the rotted wool is a tin with the l
   *gosub_scene equipment grant_gear "linen_bandage" 1
   *set stat_bump_locked true
   *set locked_stat_bump_page_id page_id
-*set dg_camp_looted true
+*set dg_silt_camp_looted true
 *line_break
 [b][Found: a linen bandage][/b]
 *set dg_mins 10
@@ -1328,7 +1399,7 @@ You turn the bedroll over with a boot. Under the rotted wool is a tin with the l
 *label pvsc_camp_mouse
 *gosub_scene dungeon dg_swa_check
 *gosub_scene dungeon dg_swa_cast
-*set dg_mouse_met true
+*set dg_silt_mouse_met true
 *if (dg_swa_cost = "ritual")
   You sit in the dust and say the words slowly, the long way, the way the book sets them out. Ten minutes of murmuring later the mouse stops washing and looks at you.
 *if (dg_swa_cost = "slot")
@@ -1344,3 +1415,115 @@ It speaks in a dry, quick whisper, and it does not like the wet. "Big drowned on
 *gosub_scene dungeon dg_time
 *line_break
 *goto pvsc_camp_menu
+
+*comment ──────────────────────────────────────────────────────────────
+*comment THIS DUNGEON'S PART OF THE ENGINE (2026-10-02). dungeon.txt reaches these three labels through one dispatch line each (dg_run_table, dg_respawn, dg_forget_map). Everything that is about THIS dungeon
+*comment lives here: its encounter table, and the flags a refill and a map reset clear. Another dungeon gets its own three labels in its own scene and one more dispatch line.
+*comment TABLE: the Silt-Gate conduits and the canals under Dredge-End. Columns: id, low-tide weight, high-tide weight. The ids are what pvsc_encounter dispatches on (pvsc_enc_<id>). Fights: mire_rats, lacedon,
+*comment centipede, viper, frog (the last three are the library "beast" with name, hit point, armor and attack overrides). Not fights: ledge (a check, fail-forward), rising_water (a check with a time and soak
+*comment cost), cache (a find), camp (an abandoned camp with a small find; a mouse to talk to for a character who can cast Speak with Animals). Human crews are held back until the Black Oath rivalry is linked;
+*comment they are new rows. Low-tide total 24, high-tide total 27.
+*comment ──────────────────────────────────────────────────────────────
+*label pvsc_table
+*set dg_trow_count 9
+*set dg_trow_id_1 "mire_rats"
+*set dg_trow_lo_1 3
+*set dg_trow_hi_1 6
+*set dg_trow_id_2 "lacedon"
+*set dg_trow_lo_2 0
+*set dg_trow_hi_2 4
+*set dg_trow_id_3 "centipede"
+*set dg_trow_lo_3 4
+*set dg_trow_hi_3 2
+*set dg_trow_id_4 "frog"
+*set dg_trow_lo_4 4
+*set dg_trow_hi_4 2
+*set dg_trow_id_5 "viper"
+*set dg_trow_lo_5 4
+*set dg_trow_hi_5 2
+*set dg_trow_id_6 "ledge"
+*set dg_trow_lo_6 3
+*set dg_trow_hi_6 3
+*set dg_trow_id_7 "rising_water"
+*set dg_trow_lo_7 0
+*set dg_trow_hi_7 5
+*set dg_trow_id_8 "cache"
+*set dg_trow_lo_8 4
+*set dg_trow_hi_8 1
+*set dg_trow_id_9 "camp"
+*set dg_trow_lo_9 2
+*set dg_trow_hi_9 2
+*return
+
+*comment What a refill clears: every hallway step's encounter roll and every room's once-only state. The map and the chalk are not touched (see dungeon.txt, THE RESPAWN).
+*label pvsc_respawn
+*set dg_done_silt_x1 false
+*set dg_done_silt_x2 false
+*set dg_done_silt_x3 false
+*set dg_done_silt_j1 false
+*set dg_done_silt_j2 false
+*set dg_done_silt_j3 false
+*set dg_done_silt_j4 false
+*set dg_done_silt_j5 false
+*set dg_done_silt_j6 false
+*set dg_done_silt_j7 false
+*set dg_done_silt_j8 false
+*set dg_done_silt_r1 false
+*set dg_done_silt_r2 false
+*set dg_done_silt_r3 false
+*set dg_done_silt_r4 false
+*set dg_done_silt_r5 false
+*set dg_silt_r1_tally false
+*set dg_silt_r1_tally_ok false
+*set dg_silt_r1_search false
+*set dg_silt_r1_steps false
+*set dg_silt_r2_cross false
+*set dg_silt_r2_found false
+*set dg_silt_r2_climb false
+*set dg_silt_r2_lacedon_dead false
+*set dg_silt_r3_clear false
+*set dg_silt_r3_found false
+*set dg_silt_r3_viper_dead false
+*set dg_silt_r4_brood_dead false
+*set dg_silt_r4_quiet false
+*set dg_silt_r5_crates false
+*set dg_silt_r5_box false
+*set dg_silt_r5_opened false
+*set dg_silt_camp_looted false
+*return
+
+*comment The Developer menu's reset: forget the map (what was seen and every chalk mark).
+*label pvsc_forget_map
+*set dg_seen_silt_x1 false
+*set dg_seen_silt_x2 false
+*set dg_seen_silt_x3 false
+*set dg_seen_silt_j1 false
+*set dg_seen_silt_j2 false
+*set dg_seen_silt_j3 false
+*set dg_seen_silt_j4 false
+*set dg_seen_silt_j5 false
+*set dg_seen_silt_j6 false
+*set dg_seen_silt_j7 false
+*set dg_seen_silt_j8 false
+*set dg_seen_silt_r1 false
+*set dg_seen_silt_r2 false
+*set dg_seen_silt_r3 false
+*set dg_seen_silt_r4 false
+*set dg_seen_silt_r5 false
+*set dg_mark_silt_x1 false
+*set dg_mark_silt_x2 false
+*set dg_mark_silt_x3 false
+*set dg_mark_silt_j1 false
+*set dg_mark_silt_j2 false
+*set dg_mark_silt_j3 false
+*set dg_mark_silt_j4 false
+*set dg_mark_silt_j5 false
+*set dg_mark_silt_j6 false
+*set dg_mark_silt_j7 false
+*set dg_mark_silt_j8 false
+*set dg_mark_silt_r1 false
+*set dg_mark_silt_r2 false
+*set dg_mark_silt_r3 false
+*set dg_mark_silt_r4 false
+*set dg_mark_silt_r5 false
+*return

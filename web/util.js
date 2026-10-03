@@ -313,6 +313,110 @@ function getRemoteEmail(callback) {
   xhrAuthRequest("GET", "getuser", callback);
 }
 
+// Save-data format, deliberately independent of the public game version.
+// Each migration transforms version N into N+1 and is never rewritten after
+// release, allowing a player to skip any number of game updates safely.
+var SAVE_SCHEMA_VERSION = 1;
+var SAVE_SCHEMA_MIGRATIONS = {
+  0: function migrateUnversionedSaveTo1(state) {
+    if (!state.temps) state.temps = {};
+    // ChoiceScript already knows every current *create default. Populate
+    // variables that did not exist when an unversioned save was made while
+    // preserving every value the player actually had.
+    if (_global.nav && typeof _global.nav.repairStats === "function") {
+      _global.nav.repairStats(state.stats);
+    }
+  }
+};
+
+function parseSaveSchemaVersion(value) {
+  if (typeof value === "undefined" || value === null || value === "") return 0;
+  var version = Number(value);
+  if (!isFinite(version) || version < 0 || Math.floor(version) !== version) return null;
+  return version;
+}
+
+function getSaveSchemaVersion(state) {
+  if (!state || !state.stats) return null;
+  var topPresent = typeof state.saveSchemaVersion !== "undefined";
+  var statPresent = typeof state.stats.save_schema_version !== "undefined";
+  var topVersion = topPresent ? parseSaveSchemaVersion(state.saveSchemaVersion) : 0;
+  var statVersion = statPresent ? parseSaveSchemaVersion(state.stats.save_schema_version) : 0;
+  if (topVersion === null || statVersion === null) return null;
+  // Every save written by this framework carries both copies. A mismatch is
+  // corruption (or a hand-edited save), not permission to choose the lower
+  // number and accidentally run an old migration over newer data.
+  if (topPresent && statPresent && topVersion !== statVersion) return null;
+  return topPresent ? topVersion : statVersion;
+}
+
+function runSaveMigrations(state, currentVersion, migrations) {
+  var originalVersion = getSaveSchemaVersion(state);
+  if (originalVersion === null) {
+    return { ok: false, reason: "invalid_version", state: state };
+  }
+  if (originalVersion > currentVersion) {
+    return {
+      ok: false,
+      reason: "newer_version",
+      savedVersion: originalVersion,
+      currentVersion: currentVersion,
+      state: state
+    };
+  }
+
+  var version = originalVersion;
+  while (version < currentVersion) {
+    var migrate = migrations[version];
+    if (typeof migrate !== "function") {
+      return {
+        ok: false,
+        reason: "missing_migration",
+        savedVersion: originalVersion,
+        missingVersion: version,
+        currentVersion: currentVersion,
+        state: state
+      };
+    }
+    migrate(state);
+    version++;
+    state.saveSchemaVersion = version;
+    state.stats.save_schema_version = version;
+  }
+
+  // Normalize string values emitted by startupgenerator.js to numbers even
+  // when this save was already at the current schema.
+  state.saveSchemaVersion = currentVersion;
+  state.stats.save_schema_version = currentVersion;
+  return {
+    ok: true,
+    state: state,
+    migrated: originalVersion !== currentVersion,
+    fromVersion: originalVersion,
+    toVersion: currentVersion
+  };
+}
+
+function migrateSaveState(state) {
+  if (!state || !state.stats || !state.stats.sceneName) {
+    return { ok: false, reason: "invalid_state", state: state };
+  }
+  return runSaveMigrations(state, SAVE_SCHEMA_VERSION, SAVE_SCHEMA_MIGRATIONS);
+}
+
+function saveMigrationError(result) {
+  if (result.reason === "newer_version") {
+    return "This save uses save-data schema " + result.savedVersion +
+      ", but this build only supports schema " + result.currentVersion +
+      ". Update the game before loading it. The save has not been changed.";
+  }
+  if (result.reason === "missing_migration") {
+    return "This build is missing the save migration from schema " +
+      result.missingVersion + ". The save has not been changed.";
+  }
+  return "This save has an invalid save-data schema version. The save has not been changed.";
+}
+
 function saveCookie(callback, slot, stats, temps, lineNum, indent, deleted, undeleted) {
     var value = computeCookie(stats, temps, lineNum, indent, deleted, undeleted);
     return writeCookie(value, slot, callback);
@@ -324,7 +428,12 @@ function computeCookie(stats, temps, lineNum, indent, deleted, undeleted) {
   if (scene) stats.sceneName = scene.name;
   var version = "UNKNOWN";
   if (typeof(window) != "undefined" && window && window.version) version = window.version;
-  var obj = { version: version, stats: stats, temps: temps, lineNum: lineNum, indent: indent };
+  // Keep a copy inside stats as well as at the top level. Besides making the
+  // version visible to imported/manual-save paths that temporarily pass only
+  // stats and temps, this prevents a newer save from being silently restamped
+  // as an older format before compatibility is checked.
+  var schemaVersion = parseSaveSchemaVersion(stats.save_schema_version);
+  var obj = { version: version, saveSchemaVersion: schemaVersion, stats: stats, temps: temps, lineNum: lineNum, indent: indent };
   // Record the nearest *label above lineNum (against the CURRENT scene
   // text), so restoreGame() can re-anchor this save by label name if the
   // scene file gets edited before this save is ever resumed -- see
@@ -355,6 +464,99 @@ function writeCookie(value, slot, callback) {
     return;
   }
   window.store.set("state"+slot, value, safeCallback(callback));
+}
+
+// Rolling page-start snapshots. The ordinary "" slot is still the live
+// autosave; these three are its last successfully rendered predecessors and
+// are intentionally absent from the player's manual save-slot list.
+var SAFE_AUTOSAVE_SLOTS = ["autosafe1", "autosafe2", "autosafe3"];
+// A scene-authored checkpoint is less recent than the rolling page history,
+// but more trustworthy after a large update: it resumes from a deliberately
+// stable gameplay hub rather than an arbitrary rendered page. It is tried
+// only after all three rolling snapshots and before the chapter backup.
+var SAFE_CHECKPOINT_SLOT = "autosafe_checkpoint";
+var SAFE_RECOVERY_SLOTS = SAFE_AUTOSAVE_SLOTS.concat([SAFE_CHECKPOINT_SLOT]);
+var safeAutosaveWriteBusy = false;
+var pendingSafeAutosave = null;
+var safeAutosaveRecoveryCursor = 0;
+
+function readStateSlot(slot, callback) {
+  if (_global.pseudoSave && Object.prototype.hasOwnProperty.call(_global.pseudoSave, slot)) {
+    return safeTimeout(function () { callback(_global.pseudoSave[slot] || null); }, 0);
+  }
+  var store = initStore();
+  if (!store) return safeTimeout(function () { callback(null); }, 0);
+  store.get("state" + slot, function (ok, value) {
+    safeCall(null, function () { callback(ok && value ? value : null); });
+  });
+}
+
+function recordSafeAutosave(value) {
+  if (!value) return;
+  pendingSafeAutosave = value;
+  if (safeAutosaveWriteBusy) return;
+  safeAutosaveWriteBusy = true;
+
+  function drain() {
+    var nextValue = pendingSafeAutosave;
+    pendingSafeAutosave = null;
+    var previous = [];
+
+    function readNext(index) {
+      if (index < SAFE_AUTOSAVE_SLOTS.length) {
+        return readStateSlot(SAFE_AUTOSAVE_SLOTS[index], function (valueAtSlot) {
+          previous[index] = valueAtSlot;
+          readNext(index + 1);
+        });
+      }
+      // Replaying or refreshing the same safe page should not consume the
+      // whole history with three identical snapshots.
+      if (previous[0] === nextValue) return finish();
+      writeCookie(previous[1] || "", SAFE_AUTOSAVE_SLOTS[2], function () {
+        writeCookie(previous[0] || "", SAFE_AUTOSAVE_SLOTS[1], function () {
+          writeCookie(nextValue, SAFE_AUTOSAVE_SLOTS[0], finish);
+        });
+      });
+    }
+
+    function finish() {
+      if (pendingSafeAutosave && pendingSafeAutosave !== nextValue) return drain();
+      safeAutosaveWriteBusy = false;
+    }
+
+    readNext(0);
+  }
+
+  drain();
+}
+
+// Called after an invalid continuation. Each repeated failure advances to
+// the next older snapshot; a successfully rendered page resets the cursor.
+function loadNextSafeAutosave(orElse) {
+  function tryNext() {
+    if (safeAutosaveRecoveryCursor >= SAFE_RECOVERY_SLOTS.length) {
+      safeAutosaveRecoveryCursor = 0;
+      return orElse();
+    }
+    var slot = SAFE_RECOVERY_SLOTS[safeAutosaveRecoveryCursor++];
+    readStateSlot(slot, function (raw) {
+      if (!raw) return tryNext();
+      var state = null;
+      try { state = jsonParse(raw); } catch (e) {}
+      if (!isStateValid(state)) return tryNext();
+      var migration = migrateSaveState(state);
+      // A broken or future-format recovery candidate must not trap recovery
+      // in a loop. Try the next older snapshot/checkpoint; the normal chapter
+      // fallback remains the final candidate.
+      if (!migration.ok) return tryNext();
+      clearScreen(function () { restoreGame(migration.state, null, false); });
+    });
+  }
+  tryNext();
+}
+
+function markSafeAutosaveRecoverySucceeded() {
+  safeAutosaveRecoveryCursor = 0;
 }
 
 function clearCookie(callback, slot) {
@@ -876,6 +1078,11 @@ function restoreGame(state, forcedScene, userRestored, forcedStats, forcedTemps)
     } else if (forcedScene == "choicescript_upgrade") {
       secondaryMode = "upgrade";
       saveSlot = "temp";
+    }
+    if (isStateValid(state)) {
+      var migration = migrateSaveState(state);
+      if (!migration.ok) throw new Error(saveMigrationError(migration));
+      state = migration.state;
     }
     if (!isStateValid(state)) {
         var startupScene = forcedScene ? forcedScene : _global.nav.getStartupScene();

@@ -73,6 +73,44 @@ function newScene(name) {
   return new sandbox.Scene(name, {});
 }
 
+console.log('visible-page save boundary');
+{
+  function finishedScene(skipFooter) {
+    const scene = newScene('teststory');
+    scene.finished = true;
+    scene.skipFooter = skipFooter;
+    scene.rollbackLineCoverage = function () {};
+    return scene;
+  }
+
+  check('an internal scene continuation does not write live, temp, or recovery saves', () => {
+    const calls = [];
+    const scene = finishedScene(true);
+    scene.refreshSavedProgress = function () { calls.push('refresh'); };
+    scene.save = function (slot) { calls.push('save:' + slot); };
+    sandbox.printFooter = function () { calls.push('footer'); };
+
+    scene.printLoop();
+
+    assert.deepStrictEqual(calls, []);
+    assert.strictEqual(scene.skipFooter, false);
+  });
+
+  check('a completed visible page refreshes recovery state and the temp save once', () => {
+    const calls = [];
+    const scene = finishedScene(false);
+    scene.refreshSavedProgress = function () { calls.push('refresh'); };
+    scene.save = function (slot) { calls.push('save:' + slot); };
+    sandbox.printFooter = function () { calls.push('footer'); };
+
+    scene.printLoop();
+
+    assert.deepStrictEqual(calls, ['refresh', 'save:temp', 'footer']);
+  });
+}
+
+console.log('');
+
 console.log('save-game resume anchor (checkSum / resumeFromLabelAnchor)');
 {
   const original = [
@@ -266,6 +304,246 @@ console.log('*gosub_scene return-address anchor (checkSum via return())');
     const ok = sceneA3.checkSum();
     assert.strictEqual(ok, false);
     assert.strictEqual(backupInvoked, true);
+  });
+}
+
+console.log('structural resume validation / return-frame failover');
+{
+  const scene = newScene('nested');
+  scene.loadLines([
+    '*label hub',
+    '*choice',
+    '  # Take the path.',
+    '    *set gold +1',
+    '*goto hub',
+  ].join('\n'));
+
+  check('rejects a restored root position that now points inside an option body', () => {
+    assert.strictEqual(scene.isResumePositionStructurallyValid(3, 0), false);
+  });
+
+  check('accepts a restored position whose current indentation is reachable', () => {
+    assert.strictEqual(scene.isResumePositionStructurallyValid(4, 0), true);
+  });
+
+  check('an anchored return whose exact line vanished falls back to its surviving label', () => {
+    const frame = {
+      lineNum: 3,
+      indent: 0,
+      resumeLabel: 'hub',
+      resumeOffset: 3,
+      resumeLineText: 'This old return line no longer exists.',
+    };
+    assert.strictEqual(scene.resolveReturnFrameLine(frame), scene.labels.hub);
+  });
+
+  check('an anchored return never falls back to a plausible raw line after its label is removed', () => {
+    const frame = {
+      lineNum: 4,
+      indent: 0,
+      resumeLabel: 'removed_label',
+      resumeOffset: 1,
+      resumeLineText: '*goto removed_label',
+    };
+    assert.strictEqual(scene.resolveReturnFrameLine(frame), null);
+  });
+
+  check('a legacy unanchored return is accepted only when indentation is structurally safe', () => {
+    assert.strictEqual(scene.resolveReturnFrameLine({ lineNum: 4, indent: 0 }), 4);
+    assert.strictEqual(scene.resolveReturnFrameLine({ lineNum: 3, indent: 0 }), null);
+  });
+}
+
+console.log('save-schema stamping and migrations');
+{
+  let repairs = 0;
+  sandbox._global = {
+    nav: {
+      repairStats: function (stats) {
+        repairs++;
+        if (typeof stats.added_later === 'undefined') stats.added_later = 'default';
+      },
+    },
+  };
+
+  check('new saves carry matching numeric schema versions at both levels', () => {
+    const scene = new sandbox.Scene('combat', { save_schema_version: '1' });
+    scene.loadLines('*label fight_round_hub\n*choice\n  # Wait.\n    *finish');
+    const state = JSON.parse(sandbox.computeCookie(scene.stats, scene.temps, 0, 0));
+    assert.strictEqual(state.saveSchemaVersion, 1);
+    assert.strictEqual(Number(state.stats.save_schema_version), 1);
+  });
+
+  check('an unversioned save receives current defaults without losing player values', () => {
+    const state = {
+      stats: { sceneName: 'combat', hp_current: 7 },
+      lineNum: 0,
+      indent: 0,
+    };
+    const result = sandbox.migrateSaveState(state);
+    assert.strictEqual(result.ok, true);
+    assert.strictEqual(result.migrated, true);
+    assert.strictEqual(result.fromVersion, 0);
+    assert.strictEqual(state.saveSchemaVersion, 1);
+    assert.strictEqual(state.stats.save_schema_version, 1);
+    assert.strictEqual(state.stats.hp_current, 7);
+    assert.strictEqual(state.stats.added_later, 'default');
+    assert.deepStrictEqual(Object.keys(state.temps), []);
+    assert.strictEqual(repairs, 1);
+  });
+
+  check('ordered migrations carry a save across several skipped releases', () => {
+    const state = { stats: { sceneName: 'combat' }, temps: {} };
+    const result = sandbox.runSaveMigrations(state, 3, {
+      0: function (s) { s.stats.history = ['zero-to-one']; },
+      1: function (s) { s.stats.history.push('one-to-two'); },
+      2: function (s) { s.stats.history.push('two-to-three'); },
+    });
+    assert.strictEqual(result.ok, true);
+    assert.strictEqual(state.saveSchemaVersion, 3);
+    assert.strictEqual(state.stats.save_schema_version, 3);
+    assert.strictEqual(Array.from(state.stats.history).join(','), 'zero-to-one,one-to-two,two-to-three');
+  });
+
+  check('a save from a newer build is rejected without being modified', () => {
+    const state = {
+      saveSchemaVersion: 2,
+      stats: { sceneName: 'combat', save_schema_version: 2 },
+      temps: {},
+    };
+    const before = JSON.stringify(state);
+    const result = sandbox.migrateSaveState(state);
+    assert.strictEqual(result.ok, false);
+    assert.strictEqual(result.reason, 'newer_version');
+    assert.strictEqual(result.savedVersion, 2);
+    assert.strictEqual(JSON.stringify(state), before);
+    assert.ok(/Update the game/.test(sandbox.saveMigrationError(result)));
+  });
+
+  check('mismatched or fractional schema markers fail closed', () => {
+    const mismatch = sandbox.migrateSaveState({
+      saveSchemaVersion: 1,
+      stats: { sceneName: 'combat', save_schema_version: 0 },
+      temps: {},
+    });
+    assert.strictEqual(mismatch.ok, false);
+    assert.strictEqual(mismatch.reason, 'invalid_version');
+
+    const fractional = sandbox.migrateSaveState({
+      saveSchemaVersion: 1.5,
+      stats: { sceneName: 'combat', save_schema_version: 1.5 },
+      temps: {},
+    });
+    assert.strictEqual(fractional.ok, false);
+    assert.strictEqual(fractional.reason, 'invalid_version');
+  });
+}
+
+console.log('rolling safe autosaves');
+{
+  const memory = {};
+  sandbox._global = { pseudoSave: {} };
+  sandbox.safeTimeout = function (fn) { fn(); };
+  sandbox.safeCall = function (ctx, fn) { fn.call(ctx); };
+  sandbox.safeCallback = function (fn) { return fn || function () {}; };
+  const fakeStore = {
+    set: function (key, value, callback) {
+      memory[key] = value;
+      if (callback) callback();
+    },
+    get: function (key, callback) {
+      callback(Object.prototype.hasOwnProperty.call(memory, key), memory[key]);
+    },
+  };
+  sandbox.store = fakeStore;
+  sandbox.initStore = function () { return fakeStore; };
+  sandbox.jsonParse = JSON.parse;
+
+  check('keeps the newest three distinct successfully rendered snapshots', () => {
+    sandbox.recordSafeAutosave('A');
+    sandbox.recordSafeAutosave('B');
+    sandbox.recordSafeAutosave('C');
+    sandbox.recordSafeAutosave('D');
+    assert.strictEqual(sandbox._global.pseudoSave.autosafe1, 'D');
+    assert.strictEqual(sandbox._global.pseudoSave.autosafe2, 'C');
+    assert.strictEqual(sandbox._global.pseudoSave.autosafe3, 'B');
+  });
+
+  check('does not fill the history with duplicate refreshes', () => {
+    sandbox.recordSafeAutosave('D');
+    assert.strictEqual(sandbox._global.pseudoSave.autosafe1, 'D');
+    assert.strictEqual(sandbox._global.pseudoSave.autosafe2, 'C');
+    assert.strictEqual(sandbox._global.pseudoSave.autosafe3, 'B');
+  });
+
+  check('automatic recovery skips a corrupt snapshot and loads the next valid one', () => {
+    sandbox._global.pseudoSave.autosafe1 = '{bad json';
+    sandbox._global.pseudoSave.autosafe2 = JSON.stringify({ stats: { sceneName: 'combat' }, temps: {}, lineNum: 0, indent: 0 });
+    let restored = null;
+    let fellBack = false;
+    sandbox.clearScreen = function (fn) { fn(); };
+    sandbox.restoreGame = function (state) { restored = state; };
+    sandbox.loadNextSafeAutosave(function () { fellBack = true; });
+    assert.strictEqual(fellBack, false);
+    assert.ok(restored);
+    assert.strictEqual(restored.stats.sceneName, 'combat');
+    sandbox.markSafeAutosaveRecoverySucceeded();
+  });
+
+  check('automatic recovery skips a snapshot written by a newer game build', () => {
+    sandbox._global.pseudoSave.autosafe1 = JSON.stringify({
+      saveSchemaVersion: 2,
+      stats: { sceneName: 'combat', save_schema_version: 2 },
+      temps: {},
+      lineNum: 0,
+      indent: 0,
+    });
+    sandbox._global.pseudoSave.autosafe2 = JSON.stringify({
+      saveSchemaVersion: 1,
+      stats: { sceneName: 'port_valen/port_valen', save_schema_version: 1 },
+      temps: {},
+      lineNum: 0,
+      indent: 0,
+    });
+    let restored = null;
+    sandbox.restoreGame = function (state) { restored = state; };
+    sandbox.loadNextSafeAutosave(function () {});
+    assert.ok(restored);
+    assert.strictEqual(restored.stats.sceneName, 'port_valen/port_valen');
+    sandbox.markSafeAutosaveRecoverySucceeded();
+  });
+
+  check('falls through the rolling history to the explicit semantic checkpoint', () => {
+    sandbox._global.pseudoSave.autosafe1 = '{bad json';
+    sandbox._global.pseudoSave.autosafe2 = '';
+    sandbox._global.pseudoSave.autosafe3 = JSON.stringify({ stats: {}, temps: {}, lineNum: 0, indent: 0 });
+    sandbox._global.pseudoSave.autosafe_checkpoint = JSON.stringify({
+      stats: { sceneName: 'combat' },
+      temps: {},
+      lineNum: 42,
+      indent: 0,
+      resumeLabel: 'fight_round_hub',
+      resumeOffset: 12,
+    });
+    let restored = null;
+    let fellBack = false;
+    sandbox.restoreGame = function (state) { restored = state; };
+    sandbox.loadNextSafeAutosave(function () { fellBack = true; });
+    assert.strictEqual(fellBack, false);
+    assert.ok(restored);
+    assert.strictEqual(restored.resumeLabel, 'fight_round_hub');
+    sandbox.markSafeAutosaveRecoverySucceeded();
+  });
+
+  check('uses the chapter fallback when every automatic recovery slot is unusable', () => {
+    sandbox._global.pseudoSave.autosafe1 = '';
+    sandbox._global.pseudoSave.autosafe2 = '';
+    sandbox._global.pseudoSave.autosafe3 = '{bad json';
+    sandbox._global.pseudoSave.autosafe_checkpoint = '';
+    let fellBack = false;
+    sandbox.loadNextSafeAutosave(function () { fellBack = true; });
+    assert.strictEqual(fellBack, true);
+    sandbox.markSafeAutosaveRecoverySucceeded();
   });
 }
 

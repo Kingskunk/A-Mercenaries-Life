@@ -297,15 +297,22 @@ The city's paving stops at the drainage cut. Past it the lanes are broken rock a
   *comment not [b]-bolded and it is placed last, after the Silt-Gates, so it reads as the last thing
   *comment the player notices on the way out.
   *comment
-  *comment NOT gated on lyra_bond or lyra_pay_generous. The greeting inside lyra_hook is what filters
-  *comment the player: at 20+ she talks and offers, at 8-19 she gives the problem but not the request so
-  *comment the accept button never renders, and under 8 she tells them to move along. A player who was
-  *comment cold to her at the camp brazier still finds out the errand exists — they just cannot take it.
-  *comment A quest that is invisible to a player is worse than one refused.
+  *comment NOT gated on lyra_bond or lyra_pay_generous. The greeting inside lyra_hook sets her TONE,
+  *comment not her availability: at 20+ she is warm and gives you the arithmetic herself, and under
+  *comment that she is flat and measuring and gives it to you anyway. Both tiers reach the same
+  *comment accept/decline choice, so every player who walks up can take the errand or refuse it.
+  *comment A quest that is invisible to a player is worse than one refused, and one that dead-ends
+  *comment them is worse than either.
   *comment
-  *comment lyra_pay_generous (lyra_bond >= 15, set at alderford.txt:2121) used to gate this and is what
-  *comment made the 8-19 and under-8 tiers dead code: at bond 14 or below the button never appeared, so
-  *comment the tiering could only ever run its warm branch. Do not put that flag back here.
+  *comment This button closes the moment the player chooses: accepting sets lyra_quest_stage "active",
+  *comment refusing sets lyra_refused, and either one greys it out. Only the walk-away leaves it
+  *comment standing, and that now leads to a real decision instead of another lap of the same scene.
+  *comment
+  *comment Do NOT gate this on lyra_bond. lyra_pay_generous (lyra_bond >= 15, set at alderford.txt:2121)
+  *comment was tried here once and made every tier below 15 dead code. More to the point, nothing in
+  *comment port_valen/ ever raises lyra_bond -- every gain is in the prologue, plus the two lines
+  *comment downstream of paying and repaying -- so a bond gate here can only ever shut players out
+  *comment permanently. It can never let them in later.
   *comment
   *comment met_lyra is the floor, and it is not a bond gate — camp_night sets it, so it only means the
   *comment player has been in the same room as her at least once.
@@ -627,8 +634,11 @@ You pick your way along a narrow timber walkway clinging to the moss-grown found
     The stone channel looks quiet. The smuggling line through this cut has not stopped. It has only learned to keep its voice down.
   *else
     The stone channel is quiet. The wooden gates hang heavy and dark above the water. A lone Watch sentry in a wool coat keeps vigil from the bridge above, his cudgel resting against the rail. The smuggling line through this cut is thoroughly broken.
-  *page_break Return to the canals…
-  *goto port_valen_dredge_end
+  *choice
+    # Go down to the grating at the foot of the arch. [~10 min]
+      *goto_scene port_valen/port_valen_silt_conduits pvsc_enter_silt_gates
+    # Return to the canals.
+      *goto port_valen_dredge_end
 
 *label pv_dredge_silt_gates_tide_check
 *if (((time_period = "Morning") or (time_period = "Midday")) or ((time_period = "Afternoon") or (time_period = "Dusk")))

@@ -203,7 +203,7 @@
           }
           // Where the errand stands.
           if (s.lyra_quest_stage === "active") {
-            out.push("The block steward wants five Silver Marks or the two rooms, and Lyra has told you she is five short of everything. She asked for nothing and said so out loud, which is why you are involved at all.");
+            out.push("The block steward wants five Silver Marks for the two rooms, and Lyra has told you she is five short of everything. She asked for nothing and said so out loud, which is why you are involved at all.");
           }
           if (s.lyra_resolution === "paid") {
             out.push("You paid it. She counted the silver over once and promised to pay it back in coin.");

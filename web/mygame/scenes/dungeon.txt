@@ -16,7 +16,10 @@
 *comment TIDE. dg_tide is derived from time_period, the same rule Dredge-End and the Silt-Gate quest already use: low water Morning through Dusk, high water at
 *comment Night and Pre-Dawn. Hours spent inside the dungeon go through advance_time as always, so the tide turns by itself as the run goes on.
 *comment
-*comment ADDING A TABLE: write a dg_table_<name> label (rows are one *gosub dg_row line each) and add one dispatch line to dg_run_table. ADDING A ROW: one line.
+*comment A DUNGEON'S OWN PART lives in its own scene, not here: pvsc_table (its encounter rows, set into the dg_trow_ slots), pvsc_respawn (what a refill clears) and pvsc_forget_map (the
+*comment Developer menu's map reset), under names the dungeon picks. This file reaches them through ONE dispatch line per dungeon in each of dg_run_table, dg_respawn and dg_forget_map (a scene name must be
+*comment literal). Node ids carry a short dungeon prefix (the conduits use silt_), so the per-node flags dg_seen_<id>, dg_mark_<id>, dg_done_<id> and each dungeon's room flags (dg_silt_r1_*) never collide with another dungeon's.
+*comment The map panel's layout is web/mygame/dungeons/<dungeon>.js. ADDING A ROW: one line in that dungeon's table label.
 *comment
 *comment REPLAY SAFETY. dg_pick makes a *rand roll and adds to scratch totals, so the whole pick sits inside one lock keyed on page_id AND dg_call_id (a refresh
 *comment replays the page with the same pair and skips it, leaving the stored result; two picks on one page with no *choice between them need different call
@@ -26,10 +29,13 @@
 *comment THE RESPAWN (2026-10-02). Going in does not refill the dungeon, or leaving and coming back would be a way to farm it. What is in it is kept between runs: the hallway steps whose encounter has been
 *comment rolled (dg_done_<node>) and what was done in each room. Every dg_respawn_days days (3, about twice a week) the next entry refills all of it. Two things survive a refill: the map, and chalk, which is permanent;
 *comment a CHALKED junction still rolls no encounter after a refill, so chalk is the way to keep a route quiet. Fleeing a fight does not bring the creature back: the step stays rolled.
+*comment dg_table (set by the caller before this) names the dungeon; its last refill day is the variable dg_reset_day_<dg_table>, so one dungeon's refill never touches another's.
 *label dg_run_begin
-*if (dg_reset_day = 0)
-  *set dg_reset_day campaign_day
-*if ((campaign_day - dg_reset_day) >= dg_respawn_days)
+*temp dgb_last {(("dg_reset_day_" & dg_table))}
+*if (dgb_last = 0)
+  *set {(("dg_reset_day_" & dg_table))} campaign_day
+  *set dgb_last campaign_day
+*if ((campaign_day - dgb_last) >= dg_respawn_days)
   *gosub dg_respawn
 *set dg_in_run true
 *set dg_pos "none"
@@ -54,41 +60,10 @@
 
 *comment Refills the dungeon: every encounter roll and every room is new again. The map and the chalk are not touched.
 *label dg_respawn
-*set dg_reset_day campaign_day
-*set dg_done_x1 false
-*set dg_done_x2 false
-*set dg_done_x3 false
-*set dg_done_j1 false
-*set dg_done_j2 false
-*set dg_done_j3 false
-*set dg_done_j4 false
-*set dg_done_j5 false
-*set dg_done_j6 false
-*set dg_done_j7 false
-*set dg_done_j8 false
-*set dg_done_r1 false
-*set dg_done_r2 false
-*set dg_done_r3 false
-*set dg_done_r4 false
-*set dg_done_r5 false
+*set {(("dg_reset_day_" & dg_table))} campaign_day
 *set dg_done_none false
-*set dg_r1_tally false
-*set dg_r1_tally_ok false
-*set dg_r1_search false
-*set dg_r1_steps false
-*set dg_r2_cross false
-*set dg_r2_found false
-*set dg_r2_climb false
-*set dg_r2_lacedon_dead false
-*set dg_r5_crates false
-*set dg_r5_box false
-*set dg_r5_opened false
-*set dg_r4_brood_dead false
-*set dg_r4_quiet false
-*set dg_r3_clear false
-*set dg_r3_found false
-*set dg_r3_viper_dead false
-*set dg_camp_looted false
+*if (dg_table = "silt_conduits")
+  *gosub_scene port_valen/port_valen_silt_conduits pvsc_respawn
 *return
 
 *comment The run is over (the player climbed out): clears the darkness debuff and the run flag.
@@ -168,28 +143,22 @@
       *set dg_found dgr_id
 *return
 
+*comment dg_run_table fills the table slots from the dungeon's own scene (one scene call, one dispatch line per dungeon), then calls dg_row for each of them. Called once per pass.
 *label dg_run_table
 *if (dg_table = "silt_conduits")
-  *gosub dg_table_silt_conduits
-*return
-
-*comment ──────────────────────────────────────────────────────────────
-*comment TABLE: the Silt-Gate conduits and the canals under Dredge-End. Columns: id, low-tide weight, high-tide weight.
-*comment The ids are what the dungeon dispatches on (port_valen/port_valen_silt_conduits.txt, pvsc_enc_<id>). Fights:
-*comment mire_rats, lacedon, centipede, viper, frog (the last three are the library "beast" with name, hit point, armor and attack overrides). Not fights: ledge (a check, fail-forward), rising_water (a check with a
-*comment time and soak cost), cache (a find), camp (an abandoned camp with a small find; a mouse to talk to for a character who can cast Speak with Animals). Human crews are held back until the Black Oath rivalry is linked; they are new rows.
-*comment Low-tide total 24, high-tide total 27.
-*comment ──────────────────────────────────────────────────────────────
-*label dg_table_silt_conduits
-*gosub dg_row "mire_rats" 3 6
-*gosub dg_row "lacedon" 0 4
-*gosub dg_row "centipede" 4 2
-*gosub dg_row "frog" 4 2
-*gosub dg_row "viper" 4 2
-*gosub dg_row "ledge" 3 3
-*gosub dg_row "rising_water" 0 5
-*gosub dg_row "cache" 4 1
-*gosub dg_row "camp" 2 2
+  *gosub_scene port_valen/port_valen_silt_conduits pvsc_table
+*temp dgt_i 1
+*temp dgt_id ""
+*temp dgt_lo 0
+*temp dgt_hi 0
+*label dg_run_table_loop
+*if (dgt_i <= dg_trow_count)
+  *set dgt_id {(("dg_trow_id_" & dgt_i))}
+  *set dgt_lo {(("dg_trow_lo_" & dgt_i))}
+  *set dgt_hi {(("dg_trow_hi_" & dgt_i))}
+  *gosub dg_row dgt_id dgt_lo dgt_hi
+  *set dgt_i + 1
+  *goto dg_run_table_loop
 *return
 
 *comment ──────────────────────────────────────────────────────────────
@@ -506,38 +475,10 @@
 *return
 
 *label dg_forget_map
-*set dg_seen_x1 false
-*set dg_seen_x2 false
-*set dg_seen_x3 false
-*set dg_seen_j1 false
-*set dg_seen_j2 false
-*set dg_seen_j3 false
-*set dg_seen_j4 false
-*set dg_seen_j5 false
-*set dg_seen_j6 false
-*set dg_seen_j7 false
-*set dg_seen_j8 false
-*set dg_seen_r1 false
-*set dg_seen_r2 false
-*set dg_seen_r3 false
-*set dg_seen_r4 false
-*set dg_seen_r5 false
-*set dg_mark_x1 false
-*set dg_mark_x2 false
-*set dg_mark_x3 false
-*set dg_mark_j1 false
-*set dg_mark_j2 false
-*set dg_mark_j3 false
-*set dg_mark_j4 false
-*set dg_mark_j5 false
-*set dg_mark_j6 false
-*set dg_mark_j7 false
-*set dg_mark_j8 false
-*set dg_mark_r1 false
-*set dg_mark_r2 false
-*set dg_mark_r3 false
-*set dg_mark_r4 false
-*set dg_mark_r5 false
+*set dg_seen_none false
+*set dg_mark_none false
+*if (dg_table = "silt_conduits")
+  *gosub_scene port_valen/port_valen_silt_conduits pvsc_forget_map
 *set dg_chalk_left 0
 *return
 

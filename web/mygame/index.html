@@ -53,6 +53,7 @@ either express or implied.
 <script src="levelup.js"></script>
 <script src="battlehud.js"></script>
 <script src="dungeonmap.js"></script>
+<script src="dungeons/silt_conduits.js"></script>
 <script src="fightlog.js"></script>
 <script src="shell.js"></script>
 <link href="../alertify.css" rel="stylesheet" type="text/css">
@@ -1512,6 +1513,8 @@ if (window.location.hostname === 'localhost') {
   padding: 0;
   max-width: 560px;
   width: calc(100vw / var(--z, 1) - 2rem);
+  max-height: calc(100vh / var(--z, 1) - 2rem);
+  overflow-y: auto;
   box-shadow: 0 8px 40px rgba(0,0,0,0.35);
   font-family: Helvetica, Arial, sans-serif;
   color: var(--ch-text);
@@ -1602,6 +1605,29 @@ if (window.location.hostname === 'localhost') {
 .ampSlotBtns button.ampBtnLoad:hover { background: var(--ch-hover); }
 .ampSlotBtns button.ampBtnDel  { border-color: var(--ch-bad); color: var(--ch-bad); }
 .ampSlotBtns button.ampBtnDel:hover  { background: var(--ch-crimson-soft); }
+.ampRecovery {
+  border-top: 1px solid var(--ch-line);
+  padding-top: 0.15em;
+}
+.ampRecoveryHead {
+  padding: 0.7em 1em 0;
+}
+.ampRecoveryHead h3 {
+  margin: 0;
+  font-size: 0.92em;
+  color: var(--ch-head-text);
+}
+.ampRecoveryHead p {
+  margin: 0.3em 0 0;
+  color: var(--ch-dim);
+  font-size: 0.76em;
+  line-height: 1.35;
+}
+.ampRecovery .ampSlotList { padding-top: 0.55em; }
+.ampRecovery .ampSlotNum {
+  min-width: 4.8em;
+  text-align: left;
+}
 #ampSLModal footer {
   display: flex;
   justify-content: flex-end;
@@ -1653,6 +1679,13 @@ if (window.location.hostname === 'localhost') {
     <button class="ampClose" onclick="document.getElementById('ampSLModal').close()" title="Close">✕</button>
   </header>
   <div class="ampSlotList" id="ampSlotList"></div>
+  <section class="ampRecovery" aria-labelledby="ampRecoveryHeading">
+    <div class="ampRecoveryHead">
+      <h3 id="ampRecoveryHeading">Recovery Saves</h3>
+      <p>Automatic snapshots are replaced as you play. Use these when your latest save cannot be loaded safely.</p>
+    </div>
+    <div class="ampSlotList" id="ampRecoveryList"></div>
+  </section>
   <footer>
     <button onclick="ampSaveLoad.exportAll()" title="Export all saves to a text file">📤 Export Saves</button>
     <button onclick="ampSaveLoad.importPrompt()" title="Import saves from a text file">📥 Import Saves</button>
@@ -1667,6 +1700,13 @@ if (window.location.hostname === 'localhost') {
   var SLOTS = 6;
   var KEY_PREFIX = 'amp_save_v1_slot_';
   var KEY_META   = 'amp_save_v1_meta_';
+  var RECOVERY_SLOTS = [
+    { key: 'autosafe1', short: 'Newest', title: 'Newest autosave', description: 'Most recent successful page' },
+    { key: 'autosafe2', short: 'Previous', title: 'Previous autosave', description: 'One successful page earlier' },
+    { key: 'autosafe3', short: 'Oldest', title: 'Oldest autosave', description: 'Two successful pages earlier' },
+    { key: 'autosafe_checkpoint', short: 'Stable', title: 'Stable checkpoint', description: 'A deliberately safe gameplay hub' }
+  ];
+  var recoveryRenderId = 0;
 
   // ── helpers ──────────────────────────────────────────────────────────────
   function toast(msg, ms) {
@@ -1741,6 +1781,89 @@ if (window.location.hostname === 'localhost') {
     list.innerHTML = html;
   }
 
+  function friendlyWords(value) {
+    return String(value || '')
+      .replace(/^.*\//, '')
+      .replace(/[_-]+/g, ' ')
+      .replace(/\b\w/g, function(letter) { return letter.toUpperCase(); });
+  }
+
+  function recoveryLocation(state) {
+    var labels = {
+      fight_round_hub: 'Combat - Round Hub',
+      alder_hub: 'Alderford',
+      port_valen_hub: 'Port Valen',
+      pvsc_here: 'Silt-Gate Conduits'
+    };
+    if (state.resumeLabel && labels[state.resumeLabel]) return labels[state.resumeLabel];
+    return friendlyWords(state.stats && state.stats.sceneName) || 'Unknown location';
+  }
+
+  function recoveryDetails(state, entry) {
+    var s = state.stats || {};
+    var gameTime = [s.calendar_date, s.clock_time].filter(Boolean).join(' - ');
+    var hp = (s.hp_current !== undefined && s.hp_max !== undefined) ?
+      (s.hp_current + '/' + s.hp_max + ' HP') : '';
+    var character = [s.name, s.class_name || s.character_class, hp].filter(Boolean).join(' - ');
+    return {
+      label: recoveryLocation(state),
+      sub: [gameTime, character].filter(Boolean).join(' - ') || entry.description
+    };
+  }
+
+  function renderRecovery() {
+    var list = document.getElementById('ampRecoveryList');
+    if (!list) return;
+    var renderId = ++recoveryRenderId;
+    var rows = new Array(RECOVERY_SLOTS.length);
+    var remaining = RECOVERY_SLOTS.length;
+    list.innerHTML = '<div class="ampSlot"><span class="ampSlotLabel empty">Checking recovery saves...</span></div>';
+
+    function finishRow(index, raw) {
+      if (renderId !== recoveryRenderId) return;
+      var entry = RECOVERY_SLOTS[index];
+      var state = null;
+      var unavailable = false;
+      if (raw) {
+        try {
+          state = JSON.parse(raw);
+          if (typeof migrateSaveState === 'function') {
+            var migration = migrateSaveState(state);
+            if (!migration.ok) unavailable = true;
+            else state = migration.state;
+          }
+        } catch (e) {
+          unavailable = true;
+        }
+      }
+
+      var html = '<div class="ampSlot">';
+      html += '<span class="ampSlotNum">' + esc(entry.short) + '</span>';
+      if (state && !unavailable) {
+        var details = recoveryDetails(state, entry);
+        html += '<span class="ampSlotLabel"><b>' + esc(details.label) + '</b><small>' +
+                esc(details.sub) + '</small><small>' + esc(entry.description) + '</small></span>';
+        html += '<span class="ampSlotBtns"><button class="ampBtnLoad" onclick="ampSaveLoad.loadRecovery(\'' +
+                entry.key + '\', \'' + entry.title + '\')" title="Load ' + esc(entry.title) + '">Load</button></span>';
+      } else if (unavailable) {
+        html += '<span class="ampSlotLabel empty">Unavailable or incompatible</span>';
+      } else {
+        html += '<span class="ampSlotLabel empty">Not created yet</span>';
+      }
+      rows[index] = html + '</div>';
+      remaining--;
+      if (!remaining && renderId === recoveryRenderId) list.innerHTML = rows.join('');
+    }
+
+    if (typeof readStateSlot !== 'function') {
+      list.innerHTML = '<div class="ampSlot"><span class="ampSlotLabel empty">Recovery saves are unavailable in this build.</span></div>';
+      return;
+    }
+    RECOVERY_SLOTS.forEach(function(entry, index) {
+      readStateSlot(entry.key, function(raw) { finishRow(index, raw); });
+    });
+  }
+
   function esc(str) {
     return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
@@ -1749,6 +1872,7 @@ if (window.location.hostname === 'localhost') {
   window.ampSaveLoad = {
     open: function() {
       render();
+      renderRecovery();
       document.getElementById('ampSLModal').showModal();
     },
 
@@ -1782,6 +1906,29 @@ if (window.location.hostname === 'localhost') {
       var state;
       try { state = JSON.parse(slot.cookie); } catch(e) { toast('Save data corrupted.'); return; }
       clearScreen(function() { restoreGame(state, null, true); });
+    },
+
+    loadRecovery: function(slot, title) {
+      if (typeof readStateSlot !== 'function') {
+        toast('Recovery saves are unavailable in this build.');
+        return;
+      }
+      readStateSlot(slot, function(raw) {
+        if (!raw) { toast(title + ' is no longer available.'); renderRecovery(); return; }
+        var state;
+        try { state = JSON.parse(raw); } catch(e) { toast('Recovery save data is corrupted.'); return; }
+        if (typeof migrateSaveState === 'function') {
+          var migration = migrateSaveState(state);
+          if (!migration.ok) {
+            toast(typeof saveMigrationError === 'function' ? saveMigrationError(migration) : 'This recovery save is incompatible.', 5000);
+            return;
+          }
+          state = migration.state;
+        }
+        if (!confirm('Load ' + title + '? Unsaved progress will be lost.')) return;
+        document.getElementById('ampSLModal').close();
+        clearScreen(function() { restoreGame(state, null, true); });
+      });
     },
 
     del: function(n) {
