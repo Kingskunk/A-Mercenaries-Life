@@ -1,5 +1,5 @@
 /*
- * The Silt-Gate Conduits: the layout the map panel (dungeonmap.js) draws. One file per dungeon in this folder; each adds itself to window.DungeonMap.maps under the value of stats.dg_table,
+ * The Silt-Gate Channels: the layout the map panel (dungeonmap.js) draws. One file per dungeon in this folder; each adds itself to window.DungeonMap.maps under the value of stats.dg_table,
  * so the engine never names a dungeon. Ids carry the dungeon's prefix (silt_), so the flags dg_seen_<id>, dg_mark_<id> and dg_done_<id> of two dungeons can never collide.
  * Positions are grid cells, east and south positive. kind: "hall" (a junction, can be chalked), "room" (named), "exit" (a way in or out).
  * tools/check_dungeon_map.js compares this file with the dungeon's scene (the label for place silt_j1 is labelPrefix + "j1", and every *set dg_dest in the scene is an edge here), so a changed exit that is
@@ -10,7 +10,7 @@
   var DM = window.DungeonMap = window.DungeonMap || {};
   DM.maps = DM.maps || {};
   DM.maps.silt_conduits = {
-    title: "The Silt-Gate Conduits",
+    title: "The Silt-Gate Channels",
     scene: "port_valen/port_valen_silt_conduits.txt",
     idPrefix: "silt_",
     labelPrefix: "pvsc_n_",

@@ -199,6 +199,32 @@
       see: ["middle_ward"]
     },
     {
+      id: "tomas_saye", category: "people", title: "Tomas Saye",
+      sub: "Water clerk and surveyor, Second Terrace",
+      role: "City water clerk and field surveyor, Middle Ward",
+      link: ["Tomas Saye", "Tomas"],
+      tags: ["Middle Ward", "Law"], aliases: ["Tomas", "Saye", "water-lines clerk", "water clerk", "conduit clerk", "surveyor"],
+      unlock: "met_tomas_saye",
+      body: [
+        "A city water clerk and field surveyor in a blue coat with a brass badge, who keeps damp plans, a grease pencil, and shutoff keys on his person. Tomas Saye follows the Second Terrace pipes in person and treats a line on the public roll as a promise the city has to defend.",
+        "He is not a Watchman and cannot settle a landlord dispute by decree. He can close a valve, call an engineering crew to shore and dig, or enter a temporary service on the maintenance roll when the evidence will stand up in daylight."
+      ],
+      see: ["middle_ward", "marda", "merrin"]
+    },
+    {
+      id: "nadi_venn", category: "people", title: "Nadi Venn",
+      sub: "Tenant of the court off Locksmiths' Close",
+      role: "Tenant, Middle Ward",
+      link: ["Nadi Venn", "Nadi"],
+      tags: ["Middle Ward"], aliases: ["Nadi", "Venn", "tenement yard", "tenement court", "court tenant", "yard tenant"],
+      unlock: "met_nadi_venn",
+      body: [
+        "A horned tenant from the cramped shared court behind the rented rooms off Locksmiths' Close. Nadi Venn speaks plainly when officials ask a question and keeps a child close when they begin talking about closures.",
+        "Forty families draw from the court's one standpipe. The landlord once folded the water charge into the rents, then stopped paying the city and left the old branch to the tenants, who kept it alive with pitch and patchwork."
+      ],
+      see: ["middle_ward", "tomas_saye"]
+    },
+    {
       id: "vael", category: "people", title: "Master Vael",
       sub: "Locksmith, Locksmiths' Close",
       role: "Locksmith, Vael & Son",
@@ -796,6 +822,15 @@
         if (truthy(s.mw_rumor_grain)) {
           out.push("Rumor from the baths: a Council grain officer waves unlicensed flour wagons through Conduit Square on Marketdays for a small payment slip, so the licensed drivers end up paying twice, once in fees and once in waiting.");
         }
+        if (s.dry_lion_resolution === "city_sealed") {
+          out.push("A broken unlisted branch beneath Conduit Square was capped to restore the public fountain. The court off Locksmiths' Close lost its only standpipe, and the city crew still has to shore the washed ground.");
+        } else if (s.dry_lion_resolution === "hidden_repaired") {
+          out.push("A split sleeve beneath Conduit Square was braced and repaired, keeping both the public fountain and the court's standpipe running. The repair is watched closely by the people who depend on it.");
+        } else if (s.dry_lion_resolution === "line_registered") {
+          out.push("The court's old branch has a ten-day emergency entry on the city maintenance roll. A lead tag at the braced junction marks the inspection that will decide whether the line stays.");
+        } else if (s.dry_lion_resolution === "failed") {
+          out.push("A split water line undermined the fountain paving and had to be shut. The city is due to shore the street and dig out the broken section.");
+        }
         return out;
       },
       see: ["lantern_lane", "smiths_row", "conduit_baths", "terrace_lodgings", "marda", "vael", "ambrose", "hollis", "halda", "merrin", "civic_heights"]
@@ -849,6 +884,9 @@
         ];
         if (truthy(s.mw_merrin_water_talk)) {
           out.push("The water is heated by boilers built into the back wall of Mother Marda's ovens.");
+        }
+        if ((s.dry_lion_resolution === "failed") && (Number(s.campaign_day) <= Number(s.dry_lion_outage_until_day))) {
+          out.push("The baths are temporarily closed while the broken water line is shored and repaired.");
         }
         return out;
       },
@@ -1311,8 +1349,8 @@
     },
     {
       id: "silt_gates", category: "places", title: "The Silt-Gates",
-      sub: "Drainage conduits under the slums",
-      tags: ["Dredge-End", "Law"], aliases: ["silt gates", "conduits", "channel", "drainage", "contraband", "smuggling"],
+      sub: "Drainage channels under the slums",
+      tags: ["Dredge-End", "Law"], aliases: ["silt gates", "channels", "channel", "drainage", "contraband", "smuggling"],
       link: ["Silt-Gates"],
       unlock: function (s) { return s.silt_gate_quest_stage && s.silt_gate_quest_stage !== "unstarted"; },
       body: function (s) {

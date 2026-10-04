@@ -41,10 +41,10 @@ const ART = [
   ["i_stats",   "Interface/Abilities_Icon.png",          72,   72,  0.92],
   ["i_lore",    "Menu/Spellbook_Menu_Icon.png",          72,   72,  0.92],
   ["i_pack",    "Interface/Equipment_Icon.png",          72,   72,  0.92],
-  ["i_trade",   "Action/Toss_a_Coin_Icon.webp",          72,   72,  0.92],
+  ["i_trade",   "Interface/Antique Gold Exchange Emblem.png", 72, 72, 0.92],
   ["i_save",    "Menu/Map_Menu_Icon.png",                72,   72,  0.92],
   ["i_menu",    "Menu/Magic_Icon.png",                   72,   72,  0.92],
-  ["i_read",    "Interface/Weathered_Bronze_Volume_Icon.png", 72, 72, 0.92],   // read aloud (the TTS reader)
+  ["i_read",    "Interface/Antique Bronze Speaker Emblem.png", 72, 72, 0.92],   // read aloud (the TTS reader)
   ["i_map",     "Item/Miscellaneous_item/Book/Map_World_A_Item_Icon.png", 72, 72, 0.92],   // the dungeon map button
 
   // the sidebar's portrait ring, named c_<class> (character_class)

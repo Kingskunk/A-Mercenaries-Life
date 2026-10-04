@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A Mercenary's Path: overworld map mock</title>
+<!--
+  DESIGN MOCK (not part of the game). Open this file in a browser. Nothing in web/mygame reads it.
+
+  What it shows: Alderford and Port Valen on a flat-top hex map, six hexes apart (the Grey River is thirty miles long and a loaded barge runs it in a day, so one hex is
+  about five miles). The terrain arrangement is a PLACEHOLDER built only from what the lorebook already says:
+    - the highland road comes down from the Highland Crags, over the Black Sinks (a dike road across the bog, the last chokepoint before the weir), to Alderford;
+    - the Grey River begins at the Alderford weir and runs to Port Valen between limestone bluffs and old imperial signal towers (the gorge);
+    - steep highland valleys in the north, chalk downland and farm country to the west, peat bog and reed flats to the east (the Grey Marches entry);
+    - Port Valen is the port capital on the coast.
+  Where a hex sits exactly (the Black Sinks gatehouse, the two signal towers) is approximate. Nothing here names a place the lorebook does not.
+
+  Art: ../ICONS/World Map Hex Tiles (72 DPI set). Each tile is a 224x194 canvas with the hex in its middle (radius 56), so tiles sit on an 84 x 97 pixel pitch and
+  overlap in their transparent padding. Rivers, dirt paths and beaches are transparent overlays laid on a terrain tile: each overlay's edges were measured from its pixels
+  and are listed in OVERLAYS below; a piece is turned in 60 degree steps to fit the edges a hex needs.
+-->
+<style>
+:root {
+  --stone: #12100f;
+  --stone-2: #1b1816;
+  --bronze: #8a7461;
+  --crimson: #7d1f1f;
+  --crimson-hi: #b53a35;
+  --brass: #d9a441;
+  --ink: #e8e0d2;
+  --ink-dim: #a99f90;
+  --line: #4b3d31;
+  --line-hi: #6b5a4a;
+  --head-font: "Cinzel", "Trajan Pro", "Palatino Linotype", Palatino, Georgia, serif;
+  --body-font: Palatino, "Palatino Linotype", Cambria, Georgia, "Times New Roman", serif;
+  --ui-font: "Segoe UI", Helvetica, Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { font-family: var(--body-font); color: var(--ink); background: #0b0a09 url(../ICONS/UiElements/big_background.png) center / cover fixed; overflow: hidden; }
+body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; background: radial-gradient(ellipse at 50% 40%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.65) 100%); }
+
+#shell { position: relative; z-index: 1; height: 100vh; display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 14px; padding: 14px; }
+
+/* the map, inside the same bronze frame the story page uses */
+#mapframe { position: relative; min-height: 0; border: 38px solid transparent; border-image: url(../ICONS/UiElements/Frame_mid.png) 110 / 38px stretch; }
+#mapframe::before { content: ""; position: absolute; inset: -30px; background: #0d0c0b url(../ICONS/UiElements/mid_background.png) center / cover; z-index: -1; }
+#viewport { position: absolute; inset: 0; overflow: hidden; cursor: grab; touch-action: none; background: radial-gradient(ellipse at center, #1d1a17 0%, #131110 70%, #0c0b0a 100%); }
+#viewport.drag { cursor: grabbing; }
+#world { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+#world img { position: absolute; display: block; width: 224px; height: 194px; pointer-events: none; user-select: none; -webkit-user-drag: none; }
+#compass { position: absolute; left: 16px; top: 14px; width: 40px; text-align: center; pointer-events: none; font: 600 13px var(--head-font); color: var(--brass); text-shadow: 0 1px 3px #000; }
+#compass i { display: block; width: 0; height: 0; margin: 2px auto 0; border: 8px solid transparent; border-bottom: 22px solid var(--brass); border-top: 0; filter: drop-shadow(0 1px 2px #000); }
+#scalebar { position: absolute; left: 16px; bottom: 14px; display: flex; align-items: center; gap: 8px; pointer-events: none; font: 12px var(--ui-font); letter-spacing: 0.05em; color: #e8dcc2; text-shadow: 0 1px 3px #000; }
+#scalebar i { width: 32px; height: 28px; background: rgba(217, 164, 65, 0.25); clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); box-shadow: inset 0 0 0 2px var(--brass); }
+#grid, #fog, #hl { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
+
+/* names written on the map */
+.lbl { position: absolute; transform: translate(-50%, -50%); white-space: nowrap; pointer-events: none; text-align: center; font: 600 15px/1.1 var(--head-font); letter-spacing: 0.08em; color: #f6e9cf; text-shadow: 0 1px 2px #000; padding: 3px 9px 4px; background: rgba(10, 9, 8, 0.62); border: 1px solid rgba(138, 116, 97, 0.55); border-radius: 3px; }
+.lbl small { display: block; font: 10px var(--ui-font); letter-spacing: 0.1em; text-transform: uppercase; color: #d8c7a6; margin-top: 2px; }
+.lbl.town { font-size: 17px; color: #ffd98a; border-color: rgba(217, 164, 65, 0.7); }
+.lbl.minor { font-size: 12px; font-weight: 500; letter-spacing: 0.06em; padding: 2px 7px 3px; }
+.region { position: absolute; pointer-events: none; font: 600 15px/1.5 var(--head-font); letter-spacing: 0.26em; text-transform: uppercase; color: rgba(236, 222, 190, 0.62); text-shadow: 0 1px 4px #000; }
+.region.l { transform: translate(-100%, -50%); text-align: right; }
+.region.r { transform: translate(0, -50%); text-align: left; }
+.region.c { transform: translate(-50%, -50%); text-align: center; }
+body.nolabels .lbl, body.nolabels .region { display: none; }
+
+/* the party marker */
+#party { position: absolute; width: 28px; height: 28px; margin: -14px 0 0 -14px; border-radius: 50%; pointer-events: none; z-index: 99999;
+  background: radial-gradient(circle at 35% 30%, #e7c06a, #b5822b 55%, #6b4713); border: 2px solid #2a0a0a; box-shadow: 0 0 0 3px var(--crimson-hi), 0 3px 10px rgba(0,0,0,0.7); transition: left 0.45s ease, top 0.45s ease; }
+#party::after { content: "\2694"; position: absolute; inset: 0; display: grid; place-items: center; font-size: 14px; color: #2a1608; }
+
+/* the side column */
+#side { display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow: auto; }
+.panel { position: relative; padding: 14px 16px 16px; background: linear-gradient(rgba(14,12,11,0.9), rgba(14,12,11,0.92)), url(../ICONS/UiElements/mid_background.png) center / cover; border: 1px solid var(--line-hi); border-radius: 6px; box-shadow: inset 0 0 0 1px #000, 0 6px 20px rgba(0,0,0,0.5); }
+.banner { padding: 10px 28px 10px 16px; background: url(../ICONS/UiElements/name_bar.png) left center / 100% 100% no-repeat; font: 600 15px/1.15 var(--head-font); letter-spacing: 0.06em; color: #f1e4cf; text-shadow: 0 1px 2px #000; }
+.banner small { display: block; font: 11px var(--ui-font); letter-spacing: 0.04em; color: #d6b9a8; text-shadow: none; margin-top: 2px; }
+.shead { margin: 0 0 8px; display: flex; align-items: center; gap: 8px; font: 600 12px var(--head-font); letter-spacing: 0.14em; text-transform: uppercase; color: var(--brass); }
+.shead::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--line-hi), transparent); }
+.row { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; border-bottom: 1px dotted var(--line); font: 13px var(--ui-font); }
+.row span:first-child { color: var(--ink-dim); }
+.row span:last-child { text-align: right; }
+#infoTitle { font: 600 17px/1.2 var(--head-font); letter-spacing: 0.05em; color: #f1e4cf; margin: 0 0 4px; }
+#infoSub { font: 11px var(--ui-font); letter-spacing: 0.1em; text-transform: uppercase; color: var(--brass); margin: 0 0 8px; }
+#infoText { font: italic 13px/1.45 var(--body-font); color: var(--ink-dim); margin: 0 0 10px; }
+button.mb { font: 12px var(--ui-font); padding: 6px 12px; cursor: pointer; color: #cfc6b8; background: #231f1c; border: 1px solid #5a4a3b; border-radius: 4px; }
+button.mb:hover { background: #2e2723; border-color: var(--brass); }
+button.mb[aria-pressed="true"] { background: var(--crimson); color: #fff; border-color: var(--crimson-hi); }
+button.mb:disabled { opacity: 0.4; cursor: default; }
+.btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.btns.go { margin-top: 10px; }
+#legend { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px 2px; }
+#legend div { text-align: center; font: 10px/1.2 var(--ui-font); color: var(--ink-dim); }
+#legend .sw { position: relative; width: 46px; height: 40px; margin: 0 auto 1px; overflow: hidden; }
+#legend .sw img { position: absolute; left: -23px; top: -19.5px; width: 92px; height: 79px; }
+.note { font: 11px/1.45 var(--ui-font); color: var(--ink-dim); }
+.note b { color: var(--ink); font-weight: 600; }
+#tip { position: fixed; z-index: 10; pointer-events: none; padding: 5px 9px; background: rgba(14,12,11,0.95); border: 1px solid var(--line-hi); border-radius: 4px; font: 12px var(--ui-font); color: var(--ink); display: none; white-space: nowrap; }
+#tip b { font: 600 13px var(--head-font); letter-spacing: 0.04em; color: #f1e4cf; display: block; }
+@media (max-width: 900px) { #shell { grid-template-columns: 1fr; grid-template-rows: 60vh auto; overflow: auto; } body { overflow: auto; } }
+</style>
+</head>
+<body>
+<div id="shell">
+  <div id="mapframe">
+    <div id="viewport">
+      <div id="world"></div>
+      <div id="compass" title="North is up"><b>N</b><i></i></div>
+      <div id="scalebar" title="One hex is about five miles"><i></i><span>1 hex &asymp; 5 mi</span></div>
+    </div>
+  </div>
+  <aside id="side">
+    <div class="panel">
+      <div class="banner">The Grey Marches<small>Alderford to Port Valen &middot; layout mock</small></div>
+    </div>
+    <div class="panel" id="info">
+      <div class="shead">Selected</div>
+      <h2 id="infoTitle"></h2>
+      <p id="infoSub"></p>
+      <p id="infoText"></p>
+      <div id="infoRows"></div>
+      <div class="btns go"><button class="mb" id="go" disabled>Travel here (mock)</button></div>
+    </div>
+    <div class="panel">
+      <div class="shead">View</div>
+      <div class="btns">
+        <button class="mb" id="tFog" aria-pressed="false">Fog of war</button>
+        <button class="mb" id="tGrid" aria-pressed="false">Hex grid</button>
+        <button class="mb" id="tLbl" aria-pressed="true">Names</button>
+        <button class="mb" id="tFit">Fit map</button>
+      </div>
+      <p class="note" style="margin-top:8px">Drag to move, wheel to zoom, click a hex to read it. <b>Travel here</b> moves the party and lifts the fog around it.</p>
+    </div>
+    <div class="panel">
+      <div class="shead">Terrain</div>
+      <div id="legend"></div>
+    </div>
+    <div class="panel">
+      <div class="shead">Scale and sources</div>
+      <p class="note"><b>1 hex is about 5 miles.</b> The Grey River runs thirty miles from the Alderford weir to Port Valen, and Alderford and Port Valen are six hexes apart.</p>
+      <p class="note" style="margin-top:6px">A placeholder arrangement drawn only from the lorebook; the gatehouse and towers are approximate.</p>
+    </div>
+  </aside>
+</div>
+<div id="tip"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------------------------------------------------------------- tiles */
+  var BASE = "../ICONS/World%20Map%20Hex%20Tiles/Assets%20-%2072%20DPI%20(VTT)/Hex%20-%20";
+  function url(name) { return BASE + encodeURIComponent(name).replace(/%28/g, "(").replace(/%29/g, ")") + ".png"; }
+  var CELL_W = 224, CELL_H = 194;          // the tile canvas
+  var R = 56;                              // hex radius inside it
+  var PX = 84, PY = 97;                    // pitch of a flat-top hex lattice at that radius (1.5 R, sqrt(3) R)
+
+  // key -> [tile file, what it is, region wording from the lorebook]
+  var T = {
+    MR:  ["Mountains, medium (rocky)",  "Crag peaks",           "The Highland Crags"],
+    ML:  ["Mountains, low (lush)",      "Highland slopes",      "The Highland Crags"],
+    FHr: ["Mountains, foothills (rocky)", "Limestone bluffs",   "The gorge"],
+    FHl: ["Mountains, foothills (lush)", "Wooded foothills",    "Chalk downland"],
+    CF:  ["Forest, conifer (lush)",     "Pine forest",          "The Highland Crags"],
+    H1:  ["Hills (lush) 1", "Chalk downland", "Chalk downland and farm country"],
+    H2:  ["Hills (lush) 2", "Chalk downland", "Chalk downland and farm country"],
+    H3:  ["Hills (lush) 3", "Limestone bluffs", "The gorge"],
+    H4:  ["Hills (lush) 4", "Limestone bluffs", "The gorge"],
+    H5:  ["Hills (lush) 5", "Chalk downland", "Chalk downland and farm country"],
+    P1:  ["Plains (lush) 1", "Downland pasture", "Chalk downland and farm country"],
+    P2:  ["Plains (lush) 2", "River meadow",     "The river country"],
+    P3:  ["Plains (lush) 3", "Downland pasture", "Chalk downland and farm country"],
+    P4:  ["Plains (lush) 4", "Downland pasture", "Chalk downland and farm country"],
+    P5:  ["Plains (lush) 5", "Coastal grass",    "The coast"],
+    PD:  ["Plains (damp) 2", "Damp meadow",      "Where the downland meets the bog"],
+    FM1: ["Urban - Farmland (lush) 1", "Farmland", "Chalk downland and farm country"],
+    FM2: ["Urban - Farmland (lush) 2", "Farmland", "Chalk downland and farm country"],
+    FM3: ["Urban - Farmland (lush) 3", "Farmland", "Chalk downland and farm country"],
+    FA:  ["Urban - Farm (lush)", "A farmstead", "Chalk downland and farm country"],
+    ST:  ["Sparse Trees (lush) 1", "Scattered trees", "The coast"],
+    W1:  ["Wetlands (damp) 1", "Bog and reed flats", "Peat bog and reed flats"],
+    W2:  ["Wetlands (damp) 2", "Bog and reed flats", "Peat bog and reed flats"],
+    W3:  ["Wetlands (damp) 3", "Bog and reed flats", "Peat bog and reed flats"],
+    W4:  ["Wetlands (damp) 4", "Bog and reed flats", "Peat bog and reed flats"],
+    W5:  ["Wetlands (damp) 5", "Bog and reed flats", "Peat bog and reed flats"],
+    W6:  ["Wetlands (damp) 6", "Bog and reed flats", "Peat bog and reed flats"],
+    W7:  ["Wetlands (damp) 7", "Bog and reed flats", "Peat bog and reed flats"],
+    SW1: ["Water - Swamp (still water) 1", "Open bog water", "Peat bog and reed flats"],
+    SW2: ["Water - Swamp (still water) 2", "Open bog water", "Peat bog and reed flats"],
+    SW3: ["Water - Swamp (still water) 3", "Open bog water", "Peat bog and reed flats"],
+    O1:  ["Water - Ocean (still water) 1", "The sea", "The sea"],
+    O2:  ["Water - Ocean (still water) 2", "The sea", "The sea"],
+    O3:  ["Water - Ocean (still water) 3", "The sea", "The sea"],
+    O4:  ["Water - Ocean (still water) 4", "The sea", "The sea"],
+    O5:  ["Water - Ocean (still water) 5", "The sea", "The sea"],
+    OW:  ["Water - Ocean (waves) 1", "The sea", "The sea"],
+    OS:  ["Water - Ocean (soft waves) 1", "The sea", "The sea"],
+    TW:  ["Urban - Town (lush)", "Town", ""],
+    CT:  ["Urban - City (lush)", "City", ""],
+    TR:  ["Urban - Tower (lush)", "Signal tower", "The gorge"],
+    GH:  ["Ruin (lush)", "Gatehouse", "Peat bog and reed flats"]
+  };
+  var OCEAN = { O1: 1, O2: 1, O3: 1, O4: 1, O5: 1, OW: 1, OS: 1 };
+
+  // The map: 7 columns by 11 rows, odd columns shoved half a hex down. Rows run north to south. RV marks a hex the river runs through (its ground is the key after the colon).
+  var GRID = [
+    ["MR",  "ML",  "FHr", "ML",  "MR",  "FHl", "CF" ],
+    ["H2",  "PD",  "GH",  "W3",  "W1",  "SW1", "W5" ],
+    ["FM2", "P3",  "TW",  "W6",  "W4",  "W2",  "SW2"],
+    ["FM1", "TR",  "RV:FHr", "FHr", "W7",  "W3",  "W6" ],
+    ["FA",  "FHl", "RV:H3", "RV:FHr", "TR", "W5", "W2" ],
+    ["P4",  "H5",  "FHr", "RV:H4", "FHr", "W1",  "SW3"],
+    ["FM3", "H2",  "P2",  "FHl", "RV:P2", "W4", "W7" ],
+    ["P1",  "P5",  "ST",  "P3",  "CT",  "O2",  "O3" ],
+    ["P2",  "P3",  "P4",  "O1",  "OW",  "O4",  "O5" ],
+    ["P5",  "O3",  "O2",  "OS",  "O5",  "OW",  "O1" ],
+    ["O1",  "O4",  "O5",  "O2",  "O3",  "O1",  "OS" ]
+  ];
+  var COLS = 7, ROWS = GRID.length;
+
+  // Places that have a name on the map, with what the lorebook says of them.
+  var PLACES = {
+    "2,2": { side: -1, name: "Alderford", kind: "Town", text: "The frontier's river weir town and barge port. The highland road reaches the head of the Grey here, and the river drops away toward the gorge.", label: true },
+    "4,7": { side: 1, name: "Port Valen", kind: "City", text: "The port capital downriver, a free city answerable to no crown. Everything the Marches sells to the wider world leaves through its harbor.", label: true },
+    "2,1": { side: 1, name: "Black Sinks", kind: "Gatehouse", text: "An imperial road gone to rot: a dike road across the bog, with a stone gatehouse where it widens. The last chokepoint on the toll road between the Crags and the Alderford weir.", label: true, small: true },
+    "1,3": { name: "Signal tower", kind: "Old imperial work", text: "One of the old imperial signal towers that stand along the limestone bluffs of the gorge." },
+    "4,4": { name: "Signal tower", kind: "Old imperial work", text: "One of the old imperial signal towers that stand along the limestone bluffs of the gorge." }
+  };
+  // The Grey River, from the Alderford weir down to Port Valen, as the hexes it runs through. Alderford is first, Port Valen last.
+  var RIVER = [[2, 2], [2, 3], [2, 4], [3, 4], [3, 5], [4, 6], [4, 7]];
+  // The highland road: it comes in from the top edge and ends at Alderford, over the Black Sinks.
+  var ROAD = [[2, 0], [2, 1], [2, 2]];
+  var START = [4, 7];
+  var ALDERFORD = [2, 2], PORT_VALEN = [4, 7];
+  var MILES_PER_HEX = 5;
+
+  /* ---------------------------------------------------------------- overlays
+     Edges are numbered clockwise from the top: 0 N, 1 NE, 2 SE, 3 S, 4 SW, 5 NW. Each piece lists the edges its artwork reaches, measured from the PNGs. */
+  var E = { N: 0, NE: 1, SE: 2, S: 3, SW: 4, NW: 5 };
+  function ed(s) { return s.split(",").map(function (x) { return E[x]; }); }
+  var OVERLAYS = {
+    river: [
+      ["River 2 N", "N,S"], ["River 9 N", "N,S"], ["River 4 N", "N,SW"], ["River 5 NE", "N,NE"],
+      ["River 3 N", "N,S,SW"], ["River 11 N", "N,NE,NW"], ["River 7 N", "N,S,SE"],
+      ["River 13 N", "N,S,SE,SW"], ["River 12 E", "NE,SE,SW,NW"], ["River 1 N", "N"], ["River 10 N", "N"]
+    ],
+    road: [
+      ["Dirt Path 2 N", "N,S"], ["Dirt Path 9 N", "N,S"], ["Dirt Path 4 N", "N,SW"], ["Dirt Path 5 NE", "N,NE"],
+      ["Dirt Path 3 N", "N,S,SW"], ["Dirt Path 11 N", "N,NE,NW"], ["Dirt Path 7 N", "N,S,SE"],
+      ["Dirt Path 13 N", "N,S,SE,SW"], ["Dirt Path 12 E", "NE,SE,SW,NW"], ["Dirt Path 6 N", "N"], ["Dirt Path 1 N", "N"]
+    ],
+    beach: [
+      ["Coast - Beach (small) N", "N"], ["Coast - Beach (medium) NW", "N,NW"], ["Coast - Beach (big) N", "N,NE,NW"]
+    ]
+  };
+  function setKey(list) { return list.slice().sort(function (a, b) { return a - b; }).join(","); }
+  // The piece (and the turn, in 60 degree steps) whose edges, turned, are exactly the wanted ones. Pieces listed first win, so the first of two equal shapes is used.
+  function pick(kind, wanted) {
+    var want = setKey(wanted), list = OVERLAYS[kind];
+    for (var k = 0; k < 6; k++) {
+      for (var i = 0; i < list.length; i++) {
+        var turned = ed(list[i][1]).map(function (e) { return (e + k) % 6; });
+        if (setKey(turned) === want) return { file: list[i][0], turn: k * 60 };
+      }
+    }
+    return null;
+  }
+
+  /* ---------------------------------------------------------------- hex arithmetic (flat top, odd columns down) */
+  var NB_EVEN = [[0, -1], [1, -1], [1, 0], [0, 1], [-1, 0], [-1, -1]];
+  var NB_ODD  = [[0, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0]];
+  function nb(c, r, d) { var t = (c & 1) ? NB_ODD[d] : NB_EVEN[d]; return [c + t[0], r + t[1]]; }
+  function inMap(c, r) { return c >= 0 && r >= 0 && c < COLS && r < ROWS; }
+  function center(c, r) { return [CELL_W / 2 + PX * c, CELL_H / 2 + PY * (r + ((c & 1) ? 0.5 : 0))]; }
+  function dirBetween(a, b) { for (var d = 0; d < 6; d++) { var n = nb(a[0], a[1], d); if (n[0] === b[0] && n[1] === b[1]) return d; } return -1; }
+  function cube(c, r) { var x = c, z = r - (c - (c & 1)) / 2; return [x, -x - z, z]; }
+  function dist(a, b) { var p = cube(a[0], a[1]), q = cube(b[0], b[1]); return Math.max(Math.abs(p[0] - q[0]), Math.abs(p[1] - q[1]), Math.abs(p[2] - q[2])); }
+  function parse(k) { var m = String(k).split(":"); return { key: m[m.length - 1], river: m.length > 1 && m[0] === "RV" }; }
+  function cellKey(c, r) { return parse(GRID[r][c]).key; }
+  function isOcean(c, r) { return inMap(c, r) && !!OCEAN[cellKey(c, r)]; }
+
+  /* ---------------------------------------------------------------- build */
+  var world = document.getElementById("world");
+  var diag = { river: [], road: [], beach: 0, misses: [] };
+  var cells = [];                        // { c, r, x, y, key }
+  var WORLD_W = CELL_W + PX * (COLS - 1), WORLD_H = CELL_H + PY * (ROWS - 1 + 0.5);
+  world.style.width = WORLD_W + "px"; world.style.height = WORLD_H + "px";
+
+  function addImg(file, c, r, z, turn) {
+    var p = center(c, r), im = document.createElement("img");
+    im.src = url(file); im.alt = ""; im.draggable = false;
+    im.style.left = (p[0] - CELL_W / 2) + "px"; im.style.top = (p[1] - CELL_H / 2) + "px"; im.style.zIndex = z;
+    if (turn) im.style.transform = "rotate(" + turn + "deg)";
+    world.appendChild(im);
+    return im;
+  }
+  var tileImgs = {};
+  for (var r = 0; r < ROWS; r++) {
+    for (var c = 0; c < COLS; c++) {
+      var spec = parse(GRID[r][c]), p = center(c, r), z = Math.round(p[1]) * 2;
+      cells.push({ c: c, r: r, x: p[0], y: p[1], key: spec.key, river: spec.river });
+      tileImgs[c + "," + r] = addImg(T[spec.key][0], c, r, z);
+    }
+  }
+  function zOf(c, r) { return Math.round(center(c, r)[1]) * 2 + 1; }
+
+  // overlays along a path of hexes: each hex joins the one before it and the one after it
+  function drawPath(kind, path, skip) {
+    for (var i = 0; i < path.length; i++) {
+      var here = path[i];
+      if (skip && skip[here[0] + "," + here[1]]) continue;
+      var edges = [];
+      if (i > 0) edges.push(dirBetween(here, path[i - 1]));
+      if (i < path.length - 1) edges.push(dirBetween(here, path[i + 1]));
+      if (i === 0 && path.length > 1 && kind === "road" && here[1] === 0) edges.push(0);          // the road runs off the top edge
+      var piece = pick(kind, edges);
+      if (!piece) { diag.misses.push(kind + " " + here + " " + edges); continue; }
+      addImg(piece.file, here[0], here[1], zOf(here[0], here[1]), piece.turn);
+      diag[kind].push(here + " " + piece.file + " " + piece.turn);
+    }
+  }
+  var special = {}; special["2,2"] = 1; special["4,7"] = 1; special["2,1"] = 1;
+  drawPath("river", RIVER, special);
+  drawPath("road", ROAD, { "2,2": 1 });
+
+  // beaches: every land hex with sea next to it gets sand along those edges (runs of one, two or three edges; longer shores are split)
+  function runs(wet) {
+    var out = [], set = {}; wet.forEach(function (e) { set[e] = 1; });
+    if (wet.length === 6) return [];
+    var start = -1;
+    for (var e = 0; e < 6; e++) if (set[e] && !set[(e + 5) % 6]) start = e;
+    if (start < 0) return [];
+    var cur = null;
+    for (var s = 0; s < 6; s++) {
+      var idx = (start + s) % 6;
+      if (set[idx]) { if (!cur || cur.len === 3) { cur = { from: idx, len: 0 }; out.push(cur); } cur.len++; } else cur = null;
+    }
+    return out;
+  }
+  cells.forEach(function (cl) {
+    if (OCEAN[cl.key] || cl.key === "CT") return;
+    var wet = [];
+    for (var d = 0; d < 6; d++) { var n = nb(cl.c, cl.r, d); if (isOcean(n[0], n[1])) wet.push(d); }
+    runs(wet).forEach(function (run) {
+      var edges = []; for (var i = 0; i < run.len; i++) edges.push((run.from + i) % 6);
+      var piece = pick("beach", edges);
+      if (!piece) { diag.misses.push("beach " + cl.c + "," + cl.r + " " + edges); return; }
+      addImg(piece.file, cl.c, cl.r, zOf(cl.c, cl.r), piece.turn);
+      diag.beach++;
+    });
+  });
+
+  // names on the map
+  function addLabel(cls, x, y, html) {
+    var d = document.createElement("div"); d.className = cls; d.style.left = x + "px"; d.style.top = y + "px"; d.style.zIndex = 90000; d.innerHTML = html; world.appendChild(d);
+  }
+  Object.keys(PLACES).forEach(function (k) {
+    var pl = PLACES[k]; if (!pl.label) return;
+    var rc = k.split(",").map(Number), p = center(rc[0], rc[1]);
+    addLabel("lbl" + (pl.small ? "" : " town"), p[0] + pl.side * (pl.small ? 84 : 98), p[1], pl.name + "<small>" + pl.kind + "</small>");
+  });
+  // the big country names sit in the margins beside the rows they describe, so they never lie over the tiles
+  var LEFT = CELL_W / 2 - R - 26, RIGHT = CELL_W / 2 + PX * (COLS - 1) + R + 26, TOP = CELL_H / 2 - PY / 2 - 24;
+  addLabel("region c", (LEFT + RIGHT) / 2, TOP, "The Highland Crags");
+  addLabel("region l", LEFT, center(0, 4)[1], "Chalk downland<br>&amp; farm country");
+  addLabel("region r", RIGHT, center(6, 4)[1], "Peat bog<br>&amp; reed flats");
+  addLabel("region c", (LEFT + RIGHT) / 2, center(1, ROWS - 1)[1] + PY / 2 + 26, "The Sea");
+  (function () {
+    var g = center(3, 4); addLabel("lbl minor", g[0] + 62, g[1] - 4, "The Gorge");
+    var q = center(3, 3); addLabel("lbl minor", q[0] + 4, q[1] - 24, "The Grey River");
+  })();
+
+  /* ---------------------------------------------------------------- svg layers: grid, fog, highlight */
+  var NS = "http://www.w3.org/2000/svg";
+  function hexPoints(x, y, rad) { var pts = []; for (var i = 0; i < 6; i++) { var a = Math.PI / 180 * 60 * i; pts.push((x + rad * Math.cos(a)).toFixed(1) + "," + (y + rad * Math.sin(a)).toFixed(1)); } return pts.join(" "); }
+  function svgLayer(id, z) {
+    var s = document.createElementNS(NS, "svg"); s.setAttribute("id", id); s.setAttribute("width", WORLD_W); s.setAttribute("height", WORLD_H); s.style.zIndex = z; world.appendChild(s); return s;
+  }
+  var gridSvg = svgLayer("grid", 80000), fogSvg = svgLayer("fog", 95000), hlSvg = svgLayer("hl", 96000);
+  gridSvg.style.display = "none";
+  cells.forEach(function (cl) {
+    var g = document.createElementNS(NS, "polygon"); g.setAttribute("points", hexPoints(cl.x, cl.y, R)); g.setAttribute("fill", "none"); g.setAttribute("stroke", "rgba(255,240,210,0.38)"); g.setAttribute("stroke-width", "1.2"); gridSvg.appendChild(g);
+  });
+  var fogPolys = {};
+  cells.forEach(function (cl) {
+    var f = document.createElementNS(NS, "polygon"); f.setAttribute("points", hexPoints(cl.x, cl.y + 2, R + 2)); f.setAttribute("fill", "rgba(9,8,7,0.94)"); f.setAttribute("stroke", "rgba(9,8,7,0.94)"); f.setAttribute("stroke-width", "3");
+    fogSvg.appendChild(f); fogPolys[cl.c + "," + cl.r] = f;
+  });
+  var hover = document.createElementNS(NS, "polygon"), sel = document.createElementNS(NS, "polygon");
+  hover.setAttribute("fill", "rgba(255,230,160,0.14)"); hover.setAttribute("stroke", "rgba(255,230,160,0.9)"); hover.setAttribute("stroke-width", "2"); hover.style.display = "none";
+  sel.setAttribute("fill", "none"); sel.setAttribute("stroke", "#d9a441"); sel.setAttribute("stroke-width", "3.5"); sel.style.display = "none";
+  hlSvg.appendChild(hover); hlSvg.appendChild(sel);
+
+  var party = document.createElement("div"); party.id = "party"; world.appendChild(party);
+  var explored = {};
+  var partyAt = START.slice();
+  function reveal(at, radius) { cells.forEach(function (cl) { if (dist([cl.c, cl.r], at) <= radius) explored[cl.c + "," + cl.r] = true; }); }
+  var TOKEN_UP = 30;                       // the token rides the top of its hex, so the art of a city or town under it stays in view
+  function movePartyTo(at) { partyAt = at.slice(); var p = center(at[0], at[1]); party.style.left = p[0] + "px"; party.style.top = (p[1] - TOKEN_UP) + "px"; reveal(at, 2); paintFog(); }
+  var fogOn = false;
+  function paintFog() { Object.keys(fogPolys).forEach(function (k) { fogPolys[k].style.display = (fogOn && !explored[k]) ? "" : "none"; }); }
+  var p0 = center(START[0], START[1]); party.style.left = p0[0] + "px"; party.style.top = (p0[1] - TOKEN_UP) + "px";
+  reveal(START, 3); paintFog();
+
+  /* ---------------------------------------------------------------- view: fit, zoom, drag */
+  var viewport = document.getElementById("viewport");
+  var scale = 1, tx = 0, ty = 0, MIN = 0.3, MAX = 2.6;
+  function apply() { world.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + scale + ")"; }
+  // the map's hexes, not its padding, are what should fill the frame
+  var BOX = { x0: CELL_W / 2 - R - 230, y0: CELL_H / 2 - PY / 2 - 44, x1: CELL_W / 2 + PX * (COLS - 1) + R + 230, y1: CELL_H / 2 + PY * (ROWS - 0.5) + PY / 2 + 44 };
+  function fit() {
+    var vw = viewport.clientWidth, vh = viewport.clientHeight, bw = BOX.x1 - BOX.x0, bh = BOX.y1 - BOX.y0;
+    scale = Math.max(MIN, Math.min(MAX, Math.min(vw / bw, vh / bh) * 0.98));
+    tx = (vw - bw * scale) / 2 - BOX.x0 * scale; ty = (vh - bh * scale) / 2 - BOX.y0 * scale; apply();
+  }
+  function toWorld(ev) { var b = viewport.getBoundingClientRect(); return [(ev.clientX - b.left - tx) / scale, (ev.clientY - b.top - ty) / scale]; }
+  viewport.addEventListener("wheel", function (ev) {
+    ev.preventDefault();
+    var b = viewport.getBoundingClientRect(), mx = ev.clientX - b.left, my = ev.clientY - b.top, old = scale;
+    scale = Math.max(MIN, Math.min(MAX, scale * (ev.deltaY < 0 ? 1.12 : 1 / 1.12)));
+    tx = mx - (mx - tx) * (scale / old); ty = my - (my - ty) * (scale / old); apply();
+  }, { passive: false });
+  var drag = null;
+  viewport.addEventListener("pointerdown", function (ev) { drag = { x: ev.clientX, y: ev.clientY, tx: tx, ty: ty, moved: false }; try { viewport.setPointerCapture(ev.pointerId); } catch (e) { /* a pointer that is already gone (touch lifted, synthetic event) */ } });
+  viewport.addEventListener("pointermove", function (ev) {
+    if (drag) {
+      var dx = ev.clientX - drag.x, dy = ev.clientY - drag.y;
+      if (Math.abs(dx) + Math.abs(dy) > 5) { drag.moved = true; viewport.classList.add("drag"); }
+      if (drag.moved) { tx = drag.tx + dx; ty = drag.ty + dy; apply(); hideTip(); return; }
+    }
+    var cl = cellAt(toWorld(ev));
+    if (cl) { showHover(cl); showTip(ev, cl); } else { hover.style.display = "none"; hideTip(); }
+  });
+  viewport.addEventListener("pointerup", function (ev) {
+    var was = drag; drag = null; viewport.classList.remove("drag");
+    if (was && !was.moved) { var cl = cellAt(toWorld(ev)); if (cl) select(cl); }
+  });
+  viewport.addEventListener("pointerleave", function () { hover.style.display = "none"; hideTip(); });
+
+  // the hex whose centre is nearest is the hex under the point: hex centres form a lattice whose cells are the hexes
+  function cellAt(pt) {
+    var best = null, bd = 1e9;
+    for (var i = 0; i < cells.length; i++) { var d = Math.hypot(cells[i].x - pt[0], cells[i].y - pt[1]); if (d < bd) { bd = d; best = cells[i]; } }
+    return bd <= R + 2 ? best : null;
+  }
+  function showHover(cl) { hover.setAttribute("points", hexPoints(cl.x, cl.y, R)); hover.style.display = ""; }
+
+  /* ---------------------------------------------------------------- reading a hex */
+  function describe(cl) {
+    var k = cl.c + "," + cl.r, place = PLACES[k], t = T[cl.key];
+    var isRiver = cl.river || (RIVER.some(function (h) { return h[0] === cl.c && h[1] === cl.r; }) && !place);
+    var known = !fogOn || explored[k];
+    if (!known) return { title: "Unexplored", sub: "", text: "The party has not been near enough to see this hex.", unknown: true };
+    var title = place ? place.name : (isRiver ? "The Grey River" : t[1]);
+    var sub = place ? place.kind : (isRiver ? "River" : t[2]);
+    var text = place ? place.text : (isRiver ? "The Grey runs thirty miles from the weir at Alderford to Port Valen between limestone bluffs and old imperial signal towers. A loaded barge makes the run downstream in a day." : "");
+    return { title: title, sub: sub, text: text, terrain: t[1], region: t[2] };
+  }
+  var selected = null;
+  function select(cl) {
+    selected = cl;
+    sel.setAttribute("points", hexPoints(cl.x, cl.y, R)); sel.style.display = "";
+    var d = describe(cl), rows = "";
+    function row(a, b) { rows += '<div class="row"><span>' + a + "</span><span>" + b + "</span></div>"; }
+    if (!d.unknown) {
+      row("Ground", d.terrain);
+      if (d.region) row("Country", d.region);
+    }
+    var fromP = dist([cl.c, cl.r], PORT_VALEN), fromA = dist([cl.c, cl.r], ALDERFORD);
+    row("From Port Valen", fromP + (fromP === 1 ? " hex" : " hexes") + " &middot; about " + fromP * MILES_PER_HEX + " mi");
+    row("From Alderford", fromA + (fromA === 1 ? " hex" : " hexes") + " &middot; about " + fromA * MILES_PER_HEX + " mi");
+    row("From the party", dist([cl.c, cl.r], partyAt) + " hexes");
+    document.getElementById("infoTitle").textContent = d.title;
+    document.getElementById("infoSub").textContent = d.sub || "";
+    document.getElementById("infoText").textContent = d.text || "";
+    document.getElementById("infoRows").innerHTML = rows;
+    var go = document.getElementById("go");
+    go.disabled = OCEAN[cl.key] || (cl.c === partyAt[0] && cl.r === partyAt[1]);
+    go.textContent = OCEAN[cl.key] ? "No road over the sea" : "Travel here (mock)";
+  }
+  var tip = document.getElementById("tip");
+  function showTip(ev, cl) {
+    var d = describe(cl);
+    tip.innerHTML = "<b>" + d.title + "</b>" + (d.sub ? d.sub : "");
+    tip.style.display = "block"; tip.style.left = (ev.clientX + 16) + "px"; tip.style.top = (ev.clientY + 14) + "px";
+  }
+  function hideTip() { tip.style.display = "none"; }
+
+  /* ---------------------------------------------------------------- the controls */
+  function toggle(id, fn) { var b = document.getElementById(id); b.addEventListener("click", function () { var on = b.getAttribute("aria-pressed") !== "true"; b.setAttribute("aria-pressed", on); fn(on); }); }
+  toggle("tFog", function (on) { fogOn = on; paintFog(); if (selected) select(selected); });
+  toggle("tGrid", function (on) { gridSvg.style.display = on ? "" : "none"; });
+  toggle("tLbl", function (on) { document.body.classList.toggle("nolabels", !on); });
+  document.getElementById("tFit").addEventListener("click", fit);
+  document.getElementById("go").addEventListener("click", function () { if (selected && !OCEAN[selected.key]) { movePartyTo([selected.c, selected.r]); select(selected); } });
+  window.addEventListener("resize", fit);
+
+  // a small legend of the tiles used
+  var LEG = [["MR", "Crags"], ["FHr", "Bluffs"], ["H1", "Downs"], ["FM1", "Farmland"], ["W1", "Bog"], ["SW1", "Bog water"], ["TW", "Town"], ["CT", "City"], ["TR", "Tower"], ["GH", "Ruin"]];
+  document.getElementById("legend").innerHTML = LEG.map(function (l) {
+    return '<div><div class="sw"><img src="' + url(T[l[0]][0]) + '" alt=""></div><span>' + l[1] + "</span></div>";
+  }).join("");
+
+  fit();
+  select(cells.filter(function (cl) { return cl.c === PORT_VALEN[0] && cl.r === PORT_VALEN[1]; })[0]);
+  window.__mapDiag = diag; window.__cells = cells;
+})();
+</script>
+</body>
+</html>

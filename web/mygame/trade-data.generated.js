@@ -422,13 +422,13 @@ window.TRADE_DATA = {
    }
   },
   "tool_kit": {
-   "name": "tool kit",
-   "title": "Tool Kit",
+   "name": "repair kit",
+   "title": "Repair Kit",
    "kind": "tool",
    "tier": "",
    "retail": 20,
    "minutes": 5,
-   "hint": "Advantage on repair, tinkering and harvest checks",
+   "hint": "+1 on repair and mechanism checks",
    "slot": "",
    "stack": true,
    "sell": {

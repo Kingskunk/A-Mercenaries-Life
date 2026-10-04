@@ -24,6 +24,9 @@
 *set mw_seen true
 *set mw_vignette_roll ((campaign_day + clock_hour) modulo 8) + 1
 *gosub_scene calendar update_hub_condition
+*if ((((dry_lion_quest_stage = "unstarted") and not(dry_lion_hook_seen)) and (day_of_week = "Greyday")) and (((time_period = "Morning") or (time_period = "Midday")) and (mw_bakehouse_seen and mw_baths_seen)))
+  *set dry_lion_hook_seen true
+  *goto_scene port_valen/MiddlewardQuest/dry_lion dry_lion_hook
 
 [b]◈ THE MIDDLE WARD: CONDUIT SQUARE[/b]
 *line_break
@@ -31,7 +34,16 @@
 *line_break
 The road climbs in turns from the docks, the salt smell of the harbor thinning behind it, then levels out onto the Second Terrace, the broad shelf of flat ground that holds most of the city. The lower streets fall away toward the harbor behind you, while the limestone cliffs of Civic Heights and the walled slopes of the Patrician Quarter rise in tiers ahead. This is the largest ward in Port Valen, and it spreads out on every side: craft lanes, tenement rows, wagon yards, and inns, stretching farther than the eye can follow. Sturdy timber buildings lean over narrow lanes, their upper floors nearly touching beneath steep slate roofs, while their lower shutters open as shop counters. The air smells of cooled iron, brass dust, cedar sawdust, and warm caraway bread from the public ovens.
 
-At the center of the square, an octagonal stone public fountain sends clear mountain water through four bronze lion-head spouts into deep basins. Narrow lanes branch from the crossroads toward the different craft quarters, while the wide trunk road, paved for iron-tired wheels, runs on through the square, east and west toward the great gates in the landward wall, and down the switchbacks to the harbor. A short way along it, a white-painted wagon wheel hangs from an iron arm over the door of an inn. Opposite the fountain, a broad chimney rises above a painted sign reading [i]"Mother Marda's Communal Oven,"[/i] sending sweet rye smoke into the air.
+*if ((dry_lion_resolution = "failed") and (campaign_day <= dry_lion_outage_until_day))
+  At the center of the square, the octagonal fountain stands dry beneath its four bronze lion heads. A rope and two warning boards keep people away from the lifted flags beside it while the city repair crew is awaited. Narrow lanes branch from the crossroads toward the different craft quarters, while the wide trunk road, paved for iron-tired wheels, runs on through the square, east and west toward the great gates in the landward wall, and down the switchbacks to the harbor. A short way along it, a white-painted wagon wheel hangs from an iron arm over the door of an inn. Opposite the fountain, a broad chimney rises above a painted sign reading [i]"Mother Marda's Communal Oven,"[/i] but no sweet rye smoke rises from it.
+*else
+  At the center of the square, an octagonal stone public fountain sends clear mountain water through four bronze lion-head spouts into deep basins. Narrow lanes branch from the crossroads toward the different craft quarters, while the wide trunk road, paved for iron-tired wheels, runs on through the square, east and west toward the great gates in the landward wall, and down the switchbacks to the harbor. A short way along it, a white-painted wagon wheel hangs from an iron arm over the door of an inn. Opposite the fountain, a broad chimney rises above a painted sign reading [i]"Mother Marda's Communal Oven,"[/i] sending sweet rye smoke into the air.
+  *if (dry_lion_resolution = "city_sealed")
+    A clean keyed cap now sits on the old branch beside the fountain. The public water runs hard, though the tenement passage beyond Locksmiths' Close is quieter for it.
+  *elseif (dry_lion_resolution = "hidden_repaired")
+    Fresh wedges and a neat new sleeve show at the fountain-side service opening. The water runs clear, and pails still pass through the narrow tenement passage off Locksmiths' Close.
+  *elseif (dry_lion_resolution = "line_registered")
+    A temporary city seal is tied to the service fence beside the fountain. The water runs clear, and a date for the tenement-yard inspection is written beneath it.
 
 *comment Layers (see port_valen_dredge_end.txt for the full rule): place, sky, street, tell.
 *comment Middle Ward profile: the city's largest ward, on the level Second Terrace (craft lanes,
@@ -219,10 +231,12 @@ At the center of the square, an octagonal stone public fountain sends clear moun
     *set time_advance_call_id "mw_walk_wash_1"
     *gosub mw_walk_time
     *goto mw_wash_yard
-  # [b]The Conduit Spout[/b]: drink the cold mountain water. [~5 min]
+  # [b]The Conduit Spout[/b]: visit the fountain. [~5 min]
     *set minutes_to_pass 5
     *set time_advance_call_id "mw_walk_spout_1"
     *gosub mw_walk_time
+    *if ((dry_lion_hook_seen) and (not(dry_lion_quest_stage = "resolved")))
+      *goto_scene port_valen/MiddlewardQuest/dry_lion dry_lion_return
 
     *temp spout_flavor 0
     *rand spout_flavor 1 3
@@ -1544,6 +1558,11 @@ Here the wall is newer and higher, faced in pale limestone, and the trunk road p
 [b]◈ MOTHER MARDA'S COMMUNAL BAKEHOUSE[/b]
 *line_break
 
+*if ((dry_lion_resolution = "failed") and (campaign_day <= dry_lion_outage_until_day))
+  The ovens are banked while the water line is shut. Marda's apprentices carry out yesterday's bread, but there is no fresh dough on the boards and no hot food at the counter.
+  *page_break Leave the quiet bakehouse...
+  *goto mw_conduit_square
+
 *if ((time_period = "Night") or ((weather_severity >= 3) and (weather_cold)))
   *if (weather_cold)
     A howling upland blizzard scours Conduit Square, banking deep drifts of white powder against the bakehouse walls. The timber storm-shutters are dropped and secured with forged pins to protect the ovens from the freezing squall, and the awning is lashed flat against the rafters. High above, woodsmoke is torn instantly to shreds by the shrieking wind as the chimney flue vents into the whiteout.
@@ -1726,6 +1745,14 @@ Here the wall is newer and higher, faced in pale limestone, and the trunk road p
 
         [b][🥟 Hot Mutton Pasty Consumed: +1 Temporary HP | Nimble Warmth (+1 DEX for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
         *page_break Finish the last flaky crust…
+        *goto mw_bakehouse
+    *if (dry_lion_marda_favor)
+      # Ask Marda how the water line is holding.
+        *if (dry_lion_resolution = "hidden_repaired")
+          Marda checks the oven kettle before she answers. "Still clear. The yard sends word if the flags soften, and I keep wedges by the back wall. That is better than waiting for a promise."
+        *else
+          Marda dusts her hands together. "Tomas put a date on that inspection. Dates can be missed, but a date on a city board is something a person can point at."
+        *page_break Leave Marda to the ovens...
         *goto mw_bakehouse
     # Watch Mother Marda paddle fresh caraway loaves into the hearth.
       You watch Mother Marda deftly slide a long ash-wood peel into the domed oven, shifting glowing embers to maintain an even baking heat. The comforting aroma of roasted caraway seeds, browned rye crust, and sweet woodsmoke fills the air under the bakehouse awning.
@@ -3188,11 +3215,17 @@ Behind Conduit Square, past the back wall of Mother Marda's ovens, a covered yar
     *comment Hearthday
     It is Hearthday, and families in their best clothes come in to soak and stay to talk.
 
+  *temp mw_dry_lion_water_out false
+  *if ((dry_lion_resolution = "failed") and (campaign_day <= dry_lion_outage_until_day))
+    *set mw_dry_lion_water_out true
   *choice
-    *if (mw_baths_seen)
+    *if (mw_dry_lion_water_out)
+      # The Conduit Baths: closed while the water line is repaired.
+        *goto mw_baths_dry_lion_closed
+    *if ((not(mw_dry_lion_water_out)) and (mw_baths_seen))
       # Go into the baths to see Merrin.
         *goto mw_baths_inside
-    *else
+    *if ((not(mw_dry_lion_water_out)) and (not(mw_baths_seen)))
       # Go through the low door into the baths.
         *goto mw_baths_inside
     # Watch the washers at the copper tubs.
@@ -3216,6 +3249,13 @@ Behind Conduit Square, past the back wall of Mother Marda's ovens, a covered yar
 *comment CONDUIT BATHS (INTERIOR)
 *comment Reached only from the wash yard while it is open, so no closed-hours branch is needed here.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label mw_baths_dry_lion_closed
+[b]◈ CONDUIT BATHS[/b]
+*line_break
+The door is barred, and a chalkboard reads: [i]"Water line shut. Reopening after city repair."[/i] Merrin is outside with a stack of dry towels, directing people toward the public pails without promising a time.
+*page_break Return to the wash-yard...
+*goto mw_wash_yard
 
 *label mw_baths_inside
 *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
@@ -3303,6 +3343,14 @@ A short passage of wet flagstones opens into a long room lined with cedar tubs a
       "Mountain water down the pipe from the cliff spring, and Marda's ovens heat it," Merrin says. "She burns the ward's bread, I burn her heat. I pay her in soaks. Her bakers come in free on Hearthday, and a baker who's had a soak makes better bread." She almost smiles. "Ask her. She'll tell you it was her idea."
       *page_break "Good to know."…
       *goto mw_baths_inside
+  *if (dry_lion_merrin_favor)
+    # Ask Merrin how the line is holding.
+      *if (dry_lion_resolution = "hidden_repaired")
+        Merrin glances toward the boiler room. "It holds because people who use it are watching it. That is more care than most pipes get."
+      *else
+        Merrin folds a towel into a tight square. "The city mark is still on the fence. If the clerk comes back, he will find us here."
+      *page_break Step back from the desk...
+      *goto mw_baths_inside
   # Step back out into the wash yard.
     *goto mw_wash_yard
 
@@ -3336,30 +3384,47 @@ You take a bench in the hot room, where the steam is so thick that faces are onl
 *comment which one, not by locking each flag individually.
 *temp mw_gossip_pick 0
 *if (not(locked_mw_gossip_page_id = page_id))
-  *if (not(mw_rumor_grain))
+  *if (((dry_lion_quest_stage = "unstarted") and dry_lion_hook_seen) and not(dry_lion_rumor_heard))
     *set mw_gossip_pick 1
-  *elseif (not(mw_rumor_steel))
+  *elseif ((dry_lion_quest_stage = "resolved") and (not(dry_lion_aftermath_heard)))
     *set mw_gossip_pick 2
-  *elseif (not(mw_rumor_steam))
+  *elseif (not(mw_rumor_grain))
     *set mw_gossip_pick 3
-  *elseif (not(mw_rumor_daughters))
+  *elseif (not(mw_rumor_steel))
     *set mw_gossip_pick 4
-  *else
+  *elseif (not(mw_rumor_steam))
     *set mw_gossip_pick 5
+  *elseif (not(mw_rumor_daughters))
+    *set mw_gossip_pick 6
+  *else
+    *set mw_gossip_pick 7
   *set mw_gossip_pick_cached mw_gossip_pick
   *set locked_mw_gossip_page_id page_id
 *else
   *set mw_gossip_pick mw_gossip_pick_cached
 *if (mw_gossip_pick = 1)
+  *set dry_lion_rumor_heard true
+  A washerwoman lowers her voice. "The south lion went brown on Greyday. That is never just grit." Someone else says, "There is a wet patch behind the rented rooms off Locksmiths' Close." The talk breaks when a towel hits the bench beside them.
+*elseif (mw_gossip_pick = 2)
+  *set dry_lion_aftermath_heard true
+  *if (dry_lion_resolution = "city_sealed")
+    A voice says, "The fountain is strong again." Another answers, "And the yard tap is gone. Strong for whom?" Nobody raises their voice after that.
+  *elseif (dry_lion_resolution = "hidden_repaired")
+    A woman laughs softly. "Both taps run, and the clerk did not see the sleeve go on." "He saw enough," someone replies. "That is why it held."
+  *elseif (dry_lion_resolution = "line_registered")
+    "They put the yard branch on the roll," a voice says. "Temporary." Another voice snorts. "Temporary is longer than a promise, most days."
+  *else
+    "No bath until the city crew comes," someone says. The hot room goes quiet for a breath, then the talk moves to pails and who has family uphill.
+*elseif (mw_gossip_pick = 3)
   *set mw_rumor_grain true
   Two voices on the bench beside you keep it low. "That Council officer with the measuring rod is waving unlicensed flour wagons through the square on Marketdays," says one. "For a payment slip, folded small." The other snorts. "So the licensed drivers pay twice. The Council's fee, and the wait."
-*elseif (mw_gossip_pick = 2)
+*elseif (mw_gossip_pick = 4)
   *set mw_rumor_steel true
   A voice with a smith's rasp complains to the steam. "Half a wagon-load of Crag steel is sitting in a shed in Alderford, and no carter will haul it down while the bailiffs work the highway." "Whose is it?" someone asks. "Whoever's brave enough to fetch it."
-*elseif (mw_gossip_pick = 3)
+*elseif (mw_gossip_pick = 5)
   *set mw_rumor_steam true
   The talk dies for a moment, and a woman's voice fills the gap. "Somebody in this room has been repeating what's said in the steam." "How do you know?" "A regular stopped coming, and Merrin doesn't lose a regular for nothing." The benches shift, and someone changes the subject to the price of soap.
-*elseif (mw_gossip_pick = 4)
+*elseif (mw_gossip_pick = 6)
   *set mw_rumor_daughters true
   A pair of voices compare notes on the shops up the lane. "The general store's girls came back from the quay with an empty cart again," says one. "Third time this season." "Somebody's buying ahead of them," says the other. "Somebody who knows their hours."
 *else

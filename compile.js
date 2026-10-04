@@ -258,7 +258,10 @@ function compile(){
   verifyFileName("port_valen/port_valen_civic_heights.txt");
   verifyFileName("port_valen/port_valen_upper_wharves.txt");
   verifyFileName("port_valen/port_valen_middle_ward.txt");
-  // The Silt-Gate conduits dungeon (see its own header comment): a *goto_scene-only scene entered from the Developer menu for now,
+  // Middle Ward quests live in their own *goto_scene-only files. The district scene owns
+  // their physical triggers and aftermath; each quest file owns its choices and resolutions.
+  verifyFileName("port_valen/MiddlewardQuest/dry_lion.txt");
+  // The Silt-Gate channels dungeon (see its own header comment): a *goto_scene-only scene entered from the Developer menu for now,
   // so it needs its own line here or a compiled build fails with "scene doesn't exist" the moment the walk starts.
   verifyFileName("port_valen/port_valen_silt_conduits.txt");
 

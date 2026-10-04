@@ -223,8 +223,8 @@ window.INVENTORY = {
     },
     {
       id: "tool_kit", category: "provisions", owned: "has_tool_kit",
-      name: function (s) { var n = 1 + (Number(s.spare_tool_kit) || 0); return "Tool Kit" + (n > 1 ? " ×" + n : ""); },
-      description: "Canvas roll of hammer, chisel, awl, pliers, folding saw and wire."
+      name: function (s) { var n = 1 + (Number(s.spare_tool_kit) || 0); return "Repair Kit" + (n > 1 ? " ×" + n : ""); },
+      description: "Canvas roll of repair tools for field fixes and simple mechanisms."
     },
     {
       id: "tinderbox", category: "provisions", owned: "has_tinderbox",

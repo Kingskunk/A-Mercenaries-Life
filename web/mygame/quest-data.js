@@ -20,8 +20,12 @@
 
   window.QUESTLOG = [
     {
-      id: "silt_gate", title: "Silt-Gate Contraband", place: "Dredge-End Flume",
+      id: "silt_gate", title: "Silt-Gate Contraband", place: "The Silt-Gates",
       active: function (s) { return s.silt_gate_quest_stage === "active"; }
+    },
+    {
+      id: "dry_lion", title: "The Dry Lion", place: "Middle Ward",
+      active: function (s) { return s.dry_lion_quest_stage === "active"; }
     },
     {
       id: "rotten_rib", title: "The Rotten Rib", place: "Iron Wharves",
