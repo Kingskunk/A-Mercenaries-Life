@@ -11,7 +11,7 @@ These are plans, not implemented quests. Add each quest to `quest/QUESTS.md`, `w
 | Order | Quest | Main locations | Type | Status |
 |---:|---|---|---|---|
 | 1 | **The Dry Lion** | Conduit Square, wash-house, Marda's bakehouse, a nearby tenement yard | Civic problem, investigation, moral choice | **Implemented** |
-| 2 | **A Key for Every Door** | Terrace Lodgings, Vael & Son | Locked-room mystery | Queued |
+| 2 | **A Key for Every Door** | Terrace Lodgings, Vael & Son | Locked-room mystery | **Implemented** |
 | 3 | **Smoke Under the Eaves** | Smiths' Row, Halda's forge, Conduit Square | Craft investigation, fire emergency | Queued |
 | 4 | **The Honest Measure** | Conduit Square, Marda's bakehouse, market storage yard | Market investigation, civic corruption | Queued |
 

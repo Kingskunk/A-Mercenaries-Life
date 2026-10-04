@@ -109,6 +109,49 @@
 *comment Mockery, a Wisdom save with no attack roll at all, passes false. A future caller has to pick one
 *comment explicitly -- there's no default that would silently let a save-based spell through.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label adjust_incoming_damage_packet
+*comment Applies the player's resistance/vulnerability to ONE optional damage packet. Unlike the legacy incoming
+*comment helper above, inputs/outputs are neutral scratch fields so a piercing bite and its poison rider can be
+*comment resolved separately in the same hit.
+*params aidp_amount aidp_type
+*set combat_packet_damage aidp_amount
+*set combat_packet_suffix ""
+*temp aidp_resisted (((aidp_type = player_resist_type_1) and (not(player_resist_type_1 = ""))) or ((aidp_type = player_resist_type_2) and (not(player_resist_type_2 = ""))))
+*if ((character_class = "barbarian") and (is_raging))
+  *if (((aidp_type = "bludgeoning") or (aidp_type = "piercing")) or (aidp_type = "slashing"))
+    *set aidp_resisted true
+*if (blade_ward_active)
+  *if (((aidp_type = "bludgeoning") or (aidp_type = "piercing")) or (aidp_type = "slashing"))
+    *set aidp_resisted true
+*temp aidp_vulnerable (((aidp_type = player_vulnerable_type_1) and (not(player_vulnerable_type_1 = ""))) or ((aidp_type = player_vulnerable_type_2) and (not(player_vulnerable_type_2 = ""))))
+*if ((aidp_resisted) and (aidp_vulnerable))
+  *comment Same type both resisted and vulnerable: normal damage.
+*elseif (aidp_resisted)
+  *set combat_packet_damage (combat_packet_damage - (combat_packet_damage modulo 2)) / 2
+  *set combat_packet_suffix " | 🛡️ Resisted"
+*elseif (aidp_vulnerable)
+  *set combat_packet_damage combat_packet_damage * 2
+  *set combat_packet_suffix " | 💥 Vulnerable"
+*return
+
+*label adjust_outgoing_damage_packet
+*comment Enemy-side twin of adjust_incoming_damage_packet. Future flaming weapons, arrows, and spell riders can
+*comment call this after their primary packet has resolved; each type tests the target's defenses independently.
+*params aodp_amount aodp_type
+*set combat_packet_damage aodp_amount
+*set combat_packet_suffix ""
+*temp aodp_resisted (((aodp_type = combat_enemy_resist_type_1) and (not(combat_enemy_resist_type_1 = ""))) or ((aodp_type = combat_enemy_resist_type_2) and (not(combat_enemy_resist_type_2 = ""))))
+*temp aodp_vulnerable (((aodp_type = combat_enemy_vulnerable_type_1) and (not(combat_enemy_vulnerable_type_1 = ""))) or ((aodp_type = combat_enemy_vulnerable_type_2) and (not(combat_enemy_vulnerable_type_2 = ""))))
+*if ((aodp_resisted) and (aodp_vulnerable))
+  *comment Same type both resisted and vulnerable: normal damage.
+*elseif (aodp_resisted)
+  *set combat_packet_damage (combat_packet_damage - (combat_packet_damage modulo 2)) / 2
+  *set combat_packet_suffix " | 🛡️ Resisted"
+*elseif (aodp_vulnerable)
+  *set combat_packet_damage combat_packet_damage * 2
+  *set combat_packet_suffix " | 💥 Vulnerable"
+*return
+
 *label resolve_player_hit
 *params rph_is_attack_roll
 *if (not(combat_player_hit_locked)) or (not(locked_combat_player_hit_page_id = page_id))
@@ -130,6 +173,18 @@
     *set cph_running + cph_hex_die
   *set combat_player_dmg_roll_banner "[b][🎲 Damage: ${cph_roll} ${cph_bonus_str}${cph_extra_str} = ${cph_running}][/b]"
   *gosub apply_outgoing_damage_resist_vuln
+  *if (combat_player_extra_dmg_dice_sides > 0)
+    *temp cph_packet_roll 0
+    *rand cph_packet_roll 1 combat_player_extra_dmg_dice_sides
+    *temp cph_packet_raw (cph_packet_roll + combat_player_extra_dmg_bonus)
+    *temp cph_packet_bonus_str ""
+    *if (combat_player_extra_dmg_bonus >= 0)
+      *set cph_packet_bonus_str "+${combat_player_extra_dmg_bonus}"
+    *else
+      *set cph_packet_bonus_str "${combat_player_extra_dmg_bonus}"
+    *gosub adjust_outgoing_damage_packet cph_packet_raw combat_player_extra_dmg_type
+    *set combat_player_dmg_dealt + combat_packet_damage
+    *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${cph_packet_roll} ${cph_packet_bonus_str} ${combat_player_extra_dmg_type} = ${combat_packet_damage}${combat_packet_suffix}][/b]"
   *set combat_enemy_hp - combat_player_dmg_dealt
   *if (combat_enemy_hp < 0)
     *set combat_enemy_hp 0
@@ -202,6 +257,18 @@ ${combat_player_dmg_roll_banner}
     *set cwh_running + cwh_ff_die
   *set combat_player_dmg_roll_banner "[b][🎲 Weapon Damage: ${cwh_roll} ${cwh_bonus_str}${cwh_extra_str} = ${cwh_running}][/b]"
   *gosub apply_outgoing_damage_resist_vuln
+  *if (combat_player_extra_dmg_dice_sides > 0)
+    *temp cwh_packet_roll 0
+    *rand cwh_packet_roll 1 combat_player_extra_dmg_dice_sides
+    *temp cwh_packet_raw (cwh_packet_roll + combat_player_extra_dmg_bonus)
+    *temp cwh_packet_bonus_str ""
+    *if (combat_player_extra_dmg_bonus >= 0)
+      *set cwh_packet_bonus_str "+${combat_player_extra_dmg_bonus}"
+    *else
+      *set cwh_packet_bonus_str "${combat_player_extra_dmg_bonus}"
+    *gosub adjust_outgoing_damage_packet cwh_packet_raw combat_player_extra_dmg_type
+    *set combat_player_dmg_dealt + combat_packet_damage
+    *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${cwh_packet_roll} ${cwh_packet_bonus_str} ${combat_player_extra_dmg_type} = ${combat_packet_damage}${combat_packet_suffix}][/b]"
   *set combat_enemy_hp - combat_player_dmg_dealt
   *if (combat_enemy_hp < 0)
     *set combat_enemy_hp 0
@@ -429,6 +496,21 @@ ${combat_player_dmg_roll_banner}
     *comment Barbarian Rage's physical-damage resistance is folded into this
     *comment same check now -- see apply_incoming_damage_resist_vuln's header.
     *gosub apply_incoming_damage_resist_vuln
+    *comment Optional rider packet (poison, fire, lightning, etc.). It is deliberately resolved after the primary
+    *comment packet so a resistance to piercing never suppresses a separate poison rider, and vice versa.
+    *if (combat_enemy_extra_dmg_dice_sides > 0)
+      *temp cea_primary_after combat_enemy_dmg_dealt
+      *temp cea_extra_roll 0
+      *rand cea_extra_roll 1 combat_enemy_extra_dmg_dice_sides
+      *temp cea_extra_raw (cea_extra_roll + combat_enemy_extra_dmg_bonus)
+      *temp cea_extra_bonus_str ""
+      *if (combat_enemy_extra_dmg_bonus >= 0)
+        *set cea_extra_bonus_str "+${combat_enemy_extra_dmg_bonus}"
+      *else
+        *set cea_extra_bonus_str "${combat_enemy_extra_dmg_bonus}"
+      *gosub adjust_incoming_damage_packet cea_extra_raw combat_enemy_extra_dmg_type
+      *set combat_enemy_dmg_dealt + combat_packet_damage
+      *set {(cea_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${cea_dmg} ${cea_bonus_str} = ${cea_primary_after}${combat_incoming_dmg_suffix} + ${cea_extra_roll} ${cea_extra_bonus_str} ${combat_enemy_extra_dmg_type} = ${combat_packet_damage}${combat_packet_suffix} | Total ${combat_enemy_dmg_dealt}][/b]"
     *if ((agathys_active) and (temp_hp > 0))
       *set combat_agathys_triggered true
       *comment Agathys retaliation is the PLAYER's own damage output (5 Cold),

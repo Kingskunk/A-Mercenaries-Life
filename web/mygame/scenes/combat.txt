@@ -81,6 +81,11 @@
 *label fight_setup
 *gosub_scene character_progression refresh_class_resource_maxs
 *gosub_scene character_progression refresh_known_spells
+*comment The current ancestry list has one Small player option. Keep this mapping at the combat boundary so Shove
+*comment always reads a valid size even in dev presets and old saves; new ancestry sizes extend this tiny mapping.
+*set player_size "medium"
+*if (race = "halfling")
+  *set player_size "small"
 *comment Resets every ephemeral combat flag so encounter N+1 never inherits
 *comment leftover state from encounter N (or a Shield/Hex left armed from a
 *comment fight the player fled). Pre-existing temp_hp from meals or prep spells
@@ -153,9 +158,12 @@
     *set so_delta - combat_enemy_atk_bonus
     *set combat_enemy_move2_atk_bonus + so_delta
   *set combat_enemy_atk_bonus combat_enemy_atk_override
+*if (not(combat_enemy_size_override = ""))
+  *set combat_enemy_size combat_enemy_size_override
 *set combat_enemy_hp_override 999
 *set combat_enemy_ac_override 999
 *set combat_enemy_atk_override 999
+*set combat_enemy_size_override ""
 *comment Slots 2 and beyond: one generic subroutine (apply_slot_stat_override, below) instead of a hand-copied
 *comment block per slot. Widening combat_enemy_slot_cap later needs no change here.
 *temp fs_ov_i 2
@@ -176,10 +184,15 @@
 *set combat_enemy1_atk_bonus combat_enemy_atk_bonus
 *set combat_enemy1_dmg_dice_sides combat_enemy_dmg_dice_sides
 *set combat_enemy1_dmg_bonus combat_enemy_dmg_bonus
+*set combat_enemy1_extra_dmg_dice_sides combat_enemy_extra_dmg_dice_sides
+*set combat_enemy1_extra_dmg_bonus combat_enemy_extra_dmg_bonus
+*set combat_enemy1_extra_dmg_type combat_enemy_extra_dmg_type
+*set combat_enemy1_size combat_enemy_size
 *set combat_enemy1_epithet combat_enemy_epithet
 *set combat_enemy1_metal_armor combat_enemy_metal_armor
 *set combat_enemy1_dmg_type combat_enemy_dmg_type
 *set combat_enemy1_weapon_type combat_enemy_weapon_type
+*set combat_enemy1_behavior_profile combat_enemy_behavior_profile
 *comment Sidearm (2026-09-29, plan §4.1): same snapshot as weapon_type above -- apply_type_archer/apply_type_
 *comment slinger only ever write the BARE combat_enemy_sidearm_* names for slot 1 (same as every other field
 *comment here), so without this line slot 1's real combat_enemy1_sidearm_weapon_type would stay "" forever and
@@ -264,6 +277,7 @@
 *temp aso_hp_ov {(aso_p & "hp_override")}
 *temp aso_ac_ov {(aso_p & "ac_override")}
 *temp aso_atk_ov {(aso_p & "atk_override")}
+*temp aso_size_ov {(aso_p & "size_override")}
 *temp aso_delta 0
 *if (not(aso_hp_ov = 999))
   *set {(aso_p & "hp")} aso_hp_ov
@@ -276,9 +290,12 @@
     *set aso_delta - {(aso_p & "atk_bonus")}
     *set {(aso_p & "move2_atk_bonus")} ({(aso_p & "move2_atk_bonus")} + aso_delta)
   *set {(aso_p & "atk_bonus")} aso_atk_ov
+*if (not(aso_size_ov = ""))
+  *set {(aso_p & "size")} aso_size_ov
 *set {(aso_p & "hp_override")} 999
 *set {(aso_p & "ac_override")} 999
 *set {(aso_p & "atk_override")} 999
+*set {(aso_p & "size_override")} ""
 *return
 
 *label apply_ability_score_range
@@ -654,6 +671,11 @@
 *comment Same reason for hiding: cover from one fight must not arm advantage in the next.
 *set combat_player_hidden false
 *set player_movement_restricted false
+*set combat_shove_success false
+*set combat_shove_dc 10
+*set combat_shove_target_name "the enemy"
+*set combat_shove_from_name "Engaged"
+*set combat_shove_to_name "Close"
 *comment Condition-on-hit, Stunned, movepool, and damage-type resistance are
 *comment all opt-in per fight_<name> label -- reset here (end of THIS fight,
 *comment before the NEXT fight's label ever runs) so an enemy that doesn't
@@ -681,7 +703,12 @@
 *set combat_flavor_enemy_move2_hit ""
 *set combat_flavor_enemy_move2_miss ""
 *set combat_enemy_dmg_type "bludgeoning"
+*set combat_enemy_extra_dmg_dice_sides 0
+*set combat_enemy_extra_dmg_bonus 0
+*set combat_enemy_extra_dmg_type "poison"
+*set combat_enemy_size "medium"
 *set combat_enemy_weapon_type "melee"
+*set combat_enemy_behavior_profile "feral"
 *comment Sidearm (2026-09-29, plan §4.1): bare/active-target reset, same place and reason as weapon_type above.
 *set combat_enemy_sidearm_weapon_type ""
 *set combat_enemy_sidearm_atk_bonus 0
@@ -745,7 +772,12 @@
   *set {(("combat_flavor_enemy" & fc_i) & "_move2_hit")} ""
   *set {(("combat_flavor_enemy" & fc_i) & "_move2_miss")} ""
   *set {(fc_p & "dmg_type")} "bludgeoning"
+  *set {(fc_p & "extra_dmg_dice_sides")} 0
+  *set {(fc_p & "extra_dmg_bonus")} 0
+  *set {(fc_p & "extra_dmg_type")} "poison"
+  *set {(fc_p & "size")} "medium"
   *set {(fc_p & "weapon_type")} "melee"
+  *set {(fc_p & "behavior_profile")} "feral"
   *comment Sidearm (2026-09-29, plan §4.1): per-slot reset, same leftover-state reason as weapon_type above -- a
   *comment slot 2 dressed as a plain guard should never inherit a dagger from whichever archer used it last.
   *set {(fc_p & "sidearm_weapon_type")} ""
@@ -801,6 +833,7 @@
   *set {(fc_p & "hp_override")} 999
   *set {(fc_p & "ac_override")} 999
   *set {(fc_p & "atk_override")} 999
+  *set {(fc_p & "size_override")} ""
   *comment Ability scores are opt-in like condition/movepool above, not always-set like hp/ac/atk_bonus -- a
   *comment hand-authored fight can be silent about them entirely, so they need an explicit reset to "average
   *comment human" or a later fight in the same slot could otherwise inherit an earlier type-library fight's roll.
@@ -830,6 +863,7 @@
 *label fight_cleanup_ally_loop
 *if (fc_a_i <= combat_ally_slot_cap)
   *set {(("combat_ally" & fc_a_i) & "_range")} 0
+  *set {(("combat_ally" & fc_a_i) & "_behavior_profile")} "guardian"
   *set {(("combat_ally" & fc_a_i) & "_target")} 0
   *set {("combat_ally_lib_" & fc_a_i)} ""
   *comment Reaction asymmetry (2026-09-29, plan §4.5/Phase 5) -- same leftover-state reason as the enemy-side
@@ -861,6 +895,7 @@
 *set combat_enemy_hp_override 999
 *set combat_enemy_ac_override 999
 *set combat_enemy_atk_override 999
+*set combat_enemy_size_override ""
 *comment Bare slot-1 ability scores, same opt-in reset as the numbered slots above.
 *set combat_enemy_strength 10
 *set combat_enemy_dexterity 10
@@ -935,10 +970,15 @@
 *set combat_enemy_atk_bonus {(fti_p & "atk_bonus")}
 *set combat_enemy_dmg_dice_sides {(fti_p & "dmg_dice_sides")}
 *set combat_enemy_dmg_bonus {(fti_p & "dmg_bonus")}
+*set combat_enemy_extra_dmg_dice_sides {(fti_p & "extra_dmg_dice_sides")}
+*set combat_enemy_extra_dmg_bonus {(fti_p & "extra_dmg_bonus")}
+*set combat_enemy_extra_dmg_type {(fti_p & "extra_dmg_type")}
+*set combat_enemy_size {(fti_p & "size")}
 *set combat_enemy_epithet {(fti_p & "epithet")}
 *set combat_enemy_metal_armor {(fti_p & "metal_armor")}
 *set combat_enemy_dmg_type {(fti_p & "dmg_type")}
 *set combat_enemy_weapon_type {(fti_p & "weapon_type")}
+*set combat_enemy_behavior_profile {(fti_p & "behavior_profile")}
 *comment Sidearm (2026-09-29, Ranged-AI Position Awareness plan §4.1): synced the same way as every field above --
 *comment "" weapon_type (every melee type, and every ranged type not yet given one) means combat_next_turn's row-2
 *comment quick-draw decision never fires for this slot.
@@ -1027,6 +1067,37 @@
   *set combat_range_display_name "Mid-Range"
 *if (crn_n >= 3)
   *set combat_range_display_name "Long Range"
+*return
+
+*label combat_size_rank
+*comment Converts the five 5e size categories into an ordered value. The output is durable because callers need
+*comment to compare two sizes across labels; unknown future labels safely behave as Medium until mapped here.
+*params csr_size
+*set combat_size_rank_value 2
+*if (csr_size = "tiny")
+  *set combat_size_rank_value 0
+*if (csr_size = "small")
+  *set combat_size_rank_value 1
+*if (csr_size = "large")
+  *set combat_size_rank_value 3
+*if (csr_size = "huge")
+  *set combat_size_rank_value 4
+*if (csr_size = "gargantuan")
+  *set combat_size_rank_value 5
+*return
+
+*label combat_check_shove_size
+*comment 2014 5e's Shove permits a target no more than one size larger; it does not add a size modifier to the
+*comment Athletics-vs-Athletics/Acrobatics contest. This project retains its existing STR/DEX defense DC but uses
+*comment the RAW size gate before the roll.
+*set combat_shove_size_allowed true
+*set combat_shove_size_msg ""
+*gosub combat_size_rank player_size
+*temp ccs_player_rank combat_size_rank_value
+*gosub combat_size_rank combat_enemy_size
+*if (combat_size_rank_value > (ccs_player_rank + 1))
+  *set combat_shove_size_allowed false
+  *set combat_shove_size_msg "${combat_enemy_name} is ${combat_enemy_size}, too large for you to Shove."
 *return
 
 *label spell_range_of
@@ -1385,12 +1456,36 @@
 *return
 
 *label fight_reach_check
+*comment Touch/unarmed maneuver reach: Engaged only. Weapon attacks call fight_weapon_reach_check instead so the
+*comment existing "reach" weapon type can strike at Close. Kept separate because Shocking Grasp and Shove remain
+*comment touch-distance effects even when the player happens to be holding a spear.
+*gosub fight_reach_check_at 0
+*return
+
+*label fight_weapon_reach_check
+*comment Ordinary melee/finesse weapons require Engaged; a reach weapon can attack at Close.
+*temp fwrc_max 0
+*if (weapon_type = "reach")
+  *set fwrc_max 1
+*gosub fight_reach_check_at fwrc_max
+*return
+
+*label fight_sidearm_reach_check
+*comment Called before the sidearm is swapped into the primary fields, so it reads sidearm_type directly.
+*temp fsrc_max 0
+*if (sidearm_type = "reach")
+  *set fsrc_max 1
+*gosub fight_reach_check_at fsrc_max
+*return
+
+*label fight_reach_check_at
 *comment Reach check for the options that need a target within reach (melee weapon attacks, Shocking Grasp), run at the moment one is CHOSEN. The hub
 *comment only offers them when something is in reach, but a target clicked in the sidebar after the page was built is not seen until the next page,
 *comment so a click on a far enemy followed by a melee swing used to hit it from Close range (found 2026-10-02 in a real browser). A far clicked target no longer
 *comment blocks the swing while ANY enemy is in reach: the attack retargets to that one (fight_retarget_to_reach) and its text names who is hit. The check only fails
 *comment when nothing living is in reach. Read-only on game state apart from the two scratch variables, so a replay of the page repeats it harmlessly. Sets
-*comment combat_reach_ok, and combat_reach_msg when it is false.
+*comment combat_reach_ok, and combat_reach_msg when it is false. frca_max is 0 for touch/ordinary melee and 1 for Reach.
+*params frca_max
 *set combat_reach_ok true
 *set combat_reach_msg ""
 *temp frc_any false
@@ -1399,7 +1494,7 @@
 *if (frc_i <= combat_enemy_count)
   *temp frc_hp {(("combat_enemy" & frc_i) & "_hp")}
   *temp frc_range {(("combat_enemy" & frc_i) & "_range")}
-  *if ((frc_hp > 0) and (frc_range <= 0))
+  *if ((frc_hp > 0) and (frc_range <= frca_max))
     *set frc_any true
   *set frc_i + 1
   *goto fight_reach_check_loop
@@ -1413,11 +1508,24 @@
 *return
 
 *label fight_retarget_to_reach
+*comment Touch/unarmed maneuver retargeting: Engaged only. Weapon attacks use the weapon-aware wrapper below.
+*gosub fight_retarget_to_range 0
+*return
+
+*label fight_retarget_weapon_to_reach
+*temp frwr_max 0
+*if (weapon_type = "reach")
+  *set frwr_max 1
+*gosub fight_retarget_to_range frwr_max
+*return
+
+*label fight_retarget_to_range
 *comment A melee weapon attack whose target (auto-picked by kill priority, or clicked) is out of reach: swing at the lowest-HP enemy that IS in reach instead.
 *comment Does nothing when the target is already in reach or when nothing is. Run right after fight_pick_target, so the epithet the attack prose names is the one actually struck.
 *comment (2026-10-02) Also runs when the clicked target is out of reach: that click stays sticky for spells, but this swing goes to whoever is in reach.
+*params frr_max
 *temp frr_cur_range {(("combat_enemy" & combat_active_target) & "_range")}
-*if (frr_cur_range > 0)
+*if (frr_cur_range > frr_max)
   *temp frr_i 1
   *temp frr_best 0
   *temp frr_best_hp 0
@@ -1425,7 +1533,7 @@
   *if (frr_i <= combat_enemy_count)
     *temp frr_hp {(("combat_enemy" & frr_i) & "_hp")}
     *temp frr_range {(("combat_enemy" & frr_i) & "_range")}
-    *if ((frr_hp > 0) and (frr_range <= 0))
+    *if ((frr_hp > 0) and (frr_range <= frr_max))
       *if ((frr_best = 0) or (frr_hp < frr_best_hp))
         *set frr_best frr_i
         *set frr_best_hp frr_hp
@@ -1538,6 +1646,27 @@
   *set locked_combat_range_shift_page_id page_id
 *return
 
+*label combat_shift_target_range
+*comment Move one living enemy one tier without moving the player or the rest of the line. This is forced movement,
+*comment so it deliberately does not call either opportunity-attack finder. The caller must own replay safety:
+*comment Shove wraps its target pick, roll and this mutation in combat_shove_locked. Keeping the primitive itself
+*comment unlocked lets a future multi-target spell call it once per slot on the same page without one shared lock
+*comment suppressing the second target. Direction is "away" (+1) or "toward" (-1), clamped to the 0-3 scale.
+*params cstr_slot cstr_direction
+*temp cstr_hp {(("combat_enemy" & cstr_slot) & "_hp")}
+*if (cstr_hp > 0)
+  *temp cstr_delta 1
+  *if (cstr_direction = "toward")
+    *set cstr_delta (0 - 1)
+  *temp cstr_from {(("combat_enemy" & cstr_slot) & "_range")}
+  *temp cstr_to (cstr_from + cstr_delta)
+  *if (cstr_to < 0)
+    *set cstr_to 0
+  *if (cstr_to > 3)
+    *set cstr_to 3
+  *set {(("combat_enemy" & cstr_slot) & "_range")} cstr_to
+*return
+
 *label find_opportunity_attacker
 *comment Opportunity attacks (2026-09-28). Sets combat_oa_candidate to the enemy that gets to swing as the
 *comment player leaves, or 0 for none. Must be called BEFORE the move that opens the tier, while every enemy
@@ -1570,7 +1699,7 @@
   *temp foa_weapon {(("combat_enemy" & foa_i) & "_weapon_type")}
   *temp foa_range {(("combat_enemy" & foa_i) & "_range")}
   *temp foa_oa {(("combat_enemy" & foa_i) & "_oa_used")}
-  *if ((((foa_hp > 0) and (foa_weapon = "melee")) and (foa_range <= 0)) and (foa_oa = false))
+  *if ((((foa_hp > 0) and ((foa_weapon = "melee") or (foa_weapon = "reach"))) and (foa_range <= 0)) and (foa_oa = false))
     *if ((combat_oa_candidate = 0) or (foa_hp < foa_best_hp))
       *set combat_oa_candidate foa_i
       *set foa_best_hp foa_hp
@@ -1649,7 +1778,7 @@
 *comment between them.
 *set combat_oa_against_kind ""
 *set combat_oa_against_slot 0
-*if ((((weapon_type = "melee") or (weapon_type = "finesse")) and (combat_enemy_range <= 0)) and (not(player_oa_used)))
+*if (((((weapon_type = "melee") or (weapon_type = "finesse")) or (weapon_type = "reach")) and (combat_enemy_range <= 0)) and (not(player_oa_used)))
   *set combat_oa_against_kind "player"
 *else
   *temp foaa_best_hp 0
@@ -1660,7 +1789,7 @@
     *temp foaa_weapon {(("combat_ally" & foaa_i) & "_weapon_type")}
     *temp foaa_range {(("combat_ally" & foaa_i) & "_range")}
     *temp foaa_oa {(("combat_ally" & foaa_i) & "_oa_used")}
-    *if ((((foaa_hp > 0) and (foaa_weapon = "melee")) and (foaa_range <= 0)) and (not(foaa_oa)))
+    *if ((((foaa_hp > 0) and ((foaa_weapon = "melee") or (foaa_weapon = "reach"))) and (foaa_range <= 0)) and (not(foaa_oa)))
       *if ((combat_oa_against_slot = 0) or (foaa_hp < foaa_best_hp))
         *set combat_oa_against_slot foaa_i
         *set foaa_best_hp foaa_hp
@@ -2753,6 +2882,8 @@
 *comment A clicked target only decides the melee options while it is itself in reach (2026-10-02, found in a real fight: a far enemy clicked for a spell stayed sticky, and with two rats
 *comment Engaged the weapon options were hidden because the clicked one was Close). Out of reach, the click is ignored for melee and any enemy in reach counts, as with no click.
 *temp combat_melee_reach false
+*temp combat_primary_reach false
+*temp combat_sidearm_reach false
 *temp combat_reach_epithet combat_enemy_epithet
 *temp cmr_chosen_ok false
 *if (combat_player_chosen_target > 0)
@@ -2760,6 +2891,8 @@
     *set cmr_chosen_ok true
 *if (cmr_chosen_ok)
   *set combat_melee_reach true
+  *set combat_primary_reach true
+  *set combat_sidearm_reach true
 *else
   *temp cmr_i 1
   *temp cmr_best 0
@@ -2774,6 +2907,10 @@
         *if ((cmr_best = 0) or (cmr_hp < cmr_best_hp))
           *set cmr_best cmr_i
           *set cmr_best_hp cmr_hp
+      *if ((cmr_range <= 0) or ((weapon_type = "reach") and (cmr_range <= 1)))
+        *set combat_primary_reach true
+      *if ((cmr_range <= 0) or ((sidearm_type = "reach") and (cmr_range <= 1)))
+        *set combat_sidearm_reach true
     *set cmr_i + 1
     *goto combat_melee_reach_loop
   *if ((cmr_best > 0) and (combat_target_range > 0))
@@ -2851,10 +2988,10 @@
   *goto fight_end_player_turn
 
 *choice
-  *if ((combat_can_attack) and ((weapon_type = "ranged") or (combat_melee_reach)))
+  *if ((combat_can_attack) and ((weapon_type = "ranged") or (combat_primary_reach)))
     # [b][ACTION][/b] [b][Attack with your ${weapon}][/b].
       *if (not(weapon_type = "ranged"))
-        *gosub fight_reach_check
+        *gosub fight_weapon_reach_check
         *if (not(combat_reach_ok))
           ${combat_reach_msg}
           *line_break
@@ -2893,10 +3030,10 @@
       *set combat_mm_darts_6 0
       *goto fight_target_dual_shot
 
-  *if (((combat_can_attack) and (not(equipped_sidearm_id = "none"))) and ((sidearm_type = "ranged") or (combat_melee_reach)))
+  *if (((combat_can_attack) and (not(equipped_sidearm_id = "none"))) and ((sidearm_type = "ranged") or (combat_sidearm_reach)))
     # [b][ACTION][/b] [b][Attack with your ${sidearm}][/b].
       *if (not(sidearm_type = "ranged"))
-        *gosub fight_reach_check
+        *gosub fight_sidearm_reach_check
         *if (not(combat_reach_ok))
           ${combat_reach_msg}
           *line_break
@@ -2914,6 +3051,56 @@
       *if (not(combat_weapon_attack_locked)) or (not(locked_combat_weapon_attack_page_id = page_id))
         *gosub_scene equipment equip_weapon equipped_sidearm_id
       *goto resolve_weapon_attack_choice
+
+  *if ((combat_player_actions_left > 0) and (combat_melee_reach))
+    # [b][ACTION][/b] [b][Shove][/b] Drive an enemy in reach back to Close.@{show_stat_hints  [Athletics vs. its stronger STR/DEX defense]|}
+      *gosub fight_reach_check
+      *if (not(combat_reach_ok))
+        ${combat_reach_msg}
+        *line_break
+        *goto fight_round_hub
+      *comment Whole-choice replay lock: the target pick, opposed DC, skill roll and forced range mutation are
+      *comment one action. A refresh reprints combat_shove_* without rolling or pushing the target a second time.
+      *if (not(combat_shove_locked)) or (not(locked_combat_shove_page_id = page_id))
+        *gosub fight_pick_target
+        *gosub fight_retarget_to_reach
+        *gosub combat_check_shove_size
+        *if (not(combat_shove_size_allowed))
+          ${combat_shove_size_msg}
+          *line_break
+          *goto fight_round_hub
+        *set combat_shove_target_name combat_enemy_name
+        *gosub combat_range_name combat_enemy_range
+        *set combat_shove_from_name combat_range_display_name
+        *gosub_scene startup score_to_mod combat_enemy_strength
+        *set combat_shove_dc (10 + sm_mod)
+        *gosub_scene startup score_to_mod combat_enemy_dexterity
+        *temp csh_dex_dc (10 + sm_mod)
+        *if (csh_dex_dc > combat_shove_dc)
+          *set combat_shove_dc csh_dex_dc
+        *gosub_scene dice_engine roll_skill_check combat_shove_dc "athletics" "" "" "" "" ""
+        *set combat_shove_success check_success
+        *if (combat_shove_success)
+          *gosub combat_shift_target_range combat_active_target "away"
+          *gosub fight_sync_target_in
+          *gosub combat_range_name combat_enemy_range
+          *set combat_shove_to_name combat_range_display_name
+        *comment Normalize the reach scratch after the result. On a successful shove the selected enemy is now
+        *comment Close, so leaving combat_reach_ok at its pre-roll true value makes a same-page replay appear to
+        *comment mutate state even though the roll and push themselves are correctly locked.
+        *gosub fight_reach_check
+        *set combat_shove_locked true
+        *set locked_combat_shove_page_id page_id
+      *if (combat_shove_success)
+        You step through ${combat_enemy_epithet}'s guard and drive hard with shoulder and forearm, forcing them out of your reach.
+        *line_break
+        [b][Shove: Success | ${combat_shove_target_name} ${combat_shove_from_name} -> ${combat_shove_to_name}][/b]
+      *else
+        You drive forward, but ${combat_enemy_epithet} drops their weight and gives you no ground.
+        *line_break
+        [b][Shove: Failed | Athletics DC ${combat_shove_dc}][/b]
+      *line_break
+      *goto fight_action_spent
 
   *if ((combat_player_moves_left > 0) and (combat_can_push_forward))
     # Push forward and close the distance on the nearest enemy. (${combat_push_from_name} → ${combat_push_to_name})
@@ -3147,6 +3334,11 @@
           *set combat_player_dmg_dice_sides 8
           *set combat_player_dmg_bonus 0
           *gosub_scene combat_dice resolve_player_hit true
+          *comment Shocking Grasp's no-reactions rider reuses the same per-slot reaction flag as Arms of Hadar.
+          *comment Set both the durable slot and active scratch so a Fall Back later this turn cannot select this
+          *comment enemy for an opportunity attack. The whole cantrip-choice lock makes the write replay-safe.
+          *set {(("combat_enemy" & combat_active_target) & "_oa_used")} true
+          *set combat_enemy_oa_used true
           *if (combat_enemy_hp <= 0)
             *gosub_scene combat_prose pick_spell_death_flavor
         *set combat_cantrip_choice_locked true
@@ -3159,11 +3351,11 @@
         *elseif (combat_enemy_metal_armor)
           Blue-white lightning discharges from your palm and leaps hungrily to the iron on ${combat_enemy_epithet}, arcing through every buckle and plate in one violent convulsion.
           *line_break
-          [b][⚡ Shocking Grasp: Hit | ${combat_player_dmg_dealt} Lightning damage${combat_outgoing_dmg_suffix} | 🔩 Metal-Seeking Advantage][/b]
+          [b][⚡ Shocking Grasp: Hit | ${combat_player_dmg_dealt} Lightning damage${combat_outgoing_dmg_suffix} | 🔩 Metal-Seeking Advantage | No reactions][/b]
         *else
           ${fsh}
           *line_break
-          [b][⚡ Shocking Grasp: Hit | ${combat_player_dmg_dealt} Lightning damage${combat_outgoing_dmg_suffix}][/b]
+          [b][⚡ Shocking Grasp: Hit | ${combat_player_dmg_dealt} Lightning damage${combat_outgoing_dmg_suffix} | No reactions][/b]
       *else
         ${fsm}
         *line_break
@@ -3786,7 +3978,7 @@ ${use_text}
   *comment page was built -- a click made while the page was already open would otherwise land on the stale target.
   *gosub fight_pick_target
   *if (not(weapon_type = "ranged"))
-    *gosub fight_retarget_to_reach
+    *gosub fight_retarget_weapon_to_reach
   *if (weapon_type = "ranged")
     *set check_stat "dex"
     *set check_skill "Ranged Attack"
@@ -4656,8 +4848,8 @@ ${use_text}
 *comment player's weapon). A scene reaches any of them through fight_library, below, with no edit to this
 *comment file. A type is stats and movepool in apply_type_<name> (one block per slot, here) plus prose in
 *comment flavor_type_<name> (written once, see ENEMY TYPE FLAVOR in combat_prose.txt). Add a new one with an
-*comment apply_type_<name> label here, one line in apply_enemy_type's dispatch, and the prose label with its line
-*comment in flavor_from_type (combat_prose.txt).
+*comment apply_type_<name> label here, one line in apply_enemy_type's dispatch, one profile selection in
+*comment assign_enemy_behavior_profile, and the prose label with its line in flavor_from_type (combat_prose.txt).
 *comment
 *comment WRITING RULE: every type's hit and miss lines, and the player's apply_generic_weapon_flavor
 *comment pool, are written to work in any fight against human combatants, anywhere, so a new fight can call a type
@@ -4667,6 +4859,102 @@ ${use_text}
 *comment the player turns it aside, and what it costs. No fight layers place-specific lines over a type: a scene
 *comment that wants a place sets the place in its own prose around the fight.
 *comment ══════════════════════════════════════════════════════════════
+
+*comment BEHAVIOR PROFILES
+*comment A personality is a compact policy, shared by enemies and allies rather than copied into each type's block.
+*comment The resolver supplies the existing movement knobs (chase chance, retreat permission and wounded flee point),
+*comment so combat_next_turn keeps one decision tree while a new type only selects a profile in the mapping below.
+*comment Profiles: bruiser (presses targets), skirmisher (mobile melee hunter / retreating ranged fighter),
+*comment sharpshooter (holds range and withdraws when cornered), guardian (holds the line), feral (simple direct attack).
+
+*label resolve_behavior_profile
+*params rbp_profile rbp_weapon_type
+*set combat_behavior_chase_chance 0
+*set combat_behavior_can_retreat false
+*set combat_behavior_flee_hp_pct 0
+*if (rbp_profile = "bruiser")
+  *set combat_behavior_chase_chance 33
+*if (rbp_profile = "skirmisher")
+  *if (rbp_weapon_type = "ranged")
+    *set combat_behavior_can_retreat true
+    *set combat_behavior_flee_hp_pct 33
+  *else
+    *set combat_behavior_chase_chance 50
+*if (rbp_profile = "sharpshooter")
+  *set combat_behavior_can_retreat true
+  *set combat_behavior_flee_hp_pct 33
+*return
+
+*label assign_enemy_behavior_profile
+*params aeb_slot aeb_type
+*temp aeb_profile "feral"
+*if (aeb_type = "swordsman")
+  *set aeb_profile "bruiser"
+*if (aeb_type = "axeman")
+  *set aeb_profile "bruiser"
+*if (aeb_type = "maceman")
+  *set aeb_profile "bruiser"
+*if (aeb_type = "knifeman")
+  *set aeb_profile "skirmisher"
+*if (aeb_type = "spearman")
+  *set aeb_profile "skirmisher"
+*if (aeb_type = "hookman")
+  *set aeb_profile "skirmisher"
+*if (aeb_type = "archer")
+  *set aeb_profile "sharpshooter"
+*if (aeb_type = "slinger")
+  *set aeb_profile "sharpshooter"
+*if (aeb_type = "guard")
+  *set aeb_profile "guardian"
+*temp aeb_p ""
+*temp aeb_weapon "melee"
+*if (aeb_slot = 1)
+  *set combat_enemy_behavior_profile aeb_profile
+  *set aeb_weapon combat_enemy_weapon_type
+*else
+  *set aeb_p (("combat_enemy" & aeb_slot) & "_")
+  *set {(aeb_p & "behavior_profile")} aeb_profile
+  *set aeb_weapon {(aeb_p & "weapon_type")}
+*gosub resolve_behavior_profile aeb_profile aeb_weapon
+*if (aeb_slot = 1)
+  *set combat_enemy_chase_chance combat_behavior_chase_chance
+  *set combat_enemy_can_retreat combat_behavior_can_retreat
+  *set combat_enemy_flee_hp_pct combat_behavior_flee_hp_pct
+*else
+  *set {(aeb_p & "chase_chance")} combat_behavior_chase_chance
+  *set {(aeb_p & "can_retreat")} combat_behavior_can_retreat
+  *set {(aeb_p & "flee_hp_pct")} combat_behavior_flee_hp_pct
+*return
+
+*label assign_ally_behavior_profile
+*params aab_slot aab_type
+*temp aab_profile "guardian"
+*if (aab_type = "archer")
+  *set aab_profile "sharpshooter"
+*if (aab_type = "slinger")
+  *set aab_profile "sharpshooter"
+*temp aab_p (("combat_ally" & aab_slot) & "_")
+*temp aab_weapon {(aab_p & "weapon_type")}
+*set {(aab_p & "behavior_profile")} aab_profile
+*gosub resolve_behavior_profile aab_profile aab_weapon
+*set {(aab_p & "chase_chance")} combat_behavior_chase_chance
+*set {(aab_p & "can_retreat")} combat_behavior_can_retreat
+*set {(aab_p & "flee_hp_pct")} combat_behavior_flee_hp_pct
+*return
+
+*label assign_enemy_size
+*comment One central size map keeps type definitions free of repeated size writes. Every current humanoid, lacedon,
+*comment and generic beast is Medium; the cat-sized mire rat is Small. A new type gets one line here, while a
+*comment hand-authored fight can set the bare combat_enemy_size directly before fight_setup.
+*params aes_slot aes_type
+*temp aes_size "medium"
+*if (aes_type = "mire_rat")
+  *set aes_size "small"
+*if (aes_slot = 1)
+  *set combat_enemy_size aes_size
+*else
+  *set {(("combat_enemy" & aes_slot) & "_size")} aes_size
+*return
 
 *label apply_enemy_type
 *if (combat_apply_type = "swordsman")
@@ -4693,6 +4981,8 @@ ${use_text}
   *gosub apply_type_mire_rat
 *if (combat_apply_type = "beast")
   *gosub apply_type_beast
+*gosub assign_enemy_behavior_profile combat_apply_slot combat_apply_type
+*gosub assign_enemy_size combat_apply_slot combat_apply_type
 *comment Which library type fills this slot. fight_narrate_enemy_turn reads the slot's hit, miss and move-2 prose from
 *comment flavor_from_type by this id, so each type's lines are written once (flavor_type_<name>), not once per slot.
 *comment Which library type fills this slot, for any slot, via indirection (fight_narrate_enemy_turn reads it
@@ -5272,6 +5562,7 @@ ${use_text}
   *set combat_enemy_ac 12
   *set combat_enemy_dmg_dice_sides 6
   *set combat_enemy_epithet "the lacedon"
+  *set combat_enemy_dmg_type "slashing"
   *gosub apply_ability_score_range "combat_enemy_" "strength" 13 15
   *gosub apply_ability_score_range "combat_enemy_" "dexterity" 13 15
   *gosub apply_ability_score_range "combat_enemy_" "constitution" 14 16
@@ -5289,6 +5580,7 @@ ${use_text}
   *set {(apt_p & "ac")} 12
   *set {(apt_p & "dmg_dice_sides")} 6
   *set {(apt_p & "epithet")} "the lacedon"
+  *set {(apt_p & "dmg_type")} "slashing"
   *gosub apply_ability_score_range apt_p "strength" 13 15
   *gosub apply_ability_score_range apt_p "dexterity" 13 15
   *gosub apply_ability_score_range apt_p "constitution" 14 16
@@ -5347,6 +5639,7 @@ ${use_text}
   *set combat_enemy_ac 9
   *set combat_enemy_dmg_dice_sides 4
   *set combat_enemy_epithet "the mire-rat"
+  *set combat_enemy_dmg_type "piercing"
   *gosub apply_ability_score_range "combat_enemy_" "strength" 6 8
   *gosub apply_ability_score_range "combat_enemy_" "dexterity" 13 15
   *gosub apply_ability_score_range "combat_enemy_" "constitution" 8 10
@@ -5364,6 +5657,7 @@ ${use_text}
   *set {(apt_p & "ac")} 9
   *set {(apt_p & "dmg_dice_sides")} 4
   *set {(apt_p & "epithet")} "the mire-rat"
+  *set {(apt_p & "dmg_type")} "piercing"
   *gosub apply_ability_score_range apt_p "strength" 6 8
   *gosub apply_ability_score_range apt_p "dexterity" 14 16
   *gosub apply_ability_score_range apt_p "constitution" 8 10
@@ -5435,6 +5729,7 @@ ${use_text}
   *gosub apply_allytype_slinger
 *if (combat_apply_ally_type = "guard")
   *gosub apply_allytype_guard
+*gosub assign_ally_behavior_profile combat_apply_ally_slot combat_apply_ally_type
 *temp aat_p (("combat_ally" & combat_apply_ally_slot) & "_")
 *temp aat_name_ov {(aat_p & "name_override")}
 *temp aat_epi_ov {(aat_p & "epithet_override")}
@@ -5636,6 +5931,18 @@ ${use_text}
 *set combat_enemy_range 3
 *goto fight_library
 
+*label fight_dev_secondary_damage_test
+*comment Dev-only proof fixture for independently typed damage: a lacedon's claws deal their ordinary slashing
+*comment damage plus 1d2+3 poison. No story encounter uses this rider yet.
+*set combat_is_nonlethal false
+*set combat_lib_1 "lacedon"
+*set combat_enemy_name_override "Venom-Laced Lacedon"
+*set combat_enemy_epithet_override "the venom-laced lacedon"
+*set combat_enemy_extra_dmg_dice_sides 2
+*set combat_enemy_extra_dmg_bonus 3
+*set combat_enemy_extra_dmg_type "poison"
+*goto fight_library
+
 *label fight_dev_ally_ranged_test
 *comment Dev-hub only (dev_hub.txt dev_combat_test_hub) -- no story scene calls this. One lacedon, plus one
 *comment ranged ally (the "archer" library type, renamed "Kess" via the override fields), to watch
@@ -5769,6 +6076,10 @@ ${use_text}
 *set combat_lib_3 "mire_rat"
 *set combat_enemy3_name_override "Black Mire-Rat (Rear)"
 *set combat_enemy3_epithet_override "the third mire-rat"
+*comment Formation: the lead and flank rats begin at the ordinary Close tier; the rear rat starts at Mid-Range.
+*comment Advancing once engages the front pair while leaving the rear rat Close, so the three-slot tutorial now
+*comment demonstrates a staggered line without changing any rat stats or AI.
+*set combat_enemy3_range 2
 *goto fight_library
 
 *label fight_dredge_ambush
@@ -5804,13 +6115,10 @@ ${use_text}
   *comment "" on refresh instead of the real pick).
   *set dredge_ambush_bruiser combat_lib_1
 *set combat_lib_2 "slinger"
-*comment Range: the slinger opens at Close (1) instead of the type-library default of Engaged (0) -- it keeps
-*comment its distance, matching its own flavor, while staying only one Push Forward action away so a melee-only
-*comment build isn't shut out for more than a turn. Close over Medium deliberately: this and the other two
-*comment fights sharing this comment are balance-simmed at ~64% overall win already, and Medium would cost a
-*comment melee build an extra turn of exposure the sim never accounted for. The bruiser slot (1) stays at the
-*comment default 0, engaged from turn one.
-*set combat_enemy2_range 1
+*comment Formation: the bruiser keeps the encounter's normal front-line tier (Close normally, Engaged when the
+*comment caller marks a true ambush) while the slinger hangs back at Mid-Range. Advancing one tier closes on both;
+*comment reaching the backliner itself still takes a deliberate Dash or another round.
+*set combat_enemy2_range 2
 *goto fight_library
 
 *label fight_wreckers
@@ -5823,9 +6131,8 @@ ${use_text}
 *set combat_is_nonlethal false
 *set combat_lib_1 "axeman"
 *set combat_lib_2 "slinger"
-*comment Range: the slinger opens at Close (1) instead of Engaged -- see fight_dredge_ambush's own copy of this
-*comment comment for the full reasoning.
-*set combat_enemy2_range 1
+*comment Formation: front-line axeman at Close, slinger at Mid-Range; see fight_dredge_ambush.
+*set combat_enemy2_range 2
 *goto fight_library
 
 *label fight_shroud_thieves
@@ -5837,9 +6144,8 @@ ${use_text}
 *set combat_is_nonlethal true
 *set combat_lib_1 "knifeman"
 *set combat_lib_2 "slinger"
-*comment Range: the slinger opens at Close (1) instead of Engaged -- see fight_dredge_ambush's own copy of this
-*comment comment for the full reasoning.
-*set combat_enemy2_range 1
+*comment Formation: front-line knifeman at Close, slinger at Mid-Range; see fight_dredge_ambush.
+*set combat_enemy2_range 2
 *goto fight_library
 
 *label fight_night_list_thugs
@@ -5854,7 +6160,6 @@ ${use_text}
 *set combat_is_nonlethal true
 *set combat_lib_1 "knifeman"
 *set combat_lib_2 "slinger"
-*comment Range: the slinger opens at Close (1) instead of Engaged -- see fight_dredge_ambush's own copy of this
-*comment comment for the full reasoning.
-*set combat_enemy2_range 1
+*comment Formation: front-line knifeman at Close, slinger at Mid-Range; see fight_dredge_ambush.
+*set combat_enemy2_range 2
 *goto fight_library

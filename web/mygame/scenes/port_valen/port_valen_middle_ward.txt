@@ -313,6 +313,12 @@ The road climbs in turns from the docks, the salt smell of the harbor thinning b
 
 *label mw_locksmiths_close
 *set met_vael true
+*comment Only the first offer interrupts the close. After "not now" the quest waits behind its own menu option (below),
+*comment because the quest's exits land back on this label and a forced redirect would trap the player in a loop.
+*comment Gate: a paying tenant (rent not lapsed) who has met Vael, on a day the shop is open (no holy day, no gale), in daylight.
+*if (((a_key_quest_stage = "unstarted") and (mw_rent_active)) and ((campaign_day > mw_rent_paid_day) and (campaign_day <= mw_rent_expiry_day)))
+  *if (((mw_vael_seen) and (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))) and ((day_of_week != "Hallowday") and (street_life != "empty")))
+    *goto_scene port_valen/MiddlewardQuest/a_key_for_every_door a_key_hook
 [b]◈ THE LOCKSMITHS' CLOSE[/b]
 *line_break
 *comment ── LAYER 1: PLACE (Constant Geography, Architecture, & Smell) ──
@@ -370,6 +376,17 @@ An arched stone tunnel opens into a quiet, clean courtyard paved with smooth pal
 *if ((wisdom >= 13) or (origin = "outlaw"))
   You clock the security of the close: it is a clean acoustic trap with only one narrow stone tunnel leading out to Conduit Square, meaning anyone stepping in can be heard thirty paces off. Furthermore, the ground-floor windows of Terrace Lodgings aren't fitted with common slide-bolts; they carry Vael's heavy rim-locks with hardened iron inserts designed specifically to break a thief's wedge.
 
+*comment ── LAYER 5: AFTERMATH (A Key for Every Door; standing lines, no one-shot flag, so a Stats refresh redraws the same page) ──
+*if (a_key_quest_stage = "resolved")
+  *if (a_key_kess_favor)
+    A hand-lettered card is propped in the lodging door's window: every key in the house accounted for, each one handed over in person.
+  *if (a_key_vael_favor)
+    Under the usual warranty, the workshop's slate sign carries a line of fresh chalk: [i]Keys cut for the holder only.[/i]
+  *if (a_key_resolution = "pragmatic")
+    The lodging door has new brass keepers and no card in the window, and the ring of spare keys no longer hangs where a visitor could see it.
+  *if (a_key_lodgings_compromised)
+    Raw new keepers shine on half the lodging doors, and notices are tacked to the stair posts one over another: [i]Rooms re-keyed. See the desk before you ask for your key.[/i] The courtyard smells of fresh-cut brass and sawn oak.
+
 *comment Vael & Son trades by day: shut at Dusk, Night, Pre-Dawn, on Hallowday and in a gale (street_life "empty",
 *comment the same test the close's own storm-shutter view uses). Shut, the workshop keeps its place on the menu as a
 *comment window view reworded for why (vael_shut_label), the way the other closed counters do.
@@ -385,6 +402,9 @@ An arched stone tunnel opens into a quiet, clean courtyard paved with smooth pal
     *set vael_shut_label "The workshop is shuttered for the holy day. Read the slate sign."
 
 *choice
+  *if (a_key_quest_stage = "active") or (a_key_quest_stage = "offered")
+    # Go back to Kess's desk and the matter of Hesta's door.
+      *goto_scene port_valen/MiddlewardQuest/a_key_for_every_door a_key_return
   *if (mw_rent_active) and (campaign_day <= mw_rent_expiry_day)
     # Enter Terrace Lodgings.
       *goto mw_lodgings_entry

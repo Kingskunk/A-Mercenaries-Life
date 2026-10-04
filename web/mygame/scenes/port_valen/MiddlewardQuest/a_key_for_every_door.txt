@@ -1,0 +1,357 @@
+*comment ====================================================================================
+*comment A KEY FOR EVERY DOOR -- Middle Ward Quest Two
+*comment Entered from Locksmiths' Close. The hub owns the gate and aftermath; this file owns the quest.
+*comment ====================================================================================
+
+*label a_key_hook
+*set a_key_hook_seen true
+[b]A KEY FOR EVERY DOOR[/b]
+*line_break
+You have been under Kess's roof long enough to know its habits: the sweep of the stair before first bell, the quiet click of doors that turn twice, the smell of beeswax rising from the hall. This afternoon those habits have broken into sharp voices.
+
+Inside Terrace Lodgings, a narrow-shouldered woman in an ink-stained sleeve stands before Kess's desk with both hands flat on the oak. A brass engraver's loupe hangs at her throat. Vael has come in from his shop, his apron still dusted with filings.
+
+"My door was locked when I came back," the woman says. "My window was barred. Yet my work slips were spread across the table, and the little brass seal my sister sent me is gone. Not my purse. Not a thing worth selling. Just that."
+
+"Hesta Rook, engraver," Kess says to you, clipped and formal. "Her room is one of mine. I will not call her careless merely because the lock did its work."
+
+Vael looks at the key in Hesta's palm, then at the closed stairwell. "And I will not call a lock failed when no one has shown me a mark from pick or wedge."
+
+*choice
+  # "Let me see the door before either of you decide what happened."
+    *goto a_key_offer
+  # "Show me what was moved, and what was left untouched."
+    Hesta draws a breath through her nose. "The purse beside the slips. The silver in it. My tools. All there. Whoever entered wanted to know when I work, not what I own."
+    *goto a_key_offer
+  # "Kess, who could have had cause to enter that room?"
+    Kess's eyes harden. "No one with my leave. I keep the spare keys in my office and do not hand them around."
+    *goto a_key_offer
+  # "Vael, tell me what your lock rules out."
+    Vael takes the key between finger and thumb. "A wedge leaves the strike scarred. A pick leaves the ward bruised if the hand is hurried. Both make a lock complain. If the bolt is clean, someone opened it with a key that belonged there."
+    *goto a_key_offer
+  # "This is your quarrel, not mine."
+    Kess gives one short nod. "Then keep your own key close."
+    *set a_key_quest_stage "offered"
+    *page_break Leave the argument for now...
+    *goto_scene port_valen/port_valen_middle_ward mw_locksmiths_close
+
+*label a_key_offer
+
+Kess opens her tenant book beside a small ring of labeled spare keys. "Two other rooms have reported small things moved this week. No broken doors. No missing coin. I need to know whether I have a thief, a fault, or a rumor that will empty my rooms."
+
+Vael folds his arms. "Find the truth and I will stand by it. But do not turn my shop upside down because a clean lock has frightened someone."
+
+*choice
+  # "I will find out how someone is getting through those doors."
+    *set a_key_quest_stage "active"
+    *page_break Begin with the rooms and the records...
+    *goto a_key_investigation_hub
+  # "Give me a little time to think on it."
+    *set a_key_quest_stage "offered"
+    *page_break Leave the matter open...
+    *goto_scene port_valen/port_valen_middle_ward mw_locksmiths_close
+
+*label a_key_return
+*if (a_key_quest_stage = "active")
+  *goto a_key_investigation_hub
+*if (a_key_quest_stage = "offered")
+  *goto a_key_offer
+*goto_scene port_valen/port_valen_middle_ward mw_locksmiths_close
+
+*label a_key_investigation_hub
+*comment Evidence is recomputed from the route flags, never incremented, so replaying a page cannot change it.
+*set a_key_evidence 0
+*if (a_key_lock_found)
+  *set a_key_evidence + 1
+*if (a_key_records_done)
+  *set a_key_evidence + 1
+*if (a_key_mark_found)
+  *set a_key_evidence + 1
+*if (a_key_runner_done)
+  *set a_key_evidence + 1
+[b]A KEY FOR EVERY DOOR: LOCKSMITHS' CLOSE[/b]
+*line_break
+Kess has cleared one end of her desk for you. Hesta waits on the lowest stair, watching the hall door as if it might turn on its own. Across the courtyard, Vael keeps working with his shop door open, though every few moments his eyes lift to the lodgings.
+
+*choice
+  *if (not(a_key_lock_done))
+    # Examine Hesta's lock and key. [~15 min]@{show_stat_hints  [Investigation / Sleight of Hand DC 12; Lockpick Set grants Advantage]|}
+      *set a_key_lock_done true
+      *set hours_to_pass 0
+      *set minutes_to_pass 15
+      *set time_advance_call_id "a_key_lock_1"
+      *gosub_scene calendar advance_time
+      *if (has_lockpick_set)
+        *set advantage true
+      *gosub_scene dice_engine roll_skill_check 12 "investigation" "" "sleight_of_hand" "" "" ""
+      *if (check_success)
+        *set a_key_lock_found true
+        You work slowly, turning the key only far enough to feel the bolt answer. The ward is clean. The brass around the keyhole has no fresh scoring, and the bolt throws without a scrape. A dark crescent of lamp soot lies in the key's deepest cut, pressed in where Hesta's own fingers could not have left it.
+
+        Vael leans over your shoulder, expression tight. "An impression-maker dusts the key so the wax does not cling," he says. "Someone had this key in hand long enough to press it. They did not beat the lock."
+      *else
+        The lock gives you no dramatic answer. Its ward is clean, its bolt true, its face unmarked. Vael checks it in silence and gives the smallest nod. "It opened as it was meant to open. That much is certain."
+      *page_break Step back from Hesta's door...
+      *goto a_key_investigation_hub
+  *if (not(a_key_records_done))
+    # Compare Kess's tenant notes with the rooms that were entered. [~20 min]@{show_stat_hints  [Investigation / Insight DC 12]|}
+      *set a_key_records_done true
+      *set hours_to_pass 0
+      *set minutes_to_pass 20
+      *set time_advance_call_id "a_key_records_1"
+      *gosub_scene calendar advance_time
+      *gosub_scene dice_engine roll_skill_check 12 "investigation" "" "insight" "" "" ""
+      *if (check_success)
+        *set a_key_runner_trust true
+        Hesta's room, a customs clerk's room, and the senior apprentice's room all received the same folded notice three days ago: [i]Vael & Son - free key inspection, return before second bell.[/i] Each tenant handed over a key to a boy with a canvas satchel and a brass-coloured thread tied around one wrist. The keys returned promptly. The notice bears a crude copy of Vael's shop mark, but the wording is wrong: Vael charges for replacement keys and never calls a collection through a runner.
+
+        Kess presses one finger against the page. "I thought it was a courtesy to people who did not wish to miss work. That is how a lie gets through a clean house."
+      *else
+        The entries are not neat enough to make a pattern at first. Kess reads them again with Hesta, and the same detail emerges: several tenants received a short notice about a free key inspection, and each remembers a satchel-carrying boy bringing their key back before the next bell. The notices used Vael's name without his hand.
+      *page_break Close the tenant book for now...
+      *goto a_key_investigation_hub
+  *if (not(a_key_mark_done))
+    # Set a quiet mark on a vacant room and watch the close. [~30 min]@{show_stat_hints  [Perception / Survival DC 12]|}
+      *set a_key_mark_done true
+      *set hours_to_pass 0
+      *set minutes_to_pass 30
+      *set time_advance_call_id "a_key_mark_1"
+      *gosub_scene calendar advance_time
+      *gosub_scene dice_engine roll_skill_check 12 "perception" "" "survival" "" "" ""
+      *if (check_success)
+        *set a_key_mark_found true
+        *set a_key_fast_to_shop true
+        Kess gives you a pinch of her floor wax. You set a thin seal between jamb and door, then take the shadowed end of the stair. Before the wax has cooled, a slight boy with a canvas satchel crosses the close, glances once at Vael's window, and slips a folded note under the vacant room's door. You catch the brass-coloured thread around his wrist before he vanishes back through the tunnel.
+      *else
+        The wax seal stays whole, but a paper twist appears beneath the door while you are watching the far end of the close. Inside is only a promise of a free inspection and a time: [i]second bell, if the room is empty.[/i] Whoever brought it was careful enough not to test the door while you watched.
+      *page_break Return to Kess's desk...
+      *goto a_key_investigation_hub
+  *if (not(a_key_runner_done))
+    # Ask Vael and Kess how the false errand could have looked real. [~10 min]
+      *set a_key_runner_done true
+      *set hours_to_pass 0
+      *set minutes_to_pass 10
+      *set time_advance_call_id "a_key_runner_1"
+      *gosub_scene calendar advance_time
+      Vael takes one of the notices, reads it, and swears under his breath. "The boy does not need to know locks. He needs only a plausible seal and half an hour with a key." He points through the window toward the tunnel. "A runner who can enter this close without remark can carry the copies back to whoever makes them."
+
+      Kess turns the tenant book around. "The brass thread. Hesta saw it too. If he returns, I will know him."
+      *page_break Keep watch on the close...
+      *goto a_key_investigation_hub
+  *if (a_key_evidence >= 2)
+    # Tell Kess and Vael what the evidence proves.
+      *goto a_key_decoy
+  # Leave the inquiry open and return later.
+    *page_break Leave Kess's desk for now...
+    *goto_scene port_valen/port_valen_middle_ward mw_locksmiths_close
+
+*label a_key_decoy
+You lay the pieces out without softening them: clean locks, keys briefly collected under false notices, and a runner using Vael's name. The rooms were not the job. They were proof that copied keys could open several of Vael's different cuts before someone risked a larger door.
+
+Vael's mouth thins. "Hollis has one of my counter locks. His daughters keep the day money in a little iron room behind the shop. That is the next door a buyer would want patterned."
+
+Kess reaches for the tenant book. "Then we warn Hollis and shut every door in this close."
+
+Before she can rise, the lodging door bangs open. The slight boy from the descriptions stumbles into the hall with a brass-coloured thread at his wrist and a copied key held up between two shaking fingers.
+
+"This one will turn," he calls toward the stairs, too loudly. "Vael sold you a lock that only looks strong. I can show everyone."
+
+Hesta recoils. Vael strides past you into the courtyard, fury overtaking caution. "Give me that key. Now."
+
+The boy's eyes flick to the open workshop. He looks less triumphant than trapped.
+
+*if (a_key_fast_to_shop)
+  You have seen the runner's timing before. While Vael and Kess close on the boy, you turn for the shop at once.
+  *goto a_key_shop_intercept
+*goto a_key_tunnel_finale
+
+*label a_key_shop_intercept
+
+The workshop is empty at the counter. Beneath it, the small hook where Vael keeps the record-drawer key during the day hangs bare. At the far bench, a plain-coated customer has the drawer open and Vael's leather-bound pattern book under one arm.
+
+The customer freezes when you enter. Outside, Vael's voice cuts across the close as he demands to know who sent the runner.
+
+*choice
+  *if (has_padlock) or (has_door_bolt)
+    # Shut the thief in with the lock you carry.@{show_stat_hints  [No roll]|}
+      *if (has_padlock)
+        You step back through the doorway, haul the door to, and snap your padlock through the hasp before the thief has crossed the floor. The shackle clicks home. A fist hits the planks from inside, once, and stops.
+      *else
+        You step back through the doorway, haul the door to, and drive your iron bolt through the two door-pulls like a bar. The thief hits the planks a heartbeat later, and the bolt holds.
+      The grilles over the windows keep the thief where they are.
+
+      "The Watch is a very short walk from here," you say through the door. "Put the book down."
+      *goto a_key_lawful
+  # Throw the workshop's own drop-bar and keep the thief inside. [Athletics DC 12]
+    *gosub_scene dice_engine roll_skill_check 12 "athletics" "" "" "" "" ""
+    *if (check_success)
+      You pull the iron drop-bar across the door and ram its pin home. The thief lunges for the threshold a heartbeat too late, then looks from the barred door to the grilles over the windows.
+
+      "The Watch is a very short walk from here," you say. "Put the book down."
+      *goto a_key_lawful
+    *else
+      The drop-bar is heavier than it looks and the pin sticks in its keeper. The thief shoulders the door open before it seats, knocks you against the jamb, and is gone into the close with the pattern book.
+      *set a_key_pattern_book "stolen"
+      *goto a_key_tunnel_finale
+  # "Your runner chose the wrong people to abandon. Give me the book and tell me who paid you."
+    *goto a_key_turn_thief
+  # Rush the thief before they can leave. [Athletics / Acrobatics DC 13]
+    *gosub_scene dice_engine roll_skill_check 13 "athletics" "" "acrobatics" "" "" ""
+    *if (check_success)
+      You catch the thief against the bench hard enough to scatter brass filings across the floor. The book thumps to the boards between you. Vael reaches the doorway as you pin the thief's wrist.
+      *goto a_key_lawful
+    *else
+      The thief kicks a tray of samples into your path. Brass skitters under your boots; by the time you catch the bench, the shop door is swinging and the pattern book is gone into the close.
+      *set a_key_pattern_book "stolen"
+      *goto a_key_tunnel_finale
+
+*label a_key_tunnel_finale
+
+*comment a_key_pattern_book is "stolen" here only when the player lost the scuffle in the shop, so the theft has already been played.
+*if (a_key_pattern_book = "stolen")
+  You stumble out of the workshop into the courtyard. The runner has backed against the lodging wall, empty-handed, with Vael bearing down on him. Beyond them, the plain-coated customer is already at the tunnel mouth with the pattern book under one arm. The tunnel is narrow enough that no one passes unseen, but not narrow enough to hold a determined person alone.
+*else
+  As Vael confronts the runner, the waiting customer crosses the empty shop, takes the record-drawer key from its hook beneath the counter, and walks out with the pattern book beneath one arm. By the time you reach the courtyard, the runner has backed against the lodging wall, empty-handed. Beyond him, the plain-coated customer is already at the tunnel mouth. The tunnel is narrow enough that no one passes unseen, but not narrow enough to hold a determined person alone.
+
+Vael has the copied key in one fist. Kess keeps the boy from bolting, one hand closed on the brass thread at his wrist.
+
+*choice
+  # "Kess, send word to the Watch. Vael, stay with the runner. I will hold the tunnel."@{show_stat_hints  [Best with 3 of 4 clues; you have ${a_key_evidence}]|}
+    You take the tunnel mouth as Kess runs for Conduit Square. The thief sees no clear route past you, and the growing noise draws faces to the arch.
+    *goto a_key_watch
+  # "The buyer will leave you with the blame. Put the book down, and I can still keep the runner out of this."
+    *goto a_key_turn_thief
+  # Let the thief reach the square, then shadow them from the tunnel.
+    The thief does not run once the arch opens onto Conduit Square. They walk quickly toward the waiting street traffic, keeping the book close beneath their coat. You follow at a distance, but a passing cart and a knot of pail-carriers swallow them before you can close the ground.
+    *goto a_key_compromised
+
+*label a_key_turn_thief
+
+*if (a_key_runner_trust)
+  The runner flinches at your words. "He said the buyer would take it at the lion fountain," the boy blurts. "Three knocks on the book, then 'Hollis keeps his brass dry.' He said I only had to make Master Vael look outside."
+
+  The thief's face changes at the phrase. The book lowers by an inch.
+  *choice
+    # "Give me the book, the waxes, and the buyer's sign. The runner gets a chance to tell the truth."
+      The thief studies the tunnel, the runner, and Vael's furious stillness. At last they slide the book across the cobbles. From an inner pocket comes a cloth packet of wax impressions and a stamped brass token marked with three notches.
+      *set a_key_pattern_book "recovered"
+      *set a_key_buyer_lead true
+      *goto a_key_strategic
+    # "There is coin in this for someone. Give it to me, return the book, and disappear."
+      The thief produces a small purse with the waxes, then leaves the book at your feet. The brass token stays in their palm as they disappear into the square without a backward look.
+      *set a_key_pattern_book "recovered"
+      *goto a_key_pragmatic
+*else
+  The runner looks from Kess to the thief and says nothing. The thief grips the book closer, reading the uncertainty.
+  *choice
+    # "Kess, fetch the Watch. Vael, stay with the runner. I will hold the tunnel."@{show_stat_hints  [Best with 3 of 4 clues; you have ${a_key_evidence}]|}
+      You take the tunnel mouth as Kess runs for Conduit Square. The thief sees no clear route past you, and the growing noise draws faces to the arch.
+      *goto a_key_watch
+    # Force past the thief and take the book. [Athletics DC 14]
+      *gosub_scene dice_engine roll_skill_check 14 "athletics" "" "" "" "" ""
+      *if (check_success)
+        You drive the thief back against the tunnel stone and wrench the book free before they can throw it past you. Vael catches it with both hands.
+        *set a_key_pattern_book "recovered"
+        *goto a_key_lawful
+      *else
+        Your shoulder catches stone instead of the thief. They twist past your reach and disappear into Conduit Square with the book.
+        *goto a_key_compromised
+
+*label a_key_watch
+
+*comment Raising the Watch is only as good as the case behind it: three or more evidence routes and the sergeant can act at once.
+*if (a_key_evidence >= 3)
+  The Watch is quick, and you have enough in hand to make them quicker. Hesta's account, the tenant book and the runner's description leave the sergeant no cause to hesitate. The pattern book is still in the thief's hands when the first halberd crosses the arch.
+  *goto a_key_lawful
+*goto a_key_watch_thin
+
+*label a_key_watch_thin
+
+The Watch comes at a walk, not a run. Without more than a clean lock and a frightened runner to show them, the sergeant wants every claim spoken twice before anyone is held. The thief hears it from the arch, turns the book face down against the wall as if steadying it, and tears out a fistful of pages. They go to a passing pail-carrier as a folded bundle before the first halberd reaches the tunnel.
+
+The thief is held. The book comes back to Vael lighter than it left. Kess waits until the sergeant is gone before she lets her breath out.
+
+"Every lock on those pages is a question now," Vael says, and begins taking sample keys from the wall.
+*set a_key_quest_stage "resolved"
+*set a_key_resolution "compromised"
+*set a_key_pattern_book "copied"
+*set a_key_lodgings_compromised true
+[b][Outcome: The Thief Is Held | Part of the Pattern Book Is Gone][/b]
+*page_break Leave while the locks are changed...
+*goto_scene port_valen/port_valen_middle_ward mw_locksmiths_close
+
+*label a_key_lawful
+
+Vael takes the pattern book back without opening it, his thumb pressed hard across the cover strap. Kess keeps the runner beside her desk until the Watch arrives. Hesta gives a clean account of the false notice; Kess gives the tenant records; Vael shows the clean locks and the copied key.
+
+The Watch sergeant writes for a long time, then looks up at you. "No broken lock. No clever ghost. Just a buyer who found a cheap way to borrow keys. That is evidence I can use."
+
+Kess has every affected tenant change rooms for the night while Vael re-keys the compromised doors. The runner is taken with the thief, but their cooperation is recorded before the sergeant closes the book.
+
+Vael counts three silver marks onto the counter. "For finding the difference between my work failing and someone abusing it."
+*if (not(a_key_reward_claimed))
+  *set a_key_reward_claimed true
+  *set currency_add_amount 30
+  *gosub_scene economy currency_add
+  *set port_watch_rep + 1
+*set a_key_quest_stage "resolved"
+*set a_key_resolution "lawful"
+*set a_key_pattern_book "recovered"
+*set a_key_kess_favor true
+*set a_key_vael_favor true
+[b][Reward: 3 Silver Marks | Port Watch Standing +1][/b]
+*page_break Leave Locksmiths' Close with its doors accounted for...
+*goto_scene port_valen/port_valen_middle_ward mw_locksmiths_close
+
+*label a_key_pragmatic
+
+The purse holds four silver marks. You take it only after the thief gives up the book and the wax packet, then watch them vanish through the tunnel with the buyer's token still hidden in their hand.
+
+Vael burns the impressions in his brazier and checks every page before he speaks. "The book is back. That is what matters today." His tone makes clear that he knows a larger matter has been left breathing.
+
+Kess changes the affected locks anyway. She does not ask where the thief went. She also does not offer you the spare-key ring again.
+*if (not(a_key_reward_claimed))
+  *set a_key_reward_claimed true
+  *set currency_add_amount 40
+  *gosub_scene economy currency_add
+*set a_key_quest_stage "resolved"
+*set a_key_resolution "pragmatic"
+*set a_key_pattern_book "recovered"
+[b][Reward: 4 Silver Marks | The buyer remains at large][/b]
+*page_break Leave the quiet aftermath behind...
+*goto_scene port_valen/port_valen_middle_ward mw_locksmiths_close
+
+*label a_key_strategic
+
+Vael checks every page, then feeds the wax packet into the brazier until it runs black and soft. Kess keeps the runner at her desk, not touching them now that the truth has been said aloud.
+
+"They will answer for what they did," Kess says. "But not for a theft they were used to cover."
+
+The notched brass token and the fountain phrase are enough to point toward the buyer without announcing the lead across the close. Hollis is warned before his shutters close. The pattern book is safe; the next move belongs to someone further up the chain.
+
+Vael does not offer coin. Instead, he gives you the details of every lock that needs changing and a promise that his door will be open when you pursue the token.
+*set a_key_quest_stage "resolved"
+*set a_key_resolution "strategic"
+*set a_key_pattern_book "recovered"
+*set a_key_buyer_lead true
+*set a_key_kess_favor true
+*set a_key_vael_favor true
+[b][Outcome: Pattern Book Recovered | Buyer Lead Secured][/b]
+*page_break Leave with the buyer's mark in mind...
+*goto_scene port_valen/port_valen_middle_ward mw_locksmiths_close
+
+*label a_key_compromised
+
+Kess shuts the lodging door with both hands and leans against it for one silent breath. Vael stares at the empty hook beneath his counter, then begins taking sample keys from the wall one by one.
+
+"Every lock in that book is a question now," he says. "Kess's first. Hollis's next. Then any customer who will listen before someone tries a copied key."
+
+Hesta gathers her work slips from the table, careful not to look at the rooms above. Kess starts a new list of temporary rooms and replacement costs. The copied-key trial has become exactly the warning it was meant to be.
+
+*set a_key_quest_stage "resolved"
+*set a_key_resolution "compromised"
+*set a_key_pattern_book "stolen"
+*set a_key_lodgings_compromised true
+[b][Outcome: The Pattern Book Is Gone | Locksmiths' Close Compromised][/b]
+*page_break Leave while the locks are changed...
+*goto_scene port_valen/port_valen_middle_ward mw_locksmiths_close

@@ -1060,12 +1060,36 @@ button#statSidebar .turnRow,
       var chaseTier = kind === "ally" ? " (" + allyTierName(effectiveRange(s, "ally", slot)) + ")" : "";
       return "chasing " + esc(chaseName) + chaseTier;
     }
+    if (kind === "enemy") return enemyThreatLine(s, slot);
     if (kind !== "ally") return "";
     var t = Number(s["combat_ally" + slot + "_target"]) || 0;
     if (t <= 0) return "";
     var name = fmt(s["combat_enemy" + t + "_name"]) || "an enemy";
     var down = (Number(s["combat_enemy" + t + "_hp"]) || 0) <= 0;
     return "fighting " + esc(name) + (down ? " (down)" : " (" + allyTierName(effectiveRange(s, "ally", slot)) + ")");
+  }
+
+  // Read-only forecast of what the enemy's existing turn logic can do from its current band. This intentionally
+  // predicts the engine rather than inventing an AI intent state: Close melee can move once and still attack;
+  // Mid-Range melee must Dash and gives up its attack; Slowed blocks that Dash; Frightened refuses to close.
+  function enemyThreatLine(s, slot) {
+    var p = "combat_enemy" + slot + "_";
+    var range = effectiveRange(s, "enemy", slot);
+    var weaponType = s[p + "weapon_type"] || "melee";
+    var frightened = Number(s[p + "frightened"]) > 0;
+    var slowed = Number(s[p + "slowed"]) > 0;
+    if (weaponType === "ranged") {
+      if (frightened) return "frightened shot: disadvantage";
+      if (range <= 0 && s[p + "sidearm_weapon_type"]) return "cornered: sidearm ready";
+      if (range <= 0) return "ranged attack: disadvantage";
+      return "ranged attack ready";
+    }
+    if (range <= 0) return frightened ? "frightened attack: disadvantage" : "threatens an attack";
+    if (frightened) return "frightened: will not close";
+    if (range === 1) return "can close and attack";
+    if (slowed) return "slowed: closes one tier";
+    if (range === 2) return "must Dash to engage";
+    return "cannot engage this turn";
   }
   // The score shown already includes any boon. The small tag beside it says how much came from a boon:
   // green when it raised the modifier, struck through and dim when it did not (a +1 on an even score, or

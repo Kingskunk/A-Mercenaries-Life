@@ -28,6 +28,10 @@
       active: function (s) { return s.dry_lion_quest_stage === "active"; }
     },
     {
+      id: "a_key_for_every_door", title: "A Key for Every Door", place: "Middle Ward",
+      active: function (s) { return s.a_key_quest_stage === "active"; }
+    },
+    {
       id: "rotten_rib", title: "The Rotten Rib", place: "Iron Wharves",
       active: function (s) { return s.rotten_rib_quest_stage === "active"; }
     },

@@ -30,6 +30,10 @@
 *comment --- CHARACTER PROFILE ---
 *create name "Corin"
 *create race "human"
+*comment Size is a creature-facing rule field rather than a cosmetic label. Character creation currently has one
+*comment Small ancestry (halfling); combat.txt refreshes this from race at each fight so adding another Small or
+*comment Large ancestry is one explicit mapping, not a new Shove implementation.
+*create player_size "medium"
 *create race_title "Human"
 *create race_desc "Common human stock. Unremarkable to look at, adaptable enough to thrive in any gutter, court, or killing field."
 *create race_darkvision false
@@ -959,6 +963,26 @@
 *create dry_lion_clerk_favor false
 *create met_tomas_saye false
 *create met_nadi_venn false
+*comment A Key for Every Door: Middle Ward lock-and-key investigation. The quest file owns every scene;
+*comment these flags only preserve its trigger, evidence, outcome, and small local aftermath.
+*create a_key_quest_stage "unstarted"
+*create a_key_resolution ""
+*create a_key_hook_seen false
+*create a_key_lock_done false
+*create a_key_records_done false
+*create a_key_mark_done false
+*create a_key_runner_done false
+*create a_key_lock_found false
+*create a_key_mark_found false
+*create a_key_evidence 0
+*create a_key_runner_trust false
+*create a_key_fast_to_shop false
+*create a_key_pattern_book "secure"
+*create a_key_lodgings_compromised false
+*create a_key_buyer_lead false
+*create a_key_reward_claimed false
+*create a_key_kess_favor false
+*create a_key_vael_favor false
 *comment Hot-room gossip: one-shot ward rumors, heard in this order (see mw_baths_gossip).
 *create mw_rumor_grain false
 *create mw_rumor_steel false
@@ -1393,10 +1417,23 @@
 *comment fight_<name> label, mirroring player_resist_type_1/_2's shape) --
 *comment see apply_outgoing_damage_resist_vuln.
 *create combat_enemy_dmg_type "bludgeoning"
+*comment Optional second damage packet. 0 dice sides means no packet; when populated, the packet is rolled and
+*comment resisted/vulnerable independently from the primary attack (e.g. 1d4+2 piercing + 1d2+3 poison).
+*create combat_enemy_extra_dmg_dice_sides 0
+*create combat_enemy_extra_dmg_bonus 0
+*create combat_enemy_extra_dmg_type "poison"
+*create combat_enemy_size "medium"
 *comment "melee"/"ranged" (2026-09-27, added alongside the enemy-vs-ally narration generalization below) --
 *comment mirrors combat_allyN_weapon_type's shape, set by every apply_enemy_type branch (never left to a
 *comment default that could leak an earlier fight's "ranged" onto a melee type in the same slot).
 *create combat_enemy_weapon_type "melee"
+*comment Shared behavior profile (combat.txt): the type library assigns one reusable personality -- bruiser,
+*comment skirmisher, sharpshooter, guardian, or feral -- and the shared profile resolver derives chase and retreat
+*comment policy from it. This is the active-slot scratch copy of combat_enemy<N>_behavior_profile.
+*create combat_enemy_behavior_profile "feral"
+*create combat_behavior_chase_chance 0
+*create combat_behavior_can_retreat false
+*create combat_behavior_flee_hp_pct 0
 *comment Sidearm (2026-09-29, Ranged-AI Position Awareness plan §4.1): a cornered ranged type's one-off melee
 *comment fallback -- see combat_enemyN_sidearm_weapon_type's own comment (its first real *create, slot 1 below)
 *comment for the full rule. Bare/active-target copy, synced in by fight_sync_target_in like every field above it.
@@ -1487,6 +1524,19 @@
 *comment exclusive *choice options, so one page-id lock covers all three -- see that label's own comment.
 *create combat_range_shift_locked false
 *create locked_combat_range_shift_page_id 0
+*comment Shove (combat.txt): the option owns a whole-choice replay lock because it picks a target, rolls an
+*comment Athletics check, and mutates that target's range on one page. The result fields persist so a refresh can
+*comment reprint the same outcome without moving the enemy a second time.
+*create combat_shove_locked false
+*create locked_combat_shove_page_id 0
+*create combat_shove_success false
+*create combat_shove_dc 10
+*create combat_shove_target_name "the enemy"
+*create combat_shove_from_name "Engaged"
+*create combat_shove_to_name "Close"
+*create combat_shove_size_allowed true
+*create combat_shove_size_msg ""
+*create combat_size_rank_value 2
 *create combat_player_dmg_type "bludgeoning"
 *create combat_enemy_resist_type_1 ""
 *create combat_enemy_resist_type_2 ""
@@ -1516,6 +1566,10 @@
 *comment header comment.
 *create combat_incoming_dmg_suffix ""
 *create combat_outgoing_dmg_suffix ""
+*comment Scratch output for a single independently typed damage packet. The damage resolvers use this for optional
+*comment fire/poison/lightning/etc. riders without overwriting the primary packet's resistance suffix.
+*create combat_packet_damage 0
+*create combat_packet_suffix ""
 *comment Per-slot now (2026-09-28, combat_enemy1_disadvantage etc. below) -- this bare copy is purely the
 *comment "active target" scratch, synced in by fight_sync_target_in and consumed on that slot's own next attack
 *comment (resolve_enemy_attack/resolve_enemy_attack_on_ally), same pattern as combat_enemy_bane_expires_round.
@@ -1651,6 +1705,11 @@
 *create combat_enemy_dmg_dealt 0
 *create combat_player_dmg_dice_sides 4
 *create combat_player_dmg_bonus 0
+*comment Future equipment/spell hook: weapon setup may opt into this separate packet without teaching the damage
+*comment resolver a new elemental exception. Existing equipment leaves sides at 0 and is unchanged.
+*create combat_player_extra_dmg_dice_sides 0
+*create combat_player_extra_dmg_bonus 0
+*create combat_player_extra_dmg_type "fire"
 *create combat_player_dmg_dealt 0
 *create combat_weapon_hit_locked false
 *create locked_combat_weapon_hit_page_id 0
@@ -1674,6 +1733,9 @@
 *comment these falls back to its normal generic name/epithet.
 *create combat_enemy_name_override ""
 *create combat_enemy_epithet_override ""
+*comment Optional size override for a named use of a broad library type (for example a Small giant centipede drawn
+*comment from the generic beast block). "" means use the type's own size. Consumed by fight_setup.
+*create combat_enemy_size_override ""
 *comment Never read or written by real code: slot 1's own rename-override is the plain names above, applied by
 *comment fight_setup (see its comment). These exist only so quicktest's line-coverage walk, which explores an *if's
 *comment untaken branch too, can safely indirection-read combat_enemy1_name_override from apply_enemy_type's generic
@@ -1683,6 +1745,7 @@
 *create combat_enemy1_hp_override 999
 *create combat_enemy1_ac_override 999
 *create combat_enemy1_atk_override 999
+*create combat_enemy1_size_override ""
 *create combat_flavor_enemy1_hit_1 ""
 *create combat_flavor_enemy1_hit_2 ""
 *create combat_flavor_enemy1_hit_3 ""
@@ -1723,18 +1786,23 @@
 *create combat_enemy2_hp_override 999
 *create combat_enemy2_ac_override 999
 *create combat_enemy2_atk_override 999
+*create combat_enemy2_size_override ""
 *create combat_enemy3_hp_override 999
 *create combat_enemy3_ac_override 999
 *create combat_enemy3_atk_override 999
+*create combat_enemy3_size_override ""
 *create combat_enemy4_hp_override 999
 *create combat_enemy4_ac_override 999
 *create combat_enemy4_atk_override 999
+*create combat_enemy4_size_override ""
 *create combat_enemy5_hp_override 999
 *create combat_enemy5_ac_override 999
 *create combat_enemy5_atk_override 999
+*create combat_enemy5_size_override ""
 *create combat_enemy6_hp_override 999
 *create combat_enemy6_ac_override 999
 *create combat_enemy6_atk_override 999
+*create combat_enemy6_size_override ""
 *comment Per-slot ability-score overrides (2026-09-27): same pattern as hp/ac/atk above, but for the six scores
 *comment that feed initiative and (later) saving throws -- 0 means "use the type's own rolled range," since no
 *comment real ability score is ever 0. Consumed and reset to 0 by apply_ability_score_range (combat.txt, called
@@ -2043,7 +2111,12 @@
 *create combat_enemy1_epithet "the creature"
 *create combat_enemy1_metal_armor false
 *create combat_enemy1_dmg_type "bludgeoning"
+*create combat_enemy1_extra_dmg_dice_sides 0
+*create combat_enemy1_extra_dmg_bonus 0
+*create combat_enemy1_extra_dmg_type "poison"
+*create combat_enemy1_size "medium"
 *create combat_enemy1_weapon_type "melee"
+*create combat_enemy1_behavior_profile "feral"
 *comment Sidearm (2026-09-29, Ranged-AI Position Awareness plan §4.1): a cornered ranged type's one-off melee
 *comment fallback -- NOT a persistent equip, never overwrites weapon_type/dmg_* above. "" weapon_type means no
 *comment sidearm (every melee type's default; they never read these fields). apply_type_archer/apply_type_slinger
@@ -2148,7 +2221,12 @@
 *create combat_enemy2_epithet "the second creature"
 *create combat_enemy2_metal_armor false
 *create combat_enemy2_dmg_type "bludgeoning"
+*create combat_enemy2_extra_dmg_dice_sides 0
+*create combat_enemy2_extra_dmg_bonus 0
+*create combat_enemy2_extra_dmg_type "poison"
+*create combat_enemy2_size "medium"
 *create combat_enemy2_weapon_type "melee"
+*create combat_enemy2_behavior_profile "feral"
 *create combat_enemy2_sidearm_weapon_type ""
 *create combat_enemy2_sidearm_atk_bonus 0
 *create combat_enemy2_sidearm_dmg_dice_sides 4
@@ -2232,7 +2310,12 @@
 *create combat_enemy3_epithet "the third creature"
 *create combat_enemy3_metal_armor false
 *create combat_enemy3_dmg_type "bludgeoning"
+*create combat_enemy3_extra_dmg_dice_sides 0
+*create combat_enemy3_extra_dmg_bonus 0
+*create combat_enemy3_extra_dmg_type "poison"
+*create combat_enemy3_size "medium"
 *create combat_enemy3_weapon_type "melee"
+*create combat_enemy3_behavior_profile "feral"
 *create combat_enemy3_sidearm_weapon_type ""
 *create combat_enemy3_sidearm_atk_bonus 0
 *create combat_enemy3_sidearm_dmg_dice_sides 4
@@ -2298,7 +2381,12 @@
 *create combat_enemy4_epithet "the fourth creature"
 *create combat_enemy4_metal_armor false
 *create combat_enemy4_dmg_type "bludgeoning"
+*create combat_enemy4_extra_dmg_dice_sides 0
+*create combat_enemy4_extra_dmg_bonus 0
+*create combat_enemy4_extra_dmg_type "poison"
+*create combat_enemy4_size "medium"
 *create combat_enemy4_weapon_type "melee"
+*create combat_enemy4_behavior_profile "feral"
 *create combat_enemy4_sidearm_weapon_type ""
 *create combat_enemy4_sidearm_atk_bonus 0
 *create combat_enemy4_sidearm_dmg_dice_sides 4
@@ -2364,7 +2452,12 @@
 *create combat_enemy5_epithet "the fifth creature"
 *create combat_enemy5_metal_armor false
 *create combat_enemy5_dmg_type "bludgeoning"
+*create combat_enemy5_extra_dmg_dice_sides 0
+*create combat_enemy5_extra_dmg_bonus 0
+*create combat_enemy5_extra_dmg_type "poison"
+*create combat_enemy5_size "medium"
 *create combat_enemy5_weapon_type "melee"
+*create combat_enemy5_behavior_profile "feral"
 *create combat_enemy5_sidearm_weapon_type ""
 *create combat_enemy5_sidearm_atk_bonus 0
 *create combat_enemy5_sidearm_dmg_dice_sides 4
@@ -2430,7 +2523,12 @@
 *create combat_enemy6_epithet "the sixth creature"
 *create combat_enemy6_metal_armor false
 *create combat_enemy6_dmg_type "bludgeoning"
+*create combat_enemy6_extra_dmg_dice_sides 0
+*create combat_enemy6_extra_dmg_bonus 0
+*create combat_enemy6_extra_dmg_type "poison"
+*create combat_enemy6_size "medium"
 *create combat_enemy6_weapon_type "melee"
+*create combat_enemy6_behavior_profile "feral"
 *create combat_enemy6_sidearm_weapon_type ""
 *create combat_enemy6_sidearm_atk_bonus 0
 *create combat_enemy6_sidearm_dmg_dice_sides 4
@@ -2545,6 +2643,7 @@
 *create combat_ally0_dmg_bonus 0
 *create combat_ally0_dmg_type "bludgeoning"
 *create combat_ally0_weapon_type "melee"
+*create combat_ally0_behavior_profile "guardian"
 *comment Sidearm (2026-09-29, Ranged-AI Position Awareness plan §4.1, extended to allies on request -- Kess is
 *comment the "archer" ally type, and gets one for the same reason the enemy archer does): "" weapon_type means no
 *comment sidearm (every melee ally's default). Unlike the enemy pool, resolve_ally_attack (combat_dice.txt) reads
@@ -2584,6 +2683,7 @@
 *create combat_ally1_dmg_bonus 0
 *create combat_ally1_dmg_type "bludgeoning"
 *create combat_ally1_weapon_type "melee"
+*create combat_ally1_behavior_profile "guardian"
 *comment Sidearm -- see combat_ally0_sidearm_weapon_type's own comment for the full rule.
 *create combat_ally1_sidearm_weapon_type ""
 *create combat_ally1_sidearm_atk_bonus 0
@@ -2627,6 +2727,7 @@
 *create combat_ally2_dmg_bonus 0
 *create combat_ally2_dmg_type "bludgeoning"
 *create combat_ally2_weapon_type "melee"
+*create combat_ally2_behavior_profile "guardian"
 *create combat_ally2_sidearm_weapon_type ""
 *create combat_ally2_sidearm_atk_bonus 0
 *create combat_ally2_sidearm_dmg_dice_sides 4
@@ -2654,6 +2755,7 @@
 *create combat_ally3_dmg_bonus 0
 *create combat_ally3_dmg_type "bludgeoning"
 *create combat_ally3_weapon_type "melee"
+*create combat_ally3_behavior_profile "guardian"
 *create combat_ally3_sidearm_weapon_type ""
 *create combat_ally3_sidearm_atk_bonus 0
 *create combat_ally3_sidearm_dmg_dice_sides 4
@@ -2681,6 +2783,7 @@
 *create combat_ally4_dmg_bonus 0
 *create combat_ally4_dmg_type "bludgeoning"
 *create combat_ally4_weapon_type "melee"
+*create combat_ally4_behavior_profile "guardian"
 *create combat_ally4_sidearm_weapon_type ""
 *create combat_ally4_sidearm_atk_bonus 0
 *create combat_ally4_sidearm_dmg_dice_sides 4
@@ -2958,6 +3061,7 @@
 *create combat_enemy0_metal_armor false
 *create combat_enemy0_dmg_type "bludgeoning"
 *create combat_enemy0_weapon_type "melee"
+*create combat_enemy0_behavior_profile "feral"
 *create combat_enemy0_sidearm_weapon_type ""
 *create combat_enemy0_sidearm_atk_bonus 0
 *create combat_enemy0_sidearm_dmg_dice_sides 4

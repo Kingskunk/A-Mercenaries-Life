@@ -180,6 +180,8 @@
     var s = statsNow();
     var actions = Math.max(0, num(s.combat_player_actions_left));
     var bonus = Math.max(0, num(s.combat_player_bonus_left));
+    var moveLeft = Math.max(0, num(s.combat_player_moves_left));
+    var moveMax = Math.max(1, num(s.combat_player_moves_max), moveLeft);
     var pos = 0;
     var primary = null, sidearm = null;
     seen.forEach(function (e) { if (e.id === "primary_attack") primary = e; else if (e.id === "sidearm_attack") sidearm = e; });
@@ -192,6 +194,7 @@
         "</div>" +
         "<div class=\"bhud-budget\"><b>Action</b>" + pips(actions, Math.max(1, actions), "act") + "</div>" +
         "<div class=\"bhud-budget\"><b>Bonus</b>" + pips(bonus, Math.max(1, bonus), "bon") + "</div>" +
+        "<div class=\"bhud-budget\"><b>Move</b>" + pips(moveLeft, moveMax, "mov") + "</div>" +
         "<button type=\"button\" class=\"bhud-toggle\" data-bhud=\"classic\">Classic list</button>" +
       "</div>";
     var moves = seen.filter(function (e) { return e.group === "move"; });
@@ -234,7 +237,7 @@
   function hideTip() { var el = document.getElementById(TIP_ID); if (el) el.className = ""; tipFor = null; }
   // The card for the Primary and Sidearm buttons: what is actually in that hand. The weapon_* and sidearm_* variables are written by equipment.txt
   // (the description, the damage with its type, melee/finesse/ranged, one or two hands), so this only formats them.
-  var ATTACK_KIND = { melee: "Melee", finesse: "Finesse melee", ranged: "Ranged" };
+  var ATTACK_KIND = { melee: "Melee", finesse: "Finesse melee", reach: "Reach melee", ranged: "Ranged" };
   function weaponCard(id) {
     var s = statsNow(), pre = id === "primary_attack" ? "weapon" : (id === "sidearm_attack" ? "sidearm" : "");
     if (!pre) return "";
@@ -315,7 +318,7 @@
     var back2 = document.getElementById("battleHudBack");
     if (back2 && back2.parentNode) back2.parentNode.removeChild(back2);
     remember(items);
-    var sig = items.map(function (i) { return i.id; }).join("|") + "#" + seen.length + "#" + num(s.combat_player_actions_left) + "/" + num(s.combat_player_bonus_left) + "/" + (truthy(s.player_oa_used) ? 1 : 0);
+    var sig = items.map(function (i) { return i.id; }).join("|") + "#" + seen.length + "#" + num(s.combat_player_actions_left) + "/" + num(s.combat_player_bonus_left) + "/" + num(s.combat_player_moves_left) + "/" + (truthy(s.player_oa_used) ? 1 : 0);
     var el = document.getElementById(HUD_ID);
     if (el && sig === lastSig) return;
     if (sig !== lastSig) pressed = false; // a new page of options: the old press is over
