@@ -34,14 +34,15 @@
   function statsNow() { return window.stats || {}; }
   function slug(name) { return String(name).toLowerCase().replace(/['’]/g, "").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, ""); }
 
-  // The grids of the bar, left to right (columns per row). Movement is not a grid: Advance and Retreat stand beside them as tall buttons.
+  // The grids of the bar, left to right. Advance and Retreat alone own the tall movement rail; chokepoint
+  // commands live on the relevant ally's sidebar card, where they can scale to a larger party.
   var SECTIONS = [
     { id: "action", groups: ["action"], cols: 6 },
     { id: "bonus",  groups: ["bonus", "free"], cols: 4 },
     { id: "other",  groups: ["other"], cols: 4 }
   ];
   var MIN_ROWS = 3;       // empty cells fill each grid to at least this many rows
-  var KIND = { action: "Action", bonus: "Bonus action", free: "Free", move: "Movement", other: "" };
+  var KIND = { action: "Action", bonus: "Bonus action", free: "Free", move: "Movement", tactic: "Tactical movement", other: "" };
 
   function iconFor(name) {
     var key = slug(name);
@@ -59,7 +60,10 @@
     }
     m = /^\[([^\]]+)\]\s*(.*)$/.exec(t);
     if (m) return { group: "free", name: m[1], blurb: m[2] };
-    if (/^(Push forward|Fall back|Close the distance|Move )/i.test(t)) return { group: "move", name: /^Push forward/i.test(t) ? "Push forward" : (/^Fall back/i.test(t) ? "Fall back" : "Move"), blurb: t };
+    if (/^(Push forward|Fall back|Trade places|Call .* back|Close the distance|Move )/i.test(t)) {
+      var tactical = /^(Trade places|Call .* back)/i.test(t);
+      return { group: tactical ? "tactic" : "move", name: /^Push forward/i.test(t) ? "Push forward" : (/^Fall back/i.test(t) ? "Fall back" : (/^Trade places/i.test(t) ? "Trade places" : (/^Call /i.test(t) ? "Call ally back" : "Move"))), blurb: t };
+    }
     var name = /^End your turn/i.test(t) ? "End turn" : (/^Break off and run/i.test(t) ? "Flee" : (/^Use an item/i.test(t) ? "Use item" : t.split(/[.,;:]/)[0].slice(0, 24)));
     return { group: "other", name: name, blurb: t };
   }
@@ -134,7 +138,11 @@
       if (s.armor_type && s.armor_type !== "cloth") return "You are wearing armor, which the ward cannot sit over";
       if (truthy(s.head_is_armor)) return "Your helmet counts as armor, which the ward cannot sit over";
     }
-    if (e.group === "move") return e.id === "push_forward" ? "Nothing to advance on, or you cannot move now" : "You are not in melee reach, or you cannot move now";
+    if (e.group === "move") {
+      if (e.id === "push_forward") return "Nothing to advance on, the chokepoint is held, or you cannot move now";
+      return "You are not in melee reach, or you cannot move now";
+    }
+    if (e.group === "tactic") return "No ally is holding a chokepoint, or you cannot move now";
     if (e.group === "action" && num(s.combat_player_actions_left) <= 0) return "No action left this turn";
     if (e.group === "bonus" && num(s.combat_player_bonus_left) <= 0) return "No bonus action left this turn";
     // A melee weapon can only strike an enemy in reach; fights now open at Close range, so this is the usual reason on the first turn.
@@ -197,6 +205,8 @@
         "<div class=\"bhud-budget\"><b>Move</b>" + pips(moveLeft, moveMax, "mov") + "</div>" +
         "<button type=\"button\" class=\"bhud-toggle\" data-bhud=\"classic\">Classic list</button>" +
       "</div>";
+    // The rail is deliberately only Advance / Retreat. Tactical ally orders are intentionally not rendered in
+    // the bar: the companion card in the sidebar owns them, avoiding an ever-growing combat action grid.
     var moves = seen.filter(function (e) { return e.group === "move"; });
     if (moves.length) html += "<div class=\"bhud-moves\">" + moves.map(moveHtml).join("") + "</div>";
     SECTIONS.forEach(function (sec) {
@@ -216,12 +226,28 @@
 
   function pick(id) {
     var radio = offered[id];
+    // A sidebar ally order must still work in Classic List mode, where the HUD has deliberately put its own
+    // buttons away. Find the live ChoiceScript radio by the same parsed id in that case; this executes the
+    // original ChoiceScript option, preserving its movement cost and replay lock.
+    if (!radio || !document.documentElement.contains(radio)) {
+      var forms = document.querySelectorAll("#main form");
+      var labels = forms.length ? forms[forms.length - 1].querySelectorAll(".choice label") : [];
+      for (var i = 0; i < labels.length; i++) {
+        var found = labels[i].querySelector("input[type=radio]"), parsed = parseLabel(labels[i].textContent);
+        if (found && slug(parsed.name) === id) { radio = found; break; }
+      }
+    }
     if (!radio || pressed || !radio.form) return;
     pressed = true;
     hideTip();
     radio.checked = true;
     if (typeof radio.form.onsubmit === "function") radio.form.onsubmit();
   }
+
+  // Small public seam for sidebar-only ally orders. It does not expose combat rules to JS: it merely presses
+  // the live ChoiceScript option above, exactly like an icon in this HUD would.
+  window.BattleHud = window.BattleHud || {};
+  window.BattleHud.pick = pick;
 
   /* ---------------------------------------------------------------- hover card */
 

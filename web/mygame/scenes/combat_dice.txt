@@ -384,7 +384,11 @@ ${combat_player_dmg_roll_banner}
   *set combat_enemy_disadvantage false
   *set {(("combat_enemy" & combat_active_target) & "_advantage")} false
   *set {(("combat_enemy" & combat_active_target) & "_disadvantage")} false
-  *set combat_enemy_atk_total (cea_roll + combat_enemy_atk_bonus)
+  *set combat_high_ground_attack_bonus 0
+  *set combat_high_ground_attack_label ""
+  *if (combat_enemy_weapon_type = "ranged")
+    *gosub_scene combat_movement combat_get_high_ground_attack_modifier "enemy" combat_active_target "player" 0
+  *set combat_enemy_atk_total ((cea_roll + combat_enemy_atk_bonus) + combat_high_ground_attack_bonus)
   *temp cea_atk_bonus_str ""
   *if (combat_enemy_atk_bonus >= 0)
     *set cea_atk_bonus_str "+${combat_enemy_atk_bonus}"
@@ -405,7 +409,11 @@ ${combat_player_dmg_roll_banner}
   *comment and the printed DC -- from drifting apart, which is exactly the bug the Shield fix had to chase
   *comment down. The banner also names which bonuses were live, so "+5 Dodge" or "+5 Dodge +5 Shield" tells the
   *comment player why a number moved rather than leaving them to infer it.
-  *temp cea_dc armor_class
+  *set combat_cover_ranged_defense_bonus 0
+  *set combat_cover_ranged_defense_label ""
+  *if (combat_enemy_weapon_type = "ranged")
+    *gosub_scene combat_movement combat_get_cover_ranged_defense_bonus "player" 0
+  *temp cea_dc (armor_class + combat_cover_ranged_defense_bonus)
   *if (dodge_active)
     *set cea_dc (cea_dc + 5)
   *comment A Shield that already fired this round (shield_active) is simply +5 AC for this attack too (RAW: until the start of the caster's next turn).
@@ -450,8 +458,10 @@ ${combat_player_dmg_roll_banner}
   *comment ("AC 17 +5 Shield" read as 22, because the 17 already includes the +5). An armed Shield that did not
   *comment fire says whether the attack already missed or was too high for +5 to deflect.
   *temp cea_ac_str ""
-  *if ((dodge_active) or (shield_active))
+  *if ((combat_cover_ranged_defense_bonus > 0) or ((dodge_active) or (shield_active)))
     *set cea_ac_str " (${armor_class}"
+    *if (combat_cover_ranged_defense_bonus > 0)
+      *set cea_ac_str "${cea_ac_str} +2 Cover"
     *if (dodge_active)
       *set cea_ac_str "${cea_ac_str} +5 Dodge"
     *if (shield_active)
@@ -462,7 +472,7 @@ ${combat_player_dmg_roll_banner}
       *set cea_ac_str " (Shield cannot stop this hit)"
     *else
       *set cea_ac_str " (Shield not needed)"
-  *set {(cea_atk_bannername)} "[b][🎲 ${combat_enemy_name} Attack Roll: ${cea_roll} ${cea_atk_bonus_str}${cea_adv_label}${cea_bane_str} = ${combat_enemy_atk_total} vs AC ${cea_dc}${cea_ac_str} — ${cea_atk_verdict}][/b]"
+  *set {(cea_atk_bannername)} "[b][🎲 ${combat_enemy_name} Attack Roll: ${cea_roll} ${cea_atk_bonus_str}${combat_high_ground_attack_label}${cea_adv_label}${cea_bane_str} = ${combat_enemy_atk_total} vs AC ${cea_dc}${cea_ac_str} — ${cea_atk_verdict}][/b]"
   *set combat_enemy_dmg_dealt 0
   *set combat_agathys_triggered false
   *set combat_agathys_shattered false
@@ -660,8 +670,18 @@ ${combat_player_dmg_roll_banner}
   *set combat_enemy_disadvantage false
   *set {(("combat_enemy" & combat_active_target) & "_advantage")} false
   *set {(("combat_enemy" & combat_active_target) & "_disadvantage")} false
-  *temp reao_target_ac {(reao_ap & "ac")}
-  *temp reao_total (reao_roll + combat_enemy_atk_bonus)
+  *temp reao_base_target_ac {(reao_ap & "ac")}
+  *temp reao_target_ac reao_base_target_ac
+  *set combat_high_ground_attack_bonus 0
+  *set combat_high_ground_attack_label ""
+  *if (combat_enemy_weapon_type = "ranged")
+    *gosub_scene combat_movement combat_get_high_ground_attack_modifier "enemy" combat_active_target "ally" reao_a_slot
+  *set combat_cover_ranged_defense_bonus 0
+  *set combat_cover_ranged_defense_label ""
+  *if (combat_enemy_weapon_type = "ranged")
+    *gosub_scene combat_movement combat_get_cover_ranged_defense_bonus "ally" reao_a_slot
+  *set reao_target_ac (reao_target_ac + combat_cover_ranged_defense_bonus)
+  *temp reao_total ((reao_roll + combat_enemy_atk_bonus) + combat_high_ground_attack_bonus)
   *temp reao_bonus_str ""
   *if (combat_enemy_atk_bonus >= 0)
     *set reao_bonus_str "+${combat_enemy_atk_bonus}"
@@ -680,7 +700,10 @@ ${combat_player_dmg_roll_banner}
   *temp reao_verdict "MISS"
   *if (combat_enemy_atk_on_ally_hit)
     *set reao_verdict "HIT"
-  *set {(reao_atk_bannername)} "[b][🎲 ${combat_enemy_name} Attack Roll: ${reao_roll} ${reao_bonus_str}${reao_adv_label}${reao_bane_str} = ${reao_total} vs AC ${reao_target_ac} — ${reao_verdict}][/b]"
+  *temp reao_ac_str ""
+  *if (combat_cover_ranged_defense_bonus > 0)
+    *set reao_ac_str " (${reao_base_target_ac} +2 Cover)"
+  *set {(reao_atk_bannername)} "[b][🎲 ${combat_enemy_name} Attack Roll: ${reao_roll} ${reao_bonus_str}${combat_high_ground_attack_label}${reao_adv_label}${reao_bane_str} = ${reao_total} vs AC ${reao_target_ac}${reao_ac_str} — ${reao_verdict}][/b]"
   *set {(reao_bannername)} ""
   *set combat_enemy_dmg_on_ally_dealt 0
   *if (combat_enemy_atk_on_ally_hit)
@@ -800,8 +823,18 @@ ${combat_player_dmg_roll_banner}
     *if (raa_roll_2 < raa_roll)
       *set raa_roll raa_roll_2
     *set raa_adv_label " (Disadvantage — in reach)"
-  *temp raa_total (raa_roll + raa_atk_bonus)
-  *temp raa_target_ac {(raa_ep & "ac")}
+  *set combat_high_ground_attack_bonus 0
+  *set combat_high_ground_attack_label ""
+  *if ((raa_weapon = "ranged") and (not(raa_knifed)))
+    *gosub_scene combat_movement combat_get_high_ground_attack_modifier "ally" raa_a_slot "enemy" raa_e_slot
+  *temp raa_total ((raa_roll + raa_atk_bonus) + combat_high_ground_attack_bonus)
+  *temp raa_base_target_ac {(raa_ep & "ac")}
+  *temp raa_target_ac raa_base_target_ac
+  *set combat_cover_ranged_defense_bonus 0
+  *set combat_cover_ranged_defense_label ""
+  *if ((raa_weapon = "ranged") and (not(raa_knifed)))
+    *gosub_scene combat_movement combat_get_cover_ranged_defense_bonus "enemy" raa_e_slot
+  *set raa_target_ac (raa_target_ac + combat_cover_ranged_defense_bonus)
   *comment Bardic Inspiration: an inspired ally rolls its die only on a MISS and adds it, deciding after the d20 like 5e. The die is spent either way.
   *temp raa_ins_str ""
   *if ((combat_inspired_ally = raa_a_slot) and (raa_total < raa_target_ac))
@@ -819,7 +852,10 @@ ${combat_player_dmg_roll_banner}
   *temp raa_verdict "MISS"
   *if (combat_ally_atk_hit)
     *set raa_verdict "HIT"
-  *set {(raa_atk_bannername)} "[b][🎲 ${raa_name} Attack Roll: ${raa_roll} ${raa_bonus_str}${raa_ins_str}${raa_adv_label} = ${raa_total} vs AC ${raa_target_ac} — ${raa_verdict}][/b]"
+  *temp raa_ac_str ""
+  *if (combat_cover_ranged_defense_bonus > 0)
+    *set raa_ac_str " (${raa_base_target_ac} +2 Cover)"
+  *set {(raa_atk_bannername)} "[b][🎲 ${raa_name} Attack Roll: ${raa_roll} ${raa_bonus_str}${combat_high_ground_attack_label}${raa_ins_str}${raa_adv_label} = ${raa_total} vs AC ${raa_target_ac}${raa_ac_str} — ${raa_verdict}][/b]"
   *set {(raa_dmg_bannername)} ""
   *set combat_ally_dmg_dealt 0
   *if (combat_ally_atk_hit)

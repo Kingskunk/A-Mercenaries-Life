@@ -919,6 +919,10 @@
 *create mw_vael_seen false
 *create mw_vael_sign_talk false
 *create mw_vael_customers_talk false
+*comment One-shot third Vael topic: the son in the shop's name (mw_vael_son_talk). Serran left eight years ago on
+*comment Gilded Scales contract work and writes rarely. Explains the "& Son" on the sign with no son behind it,
+*comment and is the only Vael beat that says anything about him rather than about locks. Codex gates on the same flag.
+*create mw_vael_son_talk false
 *create mw_herb_seen false
 *comment mw_herb_seen is reaching the still-room (walks in, so the codex entry describing the inside
 *comment unlocks); mw_herb_named is learning the name off the sign in the close, which is enough for the
@@ -974,6 +978,7 @@
 *create a_key_runner_done false
 *create a_key_lock_found false
 *create a_key_mark_found false
+*create a_key_in_shop false
 *create a_key_evidence 0
 *create a_key_runner_trust false
 *create a_key_fast_to_shop false
@@ -1235,6 +1240,13 @@
 *create roll_had_disadvantage false
 *comment A flat bonus a caller wants on THIS roll (Archery, +2 on a ranged weapon attack). roll_d20_check adds it and clears it; the caller clears it again after the roll.
 *create check_flat_bonus 0
+*comment Optional explanation paired with check_flat_bonus. The d20 engine appends it to its roll breakdown and
+*comment clears it with the number, letting terrain (and later effects) remain visible without each caller having
+*comment to build a second combat banner.
+*create check_flat_bonus_label ""
+*comment Optional explanation paired with a temporary attack DC increase (currently Cover). It follows the same
+*comment one-roll lifetime as check_flat_bonus_label, so the D20 banner can explain why the target number rose.
+*create check_dc_label ""
 *comment A scene may mark an ordinary skill check as a repair or mechanism task. roll_d20_check then reads the Repair Kit automatically; scenes never inspect has_tool_kit themselves.
 *create check_task_type "none"
 *comment Sneak Attack's second trigger (2026-10-01): a living ally is in melee, so the target is flanked. combat_flank_ally is the
@@ -1537,6 +1549,70 @@
 *create combat_shove_size_allowed true
 *create combat_shove_size_msg ""
 *create combat_size_rank_value 2
+*comment Compact arena rules (combat.txt). The original single encounter-wide rule remains as a compatibility
+*comment bridge while fights migrate to the shared lane and terrain-slot model below. New terrain should use the
+*comment slots: a slot is mechanical only ("chokepoint", "cover", etc.), never a doorway/stairs/bridge variant.
+*create combat_battlefield_rule "none"
+*create combat_battlefield_label ""
+*create combat_chokepoint_capacity 0
+*create combat_chokepoint_blocks_los false
+*create combat_choke_ally_slot 0
+*create combat_choke_ally_name ""
+*create combat_choke_player_blocked false
+*create combat_choke_swap_locked false
+*create locked_combat_choke_swap_page_id 0
+*create combat_choke_withdraw_locked false
+*create locked_combat_choke_withdraw_page_id 0
+*comment Shared abstract battlefield lane (2026-10-05). Positions are a common coordinate frame, not a map grid:
+*comment 0..6 leaves three steps of retreat and advance around the normal starting point 3. The familiar four
+*comment range bands remain derived display/attack information (gap 0/1/2/3+), so this does not turn combat into
+*comment a tactical map. During migration the old per-target ranges remain live compatibility fields; combat.txt
+*comment initializes these coordinates from them and progressively routes movement through the shared helpers.
+*create combat_lane_min_position 0
+*create combat_lane_max_position 6
+*create combat_lane_player_position 3
+*create combat_lane_ready false
+*create combat_lane_crossing_has_chokepoint false
+*create combat_lane_crossing_slot 0
+*create combat_active_chokepoint_slot 0
+*create combat_enemy0_position 3
+*create combat_enemy1_position 3
+*create combat_enemy2_position 3
+*create combat_enemy3_position 3
+*create combat_enemy4_position 3
+*create combat_enemy5_position 3
+*create combat_enemy6_position 3
+*create combat_ally0_position 3
+*create combat_ally1_position 3
+*create combat_ally2_position 3
+*create combat_ally3_position 3
+*create combat_ally4_position 3
+*comment Generic static terrain registry. Position is a lane coordinate; a chokepoint uses its position as the
+*comment crossing immediately before that coordinate, while high_ground applies to combatants standing on that
+*comment coordinate. "none" disables a slot. The UI will only show these generic types, never contextual names,
+*comment so encounter prose never needs terrain-specific variants.
+*create combat_terrain_slot_cap 3
+*create combat_terrain1_type "none"
+*create combat_terrain1_position 0
+*create combat_terrain1_capacity 0
+*create combat_terrain1_blocks_los false
+*create combat_terrain2_type "none"
+*create combat_terrain2_position 0
+*create combat_terrain2_capacity 0
+*create combat_terrain2_blocks_los false
+*create combat_terrain3_type "none"
+*create combat_terrain3_position 0
+*create combat_terrain3_capacity 0
+*create combat_terrain3_blocks_los false
+*comment Output of combat_get_high_ground_attack_modifier (combat_movement.txt). It is deliberately a terrain
+*comment query, rather than per-enemy state: an encounter can place one or more elevated lane coordinates and all
+*comment player, enemy, and ally ranged attacks use the same rule without copied personalities.
+*create combat_high_ground_attack_bonus 0
+*create combat_high_ground_attack_label ""
+*comment Output of combat_get_cover_ranged_defense_bonus (combat_movement.txt). Cover belongs to the defender's
+*comment terrain coordinate, and only ranged attack-roll resolvers read this value.
+*create combat_cover_ranged_defense_bonus 0
+*create combat_cover_ranged_defense_label ""
 *create combat_player_dmg_type "bludgeoning"
 *create combat_enemy_resist_type_1 ""
 *create combat_enemy_resist_type_2 ""

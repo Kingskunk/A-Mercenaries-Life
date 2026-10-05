@@ -29,6 +29,9 @@ const MAP = {
   disengage: "Action/Disengage_Icon.webp",
   dodge: "Passive_feature/Uncanny_Dodge_Icon.webp",       // no plain Dodge art in the library; a figure slipping a blow reads right
   hide: "Action/Hide_Icon.webp",
+  shove: "Action/Shove_Icon.webp",
+  trade_places: "Action/Benign_Transposition_Swap_Icon.webp",
+  call_ally_back: "Action/Benign_Transposition_Swap_Icon.webp",
 
   // Class features.
   second_wind: "Skill/Second_Wind_Icon.webp",

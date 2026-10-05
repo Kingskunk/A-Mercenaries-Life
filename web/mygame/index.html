@@ -43,6 +43,7 @@ either express or implied.
 <script src="spell-data.js"></script>
 <script src="spell-icons.js"></script>
 <script src="action-icons.js"></script>
+<script src="battlefield-icons.js"></script>
 <script src="equipment-data.generated.js"></script>
 <script src="equipment-panel.js"></script>
 <script src="item-icons.js"></script>
@@ -413,6 +414,16 @@ button#statSidebar .turnRow,
   color: var(--ch-dim);
   margin-left: 0.3em;
 }
+/* Terrain is conveyed by compact icon badges rather than adding another combat prose line to every card. The
+   current-tile badges are shared by player, ally, and enemy cards; only the player receives the ADV / RET previews. */
+#statSidebar .terrainBadges { display: inline-flex; align-items: center; gap: 2px; margin-left: 5px; vertical-align: -3px; }
+#statSidebar .terrainBadge { display: inline-grid; place-items: center; width: 18px; height: 18px; overflow: hidden; border: 1px solid var(--ch-line-hi); border-radius: 3px; background: rgba(0, 0, 0, 0.38); }
+#statSidebar .terrainBadge img { display: block; width: 18px; height: 18px; object-fit: cover; }
+#statSidebar .terrainFallback { color: var(--ch-brass); font: 700 12px/1 var(--ch-font-head); }
+#statSidebar .turnTerrain { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 3px; margin-left: 4px; vertical-align: -3px; }
+#statSidebar .turnTerrain .terrainBadges { margin-left: 0; }
+#statSidebar .terrainDirection { display: inline-flex; align-items: center; gap: 2px; margin-left: 3px; }
+#statSidebar .terrainDirection b { color: var(--ch-brass); font: 700 8px/1 var(--ch-font-ui); letter-spacing: 0.08em; }
 #statSidebar .dartsTag {                      /* Magic Missile dart count, prefixed before the name */
   font-weight: 700;
   color: var(--ch-info);
@@ -535,6 +546,35 @@ button#statSidebar .turnRow,
 #statSidebar .turnRow:hover:not(:disabled), #statSidebar .turnRow:focus-visible:not(:disabled) { background: var(--ch-hover); }
 #statSidebar .turnRowPicked { background: var(--ch-crimson-soft); box-shadow: inset 0 0 0 1px var(--ch-brass); }
 #statSidebar .turnRowDead { padding-bottom: 6px; }
+/* The small Orders trigger is part of the ally's name line; its actual command tray is fixed beside the
+   sidebar below, so opening commands never expands a card or pushes the rest of the turn order downward. */
+#statSidebar .allyOrderToggle {
+  display: inline-block; margin-left: 5px; padding: 1px 5px; vertical-align: 1px;
+  border: 1px solid var(--ch-info); border-radius: 3px; background: rgba(40, 94, 128, 0.22);
+  color: var(--ch-info); font: 600 9px var(--ch-font-ui); letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer;
+}
+#statSidebar .allyOrderToggle:hover, #statSidebar .allyOrderToggle:focus-visible, #statSidebar .allyOrderToggle.open { background: rgba(60, 128, 170, 0.36); color: #d5efff; outline: none; }
+#allyOrderTray {
+  position: fixed; z-index: 1100; width: 214px; padding: 9px 10px 10px;
+  border: 1px solid var(--ch-line-hi); border-left: 3px solid var(--ch-info); border-radius: 6px;
+  background: linear-gradient(rgba(17, 22, 25, 0.98), rgba(10, 14, 16, 0.98)), var(--art-stone) center / cover;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.52); color: var(--ch-text);
+  opacity: 0; visibility: hidden; pointer-events: none; transform: translateX(8px) scale(0.98); transform-origin: right center;
+  transition: opacity 0.12s ease, transform 0.12s ease, visibility 0.12s ease;
+}
+#allyOrderTray.open { opacity: 1; visibility: visible; pointer-events: auto; transform: translateX(0) scale(1); }
+#allyOrderTray .allyOrderHead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 0 2px 7px; }
+#allyOrderTray .allyOrderHead span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ch-head-text); font: 600 12px var(--ch-font-head); }
+#allyOrderTray .allyOrderHead small { color: var(--ch-info); font: 600 9px var(--ch-font-ui); letter-spacing: 0.12em; text-transform: uppercase; }
+#allyOrderTray .allyOrderButtons { display: flex; gap: 6px; }
+#allyOrderTray button {
+  flex: 1 1 0; min-height: 48px; padding: 5px 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  border: 1px solid var(--ch-line-hi); border-bottom: 3px solid var(--ch-info); border-radius: 4px;
+  background: rgba(0, 0, 0, 0.32); color: var(--ch-text); font: 600 10px var(--ch-font-ui); cursor: pointer;
+}
+#allyOrderTray button b { color: var(--ch-info); font: 700 18px var(--ch-font-head); line-height: 1; }
+#allyOrderTray button:hover, #allyOrderTray button:focus-visible { background: rgba(55, 115, 150, 0.32); color: #fff; outline: none; }
+#allyOrderTray button:active { transform: translateY(1px); }
 
 /* folding sections (Stats, Today): the same header look as the spellbook, with a short summary kept on the line while closed */
 #statSidebar .sbFold > summary {
@@ -659,6 +699,102 @@ button#statSidebar .turnRow,
     return h + "</span>";
   }
   var SB_CLASSES = { fighter: 1, barbarian: 1, bard: 1, ranger: 1, rogue: 1, warlock: 1, wizard: 1 };
+  // Terrain remains data-driven: the same three terrain slots that drive combat mechanics are read here, so no
+  // card needs a terrain-specific branch. A future type without supplied art is still visible as a brass diamond.
+  var TERRAIN_LABELS = {
+    chokepoint: "Chokepoint",
+    cover: "Cover",
+    difficult_terrain: "Difficult Terrain",
+    high_ground: "High Ground",
+    open_ground: "Open Ground"
+  };
+  function terrainLabel(type) {
+    return TERRAIN_LABELS[type] || String(type || "Terrain").replace(/_/g, " ").replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+  }
+  function terrainTypesAt(s, position) {
+    var out = [], seen = {}, cap = Math.max(0, Number(s.combat_terrain_slot_cap) || 0), pos = Number(position);
+    if (!isFinite(pos)) return out;
+    for (var i = 1; i <= cap; i++) {
+      var type = String(s["combat_terrain" + i + "_type"] || "none").toLowerCase();
+      if (type !== "none" && Number(s["combat_terrain" + i + "_position"]) === pos && !seen[type]) {
+        seen[type] = true;
+        out.push(type);
+      }
+    }
+    return out;
+  }
+  function terrainBadgesHtml(s, position, context) {
+    var types = terrainTypesAt(s, position);
+    if (!types.length) return "";
+    var icons = window.BATTLEFIELD_ICONS || {};
+    return "<span class=\"terrainBadges\" aria-label=\"" + esc(context + ": " + types.map(terrainLabel).join(", ")) + "\">" +
+      types.map(function (type) {
+        var label = terrainLabel(type), icon = icons[type], title = esc(context + ": " + label);
+        return "<span class=\"terrainBadge\" title=\"" + title + "\">" +
+          (icon ? "<img src=\"" + icon + "\" alt=\"\">" : "<span class=\"terrainFallback\">◆</span>") + "</span>";
+      }).join("") + "</span>";
+  }
+  function combatantTerrainHtml(s, kind, slot) {
+    var position = kind === "player" ? Number(s.combat_lane_player_position) : Number(s["combat_" + kind + slot + "_position"]);
+    return terrainBadgesHtml(s, position, "Current terrain");
+  }
+  function playerTerrainHtml(s) {
+    var position = Number(s.combat_lane_player_position), current = terrainBadgesHtml(s, position, "Current terrain");
+    if (!isFinite(position)) return current;
+    var advance = terrainBadgesHtml(s, position + 1, "Ahead"), retreat = terrainBadgesHtml(s, position - 1, "Behind");
+    if (!current && !advance && !retreat) return "";
+    return "<span class=\"turnTerrain\">" + current +
+      (advance ? "<span class=\"terrainDirection\"><b>ADV</b>" + advance + "</span>" : "") +
+      (retreat ? "<span class=\"terrainDirection\"><b>RET</b>" + retreat + "</span>" : "") + "</span>";
+  }
+  // Ally orders are a sidebar surface, not player actions. The ChoiceScript option remains the authority for
+  // legality and costs; this UI state only remembers which companion's compact, left-opening tray is visible.
+  var allyOrderSlot = 0;
+  function allyCanReceiveChokepointOrders(s, slot) {
+    return isTruthy(s.combat_choke_player_blocked) &&
+      Number(s.combat_choke_ally_slot) === slot &&
+      Number(s.combat_player_moves_left) > 0;
+  }
+  function allyOrderTray() {
+    var tray = document.getElementById("allyOrderTray");
+    if (!tray) {
+      tray = document.createElement("div");
+      tray.id = "allyOrderTray";
+      tray.setAttribute("role", "dialog");
+      tray.setAttribute("aria-label", "Ally orders");
+      document.body.appendChild(tray);
+    }
+    return tray;
+  }
+  function closeAllyOrders() {
+    allyOrderSlot = 0;
+    var tray = document.getElementById("allyOrderTray");
+    if (tray) tray.className = "";
+  }
+  function renderAllyOrders() {
+    var tray = document.getElementById("allyOrderTray"), s = window.stats || {};
+    if (!allyOrderSlot || !allyCanReceiveChokepointOrders(s, allyOrderSlot)) {
+      if (tray) tray.className = "";
+      return;
+    }
+    var anchor = document.querySelector("[data-ally-orders=\"" + allyOrderSlot + "\"]");
+    if (!anchor) { closeAllyOrders(); return; }
+    var name = fmt(s["combat_ally" + allyOrderSlot + "_name"]) || "Ally";
+    tray = allyOrderTray();
+    tray.innerHTML = "<div class=\"allyOrderHead\"><span>" + esc(name) + "</span><small>Orders</small></div>" +
+      "<div class=\"allyOrderButtons\">" +
+        "<button type=\"button\" data-ally-order=\"trade_places\" title=\"Spend movement to take this ally's place in the chokepoint\"><b>⇄</b><span>Swap with me</span></button>" +
+        "<button type=\"button\" data-ally-order=\"call_ally_back\" title=\"Spend movement to have this ally yield the chokepoint\"><b>↩</b><span>Yield opening</span></button>" +
+      "</div>";
+    tray.className = "open";
+    // The sidebar is fixed to the right edge, so the tray grows left into open game space rather than making
+    // the sidebar taller or widening it. Clamp only against the viewport's left edge.
+    var a = anchor.getBoundingClientRect(), t = tray.getBoundingClientRect(), z = window.UI_ZOOM || 1;
+    var left = Math.max(8, a.left - t.width - 10);
+    var top = Math.min(Math.max(8, a.top), window.innerHeight - t.height - 8);
+    tray.style.left = (left / z) + "px";
+    tray.style.top = (top / z) + "px";
+  }
   function renderStatSidebar() {
     var el = document.getElementById("statSidebar");
     if (!el) return;
@@ -769,12 +905,13 @@ button#statSidebar .turnRow,
       for (var ti = 1; ti <= count; ti++) {
         var kind = s["combat_turn_kind_" + ti], slot = Number(s["combat_turn_slot_" + ti]) || 0;
         if (kind === "player") {
+          var playerNameHtml = "<span class=\"turnMain\"><span>" + fmt(s.name || "You") + playerTerrainHtml(s) + "</span></span>";
           if (friendlyOn) {
             // Friendly targeting (Healing Word and its kin): your own row is a button too, 0 = you. Picked highlight reuses the enemy one.
             rows += "<button type=\"button\" class=\"statRow turnRow turnRowSelf" + (friendlyPick === 0 ? " turnRowPicked" : "") +
-              "\" data-friendly=\"0\"><span>" + fmt(s.name || "You") + "</span><span>" + (Number(s.hp_current) || 0) + "/" + (Number(s.hp_max) || 0) + "</span></button>";
+              "\" data-friendly=\"0\">" + playerNameHtml + "<span>" + (Number(s.hp_current) || 0) + "/" + (Number(s.hp_max) || 0) + "</span></button>";
           } else {
-            rows += "<div class=\"statRow turnRow turnRowSelf\"><span>" + fmt(s.name || "You") + "</span><span></span></div>";
+            rows += "<div class=\"statRow turnRow turnRowSelf\">" + playerNameHtml + "<span></span></div>";
           }
         } else if (kind === "enemy" || kind === "ally") {
           var pfx = kind === "enemy" ? "combat_enemy" : "combat_ally";
@@ -792,6 +929,7 @@ button#statSidebar .turnRow,
           var cEffRange = kind === "ally" ? allyDistanceToPlayer(s, slot) : effectiveRange(s, kind, slot);
           var cRangeTag = cDead ? "" : " <span class=\"rangeTag\" title=\"Distance from you\">(" +
             rangeTierName(cEffRange) + ")</span>";
+          var cTerrain = cDead ? "" : combatantTerrainHtml(s, kind, slot);
           var cSub = combatantSubLine(s, kind, slot);
           // Magic Missile dart allocation (2026-09-28): a "(N)" prefix on any enemy with darts currently
           // assigned, live while combat_mm_targeting_active -- the click handler (assignMultiTargetDart)
@@ -799,8 +937,17 @@ button#statSidebar .turnRow,
           // regardless of ChoiceScript page state) is what makes the count visible without a page reload.
           var cDarts = kind === "enemy" ? Number(s["combat_mm_darts_" + slot]) || 0 : 0;
           var cDartsTag = cDarts > 0 ? "<span class=\"dartsTag\" title=\"Darts assigned\">(" + cDarts + ")</span> " : "";
+          // This is intentionally attached to the ALLY CARD, not the action dock. At capacity one only the
+          // current holder has an order; a later wider chokepoint can expose the same compact control on every
+          // eligible holder without adding a new row of player actions per ally.
+          var cOrder = "";
+          if ((kind === "ally") && !friendlyOn && (cHp > 0) && allyCanReceiveChokepointOrders(s, slot)) {
+            cOrder = "<button type=\"button\" class=\"allyOrderToggle" + (allyOrderSlot === slot ? " open" : "") +
+              "\" data-ally-orders=\"" + slot + "\" aria-expanded=\"" + (allyOrderSlot === slot) +
+              "\" title=\"Open " + esc(cName) + "'s combat orders\">Orders</button>";
+          }
           var cNameHtml = "<span class=\"turnMain\"><span>" + cDartsTag + "<span class=\"" +
-            (kind === "enemy" ? "enemyName" : "allyName") + "\">" + esc(cName) + "</span>" + cRangeTag +
+            (kind === "enemy" ? "enemyName" : "allyName") + "\">" + esc(cName) + "</span>" + cRangeTag + cTerrain + cOrder +
             "</span>" + (cSub ? "<span class=\"turnSub\">" + cSub + "</span>" : "") + "</span>";
           if (friendlyOn && kind === "ally" && cHp > 0) {
             rows += "<button type=\"button\" class=\"statRow turnRow" + (friendlyPick === slot ? " turnRowPicked" : "") +
@@ -1069,6 +1216,20 @@ button#statSidebar .turnRow,
     return "fighting " + esc(name) + (down ? " (down)" : " (" + allyTierName(effectiveRange(s, "ally", slot)) + ")");
   }
 
+  // A melee enemy sharing a lane coordinate with a living ally is already physically held there. The forecast
+  // must report that before promising an advance toward the player; the engine will resolve that nearby ally first.
+  function enemyHoldingAlly(s, slot) {
+    var enemyPos = Number(s["combat_enemy" + slot + "_position"]);
+    if (!enemyPos) return "";
+    var cap = Number(s.combat_ally_slot_cap) || 4;
+    for (var i = 1; i <= cap; i++) {
+      if ((Number(s["combat_ally" + i + "_hp"]) || 0) <= 0) continue;
+      if (Number(s["combat_ally" + i + "_position"]) !== enemyPos) continue;
+      return fmt(s["combat_ally" + i + "_name"]) || "an ally";
+    }
+    return "";
+  }
+
   // Read-only forecast of what the enemy's existing turn logic can do from its current band. This intentionally
   // predicts the engine rather than inventing an AI intent state: Close melee can move once and still attack;
   // Mid-Range melee must Dash and gives up its attack; Slowed blocks that Dash; Frightened refuses to close.
@@ -1085,6 +1246,8 @@ button#statSidebar .turnRow,
       return "ranged attack ready";
     }
     if (range <= 0) return frightened ? "frightened attack: disadvantage" : "threatens an attack";
+    var heldBy = enemyHoldingAlly(s, slot);
+    if (heldBy) return "engaged with " + esc(heldBy);
     if (frightened) return "frightened: will not close";
     if (range === 1) return "can close and attack";
     if (slowed) return "slowed: closes one tier";
@@ -1463,6 +1626,16 @@ button#statSidebar .turnRow,
   document.getElementById("statSidebar").addEventListener("click", function (ev) {
     var el = ev.target;
     if (!el || !el.closest) return;
+    var allyOrderToggle = el.closest("[data-ally-orders]");
+    if (allyOrderToggle) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      var orderSlot = Number(allyOrderToggle.getAttribute("data-ally-orders")) || 0;
+      allyOrderSlot = allyOrderSlot === orderSlot ? 0 : orderSlot;
+      renderStatSidebar();
+      renderAllyOrders();
+      return;
+    }
     var viewBtn = el.closest("[data-sb-view]");
     if (viewBtn) {
       sbView = viewBtn.getAttribute("data-sb-view") === "stats" ? "stats" : "status";
@@ -1503,6 +1676,22 @@ button#statSidebar .turnRow,
       spellOpen = !spellOpen;
       renderStatSidebar();
     }
+  });
+  // The tray lives beside the sidebar (under <body>, not inside the repeatedly rebuilt sidebar), so it can
+  // open left into the play area without changing the sidebar's height. Its controls call BattleHud.pick,
+  // which selects the existing ChoiceScript choice rather than reproducing any combat rule in JavaScript.
+  document.addEventListener("click", function (ev) {
+    var el = ev.target && ev.target.closest ? ev.target.closest("[data-ally-order]") : null;
+    if (el) {
+      ev.preventDefault();
+      var order = el.getAttribute("data-ally-order");
+      closeAllyOrders();
+      if (window.BattleHud && typeof window.BattleHud.pick === "function") window.BattleHud.pick(order);
+      return;
+    }
+    var toggle = ev.target && ev.target.closest ? ev.target.closest("[data-ally-orders]") : null;
+    var insideTray = ev.target && ev.target.closest ? ev.target.closest("#allyOrderTray") : null;
+    if (!toggle && !insideTray && allyOrderSlot) closeAllyOrders();
   });
   // Hovering a spell row reuses the stat card (showTip/placeTip) for its description, so both hover
   // surfaces in the sidebar behave identically. Anchored to the row's own box rather than the cursor,
@@ -1599,7 +1788,7 @@ button#statSidebar .turnRow,
   });
   document.getElementById("statSidebar").addEventListener("focusout", hideTip);
   // refreshTip runs alongside every render so the card re-resolves against the rebuilt rows.
-  window.setInterval(function () { renderStatSidebar(); refreshTip(); }, 400);
+  window.setInterval(function () { renderStatSidebar(); renderAllyOrders(); refreshTip(); }, 400);
   document.addEventListener("DOMContentLoaded", renderStatSidebar);
 })();
 </script>

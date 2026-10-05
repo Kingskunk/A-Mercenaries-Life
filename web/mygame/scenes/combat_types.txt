@@ -1,0 +1,1162 @@
+*comment Reusable combat type taxonomy. This scene owns type-to-policy mappings; combat.txt remains responsible
+*comment for applying a type's concrete stat block and for all turn flow.
+
+*label resolve_behavior_profile
+*params rbp_profile rbp_weapon_type
+*set combat_behavior_chase_chance 0
+*set combat_behavior_can_retreat false
+*set combat_behavior_flee_hp_pct 0
+*if (rbp_profile = "bruiser")
+  *set combat_behavior_chase_chance 33
+*if (rbp_profile = "skirmisher")
+  *if (rbp_weapon_type = "ranged")
+    *set combat_behavior_can_retreat true
+    *set combat_behavior_flee_hp_pct 33
+  *else
+    *set combat_behavior_chase_chance 50
+*if (rbp_profile = "sharpshooter")
+  *set combat_behavior_can_retreat true
+  *set combat_behavior_flee_hp_pct 33
+*return
+
+*label assign_enemy_behavior_profile
+*params aeb_slot aeb_type
+*temp aeb_profile "feral"
+*if ((aeb_type = "swordsman") or ((aeb_type = "axeman") or (aeb_type = "maceman")))
+  *set aeb_profile "bruiser"
+*if (((aeb_type = "knifeman") or (aeb_type = "spearman")) or (aeb_type = "hookman"))
+  *set aeb_profile "skirmisher"
+*if ((aeb_type = "archer") or (aeb_type = "slinger"))
+  *set aeb_profile "sharpshooter"
+*if (aeb_type = "guard")
+  *set aeb_profile "guardian"
+*temp aeb_p ""
+*temp aeb_weapon "melee"
+*if (aeb_slot = 1)
+  *set combat_enemy_behavior_profile aeb_profile
+  *set aeb_weapon combat_enemy_weapon_type
+*else
+  *set aeb_p (("combat_enemy" & aeb_slot) & "_")
+  *set {(aeb_p & "behavior_profile")} aeb_profile
+  *set aeb_weapon {(aeb_p & "weapon_type")}
+*gosub resolve_behavior_profile aeb_profile aeb_weapon
+*if (aeb_slot = 1)
+  *set combat_enemy_chase_chance combat_behavior_chase_chance
+  *set combat_enemy_can_retreat combat_behavior_can_retreat
+  *set combat_enemy_flee_hp_pct combat_behavior_flee_hp_pct
+*else
+  *set {(aeb_p & "chase_chance")} combat_behavior_chase_chance
+  *set {(aeb_p & "can_retreat")} combat_behavior_can_retreat
+  *set {(aeb_p & "flee_hp_pct")} combat_behavior_flee_hp_pct
+*return
+
+*label assign_ally_behavior_profile
+*params aab_slot aab_type
+*temp aab_profile "guardian"
+*if ((aab_type = "archer") or (aab_type = "slinger"))
+  *set aab_profile "sharpshooter"
+*temp aab_p (("combat_ally" & aab_slot) & "_")
+*temp aab_weapon {(aab_p & "weapon_type")}
+*set {(aab_p & "behavior_profile")} aab_profile
+*gosub resolve_behavior_profile aab_profile aab_weapon
+*set {(aab_p & "chase_chance")} combat_behavior_chase_chance
+*set {(aab_p & "can_retreat")} combat_behavior_can_retreat
+*set {(aab_p & "flee_hp_pct")} combat_behavior_flee_hp_pct
+*return
+
+*label assign_enemy_size
+*params aes_slot aes_type
+*temp aes_size "medium"
+*if (aes_type = "mire_rat")
+  *set aes_size "small"
+*if (aes_slot = 1)
+  *set combat_enemy_size aes_size
+*else
+  *set {(("combat_enemy" & aes_slot) & "_size")} aes_size
+*return
+
+*label apply_ability_score_range
+*comment Ability scores, one score for one slot: rolls each of the six for a type-library enemy, feeding
+*comment initiative and the derived combat-bonus/AC/HP labels below. The manual per-slot override wins if set
+*comment (nonzero, see startup.txt); otherwise this rolls within [aasr_min, aasr_max], the calling type's own
+*comment default range. Called six times (once per score) from both branches of every apply_type_X below: slot 1
+*comment passes the bare "combat_enemy_" prefix (the same bare names fight_setup later snapshots into
+*comment combat_enemy1_*), slot 2-and-beyond passes that type's own apt_p prefix directly. Resets its own override
+*comment to 0 once consumed (fight_cleanup also resets every score and override as a backstop, so a hand-authored
+*comment fight that never touches ability scores can't inherit a leftover roll from an earlier fight).
+*params aasr_prefix aasr_field aasr_min aasr_max
+*comment Shares combat_roll_initiative's own whole-fight lock (combat_init_locked/locked_combat_init_page_id,
+*comment this file, 2026-09-30) rather than a lock of its own: called many times per fight (once per ability score
+*comment per slot) from apply_enemy_type/apply_ally_type, always BEFORE combat_roll_initiative in the same
+*comment fight_setup call, on the same first page -- one shared "has this fight's whole setup phase already run
+*comment for this page" flag covers both correctly, since a real execution always does both together and a replay
+*comment must skip both together. Unlocked, a same-page refresh (fight entry through the first real pause, however
+*comment many surprise-round turns deep) rerolled every slot's ability scores from scratch -- a slightly different
+*comment STR/DEX cascading into a different combat_enemy_atk_bonus/dmg_bonus (apply_derived_combat_bonuses) even
+*comment though nothing about the fight's actual events changed. The one-time manual-override reset below is safe
+*comment to skip on a locked replay too -- already consumed down to 0 by the original run, which the snapshot
+*comment already reflects.
+*if (not(combat_init_locked)) or (not(locked_combat_init_page_id = page_id))
+  *temp aasr_ov_name ((aasr_prefix & aasr_field) & "_override")
+  *temp aasr_target (aasr_prefix & aasr_field)
+  *temp aasr_ov {(aasr_ov_name)}
+  *if (aasr_ov > 0)
+    *set {(aasr_target)} aasr_ov
+  *else
+    *temp aasr_roll aasr_min
+    *rand aasr_roll aasr_min aasr_max
+    *set {(aasr_target)} aasr_roll
+  *set {(aasr_ov_name)} 0
+*return
+
+*comment ============================================================================
+*comment DERIVED DEFAULTS: three labels a type can call instead of its own flat *set lines, once
+*comment apply_ability_score_range has rolled that slot's six scores. apply_derived_combat_bonuses is wired into
+*comment every type in the library; apply_derived_ac/apply_derived_hp are opt-in and not yet called by any of
+*comment them, so HP and AC stay each type's own authored flat numbers unless a new type opts in. The formulas
+*comment mirror the player's own math rather than inventing new rules: attack/damage bonus off score_to_mod the
+*comment same way the player's weapon attacks work, AC the same shape as equipment.txt's recalculate_armor_class
+*comment (base_ac + DEX mod), HP the same shape as startup.txt's hp_max (hit dice count * (hit die max + CON
+*comment mod)). apply_slot_stat_override's hp/ac/atk overrides still win afterward in every case -- they already
+*comment treat whatever value is sitting there as the baseline to overwrite or offset, so they don't care whether
+*comment that baseline was a flat number or a computed one.
+*comment ============================================================================
+
+*label apply_derived_combat_bonuses
+*comment A "ranged" weapon_type always attacks off DEX; everything else uses whichever of STR/DEX rolled higher
+*comment (the same rule the player's own finesse weapons use), so a DEX-leaning melee type needs no extra flag.
+*comment atk_bonus = key ability mod + combat_lib_prof_bonus (flat 2 -- every type in either the enemy or ally
+*comment library is early, low-tier content). dmg_bonus = key ability mod alone: RAW, proficiency never adds to
+*comment damage, matching how the player's own combat_player_dmg_bonus is already just str_mod/dex_mod with no
+*comment separate prof term. Shared by both apply_enemy_type and apply_ally_type (2026-09-28) -- prefix-generic
+*comment already, nothing enemy-specific here except the constant it used to hardcode by name, not by parameter.
+*comment Shares combat_roll_initiative's own whole-fight lock (combat_init_locked/locked_combat_init_page_id,
+*comment 2026-09-30) -- same reasoning as apply_ability_score_range's own lock (its *create comment, startup.txt,
+*comment has the full explanation): called only once per slot, always during the same one-time fight_setup phase.
+*comment Reads/writes the SHARED sm_mod/sm_mod_str scratch (score_to_mod) alongside every other caller in the
+*comment whole game, not just combat -- an unlocked replay recomputing it here on a page that spans a whole
+*comment surprise round (no real pause in between) clobbers atk_bonus/dmg_bonus with a fresh mod even though the
+*comment ability score it reads is itself already correctly preserved, since RECOMPUTING is not free of side
+*comment effects when the computation itself writes through a shared global.
+*params adcb_prefix
+*if (not(combat_init_locked)) or (not(locked_combat_init_page_id = page_id))
+  *temp adcb_str {(adcb_prefix & "strength")}
+  *temp adcb_dex {(adcb_prefix & "dexterity")}
+  *gosub_scene startup score_to_mod adcb_str
+  *temp adcb_str_mod sm_mod
+  *gosub_scene startup score_to_mod adcb_dex
+  *temp adcb_dex_mod sm_mod
+  *temp adcb_key_mod adcb_str_mod
+  *if ({(adcb_prefix & "weapon_type")} = "ranged")
+    *set adcb_key_mod adcb_dex_mod
+  *elseif (adcb_dex_mod > adcb_str_mod)
+    *set adcb_key_mod adcb_dex_mod
+  *set {(adcb_prefix & "atk_bonus")} (adcb_key_mod + combat_lib_prof_bonus)
+  *set {(adcb_prefix & "dmg_bonus")} adcb_key_mod
+*return
+
+*label apply_derived_ac
+*comment ada_base_ac is the type's own default chassis number (armor/natural toughness), not a final answer --
+*comment {prefix}base_ac_override (0 = "use the default") can raise or lower it per fight while still letting the
+*comment slot's own rolled DEX apply on top, instead of hand-computing a final AC. No armor-tier DEX cap like the
+*comment player's medium/heavy armor: nothing in this library needs that yet, and the final ac_override
+*comment (apply_slot_stat_override) still covers a DEX-blind heavy fighter if one ever shows up.
+*params ada_prefix ada_base_ac
+*temp ada_ov_name ((ada_prefix & "base_ac") & "_override")
+*temp ada_ov {(ada_ov_name)}
+*if (ada_ov > 0)
+  *set ada_base_ac ada_ov
+*set {(ada_ov_name)} 0
+*temp ada_dex {(ada_prefix & "dexterity")}
+*gosub_scene startup score_to_mod ada_dex
+*set {(ada_prefix & "ac")} (ada_base_ac + sm_mod)
+*return
+
+*label apply_derived_hp
+*comment adh_hit_dice_count/adh_hit_die_max are the type's own defaults, not a final answer -- the per-slot
+*comment overrides (0 = "use the default") can make one instance tougher or squishier while still letting its own
+*comment rolled CON apply on top. Same formula startup.txt's hp_max uses. Clamped to a floor of 1 so a
+*comment single-hit-die type with a very low CON can never come out dead on arrival.
+*params adh_prefix adh_hit_dice_count adh_hit_die_max
+*temp adh_hdc_ov_name ((adh_prefix & "hit_dice_count") & "_override")
+*temp adh_hdc_ov {(adh_hdc_ov_name)}
+*if (adh_hdc_ov > 0)
+  *set adh_hit_dice_count adh_hdc_ov
+*set {(adh_hdc_ov_name)} 0
+*temp adh_hdm_ov_name ((adh_prefix & "hit_die_max") & "_override")
+*temp adh_hdm_ov {(adh_hdm_ov_name)}
+*if (adh_hdm_ov > 0)
+  *set adh_hit_die_max adh_hdm_ov
+*set {(adh_hdm_ov_name)} 0
+*temp adh_con {(adh_prefix & "constitution")}
+*gosub_scene startup score_to_mod adh_con
+*temp adh_hp (adh_hit_dice_count * (adh_hit_die_max + sm_mod))
+*if (adh_hp < 1)
+  *set adh_hp 1
+*set {(adh_prefix & "hp")} adh_hp
+*set {(adh_prefix & "max_hp")} adh_hp
+*return
+
+*comment ============================================================================
+*comment ENEMY TYPE LIBRARY
+*comment A reusable alternative to hand-authoring a slot's stat block/
+*comment movepool/flavor inline: *set combat_apply_type "<type>", *set
+*comment combat_apply_slot <1/2/3>, *gosub apply_enemy_type. Lets a mixed
+*comment fight drop the same enemy type into more than one slot (or combine
+*comment different types) without forking a one-off copy of that type's
+*comment numbers into a new fight label just to change which slots it fills.
+*comment
+*comment NAMING: a type is a WEAPON, not a person. Its lines name the fighter through
+*comment combat_enemy_epithet, "$!{combat_enemy_epithet}" at the start of a sentence (the engine capitalizes it) and
+*comment "${combat_enemy_epithet}" inside one, so the same swordsman lines serve a knight, a bandit, a duelist or a
+*comment named captain. The epithet defaults to the type ("the swordsman") and a fight renames it: set
+*comment combat_enemy_epithet_override (and combat_enemy_name_override for the banner) before the slot is built.
+*comment This works for the library's lines only because they are built at the moment of the attack, by
+*comment flavor_from_type, when the attacker is already the active slot: a ${var} inside a *set "..." string is
+*comment resolved the instant that line runs (verified against web/scene.js replaceVariables), so a line stored at
+*comment fight setup (the player's strike pools, a hand-authored fight's per-slot lines) cannot use the epithet and
+*comment names its target "they" or "the creature" instead. Two copies of the same type in one fight (2 Guards) draw
+*comment from the same pool of eight, rolled independently on every attack, so they do not repeat in lockstep.
+*comment
+*comment Optional per-instance rename: *set combat_enemy1/2/3_name_override
+*comment and/or _epithet_override before calling apply_enemy_type for that
+*comment slot (slot 1 instead uses the plain combat_enemy_name_override,
+*comment applied later by fight_setup -- see its own comment). This DOES
+*comment correctly rename the status banner, spell-targeting text, and
+*comment victory/defeat lines, since those interpolate ${combat_enemy_name}/
+*comment ${combat_enemy_epithet} live in directly-printed text, not through
+*comment a stored variable -- and, with NAMING above, into the type's own
+*comment prose too, since that names the fighter through the epithet. Consumed and cleared
+*comment the moment that slot's *gosub apply_enemy_type runs (slot 1 when
+*comment fight_setup runs), so it never bleeds into a later fight or a
+*comment different slot reusing the same type.
+*comment
+*comment Available types, by weapon: "swordsman", "axeman", "knifeman", "maceman", "spearman", "hookman" (hooked
+*comment pole), "archer", "slinger" and "guard" (plain mace, no special move), and the creatures "lacedon", "mire_rat" and
+*comment "beast" (a generic natural-attack monster; the player's lines against them are flavor_creature_<slashing|piercing|
+*comment bludgeoning|ranged>, where against the human types they are flavor_player_<...>, both built per attack by the
+*comment player's weapon). A scene reaches any of them through fight_library, below, with no edit to this
+*comment file. A type is stats and movepool in apply_type_<name> (one block per slot, here) plus prose in
+*comment flavor_type_<name> (written once, see ENEMY TYPE FLAVOR in combat_prose.txt). Add a new one with an
+*comment apply_type_<name> label here, one line in apply_enemy_type's dispatch, one profile selection in
+*comment assign_enemy_behavior_profile, and the prose label with its line in flavor_from_type (combat_prose.txt).
+*comment
+*comment WRITING RULE: every type's hit and miss lines, and the player's apply_generic_weapon_flavor
+*comment pool, are written to work in any fight against human combatants, anywhere, so a new fight can call a type
+*comment with no retuning. That means no place (ground, walls, props, water, streets), no weather, lighting or
+*comment time of day, nothing the player may not have on (cloak, coat, cloth, leather, boots, armor, harness), and
+*comment no he, she or it for the enemy (a back-reference is singular "they", never "the body"). Each line is one physical action: how the attack moves, where it lands or how
+*comment the player turns it aside, and what it costs. No fight layers place-specific lines over a type: a scene
+*comment that wants a place sets the place in its own prose around the fight.
+*comment ============================================================================
+
+*comment BEHAVIOR PROFILES
+*comment A personality is a compact policy, shared by enemies and allies rather than copied into each type's block.
+*comment The resolver supplies the existing movement knobs (chase chance, retreat permission and wounded flee point),
+*comment so combat_next_turn keeps one decision tree while a new type only selects a profile in the mapping below.
+*comment Profiles: bruiser (presses targets), skirmisher (mobile melee hunter / retreating ranged fighter),
+*comment sharpshooter (holds range and withdraws when cornered), guardian (holds the line), feral (simple direct attack).
+
+*label apply_enemy_type
+*if (combat_apply_type = "swordsman")
+  *gosub apply_type_swordsman
+*if (combat_apply_type = "axeman")
+  *gosub apply_type_axeman
+*if (combat_apply_type = "knifeman")
+  *gosub apply_type_knifeman
+*if (combat_apply_type = "maceman")
+  *gosub apply_type_maceman
+*if (combat_apply_type = "spearman")
+  *gosub apply_type_spearman
+*if (combat_apply_type = "hookman")
+  *gosub apply_type_hookman
+*if (combat_apply_type = "archer")
+  *gosub apply_type_archer
+*if (combat_apply_type = "slinger")
+  *gosub apply_type_slinger
+*if (combat_apply_type = "guard")
+  *gosub apply_type_guard
+*if (combat_apply_type = "lacedon")
+  *gosub apply_type_lacedon
+*if (combat_apply_type = "mire_rat")
+  *gosub apply_type_mire_rat
+*if (combat_apply_type = "beast")
+  *gosub apply_type_beast
+*gosub assign_enemy_behavior_profile combat_apply_slot combat_apply_type
+*gosub assign_enemy_size combat_apply_slot combat_apply_type
+*comment Which library type fills this slot. fight_narrate_enemy_turn reads the slot's hit, miss and move-2 prose from
+*comment flavor_from_type by this id, so each type's lines are written once (flavor_type_<name>), not once per slot.
+*comment Which library type fills this slot, for any slot, via indirection (fight_narrate_enemy_turn reads it
+*comment the same way to pick that slot's hit/miss prose from flavor_from_type).
+*set {(("combat_enemy" & combat_apply_slot) & "_flavor_type")} combat_apply_type
+*comment Pre-fight ambush advantage (2026-09-28): a scene that sets the bare combat_enemy_advantage true BEFORE
+*comment calling the fight ("the creature strikes first" -- several sites in alderford.txt/port_valen.txt/
+*comment port_valen_dredge_end.txt) means every enemy the fight is about to seat gets it, not just slot 1 --
+*comment applied here, once per slot as each is built, so a 3-enemy ambush (fight_granary_rats) grants it to all
+*comment three, not only the first. fight_cleanup clears the bare pending flag afterward so it can't leak into a
+*comment later fight that never set it. Mid-fight, per-target grants (Vicious Mockery, Ray of Frost, Brace,
+*comment below) work differently -- they write directly to one already-built slot's own field via
+*comment combat_active_target indirection, not through this pending mechanism.
+*if (combat_enemy_advantage)
+  *set {(("combat_enemy" & combat_apply_slot) & "_advantage")} true
+*if (combat_apply_slot = 1)
+  *comment Slot 1's rename-override is applied later, by fight_setup, once the calling fight_<name> label is
+  *comment done setting up every slot -- see combat_enemy_name_override's comment in startup.txt. Nothing to do
+  *comment here for slot 1.
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-written branch per slot.
+  *temp aet_p (("combat_enemy" & combat_apply_slot) & "_")
+  *temp aet_name_ov {(aet_p & "name_override")}
+  *temp aet_epi_ov {(aet_p & "epithet_override")}
+  *if (not(aet_name_ov = ""))
+    *set {(aet_p & "name")} aet_name_ov
+    *set {(aet_p & "name_override")} ""
+  *if (not(aet_epi_ov = ""))
+    *set {(aet_p & "epithet")} aet_epi_ov
+    *set {(aet_p & "epithet_override")} ""
+*return
+
+*label apply_type_swordsman
+*comment Sword fighter: measured cuts and thrusts, a little harder to hit (AC 12). Move 2 (30%) is a beat and a double cut
+*comment that drives the player off guard (Off-Guard). Not balance-simmed.
+*if (combat_apply_slot = 1)
+  *set combat_enemy_name "Swordsman"
+  *set combat_enemy_hp 10
+  *set combat_enemy_max_hp 10
+  *set combat_enemy_ac 12
+  *set combat_enemy_dmg_dice_sides 6
+  *set combat_enemy_epithet "the swordsman"
+  *set combat_enemy_dmg_type "slashing"
+  *set combat_enemy_move2_chance 30
+  *set combat_enemy_move2_atk_bonus 2
+  *set combat_enemy_move2_dmg_dice_sides 4
+  *set combat_enemy_move2_dmg_bonus 0
+  *set combat_enemy_move2_dmg_type "slashing"
+  *set combat_enemy_move2_inflicts_condition true
+  *set combat_enemy_move2_condition_name "Off-Guard"
+  *set combat_enemy_move2_condition_icon "🗡️"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 12 14
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 12 14
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 12 14
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 8 10
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 9 11
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
+  *comment Tactical/human -- breaks formation to chase a squishy target sometimes (2026-09-29, on request).
+  *set combat_enemy_chase_chance 33
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
+  *comment (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Swordsman"
+  *set {(apt_p & "hp")} 10
+  *set {(apt_p & "max_hp")} 10
+  *set {(apt_p & "ac")} 12
+  *set {(apt_p & "dmg_dice_sides")} 6
+  *set {(apt_p & "epithet")} "the swordsman"
+  *set {(apt_p & "dmg_type")} "slashing"
+  *set {(apt_p & "move2_chance")} 30
+  *set {(apt_p & "move2_atk_bonus")} 2
+  *set {(apt_p & "move2_dmg_dice_sides")} 4
+  *set {(apt_p & "move2_dmg_bonus")} 0
+  *set {(apt_p & "move2_dmg_type")} "slashing"
+  *set {(apt_p & "move2_inflicts_condition")} true
+  *set {(apt_p & "move2_condition_name")} "Off-Guard"
+  *set {(apt_p & "move2_condition_icon")} "🗡️"
+  *gosub apply_ability_score_range apt_p "strength" 12 14
+  *gosub apply_ability_score_range apt_p "dexterity" 12 14
+  *gosub apply_ability_score_range apt_p "constitution" 12 14
+  *gosub apply_ability_score_range apt_p "intelligence" 8 10
+  *gosub apply_ability_score_range apt_p "wisdom" 9 11
+  *gosub apply_ability_score_range apt_p "charisma" 8 10
+  *gosub apply_derived_combat_bonuses apt_p
+  *set {(apt_p & "chase_chance")} 33
+*return
+
+*label apply_type_axeman
+*comment Axe fighter: short, brutal chops. Move 2 (30%) is a wild full-strength swing that tears a deep gash and leaves the
+*comment player Bleeding (disadvantage on the next attack, like every condition-on-hit here -- the name is flavor).
+*if (combat_apply_slot = 1)
+  *set combat_enemy_name "Axeman"
+  *set combat_enemy_hp 10
+  *set combat_enemy_max_hp 10
+  *set combat_enemy_ac 11
+  *set combat_enemy_dmg_dice_sides 6
+  *set combat_enemy_epithet "the axeman"
+  *set combat_enemy_dmg_type "slashing"
+  *set combat_enemy_move2_chance 30
+  *set combat_enemy_move2_atk_bonus 2
+  *set combat_enemy_move2_dmg_dice_sides 4
+  *set combat_enemy_move2_dmg_bonus 0
+  *set combat_enemy_move2_dmg_type "slashing"
+  *set combat_enemy_move2_inflicts_condition true
+  *set combat_enemy_move2_condition_name "Bleeding"
+  *set combat_enemy_move2_condition_icon "🩸"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 14 16
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 8 10
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 13 15
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 7 9
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 8 10
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
+  *set combat_enemy_chase_chance 33
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
+  *comment (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Axeman"
+  *set {(apt_p & "hp")} 10
+  *set {(apt_p & "max_hp")} 10
+  *set {(apt_p & "ac")} 11
+  *set {(apt_p & "dmg_dice_sides")} 6
+  *set {(apt_p & "epithet")} "the axeman"
+  *set {(apt_p & "dmg_type")} "slashing"
+  *set {(apt_p & "move2_chance")} 30
+  *set {(apt_p & "move2_atk_bonus")} 2
+  *set {(apt_p & "move2_dmg_dice_sides")} 4
+  *set {(apt_p & "move2_dmg_bonus")} 0
+  *set {(apt_p & "move2_dmg_type")} "slashing"
+  *set {(apt_p & "move2_inflicts_condition")} true
+  *set {(apt_p & "move2_condition_name")} "Bleeding"
+  *set {(apt_p & "move2_condition_icon")} "🩸"
+  *gosub apply_ability_score_range apt_p "strength" 14 16
+  *gosub apply_ability_score_range apt_p "dexterity" 8 10
+  *gosub apply_ability_score_range apt_p "constitution" 13 15
+  *gosub apply_ability_score_range apt_p "intelligence" 7 9
+  *gosub apply_ability_score_range apt_p "wisdom" 8 10
+  *gosub apply_ability_score_range apt_p "charisma" 8 10
+  *gosub apply_derived_combat_bonuses apt_p
+  *set {(apt_p & "chase_chance")} 33
+*return
+
+*label apply_type_knifeman
+*comment Knife fighter: quick, close, short-reach cuts. Move 2 (30%) is a blade smeared with something dark and foul that
+*comment leaves the player Poisoned. The only human type that poisons.
+*if (combat_apply_slot = 1)
+  *set combat_enemy_name "Knifeman"
+  *set combat_enemy_hp 10
+  *set combat_enemy_max_hp 10
+  *set combat_enemy_ac 11
+  *set combat_enemy_dmg_dice_sides 6
+  *set combat_enemy_epithet "the knifeman"
+  *set combat_enemy_dmg_type "piercing"
+  *set combat_enemy_move2_chance 30
+  *set combat_enemy_move2_atk_bonus 2
+  *set combat_enemy_move2_dmg_dice_sides 4
+  *set combat_enemy_move2_dmg_bonus 0
+  *set combat_enemy_move2_dmg_type "piercing"
+  *set combat_enemy_move2_inflicts_condition true
+  *set combat_enemy_move2_condition_name "Poisoned"
+  *set combat_enemy_move2_condition_icon "🤢"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 9 11
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 14 16
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 10 12
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 8 10
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 9 11
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 9 11
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
+  *set combat_enemy_chase_chance 33
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
+  *comment (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Knifeman"
+  *set {(apt_p & "hp")} 10
+  *set {(apt_p & "max_hp")} 10
+  *set {(apt_p & "ac")} 11
+  *set {(apt_p & "dmg_dice_sides")} 6
+  *set {(apt_p & "epithet")} "the knifeman"
+  *set {(apt_p & "dmg_type")} "piercing"
+  *set {(apt_p & "move2_chance")} 30
+  *set {(apt_p & "move2_atk_bonus")} 2
+  *set {(apt_p & "move2_dmg_dice_sides")} 4
+  *set {(apt_p & "move2_dmg_bonus")} 0
+  *set {(apt_p & "move2_dmg_type")} "piercing"
+  *set {(apt_p & "move2_inflicts_condition")} true
+  *set {(apt_p & "move2_condition_name")} "Poisoned"
+  *set {(apt_p & "move2_condition_icon")} "🤢"
+  *gosub apply_ability_score_range apt_p "strength" 9 11
+  *gosub apply_ability_score_range apt_p "dexterity" 14 16
+  *gosub apply_ability_score_range apt_p "constitution" 10 12
+  *gosub apply_ability_score_range apt_p "intelligence" 8 10
+  *gosub apply_ability_score_range apt_p "wisdom" 9 11
+  *gosub apply_ability_score_range apt_p "charisma" 9 11
+  *gosub apply_derived_combat_bonuses apt_p
+  *set {(apt_p & "chase_chance")} 33
+*return
+
+*label apply_type_maceman
+*comment Mace fighter: heavy, close, brutal swings. Move 2 (30%) is a two-handed overhead skull-crack that leaves the
+*comment player Dazed.
+*if (combat_apply_slot = 1)
+  *set combat_enemy_name "Maceman"
+  *set combat_enemy_hp 10
+  *set combat_enemy_max_hp 10
+  *set combat_enemy_ac 11
+  *set combat_enemy_dmg_dice_sides 6
+  *set combat_enemy_epithet "the maceman"
+  *set combat_enemy_dmg_type "bludgeoning"
+  *set combat_enemy_move2_chance 30
+  *set combat_enemy_move2_atk_bonus 2
+  *set combat_enemy_move2_dmg_dice_sides 4
+  *set combat_enemy_move2_dmg_bonus 0
+  *set combat_enemy_move2_dmg_type "bludgeoning"
+  *set combat_enemy_move2_inflicts_condition true
+  *set combat_enemy_move2_condition_name "Dazed"
+  *set combat_enemy_move2_condition_icon "😵"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 14 16
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 8 10
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 13 15
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 7 9
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 8 10
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
+  *set combat_enemy_chase_chance 33
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
+  *comment (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Maceman"
+  *set {(apt_p & "hp")} 10
+  *set {(apt_p & "max_hp")} 10
+  *set {(apt_p & "ac")} 11
+  *set {(apt_p & "dmg_dice_sides")} 6
+  *set {(apt_p & "epithet")} "the maceman"
+  *set {(apt_p & "dmg_type")} "bludgeoning"
+  *set {(apt_p & "move2_chance")} 30
+  *set {(apt_p & "move2_atk_bonus")} 2
+  *set {(apt_p & "move2_dmg_dice_sides")} 4
+  *set {(apt_p & "move2_dmg_bonus")} 0
+  *set {(apt_p & "move2_dmg_type")} "bludgeoning"
+  *set {(apt_p & "move2_inflicts_condition")} true
+  *set {(apt_p & "move2_condition_name")} "Dazed"
+  *set {(apt_p & "move2_condition_icon")} "😵"
+  *gosub apply_ability_score_range apt_p "strength" 14 16
+  *gosub apply_ability_score_range apt_p "dexterity" 8 10
+  *gosub apply_ability_score_range apt_p "constitution" 13 15
+  *gosub apply_ability_score_range apt_p "intelligence" 7 9
+  *gosub apply_ability_score_range apt_p "wisdom" 8 10
+  *gosub apply_ability_score_range apt_p "charisma" 8 10
+  *gosub apply_derived_combat_bonuses apt_p
+  *set {(apt_p & "chase_chance")} 33
+*return
+
+*label apply_type_spearman
+*comment Spear fighter: long reach, thrusts and sweeps. Move 2 (30%) pins the player's weapon arm against the shaft
+*comment (Pinned). Not balance-simmed.
+*if (combat_apply_slot = 1)
+  *set combat_enemy_name "Spearman"
+  *set combat_enemy_hp 10
+  *set combat_enemy_max_hp 10
+  *set combat_enemy_ac 11
+  *set combat_enemy_dmg_dice_sides 6
+  *set combat_enemy_epithet "the spearman"
+  *set combat_enemy_dmg_type "piercing"
+  *set combat_enemy_move2_chance 30
+  *set combat_enemy_move2_atk_bonus 2
+  *set combat_enemy_move2_dmg_dice_sides 4
+  *set combat_enemy_move2_dmg_bonus 0
+  *set combat_enemy_move2_dmg_type "piercing"
+  *set combat_enemy_move2_inflicts_condition true
+  *set combat_enemy_move2_condition_name "Pinned"
+  *set combat_enemy_move2_condition_icon "📌"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 12 14
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 11 13
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 12 14
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 8 10
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 10 12
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
+  *set combat_enemy_chase_chance 33
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
+  *comment (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Spearman"
+  *set {(apt_p & "hp")} 10
+  *set {(apt_p & "max_hp")} 10
+  *set {(apt_p & "ac")} 11
+  *set {(apt_p & "dmg_dice_sides")} 6
+  *set {(apt_p & "epithet")} "the spearman"
+  *set {(apt_p & "dmg_type")} "piercing"
+  *set {(apt_p & "move2_chance")} 30
+  *set {(apt_p & "move2_atk_bonus")} 2
+  *set {(apt_p & "move2_dmg_dice_sides")} 4
+  *set {(apt_p & "move2_dmg_bonus")} 0
+  *set {(apt_p & "move2_dmg_type")} "piercing"
+  *set {(apt_p & "move2_inflicts_condition")} true
+  *set {(apt_p & "move2_condition_name")} "Pinned"
+  *set {(apt_p & "move2_condition_icon")} "📌"
+  *gosub apply_ability_score_range apt_p "strength" 12 14
+  *gosub apply_ability_score_range apt_p "dexterity" 11 13
+  *gosub apply_ability_score_range apt_p "constitution" 12 14
+  *gosub apply_ability_score_range apt_p "intelligence" 8 10
+  *gosub apply_ability_score_range apt_p "wisdom" 10 12
+  *gosub apply_ability_score_range apt_p "charisma" 8 10
+  *gosub apply_derived_combat_bonuses apt_p
+  *set {(apt_p & "chase_chance")} 33
+*return
+
+*label apply_type_hookman
+*comment Hooked-pole fighter: long reach, hooks and drags. Move 2 (30%) snags the player and hauls them off their feet,
+*comment leaving them Off-Balance.
+*if (combat_apply_slot = 1)
+  *set combat_enemy_name "Hookman"
+  *set combat_enemy_hp 10
+  *set combat_enemy_max_hp 10
+  *set combat_enemy_ac 11
+  *set combat_enemy_dmg_dice_sides 6
+  *set combat_enemy_epithet "the hookman"
+  *set combat_enemy_dmg_type "piercing"
+  *set combat_enemy_move2_chance 30
+  *set combat_enemy_move2_atk_bonus 2
+  *set combat_enemy_move2_dmg_dice_sides 4
+  *set combat_enemy_move2_dmg_bonus 0
+  *set combat_enemy_move2_dmg_type "bludgeoning"
+  *set combat_enemy_move2_inflicts_condition true
+  *set combat_enemy_move2_condition_name "Off-Balance"
+  *set combat_enemy_move2_condition_icon "🌀"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 12 14
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 10 12
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 12 14
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 7 9
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 8 10
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
+  *set combat_enemy_chase_chance 33
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
+  *comment (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Hookman"
+  *set {(apt_p & "hp")} 10
+  *set {(apt_p & "max_hp")} 10
+  *set {(apt_p & "ac")} 11
+  *set {(apt_p & "dmg_dice_sides")} 6
+  *set {(apt_p & "epithet")} "the hookman"
+  *set {(apt_p & "dmg_type")} "piercing"
+  *set {(apt_p & "move2_chance")} 30
+  *set {(apt_p & "move2_atk_bonus")} 2
+  *set {(apt_p & "move2_dmg_dice_sides")} 4
+  *set {(apt_p & "move2_dmg_bonus")} 0
+  *set {(apt_p & "move2_dmg_type")} "bludgeoning"
+  *set {(apt_p & "move2_inflicts_condition")} true
+  *set {(apt_p & "move2_condition_name")} "Off-Balance"
+  *set {(apt_p & "move2_condition_icon")} "🌀"
+  *gosub apply_ability_score_range apt_p "strength" 12 14
+  *gosub apply_ability_score_range apt_p "dexterity" 10 12
+  *gosub apply_ability_score_range apt_p "constitution" 12 14
+  *gosub apply_ability_score_range apt_p "intelligence" 7 9
+  *gosub apply_ability_score_range apt_p "wisdom" 8 10
+  *gosub apply_ability_score_range apt_p "charisma" 8 10
+  *gosub apply_derived_combat_bonuses apt_p
+  *set {(apt_p & "chase_chance")} 33
+*return
+
+*label apply_type_archer
+*comment Bow fighter: fragile (7 HP, AC 10) but hits hard from range. Move 2 (25%) is a shot at the legs (Hobbled).
+*comment Not balance-simmed.
+*if (combat_apply_slot = 1)
+  *set combat_enemy_name "Archer"
+  *set combat_enemy_hp 7
+  *set combat_enemy_max_hp 7
+  *set combat_enemy_ac 10
+  *set combat_enemy_dmg_dice_sides 6
+  *set combat_enemy_epithet "the archer"
+  *set combat_enemy_dmg_type "piercing"
+  *set combat_enemy_weapon_type "ranged"
+  *set combat_enemy_move2_chance 25
+  *set combat_enemy_move2_atk_bonus 2
+  *set combat_enemy_move2_dmg_dice_sides 4
+  *set combat_enemy_move2_dmg_bonus 0
+  *set combat_enemy_move2_dmg_type "piercing"
+  *set combat_enemy_move2_inflicts_condition true
+  *set combat_enemy_move2_condition_name "Hobbled"
+  *set combat_enemy_move2_condition_icon "🦵"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 9 11
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 15 16
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 10 12
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 9 11
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 11 13
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
+  *comment Sidearm (2026-09-29, Ranged-AI Position Awareness plan §4.1/§4.2): a dagger, drawn only when
+  *comment combat_next_turn's row-2 decision fires (cornered, no melee ally in the shared adjacency bucket --
+  *comment see find_intercepting_ally). Same DEX-based to-hit/damage bonus as the bow just above (a dagger is
+  *comment finesse, same ability either way), only the die shrinks -- 1d4 piercing instead of 1d6, "weaker
+  *comment damage" per the plan's own decision table (§3, row 2) -- and it takes no ranged-at-close-range
+  *comment disadvantage, since a dagger swing is a melee attack.
+  *set combat_enemy_sidearm_weapon_type "melee"
+  *set combat_enemy_sidearm_atk_bonus combat_enemy_atk_bonus
+  *set combat_enemy_sidearm_dmg_dice_sides 4
+  *set combat_enemy_sidearm_dmg_bonus combat_enemy_dmg_bonus
+  *set combat_enemy_sidearm_dmg_type "piercing"
+  *comment Retreat (2026-09-29, plan §4.5/Phase 5): tactical humanoid, can fall back when cornered with a melee
+  *comment ally to cover it -- see combat_enemy_can_retreat's own *create comment for the full rule.
+  *set combat_enemy_can_retreat true
+  *comment Disengage's wounded threshold (2026-09-29, plan §4.7/Phase 6): 33%, the same sensible-default-
+  *comment pending-playtesting starting point every other untuned percentage in this plan used.
+  *set combat_enemy_flee_hp_pct 33
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
+  *comment (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Archer"
+  *set {(apt_p & "hp")} 7
+  *set {(apt_p & "max_hp")} 7
+  *set {(apt_p & "ac")} 10
+  *set {(apt_p & "dmg_dice_sides")} 6
+  *set {(apt_p & "epithet")} "the archer"
+  *set {(apt_p & "dmg_type")} "piercing"
+  *set {(apt_p & "weapon_type")} "ranged"
+  *set {(apt_p & "move2_chance")} 25
+  *set {(apt_p & "move2_atk_bonus")} 2
+  *set {(apt_p & "move2_dmg_dice_sides")} 4
+  *set {(apt_p & "move2_dmg_bonus")} 0
+  *set {(apt_p & "move2_dmg_type")} "piercing"
+  *set {(apt_p & "move2_inflicts_condition")} true
+  *set {(apt_p & "move2_condition_name")} "Hobbled"
+  *set {(apt_p & "move2_condition_icon")} "🦵"
+  *gosub apply_ability_score_range apt_p "strength" 9 11
+  *gosub apply_ability_score_range apt_p "dexterity" 15 16
+  *gosub apply_ability_score_range apt_p "constitution" 10 12
+  *gosub apply_ability_score_range apt_p "intelligence" 9 11
+  *gosub apply_ability_score_range apt_p "wisdom" 11 13
+  *gosub apply_ability_score_range apt_p "charisma" 8 10
+  *gosub apply_derived_combat_bonuses apt_p
+  *comment Sidearm -- see slot 1's own comment above for the full rule.
+  *set {(apt_p & "sidearm_weapon_type")} "melee"
+  *set {(apt_p & "sidearm_atk_bonus")} {(apt_p & "atk_bonus")}
+  *set {(apt_p & "sidearm_dmg_dice_sides")} 4
+  *set {(apt_p & "sidearm_dmg_bonus")} {(apt_p & "dmg_bonus")}
+  *set {(apt_p & "sidearm_dmg_type")} "piercing"
+  *set {(apt_p & "can_retreat")} true
+  *set {(apt_p & "flee_hp_pct")} 33
+*return
+
+*label apply_type_slinger
+*comment Sling fighter, deliberately weak (6 HP, AC 10, +2 for d4) so a bruiser-and-slinger ambush lands near the
+*comment Silt-Lurker's overall difficulty rather than a wipe for casters (see the balance sim). Move 2 (25%) is a fistful
+*comment of grit in the eyes -> Blinded.
+*if (combat_apply_slot = 1)
+  *set combat_enemy_name "Slinger"
+  *set combat_enemy_hp 6
+  *set combat_enemy_max_hp 6
+  *set combat_enemy_ac 10
+  *set combat_enemy_dmg_dice_sides 4
+  *set combat_enemy_epithet "the slinger"
+  *set combat_enemy_dmg_type "bludgeoning"
+  *set combat_enemy_weapon_type "ranged"
+  *set combat_enemy_move2_chance 25
+  *set combat_enemy_move2_atk_bonus 2
+  *set combat_enemy_move2_dmg_dice_sides 2
+  *set combat_enemy_move2_dmg_bonus 0
+  *set combat_enemy_move2_dmg_type "bludgeoning"
+  *set combat_enemy_move2_inflicts_condition true
+  *set combat_enemy_move2_condition_name "Blinded"
+  *set combat_enemy_move2_condition_icon "🌫️"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 9 11
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 13 15
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 9 11
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 7 9
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 8 10
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 8 10
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
+  *comment Sidearm -- see apply_type_archer's slot-1 comment for the full rule. Same die as the sling itself
+  *comment (both 1d4), so "weaker damage" here comes entirely from losing the ranged-at-close-range disadvantage
+  *comment tradeoff being moot, not from a smaller die -- still the correct choice per the plan's row 2, since a
+  *comment clean dagger swing beats a disadvantaged sling shot on average.
+  *set combat_enemy_sidearm_weapon_type "melee"
+  *set combat_enemy_sidearm_atk_bonus combat_enemy_atk_bonus
+  *set combat_enemy_sidearm_dmg_dice_sides 4
+  *set combat_enemy_sidearm_dmg_bonus combat_enemy_dmg_bonus
+  *set combat_enemy_sidearm_dmg_type "piercing"
+  *set combat_enemy_can_retreat true
+  *set combat_enemy_flee_hp_pct 33
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
+  *comment (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Slinger"
+  *set {(apt_p & "hp")} 6
+  *set {(apt_p & "max_hp")} 6
+  *set {(apt_p & "ac")} 10
+  *set {(apt_p & "dmg_dice_sides")} 4
+  *set {(apt_p & "epithet")} "the slinger"
+  *set {(apt_p & "dmg_type")} "bludgeoning"
+  *set {(apt_p & "weapon_type")} "ranged"
+  *set {(apt_p & "move2_chance")} 25
+  *set {(apt_p & "move2_atk_bonus")} 2
+  *set {(apt_p & "move2_dmg_dice_sides")} 2
+  *set {(apt_p & "move2_dmg_bonus")} 0
+  *set {(apt_p & "move2_dmg_type")} "bludgeoning"
+  *set {(apt_p & "move2_inflicts_condition")} true
+  *set {(apt_p & "move2_condition_name")} "Blinded"
+  *set {(apt_p & "move2_condition_icon")} "🌫️"
+  *gosub apply_ability_score_range apt_p "strength" 9 11
+  *gosub apply_ability_score_range apt_p "dexterity" 13 15
+  *gosub apply_ability_score_range apt_p "constitution" 9 11
+  *gosub apply_ability_score_range apt_p "intelligence" 7 9
+  *gosub apply_ability_score_range apt_p "wisdom" 8 10
+  *gosub apply_ability_score_range apt_p "charisma" 8 10
+  *gosub apply_derived_combat_bonuses apt_p
+  *comment Sidearm -- see apply_type_archer's slot-1 comment for the full rule.
+  *set {(apt_p & "sidearm_weapon_type")} "melee"
+  *set {(apt_p & "sidearm_atk_bonus")} {(apt_p & "atk_bonus")}
+  *set {(apt_p & "sidearm_dmg_dice_sides")} 4
+  *set {(apt_p & "sidearm_dmg_bonus")} {(apt_p & "dmg_bonus")}
+  *set {(apt_p & "sidearm_dmg_type")} "piercing"
+  *set {(apt_p & "can_retreat")} true
+  *set {(apt_p & "flee_hp_pct")} 33
+*return
+
+*label apply_type_guard
+*comment Plain mace-armed hired muscle, no movepool/condition. fight_rennick_guards (Alderford's curing shed) fills two
+*comment slots with it, renamed Left and Right.
+*if (combat_apply_slot = 1)
+  *set combat_enemy_name "Guard"
+  *set combat_enemy_hp 8
+  *set combat_enemy_max_hp 8
+  *set combat_enemy_ac 12
+  *set combat_enemy_dmg_dice_sides 4
+  *set combat_enemy_epithet "the guard"
+  *set combat_enemy_dmg_type "bludgeoning"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 11 13
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 10 12
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 11 13
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 9 11
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 10 12
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 9 11
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
+  *set combat_enemy_chase_chance 33
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
+  *comment (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Guard"
+  *set {(apt_p & "hp")} 8
+  *set {(apt_p & "max_hp")} 8
+  *set {(apt_p & "ac")} 12
+  *set {(apt_p & "dmg_dice_sides")} 4
+  *set {(apt_p & "epithet")} "the guard"
+  *set {(apt_p & "dmg_type")} "bludgeoning"
+  *gosub apply_ability_score_range apt_p "strength" 11 13
+  *gosub apply_ability_score_range apt_p "dexterity" 10 12
+  *gosub apply_ability_score_range apt_p "constitution" 11 13
+  *gosub apply_ability_score_range apt_p "intelligence" 9 11
+  *gosub apply_ability_score_range apt_p "wisdom" 10 12
+  *gosub apply_ability_score_range apt_p "charisma" 9 11
+  *gosub apply_derived_combat_bonuses apt_p
+  *set {(apt_p & "chase_chance")} 33
+*return
+
+*label apply_type_lacedon
+*comment A drowned, clawing undead: quick, close, hard to hold. Stats are the Silt-Lurker of Alderford's cellar quest.
+*comment Mindless -- never sets combat_enemy_chase_chance (2026-09-29), so it stays at the *create default of 0
+*comment and roll_enemy_chase_commit's own >0 gate always skips it. It fights whatever's in front of it and
+*comment never breaks formation to hunt a squishier target; that's a human, tactical judgment call this undead
+*comment doesn't make.
+*if (combat_apply_slot = 1)
+  *set combat_enemy_name "Lacedon"
+  *set combat_enemy_hp 12
+  *set combat_enemy_max_hp 12
+  *set combat_enemy_ac 12
+  *set combat_enemy_dmg_dice_sides 6
+  *set combat_enemy_epithet "the lacedon"
+  *set combat_enemy_dmg_type "slashing"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 13 15
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 13 15
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 14 16
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 6 8
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 8 10
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 6 8
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
+  *comment (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Lacedon"
+  *set {(apt_p & "hp")} 12
+  *set {(apt_p & "max_hp")} 12
+  *set {(apt_p & "ac")} 12
+  *set {(apt_p & "dmg_dice_sides")} 6
+  *set {(apt_p & "epithet")} "the lacedon"
+  *set {(apt_p & "dmg_type")} "slashing"
+  *gosub apply_ability_score_range apt_p "strength" 13 15
+  *gosub apply_ability_score_range apt_p "dexterity" 13 15
+  *gosub apply_ability_score_range apt_p "constitution" 14 16
+  *gosub apply_ability_score_range apt_p "intelligence" 6 8
+  *gosub apply_ability_score_range apt_p "wisdom" 8 10
+  *gosub apply_ability_score_range apt_p "charisma" 6 8
+  *gosub apply_derived_combat_bonuses apt_p
+*return
+
+*label apply_type_beast
+*comment A generic natural-attack monster with no special move: 9 HP, AC 11, +3 to hit, d6+1. A scene makes it a wolf, a
+*comment boar or a ghoul by naming it, and a tougher or weaker one with the hp, ac and atk overrides. Not balance-simmed.
+*comment Mindless -- same reasoning as apply_type_lacedon's own comment: never sets combat_enemy_chase_chance,
+*comment stays at 0, never breaks formation.
+*if (combat_apply_slot = 1)
+  *set combat_enemy_name "Beast"
+  *set combat_enemy_hp 9
+  *set combat_enemy_max_hp 9
+  *set combat_enemy_ac 11
+  *set combat_enemy_dmg_dice_sides 6
+  *set combat_enemy_epithet "the beast"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 12 14
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 12 14
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 12 14
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 3 5
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 11 13
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 5 7
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
+  *comment (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Beast"
+  *set {(apt_p & "hp")} 9
+  *set {(apt_p & "max_hp")} 9
+  *set {(apt_p & "ac")} 11
+  *set {(apt_p & "dmg_dice_sides")} 6
+  *set {(apt_p & "epithet")} "the beast"
+  *gosub apply_ability_score_range apt_p "strength" 12 14
+  *gosub apply_ability_score_range apt_p "dexterity" 12 14
+  *gosub apply_ability_score_range apt_p "constitution" 12 14
+  *gosub apply_ability_score_range apt_p "intelligence" 3 5
+  *gosub apply_ability_score_range apt_p "wisdom" 11 13
+  *gosub apply_ability_score_range apt_p "charisma" 5 7
+  *gosub apply_derived_combat_bonuses apt_p
+*return
+
+*label apply_type_mire_rat
+*comment Big-as-a-cat vermin: fragile and fast, meant to come in threes. Stats are Alderford's granary rats.
+*comment Mindless -- same reasoning as apply_type_lacedon's own comment: never sets combat_enemy_chase_chance,
+*comment stays at 0, never breaks formation.
+*if (combat_apply_slot = 1)
+  *set combat_enemy_name "Mire-Rat"
+  *set combat_enemy_hp 4
+  *set combat_enemy_max_hp 4
+  *set combat_enemy_ac 9
+  *set combat_enemy_dmg_dice_sides 4
+  *set combat_enemy_epithet "the mire-rat"
+  *set combat_enemy_dmg_type "piercing"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 6 8
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 13 15
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 8 10
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 3 5
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 9 11
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 4 6
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection, instead of a hand-copied block per slot
+  *comment (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Mire-Rat"
+  *set {(apt_p & "hp")} 4
+  *set {(apt_p & "max_hp")} 4
+  *set {(apt_p & "ac")} 9
+  *set {(apt_p & "dmg_dice_sides")} 4
+  *set {(apt_p & "epithet")} "the mire-rat"
+  *set {(apt_p & "dmg_type")} "piercing"
+  *gosub apply_ability_score_range apt_p "strength" 6 8
+  *gosub apply_ability_score_range apt_p "dexterity" 14 16
+  *gosub apply_ability_score_range apt_p "constitution" 8 10
+  *gosub apply_ability_score_range apt_p "intelligence" 3 5
+  *gosub apply_ability_score_range apt_p "wisdom" 9 11
+  *gosub apply_ability_score_range apt_p "charisma" 4 6
+  *gosub apply_derived_combat_bonuses apt_p
+*return
+
+
+*label apply_generic_weapon_flavor
+*comment The player's side of a fight against a human fighter. Nothing is stored: every weapon line, finishing blow and
+*comment the Dissonant Whispers pair is built at the moment it is needed, from flavor_player_<damage type> and
+*comment flavor_kill_/flavor_yield_<damage type> (PLAYER STRIKE FLAVOR and PLAYER FINISHING BLOWS, combat_prose.txt), which is what lets
+*comment them follow the weapon's damage type and name the fighter through its epithet. This label only raises the flags
+*comment pick_weapon_flavor and pick_weapon_death_flavor read. A hand-authored fight can still leave combat_player_keyed
+*comment false and write its own combat_flavor_* lines instead.
+*set combat_player_keyed true
+*set combat_player_creature false
+*return
+
+*label apply_creature_weapon_flavor
+*comment The player's side of a fight against a creature (a lacedon, a rat, a beast). The same as
+*comment apply_generic_weapon_flavor, but pick_weapon_flavor and pick_weapon_death_flavor use the flavor_creature_ labels
+*comment (PLAYER LINES AGAINST A CREATURE, combat_prose.txt), which assume only a body with a head, shoulders, flank and legs.
+*set combat_player_keyed true
+*set combat_player_creature true
+*return
+
+*comment ============================================================================
+*comment ALLY TYPE LIBRARY (2026-09-28)
+*comment A reusable alternative to hand-authoring an ally's stat block inline, mirroring ENEMY TYPE LIBRARY below:
+*comment a scene sets combat_ally_lib_1 (and optionally _2/_3/_4) to a type id before calling fight_library, and
+*comment optionally combat_ally1_name_override/_epithet_override (and the _2/_3/_4 versions) to reuse a type under
+*comment a unique name -- "Kess" instead of the archer type's generic "Archer" -- with no other change. Unlike
+*comment enemy slot 1, every ally slot (1-4) is written directly via indirection; there's no "bare" canonical slot
+*comment to special-case. combat_ally1_range (and _2/_3/_4) is deliberately untouched here -- like
+*comment combat_enemy_range, it's caller-optional: leave it at the type's default (0, Engaged) or set it before
+*comment calling fight_library to open a melee ally away from Engaged, same as combat_enemy_range 3 in
+*comment fight_dev_range_test.
+*comment Available types: "archer" and "slinger" (both ranged, keep their distance, both quick-draw a dagger when a
+*comment target closes to range 0), and "guard" (melee, closes and strikes).
+*comment combat_ally_lib_* is cleared by fight_cleanup.
+*comment ============================================================================
+
+*label apply_ally_roster
+*comment Called from fight_library, before fight_setup. Applies every filled combat_ally_lib_N (1..
+*comment combat_ally_slot_cap) via apply_ally_type, the same bounded-loop-plus-indirection pattern fight_library's
+*comment own slot loop uses for enemies, and sets combat_ally_count to the highest filled slot. A fight with no
+*comment allies at all (combat_ally_lib_1 through _4 all "") leaves combat_ally_count at 0, same as ever.
+*set combat_ally_count 0
+*temp aar_i 1
+*label apply_ally_roster_loop
+*if (aar_i <= combat_ally_slot_cap)
+  *temp aar_lib {("combat_ally_lib_" & aar_i)}
+  *if (not(aar_lib = ""))
+    *set combat_ally_count aar_i
+    *set combat_apply_ally_slot aar_i
+    *set combat_apply_ally_type aar_lib
+    *gosub apply_ally_type
+  *set aar_i + 1
+  *goto apply_ally_roster_loop
+*return
+
+*label apply_ally_type
+*if (combat_apply_ally_type = "archer")
+  *gosub apply_allytype_archer
+*if (combat_apply_ally_type = "slinger")
+  *gosub apply_allytype_slinger
+*if (combat_apply_ally_type = "guard")
+  *gosub apply_allytype_guard
+*gosub assign_ally_behavior_profile combat_apply_ally_slot combat_apply_ally_type
+*temp aat_p (("combat_ally" & combat_apply_ally_slot) & "_")
+*temp aat_name_ov {(aat_p & "name_override")}
+*temp aat_epi_ov {(aat_p & "epithet_override")}
+*if (not(aat_name_ov = ""))
+  *set {(aat_p & "name")} aat_name_ov
+  *set {(aat_p & "name_override")} ""
+*if (not(aat_epi_ov = ""))
+  *set {(aat_p & "epithet")} aat_epi_ov
+  *set {(aat_p & "epithet_override")} ""
+*return
+
+*label apply_allytype_archer
+*comment Ranged skirmisher: a bow at range, keeps its distance. resolve_ally_attack never checks range for a
+*comment weapon_type "ranged" ally, so this one attacks every turn regardless of combat_ally1_range. HP/AC/damage
+*comment dice stay flat authored numbers (same convention every enemy type still uses -- apply_derived_hp/_ac
+*comment exist but nothing opts into them yet). atk_bonus/dmg_bonus (2026-09-28) derive from rolled ability
+*comment scores through the SAME apply_ability_score_range/apply_derived_combat_bonuses the enemy library uses,
+*comment replacing Kess's original fixed +4/+2 -- DEX 14-16 keeps the roll centered close to those original
+*comment numbers rather than a from-scratch retune. weapon_type must be set before apply_derived_combat_bonuses
+*comment runs, since it reads {prefix & "weapon_type"} to pick DEX over STR.
+*temp aaa_p (("combat_ally" & combat_apply_ally_slot) & "_")
+*set {(aaa_p & "name")} "Archer"
+*set {(aaa_p & "epithet")} "the archer"
+*set {(aaa_p & "hp")} 10
+*set {(aaa_p & "max_hp")} 10
+*set {(aaa_p & "ac")} 13
+*set {(aaa_p & "dmg_dice_sides")} 6
+*set {(aaa_p & "dmg_type")} "piercing"
+*set {(aaa_p & "weapon_type")} "ranged"
+*gosub apply_ability_score_range aaa_p "strength" 8 10
+*gosub apply_ability_score_range aaa_p "dexterity" 14 16
+*gosub apply_ability_score_range aaa_p "constitution" 10 12
+*gosub apply_ability_score_range aaa_p "intelligence" 8 10
+*gosub apply_ability_score_range aaa_p "wisdom" 10 12
+*gosub apply_ability_score_range aaa_p "charisma" 8 10
+*gosub apply_derived_combat_bonuses aaa_p
+*comment Sidearm (2026-09-29, Ranged-AI Position Awareness plan §4.1, extended to allies on request -- Kess is
+*comment this type, given one for the same reason the enemy archer is): a dagger, same DEX-based to-hit/damage
+*comment bonus as the bow just above, only the die drops to 1d4. Read by resolve_ally_attack (combat_dice.txt),
+*comment which quick-draws it for the ONE attack a ranged ally makes while a target is at range 0 -- shooting from
+*comment inside a foe's reach costs disadvantage, and the knife does not. Turn-scoped, never a persistent equip.
+*comment "Always fully rewrites" per this label's own header, so apply_allytype_guard clears it explicitly rather
+*comment than relying on a reset loop -- there isn't one for ally fields (see fight_cleanup_ally_loop's comment).
+*set {(aaa_p & "sidearm_weapon_type")} "melee"
+*set {(aaa_p & "sidearm_atk_bonus")} {(aaa_p & "atk_bonus")}
+*set {(aaa_p & "sidearm_dmg_dice_sides")} 4
+*set {(aaa_p & "sidearm_dmg_bonus")} {(aaa_p & "dmg_bonus")}
+*set {(aaa_p & "sidearm_dmg_type")} "piercing"
+*comment Retreat/Disengage (2026-09-29, ally-side rows 3-4 mirror, on request): same per-type opt-in as the
+*comment enemy archer/slinger. 33% max HP untuned starting point, same as the enemy side -- see
+*comment RANGED_AI_PLAN.md §4.7 for why this hasn't been balance-simmed either.
+*set {(aaa_p & "can_retreat")} true
+*set {(aaa_p & "flee_hp_pct")} 33
+*return
+
+*label apply_allytype_slinger
+*comment Ranged skirmisher variant: a sling rather than a bow. Unlike the enemy library, fight_narrate_ally_attack
+*comment (combat_prose.txt) has no per-type flavor dispatch for allies -- fnaa_ranged is one generic "shot" pool
+*comment shared by every ranged ally, so this reads mechanically identical to apply_allytype_archer at range (same
+*comment DEX-based derived bonuses, same close-range quick-draw) and narrates the same as any other ranged ally shot.
+*comment The die is smaller (1d6, not the archer's), and the HP/AC are nudged a little softer to reflect a thrown
+*comment stone being a poor answer to a shield.
+*temp asl_p (("combat_ally" & combat_apply_ally_slot) & "_")
+*set {(asl_p & "name")} "Slinger"
+*set {(asl_p & "epithet")} "the slinger"
+*set {(asl_p & "hp")} 9
+*set {(asl_p & "max_hp")} 9
+*set {(asl_p & "ac")} 12
+*set {(asl_p & "dmg_dice_sides")} 6
+*set {(asl_p & "dmg_type")} "bludgeoning"
+*set {(asl_p & "weapon_type")} "ranged"
+*gosub apply_ability_score_range asl_p "strength" 8 10
+*gosub apply_ability_score_range asl_p "dexterity" 14 16
+*gosub apply_ability_score_range asl_p "constitution" 10 12
+*gosub apply_ability_score_range asl_p "intelligence" 8 10
+*gosub apply_ability_score_range asl_p "wisdom" 10 12
+*gosub apply_ability_score_range asl_p "charisma" 8 10
+*gosub apply_derived_combat_bonuses asl_p
+*comment Sidearm: a dagger, same DEX-based bonuses as the sling above, die dropped to 1d4 -- the same data shape
+*comment apply_allytype_archer writes. Written explicitly rather than relying on a reset loop, per that label's header.
+*set {(asl_p & "sidearm_weapon_type")} "melee"
+*set {(asl_p & "sidearm_atk_bonus")} {(asl_p & "atk_bonus")}
+*set {(asl_p & "sidearm_dmg_dice_sides")} 4
+*set {(asl_p & "sidearm_dmg_bonus")} {(asl_p & "dmg_bonus")}
+*set {(asl_p & "sidearm_dmg_type")} "piercing"
+*comment Retreat/Disengage: same as apply_allytype_archer's own field, same untuned 33%.
+*set {(asl_p & "can_retreat")} true
+*set {(asl_p & "flee_hp_pct")} 33
+*return
+
+*label apply_allytype_guard
+*comment Melee bruiser: sword and shield, holds the line. First melee archetype -- exercises resolve_ally_attack's
+*comment melee path end to end, gated on this ally's OWN combat_ally<N>_range (combat_next_turn's ally branch)
+*comment reaching 0 before it swings. HP/AC/damage dice stay flat authored numbers, same convention as every
+*comment enemy type. atk_bonus/dmg_bonus (2026-09-28) derive from rolled ability scores the same way the archer
+*comment archetype's do -- STR 14-16 keeps the roll centered close to the original fixed +4/+2, and STR/DEX
+*comment "whichever rolled higher" (apply_derived_combat_bonuses' own rule) never actually picks DEX here since
+*comment its 10-12 range can't out-roll STR's 14-16.
+*temp aag_p (("combat_ally" & combat_apply_ally_slot) & "_")
+*set {(aag_p & "name")} "Guard"
+*set {(aag_p & "epithet")} "the guard"
+*set {(aag_p & "hp")} 13
+*set {(aag_p & "max_hp")} 13
+*set {(aag_p & "ac")} 15
+*set {(aag_p & "dmg_dice_sides")} 8
+*set {(aag_p & "dmg_type")} "slashing"
+*set {(aag_p & "weapon_type")} "melee"
+*gosub apply_ability_score_range aag_p "strength" 14 16
+*gosub apply_ability_score_range aag_p "dexterity" 10 12
+*gosub apply_ability_score_range aag_p "constitution" 12 14
+*gosub apply_ability_score_range aag_p "intelligence" 8 10
+*gosub apply_ability_score_range aag_p "wisdom" 10 12
+*gosub apply_ability_score_range aag_p "charisma" 8 10
+*gosub apply_derived_combat_bonuses aag_p
+*comment Sidearm: guard carries none -- see apply_allytype_archer's own comment for why this is cleared
+*comment explicitly rather than reset by a loop.
+*set {(aag_p & "sidearm_weapon_type")} ""
+*set {(aag_p & "sidearm_atk_bonus")} 0
+*set {(aag_p & "sidearm_dmg_dice_sides")} 4
+*set {(aag_p & "sidearm_dmg_bonus")} 0
+*set {(aag_p & "sidearm_dmg_type")} "piercing"
+*comment Tactical/human -- same reasoning as the enemy-side humanoid melee types (2026-09-29, on request): Rook
+*comment can break off to chase a squishy enemy caster/archer sometimes.
+*set {(aag_p & "chase_chance")} 33
+*comment Retreat/Disengage: a melee bruiser holds the line, it doesn't fall back from one -- cleared explicitly
+*comment for the same reason sidearm is cleared above rather than left to a reset loop that doesn't exist.
+*set {(aag_p & "can_retreat")} false
+*set {(aag_p & "flee_hp_pct")} 0
+*return

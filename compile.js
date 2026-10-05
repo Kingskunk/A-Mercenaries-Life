@@ -177,6 +177,12 @@ function compile(){
   // allScenes object and every *gosub_scene combat ... call fails at runtime
   // with "scene doesn't exist" the moment a player actually reaches a fight.
   verifyFileName("combat.txt");
+  // Combat's supporting modules are *gosub_scene-only libraries, just like combat.txt itself. Keep them out of
+  // *scene_list so they cannot affect the chapter-to-chapter *finish chain, but include them in compiled builds
+  // or the runtime loader cannot find the extracted type, movement, and AI labels.
+  verifyFileName("combat_types.txt");
+  verifyFileName("combat_movement.txt");
+  verifyFileName("combat_ai.txt");
   // "combat_prose" holds combat.txt's static narration text pools, split out 2026-09-28 to keep combat.txt
   // mechanics-focused (see combat_prose.txt's own header comment). Reached only via *gosub_scene combat_prose
   // <label>, never *goto_scene/*finish, same shape as combat.txt/death.txt/equipment.txt -- deliberately NOT in

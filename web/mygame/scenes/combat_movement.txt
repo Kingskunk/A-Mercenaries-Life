@@ -1,0 +1,567 @@
+*comment COMBAT MOVEMENT AND BATTLEFIELD RULES
+*comment Shared lane coordinates, distance tiers, reach, chokepoints, line of sight, and movement-aware target selection.
+*comment The fight controller and action-menu presentation stay in combat.txt; this module exposes deterministic helpers
+*comment that scenes and future terrain features can reuse without duplicating movement rules.
+*label combat_initialize_shared_lane
+*comment Compatibility-first lane setup. Existing encounters still author their opening enemy/ally ranges, so the
+*comment lane is seeded from those values instead of forcing every fight to be rewritten. Enemies start on the far
+*comment side of the player; an ally's opening range is interpreted against enemy slot 1 until its real target is
+*comment known. This has no gameplay effect until a movement path is migrated to the shared helpers below.
+*set combat_lane_player_position 3
+*temp cisl_enemy_i 1
+*label combat_initialize_shared_lane_enemy_loop
+*if (cisl_enemy_i <= combat_enemy_slot_cap)
+  *temp cisl_range {(("combat_enemy" & cisl_enemy_i) & "_range")}
+  *if (cisl_range < 0)
+    *set cisl_range 0
+  *if (cisl_range > 3)
+    *set cisl_range 3
+  *set {(("combat_enemy" & cisl_enemy_i) & "_position")} (combat_lane_player_position + cisl_range)
+  *set cisl_enemy_i + 1
+  *goto combat_initialize_shared_lane_enemy_loop
+*temp cisl_ally_i 1
+*label combat_initialize_shared_lane_ally_loop
+*if (cisl_ally_i <= combat_ally_slot_cap)
+  *temp cisl_range {(("combat_ally" & cisl_ally_i) & "_range")}
+  *if (cisl_range < 0)
+    *set cisl_range 0
+  *if (cisl_range > 3)
+    *set cisl_range 3
+  *temp cisl_pos (combat_enemy1_position - cisl_range)
+  *if (cisl_pos < combat_lane_min_position)
+    *set cisl_pos combat_lane_min_position
+  *if (cisl_pos > combat_lane_max_position)
+    *set cisl_pos combat_lane_max_position
+  *set {(("combat_ally" & cisl_ally_i) & "_position")} cisl_pos
+  *set cisl_ally_i + 1
+  *goto combat_initialize_shared_lane_ally_loop
+*comment Migrate the original global chokepoint declaration into terrain slot 1 for legacy fights. A chokepoint
+*comment is capacity-only for now: it controls who can occupy its lane coordinate, without adding prose or a
+*comment targeting/line-of-sight rule.
+*if ((combat_battlefield_rule = "chokepoint") and (combat_terrain1_type = "none"))
+  *set combat_terrain1_type "chokepoint"
+  *set combat_terrain1_position (combat_lane_player_position + 1)
+  *set combat_terrain1_capacity combat_chokepoint_capacity
+  *set combat_terrain1_blocks_los combat_chokepoint_blocks_los
+*set combat_lane_ready true
+*return
+
+*label combat_get_high_ground_attack_modifier
+*comment Shared elevation query for ranged weapon and spell ATTACK rolls. The lane coordinate, not an enemy type,
+*comment decides elevation: a combatant on any "high_ground" terrain slot gains +2 against a target not on high
+*comment ground, while a low attacker suffers -2 against an elevated target. If both (or neither) are elevated,
+*comment the modifier is 0. Saving throws intentionally never call this label.
+*params cghgam_attacker_kind cghgam_attacker_slot cghgam_defender_kind cghgam_defender_slot
+*set combat_high_ground_attack_bonus 0
+*set combat_high_ground_attack_label ""
+*temp cghgam_attacker_position combat_lane_player_position
+*temp cghgam_defender_position combat_lane_player_position
+*if (cghgam_attacker_kind = "enemy")
+  *set cghgam_attacker_position {(("combat_enemy" & cghgam_attacker_slot) & "_position")}
+*if (cghgam_attacker_kind = "ally")
+  *set cghgam_attacker_position {(("combat_ally" & cghgam_attacker_slot) & "_position")}
+*if (cghgam_defender_kind = "enemy")
+  *set cghgam_defender_position {(("combat_enemy" & cghgam_defender_slot) & "_position")}
+*if (cghgam_defender_kind = "ally")
+  *set cghgam_defender_position {(("combat_ally" & cghgam_defender_slot) & "_position")}
+*temp cghgam_attacker_high false
+*temp cghgam_defender_high false
+*temp cghgam_i 1
+*label combat_get_high_ground_attack_modifier_loop
+*if (cghgam_i <= combat_terrain_slot_cap)
+  *temp cghgam_type {(("combat_terrain" & cghgam_i) & "_type")}
+  *temp cghgam_position {(("combat_terrain" & cghgam_i) & "_position")}
+  *if (cghgam_type = "high_ground")
+    *if (cghgam_attacker_position = cghgam_position)
+      *set cghgam_attacker_high true
+    *if (cghgam_defender_position = cghgam_position)
+      *set cghgam_defender_high true
+  *set cghgam_i + 1
+  *goto combat_get_high_ground_attack_modifier_loop
+*if ((cghgam_attacker_high) and (not(cghgam_defender_high)))
+  *set combat_high_ground_attack_bonus 2
+  *set combat_high_ground_attack_label " +2 (High Ground)"
+*if ((cghgam_defender_high) and (not(cghgam_attacker_high)))
+  *set combat_high_ground_attack_bonus -2
+  *set combat_high_ground_attack_label " -2 (Target on High Ground)"
+*return
+
+*label combat_get_cover_ranged_defense_bonus
+*comment Shared defender-side terrain query for ranged weapon and spell ATTACK rolls. A combatant occupying any
+*comment "cover" slot gets +2 AC against that attack. Melee attacks, saving throws, and automatic hits never call
+*comment this label, so Cover cannot accidentally affect them.
+*params cgcrdb_defender_kind cgcrdb_defender_slot
+*set combat_cover_ranged_defense_bonus 0
+*set combat_cover_ranged_defense_label ""
+*temp cgcrdb_position combat_lane_player_position
+*if (cgcrdb_defender_kind = "enemy")
+  *set cgcrdb_position {(("combat_enemy" & cgcrdb_defender_slot) & "_position")}
+*if (cgcrdb_defender_kind = "ally")
+  *set cgcrdb_position {(("combat_ally" & cgcrdb_defender_slot) & "_position")}
+*temp cgcrdb_i 1
+*label combat_get_cover_ranged_defense_bonus_loop
+*if (cgcrdb_i <= combat_terrain_slot_cap)
+  *temp cgcrdb_type {(("combat_terrain" & cgcrdb_i) & "_type")}
+  *temp cgcrdb_terrain_position {(("combat_terrain" & cgcrdb_i) & "_position")}
+  *if ((cgcrdb_type = "cover") and (cgcrdb_position = cgcrdb_terrain_position))
+    *set combat_cover_ranged_defense_bonus 2
+    *set combat_cover_ranged_defense_label " (+2 Cover)"
+  *set cgcrdb_i + 1
+  *goto combat_get_cover_ranged_defense_bonus_loop
+*return
+
+*label combat_lane_crossing_query
+*comment Shared terrain query for future movement actions. Call with two adjacent lane positions, then read
+*comment combat_lane_crossing_has_chokepoint / _slot. It deliberately does not decide occupancy yet: that belongs
+*comment to the movement resolver, which needs to know who is attempting the crossing and who holds it.
+*params clcq_from clcq_to
+*set combat_lane_crossing_has_chokepoint false
+*set combat_lane_crossing_slot 0
+*temp clcq_low clcq_from
+*temp clcq_high clcq_to
+*if (clcq_low > clcq_high)
+  *set clcq_low clcq_to
+  *set clcq_high clcq_from
+*temp clcq_i 1
+*label combat_lane_crossing_query_loop
+*if (clcq_i <= combat_terrain_slot_cap)
+  *temp clcq_type {(("combat_terrain" & clcq_i) & "_type")}
+  *temp clcq_pos {(("combat_terrain" & clcq_i) & "_position")}
+  *if ((clcq_type = "chokepoint") and ((clcq_pos > clcq_low) and (clcq_pos <= clcq_high)))
+    *set combat_lane_crossing_has_chokepoint true
+    *set combat_lane_crossing_slot clcq_i
+  *set clcq_i + 1
+  *goto combat_lane_crossing_query_loop
+*return
+
+*label combat_find_active_chokepoint
+*comment Select the first enabled generic chokepoint slot for the current compact single-file rules. The slot itself
+*comment has no contextual name: callers and UI simply refer to it as "Chokepoint". Keeping this lookup separate
+*comment lets a later occupancy resolver evaluate several chokepoints without changing every attack/movement rule.
+*set combat_active_chokepoint_slot 0
+*temp cfac_i 1
+*label combat_find_active_chokepoint_loop
+*if (cfac_i <= combat_terrain_slot_cap)
+  *temp cfac_type {(("combat_terrain" & cfac_i) & "_type")}
+  *if ((combat_active_chokepoint_slot = 0) and (cfac_type = "chokepoint"))
+    *set combat_active_chokepoint_slot cfac_i
+    *set combat_chokepoint_capacity {(("combat_terrain" & cfac_i) & "_capacity")}
+    *set combat_chokepoint_blocks_los {(("combat_terrain" & cfac_i) & "_blocks_los")}
+  *set cfac_i + 1
+  *goto combat_find_active_chokepoint_loop
+*return
+
+*label combat_range_name
+*comment *gosub combat_range_name <range number>, then read combat_range_display_name (startup.txt *create) --
+*comment a durable output var instead of a caller-pre-declared *temp, since this label sits above every caller
+*comment in file order. Anything past 3 still reads as Long Range, rather than falling through blank, in case a
+*comment future fight sets a range higher than today's four tiers.
+*params crn_n
+*set combat_range_display_name "Engaged"
+*if (crn_n = 1)
+  *set combat_range_display_name "Close"
+*if (crn_n = 2)
+  *set combat_range_display_name "Mid-Range"
+*if (crn_n >= 3)
+  *set combat_range_display_name "Long Range"
+*return
+
+*label combat_refresh_ally_distances
+*comment Each ally's distance from the PLAYER, as a tier 0-3, into combat_ally<N>_distance. Derived the same way the sidebar derives the number it prints (index.html allyDistanceToPlayer, which
+*comment this mirrors): the ally knows how far it is from the enemy it picked (its own range, or its chase range while it chases), and the player's distance to that same enemy is known, so
+*comment the gap between the two is how far apart the ally and the player stand. With no target yet, the ally's own range stands in. Called when the hub opens and by friendly targeting.
+*temp crad_i 1
+*label combat_refresh_ally_distances_loop
+*if (crad_i <= combat_ally_slot_cap)
+  *temp crad_chase {(("combat_ally" & crad_i) & "_chase_target")}
+  *temp crad_target {(("combat_ally" & crad_i) & "_target")}
+  *temp crad_range {(("combat_ally" & crad_i) & "_range")}
+  *if (crad_chase > 0)
+    *set crad_target crad_chase
+    *set crad_range {(("combat_ally" & crad_i) & "_chase_range")}
+  *temp crad_dist crad_range
+  *if (crad_target > 0)
+    *temp crad_prange {(("combat_enemy" & crad_target) & "_range")}
+    *set crad_dist (crad_prange - crad_range)
+    *if (crad_dist < 0)
+      *set crad_dist (0 - crad_dist)
+  *set {(("combat_ally" & crad_i) & "_distance")} crad_dist
+  *set crad_i + 1
+  *goto combat_refresh_ally_distances_loop
+*return
+
+*label fight_pick_target
+*comment Kill priority (2026-09-28): the lowest-HP living slot, not the lowest slot number -- finishes off
+*comment whichever enemy is already wounded instead of always working strictly front-to-back. Shared by the
+*comment player's own HUD-fallback targeting AND every ally's turn (combat_next_turn), so both get smarter from
+*comment one change, not duplicated per caller -- the first piece of a wider smarter-AI pass (see
+*comment GAMEPLAY_MECHANICS_RULES.md). A HUD-clicked target (combat_player_chosen_target, sticky until it dies --
+*comment see startup.txt) still wins over it whenever one is set and still alive, checked first, below.
+*set combat_active_target 0
+*if (combat_player_chosen_target > 0)
+  *temp fpt_chosen_hp {(("combat_enemy" & combat_player_chosen_target) & "_hp")}
+  *if ((combat_player_chosen_target <= combat_enemy_count) and (fpt_chosen_hp > 0))
+    *set combat_active_target combat_player_chosen_target
+  *else
+    *comment The chosen target just died (or the fight shrank under it) -- clear it so the HUD stops
+    *comment highlighting a dead slot, and fall through to the ordinary auto-pick below.
+    *set combat_player_chosen_target 0
+*if (combat_active_target = 0)
+  *comment Scans every slot rather than stopping at the first living one (the old front-to-back pick's
+  *comment shortcut) -- the lowest-HP slot can be anywhere in the order, so every living slot needs comparing.
+  *temp fpt_i 1
+  *temp fpt_best_hp 0
+  *label fight_pick_target_loop
+  *if (fpt_i <= combat_enemy_count)
+    *temp fpt_hp {(("combat_enemy" & fpt_i) & "_hp")}
+    *if (fpt_hp > 0)
+      *if ((combat_active_target = 0) or (fpt_hp < fpt_best_hp))
+        *set combat_active_target fpt_i
+        *set fpt_best_hp fpt_hp
+    *set fpt_i + 1
+    *goto fight_pick_target_loop
+*if (combat_active_target > 0)
+  *gosub_scene combat fight_sync_target_in
+*return
+
+*label combat_refresh_chokepoint
+*comment A one-person chokepoint can be held by one living melee/reach ally. If the player is behind that ally
+*comment (no enemy is Engaged with the player), ordinary Push Forward is replaced by a deliberate relief/swap.
+*set combat_choke_ally_slot 0
+*set combat_choke_ally_name ""
+*set combat_choke_player_blocked false
+*gosub combat_find_active_chokepoint
+*if ((combat_active_chokepoint_slot > 0) and (combat_chokepoint_capacity = 1))
+  *temp crc_choke_pos {(("combat_terrain" & combat_active_chokepoint_slot) & "_position")}
+  *temp crc_i 1
+  *label combat_refresh_chokepoint_ally_loop
+  *if (crc_i <= combat_ally_slot_cap)
+    *temp crc_hp {(("combat_ally" & crc_i) & "_hp")}
+    *temp crc_pos {(("combat_ally" & crc_i) & "_position")}
+    *temp crc_weapon {(("combat_ally" & crc_i) & "_weapon_type")}
+    *if ((combat_choke_ally_slot = 0) and (((crc_hp > 0) and (crc_pos = crc_choke_pos)) and ((crc_weapon = "melee") or (crc_weapon = "reach"))))
+      *set combat_choke_ally_slot crc_i
+      *set combat_choke_ally_name {(("combat_ally" & crc_i) & "_epithet")}
+    *set crc_i + 1
+    *goto combat_refresh_chokepoint_ally_loop
+  *if (combat_choke_ally_slot > 0)
+    *temp crc_enemy_i 1
+    *temp crc_enemy_engaged false
+    *label combat_refresh_chokepoint_enemy_loop
+    *if (crc_enemy_i <= combat_enemy_count)
+      *temp crc_enemy_hp {(("combat_enemy" & crc_enemy_i) & "_hp")}
+      *temp crc_enemy_range {(("combat_enemy" & crc_enemy_i) & "_range")}
+      *if ((crc_enemy_hp > 0) and (crc_enemy_range <= 0))
+        *set crc_enemy_engaged true
+      *set crc_enemy_i + 1
+      *goto combat_refresh_chokepoint_enemy_loop
+    *comment An ally at the terrain coordinate only blocks the player while they are immediately on the near
+    *comment side of that fixed crossing. Retreating farther no longer makes an ally at a distant choke act like
+    *comment an invisible wall, which was the key limitation of the old encounter-wide flag.
+    *if ((not(crc_enemy_engaged)) and (combat_lane_player_position = (crc_choke_pos - 1)))
+      *set combat_choke_player_blocked true
+*return
+
+*comment Whether ANY living enemy is Engaged with the player (range 0), into combat_any_engaged. In 5e a ranged attack has disadvantage when a hostile creature is within 5 feet of the attacker,
+*comment whatever the attack is aimed at, so the close-combat penalty reads this and not just the target's own distance (found 2026-10-02: Ray of Frost at a Close rat took no penalty with two
+*comment rats Engaged). Read-only apart from the one flag, so it is safe to call from any option body or a replay.
+*label combat_check_engaged
+*set combat_any_engaged false
+*temp cce_i 1
+*label combat_check_engaged_loop
+*if (cce_i <= combat_enemy_count)
+  *temp cce_hp {(("combat_enemy" & cce_i) & "_hp")}
+  *temp cce_range {(("combat_enemy" & cce_i) & "_range")}
+  *if ((cce_hp > 0) and (cce_range <= 0))
+    *set combat_any_engaged true
+  *set cce_i + 1
+  *goto combat_check_engaged_loop
+*return
+
+*label fight_reach_check
+*comment Touch/unarmed maneuver reach: Engaged only. Weapon attacks call fight_weapon_reach_check instead so the
+*comment existing "reach" weapon type can strike at Close. Kept separate because Shocking Grasp and Shove remain
+*comment touch-distance effects even when the player happens to be holding a spear.
+*gosub fight_reach_check_at 0
+*return
+
+*label fight_weapon_reach_check
+*comment Ordinary melee/finesse weapons require Engaged; a reach weapon can attack at Close.
+*temp fwrc_max 0
+*if (weapon_type = "reach")
+  *set fwrc_max 1
+*gosub fight_reach_check_at fwrc_max
+*return
+
+*label fight_sidearm_reach_check
+*comment Called before the sidearm is swapped into the primary fields, so it reads sidearm_type directly.
+*temp fsrc_max 0
+*if (sidearm_type = "reach")
+  *set fsrc_max 1
+*gosub fight_reach_check_at fsrc_max
+*return
+
+*label fight_reach_check_at
+*comment Reach check for the options that need a target within reach (melee weapon attacks, Shocking Grasp), run at the moment one is CHOSEN. The hub
+*comment only offers them when something is in reach, but a target clicked in the sidebar after the page was built is not seen until the next page,
+*comment so a click on a far enemy followed by a melee swing used to hit it from Close range (found 2026-10-02 in a real browser). A far clicked target no longer
+*comment blocks the swing while ANY enemy is in reach: the attack retargets to that one (fight_retarget_to_reach) and its text names who is hit. The check only fails
+*comment when nothing living is in reach. Read-only on game state apart from the two scratch variables, so a replay of the page repeats it harmlessly. Sets
+*comment combat_reach_ok, and combat_reach_msg when it is false. frca_max is 0 for touch/ordinary melee and 1 for Reach.
+*params frca_max
+*set combat_reach_ok true
+*set combat_reach_msg ""
+*temp frc_any false
+*temp frc_i 1
+*label fight_reach_check_loop
+*if (frc_i <= combat_enemy_count)
+  *temp frc_hp {(("combat_enemy" & frc_i) & "_hp")}
+  *temp frc_range {(("combat_enemy" & frc_i) & "_range")}
+  *if ((frc_hp > 0) and (frc_range <= frca_max))
+    *set frc_any true
+  *set frc_i + 1
+  *goto fight_reach_check_loop
+*if (not(frc_any))
+  *set combat_reach_ok false
+  *temp frc_sel combat_active_target
+  *if (combat_player_chosen_target > 0)
+    *set frc_sel combat_player_chosen_target
+  *temp frc_epithet {(("combat_enemy" & frc_sel) & "_epithet")}
+  *set combat_reach_msg "You start to swing, but ${frc_epithet} is out of your reach. Close the distance first."
+*return
+
+*label fight_retarget_to_reach
+*comment Touch/unarmed maneuver retargeting: Engaged only. Weapon attacks use the weapon-aware wrapper below.
+*gosub fight_retarget_to_range 0
+*return
+
+*label fight_retarget_weapon_to_reach
+*temp frwr_max 0
+*if (weapon_type = "reach")
+  *set frwr_max 1
+*gosub fight_retarget_to_range frwr_max
+*return
+
+*label fight_retarget_to_range
+*comment A melee weapon attack whose target (auto-picked by kill priority, or clicked) is out of reach: swing at the lowest-HP enemy that IS in reach instead.
+*comment Does nothing when the target is already in reach or when nothing is. Run right after fight_pick_target, so the epithet the attack prose names is the one actually struck.
+*comment (2026-10-02) Also runs when the clicked target is out of reach: that click stays sticky for spells, but this swing goes to whoever is in reach.
+*params frr_max
+*temp frr_cur_range {(("combat_enemy" & combat_active_target) & "_range")}
+*if (frr_cur_range > frr_max)
+  *temp frr_i 1
+  *temp frr_best 0
+  *temp frr_best_hp 0
+  *label fight_retarget_to_reach_loop
+  *if (frr_i <= combat_enemy_count)
+    *temp frr_hp {(("combat_enemy" & frr_i) & "_hp")}
+    *temp frr_range {(("combat_enemy" & frr_i) & "_range")}
+    *if ((frr_hp > 0) and (frr_range <= frr_max))
+      *if ((frr_best = 0) or (frr_hp < frr_best_hp))
+        *set frr_best frr_i
+        *set frr_best_hp frr_hp
+    *set frr_i + 1
+    *goto fight_retarget_to_reach_loop
+  *if (frr_best > 0)
+    *set combat_active_target frr_best
+    *gosub_scene combat fight_sync_target_in
+*return
+
+*label fight_pick_nearest_target
+*comment Movement targeting (2026-09-28): the NEAREST living enemy that's actually eligible for this direction,
+*comment not kill-priority -- Push Forward/Fall Back are about closing or opening a specific gap, so "who's
+*comment already closest" is the sensible default, not "who's most wounded" (fight_pick_target above, used for
+*comment attacks and ally targeting instead). "push" wants the nearest enemy with range > 0 (nothing to gain
+*comment closing on one already Engaged); "fallback" wants the nearest with range < 3 (nothing to gain opening on
+*comment one already at Long Range) -- an enemy Engaged with you is a valid Fall Back candidate but never a valid
+*comment Push Forward one, so different enemies can legitimately win depending on direction. A HUD-clicked target
+*comment (combat_player_chosen_target, sticky until it dies) still wins over the auto-pick whenever it's alive
+*comment AND eligible for this direction; alive-but-ineligible falls through to the ordinary scan below rather
+*comment than silently doing nothing (the click stays sticky for its original purpose, attacks, either way).
+*params fpnt_direction
+*set combat_active_target 0
+*if (combat_player_chosen_target > 0)
+  *temp fpnt_chosen_hp {(("combat_enemy" & combat_player_chosen_target) & "_hp")}
+  *if ((combat_player_chosen_target > combat_enemy_count) or (fpnt_chosen_hp <= 0))
+    *comment Dead, or the fight shrank under the click -- clear it for the same reason fight_pick_target
+    *comment does, so the HUD stops highlighting a slot that no longer holds anything.
+    *set combat_player_chosen_target 0
+  *else
+    *comment Alive and in range. Eligibility is checked here but must NEVER clear the click (2026-09-28).
+    *comment **This branch used to be written as an inner *if for eligibility with the *else bound to THAT
+    *comment if**, so being ineligible for one movement direction silently wiped combat_player_chosen_target
+    *comment -- meaning "click the swordsman, then Push forward" forgot who you were attacking, and your next
+    *comment swing reverted to kill-priority. The header comment above already promised the opposite ("the
+    *comment click stays sticky for its original purpose, attacks, either way"); the code just didn't do it.
+    *comment Inverting the test puts the *else back on the liveness check, which is the only thing that
+    *comment should ever clear a click. It became materially more reachable once the movement buttons started
+    *comment advertising a from/to tier, which invites exactly that click-then-move sequence.
+    *temp fpnt_chosen_range {(("combat_enemy" & combat_player_chosen_target) & "_range")}
+    *if (((fpnt_direction = "push") and (fpnt_chosen_range > 0)) or ((fpnt_direction = "fallback") and (fpnt_chosen_range < 3)))
+      *set combat_active_target combat_player_chosen_target
+*if (combat_active_target = 0)
+  *temp fpnt_i 1
+  *temp fpnt_best_range 0
+  *label fight_pick_nearest_target_loop
+  *if (fpnt_i <= combat_enemy_count)
+    *temp fpnt_hp {(("combat_enemy" & fpnt_i) & "_hp")}
+    *if (fpnt_hp > 0)
+      *temp fpnt_range {(("combat_enemy" & fpnt_i) & "_range")}
+      *temp fpnt_ok false
+      *if ((fpnt_direction = "push") and (fpnt_range > 0))
+        *set fpnt_ok true
+      *if ((fpnt_direction = "fallback") and (fpnt_range < 3))
+        *set fpnt_ok true
+      *if (fpnt_ok)
+        *if ((combat_active_target = 0) or (fpnt_range < fpnt_best_range))
+          *set combat_active_target fpnt_i
+          *set fpnt_best_range fpnt_range
+    *set fpnt_i + 1
+    *goto fight_pick_nearest_target_loop
+*if (combat_active_target > 0)
+  *gosub_scene combat fight_sync_target_in
+*return
+
+*label combat_shift_all_ranges
+*comment Player movement primitive. The old implementation directly shifted every enemy's relative range; this
+*comment now moves the player's shared lane coordinate and derives every enemy range from that common position.
+*comment That preserves the established "one step affects the whole fight" behaviour while creating a single
+*comment place for future terrain crossing checks. Enemy/ally AI still writes legacy ranges during the migration,
+*comment so its latest values are first mirrored into lane coordinates before the player takes their step.
+*comment Calling convention: *gosub combat_shift_all_ranges "push" / "fallback" -- a direction string rather than
+*comment a numeric delta, matching fight_pick_nearest_target above, so no caller has to hand this a negative
+*comment literal. Clamps every slot to the 0-3 tier scale and skips dead ones.
+*comment Writes the slots directly by indirection and deliberately does NOT re-sync the active-target scratch:
+*comment each caller has just picked its narration target with fight_pick_nearest_target, so it re-syncs once
+*comment with fight_sync_target_in after this returns, to pick up the nearest enemy's new value.
+*params csar_direction
+*comment Self-locked (2026-09-30, real bug caught live via refresh_fuzz_test.js): a bare per-slot mutation with
+*comment no guard at all -- Push Forward/Fall Back/Break-off-and-run (its three call sites) are mutually
+*comment exclusive *choice options, so a page-id lock alone is sufficient, no per-call-site id needed the way
+*comment a subroutine genuinely called twice on one page would (see GAMEPLAY_MECHANICS_RULES.md). Without this, a
+*comment refresh replaying the current page from its start re-shifted every living enemy's range a second time --
+*comment found via combat_enemy_range/combat_range_display_name diverging on refresh, symptomatic of the same
+*comment root cause as every other bare *set var +N in this codebase's history.
+*if (not(combat_range_shift_locked)) or (not(locked_combat_range_shift_page_id = page_id))
+  *gosub combat_sync_enemy_positions_from_legacy_ranges
+  *temp csar_delta 1
+  *if (csar_direction = "push")
+    *comment Not "*set csar_delta -1": in ChoiceScript a signed literal after the variable means ADD it, so that line left the delta at 1 - 1 = 0
+    *comment and Push Forward moved nobody at all (found 2026-10-02: the Slinger stayed Close through two pushes). The subtraction is spelled out.
+    *set csar_delta (0 - 1)
+  *comment Range delta is expressed from the enemy's old perspective (push = -1), so the player's lane move is
+  *comment the inverse: advancing raises their coordinate toward the enemy side; falling back lowers it.
+  *set combat_lane_player_position (combat_lane_player_position - csar_delta)
+  *if (combat_lane_player_position < combat_lane_min_position)
+    *set combat_lane_player_position combat_lane_min_position
+  *if (combat_lane_player_position > combat_lane_max_position)
+    *set combat_lane_player_position combat_lane_max_position
+  *temp csar_i 1
+  *label combat_shift_all_ranges_loop
+  *if (csar_i <= combat_enemy_count)
+    *temp csar_hp {(("combat_enemy" & csar_i) & "_hp")}
+    *if (csar_hp > 0)
+      *temp csar_pos {(("combat_enemy" & csar_i) & "_position")}
+      *temp csar_to (csar_pos - combat_lane_player_position)
+      *if (csar_to < 0)
+        *set csar_to (0 - csar_to)
+      *if (csar_to > 3)
+        *set csar_to 3
+      *set {(("combat_enemy" & csar_i) & "_range")} csar_to
+    *set csar_i + 1
+    *goto combat_shift_all_ranges_loop
+  *set combat_range_shift_locked true
+  *set locked_combat_range_shift_page_id page_id
+*return
+
+*label combat_sync_enemy_positions_from_legacy_ranges
+*comment Transitional one-way bridge for enemy AI that still updates _range directly. It is called immediately
+*comment before player movement, so the player can safely become positional without requiring every enemy behaviour
+*comment branch to change in the same commit.
+*temp cspel_i 1
+*label combat_sync_enemy_positions_from_legacy_ranges_loop
+*if (cspel_i <= combat_enemy_count)
+  *temp cspel_range {(("combat_enemy" & cspel_i) & "_range")}
+  *if (cspel_range < 0)
+    *set cspel_range 0
+  *if (cspel_range > 3)
+    *set cspel_range 3
+  *set {(("combat_enemy" & cspel_i) & "_position")} (combat_lane_player_position + cspel_range)
+  *set cspel_i + 1
+  *goto combat_sync_enemy_positions_from_legacy_ranges_loop
+*return
+
+*label combat_shift_target_range
+*comment Move one living enemy one tier without moving the player or the rest of the line. This is forced movement,
+*comment so it deliberately does not call either opportunity-attack finder. The lane helper updates its absolute
+*comment coordinate and then derives the legacy range, keeping Shove ready for terrain crossing rules later.
+*params cstr_slot cstr_direction
+*gosub combat_lane_move_enemy_relative_to_player cstr_slot cstr_direction
+*return
+
+*label combat_lane_move_enemy_relative_to_player
+*comment Transitional enemy movement helper. Until every AI branch has migrated, it seeds an enemy's position
+*comment from its current compatibility range, moves it one lane step, then writes the derived range back. This
+*comment prevents Shove, enemy closing, and enemy retreats from silently leaving their physical position stale.
+*params clmer_slot clmer_direction
+*temp clmer_hp {(("combat_enemy" & clmer_slot) & "_hp")}
+*if (clmer_hp > 0)
+  *temp clmer_range {(("combat_enemy" & clmer_slot) & "_range")}
+  *if (clmer_range < 0)
+    *set clmer_range 0
+  *if (clmer_range > 3)
+    *set clmer_range 3
+  *temp clmer_pos (combat_lane_player_position + clmer_range)
+  *if (clmer_direction = "away")
+    *set clmer_pos + 1
+  *if (clmer_direction = "toward")
+    *set clmer_pos - 1
+  *if (clmer_pos < combat_lane_min_position)
+    *set clmer_pos combat_lane_min_position
+  *if (clmer_pos > combat_lane_max_position)
+    *set clmer_pos combat_lane_max_position
+  *set {(("combat_enemy" & clmer_slot) & "_position")} clmer_pos
+  *set clmer_range (clmer_pos - combat_lane_player_position)
+  *if (clmer_range < 0)
+    *set clmer_range (0 - clmer_range)
+  *if (clmer_range > 3)
+    *set clmer_range 3
+  *set {(("combat_enemy" & clmer_slot) & "_range")} clmer_range
+  *if (combat_active_target = clmer_slot)
+    *set combat_enemy_range clmer_range
+*return
+
+*label combat_lane_move_ally_relative_to_target
+*comment Ally-side counterpart to the enemy helper. It keeps an ally's independent pursuit range compatible with
+*comment the shared lane by establishing their current position from the target they are pursuing, taking one
+*comment actual lane step, then deriving the updated ally range. A missing/stale target falls back to enemy slot
+*comment 1 only during this migration; once target selection has run, the durable ally target always wins.
+*params clmat_slot clmat_target clmat_direction
+*if (clmat_target <= 0)
+  *set clmat_target {(("combat_ally" & clmat_slot) & "_target")}
+*if (clmat_target <= 0)
+  *set clmat_target 1
+*temp clmat_range {(("combat_ally" & clmat_slot) & "_range")}
+*if (clmat_range < 0)
+  *set clmat_range 0
+*if (clmat_range > 3)
+  *set clmat_range 3
+*temp clmat_target_pos {(("combat_enemy" & clmat_target) & "_position")}
+*temp clmat_pos (clmat_target_pos - clmat_range)
+*if (clmat_direction = "toward")
+  *set clmat_pos + 1
+*if (clmat_direction = "away")
+  *set clmat_pos - 1
+*if (clmat_pos < combat_lane_min_position)
+  *set clmat_pos combat_lane_min_position
+*if (clmat_pos > combat_lane_max_position)
+  *set clmat_pos combat_lane_max_position
+*set {(("combat_ally" & clmat_slot) & "_position")} clmat_pos
+*set clmat_range (clmat_target_pos - clmat_pos)
+*if (clmat_range < 0)
+  *set clmat_range (0 - clmat_range)
+*if (clmat_range > 3)
+  *set clmat_range 3
+*set {(("combat_ally" & clmat_slot) & "_range")} clmat_range
+*return
+

@@ -315,14 +315,14 @@ The road climbs in turns from the docks, the salt smell of the harbor thinning b
 *set met_vael true
 *comment Only the first offer interrupts the close. After "not now" the quest waits behind its own menu option (below),
 *comment because the quest's exits land back on this label and a forced redirect would trap the player in a loop.
-*comment Gate: a paying tenant (rent not lapsed) who has met Vael, on a day the shop is open (no holy day, no gale), in daylight.
-*if (((a_key_quest_stage = "unstarted") and (mw_rent_active)) and ((campaign_day > mw_rent_paid_day) and (campaign_day <= mw_rent_expiry_day)))
+*comment Gate: a tenant of at least three days (rent not lapsed) who has met Vael, on a day the shop is open (no holy day, no gale), in daylight.
+*if (((a_key_quest_stage = "unstarted") and (mw_rent_active)) and (((campaign_day - mw_rent_paid_day) >= 3) and (campaign_day <= mw_rent_expiry_day)))
   *if (((mw_vael_seen) and (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))) and ((day_of_week != "Hallowday") and (street_life != "empty")))
     *goto_scene port_valen/MiddlewardQuest/a_key_for_every_door a_key_hook
 [b]◈ THE LOCKSMITHS' CLOSE[/b]
 *line_break
 *comment ── LAYER 1: PLACE (Constant Geography, Architecture, & Smell) ──
-An arched stone tunnel opens into a quiet, clean courtyard paved with smooth pale river cobbles. To the left hangs a forged iron trade-sign shaped like an open padlock, reading [i]"Vael & Son, Locksmiths."[/i] Ahead rises the four-storey dressed limestone facade of [b]Terrace Lodgings[/b], its heavy oak door fitted with a teardrop-shaped iron knocker and reinforced brass hinges. The air in the close is sheltered and cool, smelling of cold brass filings, coal oil, lime mortar, and clean rainwater.
+An arched stone tunnel opens into a quiet, clean courtyard paved with smooth pale river cobbles. To the left hangs a forged iron trade-sign shaped like an open padlock, reading [i]"Vael & Son, Locksmiths."[/i] Ahead rises the four-storey dressed limestone facade of [b]Terrace Lodgings[/b], its heavy oak door fitted with a teardrop-shaped iron knocker and reinforced brass hinges. A worn stone porch steps up to it, an iron-shod scraper bolted at one end and a coir mat beaten flat across the boards. A hand pump stands against the courtyard wall beside the drain, its handle worn pale by use. The air in the close is sheltered and cool, smelling of cold brass filings, coal oil, lime mortar, and clean rainwater.
 
 *comment ── LAYER 2: SKY & ATMOSPHERIC LIGHT (Weather & Light Only, No People) ──
 *if (weather = "Rain")
@@ -383,9 +383,9 @@ An arched stone tunnel opens into a quiet, clean courtyard paved with smooth pal
   *if (a_key_vael_favor)
     Under the usual warranty, the workshop's slate sign carries a line of fresh chalk: [i]Keys cut for the holder only.[/i]
   *if (a_key_resolution = "pragmatic")
-    The lodging door has new brass keepers and no card in the window, and the ring of spare keys no longer hangs where a visitor could see it.
+    The lodging door has a new brass lock plate and a bare window, and the ring of spare keys sits locked in an iron tin behind the desk.
   *if (a_key_lodgings_compromised)
-    Raw new keepers shine on half the lodging doors, and notices are tacked to the stair posts one over another: [i]Rooms re-keyed. See the desk before you ask for your key.[/i] The courtyard smells of fresh-cut brass and sawn oak.
+    Raw new lock plates shine on half the lodging doors, and notices are tacked to the stair posts one over another: [i]Rooms re-keyed. See the desk before you ask for your key.[/i] The courtyard smells of fresh-cut brass and sawn oak.
 
 *comment Vael & Son trades by day: shut at Dusk, Night, Pre-Dawn, on Hallowday and in a gale (street_life "empty",
 *comment the same test the close's own storm-shutter view uses). Shut, the workshop keeps its place on the menu as a
@@ -438,46 +438,52 @@ An arched stone tunnel opens into a quiet, clean courtyard paved with smooth pal
 *label mw_lodgings_entry
 [b]◈ TERRACE LODGINGS (GROUND FLOOR)[/b]
 *line_break
-Inside the entry hall, the wide fir floorboards are scrubbed clean and smell of beeswax, sweetgrass, and dried lavender hung from the ceiling beams to deter moths. A quiet staircase rises along the far wall, its treads swept bare of grit.
+Inside the entry hall, the wide fir floorboards are scrubbed pale and smell of beeswax, sweetgrass, and dried lavender hung in bundles from the ceiling beams. A braided wool runner protects the wood down the center of the hall, and a quiet staircase rises along the far wall, its treads swept bare of a single grain of street grit.
 
 *if (not(mw_lodgings_seen))
   *set mw_lodgings_seen true
-  *if (equipped_waist_id = "none")
-    Beneath a small brass plaque reading [i]"Kess Tenements,"[/i] a tall, severe woman with iron-grey hair tied back in black cloth sits behind a sloped oak writing desk, studying your posture and ${feet_prose} with the clinical, unhurried assessment of an old quartermaster.
-  *else
-    Beneath a small brass plaque reading [i]"Kess Tenements,"[/i] a tall, severe woman with iron-grey hair tied back in black cloth sits behind a sloped oak writing desk, studying your ${waist_prose} and ${feet_prose} with the clinical, unhurried assessment of an old quartermaster.
+  Beneath a small brass plate reading [i]"Kess Tenements,"[/i] a tall, straight-backed woman stands behind a sloped oak writing desk. Her iron-grey hair is scraped back into a severe knot pinned with a carved bone bodkin, and her high-collared black wool dress looks brushed clean to the last thread. She adjusts a pair of round, iron-rimmed spectacles, not rushing to acknowledge you. Her gaze travels up with cold, practiced deliberation—first measuring ${feet_prose}, then checking your ${waist_prose}, before finally meeting your eyes with the calm, level scrutiny of a gate inspector looking for contraband.
 
   *if (equipped_feet_id = "brant_iron_heel_boots")
-    Her gaze drops instantly to the iron plates on your heels. "Those caulked iron heel-plates will gouge my fir floorboards to toothpicks. Wipe them on the coir mat outside, and mind you step lightly on the stair risers."
+    Her eyes stop cold at your heels. "Caulked iron plates. Brant's slipway irons. Those rims will gouge my heart-fir floorboards into kindling before you reach the landing. Step off that runner, and you scrape them outside on the coir mat."
   *elseif (equipped_feet_id = "marching_boots")
-    Her eyes linger on the iron studs in your boot soles. "Scrape the street mud off before you step past that runner. Hobnails will chew through my floor wax in an afternoon."
+    Her lips press into a thin, tight line at your soles. "Iron hobnails. Road studs. You wipe them twice on the coir mat before you touch my fir risers, or you pay an extra copper for the floor wax you chew up."
   *elseif (equipped_feet_id = "talia_deck_boots")
-    She catches the dark sheen of tallow on your boots. "Pitch grease. Keeps the harbor brine out, but don't track that wax onto my clean treads."
+    She catches the dark sheen of grease on the leather. "Pitch-tallow. Good for keeping harbor brine out of your toes, but it ruins floor wax. Keep both feet squarely on the wool runner and don't drag your heels."
   *elseif (equipped_feet_id = "scout_boots")
-    She gives a brief nod of approval at your soft leather soles. "Quiet wraps. At least you won't rattle the rafters over the second-floor tenants."
+    She gives the soft leather a single, brief nod of approval. "Soft deer-hide. Quiet wraps. At least you won't rattle the rafters over the mint engraver when you turn in after the night bell."
   *elseif (equipped_feet_id = "riding_boots")
-    She glances at your riding leather. "Road clay on the uppers. Use the iron scraper on the porch before you climb the risers."
+    She glances at your uppers with a faint sniff. "Upland clay caked in the welt. Take the iron scraper on the porch and knock the dry crust off before you climb. I sweep my risers once a day, not twice for travelers."
   *elseif (equipped_feet_id = "none")
-    Her eyebrow arches as she clocks your bare, road-dusted feet against the scrubbed boards. "Wash at the courtyard pump before you head up. I don't permit street grit on the third floor."
+    Her eyebrows climb her forehead as she clocks your bare, road-dusted feet against her scrubbed boards. "Wash at the courtyard pump before you touch the second riser. I run clean lodgings, not a river ditch."
+  *else
+    Her eyes drop to your boots, measuring the tread against her floorboards. "Scrape the street mud off on the coir mat before you step off that wool runner. I keep clean treads, and I don't intend to sweep twice today."
 
-  "I am Mistress Kess," she says, her voice crisp, dry, and wholly devoid of pretense. "Looking for lodging, traveler? ${mw_rent_rate_silver} silver marks buy seven days. Clean straw, dry roof, quiet stairs, and Master Vael's deadbolts on every door. No blood in my hallway, no thieves under my rafters, and no Watchmen asking questions so long as your coin hits the tin on time."
+  "I am Mistress Kess," she says, her voice low, dry, and flat as a carpenter's rule. "The plate on the door says tenements. It is not an inn. There is no taproom downstairs, no fiddler in the yard, and no drinking on the stairs. I ask no questions about your business, and I answer none when the Watch comes knocking."
+
+  She turns the register toward you and taps the blank line she has kept for your name. "${mw_rent_rate_silver} silver marks buy seven days. That pays for clean straw, a sound roof, quiet stairs, and Master Vael's double-turn deadbolts on every door. The coin goes in the tin on the day it falls due."
+
+  Her quill comes down hard on the page. "Break a latch, bring blood onto my runner, or let a thief under my roof, and your pack goes into the close before the bell finishes ringing."
 *else
   *if (mw_rent_active)
     *if (campaign_day > mw_rent_expiry_day)
-      Mistress Kess looks up from her tenant book as you approach, her expression calm, dry, and completely unsurprised.
+      Mistress Kess looks up from her open register as your boots touch the runner, her expression calm, dry, and completely unsurprised.
 
-      "The seventh sunset has passed," she says, tapping a bone stylus against her desk. "Your latch is locked from the outside. ${mw_rent_rate_silver} silver marks renew your lease for the week, or you pack your things and clear the room."
+      "The seventh sunset has passed," she says, tapping the flat of her quill against the open page. "Your latch is bolted from the outside. ${mw_rent_rate_silver} silver marks renew your key for the week, or you pack your things and clear the room before night bell."
     *else
       *temp days_left (mw_rent_expiry_day - campaign_day)
       *temp day_word "days"
       *if (days_left = 1)
         *set day_word "day"
-      Mistress Kess looks up from her records as you enter the hall, giving you a curt nod. "Key is good for another ${days_left} ${day_word}. Stairs are swept. Mind your boots on the upper landing."
+      Mistress Kess dips her quill into an inkpot as you enter, giving you a single, measured nod over the rim of her spectacles. "Key is good for another ${days_left} ${day_word}. Stairs are swept. Mind you wipe your boots on the upper landing."
   *else
-    Mistress Kess looks up from her book as you approach. "Looking for a room? ${mw_rent_rate_silver} silver marks buy seven days. Clean straw, dry roof, and quiet stairs."
+    Mistress Kess looks up from her book, resting one ink-stained hand flat on the wood. "Looking for a room? ${mw_rent_rate_silver} silver marks buy seven days. Clean straw, dry roof, and quiet stairs. Cash in advance."
 
 *label mw_lodgings_menu
-Mistress Kess waits beside her daybook.
+*if (mw_rent_active) and (campaign_day <= mw_rent_expiry_day)
+  Mistress Kess turns a page in her book, her iron key-ring jingling softly as she keeps one eye on the hall.
+*else
+  Mistress Kess waits with her hands folded over the open daybook, her spectacles catching the hall light.
 *choice
   *if (mw_rent_active) and (campaign_day <= mw_rent_expiry_day)
     # Head up the stairs to your private room on the third floor.
@@ -498,12 +504,12 @@ Mistress Kess waits beside her daybook.
 
         From a brass peg beside her desk, she lifts a heavy iron key on a loop of waxed cord and slides it across to you.
 
-        "Top of the second landing, third door on the street side," she says, dipping her quill to record your name into the tenant roll. "Key turns twice to the right. Don't lose it; a replacement costs three copper from Vael across the court."
+        "Top of the last flight, the attic door under the slate," she says, dipping her quill to record your name into the tenant roll. "Key turns twice to the right. Don't lose it; a replacement costs three copper from Vael across the court."
         *page_break Take the key and climb the risers…
         *goto mw_room_hub
     *else
       # "I can't cover the rent right now."
-        Mistress Kess dips her pen into the inkpot without looking up. "Then you sleep in the mud or the barracks until you do. My roof doesn't leak, and my rooms don't open on credit."
+        Mistress Kess dips her quill into the inkpot without looking up. "Then you sleep in the mud or the barracks until you do. My roof doesn't leak, and my rooms don't open on credit."
         *page_break Step back into the close…
         *goto mw_locksmiths_close
 
@@ -547,15 +553,19 @@ Mistress Kess waits beside her daybook.
 *label mw_vael_shop
 [b]◈ VAEL & SON, LOCKSMITHS[/b]
 *line_break
-The workshop is one long room, warm from the charcoal hearth at the back. Oak benches run down both walls beneath racks of files and gauges, and the near wall is boards of sample locks, hung in rows from thumb-sized padlocks to iron-banded chest locks. The floor is swept, and the air smells of coal oil, hot brass, and cold iron.
+The workshop is one long room, warm from the charcoal hearth at the back. Oak benches run down both walls beneath racks of precision files, wire gauges, and small brass calipers. Along the near wall, display boards hang with sample locks in neat, disciplined rows: from delicate thumb-sized jewelry latches to massive, iron-banded chest deadbolts. The floor is swept clean of curls, and the air smells of coal oil, hot brass, and cold iron.
 
 *if (not(mw_vael_seen))
   *set mw_vael_seen true
-  Behind a scarred oak counter stands the man from the window: lean, with measuring gauges tucked into a leather apron and fine brass dust on his knuckles. He is smoothing the tumblers of a chest-lock with a needle file, and he tests the mechanism with a crisp, musical [i]snick[/i] before he looks up. A slate sign hangs above him: [i]"Locks Warranted Against Pick & Wedge. Replacement Keys: Three Copper Bits."[/i]
+  Behind a scarred oak counter stands a lean, wiry craftsman in a leather apron stiff with oil. Measuring calipers peek from his breast pocket. He holds an open chest-lock close to his ear, working a needle file inside the keyway with minute, feather-light strokes.
 
-  "Vael," he says, and nods at the boards. "Those are samples. A lock worth having is made for the door it goes on. The small kit is in the trays, and the price is on the tag."
+  He doesn't rush to greet you. He slides a key into the slot, gives it a sharp flick of his wrist, and waits for the mechanism to answer with a crisp, musical [i]snick[/i]. Only when the tumblers fall clean does he lower the iron and look you over.
+
+  A slate sign hangs above his head: [i]"Locks Warranted Against Pick & Wedge. Replacement Keys: Three Copper Bits."[/i]
+
+  "Vael," he says, his voice quiet, dry, and flat with certainty. He gestures with the tip of his file toward the wall. "Those boards are displays, traveler. A lock worth having is forged for the door it keeps, not bought off a cart. If you want portable security—padlocks, bolts, or cuffs—look through the trays. The price is inked on the tag. Don't haggle with the brass."
 *else
-  Master Vael is at his bench with a needle file, and he sets it down when you step up.
+  Master Vael has a brass padlock clamped in his bench vise. He tests the key with a practiced flick of his wrist, listening to the internal clicks with his head tilted, before setting the file aside as you step up to the counter.
 
 *gosub mw_vael_open_panel
 *temp vael_has_sale (((has_lockpick_set) or (has_padlock)) or ((has_door_bolt) or (has_iron_manacles)))
@@ -569,15 +579,48 @@ The workshop is one long room, warm from the charcoal hearth at the back. Oak be
   *if (not(mw_vael_sign_talk))
     # Ask about the sign.
       *set mw_vael_sign_talk true
-      "It's a promise," Vael says, without looking up from the file. "Every lock in this ward is mine, and no one has picked one yet." A brass curl falls from the file onto the bench. "The sign doesn't say I won't sell the tools. A lock is only as good as the man who knows how it fails, and he learns that on a pick. Owners who've lost a key. Clerks shut out of their own strongboxes. The Watch, twice a year, to see what I can do that they can't." He blows the filings off the bench. "Same pick, whoever holds it."
+      Vael lifts a thumb-sized brass tumbler to the hearth light, squinting along the edge for microscopic burrs.
+
+      "It's not a boast. It's mathematics," he says, without looking away from the metal. "A wedge leaves gouges on the door-frame. A pick leaves scratches in the keyway if the hand is clumsy. Both make the lock complain."
+
+      He draws his needle file across the piece once, sending a hair-thin curl of brass fluttering down to the bench.
+
+      "People ask why a locksmith sells picks over the counter. Simple: a lock is only as honest as the man who understands how it fails. Clerks who lose strongbox keys. Merchants shut out of their own desks after a carouse. The Watch, twice a year, trying to see if they can slip one of my deadbolts." He blows the yellow dust off the bench with a dry puff. "They can't. A pick is just a lever with an attitude, traveler. It doesn't care whose hand is on the grip."
       *page_break "Fair enough."…
       *goto mw_vael_shop
   *if (not(mw_vael_customers_talk))
     # Ask who buys his locks.
       *set mw_vael_customers_talk true
-      Vael counts them off on a brass-dusted finger. "The customs wharf takes cash-boxes by the dozen. The mint has a standing order for strongroom locks, and I don't ask what goes in them. Mistress Kess has a deadbolt of mine on every door in her house." His mouth twitches. "Hollis gets his locks at cost, and I get my brass wire from him at what he calls cost."
+      Vael taps three brass pins on the scarred counter, counting them off like tally marks.
+
+      "A locksmith knows a ward by its secrets," he says, the corner of his mouth twitching with the ghost of a smirk. "The customs wharf takes cash-boxes three at a time because drunken clerks drop their keys into the dock mud. The mint has a standing order for four-tumbler strongroom bolts, and they pay in unclipped silver so I don't ask what's behind the doors. Mistress Kess across the close has a double-turn deadbolt on every room in her house—she'd rather evict a tenant than replace a latch."
+
+      He sets the pins back into a compartmentalized tray with a faint metallic chime.
+
+      "And Hollis? Hollis takes my cast-off padlocks at what he calls cost, and sells me brass wire at what I call outright robbery. We get along fine."
       *page_break "Fair enough."…
       *goto mw_vael_shop
+  *if (not(mw_vael_son_talk))
+    # Ask who the "& Son" on the sign is.
+      *set mw_vael_son_talk true
+      The nearest bench is clear but for a half-built rim-lock and a coil of blued spring steel. Vael looks at it a moment before he answers, then works the spring back and forth between his fingers, testing nothing.
+      
+      "Serran," he says. "My son. He cut his first tumbler on that bench before he was tall enough to see over it."
+      
+      *if (mw_vael_sign_talk)
+        He sets the spring down. "Eight years back he took a contract north. Scales' work, strongrooms and chests for men who count other men's money. Better money than I make, and I don't begrudge him a copper of it."
+      
+        "He writes when he can." Vael taps the half-built rim-lock, and the tap does not sound like agreement. "I told him I'd keep the name up until he said otherwise. Said it once. I don't intend to say it twice."
+      *else
+        "Eight years back he took a contract north. Scales' work, strongrooms and chests for men who count other men's money." He weighs the spring in his palm. "He writes when he can.""
+      
+        *if (a_key_quest_stage = "active")
+          "So no. You won't see him come through that door, and don't wait up for it. Take your business to the counter and I'll be honest with you instead, which is worth more than a son anyway."
+        *else
+          Vael turns back to the bench and picks up his file. "I keep the name up. I said I would. Ask anyone in this ward why a man who doesn't keep his word would put that on a slate, and they'll tell you I'm the last one in Port Valen who does."
+      *page_break "Fair enough."…
+      *goto mw_vael_shop
+      
   # Step back out into the Locksmiths' Close.
     *set shop_open ""
     *goto mw_locksmiths_close
@@ -781,7 +824,7 @@ Vael turns the ${gear_sale_name} over in his fingers, works the catch twice, and
   *set currency_txn_locked true
   *set locked_currency_txn_page_id page_id
 *if (shop_verdict = "empty")
-  Vael waits with his stylus over the ledger, finds nothing to write, and sets it down.
+  Vael waits with his quill over the ledger, finds nothing to write, and sets it down.
   *page_break Back to the counter…
   *goto mw_vael_after
 *if (shop_verdict = "short")
@@ -1578,6 +1621,13 @@ Here the wall is newer and higher, faced in pale limestone, and the trunk road p
 [b]◈ MOTHER MARDA'S COMMUNAL BAKEHOUSE[/b]
 *line_break
 
+*if (not(mw_marda_seen))
+  *set mw_marda_seen true
+  Behind the wide pine counter stands a broad, deep-chested woman in a coarse linen apron, her thick hair pinned beneath a clean cloth. Flour dust coats her bare forearms, and her face is flushed round and red from years leaning over open hearths. She works a massive trough of dark dough with heavy, rhythmic thuds of her palms, taking in your gear with an experienced, practical eye before wiping her hands on a towel.
+
+  "Marda," she says, her voice rich and raspy from chimney smoke. "The sign outside says 'Mother,' but don't mistake that for charity. Fresh rye by the loaf, hot pasties at the counter, and I take dinner pots from the tenements until third bell. Keep your boots clean, pay your copper before you take a bite, and leave your street quarrels outside."
+*else
+  *comment Repeat visits: Keep the existing time-of-day descriptions (Pre-Dawn, Day, Dusk)
 *if ((dry_lion_resolution = "failed") and (campaign_day <= dry_lion_outage_until_day))
   The ovens are banked while the water line is shut. Marda's apprentices carry out yesterday's bread, but there is no fresh dough on the boards and no hot food at the counter.
   *page_break Leave the quiet bakehouse...

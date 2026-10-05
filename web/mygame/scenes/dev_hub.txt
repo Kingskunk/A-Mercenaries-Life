@@ -515,8 +515,6 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
 Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${squad_title}). Select story milestone to jump into:
 
 *choice
-  # 🌧️ Jump to Company Intake / Munitions (company_intake.txt)
-    *goto_scene prologue/company_intake
   # ⛺ Jump to Night 1 Campfire Hub (camp_night.txt)
     *set campaign_day 1
     *set calendar_date "14th of Scorpio, 428 IR"
@@ -659,6 +657,61 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
     *gosub_scene character_progression refresh_level_up_progress
     *goto_scene port_valen/port_valen port_valen_hub
 
+  # 🗝️ Test "A Key for Every Door" (Middle Ward Quest Two) -- Port Valen hub, tenant of 3 days, quest ready to start
+    *comment Same Port Valen setup as the jump above, plus everything the Locksmiths' Close gate reads (port_valen_middle_ward.txt,
+    *comment mw_locksmiths_close): an unexpired lease paid three days ago, the workshop already visited, a daytime hour on a day that
+    *comment is not Hallowday (campaign_day 4 is Hearthday), clear weather so street_life is not "empty". Go to the Middle Ward and enter
+    *comment Locksmiths' Close and the hook plays. The quest's own state is reset to fresh every time, so the jump can be repeated.
+    *set campaign_day 4
+    *set calendar_day 17
+    *set calendar_date "17th of Scorpio, 428 IR"
+    *set clock_hour 10
+    *set clock_minute 30
+    *set clock_time "10:30"
+    *set time_period "Midday"
+    *set weather "Clear"
+    *set codex_black_sinks true
+    *set codex_gilded_scales true
+    *set codex_port_watch true
+    *set codex_marsh_squatters true
+    *set codex_alderford true
+    *set codex_meridian_empire true
+    *set port_valen_hub_seen true
+    *set port_valen_first_patrol_complete true
+    *set vane_independent_operative true
+    *set civic_heights_open true
+    *set upper_wharves_open true
+    *set dredge_end_open true
+    *set middle_ward_open true
+    *set pv_pois_open true
+    *set mw_seen true
+    *set mw_lodgings_seen true
+    *set mw_vael_seen true
+    *set met_vael true
+    *set mw_rent_active true
+    *set mw_rent_paid_day 1
+    *set mw_rent_expiry_day 8
+    *set a_key_quest_stage "unstarted"
+    *set a_key_resolution ""
+    *set a_key_hook_seen false
+    *set a_key_lock_done false
+    *set a_key_records_done false
+    *set a_key_mark_done false
+    *set a_key_runner_done false
+    *set a_key_lock_found false
+    *set a_key_mark_found false
+    *set a_key_in_shop false
+    *set a_key_evidence 0
+    *set a_key_runner_trust false
+    *set a_key_fast_to_shop false
+    *set a_key_pattern_book "secure"
+    *set a_key_lodgings_compromised false
+    *set a_key_buyer_lead false
+    *set a_key_reward_claimed false
+    *set a_key_kess_favor false
+    *set a_key_vael_favor false
+    *goto_scene port_valen/port_valen port_valen_hub
+
   # 🥊 Test a Combat Fight (combat.txt) -- jump straight into a fight, return here when it ends
     *goto dev_combat_test_hub
   # 🕳️ Test the Dungeon Encounter Picker (dungeon.txt) -- roll the Silt-Gate conduit table at low or high tide
@@ -715,6 +768,15 @@ HP and every class resource are refilled to full before each one, so every fight
     *goto dev_combat_test_run
   # 👥 Squad Test -- 2 enemies + 2 allies at different ranges, to play with nearest-enemy movement targeting
     *set dctest_label "fight_dev_squad_test"
+    *goto dev_combat_test_run
+  # ⛰️ High Ground Test -- you begin elevated against a lowland archer
+    *set dctest_label "fight_dev_high_ground_test"
+    *goto dev_combat_test_run
+  # 🛡️ Cover Test -- each side begins in Cover against an archer
+    *set dctest_label "fight_dev_cover_test"
+    *goto dev_combat_test_run
+  # 🚪 Chokepoint Test -- one ally holding a single-file stair
+    *set dctest_label "fight_dev_chokepoint_test"
     *goto dev_combat_test_run
   # 🐀 Silt-Gate Mire-Rats (conduits) -- 2 mire-rats, lethal
     *set dctest_label "dg_rats"
@@ -802,6 +864,12 @@ HP and every class resource are refilled to full before each one, so every fight
 *comment (2026-10-02: the Range Tiers, Ally Ranged, Ally Melee and Reach tests were taken off this menu at the user's request; their fight_dev_* labels are still in combat.txt.)
 *if (dctest_label = "fight_dev_squad_test")
   *gosub_scene combat fight_dev_squad_test
+*if (dctest_label = "fight_dev_high_ground_test")
+  *gosub_scene combat fight_dev_high_ground_test
+*if (dctest_label = "fight_dev_cover_test")
+  *gosub_scene combat fight_dev_cover_test
+*if (dctest_label = "fight_dev_chokepoint_test")
+  *gosub_scene combat fight_dev_chokepoint_test
 *temp dctest_hp_after hp_current
 *set hp_current hp_max
 *gosub_scene character_progression restore_class_resources

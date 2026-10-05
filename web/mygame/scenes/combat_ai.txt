@@ -1,0 +1,353 @@
+*comment COMBAT AI DECISIONS
+*comment Target preference, interception, chase commitment, and per-type special-move choice.
+*comment The combat controller remains responsible for turn order, narration, attack resolution, and movement execution.
+*label find_intercepting_ally
+*comment Interception (2026-09-28; broadened 2026-09-28 again; widened into full target selection 2026-09-29,
+*comment Ranged-AI Position Awareness plan §11.1 "Mechanism A"): sets combat_intercepting_ally to the living ally
+*comment this enemy will actually attack instead of the player, or 0 for none (attack the player, unchanged
+*comment default). Called by combat_next_turn's enemy branch right after fight_sync_target_in, so
+*comment combat_active_target is the slot currently dispatching and combat_enemy_weapon_type is already synced to
+*comment it.
+*comment
+*comment WHAT CHANGED (2026-09-28). The original rule required combat_ally<N>_target = combat_active_target as
+*comment well -- i.e. the ally had to have picked THIS enemy AND already closed to range 0. That reads as
+*comment "physically correct" but is far too strict in practice, because allies pick targets by kill-priority
+*comment (fight_pick_target, lowest HP) rather than by who they happen to be standing next to. So the whole party
+*comment converges on one wounded enemy, and every OTHER enemy in the fight walked straight past the tank to hit
+*comment the player. The mechanic existed but almost never fired, which is why enemy targeting read as 100%
+*comment player-focused.
+*comment
+*comment MECHANISM A (2026-09-28, widened 2026-09-29): any living ally already at range 0 is a legal target for
+*comment whichever enemy is dispatching -- melee OR ranged ally alike now (was melee-only; a ranged ally can only
+*comment ever be at range 0 if a scene deliberately opens her there, since nothing moves a ranged ally's own range
+*comment during a fight -- see startup.txt's combat_ally<N>_range comment). Shared adjacency bucket, not real
+*comment per-pair distance -- the loosest thing the 0-3 tier model can honestly express; combat_ally<N>_target
+*comment cannot supply a real one (see its own *create comment).
+*comment
+*comment MECHANISM B (2026-09-29, new): if Mechanism A found no one already in reach, and the ACTING enemy is
+*comment itself ranged, it would otherwise unconditionally default to the player -- prefer sniping a living
+*comment ranged-classified ally instead, wherever she is (ranged attacks don't care about distance, so no range
+*comment check here, unlike Mechanism A). An ally standing in melee reach is a more obvious, more urgent target
+*comment than a hypothetical snipe, which is why B only runs when A found nothing, never as a tiebreak against it.
+*comment Nothing here lets a ranged enemy target a MELEE ally outside Mechanism A's range-0 bucket -- that would
+*comment need Layer 2's commit-and-chase (dynamic redirect, see RANGED_AI_PLAN.md §11.3), not this phase.
+*comment
+*comment Spreading the aggro (2026-09-28) is the other half of Mechanism A, and it is NOT optional. With the
+*comment tiebreak gone, every enemy would otherwise match the same lowest-numbered engaged ally and three of them
+*comment would pile onto slot 1 -- turning a tank into an unkillable meat wall the player never has to think
+*comment about. Picking the LOWEST-HP eligible ally instead spreads the damage the same way the player side
+*comment already does it (fight_pick_target is kill-priority for exactly this reason): the focus walks the allies
+*comment down in sequence rather than dogpiling one. Ties fall to the lowest slot, because the comparison is a
+*comment strict <. Mechanism B uses the same tiebreak, scoped to ranged allies only.
+*comment
+*comment combat_ally<N>_target is deliberately NOT read here. It keeps its other job -- recording which enemy an
+*comment ally is locked onto, for the sidebar's "fighting <enemy>" sub-line (web/mygame/index.html) and the prose
+*comment -- and is set in combat_next_turn's ally branch.
+*set combat_intercepting_ally 0
+*temp fia_best_hp 0
+*temp fia_i 1
+*label find_intercepting_ally_loop
+*if (fia_i <= combat_ally_slot_cap)
+  *temp fia_hp {(("combat_ally" & fia_i) & "_hp")}
+  *temp fia_range {(("combat_ally" & fia_i) & "_range")}
+  *if ((fia_hp > 0) and (fia_range <= 0))
+    *if ((combat_intercepting_ally = 0) or (fia_hp < fia_best_hp))
+      *set combat_intercepting_ally fia_i
+      *set fia_best_hp fia_hp
+  *set fia_i + 1
+  *goto find_intercepting_ally_loop
+*if ((combat_intercepting_ally = 0) and (combat_enemy_weapon_type = "ranged"))
+  *temp fia_snipe_best_hp 0
+  *temp fia_j 1
+  *label find_intercepting_ally_snipe_loop
+  *if (fia_j <= combat_ally_slot_cap)
+    *temp fia_snipe_hp {(("combat_ally" & fia_j) & "_hp")}
+    *temp fia_snipe_weapon {(("combat_ally" & fia_j) & "_weapon_type")}
+    *if ((fia_snipe_hp > 0) and (fia_snipe_weapon = "ranged"))
+      *if ((combat_intercepting_ally = 0) or (fia_snipe_hp < fia_snipe_best_hp))
+        *set combat_intercepting_ally fia_j
+        *set fia_snipe_best_hp fia_snipe_hp
+    *set fia_j + 1
+    *goto find_intercepting_ally_snipe_loop
+*return
+
+*label find_melee_ally_present
+*comment Ally-side rows 3-4 mirror (2026-09-29, on request). Sets combat_melee_ally_present true if any living
+*comment ally with weapon_type "melee" is at range 0. Deliberately does NOT check the player -- Mechanism A
+*comment above (find_intercepting_ally) never redirects an enemy's attack onto the player, only onto an ally, so
+*comment a melee-engaged player alone creates none of the payoff a melee ally does (design decision #5,
+*comment RANGED_AI_PLAN.md: a melee ally doesn't eat the reaction, it gives whatever's chasing a ranged ally
+*comment something else worth hitting instead). No exclude-slot param, unlike find_intercepting_ally's own
+*comment candidate loop -- the only caller (combat_next_turn's ally branch) only ever runs this for a RANGED
+*comment ally, which can never itself match weapon_type = "melee", so self-counting is structurally impossible.
+*set combat_melee_ally_present false
+*temp fmap_i 1
+*label find_melee_ally_present_loop
+*if (fmap_i <= combat_ally_slot_cap)
+  *temp fmap_hp {(("combat_ally" & fmap_i) & "_hp")}
+  *temp fmap_weapon {(("combat_ally" & fmap_i) & "_weapon_type")}
+  *temp fmap_range {(("combat_ally" & fmap_i) & "_range")}
+  *if (((fmap_hp > 0) and (fmap_weapon = "melee")) and (fmap_range <= 0))
+    *set combat_melee_ally_present true
+  *set fmap_i + 1
+  *goto find_melee_ally_present_loop
+*return
+
+*comment ============================================================================
+*comment COMBAT: ALLY ATTACK TARGET SELECTION (2026-09-29, Ranged-AI Position Awareness plan §11.1)
+*comment The ally-side mirror of find_intercepting_ally's Mechanisms A/B above, called from combat_next_turn's
+*comment ally branch in place of a bare *gosub fight_pick_target. fight_pick_target itself is NOT touched --
+*comment 13 call sites share it (every player weapon/spell option, the player's own auto-target, and this one),
+*comment too much blast radius to parameterize -- so this wraps it instead, adding a preference layer only this
+*comment one call site needs, and falling back to fight_pick_target's own plain kill-priority scan whenever that
+*comment layer finds nothing to prefer.
+*comment
+*comment HUD CLICK ALWAYS WINS, checked first and unconditionally -- exactly fight_pick_target's own existing
+*comment precedence, which every ally already shares with the player's own attacks (a manual click focuses the
+*comment WHOLE team, not just the player -- pre-existing behavior, not new). This label does not duplicate that
+*comment logic; it just defers to fight_pick_target immediately whenever a click might be active, letting that
+*comment routine's own liveness re-check run exactly as it always has.
+*comment
+*comment RANGED ally (Kess): prefers a living ranged-classified enemy anywhere on the field (no range check --
+*comment ranged attacks don't care about distance, same reasoning as Mechanism B above) over
+*comment fight_pick_target's plain lowest-HP-among-everyone scan. Falls back to that scan if no enemy is
+*comment ranged-classified. Does NOT check whether Kess herself is personally threatened -- that's the ally-side
+*comment equivalent of rows 2-4 (quick-draw/retreat/disengage), explicitly out of scope for this phase (see
+*comment RANGED_AI_PLAN.md §11.5's "Ally-side rows 2-4 are still unscoped").
+*comment
+*comment MELEE ally (Rook): prefers the CLOSEST TIER PRESENT among living enemies (lowest combat_enemy<N>_range),
+*comment kill priority as the tiebreak only within that tier -- so a nearby healthy enemy is chosen over a
+*comment distant wounded one, rather than ignoring what's actually in front of the party to chase a kill
+*comment somewhere else. Reads combat_enemy<N>_range as "how close to the fight's front this enemy is," the same
+*comment shared-bucket reasoning as Mechanism A above -- not this specific ally's own real distance, which
+*comment doesn't exist as data. Since every living enemy sits at SOME tier, this branch always finds a pick; the
+*comment fight_pick_target fallback below it is unreachable in practice but kept for defensive completeness.
+*comment
+*comment Known limit, carried from RANGED_AI_PLAN.md §9: a melee ally's own combat_ally<N>_range (its progress
+*comment toward whichever target it's approaching) is never reset when the picked target changes turn to turn --
+*comment pre-existing, not introduced here (fight_pick_target's plain kill-priority already had the same gap).
+*comment Layer 2's commit-and-chase is where a real reset rule lives, for the actively-redirecting case; this
+*comment phase only ever picks among what's already reachable, so it never needs one.
+*comment ============================================================================
+*label select_ally_attack_target
+*params saat_slot
+*if (combat_player_chosen_target > 0)
+  *gosub_scene combat_movement fight_pick_target
+  *return
+*temp saat_weapon {(("combat_ally" & saat_slot) & "_weapon_type")}
+*temp saat_pref_target 0
+*if (saat_weapon = "ranged")
+  *temp saat_best_hp 0
+  *temp saat_i 1
+  *label select_ally_ranged_loop
+  *if (saat_i <= combat_enemy_count)
+    *temp saat_hp {(("combat_enemy" & saat_i) & "_hp")}
+    *temp saat_wt {(("combat_enemy" & saat_i) & "_weapon_type")}
+    *if ((saat_hp > 0) and (saat_wt = "ranged"))
+      *if ((saat_pref_target = 0) or (saat_hp < saat_best_hp))
+        *set saat_pref_target saat_i
+        *set saat_best_hp saat_hp
+    *set saat_i + 1
+    *goto select_ally_ranged_loop
+*else
+  *temp saat_min_range 999
+  *temp saat_i 1
+  *label select_ally_minrange_loop
+  *if (saat_i <= combat_enemy_count)
+    *temp saat_hp {(("combat_enemy" & saat_i) & "_hp")}
+    *if (saat_hp > 0)
+      *temp saat_range {(("combat_enemy" & saat_i) & "_range")}
+      *if (saat_range < saat_min_range)
+        *set saat_min_range saat_range
+    *set saat_i + 1
+    *goto select_ally_minrange_loop
+  *temp saat_best_hp 0
+  *set saat_i 1
+  *label select_ally_tierpick_loop
+  *if (saat_i <= combat_enemy_count)
+    *temp saat_hp {(("combat_enemy" & saat_i) & "_hp")}
+    *if (saat_hp > 0)
+      *temp saat_range {(("combat_enemy" & saat_i) & "_range")}
+      *if ((saat_range = saat_min_range) and ((saat_pref_target = 0) or (saat_hp < saat_best_hp)))
+        *set saat_pref_target saat_i
+        *set saat_best_hp saat_hp
+    *set saat_i + 1
+    *goto select_ally_tierpick_loop
+*if (saat_pref_target > 0)
+  *set combat_active_target saat_pref_target
+  *gosub_scene combat fight_sync_target_in
+*else
+  *gosub_scene combat_movement fight_pick_target
+*return
+
+*comment ============================================================================
+*comment COMBAT: COMMIT-AND-CHASE (2026-09-29, Ranged-AI Position Awareness plan §11.3, Phase "6a")
+*comment Enemy-side only in this pass -- the melee-ally mirror (a melee ally breaking off to chase a farther
+*comment enemy caster/archer) is deliberately deferred to its own follow-up increment rather than shipped
+*comment unverified alongside this. Both routines below take the acting slot as an explicit param (rec_slot/
+*comment decs_slot) rather than reading combat_next_turn's own *temp cnt_slot implicitly -- same-file *gosub
+*comment does share the caller's *temp scope in this engine (only *gosub_scene starts a fresh one), but this
+*comment file's own linter flags a *temp referenced from a label positioned earlier in the file than its
+*comment declaring line as "used before created," so an explicit param sidesteps the question entirely and
+*comment matches how every OTHER caller-supplied value in this file (resolve_enemy_attack_on_ally's
+*comment reao_a_slot, apply_derived_combat_bonuses's prefix, etc.) is already passed.
+*comment ============================================================================
+*label roll_enemy_chase_commit
+*params rec_slot
+*comment The one-shot decision. Called once, at the top of the closing-toward-the-player branch, only when this
+*comment enemy hasn't already committed to (or already tried and declined) a chase this fight -- callers outside
+*comment that branch never reach this, so "not already engaged with the default target" doesn't need its own
+*comment check here. Scans living allies for a ranged-classified one at Close or Mid (1 or 2): Long (3) is
+*comment deliberately out of reach ("she's not reachable easily," plan §11.3), and 0 is Layer 1's own job
+*comment (Mechanism A already claims an ally already standing in melee -- see find_intercepting_ally). Lowest HP
+*comment among eligible candidates wins, the same tiebreak every other target pick in this file uses.
+*comment Per-type tunable (2026-09-29, on request): gated on combat_enemy_chase_chance > 0 -- a type that never
+*comment set it (every creature type: lacedon, mire_rat, beast) skips the whole scan, the same "0 means never"
+*comment shape combat_enemy_move2_chance already uses, rather than relying on the roll below happening to always
+*comment fail (*rand can never return 0, so it would have anyway -- this just skips the wasted scan too).
+*if (((combat_enemy_chase_target = 0) and (not(combat_enemy_chase_roll_done))) and (combat_enemy_chase_chance > 0))
+  *temp recc_candidate 0
+  *temp recc_candidate_range 0
+  *temp recc_best_hp 0
+  *temp recc_i 1
+  *label roll_enemy_chase_commit_scan
+  *if (recc_i <= combat_ally_slot_cap)
+    *temp recc_hp {(("combat_ally" & recc_i) & "_hp")}
+    *temp recc_weapon {(("combat_ally" & recc_i) & "_weapon_type")}
+    *temp recc_range {(("combat_ally" & recc_i) & "_range")}
+    *if (((recc_hp > 0) and (recc_weapon = "ranged")) and ((recc_range = 1) or (recc_range = 2)))
+      *if ((recc_candidate = 0) or (recc_hp < recc_best_hp))
+        *set recc_candidate recc_i
+        *set recc_candidate_range recc_range
+        *set recc_best_hp recc_hp
+    *set recc_i + 1
+    *goto roll_enemy_chase_commit_scan
+  *if (recc_candidate > 0)
+    *comment No tuned odds yet (RANGED_AI_PLAN.md §11.5) -- combat_enemy_chase_chance, per-type (33 for tactical
+    *comment humanoids as a sensible starting point, the same pending-playtesting shape flee_hp_pct used).
+    *temp recc_roll 0
+    *rand recc_roll 1 100
+    *if (recc_roll <= combat_enemy_chase_chance)
+      *comment Bounded-by-range-and-reset-the-same-way (plan §11.3): the candidate's own range becomes this
+      *comment enemy's new tracked pursuit distance -- not combat_enemy_range itself (that keeps tracking
+      *comment distance to the player, untouched, so breaking off later needs no restore step at all).
+      *set combat_enemy_chase_target recc_candidate
+      *set combat_enemy_chase_range recc_candidate_range
+      *set combat_enemy_chase_hp_snapshot combat_enemy_hp
+      *set {(("combat_enemy" & rec_slot) & "_chase_target")} recc_candidate
+      *set {(("combat_enemy" & rec_slot) & "_chase_range")} recc_candidate_range
+      *set {(("combat_enemy" & rec_slot) & "_chase_hp_snapshot")} combat_enemy_hp
+    *set combat_enemy_chase_roll_done true
+    *set {(("combat_enemy" & rec_slot) & "_chase_roll_done")} true
+*return
+
+*label roll_ally_chase_commit
+*params rac_slot
+*comment The one-shot decision. Called once, at the top of the closing-toward-its-target branch, only when this
+*comment ally hasn't already committed to (or already tried and declined) a chase this fight. Scans living
+*comment ENEMIES for a ranged-classified one at Close or Mid (1 or 2) -- reading combat_enemy<N>_range as the
+*comment proxy for "how far back that enemy is standing," the same reuse-the-target's-own-range logic the enemy
+*comment side's roll_enemy_chase_commit already relies on. Lowest HP among eligible candidates wins.
+*temp rac_p (("combat_ally" & rac_slot) & "_")
+*comment Per-type tunable (2026-09-29, on request) -- see roll_enemy_chase_commit's own comment for the full
+*comment reasoning; Rook's own guard type sets this, a future non-tactical melee ally simply wouldn't.
+*if ((({(rac_p & "chase_target")} = 0) and (not({(rac_p & "chase_roll_done")}))) and ({(rac_p & "chase_chance")} > 0))
+  *temp racc_candidate 0
+  *temp racc_candidate_range 0
+  *temp racc_best_hp 0
+  *temp racc_i 1
+  *label roll_ally_chase_commit_scan
+  *if (racc_i <= combat_enemy_count)
+    *temp racc_hp {(("combat_enemy" & racc_i) & "_hp")}
+    *temp racc_weapon {(("combat_enemy" & racc_i) & "_weapon_type")}
+    *temp racc_range {(("combat_enemy" & racc_i) & "_range")}
+    *if (((racc_hp > 0) and (racc_weapon = "ranged")) and ((racc_range = 1) or (racc_range = 2)))
+      *if ((racc_candidate = 0) or (racc_hp < racc_best_hp))
+        *set racc_candidate racc_i
+        *set racc_candidate_range racc_range
+        *set racc_best_hp racc_hp
+    *set racc_i + 1
+    *goto roll_ally_chase_commit_scan
+  *if (racc_candidate > 0)
+    *comment combat_ally<N>_chase_chance, per-type, same untuned-starting-point shape as the enemy side
+    *comment (RANGED_AI_PLAN.md §11.5). Bounded by, and reset to, the candidate's own range -- see
+    *comment roll_enemy_chase_commit's own comment for the full reasoning; identical here, just read from the
+    *comment enemy-side fields instead of the ally-side ones.
+    *temp racc_roll 0
+    *rand racc_roll 1 100
+    *if (racc_roll <= {(rac_p & "chase_chance")})
+      *set {(rac_p & "chase_target")} racc_candidate
+      *set {(rac_p & "chase_range")} racc_candidate_range
+      *set {(rac_p & "chase_hp_snapshot")} {(rac_p & "hp")}
+    *set {(rac_p & "chase_roll_done")} true
+*return
+
+*label fight_pick_enemy_move
+*comment Movepool: called once per living slot per turn, right after
+*comment fight_sync_target_in resyncs THAT SLOT's base stats/movepool/
+*comment condition fields into the scratch vars below and before
+*comment resolve_enemy_attack reads them -- so this label never needs to
+*comment know which slot is active, only what fight_sync_target_in just
+*comment loaded. That's what makes movepool per-enemy-type in a mixed
+*comment fight: a slot with combat_enemyN_move2_chance = 0 (every enemy
+*comment that's never opted in) makes the *if below a pure no-op for that
+*comment slot's turn, leaving combat_enemy_atk_bonus/dmg_dice_sides/
+*comment dmg_bonus exactly what fight_sync_target_in just set them to.
+*comment A slot with a movepool can't ALSO carry an always-on condition
+*comment from its combat_enemyN_inflicts_condition -- this label owns the
+*comment scratch condition flag once that slot's move2_chance > 0, so give
+*comment the condition to move 2 instead.
+*comment Per-slot replay lock (2026-09-30, real bug caught live via refresh_fuzz_test.js): a bare *rand with no
+*comment guard at all, re-rolled on every refresh -- the exact "dice-reroll-on-refresh" class that tool's own
+*comment header names. This picks which attack variant (and dmg_type/condition) an enemy uses, so a reroll could
+*comment silently change a hit into a miss or swap the damage type on nothing more than a Stats round trip. Same
+*comment per-slot shape as combat_enemy_atk_locked_N/combat_enemy_narrate_locked_N (this file/combat_dice.txt) --
+*comment several enemies can act within one page, so a single shared flag would suppress the SECOND enemy's own
+*comment roll, not just protect against a replay. Caches only the boolean OUTCOME, not the derived fields it sets
+*comment -- those are stable per-slot data, so re-deriving them from the cached boolean is exact, not an
+*comment approximation.
+*comment combat_active_target > 0 guards the lock/cache indirection itself, not just the roll -- quicktest's
+*comment coverage walk reaches this label with combat_active_target still at its 0 default along at least one
+*comment path (found live: "Non-existent variable 'combat_enemy_move2_locked_0'", slot 0 was never *create'd
+*comment since it isn't a real enemy slot). Falls back to a plain, unlocked roll for that edge case, matching
+*comment this label's own pre-fix behavior there -- never reached by a real turn dispatch (fight_sync_target_in
+*comment always sets a real slot first), so it doesn't need the replay protection a real slot does.
+*set combat_enemy_move2_used false
+*if (combat_enemy_move2_chance > 0)
+  *set combat_enemy_inflicts_condition false
+  *set combat_enemy_condition_name ""
+  *set combat_enemy_condition_icon ""
+  *if (combat_active_target > 0)
+    *temp fpm_lockname (("combat_enemy_move2_locked_" & combat_active_target))
+    *if (not(locked_combat_enemy_move2_page_id = page_id))
+      *set combat_enemy_move2_locked_1 false
+      *set combat_enemy_move2_locked_2 false
+      *set combat_enemy_move2_locked_3 false
+      *set combat_enemy_move2_locked_4 false
+      *set combat_enemy_move2_locked_5 false
+      *set combat_enemy_move2_locked_6 false
+      *set locked_combat_enemy_move2_page_id page_id
+    *temp fpm_already_locked {fpm_lockname}
+    *temp fpm_vname (("combat_enemy" & combat_active_target) & "_move2_picked")
+    *if (fpm_already_locked)
+      *set combat_enemy_move2_used {fpm_vname}
+    *else
+      *temp fpm_roll 0
+      *rand fpm_roll 1 100
+      *set combat_enemy_move2_used (fpm_roll <= combat_enemy_move2_chance)
+      *set {fpm_vname} combat_enemy_move2_used
+      *set {fpm_lockname} true
+  *else
+    *temp fpm_roll 0
+    *rand fpm_roll 1 100
+    *set combat_enemy_move2_used (fpm_roll <= combat_enemy_move2_chance)
+  *if (combat_enemy_move2_used)
+    *set combat_enemy_atk_bonus combat_enemy_move2_atk_bonus
+    *set combat_enemy_dmg_dice_sides combat_enemy_move2_dmg_dice_sides
+    *set combat_enemy_dmg_bonus combat_enemy_move2_dmg_bonus
+    *set combat_enemy_dmg_type combat_enemy_move2_dmg_type
+    *set combat_enemy_inflicts_condition combat_enemy_move2_inflicts_condition
+    *set combat_enemy_condition_name combat_enemy_move2_condition_name
+    *set combat_enemy_condition_icon combat_enemy_move2_condition_icon
+*return
+
