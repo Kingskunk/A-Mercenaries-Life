@@ -46,6 +46,125 @@
 *set combat_lane_ready true
 *return
 
+*label combat_generate_terrain_layout
+*comment Resolve an encounter's optional terrain exactly once, after combatants have received opening positions.
+*comment This is intentionally a small library of compatible feature rules rather than an unrestricted map generator:
+*comment it never overlaps a combatant or another terrain slot, never uses an endpoint, and keeps a Chokepoint in
+*comment the forward central band. "hybrid" leaves authored slots untouched and fills only empty slots.
+*set combat_terrain_layout_used combat_terrain_layout
+*set combat_terrain_generated_count 0
+*temp cgtl_requested 0
+*if (combat_terrain_layout = "random_light")
+  *rand cgtl_requested 0 1
+*if ((combat_terrain_layout = "random_standard") or (combat_terrain_layout = "hybrid"))
+  *rand cgtl_requested 1 2
+*if (cgtl_requested <= 0)
+  *return
+*temp cgtl_added 0
+*temp cgtl_attempts 0
+*temp cgtl_feature_roll 1
+*temp cgtl_type ""
+*temp cgtl_min_position 2
+*temp cgtl_max_position 2
+*temp cgtl_position 2
+*label combat_generate_terrain_layout_loop
+*if ((cgtl_added < cgtl_requested) and (cgtl_attempts < 16))
+  *set cgtl_attempts + 1
+  *gosub combat_find_open_terrain_slot
+  *if (combat_terrain_open_slot > 0)
+    *rand cgtl_feature_roll 1 4
+    *set cgtl_type "cover"
+    *if (cgtl_feature_roll = 2)
+      *set cgtl_type "high_ground"
+    *if (cgtl_feature_roll = 3)
+      *set cgtl_type "difficult_terrain"
+    *if (cgtl_feature_roll = 4)
+      *set cgtl_type "chokepoint"
+    *gosub combat_terrain_type_exists cgtl_type
+    *if (not(combat_terrain_type_present))
+      *set cgtl_min_position 2
+      *set cgtl_max_position (combat_lane_max_position - 1)
+      *if (cgtl_type = "chokepoint")
+        *set cgtl_min_position (combat_lane_player_position + 1)
+        *set cgtl_max_position (combat_lane_player_position + 2)
+        *if (cgtl_max_position > (combat_lane_max_position - 1))
+          *set cgtl_max_position (combat_lane_max_position - 1)
+      *if (cgtl_min_position <= cgtl_max_position)
+        *rand cgtl_position cgtl_min_position cgtl_max_position
+        *gosub combat_terrain_position_is_available cgtl_position cgtl_min_position cgtl_max_position
+        *if (combat_terrain_position_available)
+          *set {("combat_terrain" & combat_terrain_open_slot) & "_type"} cgtl_type
+          *set {("combat_terrain" & combat_terrain_open_slot) & "_position"} cgtl_position
+          *set {("combat_terrain" & combat_terrain_open_slot) & "_capacity"} 0
+          *set {("combat_terrain" & combat_terrain_open_slot) & "_blocks_los"} false
+          *if (cgtl_type = "chokepoint")
+            *set {("combat_terrain" & combat_terrain_open_slot) & "_capacity"} 1
+          *set cgtl_added + 1
+          *set combat_terrain_generated_count + 1
+  *goto combat_generate_terrain_layout_loop
+*return
+
+*label combat_find_open_terrain_slot
+*set combat_terrain_open_slot 0
+*temp cftos_i 1
+*label combat_find_open_terrain_slot_loop
+*if (cftos_i <= combat_terrain_slot_cap)
+  *temp cftos_type {("combat_terrain" & cftos_i) & "_type"}
+  *if ((combat_terrain_open_slot = 0) and (cftos_type = "none"))
+    *set combat_terrain_open_slot cftos_i
+  *set cftos_i + 1
+  *goto combat_find_open_terrain_slot_loop
+*return
+
+*label combat_terrain_type_exists
+*params ctte_type
+*set combat_terrain_type_present false
+*temp ctte_i 1
+*label combat_terrain_type_exists_loop
+*if (ctte_i <= combat_terrain_slot_cap)
+  *temp ctte_existing_type {("combat_terrain" & ctte_i) & "_type"}
+  *if (ctte_existing_type = ctte_type)
+    *set combat_terrain_type_present true
+  *set ctte_i + 1
+  *goto combat_terrain_type_exists_loop
+*return
+
+*label combat_terrain_position_is_available
+*params ctpia_position ctpia_min_position ctpia_max_position
+*set combat_terrain_position_available false
+*if ((ctpia_position >= ctpia_min_position) and (ctpia_position <= ctpia_max_position))
+  *temp ctpia_occupied false
+  *if (ctpia_position = combat_lane_player_position)
+    *set ctpia_occupied true
+  *temp ctpia_enemy_i 1
+  *label combat_terrain_position_enemy_loop
+  *if (ctpia_enemy_i <= combat_enemy_count)
+    *temp ctpia_enemy_position {("combat_enemy" & ctpia_enemy_i) & "_position"}
+    *if (ctpia_enemy_position = ctpia_position)
+      *set ctpia_occupied true
+    *set ctpia_enemy_i + 1
+    *goto combat_terrain_position_enemy_loop
+  *temp ctpia_ally_i 1
+  *label combat_terrain_position_ally_loop
+  *if (ctpia_ally_i <= combat_ally_count)
+    *temp ctpia_ally_position {("combat_ally" & ctpia_ally_i) & "_position"}
+    *if (ctpia_ally_position = ctpia_position)
+      *set ctpia_occupied true
+    *set ctpia_ally_i + 1
+    *goto combat_terrain_position_ally_loop
+  *temp ctpia_terrain_i 1
+  *label combat_terrain_position_terrain_loop
+  *if (ctpia_terrain_i <= combat_terrain_slot_cap)
+    *temp ctpia_type {("combat_terrain" & ctpia_terrain_i) & "_type"}
+    *temp ctpia_terrain_position {("combat_terrain" & ctpia_terrain_i) & "_position"}
+    *if ((not(ctpia_type = "none")) and (ctpia_terrain_position = ctpia_position))
+      *set ctpia_occupied true
+    *set ctpia_terrain_i + 1
+    *goto combat_terrain_position_terrain_loop
+  *if (not(ctpia_occupied))
+    *set combat_terrain_position_available true
+*return
+
 *label combat_get_high_ground_attack_modifier
 *comment Shared elevation query for ranged weapon and spell ATTACK rolls. The lane coordinate, not an enemy type,
 *comment decides elevation: a combatant on any "high_ground" terrain slot gains +2 against a target not on high

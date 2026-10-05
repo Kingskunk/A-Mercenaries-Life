@@ -150,6 +150,21 @@ if (!/Terrain Archer Moves to Cover/.test(terrainAi.transcript) || !/Kess Takes 
 }
 if (!/victory|rescued/i.test(terrainAi.state.combat_outcome || "")) throw new Error("Terrain AI fixture did not finish cleanly");
 
+const randomTerrain = runFixture("fight_dev_random_terrain_test", "random_terrain");
+if (randomTerrain.state.combat_terrain_layout_used !== "random_standard" || randomTerrain.state.combat_terrain_generated_count < 1 || randomTerrain.state.combat_terrain_generated_count > 2) {
+  throw new Error("Random Terrain fixture did not build a one-or-two-feature standard layout");
+}
+if (!/victory|rescued/i.test(randomTerrain.state.combat_outcome || "")) throw new Error("Random Terrain fixture did not finish cleanly");
+
+const squad = runFixture("fight_dev_squad_test", "squad");
+if (squad.state.combat_terrain_layout_used !== "random_standard" || squad.state.combat_terrain_generated_count < 1 || squad.state.combat_terrain_generated_count > 2) {
+  throw new Error("Squad fixture did not build a randomized standard layout");
+}
+if (!/Center Guard/.test(squad.transcript) || !/Rearguard Archer/.test(squad.transcript)) {
+  throw new Error("Squad fixture did not field the added balanced enemy formation");
+}
+if (!/victory|rescued/i.test(squad.state.combat_outcome || "")) throw new Error("Squad fixture did not finish cleanly");
+
 const choke = runFixture("fight_dev_chokepoint_test", "chokepoint");
 if (!choke.flags.traded) throw new Error("Chokepoint fixture never offered Trade Places");
 if (!/victory|rescued/i.test(choke.state.combat_outcome || "")) throw new Error("Chokepoint fixture did not finish cleanly");
@@ -158,4 +173,6 @@ console.log("High Ground fixture: " + high.state.combat_outcome + " after " + hi
 console.log("Cover fixture: " + cover.state.combat_outcome + " after " + cover.choices.length + " choices; both defenders received +2 AC.");
 console.log("Difficult Terrain fixture: " + difficult.state.combat_outcome + " after " + difficult.choices.length + " choices; player and NPC Dash steps blocked.");
 console.log("Terrain AI fixture: " + terrainAi.state.combat_outcome + " after " + terrainAi.choices.length + " choices; enemy Cover and ally High Ground decisions observed.");
+console.log("Random Terrain fixture: " + randomTerrain.state.combat_outcome + " after " + randomTerrain.choices.length + " choices; generated " + randomTerrain.state.combat_terrain_generated_count + " safe feature(s).");
+console.log("Squad fixture: " + squad.state.combat_outcome + " after " + squad.choices.length + " choices; 3 enemies faced you and 2 allies on randomized terrain.");
 console.log("Chokepoint fixture: " + choke.state.combat_outcome + " after " + choke.choices.length + " choices; Trade Places observed.");

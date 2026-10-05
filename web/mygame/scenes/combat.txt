@@ -253,6 +253,9 @@
 *set combat_enemy1_vulnerable_type_2 combat_enemy_vulnerable_type_2
 *set combat_active_target 1
 *gosub_scene combat_movement combat_initialize_shared_lane
+*comment Terrain randomisation is resolved once, after every actor has an opening lane coordinate and before initiative.
+*comment Fixed is the default, so existing authored encounters remain exactly as they are until they opt in.
+*gosub_scene combat_movement combat_generate_terrain_layout
 *comment Turn order: rolled once here, after every slot above is fully built, so the roll sees the real
 *comment combat_ally_count/combat_enemy_count and every slot's real DEX. combat_current_turn_index 0 plus the
 *comment needs_advance flag means the very next *goto fight_round_hub (every fight_<name> label already ends with
@@ -568,6 +571,7 @@
 *set locked_combat_choke_withdraw_page_id 0
 *set combat_lane_player_position 3
 *set combat_lane_ready false
+*set combat_terrain_layout "fixed"
 *temp fcl_terrain_i 1
 *label fight_cleanup_terrain_loop
 *if (fcl_terrain_i <= combat_terrain_slot_cap)
@@ -4364,26 +4368,26 @@ ${use_text}
 *goto fight_library
 
 *label fight_dev_squad_test
-*comment Dev-hub only (dev_hub.txt dev_combat_test_hub) -- no story scene calls this. Two enemies and two allies
-*comment together, each opened at a different range, to play-test the nearest-enemy movement targeting
+*comment Dev-hub only (dev_hub.txt dev_combat_test_hub) -- no story scene calls this. The player and two allies face
+*comment three enemies, each opened across two formation lines, to play-test the nearest-enemy movement targeting
 *comment (fight_pick_nearest_target), kill-priority attack targeting (fight_pick_target), free movement/Dash, and
-*comment ally AI all at once instead of in isolation. The Vanguard Swordsman (Close, 1) is nearer than the
-*comment Rearguard Archer (Long Range, 3) -- Push Forward/Fall Back should NARRATE against whichever of the two is
-*comment actually nearest for that direction rather than whichever has less HP, and the button text should preview
-*comment that same tier pair ("Close -> Engaged"). **Watch the two ranges after a single Push Forward:** this pair is
-*comment also the check for combat_shift_all_ranges, which moves EVERY living enemy, so they must go 0 and 2. A 0 and
-*comment 3 result means the tier change went to a single slot again -- the pre-2026-09-28 behaviour, and the reason
-*comment this probe's original note only claimed to test "movement targeting." Rook (melee ally, Mid-Range, 2) has to
-*comment close on its own target over a couple of rounds; Kess (ranged ally) attacks every turn regardless of range,
-*comment same as fight_dev_ally_ranged_test.
+*comment ally AI all at once instead of in isolation. The Vanguard Swordsman and Center Guard begin Close (1), while
+*comment the Rearguard Archer begins Long Range (3). A randomized standard layout makes each run tactically distinct
+*comment without placing terrain underneath that opening formation. Rook (melee ally, Mid-Range, 2) has to close on
+*comment its own target over a couple of rounds; Kess (ranged ally) attacks every turn regardless of range.
 *set combat_is_nonlethal false
+*set combat_terrain_layout "random_standard"
 *set combat_lib_1 "swordsman"
 *set combat_enemy_name_override "Vanguard Swordsman"
 *set combat_enemy_range 1
-*set combat_lib_2 "archer"
-*set combat_enemy2_name_override "Rearguard Archer"
-*set combat_enemy2_epithet_override "the rearguard archer"
-*set combat_enemy2_range 3
+*set combat_lib_2 "guard"
+*set combat_enemy2_name_override "Center Guard"
+*set combat_enemy2_epithet_override "the center guard"
+*set combat_enemy2_range 1
+*set combat_lib_3 "archer"
+*set combat_enemy3_name_override "Rearguard Archer"
+*set combat_enemy3_epithet_override "the rearguard archer"
+*set combat_enemy3_range 3
 *set combat_ally_lib_1 "guard"
 *set combat_ally1_name_override "Rook"
 *set combat_ally1_epithet_override "Rook"
@@ -4450,11 +4454,25 @@ ${use_text}
 *set combat_lib_1 "archer"
 *set combat_enemy_name_override "Terrain Archer"
 *set combat_enemy_epithet_override "the terrain archer"
+*comment Keep the fixture's target alive through the automated player's opening attack so both terrain-aware turns
+*comment are always observed; this is a test-only durability override, not a balance change to real archers.
+*set combat_enemy_hp_override 30
 *set combat_enemy_range 2
 *set combat_ally_lib_1 "archer"
 *set combat_ally1_name_override "Kess"
 *set combat_ally1_epithet_override "Kess"
 *set combat_ally1_range 1
+*goto fight_library
+
+*label fight_dev_random_terrain_test
+*comment Dev-hub fixture for generated layouts. The archer opens at Mid-Range, leaving the central lane eligible;
+*comment random_standard must add one or two safe, distinct terrain slots before either side takes a turn.
+*set combat_is_nonlethal false
+*set combat_terrain_layout "random_standard"
+*set combat_lib_1 "archer"
+*set combat_enemy_name_override "Layout Archer"
+*set combat_enemy_epithet_override "the layout archer"
+*set combat_enemy_range 2
 *goto fight_library
 
 *label fight_dev_chokepoint_test
