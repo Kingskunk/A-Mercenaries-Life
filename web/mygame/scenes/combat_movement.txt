@@ -110,6 +110,24 @@
   *goto combat_get_cover_ranged_defense_bonus_loop
 *return
 
+*label combat_difficult_terrain_crossing_query
+*comment Shared movement query for an adjacent lane step. Difficult Terrain is a compact half-speed rule: an actor
+*comment may make the ordinary step into, out of, or across the terrain, but that step uses all movement and cannot
+*comment be paired with Dash's extra tier. Checking both endpoints also handles a combatant starting on the tile.
+*params cdtcq_from cdtcq_to
+*set combat_difficult_terrain_blocks_dash false
+*temp cdtcq_i 1
+*label combat_difficult_terrain_crossing_query_loop
+*if (cdtcq_i <= combat_terrain_slot_cap)
+  *temp cdtcq_type {("combat_terrain" & cdtcq_i) & "_type"}
+  *temp cdtcq_position {("combat_terrain" & cdtcq_i) & "_position"}
+  *if (cdtcq_type = "difficult_terrain")
+    *if ((cdtcq_position = cdtcq_from) or (cdtcq_position = cdtcq_to))
+      *set combat_difficult_terrain_blocks_dash true
+  *set cdtcq_i + 1
+  *goto combat_difficult_terrain_crossing_query_loop
+*return
+
 *label combat_lane_crossing_query
 *comment Shared terrain query for future movement actions. Call with two adjacent lane positions, then read
 *comment combat_lane_crossing_has_chokepoint / _slot. It deliberately does not decide occupancy yet: that belongs
@@ -444,6 +462,7 @@
 *comment root cause as every other bare *set var +N in this codebase's history.
 *if (not(combat_range_shift_locked)) or (not(locked_combat_range_shift_page_id = page_id))
   *gosub combat_sync_enemy_positions_from_legacy_ranges
+  *temp csar_from_position combat_lane_player_position
   *temp csar_delta 1
   *if (csar_direction = "push")
     *comment Not "*set csar_delta -1": in ChoiceScript a signed literal after the variable means ADD it, so that line left the delta at 1 - 1 = 0
@@ -456,6 +475,8 @@
     *set combat_lane_player_position combat_lane_min_position
   *if (combat_lane_player_position > combat_lane_max_position)
     *set combat_lane_player_position combat_lane_max_position
+  *gosub combat_difficult_terrain_crossing_query csar_from_position combat_lane_player_position
+  *set combat_move_touched_difficult_terrain combat_difficult_terrain_blocks_dash
   *temp csar_i 1
   *label combat_shift_all_ranges_loop
   *if (csar_i <= combat_enemy_count)
@@ -563,5 +584,41 @@
 *if (clmat_range > 3)
   *set clmat_range 3
 *set {(("combat_ally" & clmat_slot) & "_range")} clmat_range
+*return
+
+*label combat_lane_step_ally_from_position
+*comment Voluntary-terrain counterpart to combat_lane_move_ally_relative_to_target. The ordinary pursuit helper
+*comment intentionally rebuilds an ally's position from its compatibility range before moving; that is correct for
+*comment chase flow, but would discard the exact terrain coordinate selected by combat_choose_terrain_step. This
+*comment helper instead moves from the ally's real shared-lane position by one step relative to its current target,
+*comment then derives the compatibility range afterwards.
+*params clsafp_slot clsafp_target clsafp_direction
+*if (clsafp_target <= 0)
+  *set clsafp_target {(("combat_ally" & clsafp_slot) & "_target")}
+*if (clsafp_target <= 0)
+  *set clsafp_target 1
+*temp clsafp_target_position {(("combat_enemy" & clsafp_target) & "_position")}
+*temp clsafp_position {(("combat_ally" & clsafp_slot) & "_position")}
+*if (clsafp_direction = "toward")
+  *if (clsafp_position < clsafp_target_position)
+    *set clsafp_position + 1
+  *if (clsafp_position > clsafp_target_position)
+    *set clsafp_position - 1
+*if (clsafp_direction = "away")
+  *if (clsafp_position < clsafp_target_position)
+    *set clsafp_position - 1
+  *if (clsafp_position > clsafp_target_position)
+    *set clsafp_position + 1
+*if (clsafp_position < combat_lane_min_position)
+  *set clsafp_position combat_lane_min_position
+*if (clsafp_position > combat_lane_max_position)
+  *set clsafp_position combat_lane_max_position
+*set {(("combat_ally" & clsafp_slot) & "_position")} clsafp_position
+*temp clsafp_range (clsafp_target_position - clsafp_position)
+*if (clsafp_range < 0)
+  *set clsafp_range (0 - clsafp_range)
+*if (clsafp_range > 3)
+  *set clsafp_range 3
+*set {(("combat_ally" & clsafp_slot) & "_range")} clsafp_range
 *return
 

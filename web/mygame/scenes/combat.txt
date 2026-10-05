@@ -1731,6 +1731,7 @@
 *set combat_player_bonus_left combat_player_bonus_max
 *set combat_player_attacks_left combat_player_attacks_max
 *set combat_player_moves_left combat_player_moves_max
+*set combat_move_touched_difficult_terrain false
 *set combat_sneak_spent false
 *set player_movement_restricted false
 *return
@@ -1849,6 +1850,11 @@
 *comment Push Forward/Fall Back end here (2026-09-28), not fight_action_spent -- movement is its own budget now,
 *comment not the action. Always returns to the hub, same as every other _spent label.
 *gosub combat_spend_move
+*comment Difficult Terrain does not prevent the ordinary step that just happened. It consumes the entire movement
+*comment allowance afterwards, which removes Dash's extra step without introducing a second movement-point economy.
+*if (combat_move_touched_difficult_terrain)
+  *set combat_player_moves_left 0
+*set combat_move_touched_difficult_terrain false
 *goto fight_round_hub
 
 *comment ============================================================================
@@ -1875,6 +1881,8 @@
 *comment click made between it and a second action would otherwise sit unread until the next full turn.
 *gosub_scene combat_movement fight_pick_target
 *gosub_scene combat_movement combat_refresh_chokepoint
+*gosub_scene combat_movement combat_difficult_terrain_crossing_query combat_lane_player_position combat_lane_player_position
+*temp combat_player_on_difficult_terrain combat_difficult_terrain_blocks_dash
 *comment A semantic recovery checkpoint belongs only at the settled round hub. Target-picking pages are transient;
 *comment if an old save somehow reaches this hub with either sidebar mode still armed, retire it before persisting.
 *comment The named slot is hidden from the manual save list and is the fallback after the three rolling autosaves.
@@ -2576,7 +2584,7 @@
       *gosub resolve_opportunity_attack
       *goto fight_move_spent
 
-  *if ((combat_player_actions_left > 0) or (combat_cunning))
+  *if (((combat_player_actions_left > 0) or (combat_cunning)) and (not(combat_player_on_difficult_terrain)))
     # [b][@{combat_cunning BONUS ACTION|ACTION}][/b] [b][Dash][/b] Push yourself for extra ground this turn@{combat_cunning .|, giving up anything else.}
       *comment Dash, RAW (2026-09-28): spends the action, grants ONE extra combat_player_moves_left, so a player
       *comment starting more than one tier out can close/open two tiers this turn -- at the cost of the action, so
@@ -3695,6 +3703,21 @@ ${use_text}
     *comment cnt_rv: shared by both branches below that roll a 3-way flavor variant, declared once here instead
     *comment of once per branch.
     *temp cnt_rv 0
+    *comment Terrain intent is calculated before the ordinary decision tree but only consumed by the eligible
+    *comment ranged reposition / melee chokepoint-hold branches below. Surprise, interception, fear, retreats,
+    *comment active chases and forced movement retain their existing priority.
+    *temp cnt_terrain_must_close false
+    *temp cnt_terrain_keep_distance false
+    *if (combat_enemy_weapon_type = "ranged")
+      *set cnt_terrain_keep_distance true
+    *else
+      *set cnt_terrain_must_close true
+    *temp cnt_terrain_target_position combat_lane_player_position
+    *comment A ranged enemy that has selected a distant ranged ally uses that ally's actual lane coordinate for
+    *comment the keep-distance check. An engaged/intercepting melee ally still retains full priority below.
+    *if ((combat_enemy_weapon_type = "ranged") and (combat_intercepting_ally > 0))
+      *set cnt_terrain_target_position {(("combat_ally" & combat_intercepting_ally) & "_position")}
+    *gosub_scene combat_ai combat_choose_terrain_step "enemy" cnt_slot cnt_terrain_target_position cnt_terrain_must_close cnt_terrain_keep_distance
     *if (combat_player_surprise) and (cnt_first_pass)
       *comment Three variants, via *rand -- none lead with combat_enemy_epithet (usually a lowercase "the X"),
       *comment so the printed sentence never opens on an uncapitalized word.
@@ -3787,6 +3810,19 @@ ${use_text}
       *comment why the weakest engaged ally is chosen so several enemies don't dogpile one slot. This enemy therefore
       *comment never closes and never attacks the player this turn, and its own combat_enemy_range to the player is
       *comment irrelevant (it may still be > 0 -- the ally closed on its own initiative, independently of this enemy).
+      *comment A ranged snipe at a non-adjacent ally may still take a single legal terrain step before the shot.
+      *comment A genuinely cornered archer has combat_enemy_range 0 and therefore skips this, preserving the
+      *comment existing quick-draw/retreat behavior above.
+      *if (((combat_enemy_weapon_type = "ranged") and (combat_enemy_range > 0)) and (combat_ai_terrain_step_direction != "none"))
+        *gosub_scene combat_movement combat_lane_move_enemy_relative_to_player cnt_slot combat_ai_terrain_step_direction
+        *gosub_scene combat_movement combat_range_name combat_enemy_range
+        *if (combat_ai_terrain_step_reason = "cover")
+          [b][🛡️ ${combat_enemy_name} Moves to Cover — ${combat_range_display_name}][/b]
+        *if (combat_ai_terrain_step_reason = "high_ground")
+          [b][⛰️ ${combat_enemy_name} Takes High Ground — ${combat_range_display_name}][/b]
+        *if (combat_ai_terrain_step_reason = "chokepoint")
+          [b][🚪 ${combat_enemy_name} Takes the Chokepoint — ${combat_range_display_name}][/b]
+        *line_break
       *gosub_scene combat_dice resolve_enemy_attack_on_ally combat_intercepting_ally
       *gosub_scene combat_prose fight_narrate_ally_attack "enemy" cnt_slot "ally" combat_intercepting_ally combat_enemy_atk_on_ally_hit
       *set combat_turn_advanced_this_page true
@@ -3832,6 +3868,12 @@ ${use_text}
       [b][😨 ${combat_enemy_name} holds back, too frightened to close][/b]
       *line_break
       *set combat_turn_advanced_this_page true
+    *elseif ((((not(combat_enemy_weapon_type = "ranged")) and (combat_enemy_range > 0)) and (combat_ai_terrain_hold_position)) and (combat_ai_terrain_step_reason = "chokepoint"))
+      *comment A guardian/bruiser already occupying a valued chokepoint does not abandon that defensive position
+      *comment merely because its ordinary close branch could move it one tier nearer this turn.
+      [b][🛡️ ${combat_enemy_name} Holds the Chokepoint][/b]
+      *line_break
+      *set combat_turn_advanced_this_page true
     *elseif ((not(combat_enemy_weapon_type = "ranged")) and (combat_enemy_range > 0))
       *comment Free movement + Dash (2026-09-28, mirrors the player's own Push Forward/Dash exactly): closes one
       *comment tier for free. If that's still not enough, it Dashes too -- closes a SECOND tier -- since there's
@@ -3844,8 +3886,17 @@ ${use_text}
       *else
         *gosub_scene combat_movement combat_lane_move_enemy_relative_to_player cnt_slot "toward"
         *temp cnt_dashed false
-        *comment A Slowed enemy (Ray of Frost) cannot Dash: it closes the one free tier and no more.
-        *if ((combat_enemy_range > 0) and (cnt_slowed <= 0))
+        *temp cnt_after_first_step {("combat_enemy" & cnt_slot) & "_position"}
+        *temp cnt_before_first_step (cnt_after_first_step + 1)
+        *gosub_scene combat_movement combat_difficult_terrain_crossing_query cnt_before_first_step cnt_after_first_step
+        *temp cnt_difficult_after_first_step combat_difficult_terrain_blocks_dash
+        *temp cnt_next_dash_position (cnt_after_first_step - 1)
+        *if (cnt_next_dash_position < combat_lane_min_position)
+          *set cnt_next_dash_position combat_lane_min_position
+        *gosub_scene combat_movement combat_difficult_terrain_crossing_query cnt_after_first_step cnt_next_dash_position
+        *temp cnt_difficult_dash_path combat_difficult_terrain_blocks_dash
+        *comment Slow and Difficult Terrain both prevent the extra Dash tier; each still permits the ordinary close.
+        *if (((combat_enemy_range > 0) and (cnt_slowed <= 0)) and ((not(cnt_difficult_after_first_step)) and (not(cnt_difficult_dash_path))))
           *gosub_scene combat_movement combat_lane_move_enemy_relative_to_player cnt_slot "toward"
           *set cnt_dashed true
         *comment Same reasoning as the surprise-round variants above: three lines each, none epithet-first.
@@ -3883,6 +3934,18 @@ ${use_text}
           *if (combat_all_enemies_dead)
             *goto fight_victory
     *else
+      *comment Ranged terrain users can reposition one legal lane step and still take their normal attack. The
+      *comment chooser refuses a step into melee range, so this cannot bypass the existing quick-draw/retreat rules.
+      *if ((combat_enemy_weapon_type = "ranged") and (combat_ai_terrain_step_direction != "none"))
+        *gosub_scene combat_movement combat_lane_move_enemy_relative_to_player cnt_slot combat_ai_terrain_step_direction
+        *gosub_scene combat_movement combat_range_name combat_enemy_range
+        *if (combat_ai_terrain_step_reason = "cover")
+          [b][🛡️ ${combat_enemy_name} Moves to Cover — ${combat_range_display_name}][/b]
+        *if (combat_ai_terrain_step_reason = "high_ground")
+          [b][⛰️ ${combat_enemy_name} Takes High Ground — ${combat_range_display_name}][/b]
+        *if (combat_ai_terrain_step_reason = "chokepoint")
+          [b][🚪 ${combat_enemy_name} Takes the Chokepoint — ${combat_range_display_name}][/b]
+        *line_break
       *comment Row-2 quick-draw (2026-09-29, Ranged-AI Position Awareness plan §3/§4.2): a cornered ranged type
       *comment (range 0) with no melee ally in the shared adjacency bucket -- guaranteed here, since the
       *comment interception *elseif above already claims that case for any enemy it applies to -- draws its
@@ -4053,7 +4116,28 @@ ${use_text}
         *set combat_attacker_epithet {(("combat_ally" & cnt_slot) & "_epithet")}
         *temp cnt_a_weapon {(("combat_ally" & cnt_slot) & "_weapon_type")}
         *temp cnt_a_range {(("combat_ally" & cnt_slot) & "_range")}
-        *if ((cnt_a_weapon = "ranged") or (cnt_a_range <= 0))
+        *temp cnt_a_target_position {(("combat_enemy" & combat_active_target) & "_position")}
+        *comment Ranged allies may step onto a better adjacent terrain coordinate before shooting. The shared chooser
+        *comment enforces capacity and keeps them outside their target's coordinate; this is not a second attack or Dash.
+        *if (cnt_a_weapon = "ranged")
+          *gosub_scene combat_ai combat_choose_terrain_step "ally" cnt_slot cnt_a_target_position false true
+          *if (combat_ai_terrain_step_direction != "none")
+            *gosub_scene combat_movement combat_lane_step_ally_from_position cnt_slot combat_active_target combat_ai_terrain_step_direction
+            *set cnt_a_range {(("combat_ally" & cnt_slot) & "_range")}
+            *if (combat_ai_terrain_step_reason = "cover")
+              [b][🛡️ ${combat_attacker_name} Moves to Cover][/b]
+            *if (combat_ai_terrain_step_reason = "high_ground")
+              [b][⛰️ ${combat_attacker_name} Takes High Ground][/b]
+            *if (combat_ai_terrain_step_reason = "chokepoint")
+              [b][🚪 ${combat_attacker_name} Takes the Chokepoint][/b]
+            *line_break
+        *if (not(cnt_a_weapon = "ranged"))
+          *gosub_scene combat_ai combat_choose_terrain_step "ally" cnt_slot cnt_a_target_position true false
+        *if (((not(cnt_a_weapon = "ranged")) and (combat_ai_terrain_hold_position)) and (combat_ai_terrain_step_reason = "chokepoint"))
+          [b][🛡️ ${combat_attacker_name} Holds the Chokepoint][/b]
+          *line_break
+          *set combat_turn_advanced_this_page true
+        *elseif ((cnt_a_weapon = "ranged") or (cnt_a_range <= 0))
           *gosub_scene combat_dice resolve_ally_attack cnt_slot combat_active_target
           *gosub_scene combat_prose fight_narrate_ally_attack "ally" cnt_slot "enemy" combat_active_target combat_ally_atk_hit
           *comment Clear the quick-draw flag right after the narration, mirroring the enemy side's clear of
@@ -4080,7 +4164,16 @@ ${use_text}
             *gosub_scene combat_movement combat_lane_move_ally_relative_to_target cnt_slot combat_active_target "toward"
             *set cnt_a_range {(("combat_ally" & cnt_slot) & "_range")}
             *temp cnt_a_dashed false
-            *if (cnt_a_range > 0)
+            *temp cnt_a_after_first_step {(("combat_ally" & cnt_slot) & "_position")}
+            *temp cnt_a_before_first_step (cnt_a_after_first_step - 1)
+            *gosub_scene combat_movement combat_difficult_terrain_crossing_query cnt_a_before_first_step cnt_a_after_first_step
+            *temp cnt_a_difficult_after_first_step combat_difficult_terrain_blocks_dash
+            *temp cnt_a_next_dash_position (cnt_a_after_first_step + 1)
+            *if (cnt_a_next_dash_position > combat_lane_max_position)
+              *set cnt_a_next_dash_position combat_lane_max_position
+            *gosub_scene combat_movement combat_difficult_terrain_crossing_query cnt_a_after_first_step cnt_a_next_dash_position
+            *temp cnt_a_difficult_dash_path combat_difficult_terrain_blocks_dash
+            *if ((cnt_a_range > 0) and ((not(cnt_a_difficult_after_first_step)) and (not(cnt_a_difficult_dash_path))))
               *gosub_scene combat_movement combat_lane_move_ally_relative_to_target cnt_slot combat_active_target "toward"
               *set cnt_a_range {(("combat_ally" & cnt_slot) & "_range")}
               *set cnt_a_dashed true
@@ -4329,6 +4422,39 @@ ${use_text}
 *set combat_enemy_name_override "Covered Archer"
 *set combat_enemy_epithet_override "the covered archer"
 *set combat_enemy_range 1
+*goto fight_library
+
+*label fight_dev_difficult_terrain_test
+*comment Dev-hub fixture for the compact half-speed rule. The player begins beside Difficult Terrain and the
+*comment swordsman begins beyond it at Long Range. A player Dash can reach the difficult coordinate but cannot
+*comment supply a second move; the swordsman likewise closes only one tier when its Dash path touches the terrain.
+*set combat_is_nonlethal false
+*set combat_terrain1_type "difficult_terrain"
+*set combat_terrain1_position 4
+*set combat_lib_1 "swordsman"
+*set combat_enemy_name_override "Mired Swordsman"
+*set combat_enemy_epithet_override "the mired swordsman"
+*set combat_enemy_range 3
+*goto fight_library
+
+*label fight_dev_terrain_ai_test
+*comment Dev-hub fixture for Phase 2 terrain intent. The enemy archer starts with adjacent Cover behind it; Kess
+*comment starts with adjacent High Ground behind her. On their first eligible turns they should each step onto the
+*comment preferred terrain and still take their ordinary ranged attack, proving this is live turn behavior rather
+*comment than a score-only policy.
+*set combat_is_nonlethal false
+*set combat_terrain1_type "cover"
+*set combat_terrain1_position 6
+*set combat_terrain2_type "high_ground"
+*set combat_terrain2_position 3
+*set combat_lib_1 "archer"
+*set combat_enemy_name_override "Terrain Archer"
+*set combat_enemy_epithet_override "the terrain archer"
+*set combat_enemy_range 2
+*set combat_ally_lib_1 "archer"
+*set combat_ally1_name_override "Kess"
+*set combat_ally1_epithet_override "Kess"
+*set combat_ally1_range 1
 *goto fight_library
 
 *label fight_dev_chokepoint_test

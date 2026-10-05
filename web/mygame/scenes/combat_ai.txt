@@ -1,6 +1,182 @@
 *comment COMBAT AI DECISIONS
 *comment Target preference, interception, chase commitment, and per-type special-move choice.
 *comment The combat controller remains responsible for turn order, narration, attack resolution, and movement execution.
+
+*label combat_score_terrain_destination
+*comment Phase 1 terrain-intent evaluator. It scores one PROPOSED, already-legal lane destination for one AI actor;
+*comment it does not move anyone, pick a target, ignore a chokepoint capacity, or invent a new route. Keeping the
+*comment policy query separate from movement execution means future terrain types add one scoring rule here while
+*comment future enemy types merely select an existing behavior profile in combat_types.txt.
+*comment Inputs: actor kind ("enemy" or "ally"), numbered slot, and a candidate lane coordinate. Outputs are the
+*comment durable scratch pair combat_ai_terrain_score / combat_ai_terrain_reason. Scores are deliberately small:
+*comment terrain preference is a tie-breaker among legal tactical moves, never permission to break core combat rules.
+*params cstd_actor_kind cstd_actor_slot cstd_candidate_position
+*set combat_ai_terrain_score 0
+*set combat_ai_terrain_reason "none"
+*temp cstd_profile "feral"
+*temp cstd_weapon "melee"
+*temp cstd_current_position combat_lane_player_position
+*if (cstd_actor_kind = "enemy")
+  *set cstd_profile {(("combat_enemy" & cstd_actor_slot) & "_behavior_profile")}
+  *set cstd_weapon {(("combat_enemy" & cstd_actor_slot) & "_weapon_type")}
+  *set cstd_current_position {(("combat_enemy" & cstd_actor_slot) & "_position")}
+*if (cstd_actor_kind = "ally")
+  *set cstd_profile {(("combat_ally" & cstd_actor_slot) & "_behavior_profile")}
+  *set cstd_weapon {(("combat_ally" & cstd_actor_slot) & "_weapon_type")}
+  *set cstd_current_position {(("combat_ally" & cstd_actor_slot) & "_position")}
+*comment Resolve the policy from the profile at score time instead of storing a copied set of four preference values
+*comment on every slot. This prevents a newly added terrain preference from requiring a migration of every actor field.
+*gosub_scene combat_types resolve_behavior_profile cstd_profile cstd_weapon
+*gosub_scene combat_movement combat_difficult_terrain_crossing_query cstd_current_position cstd_candidate_position
+*if (combat_difficult_terrain_blocks_dash)
+  *set combat_ai_terrain_score (0 - combat_behavior_avoid_difficult_terrain)
+  *if (combat_behavior_avoid_difficult_terrain > 0)
+    *set combat_ai_terrain_reason "avoid_difficult_terrain"
+*temp cstd_i 1
+*label combat_score_terrain_destination_loop
+*if (cstd_i <= combat_terrain_slot_cap)
+  *temp cstd_type {(("combat_terrain" & cstd_i) & "_type")}
+  *temp cstd_position {(("combat_terrain" & cstd_i) & "_position")}
+  *if (cstd_position = cstd_candidate_position)
+    *if (cstd_type = "cover")
+      *set combat_ai_terrain_score + combat_behavior_seek_cover
+      *if (combat_behavior_seek_cover > 0)
+        *set combat_ai_terrain_reason "cover"
+    *if (cstd_type = "high_ground")
+      *set combat_ai_terrain_score + combat_behavior_seek_high_ground
+      *if (combat_behavior_seek_high_ground > 0)
+        *set combat_ai_terrain_reason "high_ground"
+    *if (cstd_type = "chokepoint")
+      *set combat_ai_terrain_score + combat_behavior_hold_chokepoint
+      *if (combat_behavior_hold_chokepoint > 0)
+        *set combat_ai_terrain_reason "chokepoint"
+  *set cstd_i + 1
+  *goto combat_score_terrain_destination_loop
+*return
+
+*label combat_ai_terrain_destination_is_legal
+*comment A deliberately small legality gate for voluntary terrain movement. Ordinary lane coordinates are open, but
+*comment an AI may not choose to enter a full capacity-limited chokepoint. Existing forced movement and the player's
+*comment dedicated chokepoint actions keep their own rules; this only filters a new optional tactical preference.
+*params catdil_actor_kind catdil_actor_slot catdil_candidate_position
+*set combat_ai_terrain_destination_legal false
+*if ((catdil_candidate_position >= combat_lane_min_position) and (catdil_candidate_position <= combat_lane_max_position))
+  *set combat_ai_terrain_destination_legal true
+*temp catdil_i 1
+*temp catdil_chokepoint_capacity 0
+*label combat_ai_terrain_destination_is_legal_loop
+*if (catdil_i <= combat_terrain_slot_cap)
+  *temp catdil_type {(("combat_terrain" & catdil_i) & "_type")}
+  *temp catdil_position {(("combat_terrain" & catdil_i) & "_position")}
+  *temp catdil_capacity {(("combat_terrain" & catdil_i) & "_capacity")}
+  *if (((catdil_type = "chokepoint") and (catdil_position = catdil_candidate_position)) and (catdil_capacity > 0))
+    *set catdil_chokepoint_capacity catdil_capacity
+  *set catdil_i + 1
+  *goto combat_ai_terrain_destination_is_legal_loop
+*temp catdil_occupants 0
+*if (combat_lane_player_position = catdil_candidate_position)
+  *set catdil_occupants + 1
+*temp catdil_enemy_i 1
+*label combat_ai_terrain_destination_is_legal_enemy_loop
+*if (catdil_enemy_i <= combat_enemy_count)
+  *temp catdil_enemy_hp {(("combat_enemy" & catdil_enemy_i) & "_hp")}
+  *temp catdil_enemy_position {(("combat_enemy" & catdil_enemy_i) & "_position")}
+  *if (((catdil_enemy_hp > 0) and (catdil_enemy_position = catdil_candidate_position)) and (not((catdil_actor_kind = "enemy") and (catdil_enemy_i = catdil_actor_slot))))
+    *set catdil_occupants + 1
+  *set catdil_enemy_i + 1
+  *goto combat_ai_terrain_destination_is_legal_enemy_loop
+*temp catdil_ally_i 1
+*label combat_ai_terrain_destination_is_legal_ally_loop
+*if (catdil_ally_i <= combat_ally_slot_cap)
+  *temp catdil_ally_hp {(("combat_ally" & catdil_ally_i) & "_hp")}
+  *temp catdil_ally_position {(("combat_ally" & catdil_ally_i) & "_position")}
+  *if (((catdil_ally_hp > 0) and (catdil_ally_position = catdil_candidate_position)) and (not((catdil_actor_kind = "ally") and (catdil_ally_i = catdil_actor_slot))))
+    *set catdil_occupants + 1
+  *set catdil_ally_i + 1
+  *goto combat_ai_terrain_destination_is_legal_ally_loop
+*if ((catdil_chokepoint_capacity > 0) and (catdil_occupants >= catdil_chokepoint_capacity))
+  *set combat_ai_terrain_destination_legal false
+*return
+
+*label combat_choose_terrain_step
+*comment Phase 2 terrain intent. Compare the actor's current coordinate with at most two adjacent, legal steps. A
+*comment choice must score strictly higher than staying put; melee callers additionally require the step not increase
+*comment distance to their target, while ranged callers forbid stepping into the target's coordinate. This prevents
+*comment a preference for Cover from overriding engagement, target, capacity, or movement rules.
+*params ccts_actor_kind ccts_actor_slot ccts_target_position ccts_must_close ccts_keep_distance
+*set combat_ai_terrain_step_direction "none"
+*set combat_ai_terrain_step_reason "none"
+*set combat_ai_terrain_hold_position false
+*temp ccts_current_position combat_lane_player_position
+*if (ccts_actor_kind = "enemy")
+  *set ccts_current_position {(("combat_enemy" & ccts_actor_slot) & "_position")}
+*if (ccts_actor_kind = "ally")
+  *set ccts_current_position {(("combat_ally" & ccts_actor_slot) & "_position")}
+*gosub combat_score_terrain_destination ccts_actor_kind ccts_actor_slot ccts_current_position
+*temp ccts_current_score combat_ai_terrain_score
+*temp ccts_best_score ccts_current_score
+*if (ccts_current_score > 0)
+  *set combat_ai_terrain_hold_position true
+  *set combat_ai_terrain_step_reason combat_ai_terrain_reason
+*temp ccts_delta 0
+*if (ccts_target_position > ccts_current_position)
+  *set ccts_delta 1
+*if (ccts_target_position < ccts_current_position)
+  *set ccts_delta (0 - 1)
+*temp ccts_current_distance (ccts_current_position - ccts_target_position)
+*if (ccts_current_distance < 0)
+  *set ccts_current_distance (0 - ccts_current_distance)
+*temp ccts_candidate_toward (ccts_current_position + ccts_delta)
+*temp ccts_candidate_away (ccts_current_position - ccts_delta)
+*temp ccts_check_toward true
+*if (ccts_delta = 0)
+  *set ccts_check_toward false
+*temp ccts_check_away true
+*if (ccts_delta = 0)
+  *set ccts_check_away false
+*comment Evaluate the toward step first. The two candidates are spelled out rather than stored in an array because
+*comment ChoiceScript has no arrays; keeping their temps distinct also makes the chosen direction explicit in saves.
+*temp ccts_toward_check ccts_check_toward
+*temp ccts_toward_distance (ccts_candidate_toward - ccts_target_position)
+*if (ccts_toward_distance < 0)
+  *set ccts_toward_distance (0 - ccts_toward_distance)
+*if (ccts_must_close)
+  *if (ccts_toward_distance > ccts_current_distance)
+    *set ccts_toward_check false
+*if (ccts_keep_distance)
+  *if (ccts_toward_distance <= 0)
+    *set ccts_toward_check false
+*if (ccts_toward_check)
+  *gosub combat_ai_terrain_destination_is_legal ccts_actor_kind ccts_actor_slot ccts_candidate_toward
+  *if (combat_ai_terrain_destination_legal)
+    *gosub combat_score_terrain_destination ccts_actor_kind ccts_actor_slot ccts_candidate_toward
+    *if (combat_ai_terrain_score > ccts_best_score)
+      *set ccts_best_score combat_ai_terrain_score
+      *set combat_ai_terrain_step_direction "toward"
+      *set combat_ai_terrain_step_reason combat_ai_terrain_reason
+      *set combat_ai_terrain_hold_position false
+*comment Then evaluate the away step. Melee callers normally reject it through must_close; ranged users may select it
+*comment when it reaches Cover or High Ground while preserving their distance from the target.
+*temp ccts_away_check ccts_check_away
+*temp ccts_away_distance (ccts_candidate_away - ccts_target_position)
+*if (ccts_away_distance < 0)
+  *set ccts_away_distance (0 - ccts_away_distance)
+*if (ccts_must_close)
+  *if (ccts_away_distance > ccts_current_distance)
+    *set ccts_away_check false
+*if (ccts_keep_distance)
+  *if (ccts_away_distance <= 0)
+    *set ccts_away_check false
+*if (ccts_away_check)
+  *gosub combat_ai_terrain_destination_is_legal ccts_actor_kind ccts_actor_slot ccts_candidate_away
+  *if (combat_ai_terrain_destination_legal)
+    *gosub combat_score_terrain_destination ccts_actor_kind ccts_actor_slot ccts_candidate_away
+    *if (combat_ai_terrain_score > ccts_best_score)
+      *set ccts_best_score combat_ai_terrain_score
+      *set combat_ai_terrain_step_direction "away"
+      *set combat_ai_terrain_step_reason combat_ai_terrain_reason
+      *set combat_ai_terrain_hold_position false
+*return
 *label find_intercepting_ally
 *comment Interception (2026-09-28; broadened 2026-09-28 again; widened into full target selection 2026-09-29,
 *comment Ranged-AI Position Awareness plan §11.1 "Mechanism A"): sets combat_intercepting_ally to the living ally

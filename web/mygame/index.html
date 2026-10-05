@@ -1230,6 +1230,19 @@ button#statSidebar .turnRow,
     return "";
   }
 
+  // Mirrors the compact Difficult Terrain rule for the forecast only. A melee enemy gets one normal lane step,
+  // but may not take its Dash step if it starts on, crosses, or would enter a difficult coordinate.
+  function enemyDashBlockedByDifficultTerrain(s, slot) {
+    var enemyPos = Number(s["combat_enemy" + slot + "_position"]);
+    var playerPos = Number(s.combat_lane_player_position);
+    if (!isFinite(enemyPos) || !isFinite(playerPos) || enemyPos === playerPos) return false;
+    var step = enemyPos + (playerPos > enemyPos ? 1 : -1);
+    var dashStep = step + (playerPos > enemyPos ? 1 : -1);
+    return terrainTypesAt(s, enemyPos).indexOf("difficult_terrain") >= 0 ||
+      terrainTypesAt(s, step).indexOf("difficult_terrain") >= 0 ||
+      terrainTypesAt(s, dashStep).indexOf("difficult_terrain") >= 0;
+  }
+
   // Read-only forecast of what the enemy's existing turn logic can do from its current band. This intentionally
   // predicts the engine rather than inventing an AI intent state: Close melee can move once and still attack;
   // Mid-Range melee must Dash and gives up its attack; Slowed blocks that Dash; Frightened refuses to close.
@@ -1250,6 +1263,7 @@ button#statSidebar .turnRow,
     if (heldBy) return "engaged with " + esc(heldBy);
     if (frightened) return "frightened: will not close";
     if (range === 1) return "can close and attack";
+    if (enemyDashBlockedByDifficultTerrain(s, slot)) return "difficult ground: closes one tier";
     if (slowed) return "slowed: closes one tier";
     if (range === 2) return "must Dash to engage";
     return "cannot engage this turn";

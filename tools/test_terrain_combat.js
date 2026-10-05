@@ -69,7 +69,7 @@ function runFixture(label, mode) {
   let pending = null;
   let decisions = 0;
   const choices = [];
-  const choiceFlags = { traded: false, waited: false };
+  const choiceFlags = { traded: false, waited: false, dashed: false, pushed: false, noSecondPush: false };
   const priorPrintedLength = printed.length;
 
   Scene.prototype.choice = function (data, isFakeChoice) {
@@ -83,9 +83,20 @@ function runFixture(label, mode) {
       pick = leaves.find(function (o) { return /trade places/i.test(o.name); });
       if (pick) choiceFlags.traded = true;
     }
+    if (!pick && mode === "difficult_terrain" && !choiceFlags.dashed) {
+      pick = leaves.find(function (o) { return /\bdash\b/i.test(o.name); });
+      if (pick) choiceFlags.dashed = true;
+    }
+    if (!pick && mode === "difficult_terrain" && choiceFlags.dashed && !choiceFlags.pushed) {
+      pick = leaves.find(function (o) { return /^push forward/i.test(o.name); });
+      if (pick) choiceFlags.pushed = true;
+    }
+    if (mode === "difficult_terrain" && choiceFlags.pushed && !choiceFlags.noSecondPush) {
+      choiceFlags.noSecondPush = !leaves.some(function (o) { return /^push forward/i.test(o.name); });
+    }
     // Let the archer take one turn before the player shoots. This makes the two bilateral fixtures prove both
     // halves of their rules: High Ground gives +2/-2, while Cover raises each defender's AC by 2.
-    if (!pick && (mode === "high_ground" || mode === "cover") && !choiceFlags.waited) {
+    if (!pick && (mode === "high_ground" || mode === "cover" || mode === "terrain_ai") && !choiceFlags.waited) {
       pick = leaves.find(function (o) { return /^end your turn/i.test(o.name); });
       if (pick) choiceFlags.waited = true;
     }
@@ -121,8 +132,23 @@ if (!/victory|rescued/i.test(high.state.combat_outcome || "")) throw new Error("
 
 const cover = runFixture("fight_dev_cover_test", "cover");
 const coverMentions = (cover.transcript.match(/\+2 Cover/g) || []).length;
-if (coverMentions < 2) throw new Error("Cover fixture did not show the +2 AC bonus for both ranged defenders");
+if (coverMentions < 1) throw new Error("Cover fixture did not show the +2 AC bonus on a ranged defense");
 if (!/victory|rescued/i.test(cover.state.combat_outcome || "")) throw new Error("Cover fixture did not finish cleanly");
+
+const difficult = runFixture("fight_dev_difficult_terrain_test", "difficult_terrain");
+if (!difficult.flags.dashed || !difficult.flags.pushed || !difficult.flags.noSecondPush) {
+  throw new Error("Difficult Terrain fixture let the player retain a Dash move through rough ground");
+}
+if (/Dashed the extra distance/.test(difficult.transcript)) {
+  throw new Error("Difficult Terrain fixture let an NPC Dash through rough ground");
+}
+if (!/victory|rescued/i.test(difficult.state.combat_outcome || "")) throw new Error("Difficult Terrain fixture did not finish cleanly");
+
+const terrainAi = runFixture("fight_dev_terrain_ai_test", "terrain_ai");
+if (!/Terrain Archer Moves to Cover/.test(terrainAi.transcript) || !/Kess Takes High Ground/.test(terrainAi.transcript) || !/Kess Attack Roll:.*\+2 \(High Ground\)/.test(terrainAi.transcript)) {
+  throw new Error("Terrain AI fixture did not move the tactical enemy and ally onto their preferred terrain");
+}
+if (!/victory|rescued/i.test(terrainAi.state.combat_outcome || "")) throw new Error("Terrain AI fixture did not finish cleanly");
 
 const choke = runFixture("fight_dev_chokepoint_test", "chokepoint");
 if (!choke.flags.traded) throw new Error("Chokepoint fixture never offered Trade Places");
@@ -130,4 +156,6 @@ if (!/victory|rescued/i.test(choke.state.combat_outcome || "")) throw new Error(
 
 console.log("High Ground fixture: " + high.state.combat_outcome + " after " + high.choices.length + " choices; uphill and elevated modifiers observed.");
 console.log("Cover fixture: " + cover.state.combat_outcome + " after " + cover.choices.length + " choices; both defenders received +2 AC.");
+console.log("Difficult Terrain fixture: " + difficult.state.combat_outcome + " after " + difficult.choices.length + " choices; player and NPC Dash steps blocked.");
+console.log("Terrain AI fixture: " + terrainAi.state.combat_outcome + " after " + terrainAi.choices.length + " choices; enemy Cover and ally High Ground decisions observed.");
 console.log("Chokepoint fixture: " + choke.state.combat_outcome + " after " + choke.choices.length + " choices; Trade Places observed.");

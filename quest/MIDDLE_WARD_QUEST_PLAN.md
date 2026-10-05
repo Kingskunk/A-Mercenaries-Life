@@ -342,11 +342,11 @@ The shared conclusion is that the intrusions are trials of copied keys. The play
 
 2. **Follow the pattern between rooms.** Kess's ordinary tenant book and the tenants' accounts show that every target has a Vael lock fitted or re-keyed within the same recent period. The rooms have different key cuts, so a single stolen master key cannot explain it. Each occupant also remembers briefly lending, leaving, or setting down their key during a plausible everyday interruption. Together, the accounts point to impressions made one key at a time.
 
-3. **Set a quiet mark.** The player can place thread, chalk, or a small wax seal across a chosen door and window, then wait nearby or arrange for a tenant to leave. A broken door mark with an untouched window mark proves ordinary entry and exit. If the player is precise, they spot a runner who pauses at the marked room rather than a resident or tradesperson.
+3. **Ask who comes and goes.** Questioning tenants, Kess, and the familiar errand runners reveals a new runner has been carrying harmless-looking notes through the close, marked with brass knots in the wharf warehousers' livery. Insight can identify the story that does not fit; Persuasion can make a worried tenant admit when their key was briefly out of sight. This route supports the watch route and is where Kess names the counting house the boy works for.
 
-4. **Ask who comes and goes.** Questioning tenants, Kess, Vael, and the familiar errand runners reveals a new runner has been carrying harmless-looking notes through the close. Insight can identify the story that does not fit; Persuasion can make a worried tenant admit when their key was briefly out of sight. This route supports the watch route but can also lead directly to the runner.
+4. **Seed a false opportunity.** With Kess's consent, the player can let it be overheard that a newly fitted lock and a tenant's expected absence make one second-landing room worth testing. This is the quickest route, but it alerts the criminals that someone may be watching. It should make the later setback sharper rather than bypass it.
 
-5. **Seed a false opportunity.** With Kess's consent, the player can let it be overheard that a newly fitted lock or a tenant's expected absence makes one room worth testing. This is the quickest route, but it alerts the criminals that someone may be watching. It should make the later setback sharper rather than bypass it.
+   *(Implemented 2026-10-10 as clue 3 of 4, replacing the earlier plan's clue 3, "Set a quiet mark." The wax-seal stakeout was cut because it let the player catch the boy on camera, which spent the quest's one "you catch the culprit" beat on reconnaissance and then had to invent a second entrance for the same boy at the decoy. The runner now appears exactly once, and only because the player baited the room. `a_key_mark_found` and `a_key_fast_to_shop` are reused by the bait: the second skips the Perception check at the decoy, since the player already knows what to look for.)*
 
 The player may name the conclusion aloud once enough clues are in place: the locks have not failed; someone is collecting impressions and testing copied keys against different cuts. Vael is vindicated on the immediate accusation, but the close is still in danger.
 
@@ -393,6 +393,13 @@ The climax remains inside Locksmiths' Close. Its single narrow tunnel to Conduit
 - `a_key_pattern_book`: secure, recovered, copied, or stolen.
 - `a_key_resolution`: lawful, pragmatic, strategic, or compromised.
 - `a_key_lodgings_compromised`: persistent state for follow-up dialogue and future quest hooks.
+- `a_key_fast_to_shop`: set by the false-opportunity bait, skips the Perception check at the decoy.
+
+**The ward's answer to the rumour (2026-10-10).** Vael's line at `a_key_offer` used to promise a cost ("A ward that starts panicking buys no locks at all") that no ending actually charged him — all four outcomes showed him re-keying other people's doors, which is work, not damage. The line now points at the on-screen threat instead (the boy's public accusation), and the reputational sting moved to the hub's Layer 5 aftermath, keyed on `a_key_pattern_book`:
+
+- `recovered` (lawful / strategic): `a_key_vael_favor` chalks a promise onto the slate — *Keys cut for the holder only.*
+- `stolen` (the one full-loss failure): a question mark appears under the warranty line, and Vael has wiped the board twice and left it.
+- `copied` (thief held, pages torn out): no chalk either way — the book came back, so there is nothing to answer.
 
 When implemented, the full quest lives in `MiddlewardQuest/a_key_for_every_door.txt`. `port_valen_middle_ward.txt` only needs its daytime entry trigger at Locksmiths' Close and any short post-quest state dialogue.
 
