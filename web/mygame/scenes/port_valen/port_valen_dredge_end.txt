@@ -629,12 +629,7 @@ You pick your way along a narrow timber walkway clinging to the moss-grown found
   Fog lies along the channel, and the top of the stone arch is lost in it.
 
 *if (silt_gate_quest_stage = "resolved")
-  *if (silt_gate_resolution = "failed")
-    The stone channel looks quiet, but the ledge edge is scored with fresh prybar marks, and somebody has oiled the gate hinges since you were last here. The smuggling line through this cut is still running.
-  *elseif (silt_gate_resolution = "leverage")
-    The stone channel looks quiet. The smuggling line through this cut has not stopped. It has only learned to keep its voice down.
-  *else
-    The stone channel is quiet. The wooden gates hang heavy and dark above the water. A lone Watch sentry in a wool coat keeps vigil from the bridge above, his cudgel resting against the rail. The smuggling line through this cut is thoroughly broken.
+  The stone channel looks quiet. The smuggling line through this cut has not stopped. It has only learned to keep its voice down.
   *choice
     # Go down to the grating at the foot of the arch. [~10 min]
       *goto_scene port_valen/port_valen_silt_conduits pvsc_enter_silt_gates
@@ -814,377 +809,11 @@ The crates are on the stone. The crew is huddled around the load, their backs co
       *set silt_gate_illusion_active true
       You shape a phantom echo with your fingers, projecting the rhythmic clatter of hobnailed boots and iron scabbards striking stone sixty paces down the northern culvert. The porters freeze in terror, their attention pulled entirely away from your ledge toward the false patrol.
       *goto pv_silt_gate_stakeout
-  # Coordinate a decisive ambush to seize the boat and contraband for the Watch.
-    *goto pv_silt_gate_ambush_watch
-  # Step out onto the platform in plain view and negotiate a hush-money cut with the contraband broker.
-    *goto pv_silt_gate_parley_oath
   # Pin the broker and squeeze him for the names on his payroll. Whoever is taking the Watch's money is worth more than the crates.
-    *goto pv_silt_gate_divert_vane
+    *goto pv_silt_gate_squeeze
 
-*label pv_silt_gate_ambush_watch
-You prepare to strike from the shadows. The two porters are hauling the first heavy crate of highland bodkin blanks onto the stone platform, their backs turned to the vault ledge.
-
-*temp hint_ambush_str ""
-*temp hint_ambush_dex ""
-*temp hint_ambush_int ""
-*temp hint_ambush_shock ""
-*temp hint_ambush_frost ""
-*if (show_stat_hints)
-  *if (guidance_active)
-    *set hint_ambush_str " [STR DC 12 (+1d4 Guidance)]"
-    *set hint_ambush_dex " [DEX DC 12 (+1d4 Guidance)]"
-    *set hint_ambush_int " [INT DC 11 (+1d4 Guidance)]"
-    *set hint_ambush_shock " [INT DC 11 (+1d4 Guidance / Advantage)]"
-    *set hint_ambush_frost " [INT DC 11 (+1d4 Guidance)]"
-  *else
-    *set hint_ambush_str " [STR DC 12]"
-    *set hint_ambush_dex " [DEX DC 12]"
-    *set hint_ambush_int " [INT DC 11]"
-    *set hint_ambush_shock " [INT DC 11 (Advantage)]"
-    *set hint_ambush_frost " [INT DC 11]"
-
-*choice
-  *if (known_shocking_grasp)
-    # [Cantrip: Shocking Grasp] Channel a jolt of violent lightning through the wet timber deck and iron prybars.${hint_ambush_shock}
-      *set check_stat "int"
-      *set check_dc 11
-      *set check_skill "Shocking Grasp"
-      *set advantage true
-      *if (not(silt_gate_lookout_spotted))
-        *set disadvantage true
-      *gosub_scene dice_engine roll_d20_check
-      *if (check_success)
-        You leap forward and drive your palm flat against the rain-slicked stone and the lead porter's iron prybar. A blinding blue arc of lightning detonates through the wet deck with a sharp crack like a splitting spar. The violent shock convulses both porters, throwing them sprawling into the canal mud with their muscles locked, while the ozone blast leaves the broker cowering against the wall.
-      *else
-        You channel the lightning, but your footing gives on the wet moss, and the charge discharges into the water-trench with a loud hiss of steam. The lead porter recovers and swings his prybar, and the blow lands on your ribs and sends you sprawling into the trench.
-        *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-          *set neglect_damage_fatigue + 2
-          *gosub_scene calendar recalc_hp_from_neglect
-          *set stat_bump_locked true
-          *set locked_stat_bump_page_id page_id
-        *goto pv_silt_gate_ambush_fail
-      *goto pv_silt_gate_ambush_conclude
-
-  *if (known_ray_of_frost)
-    # [Cantrip: Ray of Frost] Loose a beam of freezing cold into the punt's steering oar and the channel gate.${hint_ambush_frost}
-      *set check_stat "int"
-      *set check_dc 11
-      *set check_skill "Ray of Frost"
-      *if (((silt_gate_winch_jammed) or (silt_gate_lamp_snuffed)) or (silt_gate_illusion_active))
-        *set advantage true
-      *if (not(silt_gate_lookout_spotted))
-        *set disadvantage true
-      *gosub_scene dice_engine roll_d20_check
-      *if (check_success)
-        A beam of piercing blue-white cold streaks from your outstretched hand, striking the punt's stern and the channel basin. Rime-frost explodes across the timber; the steering oar freezes solid in its iron lock, and a sheet of thick canal ice locks the punt dead in the water. The boatmen cry out in panic as you step onto the platform, frost still venting from your fingers, leaving the porters completely cornered.
-      *else
-        You loose the frost beam, but the boat rocks on the surge, and the blast strikes the stone vault instead, encrusting the wall in frost while the boatmen scramble. You drop onto the platform amid the commotion, and the lead porter meets you with a prybar across the ribs.
-        *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-          *set neglect_damage_fatigue + 2
-          *gosub_scene calendar recalc_hp_from_neglect
-          *set stat_bump_locked true
-          *set locked_stat_bump_page_id page_id
-        *goto pv_silt_gate_ambush_fail
-      *goto pv_silt_gate_ambush_conclude
-
-  *if (((character_class = "wizard") and (known_magic_missile)) and (wizard_spell_slots > 0))
-    # [Spell: Magic Missile] Loose three glowing darts of force to disarm the platform instantly.
-      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-        *set wizard_spell_slots - 1
-        *set stat_bump_locked true
-        *set locked_stat_bump_page_id page_id
-      You extend three fingers into the dark channel, releasing three motes of crackling violet force that whistle through the vault with unerring precision.
-      
-      The first two darts strike the iron handles of the heavy steel crate, shattering the porters' grip with jarring concussive force and knocking both men flat into the sludge. The third dart slams into the stone inches above the broker's ear, blowing a shower of limestone dust into his face. Before the echoing cracks fade, you stand over them in the smoking dust, fingers alive with residual arcane force, the drop neutralized without a single strike reaching you.
-      *goto pv_silt_gate_ambush_conclude
-
-  # Vault from the ledge with a crushing charge into the lead porter.${hint_ambush_str}
-    *if (((silt_gate_winch_jammed) or (silt_gate_lamp_snuffed)) or (silt_gate_illusion_active))
-      *set advantage true
-    *if (not(silt_gate_lookout_spotted))
-      *set disadvantage true
-    *gosub_scene dice_engine roll_skill_check 12 "athletics" "" "" "" "" ""
-    *if (check_success)
-      Drawing on brutal momentum, you vault the gap and slam your shoulder straight into the lead porter before his fingers can touch his iron prybar. The impact drives him backward into the thick mud with a heavy splash. You plant your boot on the second porter's dropped crate, looming over the broker and pinning him against the wet masonry before anyone can scream.
-    *else
-      You vault the ledge, but your boots skid on the slime-crusted stone. The lead porter whips around and swings an iron prybar with desperate force. The blow lands on your ribs with a dull crack that knocks the breath out of you, and you go down in the mud.
-      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-        *set neglect_damage_fatigue + 3
-        *gosub_scene calendar recalc_hp_from_neglect
-        *set stat_bump_locked true
-        *set locked_stat_bump_page_id page_id
-      *goto pv_silt_gate_ambush_fail
-    *goto pv_silt_gate_ambush_conclude
-
-  # Drop silently from the rafters and disarm the platform with a precision strike.${hint_ambush_dex}
-    *if (((silt_gate_winch_jammed) or (silt_gate_lamp_snuffed)) or (silt_gate_illusion_active))
-      *set advantage true
-    *if (not(silt_gate_lookout_spotted))
-      *set disadvantage true
-    *gosub_scene dice_engine roll_skill_check 12 "sleight_of_hand" "" "" "" "" ""
-    *if (check_success)
-      You drop like a falling shadow, landing without a sound between the porters. In a blur of motion, your strike flashes across the lead man's wrist, sending his knife clattering across the flagstones, while your off-hand seizes the broker by his oiled collar and forces his head against the cold limestone.
-    *else
-      You drop from the rafters, but a damp beam gives under your weight with a loud snap, and every head on the platform turns. Both porters are braced by the time you land, and the second one's club catches your shoulder and leaves your arm throbbing and numb.
-      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-        *set neglect_damage_fatigue + 3
-        *gosub_scene calendar recalc_hp_from_neglect
-        *set stat_bump_locked true
-        *set locked_stat_bump_page_id page_id
-      *goto pv_silt_gate_ambush_fail
-    *goto pv_silt_gate_ambush_conclude
-
-  # Time your strike for the moment the porters lift the heaviest crate, catching them off-balance.${hint_ambush_int}
-    *set check_stat "int"
-    *set check_dc 11
-    *set check_skill "Tactical Timing"
-    *if (((silt_gate_winch_jammed) or (silt_gate_lamp_snuffed)) or (silt_gate_illusion_active))
-      *set advantage true
-    *if (not(silt_gate_lookout_spotted))
-      *set disadvantage true
-    *gosub_scene dice_engine roll_d20_check
-    *if (check_success)
-      You wait for the precise second both porters strain under the weight of the steel crate. As their balance shifts and their hands are pinned under the iron handles, you drop onto the platform with ruthless precision. A single kick to the timber crate topples both men into the water-trench, leaving the broker cornered against the wall before he can reach his coat.
-    *else
-      You wait for them to lift, but the lead porter shifts his grip early. When you spring from the shadows, he uses the heavy crate as a shield, and its corner catches you in the ribs and drives you back into the wet stone.
-      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-        *set neglect_damage_fatigue + 2
-        *gosub_scene calendar recalc_hp_from_neglect
-        *set stat_bump_locked true
-        *set locked_stat_bump_page_id page_id
-      *goto pv_silt_gate_ambush_fail
-    *goto pv_silt_gate_ambush_conclude
-
-*label pv_silt_gate_ambush_conclude
-*if (silt_gate_winch_jammed)
-  The boatmen scramble frantically for their poles to back the boat out, but the heavy wooden gates are locked tight behind them. Trapped in the stone trench, they drop their poles and raise their hands in sullen surrender.
-*else
-  Seeing the platform lost, the two boatmen shove off into the dark water, abandoning the cargo and the buyer on the ledge.
-
-You bind the man's wrists with a length of tarred dock rope and secure the groaning laborers to the iron mooring rings. Straining against the dead weight, you muscle the four heavy crates of steel arrowheads and the jugs of moonshine onto the ledge's two-wheeled handcart.
-
-With your boots digging into the slimy stone ramp, you haul the laden cart up out of the drainage cut and march your captive through the quiet pre-dawn streets, delivering the entire untaxed cargo straight to the Quayside customs house.
-
-The Silt-Gate run is broken, and every pound of illicit steel is secured for the city customs ledger.
-
-*if (silt_gate_quest_stage != "resolved")
-  *set silt_gate_quest_stage "resolved"
-  *set silt_gate_resolution "watch_seized"
-  *set black_oath_rep -2
-  *set black_oath_heat +2
-
-[b][Black Oath Standing -2][/b]
-
-*page_break Step back out into the Dredge-End streets…
-*goto port_valen_dredge_end
-
-*label pv_silt_gate_ambush_fail
-By the time you have your feet under you, the platform is already clear. The man in the coat is barking clipped orders, and the laborers are already hauling the crates up the ramp two at a time.
-
-*if (silt_gate_winch_jammed)
-  The jammed gates keep the boat from leaving, so the rivermen abandon it, and the empty hull knocks against the stones. Everything that was inside it is gone.
-*else
-  The two boatmen shove off into the dark bay with the last of the jugs.
-
-You get one look at the buyer's face as he disappears up the ramp. He is memorizing yours.
-
-You limp out of the channel with a bruised rib and nothing else to show for the night. The Silt-Gate run will be back on the water by the next tide, and somebody in Dredge-End now knows your face.
-
-*if (silt_gate_quest_stage != "resolved")
-  *set silt_gate_quest_stage "resolved"
-  *set silt_gate_resolution "failed"
-  *set black_oath_rep -1
-  *set black_oath_heat +1
-
-[b][🗡 Black Oath Standing -1][/b]
-
-*page_break Step back out into the Dredge-End streets…
-*goto port_valen_dredge_end
-
-*label pv_silt_gate_parley_oath
-You step out of the dark archway onto the stone platform with your hands open in plain view, radiating calm authority.
-
-"Quiet night for an uninspected cargo," you say smoothly, your voice carrying just enough weight to freeze the porters mid-reach.
-
-The broker spins around, his hand darting toward his coat, but stops dead when he catches the cold confidence in your stance and realizes you aren't City Watch.
-
-"You're not Watch," the broker mutters, his sharp eyes darting between you and the dark channel. "Who the hell are you, and what are you doing poking around my drop?"
-
-*temp hint_parley_cha ""
-*temp hint_parley_wis ""
-*temp hint_parley_int ""
-*temp hint_parley_thaum ""
-*if (show_stat_hints)
-  *if (guidance_active)
-    *set hint_parley_cha " [CHA DC 12 (+1d4 Guidance)]"
-    *set hint_parley_wis " [WIS DC 11 (+1d4 Guidance)]"
-    *set hint_parley_int " [INT DC 11 (+1d4 Guidance)]"
-    *set hint_parley_thaum " [CHA DC 10 (+1d4 Guidance)]"
-  *else
-    *set hint_parley_cha " [CHA DC 12]"
-    *set hint_parley_wis " [WIS DC 11]"
-    *set hint_parley_int " [INT DC 11]"
-    *set hint_parley_thaum " [CHA DC 10]"
-
-*choice
-  *if ((race_cantrip = "thaumaturgy") or (race_cantrip_2 = "thaumaturgy"))
-    # [Cantrip: Thaumaturgy] Flare your eyes brimstone-red and let an unnatural, booming voice command the vault.${hint_parley_thaum}
-      *set check_stat "cha"
-      *set check_dc 10
-      *set check_skill "Thaumaturgy Intimidation"
-      *if (not(silt_gate_lookout_spotted))
-        *set disadvantage true
-      *gosub_scene dice_engine roll_d20_check
-      *if (check_success)
-        You step out into the lantern light, letting your eyes ignite like glowing coals. When you speak, your voice reverberates off the stone culvert with the booming weight of a furnace door slamming shut.
-        
-        "Thirty silver marks," your unnatural voice echoes through their teeth, "or the tide washes what is left of you into the harbor."
-        
-        The broker's face drains of all color; his teeth chatter as he drops a heavy greasecloth purse directly into your palm, fumbling with the drawstring until he has it open and counts it out in a shaking, superstitious hurry.
-        *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-          *set currency_add_amount 300
-          *gosub_scene economy currency_add
-          *set currency_txn_locked true
-          *set locked_currency_txn_page_id page_id
-      *else
-        You let the brimstone flare, but the draft howling down the culvert carries the voice away before the resonance peaks. The broker flinches, looks at your glowing eyes, and shrugs. "I have paid worse than you to keep my mouth shut," he says. "Walk."
-        *goto pv_silt_gate_parley_fail
-      *goto pv_silt_gate_parley_conclude
-
-  *if (((((character_class = "bard") and (known_charm_person)) and (bard_spell_slots > 0)) or (((character_class = "wizard") and (known_charm_person)) and (wizard_spell_slots > 0))) or (((character_class = "warlock") and (known_charm_person)) and (warlock_spell_slots > 0)))
-    # [Spell: Charm Person] Weave an enchanting warmth into your greeting, making the broker treat you as a trusted confidant.
-      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-        *if (character_class = "bard")
-          *set bard_spell_slots - 1
-        *elseif (character_class = "wizard")
-          *set wizard_spell_slots - 1
-        *else
-          *set warlock_spell_slots - 1
-        *set stat_bump_locked true
-        *set locked_stat_bump_page_id page_id
-      You trace a subtle spiral in the damp air and speak with gentle, hypnotic cadence. The enchantment settles over the broker's tense features like warm wine; his suspicious scowl softens into an easy, relieved smile.
-      
-      "Ah, good, you're the collector the sergeant has been promising," the broker chuckles warmly, clapping a hand onto your shoulder as if meeting a lifelong friend. "Here's the cut, twenty-five silver marks. Tell the sergeant the north gate will be clear again next Marketday."
-      
-      He hands over the heavy purse without a single hesitation.
-      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-        *set currency_add_amount 250
-        *gosub_scene economy currency_add
-        *set currency_txn_locked true
-        *set locked_currency_txn_page_id page_id
-      *goto pv_silt_gate_parley_conclude
-
-  *if (((((character_class = "bard") and (known_disguise_self)) and (bard_spell_slots > 0)) or (((character_class = "wizard") and (known_disguise_self)) and (wizard_spell_slots > 0))) or (((race_cantrip = "disguise_self") or (race_cantrip_2 = "disguise_self")) or (inv_mask_of_many_faces)))
-    # [Spell: Disguise Self] Walk out wearing the salt-stained wool greatcoat and brass badge of a senior Harbor Watch sergeant.
-      *if (not(((race_cantrip = "disguise_self") or (race_cantrip_2 = "disguise_self")) or (inv_mask_of_many_faces)))
-        *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-          *if (character_class = "bard")
-            *set bard_spell_slots - 1
-          *else
-            *set wizard_spell_slots - 1
-          *set stat_bump_locked true
-          *set locked_stat_bump_page_id page_id
-      An illusory shimmer ripples across your frame, masking your appearance beneath the heavy wool coat, oilskin hood, and brass duty badge of the Port Valen Harbor Watch.
-      
-      You step onto the platform with official, unhurried cadence. The broker immediately bows his head in deference, holding out a heavy purse of twenty-five silver marks before you even have to open your mouth.
-      
-      "Sergeant's weekly tribute, sir," the broker says hastily. "Four crates of highland shear-steel, moving right on schedule."
-      
-      You nod curtly, take the silver, and gesture for them to clear the dock.
-      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-        *set currency_add_amount 250
-        *gosub_scene economy currency_add
-        *set currency_txn_locked true
-        *set locked_currency_txn_page_id page_id
-      *goto pv_silt_gate_parley_conclude
-
-  # Threaten to whistle for the Watch unless he pays twenty-five silver marks on the spot.${hint_parley_cha}
-    *if (not(silt_gate_lookout_spotted))
-      *set disadvantage true
-    *gosub_scene dice_engine roll_skill_check 12 "intimidation" "" "" "" "" ""
-    *if (check_success)
-      "Voss has Watch patrols checking the quays," you say with chilling calm, stepping into the lantern light. "He knows the Silt-Gates are leaking steel. Twenty-five silver marks, or this channel fills with Watch cudgels and your cargo ends up in the lockup."
-      The broker's throat bobs. Measuring the lethal certainty in your eyes against the risk of the lockup, he unhooks a heavy greasecloth purse from his belt and slaps it into your hand.
-      "Twenty-five silver marks," he rasps. "You report an empty channel to Voss, and we'll remember who lets the water run."
-      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-        *set currency_add_amount 250
-        *gosub_scene economy currency_add
-        *set currency_txn_locked true
-        *set locked_currency_txn_page_id page_id
-    *else
-      You make your demand, but the broker catches a flicker of hesitation in your stance. He glances past you toward the dark channel and realizes you're working without backup.
-      "Then whistle," he says, and the porters step forward with heavy prybars. "Go on. We'll wait."
-      *goto pv_silt_gate_parley_fail
-    *goto pv_silt_gate_parley_conclude
-
-  # Read the broker's panic and name a calculated price that secures his compliance.${hint_parley_wis}
-    *if (not(silt_gate_lookout_spotted))
-      *set disadvantage true
-    *gosub_scene dice_engine roll_skill_check 11 "insight" "" "" "" "" ""
-    *if (check_success)
-      You study the sweat beading along the broker's temple and the frantic glances he casts toward the estuary. He is behind schedule and terrified of losing his delivery window.
-      "Twenty-five silver marks," you state plainly. "That leaves you enough margin on the highland tool-steel to clear a profit, and buys you twenty minutes of undisturbed water."
-      Relief washes over the broker's face. Without haggling, he passes over the heavy purse of twenty-five silver marks.
-      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-        *set currency_add_amount 250
-        *gosub_scene economy currency_add
-        *set currency_txn_locked true
-        *set locked_currency_txn_page_id page_id
-    *else
-      You try to read the broker's margin, but he masks his panic behind a sneer. "You have nothing I need," he grunts, and the porters step between you and the ramp. "Walk while it is still your idea."
-      *goto pv_silt_gate_parley_fail
-    *goto pv_silt_gate_parley_conclude
-
-  # Cite the Gilded Scales' steel monopoly to demonstrate how easily you could ruin his network.${hint_parley_int}
-    *if (not(silt_gate_lookout_spotted))
-      *set disadvantage true
-    *gosub_scene dice_engine roll_skill_check 11 "investigation" "" "" "" "" ""
-    *if (check_success)
-      "Un-stamped highland bodkins," you observe calmly. "The Gilded Scales would pay fifty silver marks just for the location of your drop-house. Twenty-five silver marks keeps my mouth shut and your network intact."
-      The broker goes white. Recognizing that you understand the true value of his illicit trade, he counts out the full twenty-five silver marks into your hand with hurried, trembling fingers.
-      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-        *set currency_add_amount 250
-        *gosub_scene economy currency_add
-        *set currency_txn_locked true
-        *set locked_currency_txn_page_id page_id
-    *else
-      You try to cite the guild regulations, but the broker laughs harshly. "The Scales don't run the low canals, stranger. Ask them yourself, if you can find your own way out."
-      *goto pv_silt_gate_parley_fail
-    *goto pv_silt_gate_parley_conclude
-
-*label pv_silt_gate_parley_conclude
-The broker snaps his fingers; the porters hoist the barrows and vanish into the canal cellar tunnels, while the punt slips back out through the water-gate into the dark estuary.
-
-*if (silt_gate_quest_stage != "resolved")
-  *set silt_gate_quest_stage "resolved"
-  *set silt_gate_resolution "hush_money"
-  *set black_oath_rep +1
-  *set black_oath_heat +1
-
-[b][Black Oath Standing +1][/b]
-
-*page_break Pocket the silver and slip back into Dredge-End…
-*goto port_valen_dredge_end
-
-*label pv_silt_gate_parley_fail
-The porters walk you back to the archway with their prybars resting on their shoulders, close enough that you can smell the fish-oil on their coats. The broker keeps his voice level.
-
-"Whoever you are, you were never here," he says. "If I see that face again, I will know it."
-
-By the time you reach the top of the service ramp, the punt is already sliding back out through the water-gate, and the run goes on exactly as it did before you came.
-
-*if (silt_gate_quest_stage != "resolved")
-  *set silt_gate_quest_stage "resolved"
-  *set silt_gate_resolution "failed"
-  *set black_oath_rep -1
-  *set black_oath_heat +1
-
-[b][🗡 Black Oath Standing -1][/b]
-
-*page_break Slip back into Dredge-End with nothing to show…
-*goto port_valen_dredge_end
-
-*label pv_silt_gate_divert_vane
+*comment The only ending of the Silt-Gate job: squeeze the broker for the payout slip (one name or two). Kestrel takes it (pv_tower_silt_turnin).
+*label pv_silt_gate_squeeze
 You move before anyone on the platform can react. Dropping from the ledge, you step clean into the broker's path, driving the lead porter back with a ruthless sweep of your arm.
 
 "One word," you murmur, stepping close with lethal stillness, towering over him with cold, predatory stillness, "and you go headfirst into the canal."
@@ -1213,17 +842,16 @@ The broker goes pale against the wet masonry. The porters freeze, hands well cle
       *set check_stat "cha"
       *set check_dc 10
       *set check_skill "Supernatural Interrogation"
-      *if (silt_gate_winch_jammed)
+      *if ((silt_gate_winch_jammed) or ((silt_gate_lamp_snuffed) or (silt_gate_illusion_active)))
         *set advantage true
       *gosub_scene dice_engine roll_d20_check
       *if (check_success)
-        *set silt_gate_full_intel true
         You lean close, your eyes glowing like embers in the darkness, and speak in a voice that resonates through his skull like iron striking stone. The broker collapses against the stone, completely broken by terror.
         
         "Sergeant Kray and watchman Pell!" he babbles hysterically, thrusting his entire written payout slip into your hands. "They split six marks every Marketday! Take the names, take the parchment, just call off the fire!"
       *else
-        *set silt_gate_full_intel false
-        You let the power roll, but the broker thrashes against the mooring ring. A stoneware jug shatters, splashing peat-spiritus. In the confusion, he blurts out "Sergeant Kray on the night watch!" before wrenching free and diving into the canal.
+        *set silt_gate_face_seen true
+        You let the power roll, but the broker thrashes against the mooring ring, and a stoneware jug shatters, splashing peat-spiritus across the stone. You tear his coat open and take the slip while the porters find their nerve. Their lanterns swing toward you and stay there.
       *goto pv_silt_gate_divert_conclude
 
   *if (((character_class = "bard") and (known_dissonant_whispers)) and (bard_spell_slots > 0))
@@ -1232,58 +860,51 @@ The broker goes pale against the wet masonry. The porters freeze, hands well cle
         *set bard_spell_slots - 1
         *set stat_bump_locked true
         *set locked_stat_bump_page_id page_id
-      *set silt_gate_full_intel true
       You lean down and murmur a harsh, discordant syllable that tears into the broker's mind like rusted iron hooks. He clutches his temples with a choked scream, agony twisting his face as his defenses shatter completely.
       
       "Stop! Stop it!" he weeps, fumbling the oilskin-wrapped slip from his inner pocket and pressing it into your hands. "Sergeant Kray and watchman Pell! Every payout is marked in the wax. Take it all!"
       *goto pv_silt_gate_divert_conclude
 
   # Intimidate him with cold, quiet menace and demand every name on his payroll.${hint_divert_cha}
-    *if (silt_gate_winch_jammed)
+    *if ((silt_gate_winch_jammed) or ((silt_gate_lamp_snuffed) or (silt_gate_illusion_active)))
       *set advantage true
     *gosub_scene dice_engine roll_skill_check 12 "intimidation" "" "" "" "" ""
     *if (check_success)
-      *set silt_gate_full_intel true
       You lean down close, your voice dropping to a harsh, lethal murmur that leaves no doubt what happens if he hesitates.
       Sweat cuts clean lines through the grime on the broker's face. "Sergeant Kray and watchman Pell!" he whispers frantically, fumbling a wax-sealed slip from his pocket. "They take six silver marks every Marketday to walk the north quay. That's both of them, I swear it by the river!"
     *else
-      *set silt_gate_full_intel false
+      *set silt_gate_face_seen true
       You corner him with cold menace, but a thrashing laborer suddenly knocks over a crate. A stoneware jug shatters with a loud crack, splashing fiery liquor across the stone.
-      In the chaos, the terrified man blurts out, "Sergeant Kray on the night watch!" before wrenching free and diving headlong into the murky canal waters, leaving only one name in your grasp.
+      In the chaos, the terrified man wrenches free and dives headlong into the murky canal waters, leaving the wax-sealed slip in your fist. Every lantern on the platform swings your way.
     *goto pv_silt_gate_divert_conclude
 
   # Force him down onto the flagstones and search his coat for written payout slips.${hint_divert_str}
-    *if (silt_gate_winch_jammed)
+    *if ((silt_gate_winch_jammed) or ((silt_gate_lamp_snuffed) or (silt_gate_illusion_active)))
       *set advantage true
     *gosub_scene dice_engine roll_skill_check 12 "athletics" "" "" "" "" ""
     *if (check_success)
-      *set silt_gate_full_intel true
       You slam the broker face-first against the stone platform with iron force, pinning his arm behind his back while your free hand strips his oiled greatcoat. Tucked inside an oilskin pocket is a folded parchment slip detailing weekly payouts: Sergeant Kray and watchman Pell, recorded in meticulous ink.
     *else
-      *set silt_gate_full_intel false
-      You force the broker down, but he kicks wildly in the mud, tearing the pocket of his coat as he scrambles free. You manage to rip away a scrap of paper bearing Sergeant Kray's name before the broker slips into the dark water and vanishes.
+      *set silt_gate_face_seen true
+      You force the broker down, but he kicks wildly in the mud, tearing the pocket of his coat as he scrambles free. The whole slip comes away in your hand, but he has howled the alarm, and every porter on the platform has seen your face before he slips into the dark water and vanishes.
     *goto pv_silt_gate_divert_conclude
 
   # Offer to let him and the boatmen walk away if he turns over his Watch contacts.${hint_divert_wis}
-    *if (silt_gate_winch_jammed)
+    *if ((silt_gate_winch_jammed) or ((silt_gate_lamp_snuffed) or (silt_gate_illusion_active)))
       *set advantage true
     *gosub_scene dice_engine roll_skill_check 11 "persuasion" "" "" "" "" ""
     *if (check_success)
-      *set silt_gate_full_intel true
       "We took the steel," you tell him in a low, measured voice. "We don't care about your boat or your spiritus. Give me the Watchmen who sold out the gate and you walk out of here alive."
       Recognizing a way out of the trap, the broker nods frantically and writes down the names of Sergeant Kray and watchman Pell with trembling fingers.
     *else
-      *set silt_gate_full_intel false
-      The broker eyes the open channel and tries to stall, giving you only Sergeant Kray's name before shoving a barrow into your path and scrambling into the canal.
+      *set silt_gate_face_seen true
+      The broker eyes the open channel and tries to stall, but you have already seen the oilskin pocket. You take the slip off him as he shoves a barrow into your path and scrambles into the canal, bawling for his porters, who see you plain.
     *goto pv_silt_gate_divert_conclude
 
 *label pv_silt_gate_divert_conclude
 The punt scrambles back through the gate into the dark estuary, and the porters melt into the cellar tunnels after it. The crates stay where they are on the platform. Steel and spiritus are the tide's problem now, or the Watch's.
 
-*if (silt_gate_full_intel)
-  What you carry up the secluded service ramp fits in your pouch: a strip of wax vellum in the broker's own hand, with two names on it and a rate written beside each.
-*else
-  What you carry up the secluded service ramp fits in your pouch: a torn scrap of wax vellum with one name on it and a rate written beside it. Somewhere down in the canal, the other name is still swimming.
+What you carry up the secluded service ramp fits in your pouch: a strip of wax vellum in the broker's own hand, with two names on it and a rate written beside each.
 
 The Silt-Gate run is not broken, only interrupted. What you hold is worth the most while the men named on it don't know you have it.
 
@@ -1292,6 +913,22 @@ The Silt-Gate run is not broken, only interrupted. What you hold is worth the mo
   *set silt_gate_resolution "leverage"
   *set has_silt_gate_payout_slip true
   *set black_oath_heat +1
+  *if (silt_gate_face_seen)
+    *set black_oath_heat +1
+
+*if (silt_gate_face_seen)
+  The porters saw your face, though, and they are not done with you. You spend an hour wedged in a cellar drain while their lanterns work back and forth along the tunnels above, and it is a long time before the shouting moves off toward the canal.
+  *set hours_to_pass 1
+  *set minutes_to_pass 0
+  *set time_advance_call_id "pv_silt_gate_hide_1"
+  *gosub_scene calendar advance_time
+  *gosub_scene calendar recalc_hp_from_neglect
+
+  *if (hp_current <= 0)
+    *set death_cause "starvation"
+    *if (neglect_damage_fatigue > neglect_damage_hunger)
+      *set death_cause "exhaustion"
+    *goto_scene death death_screen
 
 *page_break Step back out into Dredge-End with the names in your pouch…
 *goto port_valen_dredge_end

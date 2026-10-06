@@ -2,6 +2,8 @@
 
 A grounded, low-stakes narrative quest for **The Iron Wharves** in Port Valen. Designed to flesh out maritime labor, craftsman pride, and the quiet commercial corruption of the Gilded Scales shipyards without causing major faction shifts.
 
+> **Conversion note (2026-10-06).** The quest now starts and ends with Ysolde. The Guild Truth (Hendryk) and Shakedown branches, the burned-waybill failure and the Captain Vane turn-in were cut, so every ending leaves the player holding the waybill; a failure costs the oak and Brant, not the paper. Everything below describing those branches is history. `quest/QUESTS.md` (Quest 3) is current.
+
 > **Revision note (fail-forward pass).** The climax in Section 2 (Beat 4) and Section 3 was reworked after implementation. This plan is kept as the original design; where it differs, the game and `quest/QUESTS.md` (Quest 3) are current. What changed:
 > * Branch A ("We're going to see Master Hendryk") no longer drags Elric to the factor and no longer needs no roll. The player goes over Elric's head, and the appeal at Hendryk's door is a check (`[CHA DC 13]` or `[INT DC 12]`, +1 if alerted, advantage with the ledger clue). Failure loses the evidence and a point of Gilded Scales standing.
 > * The three failure menus (`beat_4_intellect_fail`, `_intimidation_fail`, `_blackmail_fail`) no longer offer Branch A or the bribe. A failed check is a strike: thrown out, alerted, DC +1. A second strike ends the quest.

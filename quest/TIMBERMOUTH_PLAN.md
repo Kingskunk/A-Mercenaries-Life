@@ -203,25 +203,6 @@ Small temporary logging camps farther into the forest send their loads to this v
 
 This village supplies the town's daily food and gives the future mount system a believable local source without making Timbermouth itself a horse-breeding settlement.
 
-### 4.3 Clay village
-
-**Distance from Timbermouth:** about 4 to 6 miles along the Clay Road.
-
-**Produces:**
-
-- Cooking pots and storage jars.
-- Roof tiles and bricks.
-- Drain sections and simple kiln goods.
-
-**Receives:**
-
-- Firewood and charcoal from the forest village.
-- Food from the farming village.
-- Timber for roof frames, shelves, packing crates, and kiln repairs.
-- Iron tools and merchant orders routed through Timbermouth.
-
-This village creates useful trade between the villages themselves. Timbermouth is the market and contract center through which that exchange is measured and taxed.
-
 ---
 
 ## 5. Economic Flow
@@ -230,13 +211,10 @@ This village creates useful trade between the villages themselves. Timbermouth i
 
 ```text
 Forest village ---- Longshade ash, other wood, resin, bark ----\
-Farming village --- food, animals, hides ------> Timbermouth ---- finished goods and combined loads ----> Port Valen
-Clay village ------ pots, tiles, bricks -------/
+Farming village --- food, animals, hides ------> Timbermouth ---- finished goods and combined loads ---->
 
 Forest village <--- tools, food, credit --------\
 Farming village <-- tools, timber, salt ---------- Timbermouth <--- iron, coal, coin, imports, contracts --- Port Valen
-Clay village <----- fuel, timber, orders -------/
-```
 
 ### Why the road economy is credible
 
@@ -290,8 +268,7 @@ There is **no routine river or sea shortcut** between Port Valen and Timbermouth
 | Route | Approximate distance | On foot | Horse | Laden cart |
 |---|---:|---:|---:|---:|
 | Forest Road | 8-10 miles | 3-4 hours | 1.5-2 hours | 4-5 hours |
-| Farm Road | 5-7 miles | 2-3 hours | About 1 hour | 3-4 hours |
-| Clay Road | 4-6 miles | 1.5-2.5 hours | About 1 hour | 2.5-3.5 hours |
+| Farm Road | 5-7 miles | 2-3 hours | About 1 hour | 3-4 hours ||
 
 These are local trips rather than multi-day journeys. A mount lets the player visit a village and return with useful time left in the day, while walking may commit most of the working day once the visit itself is included.
 
@@ -303,10 +280,10 @@ These are local trips rather than multi-day journeys. A mount lets the player vi
                                       Forest Road
                                            |
 Port Valen ===== old imperial road ===== Timbermouth
-                                          /       \
-                                  Farm Road       Clay Road
-                                      /               \
-                              Farming village      Clay village
+                                          /      
+                                  Farm Road      
+                                      /             
+                              Farming village     
 ```
 
 The village roads meet at Timbermouth rather than bypassing it. This is why the Town Factor can inspect, tax, finance, and redirect the region's trade.
@@ -494,7 +471,6 @@ This plan does not lock a main Timbermouth quest yet. It reserves the following 
 
 - The forest village withholds loads after Timbermouth lowers its buying price.
 - The farming village's horses fall sick before a large caravan departure.
-- The clay village cannot fire an important order because its fuel shipment never arrived.
 - A damaged local road traps goods in one village while the Factor still demands the contracted amount.
 
 ### First-arrival option
@@ -535,7 +511,6 @@ When Timbermouth moves from planning into implementation, it will need:
 The next planning pass should settle:
 
 1. The exact direction of the imperial road after it leaves Port Valen: due east or east-northeast through the uplands.
-2. The final names of the forest, farming, and clay villages.
 3. Whether Timbermouth has its own standing meter or uses only `gilded_scales_rep`.
 4. Whether the first trip must be the escort contract or whether free travel can unlock through another route.
 5. Where roadside shelter falls on the two-day journey and whether it is a safe inn, a guarded rest stop, or a player-made camp.

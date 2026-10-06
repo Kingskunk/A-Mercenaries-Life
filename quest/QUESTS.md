@@ -113,31 +113,28 @@ graph TD
 ## Chapter 3: Port Valen Municipal Quests (`port_valen.txt`)
 
 ### Quest 1: The Silt-Gate Contraband
-* **Scene File:** `port_valen_dredge_end.txt` (`pv_dredge_silt_gates`, `pv_silt_gate_stakeout`, `pv_silt_gate_ambush_watch`, `pv_silt_gate_parley_oath`, `pv_silt_gate_divert_vane`); briefed and reported at `port_valen.txt`'s `pv_quays_voss_briefing`/`pv_quays_voss_report` (Harbor Quayside).
+* **Scene File:** `port_valen_dredge_end.txt` (`pv_dredge_silt_gates`, `pv_silt_gate_stakeout`, `pv_silt_gate_squeeze`); Kestrel's side in the watchtower (`pv_tower_silt`, `pv_tower_silt_turnin`) and Voss's desk at the Harbor Quayside (`pv_quays_voss_briefing`, `pv_quays_voss_chat`) in `port_valen.txt`.
 * **District:** Dredge-End (Low drainage flume & tidal vault).
 * **Briefing:** Dockmaster Voss reports uninspected highland shear-steel and illicit peat-spiritus entering through the tidal flap-valves during midnight flood tides. He's a customs official, not a Watch officer — he can catch corruption near his docks and escalate it hard, but every consequence he promises routes through "the Watch captain," never his own authority.
+* **Starts with Kestrel (converted 2026-10-06, like the Rotten Rib):** Vane tells every player to go up the watchtower after dark. There, "Tell her Vane said she has a use for you" (`silt_gate_quest_stage = "unstarted"`, sets `kestrel_silt_briefed`) is her brief: the Watch's night sergeants are paid to walk the far bank, she needs the broker's own list to keep them in her pocket, the player should take Voss's job as cover, and she pays 5 silver for both names. Voss's briefing button needs `kestrel_silt_briefed`; before that he only talks traffic.
+* **Voss:** still gives the quest, but is never told the result and is never paid. Three days after the player hands the slip to Kestrel, his chat says Sergeant Kray, who never noticed him in eleven years, has started saluting him and the men on the far bank have turned polite, though it is no better watched, and that he has decided not to ask (Kestrel is keeping the sergeants quiet, not spending them) (`silt_gate_turned_in_day`, `silt_gate_voss_told`).
 
 #### Objective Flow:
 1. **Daytime Recon (`pv_dredge_silt_gates`):**
    * Map roofline blind spots and spot the lantern-boy (`silt_gate_lookout_spotted = true`).
    * Jam the street-level storm-winch counterweight cog (`silt_gate_winch_jammed = true`).
    * Study high-tide charcoal marks on the stone vault.
-   * `[Cantrip: Mage Hand]` — Remotely wedge an iron bolt into the winch cog from the canal shadows.
-2. **Night Stakeout Prep (`pv_silt_gate_stakeout`):**
+   * `[Cantrip: Mage Hand]` - Remotely wedge an iron bolt into the winch cog from the canal shadows.
+2. **Night Stakeout (`pv_silt_gate_stakeout`):**
    * Wait for night flood tide (`[~2 Hours]`).
-   * `[Cantrip: Guidance]` — Divination focus buff (`+1d4` to next check).
-   * `[Cantrip: Prestidigitation]` — Snuff the platform's fish-oil lamp from afar (`silt_gate_lamp_snuffed = true` ➔ Advantage on ambush).
-   * `[Cantrip: Minor Illusion]` — Project false patrol footsteps down the north cut (`silt_gate_illusion_active = true` ➔ Advantage on ambush).
-3. **Three Resolution Branches:**
+   * `[Cantrip: Guidance]` - Divination focus buff (`+1d4` to next check).
+   * `[Cantrip: Prestidigitation]` - Snuff the platform's fish-oil lamp from afar (`silt_gate_lamp_snuffed = true`, advantage on the squeeze).
+   * `[Cantrip: Minor Illusion]` - Project false patrol footsteps down the north cut (`silt_gate_illusion_active = true`, advantage on the squeeze).
+3. **The one ending (`pv_silt_gate_squeeze`):** pin the broker for the names on his payroll. `[CHA DC 12]` intimidate, `[STR DC 12]` search his coat, `[WIS DC 11]` offer him a way out, `[Cantrip: Thaumaturgy]` (`CHA DC 10`), `[Spell: Dissonant Whispers]` (1 Bard Slot, automatic). Advantage if the winch is jammed, the lamp snuffed or the illusion running. **The player always gets the slip with both names** (a one-name result was removed 2026-10-06 as pointless). A failed check costs something else: `silt_gate_face_seen` is set, the porters see the player's face, the player loses an hour hiding in a cellar drain, and `black_oath_heat` rises by one more (silent). Either way `silt_gate_resolution = "leverage"`, `has_silt_gate_payout_slip = true`, `black_oath_heat +1`. The crates stay on the platform.
+4. **Turn-in (`pv_tower_silt_turnin`):** "Lay the broker's payout slip on the bench." `kestrel_respect +5` and 5 silver, always; she adds a line about keeping clear of Dredge-End if `silt_gate_face_seen`. Sets `kestrel_slip_turned_in`, `kestrel_watch_leverage`, `silt_gate_bounty_claimed` and `silt_gate_turned_in_day`.
 
-| Branch | Mechanics & Spells | Outcome & State |
-|---|---|---|
-| **Branch A: Ambush for the Watch** (`pv_silt_gate_ambush_watch`) | • `[STR DC 12]` / `[DEX DC 12]` / `[INT DC 11]`<br>• `[Cantrip: Shocking Grasp]` (Advantage, `INT DC 11`)<br>• `[Cantrip: Ray of Frost]` (Freeze rudder, `INT DC 11`)<br>• `[Spell: Magic Missile]` (1 Slot, Auto-Success) | Success: neutralizes drop, muscles barrow to Quayside.<br>`silt_gate_resolution = "watch_seized"`<br>+12 Silver bounty from Voss (`+1 port_watch_rep`), `black_oath_rep -2`, `black_oath_heat +2`.<br>**Failure (`pv_silt_gate_ambush_fail`): the drop gets away.** No cargo, no bounty, +2 or +3 fatigue, `black_oath_rep -1`, `black_oath_heat +1`, and `silt_gate_resolution = "failed"`. |
-| **Branch B: Parley & Bribe** (`pv_silt_gate_parley_oath`) | • `[CHA DC 12]` / `[WIS DC 11]` / `[INT DC 11]`<br>• `[Cantrip: Thaumaturgy]` (`CHA DC 10`, 30 Silver Marks)<br>• `[Spell: Charm Person]` (1 Slot, 25 Silver Marks)<br>• `[Spell: Disguise Self]` (1 Slot / Hexblood, 25 Silver Marks) | Success: shakes down independent contraband broker for a hush-money cut.<br>`silt_gate_resolution = "hush_money"`<br>+25–30 Silver Marks, `black_oath_rep +1`, `black_oath_heat +1`.<br>**Failure (`pv_silt_gate_parley_fail`): you are walked out with nothing.** No coin, `black_oath_rep -1`, `black_oath_heat +1`, `silt_gate_resolution = "failed"`. |
-| **Branch C: Squeeze the Payroll** (`pv_silt_gate_divert_vane`) | • `[CHA DC 12]` / `[STR DC 12]` / `[WIS DC 11]`<br>• `[Cantrip: Thaumaturgy]` (`CHA DC 10`)<br>• `[Spell: Dissonant Whispers]` (1 Bard Slot, Auto-Intel) | Pins the broker for the names of the Watch sergeants he pays. The crates are left on the platform; the payout slip is the prize.<br>`silt_gate_resolution = "leverage"`, `black_oath_heat +1`<br>`has_silt_gate_payout_slip = true`<br>`silt_gate_full_intel = true / false` (a failed check costs the second name).<br>**Spend it once:** give it to Voss (`pv_silt_gate_slip_voss`: +8 silver with both names, +6 with one, `+1 port_watch_rep` only with both) **or** take it to Captain Vane (`port_valen_vane_slip_turnin`: `+1 vane_standing`, no coin, sets `vane_watch_leverage`). Or lie to Voss and keep it (`pv_silt_gate_slip_keep`). |
-
-* **Why Branch C is about the names, not the steel:** Vane's briefing asks for leverage and standing ("the Carrion holds the leverage when you wash your fingers"), and never mentions steel or an armory, so the branch no longer invents that goal. The payout slip is the strings he can pull, and it can only be spent once, the same shape as Rotten Rib's waybill.
-* **Loss state:** `silt_gate_resolution = "failed"` (from a failed ambush or parley). The dossier shows "The Drop Got Away", the flume revisit says the run is still going, and Voss's report (`pv_quays_voss_report`) closes the matter with no bounty. See `QUEST_DESIGN_RULES.md`, "Failure Must Cost Something".
+* **Removed 2026-10-06:** the ambush-for-the-Watch branch (12 silver from Voss), the parley-and-bribe branch (25-30 silver hush money), the "failed" ending that only they could reach, Voss's report and the slip choices at his desk (give it to him, or lie and keep it), and the Captain Vane turn-in (`port_valen_vane_slip_turnin`, `vane_watch_leverage`, now `kestrel_watch_leverage`). The stats sheet and the Silt-Gates lorebook entry carry the one ending.
+* **Why only the names:** Kestrel wants the sergeants where they are, as a door that opens when she knocks; a lockup or a bounty would spend them. The payout slip can only be handed over once.
 
 ---
 
@@ -156,11 +153,11 @@ graph TD
 ---
 
 ### Quest 3: The Rotten Rib (The Iron Wharves)
-* **Scene File:** `port_valen.txt` (`pv_poi_drydock`, `pv_poi_drydock_menu`, `beat_1_*` through `beat_4_*`, `pv_poi_brant_slipway`, `port_valen_vane_timber_turnin`)
-* **District:** Harbor Quayside, reached through the Iron Wharves POI (`pv_poi_drydock`). Also touches The Cleaved Keel (rumors) and the Carrion Compound hub (Vane turn-in).
+* **Scene File:** `port_valen.txt` (`pv_poi_drydock`, `pv_poi_drydock_menu`, `beat_1_*` through `beat_4_*`, `pv_poi_brant_slipway`, and Ysolde's side in the workroom: `pv_workroom_timber`, `pv_workroom_timber_turnin`)
+* **District:** Harbor Quayside, reached through the Iron Wharves POI (`pv_poi_drydock`). Also touches The Cleaved Keel (rumors) and Ysolde's workroom in the Carrion Compound (the brief and the turn-in).
 * **Hub shape:** `pv_poi_drydock` pays the 15-minute entry cost once, prints the arrival vignette, and either turns the player away or lands on `pv_poi_drydock_menu`. Every yard exit returns to the menu, never to the arrival label. The menu re-checks the closing hours itself, because quest beats spend time and can carry the player past the shift bell.
 * **Operating hours:** open Morning/Midday/Afternoon only. Dusk, Night, Pre-Dawn, and Storm/Blizzard close the gate (no filler choices, straight back to the quayside).
-* **Briefing:** no quest-giver singles the player out. An old shipwright on Slipway Two is seen testing his hull with a mallet. The player chooses to step onto the scaffold, and he only explains once asked. A pre-seed rumor at The Cleaved Keel hints at the fines and green timber (`rotten_rib_quest_stage = "unstarted"` only).
+* **Briefing:** Vane starts it. In the summons scene (`port_valen_vane_summons`) he tells every player, whatever their squad, to see Ysolde this week: the Scales have held the company's timber and forage orders eleven days citing no barge space, and a raven badge is known on those wharves (`vane_timber_hint`). In her workroom, "Tell her Vane sent you about the held-up timber orders" (`rotten_rib_quest_stage = "unstarted"`, sets `ysolde_timber_briefed`) tells them the Scales claim no barge space while one of their own barges left the sheds riding low, and that she wants the paper explaining it, with its seal whole, for 5 silver the day the orders move. She names no oak and no shipwright by name, only "a shipwright on Slipway Two". The quest cannot be found any other way: the "Walk down to the drydock slipway" button in the yard and the Cleaved Keel pre-seed rumor both need `ysolde_timber_briefed`, so a player who has not been to Ysolde sees only the crane-watching and sluice-walk beats. Once briefed, the player chooses to step onto the scaffold at Slipway Two, where an old shipwright is seen testing his hull with a mallet, and he only explains once asked. The pre-seed rumor now serves as a nudge (`rotten_rib_quest_stage = "unstarted"` and briefed only).
 * **Names:** the shipwright stays "the old man" in narration until the apprentices name him (Master Brant) and he names himself. Elric and Hendryk reach the player through Brant's dialogue before either appears.
 * **Objective Flow:**
   1. **Slipway Two (`beat_1_*`, `beat_2_*`):** observe, question the apprentices, or approach Brant. Accepting the lead sets `rotten_rib_quest_stage = "active"` and hands over the sap-weeping splinter (`has_rotten_rib_splinter`). Declining ("not my fight") closes that conversation without starting the quest.
@@ -170,25 +167,24 @@ graph TD
      * Sawyers: `[CHA DC 12]` / `[STR DC 12]` / `[Spell: Charm Person]` / 2 silver.
      * River-gate: `[DEX DC 11]` (advantage in Fog) or `[Cantrip: Minor Illusion]`.
      * A failed approach sets `elric_alerted` instead of dead-ending. The find sets `has_diverted_timber_waybill`.
-  3. **The stash choice:** confront Elric now, report to Brant (advice on how each pressure point works), or slip away with the waybill and come back later.
-  4. **Elric's office (`beat_4_*`):** alerted vs. unalerted prose and a different opening bribe (4 vs. 8 silver). Re-entering from the menu costs 10 min (`beat_4_climb`). Walking out before rolling resolves nothing but sets `elric_alerted`. **Failure at the climax costs something real and never converts into the route or reward it was chasing** (see `QUEST_DESIGN_RULES.md`, "Failure Must Cost Something"):
-     * **Strikes.** A failed INT, STR or blackmail check gets the player thrown out by Elric's draymen (10 min). That is one strike: `elric_alerted` is set, the DC for the same checks rises from 12 to 13, and the purse stays at 4 silver. A **second strike** ends the quest as `"failed"` (the oak is carted off).
-     * **Failed extortion** is not a strike. Elric snatches the waybill and burns it, and the quest ends as `"failed"` immediately. No consolation payout.
-     * **Ledger clue.** Reading the chalk initials on the Bay Four pillar sets `rotten_rib_ledger_clue`, which gives advantage on the appeal to Hendryk.
-* **Resolutions (three ways to win, one to lose):**
+  3. **The stash choice:** the waybill is already in the player's pouch (taken at `beat_3_find_stash`, before any climax roll). Confront Elric now, report to Brant (advice on how each pressure point works), or slip away and come back later.
+  4. **Elric's office (`beat_4_*`):** alerted vs. unalerted prose; Elric still offers a purse (4 or 8 silver) but it is dialogue only, with no option to take it. Re-entering from the menu costs 10 min (`beat_4_climb`). Walking out before rolling resolves nothing but sets `elric_alerted`. **Every ending leaves the player holding the waybill, so failure costs the oak and Brant, never the paper** (see `QUEST_DESIGN_RULES.md`, "Failure Must Cost Something"):
+     * **Strikes.** A failed INT, STR or blackmail check gets the player thrown out by Elric's draymen (10 min). That is one strike: `elric_alerted` is set and the DC for the same checks rises from 12 to 13. A **second strike** ends the quest as `"failed"` (the oak is carted off and the ship launches on green wood; the player still has the waybill).
+     * **Ledger clue.** Reading the chalk initials on the Bay Four pillar sets `rotten_rib_ledger_clue`, which gives advantage on the INT check against Elric.
+* **Resolutions (one way to win, one to lose; both end with the waybill in the player's pouch):**
 
-| Branch | How | Outcome & State |
+| Ending | How | Outcome & State |
 |---|---|---|
-| **A: Guild Truth** (`beat_4_branch_a`, `beat_4_hendryk_*`) | Leave the purse and go over Elric's head to Hendryk (30 min). At the factor's door: `[CHA DC 13]` (14 if alerted) hold your ground, or `[INT DC 12]` (13 if alerted) make the case from the waybill. Advantage with `rotten_rib_ledger_clue`. Turning back at the door is free but alerts Elric. | Success: `rotten_rib_resolution = "lawful"`. +4 silver, `gilded_scales_rep +1`, `brant_favor`, Brant's Iron-Heel Boots. Elric arrested, the slipway gets a 3-day grace. **Failure: the waybill and splinter are taken, `gilded_scales_rep -1`, and the quest ends as `"failed"`.** |
-| **B: Shakedown** (`beat_4_take_bribe`, `beat_4_branch_b`) | Take the purse (4 or 8 silver, a straight choice), or `[CHA DC 13/10]` extortion for 14 silver. | `rotten_rib_resolution = "shakedown"`. Waybill destroyed, `brant_favor` stays false, the green spruce ships. **A failed extortion pays nothing and ends as `"failed"`.** |
-| **C: Silent Leverage** (`beat_4_branch_c`) | `[INT DC 12]` cite charter law, `[STR DC 12]` intimidate, or `[CHA DC 12]` blackmail (DC 13 if alerted) | `rotten_rib_resolution = "blackmail"`. Oak rolled back to Brant, player keeps the waybill, `brant_favor`, Brant's Iron-Heel Boots. A failure is a strike (see above). |
-| **Failed** (`beat_4_failed_*`) | Burned waybill, a failed appeal to Hendryk, or a second strike | `rotten_rib_resolution = "failed"`. The ship launches on green wood. **No coin, no gear, no favor from Brant.** The stats sheet shows "The Ship Launched on Green Wood" and the Keel has its own rumor. |
+| **Silent Leverage** (`beat_4_branch_c`) | `[INT DC 12]` cite charter law, `[STR DC 12]` intimidate, or `[CHA DC 12]` blackmail (DC 13 if alerted). The first strike is a retry at DC 13. | `rotten_rib_resolution = "blackmail"`. Oak rolled back to Brant, `brant_favor`, Brant's Iron-Heel Boots. Ysolde pays 5 silver and `ysolde_respect +5` on turn-in. |
+| **Failed** (`beat_4_failed_strikes`) | A second strike | `rotten_rib_resolution = "failed"`. The ship launches on green wood. **No coin, no gear, no favor from Brant.** Ysolde still takes the waybill for `ysolde_respect +5`, and pays nothing, because the orders only move if the oak goes back. The stats sheet shows "The Ship Launched on Green Wood" and the Keel has its own rumor. |
 
-* **Captain Vane hook:** while `rotten_rib_resolution = "blackmail"` and `has_diverted_timber_waybill`, the compound hub offers `port_valen_vane_timber_turnin` (independent operatives only): +5 silver and `vane_standing +1`, once (`vane_timber_turned_in`). The waybill can't be turned in mid-quest.
+* **Removed 2026-10-06:** the Guild Truth branch (going over Elric's head to Hendryk), the Shakedown branch (taking the purse, or extorting 14 silver), the burned-waybill failure, and the Captain Vane turn-in (`port_valen_vane_timber_turnin`, `vane_timber_turned_in`). The paper is no longer given away, destroyed or taken by anyone but Ysolde.
+* **Ysolde turn-in:** from her workroom, once the quest is `"resolved"` and `has_diverted_timber_waybill` is held, "Lay the stamped waybill on her table" (`pv_workroom_timber_turnin`, once: `ysolde_timber_turned_in`). `ysolde_respect +5` on either ending; 5 silver only on `"blackmail"`. The waybill can't be turned in mid-quest.
+
 * **Post-resolution:** with `brant_favor`, `pv_poi_brant_slipway` opens as an allied contact. Its prose branches on `campaign_day - rotten_rib_resolved_day` (ship still on the ways vs. long since launched) and on `rotten_rib_resolution`, so it stays valid on any later day. Without `brant_favor`, the menu still has the crane-watching and sluice-walk beats.
 * **Rumor lifecycle:** the pre-seed rumor is only offered while unstarted. After resolution it is replaced by one outcome-specific rumor per branch (`pv_tavern_rumor_rotten_rib_after`).
 * **Items:** Brant's Iron-Heel Shipwright Boots (`has_brant_iron_heel_boots`, feet slot id `brant_iron_heel_boots`, cosmetic, no AC); Sap-Weeping Spruce Splinter and Diverted Timber Waybill (evidence, shown in the dossier inventory while held).
-* **Variables:** `rotten_rib_quest_stage`, `rotten_rib_resolution`, `rotten_rib_resolved`, `rotten_rib_resolved_day`, `has_rotten_rib_splinter`, `has_diverted_timber_waybill`, `vane_timber_turned_in`, `elric_alerted`, `rotten_rib_strikes`, `rotten_rib_ledger_clue`, `brant_favor`, `has_brant_iron_heel_boots`, `pv_tavern_rumor_rotten_rib`, `pv_tavern_rumor_rotten_rib_after`.
+* **Variables:** `rotten_rib_quest_stage`, `rotten_rib_resolution` (`none`, `blackmail`, `failed`), `rotten_rib_resolved`, `rotten_rib_resolved_day`, `has_rotten_rib_splinter`, `has_diverted_timber_waybill`, `ysolde_timber_briefed`, `ysolde_timber_turned_in`, `elric_alerted`, `rotten_rib_strikes`, `rotten_rib_ledger_clue`, `brant_favor`, `has_brant_iron_heel_boots`, `pv_tavern_rumor_rotten_rib`, `pv_tavern_rumor_rotten_rib_after`.
 
 ---
 
@@ -359,10 +355,14 @@ graph TD
 *create silt_gate_recon_done false            *comment tracks daytime scout completion
 *create silt_gate_lamp_snuffed false          *comment prestidigitation stakeout buff
 *create silt_gate_illusion_active false       *comment minor illusion stakeout buff
-*create silt_gate_full_intel false            *comment both corrupt watch names discovered
+*create silt_gate_face_seen false            *comment a failed squeeze check: the porters saw your face (an hour lost, +1 silent heat)
 *create silt_gate_bounty_claimed false        *comment one-time 20 silver watch payout guard
-*create has_silt_gate_payout_slip false       *comment the broker's list of paid Watch sergeants (Branch C); spent at Voss or held for Vane
-*create vane_watch_leverage false             *comment Vane holds the names; RESERVED for future radiant Watch quests
+*create has_silt_gate_payout_slip false       *comment the broker's list of paid Watch sergeants (the one ending); turned in to Kestrel
+*create kestrel_silt_briefed false            *comment Kestrel briefed the player; unlocks Voss's briefing
+*create kestrel_slip_turned_in false          *comment the slip went to Kestrel
+*create silt_gate_turned_in_day 0             *comment campaign_day of the turn-in; Voss notices three days later
+*create silt_gate_voss_told false             *comment Voss's remark about the polite sergeants, shown once
+*create kestrel_watch_leverage false          *comment Kestrel holds the names; RESERVED for future Watch quests
 *create port_watch_rep 0                      *comment municipal guard standing
 *create black_oath_rep 0                     *comment canal smuggling network standing
 *create black_oath_heat 0                    *comment attention/danger, separate from respect
@@ -395,16 +395,17 @@ graph TD
 
 *comment --- The Rotten Rib / Iron Wharves (see Quest 3 above) ---
 *create rotten_rib_quest_stage "unstarted"    *comment "unstarted", "active", "resolved"
-*create rotten_rib_resolution "none"          *comment "none", "lawful", "shakedown", "blackmail", "failed"
+*create rotten_rib_resolution "none"          *comment "none", "blackmail", "failed"
 *create rotten_rib_resolved false             *comment one-time completion guard
 *create rotten_rib_resolved_day 0             *comment campaign_day of resolution -- drives Slipway Two prose
 *create has_rotten_rib_splinter false         *comment physical proof from Brant, cleared on resolution
-*create has_diverted_timber_waybill false     *comment Hendryk-stamped waybill; kept only on the blackmail route
-*create vane_timber_turned_in false           *comment waybill delivered to Captain Vane
+*create has_diverted_timber_waybill false     *comment Hendryk-stamped waybill; held on every ending until Ysolde takes it
+*create ysolde_timber_briefed false           *comment asked Ysolde about the held-up timber orders
+*create ysolde_timber_turned_in false         *comment waybill delivered to Ysolde
 *create elric_alerted false                   *comment a failed approach or walk-away raised the alarm
 *create rotten_rib_strikes 0                  *comment failed INT/STR/blackmail checks at Elric; the second ends the quest
-*create rotten_rib_ledger_clue false          *comment read the Bay Four initials; advantage when appealing to Hendryk
-*create brant_favor false                     *comment unlocks the Slipway Two contact (lawful and blackmail only)
+*create rotten_rib_ledger_clue false          *comment read the Bay Four initials; advantage on the INT check against Elric
+*create brant_favor false                     *comment unlocks the Slipway Two contact (blackmail ending only)
 *create has_brant_iron_heel_boots false       *comment reward footwear
 *create pv_tavern_rumor_rotten_rib false      *comment Cleaved Keel pre-seed rumor
 *create pv_tavern_rumor_rotten_rib_after false *comment Cleaved Keel post-resolution rumor

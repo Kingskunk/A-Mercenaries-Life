@@ -124,6 +124,12 @@
           if (s.squad === "vanguard") {
             out.push("Those who stood in his file knew the terms: front line, shield to shield, first to bleed and first to get paid for it. His praise ran to a single grunt or a nod, and remember that stance tomorrow was as warm as it ever got.");
           }
+          if (truthy(s.varren_advice_told)) {
+            out.push("In the armory shed he mends straps at a bench by the grindstone. His advice to a recruit who wants to live is four things: keep your feet dry, keep your iron clean and learn to mend it yourself, keep your file tight, and don't be caught on the open side. Everything else he knows, he says, is those four things said slower.");
+          }
+          if (truthy(s.varren_redfort_told)) {
+            out.push("He took a file of forty into the trenches at Redfort for the winter siege and brought out eleven. He won't give the names. He drills the next file harder instead.");
+          }
           return out;
         },
         see: ["iron_carrion", "vane", "carrion_founding", "lyra", "odessa", "port_valen"]
@@ -136,10 +142,22 @@
         tags: ["Iron Carrion"], aliases: ["scouts", "Scout Company"],
         unlock: "met_kestrel",
         meter: { stat: "kestrel_respect", label: "Kestrel's Regard" },
-        body: [
+        body: function (s) {
+          var out = [
           "Scout Company's commander. Lean, weathered, and near-silent, she runs the smallest armed company in camp on trust earned the hard way and answers to no rank but her own reputation.",
-          "<i>\"Lean, weathered, and somewhere past sixty winters—though the keen stillness in her pale moss-green eyes and her untiring stride through the marsh betray none of it. Tapered half-elven ears sit tucked beneath a close-fitting coif of greased leather, dark hair cropped short and greying at the temples, and a long skinning knife worn plain at her hip with no ornament worth mentioning. She goes by one name and no formal rank, commanding the scouts on trust earned the hard way across decades of fen warfare. Watches everyone, including her own recruits, before they ever realize they're being watched.\"</i>"
-        ],
+          "<i>\"Lean, weathered, and somewhere past sixty winters—though the keen stillness in her dark, watchful eyes and her untiring stride through the marsh betray none of it. Tapered half-elven ears sit tucked beneath a close-fitting coif of greased leather, dark hair cropped short and greying at the temples, and a long skinning knife worn plain at her hip with no ornament worth mentioning. She goes by one name and no formal rank, commanding the scouts on trust earned the hard way across decades of fen warfare. Watches everyone, including her own recruits, before they ever realize they're being watched.\"</i>"
+          ];
+          if (truthy(s.kestrel_advice_told)) {
+            out.push("From the shutter of the watchtower's top room she watches the compound and the inland road. Her advice is to keep watching the whole time, since everyone shows you what they are about to do before they do it and you can never know which moment matters. She admits it is exhausting and that she is terrible company.");
+          }
+          if (truthy(s.kestrel_watch_leverage)) {
+            out.push("She holds the names of the night sergeants who are paid to walk the far bank of the Silt-Gates, and she means to keep them where they are, owing her, and not to have them broken.");
+          }
+          if (truthy(s.kestrel_origin_told)) {
+            out.push("She was born in a fen town on piles, east of the causeway. Her mother poled an eel boat, and her father was an elf who came through with a survey party the Empire sent out, and left her mother before she knew she was with child. At fifteen she became a guide for the legion at Gryke, and the legion's soldiers named her Kestrel for the way she would watch a stretch of water before she set foot on it. She keeps her fen name to herself.");
+          }
+          return out;
+        },
         see: ["iron_carrion"]
       },
       {
@@ -544,7 +562,7 @@
             "The warlord who holds the [[great_sedge|Great Sedge]] from Gryke, an old legion fort in the fen that is slowly sinking into it. The legion there dissolved where it stood, as the others did, and its garrison stayed on. Skell is said to have been a sergeant in it.",
             "Skell takes tribute in peat, eels and spearmen, since the fen has no coin to give. Outsiders cross the Sedge by brushwood tracks that only Skell's people can find, and the Black Sinks causeway runs along the edge of it."
           ];
-          if (truthy(s.silt_gate_full_intel) || truthy(s.has_silt_gate_payout_slip)) {
+          if (s.silt_gate_resolution === "leverage" || truthy(s.has_silt_gate_payout_slip)) {
             out.push("The peat-spiritus that the Black Oath runs in through the Silt-Gates is a fen drink, made in the Sedge's towns and paid out to Skell in casks.");
           }
           return out;
@@ -613,7 +631,7 @@
           if (truthy(s.pv_tavern_rumor_1)) {
             out.push("Their men work the upper walkways and the lane corners with bare knives and no Watch badge, reading the faces that come past. The advice along the quays is simple: do not flash silver past dark in that quarter, unless you mean to donate it.");
           }
-          if (truthy(s.silt_gate_full_intel) || truthy(s.has_silt_gate_payout_slip)) {
+          if (s.silt_gate_resolution === "leverage" || truthy(s.has_silt_gate_payout_slip)) {
             out.push("Their smuggling lines penetrate the city's seawall through the storm flap-valves at the Silt-Gates, moving un-stamped highland shear-steel and illicit peat-spiritus right under the quays by paying off Harbor Watch sergeants six silver marks a week.");
           }
           if (s.black_oath_status === "contact") {
@@ -868,7 +886,7 @@
             "A wide country of peat bog, reed beds and black meres, cut by slow channels and dotted with islands of firm ground. Waist-deep mud lies under most of what looks solid, and a wagon sinks to the axle within a dozen paces. " + warlord + " holds it from Gryke, an old fort that is sinking into the fen. The towns are small and built on piles. Sedgefleet is where the eel boats and peat barges load, and Wulverston, in the south, has the bog-iron works. The only dry ways through are woven brushwood tracks laid across the mud, and only the fen people know where they run.",
             "<b>Trade.</b> The Sedge's staple is peat, cut, dried and stacked by the cartload. Port Valen's taprooms and tenements burn it beside their coal, and so do the salt-boilers on the coast. The fen also sends out smoked eels, wildfowl, reed thatch, and soft bog-iron for nails and cheap tools. Nothing grows well here and there is no timber, so grain, salt and sawn wood all come in. Without salt the eels rot in a week, so the boats that carry peat out bring salt back."
           ];
-          if (truthy(s.silt_gate_full_intel) || truthy(s.has_silt_gate_payout_slip)) {
+          if (s.silt_gate_resolution === "leverage" || truthy(s.has_silt_gate_payout_slip)) {
             out.push("The fen towns also make a rough spirit called peat-spiritus. What reaches Port Valen comes in un-stamped with the Black Oath's smugglers, through the Silt-Gates.");
           }
           return out;

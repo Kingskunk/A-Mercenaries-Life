@@ -1,0 +1,1 @@
+There has been a recent string of murders in the city. The local watch guards are stumped and they suspect magic is the cause. 

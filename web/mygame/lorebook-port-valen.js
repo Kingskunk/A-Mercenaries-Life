@@ -1374,15 +1374,11 @@
           "The canal drainage conduits beneath the Dredge-End slums. The harbor's outer boom chains are locked tight, so the contraband is not coming through the main channel: it slips into the conduits instead. Any patrol the Watch sends into the canals is spotted by rooftop lookouts with tin whistles, and the boatmen dump the crates into ten feet of river sludge before it gets within three hundred paces.",
           "Half the night sergeants working the stretch are said to take weekly hush-money to walk their beats on the far side of the canal when the tide rises."
         ];
-        var res = s.silt_gate_resolution;
-        if (res === "watch_seized") {
-          out.push("You bound the broker and his porters at the mooring rings and hauled four crates of highland shear-steel and the jugs of peat-spiritus up the ramp on a hand-barrow. The whole un-stamped cargo went to the Quayside customs house, and the run through the Silt-Gates was broken.");
-        } else if (res === "hush_money") {
-          out.push("You took twenty-five silver marks from the broker and let the run through. The porters took their barrows into the canal cellar tunnels and the punt slipped back out through the water-gate.");
-        } else if (res === "leverage") {
+        if (s.silt_gate_resolution === "leverage") {
           out.push("You interrupted the drop but did not break the run. The crates stayed on the platform for the tide or the Watch to deal with, and what you carried up the ramp was a strip of wax vellum in the broker's own hand, with a rate written beside each name: six silver marks a Marketday for the north quay.");
-        } else if (res === "failed") {
-          out.push("The night went against you. The run went back on the water by the next tide, and the broker now knows your face.");
+          if (truthy(s.kestrel_watch_leverage)) {
+            out.push("You took it to [[kestrel|Kestrel]] and not to the dockmaster. She holds the names of the paid sergeants now, and has not used them.");
+          }
         }
         return out;
       },

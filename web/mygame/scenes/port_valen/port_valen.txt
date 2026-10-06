@@ -482,30 +482,48 @@ The Watch captain offers Vane a sealed parchment writ bearing the Council mark. 
       [i]Two young recruits in padded arming doublets circle each other in the sawdust with wooden practice hilts, testing stances under the watchful eye of a scarred veteran.[/i]
 
 *choice
-  *if ((vane_independent_operative) and ((rotten_rib_resolution = "blackmail") and (has_diverted_timber_waybill)))
-    # Take Master Hendryk's stamped waybill up to Captain Vane's study.
-      *goto port_valen_vane_timber_turnin
-  *if ((vane_independent_operative) and ((silt_gate_resolution = "leverage") and (has_silt_gate_payout_slip)))
-    # Take the broker's payout slip up to Captain Vane's study.
-      *goto port_valen_vane_slip_turnin
   *if (vane_independent_operative)
     # Travel to another part of the city.
       *goto port_valen_travel
   *if ((vane_independent_operative) and (level_up_sessions_needed > 0))
     # Cross to the drill square.
       *goto pv_poi_carrion
-  *if ((vane_independent_operative) and ((not(pv_is_night)) and (met_ysolde)))
+  *if ((vane_independent_operative) and ((not(pv_is_night)) and ((not(leaders_at_drill)) and (met_ysolde))))
     # Go up to Ysolde's workroom.
       *goto pv_poi_workroom
-  *if ((vane_independent_operative) and ((not(pv_is_night)) and (not(met_ysolde))))
+  *if ((vane_independent_operative) and ((not(pv_is_night)) and ((not(leaders_at_drill)) and (not(met_ysolde)))))
     # Try the door at the top of the outside stair.
       *goto pv_poi_workroom
+  *if ((vane_independent_operative) and ((leaders_at_drill) and (met_ysolde)))
+    # Ysolde's workroom: she is out on the drill square.
+      *goto pv_workroom_away
+  *if ((vane_independent_operative) and ((leaders_at_drill) and (not(met_ysolde))))
+    # Try the door at the top of the outside stair.
+      *goto pv_workroom_away
   *if ((vane_independent_operative) and ((pv_is_night) and (met_ysolde)))
     # Ysolde's workroom: shut until morning.
       *goto pv_workroom_shut
   *if ((vane_independent_operative) and ((pv_is_night) and (not(met_ysolde))))
     # The door at the top of the outside stair: shut until morning.
       *goto pv_workroom_shut
+  *if ((vane_independent_operative) and ((not(pv_is_night)) and (not(leaders_at_drill))))
+    # Cross to the armory shed.
+      *goto pv_poi_armory
+  *if ((vane_independent_operative) and (leaders_at_drill))
+    # Cross to the armory shed: Varren is out on the drill square.
+      *goto pv_armory_away
+  *if ((vane_independent_operative) and ((pv_is_night) or (time_period = "Dusk")))
+    # Climb the watchtower.
+      *goto pv_poi_tower
+  *if ((vane_independent_operative) and (leaders_at_drill))
+    # The watchtower: Kestrel is out on the drill square.
+      *goto pv_tower_away
+  *if ((vane_independent_operative) and ((not(pv_is_night)) and ((not(leaders_at_drill)) and (not(time_period = "Dusk")))))
+    # The watchtower: Kestrel is out past the gate.
+      *goto pv_tower_away
+  *if ((vane_independent_operative) and (pv_is_night))
+    # The armory shed: shut until morning.
+      *goto pv_armory_shut
   *if (pv_mess_rations_used < pv_mess_ration_cap)
     # Eat at the compound mess.
       *goto port_valen_eat_mess
@@ -1285,7 +1303,7 @@ The throw goes hand to hand around the chalk circle, horn dice clattering agains
 *label pv_poi_tavern_rumors
 You find a bench against the wall with your back to it, a watchful habit, and let the taproom wash over you. The waterfront talks.
 
-*if ((rotten_rib_quest_stage = "unstarted") and (not(pv_tavern_rumor_rotten_rib)))
+*if ((rotten_rib_quest_stage = "unstarted") and ((ysolde_timber_briefed) and (not(pv_tavern_rumor_rotten_rib))))
   *set pv_tavern_rumor_rotten_rib true
   *set met_brant true
   Over by the rear hearth, a pair of sawyers talk over sour beer. The Gilded Scales are riding the shipwrights hard down on Brant's slipway, they say. The guild factor has the master builder under a brutal fine for every tide the cradle sits occupied, and the apprentices whisper that the spruce cleared through the gates has been weeping green sap instead of ringing true.
@@ -1293,11 +1311,7 @@ You find a bench against the wall with your back to it, a watchful habit, and le
   *goto pv_poi_tavern_menu
 *elseif ((rotten_rib_quest_stage = "resolved") and (not(pv_tavern_rumor_rotten_rib_after)))
   *set pv_tavern_rumor_rotten_rib_after true
-  *if (rotten_rib_resolution = "lawful")
-    A porter leans against the bar, nursing a small beer. "The guild lockup took Clerk Elric for skimming naval oak to a private refit in Dredge-End. Master Hendryk has every account book in the clerk's office under audit, and the slipways are moving again."
-  *elseif (rotten_rib_resolution = "shakedown")
-    A pair of caulkers shake their heads over their cups. "They say the second slipway had to bolt scrap iron across green spruce just to clear the cradle. If that merchant tub meets open swell, the sea will crack her like a walnut."
-  *elseif (rotten_rib_resolution = "failed")
+  *if (rotten_rib_resolution = "failed")
     A ship's carpenter turns his cup slowly on the bar. "They launched the green-ribbed merchantman off the yard anyway. Somebody came asking questions down there and got walked to the gate for it, so now nobody asks. I'll not sail on her, and I'll not say why."
   *else
     A yard drayman chuckles into his tankard. "Clerk Elric looked like he'd seen a ghost down in the sawpits. Rolled three beams of cured highland oak back to Brant's slipway with his own men, and hasn't said a word since."
@@ -1650,20 +1664,11 @@ A wall of black boards is ruled in columns behind the gallery, each headed with 
   The cargo quay carries on around you, manifests and crates and the steady call of hull numbers.
 
 *if (vane_independent_operative)
-  *if ((silt_gate_quest_stage = "resolved") and (not(silt_gate_bounty_claimed)))
-    *choice
-      # Report what happened at the Silt-Gates to Dockmaster Voss.
-        *goto pv_quays_voss_report
-      *if (not((time_period = "Night") or (time_period = "Pre-Dawn")))
-        # Head down to crane three, where the gang-boss keeps his crew.
-          *goto pv_poi_crane
-        # Survey the cargo line and observe the dock traffic.
-          *goto pv_quays_observe
-      # Return to the quayside.
-        *page_break Back up to the quayside…
-        *goto port_valen_harbor_pois
-  *elseif (not((time_period = "Night") or (time_period = "Pre-Dawn")))
-    *if (silt_gate_quest_stage = "unstarted")
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    *page_break Back to the harbor streets…
+    *goto port_valen_harbor_pois
+  *else
+    *if ((silt_gate_quest_stage = "unstarted") and (kestrel_silt_briefed))
       *choice
         # Step up to the customs desk and ask Dockmaster Voss if there is paid work on the quays.
           *goto pv_quays_voss_briefing
@@ -1746,14 +1751,20 @@ You lean against a mooring bitt and watch the rhythm of the cargo line.
 *label pv_quays_voss_reminder
 You step up to the customs desk while Voss is dipping his steel nib. He looks up, giving your kit a brief, assessing scan.
 
-"Silt-Gate drop is in Dredge-End, remember," Voss reminds you in a low murmur. "Peak flood tide only clears the masonry culvert late at [b]night or pre-dawn[/b]. Break the drop, seize the punt or names, and bring me proof."
+"Silt-Gate drop is in Dredge-End, remember," Voss reminds you in a low murmur. "Peak flood tide only clears the masonry culvert late at [b]night or pre-dawn[/b]. Keep your eyes on the water."
 *page_break Return to the quayside…
 *goto pv_poi_quays_menu
 
 *label pv_quays_voss_chat
 You step up to the harbor desk where Dockmaster Voss is reviewing the week's river registrations. He nods as you approach, his tone curt but professional.
 
-"Tides are running high, and the Patrician Quarter is pressing for faster clearances," he says, checking an inked entry. "Watch has its hands full keeping the quays open. Keep your steel sheathed and your ears open, stranger."
+*if ((kestrel_slip_turned_in) and (campaign_day >= (silt_gate_turned_in_day + 3)))
+  *set silt_gate_voss_told true
+  "Odd thing," he says, without looking up. "Sergeant Kray used to look straight through me. Eleven years. This week he's saluted me twice and asked after my health." He dips his nib. "The far bank's no better watched than it was. But the men on it have turned polite, and in my experience that means someone's frightened them."
+
+  He blots the line. "I've decided not to ask who. Keep your ears open, stranger."
+*else
+  "Tides are running high, and the Patrician Quarter is pressing for faster clearances," he says, checking an inked entry. "Watch has its hands full keeping the quays open. Keep your steel sheathed and your ears open, stranger."
 *page_break Return to the quayside…
 *goto pv_poi_quays_menu
 
@@ -1783,7 +1794,7 @@ He points with his quill downriver toward the low, leaning roofs of Dredge-End.
 
 His jaw tightens. "Worse, half the night sergeants working this stretch take weekly hush-money to walk their beats on the far side of the canal when the tide rises."
 
-"A flat-bottomed boat can only clear the low stone drain when the tide is at full flood, which means the drop only happens late at [b]night or pre-dawn[/b]. Get down into [b]Dredge-End[/b], scout the channel, and shut that smuggling route down. Bring the boat in intact, and the city treasury will pay twelve silver marks bounty for the logged cargo."
+"A flat-bottomed boat can only clear the low stone drain when the tide is at full flood, which means the drop only happens late at [b]night or pre-dawn[/b]. Get down into [b]Dredge-End[/b], scout the channel, and see what's moving through it."
 
 *choice
   # "I'll scout the channel before the tide rises and wait for the drop."
@@ -1795,110 +1806,9 @@ His jaw tightens. "Worse, half the night sergeants working this stretch take wee
     *set silt_gate_quest_stage "active"
     *goto pv_poi_quays_menu
   # "Twelve silver marks if the cargo is intact. What if the smugglers put up a fight down in the mud?"
-    "The city pays for cargo in coin and paper, not corpses in the canal," Voss replies flatly. "Disarm them, bring the boat in, or break up their trade so they don't use that channel again. Just keep it off the lips of the town criers."
+    "The city pays for cargo in coin and paper, not corpses in the canal," Voss replies flatly. "Keep it quiet. I'd rather the town criers heard nothing."
     *set silt_gate_quest_stage "active"
     *goto pv_poi_quays_menu
-
-*label pv_quays_voss_report
-You step up to the customs tower where Dockmaster Voss is auditing incoming barge manifests. He glances up, his sharp eyes settling on you.
-
-"The Silt-Gate culverts," he murmurs, stepping under the awning. "What did you find?"
-
-*if (silt_gate_resolution = "watch_seized")
-  "The smuggling run is broken, Dockmaster. I hit the channel at high tide, caught them on the dock, and hauled the crates and the buyer straight up to your lockup on a handcart."
-
-  Voss looks past you to where the mud-spattered barrow and the tied buyer sit under the customs awning. He lets out a low whistle of genuine surprise, a rare nod of respect crossing his weathered face.
-
-  "Forged arrowheads, steel tool blades, and a dozen jugs of mountain moonshine, every ounce of it accounted for, and the buyer under guard," Voss murmurs, blotting the intake sheet. "I didn't think there was a soul on the quayside who wouldn't skim a crate of highland steel."
-
-  He reaches beneath the counter, counting twelve broad silver marks into your palm. "Bounty as promised. Twelve silver marks, drawn straight from the customs chest. The Council will see this logged in full on the report."
-  *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-    *set currency_add_amount 120
-    *gosub_scene economy currency_add
-    *set currency_txn_locked true
-    *set locked_currency_txn_page_id page_id
-  *if (not(silt_gate_bounty_claimed))
-    *set silt_gate_bounty_claimed true
-    *set port_watch_rep +1
-
-*elseif (silt_gate_resolution = "hush_money")
-  "I staked out the drainage channel through the high tide," you report evenly. "The masonry conduit was choked with silt and rotting driftwood. No skiffs made the crossing tonight."
-
-  Voss frowns, running a thumb over his registry with visible frustration. "Dead end, then. The smugglers must have caught wind of our audit and routed their punts through a different cut. Still, at least the Silt-Gates stayed quiet on this tide."
-  He signs off on the patrol report with a sharp stroke of his quill.
-  *if (not(silt_gate_bounty_claimed))
-    *set silt_gate_bounty_claimed true
-
-*elseif (silt_gate_resolution = "leverage")
-  You have the broker's payout slip folded inside your pouch. Voss would pay for it, and spend it on the Watch. The moment it is on his desk it stops being yours, and so does everything it could have bought you later.
-
-  *choice
-    # Lay the slip on his desk and give him the names.
-      *goto pv_silt_gate_slip_voss
-    # Tell him the drop got away, and keep the slip in your pouch.
-      *goto pv_silt_gate_slip_keep
-    # Tell him the Silt-Gates are still being worked, and step back from the desk.
-      *goto pv_poi_quays_menu
-
-*elseif (silt_gate_resolution = "failed")
-  "The drop got away from me, Dockmaster," you report. "I went in at the channel and came out with nothing. The run is still moving."
-
-  Voss puts down his pen. He looks at the mud on your boots and the careful way you carry your ribs. "Then I have a customs house with a hole in it and nothing to show the Council," he says. "There's no bounty for a run that's still running." He picks the pen up again. "Come back when you have something I can log."
-  *if (not(silt_gate_bounty_claimed))
-    *set silt_gate_bounty_claimed true
-
-*page_break Return to the quayside…
-*goto pv_poi_quays_menu
-
-*label pv_silt_gate_slip_voss
-*if (silt_gate_full_intel)
-  "The run hit the channel tonight," you say. "I didn't get the crates. The boatmen went into the canal tunnels, and the broker went in after them. But he had this on him: the two night-watchmen who take payoffs to leave the water gate unwatched."
-
-  You lay the strip of wax vellum before him on the desk. Voss reads both names, his knuckles going white around his pen.
-
-  "Sergeant Kray and watchman Pell," he growls, his jaw tightening. "I knew the rosters were bleeding from the inside." He is already reaching for a fresh sheet. "This goes to the Watch captain before the midday bell tolls, and their badges won't survive what's written on it."
-
-  He tosses an eight-silver-mark voucher onto the desk. "There's no cargo to log, so it isn't the full bounty. But rooting out dirty sergeants is worth twice the steel in this port. The Watch owes you for this."
-  *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-    *set currency_add_amount 80
-    *gosub_scene economy currency_add
-    *set currency_txn_locked true
-    *set locked_currency_txn_page_id page_id
-*else
-  "The run hit the channel tonight," you say. "I didn't get the crates. The boatmen went into the canal tunnels. But the broker gave up the name of the sergeant running the gate payoff before he got away."
-
-  You lay the torn scrap of wax vellum on the desk. Voss reads the name, his jaw clenching.
-
-  "Sergeant Kray," he says grimly. "A shame the other one got away into the canal, but a dirty sergeant breaks their night rotation on his own." He is already folding the scrap into his coat. "This goes to the Watch captain before noon."
-
-  He tosses a six-silver-mark voucher onto the desk. "Good work. There's no cargo to log, so it's not the full bounty. But rooting out corruption on the rosters is worth real silver to the Watch."
-  *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-    *set currency_add_amount 60
-    *gosub_scene economy currency_add
-    *set currency_txn_locked true
-    *set locked_currency_txn_page_id page_id
-
-*if (not(silt_gate_bounty_claimed))
-  *set silt_gate_bounty_claimed true
-  *set has_silt_gate_payout_slip false
-  *if (silt_gate_full_intel)
-    *set port_watch_rep +1
-
-*page_break Return to the quayside…
-*goto pv_poi_quays_menu
-
-*label pv_silt_gate_slip_keep
-"The drop got away from me, Dockmaster," you say. "I went in at the channel and came out with nothing to log." Your hand stays away from your pouch.
-
-Voss puts down his pen and looks at you for a moment longer than the words need. "Then the run is still running," he says, and takes the pen back up. "I'll keep a patrol on the far bank. Come back when you have something I can log."
-
-He writes two words in his ledger and blots them. The slip stays where it is, folded in your pouch.
-
-*if (not(silt_gate_bounty_claimed))
-  *set silt_gate_bounty_claimed true
-
-*page_break Return to the quayside…
-*goto pv_poi_quays_menu
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment CRANE THREE: DELL OSTREY'S DAY-LABOR
@@ -2326,7 +2236,7 @@ He looks you over again, more carefully this time.
 *if (crane_quest_stage = "active")
   *set crane_quest_stage "resolved"
   *set crane_job_unlocked true
-  *comment quests_finished staleness (2026-09-30) -- same gap as port_valen's own beat_4_branch_b header comment
+  *comment quests_finished staleness (2026-09-30) -- same gap as port_valen's own beat_4_branch_c header comment
   *comment explains in full: this page's own advance_time (pv_crane_shift_cha) already recomputed it once, before
   *comment crane_quest_stage became "resolved" just above. Re-run it now that the dependency changed.
   *gosub_scene calendar update_hub_condition
@@ -2560,7 +2470,7 @@ He looks you over again, more carefully this time.
   Flat grey light lies over the ways, and coal smoke hangs low above the forge sheds.
 
 *choice
-  *if (rotten_rib_quest_stage = "unstarted")
+  *if ((rotten_rib_quest_stage = "unstarted") and (ysolde_timber_briefed))
     # Walk down to the drydock slipway, where an old shipwright works alone on a merchant hull.
       *goto beat_1_discovery
   *if ((rotten_rib_quest_stage = "active") and (not(has_diverted_timber_waybill)))
@@ -2627,13 +2537,13 @@ The old man lowers the mallet to a cross-beam. He drags a blunt thumb across the
 
 *label beat_1_observe
 *set met_hendryk true
-You lean against a stack of seasoning spruce and watch the cradle from the gravel lane. Down by the keel, the apprentices huddle over their broom handles and keep their voices low beneath the clatter of mallets.
+You lean against a stack of spruce planks and watch the ship from the gravel lane. Down by the keel, the apprentices huddle over their broom handles and keep their voices low beneath the clatter of mallets.
 
-"He's been at that same frame since the shift started," the taller boy murmurs, glancing up at the ribs. "Sap's weeping straight through the pitch. If Master Hendryk finds out the ways are stopped, he'll dock our meal-tokens."
+"He's been at that one rib since the shift started," the taller boy murmurs, glancing up. "There's wet coming through the black paint. Good wood doesn't do that."
 
-"Stop the work or drown the crew," the younger boy mutters, kicking a wood shaving into the mud. "You want to ride her into open water when the seams go?"
+"If he stops the work, Master Hendryk docks our pay," the younger boy mutters, kicking a wood shaving into the mud. "If he doesn't, she falls apart the first time she meets a big wave."
 
-Up on the staging, the old man stays pressed against the fourth frame, glaring at the dark wash with a look of quiet, smoldering fury.
+Up on the staging, the old man stays pressed against the fourth rib, glaring at the dark paint with quiet, smoldering fury.
 
 *choice
   # Step onto the scaffold planking to speak with him.
@@ -3149,48 +3059,23 @@ Elric's jaw tightens. A nerve jumps under his left eye. He looks out the square 
 *temp climax_dc 12
 *if (elric_alerted)
   *set climax_dc 13
-*temp hint_clerk_extort ""
 *temp hint_clerk_law ""
 *temp hint_clerk_str ""
 *temp hint_clerk_cha_blackmail ""
 *if (show_stat_hints)
   *if (guidance_active)
-    *if (elric_alerted)
-      *set hint_clerk_extort " [CHA DC 13 (+1d4 Guidance)]"
-    *else
-      *set hint_clerk_extort " [CHA DC 10 (+1d4 Guidance)]"
     *set hint_clerk_law " [INT DC ${climax_dc} (+1d4 Guidance)]"
     *set hint_clerk_str " [STR DC ${climax_dc} (+1d4 Guidance)]"
     *set hint_clerk_cha_blackmail " [CHA DC ${climax_dc} (+1d4 Guidance)]"
   *else
-    *if (elric_alerted)
-      *set hint_clerk_extort " [CHA DC 13]"
-    *else
-      *set hint_clerk_extort " [CHA DC 10]"
     *set hint_clerk_law " [INT DC ${climax_dc}]"
     *set hint_clerk_str " [STR DC ${climax_dc}]"
     *set hint_clerk_cha_blackmail " [CHA DC ${climax_dc}]"
 
 *choice
-  # Leave the purse where it lies. Take the waybill and the splinter over Elric's head to Master Hendryk.
-    *goto beat_4_branch_a
-  # Take the @{elric_alerted four|eight} silver marks from the desk, turn your back on Brant's cradle, and walk out.
-    *goto beat_4_take_bribe
-  *if (elric_alerted)
-    # "Four silver? For thirty marks of stolen oak? Fourteen, or Hendryk hears about it by dusk."${hint_clerk_extort}
-      *gosub_scene dice_engine roll_skill_check 13 "intimidation" "" "" "" "" ""
-      *if (check_success)
-        *goto beat_4_branch_b
-      *else
-        *goto beat_4_extort_fail
-  *else
-    # "Eight silver is a joke for thirty marks of heartwood. Fourteen, or Hendryk sees this waybill."${hint_clerk_extort}
-      *gosub_scene dice_engine roll_skill_check 10 "intimidation" "" "" "" "" ""
-      *if (check_success)
-        *goto beat_4_branch_b
-      *else
-        *goto beat_4_extort_fail
   # "Diverting naval oak under city charter earns the debtor hulks, Elric. The beams roll back to Brant now, or this waybill goes to the customs bailiffs."${hint_clerk_law}
+    *if (rotten_rib_ledger_clue)
+      *set advantage true
     *gosub_scene dice_engine roll_skill_check climax_dc "investigation" "" "" "" "" ""
     *if (check_success)
       *goto beat_4_branch_c
@@ -3213,14 +3098,13 @@ Elric's jaw tightens. A nerve jumps under his left eye. He looks out the square 
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment CLIMAX FAILURES (see quest/QUEST_DESIGN_RULES.md, "Failure Must
-*comment Cost Something"). None of these offers the route or the reward the
-*comment failed roll was chasing:
+*comment Cost Something"). Every ending of this quest leaves the player holding
+*comment the waybill (it was taken at the stash, before this roll), so a failure
+*comment never costs the paper. It costs the oak and Brant:
 *comment   - a failed INT / STR / blackmail check throws the player out and is
-*comment     a strike (elric_alerted, DC 13, offer cut to 4 silver). A second
-*comment     strike ends the quest as "failed".
-*comment   - a failed extortion burns the waybill on the spot -> "failed".
-*comment   - a failed appeal to Hendryk costs the evidence and a point of
-*comment     Gilded Scales standing -> "failed".
+*comment     a strike (elric_alerted, DC 13). A second strike ends the quest as
+*comment     "failed": the oak goes out on the barge and the ship launches on
+*comment     green wood, with no favor and no boots from Brant.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label beat_4_intellect_fail
@@ -3271,31 +3155,6 @@ You pick yourself up and brush the sawdust off. Elric knows your face now, and s
 *page_break Back to the shipyard lane…
 *goto pv_poi_drydock_menu
 
-*label beat_4_extort_fail
-*set hours_to_pass 0
-*set minutes_to_pass 20
-*set time_advance_call_id "rotten_rib_extort_fail_time"
-*gosub_scene calendar advance_time
-*gosub_scene calendar recalc_hp_from_neglect
-
-*if (hp_current <= 0)
-  *set death_cause "starvation"
-  *if (neglect_damage_fatigue > neglect_damage_hunger)
-    *set death_cause "exhaustion"
-  *goto_scene death death_screen
-
-*if (elric_alerted)
-  Elric holds his ground, backed by the draymen on the steps outside, and his lips peel back in a sneer. "Fourteen silver?" He gives a harsh bark of laughter. "You're standing in my office with sawdust in your hair, threatening a guild factor's clerk."
-*else
-  Elric's eyes narrow, and the smoothness goes out of his face all at once. "Fourteen?" he says softly. "You think I'm frightened of a stranger with a splinter?"
-
-You still have the waybill raised between you, and he is faster than a clerk should be. He snatches it out of your fingers and drops it onto his brazier. The red seal blackens and curls before you can move, and the purse is back inside his vest before the paper has finished burning.
-
-"Gurn! Corve!"
-
-They don't hurry, because they don't need to. The draymen take you down the stairs, along the lane, and out through the yard gate, and the last thing you see of the raised office is Elric leaning on his rail, brushing ash from his cuff.
-*goto beat_4_failed_extort
-
 *label beat_4_walk_away
 *set elric_alerted true
 You leave the purse lying on the desk, stow your splinter, and walk out onto the landing. Elric snatches the silver back with a sneer while the draymen watch you down the stairs, and one of them murmurs something to the other. Whatever the clerk does next, he'll do it with his guard up.
@@ -3303,273 +3162,10 @@ You leave the purse lying on the desk, stow your splinter, and walk out onto the
 *goto pv_poi_drydock_menu
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment BRANCH A: THE GUILD TRUTH (LAWFUL)
-*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-*label beat_4_branch_a
-*set hours_to_pass 0
-*set minutes_to_pass 30
-*set time_advance_call_id "rotten_rib_branch_a_time"
-*gosub_scene calendar advance_time
-*gosub_scene calendar recalc_hp_from_neglect
-
-*if (hp_current <= 0)
-  *set death_cause "starvation"
-  *if (neglect_damage_fatigue > neglect_damage_hunger)
-    *set death_cause "exhaustion"
-  *goto_scene death death_screen
-
-You leave the purse where it lies, stow the splinter, and walk out. Elric doesn't get up. "Master Hendryk keeps his door shut to strangers," he says to your back, and dips his quill. "But go on. See how far you get."
-
-The factor's office is a stone counting-house at the foot of the central slipway, its door hung with a bronze balance-scale. A gate-runner in the river-serpent colors of the Gilded Scales stands on the step with a wax tablet. He looks at your boots, your pouch, and the sawdust on your knees, in that order.
-
-*if (elric_alerted)
-  He has plainly been told something already. His eyes keep sliding toward the raised office up the hill.
-
-"The factor sees no one without a chit," he says. "And nobody gets a chit without a name I know."
-
-*label beat_4_hendryk_door
-*set met_hendryk true
-*set met_hendryk_office true
-*temp hendryk_cha_dc 13
-*temp hendryk_int_dc 12
-*if (elric_alerted)
-  *set hendryk_cha_dc 14
-  *set hendryk_int_dc 13
-*temp hint_hendryk_cha ""
-*temp hint_hendryk_int ""
-*if (show_stat_hints)
-  *if (guidance_active)
-    *set hint_hendryk_cha " [CHA DC ${hendryk_cha_dc} (+1d4 Guidance)]"
-    *set hint_hendryk_int " [INT DC ${hendryk_int_dc} (+1d4 Guidance)]"
-  *else
-    *set hint_hendryk_cha " [CHA DC ${hendryk_cha_dc}]"
-    *set hint_hendryk_int " [INT DC ${hendryk_int_dc}]"
-
-*choice
-  # Refuse to leave the step. "There's a paper in the yard with the factor's own stamp on it that he never signed. He'll want to hear that before the Watch does."${hint_hendryk_cha}
-    *if (rotten_rib_ledger_clue)
-      *set advantage true
-    *gosub_scene dice_engine roll_skill_check hendryk_cha_dc "persuasion" "" "" "" "" ""
-    *if (check_success)
-      The runner's jaw works. You hold his eyes and don't move, and you say the word "stamp" once more, a little louder, so that the clerks at the near desks stop writing. He glances at them, then at the sealed square of parchment in your hand, and steps aside with the look of a man who would rather be wrong in front of the factor than right in front of his clerks.
-      *goto beat_4_hendryk_hears
-    *else
-      The runner doesn't move, and he doesn't raise his voice. He lifts two fingers, and two guards in the same livery come down the counting-house steps and take you by the arms.
-      *goto beat_4_hendryk_fail_cha
-  # Unfold the waybill on the runner's own wax tablet and put a finger on the lading, the hull number, and the word "worm-rot." "This wasn't written by anyone who saw the beams."${hint_hendryk_int}
-    *if (rotten_rib_ledger_clue)
-      *set advantage true
-    *gosub_scene dice_engine roll_skill_check hendryk_int_dc "investigation" "" "" "" "" ""
-    *if (check_success)
-      The runner starts to wave you off, then stops, because your finger is on a line he can read for himself. Three seventy-foot beams of highland oak condemned for worm-rot on a bill that also names the barge they were chalked for. He reads it twice. When he looks up, his face has gone careful, the way a face does when it has just decided to keep its job.
-      *goto beat_4_hendryk_hears
-    *else
-      The runner reads it carefully, and your heart lifts, until he reads it a second time and his mouth goes flat. "The factor's clerks write those in a shorthand no stranger reads," he says, and slides the waybill off the tablet into his own pouch. "I'll see this reaches him."
-      *goto beat_4_hendryk_fail_int
-  # Turn back before anyone at the door has read a word of it.
-    *set elric_alerted true
-    You fold the waybill away and walk back up the slipway with the runner's eyes on your back. It's a long climb, and whoever watches from the raised office will have seen you go down toward the factor and come back without him.
-    *page_break Back to the shipyard lane…
-    *goto pv_poi_drydock_menu
-
-*label beat_4_hendryk_hears
-The runner leads you through a hall of clerks' desks to a cedar door and raps on it.
-
-Master Hendryk sits under a bronze balance-scale in a beaver-fur-trimmed oilskin, sipping watered wine from a pewter cup. He is a broad, unhurried man with pale eyes and a trimmed beard, and he does not offer you a seat. You lay the sap-wet splinter and the altered waybill on his cedar desk and tell it plainly: the green rib, the oak behind the boiler shed, the hand that wrote "worm-rot" over his own seal.
-
-*if (rotten_rib_ledger_clue)
-  You mention the initials on the chalk notes by the pillar in Bay Four, and something in his face turns over. Those are a hand he can check.
-
-He studies both in cold silence. He scrapes the splinter with a silver fruit knife, then holds the waybill to the window and tilts it until the red wax shows every ridge of his stamp.
-
-"You used my stamp," he says, to nobody in the room, and it takes you a moment to understand he means the clerk. "I don't care that the oak was sold. I care that my name went onto a hull insured under the provincial charter. If the city inspectors had found this, the guild would have seized my warehouse."
-
-He rings a small brass bell. Two heavy-shouldered yard guards come in. "The timber office," Hendryk says. "Bring me the clerk, and whatever he has burned, bring me the ashes."
-
-From the counting-house step you watch them climb the stairs of the raised office.
-*if (elric_alerted)
-  At the foot of the stairs, the two draymen set their clubs against the rail and find something else to look at.
-Elric comes down between the guards with his ink-stained wrists held out in front of him like something he is trying not to spill.
-
-Hendryk turns his pale eyes to you.
-
-"Brant gets his heartwood moved from the boiler shed within the hour," he says, counting four silver marks from an iron box onto the desk. "And the slipway gets three days' grace on the tide clock, signed under my seal. A finder's fee for your trouble. My advice: don't linger by the yard gates after dark. Elric has brothers down in Dredge-End."
-
-*if (not(rotten_rib_resolved))
-  *set rotten_rib_resolved true
-  *set rotten_rib_quest_stage "resolved"
-  *set rotten_rib_resolution "lawful"
-  *set rotten_rib_resolved_day campaign_day
-  *set gilded_scales_rep +1
-  *set brant_favor true
-  *set has_diverted_timber_waybill false
-  *set has_rotten_rib_splinter false
-  *set has_brant_iron_heel_boots true
-  *gosub_scene equipment equip_feet "brant_iron_heel_boots"
-  *comment quests_finished staleness (2026-09-30) -- same gap as the "shakedown" branch below (beat_4_branch_b's
-  *comment own header comment has the full explanation): this page's own advance_time already recomputed it once,
-  *comment before rotten_rib_quest_stage became "resolved" just above. Re-run it now that the dependency changed.
-  *gosub_scene calendar update_hub_condition
-
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-  *set currency_add_amount 40
-  *gosub_scene economy currency_add
-  *set currency_txn_locked true
-  *set locked_currency_txn_page_id page_id
-
-[b][⚖ Guild Standing: Gilded Scales Rep +1][/b]
-*line_break
-[b][💰 Finder's Fee: +4 Silver Marks][/b]
-*line_break
-[b][👢 Acquired: Brant's Iron-Heel Boots][/b]
-
-Down on Brant's slip, four draymen are already rolling the three highland oak beams down the skids. Brant watches the yard crane lower the dense wood into the cradle, and his rough face softens with relief. He hands you a pair of heavy bull-hide boots fitted with caulked iron heel-plates. "Tide mud ruined three pairs of apprentice shoes before I forged these heel-plates," he says. "They'll keep your feet sure on any slick planking or wet cobbles in this city. The slipway remembers who stood by her."
-
-*page_break Back to the shipyard lane…
-*goto pv_poi_drydock_menu
-
-*label beat_4_hendryk_fail_cha
-You say what you came to say, loudly, all the way across the yard, and nobody answers. They walk you out through the gate with your heels dragging, and the runner comes after with a hand held out. "Whatever you're carrying, it belongs to the factor's review now." One of the guards turns your pouch out on the flagstones. He takes the waybill and the sap-wet splinter and hands your empty pouch back with a polite nod.
-*goto beat_4_failed_hendryk
-
-*label beat_4_hendryk_fail_int
-The runner disappears through the cedar door with the waybill in his hand, and does not come out again. A quarter of an hour later, a clerk brings back your splinter, holding it away from his sleeve. "The factor thanks you for your concern," he says. "The matter is in hand. You may go."
-*goto beat_4_failed_hendryk
-
-*label beat_4_failed_hendryk
-*if (not(rotten_rib_resolved))
-  *set gilded_scales_rep -1
-[b][⚖ Guild Standing: Gilded Scales Rep -1][/b]
-
-By the time you reach the lane, word has gone through the yard that a stranger walked up to the factor's door and accused the factor's own clerk of forging the factor's own stamp. Nobody meets your eye. On the slipway, Brant watches you go by, then sets an iron brace against the fourth rib and begins to bolt.
-*goto beat_4_failed_tail
-
-*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment BRANCH B: THE SHAKEDOWN (HUSH MONEY)
-*comment take_bribe (4 or 8 silver, a straight choice) and branch_b (14
-*comment silver, extortion success). Both set the "shakedown" resolution and
-*comment forfeit brant_favor. A FAILED extortion no longer pays anything; see
-*comment beat_4_extort_fail / beat_4_failed_extort.
-*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-*label beat_4_take_bribe
-*set hours_to_pass 0
-*set minutes_to_pass 20
-*set time_advance_call_id "rotten_rib_take_bribe_time"
-*gosub_scene calendar advance_time
-*gosub_scene calendar recalc_hp_from_neglect
-
-*if (hp_current <= 0)
-  *set death_cause "starvation"
-  *if (neglect_damage_fatigue > neglect_damage_hunger)
-    *set death_cause "exhaustion"
-  *goto_scene death death_screen
-
-You sweep the cloth purse into your pouch and push the folded waybill across the wood. Elric's shaking hand clamps down on the paper and holds it over his tallow candle until the flame catches the dry fibers and curls Hendryk's red seal into black ash.
-
-"A sensible trade," Elric breathes, the color creeping back into his narrow face. "Now walk out through the main gates and forget what you heard down on the slip."
-
-*if (not(rotten_rib_resolved))
-  *set rotten_rib_resolved true
-  *set rotten_rib_quest_stage "resolved"
-  *set rotten_rib_resolution "shakedown"
-  *set rotten_rib_resolved_day campaign_day
-  *set brant_favor false
-  *set has_diverted_timber_waybill false
-  *set has_rotten_rib_splinter false
-  *comment quests_finished staleness (2026-09-30) -- same gap as beat_4_branch_b's own header comment below explains
-  *comment in full: this page's own advance_time already recomputed it once, before rotten_rib_quest_stage became
-  *comment "resolved" just above. Re-run it now that the dependency changed.
-  *gosub_scene calendar update_hub_condition
-
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-  *if (elric_alerted)
-    *set currency_add_amount 40
-  *else
-    *set currency_add_amount 80
-  *gosub_scene economy currency_add
-  *set currency_txn_locked true
-  *set locked_currency_txn_page_id page_id
-
-*if (elric_alerted)
-  [b][💰 Hush Money: +4 Silver Marks][/b]
-*else
-  [b][💰 Hush Money: +8 Silver Marks][/b]
-
-Down on the building slip, Brant watches you pass the cradle toward the outer gates. His eyes go to your face, then to the heavy sag of your purse, and he turns back to the rotten spruce and his iron braces, bolting scrap metal across wood that cannot hold. The ship will launch on schedule, and her fate on open swell is sealed.
-
-*page_break Back to the shipyard lane…
-*goto pv_poi_drydock_menu
-
-*label beat_4_branch_b
-*set hours_to_pass 0
-*set minutes_to_pass 20
-*set time_advance_call_id "rotten_rib_branch_b_time"
-*gosub_scene calendar advance_time
-*gosub_scene calendar recalc_hp_from_neglect
-
-*if (hp_current <= 0)
-  *set death_cause "starvation"
-  *if (neglect_damage_fatigue > neglect_damage_hunger)
-    *set death_cause "exhaustion"
-  *goto_scene death death_screen
-
-You weigh the purse in your palm and lean in until Elric can smell the shipyard grit on your clothes.
-
-"You're moving three massive oak beams to a private yard in Dredge-End," you say in a low voice. "That's thirty silver marks on the low side, cash in hand before the barge clears the harbor chain. You want me to forget the boiler shed? Fourteen silver. Right now. Or I take this waybill to Hendryk and let the debtor hulks teach you how to saw spruce."
-
-Elric stares at you with pure hatred. For a second his knuckles whiten on the edge of the desk. Then he drags an iron lockbox out from behind his stool and counts marks onto the desk with trembling fingers until the purse and the pile together make fourteen. He snatches the waybill from your grip and holds it over his brazier.
-
-"Take it," he hisses. "And get out of my yard."
-
-*if (not(rotten_rib_resolved))
-  *set rotten_rib_resolved true
-  *set rotten_rib_quest_stage "resolved"
-  *set rotten_rib_resolution "shakedown"
-  *set rotten_rib_resolved_day campaign_day
-  *set brant_favor false
-  *set has_diverted_timber_waybill false
-  *set has_rotten_rib_splinter false
-  *comment Real bug caught live via refresh_fuzz_test.js + a targeted scripted_play.js repro (2026-09-30):
-  *comment quests_finished/level_up_ready are derived, recomputed by update_hub_condition (calendar.txt) --
-  *comment already-called once, early in this branch, via this same page's own advance_time. That call ran
-  *comment BEFORE rotten_rib_quest_stage became "resolved" just above, so quests_finished stays stale at
-  *comment whatever it read then for the rest of THIS page, not reflecting the completion until the player's
-  *comment next action anywhere calls update_hub_condition again. A refresh replaying this page exposed the
-  *comment gap rather than causing it: its snapshot already has the quest resolved, so its own early
-  *comment advance_time call sees a DIFFERENT (fresher) state than the original run's did, at the exact same
-  *comment point in the code -- the two runs disagree not because either double-applied anything, but because
-  *comment "derived, so any *gosub is fine" quietly assumed the LAST recompute in a page is always the freshest,
-  *comment which isn't true once something the recompute depends on changes mid-page. Re-run it here,
-  *comment immediately after the state it depends on actually changed, so the page's own remaining span (and any
-  *comment replay of it) sees the same settled value everywhere.
-  *gosub_scene calendar update_hub_condition
-
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-  *set currency_add_amount 140
-  *gosub_scene economy currency_add
-  *set currency_txn_locked true
-  *set locked_currency_txn_page_id page_id
-
-[b][💰 Black-Market Cut: +14 Silver Marks][/b]
-
-You stow the fourteen silver marks and step out onto the landing.
-
-Down on the slipway, Brant stands in the hollow curve of the ship's ribs and watches you walk toward the main gates. He looks at your face, sees the heavy line of your purse, and understands. He turns his back on you, takes an iron brace from his chest, and begins bolting scrap iron across the rotten green spruce, reinforcing wood that cannot be saved. The ship will launch on schedule, and her fate on open swell is sealed.
-
-*page_break Back to the shipyard lane…
-*goto pv_poi_drydock_menu
-
-*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment FAILED: the ship launches on green wood
-*comment No coin, no gear, no favor from Brant. Reached from a burned waybill
-*comment (extortion), a failed appeal to Hendryk, or a second strike.
+*comment No coin, no gear, no favor from Brant, and the oak is gone. Reached only from a second strike. The player
+*comment still holds the waybill (has_diverted_timber_waybill stays true), and Ysolde takes it back all the same.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-*label beat_4_failed_extort
-Down on Brant's slip, the mallets have stopped. Brant watches the draymen fling you through the gate, and the last black flakes of the waybill drift down past the raised office landing. He stands there a long moment. Then he takes an iron brace from his chest and lays it against the fourth rib.
-*goto beat_4_failed_tail
 
 *label beat_4_failed_strikes
 *comment Reached from beat_4_strike on the second strike.
@@ -3585,23 +3181,21 @@ Brant has seen the cart too. He stands on the staging with the mallet hanging fr
   *set rotten_rib_resolution "failed"
   *set rotten_rib_resolved_day campaign_day
   *set brant_favor false
-  *set has_diverted_timber_waybill false
   *set has_rotten_rib_splinter false
-  *comment quests_finished staleness (2026-09-30) -- same gap as beat_4_branch_b's own header comment below explains
+  *comment quests_finished staleness (2026-09-30) -- same gap as beat_4_branch_c's own header comment below explains
   *comment in full: this page's own advance_time already recomputed it once, before rotten_rib_quest_stage became
   *comment "resolved" just above. Re-run it now that the dependency changed.
   *gosub_scene calendar update_hub_condition
 
-The ship will launch on schedule with the green rib bolted over. Nobody with a stamp will look at it, and nobody who looked has a stamp.
+The ship will launch on schedule with the green rib bolted over. Nobody with a stamp will look at it, and nobody who looked has a stamp. Except you: the waybill is still in your pouch, and the red seal on it is whole.
 
 *page_break Back to the shipyard lane…
 *goto pv_poi_drydock_menu
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment BRANCH C: THE SILENT LEVERAGE (BLACKMAIL)
+*comment BRANCH C: THE SILENT LEVERAGE (BLACKMAIL) -- the only winning ending
 *comment The player keeps the waybill (has_diverted_timber_waybill stays true).
-*comment It can later be turned in to Captain Vane -- see
-*comment port_valen_vane_timber_turnin below and the port_valen_hub option.
+*comment It is turned in to Ysolde in her workroom (pv_workroom_timber_turnin), not to Captain Vane.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label beat_4_branch_c
@@ -3653,9 +3247,19 @@ Brant watches the yard crane lower the dense oak into the ship's framing cradle.
   *set has_rotten_rib_splinter false
   *set has_brant_iron_heel_boots true
   *gosub_scene equipment equip_feet "brant_iron_heel_boots"
-  *comment quests_finished staleness (2026-09-30) -- same gap as beat_4_branch_b's own header comment below explains
-  *comment in full: this page's own advance_time already recomputed it once, before rotten_rib_quest_stage became
-  *comment "resolved" just above. Re-run it now that the dependency changed.
+  *comment Real bug caught live via refresh_fuzz_test.js + a targeted scripted_play.js repro (2026-09-30):
+  *comment quests_finished/level_up_ready are derived, recomputed by update_hub_condition (calendar.txt) --
+  *comment already-called once, early in this branch, via this same page's own advance_time. That call ran
+  *comment BEFORE rotten_rib_quest_stage became "resolved" just above, so quests_finished stays stale at
+  *comment whatever it read then for the rest of THIS page, not reflecting the completion until the player's
+  *comment next action anywhere calls update_hub_condition again. A refresh replaying this page exposed the
+  *comment gap rather than causing it: its snapshot already has the quest resolved, so its own early
+  *comment advance_time call sees a DIFFERENT (fresher) state than the original run's did, at the exact same
+  *comment point in the code -- the two runs disagree not because either double-applied anything, but because
+  *comment "derived, so any *gosub is fine" quietly assumed the LAST recompute in a page is always the freshest,
+  *comment which isn't true once something the recompute depends on changes mid-page. Re-run it here,
+  *comment immediately after the state it depends on actually changed, so the page's own remaining span (and any
+  *comment replay of it) sees the same settled value everywhere. (Other quests' pages point here as "beat_4_branch_c".)
   *gosub_scene calendar update_hub_condition
 
 [b][📜 Retained: Stamped Timber Waybill][/b]
@@ -3666,121 +3270,7 @@ Brant watches the yard crane lower the dense oak into the ship's framing cradle.
 *goto pv_poi_drydock_menu
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment CAPTAIN VANE INTEGRATION: TURNING IN THE WAYBILL
-*comment Offered from port_valen_hub only while
-*comment rotten_rib_resolution = "blackmail" and has_diverted_timber_waybill.
-*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-*label port_valen_vane_timber_turnin
-*set hours_to_pass 0
-*set minutes_to_pass 15
-*set time_advance_call_id "vane_timber_turnin_time"
-*gosub_scene calendar advance_time
-*gosub_scene calendar recalc_hp_from_neglect
-
-*if (hp_current <= 0)
-  *set death_cause "starvation"
-  *if (neglect_damage_fatigue > neglect_damage_hunger)
-    *set death_cause "exhaustion"
-  *goto_scene death death_screen
-
-*set met_vane true
-You climb the narrow wooden stair to the upper gallery of the garrison headquarters. On the landing outside the captain's study, a veteran sentry in soot-blackened mail stands watch with a poleaxe grounded against the planking. He shifts the haft across the doorframe, looks you over, and raps iron-studded knuckles against the oak.
-
-"Paper business, sir," the sentry calls.
-
-From within, Vane's voice cuts through the door: "Enter."
-
-The study is spartan: a trestle desk crowded with dispatches and transit waybills, the company's raven banner nailed flat to the masonry behind him.
-*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
-  A single horn lantern burns beside his inkhorn and throws a sharp pool of orange light across open requisition sheets.
-*elseif (time_period = "Dusk")
-  The last amber light of dusk filters through the shutter slats and catches the smoke drifting from a small clay brazier.
-*else
-  A blade of pale daylight cuts through the shutter slats across open requisition sheets.
-
-You step up to the desk and lay the clerk's folded transit waybill flat on the wood. The red wax impression of Master Hendryk's personal stamp catches the light.
-
-Vane lets the parchment lie between you. His cold grey eyes move from the paper to your face, then down to the scribed ink. He draws the parchment closer with one finger and reads the diverted oak tonnage, the false "worm-rot" notation, and the barge routing for Dredge-End.
-
-"Hendryk's personal seal," Vane murmurs. His voice holds no surprise, only a weighing calculation. "The Gilded Scales have stalled company supply requisitions all week, claiming transport shortages along the river cut. This proves their wharf factor is quietly selling off naval heartwood under city charter."
-
-He folds the waybill into a neat square and slides it into a brass-cornered dispatch box behind his inkpot.
-
-"Leverage like this buys the company six months of forage rights and quiets the guild's complaints about our patrol logs," Vane says, opening an iron cash drawer. He counts five heavy silver marks onto the table. "You used your eyes and kept the paper intact. The company remembers initiative."
-
-*if (not(vane_timber_turned_in))
-  *set vane_timber_turned_in true
-  *set vane_standing +1
-  *set has_diverted_timber_waybill false
-
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-  *set currency_add_amount 50
-  *gosub_scene economy currency_add
-  *set currency_txn_locked true
-  *set locked_currency_txn_page_id page_id
-
-[b][🦅 Company Regard: Captain Vane's Regard +1][/b]
-*line_break
-[b][💰 Intelligence Bounty: +5 Silver Marks][/b]
-
-*page_break Return to the garrison yard…
-*goto port_valen_hub
-
-*label port_valen_vane_slip_turnin
-*set hours_to_pass 0
-*set minutes_to_pass 15
-*set time_advance_call_id "vane_slip_turnin_time"
-*gosub_scene calendar advance_time
-*gosub_scene calendar recalc_hp_from_neglect
-
-*if (hp_current <= 0)
-  *set death_cause "starvation"
-  *if (neglect_damage_fatigue > neglect_damage_hunger)
-    *set death_cause "exhaustion"
-  *goto_scene death death_screen
-
-*set met_vane true
-You climb the narrow timber stair to the upper gallery of the garrison headquarters. The veteran sentry in soot-blackened mail looks you over, raps two iron-studded knuckles against the oak, and calls, "Paper business, sir."
-
-"Enter," Vane says from within.
-
-The study is spartan: a trestle desk crowded with muster rolls, the company's raven banner nailed flat to the masonry behind him.
-*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
-  A single horn lantern burns beside his inkhorn and throws a sharp pool of orange light across open requisition sheets.
-*elseif (time_period = "Dusk")
-  The last amber light of dusk filters through the shutter slats and catches the smoke drifting from a small clay brazier.
-*else
-  A blade of pale daylight cuts through the shutter slats across open requisition sheets.
-
-You lay the wax vellum on the desk and tell him where it came from: a broker on a stone platform in the Silt-Gates, a night's cargo you left where it sat, and the men who let it through.
-
-Vane reads it without touching it, the way a man reads a hand of cards he hasn't decided to play.
-
-*if (silt_gate_full_intel)
-  "Sergeant Kray. Watchman Pell." He says each name slowly, once. "Six marks a Marketday to walk the far bank when the tide rises. The Watch captain would give a good deal to know that."
-*else
-  "Sergeant Kray." He says the name slowly, once. "Six marks a Marketday to walk the far bank when the tide rises. There's a second name, and he'll be nervous now."
-
-He folds the vellum into a brass-cornered dispatch box behind his inkpot. "You could have sold this to Voss for silver, and he'd have burned the men on it. A sergeant who owes the Carrion a quiet night is worth more than one who's been broken." He shuts the box. "I'll decide when it gets played, or whether."
-
-"That isn't coin," Vane adds. "It's a lever, and it's the company's now." He nods once toward the door. "It's the sort of thing I asked for."
-
-*if (not(vane_watch_leverage))
-  *set vane_watch_leverage true
-  *set has_silt_gate_payout_slip false
-  *set vane_standing +1
-  *set silt_gate_bounty_claimed true
-
-[b][🦅 Company Regard: Captain Vane's Regard +1][/b]
-*line_break
-[b][🕸 Leverage: The Company Holds the Names of the Watch's Paid Sergeants][/b]
-
-*page_break Return to the garrison yard…
-*goto port_valen_hub
-
-*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment POST-RESOLUTION: SLIPWAY TWO (brant_favor only -- Branch A or C)
+*comment POST-RESOLUTION: SLIPWAY TWO (brant_favor only -- the winning ending)
 *comment (campaign_day - rotten_rib_resolved_day) picks the "still on the
 *comment ways" vs "long since launched" prose, so nothing here goes stale.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -3804,10 +3294,7 @@ When he spots you on the staging, the old shipwright lays down his blade and wip
       "The merchant ship cleared the harbor chain on her tide without taking an inch of water in her bilges," Brant says proudly, running a hand over the new barge keel. "Her master sent back word: dry cargo all the way to the outer banks. We're laying down this grain barge now, honest heartwood from stem to stern."
     *goto pv_poi_brant_slipway_menu
   # Ask what he's hearing along the quays and the river channel.
-    *if (rotten_rib_resolution = "lawful")
-      Brant leans against his bench and drops his voice under the yard noise. "The Gilded Scales factors are sweating. Word along the basin is the council's customs men are going through cargo manifests up and down Dredge-End. Hendryk's keeping his head down, and independent skippers are moving their freight before the bailiffs tighten the harbor chains."
-    *else
-      Brant leans against his bench and drops his voice under the yard noise. "Elric's been quiet as a mouse up in that stilt office. Walks past my slipway with his eyes on the mud, and I haven't seen a stick of green spruce near Bay Four since. Whatever thumb you've put on him, it's holding."
+    Brant leans against his bench and drops his voice under the yard noise. "Elric's been quiet as a mouse up in that stilt office. Walks past my slipway with his eyes on the mud, and I haven't seen a stick of green spruce near Bay Four since. Whatever thumb you've put on him, it's holding."
     *goto pv_poi_brant_slipway_menu
   # Ask whether he knows any skippers who might need reliable help or a quiet passage downriver.
     Brant gives a knowing chuckle. "This slipway has seen forty years of river craft through her cradle. When you need a word put in with an independent barge master, the sort who haul quiet cargo downriver and don't ask the guild's leave, you come see me first. I know every honest skipper between here and the sea."
@@ -4820,7 +4307,7 @@ The warden fishes a small purse off his belt and counts three silver marks into 
   *set fish_resolution "lawful"
   *set fish_resolved_day campaign_day
   *set port_watch_rep +1
-  *comment quests_finished staleness (2026-09-30) -- same gap as port_valen's own beat_4_branch_b header comment
+  *comment quests_finished staleness (2026-09-30) -- same gap as port_valen's own beat_4_branch_c header comment
   *comment explains in full: this page's own advance_time already recomputed it once, before fish_quest_stage became
   *comment "resolved" just above. Re-run it now that the dependency changed.
   *gosub_scene calendar update_hub_condition
@@ -4862,7 +4349,7 @@ He does, in front of you, and the chalk leaves a small hard mark. Down at the bl
   *set fish_resolved_day campaign_day
   *set port_watch_rep -1
   *set fish_slip_shunned true
-  *comment quests_finished staleness (2026-09-30) -- same gap as port_valen's own beat_4_branch_b header comment
+  *comment quests_finished staleness (2026-09-30) -- same gap as port_valen's own beat_4_branch_c header comment
   *comment explains in full: this page's own advance_time already recomputed it once, before fish_quest_stage became
   *comment "failed" just above. Re-run it now that the dependency changed.
   *gosub_scene calendar update_hub_condition
@@ -4933,7 +4420,7 @@ Down the ramp, Wenna has stopped tying her baskets. She watches you close your f
   *set fish_quest_stage "resolved"
   *set fish_resolution "pragmatic"
   *set fish_resolved_day campaign_day
-  *comment quests_finished staleness (2026-09-30) -- same gap as port_valen's own beat_4_branch_b header comment
+  *comment quests_finished staleness (2026-09-30) -- same gap as port_valen's own beat_4_branch_c header comment
   *comment explains in full: this page's own advance_time already recomputed it once, before fish_quest_stage became
   *comment "resolved" just above. Re-run it now that the dependency changed.
   *gosub_scene calendar update_hub_condition
@@ -4972,7 +4459,7 @@ The bell falls on Wenna's baskets at the ring's price. When you look for her, sh
   *set fish_resolution "failed"
   *set fish_resolved_day campaign_day
   *set fish_slip_shunned true
-  *comment quests_finished staleness (2026-09-30) -- same gap as port_valen's own beat_4_branch_b header comment
+  *comment quests_finished staleness (2026-09-30) -- same gap as port_valen's own beat_4_branch_c header comment
   *comment explains in full: this page's own advance_time already recomputed it once, before fish_quest_stage became
   *comment "failed" just above. Re-run it now that the dependency changed.
   *gosub_scene calendar update_hub_condition
@@ -5055,7 +4542,7 @@ Nobody in the half circle looks at you now. The buyers who used to stand a yard 
   *set fish_resolution "strategic"
   *set fish_resolved_day campaign_day
   *set wenna_favor true
-  *comment quests_finished staleness (2026-09-30) -- same gap as port_valen's own beat_4_branch_b header comment
+  *comment quests_finished staleness (2026-09-30) -- same gap as port_valen's own beat_4_branch_c header comment
   *comment explains in full: this page's own advance_time already recomputed it once, before fish_quest_stage became
   *comment "resolved" just above. Re-run it now that the dependency changed.
   *gosub_scene calendar update_hub_condition
@@ -5091,7 +4578,7 @@ Wenna is standing at the foot of the ramp with her arms crossed. She has watched
   *set fish_quest_stage "failed"
   *set fish_resolution "failed"
   *set fish_resolved_day campaign_day
-  *comment quests_finished staleness (2026-09-30) -- same gap as port_valen's own beat_4_branch_b header comment
+  *comment quests_finished staleness (2026-09-30) -- same gap as port_valen's own beat_4_branch_c header comment
   *comment explains in full: this page's own advance_time already recomputed it once, before fish_quest_stage became
   *comment "failed" just above. Re-run it now that the dependency changed.
   *gosub_scene calendar update_hub_condition
@@ -5161,7 +4648,7 @@ You find a spot at the stores awning where a quartermaster is still ladling out 
 *gosub_scene calendar update_hub_condition
 *gosub_scene character_progression training_preview
 *temp dr_day false
-*if ((time_period = "Morning") or ((time_period = "Midday") or (time_period = "Afternoon")))
+*if ((time_period = "Morning") or (time_period = "Midday"))
   *set dr_day true
 *temp dr_done false
 *if (training_sessions >= level_up_sessions_needed)
@@ -5224,7 +4711,7 @@ A rail fence rings a wide square of packed ground behind the barracks, scuffed b
     Ysolde stands apart from the rest with a slate in one hand, watching a line of Cadre recruits hold a candle flame steady between two fingers. She marks the slate without looking up whenever one of them flinches.
   *else
     File corporals have the recruits strung out in ragged lines across the square, calling the count for stance drills and cuffing anyone who drifts off the mark.
-*elseif (time_period = "Dusk")
+*elseif ((time_period = "Dusk") or (time_period = "Afternoon"))
   The day's drill is done. The last ranks file off toward the wash-troughs and the cookhouse smoke while a corporal chains the racks shut.
 *else
   The yard lies empty. A brazier burns at the gate, and the posts and racks stand in the dark until the morning drill.
@@ -5245,8 +4732,12 @@ A rail fence rings a wide square of packed ground behind the barracks, scuffed b
   *if ((((not(dr_done)) and (training_can_train)) and (dr_day)) and (weather_severity >= 3))
     # Drill with your squad: called off for the weather.
       *goto pv_carrion_drill_closed
-  # Ask your squad leader how you are coming along.
-    *goto pv_carrion_talk
+  *if (leaders_at_drill)
+    # Ask your squad leader how you are coming along.
+      *goto pv_carrion_talk
+  *if (not(leaders_at_drill))
+    # Ask your squad leader how you are coming along: they are not on the yard now.
+      *goto pv_carrion_leader_away
   # Head back across the compound.
     *goto port_valen_hub
 
@@ -5258,11 +4749,11 @@ A rail fence rings a wide square of packed ground behind the barracks, scuffed b
 [b]◈ THE DRILL SQUARE[/b]
 *line_break
 *temp dr_day false
-*if ((time_period = "Morning") or ((time_period = "Midday") or (time_period = "Afternoon")))
+*if ((time_period = "Morning") or (time_period = "Midday"))
   *set dr_day true
 *if (not(training_can_train))
   You have already put in a full shift on the yard today. The corporals are not handing out a second one, and a tired recruit is a hazard to everyone in the line.
-*elseif (time_period = "Dusk")
+*elseif ((time_period = "Dusk") or (time_period = "Afternoon"))
   Drill is over for the day. The racks are chained shut and the last of the ranks are filing off toward the cookhouse.
 *elseif (not(dr_day))
   The yard lies dark and the racks are chained shut. Drill begins with the light.
@@ -5274,15 +4765,31 @@ A rail fence rings a wide square of packed ground behind the barracks, scuffed b
 *label pv_carrion_drill_done
 [b]◈ THE DRILL SQUARE[/b]
 *line_break
-*if (squad = "vanguard")
+*if ((squad = "vanguard") and (leaders_at_drill))
   Sergeant Varren stops you at the rail with one hand flat against your chest. He looks you up and down, the milk-pale eye a beat behind the good one. "You've had the yard," he says. "Whatever I can put into you on it, you've got. What you do with it is your business."
-*elseif (squad = "scouts")
+*elseif ((squad = "scouts") and (leaders_at_drill))
   Kestrel doesn't look up from the line. "You've had the ground," she says. "What you do with it now is yours to carry."
-*elseif (squad = "cadre")
+*elseif ((squad = "cadre") and (leaders_at_drill))
   Ysolde marks her slate without looking up. "You've had the yard," she says. "What you carry out of it now is your own risk."
 *else
   The corporal at the rail waves you off the ground before you have crossed it. "You've had all the yard has," he says. "Nothing left here I can put you through."
 *page_break Back across the compound…
+*goto pv_poi_carrion
+
+*comment The squad leaders are on the yard in the morning only (leaders_at_drill). Outside that this page costs no time and sets nothing, and tells the player where to find them.
+*label pv_carrion_leader_away
+*gosub_scene calendar update_hub_condition
+[b]◈ THE DRILL SQUARE[/b]
+*line_break
+*if (squad = "vanguard")
+  The rail where Varren stands is empty. He runs the Vanguard on the square in the morning, and once the drill is done he goes back to the armory shed.
+*elseif (squad = "scouts")
+  The near rail is empty. Kestrel runs the Scouts on the ground in the morning, and once the drill is done she is gone, and nobody on the square will say where.
+*elseif (squad = "cadre")
+  The slate is gone from the rail. Ysolde runs the Cadre on the square in the morning, and once the drill is done she goes back to her workroom.
+*else
+  The corporal's pine tally-board is gone from the rail. He is on the yard in the morning and nowhere you would think to look after that.
+*page_break Back across the square…
 *goto pv_poi_carrion
 
 *comment Talking to the squad leader: the words say how the training and the finished work are going, and the numbers stay in the bracket.
@@ -5534,13 +5041,19 @@ A rail fence rings a wide square of packed ground behind the barracks, scuffed b
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment YSOLDE'S WORKROOM (pv_poi_workroom): the back room of the timber headquarters, where Vane sends the Cadre for "contract audits
 *comment or arcane counsel". A place and a handful of talk topics, no quest: her quests live in scenes/carrion_company/.
-*comment Open by day (Pre-Dawn, Night and Late Night shut it, as the hub's pv_is_night does), and the hub button stays and says so.
+*comment Open by day after the morning drill (Pre-Dawn, Night and Late Night shut it, as the hub's pv_is_night does; Morning and Midday she is out on the
+*comment drill square, leaders_at_drill, so the hub button leads to pv_workroom_away), and the hub button stays and says so.
 *comment Not gated on squad. The hub button only names her once met_ysolde is set, and a first visit by someone who has not met her
 *comment sets it when she gives her name. Backstory (see lorebook entry "ysolde"): each fact is one flag and one gated codex paragraph.
 *comment   ysolde_waterways_told  respect >= 10: she measured river depths for the Empire's waterways service, aged 18-24.
 *comment   ysolde_ostrand_told    respect >= 25 and the first told: she is of House Ostrand and left over keeping her river charts private.
 *comment The brass signet lies in the room from the first visit and is only ask-about-able once she has told the first fact.
 *comment Her niece or nephew in the house, who runs it now and whether it knows where she is are NOT written: they wait for a quest.
+*comment The Rotten Rib (Iron Wharves) starts and ends here. Vane tells every player to see her about the held-up timber orders
+*comment (vane_timber_hint, set in port_valen_vane_summons); "Tell her Vane sent you" (rotten_rib_quest_stage unstarted,
+*comment ysolde_timber_briefed) sends the player to Slipway Two; once the quest is resolved, "Lay the stamped waybill on her table"
+*comment (has_diverted_timber_waybill, ysolde_timber_turned_in) takes the paper back: ysolde_respect +5 on either ending, 5 silver only
+*comment on "blackmail" (she pays the day the orders move, and they move only if the oak goes back to Brant).
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label pv_poi_workroom
@@ -5562,6 +5075,8 @@ A stair of bare planks runs up the outside wall of the timber headquarters, past
 *else
   An older woman stands at the table with an iron pointer held over a chart, silver-framed spectacles low on her nose. Dark hair streaked iron-grey is drawn back in braids around two small horns of polished black stone. At a desk by the stove, an elven scribe copies a column of figures without looking up.
 
+A Cadre recruit waits by the door with a slate under one arm, and doesn't move until Ysolde gives her a nod.
+
 *if (squad = "cadre")
   She glances at your hands before your face. "Shut the door@{(ysolde_respect < 10) , Hands|}. That stove burns eleven pounds of coal a day. Ten and a half. I weigh it."
 *elseif (met_ysolde)
@@ -5581,6 +5096,12 @@ The pointer goes back to the chart, and the scribe's nib keeps scratching.
 *choice
   # Ask about the charts on the walls.
     *goto pv_workroom_charts
+  *if ((vane_timber_hint) and ((rotten_rib_quest_stage = "unstarted") and (not(ysolde_timber_briefed))))
+    # Tell her Vane sent you about the held-up timber orders.
+      *goto pv_workroom_timber
+  *if ((rotten_rib_quest_stage = "resolved") and ((has_diverted_timber_waybill) and (not(ysolde_timber_turned_in))))
+    # Lay the stamped waybill on her table.
+      *goto pv_workroom_timber_turnin
   *if ((ysolde_waterways_told) and ((ysolde_respect >= 25) and (not(ysolde_ostrand_told))))
     # Ask about the brass signet by the inkstand.
       *goto pv_workroom_signet
@@ -5624,10 +5145,532 @@ The pointer comes up again. "Ruler. By your elbow, there. Thanks."
 *page_break Back to the table…
 *goto pv_workroom_back
 
+*label pv_workroom_timber
+[b]◈ THE WORKROOM[/b]
+*line_break
+*set ysolde_timber_briefed true
+Ysolde sets the pointer down and looks at you over the spectacles for a moment longer than usual.
+
+"Vane sent you about the orders, then. Good, I asked him to." She taps the table. "Eleven days, and the Scales' dock clerks still say they've no barge space to spare. Odd, because last Marketday the Osprey, one of their own barges, left the Iron Wharves sheds riding eight inches lower than she came in." The scribe's nib doesn't pause. "Something heavy went onto her, and heavy things going downriver come with a paper that explains that usually list the manifest."
+
+She taps the pointer once on the table. "I want that paper. Not the clerk, not the cargo, the paper, with its seal whole. Whoever's name is on it can't call it an accident. If the timber ends up back where it belongs, the Scales' barge excuse is dead and the orders move, and I'll pay five silver the day they do."
+
+"The risk is yours," she adds. "If the yard hears the Cadre sent you, the orders stay stuck for good. There's a shipwright on Slipway Two losing money by the tide, and men who lose money talk, so start there. And shut that door properly on your way out."
+*page_break Back to the table…
+*goto pv_workroom_back
+
+*label pv_workroom_timber_turnin
+[b]◈ THE WORKROOM[/b]
+*line_break
+You unfold the waybill on the table and lay it flat under her pointer. The red wax of the factor's personal stamp has a clean edge all the way round.
+
+Ysolde doesn't touch it. She tilts her head and reads it where it lies, then lifts one corner with the tip of the pointer and checks the wax underneath.
+
+"Hendryk's own stamp. Not the yard clerk's mark, the factor's." She lets the corner fall. "Somebody put the factor's name on a lie, and he doesn't know yet. That's worth more than the oak."
+
+*if (rotten_rib_resolution = "blackmail")
+  "The oak's back on Brant's slip," she says. "So the Scales' barge excuse died this morning, and our quartermaster's orders moved at first bell." She opens a drawer, lays the waybill in it, and slides a small stack of silver marks across the table. "Five, as I said."
+*else
+  "The ship went out on green wood," she says. "Thirty people I can't put a number on." She is quiet for a moment. "The orders are still stuck, so there's nothing to pay for yet. But a paper with that stamp on it is worth keeping, and now somebody's keeping it."
+  She opens a drawer and lays the waybill inside.
+
+*if (not(ysolde_timber_turned_in))
+  *set ysolde_timber_turned_in true
+  *set has_diverted_timber_waybill false
+
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set ysolde_respect +5
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+
+*if (rotten_rib_resolution = "blackmail")
+  *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+    *set currency_add_amount 50
+    *gosub_scene economy currency_add
+    *set currency_txn_locked true
+    *set locked_currency_txn_page_id page_id
+
+[b][📜 Ysolde's Regard +5][/b]
+*if (rotten_rib_resolution = "blackmail")
+  *line_break
+  [b][💰 Paid by Ysolde: +5 Silver Marks][/b]
+
+*page_break Back to the table…
+*goto pv_workroom_back
+
 *label pv_workroom_shut
 [b]◈ THE WORKROOM[/b]
 *line_break
 The door at the top of the outside stair is shut, and the shutters are closed over the windows. A slate hangs from a nail beside it: Open by day.
+*page_break Back across the compound…
+*goto port_valen_hub
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment THE ARMORY SHED (pv_poi_armory): Sergeant Varren's place in the compound, the way the workroom is Ysolde's. Open to every squad, by day after
+*comment the morning drill (Pre-Dawn, Night and Late Night shut it, as the hub's pv_is_night does; Morning and Midday he is on the drill square, leaders_at_drill,
+*comment so the hub button leads to pv_armory_away), and the hub button stays and says so.
+*comment A place and personal talk, no quest yet: his assignments will live here, but they wait for a quest that exists. Each topic is one flag and one
+*comment gated paragraph in his lorebook entry ("varren"), the same shape as the workroom:
+*comment   varren_advice_told     what he would tell a recruit who wants to live; reads back on visited_varren (the camp-night talk) or not.
+*comment   varren_alderford_told  his view of the player's Alderford work, built from what the player actually did (up to three of the deeds below).
+*comment   varren_redfort_told    varren_respect >= 10: the winter siege at Redfort. Canon from battle_black_sinks.txt: he drilled the file that went in,
+*comment                          and never speaks the names. The forty and the eleven are new.
+*comment Nothing here changes varren_respect or pays anything: the talk is the point.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*comment Reached from the hub while the squad leaders are on the drill square (leaders_at_drill). Costs no time and sets nothing.
+*label pv_workroom_away
+[b]◈ THE WORKROOM[/b]
+*line_break
+The door at the top of the outside stair stands ajar. The elven scribe doesn't look up from his column. "The handler's on the yard with the Cadre," he says. "She'll be back when the drill's done." His nib keeps moving.
+*page_break Back across the compound…
+*goto port_valen_hub
+
+*label pv_poi_armory
+*looplimit 100000
+*set current_district "compound"
+*set met_varren true
+*gosub_scene calendar update_hub_condition
+[b]◈ THE ARMORY SHED[/b]
+*line_break
+[b][⏳ Port Valen Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
+
+A long timber shed stands against the seawall with its double doors propped open on iron stays. Inside it is cold and smells of oil and whetstone dust. Spears stand in racks along one wall, mail shirts hang from pegs along the other, and a brine trough by the door holds an axe-head wrapped in rag. At the far end an apprentice armorer works a foot-driven grindstone behind a plank partition, and beside it a bench is covered with strap leather, buckles and a half-mended shield rim.
+
+*if (weather_wet)
+  Rain ticks on the shingles over the racks.
+
+A corporal stands just inside the door with a notched tally-board, ticking off soldiers as they draw spare straps and buckles from the armorer. He looks you over once, then jerks his chin toward the bench at the far end.
+
+Sergeant Varren sits at the bench with the shield rim across his knees, working a new strap through the rivets with thick fingers. He doesn't look up when you come in.
+
+*if (varren_respect < 6)
+  "Well?" he says, to the rivet.
+*elseif (squad = "vanguard")
+  "Shut the door behind you," he says. "You're letting my heat out."
+*else
+  "You've got a question," he says. "I can tell by how you're standing."
+
+*goto pv_armory_menu
+
+*label pv_armory_back
+[b]◈ THE ARMORY SHED[/b]
+*line_break
+The strap goes back through the rivet, and the grindstone behind the partition starts up again.
+
+*label pv_armory_menu
+*choice
+  *if (not(varren_advice_told))
+    # Ask what he'd tell a recruit who wants to live.
+      *goto pv_armory_advice
+  *if (not(varren_alderford_told))
+    # Ask what he made of the work you did in Alderford.
+      *goto pv_armory_alderford
+  *if ((varren_respect >= 10) and (not(varren_redfort_told)))
+    # Ask about Redfort.
+      *goto pv_armory_redfort
+  # Head back across the compound.
+    *goto port_valen_hub
+
+*label pv_armory_advice
+[b]◈ THE ARMORY SHED[/b]
+*line_break
+*set varren_advice_told true
+
+Varren braces the shield between his knees and hauls the new strap through to the last rivet. He leans his weight against it once, then sets the shield against the bench.
+
+*if (visited_varren)
+  "You came to my fire before the causeway." He reaches for another length of leather. "Remember what you asked me?"
+
+  "About the ground."
+
+  "Aye. Everyone else wanted to know if we'd win." He jerks his chin toward the stool opposite. "Sit."
+*else
+  "You weren't at my fire before the causeway." He says it without accusation, measuring a strip of leather against his forearm. "Most weren't. Men like hearing they're brave more than they like hearing how to stay alive." He jerks his chin toward the stool opposite. "Sit. Might as well hear it now."
+
+The shed smells of lamp oil, wet wool, and the vinegar Varren uses to clean rust from neglected mail. Somewhere beyond the partition, a hammer rings twice against an anvil.
+
+"Four things." He holds up a scarred finger. "Keep your feet dry. You'd be amazed how many good soldiers I've watched lose a march to bad boots."
+
+A second finger. "Keep your iron clean. Rust doesn't care that you're tired." He taps the strap across his knee. "And learn to mend it yourself. A strap that parts in the field won't wait for the armorer."
+
+A third. "Stay with your file. If you can reach the man beside you, he can reach you."
+
+The fourth stays raised a moment. "And mind your open side."
+
+You wait.
+
+Varren lowers his hand. "That's the one that kills you."
+
+*if (squad = "vanguard")
+  He picks up the shield again and runs his thumb beneath the new strap. "You're Vanguard now. When the shields close, don't stare at the bastard in front of you. You know where he is. Know where the man beside you is. Keep the gap shut."
+
+  "And trust the other end of the line?"
+
+  "You'd better. Can't hold both ends yourself."
+*else
+  He picks up the shield again and runs his thumb beneath the new strap. "You're not Vanguard. Doesn't matter. Sooner or later you'll be standing beside us. When that happens, don't make the man next to you wonder where you've gone."
+
+He reaches for the next shield.
+
+"That's it?"
+
+"That's it."
+
+"Four things."
+
+"Four things." He bends over the next buckle. "Everything else is just finding more expensive ways to learn them."
+
+*page_break Back to the bench…
+*goto pv_armory_back
+
+
+*label pv_armory_alderford
+[b]◈ THE ARMORY SHED[/b]
+*line_break
+*set varren_alderford_told true
+*temp av_count 0
+
+Varren threads a fresh strap through a shield grip, works it back and forth, then gives it a hard pull.
+
+"I hear things," he says, reaching for the awl. "Sergeant who doesn't hear things usually ends up surprised. I don't like surprises."
+
+*if ((maura_cellar_cleared) and (av_count < 3))
+  *set av_count +1
+  The awl stops against the leather. "Maura's cellar. Heard about that."
+
+  "People talk."
+
+  "People always talk." He punches the awl through and twists it free. "No light. No room to form up. Can't see what's behind you, can't get a shield around what's in front of you." He shakes his head. "Give me rain and an open field any day."
+
+  "Thought you hated open ground."
+
+  "I do." He reaches for the next rivet. "That's how much I hate cellars."
+
+*page_break Back to the bench…
+*goto pv_armory_back
+
+
+*label pv_armory_redfort
+[b]◈ THE ARMORY SHED[/b]
+*line_break
+*set varren_redfort_told true
+
+Varren is halfway through setting a rivet when you mention Redfort.
+
+The hammer doesn't fall. For a few seconds there is only the hiss of the brazier and the scrape of someone sorting spearheads behind the partition.
+
+"Redfort." He sets the hammer down. "Winter siege. Three months."
+
+His milk-pale eye stays on the shield between his knees. "Couldn't dig deep because the ground froze. Couldn't light enough fires because they'd range the engines on the smoke. By the end we were boiling harness leather."
+
+He rubs a thumb over the unfinished rivet. "Forty in my file when we went in. Eleven came out."
+
+You say nothing. Somewhere behind the partition, a hammer starts up, then falters.
+
+Varren reaches for his own hammer again. "You want their names?"
+
+"Do you want to tell me?"
+
+"No." The hammer comes down once. "I remember them. That's enough."
+
+Another strike seats the rivet. "The next file gets drilled harder. Then the next one harder than that." He turns the shield over and checks his work. "That's what I do with the dead."
+
+For a moment, neither of you speaks. Then he pushes the finished shield toward the rack with his boot.
+
+"Hand me that buckle."
+
+You pass it to him.
+
+"Good." He takes it and reaches for the next shield. "Now we're doing something useful."
+
+*page_break Back to the bench…
+*goto pv_armory_back
+
+*label pv_armory_shut
+[b]◈ THE ARMORY SHED[/b]
+*line_break
+The double doors of the armory shed are chained, and a sentry under the lantern shakes his head before you reach them. "Opens at first bell," he says.
+*page_break Back across the compound…
+*goto port_valen_hub
+
+*comment Reached from the hub while the squad leaders are on the drill square (leaders_at_drill). Costs no time and sets nothing.
+*label pv_armory_away
+[b]◈ THE ARMORY SHED[/b]
+*line_break
+The armory shed is open, and the apprentice armorer is working the grindstone behind the partition. A corporal with a notched tally-board counts spare buckles out of a bin and doesn't look round. "Sergeant's on the square with the Vanguard," he says. "Back when the drill's done."
+*page_break Back across the compound…
+*goto port_valen_hub
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment THE WATCHTOWER TOP ROOM (pv_poi_tower): Kestrel's place, the way the armory shed is Varren's and the workroom Ysolde's. Open to every
+*comment independent operative, but guarded: a sentry at the ladder and a scout at the head of it, who admit only Vane's hired hands. Because every
+*comment player is one by now, the guard is flavor, not a lock. Her hours are the opposite of the other two: out on the drill square in the morning
+*comment (leaders_at_drill), out past the gate in the afternoon, and in the tower at Dusk and through the dark hours, when the Scouts go out. The hub
+*comment button stays listed and leads to pv_tower_away otherwise. A place and personal talk, no quest yet: the Silt-Gate job will start here.
+*comment Each topic is one flag and one gated paragraph in her lorebook entry ("kestrel"):
+*comment   kestrel_advice_told  what she sees from the shutter; reads back on visited_bivouac_kestrel (the skiff talk) or not.
+*comment   kestrel_sinks_told   her view of the Sinks and Alderford, from what the player did (up to three deeds).
+*comment   kestrel_origin_told  kestrel_respect >= 6: born in a fen town, guide to the legion at Gryke, the name the legion gave her.
+*comment Her life story (2026-10-06): half-elf, past sixty winters; fen-born mother, elf father who left; guided the legion at fifteen; the Empire's collapse,
+*comment then years among fen quarrels; guided Vane's company through the Sedge in its second year and signed her own terms, no rank. No family left.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label pv_poi_tower
+*looplimit 100000
+*set current_district "compound"
+*set met_kestrel true
+*gosub_scene calendar update_hub_condition
+[b]◈ THE WATCHTOWER[/b]
+*line_break
+[b][⏳ Port Valen Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
+
+A sentry in soot-dark mail stands at the foot of the tower ladder with a poleaxe grounded beside him. He looks at your face, not your badge, and steps aside. "You've been cleared," he says, to nobody in particular. "Up you go. Mind your step."
+
+The ladder comes up through a trapdoor into a small timber room under the roof. The shutters are open on all four sides, and the wind comes straight through them with a cold smell of tar and low tide. A rack by the trapdoor holds a row of signal lanterns with their hoods off. A bench has been worn smooth by years of sitting. On an upturned crate in the corner, someone has scratched a map of the inland road in charcoal, and half of it has already been rubbed away.
+
+*if (weather = "Fog")
+  Fog has filled the shutters, and the yard below has gone to a murmur of voices and nothing else.
+*elseif (weather_wet)
+  Rain slants in under the eaves and beads on the lantern rack.
+*elseif (time_period = "Dusk")
+  The last light lies along the seawall, and the braziers in the yard are being lit one by one.
+*else
+  Beyond the shutters the yard is a scatter of braziers, and past the wall the harbor lights shiver on the water.
+
+A scout sits against the wall beside the trapdoor with a cased bow across her knees. She has watched every step of your climb, and she doesn't stop now.
+
+Kestrel sits in the shutter that faces the inland road, one boot up on the sill, looking at something you can't see. She doesn't turn around.
+
+*goto pv_tower_menu
+
+*label pv_tower_back
+[b]◈ THE WATCHTOWER[/b]
+*line_break
+The wind rubs a little more of the charcoal off the crate, and the scout by the trapdoor goes back to watching the ladder.
+
+*label pv_tower_menu
+*choice
+  *if ((silt_gate_quest_stage = "unstarted") and (not(kestrel_silt_briefed)))
+    # Tell her Vane said she has a use for you.
+      *goto pv_tower_silt
+  *if ((has_silt_gate_payout_slip) and (not(kestrel_slip_turned_in)))
+    # Lay the broker's payout slip on the bench.
+      *goto pv_tower_silt_turnin
+  *if (not(kestrel_advice_told))
+    # Ask what she sees from up here.
+      *goto pv_tower_advice
+  *if (not(kestrel_sinks_told))
+    # Ask what she made of the Sinks and the road to Alderford.
+      *goto pv_tower_sinks
+  *if ((kestrel_respect >= 6) and (not(kestrel_origin_told)))
+    # Ask where she's from.
+      *goto pv_tower_origin
+  # Climb back down.
+    *goto port_valen_hub
+
+*label pv_tower_advice
+[b]◈ THE WATCHTOWER[/b]
+*line_break
+*set kestrel_advice_told true
+*if (squad = "scouts")
+  *temp kt_base kestrel_respect
+  *if (kestrel_slip_turned_in)
+    *set kt_base (kestrel_respect - 5)
+  *if (kt_base >= 12)
+    "${name}," Kestrel says, not turning. "I gave your name to the Captain, since you've climbed to the top of my list of new recruits I actually like. He wants secret agents."
+  *elseif (kt_base >= 6)
+    "${name}," Kestrel says, not turning. "You've kept your feet quiet, which is more than most manage. The Captain wants secret operatives. I'm one of the people that gave him your name."
+  *elseif (kt_base >= 0)
+    "${name}," Kestrel says, not turning. "You haven't let me down, and you haven't impressed me either. We'll see if that changes."
+  *else
+    "${name}," Kestrel says, flat, not turning. "You killed that woman on the gate wall. I said messy, and I haven't changed my mind." She lets a moment pass. "You're one of mine regardless. The Captain asked who I'd send, and everyone else in my unit I actually like."
+*elseif (kestrel_skiff = "light_feet")
+  "${name}." Kestrel says it as if testing the weight of it, not turning. "Light feet, at the skiff. In that fog I thought I'd be sending someone to fish you out of the reeds. You impressed me. The Captain wants hands with a sharp mind and initiative, so I said your name."
+*elseif (kestrel_skiff = "good_questions")
+  "${name}," Kestrel says, not turning. "Asking good questions is a good way to stay alive. The Captain wants hands that aren't on his roster. You had a good question and a sharp mind, so I said your name."
+*elseif (kestrel_skiff = "delivered")
+  "${name}, right?" Kestrel says, not turning. "I remembered you. You left the bodkins on the skiff and went off without a word."
+*elseif (kestrel_skiff = "stumbled")
+  "${name}," Kestrel says, not turning. "The root. Loudest thing in the Sinks that night, and that's counting the gatehouse. I nearly put an arrow through you." She shrugs. "You're still here. I'll let it go."
+*elseif (kestrel_skiff = "brushed_off")
+  "${name}," Kestrel says, not turning. "I was short with you at the skiff. It had been a long night and a longer fog." She shrugs. "Come in, then. I've nothing against people who ask."
+*elseif (spared_gate_squatter)
+  "${name}," Kestrel says, not turning. "I know your name. I know everyone's, it's the job. We've never talked, but I know your face. You let that woman go on the gate wall, and a dozen people came out of the reeds behind her. I noticed that, and I told Vane so when he asked."
+*else
+  "${name}," Kestrel says, not turning. "I know your name. I know everyone's, it's the job. We've never talked, but I know your face."
+
+She hooks a boot round the stool and drags it a few inches along the boards. "Over there. Not that shutter, you'll block the road."
+
+You crouch at the next shutter. The compound lies below you, small and busy: carts, a soldier shouting at nobody, smoke going sideways off the cookhouse roof.
+
+"The sentry on the wall-walk," she says. "What's he doing?"
+
+You look. "Nothing."
+
+"For how long?"
+
+You look for longer. "Since we sat down."
+
+"Since before that." She scratches her ear. "He's either asleep on his feet or waiting for someone. When you watch someone for long enough, hours, days, months and years, you begin to pick up and learn things that even they don't know about themselves."
+
+"That sounds exhausting."
+
+"It is. I'm told I'm terrible company. I stare too much. I'd get used to staring at people at odd hours, if you'll be working with me."
+
+*page_break Back to the shutter…
+*goto pv_tower_back
+
+*label pv_tower_sinks
+[b]◈ THE WATCHTOWER[/b]
+*line_break
+*set kestrel_sinks_told true
+*temp kt_count 0
+Kestrel takes a strip of dried eel out of her belt, bites off half, and holds the rest out to you without looking round. You take it. It's like chewing a boot.
+
+"I hear things," she says. "Mostly because I'm sat up here with nothing else to do."
+
+*if (spared_gate_squatter)
+  *set kt_count +1
+  "That woman on the gate wall. You let her go." She nods slowly. "I wasn't sure you would. A dozen of them came out of the reeds behind her before you'd gone twenty yards. Saved my people a very wet morning."
+
+*if ((maura_cellar_cleared) and (kt_count < 3))
+  *set kt_count +1
+  "I had two lads on the roof across from Maura's when you went down that cellar. They had a bet on whether you'd come back up."
+
+*if (((rennick_disposition = "intimidated") or (rennick_disposition = "paid_off")) and (kt_count < 3))
+  *set kt_count +1
+  "And the bailiff at Talia's loft. I heard you never raised your voice." She looks at the road. "People hear that and think it was easy."
+*elseif ((rennick_disposition = "humiliated") and (kt_count < 3))
+  *set kt_count +1
+  "And the bailiff at Talia's loft. I heard your fists did the talking." She chews. "He'll be careful of anyone in our colors now."
+*elseif ((rennick_disposition = "hostile") and (kt_count < 3))
+  *set kt_count +1
+  "And the bailiff at Talia's loft. You left him angry. He's the sort who doesn't forget." She turns the eel over in her fingers. "I'd watch your back if you ever return to Alderford."
+
+*if ((alder_river_chain_cleared) and (kt_count < 3))
+  *set kt_count +1
+  "The chains in the river, too. My people walked that bank two days and never saw it." She grunts. "Ysolde found it from a boat with a length of rope. As much she and I are friends, I do hate when she upstages me."
+
+*if (kt_count = 0)
+  "Honestly, I haven't much on you," she admits. "Keep your head down. It works more often than you'd think."
+*else
+  "That's what I've got," she says, and brushes the crumbs off her knee. "I'd stop there if I were you. I've no more eel."
+
+*page_break Back to the shutter…
+*goto pv_tower_back
+
+*label pv_tower_origin
+[b]◈ THE WATCHTOWER[/b]
+*line_break
+*set kestrel_origin_told true
+Kestrel doesn't answer for a while. The scout by the trapdoor shifts and finds something very interesting about her bow.
+
+"Fen," she says at last. "East of the causeway, and then a long way further. You wouldn't find it, and you wouldn't like it if you did." She tips her head at the dark past the inland road. "Houses on stilts. In the spring the water comes up through the floor and you sleep on the table."
+
+"Who with?"
+
+"My mother. She poled eels to market."
+
+"And your father?"
+
+"Passed through. An elf, with one of those survey parties that the Empire sent out, all brass and measuring." She says it the way you'd mention the weather. "He left my mother pregnant and left before she even knew she was pregnant."
+
+She picks at the crate with a thumbnail, and the charcoal comes away in little black flakes. "Half-elf in a place that small. Everyone looked and nobody spoke. So I was on the water a lot. Turns out that's a job, if you know which reeds will hold a boat."
+
+"That's how I ended up in the Empire's Legion at Gryke. An old fort. I was fifteen." Her mouth twitches. "They'd lost two patrols in the mire and were short of people who weren't drowned. Pay was bad and the food was worse. I'd never been so well off."
+
+"Is Kestrel really your name?"
+
+"It's what they called me. I used to stand at the edge of open water for an age, looking, before I put a foot in. My commander at the time said I looked like a bird over a ditch." She almost smiles. "The name Kestrel stuck."
+
+"And the other one?"
+
+"Stays where I left it." She turns back to the road. "Don't take it personally."
+
+*page_break Back to the shutter…
+*goto pv_tower_back
+
+*label pv_tower_silt
+[b]◈ THE WATCHTOWER[/b]
+*line_break
+*set kestrel_silt_briefed true
+Kestrel turns from the shutter for the first time since you climbed up, and looks you over as if you were a stretch of road.
+
+"Yes, what Vane sent you for." It isn't a question. She jerks her head at the stool.
+
+"Down on the quay, by the customs tower, the dockmaster has an issue the Watch is either too busy or too corrupt to solve. He's a lovely fellow, shouts at clerks. He's got smugglers coming in through the drain under Dredge-End at high tide, steel and spirits, and he wants them stopped. I think the Watch has the right idea here to ignore it. It would be like trying to kiss the wind, attempting to stop the smuggling of alcohol." She picks a splinter off the sill.
+
+"And you want me to look into this? To kiss the wind? What do you want out of this?"
+
+"Yes, take the job, certainly. He'll talk to you, and nobody asks why a stranger's skulking round the canals. Just need you to do it once. It'll probably drop the illegal, untaxed supply of it for a day or two." She looks at you properly. "I want the people who are making this possible in our pockets. The Watch is corrupt and no doubt is accepting bribes. Find who these people are. Just don't hand him anything. He'd do the decent thing with it, and I'd rather he didn't."
+
+"And what do I get?"
+
+"Five silver if you bring names."
+
+*page_break Back to the shutter…
+*goto pv_tower_back
+
+*label pv_tower_silt_turnin
+[b]◈ THE WATCHTOWER[/b]
+*line_break
+You unfold the strip of wax vellum and lay it on the bench between you.
+
+Kestrel doesn't touch it at first. She holds it to the lantern and reads it, lips moving a little, then rubs her thumb across the wax to feel where it was pressed.
+
+"Kray," she says. "And Pell. I'd have put money on Pell." She breathes out through her nose. "Six marks a Marketday, the pair of them. Cheaper than I'd feared."
+
+She folds the vellum into her coat and counts five silver marks onto the bench. "As agreed."
+
+*if (silt_gate_face_seen)
+  "Did they see you?"
+
+  You tell her about the porters and the lanterns.
+
+  "Then keep clear of Dredge-End for a few days." She shrugs. "Faces fade. The names on this won't."
+*else
+  "Neither of them saw you take it?"
+
+  You tell her they didn't.
+
+  "Good. Keep it that way."
+
+*if (not(kestrel_slip_turned_in))
+  *set kestrel_slip_turned_in true
+  *set kestrel_watch_leverage true
+  *set has_silt_gate_payout_slip false
+  *set silt_gate_bounty_claimed true
+  *set silt_gate_turned_in_day campaign_day
+
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set kestrel_respect +5
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount 50
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+
+[b][📜 Kestrel's Regard +5][/b]
+*line_break
+[b][💰 Paid by Kestrel: +5 Silver Marks][/b]
+
+*page_break Back to the shutter…
+*goto pv_tower_back
+
+*comment Reached from the hub in the morning and afternoon (see the comment above pv_poi_tower). Costs no time and sets nothing.
+*label pv_tower_away
+[b]◈ THE WATCHTOWER[/b]
+*line_break
+*gosub_scene calendar update_hub_condition
+The sentry at the foot of the ladder shakes his head before you have crossed the yard.
+*if (leaders_at_drill)
+  "She's on the square with the Scouts," he says. "Come back after drill."
+*else
+  "She's out past the gate," he says, and nothing more. "Come back at dusk."
 *page_break Back across the compound…
 *goto port_valen_hub
 
@@ -5799,11 +5842,16 @@ He settles back in his chair, cold grey eyes measuring you from boots to collar.
 "The Council holds the charter and the purse, and the Scales hold the Council. The Watch holds the street, thinly. The Black Oath holds the canals." He counts them off on three blunt fingers. "Shake whatever hand you have to. I only care that the Carrion holds the leash when you wash up."
 
 *if (squad = "vanguard")
-  "You're off the muster roll, not off Varren's. If you want a second opinion on a fight, or gear from the company stores, go to his quarter."
+  "You're off the muster roll, not off Varren's. If you want a second opinion on a fight, or gear from the company stores, find him in the armory shed."
 *if (squad = "scouts")
-  "You're off the muster roll, not off Kestrel's. If you need routes or word from the streets, go to her loft."
+  "You're off the muster roll, not off Kestrel's. If you need routes or word from the streets, find her in the watchtower."
 *if (squad = "cadre")
   "You're off the muster roll, not off Ysolde's. Contract audits or arcane counsel, go to her workroom."
+
+*set vane_timber_hint true
+"Whatever your squad, see Ysolde this week," Vane adds. "The Scales have held our timber and forage orders for eleven days and say they've no barge space. She says the figures don't fit. Every clerk on those wharves knows a raven badge when it walks up, and you're not wearing one."
+
+"And go up the watchtower after dark," Vane adds. "Kestrel keeps late hours, and she has a use for someone who isn't on my roster."
 
 "Two rules," Vane adds. "The first is the captain's, the one she read out at the pier: no private collections, no unsanctioned arrests, no old debts settled under city colors. Our contract with the city pays too well to lose over you. The second is mine. If the Watch takes you, I don't know your name."
 
