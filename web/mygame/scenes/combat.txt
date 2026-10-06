@@ -252,6 +252,15 @@
 *set combat_enemy1_vulnerable_type_1 combat_enemy_vulnerable_type_1
 *set combat_enemy1_vulnerable_type_2 combat_enemy_vulnerable_type_2
 *set combat_active_target 1
+*comment Existing content remains on its authored four-band scale until a fight explicitly sets expanded6. The
+*comment six-band lane has room for terrain and manoeuvre without silently turning old "Long Range (3)" starts
+*comment into Mid-Range encounters.
+*set combat_max_range 3
+*set combat_lane_max_position 6
+*if (combat_range_mode = "expanded6")
+  *set combat_max_range 5
+  *set combat_lane_max_position 8
+*set combat_range_mode_used combat_range_mode
 *gosub_scene combat_movement combat_initialize_shared_lane
 *comment Terrain randomisation is resolved once, after every actor has an opening lane coordinate and before initiative.
 *comment Fixed is the default, so existing authored encounters remain exactly as they are until they opt in.
@@ -570,8 +579,12 @@
 *set combat_choke_withdraw_locked false
 *set locked_combat_choke_withdraw_page_id 0
 *set combat_lane_player_position 3
+*set combat_range_mode "legacy4"
+*set combat_max_range 3
+*set combat_lane_max_position 6
 *set combat_lane_ready false
 *set combat_terrain_layout "fixed"
+*set combat_terrain_layout_preview ""
 *temp fcl_terrain_i 1
 *label fight_cleanup_terrain_loop
 *if (fcl_terrain_i <= combat_terrain_slot_cap)
@@ -948,7 +961,8 @@
 *set {(("combat_enemy" & combat_active_target) & "_hp")} combat_enemy_hp
 *return
 
-*comment Range tiers: 0 Engaged, 1 Close, 2 Mid-Range, 3 Long Range. A melee-only combatant closes exactly one
+*comment Legacy fights use 0 Engaged, 1 Close, 2 Mid-Range, 3 Long Range; expanded6 uses 0 Engaged, 1 Close,
+*comment 2 Near, 3 Mid-Range, 4 Far, 5 Long Range. A melee-only combatant closes exactly one
 *comment tier per Push Forward (player) or per turn (an enemy, combat_next_turn) -- never straight to Engaged --
 *comment so a fight that opens someone at Mid-Range or Long Range costs multiple turns to reach, not one. Ranged
 *comment attacks otherwise work at every tier alike, which is why nothing here ever needs a ranged combatant to
@@ -1530,8 +1544,8 @@
 *temp decs_player_range (decs_enemy_pos - combat_lane_player_position)
 *if (decs_player_range < 0)
   *set decs_player_range (0 - decs_player_range)
-*if (decs_player_range > 3)
-  *set decs_player_range 3
+*if (decs_player_range > combat_max_range)
+  *set decs_player_range combat_max_range
 *set {(("combat_enemy" & decs_slot) & "_range")} decs_player_range
 *set combat_enemy_range decs_player_range
 *temp decs_ally_name {(("combat_ally" & combat_enemy_chase_target) & "_name")}
@@ -2217,10 +2231,10 @@
 *comment the Long Range archer while a swordsman is Close reads as pushable-from-Close, when the move that actually
 *comment fires is on the archer. So the *_lock temps freeze the projection at the chosen target's tier and stop
 *comment the scan from touching that direction, exactly reproducing the skip.
-*comment Sentinel is 4, one above the widest real tier (3), so it can never collide with a live range value and
-*comment the projection guard is a plain `< 4` rather than a negative-literal comparison.
-*temp cmc_chosen_push 4
-*temp cmc_chosen_fall 4
+*comment The sentinel is one above the active maximum, so it can never collide with a live range value.
+*temp cmc_range_sentinel (combat_max_range + 1)
+*temp cmc_chosen_push cmc_range_sentinel
+*temp cmc_chosen_fall cmc_range_sentinel
 *temp cmc_lock_push false
 *temp cmc_lock_fall false
 *comment Fresh distance to the slot the NEXT action will actually target, resolved HERE (before the *choice) so
@@ -2291,7 +2305,7 @@
       *if (cmc_chosen_range > 0)
         *set cmc_chosen_push cmc_chosen_range
         *set cmc_lock_push true
-      *if (cmc_chosen_range < 3)
+      *if (cmc_chosen_range < combat_max_range)
         *set cmc_chosen_fall cmc_chosen_range
         *set cmc_lock_fall true
 *temp cmc_i 1
@@ -2302,11 +2316,11 @@
     *temp cmc_range {(("combat_enemy" & cmc_i) & "_range")}
     *if (cmc_range > 0)
       *set combat_can_push_forward true
-      *if ((cmc_lock_push = false) and ((cmc_chosen_push = 4) or (cmc_range < cmc_chosen_push)))
+      *if ((cmc_lock_push = false) and ((cmc_chosen_push = cmc_range_sentinel) or (cmc_range < cmc_chosen_push)))
         *set cmc_chosen_push cmc_range
-    *if (cmc_range < 3)
+    *if (cmc_range < combat_max_range)
       *set combat_can_fall_back true
-      *if ((cmc_lock_fall = false) and ((cmc_chosen_fall = 4) or (cmc_range < cmc_chosen_fall)))
+      *if ((cmc_lock_fall = false) and ((cmc_chosen_fall = cmc_range_sentinel) or (cmc_range < cmc_chosen_fall)))
         *set cmc_chosen_fall cmc_range
   *set cmc_i + 1
   *goto combat_movement_check_loop
@@ -2322,7 +2336,7 @@
 *temp combat_push_to_name ""
 *temp combat_fall_from_name ""
 *temp combat_fall_to_name ""
-*if (cmc_chosen_push < 4)
+*if (cmc_chosen_push < cmc_range_sentinel)
   *gosub_scene combat_movement combat_range_name cmc_chosen_push
   *set combat_push_from_name combat_range_display_name
   *temp cmc_push_to (cmc_chosen_push - 1)
@@ -2330,12 +2344,12 @@
     *set cmc_push_to 0
   *gosub_scene combat_movement combat_range_name cmc_push_to
   *set combat_push_to_name combat_range_display_name
-*if (cmc_chosen_fall < 4)
+*if (cmc_chosen_fall < cmc_range_sentinel)
   *gosub_scene combat_movement combat_range_name cmc_chosen_fall
   *set combat_fall_from_name combat_range_display_name
   *temp cmc_fall_to (cmc_chosen_fall + 1)
-  *if (cmc_fall_to > 3)
-    *set cmc_fall_to 3
+  *if (cmc_fall_to > combat_max_range)
+    *set cmc_fall_to combat_max_range
   *gosub_scene combat_movement combat_range_name cmc_fall_to
   *set combat_fall_to_name combat_range_display_name
 *comment Auto-end: silently loops back to the queue once there's truly nothing left to spend a resource on, not
@@ -2572,7 +2586,7 @@
       *comment is still what the epithet below names, so the narration is unchanged.
       *gosub_scene combat_movement combat_shift_all_ranges "fallback"
       *gosub fight_sync_target_in
-      *if (combat_enemy_range >= 3)
+      *if (combat_enemy_range >= combat_max_range)
         You break away hard, opening the last of the distance until ${combat_enemy_epithet} is barely in reach.
         *line_break
         [b][🏃 You Fall Back — Long Range][/b]
@@ -3721,7 +3735,10 @@ ${use_text}
     *comment the keep-distance check. An engaged/intercepting melee ally still retains full priority below.
     *if ((combat_enemy_weapon_type = "ranged") and (combat_intercepting_ally > 0))
       *set cnt_terrain_target_position {(("combat_ally" & combat_intercepting_ally) & "_position")}
-    *gosub_scene combat_ai combat_choose_terrain_step "enemy" cnt_slot cnt_terrain_target_position cnt_terrain_must_close cnt_terrain_keep_distance
+    *if (combat_enemy_weapon_type = "ranged")
+      *gosub_scene combat_ai combat_choose_ranged_tactical_step "enemy" cnt_slot cnt_terrain_target_position
+    *else
+      *gosub_scene combat_ai combat_choose_terrain_step "enemy" cnt_slot cnt_terrain_target_position cnt_terrain_must_close cnt_terrain_keep_distance
     *if (combat_player_surprise) and (cnt_first_pass)
       *comment Three variants, via *rand -- none lead with combat_enemy_epithet (usually a lowercase "the X"),
       *comment so the printed sentence never opens on an uncapitalized word.
@@ -3818,7 +3835,7 @@ ${use_text}
       *comment A genuinely cornered archer has combat_enemy_range 0 and therefore skips this, preserving the
       *comment existing quick-draw/retreat behavior above.
       *if (((combat_enemy_weapon_type = "ranged") and (combat_enemy_range > 0)) and (combat_ai_terrain_step_direction != "none"))
-        *gosub_scene combat_movement combat_lane_move_enemy_relative_to_player cnt_slot combat_ai_terrain_step_direction
+        *gosub_scene combat_movement combat_lane_move_enemy_to_position cnt_slot combat_ai_terrain_step_destination
         *gosub_scene combat_movement combat_range_name combat_enemy_range
         *if (combat_ai_terrain_step_reason = "cover")
           [b][🛡️ ${combat_enemy_name} Moves to Cover — ${combat_range_display_name}][/b]
@@ -3826,6 +3843,8 @@ ${use_text}
           [b][⛰️ ${combat_enemy_name} Takes High Ground — ${combat_range_display_name}][/b]
         *if (combat_ai_terrain_step_reason = "chokepoint")
           [b][🚪 ${combat_enemy_name} Takes the Chokepoint — ${combat_range_display_name}][/b]
+        *if (combat_ai_terrain_step_reason = "avoid_melee_threat")
+          [b][🏃 ${combat_enemy_name} Keeps Distance — ${combat_range_display_name}][/b]
         *line_break
       *gosub_scene combat_dice resolve_enemy_attack_on_ally combat_intercepting_ally
       *gosub_scene combat_prose fight_narrate_ally_attack "enemy" cnt_slot "ally" combat_intercepting_ally combat_enemy_atk_on_ally_hit
@@ -3941,7 +3960,7 @@ ${use_text}
       *comment Ranged terrain users can reposition one legal lane step and still take their normal attack. The
       *comment chooser refuses a step into melee range, so this cannot bypass the existing quick-draw/retreat rules.
       *if ((combat_enemy_weapon_type = "ranged") and (combat_ai_terrain_step_direction != "none"))
-        *gosub_scene combat_movement combat_lane_move_enemy_relative_to_player cnt_slot combat_ai_terrain_step_direction
+        *gosub_scene combat_movement combat_lane_move_enemy_to_position cnt_slot combat_ai_terrain_step_destination
         *gosub_scene combat_movement combat_range_name combat_enemy_range
         *if (combat_ai_terrain_step_reason = "cover")
           [b][🛡️ ${combat_enemy_name} Moves to Cover — ${combat_range_display_name}][/b]
@@ -4124,9 +4143,9 @@ ${use_text}
         *comment Ranged allies may step onto a better adjacent terrain coordinate before shooting. The shared chooser
         *comment enforces capacity and keeps them outside their target's coordinate; this is not a second attack or Dash.
         *if (cnt_a_weapon = "ranged")
-          *gosub_scene combat_ai combat_choose_terrain_step "ally" cnt_slot cnt_a_target_position false true
+          *gosub_scene combat_ai combat_choose_ranged_tactical_step "ally" cnt_slot cnt_a_target_position
           *if (combat_ai_terrain_step_direction != "none")
-            *gosub_scene combat_movement combat_lane_step_ally_from_position cnt_slot combat_active_target combat_ai_terrain_step_direction
+            *gosub_scene combat_movement combat_lane_move_ally_to_position cnt_slot combat_active_target combat_ai_terrain_step_destination
             *set cnt_a_range {(("combat_ally" & cnt_slot) & "_range")}
             *if (combat_ai_terrain_step_reason = "cover")
               [b][🛡️ ${combat_attacker_name} Moves to Cover][/b]
@@ -4134,6 +4153,8 @@ ${use_text}
               [b][⛰️ ${combat_attacker_name} Takes High Ground][/b]
             *if (combat_ai_terrain_step_reason = "chokepoint")
               [b][🚪 ${combat_attacker_name} Takes the Chokepoint][/b]
+            *if (combat_ai_terrain_step_reason = "avoid_melee_threat")
+              [b][🏃 ${combat_attacker_name} Keeps Distance][/b]
             *line_break
         *if (not(cnt_a_weapon = "ranged"))
           *gosub_scene combat_ai combat_choose_terrain_step "ally" cnt_slot cnt_a_target_position true false
@@ -4372,10 +4393,11 @@ ${use_text}
 *comment three enemies, each opened across two formation lines, to play-test the nearest-enemy movement targeting
 *comment (fight_pick_nearest_target), kill-priority attack targeting (fight_pick_target), free movement/Dash, and
 *comment ally AI all at once instead of in isolation. The Vanguard Swordsman and Center Guard begin Close (1), while
-*comment the Rearguard Archer begins Long Range (3). A randomized standard layout makes each run tactically distinct
+*comment the Rearguard Archer begins Long Range (5). A randomized standard layout makes each run tactically distinct
 *comment without placing terrain underneath that opening formation. Rook (melee ally, Mid-Range, 2) has to close on
 *comment its own target over a couple of rounds; Kess (ranged ally) attacks every turn regardless of range.
 *set combat_is_nonlethal false
+*set combat_range_mode "expanded6"
 *set combat_terrain_layout "random_standard"
 *set combat_lib_1 "swordsman"
 *set combat_enemy_name_override "Vanguard Swordsman"
@@ -4387,7 +4409,7 @@ ${use_text}
 *set combat_lib_3 "archer"
 *set combat_enemy3_name_override "Rearguard Archer"
 *set combat_enemy3_epithet_override "the rearguard archer"
-*set combat_enemy3_range 3
+*set combat_enemy3_range 5
 *set combat_ally_lib_1 "guard"
 *set combat_ally1_name_override "Rook"
 *set combat_ally1_epithet_override "Rook"
@@ -4398,6 +4420,23 @@ ${use_text}
 *comment Range: explicitly Close (1), same reason as fight_dev_ally_ranged_test's own comment -- left at the
 *comment default 0 here would show Kess fighting at the new close-range disadvantage for no in-fiction reason.
 *set combat_ally2_range 1
+*goto fight_library
+
+*label fight_dev_layout_preview
+*comment The Dev Hub sets combat_terrain_layout_preview to a named blueprint, then routes here. Reusing the Squad
+*comment Test gives every preview the same three-versus-three formation and expanded tactical lane.
+*goto fight_dev_squad_test
+
+*label fight_dev_expanded_range_test
+*comment A deterministic six-band probe: the player starts five steps from a durable melee enemy, then the test
+*comment driver Pushes once and must see the live Long Range -> Far projection before the fight continues.
+*set combat_is_nonlethal false
+*set combat_range_mode "expanded6"
+*set combat_lib_1 "lacedon"
+*set combat_enemy_name_override "Far Lacedon"
+*set combat_enemy_epithet_override "the far lacedon"
+*set combat_enemy_hp_override 30
+*set combat_enemy_range 5
 *goto fight_library
 
 *label fight_dev_high_ground_test

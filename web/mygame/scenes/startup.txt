@@ -708,6 +708,10 @@
 *create pv_pois_open false
 *create pv_tavern_seen false
 *create pv_drill_seen false
+*comment Ysolde's workroom in the compound (port_valen.txt, pv_poi_workroom). Each flag is a fixed-value set, never cleared.
+*create pv_workroom_seen false
+*create ysolde_waterways_told false
+*create ysolde_ostrand_told false
 *create pv_drydock_seen false
 *create pv_pier_seen false
 *create pv_quays_seen false
@@ -1453,6 +1457,7 @@
 *create combat_behavior_seek_high_ground 0
 *create combat_behavior_hold_chokepoint 0
 *create combat_behavior_avoid_difficult_terrain 0
+*create combat_behavior_avoid_melee_threat 0
 *comment Scratch outputs of combat_score_terrain_destination (combat_ai.txt). Phase 1 only supplies this common
 *comment evaluator; a later movement-intent pass will use the score to choose among legal one-step destinations.
 *create combat_ai_terrain_score 0
@@ -1462,8 +1467,11 @@
 *comment pursuit-compatible step. The combat controller remains the sole authority that actually moves the actor.
 *create combat_ai_terrain_step_direction "none"
 *create combat_ai_terrain_step_reason "none"
+*create combat_ai_terrain_step_destination 0
 *create combat_ai_terrain_hold_position false
 *create combat_ai_terrain_destination_legal false
+*create combat_ai_melee_threat_level 0
+*create combat_ai_melee_threat_position 0
 *comment Sidearm (2026-09-29, Ranged-AI Position Awareness plan §4.1): a cornered ranged type's one-off melee
 *comment fallback -- see combat_enemyN_sidearm_weapon_type's own comment (its first real *create, slot 1 below)
 *comment for the full rule. Bare/active-target copy, synced in by fight_sync_target_in like every field above it.
@@ -1586,6 +1594,11 @@
 *comment range bands remain derived display/attack information (gap 0/1/2/3+), so this does not turn combat into
 *comment a tactical map. During migration the old per-target ranges remain live compatibility fields; combat.txt
 *comment initializes these coordinates from them and progressively routes movement through the shared helpers.
+*comment Distance-scale compatibility: legacy4 preserves existing authored 0-3 formations; expanded6 adds Near and
+*comment Far (0-5) for encounters that opt in. fight_setup derives combat_max_range and lane bounds from this.
+*create combat_range_mode "legacy4"
+*create combat_range_mode_used "legacy4"
+*create combat_max_range 3
 *create combat_lane_min_position 0
 *create combat_lane_max_position 6
 *create combat_lane_player_position 3
@@ -1615,7 +1628,12 @@
 *comment preserving authored terrain. The generator records its one-time result for debugging/test reporting only.
 *create combat_terrain_layout "fixed"
 *create combat_terrain_layout_used "fixed"
+*comment A named preview is developer-facing only. It forces one validated layout pattern while leaving ordinary
+*comment encounters to select from their configured mode; fight_cleanup clears it so it cannot leak.
+*create combat_terrain_layout_preview ""
+*create combat_terrain_layout_result "fixed"
 *create combat_terrain_generated_count 0
+*create combat_terrain_placed false
 *create combat_terrain_open_slot 0
 *create combat_terrain_position_available false
 *create combat_terrain_type_present false

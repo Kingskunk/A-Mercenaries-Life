@@ -143,30 +143,39 @@
         see: ["iron_carrion"]
       },
       {
-        id: "ysolde", category: "people", title: "Ysolde Marrow",
-        link: ["Ysolde Marrow", "Ysolde"],
+        id: "ysolde", category: "people", title: "Ysolde Ostrand",
+        link: ["Ysolde Ostrand", "Ysolde"],
         sub: "Cadre Handler",
         role: "Iron Carrion — Cadre Handler",
-        tags: ["Iron Carrion"], aliases: ["Ysolde", "Marrow", "Cadre", "handler"],
+        tags: ["Iron Carrion"], aliases: ["Ysolde", "Ostrand", "Cadre", "handler"],
         unlock: "met_ysolde",
         meter: { stat: "ysolde_respect", label: "Ysolde's Regard" },
         body: function (s) {
           var out = [
-            "The Cadre's handler. She kept the company's small handful of gifted recruits the way other sergeants kept count of rations: exactly, constantly, and with no intention of running short. Six or seven at any time against four hundred soldiers who mostly wished the number were smaller.",
-            "<i>\"An older woman carrying subtle marks of infernal bloodline—small, polished obsidian ram horns sweeping close against dark hair streaked with iron-grey, and pale mercury-silver irises that miss nothing while appearing to look at nothing in particular. A physician's leather satchel of scrolls and glass vials slung across one shoulder, hands steady enough to thread a needle by firelight without looking down.\"</i>"
+            "The Cadre's handler. She keeps the company's small handful of gifted recruits the way other sergeants keep count of rations: exactly, constantly, and with no intention of running short. Six or seven at any time against four hundred soldiers who mostly wish the number were smaller.",
+            "<i>\"An older woman carrying subtle marks of infernal bloodline—small, polished obsidian ram horns sweeping close against dark hair streaked with iron-grey and pulled back in severe braids, and pale mercury-silver irises that miss nothing while appearing to look at nothing in particular. A physician's leather satchel of scrolls and glass vials slung across one shoulder, hands steady enough to thread a needle by firelight without looking down.\"</i>"
           ];
           if (s.squad === "cadre") {
-            out.push("Those who marched under her hand knew the terms: worth more alive than heroic, and told so plainly. She rationed the Cadre's workings from necessity, not mercy—raw current through nerves and marrow, fingers that seize, hearts that give out in the mud. Her praise was a dry nod or an errand of trust; her discipline was a hand keeping you out of the arrow-hail until the line truly broke.");
+            out.push("Those who marched under her hand knew the terms: worth more alive than heroic, and told so plainly. She rationed the Cadre's spells because they cost the caster: a spell worked under arrow fire runs through the caster's own nerves, fingers seize if it's held too long, and a heart can quit in the mud. Her praise was a dry nod or an errand of trust. Her discipline was a hand keeping you out of the arrow-hail until the line truly broke.");
           }
           if (truthy(s.alder_river_chain_cleared)) {
-            out.push("At Alderford she spread the sounding charts flat and showed you the blank stretch below the weir: an imperial boom, four barges too deep, half a century of guesswork and a flooded chamber. She staked the flotilla on sounding logs and an operative in the dark until the gorge was clear. Her silver spectacles only ever came out over chart tables.");
+            out.push("At Alderford she spread the river charts flat and showed you the blank stretch below the weir: an imperial boom, four barges too deep, thirty years of guesswork and a flooded chamber. She staked the barges on her depth readings and one person in the dark until the gorge was clear. Her silver spectacles only ever came out over chart tables.");
           }
           if (truthy(s.visited_bivouac_ysolde)) {
             out.push("By the bivouac lantern she sorted sulfur and marsh-salts by hand and signed supply chits with a swift flourish. Disciplined and reliable earned her ink. Clumsy thumbs earned a firm gesture back and an order to leave the crate alone.");
           }
+          if (truthy(s.pv_workroom_seen)) {
+            out.push("In Port Valen she keeps a workroom at the back of the timber headquarters, with the Grey River charted on both walls from the weir to the bay and a shelf of notebooks, one for each year since she began drawing the river.");
+          }
+          if (truthy(s.ysolde_waterways_told)) {
+            out.push("She drew the river below the weir from a small boat in the Empire's waterways service, three summers with a weighted line. She was twenty-four when the garrison left, and she watched a cart of its plans go down the causeway. The oldest charts on her wall are copies she made of the Empire's before the garrison left. The rest are hers.");
+          }
+          if (truthy(s.ysolde_ostrand_told)) {
+            out.push("She is of [[pq_house_ostrand|House Ostrand]], a Merchant Lord house the belongs to the Guilded Scales. For eight years after the Empire left it set its prices from the river charts she drew. She wanted the charts posted where any skipper could read them, and the house kept them locked away. She took Captain Vane's written terms instead, and keeps the family signet face-down on her table.");
+          }
           return out;
         },
-        see: ["iron_carrion", "vane", "carrion_founding", "kestrel", "odessa", "port_valen"]
+        see: ["iron_carrion", "vane", "carrion_founding", "kestrel", "odessa", "port_valen", "pq_house_ostrand"]
       },
       {
         id: "lyra", category: "people", title: "Lyra",

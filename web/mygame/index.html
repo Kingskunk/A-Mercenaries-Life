@@ -424,6 +424,25 @@ button#statSidebar .turnRow,
 #statSidebar .turnTerrain .terrainBadges { margin-left: 0; }
 #statSidebar .terrainDirection { display: inline-flex; align-items: center; gap: 2px; margin-left: 3px; }
 #statSidebar .terrainDirection b { color: var(--ch-brass); font: 700 8px/1 var(--ch-font-ui); letter-spacing: 0.08em; }
+/* Persistent battlefield strip: neutral nodes are ordinary ground; only special terrain gets an icon. Keeping the
+   whole lane visible avoids hiding a useful position simply because no combatant has reached it yet. */
+#statSidebar .battlefieldStrip { margin: -1px 0 8px; padding: 5px 0 7px; border-bottom: 1px solid var(--ch-line); overflow-x: auto; }
+#statSidebar .battlefieldStripHead { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.09em; font: 700 9px/1 var(--ch-font-head); color: var(--ch-brass); }
+#statSidebar .battlefieldStripHead small { font: 500 8px/1 var(--ch-font-ui); color: var(--ch-dim); letter-spacing: 0.04em; text-transform: none; }
+#statSidebar .battlefieldLane { min-width: 238px; display: flex; align-items: flex-start; justify-content: space-between; gap: 2px; }
+#statSidebar .battlefieldNode { position: relative; flex: 1 1 0; min-width: 22px; display: grid; justify-items: center; gap: 2px; color: var(--ch-dim); font: 600 7px/1 var(--ch-font-ui); text-align: center; }
+#statSidebar .battlefieldNode > b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: inherit; }
+#statSidebar .battlefieldNodeCore { position: relative; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 1px; width: 17px; min-height: 17px; border: 1px solid var(--ch-line-hi); border-radius: 50%; background: rgba(0,0,0,0.3); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.35); }
+#statSidebar .battlefieldNode:not(:last-child)::after { content: ""; position: absolute; top: 14px; left: calc(50% + 10px); width: calc(100% - 17px); height: 1px; background: var(--ch-line); z-index: 0; }
+#statSidebar .battlefieldNode.here { color: var(--ch-brass); }
+#statSidebar .battlefieldNode.here .battlefieldNodeCore { border-color: var(--ch-brass); box-shadow: 0 0 0 1px rgba(201,151,68,0.22), inset 0 0 0 1px rgba(0,0,0,0.35); }
+#statSidebar .battlefieldTerrain { position: absolute; inset: 1px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 50%; background: rgba(0,0,0,0.2); }
+#statSidebar .battlefieldTerrain > span { display: grid; place-items: center; width: 14px; height: 14px; color: var(--ch-brass); font-size: 9px; }
+#statSidebar .battlefieldTerrain img { width: 14px; height: 14px; object-fit: cover; }
+#statSidebar .battlefieldPawn { position: relative; z-index: 1; display: block; width: 5px; height: 5px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.75); box-shadow: 0 0 0 1px rgba(255,255,255,0.18); }
+#statSidebar .battlefieldPawn.player { background: var(--ch-brass); }
+#statSidebar .battlefieldPawn.ally { background: var(--ch-info); }
+#statSidebar .battlefieldPawn.enemy { background: var(--ch-bad); }
 #statSidebar .dartsTag {                      /* Magic Missile dart count, prefixed before the name */
   font-weight: 700;
   color: var(--ch-info);
@@ -747,6 +766,35 @@ button#statSidebar .turnRow,
       (advance ? "<span class=\"terrainDirection\"><b>ADV</b>" + advance + "</span>" : "") +
       (retreat ? "<span class=\"terrainDirection\"><b>RET</b>" + retreat + "</span>" : "") + "</span>";
   }
+  function battlefieldStripHtml(s) {
+    var min = Number(s.combat_lane_min_position), max = Number(s.combat_lane_max_position), player = Number(s.combat_lane_player_position);
+    if (!isFinite(min) || !isFinite(max) || !isFinite(player) || max < min) return "";
+    var terrainPresent = false, nodes = "", icons = window.BATTLEFIELD_ICONS || {};
+    for (var pos = min; pos <= max; pos++) {
+      var rel = pos - player, label = "RET " + Math.abs(rel);
+      if (rel === 0) label = "YOU";
+      else if (rel > 0) label = rangeTierName(rel, s);
+      var types = terrainTypesAt(s, pos), terrain = "", pawns = "";
+      if (types.length) {
+        terrainPresent = true;
+        terrain = "<span class=\"battlefieldTerrain\">" + types.map(function (type) {
+          var icon = icons[type], title = esc(terrainLabel(type));
+          return "<span title=\"" + title + "\">" + (icon ? "<img src=\"" + icon + "\" alt=\"\">" : "◆") + "</span>";
+        }).join("") + "</span>";
+      }
+      if (pos === player) pawns += "<i class=\"battlefieldPawn player\" title=\"You\"></i>";
+      var allyCap = Number(s.combat_ally_slot_cap) || 0, enemyCap = Number(s.combat_enemy_slot_cap) || 0;
+      for (var ai = 1; ai <= allyCap; ai++) {
+        if ((Number(s["combat_ally" + ai + "_hp"]) || 0) > 0 && Number(s["combat_ally" + ai + "_position"]) === pos) pawns += "<i class=\"battlefieldPawn ally\" title=\"Ally\"></i>";
+      }
+      for (var ei = 1; ei <= enemyCap; ei++) {
+        if ((Number(s["combat_enemy" + ei + "_hp"]) || 0) > 0 && Number(s["combat_enemy" + ei + "_position"]) === pos) pawns += "<i class=\"battlefieldPawn enemy\" title=\"Enemy\"></i>";
+      }
+      nodes += "<span class=\"battlefieldNode" + (rel === 0 ? " here" : "") + "\"><b>" + esc(label) + "</b><span class=\"battlefieldNodeCore\">" + terrain + pawns + "</span></span>";
+    }
+    return "<div class=\"battlefieldStrip\" aria-label=\"Battlefield lane\"><div class=\"battlefieldStripHead\"><span>Battlefield</span><small>" +
+      (terrainPresent ? "Terrain marked" : "Open ground") + "</small></div><div class=\"battlefieldLane\">" + nodes + "</div></div>";
+  }
   // Ally orders are a sidebar surface, not player actions. The ChoiceScript option remains the authority for
   // legality and costs; this UI state only remembers which companion's compact, left-opening tray is visible.
   var allyOrderSlot = 0;
@@ -928,7 +976,7 @@ button#statSidebar .turnRow,
           // fact is lost.
           var cEffRange = kind === "ally" ? allyDistanceToPlayer(s, slot) : effectiveRange(s, kind, slot);
           var cRangeTag = cDead ? "" : " <span class=\"rangeTag\" title=\"Distance from you\">(" +
-            rangeTierName(cEffRange) + ")</span>";
+            rangeTierName(cEffRange, s) + ")</span>";
           var cTerrain = cDead ? "" : combatantTerrainHtml(s, kind, slot);
           var cSub = combatantSubLine(s, kind, slot);
           // Magic Missile dart allocation (2026-09-28): a "(N)" prefix on any enemy with darts currently
@@ -984,7 +1032,7 @@ button#statSidebar .turnRow,
         if (akind === "enemy" && arange <= 0) engaged.push(fmt(s["combat_enemy" + aslot + "_name"]) || "Enemy");
         var aDispRange = akind === "ally" ? allyDistanceToPlayer(s, aslot) : effectiveRange(s, akind, aslot);
         var who = { name: fmt(s[apfx + aslot + "_name"]) || (akind === "enemy" ? "Enemy" : "Ally"),
-                    enemy: akind === "enemy", tier: rangeTierName(aDispRange), slot: aslot, kind: akind };
+                    enemy: akind === "enemy", tier: rangeTierName(aDispRange, s), slot: aslot, kind: akind };
         if (!firstAny) firstAny = who;
         if (sawPlayer && !nextAfter) nextAfter = who;
       }
@@ -1067,7 +1115,7 @@ button#statSidebar .turnRow,
           nonprofHtml +
           resourceHtml) +
       "</div>" +
-      (inCombat ? "<div class=\"sbPanel\"><div class=\"shead\">Turn order</div>" + bottomSectionHtml + "</div>"
+      (inCombat ? "<div class=\"sbPanel\"><div class=\"shead\">Turn order</div>" + battlefieldStripHtml(s) + bottomSectionHtml + "</div>"
                 : "<div class=\"sbPanel\">" + foldHtml("today", "Today", "<span class=\"sbSumStack\"><span>" + fmt(s.clock_time) + " &middot; " + dayDisplay + "</span><small>" + fmt(s.time_period) + " &middot; " + weatherDisplay + "</small></span>", bottomSectionHtml) + "</div>") +
       "<div class=\"sbPanel sbSpells\">" + spellSectionHtml() + "</div>" +
       activeQuestHtml +
@@ -1142,10 +1190,15 @@ button#statSidebar .turnRow,
     }
     return "";
   }
-  // Mirrors combat_range_name (combat.txt): 0 Engaged, 1 Close, 2 Mid-Range, 3+ Long Range.
-  function rangeTierName(n) {
+  // Mirrors combat_range_name: legacy4 is 0 Engaged, 1 Close, 2 Mid-Range, 3 Long; expanded6 adds Near and Far.
+  function rangeTierName(n, s) {
     if (n <= 0) return "Engaged";
     if (n === 1) return "Close";
+    if (String((s || window.stats || {}).combat_range_mode || "legacy4") === "expanded6") {
+      if (n === 2) return "Near";
+      if (n === 3) return "Mid-Range";
+      if (n === 4) return "Far";
+    }
     if (n === 2) return "Mid-Range";
     return "Long Range";
   }
@@ -1154,7 +1207,7 @@ button#statSidebar .turnRow,
   // you aren't even looking at. Same word, two meanings, in the same list -- which made a plain "Kess (Engaged)"
   // genuinely unreadable. Only tier 0 is renamed: the other three are not misleading enough to be worth
   // changing, and leaving them alone keeps one vocabulary across the whole panel.
-  function allyTierName(n) { return (Number(n) || 0) <= 0 ? "in melee" : rangeTierName(n); }
+  function allyTierName(n, s) { return (Number(n) || 0) <= 0 ? "in melee" : rangeTierName(n, s); }
   // Commit-and-chase (combat.txt, Ranged-AI Position Awareness plan §11.3/6a) freezes a combatant's own
   // range the moment it commits, and tracks live progress toward its quarry in a separate chase_range field
   // instead (deliberately, so breaking off needs no reset step -- see that field's own comment in startup.txt).
@@ -1204,7 +1257,7 @@ button#statSidebar .turnRow,
     var chaseTarget = Number(s[pfx + slot + "_chase_target"]) || 0;
     if (chaseTarget > 0) {
       var chaseName = fmt(s[oppPfx + chaseTarget + "_name"]) || (kind === "enemy" ? "an ally" : "an enemy");
-      var chaseTier = kind === "ally" ? " (" + allyTierName(effectiveRange(s, "ally", slot)) + ")" : "";
+      var chaseTier = kind === "ally" ? " (" + allyTierName(effectiveRange(s, "ally", slot), s) + ")" : "";
       return "chasing " + esc(chaseName) + chaseTier;
     }
     if (kind === "enemy") return enemyThreatLine(s, slot);
@@ -1213,7 +1266,7 @@ button#statSidebar .turnRow,
     if (t <= 0) return "";
     var name = fmt(s["combat_enemy" + t + "_name"]) || "an enemy";
     var down = (Number(s["combat_enemy" + t + "_hp"]) || 0) <= 0;
-    return "fighting " + esc(name) + (down ? " (down)" : " (" + allyTierName(effectiveRange(s, "ally", slot)) + ")");
+    return "fighting " + esc(name) + (down ? " (down)" : " (" + allyTierName(effectiveRange(s, "ally", slot), s) + ")");
   }
 
   // A melee enemy sharing a lane coordinate with a living ally is already physically held there. The forecast

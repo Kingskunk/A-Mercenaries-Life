@@ -66,6 +66,7 @@ function runFixture(label, mode) {
     weapon_hands: "two_handed",
     fighting_style: "archery"
   });
+  if (mode.indexOf("layout:") === 0) state.combat_terrain_layout_preview = mode.slice(7);
   let pending = null;
   let decisions = 0;
   const choices = [];
@@ -93,6 +94,10 @@ function runFixture(label, mode) {
     }
     if (mode === "difficult_terrain" && choiceFlags.pushed && !choiceFlags.noSecondPush) {
       choiceFlags.noSecondPush = !leaves.some(function (o) { return /^push forward/i.test(o.name); });
+    }
+    if (!pick && mode === "expanded6" && !choiceFlags.pushed) {
+      pick = leaves.find(function (o) { return /^push forward/i.test(o.name); });
+      if (pick) choiceFlags.pushed = true;
     }
     // Let the archer take one turn before the player shoots. This makes the two bilateral fixtures prove both
     // halves of their rules: High Ground gives +2/-2, while Cover raises each defender's AC by 2.
@@ -157,13 +162,34 @@ if (randomTerrain.state.combat_terrain_layout_used !== "random_standard" || rand
 if (!/victory|rescued/i.test(randomTerrain.state.combat_outcome || "")) throw new Error("Random Terrain fixture did not finish cleanly");
 
 const squad = runFixture("fight_dev_squad_test", "squad");
-if (squad.state.combat_terrain_layout_used !== "random_standard" || squad.state.combat_terrain_generated_count < 1 || squad.state.combat_terrain_generated_count > 2) {
+if (squad.state.combat_range_mode_used !== "expanded6" || squad.state.combat_terrain_layout_used !== "random_standard" || squad.state.combat_terrain_generated_count < 1 || squad.state.combat_terrain_generated_count > 2) {
   throw new Error("Squad fixture did not build a randomized standard layout");
 }
 if (!/Center Guard/.test(squad.transcript) || !/Rearguard Archer/.test(squad.transcript)) {
   throw new Error("Squad fixture did not field the added balanced enemy formation");
 }
 if (!/victory|rescued/i.test(squad.state.combat_outcome || "")) throw new Error("Squad fixture did not finish cleanly");
+
+const expanded = runFixture("fight_dev_expanded_range_test", "expanded6");
+if (expanded.state.combat_range_mode_used !== "expanded6" || !/^push forward/i.test(expanded.choices[0] || "") || !/You Push Forward.*Far/.test(expanded.transcript)) {
+  throw new Error("Expanded-range fixture did not expose the Long Range to Far movement transition");
+}
+if (!/victory|rescued/i.test(expanded.state.combat_outcome || "")) throw new Error("Expanded-range fixture did not finish cleanly");
+
+[
+  ["open_ground", 0],
+  ["player_position", 1],
+  ["contested_ground", 1],
+  ["rough_approach", 2],
+  ["held_line", 2],
+  ["long_sightline", 2]
+].forEach(function (layout) {
+  const preview = runFixture("fight_dev_layout_preview", "layout:" + layout[0]);
+  if (preview.state.combat_terrain_layout_result !== layout[0] || Number(preview.state.combat_terrain_generated_count) !== layout[1]) {
+    throw new Error("Layout preview " + layout[0] + " did not produce its expected validated terrain pattern");
+  }
+  if (!/victory|rescued/i.test(preview.state.combat_outcome || "")) throw new Error("Layout preview " + layout[0] + " did not finish cleanly");
+});
 
 const choke = runFixture("fight_dev_chokepoint_test", "chokepoint");
 if (!choke.flags.traded) throw new Error("Chokepoint fixture never offered Trade Places");
@@ -175,4 +201,6 @@ console.log("Difficult Terrain fixture: " + difficult.state.combat_outcome + " a
 console.log("Terrain AI fixture: " + terrainAi.state.combat_outcome + " after " + terrainAi.choices.length + " choices; enemy Cover and ally High Ground decisions observed.");
 console.log("Random Terrain fixture: " + randomTerrain.state.combat_outcome + " after " + randomTerrain.choices.length + " choices; generated " + randomTerrain.state.combat_terrain_generated_count + " safe feature(s).");
 console.log("Squad fixture: " + squad.state.combat_outcome + " after " + squad.choices.length + " choices; 3 enemies faced you and 2 allies on randomized terrain.");
+console.log("Expanded-range fixture: " + expanded.state.combat_outcome + " after " + expanded.choices.length + " choices; Long Range to Far transition observed.");
+console.log("Layout previews: Open Ground, Player Position, Contested Ground, Rough Approach, Held Line, and Long Sightline all passed.");
 console.log("Chokepoint fixture: " + choke.state.combat_outcome + " after " + choke.choices.length + " choices; Trade Places observed.");

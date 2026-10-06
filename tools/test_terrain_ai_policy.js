@@ -86,6 +86,21 @@ function choose(profile, weapon, currentPosition, targetPosition, mustClose, kee
   };
 }
 
+function chooseTactical(stateOverrides, actorKind, actorSlot, targetPosition) {
+  const state = Object.assign({}, baseStats, stateOverrides);
+  const scene = new Scene("combat_ai", state, nav, false);
+  scene.loadScene();
+  scene.temps.param = [actorKind, actorSlot, targetPosition];
+  scene.goto("combat_choose_ranged_tactical_step");
+  scene.execute();
+  return {
+    direction: state.combat_ai_terrain_step_direction,
+    destination: state.combat_ai_terrain_step_destination,
+    reason: state.combat_ai_terrain_step_reason,
+    threat: state.combat_ai_melee_threat_level
+  };
+}
+
 const sharpshooter = score("sharpshooter", "ranged", 3, 4, ["cover", 4, "high_ground", 4]);
 if (sharpshooter.score !== 5 || sharpshooter.reason !== "high_ground") {
   throw new Error("Sharpshooter did not value Cover + High Ground as expected: " + JSON.stringify(sharpshooter));
@@ -116,4 +131,67 @@ if (guardianHold.direction !== "none" || guardianHold.reason !== "chokepoint" ||
   throw new Error("Guardian did not hold its valued chokepoint: " + JSON.stringify(guardianHold));
 }
 
-console.log("Terrain AI policy: profile scores, sharpshooter Cover step, and guardian chokepoint hold passed.");
+const enemyEvasion = chooseTactical({
+  combat_enemy_count: 1,
+  combat_enemy1_hp: 10,
+  combat_enemy1_behavior_profile: "sharpshooter",
+  combat_enemy1_weapon_type: "ranged",
+  combat_enemy1_position: 3,
+  combat_lane_player_position: 0,
+  combat_ally1_hp: 10,
+  combat_ally1_weapon_type: "melee",
+  combat_ally1_position: 1
+}, "enemy", 1, 0);
+if (enemyEvasion.direction !== "evasive" || enemyEvasion.destination !== 4 || enemyEvasion.reason !== "avoid_melee_threat") {
+  throw new Error("Sharpshooter did not create space from a Dash-capable ally: " + JSON.stringify(enemyEvasion));
+}
+
+const playerEvasion = chooseTactical({
+  combat_enemy_count: 1,
+  combat_enemy1_hp: 10,
+  combat_enemy1_behavior_profile: "sharpshooter",
+  combat_enemy1_weapon_type: "ranged",
+  combat_enemy1_position: 3,
+  combat_lane_player_position: 1,
+  hp_current: 10,
+  weapon_type: "melee"
+}, "enemy", 1, 1);
+if (playerEvasion.direction !== "evasive" || playerEvasion.destination !== 4 || playerEvasion.reason !== "avoid_melee_threat") {
+  throw new Error("Enemy sharpshooter did not create space from a Dash-capable player: " + JSON.stringify(playerEvasion));
+}
+
+const difficultStopsThreat = chooseTactical({
+  combat_enemy_count: 1,
+  combat_enemy1_hp: 10,
+  combat_enemy1_behavior_profile: "sharpshooter",
+  combat_enemy1_weapon_type: "ranged",
+  combat_enemy1_position: 3,
+  combat_lane_player_position: 0,
+  combat_ally1_hp: 10,
+  combat_ally1_weapon_type: "melee",
+  combat_ally1_position: 1,
+  combat_terrain1_type: "difficult_terrain",
+  combat_terrain1_position: 2
+}, "enemy", 1, 0);
+if (difficultStopsThreat.direction !== "none" || difficultStopsThreat.destination !== 3) {
+  throw new Error("Difficult Terrain did not suppress the impossible Dash threat: " + JSON.stringify(difficultStopsThreat));
+}
+
+const allyEvasion = chooseTactical({
+  combat_enemy_count: 2,
+  combat_enemy1_hp: 10,
+  combat_enemy1_weapon_type: "melee",
+  combat_enemy1_position: 5,
+  combat_enemy2_hp: 10,
+  combat_enemy2_weapon_type: "ranged",
+  combat_enemy2_position: 0,
+  combat_ally1_hp: 10,
+  combat_ally1_behavior_profile: "sharpshooter",
+  combat_ally1_weapon_type: "ranged",
+  combat_ally1_position: 3
+}, "ally", 1, 0);
+if (allyEvasion.direction !== "evasive" || allyEvasion.destination !== 2 || allyEvasion.reason !== "avoid_melee_threat") {
+  throw new Error("Ally sharpshooter did not create space from a Dash-capable enemy: " + JSON.stringify(allyEvasion));
+}
+
+console.log("Terrain AI policy: terrain scores, legal terrain steps, player/NPC melee-threat evasion, and Difficult Terrain prediction passed.");

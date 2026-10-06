@@ -112,6 +112,7 @@
   *set ccts_current_position {(("combat_enemy" & ccts_actor_slot) & "_position")}
 *if (ccts_actor_kind = "ally")
   *set ccts_current_position {(("combat_ally" & ccts_actor_slot) & "_position")}
+*set combat_ai_terrain_step_destination ccts_current_position
 *gosub combat_score_terrain_destination ccts_actor_kind ccts_actor_slot ccts_current_position
 *temp ccts_current_score combat_ai_terrain_score
 *temp ccts_best_score ccts_current_score
@@ -155,6 +156,7 @@
       *set combat_ai_terrain_step_direction "toward"
       *set combat_ai_terrain_step_reason combat_ai_terrain_reason
       *set combat_ai_terrain_hold_position false
+      *set combat_ai_terrain_step_destination ccts_candidate_toward
 *comment Then evaluate the away step. Melee callers normally reject it through must_close; ranged users may select it
 *comment when it reaches Cover or High Ground while preserving their distance from the target.
 *temp ccts_away_check ccts_check_away
@@ -176,6 +178,121 @@
       *set combat_ai_terrain_step_direction "away"
       *set combat_ai_terrain_step_reason combat_ai_terrain_reason
       *set combat_ai_terrain_hold_position false
+      *set combat_ai_terrain_step_destination ccts_candidate_away
+*return
+
+*label combat_assess_melee_threat
+*comment Shared one-turn forecast for ranged movement. It reports the most urgent opponent: 2 can move and attack
+*comment next turn, 1 can only Dash into engagement, 0 cannot reach. It mirrors the current ordinary-step, Dash,
+*comment Difficult Terrain, and enemy Slow rules; capacity and forced-movement edge cases remain with their
+*comment dedicated movement resolvers until those routes are fully shared.
+*params camt_actor_kind camt_actor_slot camt_actor_position
+*set combat_ai_melee_threat_level 0
+*set combat_ai_melee_threat_position 0
+*temp camt_i 1
+*temp camt_limit combat_enemy_count
+*if (camt_actor_kind = "enemy")
+  *set camt_i 0
+  *set camt_limit combat_ally_slot_cap
+*label combat_assess_melee_threat_loop
+*if (camt_i <= camt_limit)
+  *temp camt_hp 0
+  *temp camt_weapon ""
+  *temp camt_position 0
+  *temp camt_slowed 0
+  *if (camt_actor_kind = "enemy")
+    *if (camt_i = 0)
+      *set camt_hp hp_current
+      *set camt_weapon weapon_type
+      *set camt_position combat_lane_player_position
+    *else
+      *set camt_hp {(("combat_ally" & camt_i) & "_hp")}
+      *set camt_weapon {(("combat_ally" & camt_i) & "_weapon_type")}
+      *set camt_position {(("combat_ally" & camt_i) & "_position")}
+  *if (camt_actor_kind = "ally")
+    *set camt_hp {(("combat_enemy" & camt_i) & "_hp")}
+    *set camt_weapon {(("combat_enemy" & camt_i) & "_weapon_type")}
+    *set camt_position {(("combat_enemy" & camt_i) & "_position")}
+    *set camt_slowed {(("combat_enemy" & camt_i) & "_slowed")}
+  *if ((camt_hp > 0) and (camt_weapon = "melee"))
+    *temp camt_distance (camt_position - camt_actor_position)
+    *if (camt_distance < 0)
+      *set camt_distance (0 - camt_distance)
+    *temp camt_level 0
+    *if (camt_distance <= 1)
+      *set camt_level 2
+    *if ((camt_distance = 2) and (camt_slowed <= 0))
+      *temp camt_step camt_position
+      *if (camt_actor_position > camt_position)
+        *set camt_step + 1
+      *else
+        *set camt_step - 1
+      *gosub_scene combat_movement combat_difficult_terrain_crossing_query camt_position camt_step
+      *temp camt_first_difficult combat_difficult_terrain_blocks_dash
+      *gosub_scene combat_movement combat_difficult_terrain_crossing_query camt_step camt_actor_position
+      *if ((not(camt_first_difficult)) and (not(combat_difficult_terrain_blocks_dash)))
+        *set camt_level 1
+    *if (camt_level > combat_ai_melee_threat_level)
+      *set combat_ai_melee_threat_level camt_level
+      *set combat_ai_melee_threat_position camt_position
+  *set camt_i + 1
+  *goto combat_assess_melee_threat_loop
+*return
+
+*label combat_choose_ranged_tactical_step
+*comment Ranged wrapper around terrain choice. A profile that sees a credible melee threat rejects a terrain step
+*comment that leaves it exposed and takes one legal step directly away if doing so changes the forecast. The result
+*comment is an absolute destination, so the attacking target and threatening melee combatant may be on different sides.
+*params ccrts_actor_kind ccrts_actor_slot ccrts_target_position
+*gosub combat_choose_terrain_step ccrts_actor_kind ccrts_actor_slot ccrts_target_position false true
+*temp ccrts_current_position combat_lane_player_position
+*temp ccrts_profile "feral"
+*temp ccrts_weapon "melee"
+*if (ccrts_actor_kind = "enemy")
+  *set ccrts_current_position {(("combat_enemy" & ccrts_actor_slot) & "_position")}
+  *set ccrts_profile {(("combat_enemy" & ccrts_actor_slot) & "_behavior_profile")}
+  *set ccrts_weapon {(("combat_enemy" & ccrts_actor_slot) & "_weapon_type")}
+*if (ccrts_actor_kind = "ally")
+  *set ccrts_current_position {(("combat_ally" & ccrts_actor_slot) & "_position")}
+  *set ccrts_profile {(("combat_ally" & ccrts_actor_slot) & "_behavior_profile")}
+  *set ccrts_weapon {(("combat_ally" & ccrts_actor_slot) & "_weapon_type")}
+*gosub_scene combat_types resolve_behavior_profile ccrts_profile ccrts_weapon
+*if (combat_behavior_avoid_melee_threat > 0)
+  *gosub combat_assess_melee_threat ccrts_actor_kind ccrts_actor_slot ccrts_current_position
+  *temp ccrts_current_threat combat_ai_melee_threat_level
+  *temp ccrts_threat_position combat_ai_melee_threat_position
+  *if (ccrts_current_threat >= combat_behavior_avoid_melee_threat)
+    *temp ccrts_keep_terrain_step false
+    *temp ccrts_found_safe_step false
+    *if (combat_ai_terrain_step_direction != "none")
+      *gosub combat_assess_melee_threat ccrts_actor_kind ccrts_actor_slot combat_ai_terrain_step_destination
+      *if (combat_ai_melee_threat_level < combat_behavior_avoid_melee_threat)
+        *set ccrts_keep_terrain_step true
+        *set ccrts_found_safe_step true
+    *if (not(ccrts_keep_terrain_step))
+      *temp ccrts_escape_position ccrts_current_position
+      *if (ccrts_current_position > ccrts_threat_position)
+        *set ccrts_escape_position + 1
+      *elseif (ccrts_current_position < ccrts_threat_position)
+        *set ccrts_escape_position - 1
+      *elseif (ccrts_target_position > ccrts_current_position)
+        *set ccrts_escape_position - 1
+      *else
+        *set ccrts_escape_position + 1
+      *gosub combat_ai_terrain_destination_is_legal ccrts_actor_kind ccrts_actor_slot ccrts_escape_position
+      *if (combat_ai_terrain_destination_legal)
+        *gosub combat_assess_melee_threat ccrts_actor_kind ccrts_actor_slot ccrts_escape_position
+        *if (combat_ai_melee_threat_level < combat_behavior_avoid_melee_threat)
+          *set combat_ai_terrain_step_direction "evasive"
+          *set combat_ai_terrain_step_destination ccrts_escape_position
+          *set combat_ai_terrain_step_reason "avoid_melee_threat"
+          *set combat_ai_terrain_hold_position false
+          *set ccrts_found_safe_step true
+      *if (not(ccrts_found_safe_step))
+        *set combat_ai_terrain_step_direction "none"
+        *set combat_ai_terrain_step_destination ccrts_current_position
+        *set combat_ai_terrain_step_reason "none"
+        *set combat_ai_terrain_hold_position false
 *return
 *label find_intercepting_ally
 *comment Interception (2026-09-28; broadened 2026-09-28 again; widened into full target selection 2026-09-29,

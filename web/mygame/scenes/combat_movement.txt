@@ -14,8 +14,8 @@
   *temp cisl_range {(("combat_enemy" & cisl_enemy_i) & "_range")}
   *if (cisl_range < 0)
     *set cisl_range 0
-  *if (cisl_range > 3)
-    *set cisl_range 3
+  *if (cisl_range > combat_max_range)
+    *set cisl_range combat_max_range
   *set {(("combat_enemy" & cisl_enemy_i) & "_position")} (combat_lane_player_position + cisl_range)
   *set cisl_enemy_i + 1
   *goto combat_initialize_shared_lane_enemy_loop
@@ -25,8 +25,8 @@
   *temp cisl_range {(("combat_ally" & cisl_ally_i) & "_range")}
   *if (cisl_range < 0)
     *set cisl_range 0
-  *if (cisl_range > 3)
-    *set cisl_range 3
+  *if (cisl_range > combat_max_range)
+    *set cisl_range combat_max_range
   *temp cisl_pos (combat_enemy1_position - cisl_range)
   *if (cisl_pos < combat_lane_min_position)
     *set cisl_pos combat_lane_min_position
@@ -48,60 +48,90 @@
 
 *label combat_generate_terrain_layout
 *comment Resolve an encounter's optional terrain exactly once, after combatants have received opening positions.
-*comment This is intentionally a small library of compatible feature rules rather than an unrestricted map generator:
-*comment it never overlaps a combatant or another terrain slot, never uses an endpoint, and keeps a Chokepoint in
-*comment the forward central band. "hybrid" leaves authored slots untouched and fills only empty slots.
+*comment Random modes choose a named, compatible layout instead of assembling unrelated feature rolls. A preview
+*comment forces one layout for the Dev Hub/test suite; hybrid preserves authored slots and each placement helper
+*comment validates what can still fit.
 *set combat_terrain_layout_used combat_terrain_layout
+*set combat_terrain_layout_result "fixed"
 *set combat_terrain_generated_count 0
-*temp cgtl_requested 0
-*if (combat_terrain_layout = "random_light")
-  *rand cgtl_requested 0 1
-*if ((combat_terrain_layout = "random_standard") or (combat_terrain_layout = "hybrid"))
-  *rand cgtl_requested 1 2
-*if (cgtl_requested <= 0)
+*temp cgtl_roll 0
+*temp cgtl_selected ""
+*if (not(combat_terrain_layout_preview = ""))
+  *set cgtl_selected combat_terrain_layout_preview
+*if ((cgtl_selected = "") and (combat_terrain_layout = "random_light"))
+  *rand cgtl_roll 1 2
+  *if (cgtl_roll = 1)
+    *set cgtl_selected "open_ground"
+  *if (cgtl_roll = 2)
+    *set cgtl_selected "player_position"
+*if ((cgtl_selected = "") and ((combat_terrain_layout = "random_standard") or (combat_terrain_layout = "hybrid")))
+  *rand cgtl_roll 1 5
+  *if (cgtl_roll = 1)
+    *set cgtl_selected "player_position"
+  *if (cgtl_roll = 2)
+    *set cgtl_selected "contested_ground"
+  *if (cgtl_roll = 3)
+    *set cgtl_selected "rough_approach"
+  *if (cgtl_roll = 4)
+    *set cgtl_selected "held_line"
+  *if (cgtl_roll = 5)
+    *set cgtl_selected "long_sightline"
+*if (not(cgtl_selected = ""))
+  *set combat_terrain_layout_result cgtl_selected
+  *gosub combat_apply_terrain_layout cgtl_selected
+*return
+
+*label combat_apply_terrain_layout
+*params catl_layout
+*comment Pattern positions are expressed from the player, so the same compact lane rules work in legacy4 and
+*comment expanded6. Open Ground deliberately writes nothing; its empty strip is still a real, readable layout.
+*if (catl_layout = "player_position")
+  *gosub combat_place_terrain_if_legal "cover" combat_lane_player_position true
+*if (catl_layout = "contested_ground")
+  *temp catl_contested_pos (combat_lane_player_position + 2)
+  *gosub combat_place_terrain_if_legal "high_ground" catl_contested_pos true
+*if (catl_layout = "rough_approach")
+  *gosub combat_place_terrain_if_legal "cover" combat_lane_player_position true
+  *temp catl_rough_pos (combat_lane_player_position + 2)
+  *gosub combat_place_terrain_if_legal "difficult_terrain" catl_rough_pos false
+*if (catl_layout = "held_line")
+  *gosub combat_place_terrain_if_legal "high_ground" combat_lane_player_position true
+  *temp catl_choke_pos (combat_lane_player_position + 2)
+  *gosub combat_place_terrain_if_legal "chokepoint" catl_choke_pos false
+*if (catl_layout = "long_sightline")
+  *gosub combat_place_terrain_if_legal "high_ground" combat_lane_player_position true
+  *temp catl_sightline_pos (combat_lane_player_position + 3)
+  *gosub combat_place_terrain_if_legal "cover" catl_sightline_pos true
+*return
+
+*label combat_place_terrain_if_legal
+*params cptil_type cptil_position cptil_allows_start_occupant
+*set combat_terrain_placed false
+*gosub combat_terrain_type_exists cptil_type
+*if (combat_terrain_type_present)
   *return
-*temp cgtl_added 0
-*temp cgtl_attempts 0
-*temp cgtl_feature_roll 1
-*temp cgtl_type ""
-*temp cgtl_min_position 2
-*temp cgtl_max_position 2
-*temp cgtl_position 2
-*label combat_generate_terrain_layout_loop
-*if ((cgtl_added < cgtl_requested) and (cgtl_attempts < 16))
-  *set cgtl_attempts + 1
-  *gosub combat_find_open_terrain_slot
-  *if (combat_terrain_open_slot > 0)
-    *rand cgtl_feature_roll 1 4
-    *set cgtl_type "cover"
-    *if (cgtl_feature_roll = 2)
-      *set cgtl_type "high_ground"
-    *if (cgtl_feature_roll = 3)
-      *set cgtl_type "difficult_terrain"
-    *if (cgtl_feature_roll = 4)
-      *set cgtl_type "chokepoint"
-    *gosub combat_terrain_type_exists cgtl_type
-    *if (not(combat_terrain_type_present))
-      *set cgtl_min_position 2
-      *set cgtl_max_position (combat_lane_max_position - 1)
-      *if (cgtl_type = "chokepoint")
-        *set cgtl_min_position (combat_lane_player_position + 1)
-        *set cgtl_max_position (combat_lane_player_position + 2)
-        *if (cgtl_max_position > (combat_lane_max_position - 1))
-          *set cgtl_max_position (combat_lane_max_position - 1)
-      *if (cgtl_min_position <= cgtl_max_position)
-        *rand cgtl_position cgtl_min_position cgtl_max_position
-        *gosub combat_terrain_position_is_available cgtl_position cgtl_min_position cgtl_max_position
-        *if (combat_terrain_position_available)
-          *set {("combat_terrain" & combat_terrain_open_slot) & "_type"} cgtl_type
-          *set {("combat_terrain" & combat_terrain_open_slot) & "_position"} cgtl_position
-          *set {("combat_terrain" & combat_terrain_open_slot) & "_capacity"} 0
-          *set {("combat_terrain" & combat_terrain_open_slot) & "_blocks_los"} false
-          *if (cgtl_type = "chokepoint")
-            *set {("combat_terrain" & combat_terrain_open_slot) & "_capacity"} 1
-          *set cgtl_added + 1
-          *set combat_terrain_generated_count + 1
-  *goto combat_generate_terrain_layout_loop
+*gosub combat_find_open_terrain_slot
+*if (combat_terrain_open_slot <= 0)
+  *return
+*temp cptil_min_position 1
+*temp cptil_max_position (combat_lane_max_position - 1)
+*gosub combat_terrain_position_is_available cptil_position cptil_min_position cptil_max_position cptil_allows_start_occupant
+*if (not(combat_terrain_position_available))
+  *return
+*set {("combat_terrain" & combat_terrain_open_slot) & "_type"} cptil_type
+*set {("combat_terrain" & combat_terrain_open_slot) & "_position"} cptil_position
+*set {("combat_terrain" & combat_terrain_open_slot) & "_capacity"} 0
+*set {("combat_terrain" & combat_terrain_open_slot) & "_blocks_los"} false
+*if (cptil_type = "chokepoint")
+  *set {("combat_terrain" & combat_terrain_open_slot) & "_capacity"} 1
+*set combat_terrain_generated_count + 1
+*set combat_terrain_placed true
+*return
+
+*comment Legacy feature-by-feature random placement is intentionally replaced by the named layouts above.
+*comment The helpers below remain shared by authored terrain and every layout pattern.
+
+*comment Removed loop follows only in source history; this return prevents no-op fallthrough.
 *return
 
 *label combat_find_open_terrain_slot
@@ -130,17 +160,19 @@
 *return
 
 *label combat_terrain_position_is_available
-*params ctpia_position ctpia_min_position ctpia_max_position
+*comment Cover and High Ground may be present when a formation begins there; rough ground and chokepoints must still
+*comment begin empty. Every terrain type remains exclusive of another terrain slot.
+*params ctpia_position ctpia_min_position ctpia_max_position ctpia_allows_start_occupant
 *set combat_terrain_position_available false
 *if ((ctpia_position >= ctpia_min_position) and (ctpia_position <= ctpia_max_position))
   *temp ctpia_occupied false
-  *if (ctpia_position = combat_lane_player_position)
+  *if ((ctpia_position = combat_lane_player_position) and (not(ctpia_allows_start_occupant)))
     *set ctpia_occupied true
   *temp ctpia_enemy_i 1
   *label combat_terrain_position_enemy_loop
   *if (ctpia_enemy_i <= combat_enemy_count)
     *temp ctpia_enemy_position {("combat_enemy" & ctpia_enemy_i) & "_position"}
-    *if (ctpia_enemy_position = ctpia_position)
+    *if ((ctpia_enemy_position = ctpia_position) and (not(ctpia_allows_start_occupant)))
       *set ctpia_occupied true
     *set ctpia_enemy_i + 1
     *goto combat_terrain_position_enemy_loop
@@ -148,7 +180,7 @@
   *label combat_terrain_position_ally_loop
   *if (ctpia_ally_i <= combat_ally_count)
     *temp ctpia_ally_position {("combat_ally" & ctpia_ally_i) & "_position"}
-    *if (ctpia_ally_position = ctpia_position)
+    *if ((ctpia_ally_position = ctpia_position) and (not(ctpia_allows_start_occupant)))
       *set ctpia_occupied true
     *set ctpia_ally_i + 1
     *goto combat_terrain_position_ally_loop
@@ -291,15 +323,22 @@
 *label combat_range_name
 *comment *gosub combat_range_name <range number>, then read combat_range_display_name (startup.txt *create) --
 *comment a durable output var instead of a caller-pre-declared *temp, since this label sits above every caller
-*comment in file order. Anything past 3 still reads as Long Range, rather than falling through blank, in case a
-*comment future fight sets a range higher than today's four tiers.
+*comment in file order. The active fight selects legacy4 or expanded6 labels; anything farther than the current
+*comment cap still reads as Long Range rather than falling through blank.
 *params crn_n
 *set combat_range_display_name "Engaged"
 *if (crn_n = 1)
   *set combat_range_display_name "Close"
 *if (crn_n = 2)
   *set combat_range_display_name "Mid-Range"
-*if (crn_n >= 3)
+*if (combat_range_mode = "expanded6")
+  *if (crn_n = 2)
+    *set combat_range_display_name "Near"
+  *if (crn_n = 3)
+    *set combat_range_display_name "Mid-Range"
+  *if (crn_n = 4)
+    *set combat_range_display_name "Far"
+*if (crn_n >= combat_max_range)
   *set combat_range_display_name "Long Range"
 *return
 
@@ -509,7 +548,7 @@
 *comment not kill-priority -- Push Forward/Fall Back are about closing or opening a specific gap, so "who's
 *comment already closest" is the sensible default, not "who's most wounded" (fight_pick_target above, used for
 *comment attacks and ally targeting instead). "push" wants the nearest enemy with range > 0 (nothing to gain
-*comment closing on one already Engaged); "fallback" wants the nearest with range < 3 (nothing to gain opening on
+*comment closing on one already Engaged); "fallback" wants the nearest enemy below the active maximum (nothing to gain opening on
 *comment one already at Long Range) -- an enemy Engaged with you is a valid Fall Back candidate but never a valid
 *comment Push Forward one, so different enemies can legitimately win depending on direction. A HUD-clicked target
 *comment (combat_player_chosen_target, sticky until it dies) still wins over the auto-pick whenever it's alive
@@ -534,7 +573,7 @@
     *comment should ever clear a click. It became materially more reachable once the movement buttons started
     *comment advertising a from/to tier, which invites exactly that click-then-move sequence.
     *temp fpnt_chosen_range {(("combat_enemy" & combat_player_chosen_target) & "_range")}
-    *if (((fpnt_direction = "push") and (fpnt_chosen_range > 0)) or ((fpnt_direction = "fallback") and (fpnt_chosen_range < 3)))
+    *if (((fpnt_direction = "push") and (fpnt_chosen_range > 0)) or ((fpnt_direction = "fallback") and (fpnt_chosen_range < combat_max_range)))
       *set combat_active_target combat_player_chosen_target
 *if (combat_active_target = 0)
   *temp fpnt_i 1
@@ -547,7 +586,7 @@
       *temp fpnt_ok false
       *if ((fpnt_direction = "push") and (fpnt_range > 0))
         *set fpnt_ok true
-      *if ((fpnt_direction = "fallback") and (fpnt_range < 3))
+      *if ((fpnt_direction = "fallback") and (fpnt_range < combat_max_range))
         *set fpnt_ok true
       *if (fpnt_ok)
         *if ((combat_active_target = 0) or (fpnt_range < fpnt_best_range))
@@ -567,7 +606,7 @@
 *comment so its latest values are first mirrored into lane coordinates before the player takes their step.
 *comment Calling convention: *gosub combat_shift_all_ranges "push" / "fallback" -- a direction string rather than
 *comment a numeric delta, matching fight_pick_nearest_target above, so no caller has to hand this a negative
-*comment literal. Clamps every slot to the 0-3 tier scale and skips dead ones.
+*comment literal. Clamps every slot to the active fight's 0-to-combat_max_range scale and skips dead ones.
 *comment Writes the slots directly by indirection and deliberately does NOT re-sync the active-target scratch:
 *comment each caller has just picked its narration target with fight_pick_nearest_target, so it re-syncs once
 *comment with fight_sync_target_in after this returns, to pick up the nearest enemy's new value.
@@ -605,8 +644,8 @@
       *temp csar_to (csar_pos - combat_lane_player_position)
       *if (csar_to < 0)
         *set csar_to (0 - csar_to)
-      *if (csar_to > 3)
-        *set csar_to 3
+      *if (csar_to > combat_max_range)
+        *set csar_to combat_max_range
       *set {(("combat_enemy" & csar_i) & "_range")} csar_to
     *set csar_i + 1
     *goto combat_shift_all_ranges_loop
@@ -624,8 +663,8 @@
   *temp cspel_range {(("combat_enemy" & cspel_i) & "_range")}
   *if (cspel_range < 0)
     *set cspel_range 0
-  *if (cspel_range > 3)
-    *set cspel_range 3
+  *if (cspel_range > combat_max_range)
+    *set cspel_range combat_max_range
   *set {(("combat_enemy" & cspel_i) & "_position")} (combat_lane_player_position + cspel_range)
   *set cspel_i + 1
   *goto combat_sync_enemy_positions_from_legacy_ranges_loop
@@ -649,8 +688,8 @@
   *temp clmer_range {(("combat_enemy" & clmer_slot) & "_range")}
   *if (clmer_range < 0)
     *set clmer_range 0
-  *if (clmer_range > 3)
-    *set clmer_range 3
+  *if (clmer_range > combat_max_range)
+    *set clmer_range combat_max_range
   *temp clmer_pos (combat_lane_player_position + clmer_range)
   *if (clmer_direction = "away")
     *set clmer_pos + 1
@@ -664,8 +703,8 @@
   *set clmer_range (clmer_pos - combat_lane_player_position)
   *if (clmer_range < 0)
     *set clmer_range (0 - clmer_range)
-  *if (clmer_range > 3)
-    *set clmer_range 3
+  *if (clmer_range > combat_max_range)
+    *set clmer_range combat_max_range
   *set {(("combat_enemy" & clmer_slot) & "_range")} clmer_range
   *if (combat_active_target = clmer_slot)
     *set combat_enemy_range clmer_range
@@ -684,8 +723,8 @@
 *temp clmat_range {(("combat_ally" & clmat_slot) & "_range")}
 *if (clmat_range < 0)
   *set clmat_range 0
-*if (clmat_range > 3)
-  *set clmat_range 3
+*if (clmat_range > combat_max_range)
+  *set clmat_range combat_max_range
 *temp clmat_target_pos {(("combat_enemy" & clmat_target) & "_position")}
 *temp clmat_pos (clmat_target_pos - clmat_range)
 *if (clmat_direction = "toward")
@@ -700,9 +739,29 @@
 *set clmat_range (clmat_target_pos - clmat_pos)
 *if (clmat_range < 0)
   *set clmat_range (0 - clmat_range)
-*if (clmat_range > 3)
-  *set clmat_range 3
+*if (clmat_range > combat_max_range)
+  *set clmat_range combat_max_range
 *set {(("combat_ally" & clmat_slot) & "_range")} clmat_range
+*return
+
+*label combat_lane_move_enemy_to_position
+*comment Absolute-coordinate movement for optional AI repositioning. Pursuit/retreat keep their compatibility
+*comment helper above; tactical terrain and threat responses already chose a real lane destination, so rebuilding
+*comment from a legacy range here would throw that decision away.
+*params clmetp_slot clmetp_position
+*if (clmetp_position < combat_lane_min_position)
+  *set clmetp_position combat_lane_min_position
+*if (clmetp_position > combat_lane_max_position)
+  *set clmetp_position combat_lane_max_position
+*set {(("combat_enemy" & clmetp_slot) & "_position")} clmetp_position
+*temp clmetp_range (clmetp_position - combat_lane_player_position)
+*if (clmetp_range < 0)
+  *set clmetp_range (0 - clmetp_range)
+*if (clmetp_range > combat_max_range)
+  *set clmetp_range combat_max_range
+*set {(("combat_enemy" & clmetp_slot) & "_range")} clmetp_range
+*if (combat_active_target = clmetp_slot)
+  *set combat_enemy_range clmetp_range
 *return
 
 *label combat_lane_step_ally_from_position
@@ -736,8 +795,30 @@
 *temp clsafp_range (clsafp_target_position - clsafp_position)
 *if (clsafp_range < 0)
   *set clsafp_range (0 - clsafp_range)
-*if (clsafp_range > 3)
-  *set clsafp_range 3
+*if (clsafp_range > combat_max_range)
+  *set clsafp_range combat_max_range
 *set {(("combat_ally" & clsafp_slot) & "_range")} clsafp_range
+*return
+
+*label combat_lane_move_ally_to_position
+*comment Ally counterpart to combat_lane_move_enemy_to_position. The caller supplies the ally's real terrain or
+*comment evasive destination; this keeps the independent target range in sync without recasting it as a chase step.
+*params clmatp_slot clmatp_target clmatp_position
+*if (clmatp_target <= 0)
+  *set clmatp_target {(("combat_ally" & clmatp_slot) & "_target")}
+*if (clmatp_target <= 0)
+  *set clmatp_target 1
+*if (clmatp_position < combat_lane_min_position)
+  *set clmatp_position combat_lane_min_position
+*if (clmatp_position > combat_lane_max_position)
+  *set clmatp_position combat_lane_max_position
+*set {(("combat_ally" & clmatp_slot) & "_position")} clmatp_position
+*temp clmatp_target_position {(("combat_enemy" & clmatp_target) & "_position")}
+*temp clmatp_range (clmatp_target_position - clmatp_position)
+*if (clmatp_range < 0)
+  *set clmatp_range (0 - clmatp_range)
+*if (clmatp_range > combat_max_range)
+  *set clmatp_range combat_max_range
+*set {(("combat_ally" & clmatp_slot) & "_range")} clmatp_range
 *return
 

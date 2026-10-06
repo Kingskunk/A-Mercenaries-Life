@@ -163,11 +163,17 @@
       link: ["Thale"],
       tags: ["Fishmongers' Slip"], aliases: ["buyer", "ring", "good gloves", "smokehouse"],
       unlock: "fish_met_wenna",
-      body: [
-        "A buyer in good leather gloves who owns two of the Slip's smokehouses. The other two buyers eat at his table, and when he lifts two fingers to the brim of his cap, nobody bids against him.",
-        "There is no law against nobody wanting a widow's fish, and the slip-warden says so."
-      ],
-      see: ["wenna", "auction_block", "fishmongers_slip"]
+      body: function (s) {
+        var out = [
+          "A buyer in good leather gloves who owns two of the Slip's smokehouses. The other two buyers eat at his table, and when he lifts two fingers to the brim of his cap, nobody bids against him.",
+          "There is no law against nobody wanting a widow's fish, and the slip-warden says so."
+        ];
+        if (truthy(s.pq_seen_vantry)) {
+          out.push("His smokehouses cure fish for [[pq_house_vantry|House Vantry]]'s contract, at the price the contract sets. Fish bought cheap at the block is how he keeps the price.");
+        }
+        return out;
+      },
+      see: ["wenna", "auction_block", "fishmongers_slip", "pq_house_vantry"]
     },
 
     /* --------------------------------------------------------- PEOPLE: MIDDLE WARD */
@@ -378,6 +384,9 @@
         ];
         if (truthy(s.pv_drill_seen)) {
           out.push("Behind the barracks lies the drill square, a fenced stretch of packed ground with practice posts and a lean-to of wooden weapons. Each squad drills there under its own leader, one long shift a day at most, and the company asks nothing for it.");
+        }
+        if (truthy(s.pv_workroom_seen)) {
+          out.push("An outside stair on the timber headquarters climbs to a back room with a blank brass plate on the door. The Cadre handler works there by day, and the door is shut after dark.");
         }
         return out;
       },
@@ -1229,7 +1238,8 @@
           "One of the three great houses on the Avenue of Estates: a gate of blue iron trimmed with silver, with a silver barge under sail worked into the lintel, fine enough that the rigging catches the light."
         ];
         if (truthy(s.pq_seen_vantry)) {
-          out.push("The house's business is grain and warehousing. Wagons of sealed sacks are drawn up in the yard behind the gate, and a man sits on a stool by the porter's window, weighing samples in a brass pan and writing the figures on a slate.");
+          out.push("The house's business is salt. Wagons of sealed sacks are drawn up in the yard behind the gate, with a pale crust of spilled grit on the stones around the wheels. A man sits on a stool by the porter's window, tasting a pinch from a brass pan, weighing the rest and writing the figures on a slate. Under the figures, in chalk: Salt by the cartload. Cured fish by contract.");
+          out.push("Most of the fish cured in the city is cured with salt that came through this gate.");
         }
         return out;
       },
@@ -1251,9 +1261,12 @@
         if (truthy(s.pq_ostrand_gap_spotted)) {
           out.push("For the slow count of about forty the house's side gate stands unwatched while the guard relief crosses the avenue at the bell. Nobody on the stones remarks on it, and the house guards wear the quartered livery of all of them, so there is no one to ask.");
         }
+        if (truthy(s.ysolde_ostrand_told)) {
+          out.push("The Carrion's Cadre handler, [[ysolde|Ysolde]], carries the house's name. She says the house set its insurance prices from river charts she drew, and that she left over who was allowed to read them.");
+        }
         return out;
       },
-      see: ["upper_wharves", "pq_house_halloran", "pq_house_vantry"]
+      see: ["upper_wharves", "pq_house_halloran", "pq_house_vantry", "ysolde"]
     },
     {
       id: "gilt_needle", category: "places", title: "The Gilt Needle",
