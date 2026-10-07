@@ -157,7 +157,7 @@
     talia_oiled_cloak: "cloak", rorik_grip_wraps: "gloves", rorik_campaign_belt: "belt", talia_deck_boots: "boots", brant_iron_heel_boots: "boots",
     althea_votive_ring: "ring", night_eye_ring: "ring", hearthstone_talisman: "stone", odessa_salve: "salve", fish_cache: "fish", kestrel_dispatch: "letter", ysolde_requisition: "letter",
     vanguard_grease_chit: "note", customs_vellum: "ledger", waterproof_gear: "jug", talia_provisions: "food", rotten_rib_splinter: "splinter",
-    diverted_timber_waybill: "note", silt_gate_payout_slip: "note", letter_of_credit: "letter"
+    diverted_timber_waybill: "note", silt_gate_payout_slip: "note", hall_insignia: "signet", letter_of_credit: "letter"
   };
   var BUCKET_ICON = { weapon: "w_generic", sidearm: "w_generic", armor: "a_generic", shield: "shield", head: "h_cap", cloak: "cloak", hands: "gloves", waist: "belt", feet: "boots", neck: "neck", ring: "ring" };
   var CATEGORY_ICON = { weapons: "w_generic", apparel: "a_generic", accessories: "ring", provisions: "sack", documents: "note", consumables: "potion" };

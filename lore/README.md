@@ -2,7 +2,7 @@
 
 Nothing in this folder is loaded by the game. The player-facing lorebook lives in `web/mygame/lorebook-*.js`, which ships to the player. This folder is for everything the player must not see yet: full life stories, secrets, and the order in which they come out.
 
-One file per character in `characters/`. Each file uses the same sections, and every fact carries a tag:
+One file per character in `characters/`, and one per world system in `world/`. Each file uses the same sections, and every fact carries a tag:
 
 - **[GAME]**: the player can already read this, and the file says where.
 - **[AGREED]**: decided in design, written nowhere in the game yet.
@@ -15,3 +15,9 @@ Ideas for quests or hooks may live here as notes. Do not build flags, items or p
 | Character | File |
 |---|---|
 | Kestrel, Scout Company commander | `characters/kestrel.md` |
+| Ysolde Ostrand, handler of the Cadre | `characters/ysolde.md` |
+| Sergeant Varren, Vanguard drillmaster | `characters/varren.md` |
+
+| World | File |
+|---|---|
+| The Hiring Hall and the Hall Insignia | `world/hiring_hall.md` |

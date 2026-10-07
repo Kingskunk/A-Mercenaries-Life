@@ -316,6 +316,7 @@ if (typeof importScripts != "undefined") {
   var mygamePath = "web/" + gameName + "/" + "mygame.js";
   if (fs.existsSync(mygamePath)) {
     load(mygamePath);
+    if (fs.existsSync("web/" + gameName + "/names-data.js")) load("web/" + gameName + "/names-data.js");
   } else {
     nav = new SceneNavigator(["startup"]);
     stats = {};

@@ -1,0 +1,309 @@
+*comment ====================================================================================
+*comment VERMIN IN THE HOUSE: the first radiant Hiring Hall job (Gilded Scales page)
+*comment
+*comment One job with two tables. WHERE it happens is a Middle Ward house most of the time and, rarely, a Patrician
+*comment Quarter house. WHAT is in the walls is a pack of giant rats or a giant snake. The posting on the wall only says
+*comment "vermin in the walls" and names the household, so the creature is a surprise on arrival.
+*comment
+*comment Wired in (2026-10-06):
+*comment   - The wall posting and the signing are in port_valen_civic_heights.txt (pv_ch_roll_read, pv_ch_roll_sign). Signing
+*comment     needs an insignia, which the Seals window sells (pv_ch_seals_buy). Signing calls rj_pest_select and
+*comment     rj_pest_describe, sets rj_pest_stage "active" and rj_pest_until (three days).
+*comment   - The house is reached from a button in the Middle Ward hub or the Quarter avenue hub, while the job is open.
+*comment   - A Quarter job counts as admission at the Inner Gate (the two writ checks in port_valen_upper_wharves.txt).
+*comment   - compile.js lists the file with verifyFileName. Not in *scene_list.
+*comment
+*comment Names: the patron is a generated person (names.txt, web/mygame/names-data.js). The five-day block is the seed, so the
+*comment wall, the hub button, the door and the payment all show the same name, and nothing about the name is stored.
+*comment The posting gives the patron and the kind of house, never a street.
+*comment
+*comment Rules this file follows: the patron pays at the door (no return trip to the Hall); the counter is
+*comment hall_jobs_scales (one per government, Port Valen's page); a failed roll never hands back the thing it was
+*comment gambling for (a failed surprise only loses the surprise, a failed clean solve starts the fight with the creature
+*comment first); Guidance does not help the clean-solve check (check_no_guidance).
+*comment
+*comment Numbers (all tunable): 4 silver for the job, stealth DC 12, clean solve DC 10 plus proficiency bonus.
+*comment Fight stats are not balance-simmed: two library mire-rats, or one beast named Giant Snake with
+*comment 9 HP, AC 12, +4 to hit.
+*comment ====================================================================================
+
+*label rj_pest_arrive
+*set minutes_to_pass 10
+*set time_advance_call_id "rj_pest_arrive_1"
+*gosub rj_time
+[b]VERMIN IN THE HOUSE[/b]
+*line_break
+*comment The patron is a generated person (names.txt): rj_pest_patron asks for the same name the posting showed, from the block seed.
+*gosub rj_pest_patron
+*temp pw name_full
+*temp pl name_last
+*if (rj_pest_where = "middle_ward")
+  *if (rj_pest_house = 1)
+    It is a narrow tenement, three floors of leaning timber with one stair for all of them. A woman with red forearms and a basket of wet linen is waiting on the second landing. "${pw}," she says. "I took in washing on the ground floor for eleven years and never had a thing in the walls. Come and listen."
+  *elseif (rj_pest_house = 2)
+    It is a cooper's, hung with hoops and smelling of cut oak and hot iron from the forge across the way. The cooper stands in his own doorway with an adze in one hand, plainly unwilling to be the man who does the work. "${pw}," he says. "Wife won't sleep in the back room. Hasn't for three nights."
+  *elseif (rj_pest_house = 3)
+    It is a pair of rooms above a chandler's shop, where the whole stair smells of tallow. A thin woman meets you at the top with a candle already lit. "${pw}," she says. "The shop's down there and the rooms are up here, and something's got between the two."
+  *else
+    It is a carter's, beside a yard full of wheel-ruts, with a cart-wheel nailed over the door for luck. The carter comes out wiping his hands on his coat. "${pw}," he says. "I'll haul anything you like. I won't go into my own cellar."
+*else
+  *comment The Quarter: the footman at the door reads the posting off the insignia, and that is all the gate asked for.
+  *if (rj_pest_house = 1)
+    It is a narrow townhouse, its steps scrubbed and its brass polished until it hurts to look at. A footman reads the posting off your insignia with a small grey stone, nods once, and does not ask you to wipe your boots, which tells you how long this has been going on. "Mistress ${pl} is in the morning room," he says. "She would like it done before the guests."
+  *elseif (rj_pest_house = 2)
+    *comment The household's head is the patron on the posting; the steward who speaks for him is a second generated person.
+    *set name_gender "m"
+    *set name_seed (rj_pest_block + 1000)
+    *gosub_scene names name_make
+    *temp sl name_last
+    It is three storeys of grey stone with a wine-factor's crest over the door. A steward in a dark coat takes your insignia, touches it to a stone, and gives it back. "Steward ${sl}," he says, very quietly. "Master ${pl} does not know it is in the house. I would prefer that he never learns the word."
+  *else
+    It is a tall glass-fronted townhouse at the quiet end of the street. The door is opened by the owner himself, an old man in a quilted gown with a harbor-master's silver whistle still on its cord. He passes a stone over your insignia without being asked. "${pw}," he says. "I have run ships through worse weather than this. I do not know how to run this."
+
+*comment ── the signs ──
+*if (rj_pest_creature = "rat")
+  The signs are plain once you stop to look. There are crumbs of plaster on the floor under a skirting board, a trail of droppings along the wall as long as your forearm, and a hole at the foot of the wall as wide as a man's fist. From somewhere behind it comes a steady dry gnawing, and when the householder bangs the wall with a spoon it stops, and starts again.
+*else
+  The signs are quieter. There is a long, papery skin lying across the doorway of the back room, dry as old parchment and longer than you are tall. The household cat will not go in, and the warm corner by the stove, where the house's one flue passes, is the only place nobody has seen it.
+
+*goto rj_pest_hub
+
+*label rj_pest_hub
+*temp hint_pest_stealth ""
+*temp hint_pest_skip ""
+*if (show_stat_hints)
+  *if (guidance_active)
+    *set hint_pest_stealth " [DEX Check (DC 12) + 1d4 (Guidance), Surprise: Advantage on First Strike]"
+  *else
+    *set hint_pest_stealth " [DEX Check (DC 12), Surprise: Advantage on First Strike]"
+  *set hint_pest_skip " [DC 10 + Proficiency, No Fight, Guidance does not help]"
+
+*choice
+  # Creep in and take it by surprise.${hint_pest_stealth}
+    *goto rj_pest_stealth
+  *if (rj_pest_creature = "rat")
+    # Block the holes, lay bait, and drive them out through the door instead of fighting.${hint_pest_skip}
+      *goto rj_pest_skip
+  *if (rj_pest_creature = "snake")
+    # Draw it out with warm milk and a sack, and get it out of the house without a fight.${hint_pest_skip}
+      *goto rj_pest_skip
+  # Leave the house for now.
+    *goto rj_pest_leave
+
+*label rj_pest_stealth
+*set minutes_to_pass 10
+*set time_advance_call_id "rj_pest_stealth_1"
+*gosub rj_time
+*gosub_scene dice_engine roll_skill_check 12 "stealth" "" "" "" "" ""
+*if (check_success)
+  *if (rj_pest_creature = "rat")
+    You go in on your toes with the householder's lantern shuttered to a crack, and stop beside the hole where the plaster is crumbling. The gnawing carries on, a hand's breadth from your boot. By the time the first grey back lifts out of the dark, you are already set.
+  *else
+    You go in along the wall with your boots in your hand, and stand a long moment in the dark by the stove. The snake is coiled in the warm corner with its head on its own coils, and it has not marked you.
+  *set advantage true
+  *set combat_player_surprise true
+  [b][🗡️ Unnoticed — Advantage on your first strike][/b]
+*else
+  *if (rj_pest_creature = "rat")
+    A board speaks under your heel. The gnawing stops all at once, and the whole wall seems to hold its breath.
+  *else
+    A loose board speaks under your heel, and a dry hiss answers from the corner. The head comes up off the coils and turns toward you.
+*goto rj_pest_fight
+
+*label rj_pest_skip
+*comment Only one time advance runs per page (calendar.txt keeps a single lock slot), so a clean solve spends its 20
+*comment minutes inside the payment's advance, and only a failed solve advances here before the fight.
+*comment A flat roll: no ability modifier, just the proficiency bonus as the boost. check_no_guidance keeps Guidance
+*comment out of it (and leaves a cast Guidance unspent for the next real check).
+*set check_stat "none"
+*set check_mod 0
+*set check_dc 10
+*set check_skill "Clear the House"
+*set check_flat_bonus prof_bonus
+*set check_flat_bonus_label " (Proficiency)"
+*set check_no_guidance true
+*gosub_scene dice_engine roll_d20_check
+*comment The engine skips its own cleanup when a page replays, so clear the scratch values here and both runs end the same.
+*set check_mod 0
+*set check_flat_bonus 0
+*set check_flat_bonus_label ""
+*if (check_success)
+  *goto rj_pest_clean
+*set minutes_to_pass 20
+*set time_advance_call_id "rj_pest_skip_1"
+*gosub rj_time
+*if (rj_pest_creature = "rat")
+  You wedge the last board across the hole and set the bait, and it is not enough. The boards go over with a crack, and the first rat is across the floor before you have turned.
+*else
+  The milk is barely in the bowl before the head comes out of the dark, and it is not interested in the milk. It comes toward the sack, and then toward you.
+*set combat_enemy_advantage true
+*goto rj_pest_fight
+
+*label rj_pest_clean
+*if (rj_pest_creature = "rat")
+  You work through the house with a hammer, a sack of old stockings, and a bowl of bacon rind. By the time the light goes you have the holes blocked, the bait laid at the cellar door, and the rest of the colony nosing its way out into the lane in a long grey line. You stand on the step and watch the last of them go.
+*else
+  You lay the bowl at the mouth of the corner and sit very still beside it, and an hour later the snake comes out to it. After that it is a matter of a sack and a long stick and the patience not to hurry. You carry it, heavy and cold and writhing, down to the water-steps and let it go.
+*set minutes_to_pass 25
+*goto rj_pest_pay
+
+*label rj_pest_fight
+*comment Terrain is randomized each time. fight_library reads the combat_lib_ slots; combat_enemy_advantage and
+*comment combat_player_surprise were set by whichever branch got us here.
+*set combat_is_nonlethal false
+*set combat_terrain_layout "random_standard"
+*if (rj_pest_creature = "rat")
+  *set combat_lib_1 "mire_rat"
+  *set combat_enemy_name_override "Giant Rat (Lead)"
+  *set combat_enemy_epithet_override "the lead giant rat"
+  *set combat_lib_2 "mire_rat"
+  *set combat_enemy2_name_override "Giant Rat (Flank)"
+  *set combat_enemy2_epithet_override "the flanking giant rat"
+*else
+  *set combat_lib_1 "beast"
+  *set combat_enemy_name_override "Giant Snake"
+  *set combat_enemy_epithet_override "the giant snake"
+  *set combat_enemy_hp_override 9
+  *set combat_enemy_ac_override 12
+  *set combat_enemy_atk_override 4
+*gosub_scene combat fight_library
+*if (combat_outcome = "player_died")
+  *set death_cause "combat"
+  *if (rj_pest_creature = "rat")
+    *set death_enemy_epithet "the giant rats in the wall"
+  *else
+    *set death_enemy_epithet "the giant snake in the back room"
+  *goto_scene death death_screen
+*if (combat_outcome = "victory")
+  *goto rj_pest_won
+*if (combat_outcome = "rescued")
+  *goto rj_pest_rescued
+*goto rj_pest_fled
+
+*label rj_pest_won
+*if (rj_pest_creature = "rat")
+  The last rat goes still against the skirting board. The house is quiet in a way it has not been for days, and then there is a long, careful breath from the stair behind you as the householder dares to come down.
+*else
+  The snake goes slack along the boards and lies still. For a moment the whole house seems to hold itself, and then the householder comes to the door with a hand over their mouth.
+*goto rj_pest_pay
+
+*label rj_pest_pay
+*gosub rj_pest_patron
+*if (minutes_to_pass = 0)
+  *set minutes_to_pass 5
+*set time_advance_call_id "rj_pest_pay_1"
+*gosub rj_time
+*if (rj_pest_where = "quarter")
+  The ${name_last} household brings out the fee on a small silver tray, as if it were a bill for something else, and passes a grey stone over your insignia. The stone chimes, and the posting on it closes.
+*else
+  ${name_first} counts the fee out of a jar on the dresser, coin by coin, and then holds a grey stone over your insignia as the Hall's clerk would. The stone chimes, and the posting on it closes.
+*if (rj_pest_stage = "active")
+  *set rj_pest_stage "done"
+  *set rj_done_block rj_pest_block
+  *set hall_jobs_scales + 1
+  *if (rj_pest_where = "quarter")
+    *set rj_pest_walkout true
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount 40
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+
+[b][💰 Paid by ${name_full}: 4 Silver Marks][/b]
+*line_break
+[b][🏷 Insignia: Port Valen page, ${hall_jobs_scales} @{(hall_jobs_scales = 1) job|jobs} finished][/b]
+*page_break Take your leave…
+*goto rj_pest_exit
+
+*label rj_pest_rescued
+*gosub rj_pest_patron
+*comment The engine floored HP at 1 and the fight is over, but the creature is not dealt with and the job stays open.
+Your legs fold. Someone drags you out across the boards by the collar, and the door shuts hard on whatever is left inside. When your head clears you are sitting on the step with a wet cloth against your face, and ${name_first} is saying, to nobody, that someone else will have to be found.
+*page_break Walk away from the house…
+*goto rj_pest_exit
+
+*label rj_pest_fled
+*gosub rj_pest_patron
+*comment The job stays open. Nothing here pays for running.
+You get out through the door and slam it behind you. ${name_first} stares at you through the window, and does not come out.
+*page_break Walk away from the house…
+*goto rj_pest_exit
+
+*label rj_pest_leave
+*gosub rj_pest_patron
+*comment Backing out is free and leaves the job open: a posting that has gone up and been signed stays signed.
+You tell ${name_first} you will be back. The look that follows you down the stair is one you have seen on people before, the look of someone being left with the problem.
+*page_break Walk away from the house…
+*goto rj_pest_exit
+
+*label rj_pest_exit
+*comment Back to the place the house is in. A finished Quarter job ends the admission, so the avenue's writ check
+*comment walks the player out (pq_lapsed reads rj_pest_walkout for its wording).
+*if (rj_pest_where = "quarter")
+  *goto_scene port_valen/port_valen_upper_wharves pq_avenue
+*else
+  *goto_scene port_valen/port_valen_middle_ward port_valen_middle_ward
+
+*comment ── the pick: five-day blocks, same answer for the same day, no state ──
+*label rj_pest_select
+*set rj_pest_block ((campaign_day - (campaign_day modulo 5)) / 5)
+*set rj_pest_where "middle_ward"
+*if ((rj_pest_block modulo 8) = 5)
+  *set rj_pest_where "quarter"
+*if (rj_pest_where = "quarter")
+  *set rj_pest_house (1 + (rj_pest_block modulo 3))
+*else
+  *set rj_pest_house (1 + (rj_pest_block modulo 4))
+*set rj_pest_creature "rat"
+*if ((rj_pest_block modulo 3) = 0)
+  *set rj_pest_creature "snake"
+*return
+
+*comment ── time helper: the caller sets minutes_to_pass and a unique time_advance_call_id first ──
+*label rj_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return
+
+*comment ── the patron: the same person every time, from the block seed (names.txt). Gender follows the house. ──
+*label rj_pest_patron
+*set name_race "human"
+*set name_region "port"
+*set name_seed rj_pest_block
+*set name_gender "f"
+*if (rj_pest_where = "middle_ward")
+  *if ((rj_pest_house = 2) or (rj_pest_house = 4))
+    *set name_gender "m"
+*else
+  *if ((rj_pest_house = 2) or (rj_pest_house = 3))
+    *set name_gender "m"
+*gosub_scene names name_make
+*return
+
+*comment ── short place text for the wall posting, the hub button and the quest log: who and what kind of house, no street ──
+*label rj_pest_describe
+*gosub rj_pest_patron
+*if (rj_pest_where = "middle_ward")
+  *if (rj_pest_house = 1)
+    *set rj_pest_place (name_full & ", a tenement")
+  *elseif (rj_pest_house = 2)
+    *set rj_pest_place (name_full & ", a cooper's house")
+  *elseif (rj_pest_house = 3)
+    *set rj_pest_place (name_full & ", rooms above a chandler's")
+  *else
+    *set rj_pest_place (name_full & ", a carter's house")
+*else
+  *if (rj_pest_house = 1)
+    *set rj_pest_place (name_full & ", a townhouse")
+  *elseif (rj_pest_house = 2)
+    *set rj_pest_place (name_full & ", a wine-factor's townhouse")
+  *else
+    *set rj_pest_place (name_full & ", a retired harbor-master's townhouse")
+*return
+

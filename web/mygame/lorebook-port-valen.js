@@ -349,24 +349,24 @@
     },
     {
       id: "tolliver", category: "people", title: "Clerk Tolliver",
-      sub: "Clerk of the Open Roll",
-      role: "Clerk, Postings window, the Open Roll (the Council Hall)",
+      sub: "Clerk of the Hiring Hall",
+      role: "Clerk, Postings window, the Hiring Hall (the Council Hall)",
       link: ["Clerk Tolliver"],
       tags: ["Civic Heights", "Law"], aliases: ["Tolliver", "clerk", "roll clerk", "postings"],
       unlock: "ch_records_seen",
       body: function (s) {
         var out = [
-          "A broad-shouldered clerk in a dark grey coat and a matching cap, with a straight back and the flat, carrying voice of a man who reads other people's terms aloud all day. He keeps the Postings window at the Open Roll. Reading the wall is free. Signing costs."
+          "A broad-shouldered clerk in a dark grey coat and a matching cap, with a straight back and the flat, carrying voice of a man who reads other people's terms aloud all day. He keeps the Postings window at the Hiring Hall. Reading the wall is free. Signing costs."
         ];
         if (truthy(s.ch_roll_rules_talk)) {
-          out.push("To him the Roll is the law and not a courtesy, and the words carved over the lintel are there so nobody can say they did not see them.");
+          out.push("To him the Hall is the law and not a courtesy, and the words carved over the lintel are there so nobody can say they did not see them.");
         }
         if (truthy(s.ch_roll_claims_talk)) {
           out.push("He has a low opinion of people who reach the Claims window without reading the wall first. Most of them, he says, did not.");
         }
         return out;
       },
-      see: ["open_roll", "civic_heights"]
+      see: ["hiring_hall", "civic_heights"]
     },
 
     /* ------------------------------------------------------------- PLACES: THE CITY */
@@ -1110,7 +1110,7 @@
           "It opens at Seventh Bell, shuts at the evening horn, and stays closed on Hallowday."
         ];
         if (truthy(s.ch_head_contracts_talk)) {
-          out.push("Contracts are let by appointment, to houses the Scales already trust and companies that have left nothing ugly on the Roll and nothing owing in the books.");
+          out.push("Contracts are let by appointment, to houses the Scales already trust and companies that have left nothing ugly in the Hall's book and nothing owing in the books.");
         }
         return out;
       },
@@ -1305,10 +1305,10 @@
       link: ["Civic Heights"],
       unlock: "civic_heights_seen",
       body: [
-        "The road from the Middle Ward ends at a broad plaza of cut limestone, and the buildings change from timber to stone. The Council Hall stands at its head, tall-windowed and long-winged, with the tax windows and the Open Roll in its east wing and the Port Watch headquarters beside its west wing. Painted boards mark the public windows, where people wait beneath the eaves.",
+        "The road from the Middle Ward ends at a broad plaza of cut limestone, and the buildings change from timber to stone. The Council Hall stands at its head, tall-windowed and long-winged, with the tax windows and the Hiring Hall in its east wing and the Port Watch headquarters beside its west wing. Painted boards mark the public windows, where people wait beneath the eaves.",
         "The cathedral rises above the Council Hall's roofline on an older foundation, its bells carrying over every district. Charity kitchens cluster around its steps, and people in thin, mended clothes queue there."
       ],
-      see: ["open_roll", "council", "port_watch", "middle_ward"]
+      see: ["hiring_hall", "council", "port_watch", "middle_ward"]
     },
     {
       id: "magistrates_court", category: "places", title: "The Magistrates' Court",
@@ -1318,9 +1318,9 @@
       unlock: "ch_court_seen",
       body: [
         "A tall limestone courtroom behind the west arch of the Council Hall, with a raised bench of dark oak under the city's three-masted seal, a clerk's table, a railed witness stand, and a low railed dock beside a barred door at the top of a narrow stair that goes down into the dark. Rows of public benches face the bar.",
-        "It sits from Seventh Bell until noon, and in the afternoon the iron gate across the west arch is drawn shut. Cases are heard in the order they were filed, at the Open Roll or at the Watch's duty desk, and anyone may sit on the public benches and listen."
+        "It sits from Seventh Bell until noon, and in the afternoon the iron gate across the west arch is drawn shut. Cases are heard in the order they were filed, at the Hiring Hall or at the Watch's duty desk, and anyone may sit on the public benches and listen."
       ],
-      see: ["council", "open_roll", "port_watch_hq"]
+      see: ["council", "hiring_hall", "port_watch_hq"]
     },
     {
       id: "trade_licence", category: "lore", title: "The Trade Licence",
@@ -1337,13 +1337,13 @@
         }
         return out;
       },
-      see: ["council", "weigh_house", "entry_writs", "open_roll"]
+      see: ["council", "weigh_house", "entry_writs", "hiring_hall"]
     },
     {
-      id: "open_roll", category: "places", title: "The Open Roll",
+      id: "hiring_hall", category: "places", title: "The Hiring Hall",
       sub: "Public contracts in the Council Hall",
       tags: ["Civic Heights", "Law", "Trade"], aliases: ["records house", "contracts", "postings", "hiring", "claims", "wages", "job board", "work"],
-      link: ["Open Roll"],
+      link: ["Hiring Hall"],
       unlock: "ch_records_seen",
       body: function (s) {
         var out = [
@@ -1351,13 +1351,19 @@
           "The hall is open by day and shuts when the evening horn sounds and on the holy day."
         ];
         if (truthy(s.ch_roll_rules_talk)) {
-          out.push("In Port Valen a hire is not a hire until both seals are on the Roll, the patron's and the city's. The rule is the same for guilds, the Scales and a widow hiring a door-warden. The courts will not enforce a promise that is not posted.");
+          out.push("In Port Valen a hire is not a hire until both seals are on the posting, the patron's and the city's. The rule is the same for guilds, the Scales and a widow hiring a door-warden. The courts will not enforce a promise that is not posted.");
         }
         if (truthy(s.ch_roll_claims_talk)) {
-          out.push("A worker who was not paid files a claim at the Claims window with a copy of the posting. If the terms are on the Roll, the court can order the patron to pay, and the city takes its fee out of what it wins back. If they are not on the Roll, there is nothing to file.");
+          out.push("A worker who was not paid files a claim at the Claims window with a copy of the posting. If the terms are posted, the court can order the patron to pay, and the city takes its fee out of what it wins back. If they are not posted, there is nothing to file.");
         }
         if (truthy(s.ch_roll_deeds_talk)) {
           out.push("A fourth window, Deeds, stands behind a permanent iron shutter. A house changes hands on the records or not at all, and the window opens when there is a sale to witness.");
+        }
+        if (truthy(s.ch_seals_talk)) {
+          out.push("The Seals window sells the Hall's insignia for a one-time licence fee: a palm-sized brass disc with the wearer's name, rank and the terms of everything they sign worked into the metal, where any reader can pass over it and tell. A copy of the shape reads blank. It is the same disc in every kingdom and only its pages differ: each government writes its own rank onto it, and some honor each other's.");
+        }
+        if (truthy(s.ch_seals_ranks_talk)) {
+          out.push("The Scales keep four ranks, and the Hall only works the brass. In order: Open, Bonded, Sealed and Named.");
         }
         return out;
       },
@@ -1399,13 +1405,13 @@
           "Two lines run at the tax windows in the east wing. The long one winds out the door and down the steps. The other is a side window with no line at all, where clerks in river-serpent colors hand in leather cases and take out stamped receipts."
         ];
         if (truthy(s.ch_hall_seen)) {
-          out.push("The Council Hall is the one grand civic building on the plaza. Inside its bronze-banded doors a limestone concourse runs the width of the building, with the Open Roll through the arch at the east end, an iron-gated arch at the west end, and a stair to an upper floor behind a red cord. It is open from Seventh Bell until the evening horn, and shut on Hallowday.");
+          out.push("The Council Hall is the one grand civic building on the plaza. Inside its bronze-banded doors a limestone concourse runs the width of the building, with the Hiring Hall through the arch at the east end, an iron-gated arch at the west end, and a stair to an upper floor behind a red cord. It is open from Seventh Bell until the evening horn, and shut on Hallowday.");
         }
         if (truthy(s.ch_court_seen)) {
           out.push("The west arch opens on the magistrates' court, which sits from Seventh Bell until noon; in the afternoon the iron gate across the arch is drawn shut.");
         }
         if (truthy(s.ch_gal_board_seen)) {
-          out.push("The Council sits every tenth day, from Noon until the evening horn, and on the next day if the tenth falls on Hallowday. A board at the foot of the stair gives the next sitting, and petitions for a sitting must be on the Roll ten days before it.");
+          out.push("The Council sits every tenth day, from Noon until the evening horn, and on the next day if the tenth falls on Hallowday. A board at the foot of the stair gives the next sitting, and petitions for a sitting must be filed at the Hiring Hall ten days before it.");
           out.push("Twelve houses sit on the Council of Factors, each by its Factor and a deputy. The Chair of the Council passes to the next house each year, and the First Factor answers to the Council.");
         }
         if (truthy(s.ch_gal_seen)) {

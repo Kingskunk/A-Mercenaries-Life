@@ -189,7 +189,7 @@
             out.push("She drew the river below the weir from a small boat in the Empire's waterways service, three summers with a weighted line. She was twenty-four when the garrison left, and she watched a cart of its plans go down the causeway. The oldest charts on her wall are copies she made of the Empire's before the garrison left. The rest are hers.");
           }
           if (truthy(s.ysolde_ostrand_told)) {
-            out.push("She is of [[pq_house_ostrand|House Ostrand]], a Merchant Lord house the belongs to the Guilded Scales. For eight years after the Empire left it set its prices from the river charts she drew. She wanted the charts posted where any skipper could read them, and the house kept them locked away. She took Captain Vane's written terms instead, and keeps the family signet face-down on her table.");
+            out.push("She is of [[pq_house_ostrand|House Ostrand]], a Merchant Lord house that belongs to the Gilded Scales. For eight years after the Empire left it set its prices from the river charts she drew. She wanted the charts posted where any skipper could read them, and the house kept them locked away. She took Captain Vane's written terms instead, and keeps the family signet face-down on her table.");
           }
           return out;
         },

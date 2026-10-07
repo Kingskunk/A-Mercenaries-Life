@@ -42,6 +42,13 @@
 *temp pq_writ false
 *if ((patrician_reg_until >= campaign_day) or (patrician_day_writ_day = campaign_day))
   *set pq_writ true
+*comment A signed Hall job in the Quarter is admission while it is open: the guard reads the posting off the insignia.
+*temp pq_job false
+*if (((rj_pest_stage = "active") and (rj_pest_where = "quarter")) and (campaign_day <= rj_pest_until))
+  *set pq_job true
+*if ((pq_job) and (not(pq_writ)))
+  *set pq_writ true
+  A guard at the arch holds a small grey stone to your insignia, reads the posting off it, and lifts his halberd out of your way. "The house is expecting you," he says. "Straight there, and straight back."
 *if (pq_writ)
   *goto pq_avenue
 *goto pq_gate_refused
@@ -165,7 +172,11 @@ A guard lowers his halberd across the arch as you approach. "Writ," he says. You
 
 *label pq_lapsed
 *comment A writ can lapse while the player is inside (a Day Writ turns at midnight). Walk them out, no penalty.
-A guard steps out from a portico and holds up a hand. "Your writ has lapsed," he says. He and a second guard walk you the length of the avenue to the inner gate, one on either side, and the pace they set leaves no room to argue.
+*if (rj_pest_walkout)
+  *set rj_pest_walkout false
+  A footman bows you down the steps, and at the corner of the avenue two guards fall in beside you. "Your posting is closed," one says, not unkindly. They walk you the length of the avenue to the inner gate, one on either side, and the pace they set leaves no room to argue.
+*else
+  A guard steps out from a portico and holds up a hand. "Your writ has lapsed," he says. He and a second guard walk you the length of the avenue to the inner gate, one on either side, and the pace they set leaves no room to argue.
 *page_break Pass out through the arch…
 *goto pq_gate_refused
 
@@ -251,8 +262,10 @@ A guard steps out from a portico and holds up a hand. "Your writ has lapsed," he
 *label pq_avenue
 *comment Re-check the writ every time the hub prints: a Day Writ turns at midnight, so time spent inside can lapse it.
 *if ((patrician_reg_until < campaign_day) and (patrician_day_writ_day < campaign_day))
-  *goto pq_lapsed
+  *if (not(((rj_pest_stage = "active") and (rj_pest_where = "quarter")) and (campaign_day <= rj_pest_until)))
+    *goto pq_lapsed
 *set pq_inside_seen true
+*set rj_pest_walkout false
 *temp uw_night false
 *temp uw_workday false
 *temp pq_savvy false
@@ -324,6 +337,9 @@ Past the inner gatehouse, the avenue runs straight and wide between great houses
 *comment ("the narrow shop with the gilt needle sign") is left plain, which is the same result. "Read the card" and the
 *comment travel exit are not destinations and stay unbolded. Keep every line at or under the old longest (61 chars).
 *choice
+  *if (((rj_pest_stage = "active") and (rj_pest_where = "quarter")) and (campaign_day <= rj_pest_until))
+    # [b]The house on your posting[/b]: ${rj_pest_place}. [~10 min]
+      *goto_scene port_valen/radiant/hall_pests rj_pest_arrive
   # [b]The Avenue of Estates[/b]: the great house gates. [~5 min]
     *set minutes_to_pass 5
     *set time_advance_call_id "pq_walk_estates_1"

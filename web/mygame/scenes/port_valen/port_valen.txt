@@ -501,10 +501,10 @@ The Watch captain offers Vane a sealed parchment writ bearing the Council mark. 
     # Try the door at the top of the outside stair.
       *goto pv_workroom_away
   *if ((vane_independent_operative) and ((pv_is_night) and (met_ysolde)))
-    # Ysolde's workroom: shut until morning.
+    # Ysolde's workroom: shut until the afternoon.
       *goto pv_workroom_shut
   *if ((vane_independent_operative) and ((pv_is_night) and (not(met_ysolde))))
-    # The door at the top of the outside stair: shut until morning.
+    # The door at the top of the outside stair: shut until the afternoon.
       *goto pv_workroom_shut
   *if ((vane_independent_operative) and ((not(pv_is_night)) and (not(leaders_at_drill))))
     # Cross to the armory shed.
@@ -522,7 +522,7 @@ The Watch captain offers Vane a sealed parchment writ bearing the Council mark. 
     # The watchtower: Kestrel is out past the gate.
       *goto pv_tower_away
   *if ((vane_independent_operative) and (pv_is_night))
-    # The armory shed: shut until morning.
+    # The armory shed: shut until the afternoon.
       *goto pv_armory_shut
   *if (pv_mess_rations_used < pv_mess_ration_cap)
     # Eat at the compound mess.
@@ -5078,12 +5078,17 @@ A stair of bare planks runs up the outside wall of the timber headquarters, past
 A Cadre recruit waits by the door with a slate under one arm, and doesn't move until Ysolde gives her a nod.
 
 *if (squad = "cadre")
-  She glances at your hands before your face. "Shut the door@{(ysolde_respect < 10) , Hands|}. That stove burns eleven pounds of coal a day. Ten and a half. I weigh it."
-*elseif (met_ysolde)
-  She looks up over the spectacles. "Company business? Infirmary's the other side of the yard, and it's got more patience than I have."
-*else
+  *comment Her own recruit hears the greeting once; on later visits the room just carries on.
+  *if (not(ysolde_cadre_greeted))
+    *set ysolde_cadre_greeted true
+    She glances at your hands before your face. "Shut the door, ${name}."
+*elseif (not(met_ysolde))
   She looks up over the spectacles and weighs you the way a customs clerk weighs a crate. "Ysolde Ostrand, handler of the Cadre. If you're bleeding, the infirmary's across the yard. If you're only curious, the charts aren't entertainment, though people keep treating them that way."
   *set met_ysolde true
+  *set ysolde_workroom_greeted true
+*elseif (not(ysolde_workroom_greeted))
+  *set ysolde_workroom_greeted true
+  She looks up over the spectacles. "Company business? Infirmary's the other side of the yard, and it's got more patience than I have."
 
 *goto pv_workroom_menu
 
@@ -5094,8 +5099,9 @@ The pointer goes back to the chart, and the scribe's nib keeps scratching.
 
 *label pv_workroom_menu
 *choice
-  # Ask about the charts on the walls.
-    *goto pv_workroom_charts
+  *if ((not(ysolde_waterways_told)) and ((ysolde_respect >= 10) or (not(ysolde_charts_asked))))
+    # Ask about the charts on the walls.
+      *goto pv_workroom_charts
   *if ((vane_timber_hint) and ((rotten_rib_quest_stage = "unstarted") and (not(ysolde_timber_briefed))))
     # Tell her Vane sent you about the held-up timber orders.
       *goto pv_workroom_timber
@@ -5111,9 +5117,8 @@ The pointer goes back to the chart, and the scribe's nib keeps scratching.
 *label pv_workroom_charts
 [b]◈ THE WORKROOM[/b]
 *line_break
-*if (ysolde_waterways_told)
-  You start to ask again. "I've told you," Ysolde says, without looking up. "Ask me something I haven't answered."
-*elseif (ysolde_respect < 10)
+*if (ysolde_respect < 10)
+  *set ysolde_charts_asked true
   Ysolde doesn't look up from her pointer. "River charts. Weir to bay, every shallow and sandbar I could find, and a few places where a loaded barge sits down and doesn't get up." She marks something. "If you've seen a shallow I haven't, bring me a number. 'About' I can get from any bargeman."
 *else
   Ysolde sets the pointer down and walks the length of the wall with you. The pale charts on the left are older than the rest, the ink gone brown at the edges.
@@ -5201,7 +5206,7 @@ Ysolde doesn't touch it. She tilts her head and reads it where it lies, then lif
 *label pv_workroom_shut
 [b]◈ THE WORKROOM[/b]
 *line_break
-The door at the top of the outside stair is shut, and the shutters are closed over the windows. A slate hangs from a nail beside it: Open by day.
+The door at the top of the outside stair is shut, and the shutters are closed over the windows. A slate hangs from a nail beside it, chalked in a small, even hand: Open afternoons and evenings, after drill.
 *page_break Back across the compound…
 *goto port_valen_hub
 
@@ -5222,7 +5227,7 @@ The door at the top of the outside stair is shut, and the shutters are closed ov
 *label pv_workroom_away
 [b]◈ THE WORKROOM[/b]
 *line_break
-The door at the top of the outside stair stands ajar. The elven scribe doesn't look up from his column. "The handler's on the yard with the Cadre," he says. "She'll be back when the drill's done." His nib keeps moving.
+The door at the top of the outside stair stands ajar. The elven scribe doesn't look up from his column. "The handler's on the yard with the Cadre," he says. "She'll be back when the drill's done, and she's here the rest of the day until dark." His nib keeps moving.
 *page_break Back across the compound…
 *goto port_valen_hub
 
@@ -5244,12 +5249,15 @@ A corporal stands just inside the door with a notched tally-board, ticking off s
 
 Sergeant Varren sits at the bench with the shield rim across his knees, working a new strap through the rivets with thick fingers. He doesn't look up when you come in.
 
-*if (varren_respect < 6)
-  "Well?" he says, to the rivet.
-*elseif (squad = "vanguard")
-  "Shut the door behind you," he says. "You're letting my heat out."
-*else
-  "You've got a question," he says. "I can tell by how you're standing."
+*comment The greeting plays on the first visit only; later visits go straight to the bench.
+*if (not(varren_armory_greeted))
+  *set varren_armory_greeted true
+  *if (varren_respect < 6)
+    "Well?" he says, to the rivet.
+  *elseif (squad = "vanguard")
+    "Shut the door behind you," he says. "You're letting my heat out."
+  *else
+    "You've got a question," he says. "I can tell by how you're standing."
 
 *goto pv_armory_menu
 
@@ -5280,13 +5288,13 @@ The strap goes back through the rivet, and the grindstone behind the partition s
 Varren braces the shield between his knees and hauls the new strap through to the last rivet. He leans his weight against it once, then sets the shield against the bench.
 
 *if (visited_varren)
-  "You came to my fire before the causeway." He reaches for another length of leather. "Remember what you asked me?"
+  "You visited me before the causeway." He reaches for another length of leather. "Remember what you asked me?"
 
   "About the ground."
 
   "Aye. Everyone else wanted to know if we'd win." He jerks his chin toward the stool opposite. "Sit."
 *else
-  "You weren't at my fire before the causeway." He says it without accusation, measuring a strip of leather against his forearm. "Most weren't. Men like hearing they're brave more than they like hearing how to stay alive." He jerks his chin toward the stool opposite. "Sit. Might as well hear it now."
+  "I didn't see you before the causeway." He says it without accusation, measuring a strip of leather against his forearm. "Men like hearing they're brave more than they like hearing how to stay alive." He jerks his chin toward the stool opposite. "Sit. Might as well hear it now."
 
 The shed smells of lamp oil, wet wool, and the vinegar Varren uses to clean rust from neglected mail. Somewhere beyond the partition, a hammer rings twice against an anvil.
 
@@ -5347,6 +5355,14 @@ Varren threads a fresh strap through a shield grip, works it back and forth, the
 
   "I do." He reaches for the next rivet. "That's how much I hate cellars."
 
+*if (av_count = 0)
+  "Alderford, not much," he admits. "You kept your boots dry and your head down."
+
+  *if (spared_gate_squatter)
+    He works the awl in slowly. "The gate wall at the Sinks, though. You let that deserter run. I'd have put her off the wall myself." He pulls the strap tight. "Might have been wrong. Don't tell the others I said so."
+  *else
+    He works the awl in slowly. "The gate wall at the Sinks, though. Whatever you did with that deserter, you did it fast, and the wall stayed ours." He pulls the strap tight. "That's all a sergeant needs from a soldier."
+
 *page_break Back to the bench…
 *goto pv_armory_back
 
@@ -5364,7 +5380,9 @@ The hammer doesn't fall. For a few seconds there is only the hiss of the brazier
 
 His milk-pale eye stays on the shield between his knees. "Couldn't dig deep because the ground froze. Couldn't light enough fires because they'd range the engines on the smoke. By the end we were boiling harness leather."
 
-He rubs a thumb over the unfinished rivet. "Forty in my file when we went in. Eleven came out."
+"The Baron's steward haggled the bounty down the whole time," he adds. "Vane paid the unit out of the company chest anyway. The Baron's coin came three months late."
+
+He rubs a thumb over the unfinished rivet. "I drilled three units for that siege. Forty in the one I marched in myself. Eleven came out."
 
 You say nothing. Somewhere behind the partition, a hammer starts up, then falters.
 
@@ -5390,7 +5408,7 @@ You pass it to him.
 *label pv_armory_shut
 [b]◈ THE ARMORY SHED[/b]
 *line_break
-The double doors of the armory shed are chained, and a sentry under the lantern shakes his head before you reach them. "Opens at first bell," he says.
+The double doors of the armory shed are chained, and a sentry under the lantern shakes his head before you reach them. "Shut for the night," he says. "The sergeant drills the Vanguard on the square from first light. The shed opens when the drill's done, and then it's open afternoons and evenings."
 *page_break Back across the compound…
 *goto port_valen_hub
 
@@ -5398,7 +5416,7 @@ The double doors of the armory shed are chained, and a sentry under the lantern 
 *label pv_armory_away
 [b]◈ THE ARMORY SHED[/b]
 *line_break
-The armory shed is open, and the apprentice armorer is working the grindstone behind the partition. A corporal with a notched tally-board counts spare buckles out of a bin and doesn't look round. "Sergeant's on the square with the Vanguard," he says. "Back when the drill's done."
+The armory shed is open, and the apprentice armorer is working the grindstone behind the partition. A corporal with a notched tally-board counts spare buckles out of a bin and doesn't look round. "Sergeant's on the square with the Vanguard," he says. "Back when the drill's done. Afternoons and evenings, you'll find him at that bench."
 *page_break Back across the compound…
 *goto port_valen_hub
 
@@ -5668,9 +5686,9 @@ She folds the vellum into her coat and counts five silver marks onto the bench. 
 *gosub_scene calendar update_hub_condition
 The sentry at the foot of the ladder shakes his head before you have crossed the yard.
 *if (leaders_at_drill)
-  "She's on the square with the Scouts," he says. "Come back after drill."
+  "She's on the square with the Scouts," he says. "She won't be up here after, either. Come back at dusk."
 *else
-  "She's out past the gate," he says, and nothing more. "Come back at dusk."
+  "She's out past the gate," he says, and nothing more. "She's up there from dusk through the night. Come back then."
 *page_break Back across the compound…
 *goto port_valen_hub
 

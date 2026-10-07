@@ -571,6 +571,18 @@ window.INVENTORY = {
       badge: "Leverage"
     },
     {
+      id: "hall_insignia", category: "documents", owned: "has_hall_insignia",
+      name: "Hall Insignia",
+      description: function (s) {
+        var n = Number(s.hall_jobs_scales) || 0;
+        return "A palm-sized brass disc worked by the Hiring Hall's sealers. Your name, rank and the terms of what you sign are set into the metal, where any reader can pass over it and tell. Port Valen page: " + n + (n === 1 ? " job" : " jobs") + " finished.";
+      },
+      badge: function (s) {
+        var r = String(s.hall_insignia_rank || "open");
+        return r.charAt(0).toUpperCase() + r.slice(1);
+      }
+    },
+    {
       id: "letter_of_credit", category: "documents", owned: "has_letter_of_credit",
       name: "Gilded Scales Letter of Credit",
       description: function (s) {

@@ -152,6 +152,7 @@ Scene.prototype["goto"] = function guardedGoto(line) {
 // exactly like "the replay ran straight to *finish/*ending."
 global.safeTimeout = function (fn) { safeCall(null, fn); };
 load("web/" + gameName + "/mygame.js");
+if (fs.existsSync("web/" + gameName + "/names-data.js")) load("web/" + gameName + "/names-data.js");
 
 // Pre-load every scene file's parsed lines into the global `allScenes` map --
 // web/scene.js checks for this and, when present, uses it instead of the

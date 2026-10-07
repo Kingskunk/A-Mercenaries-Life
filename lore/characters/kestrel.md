@@ -86,6 +86,7 @@ Examples that did not and were rewritten: any line that reads as a quotable summ
 ## Relationships
 
 - **Vane:** hired her in year two on her own terms. She keeps what she knows about him to herself.
+- **Rank:** one of the three unit heads below Vane, with Varren and Ysolde. No one stands between any of them and Vane, and any of the three could take the company if he fell. She has no formal rank, but she is not beneath the other two.
 - **Varren:** works in the same compound; he sends the Vanguard's errands to her skiff in the prologue. No more established.
 - **Ysolde:** in the Alderford talk, Kestrel is still sore that Ysolde found the river boom "from a boat with a length of rope" when her scouts walked past it for two days.
 - **Voss:** she uses him as cover and wants him not told, "he'd do the decent thing."

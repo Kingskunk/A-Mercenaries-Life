@@ -268,6 +268,11 @@ function compile(){
   // their physical triggers and aftermath; each quest file owns its choices and resolutions.
   verifyFileName("port_valen/MiddlewardQuest/dry_lion.txt");
   verifyFileName("port_valen/MiddlewardQuest/a_key_for_every_door.txt");
+  // Radiant Hiring Hall jobs: *goto_scene/*gosub_scene-only files, reached from the wall in port_valen_civic_heights.txt.
+  verifyFileName("port_valen/radiant/hall_pests.txt");
+  // "names" is the name generator's scene (name_make calls NameGen from web/mygame/names-data.js). Not in *scene_list;
+  // any quest that needs a person's name gosubs it.
+  verifyFileName("names.txt");
   // The Silt-Gate channels dungeon (see its own header comment): a *goto_scene-only scene entered from the Developer menu for now,
   // so it needs its own line here or a compiled build fails with "scene doesn't exist" the moment the walk starts.
   verifyFileName("port_valen/port_valen_silt_conduits.txt");

@@ -67,6 +67,8 @@ global.require = require;
 global.fs = fs; global.vm = vm; global.path = path;
 function load(f) { vm.runInThisContext(fs.readFileSync(path.join(ROOT, f)), f); }
 load("web/scene.js"); load("web/navigator.js"); load("web/util.js"); load("headless.js");
+// The name generator lives in a browser data file; *script in names.txt reads it from the global scope.
+load("web/mygame/names-data.js");
 
 nav = new SceneNavigator(["startup"]);
 stats = {};
