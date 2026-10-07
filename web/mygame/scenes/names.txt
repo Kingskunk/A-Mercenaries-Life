@@ -13,9 +13,37 @@
 *comment door, at the reward. Nothing here is random, so a page refresh cannot change a name. Copy the result into
 *comment *temp variables before the next name_make call if two people are on one page.
 *comment
+*comment Race and look (the same seed is the same person across all three calls):
+*comment   *set name_setting "middle_ward"  ("middle_ward", "quarter" or "docks": the mix of races that place has)
+*comment   *set name_seed rj_pest_block
+*comment   *gosub_scene names name_pick_race      sets name_race
+*comment   *set name_gender "any"                 (or "m" / "f"; "any" lets the seed choose, the same way for the name and the look)
+*comment   *gosub_scene names name_make            sets name_first, name_last, name_full
+*comment   *gosub_scene names name_look            sets look_phrase ("a stocky dwarven woman") and look_detail ("with iron-grey braids pinned up")
+*comment   *set name_look_skip "clothes hands"   optional, before name_look: leave out details the scene already covers (what the person wears, what the hands are doing)
+*comment The look is only what can be seen: build, face, ears, horns, a scar, a coat. Never a trade. What a person is doing or
+*comment holding (an adze, a basket of wet linen) belongs to the scene, which knows the job; the player has no title floating over anyone's head.
+*comment
+*comment   name_make also sets name_sex ("m" or "f"), the gender "any" came to; look_full is the same look as a sentence start
+*comment   ("A stocky dwarven woman with iron-grey braids pinned up").
+*comment One more choice from the same seed, for anything a quest picks from a table (a building, a creature):
+*comment   *set name_seed rj_pest_block   *set name_salt 12   *set name_n 6   *gosub_scene names name_roll   gives name_rolled, 0 to 5.
+*comment Use a different salt for each table so two picks from one seed do not move together.
 *comment Names of characters already in the game are never generated (RESERVED in names-data.js).
 *comment ====================================================================================
 
 *label name_make
-*script var made = window.NameGen.make(stats.name_race, stats.name_gender, stats.name_region, stats.name_seed); stats.name_first = made.first; stats.name_last = made.last; stats.name_full = made.full;
+*script var made = window.NameGen.make(stats.name_race, stats.name_gender, stats.name_region, stats.name_seed); stats.name_first = made.first; stats.name_last = made.last; stats.name_full = made.full; stats.name_sex = made.gender;
+*return
+
+*label name_pick_race
+*script stats.name_race = window.NameGen.pickRace(stats.name_seed, stats.name_setting);
+*return
+
+*label name_look
+*script var seen = window.NameGen.look(stats.name_race, stats.name_gender, stats.name_seed, stats.name_look_skip); stats.look_phrase = seen.phrase; stats.look_detail = seen.detail; stats.look_full = seen.full;
+*return
+
+*label name_roll
+*script stats.name_rolled = window.NameGen.roll(stats.name_seed, stats.name_salt, stats.name_n);
 *return

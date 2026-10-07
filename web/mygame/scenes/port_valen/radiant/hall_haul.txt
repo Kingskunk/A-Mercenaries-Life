@@ -1,0 +1,393 @@
+*comment ====================================================================================
+*comment A HOUSE TO BE MOVED: the second radiant Hiring Hall job (Gilded Scales page). Hauling, Middle Ward only.
+*comment
+*comment The patron is a generated person (names.txt), the house is one of four, and three loads have to cross the lane to a handcart: a heavy one, an
+*comment awkward one, a fragile one. Each load can be taken three ways (muscle, plan, finesse) with one check each. The loads can be done in any order
+*comment and the player can leave between them; the job stays open until its term runs out (two days) and then undoes itself.
+*comment
+*comment Pay is by the hour worked, one copper bit an hour, plus two copper for each load delivered whole, plus a hot meal on the patron's back step. A failed
+*comment load breaks something and earns no bonus; it never fails the job. Muscle takes one hour, plan two, finesse three, so faster work earns less and tires less.
+*comment
+*comment Rules this file follows: roll first, then the page's one time advance, so a cast-ahead Guidance (one minute) still counts; each load's result is
+*comment stored by plain assignment (rj_haul_h1..3 hours, rj_haul_b1..3 the whole-load bonus), never +N, so a replay cannot double anything; the pay page and the meal page
+*comment are separate pages because buy_tavern_item and the pay share the currency lock.
+*comment
+*comment Wired in: wall posting and signing in port_valen_civic_heights.txt (pv_ch_roll_read, pv_ch_haul_sign); reached through the posting hub
+*comment (radiant_hub.txt rh_hub); compile.js lists the file. Not in *scene_list.
+*comment
+*comment Numbers (all tunable): DC 10 for the approach that suits the load, 12 for the middle one, 14 for the worst; 1 copper an hour; 2 copper bonus for each load delivered whole.
+*comment ====================================================================================
+
+*label rj_haul_arrive
+*set minutes_to_pass 10
+*set time_advance_call_id "rj_haul_arrive_1"
+*gosub rj_haul_time
+[b]A HOUSE TO BE MOVED[/b]
+*line_break
+*gosub rj_haul_items
+*gosub rj_haul_patron
+*temp pw name_full
+*temp lk look_full
+*temp says "he says"
+*if (name_sex = "f")
+  *set says "she says"
+*if (rj_haul_house = 1)
+  The tenement door is propped open on a brick, and the whole contents of two rooms are stacked on the step and in the lane: bedding, crates, a birdcage with no bird in it. A handcart with one bad wheel waits across the way.
+*elseif (rj_haul_house = 2)
+  A house with a green door stands with every window bare, and its furniture is stacked in the lane under a tarp. A handcart waits in the shade of the wall with a rope coiled in the bed.
+*elseif (rj_haul_house = 3)
+  The corner house has every shutter thrown open and the front rooms echo. Furniture is stacked along the lane under a tarp, and a handcart with a mended axle waits at the kerb.
+*else
+  The low house at the end of the lane has been emptied down to its floorboards, and its bundled bedding sits by the gate. A handcart waits at the lane's mouth with its shafts on the ground.
+
+${lk} meets you with a list in one hand. "${pw}," ${says}. "Three things that will not move themselves. The new house is two streets over, and the cart is yours. I pay by the hour, and a little over for anything that arrives whole."
+*goto rj_haul_hub
+
+*label rj_haul_hub
+*gosub rj_haul_items
+*temp left 0
+*if (not(rj_haul_l1))
+  *set left + 1
+*if (not(rj_haul_l2))
+  *set left + 1
+*if (not(rj_haul_l3))
+  *set left + 1
+
+*if (left = 0)
+  Every piece is on the cart, and the house behind you is empty down to its dust.
+*else
+  @{(left = 1) One piece|${left} pieces} still to move.
+
+*choice
+  *if (not(rj_haul_l1))
+    # Take on the ${rj_haul_item1}.
+      *goto rj_haul_load1
+  *if (not(rj_haul_l2))
+    # Take on the ${rj_haul_item2}.
+      *goto rj_haul_load2
+  *if (not(rj_haul_l3))
+    # Take on the ${rj_haul_item3}.
+      *goto rj_haul_load3
+  *if (left = 0)
+    # Settle up for the day.
+      *goto rj_haul_pay
+  # Leave the house for now.
+    *goto rj_haul_leave
+
+*comment ── the three loads: a description, then three ways to do it ──
+*comment Each page sets what the shared work label (rj_haul_work) needs, then goes there: the load, the approach, and the hours the approach takes.
+
+*label rj_haul_load1
+*temp hm ""
+*temp hp ""
+*temp hf ""
+*if (show_stat_hints)
+  *if (guidance_active)
+    *set hm " [STR Check (DC 10) +1d4, 1 hour]"
+    *set hp " [INT Check (DC 12) +1d4, 2 hours]"
+    *set hf " [DEX Check (DC 14) +1d4, 3 hours]"
+  *else
+    *set hm " [STR Check (DC 10), 1 hour]"
+    *set hp " [INT Check (DC 12), 2 hours]"
+    *set hf " [DEX Check (DC 14), 3 hours]"
+The ${rj_haul_item1} sits at the back of the front room, and it is plainly the heaviest thing in the house. The doorway is narrow, and the lane outside is cobbled and tilted toward the gutter.
+
+*choice
+  # Shoulder it out through the door.${hm}
+    *set rj_haul_load 1
+    *set rj_haul_appr "muscle"
+    *goto rj_haul_work
+  # Walk the route first and lay planks over the step.${hp}
+    *set rj_haul_load 1
+    *set rj_haul_appr "plan"
+    *goto rj_haul_work
+  # Tip it onto rollers and ease it along.${hf}
+    *set rj_haul_load 1
+    *set rj_haul_appr "finesse"
+    *goto rj_haul_work
+
+*label rj_haul_load2
+*temp hm ""
+*temp hp ""
+*temp hf ""
+*if (show_stat_hints)
+  *if (guidance_active)
+    *set hm " [STR Check (DC 14) +1d4, 1 hour]"
+    *set hp " [INT Check (DC 10) +1d4, 2 hours]"
+    *set hf " [DEX Check (DC 12) +1d4, 3 hours]"
+  *else
+    *set hm " [STR Check (DC 14), 1 hour]"
+    *set hp " [INT Check (DC 10), 2 hours]"
+    *set hf " [DEX Check (DC 12), 3 hours]"
+The ${rj_haul_item2} stands at the head of the stair, too tall for the ceiling at the turn and too wide for the landing, and it has to go down.
+
+*choice
+  # Tilt it and drive it down the stair.${hm}
+    *set rj_haul_load 2
+    *set rj_haul_appr "muscle"
+    *goto rj_haul_work
+  # Measure the turn and work out the angle first.${hp}
+    *set rj_haul_load 2
+    *set rj_haul_appr "plan"
+    *goto rj_haul_work
+  # Walk it down end over end, one tread at a time.${hf}
+    *set rj_haul_load 2
+    *set rj_haul_appr "finesse"
+    *goto rj_haul_work
+
+*label rj_haul_load3
+*temp hm ""
+*temp hp ""
+*temp hf ""
+*if (show_stat_hints)
+  *if (guidance_active)
+    *set hm " [STR Check (DC 14) +1d4, 1 hour]"
+    *set hp " [INT Check (DC 12) +1d4, 2 hours]"
+    *set hf " [DEX Check (DC 10) +1d4, 3 hours]"
+  *else
+    *set hm " [STR Check (DC 14), 1 hour]"
+    *set hp " [INT Check (DC 12), 2 hours]"
+    *set hf " [DEX Check (DC 10), 3 hours]"
+The ${rj_haul_item3} has been wrapped in blankets and tied with cord, and the household has hovered over it for an hour. Whatever is inside, it will not take a drop.
+
+*choice
+  # Carry it out in both arms and trust your grip.${hm}
+    *set rj_haul_load 3
+    *set rj_haul_appr "muscle"
+    *goto rj_haul_work
+  # Pad the cart bed and plan the whole route.${hp}
+    *set rj_haul_load 3
+    *set rj_haul_appr "plan"
+    *goto rj_haul_work
+  # Shuffle it out an inch at a time.${hf}
+    *set rj_haul_load 3
+    *set rj_haul_appr "finesse"
+    *goto rj_haul_work
+
+*comment ── the work: roll first, then the page's one time advance, then what happened ──
+*label rj_haul_work
+*comment The suiting approach is DC 10, the middle one 12, the worst 14. Load 1 is heavy (muscle suits), load 2 awkward (plan), load 3 fragile (finesse).
+*set rj_haul_dc 12
+*if (rj_haul_load = 1)
+  *if (rj_haul_appr = "muscle")
+    *set rj_haul_dc 10
+  *elseif (rj_haul_appr = "finesse")
+    *set rj_haul_dc 14
+*elseif (rj_haul_load = 2)
+  *if (rj_haul_appr = "plan")
+    *set rj_haul_dc 10
+  *elseif (rj_haul_appr = "muscle")
+    *set rj_haul_dc 14
+*else
+  *if (rj_haul_appr = "finesse")
+    *set rj_haul_dc 10
+  *elseif (rj_haul_appr = "muscle")
+    *set rj_haul_dc 14
+*set rj_haul_skill "athletics"
+*set rj_haul_hours 1
+*if (rj_haul_appr = "plan")
+  *set rj_haul_skill "investigation"
+  *set rj_haul_hours 2
+*elseif (rj_haul_appr = "finesse")
+  *set rj_haul_skill "acrobatics"
+  *set rj_haul_hours 3
+*gosub_scene dice_engine roll_skill_check rj_haul_dc rj_haul_skill "" "" "" "" ""
+*set minutes_to_pass (rj_haul_hours * 60)
+*set time_advance_call_id ("rj_haul_work_" & rj_haul_load)
+*gosub rj_haul_time
+*comment Stored by assignment, so a replay of this page changes nothing: the hours worked, and two copper bonus if the load arrived whole.
+*set rj_haul_bonus 0
+*if (check_success)
+  *set rj_haul_bonus 2
+*if (rj_haul_load = 1)
+  *set rj_haul_l1 true
+  *set rj_haul_h1 rj_haul_hours
+  *set rj_haul_b1 rj_haul_bonus
+*elseif (rj_haul_load = 2)
+  *set rj_haul_l2 true
+  *set rj_haul_h2 rj_haul_hours
+  *set rj_haul_b2 rj_haul_bonus
+*else
+  *set rj_haul_l3 true
+  *set rj_haul_h3 rj_haul_hours
+  *set rj_haul_b3 rj_haul_bonus
+*if (rj_haul_load = 1)
+  *if (rj_haul_appr = "muscle")
+    *if (check_success)
+      You set your feet, take the corner and walk the ${rj_haul_item1} to the door a hand's breadth at a time. It scrapes the jamb once and clears, and the tilt of the lane carries it down to the cart.
+    *else
+      You lift and the ${rj_haul_item1} does not. It slides out of your grip, hits the sill and splits something that was holding it together, and the sound carries the length of the lane.
+  *elseif (rj_haul_appr = "plan")
+    *if (check_success)
+      You walk the route first, find the one flagstone in the lane that rocks, and lay two planks over the step. The ${rj_haul_item1} crosses on its own weight with barely a scrape.
+    *else
+      You lay the planks where the route looked flat. It was not, and the ${rj_haul_item1} comes down off the end of them with a crack that should not have come from wood.
+  *else
+    *if (check_success)
+      You tip the ${rj_haul_item1} onto a pair of rollers and ease it along, steering with your hip. It reaches the cart without a scratch.
+    *else
+      The rollers shoot out from under one end and the ${rj_haul_item1} drops. A corner comes away in your hand.
+*elseif (rj_haul_load = 2)
+  *if (rj_haul_appr = "muscle")
+    *if (check_success)
+      You tilt the ${rj_haul_item2} against your shoulder and drive it down the stair, scraping plaster at the turn and never stopping. At the bottom you set it down with your arms shaking, and it is whole.
+    *else
+      You force it at the turn. The ${rj_haul_item2} jams, you shove, and something gives with a splintering crack that echoes up the stairwell.
+  *elseif (rj_haul_appr = "plan")
+    *if (check_success)
+      You measure the turn with your hand and work out the angle: tilt first, then swing the foot. The ${rj_haul_item2} slides through with a finger's width to spare.
+    *else
+      Your angle is off by a hand's width. The ${rj_haul_item2} wedges at the turn, and when it comes free it takes a rail with it.
+  *else
+    *if (check_success)
+      You walk the ${rj_haul_item2} down end over end, one tread at a time, never letting the weight settle. It is slow and tiring, and it arrives unmarked.
+    *else
+      Halfway down, a foot slips on a worn tread. You save yourself and lose the ${rj_haul_item2} for a moment, and the corner that meets the wall does not forgive it.
+*else
+  *if (rj_haul_appr = "muscle")
+    *if (check_success)
+      You wrap both arms round the ${rj_haul_item3}, lock your grip and carry it out as if it weighed nothing. It does not so much as shift.
+    *else
+      Your grip slips halfway across the room. You catch the ${rj_haul_item3} before it hits the floor, but not before something inside it cracks.
+  *elseif (rj_haul_appr = "plan")
+    *if (check_success)
+      You pad the cart bed with bedding, lay out the whole route and take the ${rj_haul_item3} across it without a wrong step. It sits in its nest of blankets and does not stir.
+    *else
+      You pad the cart and plan the route, and the cart rolls an inch when you set the ${rj_haul_item3} down. Something inside gives a small, sad sound.
+  *else
+    *if (check_success)
+      You shuffle the ${rj_haul_item3} out an inch at a time, feeling every board before you trust it. It takes a long while, and it does not make a sound.
+    *else
+      You find the loose board with your heel. The ${rj_haul_item3} lurches and you hold it, barely, but not without a crack from inside.
+
+*if (check_success)
+  [b][⏱️ ${rj_haul_hours} @{(rj_haul_hours = 1) hour|hours} worked, the load arrives whole: 2 Copper Bits bonus][/b]
+*else
+  [b][⏱️ ${rj_haul_hours} @{(rj_haul_hours = 1) hour|hours} worked, something broke: no bonus][/b]
+*page_break Back to the loads…
+*goto rj_haul_hub
+
+*comment ── settling up: the pay page (hours plus the whole-load bonus), then the meal on its own page ──
+*label rj_haul_pay
+*gosub rj_haul_patron
+*temp hrs ((rj_haul_h1 + rj_haul_h2) + rj_haul_h3)
+*temp bonus ((rj_haul_b1 + rj_haul_b2) + rj_haul_b3)
+*temp pay (hrs + bonus)
+*if (bonus = 6)
+  ${name_first} checks every piece off the list, finds not a mark on any of them, counts the hours and adds a little over for the care.
+*elseif (bonus = 0)
+  ${name_first} checks the pieces off the list, finds a mark on every one, and counts only the hours.
+*else
+  ${name_first} checks the pieces off the list, finds a mark on some of them, and counts the hours with a little over for the ones that arrived whole.
+*if (rj_haul_stage = "active")
+  *set rj_haul_stage "done"
+  *set rj_haul_done_block rj_haul_block
+  *set hall_jobs_scales + 1
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount pay
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+
+[b][💰 Paid by ${name_full}: ${pay} Copper Bits, ${hrs} hours worked, ${bonus} in bonus][/b]
+*line_break
+[b][🏷️ Insignia: Port Valen page, ${hall_jobs_scales} @{(hall_jobs_scales = 1) job|jobs} finished][/b]
+*page_break A bowl on the back step…
+*goto rj_haul_meal
+
+*label rj_haul_meal
+*comment A hot meal clears Hunger exactly as the compound mess does (cost 0, type food). Its own page and its own half hour, since buy_tavern_item shares the currency lock with the pay.
+*set tavern_item_cost_copper 0
+*set tavern_item_hp_heal 0
+*set tavern_item_temp_hp 0
+*set tavern_item_buff_bonus 0
+*set tavern_item_type "food"
+*gosub_scene economy buy_tavern_item
+*gosub rj_haul_patron
+${name_first} sends you round to the back step with a bowl of barley and onion and a heel of bread, and the household eats the same off the lid of a crate, too tired to talk. It is the first thing all day that has not needed lifting.
+*set minutes_to_pass 30
+*set time_advance_call_id "rj_haul_meal_1"
+*gosub rj_haul_time
+*page_break Take your leave…
+*goto rj_haul_exit
+
+*label rj_haul_leave
+*gosub rj_haul_patron
+You tell ${name_first} you will be back to finish. What is left of the house watches you go with the look of a place that wants to be empty.
+*page_break Walk away from the house…
+*goto rj_haul_exit
+
+*label rj_haul_exit
+*goto_scene port_valen/port_valen_middle_ward mw_gate_road
+
+*comment ── the pick: five-day blocks, same answer for the same day, no state ──
+*comment The block is the seed. The house and the item of each load are separate rolls (a salt per table, names.txt name_roll).
+*label rj_haul_select
+*set rj_haul_block ((campaign_day - (campaign_day modulo 5)) / 5)
+*set name_seed rj_haul_block
+*set name_salt 31
+*set name_n 4
+*gosub_scene names name_roll
+*set rj_haul_house (1 + name_rolled)
+*gosub rj_haul_items
+*return
+
+*comment ── the three items, from the block seed: one of two for each load ──
+*label rj_haul_items
+*set name_seed rj_haul_block
+*set name_n 2
+*set name_salt 21
+*gosub_scene names name_roll
+*set rj_haul_item1 "iron-bound chest"
+*if (name_rolled = 1)
+  *set rj_haul_item1 "stone-topped table"
+*set name_salt 22
+*gosub_scene names name_roll
+*set rj_haul_item2 "tall wardrobe"
+*if (name_rolled = 1)
+  *set rj_haul_item2 "loom frame"
+*set name_salt 23
+*gosub_scene names name_roll
+*set rj_haul_item3 "crate of glassware"
+*if (name_rolled = 1)
+  *set rj_haul_item3 "tall clock"
+*return
+
+*comment ── the patron: the same person every time, from the block seed (names.txt) ──
+*label rj_haul_patron
+*set name_seed rj_haul_block
+*set name_setting "middle_ward"
+*gosub_scene names name_pick_race
+*set name_region "port"
+*set name_gender "any"
+*gosub_scene names name_make
+*comment The patron is holding a list, so the look leaves out details about hands.
+*set name_look_skip "hands"
+*gosub_scene names name_look
+*set name_look_skip ""
+*return
+
+*comment ── short place text for the wall posting, the hub button and the quest log: who and what kind of house, no street ──
+*label rj_haul_describe
+*gosub rj_haul_patron
+*if (rj_haul_house = 1)
+  *set rj_haul_place (name_full & ", a tenement")
+*elseif (rj_haul_house = 2)
+  *set rj_haul_place (name_full & ", a house with a green door")
+*elseif (rj_haul_house = 3)
+  *set rj_haul_place (name_full & ", a corner house")
+*else
+  *set rj_haul_place (name_full & ", a low house at a lane's end")
+*return
+
+*comment ── time helper: the caller sets minutes_to_pass and a unique time_advance_call_id first ──
+*label rj_haul_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return

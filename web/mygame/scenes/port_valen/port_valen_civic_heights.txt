@@ -358,6 +358,8 @@ Through the east arch, a long hall of pale stone runs under a barrel roof. Woode
 *gosub pv_ch_walk_time
 *comment QUEST SLOT: quest postings go here, ahead of the standing postings, each guarded by its own flag.
 *comment The radiant job (port_valen/radiant/hall_pests.txt) is up the first three days of every five-day block, once per block.
+*comment Board rules (decided 2026-10-07): a player may hold several signed jobs; each has a term and lapses on its own with no penalty; this board shows at
+*comment most THREE real jobs at a time (flavor postings do not count and will go as real jobs replace them). Other towns have their own boards of three.
 *temp rj_blk ((campaign_day - (campaign_day modulo 5)) / 5)
 *temp rj_no (1000 + rj_blk)
 *temp rj_up false
@@ -365,6 +367,13 @@ Through the east arch, a long hall of pale stone runs under a barrel roof. Woode
   *set rj_up true
 *if ((rj_pest_stage = "active") and (campaign_day <= rj_pest_until))
   *set rj_up false
+*comment Hauling takes the other two days of the same block (days 3 and 4), so the board always has one real job up and nothing overlaps yet.
+*temp rj_hno (2000 + rj_blk)
+*temp rj_hup false
+*if ((((campaign_day modulo 5) >= 3) and (rj_blk > 0)) and (not(rj_haul_done_block = rj_blk)))
+  *set rj_hup true
+*if ((rj_haul_stage = "active") and (campaign_day <= rj_haul_until))
+  *set rj_hup false
 You work along the frames. Each sheet is ruled like a form and headed with a posting number, with the seals at its foot: the patron's in wax, and the city's pressed beside it.
 
 *if (rj_up)
@@ -373,6 +382,13 @@ You work along the frames. Each sheet is ruled like a form and headed with a pos
   [b]POSTING No. ${rj_no}[/b]
   *line_break
   [i]Sealed: a household and the City. Work: vermin in the walls. Pay: 4 Silver Marks, paid at the door. Term: three days. Apply: ${rj_pest_place}, @{(rj_pest_where = "quarter") in the Patrician Quarter|in the Middle Ward}.[/i]
+
+*if (rj_hup)
+  *gosub_scene port_valen/radiant/hall_haul rj_haul_select
+  *gosub_scene port_valen/radiant/hall_haul rj_haul_describe
+  [b]POSTING No. ${rj_hno}[/b]
+  *line_break
+  [i]Sealed: a household and the City. Work: hauling, a house to be moved. Pay: a copper bit an hour, a little over for each piece delivered whole, and a meal. Term: two days. Apply: ${rj_haul_place}, in the Middle Ward.[/i]
 
 
 [b]POSTING No. 0211[/b]
@@ -387,10 +403,6 @@ You work along the frames. Each sheet is ruled like a form and headed with a pos
   [b]POSTING No. 0352[/b]
   *line_break
   [i]Sealed: a Cargo Quay warehouse and the City. Work: night watch. Pay: by the watch. Term: standing. Apply: the harbor registry.[/i]
-*elseif (day_of_week = "Greyday")
-  [b]POSTING No. 0367[/b]
-  *line_break
-  [i]Sealed: a household on the upper terraces and the City. Work: hauling, a house to be moved. Pay: meals provided. Term: one day. Apply: the house.[/i]
 *elseif (day_of_week = "Forgeday")
   [b]POSTING No. 0381[/b]
   *line_break
@@ -399,8 +411,7 @@ You work along the frames. Each sheet is ruled like a form and headed with a pos
   [b]POSTING No. 0395[/b]
   *line_break
   [i]Sealed: a seasoning yard on the Iron Wharves and the City. Work: night watch. Pay: four Copper Bits per watch. Bring your own lantern. Term: standing. Apply: the yard gate.[/i]
-*else
-  *comment Hearthday
+*elseif (day_of_week = "Hearthday")
   [b]POSTING No. 0408[/b]
   *line_break
   [i]Sealed: a household on the Heights and the City. Work: a bard for a wedding feast. Pay: the household's fee. Term: one evening. Apply: the house.[/i]
@@ -414,6 +425,12 @@ Every posting names its seals, its pay, its term, and where to apply.
   *if ((rj_up) and (not(has_hall_insignia)))
     # Take the job about the vermin.
       *goto pv_ch_roll_need
+  *if ((rj_hup) and (has_hall_insignia))
+    # Press your insignia to the posting's frame and take the job about the move.
+      *goto pv_ch_haul_sign
+  *if ((rj_hup) and (not(has_hall_insignia)))
+    # Take the job about the move.
+      *goto pv_ch_roll_need
   # Step back from the wall.
     *goto pv_ch_records_inside
 
@@ -421,6 +438,31 @@ Every posting names its seals, its pay, its term, and where to apply.
 [b]◈ THE HIRING HALL[/b]
 *line_break
 You reach for the frame, and Tolliver's flat voice carries down the wall before your hand gets there. "Insignia first. The Seals window, at the end of the counter. It's a one-time fee."
+*page_break Step back from the wall…
+*goto pv_ch_records_inside
+
+*label pv_ch_haul_sign
+*set minutes_to_pass 5
+*set time_advance_call_id "pv_ch_haul_sign_1"
+*gosub pv_ch_walk_time
+[b]◈ THE HIRING HALL[/b]
+*line_break
+You press the brass to the frame. It warms against your palm, and the terms of the posting run across its face in thin lines of light and sink into the metal. On the wall, the seals at the foot of the sheet dim, and the sheet goes grey: taken.
+*gosub_scene port_valen/radiant/hall_haul rj_haul_select
+*gosub_scene port_valen/radiant/hall_haul rj_haul_describe
+*set rj_haul_stage "active"
+*set rj_haul_until (campaign_day + 1)
+*set rj_haul_l1 false
+*set rj_haul_l2 false
+*set rj_haul_l3 false
+*set rj_haul_h1 0
+*set rj_haul_h2 0
+*set rj_haul_h3 0
+*set rj_haul_b1 0
+*set rj_haul_b2 0
+*set rj_haul_b3 0
+
+[b][🏷️ Job taken: A House to Be Moved, ${rj_haul_place}][/b]
 *page_break Step back from the wall…
 *goto pv_ch_records_inside
 
@@ -436,7 +478,7 @@ You press the brass to the frame. It warms against your palm, and the terms of t
 *set rj_pest_stage "active"
 *set rj_pest_until (campaign_day + 2)
 
-[b][🏷 Job taken: Vermin in the Walls, ${rj_pest_place}][/b]
+[b][🏷️ Job taken: Vermin in the Walls, ${rj_pest_place}][/b]
 *page_break Step back from the wall…
 *goto pv_ch_records_inside
 
@@ -496,7 +538,7 @@ The clerk lifts a blank disc out of the dish, asks your name, and writes it into
   *set currency_txn_locked true
   *set locked_currency_txn_page_id page_id
 
-[b][🏷 Acquired: Hall Insignia (Open)][/b]
+[b][🏷️ Acquired: Hall Insignia (Open)][/b]
 *page_break Step back from the window…
 *goto pv_ch_seals_menu
 

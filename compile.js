@@ -270,6 +270,9 @@ function compile(){
   verifyFileName("port_valen/MiddlewardQuest/a_key_for_every_door.txt");
   // Radiant Hiring Hall jobs: *goto_scene/*gosub_scene-only files, reached from the wall in port_valen_civic_heights.txt.
   verifyFileName("port_valen/radiant/hall_pests.txt");
+  verifyFileName("port_valen/radiant/hall_haul.txt");
+  // The hub that lists signed jobs and routes to them (reached from the Trunk Road and the Patrician Avenue).
+  verifyFileName("port_valen/radiant/radiant_hub.txt");
   // "names" is the name generator's scene (name_make calls NameGen from web/mygame/names-data.js). Not in *scene_list;
   // any quest that needs a person's name gosubs it.
   verifyFileName("names.txt");

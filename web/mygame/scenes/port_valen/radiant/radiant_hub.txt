@@ -1,0 +1,74 @@
+*comment ====================================================================================
+*comment THE POSTING HUB: the one place that lists the Hiring Hall jobs the player has signed and sends them to the right job file.
+*comment
+*comment Reached from a single "Your posting" button on the Trunk Road (Middle Ward) and on the Patrician Avenue (Quarter), each of
+*comment which first calls rh_check so the button only shows while a job is open. The entry sets rh_from ("road" or "avenue") so the
+*comment way back, and the wording when a job's house is in the other district, follow where the player stood.
+*comment
+*comment To add a job: put its "open" test in rh_check, and one block of buttons in rh_hub (a direct button when the player is in the right
+*comment district, otherwise the travel line), routing with *goto_scene to that job's own first label. The job file keeps its own
+*comment stage and clock; this file only reads them.
+*comment
+*comment Not in *scene_list: compile.js lists it with verifyFileName.
+*comment ====================================================================================
+
+*comment Sets rj_has_job: any signed job still open.
+*comment Every signed job has a term. When it runs out the job undoes itself: no penalty, nothing to report, and it simply is not there any more
+*comment (the board's pool puts a fresh posting up in its own time). Each job's lapse goes here, one line each.
+*label rh_check
+*if ((rj_pest_stage = "active") and (campaign_day > rj_pest_until))
+  *set rj_pest_stage "none"
+*if ((rj_haul_stage = "active") and (campaign_day > rj_haul_until))
+  *set rj_haul_stage "none"
+*set rj_has_job false
+*if ((rj_pest_stage = "active") and (campaign_day <= rj_pest_until))
+  *set rj_has_job true
+*if ((rj_haul_stage = "active") and (campaign_day <= rj_haul_until))
+  *set rj_has_job true
+*return
+
+*label rh_hub
+*gosub rh_check
+*if (not(rj_has_job))
+  *comment Nothing open (the job closed or lapsed behind the player): back to where they stood.
+  *goto rh_back
+[b]◈ YOUR POSTING[/b]
+*line_break
+You hold the insignia flat in your palm, and the terms you signed for run across its face in thin lines of light.
+
+*temp rh_here "middle_ward"
+*if (rh_from = "avenue")
+  *set rh_here "quarter"
+
+*comment A job whose house is in the other district sends the player to the travel menu; one travel button covers all of them.
+*temp rh_far false
+
+*if ((rj_pest_stage = "active") and (campaign_day <= rj_pest_until))
+  *temp rh_days ((rj_pest_until - campaign_day) + 1)
+  [b]Vermin in the Walls[/b]: ${rj_pest_place}. Four Silver Marks, paid at the door. Open @{(rh_days = 1) one more day|${rh_days} more days}.
+  *line_break
+  *if (not(rj_pest_where = rh_here))
+    *set rh_far true
+*if ((rj_haul_stage = "active") and (campaign_day <= rj_haul_until))
+  *temp rh_hdays ((rj_haul_until - campaign_day) + 1)
+  [b]A House to Be Moved[/b]: ${rj_haul_place}. A copper bit an hour, a little over for each piece delivered whole, and a meal. Open @{(rh_hdays = 1) one more day|${rh_hdays} more days}.
+  *if (not(rh_here = "middle_ward"))
+    *set rh_far true
+
+*choice
+  *if (((rj_pest_stage = "active") and (campaign_day <= rj_pest_until)) and (rj_pest_where = rh_here))
+    # [b]The house[/b]: ${rj_pest_place}. [~10 min]
+      *goto_scene port_valen/radiant/hall_pests rj_pest_arrive
+  *if (((rj_haul_stage = "active") and (campaign_day <= rj_haul_until)) and (rh_here = "middle_ward"))
+    # [b]The move[/b]: ${rj_haul_place}. [~10 min]
+      *goto_scene port_valen/radiant/hall_haul rj_haul_arrive
+  *if (rh_far)
+    # [Travel: Head to the district the house is in]
+      *goto_scene port_valen/port_valen port_valen_travel
+  # Put the insignia away.
+    *goto rh_back
+
+*label rh_back
+*if (rh_from = "avenue")
+  *goto_scene port_valen/port_valen_upper_wharves pq_avenue
+*goto_scene port_valen/port_valen_middle_ward mw_gate_road

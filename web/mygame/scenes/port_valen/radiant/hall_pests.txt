@@ -9,13 +9,15 @@
 *comment   - The wall posting and the signing are in port_valen_civic_heights.txt (pv_ch_roll_read, pv_ch_roll_sign). Signing
 *comment     needs an insignia, which the Seals window sells (pv_ch_seals_buy). Signing calls rj_pest_select and
 *comment     rj_pest_describe, sets rj_pest_stage "active" and rj_pest_until (three days).
-*comment   - The house is reached from a button in the Middle Ward hub or the Quarter avenue hub, while the job is open.
+*comment   - The house is reached from "Your posting" on the Trunk Road or the Patrician Avenue, which opens the posting hub (radiant_hub.txt) while the job is open.
 *comment   - A Quarter job counts as admission at the Inner Gate (the two writ checks in port_valen_upper_wharves.txt).
 *comment   - compile.js lists the file with verifyFileName. Not in *scene_list.
 *comment
-*comment Names: the patron is a generated person (names.txt, web/mygame/names-data.js). The five-day block is the seed, so the
-*comment wall, the hub button, the door and the payment all show the same name, and nothing about the name is stored.
-*comment The posting gives the patron and the kind of house, never a street.
+*comment People and houses: the patron is a generated person (names.txt, web/mygame/names-data.js). Race (from the place's mix), gender, name and look
+*comment all come from the five-day block as the seed, so the wall, the hub button, the door and the payment show the same person and nothing about them is
+*comment stored. The building (six in the Middle Ward, four in the Quarter) and the creature are separate rolls from the same seed. The posting gives the
+*comment patron and the kind of house, never a street. A look says only what can be seen, never a trade: what the person is doing or holding is written in
+*comment each building's own paragraph (rj_pest_arrive). Two Quarter houses have a second generated person at the door (rj_pest_greeter).
 *comment
 *comment Rules this file follows: the patron pays at the door (no return trip to the Hall); the counter is
 *comment hall_jobs_scales (one per government, Port Valen's page); a failed roll never hands back the thing it was
@@ -33,32 +35,54 @@
 *gosub rj_time
 [b]VERMIN IN THE HOUSE[/b]
 *line_break
-*comment The patron is a generated person (names.txt): rj_pest_patron asks for the same name the posting showed, from the block seed.
+*comment The patron is a generated person (names.txt): race, name and look all come from the block seed, so they match the posting and the
+*comment payment. The building and what the person is doing are this table; the look says only what can be seen, never a trade.
 *gosub rj_pest_patron
 *temp pw name_full
 *temp pl name_last
+*temp lk look_full
+*temp lw ((look_phrase & " ") & look_detail)
+*temp says "he says"
+*temp pp "he"
+*temp ptitle "Master"
+*if (name_sex = "f")
+  *set says "she says"
+  *set pp "she"
+  *set ptitle "Mistress"
 *if (rj_pest_where = "middle_ward")
   *if (rj_pest_house = 1)
-    It is a narrow tenement, three floors of leaning timber with one stair for all of them. A woman with red forearms and a basket of wet linen is waiting on the second landing. "${pw}," she says. "I took in washing on the ground floor for eleven years and never had a thing in the walls. Come and listen."
+    It is a narrow tenement, three floors of leaning timber with one stair for all of them. ${lk} waits on the second landing with a basket of wet linen on one hip. "${pw}," ${says}. "Eleven years on this stair and never a thing in the walls. Come and listen."
   *elseif (rj_pest_house = 2)
-    It is a cooper's, hung with hoops and smelling of cut oak and hot iron from the forge across the way. The cooper stands in his own doorway with an adze in one hand, plainly unwilling to be the man who does the work. "${pw}," he says. "Wife won't sleep in the back room. Hasn't for three nights."
+    The house is hung with hoops and smells of cut oak and hot iron from the forge across the way. ${lk} stands in the doorway with an adze in one hand, plainly unwilling to be the one who does the work. "${pw}," ${says}. "Nobody's slept in the back room for three nights."
   *elseif (rj_pest_house = 3)
-    It is a pair of rooms above a chandler's shop, where the whole stair smells of tallow. A thin woman meets you at the top with a candle already lit. "${pw}," she says. "The shop's down there and the rooms are up here, and something's got between the two."
+    It is a pair of rooms above a shop, and the whole stair smells of tallow. ${lk} meets you at the top with a candle already lit. "${pw}," ${says}. "The shop's down there and the rooms are up here, and something has got between the two."
+  *elseif (rj_pest_house = 4)
+    The house stands beside a yard rutted by wheels, with a cart-wheel nailed over the door for luck. ${lk} comes out wiping both hands on a coat. "${pw}," ${says}. "I'll carry anything you like. I won't go into my own cellar."
+  *elseif (rj_pest_house = 5)
+    The step is stained blue and red where dye-water has run, and the whole lane smells of wet wool. ${lk} stands on it with both forearms dyed to the elbow. "${pw}," ${says}. "Not so much as a mouse in this house until last week. Now I hear it every night."
   *else
-    It is a carter's, beside a yard full of wheel-ruts, with a cart-wheel nailed over the door for luck. The carter comes out wiping his hands on his coat. "${pw}," he says. "I'll haul anything you like. I won't go into my own cellar."
+    It is a tall, narrow house on a corner, its cellar door nailed shut with fresh planks. ${lk} waits on the step with a lantern held low. "${pw}," ${says}. "I nailed that cellar shut myself. It didn't help."
 *else
-  *comment The Quarter: the footman at the door reads the posting off the insignia, and that is all the gate asked for.
+  *comment The Quarter: the gate asked for a writ, and at the door a stone read off the insignia is all anyone asks. Houses one and two have someone else at the door, a second generated person.
   *if (rj_pest_house = 1)
-    It is a narrow townhouse, its steps scrubbed and its brass polished until it hurts to look at. A footman reads the posting off your insignia with a small grey stone, nods once, and does not ask you to wipe your boots, which tells you how long this has been going on. "Mistress ${pl} is in the morning room," he says. "She would like it done before the guests."
+    *gosub rj_pest_greeter
+    *temp gk look_full
+    *temp gsays "he says"
+    *if (name_sex = "f")
+      *set gsays "she says"
+    It is a narrow townhouse, its steps scrubbed and its brass polished until it hurts to look at. ${gk} reads the posting off your insignia with a small grey stone, nods once, and does not ask you to wipe your boots, which tells you how long this has been going on. "${ptitle} ${pl} would like it done before the guests," ${gsays}.
   *elseif (rj_pest_house = 2)
-    *comment The household's head is the patron on the posting; the steward who speaks for him is a second generated person.
-    *set name_gender "m"
-    *set name_seed (rj_pest_block + 1000)
-    *gosub_scene names name_make
-    *temp sl name_last
-    It is three storeys of grey stone with a wine-factor's crest over the door. A steward in a dark coat takes your insignia, touches it to a stone, and gives it back. "Steward ${sl}," he says, very quietly. "Master ${pl} does not know it is in the house. I would prefer that he never learns the word."
+    *gosub rj_pest_greeter
+    *temp gk look_full
+    *temp gl name_last
+    *temp gsays "he says"
+    *if (name_sex = "f")
+      *set gsays "she says"
+    It is three storeys of grey stone with a wine-barrel crest over the door. ${gk} takes your insignia, touches it to a stone, and gives it back. "Steward ${gl}," ${gsays}, very quietly. "${ptitle} ${pl} does not know it is in the house. I would prefer that ${pp} never learns the word."
+  *elseif (rj_pest_house = 3)
+    It is a tall, glass-fronted townhouse at the quiet end of the street. The door is opened by ${lw} and a silver whistle on a cord at the neck. A stone is passed over your insignia without being asked. "${pw}," ${says}. "I have run ships through worse weather than this. I do not know how to run this."
   *else
-    It is a tall glass-fronted townhouse at the quiet end of the street. The door is opened by the owner himself, an old man in a quilted gown with a harbor-master's silver whistle still on its cord. He passes a stone over your insignia without being asked. "${pw}," he says. "I have run ships through worse weather than this. I do not know how to run this."
+    It is a tall townhouse with every shutter closed in daylight and a cat asleep on the step. The door is opened a hand's width by ${lw}, who looks at your insignia and then at the street before letting you in. "${pw}," ${says}. "Don't mind the shutters. It doesn't care for the light, and I've stopped caring for it myself."
 
 *comment ── the signs ──
 *if (rj_pest_creature = "rat")
@@ -73,28 +97,29 @@
 *temp hint_pest_skip ""
 *if (show_stat_hints)
   *if (guidance_active)
-    *set hint_pest_stealth " [DEX Check (DC 12) + 1d4 (Guidance), Surprise: Advantage on First Strike]"
+    *set hint_pest_stealth " [DEX Check (DC 12) +1d4, Surprise: Advantage on First Strike]"
   *else
     *set hint_pest_stealth " [DEX Check (DC 12), Surprise: Advantage on First Strike]"
-  *set hint_pest_skip " [DC 10 + Proficiency, No Fight, Guidance does not help]"
+  *set hint_pest_skip " [DC 10 + Proficiency, No Fight, No Guidance]"
 
 *choice
   # Creep in and take it by surprise.${hint_pest_stealth}
     *goto rj_pest_stealth
   *if (rj_pest_creature = "rat")
-    # Block the holes, lay bait, and drive them out through the door instead of fighting.${hint_pest_skip}
+    # Block the holes, lay bait, and drive them out.${hint_pest_skip}
       *goto rj_pest_skip
   *if (rj_pest_creature = "snake")
-    # Draw it out with warm milk and a sack, and get it out of the house without a fight.${hint_pest_skip}
+    # Draw it out with warm milk and a sack.${hint_pest_skip}
       *goto rj_pest_skip
   # Leave the house for now.
     *goto rj_pest_leave
 
 *label rj_pest_stealth
+*comment Roll first, then spend the time: a cast-ahead Guidance only lasts a minute, and advancing the clock before the roll would let it lapse unused.
+*gosub_scene dice_engine roll_skill_check 12 "stealth" "" "" "" "" ""
 *set minutes_to_pass 10
 *set time_advance_call_id "rj_pest_stealth_1"
 *gosub rj_time
-*gosub_scene dice_engine roll_skill_check 12 "stealth" "" "" "" "" ""
 *if (check_success)
   *if (rj_pest_creature = "rat")
     You go in on your toes with the householder's lantern shuttered to a crack, and stop beside the hole where the plaster is crumbling. The gnawing carries on, a hand's breadth from your boot. By the time the first grey back lifts out of the dark, you are already set.
@@ -211,7 +236,7 @@
 
 [b][💰 Paid by ${name_full}: 4 Silver Marks][/b]
 *line_break
-[b][🏷 Insignia: Port Valen page, ${hall_jobs_scales} @{(hall_jobs_scales = 1) job|jobs} finished][/b]
+[b][🏷️ Insignia: Port Valen page, ${hall_jobs_scales} @{(hall_jobs_scales = 1) job|jobs} finished][/b]
 *page_break Take your leave…
 *goto rj_pest_exit
 
@@ -242,20 +267,28 @@ You tell ${name_first} you will be back. The look that follows you down the stai
 *if (rj_pest_where = "quarter")
   *goto_scene port_valen/port_valen_upper_wharves pq_avenue
 *else
-  *goto_scene port_valen/port_valen_middle_ward port_valen_middle_ward
+  *goto_scene port_valen/port_valen_middle_ward mw_gate_road
 
 *comment ── the pick: five-day blocks, same answer for the same day, no state ──
+*comment Where is the one fixed rule (about one block in eight is a Quarter house). The building, the creature and the person are each a
+*comment separate roll from the block seed (names.txt name_roll, a different salt per table), so they do not rise and fall together.
 *label rj_pest_select
 *set rj_pest_block ((campaign_day - (campaign_day modulo 5)) / 5)
 *set rj_pest_where "middle_ward"
 *if ((rj_pest_block modulo 8) = 5)
   *set rj_pest_where "quarter"
+*set name_seed rj_pest_block
+*set name_salt 12
+*set name_n 6
 *if (rj_pest_where = "quarter")
-  *set rj_pest_house (1 + (rj_pest_block modulo 3))
-*else
-  *set rj_pest_house (1 + (rj_pest_block modulo 4))
+  *set name_n 4
+*gosub_scene names name_roll
+*set rj_pest_house (1 + name_rolled)
+*set name_salt 13
+*set name_n 3
+*gosub_scene names name_roll
 *set rj_pest_creature "rat"
-*if ((rj_pest_block modulo 3) = 0)
+*if (name_rolled = 0)
   *set rj_pest_creature "snake"
 *return
 
@@ -271,19 +304,41 @@ You tell ${name_first} you will be back. The look that follows you down the stai
   *goto_scene death death_screen
 *return
 
-*comment ── the patron: the same person every time, from the block seed (names.txt). Gender follows the house. ──
+*comment ── the patron: the same person every time, from the block seed (names.txt). Race from the place's mix, gender from the seed. ──
 *label rj_pest_patron
-*set name_race "human"
-*set name_region "port"
 *set name_seed rj_pest_block
-*set name_gender "f"
-*if (rj_pest_where = "middle_ward")
-  *if ((rj_pest_house = 2) or (rj_pest_house = 4))
-    *set name_gender "m"
-*else
-  *if ((rj_pest_house = 2) or (rj_pest_house = 3))
-    *set name_gender "m"
+*set name_setting "middle_ward"
+*if (rj_pest_where = "quarter")
+  *set name_setting "quarter"
+*gosub_scene names name_pick_race
+*set name_region "port"
+*set name_gender "any"
 *gosub_scene names name_make
+*comment Leave out look details the building's own paragraph already covers: the adze and the dye-stained forearms take the hands, the wiping takes the
+*comment hands and the coat, and a Quarter patron or footman is not in a patched coat.
+*set name_look_skip ""
+*if (rj_pest_where = "middle_ward")
+  *if ((rj_pest_house = 2) or (rj_pest_house = 5))
+    *set name_look_skip "hands"
+  *elseif (rj_pest_house = 4)
+    *set name_look_skip "hands clothes"
+*else
+  *set name_look_skip "clothes"
+*gosub_scene names name_look
+*set name_look_skip ""
+*return
+
+*comment ── a second person at the door of a Quarter house: another seed, the same place's mix ──
+*label rj_pest_greeter
+*set name_seed (rj_pest_block + 1000)
+*set name_setting "quarter"
+*gosub_scene names name_pick_race
+*set name_region "port"
+*set name_gender "any"
+*gosub_scene names name_make
+*set name_look_skip "clothes"
+*gosub_scene names name_look
+*set name_look_skip ""
 *return
 
 *comment ── short place text for the wall posting, the hub button and the quest log: who and what kind of house, no street ──
@@ -296,14 +351,19 @@ You tell ${name_first} you will be back. The look that follows you down the stai
     *set rj_pest_place (name_full & ", a cooper's house")
   *elseif (rj_pest_house = 3)
     *set rj_pest_place (name_full & ", rooms above a chandler's")
-  *else
+  *elseif (rj_pest_house = 4)
     *set rj_pest_place (name_full & ", a carter's house")
+  *elseif (rj_pest_house = 5)
+    *set rj_pest_place (name_full & ", a dyer's house")
+  *else
+    *set rj_pest_place (name_full & ", a corner house")
 *else
   *if (rj_pest_house = 1)
     *set rj_pest_place (name_full & ", a townhouse")
   *elseif (rj_pest_house = 2)
     *set rj_pest_place (name_full & ", a wine-factor's townhouse")
-  *else
+  *elseif (rj_pest_house = 3)
     *set rj_pest_place (name_full & ", a retired harbor-master's townhouse")
+  *else
+    *set rj_pest_place (name_full & ", a shuttered townhouse")
 *return
-

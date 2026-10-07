@@ -9,8 +9,8 @@
  *
  * What it measures: the text the player sees on the button, in characters (the screen wraps by width, not by word
  * count). Markup is removed first: [b]/[i] tags, and the tags and conditions of @{...} (the longest option is counted).
- * A ${...} interpolation counts as 12 characters, and one whose name contains "hint" (a stat hint the scene fills in at
- * run time) counts as 60, about what those hints add. The bracketed hint written straight into the
+ * A ${...} interpolation counts as the longest text the file ever sets into that variable (*set name "text"), which is how the
+ * stat hints are filled in. If the file never sets it to a plain string it is a guess: 12 characters, or 60 for a name with "hint". The bracketed hint written straight into the
  * button, such as [Lyra Bond / Dialogue / Advantage on Gatehouse Melee], is counted: the player reads it.
  *
  * Two signals, both advisory:
@@ -108,12 +108,27 @@ function expandInline(text) {
   return out;
 }
 
-// What the player sees: the longest option of each @{...}, no tags, a stand-in for each ${...}.
-function rendered(text) {
+// What the player sees: the longest option of each @{...}, no tags. A ${...} stands for the longest text the file ever
+// puts in that variable with *set name "text" (the real hint), or, when the file never sets it to a plain string, a guess:
+// 12 characters, or 60 for a name containing "hint".
+function rendered(text, varLengths) {
   let out = expandInline(text);
-  out = out.replace(/\$\{([^}]*)\}/g, (m, name) => (/hint/i.test(name) ? 'x'.repeat(60) : 'x'.repeat(12)));
+  out = out.replace(/\$\{([^}]*)\}/g, (m, name) => {
+    const known = varLengths && varLengths[name.trim()];
+    return 'x'.repeat(known || (/hint/i.test(name) ? 60 : 12));
+  });
   out = out.replace(/\[\/?[bi]\]/g, '').replace(/\*\*/g, '');
   return out.replace(/\s+/g, ' ').trim();
+}
+
+// The longest plain string each variable is set to anywhere in the file: *set name "text".
+function stringLengths(lines) {
+  const longest = {};
+  for (const line of lines) {
+    const m = line.match(/^\s*\*set\s+(\w+)\s+"([^"]*)"\s*$/);
+    if (m && m[2].length > (longest[m[1]] || 0)) longest[m[1]] = m[2].length;
+  }
+  return longest;
 }
 
 // The last [bracketed hint] of the visible text, or ''.
@@ -125,12 +140,13 @@ function bracketHint(text) {
 function analyse(file) {
   const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
   const found = [];
+  const varLengths = stringLengths(lines);
   let buttons = 0;
   for (let i = 0; i < lines.length; i++) {
     const raw = buttonText(lines[i]);
     if (raw === null || raw === '') continue;
     buttons++;
-    const shown = rendered(raw);
+    const shown = rendered(raw, varLengths);
     const hint = bracketHint(shown);
     const problems = [];
     if (shown.length > opts.max) problems.push('long');
