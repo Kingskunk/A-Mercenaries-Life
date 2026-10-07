@@ -374,6 +374,21 @@ Through the east arch, a long hall of pale stone runs under a barrel roof. Woode
   *set rj_hup true
 *if ((rj_haul_stage = "active") and (campaign_day <= rj_haul_until))
   *set rj_hup false
+*comment The night watch is posted on Tidedays, a placeholder cadence until the board's scheduling is redone (the user's call, 2026-10-07).
+*temp rj_wweek ((((campaign_day - 1) - ((campaign_day - 1) modulo 7)) / 7) + 1)
+*temp rj_wno (3000 + rj_wweek)
+*temp rj_wup false
+*if ((day_of_week = "Tideday") and (not(rj_watch_done_week = rj_wweek)))
+  *set rj_wup true
+*if ((rj_watch_stage = "active") and (campaign_day <= rj_watch_until))
+  *set rj_wup false
+*comment Music for an evening is posted on Hearthdays, a placeholder cadence until the board's scheduling is redone (the user's call, 2026-10-07).
+*temp rj_pno (4000 + rj_wweek)
+*temp rj_pup false
+*if ((day_of_week = "Hearthday") and (not(rj_perf_done_week = rj_wweek)))
+  *set rj_pup true
+*if ((rj_perf_stage = "active") and (campaign_day <= rj_perf_until))
+  *set rj_pup false
 You work along the frames. Each sheet is ruled like a form and headed with a posting number, with the seals at its foot: the patron's in wax, and the city's pressed beside it.
 
 *if (rj_up)
@@ -391,6 +406,28 @@ You work along the frames. Each sheet is ruled like a form and headed with a pos
   [i]Sealed: a household and the City. Work: hauling, a house to be moved. Pay: a copper bit an hour, a little over for each piece delivered whole, and a meal. Term: two days. Apply: ${rj_haul_place}, in the Middle Ward.[/i]
 
 
+*if (rj_wup)
+  *gosub_scene port_valen/radiant/hall_watch rj_watch_select
+  *gosub_scene port_valen/radiant/hall_watch rj_watch_describe
+  [b]POSTING No. ${rj_wno}[/b]
+  *line_break
+  [i]Sealed: a Cargo Quay warehouse and the City. Work: night watch. Pay: a copper bit an hour, a little over for each stretch held clean. Term: one night, signed for two days. Apply: ${rj_watch_place}, the warehouse door, Harbor Quayside.[/i]
+
+*if (rj_pup)
+  *gosub_scene port_valen/radiant/hall_perform rj_perf_select
+  *gosub_scene port_valen/radiant/hall_perform rj_perf_describe
+  *temp rj_pdist "in the Middle Ward"
+  *temp rj_pkind "a household"
+  *if (rj_perf_where = "quarter")
+    *set rj_pdist "in the Patrician Quarter"
+  *elseif (rj_perf_where = "docks")
+    *set rj_pdist "on the Harbor Quayside"
+  *if (rj_perf_venue <= 2)
+    *set rj_pkind "a house of entertainment"
+  [b]POSTING No. ${rj_pno}[/b]
+  *line_break
+  [i]Sealed: ${rj_pkind} and the City. Work: music for an evening, three sets. Pay: a fee, and whatever the room gives. Term: one evening, signed for two days. Apply: ${rj_perf_place}, ${rj_pdist}.[/i]
+
 [b]POSTING No. 0211[/b]
 *line_break
 [i]Sealed: the Port Watch and the City. Work: night patrol. Pay: by the week. Term: standing. Apply: the Watch yard.[/i]
@@ -399,10 +436,6 @@ You work along the frames. Each sheet is ruled like a form and headed with a pos
   [b]POSTING No. 0340[/b]
   *line_break
   [i]Sealed: a carters' company and the City. Work: wagon guard on the road to Alderford. Pay: the fee named at the yard, half on signing. Term: two days out and back. Apply: the carters' yard.[/i]
-*elseif (day_of_week = "Tideday")
-  [b]POSTING No. 0352[/b]
-  *line_break
-  [i]Sealed: a Cargo Quay warehouse and the City. Work: night watch. Pay: by the watch. Term: standing. Apply: the harbor registry.[/i]
 *elseif (day_of_week = "Forgeday")
   [b]POSTING No. 0381[/b]
   *line_break
@@ -411,10 +444,6 @@ You work along the frames. Each sheet is ruled like a form and headed with a pos
   [b]POSTING No. 0395[/b]
   *line_break
   [i]Sealed: a seasoning yard on the Iron Wharves and the City. Work: night watch. Pay: four Copper Bits per watch. Bring your own lantern. Term: standing. Apply: the yard gate.[/i]
-*elseif (day_of_week = "Hearthday")
-  [b]POSTING No. 0408[/b]
-  *line_break
-  [i]Sealed: a household on the Heights and the City. Work: a bard for a wedding feast. Pay: the household's fee. Term: one evening. Apply: the house.[/i]
 
 Every posting names its seals, its pay, its term, and where to apply.
 
@@ -431,6 +460,18 @@ Every posting names its seals, its pay, its term, and where to apply.
   *if ((rj_hup) and (not(has_hall_insignia)))
     # Take the job about the move.
       *goto pv_ch_roll_need
+  *if ((rj_wup) and (has_hall_insignia))
+    # Press your insignia to the posting's frame and take the job about the watch.
+      *goto pv_ch_watch_sign
+  *if ((rj_wup) and (not(has_hall_insignia)))
+    # Take the job about the watch.
+      *goto pv_ch_roll_need
+  *if ((rj_pup) and (has_hall_insignia))
+    # Press your insignia to the posting's frame and take the job about the music.
+      *goto pv_ch_perf_sign
+  *if ((rj_pup) and (not(has_hall_insignia)))
+    # Take the job about the music.
+      *goto pv_ch_roll_need
   # Step back from the wall.
     *goto pv_ch_records_inside
 
@@ -438,6 +479,44 @@ Every posting names its seals, its pay, its term, and where to apply.
 [b]◈ THE HIRING HALL[/b]
 *line_break
 You reach for the frame, and Tolliver's flat voice carries down the wall before your hand gets there. "Insignia first. The Seals window, at the end of the counter. It's a one-time fee."
+*page_break Step back from the wall…
+*goto pv_ch_records_inside
+
+*label pv_ch_perf_sign
+*set minutes_to_pass 5
+*set time_advance_call_id "pv_ch_perf_sign_1"
+*gosub pv_ch_walk_time
+[b]◈ THE HIRING HALL[/b]
+*line_break
+You press the brass to the frame. It warms against your palm, and the terms of the posting run across its face in thin lines of light and sink into the metal. On the wall, the seals at the foot of the sheet dim, and the sheet goes grey: taken.
+*gosub_scene port_valen/radiant/hall_perform rj_perf_select
+*gosub_scene port_valen/radiant/hall_perform rj_perf_describe
+*set rj_perf_stage "active"
+*set rj_perf_until (campaign_day + 1)
+*set rj_perf_good1 false
+*set rj_perf_good2 false
+*set rj_perf_good3 false
+
+[b][🏷️ Job taken: Music for an Evening, ${rj_perf_place}][/b]
+*page_break Step back from the wall…
+*goto pv_ch_records_inside
+
+*label pv_ch_watch_sign
+*set minutes_to_pass 5
+*set time_advance_call_id "pv_ch_watch_sign_1"
+*gosub pv_ch_walk_time
+[b]◈ THE HIRING HALL[/b]
+*line_break
+You press the brass to the frame. It warms against your palm, and the terms of the posting run across its face in thin lines of light and sink into the metal. On the wall, the seals at the foot of the sheet dim, and the sheet goes grey: taken.
+*gosub_scene port_valen/radiant/hall_watch rj_watch_select
+*gosub_scene port_valen/radiant/hall_watch rj_watch_describe
+*set rj_watch_stage "active"
+*set rj_watch_until (campaign_day + 1)
+*set rj_watch_held1 false
+*set rj_watch_held2 false
+*set rj_watch_held3 false
+
+[b][🏷️ Job taken: The Night Watch, ${rj_watch_place}][/b]
 *page_break Step back from the wall…
 *goto pv_ch_records_inside
 

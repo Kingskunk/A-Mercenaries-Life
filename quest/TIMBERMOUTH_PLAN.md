@@ -2,6 +2,8 @@
 
 ## 0. Status and Design Constraints
 
+**Implementation status (2026-10-07):** a placeholder hub is built in `web/mygame/scenes/timbermouth/` (the hub `timbermouth.txt` plus one file per place), with the setting, the three location-intro layers, the day and night cycle (hours and closure pages) and the places as empty pages (five: the timber market and the general market of section 3 were merged into one "Market" on 2026-10-07 at the user's call), reached only from the developer menu ("Jump to Timbermouth"). A short Lorebook entry (`web/mygame/lorebook-timbermouth.js`) unlocks on the first visit. The road is built too (2026-10-07): Port Valen, three road tiles and Timbermouth on an overworld point-and-click map (`web/mygame/overworld-data.js`, `overworldmap.js`, `scenes/overworld/overworld.txt`), 10 miles a tile, 20 miles a day on foot, entered from the Charter Gate and from Timbermouth's old-road exit. Not built: events on the road, camps and food, other tiles (Alderford, the villages), the Town Factor and any named person, shops, quests, the job board. The hours are a first draft, all in `tm_hours` in the hub.
+
 This document establishes Timbermouth as the next town within the Gilded Scales' territory. It is a regional settlement plan, not yet an implementation plan for a specific quest.
 
 ### Locked decisions

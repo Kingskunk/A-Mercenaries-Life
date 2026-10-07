@@ -1,0 +1,552 @@
+*comment ====================================================================================
+*comment THE NIGHT WATCH: the third radiant Hiring Hall job (Gilded Scales page). A night's watch over a Cargo Quay warehouse.
+*comment
+*comment The patron is a generated person (names.txt, docks mix). The watch signs on at dusk at the warehouse door and runs about nine hours in three stretches
+*comment of three hours. Each stretch draws one event from a seeded table, and MOST of the table is a quiet night or a false alarm; only two events are real
+*comment (a fire, a sneak thief) and only the thief is a fight. Phase 2, not built: the City Watch patrol with a warrant (its share of the table, rolls 90 to 99,
+*comment plays as a quiet stretch until then).
+*comment
+*comment Pay is a copper bit for every hour of the watch (nine) plus two copper for each stretch held cleanly. A stretch that goes wrong loses its two copper bonus
+*comment and some goods; it never fails the job and never takes the hourly pay away.
+*comment
+*comment Rules this file follows: roll first, then the page's one time advance, so a cast-ahead Guidance (one minute) still counts. A refresh replays a page from its start on
+*comment top of that page's END state, so a page must not read a value it changes itself: each stretch's number is assigned as a constant at the top of its own page
+*comment (rj_watch_stretch1..3), never counted up or derived from what the page marks, and each result is stored by assignment (rj_watch_held1..3). The event of each
+*comment stretch is a seeded roll (a salt per stretch), so the same night always plays the same.
+*comment
+*comment Wired in: wall posting and signing in port_valen_civic_heights.txt (pv_ch_roll_read, pv_ch_watch_sign); reached through the posting hub (radiant_hub.txt rh_hub)
+*comment from the Harbor Quayside, open at Dusk only; compile.js lists the file. Not in *scene_list.
+*comment
+*comment Event ids (rj_watch_ev): 0 quiet round, 1 shutter, 2 feral cat, 3 drunk or lost sailor, 4 fire, 5 sneak thief. Table of a 0-99 roll: 0-39 quiet, 40-49 shutter,
+*comment 50-61 cat, 62-74 drunk, 75-82 fire, 83-89 thief, 90-99 reserved for the patrol (quiet for now).
+*comment ====================================================================================
+
+*label rj_watch_arrive
+*set minutes_to_pass 10
+*set time_advance_call_id "rj_watch_arrive_1"
+*gosub rj_watch_time
+[b]THE NIGHT WATCH[/b]
+*line_break
+*gosub rj_watch_patron
+*temp pw name_full
+*temp lk look_full
+*temp says "he says"
+*if (name_sex = "f")
+  *set says "she says"
+*if (rj_watch_warehouse = 1)
+  It is a long timber warehouse with tarred doors, the planks furred white with salt, and a loading arm hung over the back dock like a gallows.
+*elseif (rj_watch_warehouse = 2)
+  It is a squat brick warehouse with iron shutters bolted over every window, and the tide slaps at the piles under the back dock.
+*else
+  It is a low stone warehouse with empty barrels stacked in a wall along its front, and a single lantern hook beside the door with nothing on it.
+
+${lk} is waiting at the door with a key ring in one hand and a shuttered lantern in the other. "${pw}," ${says}. "The round is the front doors, the loft ladder and the back dock. Don't light anything that isn't mine, and don't let anyone in. Come first light, I pay by the hour, and a little over for a night where nothing went missing."
+*choice
+  # Take the lantern and begin the round.
+    *goto rj_watch_stretch1
+  # Tell ${name_first} you will come back another night.
+    *goto rj_watch_leave
+
+*comment ── a stretch: its number is a constant set at the top of its own page, then its event is drawn and the hours are played ──
+*label rj_watch_stretch1
+*set rj_watch_cur 1
+*goto rj_watch_stretch
+
+*label rj_watch_stretch2
+*set rj_watch_cur 2
+*goto rj_watch_stretch
+
+*label rj_watch_stretch3
+*set rj_watch_cur 3
+*goto rj_watch_stretch
+
+*label rj_watch_stretch
+*gosub rj_watch_pick
+*temp ord "the last stretch"
+*if (rj_watch_cur = 1)
+  *set ord "the first stretch"
+*elseif (rj_watch_cur = 2)
+  *set ord "the second stretch"
+[b]THE NIGHT WATCH: ${ord}[/b]
+*line_break
+*if (rj_watch_cur = 1)
+  The light goes out of the lane and the quay gives up its noise a piece at a time: the cranes, the draymen, the gulls. Then it is only the water and the lantern.
+*elseif (rj_watch_cur = 2)
+  Past midnight the warehouse settles around you, timber ticking as it cools. The tide is turning, and you can hear it change against the piles.
+*else
+  The last stretch before light is the coldest, and the longest. The lantern burns low, and the dark outside the doors is a different shade of dark.
+*if (weather_wet)
+  Rain beads on the shutters and runs from the eaves in a thin line.
+*elseif (weather = "Fog")
+  Fog presses against the windows until the lantern shows only itself.
+*if (rj_watch_ev = 1)
+  *goto rj_watch_shutter
+*elseif (rj_watch_ev = 2)
+  *goto rj_watch_cat
+*elseif (rj_watch_ev = 3)
+  *goto rj_watch_drunk
+*elseif (rj_watch_ev = 4)
+  *goto rj_watch_fire
+*elseif (rj_watch_ev = 5)
+  *goto rj_watch_thief
+*goto rj_watch_quiet
+
+*comment ── quiet: the round, the same round, and nothing moves ──
+*label rj_watch_quiet
+*set name_seed rj_watch_week
+*set name_salt (50 + rj_watch_cur)
+*set name_n 4
+*gosub_scene names name_roll
+*if (name_rolled = 0)
+  You walk the round: the front doors, the loft ladder, the back dock, the barrels. Nothing moves that you did not move, and the hours pass in the small noises of a big building cooling.
+*elseif (name_rolled = 1)
+  The barrels tick as the night works on them. You count them twice, and the second count agrees with the first, and that is the whole event.
+*elseif (name_rolled = 2)
+  Somewhere along the quay a rope creaks against a bollard in a rhythm you start to hum to. You sit a while on an upturned crate by the stair and listen to the water.
+*else
+  A bell tolls the half hour out on the bay. You trim the lantern, eat the heel of bread from your pocket, and walk the round again with your boots loud on the boards.
+*set rj_watch_ok true
+*set minutes_to_pass 180
+*set time_advance_call_id ("rj_watch_ev_" & rj_watch_cur)
+*gosub rj_watch_time
+*gosub rj_watch_mark
+*goto rj_watch_next
+
+*comment ── false alarm: a shutter in the wind, no choice, no cost ──
+*label rj_watch_shutter
+*set rj_watch_ok true
+*if (weather_severity >= 1)
+  A shutter somewhere on the harbor side starts banging in the wind, loud as a fist on the wall. You go the length of the building with your hand on the latch before you find the one that has worked loose, and wedge it with a sliver of barrel stave.
+*else
+  Something knocks against the loft wall in a slow, patient rhythm. You climb the ladder with the lantern raised and find a shutter swinging on its hook in the draught from the bay. You tie it fast and go down again with your heart still going.
+*set minutes_to_pass 180
+*set time_advance_call_id ("rj_watch_ev_" & rj_watch_cur)
+*gosub rj_watch_time
+*gosub rj_watch_mark
+*goto rj_watch_next
+
+*comment ── false alarm: a feral cat in the crates; held whatever you do ──
+*label rj_watch_cat
+*temp hl ""
+*temp hs ""
+*temp ha ""
+*set rj_watch_hab "WIS"
+*set rj_watch_hdc 10
+*gosub rj_watch_hint
+*set hl rj_watch_hint
+*set rj_watch_hab "DEX"
+*set rj_watch_hdc 11
+*gosub rj_watch_hint
+*set hs rj_watch_hint
+*set rj_watch_hab "WIS"
+*set rj_watch_hdc 9
+*gosub rj_watch_hint
+*set ha rj_watch_hint
+A scratching starts behind the barrels, then a shifting, then a long low crash that sounds like a whole stack of crates giving way. Something is in the dark at the back wall, and it is not making any noise now.
+*choice
+  # Stop and listen at the stack before going in.${hl}
+    *set rj_watch_opt 1
+    *goto rj_watch_cat_do
+  # Go in low with the lantern held out.${hs}
+    *set rj_watch_opt 2
+    *goto rj_watch_cat_do
+  # Rattle a lid and wait for it to come out.${ha}
+    *set rj_watch_opt 3
+    *goto rj_watch_cat_do
+
+*label rj_watch_cat_do
+*set rj_watch_ok true
+*set rj_watch_dc 10
+*set rj_watch_skill "perception"
+*if (rj_watch_opt = 2)
+  *set rj_watch_dc 11
+  *set rj_watch_skill "stealth"
+*elseif (rj_watch_opt = 3)
+  *set rj_watch_dc 9
+  *set rj_watch_skill "animal_handling"
+*gosub_scene dice_engine roll_skill_check rj_watch_dc rj_watch_skill "" "" "" "" ""
+*set minutes_to_pass 180
+*set time_advance_call_id ("rj_watch_ev_" & rj_watch_cur)
+*gosub rj_watch_time
+*gosub rj_watch_mark
+*if (rj_watch_opt = 1)
+  *if (check_success)
+    You stand still in the dark and listen until the sound sorts itself out: not a footstep, a tail. When you go round the stack the lantern shows a scrawny one-eyed cat on top of a crate, glaring at you as if you had broken into its house.
+  *else
+    You listen, and what you hear sounds like a man breathing. You go round the stack with your heart hammering, and a one-eyed cat explodes out between your boots and is gone through the loading hatch.
+*elseif (rj_watch_opt = 2)
+  *if (check_success)
+    You go in low with the lantern out in front of you, and the light finds a scrawny one-eyed cat on a toppled crate, mid-lick. It looks at you with the whole of its attention, and then goes back to licking.
+  *else
+    Your boot finds the one loose board, and something flies out of the dark at your face. You fall back against the stack, and a one-eyed cat clears your shoulder and is gone through the hatch.
+*else
+  *if (check_success)
+    You rattle a lid against a barrel and wait. After a time a scrawny one-eyed cat walks out into the lantern light as if it had been invited, sits down, and looks at you.
+  *else
+    You rattle the lid and the whole dark rattles back at you, and a one-eyed cat bolts past with a crate-load of something tumbling in its wake.
+You spend a while putting the stack right, and the rest of the hours go by quietly.
+
+[b][🕯️ Stretch held: 2 Copper Bits bonus][/b]
+*goto rj_watch_next
+
+*comment ── false alarm: a drunk or a lost sailor at the door ──
+*label rj_watch_drunk
+*temp hp ""
+*temp hi ""
+*temp hc ""
+*set rj_watch_hab "CHA"
+*set rj_watch_hdc 10
+*gosub rj_watch_hint
+*set hp rj_watch_hint
+*set rj_watch_hab "CHA"
+*set rj_watch_hdc 12
+*gosub rj_watch_hint
+*set hi rj_watch_hint
+*set rj_watch_hab "STR"
+*set rj_watch_hdc 11
+*gosub rj_watch_hint
+*set hc rj_watch_hint
+Someone starts hammering on the front doors with the flat of a hand. When you open the wicket a sailor in a salt-stiff coat sways in the lantern light, grinning with a great many teeth, and tries to push past you into the warehouse. "My bunk," he says. "My bunk's in here."
+*choice
+  # Talk him round, kindly, and walk him back to the quay.${hp}
+    *set rj_watch_opt 1
+    *goto rj_watch_drunk_do
+  # Fill the doorway and tell him to go.${hi}
+    *set rj_watch_opt 2
+    *goto rj_watch_drunk_do
+  # Take him under the arm and steer him to the night-boat stairs.${hc}
+    *set rj_watch_opt 3
+    *goto rj_watch_drunk_do
+
+*label rj_watch_drunk_do
+*set rj_watch_dc 10
+*set rj_watch_skill "persuasion"
+*if (rj_watch_opt = 2)
+  *set rj_watch_dc 12
+  *set rj_watch_skill "intimidation"
+*elseif (rj_watch_opt = 3)
+  *set rj_watch_dc 11
+  *set rj_watch_skill "athletics"
+*gosub_scene dice_engine roll_skill_check rj_watch_dc rj_watch_skill "" "" "" "" ""
+*set rj_watch_ok check_success
+*set minutes_to_pass 180
+*set time_advance_call_id ("rj_watch_ev_" & rj_watch_cur)
+*gosub rj_watch_time
+*gosub rj_watch_mark
+*if (rj_watch_opt = 1)
+  *if (check_success)
+    You ask him which ship, and he tells you for a long time. By the end he has agreed that his bunk is probably somewhere else, and goes off along the quay with his arm over your shoulder for the first ten steps and his own coat for the rest.
+  *else
+    You ask him which ship, and he tells you, and it is wrong, and he knows it is wrong, and he ducks under your arm and is through the wicket before you can close it. By the time you have him out again he has put his boot through a stack of baskets.
+*elseif (rj_watch_opt = 2)
+  *if (check_success)
+    You fill the doorway and say one flat word. He looks at you, and at the lantern, and at the doorway, and reconsiders his bunk entirely, backing off along the quay with both hands raised.
+  *else
+    You fill the doorway, and he laughs, and sways, and lunges under your arm. He is through before you can stop him and halfway across the floor, and a whole row of baskets goes over with him.
+*else
+  *if (check_success)
+    You take his weight under one arm and steer him along the quay, step by listing step, and sit him on the night-boat stairs. He sings you out of sight.
+  *else
+    He is a good deal heavier than he looks. He sags, you stagger, and the two of you go through the wicket together and take a stack of baskets with you.
+*if (rj_watch_ok)
+  The rest of the hours go by without a sound.
+
+  [b][🕯️ Stretch held: 2 Copper Bits bonus][/b]
+*else
+  You spend the rest of the stretch righting the baskets and counting what is left.
+
+  [b][🕯️ Stretch lost: goods spoiled, no bonus][/b]
+*goto rj_watch_next
+
+*comment ── real: a fire, three ways to put it out ──
+*label rj_watch_fire
+*temp hw ""
+*temp hs ""
+*temp hb ""
+*set rj_watch_hab "STR"
+*set rj_watch_hdc 10
+*gosub rj_watch_hint
+*set hw rj_watch_hint
+*set rj_watch_hab "DEX"
+*set rj_watch_hdc 11
+*gosub rj_watch_hint
+*set hs rj_watch_hint
+*set rj_watch_hab "CHA"
+*set rj_watch_hdc 12
+*gosub rj_watch_hint
+*set hb rj_watch_hint
+You smell it before you see it: a sour, dry smoke, and then a thread of orange along the base of a stack of sacks where a lantern has been knocked on its side. The fire is small, and it is already walking up the sacking.
+*choice
+  # Empty the water barrel over it.${hw}
+    *set rj_watch_opt 1
+    *goto rj_watch_fire_do
+  # Smother it with wet sacking.${hs}
+    *set rj_watch_opt 2
+    *goto rj_watch_fire_do
+  # Shout for the quay and start a bucket line.${hb}
+    *set rj_watch_opt 3
+    *goto rj_watch_fire_do
+
+*label rj_watch_fire_do
+*set rj_watch_dc 10
+*set rj_watch_skill "athletics"
+*if (rj_watch_opt = 2)
+  *set rj_watch_dc 11
+  *set rj_watch_skill "acrobatics"
+*elseif (rj_watch_opt = 3)
+  *set rj_watch_dc 12
+  *set rj_watch_skill "persuasion"
+*gosub_scene dice_engine roll_skill_check rj_watch_dc rj_watch_skill "" "" "" "" ""
+*set rj_watch_ok check_success
+*set minutes_to_pass 180
+*set time_advance_call_id ("rj_watch_ev_" & rj_watch_cur)
+*gosub rj_watch_time
+*gosub rj_watch_mark
+*if (rj_watch_opt = 1)
+  *if (check_success)
+    You drag the water barrel over by the rim and put your whole weight behind it. The flood takes the flames and half the stack with it, and you stand ankle-deep in a hiss of steam with the lantern still swinging.
+  *else
+    You heave the barrel and it sloshes half its water down your legs and the rest on the wrong sacks. The fire takes the dry ones with a soft roar, and you lose a whole row before you beat it out with a plank.
+*elseif (rj_watch_opt = 2)
+  *if (check_success)
+    You snatch a wet sack from the drip trough and throw yourself over the flames with it, and then another, rolling them out against the floor. When the smoke clears there is a black patch the size of a table and nothing else.
+  *else
+    You throw the sack and it lands on the wrong side of the flame. The heat catches your sleeve, and by the time you have beaten it out the fire has crossed two more stacks.
+*else
+  *if (check_success)
+    You throw the wicket wide and bellow down the quay, and doors bang open along the whole front. A bucket line forms in the time it takes to say so, and the fire is out before it has cleared the first sacks.
+  *else
+    You shout and the quay hears you and does not understand. A man comes at a trot with a single bucket, and then nobody, and you beat the worst of it out yourself, with a long black scar up the stack to show for it.
+*if (rj_watch_ok)
+  When the last ember is out you lift the lantern and count the stacks. Nothing is missing that was not there before, and you stay awake until light, not trusting it.
+
+  [b][🕯️ Stretch held: 2 Copper Bits bonus][/b]
+*else
+  You lift the lantern and count the stacks, and then count them again, hoping the number will change.
+
+  [b][🕯️ Stretch lost: goods burned, no bonus][/b]
+*goto rj_watch_next
+
+*comment ── real: a sneak thief, the one fight in the table ──
+*label rj_watch_thief
+*temp hl ""
+*temp hw ""
+*set rj_watch_hab "WIS"
+*set rj_watch_hdc 10
+*gosub rj_watch_hint
+*set hl rj_watch_hint
+*set rj_watch_hab "WIS"
+*set rj_watch_hdc 13
+*gosub rj_watch_hint
+*set hw rj_watch_hint
+It is a small sound: a bolt drawn back, a hinge that has been oiled. Somebody is coming in through the back dock, and they do not want to be heard.
+*choice
+  # Stand still in the dark and listen.${hl}
+    *set rj_watch_opt 1
+    *goto rj_watch_thief_do
+  # Keep walking the round as if nothing was wrong.${hw}
+    *set rj_watch_opt 2
+    *goto rj_watch_thief_do
+
+*label rj_watch_thief_do
+*set rj_watch_dc 10
+*if (rj_watch_opt = 2)
+  *set rj_watch_dc 13
+*gosub_scene dice_engine roll_skill_check rj_watch_dc "perception" "" "" "" "" ""
+*set minutes_to_pass 180
+*set time_advance_call_id ("rj_watch_ev_" & rj_watch_cur)
+*gosub rj_watch_time
+*if (check_success)
+  *set advantage true
+  *set combat_player_surprise true
+  The shadow by the loading arm is wrong: it is the wrong height, and it has a hand out in front of it. You are already behind the stack when it steps into the lantern light, and you have a clear moment before it knows you are there.
+*else
+  *set combat_enemy_advantage true
+  You are halfway along the round when the shadow by the loading arm turns round. There is a knife in it, and it is a step nearer than you were ready for.
+*goto rj_watch_thief_fight
+
+*label rj_watch_thief_fight
+*comment Terrain is randomized each time. fight_library reads the combat_lib_ slots; combat_player_surprise or combat_enemy_advantage was set by the branch above.
+*set combat_is_nonlethal false
+*set combat_terrain_layout "random_standard"
+*set combat_lib_1 "knifeman"
+*set combat_enemy_name_override "Sneak Thief"
+*set combat_enemy_epithet_override "the sneak thief"
+*gosub_scene combat fight_library
+*if (combat_outcome = "player_died")
+  *set death_cause "combat"
+  *set death_enemy_epithet "the thief in the warehouse"
+  *goto_scene death death_screen
+*if (combat_outcome = "victory")
+  *goto rj_watch_thief_won
+*if (combat_outcome = "rescued")
+  *goto rj_watch_thief_rescued
+*goto rj_watch_thief_fled
+
+*label rj_watch_thief_won
+*set rj_watch_ok true
+*gosub rj_watch_mark
+The thief goes down among the barrels with the knife skittering out of reach, and does not get up again. You drag the body out onto the back dock, and a passing Watch lantern takes the rest of the problem off your hands without a question. The hours that are left go by quietly.
+
+[b][🕯️ Stretch held: 2 Copper Bits bonus][/b]
+*goto rj_watch_next
+
+*label rj_watch_thief_rescued
+*set rj_watch_ok false
+*gosub rj_watch_mark
+Your legs fold. When your head clears you are propped on a sack by the door with a cold cloth on your face, and a stack by the back dock is missing a crate. You never see the thief again.
+
+[b][🕯️ Stretch lost: goods stolen, no bonus][/b]
+*goto rj_watch_next
+
+*label rj_watch_thief_fled
+*set rj_watch_ok false
+*gosub rj_watch_mark
+You get out through the wicket and bolt it behind you, and by the time you have the nerve to go back in, the back dock hatch is swinging and a crate is missing from the stack.
+
+[b][🕯️ Stretch lost: goods stolen, no bonus][/b]
+*goto rj_watch_next
+
+*comment ── on to the next stretch, or to the dawn pay ──
+*label rj_watch_next
+*if (rj_watch_cur = 1)
+  *page_break Keep walking…
+  *goto rj_watch_stretch2
+*elseif (rj_watch_cur = 2)
+  *page_break Keep walking…
+  *goto rj_watch_stretch3
+*page_break The light comes up…
+*goto rj_watch_pay
+
+*label rj_watch_pay
+*gosub rj_watch_patron
+*temp held 0
+*if (rj_watch_held1)
+  *set held + 1
+*if (rj_watch_held2)
+  *set held + 1
+*if (rj_watch_held3)
+  *set held + 1
+*temp bonus (held * 2)
+*temp pay (9 + bonus)
+*temp pos "his"
+*if (name_sex = "f")
+  *set pos "her"
+*if (held = 3)
+  ${name_first} comes down the quay with the first light at ${pos} back and walks the whole building. Every crate is where it should be, and the hours and the bonus are counted into your hand.
+*elseif (held = 0)
+  ${name_first} comes down the quay with the first light at ${pos} back and walks the whole building, counting under ${pos} breath. The number is not the one ${name_first} wanted. The hours are counted into your hand, and that is all.
+*else
+  ${name_first} comes down the quay with the first light at ${pos} back and walks the whole building, pausing twice at a gap in the stacks. The hours are counted into your hand, with a little over for the stretches that went well.
+*if (rj_watch_stage = "active")
+  *set rj_watch_stage "done"
+  *set rj_watch_done_week rj_watch_week
+  *set hall_jobs_scales + 1
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount pay
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+
+[b][💰 Paid by ${name_full}: ${pay} Copper Bits, 9 hours worked, ${bonus} in bonus][/b]
+*line_break
+[b][🏷️ Insignia: Port Valen page, ${hall_jobs_scales} @{(hall_jobs_scales = 1) job|jobs} finished][/b]
+*page_break Walk home in the grey light…
+*goto rj_watch_exit
+
+*label rj_watch_leave
+*gosub rj_watch_patron
+You tell ${name_first} you will come back another night. The lantern goes back on its hook, and the key ring with it.
+*page_break Walk back down the quay…
+*goto rj_watch_exit
+
+*label rj_watch_exit
+*goto_scene port_valen/port_valen port_valen_harbor_pois
+
+*comment ── the event of this stretch: a seeded roll from the posting's week, a salt per stretch ──
+*label rj_watch_pick
+*set name_seed rj_watch_week
+*set name_salt (40 + rj_watch_cur)
+*set name_n 100
+*gosub_scene names name_roll
+*set rj_watch_ev 0
+*if ((name_rolled >= 40) and (name_rolled < 50))
+  *set rj_watch_ev 1
+*elseif ((name_rolled >= 50) and (name_rolled < 62))
+  *set rj_watch_ev 2
+*elseif ((name_rolled >= 62) and (name_rolled < 75))
+  *set rj_watch_ev 3
+*elseif ((name_rolled >= 75) and (name_rolled < 83))
+  *set rj_watch_ev 4
+*elseif ((name_rolled >= 83) and (name_rolled < 90))
+  *set rj_watch_ev 5
+*return
+
+*comment ── record this stretch: held when rj_watch_ok. Assignments only. ──
+*label rj_watch_mark
+*if (rj_watch_cur = 1)
+  *set rj_watch_held1 rj_watch_ok
+*elseif (rj_watch_cur = 2)
+  *set rj_watch_held2 rj_watch_ok
+*else
+  *set rj_watch_held3 rj_watch_ok
+*return
+
+*comment ── the hint on a choice: the ability and DC the player sees, +1d4 while Guidance is up ──
+*label rj_watch_hint
+*set rj_watch_hint ""
+*if (show_stat_hints)
+  *set rj_watch_hint ((((" [" & rj_watch_hab) & " Check (DC ") & rj_watch_hdc) & ")")
+  *if (guidance_active)
+    *set rj_watch_hint (rj_watch_hint & " +1d4")
+  *set rj_watch_hint (rj_watch_hint & "]")
+*return
+
+*comment ── the pick of the warehouse: one of three from the posting's week ──
+*label rj_watch_select
+*comment The week number starts at 1, so rj_watch_done_week (0 = none yet) never matches a real week by accident.
+*set rj_watch_week ((((campaign_day - 1) - ((campaign_day - 1) modulo 7)) / 7) + 1)
+*set name_seed rj_watch_week
+*set name_salt 39
+*set name_n 3
+*gosub_scene names name_roll
+*set rj_watch_warehouse (1 + name_rolled)
+*return
+
+*comment ── the patron: the same person every time, from the week seed (names.txt), docks mix ──
+*label rj_watch_patron
+*comment Offset seed: the three jobs must not all hand the same block or week number to the generator, or one person would patron every job at once.
+*set name_seed (rj_watch_week + 3000)
+*set name_setting "docks"
+*gosub_scene names name_pick_race
+*set name_region "port"
+*set name_gender "any"
+*gosub_scene names name_make
+*comment The patron is holding a key ring and a lantern, so the look leaves out details about hands.
+*set name_look_skip "hands"
+*gosub_scene names name_look
+*set name_look_skip ""
+*return
+
+*comment ── short place text for the wall posting, the hub and the quest log: who and what kind of warehouse, no street ──
+*label rj_watch_describe
+*gosub rj_watch_patron
+*if (rj_watch_warehouse = 1)
+  *set rj_watch_place (name_full & ", a timber warehouse")
+*elseif (rj_watch_warehouse = 2)
+  *set rj_watch_place (name_full & ", a brick warehouse")
+*else
+  *set rj_watch_place (name_full & ", a stone warehouse")
+*return
+
+*comment ── time helper: the caller sets minutes_to_pass and a unique time_advance_call_id first ──
+*label rj_watch_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return

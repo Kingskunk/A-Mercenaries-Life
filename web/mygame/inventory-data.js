@@ -202,6 +202,13 @@ window.INVENTORY = {
       use: true
     },
     {
+      id: "trail_rations", category: "consumables", owned: "has_trail_rations",
+      name: function (s) { var n = 1 + (Number(s.spare_trail_rations) || 0); return "Trail Rations" + (n > 1 ? " ×" + n : ""); },
+      description: "Cloth-wrapped biscuit, dried sausage and raisins, a day's food on the road.",
+      badge: "Clears hunger, like a meal",
+      use: true
+    },
+    {
       id: "hemp_rope", category: "provisions", owned: "has_hemp_rope",
       name: function (s) { var n = 1 + (Number(s.spare_hemp_rope) || 0); return "Hemp Rope" + (n > 1 ? " ×" + n : ""); },
       description: "Fifty feet of tarred hemp rope, coiled and tied off."
@@ -225,6 +232,11 @@ window.INVENTORY = {
       id: "tool_kit", category: "provisions", owned: "has_tool_kit",
       name: function (s) { var n = 1 + (Number(s.spare_tool_kit) || 0); return "Repair Kit" + (n > 1 ? " ×" + n : ""); },
       description: "Canvas roll of repair tools for field fixes and simple mechanisms."
+    },
+    {
+      id: "lute", category: "provisions", owned: "has_lute",
+      name: function (s) { var n = 1 + (Number(s.spare_lute) || 0); return "Lute" + (n > 1 ? " ×" + n : ""); },
+      description: "Plain maple lute with seven gut strings and a worn pick-guard."
     },
     {
       id: "tinderbox", category: "provisions", owned: "has_tinderbox",

@@ -1,0 +1,428 @@
+*comment ====================================================================================
+*comment MUSIC FOR AN EVENING: the fourth radiant Hiring Hall job (Gilded Scales page). A bard-for-hire evening at a different place each time.
+*comment
+*comment The venue is a seeded roll from the posting's week: 1 the Wagoner's Rest (Middle Ward inn), 2 the Cleaved Keel (harbor tavern), 3 a private supper,
+*comment 4 a wedding feast (Middle Ward houses), 5 a gala in the Patrician Quarter (rare; the posting is admission at the Inner Gate). The inn and the tavern are run by
+*comment the keepers the player already knows (Oswin, Maret); the hosts of the supper, the wedding and the gala are generated people (names.txt).
+*comment
+*comment Three sets, one hour each. A set is one Performance check, and the player chooses the song: 1 a loud crowd-pleaser, 2 a tender ballad, 3 a clever comic number.
+*comment The room has a taste, hinted in the prose and never shown as a number: its preferred song is DC 10, its disliked one DC 14, the third DC 12 (+2 at the gala). The
+*comment taste shifts across the night, so reading the room pays. A lute adds +1 (check_task_type "perform", dice_engine.txt); without one the house lends a battered lute and
+*comment the job still plays, since carried goods unlock options and never gate the path.
+*comment
+*comment Pay is a venue fee plus a tip for each set that landed: inn or tavern 3 + 4 each, supper 8 + 3, wedding 12 + 4, gala 20 + 6 (copper), then a hot meal.
+*comment
+*comment Rules this file follows: roll first, then the page's one time advance, so a cast-ahead Guidance (one minute) still counts. A refresh replays a page from its start on
+*comment top of that page's END state, so a page must not read a value it changes itself: each set's number is a constant assigned at the top of its own page
+*comment (rj_perf_set1..3), and each result is stored by assignment (rj_perf_good1..3). The hints show the ability but never the DC, so the room's taste cannot be read
+*comment off a number.
+*comment
+*comment Wired in: wall posting and signing in port_valen_civic_heights.txt (pv_ch_roll_read, pv_ch_perf_sign); reached through the posting hub (radiant_hub.txt rh_hub) from the
+*comment Trunk Road, the Harbor Quayside or the Patrician Avenue, open at Dusk only; compile.js lists the file. Not in *scene_list.
+*comment ====================================================================================
+
+*label rj_perf_arrive
+*set minutes_to_pass 10
+*set time_advance_call_id "rj_perf_arrive_1"
+*gosub rj_perf_time
+[b]MUSIC FOR AN EVENING[/b]
+*line_break
+*gosub rj_perf_patron
+*temp pw name_first
+*temp lk look_full
+*temp says "he says"
+*if (name_sex = "f")
+  *set says "she says"
+*if (rj_perf_venue = 5)
+  *set pw name_full
+*if (rj_perf_venue = 1)
+  The Wagoner's Rest is lit and loud by the time you come in off the trunk road, the white wheel creaking over the door and a long fire roaring in the hall. A heavy man with corded forearms sits on a stool beside the hearth with a slate on his knee. "Oswin Hale," he says. "Stool by the fire. Three turns, an hour apiece, and the cup goes round after each. Play what they'll sing."
+*elseif (rj_perf_venue = 2)
+  The Cleaved Keel is packed to the beams, thick with smoke and the stamp of wet boots. A barrel-chested man with a salt-grey beard is working the pass-board, and he jerks his chin at a stool somebody has cleared beside the hearth. "Maret," he says. "Three turns, an hour apiece. They've got their wages in their pockets, so don't bore them."
+*elseif (rj_perf_venue = 3)
+  It is a narrow house with every candle lit and a table laid for a dozen, the good plates out and the bad ones hidden. ${lk} meets you in the passage. "${pw}," ${says}. "A small supper, and I'd like it to be a warm one. Three turns across the evening. Sit by the window and I'll nod when I want one."
+*elseif (rj_perf_venue = 4)
+  It is a hired hall hung with ribbons and cut greenery, the benches pushed back along the walls and a long table at the end heaped with food. ${lk} takes you by the elbow through the crowd. "${pw}," ${says}. "Three turns in the evening, and the middle one is for dancing. There's a stool by the stair, and you will be fed."
+*else
+  Two men in matching dark coats read the posting off your insignia with a small grey stone and lead you down a long hall of lamplight and polished wood. ${lk} receives you at the door of the salon. "${pw}," ${says}, in a voice meant for a much smaller room. "Three turns, between courses. You will find the company discerning. I'd be grateful if you were better than that."
+
+*if (has_lute)
+  You take the lute out of its wrapping and tune it where you stand. The strings are a shade flat from the damp, and then they are not.
+*else
+  You have no instrument of your own. ${pw} sends a boy for a battered lute with a cracked belly, which will play, though not sweetly.
+*choice
+  # Take your seat and begin the first set.
+    *goto rj_perf_set1
+  # Tell ${pw} you will come back another night.
+    *goto rj_perf_leave
+
+*comment ── a set: its number is a constant set at the top of its own page ──
+*label rj_perf_set1
+*set rj_perf_cur 1
+*goto rj_perf_set
+
+*label rj_perf_set2
+*set rj_perf_cur 2
+*goto rj_perf_set
+
+*label rj_perf_set3
+*set rj_perf_cur 3
+*goto rj_perf_set
+
+*label rj_perf_set
+*temp ord "the last set"
+*if (rj_perf_cur = 1)
+  *set ord "the first set"
+*elseif (rj_perf_cur = 2)
+  *set ord "the second set"
+[b]MUSIC FOR AN EVENING: ${ord}[/b]
+*line_break
+*gosub rj_perf_room
+*temp hl ""
+*gosub rj_perf_hint
+*set hl rj_perf_hint
+*choice
+  # Play something loud, a chorus they can stamp to.${hl}
+    *set rj_perf_song 1
+    *goto rj_perf_play
+  # Play a tender ballad, slow and low.${hl}
+    *set rj_perf_song 2
+    *goto rj_perf_play
+  # Play a clever comic number, a story with a sting.${hl}
+    *set rj_perf_song 3
+    *goto rj_perf_play
+
+*comment ── the room: the crowd, the mood, and a clue to what it wants (tastes shift across the night) ──
+*label rj_perf_room
+*if (rj_perf_venue = 1)
+  *if (rj_perf_cur = 1)
+    Carters stamp the cold off their boots and crowd the benches, calling for the next round before the last has landed. Somebody is already banging a cup on the board in time to nothing.
+  *elseif (rj_perf_cur = 2)
+    The ale has done its work. A drover is telling a long story to a friend who is not listening, and the whole table is laughing at the wrong parts.
+  *else
+    The fire has burned down to coals. The carters who are left sit with their chins on their fists, looking at nothing, and the hall is quiet enough to hear the wheel creak outside.
+*elseif (rj_perf_venue = 2)
+  *if (rj_perf_cur = 1)
+    A porter at the bar is telling a joke that has been told before, and the whole bench knows the end of it and is waiting to be let in on it again.
+  *elseif (rj_perf_cur = 2)
+    A boat crew has come in off a long shift, stamping and shouting, wanting noise to match their own.
+  *else
+    The room is thinning, and the ones who are left have ale left in their cups and a grin for anything with a punch in it.
+*elseif (rj_perf_venue = 3)
+  *if (rj_perf_cur = 1)
+    A dozen guests are settling at the long table, talking low and politely over the soup. ${name_first} glances at the window, and wants something to warm the room without breaking it.
+  *elseif (rj_perf_cur = 2)
+    The wine has loosened collars. A man at the far end tells a story that is a little too sharp, and the table pretends not to hear and then laughs.
+  *else
+    The candles have burned down to stubs. An old couple at the end of the table sit with their hands together, and nobody is saying very much.
+*elseif (rj_perf_venue = 4)
+  *if (rj_perf_cur = 1)
+    The couple are at the head of the table with their glasses raised, and the speeches have started. Someone's mother is already weeping into a napkin.
+  *elseif (rj_perf_cur = 2)
+    The benches have been pushed back and the floor is bare, and half the room is already on its feet and looking at you.
+  *else
+    The dancing has spent itself. The couple sit together at the end of the table, tired and glowing, and an old aunt asks, quietly, whether you know anything from home.
+*else
+  *if (rj_perf_cur = 1)
+    The salon is all silk and low talk, and a long table of silver. Nobody is eating much. The room is waiting to be moved, and would rather not be told so.
+  *elseif (rj_perf_cur = 2)
+    The glasses are being refilled between courses, and a man near the middle is holding a wine-stem like a pointer, hungry for something clever.
+  *else
+    The candles are down by a third and the talk has gone soft and private. Guests lean toward each other, and the quiet is the kind that is waiting for a particular sort of song.
+*return
+
+*comment ── the song resolver: the room's taste sets the DC, then roll first and advance the clock after ──
+*label rj_perf_play
+*gosub rj_perf_taste
+*set rj_perf_dc 12
+*if (rj_perf_song = rj_perf_pref)
+  *set rj_perf_dc 10
+  *set rj_perf_fit 1
+*elseif (rj_perf_song = rj_perf_dislike)
+  *set rj_perf_dc 14
+  *set rj_perf_fit 3
+*else
+  *set rj_perf_fit 2
+*if (rj_perf_venue = 5)
+  *set rj_perf_dc + 2
+*set check_task_type "perform"
+*gosub_scene dice_engine roll_skill_check rj_perf_dc "performance" "" "" "" "" ""
+*comment The engine clears the task type itself, but skips that when a page replays, so clear it here and both runs end the same.
+*set check_task_type "none"
+*set rj_perf_ok check_success
+*set minutes_to_pass 60
+*set time_advance_call_id ("rj_perf_set_" & rj_perf_cur)
+*gosub rj_perf_time
+*gosub rj_perf_mark
+*temp crowd "the room"
+*if (rj_perf_venue = 1)
+  *set crowd "the carters"
+*elseif (rj_perf_venue = 2)
+  *set crowd "the porters"
+*elseif (rj_perf_venue = 3)
+  *set crowd "the guests"
+*elseif (rj_perf_venue = 4)
+  *set crowd "the wedding guests"
+*if (rj_perf_song = 1)
+  *if (check_success)
+    You hit the first chord hard and the whole room lifts with it. The chorus comes round and ${crowd} are on it, banging and stamping, shouting the line back before you can sing it.
+  *else
+    You come in too hard and a string buzzes. The chorus falls apart in the middle, and ${crowd} pick it up wrong and drop it again.
+*elseif (rj_perf_song = 2)
+  *if (check_success)
+    You bring it down to a murmur and let the lute carry the line. By the second verse nobody is talking, and by the third nobody is breathing loudly.
+  *else
+    You mean it, and it shows in the first line and nowhere after. A cough spreads along the room, and the second verse goes to nobody.
+*else
+  *if (check_success)
+    You start the story straight-faced, a man and a mule and a wager, and by the third verse ${crowd} can see where it is going and are begging you not to.
+  *else
+    The joke is a verse too long, and the punchline lands on a silence. Somebody at the back laughs a beat after the rest, alone.
+*if (rj_perf_fit = 1)
+  *if (check_success)
+    It is exactly what the room wanted.
+  *else
+    It was the right song, and you dropped it.
+*elseif (rj_perf_fit = 3)
+  *if (check_success)
+    It is not what they wanted, and you carried them anyway.
+  *else
+    It is not what they wanted, and it shows.
+
+*if (check_success)
+  [b][🎵 The set lands: a tip in the cup][/b]
+*else
+  [b][🎵 The set falls flat: no tip][/b]
+*goto rj_perf_next
+
+*comment ── on to the next set, or to the pay ──
+*label rj_perf_next
+*if (rj_perf_cur = 1)
+  *page_break The next set…
+  *goto rj_perf_set2
+*elseif (rj_perf_cur = 2)
+  *page_break The last set…
+  *goto rj_perf_set3
+*page_break The room empties…
+*goto rj_perf_pay
+
+*comment ── the pay: the venue's fee plus a tip for each set that landed; a Quarter gala closes the posting and walks the player out ──
+*label rj_perf_pay
+*gosub rj_perf_patron
+*temp good 0
+*if (rj_perf_good1)
+  *set good + 1
+*if (rj_perf_good2)
+  *set good + 1
+*if (rj_perf_good3)
+  *set good + 1
+*temp base 3
+*temp tip 4
+*if (rj_perf_venue = 3)
+  *set base 8
+  *set tip 3
+*elseif (rj_perf_venue = 4)
+  *set base 12
+  *set tip 4
+*elseif (rj_perf_venue = 5)
+  *set base 20
+  *set tip 6
+*temp tips (good * tip)
+*temp pay (base + tips)
+*if (good = 3)
+  The cup comes back to you heavy, and the one who has been counting it tells you, with some respect, that it was the best evening they have had in a year. The fee and every tip are counted into your hand.
+*elseif (good = 0)
+  Nobody throws anything, which is the kindest thing that can be said. The cup goes round and comes back light, and you are paid the fee and nothing besides.
+*elseif (good = 1)
+  The cup comes back with a few coins in it, and a nod that stops short of anything warmer. The fee and the tip are counted into your hand.
+*else
+  The cup comes back with a good deal in it. The fee and two tips are counted into your hand, with a little nod to say that you were nearly very good.
+*if (rj_perf_stage = "active")
+  *set rj_perf_stage "done"
+  *set rj_perf_done_week rj_perf_week
+  *set hall_jobs_scales + 1
+  *if (rj_perf_where = "quarter")
+    *set rj_pest_walkout true
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount pay
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+
+[b][💰 Paid by ${name_full}: ${pay} Copper Bits, a fee of ${base} and ${tips} in tips][/b]
+*line_break
+[b][🏷️ Insignia: Port Valen page, ${hall_jobs_scales} @{(hall_jobs_scales = 1) job|jobs} finished][/b]
+*page_break Something hot after the last note…
+*goto rj_perf_meal
+
+*label rj_perf_meal
+*comment A hot meal clears Hunger exactly as the compound mess does (cost 0, type food). Its own page and its own half hour, since buy_tavern_item shares the currency lock with the pay.
+*set tavern_item_cost_copper 0
+*set tavern_item_hp_heal 0
+*set tavern_item_temp_hp 0
+*set tavern_item_buff_bonus 0
+*set tavern_item_type "food"
+*gosub_scene economy buy_tavern_item
+*gosub rj_perf_patron
+*if (rj_perf_venue = 1)
+  A bowl of barley and bacon comes across the board from the pot behind it, and the keeper pushes a heel of bread after it without being asked. You eat on the stool you played from, with the fire at your back.
+*elseif (rj_perf_venue = 2)
+  The taproom's stew comes in a wooden bowl with a spoon already standing in it, and you eat it at the end of the bar while the porters sing something you did not play.
+*elseif (rj_perf_venue = 3)
+  The supper's last course is brought to you in the passage on a good plate, and you eat it standing, with a candle on the sill.
+*elseif (rj_perf_venue = 4)
+  A plate is heaped for you from the long table, enough for two, and a stranger puts a cup of something sweet beside it and tells you it is the best part.
+*else
+  A plate of something small and elaborate is set in front of you in a side room, and you eat it quickly and without sitting, as if it might be taken away.
+*set minutes_to_pass 30
+*set time_advance_call_id "rj_perf_meal_1"
+*gosub rj_perf_time
+*page_break Take your leave…
+*goto rj_perf_exit
+
+*label rj_perf_leave
+*gosub rj_perf_patron
+You tell ${name_first} you will come back another night. The lute goes back into its wrapping.
+*page_break Take your leave…
+*goto rj_perf_exit
+
+*label rj_perf_exit
+*if (rj_perf_where = "docks")
+  *goto_scene port_valen/port_valen port_valen_harbor_pois
+*elseif (rj_perf_where = "quarter")
+  *goto_scene port_valen/port_valen_upper_wharves pq_avenue
+*goto_scene port_valen/port_valen_middle_ward mw_gate_road
+
+*comment ── the room's taste for this set: the preferred song per set by venue; the disliked one is the next song round the cycle ──
+*label rj_perf_taste
+*temp p1 1
+*temp p2 3
+*temp p3 2
+*if (rj_perf_venue = 2)
+  *set p1 3
+  *set p2 1
+  *set p3 3
+*elseif (rj_perf_venue = 3)
+  *set p1 2
+  *set p2 3
+  *set p3 2
+*elseif (rj_perf_venue = 4)
+  *set p1 2
+  *set p2 1
+  *set p3 2
+*elseif (rj_perf_venue = 5)
+  *set p1 2
+  *set p2 3
+  *set p3 2
+*set rj_perf_pref p1
+*if (rj_perf_cur = 2)
+  *set rj_perf_pref p2
+*elseif (rj_perf_cur = 3)
+  *set rj_perf_pref p3
+*set rj_perf_dislike ((rj_perf_pref modulo 3) + 1)
+*return
+
+*comment ── record this set: landed when rj_perf_ok. Assignments only. ──
+*label rj_perf_mark
+*if (rj_perf_cur = 1)
+  *set rj_perf_good1 rj_perf_ok
+*elseif (rj_perf_cur = 2)
+  *set rj_perf_good2 rj_perf_ok
+*else
+  *set rj_perf_good3 rj_perf_ok
+*return
+
+*comment ── the hint on a song: the ability (and Guidance's die), never the DC, so the room's taste cannot be read off a number ──
+*label rj_perf_hint
+*set rj_perf_hint ""
+*if (show_stat_hints)
+  *set rj_perf_hint " [CHA Check]"
+  *if (guidance_active)
+    *set rj_perf_hint " [CHA Check +1d4]"
+*return
+
+*comment ── the pick: the venue and the host come from the posting's week, one roll for the venue ──
+*label rj_perf_select
+*comment The week number starts at 1, so rj_perf_done_week (0 = none yet) never matches a real week by accident.
+*set rj_perf_week ((((campaign_day - 1) - ((campaign_day - 1) modulo 7)) / 7) + 1)
+*set name_seed rj_perf_week
+*set name_salt 61
+*set name_n 100
+*gosub_scene names name_roll
+*set rj_perf_venue 3
+*if (name_rolled < 25)
+  *set rj_perf_venue 1
+*elseif (name_rolled < 45)
+  *set rj_perf_venue 2
+*elseif (name_rolled < 65)
+  *set rj_perf_venue 3
+*elseif (name_rolled < 87)
+  *set rj_perf_venue 4
+*else
+  *set rj_perf_venue 5
+*set rj_perf_where "middle_ward"
+*if (rj_perf_venue = 2)
+  *set rj_perf_where "docks"
+*elseif (rj_perf_venue = 5)
+  *set rj_perf_where "quarter"
+*return
+
+*comment ── the host: the inn and the tavern have the keepers the player knows; the rest are generated from the week seed (names.txt). ──
+*label rj_perf_patron
+*if (rj_perf_venue = 1)
+  *set name_first "Oswin"
+  *set name_last "Hale"
+  *set name_full "Oswin Hale"
+  *set name_sex "m"
+  *set look_full "A heavy man with corded forearms and a crumb of bread in his grey-shot beard"
+  *return
+*if (rj_perf_venue = 2)
+  *set name_first "Maret"
+  *set name_last ""
+  *set name_full "Maret"
+  *set name_sex "m"
+  *set look_full "A barrel-chested man with a salt-grey beard"
+  *return
+*comment Offset seed: the four jobs must not all hand the same block or week number to the generator, or one person would patron every job at once.
+*set name_seed (rj_perf_week + 4000)
+*set name_setting "middle_ward"
+*if (rj_perf_venue = 5)
+  *set name_setting "quarter"
+*gosub_scene names name_pick_race
+*set name_region "port"
+*set name_gender "any"
+*gosub_scene names name_make
+*comment The host is holding a hand out or a candle up, so the look leaves out hands; a gala host is not in a patched coat, so it leaves out clothes there too.
+*set name_look_skip "hands"
+*if (rj_perf_venue = 5)
+  *set name_look_skip "clothes hands"
+*gosub_scene names name_look
+*set name_look_skip ""
+*return
+
+*comment ── short place text for the wall posting, the hub and the quest log: no street ──
+*label rj_perf_describe
+*gosub rj_perf_patron
+*if (rj_perf_venue = 1)
+  *set rj_perf_place "the Wagoner's Rest, the common room"
+*elseif (rj_perf_venue = 2)
+  *set rj_perf_place "the Cleaved Keel, the taproom"
+*elseif (rj_perf_venue = 3)
+  *set rj_perf_place (name_full & ", a private supper")
+*elseif (rj_perf_venue = 4)
+  *set rj_perf_place (name_full & ", a wedding feast")
+*else
+  *set rj_perf_place (name_full & ", a gala")
+*return
+
+*comment ── time helper: the caller sets minutes_to_pass and a unique time_advance_call_id first ──
+*label rj_perf_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return

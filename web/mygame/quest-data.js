@@ -28,6 +28,14 @@
       active: function (s) { return s.rj_haul_stage === "active" && Number(s.campaign_day) <= Number(s.rj_haul_until); }
     },
     {
+      id: "hall_watch", title: "The Night Watch", place: "Hiring Hall job",
+      active: function (s) { return s.rj_watch_stage === "active" && Number(s.campaign_day) <= Number(s.rj_watch_until); }
+    },
+    {
+      id: "hall_perform", title: "Music for an Evening", place: "Hiring Hall job",
+      active: function (s) { return s.rj_perf_stage === "active" && Number(s.campaign_day) <= Number(s.rj_perf_until); }
+    },
+    {
       id: "silt_gate", title: "Silt-Gate Contraband", place: "The Silt-Gates",
       active: function (s) { return s.silt_gate_quest_stage === "active"; }
     },

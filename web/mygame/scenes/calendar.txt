@@ -194,16 +194,46 @@
   *comment and *gosub_scene calendar calc_exposure before advance_time; this scene clears it
   *comment again below, outside the guard, so a replayed page cannot leak it into a later call.
   *temp neglect_mins (total_mins_this_call + exposure_extra_mins)
+  *comment Trail rations (overworld only, ow_on): the hunger clock reaches 1080 minutes (the Hungry point) and a ration is eaten for you, exactly as a tavern meal: the clock and the hunger
+  *comment debt both go back to 0. The first one is eaten when the clock reaches 1080 (at once if it is already past), then one for every further 1080 minutes, until the rations run out.
+  *comment Everything is worked out from the clock as it stood before this call: rat_first minutes into the span the first ration is due, rat_due how many fall inside the span, and
+  *comment meal_mins what is left on the clock after the last ration eaten. Once the rations are gone the usual hunger ticks run on from that last meal. Inside the replay guard, so a
+  *comment refreshed page cannot eat a second set. rations_eaten_last stays set for the caller's summary line (every call zeroes it, so it only ever reports this trip).
+  *set rations_eaten_last 0
+  *temp meal_mins neglect_mins
+  *if ((vane_independent_operative) and (ow_on))
+    *temp rat_have 0
+    *if (has_trail_rations)
+      *set rat_have (1 + spare_trail_rations)
+    *if (rat_have > 0)
+      *temp rat_first 0
+      *if (minutes_since_meal < 1080)
+        *set rat_first (1080 - minutes_since_meal)
+      *if (neglect_mins >= rat_first)
+        *temp rat_after (neglect_mins - rat_first)
+        *temp rat_due (1 + ((rat_after - (rat_after modulo 1080)) / 1080))
+        *set rations_eaten_last rat_due
+        *if (rat_due > rat_have)
+          *set rations_eaten_last rat_have
+        *set meal_mins (neglect_mins - (rat_first + ((rations_eaten_last - 1) * 1080)))
+        *set minutes_since_meal 0
+        *set neglect_damage_hunger 0
+        *set rat_have (rat_have - rations_eaten_last)
+        *if (rat_have > 0)
+          *set spare_trail_rations (rat_have - 1)
+        *else
+          *set has_trail_rations false
+          *set spare_trail_rations 0
   *if (vane_independent_operative)
-    *set minutes_since_meal + neglect_mins
+    *set minutes_since_meal + meal_mins
     *set minutes_since_rest + neglect_mins
     *comment Weather wear burns food and rest, but it does not make you dirtier, so the wash clock takes the real minutes only.
     *set minutes_since_wash + total_mins_this_call
 
     *temp meal_over_before 0
     *temp meal_over_after 0
-    *if ((minutes_since_meal - neglect_mins) > 2160)
-      *set meal_over_before ((minutes_since_meal - neglect_mins) - 2160)
+    *if ((minutes_since_meal - meal_mins) > 2160)
+      *set meal_over_before ((minutes_since_meal - meal_mins) - 2160)
     *if (minutes_since_meal > 2160)
       *set meal_over_after (minutes_since_meal - 2160)
     *temp meal_ticks_before ((meal_over_before - (meal_over_before modulo 240)) / 240)
@@ -867,6 +897,7 @@
 *comment   GEAR: every worn slot (armor, head, cloak, hands, waist, feet, neck) contributes percent cuts from
 *comment   equipment.txt garment_traits; the cuts add up per part, capped at 90 (a NEGATIVE heat cut, like a fur-lined
 *comment   cloak, adds heat wear). An owned sheet of waxed oilcloth then halves what is left of the wet part.
+*comment   CAMP: while exposure_camping is set, an owned flint and tinderbox halves the cold part (a fire).
 *comment   Total capped at +100 (double burn). Extra minutes count toward the hunger and fatigue
 *comment   clocks only, never the game clock and never the hygiene clock.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -933,6 +964,9 @@
 *set ex_heat round((ex_heat * (100 - ex_cuth)) / 100)
 *if (has_waxed_oilcloth)
   *set ex_wet round(ex_wet / 2)
+*comment A camp with a fire: flint and tinderbox halve what the cold takes (the caller sets exposure_camping only while it sleeps outdoors).
+*if ((exposure_camping) and (has_tinderbox))
+  *set ex_cold round(ex_cold / 2)
 *set ex_pct ((ex_cold + ex_wet) + ex_heat)
 *if (ex_pct > 100)
   *set ex_pct 100

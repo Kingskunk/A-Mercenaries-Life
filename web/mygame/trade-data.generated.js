@@ -442,6 +442,27 @@ window.TRADE_DATA = {
     "countVar": ""
    }
   },
+  "lute": {
+   "name": "lute",
+   "title": "Lute",
+   "kind": "tool",
+   "tier": "",
+   "retail": 40,
+   "minutes": 5,
+   "hint": "+1 on performance checks",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "countVar": ""
+   }
+  },
   "tinderbox": {
    "name": "flint and tinderbox",
    "title": "Flint and Tinderbox",
@@ -534,6 +555,27 @@ window.TRADE_DATA = {
    "retail": 2,
    "minutes": 5,
    "hint": "Hygiene back to Clean, with water at hand",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "countVar": ""
+   }
+  },
+  "trail_rations": {
+   "name": "trail rations",
+   "title": "Trail Rations",
+   "kind": "consumable",
+   "tier": "",
+   "retail": 2,
+   "minutes": 5,
+   "hint": "Eaten for you on the road when you grow hungry",
    "slot": "",
    "stack": true,
    "sell": {
@@ -1038,11 +1080,13 @@ window.TRADE_DATA = {
     "lamp_oil",
     "hooded_lantern",
     "tool_kit",
+    "lute",
     "tinderbox",
     "chalk_sticks",
     "wool_blanket",
     "waxed_oilcloth",
-    "lye_soap"
+    "lye_soap",
+    "trail_rations"
    ],
    "sell": [
     "hemp_rope",
@@ -1050,11 +1094,13 @@ window.TRADE_DATA = {
     "lamp_oil",
     "hooded_lantern",
     "tool_kit",
+    "lute",
     "tinderbox",
     "chalk_sticks",
     "wool_blanket",
     "waxed_oilcloth",
-    "lye_soap"
+    "lye_soap",
+    "trail_rations"
    ]
   },
   "vael": {

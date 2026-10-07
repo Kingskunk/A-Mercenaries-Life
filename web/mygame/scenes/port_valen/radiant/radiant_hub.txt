@@ -1,8 +1,8 @@
 *comment ====================================================================================
 *comment THE POSTING HUB: the one place that lists the Hiring Hall jobs the player has signed and sends them to the right job file.
 *comment
-*comment Reached from a single "Your posting" button on the Trunk Road (Middle Ward) and on the Patrician Avenue (Quarter), each of
-*comment which first calls rh_check so the button only shows while a job is open. The entry sets rh_from ("road" or "avenue") so the
+*comment Reached from a single "Your posting" button on the Trunk Road (Middle Ward), the Patrician Avenue (Quarter) and the Harbor Quayside (docks), each of
+*comment which first calls rh_check so the button only shows while a job is open. The entry sets rh_from ("road", "avenue" or "harbor") so the
 *comment way back, and the wording when a job's house is in the other district, follow where the player stood.
 *comment
 *comment To add a job: put its "open" test in rh_check, and one block of buttons in rh_hub (a direct button when the player is in the right
@@ -20,10 +20,18 @@
   *set rj_pest_stage "none"
 *if ((rj_haul_stage = "active") and (campaign_day > rj_haul_until))
   *set rj_haul_stage "none"
+*if ((rj_watch_stage = "active") and (campaign_day > rj_watch_until))
+  *set rj_watch_stage "none"
+*if ((rj_perf_stage = "active") and (campaign_day > rj_perf_until))
+  *set rj_perf_stage "none"
 *set rj_has_job false
 *if ((rj_pest_stage = "active") and (campaign_day <= rj_pest_until))
   *set rj_has_job true
 *if ((rj_haul_stage = "active") and (campaign_day <= rj_haul_until))
+  *set rj_has_job true
+*if ((rj_watch_stage = "active") and (campaign_day <= rj_watch_until))
+  *set rj_has_job true
+*if ((rj_perf_stage = "active") and (campaign_day <= rj_perf_until))
   *set rj_has_job true
 *return
 
@@ -39,6 +47,8 @@ You hold the insignia flat in your palm, and the terms you signed for run across
 *temp rh_here "middle_ward"
 *if (rh_from = "avenue")
   *set rh_here "quarter"
+*elseif (rh_from = "harbor")
+  *set rh_here "docks"
 
 *comment A job whose house is in the other district sends the player to the travel menu; one travel button covers all of them.
 *temp rh_far false
@@ -49,10 +59,25 @@ You hold the insignia flat in your palm, and the terms you signed for run across
   *line_break
   *if (not(rj_pest_where = rh_here))
     *set rh_far true
+*temp rh_dusk false
+*if (time_period = "Dusk")
+  *set rh_dusk true
 *if ((rj_haul_stage = "active") and (campaign_day <= rj_haul_until))
   *temp rh_hdays ((rj_haul_until - campaign_day) + 1)
   [b]A House to Be Moved[/b]: ${rj_haul_place}. A copper bit an hour, a little over for each piece delivered whole, and a meal. Open @{(rh_hdays = 1) one more day|${rh_hdays} more days}.
+  *line_break
   *if (not(rh_here = "middle_ward"))
+    *set rh_far true
+*if ((rj_watch_stage = "active") and (campaign_day <= rj_watch_until))
+  *temp rh_wdays ((rj_watch_until - campaign_day) + 1)
+  [b]The Night Watch[/b]: ${rj_watch_place}. A copper bit an hour, a little over for each stretch held clean. Signs on at dusk. Open @{(rh_wdays = 1) one more day|${rh_wdays} more days}.
+  *line_break
+  *if (not(rh_here = "docks"))
+    *set rh_far true
+*if ((rj_perf_stage = "active") and (campaign_day <= rj_perf_until))
+  *temp rh_pdays ((rj_perf_until - campaign_day) + 1)
+  [b]Music for an Evening[/b]: ${rj_perf_place}. A fee, and whatever the room gives. Starts at dusk. Open @{(rh_pdays = 1) one more day|${rh_pdays} more days}.
+  *if (not(rh_here = rj_perf_where))
     *set rh_far true
 
 *choice
@@ -62,13 +87,43 @@ You hold the insignia flat in your palm, and the terms you signed for run across
   *if (((rj_haul_stage = "active") and (campaign_day <= rj_haul_until)) and (rh_here = "middle_ward"))
     # [b]The move[/b]: ${rj_haul_place}. [~10 min]
       *goto_scene port_valen/radiant/hall_haul rj_haul_arrive
+  *if ((((rj_watch_stage = "active") and (campaign_day <= rj_watch_until)) and (rh_here = "docks")) and (rh_dusk))
+    # [b]The warehouse door[/b]: ${rj_watch_place}. [~10 min]
+      *goto_scene port_valen/radiant/hall_watch rj_watch_arrive
+  *if ((((rj_watch_stage = "active") and (campaign_day <= rj_watch_until)) and (rh_here = "docks")) and (not(rh_dusk)))
+    # [b]The warehouse door[/b]: the watch signs on at dusk.
+      *goto rh_watch_closed
+  *if ((((rj_perf_stage = "active") and (campaign_day <= rj_perf_until)) and (rh_here = rj_perf_where)) and (rh_dusk))
+    # [b]The evening[/b]: ${rj_perf_place}. [~10 min]
+      *goto_scene port_valen/radiant/hall_perform rj_perf_arrive
+  *if ((((rj_perf_stage = "active") and (campaign_day <= rj_perf_until)) and (rh_here = rj_perf_where)) and (not(rh_dusk)))
+    # [b]The evening[/b]: the music starts at dusk.
+      *goto rh_perf_closed
   *if (rh_far)
     # [Travel: Head to the district the house is in]
       *goto_scene port_valen/port_valen port_valen_travel
   # Put the insignia away.
     *goto rh_back
 
+*comment The watch signs on at dusk only. Costs no time and sets nothing.
+*label rh_watch_closed
+[b]◈ YOUR POSTING[/b]
+*line_break
+You pull the insignia out and read the terms again. The watch signs on at dusk, at the warehouse door. Come back when the light starts to go.
+*page_break Put the insignia away…
+*goto rh_hub
+
+*comment The evening starts at dusk only. Costs no time and sets nothing.
+*label rh_perf_closed
+[b]◈ YOUR POSTING[/b]
+*line_break
+You pull the insignia out and read the terms again. The music starts at dusk, and not before. Come back when the light starts to go.
+*page_break Put the insignia away…
+*goto rh_hub
+
 *label rh_back
+*if (rh_from = "harbor")
+  *goto_scene port_valen/port_valen port_valen_harbor_pois
 *if (rh_from = "avenue")
   *goto_scene port_valen/port_valen_upper_wharves pq_avenue
 *goto_scene port_valen/port_valen_middle_ward mw_gate_road

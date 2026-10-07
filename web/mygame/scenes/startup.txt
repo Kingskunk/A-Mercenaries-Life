@@ -467,6 +467,8 @@
 *create temperature_band "mild"
 *create exposure_base_mins 0
 *create exposure_extra_mins 0
+*comment exposure_camping is set by a caller whose outdoor minutes are spent asleep around a camp (overworld.txt ow_camp): an owned flint and tinderbox then halves the cold part.
+*create exposure_camping false
 
 *comment --- COMBAT VITALS & DEFENSE (TRUE D&D LEVEL 1) ---
 *create character_level 1
@@ -910,6 +912,92 @@
 *create rj_haul_skill "athletics"
 *create rj_haul_hours 1
 *create rj_haul_bonus 0
+*comment The Night Watch (radiant/hall_watch.txt): rj_watch_stage is "none", "active" or "done". The week (counted from 1) seeds the patron, the warehouse and each stretch's event.
+*comment rj_watch_held1..3 say which stretches were held cleanly. rj_watch_ev, _cur, _opt, _dc,
+*comment _skill, _ok, _hab, _hdc and _hint are scratch for the stretch labels.
+*create rj_watch_stage "none"
+*create rj_watch_week 0
+*create rj_watch_warehouse 1
+*create rj_watch_until 0
+*create rj_watch_place ""
+*create rj_watch_done_week 0
+*create rj_watch_cur 1
+*create rj_watch_ev 0
+*create rj_watch_opt 1
+*create rj_watch_dc 10
+*create rj_watch_skill "perception"
+*create rj_watch_ok true
+*create rj_watch_hab "WIS"
+*create rj_watch_hdc 10
+*create rj_watch_hint ""
+*create rj_watch_held1 false
+*create rj_watch_held2 false
+*create rj_watch_held3 false
+*comment Music for an Evening (radiant/hall_perform.txt): rj_perf_stage is "none", "active" or "done". The week (counted from 1) seeds the venue and the host. rj_perf_venue is
+*comment 1 the Wagoner's Rest, 2 the Cleaved Keel, 3 a private supper, 4 a wedding feast, 5 a Patrician gala; rj_perf_where is "middle_ward", "docks" or "quarter".
+*comment rj_perf_good1..3 say which sets landed. rj_perf_cur, _song, _pref, _dislike, _fit, _dc, _ok and _hint are scratch for the set labels.
+*create rj_perf_stage "none"
+*create rj_perf_week 0
+*create rj_perf_venue 1
+*create rj_perf_where "middle_ward"
+*create rj_perf_until 0
+*create rj_perf_place ""
+*create rj_perf_done_week 0
+*create rj_perf_cur 1
+*create rj_perf_song 1
+*create rj_perf_pref 1
+*create rj_perf_dislike 2
+*create rj_perf_fit 2
+*create rj_perf_dc 12
+*create rj_perf_ok true
+*create rj_perf_hint ""
+*create rj_perf_good1 false
+*create rj_perf_good2 false
+*create rj_perf_good3 false
+*comment Timbermouth (scenes/timbermouth/, a placeholder town): timbermouth_seen is the first arrival (it unlocks the lorebook entry); tm_<place>_seen is the first visit to each of
+*comment the five places (the timber market and the general market are one, "the Market"). tm_ok_* are the open-or-closed answers of the town's hours, set by timbermouth.txt tm_hours (derived every time, never saved state); tm_which names the
+*comment place a closure page is for.
+*create timbermouth_seen false
+*create tm_market_seen false
+*create tm_mill_seen false
+*create tm_works_seen false
+*create tm_hall_seen false
+*create tm_inn_seen false
+*create tm_ok_market false
+*create tm_ok_mill false
+*create tm_ok_works false
+*create tm_ok_hall false
+*create tm_which "market"
+*comment The overworld (scenes/overworld/overworld.txt, tiles and roads in overworld-data.js). ow_on is set while the player is on the overworld page (the map panel shows only then);
+*comment ow_pos is the tile they stand on and ow_dest the tile they picked on the map: the panel writes ow_dest and presses the one "Travel" option, and ow_travel checks it against the
+*comment data. ow_trip_ok, ow_from, ow_miles, ow_minutes, ow_text and the *_name values are stored by the journey page under the ow_trip_locked page lock (a replay reads them back).
+*create ow_on false
+*create ow_pos "pv"
+*create ow_dest "pv"
+*create ow_trip_ok false
+*create ow_from "pv"
+*create ow_miles 0
+*create ow_minutes 0
+*create ow_text ""
+*create ow_name ""
+*create ow_here_text ""
+*create ow_from_name ""
+*create ow_dest_name ""
+*create ow_trip_locked false
+*create locked_ow_trip_page_id 0
+*comment A journey is walked leg by leg (ow_legs of them, ow_leg_i the one in hand, ow_leg_minutes its length) so each leg is charged the weather of the moment, and ow_rations_total counts the trail
+*comment rations eaten over the whole trip. ow_exposure_pct is what the weather and the gear add to hunger and fatigue right now, kept for the map card. ow_can_camp is set on every overworld page
+*comment (not in a town). The camp page has its own page lock (ow_camp_locked) and keeps ow_camp_wet, whether it was raining when the player lay down, for its prose.
+*create ow_legs 0
+*create ow_leg_i 0
+*create ow_leg_minutes 0
+*create ow_rations_total 0
+*create ow_exposure_pct 0
+*create ow_can_camp false
+*create ow_camp_ok false
+*create ow_camp_wet false
+*create ow_camp_locked false
+*create locked_ow_camp_page_id 0
 *comment The Hall insignia (sold at the Seals window, port_valen_civic_heights.txt). hall_insignia_rank is "none" until bought, then "open".
 *create has_hall_insignia false
 *create hall_insignia_rank "none"
@@ -1115,6 +1203,8 @@
 *create vane_independent_operative false
 *create port_valen_next_report_day 0
 *create minutes_since_meal 0
+*comment How many trail rations the last advance_time ate for you on the overworld (calendar.txt zeroes it on every call; ow_travel reads it for its summary line).
+*create rations_eaten_last 0
 *create minutes_since_rest 0
 *create neglect_damage_hunger 0
 *create neglect_damage_fatigue 0
@@ -1353,7 +1443,7 @@
 *comment Optional explanation paired with a temporary attack DC increase (currently Cover). It follows the same
 *comment one-roll lifetime as check_flat_bonus_label, so the D20 banner can explain why the target number rose.
 *create check_dc_label ""
-*comment A scene may mark an ordinary skill check as a repair or mechanism task. roll_d20_check then reads the Repair Kit automatically; scenes never inspect has_tool_kit themselves.
+*comment A scene may mark an ordinary skill check as a repair or mechanism task ("repair") or a performance ("perform"). roll_d20_check then reads the Repair Kit or the Lute automatically; scenes never inspect has_tool_kit or has_lute themselves.
 *create check_task_type "none"
 *comment Sneak Attack's second trigger (2026-10-01): a living ally is in melee, so the target is flanked. combat_flank_ally is the
 *comment slot found by combat_find_flanking_ally (0 = none). combat_sneak_via_ally is true when THIS hit was sneak-attacking
@@ -3738,11 +3828,13 @@
 *create has_clear_head_draught false
 *create has_linen_bandage false
 *create has_lye_soap false
+*create has_trail_rations false
 *create has_hemp_rope false
 *create has_pitch_torch false
 *create has_lamp_oil false
 *create has_hooded_lantern false
 *create has_tool_kit false
+*create has_lute false
 *create has_tinderbox false
 *create has_chalk_sticks false
 *create has_wool_blanket false
@@ -3780,11 +3872,13 @@
 *create spare_althea_phial 0
 *create spare_linen_bandage 0
 *create spare_lye_soap 0
+*create spare_trail_rations 0
 *create spare_hemp_rope 0
 *create spare_pitch_torch 0
 *create spare_lamp_oil 0
 *create spare_hooded_lantern 0
 *create spare_tool_kit 0
+*create spare_lute 0
 *create spare_tinderbox 0
 *create spare_chalk_sticks 0
 *create spare_wool_blanket 0
@@ -3820,11 +3914,13 @@
 *create cart_buy_clear_head_draught 0
 *create cart_buy_linen_bandage 0
 *create cart_buy_lye_soap 0
+*create cart_buy_trail_rations 0
 *create cart_buy_hemp_rope 0
 *create cart_buy_pitch_torch 0
 *create cart_buy_lamp_oil 0
 *create cart_buy_hooded_lantern 0
 *create cart_buy_tool_kit 0
+*create cart_buy_lute 0
 *create cart_buy_tinderbox 0
 *create cart_buy_chalk_sticks 0
 *create cart_buy_wool_blanket 0
@@ -3858,11 +3954,13 @@
 *create cart_sell_plate_harness 0
 *create cart_sell_toll_seal_ring 0
 *create cart_sell_lye_soap 0
+*create cart_sell_trail_rations 0
 *create cart_sell_hemp_rope 0
 *create cart_sell_pitch_torch 0
 *create cart_sell_lamp_oil 0
 *create cart_sell_hooded_lantern 0
 *create cart_sell_tool_kit 0
+*create cart_sell_lute 0
 *create cart_sell_tinderbox 0
 *create cart_sell_chalk_sticks 0
 *create cart_sell_wool_blanket 0

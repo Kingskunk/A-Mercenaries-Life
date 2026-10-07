@@ -1617,6 +1617,15 @@ Here the wall is newer and higher, faced in pale limestone, and the trunk road p
     A slate-roofed board beside the toll-house carries the wall's notices in a tidy grid, each one pinned square. [i]"BY ORDER OF THE PORT WATCH: All writs shown at the arch. No steel drawn within the wall. Pilgrims keep to the left. Carts keep to the right. Wicket fees are posted at the toll-house."[/i] Someone has scratched a small wheel into the slate beneath the last line and been told off for it, judging by the scrubbed patch around it.
     *page_break Step back from the board…
     *goto mw_charter_gate
+  *if (not(gate_state = "shut"))
+    # [b]The old road[/b]: leave the city by the Charter Gate.
+      *set ow_pos "pv"
+      *goto_scene overworld/overworld ow_here
+  *if (gate_state = "shut")
+    # [b]The old road[/b]: the gate is shut until morning.
+      The great leaves are closed and the grate is down. A warden at the wicket shakes her head before you reach it. "Not until the morning bell," she says.
+      *page_break Step back from the arch…
+      *goto mw_charter_gate
   # Walk back along the trunk road.
     *goto mw_gate_road
 
@@ -1995,7 +2004,7 @@ Inside, the store is deeper than the bay window suggests. Shelves run to the raf
   Master Hollis is behind the long counter, working down the chalk figures on his slate.
 
 *gosub mw_hollis_open_panel
-*temp hollis_has_sale ((((((has_hemp_rope) or (has_pitch_torch)) or ((has_lamp_oil) or (has_hooded_lantern))) or (((has_tinderbox) or (has_chalk_sticks)) or ((has_wool_blanket) or (has_waxed_oilcloth)))) or (has_lye_soap)) or (has_tool_kit))
+*temp hollis_has_sale ((((((has_hemp_rope) or (has_pitch_torch)) or ((has_lamp_oil) or (has_hooded_lantern))) or (((has_tinderbox) or (has_chalk_sticks)) or ((has_wool_blanket) or (has_waxed_oilcloth)))) or ((has_lye_soap) or (has_trail_rations))) or ((has_tool_kit) or (has_lute)))
 
 *choice
   # Look over the shelves.
@@ -2045,11 +2054,13 @@ Inside, the store is deeper than the bay window suggests. Shelves run to the raf
 *temp gb_lamp_oil ""
 *temp gb_hooded_lantern ""
 *temp gb_tool_kit ""
+*temp gb_lute ""
 *temp gb_tinderbox ""
 *temp gb_chalk_sticks ""
 *temp gb_wool_blanket ""
 *temp gb_waxed_oilcloth ""
 *temp gb_lye_soap ""
+*temp gb_trail_rations ""
 *gosub_scene equipment gear_buy_label "hemp_rope"
 *set gb_hemp_rope gear_label
 *gosub_scene equipment gear_buy_label "pitch_torch"
@@ -2060,6 +2071,8 @@ Inside, the store is deeper than the bay window suggests. Shelves run to the raf
 *set gb_hooded_lantern gear_label
 *gosub_scene equipment gear_buy_label "tool_kit"
 *set gb_tool_kit gear_label
+*gosub_scene equipment gear_buy_label "lute"
+*set gb_lute gear_label
 *gosub_scene equipment gear_buy_label "tinderbox"
 *set gb_tinderbox gear_label
 *gosub_scene equipment gear_buy_label "chalk_sticks"
@@ -2070,8 +2083,10 @@ Inside, the store is deeper than the bay window suggests. Shelves run to the raf
 *set gb_waxed_oilcloth gear_label
 *gosub_scene equipment gear_buy_label "lye_soap"
 *set gb_lye_soap gear_label
+*gosub_scene equipment gear_buy_label "trail_rations"
+*set gb_trail_rations gear_label
 *comment GEN:END hollis_buy_labels
-You walk the shelves. Rope hangs in coils by thickness, from cord thin enough for a bootlace to rope thick as your wrist. Tin pots and pans are stacked by size, and folded blankets and rolls of oilcloth fill the lower racks. Pitch-dipped torches stand in a barrel by the door, hooded lanterns and canvas tool rolls hang from hooks over the counter, a jar of chalk sticks sits beside the till, and paper twists of lye soap and tin boxes of flint and steel line the counter. Waterskins, canvas sacks, needles and thread, and iron nails by the pound fill the rest. Every shelf has a chalk price marked on its edge.
+You walk the shelves. Rope hangs in coils by thickness, from cord thin enough for a bootlace to rope thick as your wrist. Tin pots and pans are stacked by size, and folded blankets and rolls of oilcloth fill the lower racks. Pitch-dipped torches stand in a barrel by the door, hooded lanterns and canvas tool rolls hang from hooks over the counter, a lute hangs by its neck from a rafter, a jar of chalk sticks sits beside the till, and paper twists of lye soap and tin boxes of flint and steel line the counter. Waterskins, canvas sacks, needles and thread, and iron nails by the pound fill the rest. Every shelf has a chalk price marked on its edge.
 
 *choice
   *comment GEN:BEGIN hollis_buy_options
@@ -2090,6 +2105,9 @@ You walk the shelves. Rope hangs in coils by thickness, from cord thin enough fo
   # ${gb_tool_kit}
     *set buy_item_id "tool_kit"
     *goto mw_hollis_buy_do
+  # ${gb_lute}
+    *set buy_item_id "lute"
+    *goto mw_hollis_buy_do
   # ${gb_tinderbox}
     *set buy_item_id "tinderbox"
     *goto mw_hollis_buy_do
@@ -2104,6 +2122,9 @@ You walk the shelves. Rope hangs in coils by thickness, from cord thin enough fo
     *goto mw_hollis_buy_do
   # ${gb_lye_soap}
     *set buy_item_id "lye_soap"
+    *goto mw_hollis_buy_do
+  # ${gb_trail_rations}
+    *set buy_item_id "trail_rations"
     *goto mw_hollis_buy_do
   *comment GEN:END hollis_buy_options
   # Step back to the counter.
@@ -2158,11 +2179,13 @@ Hollis pulls the slate toward him and clears a space on the counter. "Put it dow
 *temp gs_lamp_oil ""
 *temp gs_hooded_lantern ""
 *temp gs_tool_kit ""
+*temp gs_lute ""
 *temp gs_tinderbox ""
 *temp gs_chalk_sticks ""
 *temp gs_wool_blanket ""
 *temp gs_waxed_oilcloth ""
 *temp gs_lye_soap ""
+*temp gs_trail_rations ""
 *if (has_hemp_rope)
   *gosub_scene equipment gear_sell_label "hemp_rope" "general"
   *set gs_hemp_rope gear_label
@@ -2178,6 +2201,9 @@ Hollis pulls the slate toward him and clears a space on the counter. "Put it dow
 *if (has_tool_kit)
   *gosub_scene equipment gear_sell_label "tool_kit" "general"
   *set gs_tool_kit gear_label
+*if (has_lute)
+  *gosub_scene equipment gear_sell_label "lute" "general"
+  *set gs_lute gear_label
 *if (has_tinderbox)
   *gosub_scene equipment gear_sell_label "tinderbox" "general"
   *set gs_tinderbox gear_label
@@ -2193,6 +2219,9 @@ Hollis pulls the slate toward him and clears a space on the counter. "Put it dow
 *if (has_lye_soap)
   *gosub_scene equipment gear_sell_label "lye_soap" "general"
   *set gs_lye_soap gear_label
+*if (has_trail_rations)
+  *gosub_scene equipment gear_sell_label "trail_rations" "general"
+  *set gs_trail_rations gear_label
 *comment GEN:END hollis_sell_labels
 
 *choice
@@ -2217,6 +2246,10 @@ Hollis pulls the slate toward him and clears a space on the counter. "Put it dow
     # ${gs_tool_kit}
       *set sell_item_id "tool_kit"
       *goto mw_hollis_sell_do
+  *if (has_lute)
+    # ${gs_lute}
+      *set sell_item_id "lute"
+      *goto mw_hollis_sell_do
   *if (has_tinderbox)
     # ${gs_tinderbox}
       *set sell_item_id "tinderbox"
@@ -2236,6 +2269,10 @@ Hollis pulls the slate toward him and clears a space on the counter. "Put it dow
   *if (has_lye_soap)
     # ${gs_lye_soap}
       *set sell_item_id "lye_soap"
+      *goto mw_hollis_sell_do
+  *if (has_trail_rations)
+    # ${gs_trail_rations}
+      *set sell_item_id "trail_rations"
       *goto mw_hollis_sell_do
   *comment GEN:END hollis_sell_options
   # Take it all back off the counter.
@@ -2284,11 +2321,13 @@ Hollis turns the ${gear_sale_name} over once in the light, checks it for wear, a
 *gosub_scene equipment shop_row_add "lamp_oil"
 *gosub_scene equipment shop_row_add "hooded_lantern"
 *gosub_scene equipment shop_row_add "tool_kit"
+*gosub_scene equipment shop_row_add "lute"
 *gosub_scene equipment shop_row_add "tinderbox"
 *gosub_scene equipment shop_row_add "chalk_sticks"
 *gosub_scene equipment shop_row_add "wool_blanket"
 *gosub_scene equipment shop_row_add "waxed_oilcloth"
 *gosub_scene equipment shop_row_add "lye_soap"
+*gosub_scene equipment shop_row_add "trail_rations"
 *comment GEN:END hollis_panel_rows
 *return
 
@@ -2301,22 +2340,26 @@ Hollis turns the ${gear_sale_name} over once in the light, checks it for wear, a
 *gosub_scene equipment shop_cart_sell "lamp_oil"
 *gosub_scene equipment shop_cart_sell "hooded_lantern"
 *gosub_scene equipment shop_cart_sell "tool_kit"
+*gosub_scene equipment shop_cart_sell "lute"
 *gosub_scene equipment shop_cart_sell "tinderbox"
 *gosub_scene equipment shop_cart_sell "chalk_sticks"
 *gosub_scene equipment shop_cart_sell "wool_blanket"
 *gosub_scene equipment shop_cart_sell "waxed_oilcloth"
 *gosub_scene equipment shop_cart_sell "lye_soap"
+*gosub_scene equipment shop_cart_sell "trail_rations"
 *set gear_shop "hollis"
 *gosub_scene equipment shop_cart_buy "hemp_rope"
 *gosub_scene equipment shop_cart_buy "pitch_torch"
 *gosub_scene equipment shop_cart_buy "lamp_oil"
 *gosub_scene equipment shop_cart_buy "hooded_lantern"
 *gosub_scene equipment shop_cart_buy "tool_kit"
+*gosub_scene equipment shop_cart_buy "lute"
 *gosub_scene equipment shop_cart_buy "tinderbox"
 *gosub_scene equipment shop_cart_buy "chalk_sticks"
 *gosub_scene equipment shop_cart_buy "wool_blanket"
 *gosub_scene equipment shop_cart_buy "waxed_oilcloth"
 *gosub_scene equipment shop_cart_buy "lye_soap"
+*gosub_scene equipment shop_cart_buy "trail_rations"
 *comment GEN:END hollis_cart_pass
 *return
 

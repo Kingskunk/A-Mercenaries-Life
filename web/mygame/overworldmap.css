@@ -1,0 +1,71 @@
+/* Overworld map (2026-10-07): the point-and-click travel map docked on the overworld page: drag to pan, wheel to zoom, click a tile for its card. Colours and fonts come from the game's own theme
+   tokens (theme.css); the one extra thing here is a colour per tile kind. No icons yet: a tile is a coloured dot and a name, and a tile with an image in the data shows it in the circle. */
+
+:root {
+  --ow-city: #d9a441;     /* brass: the free port */
+  --ow-town: #e2a25f;     /* warm amber: a road town */
+  --ow-road: #a99f90;     /* dust: the open road */
+  --ow-hills: #9a7d5e;    /* earth: the climb */
+  --ow-forest: #6fa377;   /* green: the Longshade */
+}
+
+/* the plain list and the Next button under it are put away while the map is up (Travel presses the real option itself); the toggle brings them back */
+body.owMapOn #main form, body.owMapOn #main > button.next { display: none; }
+
+#overworldMap {
+  margin: 0.9em 0 0.4em; padding: 0.8em; border: 1px solid var(--ch-line-hi); border-radius: 6px;
+  background: var(--ch-bg-deep); color: var(--ch-text); font-family: var(--ch-font-ui); font-size: 15px; line-height: 1.4;
+}
+#overworldMap * { box-sizing: border-box; }
+#overworldMap button { font: inherit; color: inherit; cursor: pointer; }
+
+#overworldMap .ow-main { display: flex; flex-wrap: wrap; gap: 0.9em; align-items: stretch; }
+#overworldMap .ow-mapbox { position: relative; flex: 1 1 22rem; min-width: 0; height: 22rem; max-height: 60vh; background: var(--ch-bg); border: 1px solid var(--ch-line); border-radius: 4px; overflow: hidden; }
+#overworldMap .ow-svg { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+#overworldMap .ow-svg.dragging { cursor: grabbing; }
+/* zoomed far out, only the tile you stand on and the one you picked keep their names */
+#overworldMap .ow-svg.ow-far .ow-node:not(.ow-here):not(.ow-sel) .ow-name, #overworldMap .ow-svg.ow-far .ow-miles { display: none; }
+/* the zoom and view buttons, in the corner of the map */
+#overworldMap .ow-ctl { position: absolute; top: 0.5em; right: 0.5em; display: flex; flex-direction: column; gap: 0.3em; }
+#overworldMap .ow-ctl button { min-width: 2.2em; padding: 0.25em 0.4em; border: 1px solid var(--ch-line-hi); border-radius: 4px; background: var(--ch-card); opacity: 0.92; font-size: 0.9em; }
+#overworldMap .ow-ctl button:hover { border-color: var(--ch-brass); opacity: 1; }
+
+/* the roads and the tiles */
+#overworldMap .ow-edge { stroke: var(--ch-line-hi); stroke-width: 6; stroke-linecap: round; opacity: 0.8; }
+#overworldMap .ow-edge-route { stroke: var(--ch-brass); opacity: 1; stroke-width: 7; }
+#overworldMap .ow-miles { fill: var(--ch-dim); font: 600 13px var(--ch-font-ui); }
+#overworldMap .ow-node { cursor: pointer; outline: none; }
+#overworldMap .ow-dot { stroke: var(--ch-bg-deep); stroke-width: 3; }
+#overworldMap .ow-img { pointer-events: none; }
+#overworldMap .ow-name { fill: var(--ch-text); font: 600 15px var(--ch-font-ui); paint-order: stroke; stroke: var(--ch-bg); stroke-width: 4px; }
+#overworldMap .ow-node:hover .ow-dot, #overworldMap .ow-node:focus .ow-dot { stroke: var(--ch-text); }
+#overworldMap .ow-ring { fill: none; stroke: var(--ch-text); stroke-width: 3; stroke-dasharray: 5 5; }
+#overworldMap .ow-selring { fill: none; stroke: var(--ch-brass); stroke-width: 3.5; }
+#overworldMap .ow-k-city .ow-dot { fill: var(--ow-city); }
+#overworldMap .ow-k-town .ow-dot { fill: var(--ow-town); }
+#overworldMap .ow-k-road .ow-dot { fill: var(--ow-road); }
+#overworldMap .ow-k-hills .ow-dot { fill: var(--ow-hills); }
+#overworldMap .ow-k-forest .ow-dot { fill: var(--ow-forest); }
+
+/* the card beside it */
+#overworldMap .ow-card { flex: 0 1 17rem; min-width: 14rem; background: var(--ch-card); border: 1px solid var(--ch-line); border-radius: 4px; padding: 0.8em 0.9em; display: flex; flex-direction: column; gap: 0.4em; }
+#overworldMap .ow-card-head { display: flex; align-items: center; gap: 0.5em; font: 600 16px var(--ch-font-head); color: var(--ch-brass); letter-spacing: 0.04em; }
+#overworldMap .ow-card-sub { color: var(--ch-dim); font-size: 0.85em; }
+#overworldMap .ow-card p { margin: 0.2em 0; }
+#overworldMap .ow-card-line { color: var(--ch-text); }
+#overworldMap .ow-card-warn { color: var(--ch-warn); font-size: 0.92em; }
+#overworldMap .ow-btn { margin-top: 0.4em; padding: 0.55em 0.9em; border: 1px solid var(--ch-line-hi); border-radius: 4px; background: var(--ch-hover); }
+#overworldMap .ow-btn:hover { border-color: var(--ch-brass); }
+#overworldMap .ow-go { background: var(--pg-next-bg, var(--ch-crimson)); color: var(--pg-next-text, #f6ead6); border-color: var(--ch-crimson-hi); font-weight: 600; }
+#overworldMap .ow-go:hover { background: var(--pg-next-hover, var(--ch-crimson-hi)); }
+
+/* legend and the plain-list toggle */
+#overworldMap .ow-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4em 1.1em; margin-top: 0.6em; color: var(--ch-dim); font-size: 0.85em; }
+#overworldMap .ow-spacer { flex: 1; }
+#overworldMap .ow-hint { color: var(--ch-dim); font-size: 0.95em; }
+#overworldMap .ow-key { display: inline-block; width: 0.8em; height: 0.8em; border-radius: 50%; vertical-align: middle; background: var(--ow-road); }
+#overworldMap .ow-key.ow-k-city { background: var(--ow-city); }
+#overworldMap .ow-key.ow-k-town { background: var(--ow-town); }
+#overworldMap .ow-key.ow-k-road { background: var(--ow-road); }
+#overworldMap .ow-key.ow-k-hills { background: var(--ow-hills); }
+#overworldMap .ow-key.ow-k-forest { background: var(--ow-forest); }

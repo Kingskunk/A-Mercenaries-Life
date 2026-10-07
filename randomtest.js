@@ -317,6 +317,7 @@ if (typeof importScripts != "undefined") {
   if (fs.existsSync(mygamePath)) {
     load(mygamePath);
     if (fs.existsSync("web/" + gameName + "/names-data.js")) load("web/" + gameName + "/names-data.js");
+    if (fs.existsSync("web/" + gameName + "/overworld-data.js")) load("web/" + gameName + "/overworld-data.js");
   } else {
     nav = new SceneNavigator(["startup"]);
     stats = {};

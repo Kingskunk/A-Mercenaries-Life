@@ -60,7 +60,11 @@
       while (t && t !== rail && !(t.getAttribute && (t.getAttribute("data-real") || t.getAttribute("data-open") || t.getAttribute("data-tts")))) t = t.parentNode;
       if (t && t !== rail) {
         if (t.getAttribute("data-tts")) ttsClick(t.getAttribute("data-tts"));
-        else if (t.getAttribute("data-open") === "dungeonmap") { if (window.DungeonMap) window.DungeonMap.toggle(); }
+        else if (t.getAttribute("data-open") === "dungeonmap") {
+          // The Map button opens whichever map applies where the player is: the dungeon map inside a dungeon run, the overworld map on the overworld (it hides or shows the map there).
+          if (window.DungeonMap && window.DungeonMap.available()) window.DungeonMap.toggle();
+          else if (window.OverworldMap && window.OverworldMap.available()) window.OverworldMap.toggle();
+        }
         else realClick(t.getAttribute("data-real"));
       }
     });
@@ -133,9 +137,9 @@
       if (rt && b.getAttribute("title") !== rt) b.setAttribute("title", rt);
     }
     syncTts();
-    // the map button shows inside a dungeon run, once something has been mapped
+    // the map button shows inside a dungeon run once something has been mapped, and on the overworld
     var mapBtn = rail.querySelector("[data-open=\"dungeonmap\"]"), mapLab = rail.querySelector(".rlabel[data-for=\"dungeonmap\"]");
-    var haveMap = !!(window.DungeonMap && window.DungeonMap.available());
+    var haveMap = !!((window.DungeonMap && window.DungeonMap.available()) || (window.OverworldMap && window.OverworldMap.available()));
     if (mapBtn && mapBtn.hidden === haveMap) mapBtn.hidden = !haveMap;
     if (mapLab && mapLab.hidden === haveMap) mapLab.hidden = !haveMap;
     // room is reserved for the sidebar only while it is showing (it hides itself until the character exists)

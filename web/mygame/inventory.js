@@ -148,8 +148,8 @@
   var ID_ICON = {
     timber_axe: "w_battleaxe", stiletto: "w_dagger", iron_crowbar: "tool", torvald_iron_sallet: "h_helm", torvald_hide_cap: "h_cap",
     brigandine: "a_brig", chain_jack: "a_chain", plate_harness: "a_plate", court_coat: "a_coat", shield: "shield", toll_seal_ring: "signet",
-    warming_liniment: "salve", clear_head_draught: "elixir", althea_phial: "potion", linen_bandage: "bandage", lye_soap: "soap",
-    hemp_rope: "rope", pitch_torch: "torch", lamp_oil: "oil", hooded_lantern: "lantern", tool_kit: "toolkit", tinderbox: "tinder", chalk_sticks: "chalk",
+    warming_liniment: "salve", clear_head_draught: "elixir", althea_phial: "potion", linen_bandage: "bandage", lye_soap: "soap", trail_rations: "food",
+    hemp_rope: "rope", pitch_torch: "torch", lamp_oil: "oil", hooded_lantern: "lantern", tool_kit: "toolkit", lute: "lute", tinderbox: "tinder", chalk_sticks: "chalk",
     wool_blanket: "blanket", waxed_oilcloth: "cloth", lockpick_set: "lockpicks", padlock: "key", door_bolt: "tool", iron_manacles: "tool",
     broadcloth_cloak: "cloak", storm_cape: "cloak", winter_cloak: "cloak", summer_duster: "cloak", felt_hat: "h_hat", fur_cap: "h_cap",
     lined_gloves: "gloves", scholar_gloves: "gloves", masters_gloves: "gloves", waxed_boots: "boots", winter_boots: "boots", dancing_slippers: "slippers",

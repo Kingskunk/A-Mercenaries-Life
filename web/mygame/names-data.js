@@ -31,7 +31,7 @@
   // Every named person the player can already meet, first or last name. The generator skips these.
   var RESERVED = ["Kestrel", "Tolliver", "Ysolde", "Varren", "Vane", "Voss", "Thale", "Elric", "Halda", "Ambrose", "Hollis",
     "Vael", "Lyra", "Karr", "Skell", "Gault", "Rorik", "Odessa", "Bran", "Brant", "Hendryk", "Torvald", "Janna", "Maura",
-    "Talia", "Morzan", "Rennick", "Farrow", "Marda", "Corwen"];
+    "Talia", "Morzan", "Rennick", "Farrow", "Marda", "Corwen", "Oswin", "Maret"];
 
   var HUMAN = {
     male: [

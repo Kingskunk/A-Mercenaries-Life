@@ -271,6 +271,19 @@ function compile(){
   // Radiant Hiring Hall jobs: *goto_scene/*gosub_scene-only files, reached from the wall in port_valen_civic_heights.txt.
   verifyFileName("port_valen/radiant/hall_pests.txt");
   verifyFileName("port_valen/radiant/hall_haul.txt");
+  verifyFileName("port_valen/radiant/hall_watch.txt");
+  verifyFileName("port_valen/radiant/hall_perform.txt");
+  // Timbermouth, the placeholder town (see its hub's header comment): a hub plus one file per place, all reached only by *goto_scene (from the developer menu for now), so none
+  // of them is in *scene_list and each needs its own line here or a compiled build fails with "scene doesn't exist" the moment the player walks in.
+  verifyFileName("timbermouth/timbermouth.txt");
+  verifyFileName("timbermouth/market.txt");
+  verifyFileName("timbermouth/sawmill.txt");
+  verifyFileName("timbermouth/workshops.txt");
+  verifyFileName("timbermouth/factors_hall.txt");
+  verifyFileName("timbermouth/split_pine_inn.txt");
+  // The overworld (the road between towns, see its header comment): reached only by *goto_scene, from Timbermouth's exit and Port Valen's Charter Gate, so it is not in
+  // *scene_list and needs its own line here or a compiled build fails with "scene doesn't exist" the moment the player leaves a town.
+  verifyFileName("overworld/overworld.txt");
   // The hub that lists signed jobs and routes to them (reached from the Trunk Road and the Patrician Avenue).
   verifyFileName("port_valen/radiant/radiant_hub.txt");
   // "names" is the name generator's scene (name_make calls NameGen from web/mygame/names-data.js). Not in *scene_list;

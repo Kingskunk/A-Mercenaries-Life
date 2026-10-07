@@ -79,6 +79,7 @@ const MAP = {
   lantern: "Lantern_Weapon_Unfaded_Icon.png",
   oil: "Cup_of_Oil_Item_Icon.png",
   toolkit: "Trap_Disarm_Toolkit_Unfaded_Icon.png",
+  lute: "../Action/Perform_Lute_Unfaded_Icon.webp",
   lockpicks: "Thieves_Tools_Unfaded_Icon.png",
   key: "Key_Iron_A_Icon.png",
   tool: "Blacksmith's_Tongs_Unfaded_Icon.png",                  // STAND-IN: prybar, manacles, bolt and any other hand tool

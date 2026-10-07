@@ -109,6 +109,7 @@ function effectSummary(it) {
   if (ef.type === "heal") return "Restores " + ef.n + "d" + ef.sides + (ef.bonus ? "+" + ef.bonus : "") + " HP";
   if (ef.type === "wash") return "Hygiene back to Clean, with water at hand";
   if (ef.type === "dressing") return "+" + ef.bonus + " HP from your next sleep";
+  if (ef.type === "ration") return "Clears hunger, like a meal";
   var h = ef.minutes % 60 === 0 ? (ef.minutes / 60) + " hours" : ef.minutes + " minutes";
   return "+" + ef.bonus + " " + ef.stat.toUpperCase() + " for " + h;
 }
@@ -144,6 +145,8 @@ function genGearInfo() {
         L.push('  *set gear_eff_minutes ' + ef.minutes);
       } else if (ef.type === "wash") {
         // no fields: use_consumable resets the hygiene clock itself
+      } else if (ef.type === "ration") {
+        // no fields: use_consumable clears the hunger clock itself, and calendar.txt advance_time eats one for you on the overworld
       } else if (ef.type === "dressing") {
         L.push('  *set gear_eff_bonus ' + ef.bonus);
       } else {

@@ -40,13 +40,31 @@ Written and wired 2026-10-07. The job is `web/mygame/scenes/port_valen/radiant/h
 - **Pay is by the hour worked:** 1 copper an hour (muscle takes one hour, plan two, finesse three), plus 2 copper for each load delivered whole (changed 2026-10-07 from a breakage dock, so the checks earn pay and do not only protect it), plus a hot meal on the patron's back step that clears Hunger. A haul is worth 3 to 15 copper and a meal, by design a small job. Roll first, then the page's one time advance, so Guidance counts.
 - **The patron and house** use the name generator the same way as the vermin job (race from the Middle Ward's mix, name, a look that never names a trade); the house is one of four, the item of each load one of two, all separate rolls from the block seed.
 
+## The third radiant job: The Night Watch [GAME]
+
+Written and wired 2026-10-07. The job is `web/mygame/scenes/port_valen/radiant/hall_watch.txt`; it is reached from "Your posting" on the Harbor Quayside through the posting hub, and the warehouse door is open at Dusk only (the customs gate shuts at night, so it cannot be entered from the Cargo Quay).
+
+- **Posting:** up on Tidedays, a placeholder cadence until the board's scheduling is redone (the user will change it when three more jobs exist). Term: signing day and the next. It replaced the Tideday flavor posting 0352; the Ironday seasoning-yard posting 0395 is still flavor and becomes a second site later.
+- **The watch:** about nine hours from dusk, in three stretches of three hours. Each stretch draws one event from a seeded table: 40% quiet, 10% a banging shutter, 12% a feral cat, 13% a drunk or lost sailor, 8% a fire, 7% a sneak thief, and 10% reserved for the City Watch patrol (plays as quiet until it is built). About 13% of nights are wholly quiet, but half of all stretches are quiet and a third are false alarms. Only the thief is a fight (the one human `knifeman` fight).
+- **Pay:** 1 copper an hour (nine hours) plus 2 copper for each stretch held cleanly; a bad stretch loses its bonus and some goods, never the hourly pay. A clean night pays 15 copper; a bad one 9. The tired player walks out into the grey light.
+- **Not built:** the City Watch patrol with a warrant (real guards after a bribe, legitimate officers, or criminals in stolen uniforms; needs a Port Watch reputation hook); a spell option for the fire (Prestidigitation and the like).
+
+## The fourth radiant job: Music for an Evening [GAME]
+
+Written and wired 2026-10-07. The job is `web/mygame/scenes/port_valen/radiant/hall_perform.txt`; it is reached from "Your posting" on the Trunk Road, the Harbor Quayside or the Patrician Avenue (by venue) through the posting hub, and the music starts at Dusk only. It replaced the Hearthday flavor posting 0408 (a bard for a wedding feast).
+
+- **Posting:** Hearthdays, a placeholder cadence until the board's scheduling is redone. Term: signing day and the next.
+- **The venue is random every time** (a seeded roll from the week): the Wagoner's Rest 23%, the Cleaved Keel 23%, a private supper 17%, a wedding feast 24%, a Patrician gala 13% (the posting is admission at the Inner Gate, with the usual polite walk-out afterwards). The inn and the tavern are run by Oswin Hale and Maret; the hosts of the supper, the wedding and the gala are generated people.
+- **Three sets, one hour each, one Performance check each.** The player picks the song: loud, a tender ballad, or a clever comic number. The room has a taste, hinted in prose and never shown as a number: its preferred song is DC 10, the one it dislikes DC 14, the other DC 12 (+2 at the gala), and the taste shifts across the night. A lute adds +1 (`check_task_type "perform"`); without one the house lends a battered lute and the job still plays.
+- **Pay is by how well it went:** a fee plus a tip for each set that landed. Inn or tavern 3 + 4 each (3 to 15 copper), supper 8 + 3 (8 to 17), wedding 12 + 4 (12 to 24), gala 20 + 6 (20 to 38), then a hot meal.
+
 ## Board rules, decided with the user 2026-10-07 [AGREED]
 
 - **A player may hold several signed jobs at once.** Managing the time is the player's skill, so there is no one-job limit.
 - **Every job has a term.** When it runs out it undoes itself: no penalty, no message, and the job is simply gone. The board's pool puts a fresh posting up in its own time. (Pests: three days; each job's lapse is one line in `radiant_hub.txt` `rh_check`.)
 - **The board shows at most three real jobs at a time.** Flavor postings do not count and will go as real jobs replace them.
 - **Each settlement has its own board of three.** Alderford and Timbermouth, once they run, post their own local jobs; the Hiring Hall's Port Valen counter is the Port Valen page's only.
-- **Job types after the vermin job, easiest first:** hauling, night watch (one Cargo Quay warehouse first), escort (needs the roads out), bard (needs a performing mechanic). The three duplicate postings fold in: the seasoning yard watch becomes a second night-watch site, and the Timbermouth escort a second destination.
+- **Job types after the vermin job:** hauling, night watch and the bard job are built; escort is left (it needs the roads out). The user will redo the board scheduling when three more jobs exist. The three duplicate postings fold in: the seasoning yard watch becomes a second night-watch site, and the Timbermouth escort a second destination.
 
 ## Not built yet
 

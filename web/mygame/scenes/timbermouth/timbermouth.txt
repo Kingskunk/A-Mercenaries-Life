@@ -1,0 +1,243 @@
+*comment ====================================================================================
+*comment TIMBERMOUTH: the town hub. A PLACEHOLDER (2026-10-07): the setting, the three location-intro layers, the day and night cycle, and the five places to visit, with
+*comment nothing placed inside them yet. The plan is quest/TIMBERMOUTH_PLAN.md; its locked decisions hold here: a town, not a district; ONE hub (this one); at most six
+*comment places (the plan has six, and the timber market and the general market are ONE place here, "The Market", merged 2026-10-07, so there are five), all returning straight here; the Gilded Scales are the state; the Longshade Forest and Longshade ash; an inland road town with no navigable river; plain
+*comment words (never boom, wharf or dray).
+*comment
+*comment The folder: this file is the hub and owns every closure page; each place is its own file next to it (market, sawmill, workshops, factors_hall,
+*comment split_pine_inn), so shops and quests can land in a place without ever editing the hub. None of these is in *scene_list: compile.js lists them with verifyFileName.
+*comment
+*comment How the player gets here: the old road from Port Valen (the overworld, scenes/overworld/overworld.txt, "Go into Timbermouth" on the Timbermouth tile) or the developer menu
+*comment (dev_hub.txt, "Jump to Timbermouth"). The way out is the old road: it lands the player on the overworld at the Timbermouth tile.
+*comment
+*comment The intro is three layers with one job each (QUEST_DESIGN_RULES section 12): LAYER 1 place (constant geography and smell, no weather, time or people), LAYER 2 sky
+*comment (weather and light only, matched to time_period, closing with the ground's memory of recent weather), LAYER 3 street (who is about, gated by street_life). There
+*comment is no layer 4 (the tell) for now.
+*comment
+*comment The day and night cycle: a closed place stays on the menu with its bold name kept and the flavour swapped for the reason, and picking it plays a short closure page
+*comment that costs no time and returns here. The hours are a first draft, all in tm_hours: the Sawmill, Workshops and Factor's Hall work Morning through
+*comment Afternoon and keep Hallowday; the Market trades Morning through Dusk, keeps Hallowday and also closes when street_life is "empty" (a dangerous storm); the Split Pine
+*comment Inn and Stables never closes.
+*comment ====================================================================================
+
+*label timbermouth
+*set current_district "timbermouth"
+*set timbermouth_seen true
+*gosub_scene calendar update_hub_condition
+*gosub tm_hours
+*temp tm_night false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set tm_night true
+*temp tm_why "closed for the day"
+*if (tm_night)
+  *set tm_why "closed for the night"
+*if ((day_of_week = "Hallowday") and (not(tm_night)))
+  *set tm_why "closed for the rest day"
+*comment The two open-air markets give the weather as their reason when that is why they are shut (not on the rest day or at night).
+*temp tm_why_out tm_why
+*if (((street_life = "empty") and (not(tm_night))) and (not(day_of_week = "Hallowday")))
+  *set tm_why_out "closed for the weather"
+[b]◈ TIMBERMOUTH[/b]
+*line_break
+[b][⏳ Timbermouth Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
+*line_break
+*gosub tm_place
+*gosub tm_sky
+*gosub tm_street
+
+*comment BUTTON FORMAT, the same convention as the Port Valen district hubs: destination first, bold, then the flavour, then the [~N min] suffix. A closed place keeps its
+*comment bold name and swaps the flavour for the reason it is shut (never dropped from the menu), and plays a closure page that costs no time.
+*choice
+  *if (tm_ok_market)
+    # [b]The Market[/b]: timber, grain, iron and salt, by the lot or the cartload. [~5 min]
+      *goto_scene timbermouth/market tm_market
+  *if (not(tm_ok_market))
+    # [b]The Market[/b]: ${tm_why_out}.
+      *goto tm_closed_market
+  *if (tm_ok_mill)
+    # [b]The Sawmill[/b]: the saw frame and the log yard. [~5 min]
+      *goto_scene timbermouth/sawmill tm_mill
+  *if (not(tm_ok_mill))
+    # [b]The Sawmill[/b]: ${tm_why}.
+      *goto tm_closed_mill
+  *if (tm_ok_works)
+    # [b]The Woodworkers' Workshops[/b]: wheels, barrels and doors in the making. [~5 min]
+      *goto_scene timbermouth/workshops tm_works
+  *if (not(tm_ok_works))
+    # [b]The Woodworkers' Workshops[/b]: ${tm_why}.
+      *goto tm_closed_works
+  *if (tm_ok_hall)
+    # [b]The Factor's Hall[/b]: the seat of the Gilded Scales in the town. [~5 min]
+      *goto_scene timbermouth/factors_hall tm_hall
+  *if (not(tm_ok_hall))
+    # [b]The Factor's Hall[/b]: ${tm_why}.
+      *goto tm_closed_hall
+  # [b]The Split Pine Inn and Stables[/b]: a hall, beds and a wagon yard. [~5 min]
+    *goto_scene timbermouth/split_pine_inn tm_inn
+  # [b]The old road[/b]: leave town toward Port Valen.
+    *set ow_pos "tm"
+    *goto_scene overworld/overworld ow_here
+
+*comment ── LAYER 1: PLACE ── Constant geography and smell: no weather, no time of day, no people.
+*label tm_place
+A paved square opens where the old imperial road comes up out of the lowlands and meets three smaller roads, one from the forest, two from the farm country. Longshade ash is stacked in long ranks under open sheds on the forest side, each end-grain stamped with a grade mark and a year, and the air carries cut pine, resin and the dry sweetness of seasoning hardwood. Wells with stone curbs and a spring-fed trough stand in the middle of the square, since the town has no river to speak of. Timber houses lean shoulder to shoulder along the roads, their upper floors jutting out over the street, and it is a quarter of an hour on foot from one end of the town to the other. A signboard at the square's mouth reads [i]"Timbermouth"[/i].
+*return
+
+*comment ── LAYER 2: SKY ── Weather and light only, matched to time_period; no people. Closes with the ground's memory of recent weather.
+*label tm_sky
+*temp tm_dark false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set tm_dark true
+*if (weather = "Rain")
+  Rain drums on the plank roofs and runs off the eaves of the seasoning sheds in thin lines, and the smell of wet bark rises from every stack.
+*elseif (weather = "Storm")
+  Wind rushes down out of the forest and shakes the shed roofs on their posts, and the rain comes in sideways across the square with a loud, steady roar.
+*elseif (weather = "Fog")
+  Cold mist comes out of the Longshade and fills the square to the first floors, so that the sheds loom and the lamps are pale blurs.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow clings to the shed roofs and the stacked planks, and the paving is a grey slush that smells of resin.
+*elseif (weather = "Blizzard")
+  A freezing gale drives snow across the square, loud in the ash stacks, and the signboard creaks on its chains.
+*elseif (weather = "Clear")
+  *if (tm_dark)
+    Cold, clear starlight lies on the paving and silvers the end-grain of the stacked boards, and the forest makes a black wall beyond the roofs.
+  *elseif (time_period = "Dusk")
+    The low sun lays the shadows of the stacks long across the square and turns the stacked ash to the colour of honey.
+  *else
+    Clear light falls on the stacked boards and the pale paving, and the air smells of warm resin.
+*else
+  *comment Overcast
+  *if (tm_dark)
+    A heavy, starless night hangs over the town, and the forest is a darker dark above the roofs.
+  *else
+    A flat grey overcast lies over the square, and the smell of the forest is strong and damp.
+
+*comment ── WEATHER MEMORY (calendar ground_state, strictly no people) ──
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  After days of rain the paving still runs with water in the ruts, and every stack is dark with it.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The paving is still dark from the last rain, and the planks have not yet dried to their usual pale colour.
+*return
+
+*comment ── LAYER 3: STREET ── Who is about, gated by street_life. Working-day lines only Morning to Dusk; Marketday is full when street_life is "normal" and shows as absence otherwise.
+*label tm_street
+*temp tm_work false
+*if (((time_period = "Morning") or (time_period = "Midday")) or ((time_period = "Afternoon") or (time_period = "Dusk")))
+  *set tm_work true
+*temp tm_roll 1
+*rand tm_roll 1 2
+*if ((street_life = "empty") and (tm_work))
+  The square is deserted. The carts stand under tarpaulins against the shed walls, the shutters are up along every street, and the only movement is a single figure in an oilskin cape crossing between two doors.
+  *if (day_of_week = "Marketday")
+    It is Marketday, but the farm carts have not come up the roads and the stalls are lashed shut.
+*elseif (tm_night)
+  *if (tm_roll = 1)
+    The square is silent but for the lantern at the watch post, burning steady beside its closed door, and somewhere on the forest side a dog barking at nothing.
+  *else
+    A single lantern burns at the watch post and another over the door of the inn, and the streets between them are empty and dark.
+*elseif (time_period = "Dusk")
+  *if (tm_roll = 1)
+    The day's last wagons come in off the roads and turn toward the inn yard, and the shed doors are pulled shut one after another.
+  *else
+    Shutters go up along the street, and men and women lead their teams across the square toward the stables with their lamps lit.
+*elseif (day_of_week = "Hallowday")
+  The square is quiet and the yards are shut. A few families in clean clothes cross toward the middle of the town, and a man walks his horse slowly over the paving with no load behind it.
+*elseif (day_of_week = "Marketday")
+  *if (street_life = "normal")
+    The square is full to its edges. Farm carts are drawn up in rows with their tailboards down, buyers shout over one another, and wagons loaded with finished planks and barrels wait their turn at the road.
+  *else
+    It is Marketday, but the weather has thinned it. A few carts stand in the lee of the sheds, and the buyers move briskly from one to the next with their collars up.
+*elseif (tm_roll = 1)
+  Wagons stand loading at the shed doors while men and women in dusty coats work around them, and a boy runs across the square with a rolled paper in his fist.
+*else
+  Planks go up onto a wagon bed in a steady, clattering line, and a pair of men in leather aprons walk the ranks of stacked ash, tapping the ends with their knuckles.
+*return
+
+*comment ── THE HOURS: the one place that decides what is open. Sets the tm_ok_* flags; every closure page calls it again, so they read the clock rather than a stale hub temp. ──
+*label tm_hours
+*comment Morning through Afternoon is the working day for the Sawmill, the Workshops and the Factor's Hall; the Market (open air) trades through Dusk. Hallowday is the rest day. The
+*comment Market also closes at street_life "empty".
+*set tm_ok_market false
+*set tm_ok_mill false
+*set tm_ok_works false
+*set tm_ok_hall false
+*if (not(day_of_week = "Hallowday"))
+  *if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+    *set tm_ok_mill true
+    *set tm_ok_works true
+    *set tm_ok_hall true
+  *if ((((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon")) or (time_period = "Dusk"))
+    *if (not(street_life = "empty"))
+      *set tm_ok_market true
+*return
+
+*comment ── CLOSURE PAGES: each costs no time, sets nothing, and returns here. They read the clock and the derived flags directly, so they play from any label. ──
+*label tm_closed_market
+*set tm_which "market"
+*goto tm_closed
+
+*label tm_closed_mill
+*set tm_which "mill"
+*goto tm_closed
+
+*label tm_closed_works
+*set tm_which "works"
+*goto tm_closed
+
+*label tm_closed_hall
+*set tm_which "hall"
+*goto tm_closed
+
+*label tm_closed
+*gosub_scene calendar update_hub_condition
+*if (tm_which = "market")
+  [b]◈ THE MARKET[/b]
+*elseif (tm_which = "mill")
+  [b]◈ THE SAWMILL[/b]
+*elseif (tm_which = "works")
+  [b]◈ THE WOODWORKERS' WORKSHOPS[/b]
+*else
+  [b]◈ THE FACTOR'S HALL[/b]
+*line_break
+*if (day_of_week = "Hallowday")
+  *if (tm_which = "market")
+    The yard gates are chained, the grading boards turned to the wall, and the stalls folded with their awnings rolled up. A chalked slate beside the gate says that the market keeps the rest day.
+  *elseif (tm_which = "mill")
+    The saw frame stands still with its blade lifted clear and a chock under the wheel. The yard is swept and empty.
+  *elseif (tm_which = "works")
+    The workshop doors are shut and the benches inside are covered. Nobody works on the rest day.
+  *else
+    The doors of the hall are shut and the shutters closed. A slate by the door says that it keeps the rest day.
+*elseif ((street_life = "empty") and (tm_which = "market"))
+  The weather has cleared the ground. Tarpaulins are lashed down hard over the stacks, the stalls are folded away, and the yard gate is shut and barred.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *if (tm_which = "market")
+    The yard gate is chained for the night and the stalls are gone, leaving bare ground where loose straw turns in the wind. A lantern burns on a post beside the bays, and nothing else moves.
+  *elseif (tm_which = "mill")
+    The saw frame is dark and still, and the yard is shut behind its fence.
+  *elseif (tm_which = "works")
+    The workshops are barred and dark, and the smell of glue and fresh shavings hangs in the street outside.
+  *else
+    The doors are shut and a lantern burns at the foot of the steps. The windows are dark.
+*else
+  *comment Dusk: the workday is over for the three working places (the Market trades through Dusk, so it never gets this page).
+  *if (tm_which = "mill")
+    The saw frame has stopped, and the yard is closed for the day, with the blade lifted out of the cut.
+  *elseif (tm_which = "works")
+    The benches are cleared and the doors pulled shut for the day, and the shavings are swept into heaps by the walls.
+  *else
+    The doors of the hall have been closed for the day, and the counter windows are shuttered.
+*page_break Back to the square…
+*goto timbermouth
+
+*comment ── time helper: the caller sets minutes_to_pass and a unique time_advance_call_id first (same routine as mw_walk_time and pq_walk_time) ──
+*label tm_walk_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return

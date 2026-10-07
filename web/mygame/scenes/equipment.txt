@@ -1061,6 +1061,22 @@
   *set gear_pct_general 50
   *if (gear_shop = "hollis")
     *set gear_quote "\"Grey soap, honest lye,\" Hollis says. \"You bring the water. A stream will do, or the shore. It'll take the skin off a bad conscience.\""
+*if (gi_item = "trail_rations")
+  *set gear_name "trail rations"
+  *set gear_retail 2
+  *set gear_kind "consumable"
+  *set gear_title "Trail Rations"
+  *set gear_stack true
+  *set gear_effect "ration"
+  *set gear_use_text "You unwrap the cloth and eat the biscuit, the sausage and the raisins, one after the other. It is plain food, and it is enough."
+  *set gear_use_verb "Eat"
+  *set gear_eff_summary "Clears hunger, like a meal"
+  *set gear_hint "Eaten for you on the road when you grow hungry"
+  *set gear_blurb "A day's food wrapped in a cloth: a hard biscuit, a stick of dried sausage, and a fist of raisins."
+  *set gear_minutes 5
+  *set gear_pct_general 50
+  *if (gear_shop = "hollis")
+    *set gear_quote "\"One a day is enough to walk on,\" Hollis says. \"You'll tire of it by the second. You'll still eat it.\""
 *if (gi_item = "hemp_rope")
   *set gear_name "hemp rope"
   *set gear_retail 8
@@ -1113,6 +1129,18 @@
   *set gear_pct_general 50
   *if (gear_shop = "hollis")
     *set gear_quote "\"Nothing fancy,\" Hollis says. \"Anything that can be mended with a hammer and some patience, that roll will mend.\""
+*if (gi_item = "lute")
+  *set gear_name "lute"
+  *set gear_retail 40
+  *set gear_kind "tool"
+  *set gear_title "Lute"
+  *set gear_stack true
+  *set gear_hint "+1 on performance checks"
+  *set gear_blurb "A pear-bellied lute of plain maple with seven gut strings, a worn pick-guard, and one tuning peg replaced in a different wood."
+  *set gear_minutes 5
+  *set gear_pct_general 50
+  *if (gear_shop = "hollis")
+    *set gear_quote "\"Came in with a sailor who needed supper more than a song,\" Hollis says. \"The belly's sound and the strings are new. Tune it before you play, and again after.\""
 *if (gi_item = "tinderbox")
   *set gear_name "flint and tinderbox"
   *set gear_retail 4
@@ -1745,6 +1773,19 @@
         *set hygiene_stage "Clean"
         *gosub_scene calendar update_hub_condition
         *set use_banner "🧼 Washed Up: Hygiene Restored to Clean"
+    *comment A ration is a plain meal: it clears the hunger clock and the hunger debt exactly as a tavern meal does (economy.txt buy_tavern_item), with no buff. Refused within six hours of the
+    *comment last meal, so a ration is never wasted. On the overworld calendar.txt advance_time eats one for you at the hunger point; this is the same meal by hand.
+    *if (gear_effect = "ration")
+      *if (minutes_since_meal < 360)
+        *set use_result "full"
+        *set use_text "You ate not long ago, and the food would only go to waste."
+      *else
+        *set minutes_since_meal 0
+        *set neglect_damage_hunger 0
+        *set hunger_stage "Fed"
+        *gosub_scene calendar recalc_hp_from_neglect
+        *gosub_scene calendar update_hub_condition
+        *set use_banner "🍞 Fed: Hunger Cleared"
     *comment A dressing rides along until the next sleep that heals (calendar.txt resolve_sleep adds gear_eff_bonus
     *comment HP there and takes the dressing off). Refused while unhurt, and while one is already on.
     *if (gear_effect = "dressing")
