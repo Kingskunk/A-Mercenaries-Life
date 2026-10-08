@@ -1,23 +1,24 @@
 *comment ====================================================================================
-*comment TIMBERMOUTH: the town hub. A PLACEHOLDER (2026-10-07): the setting, the three location-intro layers, the day and night cycle, and the five places to visit, with
-*comment nothing placed inside them yet. The plan is quest/TIMBERMOUTH_PLAN.md; its locked decisions hold here: a town, not a district; ONE hub (this one); at most six
-*comment places (the plan has six, and the timber market and the general market are ONE place here, "The Market", merged 2026-10-07, so there are five), all returning straight here; the Gilded Scales are the state; the Longshade Forest and Longshade ash; an inland road town with no navigable river; plain
+*comment TIMBERMOUTH: the town hub. A PLACEHOLDER being filled in (2026-10-07): the setting, the three location-intro layers, the day and night cycle, and the five places to visit.
+*comment The Sawmill is NOT a hub place any more (the user's call, 2026-10-07: it had no purpose a button could serve, so it stays as scenery and becomes a job and event site later); the General
+*comment Store took its slot. The plan is quest/TIMBERMOUTH_PLAN.md; its locked decisions hold here: a town, not a district; ONE hub (this one); at most six
+*comment places (the plan has six; here there are five: the Market, the General Store, the Workshops, the Factor's Hall and the Split Pine), all returning straight here; the Gilded Scales are the state; the Longshade Forest and Longshade ash; an inland road town with no navigable river; plain
 *comment words (never boom, wharf or dray).
 *comment
-*comment The folder: this file is the hub and owns every closure page; each place is its own file next to it (market, sawmill, workshops, factors_hall,
-*comment split_pine_inn), so shops and quests can land in a place without ever editing the hub. None of these is in *scene_list: compile.js lists them with verifyFileName.
+*comment The folder: this file is the hub and owns every closure page; each place is its own file next to it (market, general_store, workshops, factors_hall,
+*comment split_pine_inn; the Sawmill has no file: it is scenery, and a job or event that needs it can add one), so shops and quests can land in a place without ever editing the hub. None of these is in *scene_list: compile.js lists them with verifyFileName.
 *comment
-*comment How the player gets here: the old road from Port Valen (the overworld, scenes/overworld/overworld.txt, "Go into Timbermouth" on the Timbermouth tile) or the developer menu
-*comment (dev_hub.txt, "Jump to Timbermouth"). The way out is the old road: it lands the player on the overworld at the Timbermouth tile.
+*comment How the player gets here: the road from Port Valen (the overworld, scenes/overworld/overworld.txt, "Go into Timbermouth" on the Timbermouth tile, which plays tm_arrive below first)
+*comment or the developer menu (dev_hub.txt, "Jump to Timbermouth", straight to the hub). The way out is the river road: it lands the player on the overworld at the Timbermouth tile.
 *comment
 *comment The intro is three layers with one job each (QUEST_DESIGN_RULES section 12): LAYER 1 place (constant geography and smell, no weather, time or people), LAYER 2 sky
 *comment (weather and light only, matched to time_period, closing with the ground's memory of recent weather), LAYER 3 street (who is about, gated by street_life). There
 *comment is no layer 4 (the tell) for now.
 *comment
 *comment The day and night cycle: a closed place stays on the menu with its bold name kept and the flavour swapped for the reason, and picking it plays a short closure page
-*comment that costs no time and returns here. The hours are a first draft, all in tm_hours: the Sawmill, Workshops and Factor's Hall work Morning through
-*comment Afternoon and keep Hallowday; the Market trades Morning through Dusk, keeps Hallowday and also closes when street_life is "empty" (a dangerous storm); the Split Pine
-*comment Inn and Stables never closes.
+*comment that costs no time and returns here. The hours are a first draft, all in tm_hours: the Workshops and Factor's Hall work Morning through
+*comment Afternoon and keep Hallowday; the Market trades Morning through Dusk, keeps Hallowday and also closes when street_life is "empty" (a dangerous storm); the General Store trades
+*comment Morning through Dusk and keeps Hallowday; the Split Pine Inn and Stables never closes.
 *comment ====================================================================================
 
 *label timbermouth
@@ -49,19 +50,22 @@
 *comment bold name and swaps the flavour for the reason it is shut (never dropped from the menu), and plays a closure page that costs no time.
 *choice
   *if (tm_ok_market)
-    # [b]The Market[/b]: timber, grain, iron and salt, by the lot or the cartload. [~5 min]
+    # [b]The Market[/b]: bays, wagons and the beam-scale at the gate. [~5 min]
       *goto_scene timbermouth/market tm_market
   *if (not(tm_ok_market))
     # [b]The Market[/b]: ${tm_why_out}.
       *goto tm_closed_market
-  *if (tm_ok_mill)
-    # [b]The Sawmill[/b]: the saw frame and the log yard. [~5 min]
-      *goto_scene timbermouth/sawmill tm_mill
-  *if (not(tm_ok_mill))
-    # [b]The Sawmill[/b]: ${tm_why}.
-      *goto tm_closed_mill
+  *if ((tm_ok_market) and (tm_lot_show))
+    # [b]The wagon lot[/b]: a line is making up beside the Market. [~5 min]
+      *goto_scene timbermouth/wagon_lot tm_lot
+  *if (tm_ok_store)
+    # [b]The General Store[/b]: the shop beside the Market gate. [~5 min]
+      *goto_scene timbermouth/general_store tm_store
+  *if (not(tm_ok_store))
+    # [b]The General Store[/b]: ${tm_why}.
+      *goto tm_closed_store
   *if (tm_ok_works)
-    # [b]The Woodworkers' Workshops[/b]: wheels, barrels and doors in the making. [~5 min]
+    # [b]The Woodworkers' Workshops[/b]: the lane of open-fronted shops. [~5 min]
       *goto_scene timbermouth/workshops tm_works
   *if (not(tm_ok_works))
     # [b]The Woodworkers' Workshops[/b]: ${tm_why}.
@@ -74,13 +78,56 @@
       *goto tm_closed_hall
   # [b]The Split Pine Inn and Stables[/b]: a hall, beds and a wagon yard. [~5 min]
     *goto_scene timbermouth/split_pine_inn tm_inn
-  # [b]The old road[/b]: leave town toward Port Valen.
+  # [b]The river road[/b]: leave town toward Port Valen.
     *set ow_pos "tm"
     *goto_scene overworld/overworld ow_here
 
+*comment ── THE ARRIVAL (2026-10-07): the page "Go into Timbermouth" on the overworld plays, before the hub. The player comes in off the road past a squat stone watch post at the road end, where
+*comment a man in a grey coat with the Gilded Scales' river-serpent badge on his sleeve keeps the lantern. Entry is free: no toll, no gate that shuts (a town, not a city). NO DIALOGUE at all
+*comment (the user, 2026-10-07: no repeating dialogue): the town's hours are posted on paper by the post door, which is also how the first visit says what is open, and the man only
+*comment gestures. He is UNNAMED on purpose. The first visit is a longer paragraph by time of day: working day (Morning to Afternoon), dusk, or night (Night and Pre-Dawn), when he points the traveller to
+*comment the one place that is open. Later visits are one line of gesture. If the player is hungry or worn out there is one more silent line pointing at the Split Pine. The walk in costs
+*comment 5 minutes, charged once here (tm_walk_time), and the page runs straight on into the hub below, so there is no extra click. The developer menu enters at the hub and skips this. ──
+*label tm_arrive
+*set minutes_to_pass 5
+*set time_advance_call_id "tm_arrive_1"
+*gosub tm_walk_time
+*temp tm_first false
+*if (not(tm_watch_seen))
+  *set tm_first true
+*set tm_watch_seen true
+*temp tm_arr_state "day"
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set tm_arr_state "night"
+*elseif (time_period = "Dusk")
+  *set tm_arr_state "dusk"
+*if (tm_first)
+  *if (tm_arr_state = "night")
+    A lantern burns on a hook beside a squat stone watch post at the road end, and a man in a grey coat with a river-serpent badge stitched on its sleeve sits under it with a mug between his boots. He gets to his feet when he hears you on the paving, looks you over by lantern light, and jerks his chin down the road toward the square, where a second lantern burns over the door of a big house with a split pine trunk standing beside it. Then he sits down again. A paper notice is pinned beneath a small wooden hood by the post door: [i]"Market, mill and Hall shut at dusk. Open at the morning bell. The Split Pine never shuts."[/i]
+  *elseif (tm_arr_state = "dusk")
+    The last wagons are rolling in ahead of you, and a man in a grey coat with a river-serpent badge stitched on its sleeve stands beside a squat stone watch post at the road end, waving them on toward the inn yard with a staff. A paper notice is pinned beneath a small wooden hood by the post door: [i]"Market closes with the light. Mill and shops open at the morning bell. The Split Pine keeps the pot and the beds."[/i] He glances at you as you come up, and tips his staff toward the big house with the split trunk at the end of the square.
+  *else
+    A squat stone watch post stands at the road end, and a man in a grey coat with a river-serpent badge stitched on its sleeve leans on a staff beside it, watching the wagons go by. A paper notice is pinned beneath a small wooden hood by the post door, listing the town's hours: [i]"Market, morning to dusk. Mill and shops, morning to afternoon. Carts weigh at the market gate, not in the square. The Split Pine keeps the pot and the beds at all hours."[/i] He looks at your boots and your gear, then goes back to watching the road.
+*else
+  *if (tm_arr_state = "night")
+    The lantern at the watch post burns low, and the man in the grey coat under it nods you through without getting up.
+  *elseif (tm_arr_state = "dusk")
+    The man at the watch post is waving the last of the wagons in toward the inn yard, and lifts a hand as you pass.
+  *else
+    The man at the watch post lifts a hand as you pass, and goes back to watching the road.
+*if (vane_independent_operative)
+  *if ((hunger_stage = "Hungry") or (hunger_stage = "Starving"))
+    His eyes stay on you a moment longer, then go to the chimney of the Split Pine, where kitchen smoke drifts low across the square.
+  *if ((fatigue_stage = "Exhausted") or (fatigue_stage = "Collapsing"))
+    He watches you sway past and lifts his staff toward the lamp over the Split Pine's door.
+
+*goto timbermouth
+
 *comment ── LAYER 1: PLACE ── Constant geography and smell: no weather, no time of day, no people.
 *label tm_place
-A paved square opens where the old imperial road comes up out of the lowlands and meets three smaller roads, one from the forest, two from the farm country. Longshade ash is stacked in long ranks under open sheds on the forest side, each end-grain stamped with a grade mark and a year, and the air carries cut pine, resin and the dry sweetness of seasoning hardwood. Wells with stone curbs and a spring-fed trough stand in the middle of the square, since the town has no river to speak of. Timber houses lean shoulder to shoulder along the roads, their upper floors jutting out over the street, and it is a quarter of an hour on foot from one end of the town to the other. A signboard at the square's mouth reads [i]"Timbermouth"[/i].
+A paved square opens where the road from the river comes up out of the lowlands and meets three smaller roads, one from the forest and two from the farm country. The town has no wall. At the mouth of each road stands a pair of squared ash gateposts with rusted hooks where gates once hung, and on the lowland road a squat stone watch post beside them, and between the posts the road simply runs in. The Split Pine inn stands at the road end of the square, a long house of dark timber with a split pine trunk set upright beside its door and an arch through to its yard. Facing it across the paving is the Factor's Hall, the only stone building on the square, two floors high behind a flight of broad steps, with the Gilded Scales' river-serpent banner hanging from a pole over its door. Wells with stone curbs and a spring-fed trough stand in the middle of the square.
+
+On the forest side, Longshade ash is stacked in long ranks under open sheds, each end-grain stamped with a grade mark and a year, and beyond the sheds stands the Sawmill, a long open-sided shed on the bank of the Ashrun, with its wheel turning in a mill race and its log yard spread out behind. The Ashrun comes down out of the Longshade loud over its ledges, a stony stream no wider than a road and too shallow to carry anything but loose logs, which are driven down it in the spring melt on their way to the Grey River far below. A lane of low, open-fronted Workshops runs back from the square beside the mill, and on the farm side the Market opens off the paving through a yard gate with a beam-scale hung over it, with bays and wagons spreading away behind. A general store stands beside that gate, its front hung with coils of rope, lanterns and harness under a board reading [i]"MARLOW. General goods."[/i] Oxen drag the felled trunks in from the forest on skids and chains, and horses and mules draw the loaded wagons out along the river road, so the paving is cut into ruts by iron tyres and trampled by hooves, with a hitching rail along every frontage and the smell of dung and hay under the resin. Timber houses lean shoulder to shoulder along the roads, their upper floors jutting out over the street, and it is a quarter of an hour on foot from one end of the town to the other. The air carries cut pine, resin, wet stone from the stream and the dry sweetness of seasoning hardwood, with hot iron and glue from the Workshops' lane. A signboard at the square's mouth reads [i]"Timbermouth"[/i].
 *return
 
 *comment ── LAYER 2: SKY ── Weather and light only, matched to time_period; no people. Closes with the ground's memory of recent weather.
@@ -119,56 +166,310 @@ A paved square opens where the old imperial road comes up out of the lowlands an
   The paving is still dark from the last rain, and the planks have not yet dried to their usual pale colour.
 *return
 
-*comment ── LAYER 3: STREET ── Who is about, gated by street_life. Working-day lines only Morning to Dusk; Marketday is full when street_life is "normal" and shows as absence otherwise.
+*comment ── LAYER 3: STREET ── Who is about, gated by street_life. Rewritten 2026-10-07 (the user: the street read like a ghost town, with no guards and no life beyond timber and the market).
+*comment Each visit prints THREE sentences, one from each of three independent slots, each rolled on its own, so the same few lines never come up together: (A) the WORK of the town (what the
+*comment timber trade and the market are doing), (B) TOWN LIFE (residents: water, children, bread, animals, peddlers, a clerk from the Hall), (C) the WATCH and the draught animals (two of the watch in
+*comment grey coats with the river-serpent badge, oxen and horses at the rails). The pool depends on the hour and the state of the town: a storm that has emptied the street, Pre-Dawn, Night,
+*comment Dusk, the rest day, a market day, and an ordinary working day (which itself has its own work lines for Morning, Midday and Afternoon). No line names the day of the week: the
+*comment day shows only in what the town is doing (closed yards and a bell on the rest day, full tailboards on a market day). No dialogue, no names. Every pool below has a fixed size, rolled with *rand in
+*comment its own sub-label, so a new line is added by raising that number.
 *label tm_street
-*temp tm_work false
-*if (((time_period = "Morning") or (time_period = "Midday")) or ((time_period = "Afternoon") or (time_period = "Dusk")))
-  *set tm_work true
-*temp tm_roll 1
-*rand tm_roll 1 2
-*if ((street_life = "empty") and (tm_work))
-  The square is deserted. The carts stand under tarpaulins against the shed walls, the shutters are up along every street, and the only movement is a single figure in an oilskin cape crossing between two doors.
-  *if (day_of_week = "Marketday")
-    It is Marketday, but the farm carts have not come up the roads and the stalls are lashed shut.
-*elseif (tm_night)
-  *if (tm_roll = 1)
-    The square is silent but for the lantern at the watch post, burning steady beside its closed door, and somewhere on the forest side a dog barking at nothing.
-  *else
-    A single lantern burns at the watch post and another over the door of the inn, and the streets between them are empty and dark.
+*if ((street_life = "empty") and ((((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon")) or (time_period = "Dusk")))
+  *gosub tm_st_empty
+*elseif (time_period = "Pre-Dawn")
+  *gosub tm_st_predawn
+*elseif (time_period = "Night")
+  *gosub tm_st_night
 *elseif (time_period = "Dusk")
-  *if (tm_roll = 1)
-    The day's last wagons come in off the roads and turn toward the inn yard, and the shed doors are pulled shut one after another.
-  *else
-    Shutters go up along the street, and men and women lead their teams across the square toward the stables with their lamps lit.
+  *gosub tm_st_dusk
 *elseif (day_of_week = "Hallowday")
-  The square is quiet and the yards are shut. A few families in clean clothes cross toward the middle of the town, and a man walks his horse slowly over the paving with no load behind it.
+  *gosub tm_st_rest
 *elseif (day_of_week = "Marketday")
-  *if (street_life = "normal")
-    The square is full to its edges. Farm carts are drawn up in rows with their tailboards down, buyers shout over one another, and wagons loaded with finished planks and barrels wait their turn at the road.
-  *else
-    It is Marketday, but the weather has thinned it. A few carts stand in the lee of the sheds, and the buyers move briskly from one to the next with their collars up.
-*elseif (tm_roll = 1)
-  Wagons stand loading at the shed doors while men and women in dusty coats work around them, and a boy runs across the square with a rolled paper in his fist.
+  *gosub tm_st_market
 *else
-  Planks go up onto a wagon bed in a steady, clattering line, and a pair of men in leather aprons walk the ranks of stacked ash, tapping the ends with their knuckles.
+  *gosub tm_st_day
+*return
+
+*comment ── a working day, Morning to Afternoon ──
+*label tm_st_day
+*temp st_a 1
+*temp st_b 1
+*temp st_c 1
+*rand st_b 1 8
+*rand st_c 1 6
+*if (time_period = "Morning")
+  *rand st_a 1 6
+  *if (st_a = 1)
+    Farm carts come in along the roads from the villages, their drivers walking beside tired oxen, and turn toward the Market's yard gate.
+  *elseif (st_a = 2)
+    A crew of men with axes on their shoulders and a mule loaded with chains and wedges walks out along the forest road.
+  *elseif (st_a = 3)
+    A team of oxen drags a long trunk in between the gateposts on skids, the driver walking at the lead ox's head with a goad.
+  *elseif (st_a = 4)
+    The saw frame takes up its whine at the mill, and mill hands in sawdust-grey coats stream down the lane toward it.
+  *elseif (st_a = 5)
+    A string of wagons is being hitched up in front of the Split Pine for the road to Port Valen, and the drivers shout across the teams.
+  *else
+    Boys carry bundles of tools from the Workshops' lane to the mill and back at a run, dodging the wheels.
+*elseif (time_period = "Midday")
+  *rand st_a 1 6
+  *if (st_a = 1)
+    The saw frame's whine drops for the noon rest, and mill hands sit along the rail with bread and onions on their knees.
+  *elseif (st_a = 2)
+    Teamsters water their horses at the trough while a boy holds the bridles and a groom checks the hooves.
+  *elseif (st_a = 3)
+    A woman sells hot pies from a covered tray at the corner of the square, and a queue of hungry carters has already formed.
+  *elseif (st_a = 4)
+    Two timber inspectors in long coats move down a stack of ash, tapping each end-grain with a mallet and chalking a mark.
+  *elseif (st_a = 5)
+    The hammer at the small smithy at the lane's end rings steadily, and a wagoner holds his horse's hoof out for the farrier.
+  *else
+    A clerk from the Factor's Hall hurries across the paving with a satchel and a rolled sheet, pausing at the foot of the steps to straighten his coat.
+*else
+  *comment Afternoon
+  *rand st_a 1 6
+  *if (st_a = 1)
+    Planks go up onto a wagon bed in a steady, clattering line while a tallyman marks each one on a board.
+  *elseif (st_a = 2)
+    Oxen stand yoked and patient at the rails while their drivers argue over how a load should be roped.
+  *elseif (st_a = 3)
+    A wheelwright's apprentice rolls a new wheel along the lane toward the square like a hoop, grinning at his own cleverness.
+  *elseif (st_a = 4)
+    A cart of barrels creaks past with a boy riding on top, and a hog trots after it hoping for spilled grain.
+  *elseif (st_a = 5)
+    Farm carts leave the Market with sacks of salt and bars of iron where the produce was, and empty crates rattling in the back.
+  *else
+    Two men sit in the shade of a stack, one splitting a hickory shaft and the other holding the end while they argue about a cart's weight.
+*gosub tm_st_life
+*gosub tm_st_watch
+*return
+
+*comment ── a market day: the square is full (street_life normal) or thinned by the weather ──
+*label tm_st_market
+*temp st_a 1
+*temp st_b 1
+*temp st_c 1
+*rand st_b 1 8
+*rand st_c 1 6
+*if (street_life = "normal")
+  *rand st_a 1 4
+  *if (st_a = 1)
+    The square is full to its edges. Farm carts stand drawn up in rows with their tailboards down, and buyers shout over one another.
+  *elseif (st_a = 2)
+    Wagons loaded with finished planks and barrels wait their turn at the road, and carters call to the crowd to give way.
+  *elseif (st_a = 3)
+    Hens complain in wicker crates along a cart rail, a pig squeals somewhere in the crush, and a boy pushes through with a basket of eggs held over his head.
+  *else
+    A farmer weighs a sack of grain on the beam-scale at the Market's gate, with a ring of onlookers watching the needle.
+*else
+  *rand st_a 1 2
+  *if (st_a = 1)
+    A few carts stand in the lee of the sheds, and the buyers move briskly from one to the next with their collars up.
+  *else
+    The farm carts have come in thin, and their drivers sit on the shafts with their hoods up, waiting for custom.
+*gosub tm_st_life
+*gosub tm_st_watch
+*return
+
+*comment ── the rest day: the yards are shut, nothing moves for work ──
+*label tm_st_rest
+*temp st_a 1
+*temp st_b 1
+*temp st_c 1
+*rand st_a 1 3
+*rand st_b 1 3
+*rand st_c 1 3
+*if (st_a = 1)
+  The yards are shut and no wagon moves, and the only sound is a single bell somewhere beyond the Workshops' lane.
+*elseif (st_a = 2)
+  The saw frame stands still, and the quiet carries the creak of a loose shutter from one end of the square to the other.
+*else
+  The sheds and the Market's gate stand shut, and a few chickens have the paving to themselves.
+*if (st_b = 1)
+  Families in clean clothes cross toward the bell, the children scrubbed and sullen.
+*elseif (st_b = 2)
+  A man walks his horse slowly over the paving with no load behind it, stopping to let it drink at the trough.
+*else
+  Women sit on the steps of the houses with their sewing, and a boy sails a bark boat down the gutter beside them.
+*if (st_c = 1)
+  Two of the watch stand at the road end with nothing to do, one of them whittling a peg.
+*elseif (st_c = 2)
+  A pair of oxen graze on the verge by the forest road with their yokes off.
+*else
+  The watch pass through the square once, in grey coats, at an unhurried walk, and nobody gives them a glance.
+*return
+
+*comment ── dusk: the day's traffic coming in ──
+*label tm_st_dusk
+*temp st_a 1
+*temp st_b 1
+*temp st_c 1
+*rand st_a 1 4
+*rand st_b 1 4
+*rand st_c 1 3
+*if (st_a = 1)
+  The day's last wagons come in off the roads and turn toward the Split Pine's yard, and the shed doors are pulled shut one after another.
+*elseif (st_a = 2)
+  Shutters go up along the street, and men and women lead their teams across the square toward the stables with their lamps lit.
+*elseif (st_a = 3)
+  Mill hands walk home in twos and threes with their coats over their shoulders, grey with sawdust to the knees.
+*else
+  A tired string of mules is led in from the forest road with empty panniers, and a groom runs out of the Pine's arch to take them.
+*if (st_b = 1)
+  Smoke thickens above the chimneys, and somewhere a woman calls a child in for supper in a voice that carries.
+*elseif (st_b = 2)
+  Bakers' boys cross the paving with trays of unsold rolls toward the Pine, and the hungriest carters follow them.
+*elseif (st_b = 3)
+  A pack of dogs trots along the lane in the last light, following the smell of the Split Pine's kitchen.
+*else
+  Lamplight comes on in the upper windows one by one, and a woman leans out to take in her washing.
+*if (st_c = 1)
+  The watch change at the post at the road end: two grey coats go off down the lane, and two take their place with a lantern.
+*elseif (st_c = 2)
+  Oxen are unyoked at the rails and led off steaming toward the stalls, and a boy pitches hay in front of them.
+*else
+  A pair of the watch walk the square with a lantern between them, trying each shed door as they pass.
+*return
+
+*comment ── night ──
+*label tm_st_night
+*temp st_a 1
+*temp st_b 1
+*temp st_c 1
+*rand st_a 1 3
+*rand st_b 1 4
+*rand st_c 1 3
+*if (st_a = 1)
+  Lamplight shows in the shutters of the Split Pine, with the low noise of voices and a fiddle somewhere inside it.
+*elseif (st_a = 2)
+  A late wagon rolls in from the river road with its lamps swinging, and the hooves of its team are loud on the empty paving.
+*else
+  The square is silent but for the creak of the signboard on its chains and the drip of the trough.
+*if (st_b = 1)
+  A dog barks at nothing on the forest side, and another answers from the farm roads.
+*elseif (st_b = 2)
+  Somebody sings low and badly on the Pine's steps until a window opens and a shoe comes out of it.
+*elseif (st_b = 3)
+  A cat crosses the paving and vanishes under the nearest shed, and a stack of boards ticks as the night air cools it.
+*else
+  A woman crosses the square with a shuttered lantern, going quickly toward a house where a light has been left burning.
+*if (st_c = 1)
+  A lantern burns at the watch post and another over the Pine's door, and two of the watch pass through the square at a slow walk, their boots loud on the paving.
+*elseif (st_c = 2)
+  One of the watch sits on a stool at the post with a lantern at his feet, and a pair of oxen shift in the dark of the stalls across the square.
+*else
+  The watch post's lantern burns steady, and a grey-coated figure stands with his back to the wall beside it, watching the road.
+*return
+
+*comment ── Pre-Dawn: the town waking ──
+*label tm_st_predawn
+*temp st_a 1
+*temp st_b 1
+*temp st_c 1
+*rand st_a 1 3
+*rand st_b 1 3
+*rand st_c 1 3
+*if (st_a = 1)
+  A baker's chimney is already smoking, and the smell of baking bread drifts out across the square.
+*elseif (st_a = 2)
+  The first farm carts creak in along the roads with their lamps still lit, the drivers hunched on the shafts.
+*else
+  Forest crews gather in the dark at the gateposts on the forest road, stamping their feet and blowing on their hands.
+*if (st_b = 1)
+  A woman hauls a pail up out of the well and carries it off with a shoulder yoke, slopping.
+*elseif (st_b = 2)
+  A boy runs between the houses with a taper, lighting the lamps that were left to burn down in the night.
+*else
+  A few windows have lit behind their shutters, and the sound of a kettle lid and of boots being pulled on carries into the lane.
+*if (st_c = 1)
+  The watch at the post feed a small brazier and stamp their feet, watching the road for the first wagons.
+*elseif (st_c = 2)
+  The oxen are being yoked in front of the stalls in the dark, steam rising from their backs.
+*else
+  The night watch hand the lantern over to two fresh grey coats at the post, with a few low words that do not carry.
+*return
+
+*comment ── a storm has emptied the street (street_life "empty", in the working hours) ──
+*label tm_st_empty
+*temp st_a 1
+*temp st_b 1
+*temp st_c 1
+*rand st_a 1 2
+*rand st_b 1 2
+*rand st_c 1 2
+*if (st_a = 1)
+  The square is deserted. The carts stand under tarpaulins against the shed walls, and the shutters are up along every street.
+*else
+  Nothing moves on the paving but the water running between the stones, and the saw frame stands still under its streaming shed.
+*if (st_b = 1)
+  A single figure in an oilskin cape crosses between two doors and does not stop.
+*else
+  Smoke is torn from the chimneys as it leaves them, and a loose shutter bangs somewhere out of sight.
+*if (st_c = 1)
+  The watch have drawn into the post and shut its door, with a thread of smoke at its chimney.
+*else
+  A wagon horse stamps and blows in the Pine's stalls, and the sound carries across the square.
+*return
+
+*comment ── town life (slot B), shared by the working day and the market days: residents, not work ──
+*label tm_st_life
+*if (st_b = 1)
+  Women with wooden pails wait their turn at the well, talking low, while a small boy tries to peer down the shaft until someone hauls him back by the collar.
+*elseif (st_b = 2)
+  A baker's boy cuts across the square with a tray of rolls balanced on his head, steering by the smell.
+*elseif (st_b = 3)
+  Children chase a hoop between the stacks until a man in a leather apron shouts them off.
+*elseif (st_b = 4)
+  A dog sleeps in the sun at the mouth of the Workshops' lane, and a hen picks her way across the paving as if she owned it.
+*elseif (st_b = 5)
+  A woman beats a rug over an upper sill, and a cloud of fine pale dust drifts down onto the street.
+*elseif (st_b = 6)
+  An old man sits on an upturned barrel beside the Market's gate, whittling a peg and watching everyone who passes.
+*elseif (st_b = 7)
+  A peddler with a tray of ribbons, needles and horn buttons works along the edge of the square, calling softly.
+*else
+  Two women argue about the price of eggs at the back of a farm cart, and neither is getting what she wants.
+*return
+
+*comment ── the watch and the draught animals (slot C), shared by the working day and the market days ──
+*label tm_st_watch
+*if (st_c = 1)
+  Two of the watch, in grey coats with the river-serpent badge stitched on their sleeves, walk the square at an even pace, looking at everything.
+*elseif (st_c = 2)
+  One of the watch leans on the post at the road end with his staff, watching the wagons come and go.
+*elseif (st_c = 3)
+  Oxen stand yoked at the rails, chewing and patient, with a drover asleep on the shaft of the nearest cart.
+*elseif (st_c = 4)
+  A string of pack mules with empty panniers is led across the square by a boy with a switch.
+*elseif (st_c = 5)
+  A saddled horse stands at the Split Pine's rail with a traveller's pack hanging from the saddle horn.
+*else
+  One of the watch stops a carter whose wagon sits low on its axle, and walks slowly down its length counting sacks.
 *return
 
 *comment ── THE HOURS: the one place that decides what is open. Sets the tm_ok_* flags; every closure page calls it again, so they read the clock rather than a stale hub temp. ──
 *label tm_hours
-*comment Morning through Afternoon is the working day for the Sawmill, the Workshops and the Factor's Hall; the Market (open air) trades through Dusk. Hallowday is the rest day. The
+*comment Morning through Afternoon is the working day for the Workshops and the Factor's Hall; the Market (open air) and the General Store trade through Dusk. Hallowday is the rest day. The
 *comment Market also closes at street_life "empty".
 *set tm_ok_market false
-*set tm_ok_mill false
+*set tm_ok_store false
 *set tm_ok_works false
 *set tm_ok_hall false
 *if (not(day_of_week = "Hallowday"))
   *if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
-    *set tm_ok_mill true
     *set tm_ok_works true
     *set tm_ok_hall true
   *if ((((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon")) or (time_period = "Dusk"))
+    *set tm_ok_store true
     *if (not(street_life = "empty"))
       *set tm_ok_market true
+*comment The wagon lot is part of the Market (it follows the Market hours). The hub shows a shortcut to it only while a line to Port Valen is making up (its day of the week, which the prose never names) or the
+*comment player holds a job that sets out from here, so nobody has to go through the Market page.
+*set tm_lot_show false
+*if (((rj_escort_stage = "active") and (rj_escort_from = "tm")) and (campaign_day <= rj_escort_until))
+  *set tm_lot_show true
+*if ((not(rj_escort_stage = "active")) and (day_of_week = "Tideday"))
+  *set tm_lot_show true
 *return
 
 *comment ── CLOSURE PAGES: each costs no time, sets nothing, and returns here. They read the clock and the derived flags directly, so they play from any label. ──
@@ -176,8 +477,8 @@ A paved square opens where the old imperial road comes up out of the lowlands an
 *set tm_which "market"
 *goto tm_closed
 
-*label tm_closed_mill
-*set tm_which "mill"
+*label tm_closed_store
+*set tm_which "store"
 *goto tm_closed
 
 *label tm_closed_works
@@ -192,8 +493,8 @@ A paved square opens where the old imperial road comes up out of the lowlands an
 *gosub_scene calendar update_hub_condition
 *if (tm_which = "market")
   [b]◈ THE MARKET[/b]
-*elseif (tm_which = "mill")
-  [b]◈ THE SAWMILL[/b]
+*elseif (tm_which = "store")
+  [b]◈ THE GENERAL STORE[/b]
 *elseif (tm_which = "works")
   [b]◈ THE WOODWORKERS' WORKSHOPS[/b]
 *else
@@ -201,29 +502,27 @@ A paved square opens where the old imperial road comes up out of the lowlands an
 *line_break
 *if (day_of_week = "Hallowday")
   *if (tm_which = "market")
-    The yard gates are chained, the grading boards turned to the wall, and the stalls folded with their awnings rolled up. A chalked slate beside the gate says that the market keeps the rest day.
-  *elseif (tm_which = "mill")
-    The saw frame stands still with its blade lifted clear and a chock under the wheel. The yard is swept and empty.
+  The yard gates are chained, the grading boards turned to the wall, and the stalls folded with their awnings rolled up. A paper notice beneath a wooden hood beside the gate says that the market keeps the rest day.
+  *elseif (tm_which = "store")
+    The shutters are up and barred, and a card in the window says that the store keeps the rest day. The hooks outside have been taken in.
   *elseif (tm_which = "works")
     The workshop doors are shut and the benches inside are covered. Nobody works on the rest day.
   *else
-    The doors of the hall are shut and the shutters closed. A slate by the door says that it keeps the rest day.
+  The doors of the hall are shut and the shutters closed. A paper notice beneath a wooden hood by the door says that it keeps the rest day.
 *elseif ((street_life = "empty") and (tm_which = "market"))
   The weather has cleared the ground. Tarpaulins are lashed down hard over the stacks, the stalls are folded away, and the yard gate is shut and barred.
 *elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
   *if (tm_which = "market")
     The yard gate is chained for the night and the stalls are gone, leaving bare ground where loose straw turns in the wind. A lantern burns on a post beside the bays, and nothing else moves.
-  *elseif (tm_which = "mill")
-    The saw frame is dark and still, and the yard is shut behind its fence.
+  *elseif (tm_which = "store")
+    The shutters are up and a bar lies across the door. The coils and lanterns have been taken in, and only the empty hooks show beneath the board.
   *elseif (tm_which = "works")
     The workshops are barred and dark, and the smell of glue and fresh shavings hangs in the street outside.
   *else
     The doors are shut and a lantern burns at the foot of the steps. The windows are dark.
 *else
-  *comment Dusk: the workday is over for the three working places (the Market trades through Dusk, so it never gets this page).
-  *if (tm_which = "mill")
-    The saw frame has stopped, and the yard is closed for the day, with the blade lifted out of the cut.
-  *elseif (tm_which = "works")
+  *comment Dusk: the workday is over for the two working places (the Market and the General Store trade through Dusk, so neither gets this page).
+  *if (tm_which = "works")
     The benches are cleared and the doors pulled shut for the day, and the shavings are swept into heaps by the walls.
   *else
     The doors of the hall have been closed for the day, and the counter windows are shuttered.

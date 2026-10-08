@@ -1,0 +1,135 @@
+*comment ====================================================================================
+*comment THE LANE (Barleycross): reached from the Barleycross hub (barleycross.txt). The village's one street: a farmstead on each side, house, barn and yard fronting it with strips and crofts behind,
+*comment as in a real street village. (Renamed from "Farm Row" 2026-10-07 when the user asked whether a row of "larger farmsteads" and unattended gate tables were historical: they were not, so the
+*comment lane is plain, its farms are of every size, and someone minds each gate.) It stands for the whole village, not for one farm. Prose only: the sellers at the gates and their wares are SCENERY,
+*comment nothing is for sale (no food items, prices or shop yet, the user's call), and the trading system is never explained here. The one mechanic is a hayloft bed: a household lets a traveller
+*comment sleep in a loft for one copper. The rules treat it as a SHARED bunk (no sleep-quality buff, 1 HP a night, and the wool blanket's +1 HP works). The paid loft stays the player's (bc_loft_paid)
+*comment until they sleep in it. What the household says is DESCRIBED, not quoted: it repeats, and the user's rule is that repeating dialogue is described. Always open. Not in *scene_list.
+*comment ====================================================================================
+
+*label bc_lane
+*set bc_lane_seen true
+*set minutes_to_pass 5
+*set time_advance_call_id "bc_lane_1"
+*gosub_scene timbermouth/barleycross/barleycross bc_walk_time
+*goto bc_lane_lane
+
+*label bc_lane_lane
+*temp row_roll 1
+*rand row_roll 1 4
+[b]◈ THE LANE[/b]
+*line_break
+The lane runs south from the common as the village's one street, with a farmstead on each side every fifty paces or so, some large and some barely more than a cottage and a shed, all fronting the ruts with their gable ends and their yard gates. Behind each house lie its barn, its midden and a strip of garden, and behind those the long narrow fields run out toward the hedges. Thatch hangs low over the doors, hay and barley ricks stand in the yards, and the ruts are deep and churned by cart wheels and hooves. Here and there a woman or a child sits at a gate with a basket or a crate to sell to whoever passes, and the whole lane smells of dung, sweet hay, boiled roots and woodsmoke.
+
+*if (weather = "Rain")
+  Rain drips from the thatch eaves and runs along the ruts, and every gate table has been dragged under a lean-to.
+*elseif (weather = "Storm")
+  Wind tears at the hedge and bangs the loft doors along the whole lane, and every table has been taken in.
+*elseif (weather = "Fog")
+  Mist hides the far end of the lane, and the farmsteads show only as the nearest gate and a faint glow of fire.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow lies in the ruts, and every yard has a path trodden through it from the house to the barn.
+*elseif (weather = "Blizzard")
+  Snow drives down the lane in a freezing gale and piles against every gate, and every yard is shut up tight, with only a thread of smoke from each chimney.
+
+*comment ── WEATHER MEMORY (calendar ground_state, strictly no people) ──
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  After days of rain the lane is a trough of thick mud, and the ruts stand full.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The ruts are still dark and wet from the last rain.
+
+*if (row_roll = 1)
+  A woman in a grey apron scatters grain for a flock of hens at a gate, and the whole flock arrives at once.
+*elseif (row_roll = 2)
+  A burly half-orc and a farmhand carry a calf between them through a yard gate on a hurdle, with the cow walking behind and complaining.
+*elseif (row_roll = 3)
+  A girl sits on a gatepost with her bare heels drumming on the wood and a covered basket in her lap, watching the lane.
+*else
+  A boy leads a cow on a rope across the lane from one meadow to another, and the whole lane waits for her.
+
+*choice
+  # Stop at a gate where something is for sale.
+    *goto bc_lane_table
+  # Look over the hedge into a barn.
+    *goto bc_lane_barn
+  *if (not(bc_loft_paid))
+    *selectable_if ((((gold * 100) + (silver * 10)) + copper) >= 1) # [1 Copper Bit] Ask at a gate for a place in a hayloft.
+      *goto bc_lane_loft
+  *if (bc_loft_paid)
+    # Climb to the hayloft you paid for.
+      *goto bc_lane_sleep_menu
+  # Walk back to the common.
+    *goto_scene timbermouth/barleycross/barleycross barleycross
+
+*label bc_lane_table
+An old woman sits on a stool just inside the gate with a hen-wire cage of brown eggs at her feet and a crock under a cloth on her knee. She looks you over without much interest, and without getting up lets you know with a lift of her chin that anything you want is a matter for you and her. Further down the lane a boy minds a crate of cabbages and a barrow of turnips for his mother, and at the next gate a man is cutting a cheese in the yard and does not look round.
+*page_break Turn back to the lane…
+*goto bc_lane_lane
+
+*label bc_lane_barn
+Through the gap in the hedge a long barn stands open on its yard side, its floor deep in straw. A row of cows is tied in stalls along one wall, a stack of hay rises to the rafters, and a pair of boys are pitching it down through a hatch. Chickens walk freely in and out among the cows' legs, and a barn cat sits on a beam and looks at you without interest.
+*page_break Turn back to the lane…
+*goto bc_lane_lane
+
+*comment ── THE HAYLOFT ── One copper buys one night in a loft, kept until the player has slept in it; it works like a shared bunk (no quality buff), so a night heals 1 HP and the wool blanket adds +1.
+*label bc_lane_loft
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount -1
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*set bc_loft_paid true
+A woman at the third gate looks you up and down, looks at the sky, and points with her chin at the barn. She says the loft is dry, warns you against a pipe, and holds out her palm for a copper. You count it into her hand, and she goes back to the cow she was milking.
+*page_break Climb the ladder…
+*goto bc_lane_sleep_menu
+
+*label bc_lane_sleep_menu
+[b]◈ THE HAYLOFT[/b]
+*line_break
+The ladder comes up into a long dark loft under the thatch, with the smell of hay and the warmth of the cows coming up through the floor boards. A heap of hay has been shaken out flat against the gable end, and the ridge is hung with bundles of herbs to dry. Light comes in through the cracks in the boards.
+*choice
+  # Burrow into the hay and sleep. [~8 Hours]
+    *goto bc_lane_sleep
+  # Climb back down to the lane.
+    *goto bc_lane_lane
+
+*label bc_lane_sleep
+*set hours_to_pass 8
+*set minutes_to_pass 0
+*set time_advance_call_id "bc_lane_sleep"
+*gosub_scene calendar advance_time
+
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*set sleep_location_id "barleycross_loft"
+*set sleep_is_shared true
+*set sleep_is_permanent_home false
+*set sleep_tier_name "none"
+*set sleep_tier_stat1 "none"
+*set sleep_tier_bonus1 0
+*set sleep_tier_stat2 "none"
+*set sleep_tier_bonus2 0
+*gosub_scene calendar resolve_sleep
+*set bc_loft_paid false
+
+You burrow into the hay and pull your cloak over you, and the loft is warm and dark and smells of summer. You sleep to the sound of the cows shifting below.
+
+*if ((time_period = "Morning") or (time_period = "Pre-Dawn"))
+  A cock crows from the yard before there is any light in the cracks, and the barn begins to clatter below you. Your limbs are loose and rested.
+*elseif (time_period = "Dusk")
+  You wake to the clatter of the milking pails and an amber light in the cracks. The ache of the road has eased.
+*elseif (time_period = "Night")
+  You wake in the dark to the shifting of the cows below and the tick of the thatch. Your fatigue has cleared.
+*else
+  Daylight lies in bars across the hay when you wake, and the yard is quiet. Your energy is renewed.
+
+*if (not(sleep_gear_note = ""))
+  *line_break
+  ${sleep_gear_note}
+
+*page_break Climb down into the yard…
+*goto bc_lane_lane

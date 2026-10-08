@@ -403,6 +403,38 @@ window.INVENTORY = {
       equip: { slot: "armor", id: "court_coat" },
       statBonus: true
     },
+    {
+      id: "longshade_quarterstaff", category: "weapons", owned: "has_longshade_quarterstaff", slot: "Weapon",
+      name: function (s) { var n = 1 + (Number(s.spare_longshade_quarterstaff) || 0); return "Ash Quarterstaff" + (n > 1 ? " ×" + n : ""); },
+      description: "Six-foot staff of straight-grained Longshade ash, planed round and oiled.",
+      traits: "1d6 Bludgeoning, One-Handed",
+      badge: function (s) { return s.equipped_weapon_id === "longshade_quarterstaff" ? "Equipped" : ""; },
+      equip: { slot: "weapon", id: "longshade_quarterstaff" }
+    },
+    {
+      id: "longshade_spear", category: "weapons", owned: "has_longshade_spear", slot: "Weapon",
+      name: function (s) { var n = 1 + (Number(s.spare_longshade_spear) || 0); return "Longshade Spear" + (n > 1 ? " ×" + n : ""); },
+      description: "Seven-foot Longshade ash shaft with a leaf-bladed iron head.",
+      traits: "1d6 Piercing, Reach, One-Handed",
+      badge: function (s) { return s.equipped_weapon_id === "longshade_spear" ? "Equipped" : ""; },
+      equip: { slot: "weapon", id: "longshade_spear" }
+    },
+    {
+      id: "longshade_shortbow", category: "weapons", owned: "has_longshade_shortbow", slot: "Weapon, two-handed",
+      name: function (s) { var n = 1 + (Number(s.spare_longshade_shortbow) || 0); return "Longshade Shortbow" + (n > 1 ? " ×" + n : ""); },
+      description: "Short ash stave bow backed with sinew and strung with waxed hemp.",
+      traits: "1d6 Piercing, Ranged, Two-Handed",
+      badge: function (s) { return s.equipped_weapon_id === "longshade_shortbow" ? "Equipped" : ""; },
+      equip: { slot: "weapon", id: "longshade_shortbow" }
+    },
+    {
+      id: "wooden_clogs", category: "apparel", owned: "has_wooden_clogs", slot: "Feet",
+      name: function (s) { var n = 1 + (Number(s.spare_wooden_clogs) || 0); return "Wooden Clogs" + (n > 1 ? " ×" + n : ""); },
+      description: "Deep-heeled ash clogs carved from the block.",
+      traits: "Weather wear: rain -15%",
+      badge: function (s) { return s.equipped_feet_id === "wooden_clogs" ? "Worn" : "Stowed"; },
+      equip: { slot: "feet", id: "wooden_clogs" }
+    },
     // GEN:END gear_items
     // ---- weapons ----
 

@@ -26,7 +26,7 @@ let bad = 0;
 function fail(msg) { console.error("  FAIL: " + msg); bad++; }
 
 const ids = Object.keys(O.nodes);
-const KINDS = ["city", "town", "road", "hills", "forest"];
+const KINDS = ["city", "town", "village", "road", "hills", "forest"];
 const seenEdges = {};
 O.edges.forEach((e) => {
   [e[0], e[1]].forEach((id) => { if (!O.nodes[id]) fail("a road joins \"" + id + "\", which is not a tile"); });
@@ -41,15 +41,22 @@ ids.forEach((id) => {
   if (!/^[a-z][a-z0-9_]*$/.test(id)) fail("tile id \"" + id + "\" must be a lowercase word (it is stored in a saved variable)");
   if (spots[k]) fail(id + " and " + spots[k] + " sit on one spot"); spots[k] = id;
   ["name", "kind", "region", "info", "here"].forEach((f) => { if (!n[f]) fail("tile " + id + " has no " + f); });
+  if (n.climate !== undefined && !(Number.isInteger(n.climate) && n.climate >= -3 && n.climate <= 3)) fail("tile " + id + " has a climate that is not a whole number from -3 to 3");
+  ["hereNight", "hereStorm"].forEach((f) => { if (n[f] !== undefined && !(typeof n[f] === "string" && n[f])) fail("tile " + id + " has a " + f + " that is not a sentence"); });
+  if (n.also !== undefined && (!KINDS.includes(n.also) || n.also === n.kind)) fail("tile " + id + " has an \"also\" of \"" + n.also + "\", which must be a different kind from " + KINDS.join(", "));
+  if (n.water !== undefined && !(typeof n.water === "string" && n.water)) fail("tile " + id + " has a water that is not a short phrase");
+  if (["road", "forest", "hills"].includes(n.kind) && !n.walk) fail("tile " + id + " is a " + n.kind + " tile with no walk text, which the caravan escort prints when the line comes in");
+  if (!n.territory || !(O.territories && O.territories[n.territory])) fail("tile " + id + " has territory \"" + n.territory + "\", which is not in TERRITORIES");
   if (n.kind && !KINDS.includes(n.kind)) fail("tile " + id + " has kind \"" + n.kind + "\", which the panel has no colour for (" + KINDS.join(", ") + ")");
   if (n.kind && !new RegExp("\\.ow-k-" + n.kind + " \\.ow-dot").test(css)) fail("overworldmap.css has no colour for kind \"" + n.kind + "\"");
 });
 if (!/\*set ow_pos "[a-z0-9_]+"|\*create ow_pos "([a-z0-9_]+)"/.test(startup)) fail("startup.txt does not create ow_pos");
 const start = (startup.match(/^\*create ow_pos "([a-z0-9_]+)"/m) || [])[1];
 if (start && !O.nodes[start]) fail("startup.txt starts ow_pos on \"" + start + "\", which is not a tile");
-["ow_dest", "ow_trip_ok", "ow_trip_locked", "locked_ow_trip_page_id", "ow_legs", "ow_leg_i", "ow_leg_minutes", "ow_rations_total", "ow_exposure_pct", "ow_can_camp", "ow_camp_ok", "ow_camp_wet", "ow_camp_locked", "locked_ow_camp_page_id", "exposure_camping", "rations_eaten_last"].forEach((v) => { if (!new RegExp("^\\*create " + v + " ", "m").test(startup)) fail("startup.txt does not create " + v); });
+["ow_dest", "ow_trip_ok", "ow_trip_locked", "locked_ow_trip_page_id", "ow_legs", "ow_leg_i", "ow_leg_minutes", "ow_rations_total", "ow_exposure_pct", "ow_can_camp", "ow_camp_ok", "ow_camp_mode", "ow_camp_minutes", "ow_dawn_ok", "ow_dawn_hours", "ow_camp_wet", "ow_camp_locked", "locked_ow_camp_page_id", "exposure_camping", "rations_eaten_last", "ow_water", "climate_shift"].forEach((v) => { if (!new RegExp("^\\*create " + v + " ", "m").test(startup)) fail("startup.txt does not create " + v); });
 if (!/# Travel to the tile you picked on the map\./.test(scene)) fail("overworld.txt has lost its one Travel option (the panel presses it)");
 if (!/# Make camp for the night\./.test(scene)) fail("overworld.txt has lost its camp option (the panel presses it)");
+if (!/# Make camp and sleep until dawn\./.test(scene)) fail("overworld.txt has lost its sleep-until-dawn option (the panel presses it)");
 ids.forEach((a) => ids.forEach((b) => {
   const r = O.route(a, b);
   if (!r.ok) return;

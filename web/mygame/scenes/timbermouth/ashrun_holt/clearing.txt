@@ -1,0 +1,127 @@
+*comment ====================================================================================
+*comment THE CHARCOAL CAMP (Ashrun Holt; renamed from "the Burners' Clearing" 2026-10-07 because the jargon (clamps, vents, burners) was unclear: it is a charcoal-making camp, wood stacked in earth-covered mounds and smouldered slowly): reached from the Ashrun Holt hub (ashrun_holt.txt), a walk of ten minutes beyond the last houses. Charcoal clamps smoking like low black hills, a turf hut
+*comment where a burner sleeps beside the fire, and a long bunkhouse where cutters and burners share bunks. The one mechanic is the bunkhouse: a copper for a bunk, a SHARED bunk for resolve_sleep (no
+*comment sleep-quality buff, 1 HP a night, the wool blanket's +1 HP works). The bunk stays the player's (ah_bunk_paid) until they sleep in it. What the bunkhouse keeper says is DESCRIBED, not
+*comment quoted (it repeats, and repeating dialogue is described, the user's rule). Nothing is for sale. Always open. Not in *scene_list: compile.js lists it with verifyFileName.
+*comment ====================================================================================
+
+*label ah_clearing
+*set ah_clearing_seen true
+*set minutes_to_pass 10
+*set time_advance_call_id "ah_clearing_1"
+*gosub_scene timbermouth/ashrun_holt/ashrun_holt ah_walk_time
+*goto ah_clearing_main
+
+*label ah_clearing_main
+*temp clr_roll 1
+*rand clr_roll 1 4
+[b]◈ THE CHARCOAL CAMP[/b]
+*line_break
+A track leads out past the last houses to a patch of forest where the trees have been cut back from a wide stretch of black, burnt earth. This is where the village makes its charcoal. A dozen big mounds, each as high as a man and twice as wide, stand across the ground, every one a heap of stacked logs buried under earth and turf, with thin blue smoke seeping out of it. Beside them lie piles of cordwood waiting to be built into the next mound, and heaps of finished charcoal, black and brittle. The men who tend the mounds sleep in a low hut of poles roofed with turf beside them, and a long log bunkhouse stands under two spruces on the far side. Smoke hangs under the canopy in slow ribbons, and the air tastes of tar, burning wood and cold ash.
+
+*if (weather = "Rain")
+  Rain hisses on the earth of the mounds, and thin grey steam rises from every one.
+*elseif (weather = "Storm")
+  The wind tears the smoke into streamers, and the charcoal makers have stationed themselves along the windward side of the mounds with wet sacks.
+*elseif (weather = "Fog")
+  Mist and smoke have become one grey wall, and the mounds show only as darker humps with a dull red glow at their foot.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Snow melts on the warm earth of the mounds, and the ground around them is bare and black while the forest stays white.
+*elseif (weather = "Blizzard")
+  Snow drives through the trees in a freezing gale, and the charcoal makers have banked their mounds under wet sacks and gone to the bunkhouse stove to wait.
+
+*comment ── WEATHER MEMORY (calendar ground_state, strictly no people) ──
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  After days of rain the ground around the mounds is a black slurry, and the smoke is thick and sour.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The black earth is still damp and soft from the last rain.
+
+*if (clr_roll = 1)
+  A charcoal maker in a leather apron, his face blackened to the eyes, walks slowly around a mound, checking the smoke at the little holes near its foot.
+*elseif (clr_roll = 2)
+  Two men rake the earth back from one side of a finished mound, and a wave of heat and a smell of tar rolls across the clearing.
+*elseif (clr_roll = 3)
+  A dwarf with a blackened beard sits on a log by the hut, eating a heel of bread while he watches a mound, and does not turn his head.
+*else
+  A boy shovels charcoal from a heap into sacks, sneezing and wiping his nose with an arm that leaves a black streak.
+
+*choice
+  # Look at the mounds.
+    Each mound is built with care: logs stacked on end in a dome around a central chimney, sealed under a thick skin of turf and earth so that almost no air gets in, and set alight from the chimney. The wood does not burn but smoulders for days, turning slowly to charcoal. A ring of little holes round the foot lets the charcoal maker control the burn, opening or closing each with a pinch of earth and reading the colour of the smoke. He stays beside the mound night and day, and the ground around it is worn bare by his pacing.
+    *page_break Step back from the heat…
+    *goto ah_clearing_main
+  # Look at the charcoal maker's hut.
+    A low hut of poles roofed with turf stands beside the largest mound, with a heap of logs by its door and a sleeping pallet inside, long since flattened to the shape of one man. A blackened kettle hangs from a tripod outside, a dog lies across the doorway, and the whole hut smells of tar, tobacco and damp wool.
+    *page_break Step back from the hut…
+    *goto ah_clearing_main
+  *if (not(ah_bunk_paid))
+    *selectable_if ((((gold * 100) + (silver * 10)) + copper) >= 1) # [1 Copper Bit] Ask at the bunkhouse for a bunk.
+      *goto ah_clearing_bunk
+  *if (ah_bunk_paid)
+    # Go in to the bunk you paid for.
+      *goto ah_bunk_menu
+  # Walk back to the clearing.
+    *goto_scene timbermouth/ashrun_holt/ashrun_holt ashrun_holt
+
+*comment ── THE BUNKHOUSE ── One copper buys one night in a bunk, kept until the player has slept in it. A shared bunk for the rules.
+*label ah_clearing_bunk
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount -1
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*set ah_bunk_paid true
+An old woman sits on the bunkhouse step with a pipe in her teeth and a lantern at her feet, and she looks you over through the smoke without getting up. She tells you with a jerk of her thumb that the third bunk on the left is free and the stove is lit, and that a copper in the tin by the door settles it. You drop it in, and she goes back to her pipe.
+*page_break Go inside…
+*goto ah_bunk_menu
+
+*label ah_bunk_menu
+[b]◈ THE BUNKHOUSE[/b]
+*line_break
+The bunkhouse is a single long room with a stove in the middle and a double row of bunks along each wall, built into the logs like the berths of a ship. The straw-filled sacks are dark with years of sleepers, blankets hang from pegs, and a boot-rack stands by the door, always crowded. The air is warm, thick with smoke, wet wool and the smell of men who work in the forest.
+*choice
+  # Pull off your boots and sleep. [~8 Hours]
+    *goto ah_bunk_sleep
+  # Go back out to the mounds.
+    *goto ah_clearing_main
+
+*label ah_bunk_sleep
+*set hours_to_pass 8
+*set minutes_to_pass 0
+*set time_advance_call_id "ah_bunk_sleep"
+*gosub_scene calendar advance_time
+
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*set sleep_location_id "ashrun_holt_bunkhouse"
+*set sleep_is_shared true
+*set sleep_is_permanent_home false
+*set sleep_tier_name "none"
+*set sleep_tier_stat1 "none"
+*set sleep_tier_bonus1 0
+*set sleep_tier_stat2 "none"
+*set sleep_tier_bonus2 0
+*gosub_scene calendar resolve_sleep
+*set ah_bunk_paid false
+
+You pull off your boots, climb into the bunk and drag the blanket over you, and the stove ticks and the whole room breathes with snores. You are asleep before the second log settles.
+
+*if ((time_period = "Morning") or (time_period = "Pre-Dawn"))
+  The room is already stirring when you wake, with boots thumping on the boards and the stove being raked. Your limbs are loose and rested.
+*elseif (time_period = "Dusk")
+  You wake to the clatter of the supper kettle and the light going red in the door. The ache of the road has eased.
+*elseif (time_period = "Night")
+  You wake in the dark to the tick of the stove and a chorus of snores. Your fatigue has cleared.
+*else
+  Daylight lies in a bar across the floor when you wake, and the room is empty and quiet. Your energy is renewed.
+
+*if (not(sleep_gear_note = ""))
+  *line_break
+  ${sleep_gear_note}
+
+*page_break Step out into the smoke…
+*goto ah_clearing_main

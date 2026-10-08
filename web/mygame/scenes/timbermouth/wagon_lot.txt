@@ -1,0 +1,138 @@
+*comment ====================================================================================
+*comment THE WAGON LOT (Timbermouth): the Timbermouth end of the caravan escort (port_valen/radiant/hall_escort.txt). A fenced lot on the wagon side of the Market where a line to Port Valen is made up.
+*comment It plays the same part the wagon yard outside the River Gate plays in Port Valen: the master makes the offer here, the player signs here, and the line musters here the next morning. The offer, the signing, the
+*comment muster and the road are the escort scene's own labels; this scene is only the PLACE (place layer, sky layer, a rolled lot-life layer) and the choices that lead into them. The master is the same kind of
+*comment generated person, seeded from the five-day block, so nobody else's job hands out the same face.
+*comment
+*comment The lot is part of the Market, so it follows the Market's hours (tm_ok_market, decided in timbermouth.txt tm_hours). The hub shows a shortcut to it (tm_lot_show) only while a line is making up or the
+*comment player holds this job, so the player does not have to go through the Market page. A line to Port Valen makes up on one day of the week (es_ctx_dow, set by es_set_line; the prose never names it).
+*comment
+*comment Not in *scene_list: compile.js lists it with verifyFileName.
+*comment ====================================================================================
+
+*label tm_lot
+*set es_start "tm"
+*gosub_scene port_valen/radiant/hall_escort es_set_line
+*set minutes_to_pass 5
+*set time_advance_call_id "tm_lot_1"
+*gosub_scene timbermouth/timbermouth tm_walk_time
+*set tm_lot_seen true
+*goto tm_lot_main
+
+*label tm_lot_main
+*comment What the lot is doing for this visit: "offer" (a line is making up and the player has not signed), "waiting" (signed, the line pulls out tomorrow), "muster" (signed, the pull-out is this morning
+*comment and the player is in time), "gone" (signed, and the line pulled out without them), "idle" (nothing is making up).
+*temp tl_state "idle"
+*if (((rj_escort_stage = "active") and (rj_escort_from = "tm")) and (campaign_day < rj_escort_until))
+  *set tl_state "waiting"
+*if (((rj_escort_stage = "active") and (rj_escort_from = "tm")) and (campaign_day = rj_escort_until))
+  *if (clock_hour < 9)
+    *set tl_state "muster"
+  *else
+    *set tl_state "gone"
+*if ((not(rj_escort_stage = "active")) and (day_of_week = es_ctx_dow))
+  *set tl_state "offer"
+*if (tl_state = "gone")
+  *goto_scene port_valen/radiant/hall_escort es_missed
+
+*temp tl_life 1
+*rand tl_life 1 3
+
+[b]◈ THE WAGON LOT[/b]
+*line_break
+Behind the beam-scale at the Market's far side, a long lot of trodden earth has been fenced off with rails and left open to the forest road. Wagons stand in it nose to tail, with ox yokes and spare wheels hung from the rails and a picket line of beasts running down one end. Stacks of ash and bundles of staves wait along the fence under tarps, and the ground is churned to a dark mud wherever the carts turn. The air smells of dung, resin, hot iron and wet straw.
+
+*gosub tm_lot_sky
+
+*if (weather_severity >= 3)
+  The oxen have been led under the lean-to at the end of the lot and stand with their backs to the weather, and the hands have crowded in beside them. Every wagon is sheeted down where it stands.
+*elseif (tl_state = "muster")
+  Four wagons stand nose to tail along the rails with their tarps lashed down over their loads. Oxen shift in their yokes, a hand walks the line tapping each hub with a mallet, and a lead horse stamps at the road end.
+*elseif (time_period = "Morning")
+  *if (tl_life = 1)
+    Hands rake straw under the lean-to while a boy carries water to the oxen in two buckets on a yoke.
+  *elseif (tl_life = 2)
+    A wagon stands with a wheel off while a wheelwright and his apprentice argue over a split felloe, and a hand keeps the ox from wandering.
+  *else
+    Bundles are carried up a plank into a wagon bed, and a hand counts them as they go past.
+*elseif ((time_period = "Midday") or (time_period = "Afternoon"))
+  *if (tl_life = 1)
+    A hand shoes an ox in a sling at the end of the lot, with the animal's foot tied up and its eyes rolling.
+  *elseif (tl_life = 2)
+    Two hands grease an axle with a paddle from a bucket of black fat, and a third lies asleep in the straw with his hat over his face.
+  *else
+    A wagon rolls in off the forest road, its team steaming, and the hands come out to meet it and unhitch the beasts.
+*else
+  *if (tl_life = 1)
+    Teams are led in off the road one by one and rubbed down, and a cookfire is lit under the lean-to.
+  *elseif (tl_life = 2)
+    A hand walks the rails with a lantern and counts the wagons under it, touching each one as he passes.
+  *else
+    A carter sits on an upturned bucket mending a harness strap by the last of the light, while an ox noses at his pocket.
+
+*comment ── The master's presence follows the state of the job. ──
+*if (tl_state = "waiting")
+  The master of the line is at the road end, going over a list with a hand. The wagons stand ready for tomorrow's start.
+*elseif (tl_state = "offer")
+  A line is being made up. The wagons stand along the rails with their loads already roped, and the master of the line walks their length, checking ropes and wheels.
+
+*choice
+  # Look over the wagons and the teams.
+    The wagons are the long, high-sided kind, with iron-tired wheels as tall as a man's chest and a brake lever on the near side. Their beds are loaded with bundles of ash staves wrapped in sacking and crates of pottery packed in straw, roped under tarps that have been oiled until they shine. Oxen are yoked in pairs, broad, slow and patient, with the brand of the carrier on their flanks. A pair of lean horses stands at the road end, with a saddle thrown over the rail beside them.
+    *page_break Turn back to the lot…
+    *goto tm_lot_main
+  *if (tl_state = "offer")
+    # Speak to the master of the line.
+      *goto_scene port_valen/radiant/hall_escort es_offer
+  *if (tl_state = "waiting")
+    # Ask the master when the line rolls.
+      *goto_scene port_valen/radiant/hall_escort es_when
+  *if (tl_state = "muster")
+    # Report to the master of the line.
+      *goto_scene port_valen/radiant/hall_escort es_muster
+  *if (tl_state = "idle")
+    # Ask a hand about work.
+      *goto tm_lot_idle
+  # Walk back to the square. [~5 min]
+    *set minutes_to_pass 5
+    *set time_advance_call_id "tm_lot_leave_1"
+    *gosub_scene timbermouth/timbermouth tm_walk_time
+    *goto_scene timbermouth/timbermouth timbermouth
+
+*comment ── The sky: weather and light only, no people. ──
+*label tm_lot_sky
+*temp tl_night false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set tl_night true
+*if (weather = "Rain")
+  Rain drums on the tarps and the lean-to roof and turns the lot to a field of brown puddles.
+*elseif (weather = "Storm")
+  A gale tears at the rails and drives the rain flat across the lot.
+*elseif (weather = "Fog")
+  Mist hangs over the lot, blurring the far rails and the dark line of the forest.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow settles on the tarps and the rails, and melts in the ruts.
+*elseif (weather = "Blizzard")
+  Snow drives across the lot in a freezing gale and piles against the rails.
+*elseif (weather = "Clear")
+  *if (tl_night)
+    Starlight silvers the rails and the wet edges of the ruts.
+  *elseif (time_period = "Dusk")
+    The low sun lays the long shadows of the wagons across the lot.
+  *else
+    Sunlight lies across the lot and dries the top of the mud.
+*else
+  *comment Overcast
+  A flat grey sky sits low over the lot and drains the color from the tarps.
+
+*comment ── WEATHER MEMORY (calendar ground_state, strictly no people) ──
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  After days of rain the ruts stand full of brown water, and the lot is a churned mire from rail to rail.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The ruts still hold puddles from the last rain.
+*return
+
+*label tm_lot_idle
+A hand sets down a bucket and wipes his hands on his apron. He tells you that nothing is making up today and that the carriers' lines go out when the carriers have loads for them. The board at the Factor's Hall carries the posting when one is open, and the master pays no one who turns up unasked.
+*page_break Turn back to the lot…
+*goto tm_lot_main

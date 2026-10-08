@@ -1,0 +1,186 @@
+*comment ====================================================================================
+*comment ASHRUN HOLT: the forest village nine miles from Timbermouth (overworld tile "fo", overworld-data.js). Built 2026-10-07 on the Barleycross template (the user's village scale: more generic
+*comment than a town, about three places of interest, a headperson, rural, no factor, bank or services), but it is a different KIND of place: a clearing in the Longshade where the Ashrun comes
+*comment out from under the trees, with log houses scattered around it and no street. The three places: the Longhouse (the gathering hall, with the Old Ash on the clearing outside it), the Landing
+*comment (the stream bank where logs are hauled out and stacked) and the Charcoal Camp (earth-covered charcoal mounds and the bunkhouse). The headperson is a SPEAKER, Lysa Thorn (the plan's 8.5, kept at the
+*comment user's word; the plan's ash-limit dispute is NOT used: "disregard any current situation relating to the Ashwood trees, I don't like that political situation").
+*comment The trading system is never explained to the player (the user: they should work it out): prose shows decks, marks and animals, never where anything goes. No items or shop are built.
+*comment The shrine to the Old Ash while the village fells its cousins is left UNREMARKED: the irony is the user's, and nobody in the prose points at it.
+*comment Hours: none; always open. Each place is its own file in this folder (longhouse, landing, clearing). None is in *scene_list: compile.js lists them.
+*comment ====================================================================================
+
+*comment The walk in from the road: charged once here, then straight on to the hub. No speech.
+*label ah_arrive
+*set minutes_to_pass 5
+*set time_advance_call_id "ah_arrive_1"
+*gosub ah_walk_time
+*temp ah_first false
+*if (not(ah_seen))
+  *set ah_first true
+*set ah_seen true
+*if (ah_first)
+  The road narrows to a track between the trunks, with the light going green and the sound of axes coming from somewhere deeper in. Then the trees step back from a clearing, and the village lies spread across it around a great old tree.
+*else
+  The track opens out of the trees onto the clearing.
+*goto ashrun_holt
+
+*label ashrun_holt
+*set current_district "ashrun_holt"
+*gosub_scene calendar update_hub_condition
+*set shop_open ""
+[b]◈ ASHRUN HOLT[/b]
+*line_break
+[b][⏳ Ashrun Holt Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
+*line_break
+*gosub ah_place
+*gosub ah_sky
+*gosub ah_street
+
+*comment BUTTON FORMAT, as the other hubs: destination first, bold, a flavour that does not list stock, then [~N min].
+*choice
+  # [b]The Longhouse[/b]: the long log hall under the old tree. [~5 min]
+    *goto_scene timbermouth/ashrun_holt/longhouse ah_longhouse
+  *if (weather_severity < 3)
+    # [b]The Landing[/b]: the stream bank below the clearing. [~5 min]
+      *goto_scene timbermouth/ashrun_holt/landing ah_landing
+  *if (weather_severity >= 3)
+    # [b]The Landing[/b]: too dangerous in this weather.
+      *goto ah_closed_landing
+  # [b]The Charcoal Camp[/b]: the smoke beyond the last houses. [~10 min]
+    *goto_scene timbermouth/ashrun_holt/clearing ah_clearing
+  # [b]The forest track[/b]: leave the village.
+    *set ow_pos "fo"
+    *goto_scene overworld/overworld ow_here
+
+*comment ── SEVERE WEATHER (weather_severity 3: a storm or a blizzard): the Landing stays on the menu with its reason (the closed-places rule) and plays this page, which costs no time. The Longhouse and the
+*comment Charcoal Camp stay open: the Longhouse is the shelter, and the camp holds the bunkhouse, the village's only beds, so closing it would strand a traveller in a storm. ──
+*label ah_closed_landing
+[b]◈ THE LANDING[/b]
+*line_break
+*if (weather = "Blizzard")
+  You get as far as the head of the path. Below it the stream bank is a white roar, the decks are humps of snow, and the Ashrun is somewhere under the noise, loud and brown and full of ice. You turn back.
+*else
+  You get as far as the head of the path. Below it the Ashrun has come up brown and roaring over its ledges, spray flies across the gravel, and the stacked logs shift and groan on their skids. Nobody is down there, and nobody will be until the water drops. You turn back.
+*page_break Back to the clearing…
+*goto ashrun_holt
+
+*comment ── LAYER 1: PLACE ── Constant geography and smell: no weather, time of day or people.
+*label ah_place
+The trees open around a clearing where the Ashrun runs over grey stones. An old ash grows in its middle, broad enough that its lowest limbs reach over the beaten ground. Strips of cloth and small knotted cords hang from the boughs.
+
+Log houses stand apart around the clearing, roofed in peeled bark. There is no street: hard paths run between doorsteps, chopping blocks, woodpiles, and the stream. The Longhouse stands on the east side beneath the old ash, with a deep porch facing the clearing. Downstream, the bank has been cut into rough decks where logs are hauled from the water and stacked.
+
+Wet bark, green needles, woodsmoke, and charcoal fill the air beneath the trees.
+*return
+
+*comment ── LAYER 2: SKY ── Weather and light only, matched to time_period; no people. The canopy softens it: rain arrives late and drips on after it stops. Closes with the ground's memory of recent weather.
+*label ah_sky
+*temp ah_dark false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set ah_dark true
+*if (weather = "Rain")
+  The rain reaches the clearing as a soft roar high in the canopy, and falls in heavy drops from the leaves long after it has stopped on the open ground.
+*elseif (weather = "Storm")
+  The whole forest roars over the clearing, the great boughs thrash against the sky, and branches fall somewhere in the dark under the trees.
+*elseif (weather = "Fog")
+  Mist lies in the clearing and hangs among the trunks, so that the houses come and go and the old ash vanishes into its own top.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow falls softly through the canopy and lies in patches on the open ground and on the bark shingles.
+*elseif (weather = "Blizzard")
+  Snow drives across the clearing in a freezing gale, and the forest groans beyond the houses.
+*elseif (weather = "Clear")
+  *if (ah_dark)
+    Starlight comes down through the gap over the clearing, and the trunks beyond it are solid black.
+  *elseif (time_period = "Dusk")
+    The low sun comes in level under the boughs and turns the trunks to columns of copper.
+  *else
+    Shafts of light slant down through the canopy and lie in bright patches on the ground.
+*else
+  *comment Overcast
+  *if (ah_dark)
+    A heavy, starless night lies over the clearing, and the forest is a darker dark on every side.
+  *else
+    The light under the canopy is green and dim, and the clearing is the only bright place.
+
+*comment ── WEATHER MEMORY (calendar ground_state, strictly no people) ──
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  After days of rain the tracks are black mud, and the whole forest drips.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The leaves are still dripping, and the tracks are dark and soft.
+*return
+
+*comment ── LAYER 3: STREET ── Three independent rolled slots, each a sentence: (A) the work of the forest, (B) village life, (C) the animals. No dialogue, no names, no day names. Visible variety follows names-data.js "forest_village".
+*label ah_street
+*temp st_a 1
+*temp st_b 1
+*temp st_c 1
+*if (((street_life = "empty") and (not(time_period = "Night"))) and (not(time_period = "Pre-Dawn")))
+  The clearing is deserted. Every door is shut, the wind roars in the canopy, and a single figure in an oiled cape crosses between two houses without looking up.
+  *return
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *rand st_a 1 3
+  *rand st_b 1 3
+  *if (st_a = 1)
+    A red glow shows through the trunks beyond the last house, where a charcoal maker is up with his mounds.
+  *elseif (st_a = 2)
+    The clearing is silent but for the Ashrun's long noise over its stones and the creak of the old ash's boughs.
+  *else
+    A lamp burns in the Longhouse porch, and somebody sits beside it with a cord and a knife, working at a knot.
+  *if (st_b = 1)
+    A dog barks at nothing among the trees, and another answers from the stream bank.
+  *elseif (st_b = 2)
+    Something large moves off through the undergrowth beyond the woodpiles, and the dogs go quiet at once.
+  *else
+    An owl calls from the old ash and is answered from the forest, far off.
+  *return
+*rand st_a 1 6
+*rand st_b 1 6
+*rand st_c 1 6
+*if (st_a = 1)
+  A pair of cutters walk in from the forest with felling axes on their shoulders, their shirts dark with sweat and their boots caked with bark.
+*elseif (st_a = 2)
+  A stocky dwarf with a crosscut saw on his shoulder crosses the clearing toward the stream bank, with a young man trotting to keep up.
+*elseif (st_a = 3)
+  A team of oxen drags a long trunk in along a track on skids, the driver walking at the lead ox's head with a goad.
+*elseif (st_a = 4)
+  A woman sits on a chopping block outside her door, trimming the limbs from a felled sapling with a hatchet.
+*elseif (st_a = 5)
+  A cutter stands at the foot of a woodpile with a maul and a wedge, splitting a section of ash into long clean planks with a few blows.
+*else
+  A cart piled with bark loads creaks across the clearing behind a pair of mules, leaving a smell of tannin hanging in the air.
+*if (st_b = 1)
+  Children play at felling in the leaf mould, taking turns at being the tree.
+*elseif (st_b = 2)
+  A tall half-elf woman sits on the Longhouse porch mending a net of cord, her fingers quick and dark with resin.
+*elseif (st_b = 3)
+  An old man with a white beard sits by the old ash with his back against the trunk and a pipe going, watching the clearing.
+*elseif (st_b = 4)
+  Washing hangs from lines strung between the trunks, and a girl runs between the garments with a pole.
+*elseif (st_b = 5)
+  A woman carries two pails on a yoke up from the stream, her stride unbroken by the weight.
+*else
+  Somebody ties a fresh ribbon to a low bough of the old ash, steps back, and walks away without looking at it again.
+*if (st_c = 1)
+  A big grey dog lies stretched across the Longhouse steps, and everyone going in steps over it.
+*elseif (st_c = 2)
+  Pigs root in the leaf mould at the edge of the clearing, hunting acorns under the oaks.
+*elseif (st_c = 3)
+  A pair of oxen stands yoked at a woodpile, chewing and patient, with a drover asleep on the log between them.
+*elseif (st_c = 4)
+  A string of pack mules is led down a forest path by a boy, their panniers swinging empty.
+*elseif (st_c = 5)
+  Hens scratch among the chips by a chopping block, and a cockerel stands on the block itself and defies the world.
+*else
+  A pair of red squirrels chase each other around the old ash's trunk and up into the boughs.
+*return
+
+*label ah_walk_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return

@@ -1,21 +1,361 @@
 *comment ====================================================================================
-*comment THE WOODWORKERS' WORKSHOPS (Timbermouth, a PLACEHOLDER): the page you reach from the Timbermouth hub (timbermouth.txt). Nothing is placed inside it yet: no people, shops, prices,
-*comment quests or jobs, only the building and the time it costs to walk there.
+*comment THE WOODWORKERS' WORKSHOPS (Timbermouth): the page you reach from the Timbermouth hub (timbermouth.txt). First slice (2026-10-07): the lane, three benches to look in at (the cooper's, the
+*comment wainwright's, who builds the carts and wagons that Edda's wheels go under, and the bowyer's, whose bows are sold at Edda's counter), and ROAN'S WHEEL SHOP at the head of the lane. EDDA'S COUNTER IS THE LANE'S ONE TRADE POINT (the user, 2026-10-07: one counter for the whole lane, not a visit to every bench): the masters leave finished goods there to be sold on commission and she keeps the tally, so the quarterstaff and clogs she turns herself, the spear (shaft from the lane, iron head from the lane's small forge) and the shortbow (the bowyer's) all come across one counter and one trade panel. She buys them back at half retail. No quests, jobs, repairs or commissions yet.
 *comment
-*comment Hours (decided in timbermouth.txt, tm_hours, not here): Morning through Afternoon, closed Hallowday.
-*comment What it is for (quest/TIMBERMOUTH_PLAN.md): Barrels, crates, wheels, carts, doors, furniture, tool handles and fitted building pieces: the finished goods that give Timbermouth its edge over Alderford. Suitable for crafting, specialist shops, apprenticeships, repairs and larger Port Valen orders.
+*comment Hours (decided in timbermouth.txt, tm_hours, not here): Morning through Afternoon, closed on the rest day. The hub shows the place shut when it is; this file only checks the clock after a
+*comment trade (tm_works_after) and sends the player back to the hub if the day's work has ended.
+*comment What it is for (quest/TIMBERMOUTH_PLAN.md): barrels, crates, wheels, carts, doors, furniture, tool handles and fitted building pieces; Timbermouth's real advantage is finished goods worth
+*comment hauling by road. Suitable for crafting, specialist shops, apprenticeships, repairs and larger Port Valen orders. Edda Roan (the plan's 8.2, senior woodworker) gives her name in her own
+*comment first-visit line, as the plan says; her pressure (a large Port Valen order that leaves too little time to season ash) and Master Brant are NOT used yet.
 *comment
-*comment Adding content: put it in this file, below the description, as choices on the page, and keep the way back to the hub. Nothing here edits the hub, so a shop or a quest
-*comment in this building never touches the other five. Not in *scene_list: compile.js lists it with verifyFileName.
+*comment THE SHOP, same pieces as Hollis's (port_valen_middle_ward.txt mw_hollis_*): buy menu, a counter where she buys back at half retail (buyer "general", so nothing she stocks is a dead end), and the
+*comment trade panel (open_panel, cart_pass, settle); every block between GEN markers is written by tools/gen_gear.js from tools/gear_catalog.json (shops works_buy / works_sell, trade "works"). What she
+*comment sells, all Longshade ash: an ash quarterstaff, a Longshade spear (reach), a Longshade shortbow (ranged, two-handed) and a pair of wooden clogs (cuts the wet part of exposure, a worn slot trait).
+*comment NO DIALOGUE repeats: she speaks once on the first visit and once in the one talk option; everything after is narration.
+*comment Layers: place is constant; the lane has a small sky layer; the lane's own life is who is working in it, in a pool of four. Not in *scene_list: compile.js lists it with verifyFileName.
 *comment ====================================================================================
 
+*comment The walk from the square: charged once on arrival (never again when the player comes back to the lane from a shop).
 *label tm_works
 *set tm_works_seen true
 *set minutes_to_pass 5
 *set time_advance_call_id "tm_works_1"
 *gosub_scene timbermouth/timbermouth tm_walk_time
+*goto tm_works_lane
+
+*label tm_works_lane
+*temp lane_roll 1
+*rand lane_roll 1 5
 [b]◈ THE WOODWORKERS' WORKSHOPS[/b]
 *line_break
-A lane of low, open-fronted workshops runs back from the square, each with its benches in the light of the doorway and its work hung up in the rafters. Wheels in every stage of building stand against one wall, spokes fanned out like the ribs of a ship, and a row of unfinished barrels waits beside a stack of staves. Shavings lie ankle-deep and the air smells of glue and hot iron from a small forge at the lane's end.
-*page_break Back to the square…
+A lane of low, open-fronted workshops runs back from the square beside the mill, each with its benches in the light of the doorway and its work hung up in the rafters. A wheelwright's front stands at the head of the lane under a painted board reading [i]"ROAN. Wheels, staves and shafts."[/i] Further down are a cooper's, with a row of unfinished barrels waiting beside a stack of staves, a wainwright's, where the bed of a wagon stands on trestles with its wheels still to be fitted, and a bowyer's, with bow staves hung to season and a rack of arrow shafts. Shavings lie ankle-deep and the air smells of glue, linseed and hot iron from the small forge at the lane's end.
+
+*if (weather = "Rain")
+  Rain drums on the plank roofs, and the benches have been pulled back under the eaves.
+*elseif (weather = "Storm")
+  Wind rattles the shop shutters, and every bench has been dragged back from the doorways.
+*elseif (weather = "Fog")
+  Mist drifts down the lane from the forest and softens the line of open fronts.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow melts on the shavings and turns them to a brown paste at the doorsteps.
+
+*comment ── WEATHER MEMORY (calendar ground_state, strictly no people) ──
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  After days of rain the shavings in the lane are sodden, and a damp sweetness rises from the wet wood.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The shavings by the doorsteps are still dark from the last rain.
+
+*if (lane_roll = 1)
+  Mallets knock steadily somewhere down the lane, and a boy with a broom pushes shavings toward the gutter.
+*elseif (lane_roll = 2)
+  A cooper drives a hoop down over a barrel with a hammer and a wooden drift, each stroke ringing off the walls.
+*elseif (lane_roll = 3)
+  A wainwright and his apprentice lift a cart shaft out into the light and hold it up to check the fit of its sockets.
+*elseif (lane_roll = 4)
+  A bowyer tillers a stave across his knee, bending it a little and sighting down it, then shaving a hair from one limb.
+*else
+  A wheel stands rim-down in the lane while two men walk around it, tapping the felloes with the backs of their knuckles.
+
+*choice
+  # Step into the wheelwright's shop at the head of the lane.
+    *goto tm_works_shop
+  # Look in at the cooper's bench.
+    *goto tm_works_cooper
+  # Look in at the wainwright's shop.
+    *goto tm_works_wainwright
+  # Look in at the bowyer's bench.
+    *goto tm_works_bowyer
+  # Walk back to the square.
+    *goto_scene timbermouth/timbermouth timbermouth
+
+*label tm_works_cooper
+The cooper works at a bench with a half-raised barrel clamped in an iron hoop before him, its staves splayed like the petals of a flower. He wets each stave with a rag, draws the hoop down, and checks the gaps with a thumbnail. A finished cask stands beside him on a trestle with its bung out, and the smell of fresh oak and char comes off it.
+*page_break Step back out into the lane…
+*goto tm_works_lane
+
+*label tm_works_bowyer
+The bowyer works at a long bench under a window, with a stave of ash clamped in a tillering stick and a spokeshave in his hand. Bow staves hang from the rafters by cords, each with its ends sealed in wax and a chalk number on the belly, and a rack of arrow shafts stands by the door, split and trued but not yet fletched. A quiver of finished bows leans in one corner with the lane's mark burnt into every grip, and he sets them on Edda's counter at the head of the lane when they are done.
+*page_break Step back out into the lane…
+*goto tm_works_lane
+
+*label tm_works_wainwright
+The wainwright's shed is wide enough to take a wagon, and one stands inside it on trestles, its bed framed in ash and its axle-tree laid across the bolsters, waiting for wheels. A plane runs along the edge of a tailboard and the curls of pale wood roll up off the blade and fall on the floor. A rack on the back wall holds shafts, cart poles and ladder frames in rows, and a pair of finished harrows lean against the doorpost.
+*page_break Step back out into the lane…
+*goto tm_works_lane
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment ROAN'S WHEEL SHOP
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label tm_works_shop
+*gosub tm_works_open_panel
+*temp shop_first false
+*if (not(tm_roan_seen))
+  *set shop_first true
+*set tm_roan_seen true
+[b]◈ ROAN'S WHEEL SHOP[/b]
+*line_break
+Wheels in every stage of building stand against the walls, spokes fanned out like the ribs of a ship, and finished rims hang from the rafters in pairs. A long rack runs along the back where the whole lane's finished goods are left to be sold: ash staves in three lengths, spears with leaf-bladed heads riveted on by the smith at the lane's end, and shortbows with the bowyer's mark burnt into the grip. A row of wooden clogs hangs from pegs beside the door, and the floor is ankle-deep in curls of pale wood that smell of resin and linseed. Every piece on the rack carries a small brand for the bench it came from.
+
+*if (shop_first)
+  A square-built woman with cropped iron-grey hair stands at the bench with a half-built wheel clamped before her, and pale curls of fresh wood cling to her apron. Two old breaks in her left hand have set crooked. She looks up from the spoke she is trimming, checks your hands and your boots, and goes back to the spoke. "Roan. Finished work's on the rack. What's on my bench stays there." She jerks her chin toward the rack, then trims another curl from the spoke.
+*else
+  Edda Roan is at her bench with a spokeshave, working a spoke down to size and sighting along it.
+
+*choice
+  # Look over the racks.
+    *goto tm_works_stock
+  *if (tm_works_has_sale)
+    # Put something on the bench to sell.
+      *goto tm_works_sell
+  *if (not(tm_works_talk_ash))
+    # Ask Edda how she tells good ash from bad.
+      *set tm_works_talk_ash true
+      Edda takes a bow stave from the rack, sights down it against the light, and holds it out to you. "Straight grain, run out nowhere, rings close together," she says. "Ash that grew fast looks as good as slow and breaks like a carrot under load." She raps the stave with a knuckle and holds it by your ear. "Hear that? That is a sound piece."
+      *page_break "Fair enough."…
+      *goto tm_works_shop
+  # Step back out into the lane.
+    *set shop_open ""
+    *goto tm_works_lane
+  # ⚖ Settle up the trade panel.
+    *goto tm_works_settle
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment THE RACKS (the buy menu, the bench where she buys back, and the trade panel)
+*comment Same pieces as Hollis's shelves: menus generated from the catalog, one purchase label and one sale label, each with the currency lock, and the panel hooks (open_panel, cart_pass, settle).
+*comment Everything is stackable. Each trade ends in the open-hours check: once the day's work is over the hub's closed view takes over.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label tm_works_stock
+*gosub tm_works_open_panel
+*comment GEN:BEGIN works_buy_labels
+*temp wb_longshade_quarterstaff ""
+*temp wb_longshade_spear ""
+*temp wb_longshade_shortbow ""
+*temp wb_wooden_clogs ""
+*gosub_scene equipment gear_buy_label "longshade_quarterstaff"
+*set wb_longshade_quarterstaff gear_label
+*gosub_scene equipment gear_buy_label "longshade_spear"
+*set wb_longshade_spear gear_label
+*gosub_scene equipment gear_buy_label "longshade_shortbow"
+*set wb_longshade_shortbow gear_label
+*gosub_scene equipment gear_buy_label "wooden_clogs"
+*set wb_wooden_clogs gear_label
+*comment GEN:END works_buy_labels
+You walk the racks. Ash staves lean in three lengths along the back wall, each one planed and oiled, and beside them stand spears with the smith's rivets still bright on their sockets. Shortbows hang in a row with the bowyer's mark on every grip, and the clogs on their pegs by the door are carved from the block and tarred inside the toe. Every piece has a price scratched into the wood near its end and the brand of the bench that made it.
+
+*choice
+  *comment GEN:BEGIN works_buy_options
+  # ${wb_longshade_quarterstaff}
+    *set buy_item_id "longshade_quarterstaff"
+    *goto tm_works_buy_do
+  # ${wb_longshade_spear}
+    *set buy_item_id "longshade_spear"
+    *goto tm_works_buy_do
+  # ${wb_longshade_shortbow}
+    *set buy_item_id "longshade_shortbow"
+    *goto tm_works_buy_do
+  # ${wb_wooden_clogs}
+    *set buy_item_id "wooden_clogs"
+    *goto tm_works_buy_do
+  *comment GEN:END works_buy_options
+  # Step back to the bench.
+    *goto tm_works_shop
+  # ⚖ Settle up the trade panel.
+    *goto tm_works_settle
+
+*comment The purchase itself, shared by everything she sells: price and prose come from the catalog. One currency change and one advance_time per page.
+*label tm_works_buy_do
+*set gear_shop "works"
+*gosub_scene equipment gear_info buy_item_id
+*temp wk_price gear_retail
+*if ((((gold * 100) + (silver * 10)) + copper) < wk_price)
+  You count your coin against the price scratched into the wood and come up short. Edda hangs the ${gear_name} back where it was and picks up her spokeshave again.
+  *page_break Back to the racks…
+  *goto tm_works_stock
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount (0 - wk_price)
+  *gosub_scene economy currency_add
+  *gosub_scene equipment grant_gear buy_item_id 1
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+Edda takes the ${gear_name} down, runs her thumb along the grain, and hands it across the bench. ${gear_blurb}
+*gosub_scene equipment format_copper wk_price
+*line_break
+[b][💰 Paid: ${gear_sale_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass gear_minutes
+*set time_advance_call_id "tm_works_buy"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the racks…
+*goto tm_works_after_stock
+
+*label tm_works_sell
+Edda wipes her hands on her apron and clears a space on the bench. She takes each thing you set down, turns it over once in the light, and knocks it with a knuckle to hear it.
+*comment GEN:BEGIN works_sell_labels
+*temp ws_longshade_quarterstaff ""
+*temp ws_longshade_spear ""
+*temp ws_longshade_shortbow ""
+*temp ws_wooden_clogs ""
+*if (has_longshade_quarterstaff)
+  *gosub_scene equipment gear_sell_label "longshade_quarterstaff" "general"
+  *set ws_longshade_quarterstaff gear_label
+*if (has_longshade_spear)
+  *gosub_scene equipment gear_sell_label "longshade_spear" "general"
+  *set ws_longshade_spear gear_label
+*if (has_longshade_shortbow)
+  *gosub_scene equipment gear_sell_label "longshade_shortbow" "general"
+  *set ws_longshade_shortbow gear_label
+*if (has_wooden_clogs)
+  *gosub_scene equipment gear_sell_label "wooden_clogs" "general"
+  *set ws_wooden_clogs gear_label
+*comment GEN:END works_sell_labels
+
+*choice
+  *comment GEN:BEGIN works_sell_options
+  *if (has_longshade_quarterstaff)
+    # ${ws_longshade_quarterstaff}
+      *set sell_item_id "longshade_quarterstaff"
+      *goto tm_works_sell_do
+  *if (has_longshade_spear)
+    # ${ws_longshade_spear}
+      *set sell_item_id "longshade_spear"
+      *goto tm_works_sell_do
+  *if (has_longshade_shortbow)
+    # ${ws_longshade_shortbow}
+      *set sell_item_id "longshade_shortbow"
+      *goto tm_works_sell_do
+  *if (has_wooden_clogs)
+    # ${ws_wooden_clogs}
+      *set sell_item_id "wooden_clogs"
+      *goto tm_works_sell_do
+  *comment GEN:END works_sell_options
+  # Take it all back off the bench.
+    *goto tm_works_shop
+
+*comment The sale itself. The price is worked out inside the currency lock and kept in gear_sale_* so a replayed page prints the same banner. One currency change and one advance_time per page.
+*label tm_works_sell_do
+*set gear_shop "works_sell"
+*gosub_scene equipment gear_info sell_item_id
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment gear_sale_value sell_item_id "general"
+  *gosub_scene equipment sell_gear sell_item_id
+  *set currency_add_amount gear_sale_copper
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+Edda sights along the ${gear_sale_name}, tests it with her thumb, and counts the coin out of a leather purse on the bench.
+*line_break
+[b][💰 Sold: ${gear_sale_name} for ${gear_sale_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass 5
+*set time_advance_call_id "tm_works_sell"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the bench…
+*goto tm_works_after
+
+*label tm_works_open_panel
+*set shop_open "works"
+*set shop_rows ""
+*temp wk_any_sale ((((has_longshade_quarterstaff) or (has_longshade_spear)) or ((has_longshade_shortbow) or (has_wooden_clogs))))
+*set tm_works_has_sale wk_any_sale
+*comment GEN:BEGIN works_panel_rows
+*gosub_scene equipment shop_row_add "longshade_quarterstaff"
+*gosub_scene equipment shop_row_add "longshade_spear"
+*gosub_scene equipment shop_row_add "longshade_shortbow"
+*gosub_scene equipment shop_row_add "wooden_clogs"
+*comment GEN:END works_panel_rows
+*return
+
+*label tm_works_cart_pass
+*comment GEN:BEGIN works_cart_pass
+*set shop_buyer "general"
+*set gear_shop "works_sell"
+*gosub_scene equipment shop_cart_sell "longshade_quarterstaff"
+*gosub_scene equipment shop_cart_sell "longshade_spear"
+*gosub_scene equipment shop_cart_sell "longshade_shortbow"
+*gosub_scene equipment shop_cart_sell "wooden_clogs"
+*set gear_shop "works"
+*gosub_scene equipment shop_cart_buy "longshade_quarterstaff"
+*gosub_scene equipment shop_cart_buy "longshade_spear"
+*gosub_scene equipment shop_cart_buy "longshade_shortbow"
+*gosub_scene equipment shop_cart_buy "wooden_clogs"
+*comment GEN:END works_cart_pass
+*return
+
+*label tm_works_settle
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment shop_begin
+  *gosub tm_works_cart_pass
+  *gosub_scene equipment shop_check
+  *if (shop_verdict = "ok")
+    *set shop_mode "apply"
+    *gosub tm_works_cart_pass
+    *set currency_add_amount (shop_tot_credit - shop_tot_cost)
+    *gosub_scene economy currency_add
+  *else
+    *set shop_mode "clear"
+    *gosub tm_works_cart_pass
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*if (shop_verdict = "empty")
+  Edda waits with her spokeshave lifted, finds nothing to price, and goes back to the spoke.
+  *page_break Back to the racks…
+  *goto tm_works_after_stock
+*if (shop_verdict = "short")
+  You count your coin against the prices scratched into the wood and come up short. Edda hangs each piece back where it was and leaves it there.
+  *page_break Back to the racks…
+  *goto tm_works_after_stock
+*if ((shop_tot_bought > 0) and (shop_tot_sold > 0))
+  Edda turns each thing you put down in the light and knocks it with a knuckle, then takes each piece you chose down from its place and settles the difference across the bench.
+*elseif (shop_tot_bought > 0)
+  Edda takes each piece down from its place, runs her thumb along the grain, and hands it across the bench.
+*else
+  Edda turns each thing you put down over once in the light, knocks it with a knuckle to hear it, and counts out the coin.
+*if (shop_tot_sold > 0)
+  *line_break
+  [b][💰 Sold: ${shop_sold_list} for ${shop_credit_desc}][/b]
+*if (shop_tot_bought > 0)
+  *line_break
+  [b][🛒 Bought: ${shop_recv} for ${shop_cost_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass shop_tot_minutes
+*if (shop_tot_sold > 0)
+  *set minutes_to_pass (minutes_to_pass + 5)
+*set time_advance_call_id "tm_works_trade"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the racks…
+*goto tm_works_after_stock
+
+*comment Where a trade returns to: the bench or the racks while the working day lasts, the hub once the shops have closed (tm_hours is read again, so it is never a stale answer).
+*label tm_works_after
+*gosub_scene timbermouth/timbermouth tm_hours
+*if (tm_ok_works)
+  *goto tm_works_shop
+*set shop_open ""
+*goto_scene timbermouth/timbermouth timbermouth
+
+*label tm_works_after_stock
+*gosub_scene timbermouth/timbermouth tm_hours
+*if (tm_ok_works)
+  *goto tm_works_stock
+*set shop_open ""
 *goto_scene timbermouth/timbermouth timbermouth

@@ -102,19 +102,19 @@ The road climbs in turns from the docks, the salt smell of the harbor thinning b
     Even the Watch has drawn in under the arcade. A day like this is when the quarter's small debts get settled in back rooms.
   *if (mw_workday)
     *if (day_of_week = "Marketday")
-      It is Marketday, but the canvas stalls stay folded and the farm carts have not come up from the valley.
+      The canvas stalls stay folded and the farm carts have not come up from the valley.
     *elseif (day_of_week = "Tideday")
-      It is Tideday, but the freight wagons have stopped at the foot of the switchbacks and are waiting out the weather.
+      The freight wagons have stopped at the foot of the switchbacks and are waiting out the weather.
     *elseif (day_of_week = "Hallowday")
-      It is Hallowday, and the chapel bells from Civic Heights carry down over a ward that has shut itself indoors.
+      The chapel bells from Civic Heights carry down over a ward that has shut itself indoors.
     *elseif (day_of_week = "Greyday")
-      It is Greyday, and the wash-house steam rolls up unseen behind the buildings while the lanes stay bare.
+      The wash-house steam rolls up unseen behind the buildings while the lanes stay bare.
     *elseif (day_of_week = "Forgeday")
-      It is Forgeday, and the ring of the forges comes muffled from behind closed sheds.
+      The ring of the forges comes muffled from behind closed sheds.
     *elseif (day_of_week = "Ironday")
-      It is Ironday, and the ward's usual roar is a low mutter of hammers behind shutters.
+      The ward's usual roar is a low mutter of hammers behind shutters.
     *else
-      It is Hearthday, and the chimney smoke lies thick and low over a ward that has gone indoors early.
+      The chimney smoke lies thick and low over a ward that has gone indoors early.
 *elseif (mw_night)
   The square is barred and quiet under the swinging horn lanterns. Watchmen in buff leather coats pace the perimeter in pairs, their spear-butts clicking in measured cadence against the pavers.
 *elseif (time_period = "Dusk")
@@ -140,7 +140,7 @@ The road climbs in turns from the docks, the salt smell of the harbor thinning b
     The Middle Ward reaches its busiest pace. Locksmiths file metal, herbalists grind medicine, and smiths swing heavy hammers until the lanes fill with one steady roar.
   *else
     *comment Hearthday
-    Work winds down early for Hearthday. By afternoon, workshop shutters are propped halfway, and craftsmen gather under the bakehouse awnings smoking clay pipes and drinking sour orchard cider while children toss knucklebones in sheltered corners.
+    Work winds down early. By afternoon, workshop shutters are propped halfway, and craftsmen gather under the bakehouse awnings smoking clay pipes and drinking sour orchard cider while children toss knucklebones in sheltered corners.
     *if (mw_savvy)
       Retired Watch veterans and elder artisans nurse their cider with eyes fixed on newcomers. You feel their gaze tracking your weapon harness and pack. In a quarter where everyone knows their neighbor's rent, an unfamiliar mercenary is cataloged before you take twenty paces.
 
@@ -1026,9 +1026,10 @@ Behind a bolted door, the silence belongs entirely to you.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment THE WAGONER'S REST (INN ON THE TRUNK ROAD)
 *comment Added 2026-09-24. A nightly bed for a traveler who does not want Kess's weekly lease: one guest to a room,
-*comment mw_inn_rate_copper a night, private (heals like Kess's room) but NOT a permanent home, so the routine tracker
-*comment still counts the nights. The room is active from paying until the player wakes from a night's sleep or
-*comment leaves the inn; leaving forfeits the key. The basin resets hygiene with no boon (the baths stay the luxury).
+*comment mw_inn_rate_copper, private (heals like Kess's room) but NOT a permanent home, so the routine tracker
+*comment still counts the nights. A room is paid for 24 hours (2026-10-07, the user's call: waking up must not put you out of it): the key is yours until the same hour
+*comment tomorrow, to sleep in as often as you like and to carry out and back. mw_inn_room_until is the minute (campaign_day * 1440 + the clock) it runs out; mw_inn_room_active is refreshed
+*comment from it each time the player walks into the hall or the room. The basin resets hygiene with no boon (the baths stay the luxury).
 *comment Rooms first, no bar mechanics and no gossip: the player ruled out a third bar in the ward.
 *comment STABLE HOOK: the player owns no mount yet, but mounts are planned. The stable yard (mw_inn_yard) is scenery
 *comment for now. When mounts exist, add the stall option to that *choice (a nightly stall price, feed, and the animal
@@ -1038,6 +1039,9 @@ Behind a bolted door, the silence belongs entirely to you.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label mw_inn_hall
+*temp inn_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*if (inn_now >= mw_inn_room_until)
+  *set mw_inn_room_active false
 *temp inn_first false
 *if (not(mw_inn_seen))
   *set inn_first true
@@ -1110,19 +1114,20 @@ A long two-storey house of grey stone and dark timber stands on the trunk road, 
     # Go up to your room.
       *goto mw_inn_room
   *elseif ((((gold * 100) + (silver * 10)) + copper) >= mw_inn_rate_copper)
-    # [${mw_inn_rate_copper} Copper Bits] Take a room for the night.
+    # [${mw_inn_rate_copper} Copper Bits] Take a room for 24 hours.
       *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
         *set currency_add_amount (0 - mw_inn_rate_copper)
         *gosub_scene economy currency_add
         *set currency_txn_locked true
         *set locked_currency_txn_page_id page_id
       *set mw_inn_room_active true
-      Oswin chalks your bed onto the slate, drops your coppers into a tin, and hands you an iron key on a loop of cord. "Second door on the yard side," he says. "The shutter sticks, so give it a shove."
+      *set mw_inn_room_until (inn_now + 1440)
+      Oswin chalks your bed onto the slate, drops your coppers into a tin, and hands you an iron key on a loop of cord. "Second door on the yard side," he says. "It is yours until this hour tomorrow, so come and go as you please. The shutter sticks, so give it a shove."
       *page_break Climb the stair…
       *goto mw_inn_room
   *else
     # Ask Oswin about a room for the night.
-      "${mw_inn_rate_copper} copper bits," Oswin says, and turns the slate face down on his knee. "Come back with it and the bed is yours. The road is free."
+      "${mw_inn_rate_copper} copper bits for a day and a night," Oswin says, and turns the slate face down on his knee. "Come back with it and the bed is yours. The road is free."
       *page_break "I'll be back."…
       *goto mw_inn_hall
   # Walk through the archway to the stable yard.
@@ -1130,7 +1135,7 @@ A long two-storey house of grey stone and dark timber stands on the trunk road, 
   *if (not(mw_inn_talk_house))
     # Ask Oswin how the house works.
       *set mw_inn_talk_house true
-      Oswin turns the slate so you can read the chalked rows. "One bed, one guest, paid when you take the key," he says. "The key is yours until you walk out that door or wake in the morning, whichever comes first. Leave nothing behind. What is left in a room goes to the poor-box at the cathedral." He taps the slate. "There is a landlady up in the Locksmiths' Close who lets by the week, and she is the better bargain for anyone staying longer. I am for the traveler who is here tonight and on the road tomorrow."
+      Oswin turns the slate so you can read the chalked rows. "One bed, one guest, paid when you take the key," he says. "The key is yours for a full day from the hour you pay. Sleep in the bed, go out, come back, sleep again, it is all the same to me." He taps the slate. "When the day is up, the room is let again. What is left in it goes to the poor-box at the cathedral." He taps the slate. "There is a landlady up in the Locksmiths' Close who lets by the week, and she is the better bargain for anyone staying longer. I am for the traveler who is here tonight and on the road tomorrow."
       *page_break "Fair enough."…
       *goto mw_inn_hall
   *if (not(mw_inn_talk_road))
@@ -1140,7 +1145,6 @@ A long two-storey house of grey stone and dark timber stands on the trunk road, 
       *page_break "I can see that."…
       *goto mw_inn_hall
   # Step back out onto the trunk road.
-    *set mw_inn_room_active false
     *goto mw_gate_road
 
 *label mw_inn_yard
@@ -1209,6 +1213,9 @@ Behind the inn, a cobbled yard runs between a long stable range and an open cart
     *goto mw_inn_hall
 
 *label mw_inn_room
+*temp room_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*if (room_now >= mw_inn_room_until)
+  *set mw_inn_room_active false
 *if (not(mw_inn_room_active))
   *goto mw_inn_hall
 [b]◈ YOUR ROOM: THE WAGONER'S REST[/b]
@@ -1282,8 +1289,7 @@ You drop the bar across the door, shove the shutter closed against the yard nois
   *line_break
   ${sleep_gear_note}
 
-When you carry your things down, Oswin takes the iron key, hangs it back on its hook, and wipes your name from the slate.
-*set mw_inn_room_active false
+Your name stays chalked on Oswin's slate, and the iron key is yours until this hour tomorrow.
 *page_break Step out into the hall…
 *goto mw_inn_hall
 
@@ -1309,7 +1315,7 @@ You pour cold water from the jug into the tin basin and scrub the road mud, swea
 *comment Added 2026-09-24. The E-W trunk road crosses Conduit Square and runs gate to gate through the Middle Ward;
 *comment the gates are in the LANDWARD CITY WALL (where travelers enter Port Valen), not a district. Conduit Square has
 *comment ONE option onto the road (5 min, charged once outbound like every other walk); the hub holds the Wagoner's Rest,
-*comment the River Gate (west, the Grey River road toward Alderford) and the Charter Gate (east, the old imperial road,
+*comment the River Gate (north-west, the Grey River road north to the fork, then Alderford or Timbermouth) and the Charter Gate (east, the old imperial road,
 *comment named for the charter that made Port Valen free). Each gate is 10 more minutes from the hub, so 15 from the
 *comment square. Returns are free. Gates open at first bell (Morning), stand open through Dusk, shut at the night bell
 *comment (Night and Pre-Dawn) and leave only a wicket for anyone with a reason; latecomers sleep outside in the carters'
@@ -1340,7 +1346,7 @@ You pour cold water from the jug into the tin basin and scrub the road mud, swea
 *line_break
 [b][⏳ Middle Ward Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
 *line_break
-The trunk road runs through the ward as a broad paved way, cambered to the gutters on either side, with iron-tired wheels having worn two shallow grooves into the paving. Wheelwrights, farriers, harness-makers, chandlers, and cheap cookshops line both sides, and wagon yards open behind arched entries. To the west the road runs on toward the River Gate, and to the east toward the Charter Gate. A short way along, a white-painted wagon wheel hangs over the door of an inn. The air smells of hot iron, horse, tar, and frying onions.
+The trunk road runs through the ward as a broad paved way, cambered to the gutters on either side, with iron-tired wheels having worn two shallow grooves into the paving. Wheelwrights, farriers, harness-makers, chandlers, and cheap cookshops line both sides, and wagon yards open behind arched entries. To the north-west the road runs on toward the River Gate, and to the east toward the Charter Gate. A short way along, a white-painted wagon wheel hangs over the door of an inn. The air smells of hot iron, horse, tar, and frying onions.
 
 *gosub mw_road_sky
 
@@ -1357,7 +1363,7 @@ The trunk road runs through the ward as a broad paved way, cambered to the gutte
   *elseif (road_roll = 2)
     Shutters bang down one after another while the cookshop fires roar, and a queue of hungry carters forms outside the busiest door.
   *else
-    A late train of ox-carts labors toward the west, the drivers plainly counting the streets left before the bell.
+    A late train of ox-carts labors toward the north-west, the drivers plainly counting the streets left before the bell.
 *elseif (road_state = "night")
   *if (road_roll = 1)
     The road is quiet under its lanterns, and the only movement is a two-man Watch patrol tapping its cudgels against the shopfronts.
@@ -1382,13 +1388,13 @@ The trunk road runs through the ward as a broad paved way, cambered to the gutte
     # Go along to the inn with the white wagon-wheel sign.
       *goto mw_inn_hall
   *if (mw_river_gate_seen)
-    # Walk west along the trunk road to the River Gate. [~10 min]
+    # Walk north-west along the trunk road to the River Gate. [~10 min]
       *set minutes_to_pass 10
       *set time_advance_call_id "mw_walk_river_1"
       *gosub mw_walk_time
       *goto mw_river_gate
   *else
-    # Follow the trunk road west toward the gate in the landward wall. [~10 min]
+    # Follow the trunk road north-west toward the gate in the landward wall. [~10 min]
       *set minutes_to_pass 10
       *set time_advance_call_id "mw_walk_river_1"
       *gosub mw_walk_time
@@ -1494,7 +1500,7 @@ The trunk road runs through the ward as a broad paved way, cambered to the gutte
 *rand gate_roll 1 3
 [b]◈ THE RIVER GATE[/b]
 *line_break
-The landward wall comes down the slope here in a line of grey blocks thirty feet high, and the trunk road runs through it under a gatehouse of two round towers. A legend is carved above the arch: [i]"The River Gate. Foot to the Left, Wheels to the Right, Stamped Goods Through the Center."[/i] Beyond the arch the road runs west along the river cuttings toward the Grey River, and outside the wall a straggle of carters' yards and cheap inns lines it. The air smells of horse dung, tar, woodsmoke, and river clay.
+The landward wall comes down the slope here in a line of grey blocks thirty feet high, and the trunk road runs through it under a gatehouse of two round towers. A legend is carved above the arch: [i]"The River Gate. Foot to the Left, Wheels to the Right, Stamped Goods Through the Center."[/i] Beyond the arch the road turns north along the river cuttings toward the fork where the Grey and the Ashrun meet, and outside the wall a straggle of carters' yards and cheap inns lines it. The air smells of horse dung, tar, woodsmoke, and river clay.
 
 *gosub mw_gate_sky
 
@@ -1547,6 +1553,23 @@ The landward wall comes down the slope here in a line of grey blocks thirty feet
     A slate-roofed board beside the toll-house carries the wall's notices, tacked on in layers. [i]"BY ORDER OF THE PORT WATCH: No steel drawn within the wall. Carts keep to the right. Wagons left standing in the lane are hauled to the pound at the owner's cost. Wicket fees are posted at the toll-house."[/i] Beneath them, older notices have curled at the corners and gone the color of tea.
     *page_break Step back from the board…
     *goto mw_river_gate
+  *if (not(gate_state = "shut"))
+    # [b]The wagon yard[/b]: go out under the arch to the carters' yards. [~10 min]
+      *goto_scene port_valen/radiant/hall_escort es_arrive
+  *if (gate_state = "shut")
+    # [b]The wagon yard[/b]: the gate is shut until morning.
+      The great leaves are barred and chained, and a warden at the wicket shakes his head before you reach it. Out beyond the arch the carters' fires burn along the fences, but the yards stay out of reach until the morning bell.
+      *page_break Step back from the arch…
+      *goto mw_river_gate
+  *if (not(gate_state = "shut"))
+    # [b]The river road[/b]: leave the city by the River Gate.
+      *set ow_pos "pv"
+      *goto_scene overworld/overworld ow_here
+  *if (gate_state = "shut")
+    # [b]The river road[/b]: the gate is shut until morning.
+      The great leaves are barred and chained. A warden at the wicket shakes his head before you reach it, and makes it plain with a gesture at the sky that the gate opens again at the morning bell.
+      *page_break Step back from the arch…
+      *goto mw_river_gate
   # Walk back along the trunk road.
     *goto mw_gate_road
 
@@ -1617,15 +1640,6 @@ Here the wall is newer and higher, faced in pale limestone, and the trunk road p
     A slate-roofed board beside the toll-house carries the wall's notices in a tidy grid, each one pinned square. [i]"BY ORDER OF THE PORT WATCH: All writs shown at the arch. No steel drawn within the wall. Pilgrims keep to the left. Carts keep to the right. Wicket fees are posted at the toll-house."[/i] Someone has scratched a small wheel into the slate beneath the last line and been told off for it, judging by the scrubbed patch around it.
     *page_break Step back from the board…
     *goto mw_charter_gate
-  *if (not(gate_state = "shut"))
-    # [b]The old road[/b]: leave the city by the Charter Gate.
-      *set ow_pos "pv"
-      *goto_scene overworld/overworld ow_here
-  *if (gate_state = "shut")
-    # [b]The old road[/b]: the gate is shut until morning.
-      The great leaves are closed and the grate is down. A warden at the wicket shakes her head before you reach it. "Not until the morning bell," she says.
-      *page_break Step back from the arch…
-      *goto mw_charter_gate
   # Walk back along the trunk road.
     *goto mw_gate_road
 
@@ -1925,7 +1939,7 @@ Hollis & Daughters has the widest front, a bay of small glass panes under a boar
     Grey light flattens the colors of the goods stacked at each door.
 
   *if (day_of_week = "Marketday")
-    It is Marketday, and the lane is full. Country families in from the valley stand three deep at the counters.
+    The lane is full. Country families in from the valley stand three deep at the counters.
   *elseif (day_of_week = "Tideday")
     Handcarts of goods off the tide bump up the lane, and each shop takes its share at the door.
   *elseif (day_of_week = "Greyday")
@@ -1934,7 +1948,7 @@ Hollis & Daughters has the widest front, a bay of small glass panes under a boar
     Apprentices sent up from the workshops queue for nails, rope, and lamp oil.
   *else
     *comment Hearthday
-    It is Hearthday, and the lane is slow. Shopkeepers sit in their doorways between customers.
+    The lane is slow. Shopkeepers sit in their doorways between customers.
 
   *choice
     *if (mw_store_seen)
@@ -2798,18 +2812,18 @@ Where the harbor road climbs into the ward, the lane opens into a broad cobbled 
     The forge fires glow bright against the grey light.
 
   *if (day_of_week = "Marketday")
-    It is Marketday, and country buyers walk the racks for scythes, hatchets, and plow blades alongside the townspeople.
+    Country buyers walk the racks for scythes, hatchets, and plow blades alongside the townspeople.
   *elseif (day_of_week = "Tideday")
     Wagons of iron bars and coal off the harbor road are unloading at the gate.
   *elseif (day_of_week = "Greyday")
     It is washday on the terraces, and forge smoke mixes with lye steam over the yard.
   *elseif (day_of_week = "Forgeday")
-    It is Forgeday, and every forge in the yard is at full heat, with tool-grinders working their foot-powered wheels along the wall.
+    Every forge in the yard is at full heat, with tool-grinders working their foot-powered wheels along the wall.
   *elseif (day_of_week = "Ironday")
-    It is Ironday, the busiest day of the week. Hammers ring from all three sheds at once.
+    Hammers ring from all three sheds at once, and the yard is as busy as it ever gets.
   *else
     *comment Hearthday
-    It is Hearthday, and work is slow. One forge is lit, and the smiths rest in the shade between jobs.
+    Work is slow. One forge is lit, and the smiths rest in the shade between jobs.
 
   *choice
     *if (mw_forge_seen)
@@ -3327,14 +3341,14 @@ Behind Conduit Square, past the back wall of Mother Marda's ovens, a covered yar
   *elseif (day_of_week = "Greyday")
     It is washday, and every tub is going. Shirts, sheets, and work aprons hang in rows down the length of the yard.
   *elseif (day_of_week = "Marketday")
-    It is Marketday, and country visitors wait at the bath door to wash off the road.
+    Country visitors wait at the bath door to wash off the road.
   *elseif (day_of_week = "Tideday")
     Teamsters off the harbor road crowd the trough by the door, scrubbing salt and grit from their faces.
   *elseif ((day_of_week = "Forgeday") or (day_of_week = "Ironday"))
     Smiths and workshop hands, black to the elbows, make a steady line at the door.
   *else
     *comment Hearthday
-    It is Hearthday, and families in their best clothes come in to soak and stay to talk.
+    Families in their best clothes come in to soak and stay to talk.
 
   *temp mw_dry_lion_water_out false
   *if ((dry_lion_resolution = "failed") and (campaign_day <= dry_lion_outage_until_day))

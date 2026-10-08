@@ -1,0 +1,441 @@
+*comment ====================================================================================
+*comment THE GENERAL STORE (Timbermouth): the page you reach from the Timbermouth hub (timbermouth.txt). It replaced the Sawmill as a hub place (2026-10-07, the user's call): a place to buy
+*comment general goods again. MARLOW'S, beside the Market's yard gate, is run by Marlow (surname only, given in his own first-visit line; Port Valen's Hollis is introduced the same way). It sells the
+*comment SAME POOL OF GOODS as Hollis & Daughters in Port Valen (port_valen_middle_ward.txt mw_hollis_*) at the same prices, and buys them back at half retail (buyer "general"), so nothing is a dead
+*comment end: hemp rope, torch, lamp oil, hooded lantern, repair kit, lute, flint and tinderbox, chalk, wool blanket, oilcloth, lye soap, trail rations. The catalog entries are shared (tools/gear_catalog.json,
+*comment shops tmstore_buy / tmstore_sell, trade "tmstore"); every block between GEN markers is written by tools/gen_gear.js. A stock change in one store means a change in the other's shop list.
+*comment The trail rations matter here: the road from Port Valen is two days of walking, and this is where the player stocks up for the way back.
+*comment
+*comment Hours (decided in timbermouth.txt, tm_hours, not here): Morning through Dusk, closed on the rest day. The hub shows the place shut when it is; this file only checks the clock after a trade
+*comment (tm_store_after) and sends the player back to the hub once the shutters have gone up.
+*comment THE KEEPER: Marlow, a lean man with ink on his fingers and a pencil behind each ear, weighing everything by the pound, the yard or the pint. His stock came up on the freight wagons that
+*comment bring Port Valen's goods and go back west with ash (nothing in the scene says so: it is his background). NO DIALOGUE repeats: he speaks once, on the first visit; everything after is narration.
+*comment He has NO talk option (the user, 2026-10-07: not every shopkeeper needs one, and each costs a saved flag).
+*comment Layers: place is constant; a small sky layer at the window; no street layer inside. Not in *scene_list: compile.js lists it with verifyFileName.
+*comment ====================================================================================
+
+*comment The walk from the square: charged once on arrival (never again when the player comes back to the counter from the shelves or a trade).
+*label tm_store
+*set tm_store_seen true
+*set minutes_to_pass 5
+*set time_advance_call_id "tm_store_1"
+*gosub_scene timbermouth/timbermouth tm_walk_time
+*goto tm_store_front
+
+*label tm_store_front
+*gosub tm_store_open_panel
+*temp store_first false
+*if (not(tm_marlow_seen))
+  *set store_first true
+*set tm_marlow_seen true
+[b]◈ MARLOW'S GENERAL STORE[/b]
+*line_break
+A deep shop with a plank floor stands beside the Market's yard gate, under a board reading [i]"MARLOW. General goods, by weight and measure."[/i] Coils of rope hang from the rafters by thickness, lanterns and harness leather hang from hooks along the walls, and sacks of feed and kegs of nails stand in rows on the floor. A beam-scale with a tray of brass weights hangs over the counter, and the shelves behind it hold tin cans of lamp oil, jars of chalk, folded blankets and bolts of waxed cloth. The shop smells of hemp, tar, lamp oil, leather and hay.
+
+*if (weather = "Rain")
+  Rain runs down the front window in sheets, and a pool of water has spread under the door.
+*elseif (weather = "Storm")
+  Wind shakes the shop's shutters in their frames, and every lamp over the counter is lit.
+*elseif (weather = "Fog")
+  The window is a pale grey square, and lamps burn at the counter against the gloom.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Melting slush pools on the planks by the door, and a sack has been laid down to soak it up.
+
+*comment ── WEATHER MEMORY (calendar ground_state, strictly no people) ──
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  After days of rain the planks inside the door are dark with damp, and the whole shop smells of wet hemp.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The planks inside the door are still dark from the last rain.
+
+*if (store_first)
+  A lean man in shirtsleeves stands behind the counter, with ink on his fingers and a pencil tucked behind each ear. He is lifting a sack of nails onto the scale and watching the beam settle, and he finishes the reading before he looks at you. "Marlow. By weight, length, or measure—what are you after?" He taps the scale. "Rope, oil, nails, feed. If it came north on a wagon, I may have it."
+*else
+  Marlow is behind the counter, lifting a sack onto the scale and watching the beam settle.
+
+*choice
+  # Look over the shelves.
+    *goto tm_store_stock
+  *if (tm_store_has_sale)
+    # Put something on the counter to sell.
+      *goto tm_store_sell
+  # Step back out onto the square.
+    *set shop_open ""
+    *goto_scene timbermouth/timbermouth timbermouth
+  # ⚖ Settle up the trade panel.
+    *goto tm_store_settle
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment THE SHELVES (the buy menu, the counter where he buys back, and the trade panel)
+*comment Same pieces as Hollis's shelves and Roan's racks: menus generated from the catalog, one purchase label and one sale label, each with the currency lock, and the panel hooks (open_panel,
+*comment cart_pass, settle). Everything is stackable. Each trade ends in the open-hours check: once the shutters have gone up the hub's closed view takes over.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label tm_store_stock
+*gosub tm_store_open_panel
+*comment GEN:BEGIN tmstore_buy_labels
+*temp mb_hemp_rope ""
+*temp mb_pitch_torch ""
+*temp mb_lamp_oil ""
+*temp mb_hooded_lantern ""
+*temp mb_tool_kit ""
+*temp mb_lute ""
+*temp mb_tinderbox ""
+*temp mb_chalk_sticks ""
+*temp mb_wool_blanket ""
+*temp mb_waxed_oilcloth ""
+*temp mb_lye_soap ""
+*temp mb_trail_rations ""
+*gosub_scene equipment gear_buy_label "hemp_rope"
+*set mb_hemp_rope gear_label
+*gosub_scene equipment gear_buy_label "pitch_torch"
+*set mb_pitch_torch gear_label
+*gosub_scene equipment gear_buy_label "lamp_oil"
+*set mb_lamp_oil gear_label
+*gosub_scene equipment gear_buy_label "hooded_lantern"
+*set mb_hooded_lantern gear_label
+*gosub_scene equipment gear_buy_label "tool_kit"
+*set mb_tool_kit gear_label
+*gosub_scene equipment gear_buy_label "lute"
+*set mb_lute gear_label
+*gosub_scene equipment gear_buy_label "tinderbox"
+*set mb_tinderbox gear_label
+*gosub_scene equipment gear_buy_label "chalk_sticks"
+*set mb_chalk_sticks gear_label
+*gosub_scene equipment gear_buy_label "wool_blanket"
+*set mb_wool_blanket gear_label
+*gosub_scene equipment gear_buy_label "waxed_oilcloth"
+*set mb_waxed_oilcloth gear_label
+*gosub_scene equipment gear_buy_label "lye_soap"
+*set mb_lye_soap gear_label
+*gosub_scene equipment gear_buy_label "trail_rations"
+*set mb_trail_rations gear_label
+*comment GEN:END tmstore_buy_labels
+You walk the shelves. Rope hangs in coils by thickness, from cord thin enough for a bootlace to a line as thick as your wrist. Pitch-dipped torches stand in a barrel by the door, hooded lanterns and canvas tool rolls hang from hooks along the wall, a lute hangs from a nail beside the window, and paper twists of lye soap, jars of chalk and tin boxes of flint and steel line the counter. Folded blankets and sheets of waxed cloth fill the lower racks, and a shelf by the door holds cloth-wrapped parcels of trail food. Every shelf has a weight and a price chalked on its edge.
+
+*choice
+  *comment GEN:BEGIN tmstore_buy_options
+  # ${mb_hemp_rope}
+    *set buy_item_id "hemp_rope"
+    *goto tm_store_buy_do
+  # ${mb_pitch_torch}
+    *set buy_item_id "pitch_torch"
+    *goto tm_store_buy_do
+  # ${mb_lamp_oil}
+    *set buy_item_id "lamp_oil"
+    *goto tm_store_buy_do
+  # ${mb_hooded_lantern}
+    *set buy_item_id "hooded_lantern"
+    *goto tm_store_buy_do
+  # ${mb_tool_kit}
+    *set buy_item_id "tool_kit"
+    *goto tm_store_buy_do
+  # ${mb_lute}
+    *set buy_item_id "lute"
+    *goto tm_store_buy_do
+  # ${mb_tinderbox}
+    *set buy_item_id "tinderbox"
+    *goto tm_store_buy_do
+  # ${mb_chalk_sticks}
+    *set buy_item_id "chalk_sticks"
+    *goto tm_store_buy_do
+  # ${mb_wool_blanket}
+    *set buy_item_id "wool_blanket"
+    *goto tm_store_buy_do
+  # ${mb_waxed_oilcloth}
+    *set buy_item_id "waxed_oilcloth"
+    *goto tm_store_buy_do
+  # ${mb_lye_soap}
+    *set buy_item_id "lye_soap"
+    *goto tm_store_buy_do
+  # ${mb_trail_rations}
+    *set buy_item_id "trail_rations"
+    *goto tm_store_buy_do
+  *comment GEN:END tmstore_buy_options
+  # Step back to the counter.
+    *goto tm_store_front
+  # ⚖ Settle up the trade panel.
+    *goto tm_store_settle
+
+*comment The purchase itself, shared by everything he sells: price and prose come from the catalog. One currency change and one advance_time per page.
+*label tm_store_buy_do
+*set gear_shop "tmstore"
+*gosub_scene equipment gear_info buy_item_id
+*temp ms_price gear_retail
+*if ((((gold * 100) + (silver * 10)) + copper) < ms_price)
+  You count your coin against the price chalked on the shelf and come up short. Marlow takes the ${gear_name} off the counter and returns it to its hook, and goes back to his scale.
+  *page_break Back to the shelves…
+  *goto tm_store_stock
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount (0 - ms_price)
+  *gosub_scene economy currency_add
+  *gosub_scene equipment grant_gear buy_item_id 1
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+Marlow takes the ${gear_name} down, weighs it in his hand as if to be sure, and sets it on the counter. ${gear_blurb}
+*gosub_scene equipment format_copper ms_price
+*line_break
+[b][💰 Paid: ${gear_sale_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass gear_minutes
+*set time_advance_call_id "tm_store_buy"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the shelves…
+*goto tm_store_after_stock
+
+*label tm_store_sell
+Marlow pulls a pencil from behind his ear and clears a space on the counter. He takes each thing you set down, weighs it, turns it over, and reckons a price against the one he would ask for it new.
+*comment GEN:BEGIN tmstore_sell_labels
+*temp ms_hemp_rope ""
+*temp ms_pitch_torch ""
+*temp ms_lamp_oil ""
+*temp ms_hooded_lantern ""
+*temp ms_tool_kit ""
+*temp ms_lute ""
+*temp ms_tinderbox ""
+*temp ms_chalk_sticks ""
+*temp ms_wool_blanket ""
+*temp ms_waxed_oilcloth ""
+*temp ms_lye_soap ""
+*temp ms_trail_rations ""
+*if (has_hemp_rope)
+  *gosub_scene equipment gear_sell_label "hemp_rope" "general"
+  *set ms_hemp_rope gear_label
+*if (has_pitch_torch)
+  *gosub_scene equipment gear_sell_label "pitch_torch" "general"
+  *set ms_pitch_torch gear_label
+*if (has_lamp_oil)
+  *gosub_scene equipment gear_sell_label "lamp_oil" "general"
+  *set ms_lamp_oil gear_label
+*if (has_hooded_lantern)
+  *gosub_scene equipment gear_sell_label "hooded_lantern" "general"
+  *set ms_hooded_lantern gear_label
+*if (has_tool_kit)
+  *gosub_scene equipment gear_sell_label "tool_kit" "general"
+  *set ms_tool_kit gear_label
+*if (has_lute)
+  *gosub_scene equipment gear_sell_label "lute" "general"
+  *set ms_lute gear_label
+*if (has_tinderbox)
+  *gosub_scene equipment gear_sell_label "tinderbox" "general"
+  *set ms_tinderbox gear_label
+*if (has_chalk_sticks)
+  *gosub_scene equipment gear_sell_label "chalk_sticks" "general"
+  *set ms_chalk_sticks gear_label
+*if (has_wool_blanket)
+  *gosub_scene equipment gear_sell_label "wool_blanket" "general"
+  *set ms_wool_blanket gear_label
+*if (has_waxed_oilcloth)
+  *gosub_scene equipment gear_sell_label "waxed_oilcloth" "general"
+  *set ms_waxed_oilcloth gear_label
+*if (has_lye_soap)
+  *gosub_scene equipment gear_sell_label "lye_soap" "general"
+  *set ms_lye_soap gear_label
+*if (has_trail_rations)
+  *gosub_scene equipment gear_sell_label "trail_rations" "general"
+  *set ms_trail_rations gear_label
+*comment GEN:END tmstore_sell_labels
+
+*choice
+  *comment GEN:BEGIN tmstore_sell_options
+  *if (has_hemp_rope)
+    # ${ms_hemp_rope}
+      *set sell_item_id "hemp_rope"
+      *goto tm_store_sell_do
+  *if (has_pitch_torch)
+    # ${ms_pitch_torch}
+      *set sell_item_id "pitch_torch"
+      *goto tm_store_sell_do
+  *if (has_lamp_oil)
+    # ${ms_lamp_oil}
+      *set sell_item_id "lamp_oil"
+      *goto tm_store_sell_do
+  *if (has_hooded_lantern)
+    # ${ms_hooded_lantern}
+      *set sell_item_id "hooded_lantern"
+      *goto tm_store_sell_do
+  *if (has_tool_kit)
+    # ${ms_tool_kit}
+      *set sell_item_id "tool_kit"
+      *goto tm_store_sell_do
+  *if (has_lute)
+    # ${ms_lute}
+      *set sell_item_id "lute"
+      *goto tm_store_sell_do
+  *if (has_tinderbox)
+    # ${ms_tinderbox}
+      *set sell_item_id "tinderbox"
+      *goto tm_store_sell_do
+  *if (has_chalk_sticks)
+    # ${ms_chalk_sticks}
+      *set sell_item_id "chalk_sticks"
+      *goto tm_store_sell_do
+  *if (has_wool_blanket)
+    # ${ms_wool_blanket}
+      *set sell_item_id "wool_blanket"
+      *goto tm_store_sell_do
+  *if (has_waxed_oilcloth)
+    # ${ms_waxed_oilcloth}
+      *set sell_item_id "waxed_oilcloth"
+      *goto tm_store_sell_do
+  *if (has_lye_soap)
+    # ${ms_lye_soap}
+      *set sell_item_id "lye_soap"
+      *goto tm_store_sell_do
+  *if (has_trail_rations)
+    # ${ms_trail_rations}
+      *set sell_item_id "trail_rations"
+      *goto tm_store_sell_do
+  *comment GEN:END tmstore_sell_options
+  # Take it all back off the counter.
+    *goto tm_store_front
+
+*comment The sale itself. The price is worked out inside the currency lock and kept in gear_sale_* so a replayed page prints the same banner. One currency change and one advance_time per page.
+*label tm_store_sell_do
+*set gear_shop "tmstore_sell"
+*gosub_scene equipment gear_info sell_item_id
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment gear_sale_value sell_item_id "general"
+  *gosub_scene equipment sell_gear sell_item_id
+  *set currency_add_amount gear_sale_copper
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+Marlow weighs the ${gear_sale_name}, checks it for wear, and counts the coin out of a tin box under the counter.
+*line_break
+[b][💰 Sold: ${gear_sale_name} for ${gear_sale_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass 5
+*set time_advance_call_id "tm_store_sell"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the counter…
+*goto tm_store_after
+
+*label tm_store_open_panel
+*set shop_open "tmstore"
+*set shop_rows ""
+*temp ms_any_sale (((((has_hemp_rope) or (has_pitch_torch)) or ((has_lamp_oil) or (has_hooded_lantern))) or (((has_tinderbox) or (has_chalk_sticks)) or ((has_wool_blanket) or (has_waxed_oilcloth)))) or (((has_lye_soap) or (has_trail_rations)) or ((has_tool_kit) or (has_lute))))
+*set tm_store_has_sale ms_any_sale
+*comment GEN:BEGIN tmstore_panel_rows
+*gosub_scene equipment shop_row_add "hemp_rope"
+*gosub_scene equipment shop_row_add "pitch_torch"
+*gosub_scene equipment shop_row_add "lamp_oil"
+*gosub_scene equipment shop_row_add "hooded_lantern"
+*gosub_scene equipment shop_row_add "tool_kit"
+*gosub_scene equipment shop_row_add "lute"
+*gosub_scene equipment shop_row_add "tinderbox"
+*gosub_scene equipment shop_row_add "chalk_sticks"
+*gosub_scene equipment shop_row_add "wool_blanket"
+*gosub_scene equipment shop_row_add "waxed_oilcloth"
+*gosub_scene equipment shop_row_add "lye_soap"
+*gosub_scene equipment shop_row_add "trail_rations"
+*comment GEN:END tmstore_panel_rows
+*return
+
+*label tm_store_cart_pass
+*comment GEN:BEGIN tmstore_cart_pass
+*set shop_buyer "general"
+*set gear_shop "tmstore_sell"
+*gosub_scene equipment shop_cart_sell "hemp_rope"
+*gosub_scene equipment shop_cart_sell "pitch_torch"
+*gosub_scene equipment shop_cart_sell "lamp_oil"
+*gosub_scene equipment shop_cart_sell "hooded_lantern"
+*gosub_scene equipment shop_cart_sell "tool_kit"
+*gosub_scene equipment shop_cart_sell "lute"
+*gosub_scene equipment shop_cart_sell "tinderbox"
+*gosub_scene equipment shop_cart_sell "chalk_sticks"
+*gosub_scene equipment shop_cart_sell "wool_blanket"
+*gosub_scene equipment shop_cart_sell "waxed_oilcloth"
+*gosub_scene equipment shop_cart_sell "lye_soap"
+*gosub_scene equipment shop_cart_sell "trail_rations"
+*set gear_shop "tmstore"
+*gosub_scene equipment shop_cart_buy "hemp_rope"
+*gosub_scene equipment shop_cart_buy "pitch_torch"
+*gosub_scene equipment shop_cart_buy "lamp_oil"
+*gosub_scene equipment shop_cart_buy "hooded_lantern"
+*gosub_scene equipment shop_cart_buy "tool_kit"
+*gosub_scene equipment shop_cart_buy "lute"
+*gosub_scene equipment shop_cart_buy "tinderbox"
+*gosub_scene equipment shop_cart_buy "chalk_sticks"
+*gosub_scene equipment shop_cart_buy "wool_blanket"
+*gosub_scene equipment shop_cart_buy "waxed_oilcloth"
+*gosub_scene equipment shop_cart_buy "lye_soap"
+*gosub_scene equipment shop_cart_buy "trail_rations"
+*comment GEN:END tmstore_cart_pass
+*return
+
+*label tm_store_settle
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment shop_begin
+  *gosub tm_store_cart_pass
+  *gosub_scene equipment shop_check
+  *if (shop_verdict = "ok")
+    *set shop_mode "apply"
+    *gosub tm_store_cart_pass
+    *set currency_add_amount (shop_tot_credit - shop_tot_cost)
+    *gosub_scene economy currency_add
+  *else
+    *set shop_mode "clear"
+    *gosub tm_store_cart_pass
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*if (shop_verdict = "empty")
+  Marlow waits with a pencil over the counter, finds nothing to reckon, and tucks it behind his ear again.
+  *page_break Back to the shelves…
+  *goto tm_store_after_stock
+*if (shop_verdict = "short")
+  You count your coin against the prices chalked on the shelves and come up short. Marlow returns each piece to its hook and wipes his total off the counter with the heel of his hand.
+  *page_break Back to the shelves…
+  *goto tm_store_after_stock
+*if ((shop_tot_bought > 0) and (shop_tot_sold > 0))
+  Marlow weighs each thing you put down, reckons both columns in pencil on the counter, and settles the difference with a few coins from the tin.
+*elseif (shop_tot_bought > 0)
+  Marlow takes each piece down, weighs it in his hand as if to be sure, and sets it on the counter.
+*else
+  Marlow weighs each thing you put down, checks it for wear, and counts out the coin.
+*if (shop_tot_sold > 0)
+  *line_break
+  [b][💰 Sold: ${shop_sold_list} for ${shop_credit_desc}][/b]
+*if (shop_tot_bought > 0)
+  *line_break
+  [b][🛒 Bought: ${shop_recv} for ${shop_cost_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass shop_tot_minutes
+*if (shop_tot_sold > 0)
+  *set minutes_to_pass (minutes_to_pass + 5)
+*set time_advance_call_id "tm_store_trade"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the shelves…
+*goto tm_store_after_stock
+
+*comment Where a trade returns to: the counter or the shelves while the store is open, the hub once the shutters have gone up (tm_hours is read again, so it is never a stale answer).
+*label tm_store_after
+*gosub_scene timbermouth/timbermouth tm_hours
+*if (tm_ok_store)
+  *goto tm_store_front
+*set shop_open ""
+*goto_scene timbermouth/timbermouth timbermouth
+
+*label tm_store_after_stock
+*gosub_scene timbermouth/timbermouth tm_hours
+*if (tm_ok_store)
+  *goto tm_store_stock
+*set shop_open ""
+*goto_scene timbermouth/timbermouth timbermouth

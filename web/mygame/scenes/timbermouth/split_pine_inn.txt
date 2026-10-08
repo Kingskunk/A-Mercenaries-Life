@@ -1,21 +1,354 @@
 *comment ====================================================================================
-*comment THE SPLIT PINE INN AND STABLES (Timbermouth, a PLACEHOLDER): the page you reach from the Timbermouth hub (timbermouth.txt). Nothing is placed inside it yet: no people, shops, prices,
-*comment quests or jobs, only the building and the time it costs to walk there.
+*comment THE SPLIT PINE INN AND STABLES (Timbermouth): the page you reach from the Timbermouth hub (timbermouth.txt). First slice (2026-10-07): the hall, Ressa Hale, a bed for the night
+*comment and hot food at the counter, plus the stable yard as scenery. No rumors, gambling, messages, parcels, stalls or wagon storage yet.
 *comment
 *comment Hours (decided in timbermouth.txt, tm_hours, not here): always open.
 *comment What it is for (quest/TIMBERMOUTH_PLAN.md): Lodging, meals, rumors, gambling, caravan arrangements, mount care and wagon storage. The practical home for the future mount system in Timbermouth; the inn and its stable are one establishment, not two places.
+*comment
+*comment THE HOUSE, copied in shape from the Wagoner's Rest (port_valen_middle_ward.txt mw_inn_*, Oswin Hale, Ressa's brother at the Port Valen end of the road): a private room for
+*comment tm_inn_rate_copper (one copper under the city's, a smaller house), paid for 24 hours: the key is the player's until the same hour tomorrow, to sleep in as often as they like and to carry out
+*comment and back (tm_inn_room_until is the minute it runs out, campaign_day * 1440 + the clock; tm_inn_room_active is refreshed from it whenever the player walks into the hall or the room). It heals like
+*comment any private room but is NOT a permanent home, so the routine tracker still counts the nights. The basin resets hygiene with no boon.
+*comment THE KITCHEN: Ressa sells two hot meals at the counter, always (the pot never goes off the fire): the tavern pattern (economy.txt buy_tavern_item): a stew (2 copper, +2 temp HP, +1 CON for 4h)
+*comment and a plate (1 copper, +1 temp HP, +1 STR for 4h). Both clear hunger like every tavern meal.
+*comment STABLE HOOK: the player owns no mount yet. The yard (tm_inn_yard) is scenery for now. When mounts exist, add the stall option to that *choice (a nightly stall price, feed, the animal
+*comment waiting in its stall), and let Ressa's first-visit line about "a beast" become a real offer. Wagon storage and messages to Oswin hang in the same place.
+*comment Layers: place is constant; the hall has a small sky layer (weather at the windows and the ground's memory); street is who is about by time of day, in a pool of three. The yard is open air.
+*comment The name is given in her own first-visit line, before any button names her. Lorebook: split_pine, ressa (lorebook-timbermouth.js).
 *comment
 *comment Adding content: put it in this file, below the description, as choices on the page, and keep the way back to the hub. Nothing here edits the hub, so a shop or a quest
 *comment in this building never touches the other five. Not in *scene_list: compile.js lists it with verifyFileName.
 *comment ====================================================================================
 
+*comment The walk from the square: charged once on arrival (never again when the player comes back to the hall from a room, a meal or the yard).
 *label tm_inn
-*set tm_inn_seen true
 *set minutes_to_pass 5
 *set time_advance_call_id "tm_inn_1"
 *gosub_scene timbermouth/timbermouth tm_walk_time
+*goto tm_inn_hall
+
+*label tm_inn_hall
+*temp inn_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*if (inn_now >= tm_inn_room_until)
+  *set tm_inn_room_active false
+*temp inn_first false
+*if (not(tm_inn_seen))
+  *set inn_first true
+*set tm_inn_seen true
+*temp inn_state "day"
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set inn_state "night"
+*elseif (time_period = "Morning")
+  *set inn_state "morning"
+*elseif (time_period = "Dusk")
+  *set inn_state "dusk"
+*temp inn_roll 1
+*rand inn_roll 1 3
 [b]◈ THE SPLIT PINE INN AND STABLES[/b]
 *line_break
-A long two-storey house of dark timber stands at the road end of the square, with a split pine trunk set upright beside its door as a signpost, its heart-wood opened up like a book. An arch at the side leads through to a cobbled yard and a long row of stalls, with wagons drawn up under a lean-to along one wall. Smoke, hot fat and horse come out of the doorway together.
-*page_break Back to the square…
-*goto_scene timbermouth/timbermouth timbermouth
+A long two-storey house of dark timber stands at the road end of the square, with a split pine trunk set upright beside its door as a signpost, its heart-wood opened up like a book. An arch at the side leads through to a cobbled yard and a long row of stalls, with wagons drawn up under a lean-to along one wall. Inside, the hall is long and warm, with tables of pale ash planks scrubbed white, oilskins hanging on a row of pegs by the door, a counter made from a single plank, and a stone chimney at the far end with a stew pot hung from a crane. It smells of resin smoke, hot fat, wet wool and horse.
+
+*if (weather_severity >= 3)
+  The shutters are barred against the weather, and the fire and every lamp in the hall are lit.
+*elseif (weather = "Rain")
+  Rain runs off the eaves outside the windows, and the oilskins by the door drip onto the boards.
+*elseif (weather = "Fog")
+  Mist from the forest presses against the small windows, and lamps are lit at every table.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Slush is tracked across the boards from the door, and the hearth is built high.
+
+*comment ── WEATHER MEMORY (calendar ground_state, strictly no people) ──
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  After days of rain, the boards inside the door are slick with old mud, and the whole hall smells of damp wool.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The boards inside the door are still dark from the last rain.
+
+*if (inn_first)
+  A broad-shouldered woman stands behind the plank counter with a ring of keys at her belt. Her braid is grey-shot, her face is weathered, and the old scars of rope burns show pale along both forearms. She looks you over once, then looks past you at the door. "Ressa Hale. Bed, food, or a place for an animal?" Her eyes stay on the yard. "Tell me about the animal first. It causes more trouble than you do." She turns back to you. "A bed is ${tm_inn_rate_copper} copper bits for a day and a night, a bowl of stew is two, and a plate is one. The pot is on from first light until the last wagon is in."
+*else
+  Ressa Hale stands behind the plank counter with her keys at her belt, watching the door.
+
+*if (inn_state = "morning")
+  *if (inn_roll = 1)
+    Wagon crews sit shoulder to shoulder over bowls of porridge, talking loads and weather, and boots stamp outside the door.
+  *elseif (inn_roll = 2)
+    Mill hands in sawdust-grey coats crowd the end of the table before the shift bell, eating fast and saying little.
+  *else
+    A drover argues over the reckoning at the counter, and Ressa settles it with a flat hand on the plank.
+*elseif (inn_state = "dusk")
+  *if (inn_roll = 1)
+    The yard is loud with arriving wagons. The hall fills fast with boots on the boards, packs against the wall, and a queue at the counter for the last rooms.
+  *elseif (inn_roll = 2)
+    Teamsters crowd the long tables, and the smell of stew thickens the air. Ressa calls out names and hands keys across the counter.
+  *else
+    Wheels grind in the yard outside while somebody shouts for lanterns, and the hall swells with tired people who want supper and a bed.
+*elseif (inn_state = "night")
+  *if (inn_roll = 1)
+    The hall is dim, the hearth banked to red. Sleeping shapes lie along the benches, and the only sounds are snoring and the tick of cooling coals.
+  *elseif (inn_roll = 2)
+    A single lamp burns by the stair, and the pot still ticks over a low fire. A cudgel leans against the wall beside the counter within easy reach.
+  *else
+    The hall is nearly empty at this hour, hushed and warm, with one late carter nursing a cup at the far end of the table.
+*else
+  *comment Midday and Afternoon
+  *if (inn_roll = 1)
+    The hall is half empty. A few drovers doze against the wall with their boots off, and a girl sweeps sawdust from the boards.
+  *elseif (inn_roll = 2)
+    A factor's clerk counts coin at the end of a table, glancing at the door each time it opens.
+  *else
+    Two wagoners mend a harness by the hearth, passing an awl back and forth between them.
+
+*choice
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 2)
+    # [2 Copper Bits] Buy a bowl of pork and barley stew. [~20 min]@{show_stat_hints  [+2 Temp HP, +1 CON for 4h]|}
+      *set tavern_item_cost_copper 2
+      *set tavern_item_hp_heal 0
+      *set tavern_item_temp_hp 2
+      *set tavern_item_type "food"
+      *set tavern_item_buff_name "Hearty Stew"
+      *set tavern_item_buff_desc "+1 CON"
+      *set tavern_item_buff_stat "con"
+      *set tavern_item_buff_bonus 1
+      *set tavern_item_buff_minutes 240
+      *gosub_scene economy buy_tavern_item
+      *set hours_to_pass 0
+      *set minutes_to_pass 20
+      *set time_advance_call_id "tm_inn_stew"
+      *gosub_scene calendar advance_time
+      *gosub_scene calendar recalc_hp_from_neglect
+      *if (hp_current <= 0)
+        *set death_cause "exhaustion"
+        *goto_scene death death_screen
+      You count two coppers onto the plank. Ressa ladles stew from the crane-hung pot into a wooden bowl and sets it down with a heel of rye bread across the top.
+
+      You sit at the end of a long table and eat. The pork is smoked and falling apart, the barley has taken up the fat, and there are chunks of turnip and onion in it. It is hot enough to burn your tongue, and it settles heavy and warm in your belly.
+
+      [b][🍲 Hot Stew Eaten: +2 Temporary HP | Hearty Stew (+1 CON for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+      *page_break Push the empty bowl away…
+      *goto tm_inn_hall
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 1)
+    # [1 Copper Bit] Buy a plate of bread, cheese and pickled onion. [~10 min]@{show_stat_hints  [+1 Temp HP, +1 STR for 4h]|}
+      *set tavern_item_cost_copper 1
+      *set tavern_item_hp_heal 0
+      *set tavern_item_temp_hp 1
+      *set tavern_item_type "food"
+      *set tavern_item_buff_name "Ploughman's Plate"
+      *set tavern_item_buff_desc "+1 STR"
+      *set tavern_item_buff_stat "str"
+      *set tavern_item_buff_bonus 1
+      *set tavern_item_buff_minutes 240
+      *gosub_scene economy buy_tavern_item
+      *set hours_to_pass 0
+      *set minutes_to_pass 10
+      *set time_advance_call_id "tm_inn_plate"
+      *gosub_scene calendar advance_time
+      *gosub_scene calendar recalc_hp_from_neglect
+      *if (hp_current <= 0)
+        *set death_cause "exhaustion"
+        *goto_scene death death_screen
+      You put a copper on the plank. Ressa slides a board across to you with a thick slab of rye bread, a wedge of hard yellow cheese, and three pickled onions in a twist of paper.
+
+      You eat standing at the end of the counter. The cheese is sharp and crumbly, the onions bite back, and the bread is dense enough to feel in your arms.
+
+      [b][🧀 Plate Eaten: +1 Temporary HP | Ploughman's Plate (+1 STR for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+      *page_break Wipe your hands…
+      *goto tm_inn_hall
+  *if (tm_inn_room_active)
+    # Go up to your room.
+      *goto tm_inn_room
+  *if ((not(tm_inn_room_active)) and ((((gold * 100) + (silver * 10)) + copper) >= tm_inn_rate_copper))
+    # [${tm_inn_rate_copper} Copper Bits] Take a room for 24 hours.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+        *set currency_add_amount (0 - tm_inn_rate_copper)
+        *gosub_scene economy currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id page_id
+      *set tm_inn_room_active true
+      *set tm_inn_room_until (inn_now + 1440)
+      Ressa takes the coppers, drops them into a tin under the counter, and unhooks an iron key from the board behind her. "Top of the stair, the door on the left," she says. "It is yours until this hour tomorrow, so go out and come back as you like. The window faces the yard, so you will hear the wagons. Bar the door."
+      *page_break Climb the stair…
+      *goto tm_inn_room
+  *if ((not(tm_inn_room_active)) and ((((gold * 100) + (silver * 10)) + copper) < tm_inn_rate_copper))
+    # Ask Ressa about a room.
+      "${tm_inn_rate_copper} copper bits for a day and a night," Ressa says. "Come back with it and the bed is yours. I do not let on credit, and I do not let the same bed twice."
+      *page_break "I'll be back."…
+      *goto tm_inn_hall
+  # Walk through the arch to the stable yard.
+    *goto tm_inn_yard
+  *if (not(tm_inn_talk_house))
+    # Ask Ressa how the Inn works.
+      *set tm_inn_talk_house true
+      "One bed, one guest, paid when you take the key," Ressa says, and taps the board of hooks behind her. "The key is yours for a full day from the hour you pay, and you may sleep in the bed, go out and come back as often as you like. When the day is up, the room is let again, and whatever you leave in it I sell on the first of the month." She jerks her chin toward the pot. "The stew is always on."
+      *page_break "Fair enough."…
+      *goto tm_inn_hall
+  *if (not(tm_inn_talk_brother))
+    # Ask Ressa if she knows the Wagoner's Rest, in Port Valen.
+      *set tm_inn_talk_brother true
+      Her face softens by about a finger's width. "My brother's," she says. "Oswin. We drove this road together for eleven years, then we split. He bought the Rest as his, and I took the Pine as mine." She wipes the plank with a rag. "If you see him, tell him the stew here is better. He will say it's not, and he's wrong."
+      *page_break "I'll tell him."…
+      *goto tm_inn_hall
+  # Step back out onto the square.
+    *goto_scene timbermouth/timbermouth timbermouth
+
+*label tm_inn_yard
+*temp inn_yard_roll 1
+*rand inn_yard_roll 1 2
+*temp inn_yard_night false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set inn_yard_night true
+[b]◈ THE SPLIT PINE INN AND STABLES: THE YARD[/b]
+*line_break
+Behind the house, a cobbled yard runs between a long range of stalls and a lean-to shed where wagons stand with their tongues propped on blocks. A stone trough fed by a spring stands in the middle, and the loft over the stalls is hung with hay. The yard smells of horse, straw, resin and axle grease.
+
+*if (weather = "Rain")
+  Rain drums on the lean-to roof and runs in a brown stream down the middle of the yard.
+*elseif (weather = "Storm")
+  A gale sweeps down off the forest and bangs the loft door on its hinge.
+*elseif (weather = "Fog")
+  Mist from the Longshade hangs low over the cobbles and softens the roofline of the stalls to grey.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Slush lies in the wheel ruts and drips in grey threads from the loft eaves.
+*elseif (weather = "Blizzard")
+  Snow drives flat across the cobbles and drifts against the stall doors.
+*elseif (weather = "Clear")
+  *if (inn_yard_night)
+    Starlight lies pale on the cobbles and picks out the rim of the trough.
+  *elseif (time_period = "Dusk")
+    The low sun lays the shadow of the stall range long across the cobbles.
+  *else
+    Sunlight fills the yard and glints on the spring in the trough.
+*else
+  *comment Overcast
+  A flat grey sky sits over the yard and drains the colour from the stall doors.
+
+*comment ── WEATHER MEMORY (calendar ground_state, strictly no people) ──
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  After days of rain, runoff still runs in a brown stream down the middle of the yard, and the cart ruts stand full.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The cobbles are still dark from the last rain, and the wheel ruts hold pools.
+
+*if (inn_yard_night)
+  *if (inn_yard_roll = 1)
+    A lantern hangs on a hook by the stall doors, and a boy sits under it with a mug, watching the horses.
+  *else
+    The stalls are quiet. Now and then a horse shifts and blows in the dark.
+*elseif (time_period = "Dusk")
+  *if (inn_yard_roll = 1)
+    Wagons roll in one behind another, and grooms run to unhitch the teams and lead them steaming to the trough.
+  *else
+    A wagoner backs his load under the shed with much shouting, and two grooms wrestle a stubborn mule toward an empty stall.
+*else
+  *if (inn_yard_roll = 1)
+    A groom forks straw into the stalls while a boy pumps water into the trough for the teams.
+  *else
+    A wagoner checks the tilt on his load, and a groom works a curry-comb down the flank of a patient grey cob.
+
+*choice
+  # Look over the stalls.
+    Twelve stalls run along the range, each with a name chalked on the post. A big brown wagon horse looks out over the nearest half-door, a pair of mules works steadily at a shared hay net, and in the last stall a yoked pair of red oxen stands chewing, their horns tipped with brass knobs.
+    *page_break Step back into the yard…
+    *goto tm_inn_yard
+  # Look over the wagons under the lean-to.
+    Eight wagons stand under the shed with their tilts folded. One is stacked with planks stamped with a grade mark, another is loaded with barrels, and a third carries sacks of grain, with its axle greased and its wheels worn at the rim.
+    *page_break Step back into the yard…
+    *goto tm_inn_yard
+  # Go back through the arch to the hall.
+    *goto tm_inn_hall
+
+*label tm_inn_room
+*temp room_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*if (room_now >= tm_inn_room_until)
+  *set tm_inn_room_active false
+*if (not(tm_inn_room_active))
+  *goto tm_inn_hall
+[b]◈ YOUR ROOM: THE SPLIT PINE[/b]
+*line_break
+You turn the iron key and step into a narrow room under the roof at the back of the house. A plank bed stands against the wall with a straw mattress and a folded wool blanket, a tin basin and a jug sit on a shelf beside a peg rack, and a shuttered window looks down over the stable yard. The room smells of straw, tallow and resin.
+
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  The room is dark, lit only by a thin line of lamplight under the door.
+*elseif (time_period = "Dusk")
+  The last light fades in the gaps of the shutter, and the sounds of arriving wagons rise from the yard.
+*else
+  Daylight slats through the gaps in the shutter and lies in bars across the floorboards.
+
+*if (weather_severity >= 3)
+  The wind moans in the eaves, and the shutter knocks against its latch.
+*elseif (weather = "Rain")
+  Rain ticks on the shingles a hand's breadth above the bed.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Cold seeps in through the gaps in the shutter.
+
+*comment ── WEATHER MEMORY (calendar ground_state, strictly no people) ──
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  After days of rain, damp has crept into the boards, and the blanket smells of wet wool.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The air in the room is faintly damp.
+
+*choice
+  # Bar the door and sleep in the bed. [~8 Hours]
+    *goto tm_inn_sleep
+  # Pour water into the tin basin and wash off road grime. [~10 min]
+    *goto tm_inn_wash
+  # Go back down to the hall.
+    *goto tm_inn_hall
+
+*label tm_inn_sleep
+*set hours_to_pass 8
+*set minutes_to_pass 0
+*set time_advance_call_id "tm_inn_sleep"
+*gosub_scene calendar advance_time
+
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*set sleep_location_id "split_pine_inn"
+*set sleep_is_shared false
+*set sleep_is_permanent_home false
+*set sleep_tier_name "none"
+*set sleep_tier_stat1 "none"
+*set sleep_tier_bonus1 0
+*set sleep_tier_stat2 "none"
+*set sleep_tier_bonus2 0
+*gosub_scene calendar resolve_sleep
+
+*comment resolve_sleep (above) gives back everything a long rest gives back: class pools and temp HP (character_progression.txt restore_class_resources).
+
+You drop the bar across the door, shove the shutter closed against the yard noise, and pull the wool blanket over your shoulders. The bed is narrow, but the room is your own for the night.
+
+*if ((time_period = "Morning") or (time_period = "Pre-Dawn"))
+  Cart wheels and the shouts of grooms in the yard wake you before the shutter shows much light. Your limbs are loose and rested.
+*elseif (time_period = "Dusk")
+  You wake to the clatter of arriving wagons and an amber glow in the shutter gaps. The ache of the road has eased.
+*elseif (time_period = "Night")
+  You surface in the dark to the tick of the cooling roof and the snores of the next room. Your fatigue has cleared.
+*else
+  Midday light fills the shutter gaps when you wake, and the yard below is quiet. Your mind is clear and your energy is renewed.
+
+*if (not(sleep_gear_note = ""))
+  *line_break
+  ${sleep_gear_note}
+
+The iron key is yours until this hour tomorrow, and Ressa does not ask for it back.
+*page_break Step out into the hall…
+*goto tm_inn_hall
+
+*label tm_inn_wash
+*set hours_to_pass 0
+*set minutes_to_pass 10
+*set time_advance_call_id "tm_inn_wash"
+*gosub_scene calendar advance_time
+*comment Resets hygiene like the Conduit Baths, but with no boon. Reset after advance_time, which re-derives
+*comment the stage. Fixed-value sets, so a refreshed page cannot double-apply them.
+*set minutes_since_wash 0
+*set hygiene_stage "Clean"
+*gosub_scene calendar update_hub_condition
+
+You pour cold water from the jug into the tin basin and scrub the road mud, sweat and grime from your hands, neck and forearms with a rough bar of soap. The water clouds grey, and the towel on the peg is coarse but dry.
+
+[b][🧼 Washed Up: Hygiene Restored to Clean][/b]
+*page_break Set down the jug…
+*goto tm_inn_room

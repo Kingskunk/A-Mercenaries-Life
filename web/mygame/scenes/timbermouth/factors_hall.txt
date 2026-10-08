@@ -1,21 +1,252 @@
 *comment ====================================================================================
-*comment THE FACTOR'S HALL (Timbermouth, a PLACEHOLDER): the page you reach from the Timbermouth hub (timbermouth.txt). Nothing is placed inside it yet: no people, shops, prices,
-*comment quests or jobs, only the building and the time it costs to walk there.
-*comment
-*comment Hours (decided in timbermouth.txt, tm_hours, not here): Morning through Afternoon, closed Hallowday.
-*comment What it is for (quest/TIMBERMOUTH_PLAN.md): Town government: hearings, contracts, permits, banking, taxes and Gilded Scales standing. The Town Factor works here and speaks for the Council of Factors; village disputes and Port Valen orders eventually pass through this building.
-*comment
-*comment Adding content: put it in this file, below the description, as choices on the page, and keep the way back to the hub. Nothing here edits the hub, so a shop or a quest
-*comment in this building never touches the other five. Not in *scene_list: compile.js lists it with verifyFileName.
+*comment THE FACTOR'S HALL (Timbermouth): the page you reach from the Timbermouth hub (timbermouth.txt). First slice (2026-10-07), scaled to a TOWN: the Gilded Scales' Town Factor sits behind
+*comment a closed door at the back (Sabine Halloran in quest/TIMBERMOUTH_PLAN.md, NOT on stage yet), and the front of the house is two UNNAMED clerks doing everything between them (the user: a town
+*comment has fewer jobs than a city, so the same clerks take on more work as services are added, as Alderford's Counting House does with Chief Clerk Orlov and a junior). Two things to do inside:
+*comment   THE COUNTER: BANKING with the senior clerk, the SAME Letter of Credit as Port Valen's Head House and Alderford's vault (letter_of_credit_value in silver marks, has_letter_of_credit; deposits of
+*comment   1, 2 or 5 Gold Crowns, a draw of 1, full redemption), so a balance made in one town can be drawn in another; and the SEALS with the young clerk: the Hall Insignia (1 silver, rank Open, the
+*comment   same has_hall_insignia item as Port Valen's Seals window, required for contracted postings), taken out here if the player has none. The schedule posted over the counter also lists DEEDS AND LICENCES
+*comment   BY APPOINTMENT: a HOOK ONLY (land and deed purchases, and a trade licence for the Market's future trading system), no function yet; the same two clerks will take them on.
+*comment   THE NOTICE BOARD: the FORECAST slip first (the same weather_tomorrow the calendar rolls a day ahead, right about 80% of the time, forecast_missed when it was not), a road notice, and the JOB
+*comment   BOARD, empty for now (JOB SLOT below). Reading it costs 10 minutes.
+*comment Hours (decided in timbermouth.txt, tm_hours, not here): Morning through Afternoon, closed on the rest day. Time passes at the counter and the board, so a visit can run into Dusk: the floor
+*comment then plays the closing bell and sends the player back to the square (the Port Valen Head House's evening-horn rule).
+*comment Standing: no Timbermouth meter (a plan open question, settled 2026-10-07): the existing gilded_scales_rep is all the Scales' standing there is.
+*comment NO DIALOGUE repeats: each clerk speaks once, on the first visit; everything after is narration, including every banking page (Port Valen's Teller speaks on each).
+*comment Layers: place is constant; a small sky layer at the windows; who is at the counter is a pool of three. Not in *scene_list: compile.js lists it with verifyFileName.
 *comment ====================================================================================
 
+*comment The walk from the square: charged once on arrival (never again when the player comes back to the floor from the counter or the board).
 *label tm_hall
-*set tm_hall_seen true
 *set minutes_to_pass 5
 *set time_advance_call_id "tm_hall_1"
 *gosub_scene timbermouth/timbermouth tm_walk_time
+*goto tm_hall_floor
+
+*label tm_hall_floor
+*if (((time_period = "Dusk") or (time_period = "Night")) or (time_period = "Pre-Dawn"))
+  *comment The day's work is over: time passed at the counter or the board.
+  A hand bell rings out on the front steps, and the clerks begin drawing the iron grilles across the counter. A man in river-serpent livery with a staff steers the last people toward the doors.
+  *page_break Step out onto the square…
+  *goto_scene timbermouth/timbermouth timbermouth
+*temp hall_first false
+*if (not(tm_hall_seen))
+  *set hall_first true
+*set tm_hall_seen true
+*temp hall_roll 1
+*rand hall_roll 1 3
 [b]◈ THE FACTOR'S HALL[/b]
 *line_break
-The only stone building on the square stands two floors high behind a flight of broad steps, with the Gilded Scales' river-serpent banner hanging from a pole over its door. Narrow windows run along the front, each with an iron grille, and a notice board by the door carries a column of sealed sheets. Inside the door is a long, cool hall with a floor of grey flags and a counter running its length behind a rail.
-*page_break Back to the square…
-*goto_scene timbermouth/timbermouth timbermouth
+Inside the door the hall is long and cool, with a floor of grey flags and a counter running most of its length behind a brass rail, a grille at each end. A board of pinned notices hangs beside the door in a frame divided into three columns, and a schedule is lettered on a plate over the counter. Narrow windows run along the front, each with its own iron grille, and at the back of the hall a panelled door stands closed under a brass plate. The air smells of sealing wax, sand and cold stone.
+
+*if (weather_severity >= 3)
+  The doors are pulled to against the weather, and every lamp along the counter is lit.
+*elseif (weather = "Rain")
+  Rain ticks on the narrow windows, and the flags by the door are dark with wet boots.
+*elseif (weather = "Fog")
+  Mist turns the windows to white slits, and lamps burn along the counter.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Slush is tracked across the flags from the door.
+
+*comment ── WEATHER MEMORY (calendar ground_state, strictly no people) ──
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  After days of rain, the flags by the door are slick with old mud, and a damp chill hangs over the hall.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The flags by the door are still dark from the last rain.
+
+*if (hall_first)
+  A grey-haired clerk in a black coat with river-serpent cuffs sits at the long end of the counter with a set of nested lead weights lined up beside his scale. "Deposits, letters, withdrawals," he says, without looking up from his page. At the near end, behind the other grille, a young clerk in the same cuffs has a dish of blank brass discs at one elbow and a silver stylus at the other. "Seals," she says, and nods at the dish.
+*else
+  The grey-haired clerk is working down a column with his pen, and the young clerk at the seals grille is polishing a brass blank on her sleeve.
+
+*if (hall_roll = 1)
+  Carters with satchels of sealed packets queue along the rail, and the scratch of the senior clerk's pen is the loudest sound in the hall.
+*elseif (hall_roll = 2)
+  Two drivers argue in low voices at the counter over a bill of carriage, while the young clerk waits beside them with a seal in her hand.
+*else
+  The hall is nearly empty. A woman counts coins into a leather purse at the rail, and a boy in livery sleeps on his feet beside the door.
+
+*choice
+  # Approach the counter.
+    *goto tm_hall_counter
+  # Read the notice board. [~10 min]
+    *goto tm_hall_board
+  # Step back out onto the square.
+    *goto_scene timbermouth/timbermouth timbermouth
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment THE COUNTER: banking and the seals, between the same two clerks
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label tm_hall_counter
+[b]◈ THE FACTOR'S HALL: THE COUNTER[/b]
+*line_break
+*if (has_letter_of_credit)
+  *set silver_amount_to_describe letter_of_credit_value
+  *gosub_scene economy describe_silver_amount
+  The grey-haired clerk draws your entry from the book, checks the Scales' wax seal in its corner, and turns the page so you can read it: a standing balance of ${coin_amount_desc}.
+*else
+  The grey-haired clerk finds no entry under your name and sets a blank square of vellum on the rail. A deposit of Gold Crowns opens one, one crown at the least.
+The plate over the counter reads: [i]"Deposits and letters. Seals. Deeds and licences by appointment."[/i]
+
+*choice
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 100)
+    # Deposit 1 Gold Crown against the letter.
+      *set ch_credit_deposit_amount 10
+      *goto tm_hall_bank_deposit
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 200)
+    # Deposit 2 Gold Crowns against the letter.
+      *set ch_credit_deposit_amount 20
+      *goto tm_hall_bank_deposit
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 500)
+    # Deposit 5 Gold Crowns against the letter.
+      *set ch_credit_deposit_amount 50
+      *goto tm_hall_bank_deposit
+  *if (letter_of_credit_value >= 10)
+    # Draw 1 Gold Crown from the letter.
+      *set ch_credit_withdraw_amount 10
+      *goto tm_hall_bank_withdraw
+  *if (has_letter_of_credit)
+    # Redeem the whole letter for coin.
+      *goto tm_hall_bank_redeem
+  *if (not(has_hall_insignia))
+    *selectable_if ((((gold * 100) + (silver * 10)) + copper) >= 10) # Take out an insignia at the seals grille. [1 Silver Mark]
+      *goto tm_hall_seals_buy
+  *if (has_hall_insignia)
+    # Hold your insignia up to the seals grille.
+      *goto tm_hall_seals_show
+  # Step back from the counter.
+    *goto tm_hall_floor
+
+*comment ── BANKING (the same Letter of Credit as Port Valen's Head House: currency changes once per page under the refresh-safe lock, and the drawn amount is described INSIDE the guard and stored, so a replayed page prints the same line) ──
+
+*label tm_hall_bank_deposit
+*temp hall_was_new not(has_letter_of_credit)
+*if (hall_was_new)
+  The grey-haired clerk counts your coin twice against the standard weights, draws a stiff square of vellum from a locked drawer, fills in the sum in a tight, practiced hand, and presses the Gilded Scales' wax seal into the corner.
+*else
+  The grey-haired clerk counts your coin against the standard weights, draws your entry from the book, strikes through the old sum, inks in the new total, and presses the wax seal beside it again.
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount (0 - (ch_credit_deposit_amount * 10))
+  *gosub_scene economy currency_add
+  *set letter_of_credit_value + ch_credit_deposit_amount
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*set has_letter_of_credit true
+*set silver_amount_to_describe letter_of_credit_value
+*gosub_scene economy describe_silver_amount
+*if (hall_was_new)
+  [b][📜 Gilded Scales Letter of Credit Issued: ${coin_amount_desc}][/b]
+*else
+  [b][📜 Gilded Scales Letter of Credit Increased: ${coin_amount_desc} Total][/b]
+*set ch_credit_deposit_amount 0
+*set minutes_to_pass 5
+*set time_advance_call_id "tm_hall_bank_deposit_1"
+*gosub_scene timbermouth/timbermouth tm_walk_time
+*page_break Step back from the counter…
+*goto tm_hall_counter
+
+*label tm_hall_bank_withdraw
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set silver_amount_to_describe ch_credit_withdraw_amount
+  *gosub_scene economy describe_silver_amount
+  *set ch_bank_last_desc coin_amount_desc
+  *set currency_add_amount (ch_credit_withdraw_amount * 10)
+  *gosub_scene economy currency_add
+  *set letter_of_credit_value - ch_credit_withdraw_amount
+  *if (letter_of_credit_value <= 0)
+    *set letter_of_credit_value 0
+    *set has_letter_of_credit false
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+The grey-haired clerk takes the coin from the strongbox under the counter, counts it out onto the rail, strikes the sum from your entry, and initials the change.
+[b][💰 Drawn from the Letter: ${ch_bank_last_desc}][/b]
+*set minutes_to_pass 5
+*set time_advance_call_id "tm_hall_bank_withdraw_1"
+*gosub_scene timbermouth/timbermouth tm_walk_time
+*page_break Step back from the counter…
+*goto tm_hall_counter
+
+*label tm_hall_bank_redeem
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set silver_amount_to_describe letter_of_credit_value
+  *gosub_scene economy describe_silver_amount
+  *set ch_bank_last_desc coin_amount_desc
+  *set currency_add_amount (letter_of_credit_value * 10)
+  *gosub_scene economy currency_add
+  *set letter_of_credit_value 0
+  *set has_letter_of_credit false
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+The grey-haired clerk strikes a firm line through your entry, counts the coin out onto the rail, and spikes the surrendered vellum beside his scale.
+[b][💰 Letter Redeemed: ${ch_bank_last_desc}][/b]
+*set minutes_to_pass 5
+*set time_advance_call_id "tm_hall_bank_redeem_1"
+*gosub_scene timbermouth/timbermouth tm_walk_time
+*page_break Step back from the counter…
+*goto tm_hall_counter
+
+*comment ── THE SEALS (the same Hall Insignia as Port Valen's Seals window, rank Open, 1 silver) ──
+
+*label tm_hall_seals_buy
+*set minutes_to_pass 10
+*set time_advance_call_id "tm_hall_seals_buy_1"
+*gosub_scene timbermouth/timbermouth tm_walk_time
+[b]◈ THE FACTOR'S HALL: THE SEALS[/b]
+*line_break
+The young clerk lifts a blank disc out of the dish, asks your name, and writes it into the air above the brass with the silver stylus. The metal clouds and warms, and a face works itself into it: a seal, and under it your name in small clean letters. She lays a flat grey stone over it, and the disc chimes once and goes still.
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount (0 - 10)
+  *gosub_scene economy currency_add
+  *set has_hall_insignia true
+  *set hall_insignia_rank "open"
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+
+[b][🏷️ Acquired: Hall Insignia (Open)][/b]
+*page_break Step back from the grille…
+*goto tm_hall_counter
+
+*label tm_hall_seals_show
+You hold the brass up to the grille. The young clerk passes a flat grey stone over it, and the insignia chimes once. She reads the rank off its face, nods, and slides it back across the rail: Open.
+*page_break Step back from the grille…
+*goto tm_hall_counter
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment THE NOTICE BOARD: the forecast, a road notice, and the (empty) postings
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label tm_hall_board
+*set minutes_to_pass 10
+*set time_advance_call_id "tm_hall_board_1"
+*gosub_scene timbermouth/timbermouth tm_walk_time
+[b]◈ THE FACTOR'S HALL: THE NOTICE BOARD[/b]
+*line_break
+The board by the door is divided into three columns, each headed in the same square hand. The first holds the forecast, the second the road, and the third the postings.
+*gosub tm_hall_forecast_slip
+*comment ── THE ROAD: a fixed notice (the climb is worn by heavy loads, and repairs wait; the plan's Ressa Hale pressure). Hook for later road events. ──
+[i]"NOTICE OF THE FACTOR. Loaded wagons keep to the crown of the road on the climb. Repairs are put off until the thaw."[/i]
+*comment ── JOB SLOT: the Timbermouth job board goes here. It is EMPTY on purpose: no job exists yet, so the column says so and nothing is generated. Port Valen's radiant postings
+*comment (port_valen/radiant/) are the model: rank-gated by the Hall Insignia, a board of three real jobs per settlement, several at once, silent lapse. ──
+*if ((not(rj_escort_stage = "active")) and (day_of_week = "Tideday"))
+  *temp tm_pno (5000 + ((campaign_day - (campaign_day modulo 7)) / 7))
+  [b]POSTING No. ${tm_pno}[/b]
+  *line_break
+  [i]Sealed: a carrier of ash and pottery and the City. Work: wagon escort to Port Valen. Pay: the fee named at the lot. Term: two days out. Apply: the wagon lot, beside the Market.[/i]
+*else
+  The third column is bare but for a few pins and a scrap of torn paper.
+*page_break Step back from the board…
+*goto tm_hall_floor
+
+*comment The forecast slip: the same weather_tomorrow the calendar rolls a day ahead (it holds about 80% of the time, forecast_missed says when it did not), issued by the Factor's clerks.
+*label tm_hall_forecast_slip
+*if (tomorrow_severity >= 3)
+  [i]"FROM THE FACTOR'S CLERKS. Expect ${forecast_str} tomorrow. Keep wagons off the climb."[/i]
+*elseif (tomorrow_severity = 2)
+  [i]"FROM THE FACTOR'S CLERKS. Expect ${forecast_str} tomorrow. The climb will be slick, and the forest road worse."[/i]
+*elseif (weather_tomorrow = "Fog")
+  [i]"FROM THE FACTOR'S CLERKS. Expect ${forecast_str} tomorrow. Keep to the road posts."[/i]
+*else
+  [i]"FROM THE FACTOR'S CLERKS. Expect ${forecast_str} tomorrow."[/i]
+*if (forecast_missed)
+  An older slip pinned beside it has been crossed through with a single line.
+*return

@@ -120,6 +120,111 @@ window.EQUIPMENT_CATALOG = {
     },
     {
       "ids": [
+        "longshade_quarterstaff"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "ash quarterstaff"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Ash Quarterstaff"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d6 bludgeoning"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "bludgeoning"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "ash quarterstaff"
+        }
+      }
+    },
+    {
+      "ids": [
+        "longshade_spear"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "Longshade spear"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Longshade Spear"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d6 piercing"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "reach"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "Longshade spear"
+        }
+      }
+    },
+    {
+      "ids": [
+        "longshade_shortbow"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "Longshade shortbow"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Longshade Shortbow"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d6 piercing"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "ranged"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "two_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "Longshade shortbow"
+        }
+      }
+    },
+    {
+      "ids": [
         "ash_spear"
       ],
       "fields": {
@@ -607,6 +712,111 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_prose": {
           "type": "literal",
           "value": "stiletto"
+        }
+      }
+    },
+    {
+      "ids": [
+        "longshade_quarterstaff"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "ash quarterstaff"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Slung Ash Quarterstaff"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d6 bludgeoning"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "bludgeoning"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "ash quarterstaff"
+        }
+      }
+    },
+    {
+      "ids": [
+        "longshade_spear"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "Longshade spear"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Slung Longshade Spear"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d6 piercing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "reach"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "Longshade spear"
+        }
+      }
+    },
+    {
+      "ids": [
+        "longshade_shortbow"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "Longshade shortbow"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Slung Longshade Shortbow"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d6 piercing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "ranged"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "two_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "Longshade shortbow"
         }
       }
     },
@@ -1617,6 +1827,21 @@ window.EQUIPMENT_CATALOG = {
     },
     {
       "ids": [
+        "wooden_clogs"
+      ],
+      "fields": {
+        "feet_desc": {
+          "type": "literal",
+          "value": "Wooden Clogs"
+        },
+        "feet_prose": {
+          "type": "literal",
+          "value": "wooden clogs"
+        }
+      }
+    },
+    {
+      "ids": [
         "none"
       ],
       "fields": {
@@ -1778,5 +2003,6 @@ window.GARMENT_HINTS = {
   "dancing_slippers": "+1 DEX",
   "wool_muffler": "Weather wear: cold -10%",
   "silk_neckcloth": "+1 CHA",
-  "court_coat": "Weather wear: cold -25%, rain -10%; +2 CHA"
+  "court_coat": "Weather wear: cold -25%, rain -10%; +2 CHA",
+  "wooden_clogs": "Weather wear: rain -15%"
 };

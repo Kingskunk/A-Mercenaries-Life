@@ -245,7 +245,11 @@
   var RACE_WEIGHTS = {
     middle_ward: { human: 70, halfling: 8, dwarf: 8, half_elf: 5, elf: 3, half_orc: 3, tiefling: 3 },
     quarter:     { human: 78, elf: 6, half_elf: 5, dwarf: 4, tiefling: 4, halfling: 2, half_orc: 1 },
-    docks:       { human: 62, half_orc: 10, dwarf: 8, halfling: 6, tiefling: 6, half_elf: 5, elf: 3 }
+    docks:       { human: 62, half_orc: 10, dwarf: 8, halfling: 6, tiefling: 6, half_elf: 5, elf: 3 },
+    // The country around Timbermouth (2026-10-07): a farming village leans halfling, a forest village leans dwarf and half-elf, a road town is mostly human with dwarf craftsmen.
+    village:        { human: 60, halfling: 20, dwarf: 8, half_elf: 5, half_orc: 3, elf: 2, tiefling: 2 },
+    forest_village: { human: 58, dwarf: 14, half_elf: 10, elf: 6, halfling: 6, half_orc: 4, tiefling: 2 },
+    town:           { human: 68, dwarf: 12, halfling: 7, half_elf: 5, half_orc: 4, elf: 2, tiefling: 2 }
   };
 
   // The race of one person, from a place and a seed. The same place and seed always give the same race.

@@ -20,16 +20,18 @@
   if (!OW) return;
 
   var PANEL_ID = "overworldMap";
-  var KIND_NAME = { city: "City", town: "Town", road: "Road", hills: "Hills", forest: "Forest" };
+  var KIND_NAME = { city: "City", town: "Town", village: "Village", road: "Road", hills: "Hills", forest: "Forest" };
   var SCALE = 130;          // SVG units per map unit
   var MIN_W = 220;          // closest zoom: this many SVG units across
-  var FAR_W = 1100;         // past this width the names of tiles you are not on or selecting are hidden
+  var FAR_W = 1500;         // past this width the names of tiles you are not on or selecting are hidden
   var selected = null;      // the tile whose card is showing (null: the tile the player stands on)
   var lastPos = null;       // where the player stood when the view was last placed: a move to a new tile clears the selection and recentres
   var lastSig = "";
   var pressed = false;      // Travel was pressed and the old page has not gone yet
   var view = null;          // { cx, cy, w }: the middle of the picture and how many SVG units wide it shows
   var drag = null;          // an unfinished drag or click
+  var rot = 0;              // quarter turns the player has turned the map, clockwise (0 to 3), kept between visits
+  try { rot = (Number(window.localStorage.getItem("owMapRot2")) || 0) % 4; } catch (e) { rot = 0; }
   var userAnimate = null;   // the player's own page-turn animation setting, kept while the map has it switched off (null: not switched off)
 
   function truthy(v) { return v === true || v === "true"; }
@@ -37,21 +39,29 @@
   function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
   function statsNow() { return window.stats || {}; }
 
+  // Where a tile is drawn: its map position turned by the quarter turns the player chose. Only positions turn; names and numbers stay upright.
+  function P(n) {
+    var x = n.x, y = n.y, t;
+    for (var i = 0; i < rot; i++) { t = x; x = -y; y = t; }
+    return { x: x * SCALE, y: y * SCALE };
+  }
+
   // The options the scene may offer on the newest page: the one Travel option, a way into the town the player stands in, and the camp. Only the newest form: while ChoiceScript fades a page
   // out, the old one is still in the document beside the new one.
   function scanOptions() {
     var forms = document.querySelectorAll("#main form");
     var labels = forms.length ? forms[forms.length - 1].querySelectorAll(".choice label") : [];
-    var travel = null, enter = null, camp = null;
+    var travel = null, enter = null, camp = null, dawn = null;
     for (var i = 0; i < labels.length; i++) {
       var radio = labels[i].querySelector("input[type=radio]");
       if (!radio || radio.disabled) continue;
       var text = (labels[i].textContent || "").replace(/\s+/g, " ").trim();
       if (/^Travel to the tile you picked/.test(text)) travel = radio;
+      else if (/^Make camp and sleep until dawn/.test(text)) dawn = { radio: radio, text: text };
       else if (/^Make camp/.test(text)) camp = radio;
       else if (/^Go (in|into|back)\b/.test(text)) enter = { radio: radio, text: text };
     }
-    return travel ? { travel: travel, enter: enter, camp: camp } : null;
+    return travel ? { travel: travel, enter: enter, camp: camp, dawn: dawn } : null;
   }
 
   function available() { return truthy(statsNow().ow_on) && !!scanOptions(); }
@@ -84,8 +94,9 @@
     var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     Object.keys(OW.nodes).forEach(function (id) {
       var n = OW.nodes[id];
-      minX = Math.min(minX, n.x * SCALE); maxX = Math.max(maxX, n.x * SCALE);
-      minY = Math.min(minY, n.y * SCALE); maxY = Math.max(maxY, n.y * SCALE);
+      var p = P(n);
+      minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+      minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
     });
     return { minX: minX, maxX: maxX, minY: minY, maxY: maxY };
   }
@@ -105,7 +116,8 @@
     if (!n) return;
     var b = bounds(), full = Math.max(b.maxX - b.minX + 200, 420);
     if (full <= 1000) { fit(); return; }
-    view = { cx: n.x * SCALE, cy: n.y * SCALE, w: 760 };
+    var pn = P(n);
+    view = { cx: pn.x, cy: pn.y, w: 760 };
   }
 
   function applyView() {
@@ -140,15 +152,17 @@
     var out = "";
     OW.edges.forEach(function (e) {
       var a = OW.nodes[e[0]], b = OW.nodes[e[1]], hot = onRoute[e[0] + ">" + e[1]];
-      out += "<line class=\"ow-edge" + (hot ? " ow-edge-route" : "") + "\" x1=\"" + a.x * SCALE + "\" y1=\"" + a.y * SCALE + "\" x2=\"" + b.x * SCALE + "\" y2=\"" + b.y * SCALE + "\"/>";
-      out += "<text class=\"ow-miles\" x=\"" + ((a.x + b.x) / 2 * SCALE) + "\" y=\"" + (((a.y + b.y) / 2) * SCALE - 14) + "\" text-anchor=\"middle\">" + e[2] + " mi</text>";
+      var pa = P(a), pb = P(b);
+      out += "<line class=\"ow-edge" + (hot ? " ow-edge-route" : "") + "\" x1=\"" + pa.x + "\" y1=\"" + pa.y + "\" x2=\"" + pb.x + "\" y2=\"" + pb.y + "\"/>";
+      out += "<text class=\"ow-miles\" x=\"" + ((pa.x + pb.x) / 2) + "\" y=\"" + (((pa.y + pb.y) / 2) - 14) + "\" text-anchor=\"middle\">" + e[2] + " mi</text>";
     });
     ids.forEach(function (id, k) {
-      var n = OW.nodes[id], x = n.x * SCALE, y = n.y * SCALE, big = n.kind === "city" ? 26 : (n.kind === "town" ? 22 : 15);
+      var n = OW.nodes[id], pp = P(n), x = pp.x, y = pp.y, big = n.kind === "city" ? 26 : (n.kind === "town" ? 22 : (n.kind === "village" ? 18 : 15));
       out += "<g class=\"ow-node ow-k-" + esc(n.kind) + (id === here ? " ow-here" : "") + (id === sel ? " ow-sel" : "") + "\" data-ow-tile=\"" + esc(id) + "\" tabindex=\"0\" role=\"button\" aria-label=\"" + esc(n.name) + "\">";
       if (id === here) out += "<circle class=\"ow-ring\" cx=\"" + x + "\" cy=\"" + y + "\" r=\"" + (big + 9) + "\"/>";
       if (id === sel && id !== here) out += "<circle class=\"ow-selring\" cx=\"" + x + "\" cy=\"" + y + "\" r=\"" + (big + 7) + "\"/>";
       out += "<circle class=\"ow-dot\" cx=\"" + x + "\" cy=\"" + y + "\" r=\"" + big + "\"/>";
+      if (n.also && KIND_NAME[n.also]) out += "<circle class=\"ow-alsoring ow-a-" + esc(n.also) + "\" cx=\"" + x + "\" cy=\"" + y + "\" r=\"" + (big + 4) + "\"/>";
       if (n.image) {
         // a picture in the circle, cropped round, over the colour (which stays as the edge and the fallback)
         defs += "<clipPath id=\"ow-clip-" + k + "\"><circle cx=\"" + x + "\" cy=\"" + y + "\" r=\"" + (big - 1.5) + "\"/></clipPath>";
@@ -162,16 +176,18 @@
   function card(here, sel, opts) {
     var show = sel || here, n = OW.nodes[show], html = "<div class=\"ow-card\">";
     html += "<div class=\"ow-card-head\"><i class=\"ow-key ow-k-" + esc(n.kind) + "\"></i><b>" + esc(n.name) + "</b></div>";
-    html += "<div class=\"ow-card-sub\">" + esc(KIND_NAME[n.kind] || n.kind) + " &middot; " + esc(n.region) + "</div>";
+    html += "<div class=\"ow-card-sub\">" + esc((KIND_NAME[n.kind] || n.kind) + (n.also && KIND_NAME[n.also] ? " and " + KIND_NAME[n.also].toLowerCase() : "")) + " &middot; " + esc(n.region) + "</div>";
     html += "<p>" + esc(n.info) + "</p>";
+    if (n.water) html += "<div class=\"ow-card-line\">Fresh water here: " + esc(n.water) + ".</div>";
     if (show === here) {
       html += "<div class=\"ow-card-line\">You are here.</div>";
       if (opts.enter) html += "<button type=\"button\" class=\"ow-btn\" data-ow-act=\"enter\">" + esc(opts.enter.text.replace(/\.$/, "")) + "</button>";
       if (opts.camp) html += "<div class=\"ow-card-line\">Sleep 8 hours here to clear your fatigue.</div><button type=\"button\" class=\"ow-btn\" data-ow-act=\"camp\">Make camp for the night</button>";
+      if (opts.dawn) html += "<button type=\"button\" class=\"ow-btn\" data-ow-act=\"dawn\">" + esc(opts.dawn.text.replace(/^Make camp and /, "").replace(/\.\s*(\[~?)/, " $1").replace(/^s/, "S")) + "</button>";
     } else {
       var r = OW.route(here, show);
       if (r.ok) {
-        html += "<div class=\"ow-card-line\"><b>" + r.miles + " miles</b>, " + esc(OW.duration(r.minutes)) + " on foot.</div>";
+        html += "<div class=\"ow-card-line\"><b>" + r.miles + " miles</b>, " + esc(OW.span(r.minutes)) + ".</div>";
         outlook(r.minutes).forEach(function (w) { html += "<div class=\"ow-card-warn\">" + esc(w) + "</div>"; });
         html += "<button type=\"button\" class=\"ow-btn ow-go\" data-ow-act=\"go\">Travel to " + esc(n.name) + "</button>";
       } else {
@@ -186,16 +202,22 @@
       "<span class=\"ow-spacer\"></span><span class=\"ow-hint\">Drag to move, scroll to zoom, click a tile and press Space to travel.</span></div>";
   }
 
+  // A compass in the corner: the needle points to north, from the map's own bearing (Overworld.north) and the quarter turns the player has made.
+  function compass() {
+    var a = ((Number(OW.north) || 0) + rot * 90) % 360;
+    return "<div class=\"ow-compass\" title=\"North\" aria-label=\"Compass, north is marked N\"><svg viewBox=\"-36 -36 72 72\" width=\"58\" height=\"58\"><circle r=\"25\" class=\"ow-comp-ring\"/><g transform=\"rotate(" + a + ")\"><polygon points=\"0,-21 6,2 0,-3 -6,2\" class=\"ow-comp-n\"/><polygon points=\"0,21 5,2 0,5 -5,2\" class=\"ow-comp-s\"/><text class=\"ow-comp-t\" text-anchor=\"middle\" dominant-baseline=\"central\" transform=\"translate(0,-31) rotate(" + (-a) + ")\">N</text></g></svg></div>";
+  }
+
   function controls() {
     return "<div class=\"ow-ctl\"><button type=\"button\" data-ow-act=\"zoomin\" title=\"Zoom in\" aria-label=\"Zoom in\">+</button><button type=\"button\" data-ow-act=\"zoomout\" title=\"Zoom out\" aria-label=\"Zoom out\">&minus;</button>" +
-      "<button type=\"button\" data-ow-act=\"center\" title=\"Back to you (M)\" aria-label=\"Centre on you\">Me</button><button type=\"button\" data-ow-act=\"fit\" title=\"Show the whole map\" aria-label=\"Show the whole map\">All</button></div>";
+      "<button type=\"button\" data-ow-act=\"rotate\" title=\"Turn the map a quarter turn\" aria-label=\"Turn the map\">&#8635;</button><button type=\"button\" data-ow-act=\"center\" title=\"Back to you (M)\" aria-label=\"Centre on you\">Me</button><button type=\"button\" data-ow-act=\"fit\" title=\"Show the whole map\" aria-label=\"Show the whole map\">All</button></div>";
   }
 
   function build(opts) {
     var here = statsNow().ow_pos;
     if (!OW.nodes[here]) return "";
     var sel = selected && OW.nodes[selected] ? selected : null;
-    return "<div class=\"ow-main\"><div class=\"ow-mapbox\">" + svg(here, sel) + controls() + "</div>" + card(here, sel, opts) + "</div>" + legend();
+    return "<div class=\"ow-main\"><div class=\"ow-mapbox\">" + svg(here, sel) + compass() + controls() + "</div>" + card(here, sel, opts) + "</div>" + legend();
   }
 
   /* ---------------------------------------------------------------- no page-turn while travelling */
@@ -254,11 +276,11 @@
       var np = OW.nodes[s.ow_pos], bx0 = box();
       if (!view || !np || !bx0) view = null;
       else {
-        var h0 = view.w * (bx0.h / bx0.w), mx = np.x * SCALE, my = np.y * SCALE;
+        var h0 = view.w * (bx0.h / bx0.w), pnp = P(np), mx = pnp.x, my = pnp.y;
         if (mx < view.cx - view.w / 2 + 60 || mx > view.cx + view.w / 2 - 60 || my < view.cy - h0 / 2 + 60 || my > view.cy + h0 / 2 - 60) { view.cx = mx; view.cy = my; }
       }
     }
-    var sig = [s.ow_pos, selected, opts.enter ? opts.enter.text : "", num(s.minutes_since_meal), num(s.minutes_since_rest), num(s.ow_exposure_pct), truthy(s.has_trail_rations) ? 1 + num(s.spare_trail_rations) : 0, opts.camp ? "camp" : "", Object.keys(OW.nodes).length].join("|");
+    var sig = [s.ow_pos, selected, opts.enter ? opts.enter.text : "", num(s.minutes_since_meal), num(s.minutes_since_rest), rot, num(s.ow_exposure_pct), truthy(s.has_trail_rations) ? 1 + num(s.spare_trail_rations) : 0, opts.camp ? "camp" : "", opts.dawn ? opts.dawn.text : "", Object.keys(OW.nodes).length].join("|");
     var el = document.getElementById(PANEL_ID);
     if (el && sig === lastSig) return;
     if (sig !== lastSig) pressed = false; // a new page of options: the old press is over
@@ -326,8 +348,10 @@
     if (act === "go") { var sel = selected && OW.nodes[selected] ? selected : null; if (sel) travel(sel); }
     else if (act === "enter") { if (o && o.enter) { quiet(false); press(o.enter.radio); } }
     else if (act === "camp") { if (o && o.camp) { quiet(true); press(o.camp); } }
+    else if (act === "dawn") { if (o && o.dawn) { quiet(true); press(o.dawn.radio); } }
     else if (act === "zoomin") zoomAt(1 / 1.4, 0.5, 0.5);
     else if (act === "zoomout") zoomAt(1.4, 0.5, 0.5);
+    else if (act === "rotate") { rot = (rot + 1) % 4; try { window.localStorage.setItem("owMapRot2", String(rot)); } catch (e2) {} view = null; lastSig = ""; scan(); }
     else if (act === "center") toggle();
     else if (act === "fit") { fit(); applyView(); }
   });

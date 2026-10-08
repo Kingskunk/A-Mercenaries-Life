@@ -8,7 +8,7 @@
 *comment ow_dest, then presses the ONE option below ("Travel to the tile you picked on the map"). Everything is still decided here: ow_travel asks the data file whether that tile
 *comment exists and whether there is a road to it, and refuses anything else, so the panel can grant nothing the data does not allow. A scripted test sets ow_dest by hand.
 *comment
-*comment A journey is ONE page: ow_travel works out the route from where the player stands and walks it leg by leg (36 minutes a mile, so 20 miles is a 12-hour march): each leg is charged
+*comment A journey is ONE page: ow_travel works out the route from where the player stands and walks it leg by leg (24 minutes a mile, so 20 miles is an 8-hour march): each leg is charged
 *comment the exposure of the moment (calendar.txt calc_exposure: the weather changes while you walk, so a leg after midnight pays the new day's weather) and moves the clock once, trail
 *comment rations are eaten for you at the hunger point (calendar.txt advance_time), and one summary line is printed before the new overworld page follows on the same page with the new tile.
 *comment Nothing stops the player at each tile. The player stops by picking a nearer tile first and camping there: ow_camp is an 8-hour sleep on any tile that is not a town, which clears
@@ -26,8 +26,10 @@
 *label ow_here
 *set ow_on true
 *set current_district "overworld"
+*comment The tile's climate shifts the temperature (calendar.txt reads climate_shift), and its water is what the lye soap needs. Set before update_hub_condition so the weather flags use them.
+*script var n = window.Overworld.nodes[stats.ow_pos]; stats.climate_shift = n.climate || 0; stats.ow_water = !!n.water;
 *gosub_scene calendar update_hub_condition
-*script var o = window.Overworld; var k = o.nodes[stats.ow_pos].kind; stats.ow_name = o.nodes[stats.ow_pos].name; stats.ow_here_text = o.nodes[stats.ow_pos].here; stats.ow_can_camp = (k !== "city" && k !== "town");
+*script var o = window.Overworld; var k = o.nodes[stats.ow_pos].kind; stats.ow_name = o.nodes[stats.ow_pos].name; var n = o.nodes[stats.ow_pos]; var dark = (stats.time_period === "Night" || stats.time_period === "Pre-Dawn"); var storm = Number(stats.weather_severity) >= 3; stats.ow_here_text = (storm && n.hereStorm) ? n.hereStorm : ((dark && n.hereNight) ? n.hereNight : n.here); stats.ow_can_camp = (k !== "city" && k !== "town" && k !== "village"); var nowm = Number(stats.clock_hour) * 60 + Number(stats.clock_minute); var toDawn = (1800 - nowm) % 1440; stats.ow_dawn_ok = (toDawn >= 360 && toDawn <= 720); stats.ow_dawn_hours = Math.round(toDawn / 60);
 *comment What the weather and the gear add to hunger and fatigue right now, as a percent, for the map card (base 100 minutes, so the extra minutes ARE the percent). Plain sets: a replay is harmless.
 *set exposure_base_mins 100
 *set exposure_camping false
@@ -46,15 +48,32 @@ ${ow_here_text}
     *goto ow_travel
   *if (ow_can_camp)
     # Make camp for the night.
+      *set ow_camp_mode "night"
+      *goto ow_camp
+  *if ((ow_can_camp) and (ow_dawn_ok))
+    # Make camp and sleep until dawn. [~${ow_dawn_hours} Hours]
+      *set ow_camp_mode "dawn"
       *goto ow_camp
   *if (ow_pos = "pv")
-    # Go back in through the Charter Gate.
+    # Go back in through the River Gate.
       *set ow_on false
-      *goto_scene port_valen/port_valen_middle_ward mw_charter_gate
+      *set climate_shift 0
+      *goto_scene port_valen/port_valen_middle_ward mw_river_gate
+  *if (ow_pos = "fv")
+    # Go into Barleycross.
+      *set ow_on false
+      *set climate_shift 0
+      *goto_scene timbermouth/barleycross/barleycross bc_arrive
+  *if (ow_pos = "fo")
+    # Go into Ashrun Holt.
+      *set ow_on false
+      *set climate_shift 0
+      *goto_scene timbermouth/ashrun_holt/ashrun_holt ah_arrive
   *if (ow_pos = "tm")
     # Go into Timbermouth.
       *set ow_on false
-      *goto_scene timbermouth/timbermouth timbermouth
+      *set climate_shift 0
+      *goto_scene timbermouth/timbermouth tm_arrive
 
 *comment ── the sky over the road: weather and light only, no people ──
 *label ow_sky
@@ -92,7 +111,7 @@ ${ow_here_text}
 *if (not(ow_trip_locked)) or (not(locked_ow_trip_page_id = page_id))
   *comment Worked out once per page: is this a real tile with a road to it, where the player stood, and what the road costs from there. ow_pos moves to the destination inside this same
   *comment lock (only for a valid trip), so a replay reads the stored values back instead of working a route from a position that has already changed.
-  *script var o = window.Overworld; var d = String(stats.ow_dest); var ok = !!(o.nodes[d] && o.nodes[stats.ow_pos] && d !== stats.ow_pos); var r = ok ? o.route(stats.ow_pos, d) : { ok: false, miles: 0, minutes: 0, legs: [] }; ok = ok && r.ok; stats.ow_trip_ok = ok; stats.ow_from = stats.ow_pos; stats.ow_miles = ok ? r.miles : 0; stats.ow_minutes = ok ? r.minutes : 0; stats.ow_legs = ok ? r.legs.length : 0; stats.ow_text = ok ? o.duration(r.minutes) : ""; stats.ow_from_name = o.nodes[stats.ow_pos].name; stats.ow_dest_name = ok ? o.nodes[d].name : "";
+  *script var o = window.Overworld; var d = String(stats.ow_dest); var ok = !!(o.nodes[d] && o.nodes[stats.ow_pos] && d !== stats.ow_pos); var r = ok ? o.route(stats.ow_pos, d) : { ok: false, miles: 0, minutes: 0, legs: [] }; ok = ok && r.ok; stats.ow_trip_ok = ok; stats.ow_from = stats.ow_pos; stats.ow_miles = ok ? r.miles : 0; stats.ow_minutes = ok ? r.minutes : 0; stats.ow_legs = ok ? r.legs.length : 0; stats.ow_text = ok ? o.span(r.minutes) : ""; stats.ow_from_name = o.nodes[stats.ow_pos].name; stats.ow_dest_name = ok ? o.nodes[d].name : "";
   *set ow_rations_total 0
   *if (ow_trip_ok)
     *set ow_pos ow_dest
@@ -101,7 +120,9 @@ ${ow_here_text}
     *set ow_leg_i 0
     *label ow_leg_loop
     *if (ow_leg_i < ow_legs)
-      *script stats.ow_leg_minutes = window.Overworld.route(stats.ow_from, stats.ow_dest).legs[stats.ow_leg_i].minutes;
+      *comment A leg is charged the climate of the tile it walks to: climate_shift is set, the temperature is re-derived (update_weather_flags), and only then is the exposure worked out.
+      *script var o = window.Overworld; var L = o.route(stats.ow_from, stats.ow_dest).legs[stats.ow_leg_i]; if (L) { stats.ow_leg_minutes = L.minutes; stats.climate_shift = o.nodes[L.to].climate || 0; }
+      *gosub_scene calendar update_weather_flags
       *set exposure_base_mins ow_leg_minutes
       *set exposure_camping false
       *gosub_scene calendar calc_exposure
@@ -125,7 +146,7 @@ ${ow_here_text}
     *set death_cause "exhaustion"
   *goto_scene death death_screen
 *gosub ow_event_hook
-[b][🥾 ${ow_from_name} to ${ow_dest_name}: ${ow_miles} miles, ${ow_text} on foot][/b]
+[b][🥾 ${ow_from_name} to ${ow_dest_name}: ${ow_miles} miles, ${ow_text}][/b]
 *line_break
 *if (ow_rations_total = 1)
   [b][🍞 You ate a trail ration on the way.][/b]
@@ -135,7 +156,7 @@ ${ow_here_text}
   *line_break
 *goto ow_here
 
-*comment ── a night's sleep on the road: 8 hours, fatigue cleared. Only on a tile that is not a town (ow_can_camp, set by ow_here). Same order as every sleeping place: the clock first (with the
+*comment ── a night's sleep on the road: 8 hours (or, when dawn is 6 to 12 hours off, the option to sleep until dawn at 06:00), fatigue cleared. Only on a tile that is not a town (ow_can_camp, set by ow_here). Same order as every sleeping place: the clock first (with the
 *comment    exposure of lying out), the death check, then resolve_sleep. The camp is a SHARED bunk for resolve_sleep (no sleep-quality buff, 1 HP a night, and the wool blanket's +1 HP works); the
 *comment    oilcloth halves the rain and a flint and tinderbox halves the cold (calc_exposure, exposure_camping). Sleeping out costs hunger, not rest: the clock still runs, and a ration is
 *comment    eaten for you if one comes due. All of it sits under ow_camp_locked, so a replay cannot sleep twice. ──
@@ -145,12 +166,16 @@ ${ow_here_text}
   *set ow_rations_total 0
   *if (ow_camp_ok)
     *set ow_camp_wet weather_wet
-    *set exposure_base_mins 480
+    *comment How long: a fixed 8 hours, or until 06:00 (the same sum ow_here used to offer it: minutes from now to 360 round the clock, kept between 6 and 12 hours so an odd moment cannot give a 3-hour night).
+    *set ow_camp_minutes 480
+    *if (ow_camp_mode = "dawn")
+      *script var nowm = Number(stats.clock_hour) * 60 + Number(stats.clock_minute); var toDawn = (1800 - nowm) % 1440; stats.ow_camp_minutes = (toDawn >= 360 && toDawn <= 720) ? toDawn : 480;
+    *set exposure_base_mins ow_camp_minutes
     *set exposure_camping true
     *gosub_scene calendar calc_exposure
     *set exposure_camping false
-    *set hours_to_pass 8
-    *set minutes_to_pass 0
+    *set hours_to_pass ((ow_camp_minutes - (ow_camp_minutes modulo 60)) / 60)
+    *set minutes_to_pass (ow_camp_minutes modulo 60)
     *set time_advance_call_id "ow_camp"
     *gosub_scene calendar advance_time
     *set ow_rations_total rations_eaten_last
@@ -185,7 +210,10 @@ You make camp beside the road.
 *if (not(sleep_gear_note = ""))
   ${sleep_gear_note}
 *line_break
-[b][⛺ You slept 8 hours on the road. Fatigue cleared.][/b]
+*if (ow_camp_mode = "dawn")
+  [b][⛺ You slept until dawn. Fatigue cleared.][/b]
+*else
+  [b][⛺ You slept 8 hours on the road. Fatigue cleared.][/b]
 *line_break
 *if (ow_rations_total = 1)
   [b][🍞 You ate a trail ration in the night.][/b]

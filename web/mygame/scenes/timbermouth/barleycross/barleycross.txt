@@ -1,0 +1,189 @@
+*comment ====================================================================================
+*comment BARLEYCROSS: the farming village six miles from Timbermouth (overworld tile "fv", overworld-data.js). Built 2026-10-07 as the template for the village scale the user set: more generic
+*comment than a town, about three places of interest (the Common and Gathering Hall, The Lane, the Common Pasture), a village head, rural, no factor, bank or services. It is MANY farms, not one:
+*comment thirty-odd farmsteads strung along lanes and a green, with fields and pastures running out to the hedgerows on every side, so no single place stands for the village's whole supply.
+*comment The trading system is NOT explained to the player anywhere here (the user: the player should work it out): prose shows farms and animals, never what feeds what. No food items,
+*comment prices or shop are built yet (the user's call); The Lane's gate tables are prose only.
+*comment
+*comment How the player gets here: "Go into Barleycross" on the overworld tile (plays bc_arrive, then runs on into the hub). The way out is the farm road: it lands on the overworld at the tile.
+*comment Hours: none. A village has no doors that shut against a traveller; the three places are always open.
+*comment The intro is three layers (QUEST_DESIGN_RULES section 12): LAYER 1 place (constant), LAYER 2 sky (weather and light only), LAYER 3 street (who is about, three rolled slots). No layer 4.
+*comment Each place is its own file in this folder (green, lane, pasture) so a later quest or shop lands in a place without editing this hub. None is in *scene_list: compile.js lists them.
+*comment ====================================================================================
+
+*comment The walk in from the road: charged once here, then straight on to the hub. No speech.
+*label bc_arrive
+*set minutes_to_pass 5
+*set time_advance_call_id "bc_arrive_1"
+*gosub bc_walk_time
+*temp bc_first false
+*if (not(bc_seen))
+  *set bc_first true
+*set bc_seen true
+*if (bc_first)
+  The road runs between hedged fields for the last half mile, and the first farmsteads stand back from it behind their gates, each with its own barn, yard and midden. Then the hedges open onto a wide common, and the whole village lies spread out around it.
+*else
+  The road runs between the hedged fields and opens onto the common.
+*goto barleycross
+
+*label barleycross
+*set current_district "barleycross"
+*gosub_scene calendar update_hub_condition
+*set shop_open ""
+[b]◈ BARLEYCROSS[/b]
+*line_break
+[b][⏳ Barleycross Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
+*line_break
+*gosub bc_place
+*gosub bc_sky
+*gosub bc_street
+
+*comment BUTTON FORMAT, as the Port Valen and Timbermouth hubs: destination first, bold, then a flavour that does not list stock, then [~N min].
+*choice
+  # [b]The Common and the Gathering Hall[/b]: the common at the crossing. [~5 min]
+    *goto_scene timbermouth/barleycross/green bc_green
+  # [b]The Lane[/b]: the street of farmsteads running south from the common. [~5 min]
+    *goto_scene timbermouth/barleycross/lane bc_lane
+  *if (weather_severity < 3)
+    # [b]The Common Pasture[/b]: the grazing land and its pens. [~10 min]
+      *goto_scene timbermouth/barleycross/pasture bc_pasture
+  *if (weather_severity >= 3)
+    # [b]The Common Pasture[/b]: too dangerous in this weather.
+      *goto bc_closed_pasture
+  # [b]The farm road[/b]: leave the village.
+    *set ow_pos "fv"
+    *goto_scene overworld/overworld ow_here
+
+*comment ── SEVERE WEATHER (weather_severity 3: a storm or a blizzard): the pasture stays on the menu with its reason (the closed-places rule) and plays this page, which costs no time. The Common, the
+*comment Gathering Hall and the Lane stay open as shelter, with the street empty. ──
+*label bc_closed_pasture
+[b]◈ THE COMMON PASTURE[/b]
+*line_break
+*if (weather = "Blizzard")
+  You get as far as the last hedge. Beyond it the pasture is a white roaring blank, with snow driving flat across the open ground and no sign of the track, and the animals are somewhere in the lee of the willows where nobody could find them. You turn back.
+*else
+  You get as far as the last hedge. Beyond it the wind lays the grass flat and tears at the hurdles, the rain comes across the open ground in sheets, and the animals have crowded together in the lee of the willows. Nobody is out there, and there is nothing to see that is worth the risk. You turn back.
+*page_break Back to the common…
+*goto barleycross
+
+*comment ── LAYER 1: PLACE ── Constant geography and smell: no weather, time of day or people.
+*label bc_place
+Barleycross is a village without borders—a peaceful sprawl anchored not by stone ramparts, but by four farm roads crossing upon a wide, grassy common. Here, village life circulates around a stone well-head, a muddy duck pond, and a timber Gathering Hall whose plain facade looks out from the eastern edge.
+
+Beyond the common, some forty farmsteads fan out along the cartways. Each is a world in miniature: long-roofed barns, muck-strewn yards, and clusters of cottages tucked behind thick bramble hedges. Past the homes lie the open yields—strips of pale barley and oats, dark tilled rows of root crops, and low pastures ribboned by drainage ditches and pollard willows.
+
+On the village’s southern fringe, a grain mill turns steadily beside the brook, its sails casting long, turning shadows over the grain. The settlement breathes with rural life, carrying a potent perfume of cured hay, smoldering hearth-wood, farmyard dung, and the sweet, stagnant moss of the ditchways.
+*return
+
+*comment ── LAYER 2: SKY ── Weather and light only, matched to time_period; no people. Closes with the ground's memory of recent weather.
+*label bc_sky
+*temp bc_dark false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set bc_dark true
+*if (weather = "Rain")
+  Rain falls steadily on the thatch and the open fields, and the ditches run brown beside every lane.
+*elseif (weather = "Storm")
+  Wind lays the barley flat in long waves, and the rain drives across the common in sheets.
+*elseif (weather = "Fog")
+  Ground mist lies over the fields and drowns the hedgerows, so that the farmsteads show only as darker shapes.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow lies thin on the thatch and the stubble, and the common is a grey slush.
+*elseif (weather = "Blizzard")
+  A freezing gale drives snow across the open fields and piles it against every hedge and barn wall.
+*elseif (weather = "Clear")
+  *if (bc_dark)
+    Starlight lies pale over the fields, and the hedgerows are black lines across them.
+  *elseif (time_period = "Dusk")
+    The low sun lays long shadows from the hedges across the stubble and turns the thatch to amber.
+  *else
+    Clear light lies on the fields, and the barley moves in the breeze.
+*else
+  *comment Overcast
+  *if (bc_dark)
+    A heavy, starless night lies over the fields, and the farms are dark but for a few banked fires.
+  *else
+    A flat grey overcast sits over the fields, and the air is heavy with the smell of the land.
+
+*comment ── WEATHER MEMORY (calendar ground_state, strictly no people) ──
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  After days of rain, the lanes are churned to mud and every field gate stands in a puddle.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The lanes are still dark and soft from the last rain.
+*return
+
+*comment ── LAYER 3: STREET ── Three independent rolled slots, each a sentence: (A) the work of the land, (B) village life, (C) the animals. No dialogue, no names, no day names.
+*label bc_street
+*comment Variety (2026-10-07): the people shown are mostly human with a few visible others (a dwarf, halflings, a half-elf), matching the generator's "village" mix in names-data.js; none is labelled by a trade.
+*temp st_a 1
+*temp st_b 1
+*temp st_c 1
+*if (((street_life = "empty") and (not(time_period = "Night"))) and (not(time_period = "Pre-Dawn")))
+  The common is deserted. Every gate is shut, the ducks have the pond to themselves, and a single figure in a sacking cape crosses between two barns without looking up.
+  *return
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *rand st_a 1 3
+  *rand st_b 1 3
+  *if (st_a = 1)
+    A lamp burns in the loft door of one barn, where somebody is up with a calving cow.
+  *elseif (st_a = 2)
+    A cock crows too early from one farmyard and is answered by another across the fields.
+  *else
+    The common is silent but for the drip of the well-head and the slow turning of the mill sails.
+  *if (st_b = 1)
+    A dog barks at nothing along the south lane, and another takes it up.
+  *elseif (st_b = 2)
+    Smoke rises straight from a few chimneys, and one shutter shows a line of firelight.
+  *else
+    An owl crosses the common low and silent and drops into the willows.
+  *return
+*rand st_a 1 6
+*rand st_b 1 6
+*rand st_c 1 6
+*if (st_a = 1)
+  Men and women work down a field of barley with sickles, the sheaves standing in lines behind them.
+*elseif (st_a = 2)
+  A team of two horses draws a harrow back and forth across a brown field, with a boy walking at their heads.
+*elseif (st_a = 3)
+  A hay wain stands half loaded in a meadow while a line of pitchers forks the cut grass up onto it.
+*elseif (st_a = 4)
+  A stocky dwarf with a braided beard and two farmhands set hurdles along a hedge gap, driving the stakes with a wooden maul.
+*elseif (st_a = 5)
+  A family of halflings moves along a row of roots with baskets, small quick hands pulling and knocking the earth from each one.
+*else
+  A cart of sacked grain creaks along the south lane toward the mill, with a dog trotting under the axle.
+*if (st_b = 1)
+  Women with wooden pails wait their turn at the well-head, talking low.
+*elseif (st_b = 2)
+  Geese cross the common in a column with a small round halfling girl behind them and a switch in her hand.
+*elseif (st_b = 3)
+  Children fish for something in the duck pond with a bent pin on a string and are not catching it.
+*elseif (st_b = 4)
+  An old man sits on a bench by the Gathering Hall with his boots off and his face to the sun, apparently asleep.
+*elseif (st_b = 5)
+  Washing hangs on every hedge along the lane, and a girl runs between the lines with a basket.
+*else
+  A tall, slender half-elf girl drives a pair of goats along the verge toward the brook, scolding the slower of them.
+*if (st_c = 1)
+  A bull stands in a small paddock by the common with a ring in his nose, watching everyone pass.
+*elseif (st_c = 2)
+  Hens work the dung heap in the nearest yard, and a cockerel stands on the gatepost over them.
+*elseif (st_c = 3)
+  A string of working mules is led down the lane by a boy, their halters hung with brass.
+*elseif (st_c = 4)
+  Pigs root along the verge with a sow in charge, and a small boy keeps well clear of her.
+*elseif (st_c = 5)
+  A flock of sheep spills across the common from one lane to another with a sheepdog flattening itself in the dust behind it.
+*else
+  A heavy brown horse stands patient at a gatepost, one hoof cocked, while its owner mends a trace.
+*return
+
+*label bc_walk_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return

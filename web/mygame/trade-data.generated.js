@@ -1029,6 +1029,90 @@ window.TRADE_DATA = {
     "herbalistPiece": 0,
     "countVar": ""
    }
+  },
+  "longshade_quarterstaff": {
+   "name": "ash quarterstaff",
+   "title": "Ash Quarterstaff",
+   "kind": "weapon",
+   "tier": "",
+   "retail": 15,
+   "minutes": 10,
+   "hint": "1d6 Bludgeoning, One-Handed",
+   "slot": "Weapon",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "countVar": ""
+   }
+  },
+  "longshade_spear": {
+   "name": "Longshade spear",
+   "title": "Longshade Spear",
+   "kind": "weapon",
+   "tier": "",
+   "retail": 20,
+   "minutes": 10,
+   "hint": "1d6 Piercing, Reach, One-Handed",
+   "slot": "Weapon",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "countVar": ""
+   }
+  },
+  "longshade_shortbow": {
+   "name": "Longshade shortbow",
+   "title": "Longshade Shortbow",
+   "kind": "weapon",
+   "tier": "",
+   "retail": 25,
+   "minutes": 10,
+   "hint": "1d6 Piercing, Ranged, Two-Handed",
+   "slot": "Weapon, two-handed",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "countVar": ""
+   }
+  },
+  "wooden_clogs": {
+   "name": "pair of wooden clogs",
+   "title": "Wooden Clogs",
+   "kind": "feet",
+   "tier": "",
+   "retail": 10,
+   "minutes": 10,
+   "hint": "Weather wear: rain -15%",
+   "slot": "Feet",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "countVar": ""
+   }
   }
  },
  "trades": {
@@ -1171,6 +1255,54 @@ window.TRADE_DATA = {
     "torvald_hide_cap",
     "iron_crowbar",
     "toll_seal_ring"
+   ]
+  },
+  "works": {
+   "title": "Roan's Wheel Shop",
+   "buyer": "general",
+   "buy": [
+    "longshade_quarterstaff",
+    "longshade_spear",
+    "longshade_shortbow",
+    "wooden_clogs"
+   ],
+   "sell": [
+    "longshade_quarterstaff",
+    "longshade_spear",
+    "longshade_shortbow",
+    "wooden_clogs"
+   ]
+  },
+  "tmstore": {
+   "title": "Marlow's General Goods",
+   "buyer": "general",
+   "buy": [
+    "hemp_rope",
+    "pitch_torch",
+    "lamp_oil",
+    "hooded_lantern",
+    "tool_kit",
+    "lute",
+    "tinderbox",
+    "chalk_sticks",
+    "wool_blanket",
+    "waxed_oilcloth",
+    "lye_soap",
+    "trail_rations"
+   ],
+   "sell": [
+    "hemp_rope",
+    "pitch_torch",
+    "lamp_oil",
+    "hooded_lantern",
+    "tool_kit",
+    "lute",
+    "tinderbox",
+    "chalk_sticks",
+    "wool_blanket",
+    "waxed_oilcloth",
+    "lye_soap",
+    "trail_rations"
    ]
   }
  }

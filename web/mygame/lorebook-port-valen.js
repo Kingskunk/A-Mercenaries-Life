@@ -829,7 +829,7 @@
       body: function (s) {
         var out = [
           "The road climbs in turns from the docks and levels out onto the Second Terrace, the broad shelf of flat ground that holds most of the city, with the lower streets falling away toward the harbor behind it and Civic Heights and the Patrician Quarter rising in tiers ahead. It is the largest ward in Port Valen. Timber buildings lean over narrow lanes beneath steep slate roofs, their lower shutters open as shop counters, and the air smells of cooled iron, brass dust, cedar sawdust and warm caraway bread.",
-          "Conduit Square, with its octagonal fountain and four bronze lion-head spouts, is the crossroads: the trunk road that carries the city's traffic runs through it, east and west toward the great gates in the landward wall, and down the switchbacks to the harbor. Lanes branch to the Locksmiths' Close, Lantern Lane and Smiths' Row, and Herb-Pounder Close is a dead-end at the head of Lantern Lane. A short way along the trunk road, an inn hangs a white wagon wheel over its door. A communal oven feeds the ward, and a public wash-house with baths stands behind the square."
+          "Conduit Square, with its octagonal fountain and four bronze lion-head spouts, is the crossroads: the trunk road that carries the city's traffic runs through it, north-west and east toward the great gates in the landward wall, and down the switchbacks to the harbor. Lanes branch to the Locksmiths' Close, Lantern Lane and Smiths' Row, and Herb-Pounder Close is a dead-end at the head of Lantern Lane. A short way along the trunk road, an inn hangs a white wagon wheel over its door. A communal oven feeds the ward, and a public wash-house with baths stands behind the square."
         ];
         if (truthy(s.mw_rumor_grain)) {
           out.push("Rumor from the baths: a Council grain officer waves unlicensed flour wagons through Conduit Square on Marketdays for a small payment slip, so the licensed drivers end up paying twice, once in fees and once in waiting.");
@@ -923,10 +923,10 @@
       unlock: "mw_inn_seen",
       body: function (s) {
         var out = [
-          "A long two-storey inn of grey stone and dark timber on the trunk road, marked by a white-painted wagon wheel over its door. It lets rooms by the night for " + (s.mw_inn_rate_copper || 5) + " copper bits, with a low beamed hall, a stair to the rooms above, and behind an archway a cobbled yard with a stable range and a cart shed."
+          "A long two-storey inn of grey stone and dark timber on the trunk road, marked by a white-painted wagon wheel over its door. It lets rooms for a day and a night at " + (s.mw_inn_rate_copper || 5) + " copper bits, with a low beamed hall, a stair to the rooms above, and behind an archway a cobbled yard with a stable range and a cart shed."
         ];
         if (truthy(s.mw_inn_talk_house)) {
-          out.push("One guest to a room. The key is yours until you leave by the front door or wake in the morning, and anything left behind goes to the cathedral's poor-box.");
+          out.push("One guest to a room. The key is yours for a full day from the hour you pay, to sleep in as often as you like and to carry out and back, and anything left behind when the day is up goes to the cathedral's poor-box.");
         }
         if (truthy(s.mw_inn_talk_road)) {
           out.push("Its guests are mostly carters, drovers and factors' clerks off the trunk road, and few stay longer than a night.");
@@ -963,20 +963,20 @@
       link: ["Trunk Road", "the trunk road"],
       unlock: "mw_gate_road_seen",
       body: [
-        "A broad paved way that crosses the Middle Ward from the River Gate in the west to the Charter Gate in the east, meeting Conduit Square at the middle and running on down the switchbacks to the harbor. Wheelwrights, farriers, harness-makers, chandlers and cheap cookshops line it, with wagon yards behind arched entries and the Wagoner's Rest a short way along.",
+        "A broad paved way that crosses the Middle Ward from the River Gate in the north-west to the Charter Gate in the east, meeting Conduit Square at the middle and running on down the switchbacks to the harbor. Wheelwrights, farriers, harness-makers, chandlers and cheap cookshops line it, with wagon yards behind arched entries and the Wagoner's Rest a short way along.",
         "Iron-tired wheels have worn two shallow grooves into the paving. The road belongs to carters, drovers and travelers, and the Watch patrols it in pairs."
       ],
       see: ["river_gate", "charter_gate", "wagoners_rest", "middle_ward"]
     },
     {
       id: "river_gate", category: "places", title: "The River Gate",
-      sub: "The west gate in the landward wall",
-      tags: ["Middle Ward"], aliases: ["river gate", "west gate", "wicket", "toll-house", "wall levy"],
+      sub: "The north-west gate in the landward wall",
+      tags: ["Middle Ward"], aliases: ["river gate", "north-west gate", "west gate", "wicket", "toll-house", "wall levy"],
       link: ["River Gate", "the River Gate"],
       unlock: "mw_river_gate_seen",
       body: function (s) {
         var out = [
-          "The west gate in the landward wall: thirty feet of grey blocks, with the trunk road passing through a gatehouse of two round towers. The road beyond runs west along the river cuttings toward the Grey River, with carters' yards and cheap inns outside the wall. Traffic sorts itself into three lanes under the arch: foot to the left, wheels to the right, stamped goods through the center."
+          "The north-west gate in the landward wall: thirty feet of grey blocks, with the trunk road passing through a gatehouse of two round towers. The road beyond turns north along the river cuttings toward the fork where the Grey and the Ashrun meet, with carters' yards and cheap inns outside the wall. Traffic sorts itself into three lanes under the arch: foot to the left, wheels to the right, stamped goods through the center."
         ];
         if (truthy(s.mw_river_talk_lanes)) {
           out.push("A stamp is a Gilded Scales seal on the bill of lading, and stamped goods skip the weighing. Everyone else waits for a Council officer's measuring rod, which takes its cut off the top of the load as the wall levy.");
@@ -986,7 +986,18 @@
         }
         return out;
       },
-      see: ["cobb_tarrow", "trunk_road", "charter_gate", "port_watch"]
+      see: ["cobb_tarrow", "trunk_road", "charter_gate", "port_watch", "wagon_yard"]
+    },
+    {
+      id: "wagon_yard", category: "places", title: "The Wagon Yard",
+      sub: "A carrier's yard outside the River Gate",
+      tags: ["Middle Ward", "Trade"], aliases: ["wagon yard", "carters' yard", "carriers' yard", "carter's yard", "ox yard"],
+      unlock: "es_yard_seen",
+      body: [
+        "A broad yard of beaten earth outside the north-west wall, fenced in planks and open to the River Road. A long shed keeps the wagons dry, a lean-to forge and a stone trough serve the teams, and the yard's brand is burned into the flank of every ox.",
+        "Lines for the road are made up here: four or five wagons, oxen in pairs, a lead horse and a master with a slate. The Hiring Hall posts the work, and the master pays only those who are in the line when it rolls."
+      ],
+      see: ["river_gate", "trunk_road", "hiring_hall"]
     },
     {
       id: "charter_gate", category: "places", title: "The Charter Gate",

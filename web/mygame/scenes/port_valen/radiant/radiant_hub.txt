@@ -24,6 +24,8 @@
   *set rj_watch_stage "none"
 *if ((rj_perf_stage = "active") and (campaign_day > rj_perf_until))
   *set rj_perf_stage "none"
+*if ((rj_escort_stage = "active") and (campaign_day > rj_escort_until))
+  *set rj_escort_stage "none"
 *set rj_has_job false
 *if ((rj_pest_stage = "active") and (campaign_day <= rj_pest_until))
   *set rj_has_job true
@@ -32,6 +34,8 @@
 *if ((rj_watch_stage = "active") and (campaign_day <= rj_watch_until))
   *set rj_has_job true
 *if ((rj_perf_stage = "active") and (campaign_day <= rj_perf_until))
+  *set rj_has_job true
+*if ((rj_escort_stage = "active") and (campaign_day <= rj_escort_until))
   *set rj_has_job true
 *return
 
@@ -80,6 +84,15 @@ You hold the insignia flat in your palm, and the terms you signed for run across
   *if (not(rh_here = rj_perf_where))
     *set rh_far true
 
+*temp rh_shut false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set rh_shut true
+*if ((rj_escort_stage = "active") and (campaign_day <= rj_escort_until))
+  [b]Wagon Escort[/b]: ${rj_escort_place_text}, a line of four wagons for ${rj_escort_dest_name}. Payment is by the mile, a third of it if a wagon or a load is lost, with meals and a bunk on the road. The line rolls two hours after ${rj_escort_opens} @{(campaign_day = rj_escort_until) this morning|tomorrow morning}.
+  *line_break
+  *if ((not(rh_here = "middle_ward")) and (rj_escort_from = "pv"))
+    *set rh_far true
+
 *choice
   *if (((rj_pest_stage = "active") and (campaign_day <= rj_pest_until)) and (rj_pest_where = rh_here))
     # [b]The house[/b]: ${rj_pest_place}. [~10 min]
@@ -99,6 +112,12 @@ You hold the insignia flat in your palm, and the terms you signed for run across
   *if ((((rj_perf_stage = "active") and (campaign_day <= rj_perf_until)) and (rh_here = rj_perf_where)) and (not(rh_dusk)))
     # [b]The evening[/b]: the music starts at dusk.
       *goto rh_perf_closed
+  *if (((((rj_escort_stage = "active") and (campaign_day <= rj_escort_until)) and (rj_escort_from = "pv")) and (rh_here = "middle_ward")) and (not(rh_shut)))
+    # [b]The wagon yard[/b]: outside the River Gate. [~10 min]
+      *goto_scene port_valen/radiant/hall_escort es_arrive
+  *if (((((rj_escort_stage = "active") and (campaign_day <= rj_escort_until)) and (rj_escort_from = "pv")) and (rh_here = "middle_ward")) and (rh_shut))
+    # [b]The wagon yard[/b]: the gate is shut until morning.
+      *goto rh_escort_closed
   *if (rh_far)
     # [Travel: Head to the district the house is in]
       *goto_scene port_valen/port_valen port_valen_travel
@@ -118,6 +137,14 @@ You pull the insignia out and read the terms again. The watch signs on at dusk, 
 [b]◈ YOUR POSTING[/b]
 *line_break
 You pull the insignia out and read the terms again. The music starts at dusk, and not before. Come back when the light starts to go.
+*page_break Put the insignia away…
+*goto rh_hub
+
+*comment The gate is shut at night, so the yard outside it cannot be reached. Costs no time and sets nothing.
+*label rh_escort_closed
+[b]◈ YOUR POSTING[/b]
+*line_break
+You pull the insignia out and read the terms again. The line rolls from the yard outside the River Gate, and the gate is shut until the morning bell. Come back when it opens.
 *page_break Put the insignia away…
 *goto rh_hub
 

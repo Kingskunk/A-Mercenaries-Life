@@ -273,15 +273,25 @@ function compile(){
   verifyFileName("port_valen/radiant/hall_haul.txt");
   verifyFileName("port_valen/radiant/hall_watch.txt");
   verifyFileName("port_valen/radiant/hall_perform.txt");
+  verifyFileName("port_valen/radiant/hall_escort.txt");
   // Timbermouth, the placeholder town (see its hub's header comment): a hub plus one file per place, all reached only by *goto_scene (from the developer menu for now), so none
   // of them is in *scene_list and each needs its own line here or a compiled build fails with "scene doesn't exist" the moment the player walks in.
   verifyFileName("timbermouth/timbermouth.txt");
   verifyFileName("timbermouth/market.txt");
-  verifyFileName("timbermouth/sawmill.txt");
+  verifyFileName("timbermouth/general_store.txt");
+  verifyFileName("timbermouth/wagon_lot.txt");
   verifyFileName("timbermouth/workshops.txt");
   verifyFileName("timbermouth/factors_hall.txt");
   verifyFileName("timbermouth/split_pine_inn.txt");
-  // The overworld (the road between towns, see its header comment): reached only by *goto_scene, from Timbermouth's exit and Port Valen's Charter Gate, so it is not in
+  verifyFileName("timbermouth/barleycross/barleycross.txt");
+  verifyFileName("timbermouth/barleycross/green.txt");
+  verifyFileName("timbermouth/barleycross/lane.txt");
+  verifyFileName("timbermouth/barleycross/pasture.txt");
+  verifyFileName("timbermouth/ashrun_holt/ashrun_holt.txt");
+  verifyFileName("timbermouth/ashrun_holt/longhouse.txt");
+  verifyFileName("timbermouth/ashrun_holt/landing.txt");
+  verifyFileName("timbermouth/ashrun_holt/clearing.txt");
+  // The overworld (the road between towns, see its header comment): reached only by *goto_scene, from Timbermouth's exit and Port Valen's River Gate, so it is not in
   // *scene_list and needs its own line here or a compiled build fails with "scene doesn't exist" the moment the player leaves a town.
   verifyFileName("overworld/overworld.txt");
   // The hub that lists signed jobs and routes to them (reached from the Trunk Road and the Patrician Avenue).

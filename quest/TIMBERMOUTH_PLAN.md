@@ -20,7 +20,7 @@ This document establishes Timbermouth as the next town within the Gilded Scales'
 
 ### Provisional decisions to confirm during map work
 
-- Timbermouth is about **40 miles east of Port Valen**, reached through the Charter Gate along the old imperial road.
+- Timbermouth is about **40 miles north-west of Port Valen** (revised 2026-10-08, the user's call: it stands up from the Grey River, so the Ashrun can join the river), reached through the **River Gate** along the Grey River road, which leaves the river cuttings and climbs into the uplands. The Charter Gate's old imperial road runs east, away from it, to other lands.
 - The town stands at the western mouth of the Longshade, where several forest and village roads meet that paved road.
 - The name refers to the opening through which the Longshade's timber trade reaches the main road. It does not require a river mouth.
 - Three feeder villages are enough for the first regional pass. More villages should only be added when they have playable work or a distinct economic purpose.
@@ -33,7 +33,7 @@ This document establishes Timbermouth as the next town within the Gilded Scales'
 
 - The Grey River begins at Alderford and runs thirty miles to Port Valen. It already forms a complete trade route with a clear beginning and end.
 - Alderford is the northern river gateway. It handles the weir, barges, highland freight, rough-cut timber, fish curing, and goods coming down from the Crags.
-- Port Valen's Charter Gate opens onto an old imperial road that runs east and climbs into uplands beyond the city.
+- Port Valen's Charter Gate opens onto an old imperial road that runs east (revised 2026-10-08: this road does NOT lead to Timbermouth; the River Gate road does).
 - Salt and wine traffic already uses the eastern gate, proving that it is a working freight road rather than an abandoned track.
 - A Port Valen notice already asks for an escort for a coal-and-iron wagon travelling two days to Timbermouth.
 - The current overworld mock covers the Grey River corridor only and explicitly treats its terrain arrangement as provisional. Timbermouth can sit beyond that first map without displacing Alderford, the Western Vale, or the Great Sedge.
@@ -49,9 +49,11 @@ A second river would repeat too much of Alderford:
 
 Timbermouth therefore has ordinary wells, springs, and small local watercourses as needed for daily life, but **no navigable river and no water-based regional identity**.
 
+**The Ashrun (added 2026-10-07, the user's call).** One small watercourse is named: the Ashrun, a stony stream no wider than a road that comes down out of the Longshade, turns the sawmill's wheel, and runs down as the WEST ARM of a Y: north of Port Valen the river arrives from a fork, where the Grey proper comes down from Alderford by the east arm and the Ashrun comes down from Timbermouth by the west arm, and the single river then runs south to the city (the user's geography, 2026-10-08; the Grey's own landings take what arrives). It is the one exception to "no river", and it is deliberately **not navigable**: shallow, rock-strewn, with a chute and ledges, so nothing but loose logs travels on it, and only in the spring melt, in a few weeks of driving. A share of every drive jams or splits on the rocks, and logs that arrive have lost their grade stamp and are worth far less than the stamped planks sold by road, which is why the mill keeps sawing and ships by wagon. It carries no passengers, boats, rafts, barges or goods, so it creates no river identity and no shortcut. It also gives the saw frame its power and the future events a log drive, a jam, a stolen stamped log, a drover in the rapids.
+
 ### Chosen placement: an inland road junction
 
-The old imperial road climbs east from Port Valen into wooded uplands. Timbermouth stands at the western mouth of the Longshade, where that road meets three smaller roads serving the forest and nearby villages. The ground is firm enough for loaded wagons, and the surviving imperial road makes a two-day freight journey believable.
+The Grey River road leaves Port Valen by the River Gate, follows the river cuttings, then climbs north-west into wooded uplands. Timbermouth stands at the mouth of the Longshade, where that road meets three smaller roads serving the forest and nearby villages. The ground is firm enough for loaded wagons, and the surviving imperial road makes a two-day freight journey believable.
 
 The town began as an inspection and supply stop at the edge of the managed forest. It grew because raw goods from the villages could be collected, processed, taxed, and placed under one Factor before travelling to Port Valen.
 
@@ -60,7 +62,7 @@ This gives the two towns separate functions:
 | Settlement | Regional function |
 |---|---|
 | **Alderford** | Northern gateway for bulk goods carried by river: highland freight, rough timber, fish, and barge traffic. |
-| **Timbermouth** | Eastern road town for finished woodcraft, wagons, barrels, village produce, and overland trade. |
+| **Timbermouth** | Upland road town for finished woodcraft, wagons, barrels, village produce, and overland trade. |
 | **Port Valen** | Capital, financial center, mass consumer, sea port, and exporter to the wider world. |
 
 ---
@@ -117,6 +119,10 @@ The Gilded Scales protect the Longshade ash name as a commercial grade. Timber s
 ---
 
 ## 3. The Six Places
+
+> **Revision 2026-10-07 (the user's call).** The Sawmill is no longer a hub place: it had no purpose a menu button could serve (inspection belongs to the Market, crafting to the Workshops, bulk trade to the Market and the future trading system). It stays as scenery in the town's text; its scene file was deleted (2026-10-07) and a job or event can add one when it needs it (paid shifts, the spring log drive, mill accidents). A **General Store** (Marlow's, beside the Market's yard gate) took its slot: the same pool of goods as Hollis & Daughters in Port Valen, bought back at half retail. The hub now has five places: the Market, the General Store, the Workshops, the Factor's Hall and the Split Pine. The numbered list below is the original plan.
+>
+> **The Factor's Hall, built 2026-10-07, scaled to a town (the user: fewer jobs than a city; the same two clerks take on extra work as services are added, as in Alderford's Counting House).** Two UNNAMED clerks keep one counter (banking on the shared Gilded Scales Letter of Credit, and the Hall Insignia for 1 silver, rank Open, if the player has none), a notice board holds the forecast, a road notice and an EMPTY job board, and the schedule over the counter lists "deeds and licences by appointment" as a hook only (land and deed purchases, and a trade licence for the Market's future trading system). Sabine Halloran stays off-stage behind a closed door. No Timbermouth standing meter: `gilded_scales_rep` is all the Scales' standing there is (open question 3 settled).
 
 The player enters the repeating **Timbermouth** hub and chooses among no more than six places. All six return directly to Timbermouth.
 
@@ -228,7 +234,7 @@ Raw logs are heavy and low in value for their weight. Timbermouth should not rou
 - Planks and boards are cut to standard sizes and packed without bark, branches, or unusable sections.
 - Resin and pitch travel in sealed containers rather than as raw forest material.
 
-Port Valen sends iron and coal east because Timbermouth's workshops and smithies need them. The same wagons return west carrying finished Longshade ash goods, pottery, hides, and village produce. This reduces empty return journeys and supports the existing coal-and-iron escort notice.
+Port Valen sends iron and coal up the road because Timbermouth's workshops and smithies need them. The same wagons return down to the city carrying finished Longshade ash goods, pottery, hides, and village produce. This reduces empty return journeys and supports the existing coal-and-iron escort notice.
 
 ### Goods that remain Alderford's responsibility
 
@@ -248,7 +254,7 @@ Timbermouth may work on smaller ship orders, barrels, replacement pieces, and fi
 
 ### 6.1 Port Valen to Timbermouth
 
-**Route:** Port Valen's Charter Gate -> old imperial road through the eastern uplands -> Timbermouth.
+**Route:** Port Valen's River Gate -> Grey River road along the cuttings -> up through the uplands -> Timbermouth.
 
 **Working distance:** 40 miles, or 8 hexes at the current 5-mile scale.
 
@@ -261,9 +267,9 @@ Timbermouth may work on smaller ship orders, barrels, replacement pieces, and fi
 | Laden wagon after sustained rain | Up to 3 days | Lets `ground_state` matter without changing the base map distance. |
 | Relay courier using fresh horses | About 1 day | Reserved for official messages or expensive travel, not ordinary player movement. |
 
-The imperial road should be better near Port Valen and more worn as it climbs. It remains passable to wagons because the Gilded Scales depend on the taxes and goods moving over it.
+The road should be better near Port Valen (it follows the river) and more worn as it climbs. It remains passable to wagons because the Gilded Scales depend on the taxes and goods moving over it.
 
-There is **no routine river or sea shortcut** between Port Valen and Timbermouth. The road is the relationship, which preserves the value of walking, mounts, caravans, weather, roadside stops, and escort work.
+There is **no routine river or sea shortcut** between Port Valen and Timbermouth (the Ashrun above carries only loose logs, in the spring melt). The road is the relationship, which preserves the value of walking, mounts, caravans, weather, roadside stops, and escort work.
 
 ### 6.2 Timbermouth to its villages
 
@@ -281,7 +287,7 @@ These are local trips rather than multi-day journeys. A mount lets the player vi
                                            |
                                       Forest Road
                                            |
-Port Valen ===== old imperial road ===== Timbermouth
+Port Valen ===== river road ===== Timbermouth
                                           /      
                                   Farm Road      
                                       /             
@@ -406,7 +412,7 @@ Workers from the forest regard him as someone who crossed to the Factor's side. 
 
 Ressa stopped driving after a winter journey killed a pair of horses and left the wagon stranded overnight. Nobody died, but she has no patience for merchants who treat animals, weather, and road time as figures that can be argued downward.
 
-**Current pressure:** The road remains profitable, but repeated heavy loads and delayed repairs are making the eastern climb dangerous. Sabine prioritizes the main road near town; wagon crews claim the worst stretch lies beyond the part the town watch regularly sees.
+**Current pressure:** The road remains profitable, but repeated heavy loads and delayed repairs are making the climb dangerous. Sabine prioritizes the main road near town; wagon crews claim the worst stretch lies beyond the part the town watch regularly sees.
 
 **Established-world connections:**
 
@@ -466,7 +472,7 @@ This plan does not lock a main Timbermouth quest yet. It reserves the following 
 - A major Port Valen order forces workshops to choose between speed and safe work.
 - Timber inspectors downgrade sound wood so a favored merchant can buy it cheaply.
 - A shortage of iron parts stops wagon and barrel production despite full timber stores.
-- The Town Factor spends road taxes on the main imperial road while village roads become unusable.
+- The Town Factor spends road taxes on the main road while village roads become unusable.
 - Workshop debt gives the Factor legal power to seize tools and finished orders.
 
 ### Village-to-town conflicts
@@ -512,7 +518,7 @@ When Timbermouth moves from planning into implementation, it will need:
 
 The next planning pass should settle:
 
-1. The exact direction of the imperial road after it leaves Port Valen: due east or east-northeast through the uplands.
+1. (Settled 2026-10-08) The direction of the road: north-west, from the River Gate.
 3. Whether Timbermouth has its own standing meter or uses only `gilded_scales_rep`.
 4. Whether the first trip must be the escort contract or whether free travel can unlock through another route.
 5. Where roadside shelter falls on the two-day journey and whether it is a safe inn, a guarded rest stop, or a player-made camp.
