@@ -46,6 +46,11 @@
 
   core.data = function () { return window.LOREBOOK || { categories: [], entries: [] }; };
 
+  // A supporting detail can be folded into its parent entry without remaining in the
+  // browseable index. Keep the data for its parent to reuse, but do not let it add
+  // another page, search result, story link, or discovered-count slot.
+  core.isIndexed = function (entry) { return entry.index !== false; };
+
   core.isUnlocked = function (entry, s) {
     var u = entry.unlock;
     s = s || {};
@@ -97,7 +102,7 @@
   core.unlocked = function (s) {
     var out = [];
     core.data().entries.forEach(function (e) {
-      if (core.isUnlocked(e, s)) out.push(core.resolve(e, s));
+      if (core.isIndexed(e) && core.isUnlocked(e, s)) out.push(core.resolve(e, s));
     });
     return out;
   };
@@ -160,7 +165,7 @@
     var terms = [], map = {}, titles = {};
     s = s || {};
     core.data().entries.forEach(function (e) {
-      if (!e.link || !core.isUnlocked(e, s)) return;
+      if (!core.isIndexed(e) || !e.link || !core.isUnlocked(e, s)) return;
       titles[e.id] = fill(evalField(e.title, s), s).replace(/<[^>]*>/g, "");
       e.link.forEach(function (t) {
         if (t && !map.hasOwnProperty(t)) { map[t] = e.id; terms.push(t); }
@@ -300,7 +305,7 @@
   function renderList(resetSelection) {
     var s = statsNow();
     current = core.unlocked(s);
-    var total = core.data().entries.length;
+    var total = core.data().entries.filter(core.isIndexed).length;
     refreshLinksButton();
     elCount.innerHTML = '<span class="lb-count-full">' + current.length + ' of ' + total + ' discovered</span>' +
       '<span class="lb-count-short">' + current.length + '/' + total + '</span>';

@@ -69,7 +69,7 @@
   // than branching on class, so a character shows one combined list however their magic was acquired
   // (a Hexblood's innate race_cantrip_2 sits alongside their class picks, exactly as combat reads it).
   var SPELL_SLOTS = [
-    "race_cantrip", "race_cantrip_2",
+    "race_cantrip", "race_cantrip_2", "item_cantrip",
     "warlock_cantrip", "warlock_cantrip_2", "warlock_spell", "warlock_spell_2",
     "wizard_cantrip", "wizard_cantrip_2", "wizard_cantrip_3", "wizard_spell", "wizard_spell_2", "wizard_spell_3",
     "bard_cantrip", "bard_cantrip_2", "bard_spell", "bard_spell_2", "bard_spell_3",

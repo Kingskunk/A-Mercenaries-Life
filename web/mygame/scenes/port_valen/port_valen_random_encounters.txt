@@ -1,0 +1,404 @@
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment PORT VALEN: ONE-SHOT TRAVEL ENCOUNTERS
+*comment Reached only from port_valen.txt's port_valen_travel_to after a real inter-district leg has advanced
+*comment the clock. Inputs: pv_re_origin and pv_re_dest. The picker makes one 5% roll per campaign day and every
+*comment event has its own permanent completion flag. This scene always ends by *goto_scene'ing directly to the
+*comment selected destination; it must never return to the travel label, or that leg would be charged twice.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label pv_re_roll
+*comment ChoiceScript's condition parser accepts the small nested tests below more reliably than compound
+*comment route predicates. Keep availability in these temps; the selection code should only read the flags.
+*temp pvre_generous_route false
+*temp pvre_cart_route false
+*temp pvre_alvaro_route false
+*temp pvre_night false
+*temp pvre_day false
+*temp pvre_generous_available false
+*temp pvre_cart_available false
+*temp pvre_alvaro_available false
+*temp pvre_storm_available false
+*temp pvre_ilvis_route false
+*temp pvre_ilvis_available false
+*temp pvre_has_candidate false
+
+*if (pv_re_origin = "civic_heights")
+  *if (pv_re_dest = "middle_ward")
+    *set pvre_generous_route true
+*if (pv_re_origin = "middle_ward")
+  *if (pv_re_dest = "civic_heights")
+    *set pvre_generous_route true
+*if (pv_re_origin = "harbor")
+  *if (pv_re_dest = "middle_ward")
+    *set pvre_cart_route true
+*if (pv_re_origin = "middle_ward")
+  *if (pv_re_dest = "harbor")
+    *set pvre_cart_route true
+*if (pv_re_origin = "dredge_end")
+  *if (pv_re_dest = "middle_ward")
+    *set pvre_alvaro_route true
+*if (pv_re_origin = "middle_ward")
+  *if (pv_re_dest = "dredge_end")
+    *set pvre_alvaro_route true
+*if (pv_re_origin = "middle_ward")
+  *if (pv_re_dest = "upper_wharves")
+    *set pvre_ilvis_route true
+*if (pv_re_origin = "upper_wharves")
+  *if (pv_re_dest = "middle_ward")
+    *set pvre_ilvis_route true
+*if (time_period = "Morning")
+  *set pvre_day true
+*if (time_period = "Midday")
+  *set pvre_day true
+*if (time_period = "Afternoon")
+  *set pvre_day true
+*if (time_period = "Dusk")
+  *set pvre_night true
+*if (time_period = "Night")
+  *set pvre_night true
+*if (time_period = "Pre-Dawn")
+  *set pvre_night true
+
+*if (pvre_generous_route)
+  *if (not(pv_re_generous_done))
+    *set pvre_generous_available true
+*if (pvre_cart_route)
+  *if (not(pv_re_cart_done))
+    *set pvre_cart_available true
+*if (pvre_alvaro_route)
+  *if (pvre_night)
+    *if (not(pv_re_alvaro_done))
+      *set pvre_alvaro_available true
+*if (weather_severity >= 3)
+  *if (not(pv_re_storm_done))
+    *set pvre_storm_available true
+*if (pvre_ilvis_route)
+  *if (pvre_day)
+    *if (weather_severity < 3)
+      *if (not(pv_re_ilvis_done))
+        *set pvre_ilvis_available true
+
+*if (pvre_generous_available)
+  *set pvre_has_candidate true
+*if (pvre_cart_available)
+  *set pvre_has_candidate true
+*if (pvre_alvaro_available)
+  *set pvre_has_candidate true
+*if (pvre_storm_available)
+  *set pvre_has_candidate true
+*if (pvre_ilvis_available)
+  *set pvre_has_candidate true
+*if (not(pvre_has_candidate))
+  *goto pv_re_return
+
+*temp pvre_chance 1
+*rand pvre_chance 1 100
+*if (pvre_chance > 5)
+  *goto pv_re_return
+*set pv_re_last_day campaign_day
+
+*temp pvre_pick 1
+*rand pvre_pick 1 5
+*if (pvre_pick = 1)
+  *if (pvre_generous_available)
+    *goto pv_re_generous
+*if (pvre_pick = 2)
+  *if (pvre_cart_available)
+    *goto pv_re_cart
+*if (pvre_pick = 3)
+  *if (pvre_alvaro_available)
+    *goto pv_re_alvaro
+*if (pvre_pick = 4)
+  *if (pvre_storm_available)
+    *goto pv_re_storm
+*if (pvre_pick = 5)
+  *if (pvre_ilvis_available)
+    *goto pv_re_ilvis
+
+*comment If the random pick did not match an eligible route, take the first eligible beat. This preserves the
+*comment advertised 5% chance instead of silently turning it into a much smaller chance on routes with one beat.
+*if (pvre_generous_available)
+  *goto pv_re_generous
+*if (pvre_cart_available)
+  *goto pv_re_cart
+*if (pvre_alvaro_available)
+  *goto pv_re_alvaro
+*if (pvre_storm_available)
+  *goto pv_re_storm
+*if (pvre_ilvis_available)
+  *goto pv_re_ilvis
+*goto pv_re_return
+
+*comment ── CIVIC HEIGHTS / MIDDLE WARD: A PURSE FOR THE ROAD ──
+
+*label pv_re_generous
+*set pv_re_generous_done true
+[b]◈ ON THE TERRACE ROAD[/b]
+*line_break
+A person in a deep green coat stands beside the road with a purse open in one gloved hand. Polished boots, clean cuffs, and the fine weave of the wool say more about their purse than any crest could. They are placing copper bits, one at a time, into the hands of people who pass.
+
+When they notice you, they hold out the purse. "Take the rest down the road," they say. "Give it to people who need it. I have an appointment, and more money than patience."
+
+*choice
+  # "All right. I will see these reach people who need them." Take the purse. [~10 min]
+    *set minutes_to_pass 10
+    *set time_advance_call_id "pv_re_generous_give_1"
+    *gosub pv_re_advance_time
+    *if (pv_re_generous_event = 0)
+      *rand pv_re_generous_event 1 6
+    You walk the road with the small purse open in your palm, offering its coins where need shows itself. The work is quick, but not simple.
+
+    *if (pv_re_generous_event = 1)
+      A child takes a copper bit in both hands, then runs to a woman waiting beneath an eave and presses it into her palm. The woman folds around the child for a moment, holding on as though the coin were a great treasure.
+    *if (pv_re_generous_event = 2)
+      An old man resting against a fence catches a coin neatly from the air. He studies it, then gives you one grave nod before tucking it away.
+    *if (pv_re_generous_event = 3)
+      A drunk man lunges for the purse. Two shopkeepers catch him by the elbows before he can get hold of it; after a loud argument, he accepts one coin for a bowl of stew and staggers away cursing everyone involved.
+    *if (pv_re_generous_event = 4)
+      Three sisters, so alike in face and dress that you cannot tell which spoke first, approach with their hands clasped. You give each a coin. Their thanks come out in a single shy chorus.
+    *if (pv_re_generous_event = 5)
+      One coin rolls from your palm and stops near a Watch guard's boot. He looks up and down the road, then picks it up when he thinks no one is watching. You let him keep the illusion.
+    *if (pv_re_generous_event = 6)
+      A thrown coin flashes once in the grey light before a raven snatches it from the air. The bird is gone over the rooftops before anyone can do more than laugh.
+
+    By the time the purse is empty, the person in the green coat has gone on. No one has asked your name.
+    *page_break Continue toward ${pv_re_dest}…
+    *goto pv_re_return
+  # "No. Charity should have a hand and a name behind it." Decline the purse.
+    The person closes the purse and gives you a small, unsurprised nod. "A fair answer," they say, turning to the next person on the road.
+    *page_break Continue toward ${pv_re_dest}…
+    *goto pv_re_return
+
+*comment ── HARBOR / MIDDLE WARD: THE RUNAWAY CART ──
+
+*label pv_re_cart
+*set pv_re_cart_done true
+[b]◈ ON THE WAREHOUSE ROAD[/b]
+*line_break
+A handcart piled with rope coils jolts loose on the slope ahead. Its owner catches one handle, but the other wheel skips in the gutter and the cart begins to turn broadside across the road.
+
+*choice
+  # "Keep your feet! I have the other handle." Seize it and hold the cart straight. [~5 min]
+    *set minutes_to_pass 5
+    *set time_advance_call_id "pv_re_cart_help_1"
+    *gosub pv_re_advance_time
+    Between you, the carter, and a passing fishwife, the load stops inches short of a shopfront. The carter presses two copper bits into your palm before you can refuse.
+    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+      *set currency_add_amount 2
+      *gosub_scene economy currency_add
+      *set currency_txn_locked true
+      *set locked_currency_txn_page_id page_id
+    [b][💰 Received: 2 Copper Bits][/b]
+    *page_break Continue toward ${pv_re_dest}…
+    *goto pv_re_return
+  # "Mind the shopfront!" Step clear and let the owner manage it.
+    The owner swears, braces his shoulder against the handle, and gets the cart straight with help from two other people in the road. No one has time to spare you a look.
+    *page_break Continue toward ${pv_re_dest}…
+    *goto pv_re_return
+
+*comment ── DREDGE-END / MIDDLE WARD, NIGHT: AN HONEST THIEF ──
+
+*label pv_re_alvaro
+*set pv_re_alvaro_done true
+[b]◈ AT THE CANAL STAIRS[/b]
+*line_break
+A broad-shouldered man sits on the low wall beside the canal steps with a bottle between his boots. His coat is plain, but it fits too well across the shoulders to have been bought second-hand. He watches the black water without drinking.
+
+When he notices you, he does not reach for a weapon. That restraint looks deliberate.
+
+*choice
+  # "You are not studying the water. You are looking for a way out." [~10 min]@{show_stat_hints  [Persuasion DC 12]|}
+    *gosub_scene dice_engine roll_skill_check 12 "persuasion" "" "" "" "" ""
+    *if (check_success)
+      *set pv_re_alvaro_persuaded true
+    *set minutes_to_pass 10
+    *set time_advance_call_id "pv_re_alvaro_talk_1"
+    *gosub pv_re_advance_time
+    *goto pv_re_alvaro_confession
+  # "Start with the truth. What did you do?" [~10 min]
+    *set minutes_to_pass 10
+    *set time_advance_call_id "pv_re_alvaro_truth_1"
+    *gosub pv_re_advance_time
+    The man gives you a hollow look, then turns the bottle once between his palms.
+    *goto pv_re_alvaro_confession
+  # Study him, then say, "You are no dock hand." [~10 min]@{show_stat_hints  [Perception DC 12]|}
+    *gosub_scene dice_engine roll_skill_check 12 "perception" "" "" "" "" ""
+    *if (check_success)
+      *set pv_re_alvaro_detected true
+    *set minutes_to_pass 10
+    *set time_advance_call_id "pv_re_alvaro_watch_1"
+    *gosub pv_re_advance_time
+    *goto pv_re_alvaro_confession
+  # Leave him and keep to the road.
+    The man looks back at the canal before you have gone ten paces. Whatever choice he is weighing, it is not yours to make tonight.
+    *page_break Continue toward ${pv_re_dest}…
+    *goto pv_re_return
+
+*label pv_re_alvaro_confession
+*if (pv_re_alvaro_detected)
+  You notice the balance of his feet even while seated, the knife sheath sewn inside his coat, and the old white seam at the base of his thumb. He sees you see it.
+
+  "Not a dock hand," he says. "Good eye."
+*else
+  You take a place where he can see both your hands and wait for his answer.
+
+He turns the bottle in his hands. "Alvaro Zenid," he says at last. "I used to take coin for doors that needed opening and people who needed stopping. I was good at it."
+
+For a while, the canal makes the only sound.
+
+"I have killed people whose names I never learned," Alvaro says. "Then one morning I had the coin, the knife, the next name, and nothing in me wanted any of it. I thought that meant I was sick. Now I think it means I waited too long to be a person."
+
+*choice
+  # "A realization is not forgiveness. It is still the first honest thing you have said."
+    *goto pv_re_alvaro_beginning
+  # "Then answer for it. Walk into a Watch house and tell them exactly that."
+    *goto pv_re_alvaro_watch
+  # "Put down the knife. Refuse the next name. Do that again tomorrow."
+    *goto pv_re_alvaro_next_day
+  # "I will not carry this choice for you. Decide what kind of person you are when I am gone."
+    *goto pv_re_alvaro_no_answer
+
+*label pv_re_alvaro_beginning
+*if (pv_re_alvaro_persuaded)
+  Alvaro lets out a short breath that might be a laugh. "A beginning," he says. "That is smaller than absolution. I can carry smaller."
+
+  He puts the bottle down on the wall and stands. "No more names tonight. Tomorrow, I find work that does not leave anyone dead. Then I try it again the next day."
+*else
+  Alvaro looks down at his hands. "Honest is a low bar," he says. "But perhaps it is the one I can clear tonight."
+
+  He sets the bottle beside him, still unopened. "I know what I must not do. That may be enough for one night."
+*goto pv_re_alvaro_departure
+
+*label pv_re_alvaro_watch
+Alvaro's jaw tightens. "Perhaps I will," he says. "But I will not go there looking for a clean soul. I would go because the dead deserved someone to name the cost."
+
+He does not promise it. He does put the bottle down, unopened, and look toward the lamps at the end of the road.
+*goto pv_re_alvaro_departure
+
+*label pv_re_alvaro_next_day
+Alvaro is quiet for a long moment. "Small rules," he says. "No more names. No more doors opened for coin. Work that leaves people breathing."
+
+He nods once, as if setting terms with himself. "Tomorrow, then. And the day after, if I manage it."
+*goto pv_re_alvaro_departure
+
+*label pv_re_alvaro_no_answer
+"Fair," Alvaro says. His voice is steadier than before. "I have asked enough strangers to make my conscience useful."
+
+He turns the unopened bottle over in his hands, then sets it on the wall. "I know what I must not do. That may be enough for one night."
+
+*label pv_re_alvaro_departure
+He does not ask for coin, absolution, or a promise. When you leave, he is still there, looking toward the road rather than the water.
+*page_break Continue toward ${pv_re_dest}…
+*goto pv_re_return
+
+*comment ── ANY ROUTE IN SEVERE WEATHER: THE AWNING ──
+
+*label pv_re_storm
+*set pv_re_storm_done true
+[b]◈ ON THE CITY ROAD[/b]
+*line_break
+A hard gust tears one corner of a market awning free ahead of you. The canvas snaps like a sail, wrenching at its pole while a baker tries to keep a tray of loaves out of the runoff.
+
+*choice
+  # "Get the bread inside. I have the line." Help lash the awning down. [~5 min]
+    *set minutes_to_pass 5
+    *set time_advance_call_id "pv_re_storm_help_1"
+    *gosub pv_re_advance_time
+    Your fingers go numb around the wet rope, but the three of you get the canvas tied to the iron ring before the next gust can tear it away. The baker gives you a breathless nod and gets the shutters down.
+    *page_break Continue toward ${pv_re_dest}…
+    *goto pv_re_return
+  # "Get the pole against the wall!" Brace against the rain and keep moving.
+    The canvas cracks overhead again as you pass. By the time you look back, three people have caught the pole and are wrestling it toward the wall.
+    *page_break Continue toward ${pv_re_dest}…
+    *goto pv_re_return
+
+*comment ── MIDDLE WARD / PATRICIAN QUARTER, DAY: ILVIS'S FORTUNE ──
+
+*label pv_re_ilvis
+*set pv_re_ilvis_done true
+[b]◈ BY THE UPPER STAIRS[/b]
+*line_break
+A halfling child sits on an overturned crate beside the upper stair, a cracked blue glass sphere cupped carefully in both hands. One bright eye is pressed to the unbroken side. The other watches you approach.
+
+"I tell fortunes," she says. "Only one copper, or a sweet if you have one."
+
+The sphere is no larger than an apple and plainly ordinary. The crack runs like a white thread through its blue heart.
+
+"Ilvis," she adds. "My family weaves braid and mends boots down the hill. They are busy, so I am working too."
+
+*choice
+  *if (((gold * 100) + (silver * 10)) + copper) >= 1
+    # "One copper for an honest fortune? You have a deal." [1 Copper Bit]
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+        *set currency_add_amount (0 - 1)
+        *gosub_scene economy currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id page_id
+      Ilvis vanishes the coin into her sleeve and leads you into a narrow side alley. There, three loose planks have been laid in a small circle beneath a cobbler's shutter. She takes the place facing you, turns the blue sphere in both hands, and squints into it with grave concentration.
+
+      *if (pv_re_ilvis_fortune = 0)
+        *rand pv_re_ilvis_fortune 1 8
+      *if (pv_re_ilvis_fortune = 1)
+        "You will do something very big," Ilvis says. She narrows her eyes. "Everyone will talk about it. I think."
+      *if (pv_re_ilvis_fortune = 2)
+        "Your future has sweets in it. A great many sweets. Do not eat them too quickly."
+      *if (pv_re_ilvis_fortune = 3)
+        "There is a very large cat." She turns the sphere once more. "It is looking at you. Sorry."
+      *if (pv_re_ilvis_fortune = 4)
+        "Do not cross your eyes. They stay that way forever." Her solemnity lasts exactly one breath before she grins.
+      *if (pv_re_ilvis_fortune = 5)
+        "If you eat an apple, your ears will grow." She studies your face. "Maybe they already did."
+      *if (pv_re_ilvis_fortune = 6)
+        "Tell someone who raised you that you are glad they did. Otherwise they will be sad all evening."
+      *if (pv_re_ilvis_fortune = 7)
+        "Three horses are smiling at you. Pick the one with muddy knees. It knows where it is going."
+      *if (pv_re_ilvis_fortune = 8)
+        "When the autumn wind turns cold, good things will happen. Or you will need something warmer. Both are useful."
+
+      She lowers the sphere and waits for your verdict with perfect seriousness.
+      *choice
+        # "I will remember that. Especially the important part."
+          Ilvis nods with the grave approval of a seasoned seer. "Good. The important part is usually the strange part."
+        # "That sounds suspiciously like ordinary advice in a grand coat."
+          Ilvis hugs the sphere to her chest. "Grand coats are how advice knows it is important."
+        # "For one copper, I expected worse. I suppose that makes this a fair bargain."
+          Ilvis beams. "Then you got a bargain." She settles the sphere in her lap, pleased.
+      *page_break Continue toward ${pv_re_dest}…
+      *goto pv_re_return
+  # "Not today. I have no coin or sweet to spare."
+    "Then I cannot see anything," Ilvis says, not unkindly. She holds the sphere to the light again. "It only works when it is paid attention."
+    *page_break Continue toward ${pv_re_dest}…
+    *goto pv_re_return
+  # "May your work bring you more than one copper today." Continue on.
+    Ilvis waves the blue sphere at you. "You too," she says. "Especially if there are horses."
+    *page_break Continue toward ${pv_re_dest}…
+    *goto pv_re_return
+
+*comment Shared time advance for the two helpful delays. It follows port_valen_travel_to's death check so
+*comment an extra five minutes in a storm cannot bypass hunger or fatigue consequences.
+*label pv_re_advance_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return
+
+*comment ── DESTINATION DISPATCH ──
+
+*label pv_re_return
+*if (pv_re_dest = "compound")
+  *goto_scene port_valen/port_valen port_valen_hub
+*if (pv_re_dest = "harbor")
+  *goto_scene port_valen/port_valen port_valen_harbor
+*if (pv_re_dest = "civic_heights")
+  *goto_scene port_valen/port_valen_civic_heights port_valen_civic_heights
+*if (pv_re_dest = "upper_wharves")
+  *goto_scene port_valen/port_valen_upper_wharves port_valen_upper_wharves
+*if (pv_re_dest = "dredge_end")
+  *goto_scene port_valen/port_valen_dredge_end port_valen_dredge_end_arrive
+*if (pv_re_dest = "middle_ward")
+  *goto_scene port_valen/port_valen_middle_ward port_valen_middle_ward

@@ -479,7 +479,7 @@ window.INVENTORY = {
     {
       id: "toll_seal_ring", category: "accessories", owned: "has_toll_seal_ring",
       name: "Officer's Signet Ring",
-      description: "Tarnished silver band from a customs officer, stamped with a three-headed imperial hawk.",
+      description: "Tarnished silver band from a customs officer, stamped with a three-headed imperial hawk. Worn, it lets you cast Guidance.",
       badge: function (s) { return (s.equipped_ring1_id === "toll_seal_ring" || s.equipped_ring2_id === "toll_seal_ring") ? "Worn" : ""; },
       equip: { slot: "ring", id: "toll_seal_ring" }
     },

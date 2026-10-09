@@ -20,7 +20,10 @@
       sub: "A road town at the edge of the Longshade",
       tags: ["Timbermouth", "Gilded Scales", "Trade"], aliases: ["longshade", "longshade ash", "the longshade", "market", "sawmill", "factor's hall"],
       link: ["Timbermouth"],
-      unlock: "timbermouth_seen",
+      unlock: function (s) {
+        return truthy(s.timbermouth_seen) || truthy(s.tm_lot_seen) || truthy(s.tm_inn_seen) ||
+          truthy(s.tm_works_seen) || truthy(s.tm_store_seen) || truthy(s.tm_hall_seen);
+      },
       body: [
         "A town of timber houses on a paved square, where the road from the river comes up out of the lowlands and meets three smaller roads, one from the forest and two from the farm country. It is a quarter of an hour on foot from one end to the other. A signboard at the mouth of the square gives its name.",
         "The forest is the Longshade, and its ash is stacked in long ranks under open sheds, each end-grain stamped with a grade mark and a year. The town has no wall, only gateposts at the mouth of each road. The Ashrun, a stony stream no wider than a road, comes down out of the forest past the sawmill and turns its wheel. It is too shallow for anything but loose logs, which are driven down it in the spring melt on their way to the Grey River, so nothing else travels by water here; the wells and a spring-fed trough in the square serve the town.",

@@ -619,14 +619,14 @@ The clerk lifts a blank disc out of the dish, asks your name, and writes it into
 
 [b][🏷️ Acquired: Hall Insignia (Open)][/b]
 *page_break Step back from the window…
-*goto pv_ch_seals_menu
+*goto pv_ch_seals_back
 
 *label pv_ch_seals_show
 [b]◈ THE HIRING HALL: THE SEALS WINDOW[/b]
 *line_break
 You hold the brass up to the grille. The clerk passes a flat grey stone over it, and the insignia chimes. He reads it off without looking. "Rank, Open. Port Valen page, ${hall_jobs_scales} @{(hall_jobs_scales = 1) job|jobs} finished."
 *page_break Step back from the window…
-*goto pv_ch_seals_menu
+*goto pv_ch_seals_back
 
 *label pv_ch_walk_time
 *comment Same routine as mw_walk_time in the Middle Ward. Callers set minutes_to_pass and a unique
@@ -647,7 +647,7 @@ You hold the brass up to the grille. The clerk passes a flat grey stone over it,
 *comment effect the government (the First Factor speaks for them on war, treaty and city policy, and the Council of
 *comment Factors is made of the senior merchant houses), so their head house belongs among the civic buildings. It is
 *comment the public, reachable end of the paper layer, and it was moved here from the Patrician Quarter so that banking
-*comment is never behind a paid gate. Three windows: BANKING (the same Letter of Credit ledger as Alderford's vault:
+*comment is never behind a paid gate. Three windows: BANKING (the same Letter of Credit account as Alderford's vault:
 *comment letter_of_credit_value in silver marks, has_letter_of_credit; deposits, draws and full redemption), ENTRY WRITS
 *comment for the Patrician Quarter (a Day Writ and a Registered Writ, see the patrician_* variables in startup.txt), and
 *comment the DISPATCH BOARD (news of the wider world, three of seven standing dispatches by day). Teller Maris Quillon
@@ -1073,7 +1073,7 @@ A stone gatehouse passage runs in beside the Council Hall's west wing, and at it
 *elseif (pw_roll = 1)
   Two sentries in blue-and-brass surcoats march a bound man across the yard toward the barred stair while a woman keeps pace on the near side of the bars, talking fast.
 *elseif (pw_roll = 2)
-  A cart of seized barrels stands in front of the nearest shed while men in Watch coats roll them inside and a man with a wax tablet checks each one against its tag.
+  A cart of seized barrels stands in front of the nearest shed while men in Watch coats roll them inside and a man with a waxed tally-board checks each one against its tag.
 *else
   A line of people holding papers waits in the passage, and a sentry calls them forward to the duty desk one at a time.
 
@@ -1138,15 +1138,16 @@ The notice board is a long plank painted black and hung with sheets pinned at al
 *goto pv_ch_watch_again
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment THE CATHEDRAL (GROUNDWORK)
+*comment THE CATHEDRAL
 *comment Added 2026-09-24. The Sun-Father's cathedral above the Council Hall, built of LIMESTONE like the rest of the Heights. Three
 *comment places: the STEPS (facade, the soup kettles, a board of standing notices), the MAIN HALL (pillars, the gilded figure,
 *comment banners of the great houses, a place to sit and listen) and the small ALTHEA CHAPEL at the end of the north aisle
 *comment (the folk saint's veiled figure, the linen strips, pebbles, pins and candle stubs, the poor-box, and the sanctuary
 *comment line cut over its arch). Open to everyone at all hours: by day the great doors stand open (Morning through Dusk); at
 *comment Night and Pre-Dawn they are barred but a small door in one leaf is left unlatched under a lantern, and people sleep
-*comment in the back pews. NO named or major characters on purpose: robed people are glimpsed and never speak, and the bishops,
-*comment priests and chapel keepers are left for later. Keep the faith consistent with the lorebook: the Sun-Father (oaths, high
+*comment in the back pews. Sister Anwen Pell runs the kettles and Deacon Harl Vey keeps the oath desk; the High Prelate,
+*comment Odran Marrow, is the cathedral's political head but is not yet a walk-up character. Keep the faith consistent with
+*comment the lorebook: the Sun-Father (oaths, high
 *comment justice, golden plate) is worshipped in the cathedral, Saint Althea of the Shroud (needle, loom, herb and bandage,
 *comment river pebbles left before a river crossing) is the common folk's saint, and the Dredge-End alley shrine is her small
 *comment cousin. HOOKS, not built: KITCHEN HOOK (a free bowl as a hunger safety net that costs the player something, per the
@@ -1232,6 +1233,9 @@ A broad flight of worn limestone steps climbs to three tall arched doors of blac
     *set time_advance_call_id "pv_ch_cath_board_1"
     *gosub pv_ch_walk_time
     *goto pv_ch_cath_board
+  *if (not(cath_night))
+    # Speak to the woman directing the kettle line.
+      *goto pv_ch_cath_anwen
   # Step back down to the plaza.
     *goto port_valen_civic_heights
 
@@ -1257,6 +1261,28 @@ The board is painted black and lettered in white, with a lantern bracket above i
 [i]"THE POOR-BOX stands in the side chapel of Saint Althea, at the end of the north aisle. What is left in it is spent on the kettles."[/i]
 *page_break Step back from the board…
 *goto pv_ch_cath_again
+
+*label pv_ch_cath_anwen
+*if (not(met_sister_anwen))
+  *set met_sister_anwen true
+  The woman in the patched blue cloak sees you looking toward the kettles and waves you out of the way of a pair carrying a full pot up the steps. Her sleeves are rolled past work-roughened forearms, and a strip of clean linen is tied over her hair beneath the hood.
+
+  "If you want a bowl, join the line," she says. Then she looks more closely at you and softens a little. "Sister Anwen Pell. Mind the children on the steps, if you would."
+*else
+  Sister Anwen passes bowls down the line without looking away from the next person who needs one.
+
+*label pv_ch_cath_anwen_menu
+*choice
+  *if (not(cath_anwen_kettles_talk))
+    # Ask how the cathedral keeps the kettles running.
+      *set cath_anwen_kettles_talk true
+      Anwen wipes her hands on her apron. "By counting every sack twice and trusting no donor who wants a plaque larger than the sack. The poor-box buys flour; the houses send grain when the High Prelate reminds them that hungry people notice who shut their doors."
+
+      She nods through the open doors. "If it is wounds you are carrying, speak to Deacon Vey at the oath desk. He keeps one hand for ledgers and another for the hurt. Neither is free, but neither is wasted."
+      *page_break Return to the steps…
+      *goto pv_ch_cath_again
+  # Leave Sister Anwen to the line.
+    *goto pv_ch_cath_again
 
 *comment ── THE MAIN HALL ──
 
@@ -1320,6 +1346,13 @@ The church is one long hall, and its roof is lost in shadow high overhead. Rows 
   *comment Dusk
   The bells ring the evening service, and the pews fill in twos and threes as a chant begins at the front and climbs.
 
+*if (not(ca_night))
+  *if (not(met_deacon_vey))
+    *set met_deacon_vey true
+    At a narrow oak desk beside the front pews, a lean man in a dark gold stole sands a page before closing his oath-book. His square seal bears the raised hand of the Sun-Father. When he notices you, he rises without hurry. "Deacon Harl Vey," he says. "Oaths, notices, and such wounds as cannot wait on a surgeon."
+  *else
+    Deacon Vey sits at the oath desk near the front pews, his oath-book and seal laid square before him.
+
 *label pv_ch_cath_hall_menu
 *choice
   # Walk the length of the hall. [~10 min]
@@ -1337,6 +1370,9 @@ The church is one long hall, and its roof is lost in shadow high overhead. Rows 
     *set time_advance_call_id "pv_ch_cath_sit_1"
     *gosub pv_ch_walk_time
     *goto pv_ch_cath_sit
+  *if (not(ca_night))
+    # Speak to Deacon Harl Vey at the oath desk.
+      *goto pv_ch_cath_vey
   # Go back out to the steps.
     *goto pv_ch_cath
   # Step back down to the plaza.
@@ -1376,6 +1412,69 @@ At the front, the gilded figure stands taller than three men, its plate armor be
 *else
   You sit while the light crawls across the floor. The hall is cool and hushed, and the only movement is a woman two pews ahead with her lips moving over a string of beads.
 *page_break Rise from the pew…
+*goto pv_ch_cath_hall_again
+
+*comment ── DEACON HARL VEY: OATH DESK AND HEALING RITE ──
+
+*label pv_ch_cath_vey
+Vey folds his hands over the closed oath-book. Up close, the dark gold stole is plainly mended at the edge, and there is ink in the creases of his fingers.
+
+"A sworn word can preserve a widow's claim or ruin a liar," he says. "It deserves a careful record. Sit, if you have business."
+
+*label pv_ch_cath_vey_menu
+*choice
+  *if ((hp_current < hp_max) and (not(cath_vey_healed_day = campaign_day)))
+    # [Cure Wounds] Ask the Deacon for the cathedral's healing rite. [4 Silver Marks]@{show_stat_hints  [Heals 1d8 + 3 HP]|}
+      *goto pv_ch_cath_vey_heal
+  *if ((hp_current < hp_max) and (cath_vey_healed_day = campaign_day))
+    # Ask whether he can spare another healing rite today.
+      Vey shakes his head once. "I have already given the strength set aside for such work today. Come tomorrow, or find a surgeon if it cannot wait."
+      *page_break Return to the hall…
+      *goto pv_ch_cath_hall_again
+  *if (not(cath_vey_prelate_talk))
+    # Ask who speaks for the cathedral before the Council and the great houses.
+      *set cath_vey_prelate_talk true
+      Vey glances toward the house banners before answering. "High Prelate Odran Marrow. He receives the Council, the merchant houses, and any lord who discovers that a public oath is useful after all. He keeps the cathedral's place at their tables; Sister Anwen keeps its doors open when their promises arrive late."
+      *page_break "I understand."
+      *goto pv_ch_cath_hall_again
+  # Leave the oath desk.
+    *goto pv_ch_cath_hall_again
+
+*label pv_ch_cath_vey_heal
+*if (((gold * 100) + (silver * 10)) + copper) < 40
+  Vey names the cathedral's customary offering, and you find you do not have four silver marks to spare. He does not press the matter. "Keep your coin for bread, then. A hedge-doctor's hand may do more than waiting."
+  *page_break Return to the hall…
+  *goto pv_ch_cath_hall_again
+
+*set minutes_to_pass 15
+*set time_advance_call_id "pv_ch_cath_vey_heal_1"
+*gosub pv_ch_walk_time
+
+Vey draws a clean square of linen from a drawer and lays it over the worst of your wound. "The offering keeps the lamps, the infirmary, and the kettles supplied," he says. "The rite is for the hurt, not the coin."
+
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount (0 - 40)
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *temp vey_cure_roll 0
+  *rand vey_cure_roll 1 8
+  *set locked_heal_roll (vey_cure_roll + 3)
+  *set hp_current + locked_heal_roll
+  *if (hp_current > hp_max)
+    *set hp_current hp_max
+  *set cath_vey_healed_day campaign_day
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+
+Vey presses two ink-stained fingers to the linen and speaks a low invocation. Warmth spreads through the torn and bruised places beneath it; pain loosens its hold, then recedes. When he lifts the cloth, the linen bears only a faint gold thread where the blood had been.
+
+"Go carefully," the deacon says, already a little pale. "Justice asks much of the living. So does mercy."
+
+[b][✨ Cathedral Rite: Cure Wounds | Healed: +${locked_heal_roll} HP | Current HP: ${hp_current}/${hp_max}][/b]
+*page_break Return to the hall…
 *goto pv_ch_cath_hall_again
 
 *comment ── THE ALTHEA CHAPEL ──

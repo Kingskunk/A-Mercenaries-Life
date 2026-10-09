@@ -189,7 +189,7 @@
         "A crisp, no-nonsense landlady. Two silver marks buy seven days: clean straw, a dry roof, quiet stairs, and Master Vael's deadbolts on every door.",
         "No blood in her hallway, no thieves under her rafters, and no Watchmen asking questions, so long as the coin hits the tin on time."
       ],
-      see: ["terrace_lodgings", "vael", "middle_ward"]
+      see: ["vael", "middle_ward"]
     },
     {
       id: "marda", category: "people", title: "Mother Marda",
@@ -256,7 +256,7 @@
         }
         return out;
       },
-      see: ["kess", "terrace_lodgings", "middle_ward", "hollis"]
+      see: ["kess", "middle_ward", "hollis"]
     },
     {
       id: "ambrose", category: "people", title: "Master Ambrose",
@@ -294,7 +294,7 @@
         }
         return out;
       },
-      see: ["lantern_lane", "middle_ward", "vael", "marda", "ambrose", "kess"]
+      see: ["middle_ward", "vael", "marda", "ambrose", "kess"]
     },
     {
       id: "halda", category: "people", title: "Master Halda",
@@ -321,7 +321,7 @@
         }
         return out;
       },
-      see: ["smiths_row", "middle_ward", "iron_bailiffs", "broken_crags", "torvald"]
+      see: ["middle_ward", "iron_bailiffs", "broken_crags", "torvald"]
     },
     {
       id: "merrin", category: "people", title: "Merrin",
@@ -397,7 +397,10 @@
       sub: "The waterfront",
       tags: ["Quayside", "Port Valen"], aliases: ["quayside", "harbor", "docks", "waterfront"],
       link: ["Harbor Quayside"],
-      unlock: "port_valen_harbor_seen",
+      unlock: function (s) {
+        return truthy(s.port_valen_harbor_seen) || truthy(s.pv_tavern_seen) || truthy(s.pv_quays_seen) ||
+          truthy(s.pv_drydock_seen) || truthy(s.pv_pier_seen) || truthy(s.pv_slip_seen) || truthy(s.wh_named);
+      },
       body: [
         "One long line of stone and timber along the estuary: the fish market's granite ramp and the low wooden taverns at the western end, the cargo quay with its slips and massive balance cranes, a squat customs tower where the road down from the terraces meets the quay gate, then the shipyard wall and a long stone breakwater running out toward the bar. Deep-hulled merchant vessels ride at anchor in the outer roadstead, while flat-bottomed river barges and fishing smacks crowd the inner docks.",
         "From west to east the quayside holds the Fishmongers' Slip, the Cleaved Keel, the Cargo Quay with its long grey hall under an iron beam-scale and the customs tower at its end, the shipwrights' ways of the Iron Wharves, and the long pier out to the wreck-bell. Most of it shuts at dusk."
@@ -524,15 +527,37 @@
       sub: "The low crowded quarter",
       tags: ["Dredge-End", "Black Oath"], aliases: ["slums", "canals", "silt basin", "terraces", "lanes"],
       link: ["Dredge-End"],
-      unlock: "dredge_end_seen",
+      unlock: function (s) {
+        return truthy(s.dredge_end_seen) || truthy(s.cut_seen_market) || truthy(s.cut_seen_gangways) ||
+          truthy(s.cut_seen_sheds) || truthy(s.cut_seen_landing) || truthy(s.cut_seen_lamp_stair) ||
+          truthy(s.cut_seen_shrine) || truthy(s.cut_seen_lower_steps);
+      },
       body: function (s) {
         var out = [
           "The city's paving stops at the drainage cut. Past it the lanes are broken stone and packed cinder, with planks laid over the low patches where the ground gives up. Dredge-End is a low, cramped district of leaning terraces, brick and timber shored together with whatever the river gave back, built close enough that you can cross a lane without raising your voice.",
           "It is Black Oath country. The Watch seldom comes into the quarter on a market day, and trade settles with sharp elbows and quick fingers."
         ];
+        if (truthy(s.cut_seen_market)) {
+          out.push("<b>Duckboard Market.</b> Along the canal, patched awnings shelter eel-sellers, punts, and a rope-and-oil house. The lane smells of frying eel, lamp oil, and wet rope.");
+        }
+        if (truthy(s.cut_seen_gangways)) {
+          out.push("<b>The upper gangways.</b> Plank-and-cord walkways join the upper storeys. Lookouts with tin whistles watch the lanes, canal, and street mouths from their platforms.");
+        }
+        if (truthy(s.cut_seen_sheds)) {
+          out.push("<b>The boat-sheds and scrap yard.</b> Open sheds face the canal beside a fenced yard of salvaged stone, chain, and plate iron. The scrap dealer buys anything useful from the river or a broken lane.");
+        }
+        if (truthy(s.cut_seen_landing)) {
+          out.push("<b>The dredge landing.</b> At low water, workers haul black spoil from the canal into drying mounds. The made ground beneath the district is laid down a basket at a time.");
+        }
+        if (truthy(s.cut_seen_lamp_stair)) {
+          out.push("<b>Lamp Stair.</b> Above the flood line beneath the seawall, a short stair reaches a row of red-shaded lamps, a pawnbroker and hedge-doctor by day, and a dice cellar and drinking house after dusk.");
+        }
+        if (truthy(s.cut_seen_lower_steps)) {
+          out.push("<b>The lower steps.</b> A seawall stair falls toward the canal and its tide-flooded cellars, some used as flophouses when the water is low.");
+        }
         return out;
       },
-      see: ["black_oath", "silt_gates", "duckboard_market", "upper_gangways", "boat_sheds", "dredge_landing", "lamp_stair", "corve", "alley_shrine", "flooded_steps", "port_valen"]
+      see: ["black_oath", "silt_gates", "corve", "alley_shrine", "port_valen"]
     },
 
     /* ----------------------------------------------- DREDGE-END: THE SEVEN AREAS */
@@ -543,6 +568,7 @@
       tags: ["Dredge-End"], aliases: ["market", "stalls", "rope-and-oil house", "rope shop", "eel-seller", "awnings"],
       link: ["Duckboard Market"],
       unlock: "cut_seen_market",
+      index: false,
       body: function (s) {
         var n = Number(s.cut_rumors_market) || 0;
         var out = [
@@ -573,6 +599,7 @@
       tags: ["Dredge-End"], aliases: ["gangways", "walkways", "rope bridges", "lookouts", "tin whistles"],
       link: ["Upper Gangways"],
       unlock: "cut_seen_gangways",
+      index: false,
       body: function (s) {
         var n = Number(s.cut_rumors_gangways) || 0;
         var out = [
@@ -593,6 +620,7 @@
       sub: "Oar sheds, scrap dealer and smith",
       tags: ["Dredge-End"], aliases: ["boat-sheds", "boat sheds", "scrap yard", "smith", "oars", "chain"],
       unlock: "cut_seen_sheds",
+      index: false,
       body: function (s) {
         var n = Number(s.cut_rumors_scrap) || 0;
         var out = [
@@ -632,7 +660,7 @@
         }
         return out;
       },
-      see: ["boat_sheds", "dredge_end", "black_oath", "duckboard_market"]
+      see: ["dredge_end", "black_oath"]
     },
     {
       id: "dredge_landing", category: "places", title: "Dredge Landing",
@@ -640,6 +668,7 @@
       tags: ["Dredge-End"], aliases: ["landing", "dredgers", "spoil", "barges", "foreman"],
       link: ["Dredge Landing"],
       unlock: "cut_seen_landing",
+      index: false,
       body: function (s) {
         var n = Number(s.cut_rumors_landing) || 0;
         var out = [
@@ -664,6 +693,7 @@
       tags: ["Dredge-End", "Black Oath"], aliases: ["red lamps", "red-lamp street", "blue door", "dice cellar", "pawnbroker", "hedge-doctor", "drinking house"],
       link: ["Lamp Stair"],
       unlock: "cut_seen_lamp_stair",
+      index: false,
       body: function (s) {
         var pawn = Number(s.cut_rumors_pawn) || 0;
         var drink = Number(s.cut_rumors_drink) || 0;
@@ -699,7 +729,7 @@
         ];
         return out;
       },
-      see: ["dredge_end", "lamp_stair", "sable", "brinna"]
+      see: ["dredge_end", "sable", "brinna"]
     },
     {
       id: "sable", category: "people", title: "Sable",
@@ -805,6 +835,7 @@
       tags: ["Dredge-End"], aliases: ["lower steps", "cellars", "flophouse", "flophouses", "tide marks"],
       link: ["Flooded Lower Steps"],
       unlock: "cut_seen_lower_steps",
+      index: false,
       body: function (s) {
         var n = Number(s.cut_rumors_steps) || 0;
         var out = [
@@ -825,7 +856,11 @@
       sub: "The broad middle of the city",
       tags: ["Middle Ward"], aliases: ["terrace", "second terrace", "conduit square", "craftsmen", "workshops", "trunk road"],
       link: ["Middle Ward"],
-      unlock: "mw_seen",
+      unlock: function (s) {
+        return truthy(s.mw_seen) || truthy(s.mw_lantern_seen) || truthy(s.mw_smiths_seen) ||
+          truthy(s.mw_lodgings_seen) || truthy(s.mw_wash_seen) || truthy(s.mw_river_gate_seen) ||
+          truthy(s.mw_charter_gate_seen) || truthy(s.es_yard_seen);
+      },
       body: function (s) {
         var out = [
           "The road climbs in turns from the docks and levels out onto the Second Terrace, the broad shelf of flat ground that holds most of the city, with the lower streets falling away toward the harbor behind it and Civic Heights and the Patrician Quarter rising in tiers ahead. It is the largest ward in Port Valen. Timber buildings lean over narrow lanes beneath steep slate roofs, their lower shutters open as shop counters, and the air smells of cooled iron, brass dust, cedar sawdust and warm caraway bread.",
@@ -833,6 +868,15 @@
         ];
         if (truthy(s.mw_rumor_grain)) {
           out.push("Rumor from the baths: a Council grain officer waves unlicensed flour wagons through Conduit Square on Marketdays for a small payment slip, so the licensed drivers end up paying twice, once in fees and once in waiting.");
+        }
+        if (truthy(s.mw_lantern_seen)) {
+          out.push("<b>Lantern Lane.</b> A curving shopping street under timber eaves, where counters sell everyday goods and a horn lantern hangs over every door.");
+        }
+        if (truthy(s.mw_smiths_seen)) {
+          out.push("<b>Smiths' Row.</b> Three open-shed forges share a stone water trough at the lower end of the ward, where harbor iron and coal arrive by wagon.");
+        }
+        if (truthy(s.mw_lodgings_seen)) {
+          out.push("<b>Terrace Lodgings.</b> A boarding house at the end of Locksmiths' Close lets rooms by the week behind a thick door and a locksmith's deadbolt.");
         }
         if (s.dry_lion_resolution === "city_sealed") {
           out.push("A broken unlisted branch beneath Conduit Square was capped to restore the public fountain. The court off Locksmiths' Close lost its only standpipe, and the city crew still has to shore the washed ground.");
@@ -845,7 +889,7 @@
         }
         return out;
       },
-      see: ["lantern_lane", "smiths_row", "conduit_baths", "terrace_lodgings", "marda", "vael", "ambrose", "hollis", "halda", "merrin", "civic_heights"]
+      see: ["conduit_baths", "marda", "vael", "ambrose", "hollis", "halda", "merrin", "civic_heights"]
     },
     {
       id: "lantern_lane", category: "places", title: "Lantern Lane",
@@ -853,6 +897,7 @@
       tags: ["Middle Ward", "Trade"], aliases: ["shops", "shopping street", "general store", "counters", "stalls"],
       link: ["Lantern Lane"],
       unlock: "mw_lantern_seen",
+      index: false,
       body: function (s) {
         var out = [
           "A curving lane that climbs from Conduit Square under deep timber eaves, with an iron bracket for a horn lantern over every shop door. Rope, tin pans, blankets, cloth, boots, candles, lamp oil, paper and ink are sold from small shops and open counters. Hollis & Daughters General Goods has the widest front. At the head of the lane, a gap between two workshops leads into Herb-Pounder Close, where Master Ambrose keeps his still-room.",
@@ -871,6 +916,7 @@
       tags: ["Middle Ward", "Trade"], aliases: ["smithy", "forges", "smiths yard", "blacksmith", "cooper", "iron"],
       link: ["Smiths' Row"],
       unlock: "mw_smiths_seen",
+      index: false,
       body: function (s) {
         var out = [
           "A cobbled yard at the lower end of the Middle Ward, where the harbor road climbs in. Three forges stand under open sheds around a stone water trough, with racks of finished blades, helmets and tools along the walls. Iron bars and coal come up from the harbor by wagon. A cooper's bench at the far end still makes barrels for the ward.",
@@ -910,6 +956,7 @@
       tags: ["Middle Ward"], aliases: ["lodgings", "rooms", "rent", "boarding house"],
       link: ["Terrace Lodgings"],
       unlock: "mw_lodgings_seen",
+      index: false,
       body: [
         "The four-storey limestone front of a boarding house at the end of the Locksmiths' Close, its thick wooden door fitted with a teardrop-shaped knocker. Rooms let by the week, with Mistress Kess collecting the rent and a locksmith's deadbolt on every door."
       ],
@@ -933,7 +980,7 @@
         }
         return out;
       },
-      see: ["oswin", "terrace_lodgings", "middle_ward"]
+      see: ["oswin", "middle_ward"]
     },
     {
       id: "oswin", category: "people", title: "Oswin Hale",
@@ -1045,13 +1092,13 @@
     },
     {
       id: "cathedral", category: "places", title: "The Cathedral",
-      sub: "The Sun-Father's house above the Council Hall",
-      tags: ["Civic Heights", "Faith"], aliases: ["cathedral", "church", "kettles", "poor-box", "althea chapel", "side chapel"],
+      sub: "The Church of the True Sun's chief Valen seat",
+      tags: ["Civic Heights", "Faith"], aliases: ["cathedral", "church", "Church of the True Sun", "True Sun", "kettles", "poor-box", "althea chapel", "side chapel"],
       link: ["The Cathedral", "the cathedral"],
       unlock: "cath_seen",
       body: function (s) {
         var out = [
-          "A church of pale limestone above the Council Hall, with three tall arched doors of black oak, two bell towers, and the line The Sun-Father's House. All Oaths Are Sworn in His Sight cut over the middle door. Iron soup kettles stand at the foot of the steps by day, one bowl to a head from First Bell until the pots are empty.",
+          "The chief Valen seat of the Church of the True Sun is a church of pale limestone above the Council Hall, with three tall arched doors of black oak, two bell towers, and the line The Sun-Father's House. All Oaths Are Sworn in His Sight cut over the middle door. Iron soup kettles stand at the foot of the steps by day, one bowl to a head from First Bell until the pots are empty.",
           "It is open to everyone. The great doors stand open from Morning through Dusk, and at night a small door in one leaf is left unlatched under a lantern while people sleep in the back pews."
         ];
         if (truthy(s.cath_hall_seen)) {
@@ -1062,7 +1109,7 @@
         }
         return out;
       },
-      see: ["sun_father", "saint_althea", "alley_shrine", "sanctuary_charter", "civic_heights"]
+      see: ["church_true_sun", "sun_father", "saint_althea", "alley_shrine", "sanctuary_charter", "civic_heights"]
     },
     {
       id: "port_watch_hq", category: "places", title: "The Port Watch Headquarters",
@@ -1179,7 +1226,10 @@
       sub: "The quarter of the merchant lords",
       tags: ["Patrician Quarter", "Gilded Scales", "Trade"], aliases: ["merchant quarter", "great houses", "estates", "patricians", "inner gate", "avenue", "upper wharves"],
       link: ["Patrician Quarter"],
-      unlock: "upper_wharves_seen",
+      unlock: function (s) {
+        return truthy(s.upper_wharves_seen) || truthy(s.pq_gate_seen) || truthy(s.pq_inside_seen) ||
+          truthy(s.pq_walk_seen) || truthy(s.pq_tailor_seen) || truthy(s.pq_estates_seen);
+      },
       body: function (s) {
         var out = [
           "The road climbs above the lower streets to an inner gatehouse of dressed stone, its arch held by house guards in matching surcoats. A bronze plate beside it reads Entry by Sealed Writ Only, and says that writs are sold at the Gilded Scales head house on Civic Heights."
@@ -1193,9 +1243,12 @@
         if (truthy(s.pq_gate_talk_book)) {
           out.push("The gate keeps a book of two columns: names that hold a writ, and names turned away with the reason. Nothing is written against anyone for coming without a writ.");
         }
+        if (truthy(s.pq_walk_seen)) {
+          out.push("<b>The Terrace Walk.</b> A writ-holders' promenade follows the ridge above the Middle Ward, with a stone rail looking out across the harbor, gates, and river country.");
+        }
         return out;
       },
-      see: ["entry_writs", "scales_head_house", "alys_threnn", "pq_terrace_walk", "gilt_needle", "civic_heights"]
+      see: ["entry_writs", "scales_head_house", "alys_threnn", "gilt_needle", "civic_heights"]
     },
     {
       id: "alys_threnn", category: "people", title: "Alys Threnn",
@@ -1215,6 +1268,7 @@
       tags: ["Patrician Quarter"], aliases: ["terrace walk", "promenade", "the walk", "overlook", "lindens"],
       link: ["Terrace Walk", "the Terrace Walk"],
       unlock: "pq_walk_seen",
+      index: false,
       body: [
         "A long promenade of pale paving along the crest of the ridge above the Middle Ward, with a waist-high stone rail on the outer side, a row of clipped lindens on the inner, and a lamp-standard every tenth pace. From the rail the city falls away in tiers to the bay, and on a clear day the whole of it can be seen: the harbor and its breakwater, the trunk road and the landward wall with its two gates, the river country beyond, and the heights above.",
         "It is open to writ-holders only, and it is where the merchant families walk to be seen."
@@ -1314,11 +1368,20 @@
       sub: "The council and the cathedral",
       tags: ["Civic Heights", "Law"], aliases: ["council hall", "tax hall", "courts", "cathedral", "records house"],
       link: ["Civic Heights"],
-      unlock: "civic_heights_seen",
-      body: [
-        "The road from the Middle Ward ends at a broad plaza of cut limestone, and the buildings change from timber to stone. The Council Hall stands at its head, tall-windowed and long-winged, with the tax windows and the Hiring Hall in its east wing and the Port Watch headquarters beside its west wing. Painted boards mark the public windows, where people wait beneath the eaves.",
-        "The cathedral rises above the Council Hall's roofline on an older foundation, its bells carrying over every district. Charity kitchens cluster around its steps, and people in thin, mended clothes queue there."
-      ],
+      unlock: function (s) {
+        return truthy(s.civic_heights_seen) || truthy(s.ch_hall_seen) || truthy(s.ch_court_seen) ||
+          truthy(s.ch_records_seen) || truthy(s.cath_seen) || truthy(s.pw_seen) || truthy(s.ch_head_seen);
+      },
+      body: function (s) {
+        var out = [
+          "The road from the Middle Ward ends at a broad plaza of cut limestone, and the buildings change from timber to stone. The Council Hall stands at its head, tall-windowed and long-winged, with the tax windows and the Hiring Hall in its east wing and the Port Watch headquarters beside its west wing. Painted boards mark the public windows, where people wait beneath the eaves.",
+          "The cathedral rises above the Council Hall's roofline on an older foundation, its bells carrying over every district. Charity kitchens cluster around its steps, and people in thin, mended clothes queue there."
+        ];
+        if (truthy(s.ch_court_seen)) {
+          out.push("<b>The Magistrates' Court.</b> The Council Hall's west wing holds a public courtroom, where a raised oak bench faces the witness stand and a low dock beside a barred stair.");
+        }
+        return out;
+      },
       see: ["hiring_hall", "council", "port_watch", "middle_ward"]
     },
     {
@@ -1327,6 +1390,7 @@
       tags: ["Civic Heights", "Law"], aliases: ["court", "courts", "courtroom", "magistrates", "magistrate", "dock", "bench"],
       link: ["Magistrates' Court", "the courts"],
       unlock: "ch_court_seen",
+      index: false,
       body: [
         "A tall limestone courtroom behind the west arch of the Council Hall, with a raised bench of dark oak under the city's three-masted seal, a clerk's table, a railed witness stand, and a low railed dock beside a barred door at the top of a narrow stair that goes down into the dark. Rows of public benches face the bar.",
         "It sits from Seventh Bell until noon, and in the afternoon the iron gate across the west arch is drawn shut. Cases are heard in the order they were filed, at the Hiring Hall or at the Watch's duty desk, and anyone may sit on the public benches and listen."
@@ -1430,7 +1494,7 @@
         }
         return out;
       },
-      see: ["gilded_scales", "civic_heights", "port_watch", "alderford", "trade_licence", "magistrates_court"]
+      see: ["gilded_scales", "civic_heights", "port_watch", "alderford", "trade_licence"]
     },
     {
       id: "auction_block", category: "history", title: "The Auction Block",

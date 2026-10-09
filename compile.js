@@ -264,6 +264,9 @@ function compile(){
   verifyFileName("port_valen/port_valen_civic_heights.txt");
   verifyFileName("port_valen/port_valen_upper_wharves.txt");
   verifyFileName("port_valen/port_valen_middle_ward.txt");
+  // Low-frequency, one-shot city-travel encounters. This is reached from port_valen.txt's shared
+  // travel primitive and dispatches directly to the selected district, so it is not in *scene_list.
+  verifyFileName("port_valen/port_valen_random_encounters.txt");
   // Middle Ward quests live in their own *goto_scene-only files. The district scene owns
   // their physical triggers and aftermath; each quest file owns its choices and resolutions.
   verifyFileName("port_valen/MiddlewardQuest/dry_lion.txt");

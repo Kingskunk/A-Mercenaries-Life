@@ -150,11 +150,31 @@
       for (var i = 0; i < r.path.length - 1; i++) { onRoute[r.path[i] + ">" + r.path[i + 1]] = true; onRoute[r.path[i + 1] + ">" + r.path[i]] = true; }
     }
     var out = "";
+    // Rectangles the "10 mi" labels must keep clear of: every town circle and every name (as drawn below), then the labels already placed.
+    var taken = [];
+    ids.forEach(function (id) {
+      var n = OW.nodes[id], pp = P(n), big = n.kind === "city" ? 26 : (n.kind === "town" ? 22 : (n.kind === "village" ? 18 : 15)), half = String(n.name).length * 4.6 + 6;
+      taken.push([pp.x - big - 9, pp.y - big - 9, pp.x + big + 9, pp.y + big + 9]);
+      taken.push([pp.x - half, pp.y + big + 4, pp.x + half, pp.y + big + 28]);
+    });
+    function hits(r) { return taken.some(function (t) { return r[0] < t[2] && r[2] > t[0] && r[1] < t[3] && r[3] > t[1]; }); }
     OW.edges.forEach(function (e) {
       var a = OW.nodes[e[0]], b = OW.nodes[e[1]], hot = onRoute[e[0] + ">" + e[1]];
       var pa = P(a), pb = P(b);
       out += "<line class=\"ow-edge" + (hot ? " ow-edge-route" : "") + "\" x1=\"" + pa.x + "\" y1=\"" + pa.y + "\" x2=\"" + pb.x + "\" y2=\"" + pb.y + "\"/>";
-      out += "<text class=\"ow-miles\" x=\"" + ((pa.x + pb.x) / 2) + "\" y=\"" + (((pa.y + pb.y) / 2) - 14) + "\" text-anchor=\"middle\">" + e[2] + " mi</text>";
+      // try the middle of the leg first, then other spots along it, above the line and then below; keep the first that is clear
+      var label = String(e[2]) + " mi", w = label.length * 4.2 + 4, pick = null;
+      [0.5, 0.4, 0.6, 0.3, 0.7, 0.25, 0.75].some(function (t) {
+        return [-14, 22].some(function (dy) {
+          var mx = pa.x + (pb.x - pa.x) * t, my = pa.y + (pb.y - pa.y) * t + dy, r = [mx - w, my - 13, mx + w, my + 4];
+          if (hits(r)) return false;
+          pick = { x: mx, y: my, r: r };
+          return true;
+        });
+      });
+      if (!pick) { var fx = (pa.x + pb.x) / 2, fy = (pa.y + pb.y) / 2 - 14; pick = { x: fx, y: fy, r: [fx - w, fy - 13, fx + w, fy + 4] }; }
+      taken.push(pick.r);
+      out += "<text class=\"ow-miles\" x=\"" + pick.x + "\" y=\"" + pick.y + "\" text-anchor=\"middle\">" + label + "</text>";
     });
     ids.forEach(function (id, k) {
       var n = OW.nodes[id], pp = P(n), x = pp.x, y = pp.y, big = n.kind === "city" ? 26 : (n.kind === "town" ? 22 : (n.kind === "village" ? 18 : 15));

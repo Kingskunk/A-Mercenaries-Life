@@ -650,7 +650,7 @@
           // without building the content that reads it.
           return out;
         },
-        see: ["port_valen", "dredge_end", "gilded_scales", "port_watch", "duckboard_market"]
+        see: ["port_valen", "dredge_end", "gilded_scales", "port_watch"]
       },
       {
         id: "iron_bailiffs", category: "factions", title: "The Iron Bailiffs",
@@ -738,7 +738,19 @@
         link: ["Port Valen"],
         sub: "A free port where the Grey River meets the sea",
         tags: ["Port Valen"], aliases: ["Port Valen", "Dredge-End", "Patrician Quarter", "free city", "Free City", "Council", "capital"],
-        unlock: "codex_port_valen",
+        unlock: function (s) {
+          return truthy(s.codex_port_valen) || truthy(s.port_valen_hub_seen) || truthy(s.port_valen_harbor_seen) ||
+            truthy(s.dredge_end_seen) || truthy(s.mw_seen) || truthy(s.civic_heights_seen) || truthy(s.upper_wharves_seen) ||
+            truthy(s.cath_seen) || truthy(s.ch_hall_seen) || truthy(s.ch_court_seen) || truthy(s.ch_records_seen) ||
+            truthy(s.pw_seen) || truthy(s.ch_head_seen) || truthy(s.pv_tavern_seen) || truthy(s.pv_quays_seen) ||
+            truthy(s.pv_drydock_seen) || truthy(s.pv_pier_seen) || truthy(s.pv_slip_seen) || truthy(s.cut_seen_market) ||
+            truthy(s.cut_seen_gangways) || truthy(s.cut_seen_sheds) || truthy(s.cut_seen_landing) ||
+            truthy(s.cut_seen_lamp_stair) || truthy(s.cut_seen_shrine) || truthy(s.cut_seen_lower_steps) ||
+            truthy(s.mw_lantern_seen) || truthy(s.mw_smiths_seen) || truthy(s.mw_lodgings_seen) ||
+            truthy(s.mw_wash_seen) || truthy(s.mw_river_gate_seen) || truthy(s.mw_charter_gate_seen) ||
+            truthy(s.es_yard_seen) || truthy(s.pq_gate_seen) || truthy(s.pq_inside_seen) || truthy(s.pq_walk_seen) ||
+            truthy(s.pq_tailor_seen) || truthy(s.pq_estates_seen);
+        },
         body: [
           "A port city built where the Grey River comes down out of its limestone gorge and spreads into the estuary. The river reaches it from a fork in the north, where its two arms meet: the Grey itself, running up to Alderford, and the Ashrun, a smaller stream from the western forest. The city climbs the slope behind the harbor in terraces of slate roofs and grey stone. It calls itself a free city, and has since the Old Charter of Meridian gave it the road and the right to keep its own gate. The doors on the plaza of the Heights all carry the same three-masted seal.",
           "The city runs down in layers: the Heights with their council hall and bronze scale, the workshops and wagon yards of the Middle Ward, the wharves along the water, and at the canal's edge Dredge-End, a cramped warren of leaning terraces and broken lanes, older and poorer than the rest. The landward wall has two gates. The River Gate in the west opens on the Grey River road, which follows the river cuttings north to the fork. There the road to Timbermouth climbs the west arm into the uplands, forty miles from the city, while the river road goes on up the Grey to Alderford. The Charter Gate in the east opens on the old imperial road, which runs away east."
@@ -972,26 +984,43 @@
       /* ------------------------------------------------------ FAITH & FOLKLORE */
 
       {
+        id: "church_true_sun", category: "lore", title: "The Church of the True Sun",
+        link: ["Church of the True Sun", "the Church of the True Sun"],
+        sub: "Valen's church of the gods and saints",
+        tags: ["Faith", "Port Valen"], aliases: ["True Sun", "Sun Church", "church", "high prelate", "prelate"],
+        unlock: "cath_seen",
+        body: function (s) {
+          var out = [
+            "The <b>Church of the True Sun</b> is the recognized religious body of Port Valen and the surrounding parishes. It honors many gods and saints, but gives the Sun-Father the high altar, its oaths, and its highest offices. Its cathedral above the Council Hall is the church's chief seat in the city; smaller chapels and roadside shrines keep their own devotions."
+          ];
+          if (truthy(s.cath_vey_prelate_talk)) {
+            out.push("High Prelate Odran Marrow speaks for the church before the Council, the merchant houses, and visiting lords. Deacons keep its local records and rites; its sisters and friars tend the practical work of its chapels.");
+          }
+          return out;
+        },
+        see: ["sun_father", "saint_althea", "cathedral"]
+      },
+      {
         id: "saint_althea", category: "lore", title: "Saint Althea the Mender",
         link: ["Saint Althea", "Althea"],
         sub: "The frontier's folk saint",
         tags: ["Faith"], aliases: ["Althea", "Saint Althea of the Shroud", "prayer"],
         unlock: "codex_saint_althea",
         body: [
-          "Across the cold mud of the frontier marches, common folk, weavers, and watermen pray to <b>Saint Althea of the Shroud</b>, the daughter of the Sun-Father. She is the patroness of needle, loom, herb, and bandage, the saint of those who mend what violence tears apart. Rivermen leave river pebbles polished smooth by the current at her altar before they cast off on the downriver run, and trust her for safe passage."
+          "Across the cold mud of the frontier marches, common folk, weavers, and watermen pray to <b>Saint Althea of the Shroud</b>, the daughter of the Sun-Father and a saint of the Church of the True Sun. She is the patroness of needle, loom, herb, and bandage, the saint of those who mend what violence tears apart. Rivermen leave river pebbles polished smooth by the current at her altar before they cast off on the downriver run, and trust her for safe passage."
         ],
-        see: ["sun_father", "sanctuary_charter", "corbel", "alley_shrine"]
+        see: ["church_true_sun", "sun_father", "sanctuary_charter", "corbel", "alley_shrine"]
       },
       {
         id: "sun_father", category: "lore", title: "The Sun-Father",
         link: ["Sun-Father"],
-        sub: "The god of emperors and oaths",
+        sub: "The chief god of oaths and high justice",
         tags: ["Faith"], aliases: ["Sun-Father", "pantheon", "bishops", "cathedral"],
         unlock: "codex_saint_althea",
         body: [
-          "In the great limestone cathedral of Port Valen, high bishops sing choral litanies to the <b>Sun-Father</b> in his golden plate. He is the sovereign god of emperors, oaths, and high justice. Out in the marches, common folk pray to his daughter, Saint Althea, instead."
+          "In the great limestone cathedral of Port Valen, the Church of the True Sun sings choral litanies to the <b>Sun-Father</b> in his golden plate. The church honors many gods and saints, but holds him highest in matters of oaths, rulers, and high justice. Out in the marches, common folk often pray first to his daughter, Saint Althea."
         ],
-        see: ["saint_althea"]
+        see: ["church_true_sun", "saint_althea"]
       },
       {
         id: "the_drowned", category: "lore", title: "The Drowned — {{warlock_patron_title}}",

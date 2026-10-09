@@ -161,7 +161,7 @@ Both Ring 1 and Ring 2 share the same item pool and can be equipped on either ha
 
 | Item ID | Item Name | Attunement? | Acquisition & Retail Cost | Mechanical & Narrative Details |
 |---|---|---|---|---|
-| `toll_seal_ring` | **Officer's Signet Ring** | No | Black Sinks Strongbox — Loot (Pawn/Fence Value: **8s 0c**) | Tarnished silver signet ring stamped with the three-headed imperial hawk. Physical proof of the fallen Meridian Empire's provincial customs post. Equippable on either ring finger. |
+| `toll_seal_ring` | **Officer's Signet Ring** | No | Black Sinks Strongbox — Loot (Pawn/Fence Value: **8s 0c**) | Tarnished silver signet ring stamped with the three-headed imperial hawk. Physical proof of the fallen Meridian Empire's provincial customs post. Equippable on either ring finger. Worn, it lets the wearer cast **Guidance** (a character who already knows it gets nothing extra). |
 | `althea_votive_ring` | **Althea's Stone Ring** | No | Chapel of Saint Althea — Pious Offering (**6c** temple donation) | Flat river stone drilled and bound in silver wire, offered by watermen before river crossings. Equippable on either ring finger. |
 | `night_eye_ring` | **Night-Eye Ring** | No | Silt-Gate Vault strongbox, once ever (the first time it is opened) | Black horn polished smooth by many thumbs, a smuggler's ring. **Worn in either ring slot, the wearer sees in the dark** (`sees_in_dark`: no light needed, no darkness disadvantage, no ambush in the dark), the same as darkvision. Not attuned: the cost is one of the two ring slots. Unsellable. |
 | `none` | **Bare Finger** | No | Default / Unequipped | Empty ring slot. |
