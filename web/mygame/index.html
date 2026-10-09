@@ -284,6 +284,13 @@ var rootDir = "../";
 }
 #statSidebar .spellCast:hover:not(:disabled) { background: var(--ch-crimson); }
 #statSidebar .spellCast:disabled { cursor: not-allowed; color: var(--ch-dim); background: var(--ch-hover); border-color: var(--ch-line); font-weight: 400; }
+#statSidebar .sbWait {
+  display: block; width: 100%; margin-top: 0.6em; padding: 0.3em 0.5em;
+  font: inherit; font-size: 0.9em; cursor: pointer;
+  color: var(--ch-text, inherit); background: var(--ch-hover); border: 1px solid var(--ch-line); border-radius: 4px;
+}
+#statSidebar .sbWait:hover:not(:disabled) { border-color: var(--ch-crimson-hi); }
+#statSidebar .sbWait:disabled { cursor: not-allowed; color: var(--ch-dim); font-weight: 400; }
 #statSidebar .spellNote { font-size: 0.78em; color: var(--ch-dim); margin-top: 0.4em; line-height: 1.4; }
 /* Combat state (2026-09-27): the sidebar's own header gets a small badge, and date/time/weather/purse swap for
    a live turn-order list (renderStatSidebar below) -- reusing the combat_turn_kind_N/_slot_N stats the ChoiceScript
@@ -1065,7 +1072,8 @@ button#statSidebar .turnRow,
         "<div class=\"timePeriod\">" + fmt(s.time_period) + "</div>" +
         "<div class=\"statRow\"><span>Weather</span><span>" + weatherDisplay + "</span></div>" +
         "<hr class=\"sectionDivider\">" +
-        "<div class=\"statRow\"><span>Purse</span><span>" + fmt(s.gold) + "g " + fmt(s.silver) + "s " + fmt(s.copper) + "c</span></div>";
+        "<div class=\"statRow\"><span>Purse</span><span>" + fmt(s.gold) + "g " + fmt(s.silver) + "s " + fmt(s.copper) + "c</span></div>" +
+        waitButtonHtml(s);
     }
 
     // The sidebar as the stacked panels of the design mock (stage 3): identity (portrait ring, name banner, HP bar, the numbers, the ability tiles), then Today or
@@ -1608,6 +1616,14 @@ button#statSidebar .turnRow,
     if (s.scene && s.scene.secondaryMode === "stats") return false;
     return !isTruthy(s.combat_engaged) && typeof window.Scene === "function" && typeof window.clearScreen === "function" && !!window.nav;
   }
+  // The Wait button in the Today card opens the dossier at its Wait menu. The menu decides when waiting is refused, through the one variable wait_lock_reason (empty means allowed), so a new dungeon or a new kind of long
+  // chain only has to set that variable; this button greys out and shows the reason on hover.
+  function waitButtonHtml(s) {
+    var reason = String(s.wait_lock_reason || "");
+    var off = !!reason || !canOpenDossier();
+    var tip = reason || "Pass the time: wait a few minutes, or until a time of day.";
+    return "<button type=\"button\" class=\"sbWait\" data-wait-open=\"1\" title=\"" + esc(tip) + "\"" + (off ? " disabled" : "") + ">Wait\u2026</button>";
+  }
   function openDossierAt(label) {
     if (!canOpenDossier()) return;
     var scene = new window.Scene("choicescript_stats", window.stats, window.nav, { secondaryMode: "stats", saveSlot: "temp" });
@@ -1720,6 +1736,11 @@ button#statSidebar .turnRow,
       spellPicked = null;                    // a different level can't keep the old pin
       spellTab = lvl;                        // always re-select; an empty level shows its own empty note
       renderStatSidebar();
+      return;
+    }
+    var waitBtn = el.closest("[data-wait-open]");
+    if (waitBtn) {
+      if (!waitBtn.disabled) openDossierAt("codex_wait");
       return;
     }
     var castBtn = el.closest("[data-spell-cast]");

@@ -27,8 +27,13 @@
 *comment ── the master of the line: a person from the five-day block seed (offset so no other job hands out the same face) ──
 *label es_master_make
 *set rj_escort_block ((campaign_day - (campaign_day modulo 5)) / 5)
+*comment Each end of the line has its own master in a given block: the Port Valen yard seeds from block + 5000 with the city mix, the Timbermouth lot from block + 6000 with the town mix, so one person never
+*comment stands at both ends. es_start says which end the player is at.
 *set name_seed (rj_escort_block + 5000)
 *set name_setting "middle_ward"
+*if (es_start = "tm")
+  *set name_seed (rj_escort_block + 6000)
+  *set name_setting "town"
 *gosub_scene names name_pick_race
 *set name_region "port"
 *set name_gender "any"
@@ -38,20 +43,17 @@
 *set name_look_skip ""
 *return
 
-*comment ── Which end of the line the player is at. The caller sets es_start ("pv" or "tm"); this fills in the context the offer and the pages after it use (where the line goes, its cargo, the day it makes up, what the
+*comment ── Which end of the line the player is at. The caller sets es_start ("pv" or "tm"); this fills in the context the offer and the pages after it use (where the line goes, the day it makes up, what the
 *comment road is like) and where they return to (es_place). The wagon yard sets "pv" in es_arrive, the Timbermouth lot sets "tm" in wagon_lot.txt. ──
 *label es_set_line
+*comment The fee for this route if nothing is lost, in coins (Overworld.convoyFee: three quarters of a copper bit a mile). Pure, so a replay says the same.
+*script var o = window.Overworld; var r = o.route(String(stats.es_start), String(stats.es_start) === "pv" ? "tm" : "pv"); stats.es_ctx_fee_text = o.coinText(o.convoyFee(r.miles, 0, 0));
 *if (es_start = "pv")
   *set es_end "tm"
   *set es_place "yard"
   *set es_ctx_dest_name "Timbermouth"
   *set es_ctx_opens "the gate opens"
   *set es_ctx_dow "Forgeday"
-  *set es_ctx_cargo_desc "iron and coal"
-  *set es_ctx_load_a "bars of iron"
-  *set es_ctx_load_a_one "iron bar"
-  *set es_ctx_load_b "sacks of coal"
-  *set es_ctx_load_b_one "sack of coal"
   *set es_ctx_place_text "the wagon yard outside the River Gate"
   *set es_ctx_road_talk "tips a hand toward the north-west. \"River road to the fork, then up the west bank. The first night is the Ashrun's mouth, with water and flat ground. After that the road climbs, and the forest comes down to the edge. Carriers lose what they lose on the second day, when the wagons are tired and the road is narrow.\""
 *else
@@ -60,11 +62,6 @@
   *set es_ctx_dest_name "Port Valen"
   *set es_ctx_opens "the Market opens"
   *set es_ctx_dow "Tideday"
-  *set es_ctx_cargo_desc "ash staves and pottery"
-  *set es_ctx_load_a "bundles of ash staves"
-  *set es_ctx_load_a_one "bundle of ash staves"
-  *set es_ctx_load_b "crates of pottery"
-  *set es_ctx_load_b_one "crate of pottery"
   *set es_ctx_place_text "the wagon lot beside the Market in Timbermouth"
   *set es_ctx_road_talk "tips a hand toward the south-east. \"Down off the hills by the west bank, then the river road to the fork and the cuttings to the city. The first night is the Ashrun's mouth, with water and flat ground. The second day is the easy one, if the first went well.\""
 *return
@@ -116,9 +113,9 @@ Past the arch the cart road opens into a broad yard of beaten earth, rutted and 
 *gosub es_sky
 
 *if (weather_severity >= 3)
-  The oxen have been led under the shed and stand with their backs to the weather, and the yard hands have crowded in beside them. The forge is cold and the wagons are sheeted down where they stand.
+  The oxen have been led under the shed and stand with their backs to the weather, and the yard hands have crowded in beside them. The forge is cold and the carts are sheeted down where they stand.
 *elseif (es_state = "muster")
-  Four wagons stand nose to tail along the fence with their tarps lashed down over their loads. Oxen shift in their yokes, a hand walks the line tapping each hub with a mallet, and a lead horse stamps at the gate end.
+  Four wagons stand nose to tail along the fence with their tarps lashed down over their loads. Oxen shift in their yokes, a hand walks the column tapping each hub with a mallet, and a lead horse stamps at the gate end.
 *elseif (time_period = "Morning")
   *if (es_life = 1)
     Yard hands rake out the straw under the shed while a boy carries water to the oxen in two buckets on a yoke.
@@ -137,29 +134,29 @@ Past the arch the cart road opens into a broad yard of beaten earth, rutted and 
   *if (es_life = 1)
     Teams are led in off the road one by one and rubbed down, and a cookfire is lit under the shed.
   *elseif (es_life = 2)
-    A hand walks the fence with a lantern and counts the wagons under it, touching each one as he passes.
+    A hand walks the fence with a lantern and counts the carts under it, touching each one as he passes.
   *else
     A carter sits on an upturned bucket mending a harness strap by the last of the light, while an ox noses at his pocket.
 
 *comment ── The master's presence follows the state of the job. ──
 *if (es_state = "waiting")
-  The master of the line is in the shed, going over a list with a hand. The wagons stand ready for tomorrow's start.
+  The wagon master is in the shed, going over a list with a hand. The carts stand ready for tomorrow's start.
 *elseif (es_state = "offer")
-  A line is being made up. The wagons stand in the shed with their loads already roped, and the master of the line walks their length, checking ropes and wheels.
+  A caravan is being made up. The wagons stand in the shed with their goods already roped, and the caravan master walks their length, checking ropes and wheels.
 
 *choice
   # Look over the wagons and the teams.
-    The wagons are the long, high-sided kind, with iron-tired wheels as tall as a man's chest and a brake lever on the near side. Their beds are loaded with bars of iron bundled in sacking and sacks of coal roped under tarps, and the tarps have been oiled until they shine. Oxen are yoked in pairs, broad, slow and patient, with the brand of the yard on their flanks. A pair of lean horses stands at the gate end, with a saddle thrown over the rail beside them.
+    The wagons are the long, high-sided kind, with iron-tired wheels as tall as a man's chest and a brake lever on the near side. Their beds are piled with sacked and bundled goods roped under tarps, and the tarps have been oiled until they shine. Oxen are yoked in pairs, broad, slow and patient, with the brand of the yard on their flanks. A pair of lean horses stands at the gate end, with a saddle thrown over the rail beside them.
     *page_break Turn back to the yard…
     *goto es_yard
   *if (es_state = "offer")
-    # Speak to the master of the line.
+    # Speak to the wagon master.
       *goto es_offer
   *if (es_state = "waiting")
-    # Ask the master when the line rolls.
+    # Ask the caravan master when the caravan sets out.
       *goto es_when
   *if (es_state = "muster")
-    # Report to the master of the line.
+    # Report to the wagon master.
       *goto es_muster
   *if (es_state = "idle")
     # Ask a yard hand about work.
@@ -204,7 +201,7 @@ Past the arch the cart road opens into a broad yard of beaten earth, rutted and 
 *return
 
 *label es_idle_talk
-A yard hand sets down a bucket and wipes his hands on his apron. He tells you that nothing is making up today and that the carrier's lines go out when the carrier has loads for them. The Hiring Hall's wall carries the posting when one is open, and the master pays no one who turns up unasked.
+A yard hand sets down a bucket and wipes his hands on his apron. He tells you that nothing is making up today and that the carrier's caravans go out when the carrier has goods for them. The Hiring Hall's wall carries the posting when one is open, and the caravan master pays no one who turns up unasked.
 *page_break Turn back to the yard…
 *goto es_yard
 
@@ -216,31 +213,31 @@ A yard hand sets down a bucket and wipes his hands on his apron. He tells you th
 *temp says "he says"
 *if (name_sex = "f")
   *set says "she says"
-[b]◈ THE MASTER OF THE LINE[/b]
+[b]◈ THE WAGON MASTER[/b]
 *line_break
 *if (not(es_offer_day = campaign_day))
-  ${lk} stops at the end of the line and looks you over once, boots to hat. "${pw}," ${says}.
+  ${lk} stops at the tail of the column and looks you over once, boots to hat. "${pw}," ${says}.
 
-  "Four wagons to ${es_ctx_dest_name}. ${es_ctx_cargo_desc}. Two days, if the road holds."
+  "Four wagons to ${es_ctx_dest_name}. Two days, if the road holds."
 
-  @{(name_sex = "f") She|He} taps a wheel with a knuckle. "You walk beside the wagons and watch the road. When a wheel cracks or an ox balks, you lend a hand. No heroes."
+  @{(name_sex = "f") She|He} taps a wheel with a knuckle. "You walk beside the carts and watch the road. When a wheel cracks or an ox balks, you lend a hand. No heroes."
 
-  "Bring every wagon and its load to ${es_ctx_dest_name}, and you earn three silver marks. Lose one, and you earn one. You eat from the pot and sleep under a wagon."
+  "Bring every wagon and its goods to ${es_ctx_dest_name}, and you earn ${es_ctx_fee_text}. Lose goods on the way, and you earn less. You eat from the pot and sleep under a wagon."
 
-  "We roll two hours after ${es_ctx_opens}. Be at the end of the line by then, or watch us leave without you."
+  "We roll two hours after ${es_ctx_opens}. Be at the tail of the column by then, or watch us leave without you."
 *else
-  The master of the line waits at the end of the wagons for your answer. The offer has not changed: three silver marks if the line reaches ${es_ctx_dest_name} whole, one if a wagon or load is lost, food from the pot, and a place beneath a wagon. The line rolls two hours after ${es_ctx_opens}, the morning after you sign.
+  The wagon master waits at the back of the carts for your answer. The offer has not changed: ${es_ctx_fee_text} if the caravan reaches ${es_ctx_dest_name} whole, less for every load lost on the way, food from the pot, and a place beneath a wagon. The column rolls two hours after ${es_ctx_opens}, the morning after you sign.
 *set es_offer_day campaign_day
 
 *choice
   # Take the work.
     *goto es_accept
   # Ask what the road is like.
-    ${lk} ${es_ctx_road_talk}
-    *page_break Turn back to the master…
+    ${name_first} ${es_ctx_road_talk}
+    *page_break Turn back to the caravan master…
     *goto es_offer
   # Say you will think it over.
-    The master gives a short shrug. "Think, then. The line stays until the light goes. After that, it has road to make."
+    The wagon master gives a short shrug. "Think, then. We stay until the light goes. After that, there is road to make."
     *page_break Turn back…
     *goto es_back
 
@@ -252,25 +249,21 @@ A yard hand sets down a bucket and wipes his hands on his apron. He tells you th
 *set rj_escort_dest_name es_ctx_dest_name
 *set rj_escort_opens es_ctx_opens
 *set rj_escort_place_text es_ctx_place_text
-*set es_load_a es_ctx_load_a
-*set es_load_a_one es_ctx_load_a_one
-*set es_load_b es_ctx_load_b
-*set es_load_b_one es_ctx_load_b_one
 *set rj_escort_until (campaign_day + 1)
 *set rj_escort_master name_full
 *set rj_escort_look look_full
 *set rj_escort_sex name_sex
 *set rj_escort_pos ""
-[b]◈ THE MASTER OF THE LINE[/b]
+[b]◈ THE WAGON MASTER[/b]
 *line_break
-You give your name. ${rj_escort_master} writes it down, nods once, and tells a hand to find you a place with the others. "Two hours after ${rj_escort_opens}," @{(rj_escort_sex = "f") she|he} says. "Be at the end of the line before then."
+You give your name. ${rj_escort_master} writes it down, nods once, and tells a hand to find you a place with the others. "Two hours after ${rj_escort_opens}," @{(rj_escort_sex = "f") she|he} says. "Be at the tail of the column before then."
 
 [b][🏷️ Job taken: Wagon Escort to ${rj_escort_dest_name}][/b]
 *page_break Step back…
 *goto es_back
 
 *label es_when
-The master does not look up from the list. @{(rj_escort_sex = "f") She|He} tells you the line rolls two hours after ${rj_escort_opens} tomorrow, and that the loads are already roped. Anyone not at the end of the line by then is not on it.
+The caravan master does not look up from the list. @{(rj_escort_sex = "f") She|He} tells you the caravan rolls two hours after ${rj_escort_opens} tomorrow, and that the goods are already roped. Anyone not at the tail of the column by then is not on it.
 *page_break Turn back…
 *goto es_back
 
@@ -279,11 +272,11 @@ The master does not look up from the list. @{(rj_escort_sex = "f") She|He} tells
 *if (es_place = "lot")
   [b]◈ THE WAGON LOT[/b]
   *line_break
-  The lot is nearly empty. A few hands rake straw under the lean-to, and a long double rut leads out past the last rail and away into the trees. A hand tells you the line pulled out this morning without you, and that the master pays no one who was not there.
+  The lot is nearly empty. A few hands rake straw under the lean-to, and a long double rut leads out past the last rail and away into the trees. A hand tells you the caravan pulled out this morning without you, and that the wagon master pays no one who was not there.
 *else
   [b]◈ THE WAGON YARD[/b]
   *line_break
-  The yard is nearly empty. The shed stands open with a few hands raking straw, and a long double rut leads out of the gate and away up the river road. A hand tells you the line pulled out this morning without you, and that the master pays no one who was not there.
+  The yard is nearly empty. The shed stands open with a few hands raking straw, and a long double rut leads out of the gate and away up the river road. A hand tells you the caravan pulled out this morning without you, and that the caravan master pays no one who was not there.
 *page_break Turn back from the empty ground…
 *set rj_escort_stage "none"
 *goto es_back
@@ -293,41 +286,40 @@ The master does not look up from the list. @{(rj_escort_sex = "f") She|He} tells
 *set minutes_to_pass 15
 *set time_advance_call_id "es_muster_1"
 *gosub es_time
-[b]◈ THE LINE[/b]
+[b]◈ THE COLUMN[/b]
 *line_break
 ${rj_escort_master} finds your name and nods. "Good. You are in time. Four wagons, six hands, two drovers up front. Where do you walk?"
 
 *choice
   # Walk at the head, beside the lead horse.
     *set rj_escort_pos "head"
-    The master nods. "You see the road before the oxen do, and you meet what is on it first. Keep your eyes up and your voice down."
+    ${rj_escort_master} nods. "You see the road before the oxen do, and you meet what is on it first. Keep your eyes up and your voice down."
     *goto es_pull_out
   # Walk in the middle, beside the loaded wagons.
     *set rj_escort_pos "middle"
-    The master nods. "Close to the loads, close to the drovers. If anything goes wrong with a wheel or a yoke, you are the first hand there."
+    The wagon master nods. "Close to the goods, close to the drovers. If anything goes wrong with a wheel or a yoke, you are the first hand there."
     *goto es_pull_out
   # Walk at the tail, behind the last wagon.
     *set rj_escort_pos "rear"
-    The master nods. "Whoever follows a line follows the last wagon. Strays, thieves, and anyone who thinks a tired line is an easy one. Watch behind you."
+    @{(rj_escort_sex = "f") She|He} nods. "Whoever follows a column follows the last wagon. Strays, thieves, and anyone who thinks a tired column is an easy one. Watch behind you."
     *goto es_pull_out
 
 *comment ════════════════════════════════════════════════════════════════════════════════════
-*comment THE ROAD (second piece, now driven by the route). A travel contract played as one chain of pages. The caravan sets the pace (es_pace, 30 minutes a mile) and the camp, so this is NOT the free
-*comment overworld map and the player cannot wander off. The line walks the legs of Overworld.route(rj_escort_from, rj_escort_to) (overworld-data.js), so the same pages run in either direction and over
-*comment any number of tiles. Nothing here names a tile: the text of the road comes from the tile fields walk, camp, depart and arrive.
+*comment THE ROAD (second piece, now driven by the route and played in STRETCHES). A travel contract played as a short chain of pages. The caravan sets the pace (es_pace, 30 minutes a mile) and the camp, so this is NOT
+*comment the free overworld map and the player cannot wander off. The caravan walks the legs of Overworld.route(rj_escort_from, rj_escort_to) (overworld-data.js), so the same pages run in either direction and over
+*comment any route of up to Overworld.convoyMaxLegs (7) legs, about four days. Nothing here names a tile: the text of the road comes from the tile fields walk, camp, depart and arrive.
 *comment
-*comment The day: the line rolls at 09:00 and walks leg by leg. After each leg it decides, from the clock, whether the next leg still ends by 20:00 (es_act / es_act2: "pay" at the last leg, "beat" for a halt
-*comment with an event on a road, forest or hills tile, "go" for the next leg, "camp" to stop here). The camp is a night with supper, one three-hour watch for the player chosen by their place in the line
-*comment (head 21:00, middle 00:00, rear 03:00), breakfast, and a 07:00 start. On the forward run (Port Valen to Timbermouth) that is: noon halt on the River Road, camp at Ashrun Mouth, Longshade Edge,
-*comment pay at the road end about 17:30.
+*comment A STRETCH is one page: the walk from where the caravan stands to its next stop, with the quiet legs in between folded into one summary line. The planning is a pure function (Overworld.convoyPlan, overworld-data.js):
+*comment it walks legs until the next leg would end after 20:00 (a CAMP), a tile that meets a HALT EVENT, or the end of the road (PAY). A halt on a road, forest or hills tile meets an event with a chance set by the tile's
+*comment danger (25, 50, 75 or 100 percent), at most one a day; which event comes from a table in the data file (HALT_EVENTS: kinds, weight by danger). The camp is one page for a quiet night (supper, a quiet watch, the morning)
+*comment and a few pages for a disturbed one (the oxen spook, a sneak thief). The player stands ONE watch, chosen by their place in the line (head 21:00, middle 00:00, rear 03:00).
 *comment
-*comment Beats are numbered in the order they happen (rj_escort_cur, at most six): a halt event or the night watch. Each is held (true) or lost (false) in rj_escort_b1..6. Pay: none lost = three
-*comment quarters of a copper a mile (3 silver marks for 40 miles); some lost, but not all = a third of that; every beat lost = nothing. A beat that goes wrong never ends the job. An event is a seeded roll from
-*comment the signing block (rj_escort_block + 5000, salt 60 + the beat number), so the same line always meets the same road.
+*comment BEATS are the halts and the nights, counted in order (rj_escort_cur). Goods lost are counted (rj_escort_lost), not slotted, so a road of any length works. Pay is Overworld.convoyFee: three quarters of a copper bit
+*comment a mile if nothing is lost, the share of beats that held (never under a third) if some were, nothing if all were. A beat that goes wrong never ends the job. Events are seeded from the signing block
+*comment (rj_escort_block + 5000), so the same caravan always meets the same road. Not every roll is a fight: a failed roll costs goods, time or both, and only a sneak thief at night (and later the armed bandits) can lead to blows.
 *comment
-*comment Replay rules (as hall_watch.txt): roll first, then the page's one time advance. A refresh replays a page on top of its END state, so (1) the leg a page walks is stored under a page lock
-*comment (es_leg_locked) and everything else is worked out again from that stored index by es_load_leg, which is pure; (2) the decision about what follows a leg is made INSIDE that lock, from the
-*comment clock before the walk, and stored in es_act and es_act2; (3) each page reads the decision before its own page_break and never after, so the next page rewriting it cannot disturb a replay.
+*comment Replay rules (as hall_watch.txt): roll first, then the page's one time advance. A refresh replays a page on top of its END state, so (1) a stretch's plan and walk are done once under a page lock
+*comment (es_leg_locked) and stored; (2) every page reads the decision about what follows (es_act, es_act2) before its own page_break and never after; (3) a beat is numbered and a loss counted under page locks.
 *comment ════════════════════════════════════════════════════════════════════════════════════
 
 *comment ── clock helpers. es_clock moves the clock by hours_to_pass and minutes_to_pass the caller set (and checks for death); es_walk does the same for a stretch of road, charging the weather and
@@ -383,71 +375,46 @@ ${rj_escort_master} finds your name and nods. "Good. You are in time. Four wagon
   *set rj_escort_hint (rj_escort_hint & "]")
 *return
 
-*comment ── record the current beat (rj_escort_cur): held when rj_escort_ok. Assignments only. ──
+*comment ── record the current beat: if it went wrong, count one lost. A real +1, so it sits under a page lock and a replay of the page that marked it cannot count it twice. ──
 *label es_mark
-*if (rj_escort_cur = 1)
-  *set rj_escort_b1 rj_escort_ok
-*elseif (rj_escort_cur = 2)
-  *set rj_escort_b2 rj_escort_ok
-*elseif (rj_escort_cur = 3)
-  *set rj_escort_b3 rj_escort_ok
-*elseif (rj_escort_cur = 4)
-  *set rj_escort_b4 rj_escort_ok
-*elseif (rj_escort_cur = 5)
-  *set rj_escort_b5 rj_escort_ok
-*else
-  *set rj_escort_b6 rj_escort_ok
+*if (not(rj_escort_ok))
+  *if (not(es_mark_locked)) or (not(locked_es_mark_page_id = page_id))
+    *set rj_escort_lost (rj_escort_lost + 1)
+    *set es_mark_locked true
+    *set locked_es_mark_page_id page_id
 *return
 
 *comment ── the leg in hand (es_cur_leg) worked out from the route and the tile data. Pure: it only reads, so a replay can call it freely. ──
 *label es_load_leg
-*script var o = window.Overworld; var r = o.route(String(stats.rj_escort_from), String(stats.rj_escort_to)); var i = Number(stats.es_cur_leg); var L = r.legs[i]; var N = r.legs[i + 1]; var pace = Number(stats.es_pace); stats.es_leg_count = r.legs.length; stats.es_total_miles = r.ok ? r.miles : 0; stats.es_next_minutes = N ? N.miles * pace : 0; if (L) { var n = o.nodes[L.to]; stats.es_leg_to = L.to; stats.es_leg_name = n.name; stats.es_leg_head = n.name.toUpperCase(); stats.es_leg_kind = n.kind; stats.es_leg_walk = n.walk || ""; stats.es_leg_camp = n.camp || ""; stats.es_leg_arrive = n.arrive || ""; stats.es_leg_minutes = L.miles * pace; }
+*script var o = window.Overworld; var r = o.route(String(stats.rj_escort_from), String(stats.rj_escort_to)); var i = Number(stats.es_cur_leg); var L = r.legs[i]; var N = r.legs[i + 1]; var pace = Number(stats.es_pace); stats.es_leg_count = r.legs.length; stats.es_total_miles = r.ok ? r.miles : 0; stats.es_next_minutes = N ? N.miles * pace : 0; if (L) { var n = o.nodes[L.to]; stats.es_leg_to = L.to; stats.es_leg_name = n.name; stats.es_leg_head = n.name.toUpperCase(); stats.es_leg_kind = n.kind; stats.es_leg_danger = o.dangerOf(L.to); stats.es_leg_walk = n.walk || ""; stats.es_leg_camp = n.camp || ""; stats.es_leg_arrive = n.arrive || ""; stats.es_leg_minutes = L.miles * pace; }
 *return
 
-*comment ── the event of a halt or the night watch: a seeded roll from the signing block, a salt per beat. A halt on a road tile draws from the road events (1, 2), on a forest or hills tile from the
-*comment forest events (5, 6); the night draws quiet (0), the oxen spooking (3) or a sneak thief (4). ──
-*label es_pick
-*set name_seed (rj_escort_block + 5000)
-*set name_salt (60 + rj_escort_cur)
-*if (es_pick_night)
-  *set name_n 100
-  *gosub_scene names name_roll
-  *set rj_escort_ev 0
-  *if ((name_rolled >= 50) and (name_rolled < 75))
-    *set rj_escort_ev 3
-  *elseif (name_rolled >= 75)
-    *set rj_escort_ev 4
-*else
-  *set name_n 2
-  *gosub_scene names name_roll
-  *set rj_escort_ev (1 + name_rolled)
-  *if (not(es_leg_kind = "road"))
-    *set rj_escort_ev (5 + name_rolled)
+*comment ── the next stretch, from leg es_next_leg and the clock: where it ends (es_str_end, one past the last leg walked), what it covers, and what follows it (es_act: "pay", "beat" or "camp"; es_halt_ev the halt event's number;
+*comment es_act2 whether the day goes on after that halt, "go" or "camp"). Pure given the clock, so it runs once under the stretch's lock. ──
+*label es_plan
+*script var o = window.Overworld; var now = Number(stats.clock_hour) * 60 + Number(stats.clock_minute); var p = o.convoyPlan(String(stats.rj_escort_from), String(stats.rj_escort_to), Number(stats.es_next_leg), now, Number(stats.rj_escort_block) + 5000, Number(stats.es_day_halts) > 0, Number(stats.es_pace)); stats.es_str_end = p.endLeg; stats.es_str_miles = p.miles; stats.es_str_mins = p.minutes; stats.es_str_walk = p.walk; stats.es_str_from = p.fromName; stats.es_str_to = p.toName; stats.es_act = p.stop; stats.es_act2 = p.act2; stats.es_halt_ev = p.haltEv; stats.es_phase = p.phase; stats.es_str_text = o.span(p.minutes);
 *return
 
 *comment ════════════ OUT OF THE YARD ════════════
 *label es_pull_out
-*set rj_escort_b1 true
-*set rj_escort_b2 true
-*set rj_escort_b3 true
-*set rj_escort_b4 true
-*set rj_escort_b5 true
-*set rj_escort_b6 true
+*set rj_escort_road true
+*set wait_lock_reason "The caravan is on the road and will not wait for you."
 *set rj_escort_cur 0
 *set es_cur_leg 0
 *set es_next_leg 0
-*set es_pick_night false
+*set rj_escort_lost 0
+*set es_day_halts 0
 *set rj_escort_watch 1
 *if (rj_escort_pos = "middle")
   *set rj_escort_watch 2
 *elseif (rj_escort_pos = "rear")
   *set rj_escort_watch 3
-*page_break The line starts to roll…
+*page_break The caravan starts to roll…
 [b]◈ OUT OF THE YARD[/b]
 *line_break
-*script var n = window.Overworld.nodes[String(stats.rj_escort_from)]; stats.es_depart = (n && n.depart) ? n.depart : "The gate end of the line lurches forward, ox by ox, and the wagons take up the weight of their loads with a groan of axles.";
+*script var n = window.Overworld.nodes[String(stats.rj_escort_from)]; stats.es_depart = (n && n.depart) ? n.depart : "The head of the column lurches forward, ox by ox, and the wagons take up the weight of their loads with a groan of axles.";
 ${es_depart}
-${rj_escort_master} walks the length of the line once, counting, and then goes up to the lead horse and does not look back.
+${rj_escort_master} walks the length of the column once, counting, and then goes up to the lead horse and does not look back.
 *gosub_scene overworld/overworld ow_sky
 *set es_target 540
 *set es_cap 240
@@ -457,18 +424,26 @@ ${rj_escort_master} walks the length of the line once, counting, and then goes u
   *set es_w_node rj_escort_from
   *set es_w_id "es_wait"
   *gosub es_walk
-*page_break The line takes the road…
-*goto es_leg
+*page_break The column takes the road…
+*goto es_stretch
 
-*comment ════════════ A LEG OF THE ROAD ════════════
-*label es_leg
+*comment ════════════ A STRETCH OF THE ROAD ════════════
+*label es_stretch
 *if (not(es_leg_locked)) or (not(locked_es_leg_page_id = page_id))
-  *set es_cur_leg es_next_leg
-  *set es_next_leg (es_next_leg + 1)
-  *gosub es_load_leg
-  *comment The decision about what follows this leg, from the clock before the walk: the leg ends at now plus its minutes; a halt event on a road, forest or hills tile adds half an hour; the next leg
-  *comment must still end by 20:00 or the line camps. The beat count stays below 5 so the night's watch always has a slot.
-  *script var now = Number(stats.clock_hour) * 60 + Number(stats.clock_minute); stats.es_phase = (now < 660) ? "morning" : "afternoon"; var ev = (["road", "forest", "hills"].indexOf(String(stats.es_leg_kind)) >= 0) && (Number(stats.rj_escort_cur) < 5); var last = Number(stats.es_next_leg) >= Number(stats.es_leg_count); var t = now + Number(stats.es_leg_minutes); var nx = Number(stats.es_next_minutes); var go0 = (t + nx) <= 1200; stats.es_act2 = "go"; if (last) { stats.es_act = "pay"; } else if (!go0) { stats.es_act = "camp"; } else if (ev) { stats.es_act = "beat"; stats.es_act2 = ((t + 30 + nx) <= 1200) ? "go" : "camp"; } else { stats.es_act = "go"; }
+  *gosub es_plan
+  *set es_k es_next_leg
+  *label es_str_loop
+  *if (es_k < es_str_end)
+    *comment Each leg is charged the weather and the climate of its own moment (es_walk), all inside this one lock: advance_time's own guard remembers only the last call, so the lock is what makes a replay safe.
+    *set es_cur_leg es_k
+    *gosub es_load_leg
+    *set es_w_mins es_leg_minutes
+    *set es_w_node es_leg_to
+    *set es_w_id ("es_leg_" & es_k)
+    *gosub es_walk
+    *set es_k (es_k + 1)
+    *goto es_str_loop
+  *set es_next_leg es_str_end
   *set es_leg_locked true
   *set locked_es_leg_page_id page_id
 *gosub es_load_leg
@@ -477,43 +452,43 @@ ${rj_escort_master} walks the length of the line once, counting, and then goes u
 *if (es_phase = "morning")
   The oxen set a pace you can walk to without thinking, and the wagons creak along under their tarps.
 *else
-  The afternoon is the long part of the day. The oxen keep their pace under the long shadow of the line.
-${es_leg_walk}
+  The afternoon is the long part of the day. The oxen keep their pace under the long shadow of the carts.
+${es_str_walk}
 *gosub_scene overworld/overworld ow_sky
-*set es_w_mins es_leg_minutes
-*set es_w_node es_leg_to
-*set es_w_id ("es_leg_" & es_cur_leg)
-*gosub es_walk
+*line_break
+[b][🥾 ${es_str_from} to ${es_str_to}: ${es_str_miles} miles, ${es_str_text}][/b]
 *if (es_act = "pay")
-  *page_break The line comes in…
+  *page_break The carts come in…
   *goto es_pay
 *elseif (es_act = "beat")
-  *page_break The line stops for a halt…
+  *page_break The column stops for a halt…
   *goto es_beat
-*elseif (es_act = "go")
-  *page_break The line rolls on…
-  *goto es_leg
-*page_break The line makes camp…
+*page_break The carts make camp…
 *goto es_camp
 
 *comment ════════════ A HALT ON THE ROAD ════════════
 *label es_beat
 *if (not(es_beat_locked)) or (not(locked_es_beat_page_id = page_id))
   *set rj_escort_cur (rj_escort_cur + 1)
+  *set es_day_halts 1
   *set es_beat_locked true
   *set locked_es_beat_page_id page_id
 *gosub es_load_leg
-*set es_pick_night false
-*gosub es_pick
 [b]◈ A HALT ON THE ROAD[/b]
 *line_break
-The line pulls up where the road allows, and the drovers drop the pole brakes and go down the line looking at hooves and yokes.
-*if (rj_escort_ev = 1)
+The column pulls up where the road allows, and the drovers drop the pole brakes and go down the carts looking at hooves and yokes.
+*if (es_halt_ev = 1)
   *goto es_w1a
-*elseif (rj_escort_ev = 2)
+*elseif (es_halt_ev = 2)
   *goto es_w1b
-*elseif (rj_escort_ev = 5)
+*elseif (es_halt_ev = 5)
   *goto es_t5
+*elseif (es_halt_ev = 7)
+  *goto es_x7
+*elseif (es_halt_ev = 8)
+  *goto es_x8
+*elseif (es_halt_ev = 9)
+  *goto es_x9
 *goto es_t6
 
 *comment ── event 1a: the rear wagon sinks to the hub in the soft edge of the road ──
@@ -534,7 +509,7 @@ The line pulls up where the road allows, and the drovers drop the pole brakes an
 *set rj_escort_hdc 12
 *gosub es_hint
 *set h3 rj_escort_hint
-Behind you the rear wagon's near wheel breaks through the soft edge of the road and sinks to the hub. The oxen lean into the yoke and the wagon settles deeper, with the ${es_load_a} shifting under the tarp and a drover shouting at the team to stop.
+Behind you the rear wagon's near wheel breaks through the soft edge of the road and sinks to the hub. The oxen lean into the yoke and the wagon settles deeper, with the load shifting under the tarp and a drover shouting at the team to stop.
 *choice
   # Put your shoulder to the wheel with the drovers.${h1}
     *set rj_escort_opt 1
@@ -562,27 +537,27 @@ Behind you the rear wagon's near wheel breaks through the soft edge of the road 
 *gosub es_mark
 *if (rj_escort_opt = 1)
   *if (check_success)
-    Four of you set shoulders to the spokes and heave on the drover's count. The wheel groans out of the mud with a sound like a boot leaving a bog, and the wagon rolls free with a ${es_load_b_one} still swinging on its rope.
+    Four of you set shoulders to the spokes and heave on the drover's count. The wheel groans out of the mud with a sound like a boot leaving a bog, and the cart rolls free with the tarp still flapping loose.
   *else
-    You heave with the others and the wheel does not move, and then it moves the wrong way. The wagon slews, a rope parts, and half a load of ${es_load_b} goes down the bank in a clattering slide.
+    You heave with the others and the wheel does not move, and then it moves the wrong way. The wagon slews, a rope parts, and half the goods go down the bank in a clattering slide.
 *elseif (rj_escort_opt = 2)
   *if (check_success)
-    You have the top sacks off and stacked on the verge before anyone has asked why, and a pole under the axle for a lever. The wagon comes up out of the mud as if it had been waiting for permission.
+    You have the top sacks off and stacked on the verge before anyone has asked why, and a pole under the axle for a lever. The cart comes up out of the mud as if it had been waiting for permission.
   *else
-    You lever, and the pole slips. The wagon drops back, the load shifts, and a ${es_load_a_one} goes through the tarp and over the bank with a splash that you hear for a long time.
+    You lever, and the pole slips. The wagon drops back, the load shifts, and a bundle goes through the tarp and over the bank with a splash that you hear for a long time.
 *else
   *if (check_success)
-    The lead pair come back at a walk, steady, and take the chain without being asked twice. The wagon comes out in one long pull, and the drovers cheer the oxen and not you.
+    The lead pair come back at a walk, steady, and take the chain without being asked twice. The cart comes out in one long pull, and the drovers cheer the oxen and not you.
   *else
     The oxen shy at the chain, one of them throws its head, and the pair go the wrong way together. By the time the drovers have them quiet, the rear wagon has slid into the ditch and burst a seam on a sack.
 *if (rj_escort_ok)
-  The line is rolling again within the half hour.
+  The caravan is rolling again within the half hour.
 
-  [b][🛞 The line holds.][/b]
+  [b][📦 The caravan holds.][/b]
 *else
-  You get the wagon out in the end. The master walks its length twice, then gives a single nod.
+  You get the wagon out in the end. The caravan master walks its length twice, then gives a single nod.
 
-  [b][🛞 A load is lost: it will show at the pay.][/b]
+  [b][📦 Goods are lost: it will show at the pay.][/b]
 *goto es_halt_end
 
 *comment ── event 1b: an ox lies down in the yoke at the edge of the road ──
@@ -603,7 +578,7 @@ Behind you the rear wagon's near wheel breaks through the soft edge of the road 
 *set rj_escort_hdc 10
 *gosub es_hint
 *set h3 rj_escort_hint
-Halfway along the line the second ox in the third team stops, shifts its weight, and lies down in the yoke with a groan. The wagon behind it creeps forward on its own weight and slews toward the drop beside the road.
+Halfway along the column the second ox in the third team stops, shifts its weight, and lies down in the yoke with a groan. The cart behind it creeps forward on its own weight and slews toward the drop beside the road.
 *choice
   # Talk the ox up and rub its neck.${h1}
     *set rj_escort_opt 1
@@ -637,22 +612,22 @@ Halfway along the line the second ox in the third team stops, shifts its weight,
     You talk and rub, and the ox rolls an eye at you and does not move. The wagon behind it keeps creeping, and the drovers have to drop a wheel chock the hard way.
 *elseif (rj_escort_opt = 2)
   *if (check_success)
-    You throw yourself on the brake lever with both hands. The wheels bite and the wagon stops a hand's breadth from the edge, and the ox lifts its head as if it had only paused.
+    You throw yourself on the brake lever with both hands. The wheels bite and the cart stops a hand's breadth from the edge, and the ox lifts its head as if it had only paused.
   *else
     The lever comes up in your hands and the brake does not catch. The wagon scrapes along the stone verge and takes the corner of the tarp with it.
 *else
   *if (check_success)
     You run a hand down the yoke and find the stone under the collar, rubbing a raw patch. A drover cuts it free, and the ox stands on its own.
   *else
-    You search the yoke and the hooves and find nothing. By the time anyone thinks of the collar the wagon behind has gone through the verge up to its axle.
+    You search the yoke and the hooves and find nothing. By the time anyone thinks of the collar the cart behind has gone through the verge up to its axle.
 *if (rj_escort_ok)
-  The line is rolling again within the half hour.
+  The carts are rolling again within the half hour.
 
-  [b][🛞 The line holds.][/b]
+  [b][📦 The caravan holds.][/b]
 *else
-  The wagon is hauled back onto the stone and the load re-roped, with less of it than there was. The master looks it over, then gives a single nod.
+  The wagon is hauled back onto the stone and the goods re-roped, with less of them than there was. ${rj_escort_master} looks it over, then gives a single nod.
 
-  [b][🛞 A load is lost: it will show at the pay.][/b]
+  [b][📦 Goods are lost: it will show at the pay.][/b]
 *goto es_halt_end
 
 *comment ── event 5: a tree across the narrow road ──
@@ -673,7 +648,7 @@ Halfway along the line the second ox in the third team stops, shifts its weight,
 *set rj_escort_hdc 12
 *gosub es_hint
 *set h3 rj_escort_hint
-A beech lies across the road from verge to drop, its crown in the ditch and its root plate standing up like a wall. Whether the wind took it or a saw, the line cannot go round it, and the lead drover is already on the ground looking at it.
+A beech lies across the road from verge to drop, its crown in the ditch and its root plate standing up like a wall. Whether the wind took it or a saw, the caravan cannot go round it, and the lead drover is already on the ground looking at it.
 *choice
   # Take an axe from the lead wagon and cut it through.${h1}
     *set rj_escort_opt 1
@@ -706,20 +681,20 @@ A beech lies across the road from verge to drop, its crown in the ditch and its 
     The axe skids off the bark and bites your boot-leather, and the trunk rolls an inch toward the drop. By the time it is cut through, a wheel has gone over the edge of the verge with a sack on it.
 *elseif (rj_escort_opt = 2)
   *if (check_success)
-    You find it in a stand of nettles: two faint ruts running off round the slope. The line takes it single file, with a drover at each wheel, and is back on the road beyond the beech before you have counted the oxen.
+    You find it in a stand of nettles: two faint ruts running off round the slope. The carts take it single file, with a drover at each wheel, and is back on the road beyond the beech before you have counted the oxen.
   *else
-    You find a track and it is not the track. The first wagon goes down it to its axle in a bog, and the line has to be hauled back by hand.
+    You find a track and it is not the track. The first wagon goes down it to its axle in a bog, and the carts have to be hauled back by hand.
 *else
   *if (check_success)
     The lead pair take the chain at a walk and lean into it with their whole weight. The trunk grates round on the stone and tips over the edge, and the road is open.
   *else
-    The chain slips and the oxen lunge. The trunk rolls into the lead wagon's wheel, and a load of ${es_load_a} spills down the slope before anyone can stop it.
+    The chain slips and the oxen lunge. The trunk rolls into the lead wagon's wheel, and some of the goods spill down the slope before anyone can stop it.
 *if (rj_escort_ok)
 
-  [b][🛞 The line holds.][/b]
+  [b][📦 The caravan holds.][/b]
 *else
 
-  [b][🛞 A load is lost: it will show at the pay.][/b]
+  [b][📦 Goods are lost: it will show at the pay.][/b]
 *goto es_halt_end
 
 *comment ── event 6: men with a rope across the road ──
@@ -740,9 +715,9 @@ A beech lies across the road from verge to drop, its crown in the ditch and its 
 *set rj_escort_hdc 11
 *gosub es_hint
 *set h3 rj_escort_hint
-Three men stand in the road with a rope tied across it at the height of a drover's chest. They are not dressed as soldiers. One of them carries a boar spear, one a billhook and one a bundle of firewood, and the tallest steps up to the lead horse with his hand held out. "Toll," he says. "For the forest road. A ${es_load_a_one} a wagon."
+Three men stand in the road with a rope tied across it at the height of a drover's chest. They are not dressed as soldiers. One of them carries a boar spear, one a billhook and one a bundle of firewood, and the tallest steps up to the lead horse with his hand held out. "Toll," he says. "For the forest road. A share of the goods from every wagon." Bandits, then, however politely he asks.
 *choice
-  # Step up beside the master and talk them down.${h1}
+  # Step up beside the wagon master and talk them down.${h1}
     *set rj_escort_opt 1
     *goto es_t6_do
   # Step in front of the lead horse and tell them to stand aside.${h2}
@@ -769,48 +744,245 @@ Three men stand in the road with a rope tied across it at the height of a drover
 *gosub es_mark
 *if (rj_escort_opt = 1)
   *if (check_success)
-    You tell the tall one how many wagons are behind you and how many hands, and what the Hall will do about a road that has to be paid for twice. He thinks about it, looks at his friends, and takes the rope down.
+    You tell the bandit how many wagons are behind you and how many hands, and what the Hall will do about a road that has to be paid for twice. He thinks about it, looks at his friends, and takes the rope down.
   *else
-    You talk and he listens, and then he grins and names a second bar. The master pays it, with a face that says it will cost you at the end, and the line goes through.
+    You talk and he listens, and then he grins and names a second bar. The caravan master pays it, with a face that says it will cost you at the end, and the caravan goes through.
 *elseif (rj_escort_opt = 2)
   *if (check_success)
-    You step in front of the horse and stand there. The tall one looks at your shoulders and at the drovers coming up behind you, and says something to his friends, and the rope drops.
+    You step in front of the horse and stand there. The bandit looks at your shoulders and at the drovers coming up behind you, and says something to his friends, and the rope drops.
   *else
-    He laughs. The man with the billhook steps closer, and the master has to settle it with a ${es_load_a_one} and a promise, and the line goes through lighter than it came.
+    He laughs. The man with the billhook steps closer, and the wagon master has to settle it with a share of the goods and a promise, and the caravan goes through lighter than it came.
 *else
   *if (check_success)
-    You find the bowman first: a pale shape at the edge of the trees with an arrow already nocked. You say so, loud and flat, and the whole line hears it, and the tall one's smile goes out. The rope is down before the arrow is.
+    You find the bowman first: a pale shape at the edge of the trees with an arrow already nocked. You say so, loud and flat, and the whole column hears it, and the bandit's smile goes out. The rope is down before the arrow is.
   *else
-    You look and see only trees. A shaft hums into the lead wagon's tarp and the tall one's friends are over the wagons with knives, and when they have gone a load of ${es_load_a} has gone with them.
+    You look and see only trees. A shaft hums into the lead wagon's tarp and the bandit's friends are over the wagons with knives, and when they have gone a share of the goods has gone with them.
 *if (rj_escort_ok)
 
-  [b][🛞 The line holds.][/b]
+  [b][📦 The caravan holds.][/b]
 *else
 
-  [b][🛞 A load is lost: it will show at the pay.][/b]
+  [b][📦 Goods are lost: it will show at the pay.][/b]
 *goto es_halt_end
 
-*comment ── the end of every halt: on to the next leg, or to the camp when the next leg would run past dusk. es_act2 was stored by the leg that brought the line here, and nothing on this page rewrites it. ──
+*comment ── event 7: a traveller by the road asks for a seat on a cart. Nobody here is hostile in the open: the risk is trust. Failing costs goods, never a fight. ──
+*label es_x7
+
+*temp h1 ""
+*temp h2 ""
+*temp h3 ""
+*set rj_escort_hab "WIS"
+*set rj_escort_hdc 11
+*gosub es_hint
+*set h1 rj_escort_hint
+*set rj_escort_hab "WIS"
+*set rj_escort_hdc 10
+*gosub es_hint
+*set h2 rj_escort_hint
+*set rj_escort_hab "CHA"
+*set rj_escort_hdc 10
+*gosub es_hint
+*set h3 rj_escort_hint
+A traveller sits on a milestone at the side of the road with one boot off and a bundle between their feet. They get up on one foot as the first ox comes level and lift a hand. "Is there room for one on a cart? It is a long road for a bad ankle."
+*choice
+  # Ask where they have come from, and listen to how they answer.${h1}
+    *set rj_escort_opt 1
+    *goto es_x7_do
+  # Offer to walk them to the next farm and come straight back.${h2}
+    *set rj_escort_opt 2
+    *goto es_x7_do
+  # Tell them politely that the carts carry no riders.${h3}
+    *set rj_escort_opt 3
+    *goto es_x7_do
+
+*label es_x7_do
+*set rj_escort_dc 11
+*set rj_escort_skill "insight"
+*if (rj_escort_opt = 2)
+  *set rj_escort_dc 10
+  *set rj_escort_skill "survival"
+*elseif (rj_escort_opt = 3)
+  *set rj_escort_dc 10
+  *set rj_escort_skill "persuasion"
+*gosub_scene dice_engine roll_skill_check rj_escort_dc rj_escort_skill "" "" "" "" ""
+*set rj_escort_ok check_success
+*set minutes_to_pass 30
+*set time_advance_call_id ("es_ev_" & rj_escort_cur)
+*gosub es_time
+*gosub es_mark
+*if (rj_escort_opt = 1)
+  *if (check_success)
+    The story is smooth, and a little too smooth. The bundle is heavy for a bundle, the ankle favours the other foot when they think nobody is looking, and you say so, mildly. They shrug, laugh once, and limp off faster than a hurt ankle should allow. Nothing on the carts is touched.
+  *else
+    The story holds together, and you hand them up onto the tail cart with a drink from your waterskin. At the next halt the lashings on the last cart hang loose, and the traveller is gone with some of the goods.
+*elseif (rj_escort_opt = 2)
+  *if (check_success)
+    You take the bundle and an arm, and the two of you make the farm lane in a long half hour. They sit on the gate with their boot in their hands, thank you, and look surprised that you mean to run back. You find the column exactly as you left it.
+  *else
+    You take the bundle and an arm and walk. When you come back at a jog, a cart's lashings have been cut and part of the goods has gone, and the drovers are shouting at each other about whose turn it was to watch.
+*else
+  *if (check_success)
+    You tell them kindly, with a drink from your waterskin and the name of a farm a mile on. They take the water and the farm, and the column rolls on without them.
+  *else
+    They take the water and the farm, and then they follow the column at a stone's throw, saying nothing. At the next halt a lashing on the last cart is cut, and part of the goods has gone.
+*if (rj_escort_ok)
+
+  [b][📦 The caravan holds.][/b]
+*else
+
+  [b][📦 Goods are lost: it will show at the pay.][/b]
+*goto es_halt_end
+
+*comment ── event 8: an axle cracks. A mishap: the wrong repair costs goods, and there is no fight in it. The repair options use the Repair Kit's +1 when the player carries one. ──
+*label es_x8
+
+*temp h1 ""
+*temp h2 ""
+*temp h3 ""
+*set rj_escort_hab "INT"
+*set rj_escort_hdc 11
+*gosub es_hint
+*set h1 rj_escort_hint
+*set rj_escort_hab "STR"
+*set rj_escort_hdc 12
+*gosub es_hint
+*set h2 rj_escort_hint
+*set rj_escort_hab "DEX"
+*set rj_escort_hdc 12
+*gosub es_hint
+*set h3 rj_escort_hint
+A sound like a green branch breaking runs down the column, and the third cart settles onto one side with its axle bowed. A drover crouches by the wheel and runs a thumb along a crack as long as his forearm. "Not through yet," he says. "It will be."
+*choice
+  # Look the axle over and find where the wood is still sound.${h1}
+    *set rj_escort_opt 1
+    *goto es_x8_do
+  # Take the weight on a prop while the drovers swap the wheel.${h2}
+    *set rj_escort_opt 2
+    *goto es_x8_do
+  # Bind the crack with a strap and wedges, working fast.${h3}
+    *set rj_escort_opt 3
+    *goto es_x8_do
+
+*label es_x8_do
+*set rj_escort_dc 11
+*set rj_escort_skill "investigation"
+*set check_task_type "repair"
+*if (rj_escort_opt = 2)
+  *set rj_escort_dc 12
+  *set rj_escort_skill "athletics"
+  *set check_task_type "none"
+*elseif (rj_escort_opt = 3)
+  *set rj_escort_dc 12
+  *set rj_escort_skill "sleight_of_hand"
+*gosub_scene dice_engine roll_skill_check rj_escort_dc rj_escort_skill "" "" "" "" ""
+*set check_task_type "none"
+*set rj_escort_ok check_success
+*set minutes_to_pass 30
+*set time_advance_call_id ("es_ev_" & rj_escort_cur)
+*gosub es_time
+*gosub es_mark
+*if (rj_escort_opt = 1)
+  *if (check_success)
+    You run your hand along the grain until you find where the crack stops, and have the drovers take the weight off that side only. A band and two wedges, and the axle carries the cart on to the next camp, creaking.
+  *else
+    You find the crack and miss where it runs on. The first turn of the wheel finishes it, and the cart drops on its side with a crash, spilling part of the goods into the ditch.
+*elseif (rj_escort_opt = 2)
+  *if (check_success)
+    You set your shoulder under the frame and brace your feet, and the cart comes up a hand's breadth at a time while the drovers swap the wheel. It is over before your legs start to shake.
+  *else
+    The prop slips on the wet ground and the cart comes down on one corner. Part of the goods goes over the side before anyone can catch it.
+*else
+  *if (check_success)
+    You work the strap tight and drive the wedges home with a mallet, quick and neat, while the drover holds the lantern. The bow in the axle stays where it is, and it holds.
+  *else
+    You pull the strap tight and a wedge shoots out sideways. By the time you have it back the crack has run, and the cart tips with part of its goods.
+*if (rj_escort_ok)
+
+  [b][📦 The caravan holds.][/b]
+*else
+
+  [b][📦 Goods are lost: it will show at the pay.][/b]
+*goto es_halt_end
+
+*comment ── event 9: wardens stop the column to check papers and count the goods. Where the Scales keep the road patrolled this is likelier, which is why the table gives it more weight at low danger. Failing costs a levy of goods. ──
+*label es_x9
+
+*temp h1 ""
+*temp h2 ""
+*temp h3 ""
+*set rj_escort_hab "CHA"
+*set rj_escort_hdc 11
+*gosub es_hint
+*set h1 rj_escort_hint
+*set rj_escort_hab "INT"
+*set rj_escort_hdc 10
+*gosub es_hint
+*set h2 rj_escort_hint
+*set rj_escort_hab "WIS"
+*set rj_escort_hdc 10
+*gosub es_hint
+*set h3 rj_escort_hint
+Two wardens in grey coats with a river-serpent badge on the sleeve stand in the road with a measuring rod and a slate. The taller one holds up a hand, and the whole column stops behind it. "Papers," she says, "and the goods down on the road for a count."
+*choice
+  # Stand beside the wagon master and vouch for the caravan.${h1}
+    *set rj_escort_opt 1
+    *goto es_x9_do
+  # Help the wardens count, and watch the tally.${h2}
+    *set rj_escort_opt 2
+    *goto es_x9_do
+  # Keep the oxen quiet through the long wait.${h3}
+    *set rj_escort_opt 3
+    *goto es_x9_do
+
+*label es_x9_do
+*set rj_escort_dc 11
+*set rj_escort_skill "persuasion"
+*if (rj_escort_opt = 2)
+  *set rj_escort_dc 10
+  *set rj_escort_skill "investigation"
+*elseif (rj_escort_opt = 3)
+  *set rj_escort_dc 10
+  *set rj_escort_skill "animal_handling"
+*gosub_scene dice_engine roll_skill_check rj_escort_dc rj_escort_skill "" "" "" "" ""
+*set rj_escort_ok check_success
+*set minutes_to_pass 30
+*set time_advance_call_id ("es_ev_" & rj_escort_cur)
+*gosub es_time
+*gosub es_mark
+*if (rj_escort_opt = 1)
+  *if (check_success)
+    You name the carrier, the yard and the days on the road, and the master's seals say the same. The taller warden looks from the seals to your face and chalks a mark on the first cart. "Go on," she says.
+  *else
+    You speak up and the warden looks at you as if you were something stuck to her boot. The count comes out long, and the levy takes its share off the top of the goods.
+*elseif (rj_escort_opt = 2)
+  *if (check_success)
+    You count with the younger warden, and halfway down the second cart you stop him. He has counted one bundle twice. He frowns, counts again, and chalks the right number. Nothing is taken.
+  *else
+    You help to count and the tally runs ahead of you. By the time you notice the number is long, the warden has already written it, and the levy takes its share of the goods.
+*else
+  *if (check_success)
+    The wardens take their time, and you stand at the lead pair's heads with a hand on each yoke, talking low. The oxen stand through all of it like stones, and the count goes smoothly.
+  *else
+    The wait drags on and the lead ox shifts, then shoves. A cart lurches into the count, a bundle goes down in the mud, and the wardens write it off as the levy.
+*if (rj_escort_ok)
+
+  [b][📦 The caravan holds.][/b]
+*else
+
+  [b][📦 Goods are lost: it will show at the pay.][/b]
+*goto es_halt_end
+
+*comment ── the end of every halt: on to the next stretch, or to the camp when the next leg would run past dusk. es_act2 was stored by the stretch that brought the caravan here, and nothing on this page rewrites it. ──
 *label es_halt_end
 *if (es_act2 = "camp")
-  *page_break The line makes camp…
+  *page_break The carts make camp…
   *goto es_camp
-*page_break The line rolls on…
-*goto es_leg
+*page_break The caravan rolls on…
+*goto es_stretch
 
-*comment ════════════ NIGHT: THE CAMP ════════════
-*label es_camp
-*gosub es_load_leg
-[b]◈ ${es_leg_head}[/b]
-*line_break
-*if (es_leg_camp = "")
-  The line stops where the ground is flat, a little off the road.
-*else
-  ${es_leg_camp}
-${rj_escort_master} has the wagons drawn into a half ring, the oxen picketed inside with their yokes off, and a fire lit in the lee of the lead wagon.
-*gosub_scene overworld/overworld ow_sky
-*gosub es_meal
-${rj_escort_master} ladles out the pot, serving the drovers first and then the new hands, a stew of barley and bacon rind and whatever was in the last sack, and the line eats off its knees in the firelight. When the bowls are scraped, @{(rj_escort_sex = "f") she|he} stands by the fire. "Three watches, three hours each," @{(rj_escort_sex = "f") she|he} says. "The drovers have two. Head of the line takes the first, middle the second, tail the last."
+*comment ── the supper and the watch assignment: the same words for a quiet night and a disturbed one ──
+*label es_supper_text
+${rj_escort_master} ladles out the pot, serving the drovers first and then the new hands, a stew of barley and bacon rind and whatever was in the last sack, and the caravan eats off its knees in the firelight. When the bowls are scraped, @{(rj_escort_sex = "f") she|he} stands by the fire. "Three watches, three hours each," @{(rj_escort_sex = "f") she|he} says. "The drovers have two. Head of the column takes the first, middle the second, tail the last."
 
 *if (rj_escort_watch = 1)
   "That is you at the head," @{(rj_escort_sex = "f") she|he} says. "You will not get much sleep before it. You will get plenty after."
@@ -818,15 +990,31 @@ ${rj_escort_master} ladles out the pot, serving the drovers first and then the n
   "That is you in the middle," @{(rj_escort_sex = "f") she|he} says. "Sleep first, then a cold stretch in the dark, then sleep again."
 *else
   "That is you at the tail," @{(rj_escort_sex = "f") she|he} says. "You will sleep through most of the night, and then stand the cold end of it."
-*set minutes_to_pass 30
-*set time_advance_call_id "es_supper_1"
-*gosub es_time
-*page_break Find a place under a wagon…
-*goto es_night_a
+*return
 
-*comment ── the sleep before the player's watch: lying out under a wagon, charged as camping ──
-*label es_night_a
+*comment ════════════ NIGHT: THE CAMP ════════════
+*label es_camp
+*if (not(es_camp_locked)) or (not(locked_es_camp_page_id = page_id))
+  *set rj_escort_cur (rj_escort_cur + 1)
+  *gosub es_load_leg
+  *comment The night is rolled once, here: rj_escort_ev is 0 for a quiet night (the whole night passes on this page), 3 when the oxen spook and 4 for a sneak thief (the watch plays out on the next pages).
+  *script stats.rj_escort_ev = window.Overworld.convoyNight(Number(stats.rj_escort_block) + 5000, 60 + Number(stats.rj_escort_cur), Number(stats.es_leg_danger));
+  *set es_camp_locked true
+  *set locked_es_camp_page_id page_id
 *gosub es_load_leg
+[b]◈ ${es_leg_head}[/b]
+*line_break
+*if (es_leg_camp = "")
+  The column stops where the ground is flat, a little off the road.
+*else
+  ${es_leg_camp}
+${rj_escort_master} has the wagons drawn into a half ring, the oxen picketed inside with their yokes off, and a fire lit in the lee of the lead wagon.
+*gosub_scene overworld/overworld ow_sky
+*if (rj_escort_ev = 0)
+  *goto es_night_quiet
+*gosub es_meal
+*gosub es_supper_text
+*comment The sleep before the player's watch, lying out under a wagon and charged as camping: from now to the hour their watch begins (21:00, 00:00 or 03:00).
 *set es_target 1260
 *set es_cap 600
 *if (rj_escort_watch = 2)
@@ -843,9 +1031,8 @@ ${rj_escort_master} ladles out the pot, serving the drovers first and then the n
 *set exposure_camping false
 *set hours_to_pass ((es_w_mins - (es_w_mins modulo 60)) / 60)
 *set minutes_to_pass (es_w_mins modulo 60)
-*set time_advance_call_id "es_night_a"
+*set time_advance_call_id ("es_night_a_" & es_cur_leg)
 *gosub es_clock
-[b]◈ BEFORE YOUR WATCH[/b]
 *line_break
 *if (rj_escort_watch = 1)
   You roll yourself in a blanket under the second wagon and listen to the fire settle, and an hour goes by before the drover shakes your boot.
@@ -856,18 +1043,67 @@ ${rj_escort_master} ladles out the pot, serving the drovers first and then the n
 *page_break Take your watch…
 *goto es_watch
 
-*comment ── the player's watch: three hours, one seeded event ──
+*comment ── a quiet night: supper, a quiet watch and the morning on ONE page, with one advance of the clock to 07:00, the night's sleep under one lock (as the overworld camp does) and one breakfast ──
+*label es_night_quiet
+*gosub es_supper_text
+*set name_seed (rj_escort_block + 5000)
+*set name_salt 65
+*set name_n 4
+*gosub_scene names name_roll
+*line_break
+*if (name_rolled = 0)
+  Your watch is quiet. You walk the ring: the head of the column, the oxen, the last cart, the edge of the firelight. Nothing moves that you did not move, and the hours go by in the small noises of a big camp asleep.
+*elseif (name_rolled = 1)
+  Your watch is quiet. An owl works the dark beyond the wagons, low and silent. You watch it quarter the dark and then lose it, and sit with your back to a wheel counting the oxen by the sound of their breathing.
+*elseif (name_rolled = 2)
+  Your watch is quiet. Somewhere far off a bell tolls, thin and faint. You feed the fire a split log and it takes with a soft crack, and the oxen turn their heads to the light.
+*else
+  Your watch is quiet. Something small splashes or rustles in the dark and goes quiet. You eat the heel of your bread, trim the fire, and walk the ring again with your boots loud on the ground.
+*line_break
+[b][🔥 Watch held.][/b]
+*if (not(es_night_locked)) or (not(locked_es_night_page_id = page_id))
+  *set es_target 420
+  *set es_cap 900
+  *gosub es_until
+  *set es_w_mins es_until_result
+  *script stats.climate_shift = (window.Overworld.nodes[stats.es_leg_to].climate || 0);
+  *gosub_scene calendar update_weather_flags
+  *set exposure_base_mins es_w_mins
+  *set exposure_camping true
+  *gosub_scene calendar calc_exposure
+  *set exposure_camping false
+  *set hours_to_pass ((es_w_mins - (es_w_mins modulo 60)) / 60)
+  *set minutes_to_pass (es_w_mins modulo 60)
+  *set time_advance_call_id ("es_night_" & es_cur_leg)
+  *gosub es_clock
+  *set sleep_location_id "caravan_camp"
+  *set sleep_is_shared true
+  *set sleep_is_permanent_home false
+  *set sleep_tier_name "none"
+  *set sleep_tier_stat1 "none"
+  *set sleep_tier_bonus1 0
+  *set sleep_tier_stat2 "none"
+  *set sleep_tier_bonus2 0
+  *gosub_scene calendar resolve_sleep
+  *set es_day_halts 0
+  *set es_night_locked true
+  *set locked_es_night_page_id page_id
+*gosub es_meal
+*line_break
+You wake to the smell of the pot and the clatter of yokes, with grey light in the sky and your blanket stiff with the cold.
+*gosub_scene overworld/overworld ow_sky
+${rj_escort_master} hands you a bowl of the night's stew warmed over with the end of the bread, and the column eats standing. Then the oxen are yoked in their pairs, the pickets pulled, the fire stamped out, and the wagons swing out of their half ring one by one and back onto the road.
+*if (not(sleep_gear_note = ""))
+  ${sleep_gear_note}
+*page_break The column takes the road…
+*goto es_stretch
+
+*comment ── the player's watch: three hours, the event the camp page rolled ──
 *label es_watch
-*if (not(es_beat_locked)) or (not(locked_es_beat_page_id = page_id))
-  *set rj_escort_cur (rj_escort_cur + 1)
-  *set es_beat_locked true
-  *set locked_es_beat_page_id page_id
-*set es_pick_night true
-*gosub es_pick
 [b]◈ THE WATCH[/b]
 *line_break
 *if (rj_escort_watch = 1)
-  The fire is low and the line is quiet.
+  The fire is low and the camp is quiet.
 *elseif (rj_escort_watch = 2)
   The fire is down to a red eye, and the camp sleeps around you.
 *else
@@ -879,32 +1115,7 @@ The dark sits close around the fire, and the oxen shift and breathe inside the r
   Fog creeps up from the low ground until the fire shows only itself.
 *if (rj_escort_ev = 3)
   *goto es_n_spook
-*elseif (rj_escort_ev = 4)
-  *goto es_n_thief
-*goto es_n_quiet
-
-*label es_n_quiet
-
-*set name_seed (rj_escort_block + 5000)
-*set name_salt 65
-*set name_n 4
-*gosub_scene names name_roll
-*if (name_rolled = 0)
-  You walk the ring: the head of the line, the oxen, the last wagon, the edge of the firelight. Nothing moves that you did not move, and the hours go by in the small noises of a big camp asleep.
-*elseif (name_rolled = 1)
-  An owl works the dark beyond the wagons, low and silent. You watch it quarter the dark and then lose it, and sit with your back to a wheel counting the oxen by the sound of their breathing.
-*elseif (name_rolled = 2)
-  Somewhere far off a bell tolls, thin and faint. You feed the fire a split log and it takes with a soft crack, and the oxen turn their heads to the light.
-*else
-  Something small splashes or rustles in the dark and goes quiet. You eat the heel of your bread, trim the fire, and walk the line again with your boots loud on the ground.
-*set rj_escort_ok true
-*set minutes_to_pass 180
-*set time_advance_call_id ("es_ev_" & rj_escort_cur)
-*gosub es_time
-*gosub es_mark
-[b][🔥 Watch held.][/b]
-*page_break The watch ends…
-*goto es_dawn
+*goto es_n_thief
 
 *comment ── event 3: the oxen spook at something in the dark ──
 *label es_n_spook
@@ -973,7 +1184,7 @@ A picket rope sings. Inside the ring the oxen are on their feet all at once, sno
 *else
   You spend the rest of the watch walking the animals back and counting what is left, and you tell the drover at the change what happened.
 
-  [b][🔥 A load is lost: it will show at the pay.][/b]
+  [b][🔥 Goods are lost: it will show at the pay.][/b]
 *page_break The watch ends…
 *goto es_dawn
 
@@ -990,7 +1201,7 @@ A picket rope sings. Inside the ring the oxen are on their feet all at once, sno
 *set rj_escort_hdc 13
 *gosub es_hint
 *set hw rj_escort_hint
-It is a small sound: a tarp lifted at the tail wagon, a rope slid off a bar. Somebody is working at the load, and they do not want to be heard.
+It is a small sound: a tarp lifted at the tail wagon, a rope slid off a bar. Somebody is working at the lashings, and they do not want to be heard.
 *choice
   # Stand still in the dark and listen.${hl}
     *set rj_escort_opt 1
@@ -1046,18 +1257,18 @@ The thief goes down against the wheel with the knife skittering under the wagon,
 *label es_n_thief_rescued
 *set rj_escort_ok false
 *gosub es_mark
-Your legs fold. When your head clears you are propped against a wheel with a wet cloth on your face, and a tarp at the tail of the last wagon hangs open on a gap where a load of ${es_load_a} had been. You never see the thief again.
+Your legs fold. When your head clears you are propped against a wheel with a wet cloth on your face, and a tarp at the tail of the last wagon hangs open on a gap where some of the goods had been. You never see the thief again.
 
-[b][🔥 A load is lost: it will show at the pay.][/b]
+[b][🔥 Goods are lost: it will show at the pay.][/b]
 *page_break The watch ends…
 *goto es_dawn
 
 *label es_n_thief_fled
 *set rj_escort_ok false
 *gosub es_mark
-You get clear of the wagons and shout, and by the time the drovers are up with torches the shape has gone into the dark, and the tail of the last wagon hangs open on a gap where a load of ${es_load_a} had been.
+You get clear of the wagons and shout, and by the time the drovers are up with torches the shape has gone into the dark, and the tail of the last wagon hangs open on a gap where some of the goods had been.
 
-[b][🔥 A load is lost: it will show at the pay.][/b]
+[b][🔥 Goods are lost: it will show at the pay.][/b]
 *page_break The watch ends…
 *goto es_dawn
 
@@ -1088,6 +1299,7 @@ You get clear of the wagons and shout, and by the time the drovers are up with t
   *set sleep_tier_stat2 "none"
   *set sleep_tier_bonus2 0
   *gosub_scene calendar resolve_sleep
+  *set es_day_halts 0
   *set es_night_locked true
   *set locked_es_night_page_id page_id
 *gosub es_meal
@@ -1098,58 +1310,42 @@ You get clear of the wagons and shout, and by the time the drovers are up with t
 *else
   You wake to the smell of the pot and the clatter of yokes, with grey light in the sky and your blanket stiff with the cold.
 *gosub_scene overworld/overworld ow_sky
-${rj_escort_master} hands you a bowl of the night's stew warmed over with the end of the bread, and the line eats standing. Then the oxen are yoked in their pairs, the pickets pulled, the fire stamped out, and the wagons swing out of their half ring one by one and back onto the road.
+${rj_escort_master} hands you a bowl of the night's stew warmed over with the end of the bread, and the column eats standing. Then the oxen are yoked in their pairs, the pickets pulled, the fire stamped out, and the wagons swing out of their half ring one by one and back onto the road.
 *if (not(sleep_gear_note = ""))
   ${sleep_gear_note}
-*page_break The line takes the road…
-*goto es_leg
+*page_break The column takes the road…
+*goto es_stretch
 
 *comment ════════════ ARRIVAL AND PAY ════════════
 *label es_pay
 *gosub es_load_leg
-*temp lost 0
-*if (not(rj_escort_b1))
-  *set lost + 1
-*if (not(rj_escort_b2))
-  *set lost + 1
-*if (not(rj_escort_b3))
-  *set lost + 1
-*if (not(rj_escort_b4))
-  *set lost + 1
-*if (not(rj_escort_b5))
-  *set lost + 1
-*if (not(rj_escort_b6))
-  *set lost + 1
-*temp full (((es_total_miles * 3) - ((es_total_miles * 3) modulo 4)) / 4)
-*temp fee full
-*if ((lost > 0) and (lost >= rj_escort_cur))
-  *set fee 0
-*elseif (lost > 0)
-  *set fee ((full - (full modulo 3)) / 3)
+*script stats.es_fee = window.Overworld.convoyFee(Number(stats.es_total_miles), Number(stats.rj_escort_cur), Number(stats.rj_escort_lost)); stats.es_fee_text = window.Overworld.coinText(stats.es_fee);
 [b]◈ THE ROAD'S END[/b]
 *line_break
 *if (es_leg_arrive = "")
-  The line comes in off the road and halts.
+  The caravan comes in off the road and halts.
 *else
   ${es_leg_arrive}
-${rj_escort_master} walks the length of the line, counting.
-*if (lost = 0)
+${rj_escort_master} walks the length of the column, counting.
+*if (rj_escort_lost = 0)
   @{(rj_escort_sex = "f") She|He} counts it twice, and the second count agrees with the first. "Whole," @{(rj_escort_sex = "f") she|he} says. "All of it. That is rare enough that I will say it twice."
-*elseif (fee = 0)
-  @{(rj_escort_sex = "f") She|He} counts it twice, and does not like the number either time. "The line arrived," @{(rj_escort_sex = "f") she|he} says. "That is all I can say for it. There is nothing to pay you for."
+*elseif (es_fee = 0)
+  @{(rj_escort_sex = "f") She|He} counts it twice, and does not like the number either time. "The caravan arrived," @{(rj_escort_sex = "f") she|he} says. "That is all I can say for it. There is nothing to pay you for."
 *else
   @{(rj_escort_sex = "f") She|He} counts it twice, and does not like the number either time. "Short," @{(rj_escort_sex = "f") she|he} says. "Not by so much that I will call it a loss. You will be paid for the part that came."
 *if (rj_escort_stage = "active")
   *set rj_escort_stage "done"
+  *set rj_escort_road false
+  *set wait_lock_reason ""
   *set hall_jobs_scales + 1
-*if (fee > 0)
+*if (es_fee > 0)
   *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-    *set currency_add_amount fee
+    *set currency_add_amount es_fee
     *gosub_scene economy currency_add
     *set currency_txn_locked true
     *set locked_currency_txn_page_id page_id
 
-  [b][💰 Paid by ${rj_escort_master}: ${fee} Copper Bits.][/b]
+  [b][💰 Paid by ${rj_escort_master}: ${es_fee_text}.][/b]
   *line_break
 [b][🏷️ Insignia: Port Valen page, ${hall_jobs_scales} @{(hall_jobs_scales = 1) job|jobs} finished][/b]
 *page_break Walk on…

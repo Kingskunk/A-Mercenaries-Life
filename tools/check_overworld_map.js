@@ -46,6 +46,8 @@ ids.forEach((id) => {
   if (n.also !== undefined && (!KINDS.includes(n.also) || n.also === n.kind)) fail("tile " + id + " has an \"also\" of \"" + n.also + "\", which must be a different kind from " + KINDS.join(", "));
   if (n.water !== undefined && !(typeof n.water === "string" && n.water)) fail("tile " + id + " has a water that is not a short phrase");
   if (["road", "forest", "hills"].includes(n.kind) && !n.walk) fail("tile " + id + " is a " + n.kind + " tile with no walk text, which the caravan escort prints when the line comes in");
+  if (n.danger !== undefined && !(Number.isInteger(n.danger) && n.danger >= 0 && n.danger <= 3)) fail("tile " + id + " has a danger of " + n.danger + ", which must be a whole number from 0 to 3");
+  if (O.territories && O.territories[n.territory] && O.territories[n.territory].patrol !== undefined && !(Number.isInteger(O.territories[n.territory].patrol) && Math.abs(O.territories[n.territory].patrol) <= 3)) fail("territory " + n.territory + " has a patrol that is not a whole number from -3 to 3");
   if (!n.territory || !(O.territories && O.territories[n.territory])) fail("tile " + id + " has territory \"" + n.territory + "\", which is not in TERRITORIES");
   if (n.kind && !KINDS.includes(n.kind)) fail("tile " + id + " has kind \"" + n.kind + "\", which the panel has no colour for (" + KINDS.join(", ") + ")");
   if (n.kind && !new RegExp("\\.ow-k-" + n.kind + " \\.ow-dot").test(css)) fail("overworldmap.css has no colour for kind \"" + n.kind + "\"");

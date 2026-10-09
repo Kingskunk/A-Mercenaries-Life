@@ -995,7 +995,7 @@
       unlock: "es_yard_seen",
       body: [
         "A broad yard of beaten earth outside the north-west wall, fenced in planks and open to the River Road. A long shed keeps the wagons dry, a lean-to forge and a stone trough serve the teams, and the yard's brand is burned into the flank of every ox.",
-        "Lines for the road are made up here: four or five wagons, oxen in pairs, a lead horse and a master with a slate. The Hiring Hall posts the work, and the master pays only those who are in the line when it rolls."
+        "Caravans for the road are made up here: four or five wagons, oxen in pairs, a lead horse and a wagon master with a slate. The Hiring Hall posts the work, and the wagon master pays only those who are in the column when it rolls."
       ],
       see: ["river_gate", "trunk_road", "hiring_hall"]
     },

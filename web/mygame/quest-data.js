@@ -36,6 +36,14 @@
       active: function (s) { return s.rj_perf_stage === "active" && Number(s.campaign_day) <= Number(s.rj_perf_until); }
     },
     {
+      id: "hall_escort_tm", title: "Wagon Escort to Timbermouth", place: "Wagon yard, Port Valen",
+      active: function (s) { return s.rj_escort_stage === "active" && s.rj_escort_to === "tm" && (truthy(s.rj_escort_road) || Number(s.campaign_day) <= Number(s.rj_escort_until)); }
+    },
+    {
+      id: "hall_escort_pv", title: "Wagon Escort to Port Valen", place: "Wagon lot, Timbermouth",
+      active: function (s) { return s.rj_escort_stage === "active" && s.rj_escort_to === "pv" && (truthy(s.rj_escort_road) || Number(s.campaign_day) <= Number(s.rj_escort_until)); }
+    },
+    {
       id: "silt_gate", title: "Silt-Gate Contraband", place: "The Silt-Gates",
       active: function (s) { return s.silt_gate_quest_stage === "active"; }
     },

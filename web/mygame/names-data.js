@@ -343,6 +343,9 @@
   // what the person wears, "hands" drops details about hands, forearms and fingers (the scene has them holding something).
   var CLOTHES = /^in |\bcoat\b|\bcap\b|\bscarf\b|\bshawl\b|\bcollar\b|\bcloth\b|\bribbon\b|\bsleeves\b/;
   var HANDS = /\bhands?\b|\bforearms?\b|\bknuckles?\b|\bfingers\b|\bsleeves\b/;
+  // When the first words of a look already describe the hair ("a grey-haired woman"), a detail about hair would say it twice ("... with grey-streaked hair cut short"), so those details are left out.
+  var HAIR_ADJ = /hair|bald|beard|whisker|shaven/;
+  var HAIR_MARK = /\bhair|haired|\bbraids?\b|\bplait|\bcurls\b|\bbeard|\bwhiskers?\b|\bstubble\b|\bscalp\b|\bshaved\b|\bbald/;
   function look(race, gender, seed, skip) {
     var data = LOOKS[race];
     if (!data) throw new Error("NameGen: no look for race \"" + race + "\". Known: " + Object.keys(LOOKS).join(", "));
@@ -353,6 +356,7 @@
     if (/clothes/.test(skip)) marks = marks.filter(function (m) { return !CLOTHES.test(m); });
     if (/hands/.test(skip)) marks = marks.filter(function (m) { return !HANDS.test(m); });
     var adj = data.adj[mix(seed, 6) % data.adj.length];
+    if (HAIR_ADJ.test(adj)) { var noHair = marks.filter(function (m) { return !HAIR_MARK.test(m); }); if (noHair.length) marks = noHair; }
     var detail = marks[mix(seed, 7) % marks.length];
     var noun = (data.kind ? data.kind + " " : "") + (g === "m" ? "man" : "woman");
     var article = /^[aeiou]/i.test(adj) ? "an" : "a";

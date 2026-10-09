@@ -31,12 +31,12 @@
 
     {
       id: "wagon_lot", category: "places", title: "The Wagon Lot",
-      sub: "Where lines for the road are made up, beside the Market",
+      sub: "Where caravans for the road are made up, beside the Market",
       tags: ["Timbermouth", "Trade"], aliases: ["wagon lot", "carriers' lot", "wagon side", "the lot"],
       unlock: "tm_lot_seen",
       body: [
         "A fenced lot of trodden earth on the far side of the Market, open to the forest road. Wagons stand in it nose to tail with their oxen picketed at one end, and a lean-to keeps the beasts out of the worst of the weather.",
-        "Lines for Port Valen are made up here, with a master, a slate and a handful of hired hands. The notice for the work is pinned on the board at the Factor's Hall, and the master pays only those who are in the line when it rolls."
+        "Caravans for Port Valen are made up here, with a wagon master, a slate and a handful of hired hands. The notice for the work is pinned on the board at the Factor's Hall, and the wagon master pays only those who are in the column when it rolls."
       ],
       see: ["factors_hall_tm", "timbermouth", "wagon_yard"]
     },

@@ -21,6 +21,9 @@
  * on the card ("Forest and hills"). It changes nothing else. kind picks the tile's colour in the panel: "city", "town", "village", "road", "hills", "forest" (add a kind here and a colour in overworldmap.css).
  * territory (required) is who holds the tile: an id in TERRITORIES below. Every tile so far belongs to the Gilded Scales (the user's call, 2026-10-08). It is data only for now: nothing in the panel or the
  * scenes reads it yet, so it is the place to hang tolls, patrols, escort pay and danger by owner later. A new territory is one entry in TERRITORIES.
+ * danger (optional, 0 to 3, default 0) is how rough the LAND is for a caravan before anyone patrols it: 0 safe, 1 uneasy, 2 rough, 3 dangerous. The EFFECTIVE danger is that number plus the patrol of the territory that holds the tile
+ * (TERRITORIES below; the Scales' patrol is -1), kept between 0 and 3, and Overworld.dangerOf(id) gives it. The escort (radiant/hall_escort.txt) reads the effective danger for how likely a halt on the tile is to meet an event, which
+ * events it can draw (HALT_EVENTS below) and how likely a night in camp there is to be disturbed.
  * walk, camp, depart and arrive (optional) are plain text for the caravan escort (radiant/hall_escort.txt), written to read the same in either direction: walk describes the road as the line comes in to
  * this tile, camp is the ground when the line makes camp here, depart is how the line pulls out from here, and arrive is how it comes in when this tile is the end of the road. A road, forest or hills tile needs a walk.
  * x and y are the tile's place on the map in grid units (east and south positive); the panel scales them.
@@ -41,23 +44,26 @@
   var NORTH = 0;
 
   // Who holds the land. Add a territory here and give its tiles its id.
+  // patrol shifts the danger of every tile the territory holds (see danger above): a negative number is a patrolled road, a positive one a lawless one. The Scales keep the river road patrolled.
   var TERRITORIES = {
-    scales: { name: "The Gilded Scales" }
+    scales: { name: "The Gilded Scales", patrol: -1 }
   };
 
   var NODES = {
     pv: {
       name: "Port Valen", kind: "city", x: 0.0, y: 0.0, region: "The coast",
       territory: "scales",
-      depart: "The gate end of the line lurches forward, ox by ox, and the wagons take up the weight of their loads with a groan of axles. The yard's gate swings shut behind the tail wagon, and the River Road bends away north along the cuttings above the Grey, paved and rutted and wide enough for two wagons to pass.",
+      danger: 1,
+      depart: "The head of the column lurches forward, ox by ox, and the wagons take up the weight of their loads with a groan of axles. The yard's gate swings shut behind the tail wagon, and the River Road bends away north along the cuttings above the Grey, paved and rutted and wide enough for two wagons to pass.",
       walk: "The paving runs smooth and well kept, rutted by wagon wheels, with the Grey slow beside it and the grey city wall growing ahead.",
-      arrive: "The line comes down the last of the cuttings to the carters' yards outside the River Gate, where the grey wall rises above the fences and the gate stands open on the city.",
+      arrive: "The caravan comes down the last of the cuttings to the carters' yards outside the River Gate, where the grey wall rises above the fences and the gate stands open on the city.",
       info: "The free port and the Gilded Scales' seat. The River Gate opens onto the Grey River road, which runs north along the river.",
       here: "The city's wall stands behind you, and the river road runs north from the River Gate along the cuttings of the Grey."
     },
     r1: {
       name: "The River Road", kind: "road", x: -0.72, y: -0.74, region: "The river cuttings",
       territory: "scales",
+      danger: 1,
       walk: "The paved road runs along the cuttings above the Grey, wide enough for two wagons to pass, with the river sliding by below it.",
       info: "The Grey River road, paved and well kept this close to the city, with salt and wine wagons on it, running along the cuttings above the river.",
       here: "The road runs straight and paved along the cuttings, rutted by wagon wheels, with the Grey River below it."
@@ -65,6 +71,7 @@
     r2: {
       name: "Ashrun Mouth", kind: "road", x: -0.83, y: -1.83, region: "The river fork",
       territory: "scales",
+      danger: 2,
       walk: "The cuttings climb and fall, the river shows between the trees and goes again, and the road comes down to a place where two rivers meet.",
       camp: "The Ashrun comes down from the west over a bar of grey stones and winds its brown water into the green of the Grey for a stretch before the two run as one. The road keeps to the bank, with flat ground beside it and the shingle running down to the water.",
       water: "the river",
@@ -74,6 +81,7 @@
     r3: {
       name: "Longshade Edge", kind: "forest", also: "hills", x: -1.67, y: -2.5, region: "The edge of the Longshade",
       territory: "scales",
+      danger: 3,
       walk: "The road runs through wooded hills, climbing or falling in long slow steps. The paving is broken stone, and the stone gives way to packed earth with a rut down either side, with the forest close on the far side, dark and near.",
       climate: -1,
       info: "The road climbs through wooded hills along the edge of the Longshade, with wagon tracks turning off into the trees.",
@@ -82,9 +90,10 @@
     tm: {
       name: "Timbermouth", kind: "town", x: -2.0, y: -3.46, region: "The Longshade",
       territory: "scales",
+      danger: 1,
       depart: "The line pulls out from the road end past the squat stone watch post, the oxen leaning into their yokes and the wagons groaning behind them, and the clearing falls away behind the tail wagon as the road enters the trees.",
       walk: "The road runs down out of the hills and the forest closes in on both sides, and then the trees thin and the sky opens, and the road runs straight into a long clearing with smoke over it.",
-      arrive: "The line comes down off the last of the hill into the clearing at the road's end, where a squat stone watch post stands beside the road and the roofs of Timbermouth rise beyond it.",
+      arrive: "The caravan comes down off the last of the hill into the clearing at the road's end, where a squat stone watch post stands beside the road and the roofs of Timbermouth rise beyond it.",
       info: "A road town at the mouth of the Longshade, up from the Grey River, where three smaller roads meet the road from the river.",
       here: "The road comes out of the trees onto cleared ground, and Timbermouth lies ahead at the mouth of the forest: grey shingled roofs, long ranks of stacked ash on the near side, and a thread of smoke over the sawmill. The thin whine of the saw frame carries up the road, and the smell of cut pine comes with it.",
       hereNight: "Timbermouth is a low scatter of lamplight at the mouth of the forest. A single lantern burns at the road end, and the stacked ash behind it is only a darker dark. The saw frame is silent, and the smell of cut pine hangs in the cold air.",
@@ -95,6 +104,7 @@
     fv: {
       name: "Barleycross", kind: "village", x: -1.36, y: -4.06, region: "The farm country",
       territory: "scales",
+      danger: 1,
       info: "A farming village at a crossing of farm roads, six miles from Timbermouth. It feeds the town: barley, oats, root vegetables, hay, milk, eggs, pigs and poultry, and it raises mules and working horses.",
       here: "Low fields of barley and oats spread out on either side of the road, divided by hedges and ditches, and a cluster of thatched and shingled roofs stands at the crossing ahead, with the sails of a grain mill turning slowly beyond them. The air smells of cut hay and manure.",
       hereNight: "Barleycross is a few lit windows in the dark of the fields, with a dog barking somewhere among the farms and the smell of hay on the cold air.",
@@ -103,6 +113,7 @@
     fo: {
       name: "Ashrun Holt", kind: "village", x: -2.94, y: -3.9, region: "The Longshade",
       territory: "scales",
+      danger: 2,
       water: "the Ashrun",
       info: "A forest village in a clearing where the Ashrun runs out from under the trees, nine miles from Timbermouth. It lives by the Longshade: cutters, sawyers and charcoal burners.",
       here: "The road narrows to a track between the trunks, and the village opens in a clearing where the Ashrun comes down out of the trees: low log houses with bark roofs, logs stacked in long ranks, and blue charcoal smoke hanging under the canopy. The air smells of resin and wet bark, and the sound of axes carries from somewhere deeper in.",
@@ -182,5 +193,93 @@
     return r.miles + " miles, " + span(r.minutes);
   }
 
-  root.Overworld = { MINUTES_PER_MILE: MINUTES_PER_MILE, nodes: NODES, edges: EDGES, territories: TERRITORIES, route: route, duration: duration, span: span, label: label, north: NORTH };
+
+  // ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  // THE CARAVAN ESCORT'S ROAD (radiant/hall_escort.txt). Pure functions of the route, the tile data, the clock and a seed, so a refresh replays them to the same answer and nothing here is random.
+  // A caravan walks at CONVOY_PACE minutes a mile, rolls out at 09:00 and camps when the next leg would end after 20:00. A job is at most CONVOY_MAX_LEGS legs (about four days).
+  // A STRETCH is the walk from where the line stands to its next stop: a halt event, a camp or the end of the road. The quiet legs in between are folded into the one stretch.
+  // ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  var CONVOY_PACE = 30;
+  var CONVOY_MAX_LEGS = 7;
+  var CAMP_BY = 1200;        // minutes past midnight (20:00): a leg that would end after this means the line camps first
+  var HALT_MINUTES = 30;     // what a halt event costs the clock
+  var HALT_CHANCE = [25, 50, 75, 100];   // percent, by tile danger 0 to 3, that a halt on an eligible tile meets an event
+  // Halt events. code is the label number in hall_escort.txt (1 mud_wheel, 2 balky_ox, 5 fallen_tree, 6 bandits, 7 stranded_traveller, 8 cracked_axle, 9 warden_check); kinds are the tile kinds it can happen on; weight is by tile danger 0 to 3 (0 = cannot happen).
+  // A row is the picker's whole knowledge of an event: a new event is one row here and one label in the scene. What a failed roll costs is the event's own business (a sunk wheel loses goods, bandits at the
+  // highest danger can come to blows): not every roll is a fight.
+  var HALT_EVENTS = [
+    { code: 1, id: "mud_wheel",   kinds: ["road"],                    weight: [4, 4, 4, 4] },
+    { code: 2, id: "balky_ox",    kinds: ["road", "hills"],           weight: [4, 4, 4, 4] },
+    { code: 5, id: "fallen_tree", kinds: ["forest", "hills"],         weight: [4, 4, 4, 4] },
+    { code: 6, id: "bandits",     kinds: ["road", "forest", "hills"], weight: [0, 2, 4, 6] },
+    { code: 7, id: "stranded_traveller", kinds: ["road", "forest", "hills"], weight: [2, 3, 3, 3] },
+    { code: 8, id: "cracked_axle",       kinds: ["road", "forest", "hills"], weight: [3, 3, 3, 3] },
+    { code: 9, id: "warden_check",       kinds: ["road"],                    weight: [4, 3, 2, 0] }
+  ];
+  function hash100(seed, salt) {
+    var h = (Math.floor(seed) * 2654435761 + Math.floor(salt) * 40503 + 12345) >>> 0;
+    h ^= h >>> 15; h = Math.imul(h, 2246822519) >>> 0; h ^= h >>> 13; h = Math.imul(h, 3266489917) >>> 0; h ^= h >>> 16;
+    return (h >>> 0) % 10000;
+  }
+  // The effective danger of a tile: its own number plus its territory's patrol, kept between 0 and 3.
+  function dangerOf(n) {
+    var raw = Math.floor(Number(n && n.danger) || 0), t = n && TERRITORIES[n.territory], shift = Math.floor(Number(t && t.patrol) || 0), d = raw + shift;
+    return d < 0 ? 0 : d > 3 ? 3 : d;
+  }
+  function haltEligible(n) { return n.kind === "road" || n.kind === "forest" || n.kind === "hills"; }
+  function pickHalt(n, seed, salt) {
+    var d = dangerOf(n), rows = HALT_EVENTS.filter(function (e) { return e.kinds.indexOf(n.kind) >= 0 && e.weight[d] > 0; });
+    var total = rows.reduce(function (a, e) { return a + e.weight[d]; }, 0);
+    if (!total) return 0;
+    var r = hash100(seed, salt) % total;
+    for (var i = 0; i < rows.length; i++) { if (r < rows[i].weight[d]) return rows[i].code; r -= rows[i].weight[d]; }
+    return rows[rows.length - 1].code;
+  }
+  // The night in camp: 0 quiet, 3 the oxen spook, 4 a sneak thief. A rougher camp is more likely to be disturbed (the thief band grows with danger).
+  function convoyNight(seed, salt, danger) {
+    var d = Math.max(0, Math.min(3, Math.floor(Number(danger) || 0)));
+    var roll = hash100(seed, salt) % 100, thief = 10 + 10 * d;
+    if (roll < thief) return 4;
+    if (roll < thief + 25) return 3;
+    return 0;
+  }
+  // From leg startLeg of the route, walk until the next stop. nowMin is the clock in minutes past midnight, haltedToday is true when a halt event has already happened today (one a day at most).
+  function convoyPlan(from, to, startLeg, nowMin, seed, haltedToday, pace) {
+    var r = route(from, to), legs = r.legs || [];
+    pace = pace || CONVOY_PACE;
+    var i = startLeg, t = nowMin, mins = 0, miles = 0, walk = [], stop = "", haltEv = 0, act2 = "go";
+    while (i < legs.length) {
+      var L = legs[i], n = NODES[L.to], lm = L.miles * pace;
+      t += lm; mins += lm; miles += L.miles; i++;
+      if (n.walk && walk.length < 3) walk.push(n.walk);
+      if (i >= legs.length) { stop = "pay"; break; }
+      var nm = legs[i].miles * pace;
+      if (t + nm > CAMP_BY) { stop = "camp"; break; }
+      if (!haltedToday && haltEligible(n) && (hash100(seed, 100 + i) % 100) < HALT_CHANCE[dangerOf(n)]) {
+        var ev = pickHalt(n, seed, 200 + i);
+        if (ev) { stop = "beat"; haltEv = ev; act2 = (t + HALT_MINUTES + nm) <= CAMP_BY ? "go" : "camp"; break; }
+      }
+    }
+    var first = legs[startLeg], last = legs[i - 1];
+    return { endLeg: i, miles: miles, minutes: mins, walk: walk.join(" "), stop: stop, haltEv: haltEv, act2: act2, phase: nowMin < 660 ? "morning" : "afternoon",
+             fromName: first ? NODES[first.from].name : "", toName: last ? NODES[last.to].name : "" };
+  }
+  // 10 copper bits make a silver mark, 10 silver marks a gold crown.
+  function coinText(copper) {
+    var f = Math.max(0, Math.floor(Number(copper) || 0)), g = Math.floor(f / 100), s = Math.floor((f % 100) / 10), c = f % 10, parts = [];
+    if (g) parts.push(g + (g === 1 ? " Gold Crown" : " Gold Crowns"));
+    if (s) parts.push(s + (s === 1 ? " Silver Mark" : " Silver Marks"));
+    if (c) parts.push(c + (c === 1 ? " Copper Bit" : " Copper Bits"));
+    return parts.join(", ") || "nothing";
+  }
+  // The fee, in copper: three quarters of a copper bit a mile if nothing is lost; if some of the beats (halts and nights) went wrong the share that held, but never under a third; nothing if every one did.
+  function convoyFee(miles, beats, lost) {
+    var full = Math.floor(Number(miles) * 3 / 4);
+    beats = Math.max(0, Math.floor(Number(beats) || 0)); lost = Math.max(0, Math.floor(Number(lost) || 0));
+    if (lost <= 0) return full;
+    if (lost >= beats) return 0;
+    return Math.max(Math.floor(full * (beats - lost) / beats), Math.floor(full / 3));
+  }
+
+  root.Overworld = { MINUTES_PER_MILE: MINUTES_PER_MILE, nodes: NODES, edges: EDGES, territories: TERRITORIES, convoyPlan: convoyPlan, convoyNight: convoyNight, convoyFee: convoyFee, coinText: coinText, convoyMaxLegs: CONVOY_MAX_LEGS, dangerOf: function (id) { return dangerOf(NODES[id]); }, convoyPace: CONVOY_PACE, haltEvents: HALT_EVENTS, route: route, duration: duration, span: span, label: label, north: NORTH };
 })(typeof window !== "undefined" ? window : global);

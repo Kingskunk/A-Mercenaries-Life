@@ -598,6 +598,8 @@ Review loadout, grimoire, or interface settings. Known contacts, factions, place
       *goto codex_cast
   # [Rest: Short Rest & Recovery]
     *goto codex_rest
+  # [Wait: Pass the Time]
+    *goto codex_wait
   # [Abilities & Grimoire: Spells, Traits & Mechanics]
     *goto codex_abilities
   # @{show_stat_hints [Settings: Disable Numeric Stat Hints]|[Settings: Enable Numeric Stat Hints]}
@@ -970,6 +972,153 @@ A short rest takes about an hour off the clock, so it costs the same hunger and 
 [b][🕐 Short Rest | 1 hour | ${short_rest_gave_text} restored | ${short_rests_left} / ${short_rests_max} short rests left | ${clock_time}][/b]
 *page_break Back to your rest…
 *goto codex_rest
+
+*comment WAIT (2026-10-08). The dossier's Wait menu, and where the sidebar's Wait button in the Today card lands (label codex_wait). Waiting is a way to let the clock run by a chosen amount, not an activity: it is real
+*comment time through advance_time, so it burns hunger and tiredness like any other hours, adds weather exposure when the player is out on the overworld (ow_on), and lets the day roll over and the weather change. It does not heal.
+*comment WHEN IT IS REFUSED is decided by ONE variable, wait_lock_reason (startup.txt): empty means waiting is allowed, anything else is the reason shown to the player. This menu never names a dungeon, a road or a quest.
+*comment Whatever runs a long chain of its own sets it at the start and clears it at the end (the dungeon in dg_run_begin and dg_run_end, the escort road at its pull-out and its pay), so a new dungeon or a new kind of chain
+*comment never needs this menu edited. A fight is refused through combat_engaged, which the dossier already checks. Same two rules as the Rest menu make it safe from inside the dossier: the time lock pair
+*comment (time_advance_locked, locked_time_advance_page_id, locked_time_advance_id, time_advance_call_id) is put back exactly as it was found, and a replay of the doing page reprints its stored report instead of waiting
+*comment again (wait_applied, cleared by the menu). A wait is refused when the player is starving or collapsing and could not survive the hours, because a death cannot be handled from inside the dossier.
+*label codex_wait
+*set wait_applied false
+[b]WAIT[/b]
+[i]Let the hours pass[/i]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*if (combat_engaged)
+  You cannot stand and wait in the middle of a fight.
+  *page_break Back to the dossier…
+  *goto_scene choicescript_stats
+*if (not(wait_lock_reason = ""))
+  ${wait_lock_reason}
+  *page_break Back to the dossier…
+  *goto_scene choicescript_stats
+*gosub wait_prep
+
+[b]◈ RIGHT NOW[/b]
+*line_break
+• [b]Time:[/b] ${clock_time} (${time_period})
+*if (vane_independent_operative)
+  *line_break
+  • [b]Condition:[/b] Hunger: ${hunger_stage} | Fatigue: ${fatigue_stage}
+*line_break
+Waiting costs the same hunger and tiredness as any other hours, and the weather and the day move on without you.
+
+*choice
+  # Wait 15 minutes.
+    *set wait_total_mins 15
+    *goto codex_wait_do
+  # Wait 30 minutes.
+    *set wait_total_mins 30
+    *goto codex_wait_do
+  # Wait an hour.
+    *set wait_total_mins 60
+    *goto codex_wait_do
+  # Wait two hours.
+    *set wait_total_mins 120
+    *goto codex_wait_do
+  *if (wait_m_morning > 0)
+    # Wait until morning. [~${wait_t_morning}]
+      *set wait_total_mins wait_m_morning
+      *goto codex_wait_do
+  *if (wait_m_midday > 0)
+    # Wait until midday. [~${wait_t_midday}]
+      *set wait_total_mins wait_m_midday
+      *goto codex_wait_do
+  *if (wait_m_dusk > 0)
+    # Wait until dusk. [~${wait_t_dusk}]
+      *set wait_total_mins wait_m_dusk
+      *goto codex_wait_do
+  *if (wait_m_night > 0)
+    # Wait until night. [~${wait_t_night}]
+      *set wait_total_mins wait_m_night
+      *goto codex_wait_do
+  # Wait a specific time.
+    *goto codex_wait_custom
+  # [Return to Dossier]
+    *goto_scene choicescript_stats
+  # [Close Dossier & Return]
+    *finish
+
+*comment ── The minutes from now to the next morning (07:00), midday (12:00), dusk (18:00) and night (21:00), and the same as short text. Pure: it only reads the clock. ──
+*label wait_prep
+*script var now = Number(stats.clock_hour) * 60 + Number(stats.clock_minute); function until(t) { return ((t - now) % 1440 + 1440) % 1440; } function txt(m) { var h = Math.floor(m / 60), r = m % 60; return (h ? h + (h === 1 ? " hour" : " hours") : "") + (h && r ? " " : "") + (r ? r + " min" : ""); } stats.wait_m_morning = until(420); stats.wait_m_midday = until(720); stats.wait_m_dusk = until(1080); stats.wait_m_night = until(1260); stats.wait_t_morning = txt(stats.wait_m_morning); stats.wait_t_midday = txt(stats.wait_m_midday); stats.wait_t_dusk = txt(stats.wait_m_dusk); stats.wait_t_night = txt(stats.wait_m_night);
+*return
+
+*comment ── A specific amount: hours, then minutes. Nothing passes until the player chooses to wait. ──
+*label codex_wait_custom
+*set wait_applied false
+[b]WAIT: A SPECIFIC TIME[/b]
+[i]Hours first, then minutes[/i]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+How many hours? (0 to 23)
+*input_number wait_in_hours 0 23
+How many minutes? (0 to 59)
+*input_number wait_in_minutes 0 59
+*set wait_total_mins ((wait_in_hours * 60) + wait_in_minutes)
+*if (wait_total_mins = 0)
+  No time passes.
+  *page_break Back to your waiting…
+  *goto codex_wait
+*goto codex_wait_do
+
+*label codex_wait_do
+*if (combat_engaged)
+  You cannot stand and wait in the middle of a fight.
+  *page_break Back to the dossier…
+  *goto_scene choicescript_stats
+*comment REPLAY (the same trap as the short rest): this page spends time, and the lock below is handed back as it was found, so it cannot stop a replay of THIS page. wait_applied does: once the page has done its work, a replay
+*comment skips straight to the report. The Wait menu clears it, so choosing another wait from the menu always runs.
+*if (wait_applied)
+  *goto codex_wait_report
+*if (not(wait_lock_reason = ""))
+  ${wait_lock_reason}
+  *page_break Back to your waiting…
+  *goto codex_wait
+*if (wait_total_mins <= 0)
+  No time passes.
+  *page_break Back to your waiting…
+  *goto codex_wait
+*temp cw_hours (((wait_total_mins + 59) - ((wait_total_mins + 59) modulo 60)) / 60)
+*if (((hunger_stage = "Starving") or (fatigue_stage = "Collapsing")) and (hp_current <= ((cw_hours * 2) + 1)))
+  You are too starved and spent to sit through that long without it costing more than you have left. Eat, or sleep, first.
+  *page_break Back to your waiting…
+  *goto codex_wait
+*script var m = Number(stats.wait_total_mins), h = Math.floor(m / 60), r = m % 60; stats.wait_report_text = (h ? h + (h === 1 ? " hour" : " hours") : "") + (h && r ? " " : "") + (r ? r + " min" : "");
+*temp cw_saved_locked time_advance_locked
+*temp cw_saved_page locked_time_advance_page_id
+*temp cw_saved_id locked_time_advance_id
+*temp cw_saved_call time_advance_call_id
+*comment Out on the road the hours cost weather and gear exposure like any outdoor time; in a town or a building they do not.
+*if (ow_on)
+  *set exposure_base_mins wait_total_mins
+  *set exposure_camping false
+  *gosub_scene calendar calc_exposure
+*set hours_to_pass ((wait_total_mins - (wait_total_mins modulo 60)) / 60)
+*set minutes_to_pass (wait_total_mins modulo 60)
+*set time_advance_call_id "codex_wait"
+*gosub_scene calendar advance_time
+*set time_advance_locked cw_saved_locked
+*set locked_time_advance_page_id cw_saved_page
+*set locked_time_advance_id cw_saved_id
+*set time_advance_call_id cw_saved_call
+*gosub_scene calendar recalc_hp_from_neglect
+*set wait_pick 1
+*rand wait_pick 1 3
+*set wait_applied true
+*label codex_wait_report
+*if (wait_pick = 1)
+  You find somewhere to sit and let the time go by.
+*elseif (wait_pick = 2)
+  You lean back, watch the light move, and let the hours take their own pace.
+*else
+  You pass the time as best you can, and it passes.
+*line_break
+[b][🕐 Waited | ${wait_report_text} | ${clock_time} (${time_period})][/b]
+*page_break Back to your waiting…
+*goto codex_wait
 
 *label codex_levelup
 *if (combat_engaged)
