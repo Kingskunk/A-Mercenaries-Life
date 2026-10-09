@@ -1,0 +1,255 @@
+*comment ====================================================================================
+*comment ALDERFORD: the reusable town hub. This file owns the town-level view, arrival and exit;
+*comment every meaningful place will live in its own file in scenes/alderford/ and return here.
+*comment The prologue's alderford.txt remains its one-time campaign sequence, not this hub's
+*comment source of control flow. The lasting geography carried forward is the imperial limestone
+*comment weir, the mill bank above it, and the curing lofts and wharves below it.
+*comment ====================================================================================
+
+*label alderford
+*gosub af_enter
+*gosub af_header
+*gosub af_layers
+*goto af_menu
+
+*comment Shared setup and presentation keep a direct hub visit and a map arrival in the same state.
+*label af_enter
+*temp af_first_hub false
+*if (not(alderford_seen))
+  *set af_first_hub true
+*set current_district "alderford"
+*set alderford_seen true
+*set codex_alderford true
+*gosub_scene calendar update_hub_condition
+*return
+
+*label af_header
+[b]◈ ALDERFORD[/b]
+*line_break
+[b][⏳ Alderford Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
+*line_break
+*return
+
+*label af_layers
+*gosub af_place
+*gosub af_sky
+*gosub af_street
+*return
+
+*comment Place buttons will be added here one at a time as their scene files are built. This keeps a
+*comment new shop, chapel or wharf from becoming a second branch inside the base town file.
+*label af_menu
+*choice
+  # [b]The High Grey Road[/b]: leave town toward Port Valen.
+    *set ow_pos "af"
+    *goto_scene overworld/overworld ow_here
+
+*comment ── THE ARRIVAL ── The overworld's Alderford tile reaches this label. It charges the short
+*comment walk from the road once, gives the town's first impression once, then falls into the hub.
+*label af_arrive
+*set minutes_to_pass 5
+*set time_advance_call_id "af_arrive_1"
+*gosub af_walk_time
+*temp af_first false
+*if (not(af_arrival_seen))
+  *set af_first true
+*set af_arrival_seen true
+*gosub af_enter
+*gosub af_header
+
+*if (af_first)
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    The High Grey Road comes down between wet palisade posts to a gate left ajar for late traffic. Beyond it, lamps mark the steep street toward the water. The roar of the old weir covers the smaller sounds of the town, and lower down the slope a few lamps burn among the wharves.
+  *elseif (time_period = "Dusk")
+    At the end of the High Grey Road, the town's palisade follows the shoulder above the river. Carts are still coming through the gate as the last light leaves the roofs, while the old weir throws a broad white rush through the gorge below.
+  *else
+    The High Grey Road reaches Alderford on high ground above the Grey. A timber palisade and broad gate hold the road's end; beyond them, streets descend toward the old limestone weir, with mill roofs above its rush and the long gables of the curing lofts lower down.
+*else
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    The gate is left ajar for late traffic, and the weir is louder than the town in the dark.
+  *elseif (time_period = "Dusk")
+    The gate stands open while the last carts clear the road before dark.
+  *else
+    The road gate is busy with carts, pack animals and people on foot heading for the river town.
+
+*gosub af_layers
+*goto af_menu
+
+*comment ── LAYER 1: PLACE ── Constant geography and smell only: no weather, time or people.
+*label af_place
+*if (af_first_hub)
+  Alderford climbs the eastern shoulder above the Grey, from the High Grey Road's palisade gate down toward an old imperial limestone weir. The upper street slopes past timber houses, cart yards and a covered trough toward the water. Near the gate, the slate-roofed Factor's Hall stands by the customs yard, its dressed stone and iron-bound doors setting it apart from the buildings around it.
+
+  The upper bank is given to the mill channel, sawmill yards and a squat waterwheel forge. A small old chapel stands higher on the ridge above them, its bell turret looking over the river. Beside the weir sits a long granary of pale boards on a raised stone base, close enough to the water for its loading doors to look down on the upper basin.
+
+  The weir crosses the Grey in pale, worn limestone, its narrow crossing and bronze gate gear marking the point where the river changes character. Above it, the river is held in a cold, broad reach. Below it, the Grey falls through a short, fast-cut channel before easing into the lower basin, where flat-bottomed barges lie at timber wharves for the downriver journey to Port Valen.
+
+  The lower streets run between curing lofts, net sheds, storehouses and muddy loading lanes. A low timber drinking house faces the wharves, its signboard painted with a black oar, while the lofts rise behind it in steep-gabled rows with their loading doors over the water. From almost anywhere in town, the river can be heard: held above the weir, breaking through it, or moving away below it. Green timber, river spray, curing brine and coal smoke mix in the air.
+*else
+  The High Grey Road still drops through the palisade toward the pale weir, with the Factor's Hall and upper mill bank above the water and the curing lofts, timber wharves and lower stores below it. The river remains the town's compass, loud at the weir and quieter where it leaves the lower basin for Port Valen.
+*return
+
+*comment ── LAYER 2: SKY ── Weather and light only, followed by the ground's memory of rain.
+*label af_sky
+*temp af_dark false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set af_dark true
+*if (weather = "Rain")
+  Rain darkens the limestone and runs in bright threads over the timber roofs, while spray rises steadily from the weir.
+*elseif (weather = "Storm")
+  Wind drives rain along the gorge and turns the weir's spray into a moving veil across the lower roofs.
+*elseif (weather = "Fog")
+  Cold fog gathers over the river below the weir, leaving only the nearest roofs and palisade posts clear.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow catches on the mill roofs and palisade rails, while the stone streets hold a grey, slippery slush.
+*elseif (weather = "Blizzard")
+  A freezing gale drives snow through the street gaps and erases the far bank behind a white rush.
+*elseif (weather = "Clear")
+  *if (af_dark)
+    Clear starlight lies on the weir's pale stone, and the gorge below is a black channel broken by white water.
+  *elseif (time_period = "Dusk")
+    The last light catches the weir and the upper windows, leaving the lower wharves blue in the river shadow.
+  *else
+    Clear light picks out the pale limestone, the dark mill roofs and the river's swift surface.
+*else
+  *if (af_dark)
+    A heavy, starless sky presses over the gorge, and the weir is heard more clearly than it is seen.
+  *else
+    A flat overcast lies over the town and makes the limestone, river and palisade all the same muted grey.
+*comment Weather memory: the streets and yards keep the last rain after the sky has cleared.
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Water still stands in the ruts and runs down the lanes toward the wharves after the last long rain.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The stone streets remain dark from earlier rain, and the mill yards have not yet dried.
+*return
+
+*comment ── LAYER 3: STREET ── Who is about. Each state has four clock-led vignettes instead of a random micro-action, so revisiting the hub in the same hour is stable and a later hour shows a different face of the town.
+*label af_street
+*temp af_st_pick (((campaign_day * 24) + clock_hour) modulo 4) + 1
+*if (street_life = "empty")
+  *gosub af_st_empty
+*elseif (time_period = "Pre-Dawn")
+  *gosub af_st_predawn
+*elseif (time_period = "Night")
+  *gosub af_st_night
+*elseif (time_period = "Dusk")
+  *if (street_life = "thin")
+    *gosub af_st_thin
+  *else
+    *gosub af_st_dusk
+*elseif (day_of_week = "Hallowday")
+  *gosub af_st_rest
+*elseif (street_life = "thin")
+  *gosub af_st_thin
+*elseif (day_of_week = "Marketday")
+  *gosub af_st_market
+*else
+  *gosub af_st_day
+*return
+
+*comment ── A working day, Morning through Afternoon ──
+*label af_st_day
+*if (af_st_pick = 1)
+  The saw frame works above the weir, and boards come down the slope in a steady line on waiting carts. A child follows the carts at a safe distance until an older voice calls them back from an upstairs window.
+*elseif (af_st_pick = 2)
+  Small barrels marked in pitch roll across the customs yard toward the lower wharves. Near the palisade, a woman shakes a rug over a rail until dust lifts from it and drifts away.
+*elseif (af_st_pick = 3)
+  The crane by the water raises a sling of timber, its chain answering the rush of the weir one clank at a time. Two people stop beneath the Factor's Hall steps to compare a folded note with the carts coming through the gate.
+*else
+  At the lower sheds, nets are stretched between posts while fish are sorted on slanted boards above the mud. A dog noses around a cart wheel until a hand waves it away from the traffic.
+*return
+
+*comment ── The busy trading day, only while the street is full enough to support it ──
+*label af_st_market
+*if (af_st_pick = 1)
+  The road inside the gate is half taken up by carts, their tailboards lowered while sacks and crates change hands. A child slips through the adults with a basket held tight against their chest.
+*elseif (af_st_pick = 2)
+  A line of pack animals waits by the upper yards while their loads are checked against chalk marks on the ground. Beside them, someone sells hot rolls from a covered tray to people who do not want to leave the queue.
+*elseif (af_st_pick = 3)
+  People crowd the open space by the customs yard, leaving narrow paths between their wheels and cargo. A pair with a handcart keep edging forward whenever a gap opens.
+*else
+  Grain sacks, timber bundles and small barrels fill the lane from the gate to the slope. A woman with a bundle of reeds under one arm waits for the traffic to clear before crossing toward the lower streets.
+*return
+
+*comment ── The rest day: less trade, but a river town cannot wholly stop ──
+*label af_st_rest
+*if (af_st_pick = 1)
+  The cart yards are shut and the saw frame stands quiet, leaving the weir to fill the town's usual noise. A person walks a horse slowly to the river trough, with no load behind it.
+*elseif (af_st_pick = 2)
+  The lower sheds have their doors closed, though a few figures remain by the water to tend mooring lines. On the upper slope, two children roll a hoop between the palisade posts.
+*elseif (af_st_pick = 3)
+  The Factor's Hall doors are closed and the road beside it is clear of carts. Someone has set a chair outside a timber house and is mending a shirt in the quieter street.
+*else
+  Only the weir crossing and the paths to the water see much use. A family passes uphill with clean clothes and a covered basket, while a dog follows at their heels.
+*return
+
+*comment ── A foul but passable day. The sky layer says why the traffic has thinned; this layer only shows the result. ──
+*label af_st_thin
+*if (af_st_pick = 1)
+  The street has room enough for a cart to pass without anyone stepping aside. A single team waits by the upper yard, its driver standing close to the animals.
+*elseif (af_st_pick = 2)
+  Most of the lower loading doors are shut, and only one small barge lies against the wharf. Someone crosses the slope with a covered bundle held close to their body.
+*elseif (af_st_pick = 3)
+  The crane stands idle beside the water, its hook swinging a little above the empty boards. A pair of people move between the Hall and the gate without lingering in the open.
+*else
+  The road from the palisade is mostly clear, marked by wheel tracks and the dark places where carts have stood. A dog picks its way along the wall, then disappears beneath a shed.
+*return
+
+*comment ── Dusk: the working river is being secured for the night ──
+*label af_st_dusk
+*if (af_st_pick = 1)
+  The last loaded cart of the day turns uphill from the wharves, its wheels loud on the stone. Below it, hands draw a barge tight against the posts before the light leaves the water.
+*elseif (af_st_pick = 2)
+  Shed doors are pulled shut along the lower slope, one after another. In the upper street, a child waits with a small lamp while an adult finishes unhitching a cart.
+*elseif (af_st_pick = 3)
+  The saw frame has fallen silent, and the road is full of people heading away from the mill bank in twos and threes. A string of pack animals is led through the palisade gate before it grows fully dark.
+*else
+  The wharf lamps begin to show below the weir as people finish their knots and chains. A baker's tray crosses the upper street, followed by two people watching it with interest.
+*return
+
+*comment ── Night: the wharves and gate remain legible, but the day trade is done ──
+*label af_st_night
+*if (af_st_pick = 1)
+  Lamps along the lower wharves turn the water beneath them into broken strips of light. A pair of people pass up the slope with a shuttered lantern between them.
+*elseif (af_st_pick = 2)
+  The upper street is quiet except for the occasional creak of a cart in its yard. Near the river, a chain knocks softly against a post as the current presses at a moored barge.
+*elseif (af_st_pick = 3)
+  A lamp burns inside the gatehouse, and another hangs over the lower path toward the water. Someone closes a high shutter, then the house behind it goes dark.
+*else
+  The Hall and the closed sheds stand dark above the wharves. A dog barks once from a yard, and the weir carries the sound away.
+*return
+
+*comment ── Pre-Dawn: the first necessary work begins, not the whole town ──
+*label af_st_predawn
+*if (af_st_pick = 1)
+  A shuttered lamp moves along the lower wharf before any of the upper windows have lit. At the gate, the road is empty apart from fresh wheel tracks in the dirt.
+*elseif (af_st_pick = 2)
+  The first smoke rises from a chimney above the mill bank. By the river trough, someone fills a bucket while the rest of the street remains behind closed doors.
+*elseif (af_st_pick = 3)
+  A barge rope is checked at the water's edge, its wet fibres pale in the lamp glow. The High Grey Road is a dark line beyond the open gate.
+*else
+  A small cart comes down from the upper yards with a lamp tied beneath its seat. The sound of its wheels fades into the weir before the town is properly awake.
+*return
+
+*comment ── Dangerous weather: no working vignette survives, only the shut town and its exposed edges ──
+*label af_st_empty
+*if (af_st_pick = 1)
+  The road from the palisade to the water is empty. The yard gates are fastened, and the cranes at the wharves stand still above their wet boards.
+*elseif (af_st_pick = 2)
+  No cart waits at the gate and no barge is loading below the weir. Water finds the low channels between the stones and runs toward the river.
+*elseif (af_st_pick = 3)
+  The lower shed doors are shut, their barred fronts turned toward the river. A loose signboard knocks somewhere above the empty street.
+*else
+  The Factor's Hall steps and the cart yards have been left clear. Only the weir keeps moving, white and loud beyond the closed lanes.
+*return
+
+*label af_walk_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return

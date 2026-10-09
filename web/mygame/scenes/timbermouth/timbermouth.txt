@@ -22,6 +22,16 @@
 *comment ====================================================================================
 
 *label timbermouth
+*gosub tm_enter
+*gosub tm_header
+*gosub tm_layers
+*goto tm_menu
+
+*comment Shared setup and presentation keep a direct hub visit and a road arrival in the same state.
+*label tm_enter
+*temp tm_first_hub false
+*if (not(timbermouth_seen))
+  *set tm_first_hub true
 *set current_district "timbermouth"
 *set timbermouth_seen true
 *gosub_scene calendar update_hub_condition
@@ -38,16 +48,24 @@
 *temp tm_why_out tm_why
 *if (((street_life = "empty") and (not(tm_night))) and (not(day_of_week = "Hallowday")))
   *set tm_why_out "closed for the weather"
+*return
+
+*label tm_header
 [b]◈ TIMBERMOUTH[/b]
 *line_break
 [b][⏳ Timbermouth Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
 *line_break
+*return
+
+*label tm_layers
 *gosub tm_place
 *gosub tm_sky
 *gosub tm_street
+*return
 
 *comment BUTTON FORMAT, the same convention as the Port Valen district hubs: destination first, bold, then the flavour, then the [~N min] suffix. A closed place keeps its
 *comment bold name and swaps the flavour for the reason it is shut (never dropped from the menu), and plays a closure page that costs no time.
+*label tm_menu
 *choice
   *if (tm_ok_market)
     # [b]The Market[/b]: bays, wagons and the beam-scale at the gate. [~5 min]
@@ -96,6 +114,8 @@
 *if (not(tm_watch_seen))
   *set tm_first true
 *set tm_watch_seen true
+*gosub tm_enter
+*gosub tm_header
 *temp tm_arr_state "day"
 *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
   *set tm_arr_state "night"
@@ -121,13 +141,21 @@
   *if ((fatigue_stage = "Exhausted") or (fatigue_stage = "Collapsing"))
     He watches you sway past and lifts his staff toward the lamp over the Split Pine's door.
 
-*goto timbermouth
+*gosub tm_layers
+*goto tm_menu
 
 *comment ── LAYER 1: PLACE ── Constant geography and smell: no weather, no time of day, no people.
 *label tm_place
-A paved square opens where the road from the river comes up out of the lowlands and meets three smaller roads, one from the forest and two from the farm country. The town has no wall. At the mouth of each road stands a pair of squared ash gateposts with rusted hooks where gates once hung, and on the lowland road a squat stone watch post beside them, and between the posts the road simply runs in. The Split Pine inn stands at the road end of the square, a long house of dark timber with a split pine trunk set upright beside its door and an arch through to its yard. Facing it across the paving is the Factor's Hall, the only stone building on the square, two floors high behind a flight of broad steps, with the Gilded Scales' river-serpent banner hanging from a pole over its door. Wells with stone curbs and a spring-fed trough stand in the middle of the square.
+*if (tm_first_hub)
+  A paved square opens where the road from the river comes up out of the lowlands and meets three smaller roads: one from the forest and two from the farm country. Timbermouth has no wall. At the mouth of each road stands a pair of squared ash gateposts with rusted hooks where gates once hung; a squat stone watch post sits beside the lowland road, while the other roads simply run between their posts.
 
-On the forest side, Longshade ash is stacked in long ranks under open sheds, each end-grain stamped with a grade mark and a year, and beyond the sheds stands the Sawmill, a long open-sided shed on the bank of the Ashrun, with its wheel turning in a mill race and its log yard spread out behind. The Ashrun comes down out of the Longshade loud over its ledges, a stony stream no wider than a road and too shallow to carry anything but loose logs, which are driven down it in the spring melt on their way to the Grey River far below. A lane of low, open-fronted Workshops runs back from the square beside the mill, and on the farm side the Market opens off the paving through a yard gate with a beam-scale hung over it, with bays and wagons spreading away behind. A general store stands beside that gate, its front hung with coils of rope, lanterns and harness under a board reading [i]"MARLOW. General goods."[/i] Oxen drag the felled trunks in from the forest on skids and chains, and horses and mules draw the loaded wagons out along the river road, so the paving is cut into ruts by iron tyres and trampled by hooves, with a hitching rail along every frontage and the smell of dung and hay under the resin. Timber houses lean shoulder to shoulder along the roads, their upper floors jutting out over the street, and it is a quarter of an hour on foot from one end of the town to the other. The air carries cut pine, resin, wet stone from the stream and the dry sweetness of seasoning hardwood, with hot iron and glue from the Workshops' lane. A signboard at the square's mouth reads [i]"Timbermouth"[/i].
+  The Split Pine inn stands at the road end of the square, a long house of dark timber with a split pine trunk set upright beside its door and an arch through to its yard. Across the paving, the Factor's Hall is the only stone building: two floors high behind broad steps, with the Gilded Scales' river-serpent banner over its door. Wells with stone curbs and a spring-fed trough stand in the middle of the square.
+
+  On the forest side, Longshade ash stands in long ranks under open sheds, each stack marked with a grade and year. Beyond them is the Sawmill, a long open-sided building on the Ashrun's bank, its wheel set in a water channel and its log yard spread behind. The Ashrun comes loud over its ledges, a stony stream too shallow for boats but wide enough to bring loose logs down in the spring melt. A lane of low, open-fronted Workshops runs back from the square beside the mill.
+
+  On the farm side, the Market opens through a yard gate with a beam scale hung above it. A general store stands beside that gate, its front hung with rope, lanterns and harness beneath a board reading [i]"MARLOW. General goods."[/i] The paving bears deep wheel ruts and old hoof marks, with hitching rails along every frontage. Timber houses lean shoulder to shoulder along the roads, their upper floors jutting out over the street. Cut pine, resin, wet stone, hay, hot iron and glue mix in the air. A signboard at the square's mouth reads [i]"Timbermouth"[/i].
+*else
+  The square still ties the forest road and farm roads to the lowland river road. The Split Pine faces the Factor's Hall across the wells and trough, while the Sawmill and Workshops lie toward the Ashrun and the Market and general store toward the farm country. Resin, wet stone and hay stay in the air.
 *return
 
 *comment ── LAYER 2: SKY ── Weather and light only, matched to time_period; no people. Closes with the ground's memory of recent weather.

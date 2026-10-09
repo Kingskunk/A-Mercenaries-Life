@@ -39,8 +39,8 @@
 
   // Which way north lies on the map as it is drawn, in degrees clockwise from straight up the screen (0 = north is up). The map panel draws a compass from this and lets the player turn the map
   // in quarter turns, the compass turning with it. It changes nothing about the tiles or distances. The map is laid out with north up (geography settled 2026-10-08, the user's call: the Grey
-  // River comes down to the city from a fork in the north, shaped like a Y: Alderford lies up the east arm (the Grey proper) and Timbermouth up the west arm (the Ashrun), so the road to Timbermouth leaves Port Valen by the River Gate, follows the river north to the fork, and runs
-  // north-north-west, drawn running up the screen with a slight lean to the left; the Charter Gate's old imperial road runs east, away from it).
+  // River comes down to the city from a fork in the north, shaped like a Y: Alderford lies up the east arm (the Grey proper) and Timbermouth up the west arm (the Ashrun). The River Road leaves Port Valen by the River Gate, follows the river north to the fork, and runs
+  // north-north-west toward Timbermouth. The High Grey Road is a separate north-east branch from the Charter Gate, climbing the high ground on the Grey's eastern side.
   var NORTH = 0;
 
   // Who holds the land. Add a territory here and give its tiles its id.
@@ -57,7 +57,7 @@
       depart: "The head of the column lurches forward, ox by ox, and the wagons take up the weight of their loads with a groan of axles. The yard's gate swings shut behind the tail wagon, and the River Road bends away north along the cuttings above the Grey, paved and rutted and wide enough for two wagons to pass.",
       walk: "The paving runs smooth and well kept, rutted by wagon wheels, with the Grey slow beside it and the grey city wall growing ahead.",
       arrive: "The caravan comes down the last of the cuttings to the carters' yards outside the River Gate, where the grey wall rises above the fences and the gate stands open on the city.",
-      info: "The free port and the Gilded Scales' seat. The River Gate opens onto the Grey River road, which runs north along the river.",
+      info: "The free port and the Gilded Scales' seat. The Greybridge crosses the river above the tidal reach, linking the city to the west-bank River Road.",
       here: "The city's wall stands behind you, and the river road runs north from the River Gate along the cuttings of the Grey."
     },
     r1: {
@@ -77,6 +77,56 @@
       water: "the river",
       info: "The road runs along the bank here, where the Ashrun comes down from the west and meets the Grey River. The two make one river, and the road runs alongside",
       here: "The river runs broad and slow beside the road, and the Ashrun comes in from the west over a bar of grey stones, its brown water running beside the clearer water of the Grey for a stretch before the two run as one. A track branches off up the Ashrun's bank into the trees."
+    },
+    ar1: {
+      name: "The High Grey Road", kind: "road", x: 0.82, y: -0.66, region: "The eastern cuttings",
+      territory: "scales",
+      danger: 1,
+      walk: "The old imperial paving leaves the eastern gate behind and bends north-east across open cuttings, with the Grey a distant grey line below the slope.",
+      info: "The first stretch of the High Grey Road: old paving, repaired where the Scales' grain wagons have worn it down, leading north-east from the Charter Gate.",
+      here: "The road runs north-east through open cuttings, its old paving patched with newer stone. The Grey shows far below between the folds of the land."
+    },
+    ar2: {
+      name: "Greybank Rise", kind: "road", also: "hills", x: 0.32, y: -1.68, region: "The upper Grey hills",
+      territory: "scales",
+      danger: 2,
+      climate: -1,
+      walk: "The road climbs the long shoulder above the Grey. Low stone markers keep the wagons to the firm ground where the old paving has broken into packed gravel.",
+      camp: "A low shelf above the river gives enough level ground for a small camp. The road lies open to the wind, but the Grey can be heard below and the stone markers keep the track clear by daylight.",
+      water: "the Grey River",
+      info: "A high stretch of the High Grey Road, where the old paving climbs above the Grey and the colder upland air begins.",
+      here: "The road climbs above the Grey on a broad, stony shoulder. A worn track drops to a shingle inlet below, where the river is a dark line under the bank, and the wind has a colder edge than it did near Port Valen."
+    },
+    // Map connection only for now. Alderford's prologue scene is not a returnable town scene,
+    // so overworld.txt deliberately has no "Go into Alderford" branch until its own town scene exists.
+    af: {
+      name: "Alderford", kind: "town", x: 0.88, y: -2.72, region: "The upper Grey",
+      territory: "scales",
+      danger: 1,
+      climate: -1,
+      info: "A river town at the old imperial limestone weir, thirty miles up the Grey from Port Valen. The High Grey Road reaches it from the south over the high ground.",
+      here: "Alderford stands ahead around the old limestone weir, with timber wharves below the falls and sawmill roofs and smoke climbing the bank above them.",
+      hereNight: "Alderford's wharf lamps shine below the dark line of the weir, while the town's smoke and rooflines fade into the cold above the river.",
+      hereStorm: "Spray rises from the weir and the road has turned slick with rain. Alderford's wharves and mill roofs show only in brief, pale intervals through the weather."
+    },
+    // Road-connected village tiles only. Their future place scenes are deliberately not built yet.
+    bw: {
+      name: "Brinewick", kind: "village", x: -1.58, y: -0.42, region: "The western tidal flats",
+      territory: "scales",
+      danger: 1,
+      info: "A low salt-working village on the western tidal flats. Peat-fired brine sheds and drying racks supply Valen's curing trade; grain comes from the raised fields inland.",
+      here: "Low sheds and chimney stacks stand among the ditches of the tidal flats. White salt crusts the pan walls, and peat smoke lies close over the reeds.",
+      hereNight: "Brinewick's furnace windows burn low beyond the reed beds, with salt smoke and the tide's slow wash carrying through the dark.",
+      hereStorm: "The flats have disappeared under driven rain and tidewater. Brinewick's sheds stand dark and low behind their earthen banks."
+    },
+    mc: {
+      name: "Marlcross", kind: "village", x: 1.72, y: -1.18, region: "The eastern grainlands",
+      territory: "scales",
+      danger: 1,
+      info: "A grain and carting village on the eastern high ground: barley, rye, grazing oxen, and a mill serving the traffic bound for Port Valen.",
+      here: "Fields of barley and rye run over the gentler slopes around a mill and a cluster of wagon yards. Pale marl shows in the banks where the cart tracks have cut through the soil.",
+      hereNight: "Marlcross is a few square windows beyond the dark fields, with the mill's sails still against the stars and a dog barking from the wagon yards.",
+      hereStorm: "Rain flattens the grain and turns the cart tracks through Marlcross to pale, clinging mud. The mill has its sails furled and every yard gate shut."
     },
     r3: {
       name: "Longshade Edge", kind: "forest", also: "hills", x: -1.67, y: -2.5, region: "The edge of the Longshade",
@@ -126,6 +176,11 @@
   var EDGES = [
     ["pv", "r1", 10],
     ["r1", "r2", 10],
+    ["pv", "ar1", 10],
+    ["ar1", "ar2", 10],
+    ["ar2", "af", 10],
+    ["r1", "bw", 6],
+    ["ar1", "mc", 6],
     ["r2", "r3", 10],
     ["r3", "tm", 10],
     ["tm", "fv", 6],

@@ -296,7 +296,7 @@
         unlock: "met_talia",
         body: function (s) {
           var out = [
-            "Forewoman of the four brine-curing lofts on Alderford's waterfront, and one of the last independent salters left on the wharf. She is a slender young woman with green eyes, in a coarse linen apron, and by the end of a shift her brow is flushed with sweat and dusted with sawdust. She makes the tallow-and-oil grease the river trade rubs into its leather, runs the boiling pans and drying racks with veteran cutters like Maren and a crew of local women, and has no intention of selling to anyone."
+            "Forewoman of the four brine-curing lofts on Alderford's waterfront, and one of the last independent salters left on the wharf. Carts bring curing salt up the High Grey Road from Valen; Talia's crews turn it, river fish, smoke, and time into firkins for the downriver trade. She makes the tallow-and-oil grease the river trade rubs into its leather, runs the curing rooms and drying racks with veteran cutters like Maren and a crew of local women, and has no intention of selling to anyone."
           ];
           if (truthy(s.visited_talia_loft)) {
             var fatherInfo = "The lofts were her father's. Franklin Parker, Master Salter, felled the timber and drove the foundation piles thirty winters ago, when Alderford was three timber sheds and a ferry rope.";
@@ -391,7 +391,7 @@
             out.push("The faded brand on her throat is the Iron Bull's. She did five campaign seasons with the Iron Bull Free Company in the border marches, she says, thumbing the blurred ink with a dry smirk, until a crossbow bolt through her left knee told her to find dry floorboards. She bought the timber house from an old barge-carpenter ten years ago. The river is quieter than the shield wall, she says, and nobody shoots at you over the counter, most nights anyway.");
           }
           if (truthy(s.discussed_alderford_life)) {
-            out.push("Her read on Alderford comes like a briefing. 'It's loud, damp, and smells of green cedar timber and pickled herring. If your back is broad and your knuckles aren't afraid of blisters, you eat. If you go soft, the river swallows you.' A hard town, she calls it, but an honest one if you stay clear of the counting house.");
+            out.push("Her read on Alderford comes like a briefing. 'It's loud, damp, and smells of green cedar timber and pickled herring. If your back is broad and your knuckles aren't afraid of blisters, you eat. If you go soft, the river swallows you.' A hard town, she calls it, but an honest one if you stay clear of the Factor's Hall.");
           }
           if (truthy(s.visited_maura_cellar)) {
             out.push("The Drowned Oar sits on the old stonework of a Meridian flood drain. When three feet of imperial brick collapsed inward under the autumn damp, the wall opened into the flooded drain beneath the town, and something lives in the dark water: a wet, clicking rasp and two yellow eyes behind a collapsed gate. Maura will not bring the Gilded Scales' bailiffs into her vault. They would call the drain a taxable cartel waterway and seize half her barrels. Vane will not spare swords to kill a cellar rat. So she pays bounty silver from her own till and keeps the business hers. The crane winch over the vault hatch is there for barrels, but it has hauled a bounty-taker out of the silt too, and her verdict on the deal is that taking a bounty is one thing and throwing your life away is another.");
@@ -428,14 +428,14 @@
       {
         id: "morzan", category: "people", title: "Factor Morzan",
         sub: "Factor of the Gilded Scales",
-        role: "Guild factor of the Gilded Scales, Alderford counting house",
+        role: "Guild factor of the Gilded Scales, Alderford Factor's Hall",
         link: ["Morzan", "Factor Morzan"],
-        tags: ["Alderford"], aliases: ["Factor Morzan", "Morzan", "counting house", "factor"],
+        tags: ["Alderford"], aliases: ["Factor Morzan", "Morzan", "Factor's Hall", "factor"],
         unlock: "met_morzan",
         body: function (s) {
           var out = [
             "The Gilded Scales' factor in Alderford: portly and jowled, wrapped in water-stained beaver furs, with a parchment-bound account book never far from his hand and the frank, assessing stare of a man who has spent his life weighing cargo by eye. He met the Carrion column at the town palisade the day it arrived, flanked by bailiffs in pewter scale badges. He took Captain Vane's brass baggage chits, reported that the causeway was cleared and the Sinks prisoners were in the iron cage wagons as contracted, then unrolled a stamped ledger, checked every seal, and signed the company's contract vouchers. Coin only moves when the seals satisfy him.",
-            "His counting house sits on the customs slip on blackened ironwood pilings. Inside, the whole wharf's business is weighed, sealed, and filed: clerks at their desks, brass balance pans clinking against lead weights, a vault counter issuing Letters of Credit good in Gold Crowns at the cartel's head house on Port Valen's Civic Heights, and an iron-posted bounty board by the door. Chief Clerk Orlov runs the front of the house. The Factor keeps to the back office and has no inclination to come out for routine business."
+            "His Factor's Hall sits on the customs slip on blackened ironwood pilings. Inside, the whole wharf's business is weighed, sealed, and filed: clerks at their desks, brass balance pans clinking against lead weights, a vault counter issuing Letters of Credit good in Gold Crowns at the cartel's head house on Port Valen's Civic Heights, and an iron-posted bounty board by the door. Chief Clerk Orlov runs the front of the hall. The Factor keeps to the back office and has no inclination to come out for routine business."
           ];
           if (truthy(s.rennick_reported)) {
             out.push("Report Rennick's skimming and the Factor answers: 'So you're the one. Word reached me a Carrion recruit walked into my own toll district's dispute and settled it without breaking a crate, and had the nerve to invoke my name doing it. A little bird already told me my bailiff's scales run light. Good instinct, chasing that up. I'll be having a word with Rennick myself.'");
@@ -452,24 +452,24 @@
       },
       {
         id: "orlov", category: "people", title: "Chief Clerk Orlov",
-        sub: "Chief clerk of the Alderford counting house",
-        role: "Chief Clerk, Gilded Scales counting house, Alderford customs slip",
+        sub: "Chief clerk of the Alderford Factor's Hall",
+        role: "Chief Clerk, Gilded Scales Factor's Hall, Alderford customs slip",
         link: ["Orlov", "Chief Clerk Orlov"],
         tags: ["Alderford"], aliases: ["Chief Clerk Orlov", "Orlov", "clerk"],
         unlock: "met_orlov",
         body: function (s) {
           var out = [
-            "Chief clerk of the Gilded Scales' Alderford counting house: a narrow man in ink-stained shirtsleeves behind an oak desk with a tarnished brass nameplate, spectacles pushed up into thinning grey hair, a goose quill behind one ear. He looks harried and behind on his own paperwork, and he sizes up every stranger by the state of their boots. He greets a Carrion contractor with the news that the guild contract is current and the board is open to you like any other contractor's.",
+            "Chief clerk of the Gilded Scales' Alderford Factor's Hall: a narrow man in ink-stained shirtsleeves behind an oak desk with a tarnished brass nameplate, spectacles pushed up into thinning grey hair, a goose quill behind one ear. He looks harried and behind on his own paperwork, and he sizes up every stranger by the state of their boots. He greets a Carrion contractor with the news that the guild contract is current and the board is open to you like any other contractor's.",
             "Everything on the wharf that is weighed, sealed, taxed, or owed passes through his quill: the district parish register, the bounty board by the door, the vault floor with its rows of lead weights. The Factor signs behind the side door, but Orlov writes the wharf's business."
           ];
           if (truthy(s.asked_ch_commutation)) {
-            out.push("Asked about the chapel's taxes, he reads from the parish register: 'Saint Althea's parish labor commutation. Quarterly assessment for twenty registered refugee spinners. Four Silver Marks assessed against their wool sales, paid in full to the guild treasury.' As long as the deacon's wool silver reaches the counting house, the Scales' bailiffs leave the chapel cloister alone." + (truthy(s.found_customs_vellum) ? " The Sinks toll register says the commutation was never owed. See [[sanctuary_charter|the chapel's sanctuary]]." : ""));
+            out.push("Asked about the chapel's taxes, he reads from the parish register: 'Saint Althea's parish labor commutation. Quarterly assessment for twenty registered refugee spinners. Four Silver Marks assessed against their wool sales, paid in full to the guild treasury.' As long as the deacon's wool silver reaches the Factor's Hall, the Scales' bailiffs leave the chapel cloister alone." + (truthy(s.found_customs_vellum) ? " The Sinks toll register says the commutation was never owed. See [[sanctuary_charter|the chapel's sanctuary]]." : ""));
           }
           if (truthy(s.turned_in_customs_vellum)) {
             out.push("He gave the Grey Waterway Toll Register a closer look than anything else that crosses his desk. A junior clerk brought a jeweler's loupe and a black touchstone, the three-headed hawk was held to the lamplight, and the wax seal's edge was tested against the stone before Orlov rapped twice on the side door: 'Factor! The Black Sinks contract, the customs vellum's come in!' The Scales had wanted that register out of the flooded ruin for three seasons. 'Efficient work,' the Factor said, and the silver was counted onto the counter without further comment.");
           }
           if (truthy(s.discussed_orlov_past)) {
-            out.push("His debt bond was signed at the Gilded Scales head house on Port Valen's Civic Heights against his father's debts before his beard came in, and it is renewed every quarter-day. The tavern story says the same books hold the debtor crews in the channel off the Iron Wharves. The counting house does not need chains for men whose names live in a book. 'Morzan is the third factor I have served in this room. The first died of marsh fever with the ledgers balanced to the copper. The second was recalled upward to the head house, which is how the Scales put a man somewhere he cannot spend money. Factors rotate. Clerks stay. Somebody has to remember which seals are real.'");
+            out.push("His debt bond was signed at the Gilded Scales head house on Port Valen's Civic Heights against his father's debts before his beard came in, and it is renewed every quarter-day. The tavern story says the same books hold the debtor crews in the channel off the Iron Wharves. The Factor's Hall does not need chains for men whose names live in a book. 'Morzan is the third factor I have served in this room. The first died of marsh fever with the ledgers balanced to the copper. The second was recalled upward to the head house, which is how the Scales put a man somewhere he cannot spend money. Factors rotate. Clerks stay. Somebody has to remember which seals are real.'");
           }
           if (truthy(s.discussed_orlov_quills)) {
             out.push("Asked about the second quill scratching behind the Factor's door, he lays his pen down with exaggerated care. 'The Factor keeps his own accounts, as factors do. A chief clerk who counts what crosses the counter keeps his post to a comfortable old age. A chief clerk who wonders about the door wonders his way onto a river barge.' Unprompted, he adds that the head house sends auditors down from Civic Heights every quarter, and every quarter the books agree to the copper. He says it flat and exact, like a man reading a tide table.");
@@ -497,7 +497,7 @@
             out.push("Displaced folk who shelter here register for parish labor: spinning wool, mending sacks, keeping up the weir road. The Scales hold the river trade, the sawmills, and the toll posts, and to them refugees from the border estates look like cheap labor for the brine sumps and barge slips. Corbel pays the commutation to keep bailiffs like Rennick from dragging indebted families into the debt-dredges. An uneasy compromise, he calls it, but it keeps the peace. See [[sanctuary_charter|the chapel's sanctuary]].");
           }
           if (truthy(s.corbel_charter_argument)) {
-            out.push("A clause from a flooded ruin then came up the ridge steps: consecrated ground owes no tolls, so the commutation was never owed. Corbel tested it slowly, with his eyes closed, and made the only practical choice an old deacon with sixty mouths to feed can make. The chapel keeps paying. The clause is copied fair into the parish charter roll and kept where the counting house cannot hear of it, a wall against the day the Scales reach for more than the commutation.");
+            out.push("A clause from a flooded ruin then came up the ridge steps: consecrated ground owes no tolls, so the commutation was never owed. Corbel tested it slowly, with his eyes closed, and made the only practical choice an old deacon with sixty mouths to feed can make. The chapel keeps paying. The clause is copied fair into the parish charter roll and kept where the Factor's Hall cannot hear of it, a wall against the day the Scales reach for more than the commutation.");
           }
           return out;
         },
@@ -753,7 +753,7 @@
         },
         body: [
           "A port city built where the Grey River comes down out of its limestone gorge and spreads into the estuary. The river reaches it from a fork in the north, where its two arms meet: the Grey itself, running up to Alderford, and the Ashrun, a smaller stream from the western forest. The city climbs the slope behind the harbor in terraces of slate roofs and grey stone. It calls itself a free city, and has since the Old Charter of Meridian gave it the road and the right to keep its own gate. The doors on the plaza of the Heights all carry the same three-masted seal.",
-          "The city runs down in layers: the Heights with their council hall and bronze scale, the workshops and wagon yards of the Middle Ward, the wharves along the water, and at the canal's edge Dredge-End, a cramped warren of leaning terraces and broken lanes, older and poorer than the rest. The landward wall has two gates. The River Gate in the west opens on the Grey River road, which follows the river cuttings north to the fork. There the road to Timbermouth climbs the west arm into the uplands, forty miles from the city, while the river road goes on up the Grey to Alderford. The Charter Gate in the east opens on the old imperial road, which runs away east."
+          "The city runs down in layers: the Heights with their council hall and bronze scale, the workshops and wagon yards of the Middle Ward, the wharves along the water, and at the canal's edge Dredge-End, a cramped warren of leaning terraces and broken lanes, older and poorer than the rest. The Greybridge crosses the river just above its tidal reach, tying the city to the west-bank road. The landward wall has two gates. The River Gate in the west opens on the Grey River road, which follows the river cuttings north to the fork. There the road to Timbermouth climbs the west arm into the uplands, forty miles from the city. The Charter Gate in the east opens on the old imperial road; its north-east branch, the High Grey Road, crosses the high ground above the Grey to the weir town, thirty miles away."
         ],
         see: ["gilded_scales", "port_watch", "black_oath", "alderford", "iron_carrion", "harbor_quayside", "dredge_end", "middle_ward", "upper_wharves", "civic_heights", "council", "grey_marches"]
       },
@@ -765,7 +765,7 @@
         unlock: "codex_alderford",
         meter: { stat: "alderford_rep", label: "Standing in Alderford" },
         body: [
-          "A river town built around an old imperial limestone weir, where the highland road down from the Crags reaches the head of the Grey and the river drops away toward the gorge. Sawmills crowd the bank above the falls. Below them stand warehouses, drying sheds, salt lofts, and muddy wharves where the barges tie up to load for the downriver run. The brine trade is the town's spine: catches boiled in the riverfront pans, cured in the lofts above them, and packed downriver by watermen who know every shallow of the gorge."
+          "A river town built around an old imperial limestone weir, where the highland road down from the Crags reaches the head of the Grey and the river drops away toward the gorge. Sawmills crowd the bank above the falls. Below them stand warehouses, curing lofts, and muddy wharves where the barges tie up to load for the downriver run. The brine trade is the town's spine: carts bring salt up the High Grey Road from Valen, and the river catch is split, cured, dried, and packed into firkins for the run downriver."
         ],
         see: ["port_valen", "grey_river", "sanctuary_charter", "gilded_scales", "imperial_booms", "meridian_empire", "saint_althea", "iron_carrion", "grey_marches"]
       },
@@ -777,7 +777,7 @@
         unlock: "codex_river_gorge",
         body: [
           "A wide, navigable river running thirty miles between limestone bluffs and old imperial signal towers from Alderford down to Port Valen. It begins at the Alderford weir, where the hill streams gather into one channel. Above the weir there is only the highland road, with no barge water and no river town. The steady current makes a smooth downstream run for heavy grain barges and timber scows. The river damp, freezing autumn spray, and submerged imperial works like the anti-galley booms call for waterproofed gear and experienced watermen.",
-          "<b>Trade.</b> Downstream, the current carries a loaded barge from Alderford to Port Valen in a day. Upstream, the crew has to pole against it for days. So grain, salt, timber and coal ride down, and only light goods come back up: coin, cloth and finished wares. Barge owners fill the empty run home with whatever will pay a fee, and the Scales toll the river at both ends."
+          "<b>Trade.</b> Downstream, the current carries a loaded barge from Alderford to Port Valen in a day. Upstream, the crew has to pole against it for days. Grain, cured fish, timber, coal, and small ironwork ride down; the light upriver cargo is coin, cloth, and finished wares. Salt for Alderford's curing lofts comes by cart on the High Grey Road, not against the river current. Barge owners fill the empty run home with whatever will pay a fee, and the Scales toll the river at both ends."
         ],
         see: ["alderford", "port_valen", "imperial_booms", "grey_marches"]
       },
@@ -971,7 +971,7 @@
         body: function (s) {
           var out = [
             "An old rule from the Meridian provincial charter. Church ground is sanctuary: bailiffs, merchant factors, and debt-collectors may not cross the chapel lintel to seize the people sheltering behind it.",
-            "In practice, frontier parishes keep the peace with a payment called <i>Parish Commutation</i>. Sheltered refugees spin wool, weave cloth, and mend sacks on the church looms, and the deacon pays a quarterly fee from the wool sales to the town counting house. The deacon calls it an uneasy compromise: it satisfies the counting-house men and keeps the bailiffs from dragging families into the debt-dredges."
+            "In practice, frontier parishes keep the peace with a payment called <i>Parish Commutation</i>. Sheltered refugees spin wool, weave cloth, and mend sacks on the church looms, and the deacon pays a quarterly fee from the wool sales to the town Factor's Hall. The deacon calls it an uneasy compromise: it satisfies the Factor's clerks and keeps the bailiffs from dragging families into the debt-dredges."
           ];
           if (truthy(s.found_customs_vellum)) {
             out.push("The Sinks toll register holds a second clause of the same charter: consecrated ground owes no tolls at all. The commutation is not in the charter and never was. It is a levy the Scales added themselves.");

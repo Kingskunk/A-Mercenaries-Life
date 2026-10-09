@@ -295,6 +295,8 @@ function compile(){
   verifyFileName("timbermouth/ashrun_holt/landing.txt");
   verifyFileName("timbermouth/ashrun_holt/hide_yard.txt");
   verifyFileName("timbermouth/ashrun_holt/clearing.txt");
+  // Alderford follows the same one-hub, one-file-per-place shape as Timbermouth. Only its base hub exists so far; future place files each need a verifyFileName line here.
+  verifyFileName("alderford/alderford.txt");
   // The overworld (the road between towns, see its header comment): reached only by *goto_scene, from Timbermouth's exit and Port Valen's River Gate, so it is not in
   // *scene_list and needs its own line here or a compiled build fails with "scene doesn't exist" the moment the player leaves a town.
   verifyFileName("overworld/overworld.txt");
