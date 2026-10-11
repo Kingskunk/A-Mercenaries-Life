@@ -27,7 +27,7 @@
       body: [
         "A town of timber houses on a paved square, where the road from the river comes up out of the lowlands and meets three smaller roads, one from the forest and two from the farm country. It is a quarter of an hour on foot from one end to the other. A signboard at the mouth of the square gives its name.",
         "The forest is the Longshade, and its ash is stacked in long ranks under open sheds, each end-grain stamped with a grade mark and a year. The town has no wall, only gateposts at the mouth of each road. The Ashrun, a stony stream no wider than a road, comes down out of the forest past the sawmill and turns its wheel. It is too shallow for anything but loose logs, which are driven down it in the spring melt on their way to the Grey River, so nothing else travels by water here; the wells and a spring-fed trough in the square serve the town.",
-        "The town works wood and moves it: a sawmill, and a lane of workshops that turn timber into wheels, barrels and doors. The Gilded Scales hold the town from the Factor's Hall, a stone building with their river-serpent banner over its door. The market is a broad trading ground of bays and wagons where goods are sold by the lot or the cartload: graded timber and the pieces made from it, grain, salt, iron, coal, hides and pottery, with farm stalls at its edge, and a general store beside its gate sells rope, lamp oil, hardware and food for the road. The Split Pine inn keeps beds, a hall and a wagon yard."
+        "The town works wood and moves it: a sawmill, and a lane of workshops that turn timber into wheels, barrels and doors. The Gilded Scales hold the town from the Factor's Hall, a stone building with their river-serpent banner over its door. The market is a broad trading ground of bays and wagons where goods are sold by the lot or the cartload: graded timber and the pieces made from it, grain, salt, iron, coal, hides and pottery, with farm stalls at its edge, and a general store beside its gate sells rope, lamp oil, hardware and food for the road. The Crossfield Road runs through Barleycross to Alderford, moving forest goods east and salt, ironwork, cured fish and cloth back toward the Longshade. The Split Pine inn keeps beds, a hall and a wagon yard."
       ],
       see: ["gilded_scales", "split_pine", "workshops_lane", "marlows_store", "factors_hall_tm"]
     },
@@ -39,7 +39,7 @@
       unlock: "tm_lot_seen",
       body: [
         "A fenced lot of trodden earth on the far side of the Market, open to the forest road. Wagons stand in it nose to tail with their oxen picketed at one end, and a lean-to keeps the beasts out of the worst of the weather.",
-        "Caravans for Port Valen are made up here, with a wagon master, a slate and a handful of hired hands. The notice for the work is pinned on the board at the Factor's Hall, and the wagon master pays only those who are in the column when it rolls."
+        "Caravans for Port Valen are made up here, with a wagon master, a slate and a handful of hired hands, and on another day for Alderford, by the farm road to Barleycross and the Crossfield Road, with a night on the upland. The notice for the work is pinned on the board at the Factor's Hall, and the wagon master pays only those who are in the column when it rolls."
       ],
       see: ["factors_hall_tm", "timbermouth", "wagon_yard"]
     },

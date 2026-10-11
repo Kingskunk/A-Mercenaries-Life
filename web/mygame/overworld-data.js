@@ -9,6 +9,10 @@
  *   Overworld.duration(960)       ->  "about 16 hours"
  *   Overworld.span(960)           ->  "about 16 hours of walking"   (only the hours the clock will actually run: a "days of travel" figure was tried and removed 2026-10-07 because it was false, since nothing forces a camp)
  *
+ * TERRAIN (2026-10-11, the user's call): a way between two tiles has a terrain, the optional fourth value of its EDGES entry ("road" if left out). A road costs a mile at the usual pace; "overland" (pathless forest
+ * and other difficult ground, no road or track) takes TWICE as long a mile, the tabletop rule for difficult terrain; "blocked" cannot be crossed at all, and the route finder never uses it. The route finder picks the
+ * way that takes the LEAST TIME, not the fewest miles, so a long road beats a short slog through the trees. A leg carries its terrain and its pace (percent of a road mile), and the clock charges that pace mile by mile.
+ *
  * Adding a tile: one entry in NODES and one or more in EDGES here, and nothing else. The scene does not list tiles (the map panel owns picking and writes the tile the player
  * picked into ow_dest), so the world can grow to hundreds of tiles without touching a scene. tools/check_overworld_map.js checks this file is well formed.
  *
@@ -18,7 +22,7 @@
  * here is the line shown when the player stands on the tile. A tile may also carry hereNight (shown at Night and Pre-Dawn) and hereStorm (shown in dangerous weather, which wins over the
  * night line), so the approach to a town looks different by lamplight or in a gale; overworld.txt ow_here picks one. Each is a plain sentence or two, no people to be named.
  * also (optional) is a second terrain for a tile that is two things at once (a road through hills, wooded hills): one of the same kinds, drawn as a ring of its colour round the tile's own colour, and named
- * on the card ("Forest and hills"). It changes nothing else. kind picks the tile's colour in the panel: "city", "town", "village", "road", "hills", "forest" (add a kind here and a colour in overworldmap.css).
+ * on the card ("Forest and hills"). It changes nothing else. kind picks the tile's colour in the panel: "city", "town", "village", "fort", "road", "hills", "forest" (add a kind here and a colour in overworldmap.css).
  * territory (required) is who holds the tile: an id in TERRITORIES below. Every tile so far belongs to the Gilded Scales (the user's call, 2026-10-08). It is data only for now: nothing in the panel or the
  * scenes reads it yet, so it is the place to hang tolls, patrols, escort pay and danger by owner later. A new territory is one entry in TERRITORIES.
  * ford (optional, true): a crossing of running water the road makes here, where a road event (the ford) can happen; the event reads how high the water is from the weather's memory.
@@ -27,9 +31,10 @@
  * events it can draw (HALT_EVENTS below) and how likely a night in camp there is to be disturbed.
  * walk, camp, depart and arrive (optional) are plain text for the caravan escort (radiant/hall_escort.txt), written to read the same in either direction: walk describes the road as the line comes in to
  * this tile, camp is the ground when the line makes camp here, depart is how the line pulls out from here, and arrive is how it comes in when this tile is the end of the road. A road, forest or hills tile needs a walk.
- * departVia and arriveVia (optional) are for an end of the road with more than one road out of it (Port Valen has two): an object keyed by the neighbouring tile's id, and it wins over depart/arrive when the line
+ * walkVia (optional, 2026-10-11) is the same idea for the road as the line comes IN to a tile: an object keyed by the tile the line came from, used instead of walk (Timbermouth and Alderford have two ways in).
+ * departVia and arriveVia (optional) are for an end of the road with more than one road out of it (Port Valen, Timbermouth and Alderford have two): an object keyed by the neighbouring tile's id, and it wins over depart/arrive when the line
  * leaves toward, or comes in from, that tile. Port Valen's plain depart/arrive are the River Road ones.
- * x and y are the tile's place on the map in grid units (east and south positive); the panel scales them.
+ * x and y are the tile's place on the map in grid units (east and south positive); the panel scales them. They establish the map's geography and readability, not a ruler: an edge's miles are the actual travel distance and can be longer or shorter than its visual span when terrain, detours or route conditions demand it.
  * image (optional) is a picture drawn inside the tile's circle in place of the plain colour, for when the tiles get art: a URL or data: URI, circular crop. None have one yet.
  */
 (function (root) {
@@ -52,7 +57,7 @@
   // Which way north lies on the map as it is drawn, in degrees clockwise from straight up the screen (0 = north is up). The map panel draws a compass from this and lets the player turn the map
   // in quarter turns, the compass turning with it. It changes nothing about the tiles or distances. The map is laid out with north up (geography settled 2026-10-08, the user's call: the Grey
   // River comes down to the city from a fork in the north, shaped like a Y: Alderford lies up the east arm (the Grey proper) and Timbermouth up the west arm (the Ashrun). The River Road leaves Port Valen by the River Gate, follows the river north to the fork, and runs
-  // north-north-west toward Timbermouth. The High Grey Road is a separate north-east branch from the Charter Gate, climbing the high ground on the Grey's eastern side.
+  // north-north-west toward Timbermouth. The High Grey Road is a separate north-east branch from the Charter Gate, climbing the high ground on the Grey's eastern side. The Crossfield Road runs north-west from Alderford through Barleycross to Timbermouth, carrying forest goods, grain and finished wares without sending every load down to Port Valen first. The Longshade node is dense interior forest between Timbermouth, Ashrun Holt and Longshade Edge: its map links are player travel connections, not roads or regularly used trails. North of Alderford, the Coldspine runs east and west across the whole of the north, with few passes fit for wagons or an army and a fort in each. Its southern foothills hold Redvein and Whitefold; its last low spur comes down toward the Black Sinks, and the narrow ground between that spur and the marsh is the only practical freight way east.
   var NORTH = 0;
 
   // Who holds the land. Add a territory here and give its tiles its id.
@@ -60,6 +65,26 @@
   var TERRITORIES = {
     scales: { name: "The Gilded Scales", patrol: -1 }
   };
+
+  // How each terrain walks, as a percent of a road mile's time. "blocked" has no pace: it is never walked. name is what the map card calls the ground.
+  var TERRAIN = {
+    road: { name: "road", pace: 100 },
+    overland: { name: "pathless forest", pace: 200 },
+    blocked: { name: "impassable ground", pace: 0 }
+  };
+
+  // FEATURES are things drawn on the map under the tiles that are not tiles and are not walked: a mountain range today. A feature has a name, a colour class (kind, styled as .ow-f-<kind> in
+  // overworldmap.css), a label position (map units, the name is drawn upright whatever way the map is turned), the text of its card and `art`: the name of a hand-drawn SVG in
+  // web/mygame/overworld-art/<art>.svg, which tools/gen_overworld_art.js turns into overworld-art.js (read it for how to draw). Clicking a feature in the panel shows its card; nothing routes through one.
+  // Added 2026-10-11 from the user's drawing: the Coldspine runs east and west across the north with a gap, where Stonewatch stands, due north of the Crossfield Road, and its last low spur turns south at the
+  // east end toward the Black Sinks.
+  var FEATURES = [
+    {
+      id: "coldspine", name: "The Coldspine", kind: "range", art: "coldspine", label: [-1.5, -5.18],
+      info: "A broken mountain barrier that runs east and west across the whole north, between the Highlands and the lowlands the Gilded Scales hold. Its southern foothills hold the mines and quarries of Redvein and Whitefold, and its last low spur turns south to the Black Sinks.",
+      line: "Closed to travel on foot. The one way over it is the pass at Stonewatch."
+    }
+  ];
 
   var NODES = {
     pv: {
@@ -123,10 +148,75 @@
       walk: "The road tops the last of the high ground and runs on along the shoulder to a timber palisade, with the roar of the weir rising ahead.",
       depart: "The line pulls out from the carters' lot by the lower wharf lane, the oxen leaning into their yokes and the wagons groaning behind them, and climbs the steep street past the Factor's Hall to the palisade gate. The High Grey Road drops away south over the high ground, and the roar of the weir falls behind the tail wagon.",
       arrive: "The caravan labours up the last of the grade to the palisade gate and rolls down the steep street into Alderford, with the weir loud below and the mill smoke drifting across the road, and the wagons turn in at the carters' lot beside the Lower Wharf Market.",
+      departVia: { cf: "The line pulls out from the carters' lot by the lower wharf lane, the oxen leaning into their yokes and the wagons groaning behind them, and climbs the steep street past the Factor's Hall to the palisade gate. The Crossfield Road runs away west over the open upland, and the roar of the weir falls behind the tail wagon." },
+      arriveVia: { cf: "The caravan comes in off the upland road to the palisade gate and rolls down the steep street into Alderford, with the weir loud below and the mill smoke drifting across the road, and the wagons turn in at the carters' lot beside the Lower Wharf Market." },
+      walkVia: { cf: "The upland road dips toward the Grey, and the sound of the weir comes up to meet it. The palisade of Alderford shows ahead above the slope, with the mill smoke leaning over it." },
       info: "A river town at the old imperial limestone weir, thirty miles up the Grey from Port Valen. The High Grey Road reaches it from the south over the high ground.",
       here: "Alderford stands ahead around the old limestone weir, with timber wharves below the falls and sawmill roofs and smoke climbing the bank above them.",
       hereNight: "Alderford's wharf lamps shine below the dark line of the weir, while the town's smoke and rooflines fade into the cold above the river.",
       hereStorm: "Spray rises from the weir and the road has turned slick with rain. Alderford's wharves and mill roofs show only in brief, pale intervals through the weather."
+    },
+    cf: {
+      name: "The Crossfield Road", kind: "road", also: "hills", x: -0.25, y: -3.72, region: "The cross-country uplands",
+      territory: "scales",
+      danger: 2,
+      climate: -1,
+      walk: "The Crossfield Road runs over open upland between hedged fields and low stony rises. Its packed surface is deeply rutted by timber wagons going east and grain carts going west, with no settlement close enough to shelter either line.",
+      camp: "A broad verge beside an old stone field wall gives a wagon line room to pull off the road. There is no wood nearby, but a shallow ditch holds enough rainwater for animals after wet weather.",
+      info: "The cross-country road between Alderford and Timbermouth. It runs ten miles east to the weir town and eight miles north-west to Barleycross, carrying seasoned ash, charcoal and wagon parts toward Alderford, and salt, ironwork, cured fish and cloth back toward the forest country.",
+      here: "The road crosses open upland between low field walls and patches of rough pasture. Wheel ruts run hard and deep through the pale soil, with Alderford's hills behind one way and the farm country rising toward the other.",
+      hereNight: "The Crossfield Road is a pair of dark ruts between low walls and empty fields. Far off, a window or a cart lantern shows briefly and is gone behind a fold of ground.",
+      hereStorm: "Rain sweeps unchecked across the upland and fills the road ruts to their rims. The field walls offer little shelter, and the track is only a darker line through the weather."
+    },
+    rv: {
+      name: "Redvein", kind: "village", also: "hills", x: 1.1, y: -3.62, region: "The Coldspine foothills",
+      territory: "scales",
+      danger: 2,
+      climate: -1,
+      walk: "The Eastcut Road climbs the broken southern foot of the Coldspine, where red spoil has been tipped along the slopes. Low stone markers keep the wagons to firmer ground above the drop toward the Grey.",
+      camp: "A shelf below an old spoil heap gives enough level ground for a small camp. The hills are open to the wind, but a low wall of waste stone breaks it on the road side.",
+      depart: "The wagons pull out from Redvein's scale yard, turn onto the Eastcut Road and begin the long descent toward Alderford, their empty beds rattling over the stone.",
+      arrive: "The road climbs through the last red cut in the foothills before Redvein's cottages and pit sheds come into view above the wagons.",
+      info: "A mining village on the cold southern foot of the Coldspine, eight miles from Alderford. Red iron ore and lead-bearing stone go south by wagon to the town's iron yard; food, tools and timber props come back up the Eastcut Road.",
+      here: "Low stone cottages stand among red spoil heaps on the broken southern foot of the Coldspine. Beyond them, the dark mouths of the Eastcut lie under timber shelters, and a wagon road drops south toward the Grey.",
+      hereNight: "A few lamps burn in Redvein's low windows. One steady light marks the pit yard, while the red spoil heaps are only darker shapes against the hillside.",
+      hereStorm: "Rain or snow sweeps across the exposed hillside. Redvein's cottages huddle below the pit sheds, and the road has become a dark, slick cut between the heaps."
+    },
+    // Map connection only for now. Whitefold's village scenes will be built in a later pass.
+    wf: {
+      name: "Whitefold", kind: "village", also: "hills", x: 2.54, y: -3.56, region: "The Coldspine foothills",
+      territory: "scales",
+      danger: 1,
+      climate: -2,
+      info: "A limestone and sheep village on the southern foot of the Coldspine. Quarry stone, lime and upland wool travel south by cart through Limestone Cut; grain, salt and finished goods come back from Alderford.",
+      here: "Pale quarry faces rise behind a scatter of stone roofs and sheep folds. Covered stone yards and low lime kilns sit against the foothills, while carts wait on the hard ground below.",
+      hereNight: "A few lamps burn among Whitefold's stone roofs, and the lime kilns show as dull red points beneath the black mass of the Coldspine.",
+      hereStorm: "Rain or snow has washed the quarry faces pale and turned the yards to slurry. Whitefold's roofs and sheep folds huddle at the foot of the dark range."
+    },
+    lc: {
+      name: "Limestone Cut", kind: "road", also: "hills", x: 1.73, y: -2.50, region: "The Sinks gap",
+      territory: "scales",
+      danger: 1,
+      climate: -1,
+      walk: "The road crosses a narrow cut through pale limestone under the foot of the Coldspine's eastern spur, where an old cart track from the grain country joins the toll road between Alderford and the Black Sinks.",
+      camp: "A level patch of rough grass lies behind a low limestone bank beside the junction. A stone trough holds rainwater, and the cut gives a little shelter from the open hills.",
+      info: "A road junction on the last dry high ground before the Black Sinks. The toll road runs seven miles west to Alderford and seven miles east to the gatehouse; cart roads go south to Marlcross and north into the Coldspine foothills. The narrow gap between the spur and the marsh is the only practical wagon route east.",
+      here: "Pale walls of cut limestone rise on either side of the road junction. A weathered marker points west toward Alderford, east toward the Black Sinks, north toward the grain country and north-east toward the foothills. The ground falls away into wetter, reed-filled country beyond the eastern road.",
+      hereNight: "The cut is dark between its pale stone walls. A single road marker catches the starlight, while the three tracks disappear into the hills and low ground beyond.",
+      hereStorm: "Rain runs down the limestone walls and gathers in the wheel ruts at the junction. The road marker is blurred by the weather, and the eastern track vanishes into driven mist."
+    },
+    bs: {
+      name: "Black Sinks Gatehouse", kind: "fort", x: 2.58, y: -2.28, region: "The Black Sinks gap",
+      territory: "scales",
+      danger: 0,
+      climate: -1,
+      walk: "The toll road leaves the last low spur of the Coldspine for a raised strip of old stone, with black water and dead reeds spreading away on both sides toward the gatehouse.",
+      depart: "The gate opens after the last wagon has been checked, and the road rises away from the marsh toward Alderford between the drainage ditches.",
+      arrive: "The old stone gatehouse stands ahead behind a new timber palisade, its open gate facing the narrow causeway and the road from Alderford.",
+      info: "A Gilded Scales border fort at the eastern end of the Black Sinks Causeway, fourteen miles east-southeast of Alderford. Here the last low spur of the Coldspine meets the marsh, pinching all wagon traffic into one raised road. Scales militia check cargo, toll papers and wagons before they pass to the eastern border tracks.",
+      here: "The old stone gatehouse stands inside a new timber palisade where the last low spur of the Coldspine ends above the black water and dead reeds. A pair of raised barriers divide the road into narrow wagon lanes, and the Scales' black-and-gold banner hangs above the open gate.",
+      hereNight: "Lanterns burn over the gatehouse lanes and along the palisade. Beyond them, the Black Sinks are a flat darkness broken only by the pale line of the causeway.",
+      hereStorm: "Rain drives across the raised stone and the marsh beyond it. The gatehouse barriers are down, and the lamps over the wagon lanes show only as blurred yellow patches."
     },
     // Road-connected village tiles only. Their future place scenes are deliberately not built yet.
     bw: {
@@ -156,13 +246,30 @@
       info: "The road climbs through wooded hills along the edge of the Longshade, with wagon tracks turning off into the trees.",
       here: "The road climbs between wooded slopes, its paving broken and patched, with the forest standing close on its far side, dark under its trees, and wagon tracks turning off into it."
     },
+    // Map connection only for now. This is dense interior forest, not a settlement or a road junction.
+    lf: {
+      name: "The Longshade", kind: "forest", x: -2.86, y: -2.76, region: "The Longshade",
+      territory: "scales",
+      danger: 3,
+      climate: -1,
+      water: "a forest spring",
+      walk: "The forest closes around you in ash, pine and thorn. There is no maintained way through it: only animal runs, old cuts in the undergrowth and brief stretches of firmer ground before the trees swallow them again.",
+      camp: "A dry hollow beside a cold spring gives enough room for a small camp, though the trees crowd close beyond it. Wet deadfall is plentiful; sound does not carry far here.",
+      info: "The thick interior of the Longshade, six miles from Timbermouth, Ashrun Holt and Longshade Edge by difficult overland travel. No road crosses this ground, and most people have no reason to enter it beyond the nearest trees.",
+      here: "Tall ash and pine stand close enough to make a dim roof overhead, with thorn and fallen limbs thick between their trunks. A cold spring runs through a moss-lined hollow before disappearing under the roots.",
+      hereNight: "The Longshade is black beneath its canopy. Branches close over the little starlight above, and the spring is heard before it is seen among the trees.",
+      hereStorm: "Rain rattles through the high branches and turns the leaf mould black with water. The trees fade into the moving grey, and the spring has spilled across the hollow."
+    },
     tm: {
       name: "Timbermouth", kind: "town", x: -2.0, y: -3.46, region: "The Longshade",
       territory: "scales",
       danger: 1,
       depart: "The line pulls out from the road end past the squat stone watch post, the oxen leaning into their yokes and the wagons groaning behind them, and the clearing falls away behind the tail wagon as the road enters the trees.",
+      departVia: { fv: "The line pulls out from the wagon lot beside the Market, the oxen leaning into their yokes and the wagons groaning behind them, and turns off the main street onto the farm road, past the last stacked ranks of ash. The sawmill's whine falls away behind the tail wagon, and the hedged fields of the farm country open ahead." },
+      walkVia: { fv: "The farm road runs down between hedges and ditches, and then the fields give way to stacked ash and the long clearing opens ahead, with smoke over it and the whine of the saw frame carrying up the road." },
       walk: "The road runs down out of the hills and the forest closes in on both sides, and then the trees thin and the sky opens, and the road runs straight into a long clearing with smoke over it.",
       arrive: "The caravan comes down off the last of the hill into the clearing at the road's end, where a squat stone watch post stands beside the road and the roofs of Timbermouth rise beyond it.",
+      arriveVia: { fv: "The caravan comes in along the farm road from Barleycross, between the stacked ranks of ash and the first shingled roofs, with the saw frame's thin whine rising ahead, and the wagons turn in at the wagon lot beside the Market." },
       info: "A road town at the mouth of the Longshade, up from the Grey River, where three smaller roads meet the road from the river.",
       here: "The road comes out of the trees onto cleared ground, and Timbermouth lies ahead at the mouth of the forest: grey shingled roofs, long ranks of stacked ash on the near side, and a thread of smoke over the sawmill. The thin whine of the saw frame carries up the road, and the smell of cut pine comes with it.",
       hereNight: "Timbermouth is a low scatter of lamplight at the mouth of the forest. A single lantern burns at the road end, and the stacked ash behind it is only a darker dark. The saw frame is silent, and the smell of cut pine hangs in the cold air.",
@@ -174,6 +281,8 @@
       name: "Barleycross", kind: "village", x: -1.36, y: -4.06, region: "The farm country",
       territory: "scales",
       danger: 1,
+      walk: "The road runs between low hedged fields of barley and oats, with a ditch on either side, and the sails of a grain mill turn slowly ahead where the farm roads meet.",
+      camp: "A farmer's headland beside the road, trampled by earlier lines and ringed by hedge, with a stone trough at the gate. The mill stands dark against the sky, and the village keeps its dogs close and its gates shut.",
       info: "A farming village at a crossing of farm roads, six miles from Timbermouth. It feeds the town: barley, oats, root vegetables, hay, milk, eggs, pigs and poultry, and it raises mules and working horses.",
       here: "Low fields of barley and oats spread out on either side of the road, divided by hedges and ditches, and a cluster of thatched and shingled roofs stands at the crossing ahead, with the sails of a grain mill turning slowly beyond them. The air smells of cut hay and manure.",
       hereNight: "Barleycross is a few lit windows in the dark of the fields, with a dog barking somewhere among the farms and the smell of hay on the cold air.",
@@ -188,6 +297,61 @@
       here: "The road narrows to a track between the trunks, and the village opens in a clearing where the Ashrun comes down out of the trees: low log houses with bark roofs, logs stacked in long ranks, and blue charcoal smoke hanging under the canopy. The air smells of resin and wet bark, and the sound of axes carries from somewhere deeper in.",
       hereNight: "Ashrun Holt is a handful of red windows in the dark under the trees, with a charcoal burner's fire glowing low beyond the last house and the Ashrun loud in the silence.",
       hereStorm: "The forest roars over the village, and the Ashrun is brown and loud in its bed. Every house is shut, and the bark roofs steam under the rain."
+    },
+    // Stonewatch (2026-10-11, the user picked the name): the fort in the gap of the Coldspine, due north of the Crossfield Road, where the one wagon road to the Highlands passes under its walls. Map tile only for now.
+    // Everything in its text is invented to fit the Black Sinks gatehouse beside it in kind (a Scales border fort, militia, a toll check); the Highlands beyond are not on the map yet.
+    sw: {
+      name: "Stonewatch", kind: "fort", x: 0.01, y: -4.52, region: "The Coldspine pass",
+      territory: "scales",
+      danger: 1,
+      climate: -1,
+      walk: "The road leaves the farm country and climbs between stony slopes, where the trees give way to scree and the wind has an edge, toward a dark wall of stone across the way.",
+      depart: "The gate opens once the last wagon has been counted, and the road drops from the pass between the scree slopes toward the farm country and the Crossfield Road.",
+      arrive: "The road climbs the last switchbacks to the gap, and Stonewatch stands across it: a grey stone fort built across the width of the road, its gate open and its walls running up the slopes on either side.",
+      info: "A Gilded Scales fort built across the one gap in the Coldspine that wagons can use, ten miles north of the Crossfield Road. Everything that travels between the Highlands and the lowlands passes under its walls, and Scales militia check cargo, toll papers and travellers before they let it through.",
+      here: "A grey stone fort stands across the gap, its walls running up the scree slopes on either side until the mountain itself closes them in. The road passes through a single gate with a barrier across it, and the Scales' black-and-gold banner hangs over the wall above.",
+      hereNight: "Torches burn along the wall walks and over the gate, and the pass beyond is a black wedge between the slopes. The wind comes down off the high ground with the cold of snow in it.",
+      hereStorm: "Rain or sleet drives down the pass and rattles on the fort's walls. The gate is shut, the barrier is down, and the torches over it gutter in the wind."
+    },
+    // Three forest tiles round Ashrun Holt (2026-10-11, the user's sketch): map tiles only, no place scenes, joined to the village and to each other by pathless ways. The Upper Ashrun is the one with a character of its own
+    // (the stream the village is named for); the Old Ash and the Charcoal Camp are inside the village's own clearing, so they are not here.
+    ua: {
+      name: "The Upper Ashrun", kind: "forest", x: -3.81, y: -3.9, region: "The Longshade",
+      territory: "scales",
+      danger: 3,
+      climate: -1,
+      water: "the Ashrun",
+      walk: "The ground lifts and the trees close in, and there is no path: the way keeps to the Ashrun, picking a line over wet roots and along the gravel bars of a stony stream.",
+      camp: "A gravel bar under an overhang of ash roots gives flat, dry ground a few steps from the water. The stream is loud enough to cover any sound, including your own.",
+      info: "The Ashrun above its village: a stony stream coming down through thick forest, west of Ashrun Holt. There is no road, only the gravel bars and the hunters' blazes cut into the bark.",
+      here: "The Ashrun runs shallow and loud over grey stones between banks of moss and root, with the forest crowding close on both sides. A few trunks carry old blazes cut at the height of a man's shoulder, nearly healed over.",
+      hereNight: "The stream is the only sound under the trees, and the dark between the trunks is complete. The pale gravel bars show faintly where the water has worn them.",
+      hereStorm: "Rain drives down through the branches and the Ashrun runs brown and fast over its stones, loud enough to drown the wind. Every bar of gravel is under water."
+    },
+    // The other two are plain Longshade forest (the user's call, 2026-10-11): they do not need a name or a use of their own, and a hunting ground or a felling would not lie six miles out from the village anyway.
+    ln: {
+      name: "North Longshade", kind: "forest", x: -3.0, y: -4.55, region: "The Longshade",
+      territory: "scales",
+      danger: 3,
+      climate: -1,
+      walk: "The trees press close, ash and pine over thorn and fallen limbs, and there is no way through them: only animal runs and old cuts in the undergrowth that peter out within a few strides.",
+      camp: "A dry hollow under a leaning ash, with room for a small camp. Deadfall is plentiful and damp, and the crowding trunks swallow sound.",
+      info: "Deep forest north of Ashrun Holt. No road crosses this ground, and nothing draws anyone into it beyond the nearest trees.",
+      here: "Tall ash and pine stand close enough to make a dim roof, with thorn and fallen limbs thick between the trunks. There is no path, and no sound but the wind in the high branches.",
+      hereNight: "The forest is black overhead, and the dark between the trunks is complete. Branches creak above, and something small moves in the leaf litter and goes still.",
+      hereStorm: "Rain rattles through the high branches and the whole forest roars. The leaf mould runs black with water, and the trees blur into the moving grey."
+    },
+    le: {
+      name: "Northeast Longshade", kind: "forest", x: -2.2, y: -4.5, region: "The Longshade",
+      territory: "scales",
+      danger: 3,
+      climate: -1,
+      walk: "The forest rolls over long low swells under thick ash and thorn, with no road and no track, only the runs the deer have worn and the places where the undergrowth is thin enough to push through.",
+      camp: "A level patch among the roots of a fallen pine, screened by thorn on every side. Sound does not carry far here.",
+      info: "Deep forest north of Timbermouth and beyond the Barleycross fields, where the farmland gives out. No road crosses this ground.",
+      here: "Ash and thorn crowd the long swells of the ground, and the light comes down green and dim. Fallen limbs lie where they dropped, furred with moss, and no path runs anywhere.",
+      hereNight: "The trees close out the stars, and the forest is a dark held in by sound: the creak of limbs, the drip of water, the slow rustle of leaves.",
+      hereStorm: "Wind drives through the crowns and rain follows it, drumming down through the branches. The hollows between the swells fill with running water."
     }
   };
 
@@ -200,20 +364,42 @@
     ["ar2", "af", 10],
     ["r1", "bw", 6],
     ["ar1", "mc", 6],
+    ["af", "cf", 10],
+    ["cf", "sw", 10],
+    ["cf", "fv", 8],
+    ["af", "rv", 8],
+    ["rv", "wf", 9],
+    ["af", "lc", 7],
+    ["lc", "wf", 8],
+    ["lc", "bs", 7],
+    ["mc", "lc", 10],
     ["r2", "r3", 10],
+    // Forest links are map travel connections, not roads or maintained tracks: overland, twice the time a road mile takes.
+    ["r3", "lf", 6, "overland"],
+    ["lf", "tm", 6, "overland"],
+    ["lf", "fo", 6, "overland"],
     ["r3", "tm", 10],
     ["tm", "fv", 6],
-    ["tm", "fo", 9]
+    ["tm", "fo", 9],
+    // The forest round Ashrun Holt (the user's sketch): the village to each of three forest tiles, the three to each other in a ring, and the western one back to the Longshade. All pathless.
+    ["fo", "ua", 6, "overland"],
+    ["fo", "ln", 5, "overland"],
+    ["fo", "le", 5, "overland"],
+    ["ua", "ln", 7, "overland"],
+    ["ln", "le", 5, "overland"],
+    ["ua", "lf", 10, "overland"]
   ];
 
   var adj = {};
   Object.keys(NODES).forEach(function (id) { adj[id] = []; });
   EDGES.forEach(function (e) {
-    adj[e[0]].push({ to: e[1], miles: e[2] });
-    adj[e[1]].push({ to: e[0], miles: e[2] });
+    var terrain = e[3] || "road", T = TERRAIN[terrain];
+    if (!T || !(T.pace > 0)) return;   // a blocked way is drawn on the map but never walked
+    adj[e[0]].push({ to: e[1], miles: e[2], terrain: terrain, pace: T.pace });
+    adj[e[1]].push({ to: e[0], miles: e[2], terrain: terrain, pace: T.pace });
   });
 
-  // The shortest way from one tile to another (by miles), by Dijkstra: the map is tiny, so a plain scan is enough.
+  // The QUICKEST way from one tile to another (by time, so a mile of pathless forest counts double), by Dijkstra: the map is tiny, so a plain scan is enough.
   function route(from, to) {
     if (!NODES[from] || !NODES[to]) return { ok: false, path: [], legs: [], miles: 0, minutes: 0 };
     var dist = {}, prev = {}, done = {};
@@ -225,7 +411,7 @@
       if (cur === null || cur === to) break;
       done[cur] = true;
       adj[cur].forEach(function (n) {
-        var d = dist[cur] + n.miles;
+        var d = dist[cur] + n.miles * n.pace;
         if (d < dist[n.to]) { dist[n.to] = d; prev[n.to] = cur; }
       });
     }
@@ -233,13 +419,17 @@
     var path = [to];
     while (path[0] !== from) path.unshift(prev[path[0]]);
     // one entry per road walked, so a journey can be charged leg by leg (the weather changes while you walk)
-    var legs = [];
+    var legs = [], miles = 0, minutes = 0;
     for (var i = 0; i < path.length - 1; i++) {
-      var m = 0;
-      adj[path[i]].forEach(function (n) { if (n.to === path[i + 1]) m = n.miles; });
-      legs.push({ from: path[i], to: path[i + 1], miles: m, minutes: m * MINUTES_PER_MILE });
+      var m = 0, pace = 100, terrain = "road";
+      // the cheapest way between the two tiles, if a pair were ever joined twice
+      var bestCost = Infinity;
+      adj[path[i]].forEach(function (n) { if (n.to === path[i + 1] && n.miles * n.pace < bestCost) { bestCost = n.miles * n.pace; m = n.miles; pace = n.pace; terrain = n.terrain; } });
+      var mins = Math.round(m * MINUTES_PER_MILE * pace / 100);
+      legs.push({ from: path[i], to: path[i + 1], miles: m, pace: pace, terrain: terrain, minutes: mins });
+      miles += m; minutes += mins;
     }
-    return { ok: true, path: path, legs: legs, miles: dist[to], minutes: dist[to] * MINUTES_PER_MILE };
+    return { ok: true, path: path, legs: legs, miles: miles, minutes: minutes };
   }
 
   // "about 12 hours", "about a day", "about a day and a half", "about 2 days".
@@ -287,6 +477,8 @@
           continue;
         }
         var pace = dark ? (mounted ? MOUNT_DARK_MINUTES_PER_MILE : DARK_MINUTES_PER_MILE) : (t >= DUSK_START ? (mounted ? MOUNT_DUSK_MINUTES_PER_MILE : DUSK_MINUTES_PER_MILE) : (mounted ? MOUNT_MINUTES_PER_MILE : MINUTES_PER_MILE));
+        // the terrain of this leg: a mile of pathless forest takes twice the time (calendar.txt travel_step applies the same percent, so the forecast and the trip agree)
+        pace = Math.round(pace * (r.legs[i].pace || 100) / 100);
         if (dark) nightMiles++;
         else if (t >= DUSK_START) duskMiles++;
         walk += pace; advance(pace);
@@ -425,7 +617,8 @@
     while (i < legs.length) {
       var L = legs[i], n = NODES[L.to], lm = L.miles * pace;
       t += lm; mins += lm; miles += L.miles; i++;
-      if (n.walk && walk.length < 3) walk.push(n.walk);
+      var wtext = (n.walkVia && n.walkVia[L.from]) || n.walk;
+      if (wtext && walk.length < 3) walk.push(wtext);
       if (i >= legs.length) { stop = "pay"; break; }
       var nm = legs[i].miles * pace;
       if (t + nm > CAMP_BY) { stop = "camp"; break; }
@@ -455,5 +648,5 @@
     return Math.max(Math.floor(full * (beats - lost) / beats), Math.floor(full / 3));
   }
 
-  root.Overworld = { MINUTES_PER_MILE: MINUTES_PER_MILE, nodes: NODES, edges: EDGES, territories: TERRITORIES, convoyPlan: convoyPlan, convoyNight: convoyNight, convoyFee: convoyFee, coinText: coinText, convoyMaxLegs: CONVOY_MAX_LEGS, dangerOf: function (id) { return dangerOf(NODES[id]); }, mountMinutesPerMile: MOUNT_MINUTES_PER_MILE, convoyPace: CONVOY_PACE, haltEvents: HALT_EVENTS, travelEventPlan: travelEventPlan, travelEvents: TRAVEL_EVENTS, campEventPlan: campEventPlan, campEvents: CAMP_EVENTS, campChance: CAMP_CHANCE, travelCooldownDays: TRAVEL_COOLDOWN_DAYS, travelChance: TRAVEL_CHANCE, route: route, duration: duration, span: span, label: label, travelPlan: travelPlan, north: NORTH };
+  root.Overworld = { MINUTES_PER_MILE: MINUTES_PER_MILE, features: FEATURES, terrains: TERRAIN, nodes: NODES, edges: EDGES, territories: TERRITORIES, convoyPlan: convoyPlan, convoyNight: convoyNight, convoyFee: convoyFee, coinText: coinText, convoyMaxLegs: CONVOY_MAX_LEGS, dangerOf: function (id) { return dangerOf(NODES[id]); }, mountMinutesPerMile: MOUNT_MINUTES_PER_MILE, convoyPace: CONVOY_PACE, haltEvents: HALT_EVENTS, travelEventPlan: travelEventPlan, travelEvents: TRAVEL_EVENTS, campEventPlan: campEventPlan, campEvents: CAMP_EVENTS, campChance: CAMP_CHANCE, travelCooldownDays: TRAVEL_COOLDOWN_DAYS, travelChance: TRAVEL_CHANCE, route: route, duration: duration, span: span, label: label, travelPlan: travelPlan, north: NORTH };
 })(typeof window !== "undefined" ? window : global);

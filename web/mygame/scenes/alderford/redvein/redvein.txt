@@ -1,0 +1,138 @@
+*comment ====================================================================================
+*comment REDVEIN: Alderford's eastern mining village (overworld tile "rv"). The Eastcut,
+*comment Gather House and Red Lantern are its only destinations. The ropewalk, repair shed,
+*comment weigh yard and spoil heaps remain Layer 1 scenery until they have gameplay to support.
+*comment ====================================================================================
+
+*label rv_arrive
+*set minutes_to_pass 5
+*set time_advance_call_id "rv_arrive_1"
+*gosub rv_walk_time
+*temp rv_first false
+*if (not(rv_seen))
+  *set rv_first true
+*set rv_seen true
+*if (rv_first)
+  The Eastcut Road climbs out of the last fold above Alderford to the southern foot of the Coldspine, where a scatter of stone cottages stands beneath red spoil heaps. Beyond their roofs, timber sheds cover dark openings in the hillside, and a bell hangs above the largest gate.
+*else
+  The Eastcut Road comes back into Redvein between the spoil heaps and the low stone cottages.
+*goto redvein
+
+*label redvein
+*set current_district "redvein"
+*gosub_scene calendar update_hub_condition
+*set shop_open ""
+[b]◈ REDVEIN[/b]
+*line_break
+[b][⏳ Redvein Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
+*line_break
+*gosub rv_place
+*gosub rv_sky
+*gosub rv_street
+
+*choice
+  *if (weather_severity < 3)
+    # [b]The Eastcut[/b]: pit yards, ore sorting and the mine road. [~5 min]
+      *goto_scene alderford/redvein/eastcut rv_eastcut
+  *if (weather_severity >= 3)
+    # [b]The Eastcut[/b]: shut behind its gates in this weather.
+      *goto rv_eastcut_closed
+  # [b]The Gather House[/b]: notices, benches and the village's public business. [~5 min]
+    *goto_scene alderford/redvein/gather_house rv_gather_house
+  # [b]The Red Lantern[/b]: a meal, a bed and a stable yard off the Eastcut Road. [~5 min]
+    *goto_scene alderford/redvein/red_lantern rv_red_lantern
+  # [b]The Eastcut Road[/b]: leave the village.
+    *set ow_pos "rv"
+    *goto_scene overworld/overworld ow_here
+
+*label rv_eastcut_closed
+[b]◈ THE EASTCUT[/b]
+*line_break
+The gate across the work path is shut and barred. Beyond it, rain or snow turns the red slopes dark and slick, and the mine mouths have been covered against the weather. The bell rope has been tied up beneath its frame.
+*page_break Return to the village road...
+*goto redvein
+
+*comment ── LAYER 1: PLACE ──
+*label rv_place
+Redvein occupies a fold in the southern foothills of the Coldspine, where the ground has been cut open in long red scars. Low cottages of rough grey stone stand on the lower slope, their roofs held down with stones against the wind. Above them, spoil heaps rise in uneven ridges, grassed over in places and raw where fresh loads have been tipped. The Eastcut Road enters between two of the heaps and bends south toward Alderford.
+
+The Eastcut lies on the higher side of the village. A packed work yard runs before timber shelters built over the mine mouths, with sorting tables, empty ore carts and a tall wheel for lifting loads. A long shed beside the road holds spare beams, rope and shovels. Below the yard, wagons wait at a broad scale platform before taking their loads down the ridge.
+
+The Gather House faces a small open space near the cottages, a square stone building with a bell over its door and benches under the eaves. The Red Lantern stands on the road side of the same space, its lower walls built of stone and its upper floor of dark boards. Behind it, a walled yard holds hitching rails, a trough and three covered stalls. The air smells of cold stone, damp earth, smoke and the sharp iron scent of fresh-cut ore.
+*return
+
+*comment ── LAYER 2: SKY ──
+*label rv_sky
+*temp rv_dark false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set rv_dark true
+*if (weather = "Rain")
+  Rain runs in thin dark lines down the spoil heaps and gathers in the wheel tracks below the Eastcut.
+*elseif (weather = "Storm")
+  Wind sweeps loose grit across the open yard, and the bell above the mine gate has been tied still.
+*elseif (weather = "Fog")
+  Fog fills the lower folds of the hills, leaving the nearer spoil heaps and pit sheds as dark shapes above it.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow catches on the heap tops and turns the road through the village to red-grey slush.
+*elseif (weather = "Blizzard")
+  Snow races along the exposed slope and hides the far end of the work yard behind a moving white screen.
+*elseif (weather = "Clear")
+  *if (rv_dark)
+    Starlight catches on pale stones in the heaps, while the pit sheds stand black against the slope.
+  *elseif (time_period = "Dusk")
+    Low light deepens the red cuts in the hills and leaves the cottage roofs dark below them.
+  *else
+    Clear light picks out the red earth in the cut slopes and the dark wall of the Coldspine beyond the village.
+*else
+  A low overcast lies across the hills and flattens the colour of the spoil heaps and road.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Water still lies in the deeper wheel tracks, and the lower edge of the work yard remains soft underfoot.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The road is drying from the centre outward, though dark patches remain beneath the heaps.
+*return
+
+*comment ── LAYER 3: STREET ──
+*label rv_street
+*temp rv_vignette (((campaign_day * 24) + clock_hour) modulo 6) + 1
+*if ((street_life = "empty") and (not(rv_dark)))
+  The open space is empty for the moment. Smoke from the cottages and the faint knock of work behind the Eastcut gate are the only signs of movement.
+  *return
+*if (rv_dark)
+  *if (rv_vignette = 1)
+    A lamp moves across the Eastcut yard, then vanishes behind the sorting shed.
+  *elseif (rv_vignette = 2)
+    The Red Lantern's yard light catches on the wet hitching rails.
+  *elseif (rv_vignette = 3)
+    A cart chain gives a single hard clink somewhere above the cottages.
+  *elseif (rv_vignette = 4)
+    The Gather House bell frame creaks in the wind.
+  *elseif (rv_vignette = 5)
+    A shutter closes on one of the upper cottages, and the sound carries across the open slope.
+  *else
+    Water drips from the edge of a spoil heap into a rut beside the road.
+  *return
+*if (rv_vignette = 1)
+  Two people sort red stone from pale waste at a long table beside the Eastcut gate.
+*elseif (rv_vignette = 2)
+  An ore wagon backs slowly onto the scale platform while another waits clear of the road.
+*elseif (rv_vignette = 3)
+  A coil of fresh rope is carried from the long shed toward the pit yard.
+*elseif (rv_vignette = 4)
+  Someone sweeps loose red grit away from the Gather House step with a stiff brush.
+*elseif (rv_vignette = 5)
+  A mule shakes its harness in the Red Lantern yard while hay is forked down from the loft.
+*else
+  A short line of empty carts stands along the road, their beds dusted red from earlier loads.
+*return
+
+*label rv_walk_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return

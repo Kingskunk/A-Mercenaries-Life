@@ -3841,6 +3841,19 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *set combat_turn_advanced_this_page true
 *return
 
+*label fight_enemy_quickdraw
+*comment The row-2 quick-draw as a label, for the places that need it beside the one inline in the player branch: a cornered RANGED enemy swaps its SCRATCH attack fields for its sidearm for this one attack (never its durable
+*comment combat_enemyN_* storage, so the bow is back next turn), with no special move. A type with no sidearm ("") is left alone and shoots at whatever penalty applies. The caller clears combat_enemy_used_sidearm.
+*if ((combat_enemy_weapon_type = "ranged") and (not(combat_enemy_sidearm_weapon_type = "")))
+  *set combat_enemy_weapon_type combat_enemy_sidearm_weapon_type
+  *set combat_enemy_atk_bonus combat_enemy_sidearm_atk_bonus
+  *set combat_enemy_dmg_dice_sides combat_enemy_sidearm_dmg_dice_sides
+  *set combat_enemy_dmg_bonus combat_enemy_sidearm_dmg_bonus
+  *set combat_enemy_dmg_type combat_enemy_sidearm_dmg_type
+  *set combat_enemy_move2_chance 0
+  *set combat_enemy_used_sidearm true
+*return
+
 *label combat_next_turn
 *comment The turn queue's dispatcher: walks combat_turn_kind_*/_slot_* (startup.txt) one combatant at a time, in
 *comment the order combat_roll_initiative built. A dead enemy slot, or an "ally" entry (no ally AI exists yet), is
@@ -3891,8 +3904,12 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *gosub_scene combat_ai find_intercepting_ally
     *comment A melee enemy picks its NEAREST opponent instead (choose_melee_enemy_target, combat_ai.txt): it overwrites combat_intercepting_ally and sets combat_enemy_goal_ally. Ranged enemies keep the line above as it was.
     *set combat_enemy_goal_ally 0
+    *set combat_ranged_cornered false
+    *comment A RANGED enemy picks by wounds, not distance (choose_ranged_enemy_target): the most wounded opponent, and if one shares its tile it is cornered and picks among those.
     *if (not(combat_enemy_weapon_type = "ranged"))
       *gosub_scene combat_ai choose_melee_enemy_target cnt_slot
+    *else
+      *gosub_scene combat_ai choose_ranged_enemy_target cnt_slot
     *comment Surprise round (5e RAW: a surprised creature takes no action and no move on its first turn in the
     *comment order). combat_turn_first_pass_* (startup.txt) tracks whether THIS queue position has ever dispatched
     *comment before -- read once, then cleared unconditionally, so an enemy that wins this check only loses its
@@ -3942,7 +3959,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       [b][😲 ${combat_enemy_name} Surprised — turn lost][/b]
       *line_break
       *set combat_turn_advanced_this_page true
-    *elseif ((((combat_enemy_weapon_type = "ranged") and (combat_enemy_range <= 0)) and (combat_intercepting_ally > 0)) and (combat_enemy_can_retreat))
+    *elseif (((combat_enemy_weapon_type = "ranged") and (combat_ranged_cornered)) and (combat_enemy_can_retreat))
+      *comment (2026-10-11) Cornered now means ANY opponent shares this enemy's lane tile (combat_ranged_cornered, choose_ranged_enemy_target), not "engaged with the player and a player's ally nearby".
       *comment Rows 3-4: a melee ally is already in the shared adjacency bucket (combat_intercepting_ally,
       *comment computed above by find_intercepting_ally) -- normally that claims this enemy's turn outright, the
       *comment *elseif just below. A cornered RANGED type that opted in (combat_enemy_can_retreat) preempts that
@@ -4009,9 +4027,18 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
           *gosub fight_booming_trigger
           *if (combat_boom_killed)
             *goto cnt_boom_tail
-          *gosub_scene combat_ai fight_pick_enemy_move
-          *gosub_scene combat_dice resolve_enemy_attack
-          *gosub_scene combat_prose fight_narrate_enemy_turn
+          *comment The target is chosen again from the new tile (2026-10-11): the one it was cornered by is usually clear now, and the shot goes to the most wounded of everyone it can see, not always to the player.
+          *gosub_scene combat_ai choose_ranged_enemy_target cnt_slot
+          *if (combat_intercepting_ally > 0)
+            *if (combat_ranged_cornered)
+              *gosub fight_enemy_quickdraw
+            *gosub_scene combat_dice resolve_enemy_attack_on_ally combat_intercepting_ally
+            *gosub_scene combat_prose fight_narrate_ally_attack "enemy" cnt_slot "ally" combat_intercepting_ally combat_enemy_atk_on_ally_hit
+            *set combat_enemy_used_sidearm false
+          *else
+            *gosub_scene combat_ai fight_pick_enemy_move
+            *gosub_scene combat_dice resolve_enemy_attack
+            *gosub_scene combat_prose fight_narrate_enemy_turn
           *if (combat_player_can_die) and (hp_current <= 0)
             *goto fight_player_died
           *if (not(combat_player_can_die)) and (hp_current <= 1)
@@ -4029,7 +4056,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *comment A ranged snipe at a non-adjacent ally may still take a single legal terrain step before the shot.
       *comment A genuinely cornered archer has combat_enemy_range 0 and therefore skips this, preserving the
       *comment existing quick-draw/retreat behavior above.
-      *if (((combat_enemy_weapon_type = "ranged") and (combat_enemy_range > 0)) and (combat_ai_terrain_step_direction != "none"))
+      *if ((((combat_enemy_weapon_type = "ranged") and (combat_enemy_range > 0)) and (not(combat_ranged_cornered))) and (combat_ai_terrain_step_direction != "none"))
         *gosub_scene combat_movement combat_lane_move_enemy_to_position cnt_slot combat_ai_terrain_step_destination
         *gosub_scene combat_movement combat_range_name combat_enemy_range
         *if (combat_ai_terrain_step_reason = "cover")
@@ -4044,8 +4071,12 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *gosub fight_booming_trigger
         *if (combat_boom_killed)
           *goto cnt_boom_tail
+      *comment A cornered ranged enemy (the ally it picked shares its tile) cannot back off, so it draws its sidearm for this attack, exactly as it does against the player (2026-10-11).
+      *if ((combat_enemy_weapon_type = "ranged") and (combat_ranged_cornered))
+        *gosub fight_enemy_quickdraw
       *gosub_scene combat_dice resolve_enemy_attack_on_ally combat_intercepting_ally
       *gosub_scene combat_prose fight_narrate_ally_attack "enemy" cnt_slot "ally" combat_intercepting_ally combat_enemy_atk_on_ally_hit
+      *set combat_enemy_used_sidearm false
       *set combat_turn_advanced_this_page true
     *elseif (combat_enemy_goal_ally > 0)
       *comment NEAREST-TARGET CLOSING (2026-10-11): the nearest opponent is an ally that is not in reach yet, so this enemy closes on IT, not on the player. Same tempo as closing on the player: a free step, and
@@ -4295,6 +4326,9 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *temp cnt_ar_range {(("combat_ally" & cnt_slot) & "_range")}
     *temp cnt_ar_can_retreat {(("combat_ally" & cnt_slot) & "_can_retreat")}
     *gosub_scene combat_ai find_melee_ally_present
+    *comment Cornered (2026-10-11): any living enemy shares this ally's lane tile (combat_ai_ally_cornered), whoever it is, not "my own range to my last target is 0 and a melee ally stands nearby".
+    *gosub_scene combat_ai combat_ai_ally_cornered cnt_slot
+    *temp cnt_ar_cornered combat_ally_cornered
     *if (cnt_a_chase_target > 0)
       *comment Commit-and-chase continuation, ally side (2026-09-29, plan §11.3, "6a" mirror) -- checked before
       *comment select_ally_attack_target even runs, since an active chase overrides its ordinary pick entirely.
@@ -4318,7 +4352,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *set combat_turn_advanced_this_page true
       *else
         *gosub do_ally_chase_step cnt_slot
-    *elseif ((((cnt_ar_weapon = "ranged") and (cnt_ar_range <= 0)) and (cnt_ar_can_retreat)) and (combat_melee_ally_present))
+    *elseif (((cnt_ar_weapon = "ranged") and (cnt_ar_cornered)) and (cnt_ar_can_retreat))
       *comment Ally-side rows 3-4 mirror (2026-09-29, on request): a cornered ranged ally (weapon_type "ranged",
       *comment own range <= 0) that opted in (combat_ally<N>_can_retreat) with a melee ally already at range 0 to
       *comment give whatever's threatening her something else to hit (combat_melee_ally_present, computed above)
@@ -4334,7 +4368,9 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *comment Disengage mirror: no opportunity attack at all (RAW: Disengage suppresses it entirely, a
         *comment stronger guarantee than Retreat's "provokes but the shot is worth it"), and no shot this turn --
         *comment the whole turn spent surviving, same as the enemy side's own Disengage.
-        *gosub_scene combat_movement combat_lane_move_ally_relative_to_target cnt_slot 0 "away"
+        *temp cnt_ar_back {(("combat_ally" & cnt_slot) & "_position")}
+        *set cnt_ar_back (cnt_ar_back - 1)
+        *gosub_scene combat_movement combat_lane_move_ally_to_position cnt_slot 0 cnt_ar_back
         *set cnt_ar_range {(("combat_ally" & cnt_slot) & "_range")}
         *gosub_scene combat_movement combat_range_name cnt_ar_range
         *rand cnt_ar_rv 1 3
@@ -4366,7 +4402,9 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
           *comment this re-set the "Falls Back" line below would print the enemy's own name breaking off, not hers.
           *set combat_attacker_name {(("combat_ally" & cnt_slot) & "_name")}
           *set combat_attacker_epithet {(("combat_ally" & cnt_slot) & "_epithet")}
-          *gosub_scene combat_movement combat_lane_move_ally_relative_to_target cnt_slot 0 "away"
+          *temp cnt_ar_back2 {(("combat_ally" & cnt_slot) & "_position")}
+          *set cnt_ar_back2 (cnt_ar_back2 - 1)
+          *gosub_scene combat_movement combat_lane_move_ally_to_position cnt_slot 0 cnt_ar_back2
           *set cnt_ar_range {(("combat_ally" & cnt_slot) & "_range")}
           *gosub_scene combat_movement combat_range_name cnt_ar_range
           *rand cnt_ar_rv 1 3
@@ -4443,24 +4481,28 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
           *comment combat_enemy_range, so this ally can be nearer to (or farther from) the target than the player is.
           *comment Dashes (closes a second tier) if the free move alone still doesn't reach -- no attack to give up
           *comment either way this turn -- and only attacks this same turn if the free move alone was enough.
-          *gosub_scene combat_ai roll_ally_chase_commit cnt_slot
+          *comment The one-roll commit-and-chase (roll_ally_chase_commit) is no longer called (2026-10-11): select_ally_attack_target already sends a melee ally at the NEAREST enemy, every turn, with no dice.
           *if ({(("combat_ally" & cnt_slot) & "_chase_target")} > 0)
             *gosub do_ally_chase_step cnt_slot
           *else
-            *gosub_scene combat_movement combat_lane_move_ally_relative_to_target cnt_slot combat_active_target "toward"
+            *comment Moves from the ally's REAL lane coordinate, one step toward its target in whichever direction that is (the old helper rebuilt the position from the stored range and only ever walked one way).
+            *temp cnt_a_before_first_step {(("combat_ally" & cnt_slot) & "_position")}
+            *gosub_scene combat_movement combat_lane_step_ally_from_position cnt_slot combat_active_target "toward"
             *set cnt_a_range {(("combat_ally" & cnt_slot) & "_range")}
             *temp cnt_a_dashed false
             *temp cnt_a_after_first_step {(("combat_ally" & cnt_slot) & "_position")}
-            *temp cnt_a_before_first_step (cnt_a_after_first_step - 1)
             *gosub_scene combat_movement combat_difficult_terrain_crossing_query cnt_a_before_first_step cnt_a_after_first_step
             *temp cnt_a_difficult_after_first_step combat_difficult_terrain_blocks_dash
-            *temp cnt_a_next_dash_position (cnt_a_after_first_step + 1)
-            *if (cnt_a_next_dash_position > combat_lane_max_position)
-              *set cnt_a_next_dash_position combat_lane_max_position
+            *temp cnt_a_target_pos_now {(("combat_enemy" & combat_active_target) & "_position")}
+            *temp cnt_a_next_dash_position cnt_a_after_first_step
+            *if (cnt_a_target_pos_now > cnt_a_after_first_step)
+              *set cnt_a_next_dash_position (cnt_a_after_first_step + 1)
+            *if (cnt_a_target_pos_now < cnt_a_after_first_step)
+              *set cnt_a_next_dash_position (cnt_a_after_first_step - 1)
             *gosub_scene combat_movement combat_difficult_terrain_crossing_query cnt_a_after_first_step cnt_a_next_dash_position
             *temp cnt_a_difficult_dash_path combat_difficult_terrain_blocks_dash
             *if ((cnt_a_range > 0) and ((not(cnt_a_difficult_after_first_step)) and (not(cnt_a_difficult_dash_path))))
-              *gosub_scene combat_movement combat_lane_move_ally_relative_to_target cnt_slot combat_active_target "toward"
+              *gosub_scene combat_movement combat_lane_step_ally_from_position cnt_slot combat_active_target "toward"
               *set cnt_a_range {(("combat_ally" & cnt_slot) & "_range")}
               *set cnt_a_dashed true
             *temp cnt_arv 1

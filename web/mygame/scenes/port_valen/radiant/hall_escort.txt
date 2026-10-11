@@ -48,7 +48,8 @@
 
 *comment ── Which end of the line the player is at. The caller sets es_start ("pv", "tm" or "af"); this fills in the context the offer and the pages after it use (where the line goes, the day it makes up, what the
 *comment road is like) and where they return to (es_place). The wagon yard sets "pv" in es_arrive, the Timbermouth lot sets "tm" in wagon_lot.txt, the Alderford lot sets "af" in alderford/wagon_lot.txt.
-*comment The Port Valen yard runs two lines, each on its own day of the week: Forgeday to Timbermouth, Marketday to Alderford (the lines never make up on the same day, so the offer is one line at a time). Prose never
+*comment The three ends run six lines in all, each on its own day of the week (the lines never make up on the same day at one end, so the offer is one line at a time): Port Valen runs Forgeday to Timbermouth and Marketday to
+*comment Alderford; Timbermouth runs Tideday to Port Valen and Hearthday to Alderford; Alderford runs Ironday to Port Valen and Greyday to Timbermouth. Hallowday has no line. Prose never
 *comment names the day. Whichever line the day is, es_end and the es_ctx_* wording describe it; on a day with no line the yard falls back to the Timbermouth wording, which only an unsigned visit would read. ──
 *label es_set_line
 *if (es_start = "pv")
@@ -57,8 +58,12 @@
     *set es_end "af"
 *elseif (es_start = "tm")
   *set es_end "pv"
+  *if (day_of_week = "Hearthday")
+    *set es_end "af"
 *else
   *set es_end "pv"
+  *if (day_of_week = "Greyday")
+    *set es_end "tm"
 *comment The fee for this route if nothing is lost, in coins (Overworld.convoyFee: three quarters of a copper bit a mile). Pure, so a replay says the same.
 *script var o = window.Overworld; var r = o.route(String(stats.es_start), String(stats.es_end)); stats.es_ctx_fee_text = o.coinText(o.convoyFee(r.miles, 0, 0));
 *if ((es_start = "pv") and (es_end = "tm"))
@@ -75,6 +80,13 @@
   *set es_ctx_dow "Marketday"
   *set es_ctx_place_text "the wagon yard outside the River Gate"
   *set es_ctx_road_talk "tips a hand toward the east. \"Round under the wall to the Charter Gate and up the old paving. The first night is on the High Grey Road, on the verge past the trough, with the wind and no cover. The second day is the climb to the weir, and Alderford is at the top of it. Mind the drop on the Rise.\""
+*elseif ((es_start = "tm") and (es_end = "af"))
+  *set es_place "lot"
+  *set es_ctx_dest_name "Alderford"
+  *set es_ctx_opens "the Market opens"
+  *set es_ctx_dow "Hearthday"
+  *set es_ctx_place_text "the wagon lot beside the Market in Timbermouth"
+  *set es_ctx_road_talk "tips a hand toward the north-east. \"Out by the farm road to Barleycross, then the Crossfield Road east over the uplands. The first night is on the verge by the old field wall, with water in the ditch and no wood. The second day is the long pull down to the weir, and Alderford sits above it. Carriers lose what they lose on the upland, where the ruts are deep and the wind has nothing to stop it.\""
 *elseif (es_start = "tm")
   *set es_place "lot"
   *set es_ctx_dest_name "Port Valen"
@@ -82,6 +94,13 @@
   *set es_ctx_dow "Tideday"
   *set es_ctx_place_text "the wagon lot beside the Market in Timbermouth"
   *set es_ctx_road_talk "tips a hand toward the south-east. \"Down off the hills by the west bank, then the river road to the fork and the cuttings to the city. The first night is the Ashrun's mouth, with water and flat ground. The second day is the easy one, if the first went well.\""
+*elseif ((es_start = "af") and (es_end = "tm"))
+  *set es_place "alot"
+  *set es_ctx_dest_name "Timbermouth"
+  *set es_ctx_opens "the Market opens"
+  *set es_ctx_dow "Greyday"
+  *set es_ctx_place_text "the carters' lot beside the Lower Wharf Market in Alderford"
+  *set es_ctx_road_talk "tips a hand toward the north-west. \"Out by the palisade gate and west over the upland on the Crossfield Road, with the ruts deep under a loaded wagon. The first night is at Barleycross, on a farmer's headland by the road, with a trough at the gate and the village dogs for company. The second day is the short way in, down the farm road to Timbermouth, and the saw frame will be the first thing you hear.\""
 *else
   *set es_place "alot"
   *set es_ctx_dest_name "Port Valen"
@@ -427,7 +446,7 @@ ${rj_escort_master} finds your name and nods. "Good. You are in time. Four wagon
 
 *comment ── the leg in hand (es_cur_leg) worked out from the route and the tile data. Pure: it only reads, so a replay can call it freely. ──
 *label es_load_leg
-*script var o = window.Overworld; var r = o.route(String(stats.rj_escort_from), String(stats.rj_escort_to)); var i = Number(stats.es_cur_leg); var L = r.legs[i]; var N = r.legs[i + 1]; var pace = Number(stats.es_pace); stats.es_leg_count = r.legs.length; stats.es_total_miles = r.ok ? r.miles : 0; stats.es_next_minutes = N ? N.miles * pace : 0; if (L) { var n = o.nodes[L.to]; stats.es_leg_to = L.to; stats.es_leg_name = n.name; stats.es_leg_head = n.name.toUpperCase(); stats.es_leg_kind = n.kind; stats.es_leg_danger = o.dangerOf(L.to); stats.es_leg_walk = n.walk || ""; stats.es_leg_camp = n.camp || ""; stats.es_leg_arrive = (n.arriveVia && n.arriveVia[L.from]) || n.arrive || ""; stats.es_leg_minutes = L.miles * pace; }
+*script var o = window.Overworld; var r = o.route(String(stats.rj_escort_from), String(stats.rj_escort_to)); var i = Number(stats.es_cur_leg); var L = r.legs[i]; var N = r.legs[i + 1]; var pace = Number(stats.es_pace); stats.es_leg_count = r.legs.length; stats.es_total_miles = r.ok ? r.miles : 0; stats.es_next_minutes = N ? N.miles * pace : 0; if (L) { var n = o.nodes[L.to]; stats.es_leg_to = L.to; stats.es_leg_name = n.name; stats.es_leg_head = n.name.toUpperCase(); stats.es_leg_kind = n.kind; stats.es_leg_danger = o.dangerOf(L.to); stats.es_leg_walk = (n.walkVia && n.walkVia[L.from]) || n.walk || ""; stats.es_leg_camp = n.camp || ""; stats.es_leg_arrive = (n.arriveVia && n.arriveVia[L.from]) || n.arrive || ""; stats.es_leg_minutes = L.miles * pace; }
 *return
 
 *comment ── the next stretch, from leg es_next_leg and the clock: where it ends (es_str_end, one past the last leg walked), what it covers, and what follows it (es_act: "pay", "beat" or "camp"; es_halt_ev the halt event's number;

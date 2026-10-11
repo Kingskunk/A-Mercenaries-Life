@@ -57,6 +57,7 @@ either express or implied.
 <script src="battlehud.js"></script>
 <script src="dungeonmap.js"></script>
 <script src="overworld-data.js"></script>
+<script src="overworld-art.js"></script>
 <script src="overworldmap.js"></script>
 <script src="dungeons/silt_conduits.js"></script>
 <script src="fightlog.js"></script>
@@ -1434,20 +1435,44 @@ button#statSidebar .turnRow,
   // Read-only forecast of what the enemy's existing turn logic can do from its current band. This intentionally
   // predicts the engine rather than inventing an AI intent state: Close melee can move once and still attack;
   // Mid-Range melee must Dash and gives up its attack; Slowed blocks that Dash; Frightened refuses to close.
-  // Who a MELEE enemy will go for: the nearest opponent by lane coordinate, you included, a tie to the lowest HP (the same rule as choose_melee_enemy_target in combat_ai.txt, which is
+  // Who a MELEE enemy will go for: the nearest opponent by lane coordinate, you included, a tie to the most wounded by fraction of max HP, then the lowest HP (the same rule as choose_melee_enemy_target in combat_ai.txt, which is
   // the authority; change them together). A hidden player is not a candidate. Returns {kind: "player"} or {kind: "ally", slot, d}, or null when there is nobody.
   function meleeGoal(s, slot) {
     var epos = Number(s["combat_enemy" + slot + "_position"]);
     if (!isFinite(epos)) return null;
     var best = null, ppos = Number(s.combat_lane_player_position), cap = Number(s.combat_ally_slot_cap) || 0;
-    if (!isTruthy(s.combat_player_hidden) && isFinite(ppos)) best = { kind: "player", d: Math.abs(epos - ppos), hp: Number(s.hp_current) || 0 };
+    if (!isTruthy(s.combat_player_hidden) && isFinite(ppos)) best = { kind: "player", d: Math.abs(epos - ppos), hp: Number(s.hp_current) || 0, max: Number(s.hp_max) || 1 };
     for (var i = 1; i <= cap; i++) {
-      var hp = Number(s["combat_ally" + i + "_hp"]) || 0, apos = Number(s["combat_ally" + i + "_position"]);
+      var hp = Number(s["combat_ally" + i + "_hp"]) || 0, max = Number(s["combat_ally" + i + "_max_hp"]) || 1, apos = Number(s["combat_ally" + i + "_position"]);
       if (hp <= 0 || !isFinite(apos)) continue;
       var d = Math.abs(epos - apos);
-      if (!best || d < best.d || (d === best.d && hp < best.hp)) best = { kind: "ally", slot: i, d: d, hp: hp };
+      // Nearest first; then the most wounded by fraction of maximum HP (cross-multiplied, as the game does); then the lowest HP.
+      var moreWounded = best && hp * best.max < best.hp * max, level = best && hp * best.max === best.hp * max;
+      if (!best || d < best.d || (d === best.d && (moreWounded || (level && hp < best.hp)))) best = { kind: "ally", slot: i, d: d, hp: hp, max: max };
     }
     return best;
+  }
+  // Who a RANGED enemy will shoot: the most wounded opponent by fraction of max HP (cross-multiplied), the nearest as the tiebreak, then the lowest HP. If any opponent shares its lane tile it is
+  // CORNERED and only those in its tile are candidates (the same rule as choose_ranged_enemy_target in combat_ai.txt, the authority; change them together).
+  // Returns {cornered, kind: "player"|"ally", slot} or null.
+  function rangedGoal(s, slot) {
+    var epos = Number(s["combat_enemy" + slot + "_position"]);
+    if (!isFinite(epos)) return null;
+    var ppos = Number(s.combat_lane_player_position), cap = Number(s.combat_ally_slot_cap) || 0, hidden = isTruthy(s.combat_player_hidden), cands = [], cornered = false, i;
+    if (!hidden && isFinite(ppos)) cands.push({ kind: "player", slot: 0, d: Math.abs(epos - ppos), hp: Number(s.hp_current) || 0, max: Number(s.hp_max) || 1 });
+    for (i = 1; i <= cap; i++) {
+      var hp = Number(s["combat_ally" + i + "_hp"]) || 0, apos = Number(s["combat_ally" + i + "_position"]);
+      if (hp > 0 && isFinite(apos)) cands.push({ kind: "ally", slot: i, d: Math.abs(epos - apos), hp: hp, max: Number(s["combat_ally" + i + "_max_hp"]) || 1 });
+    }
+    cands.forEach(function (c) { if (c.d <= 0) cornered = true; });
+    var best = null;
+    cands.forEach(function (c) {
+      if (cornered && c.d > 0) return;
+      if (!best) { best = c; return; }
+      var lt = c.hp * best.max < best.hp * c.max, eq = c.hp * best.max === best.hp * c.max;
+      if (lt || (eq && (c.d < best.d || (c.d === best.d && c.hp < best.hp)))) best = c;
+    });
+    return best ? { cornered: cornered, kind: best.kind, slot: best.slot } : null;
   }
   function enemyThreatLine(s, slot) {
     var p = "combat_enemy" + slot + "_";
@@ -1457,6 +1482,13 @@ button#statSidebar .turnRow,
     var slowed = Number(s[p + "slowed"]) > 0;
     if (weaponType === "ranged") {
       if (frightened) return "frightened shot: disadvantage";
+      var rgoal = rangedGoal(s, slot);
+      if (rgoal && rgoal.cornered) {
+        if (isTruthy(s[p + "can_retreat"])) return "cornered: will fall back";
+        if (rgoal.kind === "ally") return s[p + "sidearm_weapon_type"] ? "cornered: stabbing " + esc(fmt(s["combat_ally" + rgoal.slot + "_name"]) || "an ally") : "cornered";
+      } else if (rgoal && rgoal.kind === "ally") {
+        return "aiming at " + esc(fmt(s["combat_ally" + rgoal.slot + "_name"]) || "an ally");
+      }
       if (range <= 0 && s[p + "sidearm_weapon_type"]) return "cornered: sidearm ready";
       if (range <= 0) return "ranged attack: disadvantage";
       return "ranged attack ready";

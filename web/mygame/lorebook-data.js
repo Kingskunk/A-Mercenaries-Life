@@ -765,7 +765,8 @@
         unlock: "codex_alderford",
         meter: { stat: "alderford_rep", label: "Standing in Alderford" },
         body: [
-          "A river town built around an old imperial limestone weir, where the highland road down from the Crags reaches the head of the Grey and the river drops away toward the gorge. Sawmills crowd the bank above the falls. Below them stand warehouses, curing lofts, and muddy wharves where the barges tie up to load for the downriver run. The brine trade is the town's spine: carts bring salt up the High Grey Road from Valen, and the river catch is split, cured, dried, and packed into firkins for the run downriver."
+          "A river town built around an old imperial limestone weir, where the highland road down from the Crags reaches the head of the Grey and the river drops away toward the gorge. Sawmills crowd the bank above the falls. Below them stand warehouses, curing lofts, and muddy wharves where the barges tie up to load for the downriver run. The brine trade is the town's spine: carts bring salt up the High Grey Road from Valen, and the river catch is split, cured, dried, and packed into firkins for the run downriver.",
+          "North of town, the Coldspine runs east and west across the whole of the north as a broken mountain barrier, with few passes fit for wagons or an army and a fort in each. Its southern foothills supply stone, wool and ore. In the east its last low spur comes down toward the Black Sinks, and the only practical freight way east uses the narrow ground between that spur and the marsh, which is why the old gatehouse there matters to every loaded wagon."
         ],
         see: ["port_valen", "grey_river", "sanctuary_charter", "gilded_scales", "imperial_booms", "meridian_empire", "saint_althea", "iron_carrion", "grey_marches", "carters_lot_af"]
       },
@@ -776,7 +777,7 @@
         unlock: "af_lot_seen",
         body: [
           "A trodden lot of rails and lean-tos beside the uphill gate of the Lower Wharf Market, open to the lane that climbs to the palisade. Wagons stand in it nose to tail with their oxen picketed at one end, loaded with casks of cured fish, sawn boards and grain for the city.",
-          "Caravans for Port Valen are made up here, with a wagon master, a slate and a handful of hired hands. The notice for the work is pinned on the contracts column of the board at the Factor's Hall, and the wagon master pays only those who are in the column when it rolls. The line goes up the steep street and out by the palisade gate, then down the High Grey Road over Greybank Rise, two days to the city's carters' yards."
+          "Caravans for Port Valen are made up here, with a wagon master, a slate and a handful of hired hands. The notice for the work is pinned on the contracts column of the board at the Factor's Hall, and the wagon master pays only those who are in the column when it rolls. The line goes up the steep street and out by the palisade gate, then down the High Grey Road over Greybank Rise, two days to the city's carters' yards. On another day a line goes west instead, over the Crossfield Road with a night at Barleycross, to Timbermouth."
         ],
         see: ["alderford", "wagon_yard"]
       },
@@ -800,12 +801,12 @@
         unlock: "codex_black_sinks",
         body: function (s) {
           var out = [
-            "An old imperial road built up on a dike across the Sinks, laid in fitted grey stone and wide enough for military freight wagons, then left to rot for decades. Sinking peat and seasonal floods have collapsed its outer edges, so only the raised center still carries wheels, single file, with waist-deep bog on both sides. Where the road widens onto a raised limestone platform, a squat stone gatehouse blocks the way. It is the last chokepoint on the toll road between the highland Crags and the Alderford weir."
+            "An old imperial road built up on a dike across the Sinks, laid in fitted grey stone and wide enough for military freight wagons, then left to rot for decades. Sinking peat and seasonal floods have collapsed its outer edges, so only the raised center still carries wheels, single file, with waist-deep bog on both sides. At its eastern end, the last low spur of the Coldspine comes down to the marsh, leaving one narrow strip of firm ground for the dike and a squat stone gatehouse. There is no wagon detour around either the bog or the range, which makes it the last chokepoint on the toll road between the highland Crags and the Alderford weir."
           ];
           if (!truthy(s.codex_marsh_squatters)) {
             out.push("This autumn the gatehouse is held by deserters and displaced tenants out of the high valleys, with scythes, sickles, and fishing spears, and nowhere else to run. The Gilded Scales bought the road back and handed the contract to the Carrion.");
           } else {
-            out.push("The gatehouse stands open. What held it is scattered into the reeds, dead on the flagstones, or riding downriver in the iron cage wagons as contracted, and traffic crosses the causeway again under the Carrion's raven banners.");
+            out.push("The gatehouse stands open. What held it is scattered into the reeds, dead on the flagstones, or riding downriver in the iron cage wagons as contracted. The Gilded Scales have ringed the old stone with a new palisade and reopened traffic under their black-and-gold banner.");
           }
           out.push("<b>Trade.</b> Nothing is made on the causeway. It is a toll station on the only dry road between the highlands and the river, so highland steel, coal and timber pass over it going south, and peat from the eastern bogs comes in over it. When the gatehouse is held, both streams stop at once, which is why the Scales paid to have it cleared.");
           return out;

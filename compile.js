@@ -306,6 +306,11 @@ function compile(){
   verifyFileName("port_valen/brinewick/tide_house.txt");
   verifyFileName("port_valen/brinewick/saltworks.txt");
   verifyFileName("port_valen/brinewick/reedhouse.txt");
+  // Redvein is Alderford's eastern mining village. Its public places live under the Alderford folder because its ore road and market run through the town.
+  verifyFileName("alderford/redvein/redvein.txt");
+  verifyFileName("alderford/redvein/eastcut.txt");
+  verifyFileName("alderford/redvein/gather_house.txt");
+  verifyFileName("alderford/redvein/red_lantern.txt");
   // Alderford follows the same one-hub, one-file-per-place shape as Timbermouth. Every place needs a verifyFileName line here because it is reached by *goto_scene rather than *scene_list.
   verifyFileName("alderford/alderford.txt");
   verifyFileName("alderford/drowned_oar.txt");

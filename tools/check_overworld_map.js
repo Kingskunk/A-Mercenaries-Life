@@ -39,13 +39,24 @@ const overworldScene = fs.readFileSync(path.join(GAME, "scenes", "overworld", "o
   if (!overworldScene.includes('ow_event_id = "' + e.id + '"')) fail("road event " + e.id + " is not dispatched in overworld.txt ow_event");
 });
 
+require(path.join(GAME, "overworld-art.js"));
+const ART = global.window.OVERWORLD_ART || {};
+(O.features || []).forEach((f) => {
+  if (!f.id || !f.name || !f.kind || !f.info) fail("a map feature has no id, name, kind or info (the card text)");
+  if (!/^[a-z]+$/.test(f.kind) || !new RegExp("\\.ow-f-" + f.kind + "\\b").test(css)) fail("feature " + f.id + " has kind \"" + f.kind + "\", which overworldmap.css has no .ow-f- colour for");
+  const art = ART[f.art];
+  if (!art) fail("feature " + f.id + " has art \"" + f.art + "\", which is not in overworld-art.js (draw web/mygame/overworld-art/" + f.art + ".svg and run node tools/gen_overworld_art.js)");
+  else if (!art.paths || !art.paths.length || !(art.unit > 0) || !Array.isArray(art.bbox) || art.bbox.length !== 4 || !art.bbox.every(Number.isFinite)) fail("the art of feature " + f.id + " has no paths, no unit or no bounding box");
+  if (!Array.isArray(f.label) || f.label.length !== 2 || !f.label.every(Number.isFinite)) fail("feature " + f.id + " has a label that is not [x, y]");
+});
 const ids = Object.keys(O.nodes);
 ids.forEach((id) => { const n = O.nodes[id]; if (n.ford !== undefined && (n.ford !== true || n.kind !== "road")) fail("tile " + id + " has a ford flag that is not true, or is not on a road tile"); });
-const KINDS = ["city", "town", "village", "road", "hills", "forest"];
+const KINDS = ["city", "town", "village", "fort", "road", "hills", "forest"];
 const seenEdges = {};
 O.edges.forEach((e) => {
   [e[0], e[1]].forEach((id) => { if (!O.nodes[id]) fail("a road joins \"" + id + "\", which is not a tile"); });
   if (!(e[2] > 0)) fail("the road " + e[0] + "-" + e[1] + " has no length");
+  if (e[3] !== undefined && !(O.terrains && O.terrains[e[3]])) fail("the way " + e[0] + "-" + e[1] + " has terrain \"" + e[3] + "\", which is not in TERRAIN (" + Object.keys(O.terrains || {}).join(", ") + ")");
   const k = [e[0], e[1]].sort().join("-");
   if (seenEdges[k]) fail("the road " + k + " is listed twice"); seenEdges[k] = true;
 });
@@ -70,7 +81,7 @@ ids.forEach((id) => {
 if (!/\*set ow_pos "[a-z0-9_]+"|\*create ow_pos "([a-z0-9_]+)"/.test(startup)) fail("startup.txt does not create ow_pos");
 const start = (startup.match(/^\*create ow_pos "([a-z0-9_]+)"/m) || [])[1];
 if (start && !O.nodes[start]) fail("startup.txt starts ow_pos on \"" + start + "\", which is not a tile");
-["ow_dest", "ow_trip_ok", "ow_trip_locked", "locked_ow_trip_page_id", "ow_legs", "ow_leg_i", "ow_leg_minutes", "ow_rations_total", "ow_exposure_pct", "ow_can_camp", "ow_camp_ok", "ow_camp_mode", "ow_camp_minutes", "ow_dawn_ok", "ow_dawn_hours", "ow_camp_wet", "ow_camp_locked", "locked_ow_camp_page_id", "exposure_camping", "rations_eaten_last", "ow_water", "climate_shift"].forEach((v) => { if (!new RegExp("^\\*create " + v + " ", "m").test(startup)) fail("startup.txt does not create " + v); });
+["ow_dest", "ow_trip_ok", "ow_trip_locked", "locked_ow_trip_page_id", "ow_legs", "ow_leg_i", "ow_leg_minutes", "ow_leg_pace", "ow_rations_total", "ow_exposure_pct", "ow_can_camp", "ow_camp_ok", "ow_camp_mode", "ow_camp_minutes", "ow_dawn_ok", "ow_dawn_hours", "ow_camp_wet", "ow_camp_locked", "locked_ow_camp_page_id", "exposure_camping", "rations_eaten_last", "ow_water", "climate_shift"].forEach((v) => { if (!new RegExp("^\\*create " + v + " ", "m").test(startup)) fail("startup.txt does not create " + v); });
 if (!/# Travel to the tile you picked on the map\./.test(scene)) fail("overworld.txt has lost its one Travel option (the panel presses it)");
 if (!/# Make camp for the night\./.test(scene)) fail("overworld.txt has lost its camp option (the panel presses it)");
 if (!/# Make camp and sleep until dawn\./.test(scene)) fail("overworld.txt has lost its sleep-until-dawn option (the panel presses it)");

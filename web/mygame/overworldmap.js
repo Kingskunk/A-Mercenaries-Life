@@ -20,11 +20,13 @@
   if (!OW) return;
 
   var PANEL_ID = "overworldMap";
-  var KIND_NAME = { city: "City", town: "Town", village: "Village", road: "Road", hills: "Hills", forest: "Forest" };
+  var KIND_NAME = { city: "City", town: "Town", village: "Village", fort: "Fort", road: "Road", hills: "Hills", forest: "Forest" };
+  var FEATURE_KIND = { range: "Mountain range" };
   var SCALE = 130;          // SVG units per map unit
   var MIN_W = 220;          // closest zoom: this many SVG units across
   var FAR_W = 1500;         // past this width the names of tiles you are not on or selecting are hidden
   var selected = null;      // the tile whose card is showing (null: the tile the player stands on)
+  var selectedFeature = null;   // the drawn feature (a mountain range) whose card is showing, instead of a tile's; null for none
   var lastPos = null;       // where the player stood when the view was last placed: a move to a new tile clears the selection and recentres
   var lastSig = "";
   var pressed = false;      // Travel was pressed and the old page has not gone yet
@@ -114,6 +116,16 @@
       minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
       minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
     });
+    // a drawn feature (a mountain range) stays in view with the tiles: the corners of its art's box, in map units, turned like a tile
+    (OW.features || []).forEach(function (f) {
+      var art = (window.OVERWORLD_ART || {})[f.art];
+      if (!art) return;
+      [[art.bbox[0], art.bbox[1]], [art.bbox[2], art.bbox[1]], [art.bbox[0], art.bbox[3]], [art.bbox[2], art.bbox[3]]].forEach(function (c) {
+        var p = P({ x: c[0] / art.unit, y: c[1] / art.unit });
+        minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+        minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+      });
+    });
     return { minX: minX, maxX: maxX, minY: minY, maxY: maxY };
   }
 
@@ -166,18 +178,27 @@
       for (var i = 0; i < r.path.length - 1; i++) { onRoute[r.path[i] + ">" + r.path[i + 1]] = true; onRoute[r.path[i + 1] + ">" + r.path[i]] = true; }
     }
     var out = "";
+    // Features first, so the roads and tiles sit on top of them. The art is drawn in its own units (130 to a map unit), so the group scales it to the panel and turns it with the map (a quarter turn
+    // is rotate(90), the same turn P() gives a tile); the paths come straight from the SVG file (tools/gen_overworld_art.js). The name sits on the range, upright.
+    (OW.features || []).forEach(function (f) {
+      var art = (window.OVERWORLD_ART || {})[f.art];
+      if (!art) return;
+      out += "<g class=\"ow-feature ow-f-" + esc(f.kind) + (selectedFeature === f.id ? " ow-feature-sel" : "") + "\" data-ow-feature=\"" + esc(f.id) + "\" tabindex=\"0\" role=\"button\" aria-label=\"" + esc(f.name) + "\" transform=\"rotate(" + (90 * rot) + ") scale(" + (SCALE / art.unit) + ")\">" +
+        art.paths.map(function (p) { return "<path d=\"" + esc(p.d) + "\"" + (p.c ? " class=\"" + esc(p.c) + "\"" : "") + (p.t ? " transform=\"" + esc(p.t) + "\"" : "") + "/>"; }).join("") + "</g>";
+      if (f.label) { var lp = P({ x: f.label[0], y: f.label[1] }); out += "<text class=\"ow-feature-name\" x=\"" + lp.x + "\" y=\"" + lp.y + "\" text-anchor=\"middle\">" + esc(f.name) + "</text>"; }
+    });
     // Rectangles the "10 mi" labels must keep clear of: every town circle and every name (as drawn below), then the labels already placed.
     var taken = [];
     ids.forEach(function (id) {
-      var n = OW.nodes[id], pp = P(n), big = n.kind === "city" ? 26 : (n.kind === "town" ? 22 : (n.kind === "village" ? 18 : 15)), half = String(n.name).length * 4.6 + 6;
+      var n = OW.nodes[id], pp = P(n), big = n.kind === "city" ? 26 : (n.kind === "town" ? 22 : ((n.kind === "village" || n.kind === "fort") ? 18 : 15)), half = String(n.name).length * 4.6 + 6;
       taken.push([pp.x - big - 9, pp.y - big - 9, pp.x + big + 9, pp.y + big + 9]);
       taken.push([pp.x - half, pp.y + big + 4, pp.x + half, pp.y + big + 28]);
     });
     function hits(r) { return taken.some(function (t) { return r[0] < t[2] && r[2] > t[0] && r[1] < t[3] && r[3] > t[1]; }); }
     OW.edges.forEach(function (e) {
       var a = OW.nodes[e[0]], b = OW.nodes[e[1]], hot = onRoute[e[0] + ">" + e[1]];
-      var pa = P(a), pb = P(b);
-      out += "<line class=\"ow-edge" + (hot ? " ow-edge-route" : "") + "\" x1=\"" + pa.x + "\" y1=\"" + pa.y + "\" x2=\"" + pb.x + "\" y2=\"" + pb.y + "\"/>";
+      var pa = P(a), pb = P(b), terrain = e[3] || "road";
+      out += "<line class=\"ow-edge" + (terrain !== "road" ? " ow-edge-" + terrain : "") + (hot ? " ow-edge-route" : "") + "\" x1=\"" + pa.x + "\" y1=\"" + pa.y + "\" x2=\"" + pb.x + "\" y2=\"" + pb.y + "\"/>";
       // try the middle of the leg first, then other spots along it, above the line and then below; keep the first that is clear
       var label = String(e[2]) + " mi", w = label.length * 4.2 + 4, pick = null;
       [0.5, 0.4, 0.6, 0.3, 0.7, 0.25, 0.75].some(function (t) {
@@ -193,7 +214,7 @@
       out += "<text class=\"ow-miles\" x=\"" + pick.x + "\" y=\"" + pick.y + "\" text-anchor=\"middle\">" + label + "</text>";
     });
     ids.forEach(function (id, k) {
-      var n = OW.nodes[id], pp = P(n), x = pp.x, y = pp.y, big = n.kind === "city" ? 26 : (n.kind === "town" ? 22 : (n.kind === "village" ? 18 : 15));
+      var n = OW.nodes[id], pp = P(n), x = pp.x, y = pp.y, big = n.kind === "city" ? 26 : (n.kind === "town" ? 22 : ((n.kind === "village" || n.kind === "fort") ? 18 : 15));
       out += "<g class=\"ow-node ow-k-" + esc(n.kind) + (id === here ? " ow-here" : "") + (id === sel ? " ow-sel" : "") + "\" data-ow-tile=\"" + esc(id) + "\" tabindex=\"0\" role=\"button\" aria-label=\"" + esc(n.name) + "\">";
       if (id === here) out += "<circle class=\"ow-ring\" cx=\"" + x + "\" cy=\"" + y + "\" r=\"" + (big + 9) + "\"/>";
       if (id === sel && id !== here) out += "<circle class=\"ow-selring\" cx=\"" + x + "\" cy=\"" + y + "\" r=\"" + (big + 7) + "\"/>";
@@ -208,6 +229,18 @@
     });
     return "<svg class=\"ow-svg\" role=\"img\" aria-label=\"Map of the road\"><defs>" + defs + "</defs>" + out + "</svg>";
   }
+
+  // The card for a drawn feature: what it is, and the one line that says what it means for travel. No travel button: nothing routes through one.
+  function featureCard(f) {
+    var html = "<div class=\"ow-card\">";
+    html += "<div class=\"ow-card-head\"><i class=\"ow-key ow-f-" + esc(f.kind) + "-key\"></i><b>" + esc(f.name) + "</b></div>";
+    html += "<div class=\"ow-card-sub\">" + esc(FEATURE_KIND[f.kind] || f.kind) + "</div>";
+    if (f.info) html += "<p>" + esc(f.info) + "</p>";
+    if (f.line) html += "<div class=\"ow-card-warn\">" + esc(f.line) + "</div>";
+    html += "<button type=\"button\" class=\"ow-btn\" data-ow-act=\"unpick\">Back to where I stand</button>";
+    return html + "</div>";
+  }
+  function featureById(id) { var r = null; (OW.features || []).forEach(function (f) { if (f.id === id) r = f; }); return r; }
 
   function card(here, sel, opts) {
     var show = sel || here, n = OW.nodes[show], html = "<div class=\"ow-card\">";
@@ -225,6 +258,13 @@
       if (r.ok) {
         var plan = travelPlan(here, show);
         html += "<div class=\"ow-card-line\"><b>" + r.miles + " miles</b>, " + esc(OW.duration(plan.minutes)) + " total" + (plan.mounted ? ", riding" : "") + ".</div>";
+        // ground that is not road, by terrain: how far it runs and how much slower it is (a mile of it takes this many road miles' time)
+        var rough = {};
+        r.legs.forEach(function (l) { if (l.terrain && l.terrain !== "road") rough[l.terrain] = (rough[l.terrain] || 0) + l.miles; });
+        Object.keys(rough).forEach(function (t) {
+          var T = (OW.terrains || {})[t] || { name: t, pace: 100 };
+          html += "<div class=\"ow-card-warn\">" + rough[t] + " mile" + (rough[t] === 1 ? "" : "s") + " of " + esc(T.name) + ": " + (T.pace === 200 ? "twice as slow as a road" : (T.pace + "% of a road mile's time")) + ".</div>";
+        });
         html += "<div class=\"ow-card-line\"><b>Estimated arrival:</b> " + esc(arrivalDate(statsNow(), plan.arrivalDayOffset) + " at " + clockText(plan.arrivalMinute)) + ".</div>";
         if (plan.duskMiles) html += "<div class=\"ow-card-warn\">" + plan.duskMiles + " mile" + (plan.duskMiles === 1 ? "" : "s") + " at dusk: slower pace.</div>";
         if (plan.nightMiles) html += "<div class=\"ow-card-warn\">" + plan.nightMiles + " mile" + (plan.nightMiles === 1 ? "" : "s") + " in darkness: slow night pace.</div>";
@@ -258,7 +298,8 @@
     var here = statsNow().ow_pos;
     if (!OW.nodes[here]) return "";
     var sel = selected && OW.nodes[selected] ? selected : null;
-    return "<div class=\"ow-main\"><div class=\"ow-mapbox\">" + svg(here, sel) + compass() + controls() + "</div>" + card(here, sel, opts) + "</div>" + legend();
+    var feat = selectedFeature ? featureById(selectedFeature) : null;
+    return "<div class=\"ow-main\"><div class=\"ow-mapbox\">" + svg(here, sel) + compass() + controls() + "</div>" + (feat ? featureCard(feat) : card(here, sel, opts)) + "</div>" + legend();
   }
 
   /* ---------------------------------------------------------------- no page-turn while travelling */
@@ -307,7 +348,7 @@
     if (!opts) {
       remove();
       // Between two overworld pages the new form has not arrived yet for a moment: that is not leaving the map, so the animation stays off. Only ow_on turning false gives it back.
-      if (!truthy(s.ow_on)) { selected = null; lastPos = null; view = null; quiet(false); }
+      if (!truthy(s.ow_on)) { selected = null; selectedFeature = null; lastPos = null; view = null; quiet(false); }
       return;
     }
     var moved = s.ow_pos !== lastPos;
@@ -315,7 +356,7 @@
       // a move clears the selection; the view stays where the player had it (zoom and all) unless the new tile would be off the edge of it
       // an interrupted trip (a road event stopped it) keeps its goal picked, so continuing is one click
       var goal = String(s.ow_goal || "none");
-      selected = (goal !== "none" && goal !== s.ow_pos && OW.nodes[goal]) ? goal : null; lastPos = s.ow_pos;
+      selected = (goal !== "none" && goal !== s.ow_pos && OW.nodes[goal]) ? goal : null; selectedFeature = null; lastPos = s.ow_pos;
       var np = OW.nodes[s.ow_pos], bx0 = box();
       if (!view || !np || !bx0) view = null;
       else {
@@ -323,7 +364,7 @@
         if (mx < view.cx - view.w / 2 + 60 || mx > view.cx + view.w / 2 - 60 || my < view.cy - h0 / 2 + 60 || my > view.cy + h0 / 2 - 60) { view.cx = mx; view.cy = my; }
       }
     }
-    var sig = [s.ow_pos, selected, opts.enter ? opts.enter.text : "", num(s.minutes_since_meal), num(s.minutes_since_rest), rot, num(s.ow_exposure_pct), truthy(s.has_trail_rations) ? 1 + num(s.spare_trail_rations) : 0, opts.camp ? "camp" : "", opts.dawn ? opts.dawn.text : "", Object.keys(OW.nodes).length].join("|");
+    var sig = [s.ow_pos, selected, selectedFeature, opts.enter ? opts.enter.text : "", num(s.minutes_since_meal), num(s.minutes_since_rest), rot, num(s.ow_exposure_pct), truthy(s.has_trail_rations) ? 1 + num(s.spare_trail_rations) : 0, opts.camp ? "camp" : "", opts.dawn ? opts.dawn.text : "", Object.keys(OW.nodes).length].join("|");
     var el = document.getElementById(PANEL_ID);
     if (el && sig === lastSig) return;
     if (sig !== lastSig) pressed = false; // a new page of options: the old press is over
@@ -344,6 +385,7 @@
   function toggle() { centerOnMe(); applyView(); }
 
   function tileOf(el) { return el && el.closest ? el.closest("[data-ow-tile]") : null; }
+  function featureOf(el) { return el && el.closest ? el.closest("[data-ow-feature]") : null; }
   function inPanel(el) { var p = document.getElementById(PANEL_ID); return !!(p && el && p.contains(el)); }
 
   // Drag to pan: a pointer that goes down on the picture and moves more than a few pixels is a drag; one that does not is a click, on the tile it went down on.
@@ -351,7 +393,7 @@
     if (ev.button !== 0 || !inPanel(ev.target)) return;
     var bx = box();
     if (!bx || !bx.el.contains(ev.target) || ev.target.closest("[data-ow-act]")) return;
-    drag = { x: ev.clientX, y: ev.clientY, cx: view.cx, cy: view.cy, tile: tileOf(ev.target), moved: false, id: ev.pointerId };
+    drag = { x: ev.clientX, y: ev.clientY, cx: view.cx, cy: view.cy, tile: tileOf(ev.target), feature: tileOf(ev.target) ? null : featureOf(ev.target), moved: false, id: ev.pointerId };
     try { bx.el.setPointerCapture(ev.pointerId); } catch (e) {}
   });
   document.addEventListener("pointermove", function (ev) {
@@ -371,7 +413,9 @@
     var d = drag, bx = box();
     drag = null;
     if (bx) { bx.el.classList.remove("dragging"); try { bx.el.releasePointerCapture(ev.pointerId); } catch (e) {} }
-    if (!d.moved && d.tile) { selected = d.tile.getAttribute("data-ow-tile"); scan(); }
+    if (!d.moved && d.tile) { selected = d.tile.getAttribute("data-ow-tile"); selectedFeature = null; scan(); }
+    else if (!d.moved && d.feature) { selectedFeature = d.feature.getAttribute("data-ow-feature"); selected = null; scan(); }
+    else if (!d.moved && selectedFeature) { selectedFeature = null; scan(); }   // a click on bare map puts the feature's card away
   }
   document.addEventListener("pointerup", endDrag);
   document.addEventListener("pointercancel", endDrag);
@@ -396,6 +440,7 @@
     else if (act === "zoomout") zoomAt(1.4, 0.5, 0.5);
     else if (act === "rotate") { rot = (rot + 1) % 4; try { window.localStorage.setItem("owMapRot2", String(rot)); } catch (e2) {} view = null; lastSig = ""; scan(); }
     else if (act === "center") toggle();
+    else if (act === "unpick") { selectedFeature = null; selected = null; scan(); }
     else if (act === "fit") { fit(); applyView(); }
   });
   document.addEventListener("dblclick", function (ev) {
@@ -408,7 +453,10 @@
     if (tag === "input" || tag === "textarea" || tag === "select" || (ev.target && ev.target.isContentEditable)) return;
     if (document.querySelector("dialog[open]")) return;
     if ((ev.key === "Enter" || ev.key === " ") && tileOf(ev.target) && inPanel(ev.target)) {
-      ev.preventDefault(); selected = tileOf(ev.target).getAttribute("data-ow-tile"); scan(); return;
+      ev.preventDefault(); selected = tileOf(ev.target).getAttribute("data-ow-tile"); selectedFeature = null; scan(); return;
+    }
+    if ((ev.key === "Enter" || ev.key === " ") && !tileOf(ev.target) && featureOf(ev.target) && inPanel(ev.target)) {
+      ev.preventDefault(); selectedFeature = featureOf(ev.target).getAttribute("data-ow-feature"); selected = null; scan(); return;
     }
     if ((ev.key === "m" || ev.key === "M") && available()) { ev.preventDefault(); toggle(); }
   });

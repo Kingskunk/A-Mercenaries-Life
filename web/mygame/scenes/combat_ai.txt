@@ -369,8 +369,8 @@
 
 *label choose_melee_enemy_target
 *comment NEAREST-TARGET RULE (2026-10-11, on request): a melee enemy goes for the NEAREST opponent, whoever that is -- you or an ally -- by lane coordinate (combat_enemy<N>_position against
-*comment combat_lane_player_position and combat_ally<N>_position, the same coordinates the Battlefield strip draws), not for the player by default. A tie goes to the lowest current HP, the
-*comment player counted like anyone else, so nobody gets special treatment. A hidden player is not a candidate (the hidden branch in combat_next_turn still covers an enemy with nobody else to go for).
+*comment combat_lane_player_position and combat_ally<N>_position, the same coordinates the Battlefield strip draws), not for the player by default. A tie goes to the MOST WOUNDED by fraction of
+*comment maximum HP (cross-multiplied; this engine has no usable division), and if that is level too, to the lowest current HP -- the player counted like anyone else, so nobody gets special treatment. A hidden player is not a candidate (the hidden branch in combat_next_turn still covers an enemy with nobody else to go for).
 *comment It REPLACES find_intercepting_ally's "any ally in the engaged bucket" test for melee enemies (ranged enemies keep that label's own rules; they are a later step) and the old
 *comment one-roll commit-and-chase, which is no longer called for melee enemies: the nearest target IS the chase, every turn, with no dice.
 *comment Output: an ally at distance 0 goes in combat_intercepting_ally (the existing attack-the-ally branch takes it from there); an ally farther off goes in combat_enemy_goal_ally (the new
@@ -381,6 +381,7 @@
 *temp cmet_epos {(("combat_enemy" & cmet_slot) & "_position")}
 *temp cmet_best_d 999
 *temp cmet_best_hp 0
+*temp cmet_best_max 1
 *temp cmet_best_slot 0
 *temp cmet_found false
 *temp cmet_player_best false
@@ -390,6 +391,7 @@
     *set cmet_pd (0 - cmet_pd)
   *set cmet_best_d cmet_pd
   *set cmet_best_hp hp_current
+  *set cmet_best_max hp_max
   *set cmet_found true
   *set cmet_player_best true
 *temp cmet_i 1
@@ -398,14 +400,18 @@
   *temp cmet_hp {(("combat_ally" & cmet_i) & "_hp")}
   *if (cmet_hp > 0)
     *temp cmet_apos {(("combat_ally" & cmet_i) & "_position")}
+    *temp cmet_max {(("combat_ally" & cmet_i) & "_max_hp")}
     *temp cmet_ad (cmet_epos - cmet_apos)
     *if (cmet_ad < 0)
       *set cmet_ad (0 - cmet_ad)
-    *if (((not(cmet_found)) or (cmet_ad < cmet_best_d)) or ((cmet_ad = cmet_best_d) and (cmet_hp < cmet_best_hp)))
+    *temp cmet_lt ((cmet_hp * cmet_best_max) < (cmet_best_hp * cmet_max))
+    *temp cmet_eq ((cmet_hp * cmet_best_max) = (cmet_best_hp * cmet_max))
+    *if (((not(cmet_found)) or (cmet_ad < cmet_best_d)) or ((cmet_ad = cmet_best_d) and ((cmet_lt) or ((cmet_eq) and (cmet_hp < cmet_best_hp)))))
       *set cmet_found true
       *set cmet_player_best false
       *set cmet_best_d cmet_ad
       *set cmet_best_hp cmet_hp
+      *set cmet_best_max cmet_max
       *set cmet_best_slot cmet_i
   *set cmet_i + 1
   *goto choose_melee_enemy_target_loop
@@ -414,6 +420,82 @@
     *set combat_intercepting_ally cmet_best_slot
   *else
     *set combat_enemy_goal_ally cmet_best_slot
+*return
+
+*label choose_ranged_enemy_target
+*comment RANGED TARGET RULE (2026-10-11, step 3 of the nearest-target pass, on request). A ranged enemy has no use for distance, so it does not pick the NEAREST opponent; it picks the MOST WOUNDED by fraction of
+*comment maximum HP (cross-multiplied; no usable division here), the nearest as the tiebreak, then the lowest current HP -- the player counted like anyone, a hidden player not at all.
+*comment "Adjacent" means the SAME lane tile (Engaged). If any opponent shares this enemy's tile the enemy is CORNERED (combat_ranged_cornered), and the choice is limited to the opponents in its tile (it stabs
+*comment the one beside it, or, if it opted in with can_retreat, combat_next_turn has it step back first and calls this again). Otherwise every opponent is a clear shot.
+*comment Output: an ALLY target goes in combat_intercepting_ally (the existing attack-the-ally branch fires the shot); the player, or nobody, leaves it 0 and the enemy shoots the player as it always did.
+*comment This REPLACES find_intercepting_ally's Mechanisms A and B for ranged enemies (they chose by the shared "range bucket" and by lowest HP among ranged allies, never by lane position).
+*params crt_slot
+*set combat_intercepting_ally 0
+*set combat_ranged_cornered false
+*temp crt_epos {(("combat_enemy" & crt_slot) & "_position")}
+*temp crt_pd (crt_epos - combat_lane_player_position)
+*if (crt_pd < 0)
+  *set crt_pd (0 - crt_pd)
+*if ((not(combat_player_hidden)) and (crt_pd <= 0))
+  *set combat_ranged_cornered true
+*temp crt_i 1
+*label choose_ranged_enemy_target_corner_loop
+*if (crt_i <= combat_ally_slot_cap)
+  *temp crt_chp {(("combat_ally" & crt_i) & "_hp")}
+  *temp crt_cpos {(("combat_ally" & crt_i) & "_position")}
+  *if ((crt_chp > 0) and (crt_cpos = crt_epos))
+    *set combat_ranged_cornered true
+  *set crt_i + 1
+  *goto choose_ranged_enemy_target_corner_loop
+*temp crt_found false
+*temp crt_best_slot 0
+*temp crt_best_d 999
+*temp crt_best_hp 0
+*temp crt_best_max 1
+*if ((not(combat_player_hidden)) and ((not(combat_ranged_cornered)) or (crt_pd <= 0)))
+  *set crt_found true
+  *set crt_best_d crt_pd
+  *set crt_best_hp hp_current
+  *set crt_best_max hp_max
+*set crt_i 1
+*label choose_ranged_enemy_target_pick_loop
+*if (crt_i <= combat_ally_slot_cap)
+  *temp crt_hp {(("combat_ally" & crt_i) & "_hp")}
+  *if (crt_hp > 0)
+    *temp crt_max {(("combat_ally" & crt_i) & "_max_hp")}
+    *temp crt_apos {(("combat_ally" & crt_i) & "_position")}
+    *temp crt_d (crt_epos - crt_apos)
+    *if (crt_d < 0)
+      *set crt_d (0 - crt_d)
+    *if ((not(combat_ranged_cornered)) or (crt_d <= 0))
+      *temp crt_lt ((crt_hp * crt_best_max) < (crt_best_hp * crt_max))
+      *temp crt_eq ((crt_hp * crt_best_max) = (crt_best_hp * crt_max))
+      *if (((not(crt_found)) or (crt_lt)) or ((crt_eq) and ((crt_d < crt_best_d) or ((crt_d = crt_best_d) and (crt_hp < crt_best_hp)))))
+        *set crt_found true
+        *set crt_best_slot crt_i
+        *set crt_best_d crt_d
+        *set crt_best_hp crt_hp
+        *set crt_best_max crt_max
+  *set crt_i + 1
+  *goto choose_ranged_enemy_target_pick_loop
+*if ((crt_found) and (crt_best_slot > 0))
+  *set combat_intercepting_ally crt_best_slot
+*return
+
+*label combat_ai_ally_cornered
+*comment Whether the ranged ALLY in caec_slot shares its lane tile with a living enemy (the same meaning of "adjacent" the enemy side uses). Answer in combat_ally_cornered.
+*params caec_slot
+*set combat_ally_cornered false
+*temp caec_apos {(("combat_ally" & caec_slot) & "_position")}
+*temp caec_i 1
+*label combat_ai_ally_cornered_loop
+*if (caec_i <= combat_enemy_count)
+  *temp caec_hp {(("combat_enemy" & caec_i) & "_hp")}
+  *temp caec_epos {(("combat_enemy" & caec_i) & "_position")}
+  *if ((caec_hp > 0) and (caec_epos = caec_apos))
+    *set combat_ally_cornered true
+  *set caec_i + 1
+  *goto combat_ai_ally_cornered_loop
 *return
 
 *label find_melee_ally_present
@@ -478,51 +560,89 @@
 *params saat_slot
 *if (combat_player_chosen_target > 0)
   *gosub_scene combat_movement fight_pick_target
+  *comment A clicked target changes a MELEE ally's target too, so its distance is re-read from the lane coordinates (below), exactly as after its own pick.
+  *if (combat_active_target > 0)
+    *gosub combat_ai_reseed_ally_range saat_slot combat_active_target
   *return
 *temp saat_weapon {(("combat_ally" & saat_slot) & "_weapon_type")}
 *temp saat_pref_target 0
 *if (saat_weapon = "ranged")
-  *temp saat_best_hp 0
-  *temp saat_i 1
+  *comment RANGED ALLY (2026-10-11, step 3): the same rule as a ranged enemy (choose_ranged_enemy_target) -- the MOST WOUNDED enemy by fraction of maximum HP, the nearest to the ally as the tiebreak, then the
+  *comment lowest HP; the old "prefer a ranged enemy anywhere" is gone. If an enemy shares the ally's lane tile it is cornered, and only the enemies in its tile are candidates (resolve_ally_attack then
+  *comment draws the knife, because the ally's own range, re-derived below, is 0).
+  *gosub combat_ai_ally_cornered saat_slot
+  *temp saat_rapos {(("combat_ally" & saat_slot) & "_position")}
+  *temp saat_rbest_d 999
+  *temp saat_rbest_hp 0
+  *temp saat_rbest_max 1
+  *temp saat_ri 1
   *label select_ally_ranged_loop
-  *if (saat_i <= combat_enemy_count)
-    *temp saat_hp {(("combat_enemy" & saat_i) & "_hp")}
-    *temp saat_wt {(("combat_enemy" & saat_i) & "_weapon_type")}
-    *if ((saat_hp > 0) and (saat_wt = "ranged"))
-      *if ((saat_pref_target = 0) or (saat_hp < saat_best_hp))
-        *set saat_pref_target saat_i
-        *set saat_best_hp saat_hp
-    *set saat_i + 1
+  *if (saat_ri <= combat_enemy_count)
+    *temp saat_rhp {(("combat_enemy" & saat_ri) & "_hp")}
+    *if (saat_rhp > 0)
+      *temp saat_rmax {(("combat_enemy" & saat_ri) & "_max_hp")}
+      *temp saat_repos {(("combat_enemy" & saat_ri) & "_position")}
+      *temp saat_rd (saat_rapos - saat_repos)
+      *if (saat_rd < 0)
+        *set saat_rd (0 - saat_rd)
+      *if ((not(combat_ally_cornered)) or (saat_rd <= 0))
+        *temp saat_rlt ((saat_rhp * saat_rbest_max) < (saat_rbest_hp * saat_rmax))
+        *temp saat_req ((saat_rhp * saat_rbest_max) = (saat_rbest_hp * saat_rmax))
+        *if (((saat_pref_target = 0) or (saat_rlt)) or ((saat_req) and ((saat_rd < saat_rbest_d) or ((saat_rd = saat_rbest_d) and (saat_rhp < saat_rbest_hp)))))
+          *set saat_pref_target saat_ri
+          *set saat_rbest_d saat_rd
+          *set saat_rbest_hp saat_rhp
+          *set saat_rbest_max saat_rmax
+    *set saat_ri + 1
     *goto select_ally_ranged_loop
 *else
-  *temp saat_min_range 999
-  *temp saat_i 1
-  *label select_ally_minrange_loop
-  *if (saat_i <= combat_enemy_count)
-    *temp saat_hp {(("combat_enemy" & saat_i) & "_hp")}
-    *if (saat_hp > 0)
-      *temp saat_range {(("combat_enemy" & saat_i) & "_range")}
-      *if (saat_range < saat_min_range)
-        *set saat_min_range saat_range
-    *set saat_i + 1
-    *goto select_ally_minrange_loop
+  *comment NEAREST ENEMY (2026-10-11, step 2 of the nearest-target pass): a melee ally picks the enemy NEAREST to ITSELF by lane coordinate, not the one nearest the player's front (the old
+  *comment combat_enemy<N>_range tier is the enemy's distance to YOU, which says nothing about how far it is from this ally). A tie goes to the most wounded by fraction of maximum HP, then to the
+  *comment lowest current HP -- the same rule the melee enemies use (choose_melee_enemy_target). Ranged allies keep the branch above until their own step.
+  *temp saat_apos {(("combat_ally" & saat_slot) & "_position")}
+  *temp saat_best_d 999
   *temp saat_best_hp 0
-  *set saat_i 1
-  *label select_ally_tierpick_loop
+  *temp saat_best_max 1
+  *temp saat_i 1
+  *label select_ally_nearest_loop
   *if (saat_i <= combat_enemy_count)
     *temp saat_hp {(("combat_enemy" & saat_i) & "_hp")}
     *if (saat_hp > 0)
-      *temp saat_range {(("combat_enemy" & saat_i) & "_range")}
-      *if ((saat_range = saat_min_range) and ((saat_pref_target = 0) or (saat_hp < saat_best_hp)))
+      *temp saat_max {(("combat_enemy" & saat_i) & "_max_hp")}
+      *temp saat_epos {(("combat_enemy" & saat_i) & "_position")}
+      *temp saat_d (saat_apos - saat_epos)
+      *if (saat_d < 0)
+        *set saat_d (0 - saat_d)
+      *temp saat_lt ((saat_hp * saat_best_max) < (saat_best_hp * saat_max))
+      *temp saat_eq ((saat_hp * saat_best_max) = (saat_best_hp * saat_max))
+      *if (((saat_pref_target = 0) or (saat_d < saat_best_d)) or ((saat_d = saat_best_d) and ((saat_lt) or ((saat_eq) and (saat_hp < saat_best_hp)))))
         *set saat_pref_target saat_i
+        *set saat_best_d saat_d
         *set saat_best_hp saat_hp
+        *set saat_best_max saat_max
     *set saat_i + 1
-    *goto select_ally_tierpick_loop
+    *goto select_ally_nearest_loop
 *if (saat_pref_target > 0)
   *set combat_active_target saat_pref_target
   *gosub_scene combat fight_sync_target_in
+  *comment An ally's own range IS its distance to its target, so it is re-read from the lane coordinates whenever the target is picked (it used to be left at whatever the previous target set). For a ranged ally this is
+  *comment what makes the knife come out exactly when its target stands in its own tile (resolve_ally_attack quick-draws at range 0).
+  *gosub combat_ai_reseed_ally_range saat_slot saat_pref_target
 *else
   *gosub_scene combat_movement fight_pick_target
+*return
+
+*label combat_ai_reseed_ally_range
+*comment A melee ally's combat_ally<N>_range is its distance to its current target. Re-derive it from the real lane coordinates (clamped to the fight's range scale), so a new target never inherits the old one's distance.
+*params carr_slot carr_target
+*temp carr_apos {(("combat_ally" & carr_slot) & "_position")}
+*temp carr_tpos {(("combat_enemy" & carr_target) & "_position")}
+*temp carr_r (carr_apos - carr_tpos)
+*if (carr_r < 0)
+  *set carr_r (0 - carr_r)
+*if (carr_r > combat_max_range)
+  *set carr_r combat_max_range
+*set {(("combat_ally" & carr_slot) & "_range")} carr_r
 *return
 
 *comment ============================================================================

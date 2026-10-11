@@ -32,7 +32,7 @@
 *comment The tile's climate shifts the temperature (calendar.txt reads climate_shift), and its water is what the lye soap needs. Set before update_hub_condition so the weather flags use them.
 *script var n = window.Overworld.nodes[stats.ow_pos]; stats.climate_shift = n.climate || 0; stats.ow_water = !!n.water;
 *gosub_scene calendar update_hub_condition
-*script var o = window.Overworld; var k = o.nodes[stats.ow_pos].kind; stats.ow_name = o.nodes[stats.ow_pos].name; var n = o.nodes[stats.ow_pos]; var dark = (stats.time_period === "Night" || stats.time_period === "Pre-Dawn"); var storm = Number(stats.weather_severity) >= 3; stats.ow_here_text = (storm && n.hereStorm) ? n.hereStorm : ((dark && n.hereNight) ? n.hereNight : n.here); stats.ow_can_camp = (k !== "city" && k !== "town" && k !== "village"); var nowm = Number(stats.clock_hour) * 60 + Number(stats.clock_minute); var toDawn = (1800 - nowm) % 1440; stats.ow_dawn_ok = (toDawn >= 360 && toDawn <= 720); stats.ow_dawn_hours = Math.round(toDawn / 60);
+*script var o = window.Overworld; var k = o.nodes[stats.ow_pos].kind; stats.ow_name = o.nodes[stats.ow_pos].name; var n = o.nodes[stats.ow_pos]; var dark = (stats.time_period === "Night" || stats.time_period === "Pre-Dawn"); var storm = Number(stats.weather_severity) >= 3; stats.ow_here_text = (storm && n.hereStorm) ? n.hereStorm : ((dark && n.hereNight) ? n.hereNight : n.here); stats.ow_can_camp = (k !== "city" && k !== "town" && k !== "village" && k !== "fort"); var nowm = Number(stats.clock_hour) * 60 + Number(stats.clock_minute); var toDawn = (1800 - nowm) % 1440; stats.ow_dawn_ok = (toDawn >= 360 && toDawn <= 720); stats.ow_dawn_hours = Math.round(toDawn / 60);
 *comment What the weather and the gear add to hunger and fatigue right now, as a percent, for the map card (base 100 minutes, so the extra minutes ARE the percent). Plain sets: a replay is harmless.
 *set exposure_base_mins 100
 *set exposure_camping false
@@ -92,6 +92,11 @@ ${ow_here_text}
       *set ow_on false
       *set climate_shift 0
       *goto_scene alderford/alderford af_arrive
+  *if (ow_pos = "rv")
+    # Go into Redvein.
+      *set ow_on false
+      *set climate_shift 0
+      *goto_scene alderford/redvein/redvein rv_arrive
 
 *comment ── the sky over the road: weather and light only, no people ──
 *label ow_sky
@@ -144,7 +149,7 @@ ${ow_here_text}
     *label ow_leg_loop
     *if (ow_leg_i < ow_legs)
       *comment The incoming tile's climate applies to this road leg. A route node is a map landmark, not a pause in the player's one-click journey.
-      *script var o = window.Overworld; var L = o.route(stats.ow_from, stats.ow_dest).legs[stats.ow_leg_i]; if (L) { stats.ow_leg_miles = L.miles; stats.climate_shift = o.nodes[L.to].climate || 0; }
+      *script var o = window.Overworld; var L = o.route(stats.ow_from, stats.ow_dest).legs[stats.ow_leg_i]; if (L) { stats.ow_leg_miles = L.miles; stats.ow_leg_pace = L.pace || 100; stats.climate_shift = o.nodes[L.to].climate || 0; }
       *if (ow_leg_mile_i < ow_leg_miles)
         *comment The weather, the pace, the exposure and the clock for this mile are ONE scene call; it only reports back when the light or the visibility makes walking impossible.
         *gosub_scene calendar travel_step
