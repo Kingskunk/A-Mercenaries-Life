@@ -53,6 +53,7 @@ const RENAMES = {
   // second naming scheme. (These arrived as .DDS and were converted to .webp; see tools/dds2png.js
   // for the DDS path still used by the rest of the library.)
   prestidigitation: "Spell/Spell_Transmutation_Prestidigitation.webp",
+  booming_blade: "Spell/Spell_Evocation_BoomingBlade.webp",
   unseen_servant: "Spell/Spell_Conjuration_UnseenServant.webp",
   // NOTE: the library has no Chill Touch art. Action_ChillingHand is a DIFFERENT spell (a 1st-level
   // evocation attack, not a necromancy cantrip), so this is a deliberate visual stand-in rather than

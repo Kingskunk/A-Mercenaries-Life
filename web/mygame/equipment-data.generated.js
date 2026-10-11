@@ -120,6 +120,146 @@ window.EQUIPMENT_CATALOG = {
     },
     {
       "ids": [
+        "road_club"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "wooden club"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Wooden Club"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d4 bludgeoning"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "bludgeoning"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "club"
+        }
+      }
+    },
+    {
+      "ids": [
+        "rough_spear"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "rough spear"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Rough Spear"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d6 piercing"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "reach"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "rough spear"
+        }
+      }
+    },
+    {
+      "ids": [
+        "cord_sling"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "cord sling"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Cord Sling"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d4 bludgeoning"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "bludgeoning"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "ranged"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "sling"
+        }
+      }
+    },
+    {
+      "ids": [
+        "hunting_bow"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "hunting bow"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Hunting Bow"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d6 piercing"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "ranged"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "two_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "hunting bow"
+        }
+      }
+    },
+    {
+      "ids": [
         "longshade_quarterstaff"
       ],
       "fields": {
@@ -712,6 +852,146 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_prose": {
           "type": "literal",
           "value": "stiletto"
+        }
+      }
+    },
+    {
+      "ids": [
+        "road_club"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "wooden club"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Hung Wooden Club"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d4 bludgeoning"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "bludgeoning"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "club"
+        }
+      }
+    },
+    {
+      "ids": [
+        "rough_spear"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "rough spear"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Slung Rough Spear"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d6 piercing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "reach"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "rough spear"
+        }
+      }
+    },
+    {
+      "ids": [
+        "cord_sling"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "cord sling"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Coiled Cord Sling"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d4 bludgeoning"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "bludgeoning"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "ranged"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "sling"
+        }
+      }
+    },
+    {
+      "ids": [
+        "hunting_bow"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "hunting bow"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Slung Hunting Bow"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d6 piercing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "ranged"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "two_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "hunting bow"
         }
       }
     },

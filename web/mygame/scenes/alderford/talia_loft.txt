@@ -1,0 +1,397 @@
+*comment ====================================================================================
+*comment TALIA'S CURING LOFT (Alderford): permanent relationship continuation for Talia. Her
+*comment prologue route begins with the cask rescue and shelter; this file gives that relationship
+*comment a lower-wharf home without replaying those one-time scenes.
+*comment ====================================================================================
+
+*label af_talia_loft
+*set minutes_to_pass 5
+*set time_advance_call_id "af_talia_loft_walk_1"
+*gosub_scene alderford/alderford af_walk_time
+
+*if (not(talia_romanced))
+  *set talia_romanced true
+*if (not(talia_bond_seeded))
+  *set talia_bond 10
+  *set talia_bond_seeded true
+*if (not(af_talia_after_hours_seen))
+  *goto af_talia_first_visit
+*goto af_talia_loft_hub
+
+*label af_talia_first_visit
+[b]◈ TALIA'S CURING LOFT[/b]
+*line_break
+
+The narrow stair above the curing sheds ends at a door warmed by the stove inside. Brine, woodsmoke and the clean sharpness of rendered wax cling to the boards. The lower wharves are quieter after dark, but the Grey still works against the pilings below.
+
+*choice
+  # Knock and tell Talia you came to see how she is holding up.
+    When Talia opens the door, you say, "I came to see how you are holding up, away from the trouble downstairs."
+
+    Her hand stays on the latch for a moment. "That is a better question than most people ask." She steps aside. "Come in, then. The kettle is hot."
+    *set talia_first_private_tone "care"
+    *goto af_talia_first_talk
+  # Knock and ask whether she has room for company.
+    You wait for her to open the door before saying, "Have you room for company tonight? If not, I can leave you to the quiet."
+
+    Talia searches your face, then opens the door wider. "I have room. I am still learning to say that before I need to be asked twice."
+    *set talia_first_private_tone "space"
+    *goto af_talia_first_talk
+  # Leave a quiet word at the door and let her keep the evening.
+    When Talia opens the door, you give her a small nod. "I only wanted you to know I was thinking of you. Keep your evening."
+
+    Her expression softens. "Thank you. Come back when you want to talk, not only when you think I need saving."
+    *set talia_first_private_tone "space"
+    *set af_talia_after_hours_seen true
+    *if (not(talia_bond_award_locked)) or (not(locked_talia_bond_page_id = page_id))
+      *set talia_bond + 1
+      *set talia_bond_award_locked true
+      *set locked_talia_bond_page_id page_id
+    *page_break Return to Alderford…
+    *goto_scene alderford/alderford alderford
+
+*label af_talia_first_talk
+The loft is compact and orderly: drying racks along one wall, the small stove under a blackened pipe, and a table laid with two plain cups. Talia puts the kettle between the coals and sits across from you.
+
+"My father used to say a loft survives by keeping three things sound: its roof, its accounts and the people who work under it," she says. "The roof is holding. The accounts are a fight. The people are why I have not walked away."
+
+*choice
+  # Ask whether the accounts are what have been keeping her awake.
+    You let the cup warm your hands for a moment. "Is it the accounts that have been keeping you awake?"
+
+    Talia looks down, then nods. "Partly. But the numbers are only numbers. It is the thought of letting people down that keeps finding me when the room is quiet." Her eyes lift to yours. "I know what I want this place to be. I am afraid of how much it will cost to make it that."
+  # Tell her the loft already feels like something worth defending.
+    You look around the small room. "It already feels like something worth defending."
+
+    Talia glances toward the drying racks. "That is what makes losing it frightening." She looks back to you. "But it is also what makes staying mean something."
+  # Tell her she does not have to make a case for staying with you.
+    You lower your voice. "You do not have to make a case for staying with me."
+
+    A small smile finds her. "No. But I am used to doing it anyway." She curls both hands around her cup. "It is easier to stop when someone understands the noise is not all there is."
+
+*set af_talia_after_hours_seen true
+*if (not(talia_bond_award_locked)) or (not(locked_talia_bond_page_id = page_id))
+  *set talia_bond + 3
+  *set talia_bond_award_locked true
+  *set locked_talia_bond_page_id page_id
+*set hours_to_pass 0
+*set minutes_to_pass 30
+*set time_advance_call_id "af_talia_loft_first_visit"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+Talia walks you down the stair when the cups have gone cold. At the bottom, she rests a hand briefly against your arm.
+
+"Come back when you can," she says. "Not because the loft needs another defender. Because I would like to see you."
+
+*page_break Return to Alderford…
+*goto_scene alderford/alderford alderford
+
+*label af_talia_loft_hub
+*temp ta_week ((((campaign_day - 1) - ((campaign_day - 1) modulo 7)) / 7) + 1)
+*temp ta_weekly_open (not(talia_bond_week = ta_week))
+
+[b]◈ TALIA'S CURING LOFT[/b]
+*line_break
+
+The stove gives the small loft a steady warmth. Below, the lower wharves have gone dark one shed at a time, and the river moves under the pilings beyond the curing racks.
+
+*if (weather_severity >= 3)
+  Wind worries at the shutters, carrying spray and the river's cold breath up from the wharves.
+*elseif (weather = "Rain")
+  Rain taps against the loft roof and makes a silver curtain beyond the small window.
+*elseif (weather = "Fog")
+  Fog has swallowed the far wharf lamps, leaving only their blurred glow below.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Meltwater ticks from the roof edge into the dark lane below.
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  The stair boards below are still slick from the earlier rain, and a little water shines in the wharf lane.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The lower steps remain dark with damp, though the loft itself is dry and warm.
+
+*if (not(ta_weekly_open))
+  Talia has already made time for you this week. She looks up from the table with a warm, tired smile. "Come back when we can give it more than a stolen moment."
+*if ((talia_intimacy_unlocked) and (not(time_period = "Night")))
+  Talia glances toward the shuttered window, then back to you. "Stay awhile if you want. I am not ready to call it a night yet."
+
+*choice
+  *if (ta_weekly_open)
+    # Spend an evening with Talia. [~1 hour]
+      *goto af_talia_weekly_event
+  *if ((talia_intimacy_unlocked) and ((ta_weekly_open) and (time_period = "Night")))
+    # Ask Talia whether she wants you to stay the night. [~8 hours]
+      *goto af_talia_intimacy_offer
+  # Stay a while and help with the evening's small work. [~2 hours]
+    *goto af_talia_ordinary_evening
+  # Leave Talia to her evening.
+    You set your cup down. "I will let you have the quiet back."
+
+    Talia walks you to the stair. "The river will still be here when you return. So will I."
+    *page_break Return to Alderford…
+    *goto_scene alderford/alderford alderford
+
+*comment Ordinary time is deliberately repeatable: it gives the relationship a lived-in rhythm,
+*comment but does not award Bond or consume the once-weekly meaningful evening.
+*label af_talia_ordinary_evening
+*temp ta_ordinary_variant (campaign_day modulo 3)
+*if (ta_ordinary_variant = 0)
+  Talia has a heap of dry wrapping cloth on the table and a stack of small parcels waiting beside it. She nudges the cloth toward you. "Nothing heroic," she says. "Just enough hands to make the pile stop looking at me."
+
+  You take the cloth and begin folding it around the parcels while she ties them off. The work is easy to fall into: fold, turn, knot, stack. After a while, Talia bumps your shoulder with hers when she reaches for the next piece.
+
+  "You are better company than the pile," she says.
+*elseif (ta_ordinary_variant = 1)
+  A basket of clean jars waits by the stove, their lids in a separate heap. Talia is wiping each one dry before setting it on the shelf. When you move to help, she gives you a grateful look rather than an instruction.
+
+  You pass jars to her and take the dry ones she hands back, filling the shelf a little at a time. The only sounds are the soft click of glass, the stove, and the river below. Talia hums under her breath before she seems to notice she is doing it.
+
+  "That is more like an evening," she says quietly.
+*else
+  Talia has brought a crate of damp line up from the lower shed, and the two of you stretch it between the posts by the window to dry. It is slow work, feeding each length through your hands and keeping it from tangling.
+
+  When the last coil is hung, you lean beside her at the window for a moment. The wharf lights shiver in the water below. Talia lets out a small breath and leaves the line where it is instead of finding another task.
+
+  "Thank you," she says. "I do not always remember that a thing can wait until morning."
+
+*set hours_to_pass 2
+*set minutes_to_pass 0
+*set time_advance_call_id "af_talia_ordinary_evening"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*page_break Return to Alderford...
+*goto_scene alderford/alderford alderford
+
+*label af_talia_weekly_event
+*temp ta_event (ta_week modulo 3)
+*if (ta_event = 1)
+  Talia has spread a few damp account slips across the table, each weighed down with a spoon. "The work is not difficult," she says. "It is deciding which honest expense gets to hurt first."
+
+  *choice
+    # Ask whether she wants to talk about what is really bothering her.
+      You pull a chair closer. "Do you want to talk about the papers, or about what they are doing to you?"
+
+      Talia's fingers still on the nearest slip. "The second one." Her jaw tightens. "I can pay the crew early and leave myself lean, or hold the coin and make them wonder whether I am any better than the people I hate. I know the answer. I just wish it did not sit in my chest like a stone."
+    # Tell her you did not come upstairs to hear her punish herself.
+      You cover the nearest slip with your hand. "I did not come upstairs to hear you punish yourself for caring about people."
+
+      Talia lets out a breath that almost becomes a laugh. "You make that sound less noble than I was trying to make it." She folds the slip once. "Thank you."
+    # Tell her the papers can wait until morning, then ask her to sit with you.
+      You stack the slips into a neat pile. "They can wait until morning. Sit with me instead."
+
+      Talia watches you for a moment before moving the pile aside. "All right," she says softly. "Just for tonight."
+*elseif (ta_event = 2)
+  The stove is low, and Talia is working wax into the seams of a pair of river gloves. She has been at the same glove since you came in. "I have people who can finish these," she says, not looking up. "Some nights I keep a small job in my hands because then I do not have to decide what to do with myself."
+
+  *choice
+    # Ask what has made it hard to be still tonight.
+      You sit beside her. "What has made it hard to be still tonight?"
+
+      Talia rubs her thumb over the worn leather. "Nothing single. That is the trouble." She glances toward you. "When a day has too many small cuts, I start looking for one thing I can fix with my hands."
+    # Offer your hand and ask her to put the glove down for a while.
+      You hold out your hand. "Put it down for a while. Sit with me instead."
+
+      Talia looks at your hand, then gives the glove one last careful pass before setting it aside. Her fingers settle into yours. "You make stopping sound possible."
+    # Tell her you are glad she does not have to fill every quiet moment alone.
+      You rest a hand over the glove. "I am glad you do not have to fill every quiet moment alone."
+
+      Talia's expression softens. "Neither am I," she says. "That is still new enough to feel strange."
+*else
+  Talia brings two cups down to the wharf rail. The lower river is black beyond the lamps, and the mooring lines strain and ease with each change in the current. She does not speak for a while, only watches the lamps slide across the water.
+
+  *choice
+    # Ask whether the river still feels like home to her.
+      You rest your hands on the rail. "Does this still feel like home to you?"
+
+      Talia takes her time answering. "Most days. Other days it feels like the thing that has asked the most from me." She looks sideways at you. "Both can be true, I suppose."
+    # Tell her you like seeing her away from the loft for a while.
+      You look from the water to her. "I like seeing you away from the loft for a while."
+
+      Talia's shoulder brushes yours. "I forget I am allowed to be anywhere else sometimes." She looks back to the water. "You make that harder to forget."
+    # Tell her she does not have to watch the river alone tonight.
+      You lean against the rail beside her. "You do not have to watch it alone tonight."
+
+      Talia lowers her gaze to the cup between her hands. "No," she says. "I do not." Her shoulder comes to rest against yours and stays there.
+
+*label af_talia_weekly_close
+*set talia_bond_week ta_week
+*if (not(talia_bond_award_locked)) or (not(locked_talia_bond_page_id = page_id))
+  *set talia_bond + 3
+  *set talia_bond_award_locked true
+  *set locked_talia_bond_page_id page_id
+*set hours_to_pass 0
+*set minutes_to_pass 60
+*set time_advance_call_id "af_talia_weekly_evening"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*if ((talia_bond >= 20) and (not(talia_intimacy_unlocked)))
+  *set talia_intimacy_unlocked true
+  At the foot of the stair, Talia catches your hand before you can turn toward the street. She looks at it for a moment, then meets your eyes.
+
+  "I keep finding reasons to ask you upstairs," she says. "Work. The river. A cup that is already cold." A quiet, nervous smile touches her mouth. "I do not want to pretend those are the only reasons. If you want to stay with me, ask. I want the answer to be something we choose together."
+
+*if (show_stat_hints)
+  [b][Talia Bond +3: ${talia_bond}][/b]
+*page_break Return to Alderford…
+*goto_scene alderford/alderford alderford
+
+*comment ====================================================================================
+*comment TALIA: repeat intimacy unlocks at 20 Bond. It consumes the relationship's meaningful
+*comment evening for the week, gives the global encounter count and a distinct three-day boon.
+*comment ====================================================================================
+
+*label af_talia_intimacy_offer
+*set talia_bond_week ta_week
+Talia waits by the stove after the last of the work has been put aside. She does not reach for you or turn away; she simply gives you room to answer the question between you.
+
+*choice
+  # Ask Talia what she wants tonight.
+    You take her hand, keeping your voice low. "What do you want tonight?"
+
+    Her fingers close around yours. "To stop being the one who keeps everything upright for a little while." She takes a careful breath. "And to be wanted without having to make a bargain of it."
+    *set talia_intimacy_tone "ask"
+    *goto af_talia_intimacy_scene
+  # Tell Talia you want her, plainly.
+    You step close enough that she can choose the distance. "I want you, Talia. I have wanted to stay since I came up those stairs."
+
+    Her breath catches, then she gives you a small, unguarded smile. "That is plain enough for me." She draws you in by the hand and kisses you before either of you can find a safer sentence.
+    *set talia_intimacy_tone "want"
+    *goto af_talia_intimacy_scene
+  # Tell Talia she can set the pace.
+    You hold her gaze. "Show me what you want. I am here, and I will follow you."
+
+    Talia studies your face before she nods. Her palm settles against your chest. "Then stay with me," she says. "Do not make me guess."
+    *set talia_intimacy_tone "lead"
+    *goto af_talia_intimacy_scene
+  # Say you would rather sit together tonight.
+    You brush your thumb across the back of her hand. "I want to stay. I do not need more than being here with you tonight."
+
+    The tension leaves Talia's shoulders. "Then that is what we will do." She guides you to the table and pours the last of the kettle between two cups.
+    *set talia_intimacy_tone "quiet"
+    *goto af_talia_intimacy_quiet
+
+*label af_talia_intimacy_scene
+*temp ta_intimacy_variant (campaign_day modulo 3)
+*if (ta_intimacy_variant = 0)
+  Talia closes the loft door and presses you back onto the narrow bed before climbing into your lap. Her kiss is hungry rather than hurried, one hand firm at the back of your neck while the other guides you where she wants you. When she lowers herself onto you, the heat and tightness draw a broken breath from both of you. She starts slowly, watching your face, then finds a harder rhythm, hips rolling against yours until the bedframe gives a steady creak beneath you.
+
+  "Tell me if you want me to slow," she manages, breathless.
+
+  You answer by pulling her closer. Talia's hands tighten on your shoulders as the rhythm breaks apart into rougher, quicker movement. She comes with a sharp gasp against your mouth, still moving through the shudder of it until you follow her over the edge.
+
+  Afterwards, she keeps one hand at the back of your neck and laughs once, quietly, as if surprised to find herself there. "I forgot how good it is not to be alone in my own room," she says.
+*elseif (ta_intimacy_variant = 1)
+  The stove has made the small loft warm, but Talia draws you away from it and down onto the bed with a hand hooked in yours. She turns beneath you, then reaches back for you with a look that is more command than question. When you press into her from behind, she arches with a sharp sound and pushes back to meet you, one hand braced in the blankets and the other reaching for yours.
+
+  The first pace is careful only long enough to make sure she wants it. Then Talia tells you not to hold back. The bed knocks softly against the wall as you take her harder, her breath breaking into your name and half-formed encouragements. When she comes, her body tightens around you and her fingers lock through yours; the release catches you both hard enough that neither of you can speak for a while afterward.
+
+  Talia stays close when it is over, her forehead resting against yours. "You make it easier to stop bracing for the next thing," she murmurs.
+*else
+  Talia catches you halfway to the bed and kisses you hard enough to steal the next breath from both of you. She pulls you down with her, face to face, and holds your gaze while her legs draw you in. The first thrust makes her mouth open on a quiet, startled sound; the next makes her grip your hand and keep it against her chest.
+
+  "There," she whispers. "Do not go anywhere."
+
+  You do not. The night narrows to the warmth of her body, the press and drag of each movement, and the low, unguarded sounds she can no longer keep quiet. She meets you stroke for stroke until the tension between you turns unbearable, then breaks around both of you at once. Talia clings to you afterward, breathing hard, as though the river could not take anything from this room while you are still there.
+
+  Her fingers trace once along your hand beneath the blanket. "Stay close," she says. "Just until morning."
+
+*goto af_talia_after_intimacy
+
+*label af_talia_intimacy_quiet
+You sit together until the kettle goes cold. Talia talks a little, listens when you speak, and lets the silences stay unfilled. When the hour has passed, she walks you to the stair with her hand resting lightly at your back.
+
+"Come back when you want quiet," she says. "It is not a lesser thing."
+*set talia_intimacy_tone ""
+*page_break Return to the loft…
+*goto af_talia_after_quiet
+
+*label af_talia_after_intimacy
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set intimate_encounters + 1
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+*if (not(talia_bond_award_locked)) or (not(locked_talia_bond_page_id = page_id))
+  *set talia_bond + 2
+  *set talia_bond_award_locked true
+  *set locked_talia_bond_page_id page_id
+
+Afterward, Talia does not hurry to fill the room with words. She stays close beneath the blankets until the river's noise has become something distant and steady.
+
+*if (talia_intimacy_tone = "ask")
+  "Thank you for asking," she says. "Wanting something does not always make it easy to say it."
+*elseif (talia_intimacy_tone = "want")
+  "You make a plain answer feel safe," Talia says, her fingers threading through yours.
+*elseif (talia_intimacy_tone = "lead")
+  "Trust is a strange thing," she says. "It is not giving up control. It is knowing I can reach for you and be met."
+*else
+  "I am glad you stayed," she says softly. "For all of it."
+*set talia_intimacy_tone ""
+*if (show_stat_hints)
+  [b][Talia Bond +2: ${talia_bond}][/b]
+*set hours_to_pass 8
+*set minutes_to_pass 0
+*set time_advance_call_id "af_talia_intimacy_sleep"
+*gosub_scene calendar advance_time
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*set sleep_location_id "talia_loft"
+*set sleep_is_shared false
+*set sleep_is_permanent_home false
+*set sleep_tier_name "none"
+*set sleep_tier_stat1 "none"
+*set sleep_tier_bonus1 0
+*set sleep_tier_stat2 "none"
+*set sleep_tier_bonus2 0
+*gosub_scene calendar resolve_sleep
+*set minutes_since_wash 0
+*set hygiene_stage "Clean"
+*set unique_buff_input_name "Clear Bearings"
+*set unique_buff_input_desc "+1 PER (Talia's Grounded Eye)"
+*set unique_buff_input_stat "per"
+*set unique_buff_input_bonus 1
+*set unique_buff_input_minutes 4320
+*gosub_scene economy apply_unique_buff
+*gosub_scene calendar update_hub_condition
+
+When morning comes, Talia sits with you over a little food and makes room for the road ahead in the way she understands best: plainly. She asks what you need, what you are avoiding, and what can wait. By the time you leave, your next steps feel less tangled.
+
+[b][Clear Bearings: +1 PER for 3 days | Long Rest Resolved | Hygiene Restored to Clean][/b]
+*page_break Return to Alderford…
+*goto_scene alderford/alderford alderford
+
+*label af_talia_after_quiet
+*temp ta_quiet_week ((((campaign_day - 1) - ((campaign_day - 1) modulo 7)) / 7) + 1)
+*set talia_bond_week ta_quiet_week
+*set hours_to_pass 0
+*set minutes_to_pass 60
+*set time_advance_call_id "af_talia_quiet_evening"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*page_break Return to Alderford…
+*goto_scene alderford/alderford alderford

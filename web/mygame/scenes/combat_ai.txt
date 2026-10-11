@@ -367,6 +367,55 @@
     *goto find_intercepting_ally_snipe_loop
 *return
 
+*label choose_melee_enemy_target
+*comment NEAREST-TARGET RULE (2026-10-11, on request): a melee enemy goes for the NEAREST opponent, whoever that is -- you or an ally -- by lane coordinate (combat_enemy<N>_position against
+*comment combat_lane_player_position and combat_ally<N>_position, the same coordinates the Battlefield strip draws), not for the player by default. A tie goes to the lowest current HP, the
+*comment player counted like anyone else, so nobody gets special treatment. A hidden player is not a candidate (the hidden branch in combat_next_turn still covers an enemy with nobody else to go for).
+*comment It REPLACES find_intercepting_ally's "any ally in the engaged bucket" test for melee enemies (ranged enemies keep that label's own rules; they are a later step) and the old
+*comment one-roll commit-and-chase, which is no longer called for melee enemies: the nearest target IS the chase, every turn, with no dice.
+*comment Output: an ally at distance 0 goes in combat_intercepting_ally (the existing attack-the-ally branch takes it from there); an ally farther off goes in combat_enemy_goal_ally (the new
+*comment closing branch in combat_next_turn); the player, or nobody, leaves both 0 and the enemy behaves exactly as it always did.
+*params cmet_slot
+*set combat_intercepting_ally 0
+*set combat_enemy_goal_ally 0
+*temp cmet_epos {(("combat_enemy" & cmet_slot) & "_position")}
+*temp cmet_best_d 999
+*temp cmet_best_hp 0
+*temp cmet_best_slot 0
+*temp cmet_found false
+*temp cmet_player_best false
+*if (not(combat_player_hidden))
+  *temp cmet_pd (cmet_epos - combat_lane_player_position)
+  *if (cmet_pd < 0)
+    *set cmet_pd (0 - cmet_pd)
+  *set cmet_best_d cmet_pd
+  *set cmet_best_hp hp_current
+  *set cmet_found true
+  *set cmet_player_best true
+*temp cmet_i 1
+*label choose_melee_enemy_target_loop
+*if (cmet_i <= combat_ally_slot_cap)
+  *temp cmet_hp {(("combat_ally" & cmet_i) & "_hp")}
+  *if (cmet_hp > 0)
+    *temp cmet_apos {(("combat_ally" & cmet_i) & "_position")}
+    *temp cmet_ad (cmet_epos - cmet_apos)
+    *if (cmet_ad < 0)
+      *set cmet_ad (0 - cmet_ad)
+    *if (((not(cmet_found)) or (cmet_ad < cmet_best_d)) or ((cmet_ad = cmet_best_d) and (cmet_hp < cmet_best_hp)))
+      *set cmet_found true
+      *set cmet_player_best false
+      *set cmet_best_d cmet_ad
+      *set cmet_best_hp cmet_hp
+      *set cmet_best_slot cmet_i
+  *set cmet_i + 1
+  *goto choose_melee_enemy_target_loop
+*if ((cmet_found) and (not(cmet_player_best)))
+  *if (cmet_best_d <= 0)
+    *set combat_intercepting_ally cmet_best_slot
+  *else
+    *set combat_enemy_goal_ally cmet_best_slot
+*return
+
 *label find_melee_ally_present
 *comment Ally-side rows 3-4 mirror (2026-09-29, on request). Sets combat_melee_ally_present true if any living
 *comment ally with weapon_type "melee" is at range 0. Deliberately does NOT check the player -- Mechanism A

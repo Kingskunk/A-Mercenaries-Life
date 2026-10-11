@@ -277,6 +277,67 @@ ${combat_player_dmg_roll_banner}
     *gosub adjust_outgoing_damage_packet cwh_packet_raw combat_player_extra_dmg_type
     *set combat_player_dmg_dealt + combat_packet_damage
     *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${cwh_packet_roll} ${cwh_packet_bonus_str} ${combat_player_extra_dmg_type} = ${combat_packet_damage}${combat_packet_suffix}][/b]"
+  *comment TRUE STRIKE: from level 5 the hit adds Radiant dice whichever damage type was chosen: 1d6 at level 5, 2d6 at 11, 3d6 at 17 (5e). Rolled inside the hit lock, through the same resistance check as any rider.
+  *if (true_strike_on)
+    *temp cwh_ts_n 0
+    *if (character_level >= 5)
+      *set cwh_ts_n 1
+    *if (character_level >= 11)
+      *set cwh_ts_n 2
+    *if (character_level >= 17)
+      *set cwh_ts_n 3
+    *temp cwh_t1 1
+    *rand cwh_t1 1 6
+    *temp cwh_t2 1
+    *rand cwh_t2 1 6
+    *temp cwh_t3 1
+    *rand cwh_t3 1 6
+    *temp cwh_ts_raw 0
+    *if (cwh_ts_n >= 1)
+      *set cwh_ts_raw + cwh_t1
+    *if (cwh_ts_n >= 2)
+      *set cwh_ts_raw + cwh_t2
+    *if (cwh_ts_n >= 3)
+      *set cwh_ts_raw + cwh_t3
+    *if (cwh_ts_n > 0)
+      *gosub adjust_outgoing_damage_packet cwh_ts_raw "radiant"
+      *set combat_player_dmg_dealt + combat_packet_damage
+      *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${cwh_ts_n}d6 radiant = ${combat_packet_damage}${combat_packet_suffix}][/b]"
+    *if (true_strike_radiant)
+      *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][✨ True Strike: Radiant][/b]"
+    *else
+      *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][✨ True Strike][/b]"
+  *comment BOOMING BLADE: armed by its own action option for this one swing (combat.txt fight_booming_go), a melee weapon hit sheathes the struck enemy (the flag fires in combat.txt fight_booming_trigger when it moves). Spent here, inside the hit lock.
+  *if ((booming_armed) and (not(weapon_type = "ranged")))
+    *set booming_armed false
+    *set {(("combat_enemy" & combat_active_target) & "_booming")} true
+    *comment The on-hit rider by character level (5e): none at levels 1 to 4, then 1d8 thunder from level 5, 2d8 from level 11, 3d8 from level 17. Rolled inside the hit lock; the thunder goes through the same
+    *comment resistance check as any other rider.
+    *temp cwh_boom_n 0
+    *if (character_level >= 5)
+      *set cwh_boom_n 1
+    *if (character_level >= 11)
+      *set cwh_boom_n 2
+    *if (character_level >= 17)
+      *set cwh_boom_n 3
+    *temp cwh_b1 1
+    *rand cwh_b1 1 8
+    *temp cwh_b2 1
+    *rand cwh_b2 1 8
+    *temp cwh_b3 1
+    *rand cwh_b3 1 8
+    *temp cwh_boom_raw 0
+    *if (cwh_boom_n >= 1)
+      *set cwh_boom_raw + cwh_b1
+    *if (cwh_boom_n >= 2)
+      *set cwh_boom_raw + cwh_b2
+    *if (cwh_boom_n >= 3)
+      *set cwh_boom_raw + cwh_b3
+    *if (cwh_boom_n > 0)
+      *gosub adjust_outgoing_damage_packet cwh_boom_raw "thunder"
+      *set combat_player_dmg_dealt + combat_packet_damage
+      *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${cwh_boom_n}d8 thunder = ${combat_packet_damage}${combat_packet_suffix}][/b]"
+    *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][⚡ Booming Blade: sheathed in thunder][/b]"
   *set combat_enemy_hp - combat_player_dmg_dealt
   *if (combat_enemy_hp < 0)
     *set combat_enemy_hp 0

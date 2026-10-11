@@ -426,7 +426,7 @@
       link: ["Cargo Quay"],
       unlock: "pv_quays_seen",
       body: [
-        "The cargo quay runs from the taverns by the fish market toward the customs tower, and it is one long argument conducted in stamped parchment. Guild clerks in the river-serpent colors of the Gilded Scales move crate to crate with wax tablets, while Port Watch officers walk the line with cudgels slung but visible.",
+        "The cargo quay runs from the taverns by the fish market toward the customs tower, and it is one long argument conducted in stamped parchment. Guild clerks in the river-serpent colors of the Gilded Scales move crate to crate with wax tablets, while Port Watch officers walk the line with swords at their hips and spears on their shoulders.",
         "Midway along it stands a long hall of grey stone under a great iron beam-scale. The registry box stands under the customs tower at its end, where the dockmaster's lamp burns in the window. Crane three, on the cargo line, takes day labor."
       ],
       see: ["voss", "dell", "gilded_scales", "port_watch", "weigh_house"]
@@ -1042,9 +1042,9 @@
       unlock: "es_yard_seen",
       body: [
         "A broad yard of beaten earth outside the north-west wall, fenced in planks and open to the River Road. A long shed keeps the wagons dry, a lean-to forge and a stone trough serve the teams, and the yard's brand is burned into the flank of every ox.",
-        "Caravans for the road are made up here: four or five wagons, oxen in pairs, a lead horse and a wagon master with a slate. The Hiring Hall posts the work, and the wagon master pays only those who are in the column when it rolls."
+        "Caravans for the road are made up here: four or five wagons, oxen in pairs, a lead horse and a wagon master with a slate. They run to Timbermouth by the River Road and, on another day, to Alderford, going round under the wall to the High Grey Road. The Hiring Hall posts the work, and the wagon master pays only those who are in the column when it rolls."
       ],
-      see: ["river_gate", "trunk_road", "hiring_hall"]
+      see: ["river_gate", "trunk_road", "hiring_hall", "carters_lot_af"]
     },
     {
       id: "charter_gate", category: "places", title: "The Charter Gate",
@@ -1261,6 +1261,118 @@
         "A tall, weathered woman in a steel-trimmed surcoat, with grey at her temples and a duelist's stillness, who keeps the Inner Gate's book on a slanted desk under the arch. She serves the houses jointly, not the Watch."
       ],
       see: ["upper_wharves", "entry_writs"]
+    },
+    {
+      id: "the_slasher", category: "lore", title: "The Slasher",
+      sub: "The killer the city is afraid of",
+      tags: ["Port Valen", "Law"], aliases: ["slasher", "the killings", "the murders", "killer"],
+      link: ["the Slasher", "Slasher"],
+      unlock: "slasher_hook_seen",
+      body: function (s) {
+        var out = [
+          "Seven dead in Port Valen, always at night, always in a back lane, always cut up and left where they fell. The Watch took to calling the killer the Slasher because they had nothing better to call him. Varren says every lead the Watch gets goes cold: witnesses leave town, names belong to dead men, doors stand open one day and are bricked up the next."
+        ];
+        if (s.slasher_resolution === "arrested") {
+          out.push("The killer was Captain Bronner Trent of the city militia. He was taken by the Port Watch at the Drainage Cut, with a woman's comb and papers from his victims in his coat.");
+        } else if (s.slasher_resolution === "escaped") {
+          out.push("The killer was Captain Bronner Trent of the city militia, who burned his own post and escaped into Dredge-End. The Watch have put out a warrant.");
+        }
+        return out;
+      },
+      see: ["bronner_trent", "port_watch", "varren"]
+    },
+    {
+      id: "bronner_trent", category: "people", title: "Bronner Trent",
+      sub: "Captain of the militia post on the Trunk Road",
+      role: "Captain, city militia",
+      link: ["Bronner Trent", "Captain Trent", "Trent"],
+      tags: ["Middle Ward", "Law"], aliases: ["Trent", "captain", "militia captain"],
+      unlock: "slasher_hook_seen",
+      body: function (s) {
+        var out = [
+          "A captain in the city militia with a post on the Trunk Road. Varren says he served through the war, is loud about wanting the killings solved, and has put out word that he wants hands from outside the Watch and the militia."
+        ];
+        if (truthy(s.slasher_trent_met)) {
+          out.push("A broad, barrel-chested man in a boiled-leather coat in the city's colors, with two horn-handled knives at his belt that are cleaner than anything else in his office. He says the Watch leaks, and that Ulrich of Avir is the killer.");
+        }
+        if (s.slasher_resolution === "arrested") {
+          out.push("He murdered at least seven people and kept something from each. He tried to send hired swords and then a stranger into Avir Manor to have Ulrich killed or framed. The Port Watch took him at the Drainage Cut.");
+        } else if (s.slasher_resolution === "escaped") {
+          out.push("He murdered at least seven people. When he was confronted he set fire to his own post and ran, and he has not been found.");
+        }
+        return out;
+      },
+      see: ["the_slasher", "militia_post", "ulrich_of_avir"]
+    },
+    {
+      id: "militia_post", category: "places", title: "The Militia Post",
+      sub: "Captain Trent's post on the Trunk Road",
+      tags: ["Middle Ward", "Law"], aliases: ["militia post", "the post", "militia"],
+      link: ["the militia post", "militia post"],
+      unlock: "slasher_trent_met",
+      body: function (s) {
+        var out = [
+          "A squat stone building wedged between a wheelwright's and a chandler's on the Trunk Road, older than both, with the city's colors on a pole over the door. A counter and a stove in the front room, and Trent's private office at the back with a lantern hung by the door."
+        ];
+        if (s.slasher_resolution === "arrested" || s.slasher_resolution === "escaped") {
+          out.push("It burned to its beams the day Trent ran. The Council is still arguing about who pays for it.");
+        }
+        return out;
+      },
+      see: ["bronner_trent", "trunk_road"]
+    },
+    {
+      id: "ulrich_of_avir", category: "people", title: "Ulrich of Avir",
+      sub: "Timber and stone merchant, accused",
+      role: "Merchant, Patrician Quarter",
+      link: ["Ulrich of Avir", "Ulrich", "Lord Ulrich"],
+      tags: ["Patrician Quarter", "Trade"], aliases: ["Ulrich", "Avir", "Lord Ulrich"],
+      unlock: "slasher_trent_met",
+      body: function (s) {
+        var out = [
+          "A merchant in timber and stone with a house in the Patrician Quarter and enough money that the watch asks his opinion before it asks for its own. Captain Trent named him as the killer."
+        ];
+        if (truthy(s.slasher_alibi_known) || truthy(s.slasher_alibi_proof)) {
+          out.push("He was at Alderford on timber business through the last three killings and came back to the city only afterward. Receipts from the Factor's Hall there put him thirty miles from the lanes.");
+        }
+        if (truthy(s.slasher_ulrich_met)) {
+          out.push("A lean, sharp-featured man in a wine-colored velvet robe, dry and weary. He says Trent has sent men into his house for a month, and that two of his own letters to the militia command were answered by Trent. He says he will not send for the Port Watch over a housebreaker, if the housebreaker carries his proof to Trent.");
+        }
+        if (s.slasher_resolution === "arrested") {
+          out.push("He has been cleared by Trent's arrest. He says he always has use for capable people.");
+        }
+        return out;
+      },
+      see: ["bronner_trent", "avir_manor", "the_slasher"]
+    },
+    {
+      id: "avir_manor", category: "places", title: "Avir Manor",
+      sub: "Ulrich of Avir's walled estate",
+      tags: ["Patrician Quarter"], aliases: ["Avir Manor", "Avir's house", "the green tower"],
+      link: ["Avir Manor"],
+      unlock: "slasher_manor_seen",
+      body: [
+        "A walled estate behind the three great houses of the Avenue of Estates, up its own lane under the pines. A long limestone front under slate roofs, clipped hedges around a dry basin, and a balcony along the upper floor. The crest on the gate is a stone tower on a green hill. Four men in house livery walk the grounds in pairs, and there is a kennel behind the kitchen yard."
+      ],
+      see: ["ulrich_of_avir", "upper_wharves"]
+    },
+    {
+      id: "deacon_vey", category: "people", title: "Deacon Harl Vey",
+      sub: "Keeps the oath desk at the Cathedral",
+      role: "Deacon, Cathedral of the True Sun",
+      link: ["Deacon Harl Vey", "Harl Vey", "Deacon Vey"],
+      tags: ["Civic Heights", "Faith"], aliases: ["Vey", "Harl", "deacon"],
+      unlock: "met_deacon_vey",
+      body: function (s) {
+        var out = [
+          "A lean man in a dark gold stole mended at the edge, with ink in the creases of his fingers. He keeps the oath desk near the front pews and gives the cathedral's healing rite for four silver marks, once a day, the rite closing what is open."
+        ];
+        if (truthy(s.slasher_kenny_seen)) {
+          out.push("He is tending a dying man in the Althea chapel and says the rite cannot reach what is cracked inside a skull. When the militia sent a clerk for the man's name, he gave the name and kept back the man's fevered shouting.");
+        }
+        return out;
+      },
+      see: ["cathedral"]
     },
     {
       id: "pq_terrace_walk", category: "places", title: "The Terrace Walk",

@@ -1,0 +1,1560 @@
+*comment ====================================================================================
+*comment VARREN'S ERRAND: the string of killings in the city. Design source: quest/Random Quest Ideas.md.
+*comment
+*comment This file owns every scene of the quest. port_valen.txt (pv_armory_menu) owns only the entry button, and the
+*comment hubs the quest passes through will own only their physical entry points, as the Lyra and Middle Ward quests do.
+*comment
+*comment BUILT SO FAR (phase 1): the hook, in the armory shed. Captain Vane tells the player in the summons (port_valen.txt
+*comment port_valen_vane_summons, vane_varren_hint) to look in on Varren, as he does for Ysolde (timber) and Kestrel. The player goes to the
+*comment shed and tells him so; Varren lays out the case and points at Captain Bronner Trent of the city militia (post on the Trunk
+*comment Road). Taking the errand sets slasher_quest_stage "active". Nothing is paid and no time passes: it is conversation. The player
+*comment starts it, per quest/QUEST_DESIGN_RULES.md §1.
+*comment
+*comment PHASES BUILT: (1) the hook, below; (2) the militia post and Trent's pitch (slasher_post*); (3a) the street talk at the baths, the Cleaved Keel and the
+*comment Wagoner's Rest (slasher_rumor*, slasher_ask*); (3b) Kenny in the Cathedral's Althea chapel (slasher_kenny*); (4) Avir Manor and the Inner Gate (slasher_manor*, slasher_gate_warrant, slasher_ulrich*); (5) the confrontation, the chase, the fight, the arrest and Varren's
+*comment report (slasher_confront*, slasher_crack, slasher_chase*, slasher_fight, slasher_won, slasher_watch, slasher_escaped*, slasher_report); (6) Ulrich's courier and the reward at the manor
+*comment (slasher_courier, slasher_reward*); (7) the aftermath rumors (slasher_after_*). Each section has its own header. The Lorebook entries are in lorebook-port-valen.js. Not built: Trent's Cornered Butcher trait.
+*comment
+*comment Enter with:
+*comment   *goto_scene port_valen/varren_quests/varren_errand slasher_hook
+*comment
+*comment Replay: a page here never reads a flag it sets. slasher_hook_seen is set only on the page AFTER the offer is made (accept, decline
+*comment or the question about Trent), so a refresh on the offer page replays the full telling and not the shortened one.
+*comment ====================================================================================
+
+*label slasher_hook
+[b]◈ THE ARMORY SHED[/b]
+*line_break
+*if (not(slasher_hook_seen))
+  *goto slasher_hook_first
+*goto slasher_hook_again
+
+*label slasher_hook_first
+You wait for the awl to go through the leather before you speak. "Captain Vane told me to look in on you. He said you've got a job going."
+
+Varren pulls the waxed cord tight with his teeth and looks up, the good eye first and the pale one a moment behind it. "Did he." He lays the strap across his knee. "Aye, there's one. I hadn't made up my mind who'd get it, but I see the Captain has." He nudges a stool toward you with his boot. "Pull that over. You'll want to be sitting."
+
+You sit. Behind the partition the grindstone winds down and stops.
+
+"You've heard about the killings in the city?"
+
+"I haven't. Tell me what you know."
+
+"Seven dead." He says it flat, the way he'd read a tally off a board. "Always at night, always in a back lane, always cut up and left where they fell. The Watch calls him the Slasher, because they've got nothing better to call him."
+
+He takes a rag from the bench and works the awl clean. "Every time the Watch gets hold of something, it goes nowhere. A witness leaves town. A name turns out to belong to a man who died last winter. A door that stood open one day is bricked up the next. They're stretched thin, and everyone in those lanes is too frightened to talk. But it's more than that. It's like somebody is sweeping the floor behind them as they walk."
+
+"You think someone is helping him."
+
+"I think I don't like it." The awl goes back into its sheath. "Could be plain bad luck. Bad luck doesn't usually keep that neat."
+
+"Why is this the company's business?"
+
+Varren snorts. "It isn't. That's the point." He folds the rag over once and sets it down. "Captain Vane wants the Carrion known in this city for something besides hired muscle. If one of ours puts a name to this, the Council owes us a kind of thanks it can't pay in coin. People stop watching the gate when we march out, and they start saying hello. That's worth more to him than any contract on the board."
+
+"And Vane wants me to be the one."
+
+"Vane wants someone off the roster, and that's you. I want someone who'll do it properly." He leans forward, elbows on his knees. "There's a captain in the city militia, Bronner Trent, with a post on the Trunk Road. He's been asking around for hands from outside the Watch and the militia. People who can go where a uniform can't. I don't know what he has. I know he's loud about wanting it solved, and he's put the word out."
+
+*goto slasher_offer
+
+*label slasher_hook_again
+Varren is back at the strap when you ask about the work again. He tells it shorter this time: seven dead, every lead going cold, and the militia captain on the Trunk Road, Bronner Trent, who wants hands from outside the Watch. The offer is the same as it was.
+
+*goto slasher_offer
+
+*label slasher_offer
+*choice
+  # Take the errand.
+    *goto slasher_accept
+  *if (not(slasher_asked_trent))
+    # Ask what he makes of Trent.
+      *goto slasher_trent
+  # Not this one.
+    *goto slasher_decline
+
+*label slasher_trent
+*set slasher_hook_seen true
+*set slasher_asked_trent true
+"What do you make of Trent?"
+
+Varren's thumb stops on the strap. "Soldier. He served through the war and buried men for it, and he's loud about that, the way men are when they've nobody to say it to." The thumb starts moving again. "I've sat across a table from him twice. He didn't waste my time either time."
+
+"Why does he want outsiders?"
+
+"Says the Watch leaks. Seven dead and nothing to show for it, I can't call him wrong." He holds the strap up to the lamp and squints along it. "That's all I've got on him. The rest you'll learn standing in front of him."
+
+*goto slasher_offer
+
+*label slasher_accept
+*set slasher_hook_seen true
+*set slasher_quest_stage "active"
+"I'll go and see him," you say.
+
+Varren nods slowly. "Tell him the Iron Carrion sent you, and that I did. Say that much."
+
+"Not my name?"
+
+"Not yet." He turns the shield over on his knee and runs a thumb along the new strap, testing it. "Things leak in that part of the city. A name goes into one ear and comes out of a dozen mouths by morning. Keep yours until you know whose ears you're talking into."
+
+"And if he asks for it?"
+
+"Tell him you're a hand of mine and leave it there. He's a soldier. He'll understand a man who keeps his business close." He picks up the awl. "The post is on the Trunk Road, under the militia colors. Come back and tell me what he gives you."
+
+You stand. The grindstone starts up again behind the partition, and by the time you reach the door Varren has bent over the strap.
+
+[b][🏷️ Errand taken: Varren's Errand][/b]
+*page_break Head out across the compound…
+*goto_scene port_valen/port_valen port_valen_hub
+
+*label slasher_decline
+*set slasher_hook_seen true
+"Not this one," you say.
+
+Varren grunts and goes back to the rivet. "No shame in it. It isn't drill, and it won't be clean. If you change your mind, ask."
+*page_break Back to the bench…
+*goto_scene port_valen/port_valen pv_armory_back
+
+*comment ====================================================================================
+*comment THE MILITIA POST (phase 2): Captain Trent's pitch. Reached from the Trunk Road (port_valen_middle_ward.txt mw_gate_road): the hub holds only the
+*comment two buttons, one while slasher_quest_stage is "active" by day (slasher_post) and one at Night and Pre-Dawn that says the captain keeps day hours
+*comment (slasher_post_closed). Every label and every minute charged lives in this file: the walk and the visit are charged together, 25 minutes on the first
+*comment visit and 10 on later ones. Trent's office is the room the confrontation will happen in, so the lantern on its hook by the door and the window onto
+*comment the lane are set here on purpose.
+*comment
+*comment Two lies are planted for the investigation to disprove: Trent says Ulrich was seen in the lanes behind Conduit Square after dark (the street
+*comment talk will say he was upriver), and the cellar door on the map is not unlatched. The Insight check (DC 13) is slasher_trent_read: true when the
+*comment player sees through the mark, false when they trust it. The failure costs the player at Avir Manor, not here.
+*comment
+*comment Replay: the entry page sets nothing. slasher_trent_met, _proof_pressed, _trent_sized and _has_warrant are each set on the page AFTER the
+*comment decision that earns them, and the menu only reads them from the page before.
+*comment ====================================================================================
+
+*label slasher_post
+*if (not(slasher_trent_met))
+  *set minutes_to_pass 25
+  *set time_advance_call_id "slasher_post_1"
+*else
+  *set minutes_to_pass 10
+  *set time_advance_call_id "slasher_post_2"
+*gosub_scene port_valen/port_valen_middle_ward mw_walk_time
+*gosub slasher_ev_tally
+*if (slasher_has_warrant)
+  *goto slasher_post_return
+*if (slasher_trent_met)
+  *goto slasher_post_back
+*goto slasher_post_first
+
+*label slasher_post_first
+[b]◈ THE MILITIA POST[/b]
+*line_break
+The post is a squat stone building wedged between a wheelwright's and a chandler's, older than both, with the city's colors hanging limp from a pole over the door. Inside, the front room is one long space split by a counter. A stove ticks in the corner, a rack of pikes leans along one wall, and three militiamen sit on a bench and stop talking when you come in.
+*if (weather_wet)
+  Rain ticks on the slates overhead.
+
+The one behind the counter looks you over without getting up. "Help you?"
+
+"I'm here to see Captain Trent. Sergeant Varren of the Iron Carrion sent me."
+
+"Varren." He jerks his head toward a passage at the back. "End of the passage. He said somebody might come."
+
+The door at the end opens onto a narrow office with a timber floor scuffed pale by boots. A desk takes up most of the room, buried in papers and a tin mug, and a single window looks onto a lane with its shutter propped open. An iron lantern hangs on a hook beside the door.
+
+The man behind the desk is broad and barrel-chested, in a boiled-leather coat in the city's colors with the sleeves pushed up over thick forearms. Two knives with horn handles hang at his belt, cleaner than anything else in the room. He finishes the line he is writing before he looks up.
+
+"Captain Trent?" you say.
+
+"That's me." He doesn't get up. "Shut the door."
+
+You push it closed, and the noise from the front room drops to a mutter.
+
+"Sergeant Varren of the Iron Carrion sent me. He said you were looking for hands."
+
+"Varren." Trent sets the pen down. "Steady man. He listens before he talks, which is more than I can say for most of the Watch." His eyes go over you once, quickly. "He sent one."
+
+"He sent me."
+
+"Name?"
+
+"A hand of Varren's. That's what I'm offering."
+
+A short laugh comes out of him, without much humor in it. "Fair enough. Names go around this building faster than coin. I'd as soon not carry yours." He nudges a stool out from the desk with his foot. "Sit."
+
+You sit. He pulls the tin mug toward him, looks into it, and pushes it away again.
+
+"What did Varren tell you?"
+
+"That there have been seven killings, and the Watch has nothing."
+
+"Seven." He turns the mug a quarter turn on the blotter. "The last was two nights ago. Betty Fairweather. She worked a loom on the lower terrace and was walking home from a late shift. They found her behind Conduit Square, cut open, with a letter carved into her chest. An S."
+
+"What does it stand for?"
+
+"Nobody knows. The Watch took it for a name and started calling him the Slasher, and the city has used it since." He leans back, and the chair complains. "I'm militia, not Watch. They walk the lanes and I keep the walls, if things get really bad, that's when they call on us. But I've the same trouble they have. Every lead I get dies the day I get it." His eyes stay on yours. "I know who he is."
+
+"Who?"
+
+"Ulrich of Avir."
+
+He picks up the mug and drinks. When he sets it down, he goes on. "A merchant. Timber and stone, a house on the Avenue of Estates in the Patrician Quarter, and enough money that the watch asks his opinion before it asks for its own."
+
+"Then why isn't he in a cell?"
+
+"Because I can't show you why." He holds up a hand before you answer. "I'm certain. That's not the same as having something to put in front of a magistrate. The piece that makes it enough is in his house. The knife, and whatever else a man like that keeps once the night's work is done."
+
+"You could search the house."
+
+"With what? The Watch commander dines at tables Ulrich pays for. Half the merchant lords who pay the Watch's wages call him a friend. The day I put a warrant to his gate, he knows. So does everyone who would warn him, and I'd bet a few of them are sitting on that bench." He jerks his chin at the door. "There's no man out there I'd trust with this."
+
+"So you want me to search it."
+
+"I want a pair of hands nobody here has met." He opens the desk drawer and lays a folded paper and a rough sheet on the blotter. "That is a warrant under my hand and seal, made out to the bearer. Show it at the gate of the Patrician Quarter. If the guards honor it, you walk in the front door. If they refuse it, you've learned how far Ulrich's reach goes, and showing it at the manor will do you no better."
+
+"And the other sheet?"
+
+"A plan of the house. I drew it from what I could get." He taps a cross near the back, beside a small square. "The cellar door off the kitchen yard stays unlatched for the coal. If the front is closed to you, that is your way in."
+
+He rests his hand flat on the desk. "His study has a desk. The knife is in it, or something that puts his hand in a lane after dark. Bring me that and I'll carry it to the magistrates myself. Fifteen silver marks when it's on this blotter."
+
+*goto slasher_post_menu
+
+*label slasher_post_back
+[b]◈ THE MILITIA POST[/b]
+*line_break
+The militiaman at the counter nods you through to the back. Trent is where you left him, the warrant and the plan still lying open on the blotter, and he looks up as the door shuts. "Well?"
+
+*goto slasher_post_menu
+
+*label slasher_post_menu
+*choice
+  *if (slasher_ev > 0)
+    # Lay out what you have found.
+      *goto slasher_confront
+  # Take the warrant and the plan.
+    *goto slasher_take
+  *if (not(slasher_proof_pressed))
+    # Press him for something you can check.
+      *goto slasher_press
+  *if (not(slasher_trent_sized))
+    # Sit still and watch him while he waits.@{show_stat_hints  [Insight DC 13]|}
+      *goto slasher_study
+  # Say you need time to think it over.
+    *goto slasher_leave
+
+*label slasher_press
+*set slasher_trent_met true
+*set slasher_proof_pressed true
+"That's a lot to ask on your say-so," you say. "What have you got that I can check?"
+
+"Nothing I can show you." His jaw works. "Every time I've named a piece of it to the wrong ear, it was gone by morning, the same as every lead the Watch ever had. You'd do the same in my boots."
+
+"You must have something."
+
+Trent looks at the window for a moment, at the strip of lane beyond the propped shutter. "He's been seen in the lanes behind Conduit Square after dark. More than once. A lamplighter saw him three nights running, and that lamplighter has left his rounds, and I couldn't tell you where." He turns back. "Take that as it is, or leave it."
+
+*goto slasher_post_menu
+
+*label slasher_study
+*set slasher_trent_met true
+*set slasher_trent_sized true
+You sit still and watch him while he waits for your answer.
+*gosub_scene dice_engine roll_skill_check 13 "insight" "" "" "" "" ""
+*if (check_success)
+  *set slasher_trent_read true
+  Trent starts in again on Betty Fairweather, how many cuts and how deep and which way they ran, though you didn't ask. His voice slows on every number. His right thumb has found the horn handle at his belt and moves over it in small circles. The wood is scrubbed so pale it has nearly gone white, and in the seam around the pins a thin brown-red line has survived the lye. When he taps the cross on the plan he taps it twice, a little too fast, and then looks to see if you've noticed.
+*else
+  *set slasher_trent_read false
+  You see a tired captain with a dead girl's name on his desk and not much sleep behind his eyes. He slides the plan an inch closer to you, and that is all you get from him.
+
+*goto slasher_post_menu
+
+*label slasher_take
+*set slasher_trent_met true
+*set slasher_has_warrant true
+"I'll do it," you say.
+
+Trent nods once and pushes the papers across the blotter. "Fold them small. Bring it to me when you have it. Not to the Watch, and not to anyone else." He looks at you a moment longer. "Nobody else."
+
+You fold the warrant and the plan into your satchel. The seal on the warrant is a blob of red wax pressed with the militia's mark, still tacky at the edge.
+
+[b][🏷️ Gained: Trent's warrant and a plan of Avir Manor][/b]
+*page_break Out to the Trunk Road…
+*goto_scene port_valen/port_valen_middle_ward mw_gate_road
+
+*label slasher_leave
+*set slasher_trent_met true
+"I need time to think it over," you say.
+
+"Think, then." Trent takes up his pen. "Don't think long. He hasn't stopped."
+*page_break Out to the Trunk Road…
+*goto_scene port_valen/port_valen_middle_ward mw_gate_road
+
+*comment ====================================================================================
+*comment THE STREET TALK (phase 3): three places where the city talks, each with a one-shot ambient rumor about the earlier victims while the quest is
+*comment unstarted or active, and, while it is active, one try at asking about Ulrich of Avir. The places and their hooks (each hook is one short rung or
+*comment button in the district file and calls into this file; no label was added to a district):
+*comment   baths:  the hot-room gossip ladder in port_valen_middle_ward.txt (mw_baths_gossip), pick 8, to slasher_rumor_baths. 30 minutes.
+*comment   keel:   the Cleaved Keel's rumor ladder in port_valen.txt (pv_poi_tavern_rumors), the first rung, to slasher_rumor_keel. 15 minutes.
+*comment   inn:    a button in the Wagoner's Rest hall menu (mw_inn_hall) to slasher_rumor_inn: Oswin and the long table. 10 minutes. The inn has no gossip and
+*comment            no bar by the user's ruling, so this is a quest-only talk, not a repeatable option.
+*comment The try is a Charisma check (Persuasion or Deception, DC 11). Success finds both facts (slasher_alibi_known, slasher_survivor_known). Failure sets
+*comment slasher_trent_warned (someone carries word to Trent) and the speaker clams up; a talkative man will sell the alibi alone for 3 copper bits. A failed try is
+*comment never rewarded with the whole answer (QUEST_DESIGN_RULES §2), and the other two places each allow one more try.
+*comment Replay: the heard and tried flags are set on the page AFTER the one that reads them; slasher_rumor_end sets heard, charges the time and returns.
+*comment ====================================================================================
+
+*label slasher_rumor_baths
+*set slasher_ask_place "baths"
+*goto slasher_rumor_go
+
+*label slasher_rumor_keel
+*set slasher_ask_place "keel"
+*goto slasher_rumor_go
+
+*label slasher_rumor_inn
+*set slasher_ask_place "inn"
+*goto slasher_rumor_go
+
+*label slasher_rumor_go
+*temp sl_heard false
+*if ((slasher_ask_place = "baths") and slasher_rumor_baths_heard)
+  *set sl_heard true
+*if ((slasher_ask_place = "keel") and slasher_rumor_keel_heard)
+  *set sl_heard true
+*if ((slasher_ask_place = "inn") and slasher_rumor_inn_heard)
+  *set sl_heard true
+*if (sl_heard)
+  *if (slasher_ask_place = "inn")
+    *goto slasher_inn_again
+  *goto slasher_ask_choice
+*if (slasher_ask_place = "baths")
+  *goto slasher_ambient_baths
+*if (slasher_ask_place = "keel")
+  *goto slasher_ambient_keel
+*goto slasher_ambient_inn
+
+*label slasher_ambient_baths
+Close by, a woman's voice cuts under the hiss of the stones. "Seventh, now. And the Watch still calls the first six 'inquiries'."
+
+"The cooper's lad was in the drain behind the cooper's for a whole night before anyone looked," says another voice, further along. "Cut open like a pig at the fair. Nobody heard a thing, and that lane is never quiet."
+
+"My sister won't walk past the lamp stairs after dark anymore. The lamplighters go in pairs now."
+
+Somebody ladles water over the stones, and the room goes white. When it clears, the talk has moved on to soap.
+
+*goto slasher_ask_choice
+
+*label slasher_ambient_keel
+At the next table, a skiff hand and a porter are comparing the dead like the day's catch.
+
+"Night-soil carter, months back," the skiff hand says. "Found under the customs tower stairs. The Watch put it down to a drunk and a knife."
+
+"Then the pot-boy from the chandler's." The porter turns his cup on the wood. "Then the two sisters off the ropewalk, a week apart. Same cuts, every one. You'd have to be blind to call that a drunk."
+
+"Seven." The skiff hand spits to the side. "And the Watch says 'inquiries'."
+
+The porter lowers his voice. "The lamplighters have started going in pairs. Think about what that says."
+
+
+*goto slasher_ask_choice
+
+*label slasher_ambient_inn
+You catch Oswin's eye across the hall and ask him about the killings in the city. He takes his time, wiping a bowl he has already dried.
+
+"Seven, they say." He sets the bowl on the shelf with the others. "I count them by who stops booking beds. Carters who used to sleep in the stable yard to save two coppers are paying for a room inside the wall now, and bolting the door."
+
+"Do you know who's doing it?"
+
+"I don't, and I like it that way." His mouth tightens. "A man who has a notion in this city had better be a quiet one."
+
+*goto slasher_ask_choice
+
+*label slasher_inn_again
+Oswin is stacking bowls when you cross the hall toward the long table, where a wagon driver and a carter are splitting a loaf.
+
+*goto slasher_ask_choice
+
+*label slasher_ask_choice
+*temp sl_tried false
+*if ((slasher_ask_place = "baths") and slasher_ask_baths_tried)
+  *set sl_tried true
+*if ((slasher_ask_place = "keel") and slasher_ask_keel_tried)
+  *set sl_tried true
+*if ((slasher_ask_place = "inn") and slasher_ask_inn_tried)
+  *set sl_tried true
+*if (not(slasher_quest_stage = "active"))
+  *page_break The talk moves on…
+  *goto slasher_rumor_end
+*if (slasher_alibi_known)
+  *page_break The talk moves on…
+  *goto slasher_rumor_end
+*if (sl_tried)
+  *page_break The talk moves on…
+  *goto slasher_rumor_end
+*choice
+  # Ask about Ulrich of Avir.@{show_stat_hints  [Persuasion or Deception DC 11]|}
+    *goto slasher_ask
+  # Let the talk run.
+    *page_break The talk moves on…
+    *goto slasher_rumor_end
+
+*label slasher_ask
+*if (slasher_ask_place = "baths")
+  You lean toward the nearest voice, a woman by the sound of her, and keep it idle. "Has anyone seen Ulrich of Avir lately? I hear he's the man to see about a load of boards."
+*if (slasher_ask_place = "keel")
+  You shift along the bench toward the two nearest, the skiff hand and the porter, and put it lightly. "Does anyone know where Ulrich of Avir is these days? I hear he's the man for a load of boards."
+*if (slasher_ask_place = "inn")
+  You drift over to the long table, where the wagon driver and the carter are splitting a loaf, and keep your voice easy. "Either of you know if Ulrich of Avir is in the city? I hear he's the man for a load of boards."
+*gosub_scene dice_engine roll_skill_check 11 "persuasion" "" "deception" "" "" ""
+*if (check_success)
+  *goto slasher_ask_ok
+*goto slasher_ask_fail
+
+*label slasher_ask_ok
+*if (slasher_ask_place = "baths")
+  *set slasher_ask_baths_tried true
+*if (slasher_ask_place = "keel")
+  *set slasher_ask_keel_tried true
+*if (slasher_ask_place = "inn")
+  *set slasher_ask_inn_tried true
+*set slasher_alibi_known true
+*set slasher_survivor_known true
+*if (slasher_ask_place = "baths")
+  The woman shifts on the bench. "Boards? Not from him, not this month." The water hisses, and her voice drops. "He's been up at Alderford on timber business through the last three killings. Drinking in some factor's parlour thirty miles upriver. He only came back down yesterday."
+
+  "You're sure of that?"
+
+  "My sister's husband drives one of his wagons. Rode down in the same string." A pause, and the splash of a ladle. "Funny thing is, the militia captain keeps saying it's him."
+
+  "Trent?"
+
+  "That one. He sent a squad of hired swords into Avir's house two weeks back. Only one came out breathing, and he's dying now in the Cathedral, in the little chapel with the veiled saint. Deacon Vey has him on a cot."
+*if (slasher_ask_place = "keel")
+  The skiff hand glances at the porter, and the porter shrugs. "Boards," the skiff hand says. "Not from him, not lately. I watched his wagons go out the Charter Gate with his clerk on the tail one. He's been up at Alderford through the last three killings, and he only came back yesterday."
+
+  "You watched him come back, too?"
+
+  "I watched his horse." The porter snorts into his cup. "Half the quay knows where Ulrich of Avir has been. It's the militia captain who doesn't."
+
+  "Trent?"
+
+  "That one. He sent a squad of hired swords into Avir's house a fortnight ago. One of them came out alive, and he's dying in the Cathedral. The Althea chapel, the north aisle. Deacon Vey's got him."
+*if (slasher_ask_place = "inn")
+  The wagon driver wipes his fingers on his knee. "Boards? Not from him, not this month. I took a string up the High Grey Road for his yard myself. He stayed on at Alderford through the last three killings, and we came down without him. He only got back yesterday."
+
+  "Why would anyone say otherwise?"
+
+  "Because Captain Trent says otherwise, loud." The carter leans in, breaking the loaf. "Trent sent a squad of hired swords into Avir's house two weeks back. One came out alive. They've got him in the Cathedral, in the little Althea chapel, and Deacon Vey is the only one who'll say he's still breathing."
+*page_break The talk moves on…
+*goto slasher_rumor_end
+
+*label slasher_ask_fail
+*if (slasher_ask_place = "baths")
+  *set slasher_ask_baths_tried true
+*if (slasher_ask_place = "keel")
+  *set slasher_ask_keel_tried true
+*if (slasher_ask_place = "inn")
+  *set slasher_ask_inn_tried true
+*set slasher_trent_warned true
+*temp sl_purse (((gold * 100) + (silver * 10)) + copper)
+*if (slasher_ask_place = "baths")
+  The woman goes quiet, and the hiss of the stones is the only sound. "Boards," she says flatly. "Ask the factors' clerks." Across the room a bench creaks, wet footsteps cross the floor, and a door bangs. The talk around you has dried up.
+
+  A boy with an armful of towels stops at your elbow. "For three coppers I'll tell you what my mum says," he murmurs.
+*if (slasher_ask_place = "keel")
+  The skiff hand's face closes. "Boards," he says. "Ask the Factor's clerks." Behind you a stool scrapes and a man in a leather coat walks out of the taproom without finishing his drink. The porter finds something interesting in his cup.
+
+  The skiff hand taps his empty tankard on the bench. "A man talks easier with something in his hand. Three coppers."
+*if (slasher_ask_place = "inn")
+  The wagon driver stops chewing. "Boards," he says. "Ask at the Scales' yard." The carter gets up with his bowl and goes out through the archway toward the stable yard, quickly, and does not look back.
+
+  The wagon driver looks at the empty bowl by your hand. "A man remembers better after a bowl of Oswin's porridge. Three coppers."
+*if (sl_purse >= 3)
+  *choice
+    # Pay the three coppers.
+      *goto slasher_ask_pay
+    # Let it drop.
+      *page_break The talk moves on…
+      *goto slasher_rumor_end
+*else
+
+  You do not have the three coppers, and there is nothing more to be had here.
+  *page_break The talk moves on…
+  *goto slasher_rumor_end
+
+*label slasher_ask_pay
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount (0 - 3)
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*set slasher_alibi_known true
+You count the coppers into his palm.
+*if (slasher_ask_place = "baths")
+  The boy tucks them away without looking at them. "Mum says Ulrich of Avir has been up at Alderford on timber business for the last three killings. Came back yesterday." He shifts the towels on his arm and is gone before you can ask who told her.
+*if (slasher_ask_place = "keel")
+  The skiff hand pockets them and wipes his mouth. "Avir's been up at Alderford on timber business through the last three killings. Came back down yesterday. That's what three coppers buys."
+*if (slasher_ask_place = "inn")
+  The wagon driver tucks them in his belt. "Avir was at Alderford on timber business through the last three killings. Back yesterday. That's the lot, for three coppers."
+*page_break The talk moves on…
+*goto slasher_rumor_end
+
+*label slasher_rumor_end
+*if (slasher_ask_place = "baths")
+  *set slasher_rumor_baths_heard true
+  *set minutes_to_pass 30
+  *set time_advance_call_id "slasher_rumor_baths_1"
+*if (slasher_ask_place = "keel")
+  *set slasher_rumor_keel_heard true
+  *set minutes_to_pass 15
+  *set time_advance_call_id "slasher_rumor_keel_1"
+*if (slasher_ask_place = "inn")
+  *set slasher_rumor_inn_heard true
+  *set minutes_to_pass 10
+  *set time_advance_call_id "slasher_rumor_inn_1"
+*gosub_scene port_valen/port_valen_middle_ward mw_walk_time
+*if (slasher_ask_place = "baths")
+  *goto_scene port_valen/port_valen_middle_ward mw_baths_inside
+*if (slasher_ask_place = "keel")
+  *goto_scene port_valen/port_valen pv_poi_tavern_menu
+*goto_scene port_valen/port_valen_middle_ward mw_inn_hall
+
+*comment The post keeps day hours. Costs no time and sets nothing; the hub button says why it is shut and lands here.
+*label slasher_post_closed
+[b]◈ THE MILITIA POST[/b]
+*line_break
+The post's front door is barred, and a lantern burns in the grille beside it. A militiaman on the night desk slides the shutter back far enough to look at you. "The captain keeps day hours," he says. "Come back in daylight, and bring your business with you."
+*page_break Back onto the road…
+*goto_scene port_valen/port_valen_middle_ward mw_gate_road
+
+*comment The player already holds the warrant. With nothing to show, Trent asks and sends them away; with something, they can lay it out (slasher_confront).
+*label slasher_post_return
+[b]◈ THE MILITIA POST[/b]
+*line_break
+The militiaman at the counter waves you through to the back. Trent looks up from his papers as the door closes. "Have you got it?"
+
+*if (slasher_ev = 0)
+  "Not yet."
+
+  "Then come back when you have." He bends over his papers again.
+  *page_break Out to the Trunk Road…
+  *goto_scene port_valen/port_valen_middle_ward mw_gate_road
+
+*choice
+  # Lay out what you have found.
+    *goto slasher_confront
+  # "Not yet."
+    *goto slasher_post_notyet
+
+*label slasher_post_notyet
+"Not yet," you say.
+
+"Then come back when you have." Trent bends over his papers again.
+*page_break Out to the Trunk Road…
+*goto_scene port_valen/port_valen_middle_ward mw_gate_road
+
+*comment ====================================================================================
+*comment THE WOUNDED MERCENARY (phase 3b): Kenny, one of the hired swords Trent sent into Avir Manor, dying on a cot in the Cathedral's Althea chapel. Reached from two
+*comment buttons in the chapel menu in port_valen_civic_heights.txt (pv_ch_cath_chapel_menu): slasher_kenny by day, slasher_kenny_closed at Night and Pre-Dawn, while the
+*comment quest is active. Every label and every minute lives here: 10 minutes each time. Deacon Harl Vey is at the cot; his name is given in the scene if the player has
+*comment not met him (met_deacon_vey is set on the page after the first menu pick).
+*comment
+*comment Healing magic would not have saved Kenny (the user's ruling): Vey's rite closes what is open and cannot reach a broken skull. Evidence found here, read by the
+*comment confrontation: slasher_kenny_haversack (Trent's plan of the manor and a note promising ten silver for an unlatched study window), slasher_hand_matched (the player
+*comment held Trent's own warrant and compared the hand), slasher_kenny_spoke (the try at rousing him worked) or slasher_kenny_warrant (it failed, and a second warrant fell from
+*comment his boot). The try is once only. A failed try never gives the testimony.
+*comment
+*comment Replay: the entry page sets nothing. slasher_kenny_seen, met_deacon_vey and each evidence flag are set on the page after the pick that earns them, and no page here reads a
+*comment flag it sets.
+*comment ====================================================================================
+
+*label slasher_kenny
+*set minutes_to_pass 10
+*set time_advance_call_id "slasher_kenny_1"
+*gosub_scene port_valen/port_valen_middle_ward mw_walk_time
+*if (slasher_kenny_seen)
+  *goto slasher_kenny_back
+*goto slasher_kenny_first
+
+*label slasher_kenny_first
+A cot has been set against the back wall, between the poor-box and the damp stone, and the man on it is wrapped in so much clean linen that only his face shows. It is the grey of old candle wax. His breath goes in and out in shallow rasps, and a bandage as wide as a hand circles his head. On a shelf at the head of the cot stand a cup, a jug, and a small stoppered vial. A mud-stained haversack is pushed under the frame.
+
+A man in a dark gold stole kneels beside the cot, tipping water between the sick man's lips and wiping the spill from his chin with his thumb. He looks up as you come near.
+
+*if (met_deacon_vey)
+  Deacon Vey rises slowly, a hand on the cot frame. "You have come about him," he says. It is not quite a question.
+*else
+  He rises slowly, a hand on the cot frame. "Deacon Harl Vey," he says. "If you have come to pray, there is room at the rail. If you have come for him, he is past answering."
+
+"I heard a man was brought in here," you say. "Hurt in a house on the Avenue of Estates."
+
+Vey sets the cup on the shelf. "Half the Heights has heard that, and none of them has come to sit with him." He studies you a moment. "Kenny. It is the only name I have for him. He gave it to the Watch before the dark took him."
+
+"What happened to him?"
+
+"The Watch pulled him from the canal below Locksmiths' Close at first light, half drowned. A crossbow bolt had gone through the meat of his side, and two ribs were broken, one of them into the lung. I set the one and stitched the other." His thumb moves over the mended edge of his stole. "It is the blow to his head that will take him."
+
+"Isn't there a rite for this?"
+
+"The rite closes what is open." He says it gently, as if he has said it before. "It closed the cuts and warmed the blood. It cannot reach what is cracked inside the skull. I tried it twice, and he is no better for it. He will not see the week out."
+
+"Has he said anything?"
+
+"In the fever, last night. He thrashed and shouted the same thing over and over, that Captain Trent had sent them to die." Vey's mouth tightens. "When the militia sent a clerk for his name, I gave the name. I did not give the shouting. A man's fever is not testimony, and the clerk had a hurry about him I did not like."
+
+He nods at the haversack under the cot. "His things are there. The Watch did not want them, and I have not had the heart to go through a dying man's pack. If you have a better reason than I do, I will not stop you."
+
+*goto slasher_kenny_menu
+
+*label slasher_kenny_back
+Kenny lies as he did, the linen at his throat rising and falling in shallow rasps. Deacon Vey is at the foot of the cot, folding a cloth, and he gives you a short nod as you come in.
+
+*goto slasher_kenny_menu
+
+*label slasher_kenny_menu
+*choice
+  *if (not(slasher_kenny_haversack))
+    # Go through the haversack under the cot.
+      *goto slasher_kenny_pack
+  *if (not(slasher_kenny_roused))
+    # Try to bring him round for a moment.@{show_stat_hints  [Medicine or Perception DC 11]|}
+      *goto slasher_kenny_rouse
+  # Step back from the cot.
+    *goto slasher_kenny_leave
+
+*label slasher_kenny_pack
+*set slasher_kenny_seen true
+*set met_deacon_vey true
+*set slasher_kenny_haversack true
+You draw the haversack out from under the cot. Beneath a spare shirt and a heel of bread gone green is a sheet of rough paper, creased and stained brown at the edges. It is a plan of a large house, with a yard, a small square beside the kitchen, and a cross drawn against a window on the upper floor. Folded small in the same pocket is a note in a blunt hand: [i]"Leave the study window unlatched on the night, and ten silver marks are yours. B.T."[/i]
+
+*if (slasher_has_warrant)
+  *set slasher_hand_matched true
+  You take Trent's warrant out of your satchel and lay it beside the note. The hand is the same, with the same heavy downstrokes and the same way of crossing the T. The plan matches the one you were given, line for line, except for the cross. On yours it sits at the cellar door off the kitchen yard. On Kenny's it sits at a window on the upper floor, a long way from any cellar.
+*else
+  You turn the note over, but there is nothing on the back, and no name but the two letters. Whoever wrote it wanted the man holding it to know exactly what he had been promised.
+
+Vey watches you refold the papers. "I have not seen those," he says. "I will not say that I did."
+
+You tuck the plan and the note into your satchel.
+
+[b][🏷️ Gained: Kenny's plan of Avir Manor and a note signed B.T.][/b]
+*goto slasher_kenny_menu
+
+*label slasher_kenny_rouse
+*set slasher_kenny_seen true
+*set met_deacon_vey true
+*set slasher_kenny_roused true
+You look over the shelf at the head of the cot. The vial is hartshorn, sharp enough to sting the nose from where you stand, and the jug holds cold well water with a rag folded over its lip.
+*gosub_scene dice_engine roll_skill_check 11 "medicine" "" "perception" "" "" ""
+*if (check_success)
+  You uncork the vial and pass it once under his nose, then wring the rag out in the cold water and lay it on the back of his neck. His eyes come open, unfocused, and his lips work. You bend close.
+
+  "Trent," he whispers. "Set us up. Said the desk had proof." A rasp, and his chest hitches. "Guards were right inside the door. He wanted us dead."
+
+  His eyes roll back and his breath drops into the shallow rasp again. Vey lays two fingers on his throat, holds them there, and shakes his head. "He will not wake again," he says quietly. "You have heard the last of it."
+  *set slasher_kenny_spoke true
+*else
+  You reach for the vial and your sleeve knocks the cup from the shelf. It rings on the flags, and Kenny's eyes flicker under the lids. Then the cough takes him, a long wet fit that bends him up off the cot and spits red into the linen. Vey catches his shoulders and holds him until it ends.
+
+  When it does, he lies slack, deeper than before. Vey lays a hand flat on his chest and keeps it there. "No more waking," he says. "Not today, and I think not at all."
+
+  *set slasher_kenny_warrant true
+  Something has slid from the lining of Kenny's boot and lies on the blanket: a folded paper sealed in red wax. You break it open. It is a warrant made out to the bearer, under a militia seal, signed in a heavy hand: [i]B. Trent.[/i]
+  *if (slasher_has_warrant)
+
+    You hold it against the one in your satchel. The paper, the seal and the hand are the same, and the wording matches to the last line.
+
+  [b][🏷️ Gained: a second warrant, from Kenny's boot][/b]
+*goto slasher_kenny_menu
+
+*label slasher_kenny_leave
+*set slasher_kenny_seen true
+*set met_deacon_vey true
+Vey nods once as you step back. "Whatever you mean to do," he says, "do it quickly."
+*page_break Back to the hall…
+*goto_scene port_valen/port_valen_civic_heights pv_ch_cath_hall
+
+*comment The cot is curtained off at night. Costs no time and sets nothing; the chapel button says why it is shut and lands here.
+*label slasher_kenny_closed
+[b]◈ THE CHAPEL OF SAINT ALTHEA[/b]
+*line_break
+A curtain of grey wool has been drawn across the back of the chapel, and a lay sister sits beside it on a stool with a tin lamp at her feet. She lifts a finger to her lips as you come near. "The Deacon sees to the cots at first light," she whispers. "Come back then."
+*page_break Back to the hall…
+*goto_scene port_valen/port_valen_civic_heights pv_ch_cath_hall
+
+*comment ====================================================================================
+*comment AVIR MANOR (phase 4): Ulrich of Avir's house, a walled estate up a lane off the Avenue of Estates (the avenue itself has three great houses, so Avir stands behind them,
+*comment among the walled estates the avenue text already mentions). Two hooks in port_valen_upper_wharves.txt, both buttons: a lane button on pq_estates (slasher_manor) while the quest is
+*comment active and the visit is not done, and a button on the refused Inner Gate (slasher_gate_warrant) to show Trent's warrant, which the gate will not take. No label was added there.
+*comment
+*comment The player reaches the house with a writ (the existing Day or Registered Writ; the warrant opens nothing). Four ways in:
+*comment   wall:   over the garden wall to the balcony, a Stealth check, then the study lock (Thieves' Tools, advantage with a lockpick set). DC 16 by day, 12 at dusk and after dark
+*comment            (slasher_manor_dc). Success reaches the study and the Alderford receipts and Ulrich's journal; failure at either step is caught.
+*comment   cellar: the "unlatched cellar door" on Trent's plan is the kennel gate. A player who saw through Trent (slasher_trent_read) finds that out safely; one who did not is bitten
+*comment            (HP, floored at 1) and caught.
+*comment   door:   ring at the porter's window and say Trent's name; caught.
+*comment Caught means the house guards bring the player before Ulrich (slasher_manor_caught): his terms are to put his proof in front of Trent, and he does not send for the Port Watch.
+*comment Both ends set slasher_alibi_proof and slasher_manor_done; the study also sets slasher_journal_seen, and the parlor slasher_ulrich_met.
+*comment
+*comment Replay: the entry page sets nothing but the DC; flags are set on the page after the pick that earns them, except where a roll and its result share a page (as the escort does).
+*comment ====================================================================================
+
+*comment The gate will not take a militia seal. First telling quoted, later ones described.
+*label slasher_gate_warrant
+*if (slasher_gate_warrant_tried)
+  You start to unfold Trent's warrant, and the guard has already shaken his head. The answer is the one you were given before.
+*else
+  You unfold Trent's warrant and hold it out. The guard takes it by one corner, reads it through, and turns it over to look at the seal.
+
+  "This won't do" he says, and hands it back. "This gate answers to the Council's writs and the house guards' own book. This is not one of those."
+
+  "So it won't pass."
+
+  "It won't pass." He lifts the halberd back across the arch. "A Day Writ is one silver mark at the head house on Civic Heights. That's what you need."
+*page_break Step back from the arch…
+*set slasher_gate_warrant_tried true
+*goto_scene port_valen/port_valen_upper_wharves pq_gate_refused
+
+*label slasher_manor
+*set minutes_to_pass 10
+*set time_advance_call_id "slasher_manor_1"
+*gosub_scene port_valen/port_valen_upper_wharves pq_walk_time
+*set slasher_manor_dc 12
+*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+  *set slasher_manor_dc 16
+*temp sl_hint ""
+*if (show_stat_hints)
+  *set sl_hint ((" [Stealth DC " & slasher_manor_dc) & "]")
+[b]◈ AVIR MANOR[/b]
+*line_break
+*if (not(slasher_manor_seen))
+  A lane leaves the avenue past the last of the great gates and climbs between walls of the same pale stone, with pines leaning over the top. It ends at an iron gate with a porter's window and a crest you do not know: a stone tower on a green hill.
+
+  Beyond the bars, clipped hedges line gravel walks around a dry stone basin, and a long front of limestone rises under high slate roofs. A balcony runs the length of the upper floor. Four men in house livery walk the grounds in pairs, one pair along the front and one along the garden wall, and they meet at the corner by the basin and part again.
+*else
+  The lane ends at the iron gate with the green tower on its crest. The four guards walk the grounds in their pairs, as before, meeting at the basin and parting.
+
+*gosub_scene port_valen/port_valen_upper_wharves pq_sky
+
+*label slasher_manor_menu
+*choice
+  # Climb the garden wall to the balcony.${sl_hint}
+    *goto slasher_manor_wall
+  *if ((slasher_has_warrant) and (not(slasher_kennel_seen)))
+    # Try the cellar door that Trent's plan marks, off the kitchen yard.
+      *goto slasher_manor_cellar
+  # Ring at the porter's window and ask for Ulrich of Avir.
+    *goto slasher_manor_door
+  # Walk back down the lane to the avenue.
+    *goto slasher_manor_leave
+
+*label slasher_manor_leave
+*set slasher_manor_seen true
+*page_break Back to the avenue…
+*goto_scene port_valen/port_valen_upper_wharves pq_estates
+
+*label slasher_manor_wall
+*set slasher_manor_seen true
+You wait at the corner of the lane until the front pair turn their backs at the basin, then go up the wall by the pine roots and drop into the shadow of the hedge. The garden pair come along the far wall talking about a horse, and you stay where you are, one breath at a time, until their voices are behind you and the gravel stops crunching.
+*gosub_scene dice_engine roll_skill_check slasher_manor_dc "stealth" "" "" "" "" ""
+*if (check_success)
+  A trellis climbs from the hedge to the balcony, thick with old vine. You go up it hand over hand with the wall at your back, and swing a leg over the rail.
+  *goto slasher_manor_balcony
+*set slasher_manor_route "wall"
+A pine root gives under your boot, and a clod of earth patters down the wall into the hedge. "Who's there?" Boots come fast across the gravel, and two crossbows rise out of the shadow of the basin.
+*goto slasher_manor_caught
+
+*label slasher_manor_cellar
+*set slasher_manor_seen true
+You go round to the kitchen yard along the outside of the wall, where a gap in the hedge shows a low door set under an arch in the side of the house. The plan says it is kept unlatched for the coal.
+
+*if (slasher_trent_read)
+  *set slasher_kennel_seen true
+  You go no closer than the hedge. The bark of dogs behind the door answers before you have decided anything, and a chain runs out with a rattle. It is not a cellar door. It is the gate of a kennel, strapped with iron, and whatever is behind it is the size of a calf.
+
+  Trent's cross sits on it. You think of the way he tapped the plan, twice and a little too fast, and fold it away. Back along the hedge, the lane gate and the garden wall are as you left them.
+  *goto slasher_manor_menu
+*set slasher_manor_route "bite"
+*goto slasher_manor_cellar_bite
+
+*label slasher_manor_cellar_bite
+
+The latch lifts under your thumb, just as the plan promised. Behind the door is not a cellar. There is heat, a stink of dog, and then the dark moves. Two mastiffs hit you before you have a hand free, and the passage is too narrow to get out of their way.
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *temp sl_bite 1
+  *rand sl_bite 2 6
+  *set slasher_bite_dmg sl_bite
+  *set hp_current - sl_bite
+  *if (hp_current < 1)
+    *set hp_current 1
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+
+By the time a kennel-hand with a pole and a whip has hauled the dogs off by their chains, you are on your back in the kitchen yard with your arm in ribbons, and two crossbows are pointing at your chest.
+
+[b][🩸 Bitten by the kennel dogs: -${slasher_bite_dmg} HP | Current HP: ${hp_current}/${hp_max}][/b]
+*goto slasher_manor_caught
+
+*label slasher_manor_door
+*set slasher_manor_seen true
+*set slasher_manor_route "door"
+You ring at the porter's window. A man in house livery slides back the shutter and looks at you through the grille. "Lord Ulrich is at home to callers with an invitation," he says.
+
+"I've no invitation," you say. "I'd like to speak to him all the same. I have a warrant." You say, as you present the militia warrant for the porter to inspect.
+
+The porter's face changes as he examines the warrant. He does not say anything. He pulls a bell cord twice, and the gate swings open on four men who were not in sight a moment ago, two of them with crossbows already levelled.
+*goto slasher_manor_caught
+
+*label slasher_manor_balcony
+
+The balcony door is a pair of glass-paned leaves with a lock plate at the handle. Behind the glass is a study: shelves of bound papers, a heavy desk, and a chair pushed back from it as if someone had only just stood.
+
+*if (has_lockpick_set)
+  You take the lockpick set from your satchel and go to work on the plate.
+*else
+  There is nothing to do but work the lock with what you have, a bent pin and patience.
+*set check_stat "dex"
+*set check_dc slasher_manor_dc
+*set check_skill "Thieves' Tools"
+*if (has_lockpick_set)
+  *set advantage true
+*gosub_scene dice_engine roll_d20_check
+*if (check_success)
+  The last pin lifts. The leaf swings in on oiled hinges, and you step into the study and close it behind you.
+  *goto slasher_manor_study
+*set slasher_manor_route "lock"
+The pick slips and the lock gives a bright metallic click that carries across the garden. A voice below calls, "Balcony!" and by the time you have turned, two crossbows are pointed up at you from the gravel.
+*goto slasher_manor_caught
+
+*label slasher_manor_study
+
+*set slasher_manor_route "stealth"
+*set slasher_alibi_proof true
+*set slasher_journal_seen true
+The study smells of beeswax and old paper. The desk holds a pen tray, a lamp, and a stack of papers squared at the edges. There is no knife in it. The second drawer holds seals, wax, and a roll of string.
+
+The papers on the left are receipts from the Factor's Hall at Alderford, three weeks of them, stamped and signed, with the dates running right through each of the last three killings. A bound journal lies open beside them, and the last entry is in a quick, elegant hand: [i]"Third trespass this month. Intruders carried forged militia orders signed by Captain B. Trent. Trent bears a grudge since I refused to fund his armed rabble."[/i]
+
+You fold the receipts into your satchel, leave the journal where it lies, and go out the way you came. Nobody sees you cross the garden.
+
+[b][🏷️ Gained: Ulrich's receipts from the Alderford Factor's Hall][/b]
+*set minutes_to_pass 20
+*set time_advance_call_id "slasher_manor_2"
+*gosub_scene port_valen/port_valen_upper_wharves pq_walk_time
+*set slasher_manor_done true
+*page_break Down the lane…
+*goto_scene port_valen/port_valen_upper_wharves pq_estates
+
+*label slasher_manor_caught
+
+*set slasher_manor_seen true
+"Down," a guard says. "On the gravel. Hands where I can see them."
+
+You get down. Hands go over your satchel and everything else you carry, and it is all heaped on a stone bench out of reach. Two guards take you by the arms and walk you through the garden and in at a side door, along a passage of polished wood, to a room at the back of the house.
+*goto slasher_ulrich
+
+*label slasher_ulrich
+
+The parlor is on the ground floor, with a fire burning low in the grate and a thick rug that muffles the guards' boots. The man in the deep chair beside the fire does not get up. He is lean and sharp-featured, in a velvet robe the color of old wine, with a glass in his hand and the patience of someone who has had this conversation before.
+
+"The third this month, my lord," says the guard holding your arm.
+
+"The third." Ulrich looks you over without hurry. "Sit them down, and let go of them. If they had meant to cut my throat they would have put a knife to it already."
+
+The guard pushes you into the chair opposite and steps back. Another sets your satchel on the table beside the decanter.
+
+*if (slasher_has_warrant)
+  Ulrich's eyes go to it.
+
+"Another one," he says, wearily and not angrily. "Let me guess. A captain with a heavy hand gave you a signed piece of paper, promised you silver, and told you I like cutting up weavers in the rain."
+
+*choice
+  # "Something like that. A warrant, and fifteen silver marks for what's in your desk."
+    *goto slasher_ulrich_admit
+  # "I don't know what you're talking about."
+    *goto slasher_ulrich_deny
+  # "Where were you when Betty Fairweather died?"
+    *goto slasher_ulrich_ask
+
+*label slasher_ulrich_admit
+
+"Something like that," you say. "A warrant, and fifteen silver marks for whatever is in your desk."
+
+"Fifteen." Ulrich almost smiles. "He has gone up. The last pair were offered ten. You'll want to know what he told you was in that desk, and why it isn't."
+*goto slasher_ulrich_proof
+
+*label slasher_ulrich_deny
+
+"I don't know what you're talking about."
+
+"Then you are a poor liar as well as a poor burglar." He tips his glass at the table. "Your warrant, for a start."
+
+*if (slasher_has_warrant)
+  The guard lays Trent's warrant open beside the decanter, red seal up. "A militia captain's hand, a militia captain's wax. I have a drawer of these."
+*else
+  The guard turns the satchel out on the table, and there is nothing in it, but it does not seem to alter Ulrich's opinion. "No paper, this time. They are learning."
+*goto slasher_ulrich_proof
+
+*label slasher_ulrich_ask
+
+"Where were you when Betty Fairweather died?"
+
+For a moment the room is entirely still. Then Ulrich laughs once, short and dry, and sets down his glass. "That is the first sensible question I have been asked in this room in a month."
+*goto slasher_ulrich_proof
+
+*label slasher_ulrich_proof
+
+He sets the glass on the arm of the chair. "I was thirty miles upriver," he says, "in a factor's parlor at Alderford, drinking weak ale, with eleven witnesses and a receipt from the counting house for every day of it. Look at the desk behind you. The papers on the left."
+
+You turn in the chair. The papers on the left are receipts from the Factor's Hall at Alderford, three weeks of them, stamped and signed, with the dates running right through each of the last three killings.
+
+"Those could have been written anytime," you say.
+
+"They could. Send to Alderford and ask the Factor's clerk, and he will tell you the same. I will pay for the rider." Ulrich lifts a shoulder. "Captain Trent has sent men into my house for a month. I have written to the militia command twice, and both letters were answered by Trent. I don't know who put him in charge of this investigation. I can only assume malice or gross incompetence."
+
+"Why haven't you gone to the Watch?"
+
+"With what evidence? Clearly fake warrants, carried by burglars, doesn't exactly point back to Trent directly. Trent has enough pull and connections in the city to make that my complaints have fallen on deaf ears. He's resorting to these extra judicial means to see me brought to justice, and I don't know how to stop him." He turns the glass a quarter turn. "You are not an investigator. At worst you are an assassin who does not know it."
+
+He looks at you a while longer, then waves a hand at the guards. "I will not send for the Port Watch over this. I will ask one thing instead. Take those receipts down to the Middle Ward and put them in front of Captain Trent. Watch his face when you do. I can only pray to the Sun-Father that whatever he holds against me is false. If you can make him see reason and stop this, I will see you rewarded for it. I have a use for capable people."
+
+The guard slides the receipts across the table into your hands and gives your satchel back, and the other two walk you out through the garden and down the lane. At the corner of the avenue, one of them points toward the Inner Gate. "That way. And next time, send a card."
+
+[b][🏷️ Gained: Ulrich's receipts from the Alderford Factor's Hall][/b]
+*set slasher_alibi_proof true
+*set slasher_ulrich_met true
+*set slasher_manor_done true
+*set minutes_to_pass 20
+*set time_advance_call_id "slasher_manor_3"
+*gosub_scene port_valen/port_valen_upper_wharves pq_walk_time
+*page_break Down to the avenue…
+*goto_scene port_valen/port_valen_upper_wharves pq_estates
+
+*comment ====================================================================================
+*comment THE CONFRONTATION (phase 5a): Trent's private office at the militia post. Reached from slasher_post_menu and slasher_post_return when the player holds at least one piece of
+*comment evidence (slasher_ev: the receipts, Kenny's plan and note, Kenny's word, the second warrant). The player lays out what they have; each piece has its own exchange. Pressure counts a
+*comment piece each, one more for a matched hand (the player held Trent's own warrant against the note) and one more for the scrubbed knife seen with Insight (slasher_trent_read). Two or more
+*comment breaks him; one does not: he dismisses it, the player is shown the door, and he knows he is hunted (slasher_trent_warned), which puts +2 on every chase DC. A broken Trent says his
+*comment piece, smashes the lantern he hangs by the door, and runs: slasher_chase takes over.
+*comment ====================================================================================
+
+*label slasher_ev_tally
+*set slasher_ev 0
+*if (slasher_alibi_proof)
+  *set slasher_ev + 1
+*if (slasher_kenny_haversack)
+  *set slasher_ev + 1
+*if (slasher_kenny_spoke)
+  *set slasher_ev + 1
+*if (slasher_kenny_warrant)
+  *set slasher_ev + 1
+*return
+
+*label slasher_confront
+*set slasher_pressure 0
+You set your satchel on the corner of the desk and begin to take out what you have gathered. Trent's pen stops. He watches your hands.
+
+*if (slasher_alibi_proof)
+  *set slasher_pressure + 1
+  The Alderford receipts go down first, squared against the blotter.
+  *if (slasher_ulrich_met)
+    "Ulrich of Avir put these in my hand himself," you say. "Three weeks of them, stamped and signed at the Factor's Hall. The dates run right through the last three killings. He was thirty miles away."
+  *else
+    "These came out of Ulrich's study," you say. "Three weeks of them, stamped and signed at the Factor's Hall. The dates run right through the last three killings. He was thirty miles away."
+
+  Trent glances at them without touching them. "Paper," he says. "A man with Avir's money buys a clerk the way he buys a coat."
+
+*if (slasher_kenny_haversack)
+  *set slasher_pressure + 1
+  Next to them you lay Kenny's plan of the manor and the note.
+
+  "'Leave the study window unlatched on the night, and ten silver marks are yours,'" you read. "Signed B.T."
+  *if (slasher_hand_matched)
+    *set slasher_pressure + 1
+
+    You take Trent's own warrant out of the satchel and set it beside the note. The hand is the same, with the same heavy downstrokes and the same way of crossing the T.
+
+  "Half the militia can copy my hand," Trent says. "Someone has been putting my name to things for a month."
+
+*if (slasher_kenny_spoke)
+  *set slasher_pressure + 1
+  "Kenny named you before he died," you say. "He said you set them up. That the desk had proof, and the guards were standing right inside the door."
+
+  Something moves in Trent's jaw. "A dying man's fever," he says. "He was a hired sword. They say anything."
+
+*if (slasher_kenny_warrant)
+  *set slasher_pressure + 1
+  You unfold the second warrant, the one from Kenny's boot, and lay it next to the first. "Your seal, your hand, made out to the bearer. He was carrying it when the Watch pulled him from the canal."
+
+  "I've signed forty of those," Trent says. "I give one to every hired sword I send anywhere." But the mug on the blotter has stopped turning.
+
+*if (slasher_trent_read)
+  *set slasher_pressure + 1
+  Last of all, you leave your hands empty and look at his belt. "Those knives are very clean," you say. "Cleaner than anything else in this room. Except in the seam around the pins."
+
+  Trent's hand drops over the nearer handle, and he does not seem to notice that he has done it.
+
+*if (slasher_pressure >= 2)
+  *goto slasher_crack
+*goto slasher_hold
+
+*label slasher_hold
+Trent looks at the papers for a long while. Then he gathers them into a stack, squares it against the blotter, and pushes it back across to you.
+
+"You have a story," he says, evenly, "and a few pieces of paper that could mean anything. I won't see a respectable man's name ruined on that, and I won't have it said this office listened." He stands. "Bring me something I can't talk round. Until then, you were never here."
+
+He holds the door for you, and he does not take his eyes off you until you are through the front room and out in the street.
+*set slasher_trent_warned true
+*page_break Out to the Trunk Road…
+*goto_scene port_valen/port_valen_middle_ward mw_gate_road
+
+*label slasher_crack
+The mug sits still on the blotter. When Trent lifts his eyes, the tiredness has gone out of his face, and what is left is cold and flat and almost pleased.
+
+"You should have stayed in the yard with the carts," he says.
+
+"Seven people," you say.
+
+"Eight, if you count Kenny." He sits back, and the chair complains. "Merchants like Ulrich look down their noses at men like me from their stone houses. Men like that, and the poor folk whining about bread and coal, while better men bled for this city. My own men died in the war, and nobody asked who minded the dead."
+
+"And Betty Fairweather? What was she for?"
+
+"Betty Fairweather screamed for three minutes before she went quiet." He says it in the voice of a man remarking on the weather. "Taking a life is the only real thing left in this rotten part of the world." He looks at you, and there is no heat in it at all. "You should have died in Avir Manor like the rest of them."
+
+He reaches up and lifts the iron lantern off its hook beside the door.
+
+You are half out of the chair when he smashes it on the boards between you. Oil runs across the timber and takes the flame in a rush, a wall of it between you and the door, and he is through it shoulder first with the hem of his coat alight. The door bangs open on the front room. You hear a shout, a crash, a man's cry cut off, and then another.
+*set slasher_chase_wins 0
+*set slasher_c1 false
+*set slasher_c2 false
+*set slasher_c3 false
+*set slasher_chase_mod 0
+*if (slasher_trent_warned)
+  *set slasher_chase_mod 2
+*page_break The fire reaches the papers…
+*goto slasher_chase_1
+
+*comment ====================================================================================
+*comment THE CHASE (phase 5b): three beats, two wins catch Trent. Each beat is one page with a choice of approach (DC 12 and 13, 11/12 and a free shot, 12 and 12), +2 on every DC when he was warned.
+*comment A beat won adds to slasher_chase_wins. The door costs fire damage on a failure (1d6, never below 1 HP). Two or three wins end at the canal edge in the fight (slasher_fight); none or one
+*comment lets him go (slasher_escaped). Each beat charges 5 minutes, one advance per page.
+*comment ====================================================================================
+
+*label slasher_chase_1
+*set minutes_to_pass 5
+*set time_advance_call_id "slasher_chase_t1"
+*gosub_scene port_valen/port_valen_middle_ward mw_walk_time
+*temp sl_d1 (12 + slasher_chase_mod)
+*temp sl_d1w (13 + slasher_chase_mod)
+*temp sl_h1 ""
+*temp sl_h1w ""
+*if (show_stat_hints)
+  *set sl_h1 ((" [Acrobatics or Athletics DC " & sl_d1) & "]")
+  *set sl_h1w ((" [Acrobatics or Athletics DC " & sl_d1w) & "]")
+[b]◈ THE MILITIA POST: ON FIRE[/b]
+*line_break
+Fire is climbing the door frame. Through it you can see the front room: one militiaman on his knees in the passage with both hands clamped on his arm, another sprawled against the bench with his leg bent wrong, both alive and both bellowing for a bucket. The street door is swinging, and Trent's boots are already pounding out onto the Trunk Road. The shutter on the lane side of the office stands propped open, as it has all along.
+
+*choice
+  # Vault the burning doorway and run the passage.${sl_h1}
+    *goto slasher_chase_1_door
+  # Go out through the window into the lane.${sl_h1w}
+    *goto slasher_chase_1_window
+
+*label slasher_chase_1_door
+*set slasher_chase_dc sl_d1
+*gosub_scene dice_engine roll_skill_check slasher_chase_dc "acrobatics" "" "athletics" "" "" ""
+*if (check_success)
+  *set slasher_c1 true
+  You drop your shoulder, jump, and clear the blazing frame with your arm across your face. The heat lays a hand on your back and lets go. You land in the passage with smoke in your eyes, past the wounded men, and you do not stop.
+  *page_break The street…
+  *goto slasher_chase_2
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *temp sl_burn 1
+  *rand sl_burn 1 6
+  *set slasher_fire_dmg sl_burn
+  *set hp_current - sl_burn
+  *if (hp_current < 1)
+    *set hp_current 1
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+You jump, and your boot catches the burning sill. You come down in the passage on your hands with fire in your sleeve, and you beat it out against the boards. By the time you are on your feet, the running outside has gone.
+
+[b][🔥 Burned: -${slasher_fire_dmg} HP | Current HP: ${hp_current}/${hp_max}][/b]
+*page_break The street…
+*goto slasher_chase_2
+
+*label slasher_chase_1_window
+*set slasher_chase_dc sl_d1w
+*gosub_scene dice_engine roll_skill_check slasher_chase_dc "acrobatics" "" "athletics" "" "" ""
+*if (check_success)
+  *set slasher_c1 true
+  You go through the propped shutter headfirst and roll out onto the stones of the lane. By the time you are on your feet, you can hear his boots on the Trunk Road, close and to your left.
+  *page_break The street…
+  *goto slasher_chase_2
+You get your shoulders through, and the frame bites your ribs. You work yourself the rest of the way, tearing your sleeve, and drop into the lane. The boots on the Trunk Road are already faint.
+*page_break The street…
+*goto slasher_chase_2
+
+*label slasher_chase_2
+*set minutes_to_pass 5
+*set time_advance_call_id "slasher_chase_t2"
+*gosub_scene port_valen/port_valen_middle_ward mw_walk_time
+*temp sl_d2 (11 + slasher_chase_mod)
+*temp sl_d2w (12 + slasher_chase_mod)
+*temp sl_h2 ""
+*temp sl_h2w ""
+*temp sl_h2s ""
+*temp sl_shot "none"
+*if (weapon_type = "ranged")
+  *set sl_shot "weapon"
+*elseif (known_fire_bolt)
+  *set sl_shot "fire"
+*elseif (known_ray_of_frost)
+  *set sl_shot "frost"
+*elseif (known_eldritch_blast)
+  *set sl_shot "blast"
+*elseif (known_chill_touch)
+  *set sl_shot "chill"
+*if (show_stat_hints)
+  *set sl_h2 ((" [Perception or Acrobatics DC " & sl_d2) & "]")
+  *set sl_h2w ((" [Athletics DC " & sl_d2w) & "]")
+  *set sl_h2s " [Attack vs AC 14]"
+[b]◈ LANTERN LANE[/b]
+*line_break
+Trent takes the corner into Lantern Lane at a dead run and hits the stalls like a thrown stone. A barrel of brine goes over and rolls, a spool of rope bounces after it, and the lane fills with shouting and the smell of salt. People scramble back against the shop fronts. Ahead of the wreckage a man in a smoking coat is already forty strides off, running easy.
+
+*choice
+  # Look for a way round through the yard of Hollis & Daughters.${sl_h2}
+    *goto slasher_chase_2_yard
+  *if (not(sl_shot = "none"))
+    # Take a shot at him through the gap.${sl_h2s}
+      *goto slasher_chase_2_shot
+  # Go straight through the wreckage.${sl_h2w}
+    *goto slasher_chase_2_through
+
+*label slasher_chase_2_yard
+*set slasher_chase_dc sl_d2
+*gosub_scene dice_engine roll_skill_check slasher_chase_dc "perception" "" "acrobatics" "" "" ""
+*if (check_success)
+  *set slasher_c2 true
+  There is a gap between two shop fronts you would not have looked at twice, and a yard behind it stacked with crates and coils of rope. You cut through at a run, over a low wall and out through a side gate, and come out in the lane ahead of the wreckage with Trent's back thirty strides off and shortening.
+  *page_break The canal…
+  *goto slasher_chase_3
+The gap you pick turns out to be a dead end of crates, and you lose the best part of a minute backing out of it. When you reach the lane again, the barrels have been righted by angry shopkeepers and Trent is a hat's size on the far side of the road.
+*page_break The canal…
+*goto slasher_chase_3
+
+*label slasher_chase_2_through
+*set slasher_chase_dc sl_d2w
+*gosub_scene dice_engine roll_skill_check slasher_chase_dc "athletics" "" "" "" "" ""
+*if (check_success)
+  *set slasher_c2 true
+  You put your shoulder into the barrel and the brine goes over in a grey slop across the stones, and you climb the rope spool like a stair and drop on the other side running. Trent looks back once, and what he sees makes him run faster.
+  *page_break The canal…
+  *goto slasher_chase_3
+The barrel does not roll the way you meant it to. It catches your shin, the spool spins out from under your boot, and you go down hard in the brine with the whole lane staring. By the time you are up, Trent has put a good stretch of road between you.
+*page_break The canal…
+*goto slasher_chase_3
+
+*label slasher_chase_2_shot
+*set check_stat "dex"
+*set check_skill "Ranged Attack"
+*if (sl_shot = "fire")
+  *set check_stat "int"
+  *set check_skill "Fire Bolt"
+*if (sl_shot = "frost")
+  *set check_stat "int"
+  *set check_skill "Ray of Frost"
+*if (sl_shot = "blast")
+  *set check_stat "cha"
+  *set check_skill "Eldritch Blast"
+*if (sl_shot = "chill")
+  *set check_stat "cha"
+  *set check_skill "Chill Touch"
+*set check_dc 14
+*set check_add_prof_bonus true
+*if (sl_shot = "weapon")
+  You plant your feet in the lane, find the gap in the scattering crowd, and loose a shot from your ${weapon}.
+*if (sl_shot = "fire")
+  You flick a mote of arcane flame down the lane between the scattering crowd.
+*if (sl_shot = "frost")
+  You throw a lance of pale cold down the lane between the scattering crowd.
+*if (sl_shot = "blast")
+  You loose a crack of force down the lane between the scattering crowd.
+*if (sl_shot = "chill")
+  You send a skeletal grip of cold along the lane between the scattering crowd.
+*gosub_scene dice_engine roll_d20_check
+*if (check_success)
+  *set slasher_c2 true
+  The shot clips his thigh. Trent's leg buckles under him and he goes down on one knee, swearing, and heaves himself up and runs on at a limp. You have gained a good thirty strides.
+  *page_break The canal…
+  *goto slasher_chase_3
+The shot goes wide and takes a rope bale at a shop front, and the crowd shrieks. Trent does not so much as turn his head.
+*page_break The canal…
+*goto slasher_chase_3
+
+*label slasher_chase_3
+*set minutes_to_pass 5
+*set time_advance_call_id "slasher_chase_t3"
+*gosub_scene port_valen/port_valen_middle_ward mw_walk_time
+*temp sl_d3 (12 + slasher_chase_mod)
+*temp sl_h3 ""
+*temp sl_h3i ""
+*if (show_stat_hints)
+  *set sl_h3 ((" [Athletics DC " & sl_d3) & "]")
+  *set sl_h3i ((" [Intimidation DC " & sl_d3) & "]")
+[b]◈ THE DRAINAGE CUT[/b]
+*line_break
+The lane ends at a stone channel where a sluice gate holds back the foul water that runs down toward Dredge-End. Beyond the gate lies a rotten wooden catwalk, and beyond that, a labyrinth of leaning roofs. Trent is already on the gate's iron lip, measuring the ten feet to the far bank. Along the channel wall, a line of people stand with laundry baskets and buckets, watching.
+
+*choice
+  # Close the last strides and tackle him before he jumps.${sl_h3}
+    *goto slasher_chase_3_tackle
+  # Shout for the people along the wall to stop him.${sl_h3i}
+    *goto slasher_chase_3_shout
+
+*label slasher_chase_3_tackle
+*set slasher_chase_dc sl_d3
+*gosub_scene dice_engine roll_skill_check slasher_chase_dc "athletics" "" "" "" "" ""
+*if (check_success)
+  *set slasher_c3 true
+  You hit the gate lip at a dead run and take him round the hips as he gathers himself to jump. His boots leave the iron, and the two of you come down hard on the stone with the foul water sliding past your elbow.
+  *goto slasher_chase_end
+You get a hand on his coat, and he rips it out of your grip. The jump carries him clear of the water, and you fall short on the lip and skin your palms. He is across.
+*goto slasher_chase_end
+
+*label slasher_chase_3_shout
+*set slasher_chase_dc sl_d3
+*gosub_scene dice_engine roll_skill_check slasher_chase_dc "intimidation" "" "" "" "" ""
+*if (check_success)
+  *set slasher_c3 true
+  "That man cut down two militiamen and burned a post!" you roar. "Stop him!" Three of the washerwomen drop their baskets, and a man with a bucket empties it in Trent's face. He slips on the wet iron, and by the time he has found his footing you are on him.
+  *goto slasher_chase_end
+Your shout is lost in the noise of the water, and the people along the wall look at you as if you had gone mad. Trent takes the jump, lands on the far bank, and is gone.
+*goto slasher_chase_end
+
+*label slasher_chase_end
+*page_break The end of the chase…
+*set slasher_chase_wins 0
+*if (slasher_c1)
+  *set slasher_chase_wins + 1
+*if (slasher_c2)
+  *set slasher_chase_wins + 1
+*if (slasher_c3)
+  *set slasher_chase_wins + 1
+*if (slasher_chase_wins >= 2)
+  *goto slasher_fight
+*goto slasher_escaped
+
+*comment ====================================================================================
+*comment THE FIGHT AND THE ARREST (phase 5c): Trent at the canal edge. A library swordsman scaled to the design target (22 HP, AC 14, +5 to hit), NON-LETHAL for him (the user: he is never killed,
+*comment he is arrested) and lethal for the player (combat_player_can_die, the user kept the death screen), called "Trent" by name. His design trait Cornered Butcher (extra damage below 15 HP, but
+*comment attacks against him have advantage) is NOT built: the engine has no mid-fight threshold hook. His Multiattack IS built (combat_multiattack_slot): a second d4 strike each turn, on top of the swordsman's 30% double cut (Off-Guard).
+*comment Victory: the player searches him (the bone comb, the boning knife, papers taken from the dead) and the Port Watch arrives; the militiaman he cut down confirms. Stage "resolved",
+*comment resolution "arrested". Losing the chase, or fleeing the fight, lets him go: stage "failed", resolution "escaped". Both leave slasher_reported false until the player tells Varren.
+*comment ====================================================================================
+
+*label slasher_fight
+Trent rolls clear and gets to his feet a few strides off, with the hem of his coat still smoking and a thin knife in his hand. For a moment he looks at you, at the people along the wall, and at the ten feet of black water behind him. Whatever pleased him in the office has gone out of his face, and something older has come into it.
+
+"You couldn't leave it alone," he says.
+*set combat_is_nonlethal true
+*set combat_player_can_die true
+*set combat_lib_1 "swordsman"
+*set combat_enemy_name_override "Bronner Trent"
+*set combat_enemy_epithet_override "Trent"
+*set combat_enemy_hp_override 22
+*set combat_enemy_ac_override 14
+*set combat_enemy_atk_override 5
+*comment The fight opens at Close, the engine's default (the user: opening Engaged is brutal for casters). No level scaling either: Trent is tuned for roughly level 3 and an open world is not fair at every
+*comment level (the user's ruling). A random standard terrain layout (cover, high ground, difficult ground or a chokepoint, never under the opening positions) makes the canal edge tactical. His multiattack is
+*comment the extra strike: a second, d4 strike each turn after the first (combat.txt fight_enemy_extra_attack), the carving knife after the long blade.
+*set combat_terrain_layout "random_standard"
+*set combat_multiattack_slot 1
+*gosub_scene combat fight_library
+*set combat_player_can_die false
+*if (combat_outcome = "player_died")
+  *set death_cause "combat"
+  *set death_location_name "The Drainage Cut"
+  *set death_enemy_epithet "Captain Trent"
+  *goto_scene death death_screen
+*if (combat_outcome = "victory")
+  *goto slasher_won
+*goto slasher_escaped_fled
+
+*label slasher_won
+The fight goes out of him all at once. He sits down hard on the iron lip of the gate with one hand pressed to his side, and the knife slips from his fingers and rings once on the stone. He looks at it as if it belonged to someone else.
+
+You kneel and go through his coat. It does not take long. In the inner pocket, wrapped in a strip of oilcloth, is a small bone comb, a woman's, with the teeth worn short and two of them missing and a few dark hairs still caught in the spine. The knife on the stone is a thin boning knife with a nicked edge and a horn handle scrubbed white, and its twin hangs at his belt. Folded together behind the comb are three scraps of paper: a pay slip from a loom house, made out to Betty Fairweather; a letter in a child's pencil that begins [i]Dear Da[/i]; and a pawnbroker's ticket with a woman's name on it and nothing else.
+
+You go through the pieces twice. He kept something from the dead, and he kept it close.
+
+[b][🏷️ Gained: a bone comb, a boning knife and three papers from Trent's victims][/b]
+*set slasher_has_proof true
+*set minutes_to_pass 10
+*set time_advance_call_id "slasher_won_1"
+*gosub_scene port_valen/port_valen_middle_ward mw_walk_time
+*page_break Boots on the stones…
+*goto slasher_watch
+
+*label slasher_watch
+Two of the Port Watch come along the channel wall at a run, in Watch tabards, one with a spear leveled and the other with a crossbow at the ready, and behind them, bound at the arm in a rag, a militiaman who has followed the smoke and the shouting. The people along the wall make a space for him. He stops at the sight of Trent on the gate and puts a hand on a post.
+
+"That's Captain Trent," he says. "I saw him cut down a man, and the one next to me, and then he set the place alight."
+
+The older of the Watch, a heavy woman with grey in her braid, looks from the militiaman to Trent and back. "The captain in the Middle Ward?" She does not make it a question. "Hold him," she tells the other, and then she looks at you. "You. What happened here?"
+
+"He's the one you've been looking for," you say. "The killings. All seven."
+
+"That's a thing to say about a captain of the militia. Who are you?"
+
+"I know it is." You hold out what you took from his coat. "He had these on him. I'm a mercenary with the Iron Carrion, and Sergeant Varren sent me to help find the Slasher."
+
+She takes the comb and turns it over. She sets the knife down on the stone and opens the pay slip, and the name on it makes her go still. "I took the report on that girl myself." She lays the papers on the wall, one by one, the letter and the ticket last. "I guess you found him. Is there more?"
+
+You tell her all of it, in the order it happened: the warrants, the note signed with two letters, the man dying in the Althea chapel who named Trent before he died, the Alderford receipts and the study that was never Ulrich's to give up. You gave her all the evidence you collected. The militiaman nods at every part he can speak to. By the end the people along the wall have stopped pretending they aren't listening.
+
+Trent sits on the iron lip with the water at his back and watches the sergeant put the comb into a clean cloth. "She wore it crooked," he says, quietly, to no one in particular.
+
+"I'll take him to the Watch house myself," she says at last. "The commander will want to hear all about this." She tucks the cloth inside her tabard. "We'll be in touch with the Iron Carrion. Stay where we can find you."
+
+[b][📜 Trent is taken into the Watch's custody.][/b]
+*if (not(slasher_quest_stage = "resolved"))
+  *set slasher_quest_stage "resolved"
+  *set slasher_resolution "arrested"
+  *set slasher_end_day campaign_day
+*set minutes_to_pass 30
+*set time_advance_call_id "slasher_won_2"
+*gosub_scene port_valen/port_valen_middle_ward mw_walk_time
+*page_break Back to the Trunk Road…
+*goto_scene port_valen/port_valen_middle_ward mw_gate_road
+
+*label slasher_escaped_fled
+You break off and give ground, and Trent does not follow. He stays where he is at the water's edge, breathing hard, and watches you go with the knife hanging at his side. By the time you have the sense to look back, he has taken the jump.
+*goto slasher_escaped_end
+
+*label slasher_escaped
+Trent is gone. He took the jump across the foul water and the rotten catwalk beyond it, and by the time you find a way over, there is nothing on the far side but leaning roofs and washing lines and a hundred places for a man to be.
+*goto slasher_escaped_end
+
+*label slasher_escaped_end
+You stand at the iron lip until your breath comes back. Behind you, over the Trunk Road, a column of black smoke stands in the sky, and a bell is going somewhere near it.
+
+The Watch finds you there, two of them with spears and a sergeant. You tell her what you can: the office, the lantern, the two militiamen. She writes it down and says the Watch will put out a warrant for Captain Trent by nightfall. She does not say how many places there are in Dredge-End for a man to vanish.
+
+[b][📜 Trent has escaped.][/b]
+*if (not(slasher_quest_stage = "failed"))
+  *set slasher_quest_stage "failed"
+  *set slasher_resolution "escaped"
+*set minutes_to_pass 30
+*set time_advance_call_id "slasher_escaped_1"
+*gosub_scene port_valen/port_valen_middle_ward mw_walk_time
+*page_break Back to the Trunk Road…
+*goto_scene port_valen/port_valen_middle_ward mw_gate_road
+
+*comment ====================================================================================
+*comment REPORTING TO VARREN (phase 5d): a button in the armory shed menu (port_valen.txt pv_armory_menu) once the case has ended either way and the player has not yet told him. Arrested: five
+*comment silver marks from the company chest (the user's payout) and +10 Varren's regard, then the quest counts for the level-up pool (count_finished_port_valen, which tests slasher_reported).
+*comment Escaped: no pay and no regard; Varren takes it as a soldier takes a lost field. Sets slasher_reported either way.
+*comment ====================================================================================
+
+*label slasher_report
+[b]◈ THE ARMORY SHED[/b]
+*line_break
+Varren is working an awl through a strap when you come in, and he does not look up. "Heard," he says. "The whole compound has heard."
+
+*if (slasher_resolution = "arrested")
+  "Trent is in the Watch house," you say.
+
+  "I know. A Watch sergeant came to tell Vane, and Vane came to tell me." He sets the strap across his knee. "I sent you to a man I'd have shaken hands with." His jaw works once.
+
+  "You couldn't have known."
+
+  "That's what I tell a recruit." He looks at you with the good eye first, and then the pale one. "Captain Vane wanted the Carrion known in this city for something besides hired muscle. He has it. The Watch sent a man to our gate this morning to say as much." He reaches under the bench for a tin box and counts out five silver marks. "That's the company's word. Take it."
+
+  *if (not(slasher_reported))
+    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+      *set currency_add_amount 50
+      *gosub_scene economy currency_add
+      *set currency_txn_locked true
+      *set locked_currency_txn_page_id page_id
+    *set varren_respect + 10
+    *set slasher_reported true
+
+  [b][💰 Paid by Varren: 5 Silver Marks.][/b]
+  *line_break
+  [b][🤝 Varren's regard for you grows.][/b]
+
+  "Hand me that buckle," he says, and goes back to the strap.
+*else
+  "He got away," you say. "Into Dredge-End."
+
+  Varren does not answer for a time. The awl goes through the leather and comes out again.
+
+  "Vane will hear it from me, not from the Watch." He draws the cord tight with his teeth. "A man like that has more doors in this city than the Watch has keys. You went after him, and you came back. That's something. It isn't a name."
+
+  "I'm sorry."
+
+  "Don't be sorry. Be there next time." He reaches for the next strap. "Go and eat."
+
+  *if (not(slasher_reported))
+    *set slasher_reported true
+*page_break Back across the compound…
+*goto_scene port_valen/port_valen port_valen_hub
+
+*comment ====================================================================================
+*comment ULRICH'S REWARD (phase 6): a courier, then the manor. slasher_courier is called from the top of pv_re_roll (port_valen_random_encounters.txt), three days after the arrest, on the next walk between
+*comment districts by day in fair weather, for a player who got into Avir Manor (slasher_manor_done). It gives a Registered Writ for patrician_reg_days days that REPLACES any writ held (the user's ruling:
+*comment a longer pass is overwritten), once, under slasher_courier_done. There are two letters: one for a player Ulrich met (slasher_ulrich_met), one for a player who took the receipts from his study unseen,
+*comment whom he guesses is the thief. The silver is not paid by the courier: slasher_reward, a button on the Avenue of Estates, pays 15 Silver Marks at the manor (slasher_reward_paid), with a scene for each
+*comment kind of player. The courier then hands back to pv_re_return like every encounter.
+*comment ====================================================================================
+
+*label slasher_courier
+[b]◈ ON THE ROAD[/b]
+*line_break
+A young man in dark green livery steps out of a doorway into your path with a sealed letter held in both hands. A stone tower on a green hill is stitched on his sleeve, and he is out of breath in the way of someone who has been walking the city for most of the day.
+
+"Thank the saints," he says. "I was sent to the Carrion Compound at first bell, and the corporal on the gate told me you had gone down toward the Middle Ward. I have asked eleven people who looked like you." He holds out the letter. "From my lord, Ulrich of Avir."
+
+"How did he know where to find me?"
+
+"The Watch sergeant who took the captain told him who had found him, and the Carrion told the Watch where you could be had." He shrugs, with the air of a man who has stopped trying to follow it. "I only carry them."
+
+You break the seal.
+*if (slasher_ulrich_met)
+  [i]"I said I would see you rewarded. The Watch tells me Captain Trent has been taken on evidence that included my own receipts, which I put into your hands myself. A month's writ is enclosed, so that you may use my gate and not my wall. Fifteen silver marks wait with my steward for the day you can spare. U. of Avir."[/i]
+*else
+  [i]"The Watch tells me Captain Trent was taken on evidence that included my Alderford receipts, which I had thought stolen from my study the week before. Whoever climbed my trellis did it so neatly that I am told the dogs slept through it. I should like to meet them. A month's writ is enclosed, so that you may use my gate, and fifteen silver marks wait with my steward for the day you can spare. U. of Avir."[/i]
+
+*if (not(slasher_courier_done))
+  *set patrician_reg_until (campaign_day + patrician_reg_days)
+  *set patrician_day_writ_day 0
+  *set slasher_courier_done true
+
+The young man bows, a little crookedly, and is gone down the street before you can ask him whether he is hungry.
+
+[b][🏷️ Gained: a month's writ for the Patrician Quarter][/b]
+*set minutes_to_pass 5
+*set time_advance_call_id "slasher_courier_1"
+*gosub_scene port_valen/port_valen_random_encounters pv_re_advance_time
+*page_break Continue toward ${pv_re_dest}…
+*goto_scene port_valen/port_valen_random_encounters pv_re_return
+
+*comment ====================================================================================
+*comment AFTERMATH RUMORS (phase 7): once the case has ended the three places talk about it, one rumor each (slasher_after_baths_heard / _keel_ / _inn_), a version for the arrest and a version for the
+*comment escape (slasher_resolution). Hooks: a pick 9 in the baths' hot-room ladder, the first rung after the quest rumor in the Keel's ladder, and a button in the Wagoner's Rest hall menu. Each ends
+*comment through slasher_rumor_end, which charges the same time as the earlier rumors and returns to the place's menu. The flag is set on the page after the text.
+*comment ====================================================================================
+
+*label slasher_after_baths
+*set slasher_ask_place "baths"
+*if (slasher_resolution = "arrested")
+  The steam is thick with one subject. "They say he carved a letter into every one of them," a woman says close by. "And the Watch had the captain of the Trunk Road post in their cells by noon."
+
+  "A captain." A man laughs, without any pleasure in it. "My brother stood watch under that man for six years."
+
+  "Merrin's cousin walked the lamp stairs alone last night," says a third voice, further along. "First time in months."
+
+  Somebody ladles water over the stones, and for a while nobody says anything at all.
+*else
+  The steam is thick with one subject, and nobody is happy with it. "The captain of the Trunk Road post," a woman says, low. "Burned his own post and walked off into Dredge-End. The Watch have a warrant out."
+
+  "A warrant." A man snorts. "For somebody who knows every lane the Watch walks."
+
+  "The lamplighters were going in pairs." A ladle clinks on the rim of a bucket. "Now they go in threes."
+*page_break The talk moves on…
+*set slasher_after_baths_heard true
+*goto slasher_rumor_end
+
+*label slasher_after_keel
+*set slasher_ask_place "keel"
+*if (slasher_resolution = "arrested")
+  The whole taproom is talking about one thing. At the next table a chandler holds forth to anyone who will listen.
+
+  "The captain of the post on the Trunk Road," he says. "A captain! Burned his own post to the beams and ran for the cut with a hired hand on his heels."
+
+  "Caught by a hired hand," says his companion, "and not by the Watch. The Watch came after and held his coat."
+
+  "Seven," says Maret from behind the bar, and the table falls quiet. "Every one of them somebody's." He sets down a tankard harder than he needs to, and in a moment someone calls for another round.
+*else
+  The taproom is talking about the fire on the Trunk Road, and about the man who set it. At the next table a chandler lowers his voice, which does not help.
+
+  "Captain of the militia," he says. "Seven dead, and he walked out of his own burning post and into Dredge-End. The Watch have put twenty silver on a name."
+
+  "Twenty," says his companion. "He'll be across the river by morning, or under the floor of somebody who owes him."
+
+  Behind the bar, Maret wipes the same tankard until it squeaks, and keeps one eye on the door.
+*page_break The talk moves on…
+*set slasher_after_keel_heard true
+*goto slasher_rumor_end
+
+*label slasher_after_inn
+*set slasher_ask_place "inn"
+You ask Oswin how the city is taking the news from the Trunk Road. He is scrubbing the long table, and he does not stop.
+*if (slasher_resolution = "arrested")
+
+  "Carters are sleeping in the stable yard again," he says. "Two coppers cheaper than a bolted door, and they have stopped bolting." He wrings the cloth into a pail. "A man who had a notion kept it to himself and was right. I still prefer it that way." He glances at you, then back at the table. "If it was you, I won't ask."
+*else
+
+  "They are still paying for rooms inside the wall," he says, "and bolting the doors. Business is good, which is the worst thing I can say about it." He works a ring out of the wood with his thumbnail. "The militia captain ran. A man who runs has friends. I'd keep a lamp lit."
+*page_break "Thank you."…
+*set slasher_after_inn_heard true
+*goto slasher_rumor_end
+
+*label slasher_reward
+[b]◈ AVIR MANOR[/b]
+*line_break
+The porter has the gate open before you reach it. "Lord Ulrich is expecting you," he says, and his eyes go to your hands before he can stop them, looking for a rope or a crossbow. Then he coughs and steps aside. A steward walks you through the garden, over the same gravel and past the same dry basin, and in at the front door.
+
+*if (slasher_ulrich_met)
+  *goto slasher_reward_parlor
+*goto slasher_reward_study
+
+*label slasher_reward_parlor
+Ulrich is in the deep chair by the fire with a glass in his hand, as he was the first time, though the glass is full and the room is warmer.
+
+"You came by the front," he says. "I had begun to wonder if you would."
+
+"You said you would see me rewarded."
+
+"I did. I seldom say it." He waves the steward forward. "The sergeant who took Trent came to my gate herself to tell me, and she did not have to. She said he kept a woman's comb in his coat." He is looking at the fire. "I have been wondering what I would have done, had I been the man he wanted me to be."
+
+"What happens to the post on the Trunk Road?"
+
+"It burned to its beams, and the Council is already arguing about who pays. The militia has a new captain by the end of the week, and I expect he will be worse." The steward sets a small leather bag on the table beside the decanter. "Fifteen silver marks. It is what he offered you, I believe. I dislike being outbid by a murderer."
+*goto slasher_reward_pay
+
+*label slasher_reward_study
+The steward does not take you to the parlor. He takes you up the main stair, along a passage of polished wood, and opens a door on a study that you have seen before. Ulrich is at the window, with his back to the balcony door and its glass-paned leaves.
+
+"I have had the lock looked at," he says, without turning. "The smith says the pick left no mark at all."
+
+"That was the idea."
+
+"I should be furious." He turns, and he does not look it. "I find I am mostly curious. You took the receipts and you left the journal where it lay."
+
+"The receipts were the part that mattered."
+
+"They were. They put a murderer in the Watch house and took the shadow off my name." He nods at the steward, who sets a small leather bag on the desk. "Fifteen silver marks. For the receipts, and for the lock, which I shall not now have to replace."
+*goto slasher_reward_pay
+
+*label slasher_reward_pay
+
+Ulrich lifts a hand when you reach for the bag. "One thing more. I always have use for capable people, and the steward has your face now. If you want a door at this house, ask at the gate." He picks up his glass. "If you don't, the money is yours all the same."
+*if (not(slasher_reward_paid))
+  *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+    *set currency_add_amount 150
+    *gosub_scene economy currency_add
+    *set currency_txn_locked true
+    *set locked_currency_txn_page_id page_id
+  *set slasher_reward_paid true
+
+[b][💰 Received: 15 Silver Marks][/b]
+*set minutes_to_pass 25
+*set time_advance_call_id "slasher_reward_1"
+*gosub_scene port_valen/port_valen_upper_wharves pq_walk_time
+*page_break Back down the lane…
+*goto_scene port_valen/port_valen_upper_wharves pq_estates

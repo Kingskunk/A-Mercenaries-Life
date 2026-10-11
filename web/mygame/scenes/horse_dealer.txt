@@ -1,0 +1,260 @@
+*comment ====================================================================================
+*comment THE HORSE DEALER (the first mount). One library scene, entered with *goto_scene from two places that each set horse_place first: "bc" is the rail of the pens at the Barleycross common pasture (30 silver marks,
+*comment 27 on a good bargain) and "mw" is the stalls of the Wagoner's Rest stable yard in Port Valen's Middle Ward (36, 32 on a good bargain: the yard feeds and shoes it, so it asks more). hd_buy is the sale, hd_sell the
+*comment sale back (always 15 silver marks, at either place, so no one can buy at one and sell at the other for a profit). Not in *scene_list: compile.js lists it with verifyFileName.
+*comment
+*comment Who sells and which horse is for sale come from the five-day block's seed (horse_seed, stored under the page's lock so the hours the page costs cannot change the answer on a replay); each place has its own
+*comment offset, so the two never show the same person. The pen's horse is pen_*, the seller sel_*; buying copies the pen's horse into horse_*, the one the player owns. The player may try to bargain once (a check).
+*comment Owning a horse is has_horse. It is ridden automatically on the road (overworld-data.js, calendar.txt travel_step) and stabled in every settlement (calendar.txt horse_upkeep). Nothing here explains a trade: a
+*comment person has a horse and a price.
+*comment ====================================================================================
+*goto hd_buy
+
+*label hd_make
+*if (not(bc_horse_locked)) or (not(locked_bc_horse_page_id = page_id))
+  *set horse_seed (((campaign_day - (campaign_day modulo 5)) / 5) + 7000)
+  *if (horse_place = "mw")
+    *set horse_seed (horse_seed + 1000)
+  *set bc_horse_locked true
+  *set locked_bc_horse_page_id page_id
+*set name_seed horse_seed
+*if (horse_place = "mw")
+  *set name_setting "middle_ward"
+  *set name_region "port"
+*else
+  *set name_setting "town"
+  *set name_region "marches"
+*gosub_scene names name_pick_race
+*set name_gender "any"
+*gosub_scene names name_make
+*set name_look_skip "hands"
+*gosub_scene names name_look
+*set name_look_skip ""
+*set sel_first name_first
+*set sel_look look_full
+*if (name_sex = "f")
+  *set sel_sub "she"
+  *set sel_sub_cap "She"
+  *set sel_pos "her"
+*else
+  *set sel_sub "he"
+  *set sel_sub_cap "He"
+  *set sel_pos "his"
+*set name_salt 41
+*set name_n 5
+*gosub_scene names name_roll
+*if (name_rolled = 0)
+  *set pen_coat "bay"
+*elseif (name_rolled = 1)
+  *set pen_coat "grey"
+*elseif (name_rolled = 2)
+  *set pen_coat "chestnut"
+*elseif (name_rolled = 3)
+  *set pen_coat "dun"
+*else
+  *set pen_coat "black"
+*set name_salt 42
+*set name_n 2
+*gosub_scene names name_roll
+*if (name_rolled = 0)
+  *set pen_sex "mare"
+  *set pen_sub "she"
+  *set pen_sub_cap "She"
+  *set pen_obj "her"
+  *set pen_pos "her"
+*else
+  *set pen_sex "gelding"
+  *set pen_sub "he"
+  *set pen_sub_cap "He"
+  *set pen_obj "him"
+  *set pen_pos "his"
+*set name_salt 43
+*set name_n 10
+*gosub_scene names name_roll
+*if (name_rolled = 0)
+  *set pen_name "Clover"
+*elseif (name_rolled = 1)
+  *set pen_name "Ash"
+*elseif (name_rolled = 2)
+  *set pen_name "Pepper"
+*elseif (name_rolled = 3)
+  *set pen_name "Dapple"
+*elseif (name_rolled = 4)
+  *set pen_name "Rusty"
+*elseif (name_rolled = 5)
+  *set pen_name "Sorrel"
+*elseif (name_rolled = 6)
+  *set pen_name "Moss"
+*elseif (name_rolled = 7)
+  *set pen_name "Tansy"
+*elseif (name_rolled = 8)
+  *set pen_name "Barley"
+*else
+  *set pen_name "Fennel"
+*set name_salt 44
+*set name_n 3
+*gosub_scene names name_roll
+*set pen_temper name_rolled
+*return
+
+*label hd_buy
+*gosub hd_make
+*set horse_haggled false
+*if (horse_place = "mw")
+  *set horse_price 360
+*else
+  *set horse_price 300
+*if (horse_place = "mw")
+  [b]◈ THE WAGONER'S REST: THE STALLS[/b]
+*else
+  [b]◈ THE COMMON PASTURE: THE RAIL[/b]
+*line_break
+*if (horse_place = "mw")
+  ${sel_look} is working a curry-comb down the flank of a patient horse in the nearest stall, and looks round when you stop at the door.
+
+  "I'm looking for a horse," you say.
+
+  "Then you're in the right yard," ${sel_sub} says, and jerks ${sel_pos} head at the next stall. "That one's for sale."
+
+  In the stall stands a ${pen_coat} ${pen_sex}, eating from a hay net, with a shine on ${pen_pos} coat that says somebody has been looking after ${pen_obj}.
+*else
+  ${sel_look} leans on the rail of the nearest pen with a rope halter looped over one shoulder, and watches you come up the track without moving from the rail.
+
+  "I'm looking for a horse," you say.
+
+  "Then you've come to the right rail," ${sel_sub} says, and nods at the pen. "That one's mine."
+
+  In the pen stands a ${pen_coat} ${pen_sex}, eating hay from a trough with the unhurried air of an animal that has never once been in a hurry.
+*if (pen_temper = 0)
+  "${pen_name}," ${sel_sub} says. "Six years old, sound in wind and limb, and quiet as a milk cow. ${pen_sub_cap}'ll stand anywhere you tie ${pen_obj}."
+*elseif (pen_temper = 1)
+  "${pen_name}," ${sel_sub} says. "Six years old, sound in wind and limb, and willing, with a mind of ${pen_pos} own. You'll want to tell ${pen_obj} who is asking."
+*else
+  "${pen_name}," ${sel_sub} says. "Six years old, sound in wind and limb, and nothing frightens ${pen_obj}. I've seen ${pen_obj} step over a snake."
+*if (horse_place = "mw")
+  "Thirty-six silver marks," ${sel_sub} says, "with the bridle and the saddle. This is a stable yard, not a field. I keep ${pen_obj} fed and shod, and that is in the price."
+*else
+  "Thirty silver marks," ${sel_sub} says, "with the bridle and the saddle. I don't sell short and I don't sell dear."
+*label hd_choice
+*choice
+  # Pay the price.
+    *goto hd_pay
+  *if (not(horse_haggled))
+    # Try to bargain.
+      *goto hd_haggle
+  # Not today.
+    *goto hd_no
+
+*label hd_no
+"Not today," you say. "But I'll think on it."
+
+${sel_sub_cap} shrugs, as though ${sel_sub} had not expected anything else, and goes back to ${sel_pos} work.
+*page_break Step away…
+*goto hd_back
+
+*label hd_haggle
+"It's more than I meant to spend," you say. "Meet me lower and we'll shake on it."
+*set horse_haggled true
+*gosub_scene dice_engine roll_skill_check 13 "persuasion" "" "insight" "" "deception" ""
+*if (check_success)
+  *if (horse_place = "mw")
+    ${sel_sub_cap} sucks ${sel_pos} teeth, looks at ${pen_name}, and looks at you. "Thirty-two," ${sel_sub} says. "And that is the lowest, so don't ask me again."
+    *set horse_price 320
+  *else
+    ${sel_sub_cap} sucks ${sel_pos} teeth, looks at ${pen_name}, and looks at you. "Twenty-seven," ${sel_sub} says. "And that is the lowest, so don't ask me again."
+    *set horse_price 270
+*else
+  "The price is the price," ${sel_sub} says, and folds ${sel_pos} arms.
+*goto hd_choice
+
+*label hd_pay
+"I'll take ${pen_obj}," you say.
+
+*if ((((gold * 100) + (silver * 10)) + copper) < horse_price)
+  You count your coin against the price and come up short. ${sel_sub_cap} watches you do it without any unkindness. "${pen_sub_cap}'ll keep," ${sel_sub} says. "Come back when you have it."
+  *goto hd_choice
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount (0 - horse_price)
+  *gosub_scene economy currency_add
+  *set has_horse true
+  *set horse_name pen_name
+  *set horse_coat pen_coat
+  *set horse_sex pen_sex
+  *set horse_sub pen_sub
+  *set horse_sub_cap pen_sub_cap
+  *set horse_obj pen_obj
+  *set horse_pos pen_pos
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*set horse_price_silver (horse_price / 10)
+${sel_sub_cap} counts it twice, then hands you the rope and the halter with the bridle over it. "${sel_first}," ${sel_sub} says, and holds out a hand to seal it. "Be good to ${pen_obj}."
+
+${horse_name} follows you out without being asked, and when you put a foot in the stirrup, ${horse_sub} turns ${horse_pos} head to look at you and then stands to be mounted.
+
+[b][🐎 Bought: ${horse_name}, a ${horse_coat} ${horse_sex}, for ${horse_price_silver} Silver Marks.][/b]
+
+[b][🐎 On the road you ride: a mile takes about 12 minutes, against 24 on foot. In a town or city the stable keeps ${horse_obj} for 2 copper a day, in a village 1; on the road ${horse_sub} grazes free.][/b]
+*set minutes_to_pass 15
+*set time_advance_call_id "hd_buy_time"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Lead ${horse_name} away…
+*goto hd_back
+
+*label hd_sell
+*gosub hd_make
+*if (horse_place = "mw")
+  [b]◈ THE WAGONER'S REST: THE STALLS[/b]
+*else
+  [b]◈ THE COMMON PASTURE: THE RAIL[/b]
+*line_break
+*if (horse_place = "mw")
+  ${sel_look} is working a curry-comb down the flank of a patient horse in the nearest stall, and looks round as you lead ${horse_name} across the yard.
+*else
+  ${sel_look} is at the rail of the nearest pen, mending a halter strap, and looks up as you lead ${horse_name} along the track.
+
+"I'd like to sell ${horse_obj}," you say.
+
+${sel_sub_cap} walks all the way round ${horse_name} before ${sel_sub} says anything, running a hand down each leg and along the back.
+*if (horse_place = "mw")
+  "Fifteen silver marks," ${sel_sub} says at last. "That is what a horse like ${horse_obj} fetches here, and I'll not pay more than the going rate for one I have to feed."
+*else
+  "Fifteen silver marks," ${sel_sub} says at last. "Half what ${horse_sub} cost new, and not a copper more. Sound, but not new."
+*choice
+  # Sell ${horse_name}.
+    *goto hd_sold
+  # Keep ${horse_name}.
+    *goto hd_kept
+
+*label hd_kept
+"No," you say. "I think I'll keep ${horse_obj}."
+
+${sel_sub_cap} nods as though that were the answer ${sel_sub} had been hoping for.
+*page_break Step away…
+*goto hd_back
+
+*label hd_sold
+"Fifteen," you say. "Done."
+
+${sel_sub_cap} counts it into your hand. You take the halter off ${horse_name} yourself, and ${horse_sub} stands a moment with ${horse_pos} head over your shoulder before ${sel_first} clicks ${sel_pos} tongue and leads ${horse_obj} away.
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount 150
+  *gosub_scene economy currency_add
+  *set has_horse false
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+
+[b][🐎 Sold: ${horse_name}, for 15 Silver Marks.][/b]
+*page_break Step away…
+*goto hd_back
+
+*comment ── back to the place the player came from ──
+*label hd_back
+*if (horse_place = "mw")
+  *goto_scene port_valen/port_valen_middle_ward mw_inn_yard
+*goto_scene timbermouth/barleycross/pasture bc_pasture_main

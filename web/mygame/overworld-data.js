@@ -21,11 +21,14 @@
  * on the card ("Forest and hills"). It changes nothing else. kind picks the tile's colour in the panel: "city", "town", "village", "road", "hills", "forest" (add a kind here and a colour in overworldmap.css).
  * territory (required) is who holds the tile: an id in TERRITORIES below. Every tile so far belongs to the Gilded Scales (the user's call, 2026-10-08). It is data only for now: nothing in the panel or the
  * scenes reads it yet, so it is the place to hang tolls, patrols, escort pay and danger by owner later. A new territory is one entry in TERRITORIES.
+ * ford (optional, true): a crossing of running water the road makes here, where a road event (the ford) can happen; the event reads how high the water is from the weather's memory.
  * danger (optional, 0 to 3, default 0) is how rough the LAND is for a caravan before anyone patrols it: 0 safe, 1 uneasy, 2 rough, 3 dangerous. The EFFECTIVE danger is that number plus the patrol of the territory that holds the tile
  * (TERRITORIES below; the Scales' patrol is -1), kept between 0 and 3, and Overworld.dangerOf(id) gives it. The escort (radiant/hall_escort.txt) reads the effective danger for how likely a halt on the tile is to meet an event, which
  * events it can draw (HALT_EVENTS below) and how likely a night in camp there is to be disturbed.
  * walk, camp, depart and arrive (optional) are plain text for the caravan escort (radiant/hall_escort.txt), written to read the same in either direction: walk describes the road as the line comes in to
  * this tile, camp is the ground when the line makes camp here, depart is how the line pulls out from here, and arrive is how it comes in when this tile is the end of the road. A road, forest or hills tile needs a walk.
+ * departVia and arriveVia (optional) are for an end of the road with more than one road out of it (Port Valen has two): an object keyed by the neighbouring tile's id, and it wins over depart/arrive when the line
+ * leaves toward, or comes in from, that tile. Port Valen's plain depart/arrive are the River Road ones.
  * x and y are the tile's place on the map in grid units (east and south positive); the panel scales them.
  * image (optional) is a picture drawn inside the tile's circle in place of the plain colour, for when the tiles get art: a URL or data: URI, circular crop. None have one yet.
  */
@@ -36,6 +39,15 @@
   // road. Set at the user's call (2026-10-07), who preferred the realistic pace to a padded one. A camp on the road (overworld.txt ow_camp) is where the rest of the day goes; walking the whole
   // 40 miles to Timbermouth without a camp is 16 hours on your feet, and the tiles are 10 miles (4 hours) apart so a camp falls after a sensible day's walk (two tiles, 20 miles).
   var MINUTES_PER_MILE = 24;
+  var DUSK_MINUTES_PER_MILE = 30;
+  var DARK_MINUTES_PER_MILE = 48;
+  // On a horse (stats.has_horse): the same three paces, halved in daylight and at dusk, and half again in the dark, where a horse still picks its way. calendar.txt travel_step reads the same numbers.
+  var MOUNT_MINUTES_PER_MILE = 12;
+  var MOUNT_DUSK_MINUTES_PER_MILE = 15;
+  var MOUNT_DARK_MINUTES_PER_MILE = 24;
+  var DAYLIGHT_START = 420; // 07:00, when calendar.txt changes Pre-Dawn to Morning
+  var DUSK_START = 1080;    // 18:00
+  var NIGHT_START = 1260;   // 21:00
 
   // Which way north lies on the map as it is drawn, in degrees clockwise from straight up the screen (0 = north is up). The map panel draws a compass from this and lets the player turn the map
   // in quarter turns, the compass turning with it. It changes nothing about the tiles or distances. The map is laid out with north up (geography settled 2026-10-08, the user's call: the Grey
@@ -55,8 +67,10 @@
       territory: "scales",
       danger: 1,
       depart: "The head of the column lurches forward, ox by ox, and the wagons take up the weight of their loads with a groan of axles. The yard's gate swings shut behind the tail wagon, and the River Road bends away north along the cuttings above the Grey, paved and rutted and wide enough for two wagons to pass.",
-      walk: "The paving runs smooth and well kept, rutted by wagon wheels, with the Grey slow beside it and the grey city wall growing ahead.",
+      walk: "The paving runs smooth and well kept, rutted by wagon wheels, with the grey city wall growing ahead.",
       arrive: "The caravan comes down the last of the cuttings to the carters' yards outside the River Gate, where the grey wall rises above the fences and the gate stands open on the city.",
+      departVia: { ar1: "The head of the column lurches forward, ox by ox, and the wagons take up the weight of their loads with a groan of axles. The yard's gate swings shut behind the tail wagon, and the line turns east along the carters' track under the grey outer face of the wall, past the salt-factors' yards and the pilgrim hospices outside the Charter Gate, to where the old paving of the High Grey Road climbs away to the north-east." },
+      arriveVia: { ar1: "The caravan comes down off the high ground by the old paving, past the hospices and the salt-factors' yards outside the Charter Gate, and along the carters' track under the grey wall to the yards outside the River Gate, where the fences close in and the gate stands open on the city." },
       info: "The free port and the Gilded Scales' seat. The Greybridge crosses the river above the tidal reach, linking the city to the west-bank River Road.",
       here: "The city's wall stands behind you, and the river road runs north from the River Gate along the cuttings of the Grey."
     },
@@ -75,6 +89,7 @@
       walk: "The cuttings climb and fall, the river shows between the trees and goes again, and the road comes down to a place where two rivers meet.",
       camp: "The Ashrun comes down from the west over a bar of grey stones and winds its brown water into the green of the Grey for a stretch before the two run as one. The road keeps to the bank, with flat ground beside it and the shingle running down to the water.",
       water: "the river",
+      ford: true,
       info: "The road runs along the bank here, where the Ashrun comes down from the west and meets the Grey River. The two make one river, and the road runs alongside",
       here: "The river runs broad and slow beside the road, and the Ashrun comes in from the west over a bar of grey stones, its brown water running beside the clearer water of the Grey for a stretch before the two run as one. A track branches off up the Ashrun's bank into the trees."
     },
@@ -82,7 +97,8 @@
       name: "The High Grey Road", kind: "road", x: 0.82, y: -0.66, region: "The eastern cuttings",
       territory: "scales",
       danger: 1,
-      walk: "The old imperial paving leaves the eastern gate behind and bends north-east across open cuttings, with the Grey a distant grey line below the slope.",
+      walk: "The old imperial paving runs across open cuttings between the eastern gate and the high ground, patched where the grain wagons have worn it down, with the Grey a distant grey line below the slope.",
+      camp: "The wagons pull off the old paving onto a trampled verge where other lines have camped before, with a stone trough at its edge and the cuttings falling away toward the grey line of the Grey. The wind comes across open ground, and the lights of the city show faintly behind.",
       info: "The first stretch of the High Grey Road: old paving, repaired where the Scales' grain wagons have worn it down, leading north-east from the Charter Gate.",
       here: "The road runs north-east through open cuttings, its old paving patched with newer stone. The Grey shows far below between the folds of the land."
     },
@@ -91,7 +107,7 @@
       territory: "scales",
       danger: 2,
       climate: -1,
-      walk: "The road climbs the long shoulder above the Grey. Low stone markers keep the wagons to the firm ground where the old paving has broken into packed gravel.",
+      walk: "The road runs along the long shoulder above the Grey. Low stone markers keep the wagons to the firm ground where the old paving has broken into packed gravel.",
       camp: "A low shelf above the river gives enough level ground for a small camp. The road lies open to the wind, but the Grey can be heard below and the stone markers keep the track clear by daylight.",
       water: "the Grey River",
       info: "A high stretch of the High Grey Road, where the old paving climbs above the Grey and the colder upland air begins.",
@@ -104,6 +120,9 @@
       territory: "scales",
       danger: 1,
       climate: -1,
+      walk: "The road tops the last of the high ground and runs on along the shoulder to a timber palisade, with the roar of the weir rising ahead.",
+      depart: "The line pulls out from the carters' lot by the lower wharf lane, the oxen leaning into their yokes and the wagons groaning behind them, and climbs the steep street past the Factor's Hall to the palisade gate. The High Grey Road drops away south over the high ground, and the roar of the weir falls behind the tail wagon.",
+      arrive: "The caravan labours up the last of the grade to the palisade gate and rolls down the steep street into Alderford, with the weir loud below and the mill smoke drifting across the road, and the wagons turn in at the carters' lot beside the Lower Wharf Market.",
       info: "A river town at the old imperial limestone weir, thirty miles up the Grey from Port Valen. The High Grey Road reaches it from the south over the high ground.",
       here: "Alderford stands ahead around the old limestone weir, with timber wharves below the falls and sawmill roofs and smoke climbing the bank above them.",
       hereNight: "Alderford's wharf lamps shine below the dark line of the weir, while the town's smoke and rooflines fade into the cold above the river.",
@@ -248,6 +267,35 @@
     return r.miles + " miles, " + span(r.minutes);
   }
 
+  // The same pure route forecast used by the map card and overworld.txt. It walks a mile at a
+  // time so a route can change pace exactly when it crosses dusk, night or dawn. Darkness needs
+  // a usable light; poor visibility forces the same roadside halt. A halt waits until 07:00 and
+  // then the route continues, so picking a far tile never silently ignores the night.
+  function travelPlan(from, to, startMinute, hasNightLight, poorVisibility, mounted) {
+    var r = route(from, to);
+    if (!r.ok) return { ok: false, miles: 0, walkMinutes: 0, haltMinutes: 0, minutes: 0, nightMiles: 0, duskMiles: 0, nightStops: 0, arrivalMinute: 0, arrivalDayOffset: 0 };
+    var t = Math.max(0, Math.floor(Number(startMinute) || 0)) % 1440;
+    var dayOffset = 0, walk = 0, halt = 0, nightMiles = 0, duskMiles = 0, stops = 0, ends = [];
+    function advance(n) { t += n; while (t >= 1440) { t -= 1440; dayOffset++; } }
+    for (var i = 0; i < r.legs.length; i++) {
+      for (var m = 0; m < r.legs[i].miles; m++) {
+        var dark = (t >= NIGHT_START || t < DAYLIGHT_START);
+        if (dark && (!hasNightLight || poorVisibility)) {
+          var wait = (DAYLIGHT_START - t + 1440) % 1440;
+          if (wait === 0) wait = 1440;
+          halt += wait; stops++; advance(wait);
+          continue;
+        }
+        var pace = dark ? (mounted ? MOUNT_DARK_MINUTES_PER_MILE : DARK_MINUTES_PER_MILE) : (t >= DUSK_START ? (mounted ? MOUNT_DUSK_MINUTES_PER_MILE : DUSK_MINUTES_PER_MILE) : (mounted ? MOUNT_MINUTES_PER_MILE : MINUTES_PER_MILE));
+        if (dark) nightMiles++;
+        else if (t >= DUSK_START) duskMiles++;
+        walk += pace; advance(pace);
+      }
+      ends.push(t);
+    }
+    return { mounted: !!mounted, ends: ends, ok: true, miles: r.miles, walkMinutes: walk, haltMinutes: halt, minutes: walk + halt, nightMiles: nightMiles, duskMiles: duskMiles, nightStops: stops, arrivalMinute: t, arrivalDayOffset: dayOffset };
+  }
+
 
   // ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
   // THE CARAVAN ESCORT'S ROAD (radiant/hall_escort.txt). Pure functions of the route, the tile data, the clock and a seed, so a refresh replays them to the same answer and nothing here is random.
@@ -289,6 +337,77 @@
     var r = hash100(seed, salt) % total;
     for (var i = 0; i < rows.length; i++) { if (r < rows[i].weight[d]) return rows[i].code; r -= rows[i].weight[d]; }
     return rows[rows.length - 1].code;
+  }
+  // ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  // ROAD EVENTS ON A SOLO JOURNEY (scenes/overworld/overworld.txt ow_travel, scenes/overworld/travel_events.txt). Pure functions of the route, the tile data, the day and a seed, so a refresh replays them.
+  // A journey that meets an event STOPS on that tile: the walk ends there, the event plays, and the player is back on the map with the rest of the trip still picked (stats.ow_goal). At most one event
+  // every TRAVEL_COOLDOWN_DAYS days, so it stays a rare thing. A tile can host one only if its kind is road, forest or hills (never a town) and the event's own row allows its kind and territory.
+  // A row: id (the label in travel_events.txt is te_<id>), kinds (tile kinds), territories (tile territories it can happen in; empty means any), weight by effective danger 0 to 3 (0 means never at that
+  // danger, so a row with all zeros can only be forced), and dev:true for a row only the developer menu forces. A new event is one row here and one label there.
+  // ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  var TRAVEL_COOLDOWN_DAYS = 3;
+  var TRAVEL_CHANCE = [4, 8, 14, 22];   // percent, by effective danger of the tile a leg ends on, that the leg ends in an event (once the cooldown is over); a safe road still meets the odd stranger
+  // when: the light the walker meets it in, "day", "dusk" or "dark" (the time the leg ENDS at, worked out by travelPlan); leave it out for any time. A forced test event ignores it.
+  var TRAVEL_EVENTS = [
+    { id: "stub", kinds: ["road", "forest", "hills"], territories: [], weight: [0, 0, 0, 0], dev: true },
+    { id: "stranded_cart", kinds: ["road", "hills"], territories: [], weight: [3, 3, 3, 3], when: ["day"] },
+    { id: "lamp_out", kinds: ["road", "forest", "hills"], territories: [], weight: [3, 3, 3, 3], when: ["dusk", "dark"] },
+    { id: "caught_animal", kinds: ["road", "forest", "hills"], territories: [], weight: [2, 2, 2, 2], when: ["day", "dusk"] },
+    { id: "lost_traveller", kinds: ["forest", "hills"], territories: [], weight: [2, 2, 2, 2], when: ["day", "dusk"] },
+    { id: "ford", kinds: ["road"], territories: [], weight: [3, 3, 3, 3], when: ["day", "dusk"], ford: true },
+    { id: "bandits", kinds: ["road", "forest", "hills"], territories: [], weight: [0, 1, 2, 4] },
+    { id: "night_beasts", kinds: ["road", "forest", "hills"], territories: [], weight: [1, 2, 3, 4], when: ["dark"] }
+  ];
+  function periodOf(t) { t = ((Math.floor(t) % 1440) + 1440) % 1440; return (t >= NIGHT_START || t < DAYLIGHT_START) ? "dark" : (t >= DUSK_START ? "dusk" : "day"); }
+  function pickTravel(n, seed, salt, force, period) {
+    var d = dangerOf(n), rows = TRAVEL_EVENTS.filter(function (e) {
+      if (force) return e.id === force && (!e.ford || n.ford);
+      return e.kinds.indexOf(n.kind) >= 0 && (!e.territories.length || e.territories.indexOf(n.territory) >= 0) && (!e.when || e.when.indexOf(period) >= 0) && (!e.ford || n.ford) && e.weight[d] > 0;
+    });
+    if (!rows.length) return "";
+    if (force) return rows[0].id;
+    var total = rows.reduce(function (a, e) { return a + e.weight[d]; }, 0), r = hash100(seed, salt) % total;
+    for (var i = 0; i < rows.length; i++) { if (r < rows[i].weight[d]) return rows[i].id; r -= rows[i].weight[d]; }
+    return rows[rows.length - 1].id;
+  }
+  // Does the trip from -> to meet an event, and where? Returns { id, tile, leg } (tile is the tile the walk ends on, leg its number) or null. seed is any whole number the page keeps fixed (the day and the clock);
+  // day and lastDay are the campaign days now and of the last event (the cooldown); force is an event id the developer menu asks for (it ignores the chance and the cooldown, and takes the first eligible tile).
+  // startMinute, hasNightLight and poorVisibility are what travelPlan needs to say when each leg ends, so an event can be one that belongs to that hour (a lamp gone out is a dusk or a night event).
+  function travelEventPlan(from, to, seed, day, lastDay, force, startMinute, hasNightLight, poorVisibility, mounted) {
+    var legs = route(from, to).legs || [];
+    var ends = (travelPlan(from, to, Number(startMinute) || 0, hasNightLight !== false, !!poorVisibility, !!mounted).ends) || [];
+    force = String(force || "");
+    if (!force && Number(lastDay) > 0 && Number(day) - Number(lastDay) < TRAVEL_COOLDOWN_DAYS) return null;   // a lastDay of 0 means no event yet
+    for (var i = 0; i < legs.length; i++) {
+      var n = NODES[legs[i].to];
+      if (!haltEligible(n)) continue;
+      if (!force && (hash100(seed, 300 + i) % 100) >= TRAVEL_CHANCE[dangerOf(n)]) continue;
+      var id = pickTravel(n, seed, 400 + i, force, periodOf(ends[i] === undefined ? 0 : ends[i]));
+      if (id) return { id: id, tile: legs[i].to, leg: i + 1 };
+    }
+    return null;
+  }
+  // CAMP EVENTS (scenes/overworld/overworld.txt ow_camp_pre, travel_events.txt): a stranger at a solo camp, in the last of the light or the dark. Planned once per camp with campEventPlan, from the same seed and the same
+  // cooldown as a road event (ow_event_last_day), and not on every camp: CAMP_CHANCE percent by the danger of the tile. A row is the same as a road event's (id, kinds, territories, weight by danger, when).
+  var CAMP_CHANCE = [6, 8, 12, 16];
+  var CAMP_EVENTS = [
+    { id: "share_fire", kinds: ["road", "forest", "hills"], territories: [], weight: [2, 2, 2, 2], when: ["dusk", "dark"] }
+  ];
+  function campEventPlan(pos, seed, day, lastDay, force, nowMinute) {
+    var n = NODES[pos];
+    force = String(force || "");
+    if (!n) return null;
+    if (force) { var f = CAMP_EVENTS.filter(function (e) { return e.id === force; })[0]; return f ? { id: f.id } : null; }
+    if (Number(lastDay) > 0 && Number(day) - Number(lastDay) < TRAVEL_COOLDOWN_DAYS) return null;
+    if (!haltEligible(n)) return null;
+    var d = dangerOf(n), per = periodOf(nowMinute);
+    if ((hash100(seed, 500) % 100) >= CAMP_CHANCE[d]) return null;
+    var rows = CAMP_EVENTS.filter(function (e) { return e.kinds.indexOf(n.kind) >= 0 && (!e.territories.length || e.territories.indexOf(n.territory) >= 0) && (!e.when || e.when.indexOf(per) >= 0) && e.weight[d] > 0; });
+    var total = rows.reduce(function (a, e) { return a + e.weight[d]; }, 0);
+    if (!total) return null;
+    var r = hash100(seed, 501) % total;
+    for (var i = 0; i < rows.length; i++) { if (r < rows[i].weight[d]) return { id: rows[i].id }; r -= rows[i].weight[d]; }
+    return { id: rows[rows.length - 1].id };
   }
   // The night in camp: 0 quiet, 3 the oxen spook, 4 a sneak thief. A rougher camp is more likely to be disturbed (the thief band grows with danger).
   function convoyNight(seed, salt, danger) {
@@ -336,5 +455,5 @@
     return Math.max(Math.floor(full * (beats - lost) / beats), Math.floor(full / 3));
   }
 
-  root.Overworld = { MINUTES_PER_MILE: MINUTES_PER_MILE, nodes: NODES, edges: EDGES, territories: TERRITORIES, convoyPlan: convoyPlan, convoyNight: convoyNight, convoyFee: convoyFee, coinText: coinText, convoyMaxLegs: CONVOY_MAX_LEGS, dangerOf: function (id) { return dangerOf(NODES[id]); }, convoyPace: CONVOY_PACE, haltEvents: HALT_EVENTS, route: route, duration: duration, span: span, label: label, north: NORTH };
+  root.Overworld = { MINUTES_PER_MILE: MINUTES_PER_MILE, nodes: NODES, edges: EDGES, territories: TERRITORIES, convoyPlan: convoyPlan, convoyNight: convoyNight, convoyFee: convoyFee, coinText: coinText, convoyMaxLegs: CONVOY_MAX_LEGS, dangerOf: function (id) { return dangerOf(NODES[id]); }, mountMinutesPerMile: MOUNT_MINUTES_PER_MILE, convoyPace: CONVOY_PACE, haltEvents: HALT_EVENTS, travelEventPlan: travelEventPlan, travelEvents: TRAVEL_EVENTS, campEventPlan: campEventPlan, campEvents: CAMP_EVENTS, campChance: CAMP_CHANCE, travelCooldownDays: TRAVEL_COOLDOWN_DAYS, travelChance: TRAVEL_CHANCE, route: route, duration: duration, span: span, label: label, travelPlan: travelPlan, north: NORTH };
 })(typeof window !== "undefined" ? window : global);

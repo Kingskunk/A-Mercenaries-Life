@@ -271,6 +271,7 @@ function compile(){
   // their physical triggers and aftermath; each quest file owns its choices and resolutions.
   verifyFileName("port_valen/MiddlewardQuest/dry_lion.txt");
   verifyFileName("port_valen/MiddlewardQuest/a_key_for_every_door.txt");
+  verifyFileName("port_valen/varren_quests/varren_errand.txt");
   // Radiant Hiring Hall jobs: *goto_scene/*gosub_scene-only files, reached from the wall in port_valen_civic_heights.txt.
   verifyFileName("port_valen/radiant/hall_pests.txt");
   verifyFileName("port_valen/radiant/hall_haul.txt");
@@ -295,11 +296,31 @@ function compile(){
   verifyFileName("timbermouth/ashrun_holt/landing.txt");
   verifyFileName("timbermouth/ashrun_holt/hide_yard.txt");
   verifyFileName("timbermouth/ashrun_holt/clearing.txt");
-  // Alderford follows the same one-hub, one-file-per-place shape as Timbermouth. Only its base hub exists so far; future place files each need a verifyFileName line here.
+  // Marlcross is Port Valen's eastern grain and carting village. Its three public places live beside the city content rather than under Timbermouth.
+  verifyFileName("port_valen/marlcross/marlcross.txt");
+  verifyFileName("port_valen/marlcross/cross_hall.txt");
+  verifyFileName("port_valen/marlcross/grain_green.txt");
+  verifyFileName("port_valen/marlcross/wayfarers_rest.txt");
+  // Brinewick is Port Valen's western salt-working village. Its three public places live beside the city content.
+  verifyFileName("port_valen/brinewick/brinewick.txt");
+  verifyFileName("port_valen/brinewick/tide_house.txt");
+  verifyFileName("port_valen/brinewick/saltworks.txt");
+  verifyFileName("port_valen/brinewick/reedhouse.txt");
+  // Alderford follows the same one-hub, one-file-per-place shape as Timbermouth. Every place needs a verifyFileName line here because it is reached by *goto_scene rather than *scene_list.
   verifyFileName("alderford/alderford.txt");
+  verifyFileName("alderford/drowned_oar.txt");
+  verifyFileName("alderford/factors_hall.txt");
+  verifyFileName("alderford/lower_wharf_market.txt");
+  verifyFileName("alderford/wagon_lot.txt");
+  verifyFileName("alderford/timber_smithy.txt");
+  verifyFileName("alderford/chapel.txt");
+  verifyFileName("alderford/janna_alcove.txt");
+  verifyFileName("alderford/talia_loft.txt");
   // The overworld (the road between towns, see its header comment): reached only by *goto_scene, from Timbermouth's exit and Port Valen's River Gate, so it is not in
   // *scene_list and needs its own line here or a compiled build fails with "scene doesn't exist" the moment the player leaves a town.
   verifyFileName("overworld/overworld.txt");
+  verifyFileName("overworld/travel_events.txt");
+  verifyFileName("horse_dealer.txt");
   // The hub that lists signed jobs and routes to them (reached from the Trunk Road and the Patrician Avenue).
   verifyFileName("port_valen/radiant/radiant_hub.txt");
   // "names" is the name generator's scene (name_make calls NameGen from web/mygame/names-data.js). Not in *scene_list;

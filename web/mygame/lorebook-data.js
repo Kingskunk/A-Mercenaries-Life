@@ -606,7 +606,7 @@
         meter: { stat: "port_watch_rep", label: "Standing with the Port Watch" },
         body: function (s) {
           var out = [
-            "The city guard, charged with keeping the peace, patrolling the harbor quays, and manning the stone water-gates. They wear boiled leather jerkins stamped with the city's three-masted seal, carry bills, shortbows, and iron-banded cudgels, and walk the beat between foreign crews, dockside brawlers, and Dredge-End cutpurses.",
+            "The city guard, charged with keeping the peace, patrolling the harbor quays, and manning the stone water-gates. They wear boiled leather jerkins stamped with the city's three-masted seal, carry swords, spears, and crossbows, and walk the beat between foreign crews, dockside brawlers, and Dredge-End cutpurses.",
             "They are sworn to the City Council and the public order, but the Watch is under-strength and underpaid. It is pulled between the Gilded Scales, who expect immediate protection for merchant cargo, and a crowded port full of refugees and armed sellswords."
           ];
           if (truthy(s.pv_tavern_rumor_2)) {
@@ -767,7 +767,18 @@
         body: [
           "A river town built around an old imperial limestone weir, where the highland road down from the Crags reaches the head of the Grey and the river drops away toward the gorge. Sawmills crowd the bank above the falls. Below them stand warehouses, curing lofts, and muddy wharves where the barges tie up to load for the downriver run. The brine trade is the town's spine: carts bring salt up the High Grey Road from Valen, and the river catch is split, cured, dried, and packed into firkins for the run downriver."
         ],
-        see: ["port_valen", "grey_river", "sanctuary_charter", "gilded_scales", "imperial_booms", "meridian_empire", "saint_althea", "iron_carrion", "grey_marches"]
+        see: ["port_valen", "grey_river", "sanctuary_charter", "gilded_scales", "imperial_booms", "meridian_empire", "saint_althea", "iron_carrion", "grey_marches", "carters_lot_af"]
+      },
+      {
+        id: "carters_lot_af", category: "places", title: "The Carters' Lot",
+        sub: "Where caravans for Port Valen are made up, beside the Lower Wharf Market",
+        tags: ["Alderford", "Trade"], aliases: ["carters' lot", "carters lot", "wagon lot", "carriers' lot"],
+        unlock: "af_lot_seen",
+        body: [
+          "A trodden lot of rails and lean-tos beside the uphill gate of the Lower Wharf Market, open to the lane that climbs to the palisade. Wagons stand in it nose to tail with their oxen picketed at one end, loaded with casks of cured fish, sawn boards and grain for the city.",
+          "Caravans for Port Valen are made up here, with a wagon master, a slate and a handful of hired hands. The notice for the work is pinned on the contracts column of the board at the Factor's Hall, and the wagon master pays only those who are in the column when it rolls. The line goes up the steep street and out by the palisade gate, then down the High Grey Road over Greybank Rise, two days to the city's carters' yards."
+        ],
+        see: ["alderford", "wagon_yard"]
       },
       {
         id: "grey_river", category: "places", title: "The Grey River",

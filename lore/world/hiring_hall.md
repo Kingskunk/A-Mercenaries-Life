@@ -64,7 +64,7 @@ Written and wired 2026-10-07. The job is `web/mygame/scenes/port_valen/radiant/h
 - **Every job has a term.** When it runs out it undoes itself: no penalty, no message, and the job is simply gone. The board's pool puts a fresh posting up in its own time. (Pests: three days; each job's lapse is one line in `radiant_hub.txt` `rh_check`.)
 - **The board shows at most three real jobs at a time.** Flavor postings do not count and will go as real jobs replace them.
 - **Each settlement has its own board of three.** Alderford and Timbermouth, once they run, post their own local jobs; the Hiring Hall's Port Valen counter is the Port Valen page's only.
-- **Job types after the vermin job:** hauling, night watch and the bard job are built; escort is left (it needs the roads out). The user will redo the board scheduling when three more jobs exist. The three duplicate postings fold in: the seasoning yard watch becomes a second night-watch site, and the Timbermouth escort a second destination.
+- **Job types after the vermin job:** hauling, night watch and the bard job are built; escort is left (it needs the roads out). The user will redo the board scheduling when three more jobs exist. The three duplicate postings fold in: the seasoning yard watch becomes a second night-watch site, and the Timbermouth escort a second destination. **Escort lines (2026-10-10):** Port Valen yard to Timbermouth makes up on Forgeday, Timbermouth lot to Port Valen on Tideday, Port Valen yard to Alderford on Marketday (the old flavour posting 0340, now real), and the Alderford carters' lot to Port Valen on Ironday. Alderford and Timbermouth are not joined directly (it would be 70 miles through the city).
 
 ## Not built yet
 

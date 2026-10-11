@@ -38,6 +38,22 @@
   function num(v) { var n = Number(v); return isFinite(n) ? n : 0; }
   function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
   function statsNow() { return window.stats || {}; }
+  // Can the walker keep going after dark? A lit lantern or torch does it, and so does seeing in the dark (race darkvision, Devil's Sight or the Night-Eye Ring). The worn rings are read here, not
+  // from sees_in_dark, because the inventory panel swaps rings without running any ChoiceScript. The scene's trip script (overworld.txt ow_travel) must say the same thing. Poor visibility still halts everyone.
+  function nightLight(s) { return (truthy(s.has_hooded_lantern) && truthy(s.has_lamp_oil)) || (truthy(s.has_pitch_torch) && truthy(s.has_tinderbox)) || truthy(s.race_darkvision) || truthy(s.inv_devils_sight) || s.equipped_ring1_id === "night_eye_ring" || s.equipped_ring2_id === "night_eye_ring"; }
+  function clockText(m) { m = ((Math.floor(m) % 1440) + 1440) % 1440; return (m < 600 ? "0" : "") + Math.floor(m / 60) + ":" + (m % 60 < 10 ? "0" : "") + (m % 60); }
+  function suffix(d) { return (d % 10 === 1 && d !== 11) ? "st" : (d % 10 === 2 && d !== 12) ? "nd" : (d % 10 === 3 && d !== 13) ? "rd" : "th"; }
+  function arrivalDate(s, plusDays) {
+    var names = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
+    var lengths = [30, 31, 32, 31, 31, 31, 31, 30, 30, 28, 30, 30];
+    var d = num(s.calendar_day), m = num(s.calendar_month_num), y = num(s.calendar_year);
+    for (var i = 0; i < plusDays; i++) { d++; if (d > lengths[m - 1]) { d = 1; m++; if (m > 12) { m = 1; y++; } } }
+    return d + suffix(d) + " of " + names[m - 1] + ", " + y + " IR";
+  }
+  function travelPlan(from, to) {
+    var s = statsNow(), now = num(s.clock_hour) * 60 + num(s.clock_minute);
+    return OW.travelPlan(from, to, now, nightLight(s), String(s.weather_visibility) === "poor", truthy(s.has_horse));
+  }
 
   // Where a tile is drawn: its map position turned by the quarter turns the player chose. Only positions turn; names and numbers stay upright.
   function P(n) {
@@ -207,8 +223,13 @@
     } else {
       var r = OW.route(here, show);
       if (r.ok) {
-        html += "<div class=\"ow-card-line\"><b>" + r.miles + " miles</b>, " + esc(OW.span(r.minutes)) + ".</div>";
-        outlook(r.minutes).forEach(function (w) { html += "<div class=\"ow-card-warn\">" + esc(w) + "</div>"; });
+        var plan = travelPlan(here, show);
+        html += "<div class=\"ow-card-line\"><b>" + r.miles + " miles</b>, " + esc(OW.duration(plan.minutes)) + " total" + (plan.mounted ? ", riding" : "") + ".</div>";
+        html += "<div class=\"ow-card-line\"><b>Estimated arrival:</b> " + esc(arrivalDate(statsNow(), plan.arrivalDayOffset) + " at " + clockText(plan.arrivalMinute)) + ".</div>";
+        if (plan.duskMiles) html += "<div class=\"ow-card-warn\">" + plan.duskMiles + " mile" + (plan.duskMiles === 1 ? "" : "s") + " at dusk: slower pace.</div>";
+        if (plan.nightMiles) html += "<div class=\"ow-card-warn\">" + plan.nightMiles + " mile" + (plan.nightMiles === 1 ? "" : "s") + " in darkness: slow night pace.</div>";
+        if (plan.nightStops) html += "<div class=\"ow-card-warn\">Roadside halt until daylight " + (plan.nightStops === 1 ? "is" : "are") + " expected" + (nightLight(statsNow()) ? " because visibility is poor." : "; bring a lit lantern or torch to continue after dark.") + "</div>";
+        outlook(plan.minutes).forEach(function (w) { html += "<div class=\"ow-card-warn\">" + esc(w) + "</div>"; });
         html += "<button type=\"button\" class=\"ow-btn ow-go\" data-ow-act=\"go\">Travel to " + esc(n.name) + "</button>";
       } else {
         html += "<div class=\"ow-card-warn\">There is no road from here to " + esc(n.name) + ".</div>";
@@ -292,7 +313,9 @@
     var moved = s.ow_pos !== lastPos;
     if (moved) {
       // a move clears the selection; the view stays where the player had it (zoom and all) unless the new tile would be off the edge of it
-      selected = null; lastPos = s.ow_pos;
+      // an interrupted trip (a road event stopped it) keeps its goal picked, so continuing is one click
+      var goal = String(s.ow_goal || "none");
+      selected = (goal !== "none" && goal !== s.ow_pos && OW.nodes[goal]) ? goal : null; lastPos = s.ow_pos;
       var np = OW.nodes[s.ow_pos], bx0 = box();
       if (!view || !np || !bx0) view = null;
       else {

@@ -1,0 +1,140 @@
+*comment ====================================================================================
+*comment THE CARTERS' LOT (Alderford): the Alderford end of the caravan escort (port_valen/radiant/hall_escort.txt). A trodden lot of rails and lean-tos beside the Lower Wharf Market's uphill gate, where a line to
+*comment Port Valen is made up. It plays the same part the wagon lot plays in Timbermouth and the wagon yard outside the River Gate plays in Port Valen: the master makes the offer here, the player signs here, and
+*comment the line musters here the next morning. The offer, the signing, the muster and the road are the escort scene's own labels; this scene is only the PLACE (place layer, sky layer, a rolled lot-life layer)
+*comment and the choices that lead into them. The master is the same kind of generated person, seeded from the five-day block plus 7000 (es_master_make), so nobody else's job hands out the same face.
+*comment
+*comment The lot is part of the Lower Wharf Market, so it follows the Market's hours (af_ok_market, decided in alderford.txt af_hours). The town menu shows a shortcut to it (af_lot_show) only while a line is
+*comment making up or the player holds a job that sets out from here. The line makes up on one day of the week (es_ctx_dow, set by es_set_line; the prose never names it).
+*comment
+*comment Not in *scene_list: compile.js lists it with verifyFileName.
+*comment ====================================================================================
+
+*label af_lot
+*set es_start "af"
+*gosub_scene port_valen/radiant/hall_escort es_set_line
+*set minutes_to_pass 5
+*set time_advance_call_id "af_lot_1"
+*gosub_scene alderford/alderford af_walk_time
+*set af_lot_seen true
+*goto af_lot_main
+
+*label af_lot_main
+*comment What the lot is doing for this visit: "offer" (a line is making up and the player has not signed), "waiting" (signed, the line pulls out tomorrow), "muster" (signed, the pull-out is this morning
+*comment and the player is in time), "gone" (signed, and the line pulled out without them), "idle" (nothing is making up).
+*temp al_state "idle"
+*if (((rj_escort_stage = "active") and (rj_escort_from = "af")) and (campaign_day < rj_escort_until))
+  *set al_state "waiting"
+*if (((rj_escort_stage = "active") and (rj_escort_from = "af")) and (campaign_day = rj_escort_until))
+  *if (clock_hour < 9)
+    *set al_state "muster"
+  *else
+    *set al_state "gone"
+*if ((not(rj_escort_stage = "active")) and (day_of_week = es_ctx_dow))
+  *set al_state "offer"
+*if (al_state = "gone")
+  *goto_scene port_valen/radiant/hall_escort es_missed
+
+*temp al_life 1
+*rand al_life 1 3
+
+[b]◈ THE CARTERS' LOT[/b]
+*line_break
+Beside the Lower Wharf Market's uphill gate, a long lot of trodden earth has been fenced off with rails and left open to the lane that climbs to the palisade. Wagons stand in it nose to tail, with ox yokes and spare wheels hung from the rails and a picket line of beasts running down one end. Casks of brine-cured fish, bundles of sawn boards and sacks of grain wait along the fence under tarps, and the ground is churned to a grey mud wherever the carts turn. The roar of the weir carries across the lot, and the air smells of brine, green timber, dung and wet straw.
+
+*gosub af_lot_sky
+
+*if (weather_severity >= 3)
+  The oxen have been led under the lean-to at the end of the lot and stand with their backs to the weather, and the hands have crowded in beside them. Every wagon is sheeted down where it stands.
+*elseif (al_state = "muster")
+  Four wagons stand nose to tail along the rails with their tarps lashed down over their goods. Oxen shift in their yokes, a hand walks the column tapping each hub with a mallet, and a lead horse stamps at the lane end.
+*elseif (time_period = "Morning")
+  *if (al_life = 1)
+    Hands rake straw under the lean-to while a boy carries water to the oxen in two buckets on a yoke.
+  *elseif (al_life = 2)
+    A wagon stands with a wheel off while a wheelwright and his apprentice argue over a split felloe, and a hand keeps the ox from wandering.
+  *else
+    Casks are rolled up a plank into a wagon bed, and a hand chalks a mark on each head as it goes past.
+*elseif ((time_period = "Midday") or (time_period = "Afternoon"))
+  *if (al_life = 1)
+    A hand shoes an ox in a sling at the end of the lot, with the animal's foot tied up and its eyes rolling.
+  *elseif (al_life = 2)
+    Two hands grease an axle with a paddle from a bucket of black fat, and a third lies asleep in the straw with his hat over his face.
+  *else
+    A wagon rolls in down the lane from the gate, its team steaming from the climb, and the hands come out to meet it and unhitch the beasts.
+*else
+  *if (al_life = 1)
+    Teams are led in off the lane one by one and rubbed down, and a cookfire is lit under the lean-to.
+  *elseif (al_life = 2)
+    A hand walks the rails with a lantern and counts the carts under it, touching each one as he passes.
+  *else
+    A carter sits on an upturned bucket mending a harness strap by the last of the light, while an ox noses at his pocket.
+
+*comment ── The master's presence follows the state of the job. ──
+*if (al_state = "waiting")
+  The wagon master is at the lane end, going over a list with a hand. The carts stand ready for tomorrow's start.
+*elseif (al_state = "offer")
+  A caravan is being made up. The wagons stand along the rails with their goods already roped, and the caravan master walks their length, checking ropes and wheels.
+
+*choice
+  # Look over the wagons and the teams.
+    The wagons are the long, high-sided kind, with iron-tired wheels as tall as a man's chest and a brake lever on the near side. Their beds are piled with casks and bundled goods roped under tarps that have been oiled until they shine. Oxen are yoked in pairs, broad, slow and patient, with the brand of the carrier on their flanks. A pair of lean horses stands at the lane end, with a saddle thrown over the rail beside them.
+    *page_break Turn back to the lot…
+    *goto af_lot_main
+  *if (al_state = "offer")
+    # Speak to the wagon master.
+      *goto_scene port_valen/radiant/hall_escort es_offer
+  *if (al_state = "waiting")
+    # Ask the caravan master when the caravan rolls.
+      *goto_scene port_valen/radiant/hall_escort es_when
+  *if (al_state = "muster")
+    # Report to the wagon master.
+      *goto_scene port_valen/radiant/hall_escort es_muster
+  *if (al_state = "idle")
+    # Ask a hand about work.
+      *goto af_lot_idle
+  # Walk back to the street. [~5 min]
+    *set minutes_to_pass 5
+    *set time_advance_call_id "af_lot_leave_1"
+    *gosub_scene alderford/alderford af_walk_time
+    *goto_scene alderford/alderford alderford
+
+*comment ── The sky: weather and light only, no people. ──
+*label af_lot_sky
+*temp al_night false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set al_night true
+*if (weather = "Rain")
+  Rain drums on the tarps and the lean-to roof and turns the lot to a field of grey puddles.
+*elseif (weather = "Storm")
+  A gale tears at the rails and drives the rain flat across the lot, and spray from the weir comes with it.
+*elseif (weather = "Fog")
+  Mist hangs over the lot, blurring the far rails and the roofs of the curing lofts below.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow settles on the tarps and the rails, and melts in the ruts.
+*elseif (weather = "Blizzard")
+  Snow drives across the lot in a freezing gale and piles against the rails.
+*elseif (weather = "Clear")
+  *if (al_night)
+    Starlight silvers the rails and the wet edges of the ruts.
+  *elseif (time_period = "Dusk")
+    The low sun lays the long shadows of the wagons across the lot.
+  *else
+    Sunlight lies across the lot and dries the top of the mud.
+*else
+  *comment Overcast
+  A flat grey sky sits low over the lot and drains the color from the tarps.
+
+*comment ── WEATHER MEMORY (calendar ground_state, strictly no people) ──
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  After days of rain the ruts stand full of grey water, and the lot is a churned mire from rail to rail.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The ruts still hold puddles from the last rain.
+*return
+
+*label af_lot_idle
+You stop beside a hand with a bucket. "Any work going out today?"
+
+The hand sets the bucket down and wipes his hands on his apron. "Nothing making up today," he says. "The carriers go when they have goods. The board at the Factor's Hall carries the posting when one is open, and the wagon master pays no one who turns up unasked."
+*page_break Turn back to the lot…
+*goto af_lot_main

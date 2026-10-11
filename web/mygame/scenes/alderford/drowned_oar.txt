@@ -1,0 +1,299 @@
+*comment ====================================================================================
+*comment THE DROWNED OAR TAPHOUSE (Alderford): Maura's house on the lower wharves. It is the
+*comment permanent-town continuation of the prologue location, not a replacement for it.
+*comment
+*comment Continuity: visited_alder_tavern and met_maura come from the prologue; visited_maura_cellar
+*comment and maura_cellar_cleared determine whether its old flooded drain is unresolved or quiet.
+*comment af_oar_seen belongs only to this reusable location. A paid key lasts 24 hours, exactly as at
+*comment the Wagoner's Rest and the Split Pine; it is private lodging, not a permanent home.
+*comment ====================================================================================
+
+*label af_oar
+*set minutes_to_pass 5
+*set time_advance_call_id "af_oar_walk_1"
+*gosub_scene alderford/alderford af_walk_time
+*goto af_oar_hall
+
+*label af_oar_hall
+*temp oar_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*if (oar_now >= af_oar_room_until)
+  *set af_oar_room_active false
+*temp oar_first_permanent false
+*if (not(af_oar_seen))
+  *set oar_first_permanent true
+*set af_oar_seen true
+*set visited_alder_tavern true
+*temp oar_state "day"
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set oar_state "night"
+*elseif (time_period = "Morning")
+  *set oar_state "morning"
+*elseif (time_period = "Dusk")
+  *set oar_state "dusk"
+*temp oar_pick 1
+*rand oar_pick 1 3
+[b]◈ THE DROWNED OAR TAPHOUSE[/b]
+*line_break
+
+*if (oar_first_permanent)
+  The Drowned Oar stands against the stone wharf embankment below the curing lofts, its long timber wall raised on cedar piles above the lower water. A faded sign of an oar tangled in riverweed hangs above an iron-strapped door, and the old weir can be felt as much as heard through the floorboards. A leather curtain keeps the river draught from the low taproom, where an oak counter faces trestle tables, a wide hearth and a narrow stair to the rooms above. Peat smoke, wet rope, boiling broth and herring brine mingle in the heat.
+*else
+  The Drowned Oar is warm behind its leather curtain, with the river and the weir working below the floorboards.
+
+*if (weather_severity >= 3)
+  The shutters are barred against the weather, and the hearth is built high enough to make the iron hooks above it warm to the touch.
+*elseif (weather = "Rain")
+  Rain ticks on the roof and runs from the wharf above in thin streams beyond the curtained door.
+*elseif (weather = "Fog")
+  Fog has swallowed the lower wharf outside, turning the windowpanes to a dull, pearled grey.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Meltwater drips from the curtain's lower edge, and slush darkens the boards inside the door.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  The lower windows hold only black water and the broken reflections of the wharf lamps.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  The house still smells faintly of damp timber after the last long rain, and the boards near the door have not dried.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  Mud from the wharf has dried in dark lines between the floorboards.
+
+*if (not(met_maura))
+  *set met_maura true
+  Behind the counter, a lean woman in a linen apron pauses over an earthenware mug. A faded mark shows at the side of her neck above the collar. "Maura," she says. "There is broth, a bed if one is free, and no patience for trouble on my floor."
+  *choice
+    # Ask for food and a quiet seat.
+      "A bowl and a quiet seat would suit me," you say.
+
+      Maura points to an open end of the counter. "Then take it before someone with a louder need does."
+      *page_break Move to the counter…
+      *goto af_oar_hall
+    # Ask about a room.
+      "I am looking for a room," you say.
+
+      Maura taps the board of keys behind her. "Then look over the price before you ask for a key. I keep the rooms dry, not free."
+      *page_break Consider the rooms…
+      *goto af_oar_hall
+    # Say you will keep to yourself.
+      "You will not have trouble from me," you say.
+
+      Maura gives a short nod and returns to the mug. "That is usually the easiest promise in the world to break. Prove me wrong."
+      *page_break Find a place in the taproom…
+      *goto af_oar_hall
+*elseif (maura_cellar_cleared)
+  Maura looks up from the counter and gives you a small nod. "Good to see you above ground," she says. "The cellar is quiet, the river is loud, and that is the right order of things."
+*elseif (visited_maura_cellar)
+  Maura dries a mug with a linen rag and glances, briefly, toward the back of the house. "If you are here about the cellar, it has not solved itself," she says. "If you are here for food, the pot is on."
+*else
+  Maura works the counter with a linen rag, keeping one eye on the door and the other on the room. "Find a seat if you want one," she says. "The floor is for eating and sleeping, not for making a spectacle."
+
+*if (oar_state = "morning")
+  *if (oar_pick = 1)
+    Barge hands eat quickly at the end tables before the first loading bell, leaving damp coils of rope beneath the benches.
+  *elseif (oar_pick = 2)
+    A pair of carters warm their hands around bowls while the wharf outside comes awake one cart at a time.
+  *else
+    The room is quiet except for spoons, the hearth and the dull thump of cargo being shifted along the water.
+*elseif (oar_state = "dusk")
+  *if (oar_pick = 1)
+    Wet boots and tired voices fill the room as crews come up from the last barges before dark.
+  *elseif (oar_pick = 2)
+    A lamp is lit at each end of the counter while the lower wharf disappears beyond the fogged panes.
+  *else
+    The benches fill slowly, and someone at the far table begins a river song too quietly for anyone else to join.
+*elseif (oar_state = "night")
+  *if (oar_pick = 1)
+    Only a few late cups remain on the tables. The current works against the wharf piles below in a patient, irregular rhythm.
+  *elseif (oar_pick = 2)
+    Maura has banked the hearth low, but a lamp stays lit beside the stair and another beside the door.
+  *else
+    The taproom is nearly empty. A sleeper has claimed a bench by the wall, wrapped in a blanket with their boots under it.
+*else
+  *if (oar_pick = 1)
+    A net-mender has taken the table nearest the window, working through a torn edge while the room keeps its ordinary murmur.
+  *elseif (oar_pick = 2)
+    Two people at the counter compare the river levels marked on a strip of wood, then leave together for the wharf.
+  *else
+    The room has space between its tables, and the hearth heat carries farther than the talk.
+
+*choice
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 2)
+    # [2 Copper Bits] Buy a bowl of mutton and barley pottage. [~20 min]@{show_stat_hints  [+2 Temp HP, +1 CON for 4h]|}
+      *set tavern_item_cost_copper 2
+      *set tavern_item_hp_heal 0
+      *set tavern_item_temp_hp 2
+      *set tavern_item_type "food"
+      *set tavern_item_buff_name "Hearty Pottage"
+      *set tavern_item_buff_desc "+1 CON"
+      *set tavern_item_buff_stat "con"
+      *set tavern_item_buff_bonus 1
+      *set tavern_item_buff_minutes 240
+      *gosub_scene economy buy_tavern_item
+      *set hours_to_pass 0
+      *set minutes_to_pass 20
+      *set time_advance_call_id "af_oar_pottage"
+      *gosub_scene calendar advance_time
+      *gosub_scene calendar recalc_hp_from_neglect
+      *if (hp_current <= 0)
+        *set death_cause "exhaustion"
+        *goto_scene death death_screen
+      You set two copper bits on the counter. "A bowl of pottage, please."
+
+      Maura sets down a wooden bowl of barley, mutton and root vegetables, with a heel of rye bread balanced across its rim. The broth is thick with marrow fat and hot enough to make the river damp leave your hands.
+
+      [b][Hot Pottage Eaten: +2 Temporary HP | Hearty Pottage (+1 CON for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+      *page_break Set the bowl aside…
+      *goto af_oar_hall
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 1)
+    # [1 Copper Bit] Buy smoked herring, rye bread and mustard. [~10 min]@{show_stat_hints  [+1 Temp HP, +1 STR for 4h]|}
+      *set tavern_item_cost_copper 1
+      *set tavern_item_hp_heal 0
+      *set tavern_item_temp_hp 1
+      *set tavern_item_type "food"
+      *set tavern_item_buff_name "River Herring"
+      *set tavern_item_buff_desc "+1 STR"
+      *set tavern_item_buff_stat "str"
+      *set tavern_item_buff_bonus 1
+      *set tavern_item_buff_minutes 240
+      *gosub_scene economy buy_tavern_item
+      *set hours_to_pass 0
+      *set minutes_to_pass 10
+      *set time_advance_call_id "af_oar_herring"
+      *gosub_scene calendar advance_time
+      *gosub_scene calendar recalc_hp_from_neglect
+      *if (hp_current <= 0)
+        *set death_cause "exhaustion"
+        *goto_scene death death_screen
+      You set a copper bit on the counter. "Herring and bread, please."
+
+      Maura lays two smoked herring beside a slice of dark rye and a small scrape of sharp mustard. The fish is oily and salty, the bread dense, and together they make a better meal than their size promises.
+
+      [b][Smoked Herring Eaten: +1 Temporary HP | River Herring (+1 STR for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+      *page_break Wipe your hands…
+      *goto af_oar_hall
+  *if (af_oar_room_active)
+    # Go up to your room.
+      *goto af_oar_room
+  *elseif ((((gold * 100) + (silver * 10)) + copper) >= af_oar_rate_copper)
+    # [${af_oar_rate_copper} Copper Bits] Take a room for 24 hours.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+        *set currency_add_amount (0 - af_oar_rate_copper)
+        *gosub_scene economy currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id page_id
+      *set af_oar_room_active true
+      *set af_oar_room_until (oar_now + 1440)
+      You count the price onto the counter. "A room, then."
+
+      Maura takes the coppers, drops them into a tin beneath the counter, and hands you an iron key. "Upstairs, back room, door marked with a white stroke," she says. "It is yours until this hour tomorrow. The river will make more noise than the house."
+      *page_break Take the stair…
+      *goto af_oar_room
+  *else
+    # "What's the rate for a room?" you ask.
+      "What's the rate for a room?" you ask
+
+      "Copper bits ${af_oar_rate_copper} for the night," Maura says, her voice dry. "No credit, no shared keys. And if you're planning on passing out on a bench, find another inn."
+
+      You nod. "Understood."
+      *page_break Step back from the counter…
+      *goto af_oar_hall
+  *if (maura_cellar_cleared)
+    # Ask whether the old cellar has stayed quiet.
+      You lower your voice. "Has it been quiet below?"
+
+      "Quiet," Maura repeats, the word lingering. "That's a luxury I've grown to appreciate." Her glance goes to the back room, then back to you, her expression softening just a fraction. "The barrels are dry. I intend to keep them that way."
+      *page_break Let her return to work…
+      *goto af_oar_hall
+  *elseif (visited_maura_cellar)
+    # Ask about the unfinished business below the house.
+      You glance toward the back of the house. "That thing below your cellar—still there?"
+
+      Maura's expression tightens. "It is still there, unless you settled it after all and forgot to mention it." She shakes her head once. "I will not press you. Come back when you mean to deal with it."
+      *page_break Leave the subject there…
+      *goto af_oar_hall
+  # Return up the slope to Alderford.
+    *goto_scene alderford/alderford alderford
+
+*label af_oar_room
+*temp room_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*if (room_now >= af_oar_room_until)
+  *set af_oar_room_active false
+*if (not(af_oar_room_active))
+  *goto af_oar_hall
+[b]◈ YOUR ROOM: THE DROWNED OAR[/b]
+*line_break
+The room under the low roof holds a plank bed, a straw mattress, a folded wool blanket, a tin basin and a jug on a shelf. A shuttered window looks over the lower wharf, close enough that the river smell reaches the sill. The boards are old and level, and the weir gives the room a distant, continuous undertone.
+
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  Wharf lamps leave broken strips of light across the black water below the shutter.
+*elseif (time_period = "Dusk")
+  The last barge crews call to one another below while the window darkens.
+*else
+  Daylight enters through the shutter gaps and lies across the foot of the bed.
+
+*if (weather_severity >= 3)
+  Wind pushes at the shutter and makes the roof timbers complain.
+*elseif (weather = "Rain")
+  Rain taps steadily above the bed and hisses in the river below.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Cold clings to the window wall, though the room itself is dry.
+
+*choice
+  # Bar the door and sleep in the bed. [~8 Hours]
+    *goto af_oar_sleep
+  # Wash in the basin. [~10 min]
+    *goto af_oar_wash
+  # Go back down to the taproom.
+    *goto af_oar_hall
+
+*label af_oar_sleep
+*set hours_to_pass 8
+*set minutes_to_pass 0
+*set time_advance_call_id "af_oar_sleep"
+*gosub_scene calendar advance_time
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*set sleep_location_id "drowned_oar"
+*set sleep_is_shared false
+*set sleep_is_permanent_home false
+*set sleep_tier_name "none"
+*set sleep_tier_stat1 "none"
+*set sleep_tier_bonus1 0
+*set sleep_tier_stat2 "none"
+*set sleep_tier_bonus2 0
+*gosub_scene calendar resolve_sleep
+
+You bar the door, close the shutter and settle beneath the wool blanket. The room is narrow, but the bed is dry, and the river noise becomes one steady sound before sleep takes you.
+
+*if ((time_period = "Morning") or (time_period = "Pre-Dawn"))
+  The first activity on the wharf wakes you: boots, rope and a barge pole knocking against timber. Your limbs are loose and rested.
+*elseif (time_period = "Dusk")
+  You wake to the last calls from the water and an amber line beneath the shutter. The ache of travel has eased.
+*elseif (time_period = "Night")
+  You surface in the dark to the quiet clink of a mooring chain. Your fatigue has cleared.
+*else
+  Daylight reaches the foot of the bed when you wake. The noise below is ordinary work, and your mind is clear.
+
+*if (not(sleep_gear_note = ""))
+  *line_break
+  ${sleep_gear_note}
+
+The key remains yours until this hour tomorrow.
+*page_break Go downstairs…
+*goto af_oar_hall
+
+*label af_oar_wash
+*set hours_to_pass 0
+*set minutes_to_pass 10
+*set time_advance_call_id "af_oar_wash"
+*gosub_scene calendar advance_time
+*set minutes_since_wash 0
+*set hygiene_stage "Clean"
+*gosub_scene calendar update_hub_condition
+
+You pour cold water into the basin and wash away grit and the river smell with the coarse soap Maura leaves by the jug. The towel is rough, but clean.
+
+[b][Washed Up: Hygiene Restored to Clean][/b]
+*page_break Set the basin aside…
+*goto af_oar_room

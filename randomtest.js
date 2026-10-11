@@ -18,7 +18,7 @@
  */
 
 // usage: randomtest num=10000 game=mygame seed=0 delay=false trial=false
-//                    showUnreachedLabels=false gotoLoopCap=200000
+//                    showUnreachedLabels=false showDeadSpace=false gotoLoopCap=200000
 
 var isRhino = false;
 var iterations = 10;
@@ -44,6 +44,10 @@ var requireFeedbackCommand = false;
 // can never be false, a *label nothing *goto's anymore) that showCoverage's
 // raw per-line dump makes tedious to spot by hand.
 var showUnreachedLabels = false;
+// Opt-in: counts every *line_break that printed a bare empty line (no paragraph being built, or a second *line_break in a row: web/scene.js line_break) and
+// lists them by scene and line at the end, most often first. The empty line is dead space on the page. A random walk reaches a lot of the game, but not
+// all of it: tools/scripted_play.js reports the same thing for the page it plays, and tools/lint_dead_space.js finds the patterns the source shows.
+var showDeadSpace = false;
 // Safety net against a *goto cycle with no intervening *choice/*page_break/
 // *finish/*ending -- see the gotoLoopCap guard installed below, right after
 // web/scene.js loads. Such a cycle runs entirely inside one synchronous JS
@@ -78,6 +82,8 @@ function parseArgs(args) {
       showCoverage = (value !== "false");
     } else if (name === "showUnreachedLabels") {
       showUnreachedLabels = (value !== "false");
+    } else if (name === "showDeadSpace") {
+      showDeadSpace = (value !== "false");
     } else if (name === "recordBalance") {
       recordBalance = (value !== "false");
     } else if (name === "outputFile") {
@@ -361,6 +367,19 @@ Scene.prototype["goto"] = function guardedGoto(line) {
   return _origSceneGoto.call(this, line);
 };
 
+var deadSpaceHits = {};
+var _origSceneLineBreak = Scene.prototype.line_break;
+Scene.prototype.line_break = function countedLineBreak() {
+  if (showDeadSpace) {
+    var acc = this.accumulatedParagraph;
+    if (!acc.length || acc[acc.length - 1] === "[n/]") {
+      var key = this.name + " line " + (this.lineNum + 1) + (acc.length ? " (second in a row)" : "");
+      deadSpaceHits[key] = (deadSpaceHits[key] || 0) + 1;
+    }
+  }
+  return _origSceneLineBreak.apply(this, arguments);
+};
+
 printImage = function printImage(source, alignment, alt, invert) {
   //console.log('[IMAGE: ' + (alt || source) + ']');
 }
@@ -462,6 +481,11 @@ function configureShowText() {
       console.log('[ACHIEVEMENT] ' + title);
       console.log('\xa0\xa0\xa0\xa0' + description + "\n");
     }
+  } else if (showDeadSpace) {
+    // keep the real printLine so a paragraph really builds up (Scene.line_break reads it), and drop the output
+    printParagraph = function () {};
+    println = function () {};
+    printx = function () {};
   } else {
     oldPrintLine = Scene.prototype.printLine;
     Scene.prototype.printLine = function randomtest_printLine(line) {
@@ -996,6 +1020,11 @@ function randomtest() {
           console.log(sceneName + " "+ (sceneCoverage[j] || 0) + ": " + sceneLines[j]);
         }
       }
+    }
+    if (showDeadSpace) {
+      var deadKeys = Object.keys(deadSpaceHits).sort(function (a, b) { return deadSpaceHits[b] - deadSpaceHits[a]; });
+      console.log(deadKeys.length ? "DEAD SPACE: " + deadKeys.length + " *line_break(s) printed an empty line during this run (scene line, times):" : "DEAD SPACE: none found in this run.");
+      deadKeys.forEach(function (k) { console.log("  " + k + ": " + deadSpaceHits[k]); });
     }
     if (showUnreachedLabels) {
       var sceneDir = 'web/' + gameName + '/scenes';

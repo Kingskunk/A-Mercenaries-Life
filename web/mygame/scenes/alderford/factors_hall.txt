@@ -1,0 +1,295 @@
+*comment ====================================================================================
+*comment THE FACTOR'S HALL (Alderford): the permanent-town continuation of the prologue's
+*comment counting house. Chief Clerk Orlov, Factor Morzan, the letter of credit, and the old
+*comment contract flags all predate this room, so this scene respects them rather than resetting
+*comment them. It supplies the repeatable public face: accounts, Hall Insignia, forecast and
+*comment river notices. Future Alderford contracts belong on the currently empty board column.
+*comment Hours are decided by alderford.txt af_hours. This scene re-checks when time passes,
+*comment because a counter visit can carry the player into dusk.
+*comment ====================================================================================
+
+*label af_hall
+*set minutes_to_pass 5
+*set time_advance_call_id "af_hall_walk_1"
+*gosub_scene alderford/alderford af_walk_time
+*goto af_hall_floor
+
+*label af_hall_floor
+*gosub_scene alderford/alderford af_hours
+*if (not(af_ok_hall))
+  A hand bell rings from the front steps. The clerks draw the iron grilles across the public counter while a porter opens the door for the last people in the room.
+  *page_break Step out into Alderford…
+  *goto_scene alderford/alderford alderford
+
+*temp hall_first false
+*if (not(af_hall_seen))
+  *set hall_first true
+*set af_hall_seen true
+*temp hall_roll 1
+*rand hall_roll 1 3
+[b]◈ THE FACTOR'S HALL[/b]
+*line_break
+
+*if (hall_first)
+  The Factor's Hall stands on the upper slope beside the customs yard, with iron-bound doors, a slate roof and narrow windows set above the level of a cart bed. Inside, the river damp gives way to lamp-warm air, cedar shelving and drying ink. A long oak counter divides the public floor from rows of pigeonholes, a locked strongbox and two small offices at the back. Brass balance pans and nested lead weights wait at one end; a notice board of iron-nailed oak hangs beside the door.
+*else
+  The hall is cool and lamp-warm, smelling of cedar, sealing wax and drying ink. Beyond the counter, the rows of pigeonholes and locked drawers remain just out of reach.
+
+*if (weather_severity >= 3)
+  The outer doors are pulled tight against the weather, and every lamp along the counter is lit.
+*elseif (weather = "Rain")
+  Rain taps on the narrow windows, and the flags inside the door are dark with wet boots.
+*elseif (weather = "Fog")
+  Fog turns the windows to pale slits and blurs the customs yard beyond them.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Slush has been tracked across the stone flags and gathered in the grooves by the door.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  The flags still hold old mud in their joints, and a damp chill lingers near the door after the long rain.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The stones by the threshold remain dark from the last shower.
+
+*if (not(met_orlov))
+  *set met_orlov true
+  A narrow man in ink-stained shirtsleeves rises from the desk at the counter's far end. Spectacles sit in thinning grey hair, and a goose quill waits behind one ear. "Chief Clerk Orlov," he says. He looks from you to the door, as though counting the interruptions between here and his next finished page. "If you have an account, a sealed paper, or a contract, bring it to the rail. If you are finding your feet, start with the notices. They are less likely to send you back down the hill."
+
+  *choice
+    # Ask what the hall handles for Alderford.
+      You rest a hand on the rail. "What passes through this hall?"
+
+      Orlov sets his pen across the page. "The town sends boards, fish and grain downriver. This hall catches the argument after: what was loaded, what was paid, and whose mark proves it. Tolls, storage bonds, letters of credit—the dull things that stop two merchants from calling each other thieves in the yard."
+      *page_break Go on to the public floor…
+      *goto af_hall_floor
+    # Ask whether there is work posted today.
+      You glance toward the notice board. "Is there work posted today?"
+
+      Orlov glances at the board, then back at you. "Nothing unclaimed that I would promise you. Still, read it. The river makes liars of a quiet morning often enough, and a posting can go up before the ink on the last one has dried."
+      *page_break Go on to the public floor…
+      *goto af_hall_floor
+    # Say you are only looking around.
+      You give the room a measured look. "Only looking around."
+
+      One corner of Orlov's mouth moves, not quite a smile. "A sensible use of a morning. The board is for the public; the drawers are where sensible mornings go to die."
+      *page_break Go on to the public floor…
+      *goto af_hall_floor
+*elseif (met_morzan)
+  Orlov works through a column at the counter. The office door behind him is shut; the Factor's brass nameplate catches the lamplight beneath it.
+*else
+  Orlov works through a column at the counter, spectacles low on his nose. The office door behind him stays closed, with only the occasional scratch of a second quill from the room beyond.
+
+*if (hall_roll = 1)
+  A barge captain waits at the rail with a damp packet held under one hand, while a clerk compares its seal with a mark in a register.
+*elseif (hall_roll = 2)
+  Two carters stand side by side at the counter as a junior clerk weighs their sealed purses, then writes the result in separate columns.
+*else
+  The public floor is nearly empty. A porter carries a bundle of tied papers through the side door, while the lower rush of the weir reaches the room only as a dull vibration.
+
+*choice
+  # Approach the public counter.
+    *goto af_hall_counter
+  *if (not(af_hall_asked_trade))
+    # Ask Orlov what Alderford sends downriver.
+      *set af_hall_asked_trade true
+      You wait until Orlov finishes a line, then nod toward the lower wharves. "What does Alderford send downriver most often?"
+
+      Orlov dusts sand over the fresh ink before he answers. "Boards, mostly, when the yards are full. Cured fish while it will keep. Grain in sealed lots when the granary can spare it. The Grey is cheaper than wheels, provided the person steering knows where the current means to put them."
+      *page_break Step away from the counter…
+      *goto af_hall_floor
+  *if (not(af_hall_asked_river))
+    # Ask whether the weir blocks passage to Port Valen.
+      *set af_hall_asked_river true
+      You look past the narrow window toward the pale rush below. "Does the weir block passage to Port Valen?"
+
+      Orlov shakes his head. "Not if you are going downriver. The barges load below the weir and let the Grey take them south. Coming back is the troublesome direction: cargo lands below, then goes up by road around the stone. That is why the customs yard is here, where everyone has to pass it."
+      *page_break Leave Orlov to his work…
+      *goto af_hall_floor
+  # Read the notice board. [~10 min]
+    *goto af_hall_board
+  # Step back out into Alderford.
+    *goto_scene alderford/alderford alderford
+
+*comment ── The counter: the same shared Gilded Scales Letter of Credit and Hall Insignia as Port Valen and Timbermouth. Currency changes are locked to the result page for refresh safety. ──
+*label af_hall_counter
+[b]◈ THE FACTOR'S HALL: THE COUNTER[/b]
+*line_break
+*if (has_letter_of_credit)
+  *set silver_amount_to_describe letter_of_credit_value
+  *gosub_scene economy describe_silver_amount
+  Orlov draws your entry from a locked drawer, checks the Gilded Scales seal in its corner, and turns it so you can read the standing balance: ${coin_amount_desc}.
+*else
+  Orlov finds no entry under your name and lays a blank square of vellum on the rail. A letter opens at one Gold Crown or more.
+
+The brass plate above the counter reads: [i]"Deposits and letters. Seals. Contracts by appointment."[/i]
+
+*choice
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 100)
+    # Deposit 1 Gold Crown against a letter of credit.
+      *set ch_credit_deposit_amount 10
+      *goto af_hall_bank_deposit
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 200)
+    # Deposit 2 Gold Crowns against a letter of credit.
+      *set ch_credit_deposit_amount 20
+      *goto af_hall_bank_deposit
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 500)
+    # Deposit 5 Gold Crowns against a letter of credit.
+      *set ch_credit_deposit_amount 50
+      *goto af_hall_bank_deposit
+  *if (letter_of_credit_value >= 10)
+    # Draw 1 Gold Crown from the letter.
+      *set ch_credit_withdraw_amount 10
+      *goto af_hall_bank_withdraw
+  *if (has_letter_of_credit)
+    # Redeem the whole letter for coin.
+      *goto af_hall_bank_redeem
+  *if (not(has_hall_insignia))
+    *selectable_if ((((gold * 100) + (silver * 10)) + copper) >= 10) # Take out a Hall Insignia. [1 Silver Mark]
+      *goto af_hall_seals_buy
+  *if (has_hall_insignia)
+    # Hold your Hall Insignia up to the seals grille.
+      *goto af_hall_seals_show
+  # Step back from the counter.
+    *goto af_hall_floor
+
+*label af_hall_bank_deposit
+*temp hall_was_new not(has_letter_of_credit)
+You lay the coin on the rail. "Put this against my letter."
+
+*if (hall_was_new)
+  Orlov counts the coin twice against the standard weights, fills in a stiff square of vellum and presses the Gilded Scales' wax seal into its corner. "Keep it dry," he says, sliding it over. "Paper has a longer memory than a purse, if you let it."
+*else
+  Orlov counts the coin, brings out your entry, strikes through the old sum and inks in the new total before pressing the seal beside it again. "There," he says. "Same promise. More of it."
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount (0 - (ch_credit_deposit_amount * 10))
+  *gosub_scene economy currency_add
+  *set letter_of_credit_value + ch_credit_deposit_amount
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*set has_letter_of_credit true
+*set silver_amount_to_describe letter_of_credit_value
+*gosub_scene economy describe_silver_amount
+*if (hall_was_new)
+  [b][📜 Gilded Scales Letter of Credit Issued: ${coin_amount_desc}][/b]
+*else
+  [b][📜 Gilded Scales Letter of Credit Increased: ${coin_amount_desc} Total][/b]
+*set ch_credit_deposit_amount 0
+*set minutes_to_pass 5
+*set time_advance_call_id "af_hall_bank_deposit_1"
+*gosub_scene alderford/alderford af_walk_time
+*page_break Step back from the counter…
+*goto af_hall_floor
+
+*label af_hall_bank_withdraw
+You tap the sealed entry. "One crown back in coin."
+
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set silver_amount_to_describe ch_credit_withdraw_amount
+  *gosub_scene economy describe_silver_amount
+  *set ch_bank_last_desc coin_amount_desc
+  *set currency_add_amount (ch_credit_withdraw_amount * 10)
+  *gosub_scene economy currency_add
+  *set letter_of_credit_value - ch_credit_withdraw_amount
+  *if (letter_of_credit_value <= 0)
+    *set letter_of_credit_value 0
+    *set has_letter_of_credit false
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+Orlov takes the coin from the strongbox, counts it onto the rail, strikes the sum from your entry and initials the change. "Paper travels more easily," he says, "but I understand the appeal of weight in the hand."
+[b][💰 Drawn from the Letter: ${ch_bank_last_desc}][/b]
+*set minutes_to_pass 5
+*set time_advance_call_id "af_hall_bank_withdraw_1"
+*gosub_scene alderford/alderford af_walk_time
+*page_break Step back from the counter…
+*goto af_hall_floor
+
+*label af_hall_bank_redeem
+You slide the letter across the rail. "Close it and give me the coin."
+
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set silver_amount_to_describe letter_of_credit_value
+  *gosub_scene economy describe_silver_amount
+  *set ch_bank_last_desc coin_amount_desc
+  *set currency_add_amount (letter_of_credit_value * 10)
+  *gosub_scene economy currency_add
+  *set letter_of_credit_value 0
+  *set has_letter_of_credit false
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+Orlov strikes a firm line through your entry, counts the coin onto the rail and files the surrendered vellum beside his scale. "Fair warning," he says. "Coin has a way of finding reasons to leave faster than paper does."
+[b][💰 Letter Redeemed: ${ch_bank_last_desc}][/b]
+*set minutes_to_pass 5
+*set time_advance_call_id "af_hall_bank_redeem_1"
+*gosub_scene alderford/alderford af_walk_time
+*page_break Step back from the counter…
+*goto af_hall_floor
+
+*label af_hall_seals_buy
+*set minutes_to_pass 10
+*set time_advance_call_id "af_hall_seals_buy_1"
+*gosub_scene alderford/alderford af_walk_time
+[b]◈ THE FACTOR'S HALL: THE SEALS GRILLE[/b]
+*line_break
+At the second grille, a junior clerk lifts a blank brass disc from its dish. "Your name?" she asks, setting the silver stylus ready.
+
+You give your name.
+
+She writes it into the air over the brass with a silver stylus. The disc clouds and warms; a seal, and your name in small clear letters, work themselves into its face. She passes a flat grey stone over it. The metal chimes once. "Open rank," she says, passing it through the grille. "It saves everyone a great many explanations."
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount (0 - 10)
+  *gosub_scene economy currency_add
+  *set has_hall_insignia true
+  *set hall_insignia_rank "open"
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+
+[b][🏷️ Acquired: Hall Insignia (Open)][/b]
+*page_break Step back from the grille…
+*goto af_hall_floor
+
+*label af_hall_seals_show
+You hold the brass up to the grille. The junior clerk passes the grey stone over it; the insignia chimes once. She reads its face, nods, and slides it back. "Still open," she says. "Still yours."
+*page_break Step back from the grille…
+*goto af_hall_counter
+
+*comment ── Notice board: useful current conditions and an explicit future-work slot. Reading it costs time because it is information the player can act on before leaving town. ──
+*label af_hall_board
+*set minutes_to_pass 10
+*set time_advance_call_id "af_hall_board_1"
+*gosub_scene alderford/alderford af_walk_time
+[b]◈ THE FACTOR'S HALL: THE NOTICE BOARD[/b]
+*line_break
+The board beside the door has three columns: weather and water, road and customs, contracts.
+*gosub af_hall_forecast_slip
+
+*if (tomorrow_severity >= 3)
+  [i]"RIVER NOTICE. No loaded barge departs below the weir in ${forecast_str}. Crews report to their masters and wait for a clear order."[/i]
+*elseif (tomorrow_severity = 2)
+  [i]"RIVER NOTICE. Expect ${forecast_str}. Barges bound for Port Valen carry reduced loads below the weir; loose cargo is the carrier's loss."[/i]
+*elseif (weather_tomorrow = "Fog")
+  [i]"RIVER NOTICE. Expect fog. Downriver crews wait for the lower marks to show before casting off."[/i]
+*else
+  [i]"RIVER NOTICE. Lower-channel passage to Port Valen remains open, subject to the master's judgment at the wharf."[/i]
+
+[i]"CUSTOMS. Goods landed below the weir are declared at the upper yard before road carriage. No wagon crosses the weir with an unsealed cargo."[/i]
+
+*if ((not(rj_escort_stage = "active")) and (day_of_week = "Ironday"))
+  *temp af_pno (6000 + ((campaign_day - (campaign_day modulo 7)) / 7))
+  [b]POSTING No. ${af_pno}[/b]
+  *line_break
+  [i]Sealed: a carriers' company and the City. Work: wagon escort to Port Valen. Pay: the fee named at the lot. Term: two days out. Apply: the carters' lot, beside the Lower Wharf Market.[/i]
+*else
+  The contracts column is bare but for nail holes and the faded square where a notice was recently taken down. Nothing has replaced it yet.
+*page_break Step back from the board…
+*goto af_hall_floor
+
+*label af_hall_forecast_slip
+*if (tomorrow_severity >= 3)
+  [i]"FROM THE FACTOR'S CLERKS. Expect ${forecast_str} tomorrow. Keep carts clear of the lower bank."[/i]
+*elseif (tomorrow_severity = 2)
+  [i]"FROM THE FACTOR'S CLERKS. Expect ${forecast_str} tomorrow. The High Grey Road will be slick above the river."[/i]
+*elseif (weather_tomorrow = "Fog")
+  [i]"FROM THE FACTOR'S CLERKS. Expect ${forecast_str} tomorrow. Keep to the road posts."[/i]
+*else
+  [i]"FROM THE FACTOR'S CLERKS. Expect ${forecast_str} tomorrow."[/i]
+*if (forecast_missed)
+  An older forecast beside it has been crossed through in a single firm line.
+*return

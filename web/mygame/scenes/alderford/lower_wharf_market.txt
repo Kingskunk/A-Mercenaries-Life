@@ -1,0 +1,137 @@
+*comment ====================================================================================
+*comment LOWER WHARF MARKET (Alderford): one connected bulk trading ground, not a row of isolated
+*comment shops. It is the future trade-simulation hook for five player-facing commodity families:
+*comment saltfish, wax, hides/furs, grain and metals. Prices, cargo ownership and buy/sell actions
+*comment belong to the later trade system; this scene establishes the physical market and work areas.
+*comment ====================================================================================
+
+*label af_market
+*temp af_market_first false
+*if (not(af_market_seen))
+  *set af_market_first true
+*set af_market_seen true
+*set minutes_to_pass 5
+*set time_advance_call_id "af_market_walk_1"
+*gosub_scene alderford/alderford af_walk_time
+
+[b]◈ THE LOWER WHARF MARKET[/b]
+*line_break
+
+*if (af_market_first)
+  At the foot of the lower street, the market opens as a rough rectangle of cobbles and timber decking pressed between the curing lofts and the barge landing. The uphill gate is wide enough for a loaded wagon, with a long beam scale under its roof. At the river end, a squat wooden crane stands over a timber quay where flat-bottomed barges knock softly against their fenders. Carts enter at one end, loads change hands in the middle, and cargo leaves at the other without ever going back up the slope.
+
+  Long sheds lean around the yard, their open fronts facing the traffic. The fish shed nearest the water is dark with brine-stained boards and rows of barrels; beside it, the curing shed glows amber where wax cakes and oiled cloth catch the light. The hide shed is closed in tight against damp, its upper rails hung with rolled leather and fur bundles. Across from it stands the grain house, pale sacks stacked behind slatted doors, while the iron yard occupies the open corner under a low tarpaulin, its bars and fittings raised above the mud on thick planks. [i]Parker's Curing Loft[/i] fills the water-side corner: a broad ground-floor counter below drying racks and a steep stair to the rooms above, with the old F.P. maker's mark cut into the lintel.
+*else
+  The lower market is busy between the curing lofts and the barge landing: wagons come through the uphill gate, porters work the cobbles between the sheds, and the crane keeps taking cargo on and off the water.
+
+*gosub af_market_weather
+*gosub af_market_shift
+
+*goto af_market_hub
+
+*label af_market_hub
+*choice
+  *if ((not(af_market_talk_bran)) and (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon")))
+    # Speak with Overseer Bran at the grain scale.
+      *goto af_market_bran
+  # Walk through the fish and curing sheds.
+    *goto af_market_saltfish
+  # Look through the hide shed.
+    *goto af_market_hides
+  # Look into the grain house.
+    *goto af_market_grain
+  # Cross to the iron yard.
+    *goto af_market_metals
+  # Leave the Lower Wharf Market.
+    *page_break Return to the street…
+    *goto_scene alderford/alderford alderford
+
+*label af_market_bran
+At the beam scale, a flour-dusted man checks the seal on a rye sack, compares its weight to a chalk slate, and waves the wagon forward only when both agree. The pale boards of the Upper Weir Granary are visible higher up the riverbank beyond the market roofs.
+
+*if (met_bran)
+  Bran notices you as the next sack is rolled away. "You keep finding the useful end of a job," he says. "That is rarer than people think."
+*else
+  He sets down his chalk and offers a work-rough hand. "Bran. I keep the Upper Weir stores from going damp, missing, or downriver lighter than they left me."
+  *set met_bran true
+
+*choice
+  # Ask why the granary overseer comes down to the wharf himself.
+    You glance from the slate to the crane beyond the quay. "Does the granary not have enough to keep you busy without coming down here?"
+
+    Bran snorts. "A count is only honest until someone hands it over. Up at the weir, I know what is in the sacks. Down here, I make sure the barge takes the same thing, at the same weight, under the same mark." He taps the slate with one chalky finger. "Most trouble begins in the space between those two facts."
+  # Ask whether he misses running the Grey himself.
+    You watch the barge crew make ready below the quay. "Do you miss taking the Grey yourself?"
+
+    Bran follows your gaze toward the water. "Some days. I miss a clean departure more than the river. A barge loaded true, a crew that knows the current, and a hold that arrives dry—that is a satisfying kind of quiet." He gives the nearest sack a practical pat. "My back is happier with the chalk now."
+  # Tell him it is good that someone is watching the weights.
+    You nod toward the marked sacks. "It is good that someone is watching the weights."
+
+    Bran looks faintly embarrassed by the praise. "It should not need saying. But I have seen what a missing scoop from every sack does by the time a cargo reaches the Port." He straightens the corner of the slate. "Someone has to make the numbers answer to the grain."
+
+*set af_market_talk_bran true
+*page_break Return to the market yard...
+*goto af_market_hub
+
+*label af_market_saltfish
+The fish shed is cool and dim even in daylight. Barrels stand in close ranks with their heads marked in chalk, and slatted crates of saltfish sit above the wet boards on short feet. The curing shed next door is warmer and smells of smoke, tallow and brine. Wax cakes lie in shallow trays like blocks of dull amber, with tins of waterproofing grease and rolls of treated cloth stacked behind the counter. A worker seals a barrel seam with hot pitch while another carries a bundle toward the crane.
+
+*page_break Back to the market yard…
+*goto af_market_hub
+
+*label af_market_hides
+The hide shed has no open river face. Its doors stand half shut, leaving a strip of shadow and the sharp smell of tannin. Rolled hides rest on high racks clear of the paving, their cut edges turned inward beneath rope ties. Fur bundles hang from pegs along the back wall, each tied tight and marked with a waxed tag. The trader at the table weighs a bundle in one hand before adding its mark to a board already crowded with departure signs.
+
+*page_break Back to the market yard…
+*goto af_market_hub
+
+*label af_market_grain
+The grain house is built back from the water, with thick boards, narrow vents and a high stone sill at every door. Barley and rye sacks are piled on raised pallets under the eaves, while meal, seed and animal feed sit in smaller casks along the inner wall. Grain dust lies pale in the cracks of the floorboards. Two people work a hand scale by the door, cutting a sack open just enough to test the grain before the next wagon reaches the beam scale outside.
+
+*page_break Back to the market yard…
+*goto af_market_hub
+
+*label af_market_metals
+The iron yard is the loudest corner of the market. Bars lie bundled in straw beneath a low tarpaulin, scrap is sorted into deep bins, and crates of nails, rivets and fittings stand under iron-strapped covers. The ground is thick planking laid over the mud, scarred by wheel rims and dropped loads. A buyer tests a bar with the edge of a hammer; the clear ring carries across the yard before the crane chain answers it from the quay.
+
+*page_break Back to the market yard…
+*goto af_market_hub
+
+*comment ── WEATHER: sky, working surfaces and the river's effect on an open-sided market. ──
+*label af_market_weather
+*if (weather = "Storm")
+  Rain comes sideways across the lower wharf. The shed fronts are screened in canvas, the crane hook knocks against its post, and spray blows over the quay rails in white bursts.
+*elseif (weather = "Blizzard")
+  Snow drives through every gap between the sheds, whitening the planks and hiding the far moorings behind a moving wall of grey. The market has no ordinary trade in this weather.
+*elseif (weather = "Rain")
+  Rain beats on the shed roofs and runs in dark threads between the cobbles toward the river drains. The open quay shines black, and every loose lot has been pulled farther under cover.
+*elseif (weather = "Fog")
+  Cold fog gathers over the lower basin. The barges at the landing appear and disappear behind it, and the crane is only a dark angled shape against the pale water.
+*elseif (weather = "Sleet")
+  Sleet ticks hard against the roof boards and gathers in the seams of the timber decking. Porters keep their footing slowly, and the traders have hung extra canvas across the exposed shed mouths.
+*elseif (weather = "Snow")
+  Wet snow catches on the shed eaves and the yard rails. Meltwater drips from every edge into the mud beyond the planks, while the river keeps running black beneath it.
+*elseif (weather = "Clear")
+  Clear light reaches the lower wharf in a narrow band between the roofs, picking out wet iron, pale grain dust and the sheen of the river beyond the quay.
+*else
+  A flat overcast holds above the river, leaving the market roofed in dull grey light and the lower basin darker than the street above.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Earlier rain has left water standing between the cobbles, and the plank paths through the yard are still dark and slick.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The paving remains dark from earlier rain, with damp wheel tracks leading down through the gate toward the quay.
+*return
+
+*comment ── DAY / NIGHT: work arrives, peaks and is put away before the closed-market page takes over. ──
+*label af_market_shift
+*if (time_period = "Morning")
+  The first wagon loads are being backed toward the beam scale. Shed doors stand open one by one, and the crane crew are still coiling yesterday's wet rope before the river traffic thickens.
+*elseif ((time_period = "Midday") or (time_period = "Afternoon"))
+  The yard is at its fullest: handcarts wait behind wagons, slates change hands at the scale, and the crane chain rises and falls over the quay without a long pause.
+*elseif (time_period = "Dusk")
+  Daylight has slipped behind the upper town. Traders draw tarpaulins over the lots and knock wedges beneath the shed doors, though the scale still takes loads already inside the gate and one or two barges wait on the darkening water.
+*elseif (time_period = "Night")
+  The market is shut for the night. Only the quay lamps, the river and the occasional mooring line remain awake below the locked sheds.
+*else
+  Before dawn, the market is a dark yard of barred doors and tarpaulins silvered by river damp. The first work has not yet begun.
+*return

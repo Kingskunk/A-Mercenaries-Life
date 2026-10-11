@@ -28,6 +28,7 @@ const LINTERS = [
   'lint_choice_length',
   'lint_gosub_arity',
   'lint_blank_landing',
+  'lint_dead_space',
   'lint_prose_tics',
   'lint_anachronisms',
   'lint_weapon_assumption',

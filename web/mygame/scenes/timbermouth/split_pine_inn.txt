@@ -11,8 +11,8 @@
 *comment any private room but is NOT a permanent home, so the routine tracker still counts the nights. The basin resets hygiene with no boon.
 *comment THE KITCHEN: Ressa sells two hot meals at the counter, always (the pot never goes off the fire): the tavern pattern (economy.txt buy_tavern_item): a stew (2 copper, +2 temp HP, +1 CON for 4h)
 *comment and a plate (1 copper, +1 temp HP, +1 STR for 4h). Both clear hunger like every tavern meal.
-*comment STABLE HOOK: the player owns no mount yet. The yard (tm_inn_yard) is scenery for now. When mounts exist, add the stall option to that *choice (a nightly stall price, feed, the animal
-*comment waiting in its stall), and let Ressa's first-visit line about "a beast" become a real offer. Wagon storage and messages to Oswin hang in the same place.
+*comment STABLE: the yard (tm_inn_yard) is scenery, while calendar.txt horse_upkeep automatically stables an owned horse overnight and applies the settlement's daily bill. Do not add a manual stall button unless
+*comment it creates a new gameplay choice beyond that shared system. Wagon storage and messages to Oswin can use the same place later.
 *comment Layers: place is constant; the hall has a small sky layer (weather at the windows and the ground's memory); street is who is about by time of day, in a pool of three. The yard is open air.
 *comment The name is given in her own first-visit line, before any button names her. Lorebook: split_pine, ressa (lorebook-timbermouth.js).
 *comment
@@ -165,27 +165,31 @@ A long two-storey house of dark timber stands at the road end of the square, wit
         *set locked_currency_txn_page_id page_id
       *set tm_inn_room_active true
       *set tm_inn_room_until (inn_now + 1440)
+      You count the price onto the plank. "A room, then."
+
       Ressa takes the coppers, drops them into a tin under the counter, and unhooks an iron key from the board behind her. "Top of the stair, the door on the left," she says. "It is yours until this hour tomorrow, so go out and come back as you like. The window faces the yard, so you will hear the wagons. Bar the door."
       *page_break Climb the stair…
       *goto tm_inn_room
   *if ((not(tm_inn_room_active)) and ((((gold * 100) + (silver * 10)) + copper) < tm_inn_rate_copper))
     # Ask Ressa about a room.
+      "What do you charge for a room?" you ask.
+
       "${tm_inn_rate_copper} copper bits for a day and a night," Ressa says. "Come back with it and the bed is yours. I do not let on credit, and I do not let the same bed twice."
-      *page_break "I'll be back."…
+
+      You nod. "I'll be back."
+      *page_break Step back from the counter…
       *goto tm_inn_hall
   # Walk through the arch to the stable yard.
     *goto tm_inn_yard
-  *if (not(tm_inn_talk_house))
-    # Ask Ressa how the Inn works.
-      *set tm_inn_talk_house true
-      "One bed, one guest, paid when you take the key," Ressa says, and taps the board of hooks behind her. "The key is yours for a full day from the hour you pay, and you may sleep in the bed, go out and come back as often as you like. When the day is up, the room is let again, and whatever you leave in it I sell on the first of the month." She jerks her chin toward the pot. "The stew is always on."
-      *page_break "Fair enough."…
-      *goto tm_inn_hall
-  *if (not(tm_inn_talk_brother))
+  *if ((mw_inn_seen) and (not(tm_inn_talk_brother)))
     # Ask Ressa if she knows the Wagoner's Rest, in Port Valen.
       *set tm_inn_talk_brother true
+      You nod toward the road out of town. "Do you know the Wagoner's Rest in Port Valen?"
+
       Her face softens by about a finger's width. "My brother's," she says. "Oswin. We drove this road together for eleven years, then we split. He bought the Rest as his, and I took the Pine as mine." She wipes the plank with a rag. "If you see him, tell him the stew here is better. He will say it's not, and he's wrong."
-      *page_break "I'll tell him."…
+
+      "I'll tell him," you say.
+      *page_break Step back from the counter…
       *goto tm_inn_hall
   # Step back out onto the square.
     *goto_scene timbermouth/timbermouth timbermouth

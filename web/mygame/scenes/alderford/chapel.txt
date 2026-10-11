@@ -1,0 +1,211 @@
+*comment ====================================================================================
+*comment THE CHAPEL OF SAINT ALTHEA (Alderford): permanent continuation of the prologue chapel.
+*comment The old sequence remains its first-visit quest chain. This file keeps Corbel, the parish
+*comment looms, the sanctuary, Cure Wounds and the vigil available without replaying that story.
+*comment ====================================================================================
+
+*label af_chapel
+*set minutes_to_pass 10
+*set time_advance_call_id "af_chapel_walk_1"
+*gosub_scene alderford/alderford af_walk_time
+*temp ac_first false
+*if (not(af_chapel_seen))
+  *set ac_first true
+*set af_chapel_seen true
+*set codex_saint_althea true
+*goto af_chapel_hall
+
+*label af_chapel_hall
+*temp ac_night false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set ac_night true
+*temp ac_pick 1
+*rand ac_pick 1 3
+
+[b]◈ THE CHAPEL OF SAINT ALTHEA[/b]
+*line_break
+
+*comment ── LAYER 1: place. ──
+*if (ac_first)
+  Worn limestone steps climb from the mill bank to a small chapel on the ridge above the weir. Its oak doors stand beneath an imperial arch, the lettering softened by weather: [i]The Chapel of Saint Althea the Mender.[/i] A solar cross entwined with a flax spindle is cut beside the words. Inside, the thick stone walls turn the roar of the river into a low, steady presence. The nave is narrow and warm with beeswax, lanolin and cedar smoke. At its head, Saint Althea stands in limestone beside a plain altar, a weaving shuttle in one hand and a bowl of spring water in the other. A parish larder and six hand-looms fill the side aisles, and smooth river pebbles lie among the candle stubs at the altar rail.
+*else
+  The chapel holds its familiar warmth above the weir: limestone, beeswax, wool and cedar smoke, with the river reduced to a low pulse beyond the walls.
+*set ac_first false
+
+*comment ── LAYER 2: light, weather and the ground's memory. ──
+*if (ac_night)
+  A pair of oil lamps keeps the altar and the nearest looms in a gentle amber circle, while the upper rafters disappear into shadow.
+*elseif (weather_severity >= 3)
+  The narrow windows shake in their lead frames, and the chapel's lamps are lit against the weather-dark.
+*elseif (weather = "Rain")
+  Rain makes pale tracks down the outer face of the narrow windows, and their light lies soft across the flags.
+*elseif (weather = "Fog")
+  Fog has turned the glass to an even pearl-grey, leaving the candles to give the nave most of its light.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  A cold grey light comes through the windows, but the hearth stones and packed wool keep the nave warm.
+*elseif (time_period = "Dusk")
+  The last light catches the statue's bowl and the brass pins along the loom frames.
+*else
+  Daylight falls in narrow bars across the stone floor and makes the dust of flax fibre visible above the looms.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Earlier rain has left the steps outside dark and shining, and damp wool hangs near the door to dry.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The entry flags remain dark from the last rain, though the hearth has dried the rest of the nave.
+
+*comment ── LAYER 3: people and work. ──
+*if (ac_night)
+  Two parish guests sleep near the rear wall beneath borrowed blankets, and one small loom waits half-threaded beside them. The rest of the chapel is quiet.
+*elseif (ac_pick = 1)
+  The looms clatter steadily in the side aisle while a parish worker sorts spun yarn by weight near the larder door.
+*elseif (ac_pick = 2)
+  A person at the altar rail ties a fresh strip of linen into the old knots, presses it once between both hands, and leaves without speaking.
+*else
+  A kettle murmurs near the hearth. Two people carry folded cloth from the looms to the larder, careful not to block the narrow aisle.
+
+*if (not(met_corbel))
+  *set met_corbel true
+  An elderly deacon in an undyed wool habit looks up from a small chancel desk. A limestone spindle-cross rests against his chest, and his spectacles are tied behind his ears with hemp cord. "Peace to your path," he says. "I am Corbel. This roof is open to anyone who leaves their quarrel outside."
+*elseif (delivered_chapel_grain)
+  Corbel looks up from the chancel desk and gives you a warm, familiar nod. "The larder has not forgotten Bran's rye, nor the person who carried it up those steps," he says. "Come in from the road."
+*elseif (corbel_charter_argument)
+  Corbel closes the parish ledger when he sees you. "The old clause is copied safe into the charter roll," he says quietly. "Your wall is still standing where we need it."
+*else
+  Deacon Corbel works at the chancel desk beneath the statue, his ledger shut for the moment and his spindle-cross resting against his habit.
+
+*label af_chapel_menu
+*choice
+  *if ((hp_current < hp_max) and (not(af_chapel_healed_day = campaign_day)))
+    *if (delivered_chapel_grain)
+      # [Cure Wounds] Ask Deacon Corbel for the parish healing rite. [1 Copper Bit]@{show_stat_hints  [Heals 1d8 + 3 HP]|}
+        *goto af_chapel_heal_paid
+    *else
+      # [Cure Wounds] Ask Deacon Corbel for the parish healing rite. [3 Copper Bits]@{show_stat_hints  [Heals 1d8 + 3 HP]|}
+        *goto af_chapel_heal_paid
+  *if ((hp_current < hp_max) and (af_chapel_healed_day = campaign_day))
+    # Ask Corbel whether he can spare another healing rite today.
+      You keep your voice low. "Could you spare another rite today?"
+
+      Corbel's regret is plain. "I have already spent the strength I can safely give. Come tomorrow if you can, or find a surgeon if waiting would be worse."
+      *page_break Return to the nave…
+      *goto af_chapel_hall
+  *if (not(af_chapel_vigil_day = campaign_day))
+    # Kneel at Saint Althea's rail for a sanctuary vigil.@{show_stat_hints  [Restores 2 HP; +1 WIS for 4 hours]|}
+      *goto af_chapel_vigil
+  *if (af_chapel_vigil_day = campaign_day)
+    # Spend a quiet moment at Saint Althea's rail.
+      You rest a hand on the worn altar rail and let the loomwork and river settle into one steady rhythm.
+
+      The quiet does not ask anything from you. After a moment, you step back into the nave.
+      *page_break Return to the nave…
+      *goto af_chapel_hall
+  *if (not(af_chapel_talk_corbel))
+    *if (delivered_chapel_grain)
+      # Ask Corbel how the parish larder has held since Bran's rye.
+        *goto af_chapel_talk_sanctuary
+    *elseif (corbel_charter_argument)
+      # Ask Corbel whether the old charter clause has helped the parish.
+        *goto af_chapel_talk_sanctuary
+    *else
+      # Ask Corbel how the parish keeps its sanctuary open.
+        *goto af_chapel_talk_sanctuary
+  # Look at the river offerings beneath the statue.
+    The offering bowl holds smooth river pebbles, copper pins, a coil of blue thread, and the stub of a candle pressed flat by a thumb. None of it is valuable. All of it was left by someone who wanted a crossing, a wound or a difficult day to end well.
+    *page_break Step back from the altar…
+    *goto af_chapel_hall
+  # Leave the chapel and descend to Alderford.
+    *page_break Return to the street…
+    *goto_scene alderford/alderford alderford
+
+*label af_chapel_heal_paid
+*temp ac_heal_cost 3
+*if (delivered_chapel_grain)
+  *set ac_heal_cost 1
+*if ((((gold * 100) + (silver * 10)) + copper) < ac_heal_cost)
+  You reach for your purse, then find you do not have the copper to make the customary offering.
+
+  Corbel closes your hand gently. "Althea does not weigh mercy on a merchant's scale. Save your coin for bread. Kneel."
+  *goto af_chapel_heal_rite
+
+You set the offering in the poor-basin. Corbel nods toward the larder and the looms. "It keeps the lamps, wool and herbs in the room. The rite is for the hurt, not the coin."
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount (0 - ac_heal_cost)
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*goto af_chapel_heal_rite
+
+*label af_chapel_heal_rite
+*set minutes_to_pass 15
+*set time_advance_call_id "af_chapel_heal_rite_1"
+*gosub_scene alderford/alderford af_walk_time
+
+You kneel at the limestone rail. Corbel lays a clean square of linen over the worst of the wound, then presses his cool spindle-cross lightly against it.
+
+"What is torn may be re-woven," he says, and begins the old Meridian invocation.
+
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *temp ac_cure_roll 0
+  *rand ac_cure_roll 1 8
+  *set locked_heal_roll (ac_cure_roll + 3)
+  *set hp_current + locked_heal_roll
+  *if (hp_current > hp_max)
+    *set hp_current hp_max
+  *set af_chapel_healed_day campaign_day
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+
+Warmth spreads beneath the linen. The immediate pain loosens its hold, then recedes; when Corbel lifts the cloth, only a faint gold thread remains where the blood had been.
+
+Corbel exhales and steadies himself on the rail. "Walk carefully. Mending is not the same thing as being unbreakable."
+
+[b][Chapel Rite: Cure Wounds | Healed: +${locked_heal_roll} HP | Current HP: ${hp_current}/${hp_max}][/b]
+*page_break Return to the nave…
+*goto af_chapel_hall
+
+*label af_chapel_vigil
+*if (chapel_blessing_received)
+  You kneel at the rail and rest your forearms on the worn stone. You know the chapel's silence now: the looms, the warm lamps and the river held at a distance by thick stone. You ask for that stillness plainly and let it be enough.
+*else
+  You kneel at the rail and rest your forearms on the worn stone. The chapel gives you a silence unlike the road's empty stretches: a quiet made by people working, sheltering and keeping a light for one another.
+
+The clack of the looms, the warmth of the lamps and the river's low rush settle into a single steady measure. Corbel does not interrupt. Before you rise, he touches two fingers to the bowl of spring water and makes a small blessing over the rail.
+
+"May the stone hold beneath your tread," he says. "May your hand stay from harm when mercy will serve."
+
+*set af_chapel_vigil_day campaign_day
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set unique_buff_input_name "Sanctuary Vigil"
+  *set unique_buff_input_desc "+1 WIS (Inner Calm)"
+  *set unique_buff_input_stat "wis"
+  *set unique_buff_input_bonus 1
+  *set unique_buff_input_minutes 240
+  *gosub_scene economy apply_unique_buff
+  *set hp_current + 2
+  *if (hp_current > hp_max)
+    *set hp_current hp_max
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+
+[b][Sanctuary Vigil: +1 WIS for 4 Hours | +2 HP Restored | HP: ${hp_current}/${hp_max}][/b]
+*page_break Step back from the rail…
+*goto af_chapel_hall
+
+*label af_chapel_talk_sanctuary
+*set af_chapel_talk_corbel true
+*if (delivered_chapel_grain)
+  You glance toward the larder, then back to Corbel. "How has the parish held since Bran's rye came up the steps?"
+
+  Corbel's eyes follow yours. "It gave us time. That is what sound food does when a household is close to the edge: it gives people time to mend, find work, or simply make it through a bad week without selling the wrong thing." He folds his hands over the ledger. "The larder is never full enough, but it was not empty when it mattered."
+*elseif (corbel_charter_argument)
+  You keep your voice low beside the desk. "Has the old charter clause helped the parish?"
+
+  Corbel nods once. "It has helped us prepare, which is not the same as winning. The copy stays quiet in the roll until someone gives us cause to use it. But the Factor's Hall is no longer the only side with paper." His hand rests on the ledger. "That changes how a person sleeps."
+*else
+  You glance toward the occupied looms and lower your voice. "How does this place stay open with so many people under one roof?"
+
+  Corbel follows your gaze. "The parish sells cloth, pays the town's old commutation, and makes room where it can. Some call that charity. Most days it is work, done together, with fewer people left alone in the cold."
+
+  He touches the spindle-cross at his chest. "The sanctuary is not a promise that no hardship reaches these doors. It is a promise that nobody here is handed over lightly."
+*page_break Return to the nave…
+*goto af_chapel_hall

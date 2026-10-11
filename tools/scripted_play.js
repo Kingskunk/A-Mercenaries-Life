@@ -19,7 +19,8 @@
  *
  * It shows prose and lays it out the way the screen does: a paragraph break is a blank line, a *line_break is a new line, and a plain source newline joins into one
  * paragraph. A place heading ("◈ ...") or status banner that runs on from the sentence before it is flagged with "!! LAYOUT" (a label reached by *goto needs a blank
- * line under it). It does not judge the writing or change any file. Read the output as a player would: look at where lines break, not only at the words.
+ * line under it). A *line_break that prints an empty line (nothing before it on the paragraph, or a second one in a row) is flagged with "!! DEAD SPACE" and the scene and line that made it.
+ * It does not judge the writing or change any file. Read the output as a player would: look at where lines break, not only at the words.
  *
  * Usage, from any folder (it finds the repo from its own location and never changes your working folder):
  *   node tools/scripted_play.js <script.json | ->  [key=value ...] [flags]
@@ -94,7 +95,19 @@ Scene.prototype.ending = function () { this.paragraph(); this.finished = true; }
 Scene.prototype.finish = Scene.prototype.autofinish = function () { this.paragraph(); this.finished = true; };
 
 var D = { mode: "boot", steps: [], stepIdx: 0, rand: 0, events: [], log: [], exits: [], errors: [], stopped: null,
-  refreshAll: false, sabotage: [], replaySet: {}, refreshDiffs: [], refreshChecks: 0, refreshSkipped: 0 };
+  refreshAll: false, sabotage: [], replaySet: {}, refreshDiffs: [], refreshChecks: 0, refreshSkipped: 0, deadSpace: [] };
+
+// Dead space: *line_break adds a [n/] to the paragraph being built, but with no paragraph being built (a blank line or a called label just ended it, or the
+// last thing was another *line_break) the engine prints a bare empty line instead (web/scene.js line_break). Record every one that happens in a real page
+// run, not in the replay copy, so the report can name the scene and line. tools/lint_dead_space.js finds the patterns the source shows on its own.
+(function () {
+  var real = Scene.prototype.line_break;
+  Scene.prototype.line_break = function () {
+    var acc = this.accumulatedParagraph;
+    if (D.mode === "drive" && (!acc.length || acc[acc.length - 1] === "[n/]")) D.deadSpace.push(this.name + " line " + this.lineNum + (acc.length ? " (a second line break in a row)" : " (nothing before it on the paragraph)"));
+    return real.apply(this, arguments);
+  };
+})();
 
 function parseRand(v) {
   if (v === "low") return 0;
@@ -246,7 +259,7 @@ function runLoop(sc) {
 
 function resetRun() {
   D.steps = []; D.stepIdx = 0; D.rand = 0; D.events = []; D.log = []; D.exits = []; D.errors = []; D.stopped = null;
-  D.refreshAll = false; D.sabotage = []; D.replaySet = {}; D.refreshDiffs = []; D.refreshChecks = 0; D.refreshSkipped = 0;
+  D.refreshAll = false; D.sabotage = []; D.replaySet = {}; D.refreshDiffs = []; D.refreshChecks = 0; D.refreshSkipped = 0; D.deadSpace = [];
 }
 
 // Builds a character by picking a dev-menu preset. With no preset, returns the menu's option texts instead.
@@ -321,7 +334,7 @@ function play(scn) {
     status: status, text: plainTranscript(D.events), events: D.events.slice(), log: D.log.slice(), exits: D.exits.slice(),
     errors: D.errors.slice(), stopped: D.stopped, purseDelta: purse() - purseBefore, repDelta: stats.port_watch_rep - repBefore,
     hpBefore: hpBefore, hp: stats.hp_current, s: stats, watch: watch,
-    refreshDiffs: D.refreshDiffs.slice(), refreshChecks: D.refreshChecks, refreshSkipped: D.refreshSkipped
+    refreshDiffs: D.refreshDiffs.slice(), refreshChecks: D.refreshChecks, refreshSkipped: D.refreshSkipped, deadSpace: D.deadSpace.slice()
   };
 }
 
@@ -391,6 +404,10 @@ function formatText(scn, r, opts) {
   if (scn.refresh) {
     out.push("Refresh check: " + r.refreshChecks + " pages replayed, " + r.refreshSkipped + " skipped (started in another scene), " + diffs.length + " differences" + (known.length ? " (+" + known.length + " known engine difference)" : ""));
     diffs.slice(0, 12).forEach(function (d) { out.push("  - " + d); });
+  }
+  if (r.deadSpace && r.deadSpace.length) {
+    out.push("!! DEAD SPACE: " + r.deadSpace.length + " *line_break(s) printed an empty line on this run:");
+    r.deadSpace.slice(0, 8).forEach(function (d) { out.push("  - " + d); });
   }
   if (layoutWarnings) out.push("LAYOUT: " + layoutWarnings + " page(s) show a heading glued to the sentence before it (see !! above)");
   r.errors.forEach(function (e) { out.push("ERROR: " + e); });

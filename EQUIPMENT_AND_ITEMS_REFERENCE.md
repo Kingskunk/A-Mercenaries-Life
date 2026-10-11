@@ -43,6 +43,10 @@ Primary weapons and secondary sidearms can be equipped in the main-hand or store
 | `longshade_shortbow` | **Longshade Shortbow** | Two-Handed Ranged | `1d6 piercing` | Roan's Wheel Shop — **2s 5c**; sells back for 50% | Ranged weapon (DEX-based). Two-handed. Triggers Rogue Sneak Attack (+1d6). |
 | `timber_axe` | **Highland Hewing Axe** | One-Handed Melee | `1d8 slashing` | Master Torvald's Smithy (Alderford) or Halda's Forge (Port Valen) — **2s 5c** | One-handed felling axe (STR-based). Compatible with off-hand shields and Dueling Fighting Style (+2 damage). |
 | `stiletto` | **Alderford Stiletto** | One-Handed Finesse | `1d4 piercing` | Master Torvald's Smithy (Alderford) or Halda's Forge (Port Valen) — **1s 5c** | Refined file-steel thrusting blade. Finesse (STR or DEX). Triggers Rogue Sneak Attack (+1d6). |
+| `road_club` | **Wooden Club** | One-Handed Melee | `1d4 bludgeoning` | Not sold: dropped by robbers on the road (a robber with a club, 40%) — pawnbroker 35%, Roan's Wheel Shop 50% (**5c** retail) | A plain knotted club banded with iron at the head. |
+| `rough_spear` | **Rough Spear** | One-Handed Reach Melee | `1d6 piercing` | Not sold: dropped by robbers on the road (a robber with a spear, 40%) — pawnbroker 35%, Roan's Wheel Shop 50% (**8c** retail) | A straight ash pole with a wired-on iron head. Reach (STR-based): can attack from Close. |
+| `cord_sling` | **Cord Sling** | One-Handed Ranged | `1d4 bludgeoning` | Not sold: dropped by robbers on the road (a robber with a sling, 40%) — pawnbroker 35%, Roan's Wheel Shop 50% (**4c** retail) | Braided cord and a leather pouch for throwing stones. |
+| `hunting_bow` | **Hunting Bow** | Two-Handed Ranged | `1d6 piercing` | Not sold: dropped by robbers on the road (a robber with a bow, 40%) — pawnbroker 35%, Roan's Wheel Shop 50% (**15c** retail) | A plain yew stave with a waxed string. |
 
 ---
 

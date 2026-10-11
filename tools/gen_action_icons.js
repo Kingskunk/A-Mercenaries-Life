@@ -41,6 +41,14 @@ const MAP = {
   bardic_inspiration: "Action/Bardic_Inspiration_Icon.webp",
   dual_shot: "Weapon_action/Volley_Icon.webp",            // stand-in: a volley of arrows for loosing two shots at once
 
+  // The two weapon buttons at the left of the bar. Keyed by hand and attack kind, not by an action name, because the label is the weapon's own name ("Attack with your
+  // falchion"); battlehud.js picks the key from weapon_type / sidearm_type. These are the framed "Unfaded" 64px tiles, which fill the button on their own, so the button
+  // carries no word. A melee, finesse or reach weapon takes the sword tile; a ranged one takes the arrow.
+  primary_melee: "Weapon_action/Main_Hand_Attack_Unfaded_Icon.webp",
+  primary_ranged: "Weapon_action/Ranged_Attack_Unfaded_Icon.webp",
+  sidearm_melee: "Weapon_action/Off-Hand_Attack_Melee_Unfaded_Icon.webp",
+  sidearm_ranged: "Weapon_action/Off-Hand_Attack_Ranged_Unfaded_Icon.webp",
+
   // The fight's own buttons.
   flee: "Action/Jump_Running_Icon.webp",                  // a figure at a run
   use_item: "Interface/Elixir_Icon.png",

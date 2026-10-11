@@ -95,6 +95,8 @@
 *comment refresh_known_spells (character_progression.txt), which update_dnd_stats, fight_setup and the level-up page call, so a gate that asks "does the character know X" reads one flag and
 *comment never has to list the spell slots. A new slot (a fourth Bard spell, a fourth cantrip) is added to that one label and no gate changes. One flag per spell in spell-data.js.
 *create known_blade_ward false
+*create known_booming_blade false
+*create known_true_strike false
 *create known_chill_touch false
 *create known_eldritch_blast false
 *create known_fire_bolt false
@@ -584,6 +586,8 @@
 
 *comment --- RELATIONSHIPS & STANDING ---
 *create lyra_bond 0
+*create janna_bond 0
+*create talia_bond 0
 *create varren_respect 0
 *create vane_standing 0
 *create kestrel_respect 0
@@ -784,6 +788,8 @@
 *comment ysolde_timber_briefed: asked Ysolde about the held-up timber orders (she sends the player to Slipway Two). ysolde_timber_turned_in: the waybill went back to her.
 *comment vane_timber_hint: Vane told the player (in the summons scene) to see Ysolde about the held-up timber orders; it is what makes her workroom topic appear.
 *create vane_timber_hint false
+*comment vane_varren_hint: Vane told the player (in the summons scene) to look in on Varren, who has a job going; it is what makes the "Tell him Vane said..." topic appear in the armory shed (port_valen/varren_quests/varren_errand.txt).
+*create vane_varren_hint false
 *create ysolde_timber_briefed false
 *create ysolde_timber_turned_in false
 *create elric_alerted false
@@ -995,7 +1001,7 @@
 *create es_leg_to "tm"
 *create es_leg_name ""
 *create es_leg_head ""
-*comment The two ends of the line (hall_escort.txt es_set_line): es_start is the tile the player signs at, es_end the other end, es_place "yard" or "lot" where they return to, and es_ctx_* the wording for the place they are at.
+*comment The ends of the line (hall_escort.txt es_set_line): es_start is the tile the player signs at ("pv", "tm" or "af"), es_end the other end, es_place "yard", "lot" or "alot" where they return to, and es_ctx_* the wording for the place they are at.
 *comment At signing the wording is copied to rj_escort_dest_name, _opens and _place_text, which the road and the posting hub read.
 *create es_start "pv"
 *create es_end "tm"
@@ -1010,6 +1016,9 @@
 *create rj_escort_place_text "the wagon yard outside the River Gate"
 *create tm_lot_seen false
 *create tm_lot_show false
+*comment The Alderford carters' lot (alderford/wagon_lot.txt): af_lot_seen is the permanent first-visit flag, af_lot_show is derived by alderford.txt af_hours (a line is making up, or the player holds a job that sets out from here).
+*create af_lot_seen false
+*create af_lot_show false
 *comment The Wait menu (choicescript_stats.txt codex_wait). wait_lock_reason is empty when waiting is allowed and the reason shown to the player when it is not; anything that runs a long chain of its own (a dungeon run, the escort road)
 *comment sets it at the start and clears it at the end. wait_total_mins is the amount being waited; wait_in_* are the typed hours and minutes; wait_m_* and wait_t_* are the minutes and the short text to the next morning, midday, dusk and night.
 *create wait_lock_reason ""
@@ -1089,14 +1098,16 @@
 *create bc_head_seen false
 *create bc_lane_seen false
 *create bc_pasture_seen false
-*comment bc_loft_paid: the player has paid a household one copper for a hayloft bed (The Lane) and has not yet slept in it.
+*comment bc_loft_paid: the player has paid a household one copper for a hayloft bed (The Lane) and has not yet slept in it; bc_loft_seen keeps the household's first spoken exchange from repeating.
 *create bc_loft_paid false
-*comment Ashrun Holt (scenes/timbermouth/ashrun_holt/, the forest village): ah_seen is the first arrival, ah_speaker_seen the one-time meeting with the speaker Lysa Thorn in the Longhouse, ah_landing_seen and ah_clearing_seen the first visits, ah_bunk_paid a paid bunkhouse bed not yet slept in.
+*create bc_loft_seen false
+*comment Ashrun Holt (scenes/timbermouth/ashrun_holt/, the forest village): ah_seen is the first arrival, ah_speaker_seen the one-time meeting with the speaker Lysa Thorn in the Longhouse, ah_landing_seen and ah_clearing_seen the first visits, ah_bunk_paid a paid bunkhouse bed not yet slept in, and ah_bunk_seen keeps the bunkhouse keeper's first exchange from repeating.
 *create ah_seen false
 *create ah_speaker_seen false
 *create ah_landing_seen false
 *create ah_clearing_seen false
 *create ah_bunk_paid false
+*create ah_bunk_seen false
 *comment Roan's Wheel Shop (timbermouth/workshops.txt): tm_roan_seen is the player has met Edda (her one-time introduction), tm_works_talk_ash her one talk answer, tm_works_has_sale whether the player owns anything she buys (set by the shop page each time it opens).
 *create tm_roan_seen false
 *comment Marlow's General Store (timbermouth/general_store.txt): tm_store_seen is the first visit, tm_marlow_seen the one-time introduction, tm_store_has_sale whether the player owns anything he buys.
@@ -1107,15 +1118,83 @@
 *create tm_works_has_sale false
 *comment tm_watch_seen: the player has been through the watch post at the road end of Timbermouth (timbermouth.txt tm_arrive), which gives the one-time introduction.
 *create tm_watch_seen false
+*comment Marlcross (scenes/port_valen/marlcross/, the grain and carting village on the eastern high ground): mc_seen is the first arrival; each mc_<place>_seen flag keeps its place's first introduction from repeating. The working mill, storehouses and wainwright's yard remain Layer 1 scenery until they have gameplay to support.
+*create mc_seen false
+*create mc_hall_seen false
+*create mc_market_seen false
+*create mc_rest_seen false
+*comment The Wayfarer's Rest (port_valen/marlcross/wayfarers_rest.txt): a room costs mc_rest_rate_copper for 24 hours. Its stable yard is scenery; calendar.txt charges automatic village horse upkeep overnight.
+*create mc_rest_rate_copper 3
+*create mc_rest_room_until 0
+*create mc_rest_room_active false
+*comment Brinewick (scenes/port_valen/brinewick/, the salt-working village on the western tidal flats): bw_seen is the first arrival and bw_<place>_seen records the first visit to each of its three public places. The Tide House is civic, the Saltworks is the future trade anchor, and the Reedhouse is the village inn.
+*create bw_seen false
+*create bw_tide_house_seen false
+*create bw_saltworks_seen false
+*create bw_reedhouse_seen false
+*create bw_reedhouse_rate_copper 3
+*create bw_reedhouse_room_until 0
+*create bw_reedhouse_room_active false
 *comment Alderford (scenes/alderford/): alderford_seen records the first permanent-hub visit (codex_alderford unlocks the town's parent lore entry); af_arrival_seen keeps the High Grey Road arrival introduction from repeating. Individual places and their hours will add their own af_<place> flags as they are built.
 *create alderford_seen false
 *create af_arrival_seen false
+*comment The Factor's Hall (alderford/factors_hall.txt): af_hall_seen records the reusable hall's first visit; af_ok_hall and af_hall_closed_reason are derived by the Alderford hub every time it prints its menu. The two talk flags keep Orlov's optional local answers from repeating.
+*create af_hall_seen false
+*create af_ok_hall false
+*create af_hall_closed_reason ""
+*create af_hall_asked_trade false
+*create af_hall_asked_river false
+*comment The Lower Wharf Market (alderford/lower_wharf_market.txt): Alderford's unified bulk
+*comment market. Its commodity courts are narrative hooks for the future trade simulation, not
+*comment separate shops or a price system yet.
+*create af_market_seen false
+*create af_ok_market false
+*create af_market_closed_reason ""
+*comment The Timber Smithy (alderford/timber_smithy.txt): the permanent continuation of Torvald and Janna's prologue forge. The people flags come from that sequence; these flags only control this location's first view and optional repeat conversations. af_ok_smith and its closure reason are derived by alderford.txt af_hours.
+*create af_smith_seen false
+*create af_ok_smith false
+*create af_smith_closed_reason ""
+*create af_smith_talk_torvald false
+*create af_smith_talk_janna false
+*create af_smith_janna_checkin false
+*create af_market_talk_bran false
+*create af_chapel_seen false
+*create af_chapel_healed_day 0
+*create af_chapel_vigil_day 0
+*create af_chapel_talk_corbel false
+*comment Janna's relationship continuation uses the same numeric bond model as Lyra. Her prologue romance seeds the bond at 10; the alcove has one meaningful evening per campaign week, and later reuses the established intimacy sequence through janna_intimacy_return.
+*create af_janna_after_hours_seen false
+*create janna_first_private_tone ""
+*create janna_bond_seeded false
+*create janna_bond_week 0
+*create janna_intimacy_unlocked false
+*create janna_intimacy_return ""
+*create janna_intimacy_tone ""
+*create janna_bond_award_locked false
+*create locked_janna_bond_page_id 0
+*comment Talia's Curing Loft (alderford/talia_loft.txt): Talia's prologue intimacy now marks the
+*comment relationship explicitly. Older saves can infer it from the provisions received afterward.
+*comment Her permanent route begins with a private return visit and one meaningful evening each week.
+*comment At 20 Bond, mutual interest is named outright and a once-weekly overnight route becomes available.
+*create talia_romanced false
+*create af_talia_after_hours_seen false
+*create talia_first_private_tone ""
+*create talia_bond_seeded false
+*create talia_bond_week 0
+*create talia_intimacy_unlocked false
+*create talia_intimacy_tone ""
+*create talia_bond_award_locked false
+*create locked_talia_bond_page_id 0
+*comment The Drowned Oar (alderford/drowned_oar.txt): Maura's lower-wharf taphouse has its own 24-hour room key. af_oar_seen is only the permanent-town visit flag; the older prologue flags preserve whether the player already knows Maura and the cellar story.
+*create af_oar_seen false
+*create af_oar_rate_copper 4
+*create af_oar_room_until 0
+*create af_oar_room_active false
 *comment The Split Pine (timbermouth/split_pine_inn.txt): a room costs tm_inn_rate_copper for 24 hours (one under the Wagoner's Rest); tm_inn_room_until is the minute the room runs out (as mw_inn_room_until);
 *comment tm_inn_room_active is the key in the player's hand; the two talk flags are Ressa's one-time answers.
 *create tm_inn_rate_copper 4
 *create tm_inn_room_until 0
 *create tm_inn_room_active false
-*create tm_inn_talk_house false
 *create tm_inn_talk_brother false
 *create tm_ok_market false
 *create tm_ok_store false
@@ -1138,14 +1217,133 @@
 *create ow_from_name ""
 *create ow_dest_name ""
 *create ow_trip_locked false
+*comment Road events (overworld.txt ow_travel and ow_event, travel_events.txt): ow_event_id is the event the journey met ("none" when it met nothing), ow_goal the tile the interrupted trip was bound for ("none" when
+*comment the trip was not interrupted), ow_event_last_day the campaign day of the last one (the cooldown; 0 means none yet), ow_event_force an event id a test or the developer menu wants next.
+*comment A journey is walked mile by mile on one page. ow_trip_active is true while it is, and tells update_hub_condition to leave its level-up and weather refresh for the map page; exposure_gear_cached
+*comment and exposure_gear_cut* hold the worn gear's cuts for the whole walk (calendar.txt exposure_gear_prime); buff_count_now is scratch for advance_time's buff check.
+*create ow_trip_active false
+*create ow_step_halt false
+*create exposure_gear_cached false
+*create exposure_gear_cutc 0
+*create exposure_gear_cutw 0
+*create exposure_gear_cuth 0
+*create buff_count_now 0
+*create ow_event_seed 0
+*comment A road event's person and variety (travel_events.txt te_person): te_variant 0 to 2 picks one of the event's small variations, te_extra 0 to 4 varies the thanks, te_means is what the player can do about it
+*comment (their own light, flint, a cantrip, darkvision), te_sub/te_sub_cap/te_obj/te_pos are the stranger's pronouns, te_dc and te_ok are the check, te_pay the coppers the stranger presses on the player.
+*create te_first ""
+*create te_look ""
+*create te_look_mid ""
+*create te_sub "he"
+*create te_sub_cap "He"
+*create te_obj "him"
+*create te_pos "his"
+*create te_variant 0
+*create te_extra 0
+*create te_means "none"
+*create te_dc 11
+*create te_ok false
+*create te_pay 0
+*create te_pay_text ""
+*comment The two fighting road events (travel_events.txt te_bandits and te_night_beasts): te_foe1 and te_foe2 are the library types of the two robbers, te_arm1 and te_arm2 what they carry, te_cover where the first
+*comment stepped out from, te_kind and te_danger the tile's kind and effective danger, te_beast which creature the night brought, te_flat the bonus a light or flame gives a check, te_lost and te_loot the coppers
+*comment taken from or found by the player.
+*comment The animal in the trap and the lost traveller: te_creature, te_creature_cap, te_hold and te_notice describe the animal, te_swa_hint is what Speak with Animals would cost, te_town is the nearest settlement, te_mend
+*comment is true when a known Mending cantrip does the work (the stranded cart).
+*comment A camp event (travel_events.txt te_share_fire, planned by overworld.txt ow_camp_pre): te_company is "host" (the player shared their fire), "guest" (they shared a stranger's) or "none", ow_camp_fire_shared makes
+*comment the night's cold count as a fire's (calendar.txt calc_exposure), te_fire is whether the player can light one, te_dark names the hour for the prose. ow_here clears ow_camp_fire_shared; te_company is set by the event or by ow_camp_pre and only READ by ow_camp, so a replay of the camp page prints the same morning. ow_campev_* is the plan's page lock.
+*create te_company "none"
+*create ow_camp_fire_shared false
+*create te_fire false
+*create te_dark "dark"
+*create ow_campev_locked false
+*create locked_ow_campev_page_id 0
+*comment The ford (travel_events.txt te_ford): te_level is how high the water is ("low", "normal", "high"), stored under te_level_locked's page lock; te_wait_mins is the three hours the player may wait out; te_wet
+*comment doubles the exposure of the hour after a bad crossing (te_clock); te_hurt is the hit points the river took (1 to 3).
+*create te_level "normal"
+*create te_level_locked false
+*create locked_te_level_page_id 0
+*create te_wait_mins 0
+*create te_wet false
+*create te_hurt 0
+*comment The first mount (timbermouth/barleycross/pasture.txt, the horse): has_horse is true while the player owns one; horse_* is the one they own (name, coat, mare or gelding, and its pronouns); horse_place is where the dealer scene was entered ("bc" the Barleycross rail, "mw" the Port Valen stable yard); pen_* and sel_* are the
+*comment horse in the pen and the person selling it, rebuilt from horse_seed (the five-day block) each visit; horse_price is in copper (300, or 270 after a successful bargain), horse_haggled is true once the player tries.
+*comment The stable's bill (calendar.txt horse_upkeep): horse_rate is the copper a day where the horse is stabled (1 in a village, 2 otherwise), horse_owed what is due and not yet paid, horse_unpaid_days how many days
+*comment it has gone unpaid (the third keeps the horse), horse_kept_name and horse_kept_day say which horse the stable kept and when, for the hub header.
+*create has_horse false
+*create horse_place "bc"
+*create horse_rate 2
+*create horse_owed 0
+*create horse_unpaid_days 0
+*create horse_kept_name ""
+*create horse_kept_day 0
+*create horse_name ""
+*create horse_coat ""
+*create horse_sex "mare"
+*create horse_sub "she"
+*create horse_sub_cap "She"
+*create horse_obj "her"
+*create horse_pos "her"
+*create pen_name ""
+*create pen_coat ""
+*create pen_sex "mare"
+*create pen_sub "she"
+*create pen_sub_cap "She"
+*create pen_obj "her"
+*create pen_pos "her"
+*create pen_temper 0
+*create sel_first ""
+*create sel_look ""
+*create sel_sub "she"
+*create sel_sub_cap "She"
+*create sel_pos "her"
+*create horse_seed 7000
+*create horse_price 300
+*create horse_price_silver 30
+*create horse_haggled false
+*create bc_horse_locked false
+*create locked_bc_horse_page_id 0
+*create te_creature ""
+*create te_creature_cap ""
+*create te_hold ""
+*create te_notice ""
+*create te_swa_hint ""
+*create te_town ""
+*create te_mend false
+*create te_foe1 "maceman"
+*create te_foe2 "slinger"
+*create te_arm1 ""
+*create te_arm2 ""
+*create te_cover ""
+*create te_kind "road"
+*create te_danger 0
+*create te_beast "wolves"
+*create te_flat 0
+*create te_lost 0
+*create te_lost_text ""
+*create te_loot 0
+*create te_drop1 ""
+*create te_drop2 ""
+*create te_drop1_name ""
+*create te_drop2_name ""
+*create te_loot_text ""
+*create ow_event_id "none"
+*create ow_goal "none"
+*create ow_event_last_day 0
+*create ow_event_force ""
 *create locked_ow_trip_page_id 0
-*comment A journey is walked leg by leg (ow_legs of them, ow_leg_i the one in hand, ow_leg_minutes its length) so each leg is charged the weather of the moment, and ow_rations_total counts the trail
-*comment rations eaten over the whole trip. ow_exposure_pct is what the weather and the gear add to hunger and fatigue right now, kept for the map card. ow_can_camp is set on every overworld page
+*comment A journey is walked mile by mile inside its road legs (ow_legs, ow_leg_i and ow_leg_mile_i), so its pace can change at dusk, night and dawn. ow_night_stops/ow_night_wait_mins record forced roadside halts when darkness has no usable light or visibility is poor; ow_rations_total counts food over the whole trip. ow_exposure_pct is what the weather and the gear add to hunger and fatigue right now, kept for the map card. ow_can_camp is set on every overworld page
 *comment (not in a town). The camp page has its own page lock (ow_camp_locked) and keeps ow_camp_wet, whether it was raining when the player lay down, for its prose.
 *create ow_legs 0
 *create ow_leg_i 0
 *create ow_leg_minutes 0
+*create ow_leg_miles 0
+*create ow_leg_mile_i 0
 *create ow_rations_total 0
+*create ow_has_night_light false
+*create ow_night_stops 0
+*create ow_night_wait_mins 0
+*create ow_night_halt_reason "light"
 *create ow_exposure_pct 0
 *create ow_can_camp false
 *comment ow_water: the tile has fresh water (a stream, river or shore), set by ow_here and read by equipment.txt water_at_hand. The tile's climate goes into climate_shift (calendar.txt) the same way.
@@ -1342,6 +1540,84 @@
 *create a_key_records_done false
 *create a_key_mark_done false
 *create a_key_runner_done false
+*comment Varren's Errand: the string of killings in the city (port_valen/varren_quests/varren_errand.txt owns every scene; the armory shed in port_valen.txt owns only the entry button).
+*comment slasher_hook_seen is set once Varren has laid the case out, slasher_asked_trent once the player has asked what he makes of the militia captain.
+*create slasher_quest_stage "unstarted"
+*create slasher_resolution ""
+*create slasher_hook_seen false
+*create slasher_asked_trent false
+*comment The militia post (varren_errand.txt slasher_post): slasher_trent_met is set once the player has stood in front of Trent and made a first decision; slasher_proof_pressed and slasher_trent_sized
+*comment are the two one-shot options in his office; slasher_trent_read is the Insight result (true: the player saw through the cellar-door mark on the map, false: they trusted it, which costs them at the manor);
+*comment slasher_has_warrant is set when the player takes the warrant and the map.
+*create slasher_trent_met false
+*create slasher_proof_pressed false
+*create slasher_trent_sized false
+*create slasher_trent_read false
+*create slasher_has_warrant false
+*comment The street talk (varren_errand.txt slasher_rumor_*): a one-shot ambient rumor about the earlier victims at each of the three places (the baths' hot room, the Cleaved Keel, the Wagoner's Rest),
+*comment while the quest is unstarted or active, and while it is active a Charisma check there to ask about Ulrich, tried once per place. slasher_alibi_known (Ulrich was in Alderford the nights of the
+*comment 5th to 7th murders) and slasher_survivor_known (a mercenary of Trent's is dying in the Cathedral) are what the check finds; slasher_trent_warned is set when a try goes wrong and someone carries
+*comment word to Trent (the confrontation reads it). slasher_ask_place is scratch for the place the player is in.
+*create slasher_rumor_baths_heard false
+*create slasher_rumor_keel_heard false
+*create slasher_rumor_inn_heard false
+*create slasher_ask_baths_tried false
+*create slasher_ask_keel_tried false
+*create slasher_ask_inn_tried false
+*create slasher_alibi_known false
+*create slasher_survivor_known false
+*create slasher_trent_warned false
+*create slasher_ask_place ""
+*comment Aftermath rumors (varren_errand.txt slasher_after_*): one each at the baths, the Cleaved Keel and the Wagoner's Rest once the case has ended, an arrest or an escape.
+*create slasher_after_baths_heard false
+*create slasher_after_keel_heard false
+*create slasher_after_inn_heard false
+*comment The wounded mercenary in the Cathedral's Althea chapel (varren_errand.txt slasher_kenny*): slasher_kenny_seen is set when the player has stood at the cot and made a first choice there;
+*comment slasher_kenny_haversack (the plan and Trent's note were taken), slasher_hand_matched (the player held Trent's own warrant and compared the hand), slasher_kenny_roused (the one try at waking him
+*comment is spent), slasher_kenny_spoke (the try worked and he named Trent), slasher_kenny_warrant (the try failed and a second warrant fell out of his boot). The confrontation reads the four evidence flags.
+*create slasher_kenny_seen false
+*create slasher_kenny_haversack false
+*create slasher_hand_matched false
+*create slasher_kenny_roused false
+*create slasher_kenny_spoke false
+*create slasher_kenny_warrant false
+*comment Avir Manor (varren_errand.txt slasher_manor*, a lane off the Avenue of Estates in the Patrician Quarter): slasher_gate_warrant_tried is set once the player has shown Trent's warrant at the Inner Gate (the gate
+*comment will not take a militia seal); slasher_manor_seen once they have stood in front of the house and chosen; slasher_manor_dc is 16 by day and 12 at dusk and after dark for the stealth run and the lock;
+*comment slasher_manor_route is how the visit went ("stealth", "wall", "lock", "bite" or "door"); slasher_kennel_seen means the player saw through the cellar door on Trent's plan; slasher_bite_dmg is the dogs' bite
+*comment under its lock. Evidence: slasher_alibi_proof (the Alderford receipts, taken in the study or handed over by Ulrich), slasher_journal_seen (the study journal names Trent's forged orders),
+*comment slasher_ulrich_met (the player was brought before Ulrich and heard his terms). slasher_manor_done closes the visit for good.
+*create slasher_gate_warrant_tried false
+*create slasher_manor_seen false
+*create slasher_manor_dc 12
+*create slasher_manor_route ""
+*create slasher_kennel_seen false
+*create slasher_bite_dmg 0
+*create slasher_alibi_proof false
+*create slasher_journal_seen false
+*create slasher_ulrich_met false
+*create slasher_manor_done false
+*comment The confrontation, chase and fight (varren_errand.txt slasher_confront*, slasher_chase*, slasher_fight*): slasher_ev is how many pieces of evidence the player holds (the receipts, the haversack, Kenny's
+*comment word, the second warrant) and slasher_pressure how hard the player leans on Trent with them (a piece each, one more for a matched hand and one more for the scrubbed knife seen by Insight); two or more breaks
+*comment him, one does not and he knows he is hunted (slasher_trent_warned). slasher_chase_mod is +2 on every chase DC when he was warned; slasher_c1 to slasher_c3 say which chase beats were won and slasher_chase_wins counts them at the end (two of three catch him);
+*comment slasher_chase_dc and slasher_fire_dmg are scratch. slasher_resolution is "arrested" or "escaped" (stage "resolved" or "failed"); slasher_reported is set when the player has told Varren, who pays the
+*comment arrested ending. slasher_has_proof is set by searching Trent after the fight.
+*create slasher_ev 0
+*create slasher_pressure 0
+*create slasher_chase_mod 0
+*create slasher_chase_wins 0
+*create slasher_c1 false
+*create slasher_c2 false
+*create slasher_c3 false
+*create slasher_chase_dc 12
+*create slasher_fire_dmg 0
+*create slasher_has_proof false
+*create slasher_reported false
+*comment Ulrich's reward: slasher_end_day is the campaign day Trent was arrested; three days later the next walk between districts by day brings his courier (port_valen_random_encounters.txt pv_re_roll,
+*comment which hands off to varren_errand.txt slasher_courier). The courier sets slasher_courier_done and gives a Registered Writ for patrician_reg_days days, replacing any writ held. The 15 Silver Marks
+*comment are collected at the manor (slasher_reward, a button on the Avenue of Estates) and paid once (slasher_reward_paid).
+*create slasher_end_day 0
+*create slasher_courier_done false
+*create slasher_reward_paid false
 *create a_key_lock_found false
 *create a_key_mark_found false
 *create a_key_in_shop false
@@ -1899,6 +2175,23 @@
 *comment from the slot's own combat_enemyN_range by fight_sync_target_in, same as hp/ac/atk_bonus above.
 *comment combat_opens_engaged: a caller sets this true for a fight that is already hand to hand (see the OPENING DISTANCE note in combat_roll_initiative); fight_cleanup clears it.
 *create combat_opens_engaged false
+*comment combat_multiattack_slot: a caller sets this to an enemy slot number (1 to 6) for a fight in which that enemy makes a second, weaker strike each turn (a smaller die, no special move; combat.txt
+*comment fight_enemy_extra_attack, called after its first attack in both melee branches of the enemy turn). 0 is none. fight_cleanup clears it.
+*create combat_multiattack_slot 0
+*comment Booming Blade (wizard and warlock cantrip, combat.txt): an ACTION that is one melee weapon attack. The hub option sets booming_armed (and booming_side for the sidearm) for that one swing only; a hit (combat_dice.txt resolve_player_weapon_hit) sets combat_enemyN_booming on the
+*comment struck enemy; when that enemy moves of its own accord (fight_booming_trigger, called at each voluntary enemy move in the enemy turn) it takes 1d8 thunder damage and the flag ends, before its attack.
+*comment A forced move (Shove) does not trigger it. combat_boom_killed is the trigger's answer to its caller. fight_cleanup clears the flags.
+*create booming_armed false
+*create booming_side false
+*create combat_boom_killed false
+*comment combat_enemy0_booming is the inert slot-0 placeholder quicktest's branch walk needs (like combat_enemy0_move2_picked); it is never read by a real turn.
+*create combat_enemy0_booming false
+*create combat_enemy1_booming false
+*create combat_enemy2_booming false
+*create combat_enemy3_booming false
+*create combat_enemy4_booming false
+*create combat_enemy5_booming false
+*create combat_enemy6_booming false
 *create combat_enemy_range 0
 *comment Opportunity attacks (2026-09-28), the bare "active target" scratch copy, synced by fight_sync_target_in
 *comment from combat_enemyN_oa_used exactly like the range line above. True means THIS enemy has already spent
@@ -2122,6 +2415,9 @@
 *comment Set true by resolve_weapon_attack_choice alone, read and reset by fight_check_enemy_hp (both combat.txt)
 *comment -- the one flag that tells the shared damage-resolution tail to spend an attack instead of an action.
 *create combat_pending_spend_is_attack false
+*comment True Strike (cantrip, combat.txt): an action that is a weapon attack made with the spellcasting ability. true_strike_on is set by the hub option and cleared by fight_attack_spent; true_strike_radiant is the player's pick of Radiant over the weapon's own damage type.
+*create true_strike_on false
+*create true_strike_radiant false
 *create combat_attack_spend_locked false
 *create locked_combat_attack_spend_page_id 0
 *create combat_attack_grant_locked false
@@ -2560,7 +2856,6 @@
 *create dg_hurt 0
 *create dg_wet 0
 *create dg_silt_mouse_met false
-*create dg_dev_fight false
 *comment dg_dev_entry: this run was started from the Developer menu, so every exit goes back to it. The street entrances (pvsc_enter_*) set it false.
 *create dg_dev_entry false
 *comment mw_cistern_open: the stone cover in the Middle Ward wash-house yard is barred from above (an iron bar across it) until the player has come UP through it from the dungeon once; that first climb knocks the bar free for good.
@@ -2570,7 +2865,6 @@
 *create dg_cistern_first false
 *create dg_cistern_locked false
 *create locked_dg_cistern_page_id 0
-*create dg_dev_fight_id "none"
 *create dg_silt_camp_looted false
 *create dg_swa_can false
 *create dg_swa_cost "none"
@@ -2596,6 +2890,10 @@
 *comment in combat_next_turn's enemy branch -- set fresh by find_intercepting_ally (combat.txt) every time that
 *comment branch runs, so it never needs an external reset the way combat_ally<N>_target below does.
 *create combat_intercepting_ally 0
+*comment Nearest-target closing (2026-10-11): which ally slot (1-4, 0 = none) the MELEE enemy currently dispatching has picked as its nearest target when that ally is not yet
+*comment in reach, so the enemy must close on it instead of on the player. Set fresh by choose_melee_enemy_target (combat_ai.txt) every enemy turn; an ally already in reach goes in
+*comment combat_intercepting_ally instead, exactly as before.
+*create combat_enemy_goal_ally 0
 *comment Total pre-declared enemy slots (widened from 3 to 6, 2026-09-27). ChoiceScript has no arrays, so this
 *comment is the real ceiling on how many enemies one fight can hold; every loop below reads it instead of a
 *comment literal, so raising it later is: bump this number, *create the new slot's variables (mirroring an
@@ -4023,6 +4321,10 @@
 *comment GEN:BEGIN gear_creates -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
 *create has_timber_axe false
 *create has_stiletto false
+*create has_road_club false
+*create has_rough_spear false
+*create has_cord_sling false
+*create has_hunting_bow false
 *create has_iron_crowbar false
 *create has_torvald_iron_sallet false
 *create has_torvald_hide_cap false
@@ -4069,6 +4371,10 @@
 *create has_wooden_clogs false
 *create spare_timber_axe 0
 *create spare_stiletto 0
+*create spare_road_club 0
+*create spare_rough_spear 0
+*create spare_cord_sling 0
+*create spare_hunting_bow 0
 *create spare_iron_crowbar 0
 *create spare_torvald_iron_sallet 0
 *create spare_torvald_hide_cap 0
@@ -4163,6 +4469,10 @@
 *create cart_buy_wooden_clogs 0
 *create cart_sell_timber_axe 0
 *create cart_sell_stiletto 0
+*create cart_sell_road_club 0
+*create cart_sell_rough_spear 0
+*create cart_sell_cord_sling 0
+*create cart_sell_hunting_bow 0
 *create cart_sell_iron_crowbar 0
 *create cart_sell_torvald_iron_sallet 0
 *create cart_sell_torvald_hide_cap 0

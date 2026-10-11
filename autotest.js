@@ -170,8 +170,28 @@ var gameTitle, authorIncluded;
 var gotoSceneLabels = {};
 
 // enumerate scenes; gather visited labels
+//
+// FOCUSED RUN (2026-10-09): `node quicktest.js mygame scene [scene...]` tests only the scenes named. The full game also walks every label another scene jumps or calls
+// into (gotoSceneLabels, built by the scan below), so a scene that is only ever entered at a label (hall_escort.txt, a library scene) has its labels walked there. A focused run
+// used to skip the scan and so left such a scene almost wholly UNTESTED. It now scans EVERY scene file (a cheap text pass) for those entry labels, but adds none of the callers to
+// the list, so only the named scenes are walked. A full run is the check before a commit; a focused run is the check while a scene is being written.
+var focusedScan = !fullGame;
+var scanList = list;
+if (focusedScan) {
+  scanList = [];
+  (function walk(dir, rel) {
+    var names = fs.readdirSync(dir);
+    for (var n = 0; n < names.length; n++) {
+      var full = dir + "/" + names[n];
+      if (fs.statSync(full).isDirectory()) walk(full, rel + names[n] + "/");
+      else if (/\.txt$/.test(names[n])) scanList.push(rel + names[n]);
+    }
+  }("web/" + gameName + "/scenes", ""));
+}
+var addFileForTest = addFile;
+if (focusedScan) addFile = function () {};
 
-if (fullGame) {
+if (fullGame || focusedScan) {
   (function(){
     function parseSceneList(lines, lineNum) {
       var nextIndent = null;
@@ -208,9 +228,9 @@ if (fullGame) {
     }
 
 
-    for (var i = 0; i < list.length; i++) {
+    for (var i = 0; i < scanList.length; i++) {
       try {
-        var fileName = list[i];
+        var fileName = scanList[i];
         var sceneName = fileName.replace(/\.txt$/, "");
         verifyFileName("scenes", fileName);
         var sceneText = slurpFile("web/"+gameName+"/scenes/"+fileName, true /*throwOnError*/);
@@ -264,6 +284,7 @@ if (fullGame) {
     }
   }());
 }
+addFile = addFileForTest;
 
 
 
@@ -309,7 +330,7 @@ if (!exitCode) {
     print(uncoveredScene.lines.join(" UNTESTED " + uncoveredScene.name + "\n"));
   }
   for (var sceneFile of fs.readdirSync("web/"+gameName+"/scenes")) {
-    if (/\.txt$/.test(sceneFile) && !list.includes(sceneFile)) {
+    if (fullGame && /\.txt$/.test(sceneFile) && !list.includes(sceneFile)) {
       print("UNTESTED " + sceneFile + "\n");
     }
   }

@@ -437,24 +437,64 @@ button#statSidebar .turnRow,
 #statSidebar .terrainDirection { display: inline-flex; align-items: center; gap: 2px; margin-left: 3px; }
 #statSidebar .terrainDirection b { color: var(--ch-brass); font: 700 8px/1 var(--ch-font-ui); letter-spacing: 0.08em; }
 /* Persistent battlefield strip: neutral nodes are ordinary ground; only special terrain gets an icon. Keeping the
-   whole lane visible avoids hiding a useful position simply because no combatant has reached it yet. */
-#statSidebar .battlefieldStrip { margin: -1px 0 8px; padding: 5px 0 7px; border-bottom: 1px solid var(--ch-line); overflow-x: auto; }
-#statSidebar .battlefieldStripHead { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.09em; font: 700 9px/1 var(--ch-font-head); color: var(--ch-brass); }
-#statSidebar .battlefieldStripHead small { font: 500 8px/1 var(--ch-font-ui); color: var(--ch-dim); letter-spacing: 0.04em; text-transform: none; }
-#statSidebar .battlefieldLane { min-width: 238px; display: flex; align-items: flex-start; justify-content: space-between; gap: 2px; }
-#statSidebar .battlefieldNode { position: relative; flex: 1 1 0; min-width: 22px; display: grid; justify-items: center; gap: 2px; color: var(--ch-dim); font: 600 7px/1 var(--ch-font-ui); text-align: center; }
+   whole lane visible avoids hiding a useful position simply because no combatant has reached it yet.
+   (2026-10-11) Legible labels, the terrain icon is the node itself, and the combatants sit in a row UNDER it, so a
+   crowded tile never hides the terrain. Hovering a node opens the shared #csTip card (see paintNodeCard). */
+#statSidebar .battlefieldStrip { margin: -1px 0 8px; padding: 5px 0 8px; border-bottom: 1px solid var(--ch-line); }
+#statSidebar .battlefieldScroll { overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+#statSidebar .battlefieldStripHead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.09em; font: 700 12px/1 var(--ch-font-head); color: var(--ch-brass); }
+#statSidebar .battlefieldStripHead small { font: 600 11px/1.1 var(--ch-font-ui); color: var(--ch-dim); letter-spacing: 0.02em; text-transform: none; text-align: right; }
+#statSidebar .battlefieldLane { min-width: 100%; width: max-content; display: flex; align-items: flex-start; justify-content: space-between; gap: 0; }
+#statSidebar .battlefieldNode { position: relative; flex: 1 1 0; min-width: 34px; display: grid; justify-items: center; align-content: start; gap: 3px; color: var(--ch-dim); font: 600 10.5px/1 var(--ch-font-ui); text-align: center; cursor: default; }
 #statSidebar .battlefieldNode > b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: inherit; }
-#statSidebar .battlefieldNodeCore { position: relative; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 1px; width: 17px; min-height: 17px; border: 1px solid var(--ch-line-hi); border-radius: 50%; background: rgba(0,0,0,0.3); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.35); }
-#statSidebar .battlefieldNode:not(:last-child)::after { content: ""; position: absolute; top: 14px; left: calc(50% + 10px); width: calc(100% - 17px); height: 1px; background: var(--ch-line); z-index: 0; }
+#statSidebar .battlefieldNodeCore { position: relative; display: block; width: 26px; height: 26px; border: 1px solid var(--ch-line-hi); border-radius: 50%; background: rgba(0,0,0,0.3); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.35); }
+#statSidebar .battlefieldNode:not(:last-child)::after { content: ""; position: absolute; top: 27px; left: calc(50% + 14px); width: calc(100% - 28px); height: 1px; background: var(--ch-line); z-index: 0; }
 #statSidebar .battlefieldNode.here { color: var(--ch-brass); }
 #statSidebar .battlefieldNode.here .battlefieldNodeCore { border-color: var(--ch-brass); box-shadow: 0 0 0 1px rgba(201,151,68,0.22), inset 0 0 0 1px rgba(0,0,0,0.35); }
+#statSidebar .battlefieldNode:hover .battlefieldNodeCore { border-color: var(--ch-brass); }
 #statSidebar .battlefieldTerrain { position: absolute; inset: 1px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 50%; background: rgba(0,0,0,0.2); }
-#statSidebar .battlefieldTerrain > span { display: grid; place-items: center; width: 14px; height: 14px; color: var(--ch-brass); font-size: 9px; }
-#statSidebar .battlefieldTerrain img { width: 14px; height: 14px; object-fit: cover; }
-#statSidebar .battlefieldPawn { position: relative; z-index: 1; display: block; width: 5px; height: 5px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.75); box-shadow: 0 0 0 1px rgba(255,255,255,0.18); }
-#statSidebar .battlefieldPawn.player { background: var(--ch-brass); }
-#statSidebar .battlefieldPawn.ally { background: var(--ch-info); }
-#statSidebar .battlefieldPawn.enemy { background: var(--ch-bad); }
+#statSidebar .battlefieldTerrain > span { display: grid; place-items: center; width: 20px; height: 20px; color: var(--ch-brass); font-size: 14px; }
+#statSidebar .battlefieldTerrain > span + span { display: none; }   /* two kinds on one tile: the first fills the node, both are named in the card */
+#statSidebar .battlefieldTerrain img { width: 22px; height: 22px; object-fit: cover; }
+/* the combatants on a tile: a row under it, never over the terrain */
+#statSidebar .battlefieldPawns { display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; gap: 2px; max-width: 100%; min-height: 15px; }
+#statSidebar .battlefieldPawn, #statSidebar .idChip, #csTip .idChip { display: inline-grid; place-items: center; box-sizing: border-box; width: 15px; height: 15px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.75); box-shadow: 0 0 0 1px rgba(255,255,255,0.18); color: #14100d; font: 800 10px/1 var(--ch-font-ui); font-style: normal; }
+#statSidebar .battlefieldPawn.player, #statSidebar .idChip.player, #csTip .idChip.player { background: var(--ch-brass); }
+#statSidebar .battlefieldPawn.ally, #statSidebar .idChip.ally, #csTip .idChip.ally { background: var(--ch-info); }
+#statSidebar .battlefieldPawn.enemy, #statSidebar .idChip.enemy, #csTip .idChip.enemy { background: var(--ch-bad); }
+/* the same chip in front of a turn-order name ties a dot on the lane to its card; hovering either lights both */
+#statSidebar .idChip { width: 14px; height: 14px; margin-right: 4px; font-size: 9.5px; vertical-align: -3px; }
+#statSidebar .battlefieldPawn.linked, #statSidebar .idChip.linked { box-shadow: 0 0 0 2px var(--ch-brass); transform: scale(1.15); }
+#statSidebar .turnRow[data-linked] { outline: 1px solid var(--ch-brass); outline-offset: -1px; }
+#csTip .tNode { margin-top: 5px; max-width: 250px; white-space: normal; }
+#csTip .tNode b { color: var(--ch-brass); font-weight: 700; }
+#csTip .tNode p { margin: 0 0 3px; color: var(--ch-head-text); }
+#csTip .tWho { margin-top: 6px; padding-top: 5px; border-top: 1px solid rgba(255,255,255,0.12); white-space: normal; max-width: 250px; }
+#csTip .tWho div { display: flex; align-items: center; gap: 5px; margin-top: 2px; }
+#csTip .tWho .idChip { margin: 0; width: 14px; height: 14px; font-size: 9.5px; }
+#csTip .tWho span.hp { margin-left: auto; color: var(--ch-dim); padding-left: 8px; }
+/* (2026-10-11) The lane dots are the targets now: a ring shows each one's HP, a click picks it (or hands it a Magic Missile dart, or the heal),
+   and a brass outline marks the picked one. The hover card is the enemy stat card, the same one the turn-order rows open. */
+#statSidebar .battlefieldPawn {
+  --pawn: var(--ch-dim); position: relative; width: 17px; height: 17px; border: 2px solid transparent; box-shadow: none;
+  background: linear-gradient(var(--pawn), var(--pawn)) padding-box, conic-gradient(var(--pawn) calc(var(--hp, 100) * 1%), rgba(0,0,0,0.62) 0) border-box;
+}
+#statSidebar .battlefieldPawn.player { --pawn: var(--ch-brass); background: linear-gradient(var(--pawn), var(--pawn)) padding-box, conic-gradient(var(--pawn) calc(var(--hp, 100) * 1%), rgba(0,0,0,0.62) 0) border-box; }
+#statSidebar .battlefieldPawn.ally { --pawn: var(--ch-info); background: linear-gradient(var(--pawn), var(--pawn)) padding-box, conic-gradient(var(--pawn) calc(var(--hp, 100) * 1%), rgba(0,0,0,0.62) 0) border-box; }
+#statSidebar .battlefieldPawn.enemy { --pawn: var(--ch-bad); background: linear-gradient(var(--pawn), var(--pawn)) padding-box, conic-gradient(var(--pawn) calc(var(--hp, 100) * 1%), rgba(0,0,0,0.62) 0) border-box; }
+#statSidebar .battlefieldPawns { min-height: 17px; gap: 3px; }
+#statSidebar .battlefieldPawn[data-target], #statSidebar .battlefieldPawn[data-friendly] { cursor: pointer; }
+#statSidebar .battlefieldPawn[data-target]:hover, #statSidebar .battlefieldPawn[data-friendly]:hover { transform: scale(1.15); }
+#statSidebar .battlefieldPawn.picked { outline: 2px solid var(--ch-brass); outline-offset: 1px; }
+#statSidebar .battlefieldPawn.linked { box-shadow: 0 0 0 2px var(--ch-brass); transform: scale(1.15); }
+#statSidebar .pawnDarts { position: absolute; top: -7px; right: -8px; min-width: 12px; height: 12px; padding: 0 2px; box-sizing: border-box; display: grid; place-items: center; border-radius: 7px; background: var(--ch-brass); color: #14100d; font: 800 9px/1 var(--ch-font-ui); border: 1px solid rgba(0,0,0,0.7); }
+/* the folded list: its summary line is the order of play, as the same chips, with whoever acts next lit */
+#statSidebar .orderSum { display: inline-flex; align-items: center; gap: 3px; }
+#statSidebar .orderSum .idChip { margin: 0; vertical-align: 0; }
+#statSidebar .orderSum .idChip.actsNext { box-shadow: 0 0 0 2px var(--ch-brass); }
+#statSidebar .orderSum .orderArrow { color: var(--ch-dim); font-size: 10px; }
+#csTip .tExtra { margin-top: 4px; color: var(--ch-dim); font-size: 11.5px; font-style: italic; white-space: normal; max-width: 250px; }
+#csTip .tExtra.darts { color: var(--ch-brass); font-style: normal; font-weight: 700; }
 #statSidebar .dartsTag {                      /* Magic Missile dart count, prefixed before the name */
   font-weight: 700;
   color: var(--ch-info);
@@ -670,7 +710,7 @@ button#statSidebar .turnRow,
   // Sidebar sections that fold away like the spellbook (2026-10-02): Stats under the name, and Today. The open/closed flags live here, not on the <details>, because
   // the sidebar's innerHTML is rebuilt every 400ms; the summary click flips the flag (see the sidebar click handler). Both start closed; the HP bar, the name and
   // the turn order stay in view, and the folded Stats header still shows AC and the spell orbs.
-  var sbOpen = { stats: false, today: false, effects: true, abilities: true, profs: true, skills: true };   // the three Stats-view sections start open: opening Stats is asking to look   // Effects starts open (it only exists while something is active) and can be folded
+  var sbOpen = { stats: false, today: false, turnorder: true, effects: true, abilities: true, profs: true, skills: true };   // the three Stats-view sections start open: opening Stats is asking to look   // Effects starts open (it only exists while something is active) and can be folded
   // The sidebar has two views of the same column: "status" (HP, condition, Today / Turn Order, spellbook, quests, effects) and "stats" (the six scores, every skill's
   // modifier, proficiency): the things that rarely change. The name banner toggles it. Held here, not in the DOM, because the sidebar is rebuilt every 400ms.
   var sbView = "status";
@@ -778,34 +818,93 @@ button#statSidebar .turnRow,
       (advance ? "<span class=\"terrainDirection\"><b>ADV</b>" + advance + "</span>" : "") +
       (retreat ? "<span class=\"terrainDirection\"><b>RET</b>" + retreat + "</span>" : "") + "</span>";
   }
+  // Short lane names for the strip: the full names ("Mid-Range", "Long Range") do not fit a node at a readable size. The hover card spells them out.
+  function laneShortName(rel, s) {
+    var full = rangeTierName(rel, s);
+    return full === "Mid-Range" ? "Mid" : (full === "Long Range" ? "Long" : full);
+  }
+  // What each terrain does, in one line, for the hover card. These restate the rules in quest/GAMEPLAY_MECHANICS_RULES.md ("Terrain Uses
+  // Generic Static Slots"); they do not decide anything, the game does. Change a rule there and change its line here.
+  var TERRAIN_RULES = {
+    cover: "+2 AC against ranged weapon and spell attacks for whoever stands here.",
+    high_ground: "A ranged attack from here gets +2 against a target not on high ground, and -2 against one that is.",
+    difficult_terrain: "One ordinary step only. Entering, leaving or standing in it uses all your movement for the turn, so no Dash.",
+    chokepoint: "Single file: one fighter holds the crossing, and a holder blocks the way past it.",
+    open_ground: "Nothing special."
+  };
+  // Who stands on one lane coordinate, in a fixed order: you, allies, enemies. Chip text matches the turn-order cards (allies A, B, C by slot; enemies 1, 2, 3 by slot).
+  function laneOccupants(s, pos) {
+    var out = [], allyCap = Number(s.combat_ally_slot_cap) || 0, enemyCap = Number(s.combat_enemy_slot_cap) || 0, i;
+    if (Number(s.combat_lane_player_position) === pos) out.push({ kind: "player", slot: 0, chip: "\u2605", name: fmt(s.name || "You") });
+    for (i = 1; i <= allyCap; i++) {
+      if ((Number(s["combat_ally" + i + "_hp"]) || 0) > 0 && Number(s["combat_ally" + i + "_position"]) === pos) {
+        out.push({ kind: "ally", slot: i, chip: String.fromCharCode(64 + i), name: fmt(s["combat_ally" + i + "_name"]) || "Ally",
+          hp: Number(s["combat_ally" + i + "_hp"]) || 0, max: Number(s["combat_ally" + i + "_max_hp"]) || 0 });
+      }
+    }
+    for (i = 1; i <= enemyCap; i++) {
+      if ((Number(s["combat_enemy" + i + "_hp"]) || 0) > 0 && Number(s["combat_enemy" + i + "_position"]) === pos) {
+        out.push({ kind: "enemy", slot: i, chip: String(i), name: fmt(s["combat_enemy" + i + "_name"]) || "Enemy",
+          hp: Number(s["combat_enemy" + i + "_hp"]) || 0, max: Number(s["combat_enemy" + i + "_max_hp"]) || 0 });
+      }
+    }
+    return out;
+  }
+  // The pawn or chip for one combatant. A linked one (the pointer is on its card or on it) is lit, see linkKey.
+  function chipHtml(o, cls) {
+    var key = o.kind + ":" + o.slot;
+    return "<i class=\"" + cls + " " + o.kind + (linkKey === key ? " linked" : "") + "\" data-link=\"" + key + "\">" + esc(o.chip) + "</i>";
+  }
+  // A combatant's dot on the lane. It is the same target the turn-order row is: a click picks an enemy (or, while Magic Missile is arming, gives it a dart;
+  // while a friendly spell is arming, picks an ally or yourself), through the SAME click handlers the rows use, which read data-target and data-friendly.
+  // The ring is its HP. Rows keep working exactly as before; this only adds a second place to click.
+  function pawnHtml(s, o) {
+    var key = o.kind + ":" + o.slot, cls = "battlefieldPawn " + o.kind + (linkKey === key ? " linked" : ""), attrs = " data-link=\"" + key + "\"", badge = "";
+    var hp = o.kind === "player" ? (Number(s.hp_current) || 0) : o.hp, max = o.kind === "player" ? (Number(s.hp_max) || 0) : o.max;
+    var pct = max > 0 ? Math.max(0, Math.min(100, Math.round(100 * hp / max))) : 100;
+    var friendlyOn = isTruthy(s.combat_friendly_targeting_active);
+    if (o.kind === "enemy") {
+      if (!friendlyOn) attrs += " data-target=\"" + o.slot + "\"";
+      if (Number(s.combat_player_chosen_target) === o.slot) cls += " picked";
+      var darts = Number(s["combat_mm_darts_" + o.slot]) || 0;
+      if (darts > 0) badge = "<b class=\"pawnDarts\" title=\"Darts assigned\">" + darts + "</b>";
+    } else if (friendlyOn) {
+      var fslot = o.kind === "player" ? 0 : o.slot;
+      attrs += " data-friendly=\"" + fslot + "\"";
+      if ((Number(s.combat_friendly_target) || 0) === fslot) cls += " picked";
+    }
+    if (o.kind !== "player" && combatantInfo(o.kind, o.slot)) attrs += " data-combatant=\"" + key + "\"";
+    return "<i class=\"" + cls + "\" style=\"--hp:" + pct + "\"" + attrs + ">" + esc(o.chip) + badge + "</i>";
+  }
   function battlefieldStripHtml(s) {
     var min = Number(s.combat_lane_min_position), max = Number(s.combat_lane_max_position), player = Number(s.combat_lane_player_position);
     if (!isFinite(min) || !isFinite(max) || !isFinite(player) || max < min) return "";
-    var terrainPresent = false, nodes = "", icons = window.BATTLEFIELD_ICONS || {};
-    for (var pos = min; pos <= max; pos++) {
-      var rel = pos - player, label = "RET " + Math.abs(rel);
+    var seenTypes = [], nodes = "", icons = window.BATTLEFIELD_ICONS || {};
+    // Seven nodes always fit the sidebar; the six-band lane has nine. Draw the far end only as far as anything is there (a combatant or terrain, plus one
+    // empty node so the next step is visible), so the lane scrolls only when a fight really reaches that far. The near end is never trimmed: those are the places you can fall back to.
+    var hi = Math.min(max, min + 6);
+    for (var q = min; q <= max; q++) {
+      if (terrainTypesAt(s, q).length || laneOccupants(s, q).length) hi = Math.max(hi, Math.min(max, q + 1));
+    }
+    for (var pos = min; pos <= hi; pos++) {
+      var rel = pos - player, label = "Back " + Math.abs(rel);
       if (rel === 0) label = "YOU";
-      else if (rel > 0) label = rangeTierName(rel, s);
+      else if (rel > 0) label = laneShortName(rel, s);
       var types = terrainTypesAt(s, pos), terrain = "", pawns = "";
       if (types.length) {
-        terrainPresent = true;
+        types.forEach(function (t) { if (seenTypes.indexOf(t) < 0) seenTypes.push(t); });
         terrain = "<span class=\"battlefieldTerrain\">" + types.map(function (type) {
-          var icon = icons[type], title = esc(terrainLabel(type));
-          return "<span title=\"" + title + "\">" + (icon ? "<img src=\"" + icon + "\" alt=\"\">" : "◆") + "</span>";
+          var icon = icons[type];
+          return "<span>" + (icon ? "<img src=\"" + icon + "\" alt=\"\">" : "\u25c6") + "</span>";
         }).join("") + "</span>";
       }
-      if (pos === player) pawns += "<i class=\"battlefieldPawn player\" title=\"You\"></i>";
-      var allyCap = Number(s.combat_ally_slot_cap) || 0, enemyCap = Number(s.combat_enemy_slot_cap) || 0;
-      for (var ai = 1; ai <= allyCap; ai++) {
-        if ((Number(s["combat_ally" + ai + "_hp"]) || 0) > 0 && Number(s["combat_ally" + ai + "_position"]) === pos) pawns += "<i class=\"battlefieldPawn ally\" title=\"Ally\"></i>";
-      }
-      for (var ei = 1; ei <= enemyCap; ei++) {
-        if ((Number(s["combat_enemy" + ei + "_hp"]) || 0) > 0 && Number(s["combat_enemy" + ei + "_position"]) === pos) pawns += "<i class=\"battlefieldPawn enemy\" title=\"Enemy\"></i>";
-      }
-      nodes += "<span class=\"battlefieldNode" + (rel === 0 ? " here" : "") + "\"><b>" + esc(label) + "</b><span class=\"battlefieldNodeCore\">" + terrain + pawns + "</span></span>";
+      laneOccupants(s, pos).forEach(function (o) { pawns += pawnHtml(s, o); });
+      nodes += "<span class=\"battlefieldNode" + (rel === 0 ? " here" : "") + "\" data-node=\"" + pos + "\"><b>" + esc(label) + "</b><span class=\"battlefieldNodeCore\">" + terrain + "</span><span class=\"battlefieldPawns\">" + pawns + "</span></span>";
     }
+    // The header names the terrain that is actually on the field, so it need not be hunted for.
+    var present = seenTypes.length ? seenTypes.map(terrainLabel).join(" \u00b7 ") : "Open ground";
     return "<div class=\"battlefieldStrip\" aria-label=\"Battlefield lane\"><div class=\"battlefieldStripHead\"><span>Battlefield</span><small>" +
-      (terrainPresent ? "Terrain marked" : "Open ground") + "</small></div><div class=\"battlefieldLane\">" + nodes + "</div></div>";
+      esc(present) + "</small></div><div class=\"battlefieldScroll\"><div class=\"battlefieldLane\">" + nodes + "</div></div></div>";
   }
   // Ally orders are a sidebar surface, not player actions. The ChoiceScript option remains the authority for
   // legality and costs; this UI state only remembers which companion's compact, left-opening tray is visible.
@@ -958,20 +1057,20 @@ button#statSidebar .turnRow,
     // slot dies, so a fight with this sidebar hidden (the sub-960px breakpoint below) still plays exactly as it
     // always has, picking the front-most living enemy on its own.
     var combatBadgeHtml = inCombat ? "<span class=\"combatBadge\">COMBAT</span>" : "";
-    var bottomSectionHtml;
+    var bottomSectionHtml, orderSummaryHtml = "";
     if (inCombat) {
       var count = Number(s.combat_turn_count) || 0, chosen = Number(s.combat_player_chosen_target) || 0, rows = "",
           friendlyOn = isTruthy(s.combat_friendly_targeting_active), friendlyPick = Number(s.combat_friendly_target) || 0;
       for (var ti = 1; ti <= count; ti++) {
         var kind = s["combat_turn_kind_" + ti], slot = Number(s["combat_turn_slot_" + ti]) || 0;
         if (kind === "player") {
-          var playerNameHtml = "<span class=\"turnMain\"><span>" + fmt(s.name || "You") + playerTerrainHtml(s) + "</span></span>";
+          var playerNameHtml = "<span class=\"turnMain\"><span>" + chipHtml({ kind: "player", slot: 0, chip: "\u2605" }, "idChip") + fmt(s.name || "You") + playerTerrainHtml(s) + "</span></span>";
           if (friendlyOn) {
             // Friendly targeting (Healing Word and its kin): your own row is a button too, 0 = you. Picked highlight reuses the enemy one.
             rows += "<button type=\"button\" class=\"statRow turnRow turnRowSelf" + (friendlyPick === 0 ? " turnRowPicked" : "") +
-              "\" data-friendly=\"0\">" + playerNameHtml + "<span>" + (Number(s.hp_current) || 0) + "/" + (Number(s.hp_max) || 0) + "</span></button>";
+              "\" data-friendly=\"0\" data-link=\"player:0\"" + (linkKey === "player:0" ? " data-linked=\"1\"" : "") + ">" + playerNameHtml + "<span>" + (Number(s.hp_current) || 0) + "/" + (Number(s.hp_max) || 0) + "</span></button>";
           } else {
-            rows += "<div class=\"statRow turnRow turnRowSelf\">" + playerNameHtml + "<span></span></div>";
+            rows += "<div class=\"statRow turnRow turnRowSelf\" data-link=\"player:0\"" + (linkKey === "player:0" ? " data-linked=\"1\"" : "") + ">" + playerNameHtml + "<span></span></div>";
           }
         } else if (kind === "enemy" || kind === "ally") {
           var pfx = kind === "enemy" ? "combat_enemy" : "combat_ally";
@@ -1006,7 +1105,8 @@ button#statSidebar .turnRow,
               "\" data-ally-orders=\"" + slot + "\" aria-expanded=\"" + (allyOrderSlot === slot) +
               "\" title=\"Open " + esc(cName) + "'s combat orders\">Orders</button>";
           }
-          var cNameHtml = "<span class=\"turnMain\"><span>" + cDartsTag + "<span class=\"" +
+          var cChip = cDead ? "" : chipHtml({ kind: kind, slot: slot, chip: kind === "enemy" ? String(slot) : String.fromCharCode(64 + slot) }, "idChip");
+          var cNameHtml = "<span class=\"turnMain\"><span>" + cDartsTag + cChip + "<span class=\"" +
             (kind === "enemy" ? "enemyName" : "allyName") + "\">" + esc(cName) + "</span>" + cRangeTag + cTerrain + cOrder +
             "</span>" + (cSub ? "<span class=\"turnSub\">" + cSub + "</span>" : "") + "</span>";
           if (friendlyOn && kind === "ally" && cHp > 0) {
@@ -1064,6 +1164,17 @@ button#statSidebar .turnRow,
       }
       rows = alertHtml + rows;
       bottomSectionHtml = rows;
+      // The folded list's one line: the order of play as the same chips the lane and the cards wear, whoever acts next lit.
+      var ordBits = [];
+      for (var oi = 1; oi <= count; oi++) {
+        var okind = s["combat_turn_kind_" + oi], oslot = Number(s["combat_turn_slot_" + oi]) || 0, ochip = "", ocls = "idChip " + okind;
+        if (okind === "player") ochip = "\u2605";
+        else if ((okind === "enemy" || okind === "ally") && (Number(s["combat_" + okind + oslot + "_hp"]) || 0) > 0) ochip = okind === "enemy" ? String(oslot) : String.fromCharCode(64 + oslot);
+        else continue;
+        if (upcoming && upcoming.kind === okind && upcoming.slot === oslot) ocls += " actsNext";
+        ordBits.push("<i class=\"" + ocls + "\" data-link=\"" + okind + ":" + (okind === "player" ? 0 : oslot) + "\"" + (ocls.indexOf(" actsNext") >= 0 ? " title=\"Acts next\"" : "") + ">" + ochip + "</i>");
+      }
+      orderSummaryHtml = "<span class=\"orderSum\" aria-label=\"Order of play\">" + ordBits.join("<span class=\"orderArrow\">\u203a</span>") + "</span>";
     } else {
       bottomSectionHtml =
         "<div class=\"statRow\"><span>Day</span><span>" + dayDisplay + "</span></div>" +
@@ -1099,6 +1210,7 @@ button#statSidebar .turnRow,
       "</div>";
     if (inStats) {
       var armorNote = (isTruthy(s.armor_nonprof) || isTruthy(s.shield_nonprof)) ? nonprofHtml : "<div class=\"timePeriod\">Trained for the gear you wear.</div>";
+      sbLastHtml = null;   // the Stats view replaces the page; coming back to Status must rebuild it
       el.innerHTML =
         "<div class=\"sbPanel\">" + portraitHtml + "</div>" +
         "<div class=\"sbPanel\">" + foldHtml("abilities", "Abilities", fmt(s.str_mod_str) + " " + fmt(s.dex_mod_str) + " " + fmt(s.con_mod_str) + " " + fmt(s.int_mod_str) + " " + fmt(s.wis_mod_str) + " " + fmt(s.cha_mod_str),
@@ -1117,7 +1229,7 @@ button#statSidebar .turnRow,
         "<div class=\"sbPanel\">" + foldHtml("skills", "Skills", skillsSummary(s), skillsHtml(s)) + "</div>";
       return;
     }
-    el.innerHTML =
+    var sbHtml =
       "<div class=\"sbPanel\">" +
         portraitHtml +
         hpBarHtml +
@@ -1128,7 +1240,7 @@ button#statSidebar .turnRow,
           nonprofHtml +
           resourceHtml) +
       "</div>" +
-      (inCombat ? "<div class=\"sbPanel\"><div class=\"shead\">Turn order</div>" + battlefieldStripHtml(s) + bottomSectionHtml + "</div>"
+      (inCombat ? "<div class=\"sbPanel\"><div class=\"shead\">Turn order</div>" + battlefieldStripHtml(s) + foldHtml("turnorder", "Combatants", orderSummaryHtml, bottomSectionHtml) + "</div>"
                 : "<div class=\"sbPanel\">" + foldHtml("today", "Today", "<span class=\"sbSumStack\"><span>" + fmt(s.clock_time) + " &middot; " + dayDisplay + "</span><small>" + fmt(s.time_period) + " &middot; " + weatherDisplay + "</small></span>", bottomSectionHtml) + "</div>") +
       "<div class=\"sbPanel sbSpells\">" + spellSectionHtml() + "</div>" +
       activeQuestHtml +
@@ -1168,7 +1280,17 @@ button#statSidebar .turnRow,
           : "")) +
         "</div>"
         : "");
+    // Rebuild only when something changed. The rebuild replaces every element, which drops a scrollbar drag in progress and puts the battlefield
+    // strip's horizontal scroll back at the start, so an unchanged page is left alone, and a changed one hands the strip its scroll position back.
+    if (sbHtml === sbLastHtml) return;
+    var oldLane = el.querySelector(".battlefieldScroll");
+    if (oldLane) laneScroll = oldLane.scrollLeft;
+    sbLastHtml = sbHtml;
+    el.innerHTML = sbHtml;
+    var newLane = el.querySelector(".battlefieldScroll");
+    if (newLane) newLane.scrollLeft = laneScroll; else laneScroll = 0;
   }
+  var sbLastHtml = null, laneScroll = 0;
   // "3 active" for the folded Effects header: meals, drinks, boons and rest bonuses that are running.
   function effectsSummary(s) {
     var n = 0;
@@ -1312,6 +1434,21 @@ button#statSidebar .turnRow,
   // Read-only forecast of what the enemy's existing turn logic can do from its current band. This intentionally
   // predicts the engine rather than inventing an AI intent state: Close melee can move once and still attack;
   // Mid-Range melee must Dash and gives up its attack; Slowed blocks that Dash; Frightened refuses to close.
+  // Who a MELEE enemy will go for: the nearest opponent by lane coordinate, you included, a tie to the lowest HP (the same rule as choose_melee_enemy_target in combat_ai.txt, which is
+  // the authority; change them together). A hidden player is not a candidate. Returns {kind: "player"} or {kind: "ally", slot, d}, or null when there is nobody.
+  function meleeGoal(s, slot) {
+    var epos = Number(s["combat_enemy" + slot + "_position"]);
+    if (!isFinite(epos)) return null;
+    var best = null, ppos = Number(s.combat_lane_player_position), cap = Number(s.combat_ally_slot_cap) || 0;
+    if (!isTruthy(s.combat_player_hidden) && isFinite(ppos)) best = { kind: "player", d: Math.abs(epos - ppos), hp: Number(s.hp_current) || 0 };
+    for (var i = 1; i <= cap; i++) {
+      var hp = Number(s["combat_ally" + i + "_hp"]) || 0, apos = Number(s["combat_ally" + i + "_position"]);
+      if (hp <= 0 || !isFinite(apos)) continue;
+      var d = Math.abs(epos - apos);
+      if (!best || d < best.d || (d === best.d && hp < best.hp)) best = { kind: "ally", slot: i, d: d, hp: hp };
+    }
+    return best;
+  }
   function enemyThreatLine(s, slot) {
     var p = "combat_enemy" + slot + "_";
     var range = effectiveRange(s, "enemy", slot);
@@ -1323,6 +1460,14 @@ button#statSidebar .turnRow,
       if (range <= 0 && s[p + "sidearm_weapon_type"]) return "cornered: sidearm ready";
       if (range <= 0) return "ranged attack: disadvantage";
       return "ranged attack ready";
+    }
+    var goal = meleeGoal(s, slot);
+    if (goal && goal.kind === "ally") {
+      var goalName = esc(fmt(s["combat_ally" + goal.slot + "_name"]) || "an ally");
+      if (goal.d <= 0) return "attacking " + goalName;
+      if (goal.d === 1) return "closing on " + goalName + ": can attack";
+      if (goal.d === 2 && !slowed) return "closing on " + goalName + ": must Dash";
+      return "closing on " + goalName;
     }
     if (range <= 0) return frightened ? "frightened attack: disadvantage" : "threatens an attack";
     var heldBy = enemyHoldingAlly(s, slot);
@@ -1417,6 +1562,14 @@ button#statSidebar .turnRow,
   // a slot with no rolled scores), which is what keeps the card off rows it would only pad with lies.
   // Allies only ever have a DEX (startup.txt:1679 is their one ability), so they get AC/Atk/damage and
   // that single score rather than five fabricated zeroes.
+  // The lines under a combatant's card that are not stats: how many darts it has been given, and what it is about to do. Already escaped.
+  function extraLines(s, kind, slot) {
+    var out = [], darts = kind === "enemy" ? (Number(s["combat_mm_darts_" + slot]) || 0) : 0;
+    if (darts > 0) out.push("<div class=\"tExtra darts\">" + darts + (darts === 1 ? " dart" : " darts") + " assigned</div>");
+    var sub = combatantSubLine(s, kind, slot);
+    if (sub) out.push("<div class=\"tExtra\">" + sub + "</div>");
+    return out;
+  }
   function combatantInfo(kind, slot) {
     var s = window.stats;
     if (!s) return null;
@@ -1447,13 +1600,15 @@ button#statSidebar .turnRow,
       dmg: sides === null ? null : (sides > 1 ? "1d" + sides : "") + (bonus ? modStr(bonus) : ""),
       hp: num("hp"), maxHp: num("max_hp"),
       abilities: abilities,
-      conditions: conditionsOf(p, s)
+      conditions: conditionsOf(p, s),
+      extra: extraLines(s, kind, slot)
     };
     return (info.ac !== null || info.atk !== null || info.dmg !== null || abilities.length) ? info : null;
   }
   // Every value is escaped: the name and epithets come from game data, and this is innerHTML.
   function tipHtml(info) {
     var meta = [];
+    if (info.hp !== null && info.maxHp) meta.push("<b>HP</b> " + esc(info.hp) + "/" + esc(info.maxHp));
     if (info.ac !== null) meta.push("<b>AC</b> " + esc(info.ac));
     if (info.atk !== null) meta.push("<b>Atk</b> " + esc(modStr(info.atk)));
     if (info.dmg) meta.push("<b>DMG</b> " + esc(info.dmg));
@@ -1467,16 +1622,21 @@ button#statSidebar .turnRow,
     return "<div class=\"tHd\">" + esc(info.name) + "</div>" +
            (meta.length ? "<div class=\"tMeta\">" + meta.join("&nbsp;&nbsp;·&nbsp;&nbsp;") + "</div>" : "") +
            (grid ? "<div class=\"tGrid\">" + grid + "</div>" : "") +
-           (info.conditions.length ? "<div class=\"tCond\">" + esc(info.conditions.join(", ")) + "</div>" : "");
+           (info.conditions.length ? "<div class=\"tCond\">" + esc(info.conditions.join(", ")) + "</div>" : "") +
+           (info.extra && info.extra.length ? info.extra.join("") : "");
   }
   // The card is rebuilt on hover from window.stats, so the row only carries a "which combatant" pointer
   // rather than a blob of HTML in an attribute that would have to be re-escaped every 400ms.
   function combatantAttr(kind, slot) {
-    return combatantInfo(kind, slot) ? " data-combatant=\"" + kind + ":" + slot + "\"" : "";
+    return (combatantInfo(kind, slot) ? " data-combatant=\"" + kind + ":" + slot + "\"" : "") +
+      " data-link=\"" + kind + ":" + slot + "\"" + (linkKey === kind + ":" + slot ? " data-linked=\"1\"" : "");
   }
 
   // ── The card itself ──────────────────────────────────────────────────────────────────────────────────────
   var tipEl = null, tipKey = null, tipX = 0, tipY = 0;
+  // The combatant the pointer is on, as "kind:slot", on its lane dot or on its turn-order card; both are drawn lit while it is set.
+  // Held here, not in the DOM, because the sidebar is rebuilt every 400ms (see renderStatSidebar).
+  var linkKey = null;
   function tipNode() {
     if (!tipEl) {
       tipEl = document.createElement("div");
@@ -1499,8 +1659,41 @@ button#statSidebar .turnRow,
     t.style.left = (left / z) + "px";
     t.style.top = (top / z) + "px";
   }
+  // The card for one lane node (the Battlefield strip): the range name, what the terrain does, and who is standing there.
+  // Built from window.stats on every call, like the combatant card, so it never shows yesterday's lane.
+  function paintNodeCard(pos) {
+    var s = window.stats;
+    if (!s) return false;
+    pos = Number(pos);
+    var player = Number(s.combat_lane_player_position);
+    if (!isFinite(pos) || !isFinite(player)) return false;
+    var rel = pos - player, head;
+    if (rel === 0) head = "Your position";
+    else if (rel > 0) head = rangeTierName(rel, s) + " \u00b7 " + rel + (rel === 1 ? " step" : " steps") + " ahead";
+    else head = "Behind you \u00b7 " + (-rel) + (rel === -1 ? " step" : " steps") + " back";
+    var types = terrainTypesAt(s, pos), body = "";
+    if (types.length) {
+      body = types.map(function (t) { return "<p><b>" + esc(terrainLabel(t)) + "</b> " + esc(TERRAIN_RULES[t] || "") + "</p>"; }).join("");
+    } else {
+      body = "<p><b>Open ground</b> " + esc(TERRAIN_RULES.open_ground) + "</p>";
+    }
+    var who = laneOccupants(s, pos).map(function (o) {
+      var hp = o.kind === "player" ? (Number(s.hp_current) || 0) + "/" + (Number(s.hp_max) || 0) : o.hp + "/" + o.max;
+      return "<div>" + chipHtml(o, "idChip") + "<span>" + esc(o.name) + "</span><span class=\"hp\">" + esc(hp) + " HP</span></div>";
+    }).join("");
+    tipNode().innerHTML = "<div class=\"tHd\">" + esc(head) + "</div><div class=\"tNode\">" + body + "</div>" +
+      (who ? "<div class=\"tWho\">" + who + "</div>" : "");
+    return true;
+  }
   function showTip(key, x, y) {
     var t = tipNode();
+    if (key.indexOf("node:") === 0) {
+      tipKey = key; tipX = x; tipY = y;
+      if (!paintNodeCard(key.slice(5))) return hideTip();
+      placeTip();
+      t.classList.add("on");
+      return;
+    }
     var bits = key.split(":"), info = combatantInfo(bits[0], bits[1]);
     if (!info) return hideTip();
     tipKey = key; tipX = x; tipY = y;
@@ -1531,10 +1724,18 @@ button#statSidebar .turnRow,
   // the same 400ms cycle, so they need the same treatment or their card would never track either.
   function refreshTip() {
     if (!tipKey) return;
+    if (tipKey.indexOf("node:") === 0) {
+      // A lane node: re-resolve under the pointer, repaint (the lane may have moved), or drop the card.
+      var nel = document.elementFromPoint(tipX, tipY), nnode = nel && nel.closest ? nel.closest("#statSidebar .battlefieldNode[data-node]") : null;
+      if (!nnode) return hideTip();
+      tipKey = "node:" + nnode.getAttribute("data-node");
+      if (!paintNodeCard(tipKey.slice(5))) return hideTip();
+      return placeTip();
+    }
     var isSpell = tipKey.indexOf("spell:") === 0;
     var bare = isSpell ? tipKey.slice(6) : tipKey;
     var el = document.elementFromPoint(tipX, tipY);
-    var sel = isSpell ? "#statSidebar .spellRow[data-spell]" : "#statSidebar .turnRow[data-combatant]";
+    var sel = isSpell ? "#statSidebar .spellRow[data-spell]" : "#statSidebar .turnRow[data-combatant], #statSidebar .battlefieldPawn[data-combatant]";
     var row = el && el.closest ? el.closest(sel) : null;
     if (!row) return hideTip();
     var key = isSpell ? row.getAttribute("data-spell") : row.getAttribute("data-combatant");
@@ -1558,7 +1759,7 @@ button#statSidebar .turnRow,
   function rowAt(ev) {
     var el = ev.target;
     if (!el || !el.closest) return null;
-    return el.closest("#statSidebar .turnRow[data-combatant]");
+    return el.closest("#statSidebar .turnRow[data-combatant], #statSidebar .battlefieldPawn[data-combatant]");
   }
 
   // ── Spellbook section (proof of concept) ──────────────────────────────────────────────────────────────────
@@ -1871,7 +2072,30 @@ button#statSidebar .turnRow,
     var row = rowAt(ev);
     if (row && row.getAttribute("data-combatant") === tipKey) { tipX = ev.clientX; tipY = ev.clientY; placeTip(); }
   });
-  document.getElementById("statSidebar").addEventListener("mouseleave", hideTip);
+  document.getElementById("statSidebar").addEventListener("mouseleave", function () { hideTip(); setLink(null); });
+  // Battlefield lane nodes open the shared card (paintNodeCard) and follow the pointer like the combatant card does.
+  document.getElementById("statSidebar").addEventListener("mouseover", function (ev) {
+    var el = ev.target, node = el && el.closest ? el.closest(".battlefieldNode[data-node]") : null;
+    if (el && el.closest && el.closest(".battlefieldPawn[data-combatant]")) return;   // a dot opens its own combatant card, not the tile's
+    if (node) showTip("node:" + node.getAttribute("data-node"), ev.clientX, ev.clientY);
+    else if (tipKey && tipKey.indexOf("node:") === 0) hideTip();
+  });
+  document.getElementById("statSidebar").addEventListener("mousemove", function (ev) {
+    if (!tipKey || tipKey.indexOf("node:") !== 0) return;
+    var el = ev.target, node = el && el.closest ? el.closest(".battlefieldNode[data-node]") : null;
+    if (node) { tipX = ev.clientX; tipY = ev.clientY; placeTip(); }
+  });
+  // A lane dot and its turn-order card light each other. Only a CHANGE re-renders: the rebuild puts a new element under a still pointer,
+  // and the browser answers with another mouseover, which would otherwise loop.
+  function setLink(key) {
+    if (linkKey === key) return;
+    linkKey = key;
+    renderStatSidebar();
+  }
+  document.getElementById("statSidebar").addEventListener("mouseover", function (ev) {
+    var el = ev.target, linked = el && el.closest ? el.closest("[data-link]") : null;
+    setLink(linked ? linked.getAttribute("data-link") : null);
+  });
   // Keyboard parity: the living-enemy rows are real <button>s, so they must show the card on focus too.
   document.getElementById("statSidebar").addEventListener("focusin", function (ev) {
     var row = rowAt(ev);

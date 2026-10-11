@@ -973,7 +973,7 @@ The waterfront runs in one long line of stone and timber along the estuary. At i
   *elseif (harbor_vignette = 4)
     [i]Two foreign sailors in wool smocks argue with an open-air pie-seller beneath a canvas awning, waving unfamiliar copper coins in frustration.[/i]
   *elseif (harbor_vignette = 5)
-    [i]A pair of Port Watch sentries in blue-and-brass surcoats stroll slowly past the slipway edge, their iron-banded cudgels tapping rhythmically against their boots.[/i]
+    [i]A pair of Port Watch sentries in blue-and-brass surcoats stroll slowly past the slipway edge, the iron butts of their spears tapping rhythmically on the stone.[/i]
   *else
     [i]Out on the water, a heavily laden river barge eases alongside the granite wharf, deckhands scrambling to drop heavy rope fenders before the hull strikes stone.[/i]
 
@@ -1315,6 +1315,10 @@ The throw goes hand to hand around the chalk circle, horn dice clattering agains
 *label pv_poi_tavern_rumors
 You find a bench against the wall with your back to it, a watchful habit, and let the taproom wash over you. The waterfront talks.
 
+*if (((slasher_quest_stage = "unstarted") or (slasher_quest_stage = "active")) and ((not(slasher_rumor_keel_heard)) or (((slasher_quest_stage = "active") and (not(slasher_alibi_known))) and (not(slasher_ask_keel_tried)))))
+  *goto_scene port_valen/varren_quests/varren_errand slasher_rumor_keel
+*if (((slasher_quest_stage = "resolved") or (slasher_quest_stage = "failed")) and (not(slasher_after_keel_heard)))
+  *goto_scene port_valen/varren_quests/varren_errand slasher_after_keel
 *if ((rotten_rib_quest_stage = "unstarted") and ((ysolde_timber_briefed) and (not(pv_tavern_rumor_rotten_rib))))
   *set pv_tavern_rumor_rotten_rib true
   *set met_brant true
@@ -1634,7 +1638,7 @@ A wall of black boards is ruled in columns behind the gallery, each headed with 
   *set pv_quays_seen true
   *set codex_port_watch true
   *set port_watch_rep +1
-  The cargo quay runs from the taverns by the fish market toward the customs tower and the gate where the road down from the terraces comes in, and at this hour it is one long argument conducted in stamped parchment. Guild clerks in the river-serpent colors of the Gilded Scales move crate to crate with wax tablets, while Port Watch officers walk the line with cudgels slung but visible.
+  The cargo quay runs from the taverns by the fish market toward the customs tower and the gate where the road down from the terraces comes in, and at this hour it is one long argument conducted in stamped parchment. Guild clerks in the river-serpent colors of the Gilded Scales move crate to crate with wax tablets, while Port Watch officers walk the line with swords at their hips and spears on their shoulders.
 
   Above it all, standing atop an upturned cargo crate with a brass seal pinned to his salt-crusted oilskin coat, a hawk-nosed man with ink-stained thumbs calls hull numbers down to a runner.
 
@@ -4901,7 +4905,6 @@ A rail fence rings a wide square of packed ground behind the barracks, scuffed b
 
   *if (level_up_ready)
     "So that's you ready," he says, and jerks his chin toward the barracks. "Whenever you want the next step, it's yours."
-*line_break
 [b][🎯 Training ${training_sessions} / ${level_up_sessions_needed} | Quests ${quests_finished} / ${level_up_quests_needed}][/b]
 *page_break Back across the square…
 *goto pv_poi_carrion
@@ -5045,7 +5048,6 @@ A rail fence rings a wide square of packed ground behind the barracks, scuffed b
   *if ((training_sessions = level_up_sessions_needed) and (level_up_sessions_needed > 0))
     When the group is dismissed the corporal catches your eye across the yard and taps the tally-board twice. That is the last entry on it, and he draws a stroke through it.
 
-*line_break
 [b][🎯 Drill | ${training_hours} hours | Training ${training_sessions} / ${level_up_sessions_needed} | ${clock_time}][/b]
 *page_break Back across the square…
 *goto pv_poi_carrion
@@ -5289,6 +5291,12 @@ The strap goes back through the rivet, and the grindstone behind the partition s
   *if ((varren_respect >= 10) and (not(varren_redfort_told)))
     # Ask about Redfort.
       *goto pv_armory_redfort
+  *if (((slasher_quest_stage = "resolved") or (slasher_quest_stage = "failed")) and (not(slasher_reported)))
+    # Tell Varren how it went.
+      *goto_scene port_valen/varren_quests/varren_errand slasher_report
+  *if ((vane_varren_hint) and (slasher_quest_stage = "unstarted"))
+    # Tell him Vane said you should hear about the job.
+      *goto_scene port_valen/varren_quests/varren_errand slasher_hook
   # Head back across the compound.
     *goto port_valen_hub
 
@@ -5883,6 +5891,9 @@ He settles back in his chair, cold grey eyes measuring you from boots to collar.
 
 "And go up the watchtower after dark," Vane adds. "Kestrel keeps late hours, and she has a use for someone who isn't on my roster."
 
+*set vane_varren_hint true
+"Look in on Varren too," Vane adds. "He has a job going that wants hands off the roster. Go and hear him out before you decide anything."
+
 "Two rules," Vane adds. "The first is the captain's, the one she read out at the pier: no private collections, no unsanctioned arrests, no old debts settled under city colors. Our contract with the city pays too well to lose over you. The second is mine. If the Watch takes you, I don't know your name."
 
 "You've got until the contract ends. Work the districts, find me strings I can pull, and you'll be paid for it."
@@ -5942,5 +5953,8 @@ Vane pulls the next dispatch toward him before you've fully turned for the door.
 *if (bell_quest_stage = "resolved")
   *set quests_finished + 1
 *if (fish_quest_stage = "resolved")
+  *set quests_finished + 1
+*comment Varren's Errand counts only when Trent was arrested and the player has reported to Varren.
+*if (((slasher_quest_stage = "resolved") and (slasher_resolution = "arrested")) and (slasher_reported))
   *set quests_finished + 1
 *return

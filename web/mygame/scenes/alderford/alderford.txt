@@ -39,10 +39,128 @@
 *comment Place buttons will be added here one at a time as their scene files are built. This keeps a
 *comment new shop, chapel or wharf from becoming a second branch inside the base town file.
 *label af_menu
+*gosub af_hours
 *choice
+  # [b]The Drowned Oar Taphouse[/b]: meals, beds and the lower wharves. [~5 min]
+    *goto_scene alderford/drowned_oar af_oar
+  *if (af_ok_hall)
+    # [b]The Factor's Hall[/b]: accounts, notices and contracted work. [~5 min]
+      *goto_scene alderford/factors_hall af_hall
+  *if (not(af_ok_hall))
+    # [b]The Factor's Hall[/b]: ${af_hall_closed_reason}.
+      *goto af_closed_hall
+  *if (af_ok_market)
+    # [b]The Lower Wharf Market[/b]: bulk lots, weighbridge and river goods. [~5 min]
+      *goto_scene alderford/lower_wharf_market af_market
+  *if (not(af_ok_market))
+    # [b]The Lower Wharf Market[/b]: ${af_market_closed_reason}.
+      *goto af_closed_market
+  *if ((af_ok_market) and (af_lot_show))
+    # [b]The carters' lot[/b]: a line is making up beside the Market. [~5 min]
+      *goto_scene alderford/wagon_lot af_lot
+  *if (af_ok_smith)
+    # [b]The Timber Smithy[/b]: ironwork, tools and the mill-race forge. [~5 min]
+      *goto_scene alderford/timber_smithy af_smith
+  *if (not(af_ok_smith))
+    # [b]The Timber Smithy[/b]: ${af_smith_closed_reason}.
+      *goto af_closed_smith
+  # [b]The Chapel of Saint Althea[/b]: healing, sanctuary and the ridge above the weir. [~10 min]
+    *goto_scene alderford/chapel af_chapel
+  *if (janna_romanced)
+    *if ((time_period = "Dusk") or (time_period = "Night"))
+      # [b]Janna's Side Door[/b]: call on her after the forge is shut. [~5 min]
+        *goto_scene alderford/janna_alcove af_janna_alcove
+  *if ((talia_romanced) or (has_talia_provisions))
+    *if ((time_period = "Dusk") or (time_period = "Night"))
+      # [b]Talia's Curing Loft[/b]: call on her above the lower wharves. [~5 min]
+        *goto_scene alderford/talia_loft af_talia_loft
   # [b]The High Grey Road[/b]: leave town toward Port Valen.
     *set ow_pos "af"
     *goto_scene overworld/overworld ow_here
+
+*comment The Hall keeps the same public hours as the Gilded Scales' Port Valen house: it is a work office, not a night shelter. The reason is re-derived each time the hub menu is printed, so no stale closure can survive time passing in another place.
+*label af_hours
+*set af_ok_hall true
+*set af_hall_closed_reason ""
+*set af_ok_market true
+*set af_market_closed_reason ""
+*set af_ok_smith true
+*set af_smith_closed_reason ""
+*if (day_of_week = "Hallowday")
+  *set af_ok_hall false
+  *set af_hall_closed_reason "closed for Hallowday"
+  *set af_ok_market false
+  *set af_market_closed_reason "closed for Hallowday"
+  *set af_ok_smith false
+  *set af_smith_closed_reason "closed for Hallowday"
+*elseif ((time_period = "Dusk") or (time_period = "Night")) or (time_period = "Pre-Dawn")
+  *set af_ok_hall false
+  *set af_hall_closed_reason "the public counter is closed"
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set af_ok_market false
+  *set af_market_closed_reason "the trading sheds are shut for the night"
+*if ((street_life = "empty") and (not(day_of_week = "Hallowday")))
+  *set af_ok_market false
+  *set af_market_closed_reason "closed for dangerous weather"
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set af_ok_smith false
+  *set af_smith_closed_reason "the forge is banked for the night"
+*comment The carters' lot is part of the Lower Wharf Market (it follows the Market hours). The town menu shows a shortcut to it only while a line to Port Valen is making up (its day of the week, which the prose never
+*comment names) or the player holds a job that sets out from here, so nobody has to go through the Market page.
+*set af_lot_show false
+*if (((rj_escort_stage = "active") and (rj_escort_from = "af")) and (campaign_day <= rj_escort_until))
+  *set af_lot_show true
+*if ((not(rj_escort_stage = "active")) and (day_of_week = "Ironday"))
+  *set af_lot_show true
+*return
+
+*label af_closed_hall
+[b]◈ THE FACTOR'S HALL[/b]
+*line_break
+The iron-bound doors are shut. A brass plate beside them reads: [i]"Accounts, letters and contracts. Open morning through afternoon. Closed Hallowday."[/i]
+
+*if (day_of_week = "Hallowday")
+  No clerks work the public counter on Hallowday. The customs yard is quieter than usual, though the river keeps moving below the weir.
+*elseif (time_period = "Dusk")
+  The last clerks have already drawn the grilles and gone. A lamp burns behind the upper office window, but no one answers the public door.
+*else
+  The windows are dark behind their grilles. Only the river and the weir are still at work.
+*page_break Return to the street…
+*goto af_menu
+
+*label af_closed_smith
+[b]◈ THE TIMBER SMITHY[/b]
+*line_break
+The forge doors are barred. A soot-dark board beside them reads: [i]"Torvald's Timber Forge. Open from first light until the fire is banked. Closed Hallowday."[/i]
+
+*if (day_of_week = "Hallowday")
+  The mill-race still turns the wheel beneath its shelter, but no hammer answers it today.
+*else
+  The forge is dark behind its shutters, and the mill-race is louder without the hammer.
+*page_break Return to the street…
+*goto af_menu
+
+*label af_closed_market
+[b]◈ THE LOWER WHARF MARKET[/b]
+*line_break
+
+The market's timber shutters are barred across the sheds. The beam scale stands empty by the lane, and the lower wharf has gone quiet except for the river lamps.
+
+*if (day_of_week = "Hallowday")
+  A painted board at the gate reads: [i]"Market closed Hallowday. Mooring work and emergency stores only."[/i]
+*elseif (street_life = "empty")
+  *if (weather = "Storm")
+    Rain lashes the lower lanes and spray breaks over the quay rails. No trader is taking a weighing in this weather.
+  *else
+    Snow has driven across the lower lanes and swallowed the far landing. No trader is taking a weighing in this weather.
+*elseif (time_period = "Pre-Dawn")
+  The quay lamps burn over a dark yard, and the shed doors will remain barred until the first work bell.
+*elseif (time_period = "Night")
+  The last carts are gone. Water knocks beneath the quay and a rope creaks against a bollard somewhere beyond the locked gate.
+*else
+  The last lots have been chained under cover until morning.
+*page_break Return to the street…
+*goto af_menu
 
 *comment ── THE ARRIVAL ── The overworld's Alderford tile reaches this label. It charges the short
 *comment walk from the road once, gives the town's first impression once, then falls into the hub.
@@ -78,7 +196,7 @@
 *comment ── LAYER 1: PLACE ── Constant geography and smell only: no weather, time or people.
 *label af_place
 *if (af_first_hub)
-  Alderford climbs the eastern shoulder above the Grey, from the High Grey Road's palisade gate down toward an old imperial limestone weir. The upper street slopes past timber houses, cart yards and a covered trough toward the water. Near the gate, the slate-roofed Factor's Hall stands by the customs yard, its dressed stone and iron-bound doors setting it apart from the buildings around it.
+  Alderford climbs the eastern shoulder above the Grey, from the High Grey Road's palisade gate down toward an old imperial limestone weir. Just inside the gate, the High Gate Yard holds covered stalls, hitching rails, a broad watering trough and enough hard ground for road carts to turn before the steep streets begin. The upper street slopes past timber houses and cart yards toward the water. Near the gate, the slate-roofed Factor's Hall stands by the customs yard, its dressed stone and iron-bound doors setting it apart from the buildings around it.
 
   The upper bank is given to the mill channel, sawmill yards and a squat waterwheel forge. A small old chapel stands higher on the ridge above them, its bell turret looking over the river. Beside the weir sits a long granary of pale boards on a raised stone base, close enough to the water for its loading doors to look down on the upper basin.
 

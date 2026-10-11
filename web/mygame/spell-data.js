@@ -24,6 +24,7 @@
   var SPELL_DATA = [
     // ── Cantrips (level 0) ──
     { id: "blade_ward",         name: "Blade Ward",         level: 0, schools: "Abjuration" },
+    { id: "booming_blade",       name: "Booming Blade",      level: 0, schools: "Evocation" },
     { id: "chill_touch",         name: "Chill Touch",         level: 0, schools: "Necromancy" },
     { id: "eldritch_blast",     name: "Eldritch Blast",     level: 0, schools: "Evocation" },
     { id: "fire_bolt",          name: "Fire Bolt",          level: 0, schools: "Evocation" },
@@ -36,6 +37,7 @@
     { id: "prestidigitation",   name: "Prestidigitation",   level: 0, schools: "Conjuration" },
     { id: "ray_of_frost",       name: "Ray of Frost",       level: 0, schools: "Evocation" },
     { id: "shocking_grasp",     name: "Shocking Grasp",     level: 0, schools: "Evocation" },
+    { id: "true_strike",         name: "True Strike",         level: 0, schools: "Divination" },
     { id: "vicious_mockery",    name: "Vicious Mockery",    level: 0, schools: "Enchantment" },
     { id: "thaumaturgy",        name: "Thaumaturgy",        level: 0, schools: "Transmutation" },
 

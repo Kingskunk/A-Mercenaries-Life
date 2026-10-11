@@ -1,0 +1,138 @@
+*comment ====================================================================================
+*comment BRINEWICK: Port Valen's salt-working village on the western tidal flats (overworld tile
+*comment "bw"). Tide House, Saltworks and Reedhouse are the only destinations. The pans, brine
+*comment channels, peat sheds, salt store and loading slip remain Layer 1 scenery.
+*comment ====================================================================================
+
+*label bw_arrive
+*set minutes_to_pass 5
+*set time_advance_call_id "bw_arrive_1"
+*gosub bw_walk_time
+*temp bw_first false
+*if (not(bw_seen))
+  *set bw_first true
+*set bw_seen true
+*if (bw_first)
+  The road drops from the raised fields onto a long earthen bank above the flats. Low sheds, chimneys and a scatter of roofs gather beyond a tide gate, with pale salt beds shining between the reed ditches.
+*else
+  The road comes down the bank toward Brinewick's tide gate and the low roofs beyond it.
+*goto brinewick
+
+*label brinewick
+*set current_district "brinewick"
+*gosub_scene calendar update_hub_condition
+*set shop_open ""
+[b]◈ BRINEWICK[/b]
+*line_break
+[b][⏳ Brinewick Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
+*line_break
+*gosub bw_place
+*gosub bw_sky
+*gosub bw_street
+
+*choice
+  # [b]The Tide House[/b]: council benches, tide marks and village notices. [~5 min]
+    *goto_scene port_valen/brinewick/tide_house bw_tide_house
+  *if (weather_severity < 3)
+    # [b]The Saltworks[/b]: pans, packing sheds and the salt trade. [~5 min]
+      *goto_scene port_valen/brinewick/saltworks bw_saltworks
+  *if (weather_severity >= 3)
+    # [b]The Saltworks[/b]: shut behind the flood gates in this weather.
+      *goto bw_saltworks_closed
+  # [b]The Reedhouse[/b]: food, beds and a stable yard above the flats. [~5 min]
+    *goto_scene port_valen/brinewick/reedhouse bw_reedhouse
+  # [b]The bank road[/b]: leave the village.
+    *set ow_pos "bw"
+    *goto_scene overworld/overworld ow_here
+
+*label bw_saltworks_closed
+[b]◈ THE SALTWORKS[/b]
+*line_break
+The gate across the work path is shut and barred. Beyond it, rain or snow sweeps over the open pans, and water presses high in the channels along the bank. The sheds are closed until the weather lets the flats settle again.
+*page_break Return to the bank road...
+*goto brinewick
+
+*comment ── LAYER 1: PLACE ──
+*label bw_place
+Brinewick is built along the inside of an earthen bank, with the road on its higher side and the tidal flats spread out beyond the other. The Tide House stands on stout stone feet near the gate: a square building with a bell frame, narrow windows and tide marks cut into the post beside its stair. Below it, narrow paths run between low cottages, peat sheds and fenced yards where nets, barrels and oilskins dry on rails.
+
+The saltworks lie on the flat side of the bank. Shallow square beds hold brine behind low walls, linked by straight channels and wooden gates. A line of dark pan sheds stands beyond them, each with a squat chimney, and the salt store rises behind on a base of stone with its loading doors above the mud. A narrow slip runs toward the tidal channel, where a small boat can come in when the water is high enough.
+
+The Reedhouse stands near the road gate, its lower wall of stone and its upper walls of dark timber. Behind it, a small stable yard and hay shed stand on the highest ground in the village. The air carries peat smoke, wet reeds, salt and the sharp smell of boiling brine.
+*return
+
+*comment ── LAYER 2: SKY ──
+*label bw_sky
+*temp bw_dark false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set bw_dark true
+*if (weather = "Rain")
+  Rain stipples the brine beds and runs along the channels toward the tide gate.
+*elseif (weather = "Storm")
+  Wind drives water hard across the flats, and every loose shutter and hanging rail has been tied down.
+*elseif (weather = "Fog")
+  Fog lies across the beds and channels, hiding the far reeds and leaving only the nearer chimneys visible.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow catches in the reed tops and turns the bank paths to grey slush.
+*elseif (weather = "Blizzard")
+  Snow races low over the flats and fills the channels until their straight lines disappear.
+*elseif (weather = "Clear")
+  *if (bw_dark)
+    The flat water in the nearest beds catches starlight, and the salt store stands black against the sky.
+  *elseif (time_period = "Dusk")
+    Low light catches the wet beds and the channel gates, while the reeds beyond darken into one line.
+  *else
+    Clear light lies hard on the open flats, bright on the salt beds and the water between them.
+*else
+  A flat overcast sits low above the reeds and drains colour from the water and mud.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  The paths along the bank remain soft and the lower yard gates stand above shallow water.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The packed earth is drying from the edges inward, though the channels still shine full.
+*return
+
+*comment ── LAYER 3: STREET ── Clock-based, rotating local work and movement.
+*label bw_street
+*temp bw_vignette (((campaign_day * 24) + clock_hour) modulo 6) + 1
+*if ((street_life = "empty") and (not(bw_dark)))
+  The bank path is empty for the moment. Only smoke from the pan sheds and the water moving through the gates show that the village is awake.
+  *return
+*if (bw_dark)
+  *if (bw_vignette = 1)
+    A furnace window glows through the nearest pan shed, and a narrow line of steam drifts above its roof.
+  *elseif (bw_vignette = 2)
+    A lantern moves along the bank path, then vanishes behind the Tide House stair.
+  *elseif (bw_vignette = 3)
+    Water knocks softly against the loading slip below the bank.
+  *elseif (bw_vignette = 4)
+    The Reedhouse yard lamp burns above the stable gate, catching on the wet rail tops.
+  *elseif (bw_vignette = 5)
+    Someone closes a shed door against the wind, and the sound carries over the flats.
+  *else
+    A dog barks from the cottages, then the reeds take over the sound again.
+  *return
+*if (bw_vignette = 1)
+  Two people rake crystals toward the edge of a shallow bed, their boots sunk in the wet ground beside it.
+*elseif (bw_vignette = 2)
+  A handcart stacked with small salt sacks rattles along the bank toward the raised store.
+*elseif (bw_vignette = 3)
+  Someone works a gate wheel beside a channel while water rushes through the gap below it.
+*elseif (bw_vignette = 4)
+  A boat lies at the slip on the high water, and crates are passed carefully from its deck to the bank.
+*elseif (bw_vignette = 5)
+  Peat is carried in short stacks toward the pan sheds, leaving dark crumbs across the pale path.
+*else
+  A pair of people spread wet oilskins over a rail and weigh the corners down against the wind.
+*return
+
+*label bw_walk_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return

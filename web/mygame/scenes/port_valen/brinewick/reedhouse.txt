@@ -1,0 +1,252 @@
+*comment ====================================================================================
+*comment THE REEDHOUSE (Brinewick): roadside inn, cookhouse and stable yard on high ground. A
+*comment private room lasts 24 hours; its stable is scenery because calendar.txt handles horse upkeep.
+*comment The indoor layer is clock-driven so the inn never returns as an empty static room.
+*comment ====================================================================================
+
+*label bw_reedhouse
+*set minutes_to_pass 5
+*set time_advance_call_id "bw_reedhouse_1"
+*gosub_scene port_valen/brinewick/brinewick bw_walk_time
+*goto bw_reedhouse_main
+
+*label bw_reedhouse_main
+*temp reed_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*if (reed_now >= bw_reedhouse_room_until)
+  *set bw_reedhouse_room_active false
+*temp reed_first false
+*if (not(bw_reedhouse_seen))
+  *set reed_first true
+*set bw_reedhouse_seen true
+*temp reed_state "day"
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set reed_state "night"
+*elseif (time_period = "Morning")
+  *set reed_state "morning"
+*elseif (time_period = "Dusk")
+  *set reed_state "dusk"
+*temp reed_vignette (((campaign_day * 24) + clock_hour) modulo 6) + 1
+[b]◈ THE REEDHOUSE[/b]
+*line_break
+The Reedhouse is a low inn with a stone lower wall and dark timber above, its roof weighted with bundles of reed against the wind. A wide hearth faces scrubbed plank tables and a short counter. An arch at the back opens on a raised yard with hitching rails, a covered trough and three stable stalls beneath a hay loft. The room smells of peat smoke, fish broth, damp wool and the clean sharpness of salt carried in from the flats.
+
+*if (weather_severity >= 3)
+  The shutters are closed tight and the hearth burns high. The stable doors have been barred against the weather, and rain or snow rattles hard on the roof reeds.
+*elseif (weather = "Rain")
+  Rain runs from the eaves into the yard ditch, and the stone floor by the door shines where boots have tracked in water.
+*elseif (weather = "Fog")
+  Fog presses pale against the front windows and lies among the hitching rails outside.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Slush gathers in the yard ruts, and cold damp clings to the wall nearest the road.
+*elseif (reed_state = "night")
+  Lamps burn over the counter and beside the stair, while a yard lamp marks the stable gate outside.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  The floor by the door is still dark with old damp and the stable yard smells strongly of wet straw.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The yard ruts hold a little water beneath the fresh straw scattered over them.
+
+*if (reed_first)
+  A compact human woman stands behind the counter, her dark hair wrapped beneath a plain kerchief. Wind has reddened the bridge of her nose and salt has cracked the backs of both hands; a dish towel is looped through her belt. She looks up from the pot at the hearth.
+
+  "Nessa Cale," she says. "The food is hot, a room costs three copper, and the stable yard is through the arch. Pick what you need."
+*else
+  Nessa Cale keeps the counter, with the room keys hanging from a board behind her.
+
+*if ((street_life = "empty") and (not(reed_state = "night")))
+  The tables are empty for the moment, and the bubbling pot at the hearth sounds louder than the road outside.
+*elseif (reed_state = "morning")
+  *if ((reed_vignette = 1) or (reed_vignette = 4))
+    Steam rises from bowls along the nearest bench while people eat quickly before turning back to the road or the flats.
+  *else
+    Wrapped rolls and small bundles wait near the door, and somebody shakes rain from a coat in the entryway before taking a seat.
+*elseif (reed_state = "dusk")
+  *if ((reed_vignette = 2) or (reed_vignette = 5))
+    The yard gate opens and closes as late arrivals lead animals in from the road. The counter sees a steady exchange of coins, bowls and keys.
+  *else
+    The long tables are filling. One person warms both hands above the hearth while another takes a bowl to the far bench.
+*elseif (reed_state = "night")
+  *if ((reed_vignette = 3) or (reed_vignette = 6))
+    The hearth is banked low. A few quiet voices remain at the far table, and the stable yard sends an occasional creak through the rear wall.
+  *else
+    Most of the tables are empty now. Folded blankets wait at one end of the counter for anyone who comes in too late to travel on.
+*else
+  *comment Midday and Afternoon
+  *if ((reed_vignette = 1) or (reed_vignette = 5))
+    Two travelers sit by the window with a board game between them while Nessa moves between the counter and the pot.
+  *else
+    People pause at the tables for water, food or a few dry minutes by the hearth before they continue along the road.
+
+*choice
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 2)
+    # [2 Copper Bits] Buy a bowl of fish, peas and barley. [~20 min]@{show_stat_hints  [+2 Temp HP, +1 CON for 4h]|}
+      *set tavern_item_cost_copper 2
+      *set tavern_item_hp_heal 0
+      *set tavern_item_temp_hp 2
+      *set tavern_item_type "food"
+      *set tavern_item_buff_name "Saltworker's Stew"
+      *set tavern_item_buff_desc "+1 CON"
+      *set tavern_item_buff_stat "con"
+      *set tavern_item_buff_bonus 1
+      *set tavern_item_buff_minutes 240
+      *gosub_scene economy buy_tavern_item
+      *set hours_to_pass 0
+      *set minutes_to_pass 20
+      *set time_advance_call_id "bw_reed_stew"
+      *gosub_scene calendar advance_time
+      *gosub_scene calendar recalc_hp_from_neglect
+      *if (hp_current <= 0)
+        *set death_cause "exhaustion"
+        *goto_scene death death_screen
+      You set two coppers on the counter. "A bowl of stew, please."
+
+      Nessa serves a thick bowl of white fish, peas and barley with a heel of dark bread. The broth is hot with pepper and onion, and the fish breaks apart under the spoon.
+
+      [b][Hot Stew Eaten: +2 Temporary HP | Saltworker's Stew (+1 CON for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+      *page_break Set the bowl aside...
+      *goto bw_reedhouse_main
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 1)
+    # [1 Copper Bit] Buy cured fish, oat biscuit and an apple. [~10 min]@{show_stat_hints  [+1 Temp HP, +1 WIS for 4h]|}
+      *set tavern_item_cost_copper 1
+      *set tavern_item_hp_heal 0
+      *set tavern_item_temp_hp 1
+      *set tavern_item_type "food"
+      *set tavern_item_buff_name "Flats Lunch"
+      *set tavern_item_buff_desc "+1 WIS"
+      *set tavern_item_buff_stat "wis"
+      *set tavern_item_buff_bonus 1
+      *set tavern_item_buff_minutes 240
+      *gosub_scene economy buy_tavern_item
+      *set hours_to_pass 0
+      *set minutes_to_pass 10
+      *set time_advance_call_id "bw_reed_lunch"
+      *gosub_scene calendar advance_time
+      *gosub_scene calendar recalc_hp_from_neglect
+      *if (hp_current <= 0)
+        *set death_cause "exhaustion"
+        *goto_scene death death_screen
+      You set a copper on the counter. "Something small for the road."
+
+      Nessa wraps a strip of cured fish, an oat biscuit and a small apple in a square of cloth. The fish is firm with salt, the biscuit sweet with oats, and the apple leaves a clean taste after both.
+
+      [b][Flats Lunch Eaten: +1 Temporary HP | Flats Lunch (+1 WIS for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+      *page_break Wipe your hands...
+      *goto bw_reedhouse_main
+  *if (bw_reedhouse_room_active)
+    # Go up to your room.
+      *goto bw_reedhouse_room
+  *elseif ((((gold * 100) + (silver * 10)) + copper) >= bw_reedhouse_rate_copper)
+    # [${bw_reedhouse_rate_copper} Copper Bits] Take a room for 24 hours.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+        *set currency_add_amount (0 - bw_reedhouse_rate_copper)
+        *gosub_scene economy currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id page_id
+      *set bw_reedhouse_room_active true
+      *set bw_reedhouse_room_until (reed_now + 1440)
+      You place the price on the counter. "A room, then."
+
+      Nessa takes the coins and gives you an iron key. "Up the stair, first door on the yard side. It is yours until this hour tomorrow. If the water is high, the slip will knock half the night."
+      *page_break Take the stair...
+      *goto bw_reedhouse_room
+  *else
+    # Ask Nessa about a room.
+      You nod toward the keys behind the counter. "What is the rate for a room?"
+
+      "${bw_reedhouse_rate_copper} copper bits for a day and a night," Nessa says. "Bring that, and I will hand you a key."
+
+      "I will remember," you say.
+      *page_break Step back from the counter...
+      *goto bw_reedhouse_main
+  # Step through to the stable yard.
+    The raised yard is small but dry. Fresh straw lies in the stalls, a pump fills the covered trough, and hay waits on a rack under the lean-to roof.
+    *page_break Go back inside...
+    *goto bw_reedhouse_main
+  # Walk back to the tide gate.
+    *goto_scene port_valen/brinewick/brinewick brinewick
+
+*label bw_reedhouse_room
+*temp reed_room_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*if (reed_room_now >= bw_reedhouse_room_until)
+  *set bw_reedhouse_room_active false
+*if (not(bw_reedhouse_room_active))
+  *goto bw_reedhouse_main
+[b]◈ YOUR ROOM: THE REEDHOUSE[/b]
+*line_break
+The room beneath the roof holds a plank bed, straw mattress, folded wool blanket, and a tin basin beside a jug of water. A shuttered window looks across the stable yard to the bank and the reeds beyond it. The room is plain and dry, with the smell of peat smoke caught in the boards.
+
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  The stable-yard lamp shows as a narrow line beneath the shutter, and water makes a soft, uneven sound beyond the bank.
+*elseif (time_period = "Dusk")
+  Last light lies along the stable roof while the reeds beyond it turn black.
+*else
+  Daylight comes through the shutter gaps and falls across the foot of the bed.
+
+*if (weather_severity >= 3)
+  Wind worries the shutter and rattles the roof reeds overhead.
+*elseif (weather = "Rain")
+  Rain taps steadily above the bed and splashes in the yard below.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Cold clings to the window wall, though the room itself stays dry.
+
+*choice
+  # Bar the door and sleep in the bed. [~8 Hours]
+    *goto bw_reedhouse_sleep
+  # Wash in the basin. [~10 min]
+    *goto bw_reedhouse_wash
+  # Go back down to the Reedhouse.
+    *goto bw_reedhouse_main
+
+*label bw_reedhouse_sleep
+*set hours_to_pass 8
+*set minutes_to_pass 0
+*set time_advance_call_id "bw_reedhouse_sleep"
+*gosub_scene calendar advance_time
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*set sleep_location_id "brinewick_reedhouse"
+*set sleep_is_shared false
+*set sleep_is_permanent_home false
+*set sleep_tier_name "none"
+*set sleep_tier_stat1 "none"
+*set sleep_tier_bonus1 0
+*set sleep_tier_stat2 "none"
+*set sleep_tier_bonus2 0
+*gosub_scene calendar resolve_sleep
+
+You bar the door, close the shutter and settle beneath the wool blanket. The bed is narrow but dry, and the sounds of water beyond the bank blend with the settling creak of the house.
+
+*if ((time_period = "Morning") or (time_period = "Pre-Dawn"))
+  The first movement in the stable yard wakes you. Your limbs are loose and rested.
+*elseif (time_period = "Dusk")
+  You wake to the last calls by the tide gate. The ache of travel has eased.
+*elseif (time_period = "Night")
+  You surface in the dark to water knocking softly at the slip. Your fatigue has cleared.
+*else
+  Daylight reaches the foot of the bed when you wake. The village outside is moving through its ordinary work, and your mind is clear.
+
+*if (not(sleep_gear_note = ""))
+  *line_break
+  ${sleep_gear_note}
+
+The key remains yours until this hour tomorrow.
+*page_break Go downstairs...
+*goto bw_reedhouse_main
+
+*label bw_reedhouse_wash
+*set hours_to_pass 0
+*set minutes_to_pass 10
+*set time_advance_call_id "bw_reedhouse_wash"
+*gosub_scene calendar advance_time
+*set minutes_since_wash 0
+*set hygiene_stage "Clean"
+*gosub_scene calendar update_hub_condition
+
+You pour cold water into the basin and wash away road grit and salt dust with the rough soap beside the jug. The towel is coarse, but clean.
+
+[b][Washed Up: Hygiene Restored to Clean][/b]
+*page_break Set the basin aside...
+*goto bw_reedhouse_room

@@ -11,6 +11,9 @@
  *
  * Nothing is tagged in the engine yet, so slots are identified by reading each label: "[ACTION] [Name] blurb", "[BONUS ACTION]",
  * "[NO ACTION]" / "[NO COST]", or a bare "[Name] blurb" (Shield, Hellish Rebuke); anything else is Move / Other by its opening words.
+ *
+ * Variants: options named "[Base: Variant]" (True Strike: Weapon / True Strike: Radiant) are folded into ONE slot named Base. Pressing it opens
+ * a small pop-up of buttons above the slot, one per variant; each presses its own real option. The Classic list shows them as separate lines.
  */
 (function () {
   "use strict";
@@ -23,6 +26,8 @@
   var seen = [];          // every action seen this fight, in hub order: {id, group, name, blurb}
   var offered = {};       // id -> radio, for the options on the page right now
   var tipFor = null;
+  var flyFor = null;      // id of the slot whose variant pop-up is open (True Strike: Weapon / Radiant), or null
+  var FLY_ID = "battleHudFly";
 
   function truthy(v) { return v === true || v === "true"; }
   function num(v) { var n = Number(v); return isFinite(n) ? n : 0; }
@@ -74,12 +79,26 @@
     var labels = forms.length ? forms[forms.length - 1].querySelectorAll(".choice label") : [];
     var out = [];
     var hub = false;
+    var hosts = {};
     for (var i = 0; i < labels.length; i++) {
       var radio = labels[i].querySelector("input[type=radio]");
       if (!radio || radio.disabled) continue;
       var parsed = parseLabel(labels[i].textContent);
       if (parsed.name === "End turn") hub = true;
       parsed.id = slug(parsed.name);
+      // "Base: Variant" -- the variants share one slot (the first one keeps the slot's place in the order).
+      var vm = (parsed.group !== "other" && parsed.group !== "move" && parsed.group !== "tactic") ? /^(.+?):\s+(.+)$/.exec(parsed.name) : null;
+      if (vm) {
+        var baseId = slug(vm[1]);
+        var host = hosts[baseId];
+        if (!host) {
+          host = { id: baseId, group: parsed.group, name: vm[1], blurb: parsed.blurb, radio: radio, variants: [] };
+          hosts[baseId] = host;
+          out.push(host);
+        }
+        host.variants.push({ id: parsed.id, label: vm[2], blurb: parsed.blurb, radio: radio });
+        continue;
+      }
       // The drawn weapon and the sidearm swap places when the sidearm is used, so their names move; their buttons do not.
       var st = statsNow();
       if (parsed.group === "action" && st.weapon && parsed.name === "Attack with your " + st.weapon) parsed.id = "primary_attack";
@@ -106,12 +125,15 @@
       if (w[1] && w[1] !== "none") e.name = "Attack with your " + w[1];
     });
     offered = {};
-    items.forEach(function (it) { offered[it.id] = it.radio; });
+    items.forEach(function (it) {
+      offered[it.id] = it.radio;
+      (it.variants || []).forEach(function (v) { offered[v.id] = v.radio; });
+    });
     items.forEach(function (it, i) {
       var at = -1, k;
       for (k = 0; k < seen.length; k++) if (seen[k].id === it.id) { at = k; break; }
-      if (at >= 0) { seen[at].blurb = it.blurb; seen[at].group = it.group; return; }
-      var entry = { id: it.id, group: it.group, name: it.name, blurb: it.blurb };
+      if (at >= 0) { seen[at].blurb = it.blurb; seen[at].group = it.group; if (it.variants) seen[at].variants = it.variants; return; }
+      var entry = { id: it.id, group: it.group, name: it.name, blurb: it.blurb, variants: it.variants };
       var before = -1;
       for (var j = i + 1; j < items.length && before < 0; j++) {
         for (k = 0; k < seen.length; k++) if (seen[k].id === items[j].id) { before = k; break; }
@@ -145,6 +167,7 @@
     if (e.group === "tactic") return "No ally is holding a chokepoint, or you cannot move now";
     if (e.group === "action" && num(s.combat_player_actions_left) <= 0) return "No action left this turn";
     if (e.group === "bonus" && num(s.combat_player_bonus_left) <= 0) return "No bonus action left this turn";
+    if (e.id === "true_strike" && s.weapon_type !== "ranged") return "Out of reach. Close in on an enemy first, with a weapon in hand";
     // A melee weapon can only strike an enemy in reach; fights now open at Close range, so this is the usual reason on the first turn.
     if ((e.id === "primary_attack" || e.id === "sidearm_attack") && (e.id === "primary_attack" ? s.weapon_type : s.sidearm_type) !== "ranged") return "Out of reach. Advance (free movement) to close in, then strike";
     if (e.group === "free" && truthy(s.player_oa_used) && /shield|rebuke/.test(e.id)) return "Reaction already used this round";
@@ -160,7 +183,8 @@
   function slotHtml(e, key) {
     var on = !!offered[e.id];
     var icon = iconFor(e.name);
-    return "<button type=\"button\" class=\"bhud-slot bhud-" + e.group + (on ? "" : " off") + "\" data-bhud=\"pick\" data-id=\"" + esc(e.id) + "\"" +
+    var fly = !!(e.variants && e.variants.length);
+    return "<button type=\"button\" class=\"bhud-slot bhud-" + e.group + (on ? "" : " off") + (fly && flyFor === e.id ? " open" : "") + "\" data-bhud=\"" + (fly ? "fly" : "pick") + "\" data-id=\"" + esc(e.id) + "\"" +
       (key ? " data-key=\"" + key + "\"" : "") + (on ? "" : " aria-disabled=\"true\"") + " aria-label=\"" + esc(e.name) + "\">" +
       (key ? "<span class=\"bhud-key\">" + key + "</span>" : "") +
       (icon ? "<img class=\"bhud-icon\" src=\"" + icon + "\" alt=\"\">" : "<span class=\"bhud-glyph\">" + esc((e.name.match(/[A-Za-z0-9]/) || ["?"])[0]) + "</span>") +
@@ -176,12 +200,19 @@
   }
 
   // The two dedicated weapon buttons, above the turn budget: the weapon in hand, and the sidearm.
+  // The art is the framed tile for the hand and the kind of weapon in it (ACTION_ICONS primary_melee / primary_ranged / sidearm_melee / sidearm_ranged, gen_action_icons.js);
+  // the hover card still says which weapon it is. With no art the button falls back to the word and the glyph it had before.
   function weaponHtml(e, key, label, glyph) {
     var on = !!offered[e.id];
-    return "<button type=\"button\" class=\"bhud-weapon bhud-action" + (on ? "" : " off") + "\" data-bhud=\"pick\" data-id=\"" + esc(e.id) + "\"" +
+    var st = statsNow();
+    var hand = e.id === "sidearm_attack" ? "sidearm" : "primary";
+    var kind = (hand === "sidearm" ? st.sidearm_type : st.weapon_type) === "ranged" ? "ranged" : "melee";
+    var art = (window.ACTION_ICONS || {})[hand + "_" + kind];
+    return "<button type=\"button\" class=\"bhud-weapon bhud-action" + (art ? " art" : "") + (on ? "" : " off") + "\" data-bhud=\"pick\" data-id=\"" + esc(e.id) + "\"" +
       (key ? " data-key=\"" + key + "\"" : "") + (on ? "" : " aria-disabled=\"true\"") + " aria-label=\"" + esc(e.name) + "\">" +
       (key ? "<span class=\"bhud-key\">" + key + "</span>" : "") +
-      "<span class=\"bhud-wglyph\">" + glyph + "</span><span class=\"bhud-wlabel\">" + label + "</span></button>";
+      (art ? "<img class=\"bhud-wart\" src=\"" + art + "\" alt=\"\">"
+           : "<span class=\"bhud-wglyph\">" + glyph + "</span><span class=\"bhud-wlabel\">" + label + "</span>") + "</button>";
   }
 
   function build() {
@@ -239,6 +270,7 @@
     }
     if (!radio || pressed || !radio.form) return;
     pressed = true;
+    closeFly();
     hideTip();
     radio.checked = true;
     if (typeof radio.form.onsubmit === "function") radio.form.onsubmit();
@@ -248,6 +280,63 @@
   // the live ChoiceScript option above, exactly like an icon in this HUD would.
   window.BattleHud = window.BattleHud || {};
   window.BattleHud.pick = pick;
+
+  /* ---------------------------------------------------------------- variant pop-up */
+
+  function flyEl() {
+    var el = document.getElementById(FLY_ID);
+    if (!el) {
+      el = document.createElement("div");
+      el.id = FLY_ID;
+      document.body.appendChild(el);
+    }
+    return el;
+  }
+  function closeFly() {
+    flyFor = null;
+    var el = document.getElementById(FLY_ID);
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+    var open = document.querySelector("#" + HUD_ID + " .bhud-slot.open");
+    if (open) open.className = open.className.replace(/\s*\bopen\b/, "");
+  }
+  // A small row of buttons above the slot, one per variant. It lives on the body, not inside the dock: the dock scrolls and would clip it.
+  // Positioned the way the hover card is: measured in viewport pixels, set in CSS pixels, so the screen-fit zoom does not move it.
+  function openFly(id) {
+    var e = null;
+    for (var i = 0; i < seen.length; i++) if (seen[i].id === id) e = seen[i];
+    var slot = document.querySelector("#" + HUD_ID + " .bhud-slot[data-id=\"" + id + "\"]");
+    if (!e || !e.variants || !e.variants.length || !slot || !offered[id]) return;
+    hideTip();
+    closeFly();
+    flyFor = id;
+    slot.className += " open";
+    var el = flyEl();
+    el.innerHTML = "<div class=\"bfly-title\">" + esc(e.name) + "</div><div class=\"bfly-row\">" + e.variants.map(function (v) {
+      var on = !!offered[v.id];
+      var icon = variantArt(e, v) || iconFor(e.name);
+      return "<button type=\"button\" class=\"bfly-btn bhud-" + e.group + (on ? "" : " off") + "\" data-bhud=\"pick\" data-id=\"" + esc(v.id) + "\"" +
+        (on ? "" : " aria-disabled=\"true\"") + " title=\"" + esc(v.blurb) + "\">" +
+        (icon ? "<img class=\"bhud-icon\" src=\"" + icon + "\" alt=\"\">" : "") + "<span>" + esc(v.label) + "</span></button>";
+    }).join("") + "</div>";
+    el.className = "on";
+    var z = window.UI_ZOOM || 1;
+    var r = slot.getBoundingClientRect(), fr = el.getBoundingClientRect();
+    var left = Math.min(Math.max(8, r.left + r.width / 2 - fr.width / 2), window.innerWidth - fr.width - 8);
+    el.style.left = (left / z) + "px";
+    el.style.top = (Math.max(8, r.top - fr.height - 8) / z) + "px";
+  }
+  // Booming Blade's variants are weapons ("Booming Blade: falchion"): each button wears the tile of the hand that weapon is in, the same art as the weapon buttons.
+  // Anything else (True Strike: Weapon / Radiant) wears the spell's own icon.
+  function variantArt(e, v) {
+    if (e.id !== "booming_blade") return "";
+    var st = statsNow(), art = window.ACTION_ICONS || {}, lab = String(v.label).toLowerCase();
+    if (st.weapon && lab === String(st.weapon).toLowerCase()) return art.primary_melee || "";
+    if (st.sidearm && lab === String(st.sidearm).toLowerCase()) return art.sidearm_melee || "";
+    return "";
+  }
+  function toggleFly(id) {
+    if (flyFor === id) closeFly(); else openFly(id);
+  }
 
   /* ---------------------------------------------------------------- hover card */
 
@@ -282,7 +371,7 @@
     var id = slot.getAttribute("data-id");
     var e = null;
     for (var i = 0; i < seen.length; i++) if (seen[i].id === id) e = seen[i];
-    if (!e) return;
+    if (!e || flyFor === id) return;
     var on = !!offered[id];
     var el = tipEl();
     var wc = weaponCard(id);
@@ -291,6 +380,7 @@
     } else
     el.innerHTML = "<div class=\"bt-name\">" + esc(e.name) + "</div>" +
       (KIND[e.group] ? "<div class=\"bt-kind\">" + KIND[e.group] + "</div>" : "") +
+      (e.variants && e.variants.length ? "<div class=\"bt-text\">Click to choose: " + esc(e.variants.map(function (v) { return v.label; }).join(" or ")) + ".</div>" : "") +
       (e.blurb && e.blurb.replace(/[^A-Za-z]/g, "").length > 2 && e.blurb !== e.name ? "<div class=\"bt-text\">" + esc(e.blurb) + "</div>" : "") +
       (on ? "" : "<div class=\"bt-off\">" + esc(reasonFor(e)) + "</div>");
     el.className = "on";
@@ -317,6 +407,7 @@
     document.body.classList.remove("battleHudOn");
     document.documentElement.style.setProperty("--bhud-h", "0px");
     hideTip();
+    closeFly();
     lastSig = "";
   }
 
@@ -347,7 +438,7 @@
     var sig = items.map(function (i) { return i.id; }).join("|") + "#" + seen.length + "#" + num(s.combat_player_actions_left) + "/" + num(s.combat_player_bonus_left) + "/" + num(s.combat_player_moves_left) + "/" + (truthy(s.player_oa_used) ? 1 : 0);
     var el = document.getElementById(HUD_ID);
     if (el && sig === lastSig) return;
-    if (sig !== lastSig) pressed = false; // a new page of options: the old press is over
+    if (sig !== lastSig) { pressed = false; closeFly(); } // a new page of options: the old press is over
     if (!el) {
       el = document.createElement("div");
       el.id = HUD_ID;
@@ -365,8 +456,10 @@
   document.addEventListener("click", function (ev) {
     var t = ev.target;
     while (t && t !== document && !(t.getAttribute && t.hasAttribute("data-bhud"))) t = t.parentNode;
-    if (!t || t === document) return;
+    if (!t || t === document) { if (flyFor && !(ev.target.closest && ev.target.closest("#" + FLY_ID))) closeFly(); return; }
     var act = t.getAttribute("data-bhud");
+    if (act === "fly") toggleFly(t.getAttribute("data-id"));
+    else if (flyFor && act !== "pick") closeFly();
     if (act === "pick") pick(t.getAttribute("data-id"));
     else if (act === "classic") { classic = true; scan(); }
     else if (act === "hud") { classic = false; scan(); }
@@ -379,6 +472,7 @@
 
   // Number keys fire the numbered slot, like a real hotbar.
   document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape" && flyFor) { closeFly(); return; }
     if (ev.ctrlKey || ev.metaKey || ev.altKey || ev.shiftKey) return;
     if (!document.body.classList.contains("battleHudOn")) return;
     if (document.querySelector("dialog[open]")) return;
@@ -386,7 +480,10 @@
     if (tag === "input" || tag === "textarea" || tag === "select") return;
     if (!/^[1-9]$/.test(ev.key)) return;
     var slot = document.querySelector("#" + HUD_ID + " .bhud-slot[data-key=\"" + ev.key + "\"]");
-    if (slot) { ev.preventDefault(); pick(slot.getAttribute("data-id")); }
+    if (slot) {
+      ev.preventDefault();
+      if (slot.getAttribute("data-bhud") === "fly") toggleFly(slot.getAttribute("data-id")); else pick(slot.getAttribute("data-id"));
+    }
   });
   window.addEventListener("resize", dockHeight);
 

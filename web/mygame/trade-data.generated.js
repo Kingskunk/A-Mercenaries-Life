@@ -1030,6 +1030,90 @@ window.TRADE_DATA = {
     "countVar": ""
    }
   },
+  "road_club": {
+   "name": "wooden club",
+   "title": "Wooden Club",
+   "kind": "weapon",
+   "tier": "",
+   "retail": 5,
+   "minutes": 5,
+   "hint": "1d4 Bludgeoning, One-Handed",
+   "slot": "Weapon",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 35,
+    "general": 50,
+    "tailor": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "countVar": ""
+   }
+  },
+  "rough_spear": {
+   "name": "rough spear",
+   "title": "Rough Spear",
+   "kind": "weapon",
+   "tier": "",
+   "retail": 8,
+   "minutes": 5,
+   "hint": "1d6 Piercing, Reach, One-Handed",
+   "slot": "Weapon",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 35,
+    "general": 50,
+    "tailor": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "countVar": ""
+   }
+  },
+  "cord_sling": {
+   "name": "cord sling",
+   "title": "Cord Sling",
+   "kind": "weapon",
+   "tier": "",
+   "retail": 4,
+   "minutes": 5,
+   "hint": "1d4 Bludgeoning, Ranged, One-Handed",
+   "slot": "Weapon",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 35,
+    "general": 50,
+    "tailor": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "countVar": ""
+   }
+  },
+  "hunting_bow": {
+   "name": "hunting bow",
+   "title": "Hunting Bow",
+   "kind": "weapon",
+   "tier": "",
+   "retail": 15,
+   "minutes": 5,
+   "hint": "1d6 Piercing, Ranged, Two-Handed",
+   "slot": "Weapon, two-handed",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 35,
+    "general": 50,
+    "tailor": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "countVar": ""
+   }
+  },
   "longshade_quarterstaff": {
    "name": "ash quarterstaff",
    "title": "Ash Quarterstaff",
@@ -1254,7 +1338,11 @@ window.TRADE_DATA = {
     "torvald_iron_sallet",
     "torvald_hide_cap",
     "iron_crowbar",
-    "toll_seal_ring"
+    "toll_seal_ring",
+    "road_club",
+    "rough_spear",
+    "cord_sling",
+    "hunting_bow"
    ]
   },
   "works": {
@@ -1270,7 +1358,11 @@ window.TRADE_DATA = {
     "longshade_quarterstaff",
     "longshade_spear",
     "longshade_shortbow",
-    "wooden_clogs"
+    "wooden_clogs",
+    "road_club",
+    "rough_spear",
+    "cord_sling",
+    "hunting_bow"
    ]
   },
   "tmstore": {

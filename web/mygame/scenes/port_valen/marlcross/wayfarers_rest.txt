@@ -1,0 +1,254 @@
+*comment ====================================================================================
+*comment THE WAYFARER'S REST (Marlcross): the village inn and stable yard. A private room is paid
+*comment for 24 hours; it provides a bed and basin, but is not a permanent home. The stable yard is
+*comment scenery because calendar.txt already handles horse stabling and the village's daily charge.
+*comment ====================================================================================
+
+*label mc_wayfarers_rest
+*set minutes_to_pass 5
+*set time_advance_call_id "mc_wayfarers_rest_1"
+*gosub_scene port_valen/marlcross/marlcross mc_walk_time
+*goto mc_wayfarers_rest_main
+
+*label mc_wayfarers_rest_main
+*temp rest_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*if (rest_now >= mc_rest_room_until)
+  *set mc_rest_room_active false
+*temp mc_rest_first false
+*if (not(mc_rest_seen))
+  *set mc_rest_first true
+*set mc_rest_seen true
+*temp rest_state "day"
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set rest_state "night"
+*elseif (time_period = "Morning")
+  *set rest_state "morning"
+*elseif (time_period = "Dusk")
+  *set rest_state "dusk"
+*temp rest_vignette (((campaign_day * 24) + clock_hour) modulo 6) + 1
+[b]◈ THE WAYFARER'S REST[/b]
+*line_break
+The Wayfarer's Rest is a broad, low inn built along the road-side edge of the crossing. Its front room has a stone hearth, a plank counter and tables scarred by cups and knife points. An arch beside the house leads to a walled yard with hitching rails, a covered trough and a stable range under a hay loft. Wagon tongues stand propped beneath a lean-to beyond the stalls. The air smells of woodsmoke, cooked onions, straw and warm animal hide.
+
+*if (weather_severity >= 3)
+  The shutters are drawn tight and the hearth burns high. In the yard, the stable doors are shut against the weather and the trough has been covered with boards.
+*elseif (weather = "Rain")
+  Rain rattles on the stable roof and a brown stream runs through the yard toward the road ditch.
+*elseif (weather = "Fog")
+  Mist presses against the front windows and hangs low among the hitching rails outside.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Slush lies in the yard ruts and drips from the stable eaves.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  The hearth and two lamps keep the front room warm, while a yard lamp burns above the stable gate.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Old mud has dried in ridges along the yard boards and the floor inside the entrance is dark with tracked-in damp.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The yard ruts still hold a little water beneath the straw scattered over them.
+
+*if (mc_rest_first)
+  A broad-shouldered, middle-aged human woman stands behind the counter with a ring of keys at her belt. Her dark hair is cut close around her ears; a pale burn scar crosses the back of her left hand, and her square face gives you a plain look across the counter. "Tamsin Pike. Food is ready when the pot is on, rooms are three copper, and the yard has water and hay. Tell me which you need."
+*else
+  Tamsin Pike keeps the counter, with the room keys hanging within reach behind her.
+
+*if ((street_life = "empty") and (not(rest_state = "night")))
+  The tables are empty for the moment, and the kitchen sounds carry clearly through the half-open door.
+*elseif (rest_state = "morning")
+  *if ((rest_vignette = 1) or (rest_vignette = 4))
+    Steam rises from bowls along the nearest table while people eat quickly and keep one eye on the stable yard.
+  *else
+    A line of packed rolls and small bundles waits by the door, and the front room smells of porridge and damp wool.
+*elseif (rest_state = "dusk")
+  *if ((rest_vignette = 2) or (rest_vignette = 5))
+    The yard gate keeps opening and closing as late arrivals come in from the road. Muddy boots gather beneath the benches, and Tamsin's counter sees a steady line of coins and keys.
+  *else
+    The long tables fill by degrees. A bowl is passed down one end of a bench while somebody at the hearth warms stiff hands over the coals.
+*elseif (rest_state = "night")
+  *if ((rest_vignette = 3) or (rest_vignette = 6))
+    The hearth has been banked low. A few quiet voices remain at the far table, and the stable yard sends an occasional creak through the wall.
+  *else
+    Most of the tables are empty now. A lamp burns beside the stair, and blankets lie folded at one end of the counter for late guests.
+*else
+  *comment Midday and Afternoon
+  *if ((rest_vignette = 1) or (rest_vignette = 5))
+    The room has space between its tables. Two travelers share a board game by the window while the kitchen door opens and closes behind Tamsin.
+  *else
+    People pause only briefly at the tables: a drink of water, a scrape of food, a look through the front window at the road before they move on.
+
+*choice
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 2)
+    # [2 Copper Bits] Buy a bowl of beef, beans and barley. [~20 min]@{show_stat_hints  [+2 Temp HP, +1 CON for 4h]|}
+      *set tavern_item_cost_copper 2
+      *set tavern_item_hp_heal 0
+      *set tavern_item_temp_hp 2
+      *set tavern_item_type "food"
+      *set tavern_item_buff_name "Roadside Stew"
+      *set tavern_item_buff_desc "+1 CON"
+      *set tavern_item_buff_stat "con"
+      *set tavern_item_buff_bonus 1
+      *set tavern_item_buff_minutes 240
+      *gosub_scene economy buy_tavern_item
+      *set hours_to_pass 0
+      *set minutes_to_pass 20
+      *set time_advance_call_id "mc_rest_stew"
+      *gosub_scene calendar advance_time
+      *gosub_scene calendar recalc_hp_from_neglect
+      *if (hp_current <= 0)
+        *set death_cause "exhaustion"
+        *goto_scene death death_screen
+      You set two coppers on the counter. "A bowl of stew, please."
+
+      Tamsin sets down a thick bowl of beans, barley and beef with a heel of rye bread across its rim. The broth is hot and rich with onion, and the meal settles heavily after the road.
+
+      [b][Hot Stew Eaten: +2 Temporary HP | Roadside Stew (+1 CON for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+      *page_break Set the bowl aside...
+      *goto mc_wayfarers_rest_main
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 1)
+    # [1 Copper Bit] Buy an oatcake, cheese and apple. [~10 min]@{show_stat_hints  [+1 Temp HP, +1 WIS for 4h]|}
+      *set tavern_item_cost_copper 1
+      *set tavern_item_hp_heal 0
+      *set tavern_item_temp_hp 1
+      *set tavern_item_type "food"
+      *set tavern_item_buff_name "Roadside Lunch"
+      *set tavern_item_buff_desc "+1 WIS"
+      *set tavern_item_buff_stat "wis"
+      *set tavern_item_buff_bonus 1
+      *set tavern_item_buff_minutes 240
+      *gosub_scene economy buy_tavern_item
+      *set hours_to_pass 0
+      *set minutes_to_pass 10
+      *set time_advance_call_id "mc_rest_lunch"
+      *gosub_scene calendar advance_time
+      *gosub_scene calendar recalc_hp_from_neglect
+      *if (hp_current <= 0)
+        *set death_cause "exhaustion"
+        *goto_scene death death_screen
+      You put a copper on the counter. "An oatcake and whatever goes with it."
+
+      Tamsin gives you a warm oatcake, a wedge of hard cheese and a small red apple. The oatcake is crisp at the edge, the cheese sharp, and the apple sweet enough to clear the taste of road dust.
+
+      [b][Roadside Lunch Eaten: +1 Temporary HP | Roadside Lunch (+1 WIS for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+      *page_break Wipe your hands...
+      *goto mc_wayfarers_rest_main
+  *if (mc_rest_room_active)
+    # Go up to your room.
+      *goto mc_rest_room
+  *elseif ((((gold * 100) + (silver * 10)) + copper) >= mc_rest_rate_copper)
+    # [${mc_rest_rate_copper} Copper Bits] Take a room for 24 hours.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+        *set currency_add_amount (0 - mc_rest_rate_copper)
+        *gosub_scene economy currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id page_id
+      *set mc_rest_room_active true
+      *set mc_rest_room_until (rest_now + 1440)
+      You place the price on the counter. "A room, then."
+
+      Tamsin takes the coins and unhooks an iron key from the board behind her. "Top of the stair, second door," she says. "It is yours until this hour tomorrow. The yard will be louder than the house before dawn."
+      *page_break Take the stair...
+      *goto mc_rest_room
+  *else
+    # Ask Tamsin about a room.
+      You nod toward the keys behind the counter. "What is the rate for a room?"
+
+      "${mc_rest_rate_copper} copper bits for a day and a night," Tamsin says. "Bring that, and I will hand you a key."
+
+      "I will remember," you say.
+      *page_break Step back from the counter...
+      *goto mc_wayfarers_rest_main
+  # Step through to the stable yard.
+    The yard is enclosed by a low wall that breaks the wind. Fresh straw lies in the stalls, and a pump beside the trough keeps water available for passing animals. A covered rack holds hay above the reach of damp ground.
+    *page_break Go back inside...
+    *goto mc_wayfarers_rest_main
+  # Take a moment by the hearth.
+    You stand near the fire long enough for road chill to leave your hands. A kettle ticks at the edge of the coals, and the smell of onions grows stronger whenever the kitchen door opens.
+    *page_break Step back from the hearth...
+    *goto mc_wayfarers_rest_main
+  # Walk back out to the crossing.
+    *goto_scene port_valen/marlcross/marlcross marlcross
+
+*label mc_rest_room
+*temp room_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*if (room_now >= mc_rest_room_until)
+  *set mc_rest_room_active false
+*if (not(mc_rest_room_active))
+  *goto mc_wayfarers_rest_main
+[b]◈ YOUR ROOM: THE WAYFARER'S REST[/b]
+*line_break
+The room beneath the low roof holds a plank bed, a straw mattress, a folded wool blanket, and a tin basin beside a jug of water. A shuttered window looks over the stable yard, where the roofline of the hay loft cuts across the view. The room is plain, dry and close enough to the road that wheel noise reaches it through the wall.
+
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  The yard lamp sends a narrow bar of light under the shutter, and an animal shifts somewhere below.
+*elseif (time_period = "Dusk")
+  The last light lies along the stable roof while the yard grows busy below.
+*else
+  Daylight enters through the shutter gaps and falls across the foot of the bed.
+
+*if (weather_severity >= 3)
+  Wind presses at the shutter and rattles the roof boards overhead.
+*elseif (weather = "Rain")
+  Rain taps steadily above the bed and splashes in the yard below.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Cold rests against the window wall, though the room itself remains dry.
+
+*choice
+  # Bar the door and sleep in the bed. [~8 Hours]
+    *goto mc_rest_sleep
+  # Wash in the basin. [~10 min]
+    *goto mc_rest_wash
+  # Go back down to the inn.
+    *goto mc_wayfarers_rest_main
+
+*label mc_rest_sleep
+*set hours_to_pass 8
+*set minutes_to_pass 0
+*set time_advance_call_id "mc_rest_sleep"
+*gosub_scene calendar advance_time
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*set sleep_location_id "marlcross_wayfarers_rest"
+*set sleep_is_shared false
+*set sleep_is_permanent_home false
+*set sleep_tier_name "none"
+*set sleep_tier_stat1 "none"
+*set sleep_tier_bonus1 0
+*set sleep_tier_stat2 "none"
+*set sleep_tier_bonus2 0
+*gosub_scene calendar resolve_sleep
+
+You bar the door, close the shutter and settle beneath the wool blanket. The bed is narrow, but dry, and the sound of the yard fades into the ordinary creak of the house.
+
+*if ((time_period = "Morning") or (time_period = "Pre-Dawn"))
+  The first wagon leaving the yard wakes you. Your limbs are loose and rested.
+*elseif (time_period = "Dusk")
+  You wake to the last arrivals calling in the yard below. The ache of travel has eased.
+*elseif (time_period = "Night")
+  You surface in the dark to the soft knock of a stall door. Your fatigue has cleared.
+*else
+  Daylight reaches the foot of the bed when you wake. The road noise below has become ordinary work, and your mind is clear.
+
+*if (not(sleep_gear_note = ""))
+  *line_break
+  ${sleep_gear_note}
+
+The key remains yours until this hour tomorrow.
+*page_break Go downstairs...
+*goto mc_wayfarers_rest_main
+
+*label mc_rest_wash
+*set hours_to_pass 0
+*set minutes_to_pass 10
+*set time_advance_call_id "mc_rest_wash"
+*gosub_scene calendar advance_time
+*set minutes_since_wash 0
+*set hygiene_stage "Clean"
+*gosub_scene calendar update_hub_condition
+
+You pour cold water into the basin and wash away road grit with the rough soap left beside the jug. The towel is coarse, but clean.
+
+[b][Washed Up: Hygiene Restored to Clean][/b]
+*page_break Set the basin aside...
+*goto mc_rest_room

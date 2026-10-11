@@ -95,6 +95,10 @@
 *set shield_armed false
 *set shield_active false
 *set rebuke_armed false
+*set booming_armed false
+*set booming_side false
+*set true_strike_on false
+*set true_strike_radiant false
 *set combat_save_quiet false
 *set blade_ward_active false
 *set blade_ward_survived_a_turn false
@@ -506,6 +510,73 @@
 *line_break
 *return
 
+*comment BOOMING BLADE TRIGGER (2026-10-11): called by the enemy turn at each place an enemy moves of its OWN accord (a close, a dash, a fall back, a disengage, a terrain step, a chase step), right after the move
+*comment and before any attack. If the enemy in combat_active_target is sheathed (combat_enemyN_booming), the flag is spent, it takes 1d8 thunder through the usual resistance and vulnerability check, and
+*comment the new HP is written back to its slot. combat_boom_killed tells the caller it died, and the caller jumps to cnt_boom_tail so the dead enemy never reaches its attack. A forced move (Shove) never
+*comment calls this. The flag is cleared as it is spent, so a refresh that replays the page cannot take the damage twice.
+*label fight_booming_trigger
+*set combat_boom_killed false
+*comment quicktest's coverage walk reaches this label with combat_active_target still 0, and there is no combat_enemy0_booming, so the slot indirection is guarded (the same fix fight_pick_enemy_move needed).
+*if (combat_active_target > 0)
+  *temp fbt_name (("combat_enemy" & combat_active_target) & "_booming")
+  *temp fbt_on {(fbt_name)}
+  *if (fbt_on)
+    *set {(fbt_name)} false
+    *comment The move-damage dice by character level (5e): 1d8, 2d8 from level 5, 3d8 from level 11, 4d8 from level 17.
+    *temp fbt_dice 1
+    *if (character_level >= 5)
+      *set fbt_dice 2
+    *if (character_level >= 11)
+      *set fbt_dice 3
+    *if (character_level >= 17)
+      *set fbt_dice 4
+    *temp fbt_roll 1
+    *rand fbt_roll 1 8
+    *temp fbt_r2 1
+    *rand fbt_r2 1 8
+    *temp fbt_r3 1
+    *rand fbt_r3 1 8
+    *temp fbt_r4 1
+    *rand fbt_r4 1 8
+    *set combat_player_dmg_type "thunder"
+    *set combat_player_dmg_dealt fbt_roll
+    *if (fbt_dice >= 2)
+      *set combat_player_dmg_dealt + fbt_r2
+    *if (fbt_dice >= 3)
+      *set combat_player_dmg_dealt + fbt_r3
+    *if (fbt_dice >= 4)
+      *set combat_player_dmg_dealt + fbt_r4
+    *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
+    *set combat_enemy_hp - combat_player_dmg_dealt
+    *if (combat_enemy_hp < 0)
+      *set combat_enemy_hp 0
+    *gosub fight_sync_target_out
+    *if (combat_enemy_hp <= 0)
+      $!{combat_enemy_epithet} moves, and the thunder along them breaks loose in a hammering crack that finishes the work.
+      *line_break
+      [b][⚡ Booming Blade: ${combat_player_dmg_dealt} Thunder damage${combat_outgoing_dmg_suffix} | 💀 ${combat_enemy_name} Defeated][/b]
+      *set combat_boom_killed true
+    *else
+      $!{combat_enemy_epithet} moves, and the thunder along them breaks loose in a hammering crack.
+      *line_break
+      [b][⚡ Booming Blade: ${combat_player_dmg_dealt} Thunder damage${combat_outgoing_dmg_suffix}][/b]
+    *line_break
+*return
+
+*comment EXTRA ATTACK (2026-10-11, for Captain Trent in Varren's Errand): the enemy in slot combat_multiattack_slot follows its first attack with a second, weaker one at the same attack bonus: a d4 and
+*comment no special move, so a captain with a long blade and a knife strikes twice a turn without doubling his damage. Only the active-target SCRATCH fields are lowered, the same transient-override shape the
+*comment ranged quick-draw uses, so the slot's own durable stats are back next turn with no restore step. Called by name after the first attack in both melee branches; a caller sets combat_multiattack_slot
+*comment before fight_library and fight_cleanup clears it.
+*label fight_enemy_extra_attack
+*comment The second strike runs on its OWN page: resolve_enemy_attack and fight_narrate_enemy_turn lock their dice and their text per slot per page_id, so a second call on the first attack's page would
+*comment only replay the first roll. A page break gives it a fresh page_id (and a refresh replays only this page), at the cost of one click.
+*page_break The second blow follows…
+*set combat_enemy_dmg_dice_sides 4
+*set combat_enemy_move2_chance 0
+*gosub_scene combat_dice resolve_enemy_attack
+*gosub_scene combat_prose fight_narrate_enemy_turn
+*return
+
 *label fight_cleanup
 *comment Reaction asymmetry (2026-09-29, plan §4.5/Phase 5): same leftover-state reason as the enemy-side
 *comment oa_used reset below -- combat_begin_round already covers this at the start of every fight (via
@@ -518,6 +589,10 @@
 *set shield_armed false
 *set shield_active false
 *set rebuke_armed false
+*set booming_armed false
+*set booming_side false
+*set true_strike_on false
+*set true_strike_radiant false
 *set combat_save_quiet false
 *set blade_ward_active false
 *set blade_ward_survived_a_turn false
@@ -559,6 +634,7 @@
 *comment into the next fight_<name> label and grant an unearned surprise round there.
 *set combat_player_surprise false
 *set combat_opens_engaged false
+*set combat_multiattack_slot 0
 *comment Same reason for hiding: cover from one fight must not arm advantage in the next.
 *set combat_player_hidden false
 *set player_movement_restricted false
@@ -720,6 +796,7 @@
   *comment Bane (see resolve_cast_bane, combat_spells.txt): 0 means "not Baned." Reset per-slot here so a future fight's
   *comment slot never inherits an earlier fight's still-ticking duration.
   *set {(fc_p & "bane_expires_round")} 0
+  *set {(fc_p & "booming")} false
   *comment Disadvantage/advantage (2026-09-28): consumed on that slot's own next attack (resolve_enemy_attack/
   *comment resolve_enemy_attack_on_ally), but reset here too as a backstop -- an enemy that dies (or the fight
   *comment ends) before it ever gets to act with the debuff/buff applied would otherwise leave it sitting true for
@@ -1858,6 +1935,11 @@
 *comment Weapon/sidearm attacks end here instead of fight_action_spent (damage attacks arrive through
 *comment fight_check_enemy_hp first, to check for a kill). Always returns to the hub -- see THE TURN BUDGET above.
 *gosub combat_spend_attack
+*comment True Strike's attack ends here like any other, and its two flags are only live until the attack is spent.
+*set true_strike_on false
+*set true_strike_radiant false
+*set booming_armed false
+*set booming_side false
 *goto fight_round_hub
 
 *label fight_bonus_spent
@@ -1990,6 +2072,16 @@
 *if (hex_active)
   *line_break
   [b][🔮 Hex Active — +1d6 Necrotic Damage on all hits][/b]
+*temp fhb_i 1
+*label fight_hub_boom_loop
+*if (fhb_i <= combat_enemy_count)
+  *temp fhb_on {(("combat_enemy" & fhb_i) & "_booming")}
+  *if (fhb_on)
+    *temp fhb_name {(("combat_enemy" & fhb_i) & "_name")}
+    *line_break
+    [b][⚡ ${fhb_name} is sheathed in booming energy: thunder damage if they move][/b]
+  *set fhb_i + 1
+  *goto fight_hub_boom_loop
 *if (agathys_active)
   *line_break
   [b][❄️ Armor of Agathys Active — ${temp_hp} Temp HP | 5 Cold Damage Retaliation][/b]
@@ -2296,6 +2388,20 @@
     *goto combat_melee_reach_loop
   *if ((cmr_best > 0) and (combat_target_range > 0))
     *set combat_reach_epithet {(("combat_enemy" & cmr_best) & "_epithet")}
+*comment True Strike: a cantrip and an ACTION, one weapon attack made with the spellcasting ability. It takes the place of a weapon attack, so it needs one to spend (combat_can_attack), a real weapon in hand and, for a melee one, an enemy in reach (combat_primary_reach, just above).
+*comment combat_can_attack already keeps the turn alive for the auto-end test below, so it needs no entry in combat_bonus_available.
+*temp combat_can_true_strike false
+*if (((combat_can_attack) and (known_true_strike)) and (not(equipped_weapon_id = "none")))
+  *if ((weapon_type = "ranged") or (combat_primary_reach))
+    *set combat_can_true_strike true
+*comment Booming Blade: a cantrip and an ACTION, one MELEE weapon attack (the 2024 rule). One variant per melee weapon that can reach an enemy: the weapon in hand, and the sidearm. A ranged weapon cannot carry it, and it takes the place of a weapon attack, so it needs one to spend (combat_can_attack).
+*temp combat_can_booming false
+*temp combat_can_booming_side false
+*if ((combat_can_attack) and (known_booming_blade))
+  *if (((not(equipped_weapon_id = "none")) and (not(weapon_type = "ranged"))) and (combat_primary_reach))
+    *set combat_can_booming true
+  *if (((not(equipped_sidearm_id = "none")) and (not(sidearm_type = "ranged"))) and (combat_sidearm_reach))
+    *set combat_can_booming_side true
 *if (combat_player_chosen_target > 0)
   *temp cmc_chosen_slot combat_player_chosen_target
   *if (cmc_chosen_slot <= combat_enemy_count)
@@ -2382,6 +2488,31 @@
           *line_break
           *goto fight_round_hub
       *goto resolve_weapon_attack_choice
+
+  *if (combat_can_booming)
+    *comment One variant per melee weapon: the battle bar folds "Booming Blade: X" into one slot and opens the weapons on a click (battlehud.js). The Classic list shows each as a line.
+    *comment An ACTION, as in the 2024 rules: the cast IS the melee attack, so it spends an attack as the plain one does. booming_armed is set only for the length of that one swing (fight_attack_spent clears it).
+    # [b][ACTION][/b] [b][Booming Blade: ${weapon}][/b] Swing with thunder drawn tight along it: the foe struck takes thunder if it moves of its own accord.
+      *set booming_armed true
+      *set booming_side false
+      *goto fight_booming_go
+  *if (combat_can_booming_side)
+    # [b][ACTION][/b] [b][Booming Blade: ${sidearm}][/b] Swing with thunder drawn tight along it: the foe struck takes thunder if it moves of its own accord.
+      *set booming_armed true
+      *set booming_side true
+      *goto fight_booming_go
+
+  *if (combat_can_true_strike)
+    *comment Two options for one cantrip: the battle bar folds every "True Strike: X" pair into one slot and opens the variants on a click (battlehud.js). The Classic list shows both lines.
+    *comment An ACTION, as in the 2024 rules: the cast IS the weapon attack, so it spends an attack exactly as the plain one does (resolve_weapon_attack_choice).
+    # [b][ACTION][/b] [b][True Strike: Weapon][/b] Strike with your ${weapon}, rolling with your @{(character_class = "wizard") Intelligence|Charisma} instead of your body, for the weapon's own damage.
+      *set true_strike_on true
+      *set true_strike_radiant false
+      *goto fight_true_strike_go
+    # [b][ACTION][/b] [b][True Strike: Radiant][/b] Strike with your ${weapon}, rolling with your @{(character_class = "wizard") Intelligence|Charisma} instead of your body, but the blow burns with Radiant light.
+      *set true_strike_on true
+      *set true_strike_radiant true
+      *goto fight_true_strike_go
 
   *if ((combat_can_inspiration) and (combat_player_bonus_left > 0))
     # [b][BONUS ACTION][/b] [b][Bardic Inspiration][/b] Inspire ${cbi_name} with a 1d${bard_inspiration_die_sides} to save a failed roll, ${bard_inspiration_uses} left.
@@ -3386,6 +3517,46 @@ ${use_text}
 *comment the sidearm option swaps weapon<->sidearm via equip_weapon (equipment.txt) BEFORE *goto-ing here, so
 *comment "weapon" already means whichever is now active. pick_weapon_flavor and resolve_player_weapon_hit
 *comment downstream need no changes either, for the same reason.
+*label fight_true_strike_go
+*comment Entry for both True Strike options: the same reach test the plain attack makes, a line of prose, then the shared weapon attack. resolve_weapon_attack_choice reads true_strike_on to
+*comment swap the ability and, on the damage side, the type; fight_check_enemy_hp spends the attack. A refused reach check leaves the hub with the action untouched.
+*if (not(weapon_type = "ranged"))
+  *gosub_scene combat_movement fight_weapon_reach_check
+  *if (not(combat_reach_ok))
+    ${combat_reach_msg}
+    *line_break
+    *set true_strike_on false
+    *set true_strike_radiant false
+    *goto fight_round_hub
+For one clear instant the fight stills, and you see exactly where the blow should fall.
+*line_break
+*goto resolve_weapon_attack_choice
+
+*label fight_booming_go
+*comment Entry for both Booming Blade options: the same reach test the plain attack makes (for the sidearm, its own test and the draw), a line of prose, then the shared weapon attack. A hit sets the foe's booming flag in
+*comment resolve_player_weapon_hit and spends booming_armed; a miss leaves it for fight_attack_spent to clear. A refused reach check leaves the hub with the action untouched.
+*if (booming_side)
+  *gosub_scene combat_movement fight_sidearm_reach_check
+  *if (not(combat_reach_ok))
+    ${combat_reach_msg}
+    *line_break
+    *set booming_armed false
+    *set booming_side false
+    *goto fight_round_hub
+  *comment Draws the sidearm exactly as the plain sidearm attack does, with the same replay guard (see that option's comment).
+  *if (not(combat_weapon_attack_locked)) or (not(locked_combat_weapon_attack_page_id = page_id))
+    *gosub_scene equipment equip_weapon equipped_sidearm_id
+*else
+  *gosub_scene combat_movement fight_weapon_reach_check
+  *if (not(combat_reach_ok))
+    ${combat_reach_msg}
+    *line_break
+    *set booming_armed false
+    *goto fight_round_hub
+The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn tight along it, and you swing.
+*line_break
+*goto resolve_weapon_attack_choice
+
 *label resolve_weapon_attack_choice
 *comment Whole-body replay lock (2026-09-30, real bug caught live via refresh_fuzz_test.js): fight_pick_target's
 *comment kill-priority scan, pick_weapon_flavor's *rand pick, the roll, the damage, and the Hunter's Mark bookkeeping were
@@ -3423,6 +3594,12 @@ ${use_text}
     *else
       *set check_stat "str"
     *set check_skill "Melee Attack"
+  *comment True Strike: the attack is rolled with the spellcasting ability instead of Strength or Dexterity (Intelligence for a wizard, Charisma for a warlock or bard). The damage bonus is swapped below.
+  *if (true_strike_on)
+    *if (character_class = "wizard")
+      *set check_stat "int"
+    *else
+      *set check_stat "cha"
   *set check_dc combat_enemy_ac
   *comment fwh/fwm land on one of 3 randomized variants (melee or ranged
   *comment per weapon_type) -- see pick_weapon_flavor below.
@@ -3481,6 +3658,14 @@ ${use_text}
         *else
           *set combat_player_dmg_dice_sides 8
           *set combat_player_dmg_bonus str_mod
+    *comment True Strike: the spellcasting modifier replaces the Strength or Dexterity one, and the player may turn the damage to Radiant. The level 5 Radiant dice are rolled with the hit, in combat_dice.txt.
+    *if (true_strike_on)
+      *if (character_class = "wizard")
+        *set combat_player_dmg_bonus int_mod
+      *else
+        *set combat_player_dmg_bonus cha_mod
+      *if (true_strike_radiant)
+        *set combat_player_dmg_type "radiant"
     *comment Fighting Style: Dueling -- +2 damage with a one-handed melee
     *comment weapon (RAW excludes two-handed and ranged weapons). Both the
     *comment finesse and plain-melee branches above are one-handed melee
@@ -3704,6 +3889,10 @@ ${use_text}
     *set combat_active_target cnt_slot
     *gosub fight_sync_target_in
     *gosub_scene combat_ai find_intercepting_ally
+    *comment A melee enemy picks its NEAREST opponent instead (choose_melee_enemy_target, combat_ai.txt): it overwrites combat_intercepting_ally and sets combat_enemy_goal_ally. Ranged enemies keep the line above as it was.
+    *set combat_enemy_goal_ally 0
+    *if (not(combat_enemy_weapon_type = "ranged"))
+      *gosub_scene combat_ai choose_melee_enemy_target cnt_slot
     *comment Surprise round (5e RAW: a surprised creature takes no action and no move on its first turn in the
     *comment order). combat_turn_first_pass_* (startup.txt) tracks whether THIS queue position has ever dispatched
     *comment before -- read once, then cleared unconditionally, so an enemy that wins this check only loses its
@@ -3780,6 +3969,9 @@ ${use_text}
         [b][🏃💨 ${combat_enemy_name} Disengages to ${combat_range_display_name}][/b]
         *line_break
         *set combat_turn_advanced_this_page true
+        *gosub fight_booming_trigger
+        *if (combat_boom_killed)
+          *goto cnt_boom_tail
       *else
         *comment Row 3: Retreat + shoot. Healthy enough to risk the reaction: falls back one tier, provoking
         *comment exactly one reversed opportunity attack (find_opportunity_attacker_against), and still gets its
@@ -3814,6 +4006,9 @@ ${use_text}
           [b][🏃 ${combat_enemy_name} Falls Back to ${combat_range_display_name}][/b]
           *line_break
           *set combat_turn_advanced_this_page true
+          *gosub fight_booming_trigger
+          *if (combat_boom_killed)
+            *goto cnt_boom_tail
           *gosub_scene combat_ai fight_pick_enemy_move
           *gosub_scene combat_dice resolve_enemy_attack
           *gosub_scene combat_prose fight_narrate_enemy_turn
@@ -3846,9 +4041,54 @@ ${use_text}
         *if (combat_ai_terrain_step_reason = "avoid_melee_threat")
           [b][🏃 ${combat_enemy_name} Keeps Distance — ${combat_range_display_name}][/b]
         *line_break
+        *gosub fight_booming_trigger
+        *if (combat_boom_killed)
+          *goto cnt_boom_tail
       *gosub_scene combat_dice resolve_enemy_attack_on_ally combat_intercepting_ally
       *gosub_scene combat_prose fight_narrate_ally_attack "enemy" cnt_slot "ally" combat_intercepting_ally combat_enemy_atk_on_ally_hit
       *set combat_turn_advanced_this_page true
+    *elseif (combat_enemy_goal_ally > 0)
+      *comment NEAREST-TARGET CLOSING (2026-10-11): the nearest opponent is an ally that is not in reach yet, so this enemy closes on IT, not on the player. Same tempo as closing on the player: a free step, and
+      *comment a Dash for a second one (unless Slowed or the ground is difficult), attacking this same turn only if the free step alone got there. Nothing here is rolled; the choice was made by distance.
+      *temp cnt_g combat_enemy_goal_ally
+      *temp cnt_g_pos {(("combat_ally" & cnt_g) & "_position")}
+      *temp cnt_g_name {(("combat_ally" & cnt_g) & "_name")}
+      *temp cnt_g_epithet {(("combat_ally" & cnt_g) & "_epithet")}
+      *temp cnt_e_pos {(("combat_enemy" & cnt_slot) & "_position")}
+      *temp cnt_g_from cnt_e_pos
+      *temp cnt_g_step 1
+      *if (cnt_e_pos > cnt_g_pos)
+        *set cnt_g_step (0 - 1)
+      *set cnt_e_pos (cnt_e_pos + cnt_g_step)
+      *gosub_scene combat_movement combat_lane_move_enemy_to_position cnt_slot cnt_e_pos
+      *gosub_scene combat_movement combat_difficult_terrain_crossing_query cnt_g_from cnt_e_pos
+      *temp cnt_g_diff1 combat_difficult_terrain_blocks_dash
+      *temp cnt_g_next (cnt_e_pos + cnt_g_step)
+      *gosub_scene combat_movement combat_difficult_terrain_crossing_query cnt_e_pos cnt_g_next
+      *temp cnt_g_diff2 combat_difficult_terrain_blocks_dash
+      *temp cnt_g_dashed false
+      *if (((cnt_e_pos != cnt_g_pos) and (cnt_slowed <= 0)) and ((not(cnt_g_diff1)) and (not(cnt_g_diff2))))
+        *gosub_scene combat_movement combat_lane_move_enemy_to_position cnt_slot cnt_g_next
+        *set cnt_e_pos cnt_g_next
+        *set cnt_g_dashed true
+      *rand cnt_rv 1 3
+      *if (cnt_rv = 1)
+        $!{combat_enemy_epithet} turns on ${cnt_g_epithet} and presses in, ground vanishing underfoot.
+      *if (cnt_rv = 2)
+        Ahead of the rest, ${combat_enemy_epithet} bears down on ${cnt_g_epithet}, step by hard step.
+      *if (cnt_rv = 3)
+        $!{combat_enemy_epithet} lunges for ${cnt_g_epithet}, the distance between them shrinking fast.
+      *line_break
+      [b][🏃 ${combat_enemy_name} Closes on ${cnt_g_name}@{cnt_g_dashed  (Dashed the extra distance)|}][/b]
+      *line_break
+      *set combat_turn_advanced_this_page true
+      *gosub fight_booming_trigger
+      *if (combat_boom_killed)
+        *goto cnt_boom_tail
+      *if ((cnt_e_pos = cnt_g_pos) and (not(cnt_g_dashed)))
+        *gosub_scene combat_ai fight_pick_enemy_move
+        *gosub_scene combat_dice resolve_enemy_attack_on_ally cnt_g
+        *gosub_scene combat_prose fight_narrate_ally_attack "enemy" cnt_slot "ally" cnt_g combat_enemy_atk_on_ally_hit
     *elseif (combat_player_hidden)
       *comment A hidden player (2026-10-01) is not a target: this enemy does not attack the player at all. It is placed AFTER
       *comment the interception branch above, because an ally in melee reach is still a target whether or not the player is
@@ -3884,6 +4124,9 @@ ${use_text}
         *set combat_turn_advanced_this_page true
       *else
         *gosub do_enemy_chase_step cnt_slot
+        *gosub fight_booming_trigger
+        *if (combat_boom_killed)
+          *goto cnt_boom_tail
     *elseif (((cnt_frightened > 0) and (not(combat_enemy_weapon_type = "ranged"))) and (combat_enemy_range > 0))
       *comment Frightened (Cause Fear): it cannot willingly move closer to the source of its fear, so it spends the turn holding back. (Once it is within reach it can still attack, with disadvantage.)
       *gosub_scene combat_prose flavor_cause_fear_holds
@@ -3903,9 +4146,12 @@ ${use_text}
       *comment no attack to give up by spending its "action" on movement when it couldn't have reached melee range
       *comment this turn regardless. Only when the free move alone reaches Engaged (started exactly one tier out,
       *comment action still unspent) does it also attack this same turn, below.
-      *gosub_scene combat_ai roll_enemy_chase_commit cnt_slot
+      *comment The one-roll commit-and-chase (roll_enemy_chase_commit) is no longer called for melee enemies (2026-10-11): choose_melee_enemy_target already sends an enemy at the nearest ally, every turn, with no dice.
       *if (combat_enemy_chase_target > 0)
         *gosub do_enemy_chase_step cnt_slot
+        *gosub fight_booming_trigger
+        *if (combat_boom_killed)
+          *goto cnt_boom_tail
       *else
         *gosub_scene combat_movement combat_lane_move_enemy_relative_to_player cnt_slot "toward"
         *temp cnt_dashed false
@@ -3945,10 +4191,15 @@ ${use_text}
           [b][🏃 ${combat_enemy_name} Closes to ${combat_range_display_name}@{cnt_dashed  (Dashed the extra distance)|}][/b]
         *line_break
         *set combat_turn_advanced_this_page true
+        *gosub fight_booming_trigger
+        *if (combat_boom_killed)
+          *goto cnt_boom_tail
         *if ((combat_enemy_range <= 0) and (not(cnt_dashed)))
           *gosub_scene combat_ai fight_pick_enemy_move
           *gosub_scene combat_dice resolve_enemy_attack
           *gosub_scene combat_prose fight_narrate_enemy_turn
+          *if ((combat_multiattack_slot = cnt_slot) and (hp_current > 1))
+            *gosub fight_enemy_extra_attack
           *if (combat_player_can_die) and (hp_current <= 0)
             *goto fight_player_died
           *if (not(combat_player_can_die)) and (hp_current <= 1)
@@ -3969,6 +4220,9 @@ ${use_text}
         *if (combat_ai_terrain_step_reason = "chokepoint")
           [b][🚪 ${combat_enemy_name} Takes the Chokepoint — ${combat_range_display_name}][/b]
         *line_break
+        *gosub fight_booming_trigger
+        *if (combat_boom_killed)
+          *goto cnt_boom_tail
       *comment Row-2 quick-draw (2026-09-29, Ranged-AI Position Awareness plan §3/§4.2): a cornered ranged type
       *comment (range 0) with no melee ally in the shared adjacency bucket -- guaranteed here, since the
       *comment interception *elseif above already claims that case for any enemy it applies to -- draws its
@@ -3993,6 +4247,8 @@ ${use_text}
       *gosub_scene combat_prose fight_narrate_enemy_turn
       *set combat_enemy_used_sidearm false
       *set combat_turn_advanced_this_page true
+      *if ((combat_multiattack_slot = cnt_slot) and (hp_current > 1))
+        *gosub fight_enemy_extra_attack
       *if (combat_player_can_die) and (hp_current <= 0)
         *goto fight_player_died
       *if (not(combat_player_can_die)) and (hp_current <= 1)
@@ -4000,6 +4256,11 @@ ${use_text}
       *gosub fight_check_all_dead
       *if (combat_all_enemies_dead)
         *goto fight_victory
+    *comment A move that killed the enemy (Booming Blade, fight_booming_trigger) jumps here, skipping the attack it would have made. Win the fight if that was the last one.
+    *label cnt_boom_tail
+    *gosub fight_check_all_dead
+    *if (combat_all_enemies_dead)
+      *goto fight_victory
     *comment Slowed lasts until this enemy has taken its next turn: spent here, after the turn, whichever branch it took.
     *if (cnt_slowed > 0)
       *set {(("combat_enemy" & cnt_slot) & "_slowed")} (cnt_slowed - 1)

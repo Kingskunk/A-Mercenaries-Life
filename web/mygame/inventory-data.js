@@ -19,6 +19,7 @@ window.INVENTORY = {
     { id: "weapons", label: "Weapons" },
     { id: "apparel", label: "Apparel" },
     { id: "accessories", label: "Accessories & Trinkets" },
+    { id: "mounts", label: "Mount" },
     { id: "provisions", label: "Provisions & Trail Gear" },
     { id: "documents", label: "Documents & Leverage" },
     { id: "consumables", label: "Consumables" }
@@ -119,6 +120,38 @@ window.INVENTORY = {
       traits: "1d4 Piercing, Finesse",
       badge: function (s) { return s.equipped_weapon_id === "stiletto" ? "Equipped" : ""; },
       equip: { slot: "weapon", id: "stiletto" }
+    },
+    {
+      id: "road_club", category: "weapons", owned: "has_road_club", slot: "Weapon",
+      name: function (s) { var n = 1 + (Number(s.spare_road_club) || 0); return "Wooden Club" + (n > 1 ? " ×" + n : ""); },
+      description: "Knotted hardwood club with an iron band at the head.",
+      traits: "1d4 Bludgeoning, One-Handed",
+      badge: function (s) { return s.equipped_weapon_id === "road_club" ? "Equipped" : ""; },
+      equip: { slot: "weapon", id: "road_club" }
+    },
+    {
+      id: "rough_spear", category: "weapons", owned: "has_rough_spear", slot: "Weapon",
+      name: function (s) { var n = 1 + (Number(s.spare_rough_spear) || 0); return "Rough Spear" + (n > 1 ? " ×" + n : ""); },
+      description: "Straight ash pole with a wired-on iron head.",
+      traits: "1d6 Piercing, Reach, One-Handed",
+      badge: function (s) { return s.equipped_weapon_id === "rough_spear" ? "Equipped" : ""; },
+      equip: { slot: "weapon", id: "rough_spear" }
+    },
+    {
+      id: "cord_sling", category: "weapons", owned: "has_cord_sling", slot: "Weapon",
+      name: function (s) { var n = 1 + (Number(s.spare_cord_sling) || 0); return "Cord Sling" + (n > 1 ? " ×" + n : ""); },
+      description: "Braided cord and a leather pouch for throwing stones.",
+      traits: "1d4 Bludgeoning, Ranged, One-Handed",
+      badge: function (s) { return s.equipped_weapon_id === "cord_sling" ? "Equipped" : ""; },
+      equip: { slot: "weapon", id: "cord_sling" }
+    },
+    {
+      id: "hunting_bow", category: "weapons", owned: "has_hunting_bow", slot: "Weapon, two-handed",
+      name: function (s) { var n = 1 + (Number(s.spare_hunting_bow) || 0); return "Hunting Bow" + (n > 1 ? " ×" + n : ""); },
+      description: "Plain yew stave with a waxed string.",
+      traits: "1d6 Piercing, Ranged, Two-Handed",
+      badge: function (s) { return s.equipped_weapon_id === "hunting_bow" ? "Equipped" : ""; },
+      equip: { slot: "weapon", id: "hunting_bow" }
     },
     {
       id: "iron_crowbar", category: "provisions", owned: "has_iron_crowbar",
@@ -475,6 +508,13 @@ window.INVENTORY = {
       equip: { slot: "feet", id: "brant_iron_heel_boots" }
     },
 
+    // ---- the mount (hand-written: it is not gear, so it is not in tools/gear_catalog.json) ----
+    {
+      id: "horse", category: "mounts", owned: "has_horse",
+      name: function (s) { return String(s.horse_name || "Horse"); },
+      description: function (s) { return "Your " + String(s.horse_coat || "") + " " + (s.horse_sex === "gelding" ? "gelding" : "mare") + ", bridled and saddled. You ride on the road: a mile takes about 12 minutes instead of 24. A stable keeps it for 2 copper a day in a town or city and 1 in a village, and it grazes free on the road. Three days unpaid and the stable keeps it." + (Number(s.horse_unpaid_days) > 0 ? " The stable is owed " + Number(s.horse_owed) + " copper (" + Number(s.horse_unpaid_days) + " days unpaid)." : "");; },
+      badge: function () { return "Ridden"; }
+    },
     // ---- accessories & trinkets ----
     {
       id: "toll_seal_ring", category: "accessories", owned: "has_toll_seal_ring",

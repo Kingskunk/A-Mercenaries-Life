@@ -1,0 +1,1228 @@
+*comment ====================================================================================
+*comment ROAD EVENTS ON A SOLO JOURNEY. One label per event, named te_<id> (its other labels start with the same name), reached from overworld.txt ow_event when ow_event_id is that id. The row that says where,
+*comment when and how often an event happens lives in web/mygame/overworld-data.js (TRAVEL_EVENTS): add the row there, add a label here and one branch in ow_event, and nothing else changes.
+*comment
+*comment The player is standing on the tile the walk stopped on (ow_pos), the clock has moved, and ow_goal is the tile the trip was bound for. An event page follows the usual rules: a page does not read
+*comment what it changes, a roll is made before the time it costs (one advance_time per page), and an event ends with a page break and a *goto_scene to overworld/overworld ow_event_done. An event
+*comment may start a fight through the combat library; whatever happens, it must end the same way. No goods are named and no trade is explained (QUEST_DESIGN_RULES.md).
+*comment
+*comment HOW THESE ARE WRITTEN. Like lyra_quest.txt: the player's own words are written into the scene, short, and the other person answers; a choice is only for a real decision (help or go on),
+*comment never "ask about this" menus. A check is rolled only where failing changes what happens, and several skills are offered at once, so the engine takes the player's best and the prose says which
+*comment was used (check_skill). The stranger is made from the trip's own seed (ow_event_seed), so a refresh never changes who it is, and is unnamed until they give their name themselves. These are
+*comment repeatable: a low chance, the name generator and two or three small variations keep them from feeling like a loop.
+*comment ====================================================================================
+*label te_stub
+*comment The placeholder: only the developer menu (or a scripted test setting ow_event_force "stub") ever reaches it.
+[b]◈ ON THE ROAD[/b]
+*line_break
+Nothing happens here yet. This stands where the first road event will go.
+*page_break Back to the map…
+*goto_scene overworld/overworld ow_event_done
+
+*comment ── the stranger: a person from the trip's seed, plus which of the event's variations it is and how generous the thanks are. Fixed-value sets, so a replay of the page makes the same person. ──
+*label te_person
+*set name_seed ow_event_seed
+*set name_setting "town"
+*gosub_scene names name_pick_race
+*set name_region "port"
+*set name_gender "any"
+*gosub_scene names name_make
+*set name_look_skip "hands"
+*gosub_scene names name_look
+*set name_look_skip ""
+*set te_first name_first
+*set te_look look_full
+*script stats.te_look_mid = String(stats.te_look).charAt(0).toLowerCase() + String(stats.te_look).slice(1);
+*if (name_sex = "f")
+  *set te_sub "she"
+  *set te_sub_cap "She"
+  *set te_obj "her"
+  *set te_pos "her"
+*else
+  *set te_sub "he"
+  *set te_sub_cap "He"
+  *set te_obj "him"
+  *set te_pos "his"
+*set name_salt 31
+*set name_n 3
+*gosub_scene names name_roll
+*set te_variant name_rolled
+*set name_salt 32
+*set name_n 5
+*gosub_scene names name_roll
+*set te_extra name_rolled
+*return
+
+*comment ── what the player can do about a light that has gone out, best first: a light of their own, flint and tinder, a spark from Fire Bolt, a flick from Prestidigitation, the Light cantrip, or eyes that see in the dark (not at dusk, when there is still light to see by) ──
+*label te_means_pick
+*set te_means "none"
+*if (((has_hooded_lantern) and (has_lamp_oil)) or ((has_pitch_torch) and (has_tinderbox)))
+  *set te_means "own"
+*elseif (has_tinderbox)
+  *set te_means "flint"
+*elseif (known_fire_bolt)
+  *set te_means "firebolt"
+*elseif (known_prestidigitation)
+  *set te_means "flick"
+*elseif (known_light)
+  *set te_means "glow"
+*elseif ((not(time_period = "Dusk")) and (((race_darkvision) or (inv_devils_sight)) or ((equipped_ring1_id = "night_eye_ring") or (equipped_ring2_id = "night_eye_ring"))))
+  *set te_means "eyes"
+*return
+
+*comment ── time on the road: the caller sets minutes_to_pass and time_advance_call_id. Outdoor time, so the weather and the gear charge hunger and fatigue; then the usual death check. ──
+*label te_clock
+*set exposure_base_mins minutes_to_pass
+*if (te_wet)
+  *set exposure_base_mins (minutes_to_pass * 2)
+*set exposure_camping false
+*gosub_scene calendar calc_exposure
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return
+
+*comment ── the end of every one of these: the coppers if the stranger pays (te_ok and te_pay), then back to the road. The coins are given under the page's currency lock, so a replay cannot pay twice. ──
+*label te_finish
+*if ((te_ok) and (te_pay > 0))
+  *script stats.te_pay_text = window.Overworld.coinText(stats.te_pay);
+  *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+    *set currency_add_amount te_pay
+    *gosub_scene economy currency_add
+    *set currency_txn_locked true
+    *set locked_currency_txn_page_id page_id
+
+  [b][💰 Paid by ${te_first}: ${te_pay_text}.][/b]
+*goto te_end
+
+*comment ── the end of an event that pays nothing: back to the road and the map ──
+*label te_end
+*if (ow_event_id = "share_fire")
+  *page_break Settle down for the night…
+  *goto_scene overworld/overworld ow_camp
+*page_break Back on the road…
+*goto_scene overworld/overworld ow_event_done
+
+*comment ── what a fight leaves: the road's name for the death screen, and half the purse taken (stored under the page's currency lock, so a replay shows the same loss and takes nothing twice) ──
+*label te_death_place
+*script stats.death_location_name = window.Overworld.nodes[stats.ow_pos].name;
+*return
+
+*label te_take_half
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *temp tp_purse (((gold * 100) + (silver * 10)) + copper)
+  *set te_lost ((tp_purse - (tp_purse modulo 2)) / 2)
+  *set currency_add_amount (0 - te_lost)
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*script stats.te_lost_text = window.Overworld.coinText(stats.te_lost);
+*return
+
+*comment ====================================================================================
+*comment THE STRANDED CART. A cart in trouble at the side of the road, in daylight; three small variations (a sheared pin, a wheel sunk in a rut, a split spoke). The player is asked once: help or go on.
+*comment Helping is one check with the player's best of three skills; the Repair Kit adds its +1 on the two mending variations. Success is half an hour and a few coppers pressed on the player;
+*comment failure is an hour and thanks. Nothing here names what is on the cart.
+*comment ====================================================================================
+*label te_stranded_cart
+*gosub te_person
+[b]◈ ON THE ROAD[/b]
+*line_break
+*if (te_variant = 0)
+  ${te_look} is down on one knee beside a cart that sits canted at the edge of the road, its near wheel leaning off the axle. ${te_sub_cap} looks up as you come level and does not wave you on.
+
+  "The pin's sheared," ${te_sub} says. "I've a new one cut, but I can't hold the wheel up and drive it home both."
+*elseif (te_variant = 1)
+  ${te_look} stands at the head of a loaded cart, hauling on the bridle of an ox that leans into its yoke with all its patience. The near wheel has sunk to the hub in a rut, and the cart has not moved. ${te_sub_cap} turns as you come level.
+
+  "Don't suppose you've a shoulder to spare?" ${te_sub} says. "Another hour of this and one of us gives up, and it won't be the ox."
+*else
+  ${te_look} sits on the tail of a cart with a split wheel spoke across ${te_pos} knees, turning it over as though a better look might mend it. The cart leans on a stack of flat stones. ${te_sub_cap} glances up at your footsteps.
+
+  "Spoke's split," ${te_sub} says. "I can bind it, but not while I'm also keeping the wheel off the ground."
+*choice
+  # Offer to help.
+    *goto te_cart_help
+  # Say you can't stop.
+    *goto te_cart_walk
+
+*label te_cart_walk
+"Can't stop," you tell ${te_obj}. "I've somewhere to be."
+
+${te_sub_cap} nods and turns back to the wheel. The cart is still there when the road bends and takes it out of sight.
+*set te_ok false
+*goto te_finish
+
+*label te_cart_help
+*set te_dc 11
+*set te_mend false
+*if (te_variant = 0)
+  "Show me where."
+
+  You crouch at the wheel while ${te_sub} fits the new pin to its hole, and the whole weight of the cart waits on your hands.
+  *if (known_mending)
+    *set te_mend true
+  *else
+    *set check_task_type "repair"
+    *gosub_scene dice_engine roll_skill_check te_dc "athletics" "" "sleight_of_hand" "" "investigation" ""
+*elseif (te_variant = 1)
+  "Where do you want me?"
+
+  "Behind the wheel," ${te_sub} says. "Push when I say, and not before."
+  *gosub_scene dice_engine roll_skill_check te_dc "athletics" "" "animal_handling" "" "survival" ""
+*else
+  "Tell me what to hold."
+
+  "The rim," ${te_sub} says. "Steady, and don't let it turn."
+  *if (known_mending)
+    *set te_mend true
+  *else
+    *set check_task_type "repair"
+    *gosub_scene dice_engine roll_skill_check te_dc "investigation" "" "sleight_of_hand" "" "athletics" ""
+*comment The roll clears the task mark itself, but on a replay it is skipped, so it is cleared here too.
+*set check_task_type "none"
+*if (te_mend)
+  *set te_ok true
+*else
+  *set te_ok check_success
+*if (te_mend)
+  *set minutes_to_pass 15
+*elseif (te_ok)
+  *set minutes_to_pass 30
+*else
+  *set minutes_to_pass 60
+*set time_advance_call_id "te_cart_time"
+*set te_pay (4 + te_extra)
+*if (te_variant = 0)
+  *if (te_ok)
+    *if (te_mend)
+      You lay your palm on the two halves of the sheared pin and say the old words, and the break closes under your hand as if it had never been. ${te_sub_cap} stares at it, then walks the wheel back onto the axle and slides the pin home.
+    *elseif (check_skill = "Athletics")
+      You get a shoulder under the bed of the cart and lift while ${te_sub} walks the wheel back onto the axle, and the pin goes in with three blows of a stone. The cart settles level, and ${te_sub} laughs once, short and relieved.
+    *else
+      You hold the wheel true while ${te_sub} feeds the new pin through, then tap it home with the flat of a stone until it sits flush. The cart settles level, and ${te_sub} spins the wheel once to be sure of it.
+  *else
+    The wheel slips off the axle as the pin goes in, and the cart drops a hand's width with a crack that sets the ox pulling at its yoke. It takes a second try, and a third, and the better part of an hour before the pin holds.
+*elseif (te_variant = 1)
+  *if (te_ok)
+    *if (check_skill = "Athletics")
+      You set your shoulder against the back of the cart and your boots into the bank, and when ${te_sub} calls the word you shove. The wheel climbs out of the rut with a scraping lurch, and the ox goes forward as though it had planned it all along.
+    *elseif (check_skill = "Animal Handling")
+      You take the ox by the bridle and talk it down from its straining, then ask it for one slow step at a time while ${te_sub} pushes from behind. The ox finds its footing, and the wheel climbs out of the rut in a single scraping lurch.
+    *else
+      You find a stout length of fallen branch, jam it under the axle and lever while ${te_sub} urges the ox on. The wheel climbs out of the rut in a single scraping lurch.
+  *else
+    The cart rocks forward and slides back into the rut, twice, and the ox goes down on its knees in the traces and has to be coaxed up again. It takes the better part of an hour, and a good deal of shouting, before the wheel is out.
+*else
+  *if (te_ok)
+    *if (te_mend)
+      You lay a hand along the split spoke and say the old words, and the wood knits under your palm until you cannot find where it broke. ${te_sub_cap} runs a thumb down it twice, then has you set the wheel back on.
+    *elseif (check_skill = "Investigation")
+      You look the wheel over and find where the split stops, and have ${te_obj} bind above it rather than across it. It holds when the wheel turns, and the cart rolls a few paces to prove it.
+    *elseif (check_skill = "Sleight of Hand")
+      You hold the rim steady with one hand and draw the binding tight with the other while ${te_sub} drives the wedges in. It holds when the wheel turns.
+    *else
+      You take the weight of the wheel in both arms and keep it still while ${te_sub} binds the spoke, and your arms are shaking by the time ${te_sub} says it is done.
+  *else
+    The binding slips as the weight comes back onto it, and the spoke splits further. You take the wheel off, cut a new wedge, and bind it again from the start. It is nearly an hour before it holds.
+*gosub te_clock
+*if (te_ok)
+  ${te_sub_cap} wipes ${te_pos} hands down ${te_pos} front. "${te_first}," ${te_sub} says, and holds out one. "I'd have been here a good while yet." Before you can wave it off, ${te_sub} presses a few coppers into your palm.
+*else
+  ${te_sub_cap} wipes ${te_pos} hands down ${te_pos} front. "${te_first}," ${te_sub} says. "Sorry about the hour. I'd have lost more of it on my own."
+*goto te_finish
+
+*comment ====================================================================================
+*comment THE LAMP GONE OUT. At dusk or in the dark, a cart whose light has failed: either the lamp will not catch (relight it) or it is smashed and the ox will not walk without a light (lead it).
+*comment The player is asked once. What they can do about it (te_means_pick) decides the whole beat: a light of their own, flint, a Fire Bolt spark, a flick of Prestidigitation, the Light cantrip or
+*comment eyes that see in the dark each get their own paragraph and succeed outright; with none of those it is a check. The thanks are the same few coppers.
+*comment ====================================================================================
+*label te_lamp_out
+*gosub te_person
+*gosub te_means_pick
+*temp lv (te_variant modulo 2)
+[b]◈ ON THE ROAD[/b]
+*line_break
+*if (time_period = "Dusk")
+  The last grey light is draining out of the road.
+*else
+  The dark has closed in over the road.
+*if (lv = 0)
+  A cart stands on the verge ahead with its lantern hanging dark from the hook, and a small orange spark keeps flaring and dying beside it. ${te_look} is hunched over a flint, striking it again as you come near, and glances up with a start.
+
+  "Don't suppose you've a light about you?" ${te_sub} says. "This thing was burning fine until it wasn't."
+*else
+  A cart has stopped in the road ahead, and the ox in front of it will not go on. ${te_look} stands at its head with the pieces of a smashed lantern in one hand, and turns as you come near.
+
+  "Dropped it off the seat," ${te_sub} says. "Now the ox won't take a step without a light, and I can't say I blame it."
+*choice
+  # Offer to help.
+    *goto te_lamp_help
+  # Wish them luck and walk on.
+    *goto te_lamp_walk
+
+*label te_lamp_walk
+"Good luck with it," you tell ${te_obj}, and go on.
+
+Behind you the flint is still striking, a spark and a spark and a spark, until the bend in the road takes the sound as well.
+*set te_ok false
+*goto te_finish
+
+*label te_lamp_help
+*temp lh (te_variant modulo 2)
+*set te_pay (2 + te_extra)
+*set te_dc 11
+*if (lh = 0)
+  "Hold still," you say. "Let me see it."
+*else
+  "Let me see what I can do about that."
+*if (te_means = "none")
+  *if (lh = 0)
+    You take the lantern from ${te_obj} and turn it over in the failing light, feeling for what is wrong with it.
+    *gosub_scene dice_engine roll_skill_check te_dc "investigation" "" "sleight_of_hand" "" "perception" ""
+  *else
+    You step up to the ox's head and take the bridle, and the beast shifts its weight and eyes the road ahead.
+    *gosub_scene dice_engine roll_skill_check te_dc "animal_handling" "" "survival" "" "athletics" ""
+  *set te_ok check_success
+  *if (te_ok)
+    *set minutes_to_pass 30
+  *else
+    *set minutes_to_pass 60
+  *if (lh = 0)
+    *if (te_ok)
+      The wick has been turned down into its barrel. You tease it up with a thumbnail, and the next spark takes.
+    *else
+      You fumble at the lantern until your fingers are as clumsy as ${te_pos}. It is most of an hour before the wick takes.
+  *else
+    *if (te_ok)
+      You talk the ox down and lead it forward a step at a time along the edge of the road, where the ground is firmest. It follows, because you are not afraid.
+    *else
+      The ox stands rooted at every step and backs when you pull. It takes most of an hour of coaxing before it will move at all.
+*else
+  *set te_ok true
+  *set minutes_to_pass 20
+  *if (lh = 0)
+    *if (te_means = "own")
+      You lift your own light to the dead wick and wait. It takes after a moment, and the lantern steadies, and the ox lifts its head as though somebody had woken it.
+    *elseif (te_means = "flint")
+      You take out your flint and tinderbox, cup your hand around the wick and strike until the tinder takes. The lantern catches on the third try, and the ox lifts its head as though somebody had woken it.
+    *elseif (te_means = "firebolt")
+      A thread of fire runs from your fingertip to the wick and takes. The flame stands up small and yellow, and the ox lifts its head as though somebody had woken it.
+    *elseif (te_means = "flick")
+      You pinch the air over the wick and a bright spark jumps from your fingers and takes. The flame stands up small and yellow, and the ox lifts its head as though somebody had woken it.
+    *elseif (te_means = "glow")
+      You hold out your open hand, and a soft pale glow gathers on the palm, enough for ${te_obj} to see the wick and the flint at last. The third strike takes, and the ox lifts its head as though somebody had woken it.
+    *else
+      In the dark you can see the trouble plainly: the wick has been turned down into its barrel. You tease it up with a thumbnail and ${te_sub} strikes once more, and the ox lifts its head as the flame catches.
+  *else
+    *if (te_means = "own")
+      You step to the ox's head with your light held low and out in front, and the ox gives it a long look and begins to walk.
+    *elseif (te_means = "flint")
+      You split a dry branch, twist dry grass around the end and strike a spark into it until it flares. You hold it out in front of the ox, and after a long look the ox begins to walk.
+    *elseif (te_means = "firebolt")
+      You set a dry branch alight with a spark from your fingertip and hold it out in front of the ox, and after a long look the ox begins to walk.
+    *elseif (te_means = "flick")
+      A flick of your fingers lights the end of a dry branch, and you hold it out in front of the ox. After a long look the ox begins to walk.
+    *elseif (te_means = "glow")
+      You hold up your open hand, and a soft pale glow gathers on the palm, steady enough to walk by. The ox gives it a long look and begins to walk.
+    *else
+      You can see the road plainly, so you take the ox by the bridle and walk it out onto the road yourself, one step at a time, and the ox follows because you are not hesitating.
+*set time_advance_call_id "te_lamp_time"
+*gosub te_clock
+*if (te_ok)
+  ${te_sub_cap} lets out a long breath. "${te_first}," ${te_sub} says, and puts out a hand. "I'd have been standing here a good while yet." Before you can wave it off, ${te_sub} presses a few coppers into your palm.
+*else
+  ${te_sub_cap} gives a short laugh. "${te_first}," ${te_sub} says. "You tried. I'm glad of that, anyway."
+*goto te_finish
+
+*comment ====================================================================================
+*comment THE ROBBERS. Two people stop the walker on a forest, hills or road tile: one steps out in front, one is behind. They are not called anything until they ask for the purse. The player is asked
+*comment once, with three honest answers: hand over half, talk past them (best of Persuasion, Intimidation or Deception, each with its own line), or refuse and fight. A talk that fails starts the fight with
+*comment the robbers ahead (the other callers' combat_enemy_advantage). The foes are the library's weapon types picked from the trip's seed; the fight is the same weight as the Dredge-End ambush and ends the same
+*comment four ways: victory (a few coppers found), rescued (half the purse taken, hit points at 1), fled, or dead. Danger makes this likelier (the table), not tougher.
+*comment ====================================================================================
+*label te_bandits
+*gosub te_person
+*script stats.te_danger = window.Overworld.dangerOf(stats.ow_pos); stats.te_kind = window.Overworld.nodes[stats.ow_pos].kind;
+*set name_salt 33
+*set name_n 4
+*gosub_scene names name_roll
+*if (name_rolled = 0)
+  *set te_foe1 "maceman"
+  *set te_arm1 "an iron-banded club"
+*elseif (name_rolled = 1)
+  *set te_foe1 "knifeman"
+  *set te_arm1 "a long knife"
+*elseif (name_rolled = 2)
+  *set te_foe1 "axeman"
+  *set te_arm1 "a hand axe"
+*else
+  *set te_foe1 "spearman"
+  *set te_arm1 "a spear held low"
+*set name_salt 34
+*set name_n 2
+*gosub_scene names name_roll
+*if (name_rolled = 0)
+  *set te_foe2 "slinger"
+  *set te_arm2 "a sling hanging from one hand"
+*else
+  *set te_foe2 "archer"
+  *set te_arm2 "a short bow with an arrow already on the string"
+[b]◈ ON THE ROAD[/b]
+*line_break
+*if (te_kind = "forest")
+  *set te_cover "from behind the birch"
+  The trees crowd the road on both sides here, and a fallen birch lies half across it.
+*elseif (te_kind = "hills")
+  *set te_cover "down off the bank"
+  The road runs between two steep banks here, narrow enough that a cart would have to stop.
+*else
+  *set te_cover "out of the bramble"
+  The road narrows here beside a ditch, with the verge grown thick with bramble.
+
+${te_look} comes ${te_cover} and stands in the middle of the road with ${te_arm1} in one hand. Behind you a second figure has stepped onto the road, ${te_arm2}.
+
+"Far enough," ${te_sub} says. "The road costs. Half of what you're carrying, and you walk on with the rest."
+*choice
+  # Hand it over.
+    *goto te_bandits_pay
+  # Talk your way past.
+    *goto te_bandits_talk
+  # Refuse and set yourself.
+    *goto te_bandits_refuse
+
+*label te_bandits_pay
+"Take it," you say.
+
+*if ((((gold * 100) + (silver * 10)) + copper) > 1)
+  ${te_sub_cap} takes half and tips the rest back into your hand, and the one behind you steps off the road to let you by.
+  *gosub te_take_half
+
+  [b][💰 Lost: ${te_lost_text}][/b]
+*else
+  You hold out your hands, and there is nothing in them worth the walk. ${te_sub_cap} looks at your empty hands and then at you, and jerks ${te_pos} head at the road. "Then you're no use to me. Go."
+*set minutes_to_pass 5
+*set time_advance_call_id "te_bandits_pay_time"
+*gosub te_clock
+*goto te_end
+
+*label te_bandits_refuse
+"No," you say, and set your feet.
+
+${te_sub_cap} lets out a breath through ${te_pos} nose, as if you had made it harder than it needed to be. "Have it your way."
+*goto te_bandits_fight
+
+*label te_bandits_talk
+You look at ${te_obj}, and at the one behind you, and you start to talk.
+*set te_dc (11 + te_danger)
+*gosub_scene dice_engine roll_skill_check te_dc "persuasion" "" "intimidation" "" "deception" ""
+*if (check_success)
+  *if (check_skill = "Persuasion")
+    You talk plainly about what the two of them stand to gain: half of a thin purse, against a fight with someone who is not afraid of them. You watch ${te_obj} work it out. ${te_sub_cap} steps aside with a shrug.
+  *elseif (check_skill = "Intimidation")
+    You hold ${te_pos} eye and say exactly how this ends for the first of them who steps closer. ${te_sub_cap} looks past you at the other one, then back, and steps aside.
+  *else
+    You mention, easily, that there are four more behind you on the road and not far. ${te_sub_cap} glances past your shoulder, and that is long enough for you to walk on.
+  *set minutes_to_pass 10
+  *set time_advance_call_id "te_bandits_talk_time"
+  *gosub te_clock
+  *goto te_end
+*else
+  ${te_sub_cap} does not move. "Talk's cheap," ${te_sub} says, and behind you something creaks as the second one draws.
+  *set combat_enemy_advantage true
+  *goto te_bandits_fight
+
+*label te_bandits_fight
+*comment Same weight as the Dredge-End ambush (a bruiser and a backliner, about 64% overall at level 1). The foes' weapons are the trip's own; the one behind you hangs back at Mid-Range.
+*set combat_is_nonlethal false
+*set combat_lib_1 te_foe1
+*set combat_enemy_name_override "Robber"
+*set combat_enemy_epithet_override "the one in front"
+*set combat_lib_2 te_foe2
+*set combat_enemy2_name_override "Second Robber"
+*set combat_enemy2_epithet_override "the one behind you"
+*set combat_enemy2_range 2
+*comment Terrain: a rolled layout, once, for the fight (the generic Cover, High Ground and rough ground; never named for the place). The one behind you has a ranged weapon and takes a step toward
+*comment Cover or High Ground when that is better, so it matters here and not in the animal fights, whose melee foes ignore terrain. Forest and hills get the full pool; a plain road gets open ground or one piece of cover.
+*if (te_kind = "road")
+  *set combat_terrain_layout "random_light"
+*else
+  *set combat_terrain_layout "random_standard"
+*gosub_scene combat fight_library
+*if (combat_outcome = "player_died")
+  *set death_cause "combat"
+  *gosub te_death_place
+  *set death_enemy_epithet "the robbers on the road"
+  *goto_scene death death_screen
+*if (combat_outcome = "victory")
+  *goto te_bandits_won
+*if (combat_outcome = "rescued")
+  *goto te_bandits_rescued
+*goto te_bandits_fled
+
+*label te_bandits_won
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *rand te_loot 6 30
+  *set currency_add_amount te_loot
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*comment What they carried may have survived: each robber's own weapon, by chance, one of the catalog's plain weapons (the knife and the axe are the Alderford stiletto and the hewing axe; the club, spear, sling and bow are
+*comment the basic ones the pawnbroker and the wheel shop buy). Rolled once under the page's lock and granted there, so a replay finds the same drops and grants nothing twice.
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set te_drop1 ""
+  *set te_drop2 ""
+  *temp tb_roll 0
+  *rand tb_roll 1 100
+  *if ((te_foe1 = "knifeman") and (tb_roll <= 40))
+    *set te_drop1 "stiletto"
+  *if ((te_foe1 = "axeman") and (tb_roll <= 35))
+    *set te_drop1 "timber_axe"
+  *if ((te_foe1 = "maceman") and (tb_roll <= 40))
+    *set te_drop1 "road_club"
+  *if ((te_foe1 = "spearman") and (tb_roll <= 40))
+    *set te_drop1 "rough_spear"
+  *rand tb_roll 1 100
+  *if ((te_foe2 = "slinger") and (tb_roll <= 40))
+    *set te_drop2 "cord_sling"
+  *if ((te_foe2 = "archer") and (tb_roll <= 40))
+    *set te_drop2 "hunting_bow"
+  *if (not(te_drop1 = ""))
+    *gosub_scene equipment grant_gear te_drop1 1
+    *set te_drop1_name gear_name
+  *if (not(te_drop2 = ""))
+    *gosub_scene equipment grant_gear te_drop2 1
+    *set te_drop2_name gear_name
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+*script stats.te_loot_text = window.Overworld.coinText(stats.te_loot);
+The fight goes out of the road, and then out of the last of them. You go through what they were carrying and find a few coins.
+
+[b][💰 Found: ${te_loot_text}][/b]
+
+*if (not(te_drop1 = ""))
+  *if (te_foe1 = "knifeman")
+    One knife is sound: no chip in the edge, and a grip that has not been chewed. You slide it into your kit.
+  *elseif (te_foe1 = "axeman")
+    One hand axe is sound, the edge true and the haft unsplit. You slide it into your kit.
+  *elseif (te_foe1 = "maceman")
+    The club is hard wood, banded with iron at the head, and not split. You take it.
+  *else
+    The spear is straight and whole, its head still bound fast. You take it.
+
+  [b][🗡️ Found: a ${te_drop1_name}][/b]
+
+*if (not(te_drop2 = ""))
+  *if (te_foe2 = "slinger")
+    The sling is whole, the cord unfrayed and the pouch stitched tight. You take it.
+  *else
+    The short bow is sound, the string still good. You take it.
+
+  [b][🗡️ Found: a ${te_drop2_name}][/b]
+*set minutes_to_pass 20
+*set time_advance_call_id "te_bandits_won_time"
+*gosub te_clock
+*goto te_end
+
+*label te_bandits_rescued
+*gosub te_take_half
+A blow you never see puts you on the road. The stones are cold against your cheek, and a boot rolls you onto your back. Hands go over you, quick and practiced, and then the weight is gone and the footsteps fade off the road. When you can lift your head, it is empty.
+*if (te_lost > 0)
+
+  [b][💰 Lost: ${te_lost_text}][/b]
+*set minutes_to_pass 45
+*set time_advance_call_id "te_bandits_rescued_time"
+*gosub te_clock
+*goto te_end
+
+*label te_bandits_fled
+*set te_dc 13
+*gosub_scene dice_engine roll_skill_check te_dc "acrobatics" "" "athletics" "" "" ""
+*if (check_success)
+  You break away and run, boots slamming the stones, and the road bends and takes you out of reach before either of them closes the distance.
+  *set minutes_to_pass 15
+*else
+  You break away and run, but one of them is quicker than you thought, and you are brought up short with a hand in your collar. It takes the half of your purse they asked for, and you are let go.
+  *gosub te_take_half
+  *if (te_lost > 0)
+
+    [b][💰 Lost: ${te_lost_text}][/b]
+  *set minutes_to_pass 30
+*set time_advance_call_id "te_bandits_fled_time"
+*gosub te_clock
+*goto te_end
+
+*comment ====================================================================================
+*comment THE NIGHT'S CREATURES. In the dark, on a forest, hills or road tile. What comes is picked by the ground: wolves or a wild boar in the forest and hills (the trip's seed picks), a pack of half-wild dogs on a
+*comment plain road, and river-mud rats only on a bank where the road meets water (the map's water flag; the rats are Alderford's and the Silt-Gate's, driven up out of the mud). Seen with the player's own light or eyes,
+*comment so nothing here punishes the dark (nobody walks at night without one or the other). Three honest answers: stand and fight, try to drive them off, or back away. A light or flame gives the driving off a bonus.
+*comment A failed attempt starts the fight with the creatures ahead. The wolves, boar and dogs are the library's beast made smaller or bigger and are not balance-simmed; the rats are the library's mire-rat.
+*comment ====================================================================================
+*label te_night_beasts
+*gosub te_means_pick
+*set name_seed ow_event_seed
+*set name_salt 35
+*set name_n 2
+*gosub_scene names name_roll
+*script var n = window.Overworld.nodes[stats.ow_pos]; stats.te_danger = window.Overworld.dangerOf(stats.ow_pos); stats.te_kind = n.kind; stats.te_beast = n.water ? "rats" : (n.kind === "road" ? "dogs" : (Number(stats.name_rolled) === 0 ? "wolves" : "boar"));
+[b]◈ ON THE ROAD[/b]
+*line_break
+*if (te_beast = "wolves")
+  A low shape detaches itself from the dark at the edge of the trees, and then a second one, lean and grey, heads down, eyes catching what light there is. They come out onto the road a few paces apart and stop.
+*elseif (te_beast = "boar")
+  Something heavy breaks out of the brush beside the road and stops short: a dark barrel of a body on short legs, with a pale curve of tusk on either side of its snout. It paws at the road once and lowers its head.
+*elseif (te_beast = "dogs")
+  Two lean dogs slip out of the dark ahead and stand in the road with their heads low, ribs showing through ragged coats. Neither of them is wagging anything.
+*else
+  A scrabbling comes up out of the mud of the bank below the road, and then a dark shape the size of a cat, and another behind it. They are black and fat from the river mud, and they come out onto the road and fan across it.
+*choice
+  # Stand and fight.
+    *goto te_beasts_fight
+  # Try to drive them off.
+    *goto te_beasts_scare
+  # Back away.
+    *goto te_beasts_back
+
+*comment ── a light or a flame in the hand frightens animals: the bonus (te_flat) and the line that shows it ──
+*label te_beasts_light
+*set te_flat 0
+*if (te_means = "own")
+  *set te_flat 3
+  You swing your light in a wide arc in front of you.
+*elseif (te_means = "firebolt")
+  *set te_flat 3
+  A bright thread of fire from your fingertip lands on the road at their feet and burns there.
+*elseif (te_means = "flick")
+  *set te_flat 2
+  A spray of sparks jumps from your fingers and falls in a hot rain across the road.
+*elseif (te_means = "glow")
+  *set te_flat 1
+  Your open hand fills with a pale glow, and you hold it out in front of you.
+*return
+
+*label te_beasts_scare
+You raise your voice and your arms and walk straight at them.
+*gosub te_beasts_light
+*set check_flat_bonus te_flat
+*if (te_flat > 0)
+  *set check_flat_bonus_label " | light in hand"
+*set te_dc (12 + te_danger)
+*if (te_beast = "boar")
+  *set te_dc (13 + te_danger)
+*elseif (te_beast = "dogs")
+  *set te_dc (11 + te_danger)
+*gosub_scene dice_engine roll_skill_check te_dc "intimidation" "" "animal_handling" "" "survival" ""
+*comment The roll clears the bonus and its label itself, but a replay skips the roll, so they are cleared here too.
+*set check_flat_bonus 0
+*set check_flat_bonus_label ""
+*if (check_success)
+  *if (te_beast = "wolves")
+    The nearer wolf holds your eye a long moment, then turns, and the other goes after it. The grey shapes sink back into the trees until even the sound of them is gone.
+  *elseif (te_beast = "boar")
+    The boar swings its head toward you and back, grunts once, and wheels off into the brush with a crash that carries a long way.
+  *elseif (te_beast = "dogs")
+    The nearer dog flinches first, and then they are both gone, loping off into the dark with their tails low.
+  *else
+    They scatter back down the bank in a rattle of claws, and the dark closes over them.
+  *set minutes_to_pass 15
+  *set time_advance_call_id "te_beasts_scare_time"
+  *gosub te_clock
+  *goto te_end
+*else
+  *if (te_beast = "wolves")
+    The nearer wolf does not so much as flinch. It drops lower, and the other circles wide for your flank.
+  *elseif (te_beast = "boar")
+    The boar does not give ground. It paws the road twice and drops its head for the charge.
+  *elseif (te_beast = "dogs")
+    They do not run. The nearer one's lip curls back, and the other circles wide for your flank.
+  *else
+    They do not scatter. They come on across the road in a rush.
+  *set combat_enemy_advantage true
+  *goto te_beasts_fight
+
+*label te_beasts_back
+You keep your eyes on them and take a slow step back, and another.
+*set te_dc 12
+*if (te_beast = "wolves")
+  *set te_dc 13
+*elseif (te_beast = "dogs")
+  *set te_dc 11
+*elseif (te_beast = "rats")
+  *set te_dc 11
+*gosub_scene dice_engine roll_skill_check te_dc "stealth" "" "survival" "" "athletics" ""
+*if (check_success)
+  *if (te_beast = "wolves")
+    You keep your pace slow and even, and they watch you go and do not follow.
+  *elseif (te_beast = "boar")
+    You keep your pace slow and your eyes off its head, and it watches you go and goes back to the brush.
+  *elseif (te_beast = "dogs")
+    They watch you go, and do not follow past the next bend.
+  *else
+    They lose interest the moment you stop being the nearest thing moving, and turn back down the bank.
+  *set minutes_to_pass 15
+  *set time_advance_call_id "te_beasts_back_time"
+  *gosub te_clock
+  *goto te_end
+*else
+  *if (te_beast = "boar")
+    Your heel scrapes a loose stone, and that is all it was waiting for.
+  *else
+    Your heel scrapes a loose stone, and that is all they were waiting for.
+  *set combat_enemy_advantage true
+  *goto te_beasts_fight
+
+*label te_beasts_fight
+*set combat_is_nonlethal false
+*if (te_beast = "wolves")
+  *comment Two wolves: the library's beast made smaller than its default 9 HP so a pair is the weight of the Dredge-End ambush. Not balance-simmed.
+  *set combat_lib_1 "beast"
+  *set combat_enemy_name_override "Wolf"
+  *set combat_enemy_epithet_override "the nearer wolf"
+  *set combat_enemy_hp_override 7
+  *set combat_enemy_ac_override 12
+  *set combat_enemy_atk_override 3
+  *set combat_lib_2 "beast"
+  *set combat_enemy2_name_override "Wolf"
+  *set combat_enemy2_epithet_override "the other wolf"
+  *set combat_enemy2_hp_override 7
+  *set combat_enemy2_ac_override 12
+  *set combat_enemy2_atk_override 3
+  *set combat_enemy2_range 2
+*elseif (te_beast = "boar")
+  *comment One boar: the library's beast made tougher and a better hitter than its default (11 HP, +4 to hit) because there is only one of it. Not balance-simmed.
+  *set combat_lib_1 "beast"
+  *set combat_enemy_name_override "Boar"
+  *set combat_enemy_epithet_override "the boar"
+  *set combat_enemy_hp_override 11
+  *set combat_enemy_ac_override 11
+  *set combat_enemy_atk_override 4
+*elseif (te_beast = "dogs")
+  *comment Two half-wild dogs: the library's beast made small and weak (5 HP, AC 11, +2). Not balance-simmed.
+  *set combat_lib_1 "beast"
+  *set combat_enemy_name_override "Dog"
+  *set combat_enemy_epithet_override "the nearer dog"
+  *set combat_enemy_hp_override 5
+  *set combat_enemy_ac_override 11
+  *set combat_enemy_atk_override 2
+  *set combat_lib_2 "beast"
+  *set combat_enemy2_name_override "Dog"
+  *set combat_enemy2_epithet_override "the other dog"
+  *set combat_enemy2_hp_override 5
+  *set combat_enemy2_ac_override 11
+  *set combat_enemy2_atk_override 2
+  *set combat_enemy2_range 2
+*else
+  *set combat_lib_1 "mire_rat"
+  *set combat_lib_2 "mire_rat"
+*gosub_scene combat fight_library
+*if (combat_outcome = "player_died")
+  *set death_cause "combat"
+  *gosub te_death_place
+  *if (te_beast = "wolves")
+    *set death_enemy_epithet "the wolves in the dark"
+  *elseif (te_beast = "boar")
+    *set death_enemy_epithet "the boar in the brush"
+  *elseif (te_beast = "dogs")
+    *set death_enemy_epithet "the dogs on the road"
+  *else
+    *set death_enemy_epithet "the rats in the dark"
+  *goto_scene death death_screen
+*if (combat_outcome = "victory")
+  *if (te_beast = "wolves")
+    The last wolf goes down, and the road is quiet. There is nothing here worth the carrying.
+  *elseif (te_beast = "boar")
+    The boar goes down heavily and does not rise, and the brush beside the road is still. There is nothing here worth the carrying.
+  *elseif (te_beast = "dogs")
+    The last dog goes still, and the road is quiet.
+  *else
+    The last rat goes still, and the scrabbling stops. There is nothing on them worth the knife.
+  *set minutes_to_pass 25
+*elseif (combat_outcome = "rescued")
+  You come to with your cheek on the cold road and no memory of how it ended. Whatever it was has gone back where it came from.
+  *set minutes_to_pass 60
+*else
+  You break away and run until your lungs give out, and nothing follows you.
+  *set minutes_to_pass 30
+*set time_advance_call_id "te_beasts_fight_time"
+*gosub te_clock
+*goto te_end
+
+*comment ====================================================================================
+*comment THE ANIMAL IN THE TRAP. In daylight on a forest, hills or road tile: a doe in a wire snare, a fox in a trap or a heron in a net (the trip's seed picks). Nobody is here, only the animal. The player
+*comment is asked once: try to free it (the best of Animal Handling, Medicine or Sleight of Hand against a DC of 12), speak with it if they know Speak with Animals (dungeon.txt dg_swa_check and dg_swa_cast say
+*comment what the spell costs this character and take it: a slot, a ritual's ten extra minutes, or nothing for a racial gift), or leave it. Speaking frees it outright, and each animal has its own voice. Nothing is
+*comment paid: an animal has no purse.
+*comment ====================================================================================
+*label te_caught_animal
+*gosub te_variety
+*gosub te_animal_set
+*gosub_scene dungeon dg_swa_check
+*gosub te_swa_hint_set
+[b]◈ ON THE ROAD[/b]
+*line_break
+*if (te_variant = 0)
+  A deer stands at the edge of the road with one hind leg held out stiffly behind it, and a loop of snare wire pulled tight above the hock. It has dragged the stake it was tied to nearly out of the ground and has not the strength to finish the job. It watches you come with the whites of its eyes showing.
+*elseif (te_variant = 1)
+  A fox lies on its side at the foot of a bank with the iron jaws of a trap shut on one forepaw, its flanks heaving. It bares its teeth at you, but there is no real force behind them.
+*else
+  A heron is tangled in a net at the water's edge, its wings pinned and its long neck stretched out stiff, one yellow eye turned up to watch you. The net is old and has been strung between two stakes, and the more the bird has fought it, the tighter it has drawn.
+*label te_animal_choice
+*choice
+  # Try to free it.
+    *goto te_animal_free
+  *if (dg_swa_can)
+    # Speak with it. ${te_swa_hint}
+      *goto te_animal_speak
+  *if ((known_speak_with_animals) and (not(dg_swa_can)))
+    # (You have no spell left to speak with it.)
+      You say the first words, and nothing follows them. You have nothing left to cast it with.
+      *goto te_animal_choice
+  # Leave it be.
+    *goto te_animal_walk
+
+*label te_animal_walk
+You look at ${te_creature} a long moment, and go on. Behind you ${te_hold} scrapes and strains.
+*set te_ok false
+*goto te_finish
+
+*label te_animal_free
+"Easy," you say quietly, and go down on one knee beside ${te_creature}.
+*set te_dc 12
+*gosub_scene dice_engine roll_skill_check te_dc "animal_handling" "" "medicine" "" "sleight_of_hand" ""
+*set te_ok check_success
+*if (te_ok)
+  *set minutes_to_pass 25
+*else
+  *set minutes_to_pass 40
+*set time_advance_call_id "te_animal_time"
+*set te_pay 0
+*if (te_ok)
+  *if (check_skill = "Animal Handling")
+    You let ${te_creature} take your scent first and keep your hands low, and the shaking eases a little at a time until you can touch ${te_hold}.
+  *elseif (check_skill = "Medicine")
+    You look at what ${te_hold} has done before you touch it, and you work it free the way it will hurt least.
+  *else
+    Your fingers find the catch and work it loose a hair at a time, and ${te_hold} gives.
+  *if (te_variant = 0)
+    The doe stands a moment on three legs, testing the fourth, and then is gone into the trees.
+  *elseif (te_variant = 1)
+    The fox lies still a moment, then snaps once at the air and goes limping up the bank.
+  *else
+    The heron unfolds, shakes out its wings once, and goes up over the trees on slow beats.
+*else
+  ${te_creature_cap} panics under your hands and tears away, and ${te_hold} takes more from it than you wanted to see. By the time you have your breath back, it has dragged itself out of reach.
+*gosub te_clock
+*goto te_finish
+
+*label te_animal_speak
+*gosub_scene dungeon dg_swa_cast
+*if (dg_swa_cost = "ritual")
+  You sit by the road and say the words slowly, the long way, and ten minutes of murmuring later ${te_notice}.
+*elseif (dg_swa_cost = "slot")
+  You murmur the words and feel the spell leave you, and ${te_notice}.
+*else
+  You let the old knack loose, and ${te_notice}.
+
+*if (te_variant = 0)
+  "Easy," you say. "I'm going to take the wire off."
+
+  "Hands," the doe says, small and fast. It is not a voice so much as a flinch with words in it. "Hands put it. Hands at dawn. Not you? Not you."
+
+  "Not me. Hold still."
+
+  "I will hold. I am holding." The doe goes rigid from nose to tail, and the wire comes away in your fingers with nothing fought.
+
+  The doe stands a moment on three legs, testing the fourth. "Thank you, hands," it says, and is gone into the trees.
+*elseif (te_variant = 1)
+  "Easy," you say. "I'm going to get that off you."
+
+  "Don't trouble," the fox says, dry as old bone. "It's only a foot. I've had worse from a hen."
+
+  "Then it won't mind a little help. Keep talking. It makes me quicker."
+
+  "Left side," the fox says, after a moment. "The spring catches on the left. Press it, you ape."
+
+  You press it, and the iron jaws open. The fox draws the paw in and looks at it with deep suspicion. "I will remember your face," it says. "Take that however you like." Then it goes limping up the bank.
+*else
+  "Easy," you say. "I'm going to pull the net off you."
+
+  "Not the neck," the heron says, in a voice like dry reeds. "Everything else. Not the neck."
+
+  "I'll start at the wing."
+
+  "I have been still since the sun was over there," the heron says, "and I am very good at it."
+
+  The net comes away in pieces. The heron unfolds, shakes out each wing in turn, and regards you with one yellow eye. "The water is better when there are fewer of you," it says. "You may stay." Then it goes up over the trees on slow beats.
+*set te_ok true
+*set te_pay 0
+*if (dg_swa_cost = "ritual")
+  *set minutes_to_pass 30
+*else
+  *set minutes_to_pass 20
+*set time_advance_call_id "te_animal_speak_time"
+*gosub te_clock
+*goto te_finish
+
+*comment ── the animal for this trip, by variation ──
+*label te_animal_set
+*if (te_variant = 0)
+  *set te_creature "the doe"
+  *set te_creature_cap "The doe"
+  *set te_hold "the wire"
+  *set te_notice "the doe's ears turn to you"
+*elseif (te_variant = 1)
+  *set te_creature "the fox"
+  *set te_creature_cap "The fox"
+  *set te_hold "the trap"
+  *set te_notice "the fox's ears turn to you"
+*else
+  *set te_creature "the heron"
+  *set te_creature_cap "The heron"
+  *set te_hold "the net"
+  *set te_notice "the heron's head swings round and one yellow eye finds you"
+*return
+
+*comment ── what Speak with Animals would cost this character, for the choice's own label (dungeon.txt dg_swa_check has just set dg_swa_cost) ──
+*label te_swa_hint_set
+*set te_swa_hint ""
+*if (dg_swa_cost = "slot")
+  *set te_swa_hint "[Speak with Animals, uses a spell slot, ~5 min]"
+*elseif (dg_swa_cost = "ritual")
+  *set te_swa_hint "[Speak with Animals as a ritual, no slot, ~15 min]"
+*elseif (dg_swa_cost = "free")
+  *set te_swa_hint "[Speak with Animals, ~5 min]"
+*return
+
+*comment ── only the trip's variety, for an event with no person in it: te_variant 0 to 2 and te_extra 0 to 4, from the seed ──
+*label te_variety
+*set name_seed ow_event_seed
+*set name_salt 31
+*set name_n 3
+*gosub_scene names name_roll
+*set te_variant name_rolled
+*set name_salt 32
+*set name_n 5
+*gosub_scene names name_roll
+*set te_extra name_rolled
+*return
+
+*comment ====================================================================================
+*comment THE LOST TRAVELLER. In daylight on a forest or hills tile: a person at a fork who has lost the way to the nearest settlement (named from the map, whichever is the fewest miles away). Three small
+*comment variations: turning in circles at the fork, sitting on a stump with a boot off, or arguing with a dog about which way. The player is asked once, with up to four honest answers: tell them the way (the best
+*comment of Survival, Investigation or Perception; a miss costs an hour and a wrong turn), walk them part of it (no check, forty minutes, a bigger thanks), ask the dog if there is one and the player can speak with
+*comment it, or say they cannot help. The thanks are a few coppers and a name; nothing is promised for later.
+*comment ====================================================================================
+*label te_lost_traveller
+*gosub te_person
+*gosub te_town_set
+*gosub_scene dungeon dg_swa_check
+*gosub te_swa_hint_set
+[b]◈ ON THE ROAD[/b]
+*line_break
+*if (te_variant = 0)
+  ${te_look} stands where the track forks, turning a half circle one way and then back again, a bundle on one shoulder. ${te_sub_cap} lights up when ${te_sub} sees you.
+
+  "Is this the way to ${te_town}?" ${te_sub} says. "I was told left at the big stone, and I've passed three big stones."
+*elseif (te_variant = 1)
+  ${te_look} sits on a stump at the edge of the track with a boot in one hand and a bundle between ${te_pos} feet, and gets up as you come near.
+
+  "Beg pardon," ${te_sub} says. "Can you tell me if I'm still on the road to ${te_town}? I stopped to see to my foot, and now every tree looks like the one before."
+*else
+  ${te_look} stands at the fork with a rope in one hand and a shaggy yellow dog at the other end of it. The dog is looking down one track, and ${te_pos} owner is looking down the other.
+
+  "We've been arguing about it since the bridge," ${te_sub} says, and nods at the dog. "Is this the way to ${te_town}?"
+*label te_lost_choice
+*choice
+  # Tell them the way.
+    *goto te_lost_tell
+  # Offer to walk them part of the way.
+    *goto te_lost_walk
+  *if ((te_variant = 2) and (dg_swa_can))
+    # Ask the dog. ${te_swa_hint}
+      *goto te_lost_dog
+  *if ((te_variant = 2) and ((known_speak_with_animals) and (not(dg_swa_can))))
+    # (You have no spell left to ask the dog.)
+      You say the first words, and nothing follows them. You have nothing left to cast it with.
+      *goto te_lost_choice
+  # Say you can't help.
+    *goto te_lost_no
+
+*label te_lost_no
+"Sorry," you say. "I can't help you."
+
+${te_sub_cap} thanks you anyway and turns back to the fork, and you leave ${te_obj} to ${te_pos} half circle.
+*set te_ok false
+*goto te_finish
+
+*label te_lost_tell
+"Let me look at the ground," you say.
+*set te_dc 11
+*gosub_scene dice_engine roll_skill_check te_dc "survival" "" "investigation" "" "perception" ""
+*set te_ok check_success
+*if (te_ok)
+  *set minutes_to_pass 15
+*else
+  *set minutes_to_pass 60
+*set time_advance_call_id "te_lost_time"
+*set te_pay (3 + te_extra)
+*if (te_ok)
+  You read the ground until the right track stands out from the false ones, the one with real wheel marks in it, and you point ${te_obj} down it. "That one. It will bring you out at ${te_town}."
+
+  ${te_sub_cap} breathes out. "${te_first}," ${te_sub} says, and holds out a hand. "I'd have been out here until I was a story." Before you can wave it off, ${te_sub} presses a few coppers into your palm.
+*else
+  You study the ground and settle on the track that looks right, and walk ${te_obj} down it. A good while later you are both standing at the same fork again, and ${te_sub} is gracious enough not to say so. It was the other track after all.
+
+  "${te_first}," ${te_sub} says, and shakes your hand anyway. "I'll take it from here."
+*gosub te_clock
+*goto te_finish
+
+*label te_lost_walk
+"I'll walk you to where it's plain," you say.
+
+You walk ${te_obj} along the track, past a stretch of false turnings, until it widens into a road that even a lost person cannot lose, and you stand there while ${te_sub} finds the first marker on it.
+*set te_ok true
+*set minutes_to_pass 40
+*set time_advance_call_id "te_lost_walk_time"
+*set te_pay (6 + te_extra)
+*gosub te_clock
+
+"${te_first}," ${te_sub} says, and holds out a hand. "I can see it from here. I'd never have found it." Before you can wave it off, ${te_sub} presses a few coppers into your palm.
+*goto te_finish
+
+*label te_lost_dog
+*gosub_scene dungeon dg_swa_cast
+*if (dg_swa_cost = "ritual")
+  You crouch and say the words slowly, the long way, and ten minutes of murmuring later the dog's ears go up.
+*elseif (dg_swa_cost = "slot")
+  You murmur the words and feel the spell leave you, and the dog's ears go up.
+*else
+  You let the old knack loose, and the dog's ears go up.
+
+"That way," the dog says, and goes on saying it. "Smoke that way. Pigs that way. Home that way. Left, left, left."
+
+"Left," you tell ${te_obj}. "The dog says left."
+
+${te_sub_cap} looks at the dog for a long moment. "It's been pulling left since the bridge," ${te_sub} says, with great dignity. "I thought it only wanted a ditch."
+*set te_ok true
+*if (dg_swa_cost = "ritual")
+  *set minutes_to_pass 20
+*else
+  *set minutes_to_pass 10
+*set time_advance_call_id "te_lost_dog_time"
+*set te_pay (4 + te_extra)
+*gosub te_clock
+
+"${te_first}," ${te_sub} says, and holds out a hand. "And that's Biscuit." Before you can wave it off, ${te_sub} presses a few coppers into your palm.
+*goto te_finish
+
+*comment ====================================================================================
+*comment SHARE THE FIRE. A CAMP event, not a road one: the player has just made camp at dusk or in the dark (overworld.txt ow_camp_pre plans it with Overworld.campEventPlan, once per camp and under the page's lock,
+*comment and the night's sleep follows in ow_camp). A stranger comes up out of the dark, in one of three small variations (damp, coughing, shy). What happens turns on whether the player can light a fire (a flint and
+*comment tinderbox, Fire Bolt or Prestidigitation): if they can, the stranger asks to share it, and the player decides whether to make room (a few coppers of thanks, and the wood is stacked in the morning); if they
+*comment cannot, the stranger has a fire a little way back and asks the player to share THAT one, which sets ow_camp_fire_shared so the night's cold is halved exactly as a fire of their own would (calc_exposure).
+*comment te_company ("host", "guest" or "none") tells ow_camp which morning line to print. It ends the way every event does, with a page break, but into the sleep instead of the road.
+*comment ====================================================================================
+*label te_share_fire
+*set te_company "none"
+*gosub te_person
+*gosub te_town_set
+*gosub te_fire_pick
+*if (time_period = "Dusk")
+  *set te_dark "dusk"
+*else
+  *set te_dark "dark"
+[b]◈ THE CAMP[/b]
+*line_break
+*if (te_fire)
+  You are settling in beside the road with the fire just taking when ${te_look_mid} comes up out of the ${te_dark} and stops at the edge of the light, hands held out where you can see them.
+
+  *if (te_variant = 0)
+    "Mind if I share your fire?" ${te_sub} says. "Mine won't take. Everything I own is damp."
+  *elseif (te_variant = 1)
+    "That's the first fire I've seen in two hours," ${te_sub} says, and coughs into ${te_pos} sleeve. "Might I sit at it?"
+  *else
+    "Sorry," ${te_sub} says, a little out of breath, as if ${te_sub} had been working up to it for some time. "Could I sit at your fire? I can't get mine to light."
+  *choice
+    # Make room by the fire.
+      *goto te_fire_host
+    # Tell them to keep walking.
+      *goto te_fire_refuse
+*else
+  You are settling in beside the road without a fire, having no way to light one, when a small steady glow comes up the road toward you. It is a lantern, and behind it comes ${te_look_mid}, who stops a few paces off and holds it up to see you.
+
+  *if (te_variant = 0)
+    "You'll freeze, sitting there like that," ${te_sub} says. "I've a fire two bends back. There's room at it."
+  *elseif (te_variant = 1)
+    "No fire?" ${te_sub} says, and coughs into ${te_pos} sleeve. "That's a poor way to spend a night. I've one burning back there, if you'd like it."
+  *else
+    "Excuse me," ${te_sub} says, rather shyly. "I've a fire back there and nobody to sit at it. Would you like to?"
+  *choice
+    # Go with them.
+      *goto te_fire_guest
+    # Stay where you are.
+      *goto te_fire_stay
+
+*label te_fire_refuse
+"Not tonight," you say. "Keep walking."
+
+${te_sub_cap} nods as if ${te_sub} had expected it, and goes on into the ${te_dark}. You hear ${te_pos} steps for a long time.
+*set te_company "none"
+*set te_ok false
+*goto te_finish
+
+*label te_fire_host
+"Sit," you say. "There's room."
+
+*if (te_variant = 0)
+  ${te_sub_cap} sits with a grateful sound and holds both hands out to the flames. "${te_first}," ${te_sub} says. "I meant to push on to ${te_town}, and then I didn't."
+*elseif (te_variant = 1)
+  ${te_sub_cap} sits close to the flames with a cough that goes on a little too long. "${te_first}," ${te_sub} says. "Forgive the noise. It's only the damp." You feed the fire another branch, and after a while the coughing eases.
+*else
+  ${te_sub_cap} sits on the far side of the fire with ${te_pos} knees drawn up and holds ${te_pos} hands out to the heat, watching the flames. "${te_first}," ${te_sub} says at last, as though it had cost something. "Thank you."
+
+You trade the small talk of a fire: where each of you has come from, where each is bound, how long the road has been. When it runs down, ${te_first} lies down on the far side of the fire with a coat for a pillow, and in a little while you do the same, but not before ${te_first} presses a few coppers into your hand. "For the wood," ${te_sub} says.
+*set te_company "host"
+*set te_ok true
+*set te_pay (2 + te_extra)
+*goto te_finish
+
+*label te_fire_stay
+"I'm all right here," you say.
+
+${te_sub_cap} lingers a moment, then shrugs and carries the light away, and the ${te_dark} closes in behind it.
+*set te_company "none"
+*set te_ok false
+*goto te_finish
+
+*label te_fire_guest
+"Lead on," you say.
+
+${te_sub_cap} takes you back along the road, past two bends, to a fire burning in the lee of a bank with a bedroll laid out beside it. "${te_first}," ${te_sub} says, and gestures at the best of the ground. You sit, and the warmth reaches your face like a hand.
+
+You trade the small talk of a fire: where each of you has come from, where each is bound, how long the road has been. When it runs down, you lie down on the side the wind does not reach.
+*set ow_camp_fire_shared true
+*set te_company "guest"
+*set te_ok false
+*goto te_finish
+
+*comment ── can the player light a fire? the same three ways calendar.txt calc_exposure counts for a camp ──
+*label te_fire_pick
+*set te_fire false
+*if (((has_tinderbox) or (known_fire_bolt)) or (known_prestidigitation))
+  *set te_fire true
+*return
+
+*comment ── the nearest settlement to the tile the player stands on, named from the map (a person asking the way, or saying where they were bound) ──
+*label te_town_set
+*script var o = window.Overworld, best = null, bm = 1e9; Object.keys(o.nodes).forEach(function (id) { var n = o.nodes[id]; if (id === stats.ow_pos || ["town", "village", "city"].indexOf(n.kind) < 0) return; var r = o.route(stats.ow_pos, id); if (r.ok && r.miles < bm) { bm = r.miles; best = n.name; } }); stats.te_town = best || "the next village";
+*return
+
+*comment ====================================================================================
+*comment THE FORD. In daylight or at dusk at a tile the map marks as a ford (a `ford` flag in overworld-data.js; so far Ashrun Mouth, where the Ashrun comes over its bar of grey stones). Nobody is here, only the water,
+*comment and how high it is comes from the weather's memory (te_ford_level, worked out once under the page's lock): low on dry ground, normal on wet ground or in rain, high on sodden ground or in heavy rain.
+*comment The player is asked once: cross here (the best of Athletics, Survival or Acrobatics against 10, 12 or 14; a Hemp Rope adds a bonus), wait for the water to drop (only when it is high: three hours, and then
+*comment the crossing is a normal one), or take the long way round (two hours, no check, always offered). A failed crossing sweeps the player a few yards: 1 to 3 hit points (never below 1, like the Silt-Gate
+*comment slip) and an hour soaked, charged at twice the exposure (te_wet). Nothing is lost in the river.
+*comment ====================================================================================
+*label te_ford
+*set te_wet false
+*gosub te_ford_level
+[b]◈ ON THE ROAD[/b]
+*line_break
+*if (te_level = "low")
+  The road comes down to the water here, where the Ashrun spreads over its bar of grey stones, clear and shallow, to run beside the Grey. The stones show dry on top, and the crossing is a matter of picking your way.
+*elseif (te_level = "normal")
+  The road comes down to the water here, where the Ashrun runs brown and knee-deep over its bar of grey stones, steady and loud. The stones show only as pale shapes under the water.
+*else
+  The road comes down to the water here, where the Ashrun is high and fast and brown over its bar of grey stones, with a pull to it that you can see in the way it bends around every rock. The stones are only a rumor under the surface.
+*label te_ford_choice
+*choice
+  # Cross here.
+    *set te_wait_mins 0
+    *goto te_ford_cross
+  *if (te_level = "high")
+    # Wait for the water to drop. [~3 Hours]
+      *set te_wait_mins 180
+      *goto te_ford_wait
+  # Take the long way round. [~2 Hours]
+    *goto te_ford_round
+
+*label te_ford_round
+You turn upriver and follow the bank until the water narrows and the stones stand clear of it, and you cross there, without wetting your boots, a long way round. It costs you the better part of two hours.
+*set te_ok true
+*set minutes_to_pass 120
+*set time_advance_call_id "te_ford_round_time"
+*gosub te_clock
+*set te_pay 0
+*goto te_end
+
+*label te_ford_wait
+You sit on the bank and watch the Ashrun. A long time later it has fallen back enough to show its stones.
+*goto te_ford_cross
+
+*label te_ford_cross
+*comment The water the player faces: a normal one after waiting, otherwise what it was. DC 10, 12 or 14.
+*set te_dc 12
+*if ((te_level = "low") and (te_wait_mins = 0))
+  *set te_dc 10
+*elseif ((te_level = "high") and (te_wait_mins = 0))
+  *set te_dc 14
+*if (has_hemp_rope)
+  *set te_flat 2
+  You knot one end of your rope around a stump on the bank and take the other with you.
+*else
+  *set te_flat 0
+  You look the crossing over from the bank, and then you go in.
+*set check_flat_bonus te_flat
+*if (te_flat > 0)
+  *set check_flat_bonus_label " | rope"
+*gosub_scene dice_engine roll_skill_check te_dc "athletics" "" "survival" "" "acrobatics" ""
+*comment The roll clears the bonus and its label itself, but a replay skips the roll, so they are cleared here too.
+*set check_flat_bonus 0
+*set check_flat_bonus_label ""
+*set te_ok check_success
+*if (te_ok)
+  *if (check_skill = "Athletics")
+    You wade in at a slant to the pull and lean on every step, and the current tugs at your legs the whole way across, until the far bank is under your hands.
+  *elseif (check_skill = "Survival")
+    You read the water first: the dark patches are deep, and the ripples mark the stones. You cross where the ripples run, one careful step at a time, and the river never takes your feet.
+  *else
+    You cross on the tops of the stones, a step and a pause and a step, with your arms out and your weight low, and you hop the last wet gap onto the far shingle.
+  *if (te_flat > 0)
+    On the far bank you work the rope loose from the stump behind you and coil it as you go.
+  *set minutes_to_pass (te_wait_mins + 20)
+*else
+  A stone rolls under your foot, and the river has you. It carries you a dozen yards downstream before you find the bottom, and you crawl out onto the shingle on your hands and knees with the cold of it in your chest.
+  *set te_wet true
+  *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+    *rand te_hurt 1 3
+    *if (hp_current > te_hurt)
+      *set hp_current (hp_current - te_hurt)
+    *else
+      *set hp_current 1
+    *set stat_bump_locked true
+    *set locked_stat_bump_page_id page_id
+
+  [b][🩸 Lost ${te_hurt} HP][/b]
+  *set minutes_to_pass (te_wait_mins + 60)
+*set time_advance_call_id "te_ford_time"
+*gosub te_clock
+*set te_pay 0
+*goto te_end
+
+*comment ── how high the water is, from the weather's memory: worked out once under this page's lock, because the hours the event costs can change the weather and a replay would read a different answer ──
+*label te_ford_level
+*if (not(te_level_locked)) or (not(locked_te_level_page_id = page_id))
+  *set te_level "low"
+  *if ((weather_wet) or (ground_state = "wet"))
+    *set te_level "normal"
+  *if ((ground_state = "sodden") or ((weather_wet) and (weather_severity >= 2)))
+    *set te_level "high"
+  *set te_level_locked true
+  *set locked_te_level_page_id page_id
+*return

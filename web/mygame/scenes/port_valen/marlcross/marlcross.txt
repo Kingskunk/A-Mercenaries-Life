@@ -1,0 +1,128 @@
+*comment ====================================================================================
+*comment MARLCROSS: Port Valen's eastern grain and carting village (overworld tile "mc"). It is
+*comment deliberately compact: the Cross Hall, Grain Green and Wayfarer's Rest are its only
+*comment destinations. The windmill, storehouses, wainwright's yard and ox common establish the
+*comment village's freight identity in Layer 1, without becoming menus before they have gameplay.
+*comment ====================================================================================
+
+*label mc_arrive
+*set minutes_to_pass 5
+*set time_advance_call_id "mc_arrive_1"
+*gosub mc_walk_time
+*temp mc_first false
+*if (not(mc_seen))
+  *set mc_first true
+*set mc_seen true
+*if (mc_first)
+  The High Grey Road leaves the low country behind and climbs between open fields. A stone cross rises above the road where four tracks meet, with a windmill turning on the ridge beyond it and rows of grain barns gathered below.
+*else
+  The High Grey Road tops the rise and comes in among the barns and wagon yards of Marlcross.
+*goto marlcross
+
+*label marlcross
+*set current_district "marlcross"
+*gosub_scene calendar update_hub_condition
+*set shop_open ""
+[b]◈ MARLCROSS[/b]
+*line_break
+[b][⏳ Marlcross Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
+*line_break
+*gosub mc_place
+*gosub mc_sky
+*gosub mc_street
+
+*choice
+  # [b]The Cross Hall[/b]: council benches, notices and the village's public business. [~5 min]
+    *goto_scene port_valen/marlcross/cross_hall mc_cross_hall
+  # [b]The Grain Green[/b]: scales, market awnings and the road-side trade. [~5 min]
+    *goto_scene port_valen/marlcross/grain_green mc_grain_green
+  # [b]The Wayfarer's Rest[/b]: a meal, a bed and a stable yard off the High Grey Road. [~5 min]
+    *goto_scene port_valen/marlcross/wayfarers_rest mc_wayfarers_rest
+  # [b]The High Grey Road[/b]: leave the village.
+    *set ow_pos "mc"
+    *goto_scene overworld/overworld ow_here
+
+*comment ── LAYER 1: PLACE ──
+*label mc_place
+Marlcross stands where the High Grey Road meets three farm tracks on the eastern high ground. The meeting place is a broad triangle of pale, hard-packed marl, cut deep with wheel ruts. An old stone cross stands on a stepped base at its centre, its arms worn blunt by weather and passing hands. The Cross Hall faces it from the west side: a low timber building with a bell frame over its door and a line of benches beneath the eaves.
+
+The Grain Green opens along the north side of the road, a fenced strip of packed earth with a beam scale, empty stall frames and a stone trough. Beyond it stand long raised storehouses on short stone feet, their shuttered loading doors looking out toward the cart track. On the ridge, a round windmill turns above the roofs. Its sails are visible from every open part of the village, and the sound of its gears carries down when the wind is right.
+
+The southern track passes a wainwright's yard where bare wheel rims, wagon tongues and stacks of seasoned planks lean beneath open sheds. Farther out, an ox common lies behind a post-and-rail fence, with a pond at its lowest corner and enough cropped grass for teams stopping on the road. The air smells of dry straw, flour dust, animal sweat and axle grease.
+*return
+
+*comment ── LAYER 2: SKY ── Weather and light only, followed by the ground's memory.
+*label mc_sky
+*temp mc_dark false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set mc_dark true
+*if (weather = "Rain")
+  Rain taps on the storehouse shutters and gathers in the wheel ruts, turning the pale ground slick and brown.
+*elseif (weather = "Storm")
+  Wind snaps at the empty market awnings and the mill's sails have been tied off against the gusts.
+*elseif (weather = "Fog")
+  Fog fills the folds of the high ground, leaving the road marker and the mill as pale shapes above it.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow clings to the cart roofs and piles in the corners of the stone cross's base.
+*elseif (weather = "Blizzard")
+  Snow races across the open rise and smears the road into a white, shifting track. The mill is only a dark bulk behind its furled sails.
+*elseif (weather = "Clear")
+  *if (mc_dark)
+    Starlight catches on the road marker and the mill sails stand black above the roofs.
+  *elseif (time_period = "Dusk")
+    Low light turns the marl and the dust on the road a warm red-brown, while the ridge begins to darken behind the mill.
+  *else
+    Clear light lies open across the rise, and the grainfields show in long bands beyond the last barns.
+*else
+  A flat overcast hangs over the ridge and dulls the pale ground around the crossing.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Water remains in the deepest ruts, and the path between the Green and the storehouses is still soft underfoot.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The marl has dried pale again except where carts have pressed dark tracks across it.
+*return
+
+*comment ── LAYER 3: STREET ── Clock-based variety; no named recurring micro-actions.
+*label mc_street
+*temp mc_vignette (((campaign_day * 24) + clock_hour) modulo 6) + 1
+*if ((street_life = "empty") and (not(mc_dark)))
+  The crossing is nearly empty. The market frames stand bare, the hall door is shut, and only the windmill keeps moving above the village.
+  *return
+*if (mc_dark)
+  *if (mc_vignette = 1)
+    A lantern moves between the storehouses, then disappears behind a loading door.
+  *elseif (mc_vignette = 2)
+    An ox shifts against a rail in the common and its chain gives a soft clink.
+  *elseif (mc_vignette = 3)
+    A late wagon rolls through the crossing with its lamps hooded against the wind.
+  *elseif (mc_vignette = 4)
+    The Rest's yard lamp throws a square of light over the road-side gate.
+  *elseif (mc_vignette = 5)
+    The mill has stopped, and its still sails cut across the stars.
+  *else
+    A dog barks from one of the wagon yards, then the crossing settles again.
+  *return
+*if (mc_vignette = 1)
+  Two people ease a sack onto the beam scale while another marks its weight on a board.
+*elseif (mc_vignette = 2)
+  A pair of oxen stand in the road while their driver checks a loose strap at the yoke.
+*elseif (mc_vignette = 3)
+  A wagon comes out from the storehouses under a load of sacks, its wheels grinding slowly over the marl.
+*elseif (mc_vignette = 4)
+  A worker at the wainwright's shed tests the roundness of a wheel rim against the packed ground.
+*elseif (mc_vignette = 5)
+  People gather beneath the market frames to compare handfuls of grain in their palms before tying their sacks closed.
+*else
+  A small line of carts waits along the road, leaving a clear strip through the crossing for traffic to pass.
+*return
+
+*label mc_walk_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return

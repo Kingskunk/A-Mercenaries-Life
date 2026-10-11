@@ -142,7 +142,7 @@ The road climbs in turns from the docks, the salt smell of the harbor thinning b
     *comment Hearthday
     Work winds down early. By afternoon, workshop shutters are propped halfway, and craftsmen gather under the bakehouse awnings smoking clay pipes and drinking sour orchard cider while children toss knucklebones in sheltered corners.
     *if (mw_savvy)
-      Retired Watch veterans and elder artisans nurse their cider with eyes fixed on newcomers. You feel their gaze tracking your weapon harness and pack. In a quarter where everyone knows their neighbor's rent, an unfamiliar mercenary is cataloged before you take twenty paces.
+      Retired Watch veterans and elder artisans nurse their cider with eyes fixed on people passing beneath the awning. In a quarter where everyone knows their neighbor's rent, a newcomer attracts notice before they take twenty paces.
 
 *comment Passing vignette: only when there is a street to pass through. Normal weather gets the
 *comment full pool, thin weather a small covered-lane pool, and empty streets or night get none.
@@ -153,7 +153,7 @@ The road climbs in turns from the docks, the salt smell of the harbor thinning b
     *elseif (mw_vignette_roll = 2)
       [i]Two washerwomen exchange sharp words beside the south fountain spout over whose wooden pail has the right place beneath the lion's mouth.[/i]
     *elseif (mw_vignette_roll = 3)
-      [i]A traveling knife-grinder working a foot-powered wheel catches your eye beneath an awning and nods toward your weapon belt with a professional wink.[/i]
+      [i]A traveling knife-grinder works a foot-powered wheel beneath an awning, with newly sharpened household tools catching the light beside him.[/i]
     *elseif (mw_vignette_roll = 4)
       [i]A street balladeer perched on a mounting block sings an irreverent tune about the Council's grain tariff until a passing Watchman raps a spear-butt on the stones.[/i]
     *elseif (mw_vignette_roll = 5)
@@ -1031,9 +1031,8 @@ Behind a bolted door, the silence belongs entirely to you.
 *comment tomorrow, to sleep in as often as you like and to carry out and back. mw_inn_room_until is the minute (campaign_day * 1440 + the clock) it runs out; mw_inn_room_active is refreshed
 *comment from it each time the player walks into the hall or the room. The basin resets hygiene with no boon (the baths stay the luxury).
 *comment Rooms first, no bar mechanics and no gossip: the player ruled out a third bar in the ward.
-*comment STABLE HOOK: the player owns no mount yet, but mounts are planned. The stable yard (mw_inn_yard) is scenery
-*comment for now. When mounts exist, add the stall option to that *choice (a nightly stall price, feed, and the animal
-*comment waiting in its stall), and let Oswin's first-visit line about "a beast" become a real offer.
+*comment STABLE: calendar.txt horse_upkeep automatically stables an owned horse overnight and applies the city's daily bill. The stable yard (mw_inn_yard) remains scenery
+*comment unless a manual stall interaction creates a new gameplay choice beyond that shared system. Oswin's first-visit line about "a beast" already reflects the yard's everyday use.
 *comment Layers: place is constant; the hall's street layer is who is about, by time of day, in a pool of three.
 *comment The yard is open air, so it also has a sky layer. Keeper: Oswin Hale. Lorebook: wagoners_rest, oswin.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1132,6 +1131,12 @@ A long two-storey house of grey stone and dark timber stands on the trunk road, 
       *goto mw_inn_hall
   # Walk through the archway to the stable yard.
     *goto mw_inn_yard
+  *if (((slasher_quest_stage = "unstarted") or (slasher_quest_stage = "active")) and ((not(slasher_rumor_inn_heard)) or (((slasher_quest_stage = "active") and (not(slasher_alibi_known))) and (not(slasher_ask_inn_tried)))))
+    # Ask Oswin about the killings in the city. [~10 min]
+      *goto_scene port_valen/varren_quests/varren_errand slasher_rumor_inn
+  *if (((slasher_quest_stage = "resolved") or (slasher_quest_stage = "failed")) and (not(slasher_after_inn_heard)))
+    # Ask Oswin how the city is taking the news. [~10 min]
+      *goto_scene port_valen/varren_quests/varren_errand slasher_after_inn
   *if (not(mw_inn_talk_house))
     # Ask Oswin how the house works.
       *set mw_inn_talk_house true
@@ -1209,6 +1214,21 @@ Behind the inn, a cobbled yard runs between a long stable range and an open cart
     A dozen wagons stand under the shed with their tilts folded and their tongues propped on blocks. One carries barrels branded with a gilded river-serpent, another sacks stenciled with a valley grain mark, and a third is loaded so high with hides that its axle groans.
     *page_break Step back into the yard…
     *goto mw_inn_yard
+  *if ((not(has_horse)) and (not(inn_yard_night)))
+    # Ask about a horse.
+      *set horse_place "mw"
+      *page_break Walk over to the stalls…
+      *goto_scene horse_dealer hd_buy
+  *if ((has_horse) and (not(inn_yard_night)))
+    # Offer ${horse_name} for sale.
+      *set horse_place "mw"
+      *page_break Walk over to the stalls…
+      *goto_scene horse_dealer hd_sell
+  *if (inn_yard_night)
+    # (Nobody here will deal in horses until morning.)
+      The stalls are dark and the loft is full of snoring. Nobody here is going to talk about horses until morning.
+      *page_break Step back into the yard…
+      *goto mw_inn_yard
   # Go back through the archway to the hall.
     *goto mw_inn_hall
 
@@ -1366,7 +1386,7 @@ The trunk road runs through the ward as a broad paved way, cambered to the gutte
     A late train of ox-carts labors toward the north-west, the drivers plainly counting the streets left before the bell.
 *elseif (road_state = "night")
   *if (road_roll = 1)
-    The road is quiet under its lanterns, and the only movement is a two-man Watch patrol tapping its cudgels against the shopfronts.
+    The road is quiet under its lanterns, and the only movement is a two-man Watch patrol rattling the shop doors with the butts of their spears.
   *elseif (road_roll = 2)
     A single wagon rumbles through the dark toward the inn's yard, the driver's lantern swinging from a pole on the tilt.
   *else
@@ -1411,6 +1431,12 @@ The trunk road runs through the ward as a broad paved way, cambered to the gutte
       *set time_advance_call_id "mw_walk_charter_1"
       *gosub mw_walk_time
       *goto mw_charter_gate
+  *if ((slasher_quest_stage = "active") and (not(road_state = "night")))
+    # [b]The militia post[/b]: the captain Varren named. [~25 min]
+      *goto_scene port_valen/varren_quests/varren_errand slasher_post
+  *if ((slasher_quest_stage = "active") and (road_state = "night"))
+    # [b]The militia post[/b]: the captain keeps day hours.
+      *goto_scene port_valen/varren_quests/varren_errand slasher_post_closed
   *if (rj_has_job)
     # [b]Your posting[/b]: read what the insignia holds.
       *set rh_from "road"
@@ -3519,7 +3545,11 @@ You take a bench in the hot room, where the steam is so thick that faces are onl
 *comment which one, not by locking each flag individually.
 *temp mw_gossip_pick 0
 *if (not(locked_mw_gossip_page_id = page_id))
-  *if (((dry_lion_quest_stage = "unstarted") and dry_lion_hook_seen) and not(dry_lion_rumor_heard))
+  *if (((slasher_quest_stage = "unstarted") or (slasher_quest_stage = "active")) and ((not(slasher_rumor_baths_heard)) or (((slasher_quest_stage = "active") and (not(slasher_alibi_known))) and (not(slasher_ask_baths_tried)))))
+    *set mw_gossip_pick 8
+  *elseif ((((slasher_quest_stage = "resolved") or (slasher_quest_stage = "failed")) and (not(slasher_after_baths_heard))))
+    *set mw_gossip_pick 9
+  *elseif (((dry_lion_quest_stage = "unstarted") and dry_lion_hook_seen) and not(dry_lion_rumor_heard))
     *set mw_gossip_pick 1
   *elseif ((dry_lion_quest_stage = "resolved") and (not(dry_lion_aftermath_heard)))
     *set mw_gossip_pick 2
@@ -3550,6 +3580,10 @@ You take a bench in the hot room, where the steam is so thick that faces are onl
     "They put the yard branch on the roll," a voice says. "Temporary." Another voice snorts. "Temporary is longer than a promise, most days."
   *else
     "No bath until the city crew comes," someone says. The hot room goes quiet for a breath, then the talk moves to pails and who has family uphill.
+*elseif (mw_gossip_pick = 8)
+  *goto_scene port_valen/varren_quests/varren_errand slasher_rumor_baths
+*elseif (mw_gossip_pick = 9)
+  *goto_scene port_valen/varren_quests/varren_errand slasher_after_baths
 *elseif (mw_gossip_pick = 3)
   *set mw_rumor_grain true
   Two voices on the bench beside you keep it low. "That Council officer with the measuring rod is waving unlicensed flour wagons through the square on Marketdays," says one. "For a payment slip, folded small." The other snorts. "So the licensed drivers pay twice. The Council's fee, and the wait."

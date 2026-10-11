@@ -41,7 +41,19 @@
     },
     {
       id: "hall_escort_pv", title: "Wagon Escort to Port Valen", place: "Wagon lot, Timbermouth",
-      active: function (s) { return s.rj_escort_stage === "active" && s.rj_escort_to === "pv" && (truthy(s.rj_escort_road) || Number(s.campaign_day) <= Number(s.rj_escort_until)); }
+      active: function (s) { return s.rj_escort_stage === "active" && s.rj_escort_to === "pv" && s.rj_escort_from === "tm" && (truthy(s.rj_escort_road) || Number(s.campaign_day) <= Number(s.rj_escort_until)); }
+    },
+    {
+      id: "hall_escort_af", title: "Wagon Escort to Alderford", place: "Wagon yard, Port Valen",
+      active: function (s) { return s.rj_escort_stage === "active" && s.rj_escort_to === "af" && (truthy(s.rj_escort_road) || Number(s.campaign_day) <= Number(s.rj_escort_until)); }
+    },
+    {
+      id: "hall_escort_pv_af", title: "Wagon Escort to Port Valen", place: "Carters' lot, Alderford",
+      active: function (s) { return s.rj_escort_stage === "active" && s.rj_escort_to === "pv" && s.rj_escort_from === "af" && (truthy(s.rj_escort_road) || Number(s.campaign_day) <= Number(s.rj_escort_until)); }
+    },
+    {
+      id: "varren_errand", title: "Varren's Errand", place: "Port Valen",
+      active: function (s) { return s.slasher_quest_stage === "active" || ((s.slasher_quest_stage === "resolved" || s.slasher_quest_stage === "failed") && !truthy(s.slasher_reported)); }
     },
     {
       id: "silt_gate", title: "Silt-Gate Contraband", place: "The Silt-Gates",

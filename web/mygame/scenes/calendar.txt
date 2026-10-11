@@ -17,6 +17,8 @@
   *comment since it's derived from the same staged values and would double-
   *comment decay on a replay for the same reason the clock would.
   *temp total_mins_this_call ((hours_to_pass * 60) + minutes_to_pass)
+  *gosub buff_active_count
+  *temp buff_count_before buff_count_now
 
   *if (minutes_to_pass > 0)
     *set clock_minute + minutes_to_pass
@@ -41,6 +43,10 @@
     *set calendar_day + days_to_pass
     *set taphouse_dice_bankroll taphouse_dice_bankroll_max
     *set keel_dice_bankroll keel_dice_bankroll_max
+    *comment A stabled horse costs by the day (horse_upkeep below): only while the player is off the overworld in a settlement, never on the road (it grazes) and never while escorting a caravan. The tick
+    *comment sits here because every place the player spends a night already calls advance_time, so no town, inn or rest needs to know about the horse.
+    *if ((has_horse) and ((not(ow_on)) and (not(rj_escort_road))))
+      *gosub horse_upkeep
 
     *comment Weather is rolled a day ahead. Today's weather is yesterday's forecast
     *comment (weather_tomorrow) about 80% of the time; otherwise the forecast missed and
@@ -169,8 +175,11 @@
       *set sleep_buff2_desc "none"
       *set sleep_buff2_stat "none"
       *set sleep_buff2_bonus 0
-  *comment Buffs are ability-score boons now, so a buff that just ran out has to give its score back.
-  *gosub_scene character_buffs recalculate_buff_stats
+  *comment Buffs are ability-score boons now, so a buff that just ran out has to give its score back. Recalculating is a dozen scene calls, so it runs only when the number of
+  *comment active buffs changed during this call (one ran out); a call with no buff, or with buffs still running, changes no score.
+  *gosub buff_active_count
+  *if (not(buff_count_now = buff_count_before))
+    *gosub_scene character_buffs recalculate_buff_stats
 
   *comment --- Hunger & Fatigue neglect clock (Port Valen open-world only) ---
   *comment Only ticks once vane_independent_operative is true, so the clock
@@ -646,14 +655,23 @@
     *set hub_condition_str "${hub_condition_str} | Hygiene: ${hygiene_stage}"
   *if (not(routine_stage = "Settled"))
     *set hub_condition_str "${hub_condition_str} | Routine: ${routine_stage}"
+  *if ((has_horse) and (horse_unpaid_days > 0))
+    *if (horse_unpaid_days = 1)
+      *set hub_condition_str "${hub_condition_str} | Stable: 1 day unpaid"
+    *else
+      *set hub_condition_str "${hub_condition_str} | Stable: ${horse_unpaid_days} days unpaid"
+  *if ((horse_kept_day > 0) and (campaign_day <= (horse_kept_day + 1)))
+    *set hub_condition_str "${hub_condition_str} | ${horse_kept_name} was kept by the stable"
   *if (sleep_buff1_active)
     *set hub_condition_str "${hub_condition_str} | ${sleep_buff1_name}"
   *if (dressing_on)
     *set hub_condition_str "${hub_condition_str} | Wounds Dressed"
 *comment Keeps level_up_ready (and so the top-bar Level Up button) current: advance_time ends by calling this, and the district hubs call it
 *comment on entry, so nearly every stretch of play passes through here and no place has to refresh it. Derived, fixed-value sets only.
-*gosub_scene character_progression refresh_level_up_progress
-*gosub update_weather_flags
+*comment Not while a journey is being walked (ow_trip_active): neither can change between two miles, they cost a dozen scene calls, and the map page refreshes both on arrival.
+*if (not(ow_trip_active))
+  *gosub_scene character_progression refresh_level_up_progress
+  *gosub update_weather_flags
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -897,7 +915,7 @@
 *comment   GEAR: every worn slot (armor, head, cloak, hands, waist, feet, neck) contributes percent cuts from
 *comment   equipment.txt garment_traits; the cuts add up per part, capped at 90 (a NEGATIVE heat cut, like a fur-lined
 *comment   cloak, adds heat wear). An owned sheet of waxed oilcloth then halves what is left of the wet part.
-*comment   CAMP: while exposure_camping is set, an owned flint and tinderbox halves the cold part (a fire).
+*comment   CAMP: while exposure_camping is set, anything that can light a fire halves the cold part: an owned flint and tinderbox (never used up), or a known Fire Bolt or Prestidigitation.
 *comment   Total capped at +100 (double burn). Extra minutes count toward the hunger and fatigue
 *comment   clocks only, never the game clock and never the hygiene clock.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -923,34 +941,13 @@
   *set ex_cold (ex_cold + ((0 - temp_extreme) * 20))
 *if (temp_extreme > 0)
   *set ex_heat (ex_heat + (temp_extreme * 20))
-*gosub_scene equipment garment_traits equipped_armor_id
-*set ex_cutc (ex_cutc + garment_cold)
-*set ex_cutw (ex_cutw + garment_wet)
-*set ex_cuth (ex_cuth + garment_heat)
-*gosub_scene equipment garment_traits equipped_head_id
-*set ex_cutc (ex_cutc + garment_cold)
-*set ex_cutw (ex_cutw + garment_wet)
-*set ex_cuth (ex_cuth + garment_heat)
-*gosub_scene equipment garment_traits equipped_cloak_id
-*set ex_cutc (ex_cutc + garment_cold)
-*set ex_cutw (ex_cutw + garment_wet)
-*set ex_cuth (ex_cuth + garment_heat)
-*gosub_scene equipment garment_traits equipped_hands_id
-*set ex_cutc (ex_cutc + garment_cold)
-*set ex_cutw (ex_cutw + garment_wet)
-*set ex_cuth (ex_cuth + garment_heat)
-*gosub_scene equipment garment_traits equipped_waist_id
-*set ex_cutc (ex_cutc + garment_cold)
-*set ex_cutw (ex_cutw + garment_wet)
-*set ex_cuth (ex_cuth + garment_heat)
-*gosub_scene equipment garment_traits equipped_feet_id
-*set ex_cutc (ex_cutc + garment_cold)
-*set ex_cutw (ex_cutw + garment_wet)
-*set ex_cuth (ex_cuth + garment_heat)
-*gosub_scene equipment garment_traits equipped_neck_id
-*set ex_cutc (ex_cutc + garment_cold)
-*set ex_cutw (ex_cutw + garment_wet)
-*set ex_cuth (ex_cuth + garment_heat)
+*comment The gear's cuts are the same for every mile of a journey, and working them out is seven scene calls, so a journey primes them once (exposure_gear_prime) and every
+*comment mile after reads them back (exposure_gear_cached). Anywhere else the flag is false and they are worked out here, as before.
+*if (not(exposure_gear_cached))
+  *gosub_scene equipment exposure_gear_sum
+*set ex_cutc exposure_gear_cutc
+*set ex_cutw exposure_gear_cutw
+*set ex_cuth exposure_gear_cuth
 *if (ex_cutc > 90)
   *set ex_cutc 90
 *if (ex_cutw > 90)
@@ -964,11 +961,91 @@
 *set ex_heat round((ex_heat * (100 - ex_cuth)) / 100)
 *if (has_waxed_oilcloth)
   *set ex_wet round(ex_wet / 2)
-*comment A camp with a fire: flint and tinderbox halve what the cold takes (the caller sets exposure_camping only while it sleeps outdoors).
-*if ((exposure_camping) and (has_tinderbox))
+*comment A camp with a fire: a flint and tinderbox, the cantrips Fire Bolt and Prestidigitation (which light kindling and small fires), or a stranger's fire the player was asked to share (ow_camp_fire_shared), halve what the cold takes (the caller sets
+*comment exposure_camping only while it sleeps outdoors). overworld.txt ow_camp tells the two apart in its prose.
+*if ((exposure_camping) and ((((has_tinderbox) or (known_fire_bolt)) or (known_prestidigitation)) or (ow_camp_fire_shared)))
   *set ex_cold round(ex_cold / 2)
 *set ex_pct ((ex_cold + ex_wet) + ex_heat)
 *if (ex_pct > 100)
   *set ex_pct 100
 *set exposure_extra_mins round((exposure_base_mins * ex_pct) / 100)
+*return
+
+*comment Work the gear's cuts out now and keep them until exposure_gear_cached is set false again (the journey page does both).
+*label exposure_gear_prime
+*gosub_scene equipment exposure_gear_sum
+*set exposure_gear_cached true
+*return
+
+*comment THE STABLE'S BILL. Called once for each night the player's horse spends stabled (days_to_pass of them): 2 copper a day in a town or city, 1 in a village (the kind of the tile ow_pos names, which is
+*comment the settlement the player is in), added to horse_owed and paid in full whenever the purse covers it. A purse that cannot cover it adds those days to horse_unpaid_days (the hub header shows them),
+*comment and the third unpaid day the stable keeps the horse for its board: has_horse goes false and horse_kept_name and horse_kept_day let the header say so for a day. Inside advance_time's own replay guard.
+*label horse_upkeep
+*script var n = window.Overworld.nodes[stats.ow_pos]; stats.horse_rate = (n && n.kind === "village") ? 1 : 2;
+*set horse_owed (horse_owed + (horse_rate * days_to_pass))
+*temp hu_purse (((gold * 100) + (silver * 10)) + copper)
+*if (hu_purse >= horse_owed)
+  *set currency_add_amount (0 - horse_owed)
+  *gosub_scene economy currency_add
+  *set horse_owed 0
+  *set horse_unpaid_days 0
+*else
+  *set horse_unpaid_days (horse_unpaid_days + days_to_pass)
+  *if (horse_unpaid_days >= 3)
+    *set horse_kept_name horse_name
+    *set horse_kept_day campaign_day
+    *set has_horse false
+    *set horse_owed 0
+    *set horse_unpaid_days 0
+*return
+
+*comment One mile of a journey in ONE scene call: the weather and light of the moment, the pace they allow, the exposure and the clock. Every *gosub_scene is a trip through the page's
+*comment scheduler (a timer in the browser), so a call each for the weather, the exposure and the clock cost three times what this does. The caller (overworld.txt ow_travel) has set
+*comment climate_shift for the leg, ow_has_night_light, ow_leg_i and ow_leg_mile_i. At night without a lit light, or in poor visibility, the player cannot walk: ow_step_halt comes back
+*comment true with ow_night_halt_reason set, and the clock is NOT moved (the caller makes the roadside halt). Otherwise ow_leg_minutes is the pace: 24 minutes a mile, 30 at dusk, 48 in the dark.
+*label travel_step
+*gosub update_weather_flags
+*set ow_step_halt false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *if ((not(ow_has_night_light)) or (weather_visibility = "poor"))
+    *if (weather_visibility = "poor")
+      *set ow_night_halt_reason "weather"
+    *else
+      *set ow_night_halt_reason "light"
+    *set ow_step_halt true
+    *return
+  *set ow_leg_minutes 48
+*elseif (time_period = "Dusk")
+  *set ow_leg_minutes 30
+*else
+  *set ow_leg_minutes 24
+*comment A rider covers a mile in half the time by day and at dusk, and in the dark still takes half (overworld-data.js MOUNT_*_MINUTES_PER_MILE).
+*if (has_horse)
+  *set ow_leg_minutes (ow_leg_minutes / 2)
+*set exposure_base_mins ow_leg_minutes
+*set exposure_camping false
+*set hours_to_pass 0
+*set minutes_to_pass ow_leg_minutes
+*set time_advance_call_id (("ow_trip_mile_" & ow_leg_i) & ("_" & ow_leg_mile_i))
+*gosub calc_exposure
+*gosub advance_time
+*return
+
+*comment How many timed buffs are active right now, into buff_count_now (a fixed-value set, so a replay changes nothing).
+*label buff_active_count
+*set buff_count_now 0
+*if (food_buff_active)
+  *set buff_count_now + 1
+*if (drink_buff_active)
+  *set buff_count_now + 1
+*if (unique_buff1_active)
+  *set buff_count_now + 1
+*if (unique_buff2_active)
+  *set buff_count_now + 1
+*if (unique_buff3_active)
+  *set buff_count_now + 1
+*if (sleep_buff1_active)
+  *set buff_count_now + 1
+*if (sleep_buff2_active)
+  *set buff_count_now + 1
 *return

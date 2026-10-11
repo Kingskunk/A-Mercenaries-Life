@@ -39,6 +39,7 @@ const MAP = {
   w_spear: "Spear_Unfaded_Icon.png",
   w_bow: "Shortbow_Unfaded_Icon.png",
   w_xbow: "Hand_Crossbow_Unfaded_Icon.png",
+  w_sling: "Sling.png",
   w_staff: "Quarterstaff_Unfaded_Icon.png",
   w_mace: "Mace_Unfaded_Icon.png",
   w_club: "Club_Unfaded_Icon.png",
@@ -99,6 +100,7 @@ const MAP = {
   food: "FOOD_Dried_Rope_Sausage_Unfaded_Icon.png",
   fish: "Bucket_of_Fish_Unfaded_Icon.png",
   sack: "Camp_Supply_Sack_Unfaded_Icon.png",
+  mount: "../Generic/Generic_Wild_Animal_Icon.webp",           // STAND-IN: the horse, until there is art of one
   jug: "Ceramic_Jug_A_Unfaded_Icon.png",
   note: "Book_Note_A_Item_Icon.png",
   letter: "Book_Parchment_A_Item_Icon.png",
@@ -146,8 +148,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 (async () => {
   const page = "file:///" + ITEM.replace(/\\/g, "/") + "/Consumable/Potion/POT_Potion_of_Healing_Unfaded_Icon.png";   // any file:// page to run in
+  const profileDirName = "cs-itemicons-" + Date.now();
   const chrome = spawn(CHROME, ["--headless=new", "--disable-gpu", "--allow-file-access-from-files", "--remote-debugging-port=" + PORT, "--no-first-run",
-    "--user-data-dir=" + path.join(os.tmpdir(), "cs-itemicons-" + Date.now()), page], { stdio: "ignore" });
+    "--user-data-dir=" + path.join(os.tmpdir(), profileDirName), page], { stdio: "ignore" });
   let ws = null;
   try {
     let list = null;
@@ -193,6 +196,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     console.log("wrote " + path.relative(ROOT, OUT) + " (" + Object.keys(out).length + " icons, " + Math.round(body.length / 1024) + " KB)");
   } finally {
     if (ws) try { ws.close(); } catch (e) {}
-    chrome.kill();
+    // kill the whole tree this script started (the GPU and renderer children outlive chrome.kill()); by PID, never by name, so the person's own browser is untouched
+    try { chrome.kill(); } catch (e) {}
+    // The browser leaves helper processes behind that a plain kill misses, and they do not share a process tree with it. Find them by THIS run's own profile folder (never by program name, which would also close the person's browser).
+    try { require("child_process").spawnSync("powershell", ["-NoProfile", "-Command", "Get-CimInstance Win32_Process -Filter \"Name='chrome.exe'\" | Where-Object { $_.CommandLine -like '*" + profileDirName + "*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"], { stdio: "ignore" }); } catch (e) {}
   }
 })().catch((e) => { console.error("FAILED: " + e.message); process.exit(1); });

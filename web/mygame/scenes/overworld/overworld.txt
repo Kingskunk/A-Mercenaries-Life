@@ -12,8 +12,8 @@
 *comment the exposure of the moment (calendar.txt calc_exposure: the weather changes while you walk, so a leg after midnight pays the new day's weather) and moves the clock once, trail
 *comment rations are eaten for you at the hunger point (calendar.txt advance_time), and one summary line is printed before the new overworld page follows on the same page with the new tile.
 *comment Nothing stops the player at each tile. The player stops by picking a nearer tile first and camping there: ow_camp is an 8-hour sleep on any tile that is not a town, which clears
-*comment fatigue. A camp counts as a shared bunk for resolve_sleep (so the wool blanket's +1 HP works), the oilcloth halves its rain, a flint and tinderbox halves its cold. Roadside inns and
-*comment events are later steps (ow_event_hook is the empty place for events).
+*comment fatigue. A camp counts as a shared bunk for resolve_sleep (so the wool blanket's +1 HP works), the oilcloth halves its rain, a flint and tinderbox (or the cantrips Fire Bolt and Prestidigitation) halves its cold. Roadside inns and
+*comment road events stop a journey on the tile they happen on (see ow_event below and travel_events.txt).
 *comment
 *comment A replay (a refresh, or opening Stats and returning) reruns a page from its start on top of its END state, so ow_travel must not read a value it changes itself. The route is
 *comment worked out once under a page_id lock (ow_trip_locked): whether the trip is valid, the tile the player stood on, the miles and the minutes are stored then, and a replayed
@@ -25,6 +25,9 @@
 
 *label ow_here
 *set ow_on true
+*set ow_trip_active false
+*set exposure_gear_cached false
+*set ow_camp_fire_shared false
 *set current_district "overworld"
 *comment The tile's climate shifts the temperature (calendar.txt reads climate_shift), and its water is what the lye soap needs. Set before update_hub_condition so the weather flags use them.
 *script var n = window.Overworld.nodes[stats.ow_pos]; stats.climate_shift = n.climate || 0; stats.ow_water = !!n.water;
@@ -49,11 +52,11 @@ ${ow_here_text}
   *if (ow_can_camp)
     # Make camp for the night.
       *set ow_camp_mode "night"
-      *goto ow_camp
+      *goto ow_camp_pre
   *if ((ow_can_camp) and (ow_dawn_ok))
     # Make camp and sleep until dawn. [~${ow_dawn_hours} Hours]
       *set ow_camp_mode "dawn"
-      *goto ow_camp
+      *goto ow_camp_pre
   *if (ow_pos = "pv")
     # Go back in through the River Gate.
       *set ow_on false
@@ -64,11 +67,21 @@ ${ow_here_text}
       *set ow_on false
       *set climate_shift 0
       *goto_scene timbermouth/barleycross/barleycross bc_arrive
+  *if (ow_pos = "bw")
+    # Go into Brinewick.
+      *set ow_on false
+      *set climate_shift 0
+      *goto_scene port_valen/brinewick/brinewick bw_arrive
   *if (ow_pos = "fo")
     # Go into Ashrun Holt.
       *set ow_on false
       *set climate_shift 0
       *goto_scene timbermouth/ashrun_holt/ashrun_holt ah_arrive
+  *if (ow_pos = "mc")
+    # Go into Marlcross.
+      *set ow_on false
+      *set climate_shift 0
+      *goto_scene port_valen/marlcross/marlcross mc_arrive
   *if (ow_pos = "tm")
     # Go into Timbermouth.
       *set ow_on false
@@ -116,28 +129,36 @@ ${ow_here_text}
 *if (not(ow_trip_locked)) or (not(locked_ow_trip_page_id = page_id))
   *comment Worked out once per page: is this a real tile with a road to it, where the player stood, and what the road costs from there. ow_pos moves to the destination inside this same
   *comment lock (only for a valid trip), so a replay reads the stored values back instead of working a route from a position that has already changed.
-  *script var o = window.Overworld; var d = String(stats.ow_dest); var ok = !!(o.nodes[d] && o.nodes[stats.ow_pos] && d !== stats.ow_pos); var r = ok ? o.route(stats.ow_pos, d) : { ok: false, miles: 0, minutes: 0, legs: [] }; ok = ok && r.ok; stats.ow_trip_ok = ok; stats.ow_from = stats.ow_pos; stats.ow_miles = ok ? r.miles : 0; stats.ow_minutes = ok ? r.minutes : 0; stats.ow_legs = ok ? r.legs.length : 0; stats.ow_text = ok ? o.span(r.minutes) : ""; stats.ow_from_name = o.nodes[stats.ow_pos].name; stats.ow_dest_name = ok ? o.nodes[d].name : "";
+  *comment The forecast in Overworld.travelPlan is also what the map card shows. Miles are resolved one at a time below so dusk, darkness and dawn change the pace at the same moments in the actual trip.
+  *script var o = window.Overworld; var d = String(stats.ow_dest); var ok = !!(o.nodes[d] && o.nodes[stats.ow_pos] && d !== stats.ow_pos); var day = Number(stats.campaign_day); var light = !!((stats.has_hooded_lantern && stats.has_lamp_oil) || (stats.has_pitch_torch && stats.has_tinderbox) || stats.race_darkvision || stats.inv_devils_sight || stats.equipped_ring1_id === "night_eye_ring" || stats.equipped_ring2_id === "night_eye_ring"); var now = Number(stats.clock_hour) * 60 + Number(stats.clock_minute); var poor = String(stats.weather_visibility) === "poor"; var seed = day * 1440 + now; var ev = ok ? o.travelEventPlan(String(stats.ow_pos), d, seed, day, Number(stats.ow_event_last_day), String(stats.ow_event_force), now, light, poor, !!stats.has_horse) : null; stats.ow_goal = ev ? d : "none"; stats.ow_event_id = ev ? ev.id : "none"; stats.ow_event_seed = ev ? seed : 0; if (ev) { d = ev.tile; stats.ow_dest = d; stats.ow_event_last_day = day; stats.ow_event_force = ""; } var r = ok ? o.route(stats.ow_pos, d) : { ok: false, miles: 0, legs: [] }; var p = ok ? o.travelPlan(stats.ow_pos, d, now, light, String(stats.weather_visibility) === "poor", !!stats.has_horse) : { ok: false, miles: 0, minutes: 0, nightStops: 0 }; ok = ok && r.ok && p.ok; stats.ow_trip_ok = ok; stats.ow_from = stats.ow_pos; stats.ow_miles = ok ? p.miles : 0; stats.ow_minutes = ok ? p.minutes : 0; stats.ow_legs = ok ? r.legs.length : 0; stats.ow_text = ok ? o.duration(p.minutes) : ""; stats.ow_from_name = o.nodes[stats.ow_pos].name; stats.ow_dest_name = ok ? o.nodes[d].name : ""; stats.ow_has_night_light = light; stats.ow_night_stops = 0; stats.ow_night_wait_mins = 0; stats.ow_night_halt_reason = "light";
   *set ow_rations_total 0
   *if (ow_trip_ok)
     *set ow_pos ow_dest
-    *comment The walk, one leg at a time. Each leg is charged the exposure of the moment (weather and gear, calendar.txt calc_exposure) and moves the clock once; advance_time eats a trail
-    *comment ration for you when the hunger clock reaches the hungry point, and zeroes rations_eaten_last on every call, so the trip's count is added up here.
+    *comment Each mile is charged at the light and weather of the moment. This is deliberately inside the trip lock: advance_time's own lock remembers only its last call on this page.
+    *comment The worn gear is the same for every mile, so its cuts are worked out once here (calendar.txt exposure_gear_prime), and a mile is ONE scene call (calendar.txt travel_step): the walk used to be
+    *comment about fifty scheduler hops a mile, which in the browser took a quarter of a second a mile (a forty-mile trip took ten seconds).
+    *gosub_scene calendar exposure_gear_prime
+    *set ow_trip_active true
     *set ow_leg_i 0
+    *set ow_leg_mile_i 0
     *label ow_leg_loop
     *if (ow_leg_i < ow_legs)
-      *comment A leg is charged the climate of the tile it walks to: climate_shift is set, the temperature is re-derived (update_weather_flags), and only then is the exposure worked out.
-      *script var o = window.Overworld; var L = o.route(stats.ow_from, stats.ow_dest).legs[stats.ow_leg_i]; if (L) { stats.ow_leg_minutes = L.minutes; stats.climate_shift = o.nodes[L.to].climate || 0; }
-      *gosub_scene calendar update_weather_flags
-      *set exposure_base_mins ow_leg_minutes
-      *set exposure_camping false
-      *gosub_scene calendar calc_exposure
-      *set hours_to_pass 0
-      *set minutes_to_pass ow_leg_minutes
-      *set time_advance_call_id ("ow_trip_leg_" & ow_leg_i)
-      *gosub_scene calendar advance_time
-      *set ow_rations_total (ow_rations_total + rations_eaten_last)
+      *comment The incoming tile's climate applies to this road leg. A route node is a map landmark, not a pause in the player's one-click journey.
+      *script var o = window.Overworld; var L = o.route(stats.ow_from, stats.ow_dest).legs[stats.ow_leg_i]; if (L) { stats.ow_leg_miles = L.miles; stats.climate_shift = o.nodes[L.to].climate || 0; }
+      *if (ow_leg_mile_i < ow_leg_miles)
+        *comment The weather, the pace, the exposure and the clock for this mile are ONE scene call; it only reports back when the light or the visibility makes walking impossible.
+        *gosub_scene calendar travel_step
+        *if (ow_step_halt)
+          *gosub ow_dark_halt
+          *goto ow_leg_loop
+        *set ow_rations_total (ow_rations_total + rations_eaten_last)
+        *set ow_leg_mile_i (ow_leg_mile_i + 1)
+        *goto ow_leg_loop
       *set ow_leg_i (ow_leg_i + 1)
+      *set ow_leg_mile_i 0
       *goto ow_leg_loop
+  *set ow_trip_active false
+  *set exposure_gear_cached false
   *set ow_trip_locked true
   *set locked_ow_trip_page_id page_id
 *if (not(ow_trip_ok))
@@ -150,22 +171,81 @@ ${ow_here_text}
   *if (neglect_damage_fatigue > neglect_damage_hunger)
     *set death_cause "exhaustion"
   *goto_scene death death_screen
-*gosub ow_event_hook
 [b][🥾 ${ow_from_name} to ${ow_dest_name}: ${ow_miles} miles, ${ow_text}][/b]
 *line_break
+*if (ow_night_stops > 0)
+  *if (ow_night_stops = 1)
+    *if (ow_night_halt_reason = "weather")
+      [b][⛺ Poor night visibility forced a roadside halt until morning.][/b]
+    *else
+      [b][⛺ Without a lit lantern or torch, you made a roadside halt until morning.][/b]
+  *else
+    *if (ow_night_halt_reason = "weather")
+      [b][⛺ Poor night visibility forced ${ow_night_stops} roadside halts until morning.][/b]
+    *else
+      [b][⛺ Without a lit lantern or torch, you made ${ow_night_stops} roadside halts until morning.][/b]
+  *line_break
 *if (ow_rations_total = 1)
   [b][🍞 You ate a trail ration on the way.][/b]
   *line_break
 *if (ow_rations_total > 1)
   [b][🍞 You ate ${ow_rations_total} trail rations on the way.][/b]
   *line_break
-*goto ow_here
+*if (ow_event_id = "none")
+  *goto ow_here
+*page_break Something on the road…
+*goto ow_event
+
+*comment ── A forced halt in darkness. This is a roadside camp rather than a destination tile: it advances to 07:00, charges normal camping exposure and resolves sleep before the stored route continues. ──
+*label ow_dark_halt
+*set ow_night_stops + 1
+*script var now = Number(stats.clock_hour) * 60 + Number(stats.clock_minute); var wait = (1860 - now) % 1440; stats.ow_camp_minutes = wait || 1440;
+*set ow_night_wait_mins + ow_camp_minutes
+*set exposure_base_mins ow_camp_minutes
+*set exposure_camping true
+*gosub_scene calendar calc_exposure
+*set exposure_camping false
+*set hours_to_pass ((ow_camp_minutes - (ow_camp_minutes modulo 60)) / 60)
+*set minutes_to_pass (ow_camp_minutes modulo 60)
+*set time_advance_call_id ("ow_trip_dark_halt_" & ow_night_stops)
+*gosub_scene calendar advance_time
+*set ow_rations_total (ow_rations_total + rations_eaten_last)
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*set sleep_location_id ("roadside_" & ow_from)
+*set sleep_is_shared true
+*set sleep_is_permanent_home false
+*set sleep_tier_name "none"
+*set sleep_tier_stat1 "none"
+*set sleep_tier_bonus1 0
+*set sleep_tier_stat2 "none"
+*set sleep_tier_bonus2 0
+*gosub_scene calendar resolve_sleep
+*return
 
 *comment ── a night's sleep on the road: 8 hours (or, when dawn is 6 to 12 hours off, the option to sleep until dawn at 06:00), fatigue cleared. Only on a tile that is not a town (ow_can_camp, set by ow_here). Same order as every sleeping place: the clock first (with the
 *comment    exposure of lying out), the death check, then resolve_sleep. The camp is a SHARED bunk for resolve_sleep (no sleep-quality buff, 1 HP a night, and the wool blanket's +1 HP works); the
-*comment    oilcloth halves the rain and a flint and tinderbox halves the cold (calc_exposure, exposure_camping). Sleeping out costs hunger, not rest: the clock still runs, and a ration is
+*comment    oilcloth halves the rain and a fire (a flint and tinderbox, or Fire Bolt or Prestidigitation) halves the cold (calc_exposure, exposure_camping). Sleeping out costs hunger, not rest: the clock still runs, and a ration is
 *comment    eaten for you if one comes due. All of it sits under ow_camp_locked, so a replay cannot sleep twice. ──
+*comment ── BEFORE THE SLEEP: a camp at dusk or in the dark may bring a stranger to the fire (Overworld.campEventPlan, rare, and on the road events' cooldown). Planned once under this page's lock, from the
+*comment    seed the clock gives; with no event the page goes straight on to ow_camp, so a camp with nothing in it costs no extra page. An event ends with a page break and a *goto_scene to ow_camp. ──
+*label ow_camp_pre
+*if (not(ow_campev_locked)) or (not(locked_ow_campev_page_id = page_id))
+  *script var o = window.Overworld; var day = Number(stats.campaign_day); var now = Number(stats.clock_hour) * 60 + Number(stats.clock_minute); var seed = day * 1440 + now + 7; var ev = stats.ow_can_camp ? o.campEventPlan(String(stats.ow_pos), seed, day, Number(stats.ow_event_last_day), String(stats.ow_event_force), now) : null; stats.ow_event_id = ev ? ev.id : "none"; stats.ow_event_seed = ev ? seed : 0; if (ev) { stats.ow_event_last_day = day; stats.ow_event_force = ""; }
+  *set ow_campev_locked true
+  *set locked_ow_campev_page_id page_id
+*if (ow_event_id = "share_fire")
+  *goto_scene overworld/travel_events te_share_fire
+*comment No event: nobody shared a fire, so the morning lines (ow_camp reads te_company and never changes it) have nothing to say.
+*set te_company "none"
+*goto ow_camp
+
 *label ow_camp
+*set ow_event_id "none"
 *if (not(ow_camp_locked)) or (not(locked_ow_camp_page_id = page_id))
   *set ow_camp_ok ow_can_camp
   *set ow_rations_total 0
@@ -206,10 +286,18 @@ ${ow_here_text}
   *line_break
   *goto ow_here
 You make camp beside the road.
-*if (has_tinderbox)
+*if (te_company = "guest")
+  You sleep by the fire ${te_first} offered, and in the morning ${te_sub} has gone ahead and left the embers banked.
+*elseif (has_tinderbox)
   Your flint and tinderbox get a small fire going, and you sleep with your back to it.
+*elseif (known_fire_bolt)
+  A spark from your fingertips catches the kindling, and you sleep with your back to the small fire.
+*elseif (known_prestidigitation)
+  A flick of your fingers sets a flame to the kindling, and you sleep with your back to the small fire.
 *else
   You have no way to light a fire, so you sleep without one.
+*if (te_company = "host")
+  ${te_first} is gone before you wake, and has left the wood stacked beside the ashes.
 *if ((ow_camp_wet) and (has_waxed_oilcloth))
   You stretch the oilcloth over a low branch, and the rain runs off it.
 *if (not(sleep_gear_note = ""))
@@ -228,6 +316,29 @@ You make camp beside the road.
   *line_break
 *goto ow_here
 
-*comment ── the place events plug in later: called once per journey after the clock has moved, before the new tile's page. Empty for now. ──
-*label ow_event_hook
-*return
+*comment ── A ROAD EVENT. The journey page planned it under its lock (Overworld.travelEventPlan: a rare thing, at most one every few days, only on a road, forest or hills tile) and stopped the walk on its tile; the
+*comment    page before this one ends with the summary of that shortened walk. ow_event_id names the event and its label is te_<id> in overworld/travel_events.txt. Every event ends with a page break and a
+*comment    *goto_scene to ow_event_done below, which clears the event and returns to the map with the rest of the trip still picked (the map panel selects ow_goal when the player stands somewhere else). This
+*comment    page only reads ow_event_id; it is cleared on the NEXT page, so a replay of this page sees the same event. ──
+*label ow_event
+*if (ow_event_id = "stub")
+  *goto_scene overworld/travel_events te_stub
+*if (ow_event_id = "stranded_cart")
+  *goto_scene overworld/travel_events te_stranded_cart
+*if (ow_event_id = "lamp_out")
+  *goto_scene overworld/travel_events te_lamp_out
+*if (ow_event_id = "caught_animal")
+  *goto_scene overworld/travel_events te_caught_animal
+*if (ow_event_id = "lost_traveller")
+  *goto_scene overworld/travel_events te_lost_traveller
+*if (ow_event_id = "ford")
+  *goto_scene overworld/travel_events te_ford
+*if (ow_event_id = "bandits")
+  *goto_scene overworld/travel_events te_bandits
+*if (ow_event_id = "night_beasts")
+  *goto_scene overworld/travel_events te_night_beasts
+*goto ow_event_done
+
+*label ow_event_done
+*set ow_event_id "none"
+*goto ow_here

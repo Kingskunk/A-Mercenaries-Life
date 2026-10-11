@@ -25,7 +25,22 @@ const css = fs.readFileSync(path.join(GAME, "overworldmap.css"), "utf8");
 let bad = 0;
 function fail(msg) { console.error("  FAIL: " + msg); bad++; }
 
+// road events on a solo journey: every row has an id, tile kinds the map knows, territories that exist, and four weights; the scene has a label for it
+const travelScene = fs.readFileSync(path.join(GAME, "scenes", "overworld", "travel_events.txt"), "utf8");
+const overworldScene = fs.readFileSync(path.join(GAME, "scenes", "overworld", "overworld.txt"), "utf8");
+((O.travelEvents || []).concat((O.campEvents || []).map((e) => Object.assign({ camp: true }, e)))).forEach((e) => {
+  if (e.ford && !Object.keys(O.nodes).some((k) => O.nodes[k].ford)) fail("road event " + e.id + " needs a ford tile, and no tile has the ford flag");
+  if (!/^[a-z_]+$/.test(String(e.id))) fail("a road event has an id that is not plain lowercase words");
+  (e.kinds || []).forEach((k) => { if (!["road", "forest", "hills"].includes(k)) fail("road event " + e.id + " lists a tile kind it can never happen on: " + k); });
+  (e.territories || []).forEach((t) => { if (!O.territories[t]) fail("road event " + e.id + " names a territory that does not exist: " + t); });
+  (e.when || []).forEach((w) => { if (!["day", "dusk", "dark"].includes(w)) fail("road event " + e.id + " has a time of day the planner does not know: " + w); });
+  if (!Array.isArray(e.weight) || e.weight.length !== 4 || e.weight.some((w) => !Number.isInteger(w) || w < 0)) fail("road event " + e.id + " needs four whole-number weights, one for each danger from 0 to 3");
+  if (!new RegExp("^\\*label te_" + e.id + "\\s*$", "m").test(travelScene)) fail("road event " + e.id + " has no *label te_" + e.id + " in overworld/travel_events.txt");
+  if (!overworldScene.includes('ow_event_id = "' + e.id + '"')) fail("road event " + e.id + " is not dispatched in overworld.txt ow_event");
+});
+
 const ids = Object.keys(O.nodes);
+ids.forEach((id) => { const n = O.nodes[id]; if (n.ford !== undefined && (n.ford !== true || n.kind !== "road")) fail("tile " + id + " has a ford flag that is not true, or is not on a road tile"); });
 const KINDS = ["city", "town", "village", "road", "hills", "forest"];
 const seenEdges = {};
 O.edges.forEach((e) => {
