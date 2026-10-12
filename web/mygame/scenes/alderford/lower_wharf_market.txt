@@ -30,6 +30,9 @@
 *goto af_market_hub
 
 *label af_market_hub
+*temp af_store_open true
+*if (time_period = "Dusk")
+  *set af_store_open false
 *choice
   *if ((not(af_market_talk_bran)) and (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon")))
     # Speak with Overseer Bran at the grain scale.
@@ -42,6 +45,18 @@
     *goto af_market_grain
   # Cross to the iron yard.
     *goto af_market_metals
+  *if (af_store_open)
+    *if (af_store_seen)
+      # Visit Pell's Stores for road goods.
+        *goto af_store
+    *else
+      # Step into the small provision shop beside the grain house.
+        *goto af_store
+  *else
+    # Look at the shuttered provision shop beside the grain house.
+      A hand-painted board over the closed shutters reads: [i]"PELL'S STORES. Road goods, household stock, and barge supplies. Open morning through afternoon."[/i]
+      *page_break Back to the market yard...
+      *goto af_market_hub
   # Leave the Lower Wharf Market.
     *page_break Return to the street…
     *goto_scene alderford/alderford alderford
@@ -98,6 +113,422 @@ The iron yard is the loudest corner of the market. Bars lie bundled in straw ben
 *goto af_market_hub
 
 *comment ── WEATHER: sky, working surfaces and the river's effect on an open-sided market. ──
+*comment PELL'S STORES: the market's general-goods counter. The bulk sheds handle cargo by lot; this small shop
+*comment handles the pieces ordinary travelers and crews need one at a time. Its stock is the established general-goods
+*comment pool, and the generated trade panel keeps buying and selling consistent with Port Valen and Timbermouth.
+*label af_store
+*set af_store_seen true
+*goto af_store_front
+
+*label af_store_front
+*gosub af_store_open_panel
+*temp af_store_first false
+*if (not(af_nessa_seen))
+  *set af_store_first true
+*set af_nessa_seen true
+[b]◈ PELL'S STORES[/b]
+*line_break
+A low shop is tucked between the grain house and the curing sheds, its front open to the market under a deep plank awning. Shelves rise around a narrow counter: coils of rope, lanterns, tins of oil, folded blankets, waxed cloth, chalk, tinderboxes, and cloth-wrapped trail food all kept in neat, dry rows. A hand scale hangs beneath the beam, and spare casks serve as a worktable for counting nails, sorting odds and ends, and cutting rope to length. The air holds hemp, lamp oil, flour dust, and the smoke drifting in from the curing shed.
+
+*if (weather_wet)
+  Rain drums on the awning and sheets off its edge into the gutter between the shop and the grain house.
+*elseif (weather_cold)
+  A lidded brazier under the counter gives out a dry warmth, and the shopkeeper has weighted the door flap against the draft.
+*elseif (time_period = "Morning")
+  Morning light reaches under the awning in a low bar, brightening the brass lanterns along the front shelf.
+*elseif (time_period = "Afternoon")
+  The awning throws the counter into cool shade while the market yard beyond it lies bright in the river light.
+*else
+  Midday light fills the open front, showing every fibre in the rope coils and every speck of flour dust on the boards.
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  The boards nearest the entrance remain dark with damp, and a strip of old sacking has been laid across them.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  Damp wheel marks still cross the yard beyond the awning.
+
+*if (af_store_first)
+  A compact woman with a blunt grey-streaked braid, a square jaw, and small round spectacles stands behind the counter, measuring rope against a notched stick. She finishes the cut, ties the end with waxed thread, and sets it aside.
+
+  "Nessa Pell," she says. "Road stock, barge stock, and the things people remember only after they have left town. What are you short of?"
+*else
+  Nessa stands behind the counter with a length of rope stretched against her measuring stick.
+
+*choice
+  # Look over the shelves.
+    *goto af_store_stock
+  *if (af_store_has_sale)
+    # Put something on the counter to sell.
+      *goto af_store_sell
+  # Step back into the market yard.
+    *set shop_open ""
+    *goto af_market_hub
+  # ⚖ Settle up the trade panel.
+    *goto af_store_settle
+
+*label af_store_stock
+*gosub af_store_open_panel
+*comment GEN:BEGIN afstore_buy_labels
+*temp ab_hemp_rope ""
+*temp ab_pitch_torch ""
+*temp ab_lamp_oil ""
+*temp ab_hooded_lantern ""
+*temp ab_tool_kit ""
+*temp ab_lute ""
+*temp ab_tinderbox ""
+*temp ab_chalk_sticks ""
+*temp ab_wool_blanket ""
+*temp ab_waxed_oilcloth ""
+*temp ab_lye_soap ""
+*temp ab_trail_rations ""
+*gosub_scene equipment gear_buy_label "hemp_rope"
+*set ab_hemp_rope gear_label
+*gosub_scene equipment gear_buy_label "pitch_torch"
+*set ab_pitch_torch gear_label
+*gosub_scene equipment gear_buy_label "lamp_oil"
+*set ab_lamp_oil gear_label
+*gosub_scene equipment gear_buy_label "hooded_lantern"
+*set ab_hooded_lantern gear_label
+*gosub_scene equipment gear_buy_label "tool_kit"
+*set ab_tool_kit gear_label
+*gosub_scene equipment gear_buy_label "lute"
+*set ab_lute gear_label
+*gosub_scene equipment gear_buy_label "tinderbox"
+*set ab_tinderbox gear_label
+*gosub_scene equipment gear_buy_label "chalk_sticks"
+*set ab_chalk_sticks gear_label
+*gosub_scene equipment gear_buy_label "wool_blanket"
+*set ab_wool_blanket gear_label
+*gosub_scene equipment gear_buy_label "waxed_oilcloth"
+*set ab_waxed_oilcloth gear_label
+*gosub_scene equipment gear_buy_label "lye_soap"
+*set ab_lye_soap gear_label
+*gosub_scene equipment gear_buy_label "trail_rations"
+*set ab_trail_rations gear_label
+*comment GEN:END afstore_buy_labels
+The shelves are arranged for a person who has to leave soon: rope and lamp stock by the front, tinder and chalk at the counter, then blankets, waxed cloth, soap, and wrapped provisions in the dry back rows. Each shelf edge bears a chalked price, a unit, and a small mark showing what can be cut or counted while you wait.
+
+*choice
+  *comment GEN:BEGIN afstore_buy_options
+  # ${ab_hemp_rope}
+    *set buy_item_id "hemp_rope"
+    *goto af_store_buy_do
+  # ${ab_pitch_torch}
+    *set buy_item_id "pitch_torch"
+    *goto af_store_buy_do
+  # ${ab_lamp_oil}
+    *set buy_item_id "lamp_oil"
+    *goto af_store_buy_do
+  # ${ab_hooded_lantern}
+    *set buy_item_id "hooded_lantern"
+    *goto af_store_buy_do
+  # ${ab_tool_kit}
+    *set buy_item_id "tool_kit"
+    *goto af_store_buy_do
+  # ${ab_lute}
+    *set buy_item_id "lute"
+    *goto af_store_buy_do
+  # ${ab_tinderbox}
+    *set buy_item_id "tinderbox"
+    *goto af_store_buy_do
+  # ${ab_chalk_sticks}
+    *set buy_item_id "chalk_sticks"
+    *goto af_store_buy_do
+  # ${ab_wool_blanket}
+    *set buy_item_id "wool_blanket"
+    *goto af_store_buy_do
+  # ${ab_waxed_oilcloth}
+    *set buy_item_id "waxed_oilcloth"
+    *goto af_store_buy_do
+  # ${ab_lye_soap}
+    *set buy_item_id "lye_soap"
+    *goto af_store_buy_do
+  # ${ab_trail_rations}
+    *set buy_item_id "trail_rations"
+    *goto af_store_buy_do
+  *comment GEN:END afstore_buy_options
+  # Step back to the counter.
+    *goto af_store_front
+  # ⚖ Settle up the trade panel.
+    *goto af_store_settle
+
+*label af_store_buy_do
+*set gear_shop "afstore"
+*gosub_scene equipment gear_info buy_item_id
+*temp afs_price gear_retail
+*if ((((gold * 100) + (silver * 10)) + copper) < afs_price)
+  You count your coin against the chalked price and come up short. Nessa returns the ${gear_name} to its shelf without comment.
+  *page_break Back to the shelves...
+  *goto af_store_stock
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount (0 - afs_price)
+  *gosub_scene economy currency_add
+  *gosub_scene equipment grant_gear buy_item_id 1
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+Nessa takes down the ${gear_name}, checks it against the shelf mark, and sets it on the counter. ${gear_blurb}
+*gosub_scene equipment format_copper afs_price
+*line_break
+[b][💰 Paid: ${gear_sale_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass gear_minutes
+*set time_advance_call_id "af_store_buy"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the shelves...
+*goto af_store_after_stock
+
+*label af_store_sell
+Nessa clears a square of counter and lays a scrap of old sailcloth across it. "Let me see it," she says.
+*comment GEN:BEGIN afstore_sell_labels
+*temp as_hemp_rope ""
+*temp as_pitch_torch ""
+*temp as_lamp_oil ""
+*temp as_hooded_lantern ""
+*temp as_tool_kit ""
+*temp as_lute ""
+*temp as_tinderbox ""
+*temp as_chalk_sticks ""
+*temp as_wool_blanket ""
+*temp as_waxed_oilcloth ""
+*temp as_lye_soap ""
+*temp as_trail_rations ""
+*if (has_hemp_rope)
+  *gosub_scene equipment gear_sell_label "hemp_rope" "general"
+  *set as_hemp_rope gear_label
+*if (has_pitch_torch)
+  *gosub_scene equipment gear_sell_label "pitch_torch" "general"
+  *set as_pitch_torch gear_label
+*if (has_lamp_oil)
+  *gosub_scene equipment gear_sell_label "lamp_oil" "general"
+  *set as_lamp_oil gear_label
+*if (has_hooded_lantern)
+  *gosub_scene equipment gear_sell_label "hooded_lantern" "general"
+  *set as_hooded_lantern gear_label
+*if (has_tool_kit)
+  *gosub_scene equipment gear_sell_label "tool_kit" "general"
+  *set as_tool_kit gear_label
+*if (has_lute)
+  *gosub_scene equipment gear_sell_label "lute" "general"
+  *set as_lute gear_label
+*if (has_tinderbox)
+  *gosub_scene equipment gear_sell_label "tinderbox" "general"
+  *set as_tinderbox gear_label
+*if (has_chalk_sticks)
+  *gosub_scene equipment gear_sell_label "chalk_sticks" "general"
+  *set as_chalk_sticks gear_label
+*if (has_wool_blanket)
+  *gosub_scene equipment gear_sell_label "wool_blanket" "general"
+  *set as_wool_blanket gear_label
+*if (has_waxed_oilcloth)
+  *gosub_scene equipment gear_sell_label "waxed_oilcloth" "general"
+  *set as_waxed_oilcloth gear_label
+*if (has_lye_soap)
+  *gosub_scene equipment gear_sell_label "lye_soap" "general"
+  *set as_lye_soap gear_label
+*if (has_trail_rations)
+  *gosub_scene equipment gear_sell_label "trail_rations" "general"
+  *set as_trail_rations gear_label
+*comment GEN:END afstore_sell_labels
+
+*choice
+  *comment GEN:BEGIN afstore_sell_options
+  *if (has_hemp_rope)
+    # ${as_hemp_rope}
+      *set sell_item_id "hemp_rope"
+      *goto af_store_sell_do
+  *if (has_pitch_torch)
+    # ${as_pitch_torch}
+      *set sell_item_id "pitch_torch"
+      *goto af_store_sell_do
+  *if (has_lamp_oil)
+    # ${as_lamp_oil}
+      *set sell_item_id "lamp_oil"
+      *goto af_store_sell_do
+  *if (has_hooded_lantern)
+    # ${as_hooded_lantern}
+      *set sell_item_id "hooded_lantern"
+      *goto af_store_sell_do
+  *if (has_tool_kit)
+    # ${as_tool_kit}
+      *set sell_item_id "tool_kit"
+      *goto af_store_sell_do
+  *if (has_lute)
+    # ${as_lute}
+      *set sell_item_id "lute"
+      *goto af_store_sell_do
+  *if (has_tinderbox)
+    # ${as_tinderbox}
+      *set sell_item_id "tinderbox"
+      *goto af_store_sell_do
+  *if (has_chalk_sticks)
+    # ${as_chalk_sticks}
+      *set sell_item_id "chalk_sticks"
+      *goto af_store_sell_do
+  *if (has_wool_blanket)
+    # ${as_wool_blanket}
+      *set sell_item_id "wool_blanket"
+      *goto af_store_sell_do
+  *if (has_waxed_oilcloth)
+    # ${as_waxed_oilcloth}
+      *set sell_item_id "waxed_oilcloth"
+      *goto af_store_sell_do
+  *if (has_lye_soap)
+    # ${as_lye_soap}
+      *set sell_item_id "lye_soap"
+      *goto af_store_sell_do
+  *if (has_trail_rations)
+    # ${as_trail_rations}
+      *set sell_item_id "trail_rations"
+      *goto af_store_sell_do
+  *comment GEN:END afstore_sell_options
+  # Take it all back off the counter.
+    *goto af_store_front
+
+*label af_store_sell_do
+*set gear_shop "afstore_sell"
+*gosub_scene equipment gear_info sell_item_id
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment gear_sale_value sell_item_id "general"
+  *gosub_scene equipment sell_gear sell_item_id
+  *set currency_add_amount gear_sale_copper
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+Nessa checks the ${gear_sale_name} for wear, sets a practical price, and counts the coin into your hand.
+*line_break
+[b][💰 Sold: ${gear_sale_name} for ${gear_sale_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass 5
+*set time_advance_call_id "af_store_sell"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the counter...
+*goto af_store_after
+
+*label af_store_open_panel
+*set shop_open "afstore"
+*set shop_rows ""
+*temp afs_any_sale (((((has_hemp_rope) or (has_pitch_torch)) or ((has_lamp_oil) or (has_hooded_lantern))) or (((has_tinderbox) or (has_chalk_sticks)) or ((has_wool_blanket) or (has_waxed_oilcloth)))) or (((has_lye_soap) or (has_trail_rations)) or ((has_tool_kit) or (has_lute))))
+*set af_store_has_sale afs_any_sale
+*comment GEN:BEGIN afstore_panel_rows
+*gosub_scene equipment shop_row_add "hemp_rope"
+*gosub_scene equipment shop_row_add "pitch_torch"
+*gosub_scene equipment shop_row_add "lamp_oil"
+*gosub_scene equipment shop_row_add "hooded_lantern"
+*gosub_scene equipment shop_row_add "tool_kit"
+*gosub_scene equipment shop_row_add "lute"
+*gosub_scene equipment shop_row_add "tinderbox"
+*gosub_scene equipment shop_row_add "chalk_sticks"
+*gosub_scene equipment shop_row_add "wool_blanket"
+*gosub_scene equipment shop_row_add "waxed_oilcloth"
+*gosub_scene equipment shop_row_add "lye_soap"
+*gosub_scene equipment shop_row_add "trail_rations"
+*comment GEN:END afstore_panel_rows
+*return
+
+*label af_store_cart_pass
+*comment GEN:BEGIN afstore_cart_pass
+*set shop_buyer "general"
+*set gear_shop "afstore_sell"
+*gosub_scene equipment shop_cart_sell "hemp_rope"
+*gosub_scene equipment shop_cart_sell "pitch_torch"
+*gosub_scene equipment shop_cart_sell "lamp_oil"
+*gosub_scene equipment shop_cart_sell "hooded_lantern"
+*gosub_scene equipment shop_cart_sell "tool_kit"
+*gosub_scene equipment shop_cart_sell "lute"
+*gosub_scene equipment shop_cart_sell "tinderbox"
+*gosub_scene equipment shop_cart_sell "chalk_sticks"
+*gosub_scene equipment shop_cart_sell "wool_blanket"
+*gosub_scene equipment shop_cart_sell "waxed_oilcloth"
+*gosub_scene equipment shop_cart_sell "lye_soap"
+*gosub_scene equipment shop_cart_sell "trail_rations"
+*set gear_shop "afstore"
+*gosub_scene equipment shop_cart_buy "hemp_rope"
+*gosub_scene equipment shop_cart_buy "pitch_torch"
+*gosub_scene equipment shop_cart_buy "lamp_oil"
+*gosub_scene equipment shop_cart_buy "hooded_lantern"
+*gosub_scene equipment shop_cart_buy "tool_kit"
+*gosub_scene equipment shop_cart_buy "lute"
+*gosub_scene equipment shop_cart_buy "tinderbox"
+*gosub_scene equipment shop_cart_buy "chalk_sticks"
+*gosub_scene equipment shop_cart_buy "wool_blanket"
+*gosub_scene equipment shop_cart_buy "waxed_oilcloth"
+*gosub_scene equipment shop_cart_buy "lye_soap"
+*gosub_scene equipment shop_cart_buy "trail_rations"
+*comment GEN:END afstore_cart_pass
+*return
+
+*label af_store_settle
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment shop_begin
+  *gosub af_store_cart_pass
+  *gosub_scene equipment shop_check
+  *if (shop_verdict = "ok")
+    *set shop_mode "apply"
+    *gosub af_store_cart_pass
+    *set currency_add_amount (shop_tot_credit - shop_tot_cost)
+    *gosub_scene economy currency_add
+  *else
+    *set shop_mode "clear"
+    *gosub af_store_cart_pass
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*if (shop_verdict = "empty")
+  Nessa waits with her pencil over the counter, then puts it back behind her ear. "Nothing to reckon."
+  *page_break Back to the shelves...
+  *goto af_store_after_stock
+*if (shop_verdict = "short")
+  You count your coin against the chalked prices and come up short. Nessa wipes the figures from the counter with the heel of her hand and returns the goods to their places.
+  *page_break Back to the shelves...
+  *goto af_store_after_stock
+*if ((shop_tot_bought > 0) and (shop_tot_sold > 0))
+  Nessa weighs what you put down, makes two columns in pencil, and settles the difference from the tin beneath the counter.
+*elseif (shop_tot_bought > 0)
+  Nessa checks each item against its shelf mark and sets it out for you on the sailcloth.
+*else
+  Nessa checks each item for wear and counts out the coin.
+*if (shop_tot_sold > 0)
+  *line_break
+  [b][💰 Sold: ${shop_sold_list} for ${shop_credit_desc}][/b]
+*if (shop_tot_bought > 0)
+  *line_break
+  [b][🛒 Bought: ${shop_recv} for ${shop_cost_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass shop_tot_minutes
+*if (shop_tot_sold > 0)
+  *set minutes_to_pass (minutes_to_pass + 5)
+*set time_advance_call_id "af_store_trade"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the shelves...
+*goto af_store_after_stock
+
+*label af_store_after
+*if ((((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon")) and (not(day_of_week = "Hallowday")))
+  *goto af_store_front
+*set shop_open ""
+*goto af_market_hub
+
+*label af_store_after_stock
+*if ((((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon")) and (not(day_of_week = "Hallowday")))
+  *goto af_store_stock
+*set shop_open ""
+*goto af_market_hub
+
 *label af_market_weather
 *if (weather = "Storm")
   Rain comes sideways across the lower wharf. The shed fronts are screened in canvas, the crane hook knocks against its post, and spray blows over the quay rails in white bursts.

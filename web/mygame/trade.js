@@ -58,7 +58,7 @@
     var it = data().items[id];
     if (!it) return 0;
     var sl = it.sell;
-    var pct = buyer === "smith" ? sl.smith : (buyer === "general" ? sl.general : (buyer === "tailor" ? sl.tailor : sl.pawn));
+    var pct = buyer === "smith" ? sl.smith : (buyer === "general" ? sl.general : (buyer === "tailor" ? sl.tailor : (buyer === "jeweler" ? sl.jeweler : sl.pawn)));
     var v = Math.floor((it.retail * pct) / 100);
     if (buyer === "pawn" && sl.pawnFixed > 0) v = sl.pawnFixed;
     if (buyer === "smith" && sl.smithPiece > 0) v = sl.smithPiece;

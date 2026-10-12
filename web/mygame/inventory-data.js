@@ -20,6 +20,7 @@ window.INVENTORY = {
     { id: "apparel", label: "Apparel" },
     { id: "accessories", label: "Accessories & Trinkets" },
     { id: "mounts", label: "Mount" },
+    { id: "valuables", label: "Valuables" },
     { id: "provisions", label: "Provisions & Trail Gear" },
     { id: "documents", label: "Documents & Leverage" },
     { id: "consumables", label: "Consumables" }
@@ -484,6 +485,56 @@ window.INVENTORY = {
       id: "herbalists_kit", category: "provisions", owned: "has_herbalists_kit",
       name: function (s) { var n = 1 + (Number(s.spare_herbalists_kit) || 0); return "Herbalist's Kit" + (n > 1 ? " ×" + n : ""); },
       description: "Waxed-canvas satchel of phials, a mortar, pressed herbs and a needle, for treating wounds."
+    },
+    {
+      id: "gem_agate", category: "valuables", owned: "has_gem_agate",
+      name: function (s) { var n = 1 + (Number(s.spare_gem_agate) || 0); return "Agate" + (n > 1 ? " ×" + n : ""); },
+      description: "Polished red-orange stone with fine pale bands."
+    },
+    {
+      id: "gem_citrine", category: "valuables", owned: "has_gem_citrine",
+      name: function (s) { var n = 1 + (Number(s.spare_gem_citrine) || 0); return "Citrine" + (n > 1 ? " ×" + n : ""); },
+      description: "Clear golden stone with a warm-cut face."
+    },
+    {
+      id: "gem_quartz", category: "valuables", owned: "has_gem_quartz",
+      name: function (s) { var n = 1 + (Number(s.spare_gem_quartz) || 0); return "Clear Quartz" + (n > 1 ? " ×" + n : ""); },
+      description: "Pale transparent crystal with a clean faceted face."
+    },
+    {
+      id: "gem_aquamarine", category: "valuables", owned: "has_gem_aquamarine",
+      name: function (s) { var n = 1 + (Number(s.spare_gem_aquamarine) || 0); return "Aquamarine" + (n > 1 ? " ×" + n : ""); },
+      description: "Clear blue stone the colour of sunlit shallows."
+    },
+    {
+      id: "gem_opal", category: "valuables", owned: "has_gem_opal",
+      name: function (s) { var n = 1 + (Number(s.spare_gem_opal) || 0); return "Opal" + (n > 1 ? " ×" + n : ""); },
+      description: "Milk-pale stone with ember and green colour under the surface."
+    },
+    {
+      id: "gem_pearl", category: "valuables", owned: "has_gem_pearl",
+      name: function (s) { var n = 1 + (Number(s.spare_gem_pearl) || 0); return "Pearl" + (n > 1 ? " ×" + n : ""); },
+      description: "Single round pearl with a soft cream lustre."
+    },
+    {
+      id: "gem_sapphire", category: "valuables", owned: "has_gem_sapphire",
+      name: function (s) { var n = 1 + (Number(s.spare_gem_sapphire) || 0); return "Sapphire" + (n > 1 ? " ×" + n : ""); },
+      description: "Deep blue stone cut in a careful oval."
+    },
+    {
+      id: "gem_ruby", category: "valuables", owned: "has_gem_ruby",
+      name: function (s) { var n = 1 + (Number(s.spare_gem_ruby) || 0); return "Ruby" + (n > 1 ? " ×" + n : ""); },
+      description: "Deep red stone with a strong steady fire."
+    },
+    {
+      id: "gem_emerald", category: "valuables", owned: "has_gem_emerald",
+      name: function (s) { var n = 1 + (Number(s.spare_gem_emerald) || 0); return "Emerald" + (n > 1 ? " ×" + n : ""); },
+      description: "Rich green rectangular stone with a stepped cut."
+    },
+    {
+      id: "gem_diamond", category: "valuables", owned: "has_gem_diamond",
+      name: function (s) { var n = 1 + (Number(s.spare_gem_diamond) || 0); return "Diamond" + (n > 1 ? " ×" + n : ""); },
+      description: "Clear hard stone cut into bright cold facets."
     },
     // GEN:END gear_items
     // ---- weapons ----

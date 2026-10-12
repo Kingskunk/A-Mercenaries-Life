@@ -2935,6 +2935,36 @@ The largest shed is open on the yard side, with a forge at the back and an anvil
   *if (halda_has_sale)
     # Put something on the bench to sell.
       *goto mw_halda_sell
+  *if (not(smith_halda_accepted))
+    # Ask Halda whether she needs an extra hand.
+      *gosub_scene work/smithing smith_work_halda_inquiry
+      *goto mw_smiths_forge
+  *if ((smith_halda_accepted) and ((smith_rank = 0) and (smith_halda_forge_hand_ready)))
+    # Hear what Halda has to say about your work.
+      *gosub_scene work/smithing smith_work_halda_forge_hand_promotion
+      *goto mw_smiths_forge
+  *if ((smith_halda_accepted) and ((smith_rank = 1) and (smith_halda_assistant_ready)))
+    # Hear what Halda has to say about your work.
+      *gosub_scene work/smithing smith_work_halda_assistant_promotion
+      *goto mw_smiths_forge
+  *if (smith_halda_accepted)
+    *if (smith_halda_last_work_day = campaign_day)
+      # Ask Halda for another shift.
+        "You have had your work for today," Halda says without looking up from the bar under her hammer. "Come back after you have slept."
+        *page_break Leave her to the forgeâ€¦
+        *goto mw_smiths_row
+    *elseif (smith_rank = 0)
+      # Take a casual-hand shift for Halda (6 hours, 6 copper).
+        *gosub_scene work/smithing smith_work_halda_shift
+        *goto mw_smiths_row
+    *elseif (smith_rank = 1)
+      # Take a Forge Hand shift for Halda (6 hours, 7 copper).
+        *gosub_scene work/smithing smith_work_halda_shift
+        *goto mw_smiths_row
+    *else
+      # Take a Smith's Assistant shift for Halda (6 hours, 8 copper).
+        *gosub_scene work/smithing smith_work_halda_shift
+        *goto mw_smiths_row
   *if (not(mw_halda_trade_talk))
     # Ask Master Halda what she pays for old steel.
       *set mw_halda_trade_talk true

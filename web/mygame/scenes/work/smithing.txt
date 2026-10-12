@@ -1,0 +1,342 @@
+*comment SHARED SMITHING-WORK LIBRARY
+*comment
+*comment Every smithy calls this scene instead of carrying a local copy of the
+*comment career rules. Profession-wide state is created in startup.txt;
+*comment individual masters only hold their own permission or relationship
+*comment flags. The first three ranks are deliberately modest: a six-copper
+*comment Casual Hand, a seven-copper Forge Hand, and an eight-copper Smith's
+*comment Assistant, each with one six-hour shift per day. Formal apprenticeship
+*comment remains behind a later relationship event with Halda.
+
+*label smith_work_halda_inquiry
+*if (smith_halda_accepted)
+  Halda glances from the glowing bar in her tongs to you. "You know the terms. Come back when you are ready to put your back into them."
+  *return
+
+You wait until Halda has set her hammer down before you speak. She gives you the look of someone measuring a length of iron for flaws.
+
+"I do not hire people to admire a forge," she says. "I hire them to move when told and stop before they make expensive noise. What are you after?"
+
+*choice
+  # "A start. I can carry coal and follow a mark."
+    Halda studies your hands, then grunts. "That is a more useful answer than most."
+    *goto smith_work_halda_terms
+  # "I want to learn the trade, in time."
+    "In time is right," Halda says. "First you learn to keep a clear floor and fetch the right tool without being asked twice. The trade comes after you prove you can do the small things."
+    *goto smith_work_halda_terms
+  # "What work would you put me to?"
+    "Coal, water, scrap, deliveries, and whatever else keeps my hands on the iron," Halda says. "Nothing glorious. All of it necessary."
+    *goto smith_work_halda_terms
+
+*label smith_work_halda_terms
+"You would start as a casual hand," Halda says. "You show up, take the work I give you, and do it cleanly. No promised lessons and no wandering off once the day has started. Keep that up long enough, and we can speak about hammer and heat."
+
+She points the hammer at the yard door. "When I have work fit for an extra hand, ask me here."
+
+*set smith_halda_accepted true
+*page_break "Understood."
+*return
+
+*comment ---------------------------------------------------------------------
+*comment HALDA: FORGE HAND PROMOTION
+*comment Reaching 12 completed shifts and 8 progress opens this conversation;
+*comment the player still has to return and hear Halda out. The later
+*comment apprentice gate will be a fuller relationship event, not an automatic
+*comment threshold promotion.
+*comment ---------------------------------------------------------------------
+
+*label smith_work_halda_forge_hand_promotion
+*if (not((smith_rank = 0) and (smith_halda_forge_hand_ready)))
+  *return
+
+Halda sets a finished hatchet aside and looks over the yard before she speaks. "You've stopped waiting to be told every small thing. That saves me time."
+
+*choice
+  # "I've been watching how the work moves."
+    Halda gives a short nod. "Keep watching. A forge tells you what it needs before somebody has to shout it."
+    *goto smith_work_halda_forge_hand_terms
+  # "Give me what you trust me to handle."
+    "Trust is work done right when nobody is looking," Halda says. "You have made a beginning."
+    *goto smith_work_halda_forge_hand_terms
+  # "What changes?"
+    "More of the work reaches your hands before it reaches mine," Halda says. "That is the change. Do it badly and it comes back to me."
+    *goto smith_work_halda_forge_hand_terms
+
+*label smith_work_halda_forge_hand_terms
+*line_break
+"You're a Forge Hand now," Halda says. "Seven coppers for the day. I will give you better work, and I will expect you to see it through."
+
+*set smith_rank 1
+*set smith_halda_forge_hand_ready false
+*page_break "I understand."
+*return
+
+*comment ---------------------------------------------------------------------
+*comment HALDA: SMITH'S ASSISTANT PROMOTION
+*comment Reaching 35 completed shifts and 23 progress opens this conversation.
+*comment This is the final automatic promotion. The next rank remains locked
+*comment until a future relationship event earns Halda's formal apprenticeship.
+*comment ---------------------------------------------------------------------
+
+*label smith_work_halda_assistant_promotion
+*if (not((smith_rank = 1) and (smith_halda_assistant_ready)))
+  *return
+
+Halda lets the last of a run of hinges cool before she speaks. "You see the work coming now. That is worth more than strong arms."
+
+*choice
+  # "I have learned to watch the whole yard."
+    "Keep doing it," Halda says. "A smith who only sees the piece under the hammer makes trouble for everyone else."
+    *goto smith_work_halda_assistant_terms
+  # "What do you need me to take on?"
+    "The work that needs a steady hand before it needs mine," Halda says. "You will know the difference soon enough."
+    *goto smith_work_halda_assistant_terms
+  # "I will not waste the chance."
+    Halda gives a brief nod. "Then do not waste the iron either."
+    *goto smith_work_halda_assistant_terms
+
+*label smith_work_halda_assistant_terms
+*line_break
+"You are my Smith's Assistant now," Halda says. "Eight coppers for the day. You will finish straightforward work under my roof, and you will bring me anything that is not straightforward."
+
+*set smith_rank 2
+*set smith_halda_assistant_ready false
+*page_break "Understood."
+*return
+
+*comment ---------------------------------------------------------------------
+*comment HALDA: CASUAL-HAND SHIFT
+*comment The caller offers this only at Halda's open forge. The second daily
+*comment guard below is deliberate defense for future callers: a player may
+*comment never take two shifts in one campaign day, even if another menu is
+*comment added later. A failed check still earns the full day's pay; only
+*comment progress is at stake.
+*comment ---------------------------------------------------------------------
+
+*label smith_work_halda_shift
+*temp smith_work_task ""
+*temp smith_work_progress_earned 0
+*temp smith_work_pay 0
+*if (not(smith_halda_accepted))
+  *return
+*if (smith_halda_last_work_day = campaign_day)
+  "You have had your work for today," Halda says. "Come back after you have slept."
+  *return
+*if (smith_rank = 0)
+  *goto smith_work_halda_casual_shift
+*if (smith_rank = 1)
+  *goto smith_work_halda_forge_hand_shift
+*if (smith_rank = 2)
+  *goto smith_work_halda_assistant_shift
+*return
+
+*label smith_work_halda_casual_shift
+*set smith_work_pay 6
+
+Halda nods toward the yard. "Six coppers for a day's hand. Pick a job and see it through."
+
+*choice
+  # Take coal and finished stock across the yard.@{show_stat_hints  [STR Check (DC 10), Smithing Progress]|}
+    *set smith_work_task "haul"
+    *set check_stat "str"
+    *set check_dc 10
+    *set check_skill "Forge Hauling"
+    *gosub_scene dice_engine roll_d20_check
+    *goto smith_work_halda_result
+  # Sort scrap and keep the right tools within reach.@{show_stat_hints  [INT Check (DC 10), Smithing Progress]|}
+    *set smith_work_task "sort"
+    *set check_stat "int"
+    *set check_dc 10
+    *set check_skill "Forge Sorting"
+    *gosub_scene dice_engine roll_d20_check
+    *goto smith_work_halda_result
+  # Keep the bellows, water trough, and floor clear through the heat.@{show_stat_hints  [CON Check (DC 10), Smithing Progress]|}
+    *set smith_work_task "tend"
+    *set check_stat "con"
+    *set check_dc 10
+    *set check_skill "Forge Tending"
+    *gosub_scene dice_engine roll_d20_check
+    *goto smith_work_halda_result
+  # Take the ordinary jobs exactly as Halda gives them.
+    *set smith_work_task "steady"
+    *goto smith_work_halda_result
+
+*label smith_work_halda_forge_hand_shift
+*set smith_work_pay 7
+
+Halda points to the orders stacked beside the forge. "Seven coppers today. Keep ahead of the work, and do not make me hunt for you."
+
+*choice
+  # Move fresh iron and finished orders where the yard needs them.@{show_stat_hints  [STR Check (DC 11), Smithing Progress]|}
+    *set smith_work_task "forge_stock"
+    *set check_stat "str"
+    *set check_dc 11
+    *set check_skill "Forge Stock"
+    *gosub_scene dice_engine roll_d20_check
+    *goto smith_work_halda_result
+  # Dress rough-finished iron with file and oil under Halda's eye.@{show_stat_hints  [DEX Check (DC 11), Smithing Progress]|}
+    *set smith_work_task "forge_finish"
+    *set check_stat "dex"
+    *set check_dc 11
+    *set check_skill "Forge Finishing"
+    *gosub_scene dice_engine roll_d20_check
+    *goto smith_work_halda_result
+  # Read Halda's order marks and lay the work out in the right order.@{show_stat_hints  [WIS Check (DC 11), Smithing Progress]|}
+    *set smith_work_task "forge_orders"
+    *set check_stat "wis"
+    *set check_dc 11
+    *set check_skill "Forge Orders"
+    *gosub_scene dice_engine roll_d20_check
+    *goto smith_work_halda_result
+  # Take the routine work Halda sets without a check.
+    *set smith_work_task "forge_steady"
+    *goto smith_work_halda_result
+
+*label smith_work_halda_assistant_shift
+*set smith_work_pay 8
+
+Halda sets three marked bars beside the anvil. "Eight coppers today. Finish what is within your hands, and bring me the work that is not."
+
+*choice
+  # Draw a batch of hinge pins to the marked length and thickness.@{show_stat_hints  [STR Check (DC 12), Smithing Progress]|}
+    *set smith_work_task "assistant_draw"
+    *set check_stat "str"
+    *set check_dc 12
+    *set check_skill "Draw Out Iron"
+    *gosub_scene dice_engine roll_d20_check
+    *goto smith_work_halda_result
+  # True a run of hatchet edges before Halda inspects the temper.@{show_stat_hints  [DEX Check (DC 12), Smithing Progress]|}
+    *set smith_work_task "assistant_true"
+    *set check_stat "dex"
+    *set check_dc 12
+    *set check_skill "True an Edge"
+    *gosub_scene dice_engine roll_d20_check
+    *goto smith_work_halda_result
+  # Watch the color of the iron and bring each bar to the anvil at the right heat.@{show_stat_hints  [WIS Check (DC 12), Smithing Progress]|}
+    *set smith_work_task "assistant_heat"
+    *set check_stat "wis"
+    *set check_dc 12
+    *set check_skill "Judge Forge Heat"
+    *gosub_scene dice_engine roll_d20_check
+    *goto smith_work_halda_result
+  # Take the routine work Halda assigns without a check.
+    *set smith_work_task "assistant_steady"
+    *goto smith_work_halda_result
+
+*label smith_work_halda_result
+*if (smith_work_task = "haul")
+  *if (check_success)
+    You learn the yard's rhythm quickly: coal before the fire wants it, finished work off the rack before it blocks the next order. By the end, Halda has stopped needing to point.
+  *else
+    The loads leave your shoulders aching, and you lose time twice finding the right rack. Halda corrects you with a short word and keeps the work moving.
+*elseif (smith_work_task = "sort")
+  *if (check_success)
+    You read Halda's marks, separate usable pieces from the bad iron, and keep the tools she calls for close at hand. The work goes on without her having to break stride.
+  *else
+    Halda has to send you back through the scrap once and correct the tool in your hand. You remember both corrections before the next order comes.
+*elseif (smith_work_task = "tend")
+  *if (check_success)
+    You keep the bellows steady, the water close, and the floor clear under a rain of scale. The heat never gets ahead of you.
+  *else
+    The heat wears you down before the work is done, and Halda calls you back twice before a tool goes where it belongs. You finish the shift with soot in every crease of your hands.
+*elseif (smith_work_task = "steady")
+  You carry, sweep, fetch, and hold what Halda puts before you. The work is plain, but the forge keeps moving because someone does it.
+*elseif (smith_work_task = "forge_stock")
+  *if (check_success)
+    You move iron and finished work before the next pair of hands needs it. The yard stays clear enough that even the cart driver stops asking where his order has gone.
+  *else
+    You lose the thread of two orders and have to shift a stack twice before the yard runs cleanly again. Halda notices, says little, and puts you back on the right path.
+*elseif (smith_work_task = "forge_finish")
+  *if (check_success)
+    Under Halda's eye, you take the burrs from a run of iron pieces and leave a thin coat of oil where it will keep rust away. She checks one, then lets you finish the rest.
+  *else
+    Halda catches a rough edge before it leaves the bench and sends it back to you. You work slower after that, feeling each pass of the file before you set the piece down.
+*elseif (smith_work_task = "forge_orders")
+  *if (check_success)
+    You learn to read the marks at a glance and put each order where the work will reach it in time. Halda's hammer never has to stop while she waits for the next piece.
+  *else
+    Two marks look alike until Halda taps the difference with one blackened finger. You reset the pile and keep the corrected order in your head for the rest of the day.
+*elseif (smith_work_task = "assistant_draw")
+  *if (check_success)
+    You bring each pin out evenly, checking the marks before the iron loses its give. Halda tests the first against its hinge plate and sets the rest aside without correction.
+  *else
+    The first few pins run heavy at the shoulder, and Halda makes you heat them again. You adjust your hammer work and finish the batch closer to the marks.
+*elseif (smith_work_task = "assistant_true")
+  *if (check_success)
+    You work the hatchet edges until they lie straight from heel to point. Halda runs her thumb along one, then gives the rest a small nod.
+  *else
+    One edge wanders as you bring it true. Halda shows you where the metal has pulled, and you correct the rest with slower, smaller blows.
+*elseif (smith_work_task = "assistant_heat")
+  *if (check_success)
+    You learn the heat by color and time, turning each bar before its skin burns. Halda's hammer meets iron that is ready every time she reaches for it.
+  *else
+    You bring one bar too cool and another too bright. Halda sends both back into the fire, then has you name the color you should have waited for.
+*else
+  You keep the routine work moving: sweepings out, water filled, coal close, and no finished piece left where a boot can find it.
+
+*if (((not(smith_work_task = "steady")) and (not(smith_work_task = "forge_steady"))) and (not(smith_work_task = "assistant_steady")))
+  *if (check_success)
+    *set smith_work_progress_earned 1
+    *if (d20_roll = 20)
+      *set smith_work_progress_earned 2
+
+*comment A shift is indoors, so it advances the real clock but carries no
+*comment weather-exposure charge. advance_time and the currency helper each
+*comment protect their own side effects; the local lock below protects the
+*comment career counters that sit alongside them.
+*set hours_to_pass 6
+*set minutes_to_pass 0
+*set time_advance_call_id "smith_halda_shift"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*if (not(smith_halda_shift_locked)) or (not(smith_halda_shift_locked_page_id = page_id))
+  *set smith_halda_last_work_day campaign_day
+  *set smith_shifts_completed +1
+  *if (smith_work_progress_earned > 0)
+    *set smith_progress + smith_work_progress_earned
+  *if (((smith_rank = 0) and (not(smith_halda_forge_hand_ready))) and ((smith_shifts_completed >= 12) and (smith_progress >= 8)))
+    *set smith_halda_forge_hand_ready true
+  *if (((smith_rank = 1) and (not(smith_halda_assistant_ready))) and ((smith_shifts_completed >= 35) and (smith_progress >= 23)))
+    *set smith_halda_assistant_ready true
+  *set smith_halda_shift_locked true
+  *set smith_halda_shift_locked_page_id page_id
+
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount smith_work_pay
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+
+*if (smith_work_pay = 6)
+  Halda counts six copper bits into your palm. "Same again when I need you."
+*elseif (smith_work_pay = 7)
+  Halda counts seven copper bits into your palm. "You earned it. Do the same tomorrow."
+*else
+  Halda counts eight copper bits into your palm. "That is work I can use. Keep it that way."
+
+[b][Paid: ${smith_work_pay} Copper Bits.][/b]
+*if (smith_work_progress_earned = 1)
+  *line_break
+  [b][Smithing progress: +1][/b]
+*elseif (smith_work_progress_earned = 2)
+  *line_break
+  [b][Smithing progress: +2][/b]
+*if ((smith_rank = 0) and (smith_halda_forge_hand_ready))
+  *line_break
+  Halda watches you put the last tool away. "Come back when you have a moment. I want a word about the work you have been doing."
+  *line_break
+  [b][Halda has noticed your work.][/b]
+*if ((smith_rank = 1) and (smith_halda_assistant_ready))
+  *line_break
+  Halda looks over the finished work, then nods toward the forge. "Come back when you have a moment. We need to settle what you are becoming here."
+  *line_break
+  [b][Halda is ready to give you more responsibility.][/b]
+
+*page_break Leave the forge yardâ€¦
+*return

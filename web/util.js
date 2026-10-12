@@ -316,13 +316,42 @@ function getRemoteEmail(callback) {
 // Save-data format, deliberately independent of the public game version.
 // Each migration transforms version N into N+1 and is never rewritten after
 // release, allowing a player to skip any number of game updates safely.
-var SAVE_SCHEMA_VERSION = 1;
+var SAVE_SCHEMA_VERSION = 5;
 var SAVE_SCHEMA_MIGRATIONS = {
   0: function migrateUnversionedSaveTo1(state) {
     if (!state.temps) state.temps = {};
     // ChoiceScript already knows every current *create default. Populate
     // variables that did not exist when an unversioned save was made while
     // preserving every value the player actually had.
+    if (_global.nav && typeof _global.nav.repairStats === "function") {
+      _global.nav.repairStats(state.stats);
+    }
+  },
+  1: function migrateSaveTo2(state) {
+    // Phase 1 of the shared smithing-career framework adds persistent
+    // profession and site-permission stats. Repair against the current
+    // startup definitions so established saves receive their defaults.
+    if (_global.nav && typeof _global.nav.repairStats === "function") {
+      _global.nav.repairStats(state.stats);
+    }
+  },
+  2: function migrateSaveTo3(state) {
+    // The first playable Halda shift adds its daily-use and replay-lock stats.
+    // Repair against startup so saves from Phase 1 gain safe defaults.
+    if (_global.nav && typeof _global.nav.repairStats === "function") {
+      _global.nav.repairStats(state.stats);
+    }
+  },
+  3: function migrateSaveTo4(state) {
+    // Forge Hand introduces the one-time promotion offer flag. Repair keeps
+    // Phase 2 saves valid without overwriting any established career values.
+    if (_global.nav && typeof _global.nav.repairStats === "function") {
+      _global.nav.repairStats(state.stats);
+    }
+  },
+  4: function migrateSaveTo5(state) {
+    // Smith's Assistant adds its promotion-ready flag. Repair supplies the
+    // new default without changing established career state on older saves.
     if (_global.nav && typeof _global.nav.repairStats === "function") {
       _global.nav.repairStats(state.stats);
     }

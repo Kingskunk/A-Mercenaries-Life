@@ -99,6 +99,18 @@ const MAP = {
   venom: "Conical_Flask_Filled_Unfaded_Icon.png",
   ichor: "Clutter_Bottle_Small_Eye_Unfaded_Icon.webp",
 
+  // ---- loose stones
+  gem_agate: "Miscellaneous_item/Valuables/Gemstone/GEM_Agate_Unfaded_Icon.png",
+  gem_citrine: "Miscellaneous_item/Valuables/Gemstone/GEM_Jacinth_Unfaded_Icon.png",
+  gem_quartz: "Miscellaneous_item/Valuables/Gemstone/GEM_Diamond_Unfaded_Icon.png",
+  gem_aquamarine: "Miscellaneous_item/Valuables/Gemstone/GEM_Topaz_Unfaded_Icon.png",
+  gem_opal: "Miscellaneous_item/Valuables/Gemstone/Strange_Chunk_of_Amber_Unfaded_Icon.png",
+  gem_pearl: "Miscellaneous_item/Valuables/Gemstone/GEM_Pearl_Unfaded_Icon.png",
+  gem_sapphire: "Miscellaneous_item/Valuables/Gemstone/GEM_Sapphire_Unfaded_Icon.png",
+  gem_ruby: "Miscellaneous_item/Valuables/Gemstone/GEM_Ruby_Unfaded_Icon.png",
+  gem_emerald: "Miscellaneous_item/Valuables/Gemstone/GEM_Malachite_Unfaded_Icon.png",
+  gem_diamond: "Miscellaneous_item/Valuables/Gemstone/GEM_Diamond_Unfaded_Icon.png",
+
   // ---- provisions, papers and everything else
   food: "FOOD_Dried_Rope_Sausage_Unfaded_Icon.png",
   rations: "Consumable/Camp_supply/Heavy_Supply_Pack_Unfaded_Icon.png",

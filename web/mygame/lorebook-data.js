@@ -789,7 +789,31 @@
           "A river town built around an old imperial limestone weir, where the highland road down from the Crags reaches the head of the Grey and the river drops away toward the gorge. Sawmills crowd the bank above the falls. Below them stand warehouses, curing lofts, and muddy wharves where the barges tie up to load for the downriver run. The brine trade is the town's spine: carts bring salt up the High Grey Road from Valen, and the river catch is split, cured, dried, and packed into firkins for the run downriver.",
           "North of town, the Coldspine runs east and west across the whole of the north as a broken mountain barrier, with few passes fit for wagons or an army and a fort in each. Its southern foothills supply stone, wool and ore. In the east its last low spur comes down toward the Black Sinks, and the only practical freight way east uses the narrow ground between that spur and the marsh, which is why the old gatehouse there matters to every loaded wagon."
         ],
-        see: ["port_valen", "grey_river", "sanctuary_charter", "gilded_scales", "imperial_booms", "meridian_empire", "saint_althea", "iron_carrion", "grey_marches", "carters_lot_af"]
+        see: ["port_valen", "grey_river", "sanctuary_charter", "gilded_scales", "imperial_booms", "meridian_empire", "saint_althea", "iron_carrion", "grey_marches", "carters_lot_af", "pells_stores"]
+      },
+      {
+        id: "pells_stores", category: "places", title: "Pell's Stores",
+        sub: "Road goods and barge supplies at the Lower Wharf Market",
+        tags: ["Alderford", "Trade"], aliases: ["general store", "provision shop", "road goods", "supplies", "Pell's"],
+        unlock: "af_store_seen",
+        body: [
+          "A low provision shop between Alderford's grain house and curing sheds, open to the Lower Wharf Market beneath a deep plank awning. Its shelves carry rope, light, tinder, blankets, waxed cloth, soap, basic tools, and cloth-wrapped food for travelers and river crews.",
+          "Nessa Pell keeps the small stock dry, measured, and priced by the piece, the length, or the weight. The surrounding sheds deal in cargo lots; her counter is for what one person can carry away."
+        ],
+        see: ["nessa_pell", "alderford"]
+      },
+      {
+        id: "nessa_pell", category: "people", title: "Nessa Pell",
+        sub: "Provisioner at Pell's Stores",
+        role: "General-goods merchant, the Lower Wharf Market",
+        link: ["Nessa Pell", "Nessa", "Pell"],
+        tags: ["Alderford", "Trade"], aliases: ["provisioner", "storekeeper", "general goods"],
+        unlock: "af_store_seen",
+        body: [
+          "A compact woman with a blunt grey-streaked braid, square jaw, and small round spectacles. She measures rope against a notched stick and runs Pell's Stores from the Lower Wharf Market.",
+          "Nessa deals in the ordinary things travelers, caravan hands, and barge crews tend to need too late: food for the road, light, rope, weatherproofing, bedding, and practical tools."
+        ],
+        see: ["pells_stores", "alderford"]
       },
       {
         id: "carters_lot_af", category: "places", title: "The Carters' Lot",

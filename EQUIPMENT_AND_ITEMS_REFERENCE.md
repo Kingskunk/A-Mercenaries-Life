@@ -223,7 +223,8 @@ Prices live in one place: `equipment.txt` `gear_sale_value` (retail in copper, p
 | Buyer | Where | Pays | Buys |
 |---|---|---|---|
 | Halda (smith) | Halda's Forge, Middle Ward | **50% of retail** | studded gambeson, mail shirt, hewing axe, stiletto, iron skullcap, iron prybar, and scrap steel (5c a piece) |
-| Pawnbroker | Dredge-End, Lamp Stair (daytime) | **35% of retail**, no questions | everything Halda buys except scrap steel, plus the hide cap and the signet ring (fixed **8s**) |
+| Pawnbroker | Dredge-End, Lamp Stair (daytime) | **35% of retail** for ordinary gear; **40%** for loose gems, no questions | everything Halda buys except scrap steel, plus the hide cap, signet ring (fixed **8s**), and the loose gems in section 16 |
+| Cassia Rell (jeweler) | The Bright Setting, Upper Wharves | **75% of retail** | loose gems only (section 16); she tests and weighs each one before buying |
 | Fenwick (tailor) | The Gilt Needle, Patrician Quarter (Morning to Afternoon, needs a writ) | **40% of retail** | only what he stocks (section 15); the pawnbroker does not list these |
 | Hollis (general store) | Hollis & Daughters, Lantern Lane (Morning to Afternoon) | **50% of retail** | only what he stocks: rope, torch, lamp oil, hooded lantern, repair kit, tinderbox, chalk, wool blanket, waxed oilcloth, lye soap and trail rations (buyer `general`; a 1c item like the torch pays 1c, since each price is floored) |
 | Edda Roan (Roan's Wheel Shop, Timbermouth Workshops) | The Woodworkers' Workshops, Timbermouth (Morning to Afternoon, closed on the rest day) | **50% of retail** | only what she stocks: the ash quarterstaff, the Longshade spear, the Longshade shortbow and wooden clogs (buyer `general`) |
@@ -303,3 +304,24 @@ Master Idris Fenwick sells finished pieces "cut to the wearer" from three racks 
 **Comparing with what you wear.** The inventory's slot cards show each worn piece's weather cuts and score bonus (or "No bonuses"), the dossier's worn-gear lists show the same text, and the trade panel adds a "Wearing:" line under each equipment row (your weapon's damage, your armor's AC, or the piece in that slot and what it does), so a purchase can be weighed against what is on. All of it reads the `garment_traits` table.
 
 **Regions.** `climate_shift` (startup.txt, 0 in Port Valen) moves the raw temperature before it is clamped into the six bands; each step it pushes past freezing or hot adds +20% to that part of exposure (`temp_extreme`). Port Valen's own numbers are unchanged. Set it per region when overland travel exists.
+
+---
+
+## 16. The Bright Setting (Loose Gemstones)
+
+Cassia Rell keeps small, jewelry-grade loose stones in paper trays beneath her display cases. They are stackable **Valuables** with no mechanical effect: portable wealth intended for sale, gifts, crafting, or future quest use. Cassia pays **75% of retail** after inspection; the Dredge-End pawnbroker buys the same stones at **40%**. Both prices receive the normal Charisma selling bonus.
+
+| Item ID | Item | Retail | Cassia | Pawnbroker | Asset stand-in |
+|---|---|---:|---:|---:|---|
+| `gem_agate` | **Agate** | 1s | 7c | 4c | Agate |
+| `gem_citrine` | **Citrine** | 2s | 1s 5c | 8c | Jacinth |
+| `gem_quartz` | **Clear Quartz** | 3s | 2s 2c | 1s 2c | Diamond |
+| `gem_aquamarine` | **Aquamarine** | 5s | 3s 7c | 2s | Topaz |
+| `gem_opal` | **Opal** | 8s | 6s | 3s 2c | Strange Chunk of Amber |
+| `gem_pearl` | **Pearl** | 1g | 7s 5c | 4s | Pearl |
+| `gem_sapphire` | **Sapphire** | 2g | 1g 5s | 8s | Sapphire |
+| `gem_ruby` | **Ruby** | 3g | 2g 2s 5c | 1g 2s | Ruby |
+| `gem_emerald` | **Emerald** | 4g | 3g | 1g 6s | Malachite |
+| `gem_diamond` | **Diamond** | 5g | 3g 7s 5c | 2g | Diamond |
+
+All prices in the table are exact values after the 75% and 40% rate, before any Charisma bonus.
