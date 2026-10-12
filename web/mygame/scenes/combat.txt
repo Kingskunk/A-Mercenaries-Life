@@ -637,6 +637,9 @@
 *set combat_multiattack_slot 0
 *comment Same reason for hiding: cover from one fight must not arm advantage in the next.
 *set combat_player_hidden false
+*set combat_hide_uses 0
+*set ensnaring_armed false
+*set combat_hide_free_round 0
 *set player_movement_restricted false
 *set combat_shove_success false
 *set combat_shove_dc 10
@@ -788,6 +791,20 @@
   *set {(fc_p & "chase_chance")} 0
   *set {(fc_p & "can_retreat")} false
   *set {(fc_p & "flee_hp_pct")} 0
+  *comment Grease and prone (2026-10-12): per-slot reset, so a slot reused in a new fight never starts slick or on the ground.
+  *set {(fc_p & "greased")} 0
+  *set {(fc_p & "grease_until")} 0
+  *set {(fc_p & "prone")} false
+  *set {(fc_p & "grease_page")} 0
+  *set {(fc_p & "grease_res")} 0
+  *set {(fc_p & "burning")} 0
+  *set {(fc_p & "burn_page")} 0
+  *set {(fc_p & "burn_dealt")} 0
+  *set {(fc_p & "burn_douse")} false
+  *set {(fc_p & "restrained_until")} 0
+  *set {(fc_p & "restrain_page")} 0
+  *set {(fc_p & "restrain_res")} 0
+  *set {(fc_p & "reach")} "long"
   *set {(fc_p & "resist_type_1")} ""
   *set {(fc_p & "resist_type_2")} ""
   *set {(fc_p & "vulnerable_type_1")} ""
@@ -1201,11 +1218,51 @@
 *comment spent here, before the roll, not after it. That is the only place advantage is applied, so a new attack option
 *comment adds this one line and nothing else. Advantage still cancels against any disadvantage already set (reach, etc.),
 *comment same as everywhere else. Sneak Attack reads roll_had_advantage, so it fires on its own from here.
+*comment Advantage from the target itself (a prone enemy after grease, 2026-10-12) comes from combat_attack_edge in combat_dice.txt, the one rule every attacker, ally attacks included, asks.
+*temp cha_tag combat_attack_tag
+*set combat_attack_tag ""
+*gosub_scene combat_dice combat_attack_edge combat_enemy_range combat_active_target cha_tag
+*if (combat_edge_adv)
+  *set advantage true
+  [b][🧴 ${combat_enemy_name}: ${combat_edge_label}. Your attack has advantage.][/b]
+  *line_break
 *if (combat_player_hidden)
   *set combat_player_hidden false
   *set advantage true
+  *comment The hidden attack is one USE: every use raises the next Hide's DC by 2, and Hide is not offered again until a turn has gone by (combat_hide_free_round), so a rogue cannot hide and strike every single turn.
+  *set combat_hide_uses + 1
+  *set combat_hide_free_round (combat_round + 2)
   [b][👤 You strike from hiding, and your cover breaks.][/b]
   *line_break
+*return
+
+*label combat_hide_dc_calc
+*comment HIDE'S DC (2026-10-12, the user's call): no longer a flat 15. It is 10 plus the Wisdom modifier of the sharpest-eyed living enemy (their passive Perception), minus 2 when the nearest enemy is all the way out at Long Range, and, for the Hide action itself
+*comment (chd_escalate true), plus 2 for every hidden attack already made this fight (combat_hide_uses), because the enemy is watching for it. The check to STAY hidden against a searching enemy uses the same number without the repeat penalty. Never below 8. Written to combat_hide_dc_value.
+*params chd_escalate
+*temp chd_best (0 - 5)
+*temp chd_near combat_max_range
+*temp chd_i 1
+*label combat_hide_dc_calc_loop
+*if (chd_i <= combat_enemy_count)
+  *temp chd_hp {(("combat_enemy" & chd_i) & "_hp")}
+  *if (chd_hp > 0)
+    *temp chd_wis {(("combat_enemy" & chd_i) & "_wisdom")}
+    *gosub_scene startup score_to_mod chd_wis
+    *if (sm_mod > chd_best)
+      *set chd_best sm_mod
+    *temp chd_range {(("combat_enemy" & chd_i) & "_range")}
+    *if (chd_range < chd_near)
+      *set chd_near chd_range
+  *set chd_i + 1
+  *goto combat_hide_dc_calc_loop
+*set combat_hide_dc_value (10 + chd_best)
+*if (chd_near >= combat_max_range)
+  *set combat_hide_dc_value (combat_hide_dc_value - 2)
+*if (chd_escalate)
+  *set combat_hide_dc_value (combat_hide_dc_value + (combat_hide_uses * 2))
+*if (combat_hide_dc_value < 8)
+  *set combat_hide_dc_value 8
 *return
 
 *label combat_check_hide
@@ -1723,7 +1780,7 @@
   *if (dacs_rv = 1)
     $!{combat_attacker_epithet} peels away from the melee, driving hard toward ${dacs_enemy_epithet} instead.
   *if (dacs_rv = 2)
-    Choosing a different fight, ${combat_attacker_epithet} bulls past what's in front of it and closes on ${dacs_enemy_epithet}.
+    Choosing a different fight, ${combat_attacker_epithet} bulls past the nearest melee and closes on ${dacs_enemy_epithet}.
   *if (dacs_rv = 3)
     $!{combat_attacker_epithet} breaks formation and cuts a straight line for ${dacs_enemy_epithet}, closing fast.
   *line_break
@@ -2040,6 +2097,9 @@
 *if (combat_player_hidden)
   *line_break
   [b][👤 Hidden: your next attack has advantage][/b]
+*elseif (combat_round < combat_hide_free_round)
+  *line_break
+  [b][👁️ You were just seen: no hiding again until a turn has passed][/b]
 *if (blade_ward_active)
   *line_break
   *comment blade_ward_survived_a_turn true means this is its SECOND displayed round -- the tick
@@ -2069,6 +2129,9 @@
 *elseif (combat_hm_orphaned)
   *line_break
   [b][🎯 Hunter's Mark has no quarry: move it with a bonus action][/b]
+*if ((ensnaring_armed) and (ensnaring_expires_round >= combat_round))
+  *line_break
+  [b][🌿 Ensnaring Strike ready: your next weapon hit may bind its target][/b]
 *if (hex_active)
   *line_break
   [b][🔮 Hex Active — +1d6 Necrotic Damage on all hits][/b]
@@ -2130,6 +2193,10 @@
 *if (has_clear_head_draught)
   *set cu_any true
 *if (has_althea_phial)
+  *set cu_any true
+*if (has_grease_flask)
+  *set cu_any true
+*if (has_alchemists_fire)
   *set cu_any true
 *comment GEN:END combat_use_check
 *comment Bonus-action availability: precomputed once, the same way combat_can_attack is, and reused by each
@@ -2212,6 +2279,9 @@
   *gosub combat_dual_shot_check
   *if (combat_dual_pair_ok)
     *set combat_can_dual_shot true
+*temp combat_can_ensnaring false
+*if (((known_ensnaring_strike) and (ranger_spell_slots > 0)) and (not(ensnaring_armed)))
+  *set combat_can_ensnaring true
 *temp combat_can_hunters_mark false
 *if (character_class = "ranger")
   *if (combat_hm_orphaned)
@@ -2257,6 +2327,8 @@
   *set combat_bonus_available true
 *if (combat_can_hunters_mark)
   *set combat_bonus_available true
+*if (combat_can_ensnaring)
+  *set combat_bonus_available true
 *if (combat_can_inspiration)
   *set combat_bonus_available true
 *if (combat_cunning)
@@ -2301,10 +2373,11 @@
 *comment Hide (2026-10-01): an unspent action, not already hidden, and no living enemy at Close or Engaged. An
 *comment enemy range is read per slot by combat_check_hide, so a far-off group does not block it.
 *temp combat_can_hide false
-*if (((combat_player_actions_left > 0) or (combat_cunning)) and (not(combat_player_hidden)))
+*if (((combat_player_actions_left > 0) or (combat_cunning)) and ((not(combat_player_hidden)) and (combat_round >= combat_hide_free_round)))
   *gosub combat_check_hide
   *if (not(combat_hide_blocked))
     *set combat_can_hide true
+    *gosub combat_hide_dc_calc true
 *comment Nearest-eligible range per direction (2026-09-28, button projection): which tier the move will act on,
 *comment so the option text can state the result outright ("Close -> Engaged") instead of leaving the player to
 *comment do the arithmetic off the sidebar's range tag themselves.
@@ -2388,11 +2461,84 @@
     *goto combat_melee_reach_loop
   *if ((cmr_best > 0) and (combat_target_range > 0))
     *set combat_reach_epithet {(("combat_enemy" & cmr_best) & "_epithet")}
+*comment REACH CLASSES (2026-10-12, the user's call): touch, short (up to Close), medium (up to Mid-Range) and long (anywhere). Worked out here once per page: combat_reach_medium is the tier "medium" means in this fight, combat_in_short / combat_in_medium /
+*comment combat_in_long say whether any living enemy is inside that reach, and combat_med_epithet names who a medium-reach action will really hit (the clicked enemy if it is in reach, otherwise the weakest one that is), exactly as combat_reach_epithet does
+*comment for melee. The per-spell flags below are generated from tools/spell_catalog.json; a ranged weapon uses its own reach class (weapon_reach / sidearm_reach, from its loadout).
+*set combat_reach_medium 2
+*if (combat_max_range > 3)
+  *set combat_reach_medium 3
+*temp combat_in_short false
+*temp combat_in_medium false
+*temp combat_in_long false
+*temp combat_med_epithet combat_enemy_epithet
+*temp cri_i 1
+*temp cri_best 0
+*temp cri_best_hp 0
+*label combat_reach_scan_loop
+*if (cri_i <= combat_enemy_count)
+  *temp cri_hp {(("combat_enemy" & cri_i) & "_hp")}
+  *if (cri_hp > 0)
+    *set combat_in_long true
+    *temp cri_range {(("combat_enemy" & cri_i) & "_range")}
+    *if (cri_range <= 1)
+      *set combat_in_short true
+    *if (cri_range <= combat_reach_medium)
+      *set combat_in_medium true
+      *if ((cri_best = 0) or (cri_hp < cri_best_hp))
+        *set cri_best cri_i
+        *set cri_best_hp cri_hp
+  *set cri_i + 1
+  *goto combat_reach_scan_loop
+*if (combat_player_chosen_target > 0)
+  *temp cri_cs combat_player_chosen_target
+  *if (cri_cs <= combat_enemy_count)
+    *temp cri_chp {(("combat_enemy" & cri_cs) & "_hp")}
+    *temp cri_cr {(("combat_enemy" & cri_cs) & "_range")}
+    *if ((cri_chp > 0) and (cri_cr <= combat_reach_medium))
+      *set cri_best cri_cs
+*if (cri_best > 0)
+  *set combat_med_epithet {(("combat_enemy" & cri_best) & "_epithet")}
+*comment A ranged weapon in hand, and the sidearm: can it reach anyone? (A melee weapon keeps its own reach rules above.)
+*temp combat_wpn_far_ok false
+*temp combat_side_far_ok false
+*if (weapon_type = "ranged")
+  *if (weapon_reach = "long")
+    *set combat_wpn_far_ok combat_in_long
+  *elseif (weapon_reach = "medium")
+    *set combat_wpn_far_ok combat_in_medium
+  *elseif (weapon_reach = "short")
+    *set combat_wpn_far_ok combat_in_short
+*if (sidearm_type = "ranged")
+  *if (sidearm_reach = "long")
+    *set combat_side_far_ok combat_in_long
+  *elseif (sidearm_reach = "medium")
+    *set combat_side_far_ok combat_in_medium
+  *elseif (sidearm_reach = "short")
+    *set combat_side_far_ok combat_in_short
+*comment GEN:BEGIN spell_reach_flags -- generated by tools/gen_spells.js from tools/spell_catalog.json; edit the catalog, not this block
+*temp spell_reach_ok_fire_bolt combat_in_long
+*temp spell_reach_ok_ray_of_frost combat_in_medium
+*temp spell_reach_ok_eldritch_blast combat_in_long
+*temp spell_reach_ok_chill_touch combat_in_medium
+*temp spell_reach_ok_vicious_mockery combat_in_medium
+*temp spell_reach_ok_shocking_grasp combat_melee_reach
+*temp spell_reach_ok_magic_missile combat_in_long
+*temp spell_reach_ok_dissonant_whispers combat_in_medium
+*temp spell_reach_ok_cause_fear combat_in_medium
+*temp spell_reach_ok_hex combat_in_medium
+*temp spell_reach_ok_hunters_mark combat_in_medium
+*temp spell_reach_ok_bane combat_in_medium
+*comment GEN:END spell_reach_flags
+*comment Tell the player why a short-reach spell or weapon has gone from the menu, instead of letting it vanish without a word.
+*if ((combat_in_long) and (not(combat_in_medium)))
+  *if (((((known_ray_of_frost) or (known_chill_touch)) or ((known_vicious_mockery) or (known_dissonant_whispers))) or ((weapon_type = "ranged") and (weapon_reach = "medium"))) or ((sidearm_type = "ranged") and (sidearm_reach = "medium")))
+    [b][🎯 Every foe is beyond Mid-Range: close in to use your shorter-reach spells and weapons][/b]
+    *line_break
 *comment True Strike: a cantrip and an ACTION, one weapon attack made with the spellcasting ability. It takes the place of a weapon attack, so it needs one to spend (combat_can_attack), a real weapon in hand and, for a melee one, an enemy in reach (combat_primary_reach, just above).
 *comment combat_can_attack already keeps the turn alive for the auto-end test below, so it needs no entry in combat_bonus_available.
 *temp combat_can_true_strike false
 *if (((combat_can_attack) and (known_true_strike)) and (not(equipped_weapon_id = "none")))
-  *if ((weapon_type = "ranged") or (combat_primary_reach))
+  *if ((combat_wpn_far_ok) or (combat_primary_reach))
     *set combat_can_true_strike true
 *comment Booming Blade: a cantrip and an ACTION, one MELEE weapon attack (the 2024 rule). One variant per melee weapon that can reach an enemy: the weapon in hand, and the sidearm. A ranged weapon cannot carry it, and it takes the place of a weapon attack, so it needs one to spend (combat_can_attack).
 *temp combat_can_booming false
@@ -2438,6 +2584,49 @@
 *comment combat_range_display_name, so every call is copied out immediately before the next overwrites it -- four
 *comment separate temps rather than one reused name. Left as "" when that direction isn't available, which can't
 *comment reach the button text anyway (each option is gated on its own combat_can_ flag).
+*comment SLIP PAST (2026-10-12, the user's call): the lane has a back end, and a player who has been driven all the way to it could fall back no further, so a melee enemy that cornered a ranged fighter won outright. Slip Past is therefore its own option, offered anywhere
+*comment in the lane while an enemy is in reach (and Fall Back is withdrawn at the very back, where it can do nothing): an ACTION and a skill check (the better of Acrobatics and Athletics) against the toughest enemy in reach, DC 10 + its better STR or DEX modifier. A success puts the player back near the middle of the lane (combat_slip_player_past) with every enemy that was
+*comment in reach thrown out to Mid-Range, so the enemy has to turn and chase and the retreat has room again. A miss leaves things as they were and gives one engaged melee enemy its opportunity attack (none if Disengage covers the round). Only offered with an enemy actually in reach.
+*temp combat_can_slip false
+*temp combat_push_past false
+*temp combat_slip_slot 0
+*temp combat_slip_best_mod (0 - 9)
+*comment The engaged enemy to name and test against: the toughest living enemy at range 0.
+*temp csp_i 1
+*label combat_slip_scan_loop
+*if (csp_i <= combat_enemy_count)
+  *temp csp_hp {(("combat_enemy" & csp_i) & "_hp")}
+  *temp csp_range {(("combat_enemy" & csp_i) & "_range")}
+  *if ((csp_hp > 0) and (csp_range <= 0))
+    *temp csp_str {(("combat_enemy" & csp_i) & "_strength")}
+    *gosub_scene startup score_to_mod csp_str
+    *temp csp_mod sm_mod
+    *temp csp_dex {(("combat_enemy" & csp_i) & "_dexterity")}
+    *gosub_scene startup score_to_mod csp_dex
+    *if (sm_mod > csp_mod)
+      *set csp_mod sm_mod
+    *if (csp_mod > combat_slip_best_mod)
+      *set combat_slip_best_mod csp_mod
+      *set combat_slip_slot csp_i
+  *set csp_i + 1
+  *goto combat_slip_scan_loop
+*if (combat_lane_player_position <= combat_lane_min_position)
+  *set combat_can_fall_back false
+*comment A level 2 rogue spends the BONUS action on it (combat_cunning, the same switch Dash, Disengage and Hide use), so the action stays free for an attack. With the bonus spent, or for anyone else, it is the action.
+*if (((combat_slip_slot > 0) and ((combat_player_actions_left > 0) or (combat_cunning))) and ((combat_can_move) and ((not(player_movement_restricted)) and (not(combat_choke_player_blocked)))))
+  *set combat_can_slip true
+*comment ADVANCE PAST (the user's call, 2026-10-12): with an enemy in reach and nothing farther to close on, Push Forward still works, as a step past it. Leaving reach gives the same free swing as falling back (see the Push Forward option).
+*if (((combat_slip_slot > 0) and (not(combat_can_push_forward))) and ((not(player_movement_restricted)) and (not(combat_choke_player_blocked))))
+  *if (combat_lane_player_position < combat_lane_max_position)
+    *set combat_can_push_forward true
+    *set combat_push_past true
+*temp combat_slip_dc_now (10 + combat_slip_best_mod)
+*temp combat_slip_epithet "the enemy"
+*if (combat_can_slip)
+  *set combat_slip_epithet {(("combat_enemy" & combat_slip_slot) & "_epithet")}
+*temp combat_push_leaves false
+*if ((combat_slip_slot > 0) and (not(combat_player_disengaged)))
+  *set combat_push_leaves true
 *temp combat_push_from_name ""
 *temp combat_push_to_name ""
 *temp combat_fall_from_name ""
@@ -2479,7 +2668,7 @@
   *goto fight_end_player_turn
 
 *choice
-  *if ((combat_can_attack) and ((weapon_type = "ranged") or (combat_primary_reach)))
+  *if ((combat_can_attack) and ((combat_wpn_far_ok) or (combat_primary_reach)))
     # [b][ACTION][/b] [b][Attack with your ${weapon}][/b].
       *if (not(weapon_type = "ranged"))
         *gosub_scene combat_movement fight_weapon_reach_check
@@ -2546,7 +2735,7 @@
       *set combat_mm_darts_6 0
       *goto fight_target_dual_shot
 
-  *if (((combat_can_attack) and (not(equipped_sidearm_id = "none"))) and ((sidearm_type = "ranged") or (combat_sidearm_reach)))
+  *if (((combat_can_attack) and (not(equipped_sidearm_id = "none"))) and ((combat_side_far_ok) or (combat_sidearm_reach)))
     # [b][ACTION][/b] [b][Attack with your ${sidearm}][/b].
       *if (not(sidearm_type = "ranged"))
         *gosub_scene combat_movement fight_sidearm_reach_check
@@ -2660,7 +2849,7 @@
       *goto fight_move_spent
 
   *if ((combat_player_moves_left > 0) and (combat_can_push_forward))
-    # Push forward and close the distance on the nearest enemy. (${combat_push_from_name} → ${combat_push_to_name})
+    # Push forward @{combat_push_past past ${combat_slip_epithet}, leaving them at your back.|and close the distance on the nearest enemy. (${combat_push_from_name} → ${combat_push_to_name})}@{combat_push_leaves  Leaving their reach gives them a free swing.|}
       *comment Free movement (2026-09-28, replaces the old "Dash, RAW: the whole action" one-tier move) -- spends
       *comment combat_player_moves_left, not the action, so a player who's exactly one tier out can push forward
       *comment AND still attack the same turn once Engaged, same as real 5e letting you move up to your speed and
@@ -2672,7 +2861,19 @@
       *comment purpose: which enemy is nearest can change turn to turn in a multi-enemy fight. What the button now
       *comment DOES state is the from/to pair of tiers the move produces, which doesn't require naming anyone -- the
       *comment confirmation banner below names the enemy once resolved.
+      *comment ADVANCE PAST (the user's call, 2026-10-12): an enemy in reach may be walked past, and leaving its reach costs what falling back costs, a free swing from one engaged melee enemy (none while Disengage covers the round). The finder runs once under its own lock,
+      *comment before the step, while the enemy is still in reach; the swing lands after the move is narrated. With nothing farther to close on, the engaged enemy is the one the step is narrated against.
+      *if (not(combat_pushpast_locked)) or (not(locked_combat_pushpast_page_id = page_id))
+        *set combat_pushpast_flag combat_push_past
+        *set combat_pushpast_name combat_slip_epithet
+        *set combat_pushpast_slot combat_slip_slot
+        *if (combat_push_leaves)
+          *gosub find_opportunity_attacker
+        *set combat_pushpast_locked true
+        *set locked_combat_pushpast_page_id page_id
       *gosub_scene combat_movement fight_pick_nearest_target "push"
+      *if ((combat_active_target = 0) and (combat_pushpast_slot > 0))
+        *set combat_active_target combat_pushpast_slot
       *comment The tier change itself is GLOBAL (combat_shift_all_ranges) -- stepping toward one enemy in a
       *comment multi-enemy fight is a step toward all of them, and the old single-slot write made the sidebar's
       *comment per-row range tags contradict each other. The nearest eligible enemy is still what gets NARRATED
@@ -2680,7 +2881,11 @@
       *comment as before; fight_sync_target_in then refreshes the scratch off that same slot.
       *gosub_scene combat_movement combat_shift_all_ranges "push"
       *gosub fight_sync_target_in
-      *if (combat_enemy_range <= 0)
+      *if (combat_pushpast_flag)
+        You go in under ${combat_pushpast_name}'s guard and past them, and for a moment they are at your back.
+        *line_break
+        [b][🏃 You Push Forward — past ${combat_pushpast_name}][/b]
+      *elseif (combat_enemy_range <= 0)
         You break into a hard sprint, closing the last of the distance before ${combat_enemy_epithet} can react.
         *line_break
         [b][🏃 You Push Forward — Engaged][/b]
@@ -2690,7 +2895,39 @@
         *line_break
         [b][🏃 You Push Forward — ${combat_range_display_name}][/b]
       *line_break
+      *gosub resolve_opportunity_attack
       *goto fight_move_spent
+
+  *if (combat_can_slip)
+    # [b][@{combat_cunning BONUS ACTION|ACTION}][/b] [b][Slip Past][/b] Duck round ${combat_slip_epithet} and break clear, wherever you stand. A miss gives them a free swing.@{show_stat_hints  [Acrobatics or Athletics vs. DC ${combat_slip_dc_now}]|}
+      *comment Slip Past (see the SLIP PAST comment above the movement checks): offered anywhere in the lane with an enemy in reach. Whole-choice replay lock, like Shove.
+      *if (not(combat_slip_locked)) or (not(locked_combat_slip_page_id = page_id))
+        *set combat_slip_dc combat_slip_dc_now
+        *set combat_slip_name combat_slip_epithet
+        *gosub_scene dice_engine roll_skill_check combat_slip_dc "acrobatics" "" "athletics" "" "" ""
+        *set combat_slip_success check_success
+        *if (combat_slip_success)
+          *gosub_scene combat_movement combat_slip_player_past
+          *gosub_scene combat_movement combat_range_name 2
+          *set combat_slip_to_name combat_range_display_name
+        *else
+          *if (not(combat_player_disengaged))
+            *gosub find_opportunity_attacker
+        *set combat_slip_locked true
+        *set locked_combat_slip_page_id page_id
+      *if (combat_slip_success)
+        You drop a shoulder, go low under ${combat_slip_name}'s guard and come up on the far side of them with the whole length of the ground open behind you. They have to turn to follow.
+        *line_break
+        [b][🏃 You Slip Past — ${combat_slip_name} is thrown back to ${combat_slip_to_name}][/b]
+      *else
+        You try to slip past ${combat_slip_name}, but they turn with you and shut the gap.
+        *line_break
+        [b][Slip Past: Failed | DC ${combat_slip_dc}][/b]
+      *line_break
+      *gosub resolve_opportunity_attack
+      *if (combat_cunning)
+        *goto fight_bonus_spent
+      *goto fight_action_spent
 
   *if ((combat_player_moves_left > 0) and (combat_can_fall_back))
     # Fall back and open the distance from the nearest enemy. (${combat_fall_from_name} → ${combat_fall_to_name})
@@ -2775,6 +3012,7 @@
         *if (spell_penalty_result)
           *set disadvantage true
           *set combat_reach_pinned true
+        *set combat_attack_tag "fire"
         *gosub combat_hidden_attack_roll
         *gosub_scene dice_engine roll_d20_check
         *if (check_success)
@@ -2802,12 +3040,13 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if (((combat_player_actions_left > 0) and (known_ray_of_frost)))
-    # [b][ACTION][/b] [b][Ray of Frost][/b] Loose a beam of numbing cold at ${combat_enemy_epithet}.
+  *if ((((combat_player_actions_left > 0) and (known_ray_of_frost)) and (spell_reach_ok_ray_of_frost)))
+    # [b][ACTION][/b] [b][Ray of Frost][/b] Loose a beam of numbing cold at ${combat_med_epithet}.
       *comment Shares Fire Bolt's own whole-body replay lock (combat_cantrip_choice_locked, its own comment above
       *comment has the full explanation) -- same bug shape, same one-action-per-page exclusivity.
       *if (not(combat_cantrip_choice_locked)) or (not(locked_combat_cantrip_choice_page_id = page_id))
         *gosub_scene combat_movement fight_pick_target
+        *gosub_scene combat_movement fight_retarget_by_class "medium"
         *set combat_current_spell_id "ray_of_frost"
         *gosub_scene combat_prose pick_spell_flavor
         *set check_stat "int"
@@ -2969,12 +3208,13 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if (((combat_player_actions_left > 0) and (known_chill_touch)))
-    # [b][ACTION][/b] [b][Chill Touch][/b] Conjure a skeletal hand of necrotic frost against ${combat_enemy_epithet}.
+  *if ((((combat_player_actions_left > 0) and (known_chill_touch)) and (spell_reach_ok_chill_touch)))
+    # [b][ACTION][/b] [b][Chill Touch][/b] Conjure a skeletal hand of necrotic frost against ${combat_med_epithet}.
       *comment Shares Fire Bolt's own whole-body replay lock (combat_cantrip_choice_locked, its own comment above
       *comment has the full explanation) -- same bug shape, same one-action-per-page exclusivity.
       *if (not(combat_cantrip_choice_locked)) or (not(locked_combat_cantrip_choice_page_id = page_id))
         *gosub_scene combat_movement fight_pick_target
+        *gosub_scene combat_movement fight_retarget_by_class "medium"
         *set combat_current_spell_id "chill_touch"
         *gosub_scene combat_prose pick_spell_flavor
         *set check_stat "cha"
@@ -3013,7 +3253,7 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if (((combat_player_actions_left > 0) and (known_vicious_mockery)))
+  *if ((((combat_player_actions_left > 0) and (known_vicious_mockery)) and (spell_reach_ok_vicious_mockery)))
     *comment Tagged "ranged" in tools/spell_catalog.json, but deliberately NOT wired to spell_range_of's penalty
     *comment and deliberately NOT gated on reach: Vicious Mockery resolves as a Wisdom SAVE (below), so the
     *comment player never makes an attack roll to spoil. The close-combat penalty is a penalty on the ATTACK
@@ -3021,7 +3261,7 @@
     *comment A ranged spell's reach tier is not a restriction either, so there is nothing for spell_reach_result
     *comment to gate. It stays in the catalog so the tag is visible to a future RAW "it must be within 60 feet"
     *comment implementation, not so this option behaves differently from the others.
-    # [b][ACTION][/b] [b][Vicious Mockery][/b] Hurl a barbed, perfectly-aimed insult at ${combat_enemy_epithet}.
+    # [b][ACTION][/b] [b][Vicious Mockery][/b] Hurl a barbed, perfectly-aimed insult at ${combat_med_epithet}.
       *comment Shares Fire Bolt's own whole-body replay lock (combat_cantrip_choice_locked, its own comment above
       *comment has the full explanation) -- same bug shape, same one-action-per-page exclusivity. resolve_enemy_save
       *comment already locks its own roll (per-lock-index, page_id-keyed, shared with Dissonant Whispers via the
@@ -3030,6 +3270,7 @@
       *comment guard for the same reason as every other option here.
       *if (not(combat_cantrip_choice_locked)) or (not(locked_combat_cantrip_choice_page_id = page_id))
         *gosub_scene combat_movement fight_pick_target
+        *gosub_scene combat_movement fight_retarget_by_class "medium"
         *set combat_current_spell_id "vicious_mockery"
         *gosub_scene combat_prose pick_spell_flavor
         *comment Enemy saving throw against the player's own spell_save_dc -- Vicious Mockery is a Wisdom save, RAW.
@@ -3079,9 +3320,10 @@
       *set combat_mm_darts_6 0
       *goto fight_target_magic_missile
 
-  *if (((combat_can_hex) and (combat_player_bonus_left > 0)))
-    # [b][BONUS ACTION][/b] [b][Hex][/b] Lay a baleful eldritch curse upon ${combat_enemy_epithet}.
+  *if ((((combat_can_hex) and (combat_player_bonus_left > 0))) and (spell_reach_ok_hex))
+    # [b][BONUS ACTION][/b] [b][Hex][/b] Lay a baleful eldritch curse upon ${combat_med_epithet}.
       *gosub_scene combat_movement fight_pick_target
+      *gosub_scene combat_movement fight_retarget_by_class "medium"
       *gosub_scene combat_spells resolve_cast_hex
       You whisper a guttural syllable of ancient ruin. Dark, spectral runes flare briefly across ${combat_enemy_epithet} and sink in, binding the foe's fate to your will—every strike you land will tear in with extra necrotic fury!
       *comment No banner here -- the hub's own "Hex Active" status line (fight_round_hub) says the same thing the
@@ -3118,8 +3360,8 @@
       *line_break
       *goto fight_action_spent
 
-  *if (((combat_player_actions_left > 0) and ((known_dissonant_whispers) and (bard_spell_slots > 0))))
-    # [b][ACTION][/b] [b][Dissonant Whispers][/b] A discordant psychic phrase wracks ${combat_enemy_epithet}.
+  *if ((((combat_player_actions_left > 0) and ((known_dissonant_whispers) and (bard_spell_slots > 0)))) and (spell_reach_ok_dissonant_whispers))
+    # [b][ACTION][/b] [b][Dissonant Whispers][/b] A discordant psychic phrase wracks ${combat_med_epithet}.
       *comment Whole-body replay lock (2026-09-30, same bug/shape as resolve_weapon_attack_choice's own header
       *comment comment above): fight_pick_target's kill-priority re-scan and pick_spell_flavor's *rand pick were
       *comment unguarded here too, so a same-page replay that killed this spell's own target could re-derive a
@@ -3129,6 +3371,7 @@
       *comment callable subroutine.
       *if (not(combat_dw_choice_locked)) or (not(locked_combat_dw_choice_page_id = page_id))
         *gosub_scene combat_movement fight_pick_target
+        *gosub_scene combat_movement fight_retarget_by_class "medium"
         *set combat_current_spell_id "dissonant_whispers"
         *gosub_scene combat_prose pick_spell_flavor
         *comment Enemy saving throw against the player's own spell_save_dc -- Dissonant Whispers is a Wisdom save,
@@ -3154,9 +3397,10 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if ((combat_can_fear))
-    # [b][ACTION][/b] [b][Cause Fear][/b] Plant a whispered dread in ${combat_enemy_epithet}.@{show_stat_hints  [Wisdom Save]|}
+  *if (((combat_can_fear) and (spell_reach_ok_cause_fear)))
+    # [b][ACTION][/b] [b][Cause Fear][/b] Plant a whispered dread in ${combat_med_epithet}.@{show_stat_hints  [Wisdom Save]|}
       *gosub_scene combat_movement fight_pick_target
+      *gosub_scene combat_movement fight_retarget_by_class "medium"
       *gosub_scene combat_prose flavor_cause_fear
       *line_break
       *gosub_scene combat_spells resolve_cast_cause_fear
@@ -3215,12 +3459,12 @@
       *goto fight_action_spent
 
   *if (combat_can_hide)
-    # [b][@{combat_cunning BONUS ACTION|ACTION}][/b] [b][Hide][/b] Slip out of sight; your next attack has advantage.@{show_stat_hints  [Stealth Check (DC 15)]|}
+    # [b][@{combat_cunning BONUS ACTION|ACTION}][/b] [b][Hide][/b] Slip out of sight; your next attack has advantage.@{show_stat_hints  [Stealth Check (DC ${combat_hide_dc_value})]|}
       *comment HIDE (2026-10-01). Universal ACTION; a rogue's Cunning Action makes it a BONUS action (combat_cunning, above).
       *comment Success arms combat_player_hidden, which combat_hidden_attack_roll spends on the next attack roll. A
       *comment failure still spends the action: you tried and were seen. roll_skill_check applies proficiency and
       *comment Rogue Expertise to Stealth like any other check.
-      *gosub_scene dice_engine roll_skill_check 15 "stealth" "" "" "" "" ""
+      *gosub_scene dice_engine roll_skill_check combat_hide_dc_value "stealth" "" "" "" "" ""
       *if (check_success)
         *set combat_player_hidden true
         *gosub_scene combat_prose flavor_hide_success
@@ -3262,12 +3506,20 @@
       *line_break
       *goto fight_bonus_spent
 
-  *if (((combat_can_hunters_mark) and (combat_player_bonus_left > 0)))
-    # [b][BONUS ACTION][/b] [b][Hunter's Mark][/b] @{combat_hm_orphaned Move your mark to|Mark} ${combat_enemy_epithet} as your quarry${chm_cost_text}.
+  *if ((((combat_can_hunters_mark) and (combat_player_bonus_left > 0))) and (spell_reach_ok_hunters_mark))
+    # [b][BONUS ACTION][/b] [b][Hunter's Mark][/b] @{combat_hm_orphaned Move your mark to|Mark} ${combat_med_epithet} as your quarry${chm_cost_text}.
       *gosub_scene combat_movement fight_pick_target
+      *gosub_scene combat_movement fight_retarget_by_class "medium"
       *gosub_scene combat_spells resolve_cast_hunters_mark
       *gosub_scene combat_prose flavor_hunters_mark combat_hm_orphaned
       *comment No banner here: the hub's own "Hunter's Mark" status line says the same thing the instant it reopens.
+      *line_break
+      *goto fight_bonus_spent
+
+  *if ((combat_can_ensnaring) and (combat_player_bonus_left > 0))
+    # [b][BONUS ACTION][/b] [b][Ensnaring Strike][/b] Your next weapon hit calls up thorned vines that bind the target if it fails a Strength save.@{show_stat_hints  [Strength Save, 1d6 Piercing]|}
+      *gosub_scene combat_spells resolve_cast_ensnaring_strike
+      You murmur the word and feel thorns rise along your weapon, waiting for a hit to carry them.
       *line_break
       *goto fight_bonus_spent
 
@@ -3373,9 +3625,102 @@
     # [b][ACTION][/b] [b][Drink the phial of Saint Althea's water][/b].@{show_stat_hints  [Restores 2d4+2 HP]|}
       *set use_item_id "althea_phial"
       *goto fight_use_do
+  *if (has_grease_flask)
+    # [b][ACTION][/b] [b][Throw the grease flask][/b].@{show_stat_hints  [Thrown: a foe that fails a Dex save slips when it moves]|}
+      *set use_item_id "grease_flask"
+      *goto fight_throw_item
+  *if (has_alchemists_fire)
+    # [b][ACTION][/b] [b][Throw the alchemist's fire][/b].@{show_stat_hints  [Thrown: 1d4 fire, then burns for 3 turns]|}
+      *set use_item_id "alchemists_fire"
+      *goto fight_throw_item
   *comment GEN:END combat_use_options
   # Put the satchel away.
     *goto fight_round_hub
+
+*comment THROWN ITEMS (2026-10-12): an item whose catalog effect type is "throw" (a grease flask) is thrown at an enemy, so its menu line comes here, not to fight_use_do. It costs the ACTION, works on a target up to Mid-Range away (the clicked enemy, else
+*comment the one with the least health, else whoever is in range), and the flask is used up by resolve_throw_item (combat_spells.txt) under the combat_cast lock. Nothing is spent if nothing is in range.
+*label fight_throw_item
+*if (use_item_id = "alchemists_fire")
+  *goto fight_throw_fire
+*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
+  *gosub_scene combat_movement fight_pick_target
+  *temp fti_reach combat_reach_medium
+  *gosub_scene combat_movement fight_retarget_to_range fti_reach
+  *if (combat_enemy_range > fti_reach)
+    Nothing is close enough to throw at. Close the distance first.
+    *line_break
+    *goto fight_round_hub
+*gosub_scene combat_spells resolve_throw_item use_item_id
+*goto fight_action_spent
+
+*comment ALCHEMIST'S FIRE (2026-10-12): a thrown ATTACK, not a save. Dexterity + proficiency against AC, the same ranged-attack penalties and advantages as Fire Bolt (and, being fire, advantage on a greased target through combat_attack_tag), 1d4 fire damage, +2 on a greased target,
+*comment and a hit that leaves the enemy standing sets it burning for three of its turns (combat_burn_tick). Shares Fire Bolt's cantrip replay lock because they cost the same action. Target picked and ranged inside the lock, like Fire Bolt, so a replay never re-derives it.
+*label fight_throw_fire
+*if (not(combat_cantrip_choice_locked)) or (not(locked_combat_cantrip_choice_page_id = page_id))
+  *gosub_scene combat_movement fight_pick_target
+  *temp ftf_reach combat_reach_medium
+  *gosub_scene combat_movement fight_retarget_to_range ftf_reach
+  *if (combat_enemy_range > ftf_reach)
+    Nothing is close enough to throw at. Close the distance first.
+    *line_break
+    *goto fight_round_hub
+  *gosub_scene equipment spend_consumable "alchemists_fire"
+  *set combat_throw_name combat_enemy_name
+  *set combat_throw_epithet combat_enemy_epithet
+  *rand combat_throw_v 1 3
+  *temp ftf_p (("combat_enemy" & combat_active_target) & "_")
+  *temp ftf_greased {(ftf_p & "greased")}
+  *set combat_throw_greased false
+  *if (ftf_greased > 0)
+    *set combat_throw_greased true
+  *set check_stat "dex"
+  *set check_dc combat_enemy_ac
+  *set check_skill "Alchemist's Fire"
+  *set check_add_prof_bonus true
+  *gosub spell_range_of
+  *gosub combat_apply_player_ranged_terrain
+  *if (spell_penalty_result)
+    *set disadvantage true
+    *set combat_reach_pinned true
+  *set combat_attack_tag "fire"
+  *gosub combat_hidden_attack_roll
+  *gosub_scene dice_engine roll_d20_check
+  *if (check_success)
+    *set combat_player_dmg_type "fire"
+    *set combat_player_dmg_dice_sides 4
+    *set combat_player_dmg_bonus 0
+    *if (combat_throw_greased)
+      *set combat_player_dmg_bonus 2
+    *gosub_scene combat_dice resolve_player_hit true
+    *if (combat_enemy_hp > 0)
+      *set {(ftf_p & "burning")} 3
+  *set combat_cantrip_choice_locked true
+  *set locked_combat_cantrip_choice_page_id page_id
+*if (check_success)
+  *if (combat_throw_v = 1)
+    The flask breaks against ${combat_throw_epithet}, and the mixture meets the air and catches with a soft roar.
+  *if (combat_throw_v = 2)
+    It bursts on ${combat_throw_epithet}, and a sheet of amber flame runs over them, clinging to whatever it touches.
+  *if (combat_throw_v = 3)
+    The glass shatters, and the sticky fire spreads across ${combat_throw_epithet} before they can beat it out.
+  *line_break
+  *if (combat_enemy_hp <= 0)
+    [b][💀 ${combat_throw_name} Defeated: ${combat_player_dmg_dealt} Fire damage${combat_outgoing_dmg_suffix}][/b]
+  *else
+    [b][🔥 Alchemist's Fire: Hit | ${combat_player_dmg_dealt} Fire damage${combat_outgoing_dmg_suffix}@{combat_throw_greased  (the grease caught, +2)|}][/b]
+    *line_break
+    [b][🔥 ${combat_throw_name} is burning: 1d4 fire damage at the start of each of its next three turns][/b]
+*else
+  *if (combat_throw_v = 1)
+    The flask goes wide and bursts on the ground, and the fire gutters out on bare stone.
+  *if (combat_throw_v = 2)
+    ${combat_throw_name} ducks the throw, and the flask burns itself out on the ground.
+  *if (combat_throw_v = 3)
+    The glass breaks short, and a puddle of flame spits and dies at ${combat_throw_epithet}'s feet.
+  *line_break
+  [b][💨 Miss][/b]
+*line_break
+*goto fight_check_enemy_hp
 
 *label fight_use_do
 *set use_in_combat true
@@ -3578,6 +3923,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *comment Every targeted option re-syncs the HUD-picked target here, at the moment it's chosen, not just when the
   *comment page was built -- a click made while the page was already open would otherwise land on the stale target.
   *gosub_scene combat_movement fight_pick_target
+  *if (weapon_type = "ranged")
+    *gosub_scene combat_movement fight_retarget_by_class weapon_reach
   *if (not(weapon_type = "ranged"))
     *gosub_scene combat_movement fight_retarget_weapon_to_reach
   *if (weapon_type = "ranged")
@@ -3688,6 +4035,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *else
           *set combat_player_dmg_bonus + barbarian_rage_damage_bonus
     *gosub_scene combat_dice resolve_player_weapon_hit
+    *gosub combat_ensnare_apply
     *if ((not(combat_sneak_attack_triggered)) and (combat_enemy_hp <= 0))
       *gosub_scene combat_prose pick_weapon_death_flavor
   *set combat_weapon_attack_locked true
@@ -3758,6 +4106,21 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   ${fwm}
   *line_break
   [b][💨 Miss][/b]
+*if ((check_success) and (combat_ensnare_result > 0))
+  *line_break
+  Thorned vines burst from the blow and lash at ${combat_enemy_epithet}.
+  *line_break
+  ${combat_ensnare_banner}
+  *line_break
+  *if (not(combat_ensnare_banner2 = ""))
+    [b][⚖️ ${combat_enemy_name} is ${combat_enemy_size}: advantage on the save, a second roll][/b]
+    *line_break
+    ${combat_ensnare_banner2}
+    *line_break
+  *if (combat_ensnare_result = 2)
+    [b][🌿 ${combat_enemy_name} is restrained: 1d6 piercing at the start of each of its turns, attacks against it have advantage, until it tears free (up to 10 rounds)][/b]
+  *else
+    [b][💨 ${combat_enemy_name} tears clear of the vines][/b]
 *line_break
 *comment The one and only entry point for both weapon and sidearm attacks -- flagging it here, right before the
 *comment shared fight_check_enemy_hp tail every damage option uses, is how that tail knows to spend an ATTACK
@@ -3794,6 +4157,257 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *goto fight_attack_spent
 *goto fight_action_spent
 
+*label combat_ensnare_apply
+*comment ENSNARING STRIKE (2026-10-12): called inside the weapon-hit lock right after the hit is resolved. If the spell is armed and still running, it is spent on this hit whatever happens; a target still standing makes a Strength save against the player's spell save DC and, on a failure, is restrained
+*comment until the spell's last round (ensnaring_expires_round) or until it tears free. The save banner is kept (combat_save_quiet) and printed by the attack's report; check_success is the ATTACK's result and is put back, because the report that follows reads it.
+*set combat_ensnare_result 0
+*if (ensnaring_armed)
+  *set ensnaring_armed false
+  *if ((ensnaring_expires_round >= combat_round) and (combat_enemy_hp > 0))
+    *temp cea_cs check_success
+    *temp cea_p (("combat_enemy" & combat_active_target) & "_")
+    *set combat_save_quiet true
+    *gosub_scene combat_dice resolve_enemy_save cea_p "strength" "Strength" 0
+    *set combat_save_quiet false
+    *set combat_ensnare_banner {("combat_save_banner_0")}
+    *set combat_ensnare_banner2 ""
+    *comment The spell's own size rule: a Large or larger creature has advantage on the save, so a failure is rolled again (on the target's own save lock, so it is a fresh d20) and the better of the two stands.
+    *gosub combat_size_rank combat_enemy_size
+    *if ((check_success) and (combat_size_rank_value >= 3))
+      *set combat_save_quiet true
+      *gosub_scene combat_dice resolve_enemy_save cea_p "strength" "Strength" combat_active_target
+      *set combat_save_quiet false
+      *set combat_ensnare_banner2 {(("combat_save_banner_" & combat_active_target))}
+    *set combat_ensnare_result 1
+    *if (check_success)
+      *set combat_ensnare_result 2
+      *set {(cea_p & "restrained_until")} ensnaring_expires_round
+    *set check_success cea_cs
+*return
+
+*label combat_restrain_tick
+*comment RESTRAINED (2026-10-12, Ensnaring Strike): called at the start of the enemy's turn while it is held. It takes 1d6 piercing from the thorns (resistances applied). Then, if it means to move this turn, it spends its action on a Strength check against the player's spell save DC to tear free (a success or a miss, the turn is
+*comment spent); if it only wanted to fight where it stands, it attacks with disadvantage instead. Stored per slot against the page id, so a replay prints the same tick and never rolls twice. Sets combat_restrain_stop when the turn is used up, and combat_burn_killed when the thorns finish the enemy.
+*params crt_slot crt_wants
+*set combat_restrain_stop false
+*set combat_burn_killed false
+*temp crt_p (("combat_enemy" & crt_slot) & "_")
+*temp crt_page {(crt_p & "restrain_page")}
+*temp crt_res 0
+*temp crt_dealt 0
+*temp crt_roll 0
+*temp crt_v 1
+*if (crt_page = page_id)
+  *set crt_res {(crt_p & "restrain_res")}
+  *set crt_dealt {(crt_p & "restrain_dealt")}
+  *set crt_roll {(crt_p & "restrain_roll")}
+  *set crt_v {(crt_p & "restrain_v")}
+*else
+  *rand crt_v 1 3
+  *temp crt_die 1
+  *rand crt_die 1 6
+  *set combat_player_dmg_type "piercing"
+  *set combat_player_dmg_dealt crt_die
+  *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
+  *set crt_dealt combat_player_dmg_dealt
+  *set combat_enemy_hp - crt_dealt
+  *if (combat_enemy_hp < 0)
+    *set combat_enemy_hp 0
+  *gosub fight_sync_target_out
+  *if (combat_enemy_hp > 0)
+    *if (crt_wants)
+      *temp crt_str {(crt_p & "strength")}
+      *gosub_scene startup score_to_mod crt_str
+      *rand crt_roll 1 20
+      *set crt_roll (crt_roll + sm_mod)
+      *if (crt_roll >= spell_save_dc)
+        *set crt_res 2
+        *set {(crt_p & "restrained_until")} 0
+      *else
+        *set crt_res 1
+    *else
+      *set {(crt_p & "disadvantage")} true
+  *set {(crt_p & "restrain_res")} crt_res
+  *set {(crt_p & "restrain_dealt")} crt_dealt
+  *set {(crt_p & "restrain_roll")} crt_roll
+  *set {(crt_p & "restrain_v")} crt_v
+  *set {(crt_p & "restrain_page")} page_id
+*if (combat_enemy_hp <= 0)
+  The thorns close tight, and ${combat_enemy_epithet} goes still in the vines.
+  *line_break
+  [b][🌿 ${combat_enemy_name} takes ${crt_dealt} piercing damage from the thorns${combat_outgoing_dmg_suffix} | 💀 Defeated][/b]
+  *line_break
+  *set combat_burn_killed true
+*else
+  [b][🌿 ${combat_enemy_name} takes ${crt_dealt} piercing damage from the thorns${combat_outgoing_dmg_suffix}][/b]
+  *line_break
+  *if (crt_res = 1)
+    *if (crt_v = 1)
+      $!{combat_enemy_epithet} heaves at the vines and gets nowhere.
+    *if (crt_v = 2)
+      $!{combat_enemy_epithet} tears at the thorns with both hands, and the vines tighten.
+    *if (crt_v = 3)
+      The vines hold, and ${combat_enemy_epithet} spends the turn straining against them.
+    *line_break
+    [b][🌿 ${combat_enemy_name} fails to break free (Strength check ${crt_roll} vs DC ${spell_save_dc}) — turn spent][/b]
+    *line_break
+    *set combat_restrain_stop true
+  *elseif (crt_res = 2)
+    *if (crt_v = 1)
+      $!{combat_enemy_epithet} wrenches an arm free, and the rest of the vines tear away after it.
+    *if (crt_v = 2)
+      With a roar, ${combat_enemy_epithet} rips the vines out by the root.
+    *if (crt_v = 3)
+      The thorns give way at last, and ${combat_enemy_epithet} stumbles free.
+    *line_break
+    [b][🌿 ${combat_enemy_name} breaks free of the vines (Strength check ${crt_roll} vs DC ${spell_save_dc}) — turn spent][/b]
+    *line_break
+    *set combat_restrain_stop true
+  *else
+    The vines hold ${combat_enemy_epithet} where they stand, and they fight from the spot.
+    *line_break
+*set combat_turn_advanced_this_page true
+*return
+
+*label combat_burn_tick
+*comment BURNING (2026-10-12, Alchemist's Fire): called at the start of an enemy's turn when it is burning. It takes 1d4 fire damage (+1 if it is still greased, which burns well), resistances and vulnerabilities applied, and the fire runs down one turn. Sets combat_burn_killed when the fire finishes it.
+*comment The tick is stored per slot against the page id (burn_page / burn_dealt), so a replay of the page prints the same tick and never burns twice. An enemy that dies is skipped by the caller exactly like a Booming Blade kill.
+*comment DOUSING (the user's call, 2026-10-12): a creature that can think of it spends its ACTION putting the fire out, two turns in three, and does nothing else that turn (combat_burn_doused, the caller skips the rest of its turn). Beasts and the like (the feral behavior profile)
+*comment never do: they burn the full three turns.
+*params cb_slot
+*set combat_burn_killed false
+*set combat_burn_doused false
+*temp cb_p (("combat_enemy" & cb_slot) & "_")
+*temp cb_page {(cb_p & "burn_page")}
+*temp cb_left {(cb_p & "burning")}
+*temp cb_dealt 0
+*temp cb_douse false
+*if (cb_page = page_id)
+  *set cb_dealt {(cb_p & "burn_dealt")}
+  *set cb_douse {(cb_p & "burn_douse")}
+*else
+  *temp cb_die 1
+  *rand cb_die 1 4
+  *temp cb_greased {(cb_p & "greased")}
+  *if (cb_greased > 0)
+    *set cb_die + 1
+  *set combat_player_dmg_type "fire"
+  *set combat_player_dmg_dealt cb_die
+  *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
+  *set cb_dealt combat_player_dmg_dealt
+  *set combat_enemy_hp - cb_dealt
+  *if (combat_enemy_hp < 0)
+    *set combat_enemy_hp 0
+  *gosub fight_sync_target_out
+  *set cb_left (cb_left - 1)
+  *set {(cb_p & "burning")} cb_left
+  *set {(cb_p & "burn_dealt")} cb_dealt
+  *set {(cb_p & "burn_page")} page_id
+  *temp cb_profile {(cb_p & "behavior_profile")}
+  *temp cb_dv 1
+  *rand cb_dv 1 3
+  *if (((combat_enemy_hp > 0) and (cb_left > 0)) and ((not(cb_profile = "feral")) and (cb_dv <= 2)))
+    *set cb_douse true
+    *set {(cb_p & "burning")} 0
+    *set {(cb_p & "burn_douse")} true
+*if (combat_enemy_hp <= 0)
+  The fire finishes ${combat_enemy_epithet}, and it drops, still burning.
+  *line_break
+  [b][🔥 ${combat_enemy_name} burns: ${cb_dealt} Fire damage${combat_outgoing_dmg_suffix} | 💀 Defeated][/b]
+  *line_break
+  *set combat_burn_killed true
+*else
+  [b][🔥 ${combat_enemy_name} burns: ${cb_dealt} Fire damage${combat_outgoing_dmg_suffix}@{((cb_left <= 0) and (not(cb_douse)))  — the flames die out|}][/b]
+  *line_break
+  *if (cb_douse)
+    *set combat_burn_doused true
+    $!{combat_enemy_epithet} throws themselves down and beats at the flames with a cloak and both hands, spending the whole turn putting the fire out.
+    *line_break
+    [b][💨 ${combat_enemy_name} puts out the fire — turn spent][/b]
+    *line_break
+*set combat_turn_advanced_this_page true
+*return
+
+*label combat_grease_gate
+*comment GREASE GATE (2026-10-12). Called at the start of an enemy's turn when it is greased or prone, with whether the enemy means to move this turn. Prints what happens and sets combat_grease_stop true when the turn is spent.
+*comment Prone: it stands up (its movement), and the turn is spent if it meant to move; one that only wanted to swing gets up and swings. Greased and moving: DC 10 Dexterity check; a pass scrapes the grease off and it moves normally, a miss drops it prone with the turn lost and one fewer attempt on the grease
+*comment (it starts with two, and wears off after combat_enemyN_grease_until rounds). Standing still never rolls. The result is stored per slot against the page id, so a replay of the page reprints the same outcome and never rolls or falls twice.
+*params gg_slot gg_wants
+*set combat_grease_stop false
+*temp gg_p (("combat_enemy" & gg_slot) & "_")
+*temp gg_page {(gg_p & "grease_page")}
+*temp gg_res 0
+*temp gg_roll 0
+*temp gg_v 1
+*if (gg_page = page_id)
+  *set gg_res {(gg_p & "grease_res")}
+  *set gg_roll {(gg_p & "grease_roll")}
+  *set gg_v {(gg_p & "grease_v")}
+*else
+  *temp gg_prone {(gg_p & "prone")}
+  *temp gg_greased {(gg_p & "greased")}
+  *temp gg_until {(gg_p & "grease_until")}
+  *if ((gg_greased > 0) and (combat_round > gg_until))
+    *set gg_greased 0
+    *set {(gg_p & "greased")} 0
+  *rand gg_v 1 3
+  *if (gg_prone)
+    *set {(gg_p & "prone")} false
+    *set gg_res 2
+    *if (gg_wants)
+      *set gg_res 1
+  *elseif ((gg_greased > 0) and (gg_wants))
+    *temp gg_dex {(gg_p & "dexterity")}
+    *gosub_scene startup score_to_mod gg_dex
+    *rand gg_roll 1 20
+    *set gg_roll (gg_roll + sm_mod)
+    *if (gg_roll >= 10)
+      *set gg_res 4
+      *set {(gg_p & "greased")} 0
+    *else
+      *set gg_res 3
+      *set {(gg_p & "prone")} true
+      *set {(gg_p & "greased")} (gg_greased - 1)
+  *set {(gg_p & "grease_res")} gg_res
+  *set {(gg_p & "grease_roll")} gg_roll
+  *set {(gg_p & "grease_v")} gg_v
+  *set {(gg_p & "grease_page")} page_id
+*if (gg_res = 3)
+  *if (gg_v = 1)
+    $!{combat_enemy_epithet} takes a step, and the grease takes the foot out from under them. They go down hard.
+  *if (gg_v = 2)
+    The slick ground betrays ${combat_enemy_epithet} mid-stride, and they land on their back in the mess.
+  *if (gg_v = 3)
+    $!{combat_enemy_epithet} lunges forward, finds nothing to push against, and goes sprawling.
+  *line_break
+  [b][🧴 ${combat_enemy_name} slips and falls prone (Dexterity check ${gg_roll} vs DC 10) — turn lost][/b]
+  *line_break
+  *set combat_grease_stop true
+*elseif (gg_res = 1)
+  *if (gg_v = 1)
+    $!{combat_enemy_epithet} claws their way upright on the slick ground, and that is the whole of their turn.
+  *if (gg_v = 2)
+    $!{combat_enemy_epithet} scrabbles to get their feet under them, with no strength left to cross the ground.
+  *if (gg_v = 3)
+    Just standing takes the whole of ${combat_enemy_epithet}'s turn.
+  *line_break
+  [b][🧴 ${combat_enemy_name} struggles to its feet — turn spent standing][/b]
+  *line_break
+  *set combat_grease_stop true
+*elseif (gg_res = 2)
+  $!{combat_enemy_epithet} rolls over and gets up, mud and grease to the elbows.
+  *line_break
+  [b][🧴 ${combat_enemy_name} stands up][/b]
+  *line_break
+*elseif (gg_res = 4)
+  $!{combat_enemy_epithet} feels the grease go and catches their balance, scraping a boot clean.
+  *line_break
+  [b][🧴 ${combat_enemy_name} keeps its footing (Dexterity check ${gg_roll} vs DC 10) — the grease is spent][/b]
+  *line_break
+*if (gg_res > 0)
+  *set combat_turn_advanced_this_page true
+*return
+
 *label combat_hidden_enemy_turn
 *comment One enemy's turn against a hidden player (2026-10-01). Reads the active slot's scratch fields, like every enemy-turn
 *comment branch. The enemy never attacks the player: a melee type closes one tier toward where it last saw them (no Dash, no
@@ -3826,7 +4440,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *set combat_hide_checked true
     *if (combat_hide_blocked)
       *set disadvantage true
-    *gosub_scene dice_engine roll_skill_check 15 "stealth" "" "" "" "" ""
+    *gosub combat_hide_dc_calc false
+    *gosub_scene dice_engine roll_skill_check combat_hide_dc_value "stealth" "" "" "" "" ""
     *if (check_success)
       *gosub_scene combat_prose flavor_hidden_holds
       *line_break
@@ -3927,6 +4542,11 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *comment cnt_rv: shared by both branches below that roll a 3-way flavor variant, declared once here instead
     *comment of once per branch.
     *temp cnt_rv 0
+    *comment Room to back off (2026-10-12): a cornered ranged enemy can only give ground if the lane has any left behind it. At the far end it cannot, and used to narrate a retreat that moved nothing (then shot at disadvantage anyway, with a free swing taken against it); with no room it now falls through to the dagger like any cornered archer.
+    *temp cnt_e_room false
+    *temp cnt_e_back_range {(("combat_enemy" & cnt_slot) & "_range")}
+    *if ((combat_lane_player_position + cnt_e_back_range) < combat_lane_max_position)
+      *set cnt_e_room true
     *comment Terrain intent is calculated before the ordinary decision tree but only consumed by the eligible
     *comment ranged reposition / melee chokepoint-hold branches below. Surprise, interception, fear, retreats,
     *comment active chases and forced movement retain their existing priority.
@@ -3945,6 +4565,51 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *gosub_scene combat_ai combat_choose_ranged_tactical_step "enemy" cnt_slot cnt_terrain_target_position
     *else
       *gosub_scene combat_ai combat_choose_terrain_step "enemy" cnt_slot cnt_terrain_target_position cnt_terrain_must_close cnt_terrain_keep_distance
+    *comment GREASE (2026-10-12, the user's call): a greased enemy that tries to MOVE must pass a DC 10 Dexterity check or fall prone and lose its turn; a prone one spends its next turn standing. Standing still and swinging never trips it.
+    *comment Whether this enemy would move this turn is worked out here from the same facts the branches below use (close on the player or an ally, back off from a corner, take a terrain step); combat_grease_gate does the rest.
+    *comment REACH (2026-10-12): a ranged enemy whose weapon does not reach you from where it stands must close first (a slinger is medium, an archer long). cnt_e_out is true when it is out of its own reach.
+    *temp cnt_e_class {(("combat_enemy" & cnt_slot) & "_reach")}
+    *gosub_scene combat_movement combat_reach_tier cnt_e_class
+    *temp cnt_e_tier combat_reach_tier_result
+    *temp cnt_e_out false
+    *if ((combat_enemy_weapon_type = "ranged") and (combat_enemy_range > cnt_e_tier))
+      *set cnt_e_out true
+    *temp cnt_burning {(("combat_enemy" & cnt_slot) & "_burning")}
+    *if ((cnt_burning > 0) and (not((combat_player_surprise) and (cnt_first_pass))))
+      *gosub combat_burn_tick cnt_slot
+      *comment Dead of the fire, or the turn spent putting it out: nothing more this turn.
+      *if ((combat_burn_killed) or (combat_burn_doused))
+        *goto cnt_boom_tail
+    *temp cnt_grease_stop false
+    *temp cnt_wants_move false
+    *if (combat_enemy_weapon_type = "ranged")
+      *if (((cnt_e_out) and (combat_intercepting_ally = 0)) and (not(combat_player_hidden)))
+        *set cnt_wants_move true
+      *elseif (((combat_ranged_cornered) and (combat_enemy_can_retreat)) and (cnt_e_room))
+        *set cnt_wants_move true
+      *elseif (combat_ai_terrain_step_direction != "none")
+        *set cnt_wants_move true
+    *elseif (combat_intercepting_ally = 0)
+      *if (combat_enemy_goal_ally > 0)
+        *set cnt_wants_move true
+      *elseif (((combat_enemy_range > 0) and (cnt_frightened <= 0)) and (not((combat_ai_terrain_hold_position) and (combat_ai_terrain_step_reason = "chokepoint"))))
+        *set cnt_wants_move true
+    *comment ENSNARING STRIKE: a held enemy takes the thorns and either struggles (if it meant to move) or fights from where it stands. The hold runs out after the spell's last round.
+    *temp cnt_restrain_stop false
+    *temp cnt_restrained {(("combat_enemy" & cnt_slot) & "_restrained_until")}
+    *if ((cnt_restrained > 0) and (combat_round > cnt_restrained))
+      *set {(("combat_enemy" & cnt_slot) & "_restrained_until")} 0
+      *set cnt_restrained 0
+    *if ((cnt_restrained > 0) and (not((combat_player_surprise) and (cnt_first_pass))))
+      *gosub combat_restrain_tick cnt_slot cnt_wants_move
+      *if (combat_burn_killed)
+        *goto cnt_boom_tail
+      *set cnt_restrain_stop combat_restrain_stop
+    *temp cnt_greased {(("combat_enemy" & cnt_slot) & "_greased")}
+    *temp cnt_prone {(("combat_enemy" & cnt_slot) & "_prone")}
+    *if ((((cnt_prone) or (cnt_greased > 0)) and (not(cnt_restrain_stop))) and (not((combat_player_surprise) and (cnt_first_pass))))
+      *gosub combat_grease_gate cnt_slot cnt_wants_move
+      *set cnt_grease_stop combat_grease_stop
     *if (combat_player_surprise) and (cnt_first_pass)
       *comment Three variants, via *rand -- none lead with combat_enemy_epithet (usually a lowercase "the X"),
       *comment so the printed sentence never opens on an uncapitalized word.
@@ -3959,7 +4624,13 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       [b][😲 ${combat_enemy_name} Surprised — turn lost][/b]
       *line_break
       *set combat_turn_advanced_this_page true
-    *elseif (((combat_enemy_weapon_type = "ranged") and (combat_ranged_cornered)) and (combat_enemy_can_retreat))
+    *elseif (cnt_restrain_stop)
+      *comment The thorns tick has already printed it (struggling, or tearing free); the turn is spent.
+      *set combat_turn_advanced_this_page true
+    *elseif (cnt_grease_stop)
+      *comment The gate has already printed what happened (a fall, or getting up); the turn is spent.
+      *set combat_turn_advanced_this_page true
+    *elseif ((((combat_enemy_weapon_type = "ranged") and (combat_ranged_cornered)) and (combat_enemy_can_retreat)) and (cnt_e_room))
       *comment (2026-10-11) Cornered now means ANY opponent shares this enemy's lane tile (combat_ranged_cornered, choose_ranged_enemy_target), not "engaged with the player and a player's ally nearby".
       *comment Rows 3-4: a melee ally is already in the shared adjacency bucket (combat_intercepting_ally,
       *comment computed above by find_intercepting_ally) -- normally that claims this enemy's turn outright, the
@@ -4171,6 +4842,34 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       [b][🛡️ ${combat_enemy_name} Holds the Chokepoint][/b]
       *line_break
       *set combat_turn_advanced_this_page true
+    *elseif (cnt_e_out)
+      *comment A ranged enemy out of its own reach (2026-10-12): it closes one step (a second if it Dashes and is not slowed) and shoots this same turn only if the first step put you within its reach. Placed after the cornered, interception, hidden and chase branches,
+      *comment which still win where they apply, and ahead of the melee closing branch and the plain ranged one.
+      *gosub_scene combat_movement combat_lane_move_enemy_relative_to_player cnt_slot "toward"
+      *temp cnt_o_dashed false
+      *if (((combat_enemy_range > cnt_e_tier) and (cnt_slowed <= 0)) and (not(combat_ai_terrain_hold_position)))
+        *gosub_scene combat_movement combat_lane_move_enemy_relative_to_player cnt_slot "toward"
+        *set cnt_o_dashed true
+      *gosub_scene combat_movement combat_range_name combat_enemy_range
+      $!{combat_enemy_epithet} edges forward to get you in range.
+      *line_break
+      [b][🏃 ${combat_enemy_name} Moves Into Range — ${combat_range_display_name}@{cnt_o_dashed  (Dashed the extra distance)|}][/b]
+      *line_break
+      *set combat_turn_advanced_this_page true
+      *gosub fight_booming_trigger
+      *if (combat_boom_killed)
+        *goto cnt_boom_tail
+      *if ((combat_enemy_range <= cnt_e_tier) and (not(cnt_o_dashed)))
+        *gosub_scene combat_ai fight_pick_enemy_move
+        *gosub_scene combat_dice resolve_enemy_attack
+        *gosub_scene combat_prose fight_narrate_enemy_turn
+        *if (combat_player_can_die) and (hp_current <= 0)
+          *goto fight_player_died
+        *if (not(combat_player_can_die)) and (hp_current <= 1)
+          *goto fight_rescued
+        *gosub fight_check_all_dead
+        *if (combat_all_enemies_dead)
+          *goto fight_victory
     *elseif ((not(combat_enemy_weapon_type = "ranged")) and (combat_enemy_range > 0))
       *comment Free movement + Dash (2026-09-28, mirrors the player's own Push Forward/Dash exactly): closes one
       *comment tier for free. If that's still not enough, it Dashes too -- closes a SECOND tier -- since there's
@@ -4329,6 +5028,11 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *comment Cornered (2026-10-11): any living enemy shares this ally's lane tile (combat_ai_ally_cornered), whoever it is, not "my own range to my last target is 0 and a melee ally stands nearby".
     *gosub_scene combat_ai combat_ai_ally_cornered cnt_slot
     *temp cnt_ar_cornered combat_ally_cornered
+    *comment Room to back off, ally side (2026-10-12): the same lane-end rule as the enemy's. At the very back of the lane there is nowhere to give ground, so the ally falls through to its dagger instead of narrating a retreat that moves nothing.
+    *temp cnt_ar_room false
+    *temp cnt_ar_back_pos {(("combat_ally" & cnt_slot) & "_position")}
+    *if (cnt_ar_back_pos > combat_lane_min_position)
+      *set cnt_ar_room true
     *if (cnt_a_chase_target > 0)
       *comment Commit-and-chase continuation, ally side (2026-09-29, plan §11.3, "6a" mirror) -- checked before
       *comment select_ally_attack_target even runs, since an active chase overrides its ordinary pick entirely.
@@ -4340,19 +5044,19 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *set {(("combat_ally" & cnt_slot) & "_chase_target")} 0
         $!{combat_attacker_epithet} eases off, the target already down, and looks for someone else to fight.
         *line_break
-        [b][${combat_attacker_name} Breaks Off Its Chase (target down)][/b]
+        [b][${combat_attacker_name} Breaks Off the Chase (target down)][/b]
         *line_break
         *set combat_turn_advanced_this_page true
       *elseif (cnt_a_hp < cnt_a_chase_hp_snapshot)
         Hurt, ${combat_attacker_epithet} lets the chase go and turns to deal with the more immediate threat.
         *set {(("combat_ally" & cnt_slot) & "_chase_target")} 0
         *line_break
-        [b][${combat_attacker_name} Breaks Off Its Chase (took a hit)][/b]
+        [b][${combat_attacker_name} Breaks Off the Chase (took a hit)][/b]
         *line_break
         *set combat_turn_advanced_this_page true
       *else
         *gosub do_ally_chase_step cnt_slot
-    *elseif (((cnt_ar_weapon = "ranged") and (cnt_ar_cornered)) and (cnt_ar_can_retreat))
+    *elseif ((((cnt_ar_weapon = "ranged") and (cnt_ar_cornered)) and (cnt_ar_can_retreat)) and (cnt_ar_room))
       *comment Ally-side rows 3-4 mirror (2026-09-29, on request): a cornered ranged ally (weapon_type "ranged",
       *comment own range <= 0) that opted in (combat_ally<N>_can_retreat) with a melee ally already at range 0 to
       *comment give whatever's threatening her something else to hit (combat_melee_ally_present, computed above)
@@ -4375,11 +5079,11 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *gosub_scene combat_movement combat_range_name cnt_ar_range
         *rand cnt_ar_rv 1 3
         *if (cnt_ar_rv = 1)
-          Hurt, ${combat_attacker_epithet} breaks off clean, giving up the shot to put real distance behind it.
+          Hurt, ${combat_attacker_epithet} breaks off clean, giving up the shot to make real distance.
         *if (cnt_ar_rv = 2)
           $!{combat_attacker_epithet} disengages, more interested in surviving the next few seconds than another shot.
         *if (cnt_ar_rv = 3)
-          Too battered to press its luck, ${combat_attacker_epithet} pulls back and leaves the fight to its ally.
+          Too battered to press the attack, ${combat_attacker_epithet} pulls back and leaves the field to the others.
         *line_break
         [b][🏃💨 ${combat_attacker_name} Disengages to ${combat_range_display_name}][/b]
         *line_break
@@ -4411,7 +5115,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
           *if (cnt_ar_rv = 1)
             $!{combat_attacker_epithet} breaks off, falling back a step to open a clean line.
           *if (cnt_ar_rv = 2)
-            Backing away fast, ${combat_attacker_epithet} puts a step of distance between itself and the blade at its side.
+            Backing away fast, ${combat_attacker_epithet} takes a step back and clears room for a shot.
           *if (cnt_ar_rv = 3)
             $!{combat_attacker_epithet} gives ground, retreating just far enough to loose a clean shot.
           *line_break
@@ -4689,6 +5393,52 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *comment The probe needs this enemy Engaged from the first round, so it opts out of the opening-distance rule (combat_roll_initiative).
 *set combat_opens_engaged true
 *set combat_enemy2_range 3
+*goto fight_library
+
+*label fight_trent_test
+*comment Dev-hub only (dev_hub.txt dev_combat_test_hub): Captain Trent's fight from Varren's Errand (varren_errand.txt slasher_fight), with the same stats and the same random standard terrain, so his Multiattack and the layouts can be tried without playing the quest. Non-lethal for him; combat_player_can_die stays false here, as for every test fight, so a loss is a rescue and not the death screen.
+*set combat_is_nonlethal true
+*set combat_lib_1 "swordsman"
+*set combat_enemy_name_override "Bronner Trent"
+*set combat_enemy_epithet_override "Trent"
+*set combat_enemy_hp_override 22
+*set combat_enemy_ac_override 14
+*set combat_enemy_atk_override 5
+*set combat_terrain_layout "random_standard"
+*set combat_multiattack_slot 1
+*goto fight_library
+
+*label fight_dev_fire_test
+*comment Dev-hub only (dev_hub.txt dev_combat_test_hub): the thrown items. A swordsman, an archer and a mire-rat (a beast, which never puts a fire out) with a random standard layout; dev_combat_test_run puts three grease flasks and three flasks of alchemist's fire in the satchel first.
+*set combat_is_nonlethal false
+*set combat_terrain_layout "random_standard"
+*set combat_lib_1 "swordsman"
+*set combat_enemy_name_override "Test Swordsman"
+*set combat_enemy_epithet_override "the test swordsman"
+*set combat_enemy_range 1
+*set combat_lib_2 "archer"
+*set combat_enemy2_name_override "Test Archer"
+*set combat_enemy2_epithet_override "the test archer"
+*set combat_enemy2_range 2
+*set combat_lib_3 "mire_rat"
+*set combat_enemy3_name_override "Test Mire-Rat"
+*set combat_enemy3_epithet_override "the test mire-rat"
+*set combat_enemy3_range 2
+*goto fight_library
+
+*label fight_dev_reach_class_test
+*comment Dev-hub only (dev_hub.txt dev_combat_test_hub): the reach classes. A slinger (medium reach) and an archer (long reach) both open at Long Range in the six-band lane, so the slinger has to close before it can shoot and the archer does not.
+*comment Your own short-reach spells (Ray of Frost and friends) and a sling or hand crossbow are held back until something is inside Mid-Range.
+*set combat_is_nonlethal false
+*set combat_range_mode "expanded6"
+*set combat_lib_1 "slinger"
+*set combat_enemy_name_override "Test Slinger"
+*set combat_enemy_epithet_override "the test slinger"
+*set combat_enemy_range 5
+*set combat_lib_2 "archer"
+*set combat_enemy2_name_override "Test Archer"
+*set combat_enemy2_epithet_override "the test archer"
+*set combat_enemy2_range 5
 *goto fight_library
 
 *label fight_dev_squad_test

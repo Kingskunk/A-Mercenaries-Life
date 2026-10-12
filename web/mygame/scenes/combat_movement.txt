@@ -511,6 +511,25 @@
 *gosub fight_retarget_to_range 0
 *return
 
+*comment REACH CLASSES (2026-10-12, the user's call): a spell's or ranged weapon's reach is a NAME (touch, short, medium, long), the same in the four-band and six-band lanes. combat_reach_tier turns a class into the farthest tier it reaches
+*comment (touch 0, short 1, medium combat_reach_medium, which the hub sets to 2, or 3 in the six-band lane, long 99), written to combat_reach_tier_result; fight_retarget_by_class aims the current target at the weakest enemy that class can reach, if the picked one is too far.
+*label combat_reach_tier
+*params crt_class
+*set combat_reach_tier_result 99
+*if (crt_class = "touch")
+  *set combat_reach_tier_result 0
+*if (crt_class = "short")
+  *set combat_reach_tier_result 1
+*if (crt_class = "medium")
+  *set combat_reach_tier_result combat_reach_medium
+*return
+
+*label fight_retarget_by_class
+*params frbc_class
+*gosub combat_reach_tier frbc_class
+*gosub fight_retarget_to_range combat_reach_tier_result
+*return
+
 *label fight_retarget_weapon_to_reach
 *temp frwr_max 0
 *if (weapon_type = "reach")
@@ -668,6 +687,41 @@
   *set {(("combat_enemy" & cspel_i) & "_position")} (combat_lane_player_position + cspel_range)
   *set cspel_i + 1
   *goto combat_sync_enemy_positions_from_legacy_ranges_loop
+*return
+
+*label combat_slip_player_past
+*comment Slip Past, success (combat.txt): the player gets the lane behind them back. The player's coordinate returns to the opening spot (3), or stays where it is if that is further on, every living enemy that was in reach (range 0) is put at range 2, and every enemy's coordinate is rebuilt from the player's with
+*comment its range, so the model stays what the rest of the engine assumes: enemies on the far side of the player. Allies keep their coordinates and have their range to their own target worked out again from where they now stand.
+*gosub combat_sync_enemy_positions_from_legacy_ranges
+*temp csp_start 3
+*if (combat_lane_player_position > csp_start)
+  *set csp_start combat_lane_player_position
+*if (csp_start > combat_lane_max_position)
+  *set csp_start combat_lane_max_position
+*set combat_lane_player_position csp_start
+*temp csp_to 2
+*if (csp_to > combat_max_range)
+  *set csp_to combat_max_range
+*temp csp_i 1
+*label combat_slip_player_past_loop
+*if (csp_i <= combat_enemy_count)
+  *temp csp_hp {(("combat_enemy" & csp_i) & "_hp")}
+  *temp csp_range {(("combat_enemy" & csp_i) & "_range")}
+  *if ((csp_hp > 0) and (csp_range <= 0))
+    *set {(("combat_enemy" & csp_i) & "_range")} csp_to
+  *set csp_i + 1
+  *goto combat_slip_player_past_loop
+*gosub combat_sync_enemy_positions_from_legacy_ranges
+*temp csp_a 1
+*label combat_slip_player_past_ally_loop
+*if (csp_a <= combat_ally_slot_cap)
+  *temp csp_ahp {(("combat_ally" & csp_a) & "_hp")}
+  *if (csp_ahp > 0)
+    *temp csp_apos {(("combat_ally" & csp_a) & "_position")}
+    *gosub combat_lane_move_ally_to_position csp_a 0 csp_apos
+  *set csp_a + 1
+  *goto combat_slip_player_past_ally_loop
+*set combat_move_touched_difficult_terrain false
 *return
 
 *label combat_shift_target_range

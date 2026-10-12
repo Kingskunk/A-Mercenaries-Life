@@ -829,6 +829,30 @@ ${combat_player_dmg_roll_banner}
 *comment Inputs: raa_a_slot (1-4, which combat_allyN_*), raa_e_slot (1-6, which combat_enemyN_* it's attacking)
 *comment Outputs: combat_ally_atk_hit, combat_ally_dmg_dealt; combat_enemyN_hp is reduced directly
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label combat_attack_edge
+*comment ADVANTAGE FROM THE TARGET (2026-10-12): the one place that answers "does the thing being attacked give this attack advantage?", for every kind of attacker. The player's roll (combat.txt combat_hidden_attack_roll) and an ally's (resolve_ally_attack below) both ask it, so a new way
+*comment to gain advantage is one rule here and every attacker has it. Inputs: the distance between attacker and target in range tiers, the target's enemy slot, and a tag for the kind of attack ("" for an ordinary one; "fire" will be tested here once fire attacks are wired).
+*comment Outputs combat_edge_adv and combat_edge_label. Rules so far: a prone target (grease), when the attacker is at Close or Engaged range. Disadvantage stays with each caller (reach and range penalties); the caller cancels the two as it already does.
+*params cae_distance cae_slot cae_tag
+*set combat_edge_adv false
+*set combat_edge_label ""
+*temp cae_prone {(("combat_enemy" & cae_slot) & "_prone")}
+*if ((cae_prone) and (cae_distance <= 1))
+  *set combat_edge_adv true
+  *set combat_edge_label "Prone"
+*comment A restrained target (Ensnaring Strike) is easy to hit from anywhere, for as long as the vines hold.
+*temp cae_restrained {(("combat_enemy" & cae_slot) & "_restrained_until")}
+*if ((cae_restrained > 0) and (cae_restrained >= combat_round))
+  *set combat_edge_adv true
+  *set combat_edge_label "Restrained"
+*comment Grease is fuel: a fire attack (tag "fire": Fire Bolt, Alchemist's Fire) on a creature still slick with it has advantage at any distance.
+*temp cae_greased {(("combat_enemy" & cae_slot) & "_greased")}
+*if ((cae_tag = "fire") and (cae_greased > 0))
+  *set combat_edge_adv true
+  *if (combat_edge_label = "")
+    *set combat_edge_label "Greased"
+*return
+
 *label resolve_ally_attack
 *params raa_a_slot raa_e_slot
 *temp raa_ap (("combat_ally" & raa_a_slot) & "_")
@@ -896,6 +920,19 @@ ${combat_player_dmg_roll_banner}
     *if (raa_roll_2 < raa_roll)
       *set raa_roll raa_roll_2
     *set raa_adv_label " (Disadvantage — in reach)"
+  *comment Advantage from the target (a prone enemy, combat_attack_edge): it takes the better of two d20s, and cancels the in-reach disadvantage above if both apply.
+  *gosub combat_attack_edge raa_range raa_e_slot ""
+  *if (combat_edge_adv)
+    *if (raa_ranged_pinned)
+      *comment Advantage and disadvantage cancel: one plain d20, so the lower of the two dice rolled above is thrown away.
+      *rand raa_roll 1 20
+      *set raa_adv_label ""
+    *else
+      *temp raa_roll_3 0
+      *rand raa_roll_3 1 20
+      *if (raa_roll_3 > raa_roll)
+        *set raa_roll raa_roll_3
+      *set raa_adv_label " (Advantage — ${combat_edge_label})"
   *set combat_high_ground_attack_bonus 0
   *set combat_high_ground_attack_label ""
   *if ((raa_weapon = "ranged") and (not(raa_knifed)))

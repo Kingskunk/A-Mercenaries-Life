@@ -468,6 +468,23 @@ window.INVENTORY = {
       badge: function (s) { return s.equipped_feet_id === "wooden_clogs" ? "Worn" : "Stowed"; },
       equip: { slot: "feet", id: "wooden_clogs" }
     },
+    {
+      id: "grease_flask", category: "consumables", owned: "has_grease_flask",
+      name: function (s) { var n = 1 + (Number(s.spare_grease_flask) || 0); return "Grease Flask" + (n > 1 ? " ×" + n : ""); },
+      description: "Stoppered clay flask of rendered tallow and pitch-oil, for throwing.",
+      badge: "Thrown: a foe that fails a Dex save slips when it moves"
+    },
+    {
+      id: "alchemists_fire", category: "consumables", owned: "has_alchemists_fire",
+      name: function (s) { var n = 1 + (Number(s.spare_alchemists_fire) || 0); return "Alchemist's Fire" + (n > 1 ? " ×" + n : ""); },
+      description: "Sealed glass flask of a sticky mixture that catches fire in open air.",
+      badge: "Thrown: 1d4 fire, then burns for 3 turns"
+    },
+    {
+      id: "herbalists_kit", category: "provisions", owned: "has_herbalists_kit",
+      name: function (s) { var n = 1 + (Number(s.spare_herbalists_kit) || 0); return "Herbalist's Kit" + (n > 1 ? " ×" + n : ""); },
+      description: "Waxed-canvas satchel of phials, a mortar, pressed herbs and a needle, for treating wounds."
+    },
     // GEN:END gear_items
     // ---- weapons ----
 

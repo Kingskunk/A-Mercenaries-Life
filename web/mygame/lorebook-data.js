@@ -524,11 +524,32 @@
             out.push("For twenty-two years he was master of the Patient Heron, a grain barge on the Grey. He loaded at the weir, ran the gorge, and tied up at the Port Valen quays with the hold dry and the count true. Two autumns ago a swell in the gorge shifted a wheat cargo and spoiled the hold from the keel boards up. The Scales' weigh-masters condemned the share, and every seal they stamped was true. Spoiled grain is bonded grain, and bonded grain that fails takes the boat with it. He signed his last paper as a boat owner and his first as a hired floor-keeper in the same season. He keeps his chalk honest now because it is the one thing on the loft floor that is still entirely his.");
           }
           if (truthy(s.quest_chapel_flour_offered)) {
-            out.push("Sacks with torn weave or rodent sign count as uncertified. Factor Morzan marks them dock spoilage, and by morning the clerks sweep them into the silt chute. For seasons Bran has carried those condemned sweepings up the cliff stairs to the weavers at the Old Chapel, ahead of the morning count. Their families are boiling nettle broth and need sound rye more than the silt chute does. The Scales would ask questions if they caught him, and this year his spine has quit carrying the argument. So the favor he offers you is a thirty-pound sack of sound rye and a warning to move quietly.");
+            out.push("Sacks with torn weave or rodent sign count as uncertified. Factor Morzan marks them dock spoilage, and by morning the clerks sweep them into the silt chute. For seasons Bran has carried those condemned sweepings up the cliff stairs to the weavers at the Old Chapel, ahead of the morning count. Their families are boiling nettle broth and need sound rye more than the silt chute does. The Scales would ask questions if they caught him, and he no longer trusts his spine to carry the argument. So the favor he offers you is a thirty-pound sack of sound rye and a warning to move quietly.");
           }
           return out;
         },
         see: ["morzan", "orlov", "corbel", "alderford"]
+      },
+      {
+        id: "edda_cale", category: "people", title: "Edda Cale",
+        sub: "Commonwarden of Whitefold",
+        role: "Commonwarden, Whitefold Common",
+        link: ["Edda Cale", "Commonwarden Cale"],
+        tags: ["Alderford", "Whitefold"], aliases: ["Edda", "Cale", "Commonwarden", "Whitefold Common"],
+        unlock: "wf_common_seen",
+        body: function (s) {
+          var out = [
+            "A sheep-holder with a heavy grey braid, a wind-burned face, and a plain wool coat carefully mended at the cuffs. She holds the Commonwarden's chair in the small meeting room beside Whitefold's shared Fleecefold."
+          ];
+          if (truthy(s.wf_common_asked_rule)) {
+            out.push("Whitefold's Common has four seats: the upper folds, the lower folds, the quarry and kilns, and the houses that live by the road. When a seat falls vacant, its people choose another voice. The four choose one of themselves as Commonwarden. The chair carries the Common's word, keeps the meeting moving, and breaks a tied vote.");
+          }
+          if (truthy(s.wf_common_asked_alderford)) {
+            out.push("The Common decides its pasture, wells, walls and lanes. Contracts, weights and payments that leave the village pass through Alderford's Factor's Hall. A killing, a broken road agreement, or any dispute Whitefold cannot contain goes down to Alderford.");
+          }
+          return out;
+        },
+        see: ["alderford", "gilded_scales"]
       },
 
       /* ------------------------------------------------------------ PEOPLE: KARR */

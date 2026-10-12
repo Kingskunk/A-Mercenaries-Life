@@ -88,6 +88,16 @@
 *set {(aab_p & "flee_hp_pct")} combat_behavior_flee_hp_pct
 *return
 
+*label assign_enemy_reach
+*comment REACH CLASS of a ranged enemy (2026-10-12, the user's call): how far its weapon shoots, written straight to the slot's durable combat_enemyN_reach (long unless a type below says otherwise). A slinger is medium, so it cannot
+*comment hit from the far end of the lane and must close; an archer is long. See combat_movement.txt combat_reach_tier for what the class names mean and combat.txt combat_next_turn for the enemy closing into reach.
+*params aer_slot aer_type
+*temp aer_class "long"
+*if (aer_type = "slinger")
+  *set aer_class "medium"
+*set {(("combat_enemy" & aer_slot) & "_reach")} aer_class
+*return
+
 *label assign_enemy_size
 *params aes_slot aes_type
 *temp aes_size "medium"
@@ -308,6 +318,7 @@
   *gosub apply_type_beast
 *gosub assign_enemy_behavior_profile combat_apply_slot combat_apply_type
 *gosub assign_enemy_size combat_apply_slot combat_apply_type
+*gosub assign_enemy_reach combat_apply_slot combat_apply_type
 *comment Which library type fills this slot. fight_narrate_enemy_turn reads the slot's hit, miss and move-2 prose from
 *comment flavor_from_type by this id, so each type's lines are written once (flavor_type_<name>), not once per slot.
 *comment Which library type fills this slot, for any slot, via indirection (fight_narrate_enemy_turn reads it

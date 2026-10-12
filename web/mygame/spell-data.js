@@ -52,6 +52,7 @@
     { id: "detect_magic",       name: "Detect Magic",       level: 1, schools: "Divination" },
     { id: "disguise_self",      name: "Disguise Self",      level: 1, schools: "Illusion" },
     { id: "dissonant_whispers", name: "Dissonant Whispers", level: 1, schools: "Enchantment" },
+    { id: "ensnaring_strike", name: "Ensnaring Strike", level: 1, schools: "Conjuration" },
     { id: "false_life",         name: "False Life",         level: 1, schools: "Necromancy" },
     { id: "feather_fall",       name: "Feather Fall",       level: 1, schools: "Transmutation" },
     { id: "healing_word",       name: "Healing Word",       level: 1, schools: "Evocation" },

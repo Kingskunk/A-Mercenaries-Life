@@ -159,6 +159,16 @@ ${fsh}
 *comment a spell slot instead. Moving a mark whose creature dropped (combat_hm_orphaned, set when the hub opened) costs nothing. The extra damage itself is added in resolve_player_weapon_hit.
 *comment Replay-locked with the other single-cast spells (combat_cast_locked).
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment ENSNARING STRIKE (2026-10-12): the cast only arms it and spends the slot; combat.txt combat_ensnare_apply fires it on the next weapon hit. Ten rounds is the whole spell, the same flat stand-in for concentration Hunter's Mark uses.
+*label resolve_cast_ensnaring_strike
+*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
+  *set ranger_spell_slots - 1
+  *set ensnaring_armed true
+  *set ensnaring_expires_round (combat_round + 9)
+  *set combat_cast_locked true
+  *set locked_combat_cast_page_id page_id
+*return
+
 *label resolve_cast_hunters_mark
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
   *if (not(combat_hm_orphaned))
@@ -261,6 +271,54 @@ ${combat_player_dmg_roll_banner}
 *comment stand-in for concentration (nothing here tracks concentration, as with Bane). A frightened enemy attacks with disadvantage and will not close the distance, and it repeats its Wisdom save at
 *comment the end of each of its turns, ending the fear on a success (combat_next_turn, combat.txt). Costs a slot of the caster's own pool. Replay-locked (combat_cast_locked).
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment THROWN ITEMS (2026-10-12): resolve_throw_item, called by combat.txt fight_throw_item after it has picked and ranged the target (combat_active_target). The flask is used up here, inside the combat_cast replay lock, with the roll; the narration reads what was stored.
+*comment The target makes a Dexterity saving throw against 8 + proficiency + the thrower's Dexterity modifier (spell_save_dc is borrowed for the roll and put back). The grease flask: a failed save leaves the creature slick for two attempts to move or four rounds, whichever comes first
+*comment (combat_grease_gate, combat.txt); a passed save, the flask bursts on the ground. A later thrown item adds its own branch here.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_throw_item
+*params rti_item
+*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
+  *gosub_scene equipment spend_consumable rti_item
+  *temp rti_p (("combat_enemy" & combat_active_target) & "_")
+  *temp rti_old spell_save_dc
+  *set spell_save_dc ((8 + prof_bonus) + dex_mod)
+  *set combat_throw_dc spell_save_dc
+  *set combat_throw_name combat_enemy_name
+  *set combat_throw_epithet combat_enemy_epithet
+  *rand combat_throw_v 1 3
+  You pull the stopper with your teeth and hurl the flask at ${combat_enemy_epithet}.
+  *line_break
+  *gosub_scene combat_dice resolve_enemy_save rti_p "dexterity" "Dexterity" combat_active_target
+  *set spell_save_dc rti_old
+  *set combat_throw_failed check_success
+  *if (rti_item = "grease_flask")
+    *if (check_success)
+      *set {(rti_p & "greased")} 2
+      *set {(rti_p & "grease_until")} (combat_round + 4)
+  *set combat_cast_locked true
+  *set locked_combat_cast_page_id page_id
+*if (combat_throw_failed)
+  *if (combat_throw_v = 1)
+    The flask bursts on ${combat_throw_epithet}'s legs, and thick yellow grease runs down to the ground and spreads under their feet.
+  *if (combat_throw_v = 2)
+    The clay breaks across ${combat_throw_epithet}'s shins and the grease pours out over the ground around it. Every step is going to be a gamble now.
+  *if (combat_throw_v = 3)
+    It lands square. The flask bursts and a fat slick of grease spreads out under ${combat_throw_epithet}.
+  *line_break
+  [b][🧴 ${combat_throw_name} is slicked with grease: if it tries to move, it must pass a DC 10 Dexterity check or fall prone][/b]
+*else
+  *if (combat_throw_v = 1)
+    ${combat_throw_name} leaps clear, and the flask bursts on the ground behind it, spreading grease where nothing stands.
+  *if (combat_throw_v = 2)
+    The flask goes wide, and the grease it spills soaks harmlessly into the ground.
+  *if (combat_throw_v = 3)
+    ${combat_throw_name} twists out of the way, and the flask smashes on the ground.
+  *line_break
+  [b][💨 ${combat_throw_name} avoids the grease (DC ${combat_throw_dc})][/b]
+*line_break
+*return
+
 *label resolve_cast_cause_fear
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
   *if (character_class = "wizard")

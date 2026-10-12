@@ -291,7 +291,7 @@ A guard lowers his halberd across the arch as you approach. "Writ," he says. You
 *line_break
 [b][⏳ Patrician Quarter Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
 *line_break
-Past the inner gatehouse, the avenue runs straight and wide between great houses, each a block of pale stone behind an iron-studded gate, with a courtyard behind it and rows of tall windows above. Walled estates with their own gates climb the slope behind them. A stair of shallow steps at the head of the avenue climbs to a tree-lined promenade, and a gilt needle threaded with red silk hangs over a narrow shopfront near the gatehouse. The air smells of beeswax, cut lavender, and cold stone.
+Past the inner gatehouse, the avenue runs straight and wide between great houses, each a block of pale stone behind an iron-studded gate, with a courtyard behind it and rows of tall windows above. Walled estates with their own gates climb the slope behind them. A stair of shallow steps at the head of the avenue climbs to a tree-lined promenade. Near the gatehouse, a gilt needle threaded with red silk hangs over one narrow shopfront, a brass lamp over another shines above a window full of books, and a small faceted stone catches the light above a third door. The air smells of beeswax, cut lavender, and cold stone.
 
 *gosub pq_sky
 
@@ -380,6 +380,44 @@ Past the inner gatehouse, the avenue runs straight and wide between great houses
       A card in the bow-glass window reads: [i]"The Gilt Needle. Idris Fenwick, Tailor to the Quarter. Fittings by Appointment, Seventh Bell to the Evening Horn. Closed on Hallowday."[/i]
       *set pq_tailor_named true
       *page_break Step back from the door…
+      *goto pq_avenue
+  *if (pq_shop_open)
+    *if ((pq_ink_lamp_seen) or (pq_ink_lamp_named))
+      # The Ink & Lamp: Aldren Saye, bookseller. [~5 min]
+        *set minutes_to_pass 5
+        *set time_advance_call_id "pq_walk_ink_lamp_1"
+        *gosub pq_walk_time
+        *goto pq_ink_lamp
+    *else
+      # Step into the bookshop beneath the brass lamp. [~5 min]
+        *set minutes_to_pass 5
+        *set time_advance_call_id "pq_walk_ink_lamp_1"
+        *gosub pq_walk_time
+        *goto pq_ink_lamp
+  *else
+    # Read the card below the bookshop's brass lamp.
+      The card behind the glass reads: [i]"The Ink & Lamp. Aldren Saye, Bookseller. Books, charts, copies, and licensed scrollwork. Open from the seventh bell to the evening horn. Closed on Hallowday."[/i]
+      *set pq_ink_lamp_named true
+      *page_break Step back from the window...
+      *goto pq_avenue
+  *if (pq_shop_open)
+    *if ((pq_bright_setting_seen) or (pq_bright_setting_named))
+      # The Bright Setting: Cassia Rell, jeweler. [~5 min]
+        *set minutes_to_pass 5
+        *set time_advance_call_id "pq_walk_bright_setting_1"
+        *gosub pq_walk_time
+        *goto pq_bright_setting
+    *else
+      # Step into the shop beneath the faceted-stone sign. [~5 min]
+        *set minutes_to_pass 5
+        *set time_advance_call_id "pq_walk_bright_setting_1"
+        *gosub pq_walk_time
+        *goto pq_bright_setting
+  *else
+    # Read the card beneath the faceted-stone sign.
+      The card inside the shuttered window reads: [i]"The Bright Setting. Cassia Rell, Jeweler. Rings, chains, stones, repairs, and fair weights. Open from the seventh bell to the evening horn. Closed on Hallowday."[/i]
+      *set pq_bright_setting_named true
+      *page_break Step back from the window...
       *goto pq_avenue
   # [b]The Inner Gate[/b]: where the gate-captain sits. [~5 min]
     *set minutes_to_pass 5
@@ -588,6 +626,107 @@ A long promenade of pale paving runs along the crest of the ridge, edged on the 
 *comment Morning through Afternoon: a trade can run the clock past that, so every trade exit ends in pq_tailor_after,
 *comment which hands over to the avenue once the shop has closed. Boots and gloves gained their weather traits in the
 *comment same pass; older worn pieces are grandfathered into the same table. Fenwick's voice is exact and dry.
+
+*comment THE INK & LAMP (BOOKSELLER AND FUTURE SCROLL SHOP)
+*comment The stock is deliberately established before books and scrolls become purchasable inventory. When those
+*comment systems exist, their menu belongs at pq_ink_lamp_stock; the location and Aldren's identity need no rewrite.
+*label pq_ink_lamp
+*temp pq_ink_lamp_first false
+*if (not(pq_ink_lamp_seen))
+  *set pq_ink_lamp_first true
+*set pq_ink_lamp_seen true
+[b]◈ THE INK & LAMP[/b]
+*line_break
+A bell over the door gives one dry note as you enter. The shop is narrow and deep, with books rising in dark shelves to a plaster ceiling crossed by old water stains. A long counter divides the front from a worktable crowded with a press, pots of ink, folded maps, and a brass frame holding a magnifying glass. Behind it, a tall glass cabinet has three locks and a small brass plate: [i]"Licensed Scrollwork. Ask at Counter."[/i] Paper, lamp oil, and warm dust fill the air.
+
+*if (weather_wet)
+  Rain ticks on the high window and turns the street beyond it into a moving grey blur.
+*elseif (weather_cold)
+  The front window holds a faint bloom of breath-fog at its corners, and a small coal stove clicks behind the counter.
+*elseif (time_period = "Morning")
+  Low light comes through the front glass and catches in the gold leaf on several book spines.
+*elseif (time_period = "Afternoon")
+  The sun has moved past the window, leaving the back shelves in the amber pool of two shaded lamps.
+*else
+  Clear midday light reaches the worktable and shows every grain in its scarred wood.
+*if ((ground_state = "wet") and (not(weather_wet)))
+  The stone threshold still holds a dark half-moon of tracked-in damp.
+*elseif ((ground_state = "sodden") and (not(weather_wet)))
+  Damp has crept under the door and darkened the mat inside the threshold.
+
+*if (pq_ink_lamp_first)
+  A lean man with close-cropped black hair and a narrow pale scar across one thumb sits at the worktable. He holds a brass stylus over a sheet of scraped parchment; a line of faded ink lifts from the page, sharpens, and settles again under the lens. He notices you watching and lays the stylus down.
+
+  "Aldren Saye," he says. "Books, charts, copied contracts. The cabinet holds scrollwork. Tell me what you need before you handle any of it."
+*else
+  Aldren works at the table with a book held open under the brass lens. The locked cabinet stands behind him.
+
+*choice
+  # Browse the shelves.
+    The front shelves hold road guides, tide tables, house histories, law books, and slim primers with their titles written by hand. The higher shelves are kept for copied records and older works with cracked leather covers. Price slips wait beneath the books, but the stock is too varied to buy by a glance and Aldren keeps the counter between you and the rarer shelves.
+    *page_break Step back from the shelves...
+    *goto pq_ink_lamp
+  *if (not(pq_ink_lamp_talk_scrolls))
+    # Ask about the locked scroll cabinet.
+      *set pq_ink_lamp_talk_scrolls true
+      You nod toward the three locks. "What makes a scroll need all that?"
+
+      Aldren turns the brass plate with one finger until it hangs straight. "A bad copy can burn a hand, break a window, or do nothing at all after taking a month's wages. A good one is worth more than paper and ink." He meets your eyes. "I test what I sell. When I have something fit to sell, the card goes in the window."
+      *page_break Step back from the counter...
+      *goto pq_ink_lamp
+  # Leave the shop.
+    *goto pq_avenue
+
+*comment THE BRIGHT SETTING (JEWELER AND APPRAISER)
+*comment Cassia's shop establishes Port Valen's jeweler before ordinary jewelry has a clean, generic ring-and-pendant
+*comment inventory system. Rings already use bespoke power-item logic, so the counter does not pretend that display
+*comment stock is equipment until that system is extended deliberately.
+*label pq_bright_setting
+*temp pq_bright_setting_first false
+*if (not(pq_bright_setting_seen))
+  *set pq_bright_setting_first true
+*set pq_bright_setting_seen true
+[b]◈ THE BRIGHT SETTING[/b]
+*line_break
+The shop is no wider than its front window, but every surface is made to catch the light. A felt-covered counter runs beneath a glass case of rings, brooches, chains, and small carved stones. At the rear, a bench holds tiny files, a charcoal brazier, iron tongs, a cup of cloudy rinse water, and a balance so fine its beam scarcely seems to move. A black touchstone rests beside it, streaked with pale lines of metal. The room smells of warm wax, charcoal, and the faint metallic tang left after rain.
+
+*if (weather_wet)
+  Rain freckles the front glass and breaks the street outside into wavering strips of slate and gold.
+*elseif (weather_cold)
+  A narrow charcoal brazier gives off a steady dry warmth, while the window clouds at its corners.
+*elseif (time_period = "Morning")
+  Morning light reaches the counter at a slant, waking small hard flashes in the glass case.
+*elseif (time_period = "Afternoon")
+  The direct light has left the window, and shaded lamps give the cases a close amber glow.
+*else
+  Clear midday light falls squarely through the front glass and turns every polished edge bright.
+*if ((ground_state = "wet") and (not(weather_wet)))
+  A dark crescent of tracked-in damp has dried only halfway across the threshold.
+*elseif ((ground_state = "sodden") and (not(weather_wet)))
+  Damp has worked beneath the door and left the mat dark at its edge.
+
+*if (pq_bright_setting_first)
+  A broad-shouldered woman with copper-brown skin, cropped black curls, and a magnifying loupe braced before one dark eye sits at the rear bench. She eases a thin gold chain from a pair of tongs, studies the join, and looks up without removing the loupe.
+
+  "Cassia Rell," she says. "I make rings, mend chains, test stones, and weigh metal. Tell me what you need before you touch the cases."
+*else
+  Cassia works at the rear bench with the loupe in one eye and a fine chain laid across the felt.
+
+*choice
+  # Look over the display cases.
+    Plain silver bands sit in a neat row beside engraved signets, while the finer case holds worked gold, pearl drops, dark red garnets, and chainwork thin enough to knot around a fingertip. Nothing is piled. Each piece has its own small card, set square to the felt, and the repair work is kept apart from the goods for sale.
+    *page_break Step back from the cases...
+    *goto pq_bright_setting
+  *if (not(pq_bright_setting_talk_appraisal))
+    # Ask Cassia about the black touchstone.
+      *set pq_bright_setting_talk_appraisal true
+      You gesture toward the streaked stone beside the balance. "Can that tell you what a piece is worth?"
+
+      Cassia turns the stone so its rubbed face catches the lamp. "It tells me what the metal is likely to be, and whether a bright surface is only plating. The loupe tells me what a stone has suffered. The scale tells me what is actually there." She sets it down. "I can give you a price this shop will stand behind. I don't certify magic, and I don't settle who has the right to sell a thing. Those are other people's trades."
+      *page_break Step back from the bench...
+      *goto pq_bright_setting
+  # Leave the shop.
+    *goto pq_avenue
 
 *label pq_tailor
 *temp pq_tailor_first false

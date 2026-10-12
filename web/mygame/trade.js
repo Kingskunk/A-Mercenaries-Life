@@ -50,7 +50,10 @@
     return 1 + (it.stack ? Math.max(0, num(s["spare_" + id])) : 0);
   }
 
-  // What ONE unit fetches from this trade's buyer. Mirrors equipment.txt gear_unit_value (floor of retail * pct).
+  // The percent a buyer pays this player above the base price: the game's own number (equipment.txt sell_bonus_percent writes it each time it quotes a price), never worked out here.
+  function sellBonus() { return Math.max(0, num(statsNow().sell_bonus_pct)); }
+
+  // What ONE unit fetches from this trade's buyer. Mirrors equipment.txt gear_unit_value (floor of retail * pct, then the sell bonus).
   function unitPrice(id, buyer) {
     var it = data().items[id];
     if (!it) return 0;
@@ -60,6 +63,8 @@
     if (buyer === "pawn" && sl.pawnFixed > 0) v = sl.pawnFixed;
     if (buyer === "smith" && sl.smithPiece > 0) v = sl.smithPiece;
     if (buyer === "herbalist") v = sl.herbalistPiece > 0 ? sl.herbalistPiece : 0;
+    var b = sellBonus();
+    if (b > 0) v = Math.floor((v * (100 + b) + 50) / 100);   // to the nearest copper, half up, as equipment.txt does
     return v;
   }
 
@@ -251,6 +256,7 @@
       });
     } else {
       if (!sells.length) html = '<div class="trd-empty">You have nothing this buyer wants.</div>';
+      else if (sellBonus() > 0) html += '<div class="trd-bonus">Your Charisma earns you ' + sellBonus() + '% more on everything you sell.</div>';
       sells.forEach(function (r) {
         var it = data().items[r.id], qty = cart.sell[r.id] || 0, worn = isWorn(r.id, s);
         var note = "";

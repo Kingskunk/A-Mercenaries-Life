@@ -71,6 +71,9 @@ const MAP = {
 
   // ---- consumables and tools
   potion: "POT_Potion_of_Healing_Unfaded_Icon.png",
+  grease: "GRN_Grease_Bottle_Unfaded_Icon.png",
+  herbal_kit: "Herbalist_kit.png",
+  alch_fire: "GRN_Alchemist's_Fire_Unfaded_Icon.png",
   elixir: "ELX_Elixir_of_Darkvision_Unfaded_Icon.png",
   salve: "Clutter_Bottle_Small_Flowers_Unfaded_Icon.webp",
   bandage: "Bed_Linen_Unfaded_Icon.png",
@@ -80,7 +83,7 @@ const MAP = {
   lantern: "Lantern_Weapon_Unfaded_Icon.png",
   oil: "Cup_of_Oil_Item_Icon.png",
   toolkit: "Trap_Disarm_Toolkit_Unfaded_Icon.png",
-  lute: "../Action/Perform_Lute_Unfaded_Icon.webp",
+  lute: "Equipment/Instrument/Instrument_Lute_Unfaded_Icon.png",
   lockpicks: "Thieves_Tools_Unfaded_Icon.png",
   key: "Key_Iron_A_Icon.png",
   tool: "Blacksmith's_Tongs_Unfaded_Icon.png",                  // STAND-IN: prybar, manacles, bolt and any other hand tool
@@ -98,9 +101,10 @@ const MAP = {
 
   // ---- provisions, papers and everything else
   food: "FOOD_Dried_Rope_Sausage_Unfaded_Icon.png",
+  rations: "Consumable/Camp_supply/Heavy_Supply_Pack_Unfaded_Icon.png",
   fish: "Bucket_of_Fish_Unfaded_Icon.png",
   sack: "Camp_Supply_Sack_Unfaded_Icon.png",
-  mount: "../Generic/Generic_Wild_Animal_Icon.webp",           // STAND-IN: the horse, until there is art of one
+  mount: "Miscellaneous_item/Horse.png",
   jug: "Ceramic_Jug_A_Unfaded_Icon.png",
   note: "Book_Note_A_Item_Icon.png",
   letter: "Book_Parchment_A_Item_Icon.png",

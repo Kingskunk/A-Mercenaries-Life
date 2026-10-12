@@ -532,10 +532,18 @@ Inside the entry hall, the wide fir floorboards are scrubbed pale and smell of b
         *page_break Step back toward the stairs…
         *goto mw_lodgings_menu
 
-  # "Who else lives in these rooms, Mistress Kess?"
-    Mistress Kess rests her hands flat on the open record book. "Orderly folk. An engraver from the mint on the second floor, two journeymen clerks from the customs wharf, and Master Vael's senior apprentice. Everyone minds their own latch, pays on the day, and keeps the noise down after the ninth bell. I expect the same from you."
-    *page_break "Understood."…
-    *goto mw_lodgings_menu
+  *if (not(mw_kess_tenants_talk))
+    # Ask who shares the house.
+      *set mw_kess_tenants_talk true
+      You glance toward the quiet staircase. "Who shares the house?"
+
+      Kess lays her quill across the open book. "People who don't require an audience. An engraver from the mint on the second floor, two customs clerks, and Vael's senior apprentice. They keep their own latches, pay on the day, and keep the noise down after the ninth bell."
+
+      You nod toward the stairs. "Quiet suits me."
+
+      "Then you'll suit the house," Kess says, and takes up her quill again.
+      *page_break Step back from the desk…
+      *goto mw_lodgings_menu
 
   # Step back out into the Locksmiths' Close.
     *goto mw_locksmiths_close
@@ -928,6 +936,7 @@ You turn the key twice in the lock and step into your room. Directly beneath the
 *set sleep_location_id "terrace_lodgings"
 *set sleep_is_shared false
 *set sleep_is_permanent_home true
+*set sleep_is_paid_inn false
 *set sleep_tier_name "none"
 *set sleep_tier_stat1 "none"
 *set sleep_tier_bonus1 0
@@ -1285,6 +1294,7 @@ You turn the iron key and step into a narrow room under the eaves at the back of
 *set sleep_location_id "wagoners_rest"
 *set sleep_is_shared false
 *set sleep_is_permanent_home false
+*set sleep_is_paid_inn true
 *set sleep_tier_name "none"
 *set sleep_tier_stat1 "none"
 *set sleep_tier_bonus1 0
@@ -1337,15 +1347,14 @@ You pour cold water from the jug into the tin basin and scrub the road mud, swea
 *comment ONE option onto the road (5 min, charged once outbound like every other walk); the hub holds the Wagoner's Rest,
 *comment the River Gate (north-west, the Grey River road north to the fork and Timbermouth) and the Charter Gate (east, the old imperial road and its High Grey branch,
 *comment named for the charter that made Port Valen free). Each gate is 10 more minutes from the hub, so 15 from the
-*comment square. Returns are free. Gates open at first bell (Morning), stand open through Dusk, shut at the night bell
-*comment (Night and Pre-Dawn) and leave only a wicket for anyone with a reason; latecomers sleep outside in the carters'
-*comment yards (pilgrims in the hospices) or come through the wicket to the inn.
+*comment square. Returns are free. The gates stay usable at every hour: after dark the broad leaves are drawn in partway,
+*comment traffic narrows under lanterns, and the Watch and Council clerks work a night shift.
 *comment Layers: place is constant; sky is shared (mw_road_sky, mw_gate_sky); street is who is about, by gate state
-*comment (open, dusk, shut) in a pool of three. The wardens are the Watch; the toll-clerks and measuring-rod officers
+*comment (open, dusk, night) in a pool of three. The wardens are the Watch; the toll-clerks and measuring-rod officers
 *comment are the Council's. Three lanes at each gate: foot, wheels, guild-stamped goods (stamped skips the weighing).
 *comment GATE HOOKS, not built: (1) tolls, the wicket fee and outbound travel at both gates once the player can leave
 *comment the city; (2) mount stabling (see the STABLE HOOK at the inn); (3) QUEST SLOT: Watch notices on each board.
-*comment Lorebook: trunk_road, river_gate, charter_gate, cobb_tarrow, ilse_dornwell.
+*comment Lorebook: trunk_road, river_gate, charter_gate.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label mw_gate_road
@@ -1379,11 +1388,11 @@ The trunk road runs through the ward as a broad paved way, cambered to the gutte
     A boy sprints down the middle of the road with a bundle of harness straps over his shoulder while a carter roars at him to get clear of the wheels.
 *elseif (road_state = "dusk")
   *if (road_roll = 1)
-    Wagons hurry in both directions, their drivers shouting for the yards that still have room, and runners call the closing bell's hour at every door.
+    Wagons hurry in both directions, their drivers shouting for the yards that still have room, and runners call the closing hour at every door.
   *elseif (road_roll = 2)
     Shutters bang down one after another while the cookshop fires roar, and a queue of hungry carters forms outside the busiest door.
   *else
-    A late train of ox-carts labors toward the north-west, the drivers plainly counting the streets left before the bell.
+    A late train of ox-carts labors toward the north-west, the drivers plainly counting the yards still open before the bell.
 *elseif (road_state = "night")
   *if (road_roll = 1)
     The road is quiet under its lanterns, and the only movement is a two-man Watch patrol rattling the shop doors with the butts of their spears.
@@ -1519,7 +1528,7 @@ The trunk road runs through the ward as a broad paved way, cambered to the gutte
 *set mw_river_gate_seen true
 *temp gate_state "open"
 *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
-  *set gate_state "shut"
+  *set gate_state "night"
 *elseif (time_period = "Dusk")
   *set gate_state "dusk"
 *temp gate_roll 1
@@ -1531,9 +1540,9 @@ The landward wall comes down the slope here in a line of grey blocks thirty feet
 *gosub mw_gate_sky
 
 *if (gate_first)
-  A wall warden in a Watch tabard stands at the foot of the left-hand tower, a stocky man with a broken nose and a tally-stick in one hand. "Cobb Tarrow, warden of the River Gate," he says as you stop. "Foot left, wheels right, stamped center. Don't stand in the middle unless you've a stamp."
+  Two Watch wardens work beneath the left-hand tower, one directing the foot lane with a staff while the other checks a drover's packs. A Council toll-clerk sits behind a raised desk beside the center lane, with another clerk carrying marked bills between the desk and the wagons.
 *else
-  Warden Tarrow stands at the foot of the left-hand tower with his tally-stick, watching the lanes.
+  The Watch detail and the Council clerks keep the lanes moving beneath the towers.
 
 *if (gate_state = "open")
   *if (gate_roll = 1)
@@ -1544,58 +1553,31 @@ The landward wall comes down the slope here in a line of grey blocks thirty feet
     Wall wardens stop a pair of drovers, glance into their packs, and let them pass with a nod, while a mule train waits its turn behind them.
 *elseif (gate_state = "dusk")
   *if (gate_roll = 1)
-    The queue thickens as the light fails. Drivers shout at each other to move up, and wardens walk the line calling that the bell will not wait for anyone.
+    The queue thickens as the light fails. Drivers shout at each other to move up, and wardens walk the line directing the last long wagons into the right-hand bay.
   *elseif (gate_roll = 2)
     Carts crowd the right-hand bay in a knot of wheels and curses, and a warden with a pole begins lighting the torches along the arch.
   *else
-    The last wagons rumble through as the wardens take their places at the great leaves, hands on the bars, watching the approach for stragglers.
+    The last long wagons rumble through as two wardens draw one great leaf inward, leaving the lit center lane clear for night traffic.
 *else
   *if (gate_roll = 1)
-    The great leaves are barred and chained. Outside, a line of carters' fires flickers beyond the arch, and a single lantern burns at the wicket in the left-hand leaf.
+    One great leaf stands drawn in against the arch, narrowing the passage beneath the towers. Lanterns hang above the remaining lanes, where a warden checks a driver's papers while another waves a pair of travelers through.
   *elseif (gate_roll = 2)
-    The gate is shut, with a warden pacing the walkway above and a second sitting beside the wicket with a lantern between his boots.
+    A warden paces the walkway above while two more work below beside the toll desk. A cart moves through the right-hand bay at a walk, its driver holding a lantern high for the clerk.
   *else
-    The wicket in the left-hand leaf stands ajar on a chain, and a toll-clerk in a fur-collared coat sits behind it, hearing a late traveler's case.
+    A Council clerk works by lanternlight at the center desk, while two wardens guide a mule train through the narrowed right-hand bay.
 
 *choice
   # Look up at the gatehouse and the wall.
-    The wall is thirty feet of grey blocks with a walkway along the top, and a warden paces it between the towers, looking down on the traffic on one side and out over the yards beyond the wall on the other. The great oak leaves of the gate hang on iron pins in the arch, banded in iron and studded with nails the size of thumbs.
+    The wall is thirty feet of grey blocks with a walkway along the top. Two wardens pace between the towers above, while below them another pair work the lanes beside the Council desk. The great oak leaves of the gate hang on iron pins in the arch, banded in iron and studded with nails the size of thumbs.
     *page_break Lower your gaze…
     *goto mw_river_gate
-  *if (not(mw_river_talk_lanes))
-    # Ask Warden Tarrow about the three lanes.
-      *set mw_river_talk_lanes true
-      Tarrow taps the carved legend with his tally-stick. "Foot left, wheels right, stamped center. A stamp is a Scales seal on the bill of lading, and stamped goods skip the weighing entirely." He jerks his chin at the officer with the measuring rod on the grain wagon. "Everyone else waits for the rod, and the rod takes its cut off the top of every load. The Council calls it the wall levy. The drivers call it other things." He shrugs. "I keep the lanes straight. What is in the wagons is the clerks' business."
-      *page_break "I see."…
-      *goto mw_river_gate
-  *if (not(mw_river_talk_bell))
-    # Ask Warden Tarrow about the closing bell.
-      *set mw_river_talk_bell true
-      "End of Dusk, the bell rings and the great leaves shut," Tarrow says. "Not one wagon after. First bell of morning, they open." He nods at the wicket in the left-hand leaf. "That stays open for anyone with a reason to be out or in: a sealed writ, a Watch chit, a physician's bag. The clerk behind it decides what counts as a reason, and his reasons come in silver." He spits neatly to one side. "Everybody else sleeps out with the carters and comes in with the morning."
-      *page_break "Good to know."…
-      *goto mw_river_gate
-  # Read the notices beside the toll-house.
-    *comment QUEST SLOT: Watch notices for this gate go here. Keep them lawful postings under city law, not a guild board.
-    A slate-roofed board beside the toll-house carries the wall's notices, tacked on in layers. [i]"BY ORDER OF THE PORT WATCH: No steel drawn within the wall. Carts keep to the right. Wagons left standing in the lane are hauled to the pound at the owner's cost. Wicket fees are posted at the toll-house."[/i] Beneath them, older notices have curled at the corners and gone the color of tea.
-    *page_break Step back from the board…
-    *goto mw_river_gate
-  *if (not(gate_state = "shut"))
-    # [b]The wagon yard[/b]: go out under the arch to the carters' yards. [~10 min]
-      *goto_scene port_valen/radiant/hall_escort es_arrive
-  *if (gate_state = "shut")
-    # [b]The wagon yard[/b]: the gate is shut until morning.
-      The great leaves are barred and chained, and a warden at the wicket shakes his head before you reach it. Out beyond the arch the carters' fires burn along the fences, but the yards stay out of reach until the morning bell.
-      *page_break Step back from the arch…
-      *goto mw_river_gate
-  *if (not(gate_state = "shut"))
-    # [b]The river road[/b]: leave the city by the River Gate.
-      *set ow_pos "pv"
-      *goto_scene overworld/overworld ow_here
-  *if (gate_state = "shut")
-    # [b]The river road[/b]: the gate is shut until morning.
-      The great leaves are barred and chained. A warden at the wicket shakes his head before you reach it, and makes it plain with a gesture at the sky that the gate opens again at the morning bell.
-      *page_break Step back from the arch…
-      *goto mw_river_gate
+  # [b]The wagon yard[/b]: go out under the arch to the carters' yards. [~10 min]
+    *goto_scene port_valen/radiant/hall_escort es_arrive
+  # [b]The river road[/b]: leave the city by the River Gate.
+    *set ow_pos "pv"
+    *goto_scene overworld/overworld ow_here
+  # Head back into the city.
+    *goto_scene port_valen/port_valen port_valen_travel
   # Walk back along the trunk road.
     *goto mw_gate_road
 
@@ -1606,21 +1588,21 @@ The landward wall comes down the slope here in a line of grey blocks thirty feet
 *set mw_charter_gate_seen true
 *temp gate_state "open"
 *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
-  *set gate_state "shut"
+  *set gate_state "night"
 *elseif (time_period = "Dusk")
   *set gate_state "dusk"
 *temp gate_roll 1
 *rand gate_roll 1 3
 [b]◈ THE CHARTER GATE[/b]
 *line_break
-Here the wall is newer and higher, faced in pale limestone, and the trunk road passes under a single great arch with an iron grate housed in the gallery above and heavy oak leaves hung from the towers. A legend is carved across the arch: [i]"By the Old Charter. Open at First Bell, Shut at the Night Bell."[/i] Beyond it the imperial road runs east, straight and paved, toward the Meridian country, with a line of pilgrim hospices and salt-factors' yards outside the wall. The air smells of salt, dust, and cold stone.
+Here the wall is newer and higher, faced in pale limestone, and the trunk road passes under a single great arch with an iron grate housed in the gallery above and heavy oak leaves hung from the towers. A legend is carved across the arch: [i]"By the Old Charter. Keep the Road Clear."[/i] Beyond it the imperial road runs east, straight and paved, toward the Meridian country, with a line of pilgrim hospices and salt-factors' yards outside the wall. The air smells of salt, dust, and cold stone.
 
 *gosub mw_gate_sky
 
 *if (gate_first)
-  A tall, grey-eyed woman in a blue-and-brass surcoat stands under the arch with a writ-board on her arm and her hair pinned tight beneath a steel cap. "Ilse Dornwell, warden of the Charter Gate," she says. "Writs open, hands where I can see them, and the salt wagons keep to the right."
+  Two Watch wardens work beneath the arch, one checking travelers' papers while the other directs a salt wagon to the right-hand bay. A Council clerk at a high desk compares bills of carriage, and a second clerk carries the marked sheets to the carts.
 *else
-  Warden Dornwell stands under the arch with her writ-board on her arm, reading each traveler as they come.
+  The Watch detail and Council clerks keep the arch clear beneath the gatehouse.
 
 *if (gate_state = "open")
   *if (gate_roll = 1)
@@ -1631,41 +1613,29 @@ Here the wall is newer and higher, faced in pale limestone, and the trunk road p
     A Council officer with a measuring rod works down a line of wine casks, tapping each one and chalking a mark that will cost somebody a coin.
 *elseif (gate_state = "dusk")
   *if (gate_roll = 1)
-    The queue lengthens as the sun drops. Drivers stand in their stirrups looking for a gap, and a warden walks the line calling the hour of the bell.
+    The queue lengthens as the sun drops. Drivers stand in their stirrups looking for a gap, and wardens sort carts into the side bay before the night detail takes over.
   *elseif (gate_roll = 2)
     A pilgrim party hurries the last stretch of road in a bunch, the oldest among them leaning hard on a staff and being urged along by the rest.
   *else
-    Wardens move to the great leaves and take hold of the bars, and the grate chains creak above the arch as the gallery crew tests the winch.
+    A night detail takes the bars and draws one oak leaf inward; the gallery crew tests the grate's winch above the arch.
 *else
   *if (gate_roll = 1)
-    The leaves are shut and the iron grate is down. A lantern burns at the wicket, and a warden sits beside it with a writ-board on her knee.
+    One oak leaf is drawn inward and the iron grate remains raised. Lanterns burn over the narrowed lanes, where a Watch warden and toll-clerk work side by side.
   *elseif (gate_roll = 2)
-    The gate is dark and shut, with a warden pacing the gallery above and the low glow of the hospice windows showing along the road outside.
+    The arch is narrow beneath its lanterns, with a warden pacing the gallery above and two more guiding a wine dray through the right-hand bay. The hospice windows glow along the road outside.
   *else
-    The wicket stands ajar, and a toll-clerk in a fur-collared coat questions a late traveler over a tally sheet while a warden watches from the shadow of the arch.
+    A toll-clerk checks papers by lanternlight while a warden keeps the foot lane moving beneath the shadow of the arch.
 
 *choice
   # Look up at the gatehouse and the wall.
-    The limestone of the wall is clean and sharp-edged, with a gallery of arrow slits above the arch and a walkway along the top where wardens pace in pairs. The iron grate is a lattice of iron shod with points, hung in the gallery on chains as thick as a man's wrist.
+    The limestone of the wall is clean and sharp-edged, with a gallery of arrow slits above the arch and a walkway along the top where wardens pace in pairs. Below, two more wardens and the Council clerks work the lanes beneath the arch. The iron grate is a lattice of iron shod with points, hung in the gallery on chains as thick as a man's wrist.
     *page_break Lower your gaze…
     *goto mw_charter_gate
-  *if (not(mw_charter_talk_charter))
-    # Ask Warden Dornwell about the carving over the arch.
-      *set mw_charter_talk_charter true
-      Dornwell nods up at the legend. "By the Old Charter. Meridian gave us the road and the right to keep our own gate, and it has been our gate ever since." Her mouth quirks. "Free means no crown sends us a garrison. It also means no crown sends us the money to run a wall, so the Council sends the bill to whoever comes under the arch."
-      *page_break "I see."…
-      *goto mw_charter_gate
-  *if (not(mw_charter_talk_pilgrims))
-    # Ask Warden Dornwell about the pilgrims.
-      *set mw_charter_talk_pilgrims true
-      "On feast days, half the road is pilgrims for the cathedral," Dornwell says. "They walk in through the left-hand lane, singing, and I leave them their lane and their songs. It is the salt and the wine that argue." She taps her writ-board. "The hospices outside the wall take them in when they come after the bell, so they never sleep on the road. Nobody else is so lucky."
-      *page_break "Good to know."…
-      *goto mw_charter_gate
-  # Read the notices beside the toll-house.
-    *comment QUEST SLOT: Watch notices for this gate go here. Keep them lawful postings under city law, not a guild board.
-    A slate-roofed board beside the toll-house carries the wall's notices in a tidy grid, each one pinned square. [i]"BY ORDER OF THE PORT WATCH: All writs shown at the arch. No steel drawn within the wall. Pilgrims keep to the left. Carts keep to the right. Wicket fees are posted at the toll-house."[/i] Someone has scratched a small wheel into the slate beneath the last line and been told off for it, judging by the scrubbed patch around it.
-    *page_break Step back from the board…
-    *goto mw_charter_gate
+  # [b]The High Grey Road[/b]: leave the city by the Charter Gate.
+    *set ow_pos "pv"
+    *goto_scene overworld/overworld ow_here
+  # Head back into the city.
+    *goto_scene port_valen/port_valen port_valen_travel
   # Walk back along the trunk road.
     *goto mw_gate_road
 
@@ -2044,7 +2014,7 @@ Inside, the store is deeper than the bay window suggests. Shelves run to the raf
   Master Hollis is behind the long counter, working down the chalk figures on his slate.
 
 *gosub mw_hollis_open_panel
-*temp hollis_has_sale ((((((has_hemp_rope) or (has_pitch_torch)) or ((has_lamp_oil) or (has_hooded_lantern))) or (((has_tinderbox) or (has_chalk_sticks)) or ((has_wool_blanket) or (has_waxed_oilcloth)))) or ((has_lye_soap) or (has_trail_rations))) or ((has_tool_kit) or (has_lute)))
+*temp hollis_has_sale ((((((has_hemp_rope) or (has_pitch_torch)) or ((has_lamp_oil) or (has_hooded_lantern))) or (((has_tinderbox) or (has_chalk_sticks)) or ((has_wool_blanket) or (has_waxed_oilcloth)))) or ((has_lye_soap) or (has_trail_rations))) or (((has_tool_kit) or (has_lute)) or (has_grease_flask)))
 
 *choice
   # Look over the shelves.
@@ -2101,6 +2071,7 @@ Inside, the store is deeper than the bay window suggests. Shelves run to the raf
 *temp gb_waxed_oilcloth ""
 *temp gb_lye_soap ""
 *temp gb_trail_rations ""
+*temp gb_grease_flask ""
 *gosub_scene equipment gear_buy_label "hemp_rope"
 *set gb_hemp_rope gear_label
 *gosub_scene equipment gear_buy_label "pitch_torch"
@@ -2125,6 +2096,8 @@ Inside, the store is deeper than the bay window suggests. Shelves run to the raf
 *set gb_lye_soap gear_label
 *gosub_scene equipment gear_buy_label "trail_rations"
 *set gb_trail_rations gear_label
+*gosub_scene equipment gear_buy_label "grease_flask"
+*set gb_grease_flask gear_label
 *comment GEN:END hollis_buy_labels
 You walk the shelves. Rope hangs in coils by thickness, from cord thin enough for a bootlace to rope thick as your wrist. Tin pots and pans are stacked by size, and folded blankets and rolls of oilcloth fill the lower racks. Pitch-dipped torches stand in a barrel by the door, hooded lanterns and canvas tool rolls hang from hooks over the counter, a lute hangs by its neck from a rafter, a jar of chalk sticks sits beside the till, and paper twists of lye soap and tin boxes of flint and steel line the counter. Waterskins, canvas sacks, needles and thread, and iron nails by the pound fill the rest. Every shelf has a chalk price marked on its edge.
 
@@ -2165,6 +2138,9 @@ You walk the shelves. Rope hangs in coils by thickness, from cord thin enough fo
     *goto mw_hollis_buy_do
   # ${gb_trail_rations}
     *set buy_item_id "trail_rations"
+    *goto mw_hollis_buy_do
+  # ${gb_grease_flask}
+    *set buy_item_id "grease_flask"
     *goto mw_hollis_buy_do
   *comment GEN:END hollis_buy_options
   # Step back to the counter.
@@ -2226,6 +2202,7 @@ Hollis pulls the slate toward him and clears a space on the counter. "Put it dow
 *temp gs_waxed_oilcloth ""
 *temp gs_lye_soap ""
 *temp gs_trail_rations ""
+*temp gs_grease_flask ""
 *if (has_hemp_rope)
   *gosub_scene equipment gear_sell_label "hemp_rope" "general"
   *set gs_hemp_rope gear_label
@@ -2262,6 +2239,9 @@ Hollis pulls the slate toward him and clears a space on the counter. "Put it dow
 *if (has_trail_rations)
   *gosub_scene equipment gear_sell_label "trail_rations" "general"
   *set gs_trail_rations gear_label
+*if (has_grease_flask)
+  *gosub_scene equipment gear_sell_label "grease_flask" "general"
+  *set gs_grease_flask gear_label
 *comment GEN:END hollis_sell_labels
 
 *choice
@@ -2313,6 +2293,10 @@ Hollis pulls the slate toward him and clears a space on the counter. "Put it dow
   *if (has_trail_rations)
     # ${gs_trail_rations}
       *set sell_item_id "trail_rations"
+      *goto mw_hollis_sell_do
+  *if (has_grease_flask)
+    # ${gs_grease_flask}
+      *set sell_item_id "grease_flask"
       *goto mw_hollis_sell_do
   *comment GEN:END hollis_sell_options
   # Take it all back off the counter.
@@ -2368,6 +2352,7 @@ Hollis turns the ${gear_sale_name} over once in the light, checks it for wear, a
 *gosub_scene equipment shop_row_add "waxed_oilcloth"
 *gosub_scene equipment shop_row_add "lye_soap"
 *gosub_scene equipment shop_row_add "trail_rations"
+*gosub_scene equipment shop_row_add "grease_flask"
 *comment GEN:END hollis_panel_rows
 *return
 
@@ -2387,6 +2372,7 @@ Hollis turns the ${gear_sale_name} over once in the light, checks it for wear, a
 *gosub_scene equipment shop_cart_sell "waxed_oilcloth"
 *gosub_scene equipment shop_cart_sell "lye_soap"
 *gosub_scene equipment shop_cart_sell "trail_rations"
+*gosub_scene equipment shop_cart_sell "grease_flask"
 *set gear_shop "hollis"
 *gosub_scene equipment shop_cart_buy "hemp_rope"
 *gosub_scene equipment shop_cart_buy "pitch_torch"
@@ -2400,6 +2386,7 @@ Hollis turns the ${gear_sale_name} over once in the light, checks it for wear, a
 *gosub_scene equipment shop_cart_buy "waxed_oilcloth"
 *gosub_scene equipment shop_cart_buy "lye_soap"
 *gosub_scene equipment shop_cart_buy "trail_rations"
+*gosub_scene equipment shop_cart_buy "grease_flask"
 *comment GEN:END hollis_cart_pass
 *return
 
@@ -2529,7 +2516,7 @@ Tucked behind the main lane, this stone dead-end is sheltered by cedar roofs and
   *if (not(mw_herb_seen))
     *set mw_herb_seen true
   *gosub mw_ambrose_open_panel
-  *temp ambrose_has_sale ((((frog_slime > 0) or (centipede_gland > 0)) or (viper_venom > 0)) or (grave_ichor > 0))
+  *temp ambrose_has_sale (((((frog_slime > 0) or (centipede_gland > 0)) or (viper_venom > 0)) or (grave_ichor > 0)) or ((has_alchemists_fire) or (has_herbalists_kit)))
 
   *choice
     # Look over the shelves.
@@ -2571,12 +2558,18 @@ Tucked behind the main lane, this stone dead-end is sheltered by cedar roofs and
 *temp ab_warming_liniment ""
 *temp ab_clear_head_draught ""
 *temp ab_linen_bandage ""
+*temp ab_alchemists_fire ""
+*temp ab_herbalists_kit ""
 *gosub_scene equipment gear_buy_label "warming_liniment"
 *set ab_warming_liniment gear_label
 *gosub_scene equipment gear_buy_label "clear_head_draught"
 *set ab_clear_head_draught gear_label
 *gosub_scene equipment gear_buy_label "linen_bandage"
 *set ab_linen_bandage gear_label
+*gosub_scene equipment gear_buy_label "alchemists_fire"
+*set ab_alchemists_fire gear_label
+*gosub_scene equipment gear_buy_label "herbalists_kit"
+*set ab_herbalists_kit gear_label
 *comment GEN:END ambrose_buy_labels
 Stoneware pots and stoppered bottles stand in rows on the counter, each with a slip of chalked slate against it. Two things sell better than the rest: a grey tallow for stiff joints, and an amber tonic for a foggy head. Ambrose sells each for a silver mark. A shallow basket at the end of the counter holds rolls of boiled linen, five copper bits apiece, for anyone who needs to bind a wound.
 
@@ -2590,6 +2583,12 @@ Stoneware pots and stoppered bottles stand in rows on the counter, each with a s
     *goto mw_ambrose_buy_do
   # ${ab_linen_bandage}
     *set buy_item_id "linen_bandage"
+    *goto mw_ambrose_buy_do
+  # ${ab_alchemists_fire}
+    *set buy_item_id "alchemists_fire"
+    *goto mw_ambrose_buy_do
+  # ${ab_herbalists_kit}
+    *set buy_item_id "herbalists_kit"
     *goto mw_ambrose_buy_do
   *comment GEN:END ambrose_buy_options
   # Step back from the counter.
@@ -2641,6 +2640,8 @@ Master Ambrose pushes his spectacles up his nose and clears a square of the coun
 *temp as_centipede_gland ""
 *temp as_viper_venom ""
 *temp as_grave_ichor ""
+*temp as_alchemists_fire ""
+*temp as_herbalists_kit ""
 *if (frog_slime > 0)
   *gosub_scene equipment gear_sell_label "frog_slime" "herbalist"
   *set as_frog_slime gear_label
@@ -2653,6 +2654,12 @@ Master Ambrose pushes his spectacles up his nose and clears a square of the coun
 *if (grave_ichor > 0)
   *gosub_scene equipment gear_sell_label "grave_ichor" "herbalist"
   *set as_grave_ichor gear_label
+*if (has_alchemists_fire)
+  *gosub_scene equipment gear_sell_label "alchemists_fire" "herbalist"
+  *set as_alchemists_fire gear_label
+*if (has_herbalists_kit)
+  *gosub_scene equipment gear_sell_label "herbalists_kit" "herbalist"
+  *set as_herbalists_kit gear_label
 *comment GEN:END ambrose_sell_labels
 
 *choice
@@ -2672,6 +2679,14 @@ Master Ambrose pushes his spectacles up his nose and clears a square of the coun
   *if (grave_ichor > 0)
     # ${as_grave_ichor}
       *set sell_item_id "grave_ichor"
+      *goto mw_ambrose_sell_do
+  *if (has_alchemists_fire)
+    # ${as_alchemists_fire}
+      *set sell_item_id "alchemists_fire"
+      *goto mw_ambrose_sell_do
+  *if (has_herbalists_kit)
+    # ${as_herbalists_kit}
+      *set sell_item_id "herbalists_kit"
       *goto mw_ambrose_sell_do
   *comment GEN:END ambrose_sell_options
   # Put them back in your satchel.
@@ -2714,6 +2729,8 @@ Master Ambrose weighs the ${gear_sale_name} in a brass pan, nods once, and count
 *gosub_scene equipment shop_row_add "warming_liniment"
 *gosub_scene equipment shop_row_add "clear_head_draught"
 *gosub_scene equipment shop_row_add "linen_bandage"
+*gosub_scene equipment shop_row_add "alchemists_fire"
+*gosub_scene equipment shop_row_add "herbalists_kit"
 *comment GEN:END ambrose_panel_rows
 *return
 
@@ -2725,10 +2742,14 @@ Master Ambrose weighs the ${gear_sale_name} in a brass pan, nods once, and count
 *gosub_scene equipment shop_cart_sell "centipede_gland"
 *gosub_scene equipment shop_cart_sell "viper_venom"
 *gosub_scene equipment shop_cart_sell "grave_ichor"
+*gosub_scene equipment shop_cart_sell "alchemists_fire"
+*gosub_scene equipment shop_cart_sell "herbalists_kit"
 *set gear_shop "ambrose"
 *gosub_scene equipment shop_cart_buy "warming_liniment"
 *gosub_scene equipment shop_cart_buy "clear_head_draught"
 *gosub_scene equipment shop_cart_buy "linen_bandage"
+*gosub_scene equipment shop_cart_buy "alchemists_fire"
+*gosub_scene equipment shop_cart_buy "herbalists_kit"
 *comment GEN:END ambrose_cart_pass
 *return
 

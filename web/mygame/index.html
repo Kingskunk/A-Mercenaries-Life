@@ -122,6 +122,11 @@ var rootDir = "../";
   color: var(--ch-dim);
   text-align: right;
 }
+
+#statSidebar .questLevelNote {
+  color: var(--ch-gold, #c9a35a);
+  font-style: normal;
+}
 #statSidebar .abilityGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1041,7 +1046,9 @@ button#statSidebar .turnRow,
     });
     if (activeQuests.length) {
       activeQuestHtml = "<div class=\"sbPanel\"><div class=\"shead\">" + (activeQuests.length > 1 ? "Quests" : "Active quest") + "</div>" + activeQuests.map(function (q) {
-        return "<div class=\"statRow\"><span>" + (activeQuests.length > 1 ? "Quest" : "Active Quest") + "</span><span style=\"font-size:0.9em;\">" + q.title + "</span></div><div class=\"timePeriod\">" + q.place + "</div>";
+        var title = typeof q.title === "function" ? q.title(s) : q.title, place = typeof q.place === "function" ? q.place(s) : q.place;
+        var levelNote = q.levelProgress === true ? "Counts toward level progress on success." : (typeof q.levelProgress === "string" ? q.levelProgress : "");
+        return "<div class=\"statRow\"><span>" + (activeQuests.length > 1 ? "Quest" : "Active Quest") + "</span><span style=\"font-size:0.9em;\">" + title + "</span></div><div class=\"timePeriod\">" + place + (levelNote ? "<br><span class=\"questLevelNote\">&#9670; " + levelNote + "</span>" : "") + "</div>";
       }).join("") + "</div>";
     }
 
@@ -1581,11 +1588,11 @@ button#statSidebar .turnRow,
   }
   // Active conditions on one combatant, read from per-slot "rounds left" variables (0 = none). To show a new
   // condition, add its variable suffix and label here; the game writes the value, this only reads it.
-  var CONDITION_KEYS = [["slowed", "Slowed"], ["frightened", "Frightened"]];
+  var CONDITION_KEYS = [["slowed", "Slowed"], ["frightened", "Frightened"], ["greased", "Greased"], ["prone", "Prone"], ["burning", "Burning"]];
   function conditionsOf(p, s) {
     var out = [];
     for (var i = 0; i < CONDITION_KEYS.length; i++) {
-      var left = Number(s[p + CONDITION_KEYS[i][0]]);
+      var raw = s[p + CONDITION_KEYS[i][0]], left = (raw === true || raw === "true") ? 1 : Number(raw);   // prone is a flag, the others count rounds or attempts
       if (isFinite(left) && left > 0) out.push(CONDITION_KEYS[i][1]);
     }
     return out;

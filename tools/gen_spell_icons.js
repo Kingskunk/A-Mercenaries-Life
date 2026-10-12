@@ -44,6 +44,7 @@ const BATCH_IDS = ["guidance", "ray_of_frost", "blade_ward"];
 // automatically by findSpellIcon, so this list stays short and only holds genuine ambiguities.
 const RENAMES = {
   // "Spell/" prefixes are relative to ICONS/, not ICONS/Spell/ -- see findSpellIcon step 1.
+  ensnaring_strike: "Action/Ensnaring_Strands_Icon.webp",  // STAND-IN: the library has Ensnaring Strands, a different spell, but the same thorned vines
   hex: "Spell/Hex_Charisma_Icon.webp",                   // library also has Hex_Conjure
   disguise_self: "Spell/Disguise_Self_Femme_Dragonborn_Icon.webp",  // library variants are race-specific
 

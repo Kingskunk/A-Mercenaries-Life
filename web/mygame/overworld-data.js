@@ -28,7 +28,7 @@
  * ford (optional, true): a crossing of running water the road makes here, where a road event (the ford) can happen; the event reads how high the water is from the weather's memory.
  * danger (optional, 0 to 3, default 0) is how rough the LAND is for a caravan before anyone patrols it: 0 safe, 1 uneasy, 2 rough, 3 dangerous. The EFFECTIVE danger is that number plus the patrol of the territory that holds the tile
  * (TERRITORIES below; the Scales' patrol is -1), kept between 0 and 3, and Overworld.dangerOf(id) gives it. The escort (radiant/hall_escort.txt) reads the effective danger for how likely a halt on the tile is to meet an event, which
- * events it can draw (HALT_EVENTS below) and how likely a night in camp there is to be disturbed.
+ * events it can draw (HALT_EVENTS below) and how likely a night in camp there is to be disturbed. patrol (optional) overrides the territory value for a remote pocket that is claimed but not actually patrolled.
  * walk, camp, depart and arrive (optional) are plain text for the caravan escort (radiant/hall_escort.txt), written to read the same in either direction: walk describes the road as the line comes in to
  * this tile, camp is the ground when the line makes camp here, depart is how the line pulls out from here, and arrive is how it comes in when this tile is the end of the road. A road, forest or hills tile needs a walk.
  * walkVia (optional, 2026-10-11) is the same idea for the road as the line comes IN to a tile: an object keyed by the tile the line came from, used instead of walk (Timbermouth and Alderford have two ways in).
@@ -57,7 +57,7 @@
   // Which way north lies on the map as it is drawn, in degrees clockwise from straight up the screen (0 = north is up). The map panel draws a compass from this and lets the player turn the map
   // in quarter turns, the compass turning with it. It changes nothing about the tiles or distances. The map is laid out with north up (geography settled 2026-10-08, the user's call: the Grey
   // River comes down to the city from a fork in the north, shaped like a Y: Alderford lies up the east arm (the Grey proper) and Timbermouth up the west arm (the Ashrun). The River Road leaves Port Valen by the River Gate, follows the river north to the fork, and runs
-  // north-north-west toward Timbermouth. The High Grey Road is a separate north-east branch from the Charter Gate, climbing the high ground on the Grey's eastern side. The Crossfield Road runs north-west from Alderford through Barleycross to Timbermouth, carrying forest goods, grain and finished wares without sending every load down to Port Valen first. The Longshade node is dense interior forest between Timbermouth, Ashrun Holt and Longshade Edge: its map links are player travel connections, not roads or regularly used trails. North of Alderford, the Coldspine runs east and west across the whole of the north, with few passes fit for wagons or an army and a fort in each. Its southern foothills hold Redvein and Whitefold; its last low spur comes down toward the Black Sinks, and the narrow ground between that spur and the marsh is the only practical freight way east.
+  // north-north-west toward Timbermouth. The High Grey Road is a separate north-east branch from the Charter Gate, climbing the high ground on the Grey's eastern side. The Crossfield Road runs north-west from Alderford through Barleycross to Timbermouth, carrying forest goods, grain and finished wares without sending every load down to Port Valen first. The Longshade node is dense interior forest between Timbermouth, Ashrun Holt and Longshade Edge: its map links are player travel connections, not roads or regularly used trails. North of Alderford, the Coldspine runs east and west across the whole of the north, with few passes fit for wagons or an army and a fort in each. Its southern foothills hold Redvein and Whitefold; the Splitjaw Ravines are a dead-end approach into its lower face. Its last low spur comes down toward the Black Sinks, and the narrow ground between that spur and the marsh is the only practical freight way east.
   var NORTH = 0;
 
   // Who holds the land. Add a territory here and give its tiles its id.
@@ -192,6 +192,20 @@
       here: "Pale quarry faces rise behind a scatter of stone roofs and sheep folds. Covered stone yards and low lime kilns sit against the foothills, while carts wait on the hard ground below.",
       hereNight: "A few lamps burn among Whitefold's stone roofs, and the lime kilns show as dull red points beneath the black mass of the Coldspine.",
       hereStorm: "Rain or snow has washed the quarry faces pale and turned the yards to slurry. Whitefold's roofs and sheep folds huddle at the foot of the dark range."
+    },
+    // Map-only wilderness node. The ravines run into the southern face of the Coldspine and end there; they are not a route through the range.
+    sj: {
+      name: "The Splitjaw Ravines", kind: "hills", x: 2.68, y: -2.85, region: "The Coldspine foothills",
+      territory: "scales",
+      danger: 3,
+      patrol: 0,
+      climate: -2,
+      walk: "A goat path leaves Whitefold's outer pasture and climbs between split limestone walls. It soon breaks into loose shale, thorn and narrow gullies where a cart could never pass and a person must pick each foothold.",
+      camp: "A shallow shelf below an overhang gives a little cover from the wind. Loose shale lies thick beneath it, and the gullies leave no clear view beyond the nearest bend.",
+      info: "A dead-end maze of limestone gullies, loose shale and old prospect cuts in the lower southern face of the Coldspine, four difficult miles from Whitefold. The ravines narrow into scree and broken stone beneath the range; they do not cross it.",
+      here: "Broken limestone walls rise close around a floor of shale and thorn. Old prospect cuts disappear into the gullies, and the path from Whitefold is already hard to pick out behind you.",
+      hereNight: "The ravines hold the darkness long before the open ground does. Water ticks from the stone, and loose shale shifts somewhere beyond the nearest bend.",
+      hereStorm: "Rain runs white over the limestone and gathers beneath the shale. The gullies are slick, loud with water and almost impossible to read."
     },
     lc: {
       name: "Limestone Cut", kind: "road", also: "hills", x: 1.73, y: -2.50, region: "The Sinks gap",
@@ -371,6 +385,8 @@
     ["rv", "wf", 9],
     ["af", "lc", 7],
     ["lc", "wf", 8],
+    // The Splitjaw is a dead-end mountain approach, not a road and not a pass through the Coldspine.
+    ["wf", "sj", 4, "overland"],
     ["lc", "bs", 7],
     ["mc", "lc", 10],
     ["r2", "r3", 10],
@@ -518,7 +534,7 @@
   }
   // The effective danger of a tile: its own number plus its territory's patrol, kept between 0 and 3.
   function dangerOf(n) {
-    var raw = Math.floor(Number(n && n.danger) || 0), t = n && TERRITORIES[n.territory], shift = Math.floor(Number(t && t.patrol) || 0), d = raw + shift;
+    var raw = Math.floor(Number(n && n.danger) || 0), t = n && TERRITORIES[n.territory], shift = n && n.patrol !== undefined ? Math.floor(Number(n.patrol) || 0) : Math.floor(Number(t && t.patrol) || 0), d = raw + shift;
     return d < 0 ? 0 : d > 3 ? 3 : d;
   }
   function haltEligible(n) { return n.kind === "road" || n.kind === "forest" || n.kind === "hills"; }
@@ -631,6 +647,84 @@
     return { endLeg: i, miles: miles, minutes: mins, walk: walk.join(" "), stop: stop, haltEv: haltEv, act2: act2, phase: nowMin < 660 ? "morning" : "afternoon",
              fromName: first ? NODES[first.from].name : "", toName: last ? NODES[last.to].name : "" };
   }
+  // ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  // THE COURIER BOARD (radiant/hall_courier.txt). A courier carries a letter, a sealed contract or a small parcel to a named person at another place and walks it there on the free map: nothing here moves the
+  // player. The board is a pure function of the origin tile and the day, so a refresh shows the same postings, and it names no tile: any tile of a kind in COURIER_DEST_WEIGHT can receive a parcel, so a
+  // new village is one NODES entry (and, if you like, one COURIER_TILES line for where letters are left) and it is on the board. Nearer places come up more often, villages more than towns, towns more than forts.
+  // Pay is about half a copper bit a mile with a floor (halved on 2026-10-12: a satchel of three could be chained endlessly and out-earned the Hall's own jobs); the term is the days the walk takes at 20 miles a day plus two. Higher grades of work (valuables, a longer term, more pay) are for the higher Insignia
+  // ranks, which are not built yet: a posting carries a `grade` (always 1 for now) so they can slot in without changing its shape.
+  // ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  var COURIER_KINDS = [
+    { id: "letter", item: "a sealed letter", rate: 4, min: 2, weight: 50 },
+    { id: "parcel", item: "a small parcel", rate: 5, min: 3, weight: 30 },
+    { id: "contract", item: "a sealed contract", rate: 6, min: 4, weight: 20 }
+  ];   // rate is tenths of a copper bit a mile; min is the floor in copper bits
+  var COURIER_DEST_WEIGHT = { village: 3, town: 2, fort: 1, city: 1 };
+  // Where in a tile a letter is left (place), and the people there (setting: names-data.js's mix of races; region: its surnames). All optional: a kind has defaults.
+  var COURIER_TILES = {
+    pv: { place: "the River Gate", setting: "middle_ward", region: "port" },
+    fv: { place: "the Gathering Hall", setting: "village" },
+    fo: { place: "the Longhouse", setting: "forest_village" },
+    mc: { place: "the Cross Hall", setting: "village" },
+    bw: { place: "the Tide House", setting: "village", region: "port" },
+    rv: { place: "the Gather House", setting: "village" },
+    wf: { place: "the Stone Yard", setting: "village" },
+    tm: { place: "the Factor's Hall" },
+    af: { place: "the Factor's Hall" },
+    bs: { place: "the gatehouse" },
+    sw: { place: "the gate" }
+  };
+  // count is how many postings a board shows on a given day, rolled between the two numbers from the day and the origin (so a refresh and a return visit show the same board): a city is busiest and a village is
+  // sometimes empty (the user's call, 2026-10-11). A COURIER_TILES entry may give its own count: [min, max].
+  var COURIER_DEFAULTS = {
+    village: { place: "the village", setting: "village", region: "marches", count: [0, 2] },
+    town: { place: "the town", setting: "town", region: "marches", count: [1, 3] },
+    fort: { place: "the gate", setting: "town", region: "marches", count: [0, 0] },
+    city: { place: "the city", setting: "middle_ward", region: "port", count: [2, 3] }
+  };
+  function courierTile(id) {
+    var n = NODES[id], t = COURIER_TILES[id] || {}, d = COURIER_DEFAULTS[n.kind] || COURIER_DEFAULTS.village;
+    return { place: t.place || d.place, setting: t.setting || d.setting, region: t.region || d.region, count: t.count || d.count };
+  }
+  function courierSeed(origin, day) {
+    var base = Math.floor(Number(day) || 0) * 977;
+    for (var c = 0; c < String(origin).length; c++) base += String(origin).charCodeAt(c) * 31;
+    return base;
+  }
+  // how many postings this origin's board shows today
+  function courierCount(origin, day) {
+    var n = courierTile(origin).count, lo = n[0], hi = n[1];
+    return lo + (hi > lo ? hash100(courierSeed(origin, day), 300) % (hi - lo + 1) : 0);
+  }
+  // count postings for the origin on this day: [{ n, to, toName, miles, kind, item, fee, term, grade, seed, place, setting, region, no }]
+  function courierPostings(origin, day, count) {
+    var base = courierSeed(origin, day);
+    if (count == null) count = courierCount(origin, day);
+    var cands = [];
+    Object.keys(NODES).forEach(function (id) {
+      var w = COURIER_DEST_WEIGHT[NODES[id].kind];
+      if (!w || id === origin) return;
+      var r = route(origin, id);
+      if (!r.ok) return;
+      cands.push({ id: id, miles: r.miles, weight: w * Math.max(1, 70 - r.miles) });
+    });
+    var out = [];
+    for (var i = 0; i < count && cands.length; i++) {
+      var sum = 0; cands.forEach(function (q) { sum += q.weight; });
+      var at = hash100(base, 100 + i) / 10000 * sum, k = 0;
+      while (k < cands.length - 1 && at >= cands[k].weight) { at -= cands[k].weight; k++; }
+      var d = cands.splice(k, 1)[0];
+      var ksum = 0; COURIER_KINDS.forEach(function (q) { ksum += q.weight; });
+      var kat = hash100(base, 200 + i) / 10000 * ksum, kk = 0;
+      while (kk < COURIER_KINDS.length - 1 && kat >= COURIER_KINDS[kk].weight) { kat -= COURIER_KINDS[kk].weight; kk++; }
+      var K = COURIER_KINDS[kk], tile = courierTile(d.id);
+      out.push({ n: i + 1, to: d.id, toName: NODES[d.id].name, miles: d.miles, kind: K.id, item: K.item, grade: 1,
+        fee: Math.max(K.min, Math.round(d.miles * K.rate / 10)), term: Math.ceil(d.miles / 20) + 2,
+        seed: base * 10 + i + 1, place: tile.place, setting: tile.setting, region: tile.region, no: 7000 + (Math.floor(Number(day) || 0) * 3 + i) });
+    }
+    return out;
+  }
+
   // 10 copper bits make a silver mark, 10 silver marks a gold crown.
   function coinText(copper) {
     var f = Math.max(0, Math.floor(Number(copper) || 0)), g = Math.floor(f / 100), s = Math.floor((f % 100) / 10), c = f % 10, parts = [];
@@ -648,5 +742,5 @@
     return Math.max(Math.floor(full * (beats - lost) / beats), Math.floor(full / 3));
   }
 
-  root.Overworld = { MINUTES_PER_MILE: MINUTES_PER_MILE, features: FEATURES, terrains: TERRAIN, nodes: NODES, edges: EDGES, territories: TERRITORIES, convoyPlan: convoyPlan, convoyNight: convoyNight, convoyFee: convoyFee, coinText: coinText, convoyMaxLegs: CONVOY_MAX_LEGS, dangerOf: function (id) { return dangerOf(NODES[id]); }, mountMinutesPerMile: MOUNT_MINUTES_PER_MILE, convoyPace: CONVOY_PACE, haltEvents: HALT_EVENTS, travelEventPlan: travelEventPlan, travelEvents: TRAVEL_EVENTS, campEventPlan: campEventPlan, campEvents: CAMP_EVENTS, campChance: CAMP_CHANCE, travelCooldownDays: TRAVEL_COOLDOWN_DAYS, travelChance: TRAVEL_CHANCE, route: route, duration: duration, span: span, label: label, travelPlan: travelPlan, north: NORTH };
+  root.Overworld = { courierCount: courierCount, courierPostings: courierPostings, courierTile: courierTile, MINUTES_PER_MILE: MINUTES_PER_MILE, features: FEATURES, terrains: TERRAIN, nodes: NODES, edges: EDGES, territories: TERRITORIES, convoyPlan: convoyPlan, convoyNight: convoyNight, convoyFee: convoyFee, coinText: coinText, convoyMaxLegs: CONVOY_MAX_LEGS, dangerOf: function (id) { return dangerOf(NODES[id]); }, mountMinutesPerMile: MOUNT_MINUTES_PER_MILE, convoyPace: CONVOY_PACE, haltEvents: HALT_EVENTS, travelEventPlan: travelEventPlan, travelEvents: TRAVEL_EVENTS, campEventPlan: campEventPlan, campEvents: CAMP_EVENTS, campChance: CAMP_CHANCE, travelCooldownDays: TRAVEL_COOLDOWN_DAYS, travelChance: TRAVEL_CHANCE, route: route, duration: duration, span: span, label: label, travelPlan: travelPlan, north: NORTH };
 })(typeof window !== "undefined" ? window : global);

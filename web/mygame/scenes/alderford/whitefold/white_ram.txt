@@ -1,0 +1,237 @@
+*comment ====================================================================================
+*comment THE WHITE RAM: Whitefold's inn, cookhouse and stable yard. A room lasts 24 hours.
+*comment ====================================================================================
+
+*label wf_white_ram
+*set minutes_to_pass 5
+*set time_advance_call_id "wf_ram_1"
+*gosub_scene alderford/whitefold/whitefold wf_walk_time
+*goto wf_ram_main
+
+*label wf_ram_main
+*temp wf_ram_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*if (wf_ram_now >= wf_ram_room_until)
+  *set wf_ram_room_active false
+*temp wf_ram_first false
+*if (not(wf_ram_seen))
+  *set wf_ram_first true
+*set wf_ram_seen true
+*temp wf_ram_dark false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set wf_ram_dark true
+*temp wf_ram_vignette (((campaign_day * 24) + clock_hour) modulo 4) + 1
+[b]◈ THE WHITE RAM[/b]
+*line_break
+The White Ram is a low stone inn with a broad slate roof and a carved ram's head over the door. A stove warms its single public room, where scrubbed tables stand beneath whitewashed beams. An arch beside the stair leads to a walled stable yard with a covered trough, hitching rails and four dry stalls. The room smells of mutton broth, peat smoke and straw.
+
+*if (weather_severity >= 3)
+  The shutters are closed and the stove burns high. The stable doors have been barred against the weather, and rain or snow hammers above the room.
+*elseif (weather = "Rain")
+  Rain runs from the eaves into the yard drain, and damp chalk shows pale around the door where boots have tracked it in.
+*elseif (weather = "Fog")
+  Fog turns the front windows white and lies low around the stable rails outside.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Meltwater and slush shine in the yard, while the stove draws a line of warmth through the room.
+*elseif (wf_ram_dark)
+  Lamps burn over the counter and along the stair, while the stable yard lamp marks the gate beyond the rear arch.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  The floor by the door remains dark with old damp, and the stable yard smells strongly of wet straw.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The yard ruts still hold water beneath their fresh straw.
+
+*if (wf_ram_first)
+  A middle-aged human man stands behind the counter, broad through the shoulders with a close grey beard and a flattened nose that has healed crooked. Flour dust marks one sleeve of his dark shirt, and a brass key ring hangs from his belt. He looks up from a loaf he has just cut.
+
+  "Perrin Holt," he says. "There's stew if you're hungry, a bed if you've the coin, and a dry stall if your animal needs one."
+*else
+  Perrin Holt keeps the counter, with the room keys hanging behind him.
+
+*if ((street_life = "empty") and (not(wf_ram_dark)))
+  The tables are empty for the moment. The stove ticks softly, and a horse shifts in the yard beyond the rear wall.
+*elseif (wf_ram_dark)
+  *if ((wf_ram_vignette = 1) or (wf_ram_vignette = 3))
+    A few quiet voices remain at the far table while Perrin banks the stove for the night.
+  *else
+    Folded blankets wait at one end of the counter for anyone who arrives after the road has gone dark.
+*elseif (time_period = "Morning")
+  Bowls and oatcakes move across the tables before people turn back to the quarry, the folds or the road.
+*elseif (time_period = "Dusk")
+  The room fills by degrees as carts come in from the Cut and people warm their hands by the stove.
+*else
+  A pair of carters sit over a board game near the window while Perrin carries bowls from the stove.
+
+*choice
+  *if ((not(wf_ram_dark)) and ((((gold * 100) + (silver * 10)) + copper) >= 2))
+    # [2 Copper Bits] Buy mutton stew with beans and barley. [~20 min]@{show_stat_hints  [+2 Temp HP, +1 CON for 4h]|}
+      *set tavern_item_cost_copper 2
+      *set tavern_item_hp_heal 0
+      *set tavern_item_temp_hp 2
+      *set tavern_item_type "food"
+      *set tavern_item_buff_name "Hillside Stew"
+      *set tavern_item_buff_desc "+1 CON"
+      *set tavern_item_buff_stat "con"
+      *set tavern_item_buff_bonus 1
+      *set tavern_item_buff_minutes 240
+      *gosub_scene economy buy_tavern_item
+      *set hours_to_pass 0
+      *set minutes_to_pass 20
+      *set time_advance_call_id "wf_ram_stew"
+      *gosub_scene calendar advance_time
+      *gosub_scene calendar recalc_hp_from_neglect
+      *if (hp_current <= 0)
+        *set death_cause "exhaustion"
+        *goto_scene death death_screen
+      You place two coppers on the counter. "A bowl of stew, please."
+
+      Perrin serves mutton, white beans and barley with a heel of brown bread. The broth is thick with onion and thyme, and the bowl warms your hands as much as your stomach.
+
+      [b][Hillside Stew Eaten: +2 Temporary HP | Hillside Stew (+1 CON for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+      *page_break Set the bowl aside...
+      *goto wf_ram_main
+  *if ((not(wf_ram_dark)) and ((((gold * 100) + (silver * 10)) + copper) >= 1))
+    # [1 Copper Bit] Buy oatcake, cheese and an apple. [~10 min]@{show_stat_hints  [+1 Temp HP, +1 WIS for 4h]|}
+      *set tavern_item_cost_copper 1
+      *set tavern_item_hp_heal 0
+      *set tavern_item_temp_hp 1
+      *set tavern_item_type "food"
+      *set tavern_item_buff_name "Fold Lunch"
+      *set tavern_item_buff_desc "+1 WIS"
+      *set tavern_item_buff_stat "wis"
+      *set tavern_item_buff_bonus 1
+      *set tavern_item_buff_minutes 240
+      *gosub_scene economy buy_tavern_item
+      *set hours_to_pass 0
+      *set minutes_to_pass 10
+      *set time_advance_call_id "wf_ram_lunch"
+      *gosub_scene calendar advance_time
+      *gosub_scene calendar recalc_hp_from_neglect
+      *if (hp_current <= 0)
+        *set death_cause "exhaustion"
+        *goto_scene death death_screen
+      You place a copper on the counter. "Something small for the road."
+
+      Perrin wraps an oatcake, a wedge of sharp cheese and an apple in a square of cloth. "Keep the cloth," he says. "The road dust gets into everything else."
+
+      [b][Fold Lunch Eaten: +1 Temporary HP | Fold Lunch (+1 WIS for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+      *page_break Put the food away...
+      *goto wf_ram_main
+  *if (wf_ram_room_active)
+    # Go up to your room.
+      *goto wf_ram_room
+  *elseif ((((gold * 100) + (silver * 10)) + copper) >= wf_ram_rate_copper)
+    # [${wf_ram_rate_copper} Copper Bits] Take a room for 24 hours.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+        *set currency_add_amount (0 - wf_ram_rate_copper)
+        *gosub_scene economy currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id page_id
+      *set wf_ram_room_active true
+      *set wf_ram_room_until (wf_ram_now + 1440)
+      You place the price on the counter. "A room, then."
+
+      Perrin takes the coins and gives you a brass key. "Up the stair, first door over the yard. It is yours until this hour tomorrow."
+      *page_break Take the stair...
+      *goto wf_ram_room
+  *else
+    # Ask Perrin about a room.
+      You nod toward the keys behind him. "What is the rate for a room?"
+
+      "${wf_ram_rate_copper} copper bits for a day and a night," Perrin says. "That buys the key and a dry bed."
+
+      "I'll remember," you say.
+      *page_break Step back from the counter...
+      *goto wf_ram_main
+  # Step through to the stable yard.
+    The yard is small but dry. Fresh straw lies in the stalls, a pump fills the covered trough and hay waits on a rack beneath the lean-to roof.
+    *page_break Go back inside...
+    *goto wf_ram_main
+  # Walk back to the village common.
+    *goto_scene alderford/whitefold/whitefold whitefold
+
+*label wf_ram_room
+*temp wf_room_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*if (wf_room_now >= wf_ram_room_until)
+  *set wf_ram_room_active false
+*if (not(wf_ram_room_active))
+  *goto wf_ram_main
+[b]◈ YOUR ROOM: THE WHITE RAM[/b]
+*line_break
+The room under the slate roof holds a plank bed, straw mattress, folded wool blanket and a tin basin beside a jug of water. Its shuttered window looks across the stable yard toward the pale quarry face. The room is plain, dry and warm enough once the door is barred.
+
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  The yard lamp shows as a narrow line beneath the shutter, and an animal shifts in one of the stalls below.
+*elseif (time_period = "Dusk")
+  Last light rests on the quarry face before the yard falls into shadow.
+*else
+  Daylight comes through the shutter gaps and lies across the foot of the bed.
+
+*if (weather_severity >= 3)
+  Wind worries the shutter and rattles the slate overhead.
+*elseif (weather = "Rain")
+  Rain taps steadily above the bed and splashes in the yard below.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Cold clings to the window wall, though the room itself stays dry.
+
+*choice
+  # Bar the door and sleep in the bed. [~8 Hours]
+    *goto wf_ram_sleep
+  # Wash in the basin. [~10 min]
+    *goto wf_ram_wash
+  # Go back down to the White Ram.
+    *goto wf_ram_main
+
+*label wf_ram_sleep
+*set hours_to_pass 8
+*set minutes_to_pass 0
+*set time_advance_call_id "wf_ram_sleep"
+*gosub_scene calendar advance_time
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*set sleep_location_id "whitefold_white_ram"
+*set sleep_is_shared false
+*set sleep_is_permanent_home false
+*set sleep_is_paid_inn true
+*set sleep_tier_name "none"
+*set sleep_tier_stat1 "none"
+*set sleep_tier_bonus1 0
+*set sleep_tier_stat2 "none"
+*set sleep_tier_bonus2 0
+*gosub_scene calendar resolve_sleep
+
+You bar the door, close the shutter and settle beneath the wool blanket. The bed is narrow but dry, and the inn's lower sounds fade into the occasional creak of the stable yard.
+
+*if ((time_period = "Morning") or (time_period = "Pre-Dawn"))
+  The first cart through the yard wakes you. Your limbs are loose and rested.
+*elseif (time_period = "Dusk")
+  You wake to the last calls from the common. The ache of travel has eased.
+*elseif (time_period = "Night")
+  You surface in the dark to the quiet stamp of an animal below. Your fatigue has cleared.
+*else
+  Daylight reaches the foot of the bed when you wake. The village outside is moving through its ordinary work, and your mind is clear.
+
+*if (not(sleep_gear_note = ""))
+  *line_break
+  ${sleep_gear_note}
+
+The key remains yours until this hour tomorrow.
+*page_break Sit up in your room...
+*goto wf_ram_room
+
+*label wf_ram_wash
+*set hours_to_pass 0
+*set minutes_to_pass 10
+*set time_advance_call_id "wf_ram_wash"
+*gosub_scene calendar advance_time
+*set minutes_since_wash 0
+*set hygiene_stage "Clean"
+*gosub_scene calendar update_hub_condition
+
+You pour cold water into the basin and wash away road grit, chalk dust and the smell of wet wool with the rough soap beside the jug. The towel is coarse, but clean.
+
+[b][Washed Up: Hygiene Restored to Clean][/b]
+*page_break Set the basin aside...
+*goto wf_ram_room

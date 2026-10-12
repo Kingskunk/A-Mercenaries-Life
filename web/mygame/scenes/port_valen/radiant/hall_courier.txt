@@ -1,0 +1,316 @@
+*comment ====================================================================================
+*comment THE COURIER JOB (radiant): carry a sealed letter, a sealed contract or a small parcel to a named person at another place, on foot, on the free map. The sixth radiant job, and the first that does not
+*comment move the player anywhere: it is taken at the Hiring Hall board and delivered from the map card of the destination, so the player walks wherever and whenever they like inside the term.
+*comment
+*comment Design (the user agreed, 2026-10-11): delivery is on the OVERWORLD MAP CARD ("Deliver ..." beside the tile's other buttons, offered by overworld.txt ow_here), not inside each village, so a
+*comment new town, village or fort needs no edit here. Pay is about half a copper bit a mile with a floor; every third delivery (cr_credit counts them) adds one to the Insignia's page (hall_jobs_scales); a late parcel simply lapses,
+*comment no penalty and no message (radiant_hub.txt rh_check). Letters, sealed contracts and small parcels only: more valuable work is for the higher Insignia ranks (not built), and a posting already carries
+*comment a grade (always 1) for that.
+*comment
+*comment The board is Overworld.courierPostings (overworld-data.js): a pure function of the origin tile and the day, so a refresh shows the same three postings; the recipient is made from names-data.js
+*comment (race by the destination's setting, surname by its region, a look phrase), seeded by the posting, so the same person is always at the same place. The postings are held in crp1_* to crp3_*; a taken
+*comment one is flagged for the day (crpN_taken). The satchel holds three parcels, in crs1_* to crs3_*: no arrays, three fixed slots, taken first-free.
+*comment
+*comment Replay: the take and the delivery each change state once, under a page-id lock (cr_take_locked, and the currency lock for delivery); both pages print from values the lock does not change.
+*comment
+*comment EVERY settlement has a board (the user, 2026-10-11): the origin is cr_origin (a tile id), and the board is the same generator for any of them. Port Valen's is printed inside the Hiring Hall board page
+*comment (port_valen_civic_heights.txt pv_ch_roll_read, which sets cr_origin "pv" and calls cr_board_print, with choices only). Every other settlement's existing notice option (the Factor's Halls of Timbermouth and Alderford,
+*comment the Cross Hall, the Tide House, the Gather House, the Longhouse's board of cords, Barleycross's notice post, Whitefold's notice rail in the Fleecefold) ends by setting cr_origin and going to cr_read, which prints that
+*comment board's postings and offers them, and goes straight back (cr_back) if there is nothing to take. cr_back is the one table of where each place returns to; a new settlement is one line there, one line in
+*comment COURIER_TILES (overworld-data.js) and a call to cr_read from its own notice option.
+*comment
+*comment Not in *scene_list: compile.js lists it with verifyFileName. Wired in: the notice options named above, radiant_hub.txt (lapse, "Your posting"), overworld.txt (the Deliver options) and
+*comment overworldmap.js (their buttons), startup.txt variables.
+*comment ====================================================================================
+
+*comment ── the first free satchel slot (cr_free, 0 when all three are full) ──
+*label cr_free_slot
+*set cr_free 0
+*if (not(crs3_on))
+  *set cr_free 3
+*if (not(crs2_on))
+  *set cr_free 2
+*if (not(crs1_on))
+  *set cr_free 1
+*return
+
+*comment ── today's postings, worked out once per visit into crp1_* to crp3_* (plain sets of values the day decides, so a replay is harmless; the taken flags are reset only when the day changes) ──
+*label cr_board_prepare
+*comment cr_taken_log holds the keys (origin:day:number, each followed by a bar, the log starting with one) of today's postings already taken, so a posting taken at one board is not offered again if the player comes back the same day, from any board; it is emptied when the day changes.
+*if (not(cr_p_day = campaign_day))
+  *set cr_p_day campaign_day
+  *set cr_taken_log "|"
+*comment A parcel whose term has run out lets go of its slot (the same lapse radiant_hub.txt rh_check makes, so the board is right even if the hub was not visited).
+*if ((crs1_on) and (campaign_day > crs1_until))
+  *set crs1_on false
+*if ((crs2_on) and (campaign_day > crs2_until))
+  *set crs2_on false
+*if ((crs3_on) and (campaign_day > crs3_until))
+  *set crs3_on false
+*gosub cr_free_slot
+*script var o = window.Overworld, G = window.NameGen, org = String(stats.cr_origin); var P = o.courierPostings(org, Number(stats.campaign_day)); for (var i = 1; i <= 3; i++) { var p = P[i - 1], k = "crp" + i + "_"; stats[k + "on"] = !!p; if (!p) continue; stats[k + "key"] = org + ":" + Number(stats.campaign_day) + ":" + i; stats[k + "taken"] = String(stats.cr_taken_log).indexOf("|" + stats[k + "key"] + "|") >= 0; var race = G.pickRace(p.seed, p.setting); var made = G.make(race, "any", p.region, p.seed); var seen = G.look(race, "any", p.seed, "clothes hands"); stats[k + "to"] = p.to; stats[k + "to_name"] = p.toName; stats[k + "place"] = p.place; stats[k + "kind"] = p.kind; stats[k + "item"] = p.item; stats[k + "miles"] = p.miles; stats[k + "fee"] = p.fee; stats[k + "fee_text"] = o.coinText(p.fee); stats[k + "term"] = p.term; stats[k + "seed"] = p.seed; stats[k + "no"] = p.no; stats[k + "who"] = made.full; stats[k + "sex"] = made.gender; stats[k + "look"] = seen.phrase; }
+*set crp1_open ((crp1_on) and ((not(crp1_taken)) and (cr_free > 0)))
+*set crp2_open ((crp2_on) and ((not(crp2_taken)) and (cr_free > 0)))
+*set crp3_open ((crp3_on) and ((not(crp3_taken)) and (cr_free > 0)))
+*set crp1_full ((crp1_on) and ((not(crp1_taken)) and (cr_free = 0)))
+*set crp2_full ((crp2_on) and ((not(crp2_taken)) and (cr_free = 0)))
+*set crp3_full ((crp3_on) and ((not(crp3_taken)) and (cr_free = 0)))
+*return
+
+*comment ── one posting as the board prints it (the number, the seals, the work, the pay, the term) ──
+*label cr_post_line
+*params cpl_n
+*temp cpl_p (("crp" & cpl_n) & "_")
+*temp cpl_no {(cpl_p & "no")}
+*temp cpl_kind {(cpl_p & "kind")}
+*temp cpl_item {(cpl_p & "item")}
+*temp cpl_who {(cpl_p & "who")}
+*temp cpl_look {(cpl_p & "look")}
+*temp cpl_place {(cpl_p & "place")}
+*temp cpl_to {(cpl_p & "to_name")}
+*temp cpl_pay {(cpl_p & "fee_text")}
+*temp cpl_term {(cpl_p & "term")}
+*temp cpl_sealer "a household"
+*if (cpl_kind = "contract")
+  *set cpl_sealer "a trading house"
+[b]POSTING No. ${cpl_no}[/b]
+*line_break
+[i]Sealed: ${cpl_sealer} and the City. Work: courier, carrying ${cpl_item} to ${cpl_who}, ${cpl_look}, at ${cpl_place} in ${cpl_to}. Pay: ${cpl_pay}, paid on delivery. Term: ${cpl_term} days from signing. Apply: this frame.[/i]
+
+*return
+
+*comment ── the board's courier postings: prepared, then each open one printed ──
+*label cr_board_print
+*gosub cr_board_prepare
+*if ((crp1_on) and (not(crp1_taken)))
+  *gosub cr_post_line 1
+*if ((crp2_on) and (not(crp2_taken)))
+  *gosub cr_post_line 2
+*if ((crp3_on) and (not(crp3_taken)))
+  *gosub cr_post_line 3
+*return
+
+*comment ── taking one: cr_pick (1 to 3) names the posting. The posting is copied into the first free satchel slot under a lock, and the page prints from the posting, which the lock does not change. ──
+*label cr_sign
+*if (not(cr_take_locked)) or (not(locked_cr_take_page_id = page_id))
+  *gosub cr_free_slot
+  *if (cr_free > 0)
+    *temp ct_src (("crp" & cr_pick) & "_")
+    *temp ct_dst (("crs" & cr_free) & "_")
+    *set {(ct_dst & "on")} true
+    *set {(ct_dst & "to")} {(ct_src & "to")}
+    *set {(ct_dst & "to_name")} {(ct_src & "to_name")}
+    *set {(ct_dst & "place")} {(ct_src & "place")}
+    *set {(ct_dst & "kind")} {(ct_src & "kind")}
+    *set {(ct_dst & "item")} {(ct_src & "item")}
+    *set {(ct_dst & "miles")} {(ct_src & "miles")}
+    *set {(ct_dst & "fee")} {(ct_src & "fee")}
+    *set {(ct_dst & "fee_text")} {(ct_src & "fee_text")}
+    *set {(ct_dst & "who")} {(ct_src & "who")}
+    *set {(ct_dst & "sex")} {(ct_src & "sex")}
+    *set {(ct_dst & "look")} {(ct_src & "look")}
+    *set {(ct_dst & "seed")} {(ct_src & "seed")}
+    *temp ct_term {(ct_src & "term")}
+    *set {(ct_dst & "until")} (campaign_day + ct_term)
+    *set {((("crp" & cr_pick) & "_") & "taken")} true
+    *temp ct_key {(ct_src & "key")}
+    *set cr_taken_log ((cr_taken_log & ct_key) & "|")
+  *set cr_take_locked true
+  *set locked_cr_take_page_id page_id
+*set minutes_to_pass 5
+*set time_advance_call_id "cr_sign_1"
+*set hours_to_pass 0
+*gosub cr_clock
+*temp cs_src (("crp" & cr_pick) & "_")
+*temp cs_item {(cs_src & "item")}
+*temp cs_who {(cs_src & "who")}
+*temp cs_to {(cs_src & "to_name")}
+[b]◈ THE COURIER POSTING[/b]
+*line_break
+You press the brass to the posting. It warms against your palm, and the terms run across its face in thin lines of light and sink into the metal. At the foot of the sheet the seals dim, and the posting is taken down.
+
+[b][🏷️ Job taken: Courier, ${cs_item} for ${cs_who} in ${cs_to}][/b]
+*page_break Look over the remaining courier postings…
+*goto cr_read
+
+*comment The satchel is full: costs no time and sets nothing.
+*label cr_full
+[b]◈ THE COURIER POSTING[/b]
+*line_break
+You reach for the posting and stop. Three parcels is what the satchel and the Hall's terms allow. Deliver one, or let one lapse, and come back.
+*page_break Step back from the notices…
+*goto cr_back
+
+*comment No insignia: costs no time and sets nothing. A courier carries the Hall's brass, which the Seals window in Port Valen sells once.
+*label cr_need
+[b]◈ THE COURIER POSTING[/b]
+*line_break
+You reach for the posting, and the seal at its foot is the Hall's, not a village's. The work goes to a bearer of the Hall's insignia, and the Seals window in Port Valen sells it, once.
+*page_break Step back from the notices…
+*goto cr_read
+
+*comment ── a settlement's board page (every origin but Port Valen, whose board is printed inside the Hiring Hall page): the postings of cr_origin, with the choices. Nothing to take or carry: straight back. ──
+*comment cr_inline is set true by a notice option that reaches this page straight from its own prose (no page between, the user's call, 2026-10-11): the postings then follow the notices on the SAME page, with no heading, and
+*comment if there is nothing to take the page breaks first so the hall does not run on after the notices. It is cleared as soon as it is read, and every other way in (taking a posting, no insignia) arrives on a fresh page.
+*label cr_read
+*gosub cr_board_prepare
+*if (not((crp1_open) or ((crp2_open) or ((crp3_open) or ((crp1_full) or ((crp2_full) or (crp3_full)))))))
+  *if (cr_inline)
+    *set cr_inline false
+    *page_break Step back…
+  *goto cr_back
+*temp cr_where "Among the notices"
+*if ((cr_origin = "tm") or (cr_origin = "af"))
+  *set cr_where "Among the postings on the board"
+*elseif (cr_origin = "fv")
+  *set cr_where "Among the scraps on the post"
+*elseif (cr_origin = "fo")
+  *set cr_where "Beside the board of cords"
+*elseif (cr_origin = "wf")
+  *set cr_where "Beside the notice rail"
+*if (not(cr_inline))
+  [b]◈ THE COURIER POSTINGS[/b]
+  *line_break
+*set cr_inline false
+
+${cr_where}, a few sheets are ruled like forms, each headed with a posting number and sealed twice, the patron's in wax and the city's pressed beside it.
+
+*if ((crp1_on) and (not(crp1_taken)))
+  *gosub cr_post_line 1
+*if ((crp2_on) and (not(crp2_taken)))
+  *gosub cr_post_line 2
+*if ((crp3_on) and (not(crp3_taken)))
+  *gosub cr_post_line 3
+*choice
+  *if ((crp1_open) and (has_hall_insignia))
+    # Press your insignia to the posting and take the courier job to ${crp1_to_name}.
+      *set cr_pick 1
+      *goto cr_sign
+  *if ((crp1_open) and (not(has_hall_insignia)))
+    # Take the courier job to ${crp1_to_name}.
+      *goto cr_need
+  *if (crp1_full)
+    # Take the courier job to ${crp1_to_name}.
+      *goto cr_full
+  *if ((crp2_open) and (has_hall_insignia))
+    # Press your insignia to the posting and take the courier job to ${crp2_to_name}.
+      *set cr_pick 2
+      *goto cr_sign
+  *if ((crp2_open) and (not(has_hall_insignia)))
+    # Take the courier job to ${crp2_to_name}.
+      *goto cr_need
+  *if (crp2_full)
+    # Take the courier job to ${crp2_to_name}.
+      *goto cr_full
+  *if ((crp3_open) and (has_hall_insignia))
+    # Press your insignia to the posting and take the courier job to ${crp3_to_name}.
+      *set cr_pick 3
+      *goto cr_sign
+  *if ((crp3_open) and (not(has_hall_insignia)))
+    # Take the courier job to ${crp3_to_name}.
+      *goto cr_need
+  *if (crp3_full)
+    # Take the courier job to ${crp3_to_name}.
+      *goto cr_full
+  # Step back from the notices.
+    *goto cr_back
+
+*comment ── where each place returns to: the one table of where a board was reached from. A new settlement is one line here. ──
+*label cr_back
+*if (cr_origin = "tm")
+  *goto_scene timbermouth/factors_hall tm_hall_floor
+*if (cr_origin = "af")
+  *goto_scene alderford/factors_hall af_hall_floor
+*if (cr_origin = "mc")
+  *goto_scene port_valen/marlcross/cross_hall mc_cross_hall_main
+*if (cr_origin = "bw")
+  *goto_scene port_valen/brinewick/tide_house bw_tide_house_main
+*if (cr_origin = "rv")
+  *goto_scene alderford/redvein/gather_house rv_gather_house_main
+*if (cr_origin = "fo")
+  *goto_scene timbermouth/ashrun_holt/longhouse ah_hall
+*if (cr_origin = "fv")
+  *goto_scene timbermouth/barleycross/green bc_hall
+*if (cr_origin = "wf")
+  *goto_scene alderford/whitefold/fleecefold wf_fleecefold
+*goto_scene port_valen/port_valen_civic_heights pv_ch_records_inside
+
+*comment ── the clock after a page's walk: advance, the neglect check, and the death screen (the same as es_clock) ──
+*label cr_clock
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return
+
+*comment ── the delivery: called from overworld.txt ow_here (a gosub_scene, so the player never leaves the map) with the satchel slot 1 to 3. Ten minutes to find the person, then the fee, one Insignia count and the slot freed,
+*comment all under the currency lock. The slot keeps its text until it is next filled, so a replay prints the same page. ──
+*label cr_deliver
+*params cd_n
+*temp cd_p (("crs" & cd_n) & "_")
+*temp cd_kind {(cd_p & "kind")}
+*temp cd_item {(cd_p & "item")}
+*temp cd_who {(cd_p & "who")}
+*temp cd_look {(cd_p & "look")}
+*temp cd_place {(cd_p & "place")}
+*temp cd_to {(cd_p & "to_name")}
+*temp cd_sex {(cd_p & "sex")}
+*temp cd_fee {(cd_p & "fee")}
+*temp cd_fee_text {(cd_p & "fee_text")}
+*temp cd_seed {(cd_p & "seed")}
+*temp cd_v (cd_seed modulo 3)
+*set minutes_to_pass 10
+*set time_advance_call_id (("cr_deliver_" & cd_n) & "_1")
+*set hours_to_pass 0
+*gosub cr_clock
+[b]◈ THE DELIVERY[/b]
+*line_break
+You ask for ${cd_who} at ${cd_place} in ${cd_to}, and someone points you toward ${cd_look}.
+
+*if (cd_kind = "letter")
+  *if (cd_v = 0)
+    @{(cd_sex = "f") She|He} breaks the seal with a thumbnail and reads it where @{(cd_sex = "f") she|he} stands, once, without a change of face, and then folds it small and puts it away inside a coat.
+  *elseif (cd_v = 1)
+    @{(cd_sex = "f") She|He} turns the letter over twice before opening it, reads the first lines and the last, and gives no sign of what lies between them.
+  *else
+    @{(cd_sex = "f") She|He} takes the letter in both hands as if it might be heavier than it looks, breaks the seal, and reads it all the way through with @{(cd_sex = "f") her|his} lips moving a little.
+*elseif (cd_kind = "contract")
+  *if (cd_v = 0)
+    @{(cd_sex = "f") She|He} checks the seal against another from a pouch, reads the whole of it slowly with a finger under the lines, and signs a receipt in a cramped hand.
+  *elseif (cd_v = 1)
+    @{(cd_sex = "f") She|He} reads it twice, lays it flat inside a book, and writes out a receipt for you before you have to ask.
+  *else
+    @{(cd_sex = "f") She|He} holds it to the light to see the seal, nods, and signs the receipt without reading past the first lines, as though the rest were already known.
+*else
+  *if (cd_v = 0)
+    @{(cd_sex = "f") She|He} weighs the parcel in one hand, shakes it once, hears nothing, and signs for it.
+  *elseif (cd_v = 1)
+    @{(cd_sex = "f") She|He} cuts the string, looks inside without taking anything out, and closes it again with a short nod.
+  *else
+    @{(cd_sex = "f") She|He} sets the parcel on the nearest flat thing, unwraps one corner, and wraps it up again with care.
+
+Then @{(cd_sex = "f") she|he} counts your fee out of a purse, and the work is done.
+
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount cd_fee
+  *gosub_scene economy currency_add
+  *set cr_credit + 1
+  *if (cr_credit >= 3)
+    *set cr_credit 0
+    *set hall_jobs_scales + 1
+  *set {(cd_p & "on")} false
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+
+[b][💰 Paid: ${cd_fee_text}.][/b]
+*line_break
+*comment cr_credit is 0 only on the delivery that completed a set of three (it was reset in the locked block), so this reads the same on a replay.
+*if (cr_credit = 0)
+  [b][🏷️ Insignia: Port Valen page, ${hall_jobs_scales} @{(hall_jobs_scales = 1) job|jobs} finished][/b]
+*else
+  [b][🏷️ Insignia: courier work, ${cr_credit} of 3 deliveries toward the next job on the Port Valen page][/b]
+*line_break
+*return

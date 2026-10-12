@@ -26,7 +26,16 @@
   *set rj_perf_stage "none"
 *if (((rj_escort_stage = "active") and (campaign_day > rj_escort_until)) and (not(rj_escort_road)))
   *set rj_escort_stage "none"
+*comment The courier's satchel (hall_courier.txt): a parcel past its term lets go of its slot, silently, like every job.
+*if ((crs1_on) and (campaign_day > crs1_until))
+  *set crs1_on false
+*if ((crs2_on) and (campaign_day > crs2_until))
+  *set crs2_on false
+*if ((crs3_on) and (campaign_day > crs3_until))
+  *set crs3_on false
 *set rj_has_job false
+*if ((crs1_on) or ((crs2_on) or (crs3_on)))
+  *set rj_has_job true
 *if ((rj_pest_stage = "active") and (campaign_day <= rj_pest_until))
   *set rj_has_job true
 *if ((rj_haul_stage = "active") and (campaign_day <= rj_haul_until))
@@ -84,9 +93,19 @@ You hold the insignia flat in your palm, and the terms you signed for run across
   *if (not(rh_here = rj_perf_where))
     *set rh_far true
 
-*temp rh_shut false
-*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
-  *set rh_shut true
+*comment The parcels the player carries (hall_courier.txt): nothing to walk to from here, since a parcel is delivered from the map card of its place, so they are only listed.
+*if (crs1_on)
+  *temp rh_c1 ((crs1_until - campaign_day) + 1)
+  [b]Courier[/b]: ${crs1_item} for ${crs1_who}, at ${crs1_place} in ${crs1_to_name}. ${crs1_fee_text}, paid on delivery. Open @{(rh_c1 = 1) one more day|${rh_c1} more days}.
+  *line_break
+*if (crs2_on)
+  *temp rh_c2 ((crs2_until - campaign_day) + 1)
+  [b]Courier[/b]: ${crs2_item} for ${crs2_who}, at ${crs2_place} in ${crs2_to_name}. ${crs2_fee_text}, paid on delivery. Open @{(rh_c2 = 1) one more day|${rh_c2} more days}.
+  *line_break
+*if (crs3_on)
+  *temp rh_c3 ((crs3_until - campaign_day) + 1)
+  [b]Courier[/b]: ${crs3_item} for ${crs3_who}, at ${crs3_place} in ${crs3_to_name}. ${crs3_fee_text}, paid on delivery. Open @{(rh_c3 = 1) one more day|${rh_c3} more days}.
+  *line_break
 *if ((rj_escort_stage = "active") and (campaign_day <= rj_escort_until))
   [b]Wagon Escort[/b]: ${rj_escort_place_text}, a caravan of four wagons for ${rj_escort_dest_name}. Payment is by the mile, less for every load lost on the way, with meals and a bunk on the road. The caravan rolls two hours after ${rj_escort_opens} @{(campaign_day = rj_escort_until) this morning|tomorrow morning}.
   *line_break
@@ -112,12 +131,9 @@ You hold the insignia flat in your palm, and the terms you signed for run across
   *if ((((rj_perf_stage = "active") and (campaign_day <= rj_perf_until)) and (rh_here = rj_perf_where)) and (not(rh_dusk)))
     # [b]The evening[/b]: the music starts at dusk.
       *goto rh_perf_closed
-  *if (((((rj_escort_stage = "active") and (campaign_day <= rj_escort_until)) and (rj_escort_from = "pv")) and (rh_here = "middle_ward")) and (not(rh_shut)))
+  *if ((((rj_escort_stage = "active") and (campaign_day <= rj_escort_until)) and (rj_escort_from = "pv")) and (rh_here = "middle_ward"))
     # [b]The wagon yard[/b]: outside the River Gate. [~10 min]
       *goto_scene port_valen/radiant/hall_escort es_arrive
-  *if (((((rj_escort_stage = "active") and (campaign_day <= rj_escort_until)) and (rj_escort_from = "pv")) and (rh_here = "middle_ward")) and (rh_shut))
-    # [b]The wagon yard[/b]: the gate is shut until morning.
-      *goto rh_escort_closed
   *if (rh_far)
     # [Travel: Head to the district the house is in]
       *goto_scene port_valen/port_valen port_valen_travel
@@ -137,14 +153,6 @@ You pull the insignia out and read the terms again. The watch signs on at dusk, 
 [b]◈ YOUR POSTING[/b]
 *line_break
 You pull the insignia out and read the terms again. The music starts at dusk, and not before. Come back when the light starts to go.
-*page_break Put the insignia away…
-*goto rh_hub
-
-*comment The gate is shut at night, so the yard outside it cannot be reached. Costs no time and sets nothing.
-*label rh_escort_closed
-[b]◈ YOUR POSTING[/b]
-*line_break
-You pull the insignia out and read the terms again. The caravan rolls from the yard outside the River Gate, and the gate is shut until the morning bell. Come back when it opens.
 *page_break Put the insignia away…
 *goto rh_hub
 

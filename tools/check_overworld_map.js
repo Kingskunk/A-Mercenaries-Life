@@ -83,14 +83,14 @@ const start = (startup.match(/^\*create ow_pos "([a-z0-9_]+)"/m) || [])[1];
 if (start && !O.nodes[start]) fail("startup.txt starts ow_pos on \"" + start + "\", which is not a tile");
 ["ow_dest", "ow_trip_ok", "ow_trip_locked", "locked_ow_trip_page_id", "ow_legs", "ow_leg_i", "ow_leg_minutes", "ow_leg_pace", "ow_rations_total", "ow_exposure_pct", "ow_can_camp", "ow_camp_ok", "ow_camp_mode", "ow_camp_minutes", "ow_dawn_ok", "ow_dawn_hours", "ow_camp_wet", "ow_camp_locked", "locked_ow_camp_page_id", "exposure_camping", "rations_eaten_last", "ow_water", "climate_shift"].forEach((v) => { if (!new RegExp("^\\*create " + v + " ", "m").test(startup)) fail("startup.txt does not create " + v); });
 if (!/# Travel to the tile you picked on the map\./.test(scene)) fail("overworld.txt has lost its one Travel option (the panel presses it)");
-if (!/# Make camp for the night\./.test(scene)) fail("overworld.txt has lost its camp option (the panel presses it)");
-if (!/# Make camp and sleep until dawn\./.test(scene)) fail("overworld.txt has lost its sleep-until-dawn option (the panel presses it)");
+if (!/# Make camp\./.test(scene)) fail("overworld.txt has lost its camp option (the panel presses it)");
 ids.forEach((a) => ids.forEach((b) => {
   const r = O.route(a, b);
   if (!r.ok) return;
   const m = r.legs.reduce((t, l) => t + l.miles, 0), t = r.legs.reduce((x, l) => x + l.minutes, 0);
   if (r.legs.length !== r.path.length - 1 || m !== r.miles || t !== r.minutes) fail("the legs of " + a + " to " + b + " do not add up to the route");
 }));
+if (!/# Deliver \$\{crs1_item\}/.test(scene)) fail("overworld.txt has lost its courier Deliver options (the panel offers them as buttons; radiant/hall_courier.txt)");
 if (/\*set ow_dest "/.test(scene)) fail("overworld.txt sets ow_dest by hand: the panel writes it, and the scene lists no tiles");
 
 if (bad) { console.error(bad + " problem(s)"); process.exit(1); }

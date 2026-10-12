@@ -69,17 +69,17 @@
   function scanOptions() {
     var forms = document.querySelectorAll("#main form");
     var labels = forms.length ? forms[forms.length - 1].querySelectorAll(".choice label") : [];
-    var travel = null, enter = null, camp = null, dawn = null;
+    var travel = null, enter = null, camp = null, dawn = null, deliver = [];
     for (var i = 0; i < labels.length; i++) {
       var radio = labels[i].querySelector("input[type=radio]");
       if (!radio || radio.disabled) continue;
       var text = (labels[i].textContent || "").replace(/\s+/g, " ").trim();
       if (/^Travel to the tile you picked/.test(text)) travel = radio;
-      else if (/^Make camp and sleep until dawn/.test(text)) dawn = { radio: radio, text: text };
       else if (/^Make camp/.test(text)) camp = radio;
       else if (/^Go (in|into|back)\b/.test(text)) enter = { radio: radio, text: text };
+      else if (/^Deliver /.test(text)) deliver.push({ radio: radio, text: text });   // a courier's parcel for this tile (radiant/hall_courier.txt): one button each, none for a tile nobody wrote
     }
-    return travel ? { travel: travel, enter: enter, camp: camp, dawn: dawn } : null;
+    return travel ? { travel: travel, enter: enter, camp: camp, dawn: dawn, deliver: deliver } : null;
   }
 
   function available() { return truthy(statsNow().ow_on) && !!scanOptions(); }
@@ -199,7 +199,7 @@
       var a = OW.nodes[e[0]], b = OW.nodes[e[1]], hot = onRoute[e[0] + ">" + e[1]];
       var pa = P(a), pb = P(b), terrain = e[3] || "road";
       out += "<line class=\"ow-edge" + (terrain !== "road" ? " ow-edge-" + terrain : "") + (hot ? " ow-edge-route" : "") + "\" x1=\"" + pa.x + "\" y1=\"" + pa.y + "\" x2=\"" + pb.x + "\" y2=\"" + pb.y + "\"/>";
-      // try the middle of the leg first, then other spots along it, above the line and then below; keep the first that is clear
+      // Try the middle of the leg first, then other spots along it, above the line and then below. A near-vertical leg can have no clear vertical position at all, so its last candidates move out to either side of the line.
       var label = String(e[2]) + " mi", w = label.length * 4.2 + 4, pick = null;
       [0.5, 0.4, 0.6, 0.3, 0.7, 0.25, 0.75].some(function (t) {
         return [-14, 22].some(function (dy) {
@@ -209,6 +209,19 @@
           return true;
         });
       });
+      if (!pick) {
+        var vx = pb.x - pa.x, vy = pb.y - pa.y, len = Math.sqrt(vx * vx + vy * vy);
+        if (len) {
+          [0.5, 0.6, 0.7, 0.4, 0.3].some(function (t) {
+            return [-24, 24, -38, 38].some(function (side) {
+              var mx = pa.x + vx * t - vy * side / len, my = pa.y + vy * t + vx * side / len, r = [mx - w, my - 13, mx + w, my + 4];
+              if (hits(r)) return false;
+              pick = { x: mx, y: my, r: r };
+              return true;
+            });
+          });
+        }
+      }
       if (!pick) { var fx = (pa.x + pb.x) / 2, fy = (pa.y + pb.y) / 2 - 14; pick = { x: fx, y: fy, r: [fx - w, fy - 13, fx + w, fy + 4] }; }
       taken.push(pick.r);
       out += "<text class=\"ow-miles\" x=\"" + pick.x + "\" y=\"" + pick.y + "\" text-anchor=\"middle\">" + label + "</text>";
@@ -251,7 +264,8 @@
     if (show === here) {
       html += "<div class=\"ow-card-line\">You are here.</div>";
       if (opts.enter) html += "<button type=\"button\" class=\"ow-btn\" data-ow-act=\"enter\">" + esc(opts.enter.text.replace(/\.$/, "")) + "</button>";
-      if (opts.camp) html += "<div class=\"ow-card-line\">Sleep 8 hours here to clear your fatigue.</div><button type=\"button\" class=\"ow-btn\" data-ow-act=\"camp\">Make camp for the night</button>";
+      (opts.deliver || []).forEach(function (d, i) { html += "<button type=\"button\" class=\"ow-btn ow-deliver\" data-ow-act=\"deliver\" data-ow-i=\"" + i + "\">" + esc(d.text.replace(/\.$/, "")) + "</button>"; });
+      if (opts.camp) html += "<div class=\"ow-card-line\">Make camp here to sleep, rest, eat or drill.</div><button type=\"button\" class=\"ow-btn\" data-ow-act=\"camp\">Make camp</button>";
       if (opts.dawn) html += "<button type=\"button\" class=\"ow-btn\" data-ow-act=\"dawn\">" + esc(opts.dawn.text.replace(/^Make camp and /, "").replace(/\.\s*(\[~?)/, " $1").replace(/^s/, "S")) + "</button>";
     } else {
       var r = OW.route(here, show);
@@ -364,7 +378,7 @@
         if (mx < view.cx - view.w / 2 + 60 || mx > view.cx + view.w / 2 - 60 || my < view.cy - h0 / 2 + 60 || my > view.cy + h0 / 2 - 60) { view.cx = mx; view.cy = my; }
       }
     }
-    var sig = [s.ow_pos, selected, selectedFeature, opts.enter ? opts.enter.text : "", num(s.minutes_since_meal), num(s.minutes_since_rest), rot, num(s.ow_exposure_pct), truthy(s.has_trail_rations) ? 1 + num(s.spare_trail_rations) : 0, opts.camp ? "camp" : "", opts.dawn ? opts.dawn.text : "", Object.keys(OW.nodes).length].join("|");
+    var sig = [s.ow_pos, selected, selectedFeature, opts.enter ? opts.enter.text : "", (opts.deliver || []).map(function (d) { return d.text; }).join("|"), num(s.minutes_since_meal), num(s.minutes_since_rest), rot, num(s.ow_exposure_pct), truthy(s.has_trail_rations) ? 1 + num(s.spare_trail_rations) : 0, opts.camp ? "camp" : "", opts.dawn ? opts.dawn.text : "", Object.keys(OW.nodes).length].join("|");
     var el = document.getElementById(PANEL_ID);
     if (el && sig === lastSig) return;
     if (sig !== lastSig) pressed = false; // a new page of options: the old press is over
@@ -435,6 +449,7 @@
     if (act === "go") { var sel = selected && OW.nodes[selected] ? selected : null; if (sel) travel(sel); }
     else if (act === "enter") { if (o && o.enter) { quiet(false); press(o.enter.radio); } }
     else if (act === "camp") { if (o && o.camp) { quiet(true); press(o.camp); } }
+    else if (act === "deliver") { var di = Number(t.getAttribute("data-ow-i")); if (o && o.deliver && o.deliver[di]) { quiet(true); press(o.deliver[di].radio); } }
     else if (act === "dawn") { if (o && o.dawn) { quiet(true); press(o.dawn.radio); } }
     else if (act === "zoomin") zoomAt(1 / 1.4, 0.5, 0.5);
     else if (act === "zoomout") zoomAt(1.4, 0.5, 0.5);

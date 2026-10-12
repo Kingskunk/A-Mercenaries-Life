@@ -110,6 +110,7 @@ function effectSummary(it) {
   if (ef.type === "wash") return "Hygiene back to Clean, with water at hand";
   if (ef.type === "dressing") return "+" + ef.bonus + " HP from your next sleep";
   if (ef.type === "ration") return "Clears hunger, like a meal";
+  if (ef.type === "throw") return ef.summary;
   var h = ef.minutes % 60 === 0 ? (ef.minutes / 60) + " hours" : ef.minutes + " minutes";
   return "+" + ef.bonus + " " + ef.stat.toUpperCase() + " for " + h;
 }
@@ -149,6 +150,8 @@ function genGearInfo() {
         // no fields: use_consumable clears the hunger clock itself, and calendar.txt advance_time eats one for you on the overworld
       } else if (ef.type === "dressing") {
         L.push('  *set gear_eff_bonus ' + ef.bonus);
+      } else if (ef.type === "throw") {
+        // no fields: a thrown item is used only in a fight, and combat.txt fight_throw_item / combat_spells.txt resolve_throw_item work from the item id
       } else {
         throw new Error("item '" + it.id + "': unknown effect type " + ef.type);
       }
@@ -220,6 +223,7 @@ function loadoutBlock(kind) {
       L.push('  *set weapon_type ' + q(o.type));
       L.push('  *set weapon_hands ' + q(o.hands));
       L.push('  *set weapon_prose ' + q(o.prose));
+      if (o.reach) L.push('  *set weapon_reach ' + q(o.reach));
     } else if (CLOTHING.indexOf(kind) !== -1) {
       need(o, ["desc", "prose"]);
       L.push('*if (equipped_' + kind + '_id = ' + q(it.id) + ')');
@@ -251,6 +255,7 @@ function genSidearms() {
     L.push('  *set sidearm_type ' + q(o.type));
     L.push('  *set sidearm_hands ' + q(o.hands));
     L.push('  *set sidearm_prose ' + q(o.prose));
+    if (o.reach) L.push('  *set sidearm_reach ' + q(o.reach));
   });
   return L;
 }
@@ -347,9 +352,10 @@ function genInventory() {
         L.push('  badge: function (s) { return ' + q(effectSummary(it)) + ' + (' + on + '(s) ? " · active, using it refreshes" : ""); },');
         L.push('  useLabel: function (s) { return ' + on + '(s) ? "Refresh" : "Use"; },');
       } else {
-        L.push('  badge: ' + q(effectSummary(it)) + ',');
+        L.push('  badge: ' + q(effectSummary(it)) + (it.effect.type === "throw" ? '' : ','));
       }
-      L.push('  use: true');
+      // Nothing to "Use" from the bag for a thrown item: it is thrown from the combat menu.
+      if (it.effect.type !== "throw") L.push('  use: true');
     }
     if (EQUIPPED_VAR[it.kind]) {
       var slot = it.kind;
@@ -394,7 +400,8 @@ function genShop(shop) {
 
 // ---------------------------------------------------------------- consumables (use menus)
 function consumables(combatOnly) {
-  return items.filter(function (it) { return it.kind === "consumable" && (!combatOnly || it.combat); });
+  // A thrown item (effect type throw) is used only in a fight, so it never appears in the out-of-combat satchel menu.
+  return items.filter(function (it) { return it.kind === "consumable" && (combatOnly ? it.combat : it.effect.type !== "throw"); });
 }
 // True while a boon of this item's name is already running in one of the three unique-buff slots (a boon item only).
 function boonRunning(it) {
@@ -430,7 +437,8 @@ function genUseOptions(goto, combatOnly) {
     L.push('*if (' + flag(it) + ')');
     L.push('  # ' + useLabel(it, combatOnly));
     L.push('    *set use_item_id ' + q(it.id));
-    L.push('    *goto ' + goto);
+    // A thrown item picks its own target first (combat.txt fight_throw_item), so it does not go through the shared use routine.
+    L.push('    *goto ' + (it.effect.type === "throw" ? "fight_throw_item" : goto));
   });
   return L;
 }

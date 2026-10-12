@@ -1,0 +1,153 @@
+*comment ====================================================================================
+*comment WHITEFOLD: Coldspine foothill village (overworld tile "wf"). The Quarry Yard,
+*comment Fleecefold and White Ram are its only destinations; the lime kilns and sheep pasture
+*remain Layer 1 scenery until they have gameplay to support.
+*comment ====================================================================================
+
+*label wf_arrive
+*set minutes_to_pass 5
+*set time_advance_call_id "wf_arrive_1"
+*gosub wf_walk_time
+*temp wf_first false
+*if (not(wf_seen))
+  *set wf_first true
+*set wf_seen true
+*if (wf_first)
+  The main foothill road leaves the last hard bend of Limestone Cut and reaches the broad scatter of fold yards, stone cottages and barns that make up Whitefold beneath the Coldspine. A narrower road breaks northwest through the pastures toward Redvein. Sheep pens climb the lower ground below the quarry face, and the smoke from low lime kilns lies close to the ground.
+*else
+  The road returns to Whitefold between its sheep pens and pale stone yards.
+*goto whitefold
+
+*label whitefold
+*set current_district "whitefold"
+*gosub_scene calendar update_hub_condition
+*set shop_open ""
+[b]◈ WHITEFOLD[/b]
+*line_break
+[b][⏳ Whitefold Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
+*line_break
+*gosub wf_place
+*gosub wf_sky
+*gosub wf_street
+
+*choice
+  *if (weather_severity >= 3)
+    # [b]The Quarry Yard[/b]: closed below the face in this weather.
+      *goto wf_yard_closed
+  *elseif ((time_period = "Dusk") or (time_period = "Night")) or (time_period = "Pre-Dawn")
+    # [b]The Quarry Yard[/b]: the gate is shut for the evening.
+      *goto wf_yard_closed
+  *else
+    # [b]The Quarry Yard[/b]: stone cutting, lime carts and the road below the face. [~5 min]
+      *goto_scene alderford/whitefold/stone_yard wf_stone_yard
+  *if ((time_period = "Dusk") or (time_period = "Night")) or (time_period = "Pre-Dawn")
+    # [b]The Fleecefold[/b]: the weighing floor is shut for the evening.
+      *goto wf_fold_closed
+  *else
+    # [b]The Fleecefold[/b]: wool sheds, shearers and the village weighing floor. [~5 min]
+      *goto_scene alderford/whitefold/fleecefold wf_fleecefold
+  # [b]The White Ram[/b]: a meal, a bed and a stable yard. [~5 min]
+    *goto_scene alderford/whitefold/white_ram wf_white_ram
+  # [b]The roads out of the village[/b]: leave Whitefold.
+    *set ow_pos "wf"
+    *goto_scene overworld/overworld ow_here
+
+*label wf_yard_closed
+[b]◈ THE QUARRY YARD[/b]
+*line_break
+*if (weather_severity >= 3)
+  The gate below the quarry face is shut. Rain, snow or hard wind has made the ledges unsafe, and the carts have been pulled under their sheds. Only the kiln smoke moves above the yard.
+*else
+  The gate below the quarry face is shut and the cutting beds stand empty beneath their lean-to roofs. A lamp glows behind the weigh-house shutter, but the working day is over.
+*page_break Return to the village lane...
+*goto whitefold
+
+*label wf_fold_closed
+[b]◈ THE FLEECEFOLD[/b]
+*line_break
+The rail pens are latched and the broad barn doors have been pulled to, leaving only a thread of warm light beneath them. The weighing floor and Common Room have closed for the evening.
+*page_break Return to the village lane...
+*goto whitefold
+
+*comment ── LAYER 1: PLACE ──
+*label wf_place
+Whitefold stands on hard, pale ground at the southern foot of the Coldspine. It is not one tight street but a spread of low stone steadings, fold yards and small barns gathered around the common and climbing the sheltered lower slopes. The quarry rises immediately behind the western end of the village in stepped white faces, with dark drill holes and narrow ledges under the mountain's broken slope. Slate roofs are weighted against the wind, and every household keeps some walled ground for vegetables, hens or a milk goat. The broader cart road comes in from Limestone Cut past a long trough where the teams drink. A narrower foothill road leaves the common northwest toward Redvein, running between the lower folds and the first broken slopes.
+
+The Quarry Yard fills the foot of the face: cutting beds, stacked blocks under lean-to roofs, a weigh platform and low carts waiting by the gate. Beyond it, the lime kilns sit in a row of white-stained domes, their fuel sheds and ash pits kept apart from the cottages. But the greater part of Whitefold looks to the flocks: dry-stone walls divide the rough pasture, lambing sheds stand open behind the houses, and narrow lanes run between family pens toward the grazing above. Across the lane stands the Fleecefold, a broad shared weighing and baling barn of pale stone and dark timber, with open pens beside it. The White Ram faces the small common at the road end, its ram-horn sign creaking above a pair of stable doors. Chalk dust, lanolin, wood smoke and wet sheep hang in the cold air.
+*return
+
+*comment ── LAYER 2: SKY AND GROUND MEMORY ──
+*label wf_sky
+*temp wf_dark false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set wf_dark true
+*if (weather = "Rain")
+  Rain darkens the quarry face and turns the chalk dust in the yard to pale paste.
+*elseif (weather = "Storm")
+  Wind tears across the open foothill and rattles every loose gate in Whitefold.
+*elseif (weather = "Fog")
+  Fog fills the lower ground below the village, leaving the quarry face as a pale wall above it.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow catches in the folds and lies in the quarry steps, turning the lanes to grey slush.
+*elseif (weather = "Blizzard")
+  Blown snow erases the far edge of the common and hides the Coldspine behind a white moving screen.
+*elseif (weather = "Clear")
+  *if (wf_dark)
+    Starlight catches on the quarry's pale ledges, while the kiln mouths show as dull red points below.
+  *elseif (time_period = "Dusk")
+    The last light holds on the upper quarry face while the cottages and folds settle into shadow.
+  *else
+    Clear light picks out the pale stone, dark sheep backs and the broken southern wall of the Coldspine.
+*else
+  A low overcast flattens the village into stone grey, wool grey and the white of the quarry face.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Water still lies in the wheel ruts, and the chalky yards remain soft beneath the fresh straw.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The lane is drying in pale patches, though the yard gates still carry a dark wet line at their bases.
+*return
+
+*comment ── LAYER 3: STREET LIFE ──
+*label wf_street
+*temp wf_vignette (((campaign_day * 24) + clock_hour) modulo 6) + 1
+*if ((street_life = "empty") and (not(wf_dark)))
+  The common is empty for the moment. A sheep calls once from the folds, and stone taps faintly somewhere behind the Quarry Yard gate.
+  *return
+*if (wf_dark)
+  *if (wf_vignette = 1)
+    A lamp moves across the Fleecefold's upper window, then goes out.
+  *elseif (wf_vignette = 2)
+    The White Ram's stable door creaks as somebody checks a latch.
+  *elseif (wf_vignette = 3)
+    A kiln breathes a low red glow through its vent before the wind takes it.
+  *elseif (wf_vignette = 4)
+    A sheep bell gives one small knock in the nearer fold.
+  *elseif (wf_vignette = 5)
+    Water drips from a cart axle into the mud beside the common.
+  *else
+    A shutter closes hard against the hillside wind.
+  *return
+*if (wf_vignette = 1)
+  Two people roll a squared block onto a low cart in the Quarry Yard.
+*elseif (wf_vignette = 2)
+  Fresh fleeces are shaken out over rails behind the Fleecefold while sheep move between the lower pens in a slow, bleating press.
+*elseif (wf_vignette = 3)
+  A child carries a bucket of feed across the common while a sheepdog shadows their heels.
+*elseif (wf_vignette = 4)
+  A cart team drinks at the trough while two shepherds guide a string of sheep past the common toward the upper grazing.
+*elseif (wf_vignette = 5)
+  White dust is swept from the White Ram's doorstep into the lane.
+*else
+  A loaded lime cart waits with its canvas tied down against the wind.
+*return
+
+*label wf_walk_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return

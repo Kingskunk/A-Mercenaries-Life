@@ -274,6 +274,48 @@ window.TRADE_DATA = {
     "countVar": "grave_ichor"
    }
   },
+  "alchemists_fire": {
+   "name": "alchemist's fire",
+   "title": "Alchemist's Fire",
+   "kind": "consumable",
+   "tier": "",
+   "retail": 25,
+   "minutes": 5,
+   "hint": "Thrown: 1d4 fire, burns 3 turns, worse on grease",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 12,
+    "countVar": ""
+   }
+  },
+  "herbalists_kit": {
+   "name": "herbalist's kit",
+   "title": "Herbalist's Kit",
+   "kind": "tool",
+   "tier": "",
+   "retail": 30,
+   "minutes": 5,
+   "hint": "+1 on Medicine checks",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 15,
+    "countVar": ""
+   }
+  },
   "warming_liniment": {
    "name": "warming liniment",
    "title": "Warming Liniment",
@@ -576,6 +618,27 @@ window.TRADE_DATA = {
    "retail": 2,
    "minutes": 5,
    "hint": "Eaten for you on the road when you grow hungry",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "countVar": ""
+   }
+  },
+  "grease_flask": {
+   "name": "grease flask",
+   "title": "Grease Flask",
+   "kind": "consumable",
+   "tier": "",
+   "retail": 5,
+   "minutes": 5,
+   "hint": "Thrown: Dex save or slick, falls when it moves",
    "slot": "",
    "stack": true,
    "sell": {
@@ -1230,13 +1293,17 @@ window.TRADE_DATA = {
    "buy": [
     "warming_liniment",
     "clear_head_draught",
-    "linen_bandage"
+    "linen_bandage",
+    "alchemists_fire",
+    "herbalists_kit"
    ],
    "sell": [
     "frog_slime",
     "centipede_gland",
     "viper_venom",
-    "grave_ichor"
+    "grave_ichor",
+    "alchemists_fire",
+    "herbalists_kit"
    ]
   },
   "hollis": {
@@ -1254,7 +1321,8 @@ window.TRADE_DATA = {
     "wool_blanket",
     "waxed_oilcloth",
     "lye_soap",
-    "trail_rations"
+    "trail_rations",
+    "grease_flask"
    ],
    "sell": [
     "hemp_rope",
@@ -1268,7 +1336,8 @@ window.TRADE_DATA = {
     "wool_blanket",
     "waxed_oilcloth",
     "lye_soap",
-    "trail_rations"
+    "trail_rations",
+    "grease_flask"
    ]
   },
   "vael": {

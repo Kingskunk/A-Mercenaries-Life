@@ -1021,19 +1021,10 @@
       tags: ["Middle Ward"], aliases: ["river gate", "north-west gate", "west gate", "wicket", "toll-house", "wall levy"],
       link: ["River Gate", "the River Gate"],
       unlock: "mw_river_gate_seen",
-      body: function (s) {
-        var out = [
-          "The north-west gate in the landward wall: thirty feet of grey blocks, with the trunk road passing through a gatehouse of two round towers. The road beyond turns north along the river cuttings toward the fork where the Grey and the Ashrun meet, with carters' yards and cheap inns outside the wall. Traffic sorts itself into three lanes under the arch: foot to the left, wheels to the right, stamped goods through the center."
-        ];
-        if (truthy(s.mw_river_talk_lanes)) {
-          out.push("A stamp is a Gilded Scales seal on the bill of lading, and stamped goods skip the weighing. Everyone else waits for a Council officer's measuring rod, which takes its cut off the top of the load as the wall levy.");
-        }
-        if (truthy(s.mw_river_talk_bell)) {
-          out.push("The great leaves shut at the night bell and open at first bell. A wicket in the left-hand leaf stays open for anyone with a reason to be out or in, and the clerk behind it decides what counts.");
-        }
-        return out;
-      },
-      see: ["cobb_tarrow", "trunk_road", "charter_gate", "port_watch", "wagon_yard"]
+      body: [
+        "The north-west gate in the landward wall: thirty feet of grey blocks, with the trunk road passing through a gatehouse of two round towers. The road beyond turns north along the river cuttings toward the fork where the Grey and the Ashrun meet, with carters' yards and cheap inns outside the wall. Traffic sorts itself into three lanes under the arch: foot to the left, wheels to the right, stamped goods through the center. Watch wardens and Council toll-clerks work the lanes in shifts at every hour."
+      ],
+      see: ["trunk_road", "charter_gate", "port_watch", "wagon_yard"]
     },
     {
       id: "wagon_yard", category: "places", title: "The Wagon Yard",
@@ -1052,43 +1043,11 @@
       tags: ["Middle Ward"], aliases: ["charter gate", "east gate", "imperial road", "wicket", "pilgrim hospices"],
       link: ["Charter Gate", "the Charter Gate"],
       unlock: "mw_charter_gate_seen",
-      body: function (s) {
-        var out = [
-          "The east gate in the landward wall: newer, higher and faced in pale limestone, with a single great arch, an iron grate in the gallery above and oak leaves hung from the towers. Carved across the arch: By the Old Charter. Open at First Bell, Shut at the Night Bell. Beyond it the imperial road runs east toward the Meridian country, with pilgrim hospices and salt-factors' yards outside the wall."
-        ];
-        if (truthy(s.mw_charter_talk_charter)) {
-          out.push("The gate is Port Valen's own by the old charter. No crown sends a garrison, and no crown sends money for the wall either, so the Council bills whoever comes under the arch.");
-        }
-        if (truthy(s.mw_charter_talk_pilgrims)) {
-          out.push("On feast days much of the road is pilgrims bound for the cathedral, who keep to the left-hand lane. The hospices outside the wall take in those who arrive after the bell.");
-        }
-        return out;
-      },
-      see: ["ilse_dornwell", "trunk_road", "river_gate", "port_watch"]
-    },
-    {
-      id: "cobb_tarrow", category: "people", title: "Cobb Tarrow",
-      sub: "Warden of the River Gate",
-      role: "Wall warden, River Gate (Port Watch)",
-      link: ["Cobb Tarrow", "Warden Tarrow", "Tarrow"],
-      tags: ["Middle Ward", "Law"], aliases: ["Tarrow", "Cobb", "wall warden"],
-      unlock: "mw_river_gate_seen",
       body: [
-        "A stocky Watch warden with a broken nose and a tally-stick, who stands at the foot of the left-hand tower and keeps the three lanes straight. He says the contents of the wagons are the clerks' business, not his."
+        "The east gate in the landward wall: newer, higher and faced in pale limestone, with a single great arch, an iron grate in the gallery above and oak leaves hung from the towers. Carved across the arch: By the Old Charter. Keep the Road Clear. Beyond it the imperial road runs east toward the Meridian country, with pilgrim hospices and salt-factors' yards outside the wall.",
+        "Watch wardens and Council toll-clerks work the arch in shifts. At night one oak leaf is drawn inward and the traffic narrows beneath lanterns, but the gate remains in use."
       ],
-      see: ["river_gate", "port_watch"]
-    },
-    {
-      id: "ilse_dornwell", category: "people", title: "Ilse Dornwell",
-      sub: "Warden of the Charter Gate",
-      role: "Wall warden, Charter Gate (Port Watch)",
-      link: ["Ilse Dornwell", "Warden Dornwell", "Dornwell"],
-      tags: ["Middle Ward", "Law"], aliases: ["Dornwell", "Ilse", "wall warden"],
-      unlock: "mw_charter_gate_seen",
-      body: [
-        "A tall, grey-eyed woman in a blue-and-brass surcoat who stands under the arch with a writ-board on her arm and reads every traveler as they come. She leaves the pilgrims their lane and their songs, and keeps the salt wagons to the right."
-      ],
-      see: ["charter_gate", "port_watch"]
+      see: ["trunk_road", "river_gate", "port_watch"]
     },
     {
       id: "cathedral", category: "places", title: "The Cathedral",
@@ -1228,7 +1187,7 @@
       link: ["Patrician Quarter"],
       unlock: function (s) {
         return truthy(s.upper_wharves_seen) || truthy(s.pq_gate_seen) || truthy(s.pq_inside_seen) ||
-          truthy(s.pq_walk_seen) || truthy(s.pq_tailor_seen) || truthy(s.pq_estates_seen);
+          truthy(s.pq_walk_seen) || truthy(s.pq_tailor_seen) || truthy(s.pq_ink_lamp_seen) || truthy(s.pq_bright_setting_seen) || truthy(s.pq_estates_seen);
       },
       body: function (s) {
         var out = [
@@ -1248,7 +1207,7 @@
         }
         return out;
       },
-      see: ["entry_writs", "scales_head_house", "alys_threnn", "gilt_needle", "civic_heights"]
+      see: ["entry_writs", "scales_head_house", "alys_threnn", "gilt_needle", "ink_and_lamp", "bright_setting", "civic_heights"]
     },
     {
       id: "alys_threnn", category: "people", title: "Alys Threnn",
@@ -1474,6 +1433,56 @@
         return out;
       },
       see: ["gilt_needle", "upper_wharves"]
+    },
+    {
+      id: "ink_and_lamp", category: "places", title: "The Ink & Lamp",
+      sub: "Bookseller and licensed scrollwork",
+      tags: ["Patrician Quarter", "Trade", "Magic"], aliases: ["bookshop", "bookseller", "scrolls", "maps", "books"],
+      link: ["The Ink & Lamp", "Ink & Lamp"],
+      unlock: "pq_ink_lamp_seen",
+      body: [
+        "A narrow bookshop near the Inner Gate, marked by a brass lamp above a window full of books. Road guides, tide tables, house histories, legal books, copied records, and older works fill its dark shelves. A press, ink pots, and folded maps cover the worktable behind the counter.",
+        "A three-locked glass cabinet behind the counter is marked Licensed Scrollwork. Aldren Saye examines and copies magical writing there, and says that a bad copy can hurt someone, ruin a room, or take payment for nothing."
+      ],
+      see: ["aldren_saye", "upper_wharves"]
+    },
+    {
+      id: "aldren_saye", category: "people", title: "Aldren Saye",
+      sub: "Bookseller of the Ink & Lamp",
+      role: "Bookseller and licensed arcanist, The Ink & Lamp",
+      link: ["Aldren Saye", "Aldren", "Saye"],
+      tags: ["Patrician Quarter", "Magic"], aliases: ["bookseller", "arcanist", "scrollwork"],
+      unlock: "pq_ink_lamp_seen",
+      body: [
+        "A lean man with close-cropped black hair, a narrow pale scar across one thumb, and ink marked into the side of one finger. He works beneath a brass lens at the back table of the Ink & Lamp, restoring old writing and examining scrolls before he will sell them.",
+        "His manner is careful rather than grand. He keeps rare stock behind the counter, asks what a customer needs before putting it in their hands, and insists that a spell on paper has to be tested before it can be trusted."
+      ],
+      see: ["ink_and_lamp", "upper_wharves"]
+    },
+    {
+      id: "bright_setting", category: "places", title: "The Bright Setting",
+      sub: "Jeweler and appraiser to the Quarter",
+      tags: ["Patrician Quarter", "Trade"], aliases: ["jeweler", "jewellery", "jewelry", "rings", "chains", "appraiser"],
+      link: ["The Bright Setting", "Bright Setting"],
+      unlock: "pq_bright_setting_seen",
+      body: [
+        "A small jeweler's shop near the Inner Gate, marked by a faceted-stone sign. Rings, brooches, chains, carved stones, and worked gold sit one piece to a card in felt-lined glass cases. A rear bench carries fine files, tongs, a charcoal brazier, a balance, and a black touchstone used to test metal.",
+        "Cassia Rell makes and repairs jewelry, weighs metal, and assesses a piece's material and condition. She will stand behind a price, but refuses to judge magic or decide who legally owns an object."
+      ],
+      see: ["cassia_rell", "upper_wharves"]
+    },
+    {
+      id: "cassia_rell", category: "people", title: "Cassia Rell",
+      sub: "Jeweler of the Bright Setting",
+      role: "Jeweler and appraiser, the Bright Setting",
+      link: ["Cassia Rell", "Cassia", "Rell"],
+      tags: ["Patrician Quarter", "Trade"], aliases: ["jeweler", "appraiser", "goldsmith"],
+      unlock: "pq_bright_setting_seen",
+      body: [
+        "A broad-shouldered woman with copper-brown skin, cropped black curls, and a magnifying loupe habitually braced before one dark eye. She works from the rear bench of the Bright Setting, where every tool has a fixed place.",
+        "Cassia speaks plainly about the limits of her work. She can test metal, inspect stones, repair a setting, and offer a price her shop will stand behind; a magical property or disputed ownership belongs with someone else."
+      ],
+      see: ["bright_setting", "upper_wharves"]
     },
     {
       id: "civic_heights", category: "places", title: "Civic Heights",

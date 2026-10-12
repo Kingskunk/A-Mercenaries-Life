@@ -50,13 +50,25 @@ ${ow_here_text}
   # Travel to the tile you picked on the map.
     *goto ow_travel
   *if (ow_can_camp)
-    # Make camp for the night.
-      *set ow_camp_mode "night"
-      *goto ow_camp_pre
-  *if ((ow_can_camp) and (ow_dawn_ok))
-    # Make camp and sleep until dawn. [~${ow_dawn_hours} Hours]
-      *set ow_camp_mode "dawn"
-      *goto ow_camp_pre
+    *comment One option: the camp page (overworld/camp.txt) offers the sleeps, a short rest, a meal and a drill. Its sleeps come back to ow_camp_pre below.
+    # Make camp.
+      *goto_scene overworld/camp camp_hub
+  *comment Courier parcels (radiant/hall_courier.txt): a parcel for this tile is delivered HERE, from the map card, without leaving the map. A new tile needs nothing: this checks the tile id the parcel was made for.
+  *if ((crs1_on) and ((crs1_to = ow_pos) and (campaign_day <= crs1_until)))
+    # Deliver ${crs1_item} to ${crs1_who}.
+      *gosub_scene port_valen/radiant/hall_courier cr_deliver 1
+      *page_break Walk on…
+      *goto ow_here
+  *if ((crs2_on) and ((crs2_to = ow_pos) and (campaign_day <= crs2_until)))
+    # Deliver ${crs2_item} to ${crs2_who}.
+      *gosub_scene port_valen/radiant/hall_courier cr_deliver 2
+      *page_break Walk on…
+      *goto ow_here
+  *if ((crs3_on) and ((crs3_to = ow_pos) and (campaign_day <= crs3_until)))
+    # Deliver ${crs3_item} to ${crs3_who}.
+      *gosub_scene port_valen/radiant/hall_courier cr_deliver 3
+      *page_break Walk on…
+      *goto ow_here
   *if (ow_pos = "pv")
     # Go back in through the River Gate.
       *set ow_on false
@@ -97,6 +109,11 @@ ${ow_here_text}
       *set ow_on false
       *set climate_shift 0
       *goto_scene alderford/redvein/redvein rv_arrive
+  *if (ow_pos = "wf")
+    # Go into Whitefold.
+      *set ow_on false
+      *set climate_shift 0
+      *goto_scene alderford/whitefold/whitefold wf_arrive
 
 *comment ── the sky over the road: weather and light only, no people ──
 *label ow_sky
@@ -224,6 +241,7 @@ ${ow_here_text}
 *set sleep_location_id ("roadside_" & ow_from)
 *set sleep_is_shared true
 *set sleep_is_permanent_home false
+*set sleep_is_paid_inn false
 *set sleep_tier_name "none"
 *set sleep_tier_stat1 "none"
 *set sleep_tier_bonus1 0
@@ -278,6 +296,7 @@ ${ow_here_text}
     *set sleep_location_id ("camp_" & ow_pos)
     *set sleep_is_shared true
     *set sleep_is_permanent_home false
+    *set sleep_is_paid_inn false
     *set sleep_tier_name "none"
     *set sleep_tier_stat1 "none"
     *set sleep_tier_bonus1 0

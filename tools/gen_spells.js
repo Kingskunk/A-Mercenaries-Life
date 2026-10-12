@@ -29,6 +29,9 @@ var CHECK = process.argv.indexOf("--check") !== -1;
 
 var spells = CATALOG.spells;
 var VALID_RANGES = { ranged: true, close: true, touch: true };
+var VALID_REACH = { touch: true, short: true, medium: true, long: true };
+// The reach class of a spell (see the catalog's readme): a touch-tagged spell is always touch, anything else defaults to long.
+function reachOf(s) { return s.range === "touch" ? "touch" : (s.reach || "long"); }
 
 var seenId = {};
 spells.forEach(function (s) {
@@ -37,6 +40,7 @@ spells.forEach(function (s) {
   });
   if (seenId[s.id]) throw new Error("duplicate spell id: " + s.id);
   seenId[s.id] = true;
+  if (s.reach && !VALID_REACH[s.reach]) throw new Error("spell '" + s.id + "' has reach '" + s.reach + "'; must be touch | short | medium | long");
   if (!VALID_RANGES[s.range]) {
     throw new Error("spell '" + s.id + "' has range '" + s.range + "'; must be ranged | close | touch");
   }
@@ -73,6 +77,15 @@ function genLookup() {
   spells.forEach(function (s) {
     L.push("*if (check_skill = " + q(s.name) + ")");
     L.push("  *set spell_range_tag " + q(s.range));
+  });
+  // Reach class: out of reach is UNAVAILABLE (spell_in_range false), never a penalty. Touch is covered by its range tag just below.
+  spells.forEach(function (s) {
+    var r = reachOf(s);
+    if (r === "short" || r === "medium") {
+      L.push("*if (check_skill = " + q(s.name) + ")");
+      L.push("  *if (spell_range_at > " + (r === "short" ? "1" : "combat_reach_medium") + ")");
+      L.push("    *set spell_in_range false");
+    }
   });
   L.push("*if (spell_range_tag = \"close\")");
   L.push("  *if (spell_range_at <= 0)");
@@ -111,7 +124,19 @@ function setRegion(file, name, lines) {
   pending[file] = rows.slice(0, b + 1).concat(body, rows.slice(e)).join("\n");
 }
 
+// One flag per spell for the hub to gate its option on: can ANY living enemy be reached by this spell right now? The class flags
+// (combat_in_short, combat_in_medium) and combat_melee_reach are worked out by hand in the hub just above the block.
+function genReachFlags() {
+  var L = [];
+  spells.forEach(function (s) {
+    var r = reachOf(s);
+    var flag = r === "touch" ? "combat_melee_reach" : (r === "short" ? "combat_in_short" : (r === "medium" ? "combat_in_medium" : "combat_in_long"));
+    L.push("*temp spell_reach_ok_" + s.id + " " + flag);
+  });
+  return L;
+}
 setRegion(path.join(SCENES, "combat.txt"), "spell_range_lookup", genLookup());
+setRegion(path.join(SCENES, "combat.txt"), "spell_reach_flags", genReachFlags());
 
 // ---------------------------------------------------------------- write or check
 var stale = [];

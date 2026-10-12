@@ -278,6 +278,8 @@ function compile(){
   verifyFileName("port_valen/radiant/hall_watch.txt");
   verifyFileName("port_valen/radiant/hall_perform.txt");
   verifyFileName("port_valen/radiant/hall_escort.txt");
+  verifyFileName("port_valen/radiant/hall_courier.txt");
+  verifyFileName("overworld/camp.txt");
   // Timbermouth, the placeholder town (see its hub's header comment): a hub plus one file per place, all reached only by *goto_scene (from the developer menu for now), so none
   // of them is in *scene_list and each needs its own line here or a compiled build fails with "scene doesn't exist" the moment the player walks in.
   verifyFileName("timbermouth/timbermouth.txt");
@@ -311,6 +313,11 @@ function compile(){
   verifyFileName("alderford/redvein/eastcut.txt");
   verifyFileName("alderford/redvein/gather_house.txt");
   verifyFileName("alderford/redvein/red_lantern.txt");
+  // Whitefold is Alderford's Coldspine limestone-and-wool village. Its three public places follow the same hub pattern as Redvein.
+  verifyFileName("alderford/whitefold/whitefold.txt");
+  verifyFileName("alderford/whitefold/stone_yard.txt");
+  verifyFileName("alderford/whitefold/fleecefold.txt");
+  verifyFileName("alderford/whitefold/white_ram.txt");
   // Alderford follows the same one-hub, one-file-per-place shape as Timbermouth. Every place needs a verifyFileName line here because it is reached by *goto_scene rather than *scene_list.
   verifyFileName("alderford/alderford.txt");
   verifyFileName("alderford/drowned_oar.txt");

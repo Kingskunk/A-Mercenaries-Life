@@ -175,6 +175,13 @@
       *set sleep_buff2_desc "none"
       *set sleep_buff2_stat "none"
       *set sleep_buff2_bonus 0
+  *comment Well Rested is a check-only inn benefit, deliberately kept out of the ability-score buff pipeline.
+  *if (well_rested_active) and (total_mins_this_call > 0)
+    *if (well_rested_minutes_left > total_mins_this_call)
+      *set well_rested_minutes_left - total_mins_this_call
+    *else
+      *set well_rested_minutes_left 0
+      *set well_rested_active false
   *comment Buffs are ability-score boons now, so a buff that just ran out has to give its score back. Recalculating is a dozen scene calls, so it runs only when the number of
   *comment active buffs changed during this call (one ran out); a call with no buff, or with buffs still running, changes no score.
   *gosub buff_active_count
@@ -511,6 +518,8 @@
 *comment                             location's debuff) -- resolve_sleep
 *comment                             handles the sign either way.
 *comment   sleep_tier_stat2/bonus2 - second stat bonus ("none"/0 if unused)
+*comment   sleep_is_paid_inn        - true only for a rented room at an inn;
+*comment                              grants the separate Well Rested check boon.
 *comment
 *comment Every call fully overwrites both sleep_buff slots, even to
 *comment inactive -- one night's sleep always supersedes the last, never
@@ -621,6 +630,13 @@
   *set sleep_buff2_stat sleep_tier_stat2
   *set sleep_buff2_bonus sleep_tier_bonus2
   *set sleep_buff2_minutes_left 480
+*comment A paid private inn room gives a predictable, check-only benefit. Any other sleep replaces it.
+*if ((sleep_is_shared) or (not(sleep_is_paid_inn)))
+  *set well_rested_active false
+  *set well_rested_minutes_left 0
+*else
+  *set well_rested_active true
+  *set well_rested_minutes_left 720
 *gosub_scene character_buffs recalculate_buff_stats
 *gosub update_hub_condition
 *return
@@ -664,6 +680,8 @@
     *set hub_condition_str "${hub_condition_str} | ${horse_kept_name} was kept by the stable"
   *if (sleep_buff1_active)
     *set hub_condition_str "${hub_condition_str} | ${sleep_buff1_name}"
+  *if (well_rested_active)
+    *set hub_condition_str "${hub_condition_str} | Well Rested (+1 INT/WIS checks)"
   *if (dressing_on)
     *set hub_condition_str "${hub_condition_str} | Wounds Dressed"
 *comment Keeps level_up_ready (and so the top-bar Level Up button) current: advance_time ends by calling this, and the district hubs call it

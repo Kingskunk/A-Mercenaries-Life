@@ -23,6 +23,8 @@
 *comment WEAPONS & SHIELDS
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label apply_weapon_loadout
+*comment Reach class of a ranged weapon (long unless a loadout below says otherwise: the sling and the hand crossbow are medium). Reset first, so a swap never leaves the last weapon's reach behind.
+*set weapon_reach "long"
 *if (equipped_weapon_id = "starting")
   *set weapon starting_weapon
   *set weapon_desc starting_weapon_desc
@@ -72,6 +74,7 @@
   *set weapon_type "ranged"
   *set weapon_hands "one_handed"
   *set weapon_prose "sling"
+  *set weapon_reach "medium"
 *if (equipped_weapon_id = "hunting_bow")
   *set weapon "hunting bow"
   *set weapon_desc "Hunting Bow"
@@ -135,6 +138,7 @@
   *set weapon_damage "1d6 piercing"
   *set weapon_damage_type "piercing"
   *set weapon_type "ranged"
+  *set weapon_reach "medium"
   *set weapon_hands "one_handed"
   *set weapon_prose "hand crossbow"
 *if (equipped_weapon_id = "bodkin_dagger")
@@ -720,6 +724,7 @@
 *comment SIDEARM
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label apply_sidearm_loadout
+*set sidearm_reach "long"
 *if (equipped_sidearm_id = "starting")
   *set sidearm starting_weapon
   *set sidearm_desc starting_weapon_desc
@@ -758,6 +763,7 @@
   *set sidearm_damage "1d6 piercing"
   *set sidearm_damage_type "piercing"
   *set sidearm_type "ranged"
+  *set sidearm_reach "medium"
   *set sidearm_hands "one_handed"
   *set sidearm_prose "hand crossbow"
 *if (equipped_sidearm_id = "bodkin_dagger")
@@ -809,6 +815,7 @@
   *set sidearm_type "ranged"
   *set sidearm_hands "one_handed"
   *set sidearm_prose "sling"
+  *set sidearm_reach "medium"
 *if (equipped_sidearm_id = "hunting_bow")
   *set sidearm "hunting bow"
   *set sidearm_desc "Slung Hunting Bow"
@@ -1695,6 +1702,48 @@
   *set gear_title "Grave Ichor"
   *set gear_piece_herbalist 15
   *set gear_count_var "grave_ichor"
+*if (gi_item = "grease_flask")
+  *set gear_name "grease flask"
+  *set gear_retail 5
+  *set gear_kind "consumable"
+  *set gear_title "Grease Flask"
+  *set gear_stack true
+  *set gear_effect "throw"
+  *set gear_use_text "You pull the stopper and hurl the flask."
+  *set gear_use_verb "Throw"
+  *set gear_combat true
+  *set gear_eff_summary "Thrown: a foe that fails a Dex save slips when it moves"
+  *set gear_hint "Thrown: Dex save or slick, falls when it moves"
+  *set gear_blurb "A stoppered clay flask of rendered tallow and pitch-oil, thick and yellow, made to be thrown."
+  *set gear_minutes 5
+  *set gear_pct_general 50
+*if (gi_item = "alchemists_fire")
+  *set gear_name "alchemist's fire"
+  *set gear_retail 25
+  *set gear_kind "consumable"
+  *set gear_title "Alchemist's Fire"
+  *set gear_stack true
+  *set gear_effect "throw"
+  *set gear_use_text "You break the wax seal and hurl the flask."
+  *set gear_use_verb "Throw"
+  *set gear_combat true
+  *set gear_eff_summary "Thrown: 1d4 fire, then burns for 3 turns"
+  *set gear_hint "Thrown: 1d4 fire, burns 3 turns, worse on grease"
+  *set gear_blurb "A sealed glass flask of Ambrose's sticky amber mixture that catches the moment it meets air."
+  *set gear_minutes 5
+  *set gear_piece_herbalist 12
+*if (gi_item = "herbalists_kit")
+  *set gear_name "herbalist's kit"
+  *set gear_retail 30
+  *set gear_kind "tool"
+  *set gear_title "Herbalist's Kit"
+  *set gear_stack true
+  *set gear_hint "+1 on Medicine checks"
+  *set gear_blurb "A waxed-canvas satchel of stoppered phials, a small bronze mortar, pressed herbs in paper, a bone needle and a coil of clean thread."
+  *set gear_minutes 5
+  *set gear_piece_herbalist 15
+  *if (gear_shop = "ambrose")
+    *set gear_quote "\"Everything in it I would carry myself,\" Master Ambrose says, and ties the flap shut. \"A good kit does not heal anyone. It lets a steady hand do it properly.\""
 *comment GEN:END gear_info_items
 *return
 
@@ -1723,8 +1772,17 @@
   *set gear_sale_desc "nothing"
 *return
 
+*comment SELL BONUS (2026-10-11, on request): how much more than the base price a buyer pays THIS player, as a percent, in sell_bonus_pct. It is the one place that decides it. Today: 5% per point of positive
+*comment Charisma modifier (cha_mod already counts any boon), nothing for a modifier of 0 or less (the user asked for a bonus, not a penalty). To add another source (a reputation, a perk, a ring), add a line here that
+*comment adds to sell_bonus_pct; gear_unit_value, the menus and the trade panel all read this one number. Called by gear_unit_value on every quote, so it is never stale; a plain set of a value worked out from stats.
+*label sell_bonus_percent
+*set sell_bonus_pct 0
+*if (cha_mod > 0)
+  *set sell_bonus_pct (cha_mod * 5)
+*return
+
 *comment *gosub_scene equipment gear_unit_value <item_id> <"smith"|"pawn"|"general"|"tailor">   (output gear_unit_copper: what ONE
-*comment unit fetches from that buyer; 0 means this buyer declines it)
+*comment unit fetches from that buyer; 0 means this buyer declines it; the player's sell bonus (sell_bonus_percent) is already in it)
 *comment Prices come from the catalog's sell fields (gear_info): a percentage of retail per buyer, an optional fixed
 *comment pawn value, and an optional per-piece smith price for a counted item. "general" is the general store.
 *label gear_unit_value
@@ -1747,6 +1805,12 @@
   *set gear_unit_copper gear_piece_smith
 *if ((guv_buyer = "herbalist") and (gear_piece_herbalist > 0))
   *set gear_unit_copper gear_piece_herbalist
+*comment The sell bonus, last, on the final per-unit price (a fixed pawn price and a per-piece price get it too), rounded to the NEAREST copper (half up): prices here are a handful of coppers, and rounding down would let
+*comment a +15% vanish on anything under 7 coppers. A price still too small to gain a copper stays as it was.
+*gosub sell_bonus_percent
+*if (sell_bonus_pct > 0)
+  *temp guv_scaled ((gear_unit_copper * (100 + sell_bonus_pct)) + 50)
+  *set gear_unit_copper ((guv_scaled - (guv_scaled modulo 100)) / 100)
 *return
 
 *comment *gosub_scene equipment gear_sale_value <item_id> <"smith"|"pawn"|"general"|"tailor">   (a price of 0 means this buyer declines)
@@ -1756,10 +1820,11 @@
 *gosub gear_unit_value gsv_item gsv_buyer
 *set gear_sale_name gear_name
 *set gear_sale_copper gear_unit_copper
+*comment A counted item sells per piece; gear_unit_copper is the per-piece price WITH the sell bonus, so the lot is that times the count.
 *if ((gsv_buyer = "smith") and (gear_piece_smith > 0))
-  *set gear_sale_copper (gear_piece_smith * {gear_count_var})
+  *set gear_sale_copper (gear_unit_copper * {gear_count_var})
 *if ((gsv_buyer = "herbalist") and (gear_piece_herbalist > 0))
-  *set gear_sale_copper (gear_piece_herbalist * {gear_count_var})
+  *set gear_sale_copper (gear_unit_copper * {gear_count_var})
 *gosub format_copper gear_sale_copper
 *return
 
@@ -1962,6 +2027,18 @@
 *comment page lock and its result stays set, so a refresh cannot use a second copy.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+*comment Uses up one copy of a consumable: a spare if there is one, otherwise the item itself. The caller owns the replay lock (use_consumable's use_locked, or a thrown item's combat_cast_locked in combat_spells.txt resolve_throw_item).
+*label spend_consumable
+*params sc_item
+*set gear_flag_var ("has_" & sc_item)
+*set gear_spare_var ("spare_" & sc_item)
+*temp sc_spare {gear_spare_var}
+*if (sc_spare > 0)
+  *set {gear_spare_var} (sc_spare - 1)
+*else
+  *set {gear_flag_var} false
+*return
+
 *label use_consumable
 *params uc_item
 *if (not(use_locked)) or (not(locked_use_page_id = page_id))
@@ -2048,13 +2125,7 @@
         *gosub_scene calendar update_hub_condition
         *set use_banner ("🩹 Wounds Dressed: " & gear_eff_summary)
     *if (use_result = "ok")
-      *set gear_flag_var ("has_" & uc_item)
-      *set gear_spare_var ("spare_" & uc_item)
-      *temp uc_spare {gear_spare_var}
-      *if (uc_spare > 0)
-        *set {gear_spare_var} (uc_spare - 1)
-      *else
-        *set {gear_flag_var} false
+      *gosub spend_consumable uc_item
   *set use_locked true
   *set locked_use_page_id page_id
 *return
