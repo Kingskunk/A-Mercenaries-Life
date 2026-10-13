@@ -38,6 +38,7 @@ const LINTERS = [
   'lint_dash_frequency',
   'lint_weather_names',
   'lint_slow_healing',
+  'lint_replay_guard',
 ];
 
 let target = null;

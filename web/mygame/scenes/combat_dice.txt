@@ -41,6 +41,7 @@
 *comment this same check -- not a separate halving elsewhere -- so it
 *comment correctly cancels against an item-granted vulnerability to the same
 *comment type instead of silently compounding with it.
+*comment replay-ok: the callers (resolve_enemy_attack) are inside their own once-per-page locks, and the halving reads a roll made in the same lock.
 *label apply_incoming_damage_resist_vuln
 *comment Own suffix var (combat_incoming_dmg_suffix), never combat_outgoing_
 *comment dmg_suffix -- resolve_enemy_attack can call BOTH this AND the
@@ -83,6 +84,7 @@
 *comment active into these scratch names, same as every other combat_enemy_*
 *comment field, so this never needs to know which slot it's reading. Own
 *comment suffix var (combat_outgoing_dmg_suffix) for the same reason as above.
+*comment replay-ok: every caller sits inside a once-per-page lock (combat_player_hit_locked, combat_weapon_hit_locked, crt_page, cb_page) or a spent flag (booming), and halves a roll made in the same lock.
 *label apply_outgoing_damage_resist_vuln
 *set combat_outgoing_dmg_suffix ""
 *temp aodrv_resisted (((combat_player_dmg_type = combat_enemy_resist_type_1) and (not(combat_enemy_resist_type_1 = ""))) or ((combat_player_dmg_type = combat_enemy_resist_type_2) and (not(combat_enemy_resist_type_2 = ""))))

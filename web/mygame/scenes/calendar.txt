@@ -314,6 +314,7 @@
 *set exposure_base_mins 0
 *set exposure_extra_mins 0
 
+*comment replay-ok: runs inside advance_time's replay guard, and the subtraction leaves calendar_day at or below month_max, so a second pass finds nothing to carry.
 *label check_calendar_month
 *temp month_max 30
 *if (calendar_month_num = 1)
@@ -472,6 +473,7 @@
 *comment gosub, not after. The prologue chapters (before Port Valen) never call this and keep
 *comment their simple direct-HP handling and instant scripted heals.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment replay-ok: idempotent by design: only the change in debt is applied, and hp_debt_applied is set to the total (see its header).
 *label recalc_hp_from_neglect
 *temp hp_debt_total (neglect_damage_hunger + neglect_damage_fatigue)
 *set hp_current (hp_current - (hp_debt_total - hp_debt_applied))
@@ -998,6 +1000,7 @@
 *comment THE STABLE'S BILL. Called once for each night the player's horse spends stabled (days_to_pass of them): 2 copper a day in a town or city, 1 in a village (the kind of the tile ow_pos names, which is
 *comment the settlement the player is in), added to horse_owed and paid in full whenever the purse covers it. A purse that cannot cover it adds those days to horse_unpaid_days (the hub header shows them),
 *comment and the third unpaid day the stable keeps the horse for its board: has_horse goes false and horse_kept_name and horse_kept_day let the header say so for a day. Inside advance_time's own replay guard.
+*comment replay-ok: called only from advance_time's day tick, inside its replay guard (see the header above).
 *label horse_upkeep
 *script var n = window.Overworld.nodes[stats.ow_pos]; stats.horse_rate = (n && n.kind === "village") ? 1 : 2;
 *set horse_owed (horse_owed + (horse_rate * days_to_pass))

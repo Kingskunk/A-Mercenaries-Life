@@ -157,6 +157,7 @@
   *set combat_enemy_max_hp combat_enemy_hp_override
 *if (not(combat_enemy_ac_override = 999))
   *set combat_enemy_ac combat_enemy_ac_override
+*comment replay-ok: the override is consumed (set back to 999) a few lines below, so a replay finds 999 and skips this block.
 *if (not(combat_enemy_atk_override = 999))
   *if (combat_enemy_move2_chance > 0)
     *set so_delta combat_enemy_atk_override
@@ -515,6 +516,7 @@
 *comment and before any attack. If the enemy in combat_active_target is sheathed (combat_enemyN_booming), the flag is spent, it takes 1d8 thunder through the usual resistance and vulnerability check, and
 *comment the new HP is written back to its slot. combat_boom_killed tells the caller it died, and the caller jumps to cnt_boom_tail so the dead enemy never reaches its attack. A forced move (Shove) never
 *comment calls this. The flag is cleared as it is spent, so a refresh that replays the page cannot take the damage twice.
+*comment replay-ok: the sheathed flag is cleared as it is spent, so a replay cannot take the damage twice (see the header).
 *label fight_booming_trigger
 *set combat_boom_killed false
 *comment quicktest's coverage walk reaches this label with combat_active_target still 0, and there is no combat_enemy0_booming, so the slot indirection is guarded (the same fix fight_pick_enemy_move needed).
@@ -1180,6 +1182,7 @@
 *comment ChoiceScript-side convenience so callers don't each write their own bounded loop.
 *set combat_mm_darts_total 0
 *temp cmrd_i 1
+*comment replay-ok: combat_mm_recount_darts zeroes combat_mm_darts_total before this loop, so the total is rebuilt on every call.
 *label combat_mm_recount_darts_loop
 *if (cmrd_i <= combat_enemy_slot_cap)
   *set combat_mm_darts_total + {(("combat_mm_darts_" & cmrd_i))}
@@ -1202,6 +1205,7 @@
   *goto find_flanking_ally_loop
 *return
 
+*comment replay-ok: every caller sits inside a cantrip or cast replay lock (combat_cantrip_choice_locked / combat_cast_locked), so this runs once per click.
 *label combat_apply_player_ranged_terrain
 *comment The four spell attack options call this after identifying their target. Touch attacks and saving-throw
 *comment spells deliberately do not: elevation and Cover change a ranged attack roll, never a saving throw.
@@ -4519,6 +4523,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *comment or the player_stunned banner) gates the page_break right before the player's menu reappears, so a chain
 *comment that dispatches straight to the player with nothing having happened yet (round 1's first entry, most
 *comment commonly) reads with no break at all, exactly as it always did.
+*comment replay-ok: the turn chain advances once per page; checked in a real browser (Menu then Return left combat_current_turn_index unchanged on every page of a fight).
 *set combat_current_turn_index + 1
 *if (combat_current_turn_index > combat_turn_count)
   *set combat_current_turn_index 1
