@@ -11,6 +11,7 @@
 *goto mc_wayfarers_rest_main
 
 *label mc_wayfarers_rest_main
+*gosub_scene port_valen/marlcross/milling_fair festival_state
 *temp rest_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
 *if (rest_now >= mc_rest_room_until)
   *set mc_rest_room_active false
@@ -47,11 +48,28 @@ The Wayfarer's Rest is a broad, low inn built along the road-side edge of the cr
   The yard ruts still hold a little water beneath the straw scattered over them.
 
 *if (mc_rest_first)
-  A broad-shouldered, middle-aged human woman stands behind the counter with a ring of keys at her belt. Her dark hair is cut close around her ears; a pale burn scar crosses the back of her left hand, and her square face gives you a plain look across the counter. "Tamsin Pike. Food is ready when the pot is on, rooms are three copper, and the yard has water and hay. Tell me which you need."
+  A broad-shouldered, middle-aged human woman stands behind the counter with a ring of keys at her belt. Her dark hair is cut close around her ears; a pale burn scar crosses the back of her left hand, and her square face gives you a plain look across the counter. "Tamsin Pike. Pot's on when it's on, rooms are three copper, and the yard's got water and hay. What do you need?"
 *else
   Tamsin Pike keeps the counter, with the room keys hanging within reach behind her.
 
-*if ((street_life = "empty") and (not(rest_state = "night")))
+*if (marlcross_milling_fair_today)
+  *if (marlcross_milling_fair_indoors)
+    The front room is crowded with fairgoers sheltering from the weather. Tamsin has cleared one end of the counter for registration papers and keeps directing pie sellers toward the Cross Hall.
+  *elseif (marlcross_milling_fair_phase = "morning")
+    Tamsin has claimed the end of the counter for the Milling Fair register. Contestants and their backers queue beneath a chalkboard that reads [i]PIE-EATING ENTRIES[/i], while the kitchen sends out tray after tray of ${marlcross_milling_fair_pie_description}.
+    *if (marlcross_milling_fair_last_outcome = "won")
+      Your old winning number remains in the corner of the board, half hidden by this year's fresh chalk.
+    *elseif (marlcross_milling_fair_last_outcome = "draw")
+      A pair of old contest numbers have been pinned together beneath the new list, left there as a joke about last year's split purse.
+    *elseif (marlcross_milling_fair_boro_legacy = "exposed")
+      Boro, Tov, and Keda Broadbelt enter one at a time today, drawing more looks than the other names on the list.
+  *elseif (marlcross_milling_fair_phase = "contest")
+    With the contest under way on the Green, the Rest has become a waiting room for late arrivals and nervous backers. Tamsin keeps one ear turned toward the cheering outside while she pours drinks.
+  *elseif (marlcross_milling_fair_phase = "afternoon")
+    The front room is full of people arguing cheerfully over who ate the most and whether the judges counted fairly. A smear of flour marks the edge of Tamsin's register where she has closed it for the day.
+  *else
+    The register has been put away, but the Rest is still busy with departing visitors and villagers retelling the day over the last cups at the tables.
+*elseif ((street_life = "empty") and (not(rest_state = "night")))
   The tables are empty for the moment, and the kitchen sounds carry clearly through the half-open door.
 *elseif (rest_state = "morning")
   *if ((rest_vignette = 1) or (rest_vignette = 4))
@@ -76,6 +94,14 @@ The Wayfarer's Rest is a broad, low inn built along the road-side edge of the cr
     People pause only briefly at the tables: a drink of water, a scrape of food, a look through the front window at the road before they move on.
 
 *choice
+  *if (((marlcross_milling_fair_today and (marlcross_milling_fair_phase = "morning")) and (not(marlcross_milling_fair_registered))) and (not(marlcross_milling_fair_completed)))
+    # [2 Copper Bits] Put your name down for the pie-eating contest.
+      *goto_scene port_valen/marlcross/milling_fair register
+  *if (((marlcross_milling_fair_today and (marlcross_milling_fair_phase = "morning")) and marlcross_milling_fair_registered) and (not(marlcross_milling_fair_completed)))
+    # Check that your contest entry is still on Tamsin's register.
+      Tamsin taps the chalk number beside your name. "Still there. Judges call the table at midday, so don't wander far."
+      *page_break Leave the counter...
+      *goto mc_wayfarers_rest_main
   *if ((((gold * 100) + (silver * 10)) + copper) >= 2)
     # [2 Copper Bits] Buy a bowl of beef, beans and barley. [~20 min]@{show_stat_hints  [+2 Temp HP, +1 CON for 4h]|}
       *set tavern_item_cost_copper 2
@@ -144,14 +170,14 @@ The Wayfarer's Rest is a broad, low inn built along the road-side edge of the cr
       *set mc_rest_room_until (rest_now + 1440)
       You place the price on the counter. "A room, then."
 
-      Tamsin takes the coins and unhooks an iron key from the board behind her. "Top of the stair, second door," she says. "It is yours until this hour tomorrow. The yard will be louder than the house before dawn."
+      Tamsin takes the coins and unhooks an iron key from the board behind her. "Top of the stair, second door," she says. "It's yours till this hour tomorrow. Yard'll wake before the house does."
       *page_break Take the stair...
       *goto mc_rest_room
   *else
     # Ask Tamsin about a room.
       You nod toward the keys behind the counter. "What is the rate for a room?"
 
-      "${mc_rest_rate_copper} copper bits for a day and a night," Tamsin says. "Bring that, and I will hand you a key."
+      "${mc_rest_rate_copper} copper for a day and night," Tamsin says. "Bring it over, and I'll hand you a key."
 
       "I will remember," you say.
       *page_break Step back from the counter...

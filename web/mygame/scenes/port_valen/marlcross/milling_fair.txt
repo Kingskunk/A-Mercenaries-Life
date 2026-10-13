@@ -49,4 +49,470 @@
 *if ((marlcross_milling_fair_year = calendar_year) and (current_season = "Autumn"))
   *if ((calendar_month_num < marlcross_milling_fair_month) or ((calendar_month_num = marlcross_milling_fair_month) and (calendar_day < marlcross_milling_fair_day)))
     *set marlcross_milling_fair_notice_active true
+*gosub reset_for_year
 *return
+
+*label reset_for_year
+*if (marlcross_milling_fair_event_year != marlcross_milling_fair_year)
+  *set marlcross_milling_fair_event_year marlcross_milling_fair_year
+  *set marlcross_milling_fair_registered false
+  *set marlcross_milling_fair_contest_started false
+  *set marlcross_milling_fair_completed false
+  *set marlcross_milling_fair_round 0
+  *set marlcross_milling_fair_boro_out false
+  *set marlcross_milling_fair_spotted_trick false
+  *set marlcross_milling_fair_cheat_choice "none"
+  *set marlcross_milling_fair_outcome "none"
+  *set marlcross_milling_fair_prize_paid false
+  *set marlcross_milling_fair_completion_recorded false
+  *if (marlcross_milling_fair_years_completed = 0)
+    *rand marlcross_milling_fair_program 1 3
+  *else
+    *set marlcross_milling_fair_program (marlcross_milling_fair_last_program + 1)
+    *if (marlcross_milling_fair_program > 3)
+      *set marlcross_milling_fair_program 1
+  *if (marlcross_milling_fair_program = 1)
+    *set marlcross_milling_fair_pie_description "apple and dried berry pies"
+    *set marlcross_milling_fair_prize_copper 15
+    *set marlcross_milling_fair_prize_description "a fifteen-copper purse tied with a flour-white ribbon"
+  *elseif (marlcross_milling_fair_program = 2)
+    *set marlcross_milling_fair_pie_description "beef, onion, and pepper pies"
+    *set marlcross_milling_fair_prize_copper 18
+    *set marlcross_milling_fair_prize_description "an eighteen-copper purse from the carters' pool"
+  *else
+    *set marlcross_milling_fair_pie_description "pear, cheese, and honey pies"
+    *set marlcross_milling_fair_prize_copper 12
+    *set marlcross_milling_fair_prize_description "a twelve-copper purse from the miller's winter fund"
+  *set name_seed (marlcross_milling_fair_year * 73)
+  *set name_seed + (marlcross_milling_fair_month * 31)
+  *set name_seed + marlcross_milling_fair_day
+  *set name_setting "village"
+  *gosub_scene names name_pick_race
+  *set name_region "marches"
+  *set name_gender "any"
+  *gosub_scene names name_make
+  *set marlcross_milling_fair_honest_contender_name name_full
+  *set name_seed + 1
+  *gosub_scene names name_pick_race
+  *gosub_scene names name_make
+  *set marlcross_milling_fair_lean_contender_name name_full
+  *set name_seed + 1
+  *gosub_scene names name_pick_race
+  *gosub_scene names name_make
+  *set marlcross_milling_fair_broad_contender_name name_full
+  *set name_salt 72
+  *set name_n 3
+  *gosub_scene names name_roll
+  *set marlcross_milling_fair_table_variant name_rolled
+  *set name_salt 71
+  *set name_n 3
+  *gosub_scene names name_roll
+  *set marlcross_milling_fair_boro_trick_active true
+  *set marlcross_milling_fair_finalist_name "Boro Broadbelt"
+  *if (marlcross_milling_fair_boro_legacy = "exposed")
+    *set marlcross_milling_fair_boro_trick_active false
+    *set marlcross_milling_fair_finalist_name "Tov Broadbelt"
+  *elseif (marlcross_milling_fair_boro_legacy = "bargained")
+    *set marlcross_milling_fair_boro_trick_active false
+  *elseif (marlcross_milling_fair_boro_legacy = "kept")
+    *set marlcross_milling_fair_boro_trick_active true
+  *if (marlcross_milling_fair_boro_trick_active)
+    *set marlcross_milling_fair_winner_name marlcross_milling_fair_finalist_name
+  *elseif (name_rolled = 0)
+    *set marlcross_milling_fair_winner_name marlcross_milling_fair_finalist_name
+  *else
+    *set marlcross_milling_fair_winner_name marlcross_milling_fair_honest_contender_name
+*return
+
+*label record_completion
+*if (not(marlcross_milling_fair_completion_recorded))
+  *set marlcross_milling_fair_completion_recorded true
+  *set marlcross_milling_fair_years_completed + 1
+  *set marlcross_milling_fair_last_outcome marlcross_milling_fair_outcome
+  *set marlcross_milling_fair_last_program marlcross_milling_fair_program
+  *if (marlcross_milling_fair_outcome = "watched")
+    *set marlcross_milling_fair_last_winner_name marlcross_milling_fair_winner_name
+  *elseif (marlcross_milling_fair_outcome = "arrived_late")
+    *set marlcross_milling_fair_last_winner_name marlcross_milling_fair_winner_name
+  *elseif (marlcross_milling_fair_outcome = "exposed_as_watcher")
+    *set marlcross_milling_fair_last_winner_name marlcross_milling_fair_winner_name
+*return
+
+*label sella_introduction
+*if (not(mc_sella_met))
+  A lean older woman leaves the judges' table and looks along the row of contestants.
+
+  "Sella Morren," she says. "I hold the elder's chair. You'll get a fair count here. When you've had enough, you step away. No one gets hurt over a ribbon and a purse."
+  *set mc_sella_met true
+*return
+
+*label festival_state
+*comment Derived location-facing state. The contest itself will be added here in a later pass.
+*gosub schedule
+*set marlcross_milling_fair_today false
+*set marlcross_milling_fair_phase "none"
+*set marlcross_milling_fair_indoors false
+*if (((marlcross_milling_fair_year = calendar_year) and (calendar_month_num = marlcross_milling_fair_month)) and (calendar_day = marlcross_milling_fair_day))
+  *set marlcross_milling_fair_today true
+  *if (weather_severity >= 3)
+    *set marlcross_milling_fair_indoors true
+  *if (time_period = "Morning")
+    *set marlcross_milling_fair_phase "morning"
+  *elseif (time_period = "Midday")
+    *set marlcross_milling_fair_phase "contest"
+  *elseif (time_period = "Afternoon")
+    *set marlcross_milling_fair_phase "afternoon"
+  *else
+    *set marlcross_milling_fair_phase "aftermath"
+*if (marlcross_milling_fair_completed)
+  *if (marlcross_milling_fair_phase = "contest")
+    *set marlcross_milling_fair_phase "aftermath"
+*return
+
+*comment ── PLAYABLE FAIR ──────────────────────────────────────────────────────
+
+*label register
+*gosub festival_state
+*if ((not(marlcross_milling_fair_today)) or (not(marlcross_milling_fair_phase = "morning")))
+  The entry book is closed now. Tamsin has already sent the contestants on to the Green.
+  *page_break Step away from the counter...
+  *goto_scene port_valen/marlcross/wayfarers_rest mc_wayfarers_rest_main
+*if (marlcross_milling_fair_registered)
+  Tamsin taps your name on the register. "You're down already. Be at the judges' table when they call the field."
+  *page_break Leave the counter...
+  *goto_scene port_valen/marlcross/wayfarers_rest mc_wayfarers_rest_main
+*if ((((gold * 100) + (silver * 10)) + copper) < 2)
+  You put your hand on the counter, then leave it there when Tamsin names the fee.
+
+  "Two coppers," she says. "That covers the pies and puts something in the purse. This year's prize is ${marlcross_milling_fair_prize_description}. Come back when you've got it."
+  *page_break Step away from the register...
+  *goto_scene port_valen/marlcross/wayfarers_rest mc_wayfarers_rest_main
+
+You set two copper bits beside the register. "Put me in."
+
+Tamsin draws a line beneath the last name and writes yours below it. She gives you a square of red cloth with a chalk number on it.
+
+"Three pies a round," she says. "When you've had enough, put your hand up. We'll see the rest fairly."
+
+*set currency_add_amount -2
+*gosub_scene economy currency_add
+*set marlcross_milling_fair_registered true
+*page_break Fold the cloth into your hand...
+*goto_scene port_valen/marlcross/wayfarers_rest mc_wayfarers_rest_main
+
+*label wait_for_contest
+*gosub festival_state
+*if (not(marlcross_milling_fair_today))
+  *goto_scene port_valen/marlcross/grain_green mc_grain_green_main
+*if (not(marlcross_milling_fair_phase = "morning"))
+  *goto_scene port_valen/marlcross/grain_green mc_grain_green_main
+*temp milling_fair_wait_minutes (((12 - clock_hour) * 60) - clock_minute)
+*set hours_to_pass 0
+*set minutes_to_pass milling_fair_wait_minutes
+*set time_advance_call_id "marlcross_milling_fair_wait"
+*gosub_scene calendar advance_time
+
+By the time the judges ring a spoon against the scale beam, the benches are full and the pie table has been set beneath the awnings.
+*page_break Step toward the Green...
+*goto_scene port_valen/marlcross/grain_green mc_grain_green_main
+
+*label contest
+*gosub festival_state
+*if ((not(marlcross_milling_fair_today)) or (not(marlcross_milling_fair_registered)))
+  *goto_scene port_valen/marlcross/grain_green mc_grain_green_main
+*if (marlcross_milling_fair_completed)
+  *goto_scene port_valen/marlcross/grain_green mc_grain_green_main
+*if (not(marlcross_milling_fair_contest_started))
+  *set marlcross_milling_fair_contest_started true
+  *set marlcross_milling_fair_round 1
+
+  The judges call the numbered cloths, and you take a place at the long table.
+
+  *if (marlcross_milling_fair_table_variant = 0)
+    To one side, ${marlcross_milling_fair_honest_contender_name}, flour on both sleeves, rolls their shoulders over the first plate. On the other, lean ${marlcross_milling_fair_lean_contender_name} keeps both hands flat against the boards as though bracing for a cart's jolt. Across from you, broad-shouldered ${marlcross_milling_fair_broad_contender_name} rubs both palms on their trousers.
+  *elseif (marlcross_milling_fair_table_variant = 1)
+    ${marlcross_milling_fair_honest_contender_name} settles beside you with a napkin already tucked at the throat. Across the table, ${marlcross_milling_fair_lean_contender_name} eyes the pies as though judging a difficult load. ${marlcross_milling_fair_broad_contender_name} rolls their neck once and reaches for the first fork.
+  *else
+    The first plates find ${marlcross_milling_fair_honest_contender_name}, who dusts flour from their sleeve without looking up. ${marlcross_milling_fair_lean_contender_name} checks the water bucket behind the bench; ${marlcross_milling_fair_broad_contender_name} grins at the crowd and drums both hands against the table.
+
+  The first plates hold ${marlcross_milling_fair_pie_description}, their steam carrying through the awning.
+
+  *if (marlcross_milling_fair_boro_trick_active)
+    At the far end, ${marlcross_milling_fair_finalist_name} lowers into a chair that groans beneath the great padded coat around them. The hem falls almost to the ground. They grin toward the crowd.
+
+    "Twenty-four last year," ${marlcross_milling_fair_finalist_name} says. "Don't choke trying to match it."
+  *else
+    *if (marlcross_milling_fair_boro_legacy = "exposed")
+      ${marlcross_milling_fair_finalist_name} takes the far chair in an ordinary shirt, with Boro and Keda Broadbelt watching from the nearest bench. There is no great coat this year; only a stack of plates and a guarded look toward the judges' table.
+    *else
+      ${marlcross_milling_fair_finalist_name} takes the far chair in an ordinary shirt. For a moment, they meet your eye, then set both hands around the first plate. The padded coat is nowhere in sight.
+
+  *gosub sella_introduction
+  Sella raises one hand. "Three pies a round. Step away when you're done. No one's here to be sick for our amusement. The prize is ${marlcross_milling_fair_prize_description}."
+*goto contest_round
+
+*label contest_round
+*temp milling_fair_boro_roll 0
+*set check_stat "con"
+*set check_dc (marlcross_milling_fair_round * 5)
+*set check_skill "Pie-Eating"
+*set check_no_guidance true
+*gosub_scene dice_engine roll_d20_check
+*if (not(check_success))
+  *goto player_withdraws
+
+The last mouthful sits heavy, but you keep it down and lift a hand to show you are still in.
+
+*if (((marlcross_milling_fair_round = 1) and (marlcross_milling_fair_cheat_choice = "none")) and marlcross_milling_fair_boro_trick_active)
+  ${marlcross_milling_fair_broad_contender_name} pushes their plate away and presses a hand over their mouth. The crowd parts enough for them to reach the water bucket.
+  *goto boro_break
+*if (marlcross_milling_fair_round = 2)
+  ${marlcross_milling_fair_lean_contender_name} breathes through their nose for a long moment, then gives the judges a rueful shake of the head and leaves the table.
+*if (marlcross_milling_fair_round = 3)
+  ${marlcross_milling_fair_honest_contender_name} stares at the next pie, laughs once without much breath behind it, and steps away. Only you and ${marlcross_milling_fair_finalist_name} remain at the table.
+  *if (marlcross_milling_fair_boro_out)
+    *goto player_wins
+*if (marlcross_milling_fair_round >= 4)
+  *if (marlcross_milling_fair_boro_out)
+    *goto player_wins
+  *rand milling_fair_boro_roll 1 20
+  *if (milling_fair_boro_roll = 1)
+    *if (marlcross_milling_fair_boro_trick_active)
+      ${marlcross_milling_fair_finalist_name} lifts the next forkful, then the great coat gives a sharp, awkward hitch. The fork falls against the plate. They push back from the table, breathing hard through a grin that no longer holds.
+    *else
+      ${marlcross_milling_fair_finalist_name} studies the next forkful, then pushes the plate away and gives the judges a tired shake of the head.
+    *goto player_wins
+*if (marlcross_milling_fair_round >= 5)
+  *goto player_draws
+
+*set marlcross_milling_fair_round + 1
+*page_break Face the next three pies...
+*goto contest_round
+
+*label boro_break
+*if (marlcross_milling_fair_boro_legacy = "kept")
+  The coat sags against the bench, then fills out again as someone shifts inside it. You saw the same exchange at the last fair. The people beneath the coat have come back trusting your silence.
+  *set marlcross_milling_fair_spotted_trick true
+  *goto boro_return_choice
+*temp milling_fair_passive_perception (10 + wis_mod)
+*if (skill_perception)
+  *set milling_fair_passive_perception + prof_bonus
+*if (milling_fair_passive_perception >= 15)
+  The coat settles in a way a single body should not. Something crawls forward inside it, and a different voice answers a shout from the collar. The eater is being changed beneath the coat.
+  *set marlcross_milling_fair_spotted_trick true
+  *goto boro_choice
+
+*choice
+  # Watch Boro closely while the crowd looks to the woman leaving the table.@{show_stat_hints  [Perception Check (DC 15)]|}
+    *gosub_scene dice_engine roll_skill_check 15 "perception" "" "" "" "" ""
+    *if (check_success)
+      The coat dips near the bench. One voice cuts off, another calls for water from inside the collar, and the padding swells into a different shape. The eater is being changed beneath the coat.
+      *set marlcross_milling_fair_spotted_trick true
+      *goto boro_choice
+    Boro wipes their mouth with a cloth and keeps the coat pulled close. Whatever drew your eye is gone before you can make sense of it.
+    *goto contest_continue
+  # Keep your attention on the next plate.
+    *goto contest_continue
+
+*label boro_choice
+*choice
+  # Call Sella over and point out what you saw.
+    *goto boro_expose
+  # Lean close and ask for five coppers to leave the table quietly.
+    You bend toward the swollen collar. "I know there are three of you under there, changing places. Five coppers, and I keep my mouth shut."
+
+    After a pause, a small hand slips from the coat with coins pinched in its fingers. "Take them, then lose yourself in the crowd," a voice says from inside.
+
+    *set currency_add_amount 5
+    *gosub_scene economy currency_add
+    *set marlcross_milling_fair_cheat_choice "bargained"
+    *set marlcross_milling_fair_outcome "bargained"
+    *set marlcross_milling_fair_completed true
+    *set marlcross_milling_fair_boro_legacy "bargained"
+    *gosub record_completion
+    *page_break Leave the table with the coins...
+    *goto_scene port_valen/marlcross/grain_green mc_grain_green_main
+  # Let the trick pass and face the next plate.
+    You keep the discovery to yourself and turn back to the pies.
+    *set marlcross_milling_fair_cheat_choice "kept"
+    *set marlcross_milling_fair_boro_legacy "kept"
+    *goto contest_continue
+
+*label boro_return_choice
+*choice
+  # Call Sella over and end the trick this year.
+    *goto boro_expose
+  # Keep the silence you gave them before.
+    You turn back to the pies. The coat settles once more, and one hidden eater gives the faintest knock against the table's underside.
+    *set marlcross_milling_fair_cheat_choice "kept"
+    *goto contest_continue
+
+*label boro_expose
+You raise your hand. "Elder Morren—look beneath that coat. There are three people taking turns."
+
+Sella comes close enough to look beneath the hem. The coat wobbles as Boro rises, and three dwarves tumble out in a tangle of padded sleeves and spilled crumbs. The nearest benches erupt with laughter, then a few sharp calls for the judges to put them out.
+
+Sella plants a hand on the table. Her voice cuts through the laughter. "Boro, Tov, Keda—off the bench. Three cousins don't make one champion. You've cheated every person at this table. You're disqualified. Take that coat and clear the Green."
+
+The three cousins gather the coat between them and move off toward the road, speaking too low for you to catch. Their place is empty.
+*set marlcross_milling_fair_boro_out true
+*set marlcross_milling_fair_cheat_choice "exposed"
+*set marlcross_milling_fair_boro_legacy "exposed"
+*goto contest_continue
+
+*label contest_continue
+*set marlcross_milling_fair_round + 1
+*page_break Face the next three pies...
+*goto contest_round
+
+*label player_withdraws
+You set your fork down before the next pie reaches the table. The judge nods and points you toward the water bucket, while the crowd's attention stays on the contestants still eating.
+
+*set marlcross_milling_fair_completed true
+*set marlcross_milling_fair_outcome "withdrew"
+*gosub record_completion
+*page_break Step away from the table...
+*goto_scene port_valen/marlcross/grain_green mc_grain_green_main
+
+*label player_wins
+Sella waits until you have swallowed, then raises your arm above the floury table. The crowd answers with cheers and palms on benches. Tamsin brings the purse from the scale shed and presses it into your hand.
+
+*if (not(marlcross_milling_fair_prize_paid))
+  *set currency_add_amount marlcross_milling_fair_prize_copper
+  *gosub_scene economy currency_add
+  *set marlcross_milling_fair_prize_paid true
+*set marlcross_milling_fair_completed true
+*set marlcross_milling_fair_outcome "won"
+*gosub record_completion
+
+[b][Milling Fair Winner: ${marlcross_milling_fair_prize_copper} Copper Bits][/b]
+*page_break Leave the judges' table...
+*goto_scene port_valen/marlcross/grain_green mc_grain_green_main
+
+*label player_draws
+*temp milling_fair_shared_purse ((marlcross_milling_fair_prize_copper - (marlcross_milling_fair_prize_copper modulo 2)) / 2)
+After the fifth round, both you and ${marlcross_milling_fair_finalist_name} are still sitting. Sella looks from the empty pie boards to the waiting crowd, then cuts the purse in two with a simple count of coins.
+
+"That's enough. Nobody needs a sixth round to see what you've both done," she says.
+
+*if (not(marlcross_milling_fair_prize_paid))
+  *set currency_add_amount milling_fair_shared_purse
+  *gosub_scene economy currency_add
+  *set marlcross_milling_fair_prize_paid true
+*set marlcross_milling_fair_completed true
+*set marlcross_milling_fair_outcome "draw"
+*gosub record_completion
+
+[b][Milling Fair Shared Purse: ${milling_fair_shared_purse} Copper Bits][/b]
+*page_break Leave the judges' table...
+*goto_scene port_valen/marlcross/grain_green mc_grain_green_main
+
+*label watch_contest
+*gosub festival_state
+*if ((not(marlcross_milling_fair_today)) or (marlcross_milling_fair_completed))
+  *goto_scene port_valen/marlcross/grain_green mc_grain_green_main
+
+*if (marlcross_milling_fair_boro_trick_active)
+  You find a place beside the awning post. At the centre of the table, a figure in a great padded coat eats with an even, practiced rhythm. A few people near the bench call the champion ${marlcross_milling_fair_finalist_name}.
+*else
+  You find a place beside the awning post. ${marlcross_milling_fair_finalist_name} sits at the far end in an ordinary shirt while Boro and Keda Broadbelt watch from the benches. The family has left the padded coat at home.
+*gosub sella_introduction
+*goto watcher_notices
+
+*label watcher_notices
+*if (not(marlcross_milling_fair_boro_trick_active))
+  *goto watcher_result
+*if (marlcross_milling_fair_boro_legacy = "kept")
+  The familiar coat shifts against the bench. You know the movement now, and the people beneath it know you have seen it before.
+  *set marlcross_milling_fair_spotted_trick true
+  *goto watcher_return_choice
+*temp milling_fair_watch_passive (10 + wis_mod)
+*if (skill_perception)
+  *set milling_fair_watch_passive + prof_bonus
+*if (milling_fair_watch_passive >= 15)
+  The coat settles low against the bench, then rises full again after a hidden shift beneath the padding. The voice that answers a cheer has changed. You have seen enough.
+  *set marlcross_milling_fair_spotted_trick true
+  *goto watcher_choice
+
+*choice
+  # Study Boro's coat while the crowd watches the pie table.@{show_stat_hints  [Perception Check (DC 15)]|}
+    *gosub_scene dice_engine roll_skill_check 15 "perception" "" "" "" "" ""
+    *if (check_success)
+      A seam parts near the collar. You glimpse a second face in the shadow of the padding before the coat turns away.
+      *set marlcross_milling_fair_spotted_trick true
+      *goto watcher_choice
+    Boro works a cloth around their mouth and the coat settles back into place. You lose the small movement in the crush of shoulders around you.
+    *goto watcher_result
+  # Watch the contest without following Boro's movements.
+    *goto watcher_result
+
+*label watcher_choice
+*choice
+  # Tell Sella what you saw.
+    *goto watcher_expose
+  # Ask Boro for five coppers to keep quiet.
+    You wait until the judges turn to the next plate, then speak toward the coat's collar. "I know you're changing places under that coat. Five coppers, or I tell Sella exactly how you're doing it."
+
+    A small hand finds yours beneath the table and leaves five coins in your palm. "Walk away," a voice whispers.
+
+    *set currency_add_amount 5
+    *gosub_scene economy currency_add
+    *set marlcross_milling_fair_cheat_choice "bargained"
+    *set marlcross_milling_fair_outcome "bargained_as_watcher"
+    *set marlcross_milling_fair_completed true
+    *set marlcross_milling_fair_boro_legacy "bargained"
+    *gosub record_completion
+    *page_break Leave the awning with the coins...
+    *goto_scene port_valen/marlcross/grain_green mc_grain_green_main
+  # Keep the trick to yourself.
+    You fold your arms and watch the last plates go down.
+    *set marlcross_milling_fair_cheat_choice "kept"
+    *set marlcross_milling_fair_boro_legacy "kept"
+    *goto watcher_result
+
+*label watcher_return_choice
+*choice
+  # Tell Sella what you saw this year.
+    *goto watcher_expose
+  # Keep the silence you gave them before.
+    You lean back against the awning post and let the hidden eaters carry on with the trick.
+    *set marlcross_milling_fair_cheat_choice "kept"
+    *goto watcher_result
+
+*label watcher_expose
+You catch Sella's eye and point beneath the coat. "Sella—there are three people under that coat, taking turns."
+
+Sella steps to the table. The coat gives one quick lurch, then three dwarves spill free of it amid a burst of startled laughter. "Boro, Tov, Keda—out," she says. "Three cousins don't make one contestant." She sends the three Broadbelt cousins away from the contest and hands the purse to ${marlcross_milling_fair_honest_contender_name}, the last honest eater still at the table.
+
+*set marlcross_milling_fair_winner_name marlcross_milling_fair_honest_contender_name
+
+*set marlcross_milling_fair_boro_out true
+*set marlcross_milling_fair_cheat_choice "exposed"
+*set marlcross_milling_fair_outcome "exposed_as_watcher"
+*set marlcross_milling_fair_completed true
+*set marlcross_milling_fair_boro_legacy "exposed"
+*gosub record_completion
+*page_break Step back from the judges...
+*goto_scene port_valen/marlcross/grain_green mc_grain_green_main
+
+*label watcher_result
+${marlcross_milling_fair_winner_name} lifts the last empty tin, and the crowd answers with a cheer loud enough to shake flour from the awning rope. @{marlcross_milling_fair_boro_trick_active The great coat turns toward the prize table without revealing anything more.|${marlcross_milling_fair_winner_name} takes the purse while the Broadbelts watch from the benches.}
+
+*set marlcross_milling_fair_outcome "watched"
+*set marlcross_milling_fair_completed true
+*gosub record_completion
+*page_break Leave the crowd...
+*goto_scene port_valen/marlcross/grain_green mc_grain_green_main
+
+*label late_result
+*gosub festival_state
+*if ((not(marlcross_milling_fair_today)) or (marlcross_milling_fair_completed))
+  *goto_scene port_valen/marlcross/grain_green mc_grain_green_main
+
+You arrive after the contest has run its course. ${marlcross_milling_fair_winner_name} stands at the scale shed with the purse held high.@{marlcross_milling_fair_boro_trick_active The padded coat draws laughter from the nearest benches.|The Broadbelts keep close to the edge of the crowd.}
+
+*set marlcross_milling_fair_outcome "arrived_late"
+*set marlcross_milling_fair_completed true
+*gosub record_completion
+*page_break Step away from the prize table...
+*goto_scene port_valen/marlcross/grain_green mc_grain_green_main

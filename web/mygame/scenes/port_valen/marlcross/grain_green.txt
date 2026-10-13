@@ -10,6 +10,7 @@
 *goto mc_grain_green_main
 
 *label mc_grain_green_main
+*gosub_scene port_valen/marlcross/milling_fair festival_state
 *temp mc_market_first false
 *if (not(mc_market_seen))
   *set mc_market_first true
@@ -17,6 +18,18 @@
 [b]◈ THE GRAIN GREEN[/b]
 *line_break
 The Green is a long, open strip of packed earth beside the High Grey Road. A beam scale stands under a roof of rough boards, its iron hooks black with use. Around it, simple timber frames hold canvas awnings when people are selling, and low stone blocks give buyers somewhere to rest a sample sack. The storehouses rise behind the fence with their loading doors above head height and their lower walls rubbed pale by carts passing close.
+
+*if (marlcross_milling_fair_today)
+  *if (marlcross_milling_fair_indoors)
+    The fair's tables and judges have been moved into the Cross Hall, but the Green still holds the abandoned outline of its work: tied-down canvas, benches carried in against the fence, and a line of disappointed carts along the road.
+  *elseif (marlcross_milling_fair_phase = "morning")
+    For the Milling Fair, the scale shed has become a judges' table, with a hand-painted board naming ${marlcross_milling_fair_pie_description} and ${marlcross_milling_fair_prize_description}. Pie sellers claim the awnings in a row, and volunteers are laying long boards across barrels for the contestants' table.
+  *elseif (marlcross_milling_fair_phase = "contest")
+    The scale is draped with red cloth and the Green is ringed three deep with onlookers. A long table stands beneath the awnings, with rows of ${marlcross_milling_fair_pie_description} waiting behind it and the judges poised beside the prize board.
+  *elseif (marlcross_milling_fair_phase = "afternoon")
+    Crumbs and flour mark the long contest table. The prizes are still displayed beneath the scale shed while the remaining sellers do brisk trade with visitors who have stayed to hear the result.
+  *else
+    Only the last pie sellers remain. The contest table has been cleared, though its floury outline and the trampled straw around it show how full the Green was earlier.
 
 *if (weather_severity >= 3)
   The awnings have been stripped down and the scale beam is tied fast. Rain or snow lashes through the empty frames, while the storehouse doors remain barred.
@@ -42,6 +55,36 @@ The Green is a long, open strip of packed earth beside the High Grey Road. A bea
   Grain moves through the Green in a slow exchange of lifted sacks, weighed loads and carts leaving room for one another along the road.
 
 *choice
+  *if ((marlcross_milling_fair_today and (marlcross_milling_fair_phase = "morning")) and (marlcross_milling_fair_years_completed > 0))
+    # Read the prize board and the line beneath it.
+      The board names ${marlcross_milling_fair_pie_description} and ${marlcross_milling_fair_prize_description}.
+
+      *if (marlcross_milling_fair_last_outcome = "won")
+        Beneath it, a smaller line names you as the previous fair's winner. Several fresh names have been written under it for this year.
+      *elseif (marlcross_milling_fair_last_outcome = "draw")
+        Beneath it, a smaller line records last year's shared purse. The new prize has been written beside it in darker ink.
+      *elseif (not(marlcross_milling_fair_last_winner_name = ""))
+        Beneath the fresh programme, last year's prize is marked beside ${marlcross_milling_fair_last_winner_name}'s name.
+        *if (marlcross_milling_fair_boro_legacy = "exposed")
+          A corner of the board has been rubbed nearly clean where an older result was once written. Tov Broadbelt's name appears among this year's entries without the old boast beside it.
+      *elseif ((marlcross_milling_fair_last_outcome = "exposed_as_watcher") or (marlcross_milling_fair_boro_legacy = "exposed"))
+        A corner of the board has been rubbed nearly clean where an older result was once written. Tov Broadbelt's name appears among this year's entries without the old boast beside it.
+      *else
+        Old winners' names have been left beneath the fresh programme, their ink fading into the rough board.
+      *page_break Step back from the board...
+      *goto mc_grain_green_main
+  *if (((marlcross_milling_fair_today and (marlcross_milling_fair_phase = "morning")) and marlcross_milling_fair_registered) and (not(marlcross_milling_fair_completed)))
+    # Wait by the judges' table for the contest to begin. [Until Midday]
+      *goto_scene port_valen/marlcross/milling_fair wait_for_contest
+  *if (((marlcross_milling_fair_today and (marlcross_milling_fair_phase = "contest")) and marlcross_milling_fair_registered) and (not(marlcross_milling_fair_completed)))
+    # Take your place at the pie table.
+      *goto_scene port_valen/marlcross/milling_fair contest
+  *if (((marlcross_milling_fair_today and (marlcross_milling_fair_phase = "contest")) and (not(marlcross_milling_fair_registered))) and (not(marlcross_milling_fair_completed)))
+    # Watch the pie-eating contest.
+      *goto_scene port_valen/marlcross/milling_fair watch_contest
+  *if (((marlcross_milling_fair_today and (marlcross_milling_fair_phase = "afternoon")) and (not(marlcross_milling_fair_completed))) and (not(marlcross_milling_fair_registered)))
+    # Hear who won the pie-eating contest.
+      *goto_scene port_valen/marlcross/milling_fair late_result
   # Look over the public scale.
     You stand beneath the shed and examine the beam. The weight stones are kept in a locked box at its post, and a shallow groove in the ground shows where loaded carts have been drawn up beside it for years.
     *page_break Step back from the scale...
