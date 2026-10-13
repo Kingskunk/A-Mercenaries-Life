@@ -3,16 +3,17 @@
 *comment
 *comment Callers set se_settlement_id, se_settlement_kind, se_wedding_style, and event opt-ins, then
 *comment *gosub_scene settlement_events se_roll after real local movement. This scene always returns.
-*comment IDs are local declarations, never names in a central list. The wedding runs in any registered
-*comment settlement once; event-specific scenes select broad style, never individual settlement names.
+*comment IDs are local declarations, never names in a central list. Events select broad styles, never
+*comment individual settlement names. A global event can still be one-time for the whole campaign.
 *comment ====================================================================================
 
 *label se_roll
 *temp se_event_roll 0
+*temp se_event_pick 0
+*temp se_wedding_available false
+*temp se_elders_available false
 
 *if (se_settlement_id <= 0)
-  *goto se_return
-*if (not(se_wedding_enabled))
   *goto se_return
 *if (settlement_event_last_day = campaign_day)
   *goto se_return
@@ -23,7 +24,13 @@
 *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
   *goto se_return
 
-*if ({("settlement_wedding_done_" & se_settlement_id)})
+*if (se_wedding_enabled)
+  *if (not({("settlement_wedding_done_" & se_settlement_id)}))
+    *set se_wedding_available true
+*if (se_helping_elders_enabled)
+  *if (not(helping_your_elders_done))
+    *set se_elders_available true
+*if ((not(se_wedding_available)) and (not(se_elders_available)))
   *goto se_return
 
 *rand se_event_roll 1 100
@@ -31,9 +38,19 @@
   *goto se_return
 
 *set settlement_event_last_day campaign_day
-*gosub_scene settlement_events/caught_in_wedding wedding_run
+*if (se_wedding_available and se_elders_available)
+  *rand se_event_pick 1 2
+*elseif (se_wedding_available)
+  *set se_event_pick 1
+*else
+  *set se_event_pick 2
+*if (se_event_pick = 1)
+  *gosub_scene settlement_events/caught_in_wedding wedding_run
+*else
+  *gosub_scene settlement_events/helping_your_elders elders_run
 
 *label se_return
 *comment Opt-ins are per-call configuration, never persistent state inherited by the next settlement.
 *set se_wedding_enabled false
+*set se_helping_elders_enabled false
 *return

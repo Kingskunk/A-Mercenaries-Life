@@ -1,0 +1,91 @@
+*comment ====================================================================================
+*comment HELPING YOUR ELDERS: a single campaign-wide settlement encounter.
+*comment Nella Cvorza's history is deliberately not stated as fact the player cannot know.
+*comment ====================================================================================
+
+*label elders_run
+*if (helping_your_elders_done)
+  *return
+*set helping_your_elders_done true
+
+[b]HELPING AN ELDER[/b]
+*line_break
+An elderly woman waits at the edge of the road with a deep wicker basket hooked over one arm. It is heaped with root vegetables, greens, and two jars wrapped in cloth. Each time she tries to lift it, the basket pulls her sideways before she can step into the traffic.
+
+People pass close enough to see her struggle. A cart rattles by. No one stops.
+
+She catches your eye, then seems to regret doing it. "I only need to get to market," she says. Her voice is rough but steady. "The basket has become heavier than it was at my door."
+
+*choice
+  # Offer your arm and carry the basket to the market. [~15 min]
+    You take the basket's weight before she can change her mind. "Show me the way."
+
+    Relief loosens her shoulders. "Nella Cvorza," she says. "And thank you."
+
+    Nella keeps one hand on your arm as you cross the road, then walks beside you toward the market at a pace set by the basket rather than her pride. She talks about the vegetables because it is easy talk: which turnips will keep, which greens wilt first, and how much better a buyer is after they have smelled fresh dill.
+
+    Near the market, a pair of children dart past with a hoop. Nella watches them until they are gone. Her fingers tighten once on your sleeve.
+
+    "Mind the rut there," she says, too quickly. Then she squares herself and points you to an empty patch of stall-board. "That will do."
+
+    When the basket is down, she digs through a purse tied beneath her apron and holds out three silver marks. "You've done work, and work is paid. Don't make me argue about it."
+
+    *choice
+      # Accept the payment.
+        You take the coins. "Thank you, Nella."
+
+        She gives a satisfied nod, as though a proper account has been settled.
+        *comment Replay-safe: a refresh of this choice page must not pay Nella's reward twice.
+        *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+          *set currency_add_amount 30
+          *gosub_scene economy currency_add
+          *set currency_txn_locked true
+          *set locked_currency_txn_page_id page_id
+        [b][+3 Silver Marks][/b]
+        *goto elders_helped_end
+      # "Keep it. I was glad to help."
+        You close her fingers gently around the coins. "Use it for your stall."
+
+        Nella looks down at her hand for a moment. "Then I will," she says. "And I will remember you did."
+        *goto elders_helped_end
+  # Help her safely across the road, then continue on. [~5 min]
+    You offer your arm and wait until the road clears. "Slowly. I've got you."
+
+    She crosses with care, one hand on your sleeve and the other fixed around the basket handle. On the far side, she draws a fuller breath.
+
+    "Nella Cvorza," she says. "I can manage the rest from here. Thank you for seeing me across."
+
+    She turns toward the market, still bent beneath the basket but no longer stranded in the road.
+    *set minutes_to_pass 5
+    *set time_advance_call_id "se_elders_crossing"
+    *gosub elders_advance_time
+    *page_break Continue on your way...
+    *return
+  # Apologize and leave her to find another hand.
+    You shake your head. "I'm sorry. I can't stop."
+
+    "Of course," she says, moving the basket back against her hip. She looks toward the road again, weighing the traffic and the weight in her arms.
+
+    You continue on. Behind you, the basket scrapes once against the stones.
+    *page_break Continue on your way...
+    *return
+
+*label elders_helped_end
+Nella begins laying out her vegetables with deliberate care: greens first, then turnips, then the jars where the light can catch them. Before you leave, she looks up once and gives you a small wave.
+
+*set minutes_to_pass 15
+*set time_advance_call_id "se_elders_market"
+*gosub elders_advance_time
+*page_break Step back into the street...
+*return
+
+*label elders_advance_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return

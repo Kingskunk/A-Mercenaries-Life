@@ -271,6 +271,7 @@ function compile(){
   // it returns to the caller after resolving an event, so it does not belong in *scene_list.
   verifyFileName("settlement_events.txt");
   verifyFileName("settlement_events/caught_in_wedding.txt");
+  verifyFileName("settlement_events/helping_your_elders.txt");
   // Middle Ward quests live in their own *goto_scene-only files. The district scene owns
   // their physical triggers and aftermath; each quest file owns its choices and resolutions.
   verifyFileName("port_valen/MiddlewardQuest/dry_lion.txt");

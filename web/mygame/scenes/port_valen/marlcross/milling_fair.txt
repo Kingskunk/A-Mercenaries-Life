@@ -65,6 +65,11 @@
   *set marlcross_milling_fair_outcome "none"
   *set marlcross_milling_fair_prize_paid false
   *set marlcross_milling_fair_completion_recorded false
+  *set marlcross_milling_fair_boro_roll 0
+  *set marlcross_milling_fair_boro_roll_locked false
+  *set locked_marlcross_milling_fair_boro_roll_page_id 0
+  *set marlcross_milling_fair_round_advance_locked false
+  *set locked_marlcross_milling_fair_round_advance_page_id 0
   *if (marlcross_milling_fair_years_completed = 0)
     *rand marlcross_milling_fair_program 1 3
   *else
@@ -194,8 +199,12 @@ Tamsin draws a line beneath the last name and writes yours below it. She gives y
 
 "Three pies a round," she says. "When you've had enough, put your hand up. We'll see the rest fairly."
 
-*set currency_add_amount -2
-*gosub_scene economy currency_add
+*comment Replay-safe: revisiting this choice page cannot charge the entry fee twice.
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount -2
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
 *set marlcross_milling_fair_registered true
 *page_break Fold the cloth into your hand...
 *goto_scene port_valen/marlcross/wayfarers_rest mc_wayfarers_rest_main
@@ -252,7 +261,6 @@ By the time the judges ring a spoon against the scale beam, the benches are full
 *goto contest_round
 
 *label contest_round
-*temp milling_fair_boro_roll 0
 *set check_stat "con"
 *set check_dc (marlcross_milling_fair_round * 5)
 *set check_skill "Pie-Eating"
@@ -275,8 +283,12 @@ The last mouthful sits heavy, but you keep it down and lift a hand to show you a
 *if (marlcross_milling_fair_round >= 4)
   *if (marlcross_milling_fair_boro_out)
     *goto player_wins
-  *rand milling_fair_boro_roll 1 20
-  *if (milling_fair_boro_roll = 1)
+  *comment Replay-safe: Boro's dropout result stays fixed on a refresh of this round.
+  *if (not(marlcross_milling_fair_boro_roll_locked)) or (not(locked_marlcross_milling_fair_boro_roll_page_id = page_id))
+    *rand marlcross_milling_fair_boro_roll 1 20
+    *set marlcross_milling_fair_boro_roll_locked true
+    *set locked_marlcross_milling_fair_boro_roll_page_id page_id
+  *if (marlcross_milling_fair_boro_roll = 1)
     *if (marlcross_milling_fair_boro_trick_active)
       ${marlcross_milling_fair_finalist_name} lifts the next forkful, then the great coat gives a sharp, awkward hitch. The fork falls against the plate. They push back from the table, breathing hard through a grin that no longer holds.
     *else
@@ -285,7 +297,7 @@ The last mouthful sits heavy, but you keep it down and lift a hand to show you a
 *if (marlcross_milling_fair_round >= 5)
   *goto player_draws
 
-*set marlcross_milling_fair_round + 1
+*gosub advance_to_next_round
 *page_break Face the next three pies...
 *goto contest_round
 
@@ -323,8 +335,12 @@ The last mouthful sits heavy, but you keep it down and lift a hand to show you a
 
     After a pause, a small hand slips from the coat with coins pinched in its fingers. "Take them, then lose yourself in the crowd," a voice says from inside.
 
-    *set currency_add_amount 5
-    *gosub_scene economy currency_add
+    *comment Replay-safe: Boro's payment cannot be collected twice from this choice page.
+    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+      *set currency_add_amount 5
+      *gosub_scene economy currency_add
+      *set currency_txn_locked true
+      *set locked_currency_txn_page_id page_id
     *set marlcross_milling_fair_cheat_choice "bargained"
     *set marlcross_milling_fair_outcome "bargained"
     *set marlcross_milling_fair_completed true
@@ -361,9 +377,17 @@ The three cousins gather the coat between them and move off toward the road, spe
 *goto contest_continue
 
 *label contest_continue
-*set marlcross_milling_fair_round + 1
+*gosub advance_to_next_round
 *page_break Face the next three pies...
 *goto contest_round
+
+*label advance_to_next_round
+*comment Replay-safe: a refresh cannot silently skip an extra pie round.
+*if (not(marlcross_milling_fair_round_advance_locked)) or (not(locked_marlcross_milling_fair_round_advance_page_id = page_id))
+  *set marlcross_milling_fair_round + 1
+  *set marlcross_milling_fair_round_advance_locked true
+  *set locked_marlcross_milling_fair_round_advance_page_id page_id
+*return
 
 *label player_withdraws
 You set your fork down before the next pie reaches the table. The judge nods and points you toward the water bucket, while the crowd's attention stays on the contestants still eating.
@@ -456,8 +480,12 @@ After the fifth round, both you and ${marlcross_milling_fair_finalist_name} are 
 
     A small hand finds yours beneath the table and leaves five coins in your palm. "Walk away," a voice whispers.
 
-    *set currency_add_amount 5
-    *gosub_scene economy currency_add
+    *comment Replay-safe: Boro's payment cannot be collected twice from this choice page.
+    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+      *set currency_add_amount 5
+      *gosub_scene economy currency_add
+      *set currency_txn_locked true
+      *set locked_currency_txn_page_id page_id
     *set marlcross_milling_fair_cheat_choice "bargained"
     *set marlcross_milling_fair_outcome "bargained_as_watcher"
     *set marlcross_milling_fair_completed true
