@@ -30,8 +30,10 @@ const MAP = {
   dodge: "Passive_feature/Uncanny_Dodge_Icon.webp",       // no plain Dodge art in the library; a figure slipping a blow reads right
   hide: "Action/Hide_Icon.webp",
   shove: "Action/Shove_Icon.webp",
-  throw_the_alchemists_fire: "Item/Consumable/Grenade/GRN_Alchemist's_Fire_Unfaded_Icon.png",
-  throw_the_grease_flask: "Item/Consumable/Grenade/GRN_Grease_Bottle_Unfaded_Icon.png",   // a thrown flask: the label is "Throw the grease flask"
+  throw: "Action/Throw_Icon.webp",   // the one Throw button on the bar; its fly-out shows each item in its own art (below)
+  // Each thrown item's own art, keyed throw_<slug of its title>: battlehud.js variantArt reads "Throw: Grease Flask" as throw_grease_flask.
+  throw_grease_flask: "Item/Consumable/Grenade/GRN_Grease_Bottle_Unfaded_Icon.png",
+  throw_alchemists_fire: "Item/Consumable/Grenade/GRN_Alchemist's_Fire_Unfaded_Icon.png",
   slip_past: "Action/Evasive_Footwork_Icon.webp",
   trade_places: "Action/Benign_Transposition_Swap_Icon.webp",
   call_ally_back: "Action/Benign_Transposition_Swap_Icon.webp",

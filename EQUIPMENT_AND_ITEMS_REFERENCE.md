@@ -12,6 +12,8 @@ A comprehensive developer and lore reference for every wearable, equippable, and
 - **Id-Driven State Machine:** All paper-doll slots and weapons derive their display and combat properties from persistent string IDs (e.g., `equipped_weapon_id`, `equipped_head_id`, `equipped_neck_id`).
 - **Idempotent Recomputations:** Changing equipment triggers idempotent recompute subroutines (`recalculate_armor_class`, `apply_weapon_loadout`, `apply_head_loadout`, etc.). No stat is nudged with bare `*set +N` operations, ensuring complete refresh and replay safety.
 - **Starting Snapshot Mechanism:** At enlistment/chargen, the player's initial weapon and armor choices are permanently saved to `starting_weapon_*` and `starting_armor_*`. Players can switch back to their starting equipment at any time from the dossier.
+- **Starting kit, unified (2026-10-12, the user's call, after Baldur's Gate 3):** there is no armor choice at enlistment any more. The class is known only at the dawn trial, so the muster leaves Simple Clothes on you and `equipment.txt grant_class_armor` issues the class armor then (and refreshes the `starting_armor*` snapshot): **Fighter** Scale Mail (AC 13 + DEX max 2, `brigandine` type), **Rogue, Bard and Ranger** Leather Armor (AC 11 + DEX), **Barbarian** Barbarian Clothes (cloth, so Unarmored Defense applies), **Wizard and Warlock** Simple Clothes (cloth, AC 10 + DEX; Mage Armor and Armor of Shadows work). Every character also starts in the same plain **Cloak** (`starting_cloak`, cold -40%, rain -40%) and **Boots** (`starting_boots`). The hands and belt are one plain pair too (**Gloves**, **Leather Belt**: `starting_gloves`, `starting_belt`), and **nobody starts with headwear** (`equipped_head_id` "none", a Bare Head; caps, hats and helms are shop stock, and the swap menus offer "Take off your ..." as the way back). The rows below for the old muster armors (Studded Gambeson, Scaled Coat, Leather Jerkin, Scout Wraps, Scholar's Robe, Canvas Jacket, Travel Coat) and the three origin cloaks and boots are no longer issued at enlistment; the ones sold in shops stay as shop stock.
+- **Starting weapons, unified (2026-10-12, the user's call):** the weapon choice is gone too. `equipment.txt grant_class_weapons` issues one kit per class at the dawn trial (the muster leaves you unarmed): **Fighter** a Longsword (1d8 slashing), a shield and a Spear in the sidearm slot; **Barbarian** a two-handed **Broadaxe** (1d12 slashing, no shield) and the Spear; **Wizard and Warlock** a Quarterstaff and a Crossbow; **Rogue, Bard and Ranger** a Shortbow and a Dagger. Every dagger is just **Dagger** (1d4 piercing, finesse, one weapon, not a pair), the spear is **Spear**, the hand crossbow is **Crossbow**, the recurve shortbow is **Shortbow**, the arming sword and falchion are **Longsword**, and the iron-shod quarterstaff is **Quarterstaff**. The prose of the old picks is told once when the kit is issued (`dawn_trial.txt kit_prose`). The Twin Daggers, Slim Dagger, Matched Dagger, Bodkin Dagger, Trench Dagger, Falchion and Broadaxe rows are no longer issued; the Hooked Broadaxe (`felling_axe`) stays as an item only.
 - **Magic Item Attunement:** Attuned items bind to a limited attunement pool (`max_attunement_slots = 5`). Bonuses only apply while `attuned = true`. Attuning to wearable relics automatically equips them to their physical slot.
 - **Sidearm Swapping:** Characters can carry a secondary sidearm (`equipped_sidearm_id`). Calling `swap_active_sidearm` instantaneously swaps the primary main-hand weapon with the sidearm.
 - **Two-Handed Weapon / Shield Exclusivity:** Equipping a two-handed weapon (`weapon_hands = "two_handed"`) automatically stows the shield (`shield_equipped = false`). Switching back to a one-handed weapon automatically restores the player's prior shield stance (`wants_shield_equipped`).
@@ -189,7 +191,7 @@ These items are carried in the player's satchel/inventory and provide active mec
 | `has_hemp_rope` | **Hemp Rope** | Field Tool (stock) | Hollis & Daughters — **8c**; sells back for 4c | Stackable. Fifty feet of tarred hemp. **No effect yet:** it exists so climbing, lowering and tying options can be added to quests later (spend one with `sell_gear`). |
 | `has_pitch_torch` | **Torch** | Field Tool (stock) | Hollis & Daughters — **2c**; sells back for 1c | Stackable. About an hour of light. **No effect yet** (future dark-place options). |
 | `has_lamp_oil` | **Lamp Oil** | Field Tool (stock) | Hollis & Daughters — **3c**; sells back for 1c | Stackable. Fuel for the hooded lantern. **No effect yet.** |
-| `has_grease_flask` | **Grease Flask** | Thrown Consumable | Hollis & Daughters — **5c**; sells back for 2c | Stackable. Thrown from the combat Use-an-item menu as an action: Dex save or the foe is greased (DC 10 Dex check when it moves, or it falls prone and loses its turn; attacks from Close range on a prone foe have advantage). |
+| `has_grease_flask` | **Grease Flask** | Thrown Consumable | Hollis & Daughters — **5c**; sells back for 2c | Stackable. Thrown from the **Throw** button on the fight menu (a fly-out of throwables) as an action: Dex save or the foe is greased (DC 10 Dex check when it moves, or it falls prone and loses its turn; attacks from Close range on a prone foe have advantage). |
 | `has_alchemists_fire` | **Alchemist's Fire** | Thrown Consumable | Ambrose's Still-Room — **25c**; sells back for 12c | Stackable. Thrown as an action: Dex attack vs AC, 1d4 fire (+2 on a greased foe), then burns 1d4 for 3 of its turns. Fire attacks have advantage on a greased foe. |
 | `has_herbalists_kit` | **Herbalist's Kit** | Field Tool (stock) | Ambrose's Still-Room — **30c**; sells back for 15c | Stackable. **+1 on every Medicine check**, any scene (`dice_engine.txt roll_d20_check`, keyed on the skill, so no scene needs to know about it). |
 | `has_hooded_lantern` | **Hooded Lantern** | Field Tool (stock) | Hollis & Daughters — **12c**; sells back for 6c | Stackable. Iron lantern with horn windows and a sliding tin shutter. **No effect yet**; when light becomes a mechanic it is the lasting item and lamp oil is what gets used up. |
@@ -272,7 +274,7 @@ Adding a shop: give its scene the marker pairs `<name>_cart_pass` (and `<name>_p
 
 ## 15. The Gilt Needle (Tailor, Patrician Quarter)
 
-Master Idris Fenwick sells finished pieces "cut to the wearer" from three racks (cloaks and capes; hats, gloves, boots and mufflers; fine dress), and buys them back at **40% of retail** (buyer `tailor`) because each was cut to one person. The shop is inside the Quarter, so it needs a Day Writ, and it trades Morning to Afternoon. Everything is stackable. Clothing is **not worn on purchase** (wear it from the dossier: Equipment > Apparel, or Accessories for neckwear); the Court Coat is armor and is put on like any bought armor. A trade past Afternoon ends in the avenue.
+Master Idris Fenwick sells finished pieces "cut to the wearer" from three racks (cloaks and capes; hats, gloves, boots and mufflers; fine dress), and buys them back at **40% of retail** (buyer `tailor`) because each was cut to one person. The shop is inside the Quarter, so it needs a Day Writ, and it trades Morning to Afternoon. Everything is stackable. Clothing is **not worn on purchase** (wear it from the dossier: Equipment > Apparel, or Accessories for neckwear); the Envoy's Court Coat is armor and is put on like any bought armor. A trade past Afternoon ends in the avenue.
 
 | Item ID | Item | Slot | Price | Buy-back | Effect |
 |---|---|---|---|---|---|
@@ -287,17 +289,21 @@ Master Idris Fenwick sells finished pieces "cut to the wearer" from three racks 
 | `winter_boots` | **Winter Boots** | Feet | 5s | 2s | cold -25% |
 | `wooden_clogs` | **Wooden Clogs** | Feet | 1s (Roan's Wheel Shop, Timbermouth; sells back at 50%) | 5c | rain -15% |
 | `wool_muffler` | **Wool Muffler** | Neck | 1s |  4c | cold -10% |
-| `silk_neckcloth` | **Silk Neckcloth** | Neck | 6s | 2s 4c | **+1 CHA** |
-| `scholar_gloves` | **Scholar's Gloves** | Hands | 8s | 3s 2c | **+1 INT** |
-| `dancing_slippers` | **Dancing Slippers** | Feet | 7s | 2s 8c | **+1 DEX** |
-| `masters_gloves` | **Master's Gloves** | Hands | 25s | 10s | **+2 INT** |
-| `court_coat` | **Court Coat** | Body (armor slot) | 18s | 7s 2c | cold -25%, rain -10%; **+2 CHA** |
+| `silk_neckcloth` | **Silvertongue Cravat** | Neck | 4g (400c) | 1g 6s (160c) | **+1 CHA**; unique |
+| `scholar_gloves` | **Lamplight Gloves** | Hands | 4g (400c) | 1g 6s (160c) | **+1 INT**; unique |
+| `dancing_slippers` | **Swallowstep Shoes** | Feet | 4g (400c) | 1g 6s (160c) | **+1 DEX**; unique |
+| `masters_gloves` | **Spellseeker Gloves** | Hands | 15g (1,500c) | 6g (600c) | **+2 INT**; unique |
+| `court_coat` | **Envoy's Court Coat** | Body (armor slot) | 12g (1,200c) | 4g 8s (480c) | cold -25%, rain -10%; **+2 CHA**; unique |
 
 **Traits.** Cold, rain and heat are percent cuts to that part of outdoor exposure, summed over every worn slot (armor, head, cloak, hands, waist, feet, neck) and capped at 90% per part; a heat cut below zero adds heat wear (the winter cloak in summer costs more than going bare, so owning a second cloak is a real choice). An owned waxed oilcloth then halves the rain part. `tools/sim_weather.js` prints full kits.
 
-**Ability-score bonuses** are ordinary and modest: +1 or +2 to one score, derived and revocable while the piece is worn, and **only the highest equipment bonus to a stat applies** (the +2 Court Coat and the +1 neckcloth give +2 CHA together, not +3; different stats each count). A +1 raises the modifier only when it lifts an odd score onto the next even number; a +2 always raises it by 1. Nothing here adds to the d20 roll itself (that is reserved for powerful items, see `quest/GAMEPLAY_MECHANICS_RULES.md` section 2). The gloves, slippers and neckcloth compete with weatherproof pieces for the same slot.
+**Fenwick and the second stitch (2026-10-13, the user's call).** The tailor is a quiet enchanter: he never says "magic". The fine work stands behind a grey curtain in the corner under the skylight, every seam carries a second line of pale stitching in red-dyed Quarter silk that does not fray, and the air near it is faintly warm. A talk option ("Ask about the fine work under the skylight", `pq_tailor_talk_fine`) has him explain that a piece is finished once, for one wearer, which is why there is one of each. Each of the five has a hint in its description (the sole rising to meet the floor; folds that settle on their own; fingertips warming on a lit page or near a written line; a coat that makes people stand straighter), and selling one back is explained as unpicking the finishing (`tailor_sell` quotes). The lorebook entries for the Gilt Needle and Fenwick gain a paragraph once the talk has happened. Invented details: the second stitch, the red silk, the warmth, and that the finishing holds for one wearer only.
 
-**Court Coat.** Cloth armor (`armor_type "cloth"`: AC 10 + DEX, Mage Armor and Barbarian Unarmored Defense still work), so it competes with mail for the body slot; the shop warns before it replaces armor you are wearing, and selling it puts you back in your starting armor.
+**These five are magical dress, priced and kept that way (2026-10-13, the user's call):** +1 pieces cost 400c (4 gold crowns), +2 pieces 1,200c to 1,500c, against a Hall job's 40c. Each is **unique**: any item with a stat bonus cannot be stacked (`tools/gen_gear.js stackable()`), the shop's plain menu stops offering it while you own it, the trade panel drops it from the shelf and never allows more than one in the cart, and `shop_cart_buy` refuses a second copy at the counter. Sell it back (the tailor pays 40%) and it returns to the shelf. Rings are non-stacking by default and behave the same.
+
+**Ability-score bonuses** are ordinary and modest: +1 or +2 to one score, derived and revocable while the piece is worn, and **only the highest equipment bonus to a stat applies** (the +2 Envoy's Court Coat and the +1 neckcloth give +2 CHA together, not +3; different stats each count). A +1 raises the modifier only when it lifts an odd score onto the next even number; a +2 always raises it by 1. Nothing here adds to the d20 roll itself (that is reserved for powerful items, see `quest/GAMEPLAY_MECHANICS_RULES.md` section 2). The gloves, slippers and neckcloth compete with weatherproof pieces for the same slot.
+
+**Envoy's Court Coat.** Cloth armor (`armor_type "cloth"`: AC 10 + DEX, Mage Armor and Barbarian Unarmored Defense still work), so it competes with mail for the body slot; the shop warns before it replaces armor you are wearing, and selling it puts you back in your starting armor.
 
 **Swapping.** The dossier's Apparel page offers, for each slot, the character's origin piece (`origin_clothing`: Ashbrook, outlaw and disgraced each start in their own cloak, gloves, belt and boots), the quest pieces they hold (Talia's cloak and boots, Brant's boots, Rorik's grip wraps and belt) and everything bought. The inventory panel's Cloak, Hands, Waist and Feet dropdowns do the same; a swap that changes an ability score is handed to the dossier (`codex_equip_do`) so ChoiceScript re-derives scores, max HP and AC. Neckwear swaps only from the dossier (the Hearthstone's attunement lives there).
 
@@ -307,7 +313,7 @@ Master Idris Fenwick sells finished pieces "cut to the wearer" from three racks 
 
 ---
 
-## 16. The Bright Setting (Loose Gemstones)
+## 16. The Bright Setting (Gemstones and Jewelry)
 
 Cassia Rell keeps small, jewelry-grade loose stones in paper trays beneath her display cases. They are stackable **Valuables** with no mechanical effect: portable wealth intended for sale, gifts, crafting, or future quest use. Cassia pays **75% of retail** after inspection; the Dredge-End pawnbroker buys the same stones at **40%**. Both prices receive the normal Charisma selling bonus.
 
@@ -315,9 +321,9 @@ Cassia Rell keeps small, jewelry-grade loose stones in paper trays beneath her d
 |---|---|---:|---:|---:|---|
 | `gem_agate` | **Agate** | 1s | 7c | 4c | Agate |
 | `gem_citrine` | **Citrine** | 2s | 1s 5c | 8c | Jacinth |
-| `gem_quartz` | **Clear Quartz** | 3s | 2s 2c | 1s 2c | Diamond |
+| `gem_quartz` | **Clear Quartz** | 3s | 2s 2c | 1s 2c | Quartz |
 | `gem_aquamarine` | **Aquamarine** | 5s | 3s 7c | 2s | Topaz |
-| `gem_opal` | **Opal** | 8s | 6s | 3s 2c | Strange Chunk of Amber |
+| `gem_opal` | **Opal** | 8s | 6s | 3s 2c | Opal |
 | `gem_pearl` | **Pearl** | 1g | 7s 5c | 4s | Pearl |
 | `gem_sapphire` | **Sapphire** | 2g | 1g 5s | 8s | Sapphire |
 | `gem_ruby` | **Ruby** | 3g | 2g 2s 5c | 1g 2s | Ruby |
@@ -325,3 +331,18 @@ Cassia Rell keeps small, jewelry-grade loose stones in paper trays beneath her d
 | `gem_diamond` | **Diamond** | 5g | 3g 7s 5c | 2g | Diamond |
 
 All prices in the table are exact values after the 75% and 40% rate, before any Charisma bonus.
+
+Cassia also sells finished, nonmagical jewelry. Each piece can be worn in its listed equipment slot but grants no combat or ability bonus. Finished work loses more of its retail markup on resale than a loose stone, so Cassia pays **60%** and the Dredge-End pawnbroker pays **35%**. At the setting's ordinary labor rate of 6 copper per day, the last column gives the rough number of workdays needed to buy each piece at retail.
+
+| Item ID | Item | Slot | Retail | Cassia | Pawnbroker | Labor days |
+|---|---|---|---:|---:|---:|---:|
+| `jewelry_silver_ring` | **Silver Ring** | Ring | 3s | 1s 8c | 1s | 5 |
+| `jewelry_crescent_earrings` | **Crescent-Moon Earrings** | Head | 8s | 4s 8c | 2s 8c | 13⅓ |
+| `jewelry_gold_ring` | **Gold Ring** | Ring | 1g | 6s | 3s 5c | 16⅔ |
+| `jewelry_drop_pendant` | **Drop Pendant** | Neck | 1g 2s | 7s 2c | 4s 2c | 20 |
+| `jewelry_gold_necklace` | **Fine Gold Necklace** | Neck | 2g 5s | 1g 5s | 8s 7c | 41⅔ |
+| `jewelry_sapphire_gold_ring` | **Sapphire Gold Ring** | Ring | 4g | 2g 4s | 1g 4s | 66⅔ |
+| `jewelry_ruby_gold_ring` | **Ruby Gold Ring** | Ring | 5g 5s | 3g 3s | 1g 9s 2c | 91⅔ |
+| `jewelry_ruby_pearl_necklace` | **Ruby Pearl Necklace** | Neck | 4g 5s | 2g 7s | 1g 5s 7c | 75 |
+| `jewelry_emerald_pearl_necklace` | **Emerald Pearl Necklace** | Neck | 5g 5s | 3g 3s | 1g 9s 2c | 91⅔ |
+| `jewelry_diamond_gold_ring` | **Diamond Gold Ring** | Ring | 7g | 4g 2s | 2g 4s 5c | 116⅔ |

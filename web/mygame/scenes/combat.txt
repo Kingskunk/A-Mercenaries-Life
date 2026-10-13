@@ -91,6 +91,7 @@
 *comment fight the player fled). Pre-existing temp_hp from meals or prep spells
 *comment is preserved.
 *set hex_active false
+*set hex_target_slot 0
 *set agathys_active false
 *set shield_armed false
 *set shield_active false
@@ -585,6 +586,7 @@
 *set combat_engaged false
 *set combat_hub_shown_once false
 *set hex_active false
+*set hex_target_slot 0
 *set agathys_active false
 *set shield_armed false
 *set shield_active false
@@ -1431,6 +1433,20 @@
       *set combat_hm_orphaned true
 *return
 
+*label combat_hex_state
+*comment Hex parallels Hunter's Mark's target bookkeeping, but applies to every kind of attack roll rather than weapon hits alone.
+*set combat_hex_live false
+*set combat_hex_orphaned false
+*set combat_hex_name ""
+*if ((hex_active) and (hex_target_slot > 0))
+  *temp chx_hp {(("combat_enemy" & hex_target_slot) & "_hp")}
+  *if (chx_hp > 0)
+    *set combat_hex_live true
+    *set combat_hex_name {(("combat_enemy" & hex_target_slot) & "_name")}
+  *else
+    *set combat_hex_orphaned true
+*return
+
 *label find_opportunity_attacker
 *comment Opportunity attacks (2026-09-28). Sets combat_oa_candidate to the enemy that gets to swing as the
 *comment player leaves, or 0 for none. Must be called BEFORE the move that opens the tier, while every enemy
@@ -2123,6 +2139,7 @@
   [b][⚔️ Reckless: advantage on your Strength attacks, and advantage against you, until your next turn][/b]
 *gosub_scene combat_movement combat_refresh_ally_distances
 *gosub combat_hm_state
+*gosub combat_hex_state
 *if (combat_hm_live)
   *line_break
   [b][🎯 Hunter's Mark on ${combat_hm_name}: +1d6 force on your weapon hits][/b]
@@ -2132,9 +2149,12 @@
 *if ((ensnaring_armed) and (ensnaring_expires_round >= combat_round))
   *line_break
   [b][🌿 Ensnaring Strike ready: your next weapon hit may bind its target][/b]
-*if (hex_active)
+*if (combat_hex_live)
   *line_break
-  [b][🔮 Hex Active — +1d6 Necrotic Damage on all hits][/b]
+  [b][🔮 Hex on ${combat_hex_name} — +1d6 Necrotic Damage when you hit it with an attack][/b]
+*elseif (combat_hex_orphaned)
+  *line_break
+  [b][🔮 Hex has no target: move it with a bonus action][/b]
 *temp fhb_i 1
 *label fight_hub_boom_loop
 *if (fhb_i <= combat_enemy_count)
@@ -2194,10 +2214,6 @@
   *set cu_any true
 *if (has_althea_phial)
   *set cu_any true
-*if (has_grease_flask)
-  *set cu_any true
-*if (has_alchemists_fire)
-  *set cu_any true
 *comment GEN:END combat_use_check
 *comment Bonus-action availability: precomputed once, the same way combat_can_attack is, and reused by each
 *comment bonus option's own *if below. Needed because combat_player_bonus_left sitting at its full value means
@@ -2216,7 +2232,9 @@
   *if (mage_armor_can_cast)
     *set combat_can_mage_armor true
 *temp combat_can_hex false
-*if (((((warlock_spell = "hex") or (warlock_spell_2 = "hex")) and (warlock_spell_slots > 0)) or ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))) and (not(hex_active)))
+*if (combat_hex_orphaned)
+  *set combat_can_hex true
+*elseif (((((warlock_spell = "hex") or (warlock_spell_2 = "hex")) and (warlock_spell_slots > 0)) or ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))) and (not(hex_active)))
   *set combat_can_hex true
 *gosub combat_ally_hurt_check
 *temp combat_can_healing_word false
@@ -3188,6 +3206,16 @@
           *if ((inv_agonizing_blast) and (cha_mod > 0))
             *set combat_player_dmg_bonus cha_mod
           *gosub_scene combat_dice resolve_player_hit true
+          *comment Repelling Blast (Warlock invocation): a Large or smaller creature that is still standing is driven back one range step, forced movement (no opportunity attack), the same step Shove uses. At the back of the lane there is nowhere to go, so it stays.
+          *set combat_repel_result 0
+          *if ((inv_repelling_blast) and (combat_enemy_hp > 0))
+            *gosub combat_size_rank combat_enemy_size
+            *if ((combat_size_rank_value <= 3) and (combat_enemy_range < combat_max_range))
+              *gosub_scene combat_movement combat_shift_target_range combat_active_target "away"
+              *gosub fight_sync_target_in
+              *gosub_scene combat_movement combat_range_name combat_enemy_range
+              *set combat_repel_name combat_range_display_name
+              *set combat_repel_result 1
           *if (combat_enemy_hp <= 0)
             *gosub_scene combat_prose pick_spell_death_flavor
         *set combat_cantrip_choice_locked true
@@ -3201,6 +3229,9 @@
           ${fsh}
           *line_break
           [b][✨ Eldritch Blast: Hit | ${combat_player_dmg_dealt} Force damage${combat_outgoing_dmg_suffix}][/b]
+          *if (combat_repel_result = 1)
+            *line_break
+            [b][💥 Repelling Blast: ${combat_enemy_name} is driven back to ${combat_repel_name}][/b]
       *else
         ${fsm}
         *line_break
@@ -3321,12 +3352,12 @@
       *goto fight_target_magic_missile
 
   *if ((((combat_can_hex) and (combat_player_bonus_left > 0))) and (spell_reach_ok_hex))
-    # [b][BONUS ACTION][/b] [b][Hex][/b] Lay a baleful eldritch curse upon ${combat_med_epithet}.
+    # [b][BONUS ACTION][/b] [b][Hex][/b] @{combat_hex_orphaned Move your curse to|Lay a baleful eldritch curse upon} ${combat_med_epithet}.
       *gosub_scene combat_movement fight_pick_target
       *gosub_scene combat_movement fight_retarget_by_class "medium"
       *gosub_scene combat_spells resolve_cast_hex
-      You whisper a guttural syllable of ancient ruin. Dark, spectral runes flare briefly across ${combat_enemy_epithet} and sink in, binding the foe's fate to your will—every strike you land will tear in with extra necrotic fury!
-      *comment No banner here -- the hub's own "Hex Active" status line (fight_round_hub) says the same thing the
+      You whisper a guttural syllable of ancient ruin. Dark, spectral runes flare briefly across ${combat_enemy_epithet} and sink in, binding the foe's fate to your will—every attack you land against them will tear in with extra necrotic fury!
+      *comment No banner here -- the hub's own "Hex" status line (fight_round_hub) says the same thing the
       *comment instant this reopens it, so a second copy here would just repeat it on the very same page.
       *line_break
       *goto fight_bonus_spent
@@ -3557,6 +3588,18 @@
       *line_break
       *goto fight_bonus_spent
 
+  *comment GEN:BEGIN combat_throw_options -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
+  *if (has_grease_flask)
+    *if ((combat_player_actions_left > 0) and (combat_in_medium))
+      # [b][ACTION][/b] [b][Throw: Grease Flask][/b] Hurl it at ${combat_med_epithet}.@{show_stat_hints  [Thrown: a foe that fails a Dex save slips when it moves]|}
+        *set use_item_id "grease_flask"
+        *goto fight_throw_item
+  *if (has_alchemists_fire)
+    *if ((combat_player_actions_left > 0) and (combat_in_medium))
+      # [b][ACTION][/b] [b][Throw: Alchemist's Fire][/b] Hurl it at ${combat_med_epithet}.@{show_stat_hints  [Thrown: 1d4 fire, then burns for 3 turns]|}
+        *set use_item_id "alchemists_fire"
+        *goto fight_throw_item
+  *comment GEN:END combat_throw_options
   *if (cu_any)
     # Use an item from your satchel.
       *goto fight_use_item
@@ -3625,14 +3668,6 @@
     # [b][ACTION][/b] [b][Drink the phial of Saint Althea's water][/b].@{show_stat_hints  [Restores 2d4+2 HP]|}
       *set use_item_id "althea_phial"
       *goto fight_use_do
-  *if (has_grease_flask)
-    # [b][ACTION][/b] [b][Throw the grease flask][/b].@{show_stat_hints  [Thrown: a foe that fails a Dex save slips when it moves]|}
-      *set use_item_id "grease_flask"
-      *goto fight_throw_item
-  *if (has_alchemists_fire)
-    # [b][ACTION][/b] [b][Throw the alchemist's fire][/b].@{show_stat_hints  [Thrown: 1d4 fire, then burns for 3 turns]|}
-      *set use_item_id "alchemists_fire"
-      *goto fight_throw_item
   *comment GEN:END combat_use_options
   # Put the satchel away.
     *goto fight_round_hub
@@ -4669,12 +4704,16 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *if (combat_oa_against_kind = "player")
           *set player_oa_used true
           *gosub resolve_reverse_oa_player
+          *comment The player's hit lowered the SCRATCH hit points; write them back to the slot before anything reads the slot (the all-dead check just below does), or a killing opportunity attack leaves the enemy alive and a wounding one is lost (found 2026-10-13 in a fight log).
+          *gosub fight_sync_target_out
           *gosub fight_check_all_dead
           *if (combat_all_enemies_dead)
             *goto fight_victory
         *elseif (combat_oa_against_kind = "ally")
           *set {(("combat_ally" & combat_oa_against_slot) & "_oa_used")} true
           *gosub resolve_reverse_oa_ally combat_oa_against_slot
+          *comment The ally's hit lowered the slot's hit points directly, so the scratch copy is now stale: read it back, or the next write-back would put the old hit points over the wound.
+          *gosub fight_sync_target_in
           *gosub fight_check_all_dead
           *if (combat_all_enemies_dead)
             *goto fight_victory

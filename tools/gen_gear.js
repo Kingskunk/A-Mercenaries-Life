@@ -69,7 +69,8 @@ function traitHint(it) {
   if (t.stat) out += (out ? "; " : "") + "+" + t.bonus + " " + STAT_NAMES[t.stat];
   return out;
 }
-function stackable(it) { return it.stack !== undefined ? !!it.stack : STACKABLE_KINDS.indexOf(it.kind) !== -1; }
+// A piece that gives an ability-score bonus is magical and unique (the user, 2026-10-13): one copy at most, whatever its kind.
+function stackable(it) { if (it.traits && it.traits.stat) return it.stack === true; return it.stack !== undefined ? !!it.stack : STACKABLE_KINDS.indexOf(it.kind) !== -1; }
 
 // ChoiceScript will not chain operators, so an OR of N terms is nested pairwise: (((a) or (b)) or (c)).
 function orChain(terms) {
@@ -123,6 +124,7 @@ function genGearInfo() {
     L.push('  *set gear_name ' + q(it.name));
     if (it.retail) L.push('  *set gear_retail ' + it.retail);
     L.push('  *set gear_kind ' + q(it.kind));
+    if (it.tradeGroup) L.push('  *set gear_group ' + q(it.tradeGroup));
     if (slotLabel(it)) L.push('  *set gear_slot ' + q(slotLabel(it)));
     L.push('  *set gear_title ' + q(it.title || it.name));
     if (stackable(it)) L.push('  *set gear_stack true');
@@ -225,6 +227,11 @@ function loadoutBlock(kind) {
       L.push('  *set weapon_hands ' + q(o.hands));
       L.push('  *set weapon_prose ' + q(o.prose));
       if (o.reach) L.push('  *set weapon_reach ' + q(o.reach));
+    } else if (kind === "ring") {
+      need(o, ["desc", "prose"]);
+      L.push('*if (item_id = ' + q(it.id) + ')');
+      L.push('  *set new_ring_desc ' + q(o.desc));
+      L.push('  *set new_ring_prose ' + q(o.prose));
     } else if (CLOTHING.indexOf(kind) !== -1) {
       need(o, ["desc", "prose"]);
       L.push('*if (equipped_' + kind + '_id = ' + q(it.id) + ')');
@@ -263,6 +270,10 @@ function genSidearms() {
 
 var EQUIPPED_VAR = { weapon: "equipped_weapon_id", head: "equipped_head_id", armor: "equipped_armor_id",
   cloak: "equipped_cloak_id", hands: "equipped_hands_id", waist: "equipped_waist_id", feet: "equipped_feet_id", neck: "equipped_neck_id" };
+function ringWornExpr(it, prefix) {
+  prefix = prefix || "";
+  return "((" + prefix + "equipped_ring1_id = " + q(it.id) + ") or (" + prefix + "equipped_ring2_id = " + q(it.id) + "))";
+}
 function listed() { return items.filter(function (it) { return it.dossier && !isHand(it); }); }
 
 function genDossierList() {
@@ -271,7 +282,9 @@ function genDossierList() {
     need(it.dossier, ["line"]);
     var d = it.dossier, badge = "";
     var badgeOn = d.badgeOn || (isClothing(it) ? "Worn" : ""), badgeOff = d.badgeOff !== undefined ? d.badgeOff : (isClothing(it) ? "Stowed" : "");
-    if (EQUIPPED_VAR[it.kind] && badgeOn) {
+    if (it.kind === "ring") {
+      badge = "@{" + ringWornExpr(it) + "  [" + (d.badgeOn || "Worn") + "]|" + (d.badgeOff ? " [" + d.badgeOff + "]" : "") + "}";
+    } else if (EQUIPPED_VAR[it.kind] && badgeOn) {
       badge = "@{(" + EQUIPPED_VAR[it.kind] + " = " + q(it.id) + ")  [" + badgeOn + "]|" + (badgeOff ? " [" + badgeOff + "]" : "") + "}";
     }
     L.push('*if (' + flag(it) + ')');
@@ -325,8 +338,24 @@ function genEquipWorn() {
   return L;
 }
 
+function genEquipRings() {
+  var L = [];
+  listed().filter(function (it) { return it.kind === "ring"; }).forEach(function (it) {
+    var worn = ringWornExpr(it);
+    L.push('*if ((' + flag(it) + ') and (not(' + worn + ')))');
+    L.push('  # Wear the ' + it.title + ' in your first ring slot, replacing ${ring1_desc}.');
+    L.push('    *gosub_scene equipment equip_ring "1" ' + q(it.id));
+    L.push('    *goto codex_equipment_accessories');
+    L.push('*if ((' + flag(it) + ') and (not(' + worn + ')))');
+    L.push('  # Wear the ' + it.title + ' in your second ring slot, replacing ${ring2_desc}.');
+    L.push('    *gosub_scene equipment equip_ring "2" ' + q(it.id));
+    L.push('    *goto codex_equipment_accessories');
+  });
+  return L;
+}
+
 var INV_CATEGORY = { weapon: "weapons", armor: "apparel", head: "apparel", tool: "provisions", consumable: "consumables", valuable: "valuables",
-  cloak: "apparel", hands: "apparel", waist: "apparel", feet: "apparel", neck: "apparel" };
+  cloak: "apparel", hands: "apparel", waist: "apparel", feet: "apparel", neck: "apparel", ring: "accessories" };
 function genInventory() {
   var L = [];
   listed().forEach(function (it) {
@@ -343,7 +372,7 @@ function genInventory() {
     }
     var wornHint = it.hint || (it.traits ? traitHint(it) : "");
     if (EQUIPPED_VAR[it.kind] && wornHint) { L.push('  description: ' + q(desc) + ','); L.push('  traits: ' + q(wornHint) + ','); }
-    var more = EQUIPPED_VAR[it.kind] || it.kind === "consumable";
+    var more = EQUIPPED_VAR[it.kind] || it.kind === "consumable" || it.kind === "ring";   // a ring also gets a badge and an equip line after its description
     if (!(EQUIPPED_VAR[it.kind] && wornHint)) L.push('  description: ' + q(desc) + (more ? ',' : ''));
     if (it.kind === "consumable") {
       if (it.effect.type === "boon") {
@@ -358,7 +387,10 @@ function genInventory() {
       // Nothing to "Use" from the bag for a thrown item: it is thrown from the combat menu.
       if (it.effect.type !== "throw") L.push('  use: true');
     }
-    if (EQUIPPED_VAR[it.kind]) {
+    if (it.kind === "ring") {
+      L.push('  badge: function (s) { return (s.equipped_ring1_id === ' + q(it.id) + ' || s.equipped_ring2_id === ' + q(it.id) + ') ? ' + q(d.badgeOn || "Worn") + ' : ' + q(d.badgeOff !== undefined ? d.badgeOff : "Stowed") + '; },');
+      L.push('  equip: { slot: "ring", id: ' + q(it.id) + ' }');
+    } else if (EQUIPPED_VAR[it.kind]) {
       var slot = it.kind;
       L.push('  badge: function (s) { return s.' + EQUIPPED_VAR[it.kind] + ' === ' + q(it.id) + ' ? ' + q(d.badgeOn || (isClothing(it) ? "Worn" : "Equipped")) + ' : ' + q(d.badgeOff !== undefined ? d.badgeOff : (isClothing(it) ? "Stowed" : "")) + '; },');
       // statBonus: the panel hands the swap to the dossier so ChoiceScript recomputes the ability scores.
@@ -401,8 +433,24 @@ function genShop(shop) {
 
 // ---------------------------------------------------------------- consumables (use menus)
 function consumables(combatOnly) {
-  // A thrown item (effect type throw) is used only in a fight, so it never appears in the out-of-combat satchel menu.
-  return items.filter(function (it) { return it.kind === "consumable" && (combatOnly ? it.combat : it.effect.type !== "throw"); });
+  // A thrown item (effect type throw) is used only in a fight, and from its own Throw button on the fight's main menu (genThrowOptions), so it appears in neither the satchel menu nor the fight's Use-an-item list.
+  return items.filter(function (it) { return it.kind === "consumable" && it.effect.type !== "throw" && (!combatOnly || it.combat); });
+}
+function throwItems() {
+  return items.filter(function (it) { return it.kind === "consumable" && it.effect.type === "throw" && it.combat; });
+}
+// One option per thrown item for the fight's main menu. They share the name "Throw" and differ after the colon, which the battle bar folds into ONE Throw button with a fly-out
+// (battlehud.js "Name: Variant"). Offered while the action is unspent and some enemy is inside Mid-Range (combat_in_medium, the hub works it out); the throw aims at the clicked enemy, else the weakest in reach.
+function genThrowOptions() {
+  var L = [];
+  throwItems().forEach(function (it) {
+    L.push('*if (' + flag(it) + ')');
+    L.push('  *if ((combat_player_actions_left > 0) and (combat_in_medium))');
+    L.push('    # [b][ACTION][/b] [b][Throw: ' + it.title + '][/b] Hurl it at ${combat_med_epithet}.@{show_stat_hints  [' + effectSummary(it) + ']|}');
+    L.push('      *set use_item_id ' + q(it.id));
+    L.push('      *goto fight_throw_item');
+  });
+  return L;
 }
 // True while a boon of this item's name is already running in one of the three unique-buff slots (a boon item only).
 function boonRunning(it) {
@@ -511,7 +559,7 @@ function genTradeData() {
   Object.keys(ids).forEach(function (id) {
     var it = byId[id], sl = it.sell || {};
     data.items[id] = {
-      name: it.name, title: it.title || it.name, kind: it.kind, tier: it.tier || "", retail: it.retail || 0,
+      name: it.name, title: it.title || it.name, kind: it.kind, group: it.tradeGroup || "", tier: it.tier || "", retail: it.retail || 0,
       minutes: it.minutes || 10, hint: it.hint || (it.traits ? traitHint(it) : ""), slot: slotLabel(it), stack: stackable(it),
       sell: { smith: sl.smith || 0, pawn: sl.pawn || 0, general: sl.general || 0, tailor: sl.tailor || 0, jeweler: sl.jeweler || 0, pawnFixed: sl.pawnFixed || 0, smithPiece: sl.smithPiece || 0, herbalistPiece: sl.herbalistPiece || 0, countVar: sl.countVar || "" }
     };
@@ -560,6 +608,7 @@ setRegion(F.equipment, "armor_items", loadoutBlock("armor"));
 setRegion(F.equipment, "weapon_items", loadoutBlock("weapon"));
 setRegion(F.equipment, "sidearm_items", genSidearms());
 setRegion(F.equipment, "head_items", loadoutBlock("head"));
+setRegion(F.equipment, "ring_items", loadoutBlock("ring"));
 CLOTHING.forEach(function (k) { setRegion(F.equipment, k + "_items", loadoutBlock(k)); });
 setRegion(F.equipment, "garment_traits_items", genGarmentTraits());
 setRegion(F.stats, "gear_list", genDossierList());
@@ -567,10 +616,12 @@ setRegion(F.stats, "gear_equip_weapons", genEquipWeapons());
 setRegion(F.stats, "gear_equip_worn", genEquipWorn());
 setRegion(F.stats, "gear_equip_apparel", genEquipClothing(["cloak", "hands", "waist", "feet"], "codex_equipment_apparel"));
 setRegion(F.stats, "gear_equip_neck", genEquipClothing(["neck"], "codex_equipment_accessories"));
+setRegion(F.stats, "gear_equip_rings", genEquipRings());
 setRegion(F.inventory, "gear_items", genInventory());
 setRegion(F.stats, "codex_use_check", genUseCheck(false));
 setRegion(F.stats, "codex_use_check2", genUseCheck(false));   // the satchel page repeats the check
 setRegion(F.stats, "codex_use_options", genUseOptions("codex_use_do", false));
+setRegion(F.combat, "combat_throw_options", genThrowOptions());
 setRegion(F.combat, "combat_use_check", genUseCheck(true));
 setRegion(F.combat, "combat_use_options", genUseOptions("fight_use_do", true));
 CATALOG.shops.forEach(function (shop) {

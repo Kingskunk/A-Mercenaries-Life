@@ -328,6 +328,8 @@
   // Booming Blade's variants are weapons ("Booming Blade: falchion"): each button wears the tile of the hand that weapon is in, the same art as the weapon buttons.
   // Anything else (True Strike: Weapon / Radiant) wears the spell's own icon.
   function variantArt(e, v) {
+    // Throw: Grease Flask / Alchemist's Fire ... -- each thrown item wears its own art (ACTION_ICONS throw_<item>), the Throw icon when it has none.
+    if (e.id === "throw") return (window.ACTION_ICONS || {})["throw_" + slug(v.label)] || "";
     if (e.id !== "booming_blade") return "";
     var st = statsNow(), art = window.ACTION_ICONS || {}, lab = String(v.label).toLowerCase();
     if (st.weapon && lab === String(st.weapon).toLowerCase()) return art.primary_melee || "";

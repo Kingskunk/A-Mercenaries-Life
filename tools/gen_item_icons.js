@@ -14,6 +14,7 @@
  *
  * Run: node tools/gen_item_icons.js            (write)
  *      node tools/gen_item_icons.js --check    (verify, non-writing; exit 1 if stale or a source is missing)
+ *      node tools/gen_item_icons.js --refresh-png key [...]  (refresh selected PNG keys without recompressing the rest)
  */
 const fs = require("fs");
 const path = require("path");
@@ -27,6 +28,8 @@ const CHROME = process.env.CHROME || "C:\\Program Files\\Google\\Chrome\\Applica
 const PORT = 9347;
 const SIZE = 72, QUALITY = 0.88;
 const checkOnly = process.argv.includes("--check");
+const refreshAt = process.argv.indexOf("--refresh-png");
+const refreshKeys = refreshAt >= 0 ? process.argv.slice(refreshAt + 1) : [];
 
 const MAP = {
   // ---- weapons (one key per weapon family; the starting loadouts and shop weapons all fall into these)
@@ -49,6 +52,10 @@ const MAP = {
   // ---- body armour and clothing worn as armour
   a_cloth: "Robe_D_Unfaded_Icon.png",
   a_coat: "Robe_E_Unfaded_Icon.png",
+  a_clothes: "Clothes_Unfaded_Icon.png",                       // Simple Clothes, the Wizard's and the Warlock's
+  a_barbarian: "Barbarian_Clothes_Unfaded_Icon.png",
+  a_scale: "Scale_Mail_Unfaded_Icon.png",
+  a_robe: "Robe_E_Unfaded_Icon.png",                       // a plain robe (the Dread Warlock's)
   a_leather: "Hide_Armour_Unfaded_Icon.png",
   a_chain: "Chain_Shirt_Unfaded_Icon.png",
   a_brig: "Breastplate_Unfaded_Icon.png",                       // STAND-IN: studded gambeson / brigandine
@@ -61,10 +68,21 @@ const MAP = {
   h_hat: "Brimmed_Hat_Unfaded_Icon.png",
   h_helm: "Blackplume_Helm_Unfaded_Icon.png",                   // STAND-IN: a plain iron helm
   cloak: "Cloak_B_Unfaded_Icon.png",
+  cloak_traveler: "Travelers_cloak.png",                     // Traveler's Cloak (id broadcloth_cloak)
+  cloak_storm: "Storm_Cloak.png",                            // Storm Cape
+  cloak_winter: "Winter_Cloak.png",
+  cloak_duster: "Summer_Duster.png",
+  neck_muffler: "Wool_Muffler.png",
+  neck_cravat: "Silvertongue_Cravat.png",                    // Silvertongue Cravat (id silk_neckcloth)
   gloves: "Gloves_Hide_Unfaded_Icon.png",
+  gloves_scholar: "Gloves_Leather_3_Unfaded_Icon.png",       // Lamplight Gloves
+  gloves_lined: "Bracers_Barbarian_Unfaded_Icon.png",         // Lined Gloves
+  gloves_master: "Spellseeking_Gloves_Unfaded_Icon.png",      // Spellseeker Gloves
   boots: "Boots_Leather_Unfaded_Icon.png",
-  slippers: "Boots_Leather_A_Unfaded_Icon.png",
-  belt: "Leather_Pouch_A_Unfaded_Icon.webp",                     // STAND-IN: no belt art in the library
+  boots_rain: "Boots_Leather_A_Unfaded_Icon.png",             // Rain Boots
+  boots_winter: "Shoes_Barbarian_Unfaded_Icon.png",          // Winter Boots
+  shoes_dancing: "Camp_Shoes_C_Unfaded_Icon.webp",            // Swallowstep Shoes
+  belt: "Leather_Belt.png",
   neck: "Amulet_Necklace_A_Bronze_A_Unfaded_Icon.png",          // STAND-IN for scarves and mufflers too
   ring: "Ring_A_Simple_Gold_Unfaded_Icon.png",
   signet: "Equipment/Ring/Guild_Ring_Unfaded_Icon.png",
@@ -102,14 +120,26 @@ const MAP = {
   // ---- loose stones
   gem_agate: "Miscellaneous_item/Valuables/Gemstone/GEM_Agate_Unfaded_Icon.png",
   gem_citrine: "Miscellaneous_item/Valuables/Gemstone/GEM_Jacinth_Unfaded_Icon.png",
-  gem_quartz: "Miscellaneous_item/Valuables/Gemstone/GEM_Diamond_Unfaded_Icon.png",
+  gem_quartz: "Miscellaneous_item/Valuables/Gemstone/Quartz.png",
   gem_aquamarine: "Miscellaneous_item/Valuables/Gemstone/GEM_Topaz_Unfaded_Icon.png",
-  gem_opal: "Miscellaneous_item/Valuables/Gemstone/Strange_Chunk_of_Amber_Unfaded_Icon.png",
+  gem_opal: "Miscellaneous_item/Valuables/Gemstone/Opal.png",
   gem_pearl: "Miscellaneous_item/Valuables/Gemstone/GEM_Pearl_Unfaded_Icon.png",
   gem_sapphire: "Miscellaneous_item/Valuables/Gemstone/GEM_Sapphire_Unfaded_Icon.png",
   gem_ruby: "Miscellaneous_item/Valuables/Gemstone/GEM_Ruby_Unfaded_Icon.png",
   gem_emerald: "Miscellaneous_item/Valuables/Gemstone/GEM_Malachite_Unfaded_Icon.png",
   gem_diamond: "Miscellaneous_item/Valuables/Gemstone/GEM_Diamond_Unfaded_Icon.png",
+
+  // ---- finished jewelry (decorative valuables; not powered equipment)
+  jewelry_silver_ring: "Equipment/Ring/Silver_Ring.png",
+  jewelry_gold_ring: "Equipment/Ring/Gold_Ring.png",
+  jewelry_crescent_earrings: "Miscellaneous_item/Valuables/Crescent_Moon_Earring_Unfaded_Icon.png",
+  jewelry_drop_pendant: "Equipment/Amulet/Silver_Pendant_Unfaded_Icon.png",
+  jewelry_gold_necklace: "Equipment/Amulet/Amulet_Necklace_B_Gold_A_Unfaded_Icon.png",
+  jewelry_emerald_pearl_necklace: "Equipment/Amulet/Amulet_Necklace_E_Pearl_B_Unfaded_Icon.png",
+  jewelry_ruby_pearl_necklace: "Equipment/Amulet/Amulet_Necklace_E_Pearl_C_Unfaded_Icon.png",
+  jewelry_sapphire_gold_ring: "Equipment/Ring/Sapphire_Gold_Ring.png",
+  jewelry_ruby_gold_ring: "Equipment/Ring/Gold_Ruby_Ring.png",
+  jewelry_diamond_gold_ring: "Equipment/Ring/Golden Diamond Ring Render.png",
 
   // ---- provisions, papers and everything else
   food: "FOOD_Dried_Rope_Sausage_Unfaded_Icon.png",
@@ -149,6 +179,25 @@ const SRC = {};
 for (const k of Object.keys(MAP)) {
   const p = resolveSource(MAP[k]);
   if (!p || !fs.existsSync(p)) { console.error("  MISSING source: " + k + " -> " + MAP[k]); bad++; } else SRC[k] = p;
+}
+
+if (refreshAt >= 0) {
+  if (!refreshKeys.length) { console.error("--refresh-png requires at least one icon key"); process.exit(1); }
+  const js = fs.existsSync(OUT) ? fs.readFileSync(OUT, "utf8") : "";
+  const marker = "window.ITEM_ICONS = ";
+  const start = js.indexOf("{", js.indexOf(marker));
+  const end = js.lastIndexOf(";");
+  if (start < 0 || end < start) { console.error("could not read the existing item-icons.js bundle"); process.exit(1); }
+  const out = JSON.parse(js.slice(start, end));
+  for (const k of refreshKeys) {
+    if (!Object.prototype.hasOwnProperty.call(MAP, k)) { console.error("unknown icon key: " + k); bad++; continue; }
+    if (!SRC[k] || path.extname(SRC[k]).toLowerCase() !== ".png") { console.error(k + " does not resolve to a PNG source"); bad++; continue; }
+    out[k] = "data:image/png;base64," + fs.readFileSync(SRC[k]).toString("base64");
+  }
+  if (bad) process.exit(1);
+  fs.writeFileSync(OUT, js.slice(0, start) + JSON.stringify(out, null, 1) + js.slice(end));
+  console.log("refreshed " + refreshKeys.length + " PNG icons in " + path.relative(ROOT, OUT));
+  process.exit(0);
 }
 
 if (checkOnly) {

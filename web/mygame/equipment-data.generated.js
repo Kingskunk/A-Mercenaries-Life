@@ -118,7 +118,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "armor_desc": {
           "type": "literal",
-          "value": "Court Coat"
+          "value": "Envoy's Court Coat"
         },
         "armor_type": {
           "type": "literal",
@@ -126,7 +126,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "armor_prose": {
           "type": "literal",
-          "value": "court coat"
+          "value": "envoy's court coat"
         }
       }
     },
@@ -343,6 +343,29 @@ window.EQUIPMENT_CATALOG = {
   "head": [
     {
       "ids": [
+        "none"
+      ],
+      "fields": {
+        "head_desc": {
+          "type": "literal",
+          "value": "Bare Head"
+        },
+        "head_prose": {
+          "type": "literal",
+          "value": "bare head"
+        },
+        "head_ac": {
+          "type": "literal",
+          "value": 0
+        },
+        "head_is_armor": {
+          "type": "literal",
+          "value": false
+        }
+      }
+    },
+    {
+      "ids": [
         "arming_cap"
       ],
       "fields": {
@@ -504,6 +527,29 @@ window.EQUIPMENT_CATALOG = {
     },
     {
       "ids": [
+        "jewelry_crescent_earrings"
+      ],
+      "fields": {
+        "head_desc": {
+          "type": "literal",
+          "value": "Crescent-Moon Earrings"
+        },
+        "head_prose": {
+          "type": "literal",
+          "value": "silver crescent earrings"
+        },
+        "head_ac": {
+          "type": "literal",
+          "value": 0
+        },
+        "head_is_armor": {
+          "type": "literal",
+          "value": false
+        }
+      }
+    },
+    {
+      "ids": [
         "none"
       ],
       "fields": {
@@ -527,6 +573,21 @@ window.EQUIPMENT_CATALOG = {
     }
   ],
   "cloak": [
+    {
+      "ids": [
+        "starting_cloak"
+      ],
+      "fields": {
+        "cloak_desc": {
+          "type": "literal",
+          "value": "Cloak"
+        },
+        "cloak_prose": {
+          "type": "literal",
+          "value": "cloak"
+        }
+      }
+    },
     {
       "ids": [
         "wool_mantle"
@@ -666,6 +727,21 @@ window.EQUIPMENT_CATALOG = {
   "hands": [
     {
       "ids": [
+        "starting_gloves"
+      ],
+      "fields": {
+        "hands_desc": {
+          "type": "literal",
+          "value": "Gloves"
+        },
+        "hands_prose": {
+          "type": "literal",
+          "value": "gloves"
+        }
+      }
+    },
+    {
+      "ids": [
         "leather_wraps"
       ],
       "fields": {
@@ -746,11 +822,11 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "hands_desc": {
           "type": "literal",
-          "value": "Scholar's Gloves"
+          "value": "Lamplight Gloves"
         },
         "hands_prose": {
           "type": "literal",
-          "value": "scholar's gloves"
+          "value": "lamplight gloves"
         }
       }
     },
@@ -761,11 +837,11 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "hands_desc": {
           "type": "literal",
-          "value": "Master's Gloves"
+          "value": "Spellseeker Gloves"
         },
         "hands_prose": {
           "type": "literal",
-          "value": "master's gloves"
+          "value": "spellseeker gloves"
         }
       }
     },
@@ -786,6 +862,21 @@ window.EQUIPMENT_CATALOG = {
     }
   ],
   "waist": [
+    {
+      "ids": [
+        "starting_belt"
+      ],
+      "fields": {
+        "waist_desc": {
+          "type": "literal",
+          "value": "Leather Belt"
+        },
+        "waist_prose": {
+          "type": "literal",
+          "value": "leather belt"
+        }
+      }
+    },
     {
       "ids": [
         "soldiers_belt"
@@ -863,6 +954,21 @@ window.EQUIPMENT_CATALOG = {
     }
   ],
   "feet": [
+    {
+      "ids": [
+        "starting_boots"
+      ],
+      "fields": {
+        "feet_desc": {
+          "type": "literal",
+          "value": "Boots"
+        },
+        "feet_prose": {
+          "type": "literal",
+          "value": "boots"
+        }
+      }
+    },
     {
       "ids": [
         "marching_boots"
@@ -975,11 +1081,11 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "feet_desc": {
           "type": "literal",
-          "value": "Dancing Slippers"
+          "value": "Swallowstep Shoes"
         },
         "feet_prose": {
           "type": "literal",
-          "value": "dancing slippers"
+          "value": "swallowstep shoes"
         }
       }
     },
@@ -1037,11 +1143,71 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "neck_desc": {
           "type": "literal",
-          "value": "Silk Neckcloth"
+          "value": "Silvertongue Cravat"
         },
         "neck_prose": {
           "type": "literal",
-          "value": "silk neckcloth"
+          "value": "silvertongue cravat"
+        }
+      }
+    },
+    {
+      "ids": [
+        "jewelry_drop_pendant"
+      ],
+      "fields": {
+        "neck_desc": {
+          "type": "literal",
+          "value": "Drop Pendant"
+        },
+        "neck_prose": {
+          "type": "literal",
+          "value": "silver drop pendant"
+        }
+      }
+    },
+    {
+      "ids": [
+        "jewelry_gold_necklace"
+      ],
+      "fields": {
+        "neck_desc": {
+          "type": "literal",
+          "value": "Fine Gold Necklace"
+        },
+        "neck_prose": {
+          "type": "literal",
+          "value": "fine gold necklace"
+        }
+      }
+    },
+    {
+      "ids": [
+        "jewelry_emerald_pearl_necklace"
+      ],
+      "fields": {
+        "neck_desc": {
+          "type": "literal",
+          "value": "Emerald Pearl Necklace"
+        },
+        "neck_prose": {
+          "type": "literal",
+          "value": "emerald pearl necklace"
+        }
+      }
+    },
+    {
+      "ids": [
+        "jewelry_ruby_pearl_necklace"
+      ],
+      "fields": {
+        "neck_desc": {
+          "type": "literal",
+          "value": "Ruby Pearl Necklace"
+        },
+        "neck_prose": {
+          "type": "literal",
+          "value": "ruby pearl necklace"
         }
       }
     },
@@ -1136,11 +1302,87 @@ window.EQUIPMENT_CATALOG = {
           "value": "black horn ring"
         }
       }
+    },
+    {
+      "ids": [
+        "jewelry_silver_ring"
+      ],
+      "fields": {
+        "new_ring_desc": {
+          "type": "literal",
+          "value": "Silver Ring"
+        },
+        "new_ring_prose": {
+          "type": "literal",
+          "value": "plain silver ring"
+        }
+      }
+    },
+    {
+      "ids": [
+        "jewelry_gold_ring"
+      ],
+      "fields": {
+        "new_ring_desc": {
+          "type": "literal",
+          "value": "Gold Ring"
+        },
+        "new_ring_prose": {
+          "type": "literal",
+          "value": "plain gold ring"
+        }
+      }
+    },
+    {
+      "ids": [
+        "jewelry_sapphire_gold_ring"
+      ],
+      "fields": {
+        "new_ring_desc": {
+          "type": "literal",
+          "value": "Sapphire Gold Ring"
+        },
+        "new_ring_prose": {
+          "type": "literal",
+          "value": "sapphire-set gold ring"
+        }
+      }
+    },
+    {
+      "ids": [
+        "jewelry_ruby_gold_ring"
+      ],
+      "fields": {
+        "new_ring_desc": {
+          "type": "literal",
+          "value": "Ruby Gold Ring"
+        },
+        "new_ring_prose": {
+          "type": "literal",
+          "value": "ruby-set gold ring"
+        }
+      }
+    },
+    {
+      "ids": [
+        "jewelry_diamond_gold_ring"
+      ],
+      "fields": {
+        "new_ring_desc": {
+          "type": "literal",
+          "value": "Diamond Gold Ring"
+        },
+        "new_ring_prose": {
+          "type": "literal",
+          "value": "diamond-set gold ring"
+        }
+      }
     }
   ]
 };
 // id -> the short text for what a worn item does (weather cuts, score bonus), from equipment.txt garment_traits.
 window.GARMENT_HINTS = {
+  "starting_cloak": "Weather wear: cold -40%, rain -40%",
   "wool_mantle": "Weather wear: cold -65%, rain -30%",
   "weather_cloak": "Weather wear: cold -30%, rain -65%",
   "camo_cloak": "Weather wear: cold -40%, rain -40%",

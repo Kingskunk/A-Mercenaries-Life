@@ -165,7 +165,8 @@
     *set cph_bonus_str "${combat_player_dmg_bonus}"
   *temp cph_extra_str ""
   *temp cph_running (cph_roll + combat_player_dmg_bonus)
-  *if ((hex_active) and (rph_is_attack_roll))
+  *comment Hex only enhances an attack roll that hit its marked creature. Save-based spells pass false here, so they cannot trigger it.
+  *if (((hex_active) and (rph_is_attack_roll)) and ((hex_target_slot > 0) and (hex_target_slot = combat_active_target)))
     *temp cph_hex_die 0
     *rand cph_hex_die 1 6
     *set combat_player_dmg_dealt + cph_hex_die
@@ -243,7 +244,8 @@ ${combat_player_dmg_roll_banner}
     *set combat_player_dmg_dealt + cwh_sneak_die
     *set cwh_extra_str "${cwh_extra_str} +${cwh_sneak_die} (Sneak Attack)"
     *set cwh_running + cwh_sneak_die
-  *if (hex_active)
+  *comment Weapon attacks are attack rolls, but Hex still applies only against its chosen creature.
+  *if (((hex_active) and (hex_target_slot > 0)) and (hex_target_slot = combat_active_target))
     *temp cwh_hex_die 0
     *rand cwh_hex_die 1 6
     *set combat_player_dmg_dealt + cwh_hex_die

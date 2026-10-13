@@ -1,0 +1,52 @@
+*comment MARLCROSS MILLING FAIR -- event-owned calendar and notice state.
+*comment This file owns the fair's annual date and all future festival logic.
+
+*label schedule
+*comment One autumn date per campaign year. The date falls in Scorpio or Sagittarius,
+*comment is saved the first time a notice board asks for it, and does not change on refresh.
+*if (marlcross_milling_fair_year < calendar_year)
+  *set marlcross_milling_fair_year 0
+
+*if (marlcross_milling_fair_year = 0)
+  *if (calendar_month_num < 8)
+    *set marlcross_milling_fair_year calendar_year
+    *rand marlcross_milling_fair_month 8 9
+    *rand marlcross_milling_fair_day 1 30
+  *elseif (calendar_month_num = 8)
+    *set marlcross_milling_fair_year calendar_year
+    *temp milling_fair_offset 0
+    *rand milling_fair_offset calendar_day 59
+    *if (milling_fair_offset <= 29)
+      *set marlcross_milling_fair_month 8
+      *set marlcross_milling_fair_day (milling_fair_offset + 1)
+    *else
+      *set marlcross_milling_fair_month 9
+      *set marlcross_milling_fair_day (milling_fair_offset - 29)
+  *elseif ((calendar_month_num = 9) and (calendar_day < 30))
+    *set marlcross_milling_fair_year calendar_year
+    *set marlcross_milling_fair_month 9
+    *rand marlcross_milling_fair_day (calendar_day + 1) 30
+  *else
+    *set marlcross_milling_fair_year (calendar_year + 1)
+    *rand marlcross_milling_fair_month 8 9
+    *rand marlcross_milling_fair_day 1 30
+
+*if (marlcross_milling_fair_month = 8)
+  *set marlcross_milling_fair_month_name "Scorpio"
+*else
+  *set marlcross_milling_fair_month_name "Sagittarius"
+
+*set marlcross_milling_fair_day_suffix "th"
+*if ((marlcross_milling_fair_day = 1) or (marlcross_milling_fair_day = 21))
+  *set marlcross_milling_fair_day_suffix "st"
+*elseif ((marlcross_milling_fair_day = 2) or (marlcross_milling_fair_day = 22))
+  *set marlcross_milling_fair_day_suffix "nd"
+*elseif ((marlcross_milling_fair_day = 3) or (marlcross_milling_fair_day = 23))
+  *set marlcross_milling_fair_day_suffix "rd"
+*set marlcross_milling_fair_date "${marlcross_milling_fair_day}${marlcross_milling_fair_day_suffix} of ${marlcross_milling_fair_month_name}, ${marlcross_milling_fair_year} IR"
+
+*set marlcross_milling_fair_notice_active false
+*if ((marlcross_milling_fair_year = calendar_year) and (current_season = "Autumn"))
+  *if ((calendar_month_num < marlcross_milling_fair_month) or ((calendar_month_num = marlcross_milling_fair_month) and (calendar_day < marlcross_milling_fair_day)))
+    *set marlcross_milling_fair_notice_active true
+*return

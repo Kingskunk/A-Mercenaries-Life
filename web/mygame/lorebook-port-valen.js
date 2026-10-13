@@ -307,15 +307,6 @@
         var out = [
           "A broad-shouldered smith past fifty, with a grey braid pinned up under a leather cap and forearms freckled with old burns. Her sign reads: Steel Bought, Sold, and Mended. She works the largest shed on Smiths' Row, and her racks hold every kind of blade, axe, spear, shield, helmet and mail shirt."
         ];
-        if (truthy(s.mw_halda_trade_talk)) {
-          out.push("She pays for old steel by weight and by edge: sound steel by the pound, and more for a good edge. Rust she can grind off, but she will not mend cracked steel. It goes in the scrap bin at scrap price, and she says so to your face. What she sells comes with the same promise: a straight edge and no hidden flaws, or you bring it back.");
-        }
-        if (truthy(s.mw_halda_mend_talk)) {
-          out.push("She mends blades, helmets, tools and cartwheel rims, and mail by the link. A bent helmet she knocks straight, and a split shield she sends to the carpenter. Anything cracked through the middle she will not touch.");
-        }
-        if (truthy(s.mw_halda_steel_talk)) {
-          out.push("The best steel in the country came out of the Highland Crags, and hardly any of it comes down now. Karr's bailiffs taxed the Crag forges half out of business, and the smiths who could leave did. She has heard that a Crag dwarf set up at the weir in Alderford.");
-        }
         if (truthy(s.mw_rumor_steel)) {
           out.push("Rumor from the baths: half a wagon-load of Crag steel is sitting in a shed in Alderford, and no carter will haul it down while the bailiffs work the highway.");
         }
@@ -922,9 +913,6 @@
           "A cobbled yard at the lower end of the Middle Ward, where the harbor road climbs in. Three forges stand under open sheds around a stone water trough, with racks of finished blades, helmets and tools along the walls. Iron bars and coal come up from the harbor by wagon. A cooper's bench at the far end still makes barrels for the ward.",
           "The forges work in daylight and bank their fires at dusk. On the holy day and in a blizzard the sheds stay barred."
         ];
-        if (truthy(s.mw_halda_forges_talk)) {
-          out.push("Three forges, three masters, one water trough. Halda does edges, the middle shed does wheel rims and nails, and the far one hammers out tin pots and tools for the ward's trades.");
-        }
         return out;
       },
       see: ["halda", "middle_ward", "vael"]
@@ -1410,10 +1398,16 @@
       tags: ["Patrician Quarter", "Trade"], aliases: ["tailor", "tailors shop", "fitting", "clothing"],
       link: ["The Gilt Needle", "Gilt Needle"],
       unlock: "pq_tailor_seen",
-      body: [
-        "A narrow shop of dark wood and bow glass near the Inner Gate, marked by a gilt needle threaded with red silk. Bolts of cloth lean in racks to the ceiling, and a long cutting table is spread with paper patterns. Everything is cut to the wearer, and each piece is adjusted while you wait.",
-        "Finished cloaks, hats, gloves, boots and fine dress hang along the walls and sit in glass cases, each priced on a card in Fenwick's small square hand. He buys a piece back for about four in ten of what he asked, since it was cut to one person."
-      ],
+      body: function (s) {
+        var out = [
+          "A narrow shop of dark wood and bow glass near the Inner Gate, marked by a gilt needle threaded with red silk. Bolts of cloth lean in racks to the ceiling, and a long cutting table is spread with paper patterns. Everything is cut to the wearer, and each piece is adjusted while you wait.",
+          "Finished cloaks, hats, gloves, boots and fine dress hang along the walls and sit in glass cases, each priced on a card in Fenwick's small square hand. He buys a piece back for about four in ten of what he asked, since it was cut to one person."
+        ];
+        if (truthy(s.pq_tailor_talk_fine)) {
+          out.push("The finest pieces are kept apart under the skylight, with a second line of pale stitching in every seam. There is one of each, finished for one wearer, and they cost a great deal more than the rest of the shop.");
+        }
+        return out;
+      },
       see: ["idris_fenwick", "upper_wharves"]
     },
     {
@@ -1429,6 +1423,9 @@
         ];
         if (truthy(s.pq_tailor_talk_clients)) {
           out.push("He dresses the great houses, their families, their clerks and their guards' officers, and the occasional captain who has done a house a service and wishes to be seen to have done it. To him a coat is a way of saying whose door you came from.");
+        }
+        if (truthy(s.pq_tailor_talk_fine)) {
+          out.push("He never calls it magic. He calls it the second stitch, worked in red-dyed Quarter silk that does not fray, and says a piece finished that way holds only for the one wearer. He will not say where the thread comes from, and he will not do it twice.");
         }
         return out;
       },

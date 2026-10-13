@@ -68,32 +68,27 @@ window.INVENTORY = {
     { label: "Head", shape: "headwear", desc: "head_desc", ac: "head_ac", isArmor: "head_is_armor", bucket: "head",
       swappable: true,
       always: function (s) {
-        var originDefault = { ruined: "arming_cap", outlaw: "camo_hood", disgraced: "scholar_coif" };
-        return [originDefault[s.origin] || "arming_cap"];
+        return ["none"];   // nobody starts in headwear; a hat or helm can always come off (equipment.txt apply_head_loadout)
       } },
     { label: "Cloak", shape: "plain", desc: "cloak_desc", bucket: "cloak",
       swappable: true,
       always: function (s) {
-        var originDefault = { ruined: "wool_mantle", outlaw: "camo_cloak", disgraced: "weather_cloak" };
-        return [originDefault[s.origin] || "wool_mantle"];
+        return ["starting_cloak"];   // the same plain cloak for every origin (equipment.txt apply_cloak_loadout)
       } },
     { label: "Hands", shape: "plain", desc: "hands_desc", bucket: "hands",
       swappable: true,
       always: function (s) {
-        var originDefault = { ruined: "leather_wraps", outlaw: "archer_bracers", disgraced: "scribe_gloves" };
-        return [originDefault[s.origin] || "leather_wraps"];
+        return ["starting_gloves"];   // the same plain gloves for every origin (equipment.txt apply_hands_loadout)
       } },
     { label: "Waist", shape: "plain", desc: "waist_desc", bucket: "waist",
       swappable: true,
       always: function (s) {
-        var originDefault = { ruined: "soldiers_belt", outlaw: "scabbard_belt", disgraced: "satchel_harness" };
-        return [originDefault[s.origin] || "soldiers_belt"];
+        return ["starting_belt"];   // the same leather belt for every origin (equipment.txt apply_waist_loadout)
       } },
     { label: "Feet", shape: "plain", desc: "feet_desc", bucket: "feet",
       swappable: true,
       always: function (s) {
-        var originDefault = { ruined: "marching_boots", outlaw: "scout_boots", disgraced: "riding_boots" };
-        return [originDefault[s.origin] || "marching_boots"];
+        return ["starting_boots"];   // the same plain boots for every origin (equipment.txt apply_feet_loadout)
       } },
     // Neck and rings became swappable 2026-10-02 (the dossier already offers neck pieces; rings had no menu at all and were only ever put on by the story).
     // Both can be taken off: "none" is a bare throat or finger. A neck is not offered the way back while the Hearthstone is attuned (that is broken with its
@@ -370,7 +365,7 @@ window.INVENTORY = {
     },
     {
       id: "scholar_gloves", category: "apparel", owned: "has_scholar_gloves", slot: "Hands",
-      name: function (s) { var n = 1 + (Number(s.spare_scholar_gloves) || 0); return "Scholar's Gloves" + (n > 1 ? " ×" + n : ""); },
+      name: "Lamplight Gloves",
       description: "Fine black kid gloves cut close for close work.",
       traits: "+1 INT",
       badge: function (s) { return s.equipped_hands_id === "scholar_gloves" ? "Worn" : "Stowed"; },
@@ -379,7 +374,7 @@ window.INVENTORY = {
     },
     {
       id: "masters_gloves", category: "apparel", owned: "has_masters_gloves", slot: "Hands",
-      name: function (s) { var n = 1 + (Number(s.spare_masters_gloves) || 0); return "Master's Gloves" + (n > 1 ? " ×" + n : ""); },
+      name: "Spellseeker Gloves",
       description: "Black kid gloves fitted finger by finger and stitched in silk.",
       traits: "+2 INT",
       badge: function (s) { return s.equipped_hands_id === "masters_gloves" ? "Worn" : "Stowed"; },
@@ -404,8 +399,8 @@ window.INVENTORY = {
     },
     {
       id: "dancing_slippers", category: "apparel", owned: "has_dancing_slippers", slot: "Feet",
-      name: function (s) { var n = 1 + (Number(s.spare_dancing_slippers) || 0); return "Dancing Slippers" + (n > 1 ? " ×" + n : ""); },
-      description: "Flat black kid slippers with a thin flexible sole.",
+      name: "Swallowstep Shoes",
+      description: "Flat black kid shoes with a thin flexible sole.",
       traits: "+1 DEX",
       badge: function (s) { return s.equipped_feet_id === "dancing_slippers" ? "Worn" : "Stowed"; },
       equip: { slot: "feet", id: "dancing_slippers" },
@@ -421,7 +416,7 @@ window.INVENTORY = {
     },
     {
       id: "silk_neckcloth", category: "apparel", owned: "has_silk_neckcloth", slot: "Neck",
-      name: function (s) { var n = 1 + (Number(s.spare_silk_neckcloth) || 0); return "Silk Neckcloth" + (n > 1 ? " ×" + n : ""); },
+      name: "Silvertongue Cravat",
       description: "Dove-grey silk neckcloth folded in the Quarter fashion.",
       traits: "+1 CHA",
       badge: function (s) { return s.equipped_neck_id === "silk_neckcloth" ? "Worn" : "Stowed"; },
@@ -430,7 +425,7 @@ window.INVENTORY = {
     },
     {
       id: "court_coat", category: "apparel", owned: "has_court_coat", slot: "Body armor",
-      name: function (s) { var n = 1 + (Number(s.spare_court_coat) || 0); return "Court Coat" + (n > 1 ? " ×" + n : ""); },
+      name: "Envoy's Court Coat",
       description: "Charcoal wool coat, silk-lined and cut close through the shoulder.",
       traits: "Cloth armor: AC 10 + DEX; cold -25%, rain -10%; +2 CHA",
       badge: function (s) { return s.equipped_armor_id === "court_coat" ? "Worn, Cloth Armor" : "Stowed"; },
@@ -535,6 +530,81 @@ window.INVENTORY = {
       id: "gem_diamond", category: "valuables", owned: "has_gem_diamond",
       name: function (s) { var n = 1 + (Number(s.spare_gem_diamond) || 0); return "Diamond" + (n > 1 ? " ×" + n : ""); },
       description: "Clear hard stone cut into bright cold facets."
+    },
+    {
+      id: "jewelry_silver_ring", category: "accessories", owned: "has_jewelry_silver_ring", slot: "Ring",
+      name: "Silver Ring",
+      description: "Broad polished silver ring, plain enough for engraving.",
+      badge: function (s) { return (s.equipped_ring1_id === "jewelry_silver_ring" || s.equipped_ring2_id === "jewelry_silver_ring") ? "Worn" : "Stowed"; },
+      equip: { slot: "ring", id: "jewelry_silver_ring" }
+    },
+    {
+      id: "jewelry_gold_ring", category: "accessories", owned: "has_jewelry_gold_ring", slot: "Ring",
+      name: "Gold Ring",
+      description: "Smooth yellow-gold ring with a nearly invisible join.",
+      badge: function (s) { return (s.equipped_ring1_id === "jewelry_gold_ring" || s.equipped_ring2_id === "jewelry_gold_ring") ? "Worn" : "Stowed"; },
+      equip: { slot: "ring", id: "jewelry_gold_ring" }
+    },
+    {
+      id: "jewelry_crescent_earrings", category: "accessories", owned: "has_jewelry_crescent_earrings", slot: "Head",
+      name: function (s) { var n = 1 + (Number(s.spare_jewelry_crescent_earrings) || 0); return "Crescent-Moon Earrings" + (n > 1 ? " ×" + n : ""); },
+      description: "Matched silver crescent earrings with tiny dark glass beads.",
+      traits: "Head slot; matched silver crescents",
+      badge: function (s) { return s.equipped_head_id === "jewelry_crescent_earrings" ? "Equipped" : ""; },
+      equip: { slot: "head", id: "jewelry_crescent_earrings" }
+    },
+    {
+      id: "jewelry_drop_pendant", category: "accessories", owned: "has_jewelry_drop_pendant", slot: "Neck",
+      name: function (s) { var n = 1 + (Number(s.spare_jewelry_drop_pendant) || 0); return "Drop Pendant" + (n > 1 ? " ×" + n : ""); },
+      description: "Pale cut-glass drop in silver wire on a fine chain.",
+      traits: "Neck slot; pale cut-glass drop",
+      badge: function (s) { return s.equipped_neck_id === "jewelry_drop_pendant" ? "Worn" : "Stowed"; },
+      equip: { slot: "neck", id: "jewelry_drop_pendant" }
+    },
+    {
+      id: "jewelry_gold_necklace", category: "accessories", owned: "has_jewelry_gold_necklace", slot: "Neck",
+      name: function (s) { var n = 1 + (Number(s.spare_jewelry_gold_necklace) || 0); return "Fine Gold Necklace" + (n > 1 ? " ×" + n : ""); },
+      description: "Fine gold necklace with a worked central drop and careful joins.",
+      traits: "Neck slot; fine worked gold",
+      badge: function (s) { return s.equipped_neck_id === "jewelry_gold_necklace" ? "Worn" : "Stowed"; },
+      equip: { slot: "neck", id: "jewelry_gold_necklace" }
+    },
+    {
+      id: "jewelry_emerald_pearl_necklace", category: "accessories", owned: "has_jewelry_emerald_pearl_necklace", slot: "Neck",
+      name: function (s) { var n = 1 + (Number(s.spare_jewelry_emerald_pearl_necklace) || 0); return "Emerald Pearl Necklace" + (n > 1 ? " ×" + n : ""); },
+      description: "Pale pearl necklace ending in a deep green emerald drop.",
+      traits: "Neck slot; pearls and emerald drop",
+      badge: function (s) { return s.equipped_neck_id === "jewelry_emerald_pearl_necklace" ? "Worn" : "Stowed"; },
+      equip: { slot: "neck", id: "jewelry_emerald_pearl_necklace" }
+    },
+    {
+      id: "jewelry_ruby_pearl_necklace", category: "accessories", owned: "has_jewelry_ruby_pearl_necklace", slot: "Neck",
+      name: function (s) { var n = 1 + (Number(s.spare_jewelry_ruby_pearl_necklace) || 0); return "Ruby Pearl Necklace" + (n > 1 ? " ×" + n : ""); },
+      description: "Pale pearl necklace ending in a dark red ruby drop.",
+      traits: "Neck slot; pearls and ruby drop",
+      badge: function (s) { return s.equipped_neck_id === "jewelry_ruby_pearl_necklace" ? "Worn" : "Stowed"; },
+      equip: { slot: "neck", id: "jewelry_ruby_pearl_necklace" }
+    },
+    {
+      id: "jewelry_sapphire_gold_ring", category: "accessories", owned: "has_jewelry_sapphire_gold_ring", slot: "Ring",
+      name: "Sapphire Gold Ring",
+      description: "Deep blue sapphire set above a leaf-chased gold band.",
+      badge: function (s) { return (s.equipped_ring1_id === "jewelry_sapphire_gold_ring" || s.equipped_ring2_id === "jewelry_sapphire_gold_ring") ? "Worn" : "Stowed"; },
+      equip: { slot: "ring", id: "jewelry_sapphire_gold_ring" }
+    },
+    {
+      id: "jewelry_ruby_gold_ring", category: "accessories", owned: "has_jewelry_ruby_gold_ring", slot: "Ring",
+      name: "Ruby Gold Ring",
+      description: "Deep red ruby set in a heavy worked gold band.",
+      badge: function (s) { return (s.equipped_ring1_id === "jewelry_ruby_gold_ring" || s.equipped_ring2_id === "jewelry_ruby_gold_ring") ? "Worn" : "Stowed"; },
+      equip: { slot: "ring", id: "jewelry_ruby_gold_ring" }
+    },
+    {
+      id: "jewelry_diamond_gold_ring", category: "accessories", owned: "has_jewelry_diamond_gold_ring", slot: "Ring",
+      name: "Diamond Gold Ring",
+      description: "Clear diamond set above a leaf-chased gold band.",
+      badge: function (s) { return (s.equipped_ring1_id === "jewelry_diamond_gold_ring" || s.equipped_ring2_id === "jewelry_diamond_gold_ring") ? "Worn" : "Stowed"; },
+      equip: { slot: "ring", id: "jewelry_diamond_gold_ring" }
     },
     // GEN:END gear_items
     // ---- weapons ----

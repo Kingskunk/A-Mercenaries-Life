@@ -142,12 +142,45 @@
     return out;
   }
 
+  /* ------------------------------------------------------------------ categories and art */
+
+  // Fine-grained where equipment has a slot, broad where it does not. A shop
+  // only offers filter choices represented by its current Buy or Sell list.
+  var CATEGORY_LABEL = {
+    weapon: "Weapons", armor: "Body armor", shield: "Shields & off-hand", head: "Headwear",
+    cloak: "Cloaks", hands: "Gloves", feet: "Footwear", neck: "Neckwear", ring: "Rings",
+    tool: "Tools", consumable: "Consumables", gemstone: "Loose stones", jewelry: "Jewelry", salvage: "Salvage", other: "Other"
+  };
+  var CATEGORY_ORDER = ["weapon", "armor", "shield", "head", "cloak", "hands", "feet", "neck", "ring", "tool", "consumable", "gemstone", "jewelry", "salvage", "other"];
+  function categoryOf(it) {
+    var kind = String(it && it.kind || "").toLowerCase();
+    var group = String(it && it.group || "").toLowerCase();
+    if (CATEGORY_LABEL[group]) return group;
+    if (kind === "valuable") return "gemstone";
+    return CATEGORY_LABEL[kind] ? kind : "other";
+  }
+  function categoriesFor(rows) {
+    var found = {};
+    rows.forEach(function (r) { found[categoryOf(data().items[r.id])] = true; });
+    return CATEGORY_ORDER.filter(function (key) { return found[key]; });
+  }
+  function filterRows(rows) {
+    return view.category ? rows.filter(function (r) { return categoryOf(data().items[r.id]) === view.category; }) : rows;
+  }
+  function tradeIcon(id, it) {
+    var resolver = window.ItemIconResolver, key = "misc", src = "";
+    if (resolver && typeof resolver.keyFor === "function") key = resolver.keyFor(id, it);
+    if (resolver && typeof resolver.srcFor === "function") src = resolver.srcFor(key);
+    else { var icons = window.ITEM_ICONS || {}; src = icons[key] || icons.misc || ""; }
+    return src ? '<img class="trd-icon" alt="" draggable="false" src="' + src + '">' : '<span class="trd-icon trd-icon-none"></span>';
+  }
+
   /* ------------------------------------------------------------------ DOM */
 
   if (typeof document === "undefined") return; // node tests stop here (mirrors inventory.js)
 
-  var dlg, elTitle, elPurse, elBody, elFoot, elTabs;
-  var view = { key: "", tab: "buy" };
+  var dlg, elTitle, elPurse, elBody, elFoot, elTabs, elControls, elFilter;
+  var view = { key: "", tab: "buy", category: "" };
   var cart = { buy: {}, sell: {} };
   var reopen = false;
   var confirmedLabel = null; // the settle option we clicked; the old page can linger while ChoiceScript fades it out
@@ -163,16 +196,19 @@
         '<span class="trd-purse"></span><span class="trd-spacer"></span>' +
         '<button type="button" class="trd-close" data-act="close" aria-label="Close trade">×</button>' +
       "</div>" +
-      '<div class="trd-tabs"></div>' +
+      '<div class="trd-controls"><div class="trd-tabs"></div><label class="trd-filter-wrap">Show <select class="trd-filter" data-act="filter"></select></label></div>' +
       '<div class="trd-body"></div>' +
       '<div class="trd-foot"></div>';
     document.body.appendChild(dlg);
     elTitle = dlg.querySelector(".trd-title");
     elPurse = dlg.querySelector(".trd-purse");
+    elControls = dlg.querySelector(".trd-controls");
     elTabs = dlg.querySelector(".trd-tabs");
+    elFilter = dlg.querySelector(".trd-filter");
     elBody = dlg.querySelector(".trd-body");
     elFoot = dlg.querySelector(".trd-foot");
     dlg.addEventListener("click", onClick);
+    dlg.addEventListener("change", onChange);
     // Keep typing from reaching the game's own hotkeys (1-9, J/K...) while this panel is up.
     dlg.addEventListener("keydown", function (ev) {
       ev.stopPropagation();
@@ -212,8 +248,8 @@
   function render() {
     if (!dlg) return;
     var s = statsNow(), trade = currentTrade();
-    if (!trade) { elBody.innerHTML = '<div class="trd-empty">There is nothing to trade here.</div>'; elFoot.innerHTML = ""; elTabs.innerHTML = ""; return; }
-    if (view.key !== trade.key) { view.key = trade.key; view.tab = trade.def.buy.length ? "buy" : "sell"; cart = { buy: {}, sell: {} }; }
+    if (!trade) { elBody.innerHTML = '<div class="trd-empty">There is nothing to trade here.</div>'; elFoot.innerHTML = ""; elTabs.innerHTML = ""; elControls.style.display = "none"; return; }
+    if (view.key !== trade.key) { view.key = trade.key; view.tab = trade.def.buy.length ? "buy" : "sell"; view.category = ""; cart = { buy: {}, sell: {} }; }
 
     elTitle.textContent = trade.def.title;
     elPurse.textContent = "Purse: " + fmt(purse(s));
@@ -238,12 +274,26 @@
     if (!hasBuy) view.tab = "sell";
     if (!hasSell) view.tab = "buy";
 
+    var currentRows = view.tab === "buy" ? buys : sells;
+    var categories = categoriesFor(currentRows);
+    if (categories.indexOf(view.category) === -1) view.category = "";
+    elFilter.parentNode.style.display = categories.length > 1 ? "" : "none";
+    elFilter.innerHTML = '<option value="">All items</option>' + categories.map(function (key) {
+      return '<option value="' + key + '"' + (view.category === key ? " selected" : "") + ">" + CATEGORY_LABEL[key] + "</option>";
+    }).join("");
+    elControls.style.display = (hasBuy && hasSell) || categories.length > 1 ? "" : "none";
+    buys = filterRows(buys);
+    sells = filterRows(sells);
+    // A unique piece (stack false: the magical dress, rings) you already own leaves the shelf until you sell it back, and a shelf never offers more than one of it.
+    buys = buys.filter(function (r) { var it = data().items[r.id]; return !(it && !it.stack && it.kind !== "salvage" && owned(r.id, s) > 0); });
+
     var html = "", hints = truthy(s.show_stat_hints);
     if (view.tab === "buy") {
       if (!buys.length) html = '<div class="trd-empty">Nothing on the racks right now.</div>';
       buys.forEach(function (r) {
         var it = data().items[r.id], have = owned(r.id, s), qty = cart.buy[r.id] || 0;
         html += '<div class="trd-row' + (qty ? " trd-row-on" : "") + '">' +
+          tradeIcon(r.id, it) +
           '<div class="trd-main">' +
             '<div class="trd-name">' + esc(it.title) + (it.slot ? '<span class="trd-slot">' + esc(it.slot) + "</span>" : "") + (have ? '<span class="trd-have">you have ' + have + "</span>" : "") + "</div>" +
             (hints && it.hint ? '<div class="trd-meta">' + esc(it.hint) + "</div>" : "") +
@@ -251,7 +301,7 @@
             (wearingLine(r.id, it, s) ? '<div class="trd-worn">' + esc(wearingLine(r.id, it, s)) + "</div>" : "") +
           "</div>" +
           '<div class="trd-price">' + fmt(it.retail) + "</div>" +
-          renderStepper("buy", r.id, qty, 20) +
+          renderStepper("buy", r.id, qty, (it.stack || it.kind === "salvage") ? 20 : 1) +
         "</div>";
       });
     } else {
@@ -262,6 +312,7 @@
         var note = "";
         if (worn && qty >= r.have && it.kind !== "salvage") note = "Selling your last one puts you back in your starting gear.";
         html += '<div class="trd-row' + (qty ? " trd-row-on" : "") + '">' +
+          tradeIcon(r.id, it) +
           '<div class="trd-main">' +
             '<div class="trd-name">' + esc(it.title) + (it.slot ? '<span class="trd-slot">' + esc(it.slot) + "</span>" : "") + '<span class="trd-have">you have ' + r.have + "</span>" +
               (worn ? '<span class="trd-badge">worn</span>' : "") + "</div>" +
@@ -323,6 +374,14 @@
     if (act === "close") return close();
     if (act === "clear") { cart = { buy: {}, sell: {} }; render(); return; }
     if (act === "confirm") { if (!t.disabled) confirm(); }
+  }
+
+  function onChange(ev) {
+    var t = ev.target;
+    if (t && t.getAttribute && t.getAttribute("data-act") === "filter") {
+      view.category = t.value;
+      render();
+    }
   }
 
   function open() {

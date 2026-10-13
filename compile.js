@@ -303,6 +303,8 @@ function compile(){
   verifyFileName("port_valen/marlcross/cross_hall.txt");
   verifyFileName("port_valen/marlcross/grain_green.txt");
   verifyFileName("port_valen/marlcross/wayfarers_rest.txt");
+  // The Milling Fair owns its scheduling and future event flow; public notice boards call its schedule label.
+  verifyFileName("port_valen/marlcross/milling_fair.txt");
   // Brinewick is Port Valen's western salt-working village. Its three public places live beside the city content.
   verifyFileName("port_valen/brinewick/brinewick.txt");
   verifyFileName("port_valen/brinewick/tide_house.txt");

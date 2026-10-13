@@ -586,6 +586,10 @@ A third thing settles in beside the cantrips and the bound spell: a quiet, parti
     # Agonizing Blast. Add your Charisma modifier to the damage of Eldritch Blast.@{show_stat_hints  [Invocation: Agonizing Blast]|}
       *set warlock_invocation_1 "agonizing_blast"
       *goto warlock_invocation_sealed
+  *if ((warlock_cantrip = "eldritch_blast") or (warlock_cantrip_2 = "eldritch_blast"))
+    # Repelling Blast. When Eldritch Blast hits a Large or smaller creature, it is driven back one range step.@{show_stat_hints  [Invocation: Repelling Blast]|}
+      *set warlock_invocation_1 "repelling_blast"
+      *goto warlock_invocation_sealed
   # Armor of Shadows. You can cast Mage Armor on yourself at will: while you wear no armor, your base Armor Class is 13 + your Dexterity modifier.@{show_stat_hints  [Invocation: Armor of Shadows]|}
     *set warlock_invocation_1 "armor_of_shadows"
     *goto warlock_invocation_sealed
@@ -602,7 +606,26 @@ A third thing settles in beside the cantrips and the bound spell: a quiet, parti
 *label warlock_invocation_sealed
 *goto trial_converge
 
+*comment THE ISSUED KIT (2026-10-12): the prose the old muster choices carried, now told once when the class kit is issued. One paragraph per weapon, by class (equipment.txt grant_class_weapons).
+*label kit_prose
+The quartermaster's tally goes against your name, and the racks open for you.
+
+*if (character_class = "barbarian")
+  You pull a brutal, heavy-bearded broadaxe from beneath a crate of shaft-heads and rest the three-foot ash haft against your shoulder. The steel head is pitted and dark with old oil, ground to a cruel, chopping wedge. Not a weapon for fencing or polished maneuvers: in the screaming press of a vanguard crash, a heavy axe splits oak shields, shears through boiled leather, and leaves ruined limbs in its wake. A seven-foot ash spear goes over your other shoulder, a leaf-bladed head on a straight shaft, for the moments when you cannot afford to get close.
+*if (character_class = "fighter")
+  You haul three feet of forward-weighted steel from the rack and strap a scarred buckler onto your left forearm. You test the balance with a downward cleave. It lacks noble grace, but in the close, screaming press of a shield-wall, a longsword can hack through boiled leather and split wooden shields. A seven-foot ash spear goes over your shoulder, its leaf-bladed head pinned and sharpened to a cruel point, the true workhorse of mercenary infantry: a weapon of reach and discipline that keeps enemies at bay before they can get within blade-stroke.
+*if ((character_class = "wizard") or (character_class = "warlock"))
+  You take up a plain, iron-shod quarterstaff, worn smooth by some traveler's hands long before it ended up in a mercenary company's crate. Unglamorous, but it has an honest weight to it. A small crossbow comes with it, no longer than your forearm, and a pouch of stubby bolts: quiet, quick to reload, and easy enough to tuck beneath a cloak when you would rather not be seen carrying steel at all.
+*if (((character_class = "rogue") or (character_class = "bard")) or (character_class = "ranger"))
+  You string a lightweight shortbow and fill a quiver with black-fletched bodkin arrows, testing the draw against your shoulder. A plain, well-balanced dagger goes at your hip after you test its edge against your thumb. Not much for a shield-wall, but nobody in a brawl fights fair either.
+
+*return
+
 *label trial_converge
+*comment The class is known now, so the armor is issued (equipment.txt grant_class_armor): one armor per class, no choice.
+*gosub_scene equipment grant_class_armor
+*gosub_scene equipment grant_class_weapons
+*gosub kit_prose
 *gosub_scene character_stats update_dnd_stats
 *set class_assigned true
 The notched-ear veteran scratches a final mark beside your name on his roster and jerks his chin back toward the fires, already turning to the next recruit in line.
@@ -614,6 +637,10 @@ You check your gear one last time, the weight of your ${weapon} and the cold sha
 [b]◈ CLASS PATH DETERMINED[/b]
 *line_break
 • [b]Path:[/b] ${class_title}
+*line_break
+• [b]Armor:[/b] ${armor_desc}
+*line_break
+• [b]Weapons:[/b] ${weapon_desc} and ${sidearm}@{has_shield  , with a shield|}
 *if (character_class = "warlock")
   *line_break
   • [b]Patron:[/b] ${warlock_patron_title}

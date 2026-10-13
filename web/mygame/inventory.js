@@ -151,13 +151,15 @@
     warming_liniment: "salve", clear_head_draught: "elixir", althea_phial: "potion", grease_flask: "grease", alchemists_fire: "alch_fire", herbalists_kit: "herbal_kit", linen_bandage: "bandage", lye_soap: "soap", trail_rations: "rations",
     hemp_rope: "rope", pitch_torch: "torch", lamp_oil: "oil", hooded_lantern: "lantern", tool_kit: "toolkit", lute: "lute", tinderbox: "tinder", chalk_sticks: "chalk",
     wool_blanket: "blanket", waxed_oilcloth: "cloth", lockpick_set: "lockpicks", padlock: "key", door_bolt: "tool", iron_manacles: "tool",
-    broadcloth_cloak: "cloak", storm_cape: "cloak", winter_cloak: "cloak", summer_duster: "cloak", felt_hat: "h_hat", fur_cap: "h_cap",
-    lined_gloves: "gloves", scholar_gloves: "gloves", masters_gloves: "gloves", waxed_boots: "boots", winter_boots: "boots", dancing_slippers: "slippers",
-    wool_muffler: "neck", silk_neckcloth: "neck", scrap_steel: "scrap", frog_slime: "frog_slime", centipede_gland: "gland", viper_venom: "venom", grave_ichor: "ichor",
+    broadcloth_cloak: "cloak_traveler", storm_cape: "cloak_storm", winter_cloak: "cloak_winter", summer_duster: "cloak_duster", felt_hat: "h_hat", fur_cap: "h_cap",
+    lined_gloves: "gloves_lined", scholar_gloves: "gloves_scholar", masters_gloves: "gloves_master", waxed_boots: "boots_rain", winter_boots: "boots_winter", dancing_slippers: "shoes_dancing",
+    wool_muffler: "neck_muffler", silk_neckcloth: "neck_cravat", scrap_steel: "scrap", frog_slime: "frog_slime", centipede_gland: "gland", viper_venom: "venom", grave_ichor: "ichor",
     talia_oiled_cloak: "cloak", rorik_grip_wraps: "gloves", rorik_campaign_belt: "belt", talia_deck_boots: "boots", brant_iron_heel_boots: "boots",
     althea_votive_ring: "ring", night_eye_ring: "ring", hearthstone_talisman: "stone", odessa_salve: "salve", fish_cache: "fish", kestrel_dispatch: "letter", ysolde_requisition: "letter",
     vanguard_grease_chit: "note", customs_vellum: "ledger", waterproof_gear: "jug", talia_provisions: "food", rotten_rib_splinter: "splinter",
     gem_agate: "gem_agate", gem_citrine: "gem_citrine", gem_quartz: "gem_quartz", gem_aquamarine: "gem_aquamarine", gem_opal: "gem_opal", gem_pearl: "gem_pearl", gem_sapphire: "gem_sapphire", gem_ruby: "gem_ruby", gem_emerald: "gem_emerald", gem_diamond: "gem_diamond",
+    jewelry_silver_ring: "jewelry_silver_ring", jewelry_gold_ring: "jewelry_gold_ring", jewelry_crescent_earrings: "jewelry_crescent_earrings", jewelry_drop_pendant: "jewelry_drop_pendant", jewelry_gold_necklace: "jewelry_gold_necklace",
+    jewelry_emerald_pearl_necklace: "jewelry_emerald_pearl_necklace", jewelry_ruby_pearl_necklace: "jewelry_ruby_pearl_necklace", jewelry_sapphire_gold_ring: "jewelry_sapphire_gold_ring", jewelry_ruby_gold_ring: "jewelry_ruby_gold_ring", jewelry_diamond_gold_ring: "jewelry_diamond_gold_ring",
     horse: "mount", diverted_timber_waybill: "note", silt_gate_payout_slip: "note", hall_insignia: "signet", letter_of_credit: "letter"
   };
   var BUCKET_ICON = { weapon: "w_generic", sidearm: "w_generic", armor: "a_generic", shield: "shield", head: "h_cap", cloak: "cloak", hands: "gloves", waist: "belt", feet: "boots", neck: "neck", ring: "ring" };
@@ -189,6 +191,10 @@
   function armorIcon(s) {
     var type = String(s.armor_type || ""), d = String(s.armor_desc || "").toLowerCase();
     if (/court/.test(d)) return "a_coat";
+    if (/scale mail/.test(d)) return "a_scale";
+    if (/barbarian/.test(d)) return "a_barbarian";
+    if (/simple clothes/.test(d)) return "a_clothes";
+    if (/robe/.test(d)) return "a_robe";
     if (type === "cloth") return "a_cloth";
     if (type === "leather") return "a_leather";
     if (type === "chain_jack" || /scale|chain/.test(d)) return "a_chain";
@@ -205,7 +211,7 @@
     if (bucket === "sidearm") return weaponIcon(s.sidearm_desc);
     if (bucket === "armor") return armorIcon(s);
     if (bucket === "head") return headIcon(s.head_desc);
-    if (bucket === "feet" && /slipper/i.test(String(s.feet_desc || ""))) return "slippers";
+    if (bucket === "feet" && /slipper|dancing shoe|swallowstep/i.test(String(s.feet_desc || ""))) return "shoes_dancing";
     return BUCKET_ICON[bucket] || "misc";
   }
   function itemIconKey(r) {
@@ -221,6 +227,24 @@
     return all[key] || all.misc || "";
   }
   function iconImg(key) { var src = iconSrc(key); return src ? '<img class="inv-ico" alt="" draggable="false" src="' + src + '">' : '<span class="inv-ico inv-ico-none"></span>'; }
+
+  // The trade panel uses the same item art as the satchel. Keep the choice of
+  // picture here, beside the catalog-facing mapping above, so a new item's art
+  // does not quietly diverge between the two panels.
+  window.ItemIconResolver = {
+    keyFor: function (id, item) {
+      if (ID_ICON[id]) return ID_ICON[id];
+      var kind = String(item && item.kind || "").toLowerCase();
+      if (kind === "weapon") return weaponIcon(item && (item.title || item.name));
+      if (kind === "head") return headIcon(item && (item.title || item.name));
+      if (BUCKET_ICON[kind]) return BUCKET_ICON[kind];
+      if (kind === "valuable") return "gem_agate";
+      if (kind === "salvage") return "scrap";
+      if (kind === "consumable") return "potion";
+      return "misc";
+    },
+    srcFor: iconSrc
+  };
 
   // Stackable items put their count in the name ("Oak Shield x2" or "Scrap Steel (5)"); the tile shows it as a badge instead.
   function splitCount(name) {

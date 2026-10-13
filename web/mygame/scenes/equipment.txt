@@ -109,46 +109,38 @@
   *set weapon_prose "Longshade shortbow"
 *comment GEN:END weapon_items
 *if (equipped_weapon_id = "ash_spear")
-  *set weapon "ash-wood spear"
-  *set weapon_desc "Ash-Wood Spear"
+  *set weapon "spear"
+  *set weapon_desc "Spear"
   *set weapon_damage "1d6/1d8 piercing"
   *set weapon_damage_type "piercing"
   *set weapon_type "reach"
   *set weapon_hands "one_handed"
-  *set weapon_prose "ash spear"
+  *set weapon_prose "spear"
 *if (equipped_weapon_id = "felling_axe")
-  *set weapon "heavy broadaxe"
-  *set weapon_desc "Hooked Broadaxe"
+  *set weapon "broadaxe"
+  *set weapon_desc "Broadaxe"
   *set weapon_damage "1d12 slashing"
   *set weapon_damage_type "slashing"
   *set weapon_type "melee"
   *set weapon_hands "two_handed"
   *set weapon_prose "broadaxe"
 *if (equipped_weapon_id = "matched_dagger")
-  *set weapon "twin daggers"
-  *set weapon_desc "Twin Daggers"
+  *set weapon "dagger"
+  *set weapon_desc "Dagger"
   *set weapon_damage "1d4 piercing"
   *set weapon_damage_type "piercing"
   *set weapon_type "finesse"
   *set weapon_hands "one_handed"
-  *set weapon_prose "matched daggers"
+  *set weapon_prose "dagger"
 *if (equipped_weapon_id = "hand_crossbow")
-  *set weapon "hand crossbow"
-  *set weapon_desc "Hand Crossbow"
+  *set weapon "crossbow"
+  *set weapon_desc "Crossbow"
   *set weapon_damage "1d6 piercing"
   *set weapon_damage_type "piercing"
   *set weapon_type "ranged"
   *set weapon_reach "medium"
   *set weapon_hands "one_handed"
-  *set weapon_prose "hand crossbow"
-*if (equipped_weapon_id = "bodkin_dagger")
-  *set weapon "slim dagger"
-  *set weapon_desc "Slim Dagger"
-  *set weapon_damage "1d4 piercing"
-  *set weapon_damage_type "piercing"
-  *set weapon_type "finesse"
-  *set weapon_hands "one_handed"
-  *set weapon_prose "bodkin dagger"
+  *set weapon_prose "crossbow"
 *if (equipped_weapon_id = "none")
   *set weapon "unarmed"
   *set weapon_desc "Unarmed"
@@ -214,9 +206,9 @@
   *set armor_prose "plate harness"
 *if (equipped_armor_id = "court_coat")
   *set armor "court-coat"
-  *set armor_desc "Court Coat"
+  *set armor_desc "Envoy's Court Coat"
   *set armor_type "cloth"
-  *set armor_prose "court coat"
+  *set armor_prose "envoy's court coat"
 *comment GEN:END armor_items
 *if (equipped_armor_id = "buff_coat")
   *set armor "buff-coat"
@@ -287,6 +279,12 @@
 *comment HEADWEAR
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label apply_head_loadout
+*comment Nobody starts with headwear (2026-10-12, the user's call): hats, caps and helms are shop stock. "none" is a bare head, and it is what the swap menus offer as the way back from a hat or helm.
+*if (equipped_head_id = "none")
+  *set head_desc "Bare Head"
+  *set head_prose "bare head"
+  *set head_ac 0
+  *set head_is_armor false
 *if (equipped_head_id = "arming_cap")
   *set head_desc "Linen Cap"
   *set head_prose "linen cap"
@@ -323,6 +321,11 @@
   *set head_prose "fur-trimmed cap"
   *set head_ac 0
   *set head_is_armor false
+*if (equipped_head_id = "jewelry_crescent_earrings")
+  *set head_desc "Crescent-Moon Earrings"
+  *set head_prose "silver crescent earrings"
+  *set head_ac 0
+  *set head_is_armor false
 *comment GEN:END head_items
 *if (equipped_head_id = "none")
   *set head_desc "Bare Head"
@@ -344,6 +347,10 @@
 *comment CLOAKS
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label apply_cloak_loadout
+*comment The Cloak every character starts in (2026-10-12, the user's call): one plain cloak for everyone, not one per origin. It keeps the old middling weather values (garment_traits).
+*if (equipped_cloak_id = "starting_cloak")
+  *set cloak_desc "Cloak"
+  *set cloak_prose "cloak"
 *if (equipped_cloak_id = "wool_mantle")
   *set cloak_desc "Wool Mantle"
   *set cloak_prose "wool mantle"
@@ -404,6 +411,10 @@
 *set garment_stat "none"
 *set garment_bonus 0
 *set garment_hint ""
+*if (gt_id = "starting_cloak")
+  *set garment_cold 40
+  *set garment_wet 40
+  *set garment_hint "Weather wear: cold -40%, rain -40%"
 *if (gt_id = "wool_mantle")
   *set garment_cold 65
   *set garment_wet 30
@@ -530,6 +541,85 @@
 *set exposure_gear_cuth (exposure_gear_cuth + garment_heat)
 *return
 
+*comment CLASS ARMOR (2026-10-12, the user's call, after Baldur's Gate 3's starting kit): every character of a class starts in the same armor, and there is no choice. The class is only known at the dawn trial, so the muster
+*comment (company_intake.txt) leaves simple clothes on you and dawn_trial.txt calls this when the class is assigned. It also fills the starting_armor snapshot, which character_stats took at the end of the muster. The AC comes from the armor_type:
+*comment cloth 10 + DEX (Barbarian Unarmored Defense and Mage Armor work on cloth), leather 11 + DEX, and brigandine 13 + DEX (max +2), which is the Fighter's Scale Mail.
+*comment CLASS WEAPONS (2026-10-12, the user's call): the weapon choice at the muster is gone too. Each class gets one kit, issued at the dawn trial with the armor: Fighter a Longsword, a shield and a Spear (the Spear in the sidearm slot); Barbarian a two-handed Broadaxe (1d12) and the Spear, no shield; Wizard and Warlock a Quarterstaff and a Crossbow; Rogue, Bard and Ranger a Shortbow and a Dagger. The primary weapon goes through the same "starting" snapshot the muster pick used (so the swap menus' "back to your starting
+*comment weapon" is this one); the sidearm is a plain id. Dagger, Spear and Crossbow each have ONE name now (the ids matched_dagger, ash_spear and hand_crossbow are only internal).
+*label grant_class_weapons
+*set has_shield false
+*set shield_equipped false
+*set weapon "dagger"
+*set weapon_desc "Dagger"
+*set weapon_damage "1d4 piercing"
+*set weapon_damage_type "piercing"
+*set weapon_type "finesse"
+*set weapon_hands "one_handed"
+*set equipped_sidearm_id "none"
+*if (character_class = "barbarian")
+  *comment The Barbarian swings the heavy two-handed Broadaxe (1d12), so no shield; the Spear rides in the sidearm slot.
+  *set weapon "broadaxe"
+  *set weapon_desc "Broadaxe"
+  *set weapon_damage "1d12 slashing"
+  *set weapon_damage_type "slashing"
+  *set weapon_type "melee"
+  *set weapon_hands "two_handed"
+  *set equipped_sidearm_id "ash_spear"
+*if (character_class = "fighter")
+  *set weapon "longsword"
+  *set weapon_desc "Longsword"
+  *set weapon_damage "1d8 slashing"
+  *set weapon_damage_type "slashing"
+  *set weapon_type "melee"
+  *set weapon_hands "one_handed"
+  *set has_shield true
+  *set shield_equipped true
+  *set equipped_sidearm_id "ash_spear"
+*if ((character_class = "wizard") or (character_class = "warlock"))
+  *set weapon "quarterstaff"
+  *set weapon_desc "Quarterstaff"
+  *set weapon_damage "1d6/1d8 bludgeoning"
+  *set weapon_damage_type "bludgeoning"
+  *set weapon_type "melee"
+  *set weapon_hands "one_handed"
+  *set equipped_sidearm_id "hand_crossbow"
+*if (((character_class = "rogue") or (character_class = "bard")) or (character_class = "ranger"))
+  *set weapon "shortbow"
+  *set weapon_desc "Shortbow"
+  *set weapon_damage "1d6 piercing"
+  *set weapon_damage_type "piercing"
+  *set weapon_type "ranged"
+  *set weapon_hands "two_handed"
+  *set equipped_sidearm_id "matched_dagger"
+*set starting_weapon weapon
+*set starting_weapon_desc weapon_desc
+*set starting_weapon_damage weapon_damage
+*set starting_weapon_damage_type weapon_damage_type
+*set starting_weapon_type weapon_type
+*set starting_weapon_hands weapon_hands
+*set equipped_weapon_id "starting"
+*return
+
+*label grant_class_armor
+*set armor "simple clothes"
+*set armor_desc "Simple Clothes"
+*set armor_type "cloth"
+*if (character_class = "fighter")
+  *set armor "scale mail"
+  *set armor_desc "Scale Mail"
+  *set armor_type "brigandine"
+*if (character_class = "barbarian")
+  *set armor "barbarian clothes"
+  *set armor_desc "Barbarian Clothes"
+*if (((character_class = "rogue") or (character_class = "bard")) or (character_class = "ranger"))
+  *set armor "leather armor"
+  *set armor_desc "Leather Armor"
+  *set armor_type "leather"
+*set starting_armor armor
+*set starting_armor_desc armor_desc
+*set starting_armor_type armor_type
+*return
+
 *comment *gosub_scene equipment origin_clothing <"cloak"|"hands"|"waist"|"feet"|"neck">   (outputs origin_clothing_id and
 *comment origin_clothing_name: the item a character of this origin starts in, which every swap menu offers as the way
 *comment back, like the head slot's origin cap). Neckwear has no starting piece.
@@ -539,43 +629,43 @@
 *set origin_clothing_name "nothing"
 *if (origin = "ruined")
   *if (oc_slot = "cloak")
-    *set origin_clothing_id "wool_mantle"
-    *set origin_clothing_name "Wool Mantle"
+    *set origin_clothing_id "starting_cloak"
+    *set origin_clothing_name "Cloak"
   *if (oc_slot = "hands")
-    *set origin_clothing_id "leather_wraps"
-    *set origin_clothing_name "Leather Wraps"
+    *set origin_clothing_id "starting_gloves"
+    *set origin_clothing_name "Gloves"
   *if (oc_slot = "waist")
-    *set origin_clothing_id "soldiers_belt"
-    *set origin_clothing_name "Soldier's Belt"
+    *set origin_clothing_id "starting_belt"
+    *set origin_clothing_name "Leather Belt"
   *if (oc_slot = "feet")
-    *set origin_clothing_id "marching_boots"
-    *set origin_clothing_name "Marching Boots"
+    *set origin_clothing_id "starting_boots"
+    *set origin_clothing_name "Boots"
 *if (origin = "outlaw")
   *if (oc_slot = "cloak")
-    *set origin_clothing_id "camo_cloak"
-    *set origin_clothing_name "Mottled Cloak"
+    *set origin_clothing_id "starting_cloak"
+    *set origin_clothing_name "Cloak"
   *if (oc_slot = "hands")
-    *set origin_clothing_id "archer_bracers"
-    *set origin_clothing_name "Archer Bracers"
+    *set origin_clothing_id "starting_gloves"
+    *set origin_clothing_name "Gloves"
   *if (oc_slot = "waist")
-    *set origin_clothing_id "scabbard_belt"
-    *set origin_clothing_name "Scabbard Belt"
+    *set origin_clothing_id "starting_belt"
+    *set origin_clothing_name "Leather Belt"
   *if (oc_slot = "feet")
-    *set origin_clothing_id "scout_boots"
-    *set origin_clothing_name "Scout Boots"
+    *set origin_clothing_id "starting_boots"
+    *set origin_clothing_name "Boots"
 *if (origin = "disgraced")
   *if (oc_slot = "cloak")
-    *set origin_clothing_id "weather_cloak"
-    *set origin_clothing_name "Marcher Weather Cloak"
+    *set origin_clothing_id "starting_cloak"
+    *set origin_clothing_name "Cloak"
   *if (oc_slot = "hands")
-    *set origin_clothing_id "scribe_gloves"
-    *set origin_clothing_name "Scribe's Gloves"
+    *set origin_clothing_id "starting_gloves"
+    *set origin_clothing_name "Gloves"
   *if (oc_slot = "waist")
-    *set origin_clothing_id "satchel_harness"
-    *set origin_clothing_name "Satchel Harness"
+    *set origin_clothing_id "starting_belt"
+    *set origin_clothing_name "Leather Belt"
   *if (oc_slot = "feet")
-    *set origin_clothing_id "riding_boots"
-    *set origin_clothing_name "Riding Boots"
+    *set origin_clothing_id "starting_boots"
+    *set origin_clothing_name "Boots"
 *return
 
 *comment *gosub_scene equipment equip_by_slot <slot> <id>   (one entry point for every worn slot; the inventory panel
@@ -602,6 +692,10 @@
 *comment HANDWEAR
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label apply_hands_loadout
+*comment The Gloves every character starts in (2026-10-12): the same plain pair for everyone.
+*if (equipped_hands_id = "starting_gloves")
+  *set hands_desc "Gloves"
+  *set hands_prose "gloves"
 *if (equipped_hands_id = "leather_wraps")
   *set hands_desc "Leather Wraps"
   *set hands_prose "leather wraps"
@@ -619,11 +713,11 @@
   *set hands_desc "Lined Gloves"
   *set hands_prose "fleece-lined gloves"
 *if (equipped_hands_id = "scholar_gloves")
-  *set hands_desc "Scholar's Gloves"
-  *set hands_prose "scholar's gloves"
+  *set hands_desc "Lamplight Gloves"
+  *set hands_prose "lamplight gloves"
 *if (equipped_hands_id = "masters_gloves")
-  *set hands_desc "Master's Gloves"
-  *set hands_prose "master's gloves"
+  *set hands_desc "Spellseeker Gloves"
+  *set hands_prose "spellseeker gloves"
 *comment GEN:END hands_items
 *if (equipped_hands_id = "none")
   *set hands_desc "None"
@@ -645,6 +739,10 @@
 *comment WAIST
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label apply_waist_loadout
+*comment The Leather Belt every character starts in (2026-10-12): the same belt for everyone.
+*if (equipped_waist_id = "starting_belt")
+  *set waist_desc "Leather Belt"
+  *set waist_prose "leather belt"
 *if (equipped_waist_id = "soldiers_belt")
   *set waist_desc "Soldier's Belt"
   *set waist_prose "soldier's belt"
@@ -678,6 +776,10 @@
 *comment FOOTWEAR
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label apply_feet_loadout
+*comment The Boots every character starts in (2026-10-12): the same plain pair for everyone.
+*if (equipped_feet_id = "starting_boots")
+  *set feet_desc "Boots"
+  *set feet_prose "boots"
 *if (equipped_feet_id = "marching_boots")
   *set feet_desc "Marching Boots"
   *set feet_prose "marching boots"
@@ -701,8 +803,8 @@
   *set feet_desc "Winter Boots"
   *set feet_prose "felt-lined boots"
 *if (equipped_feet_id = "dancing_slippers")
-  *set feet_desc "Dancing Slippers"
-  *set feet_prose "dancing slippers"
+  *set feet_desc "Swallowstep Shoes"
+  *set feet_prose "swallowstep shoes"
 *if (equipped_feet_id = "wooden_clogs")
   *set feet_desc "Wooden Clogs"
   *set feet_prose "wooden clogs"
@@ -734,13 +836,13 @@
   *set sidearm_hands starting_weapon_hands
   *set sidearm_prose starting_weapon
 *if (equipped_sidearm_id = "ash_spear")
-  *set sidearm "ash-wood spear"
-  *set sidearm_desc "Slung Ash-Wood Spear"
+  *set sidearm "spear"
+  *set sidearm_desc "Slung Spear"
   *set sidearm_damage "1d6/1d8 piercing"
   *set sidearm_damage_type "piercing"
   *set sidearm_type "reach"
   *set sidearm_hands "one_handed"
-  *set sidearm_prose "ash spear"
+  *set sidearm_prose "spear"
 *if (equipped_sidearm_id = "felling_axe")
   *set sidearm "felling axe"
   *set sidearm_desc "Slung Felling Axe"
@@ -750,30 +852,22 @@
   *set sidearm_hands "one_handed"
   *set sidearm_prose "felling axe"
 *if (equipped_sidearm_id = "matched_dagger")
-  *set sidearm "matched dagger"
-  *set sidearm_desc "Matched Sidearm Dagger"
+  *set sidearm "dagger"
+  *set sidearm_desc "Sheathed Dagger"
   *set sidearm_damage "1d4 piercing"
   *set sidearm_damage_type "piercing"
   *set sidearm_type "finesse"
   *set sidearm_hands "one_handed"
-  *set sidearm_prose "matched dagger"
+  *set sidearm_prose "dagger"
 *if (equipped_sidearm_id = "hand_crossbow")
-  *set sidearm "hand crossbow"
-  *set sidearm_desc "Holstered Hand Crossbow"
+  *set sidearm "crossbow"
+  *set sidearm_desc "Holstered Crossbow"
   *set sidearm_damage "1d6 piercing"
   *set sidearm_damage_type "piercing"
   *set sidearm_type "ranged"
   *set sidearm_reach "medium"
   *set sidearm_hands "one_handed"
-  *set sidearm_prose "hand crossbow"
-*if (equipped_sidearm_id = "bodkin_dagger")
-  *set sidearm "slim dagger"
-  *set sidearm_desc "Slim Dagger"
-  *set sidearm_damage "1d4 piercing"
-  *set sidearm_damage_type "piercing"
-  *set sidearm_type "finesse"
-  *set sidearm_hands "one_handed"
-  *set sidearm_prose "bodkin dagger"
+  *set sidearm_prose "crossbow"
 *comment GEN:BEGIN sidearm_items -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
 *if (equipped_sidearm_id = "timber_axe")
   *set sidearm "timber axe"
@@ -878,8 +972,20 @@
   *set neck_desc "Wool Muffler"
   *set neck_prose "wool muffler"
 *if (equipped_neck_id = "silk_neckcloth")
-  *set neck_desc "Silk Neckcloth"
-  *set neck_prose "silk neckcloth"
+  *set neck_desc "Silvertongue Cravat"
+  *set neck_prose "silvertongue cravat"
+*if (equipped_neck_id = "jewelry_drop_pendant")
+  *set neck_desc "Drop Pendant"
+  *set neck_prose "silver drop pendant"
+*if (equipped_neck_id = "jewelry_gold_necklace")
+  *set neck_desc "Fine Gold Necklace"
+  *set neck_prose "fine gold necklace"
+*if (equipped_neck_id = "jewelry_emerald_pearl_necklace")
+  *set neck_desc "Emerald Pearl Necklace"
+  *set neck_prose "emerald pearl necklace"
+*if (equipped_neck_id = "jewelry_ruby_pearl_necklace")
+  *set neck_desc "Ruby Pearl Necklace"
+  *set neck_prose "ruby pearl necklace"
 *comment GEN:END neck_items
 *if (equipped_neck_id = "none")
   *set neck_desc "Bare Throat"
@@ -938,6 +1044,23 @@
 *if (item_id = "night_eye_ring")
   *set new_ring_desc "Night-Eye Ring"
   *set new_ring_prose "black horn ring"
+*comment GEN:BEGIN ring_items -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
+*if (item_id = "jewelry_silver_ring")
+  *set new_ring_desc "Silver Ring"
+  *set new_ring_prose "plain silver ring"
+*if (item_id = "jewelry_gold_ring")
+  *set new_ring_desc "Gold Ring"
+  *set new_ring_prose "plain gold ring"
+*if (item_id = "jewelry_sapphire_gold_ring")
+  *set new_ring_desc "Sapphire Gold Ring"
+  *set new_ring_prose "sapphire-set gold ring"
+*if (item_id = "jewelry_ruby_gold_ring")
+  *set new_ring_desc "Ruby Gold Ring"
+  *set new_ring_prose "ruby-set gold ring"
+*if (item_id = "jewelry_diamond_gold_ring")
+  *set new_ring_desc "Diamond Gold Ring"
+  *set new_ring_prose "diamond-set gold ring"
+*comment GEN:END ring_items
 *if (ring_slot = "1")
   *set ring1_desc new_ring_desc
   *set ring1_prose new_ring_prose
@@ -973,7 +1096,7 @@
 *comment piece. Starting gear and quest rewards are never in this table, so they cannot be bought or sold.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-*comment *gosub_scene equipment gear_info <item_id>   (fills gear_name, gear_retail, gear_kind, gear_tier,
+*comment *gosub_scene equipment gear_info <item_id>   (fills gear_name, gear_retail, gear_kind, gear_group, gear_tier,
 *comment gear_hint, gear_blurb, gear_minutes; an unknown id leaves them blank)
 *label gear_info
 *params gi_item
@@ -981,6 +1104,7 @@
 *set gear_name ""
 *set gear_retail 0
 *set gear_kind ""
+*set gear_group ""
 *set gear_slot ""
 *set gear_stack false
 *set gear_title ""
@@ -1530,31 +1654,33 @@
   *set gear_minutes 15
   *set gear_pct_tailor 40
 *if (gi_item = "scholar_gloves")
-  *set gear_name "pair of scholar's gloves"
-  *set gear_retail 80
+  *set gear_name "pair of lamplight gloves"
+  *set gear_retail 400
   *set gear_kind "hands"
   *set gear_slot "Hands"
-  *set gear_title "Scholar's Gloves"
-  *set gear_stack true
+  *set gear_title "Lamplight Gloves"
   *set gear_hint "+1 INT"
-  *set gear_blurb "Fine black kid gloves, cut close across the knuckles so a quill or a page can be worked without taking them off."
+  *set gear_blurb "Fine black kid gloves, cut close across the knuckles so a quill or a page can be worked without taking them off. The fingertips warm a little when they rest on a lit page."
   *set gear_minutes 15
   *set gear_pct_tailor 40
   *if (gear_shop = "tailor")
     *set gear_quote "\"For people who read for a living,\" Fenwick says. \"The fit is in the knuckle. Everything else is decoration.\""
+  *if (gear_shop = "tailor_sell")
+    *set gear_quote "Fenwick draws the gloves off the paper one finger at a time and looks at the seams against the skylight. \"The finishing is in the thread,\" he says. \"It has to be unpicked before I can sell them again.\""
 *if (gi_item = "masters_gloves")
-  *set gear_name "pair of master's gloves"
-  *set gear_retail 250
+  *set gear_name "pair of spellseeker gloves"
+  *set gear_retail 1500
   *set gear_kind "hands"
   *set gear_slot "Hands"
-  *set gear_title "Master's Gloves"
-  *set gear_stack true
+  *set gear_title "Spellseeker Gloves"
   *set gear_hint "+2 INT"
-  *set gear_blurb "Black kid gloves cut from a single skin, each finger fitted to a plaster cast of the hand, and stitched in silk."
+  *set gear_blurb "Black kid gloves cut from a single skin, each finger fitted to a plaster cast of the hand, and stitched in silk. The stitching is doubled in pale thread along every finger, and the fingertips warm whenever they pass near a written line."
   *set gear_minutes 30
   *set gear_pct_tailor 40
   *if (gear_shop = "tailor")
     *set gear_quote "\"I measure each finger twice,\" Fenwick says. \"You will not thank me for it, but you will not think about them again either, and that is the point.\""
+  *if (gear_shop = "tailor_sell")
+    *set gear_quote "Fenwick lays the gloves on the brown paper and does not touch them for a moment. \"A great deal of thread in those,\" he says. \"It all comes out before another hand goes in, and that is days of work. Hence the figure.\""
 *if (gi_item = "waxed_boots")
   *set gear_name "pair of rain boots"
   *set gear_retail 60
@@ -1580,18 +1706,19 @@
   *set gear_minutes 20
   *set gear_pct_tailor 40
 *if (gi_item = "dancing_slippers")
-  *set gear_name "pair of dancing slippers"
-  *set gear_retail 70
+  *set gear_name "pair of swallowstep shoes"
+  *set gear_retail 400
   *set gear_kind "feet"
   *set gear_slot "Feet"
-  *set gear_title "Dancing Slippers"
-  *set gear_stack true
+  *set gear_title "Swallowstep Shoes"
   *set gear_hint "+1 DEX"
-  *set gear_blurb "Flat black slippers of soft kid with a thin, flexible sole and a strap over the instep, made for a ballroom floor."
+  *set gear_blurb "Flat black shoes of soft kid with a thin, flexible sole and a strap over the instep, made for a ballroom floor. A second line of pale stitching runs along the strap, and the sole seems to rise to meet the floor."
   *set gear_minutes 15
   *set gear_pct_tailor 40
   *if (gear_shop = "tailor")
     *set gear_quote "\"The sole is thin on purpose,\" Fenwick says. \"You will feel the floor, and so will your feet. It is not a road shoe.\""
+  *if (gear_shop = "tailor_sell")
+    *set gear_quote "Fenwick turns the shoes over, finds the pale stitching along the strap with a fingernail, and starts to unpick it. \"The finishing has to come out before they go back on the stool,\" he says. \"That is what the forty in the hundred is for.\""
 *if (gi_item = "wool_muffler")
   *set gear_name "wool muffler"
   *set gear_retail 10
@@ -1603,28 +1730,28 @@
   *set gear_blurb "A long knitted muffler of thick grey wool, wound twice about the neck and tucked into the collar."
   *set gear_pct_tailor 40
 *if (gi_item = "silk_neckcloth")
-  *set gear_name "silk neckcloth"
-  *set gear_retail 60
+  *set gear_name "silvertongue cravat"
+  *set gear_retail 400
   *set gear_kind "neck"
   *set gear_slot "Neck"
-  *set gear_title "Silk Neckcloth"
-  *set gear_stack true
+  *set gear_title "Silvertongue Cravat"
   *set gear_hint "+1 CHA"
-  *set gear_blurb "A neckcloth of dove-grey silk, folded and pinned in the Quarter fashion so the knot sits under the chin."
+  *set gear_blurb "A neckcloth of dove-grey silk, folded and pinned in the Quarter fashion so the knot sits under the chin. Once pinned, the folds settle on their own and stay where they fell."
   *set gear_minutes 15
   *set gear_pct_tailor 40
   *if (gear_shop = "tailor")
     *set gear_quote "\"The knot is the whole trick,\" Fenwick says, and folds it for you once, quickly, so you can see how."
+  *if (gear_shop = "tailor_sell")
+    *set gear_quote "Fenwick shakes the neckcloth out and the folds hold their shape for a moment too long. \"Finished for one throat,\" he says. \"I will have to take the second stitch out before anyone else wears it.\""
 *if (gi_item = "court_coat")
-  *set gear_name "court coat"
-  *set gear_retail 180
+  *set gear_name "envoy's court coat"
+  *set gear_retail 1200
   *set gear_kind "armor"
   *set gear_slot "Body armor"
-  *set gear_title "Court Coat"
-  *set gear_stack true
+  *set gear_title "Envoy's Court Coat"
   *set gear_tier "none"
   *set gear_hint "Cloth armor: AC 10 + DEX; cold -25%, rain -10%; +2 CHA"
-  *set gear_blurb "A long-skirted coat in charcoal wool with a silk lining, cut close through the shoulder and finished with covered buttons."
+  *set gear_blurb "A long-skirted coat in charcoal wool with a silk lining, cut close through the shoulder and finished with covered buttons. It hangs the same on every wearer, and people nearby stand a little straighter without knowing why."
   *set gear_minutes 30
   *set gear_pct_tailor 40
   *if (not(armor_type = "cloth"))
@@ -1632,7 +1759,7 @@
   *if (gear_shop = "tailor")
     *set gear_quote "\"Cut to you, not to a peg,\" Fenwick says. \"It is not armor. It is the reason a door opens.\""
   *if (gear_shop = "tailor_sell")
-    *set gear_quote "Fenwick runs a thumb along the lapel and shakes his head slowly. \"Cut to you. It will need taking in for anyone else, and that costs me.\""
+    *set gear_quote "Fenwick runs a thumb along the lapel and shakes his head slowly. \"Finished for you. I will have to unpick the second stitch before it can hang for anyone else, and that costs me.\""
 *if (gi_item = "longshade_quarterstaff")
   *set gear_name "ash quarterstaff"
   *set gear_retail 15
@@ -1751,7 +1878,7 @@
   *set gear_kind "valuable"
   *set gear_title "Agate"
   *set gear_stack true
-  *set gear_hint "Loose gemstone"
+  *set gear_hint "Red-orange stone with pale bands"
   *set gear_blurb "A polished red-orange stone marked with fine pale bands."
   *set gear_minutes 5
   *set gear_pct_pawn 40
@@ -1762,7 +1889,7 @@
   *set gear_kind "valuable"
   *set gear_title "Citrine"
   *set gear_stack true
-  *set gear_hint "Loose gemstone"
+  *set gear_hint "Clear golden stone"
   *set gear_blurb "A clear golden stone, cut to catch warm flashes of light."
   *set gear_minutes 5
   *set gear_pct_pawn 40
@@ -1773,7 +1900,7 @@
   *set gear_kind "valuable"
   *set gear_title "Clear Quartz"
   *set gear_stack true
-  *set gear_hint "Loose gemstone"
+  *set gear_hint "Pale transparent crystal"
   *set gear_blurb "A pale transparent crystal with a clean faceted face."
   *set gear_minutes 5
   *set gear_pct_pawn 40
@@ -1784,7 +1911,7 @@
   *set gear_kind "valuable"
   *set gear_title "Aquamarine"
   *set gear_stack true
-  *set gear_hint "Loose gemstone"
+  *set gear_hint "Clear sea-blue stone"
   *set gear_blurb "A clear blue stone with the colour of sunlit shallows."
   *set gear_minutes 5
   *set gear_pct_pawn 40
@@ -1795,7 +1922,7 @@
   *set gear_kind "valuable"
   *set gear_title "Opal"
   *set gear_stack true
-  *set gear_hint "Loose gemstone"
+  *set gear_hint "Milk-pale stone with rainbow fire"
   *set gear_blurb "A milk-pale stone alive with shifting ember and green colour."
   *set gear_minutes 5
   *set gear_pct_pawn 40
@@ -1806,7 +1933,7 @@
   *set gear_kind "valuable"
   *set gear_title "Pearl"
   *set gear_stack true
-  *set gear_hint "Loose gemstone"
+  *set gear_hint "Round pearl with cream lustre"
   *set gear_blurb "A single round pearl with a soft cream lustre."
   *set gear_minutes 5
   *set gear_pct_pawn 40
@@ -1817,7 +1944,7 @@
   *set gear_kind "valuable"
   *set gear_title "Sapphire"
   *set gear_stack true
-  *set gear_hint "Loose gemstone"
+  *set gear_hint "Deep blue oval-cut stone"
   *set gear_blurb "A deeply blue stone with a careful oval cut."
   *set gear_minutes 5
   *set gear_pct_pawn 40
@@ -1828,7 +1955,7 @@
   *set gear_kind "valuable"
   *set gear_title "Ruby"
   *set gear_stack true
-  *set gear_hint "Loose gemstone"
+  *set gear_hint "Deep red stone with steady fire"
   *set gear_blurb "A deep red stone cut for a strong, steady fire."
   *set gear_minutes 5
   *set gear_pct_pawn 40
@@ -1839,7 +1966,7 @@
   *set gear_kind "valuable"
   *set gear_title "Emerald"
   *set gear_stack true
-  *set gear_hint "Loose gemstone"
+  *set gear_hint "Rich green step-cut stone"
   *set gear_blurb "A rich green rectangular stone with a stepped cut."
   *set gear_minutes 5
   *set gear_pct_pawn 40
@@ -1850,11 +1977,136 @@
   *set gear_kind "valuable"
   *set gear_title "Diamond"
   *set gear_stack true
-  *set gear_hint "Loose gemstone"
+  *set gear_hint "Clear stone with cold facets"
   *set gear_blurb "A clear hard stone cut into bright cold facets."
   *set gear_minutes 5
   *set gear_pct_pawn 40
   *set gear_pct_jeweler 75
+*if (gi_item = "jewelry_silver_ring")
+  *set gear_name "silver ring"
+  *set gear_retail 30
+  *set gear_kind "ring"
+  *set gear_group "jewelry"
+  *set gear_slot "Ring"
+  *set gear_title "Silver Ring"
+  *set gear_hint "Ring slot; plain polished silver"
+  *set gear_blurb "A broad silver ring polished to a soft mirror shine, plain enough for later engraving."
+  *set gear_minutes 5
+  *set gear_pct_pawn 35
+  *set gear_pct_jeweler 60
+*if (gi_item = "jewelry_gold_ring")
+  *set gear_name "gold ring"
+  *set gear_retail 100
+  *set gear_kind "ring"
+  *set gear_group "jewelry"
+  *set gear_slot "Ring"
+  *set gear_title "Gold Ring"
+  *set gear_hint "Ring slot; smooth yellow gold"
+  *set gear_blurb "A warm yellow-gold band with a smooth face and a clean, nearly invisible join."
+  *set gear_minutes 5
+  *set gear_pct_pawn 35
+  *set gear_pct_jeweler 60
+*if (gi_item = "jewelry_crescent_earrings")
+  *set gear_name "crescent-moon earrings"
+  *set gear_retail 80
+  *set gear_kind "head"
+  *set gear_group "jewelry"
+  *set gear_slot "Head"
+  *set gear_title "Crescent-Moon Earrings"
+  *set gear_stack true
+  *set gear_hint "Head slot; matched silver crescents"
+  *set gear_blurb "A matched pair of silver crescents hung from fine hooks, each with a tiny dark glass bead."
+  *set gear_minutes 5
+  *set gear_pct_pawn 35
+  *set gear_pct_jeweler 60
+*if (gi_item = "jewelry_drop_pendant")
+  *set gear_name "drop pendant"
+  *set gear_retail 120
+  *set gear_kind "neck"
+  *set gear_group "jewelry"
+  *set gear_slot "Neck"
+  *set gear_title "Drop Pendant"
+  *set gear_stack true
+  *set gear_hint "Neck slot; pale cut-glass drop"
+  *set gear_blurb "A teardrop of pale cut glass held in silver wire and hung from a fine silver chain."
+  *set gear_minutes 5
+  *set gear_pct_pawn 35
+  *set gear_pct_jeweler 60
+*if (gi_item = "jewelry_gold_necklace")
+  *set gear_name "fine gold necklace"
+  *set gear_retail 250
+  *set gear_kind "neck"
+  *set gear_group "jewelry"
+  *set gear_slot "Neck"
+  *set gear_title "Fine Gold Necklace"
+  *set gear_stack true
+  *set gear_hint "Neck slot; fine worked gold"
+  *set gear_blurb "Fine gold links support a worked central drop, delicate in appearance but carefully joined."
+  *set gear_minutes 5
+  *set gear_pct_pawn 35
+  *set gear_pct_jeweler 60
+*if (gi_item = "jewelry_emerald_pearl_necklace")
+  *set gear_name "emerald pearl necklace"
+  *set gear_retail 550
+  *set gear_kind "neck"
+  *set gear_group "jewelry"
+  *set gear_slot "Neck"
+  *set gear_title "Emerald Pearl Necklace"
+  *set gear_stack true
+  *set gear_hint "Neck slot; pearls and emerald drop"
+  *set gear_blurb "A strand of pale pearls gathered above a silver setting and a deep green emerald drop."
+  *set gear_minutes 5
+  *set gear_pct_pawn 35
+  *set gear_pct_jeweler 60
+*if (gi_item = "jewelry_ruby_pearl_necklace")
+  *set gear_name "ruby pearl necklace"
+  *set gear_retail 450
+  *set gear_kind "neck"
+  *set gear_group "jewelry"
+  *set gear_slot "Neck"
+  *set gear_title "Ruby Pearl Necklace"
+  *set gear_stack true
+  *set gear_hint "Neck slot; pearls and ruby drop"
+  *set gear_blurb "A strand of pale pearls gathered above a silver setting and a dark red ruby drop."
+  *set gear_minutes 5
+  *set gear_pct_pawn 35
+  *set gear_pct_jeweler 60
+*if (gi_item = "jewelry_sapphire_gold_ring")
+  *set gear_name "sapphire gold ring"
+  *set gear_retail 400
+  *set gear_kind "ring"
+  *set gear_group "jewelry"
+  *set gear_slot "Ring"
+  *set gear_title "Sapphire Gold Ring"
+  *set gear_hint "Ring slot; blue sapphire in worked gold"
+  *set gear_blurb "A deep blue sapphire rises from a worked gold band chased with curling leaves."
+  *set gear_minutes 5
+  *set gear_pct_pawn 35
+  *set gear_pct_jeweler 60
+*if (gi_item = "jewelry_ruby_gold_ring")
+  *set gear_name "ruby gold ring"
+  *set gear_retail 550
+  *set gear_kind "ring"
+  *set gear_group "jewelry"
+  *set gear_slot "Ring"
+  *set gear_title "Ruby Gold Ring"
+  *set gear_hint "Ring slot; red ruby in worked gold"
+  *set gear_blurb "A deep red ruby sits proud in a worked gold band, cut with a flat table that throws the light back like a coal."
+  *set gear_minutes 5
+  *set gear_pct_pawn 35
+  *set gear_pct_jeweler 60
+*if (gi_item = "jewelry_diamond_gold_ring")
+  *set gear_name "diamond gold ring"
+  *set gear_retail 700
+  *set gear_kind "ring"
+  *set gear_group "jewelry"
+  *set gear_slot "Ring"
+  *set gear_title "Diamond Gold Ring"
+  *set gear_hint "Ring slot; clear diamond in worked gold"
+  *set gear_blurb "A clear diamond sits high above a worked gold band chased with curling leaves."
+  *set gear_minutes 5
+  *set gear_pct_pawn 35
+  *set gear_pct_jeweler 60
 *comment GEN:END gear_info_items
 *return
 
@@ -2091,12 +2343,6 @@
   *if (gear_kind = "head")
     *if (equipped_head_id = sg_item)
       *temp sg_head "none"
-      *if (origin = "ruined")
-        *set sg_head "arming_cap"
-      *if (origin = "outlaw")
-        *set sg_head "camo_hood"
-      *if (origin = "disgraced")
-        *set sg_head "scholar_coif"
       *gosub equip_head sg_head
       *set gear_sold_note "Your head is bare to the weather again."
       *if (not(sg_head = "none"))
@@ -2277,6 +2523,13 @@
   *set sb_qty 99
 *if (sb_qty > 0)
   *gosub gear_info sb_item
+  *comment A unique piece (gear_stack false: the magical dress, rings) is bought once, and not at all while one is owned; it comes back to the shelf when it is sold.
+  *if (not(gear_stack))
+    *set sb_qty 1
+    *gosub gear_count sb_item
+    *if (gear_qty > 0)
+      *set sb_qty 0
+*if (sb_qty > 0)
   *if (shop_mode = "tally")
     *set shop_tot_cost (shop_tot_cost + (gear_retail * sb_qty))
     *set shop_tot_minutes (shop_tot_minutes + gear_minutes)
