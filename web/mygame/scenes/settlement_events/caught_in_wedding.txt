@@ -1,0 +1,136 @@
+*comment ====================================================================================
+*comment CAUGHT IN A WEDDING: the settlement event router has already checked eligibility,
+*comment applied its daily lock, and called wedding_run with the current settlement's ID, kind, and style.
+*comment This event owns completion, local name generation, choices, and extra time.
+*comment ====================================================================================
+
+*label wedding_run
+*temp wedding_seed (campaign_day * 97)
+*temp wedding_first ""
+*temp wedding_second ""
+
+*comment A direct test or accidental external call has no registered settlement context.
+*if (se_settlement_id <= 0)
+  *return
+
+*set {("settlement_wedding_done_" & se_settlement_id)} true
+*set wedding_seed + (se_settlement_id * 97)
+*set name_setting se_settlement_kind
+
+*set name_seed wedding_seed
+*gosub_scene names name_pick_race
+*set name_region "marches"
+*set name_gender "any"
+*gosub_scene names name_make
+*set wedding_first name_full
+*set name_seed + 1
+*gosub_scene names name_pick_race
+*gosub_scene names name_make
+*set wedding_second name_full
+
+[b]CAUGHT UP IN A WEDDING[/b]
+*line_break
+*if (se_wedding_style = "market")
+  A ribbon strung between two market posts catches across the lane just as you pass. Pine boughs and shavings have been scattered over the packed ground, and a small crowd has filled the gap between the wagons.
+*elseif (se_wedding_style = "riverside")
+  A knot of people spills from a side lane toward the river path, bright ribbons snapping above their heads. Someone has hung little paper flowers from the rail beside the road.
+*elseif (se_wedding_style = "crossroads")
+  The sound of a fiddle reaches you before the procession turns into the crossing. Ribbons are tied to the rail outside the Cross Hall, and the Grain Green's nearest awning has been cleared for the gathered families.
+*elseif (se_wedding_style = "coastal")
+  A wedding party has gathered by the Tide House steps, where the bank gives them dry ground above the flats. Salt-white ribbon knots flutter from the bell frame.
+*elseif (se_wedding_style = "common")
+  A wedding party has gathered by the hall at the edge of the common. Bright ribbons run from the well-head to the hitching rail, and children keep darting between the adults with flower heads clutched in both hands.
+*else
+  The Longhouse porch has been swept clear beneath the old ash. Knotted cords and strips of cloth hang from its low branches, and a fiddle answers the soft beat of hands on the porch rail.
+
+A person in a new coat, cheeks red with haste, catches at your sleeve before the procession closes around you. Another waits a few steps behind, holding a spray of late flowers tight enough to bend the stems.
+
+"I'm ${wedding_first}," the first says. They point toward the waiting figure. "That's ${wedding_second}. Our second witness has vanished, and the bell's about to ring. Will you stand with us?"
+
+The waiting figure gives you an apologetic look. "My sister went to fetch her shawl. Then her uncle gave her something to drink. That was a while ago."
+
+*if (weather = "Rain")
+  Fine rain darkens the ribbons and gathers on the shoulders of the waiting guests, but no one has yet lost the will to celebrate.
+*elseif (weather = "Snow")
+  Snow catches in hair and on sleeves. Someone keeps brushing the flowers clear before the petals can disappear beneath it.
+*elseif (weather = "Sleet")
+  Sleet ticks against the awning and clings to the ribbons. Three people are holding the awning rope as though the weather has taken a personal dislike to weddings.
+*else
+  The gathered families keep glancing toward the lane, measuring how much longer they can hold the moment before ordinary traffic breaks it apart.
+
+*choice
+  # "I'll stand with you." Take the missing witness's place. [~15 min]
+    You step into the small space beside the couple. "Tell me where you need me."
+
+    The person with the flowers lets out a breath and passes you a length of ribbon. An older celebrant in a good coat asks you to hold one end while the couple takes the other between them.
+
+    "You know why you are here?" the celebrant asks.
+
+    You look from one anxious face to the other. "To say I saw you choose each other."
+
+    That earns a laugh from the crowd, small at first and then warm enough to ease both of them. The vows are plain promises: to keep a place at the fire, to speak straight when speaking is hard, and to carry the work when the other cannot. No one pretends that promises make a life easy. That may be why the people listening take them seriously.
+
+    When the bell rings, it is close and bright. ${wedding_first} clasps your hand between both of theirs.
+
+    "You saved us from a very awkward story," they say.
+
+    ${wedding_second} presses the bent flowers into ${wedding_first}'s free hand. "Now it is only our story," they say.
+
+    Around you, the crowd breaks into cheers and the first steps of a dance. You leave them their celebration and find the lane open again.
+    *gosub wedding_settlement_coda
+    *set minutes_to_pass 15
+    *set time_advance_call_id "se_wedding_witness"
+    *gosub wedding_advance_time
+    *page_break Step back into the lane...
+    *return
+  # Help the procession make room in the lane. [~10 min]
+    You take one end of the ribbon and wave the nearest cart around the crowd. "Give them a clear path. They'll be done soon."
+
+    The driver grumbles, then sees the couple and softens enough to turn the team with care. You keep the impatient foot traffic from cutting through the gathering, send two children after a loose ribbon, and make room for the old celebrant to reach the couple without being jostled.
+
+    Once the lane is clear, the ceremony finds its shape. You stand at its edge and hear the crowd answer the vows with a cheer. The fiddler catches the rhythm before the bell has stopped ringing, and the guests begin clapping in time.
+
+    As you step aside, ${wedding_second} lifts their flowers in thanks. "You gave us a proper beginning," they call.
+
+    It is a small thing to have done, but the lane feels kinder for it. You leave as the first dancers claim the cleared ground.
+    *gosub wedding_settlement_coda
+    *set minutes_to_pass 10
+    *set time_advance_call_id "se_wedding_lane"
+    *gosub wedding_advance_time
+    *page_break Continue on your way...
+    *return
+  # "I'm sorry. I can't stay."
+    You ease your sleeve free. "I hope it goes well for you both."
+
+    "Fair enough," ${wedding_first} says, already looking past you for another face in the crowd.
+
+    You take the edge of the crowd instead. Behind you, someone finally answers the call for a witness, and a relieved cheer rises before you have gone far. The fiddle starts again, then the bell. Whatever waits for the couple after today, they begin it surrounded by people who showed up.
+    *gosub wedding_settlement_coda
+    *page_break Continue on your way...
+    *return
+
+*label wedding_settlement_coda
+*if (se_wedding_style = "market")
+  By the time you look back, the market posts have become a dance line, with sawdust rising under every turn.
+*elseif (se_wedding_style = "riverside")
+  Paper flowers tremble along the river rail as the guests make room for the next dance.
+*elseif (se_wedding_style = "crossroads")
+  At the Cross Hall, someone has brought out a keg, and the edge of the Grain Green fills with laughter.
+*elseif (se_wedding_style = "coastal")
+  The tide keeps sliding over the flats while the Tide House bell answers the fiddle from above the bank.
+*elseif (se_wedding_style = "common")
+  The children scatter flower heads across the common until even the quiet corners look prepared for company.
+*else
+  Beneath the old ash, the longhouse porch carries the beat of hands and heels long after you turn away.
+*return
+
+*label wedding_advance_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return
