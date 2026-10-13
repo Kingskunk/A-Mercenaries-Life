@@ -3523,6 +3523,7 @@ stats = {
  "weaver_gratitude": "false",
  "gilded_scales_leverage": "false",
  "alder_wager_won": "false",
+ "marlcross_milling_fair_won": "false",
  "prep_waterproof_gear": "false",
  "river_crossing_rattled": "false",
  "river_crossing_weary": "false",
