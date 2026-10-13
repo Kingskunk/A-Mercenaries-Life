@@ -53,6 +53,13 @@ The Reedhouse is a low inn with a stone lower wall and dark timber above, its ro
 *else
   Nessa Cale keeps the counter, with the room keys hanging from a board behind her.
 
+*comment The daughter quest is deliberately unavailable on the introduction visit: bw_reedhouse_seen
+*comment only becomes true above, while reed_first remains true for this whole first page.
+*if (((not(reed_first)) and (campaign_day > 30)) and (bw_daughter_quest_stage = "unstarted"))
+  At the kitchen door, a young woman pauses with a stack of bowls held too carefully against her hip. Nessa watches her with the fixed concern of someone who has already tried and failed to start a conversation.
+  *page_break Notice the tension at the kitchen door...
+  *goto_scene port_valen/brinewick/innkeepers_daughter bw_daughter_open
+
 *if ((street_life = "empty") and (not(reed_state = "night")))
   The tables are empty for the moment, and the bubbling pot at the hearth sounds louder than the road outside.
 *elseif (reed_state = "morning")
@@ -78,6 +85,9 @@ The Reedhouse is a low inn with a stone lower wall and dark timber above, its ro
     People pause at the tables for water, food or a few dry minutes by the hearth before they continue along the road.
 
 *choice
+  *if (bw_daughter_quest_stage = "active")
+    # Ask Nessa whether she will reconsider Iria's marriage.
+      *goto_scene port_valen/brinewick/innkeepers_daughter bw_daughter_nessa
   *if ((((gold * 100) + (silver * 10)) + copper) >= 2)
     # [2 Copper Bits] Buy a bowl of fish, peas and barley. [~20 min]@{show_stat_hints  [+2 Temp HP, +1 CON for 4h]|}
       *set tavern_item_cost_copper 2
@@ -134,6 +144,14 @@ The Reedhouse is a low inn with a stone lower wall and dark timber above, its ro
       *goto bw_reedhouse_main
   *if (bw_reedhouse_room_active)
     # Go up to your room.
+      *goto bw_reedhouse_room
+  *elseif (bw_daughter_room_gift)
+    # Take the room Nessa promised you.
+      *set bw_daughter_room_gift false
+      *set bw_reedhouse_room_active true
+      *set bw_reedhouse_room_until (reed_now + 1440)
+      Nessa takes the key Iria gave you and exchanges it for one from the board behind her. "Top of the stair, first door on the yard side," she says. "It is yours until this hour tomorrow."
+      *page_break Take the stair...
       *goto bw_reedhouse_room
   *elseif ((((gold * 100) + (silver * 10)) + copper) >= bw_reedhouse_rate_copper)
     # [${bw_reedhouse_rate_copper} Copper Bits] Take a room for 24 hours.

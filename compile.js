@@ -315,6 +315,7 @@ function compile(){
   verifyFileName("port_valen/brinewick/tide_house.txt");
   verifyFileName("port_valen/brinewick/saltworks.txt");
   verifyFileName("port_valen/brinewick/reedhouse.txt");
+  verifyFileName("port_valen/brinewick/innkeepers_daughter.txt");
   // Redvein is Alderford's eastern mining village. Its public places live under the Alderford folder because its ore road and market run through the town.
   verifyFileName("alderford/redvein/redvein.txt");
   verifyFileName("alderford/redvein/eastcut.txt");

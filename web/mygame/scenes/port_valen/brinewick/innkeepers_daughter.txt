@@ -1,0 +1,170 @@
+*comment ====================================================================================
+*comment A HOUSE ACROSS THE FLATS: Brinewick's Reedhouse relationship quest. The Reedhouse owns
+*comment the physical trigger and free-room claim; this scene owns the conversation, resolution,
+*comment and the delayed, bespoke wedding coda.
+*comment ====================================================================================
+
+*label bw_daughter_open
+The kitchen door opens just far enough for a young woman to step through with a stack of bowls against her hip. She moves carefully, as though each one might break, then stops when she sees Nessa watching her.
+
+"Iria," Nessa says, not unkindly. "That table has been waiting on those bowls longer than it has patience."
+
+Iria Cale starts, reddens, and carries them on. When she returns, she catches you looking and lets out a small, embarrassed breath.
+
+"I'm sorry," she says. "I keep making work of things that ought to be simple."
+
+After a glance toward her mother, she lowers her voice. "Tovin Rusk has asked me to marry him. His father runs a small tanyard just past the salt store. I want to say yes. My mother says I'll stop coming home once I do."
+
+"I said no such thing," Nessa calls from the counter. "I said people make new lives, and old tables go quiet."
+
+Iria's fingers tighten around the edge of a bowl. "Tovin's place is across the bank, not across the sea. But she won't hear it from me."
+
+*choice
+  # Tell Iria you'll speak with Nessa.
+    *set bw_daughter_quest_stage "active"
+    *goto bw_daughter_nessa
+  # Tell Iria you need to think first.
+    "I don't want to promise what I can't do," you say.
+
+    Iria nods, trying for a smile. "That's kinder than saying yes for the sound of it."
+    *page_break Step back from the kitchen door...
+    *goto_scene port_valen/brinewick/reedhouse bw_reedhouse_main
+
+*label bw_daughter_nessa
+*temp bw_daughter_hint ""
+*if (show_stat_hints)
+  *set bw_daughter_hint " [CHA DC 12]"
+
+Nessa sets down the cloth she has been using on the counter. Up close, the salt cracks across the backs of her hands look deep enough to hurt.
+
+"You heard us," she says. "Then you know the whole of it. Tovin is decent. His father is decent. The tanyard isn't even a ten-minute walk."
+
+She looks past you, toward Iria's bent head at the kitchen door.
+
+"But marriage changes the shape of a family. First it's suppers missed because there's work at the other hearth. Then it's a visit when there's time. Then one day you realize your child treats your home as a stopover. I can't bring myself to hand her over to that."
+
+*choice
+  # Tell Nessa that Iria choosing a household of her own is not the same as abandoning this one.${bw_daughter_hint}
+    *gosub_scene dice_engine roll_skill_check 12 "persuasion" "" "" "" "" ""
+    *if (check_success)
+      You do not pretend that marriage leaves a family unchanged. Instead, you point toward the kitchen and the bank beyond the window: Iria has chosen a person who works in Brinewick, close enough to walk home for supper, close enough to remain part of the life she has always had.
+
+      "A daughter can't stay a child to prove she loves you," you say. "Let her come back because she wants to, not because you made leaving a betrayal."
+
+      Nessa's face works once. For a long moment she says nothing.
+
+      "That's a hard thing to hear from a stranger," she says at last. "Which may be why I heard it." She looks toward Iria. "Go fetch him. Before I find a new reason to be a fool."
+      *set bw_daughter_resolution "persuaded"
+      *goto bw_daughter_resolve
+    Nessa presses her lips together and shakes her head.
+
+    "You make it sound easy because you're not the one who'll wake up to the quiet," she says. "I can't. Not today."
+    *goto bw_daughter_persuasion_failed
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 50)
+    # Place five silver marks on the counter for Iria and Tovin's first winter.
+      You lay five silver marks on the counter. "Then help them keep a household close enough to come home to. That's for their first winter, not the price of your blessing."
+
+      Nessa looks at the coins, then at Iria. Her eyes close briefly.
+
+      "You'd put your own coin behind that?" she asks.
+
+      "I'd give them a fair start," you say.
+
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+        *set currency_add_amount -50
+        *gosub_scene economy currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id page_id
+      *set bw_daughter_resolution "funded"
+      *goto bw_daughter_resolve
+  # Threaten Nessa until she gives in.
+    You lean in and make the threat plain enough that no one in the room can mistake it.
+
+    Nessa does not flinch. She takes one step toward the kitchen door, placing herself between you and Iria.
+
+    "Out," she says. Her voice is quiet, and all warmth has gone from it. "You don't get to use my daughter's hope as a handle for my fear."
+
+    Iria has gone still. You have won nothing here, and there will be no second conversation.
+    *set bw_daughter_quest_stage "failed"
+    *set bw_daughter_resolution "intimidated"
+    *page_break Leave the Reedhouse...
+    *goto_scene port_valen/brinewick/reedhouse bw_reedhouse_main
+  # Leave Nessa with her thoughts for now.
+    Nessa gives a tired, grateful nod. "That's more sense than most people bring to somebody else's family."
+    *page_break Step back from the counter...
+    *goto_scene port_valen/brinewick/reedhouse bw_reedhouse_main
+
+*label bw_daughter_persuasion_failed
+*choice
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 50)
+    # Offer five silver marks toward the couple's first winter instead.
+      You set five silver marks on the counter. "Then let them begin close by, with enough put aside that hardship does not pull them away."
+
+      Nessa stares at the coins. When she finally reaches for them, it is not greed in her face, but the reluctant recognition that you have given her something practical to hold onto.
+
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+        *set currency_add_amount -50
+        *gosub_scene economy currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id page_id
+      *set bw_daughter_resolution "funded_after_failure"
+      *goto bw_daughter_resolve
+  # Let Nessa have time to reconsider.
+    You nod. "Then I won't force the matter today."
+    *page_break Step back from the counter...
+    *goto_scene port_valen/brinewick/reedhouse bw_reedhouse_main
+
+*label bw_daughter_resolve
+*set bw_daughter_quest_stage "resolved"
+*rand bw_daughter_wedding_day 12 20
+*set bw_daughter_wedding_day + campaign_day
+*set bw_daughter_room_gift true
+
+Nessa turns toward the kitchen. "Iria. Send a boy to the Rusks' tanyard. Tell Tovin to come here before I find an excuse to change my mind."
+
+For a breath Iria only stares. Then she laughs once, sharply, and throws both arms around her mother. Nessa holds her tightly despite pretending not to know what to do with her hands.
+
+When Iria finally turns back to you, her worry has gone out of her face so completely that she seems like another person.
+
+"You've given us more than a yes," she says. "You've given us a beginning." She presses a room key into your hand. "Nessa says the next room is yours. No arguments."
+
+Nessa clears her throat. "One room. One night. Don't make a tradition of it."
+
+Iria smiles at that. "Come back through Brinewick when you can. I know every salt-carrier, lighter crew, and road hand who comes through this house. If there's word worth finding, I'll help you find it."
+
+*page_break Keep the key safe...
+*goto_scene port_valen/brinewick/reedhouse bw_reedhouse_main
+
+*label bw_daughter_wedding
+*set bw_daughter_wedding_seen true
+
+[b]A HOUSE ACROSS THE FLATS — WEDDING DAY[/b]
+*line_break
+*if (weather_severity >= 3)
+  The weather has driven the wedding indoors, but not dampened it. The Reedhouse tables have been pushed back beneath strings of salt-white ribbon, and the Tide House bell has been borrowed to ring from the sheltered yard gate.
+*else
+  The Tide House steps have been swept clear above the flats. Salt-white ribbon knots flutter from the bell frame, and the brine beds shine beyond the gathered families.
+
+Iria stands in a new blue wool dress with Nessa beside her, holding one hand so tightly that neither seems to notice. Across from them, Tovin Rusk wears a clean dark coat, his father at his shoulder with the quiet pride of a man who has spent his life working hide and salt into things meant to last.
+
+When the celebrant asks what they promise, Iria looks first at Tovin and then at her mother.
+
+"A place at the fire," she says. "And a way back to it."
+
+Nessa laughs through the tears she has not managed to hide. Tovin repeats the promise, then takes Iria's hands in his. The bell rings, the gathered people answer it with cheers, and a fiddle begins before its final note has faded.
+
+Iria spots you at the edge of the crowd. She lifts her joined hand with Tovin's in thanks, and Nessa gives you a single, firm nod.
+
+*set hours_to_pass 0
+*set minutes_to_pass 20
+*set time_advance_call_id "bw_daughter_wedding"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*page_break Leave the wedding to its dancing...
+*goto_scene port_valen/brinewick/brinewick brinewick
