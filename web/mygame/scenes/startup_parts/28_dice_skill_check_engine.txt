@@ -1,0 +1,58 @@
+*comment --- D&D D20 DICE & SKILL CHECK ENGINE ---
+*create d20_roll 10
+*create d20_roll_2 10
+*create check_stat "cha"
+*create check_dc 10
+*create check_skill "Persuasion"
+*create check_mod 0
+*create check_total 10
+*create check_success true
+*create is_nat_20 false
+*create is_nat_1 false
+*create advantage false
+*create disadvantage false
+*create guidance_active false
+*comment GUIDANCE CAST AHEAD (2026-10-03): the sidebar spellbook's Cast button (choicescript_stats.txt codex_cast_now_guidance) sets guidance_active true and guidance_minutes_left to
+*comment guidance_duration_minutes, so no scene needs its own "[Cantrip: Guidance]" option. The clock counts the minutes down (calendar.txt advance_time) and drops guidance_active at zero;
+*comment the next ability check uses it up (dice_engine.txt) and clears the timer. The old in-scene casts set guidance_active alone, with no timer, and behave as they always did. Guidance is
+*comment ignored while combat_engaged, so an attack roll or a fight save can never eat it. 1 is 5e's duration: cast on the page that offers the check, it holds until the roll unless the chosen
+*comment option itself spends time first (a 20-minute watch, a 6-hour shift: 4 spots in port_valen_dredge_end.txt when measured 2026-10-03), which is when it lapses. Raise it to be more forgiving
+*comment (10 survives a short walk, 60 an hour); nothing else reads the number.
+*create guidance_minutes_left 0
+*create guidance_duration_minutes 1
+*comment Same lifecycle as advantage/disadvantage/guidance_active above: a caller sets it true right before
+*comment *gosub_scene dice_engine roll_d20_check, and roll_d20_check itself resets it false on every exit path, so
+*comment it can never bleed into the next, unrelated check. Weapon attacks and the five attack-roll cantrips set
+*comment it (a player is always proficient with their own equipped weapon and known spells). Skill checks go through roll_skill_check, which
+*comment sets it from the skill's own skill_<id> flag (a proficient skill only), so a skill check is never a blanket add either.
+*create check_add_prof_bonus false
+*comment check_no_guidance: a scene sets it true right before roll_d20_check for a check Guidance must not help (it adds nothing, and a cast Guidance is not spent). roll_d20_check clears it on every exit.
+*create check_no_guidance false
+*comment ══════════════════════════════════════════════════════════════
+*comment SKILL PROFICIENCIES (5e's 18 skills). One boolean each, granted by class/background/race wherever
+*comment those get assigned (not yet wired into the 3 starting backgrounds -- next step after this). Read by
+*comment roll_skill_check (dice_engine.txt) via {("skill_" & id)} indirection, so a new skill would only ever need a create
+*comment here, not a matching *if branch anywhere else.
+*comment ══════════════════════════════════════════════════════════════
+*create skill_acrobatics false
+*create skill_animal_handling false
+*create skill_arcana false
+*create skill_athletics false
+*create skill_deception false
+*create skill_history false
+*create skill_insight false
+*create skill_intimidation false
+*create skill_investigation false
+*create skill_medicine false
+*create skill_nature false
+*create skill_perception false
+*create skill_performance false
+*create skill_persuasion false
+*create skill_religion false
+*create skill_sleight_of_hand false
+*create skill_stealth false
+*create skill_survival false
+*comment Output of skill_lookup (dice_engine.txt).
+*create skill_lookup_ability ""
+*create skill_lookup_display ""
+*create save_vs "none"

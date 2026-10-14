@@ -23,6 +23,7 @@ function collectSceneFiles(target, extensions) {
     for (var i = 0; i < entries.length; i++) {
       var entryPath = path.join(dir, entries[i]);
       if (fs.statSync(entryPath).isDirectory()) {
+        if (entries[i] === "startup_parts") continue;   // the SOURCE of startup.txt (tools/build_startup.js): the built startup.txt is what gets linted, once
         walk(entryPath);
       } else if (extensions.some(function (ext) { return entries[i].endsWith(ext); })) {
         results.push(entryPath);

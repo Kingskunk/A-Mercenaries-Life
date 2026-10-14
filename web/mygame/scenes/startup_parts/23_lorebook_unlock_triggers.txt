@@ -1,0 +1,829 @@
+*comment --- LOREBOOK UNLOCK TRIGGERS (Port Valen) ---
+*comment Each is set once, at the moment the player learns the name or reaches the place, and
+*comment only unlocks an entry in web/mygame/lorebook-port-valen.js. Setting them again is harmless.
+*comment brant_saw_him is watching the old man work at the cradle (beat_1_discovery). The name can be
+*comment learned earlier from the tavern rumor, so only the up-close description waits on this one.
+*create met_brant false
+*create brant_saw_him false
+*create met_hendryk false
+*create met_hendryk_office false
+*create met_elric false
+*create met_hask false
+*create met_anselm false
+*create met_vael false
+*create codex_corve false
+*create codex_wreck_law false
+*create dredge_end_seen false
+*comment Dredge-End night ambush (port_valen_dredge_end.txt, de_night_ambush). Tunables:
+*comment dredge_ambush_chance is the percent chance per night that arriving rolls an
+*comment ambush, and dredge_ambush_toll_copper is the toll in copper (10 = 1 silver).
+*comment dredge_ambush_night is the night id last rolled (campaign_day, minus 1 between
+*comment midnight and noon so Pre-Dawn belongs to the night before), which caps it at
+*comment one roll per night. dredge_ambush_active marks an ambush still waiting on the
+*comment player's answer, so a page replay cannot roll it away. loot/lost feed the
+*comment coin banners so they read the same on a replay.
+*create dredge_ambush_chance 35
+*create dredge_ambush_toll_copper 30
+*create dredge_ambush_night 0
+*create dredge_ambush_active false
+*create dredge_ambush_loot 0
+*create dredge_ambush_lost 0
+*create upper_wharves_seen false
+*create civic_heights_seen false
+*comment Civic Heights Council Hall: ch_hall_seen is going in through the great doors; ch_records_seen is reaching the Open
+*comment Hiring Hall in its east wing and meeting Clerk Tolliver; the *_talk flags record his two answers (lorebook echoes them).
+*create ch_hall_seen false
+*comment Council Hall tax windows: ch_tax_seen is going in, ch_tax_counter_seen is reaching the grille, ch_tax_licence_talk is the clerk's
+*comment answer. The TRADE LICENCE is a fee for a permission: trade_licence_until is a campaign day, trade_licence_price_silver silver
+*comment for trade_licence_days days, extendable (same shape as the Registered Writ). ch_roll_deeds_talk is Tolliver's answer about the
+*comment shuttered Deeds window (the property hook).
+*create ch_court_seen false
+*comment Council gallery: ch_gal_seen is going up the stair, ch_gal_board_seen is reading the board at its foot (the Council sits every tenth day).
+*create ch_gal_seen false
+*create ch_gal_board_seen false
+*create ch_tax_seen false
+*create ch_tax_counter_seen false
+*create ch_tax_licence_talk false
+*create ch_roll_deeds_talk false
+*create trade_licence_until 0
+*create trade_licence_price_silver 10
+*create trade_licence_days 30
+*create ch_records_seen false
+*create ch_roll_rules_talk false
+*create ch_roll_claims_talk false
+*comment ch_seals_seen / ch_seals_talk / ch_seals_ranks_talk: the Hiring Hall's Seals window (what the insignia is, and the four ranks). The insignia itself is not built: the Seals clerk sells one for a one-time licence fee when a player signs their first posting.
+*create ch_seals_seen false
+*create ch_seals_talk false
+*create ch_seals_ranks_talk false
+*comment Name generator inputs and results (names.txt, web/mygame/names-data.js). Set the four name_ inputs, gosub names name_make, read name_first/name_last/name_full.
+*create name_race "human"
+*create name_gender "f"
+*create name_region "port"
+*create name_seed 0
+*create name_first ""
+*create name_last ""
+*create name_full ""
+*comment name_setting picks the race mix (name_pick_race); look_phrase and look_detail are what name_look returns: what can be seen of a person.
+*create name_setting "middle_ward"
+*create look_phrase ""
+*create look_detail ""
+*comment look_full is look_phrase and look_detail as one sentence start; name_sex is the gender a name came to; name_salt, name_n and name_rolled go with name_roll.
+*create look_full ""
+*create name_look_skip ""
+*create name_sex "m"
+*create name_salt 0
+*create name_n 1
+*create name_rolled 0
+*comment Radiant Hiring Hall jobs (port_valen/radiant/). hall_jobs_scales counts jobs finished on the Gilded Scales page of the insignia, one counter per government. rj_done_block is the last five-day block a job was finished in (0 = none; block 0 is the first five days of the game, when no posting is up).
+*create hall_jobs_scales 0
+*comment The courier job (radiant/hall_courier.txt, 2026-10-11). crp1_* to crp3_* are the three postings on the Hiring Hall board today (worked out by cr_board_prepare from Overworld.courierPostings; crpN_taken is the
+*comment day's flag, reset when cr_p_day changes), crs1_* to crs3_* are the three parcels in the satchel (no arrays: three fixed slots, taken first-free), cr_pick is the posting being taken and cr_free the first free slot.
+*comment Courier deliveries since the last full set of three; every third adds one job to the Insignia's page (hall_courier.txt cr_deliver).
+*create cr_credit 0
+*create cr_pick 0
+*comment The settlement whose board is being read or taken from (a tile id), and the keys (origin:day:number, each followed by a bar) of today's postings already taken.
+*create cr_origin "pv"
+*comment True only while a notice option flows straight into the courier board (hall_courier.txt cr_read), so the postings follow the notices on one page.
+*create cr_inline false
+*create cr_taken_log "|"
+*create crp0_key ""
+*create crp1_key ""
+*create crp2_key ""
+*create crp3_key ""
+*comment Slot 0 placeholders (never read by a real page): quicktest walks every branch with cr_pick and the delivery slot at 0, like combat_enemy0_*.
+*create crp0_on false
+*create crp0_taken false
+*create crp0_open false
+*create crp0_full false
+*create crp0_to ""
+*create crp0_to_name ""
+*create crp0_place ""
+*create crp0_kind ""
+*create crp0_item ""
+*create crp0_miles 0
+*create crp0_fee 0
+*create crp0_fee_text ""
+*create crp0_term 0
+*create crp0_seed 0
+*create crp0_no 0
+*create crp0_who ""
+*create crp0_sex "m"
+*create crp0_look ""
+*create crs0_on false
+*create crs0_to ""
+*create crs0_to_name ""
+*create crs0_place ""
+*create crs0_kind ""
+*create crs0_item ""
+*create crs0_miles 0
+*create crs0_fee 0
+*create crs0_fee_text ""
+*create crs0_until 0
+*create crs0_who ""
+*create crs0_sex "m"
+*create crs0_look ""
+*create crs0_seed 0
+*create cr_free 0
+*create cr_p_day 0
+*create cr_take_locked false
+*create locked_cr_take_page_id 0
+*create crp1_on false
+*create crp1_taken false
+*create crp1_open false
+*create crp1_full false
+*create crp1_to ""
+*create crp1_to_name ""
+*create crp1_place ""
+*create crp1_kind ""
+*create crp1_item ""
+*create crp1_miles 0
+*create crp1_fee 0
+*create crp1_fee_text ""
+*create crp1_term 0
+*create crp1_seed 0
+*create crp1_no 0
+*create crp1_who ""
+*create crp1_sex "m"
+*create crp1_look ""
+*create crp2_on false
+*create crp2_taken false
+*create crp2_open false
+*create crp2_full false
+*create crp2_to ""
+*create crp2_to_name ""
+*create crp2_place ""
+*create crp2_kind ""
+*create crp2_item ""
+*create crp2_miles 0
+*create crp2_fee 0
+*create crp2_fee_text ""
+*create crp2_term 0
+*create crp2_seed 0
+*create crp2_no 0
+*create crp2_who ""
+*create crp2_sex "m"
+*create crp2_look ""
+*create crp3_on false
+*create crp3_taken false
+*create crp3_open false
+*create crp3_full false
+*create crp3_to ""
+*create crp3_to_name ""
+*create crp3_place ""
+*create crp3_kind ""
+*create crp3_item ""
+*create crp3_miles 0
+*create crp3_fee 0
+*create crp3_fee_text ""
+*create crp3_term 0
+*create crp3_seed 0
+*create crp3_no 0
+*create crp3_who ""
+*create crp3_sex "m"
+*create crp3_look ""
+*create crs1_on false
+*create crs1_to ""
+*create crs1_to_name ""
+*create crs1_place ""
+*create crs1_kind ""
+*create crs1_item ""
+*create crs1_miles 0
+*create crs1_fee 0
+*create crs1_fee_text ""
+*create crs1_until 0
+*create crs1_who ""
+*create crs1_sex "m"
+*create crs1_look ""
+*create crs1_seed 0
+*create crs2_on false
+*create crs2_to ""
+*create crs2_to_name ""
+*create crs2_place ""
+*create crs2_kind ""
+*create crs2_item ""
+*create crs2_miles 0
+*create crs2_fee 0
+*create crs2_fee_text ""
+*create crs2_until 0
+*create crs2_who ""
+*create crs2_sex "m"
+*create crs2_look ""
+*create crs2_seed 0
+*create crs3_on false
+*create crs3_to ""
+*create crs3_to_name ""
+*create crs3_place ""
+*create crs3_kind ""
+*create crs3_item ""
+*create crs3_miles 0
+*create crs3_fee 0
+*create crs3_fee_text ""
+*create crs3_until 0
+*create crs3_who ""
+*create crs3_sex "m"
+*create crs3_look ""
+*create crs3_seed 0
+*create rj_done_block 0
+*comment Vermin in the House (radiant/hall_pests.txt): rj_pest_stage is "none", "active" or "done"; where, house and creature are picked from the five-day block by rj_pest_select.
+*comment rj_has_job: a signed job is open (set by radiant_hub.txt rh_check). rh_from: where the player pressed "Your posting", "road" (Trunk Road) or "avenue" (Patrician Avenue).
+*create rj_has_job false
+*create rh_from "road"
+*create rj_pest_stage "none"
+*create rj_pest_block 0
+*create rj_pest_where "middle_ward"
+*create rj_pest_house 1
+*create rj_pest_creature "rat"
+*create rj_pest_place ""
+*comment rj_pest_until: the last day the signed job is open (signing day plus two). rj_pest_walkout: a finished Quarter job, so the avenue walks the player out with its own wording.
+*create rj_pest_until 0
+*create rj_pest_walkout false
+*comment A House to Be Moved (radiant/hall_haul.txt): rj_haul_stage is "none", "active" or "done". The house and the three items are picked from the five-day block by rj_haul_select.
+*comment rj_haul_l1..3 say which loads are moved; rj_haul_h1..3 are the hours each took and rj_haul_b1..3 the copper bonus for a load that arrived whole, stored by assignment so a replay cannot double them.
+*comment rj_haul_load, _appr, _dc, _skill, _hours and _bonus are scratch for the shared work label.
+*create rj_haul_stage "none"
+*create rj_haul_block 0
+*create rj_haul_house 1
+*create rj_haul_until 0
+*create rj_haul_place ""
+*create rj_haul_done_block 0
+*create rj_haul_item1 "iron-bound chest"
+*create rj_haul_item2 "tall wardrobe"
+*create rj_haul_item3 "crate of glassware"
+*create rj_haul_l1 false
+*create rj_haul_l2 false
+*create rj_haul_l3 false
+*create rj_haul_h1 0
+*create rj_haul_h2 0
+*create rj_haul_h3 0
+*create rj_haul_b1 0
+*create rj_haul_b2 0
+*create rj_haul_b3 0
+*create rj_haul_load 1
+*create rj_haul_appr "muscle"
+*create rj_haul_dc 12
+*create rj_haul_skill "athletics"
+*create rj_haul_hours 1
+*create rj_haul_bonus 0
+*comment The Wagon Escort (radiant/hall_escort.txt): rj_escort_stage is "none" or "active". The player signs at the wagon yard outside the River Gate; rj_escort_until is the muster day (the day after signing).
+*comment The master's name, look and sex are stored at signing (the five-day block seed can change between signing and muster). rj_escort_pos is the place in the line ("head", "middle", "rear").
+*comment es_offer_day is the day the offer was last spoken in full, so a repeat visit describes it instead of quoting it again. es_yard_seen unlocks the Lorebook entry.
+*create rj_escort_stage "none"
+*create rj_escort_until 0
+*create rj_escort_block 0
+*create rj_escort_master ""
+*create rj_escort_look ""
+*create rj_escort_sex "m"
+*create rj_escort_pos ""
+*create es_offer_day 0
+*comment The road (hall_escort.txt): rj_escort_b1..3 say whether each of the three beats (noon halt, night watch, Longshade Edge) was held; rj_escort_watch is the player's stretch (1 head, 2 middle, 3 rear);
+*comment rj_escort_cur, _ev, _opt, _dc, _skill, _ok, _hab, _hdc and _hint are scratch for the beats; es_until_result is the wait to a clock time (under es_until_locked); es_target, es_cap, es_w_mins, es_w_node and es_w_id
+*comment are scratch for the clock helpers; es_night_locked is the one lock for the night's sleep.
+*create rj_escort_b1 true
+*create rj_escort_b2 true
+*create rj_escort_b3 true
+*create rj_escort_watch 1
+*create rj_escort_cur 1
+*create rj_escort_ev 0
+*create rj_escort_opt 1
+*create rj_escort_dc 10
+*create rj_escort_skill "perception"
+*create rj_escort_ok true
+*create rj_escort_hab "WIS"
+*create rj_escort_hdc 10
+*create rj_escort_hint ""
+*create es_until_result 0
+*create es_until_locked false
+*create locked_es_until_page_id 0
+*create es_target 0
+*create es_cap 0
+*create es_w_mins 0
+*create es_w_node "r1"
+*create es_w_id ""
+*create es_night_locked false
+*comment The road is driven by the route (hall_escort.txt): rj_escort_from and _to are the tiles the line runs between, es_cur_leg the leg in hand and es_next_leg the one after it (both moved only under es_leg_locked),
+*comment es_act and es_act2 what follows this leg and this halt ("pay", "beat", "go", "camp"), es_pace the minutes a mile for the line, and es_leg_* the tile data for the leg in hand, loaded fresh by es_load_leg.
+*create rj_escort_from "pv"
+*comment rj_escort_road is true from the pull-out until the job is paid, so the sidebar keeps the job listed on the road even after the day it was signed for has passed.
+*create rj_escort_to "tm"
+*create rj_escort_road false
+*create es_fee_text ""
+*comment The road in stretches (hall_escort.txt): rj_escort_lost counts the beats that went wrong; es_day_halts is 1 once today has had a halt event (one a day); es_str_* describe the stretch just planned; es_halt_ev is the halt
+*comment event's number; es_k is the loop counter inside the stretch's lock; es_fee is the fee in copper; es_ctx_fee_text the fee for the route on offer, in coins; the *_locked pairs make each real +1 run once.
+*create rj_escort_lost 0
+*create es_day_halts 0
+*create es_str_end 0
+*create es_str_miles 0
+*create es_str_mins 0
+*create es_str_walk ""
+*create es_str_from ""
+*create es_str_to ""
+*create es_str_text ""
+*create es_k 0
+*create es_halt_ev 0
+*create es_leg_danger 0
+*create es_fee 0
+*create es_ctx_fee_text ""
+*create es_camp_locked false
+*create locked_es_camp_page_id 0
+*create es_mark_locked false
+*create locked_es_mark_page_id 0
+*create es_pace 30
+*create es_cur_leg 0
+*create es_next_leg 0
+*create es_leg_locked false
+*create locked_es_leg_page_id 0
+*create es_beat_locked false
+*create locked_es_beat_page_id 0
+*create es_act "go"
+*create es_act2 "go"
+*create es_phase "morning"
+*create es_depart ""
+*create es_leg_count 0
+*create es_total_miles 0
+*create es_next_minutes 0
+*create es_leg_to "tm"
+*create es_leg_name ""
+*create es_leg_head ""
+*comment The ends of the line (hall_escort.txt es_set_line): es_start is the tile the player signs at ("pv", "tm" or "af"), es_end the other end, es_place "yard", "lot" or "alot" where they return to, and es_ctx_* the wording for the place they are at.
+*comment At signing the wording is copied to rj_escort_dest_name, _opens and _place_text, which the road and the posting hub read.
+*create es_start "pv"
+*create es_end "tm"
+*create es_place "yard"
+*create es_ctx_dest_name "Timbermouth"
+*create es_ctx_opens "the gate opens"
+*create es_ctx_dow "Forgeday"
+*create es_ctx_place_text ""
+*create es_ctx_road_talk ""
+*create rj_escort_dest_name "Timbermouth"
+*create rj_escort_opens "the gate opens"
+*create rj_escort_place_text "the wagon yard outside the River Gate"
+*create tm_lot_seen false
+*create tm_lot_show false
+*comment The Alderford carters' lot (alderford/wagon_lot.txt): af_lot_seen is the permanent first-visit flag, af_lot_show is derived by alderford.txt af_hours (a line is making up, or the player holds a job that sets out from here).
+*create af_lot_seen false
+*create af_lot_show false
+*comment The Wait menu (choicescript_stats.txt codex_wait). wait_lock_reason is empty when waiting is allowed and the reason shown to the player when it is not; anything that runs a long chain of its own (a dungeon run, the escort road)
+*comment sets it at the start and clears it at the end. wait_total_mins is the amount being waited; wait_in_* are the typed hours and minutes; wait_m_* and wait_t_* are the minutes and the short text to the next morning, midday, dusk and night.
+*create wait_lock_reason ""
+*create wait_total_mins 0
+*create wait_in_hours 0
+*create wait_in_minutes 0
+*create wait_applied false
+*create wait_report_text ""
+*create wait_pick 1
+*create wait_m_morning 0
+*create wait_m_midday 0
+*create wait_m_dusk 0
+*create wait_m_night 0
+*create wait_t_morning ""
+*create wait_t_midday ""
+*create wait_t_dusk ""
+*create wait_t_night ""
+*create es_leg_kind "road"
+*create es_leg_walk ""
+*create es_leg_camp ""
+*create es_leg_arrive ""
+*create es_leg_minutes 0
+*create locked_es_night_page_id 0
+*create es_yard_seen false
+*comment The Night Watch (radiant/hall_watch.txt): rj_watch_stage is "none", "active" or "done". The week (counted from 1) seeds the patron, the warehouse and each stretch's event.
+*comment rj_watch_held1..3 say which stretches were held cleanly. rj_watch_ev, _cur, _opt, _dc,
+*comment _skill, _ok, _hab, _hdc and _hint are scratch for the stretch labels.
+*create rj_watch_stage "none"
+*create rj_watch_week 0
+*create rj_watch_warehouse 1
+*create rj_watch_until 0
+*create rj_watch_place ""
+*create rj_watch_done_week 0
+*create rj_watch_cur 1
+*create rj_watch_ev 0
+*create rj_watch_opt 1
+*create rj_watch_dc 10
+*create rj_watch_skill "perception"
+*create rj_watch_ok true
+*create rj_watch_hab "WIS"
+*create rj_watch_hdc 10
+*create rj_watch_hint ""
+*create rj_watch_held1 false
+*create rj_watch_held2 false
+*create rj_watch_held3 false
+*comment Music for an Evening (radiant/hall_perform.txt): rj_perf_stage is "none", "active" or "done". The week (counted from 1) seeds the venue and the host. rj_perf_venue is
+*comment 1 the Wagoner's Rest, 2 the Cleaved Keel, 3 a private supper, 4 a wedding feast, 5 a Patrician gala; rj_perf_where is "middle_ward", "docks" or "quarter".
+*comment rj_perf_good1..3 say which sets landed. rj_perf_cur, _song, _pref, _dislike, _fit, _dc, _ok and _hint are scratch for the set labels.
+*create rj_perf_stage "none"
+*create rj_perf_week 0
+*create rj_perf_venue 1
+*create rj_perf_where "middle_ward"
+*create rj_perf_until 0
+*create rj_perf_place ""
+*create rj_perf_done_week 0
+*create rj_perf_cur 1
+*create rj_perf_song 1
+*create rj_perf_pref 1
+*create rj_perf_dislike 2
+*create rj_perf_fit 2
+*create rj_perf_dc 12
+*create rj_perf_ok true
+*create rj_perf_hint ""
+*create rj_perf_good1 false
+*create rj_perf_good2 false
+*create rj_perf_good3 false
+*comment Timbermouth (scenes/timbermouth/, a placeholder town): timbermouth_seen is the first permanent-hub visit (it unlocks the lorebook entry); tm_<place>_seen is the first visit to each of
+*comment the five places (the Market, the General Store, the Workshops, the Factor's Hall and the Split Pine; the Sawmill is scenery only, with no place file). tm_ok_* are the open-or-closed answers of the town's hours, set by timbermouth.txt tm_hours (derived every time, never saved state); tm_which names the
+*comment place a closure page is for.
+*create timbermouth_seen false
+*create tm_market_seen false
+*create tm_works_seen false
+*create tm_hall_seen false
+*create tm_inn_seen false
+*comment Barleycross (scenes/timbermouth/barleycross/, the farming village off Timbermouth): bc_seen is the first arrival, bc_head_seen the one-time meeting with the village head at the Gathering Hall, bc_lane_seen and bc_pasture_seen the first visits to those places.
+*create bc_seen false
+*create bc_head_seen false
+*create bc_lane_seen false
+*create bc_pasture_seen false
+*comment bc_loft_paid: the player has paid a household one copper for a hayloft bed (The Lane) and has not yet slept in it; bc_loft_seen keeps the household's first spoken exchange from repeating.
+*create bc_loft_paid false
+*create bc_loft_seen false
+*comment Ashrun Holt (scenes/timbermouth/ashrun_holt/, the forest village): ah_seen is the first arrival, ah_speaker_seen the one-time meeting with the speaker Lysa Thorn in the Longhouse, and ah_inn_seen keeps the Ashrun House's first welcome from repeating. A paid room lasts until the same clock time tomorrow.
+*create ah_seen false
+*create ah_speaker_seen false
+*create ah_inn_seen false
+*create ah_inn_room_active false
+*create ah_inn_room_until 0
+*create ah_inn_rate_copper 2
+*comment Ashrun Holt work yards: one paid shift per day, whether it is taken at the Log Yard or Charcoal Ground. The award lock makes the payout and any fatigue cost refresh-safe.
+*create ah_work_last_shift_day 0
+*create ah_work_shifts_completed 0
+*create ah_work_award_locked false
+*create locked_ah_work_award_page_id 0
+*comment Roan's Wheel Shop (timbermouth/workshops.txt): tm_roan_seen is the player has met Edda (her one-time introduction), tm_works_talk_ash her one talk answer, tm_works_has_sale whether the player owns anything she buys (set by the shop page each time it opens).
+*create tm_roan_seen false
+*comment Marlow's General Store (timbermouth/general_store.txt): tm_store_seen is the first visit, tm_marlow_seen the one-time introduction, tm_store_has_sale whether the player owns anything he buys.
+*create tm_store_seen false
+*create tm_marlow_seen false
+*create tm_store_has_sale false
+*create tm_works_talk_ash false
+*create tm_works_has_sale false
+*comment tm_watch_seen: the player has been through the watch post at the road end of Timbermouth (timbermouth.txt tm_arrive), which gives the one-time introduction.
+*create tm_watch_seen false
+*comment Marlcross (scenes/port_valen/marlcross/, the grain and carting village on the eastern high ground): mc_seen is the first arrival; each mc_<place>_seen flag keeps its place's first introduction from repeating. The working mill, storehouses and wainwright's yard remain Layer 1 scenery until they have gameplay to support.
+*create mc_seen false
+*create mc_hall_seen false
+*create mc_sella_met false
+*create mc_market_seen false
+*create mc_rest_seen false
+*comment The Wayfarer's Rest (port_valen/marlcross/wayfarers_rest.txt): a room costs mc_rest_rate_copper for 24 hours. Its stable yard is scenery; calendar.txt charges automatic village horse upkeep overnight.
+*create mc_rest_rate_copper 3
+*create mc_rest_room_until 0
+*create mc_rest_room_active false
+*comment Brinewick (scenes/port_valen/brinewick/, the salt-working village on the western tidal flats): bw_seen is the first arrival and bw_<place>_seen records the first visit to each of its three public places. The Tide House is civic, the Saltworks is the future trade anchor, and the Reedhouse is the village inn.
+*create bw_seen false
+*create bw_tide_house_seen false
+*create bw_saltworks_seen false
+*create bw_reedhouse_seen false
+*create bw_reedhouse_rate_copper 3
+*create bw_reedhouse_room_until 0
+*create bw_reedhouse_room_active false
+*comment The Reedhouse daughter: this Brinewick quest appears only after a prior meeting with Nessa and after day 30. Its free room is a claim, so it never overwrites a paid room; the promised wedding has its own date rather than competing with the generic settlement wedding.
+*create bw_daughter_quest_stage "unstarted"
+*create bw_daughter_resolution ""
+*create bw_daughter_completed false
+*create bw_daughter_room_gift false
+*create bw_daughter_wedding_day 0
+*create bw_daughter_wedding_seen false
+*create bw_daughter_aftermath_discussed false
+*comment Redvein (scenes/alderford/redvein/, Alderford's eastern mining village): rv_seen is the first arrival; each rv_<place>_seen flag keeps its public place's first introduction from repeating. The Eastcut is the future ore-trade hook, while the Gather House and Red Lantern provide the civic and lodging faces.
+*create rv_seen false
+*create rv_eastcut_seen false
+*create rv_hall_seen false
+*create rv_lantern_seen false
+*create rv_lantern_rate_copper 3
+*create rv_lantern_room_until 0
+*create rv_lantern_room_active false
+*comment Whitefold (scenes/alderford/whitefold/, the Coldspine limestone-and-wool village): wf_seen is the first arrival; the Quarry Yard, Fleecefold and White Ram are its stone, wool and lodging faces.
+*create wf_seen false
+*create wf_yard_seen false
+*create wf_yard_asked_stone false
+*create wf_yard_asked_road false
+*create wf_fold_seen false
+*create wf_fold_asked_wool false
+*create wf_fold_asked_weather false
+*create wf_common_seen false
+*create wf_common_asked_rule false
+*create wf_common_asked_alderford false
+*create wf_ram_seen false
+*create wf_ram_rate_copper 3
+*create wf_ram_room_until 0
+*create wf_ram_room_active false
+*comment Alderford (scenes/alderford/): alderford_seen records the first permanent-hub visit (codex_alderford unlocks the town's parent lore entry); af_arrival_seen keeps the High Grey Road arrival introduction from repeating. Individual places and their hours will add their own af_<place> flags as they are built.
+*create alderford_seen false
+*create af_arrival_seen false
+*comment The Factor's Hall (alderford/factors_hall.txt): af_hall_seen records the reusable hall's first visit; af_ok_hall and af_hall_closed_reason are derived by the Alderford hub every time it prints its menu. The two talk flags keep Orlov's optional local answers from repeating.
+*create af_hall_seen false
+*create af_ok_hall false
+*create af_hall_closed_reason ""
+*create af_hall_asked_trade false
+*create af_hall_asked_river false
+*comment The Lower Wharf Market (alderford/lower_wharf_market.txt): Alderford's unified bulk
+*comment market. Its commodity courts are narrative hooks for the future trade simulation, not
+*comment separate shops or a price system yet.
+*create af_market_seen false
+*create af_ok_market false
+*create af_market_closed_reason ""
+*comment Pell's Stores (alderford/lower_wharf_market.txt): a working general-goods counter inside the Lower Wharf Market. af_store_seen unlocks its codex entries; af_nessa_seen keeps her first introduction from repeating; af_store_has_sale is refreshed when its trade panel opens.
+*create af_store_seen false
+*create af_nessa_seen false
+*create af_store_has_sale false
+*comment The Timber Smithy (alderford/timber_smithy.txt): the permanent continuation of Torvald and Janna's prologue forge. The people flags come from that sequence; these flags only control this location's first view and optional repeat conversations. af_ok_smith and its closure reason are derived by alderford.txt af_hours.
+*create af_smith_seen false
+*create af_ok_smith false
+*create af_smith_closed_reason ""
+*create af_smith_talk_torvald false
+*create af_smith_talk_janna false
+*create af_smith_janna_checkin false
+*create af_market_talk_bran false
+*create af_chapel_seen false
+*create af_chapel_healed_day 0
+*create af_chapel_vigil_day 0
+*create af_chapel_talk_corbel false
+*comment Janna's relationship continuation uses the same numeric bond model as Lyra. Her prologue romance seeds the bond at 10; the alcove has one meaningful evening per campaign week, and later reuses the established intimacy sequence through janna_intimacy_return.
+*create af_janna_after_hours_seen false
+*create janna_first_private_tone ""
+*create janna_bond_seeded false
+*create janna_bond_week 0
+*create janna_intimacy_unlocked false
+*create janna_intimacy_return ""
+*create janna_intimacy_tone ""
+*create janna_bond_award_locked false
+*create locked_janna_bond_page_id 0
+*comment Talia's Curing Loft (alderford/talia_loft.txt): Talia's prologue intimacy now marks the
+*comment relationship explicitly. Older saves can infer it from the provisions received afterward.
+*comment Her permanent route begins with a private return visit and one meaningful evening each week.
+*comment At 20 Bond, mutual interest is named outright and a once-weekly overnight route becomes available.
+*create talia_romanced false
+*create af_talia_after_hours_seen false
+*create talia_first_private_tone ""
+*create talia_bond_seeded false
+*create talia_bond_week 0
+*create talia_intimacy_unlocked false
+*create talia_intimacy_tone ""
+*create talia_bond_award_locked false
+*create locked_talia_bond_page_id 0
+*comment The Drowned Oar (alderford/drowned_oar.txt): Maura's lower-wharf taphouse has its own 24-hour room key. af_oar_seen is only the permanent-town visit flag; the older prologue flags preserve whether the player already knows Maura and the cellar story.
+*create af_oar_seen false
+*create af_oar_rate_copper 4
+*create af_oar_room_until 0
+*create af_oar_room_active false
+*comment The Split Pine (timbermouth/split_pine_inn.txt): a room costs tm_inn_rate_copper for 24 hours (one under the Wagoner's Rest); tm_inn_room_until is the minute the room runs out (as mw_inn_room_until);
+*comment tm_inn_room_active is the key in the player's hand; the two talk flags are Ressa's one-time answers.
+*create tm_inn_rate_copper 4
+*create tm_inn_room_until 0
+*create tm_inn_room_active false
+*create tm_inn_talk_brother false
+*create tm_ok_market false
+*create tm_ok_store false
+*create tm_ok_works false
+*create tm_ok_hall false
+*create tm_which "market"
+*comment The overworld (scenes/overworld/overworld.txt, tiles and roads in overworld-data.js). ow_on is set while the player is on the overworld page (the map panel shows only then);
+*comment ow_pos is the tile they stand on and ow_dest the tile they picked on the map: the panel writes ow_dest and presses the one "Travel" option, and ow_travel checks it against the
+*comment data. ow_trip_ok, ow_from, ow_miles, ow_minutes, ow_text and the *_name values are stored by the journey page under the ow_trip_locked page lock (a replay reads them back).
+*create ow_on false
+*create ow_pos "pv"
+*create ow_dest "pv"
+*create ow_trip_ok false
+*create ow_from "pv"
+*create ow_miles 0
+*create ow_minutes 0
+*create ow_text ""
+*create ow_name ""
+*create ow_here_text ""
+*create ow_from_name ""
+*create ow_dest_name ""
+*create ow_trip_locked false
+*comment Road events (overworld.txt ow_travel and ow_event, travel_events.txt): ow_event_id is the event the journey met ("none" when it met nothing), ow_goal the tile the interrupted trip was bound for ("none" when
+*comment the trip was not interrupted), ow_event_last_day the campaign day of the last one (the cooldown; 0 means none yet), ow_event_force an event id a test or the developer menu wants next.
+*comment A journey is walked mile by mile on one page. ow_trip_active is true while it is, and tells update_hub_condition to leave its level-up and weather refresh for the map page; exposure_gear_cached
+*comment and exposure_gear_cut* hold the worn gear's cuts for the whole walk (calendar.txt exposure_gear_prime); buff_count_now is scratch for advance_time's buff check.
+*create ow_trip_active false
+*create ow_step_halt false
+*create exposure_gear_cached false
+*create exposure_gear_cutc 0
+*create exposure_gear_cutw 0
+*create exposure_gear_cuth 0
+*create buff_count_now 0
+*create ow_event_seed 0
+*comment A road event's person and variety (travel_events.txt te_person): te_variant 0 to 2 picks one of the event's small variations, te_extra 0 to 4 varies the thanks, te_means is what the player can do about it
+*comment (their own light, flint, a cantrip, darkvision), te_sub/te_sub_cap/te_obj/te_pos are the stranger's pronouns, te_dc and te_ok are the check, te_pay the coppers the stranger presses on the player.
+*create te_first ""
+*create te_look ""
+*create te_look_mid ""
+*create te_sub "he"
+*create te_sub_cap "He"
+*create te_obj "him"
+*create te_pos "his"
+*create te_variant 0
+*create te_extra 0
+*create te_means "none"
+*create te_dc 11
+*create te_ok false
+*create te_pay 0
+*create te_pay_text ""
+*comment The two fighting road events (travel_events.txt te_bandits and te_night_beasts): te_foe1 and te_foe2 are the library types of the two robbers, te_arm1 and te_arm2 what they carry, te_cover where the first
+*comment stepped out from, te_kind and te_danger the tile's kind and effective danger, te_beast which creature the night brought, te_flat the bonus a light or flame gives a check, te_lost and te_loot the coppers
+*comment taken from or found by the player.
+*comment The animal in the trap and the lost traveller: te_creature, te_creature_cap, te_hold and te_notice describe the animal, te_swa_hint is what Speak with Animals would cost, te_town is the nearest settlement, te_mend
+*comment is true when a known Mending cantrip does the work (the stranded cart).
+*comment A camp event (travel_events.txt te_share_fire, planned by overworld.txt ow_camp_pre): te_company is "host" (the player shared their fire), "guest" (they shared a stranger's) or "none", ow_camp_fire_shared makes
+*comment the night's cold count as a fire's (calendar.txt calc_exposure), te_fire is whether the player can light one, te_dark names the hour for the prose. ow_here clears ow_camp_fire_shared; te_company is set by the event or by ow_camp_pre and only READ by ow_camp, so a replay of the camp page prints the same morning. ow_campev_* is the plan's page lock.
+*create te_company "none"
+*create ow_camp_fire_shared false
+*create te_fire false
+*create te_dark "dark"
+*create ow_campev_locked false
+*create locked_ow_campev_page_id 0
+*comment The ford (travel_events.txt te_ford): te_level is how high the water is ("low", "normal", "high"), stored under te_level_locked's page lock; te_wait_mins is the three hours the player may wait out; te_wet
+*comment doubles the exposure of the hour after a bad crossing (te_clock); te_hurt is the hit points the river took (1 to 3).
+*create te_level "normal"
+*create te_level_locked false
+*create locked_te_level_page_id 0
+*create te_wait_mins 0
+*create te_wet false
+*create te_hurt 0
+*comment The first mount (timbermouth/barleycross/pasture.txt, the horse): has_horse is true while the player owns one; horse_* is the one they own (name, coat, mare or gelding, and its pronouns); horse_place is where the dealer scene was entered ("bc" the Barleycross rail, "mw" the Port Valen stable yard); pen_* and sel_* are the
+*comment horse in the pen and the person selling it, rebuilt from horse_seed (the five-day block) each visit; horse_price is in copper (300, or 270 after a successful bargain), horse_haggled is true once the player tries.
+*comment The stable's bill (calendar.txt horse_upkeep): horse_rate is the copper a day where the horse is stabled (1 in a village, 2 otherwise), horse_owed what is due and not yet paid, horse_unpaid_days how many days
+*comment it has gone unpaid (the third keeps the horse), horse_kept_name and horse_kept_day say which horse the stable kept and when, for the hub header.
+*create has_horse false
+*create horse_place "bc"
+*create horse_rate 2
+*create horse_owed 0
+*create horse_unpaid_days 0
+*create horse_kept_name ""
+*create horse_kept_day 0
+*create horse_name ""
+*create horse_coat ""
+*create horse_sex "mare"
+*create horse_sub "she"
+*create horse_sub_cap "She"
+*create horse_obj "her"
+*create horse_pos "her"
+*create pen_name ""
+*create pen_coat ""
+*create pen_sex "mare"
+*create pen_sub "she"
+*create pen_sub_cap "She"
+*create pen_obj "her"
+*create pen_pos "her"
+*create pen_temper 0
+*create sel_first ""
+*create sel_look ""
+*create sel_sub "she"
+*create sel_sub_cap "She"
+*create sel_pos "her"
+*create horse_seed 7000
+*create horse_price 300
+*create horse_price_silver 30
+*create horse_haggled false
+*create bc_horse_locked false
+*create locked_bc_horse_page_id 0
+*create te_creature ""
+*create te_creature_cap ""
+*create te_hold ""
+*create te_notice ""
+*create te_swa_hint ""
+*create te_town ""
+*create te_mend false
+*create te_foe1 "maceman"
+*create te_foe2 "slinger"
+*create te_arm1 ""
+*create te_arm2 ""
+*create te_cover ""
+*create te_kind "road"
+*create te_danger 0
+*create te_beast "wolves"
+*create te_flat 0
+*create te_lost 0
+*create te_lost_text ""
+*create te_loot 0
+*create te_drop1 ""
+*create te_drop2 ""
+*create te_drop1_name ""
+*create te_drop2_name ""
+*create te_loot_text ""
+*create ow_event_id "none"
+*create ow_goal "none"
+*create ow_event_last_day 0
+*create ow_event_force ""
+*create locked_ow_trip_page_id 0
+*comment A journey is walked mile by mile inside its road legs (ow_legs, ow_leg_i and ow_leg_mile_i), so its pace can change at dusk, night and dawn. ow_night_stops/ow_night_wait_mins record forced roadside halts when darkness has no usable light or visibility is poor; ow_rations_total counts food over the whole trip. ow_exposure_pct is what the weather and the gear add to hunger and fatigue right now, kept for the map card. ow_can_camp is set on every overworld page
+*comment (not in a town). The camp page has its own page lock (ow_camp_locked) and keeps ow_camp_wet, whether it was raining when the player lay down, for its prose.
+*create ow_legs 0
+*create ow_leg_i 0
+*create ow_leg_minutes 0
+*create ow_leg_miles 0
+*comment The terrain pace of the leg being walked, as a percent of a road mile (100 road, 200 pathless forest): set per leg by overworld.txt, read per mile by calendar.txt travel_step.
+*create ow_leg_pace 100
+*create ow_leg_mile_i 0
+*create ow_rations_total 0
+*create ow_has_night_light false
+*create ow_night_stops 0
+*create ow_night_wait_mins 0
+*create ow_night_halt_reason "light"
+*create ow_exposure_pct 0
+*create ow_can_camp false
+*comment ow_water: the tile has fresh water (a stream, river or shore), set by ow_here and read by equipment.txt water_at_hand. The tile's climate goes into climate_shift (calendar.txt) the same way.
+*create ow_water false
+*comment Camping: ow_camp_mode is "night" (a fixed 8 hours) or "dawn" (until 06:00, offered only when dawn is 6 to 12 hours away, so ow_dawn_ok and ow_dawn_hours are set by ow_here from the clock); ow_camp_minutes is how long this camp sleeps, stored under the camp page lock.
+*create ow_camp_mode "night"
+*create ow_camp_minutes 480
+*create ow_dawn_ok false
+*create ow_dawn_hours 0
+*create ow_camp_ok false
+*create ow_camp_wet false
+*create ow_camp_locked false
+*create locked_ow_camp_page_id 0
+*comment The Hall insignia (sold at the Seals window, port_valen_civic_heights.txt). hall_insignia_rank is "none" until bought, then "open".
+*create has_hall_insignia false
+*create hall_insignia_rank "none"
+*comment Civic Heights: the Gilded Scales head house. ch_head_named is reading the lettering over its doors (until then the plaza
+*comment prose and button leave it unnamed); ch_head_seen is entering the counting floor (meets Teller
+*comment Quillon), ch_head_writ_seen is reaching the Writs window (meets Registrar Ashe); the *_talk flags record
+*comment their answers (lorebook echoes them). ch_bank_last_desc and ch_credit_withdraw_amount are working values
+*comment for the banking window (ch_credit_deposit_amount is shared with Alderford's vault).
+*comment Harbor Quayside, the Weigh House (see the block in port_valen.txt). wh_named is reading the lettering over its
+*comment doors (the hub button stays unnamed until then), wh_seen is going inside (meets Weighmaster Farrow), and the
+*comment *_talk flags record his answers (the lorebook echoes them).
+*create wh_named false
+*create wh_seen false
+*create wh_floor_talk false
+*create wh_slate_talk false
+*create wh_hull_talk false
+*create wh_origin_talk false
+*comment Civic Heights, the Port Watch headquarters (see the block in port_valen_civic_heights.txt). pw_seen is passing the
+*comment gate; pw_captain_seen and pw_desk_seen meet Captain Brask and Sergeant Lund; pw_talk_rounds records his answer
+*comment about the night rounds (the lorebook echoes it).
+*comment Civic Heights, the cathedral (see the block in port_valen_civic_heights.txt): cath_seen is climbing the steps,
+*comment cath_hall_seen is going in, cath_chapel_seen is the Althea chapel. Sister Anwen Pell runs the kettles;
+*comment Deacon Harl Vey keeps the oath desk and may spend one healing rite a day.
+*create cath_seen false
+*create cath_hall_seen false
+*create cath_chapel_seen false
+*create met_sister_anwen false
+*create cath_anwen_kettles_talk false
+*create met_deacon_vey false
+*create cath_vey_prelate_talk false
+*create cath_vey_healed_day 0
+*create pw_seen false
+*create pw_captain_seen false
+*create pw_desk_seen false
+*create pw_talk_rounds false
+*create ch_head_named false
+*create ch_head_seen false
+*create ch_head_writ_seen false
+*create ch_head_contracts_talk false
+*create ch_head_writ_talk false
+*create ch_credit_withdraw_amount 0
+*create ch_bank_last_desc ""
+*comment Patrician Quarter entry writs, bought at the head house. A Day Writ is good on the day it was bought
+*comment (patrician_day_writ_day = campaign_day); a Registered Writ is good through patrician_reg_until (a
+*comment campaign day). The Inner Gate reads both. Prices are silver marks; patrician_reg_price_silver must stay 2
+*comment or more (the text says "Silver Marks"), and the Day Writ label pluralises itself.
+*create patrician_day_writ_day 0
+*create patrician_reg_until 0
+*create patrician_day_price_silver 1
+*create patrician_reg_price_silver 8
+*create patrician_reg_days 30
+*comment Patrician Quarter first-visit triggers (lorebook) and one-shot talks. pq_inside_seen is passing the Inner
+*comment Gate with a writ; pq_estates_seen is walking the Avenue of Estates, which names all three great
+*comment houses to everyone and so unlocks their three entries; the pq_seen_* flags are studying each house's
+*comment gate up close and only add that house's porter's-window detail. pq_ostrand_gap_spotted is the
+*comment wisdom-13/outlaw tell about House Ostrand's unwatched side gate: printed once only, because it is a
+*comment fact about the world rather than a perception, and the lorebook entry echoes it. pq_tailor_named is
+*comment reading the tailor's door card, which names the shop and its master (the avenue button stays unnamed
+*comment until then); the lorebook entries stay keyed to pq_tailor_seen, since the codex describes the inside.
+*create pq_inside_seen false
+*create pq_estates_seen false
+*create pq_ostrand_gap_spotted false
+*create pq_gate_seen false
+*create pq_gate_talk_guards false
+*create pq_gate_talk_book false
+*create pq_walk_seen false
+*create pq_seen_halloran false
+*create pq_seen_vantry false
+*create pq_seen_ostrand false
+*create pq_tailor_seen false
+*create pq_tailor_named false
+*create pq_tailor_talk_clients false
+*comment Fenwick has spoken of the fine work under the skylight (the second stitch): the lorebook entries add a paragraph once this is set.
+*create pq_tailor_talk_fine false
+*comment The Ink & Lamp: name from the shutter card, codex from entering, and one scrollwork conversation.
+*create pq_ink_lamp_seen false
+*create pq_ink_lamp_named false
+*create pq_ink_lamp_talk_scrolls false
+*comment The Bright Setting: name from its door card, codex from entering, and one first conversation about Cassia's appraisal work.
+*create pq_bright_setting_seen false
+*create pq_bright_setting_named false
+*create pq_bright_setting_talk_appraisal false
+*create keel_dice_bankroll 40
+*create keel_dice_bankroll_max 40

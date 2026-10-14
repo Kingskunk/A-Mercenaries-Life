@@ -1,0 +1,166 @@
+*comment Armor proficiency (equipment.txt armor_prof_check / recalculate_proficiency). armor_tier is derived from
+*comment armor_type; armor_nonprof is true while the worn armor is one the class is not trained in, which
+*comment costs disadvantage on STR and DEX rolls (roll_d20_check). apc_ok is the routine's output.
+*create armor_tier "none"
+*create armor_nonprof false
+*create apc_ok false
+*comment Shield proficiency: shield_nonprof is true while an equipped shield is one the class is not trained in.
+*comment A shield the character STARTED with is grandfathered (shield_grandfathered, snapshotted at loadout
+*comment init), like the starting armor, because the muster shield is picked by origin before class.
+*create shield_nonprof false
+*create shield_grandfathered false
+*comment Selling (equipment.txt gear_sale_value / sell_gear). scrap_steel counts pieces looted from
+*comment the Dredge-End ambush, sold to Halda by weight. sell_item_id is what the shop menu picked;
+*comment gear_sale_* are the price outputs and gear_sold_note is a line about what the player fell
+*comment back to when they sold something worn. All three stay set after the sale so a replayed
+*comment page prints the same banner.
+*create scrap_steel 0
+*comment Ingredients (2026-10-02, the dungeon's harvesting, dungeon.txt dg_harvest): counted salvage like scrap_steel, sold to Ambrose by the piece (catalog herbalistPiece).
+*create frog_slime 0
+*create centipede_gland 0
+*create viper_venom 0
+*create grave_ichor 0
+*comment The gear table (equipment.txt gear_info) and its outputs. An item's ownership flag is always
+*comment has_<id>, so the shared buy and sell routines reach it through gear_flag_var instead of a branch.
+*create gear_id ""
+*create gear_pct_smith 0
+*create gear_pct_pawn 0
+*create gear_pct_general 0
+*create gear_pct_tailor 0
+*create gear_pct_jeweler 0
+*create gear_fixed_pawn 0
+*create gear_piece_smith 0
+*create gear_piece_herbalist 0
+*create gear_count_var ""
+*create gear_warn ""
+*create gear_quote ""
+*create gear_shop ""
+*create gear_name ""
+*create gear_retail 0
+*create gear_kind ""
+*comment gear_group: a finer trade grouping for items that share a broad kind, such as finished jewelry among valuables.
+*create gear_group ""
+*comment gear_slot: the equipment slot the item fills, as the player reads it ("Cloak", "Hands", "Weapon, one-handed"), or "" for a tool or consumable.
+*create gear_slot ""
+*create gear_tier ""
+*create gear_hint ""
+*create gear_blurb ""
+*create gear_minutes 10
+*create gear_flag_var ""
+*create gear_label ""
+*create gear_grant_note ""
+*create buy_item_id ""
+*create dredge_ambush_salvage 0
+*create dredge_ambush_drop ""
+*create dredge_ambush_bruiser ""
+*create dredge_ambush_drop_name ""
+*create sell_item_id ""
+*create gear_sale_copper 0
+*create gear_sale_desc ""
+*create gear_sale_name ""
+*create gear_sold_note ""
+*comment Stacking: has_<id> means "at least one"; spare_<id> counts the copies beyond the first (created for every
+*comment stackable catalog item). gear_qty / gear_stack / gear_spare_var are gear_count and gear_info outputs.
+*comment garment_traits outputs (equipment.txt): percent cuts to the cold, wet and heat parts of outdoor exposure, an
+*comment ability-score bonus, and the menu hint. origin_clothing outputs: the origin's own piece for a slot. sg_slot_var
+*comment is sell_gear's scratch name of a worn slot's id variable.
+*create garment_cold 0
+*create garment_wet 0
+*create garment_heat 0
+*create garment_stat "none"
+*create garment_bonus 0
+*create garment_hint ""
+*create origin_clothing_id "none"
+*create origin_clothing_name "nothing"
+*create sg_slot_var ""
+*create gear_stack false
+*create gear_qty 0
+*create gear_spare_var ""
+*create gear_unit_copper 0
+*comment The percent added to what a buyer pays the player (2026-10-11): worked out by equipment.txt sell_bonus_percent every time a sale price is quoted, so it is always current, and read by the trade panel (trade.js) so the panel
+*comment and the menus agree. Today it is 5% per point of Charisma modifier (a boon counts, since cha_mod does); a later source (a reputation, a perk, a ring) is one more line in that label, and nothing else changes.
+*create sell_bonus_pct 0
+*create gear_warning ""
+*comment Consumables (equipment.txt use_consumable). gear_effect is "heal", "boon", "wash" or "dressing"; the gear_eff_* and gear_heal_*
+*comment fields describe it. use_item_id / use_in_combat are the inputs, use_result ("ok" | "full" | "limit" | "none"),
+*comment use_text and use_banner the outputs (kept set so a replayed page prints the same result).
+*create gear_title ""
+*create gear_effect ""
+*create gear_use_text ""
+*create gear_use_verb "Use"
+*create gear_combat false
+*create gear_eff_summary ""
+*create gear_heal_n 0
+*create gear_heal_sides 0
+*create gear_heal_bonus 0
+*create gear_eff_name ""
+*create gear_eff_desc ""
+*create gear_eff_stat ""
+*create gear_eff_bonus 0
+*create gear_eff_minutes 0
+*create use_item_id ""
+*comment The inventory panel sets these before it opens choicescript_stats codex_equip_do (an equip that changes ability scores).
+*create equip_slot ""
+*create equip_item_id ""
+*comment attune_action: "attune" or "break", set by the inventory panel before it runs choicescript_stats codex_attune_do.
+*create attune_action ""
+*create use_in_combat false
+*create use_result ""
+*create use_text ""
+*create use_banner ""
+*create use_locked false
+*create locked_use_page_id 0
+*comment true from fight_setup until the fight ends; the dossier refuses to open the satchel mid-fight.
+*create combat_engaged false
+*comment The trade panel (web/mygame/trade.js). shop_open names the trade a page offers ("" when none) and shop_rows
+*comment lists the live buy rows as "id~warning|". The panel writes cart_buy_<id> / cart_sell_<id>, and equipment.txt
+*comment shop_begin .. shop_check runs the trade. The remaining shop_* variables are that routine's totals and receipt.
+*create shop_open ""
+*comment The Gilt Needle: which rack the shopper stood at, and whether the shop is open this hour (pq_tailor_open_check).
+*create pq_tailor_back "stock"
+*create pq_tailor_open true
+*create shop_rows ""
+*create shop_mode ""
+*create shop_buyer ""
+*create shop_cart_var ""
+*create shop_verdict ""
+*create shop_tot_cost 0
+*create shop_tot_credit 0
+*create shop_tot_minutes 0
+*create shop_tot_bought 0
+*create shop_tot_sold 0
+*create shop_recv ""
+*create shop_sold_list ""
+*create shop_quote_line ""
+*create shop_note_line ""
+*create shop_fit false
+*create shop_cost_desc ""
+*create shop_credit_desc ""
+*create has_talia_provisions false
+*create has_talia_oiled_cloak false
+*create discussed_talia_craft false
+*create discussed_talia_exemption false
+*create discussed_talia_nerve false
+*create has_talia_deck_boots false
+*comment Rorik's camp gifts have no ownership flag of their own; equipment.txt equip_hands and equip_waist set these when the piece is first swapped out.
+*create has_rorik_grip_wraps false
+*create has_rorik_campaign_belt false
+*create has_toll_seal_ring false
+*create has_althea_votive_ring false
+*comment The Night-Eye Ring (2026-10-02): found in the Silt-Gate Vault, once ever. Worn in a ring slot, it lets the wearer see in the dark (character_progression.txt refresh_invocations).
+*create has_night_eye_ring false
+*create intimate_encounters 0
+*comment Widow Corve's: daily companion roster and encounter state
+*create corve_roster_day 0
+*create corve_roster_id 1
+*create met_corve_sable false
+*create met_corve_brinna false
+*comment lorebook echoes for the two backstory questions each companion offers
+*create sable_talk_1 false
+*create sable_talk_2 false
+*create brinna_talk_1 false
+*create brinna_talk_2 false
+*create corve_approach_name "none"
+*create corve_stay_overnight false
+
+

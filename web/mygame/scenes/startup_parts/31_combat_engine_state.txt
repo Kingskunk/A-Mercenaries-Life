@@ -1,0 +1,2321 @@
+*comment --- COMBAT ENGINE STATE (combat.txt) ---
+*create combat_enemy_name "none"
+*create combat_enemy_hp 0
+*create combat_enemy_max_hp 0
+*create combat_enemy_ac 10
+*create combat_enemy_atk_bonus 0
+*create combat_enemy_dmg_dice_sides 4
+*create combat_enemy_dmg_bonus 0
+*comment Flat proficiency bonus (2026-09-27, renamed from combat_enemy_prof_bonus 2026-09-28 when the ally type
+*comment library started sharing the same derived-stat pipeline), read by combat.txt's apply_derived_combat_bonuses
+*comment for both the enemy AND ally type libraries -- every type in either library so far is early, low-tier
+*comment content, same tier the player starts at, so there's no per-type/tier value yet. A tougher named enemy
+*comment can still use atk_override.
+*create combat_lib_prof_bonus 2
+*comment Damage-type scratch (mirrors atk_bonus/dmg_dice_sides/dmg_bonus's
+*comment own scratch-then-per-slot-storage shape, see the comment block just
+*comment below). combat_enemy_dmg_type defaults "bludgeoning" -- every
+*comment existing enemy is unaffected until a fight/type deliberately sets it
+*comment to something else. combat_player_dmg_type is set by combat.txt's own
+*comment attack/spell *choice options (or hardcoded inside a spell's own
+*comment resolve_* primitive when that spell always deals one fixed type, e.g.
+*comment Magic Missile). combat_enemy_resist_type_1/_2 and _vulnerable_type_1/
+*comment _2 are this ENEMY's own resistances (set by apply_enemy_type or a
+*comment fight_<name> label, mirroring player_resist_type_1/_2's shape) --
+*comment see apply_outgoing_damage_resist_vuln.
+*create combat_enemy_dmg_type "bludgeoning"
+*comment Optional second damage packet. 0 dice sides means no packet; when populated, the packet is rolled and
+*comment resisted/vulnerable independently from the primary attack (e.g. 1d4+2 piercing + 1d2+3 poison).
+*create combat_enemy_extra_dmg_dice_sides 0
+*create combat_enemy_extra_dmg_bonus 0
+*create combat_enemy_extra_dmg_type "poison"
+*create combat_enemy_size "medium"
+*comment "melee"/"ranged" (2026-09-27, added alongside the enemy-vs-ally narration generalization below) --
+*comment mirrors combat_allyN_weapon_type's shape, set by every apply_enemy_type branch (never left to a
+*comment default that could leak an earlier fight's "ranged" onto a melee type in the same slot).
+*create combat_enemy_weapon_type "melee"
+*comment Shared behavior profile (combat.txt): the type library assigns one reusable personality -- bruiser,
+*comment skirmisher, sharpshooter, guardian, or feral -- and the shared profile resolver derives chase and retreat
+*comment policy from it. This is the active-slot scratch copy of combat_enemy<N>_behavior_profile.
+*create combat_enemy_behavior_profile "feral"
+*create combat_behavior_chase_chance 0
+*create combat_behavior_can_retreat false
+*create combat_behavior_flee_hp_pct 0
+*comment Terrain-policy outputs of resolve_behavior_profile (combat_types.txt). These are weights, not hard-coded
+*comment monster behaviours: 0 means the profile makes no deliberate terrain choice; higher values only matter when
+*comment combat_ai's shared destination scorer is asked to compare otherwise legal positions.
+*create combat_behavior_seek_cover 0
+*create combat_behavior_seek_high_ground 0
+*create combat_behavior_hold_chokepoint 0
+*create combat_behavior_avoid_difficult_terrain 0
+*create combat_behavior_avoid_melee_threat 0
+*comment Scratch outputs of combat_score_terrain_destination (combat_ai.txt). Phase 1 only supplies this common
+*comment evaluator; a later movement-intent pass will use the score to choose among legal one-step destinations.
+*create combat_ai_terrain_score 0
+*create combat_ai_terrain_reason "none"
+*comment Output of combat_choose_terrain_step (combat_ai.txt). A direction is relative to the actor's current
+*comment target ("toward" / "away" / "none"); hold_position means its present terrain already beats every legal
+*comment pursuit-compatible step. The combat controller remains the sole authority that actually moves the actor.
+*create combat_ai_terrain_step_direction "none"
+*create combat_ai_terrain_step_reason "none"
+*create combat_ai_terrain_step_destination 0
+*create combat_ai_terrain_hold_position false
+*create combat_ai_terrain_destination_legal false
+*create combat_ai_melee_threat_level 0
+*create combat_ai_melee_threat_position 0
+*comment Sidearm (2026-09-29, Ranged-AI Position Awareness plan §4.1): a cornered ranged type's one-off melee
+*comment fallback -- see combat_enemyN_sidearm_weapon_type's own comment (its first real *create, slot 1 below)
+*comment for the full rule. Bare/active-target copy, synced in by fight_sync_target_in like every field above it.
+*create combat_enemy_sidearm_weapon_type ""
+*create combat_enemy_sidearm_atk_bonus 0
+*create combat_enemy_sidearm_dmg_dice_sides 4
+*create combat_enemy_sidearm_dmg_bonus 0
+*create combat_enemy_sidearm_dmg_type "piercing"
+*comment Commit-and-chase (2026-09-29, Ranged-AI Position Awareness plan §11.3/6a): bare/active-target copy of
+*comment this slot's chase state, synced in by fight_sync_target_in like every field above. See
+*comment combat_enemy1_chase_target's own comment (first real *create, below) for the full rule.
+*create combat_enemy_chase_target 0
+*create combat_enemy_chase_range 0
+*create combat_enemy_chase_roll_done false
+*create combat_enemy_chase_hp_snapshot 0
+*comment Per-type tunability (2026-09-29, on request): the commit roll's own odds (0-100, "0 means never" --
+*comment same convention as combat_enemy_move2_chance) used to be a bare 33 inside roll_enemy_chase_commit
+*comment itself. Made a per-type field, set by apply_type_<name>, so a tactical humanoid type (swordsman, guard,
+*comment ...) can break formation to chase a squishy target while a mindless creature type (lacedon, mire_rat,
+*comment beast) simply never does -- the type never sets this field, so it stays at the *create default below and
+*comment the roll can never succeed (*rand always returns >= 1). See RANGED_AI_PLAN.md's Phase 4 retrofit note.
+*create combat_enemy_chase_chance 0
+*comment Retreat (2026-09-29, plan §4.5/Phase 5): per-type opt-in, same "must be set explicitly" shape as
+*comment chase_chance right above -- a cornered ranged type only retreats if its own type set this true.
+*comment Archer/slinger (the only ranged types today, both tactical humanoids) set it; a future non-tactical
+*comment ranged creature simply wouldn't, and would fall back to row 2's quick-draw instead (or nothing, if it
+*comment has no sidearm either) whenever a melee ally would otherwise have been its excuse to fall back.
+*create combat_enemy_can_retreat false
+*comment Disengage (2026-09-29, plan §4.6/§4.7/Phase 6): the wounded threshold that splits row 3 (Retreat) from
+*comment row 4 (Disengage) -- both share combat_enemy_can_retreat as their gate (a type tactically capable of
+*comment falling back at all is capable of picking the safer variant when hurt), so this field only ever matters
+*comment for a type that already has can_retreat true. 0-100, compared as a percentage of max HP; a type that
+*comment never sets it (default 0) can never actually reach it (HP is never negative), so it silently only ever
+*comment takes row 3 -- "always retreat, never the extra-safe disengage" is a safe, non-broken default for an
+*comment unconfigured type, same "0 means never" shape chase_chance/move2_chance already use.
+*create combat_enemy_flee_hp_pct 0
+*comment Bane (2026-09-27, dormant -- see resolve_cast_bane, combat_spells.txt): the round number this slot's Bane
+*comment penalty expires on (0 = not Baned). This is the "active target" scratch copy, synced in from the
+*comment slot's own combat_enemyN_bane_expires_round by fight_sync_target_in, same as hp/ac/atk_bonus above.
+*create combat_enemy_bane_expires_round 0
+*comment Range/positioning (2026-09-27, groundwork): 0 Engaged, 1 Close, 2 Medium, 3 Far -- the designer's own
+*comment scale, stored as the real number from the start even though only the cheap binary rule (0 vs not-0)
+*comment is wired up yet. 0 is every type's default (matches every fight that exists today -- nothing sets this
+*comment above 0 yet, so this is fully dormant, same as Bane's own groundwork). A melee weapon (player or enemy)
+*comment needs range 0 to land a hit; see the weapon-attack *choice gate and combat_next_turn's enemy branch
+*comment (both combat.txt) for the two sides of that rule. This is the "active target" scratch copy, synced in
+*comment from the slot's own combat_enemyN_range by fight_sync_target_in, same as hp/ac/atk_bonus above.
+*comment combat_opens_engaged: a caller sets this true for a fight that is already hand to hand (see the OPENING DISTANCE note in combat_roll_initiative); fight_cleanup clears it.
+*create combat_opens_engaged false
+*comment combat_multiattack_slot: a caller sets this to an enemy slot number (1 to 6) for a fight in which that enemy makes a second, weaker strike each turn (a smaller die, no special move; combat.txt
+*comment fight_enemy_extra_attack, called after its first attack in both melee branches of the enemy turn). 0 is none. fight_cleanup clears it.
+*create combat_multiattack_slot 0
+*comment Booming Blade (wizard and warlock cantrip, combat.txt): an ACTION that is one melee weapon attack. The hub option sets booming_armed (and booming_side for the sidearm) for that one swing only; a hit (combat_dice.txt resolve_player_weapon_hit) sets combat_enemyN_booming on the
+*comment struck enemy; when that enemy moves of its own accord (fight_booming_trigger, called at each voluntary enemy move in the enemy turn) it takes 1d8 thunder damage and the flag ends, before its attack.
+*comment A forced move (Shove) does not trigger it. combat_boom_killed is the trigger's answer to its caller. fight_cleanup clears the flags.
+*create booming_armed false
+*create booming_side false
+*create combat_boom_killed false
+*comment combat_enemy0_booming is the inert slot-0 placeholder quicktest's branch walk needs (like combat_enemy0_move2_picked); it is never read by a real turn.
+*create combat_enemy0_booming false
+*create combat_enemy1_booming false
+*create combat_enemy2_booming false
+*create combat_enemy3_booming false
+*create combat_enemy4_booming false
+*create combat_enemy5_booming false
+*create combat_enemy6_booming false
+*create combat_enemy_range 0
+*comment Opportunity attacks (2026-09-28), the bare "active target" scratch copy, synced by fight_sync_target_in
+*comment from combat_enemyN_oa_used exactly like the range line above. True means THIS enemy has already spent
+*comment its one opportunity attack this round. The player-side mirror of the same idea is
+*comment combat_player_disengaged below, which is the single flag that suppresses provoked attacks entirely.
+*create combat_enemy_oa_used false
+*comment Reaction asymmetry closed (2026-09-29, Ranged-AI Position Awareness plan §4.5/Phase 5): the player and
+*comment every ally now have their own reaction too, so an enemy that retreats can be punished the same way the
+*comment player already can be. player_oa_used is singular (one player, no slot indirection needed);
+*comment combat_ally<N>_oa_used mirrors combat_enemy<N>_oa_used exactly, per ally slot. Both reset in
+*comment combat_begin_round alongside the existing enemy loop.
+*create player_oa_used false
+*comment Outputs of find_opportunity_attacker_against (combat.txt): who reacts to the enemy currently retreating
+*comment -- "player"/"ally"/"" and, for "ally", which slot (0 = n/a).
+*create combat_oa_against_kind ""
+*create combat_oa_against_slot 0
+*comment combat_oa_candidate is the OUTPUT of find_opportunity_attacker and the INPUT to
+*comment resolve_opportunity_attack (both combat.txt) -- deliberately a separate var rather than overloading
+*comment combat_active_target, which is transient shared scratch and would be clobbered by the very movement that
+*comment provoked the attack. Held for the length of one move: found before the tier opens, spent after.
+*create combat_oa_candidate 0
+*comment Ally-side rows 3-4 mirror (2026-09-29, on request -- see combat_ally0_can_retreat below for the fields
+*comment this gates): OUTPUT of find_melee_ally_present (combat.txt), recomputed fresh on every ally's turn.
+*comment True if a living ally with weapon_type "melee" is at range 0 -- the only kind of ally Mechanism A
+*comment (find_intercepting_ally) can ever redirect an attack onto, since it never redirects onto the player. A
+*comment cornered ranged ally only bothers falling back when this is true, same reason the enemy side requires
+*comment combat_intercepting_ally > 0 for its own rows 3-4 (design decision #5, RANGED_AI_PLAN.md: a melee ally
+*comment doesn't eat the reaction, it gives the chaser something else to hit instead).
+*create combat_melee_ally_present false
+*comment Disengage (2026-09-28): set when the player spends their action on it, cleared every round in
+*comment combat_begin_round. Deliberately a plain boolean rather than a budget, because it is used at most once
+*comment per round and gating it on combat_player_actions_left is the action economy doing the work already --
+*comment the same pattern Second Wind and Brace use. Covers a whole round, not a single move, because 5e's
+*comment Disengage says "your movement doesn't provoke opportunity attacks" for the turn and the player may
+*comment still have a second move (Dash) after using it.
+*create combat_player_disengaged false
+*comment Self-lock for combat_shift_all_ranges (2026-09-30, real refresh-duplication bug found via
+*comment refresh_fuzz_test.js): its three call sites (Push Forward/Fall Back/Break off and run) are mutually
+*comment exclusive *choice options, so one page-id lock covers all three -- see that label's own comment.
+*create combat_range_shift_locked false
+*create locked_combat_range_shift_page_id 0
+*comment Shove (combat.txt): the option owns a whole-choice replay lock because it picks a target, rolls an
+*comment Athletics check, and mutates that target's range on one page. The result fields persist so a refresh can
+*comment reprint the same outcome without moving the enemy a second time.
+*comment Slip Past (combat.txt, the Fall Back option once the player stands at the back of the lane): one whole-choice replay lock, because it rolls a skill check, moves the lane and may draw an opportunity attack on one page. The result fields persist so a refresh reprints the same outcome.
+*comment Advance past (combat.txt, the Push Forward option when an enemy is in reach): the same kind of whole-choice lock, since it can draw an opportunity attack and moves the lane on one page.
+*create combat_pushpast_locked false
+*create locked_combat_pushpast_page_id 0
+*create combat_pushpast_flag false
+*create combat_pushpast_name "the enemy"
+*create combat_pushpast_slot 0
+*create combat_slip_locked false
+*create locked_combat_slip_page_id 0
+*create combat_slip_success false
+*create combat_slip_dc 10
+*create combat_slip_name "the enemy"
+*create combat_slip_to_name "Mid-Range"
+*create combat_shove_locked false
+*create locked_combat_shove_page_id 0
+*create combat_shove_success false
+*create combat_shove_dc 10
+*create combat_shove_target_name "the enemy"
+*create combat_shove_from_name "Engaged"
+*create combat_shove_to_name "Close"
+*create combat_shove_size_allowed true
+*create combat_shove_size_msg ""
+*create combat_size_rank_value 2
+*comment Compact arena rules (combat.txt). The original single encounter-wide rule remains as a compatibility
+*comment bridge while fights migrate to the shared lane and terrain-slot model below. New terrain should use the
+*comment slots: a slot is mechanical only ("chokepoint", "cover", etc.), never a doorway/stairs/bridge variant.
+*create combat_battlefield_rule "none"
+*create combat_battlefield_label ""
+*create combat_chokepoint_capacity 0
+*create combat_chokepoint_blocks_los false
+*create combat_choke_ally_slot 0
+*create combat_choke_ally_name ""
+*create combat_choke_player_blocked false
+*create combat_choke_swap_locked false
+*create locked_combat_choke_swap_page_id 0
+*create combat_choke_withdraw_locked false
+*create locked_combat_choke_withdraw_page_id 0
+*comment Shared abstract battlefield lane (2026-10-05). Positions are a common coordinate frame, not a map grid:
+*comment 0..6 leaves three steps of retreat and advance around the normal starting point 3. The familiar four
+*comment range bands remain derived display/attack information (gap 0/1/2/3+), so this does not turn combat into
+*comment a tactical map. During migration the old per-target ranges remain live compatibility fields; combat.txt
+*comment initializes these coordinates from them and progressively routes movement through the shared helpers.
+*comment Distance-scale compatibility: legacy4 preserves existing authored 0-3 formations; expanded6 adds Near and
+*comment Far (0-5) for encounters that opt in. fight_setup derives combat_max_range and lane bounds from this.
+*create combat_range_mode "legacy4"
+*create combat_range_mode_used "legacy4"
+*create combat_max_range 3
+*create combat_lane_min_position 0
+*create combat_lane_max_position 6
+*create combat_lane_player_position 3
+*create combat_lane_ready false
+*create combat_lane_crossing_has_chokepoint false
+*create combat_lane_crossing_slot 0
+*create combat_active_chokepoint_slot 0
+*create combat_enemy0_position 3
+*create combat_enemy1_position 3
+*create combat_enemy2_position 3
+*create combat_enemy3_position 3
+*create combat_enemy4_position 3
+*create combat_enemy5_position 3
+*create combat_enemy6_position 3
+*create combat_ally0_position 3
+*create combat_ally1_position 3
+*create combat_ally2_position 3
+*create combat_ally3_position 3
+*create combat_ally4_position 3
+*comment Generic static terrain registry. Position is a lane coordinate; a chokepoint uses its position as the
+*comment crossing immediately before that coordinate, while high_ground applies to combatants standing on that
+*comment coordinate. "none" disables a slot. The UI will only show these generic types, never contextual names,
+*comment so encounter prose never needs terrain-specific variants.
+*create combat_terrain_slot_cap 3
+*comment Encounter authors opt in before *gosub_scene combat fight_<name>. "fixed" preserves authored slots;
+*comment random_light rolls zero or one feature, random_standard rolls one or two, and hybrid fills empty slots while
+*comment preserving authored terrain. The generator records its one-time result for debugging/test reporting only.
+*create combat_terrain_layout "fixed"
+*create combat_terrain_layout_used "fixed"
+*comment A named preview is developer-facing only. It forces one validated layout pattern while leaving ordinary
+*comment encounters to select from their configured mode; fight_cleanup clears it so it cannot leak.
+*create combat_terrain_layout_preview ""
+*create combat_terrain_layout_result "fixed"
+*create combat_terrain_generated_count 0
+*create combat_terrain_placed false
+*create combat_terrain_open_slot 0
+*create combat_terrain_position_available false
+*create combat_terrain_type_present false
+*create combat_terrain1_type "none"
+*create combat_terrain1_position 0
+*create combat_terrain1_capacity 0
+*create combat_terrain1_blocks_los false
+*create combat_terrain2_type "none"
+*create combat_terrain2_position 0
+*create combat_terrain2_capacity 0
+*create combat_terrain2_blocks_los false
+*create combat_terrain3_type "none"
+*create combat_terrain3_position 0
+*create combat_terrain3_capacity 0
+*create combat_terrain3_blocks_los false
+*comment Output of combat_get_high_ground_attack_modifier (combat_movement.txt). It is deliberately a terrain
+*comment query, rather than per-enemy state: an encounter can place one or more elevated lane coordinates and all
+*comment player, enemy, and ally ranged attacks use the same rule without copied personalities.
+*create combat_high_ground_attack_bonus 0
+*create combat_high_ground_attack_label ""
+*comment Output of combat_get_cover_ranged_defense_bonus (combat_movement.txt). Cover belongs to the defender's
+*comment terrain coordinate, and only ranged attack-roll resolvers read this value.
+*create combat_cover_ranged_defense_bonus 0
+*create combat_cover_ranged_defense_label ""
+*comment Shared Difficult Terrain movement result. A normal lane step may still cross the terrain, but it consumes
+*comment all of the turn's movement so no Dash step remains. The movement helpers set this; fight_move_spent spends it.
+*create combat_difficult_terrain_blocks_dash false
+*create combat_move_touched_difficult_terrain false
+*create combat_player_dmg_type "bludgeoning"
+*create combat_enemy_resist_type_1 ""
+*create combat_enemy_resist_type_2 ""
+*create combat_enemy_vulnerable_type_1 ""
+*create combat_enemy_vulnerable_type_2 ""
+*comment Ability scores (2026-09-27, groundwork for initiative rolls and later saving throws/stat-modifying
+*comment spells): same scratch-then-per-slot-storage shape as hp/ac/atk_bonus/dmg_type above. Default 10 (average,
+*comment +0 on score_to_mod's ladder) -- a hand-authored fight that never sets these gets an unremarkable human,
+*comment same as it already does for dmg_type. A type-library enemy gets them from apply_ability_score_range
+*comment (combat.txt, called from each apply_type_X): the type's own default range, or a manual per-slot override
+*comment below if one is set.
+*create combat_enemy_strength 10
+*create combat_enemy_dexterity 10
+*create combat_enemy_constitution 10
+*create combat_enemy_intelligence 10
+*create combat_enemy_wisdom 10
+*create combat_enemy_charisma 10
+*comment Short banner tags set by apply_incoming_damage_resist_vuln (enemy
+*comment hits against the player) and apply_outgoing_damage_resist_vuln
+*comment (player-dealt damage, including Agathys retaliation) -- " | 🛡️
+*comment Resisted" / " | 💥 Vulnerable" / "" -- appended by combat.txt to the
+*comment end of every hit banner so a resisted/vulnerable hit is visible, not
+*comment just silently different math. Kept as two separate vars, not one
+*comment shared one, because resolve_enemy_attack can call both in the same
+*comment invocation (an enemy's own hit, then its Agathys retaliation) before
+*comment either banner has printed -- see apply_incoming_damage_resist_vuln's
+*comment header comment.
+*create combat_incoming_dmg_suffix ""
+*create combat_outgoing_dmg_suffix ""
+*comment Scratch output for a single independently typed damage packet. The damage resolvers use this for optional
+*comment fire/poison/lightning/etc. riders without overwriting the primary packet's resistance suffix.
+*create combat_packet_damage 0
+*create combat_packet_suffix ""
+*comment Per-slot now (2026-09-28, combat_enemy1_disadvantage etc. below) -- this bare copy is purely the
+*comment "active target" scratch, synced in by fight_sync_target_in and consumed on that slot's own next attack
+*comment (resolve_enemy_attack/resolve_enemy_attack_on_ally), same pattern as combat_enemy_bane_expires_round.
+*create combat_enemy_disadvantage false
+*comment The player's action budget for a turn (2026-09-26). One action and one bonus action by default. combat_player_actions_max and
+*comment combat_player_bonus_max are what an ONGOING effect changes (Haste would make the first 2 while it lasts and put it back to 1 when
+*comment it ends; a feature that grants a second bonus action would raise the second). combat.txt combat_begin_round refills the two
+*comment _left counters from them at the start of every round, and fight_cleanup puts all four back to 1. A ONE-OFF extra (Action Surge) is
+*comment combat_grant_action / combat_grant_bonus. Options spend through fight_action_spent / fight_bonus_spent, never by hand. Every spend
+*comment and every grant has its own replay lock (a bare +1 or -1 would run twice when the page is replayed).
+*create combat_player_actions_max 1
+*create combat_player_bonus_max 1
+*create combat_player_actions_left 1
+*create combat_player_bonus_left 1
+*create combat_action_spend_locked false
+*create locked_combat_action_spend_page_id 0
+*create combat_bonus_spend_locked false
+*create locked_combat_bonus_spend_page_id 0
+*create combat_action_grant_locked false
+*create locked_combat_action_grant_page_id 0
+*create combat_bonus_grant_locked false
+*create locked_combat_bonus_grant_page_id 0
+*comment The player's ATTACK budget (2026-09-27): decoupled from the action budget above on purpose -- Extra
+*comment Attack (a future level-5 feature) lets a character swing more than once as part of the SAME action, it
+*comment does not grant a second action, so it needs its own pool rather than just raising combat_player_actions_
+*comment max. combat_player_attacks_max is what Extra Attack would raise (2, permanently, once taken); combat.txt's
+*comment combat_begin_round refills combat_player_attacks_left from it every round, and fight_cleanup puts both
+*comment back to 1. The FIRST attack in a round still spends one use from the action budget above (Attack is your
+*comment action) -- see fight_attack_spent, combat.txt -- every attack after that, while combat_player_attacks_left
+*comment stays above 0, does not spend a second one. Same replay-lock shape as the action/bonus spends above.
+*create combat_player_attacks_max 1
+*create combat_player_attacks_left 1
+*comment The player's MOVEMENT budget (2026-09-28): decoupled from the action budget, matching real 5e -- moving
+*comment doesn't cost your action, it's its own resource, so Push Forward/Fall Back no longer eat the action the
+*comment way an old-style "Dash, RAW" one-tier move did. One move per round by default; Dash (a new action-costing
+*comment choice, fight_round_hub) grants a second one via combat_grant_move, matching combat_grant_action's own
+*comment shape -- so Dashing gives up your action but lets you close/open TWO tiers, or move once and still act if
+*comment you only needed the free one. combat_begin_round refills combat_player_moves_left from _max every round;
+*comment fight_cleanup puts both back to 1. Same replay-lock shape and spend-only-through-fight_move_spent
+*comment convention as every other pool here.
+*create combat_player_moves_max 1
+*create combat_player_moves_left 1
+*create combat_move_spend_locked false
+*create locked_combat_move_spend_page_id 0
+*create combat_move_grant_locked false
+*create locked_combat_move_grant_page_id 0
+*comment Set true by resolve_weapon_attack_choice alone, read and reset by fight_check_enemy_hp (both combat.txt)
+*comment -- the one flag that tells the shared damage-resolution tail to spend an attack instead of an action.
+*create combat_pending_spend_is_attack false
+*comment True Strike (cantrip, combat.txt): an action that is a weapon attack made with the spellcasting ability. true_strike_on is set by the hub option and cleared by fight_attack_spent; true_strike_radiant is the player's pick of Radiant over the weapon's own damage type.
+*create true_strike_on false
+*create true_strike_radiant false
+*create combat_attack_spend_locked false
+*create locked_combat_attack_spend_page_id 0
+*create combat_attack_grant_locked false
+*create locked_combat_attack_grant_page_id 0
+*comment Per-slot now (2026-09-28, combat_enemy1_advantage etc. below), same "active target" scratch pattern as
+*comment combat_enemy_disadvantage just above -- EXCEPT this bare copy also doubles as a pending pre-fight
+*comment ambush flag: a scene sets it true before calling the fight ("the creature strikes first," several
+*comment sites in alderford.txt/port_valen.txt/port_valen_dredge_end.txt), and apply_enemy_type (combat.txt)
+*comment copies it onto every slot as each is built, so a multi-enemy ambush grants it to all of them, not just
+*comment slot 1. fight_cleanup clears this bare copy afterward so it can't leak into a fight that never set it.
+*create combat_enemy_advantage false
+*comment Condition-on-hit (Frightened/Poisoned): a fight_<name> label sets
+*comment these three to make its enemy's hit inflict disadvantage on the
+*comment player's next roll, purely for flavor/status-line naming -- the
+*comment mechanical effect just reuses the existing global disadvantage flag
+*comment roll_d20_check already reads for every check. These three plus the
+*comment Stunned and movepool vars right below are the SCRATCH copies --
+*comment same relationship as combat_enemy_atk_bonus to combat_enemy1_atk_
+*comment bonus -- fight_setup snapshots them into slot 1's permanent
+*comment combat_enemy1_* storage below, and fight_sync_target_in resyncs
+*comment whichever slot is active into these scratch names before its turn,
+*comment so resolve_enemy_attack/fight_pick_enemy_move never need to know
+*comment which slot they're reading. That's what lets a mixed fight give one
+*comment enemy type a movepool/condition and another type none at all.
+*create combat_enemy_inflicts_condition false
+*create combat_enemy_condition_name ""
+*create combat_enemy_condition_icon ""
+*create combat_condition_inflicted false
+*comment Movement conditions (2026-09-27): Pinned/Hobbled/Off-Balance are the three condition-on-hit names in
+*comment the type library that are actually about physical positioning (a weapon arm pinned, legs shot out, hauled
+*comment off your feet), not just a generic sting -- see combat.txt's resolve_enemy_attack call site for how this
+*comment gets set, and fight_round_hub for what it gates (Break off and disengage). The other five condition
+*comment names (Off-Guard, Bleeding, Poisoned, Dazed, Blinded) keep the plain disadvantage-only effect; nothing
+*comment about them is actually about movement, so they don't set this. Round-scoped like combat_enemy_disadvantage
+*comment (cleared by combat_begin_round), not roll-scoped like the player's own disadvantage flag -- you're pinned
+*comment for the rest of the round it lands in, not just until your very next attack.
+*create player_movement_restricted false
+*comment Stunned/Paralyzed: same opt-in pattern as the condition-on-hit
+*comment above, but costs the player their whole next turn instead of just
+*comment a disadvantage roll -- deliberately single-round only (consumed the
+*comment moment fight_round_hub sees it), never a multi-round lock, since a
+*comment solo-fight stun-lock isn't fun and this game has no way to cleanse
+*comment a condition early to compensate for one.
+*create combat_enemy_inflicts_stun false
+*create combat_enemy_stun_name ""
+*create combat_enemy_stun_icon ""
+*create combat_stun_inflicted false
+*create player_stunned false
+*comment Enemy movepool: opt-in second attack for an enemy that mixes up its
+*comment actions instead of throwing the same move every round.
+*comment combat_enemy_move2_chance is a 0-100 percent roll checked once per
+*comment enemy turn (fight_pick_enemy_move, combat.txt) -- 0 (the default)
+*comment means the enemy never has a second move and this whole block is a
+*comment no-op, so every existing single-move enemy is unaffected. When it
+*comment fires, these override the scratch combat_enemy_atk_bonus/dmg_dice_
+*comment sides/dmg_bonus/inflicts_condition/condition_name/condition_icon for
+*comment that one attack only -- fight_sync_target_in resyncs the base values
+*comment from combat_enemy1/2/3_* at the top of the next round regardless, so
+*comment nothing needs to explicitly restore them. A movepool enemy can't
+*comment also carry an always-on combat_enemy_inflicts_condition from
+*comment fight_setup -- fight_pick_enemy_move owns that flag once movepool is
+*comment active, so use move 2 to carry the condition instead.
+*create combat_enemy_move2_chance 0
+*create combat_enemy_move2_atk_bonus 0
+*create combat_enemy_move2_dmg_dice_sides 4
+*create combat_enemy_move2_dmg_bonus 0
+*create combat_enemy_move2_dmg_type "bludgeoning"
+*create combat_enemy_move2_inflicts_condition false
+*create combat_enemy_move2_condition_name ""
+*create combat_enemy_move2_condition_icon ""
+*create combat_enemy_move2_used false
+*comment Quick-draw (2026-09-29, Ranged-AI Position Awareness plan §4.2/§4.8): set for one turn, by
+*comment combat_next_turn's row-2 decision, right before it overwrites the active-target scratch's weapon/damage
+*comment fields with this slot's own sidearm fields and calls resolve_enemy_attack as normal. Read by
+*comment fight_narrate_enemy_turn (combat_prose.txt) to pick the type's *_dagger flavor pool instead of its usual
+*comment one, and cleared again immediately after narration so it can never bleed into a later turn. Same
+*comment transient-scratch shape as every other per-turn override here (move2, Bane) -- nothing durable changes,
+*comment so this slot goes back to shooting normally next turn with no restore step needed.
+*create combat_enemy_used_sidearm false
+*create combat_flavor_enemy_move2_hit ""
+*create combat_flavor_enemy_move2_miss ""
+*create combat_enemy_atk_total 0
+*create combat_enemy_hit_success false
+*create combat_enemy_dmg_dealt 0
+*create combat_player_dmg_dice_sides 4
+*create combat_player_dmg_bonus 0
+*comment Future equipment/spell hook: weapon setup may opt into this separate packet without teaching the damage
+*comment resolver a new elemental exception. Existing equipment leaves sides at 0 and is unchanged.
+*create combat_player_extra_dmg_dice_sides 0
+*create combat_player_extra_dmg_bonus 0
+*create combat_player_extra_dmg_type "fire"
+*create combat_player_dmg_dealt 0
+*create combat_weapon_hit_locked false
+*create locked_combat_weapon_hit_page_id 0
+*comment Whole-body lock for resolve_weapon_attack_choice (combat.txt, 2026-09-30) -- separate from
+*comment combat_weapon_hit_locked just above, which only guards resolve_player_weapon_hit's OWN dice/HP math.
+*comment This one guards everything AROUND it too: fight_pick_target's kill-priority re-scan, pick_weapon_flavor's
+*comment *rand, and the Hunter's Mark bookkeeping -- see that label's own header comment for the bug this caught.
+*create combat_weapon_attack_locked false
+*create locked_combat_weapon_attack_page_id 0
+*create combat_sneak_attack_triggered false
+*create combat_round 0
+*comment Populated by combat.txt's fight_* labels for the calling scene to
+*comment read once *gosub_scene combat fight_<name> returns.
+*create combat_outcome ""
+*comment Named-NPC override: the CALLING scene sets these right before
+*comment *gosub_scene combat fight_<name> to reuse a common enemy type's
+*comment full stat block/movepool/flavor text under a unique name, without
+*comment forking a one-off copy of the fight_<name> label just to change a
+*comment string. fight_setup (combat.txt) applies and immediately clears
+*comment both, so a later call to the same fight_<name> without setting
+*comment these falls back to its normal generic name/epithet.
+*create combat_enemy_name_override ""
+*create combat_enemy_epithet_override ""
+*comment Optional size override for a named use of a broad library type (for example a Small giant centipede drawn
+*comment from the generic beast block). "" means use the type's own size. Consumed by fight_setup.
+*create combat_enemy_size_override ""
+*comment Never read or written by real code: slot 1's own rename-override is the plain names above, applied by
+*comment fight_setup (see its comment). These exist only so quicktest's line-coverage walk, which explores an *if's
+*comment untaken branch too, can safely indirection-read combat_enemy1_name_override from apply_enemy_type's generic
+*comment slots-2-and-beyond block on a pass where combat_apply_slot happens to still be 1.
+*create combat_enemy1_name_override ""
+*create combat_enemy1_epithet_override ""
+*create combat_enemy1_hp_override 999
+*create combat_enemy1_ac_override 999
+*create combat_enemy1_atk_override 999
+*create combat_enemy1_size_override ""
+*create combat_flavor_enemy1_hit_1 ""
+*create combat_flavor_enemy1_hit_2 ""
+*create combat_flavor_enemy1_hit_3 ""
+*create combat_flavor_enemy1_hit_4 ""
+*create combat_flavor_enemy1_hit_5 ""
+*create combat_flavor_enemy1_miss_1 ""
+*create combat_flavor_enemy1_miss_2 ""
+*create combat_flavor_enemy1_miss_3 ""
+*create combat_flavor_enemy1_miss_4 ""
+*create combat_flavor_enemy1_miss_5 ""
+*create combat_flavor_enemy1_move2_hit ""
+*create combat_flavor_enemy1_move2_miss ""
+*comment Slot 2/3 get their own name/epithet overrides -- slot 1 reuses the
+*comment two above since it already flows through fight_setup's scratch-var
+*comment snapshot, but slots 2/3 are written directly by apply_enemy_type
+*comment (below) with no equivalent snapshot step, so their overrides are
+*comment applied and cleared inside apply_enemy_type itself instead.
+*create combat_enemy2_name_override ""
+*create combat_enemy2_epithet_override ""
+*create combat_enemy3_name_override ""
+*create combat_enemy3_epithet_override ""
+*create combat_enemy4_name_override ""
+*create combat_enemy4_epithet_override ""
+*create combat_enemy5_name_override ""
+*create combat_enemy5_epithet_override ""
+*create combat_enemy6_name_override ""
+*create combat_enemy6_epithet_override ""
+*comment Per-slot stat overrides (2026-09-26): set any of these before the fight is built and that slot is that tough,
+*comment whatever library type fills it -- a veteran, a captain, a drunk. hp sets current and max HP, ac is the number the
+*comment player must beat to hit it, atk is its to-hit bonus (its special move moves by the same amount). 999 means
+*comment "use the type's own number": it has to be a number (quicktest runs both sides of every *if, so the arithmetic in
+*comment fight_setup must never see a string) and a value no real HP, AC or to-hit bonus reaches, so 0 stays a legal
+*comment override. Consumed by fight_setup and put back to 999, and fight_cleanup resets them too, so one fight's
+*comment numbers never reach the next.
+*create combat_enemy_hp_override 999
+*create combat_enemy_ac_override 999
+*create combat_enemy_atk_override 999
+*create combat_enemy2_hp_override 999
+*create combat_enemy2_ac_override 999
+*create combat_enemy2_atk_override 999
+*create combat_enemy2_size_override ""
+*create combat_enemy3_hp_override 999
+*create combat_enemy3_ac_override 999
+*create combat_enemy3_atk_override 999
+*create combat_enemy3_size_override ""
+*create combat_enemy4_hp_override 999
+*create combat_enemy4_ac_override 999
+*create combat_enemy4_atk_override 999
+*create combat_enemy4_size_override ""
+*create combat_enemy5_hp_override 999
+*create combat_enemy5_ac_override 999
+*create combat_enemy5_atk_override 999
+*create combat_enemy5_size_override ""
+*create combat_enemy6_hp_override 999
+*create combat_enemy6_ac_override 999
+*create combat_enemy6_atk_override 999
+*create combat_enemy6_size_override ""
+*comment Per-slot ability-score overrides (2026-09-27): same pattern as hp/ac/atk above, but for the six scores
+*comment that feed initiative and (later) saving throws -- 0 means "use the type's own rolled range," since no
+*comment real ability score is ever 0. Consumed and reset to 0 by apply_ability_score_range (combat.txt, called
+*comment from each apply_type_X), so a hand-authored fight has no need for these at all -- it just *sets a score
+*comment directly, the same way it already sets hp/ac/atk_bonus directly with no override involved.
+*create combat_enemy_strength_override 0
+*create combat_enemy_dexterity_override 0
+*create combat_enemy_constitution_override 0
+*create combat_enemy_intelligence_override 0
+*create combat_enemy_wisdom_override 0
+*create combat_enemy_charisma_override 0
+*create combat_enemy2_strength_override 0
+*create combat_enemy2_dexterity_override 0
+*create combat_enemy2_constitution_override 0
+*create combat_enemy2_intelligence_override 0
+*create combat_enemy2_wisdom_override 0
+*create combat_enemy2_charisma_override 0
+*create combat_enemy3_strength_override 0
+*create combat_enemy3_dexterity_override 0
+*create combat_enemy3_constitution_override 0
+*create combat_enemy3_intelligence_override 0
+*create combat_enemy3_wisdom_override 0
+*create combat_enemy3_charisma_override 0
+*create combat_enemy4_strength_override 0
+*create combat_enemy4_dexterity_override 0
+*create combat_enemy4_constitution_override 0
+*create combat_enemy4_intelligence_override 0
+*create combat_enemy4_wisdom_override 0
+*create combat_enemy4_charisma_override 0
+*create combat_enemy5_strength_override 0
+*create combat_enemy5_dexterity_override 0
+*create combat_enemy5_constitution_override 0
+*create combat_enemy5_intelligence_override 0
+*create combat_enemy5_wisdom_override 0
+*create combat_enemy5_charisma_override 0
+*create combat_enemy6_strength_override 0
+*create combat_enemy6_dexterity_override 0
+*create combat_enemy6_constitution_override 0
+*create combat_enemy6_intelligence_override 0
+*create combat_enemy6_wisdom_override 0
+*create combat_enemy6_charisma_override 0
+*comment Per-slot overrides for apply_derived_hp/apply_derived_ac's recipe inputs (2026-09-27, opt-in): same
+*comment pattern as the ability-score overrides just above, not the flat hp_override/ac_override further up --
+*comment those replace the FINAL computed number, these replace an INGREDIENT before the formula runs, so a
+*comment specific fight_<name> call can make one instance a tougher/squishier variant (2 hit dice instead of 1,
+*comment better armor) while still letting that instance's own rolled CON/DEX modifier apply on top, instead of
+*comment having to hand-compute and hardcode a final number. 0 means "use the type's own default" (a real hit
+*comment dice count, die size or base AC is never 0). Consumed and reset to 0 by the two labels themselves, same
+*comment as the ability-score overrides. Unused until a type opts into apply_derived_hp/apply_derived_ac.
+*create combat_enemy_hit_dice_count_override 0
+*create combat_enemy_hit_die_max_override 0
+*create combat_enemy_base_ac_override 0
+*create combat_enemy2_hit_dice_count_override 0
+*create combat_enemy2_hit_die_max_override 0
+*create combat_enemy2_base_ac_override 0
+*create combat_enemy3_hit_dice_count_override 0
+*create combat_enemy3_hit_die_max_override 0
+*create combat_enemy3_base_ac_override 0
+*create combat_enemy4_hit_dice_count_override 0
+*create combat_enemy4_hit_die_max_override 0
+*create combat_enemy4_base_ac_override 0
+*create combat_enemy5_hit_dice_count_override 0
+*create combat_enemy5_hit_die_max_override 0
+*create combat_enemy5_base_ac_override 0
+*create combat_enemy6_hit_dice_count_override 0
+*create combat_enemy6_hit_die_max_override 0
+*create combat_enemy6_base_ac_override 0
+*comment Enemy type library (combat.txt: apply_enemy_type) -- the calling
+*comment fight_<name> label sets these two, then *gosub apply_enemy_type, to
+*comment fill one slot (1/2/3) with a named reusable enemy type's full stat
+*comment block/movepool/flavor instead of hand-authoring it inline. See
+*comment apply_enemy_type's header comment for the list of available types.
+*create combat_apply_type ""
+*create combat_apply_slot 0
+*comment Dev combat test hub scratch (2026-09-27, dev_hub.txt's dev_combat_test_hub): which fight_<name> the
+*comment player picked, read by dev_combat_test_run right after. *create has to live up here in startup.txt's
+*comment preamble regardless of which file reads it -- this engine only accepts *create before the first real
+*comment command, and only in startup.txt (see GAMEPLAY_MECHANICS_RULES.md).
+*create dctest_label ""
+*comment fightlog_export_req: set by the Developer menu's "Export the fight log" option; fightlog.js turns it into a download and clears it.
+*create fightlog_export_req false
+*comment Dungeon engine (2026-10-02, dungeon.txt): the random-encounter picker. dg_table and dg_call_id are set by the caller; dg_encounter is the result
+*comment ("none" when nothing is left to roll); dg_pick_1..8 are the run's no-repeat history; dg_tide is derived from time_period (low Morning-Dusk, high Night and
+*comment Pre-Dawn); the rest is scratch for one pick, and the lock pair makes a replay of the same page skip the roll.
+*create dg_table "silt_conduits"
+*create dg_call_id ""
+*create dg_encounter "none"
+*create dg_tide "low"
+*create dg_pick_count 0
+*create dg_pick_1 "none"
+*create dg_pick_2 "none"
+*create dg_pick_3 "none"
+*create dg_pick_4 "none"
+*create dg_pick_5 "none"
+*create dg_pick_6 "none"
+*create dg_pick_7 "none"
+*create dg_pick_8 "none"
+*comment The history grew to sixteen for the Longshade Forest. dg_daylit: the dungeon is under open sky, lit by day (set by its entrance, cleared by dg_run_end). dg_was_dark and dg_fell_dark: whether the last step took the player from lit to dark (dg_step).
+*create dg_pick_9 "none"
+*create dg_pick_10 "none"
+*create dg_pick_11 "none"
+*create dg_pick_12 "none"
+*create dg_pick_13 "none"
+*create dg_pick_14 "none"
+*create dg_pick_15 "none"
+*create dg_pick_16 "none"
+*create dg_daylit false
+*create dg_was_dark false
+*create dg_fell_dark false
+*comment The Longshade Forest (overworld/longshade_forest.txt, web/mygame/dungeons/longshade_forest.js): its last refill day and the per-place flags every dungeon keeps (done / seen / chalked).
+*create dg_reset_day_longshade_forest 0
+*create dg_done_lsf_x1 false
+*create dg_done_lsf_x2 false
+*create dg_done_lsf_j1 false
+*create dg_done_lsf_j2 false
+*create dg_done_lsf_j3 false
+*create dg_done_lsf_j4 false
+*create dg_done_lsf_j5 false
+*create dg_done_lsf_j6 false
+*create dg_done_lsf_j7 false
+*create dg_done_lsf_j8 false
+*create dg_done_lsf_j9 false
+*create dg_done_lsf_j10 false
+*create dg_done_lsf_j11 false
+*create dg_done_lsf_j12 false
+*create dg_done_lsf_j13 false
+*create dg_done_lsf_j14 false
+*create dg_done_lsf_j15 false
+*create dg_done_lsf_j16 false
+*create dg_done_lsf_j17 false
+*create dg_done_lsf_j18 false
+*create dg_done_lsf_j19 false
+*create dg_done_lsf_j20 false
+*create dg_done_lsf_j21 false
+*create dg_done_lsf_r1 false
+*create dg_done_lsf_r2 false
+*create dg_done_lsf_r3 false
+*create dg_done_lsf_r4 false
+*create dg_done_lsf_r5 false
+*create dg_done_lsf_r6 false
+*create dg_done_lsf_r7 false
+*create dg_done_lsf_r8 false
+*create dg_done_lsf_r9 false
+*create dg_done_lsf_r10 false
+*create dg_done_lsf_r11 false
+*create dg_done_lsf_r12 false
+*create dg_done_lsf_r13 false
+*create dg_done_lsf_r14 false
+*create dg_done_lsf_r15 false
+*create dg_seen_lsf_x1 false
+*create dg_seen_lsf_x2 false
+*create dg_seen_lsf_j1 false
+*create dg_seen_lsf_j2 false
+*create dg_seen_lsf_j3 false
+*create dg_seen_lsf_j4 false
+*create dg_seen_lsf_j5 false
+*create dg_seen_lsf_j6 false
+*create dg_seen_lsf_j7 false
+*create dg_seen_lsf_j8 false
+*create dg_seen_lsf_j9 false
+*create dg_seen_lsf_j10 false
+*create dg_seen_lsf_j11 false
+*create dg_seen_lsf_j12 false
+*create dg_seen_lsf_j13 false
+*create dg_seen_lsf_j14 false
+*create dg_seen_lsf_j15 false
+*create dg_seen_lsf_j16 false
+*create dg_seen_lsf_j17 false
+*create dg_seen_lsf_j18 false
+*create dg_seen_lsf_j19 false
+*create dg_seen_lsf_j20 false
+*create dg_seen_lsf_j21 false
+*create dg_seen_lsf_r1 false
+*create dg_seen_lsf_r2 false
+*create dg_seen_lsf_r3 false
+*create dg_seen_lsf_r4 false
+*create dg_seen_lsf_r5 false
+*create dg_seen_lsf_r6 false
+*create dg_seen_lsf_r7 false
+*create dg_seen_lsf_r8 false
+*create dg_seen_lsf_r9 false
+*create dg_seen_lsf_r10 false
+*create dg_seen_lsf_r11 false
+*create dg_seen_lsf_r12 false
+*create dg_seen_lsf_r13 false
+*create dg_seen_lsf_r14 false
+*create dg_seen_lsf_r15 false
+*create dg_mark_lsf_x1 false
+*create dg_mark_lsf_x2 false
+*create dg_mark_lsf_j1 false
+*create dg_mark_lsf_j2 false
+*create dg_mark_lsf_j3 false
+*create dg_mark_lsf_j4 false
+*create dg_mark_lsf_j5 false
+*create dg_mark_lsf_j6 false
+*create dg_mark_lsf_j7 false
+*create dg_mark_lsf_j8 false
+*create dg_mark_lsf_j9 false
+*create dg_mark_lsf_j10 false
+*create dg_mark_lsf_j11 false
+*create dg_mark_lsf_j12 false
+*create dg_mark_lsf_j13 false
+*create dg_mark_lsf_j14 false
+*create dg_mark_lsf_j15 false
+*create dg_mark_lsf_j16 false
+*create dg_mark_lsf_j17 false
+*create dg_mark_lsf_j18 false
+*create dg_mark_lsf_j19 false
+*create dg_mark_lsf_j20 false
+*create dg_mark_lsf_j21 false
+*create dg_mark_lsf_r1 false
+*create dg_mark_lsf_r2 false
+*create dg_mark_lsf_r3 false
+*create dg_mark_lsf_r4 false
+*create dg_mark_lsf_r5 false
+*create dg_mark_lsf_r6 false
+*create dg_mark_lsf_r7 false
+*create dg_mark_lsf_r8 false
+*create dg_mark_lsf_r9 false
+*create dg_mark_lsf_r10 false
+*create dg_mark_lsf_r11 false
+*create dg_mark_lsf_r12 false
+*create dg_mark_lsf_r13 false
+*create dg_mark_lsf_r14 false
+*create dg_mark_lsf_r15 false
+*create dg_pass 0
+*create dg_total 0
+*create dg_roll 0
+*create dg_cursor 0
+*create dg_found "none"
+*create dg_pick_locked false
+*create locked_dg_pick_page_id 0
+*create locked_dg_pick_id ""
+*comment Harvesting a kill (dungeon.txt dg_harvest): the caller sets dg_hv_creature ("frog", "centipede", "viper" or "lacedon"); dg_harvest_info fills the rest.
+*create dg_hv_creature ""
+*create dg_hv_dc 0
+*create dg_hv_var ""
+*create dg_hv_name ""
+*create dg_hv_sting false
+*comment Dungeon walking (dungeon.txt dg_step, dg_light_prompt, dg_dark_check; the map is port_valen/port_valen_silt_conduits.txt). dg_dark is derived, never set by hand:
+*comment true in a run with no light left and no darkvision, and the one thing that reads it is roll_d20_check (disadvantage) and dg_fight_prep (enemy advantage).
+*create dg_in_run false
+*create dg_start "silt_x1"
+*create dg_pos "none"
+*create dg_dest "none"
+*create dg_dest_hall false
+*create dg_steps 0
+*comment THE RESPAWN (dungeon.txt dg_respawn). What a dungeon holds is kept BETWEEN runs and refilled every dg_respawn_days days (about twice a week): dg_done_<node> says a hallway step's encounter has been rolled
+*comment (arriving there again rolls nothing), and the room flags below say what the player already did in a room. dg_reset_day_<dg_table> is the campaign_day of that dungeon's last refill (0 = never); the room flags are dg_<dungeon>_r<N>_* (dg_silt_r1_*...), so two dungeons never share one. Chalked junctions stay quiet after a refill.
+*comment THE TABLE ROWS (dungeon.txt dg_run_table): a dungeon's table label FILLS these slots and the engine walks them, so a pick makes one scene call per pass, not one per row (a scene call nests in the
+*comment headless engine). dg_trow_count rows at most 12, each an id and its low-tide and high-tide weight.
+*create dg_trow_count 0
+*create dg_trow_id_1 "none"
+*create dg_trow_lo_1 0
+*create dg_trow_hi_1 0
+*create dg_trow_id_2 "none"
+*create dg_trow_lo_2 0
+*create dg_trow_hi_2 0
+*create dg_trow_id_3 "none"
+*create dg_trow_lo_3 0
+*create dg_trow_hi_3 0
+*create dg_trow_id_4 "none"
+*create dg_trow_lo_4 0
+*create dg_trow_hi_4 0
+*create dg_trow_id_5 "none"
+*create dg_trow_lo_5 0
+*create dg_trow_hi_5 0
+*create dg_trow_id_6 "none"
+*create dg_trow_lo_6 0
+*create dg_trow_hi_6 0
+*create dg_trow_id_7 "none"
+*create dg_trow_lo_7 0
+*create dg_trow_hi_7 0
+*create dg_trow_id_8 "none"
+*create dg_trow_lo_8 0
+*create dg_trow_hi_8 0
+*create dg_trow_id_9 "none"
+*create dg_trow_lo_9 0
+*create dg_trow_hi_9 0
+*create dg_trow_id_10 "none"
+*create dg_trow_lo_10 0
+*create dg_trow_hi_10 0
+*create dg_trow_id_11 "none"
+*create dg_trow_lo_11 0
+*create dg_trow_hi_11 0
+*create dg_trow_id_12 "none"
+*create dg_trow_lo_12 0
+*create dg_trow_hi_12 0
+*create dg_respawn_days 3
+*create dg_reset_day_silt_conduits 0
+*create dg_done_silt_x1 false
+*create dg_done_silt_x2 false
+*create dg_done_silt_x3 false
+*create dg_done_silt_j1 false
+*create dg_done_silt_j2 false
+*create dg_done_silt_j3 false
+*create dg_done_silt_j4 false
+*create dg_done_silt_j5 false
+*create dg_done_silt_j6 false
+*create dg_done_silt_j7 false
+*create dg_done_silt_j8 false
+*create dg_done_silt_r1 false
+*create dg_done_silt_r2 false
+*create dg_done_silt_r3 false
+*create dg_done_silt_r4 false
+*create dg_done_silt_r5 false
+*create dg_done_none false
+*create dg_prev_enc false
+*create dg_enc_now false
+*create dg_light_kind "none"
+*create dg_light_left 0
+*create dg_light_out_now false
+*create dg_dark false
+*create dg_from "none"
+*comment The map and the chalk (dungeon.txt, the map panel is dungeonmap.js). dg_seen_<node> is true once the player has stood on that node WITH LIGHT (a character in the dark
+*comment cannot see to update the map); dg_mark_<node> is true once they chalked it. Both outlive a run on purpose: the map keeps what was explored and a chalk mark stays
+*comment forever. The node ids are x1 x2 x3 (the three ways in), j1..j8 (hallway junctions) and r1..r5 (rooms); the "none" pair exists so reading the flag of a position that is
+*comment not a node yet ("none") is never an error. dg_chalk_left is the marks left on the bundle in use (a bundle of six sticks is one mark each).
+*create dg_seen_silt_x1 false
+*create dg_seen_silt_x2 false
+*create dg_seen_silt_x3 false
+*create dg_seen_silt_j1 false
+*create dg_seen_silt_j2 false
+*create dg_seen_silt_j3 false
+*create dg_seen_silt_j4 false
+*create dg_seen_silt_j5 false
+*create dg_seen_silt_j6 false
+*create dg_seen_silt_j7 false
+*create dg_seen_silt_j8 false
+*create dg_seen_silt_r1 false
+*create dg_seen_silt_r2 false
+*create dg_seen_silt_r3 false
+*create dg_seen_silt_r4 false
+*create dg_seen_silt_r5 false
+*create dg_seen_none false
+*create dg_mark_silt_x1 false
+*create dg_mark_silt_x2 false
+*create dg_mark_silt_x3 false
+*create dg_mark_silt_j1 false
+*create dg_mark_silt_j2 false
+*create dg_mark_silt_j3 false
+*create dg_mark_silt_j4 false
+*create dg_mark_silt_j5 false
+*create dg_mark_silt_j6 false
+*create dg_mark_silt_j7 false
+*create dg_mark_silt_j8 false
+*create dg_mark_silt_r1 false
+*create dg_mark_silt_r2 false
+*create dg_mark_silt_r3 false
+*create dg_mark_silt_r4 false
+*create dg_mark_silt_r5 false
+*create dg_mark_none false
+*comment Room state (port_valen/port_valen_silt_conduits.txt): what the player has already done in a room since the dungeon last refilled. dungeon.txt dg_respawn clears these every dg_respawn_days days,
+*comment not every run, and the map and the chalk are never cleared. dg_mins and dg_time_id are the inputs of dungeon.txt dg_time.
+*create dg_silt_r1_tally false
+*create dg_silt_r1_tally_ok false
+*create dg_silt_r1_search false
+*create dg_silt_r1_steps false
+*create dg_silt_r2_cross false
+*create dg_silt_r3_clear false
+*create dg_silt_r4_brood_dead false
+*create dg_silt_r5_crates false
+*create dg_silt_r5_box false
+*create dg_silt_r5_opened false
+*create dg_silt_r5_ring_now false
+*create dg_silt_r4_quiet false
+*create dg_silt_r3_found false
+*create dg_silt_r3_viper_dead false
+*create dg_silt_r2_found false
+*create dg_silt_r2_climb false
+*create dg_silt_r2_lacedon_dead false
+*create dg_mins 5
+*create dg_time_id ""
+*create dg_chalk_left 0
+*create dg_chalk_avail 0
+*create dg_chalk_ok false
+*create dg_chalk_locked false
+*create locked_dg_chalk_page_id 0
+*create dg_lit_now false
+*create dg_hurt 0
+*create dg_wet 0
+*create dg_silt_mouse_met false
+*comment dg_dev_entry: this run was started from the Developer menu, so every exit goes back to it. The street entrances (pvsc_enter_*) set it false.
+*create dg_dev_entry false
+*comment mw_cistern_open: the stone cover in the Middle Ward wash-house yard is barred from above (an iron bar across it) until the player has come UP through it from the dungeon once; that first climb knocks the bar free for good.
+*comment Until then the yard's cover option is closed, so the first trip must be in at the Dredge-End Silt-Gates (open only once the Contraband quest is resolved) and out at the cistern ladder.
+*comment dg_cistern_first is set inside the exit page's lock so a refresh prints the same prose.
+*create mw_cistern_open false
+*create dg_cistern_first false
+*create dg_cistern_locked false
+*create locked_dg_cistern_page_id 0
+*create dg_silt_camp_looted false
+*create dg_swa_can false
+*create dg_swa_cost "none"
+*create dg_swa_why ""
+*create dg_swa_locked false
+*create locked_dg_swa_page_id 0
+*create dg_walk_roll 0
+*create dg_step_locked false
+*create locked_dg_step_page_id 0
+*create dg_light_locked false
+*create locked_dg_light_page_id 0
+*comment Multi-enemy fight support (combat.txt: slots 1-3)
+*create combat_enemy_count 1
+*create combat_active_target 1
+*comment Target-selection HUD (2026-09-27): 0 means "no explicit choice, use the ordinary front-to-back
+*comment auto-pick"; a JS panel (combat-hud.js) sets this directly to an enemy slot number on click, no
+*comment ChoiceScript round-trip needed since it's read, not acted on, until the player's next attack.
+*comment fight_pick_target (combat.txt) checks this first and clears it back to 0 the instant that slot dies,
+*comment so it stays selected ("sticky") across rounds until then, exactly like a real fight would expect, and a
+*comment fight with no HUD attached (or nothing ever clicked) behaves identically to before this existed.
+*create combat_player_chosen_target 0
+*comment Interception (2026-09-28): which ally slot (1-4, 0 = none) is blocking the enemy CURRENTLY dispatching
+*comment in combat_next_turn's enemy branch -- set fresh by find_intercepting_ally (combat.txt) every time that
+*comment branch runs, so it never needs an external reset the way combat_ally<N>_target below does.
+*create combat_intercepting_ally 0
+*comment Nearest-target closing (2026-10-11): which ally slot (1-4, 0 = none) the MELEE enemy currently dispatching has picked as its nearest target when that ally is not yet
+*comment in reach, so the enemy must close on it instead of on the player. Set fresh by choose_melee_enemy_target (combat_ai.txt) every enemy turn; an ally already in reach goes in
+*comment combat_intercepting_ally instead, exactly as before.
+*create combat_enemy_goal_ally 0
+*comment Ranged targeting (2026-10-11, step 3 of the nearest-target pass): combat_ranged_cornered is true when the RANGED enemy dispatching shares its lane tile with any opponent (the player, unless hidden, or a
+*comment living ally). Set fresh by choose_ranged_enemy_target (combat_ai.txt) every ranged enemy turn. combat_ally_cornered is the same answer for the ranged ALLY being asked about (combat_ai_ally_cornered).
+*create combat_ranged_cornered false
+*create combat_ally_cornered false
+*comment Total pre-declared enemy slots (widened from 3 to 6, 2026-09-27). ChoiceScript has no arrays, so this
+*comment is the real ceiling on how many enemies one fight can hold; every loop below reads it instead of a
+*comment literal, so raising it later is: bump this number, *create the new slot's variables (mirroring an
+*comment existing slot's block), done -- nothing that reads combat_enemy_slot_cap needs to change.
+*create combat_enemy_slot_cap 6
+*create combat_all_enemies_dead false
+*create combat_is_nonlethal false
+*create combat_player_can_die false
+*create combat_enemy1_name "none"
+*create combat_enemy1_hp 0
+*create combat_enemy1_max_hp 0
+*create combat_enemy1_ac 10
+*create combat_enemy1_atk_bonus 0
+*create combat_enemy1_dmg_dice_sides 4
+*create combat_enemy1_dmg_bonus 0
+*create combat_enemy1_epithet "the creature"
+*create combat_enemy1_metal_armor false
+*create combat_enemy1_dmg_type "bludgeoning"
+*create combat_enemy1_extra_dmg_dice_sides 0
+*create combat_enemy1_extra_dmg_bonus 0
+*create combat_enemy1_extra_dmg_type "poison"
+*create combat_enemy1_size "medium"
+*create combat_enemy1_weapon_type "melee"
+*create combat_enemy1_behavior_profile "feral"
+*comment Sidearm (2026-09-29, Ranged-AI Position Awareness plan §4.1): a cornered ranged type's one-off melee
+*comment fallback -- NOT a persistent equip, never overwrites weapon_type/dmg_* above. "" weapon_type means no
+*comment sidearm (every melee type's default; they never read these fields). apply_type_archer/apply_type_slinger
+*comment set them to a dagger; combat_next_turn's row-2 quick-draw decision (combat.txt) reads them only when this
+*comment slot's own weapon_type is "ranged" and its range is 0, and only for the one attack that turn -- the
+*comment slot's real weapon_type field above is never touched, so the type reverts to shooting normally next turn.
+*create combat_enemy1_sidearm_weapon_type ""
+*create combat_enemy1_sidearm_atk_bonus 0
+*create combat_enemy1_sidearm_dmg_dice_sides 4
+*create combat_enemy1_sidearm_dmg_bonus 0
+*create combat_enemy1_sidearm_dmg_type "piercing"
+*comment Commit-and-chase (2026-09-29, plan §11.3/6a): combat_enemy<N>_chase_target is which living ALLY slot
+*comment (1-4, 0 = not chasing) this enemy has committed to hunting instead of its usual default (the player),
+*comment set at most once per fight by roll_enemy_chase_commit (combat.txt) and cleared the moment the chase
+*comment target dies, this enemy takes any damage, or it actually reaches melee with its target (Layer 1's
+*comment ordinary target selection takes back over from there -- see find_intercepting_ally/RANGED_AI_PLAN.md
+*comment §11.3). combat_enemy<N>_chase_range is a SEPARATE field from this slot's own _range (which stays
+*comment untouched, still tracking distance to the player, the whole time) -- deliberately not reused, so
+*comment breaking off a chase needs no reset step at all: _range was simply never touched, and normal behavior
+*comment resumes exactly where it left off. _chase_roll_done is a one-shot flag (per fight, not per round) so a
+*comment declined chase is never re-offered later just because the same ranged ally is still visible.
+*comment _chase_hp_snapshot is this enemy's own HP at the moment the chase committed, compared against its
+*comment current HP every turn after -- any drop means "something hurt me," and self-preservation ends the
+*comment chase (deliberately not source-tracked; see RANGED_AI_PLAN.md §11.3 for why a blanket check beats
+*comment attributing the hit to a specific attacker).
+*create combat_enemy1_chase_target 0
+*create combat_enemy1_chase_range 0
+*create combat_enemy1_chase_roll_done false
+*create combat_enemy1_chase_hp_snapshot 0
+*create combat_enemy1_chase_chance 0
+*create combat_enemy1_can_retreat false
+*create combat_enemy1_flee_hp_pct 0
+*create combat_enemy1_bane_expires_round 0
+*create combat_enemy1_disadvantage false
+*comment Slowed (2026-10-01): rounds left, 0 = none. Set by Ray of Frost, read by combat_next_turn (a Slowed enemy cannot Dash) and shown on the hover card (index.html). Consumed at the end of that enemy's own next turn.
+*create combat_enemy1_slowed 0
+*comment Frightened (2026-10-02, Cause Fear): rounds left, 0 = none. A frightened enemy attacks with disadvantage, will not close the distance (combat_next_turn), and repeats its Wisdom save at the end of each of its turns, ending the fear on a success. Shown on the hover card (index.html CONDITION_KEYS). Cleared in fight_cleanup.
+*create combat_enemy1_frightened 0
+*create combat_enemy1_advantage false
+*comment Opportunity attack (2026-09-28), per slot 1-6, mirroring disadvantage/advantage right above: has THIS
+*comment enemy already spent its one opportunity attack on the player this round? 5e gives each creature one
+*comment reaction per round, and since only enemies react to the player's movement, that is exactly one OA per
+*comment enemy per round -- a single shared counter would be wrong the other way, letting one enemy punish every
+*comment Fall Back you ever make. **This flag is also what keeps the replay lock honest**: resolve_enemy_attack
+*comment keys its lock on combat_enemy_atk_locked_<slot> vs page_id, so a second attack by the same slot on the
+*comment same page would silently reuse the first roll and do nothing at all. One OA per enemy per round means
+*comment flag and lock can never disagree. Reset in combat_begin_round (the round boundary) and again in
+*comment fight_cleanup (leftover state into the next fight) -- the same two-place convention as disadvantage.
+*comment Melee only, never ranged: a 5e opportunity attack is a MELEE attack, and an archer you walk past should
+*comment not get a free parting shot -- especially now that a ranged enemy already at range 0 shoots at
+*comment disadvantage (resolve_enemy_attack, combat_dice.txt). Both reasons point the same way.
+*create combat_enemy1_oa_used false
+*comment Grease (combat.txt combat_grease_gate, combat_spells.txt resolve_throw_item, 2026-10-12): per enemy slot. _greased is how many more move attempts the grease will spoil (0 = none), _grease_until the last round it can still be on, _prone whether the enemy is on the ground (it spends its next movement standing),
+*comment and _grease_page / _grease_res / _grease_roll / _grease_v hold the finished gate for the page it ran on, so a replay of that page prints the same thing and never rolls or falls twice.
+*create combat_enemy1_greased 0
+*create combat_enemy1_grease_until 0
+*create combat_enemy1_prone false
+*create combat_enemy1_grease_page 0
+*create combat_enemy1_grease_res 0
+*create combat_enemy1_grease_roll 0
+*create combat_enemy1_grease_v 0
+*create combat_enemy2_greased 0
+*create combat_enemy2_grease_until 0
+*create combat_enemy2_prone false
+*create combat_enemy2_grease_page 0
+*create combat_enemy2_grease_res 0
+*create combat_enemy2_grease_roll 0
+*create combat_enemy2_grease_v 0
+*create combat_enemy3_greased 0
+*create combat_enemy3_grease_until 0
+*create combat_enemy3_prone false
+*create combat_enemy3_grease_page 0
+*create combat_enemy3_grease_res 0
+*create combat_enemy3_grease_roll 0
+*create combat_enemy3_grease_v 0
+*create combat_enemy4_greased 0
+*create combat_enemy4_grease_until 0
+*create combat_enemy4_prone false
+*create combat_enemy4_grease_page 0
+*create combat_enemy4_grease_res 0
+*create combat_enemy4_grease_roll 0
+*create combat_enemy4_grease_v 0
+*create combat_enemy5_greased 0
+*create combat_enemy5_grease_until 0
+*create combat_enemy5_prone false
+*create combat_enemy5_grease_page 0
+*create combat_enemy5_grease_res 0
+*create combat_enemy5_grease_roll 0
+*create combat_enemy5_grease_v 0
+*create combat_enemy6_greased 0
+*create combat_enemy6_grease_until 0
+*create combat_enemy6_prone false
+*create combat_enemy6_grease_page 0
+*create combat_enemy6_grease_res 0
+*create combat_enemy6_grease_roll 0
+*create combat_enemy6_grease_v 0
+*comment The last thrown item's result, for its narration (all written inside the combat_cast lock): the save DC, whether the target failed it, a flavor pick, and who was hit.
+*comment True for the enemy whose turn the grease gate (combat.txt combat_grease_gate) has spent: it fell or got up, and does nothing more this turn.
+*create combat_grease_stop false
+*comment The camp (scenes/overworld/camp.txt): true once the camp's short-rest page has done its work, so a replay of that page only reports. The camp hub clears it.
+*create camp_rest_applied false
+*comment Output of combat_attack_edge (combat_dice.txt): whether the target itself grants an attack advantage, and a short name for why (e.g. "Prone").
+*create combat_edge_adv false
+*create combat_edge_label ""
+*comment combat_enemy0_prone is the inert slot-0 placeholder quicktest's branch walk needs for the prone-advantage check (combat_hidden_attack_roll); never read by a real attack.
+*create combat_enemy0_prone false
+*create combat_enemy0_greased 0
+*create combat_enemy0_grease_until 0
+*create combat_enemy0_grease_page 0
+*create combat_enemy0_grease_res 0
+*create combat_enemy0_grease_roll 0
+*create combat_enemy0_grease_v 0
+*create combat_throw_dc 10
+*comment Burning (combat.txt combat_burn_tick, Alchemist's Fire, 2026-10-12): per enemy slot, turns of fire left (0 = none), the page its tick last ran on, and the damage it dealt, so a replay of that page prints the same tick and never burns twice.
+*create combat_enemy0_burning 0
+*create combat_enemy0_burn_page 0
+*create combat_enemy0_burn_dealt 0
+*create combat_enemy1_burning 0
+*create combat_enemy1_burn_page 0
+*create combat_enemy1_burn_dealt 0
+*create combat_enemy2_burning 0
+*create combat_enemy2_burn_page 0
+*create combat_enemy2_burn_dealt 0
+*create combat_enemy3_burning 0
+*create combat_enemy3_burn_page 0
+*create combat_enemy3_burn_dealt 0
+*create combat_enemy4_burning 0
+*create combat_enemy4_burn_page 0
+*create combat_enemy4_burn_dealt 0
+*create combat_enemy5_burning 0
+*create combat_enemy5_burn_page 0
+*create combat_enemy5_burn_dealt 0
+*create combat_enemy6_burning 0
+*create combat_enemy6_burn_page 0
+*create combat_enemy6_burn_dealt 0
+*comment The kind of attack the next player attack roll is, read and cleared by combat_hidden_attack_roll ("fire" for Fire Bolt and Alchemist's Fire; "" otherwise) so combat_attack_edge can give a fire attack advantage on a greased target. combat_burn_killed: the burn tick finished the enemy.
+*create combat_attack_tag ""
+*create combat_burn_killed false
+*comment True when the burning enemy spent its turn putting the fire out (combat_burn_tick); per-slot burn_douse keeps the choice for a replay of that page.
+*create combat_burn_doused false
+*create combat_enemy0_burn_douse false
+*create combat_enemy1_burn_douse false
+*create combat_enemy2_burn_douse false
+*create combat_enemy3_burn_douse false
+*create combat_enemy4_burn_douse false
+*create combat_enemy5_burn_douse false
+*create combat_enemy6_burn_douse false
+*create combat_throw_greased false
+*create combat_throw_failed false
+*create combat_throw_v 1
+*create combat_throw_name "the enemy"
+*create combat_throw_epithet "the enemy"
+*create combat_enemy1_range 0
+*comment Per-slot condition/stun/movepool/resistance storage -- see the
+*comment scratch-var comment block above. A slot that never sets these (every
+*comment existing enemy) keeps the same defaults, so this is a no-op until a
+*comment fight deliberately sets combat_enemy2_move2_chance etc. for one slot
+*comment only.
+*create combat_enemy1_inflicts_condition false
+*create combat_enemy1_condition_name ""
+*create combat_enemy1_condition_icon ""
+*create combat_enemy1_inflicts_stun false
+*create combat_enemy1_stun_name ""
+*create combat_enemy1_stun_icon ""
+*create combat_enemy1_move2_chance 0
+*create combat_enemy1_move2_atk_bonus 0
+*create combat_enemy1_move2_dmg_dice_sides 4
+*create combat_enemy1_move2_dmg_bonus 0
+*create combat_enemy1_move2_dmg_type "bludgeoning"
+*create combat_enemy1_move2_inflicts_condition false
+*create combat_enemy1_move2_condition_name ""
+*create combat_enemy1_move2_condition_icon ""
+*create combat_enemy1_resist_type_1 ""
+*create combat_enemy1_resist_type_2 ""
+*create combat_enemy1_vulnerable_type_1 ""
+*create combat_enemy1_vulnerable_type_2 ""
+*comment Ability scores (2026-09-27): slot 1's real, permanent storage (fight_setup snapshots the bare
+*comment combat_enemy_<score> names into these, same as every field above).
+*create combat_enemy1_strength 10
+*create combat_enemy1_dexterity 10
+*create combat_enemy1_constitution 10
+*create combat_enemy1_intelligence 10
+*create combat_enemy1_wisdom 10
+*create combat_enemy1_charisma 10
+*comment Slot 1's numbered ability-score overrides are never read or written by real logic -- slot 1 uses the
+*comment bare (unnumbered) override names just above, applied inside apply_ability_score_range -- but they exist
+*comment so fight_cleanup's generic per-slot loop can stay unconditional across every slot (same reasoning as
+*comment combat_enemy1_hp_override etc.).
+*create combat_enemy1_strength_override 0
+*create combat_enemy1_dexterity_override 0
+*create combat_enemy1_constitution_override 0
+*create combat_enemy1_intelligence_override 0
+*create combat_enemy1_wisdom_override 0
+*create combat_enemy1_charisma_override 0
+*create combat_enemy2_name "none"
+*create combat_enemy2_hp 0
+*create combat_enemy2_max_hp 0
+*create combat_enemy2_ac 10
+*create combat_enemy2_atk_bonus 0
+*create combat_enemy2_dmg_dice_sides 4
+*create combat_enemy2_dmg_bonus 0
+*create combat_enemy2_epithet "the second creature"
+*create combat_enemy2_metal_armor false
+*create combat_enemy2_dmg_type "bludgeoning"
+*create combat_enemy2_extra_dmg_dice_sides 0
+*create combat_enemy2_extra_dmg_bonus 0
+*create combat_enemy2_extra_dmg_type "poison"
+*create combat_enemy2_size "medium"
+*create combat_enemy2_weapon_type "melee"
+*create combat_enemy2_behavior_profile "feral"
+*create combat_enemy2_sidearm_weapon_type ""
+*create combat_enemy2_sidearm_atk_bonus 0
+*create combat_enemy2_sidearm_dmg_dice_sides 4
+*create combat_enemy2_sidearm_dmg_bonus 0
+*create combat_enemy2_sidearm_dmg_type "piercing"
+*create combat_enemy2_chase_target 0
+*create combat_enemy2_chase_range 0
+*create combat_enemy2_chase_roll_done false
+*create combat_enemy2_chase_hp_snapshot 0
+*create combat_enemy2_chase_chance 0
+*create combat_enemy2_can_retreat false
+*create combat_enemy2_flee_hp_pct 0
+*create combat_enemy2_bane_expires_round 0
+*create combat_enemy2_disadvantage false
+*create combat_enemy2_slowed 0
+*create combat_enemy2_frightened 0
+*create combat_enemy2_advantage false
+*create combat_enemy2_oa_used false
+*create combat_enemy2_range 0
+*create combat_enemy2_inflicts_condition false
+*create combat_enemy2_condition_name ""
+*create combat_enemy2_condition_icon ""
+*create combat_enemy2_inflicts_stun false
+*create combat_enemy2_stun_name ""
+*create combat_enemy2_stun_icon ""
+*create combat_enemy2_move2_chance 0
+*create combat_enemy2_move2_atk_bonus 0
+*create combat_enemy2_move2_dmg_dice_sides 4
+*create combat_enemy2_move2_dmg_bonus 0
+*create combat_enemy2_move2_dmg_type "bludgeoning"
+*create combat_enemy2_move2_inflicts_condition false
+*create combat_enemy2_move2_condition_name ""
+*create combat_enemy2_move2_condition_icon ""
+*create combat_enemy2_resist_type_1 ""
+*create combat_enemy2_resist_type_2 ""
+*create combat_enemy2_vulnerable_type_1 ""
+*create combat_enemy2_vulnerable_type_2 ""
+*create combat_enemy2_strength 10
+*create combat_enemy2_dexterity 10
+*create combat_enemy2_constitution 10
+*create combat_enemy2_intelligence 10
+*create combat_enemy2_wisdom 10
+*create combat_enemy2_charisma 10
+*create combat_flavor_enemy2_move2_hit ""
+*create combat_flavor_enemy2_move2_miss ""
+*create combat_current_spell_id ""
+*comment Output of combat_range_name (combat.txt): the display name for whatever range number was just passed in
+*comment (Engaged/Close/Mid-Range/Long Range) -- a durable var instead of a caller-declared *temp, since that
+*comment label sits above its callers in combat.txt's own file order.
+*create combat_range_display_name ""
+*comment Outputs of spell_range_of (combat.txt, generated block from tools/spell_catalog.json): whether the caster
+*comment can reach the current target at this range, and whether the close-combat ranged penalty applies.
+*comment Durable rather than *temp because the label's callers are option bodies that read these AFTER it
+*comment returns, across *goto boundaries. Both are copied from the label's *temps because ChoiceScript's *set
+*comment takes a literal and cannot interpolate.
+*create spell_reach_result true
+*create spell_penalty_result false
+*comment Set true by an attack that took the close-combat ranged penalty, so dice_engine.txt's roll banner can
+*comment print "(Disadvantage - in reach)" instead of a bare "(Disadvantage)" and the player is told why. Mirrors
+*comment the enemy-side cea_ranged_pinned in combat_dice.txt. Cleared inside roll_d20_check on every call, so a
+*comment flag left set by an abandoned option can never bleed into a later check.
+*create combat_reach_pinned false
+*comment Optional per-slot flavor overrides
+*create combat_flavor_enemy2_hit_1 ""
+*create combat_flavor_enemy2_hit_2 ""
+*create combat_flavor_enemy2_hit_3 ""
+*create combat_flavor_enemy2_hit_4 ""
+*create combat_flavor_enemy2_hit_5 ""
+*create combat_flavor_enemy2_miss_1 ""
+*create combat_flavor_enemy2_miss_2 ""
+*create combat_flavor_enemy2_miss_3 ""
+*create combat_flavor_enemy2_miss_4 ""
+*create combat_flavor_enemy2_miss_5 ""
+*create combat_enemy3_name "none"
+*create combat_enemy3_hp 0
+*create combat_enemy3_max_hp 0
+*create combat_enemy3_ac 10
+*create combat_enemy3_atk_bonus 0
+*create combat_enemy3_dmg_dice_sides 4
+*create combat_enemy3_dmg_bonus 0
+*create combat_enemy3_epithet "the third creature"
+*create combat_enemy3_metal_armor false
+*create combat_enemy3_dmg_type "bludgeoning"
+*create combat_enemy3_extra_dmg_dice_sides 0
+*create combat_enemy3_extra_dmg_bonus 0
+*create combat_enemy3_extra_dmg_type "poison"
+*create combat_enemy3_size "medium"
+*create combat_enemy3_weapon_type "melee"
+*create combat_enemy3_behavior_profile "feral"
+*create combat_enemy3_sidearm_weapon_type ""
+*create combat_enemy3_sidearm_atk_bonus 0
+*create combat_enemy3_sidearm_dmg_dice_sides 4
+*create combat_enemy3_sidearm_dmg_bonus 0
+*create combat_enemy3_sidearm_dmg_type "piercing"
+*create combat_enemy3_chase_target 0
+*create combat_enemy3_chase_range 0
+*create combat_enemy3_chase_roll_done false
+*create combat_enemy3_chase_hp_snapshot 0
+*create combat_enemy3_chase_chance 0
+*create combat_enemy3_can_retreat false
+*create combat_enemy3_flee_hp_pct 0
+*create combat_enemy3_bane_expires_round 0
+*create combat_enemy3_disadvantage false
+*create combat_enemy3_slowed 0
+*create combat_enemy3_frightened 0
+*create combat_enemy3_advantage false
+*create combat_enemy3_oa_used false
+*create combat_enemy3_range 0
+*create combat_enemy3_inflicts_condition false
+*create combat_enemy3_condition_name ""
+*create combat_enemy3_condition_icon ""
+*create combat_enemy3_inflicts_stun false
+*create combat_enemy3_stun_name ""
+*create combat_enemy3_stun_icon ""
+*create combat_enemy3_move2_chance 0
+*create combat_enemy3_move2_atk_bonus 0
+*create combat_enemy3_move2_dmg_dice_sides 4
+*create combat_enemy3_move2_dmg_bonus 0
+*create combat_enemy3_move2_dmg_type "bludgeoning"
+*create combat_enemy3_move2_inflicts_condition false
+*create combat_enemy3_move2_condition_name ""
+*create combat_enemy3_move2_condition_icon ""
+*create combat_enemy3_resist_type_1 ""
+*create combat_enemy3_resist_type_2 ""
+*create combat_enemy3_vulnerable_type_1 ""
+*create combat_enemy3_vulnerable_type_2 ""
+*create combat_enemy3_strength 10
+*create combat_enemy3_dexterity 10
+*create combat_enemy3_constitution 10
+*create combat_enemy3_intelligence 10
+*create combat_enemy3_wisdom 10
+*create combat_enemy3_charisma 10
+*create combat_flavor_enemy3_move2_hit ""
+*create combat_flavor_enemy3_move2_miss ""
+*create combat_flavor_enemy3_hit_1 ""
+*create combat_flavor_enemy3_hit_2 ""
+*create combat_flavor_enemy3_hit_3 ""
+*create combat_flavor_enemy3_hit_4 ""
+*create combat_flavor_enemy3_hit_5 ""
+*create combat_flavor_enemy3_miss_1 ""
+*create combat_flavor_enemy3_miss_2 ""
+*create combat_flavor_enemy3_miss_3 ""
+*create combat_flavor_enemy3_miss_4 ""
+*create combat_flavor_enemy3_miss_5 ""
+*create combat_enemy4_name "none"
+*create combat_enemy4_hp 0
+*create combat_enemy4_max_hp 0
+*create combat_enemy4_ac 10
+*create combat_enemy4_atk_bonus 0
+*create combat_enemy4_dmg_dice_sides 4
+*create combat_enemy4_dmg_bonus 0
+*create combat_enemy4_epithet "the fourth creature"
+*create combat_enemy4_metal_armor false
+*create combat_enemy4_dmg_type "bludgeoning"
+*create combat_enemy4_extra_dmg_dice_sides 0
+*create combat_enemy4_extra_dmg_bonus 0
+*create combat_enemy4_extra_dmg_type "poison"
+*create combat_enemy4_size "medium"
+*create combat_enemy4_weapon_type "melee"
+*create combat_enemy4_behavior_profile "feral"
+*create combat_enemy4_sidearm_weapon_type ""
+*create combat_enemy4_sidearm_atk_bonus 0
+*create combat_enemy4_sidearm_dmg_dice_sides 4
+*create combat_enemy4_sidearm_dmg_bonus 0
+*create combat_enemy4_sidearm_dmg_type "piercing"
+*create combat_enemy4_chase_target 0
+*create combat_enemy4_chase_range 0
+*create combat_enemy4_chase_roll_done false
+*create combat_enemy4_chase_hp_snapshot 0
+*create combat_enemy4_chase_chance 0
+*create combat_enemy4_can_retreat false
+*create combat_enemy4_flee_hp_pct 0
+*create combat_enemy4_bane_expires_round 0
+*create combat_enemy4_disadvantage false
+*create combat_enemy4_slowed 0
+*create combat_enemy4_frightened 0
+*create combat_enemy4_advantage false
+*create combat_enemy4_oa_used false
+*create combat_enemy4_range 0
+*create combat_enemy4_inflicts_condition false
+*create combat_enemy4_condition_name ""
+*create combat_enemy4_condition_icon ""
+*create combat_enemy4_inflicts_stun false
+*create combat_enemy4_stun_name ""
+*create combat_enemy4_stun_icon ""
+*create combat_enemy4_move2_chance 0
+*create combat_enemy4_move2_atk_bonus 0
+*create combat_enemy4_move2_dmg_dice_sides 4
+*create combat_enemy4_move2_dmg_bonus 0
+*create combat_enemy4_move2_dmg_type "bludgeoning"
+*create combat_enemy4_move2_inflicts_condition false
+*create combat_enemy4_move2_condition_name ""
+*create combat_enemy4_move2_condition_icon ""
+*create combat_enemy4_resist_type_1 ""
+*create combat_enemy4_resist_type_2 ""
+*create combat_enemy4_vulnerable_type_1 ""
+*create combat_enemy4_vulnerable_type_2 ""
+*create combat_enemy4_strength 10
+*create combat_enemy4_dexterity 10
+*create combat_enemy4_constitution 10
+*create combat_enemy4_intelligence 10
+*create combat_enemy4_wisdom 10
+*create combat_enemy4_charisma 10
+*create combat_flavor_enemy4_move2_hit ""
+*create combat_flavor_enemy4_move2_miss ""
+*create combat_flavor_enemy4_hit_1 ""
+*create combat_flavor_enemy4_hit_2 ""
+*create combat_flavor_enemy4_hit_3 ""
+*create combat_flavor_enemy4_hit_4 ""
+*create combat_flavor_enemy4_hit_5 ""
+*create combat_flavor_enemy4_miss_1 ""
+*create combat_flavor_enemy4_miss_2 ""
+*create combat_flavor_enemy4_miss_3 ""
+*create combat_flavor_enemy4_miss_4 ""
+*create combat_flavor_enemy4_miss_5 ""
+*create combat_enemy5_name "none"
+*create combat_enemy5_hp 0
+*create combat_enemy5_max_hp 0
+*create combat_enemy5_ac 10
+*create combat_enemy5_atk_bonus 0
+*create combat_enemy5_dmg_dice_sides 4
+*create combat_enemy5_dmg_bonus 0
+*create combat_enemy5_epithet "the fifth creature"
+*create combat_enemy5_metal_armor false
+*create combat_enemy5_dmg_type "bludgeoning"
+*create combat_enemy5_extra_dmg_dice_sides 0
+*create combat_enemy5_extra_dmg_bonus 0
+*create combat_enemy5_extra_dmg_type "poison"
+*create combat_enemy5_size "medium"
+*create combat_enemy5_weapon_type "melee"
+*create combat_enemy5_behavior_profile "feral"
+*create combat_enemy5_sidearm_weapon_type ""
+*create combat_enemy5_sidearm_atk_bonus 0
+*create combat_enemy5_sidearm_dmg_dice_sides 4
+*create combat_enemy5_sidearm_dmg_bonus 0
+*create combat_enemy5_sidearm_dmg_type "piercing"
+*create combat_enemy5_chase_target 0
+*create combat_enemy5_chase_range 0
+*create combat_enemy5_chase_roll_done false
+*create combat_enemy5_chase_hp_snapshot 0
+*create combat_enemy5_chase_chance 0
+*create combat_enemy5_can_retreat false
+*create combat_enemy5_flee_hp_pct 0
+*create combat_enemy5_bane_expires_round 0
+*create combat_enemy5_disadvantage false
+*create combat_enemy5_slowed 0
+*create combat_enemy5_frightened 0
+*create combat_enemy5_advantage false
+*create combat_enemy5_oa_used false
+*create combat_enemy5_range 0
+*create combat_enemy5_inflicts_condition false
+*create combat_enemy5_condition_name ""
+*create combat_enemy5_condition_icon ""
+*create combat_enemy5_inflicts_stun false
+*create combat_enemy5_stun_name ""
+*create combat_enemy5_stun_icon ""
+*create combat_enemy5_move2_chance 0
+*create combat_enemy5_move2_atk_bonus 0
+*create combat_enemy5_move2_dmg_dice_sides 4
+*create combat_enemy5_move2_dmg_bonus 0
+*create combat_enemy5_move2_dmg_type "bludgeoning"
+*create combat_enemy5_move2_inflicts_condition false
+*create combat_enemy5_move2_condition_name ""
+*create combat_enemy5_move2_condition_icon ""
+*create combat_enemy5_resist_type_1 ""
+*create combat_enemy5_resist_type_2 ""
+*create combat_enemy5_vulnerable_type_1 ""
+*create combat_enemy5_vulnerable_type_2 ""
+*create combat_enemy5_strength 10
+*create combat_enemy5_dexterity 10
+*create combat_enemy5_constitution 10
+*create combat_enemy5_intelligence 10
+*create combat_enemy5_wisdom 10
+*create combat_enemy5_charisma 10
+*create combat_flavor_enemy5_move2_hit ""
+*create combat_flavor_enemy5_move2_miss ""
+*create combat_flavor_enemy5_hit_1 ""
+*create combat_flavor_enemy5_hit_2 ""
+*create combat_flavor_enemy5_hit_3 ""
+*create combat_flavor_enemy5_hit_4 ""
+*create combat_flavor_enemy5_hit_5 ""
+*create combat_flavor_enemy5_miss_1 ""
+*create combat_flavor_enemy5_miss_2 ""
+*create combat_flavor_enemy5_miss_3 ""
+*create combat_flavor_enemy5_miss_4 ""
+*create combat_flavor_enemy5_miss_5 ""
+*create combat_enemy6_name "none"
+*create combat_enemy6_hp 0
+*create combat_enemy6_max_hp 0
+*create combat_enemy6_ac 10
+*create combat_enemy6_atk_bonus 0
+*create combat_enemy6_dmg_dice_sides 4
+*create combat_enemy6_dmg_bonus 0
+*create combat_enemy6_epithet "the sixth creature"
+*create combat_enemy6_metal_armor false
+*create combat_enemy6_dmg_type "bludgeoning"
+*create combat_enemy6_extra_dmg_dice_sides 0
+*create combat_enemy6_extra_dmg_bonus 0
+*create combat_enemy6_extra_dmg_type "poison"
+*create combat_enemy6_size "medium"
+*create combat_enemy6_weapon_type "melee"
+*create combat_enemy6_behavior_profile "feral"
+*create combat_enemy6_sidearm_weapon_type ""
+*create combat_enemy6_sidearm_atk_bonus 0
+*create combat_enemy6_sidearm_dmg_dice_sides 4
+*create combat_enemy6_sidearm_dmg_bonus 0
+*create combat_enemy6_sidearm_dmg_type "piercing"
+*create combat_enemy6_chase_target 0
+*create combat_enemy6_chase_range 0
+*create combat_enemy6_chase_roll_done false
+*create combat_enemy6_chase_hp_snapshot 0
+*create combat_enemy6_chase_chance 0
+*create combat_enemy6_can_retreat false
+*create combat_enemy6_flee_hp_pct 0
+*create combat_enemy6_bane_expires_round 0
+*create combat_enemy6_disadvantage false
+*create combat_enemy6_slowed 0
+*create combat_enemy6_frightened 0
+*create combat_enemy6_advantage false
+*create combat_enemy6_oa_used false
+*create combat_enemy6_range 0
+*create combat_enemy6_inflicts_condition false
+*create combat_enemy6_condition_name ""
+*create combat_enemy6_condition_icon ""
+*create combat_enemy6_inflicts_stun false
+*create combat_enemy6_stun_name ""
+*create combat_enemy6_stun_icon ""
+*create combat_enemy6_move2_chance 0
+*create combat_enemy6_move2_atk_bonus 0
+*create combat_enemy6_move2_dmg_dice_sides 4
+*create combat_enemy6_move2_dmg_bonus 0
+*create combat_enemy6_move2_dmg_type "bludgeoning"
+*create combat_enemy6_move2_inflicts_condition false
+*create combat_enemy6_move2_condition_name ""
+*create combat_enemy6_move2_condition_icon ""
+*create combat_enemy6_resist_type_1 ""
+*create combat_enemy6_resist_type_2 ""
+*create combat_enemy6_vulnerable_type_1 ""
+*create combat_enemy6_vulnerable_type_2 ""
+*create combat_enemy6_strength 10
+*create combat_enemy6_dexterity 10
+*create combat_enemy6_constitution 10
+*create combat_enemy6_intelligence 10
+*create combat_enemy6_wisdom 10
+*create combat_enemy6_charisma 10
+*create combat_flavor_enemy6_move2_hit ""
+*create combat_flavor_enemy6_move2_miss ""
+*create combat_flavor_enemy6_hit_1 ""
+*create combat_flavor_enemy6_hit_2 ""
+*create combat_flavor_enemy6_hit_3 ""
+*create combat_flavor_enemy6_hit_4 ""
+*create combat_flavor_enemy6_hit_5 ""
+*create combat_flavor_enemy6_miss_1 ""
+*create combat_flavor_enemy6_miss_2 ""
+*create combat_flavor_enemy6_miss_3 ""
+*create combat_flavor_enemy6_miss_4 ""
+*create combat_flavor_enemy6_miss_5 ""
+*create combat_enemy_epithet "the creature"
+*create combat_enemy_metal_armor false
+*comment Randomized 5-variant combat attack flavor pools
+*create combat_flavor_weapon_hit_1 ""
+*create combat_flavor_weapon_hit_2 ""
+*create combat_flavor_weapon_hit_3 ""
+*create combat_flavor_weapon_hit_4 ""
+*create combat_flavor_weapon_hit_5 ""
+*create combat_flavor_weapon_miss_1 ""
+*create combat_flavor_weapon_miss_2 ""
+*create combat_flavor_weapon_miss_3 ""
+*create combat_flavor_weapon_miss_4 ""
+*create combat_flavor_weapon_miss_5 ""
+*create combat_flavor_weapon_hit_ranged_1 ""
+*create combat_flavor_weapon_hit_ranged_2 ""
+*create combat_flavor_weapon_hit_ranged_3 ""
+*create combat_flavor_weapon_hit_ranged_4 ""
+*create combat_flavor_weapon_hit_ranged_5 ""
+*create combat_flavor_weapon_miss_ranged_1 ""
+*create combat_flavor_weapon_miss_ranged_2 ""
+*create combat_flavor_weapon_miss_ranged_3 ""
+*create combat_flavor_weapon_miss_ranged_4 ""
+*create combat_flavor_weapon_miss_ranged_5 ""
+*create combat_flavor_enemy_hit_1 ""
+*create combat_flavor_enemy_hit_2 ""
+*create combat_flavor_enemy_hit_3 ""
+*create combat_flavor_enemy_hit_4 ""
+*create combat_flavor_enemy_hit_5 ""
+*create combat_flavor_enemy_miss_1 ""
+*create combat_flavor_enemy_miss_2 ""
+*create combat_flavor_enemy_miss_3 ""
+*create combat_flavor_enemy_miss_4 ""
+*create combat_flavor_enemy_miss_5 ""
+*comment ══════════════════════════════════════════════════════════════
+*comment ALLY POOL (2026-09-27, ranged AI + type library + independent position 2026-09-28) -- storage, a
+*comment reusable type library (apply_ally_type/apply_ally_roster, combat.txt, mirroring apply_enemy_type/
+*comment fight_library), and real turn-taking AI (combat_next_turn's ally branch, combat.txt): ranged allies
+*comment attack every turn regardless of distance; melee allies close their OWN range (below) one tier per turn
+*comment until it reaches 0, then attack -- independent of combat_enemy_range, so a melee ally can be ahead of or
+*comment behind the player, not glued to the player's own distance from the target. Mirrors the enemy pool's
+*comment basic fields (name/hp/ac/attack/damage/epithet), not its condition/stun/movepool/resistance machinery,
+*comment since ally AI doesn't use any of that yet.
+*comment ══════════════════════════════════════════════════════════════
+*create combat_ally_slot_cap 4
+*create combat_ally_count 0
+*comment Same quicktest branch-coverage gotcha as combat_enemy0_* elsewhere in this file: announce_turn_order
+*comment and combat_next_turn's own ally branch (combat.txt) both check *if (cnt_kind = "ally") before reading
+*comment combat_allyN_* via slot -- for an unused turn-order position (kind "", slot 0), the walk visits that
+*comment body anyway. Never read by real logic.
+*create combat_ally0_name ""
+*create combat_ally0_epithet ""
+*create combat_ally0_hp 0
+*create combat_ally0_max_hp 0
+*create combat_ally0_ac 10
+*create combat_ally0_atk_bonus 0
+*create combat_ally0_dmg_dice_sides 4
+*create combat_ally0_dmg_bonus 0
+*create combat_ally0_dmg_type "bludgeoning"
+*create combat_ally0_weapon_type "melee"
+*create combat_ally0_behavior_profile "guardian"
+*comment Sidearm (2026-09-29, Ranged-AI Position Awareness plan §4.1, extended to allies on request -- Kess is
+*comment the "archer" ally type, and gets one for the same reason the enemy archer does): "" weapon_type means no
+*comment sidearm (every melee ally's default). Unlike the enemy pool, resolve_ally_attack (combat_dice.txt) reads
+*comment combat_ally<N>_* fields directly by slot, with no bare active-target scratch copy to also maintain --
+*comment so there's no fight_setup-style snapshot step for allies, and no equivalent trap to fall into.
+*create combat_ally0_sidearm_weapon_type ""
+*create combat_ally0_sidearm_atk_bonus 0
+*create combat_ally0_sidearm_dmg_dice_sides 4
+*create combat_ally0_sidearm_dmg_bonus 0
+*create combat_ally0_sidearm_dmg_type "piercing"
+*create combat_ally0_dexterity 10
+*comment Full six ability scores (2026-09-28) -- DEX above was initiative-only groundwork (2026-09-27); the other
+*comment five were added when the ally type library started sharing apply_ability_score_range/
+*comment apply_derived_combat_bonuses with the enemy library, so an ally's atk_bonus/dmg_bonus are rolled and
+*comment derived the same way an enemy's are, not hand-set flat numbers.
+*create combat_ally0_strength 10
+*create combat_ally0_constitution 10
+*create combat_ally0_intelligence 10
+*create combat_ally0_wisdom 10
+*create combat_ally0_charisma 10
+*comment Per-score manual overrides (2026-09-28): apply_ability_score_range (combat.txt), shared with the enemy
+*comment library, unconditionally reads {prefix & field & "_override"} for every score it rolls -- 0 means "use
+*comment the type's own rolled range," matching combat_enemy_strength_override's exact convention and sentinel.
+*create combat_ally0_strength_override 0
+*create combat_ally0_dexterity_override 0
+*create combat_ally0_constitution_override 0
+*create combat_ally0_intelligence_override 0
+*create combat_ally0_wisdom_override 0
+*create combat_ally0_charisma_override 0
+*create combat_ally1_name "none"
+*create combat_ally1_epithet "your ally"
+*create combat_ally1_hp 0
+*create combat_ally1_max_hp 0
+*create combat_ally1_ac 10
+*create combat_ally1_atk_bonus 0
+*create combat_ally1_dmg_dice_sides 4
+*create combat_ally1_dmg_bonus 0
+*create combat_ally1_dmg_type "bludgeoning"
+*create combat_ally1_weapon_type "melee"
+*create combat_ally1_behavior_profile "guardian"
+*comment Sidearm -- see combat_ally0_sidearm_weapon_type's own comment for the full rule.
+*create combat_ally1_sidearm_weapon_type ""
+*create combat_ally1_sidearm_atk_bonus 0
+*create combat_ally1_sidearm_dmg_dice_sides 4
+*create combat_ally1_sidearm_dmg_bonus 0
+*create combat_ally1_sidearm_dmg_type "piercing"
+*comment Set for ONE turn by resolve_ally_attack when a ranged ally quick-draws its sidearm, and read by
+*comment fight_narrate_ally_attack to pick the knife pool instead of the bow one. The enemy-side twin of this
+*comment is combat_enemy_used_sidearm (startup.txt), and it is deliberately TURN-SCOPED on both sides: the
+*comment sidearm is a one-off for that attack, never a persistent equip, so a drawn dagger can never leave an
+*comment archer disarmed. Cleared by the caller right after the narration, exactly as combat.txt's enemy quick-draw
+*comment clears combat_enemy_used_sidearm -- a cornered archer re-reads the situation every turn and is a knife
+*comment fighter while adjacent and a bow fighter the moment she has room, with no restore step.
+*comment NOT gated on attacker kind at the write site; the READER (fight_narrate_ally_attack) gates on it, because
+*comment that label is shared with the enemy-as-attacker paths (interception and chase), and a flag left true from
+*comment an ally's turn would otherwise narrate an ENEMY's swing as a knife attack.
+*create combat_ally_atk_used_sidearm false
+*comment DEX (2026-09-27, groundwork for initiative -- see combat_roll_initiative below) plus the other five
+*comment (2026-09-28, once atk_bonus/dmg_bonus started deriving from them the same way an enemy's do). Ally
+*comment saving throws would still need their own resolve_ally_save the way resolve_enemy_save exists for
+*comment enemies -- these scores alone don't add that, just feed the derived combat bonuses and initiative.
+*create combat_ally1_dexterity 10
+*create combat_ally1_strength 10
+*create combat_ally1_constitution 10
+*create combat_ally1_intelligence 10
+*create combat_ally1_wisdom 10
+*create combat_ally1_charisma 10
+*create combat_ally1_strength_override 0
+*create combat_ally1_dexterity_override 0
+*create combat_ally1_constitution_override 0
+*create combat_ally1_intelligence_override 0
+*create combat_ally1_wisdom_override 0
+*create combat_ally1_charisma_override 0
+*create combat_ally2_name "none"
+*create combat_ally2_epithet "your second ally"
+*create combat_ally2_hp 0
+*create combat_ally2_max_hp 0
+*create combat_ally2_ac 10
+*create combat_ally2_atk_bonus 0
+*create combat_ally2_dmg_dice_sides 4
+*create combat_ally2_dmg_bonus 0
+*create combat_ally2_dmg_type "bludgeoning"
+*create combat_ally2_weapon_type "melee"
+*create combat_ally2_behavior_profile "guardian"
+*create combat_ally2_sidearm_weapon_type ""
+*create combat_ally2_sidearm_atk_bonus 0
+*create combat_ally2_sidearm_dmg_dice_sides 4
+*create combat_ally2_sidearm_dmg_bonus 0
+*create combat_ally2_sidearm_dmg_type "piercing"
+*create combat_ally2_dexterity 10
+*create combat_ally2_strength 10
+*create combat_ally2_constitution 10
+*create combat_ally2_intelligence 10
+*create combat_ally2_wisdom 10
+*create combat_ally2_charisma 10
+*create combat_ally2_strength_override 0
+*create combat_ally2_dexterity_override 0
+*create combat_ally2_constitution_override 0
+*create combat_ally2_intelligence_override 0
+*create combat_ally2_wisdom_override 0
+*create combat_ally2_charisma_override 0
+*create combat_ally3_name "none"
+*create combat_ally3_epithet "your third ally"
+*create combat_ally3_hp 0
+*create combat_ally3_max_hp 0
+*create combat_ally3_ac 10
+*create combat_ally3_atk_bonus 0
+*create combat_ally3_dmg_dice_sides 4
+*create combat_ally3_dmg_bonus 0
+*create combat_ally3_dmg_type "bludgeoning"
+*create combat_ally3_weapon_type "melee"
+*create combat_ally3_behavior_profile "guardian"
+*create combat_ally3_sidearm_weapon_type ""
+*create combat_ally3_sidearm_atk_bonus 0
+*create combat_ally3_sidearm_dmg_dice_sides 4
+*create combat_ally3_sidearm_dmg_bonus 0
+*create combat_ally3_sidearm_dmg_type "piercing"
+*create combat_ally3_dexterity 10
+*create combat_ally3_strength 10
+*create combat_ally3_constitution 10
+*create combat_ally3_intelligence 10
+*create combat_ally3_wisdom 10
+*create combat_ally3_charisma 10
+*create combat_ally3_strength_override 0
+*create combat_ally3_dexterity_override 0
+*create combat_ally3_constitution_override 0
+*create combat_ally3_intelligence_override 0
+*create combat_ally3_wisdom_override 0
+*create combat_ally3_charisma_override 0
+*create combat_ally4_name "none"
+*create combat_ally4_epithet "your fourth ally"
+*create combat_ally4_hp 0
+*create combat_ally4_max_hp 0
+*create combat_ally4_ac 10
+*create combat_ally4_atk_bonus 0
+*create combat_ally4_dmg_dice_sides 4
+*create combat_ally4_dmg_bonus 0
+*create combat_ally4_dmg_type "bludgeoning"
+*create combat_ally4_weapon_type "melee"
+*create combat_ally4_behavior_profile "guardian"
+*create combat_ally4_sidearm_weapon_type ""
+*create combat_ally4_sidearm_atk_bonus 0
+*create combat_ally4_sidearm_dmg_dice_sides 4
+*create combat_ally4_sidearm_dmg_bonus 0
+*create combat_ally4_sidearm_dmg_type "piercing"
+*create combat_ally4_dexterity 10
+*create combat_ally4_strength 10
+*create combat_ally4_constitution 10
+*create combat_ally4_intelligence 10
+*create combat_ally4_wisdom 10
+*create combat_ally4_charisma 10
+*create combat_ally4_strength_override 0
+*create combat_ally4_dexterity_override 0
+*create combat_ally4_constitution_override 0
+*create combat_ally4_intelligence_override 0
+*create combat_ally4_wisdom_override 0
+*create combat_ally4_charisma_override 0
+*comment Independent position (2026-09-28): each ally's OWN distance to whatever it's currently fighting, same
+*comment 0-3 tier scale as combat_enemy_range (0 Engaged .. 3 Long Range) but tracked separately per ally, not
+*comment shared with the player's own range to that enemy -- a melee ally closes it on its own turn (see
+*comment combat_next_turn's ally branch, combat.txt) and can be nearer or farther than the player is. Left at the
+*comment type's default (0, Engaged) unless the calling fight_<name> label overrides it before calling
+*comment fight_library, same convention as combat_enemy_range. Never read for weapon_type "ranged" -- a ranged
+*comment ally still attacks regardless of distance, unchanged.
+*create combat_ally0_range 0
+*create combat_ally1_range 0
+*create combat_ally2_range 0
+*create combat_ally3_range 0
+*create combat_ally4_range 0
+*comment Reaction asymmetry closed (2026-09-29, plan §4.5/Phase 5) -- mirrors combat_enemy<N>_oa_used exactly,
+*comment reset in combat_begin_round's own per-slot loop.
+*create combat_ally0_oa_used false
+*create combat_ally1_oa_used false
+*create combat_ally2_oa_used false
+*create combat_ally3_oa_used false
+*create combat_ally4_oa_used false
+*comment Interception (2026-09-28): which enemy slot (1-6, 0 = none) this ally last picked as its target, set
+*comment durably in combat_next_turn's ally branch right after fight_pick_target -- unlike combat_active_target
+*comment (a shared scratch value overwritten by whoever's turn is currently running), this survives on the ally's
+*comment own slot until it picks again. Reset to 0 by fight_cleanup, same leftover-state reason as
+*comment combat_ally<N>_range -- without it, an ally who hasn't picked a target yet this fight could still match a
+*comment stale target slot number from the last one.
+*comment READERS, and only two. (1) The sidebar's "fighting <enemy>" sub-line (web/mygame/index.html) -- this is now
+*comment the field's main job. (2) Nothing else: find_intercepting_ally USED to require
+*comment combat_ally<N>_target = combat_active_target, but that was dropped the same day, because allies pick by
+*comment kill-priority rather than by adjacency, so the whole party converged on one wounded enemy and every other
+*comment enemy ignored the tank entirely. **This field therefore cannot be used to recover real adjacency** -- it
+*comment records intent, not position. A genuine per-pair "is this ally next to this enemy" test needs a
+*comment player-to-ally or ally-to-ally distance that does not exist in this model, which is why interception
+*comment settled on treating melee as one shared bucket instead.
+*create combat_ally0_target 0
+*create combat_ally1_target 0
+*create combat_ally2_target 0
+*create combat_ally3_target 0
+*create combat_ally4_target 0
+*comment Commit-and-chase, ally side (2026-09-29, Ranged-AI Position Awareness plan §11.3/6a, mirroring the
+*comment enemy-side combat_enemy<N>_chase_* fields, startup.txt): combat_ally<N>_chase_target is which living
+*comment ENEMY slot (1-6, 0 = not chasing) a melee ally has committed to hunting instead of whatever
+*comment select_ally_attack_target would otherwise have picked, set at most once per fight by
+*comment roll_ally_chase_commit (combat.txt) and cleared the moment the chase target dies, this ally takes any
+*comment damage, or it actually reaches melee with its target (Layer 1's ordinary select_ally_attack_target takes
+*comment back over from there). combat_ally<N>_chase_range is a SEPARATE field from this slot's own _range
+*comment (untouched the whole time it's chasing, so breaking off needs no reset step) -- same reasoning as the
+*comment enemy side's own _chase_range, see its comment for the full rule. No bare active-target scratch copy
+*comment needed here, unlike the enemy side -- the ally system has no sync layer at all (select_ally_attack_target
+*comment and resolve_ally_attack already read combat_ally<N>_* directly via slot indirection), so these fields are
+*comment read/written the same direct way throughout.
+*create combat_ally0_chase_target 0
+*create combat_ally0_chase_range 0
+*create combat_ally0_chase_roll_done false
+*create combat_ally0_chase_hp_snapshot 0
+*create combat_ally0_chase_chance 0
+*create combat_ally1_chase_target 0
+*create combat_ally1_chase_range 0
+*create combat_ally1_chase_roll_done false
+*create combat_ally1_chase_hp_snapshot 0
+*create combat_ally1_chase_chance 0
+*create combat_ally2_chase_target 0
+*create combat_ally2_chase_range 0
+*create combat_ally2_chase_roll_done false
+*create combat_ally2_chase_hp_snapshot 0
+*create combat_ally2_chase_chance 0
+*create combat_ally3_chase_target 0
+*create combat_ally3_chase_range 0
+*create combat_ally3_chase_roll_done false
+*create combat_ally3_chase_hp_snapshot 0
+*create combat_ally3_chase_chance 0
+*create combat_ally4_chase_target 0
+*create combat_ally4_chase_range 0
+*create combat_ally4_chase_roll_done false
+*create combat_ally4_chase_hp_snapshot 0
+*create combat_ally4_chase_chance 0
+*comment Ally-side rows 3-4 mirror (2026-09-29, on request): combat_ally<N>_can_retreat/_flee_hp_pct are the exact
+*comment mirror of combat_enemy<N>_can_retreat/_flee_hp_pct (startup.txt, near combat_enemy_can_retreat) -- same
+*comment "0/false means never" per-type opt-in shape chase_chance already uses. Set true/33 by apply_allytype_archer
+*comment and apply_allytype_slinger (combat.txt), the two ranged ally types today; apply_allytype_guard clears both
+*comment explicitly, same as it clears the sidearm fields, since there's no reset loop for ally fields (see
+*comment fight_cleanup_ally_loop's own comment) to fall back on between fights that reuse a slot. Gates the new
+*comment elseif in combat_next_turn's ally branch: a cornered ranged ally (weapon_type "ranged", own range <= 0)
+*comment that opted in falls back instead of standing and quick-drawing, same two-way split as the enemy side
+*comment (Retreat if healthy, Disengage if wounded below flee_hp_pct) -- gated ALSO on combat_melee_ally_present
+*comment (just above), since a melee ally is what makes falling back worth the risk, not just being cornered.
+*create combat_ally0_can_retreat false
+*create combat_ally0_flee_hp_pct 0
+*create combat_ally1_can_retreat false
+*create combat_ally1_flee_hp_pct 0
+*create combat_ally2_can_retreat false
+*create combat_ally2_flee_hp_pct 0
+*create combat_ally3_can_retreat false
+*create combat_ally3_flee_hp_pct 0
+*create combat_ally4_can_retreat false
+*create combat_ally4_flee_hp_pct 0
+*comment Ally type library (combat.txt: apply_ally_type/apply_ally_roster), mirroring the enemy one just above --
+*comment a scene sets combat_ally_lib_1 (and optionally _2/_3/_4) to a library type id ("archer", "guard") before
+*comment calling fight_library, instead of hand-authoring every ally stat inline. combat_apply_ally_slot/_type are
+*comment the same kind of caller-set scratch pair as combat_apply_slot/combat_apply_type; cleared by nothing since
+*comment apply_ally_roster always overwrites both before every apply_ally_type call. combat_ally_lib_N is cleared
+*comment by fight_cleanup, same as combat_lib_N.
+*create combat_ally_lib_1 ""
+*create combat_ally_lib_2 ""
+*create combat_ally_lib_3 ""
+*create combat_ally_lib_4 ""
+*create combat_apply_ally_slot 0
+*create combat_apply_ally_type ""
+*comment Name/epithet override, same convention as combat_enemy2_name_override etc.: set before calling
+*comment fight_library to reuse a type under a unique name ("Kess" instead of the archer type's generic
+*comment "Archer"). Applied and cleared inside apply_ally_type itself, since -- like enemy slots 2 and beyond --
+*comment every ally slot is written directly via indirection with no snapshot step to hang an enemy-slot-1-style
+*comment reuse off of instead.
+*create combat_ally1_name_override ""
+*create combat_ally1_epithet_override ""
+*create combat_ally2_name_override ""
+*create combat_ally2_epithet_override ""
+*create combat_ally3_name_override ""
+*create combat_ally3_epithet_override ""
+*create combat_ally4_name_override ""
+*create combat_ally4_epithet_override ""
+*comment Scratch copies fight_narrate_ally_attack (combat_prose.txt) fills via {}-indirection right before printing --
+*comment the same pattern as combat_enemy_name/_epithet for the player's own target, but kept fully separate so
+*comment a narration call can never stomp the player's own in-progress attack-resolution state. Named for
+*comment "attacker"/"defender", not "ally"/"enemy" (renamed 2026-09-27 when the label was generalized to work in
+*comment either direction) -- either one can hold an ally's or an enemy's data depending on who's attacking whom.
+*create combat_attacker_name ""
+*create combat_attacker_epithet ""
+*create combat_defender_name ""
+*create combat_defender_epithet ""
+*comment Weapon/spell/death-blow flavor pass-through (2026-09-28, made durable when combat_prose.txt split out of
+*comment combat.txt): combat.txt declares the caller's side of a prose pick with *temp, e.g. *temp fsh "" before
+*comment *gosub_scene combat_prose pick_spell_flavor, then prints ${fsh} after the call returns -- but *temp does
+*comment NOT cross a *gosub_scene file boundary (confirmed the hard way: quicktest immediately failed with
+*comment "Non-existent variable 'fsh'" the moment pick_spell_flavor, now in a different file, tried to *set it).
+*comment These five have to be real *create'd globals instead, exactly like combat_attacker_name/etc. just above
+*comment for the same reason. fsh/fsm: spell hit/miss text (pick_spell_flavor). fwh/fwm: weapon hit/miss text
+*comment (pick_weapon_flavor). fdh: any finishing-blow/death line (pick_spell_death_flavor,
+*comment pick_weapon_death_flavor, and fight_narrate_enemy_turn's own Agathys-retaliation kill, all funnel through
+*comment this one name). Always fully overwritten before being read, same as any other scratch pass-through in
+*comment this file -- the "" default only matters before the very first fight ever runs.
+*create fsh ""
+*create fsm ""
+*create fwh ""
+*create fwm ""
+*create fdh ""
+*comment ══════════════════════════════════════════════════════════════
+*comment TURN ORDER / INITIATIVE (2026-09-27) -- steps 4-5 of the turn-order rebuild. combat_roll_initiative
+*comment (combat.txt, called once from fight_setup, never per-round -- 5e rolls initiative once at the top of a
+*comment fight and keeps it for the whole thing) builds combat_turn_kind_1..11/_slot_1..11 below: the fixed order
+*comment every combatant in THIS fight acts in. 11 is 1 (player) + combat_ally_slot_cap (4) + combat_enemy_slot_cap
+*comment (6) -- a derived ceiling, not an independent tunable; bump it if either underlying cap grows.
+*comment combat_next_turn (combat.txt) is the dispatcher that actually walks this order, one combatant at a time,
+*comment replacing fight_enemy_turn's old all-enemies-at-once batch and fight_round_hub's exit point.
+*comment ══════════════════════════════════════════════════════════════
+*create combat_current_turn_index 0
+*comment True right after fight_setup, so the FIRST *goto fight_round_hub every fight_<name> label already ends
+*comment with (unchanged, no call site needed editing) dispatches through the queue instead of assuming the
+*comment player always goes first -- fight_round_hub's own preamble clears this the instant it's read. Nothing
+*comment else needs it: every OTHER transition into combat_next_turn (the player's turn ending, a stun skipping
+*comment it) goes there directly, since those are internal to combat.txt and don't have this many callers to avoid
+*comment touching.
+*create combat_turn_needs_advance false
+*comment True once anything has actually been narrated (an enemy's attack, a stun skipping the player's turn)
+*comment since the queue last handed control to the player -- gates whether combat_next_turn's page_break fires
+*comment before showing the next menu, so round 1 (and a mid-turn hub reopen) reads exactly as it always did, with
+*comment no break before anything has actually happened yet.
+*create combat_turn_advanced_this_page false
+*comment True once fight_round_hub has printed its round banner for the first time this fight -- gates the
+*comment opening blank-line separator (combat.txt) so it fires once, leaving the calling scene's prose, rather
+*comment than every time the hub reopens within the same round (a bonus action, an extra action, a spell that
+*comment loops back without ending the turn).
+*create combat_hub_shown_once false
+*comment Set true by a calling scene (alongside its own "advantage true" for the player's first attack roll) when
+*comment a stealth check catches the whole enemy group unaware -- NOT set by a pre-fight buff like the camp
+*comment whetstone prep, which sharpens the blade but doesn't mean the enemy never saw the player coming. Combined
+*comment with combat_turn_first_pass_1..11 below, this costs every enemy its first turn in the order outright (5e's
+*comment own surprise rule: no move, no action) instead of just handing the player's own roll advantage while an
+*comment enemy that won initiative still swings first. Reset false in fight_cleanup (combat.txt) like every other
+*comment fight-scoped flag.
+*create combat_player_surprise false
+*comment Hidden (2026-10-01): true while the player is concealed from every enemy. Armed by a successful Hide (not built yet),
+*comment it gives advantage on the NEXT attack roll -- weapon or spell, which is what switches Sneak Attack on -- and is spent
+*comment by making that roll, hit or miss (combat_hidden_attack_roll, combat.txt). Also ends when the player takes damage
+*comment (resolve_enemy_attack). Reset false in fight_cleanup like every other fight-scoped flag.
+*create combat_player_hidden false
+*comment Output of combat_check_hide (combat.txt): true when a living enemy is at Close or Engaged, so Hide is not offered.
+*create combat_hide_blocked false
+*comment True once an enemy has had its one spot check against a hidden player this round (combat_hidden_enemy_turn, combat.txt); cleared each round.
+*create combat_hide_checked false
+*comment Hide's difficulty (combat.txt combat_hide_dc_calc, 2026-10-12): the DC to hide or stay hidden is worked out each time, not fixed. combat_hide_dc_value is its output; combat_hide_uses counts the hidden attacks made this fight (each raises the next Hide by 2);
+*comment combat_hide_free_round is the first round Hide is offered again after a hidden attack (two rounds on, so a turn has to pass in between). All three are fight-scoped and reset in the fight setup.
+*create combat_hide_dc_value 15
+*create combat_hide_uses 0
+*create combat_hide_free_round 0
+*create combat_turn_count 0
+*create combat_turn_kind_1 ""
+*create combat_turn_slot_1 0
+*create combat_turn_kind_2 ""
+*create combat_turn_slot_2 0
+*create combat_turn_kind_3 ""
+*create combat_turn_slot_3 0
+*create combat_turn_kind_4 ""
+*create combat_turn_slot_4 0
+*create combat_turn_kind_5 ""
+*create combat_turn_slot_5 0
+*create combat_turn_kind_6 ""
+*create combat_turn_slot_6 0
+*create combat_turn_kind_7 ""
+*create combat_turn_slot_7 0
+*create combat_turn_kind_8 ""
+*create combat_turn_slot_8 0
+*create combat_turn_kind_9 ""
+*create combat_turn_slot_9 0
+*create combat_turn_kind_10 ""
+*create combat_turn_slot_10 0
+*create combat_turn_kind_11 ""
+*create combat_turn_slot_11 0
+*comment Parallel to combat_turn_kind_N/_slot_N above, same 11-position ceiling: true until that queue position has
+*comment dispatched once, then cleared for good (combat_next_turn, combat.txt) -- combat_player_surprise reads it to
+*comment know whether THIS enemy's turn is its first, since a position can recur every round for the rest of the
+*comment fight. Reset true for all 11 by combat_roll_initiative itself (combat.txt), same place combat_turn_kind_N
+*comment gets rebuilt, so a fresh fight never inherits a spent flag from the last one.
+*create combat_turn_first_pass_1 true
+*create combat_turn_first_pass_2 true
+*create combat_turn_first_pass_3 true
+*create combat_turn_first_pass_4 true
+*create combat_turn_first_pass_5 true
+*create combat_turn_first_pass_6 true
+*create combat_turn_first_pass_7 true
+*create combat_turn_first_pass_8 true
+*create combat_turn_first_pass_9 true
+*create combat_turn_first_pass_10 true
+*create combat_turn_first_pass_11 true
+*comment Scratch candidate list combat_roll_initiative builds and sorts FROM -- cleared and rebuilt every call,
+*comment never read outside it. Persistent *create'd storage (not *temp) so {}-indirection can target them the
+*comment same way every other scratch pool in this engine already does.
+*comment Index 0 is never a real candidate (cri_is_better_than_best is only ever called with a real 1-11 index) --
+*comment these five exist purely because quicktest's *if-branch-coverage walk visits cri_is_better_than_best's
+*comment *else branch even on the pass where cri_best is still 0 (a plain *if, same gotcha the enemy-widening work
+*comment already hit), so the indirected read needs somewhere to land without crashing. Never read by real logic.
+*create combat_init_kind_0 ""
+*create combat_init_slot_0 0
+*create combat_init_score_0 0
+*create combat_init_dex_0 0
+*create combat_init_used_0 false
+*comment Same gotcha, a different index: combat_next_turn (combat.txt) checks *if (cnt_kind = "enemy") before
+*comment reading combat_enemyN_* via cnt_slot -- for an unused turn-order position (kind "", slot 0, N beyond
+*comment combat_turn_count for this fight), quicktest's walk visits that body anyway with cnt_slot still 0, and
+*comment from there falls all the way through fight_sync_target_in/fight_narrate_enemy_turn's own indirected
+*comment reads -- so this needs a FULL inert slot 0, every field a real slot has (mirroring slot 6's own list),
+*comment not just combat_enemy0_hp. Never read by real logic; real data never pairs kind "enemy" with slot 0.
+*create combat_enemy_atk_locked_0 false
+*create combat_enemy0_name "none"
+*create combat_enemy0_hp 0
+*create combat_enemy0_slowed 0
+*create combat_enemy0_frightened 0
+*create combat_enemy0_max_hp 0
+*create combat_enemy0_ac 10
+*create combat_enemy0_atk_bonus 0
+*create combat_enemy0_dmg_dice_sides 4
+*create combat_enemy0_dmg_bonus 0
+*create combat_enemy0_epithet "the creature"
+*create combat_enemy0_metal_armor false
+*create combat_enemy0_dmg_type "bludgeoning"
+*create combat_enemy0_weapon_type "melee"
+*create combat_enemy0_behavior_profile "feral"
+*create combat_enemy0_sidearm_weapon_type ""
+*create combat_enemy0_sidearm_atk_bonus 0
+*create combat_enemy0_sidearm_dmg_dice_sides 4
+*create combat_enemy0_sidearm_dmg_bonus 0
+*create combat_enemy0_sidearm_dmg_type "piercing"
+*create combat_enemy0_chase_target 0
+*create combat_enemy0_chase_range 0
+*create combat_enemy0_chase_roll_done false
+*create combat_enemy0_chase_hp_snapshot 0
+*create combat_enemy0_chase_chance 0
+*create combat_enemy0_can_retreat false
+*create combat_enemy0_flee_hp_pct 0
+*create combat_enemy0_bane_expires_round 0
+*create combat_enemy0_disadvantage false
+*create combat_enemy0_advantage false
+*create combat_enemy0_oa_used false
+*create combat_enemy0_range 0
+*create combat_enemy0_inflicts_condition false
+*create combat_enemy0_condition_name ""
+*create combat_enemy0_condition_icon ""
+*create combat_enemy0_inflicts_stun false
+*create combat_enemy0_stun_name ""
+*create combat_enemy0_stun_icon ""
+*create combat_enemy0_move2_chance 0
+*create combat_enemy0_move2_atk_bonus 0
+*create combat_enemy0_move2_dmg_dice_sides 4
+*create combat_enemy0_move2_dmg_bonus 0
+*create combat_enemy0_move2_dmg_type "bludgeoning"
+*create combat_enemy0_move2_inflicts_condition false
+*create combat_enemy0_move2_condition_name ""
+*create combat_enemy0_move2_condition_icon ""
+*create combat_enemy0_resist_type_1 ""
+*create combat_enemy0_resist_type_2 ""
+*create combat_enemy0_vulnerable_type_1 ""
+*create combat_enemy0_vulnerable_type_2 ""
+*create combat_enemy0_strength 10
+*create combat_enemy0_dexterity 10
+*create combat_enemy0_constitution 10
+*create combat_enemy0_intelligence 10
+*create combat_enemy0_wisdom 10
+*create combat_enemy0_charisma 10
+*create combat_enemy0_flavor_type ""
+*create combat_enemy0_extra_dmg_dice_sides 0
+*create combat_enemy0_extra_dmg_bonus 0
+*create combat_enemy0_extra_dmg_type "poison"
+*create combat_enemy0_size "medium"
+*comment Slot-0 placeholders for the per-fight override fields (inert, never read by real logic; quicktest's branch walk reads them for the unused slot).
+*create combat_enemy0_ac_override 999
+*create combat_enemy0_atk_override 999
+*create combat_enemy0_hp_override 999
+*create combat_enemy0_strength_override 0
+*create combat_enemy0_dexterity_override 0
+*create combat_enemy0_constitution_override 0
+*create combat_enemy0_intelligence_override 0
+*create combat_enemy0_wisdom_override 0
+*create combat_enemy0_charisma_override 0
+*create combat_enemy0_name_override ""
+*create combat_enemy0_epithet_override ""
+*create combat_enemy0_size_override ""
+*create combat_ally0_name_override ""
+*create combat_ally0_epithet_override ""
+*create combat_flavor_enemy0_move2_hit ""
+*create combat_flavor_enemy0_move2_miss ""
+*create combat_flavor_enemy0_hit_1 ""
+*create combat_flavor_enemy0_hit_2 ""
+*create combat_flavor_enemy0_hit_3 ""
+*create combat_flavor_enemy0_hit_4 ""
+*create combat_flavor_enemy0_hit_5 ""
+*create combat_flavor_enemy0_miss_1 ""
+*create combat_flavor_enemy0_miss_2 ""
+*create combat_flavor_enemy0_miss_3 ""
+*create combat_flavor_enemy0_miss_4 ""
+*create combat_flavor_enemy0_miss_5 ""
+*comment Whole-body lock (2026-09-30) for combat_roll_initiative itself (combat.txt) -- see that *label's own
+*comment header comment for the reroll-the-whole-turn-order bug this caught.
+*create combat_init_locked false
+*create locked_combat_init_page_id 0
+*create combat_init_count 0
+*create combat_init_kind_1 ""
+*create combat_init_slot_1 0
+*create combat_init_score_1 0
+*create combat_init_dex_1 0
+*create combat_init_used_1 false
+*create combat_init_kind_2 ""
+*create combat_init_slot_2 0
+*create combat_init_score_2 0
+*create combat_init_dex_2 0
+*create combat_init_used_2 false
+*create combat_init_kind_3 ""
+*create combat_init_slot_3 0
+*create combat_init_score_3 0
+*create combat_init_dex_3 0
+*create combat_init_used_3 false
+*create combat_init_kind_4 ""
+*create combat_init_slot_4 0
+*create combat_init_score_4 0
+*create combat_init_dex_4 0
+*create combat_init_used_4 false
+*create combat_init_kind_5 ""
+*create combat_init_slot_5 0
+*create combat_init_score_5 0
+*create combat_init_dex_5 0
+*create combat_init_used_5 false
+*create combat_init_kind_6 ""
+*create combat_init_slot_6 0
+*create combat_init_score_6 0
+*create combat_init_dex_6 0
+*create combat_init_used_6 false
+*create combat_init_kind_7 ""
+*create combat_init_slot_7 0
+*create combat_init_score_7 0
+*create combat_init_dex_7 0
+*create combat_init_used_7 false
+*create combat_init_kind_8 ""
+*create combat_init_slot_8 0
+*create combat_init_score_8 0
+*create combat_init_dex_8 0
+*create combat_init_used_8 false
+*create combat_init_kind_9 ""
+*create combat_init_slot_9 0
+*create combat_init_score_9 0
+*create combat_init_dex_9 0
+*create combat_init_used_9 false
+*create combat_init_kind_10 ""
+*create combat_init_slot_10 0
+*create combat_init_score_10 0
+*create combat_init_dex_10 0
+*create combat_init_used_10 false
+*create combat_init_kind_11 ""
+*create combat_init_slot_11 0
+*create combat_init_score_11 0
+*create combat_init_dex_11 0
+*create combat_init_used_11 false
+*comment cri_is_better_than_best's own output (combat.txt) -- persistent like sm_mod/sm_mod_str, read by the
+*comment caller right after *gosub returns.
+*create cri_ibt_result false
+*comment Placeholder flavor text for an ally-vs-enemy attack (either direction) lives in combat.txt (fight_narrate_ally_attack), built fresh
+*comment at call time rather than stored here -- a stored *set string's ${} tokens resolve immediately, at that
+*comment *set, not later when the string is finally printed, so a pool baked once at startup would freeze in
+*comment whatever epithet was live at game-start (empty), never the real attacker/target. Confirmed with a
+*comment synthetic test before shipping this, not assumed.
+*comment Variants 6-8 of the stored player strike pool, which the creature fights use (apply_creature_weapon_flavor). A hand-authored fight has 1-5 only.
+*create combat_flavor_weapon_hit_6 ""
+*create combat_flavor_weapon_hit_7 ""
+*create combat_flavor_weapon_hit_8 ""
+*create combat_flavor_weapon_miss_6 ""
+*create combat_flavor_weapon_miss_7 ""
+*create combat_flavor_weapon_miss_8 ""
+*create combat_flavor_weapon_hit_ranged_6 ""
+*create combat_flavor_weapon_hit_ranged_7 ""
+*create combat_flavor_weapon_hit_ranged_8 ""
+*create combat_flavor_weapon_miss_ranged_6 ""
+*create combat_flavor_weapon_miss_ranged_7 ""
+*create combat_flavor_weapon_miss_ranged_8 ""
+*comment True while the player's weapon lines come from combat.txt's flavor_player_<damage type> labels (a fight against
+*comment a human fighter) rather than the stored creature pool. Set by apply_generic_weapon_flavor, cleared by fight_cleanup.
+*create combat_player_keyed false
+*comment True when the foe is a creature (lacedon, mire_rat, beast) rather than a person: the player's lines then come from the
+*comment flavor_creature_ labels. Set with combat_player_keyed by apply_creature_weapon_flavor; cleared by fight_cleanup.
+*create combat_player_creature false
+*comment Enemy type library: which library type fills each slot ("" for a hand-authored slot), and the scratch fields
+*comment flavor_from_type (combat.txt) reads and writes. Plain variables rather than *params, like advance_time.
+*comment combat_lib_1/2/3: what a scene sets to call combat.txt fight_library (a library type id per slot); cleared by fight_cleanup.
+*create combat_lib_1 ""
+*create combat_lib_2 ""
+*create combat_lib_3 ""
+*create combat_lib_4 ""
+*create combat_lib_5 ""
+*create combat_lib_6 ""
+*create combat_enemy1_flavor_type ""
+*create combat_enemy2_flavor_type ""
+*create combat_enemy3_flavor_type ""
+*create combat_enemy4_flavor_type ""
+*create combat_enemy5_flavor_type ""
+*create combat_enemy6_flavor_type ""
+*create fft_type ""
+*create fft_v 1
+*create fft_m2 1
+*create fft_hit ""
+*create fft_miss ""
+*create fft_m2hit ""
+*create fft_m2miss ""
+*comment Shield (RAW, reworked 2026-10-03): shield_armed is the held reaction (free to keep, a slot is spent only when it fires). It requires an available spell slot and player reaction. It fires only for a hit that the +5 AC can turn into a miss; an unbeatable hit keeps it armed. When it fires,
+*comment it spends both resources and shield_active holds the +5 AC for EVERY attack made against the player until the start of the player's next turn; it is not destroyed by a hit. Both states are cleared
+*comment at the start of each player turn and by fight_cleanup.
+*create shield_armed false
+*create shield_active false
+*create combat_shield_triggered false
+*comment MAGIC MISSILE TARGETING (2026-09-28): sidebar-driven multi-target dart allocation, the first spell
+*comment built this way and meant as a reusable shape for future multi-target spells -- see fight_target_magic_
+*comment missile (combat.txt). combat_mm_targeting_active gates the sidebar's click handler (web/mygame/
+*comment index.html): while true, clicking an enemy row raises or lowers THAT slot's own combat_mm_darts_N
+*comment instead of the usual single-target combat_player_chosen_target. combat_mm_darts_max is set once, when
+*comment the spell is armed (3 for Magic Missile), not hardcoded in the JS, so a future spell with a different
+*comment count can reuse the same click handler untouched. One field per enemy slot, same convention as
+*comment combat_enemy<N>_* -- combat_enemy_slot_cap (6) is the bound both the JS and the ChoiceScript loops use.
+*create combat_mm_targeting_active false
+*create combat_mm_darts_max 0
+*create combat_mm_darts_total 0
+*create combat_mm_darts_1 0
+*create combat_mm_darts_2 0
+*create combat_mm_darts_3 0
+*create combat_mm_darts_4 0
+*create combat_mm_darts_5 0
+*create combat_mm_darts_6 0
+*comment Per-target result banners (2026-09-28, real damage split): one durable string per enemy slot, set
+*comment inside resolve_magic_missile's replay lock and printed outside it, same shape as
+*comment combat_player_dmg_roll_banner used before the split -- a page replay re-prints the same banners
+*comment without re-rolling. Empty string for any slot that took no darts this cast.
+*create combat_mm_banner_1 ""
+*create combat_mm_banner_2 ""
+*create combat_mm_banner_3 ""
+*create combat_mm_banner_4 ""
+*create combat_mm_banner_5 ""
+*create combat_mm_banner_6 ""
+*comment BLADE WARD (house rule: a bonus-action Blade Ward, not RAW's 1 action) -- a cantrip for
+*comment warlocks, wizards and bards. Until the end of your NEXT turn you have resistance to
+*comment bludgeoning, piercing and slashing from weapon attacks. Two flags because "end of your next
+*comment turn" is a duration measured in player turns, not rounds:
+*create blade_ward_active false
+*comment blade_ward_survived_a_turn set true by the FIRST player turn-end after the cast, which is
+*comment                                what makes the SECOND one expire it (see blade_ward_tick, combat.txt)
+*comment The re-cast resets survived_a_turn as well as active: without that, casting on the turn after
+*comment the ward looks like a no-op and the effect still dies a turn early. Idempotent, so it needs
+*comment no replay lock of its own (unlike the tick, which does).
+*create blade_ward_survived_a_turn false
+*comment Replay guard for blade_ward_tick: it mutates a fight-scoped flag, and a bare *set re-runs when
+*comment the page is replayed, which would expire the ward a whole turn early. Same page_id idiom as
+*comment combat_spend_bonus (create at startup.txt:1053-1054).
+*create blade_ward_tick_locked false
+*create locked_blade_ward_tick_page_id 0
+*comment ═══ DODGE (2026-09-28) ═══ RAW 2014 "Actions in Combat": +5 AC for the current turn, and you cannot
+*comment move. Replaces the homebrew "Brace" option (combat.txt), which tried to do the same job in a worse
+*comment way -- it made ONE chosen enemy roll at disadvantage for a whole action, where this covers every
+*comment attack from every enemy. Brace was also not a 5e action at all, and had never been documented as a
+*comment house rule. Kept as a plain durable flag rather than an AC offset written onto armor_class, so
+*comment equipment's recalculate_armor_class can never absorb a +5 that only lasts until the turn ends.
+*comment Reset in fight_setup and fight_cleanup, and -- per the RAW "for the current turn" wording -- at
+*comment fight_end_player_turn. The "cannot move" half is enforced in combat.txt's movement gates.
+*create dodge_active false
+*create hex_active false
+*comment Hex follows one creature at a time. When that creature falls, combat_hex_orphaned lets the player move the spell with a bonus action, as RAW permits.
+*create hex_target_slot 0
+*create combat_hex_live false
+*create combat_hex_orphaned false
+*create combat_hex_name ""
+*create hexblood_hex_used false
+*create temp_hp 0
+*create agathys_active false
+*create combat_agathys_triggered false
+*create combat_agathys_shattered false
+*create combat_cast_locked false
+*create locked_combat_cast_page_id 0
+*create combat_cast_result 0
+*create combat_dissonant_whispers_locked false
+*create locked_combat_dissonant_whispers_page_id 0
+*comment Whole-choice-body lock (2026-09-30) for the Dissonant Whispers option itself (combat.txt), separate from
+*comment combat_dissonant_whispers_locked above (which only guards resolve_dissonant_whispers's own damage math) --
+*comment same fight_pick_target-rerun bug as combat_weapon_attack_locked, see that *create's own comment.
+*create combat_dw_choice_locked false
+*create locked_combat_dw_choice_page_id 0
+*comment Whole-choice-body lock (2026-09-30), shared by all six cantrip options (Fire Bolt/Ray of Frost/Shocking
+*comment Grasp/Eldritch Blast/Chill Touch/Vicious Mockery, combat.txt) -- one flag covers all of them since they
+*comment cost the same ACTION budget and so are mutually exclusive within any one page, the same reasoning
+*comment resolve_player_hit's own single shared lock (combat_dice.txt) already relies on for the same five/six
+*comment callers. See Fire Bolt's own comment (combat.txt) for the fight_pick_target-rerun bug this caught.
+*create combat_cantrip_choice_locked false
+*create locked_combat_cantrip_choice_page_id 0
+

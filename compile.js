@@ -25,6 +25,8 @@ if (typeof process != "undefined") {
   // shop menus) from tools/gear_catalog.json into the scenes that gen_equipment_data.js then parses.
   require(path.join(__dirname, 'tools', 'gen_gear.js'));
   require(path.join(__dirname, 'tools', 'gen_equipment_data.js'));
+  // startup.txt is built from web/mygame/scenes/startup_parts/ (the source); join them before anything reads it. gen_gear.js above already did after writing its part.
+  require(path.join(__dirname, 'tools', 'build_startup.js')).write();
   load = function(file) {
     vm.runInThisContext(fs.readFileSync(file), file);
   };

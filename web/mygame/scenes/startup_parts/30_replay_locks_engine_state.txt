@@ -1,0 +1,174 @@
+*comment --- REPLAY LOCKS & ENGINE STATE ---
+*create roll_locked false
+*create locked_page_id 0
+*create locked_guidance_roll 0
+*create locked_adv_label ""
+*create roll_had_advantage false
+*comment True when the last d20 roll had disadvantage (set beside roll_had_advantage in roll_d20_check). Sneak Attack's ally
+*comment trigger reads it, because 5e denies that trigger on a roll made with disadvantage, even when advantage cancelled it.
+*create roll_had_disadvantage false
+*comment A flat bonus a caller wants on THIS roll (Archery, +2 on a ranged weapon attack). roll_d20_check adds it and clears it; the caller clears it again after the roll.
+*create check_flat_bonus 0
+*comment Optional explanation paired with check_flat_bonus. The d20 engine appends it to its roll breakdown and
+*comment clears it with the number, letting terrain (and later effects) remain visible without each caller having
+*comment to build a second combat banner.
+*create check_flat_bonus_label ""
+*comment Optional explanation paired with a temporary attack DC increase (currently Cover). It follows the same
+*comment one-roll lifetime as check_flat_bonus_label, so the D20 banner can explain why the target number rose.
+*create check_dc_label ""
+*comment A scene may mark an ordinary skill check as a repair or mechanism task ("repair") or a performance ("perform"). roll_d20_check then reads the Repair Kit or the Lute automatically; scenes never inspect has_tool_kit or has_lute themselves.
+*create check_task_type "none"
+*comment Sneak Attack's second trigger (2026-10-01): a living ally is in melee, so the target is flanked. combat_flank_ally is the
+*comment slot found by combat_find_flanking_ally (0 = none). combat_sneak_via_ally is true when THIS hit was sneak-attacking
+*comment through the ally and not through advantage, and combat_sneak_ally_name is who, for the hit prose (combat.txt).
+*create combat_flank_ally 0
+*comment Sneak Attack is once per turn (2026-10-01): true once it has fired, cleared with the other per-turn budgets in combat_begin_round.
+*create combat_sneak_spent false
+*create combat_sneak_via_ally false
+*create combat_sneak_ally_name ""
+*create damage_roll_locked false
+*create locked_damage_page_id 0
+*comment Damage-roll breakdown banners (2026-09-27, on request -- "I only see attack rolls, not damage rolls"):
+*comment same idea as the D20 Check banner (roll_d20_check, dice_engine.txt, prints its own), each damage-resolving primitive (combat_dice.txt)
+*comment prints its own "[dice] +[bonus] = [total]" line, built once inside its existing replay-lock gate and
+*comment printed unconditionally after it, so a Stats-and-back replay reprints the ORIGINAL roll instead of
+*comment silently losing the line or re-rolling. combat_player_dmg_roll_banner is shared by every player-damage
+*comment label (weapon hit, cantrip hit, Magic Missile, Dissonant Whispers) since only one can fire per turn --
+*comment same reasoning apply_derived_combat_bonuses's prof_bonus note gives for one flat field covering many
+*comment callers. combat_enemy_dmg_banner_1..6 is per-slot instead, reusing resolve_enemy_attack's own existing
+*comment combat_enemy_atk_locked_N array as the gate (no new lock needed) -- a full round can narrate several
+*comment enemies' attacks on ONE page before the break, so a single shared field would let enemy 3's banner
+*comment silently overwrite enemy 1's and 2's on a mid-round replay, the same class of bug Bane's own per-index
+*comment save banners were built to avoid.
+*create combat_player_dmg_roll_banner ""
+*create combat_enemy_dmg_banner_1 ""
+*create combat_enemy_dmg_banner_2 ""
+*create combat_enemy_dmg_banner_3 ""
+*create combat_enemy_dmg_banner_4 ""
+*create combat_enemy_dmg_banner_5 ""
+*create combat_enemy_dmg_banner_6 ""
+*comment Enemy attack-roll banners (2026-09-27, on request -- "I only ever see hit or a miss"): same idea and
+*comment same per-slot reasoning as the damage banners just above, for the TO-HIT roll instead -- mirrors the
+*comment player's own D20 Check banner (roll_d20_check), which enemies never had an equivalent of.
+*create combat_enemy_atk_banner_1 ""
+*create combat_enemy_atk_banner_2 ""
+*create combat_enemy_atk_banner_3 ""
+*create combat_enemy_atk_banner_4 ""
+*create combat_enemy_atk_banner_5 ""
+*create combat_enemy_atk_banner_6 ""
+*comment resolve_enemy_save (2026-09-27): indexed 0-6 instead of one shared lock, because Bane (dormant, see
+*comment resolve_cast_bane) calls this up to three times on the SAME page, once per targeted slot -- a single
+*comment shared lock would incorrectly skip the 2nd/3rd target's own roll even on the very first pass, not just
+*comment on a Stats-and-back replay. Index 0 is Vicious Mockery/Dissonant Whispers' own single-target call
+*comment (they never call it twice on one page, so 0 alone covers both); indices 1-6 are resolve_cast_bane
+*comment checking a specific numbered slot directly. Banner text is cached alongside the outcome so a replay
+*comment reprints the exact original line instead of a fresh (and possibly contradictory-looking) roll.
+*create locked_combat_save_page_id 0
+*create combat_save_locked_0 false
+*create combat_save_success_0 false
+*create combat_save_banner_0 ""
+*create combat_save_locked_1 false
+*create combat_save_success_1 false
+*create combat_save_banner_1 ""
+*create combat_save_locked_2 false
+*create combat_save_success_2 false
+*create combat_save_banner_2 ""
+*create combat_save_locked_3 false
+*create combat_save_success_3 false
+*create combat_save_banner_3 ""
+*create combat_save_locked_4 false
+*create combat_save_success_4 false
+*create combat_save_banner_4 ""
+*create combat_save_locked_5 false
+*create combat_save_success_5 false
+*create combat_save_banner_5 ""
+*create combat_save_locked_6 false
+*create combat_save_success_6 false
+*create combat_save_banner_6 ""
+*create combat_player_hit_locked false
+*create locked_combat_player_hit_page_id 0
+*create locked_combat_enemy_atk_page_id 0
+*create combat_enemy_atk_locked_1 false
+*create combat_enemy_atk_locked_2 false
+*create combat_enemy_atk_locked_3 false
+*create combat_enemy_atk_locked_4 false
+*create combat_enemy_atk_locked_5 false
+*create combat_enemy_atk_locked_6 false
+*comment Enemy turn narration (fight_narrate_enemy_turn, combat_prose.txt), 2026-09-30: a separate per-slot lock
+*comment from the attack-resolution one just above, deliberately -- an opportunity attack and a normal attack on
+*comment the same slot within one page would otherwise share (and collide on) one lock namespace. Caches the
+*comment RANDOM SEED only (narrate_v/narrate_m2), not the derived hit/miss text, since flavor_from_type is a pure
+*comment function of that seed plus the type -- see that label's own comment for the real bug this closed.
+*create locked_combat_enemy_narrate_page_id 0
+*create combat_enemy_narrate_locked_1 false
+*create combat_enemy_narrate_locked_2 false
+*create combat_enemy_narrate_locked_3 false
+*create combat_enemy_narrate_locked_4 false
+*create combat_enemy_narrate_locked_5 false
+*create combat_enemy_narrate_locked_6 false
+*create combat_enemy1_narrate_v 0
+*create combat_enemy1_narrate_m2 0
+*create combat_enemy2_narrate_v 0
+*create combat_enemy2_narrate_m2 0
+*create combat_enemy3_narrate_v 0
+*create combat_enemy3_narrate_m2 0
+*create combat_enemy4_narrate_v 0
+*create combat_enemy4_narrate_m2 0
+*create combat_enemy5_narrate_v 0
+*create combat_enemy5_narrate_m2 0
+*create combat_enemy6_narrate_v 0
+*create combat_enemy6_narrate_m2 0
+*comment Movepool roll (fight_pick_enemy_move, combat.txt), 2026-09-30: same per-slot lock/cache shape as the
+*comment attack and narration locks just above -- see that label's own comment for the real bug this closed.
+*comment combat_enemy_move2_locked_0/combat_enemy0_move2_picked are inert placeholders, never meaningfully read
+*comment or written at runtime (the label's own combat_active_target > 0 guard sees to that) -- quicktest's
+*comment coverage walk visits an *if body's lines regardless of whether the guard is true for its own simulated
+*comment state (GAMEPLAY_MECHANICS_RULES.md's own "Sharp edge" note on this), so the indirected name still has
+*comment to resolve to something real for slot 0, same fix shape as any other slot-1-only field's own placeholder.
+*create locked_combat_enemy_move2_page_id 0
+*create combat_enemy_move2_locked_0 false
+*create combat_enemy0_move2_picked false
+*create combat_enemy_move2_locked_1 false
+*create combat_enemy_move2_locked_2 false
+*create combat_enemy_move2_locked_3 false
+*create combat_enemy_move2_locked_4 false
+*create combat_enemy_move2_locked_5 false
+*create combat_enemy_move2_locked_6 false
+*create combat_enemy1_move2_picked false
+*create combat_enemy2_move2_picked false
+*create combat_enemy3_move2_picked false
+*create combat_enemy4_move2_picked false
+*create combat_enemy5_move2_picked false
+*create combat_enemy6_move2_picked false
+*comment Ally attack (resolve_ally_attack, combat_dice.txt): same per-slot lock/banner shape as the enemy-attack
+*comment block above, sized to combat_ally_slot_cap (4) instead of 6. combat_ally_atk_hit and combat_ally_
+*comment dmg_dealt are the routine's outputs, read by the caller after the *gosub_scene returns -- durable
+*comment globals, not a caller-declared *temp, since a value has to survive that scene-crossing round trip.
+*create locked_combat_ally_atk_page_id 0
+*create combat_ally_atk_locked_1 false
+*create combat_ally_atk_locked_2 false
+*create combat_ally_atk_locked_3 false
+*create combat_ally_atk_locked_4 false
+*create combat_ally_atk_banner_1 ""
+*create combat_ally_atk_banner_2 ""
+*create combat_ally_atk_banner_3 ""
+*create combat_ally_atk_banner_4 ""
+*create combat_ally_dmg_banner_1 ""
+*create combat_ally_dmg_banner_2 ""
+*create combat_ally_dmg_banner_3 ""
+*create combat_ally_dmg_banner_4 ""
+*create combat_ally_atk_hit false
+*create combat_ally_dmg_dealt 0
+*comment Interception outputs (2026-09-28): resolve_enemy_attack_on_ally's own hit flag/damage total, same
+*comment naming convention as combat_ally_atk_hit/_dmg_dealt just above but for the reverse direction.
+*create combat_enemy_atk_on_ally_hit false
+*create combat_enemy_dmg_on_ally_dealt 0
+*create combat_magic_missile_locked false
+*create locked_combat_magic_missile_page_id 0
+*create second_wind_locked false
+*create locked_second_wind_page_id 0
+*create action_surge_locked false
+*create locked_action_surge_page_id 0
+*create activate_rage_locked false
+*create locked_activate_rage_page_id 0
+

@@ -607,7 +607,7 @@ function setRegion(file, name, lines) {
 }
 
 var F = {
-  startup: path.join(SCENES, "startup.txt"),
+  startup: path.join(SCENES, "startup_parts", "40_gear_creates_generated.txt"),   // a part of startup.txt; build_startup.js joins the parts (run at the end of this script)
   equipment: path.join(SCENES, "equipment.txt"),
   stats: path.join(SCENES, "choicescript_stats.txt"),
   combat: path.join(SCENES, "combat.txt"),
@@ -665,4 +665,5 @@ if (CHECK) {
   console.log("gen_gear: all generated blocks are up to date (" + items.length + " items, " + CATALOG.shops.length + " shop menus).");
 } else {
   console.log("gen_gear: " + items.length + " items, " + CATALOG.shops.length + " shop menus; " + (stale.length ? "rewrote " + stale.join(", ") : "nothing changed") + ".");
+  require("./build_startup.js").write();
 }

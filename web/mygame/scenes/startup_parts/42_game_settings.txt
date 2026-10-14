@@ -1,0 +1,71 @@
+*comment --- GAME SETTINGS ---
+*comment The real first choice of the game, reached the instant the *create preamble above finishes. Everything
+*comment past this point -- the actual "Begin Campaign" vs. "Developer" fork, the 8 character presets, the combat
+*comment dev-test hub -- lives in dev_hub.txt (2026-09-28 split), reached with *goto_scene dev_hub mode_select
+*comment (one-way, no return, same shape as death.txt) since startup.txt can hold nothing past its *create
+*comment preamble except this one settings choice.
+Before the mud and the blood: many choices throughout this game carry mechanical weight—ability scores, dice, DCs, damage. Would you like these shown as numeric hints next to the choices that have them?
+
+*choice
+  # Yes, show me the numbers. (You can toggle this later from the dossier's Settings option.)
+    *set show_stat_hints true
+    *goto_scene dev_hub mode_select
+  # No, keep it immersive—let me discover what a choice does through the story alone.
+    *set show_stat_hints false
+    *goto_scene dev_hub mode_select
+
+*comment score_to_mod: the real 2014-rules ability modifier, floor((score-10)/2), uncapped in both directions
+*comment (2026-09-27) -- this used to flatline at -1 below 9 and cap at +3 above 16, an unintentional house rule
+*comment discovered while adding enemy ability scores (nothing above 16 bought anything), not a deliberate
+*comment balance choice, so it's corrected here rather than kept, for the player's own modifiers too --
+*comment update_dnd_stats/recalculate_con_mod (character_stats.txt) now call this instead of each keeping their own hand-copied
+*comment ladder, so there is exactly one place this math can go wrong instead of six. Written as a threshold
+*comment ladder, not division/modulo, to avoid any doubt about how this engine rounds negative division (never
+*comment verified, and unnecessary when a plain *if chain says exactly the same thing with zero ambiguity).
+*comment Covers the full legal 5e score range, 1-30. Thresholds are listed least-to-most-extreme in each
+*comment direction, so the most extreme applicable one, being the last to run, is the one left standing.
+*comment Output: sm_mod (number), sm_mod_str ("+4"/"-2"/... for display, same format the old hardcoded
+*comment _mod_str strings already used).
+*label score_to_mod
+*params sm_score
+*set sm_mod 0
+*if (sm_score <= 9)
+  *set sm_mod 0 - 1
+*if (sm_score <= 7)
+  *set sm_mod 0 - 2
+*if (sm_score <= 5)
+  *set sm_mod 0 - 3
+*if (sm_score <= 3)
+  *set sm_mod 0 - 4
+*if (sm_score <= 1)
+  *set sm_mod 0 - 5
+*if (sm_score >= 12)
+  *set sm_mod 1
+*if (sm_score >= 14)
+  *set sm_mod 2
+*if (sm_score >= 16)
+  *set sm_mod 3
+*if (sm_score >= 18)
+  *set sm_mod 4
+*if (sm_score >= 20)
+  *set sm_mod 5
+*if (sm_score >= 22)
+  *set sm_mod 6
+*if (sm_score >= 24)
+  *set sm_mod 7
+*if (sm_score >= 26)
+  *set sm_mod 8
+*if (sm_score >= 28)
+  *set sm_mod 9
+*if (sm_score >= 30)
+  *set sm_mod 10
+*if (sm_mod >= 0)
+  *set sm_mod_str ("+" & sm_mod)
+*else
+  *set sm_mod_str ("" & sm_mod)
+*return
+
+*comment Note: Equipment loadouts and AC calculations are in equipment.txt
+
+*comment Consumables (the Saint Althea's Water phial, Ambrose's liniment and draught) are catalog items used through
+*comment equipment.txt use_consumable; the old single-flag use_althea_phial routine is gone.
