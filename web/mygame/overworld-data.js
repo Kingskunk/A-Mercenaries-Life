@@ -356,7 +356,7 @@
       hereStorm: "Rain rattles through the high branches and the whole forest roars. The leaf mould runs black with water, and the trees blur into the moving grey."
     },
     le: {
-      name: "Northeast Longshade", kind: "forest", x: -2.2, y: -4.5, region: "The Longshade",
+      name: "Northeast Longshade", kind: "forest", x: -2.2, y: -4.25, region: "The Longshade",
       territory: "scales",
       danger: 3,
       climate: -1,
