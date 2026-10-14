@@ -7,12 +7,12 @@
 *comment   Sleep: overworld.txt ow_camp_pre / ow_camp, unchanged (the visitor at the fire, the 8 hours or the sleep until dawn, shared bunk, exposure, the death check, resolve_sleep). It ends on the map, as it always did.
 *comment   Rest: the one-hour short rest (character_progression.txt short_rest_preview / do_short_rest), the same one the dossier's Rest menu takes, with the camp's fire taken into the exposure.
 *comment   Eat: a trail ration through equipment.txt use_consumable (refused within six hours of a meal, like anywhere).
-*comment   Drill: a training session on your own (character_progression.txt training_preview / do_training_session). It counts fully toward the level-up sessions and shares the compound's once-a-day limit
+*comment   Train: a training session on your own (character_progression.txt training_preview / do_training_session). It counts fully toward the level-up sessions and shares the compound's once-a-day limit
 *comment     (last_training_day), so camping never gives a second session in a day. The compound keeps its teachers and its prose; this is a short self-directed track with no squad voice.
 *comment   Break camp: back to the map.
 *comment A button that cannot be used right now stays listed and is reworded to say why (the closure pages cost no time and set nothing). To add a camp activity, add one option and one label here.
 *comment
-*comment Replay: every action is its own page with its own time_advance_call_id; the rest page is guarded by camp_rest_applied (cleared by the hub), the drill by do_training_session's own stamp, and the closure
+*comment Replay: every action is its own page with its own time_advance_call_id; the rest page is guarded by camp_rest_applied (cleared by the hub), the training by do_training_session's own stamp, and the closure
 *comment pages read the live state. The hub chooses between an action and its closure page when it is built, so the action page never re-checks what it has just changed.
 *comment
 *comment Not in *scene_list: compile.js lists it with verifyFileName.
@@ -21,7 +21,7 @@
 *label camp_hub
 *set ow_on true
 *set camp_rest_applied false
-*comment The sleep-until-dawn option needs the same numbers the map card works out (overworld.txt ow_here), fresh: a rest or a drill has moved the clock since.
+*comment The sleep-until-dawn option needs the same numbers the map card works out (overworld.txt ow_here), fresh: a rest or training has moved the clock since.
 *script var nowm = Number(stats.clock_hour) * 60 + Number(stats.clock_minute); var toDawn = (1800 - nowm) % 1440; stats.ow_dawn_ok = (toDawn >= 360 && toDawn <= 720); stats.ow_dawn_hours = Math.round(toDawn / 60);
 *gosub_scene calendar update_hub_condition
 *gosub_scene character_progression training_preview
@@ -76,24 +76,24 @@ You have made camp off the road, in the best patch of ground you could find.
     # Eat a trail ration.
       *goto camp_eat
   *if (cp_train_ok)
-    # Drill on your own. [~${training_hours} Hours]
+    # Train on your own. [~${training_hours} Hours]
       *goto camp_train
   *if (cp_done)
-    # Drill on your own: nothing more drill can teach you.
+    # Train on your own: nothing more to learn today.
       *goto camp_train_closed
   *if ((not(cp_done)) and (not(training_can_train)))
-    # Drill on your own: you have already trained today.
+    # Train on your own: you have already trained today.
       *goto camp_train_closed
   *if (((not(cp_done)) and (training_can_train)) and (cp_dark))
-    # Drill on your own: the light is going.
+    # Train on your own: the light is going.
       *goto camp_train_closed
   *if ((((not(cp_done)) and (training_can_train)) and (not(cp_dark))) and (weather_severity >= 3))
-    # Drill on your own: too foul out.
+    # Train on your own: too foul out.
       *goto camp_train_closed
   # Break camp and go back to the road.
     *goto_scene overworld/overworld ow_here
 
-*comment ── after a stretch of the clock at the camp: hunger and tiredness can cost a hit point each, so the death check the camp sleep and the drill square both make. ──
+*comment ── after a stretch of the clock at the camp: hunger and tiredness can cost a hit point each, so the death check the camp sleep and the training square both make. ──
 *label camp_after_time
 *gosub_scene calendar recalc_hp_from_neglect
 *if (hp_current <= 0)
@@ -147,7 +147,7 @@ You have made camp off the road, in the best patch of ground you could find.
 *if (short_rest_pick = 3)
   You close your eyes for a stretch and let the tension drain out of your limbs.
 *if (character_class = "fighter")
-  The stubborn steadiness comes back into your arms, the way it does after a hard drill.
+  The stubborn steadiness comes back into your arms, the way it does after hard training.
 *if (character_class = "warlock")
   The pact's low hum settles back behind your ribs, ready to be called on again.
 *if (((character_class = "wizard") or (character_class = "bard")) or (character_class = "ranger"))
@@ -171,20 +171,20 @@ ${use_text}
 *page_break Back to the fire…
 *goto camp_hub
 
-*comment ── Drill on your own. The same session the compound counts, four hours, free, and it cannot fail; the compound's once-a-day limit applies, so the hub shows it closed after a session today. The vignette is picked from training_sessions
+*comment ── Train on your own. The same session the compound counts, four hours, free, and it cannot fail; the compound's once-a-day limit applies, so the hub shows it closed after a session today. The vignette is picked from training_sessions
 *comment (which do_training_session has already counted on this page), never from the clock or *rand, so a replayed page prints the same words. ──
 *label camp_train_closed
 *gosub_scene character_progression training_preview
 [b]◈ CAMP[/b]
 *line_break
 *if (training_sessions >= level_up_sessions_needed)
-  You go through your drills until you are bored of them. There is nothing left in them you do not already know.
+  You work through your training until you are bored of it. There is nothing left to learn today.
 *elseif (not(training_can_train))
-  You have put in a full day's drill already. Another bout now would only wear you down, and a tired fighter learns nothing.
+  You have put in a full day's training already. Another bout now would only wear you down, and tired hands learn nothing.
 *elseif (weather_severity >= 3)
   The weather is too foul to work in. You would only be learning to slip in the mud.
 *else
-  The light is going, and nobody drills on strange ground in the dark.
+  The light is going, and nobody trains on strange ground in the dark.
 *page_break Back to the fire…
 *goto camp_hub
 
@@ -200,22 +200,47 @@ ${use_text}
 *temp ct_pick (training_sessions modulo 6)
 [b]◈ CAMP[/b]
 *line_break
-*if (ct_pick = 0)
-  You clear a patch of ground and run your forms slowly at first and then at full speed, the same few movements over and over until the pattern stops being something you think about.
-*elseif (ct_pick = 1)
-  You cut a stout pole and spar with a tree, striking and recovering, striking and recovering, until your forearms burn and the bark is bare.
-*elseif (ct_pick = 2)
-  You work your footing on the uneven ground: short steps, long steps, a pivot on a rock, a drop to one knee and up again, until you can do it without looking down.
-*elseif (ct_pick = 3)
-  You carry stones from the stream bed to the camp and back, steadily, with your pack on, until your own breath is the only thing you can hear.
-*elseif (ct_pick = 4)
-  You set a mark on a trunk and throw at it from every distance and angle you can find, fetching each throw before the next, until you hit it more often than you miss.
+*if (character_class = "fighter")
+  *if (ct_pick <= 2)
+    You clear a patch of ground and run weapon forms: guard, cut, recovery, then the same sequence again until it no longer needs thought.
+  *else
+    You work your guard and footwork at the camp's edge, stepping, turning, and recovering until your arms burn and your stance still holds.
+*elseif (character_class = "barbarian")
+  *if (ct_pick <= 2)
+    You strap your pack close and work through lifts, carries, and steady holds, finding the breath and balance beneath brute effort.
+  *else
+    You practice powerful blows in the open air, then stop before anger takes the work from your hands. Strength is better when you choose where it lands.
+*elseif (character_class = "rogue")
+  *if (ct_pick <= 2)
+    You circle the camp without disturbing its edges, then do it again until your body knows where each foot should land before you look.
+  *else
+    You set small marks around camp and approach them from different angles, studying lines of sight, cover, and the quiet places a person could miss.
+*elseif (character_class = "ranger")
+  *if (ct_pick <= 2)
+    You study the approaches beyond the firelight, looking for any sign of passage and the route it would have taken toward the camp.
+  *else
+    You choose distant points around the camp and judge the clearest paths to each, correcting for wind, distance, and where the ground would slow a traveler.
+*elseif (character_class = "wizard")
+  *if (ct_pick <= 2)
+    You review your spellbook by firelight, tracing each notation until the pattern is clear in your mind without the page beneath your fingers.
+  *else
+    You practice the smallest motions of a cantrip, careful with breath and cadence, until each gesture ends exactly where you intend.
+*elseif (character_class = "bard")
+  *if (ct_pick <= 2)
+    You work scales and measured breaths under your voice, feeling for the point where a phrase carries cleanly without straining.
+  *else
+    You tap out a quiet rhythm against your knee and rehearse a tale's turns, cutting every wasted word until the telling lands where it should.
+*elseif (character_class = "warlock")
+  *if (ct_pick <= 2)
+    You sit apart from the fire and feel for the pact's familiar pressure, learning again where your own will ends and its answer begins.
+  *else
+    You rehearse the words and signs that steady your magic, keeping each one measured and precise before you risk calling on more.
 *else
-  You spend the hours on the things that are not fighting: working the cold out of your joints, checking your kit strap by strap, and going over what has gone wrong before and what you would do differently.
+  You spend the hours on the fundamentals: working the cold out of your joints, checking your kit strap by strap, and considering what you would do differently next time.
 *if ((training_sessions = level_up_sessions_needed) and (level_up_sessions_needed > 0))
   *line_break
   When you finish you count the notches you have been cutting in your belt strap. The count is the one you came for.
 *line_break
-[b][🎯 Camp Drill | ${training_hours} hours | Training ${training_sessions} / ${level_up_sessions_needed} | ${clock_time}][/b]
+[b][🎯 Camp Training | ${training_hours} hours | Training ${training_sessions} / ${level_up_sessions_needed} | ${clock_time}][/b]
 *page_break Back to the fire…
 *goto camp_hub
