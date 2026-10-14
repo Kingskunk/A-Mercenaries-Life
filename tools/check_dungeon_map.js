@@ -8,7 +8,9 @@
  *   4. the direction words in the exit text ("Go north...") agree with where the map puts the place;
  *   5. startup.txt creates dg_seen_<id>, dg_mark_<id> and dg_done_<id> for every place (and the "none" ones);
  *   6. every id carries the dungeon's idPrefix, so two dungeons' flags cannot collide, and no id is claimed by two dungeons;
- *   7. the shared engine (dungeon.txt) and the map panel (dungeonmap.js) name no node of any dungeon.
+ *   7. the shared engine (dungeon.txt) and the map panel (dungeonmap.js) name no node of any dungeon;
+ *   9. no option that starts with "Go" and names a direction fails to move (the in-page map treats every such option as a move);
+ *   8. every option that moves to a neighbouring place starts with "Go" and names its direction, because the in-page map (dungeonmap.js) finds a way's option by that word.
  * Run: node tools/check_dungeon_map.js        Exit code 1 if anything disagrees.
  */
 const fs = require("fs");
@@ -46,20 +48,29 @@ for (const key of Object.keys(MAPS)) {
 
   // the scene's places and exits
   const places = {}, sceneEdges = {};
-  let cur = null, lastOption = "";
+  let cur = null, lastOption = "", lastWasMove = false;
+  const goOptions = [];   // every option of a place that starts with "Go" and names a direction, and whether it is a move (it sets dg_dest)
   lines.forEach((ln) => {
     const lab = labelRe.exec(ln);
     if (lab) { cur = m.idPrefix + lab[1]; places[cur] = true; return; }
     if (/^\*label /.test(ln)) { cur = null; return; }
     if (!cur) return;
     const opt = /^\s*# (.*)$/.exec(ln);
-    if (opt) { lastOption = opt[1]; return; }
+    if (opt) {
+      lastOption = opt[1]; lastWasMove = false;
+      if (/^Go\b/.test(lastOption) && /\b(west|east|north|south)\b/i.test(lastOption)) goOptions.push({ place: cur, text: lastOption, move: false });
+      return;
+    }
     const dest = /^\s*\*set dg_dest "(\w+)"/.exec(ln);
     if (dest) {
       const to = dest[1];
+      if (goOptions.length && goOptions[goOptions.length - 1].text === lastOption) goOptions[goOptions.length - 1].move = true;
       (sceneEdges[cur + ">" + to] = sceneEdges[cur + ">" + to] || []).push(lastOption);
     }
   });
+
+  // 9 an option that reads as a move ("Go north...") but does not move would be pressed by the in-page map as one
+  goOptions.forEach((o) => { if (!o.move) fail("\"" + o.text + "\" (" + o.place + ") reads as a move but sets no dg_dest: the in-page map would treat it as one; reword it, or it will be pressed as a move"); });
 
   // 1 places
   Object.keys(places).forEach((id) => { if (!m.nodes[id]) fail("the scene has place " + id + " but the map does not"); });
@@ -97,6 +108,13 @@ for (const key of Object.keys(MAPS)) {
       if (!w) return;
       const d = WORDS[w[1].toLowerCase()];
       if (nb.x - na.x !== d[0] || nb.y - na.y !== d[1]) fail("\"" + optText + "\" (" + a + " -> " + b + ") says " + w[1] + " but the map puts " + b + " " + (nb.x - na.x) + "," + (nb.y - na.y) + " from " + a);
+    });
+  });
+
+  // 8 the in-page map presses a move by its direction word, so every move option must have one (and start with "Go")
+  Object.keys(sceneEdges).forEach((k) => {
+    sceneEdges[k].forEach((optText) => {
+      if (!/^Go\b/.test(optText) || !/\b(west|east|north|south)\b/i.test(optText)) fail("\"" + optText + "\" (" + k.replace(">", " -> ") + ") must start with \"Go\" and name a direction, or the in-page map cannot press it");
     });
   });
 

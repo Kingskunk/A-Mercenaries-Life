@@ -23,7 +23,7 @@
 *comment
 *comment REPLAY SAFETY. dg_pick makes a *rand roll and adds to scratch totals, so the whole pick sits inside one lock keyed on page_id AND dg_call_id (a refresh
 *comment replays the page with the same pair and skips it, leaving the stored result; two picks on one page with no *choice between them need different call
-*comment ids). The history is dg_pick_1..8 (eight is more transitions than any run has), recorded inside the same lock.
+*comment ids). The history is dg_pick_1..16 (sixteen: the Longshade Forest is a bigger dungeon than the channels), recorded inside the same lock.
 *comment ══════════════════════════════════════════════════════════════
 
 *comment THE RESPAWN (2026-10-02). Going in does not refill the dungeon, or leaving and coming back would be a way to farm it. What is in it is kept between runs: the hallway steps whose encounter has been
@@ -55,6 +55,16 @@
 *set dg_pick_6 "none"
 *set dg_pick_7 "none"
 *set dg_pick_8 "none"
+*set dg_pick_9 "none"
+*set dg_pick_10 "none"
+*set dg_pick_11 "none"
+*set dg_pick_12 "none"
+*set dg_pick_13 "none"
+*set dg_pick_14 "none"
+*set dg_pick_15 "none"
+*set dg_pick_16 "none"
+*set dg_was_dark false
+*set dg_fell_dark false
 *set dg_encounter "none"
 *gosub dg_dark_check
 *return
@@ -65,11 +75,14 @@
 *set dg_done_none false
 *if (dg_table = "silt_conduits")
   *gosub_scene port_valen/port_valen_silt_conduits pvsc_respawn
+*if (dg_table = "longshade_forest")
+  *gosub_scene overworld/longshade_forest lsf_respawn
 *return
 
 *comment The run is over (the player climbed out): clears the darkness debuff and the run flag.
 *label dg_run_end
 *set dg_in_run false
+*set dg_daylit false
 *set wait_lock_reason ""
 *set dg_light_kind "none"
 *set dg_light_left 0
@@ -105,7 +118,7 @@
   *if (dg_encounter = "none")
     *comment nothing left in play: no history slot is used
   *else
-    *if (dg_pick_count < 8)
+    *if (dg_pick_count < 16)
       *set dg_pick_count + 1
       *if (dg_pick_count = 1)
         *set dg_pick_1 dg_encounter
@@ -123,6 +136,22 @@
         *set dg_pick_7 dg_encounter
       *if (dg_pick_count = 8)
         *set dg_pick_8 dg_encounter
+      *if (dg_pick_count = 9)
+        *set dg_pick_9 dg_encounter
+      *if (dg_pick_count = 10)
+        *set dg_pick_10 dg_encounter
+      *if (dg_pick_count = 11)
+        *set dg_pick_11 dg_encounter
+      *if (dg_pick_count = 12)
+        *set dg_pick_12 dg_encounter
+      *if (dg_pick_count = 13)
+        *set dg_pick_13 dg_encounter
+      *if (dg_pick_count = 14)
+        *set dg_pick_14 dg_encounter
+      *if (dg_pick_count = 15)
+        *set dg_pick_15 dg_encounter
+      *if (dg_pick_count = 16)
+        *set dg_pick_16 dg_encounter
   *set dg_pick_locked true
   *set locked_dg_pick_page_id page_id
   *set locked_dg_pick_id dg_call_id
@@ -137,6 +166,8 @@
   *set dgr_w dgr_high
 *if ((((((((dgr_id = dg_pick_1) or (dgr_id = dg_pick_2)) or (dgr_id = dg_pick_3)) or (dgr_id = dg_pick_4)) or (dgr_id = dg_pick_5)) or (dgr_id = dg_pick_6)) or (dgr_id = dg_pick_7)) or (dgr_id = dg_pick_8))
   *set dgr_w 0
+*if ((((((((dgr_id = dg_pick_9) or (dgr_id = dg_pick_10)) or (dgr_id = dg_pick_11)) or (dgr_id = dg_pick_12)) or (dgr_id = dg_pick_13)) or (dgr_id = dg_pick_14)) or (dgr_id = dg_pick_15)) or (dgr_id = dg_pick_16))
+  *set dgr_w 0
 *if (dg_pass = 1)
   *set dg_total + dgr_w
 *else
@@ -150,6 +181,8 @@
 *label dg_run_table
 *if (dg_table = "silt_conduits")
   *gosub_scene port_valen/port_valen_silt_conduits pvsc_table
+*if (dg_table = "longshade_forest")
+  *gosub_scene overworld/longshade_forest lsf_table
 *temp dgt_i 1
 *temp dgt_id ""
 *temp dgt_lo 0
@@ -276,6 +309,11 @@
   *if (not(sees_in_dark))
     *if (dg_light_left <= 0)
       *set dg_dark true
+      *comment An open-air dungeon (dg_daylit, set by its entrance) is lit by day and at dusk, and dark at night, before dawn and in a storm (weather_severity 3 or more).
+      *if (dg_daylit)
+        *if (not((time_period = "Night") or (time_period = "Pre-Dawn")))
+          *if (weather_severity < 3)
+            *set dg_dark false
 *return
 
 *label dg_fight_prep
@@ -295,12 +333,16 @@
   [b][You see in the dark: no light needed][/b]
 *elseif (dg_light_left > 0)
   [b][Light: ${dg_light_kind}, ${dg_light_left} @{(dg_light_left = 1) step|steps} left][/b]
+*elseif ((dg_daylit) and (not(dg_dark)))
+  [b][Daylight: no light needed][/b]
 *else
   [b][No light: disadvantage on every roll, and enemies strike first][/b]
 *return
 
 *label dg_step
 *if (not(dg_step_locked)) or (not(locked_dg_step_page_id = page_id))
+  *gosub dg_dark_check
+  *set dg_was_dark dg_dark
   *set dg_from dg_pos
   *set dg_pos dg_dest
   *set dg_steps + 1
@@ -325,6 +367,11 @@
         *set dg_light_out_now true
         *set dg_light_kind "none"
   *gosub dg_dark_check
+  *comment dg_fell_dark: this step took the player from lit to dark without a light dying (the day ended under an open sky); the dungeon's move label offers a light. Set inside the lock, so a replay reads it back.
+  *set dg_fell_dark false
+  *if ((dg_dark) and (not(dg_was_dark)))
+    *if (not(dg_light_out_now))
+      *set dg_fell_dark true
   *if (dg_dest_hall)
     *comment No encounter roll on a chalked junction (a stretch the player knows) or on one whose roll has already been made since the last refill (dg_done_<node>): walking back over ground does not find
     *comment anything new. The roll that is made is remembered, whatever it found; a step right after an encounter makes no roll and is not remembered.
@@ -436,6 +483,11 @@
   *set dg_lit_now true
 *if (dg_light_left > 0)
   *set dg_lit_now true
+*comment An open-air dungeon in daylight (dg_daylit) is lit too: the map learns its places by day.
+*if (dg_daylit)
+  *gosub dg_dark_check
+  *if (not(dg_dark))
+    *set dg_lit_now true
 *return
 
 *label dg_note_seen
@@ -480,6 +532,8 @@
 *set dg_mark_none false
 *if (dg_table = "silt_conduits")
   *gosub_scene port_valen/port_valen_silt_conduits pvsc_forget_map
+*if (dg_table = "longshade_forest")
+  *gosub_scene overworld/longshade_forest lsf_forget_map
 *set dg_chalk_left 0
 *return
 

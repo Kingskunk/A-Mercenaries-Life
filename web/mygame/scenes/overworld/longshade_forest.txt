@@ -1,0 +1,1160 @@
+*comment ══════════════════════════════════════════════════════════════
+*comment THE LONGSHADE FOREST: the second dungeon (2026-10-14). A *goto_scene-only scene like port_valen_silt_conduits.txt, NOT in *scene_list, listed in compile.js. Everything here is a LAYOUT ONLY: 38 places
+*comment (15 rooms, 21 trail junctions and 2 mouths) numbered in the order a walker from the south mouth meets them, with placeholder text and an empty encounter table. The user will name the rooms and
+*comment junctions and fill them in a piece at a time. The layout is lsf_ in web/mygame/dungeons/longshade_forest.js and tools/check_dungeon_map.js compares it with this file.
+*comment
+*comment TWO MOUTHS (the user's call): the SOUTH mouth (lsf_x1) opens on The Longshade (overworld tile lf) and the EAST mouth (lsf_x2) on West Longshade (ua); the overworld option "Go into the Longshade forest." on either tile
+*comment starts the run at that mouth. A mouth leaves the dungeon onto ITS OWN tile, so walking in at one and out at the other is a way between the two tiles. dg_dev_entry (the Developer menu's entries) sends every exit back to the Developer menu.
+*comment
+*comment LIGHT BY THE DAY (the user's call): dg_daylit is set before the run begins, and dungeon.txt dg_dark_check then reads the dungeon as lit by day and at dusk, and dark at night, before dawn and in a storm (weather
+*comment severity 3 or more). By day nothing burns and nothing is asked; when the light fails during a run (dg_fell_dark) the player is offered a light, as when a torch dies.
+*comment HOW A MOVE RUNS is as in the Silt-Gate channels: an option sets dg_dest and dg_dest_hall and goes to lsf_move, which calls dungeon.txt dg_step (10 minutes, one step of light, a 40% encounter roll on a trail
+*comment junction step). The table is empty for now, so no step ever finds anything.
+*comment ══════════════════════════════════════════════════════════════
+
+*label lsf_enter_south
+You leave the open ground at the foot of the slope and push in under the trees, following an animal run until the forest has closed behind you.
+*line_break
+*set dg_mins 10
+*set dg_time_id "enter_lsf_south"
+*gosub_scene dungeon dg_time
+*set dg_table "longshade_forest"
+*set dg_start "lsf_x1"
+*set dg_daylit true
+*set dg_dev_entry false
+*gosub_scene dungeon dg_run_begin
+*goto lsf_begin
+
+*label lsf_enter_east
+You turn off the way you were going and push in under the trees, following an animal run until the forest has closed behind you.
+*line_break
+*set dg_mins 10
+*set dg_time_id "enter_lsf_east"
+*gosub_scene dungeon dg_time
+*set dg_table "longshade_forest"
+*set dg_start "lsf_x2"
+*set dg_daylit true
+*set dg_dev_entry false
+*gosub_scene dungeon dg_run_begin
+*goto lsf_begin
+
+*comment A mouth leaves the dungeon onto its own overworld tile (ow_pos), then the overworld page. The run ends first, which clears the light.
+*label lsf_exit_south
+You work your way back out to the edge of the trees, and the open ground lies ahead.
+*page_break Step out of the trees…
+*set ow_pos "lf"
+*goto_scene overworld/overworld ow_here
+
+*label lsf_exit_east
+You work your way back out to the edge of the trees, and the open ground lies ahead.
+*page_break Step out of the trees…
+*set ow_pos "ua"
+*goto_scene overworld/overworld ow_here
+
+*label lsf_begin
+*set dg_pos dg_start
+*set dg_table "longshade_forest"
+*gosub_scene dungeon dg_light_prompt
+*gosub_scene dungeon dg_note_seen
+*goto lsf_here
+
+*label lsf_move
+*gosub_scene dungeon dg_step
+*if (dg_light_out_now)
+  The light gutters and goes out.
+  *line_break
+  *gosub_scene dungeon dg_light_prompt
+*if (dg_fell_dark)
+  The light under the trees fails, and the dark comes down.
+  *line_break
+  *gosub_scene dungeon dg_light_prompt
+*if (dg_enc_now)
+  *goto lsf_encounter
+*goto lsf_here
+
+*comment THE ENCOUNTERS: none yet (the table is empty, so dg_step never sets dg_enc_now). This stub is here so the branch has somewhere to land when the first row is added.
+*label lsf_encounter
+*set dg_enc_now false
+*line_break
+Nothing happens here yet.
+*line_break
+*goto lsf_here
+
+*label lsf_chalked
+You scrape a bold cross into the bark at head height, so you will know this junction again.
+*gosub_scene dungeon dg_chalk_check
+*line_break
+[b][Chalk: ${dg_chalk_avail} @{(dg_chalk_avail = 1) mark|marks} left][/b]
+*line_break
+*goto lsf_here
+
+*label lsf_here
+*gosub_scene dungeon dg_chalk_check
+*comment Stable dungeon recovery point: the last move/encounter is complete and dg_pos can safely dispatch the room again.
+*save_checkpoint autosafe_checkpoint
+*if (dg_pos = "lsf_x1")
+  *goto lsf_n_x1
+*if (dg_pos = "lsf_x2")
+  *goto lsf_n_x2
+*if (dg_pos = "lsf_j1")
+  *goto lsf_n_j1
+*if (dg_pos = "lsf_j2")
+  *goto lsf_n_j2
+*if (dg_pos = "lsf_j3")
+  *goto lsf_n_j3
+*if (dg_pos = "lsf_j4")
+  *goto lsf_n_j4
+*if (dg_pos = "lsf_j5")
+  *goto lsf_n_j5
+*if (dg_pos = "lsf_j6")
+  *goto lsf_n_j6
+*if (dg_pos = "lsf_j7")
+  *goto lsf_n_j7
+*if (dg_pos = "lsf_j8")
+  *goto lsf_n_j8
+*if (dg_pos = "lsf_j9")
+  *goto lsf_n_j9
+*if (dg_pos = "lsf_j10")
+  *goto lsf_n_j10
+*if (dg_pos = "lsf_j11")
+  *goto lsf_n_j11
+*if (dg_pos = "lsf_j12")
+  *goto lsf_n_j12
+*if (dg_pos = "lsf_j13")
+  *goto lsf_n_j13
+*if (dg_pos = "lsf_j14")
+  *goto lsf_n_j14
+*if (dg_pos = "lsf_j15")
+  *goto lsf_n_j15
+*if (dg_pos = "lsf_j16")
+  *goto lsf_n_j16
+*if (dg_pos = "lsf_j17")
+  *goto lsf_n_j17
+*if (dg_pos = "lsf_j18")
+  *goto lsf_n_j18
+*if (dg_pos = "lsf_j19")
+  *goto lsf_n_j19
+*if (dg_pos = "lsf_j20")
+  *goto lsf_n_j20
+*if (dg_pos = "lsf_j21")
+  *goto lsf_n_j21
+*if (dg_pos = "lsf_r1")
+  *goto lsf_n_r1
+*if (dg_pos = "lsf_r2")
+  *goto lsf_n_r2
+*if (dg_pos = "lsf_r3")
+  *goto lsf_n_r3
+*if (dg_pos = "lsf_r4")
+  *goto lsf_n_r4
+*if (dg_pos = "lsf_r5")
+  *goto lsf_n_r5
+*if (dg_pos = "lsf_r6")
+  *goto lsf_n_r6
+*if (dg_pos = "lsf_r7")
+  *goto lsf_n_r7
+*if (dg_pos = "lsf_r8")
+  *goto lsf_n_r8
+*if (dg_pos = "lsf_r9")
+  *goto lsf_n_r9
+*if (dg_pos = "lsf_r10")
+  *goto lsf_n_r10
+*if (dg_pos = "lsf_r11")
+  *goto lsf_n_r11
+*if (dg_pos = "lsf_r12")
+  *goto lsf_n_r12
+*if (dg_pos = "lsf_r13")
+  *goto lsf_n_r13
+*if (dg_pos = "lsf_r14")
+  *goto lsf_n_r14
+*if (dg_pos = "lsf_r15")
+  *goto lsf_n_r15
+*goto lsf_n_x1
+
+*label lsf_n_x1
+
+[b]◈ THE SOUTH MOUTH[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is the south mouth. Nothing is written here yet.
+*else
+  This is the south mouth. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go back out of the forest.
+    *gosub_scene dungeon dg_run_end
+    *if (dg_dev_entry)
+      *goto_scene dev_hub dev_dungeon_test_hub
+    *goto lsf_exit_south
+  # Go north.
+    *set dg_dest "lsf_j1"
+    *set dg_dest_hall true
+    *goto lsf_move
+
+*label lsf_n_x2
+
+[b]◈ THE EAST MOUTH[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is the east mouth. Nothing is written here yet.
+*else
+  This is the east mouth. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go back out of the forest.
+    *gosub_scene dungeon dg_run_end
+    *if (dg_dev_entry)
+      *goto_scene dev_hub dev_dungeon_test_hub
+    *goto lsf_exit_east
+  # Go west.
+    *set dg_dest "lsf_j16"
+    *set dg_dest_hall true
+    *goto lsf_move
+
+*label lsf_n_j1
+
+[b]◈ FOREST TRAIL 1[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest trail 1. Nothing is written here yet.
+*else
+  This is forest trail 1. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go north.
+    *set dg_dest "lsf_j2"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go south.
+    *set dg_dest "lsf_x1"
+    *set dg_dest_hall false
+    *goto lsf_move
+  *if (dg_chalk_ok)
+    # Mark this junction with chalk. [~5 min]
+      *gosub_scene dungeon dg_chalk_mark
+      *goto lsf_chalked
+
+*label lsf_n_j2
+
+[b]◈ FOREST TRAIL 2[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest trail 2. Nothing is written here yet.
+*else
+  This is forest trail 2. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go east.
+    *set dg_dest "lsf_j4"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go south.
+    *set dg_dest "lsf_j1"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go west.
+    *set dg_dest "lsf_j3"
+    *set dg_dest_hall true
+    *goto lsf_move
+  *if (dg_chalk_ok)
+    # Mark this junction with chalk. [~5 min]
+      *gosub_scene dungeon dg_chalk_mark
+      *goto lsf_chalked
+
+*label lsf_n_j3
+
+[b]◈ FOREST TRAIL 3[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest trail 3. Nothing is written here yet.
+*else
+  This is forest trail 3. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go east.
+    *set dg_dest "lsf_j2"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go west.
+    *set dg_dest "lsf_r1"
+    *set dg_dest_hall false
+    *goto lsf_move
+  *if (dg_chalk_ok)
+    # Mark this junction with chalk. [~5 min]
+      *gosub_scene dungeon dg_chalk_mark
+      *goto lsf_chalked
+
+*label lsf_n_j4
+
+[b]◈ FOREST TRAIL 4[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest trail 4. Nothing is written here yet.
+*else
+  This is forest trail 4. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go east.
+    *set dg_dest "lsf_r2"
+    *set dg_dest_hall false
+    *goto lsf_move
+  # Go west.
+    *set dg_dest "lsf_j2"
+    *set dg_dest_hall true
+    *goto lsf_move
+  *if (dg_chalk_ok)
+    # Mark this junction with chalk. [~5 min]
+      *gosub_scene dungeon dg_chalk_mark
+      *goto lsf_chalked
+
+*label lsf_n_j5
+
+[b]◈ FOREST TRAIL 5[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest trail 5. Nothing is written here yet.
+*else
+  This is forest trail 5. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go east.
+    *set dg_dest "lsf_r1"
+    *set dg_dest_hall false
+    *goto lsf_move
+  # Go west.
+    *set dg_dest "lsf_j8"
+    *set dg_dest_hall true
+    *goto lsf_move
+  *if (dg_chalk_ok)
+    # Mark this junction with chalk. [~5 min]
+      *gosub_scene dungeon dg_chalk_mark
+      *goto lsf_chalked
+
+*label lsf_n_j6
+
+[b]◈ FOREST TRAIL 6[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest trail 6. Nothing is written here yet.
+*else
+  This is forest trail 6. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go east.
+    *set dg_dest "lsf_r3"
+    *set dg_dest_hall false
+    *goto lsf_move
+  # Go west.
+    *set dg_dest "lsf_r2"
+    *set dg_dest_hall false
+    *goto lsf_move
+  *if (dg_chalk_ok)
+    # Mark this junction with chalk. [~5 min]
+      *gosub_scene dungeon dg_chalk_mark
+      *goto lsf_chalked
+
+*label lsf_n_j7
+
+[b]◈ FOREST TRAIL 7[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest trail 7. Nothing is written here yet.
+*else
+  This is forest trail 7. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go north.
+    *set dg_dest "lsf_r2"
+    *set dg_dest_hall false
+    *goto lsf_move
+  # Go south.
+    *set dg_dest "lsf_r4"
+    *set dg_dest_hall false
+    *goto lsf_move
+  *if (dg_chalk_ok)
+    # Mark this junction with chalk. [~5 min]
+      *gosub_scene dungeon dg_chalk_mark
+      *goto lsf_chalked
+
+*label lsf_n_j8
+
+[b]◈ FOREST TRAIL 8[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest trail 8. Nothing is written here yet.
+*else
+  This is forest trail 8. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go north.
+    *set dg_dest "lsf_j9"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go east.
+    *set dg_dest "lsf_j5"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go south.
+    *set dg_dest "lsf_j10"
+    *set dg_dest_hall true
+    *goto lsf_move
+  *if (dg_chalk_ok)
+    # Mark this junction with chalk. [~5 min]
+      *gosub_scene dungeon dg_chalk_mark
+      *goto lsf_chalked
+
+*label lsf_n_j9
+
+[b]◈ FOREST TRAIL 9[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest trail 9. Nothing is written here yet.
+*else
+  This is forest trail 9. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go north.
+    *set dg_dest "lsf_r5"
+    *set dg_dest_hall false
+    *goto lsf_move
+  # Go south.
+    *set dg_dest "lsf_j8"
+    *set dg_dest_hall true
+    *goto lsf_move
+  *if (dg_chalk_ok)
+    # Mark this junction with chalk. [~5 min]
+      *gosub_scene dungeon dg_chalk_mark
+      *goto lsf_chalked
+
+*label lsf_n_j10
+
+[b]◈ FOREST TRAIL 10[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest trail 10. Nothing is written here yet.
+*else
+  This is forest trail 10. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go north.
+    *set dg_dest "lsf_j8"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go south.
+    *set dg_dest "lsf_r6"
+    *set dg_dest_hall false
+    *goto lsf_move
+  *if (dg_chalk_ok)
+    # Mark this junction with chalk. [~5 min]
+      *gosub_scene dungeon dg_chalk_mark
+      *goto lsf_chalked
+
+*label lsf_n_j11
+
+[b]◈ FOREST TRAIL 11[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest trail 11. Nothing is written here yet.
+*else
+  This is forest trail 11. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go north.
+    *set dg_dest "lsf_j12"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go south.
+    *set dg_dest "lsf_r3"
+    *set dg_dest_hall false
+    *goto lsf_move
+  *if (dg_chalk_ok)
+    # Mark this junction with chalk. [~5 min]
+      *gosub_scene dungeon dg_chalk_mark
+      *goto lsf_chalked
+
+*label lsf_n_j12
+
+[b]◈ FOREST TRAIL 12[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest trail 12. Nothing is written here yet.
+*else
+  This is forest trail 12. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go north.
+    *set dg_dest "lsf_j14"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go south.
+    *set dg_dest "lsf_j11"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go west.
+    *set dg_dest "lsf_j15"
+    *set dg_dest_hall true
+    *goto lsf_move
+  *if (dg_chalk_ok)
+    # Mark this junction with chalk. [~5 min]
+      *gosub_scene dungeon dg_chalk_mark
+      *goto lsf_chalked
+
+*label lsf_n_j13
+
+[b]◈ FOREST TRAIL 13[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest trail 13. Nothing is written here yet.
+*else
+  This is forest trail 13. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go east.
+    *set dg_dest "lsf_r7"
+    *set dg_dest_hall false
+    *goto lsf_move
+  # Go west.
+    *set dg_dest "lsf_r5"
+    *set dg_dest_hall false
+    *goto lsf_move
+  *if (dg_chalk_ok)
+    # Mark this junction with chalk. [~5 min]
+      *gosub_scene dungeon dg_chalk_mark
+      *goto lsf_chalked
+
+*label lsf_n_j14
+
+[b]◈ FOREST TRAIL 14[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest trail 14. Nothing is written here yet.
+*else
+  This is forest trail 14. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go north.
+    *set dg_dest "lsf_j16"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go south.
+    *set dg_dest "lsf_j12"
+    *set dg_dest_hall true
+    *goto lsf_move
+  *if (dg_chalk_ok)
+    # Mark this junction with chalk. [~5 min]
+      *gosub_scene dungeon dg_chalk_mark
+      *goto lsf_chalked
+
+*label lsf_n_j15
+
+[b]◈ FOREST TRAIL 15[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest trail 15. Nothing is written here yet.
+*else
+  This is forest trail 15. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go east.
+    *set dg_dest "lsf_j12"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go west.
+    *set dg_dest "lsf_r8"
+    *set dg_dest_hall false
+    *goto lsf_move
+  *if (dg_chalk_ok)
+    # Mark this junction with chalk. [~5 min]
+      *gosub_scene dungeon dg_chalk_mark
+      *goto lsf_chalked
+
+*label lsf_n_j16
+
+[b]◈ FOREST TRAIL 16[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest trail 16. Nothing is written here yet.
+*else
+  This is forest trail 16. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go east.
+    *set dg_dest "lsf_x2"
+    *set dg_dest_hall false
+    *goto lsf_move
+  # Go south.
+    *set dg_dest "lsf_j14"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go west.
+    *set dg_dest "lsf_j18"
+    *set dg_dest_hall true
+    *goto lsf_move
+  *if (dg_chalk_ok)
+    # Mark this junction with chalk. [~5 min]
+      *gosub_scene dungeon dg_chalk_mark
+      *goto lsf_chalked
+
+*label lsf_n_j17
+
+[b]◈ FOREST TRAIL 17[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest trail 17. Nothing is written here yet.
+*else
+  This is forest trail 17. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go east.
+    *set dg_dest "lsf_r10"
+    *set dg_dest_hall false
+    *goto lsf_move
+  # Go west.
+    *set dg_dest "lsf_r7"
+    *set dg_dest_hall false
+    *goto lsf_move
+  *if (dg_chalk_ok)
+    # Mark this junction with chalk. [~5 min]
+      *gosub_scene dungeon dg_chalk_mark
+      *goto lsf_chalked
+
+*label lsf_n_j18
+
+[b]◈ FOREST TRAIL 18[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest trail 18. Nothing is written here yet.
+*else
+  This is forest trail 18. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go east.
+    *set dg_dest "lsf_j16"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go west.
+    *set dg_dest "lsf_r11"
+    *set dg_dest_hall false
+    *goto lsf_move
+  *if (dg_chalk_ok)
+    # Mark this junction with chalk. [~5 min]
+      *gosub_scene dungeon dg_chalk_mark
+      *goto lsf_chalked
+
+*label lsf_n_j19
+
+[b]◈ FOREST TRAIL 19[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest trail 19. Nothing is written here yet.
+*else
+  This is forest trail 19. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go north.
+    *set dg_dest "lsf_r11"
+    *set dg_dest_hall false
+    *goto lsf_move
+  # Go south.
+    *set dg_dest "lsf_r8"
+    *set dg_dest_hall false
+    *goto lsf_move
+  *if (dg_chalk_ok)
+    # Mark this junction with chalk. [~5 min]
+      *gosub_scene dungeon dg_chalk_mark
+      *goto lsf_chalked
+
+*label lsf_n_j20
+
+[b]◈ FOREST TRAIL 20[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest trail 20. Nothing is written here yet.
+*else
+  This is forest trail 20. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go east.
+    *set dg_dest "lsf_r8"
+    *set dg_dest_hall false
+    *goto lsf_move
+  # Go west.
+    *set dg_dest "lsf_r10"
+    *set dg_dest_hall false
+    *goto lsf_move
+  *if (dg_chalk_ok)
+    # Mark this junction with chalk. [~5 min]
+      *gosub_scene dungeon dg_chalk_mark
+      *goto lsf_chalked
+
+*label lsf_n_j21
+
+[b]◈ FOREST TRAIL 21[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest trail 21. Nothing is written here yet.
+*else
+  This is forest trail 21. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go north.
+    *set dg_dest "lsf_r12"
+    *set dg_dest_hall false
+    *goto lsf_move
+  # Go south.
+    *set dg_dest "lsf_r10"
+    *set dg_dest_hall false
+    *goto lsf_move
+  *if (dg_chalk_ok)
+    # Mark this junction with chalk. [~5 min]
+      *gosub_scene dungeon dg_chalk_mark
+      *goto lsf_chalked
+
+*label lsf_n_r1
+
+[b]◈ FOREST ROOM 1[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest room 1. Nothing is written here yet.
+*else
+  This is forest room 1. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go east.
+    *set dg_dest "lsf_j3"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go west.
+    *set dg_dest "lsf_j5"
+    *set dg_dest_hall true
+    *goto lsf_move
+
+*label lsf_n_r2
+
+[b]◈ FOREST ROOM 2[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest room 2. Nothing is written here yet.
+*else
+  This is forest room 2. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go east.
+    *set dg_dest "lsf_j6"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go south.
+    *set dg_dest "lsf_j7"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go west.
+    *set dg_dest "lsf_j4"
+    *set dg_dest_hall true
+    *goto lsf_move
+
+*label lsf_n_r3
+
+[b]◈ FOREST ROOM 3[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest room 3. Nothing is written here yet.
+*else
+  This is forest room 3. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go north.
+    *set dg_dest "lsf_j11"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go west.
+    *set dg_dest "lsf_j6"
+    *set dg_dest_hall true
+    *goto lsf_move
+
+*label lsf_n_r4
+
+[b]◈ FOREST ROOM 4[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest room 4. Nothing is written here yet.
+*else
+  This is forest room 4. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go north.
+    *set dg_dest "lsf_j7"
+    *set dg_dest_hall true
+    *goto lsf_move
+
+*label lsf_n_r5
+
+[b]◈ FOREST ROOM 5[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest room 5. Nothing is written here yet.
+*else
+  This is forest room 5. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go east.
+    *set dg_dest "lsf_j13"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go south.
+    *set dg_dest "lsf_j9"
+    *set dg_dest_hall true
+    *goto lsf_move
+
+*label lsf_n_r6
+
+[b]◈ FOREST ROOM 6[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest room 6. Nothing is written here yet.
+*else
+  This is forest room 6. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go north.
+    *set dg_dest "lsf_j10"
+    *set dg_dest_hall true
+    *goto lsf_move
+
+*label lsf_n_r7
+
+[b]◈ FOREST ROOM 7[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest room 7. Nothing is written here yet.
+*else
+  This is forest room 7. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go north.
+    *set dg_dest "lsf_r9"
+    *set dg_dest_hall false
+    *goto lsf_move
+  # Go east.
+    *set dg_dest "lsf_j17"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go west.
+    *set dg_dest "lsf_j13"
+    *set dg_dest_hall true
+    *goto lsf_move
+
+*label lsf_n_r8
+
+[b]◈ FOREST ROOM 8[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest room 8. Nothing is written here yet.
+*else
+  This is forest room 8. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go north.
+    *set dg_dest "lsf_j19"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go east.
+    *set dg_dest "lsf_j15"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go west.
+    *set dg_dest "lsf_j20"
+    *set dg_dest_hall true
+    *goto lsf_move
+
+*label lsf_n_r9
+
+[b]◈ FOREST ROOM 9[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest room 9. Nothing is written here yet.
+*else
+  This is forest room 9. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go south.
+    *set dg_dest "lsf_r7"
+    *set dg_dest_hall false
+    *goto lsf_move
+
+*label lsf_n_r10
+
+[b]◈ FOREST ROOM 10[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest room 10. Nothing is written here yet.
+*else
+  This is forest room 10. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go north.
+    *set dg_dest "lsf_j21"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go east.
+    *set dg_dest "lsf_j20"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go west.
+    *set dg_dest "lsf_j17"
+    *set dg_dest_hall true
+    *goto lsf_move
+
+*label lsf_n_r11
+
+[b]◈ FOREST ROOM 11[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest room 11. Nothing is written here yet.
+*else
+  This is forest room 11. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go east.
+    *set dg_dest "lsf_j18"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go south.
+    *set dg_dest "lsf_j19"
+    *set dg_dest_hall true
+    *goto lsf_move
+
+*label lsf_n_r12
+
+[b]◈ FOREST ROOM 12[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest room 12. Nothing is written here yet.
+*else
+  This is forest room 12. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go north.
+    *set dg_dest "lsf_r13"
+    *set dg_dest_hall false
+    *goto lsf_move
+  # Go south.
+    *set dg_dest "lsf_j21"
+    *set dg_dest_hall true
+    *goto lsf_move
+
+*label lsf_n_r13
+
+[b]◈ FOREST ROOM 13[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest room 13. Nothing is written here yet.
+*else
+  This is forest room 13. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go north.
+    *set dg_dest "lsf_r14"
+    *set dg_dest_hall false
+    *goto lsf_move
+  # Go south.
+    *set dg_dest "lsf_r12"
+    *set dg_dest_hall false
+    *goto lsf_move
+
+*label lsf_n_r14
+
+[b]◈ FOREST ROOM 14[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest room 14. Nothing is written here yet.
+*else
+  This is forest room 14. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go east.
+    *set dg_dest "lsf_r15"
+    *set dg_dest_hall false
+    *goto lsf_move
+  # Go south.
+    *set dg_dest "lsf_r13"
+    *set dg_dest_hall false
+    *goto lsf_move
+
+*label lsf_n_r15
+
+[b]◈ FOREST ROOM 15[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The dark under the trees is close, and you feel your way. This is forest room 15. Nothing is written here yet.
+*else
+  This is forest room 15. Nothing is written here yet.
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go west.
+    *set dg_dest "lsf_r14"
+    *set dg_dest_hall false
+    *goto lsf_move
+
+*comment The encounter table: empty for now (no rows), so nothing is ever rolled. A row is added here as one *set dg_trow_ line each; see port_valen_silt_conduits.txt pvsc_table for the shape.
+*label lsf_table
+*set dg_trow_count 0
+*return
+
+*comment What a refill clears: every trail step's encounter roll. Nothing in the rooms to clear yet. The map and the chalk are not touched (see dungeon.txt, THE RESPAWN).
+*label lsf_respawn
+*set dg_done_lsf_x1 false
+*set dg_done_lsf_x2 false
+*set dg_done_lsf_j1 false
+*set dg_done_lsf_j2 false
+*set dg_done_lsf_j3 false
+*set dg_done_lsf_j4 false
+*set dg_done_lsf_j5 false
+*set dg_done_lsf_j6 false
+*set dg_done_lsf_j7 false
+*set dg_done_lsf_j8 false
+*set dg_done_lsf_j9 false
+*set dg_done_lsf_j10 false
+*set dg_done_lsf_j11 false
+*set dg_done_lsf_j12 false
+*set dg_done_lsf_j13 false
+*set dg_done_lsf_j14 false
+*set dg_done_lsf_j15 false
+*set dg_done_lsf_j16 false
+*set dg_done_lsf_j17 false
+*set dg_done_lsf_j18 false
+*set dg_done_lsf_j19 false
+*set dg_done_lsf_j20 false
+*set dg_done_lsf_j21 false
+*set dg_done_lsf_r1 false
+*set dg_done_lsf_r2 false
+*set dg_done_lsf_r3 false
+*set dg_done_lsf_r4 false
+*set dg_done_lsf_r5 false
+*set dg_done_lsf_r6 false
+*set dg_done_lsf_r7 false
+*set dg_done_lsf_r8 false
+*set dg_done_lsf_r9 false
+*set dg_done_lsf_r10 false
+*set dg_done_lsf_r11 false
+*set dg_done_lsf_r12 false
+*set dg_done_lsf_r13 false
+*set dg_done_lsf_r14 false
+*set dg_done_lsf_r15 false
+*return
+
+*comment The Developer menu's reset: forget the map (what was seen and every chalk mark).
+*label lsf_forget_map
+*set dg_seen_lsf_x1 false
+*set dg_seen_lsf_x2 false
+*set dg_seen_lsf_j1 false
+*set dg_seen_lsf_j2 false
+*set dg_seen_lsf_j3 false
+*set dg_seen_lsf_j4 false
+*set dg_seen_lsf_j5 false
+*set dg_seen_lsf_j6 false
+*set dg_seen_lsf_j7 false
+*set dg_seen_lsf_j8 false
+*set dg_seen_lsf_j9 false
+*set dg_seen_lsf_j10 false
+*set dg_seen_lsf_j11 false
+*set dg_seen_lsf_j12 false
+*set dg_seen_lsf_j13 false
+*set dg_seen_lsf_j14 false
+*set dg_seen_lsf_j15 false
+*set dg_seen_lsf_j16 false
+*set dg_seen_lsf_j17 false
+*set dg_seen_lsf_j18 false
+*set dg_seen_lsf_j19 false
+*set dg_seen_lsf_j20 false
+*set dg_seen_lsf_j21 false
+*set dg_seen_lsf_r1 false
+*set dg_seen_lsf_r2 false
+*set dg_seen_lsf_r3 false
+*set dg_seen_lsf_r4 false
+*set dg_seen_lsf_r5 false
+*set dg_seen_lsf_r6 false
+*set dg_seen_lsf_r7 false
+*set dg_seen_lsf_r8 false
+*set dg_seen_lsf_r9 false
+*set dg_seen_lsf_r10 false
+*set dg_seen_lsf_r11 false
+*set dg_seen_lsf_r12 false
+*set dg_seen_lsf_r13 false
+*set dg_seen_lsf_r14 false
+*set dg_seen_lsf_r15 false
+*set dg_mark_lsf_x1 false
+*set dg_mark_lsf_x2 false
+*set dg_mark_lsf_j1 false
+*set dg_mark_lsf_j2 false
+*set dg_mark_lsf_j3 false
+*set dg_mark_lsf_j4 false
+*set dg_mark_lsf_j5 false
+*set dg_mark_lsf_j6 false
+*set dg_mark_lsf_j7 false
+*set dg_mark_lsf_j8 false
+*set dg_mark_lsf_j9 false
+*set dg_mark_lsf_j10 false
+*set dg_mark_lsf_j11 false
+*set dg_mark_lsf_j12 false
+*set dg_mark_lsf_j13 false
+*set dg_mark_lsf_j14 false
+*set dg_mark_lsf_j15 false
+*set dg_mark_lsf_j16 false
+*set dg_mark_lsf_j17 false
+*set dg_mark_lsf_j18 false
+*set dg_mark_lsf_j19 false
+*set dg_mark_lsf_j20 false
+*set dg_mark_lsf_j21 false
+*set dg_mark_lsf_r1 false
+*set dg_mark_lsf_r2 false
+*set dg_mark_lsf_r3 false
+*set dg_mark_lsf_r4 false
+*set dg_mark_lsf_r5 false
+*set dg_mark_lsf_r6 false
+*set dg_mark_lsf_r7 false
+*set dg_mark_lsf_r8 false
+*set dg_mark_lsf_r9 false
+*set dg_mark_lsf_r10 false
+*set dg_mark_lsf_r11 false
+*set dg_mark_lsf_r12 false
+*set dg_mark_lsf_r13 false
+*set dg_mark_lsf_r14 false
+*set dg_mark_lsf_r15 false
+*return

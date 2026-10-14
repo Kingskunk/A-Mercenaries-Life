@@ -349,6 +349,8 @@ function compile(){
   // The Silt-Gate channels dungeon (see its own header comment): a *goto_scene-only scene entered from the Developer menu for now,
   // so it needs its own line here or a compiled build fails with "scene doesn't exist" the moment the walk starts.
   verifyFileName("port_valen/port_valen_silt_conduits.txt");
+  // The Longshade Forest dungeon (2026-10-14): a *goto_scene-only scene entered from the overworld tiles lf and ua.
+  verifyFileName("overworld/longshade_forest.txt");
 
   //Check startup.txt for a *scene_list
   var sceneList = false;
