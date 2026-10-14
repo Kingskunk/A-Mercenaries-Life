@@ -30578,7 +30578,9 @@ window.OVERWORLD_ART = {"coldspine":{"unit":130,"bbox":[-600.7,-784,431.8,-329.6
     var el = document.getElementById(PANEL_ID);
     if (el && sig === lastSig) return;
     if (sig !== lastSig) pressed = false; // a new page of options: the old press is over
+    var fresh = false;
     if (!el) {
+      fresh = true;
       el = document.createElement("div");
       el.id = PANEL_ID;
       var forms = document.querySelectorAll("#main form"), f = forms.length ? forms[forms.length - 1] : null;
@@ -30590,6 +30592,29 @@ window.OVERWORLD_ART = {"coldspine":{"unit":130,"bbox":[-600.7,-784,431.8,-329.6
     lastSig = sig;
     if (!view) centerOnMe();
     applyView();
+    if (fresh) bringIntoView();
+  }
+
+  // A new overworld page opens scrolled to the top, with the place and weather text above the map, so the lower half of the map is off screen. Once per new page (never on a tile click, zoom or pan, which
+  // only redraw the same panel), scroll so the map's top edge sits just under the top of the visible area; the text above is one scroll up. The page scrolls inside #main, not the window, so the visible area
+  // is that of the nearest scrolling ancestor. Waits a moment because the page change itself resets the scroll position.
+  function scroller(el) {
+    for (var e = el.parentElement; e && e !== document.documentElement; e = e.parentElement) {
+      var oy = window.getComputedStyle(e).overflowY;
+      if ((oy === "auto" || oy === "scroll") && e.scrollHeight > e.clientHeight + 2) return e;
+    }
+    return null;
+  }
+  function bringIntoView() {
+    setTimeout(function () {
+      var el = document.getElementById(PANEL_ID);
+      if (!el) return;
+      var sc = scroller(el), r = el.getBoundingClientRect();
+      var top = sc ? sc.getBoundingClientRect().top : 0, bottom = sc ? sc.getBoundingClientRect().bottom : (window.innerHeight || document.documentElement.clientHeight);
+      if (r.top >= top && r.bottom <= bottom) return;   // already all in view
+      if (sc) sc.scrollTop = Math.max(0, sc.scrollTop + (r.top - top) - 12);
+      else window.scrollTo(0, Math.max(0, (window.pageYOffset || document.documentElement.scrollTop || 0) + r.top - 12));
+    }, 250);
   }
 
   function toggle() { centerOnMe(); applyView(); }
