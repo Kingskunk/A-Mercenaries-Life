@@ -154,6 +154,8 @@ global.safeTimeout = function (fn) { safeCall(null, fn); };
 load("web/" + gameName + "/mygame.js");
 if (fs.existsSync("web/" + gameName + "/names-data.js")) load("web/" + gameName + "/names-data.js");
 if (fs.existsSync("web/" + gameName + "/overworld-data.js")) load("web/" + gameName + "/overworld-data.js");
+if (fs.existsSync("web/" + gameName + "/inventory-data.js")) load("web/" + gameName + "/inventory-data.js");
+if (fs.existsSync("web/" + gameName + "/inventory.js")) load("web/" + gameName + "/inventory.js");
 
 // Pre-load every scene file's parsed lines into the global `allScenes` map --
 // web/scene.js checks for this and, when present, uses it instead of the

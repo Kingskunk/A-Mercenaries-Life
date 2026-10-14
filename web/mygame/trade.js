@@ -223,6 +223,23 @@
     if (n) cart[kind][id] = n; else delete cart[kind][id];
   }
 
+  /* ------------------------------------------------------------------ load (2026-10-14)
+   * The pack's Load calculation (inventory.js loadOf) is the one source. The cart changes it three ways: what is bought comes on, what is sold goes off, and the coin spent or taken changes
+   * what the purse weighs (the purse is always held as the fewest coins). Only shown, never a gate: a trade that overloads is allowed, with the words the shop menus use. */
+  function IP() { return window.InventoryPanel && window.InventoryPanel.loadOf ? window.InventoryPanel : null; }
+  function wt(id) { var it = data().items[id]; return it ? num(it.weight) : 0; }
+  function weightTag(id) { var w = wt(id), p = IP(); return w && p ? '<span class="trd-wt">' + p.fmtLoad(w) + " load</span>" : ""; }
+  function cartLoad(t, s) {
+    var p = IP(), ld = p ? p.loadOf(s) : null;
+    if (!ld) return null;
+    var delta = 0;
+    Object.keys(cart.buy).forEach(function (id) { delta += wt(id) * cart.buy[id]; });
+    Object.keys(cart.sell).forEach(function (id) { delta -= wt(id) * cart.sell[id]; });
+    var coinNow = p.coinLoad(t.funds), coinAfter = p.coinLoad(Math.max(0, t.funds + t.credit - t.cost));
+    var after = ld.total + delta + (coinAfter - coinNow);
+    return { now: ld.total, after: after, capacity: ld.capacity, pct: p.penaltyPct(after, ld.capacity) };
+  }
+
   function totals(trade, s) {
     var cost = 0, credit = 0, buying = 0, selling = 0;
     Object.keys(cart.buy).forEach(function (id) {
@@ -295,7 +312,7 @@
         html += '<div class="trd-row' + (qty ? " trd-row-on" : "") + '">' +
           tradeIcon(r.id, it) +
           '<div class="trd-main">' +
-            '<div class="trd-name">' + esc(it.title) + (it.slot ? '<span class="trd-slot">' + esc(it.slot) + "</span>" : "") + (have ? '<span class="trd-have">you have ' + have + "</span>" : "") + "</div>" +
+            '<div class="trd-name">' + esc(it.title) + (it.slot ? '<span class="trd-slot">' + esc(it.slot) + "</span>" : "") + (have ? '<span class="trd-have">you have ' + have + "</span>" : "") + weightTag(r.id) + "</div>" +
             (hints && it.hint ? '<div class="trd-meta">' + esc(it.hint) + "</div>" : "") +
             (r.warn ? '<div class="trd-warn">' + esc(r.warn) + "</div>" : "") +
             (wearingLine(r.id, it, s) ? '<div class="trd-worn">' + esc(wearingLine(r.id, it, s)) + "</div>" : "") +
@@ -314,7 +331,7 @@
         html += '<div class="trd-row' + (qty ? " trd-row-on" : "") + '">' +
           tradeIcon(r.id, it) +
           '<div class="trd-main">' +
-            '<div class="trd-name">' + esc(it.title) + (it.slot ? '<span class="trd-slot">' + esc(it.slot) + "</span>" : "") + '<span class="trd-have">you have ' + r.have + "</span>" +
+            '<div class="trd-name">' + esc(it.title) + (it.slot ? '<span class="trd-slot">' + esc(it.slot) + "</span>" : "") + '<span class="trd-have">you have ' + r.have + "</span>" + weightTag(r.id) +
               (worn ? '<span class="trd-badge">worn</span>' : "") + "</div>" +
             (note ? '<div class="trd-warn">' + esc(note) + "</div>" : "") +
           "</div>" +
@@ -331,6 +348,12 @@
     if (!t.buying && !t.selling) lines = '<div class="trd-line trd-line-idle"><span>Set some items aside to trade.</span></div>';
     else if (t.short) lines += '<div class="trd-line trd-line-bad"><span>Not enough coin</span><span>short ' + fmt(t.short) + "</span></div>";
     else lines += '<div class="trd-line trd-line-net"><span>Purse after</span><span>' + fmt(t.funds + t.credit - t.cost) + "</span></div>";
+    var cl = (t.buying || t.selling) ? cartLoad(t, s) : null;
+    if (cl) {
+      var f = IP().fmtLoad, over = cl.after > cl.capacity;
+      lines += '<div class="trd-line trd-line-load' + (over ? " trd-line-bad" : "") + '"><span>Load after</span><span>' + f(cl.now) + " → " + f(cl.after) + " of " + f(cl.capacity) + "</span></div>";
+      if (over) lines += '<div class="trd-line trd-line-bad"><span>Over your limit: you tire ' + cl.pct + "% faster on the move</span><span></span></div>";
+    }
     var can = (t.buying || t.selling) && !t.short;
     elFoot.innerHTML = lines +
       '<div class="trd-actions">' +

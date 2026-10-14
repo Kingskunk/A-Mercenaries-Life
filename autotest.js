@@ -39,6 +39,8 @@ if (fs.existsSync(mygamePath)) {
   // The name generator and the overworld map are read by *script lines in the scenes, as in randomtest.js.
   if (fs.existsSync("web/" + gameName + "/names-data.js")) load("web/" + gameName + "/names-data.js");
   if (fs.existsSync("web/" + gameName + "/overworld-data.js")) load("web/" + gameName + "/overworld-data.js");
+  if (fs.existsSync("web/" + gameName + "/inventory-data.js")) load("web/" + gameName + "/inventory-data.js");
+  if (fs.existsSync("web/" + gameName + "/inventory.js")) load("web/" + gameName + "/inventory.js");
 } else {
   nav = new SceneNavigator(["startup"]);
   stats = {};

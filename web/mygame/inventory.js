@@ -20,7 +20,8 @@
 (function () {
   "use strict";
 
-  var INV = window.InventoryPanel = window.InventoryPanel || {};
+  var ROOT = typeof window !== "undefined" ? window : global;   // the node test harnesses have no window; the game reads the load through *script (calendar.txt calc_load)
+  var INV = ROOT.InventoryPanel = ROOT.InventoryPanel || {};
 
   function truthy(v) { return v === true || v === "true"; }
   function esc(s) {
@@ -30,7 +31,7 @@
   }
   function evalField(v, s) { return typeof v === "function" ? v(s) : v; }
 
-  function data() { return window.INVENTORY || { categories: [], equippedSlots: [], items: [] }; }
+  function data() { return ROOT.INVENTORY || { categories: [], equippedSlots: [], items: [] }; }
 
   function isOwned(item, s) {
     var o = item.owned;
@@ -51,6 +52,7 @@
       name: evalField(item.name, s),
       description: evalField(item.description, s),
       badge: evalField(item.badge, s) || "",
+      weight: Number(item.weight) || 0,
       use: !!item.use,
       useLabel: evalField(item.useLabel, s) || "Use",
       equip: item.equip || null
@@ -231,7 +233,7 @@
   // The trade panel uses the same item art as the satchel. Keep the choice of
   // picture here, beside the catalog-facing mapping above, so a new item's art
   // does not quietly diverge between the two panels.
-  window.ItemIconResolver = {
+  ROOT.ItemIconResolver = {
     keyFor: function (id, item) {
       if (ID_ICON[id]) return ID_ICON[id];
       var kind = String(item && item.kind || "").toLowerCase();
@@ -252,6 +254,62 @@
     if (m) return { name: m[1], count: Number(m[2] || m[3]) };
     return { name: String(name || ""), count: 1 };
   }
+
+  /* ---------------------------------------------------------------------- load (2026-10-14)
+   * What the character carries, in load points (weights are per item in inventory-data.js; the capacity formula, coin weights and starting gear are its `load` block, generated from
+   * tools/gear_catalog.json). A stack weighs weight x quantity. The starting kit (the class's armour, weapon and sidearm, and the four plain pieces of clothing) is always carried: it is
+   * not an item in the bag, but "switch back to starting gear" is always offered, so it is always on you. Coins weigh by kind; the Letter of Credit is a bag item like any other.
+   * Nothing is written to the game's state: this is only read, for the pack's display. */
+  function loadOf(s) {
+    var cfg = data().load;
+    if (!cfg) return null;
+    var gear = 0, coin = 0, kit = 0;
+    data().items.forEach(function (item) {
+      var w = Number(item.weight) || 0;
+      if (!w || !isOwned(item, s)) return;
+      gear += w * splitCount(evalField(item.name, s)).count;
+    });
+    var st = cfg.starting || {};
+    kit += (st.armor && st.armor[s.starting_armor]) || 0;
+    kit += (st.weapons && st.weapons[s.starting_weapon]) || 0;
+    kit += (st.sidearms && st.sidearm_by_class && st.sidearms[st.sidearm_by_class[s.character_class]]) || 0;
+    Object.keys(st.clothing || {}).forEach(function (k) { kit += Number(st.clothing[k]) || 0; });
+    var c = cfg.coin || {};
+    coin = (Number(s.gold) || 0) * (c.gold || 0) + (Number(s.silver) || 0) * (c.silver || 0) + (Number(s.copper) || 0) * (c.copper || 0);
+    // A horse carries a share (cfg.capacityHorse) while it is with the character; inside a dungeon run it waits outside.
+    var horse = truthy(s.has_horse) && !truthy(s.dg_in_run) ? (cfg.capacityHorse || 0) : 0;
+    var capacity = (cfg.capacityBase || 0) + (cfg.capacityPerStr || 0) * (Number(s.strength) || 0) + horse;
+    // Over the limit, every point over adds a few percent to how fast the rest clock runs while moving (calendar.txt calc_load reads this, so the game and the pack cannot disagree).
+    return { total: gear + coin + kit, gear: gear, coin: coin, kit: kit, capacity: capacity, horse: horse, extraPct: penaltyPct(gear + coin + kit, capacity) };
+  }
+  // The extra percent of fatigue while moving for a load over the limit (0 when it is not over).
+  function penaltyPct(total, capacity) {
+    var cfg = data().load || {}, over = total - capacity;
+    return over > 0 ? Math.min(cfg.overPctCap || 0, Math.ceil(over * (cfg.overPctPerPoint || 0))) : 0;
+  }
+  // What a purse of this many copper weighs, held as the fewest coins (10 copper = 1 silver, 10 silver = 1 gold: economy.txt currency_add).
+  function coinLoad(copper) {
+    var c = (data().load || {}).coin || {}, n = Math.max(0, Math.floor(Number(copper) || 0));
+    var gold = Math.floor(n / 100), silver = Math.floor((n - gold * 100) / 10), cu = n - gold * 100 - silver * 10;
+    return gold * (c.gold || 0) + silver * (c.silver || 0) + cu * (c.copper || 0);
+  }
+  // One decimal at most, none when it is whole: 31.4, 20, 0.1.
+  function fmtLoad(n) { var r = Math.round(n * 10) / 10; return String(r); }
+  INV.loadOf = loadOf;
+  INV.penaltyPct = penaltyPct;
+  INV.coinLoad = coinLoad;
+  INV.fmtLoad = fmtLoad;
+  // The warning a shop shows beside an item that would put the character over their limit (equipment.txt gear_warning_text reads it through *script, so the shop menus and the trade panel's
+  // rows carry the same words). "" when buying one still fits. One unit; a stack of them is the trade panel's own check.
+  function overloadNote(s, id) {
+    var ld = loadOf(s), w = 0;
+    if (!ld) return "";
+    data().items.forEach(function (item) { if (item.id === id) w = Number(item.weight) || 0; });
+    if (!w || ld.total + w <= ld.capacity) return "";
+    var after = fmtLoad(ld.total + w) + " of " + fmtLoad(ld.capacity);
+    return ld.total > ld.capacity ? "Adds to your overload: " + after : "Would overload you: " + after;
+  }
+  INV.overloadNote = overloadNote;
 
   /* ---------------------------------------------------------------------- DOM */
 
@@ -474,6 +532,16 @@
     html += '<div class="inv-restbar"><span class="inv-rest-name">Rest</span>' + (badge ? '<span class="inv-item-badge">' + esc(badge) + "</span>" : "") +
       '<span class="inv-spacer"></span><button type="button" class="inv-use" data-rest' + (canUse() ? "" : " disabled") + ">Rest…</button></div>";
 
+    var ld = loadOf(s);
+    if (ld) {
+      var ratio = ld.capacity > 0 ? ld.total / ld.capacity : 0;
+      var cls = ratio > 1 ? " inv-load-over" : (ratio >= 0.8 ? " inv-load-near" : "");
+      var word = ratio > 1 ? "Over the limit: you tire " + ld.extraPct + "% faster on the move" : (ratio >= 0.8 ? "Near the limit" : "");
+      html += '<div class="inv-loadbar' + cls + '" title="Gear ' + fmtLoad(ld.gear) + " · Starting kit " + fmtLoad(ld.kit) + " · Coin " + fmtLoad(ld.coin) + (ld.horse ? " · Capacity includes your horse (+" + fmtLoad(ld.horse) + ")" : "") + '">' +
+        '<span class="inv-load-name">Load</span><span class="inv-load-num">' + fmtLoad(ld.total) + " / " + fmtLoad(ld.capacity) + "</span>" +
+        '<span class="inv-load-track"><i style="width:' + Math.min(100, Math.round(ratio * 100)) + '%"></i></span>' +
+        (word ? '<span class="inv-load-word">' + word + "</span>" : "") + "</div>";
+    }
     html += '<div class="inv-chips"><button type="button" class="inv-chip" data-cat="" aria-pressed="' + (!view.category) + '">All<small>' + current.length + "</small></button>";
     data().categories.forEach(function (c) {
       if (!counts[c.id]) return;
@@ -503,6 +571,7 @@
       html += '<div class="inv-detail-main"><div class="inv-detail-name">' + esc(sc.name) + (sel.slot ? '<span class="inv-item-slot">' + esc(sel.slot) + "</span>" : "") +
         (sel.badge ? '<span class="inv-item-badge">' + esc(sel.badge) + "</span>" : "") + "</div>" +
         (sel.traits ? '<div class="inv-item-traits">' + esc(sel.traits) + "</div>" : "") +
+        (sel.weight ? '<div class="inv-item-weight">' + weightText(sel.weight, sc.count) + "</div>" : "") +
         (sel.description ? '<div class="inv-item-desc">' + esc(sel.description) + "</div>" : "") + "</div>" +
         '<div class="inv-detail-acts">' +
         (sel.equip && sel.equip.attune ? '<button type="button" class="inv-use" data-attune="' + (truthy(s.hearthstone_attuned) ? "break" : "attune") + '">' + (truthy(s.hearthstone_attuned) ? "Break attunement" : "Attune") + "</button>"
@@ -516,7 +585,7 @@
     } else {
       html += '<div class="inv-note">Drag a piece onto the figure to wear it, or select it and press Equip. Click a slot to see what else fits.</div>';
     }
-    html += '<div class="inv-purse" title="Coin on you">' + esc(purseText(s)) + "</div></div>";
+    html += '<div class="inv-purse" title="Coin on you">' + esc(purseText(s)) + (ld ? " · weighs " + fmtLoad(ld.coin) : "") + "</div></div>";
     elBag.innerHTML = html;
   }
 
@@ -531,9 +600,11 @@
   /* ---------------------------------------------------------------- hover cards */
 
   function hideTip() { if (elTip) elTip.className = "inv-tip"; }
+  function weightText(w, count) { return "Weight " + fmtLoad(w) + (count > 1 ? " each, " + fmtLoad(w * count) + " in all" : ""); }
   function tipHtmlForItem(r) {
     var c = splitCount(r.name);
     return '<div class="bt-name">' + esc(c.name) + (c.count > 1 ? " ×" + c.count : "") + "</div>" +
+      (r.weight ? '<div class="bt-meta">' + weightText(r.weight, c.count) + "</div>" : "") +
       (r.slot || r.badge ? '<div class="bt-kind">' + esc([r.slot, r.badge].filter(Boolean).join(" · ")) + "</div>" : "") +
       (r.traits ? '<div class="bt-meta">' + esc(r.traits) + "</div>" : "") +
       (r.description ? '<div class="bt-text">' + esc(r.description) + "</div>" : "") +

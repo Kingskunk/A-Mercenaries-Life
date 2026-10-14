@@ -71,6 +71,8 @@ load("web/scene.js"); load("web/navigator.js"); load("web/util.js"); load("headl
 // The name generator lives in a browser data file; *script in names.txt reads it from the global scope.
 load("web/mygame/names-data.js");
 load("web/mygame/overworld-data.js");
+load("web/mygame/inventory-data.js");
+load("web/mygame/inventory.js");
 
 nav = new SceneNavigator(["startup"]);
 stats = {};

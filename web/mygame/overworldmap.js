@@ -88,7 +88,7 @@
   // add right now, a percent), hungry past 18 hours since a meal, starving past 36; exhausted past 20 hours since rest, collapsing past 40; and a trail ration is eaten for you whenever the
   // meal clock reaches 18 hours (advance_time), one per further 18 hours, until they run out. The weather can change on a long walk, so this is the weather of the moment, not a promise.
   function outlook(minutes) {
-    var s = statsNow(), pct = num(s.ow_exposure_pct), burn = Math.round(minutes * (100 + pct) / 100), meal = num(s.minutes_since_meal), rest = num(s.minutes_since_rest) + burn;
+    var s = statsNow(), pct = num(s.ow_exposure_pct), loadPct = num(s.load_over_pct), burn = Math.round(minutes * (100 + pct) / 100), meal = num(s.minutes_since_meal), rest = num(s.minutes_since_rest) + Math.round(minutes * (100 + pct + loadPct) / 100);
     var have = truthy(s.has_trail_rations) ? 1 + num(s.spare_trail_rations) : 0, eaten = 0, lines = [];
     if (have > 0 && truthy(s.vane_independent_operative)) {
       var first = meal < 1080 ? 1080 - meal : 0;
@@ -103,6 +103,7 @@
     if (parts.length) lines.push("You will be " + parts.join(" and ") + " by the time you get there.");
     if (eaten > 0) lines.push("You will eat " + (eaten === 1 ? "a trail ration" : eaten + " trail rations") + " on the way.");
     if (pct > 0) lines.push("Weather and cold wear you down about " + pct + "% faster on the road.");
+    if (loadPct > 0) lines.push("Your load is over what you can carry: it tires you about " + loadPct + "% faster on the road.");
     return lines;
   }
 

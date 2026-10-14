@@ -356,6 +356,15 @@ function genEquipRings() {
 
 var INV_CATEGORY = { weapon: "weapons", armor: "apparel", head: "apparel", tool: "provisions", consumable: "consumables", valuable: "valuables",
   cloak: "apparel", hands: "apparel", waist: "apparel", feet: "apparel", neck: "apparel", ring: "accessories" };
+// The load rules the pack reads (inventory.js): capacity, coin weights and the starting gear that is not catalog stock. Weights are per ONE item; a stack weighs weight x quantity.
+function genLoadConfig() {
+  var cap = CATALOG.capacity, coin = CATALOG.coin_weights, sw = CATALOG.starting_weights;
+  if (!cap || !coin || !sw) throw new Error("the catalog needs capacity, coin_weights and starting_weights");
+  var clean = function (o) { var r = {}; Object.keys(o).forEach(function (k) { if (k.charAt(0) !== "_") r[k] = o[k]; }); return r; };
+  var coins = clean(coin); delete coins.letter_of_credit;   // the letter is an item of its own in the pack (inventory-data.js letter_of_credit), so it is weighed there
+  return ["load: " + JSON.stringify({ capacityBase: cap.base, capacityPerStr: cap.per_str, capacityHorse: cap.horse, overPctPerPoint: cap.over_pct_per_point, overPctCap: cap.over_pct_cap, coin: coins, starting: clean(sw) }) + ","];
+}
+
 function genInventory() {
   var L = [];
   listed().forEach(function (it) {
@@ -365,6 +374,8 @@ function genInventory() {
     var desc = /[.!?]$/.test(d.line) ? d.line : d.line + ".";
     L.push('{');
     L.push('  id: ' + q(it.id) + ', category: ' + q(cat) + ', owned: ' + q(flag(it)) + ',' + (slotLabel(it) ? ' slot: ' + q(slotLabel(it)) + ',' : ''));
+    if (typeof it.weight !== "number") throw new Error("item '" + it.id + "' has no weight (a number of load points, 0.1 and up)");
+    L.push('  weight: ' + it.weight + ',');
     if (stackable(it)) {
       L.push('  name: function (s) { var n = 1 + (Number(s.spare_' + it.id + ') || 0); return ' + q(it.title) + ' + (n > 1 ? " ×" + n : ""); },');
     } else {
@@ -559,7 +570,7 @@ function genTradeData() {
   Object.keys(ids).forEach(function (id) {
     var it = byId[id], sl = it.sell || {};
     data.items[id] = {
-      name: it.name, title: it.title || it.name, kind: it.kind, group: it.tradeGroup || "", tier: it.tier || "", retail: it.retail || 0,
+      name: it.name, title: it.title || it.name, kind: it.kind, group: it.tradeGroup || "", tier: it.tier || "", retail: it.retail || 0, weight: it.weight || 0,
       minutes: it.minutes || 10, hint: it.hint || (it.traits ? traitHint(it) : ""), slot: slotLabel(it), stack: stackable(it),
       sell: { smith: sl.smith || 0, pawn: sl.pawn || 0, general: sl.general || 0, tailor: sl.tailor || 0, jeweler: sl.jeweler || 0, pawnFixed: sl.pawnFixed || 0, smithPiece: sl.smithPiece || 0, herbalistPiece: sl.herbalistPiece || 0, countVar: sl.countVar || "" }
     };
@@ -618,6 +629,7 @@ setRegion(F.stats, "gear_equip_apparel", genEquipClothing(["cloak", "hands", "wa
 setRegion(F.stats, "gear_equip_neck", genEquipClothing(["neck"], "codex_equipment_accessories"));
 setRegion(F.stats, "gear_equip_rings", genEquipRings());
 setRegion(F.inventory, "gear_items", genInventory());
+setRegion(F.inventory, "load_config", genLoadConfig());
 setRegion(F.stats, "codex_use_check", genUseCheck(false));
 setRegion(F.stats, "codex_use_check2", genUseCheck(false));   // the satchel page repeats the check
 setRegion(F.stats, "codex_use_options", genUseOptions("codex_use_do", false));

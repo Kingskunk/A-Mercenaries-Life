@@ -210,6 +210,8 @@
   *comment and *gosub_scene calendar calc_exposure before advance_time; this scene clears it
   *comment again below, outside the guard, so a replayed page cannot leak it into a later call.
   *temp neglect_mins (total_mins_this_call + exposure_extra_mins)
+  *comment Carrying too much (calc_load, the pack's Load bar) tires the body on the move: load_extra_mins is counted toward the FATIGUE clock only, on top of the weather's extra. A mover sets it before this call.
+  *temp rest_mins (neglect_mins + load_extra_mins)
   *comment Trail rations (overworld only, ow_on): the hunger clock reaches 1080 minutes (the Hungry point) and a ration is eaten for you, exactly as a tavern meal: the clock and the hunger
   *comment debt both go back to 0. The first one is eaten when the clock reaches 1080 (at once if it is already past), then one for every further 1080 minutes, until the rations run out.
   *comment Everything is worked out from the clock as it stood before this call: rat_first minutes into the span the first ration is due, rat_due how many fall inside the span, and
@@ -242,7 +244,7 @@
           *set spare_trail_rations 0
   *if (vane_independent_operative)
     *set minutes_since_meal + meal_mins
-    *set minutes_since_rest + neglect_mins
+    *set minutes_since_rest + rest_mins
     *comment Weather wear burns food and rest, but it does not make you dirtier, so the wash clock takes the real minutes only.
     *set minutes_since_wash + total_mins_this_call
 
@@ -258,8 +260,8 @@
 
     *temp rest_over_before 0
     *temp rest_over_after 0
-    *if ((minutes_since_rest - neglect_mins) > 2400)
-      *set rest_over_before ((minutes_since_rest - neglect_mins) - 2400)
+    *if ((minutes_since_rest - rest_mins) > 2400)
+      *set rest_over_before ((minutes_since_rest - rest_mins) - 2400)
     *if (minutes_since_rest > 2400)
       *set rest_over_after (minutes_since_rest - 2400)
     *temp rest_ticks_before ((rest_over_before - (rest_over_before modulo 240)) / 240)
@@ -313,6 +315,7 @@
 *set days_to_pass 0
 *set exposure_base_mins 0
 *set exposure_extra_mins 0
+*set load_extra_mins 0
 
 *comment replay-ok: runs inside advance_time's replay guard, and the subtraction leaves calendar_day at or below month_max, so a second pass finds nothing to carry.
 *label check_calendar_month
@@ -991,6 +994,15 @@
 *set exposure_extra_mins round((exposure_base_mins * ex_pct) / 100)
 *return
 
+*comment The pack's load (web/mygame/inventory.js loadOf, called through *script so the game and the Load bar read one calculation): load_total, load_capacity and load_over_pct. Fixed-value sets from what the
+*comment character carries, so a replay changes nothing. A mover then sets load_extra_mins from load_over_pct. If the pack's script is not loaded (a test harness), nothing is over.
+*label calc_load
+*set load_total 0
+*set load_capacity 0
+*set load_over_pct 0
+*script var P = window.InventoryPanel; var r = P && P.loadOf ? P.loadOf(stats) : null; if (r) { stats.load_total = Math.round(r.total * 10) / 10; stats.load_capacity = r.capacity; stats.load_over_pct = r.extraPct; }
+*return
+
 *comment Work the gear's cuts out now and keep them until exposure_gear_cached is set false again (the journey page does both).
 *label exposure_gear_prime
 *gosub_scene equipment exposure_gear_sum
@@ -1047,6 +1059,7 @@
 *if (not(ow_leg_pace = 100))
   *set ow_leg_minutes round((ow_leg_minutes * ow_leg_pace) / 100)
 *set exposure_base_mins ow_leg_minutes
+*set load_extra_mins round((ow_leg_minutes * load_over_pct) / 100)
 *set exposure_camping false
 *set hours_to_pass 0
 *set minutes_to_pass ow_leg_minutes
