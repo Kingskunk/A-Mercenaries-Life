@@ -1,0 +1,146 @@
+*comment ====================================================================================
+*comment THE ASHRUN HOUSE (Ashrun Holt): a small village inn for cutters, haulers and travellers.
+*comment Its private rooms last 24 hours; the stable rails remain scenery, as calendar.txt handles horse upkeep.
+*comment ====================================================================================
+
+*label ah_inn
+*set minutes_to_pass 5
+*set time_advance_call_id "ah_inn_1"
+*gosub_scene timbermouth/ashrun_holt/ashrun_holt ah_walk_time
+*goto ah_inn_main
+
+*label ah_inn_main
+*temp inn_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*if (inn_now >= ah_inn_room_until)
+  *set ah_inn_room_active false
+*temp inn_first false
+*if (not(ah_inn_seen))
+  *set inn_first true
+*set ah_inn_seen true
+
+[b]◈ THE ASHRUN HOUSE[/b]
+*line_break
+The Ashrun House is a broad, two-storey log building with a deep porch facing the clearing and stable rails along one side. Inside, a long hearth warms scrubbed tables beneath smoke-darkened beams. Wet wool, fir smoke, onion broth and the clean sharp smell of split wood fill the room.
+
+*if (inn_first)
+  A square-shouldered woman at the counter looks up from a pot at the hearth. "Food's hot, rooms are two copper, and the rails are outside. Keep your boots clear of the passage and we'll get on." 
+*elseif (time_period = "Night")
+  Lamps burn over the counter and stair, and the last few tables keep their voices low beneath the sound of the river.
+*elseif (weather_severity >= 3)
+  The shutters are barred and the hearth burns high. Somebody has hung soaked cloaks from the beam above it.
+*elseif (time_period = "Morning")
+  Cutters and haulers eat quickly before the work paths fill, their boots lined beneath the nearest bench.
+*else
+  The room has the steady traffic of a place where people come in for warmth, news and a meal before returning to the trees.
+
+*choice
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 2)
+    # [2 Copper Bits] Buy venison, barley and root stew. [~20 min]@{show_stat_hints  [+2 Temp HP, +1 CON for 4h]|}
+      *set tavern_item_cost_copper 2
+      *set tavern_item_hp_heal 0
+      *set tavern_item_temp_hp 2
+      *set tavern_item_type "food"
+      *set tavern_item_buff_name "Cutter's Stew"
+      *set tavern_item_buff_desc "+1 CON"
+      *set tavern_item_buff_stat "con"
+      *set tavern_item_buff_bonus 1
+      *set tavern_item_buff_minutes 240
+      *gosub_scene economy buy_tavern_item
+      *set hours_to_pass 0
+      *set minutes_to_pass 20
+      *set time_advance_call_id "ah_inn_stew"
+      *gosub_scene calendar advance_time
+      *gosub_scene calendar recalc_hp_from_neglect
+      *if (hp_current <= 0)
+        *set death_cause "exhaustion"
+        *goto_scene death death_screen
+      A bowl of dark stew arrives with barley, venison and root vegetables beneath a heel of oat bread. The broth is hot, thick, and peppered hard enough to clear the road from your head.
+
+      [b][Hot Stew Eaten: +2 Temporary HP | Cutter's Stew (+1 CON for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+      *page_break Set the bowl aside...
+      *goto ah_inn_main
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 1)
+    # [1 Copper Bit] Buy oatcake, sharp cheese and an apple. [~10 min]@{show_stat_hints  [+1 Temp HP, +1 WIS for 4h]|}
+      *set tavern_item_cost_copper 1
+      *set tavern_item_hp_heal 0
+      *set tavern_item_temp_hp 1
+      *set tavern_item_type "food"
+      *set tavern_item_buff_name "Holt Lunch"
+      *set tavern_item_buff_desc "+1 WIS"
+      *set tavern_item_buff_stat "wis"
+      *set tavern_item_buff_bonus 1
+      *set tavern_item_buff_minutes 240
+      *gosub_scene economy buy_tavern_item
+      *set hours_to_pass 0
+      *set minutes_to_pass 10
+      *set time_advance_call_id "ah_inn_lunch"
+      *gosub_scene calendar advance_time
+      *gosub_scene calendar recalc_hp_from_neglect
+      *if (hp_current <= 0)
+        *set death_cause "exhaustion"
+        *goto_scene death death_screen
+      The oatcake is warm from the hearthstone, the cheese sharp enough to bite back, and the apple crisp despite the season.
+
+      [b][Holt Lunch Eaten: +1 Temporary HP | Holt Lunch (+1 WIS for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+      *page_break Wipe your hands...
+      *goto ah_inn_main
+  *if (ah_inn_room_active)
+    # Go up to your room.
+      *goto ah_inn_room
+  *elseif ((((gold * 100) + (silver * 10)) + copper) >= ah_inn_rate_copper)
+    # [${ah_inn_rate_copper} Copper Bits] Take a room for 24 hours.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+        *set currency_add_amount (0 - ah_inn_rate_copper)
+        *gosub_scene economy currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id page_id
+      *set ah_inn_room_active true
+      *set ah_inn_room_until (inn_now + 1440)
+      The woman takes the coins and gives you an iron key. "Top of the stair, window side. Yours until this hour tomorrow."
+      *page_break Take the stair...
+      *goto ah_inn_room
+  *else
+    # Ask about a room.
+      "Two copper for a day and a night," the innkeeper says. "Dry bed, wool blanket, door that bars."
+      *page_break Step back from the counter...
+      *goto ah_inn_main
+  # Return to the clearing.
+    *goto_scene timbermouth/ashrun_holt/ashrun_holt ashrun_holt
+
+*label ah_inn_room
+*temp room_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*if (room_now >= ah_inn_room_until)
+  *set ah_inn_room_active false
+*if (not(ah_inn_room_active))
+  *goto ah_inn_main
+[b]◈ YOUR ROOM: THE ASHRUN HOUSE[/b]
+*line_break
+The room has a plank bed, straw mattress, wool blanket, washbasin and a shuttered window looking over the clearing. It is plain, clean and warm enough that the forest sounds beyond the wall seem far away.
+
+*choice
+  # Bar the door and sleep. [~8 Hours]
+    *set hours_to_pass 8
+    *set minutes_to_pass 0
+    *set time_advance_call_id "ah_inn_sleep"
+    *gosub_scene calendar advance_time
+    *if (hp_current <= 0)
+      *set death_cause "starvation"
+      *if (neglect_damage_fatigue > neglect_damage_hunger)
+        *set death_cause "exhaustion"
+      *goto_scene death death_screen
+    *set sleep_location_id "ashrun_holt_ashrun_house"
+    *set sleep_is_shared false
+    *set sleep_is_permanent_home false
+    *set sleep_is_paid_inn true
+    *set sleep_tier_name "none"
+    *set sleep_tier_stat1 "none"
+    *set sleep_tier_bonus1 0
+    *set sleep_tier_stat2 "none"
+    *set sleep_tier_bonus2 0
+    *gosub_scene calendar resolve_sleep
+    You pull the blanket up, and the river and the work of the clearing settle into a low, far-off noise below the window.
+
+    *page_break Wake rested...
+    *goto ah_inn_room
+  # Go back down to the Ashrun House.
+    *goto ah_inn_main

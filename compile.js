@@ -300,9 +300,8 @@ function compile(){
   verifyFileName("timbermouth/barleycross/pasture.txt");
   verifyFileName("timbermouth/ashrun_holt/ashrun_holt.txt");
   verifyFileName("timbermouth/ashrun_holt/longhouse.txt");
-  verifyFileName("timbermouth/ashrun_holt/landing.txt");
   verifyFileName("timbermouth/ashrun_holt/hide_yard.txt");
-  verifyFileName("timbermouth/ashrun_holt/clearing.txt");
+  verifyFileName("timbermouth/ashrun_holt/ashrun_house.txt");
   // Marlcross is Port Valen's eastern grain and carting village. Its three public places live beside the city content rather than under Timbermouth.
   verifyFileName("port_valen/marlcross/marlcross.txt");
   verifyFileName("port_valen/marlcross/cross_hall.txt");

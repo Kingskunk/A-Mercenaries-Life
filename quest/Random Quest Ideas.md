@@ -33,3 +33,6 @@ problem is resolved, she will be your best friend in the city,
 helping wherever she can.
 Roll for 1 Flaw, 1 Strength, and 1 in the NPC setup
 tables
+
+
+
