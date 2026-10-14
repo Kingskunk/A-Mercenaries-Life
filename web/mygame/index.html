@@ -298,6 +298,9 @@ var rootDir = "../";
 }
 #statSidebar .sbWait:hover:not(:disabled) { border-color: var(--ch-crimson-hi); }
 #statSidebar .sbWait:disabled { cursor: not-allowed; color: var(--ch-dim); font-weight: 400; }
+/* Wait and Rest side by side on one line (the Rest button moved here from the inventory) */
+#statSidebar .sbWaitRow { display: flex; gap: 0.4em; margin-top: 0.6em; }
+#statSidebar .sbWaitRow .sbWait { flex: 1 1 0; width: auto; margin-top: 0; }
 #statSidebar .spellNote { font-size: 0.78em; color: var(--ch-dim); margin-top: 0.4em; line-height: 1.4; }
 /* Combat state (2026-09-27): the sidebar's own header gets a small badge, and date/time/weather/purse swap for
    a live turn-order list (renderStatSidebar below) -- reusing the combat_turn_kind_N/_slot_N stats the ChoiceScript
@@ -1878,7 +1881,9 @@ button#statSidebar .turnRow,
     var reason = String(s.wait_lock_reason || "");
     var off = !!reason || !canOpenDossier();
     var tip = reason || "Pass the time: wait a few minutes, or until a time of day.";
-    return "<button type=\"button\" class=\"sbWait\" data-wait-open=\"1\" title=\"" + esc(tip) + "\"" + (off ? " disabled" : "") + ">Wait\u2026</button>";
+    var restOff = !canOpenDossier();
+    return "<div class=\"sbWaitRow\"><button type=\"button\" class=\"sbWait\" data-wait-open=\"1\" title=\"" + esc(tip) + "\"" + (off ? " disabled" : "") + ">Wait\u2026</button>" +
+      "<button type=\"button\" class=\"sbWait\" data-rest-open=\"1\" title=\"Catch your breath: an hour's rest, and what it wins back.\"" + (restOff ? " disabled" : "") + ">Rest\u2026</button></div>";
   }
   function openDossierAt(label) {
     if (!canOpenDossier()) return;
@@ -1997,6 +2002,11 @@ button#statSidebar .turnRow,
     var waitBtn = el.closest("[data-wait-open]");
     if (waitBtn) {
       if (!waitBtn.disabled) openDossierAt("codex_wait");
+      return;
+    }
+    var restBtn = el.closest("[data-rest-open]");
+    if (restBtn) {
+      if (!restBtn.disabled) openDossierAt("codex_rest");
       return;
     }
     var castBtn = el.closest("[data-spell-cast]");

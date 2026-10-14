@@ -317,7 +317,7 @@
     Object.keys(info.moves).forEach(function (id) { if (info.moves[id].box.classList) info.moves[id].box.classList.add("dgMove"); });
     document.body.classList.toggle("dgMapOn", mode !== "classic");
     document.body.classList.toggle("dgMapOnly", mode === "only");
-    if (fresh) bringIntoView(el);
+    if (fresh && mode !== "classic") bringIntoView(el);   // a folded map (the small bar) must not drag the page down to itself
   }
   function queueScan() {
     if (queuedScan) return;

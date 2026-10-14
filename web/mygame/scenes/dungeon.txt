@@ -399,6 +399,23 @@
   *set locked_dg_step_page_id page_id
 *return
 
+*comment A SHORT REST INSIDE A DUNGEON (2026-10-14, the user's call): the hour sits by the light like six steps of walking, so the torch or lantern burns six steps (an hour of light) and may go out, unless the
+*comment character sees in the dark (nothing burns for them) or is under open sky by day (no light is lit). Called once from the Rest page's guarded work (choicescript_stats.txt codex_rest_short), so a replay cannot
+*comment burn it twice; dg_rest_light_text is what the report says. Waiting is NOT allowed here (wait_lock_reason): it would refill anything that works once a day.
+*label dg_rest_burn
+*set dg_rest_light_text ""
+*gosub dg_dark_check
+*if (not(sees_in_dark))
+  *if (dg_light_left > 0)
+    *if (dg_light_left > 6)
+      *set dg_light_left (dg_light_left - 6)
+      *set dg_rest_light_text "Your light burns lower while you rest."
+    *else
+      *set dg_light_left 0
+      *set dg_light_kind "none"
+      *set dg_rest_light_text "Your light burns down while you rest, and goes out."
+*return
+
 *label dg_light_prompt
 *gosub dg_dark_check
 *if (not(dg_dark))

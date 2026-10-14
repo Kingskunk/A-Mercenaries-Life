@@ -15,7 +15,7 @@
  *
  * Open with the Inventory button or the I key.
  *
- * A Rest bar sits at the top of the bag (see restBadge): it is not a catalog item, and its button opens the dossier's Rest menu (choicescript_stats codex_rest).
+ * Rest is not here: its button sits beside Wait in the sidebar's Today card (index.html), and opens the dossier's Rest menu (choicescript_stats codex_rest).
  */
 (function () {
   "use strict";
@@ -53,6 +53,7 @@
       description: evalField(item.description, s),
       badge: evalField(item.badge, s) || "",
       weight: Number(item.weight) || 0,
+      stow: !!item.stow,
       use: !!item.use,
       useLabel: evalField(item.useLabel, s) || "Use",
       equip: item.equip || null
@@ -295,6 +296,78 @@
   }
   // One decimal at most, none when it is whole: 31.4, 20, 0.1.
   function fmtLoad(n) { var r = Math.round(n * 10) / 10; return String(r); }
+  /* ---------------------------------------------------------------------- containers (2026-10-14)
+   * Places to put items that are not on the character (the user's design: several, some that follow, some fixed in a place). The list is load.containers, generated from the catalog:
+   * a container is an id, a name, a capacity in load points, `needs` (a flag that must be true to reach it) and `dungeon: "waits"` (it is left outside a dungeon run). Stowing MOVES a unit
+   * out of the character's own counts (has_<id>, spare_<id>) into stow_<container>_<id>, so everything else in the game (a torch to light, a potion to drink, a shop counter) simply sees it
+   * as not owned, and none of those places had to learn about containers. Taking it back moves it in again. Rules: never in a fight; what is worn cannot be stowed (the piece in use stays);
+   * a container refuses past its capacity, never penalises; its contents stay when it is out of reach and wait. Like EquipmentEngine this writes window.stats directly: a count move between
+   * two pages, so there is no page to replay. Only the pack items the game generates (item.stow) can be stowed. */
+  var WORN = ["equipped_weapon_id", "equipped_sidearm_id", "equipped_armor_id", "equipped_head_id", "equipped_cloak_id", "equipped_hands_id", "equipped_waist_id", "equipped_feet_id", "equipped_neck_id", "equipped_ring1_id", "equipped_ring2_id"];
+  function truthyS(v) { return v === true || v === "true"; }
+  function containersCfg() { return (data().load || {}).containers || []; }
+  function containerCfg(cid) { var f = null; containersCfg().forEach(function (c) { if (c.id === cid) f = c; }); return f; }
+  function stowItem(id) { var f = null; data().items.forEach(function (i) { if (i.id === id && i.stow) f = i; }); return f; }
+  function haveOf(item, s) { return truthyS(s["has_" + item.id]) ? 1 + (item.stack ? (Number(s["spare_" + item.id]) || 0) : 0) : 0; }
+  function stowedOf(cid, id, s) { return Number(s["stow_" + cid + "_" + id]) || 0; }
+  function isWornId(id, s) { return WORN.some(function (v) { return s[v] === id; }); }
+  // Why nothing can be moved to or from this container right now, or "".
+  function containerBlock(cid, s) {
+    var c = containerCfg(cid);
+    if (!c) return "That container does not exist.";
+    if (c.needs && !truthyS(s[c.needs])) return c.needsReason || "It is not with you.";
+    if (truthyS(s.combat_engaged)) return "Not in the middle of a fight.";
+    if (c.dungeon === "waits" && truthyS(s.dg_in_run)) return c.name + " waits outside: nothing can be moved in a dungeon.";
+    return "";
+  }
+  function containerOf(cid, s) {
+    var c = containerCfg(cid), total = 0, entries = [];
+    if (!c) return null;
+    data().items.forEach(function (item) {
+      if (!item.stow) return;
+      var q = stowedOf(cid, item.id, s);
+      if (q > 0) { total += (Number(item.weight) || 0) * q; entries.push({ item: item, qty: q }); }
+    });
+    return { id: cid, name: c.name, note: c.note || "", capacity: c.capacity || 0, total: total, entries: entries, present: !c.needs || truthyS(s[c.needs]), why: containerBlock(cid, s) };
+  }
+  // The containers the character has, or that still hold something while out of reach.
+  function visibleContainers(s) {
+    return containersCfg().map(function (c) { return containerOf(c.id, s); }).filter(function (st) { return st.present || st.entries.length > 0; });
+  }
+  // How many of this item can go into the container now (0 with the reason in .why).
+  function stowRoom(cid, id, s) {
+    var item = stowItem(id), why = containerBlock(cid, s);
+    if (!item) return { n: 0, why: "That cannot be stowed." };
+    if (why) return { n: 0, why: why };
+    var free = haveOf(item, s) - (isWornId(id, s) ? 1 : 0);
+    if (free <= 0) return { n: 0, why: haveOf(item, s) > 0 ? "You are using it: take it off first." : "You have none." };
+    var w = Number(item.weight) || 0, st = containerOf(cid, s), byWeight = w > 0 ? Math.floor((st.capacity - st.total) / w + 1e-9) : free;
+    if (byWeight <= 0) return { n: 0, why: st.name + (/s$/.test(st.name) ? " are full." : " is full.") };
+    return { n: Math.min(free, byWeight), why: "" };
+  }
+  function stowUnits(cid, id, n) {
+    var s = statsNow(), item = stowItem(id), room = stowRoom(cid, id, s);
+    n = Math.min(Math.max(0, Math.floor(Number(n) || 0)), room.n);
+    if (!item || n <= 0) return { moved: 0, why: room.why };
+    var spare = item.stack ? (Number(s["spare_" + id]) || 0) : 0, fromSpare = Math.min(n, spare), rest = n - fromSpare;
+    if (fromSpare) s["spare_" + id] = spare - fromSpare;
+    if (rest) s["has_" + id] = false;   // only the one base copy is left to take, and stowRoom has already ruled out the worn one
+    s["stow_" + cid + "_" + id] = stowedOf(cid, id, s) + n;
+    return { moved: n, why: "" };
+  }
+  function takeUnits(cid, id, n) {
+    var s = statsNow(), item = stowItem(id), why = containerBlock(cid, s), have = stowedOf(cid, id, s);
+    if (!item || why) return { moved: 0, why: why || "That is not in there." };
+    n = Math.min(Math.max(0, Math.floor(Number(n) || 0)), have);
+    if (n <= 0) return { moved: 0, why: "" };
+    var left = n;
+    if (!truthyS(s["has_" + id])) { s["has_" + id] = true; left -= 1; }
+    if (left > 0 && item.stack) s["spare_" + id] = (Number(s["spare_" + id]) || 0) + left;
+    s["stow_" + cid + "_" + id] = have - n;
+    return { moved: n, why: "" };
+  }
+  INV.containerOf = containerOf; INV.visibleContainers = visibleContainers; INV.stowRoom = stowRoom; INV.stowUnits = stowUnits; INV.takeUnits = takeUnits; INV.containerBlock = containerBlock;
+
   INV.loadOf = loadOf;
   INV.penaltyPct = penaltyPct;
   INV.coinLoad = coinLoad;
@@ -316,7 +389,7 @@
   if (typeof document === "undefined") return; // node tests stop here (mirrors lorebook.js)
 
   var dlg, elDoll, elBag, elTip;
-  var view = { category: "", sel: null, drag: null, pop: null, note: "" };
+  var view = { category: "", sel: null, drag: null, pop: null, note: "", left: "you", csel: null, qty: 1 };
 
   function statsNow() { return window.stats || {}; }
 
@@ -387,6 +460,14 @@
 
   /* ---------------------------------------------------------------- what can go where */
 
+  // An item that is in a container, as the same plain values a carried one has (so the grid, the item card and the hover card all read it the same way).
+  function stowedEntry(cid, id, s) {
+    var item = stowItem(id), q = item ? stowedOf(cid, id, s) : 0, c = containerCfg(cid);
+    if (!item || q <= 0 || !c) return null;
+    var r = resolve(item, s), base = splitCount(r.name).name;
+    r.name = base + (q > 1 ? " ×" + q : ""); r.badge = "In the " + c.name.toLowerCase(); r.equip = null; r.use = false; r.category = "container";
+    return r;
+  }
   function findOwned(id) {
     var list = owned(statsNow());
     for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
@@ -490,21 +571,12 @@
     var hasSidearm = s.equipped_sidearm_id && s.equipped_sidearm_id !== "none";
     if (hasSidearm && window.EquipmentEngine) html += '<button type="button" class="inv-swap-sidearm" data-swap-sidearm>⇄ Swap Weapon &amp; Sidearm</button>';
     html += '<div class="inv-vitals"><span>AC <b>' + esc(s.armor_class) + '</b></span><span>HP <b>' + esc(s.hp_current) + "/" + esc(s.hp_max) + '</b></span><span>Proficiency <b>+' + esc(s.prof_bonus) + "</b></span></div>";
-    elDoll.innerHTML = html + popHtml();
+    var cs = visibleContainers(s);
+    if (view.left === "you") elDoll.innerHTML = (cs.length ? leftTabsHtml(cs) : "") + html + popHtml();
+    else elDoll.innerHTML = leftTabsHtml(cs) + containerPaneHtml(containerOf(view.left, s), s);
   }
 
   /* ---------------------------------------------------------------- the bag */
-
-  // The Rest card: not an item you own, so it is not in the catalog and not counted. Its button opens the dossier's Rest menu (choicescript_stats
-  // codex_rest), the same way Use opens the satchel. The badge shows the one number a short rest is for.
-  function restBadge(s) {
-    if (s.character_class === "fighter") {
-      return "Second Wind " + s.fighter_second_wind_uses + "/" + s.fighter_second_wind_max +
-        (Number(s.fighter_action_surge_max) > 0 ? " · Action Surge " + s.fighter_action_surge_uses + "/" + s.fighter_action_surge_max : "");
-    }
-    if (s.character_class === "warlock") return "Pact slot " + s.warlock_spell_slots + "/" + s.warlock_spell_slots_max;
-    return "";
-  }
 
   function purseText(s) {
     var parts = [];
@@ -528,10 +600,6 @@
       html += '<div class="inv-tradebar"><span class="inv-tradebar-title">Trading at ' + esc(window.TradePanel.title()) + '</span>' +
         '<button type="button" data-act="trade">Open trade panel</button></div>';
     }
-    var badge = restBadge(s);
-    html += '<div class="inv-restbar"><span class="inv-rest-name">Rest</span>' + (badge ? '<span class="inv-item-badge">' + esc(badge) + "</span>" : "") +
-      '<span class="inv-spacer"></span><button type="button" class="inv-use" data-rest' + (canUse() ? "" : " disabled") + ">Rest…</button></div>";
-
     var ld = loadOf(s);
     if (ld) {
       var ratio = ld.capacity > 0 ? ld.total / ld.capacity : 0;
@@ -563,7 +631,7 @@
     html += "</div>";
 
     // the selected item's details and its actions, under the grid: the touch-friendly way to do what hovering and dragging do on a desktop
-    var sel = view.sel ? findOwned(view.sel) : null;
+    var xc = xferContext(s), sel = xc && xc.sel ? xc.sel : (view.sel ? findOwned(view.sel) : null);
     html += '<div class="inv-detail">';
     if (view.note) html += '<div class="inv-note inv-note-warn">' + esc(view.note) + "</div>";
     if (sel) {
@@ -585,13 +653,81 @@
     } else {
       html += '<div class="inv-note">Drag a piece onto the figure to wear it, or select it and press Equip. Click a slot to see what else fits.</div>';
     }
+    if (xc && xc.sel && xc.dir) html += xferHtml(xc);
     html += '<div class="inv-purse" title="Coin on you">' + esc(purseText(s)) + (ld ? " · weighs " + fmtLoad(ld.coin) : "") + "</div></div>";
     elBag.innerHTML = html;
+  }
+
+  /* ---------------------------------------------------------------- containers: the left-hand tabs, the container pane and the transfer strip */
+
+  // What is selected and what a move would do: the open container, the selected item (carried, or in the container), the direction and how many can move now.
+  function xferContext(s) {
+    var open = view.left !== "you" ? containerOf(view.left, s) : null;
+    if (!open) return null;
+    var sel = null, from = "";
+    if (view.csel) { sel = stowedEntry(open.id, view.csel, s); from = "container"; if (!sel) view.csel = null; }
+    if (!sel && view.sel) { sel = findOwned(view.sel); from = "bag"; }
+    if (!sel || (from === "bag" && !sel.stow)) return { open: open, sel: sel, from: from, dir: "", max: 0, why: "" };
+    var dir = from === "container" ? "take" : "stow", max, why;
+    if (dir === "stow") { var rm = stowRoom(open.id, sel.id, s); max = rm.n; why = rm.why; }
+    else { why = containerBlock(open.id, s); max = why ? 0 : stowedOf(open.id, sel.id, s); }
+    return { open: open, sel: sel, from: from, dir: dir, max: max, why: why };
+  }
+
+  // The transfer strip under the item card: how many, and one button named for where it goes. Never on the card's own button line, which keeps Use and Equip.
+  function xferHtml(xc) {
+    var qty = Math.max(1, Math.min(view.qty, xc.max || 1)), off = !xc.max || !!xc.why;
+    var label = xc.dir === "stow" ? "To " + xc.open.name + " →" : "← Take back";
+    return '<div class="inv-xfer"><span class="inv-xfer-label">Move</span>' +
+      '<span class="inv-xfer-step"><button type="button" data-qty="-1"' + (off || qty <= 1 ? " disabled" : "") + ' aria-label="Fewer">−</button>' +
+        '<span class="inv-xfer-qty">' + qty + '</span><button type="button" data-qty="1"' + (off || qty >= xc.max ? " disabled" : "") + ' aria-label="More">+</button></span>' +
+      '<span class="inv-xfer-pre"><button type="button" data-qty-set="1"' + (off ? " disabled" : "") + ">1</button><button type=\"button\" data-qty-set=\"10\"" + (off ? " disabled" : "") + ">10</button><button type=\"button\" data-qty-set=\"all\"" + (off ? " disabled" : "") + ">All</button></span>" +
+      '<button type="button" class="inv-use inv-xfer-go" data-xfer="' + xc.dir + '"' + (off ? " disabled" : "") + ">" + esc(label) + "</button>" +
+      (xc.why ? '<div class="inv-xfer-why">' + esc(xc.why) + "</div>" : "") + "</div>";
+  }
+
+  function leftTabsHtml(list) {
+    var html = '<div class="inv-ctabs" role="tablist"><button type="button" class="inv-ctab" data-left="you" aria-pressed="' + (view.left === "you") + '">You</button>';
+    list.forEach(function (c) {
+      html += '<button type="button" class="inv-ctab' + (c.present ? "" : " inv-ctab-off") + '" data-left="' + esc(c.id) + '" aria-pressed="' + (view.left === c.id) + '"' + (c.why ? ' title="' + esc(c.why) + '"' : "") + ">" +
+        esc(c.name) + (c.entries.length ? "<small>" + c.entries.length + "</small>" : "") + "</button>";
+    });
+    return html + "</div>";
+  }
+
+  // The open container in place of the paper doll: its meter, its note, why it is out of reach if it is, and a grid of what is in it.
+  function containerPaneHtml(c, s) {
+    var ratio = c.capacity > 0 ? c.total / c.capacity : 0;
+    var html = '<div class="inv-cpane"><div class="inv-loadbar inv-sbbar' + (ratio >= 0.9 ? " inv-load-near" : "") + '">' +
+      '<span class="inv-load-name">' + esc(c.name) + '</span><span class="inv-load-num">' + fmtLoad(c.total) + " / " + fmtLoad(c.capacity) + "</span>" +
+      '<span class="inv-load-track"><i style="width:' + Math.min(100, Math.round(ratio * 100)) + '%"></i></span></div>' +
+      (c.note ? '<div class="inv-cnote">' + esc(c.note) + "</div>" : "") +
+      (c.why ? '<div class="inv-cwhy">' + esc(c.why) + "</div>" : "") + '<div class="inv-grid inv-cgrid">';
+    c.entries.forEach(function (e) {
+      var r = stowedEntry(c.id, e.item.id, s), cn = splitCount(r.name);
+      html += '<button type="button" class="inv-tile inv-bagitem inv-citem' + (view.csel === r.id ? " inv-sel" : "") + '" data-citem="' + esc(r.id) + '" aria-label="' + esc(cn.name) + '">' + iconImg(itemIconKey(r)) +
+        (cn.count > 1 ? '<span class="inv-cnt">' + cn.count + "</span>" : "") + "</button>";
+    });
+    var cells = Math.max(15, Math.ceil(c.entries.length / 5) * 5);
+    for (var i = c.entries.length; i < cells; i++) html += '<span class="inv-tile inv-blank" aria-hidden="true"></span>';
+    return html + "</div></div>";
+  }
+
+  // Move units between the character and the open container, then draw again with the reason when nothing moved.
+  function doMove(dir, id, want) {
+    var s = statsNow(), cid = view.left;
+    if (cid === "you") return;
+    var res = dir === "stow" ? stowUnits(cid, id, want) : takeUnits(cid, id, want);
+    note(res.moved ? "" : (res.why || ""));
+    if (res.moved && dir === "stow" && !haveOf(stowItem(id) || {}, statsNow())) view.sel = null;
+    if (res.moved && dir === "take" && !stowedOf(cid, id, statsNow())) view.csel = null;
+    render();
   }
 
   function render() {
     var s = statsNow();
     hideTip();
+    if (view.left !== "you" && !visibleContainers(s).some(function (c) { return c.id === view.left; })) { view.left = "you"; view.csel = null; }
     renderDoll(s);
     renderBag(s);
     placePop();
@@ -649,9 +785,10 @@
     elTip.style.top = ((top - padT) / z) + "px";
   }
   function onOver(ev) {
-    var t = ev.target && ev.target.closest ? ev.target.closest("[data-item], [data-slot]") : null;
+    var t = ev.target && ev.target.closest ? ev.target.closest("[data-item], [data-citem], [data-slot]") : null;
     if (!t || view.drag) { if (!t) hideTip(); return; }
-    if (t.hasAttribute("data-item")) showTip(t, tipHtmlForItem(findOwned(t.getAttribute("data-item")) || {}));
+    if (t.hasAttribute("data-citem")) showTip(t, tipHtmlForItem(stowedEntry(view.left, t.getAttribute("data-citem"), statsNow()) || {}));
+    else if (t.hasAttribute("data-item")) showTip(t, tipHtmlForItem(findOwned(t.getAttribute("data-item")) || {}));
     else showTip(t, tipHtmlForSlot(t.getAttribute("data-slot"), t.getAttribute("data-ring") || ""));
   }
 
@@ -704,17 +841,6 @@
     close();
     var scene = new window.Scene("choicescript_stats", window.stats, window.nav, { secondaryMode: "stats", saveSlot: "temp" });
     scene.targetLabel = { label: "codex_use_do", origin: "url", originLine: 0 };
-    window.clearScreen(function () {
-      if (typeof window.setButtonTitles === "function") window.setButtonTitles();
-      scene.execute();
-    });
-  }
-
-  function openRest() {
-    if (!canUse()) return;
-    close();
-    var scene = new window.Scene("choicescript_stats", window.stats, window.nav, { secondaryMode: "stats", saveSlot: "temp" });
-    scene.targetLabel = { label: "codex_rest", origin: "url", originLine: 0 };
     window.clearScreen(function () {
       if (typeof window.setButtonTitles === "function") window.setButtonTitles();
       scene.execute();
@@ -781,7 +907,7 @@
   }
 
   function onClick(ev) {
-    var t = ev.target && ev.target.closest ? ev.target.closest("[data-act], [data-cat], [data-item], [data-slot], [data-pop-id], [data-pop-shield], [data-attune], [data-swap-sidearm], [data-equip-sel], [data-use], [data-rest]") : null;
+    var t = ev.target && ev.target.closest ? ev.target.closest("[data-act], [data-cat], [data-item], [data-slot], [data-pop-id], [data-pop-shield], [data-attune], [data-swap-sidearm], [data-equip-sel], [data-use], [data-left], [data-citem], [data-qty], [data-qty-set], [data-xfer]") : null;
     if (!t || !dlg.contains(t)) {
       if (view.pop) { view.pop = null; render(); }   // a click on empty space puts the option list away
       return;
@@ -794,12 +920,34 @@
       if (window.TradePanel) window.TradePanel.open();
       return;
     }
-    if (t.hasAttribute("data-rest")) { if (!t.disabled) openRest(); return; }
+    if (t.hasAttribute("data-left")) {
+      view.left = t.getAttribute("data-left"); view.sel = null; view.csel = null; view.pop = null; view.qty = 1; note("");
+      render();
+      return;
+    }
+    if (t.hasAttribute("data-citem")) {
+      var cid2 = t.getAttribute("data-citem");
+      if (ev.shiftKey) { doMove("take", cid2, 99999); return; }   // shift-click takes the whole stack back
+      view.csel = view.csel === cid2 ? null : cid2; view.sel = null; view.qty = 1; note("");
+      render();
+      return;
+    }
+    if (t.hasAttribute("data-qty") || t.hasAttribute("data-qty-set") || t.hasAttribute("data-xfer")) {
+      if (t.disabled) return;
+      var xc2 = xferContext(statsNow());
+      if (!xc2 || !xc2.sel || !xc2.dir) return;
+      var cur = Math.max(1, Math.min(view.qty, xc2.max || 1));
+      if (t.hasAttribute("data-qty")) { view.qty = Math.max(1, Math.min(xc2.max, cur + Number(t.getAttribute("data-qty")))); render(); return; }
+      if (t.hasAttribute("data-qty-set")) { var v = t.getAttribute("data-qty-set"); view.qty = v === "all" ? xc2.max : Math.min(xc2.max, Number(v)); render(); return; }
+      doMove(xc2.dir, xc2.sel.id, cur);
+      return;
+    }
     if (t.hasAttribute("data-use")) { if (!t.disabled) useItem(t.getAttribute("data-use")); return; }
     if (t.hasAttribute("data-cat")) { view.category = t.getAttribute("data-cat"); render(); return; }
     if (t.hasAttribute("data-item")) {
       var id = t.getAttribute("data-item");
-      view.sel = view.sel === id ? null : id;
+      if (ev.shiftKey && view.left !== "you") { var carried = findOwned(id); if (carried && carried.stow) { doMove("stow", id, 99999); return; } }   // shift-click moves the whole stack into the open container
+      view.sel = view.sel === id ? null : id; view.csel = null; view.qty = 1;
       view.pop = null; note("");
       render();
       return;
@@ -831,7 +979,10 @@
   }
 
   function onDblClick(ev) {
+    var ct = ev.target && ev.target.closest ? ev.target.closest("[data-citem]") : null;
+    if (ct) { doMove("take", ct.getAttribute("data-citem"), 1); return; }   // with a container open, a double-click moves one unit across
     var t = ev.target && ev.target.closest ? ev.target.closest("[data-item]") : null;
+    if (t && view.left !== "you") { var it = findOwned(t.getAttribute("data-item")); if (it && it.stow) { doMove("stow", it.id, 1); return; } }
     if (t) quickAct(t.getAttribute("data-item"));
   }
 

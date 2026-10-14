@@ -99,6 +99,7 @@ function genCreates() {
   var buys = tradeIds("buy"), sells = tradeIds("sell");
   var L = items.filter(makesFlag).map(function (it) { return "*create " + flag(it) + " false"; });
   items.forEach(function (it) { if (stackable(it)) L.push("*create spare_" + it.id + " 0"); });
+  (CATALOG.containers || []).forEach(function (ct) { listed().forEach(function (it) { L.push("*create stow_" + ct.id + "_" + it.id + " 0"); }); });   // what is in each container (web/mygame/inventory.js)
   items.forEach(function (it) { if (buys[it.id]) L.push("*create cart_buy_" + it.id + " 0"); });
   items.forEach(function (it) { if (sells[it.id]) L.push("*create cart_sell_" + it.id + " 0"); });
   return L;
@@ -362,7 +363,7 @@ function genLoadConfig() {
   if (!cap || !coin || !sw) throw new Error("the catalog needs capacity, coin_weights and starting_weights");
   var clean = function (o) { var r = {}; Object.keys(o).forEach(function (k) { if (k.charAt(0) !== "_") r[k] = o[k]; }); return r; };
   var coins = clean(coin); delete coins.letter_of_credit;   // the letter is an item of its own in the pack (inventory-data.js letter_of_credit), so it is weighed there
-  return ["load: " + JSON.stringify({ capacityBase: cap.base, capacityPerStr: cap.per_str, capacityHorse: cap.horse, overPctPerPoint: cap.over_pct_per_point, overPctCap: cap.over_pct_cap, coin: coins, starting: clean(sw) }) + ","];
+  return ["load: " + JSON.stringify({ capacityBase: cap.base, capacityPerStr: cap.per_str, capacityHorse: cap.horse, containers: (CATALOG.containers || []).map(function (ct) { return { id: ct.id, name: ct.name, capacity: ct.capacity, needs: ct.needs || "", needsReason: ct.needs_reason || "", dungeon: ct.dungeon || "", note: ct.note || "" }; }), overPctPerPoint: cap.over_pct_per_point, overPctCap: cap.over_pct_cap, coin: coins, starting: clean(sw) }) + ","];
 }
 
 function genInventory() {
@@ -375,7 +376,7 @@ function genInventory() {
     L.push('{');
     L.push('  id: ' + q(it.id) + ', category: ' + q(cat) + ', owned: ' + q(flag(it)) + ',' + (slotLabel(it) ? ' slot: ' + q(slotLabel(it)) + ',' : ''));
     if (typeof it.weight !== "number") throw new Error("item '" + it.id + "' has no weight (a number of load points, 0.1 and up)");
-    L.push('  weight: ' + it.weight + ',');
+    L.push('  weight: ' + it.weight + ', stow: true, stack: ' + (stackable(it) ? "true" : "false") + ',');
     if (stackable(it)) {
       L.push('  name: function (s) { var n = 1 + (Number(s.spare_' + it.id + ') || 0); return ' + q(it.title) + ' + (n > 1 ? " ×" + n : ""); },');
     } else {

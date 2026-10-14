@@ -24,7 +24,15 @@ catalog.items.forEach((c) => {
   if (typeof c.weight !== "number") fail("catalog item " + c.id + " has no weight");
   else if (e && e.weight !== c.weight) fail("catalog item " + c.id + " weighs " + c.weight + " but its pack entry says " + e.weight + " (run node tools/gen_gear.js)");
 });
+const startup = require("fs").readFileSync(path.join(ROOT, "web", "mygame", "scenes", "startup.txt"), "utf8");
 const L = INV.load;
+if (L) {
+  if (!Array.isArray(L.containers) || !L.containers.length) fail("load.containers is missing (run node tools/gen_gear.js)");
+  (L.containers || []).forEach((ct) => {
+    if (!ct.id || !ct.name || !(ct.capacity > 0)) fail("container " + ct.id + " needs an id, a name and a capacity");
+    INV.items.filter((i) => i.stow).forEach((i) => { if (startup.indexOf("*create stow_" + ct.id + "_" + i.id + " 0") < 0) fail("startup.txt does not create stow_" + ct.id + "_" + i.id + " (run node tools/gen_gear.js)"); });
+  });
+}
 if (!L) fail("inventory-data.js has no load block (run node tools/gen_gear.js)");
 else {
   if (!(L.capacityBase > 0) || !(L.capacityPerStr >= 0)) fail("load.capacityBase / capacityPerStr are missing");
