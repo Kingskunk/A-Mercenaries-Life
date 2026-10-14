@@ -119,7 +119,7 @@ function guideSvg(bbox) {
     const a = OW.nodes[e[0]], b = OW.nodes[e[1]], dash = (e[3] && e[3] !== "road") ? " stroke-dasharray=\"3 12\"" : "";
     s += "\n    <line x1=\"" + f(a.x * UNIT) + "\" y1=\"" + f(a.y * UNIT) + "\" x2=\"" + f(b.x * UNIT) + "\" y2=\"" + f(b.y * UNIT) + "\" stroke=\"#8a7b6c\" stroke-width=\"5\" stroke-linecap=\"round\"" + dash + "/>";
   });
-  const col = { forest: "#6f9f78", town: "#e0a45e", city: "#e0a45e", village: "#c8b66a", fort: "#b36a6a" };
+  const col = { forest: "#6f9f78", woodroad: "#8c9a5c", town: "#e0a45e", city: "#e0a45e", village: "#c8b66a", fort: "#b36a6a" };
   Object.keys(OW.nodes).forEach((id) => {
     const n = OW.nodes[id], r = n.kind === "city" ? 26 : (n.kind === "town" ? 22 : ((n.kind === "village" || n.kind === "fort") ? 18 : 14));
     s += "\n    <circle cx=\"" + f(n.x * UNIT) + "\" cy=\"" + f(n.y * UNIT) + "\" r=\"" + r + "\" fill=\"" + (col[n.kind] || "#a39d93") + "\"/>";

@@ -1,0 +1,124 @@
+*comment ====================================================================================
+*comment THE WORK YARDS (Ashrun Holt): one industrial-edge district containing the Log Yard by
+*comment the Ashrun and the Charcoal Ground beyond the houses. A player may take one paid shift
+*comment per day at either place. The small payout and fatigue-on-failure pattern follows the
+*comment Port Valen crane shift, without its quest, reputation, or progression layer.
+*comment ====================================================================================
+
+*temp ah_work_pay 0
+*temp ah_work_outcome ""
+
+*label ah_work_yards
+*set minutes_to_pass 10
+*set time_advance_call_id "ah_work_yards_1"
+*gosub_scene timbermouth/ashrun_holt/ashrun_holt ah_walk_time
+*goto ah_work_yards_main
+
+*label ah_work_yards_main
+*temp ah_work_open true
+*if (((time_period = "Dusk") or (time_period = "Night")) or (time_period = "Pre-Dawn"))
+  *set ah_work_open false
+*if (weather_severity >= 3)
+  *set ah_work_open false
+
+[b]◈ THE WORK YARDS[/b]
+*line_break
+The work track divides beyond the last houses. Downhill, the Log Yard spreads along a gravel shelf beside the Ashrun: bark-stripped trunks lie on skids in marked decks, their painted ends turned toward the water and its narrow grey ledges. Downwind, the Charcoal Ground is a black clearing of turf-covered mounds, cordwood stacks and thin blue smoke. The air holds wet bark, river stone, tar and ash.
+
+*if (not(ah_work_open))
+  *if (weather_severity >= 3)
+    The work has stopped for the weather. The logs are chocked hard on their skids, and wet sacks lie over the charcoal mounds while everyone waits under cover.
+  *else
+    The crews have finished for the day. A lantern burns at the Log Yard tally post, but neither the river nor the charcoal ground takes on hands after dark.
+  *page_break Return to the clearing...
+  *goto_scene timbermouth/ashrun_holt/ashrun_holt ashrun_holt
+
+*if (ah_work_last_shift_day = campaign_day)
+  A slate at the fork has your name chalked beneath today's date. Both crews have their hands for the rest of the day.
+  *page_break Return to the clearing...
+  *goto_scene timbermouth/ashrun_holt/ashrun_holt ashrun_holt
+
+*temp ah_work_hint ""
+*if (show_stat_hints)
+  *set ah_work_hint " [DC 11]"
+
+*choice
+  # Take a shift at the Log Yard.${ah_work_hint}
+    *goto ah_log_yard_shift
+  # Take a shift at the Charcoal Ground.${ah_work_hint}
+    *goto ah_charcoal_shift
+  # Return to the clearing.
+    *goto_scene timbermouth/ashrun_holt/ashrun_holt ashrun_holt
+
+*label ah_log_yard_shift
+*comment Roll before the shift passes: Guidance and other short-lived check effects apply to the work.
+*gosub_scene dice_engine roll_skill_check 11 "athletics" "" "" "" "" ""
+*set hours_to_pass 4
+*set minutes_to_pass 0
+*set time_advance_call_id "ah_log_yard_shift"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*if (check_success)
+  You take the hauling line with the ox team and keep each trunk moving cleanly from skid to deck. By midday the tally post has a neat new column of marks, and the yard caller waves you over without needing to ask who did the work.
+  *set ah_work_pay 3
+  *set ah_work_outcome "A LOG YARD SHIFT"
+*else
+  You spend the shift heaving wet timber into place while the line bites through your gloves. The work gets done, but your shoulders are shaking by the last deck, and the yard caller pays you as an untrained hand.
+  *set ah_work_pay 2
+  *set ah_work_outcome "A LOG YARD SHIFT"
+  *goto ah_work_fatigue
+*goto ah_work_resolve
+
+*label ah_charcoal_shift
+*comment Roll before the shift passes: Guidance and other short-lived check effects apply to the work.
+*gosub_scene dice_engine roll_skill_check 11 "survival" "" "" "" "" ""
+*set hours_to_pass 4
+*set minutes_to_pass 0
+*set time_advance_call_id "ah_charcoal_shift"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*if (check_success)
+  You read the smoke as it comes through the vents and open or close each hole before the mound can turn hot or starve. The charcoal maker gives one approving nod when the burn settles into an even blue thread.
+  *set ah_work_pay 3
+  *set ah_work_outcome "A CHARCOAL SHIFT"
+*else
+  You mistake the colour of the smoke and spend the rest of the shift carrying wet earth, hauling cordwood, and fixing what the experienced hands catch before it goes wrong. By the end, everything you own smells of tar and soot.
+  *set ah_work_pay 2
+  *set ah_work_outcome "A CHARCOAL SHIFT"
+  *goto ah_work_fatigue
+*goto ah_work_resolve
+
+*label ah_work_fatigue
+*if (not(ah_work_award_locked)) or (not(locked_ah_work_award_page_id = page_id))
+  *set neglect_damage_fatigue + 1
+  *gosub_scene calendar recalc_hp_from_neglect
+*goto ah_work_resolve
+
+*label ah_work_resolve
+*if (not(ah_work_award_locked)) or (not(locked_ah_work_award_page_id = page_id))
+  *set ah_work_last_shift_day campaign_day
+  *set ah_work_shifts_completed + 1
+  *set ah_work_award_locked true
+  *set locked_ah_work_award_page_id page_id
+
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount ah_work_pay
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+
+[b][⚒ ${ah_work_outcome}: +${ah_work_pay} Copper Bits][/b]
+*page_break Pocket your pay...
+*goto_scene timbermouth/ashrun_holt/ashrun_holt ashrun_holt

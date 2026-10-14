@@ -51,7 +51,7 @@ const ART = global.window.OVERWORLD_ART || {};
 });
 const ids = Object.keys(O.nodes);
 ids.forEach((id) => { const n = O.nodes[id]; if (n.ford !== undefined && (n.ford !== true || n.kind !== "road")) fail("tile " + id + " has a ford flag that is not true, or is not on a road tile"); });
-const KINDS = ["city", "town", "village", "fort", "road", "hills", "forest"];
+const KINDS = ["city", "town", "village", "fort", "road", "woodroad", "hills", "forest"];
 const seenEdges = {};
 O.edges.forEach((e) => {
   [e[0], e[1]].forEach((id) => { if (!O.nodes[id]) fail("a road joins \"" + id + "\", which is not a tile"); });
@@ -71,7 +71,7 @@ ids.forEach((id) => {
   ["hereNight", "hereStorm"].forEach((f) => { if (n[f] !== undefined && !(typeof n[f] === "string" && n[f])) fail("tile " + id + " has a " + f + " that is not a sentence"); });
   if (n.also !== undefined && (!KINDS.includes(n.also) || n.also === n.kind)) fail("tile " + id + " has an \"also\" of \"" + n.also + "\", which must be a different kind from " + KINDS.join(", "));
   if (n.water !== undefined && !(typeof n.water === "string" && n.water)) fail("tile " + id + " has a water that is not a short phrase");
-  if (["road", "forest", "hills"].includes(n.kind) && !n.walk) fail("tile " + id + " is a " + n.kind + " tile with no walk text, which the caravan escort prints when the line comes in");
+  if (["road", "woodroad", "forest", "hills"].includes(n.kind) && !n.walk) fail("tile " + id + " is a " + n.kind + " tile with no walk text, which the caravan escort prints when the line comes in");
   if (n.danger !== undefined && !(Number.isInteger(n.danger) && n.danger >= 0 && n.danger <= 3)) fail("tile " + id + " has a danger of " + n.danger + ", which must be a whole number from 0 to 3");
   if (O.territories && O.territories[n.territory] && O.territories[n.territory].patrol !== undefined && !(Number.isInteger(O.territories[n.territory].patrol) && Math.abs(O.territories[n.territory].patrol) <= 3)) fail("territory " + n.territory + " has a patrol that is not a whole number from -3 to 3");
   if (!n.territory || !(O.territories && O.territories[n.territory])) fail("tile " + id + " has territory \"" + n.territory + "\", which is not in TERRITORIES");

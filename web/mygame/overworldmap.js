@@ -20,7 +20,7 @@
   if (!OW) return;
 
   var PANEL_ID = "overworldMap";
-  var KIND_NAME = { city: "City", town: "Town", village: "Village", fort: "Fort", road: "Road", hills: "Hills", forest: "Forest" };
+  var KIND_NAME = { city: "City", town: "Town", village: "Village", fort: "Fort", road: "Road", woodroad: "Wooded road", hills: "Hills", forest: "Forest" };
   var FEATURE_KIND = { range: "Mountain range" };
   var SCALE = 130;          // SVG units per map unit
   var MIN_W = 220;          // closest zoom: this many SVG units across

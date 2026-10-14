@@ -22,7 +22,7 @@
  * here is the line shown when the player stands on the tile. A tile may also carry hereNight (shown at Night and Pre-Dawn) and hereStorm (shown in dangerous weather, which wins over the
  * night line), so the approach to a town looks different by lamplight or in a gale; overworld.txt ow_here picks one. Each is a plain sentence or two, no people to be named.
  * also (optional) is a second terrain for a tile that is two things at once (a road through hills, wooded hills): one of the same kinds, drawn as a ring of its colour round the tile's own colour, and named
- * on the card ("Forest and hills"). It changes nothing else. kind picks the tile's colour in the panel: "city", "town", "village", "fort", "road", "hills", "forest" (add a kind here and a colour in overworldmap.css).
+ * on the card ("Forest and hills"). It changes nothing else. kind picks the tile's colour in the panel: "city", "town", "village", "fort", "road", "woodroad", "hills", "forest" (add a kind here and a colour in overworldmap.css). "woodroad" is a made road with the trees close on both sides (the Longshade Edge): for road events and forest events it counts as BOTH a road and a forest (kindIn below), so it meets the stranger, the lamp, the cart and the beasts, and has its own colour so it reads apart from the deep forest.
  * territory (required) is who holds the tile: an id in TERRITORIES below. Every tile so far belongs to the Gilded Scales (the user's call, 2026-10-08). It is data only for now: nothing in the panel or the
  * scenes reads it yet, so it is the place to hang tolls, patrols, escort pay and danger by owner later. A new territory is one entry in TERRITORIES.
  * ford (optional, true): a crossing of running water the road makes here, where a road event (the ford) can happen; the event reads how high the water is from the weather's memory.
@@ -252,9 +252,9 @@
       hereStorm: "Rain flattens the grain and turns the cart tracks through Marlcross to pale, clinging mud. The mill has its sails furled and every yard gate shut."
     },
     r3: {
-      name: "Longshade Edge", kind: "forest", also: "hills", x: -1.67, y: -2.5, region: "The edge of the Longshade",
+      name: "Longshade Edge", kind: "woodroad", also: "hills", x: -1.67, y: -2.5, region: "The edge of the Longshade",
       territory: "scales",
-      danger: 3,
+      danger: 2,
       walk: "The road runs through wooded hills, climbing or falling in long slow steps. The paving is broken stone, and the stone gives way to packed earth with a rut down either side, with the forest close on the far side, dark and near.",
       climate: -1,
       info: "The road climbs through wooded hills along the edge of the Longshade, with wagon tracks turning off into the trees.",
@@ -537,9 +537,11 @@
     var raw = Math.floor(Number(n && n.danger) || 0), t = n && TERRITORIES[n.territory], shift = n && n.patrol !== undefined ? Math.floor(Number(n.patrol) || 0) : Math.floor(Number(t && t.patrol) || 0), d = raw + shift;
     return d < 0 ? 0 : d > 3 ? 3 : d;
   }
-  function haltEligible(n) { return n.kind === "road" || n.kind === "forest" || n.kind === "hills"; }
+  // A "woodroad" (a road under close trees) matches an event row that lists either "road" or "forest".
+  function kindIn(list, kind) { return list.indexOf(kind) >= 0 || (kind === "woodroad" && (list.indexOf("road") >= 0 || list.indexOf("forest") >= 0)); }
+  function haltEligible(n) { return n.kind === "road" || n.kind === "woodroad" || n.kind === "forest" || n.kind === "hills"; }
   function pickHalt(n, seed, salt) {
-    var d = dangerOf(n), rows = HALT_EVENTS.filter(function (e) { return e.kinds.indexOf(n.kind) >= 0 && e.weight[d] > 0; });
+    var d = dangerOf(n), rows = HALT_EVENTS.filter(function (e) { return kindIn(e.kinds, n.kind) && e.weight[d] > 0; });
     var total = rows.reduce(function (a, e) { return a + e.weight[d]; }, 0);
     if (!total) return 0;
     var r = hash100(seed, salt) % total;
@@ -570,7 +572,7 @@
   function pickTravel(n, seed, salt, force, period) {
     var d = dangerOf(n), rows = TRAVEL_EVENTS.filter(function (e) {
       if (force) return e.id === force && (!e.ford || n.ford);
-      return e.kinds.indexOf(n.kind) >= 0 && (!e.territories.length || e.territories.indexOf(n.territory) >= 0) && (!e.when || e.when.indexOf(period) >= 0) && (!e.ford || n.ford) && e.weight[d] > 0;
+      return kindIn(e.kinds, n.kind) && (!e.territories.length || e.territories.indexOf(n.territory) >= 0) && (!e.when || e.when.indexOf(period) >= 0) && (!e.ford || n.ford) && e.weight[d] > 0;
     });
     if (!rows.length) return "";
     if (force) return rows[0].id;
@@ -610,7 +612,7 @@
     if (!haltEligible(n)) return null;
     var d = dangerOf(n), per = periodOf(nowMinute);
     if ((hash100(seed, 500) % 100) >= CAMP_CHANCE[d]) return null;
-    var rows = CAMP_EVENTS.filter(function (e) { return e.kinds.indexOf(n.kind) >= 0 && (!e.territories.length || e.territories.indexOf(n.territory) >= 0) && (!e.when || e.when.indexOf(per) >= 0) && e.weight[d] > 0; });
+    var rows = CAMP_EVENTS.filter(function (e) { return kindIn(e.kinds, n.kind) && (!e.territories.length || e.territories.indexOf(n.territory) >= 0) && (!e.when || e.when.indexOf(per) >= 0) && e.weight[d] > 0; });
     var total = rows.reduce(function (a, e) { return a + e.weight[d]; }, 0);
     if (!total) return null;
     var r = hash100(seed, 501) % total;
