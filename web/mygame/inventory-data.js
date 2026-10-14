@@ -811,7 +811,7 @@
       weight: 0.2,
       owned: function (s) { return Number(s.viper_venom) > 0; },
       name: function (s) { return "Viper Venom (" + Number(s.viper_venom) + ")"; },
-      description: "Venom milked from a giant viper. Ambrose buys it by the vial.",
+      description: "Venom milked from a giant viper.",
       badge: "Sells to a herbalist"
     },
     {

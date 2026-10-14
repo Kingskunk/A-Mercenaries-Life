@@ -181,6 +181,7 @@ What the level-up pool counts, and which flag says a quest was successfully comp
 | The deacon's grain | `delivered_chapel_grain` | |
 | Torvald's wheel | `torvald_wheel_saved` (added 2026-09-26) | the failed jam |
 | Talia's casks | `talia_casks_saved` (added 2026-09-26) | the failed ending |
+| The Silt-Gate vault (the dungeon's strongbox and Night-Eye Ring) | `silt_vault_cleared` (added 2026-10-14, set when the box is opened, never reset by a refill; `count_finished_silt_conduits`) | a failed pick or break-off (the box stays shut until the refill) |
 | Factor Morzan's vellum | `morzan_vellum_delivered` (added 2026-09-26, set only in `ch_bounty_redemption`) | handing the vellum to Ysolde's chart room instead (the two routes exclude each other) |
 | The Cadre river chain | `alder_river_chain_cleared` (added 2026-10-05, `count_finished_alderford`; set only on the three clearing routes) | declining it: the flag stays false and the barge hits the boom (`transit_boom_hazard`) |
 | The Dry Lion | stage `resolved` and `dry_lion_resolution` not `"failed"` (`city_sealed`, `hidden_repaired`, `line_registered`) (added 2026-10-05, `count_finished_middle_ward`) | resolution `"failed"` (the stage is still `resolved`) |

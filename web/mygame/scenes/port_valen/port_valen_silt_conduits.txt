@@ -940,6 +940,7 @@ You cross the mud with your weapon ready. Halfway to the mound the heap splits o
 *comment   one) or break it off (Athletics DC 14, a fail cuts you). One try per refill; a failed try costs the time and leaves the box shut until the refill, and never turns into the reward.
 *comment   Open, it always holds 20 copper (two silver marks). Only the first time it is ever opened it also holds the Night-Eye Ring (until has_night_eye_ring). The ring is worn in a ring slot and lets the wearer see in the
 *comment   dark (character_progression.txt refresh_invocations). dg_silt_r5_ring_now is set inside the page's lock so a refresh prints the same prose.
+*comment   Opening the box (never a failed try) also sets silt_vault_cleared, which is never reset and counts once toward the level-up quest total (count_finished_silt_conduits, at the bottom of this file).
 *label pvsc_n_r5
 
 *gosub_scene dungeon dg_tide_check
@@ -1022,7 +1023,6 @@ You work the lids up with the point of a blade, and the nails shriek. Under sail
   *set dg_mins 15
   *set dg_time_id "r5_pick"
   *gosub_scene dungeon dg_time
-  *line_break
   *goto pvsc_n_r5
 
 *label pvsc_r5_force
@@ -1051,6 +1051,7 @@ You work the lids up with the point of a blade, and the nails shriek. Under sail
   *set currency_add_amount 20
   *gosub_scene economy currency_add
   *set dg_silt_r5_opened true
+  *set silt_vault_cleared true
   *set stat_bump_locked true
   *set locked_stat_bump_page_id page_id
 Under a folded cloth lies a small leather purse, heavy with coin.
@@ -1064,7 +1065,6 @@ Under a folded cloth lies a small leather purse, heavy with coin.
 *set dg_mins 15
 *set dg_time_id "r5_open"
 *gosub_scene dungeon dg_time
-*line_break
 *goto pvsc_n_r5
 
 *comment ──────────────────────────────────────────────────────────────
@@ -1518,4 +1518,10 @@ It speaks in a dry, quick whisper, and it does not like the wet. "Big drowned on
 *set dg_mark_silt_r3 false
 *set dg_mark_silt_r4 false
 *set dg_mark_silt_r5 false
+*return
+
+*comment The level-up quest total (character_progression.txt refresh_quests_finished). The Silt-Gate vault counts once the strongbox has been opened, by the pick or the break-off; a failed try never does.
+*label count_finished_silt_conduits
+*if (silt_vault_cleared)
+  *set quests_finished + 1
 *return
