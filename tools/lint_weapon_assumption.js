@@ -147,7 +147,7 @@ const EQUIPMENT_RULES = [
   {
     module: 'APPAREL',
     id: 'cloak-assumption',
-    regex: /\b(?:draw\s+your\s+cloak|wrap\s+your\s+cloak|flinging\s+your\s+cloak|tuck\s+beneath\s+your\s+cloak)\b/i,
+    regex: /\b(?:your|my)\s+(?:cloak|mantle)\b/i,   // any hand-written "your cloak" (it used to match only four verb phrases and missed "pull your cloak"); use ${cloak_prose}
     gates: /\b(?:equipped_cloak|equipped_cloak_id|has_cloak)\b/i,
     inlineGates: /@\{[^{}]*(?:equipped_cloak|equipped_cloak_id)[^{}]*\|/i,
     desc: 'Assumes protagonist is wearing a cloak/mantle.',
@@ -199,6 +199,18 @@ const EQUIPMENT_RULES = [
     gates: /\b(?:equipped_hands|equipped_hands_id|equipped_feet|equipped_feet_id|has_gloves|has_gauntlets|has_bracers)\b/i,
     inlineGates: /@\{[^{}]*(?:equipped_hands|equipped_feet)[^{}]*\|/i,
     desc: 'Assumes protagonist is wearing specific gauntlets, bracers, greaves, or gloves.',
+  },
+  {
+    // Added 2026-10-15 (the user assumed this check already existed; it covered coats and hoods but not boots or belts). The prologue is exempt: the starting gear is fixed and the player cannot
+    // buy anything there, so a hard-coded "your boots" is true. Everywhere else the player may wear other footwear or none, so name it through ${feet_prose} / ${waist_prose} (a line that does
+    // is not matched, since "your ${feet_prose}" has no "boots" after "your").
+    module: 'APPAREL_SLOTS',
+    id: 'worn-piece-boots-belt',
+    regex: /\byour\s+(?:boots?|shoes?|belt)\b/i,
+    gates: /\b(?:equipped_feet|equipped_feet_id|equipped_waist|equipped_waist_id|has_boots)\b/i,
+    inlineGates: /@\{[^{}]*(?:equipped_feet|equipped_feet_id|equipped_waist|equipped_waist_id)[^{}]*\|/i,
+    skipPaths: /[\\/]prologue[\\/]/,
+    desc: 'Hard-codes the boots or belt the player wears. Use ${feet_prose} or ${waist_prose} (the slot may hold other gear, or nothing: "bare feet").',
   },
 
   // ── MODULE 9: MAGIC FOCUS ASSUMPTIONS ────────────────────────
@@ -279,6 +291,7 @@ function lintFile(file) {
     if (GLOBAL_WHITELIST.some((wl) => wl.test(trimmed))) continue;
 
     for (const rule of EQUIPMENT_RULES) {
+      if (rule.skipPaths && rule.skipPaths.test(file)) continue;   // a rule may exempt a folder (the prologue, where the starting gear is fixed)
       const match = rule.regex.exec(trimmed);
       if (!match) continue;
 

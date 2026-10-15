@@ -104,6 +104,8 @@ You work your way back out to the edge of the trees, and the open ground lies ah
   *set dg_dest_hall false
 *if (dg_dest = "lsf_r1")
   *set dg_dest_hall false
+*if (dg_dest = "lsf_r4")
+  *set dg_dest_hall false
 *if (dg_dest = "lsf_x1")
   *set dg_dest_hall false
 *if (dg_dest = "lsf_x2")
@@ -254,7 +256,7 @@ You scrape a bold cross into the bark at head height, so you will know this junc
   *else
     The air is still and smells of damp earth and cold bark.
   *if ((ground_state = "sodden") and (not(weather_wet)))
-    The fallen leaves are sodden, and mud sucks at your boots.
+    The fallen leaves are sodden, and mud sucks at your ${feet_prose}.
   *elseif ((ground_state = "wet") and (not(weather_wet)))
     The fallen leaves are damp underfoot.
 *else
@@ -277,7 +279,7 @@ You scrape a bold cross into the bark at head height, so you will know this junc
   *else
     The light has gone dim and amber, and the trunks throw long shadows.
   *if ((ground_state = "sodden") and (not(weather_wet)))
-    The fallen leaves are sodden, and mud sucks at your boots.
+    The fallen leaves are sodden, and mud sucks at your ${feet_prose}.
   *elseif ((ground_state = "wet") and (not(weather_wet)))
     The fallen leaves are damp and darkened by the last rain.
 *line_break
@@ -295,7 +297,7 @@ You scrape a bold cross into the bark at head height, so you will know this junc
   *if (le_pick = 5)
     A twig snaps somewhere to one side, and you hold still until nothing follows.
   *if (le_pick = 6)
-    Your boot finds a hoof print, small and sharp, pressed into the soft earth.
+    Your ${feet_prose} find a hoof print, small and sharp, pressed into the soft earth.
   *if (le_pick = 7)
     A cold drip lands on the back of your hand, and you cannot tell from where.
 *else
@@ -365,7 +367,7 @@ You scrape a bold cross into the bark at head height, so you will know this junc
 *line_break
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  The dark under the trees is close, and you feel your way along a narrow path of packed earth. Roots rise under your boots and trunks crowd both sides. To the south the air moves more freely, where the forest ends.
+  The dark under the trees is close, and you feel your way along a narrow path of packed earth. Roots rise under your ${feet_prose} and trunks crowd both sides. To the south the air moves more freely, where the forest ends.
 *else
   A narrow path winds between trunks as thick as barrels. Animals have beaten it bare, and old leaves lie thin on the packed earth. To the south the trees thin toward open ground, and to the north the path bends into deeper shade.
 *gosub lsf_env
@@ -390,7 +392,7 @@ You scrape a bold cross into the bark at head height, so you will know this junc
 *line_break
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  Three paths meet under your boots, and you find them by the feel of the ground: packed earth to the south, soft rotting leaves to the west, and bark chips and twigs to the east. A split trunk leans over the east path, its torn edge rough under your hand.
+  Three paths meet under your ${feet_prose}, and you find them by the feel of the ground: packed earth to the south, soft rotting leaves to the west, and bark chips and twigs to the east. A split trunk leans over the east path, its torn edge rough under your hand.
 *else
   Three narrow paths, beaten down by animals, meet here. One heads west under low branches, one east past a pine split open down the middle and blackened along the crack, and one leads south toward the forest's edge.
 *gosub lsf_env
@@ -423,7 +425,7 @@ You scrape a bold cross into the bark at head height, so you will know this junc
 *line_break
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  The track narrows, and the branches pull back overhead so that a little sky shows. Under your boots the earth is scored in a long rut, as if something heavy has been dragged here. Woodsmoke hangs in the air to the west.
+  The track narrows, and the branches pull back overhead so that a little sky shows. Under your ${feet_prose} the earth is scored in a long rut, as if something heavy has been dragged here. Woodsmoke hangs in the air to the west.
 *else
   The track narrows to a single rut, scored by something heavy dragged along it. The trees to the west have been cut low, and the stumps are pale and flat on top. The smell of woodsmoke drifts down that way.
 *gosub lsf_env
@@ -448,7 +450,7 @@ You scrape a bold cross into the bark at head height, so you will know this junc
 *line_break
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  The ground dips under your boots into a shallow hollow. Beside the path your hand finds a wall of dirt and tangled roots, taller than you, and brambles snag your sleeve. To the east the way opens out.
+  The ground dips under your ${feet_prose} into a shallow hollow. Beside the path your hand finds a wall of dirt and tangled roots, taller than you, and brambles snag your sleeve. To the east the way opens out.
 *else
   The path dips into a shallow hollow where the ground is softer and the trees stand farther apart. The torn-up roots of a fallen beech stand on edge beside it, a wall of dirt and stone taller than you, and brambles crowd the other side. To the east the path opens out between the trunks.
 *gosub lsf_env
@@ -515,29 +517,115 @@ You scrape a bold cross into the bark at head height, so you will know this junc
       *gosub_scene dungeon dg_chalk_mark
       *goto lsf_chalked
 
+*comment THE HIDDEN SPRING (the user's idea from a published adventure, 2026-10-15; Room 4 is the spring, the hillside, the find-and-climb and the fauna are invented here). Trail 7 runs south out of Room 2 and ends in thick
+*comment brush. The way to Room 4 is hidden until reached: a Survival or Perception check (DC 12) to find the gap under the bushes (a Speak with Animals option does it for a character who can; time is the cost of a miss, and it can be
+*comment tried again), then an Athletics or Acrobatics check (DC 11) to climb the muddy rock (a miss slides the player back down, ten minutes, no harm). lsf_spring_found and lsf_spring_reached are kept between runs, and
+*comment the map's hidden edge reads lsf_spring_reached. The spring itself clears the fatigue clock once per refill (dg_lsf_spring_used) and only when it helps; the lye soap works there (equipment.txt water_at_hand).
 *label lsf_n_j7
 
-[b]◈ FOREST TRAIL 7[/b]
+[b]◈ THE THICK BRUSH[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
+*gosub_scene dungeon dg_swa_check
 *if (dg_dark)
-  The dark under the trees is close, and you feel your way. This is forest trail 7. Nothing is written here yet.
+  *if (lsf_spring_reached)
+    The track thins under your ${feet_prose} and your hands find stems on every side, but the way south is trampled down now. Water trickles somewhere above.
+  *elseif (lsf_spring_found)
+    Your hands find a face of wet rock and mud rising in front of you, and the sound of water comes down it from above.
+  *else
+    The track thins under your ${feet_prose} until your hands find only thorny stems on every side. Somewhere ahead, water is trickling.
 *else
-  This is forest trail 7. Nothing is written here yet.
+  *if (lsf_spring_reached)
+    South of the room the track runs out into brush so thick the stems knit overhead, but a way has been trampled through it now, up the muddy rock toward the sound of water.
+  *elseif (lsf_spring_found)
+    The brush gives onto a face of rock and mud rising out of the undergrowth, dark with seeping water. The sound of the water comes down it from above.
+  *else
+    South of the room the track thins and then stops, swallowed by brush so dense the stems knit overhead. Somewhere inside it, water is trickling.
+*gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
   # Go north.
     *set dg_dest "lsf_r2"
     *set dg_dest_hall false
     *goto lsf_move
-  # Go south.
-    *set dg_dest "lsf_r4"
-    *set dg_dest_hall false
-    *goto lsf_move
+  *if (lsf_spring_reached)
+    # Go south.
+      *set dg_dest "lsf_r4"
+      *set dg_dest_hall false
+      *goto lsf_move
+  *if ((not(lsf_spring_found)) and (not(lsf_spring_reached)))
+    # Push into the brush toward the sound of running water. [~20 min]@{show_stat_hints  [Survival or Perception DC 12]|}
+      *goto lsf_spring_search
+    *if (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "slot"))
+      # Ask the animals where the water is. [Speak with Animals, uses a spell slot, ~5 min]
+        *goto lsf_spring_animals
+    *if (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "ritual"))
+      # Ask the animals where the water is. [Speak with Animals as a ritual, no slot, ~15 min]
+        *goto lsf_spring_animals
+    *if (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "free"))
+      # Ask the animals where the water is. [Speak with Animals, ~5 min]
+        *goto lsf_spring_animals
+    *if ((known_speak_with_animals) and (not(dg_swa_can)))
+      # (You have no spell slot left to ask the animals.)
+        A thrush on a low branch watches you mouth the words, and nothing comes of them. You have nothing left to cast with.
+        *goto lsf_n_j7
+  *if ((lsf_spring_found) and (not(lsf_spring_reached)))
+    # Climb the muddy rock toward the sound of water. [~10 min]@{show_stat_hints  [Athletics or Acrobatics DC 11]|}
+      *goto lsf_spring_climb
   *if (dg_chalk_ok)
     # Mark this junction with chalk. [~5 min]
       *gosub_scene dungeon dg_chalk_mark
       *goto lsf_chalked
+
+*label lsf_spring_search
+You turn off the track and push in among the stems, stopping every few strides to listen.
+*gosub_scene dice_engine roll_skill_check 12 "survival" "" "perception" "" "" ""
+*if (check_success)
+  You stop pushing and only listen, and the sound comes from low and to one side, from under a bush whose leaves are wetter than the rest. You part the stems and find a gap, and beyond it the ground rises in a face of rock and mud with water seeping down it.
+  *set lsf_spring_found true
+*else
+  You crash around among the stems for twenty minutes with brambles hooked in your sleeves. Whichever way you turn, the sound of water seems to be behind you, and in the end you come out where you started.
+*set dg_mins 20
+*set dg_time_id "lsf_spring_search"
+*gosub_scene dungeon dg_time
+*goto lsf_n_j7
+
+*label lsf_spring_animals
+*gosub_scene dungeon dg_swa_check
+*gosub_scene dungeon dg_swa_cast
+*if (dg_swa_cost = "ritual")
+  You stand still among the stems and say the words slowly, the long way, the way the book sets them out. A quarter of an hour later a thrush on a low branch turns its head to look at you.
+*if (dg_swa_cost = "slot")
+  You murmur the words and feel the spell leave you. A thrush on a low branch turns its head to look at you.
+*if (dg_swa_cost = "free")
+  You let the old knack loose, and a thrush on a low branch turns its head to look at you.
+*line_break
+It answers in a bright, impatient run of notes. "Water. Up. Where the ferns grow thick under the stone, behind the wet bush. Mud and rock. Climb it, climb it, we all do."
+*line_break
+Behind the wet bush there is a gap, and beyond it a face of rock and mud with water seeping down it.
+*set lsf_spring_found true
+*set dg_mins 5
+*if (dg_swa_cost = "ritual")
+  *set dg_mins 15
+*set dg_time_id "lsf_spring_animals"
+*gosub_scene dungeon dg_time
+*goto lsf_n_j7
+
+*label lsf_spring_climb
+You find the first handholds in the rock and test each before you trust it.
+*gosub_scene dice_engine roll_skill_check 11 "athletics" "" "acrobatics" "" "" ""
+*if (check_success)
+  You pull yourself up from hold to hold, haul the last slick stretch over on your belly, and lie for a moment on a small flat ledge with your ${feet_prose} hanging over the edge and the sound of water close by.
+  *set lsf_spring_reached true
+  *set dg_dest "lsf_r4"
+  *set dg_dest_hall false
+  *goto lsf_move
+*else
+  A foothold turns to mud under your ${feet_prose}, and you slide down the whole face in a rush of wet earth and land sitting at the bottom, filthy and unhurt.
+  *set dg_mins 10
+  *set dg_time_id "lsf_spring_climb"
+  *gosub_scene dungeon dg_time
+  *goto lsf_n_j7
 
 *label lsf_n_j8
 
@@ -896,7 +984,7 @@ You scrape a bold cross into the bark at head height, so you will know this junc
 *line_break
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  The ground under your boots is packed hard and flat, and your raised hand finds nothing but air: the branches overhead have been cut back to head height, and the cut ends are rough under your fingers.
+  The ground under your ${feet_prose} is packed hard and flat, and your raised hand finds nothing but air: the branches overhead have been cut back to head height, and the cut ends are rough under your fingers.
 *else
   A straight path runs north through the trees, trodden wider and flatter than the animal paths around it. Someone has kept it open: the low branches are cut back at head height, and the stumps of the cuts have weathered grey.
 *gosub lsf_env
@@ -921,7 +1009,7 @@ You scrape a bold cross into the bark at head height, so you will know this junc
 *line_break
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  Cold water runs over your boots for a few strides, thin and quick, and then the ground rises again. Under your hand is a fallen trunk laid across the gully, its bark worn smooth.
+  Cold water runs over your ${feet_prose} for a few strides, thin and quick, and then the ground rises again. Under your hand is a fallen trunk laid across the gully, its bark worn smooth.
 *else
   The path dips into a shallow gully where a thread of water runs over flat stones. A fallen trunk lies across it, the bark worn smooth along the top by the feet of whoever crosses.
 *gosub lsf_env
@@ -946,7 +1034,7 @@ You scrape a bold cross into the bark at head height, so you will know this junc
 *line_break
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  The trail is so narrow that your boots overlap its edges. A loop of cord brushes your arm from a bent sapling beside the way, and it swings when you touch it.
+  The trail is so narrow that your ${feet_prose} overlap its edges. A loop of cord brushes your arm from a bent sapling beside the way, and it swings when you touch it.
 *else
   A thin trail, barely a hand wide, winds through the undergrowth between two old oaks. A snare of cord hangs from a bent sapling beside it, sprung and empty.
 *gosub lsf_env
@@ -1162,7 +1250,6 @@ You ask what he was looking for when he looked you over. Thole takes the short a
 *set dg_seen_lsf_j22 true
 *set dg_seen_lsf_j24 true
 *set dg_seen_lsf_r2 true
-*set dg_seen_lsf_r4 true
 *set dg_seen_lsf_r5 true
 *set dg_seen_lsf_r6 true
 *set dg_seen_lsf_r7 true
@@ -1295,19 +1382,89 @@ Thole counts the bundles into your hands one at a time and drops the coin into a
 
 *label lsf_n_r4
 
-[b]◈ FOREST ROOM 4[/b]
+[b]◈ THE HIDDEN SPRING[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
+*temp hs_night ((time_period = "Night") or (time_period = "Pre-Dawn"))
+*temp hs_pick ((((campaign_day * 24) + clock_hour) modulo 4) + 1)
 *if (dg_dark)
-  The dark under the trees is close, and you feel your way. This is forest room 4. Nothing is written here yet.
+  The sound of water is loud here. Your hand finds cold, wet rock, and a thread of water spilling over a ledge into a basin, and the ground under you is slick mud held together by roots.
 *else
-  This is forest room 4. Nothing is written here yet.
+  A small spring wells out of a seam in the rock above a ledge of flat stones, spills over it into a clear basin, and runs off through the bushes in a thread of water. The rock is dark with moss, and the ground is slick mud held together by roots.
+  *line_break
+  *if (hs_night)
+    *if (hs_pick = 1)
+      Small tracks, fresh in the mud, circle the basin. Something drank here not long ago.
+    *if (hs_pick = 2)
+      A badger snuffles at the water's edge, heavy and slow, and shuffles off into the dark.
+    *if (hs_pick = 3)
+      A moth the size of your thumb circles above the water and settles on a wet stone.
+    *if (hs_pick = 4)
+      Two eyes shine low in the bushes for a moment, and are gone.
+  *else
+    *if (hs_pick = 1)
+      A doe stands at the water's edge with her ears turning, and bounds into the bushes when she sees you.
+    *if (hs_pick = 2)
+      Two small brown birds splash in the basin, scattering drops across the stones.
+    *if (hs_pick = 3)
+      A fox sits upright beside the water with a wet muzzle, and trots away without hurrying when you come close.
+    *if (hs_pick = 4)
+      A wood pigeon drinks from the rim of the basin and watches you with one orange eye.
+*gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
-  # Go north.
+  *if (not(dg_lsf_spring_used))
+    # Drink from the spring. [~10 min]
+      *goto lsf_spring_drink
+  *else
+    # (The spring has run thin since you drank.)
+      The basin has dropped to a skin of water, and the thread that feeds it is no more than a trickle. It will fill again in its own time.
+      *goto lsf_n_r4
+  *if (has_lye_soap)
+    # Wash in the spring with your lye soap. [~10 min]
+      *goto lsf_spring_wash
+  # Go north, down the muddy rock.
     *set dg_dest "lsf_j7"
     *set dg_dest_hall true
     *goto lsf_move
+
+*comment THE SPRING'S DRAUGHT: once per refill (dg_lsf_spring_used), and only when it helps. If the fatigue clock is past Rested (minutes_since_rest over 1200) it is set back to 0, the exhaustion debt goes with it, and the
+*comment use is spent. If the player is not tired they just drink, and the use is kept. It does not heal HP or return spell slots (only sleep does). Decided inside the page lock so a refresh prints the same words.
+*label lsf_spring_drink
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *if (minutes_since_rest > 1200)
+    *set lsf_spring_effect "cleared"
+    *set dg_lsf_spring_used true
+    *set minutes_since_rest 0
+    *set neglect_damage_fatigue 0
+    *set fatigue_stage "Rested"
+    *gosub_scene calendar recalc_hp_from_neglect
+  *else
+    *set lsf_spring_effect "fresh"
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+*if (lsf_spring_effect = "cleared")
+  You kneel at the ledge and drink from your cupped hands. The water is cold enough to ache in your teeth and tastes of stone. By the time you stop, the weight behind your eyes has lifted and your legs feel like your own again.
+  *line_break
+  [b][The spring: your weariness is gone][/b]
+*else
+  You drink from your cupped hands. The water is cold and tastes of stone, and it quenches your thirst and does no more than that. The spring keeps what else it has for someone who needs it.
+*set dg_mins 10
+*set dg_time_id "lsf_spring_drink"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r4
+
+*label lsf_spring_wash
+*set use_in_combat false
+*gosub_scene equipment use_consumable "lye_soap"
+${use_text}
+*if (use_result = "ok")
+  *line_break
+  [b][${use_banner}][/b]
+  *set dg_mins 10
+  *set dg_time_id "lsf_spring_wash"
+  *gosub_scene dungeon dg_time
+*goto lsf_n_r4
 
 *label lsf_n_r5
 
@@ -1660,6 +1817,7 @@ Two people crash out of the brush together. The woman is short and broad, muddy 
 *set dg_done_lsf_j22 false
 *set dg_done_lsf_j23 false
 *set dg_done_lsf_j24 false
+*set dg_lsf_spring_used false
 *return
 
 *comment The Developer menu's reset: forget the map (what was seen and every chalk mark).
