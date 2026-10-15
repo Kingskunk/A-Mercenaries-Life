@@ -1,13 +1,17 @@
 /*
  * AMBIENCE -- the page's background sound follows where the player is, the hour and the weather (2026-10-14).
  *
- * LAYER 1, the place bed: web/mygame/scenery.js already works out where the player is (placeKeys); a place that has <key>_day and/or <key>_night in /ambience plays them, the day loop
- *   fading in through the dawn and out through the dusk and the night loop the other way (the same daylight curve as the backdrop). A place with only a night loop is quiet by day.
- * LAYER 2, the weather on top: weather_rain (wet), weather_storm (a storm; the rain loop if there is none), weather_thunder (a storm, over the rain) and weather_wind (snow and blizzard). They play only where a place bed plays, so
- *   rain is not heard in a town shop, and a dungeon that is not open air (everything but the forest) hears them muffled. A missing file is skipped, so the layers can be added one at a time.
+ * LAYER 1, the place bed: web/mygame/scenery.js works out where the player is (placeNames: an inn, a shop, a dungeon, an overworld tile, a district); SOUND below says which loops each
+ *   place plays. A place has a day loop and/or a night loop (the day one fading in through the dawn and out through the dusk, the night one the other way, on the same curve as the
+ *   backdrop) or one loop for every hour ("all"). A side with no loop is quiet at that hour.
+ * LAYER 2, the weather on top: weather_rain (wet), weather_storm (a storm; the rain loop if there is none), weather_thunder (a storm, over the rain), weather_wind (snow) and
+ *   weather_blizzard (a blizzard; the wind loop if there is none). They play where a place bed plays, so rain is not heard in a town shop, and an indoor place (an inn, a shop, a
+ *   dungeon that is not open air) hears them muffled. A missing file is skipped, so the layers can be added one at a time.
+ * LAYER 3, travel: horseback_travel (hooves) plays on the overworld, on open ground, for a player who has a horse. Weather plays over it.
+ * The Black Sinks battle plays siege_with_magic for the Cadre and siege_battle for everyone else.
  *
  * TO ADD SOUND: put Name.mp3 (any length) in /Sounds, run  node tools/make_ambience.js  (it cuts a seamless ~1 MB loop into /ambience and rewrites ambience-data.js), then  node compile.js.
- * Name it  <place>_day / <place>_night  (Forest_Day.mp3, City_Night.mp3: the place is the same key the backdrops use) or  weather_rain / weather_storm / weather_wind.
+ * A loop's name is its file name in lower case with underscores (Forest_Day.mp3 -> forest_day). Then add the place to SOUND (and a name to ALIAS if the place has several names).
  *
  * Plain <audio> elements, not Web Audio: they stream (a 150 s stereo loop decoded to memory is 57 MB), and they play from file:// where fetch is blocked. Fades are stepped here. Browsers
  * stay silent until the player has clicked or pressed a key once; the first gesture starts everything. The loop point is a seamless crossfade made by the tool, so the one small gap the
@@ -18,9 +22,31 @@
   var FILES = window.AMBIENCE_FILES || [];
   if (!FILES.length) return;
   var BASES = ["ambience/", "../../ambience/", "../ambience/"];   // where the folder may be, relative to the page
-  var OUTDOOR = { forest: true };                                   // places that are open air: the weather is heard at full strength there
   var FADE = 3;                                                     // seconds for a layer to fade in or out
   var base = null, probing = false, layers = {}, unlocked = false, cfg = { vol: 0.5, mute: false };
+
+  // what each kind of place plays: day (by day), night (at night), all (at every hour). indoor: the weather is muffled there.
+  var SOUND = {
+    forest:        { day: "forest_day", night: "forest_night" },
+    city:          { day: "city_day", night: "city_night" },
+    harbor:        { all: "medieval_harbour" },
+    dredge_end:    { all: "medieval_slums" },
+    village:       { day: "generic_village", night: "generic_village_town_night" },
+    woodland:      { day: "woodland_village", night: "generic_village_town_night" },
+    shop:          { all: "city_indoor", indoor: true },
+    tavern:        { day: "quiet_tavern", night: "crowded_tavern", indoor: true },   // it fills up as the day ends
+    silt_conduits: { all: "sewer", indoor: true },
+    siege:         { all: "siege_battle" }
+  };
+  // a place name (from Scenery.placeNames) that plays another kind of place's sound
+  var ALIAS = {
+    longshade_forest: "forest", woodroad: "forest", forest: "forest",
+    compound: "city", middle_ward: "city", civic_heights: "city", upper_wharves: "city", port_valen: "city", city: "city",
+    alderford: "village", whitefold: "village", redvein: "village", marlcross: "village", brinewick: "village", barleycross: "village", village: "village",
+    timbermouth: "woodland", ashrun_holt: "woodland"
+  };
+  var OVERWORLD_OPEN = { road: 1, woodroad: 1, hills: 1, forest: 1 };   // ground a rider travels over (not a town, a village or a fort)
+
   try { var saved = JSON.parse(window.localStorage.getItem("ambience") || "null"); if (saved) cfg = { vol: Math.max(0, Math.min(1, Number(saved.vol))), mute: !!saved.mute }; } catch (e) {}
   if (isNaN(cfg.vol)) cfg.vol = 0.5;
   function save() { try { window.localStorage.setItem("ambience", JSON.stringify(cfg)); } catch (e) {} }
@@ -41,22 +67,48 @@
     })();
   }
 
+  // the place the player is in, for sound: the first name Scenery gives that plays something, as { kind, spec }
+  function place(s) {
+    var names = window.Scenery && window.Scenery.placeNames ? window.Scenery.placeNames(s) : [];
+    for (var i = 0; i < names.length; i++) {
+      var kind = ALIAS[names[i]] || names[i], spec = SOUND[kind];
+      if (!spec) continue;
+      var d = spec.day || spec.all, n = spec.night || spec.all;
+      if (has(d) || has(n)) return { kind: kind, spec: spec };
+    }
+    return null;
+  }
+
   // what each layer should be doing now: name -> 0..1
   function targets(s) {
-    var t = {}, key = null, keys = window.Scenery && window.Scenery.placeKeys ? window.Scenery.placeKeys(s) : [];
-    for (var i = 0; i < keys.length && !key; i++) if (has(keys[i] + "_day") || has(keys[i] + "_night")) key = keys[i];
-    if (!key || cfg.mute || document.hidden) return t;
-    var d = window.Scenery.daylight((Number(s.clock_hour) || 0) + (Number(s.clock_minute) || 0) / 60);
-    if (has(key + "_day")) t[key + "_day"] = d;
-    if (has(key + "_night")) t[key + "_night"] = 1 - d;
-    var wet = !!s.weather_wet, cold = !!s.weather_cold && !wet, storm = Number(s.weather_severity) >= 3;
-    var k = (s.dg_in_run && !OUTDOOR[key]) ? 0.3 : 1;
-    if (wet) {
-      if (storm && has("weather_storm")) t.weather_storm = 0.9 * k;
-      else if (has("weather_rain")) t.weather_rain = (storm ? 1 : 0.6) * k;
-      if (storm && has("weather_thunder")) t.weather_thunder = 0.8 * k;   // three minutes of thunder alone, on top of the storm
+    var t = {};
+    if (cfg.mute || document.hidden || !window.Scenery) return t;
+    var p = place(s), d = window.Scenery.daylight((Number(s.clock_hour) || 0) + (Number(s.clock_minute) || 0) / 60);
+    function put(name, v) { if (name && has(name) && v > 0) t[name] = Math.max(t[name] || 0, v); }
+    if (p) {
+      var sp = p.spec, siege = p.kind === "siege";
+      if (siege) put(s.squad === "cadre" && has("siege_with_magic") ? "siege_with_magic" : "siege_battle", 1);
+      else if (sp.all) put(sp.all, 1);
+      else { put(sp.day, d); put(sp.night, 1 - d); }
     }
-    if (cold && has("weather_wind")) t.weather_wind = (s.weather === "Blizzard" ? 0.9 : 0.35) * k;
+    // travel: hooves, on open ground on the overworld, for a rider
+    var O = window.Overworld, n = s.ow_on && O && O.nodes ? O.nodes[s.ow_pos] : null;
+    var riding = !!(n && s.has_horse && OVERWORLD_OPEN[n.kind]);
+    if (riding) put("horseback_travel", 0.9);
+    // weather: where there is a bed to hear it in, or on open ground; muffled indoors and underground
+    if (p || riding) {
+      var wet = !!s.weather_wet, cold = !!s.weather_cold && !wet, storm = Number(s.weather_severity) >= 3;
+      var indoor = !!(p && p.spec.indoor) || !!(s.dg_in_run && p && p.kind !== "forest" && !p.spec.indoor), k = indoor ? 0.3 : 1;
+      if (wet) {
+        if (storm && has("weather_storm")) put("weather_storm", 0.9 * k);
+        else put("weather_rain", (storm ? 1 : 0.6) * k);
+        if (storm) put("weather_thunder", 0.8 * k);   // three minutes of thunder alone, on top of the storm
+      }
+      if (cold) {
+        if (s.weather === "Blizzard" && has("weather_blizzard")) put("weather_blizzard", 0.9 * k);
+        else put("weather_wind", (s.weather === "Blizzard" ? 0.9 : 0.35) * k);
+      }
+    }
     return t;
   }
 
@@ -142,5 +194,5 @@
     document.addEventListener("visibilitychange", update);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
-  window.Ambience = { update: update, targets: function () { return window.stats ? targets(window.stats) : {}; }, layers: layers, config: cfg };
+  window.Ambience = { update: update, targets: function () { return window.stats ? targets(window.stats) : {}; }, place: function () { return window.stats ? place(window.stats) : null; }, layers: layers, config: cfg };
 })();

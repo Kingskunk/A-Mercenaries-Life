@@ -11,6 +11,7 @@
  *
  * Run:  node tools/make_ambience.js                 every Sounds/*.mp3
  *       node tools/make_ambience.js --only Forest_Day --seconds 120 --kbps 48
+ *       node tools/make_ambience.js --force              redo every recording (the default skips a loop that is already cut and newer than its recording)
  *       node tools/make_ambience.js --manifest-only      only rewrite web/mygame/ambience-data.js from the files in /ambience
  * The loop plays with an AudioBufferSourceNode (gapless), not an <audio loop>, which would leave a gap.
  */
@@ -145,8 +146,12 @@ const CUT = (b64, lead, secs, fade, target, kbps) => `(async () => { ${DECODE}
     out.push(o);
   }
   let a = 0, peak = 0; for (let c = 0; c < 2; c++) for (let t = 0; t < N; t++) { a += out[c][t] * out[c][t]; peak = Math.max(peak, Math.abs(out[c][t])); }
-  const rms = Math.sqrt(a / (2 * N)); let gain = ${target} / (rms || 1); if (peak * gain > 0.97) gain = 0.97 / peak;
-  for (let c = 0; c < 2; c++) for (let t = 0; t < N; t++) out[c][t] *= gain;
+  // Level to the target loudness. A recording with one loud spike (a clink, a rooster) cannot be raised that far without the spike clipping, so the boost is held to a peak of 1.8 and a soft knee
+  // (above 0.6, tanh) squeezes the spikes under full scale; the bed itself is untouched.
+  const rms = Math.sqrt(a / (2 * N)); let gain = ${target} / (rms || 1); if (peak * gain > 1.8) gain = 1.8 / peak;
+  let b2 = 0;
+  for (let c = 0; c < 2; c++) for (let t = 0; t < N; t++) { let v = out[c][t] * gain; const m = Math.abs(v); if (m > 0.6) v = Math.sign(v) * (0.6 + 0.37 * Math.tanh((m - 0.6) / 0.37)); out[c][t] = v; b2 += v * v; }
+  const rmsOut = Math.sqrt(b2 / (2 * N));
   const packets = []; let desc = null;
   const enc = new AudioEncoder({ output: (chunk, meta) => { const u = new Uint8Array(chunk.byteLength); chunk.copyTo(u); packets.push(Array.from(u)); if (!desc && meta && meta.decoderConfig && meta.decoderConfig.description) { desc = Array.from(new Uint8Array(meta.decoderConfig.description instanceof ArrayBuffer ? meta.decoderConfig.description : meta.decoderConfig.description.buffer)); } }, error: (e) => { throw e; } });
   enc.configure({ codec: "opus", sampleRate: 48000, numberOfChannels: 2, bitrate: ${kbps} * 1000 });
@@ -156,7 +161,7 @@ const CUT = (b64, lead, secs, fade, target, kbps) => `(async () => { ${DECODE}
     enc.encode(new AudioData({ format: "f32-planar", sampleRate: 48000, numberOfFrames: F, numberOfChannels: 2, timestamp: Math.round(s / 48000 * 1e6), data }));
   }
   await enc.flush(); enc.close();
-  return { packets, desc, gain, rms: rms * gain, N, n: packets.length };
+  return { packets, desc, gain, rms: rmsOut, N, n: packets.length };
 })()`;
 const VERIFY = (b64, secs) => `(async () => {
   const bin = atob(${JSON.stringify(b64)}), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
@@ -191,6 +196,9 @@ function writeManifest() {
   await withChrome(async (evaluate) => {
     for (const f of files) {
       const key = f.replace(/\.mp3$/i, "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+      // a loop that is already cut and newer than its recording is left alone (so adding one recording does not redo the rest); --force redoes everything, and --only always redoes what it names
+      const outFile0 = path.join(OUT, key + ".ogg");
+      if (!process.argv.includes("--force") && !ONLY && fs.existsSync(outFile0) && fs.statSync(outFile0).mtimeMs > fs.statSync(path.join(SRC, f)).mtimeMs) { console.log(f + ": up to date, skipped"); continue; }
       const buf = fs.readFileSync(path.join(SRC, f)), m = mp3Frames(buf);
       const total = m.frames.length * m.spf / m.rate;
       console.log(f + ": " + (buf.length / 1048576).toFixed(1) + " MB, " + Math.round(total / 60) + " min, " + m.rate + " Hz, " + (buf.length * 8 / total / 1000).toFixed(0) + " kbps");
