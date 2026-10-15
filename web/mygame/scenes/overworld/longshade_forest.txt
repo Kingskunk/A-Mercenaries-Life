@@ -295,11 +295,11 @@ You scrape a bold cross into the bark at head height, so you will know this junc
   *if (le_pick = 4)
     Far off, a branch cracks and falls, and the sound rolls away through the trees.
   *if (le_pick = 5)
-    A twig snaps somewhere to one side, and you hold still until nothing follows.
+    A twig snaps somewhere to one side, and you hold still until the quiet comes back.
   *if (le_pick = 6)
     Your ${feet_prose} find a hoof print, small and sharp, pressed into the soft earth.
   *if (le_pick = 7)
-    A cold drip lands on the back of your hand, and you cannot tell from where.
+    A cold drip lands on the back of your hand from somewhere overhead.
 *else
   *if (le_pick = 0)
     A bird calls from high in the canopy, and another answers from farther off.
@@ -536,11 +536,11 @@ You scrape a bold cross into the bark at head height, so you will know this junc
     The track thins under your ${feet_prose} until your hands find only thorny stems on every side. Somewhere ahead, water is trickling.
 *else
   *if (lsf_spring_reached)
-    South of the room the track runs out into brush so thick the stems knit overhead, but a way has been trampled through it now, up the muddy rock toward the sound of water.
+    Here the track runs out into brush so thick the stems knit overhead, but a way has been trampled through it now, up the muddy rock toward the sound of water.
   *elseif (lsf_spring_found)
     The brush gives onto a face of rock and mud rising out of the undergrowth, dark with seeping water. The sound of the water comes down it from above.
   *else
-    South of the room the track thins and then stops, swallowed by brush so dense the stems knit overhead. Somewhere inside it, water is trickling.
+    Here the track thins and then stops, swallowed by brush so dense the stems knit overhead. Somewhere inside it, water is trickling.
 *gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
@@ -567,7 +567,7 @@ You scrape a bold cross into the bark at head height, so you will know this junc
         *goto lsf_spring_animals
     *if ((known_speak_with_animals) and (not(dg_swa_can)))
       # (You have no spell slot left to ask the animals.)
-        A thrush on a low branch watches you mouth the words, and nothing comes of them. You have nothing left to cast with.
+        A thrush on a low branch watches you mouth the words and flies off. Every spell slot you had is spent.
         *goto lsf_n_j7
   *if ((lsf_spring_found) and (not(lsf_spring_reached)))
     # Climb the muddy rock toward the sound of water. [~10 min]@{show_stat_hints  [Athletics or Acrobatics DC 11]|}
@@ -579,6 +579,9 @@ You scrape a bold cross into the bark at head height, so you will know this junc
 
 *label lsf_spring_search
 You turn off the track and push in among the stems, stopping every few strides to listen.
+*if (lsf_tracks_read)
+  You look for where the stems are pressed low, the way a deer or a fox would have gone through, and you start there.
+  *set advantage true
 *gosub_scene dice_engine roll_skill_check 12 "survival" "" "perception" "" "" ""
 *if (check_success)
   You stop pushing and only listen, and the sound comes from low and to one side, from under a bush whose leaves are wetter than the rest. You part the stems and find a gap, and beyond it the ground rises in a face of rock and mud with water seeping down it.
@@ -984,7 +987,7 @@ You find the first handholds in the rock and test each before you trust it.
 *line_break
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  The ground under your ${feet_prose} is packed hard and flat, and your raised hand finds nothing but air: the branches overhead have been cut back to head height, and the cut ends are rough under your fingers.
+  The ground under your ${feet_prose} is packed hard and flat, and your raised hand finds only air: the branches overhead have been cut back to head height, and the cut ends are rough under your fingers.
 *else
   A straight path runs north through the trees, trodden wider and flatter than the animal paths around it. Someone has kept it open: the low branches are cut back at head height, and the stumps of the cuts have weathered grey.
 *gosub lsf_env
@@ -1336,17 +1339,48 @@ Thole counts the bundles into your hands one at a time and drops the coin into a
 *comment GEN:END trapper_cart_pass
 *return
 
+*comment THE WALLOW (Room 2, the user picked this from three ideas, 2026-10-15; the place, the animals and the tracks are invented here). The first stop east of the crossroads, where the track forks west to the fallen beech, east
+*comment to Room 3 and south into the Thick Brush. A patch of bare trampled ground around a muddy hollow where animals roll. It hints that the Hidden Spring exists: a Survival or Nature check (DC 10, lit places only, ten
+*comment minutes, retryable) reads the tracks and sets lsf_tracks_read, kept between runs, and from then on the find check on Trail 7 is rolled with advantage. The animals seen change with the clock, as at the spring.
 *label lsf_n_r2
 
-[b]◈ FOREST ROOM 2[/b]
+[b]◈ THE WALLOW[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
+*temp wl_night ((time_period = "Night") or (time_period = "Pre-Dawn"))
+*temp wl_pick ((((campaign_day * 24) + clock_hour) modulo 4) + 1)
 *if (dg_dark)
-  The dark under the trees is close, and you feel your way. This is forest room 2. Nothing is written here yet.
+  The ground gives under your ${feet_prose} and then goes soft, trodden into a wide patch of bare mud. In the middle your hand finds a hollow, wet at the bottom and slick on the sides, and a rank, musky smell hangs over it. In this dark the prints are only dents under your fingers.
 *else
-  This is forest room 2. Nothing is written here yet.
+  The trees stand back from a wide patch of ground that animals have trodden bare. In the middle is a shallow hollow of black mud, still wet at the bottom and slick on the sides, where heavy bodies have rolled to cool themselves and scrape off ticks. Prints cross the mud in every direction, and a rank, musky smell hangs over it.
+  *line_break
+  *if (wl_night)
+    *if (wl_pick = 1)
+      The mud in the hollow is still shining where something has just rolled in it.
+    *if (wl_pick = 2)
+      Something heavy moves off through the brush, breathing hard, and the stems close behind it.
+    *if (wl_pick = 3)
+      A fox slips across the bare ground, silent, with its eyes on the far trees.
+    *if (wl_pick = 4)
+      A hedgehog snuffles along the edge of the mud, turning over leaves.
+  *else
+    *if (wl_pick = 1)
+      A sow lifts her head from the hollow, black to the shoulders with mud, and goes crashing off through the brush.
+    *if (wl_pick = 2)
+      Three crows walk about the churned ground, turning over clods of earth with their beaks.
+    *if (wl_pick = 3)
+      A hare sits up in the middle of the bare ground, ears high, and is gone in two bounds.
+    *if (wl_pick = 4)
+      A jay scolds you from a low branch and keeps it up until you move on.
+  *if (lsf_tracks_read)
+    *line_break
+    The marks make sense to you now. Deer, a heavy boar, a fox and a badger all come through here, and most of the tracks leaving the clearing turn south into the thick brush, toward water.
+*gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
+  *if ((not(dg_dark)) and (not(lsf_tracks_read)))
+    # Read the tracks in the mud. [~10 min]@{show_stat_hints  [Survival or Nature DC 10]|}
+      *goto lsf_wallow_tracks
   # Go east.
     *set dg_dest "lsf_j6"
     *set dg_dest_hall true
@@ -1359,6 +1393,22 @@ Thole counts the bundles into your hands one at a time and drops the coin into a
     *set dg_dest "lsf_j4"
     *set dg_dest_hall true
     *goto lsf_move
+
+*comment READING THE TRACKS: ten minutes whatever happens. A pass sets lsf_tracks_read (kept between runs); a miss costs only the time and can be tried again.
+*label lsf_wallow_tracks
+You crouch at the edge of the hollow and go over the ground a hand's width at a time.
+*gosub_scene dice_engine roll_skill_check 10 "survival" "" "nature" "" "" ""
+*if (check_success)
+  The small, pointed prints sunk deep in the mud are deer, and the broad blunt ones with the dewclaws showing are a boar's, a big one, back and forth to the hollow on a steady round. A fox has crossed in a neat line and a badger flat-footed behind it. Where the tracks leave the clearing, almost all of them turn south into the brush, and the mud at the edge of the prints there is fresher and wetter than any around you. They are going to water.
+  *set lsf_tracks_read true
+  *line_break
+  [b][Tracks read: the animals here go south for water][/b]
+*else
+  The mud holds a hundred overlapping marks, each one blurred into the next. Twice you think you have found a line, and twice it ends in the churn.
+*set dg_mins 10
+*set dg_time_id "lsf_wallow_tracks"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r2
 
 *label lsf_n_r3
 
@@ -1407,7 +1457,7 @@ Thole counts the bundles into your hands one at a time and drops the coin into a
     *if (hs_pick = 2)
       Two small brown birds splash in the basin, scattering drops across the stones.
     *if (hs_pick = 3)
-      A fox sits upright beside the water with a wet muzzle, and trots away without hurrying when you come close.
+      A fox sits upright beside the water with a wet muzzle, and trots away at an easy pace when you come close.
     *if (hs_pick = 4)
       A wood pigeon drinks from the rim of the basin and watches you with one orange eye.
 *gosub lsf_env
@@ -1448,7 +1498,7 @@ Thole counts the bundles into your hands one at a time and drops the coin into a
   *line_break
   [b][The spring: your weariness is gone][/b]
 *else
-  You drink from your cupped hands. The water is cold and tastes of stone, and it quenches your thirst and does no more than that. The spring keeps what else it has for someone who needs it.
+  You drink from your cupped hands. The water is cold and tastes of stone, and it quenches your thirst.
 *set dg_mins 10
 *set dg_time_id "lsf_spring_drink"
 *gosub_scene dungeon dg_time

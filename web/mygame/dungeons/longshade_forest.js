@@ -41,7 +41,7 @@
       lsf_j23: { x: 5, y: 2, kind: "hall" },   // the Cross Trail: a second way into the north, between Room 11 and Room 12
       lsf_j24: { x: 2, y: 5, kind: "hall" },   // the Game Trail: a HIDDEN way between the watchtower and Room 7, there once the tower has been climbed
       lsf_r1: { x: 2, y: 6, kind: "room", name: "Watchtower" },
-      lsf_r2: { x: 6, y: 6, kind: "room", name: "Room 2" },
+      lsf_r2: { x: 6, y: 6, kind: "room", name: "The Wallow" },
       lsf_r3: { x: 8, y: 6, kind: "room", name: "Room 3" },
       lsf_r4: { x: 6, y: 8, kind: "room", name: "Hidden Spring" },
       lsf_r5: { x: 0, y: 4, kind: "room", name: "Room 5" },
