@@ -58,7 +58,61 @@ You work your way back out to the edge of the trees, and the open ground lies ah
 *gosub_scene dungeon dg_note_seen
 *goto lsf_here
 
+*comment WHERE AN ENCOUNTER MAY ROLL (2026-10-15): on arriving at a fork or a room, not at a plain bend (a trail junction with only two ways is not a decision). dg_dest_hall is what dg_step reads to roll, so lsf_move sets it
+*comment for every destination and this label clears it for the quiet ones: every plain bend (the map's own list: tools/check_dungeon_map.js fails if it drifts, since a junction with exactly two ways must be here and any other
+*comment junction must not), the watchtower (it has its own life) and the two mouths.
+*label lsf_bend_check
+*if (dg_dest = "lsf_j1")
+  *set dg_dest_hall false
+*if (dg_dest = "lsf_j3")
+  *set dg_dest_hall false
+*if (dg_dest = "lsf_j4")
+  *set dg_dest_hall false
+*if (dg_dest = "lsf_j5")
+  *set dg_dest_hall false
+*if (dg_dest = "lsf_j6")
+  *set dg_dest_hall false
+*if (dg_dest = "lsf_j7")
+  *set dg_dest_hall false
+*if (dg_dest = "lsf_j9")
+  *set dg_dest_hall false
+*if (dg_dest = "lsf_j10")
+  *set dg_dest_hall false
+*if (dg_dest = "lsf_j11")
+  *set dg_dest_hall false
+*if (dg_dest = "lsf_j13")
+  *set dg_dest_hall false
+*if (dg_dest = "lsf_j14")
+  *set dg_dest_hall false
+*if (dg_dest = "lsf_j15")
+  *set dg_dest_hall false
+*if (dg_dest = "lsf_j17")
+  *set dg_dest_hall false
+*if (dg_dest = "lsf_j18")
+  *set dg_dest_hall false
+*if (dg_dest = "lsf_j19")
+  *set dg_dest_hall false
+*if (dg_dest = "lsf_j20")
+  *set dg_dest_hall false
+*if (dg_dest = "lsf_j21")
+  *set dg_dest_hall false
+*if (dg_dest = "lsf_j22")
+  *set dg_dest_hall false
+*if (dg_dest = "lsf_j23")
+  *set dg_dest_hall false
+*if (dg_dest = "lsf_j24")
+  *set dg_dest_hall false
+*if (dg_dest = "lsf_r1")
+  *set dg_dest_hall false
+*if (dg_dest = "lsf_x1")
+  *set dg_dest_hall false
+*if (dg_dest = "lsf_x2")
+  *set dg_dest_hall false
+*return
+
 *label lsf_move
+*set dg_dest_hall true
+*gosub lsf_bend_check
 *gosub_scene dungeon dg_step
 *if (dg_light_out_now)
   The light gutters and goes out.
@@ -138,6 +192,12 @@ You scrape a bold cross into the bark at head height, so you will know this junc
   *goto lsf_n_j20
 *if (dg_pos = "lsf_j21")
   *goto lsf_n_j21
+*if (dg_pos = "lsf_j22")
+  *goto lsf_n_j22
+*if (dg_pos = "lsf_j23")
+  *goto lsf_n_j23
+*if (dg_pos = "lsf_j24")
+  *goto lsf_n_j24
 *if (dg_pos = "lsf_r1")
   *goto lsf_n_r1
 *if (dg_pos = "lsf_r2")
@@ -346,6 +406,10 @@ You scrape a bold cross into the bark at head height, so you will know this junc
     *goto lsf_move
   # Go west.
     *set dg_dest "lsf_j3"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go north.
+    *set dg_dest "lsf_j22"
     *set dg_dest_hall true
     *goto lsf_move
   *if (dg_chalk_ok)
@@ -823,6 +887,84 @@ You scrape a bold cross into the bark at head height, so you will know this junc
       *gosub_scene dungeon dg_chalk_mark
       *goto lsf_chalked
 
+*comment THE THREE TRAILS ADDED 2026-10-15 (the user approved a rework of the layout: it was nearly a tree, with long single-file corridors). The Middle Path (j22) and the Cross Trail (j23) are ordinary through-ways;
+*comment the Game Trail (j24) is HIDDEN: its two ways exist only once the watchtower has been climbed (lsf_tower_viewed; the map's edges carry that flag, and Rooms 1 and 7 offer the way only then). All three are plain bends,
+*comment so they make no encounter roll (lsf_bend_check).
+*label lsf_n_j22
+
+[b]◈ THE MIDDLE PATH[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The ground under your boots is packed hard and flat, and your raised hand finds nothing but air: the branches overhead have been cut back to head height, and the cut ends are rough under your fingers.
+*else
+  A straight path runs north through the trees, trodden wider and flatter than the animal paths around it. Someone has kept it open: the low branches are cut back at head height, and the stumps of the cuts have weathered grey.
+*gosub lsf_env
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go north.
+    *set dg_dest "lsf_r10"
+    *set dg_dest_hall false
+    *goto lsf_move
+  # Go south.
+    *set dg_dest "lsf_j2"
+    *set dg_dest_hall true
+    *goto lsf_move
+  *if (dg_chalk_ok)
+    # Mark this junction with chalk. [~5 min]
+      *gosub_scene dungeon dg_chalk_mark
+      *goto lsf_chalked
+
+*label lsf_n_j23
+
+[b]◈ THE CROSS TRAIL[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  Cold water runs over your boots for a few strides, thin and quick, and then the ground rises again. Under your hand is a fallen trunk laid across the gully, its bark worn smooth.
+*else
+  The path dips into a shallow gully where a thread of water runs over flat stones. A fallen trunk lies across it, the bark worn smooth along the top by the feet of whoever crosses.
+*gosub lsf_env
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go east.
+    *set dg_dest "lsf_r11"
+    *set dg_dest_hall false
+    *goto lsf_move
+  # Go west.
+    *set dg_dest "lsf_r12"
+    *set dg_dest_hall false
+    *goto lsf_move
+  *if (dg_chalk_ok)
+    # Mark this junction with chalk. [~5 min]
+      *gosub_scene dungeon dg_chalk_mark
+      *goto lsf_chalked
+
+*label lsf_n_j24
+
+[b]◈ THE GAME TRAIL[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The trail is so narrow that your boots overlap its edges. A loop of cord brushes your arm from a bent sapling beside the way, and it swings when you touch it.
+*else
+  A thin trail, barely a hand wide, winds through the undergrowth between two old oaks. A snare of cord hangs from a bent sapling beside it, sprung and empty.
+*gosub lsf_env
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go north.
+    *set dg_dest "lsf_r7"
+    *set dg_dest_hall false
+    *goto lsf_move
+  # Go south.
+    *set dg_dest "lsf_r1"
+    *set dg_dest_hall false
+    *goto lsf_move
+  *if (dg_chalk_ok)
+    # Mark this junction with chalk. [~5 min]
+      *gosub_scene dungeon dg_chalk_mark
+      *goto lsf_chalked
+
 *label lsf_n_r1
 
 [b]◈ THE WATCHTOWER[/b]
@@ -904,6 +1046,11 @@ You scrape a bold cross into the bark at head height, so you will know this junc
     *set dg_dest "lsf_j5"
     *set dg_dest_hall true
     *goto lsf_move
+  *if (lsf_tower_viewed)
+    # Go north, along the thin trail you saw from the tower.
+      *set dg_dest "lsf_j24"
+      *set dg_dest_hall true
+      *goto lsf_move
 
 *comment THE TRAPPER (the user's idea, 2026-10-14; Merrick Thole's name, past and every line are invented here). A stranger gets one hearing a day: Persuasion DC 12, no other way. A pass is permanent and brings
 *comment three trail rations once; a fail shuts the door until the next day, never for good. He sells trail rations on the trade panel (the 'trapper' trade) and lets a trusted player up the lookout, which marks
@@ -993,7 +1140,9 @@ You ask what he was looking for when he looked you over. Thole takes the short a
   *line_break
   He points with the stem of his pipe: the pale threads of trails under the leaves, a clearing the size of a thumbprint, a wet shine where the trees stand back from something low. You fix what you can in your head and mark the rest on your map with a burnt twig.
   *line_break
-  [b][Mapped: the forest around the watchtower][/b]
+  Almost under you, a thread of trail leaves the foot of the tower and runs north into the trees, so thin you would walk straight past it on the ground.
+  *line_break
+  [b][Mapped: the forest around the watchtower, and a hidden trail north of the lodge][/b]
 *else
   You climb up again and look out over the forest you have already marked. Nothing has moved but the wind in the leaves.
 *set dg_seen_lsf_x1 true
@@ -1010,6 +1159,8 @@ You ask what he was looking for when he looked you over. Thole takes the short a
 *set dg_seen_lsf_j17 true
 *set dg_seen_lsf_j20 true
 *set dg_seen_lsf_j21 true
+*set dg_seen_lsf_j22 true
+*set dg_seen_lsf_j24 true
 *set dg_seen_lsf_r2 true
 *set dg_seen_lsf_r4 true
 *set dg_seen_lsf_r5 true
@@ -1217,6 +1368,11 @@ Thole counts the bundles into your hands one at a time and drops the coin into a
     *set dg_dest "lsf_j13"
     *set dg_dest_hall true
     *goto lsf_move
+  *if (lsf_tower_viewed)
+    # Go south.
+      *set dg_dest "lsf_j24"
+      *set dg_dest_hall true
+      *goto lsf_move
 
 *label lsf_n_r8
 
@@ -1281,6 +1437,10 @@ Thole counts the bundles into your hands one at a time and drops the coin into a
     *set dg_dest "lsf_j17"
     *set dg_dest_hall true
     *goto lsf_move
+  # Go south.
+    *set dg_dest "lsf_j22"
+    *set dg_dest_hall true
+    *goto lsf_move
 
 *label lsf_n_r11
 
@@ -1301,6 +1461,10 @@ Thole counts the bundles into your hands one at a time and drops the coin into a
     *set dg_dest "lsf_j19"
     *set dg_dest_hall true
     *goto lsf_move
+  # Go west.
+    *set dg_dest "lsf_j23"
+    *set dg_dest_hall true
+    *goto lsf_move
 
 *label lsf_n_r12
 
@@ -1319,6 +1483,10 @@ Thole counts the bundles into your hands one at a time and drops the coin into a
     *goto lsf_move
   # Go south.
     *set dg_dest "lsf_j21"
+    *set dg_dest_hall true
+    *goto lsf_move
+  # Go east.
+    *set dg_dest "lsf_j23"
     *set dg_dest_hall true
     *goto lsf_move
 
@@ -1489,6 +1657,9 @@ Two people crash out of the brush together. The woman is short and broad, muddy 
 *set dg_done_lsf_r13 false
 *set dg_done_lsf_r14 false
 *set dg_done_lsf_r15 false
+*set dg_done_lsf_j22 false
+*set dg_done_lsf_j23 false
+*set dg_done_lsf_j24 false
 *return
 
 *comment The Developer menu's reset: forget the map (what was seen and every chalk mark).
@@ -1531,6 +1702,9 @@ Two people crash out of the brush together. The woman is short and broad, muddy 
 *set dg_seen_lsf_r13 false
 *set dg_seen_lsf_r14 false
 *set dg_seen_lsf_r15 false
+*set dg_seen_lsf_j22 false
+*set dg_seen_lsf_j23 false
+*set dg_seen_lsf_j24 false
 *set dg_mark_lsf_x1 false
 *set dg_mark_lsf_x2 false
 *set dg_mark_lsf_j1 false
@@ -1569,4 +1743,7 @@ Two people crash out of the brush together. The woman is short and broad, muddy 
 *set dg_mark_lsf_r13 false
 *set dg_mark_lsf_r14 false
 *set dg_mark_lsf_r15 false
+*set dg_mark_lsf_j22 false
+*set dg_mark_lsf_j23 false
+*set dg_mark_lsf_j24 false
 *return

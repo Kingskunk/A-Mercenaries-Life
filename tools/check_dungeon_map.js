@@ -78,6 +78,20 @@ for (const key of Object.keys(MAPS)) {
     if (mk && mk[1].indexOf(m.idPrefix) === 0 && !m.nodes[mk[1]]) fail("line " + (i + 1) + " marks " + mk[1] + " as seen, which is not a place on the map");
   });
 
+  // 11 a dungeon with a "<prefix>bend_check" label (a quiet-bend list: plain bends make no encounter roll) must list EXACTLY the trail junctions that have two ways (hidden ways count)
+  const bendLabel = m.labelPrefix.replace(/n_$/, "") + "bend_check";
+  const bi = lines.findIndex((ln) => ln.trim() === "*label " + bendLabel);
+  if (bi >= 0) {
+    const listed = new Set();
+    for (let k = bi + 1; k < lines.length && !/^\*(label|return)/.test(lines[k]); k++) { const mm = /^\*if \(dg_dest = "(\w+)"\)/.exec(lines[k]); if (mm) listed.add(mm[1]); }
+    const degree = {}; Object.keys(m.nodes).forEach((id) => (degree[id] = 0)); m.edges.forEach((e) => { degree[e[0]]++; degree[e[1]]++; });
+    Object.keys(m.nodes).forEach((id) => {
+      const bend = m.nodes[id].kind === "hall" && degree[id] === 2;
+      if (bend && !listed.has(id)) fail(id + " is a plain bend (two ways) but is not in " + bendLabel);
+      if (!bend && listed.has(id) && m.nodes[id].kind === "hall") fail(id + " is in " + bendLabel + " but is not a plain bend");   // a room or a mouth may be listed too (it is made quiet)
+    });
+  }
+
   // 1 places
   Object.keys(places).forEach((id) => { if (!m.nodes[id]) fail("the scene has place " + id + " but the map does not"); });
   Object.keys(m.nodes).forEach((id) => { if (!places[id]) fail("the map has place " + id + " but the scene has no " + m.labelPrefix + id.slice(m.idPrefix.length) + " label"); });

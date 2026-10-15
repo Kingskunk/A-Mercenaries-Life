@@ -30,6 +30,8 @@
   function statsNow() { return window.stats || {}; }
 
   function mapFor(s) { return MAPS[s.dg_table] || null; }
+  // An edge may carry a third element, a stat that must be true for the way to exist (a hidden trail revealed by an event): the map neither draws it, nor offers a stub for it, nor walks through it until then.
+  function liveEdge(s, e) { return !e[2] || truthy(s[e[2]]); }
   function marked(s, id) { return truthy(s["dg_mark_" + id]); }
   function seen(s, id) { return truthy(s["dg_seen_" + id]) || marked(s, id); }
 
@@ -59,6 +61,7 @@
     var edgesHtml = "", stubsHtml = "", nodesHtml = "", pts = [];
 
     m.edges.forEach(function (e) {
+      if (!liveEdge(s, e)) return;
       var a = m.nodes[e[0]], b = m.nodes[e[1]], sa = !!show[e[0]], sb = !!show[e[1]];
       if (sa && sb) {
         edgesHtml += '<line class="dm-edge' + (marked(s, e[0]) && marked(s, e[1]) ? " dm-edge-hot" : "") + '" x1="' + a.x * CELL + '" y1="' + a.y * CELL + '" x2="' + b.x * CELL + '" y2="' + b.y * CELL + '"/>';
@@ -151,7 +154,7 @@
   }
   function close() { if (dlg && dlg.open) dlg.close(); }
   function toggle() { if (dlg && dlg.open) close(); else open(); }
-  DM.open = open; DM.close = close; DM.toggle = toggle;
+  DM.open = open; DM.close = close; DM.toggle = toggle; DM.svgFor = svgFor;   // svgFor is exposed for the tests (tools and browser probes)
 
   /* ---------------------------------------------------------------- the map in the page (2026-10-14)
    * While a run is on and the page offers moves, the map is drawn above the page's options and is the way to move: a click on a neighbouring place presses that way's own option ("Go north." and
@@ -170,7 +173,9 @@
   }
   function neighbours(m, id) {
     var out = [];
+    var st = statsNow();
     m.edges.forEach(function (e) {
+      if (!liveEdge(st, e)) return;
       var o = e[0] === id ? e[1] : (e[1] === id ? e[0] : null);
       if (o && m.nodes[o]) out.push({ to: o, dir: dirWord(m.nodes[id], m.nodes[o]) });
     });
