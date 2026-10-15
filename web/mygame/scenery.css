@@ -1,0 +1,44 @@
+/*
+ * SCENERY (test, 2026-10-14) -- the backdrop layers scenery.js drives. See that file. Everything is behind the page (z-index -2, under the shell's vignette at -1),
+ * and nothing is drawn unless html.hasScenery is set, so a place with no picture looks exactly as before.
+ */
+#scenery { position: fixed; inset: 0; z-index: -2; pointer-events: none; overflow: hidden; opacity: 0; transition: opacity 1.2s ease; }
+html.hasScenery #scenery { opacity: 1; }
+
+#scenery .sc-layer { position: absolute; inset: 0; background-size: cover; background-position: center; filter: saturate(var(--sc-sat, 1)) brightness(var(--sc-bright, 1)); transition: opacity 1.5s linear, filter 1.5s ease; }
+#scenery .sc-night { background-image: var(--sc-img-night); }
+#scenery .sc-day { background-image: var(--sc-img-day); opacity: var(--sc-day, 1); }
+
+/* the warmth of the dawn and the dusk, strongest when the two pictures are half and half */
+#scenery .sc-glow { position: absolute; inset: 0; opacity: var(--sc-glow, 0); mix-blend-mode: soft-light; transition: opacity 1.5s linear;
+  background: linear-gradient(to top, rgba(255, 150, 60, 0.95), rgba(255, 110, 50, 0.55) 55%, rgba(255, 190, 110, 0.15)); }
+
+/* fog, and a flat grey light under cloud */
+#scenery .sc-haze { position: absolute; inset: 0; opacity: var(--sc-haze, 0); transition: opacity 1.5s ease;
+  background: radial-gradient(ellipse at 50% 60%, rgba(220, 228, 232, 0.85), rgba(190, 200, 206, 0.55) 60%, rgba(170, 180, 188, 0.4)); }
+
+/* rain: two sheets of slanted streaks falling at different speeds */
+#scenery .sc-rain { position: absolute; inset: -10% -10%; opacity: var(--sc-rain, 0); transition: opacity 1.5s ease;
+  background-image:
+    repeating-linear-gradient(100deg, rgba(210, 225, 240, 0) 0 13px, rgba(210, 225, 240, 0.5) 13px 14px, rgba(210, 225, 240, 0) 14px 41px),
+    repeating-linear-gradient(100deg, rgba(210, 225, 240, 0) 0 23px, rgba(210, 225, 240, 0.35) 23px 24px, rgba(210, 225, 240, 0) 24px 67px);
+  background-size: 260px 260px, 340px 340px; animation: scRain 0.55s linear infinite; }
+@keyframes scRain { from { background-position: 0 0, 0 0; } to { background-position: -40px 260px, -55px 340px; } }
+
+/* snow: two sheets of soft flakes drifting down */
+#scenery .sc-snow { position: absolute; inset: -10% -10%; opacity: var(--sc-snow, 0); transition: opacity 1.5s ease;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.95) 0 2px, transparent 3px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.7) 0 1.5px, transparent 2.5px);
+  background-size: 140px 140px, 90px 90px; background-position: 0 0, 40px 30px; animation: scSnow 9s linear infinite; }
+@keyframes scSnow { from { background-position: 0 0, 40px 30px; } to { background-position: 30px 140px, 70px 120px; } }
+
+/* a dungeon with no light: the scene is there, but you cannot see it */
+#scenery .sc-dim { position: absolute; inset: 0; background: #000; opacity: var(--sc-dim, 0); transition: opacity 1.2s ease; }
+
+/* with a backdrop, the story panel lets it show through a little (it is 0.9 opaque on bare stone) and blurs what shows, so the text keeps its contrast */
+html.hasScenery body[data-theme] .container::before {
+  background: linear-gradient(rgba(14, 12, 11, var(--sc-panel, 0.85)), rgba(14, 12, 11, var(--sc-panel, 0.85)));
+  -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px);
+}
+@media (prefers-reduced-motion: reduce) { #scenery .sc-rain, #scenery .sc-snow { animation: none; } }

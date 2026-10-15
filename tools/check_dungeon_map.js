@@ -72,6 +72,12 @@ for (const key of Object.keys(MAPS)) {
   // 9 an option that reads as a move ("Go north...") but does not move would be pressed by the in-page map as one
   goOptions.forEach((o) => { if (!o.move) fail("\"" + o.text + "\" (" + o.place + ") reads as a move but sets no dg_dest: the in-page map would treat it as one; reword it, or it will be pressed as a move"); });
 
+  // 10 a scene that marks places as seen from afar (the Longshade watchtower's view) names places the map has: a typo would mark a flag no map ever reads
+  lines.forEach((ln, i) => {
+    const mk = /^\s*\*set dg_seen_(\w+) true/.exec(ln);
+    if (mk && mk[1].indexOf(m.idPrefix) === 0 && !m.nodes[mk[1]]) fail("line " + (i + 1) + " marks " + mk[1] + " as seen, which is not a place on the map");
+  });
+
   // 1 places
   Object.keys(places).forEach((id) => { if (!m.nodes[id]) fail("the scene has place " + id + " but the map does not"); });
   Object.keys(m.nodes).forEach((id) => { if (!places[id]) fail("the map has place " + id + " but the scene has no " + m.labelPrefix + id.slice(m.idPrefix.length) + " label"); });

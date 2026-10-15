@@ -2225,6 +2225,14 @@ window.TRADE_DATA = {
     "lye_soap",
     "trail_rations"
    ]
+  },
+  "trapper": {
+   "title": "The Trapper's Bench",
+   "buyer": "",
+   "buy": [
+    "trail_rations"
+   ],
+   "sell": []
   }
  }
 };

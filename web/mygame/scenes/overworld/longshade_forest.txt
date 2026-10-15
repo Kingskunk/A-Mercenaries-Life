@@ -13,7 +13,7 @@
 *comment ══════════════════════════════════════════════════════════════
 
 *label lsf_enter_south
-You leave the open ground at the foot of the slope and push in under the trees, following an animal run until the forest has closed behind you.
+You leave the open ground at the foot of the slope and push in under the trees, following a narrow path beaten down by animals until the forest has closed behind you.
 *line_break
 *set dg_mins 10
 *set dg_time_id "enter_lsf_south"
@@ -26,7 +26,7 @@ You leave the open ground at the foot of the slope and push in under the trees, 
 *goto lsf_begin
 
 *label lsf_enter_east
-You turn off the way you were going and push in under the trees, following an animal run until the forest has closed behind you.
+You turn off the way you were going and push in under the trees, following a narrow path beaten down by animals until the forest has closed behind you.
 *line_break
 *set dg_mins 10
 *set dg_time_id "enter_lsf_east"
@@ -170,6 +170,93 @@ You scrape a bold cross into the bark at head height, so you will know this junc
   *goto lsf_n_r15
 *goto lsf_n_x1
 
+*comment ──────────────────────────────────────────────────────────────
+*comment THE FOREST'S SHARED LAYERS (2026-10-14). A place in the forest is read many times, so its text is built in layers (narrative guidelines sections 3 and 10): a place's own prose (a lit version and a by-touch
+*comment version for the dark) says what the place IS; lsf_env adds the two layers every forest place shares, in a line each below it:
+*comment   the sky     weather first (rain, snow, fog), then the hour, then the ground's memory of the last rain (ground_state). Light sentences are used only for a lit place, never at night, and nothing
+*comment               here has a person in it. In the dark the same layer is heard and felt, never seen.
+*comment   an ambient detail  one of eight sounds, smells or sights that rotates with dg_steps, so walking on changes it but a page refresh does not. The sight-and-sound pool is for day and dusk; at night or in the
+*comment               dark the touch-and-sound pool is used, so there is no birdsong at midnight.
+*comment A place calls it with *gosub lsf_env after its own prose. The forest's own rooms and the trail can all share it.
+*comment ──────────────────────────────────────────────────────────────
+*label lsf_env
+*gosub_scene dungeon dg_dark_check
+*temp le_night ((time_period = "Night") or (time_period = "Pre-Dawn"))
+*temp le_pick (dg_steps modulo 8)
+*line_break
+*if (dg_dark)
+  *if (weather_wet)
+    Rain hisses in the leaves overhead, and a drop finds the back of your neck every few steps.
+  *elseif (weather_cold)
+    Cold air moves between the trunks, and now and then a slide of snow lands somewhere close with a soft thump.
+  *elseif (weather_visibility = "poor")
+    The air is damp and thick, and it beads on your face.
+  *else
+    The air is still and smells of damp earth and cold bark.
+  *if ((ground_state = "sodden") and (not(weather_wet)))
+    The fallen leaves are sodden, and mud sucks at your boots.
+  *elseif ((ground_state = "wet") and (not(weather_wet)))
+    The fallen leaves are damp underfoot.
+*else
+  *if (weather_wet)
+    Rain taps on the leaves overhead, and heavy drops fall through the branches to the ground.
+  *elseif (weather_cold)
+    Fine snow sifts down between the trunks and edges every branch in white.
+  *elseif (weather_visibility = "poor")
+    Fog drifts between the trunks, and the farther trees fade to grey shapes.
+  *elseif (le_night)
+    Night sits on the forest, and past the first few trunks the trees are only dark shapes.
+  *elseif (weather = "Overcast")
+    A flat grey light filters down through the leaves and throws no shadows.
+  *elseif (time_period = "Morning")
+    Early light slants between the trunks in long pale bars.
+  *elseif (time_period = "Midday")
+    The sun reaches the ground in a few bright patches that shift as the leaves move.
+  *elseif (time_period = "Afternoon")
+    Warm light comes in low and gold between the trunks.
+  *else
+    The light has gone dim and amber, and the trunks throw long shadows.
+  *if ((ground_state = "sodden") and (not(weather_wet)))
+    The fallen leaves are sodden, and mud sucks at your boots.
+  *elseif ((ground_state = "wet") and (not(weather_wet)))
+    The fallen leaves are damp and darkened by the last rain.
+*line_break
+*if ((dg_dark) or (le_night))
+  *if (le_pick = 0)
+    Something small rustles in the fallen leaves and goes still.
+  *if (le_pick = 1)
+    A branch creaks overhead as the wind shifts.
+  *if (le_pick = 2)
+    The air smells of damp earth and cold bark.
+  *if (le_pick = 3)
+    Your hand brushes a trunk furred with moss, damp and soft.
+  *if (le_pick = 4)
+    Far off, a branch cracks and falls, and the sound rolls away through the trees.
+  *if (le_pick = 5)
+    A twig snaps somewhere to one side, and you hold still until nothing follows.
+  *if (le_pick = 6)
+    Your boot finds a hoof print, small and sharp, pressed into the soft earth.
+  *if (le_pick = 7)
+    A cold drip lands on the back of your hand, and you cannot tell from where.
+*else
+  *if (le_pick = 0)
+    A bird calls from high in the canopy, and another answers from farther off.
+  *if (le_pick = 1)
+    Something small scrabbles up the far side of a trunk and is gone.
+  *if (le_pick = 2)
+    The air smells of damp earth and cold bark.
+  *if (le_pick = 3)
+    A branch creaks overhead as the wind shifts.
+  *if (le_pick = 4)
+    A web hangs between two low branches, with its owner waiting at the center.
+  *if (le_pick = 5)
+    A fallen trunk lies beside the trail, furred green with moss and ringed with pale fungus.
+  *if (le_pick = 6)
+    Hoof prints, small and sharp, cross the trail in the soft earth.
+  *if (le_pick = 7)
+    Sap has run down a trunk beside you and set in amber beads.
+*return
+
 *label lsf_n_x1
 
 [b]◈ THE SOUTH MOUTH[/b]
@@ -214,13 +301,14 @@ You scrape a bold cross into the bark at head height, so you will know this junc
 
 *label lsf_n_j1
 
-[b]◈ FOREST TRAIL 1[/b]
+[b]◈ THE SOUTH PATH[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  The dark under the trees is close, and you feel your way. This is forest trail 1. Nothing is written here yet.
+  The dark under the trees is close, and you feel your way along a narrow path of packed earth. Roots rise under your boots and trunks crowd both sides. To the south the air moves more freely, where the forest ends.
 *else
-  This is forest trail 1. Nothing is written here yet.
+  A narrow path winds between trunks as thick as barrels. Animals have beaten it bare, and old leaves lie thin on the packed earth. To the south the trees thin toward open ground, and to the north the path bends into deeper shade.
+*gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
   # Go north.
@@ -238,13 +326,14 @@ You scrape a bold cross into the bark at head height, so you will know this junc
 
 *label lsf_n_j2
 
-[b]◈ FOREST TRAIL 2[/b]
+[b]◈ WHERE THE PATHS MEET[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  The dark under the trees is close, and you feel your way. This is forest trail 2. Nothing is written here yet.
+  Three paths meet under your boots, and you find them by the feel of the ground: packed earth to the south, soft rotting leaves to the west, and bark chips and twigs to the east. A split trunk leans over the east path, its torn edge rough under your hand.
 *else
-  This is forest trail 2. Nothing is written here yet.
+  Three narrow paths, beaten down by animals, meet here. One heads west under low branches, one east past a pine split open down the middle and blackened along the crack, and one leads south toward the forest's edge.
+*gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
   # Go east.
@@ -266,13 +355,14 @@ You scrape a bold cross into the bark at head height, so you will know this junc
 
 *label lsf_n_j3
 
-[b]◈ FOREST TRAIL 3[/b]
+[b]◈ THE CUT TRACK[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  The dark under the trees is close, and you feel your way. This is forest trail 3. Nothing is written here yet.
+  The track narrows, and the branches pull back overhead so that a little sky shows. Under your boots the earth is scored in a long rut, as if something heavy has been dragged here. Woodsmoke hangs in the air to the west.
 *else
-  This is forest trail 3. Nothing is written here yet.
+  The track narrows to a single rut, scored by something heavy dragged along it. The trees to the west have been cut low, and the stumps are pale and flat on top. The smell of woodsmoke drifts down that way.
+*gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
   # Go east.
@@ -290,13 +380,14 @@ You scrape a bold cross into the bark at head height, so you will know this junc
 
 *label lsf_n_j4
 
-[b]◈ FOREST TRAIL 4[/b]
+[b]◈ THE EAST PATH[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  The dark under the trees is close, and you feel your way. This is forest trail 4. Nothing is written here yet.
+  The ground dips under your boots into a shallow hollow. Beside the path your hand finds a wall of dirt and tangled roots, taller than you, and brambles snag your sleeve. To the east the way opens out.
 *else
-  This is forest trail 4. Nothing is written here yet.
+  The path dips into a shallow hollow where the ground is softer and the trees stand farther apart. The torn-up roots of a fallen beech stand on edge beside it, a wall of dirt and stone taller than you, and brambles crowd the other side. To the east the path opens out between the trunks.
+*gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
   # Go east.
@@ -734,15 +825,77 @@ You scrape a bold cross into the bark at head height, so you will know this junc
 
 *label lsf_n_r1
 
-[b]◈ FOREST ROOM 1[/b]
+[b]◈ THE WATCHTOWER[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
+*comment He keeps his door shut at night and in a dangerous storm. lsf_tw_wary is true on the day a try failed, and false from the next day, so a later visit gets another hearing.
+*set lsf_tw_shut ((time_period = "Night") or ((time_period = "Pre-Dawn") or (weather_severity >= 3)))
+*set lsf_tw_wary ((lsf_trapper_wary_day > 0) and (lsf_trapper_wary_day >= campaign_day))
+*comment What the trapper is doing turns with the clock (six pictures, rotating by the hour), so a return visit never shows the same gesture twice running.
+*temp tw_pick ((((campaign_day * 24) + clock_hour) modulo 6) + 1)
+*temp tw_act "scraping a pelt on its frame"
+*if (tw_pick = 2)
+  *set tw_act "mending a snare on the lodge step"
+*if (tw_pick = 3)
+  *set tw_act "splitting kindling beside the woodpile"
+*if (tw_pick = 4)
+  *set tw_act "turning a pelt on the drying frames"
+*if (tw_pick = 5)
+  *set tw_act "smoking a short clay pipe in the lodge doorway"
+*if (tw_pick = 6)
+  *set tw_act "sharpening a skinning knife on a flat stone"
 *if (dg_dark)
-  The dark under the trees is close, and you feel your way. This is forest room 1. Nothing is written here yet.
+  The trees open into a clearing, and the dark is thinner here, with the sky above it. You can make out the square bulk of a building, and above it a taller, thinner shape.
 *else
-  This is forest room 1. Nothing is written here yet.
+  The trees have been cut back to leave a wide clearing. In the middle of it stands a square lodge of grey logs, the gaps between them stuffed with moss and mud, and a lookout tower of lashed timber rises from its roof, thirty feet above the canopy. Pelts are stretched on frames along one wall, and snares of cord and bent sapling hang from the eaves.
+  *line_break
+  *if (weather_wet)
+    Water runs off the lodge roof and drips from the leaves, and the cut stumps shine black.
+  *elseif (weather_cold)
+    Fine snow sifts down through the branches and gathers along the roof ridge, and your breath hangs in front of you.
+  *elseif (weather_visibility = "poor")
+    Fog hangs in the clearing, and the top of the tower is lost in it.
+  *elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    The sky above the clearing is dark.
+  *elseif (weather = "Overcast")
+    A grey, even light comes down into the clearing and casts no shadows.
+  *elseif (time_period = "Morning")
+    Low early light comes in over the stumps and warms the grey logs of the lodge.
+  *elseif (time_period = "Midday")
+    The sun stands high over the clearing, and the lodge throws a short shadow.
+  *elseif (time_period = "Afternoon")
+    The afternoon light lies long across the cut stumps.
+  *else
+    The light has gone low and orange, and the tower's shadow reaches across the clearing.
+  *if ((ground_state = "sodden") and (not(weather_wet)))
+    The cleared ground is churned to mud, and the stumps are still dark with water.
+  *elseif ((ground_state = "wet") and (not(weather_wet)))
+    The ground in the clearing is dark and damp underfoot.
+*line_break
+*if (lsf_tw_shut)
+  Every shutter on the lodge is closed and barred, and a thread of smoke leaks from the chimney. A line of light shows under the eaves of the lookout.
+*elseif (lsf_trapper_trust)
+  Thole is ${tw_act}.
+*elseif (lsf_tw_wary)
+  The lodge door is shut and barred. A shutter stands open a hand's width, and an eye watches you through the gap.
+*else
+  A lean man in a patched hide coat, his face weathered brown and grey with stubble, is ${tw_act}. He watches you come, and his free hand finds the haft of a short axe at his belt.
 *gosub_scene dungeon dg_status_line
 *choice
+  *if ((not(lsf_tw_shut)) and ((not(lsf_trapper_trust)) and (not(lsf_tw_wary))))
+    # Walk across the clearing to the man.
+      *goto lsf_tw_hail
+  *if ((lsf_tw_shut) or ((lsf_tw_wary) and (not(lsf_trapper_trust))))
+    # Knock at the shutter.
+      *goto lsf_tw_knock
+  *if ((lsf_trapper_trust) and (not(lsf_tw_shut)))
+    # Ask what food he can spare.
+      *goto lsf_tw_trade
+    *if (not(lsf_trapper_why))
+      # Ask what he was looking for when he looked you over. [~5 min]
+        *goto lsf_tw_why
+    # Climb the lookout tower. [~20 min]
+      *goto lsf_tw_climb
   # Go east.
     *set dg_dest "lsf_j3"
     *set dg_dest_hall true
@@ -751,6 +904,199 @@ You scrape a bold cross into the bark at head height, so you will know this junc
     *set dg_dest "lsf_j5"
     *set dg_dest_hall true
     *goto lsf_move
+
+*comment THE TRAPPER (the user's idea, 2026-10-14; Merrick Thole's name, past and every line are invented here). A stranger gets one hearing a day: Persuasion DC 12, no other way. A pass is permanent and brings
+*comment three trail rations once; a fail shuts the door until the next day, never for good. He sells trail rations on the trade panel (the 'trapper' trade) and lets a trusted player up the lookout, which marks
+*comment the places within 4.5 grid cells of the room on the map (a view needs daylight and fair weather). The map marks live in dg_seen_lsf_* and are kept between runs like any other.
+*comment Dialogue is quoted once and described after that (narrative guidelines section 3): lsf_trapper_met, lsf_trapper_why and lsf_trapper_traded say what has been spoken. Each is set on the page AFTER the one it changes,
+*comment so a refresh prints the page it printed the first time.
+*label lsf_tw_hail
+*if (lsf_trapper_met)
+  You cross the clearing slowly, with your hands where he can see them. He lets you come to about ten paces, draws the axe a hand's breadth out of his belt, and asks for your name and your road again, slowly.
+*else
+  You cross the clearing slowly, with your hands where he can see them. He lets you come to about ten paces and draws the axe a hand's breadth out of his belt.
+  *line_break
+  "Far enough," he says, in a dry, unhurried voice. "Name first, then where you've come from and what you want. Say it slow. I listen better that way."
+*choice
+  # Tell him who you are and why you're here, with your hands open.@{show_stat_hints  [Persuasion DC 12]|}
+    *goto lsf_tw_persuade
+  # Back away and leave him to his work.
+    *set lsf_trapper_met true
+    You raise your hands and step back, and he watches until you are across the clearing.
+    *goto lsf_n_r1
+
+*label lsf_tw_persuade
+*set lsf_trapper_met true
+*gosub_scene dice_engine roll_skill_check 12 "persuasion" "" "" "" "" ""
+*if (check_success)
+  "I'm ${name}," you tell him, "and I'm passing through." You keep your voice level, your hands open and your face easy, and you say it all again from the end when he asks. He watches your mouth while you talk and your eyes when you stop, and his head tilts a little at each answer. Then the axe slides back home.
+  *line_break
+  "Merrick Thole," he says. "Trapper. Forgive the welcome. There's things in these woods that wear a face, and every one of them talks easy."
+  *set lsf_trapper_trust true
+  *goto lsf_tw_pass
+*else
+  "I'm ${name}," you tell him, "and I'm passing through." You keep your voice level and your hands open, but his eyes keep moving between your face and your hands, and the axe stays where it is.
+  *line_break
+  He says quietly that it came too easy, or not easy enough, and that he can't tell which. He backs to the lodge door with one hand behind him, and you hear the bar fall into its brackets. Through the shutter he tells you to try him again tomorrow.
+  *set lsf_trapper_wary_day campaign_day
+  *set dg_mins 10
+  *set dg_time_id "lsf_tw_fail"
+  *gosub_scene dungeon dg_time
+  *goto lsf_n_r1
+
+*label lsf_tw_pass
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set lsf_gift_now (not(lsf_trapper_gift))
+  *if (lsf_gift_now)
+    *gosub_scene equipment grant_gear "trail_rations" 3
+    *set lsf_trapper_gift true
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+*if (lsf_gift_now)
+  He goes into the lodge and comes back with a cloth bundle. "Three days' food," he says. "Take it. I've never been robbed by anyone I gave food to."
+  *line_break
+  [b][Found: three trail rations][/b]
+*set dg_mins 10
+*set dg_time_id "lsf_tw_pass"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r1
+
+*label lsf_tw_knock
+*if (lsf_trapper_trust)
+  Thole's voice comes through the shutter, easy now. He tells you to come back when the weather is fair and the light is good.
+*elseif (lsf_tw_shut)
+  Nothing answers at first. Then a voice behind the shutter tells you, flatly, that he opens to no stranger in the dark or in a storm.
+*else
+  The voice behind the shutter tells you again to come back tomorrow, calm and sure.
+*goto lsf_n_r1
+
+*label lsf_tw_why
+*set lsf_trapper_why true
+You ask what he was looking for when he looked you over. Thole takes the short axe from his belt and turns it over in his hands. "Two winters back a woodcutter walked out of the trees, and he knew my name, and he knew where I kept my salt. He had the right face for it, too. He sat at my fire three nights." He studies the edge. "On the fourth I saw him lift a pot out of the coals with his bare hand. He held it like a cup, and never noticed I was watching."
+*line_break
+"Maybe he was only a man who'd been burned so often he'd stopped minding. Maybe not. He was gone before light, and so was my good axe." He slides this one back into his belt. "I'd sooner be rude to a hundred honest strangers than be polite to that again. You passed. They don't usually stay for the lecture."
+*set dg_mins 5
+*set dg_time_id "lsf_tw_why"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r1
+
+*label lsf_tw_climb
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  Thole shakes his head at the foot of the ladder: there is nothing to see in this light and a bad fall waiting.
+  *goto lsf_n_r1
+*if (weather_visibility = "poor")
+  Thole looks at the sky and tells you the view would be nothing but weather. He suggests waiting for it to clear.
+  *goto lsf_n_r1
+*if (not(lsf_tower_viewed))
+  Thole goes up first. The ladder is a pine trunk with the knot stubs left on for rungs, and the trapdoor at the top sticks until he puts a shoulder to it. Then you are out in the wind above the canopy, on a platform no wider than a cart bed, with the forest spread below you and treetops in every direction.
+  *line_break
+  He points with the stem of his pipe: the pale threads of trails under the leaves, a clearing the size of a thumbprint, a wet shine where the trees stand back from something low. You fix what you can in your head and mark the rest on your map with a burnt twig.
+  *line_break
+  [b][Mapped: the forest around the watchtower][/b]
+*else
+  You climb up again and look out over the forest you have already marked. Nothing has moved but the wind in the leaves.
+*set dg_seen_lsf_x1 true
+*set dg_seen_lsf_j1 true
+*set dg_seen_lsf_j2 true
+*set dg_seen_lsf_j3 true
+*set dg_seen_lsf_j4 true
+*set dg_seen_lsf_j5 true
+*set dg_seen_lsf_j7 true
+*set dg_seen_lsf_j8 true
+*set dg_seen_lsf_j9 true
+*set dg_seen_lsf_j10 true
+*set dg_seen_lsf_j13 true
+*set dg_seen_lsf_j17 true
+*set dg_seen_lsf_j20 true
+*set dg_seen_lsf_j21 true
+*set dg_seen_lsf_r2 true
+*set dg_seen_lsf_r4 true
+*set dg_seen_lsf_r5 true
+*set dg_seen_lsf_r6 true
+*set dg_seen_lsf_r7 true
+*set dg_seen_lsf_r8 true
+*set dg_seen_lsf_r9 true
+*set dg_seen_lsf_r10 true
+*set dg_seen_lsf_r12 true
+*set lsf_tower_viewed true
+*set dg_mins 20
+*set dg_time_id "lsf_tw_climb"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r1
+
+*label lsf_tw_trade
+*gosub lsf_tw_open_panel
+*if (lsf_trapper_traded)
+  Thole sets the hemp sack on the bench by the door, unties it, and nods you toward the bundles of trail rations inside.
+*else
+  You ask what food he can spare. Thole sets a hemp sack on the bench by the door and unties it. Inside are cloth-wrapped bundles of trail rations. "Biscuit, dried sausage, a fist of raisins," he says. "Plain stuff, and it keeps."
+*choice
+  # Step back from the bench.
+    *set lsf_trapper_traded true
+    *set shop_open ""
+    *goto lsf_n_r1
+  # ⚖ Settle up the trade panel.
+    *goto lsf_tw_settle
+
+*label lsf_tw_settle
+*set lsf_trapper_traded true
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment shop_begin
+  *gosub lsf_tw_cart_pass
+  *gosub_scene equipment shop_check
+  *if (shop_verdict = "ok")
+    *set shop_mode "apply"
+    *gosub lsf_tw_cart_pass
+    *set currency_add_amount (shop_tot_credit - shop_tot_cost)
+    *gosub_scene economy currency_add
+  *else
+    *set shop_mode "clear"
+    *gosub lsf_tw_cart_pass
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*if (shop_verdict = "empty")
+  Thole waits with his hand on the sack, then lets the neck fall shut.
+  *goto lsf_tw_after
+*if (shop_verdict = "short")
+  You count your coin against his price and come up short. Thole nods and ties the sack closed again.
+  *goto lsf_tw_after
+Thole counts the bundles into your hands one at a time and drops the coin into a pouch at his belt.
+*if (shop_tot_bought > 0)
+  *line_break
+  [b][🛒 Bought: ${shop_recv} for ${shop_cost_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass shop_tot_minutes
+*set time_advance_call_id "lsf_tw_trade"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*goto lsf_tw_after
+
+*label lsf_tw_after
+*if (lsf_tw_shut)
+  *set shop_open ""
+  *goto lsf_n_r1
+*goto lsf_tw_trade
+
+*label lsf_tw_open_panel
+*set shop_open "trapper"
+*set shop_rows ""
+*comment GEN:BEGIN trapper_panel_rows
+*gosub_scene equipment shop_row_add "trail_rations"
+*comment GEN:END trapper_panel_rows
+*return
+
+*label lsf_tw_cart_pass
+*comment GEN:BEGIN trapper_cart_pass
+*set gear_shop "trapper"
+*gosub_scene equipment shop_cart_buy "trail_rations"
+*comment GEN:END trapper_cart_pass
+*return
 
 *label lsf_n_r2
 

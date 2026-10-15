@@ -37,7 +37,7 @@
       lsf_j19: { x: 6, y: 3, kind: "hall" },
       lsf_j20: { x: 5, y: 4, kind: "hall" },
       lsf_j21: { x: 4, y: 3, kind: "hall" },
-      lsf_r1: { x: 2, y: 6, kind: "room", name: "Room 1" },
+      lsf_r1: { x: 2, y: 6, kind: "room", name: "Watchtower" },
       lsf_r2: { x: 6, y: 6, kind: "room", name: "Room 2" },
       lsf_r3: { x: 8, y: 6, kind: "room", name: "Room 3" },
       lsf_r4: { x: 6, y: 8, kind: "room", name: "Room 4" },

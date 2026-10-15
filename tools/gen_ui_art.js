@@ -57,6 +57,27 @@ const ART = [
   ["c_wizard",    "HUD/Class_Wizard_Plain_Icon.png",     96,   96,  0.92]
 ];
 
+// Place backdrops (web/mygame/scenery.js): every pair <Name>_Day.png / <Name>_Night.png in /Wallpaper (one level above ICONS) becomes scene_<name>_day and scene_<name>_night, so a new place
+// is two files dropped in that folder and this script re-run. The two pictures should be the SAME view by day and by night, so the clock can blend them. The height is 0 = keep the picture's own
+// proportions (a width of 1672 px, quality 0.72). A name with spaces or capitals is turned into a plain key: "Silt Conduits_Day.png" -> scene_silt_conduits_day.
+// The pictures are NOT inlined into the single html file (each is a few hundred KB): they are written as real files in /scenery, and a small list of which keys exist is written to
+// web/mygame/scenery-data.js. scenery.js finds the folder at run time (it sits beside play_game.html, or two levels above web/mygame/index.html) and loads a place's pair when it is first needed.
+const SCENERY_DIR = path.join(ROOT, "scenery");
+const MANIFEST = path.join(ROOT, "web", "mygame", "scenery-data.js");
+const WALL = path.join(ROOT, "Wallpaper");
+if (fs.existsSync(WALL)) {
+  const files = fs.readdirSync(WALL);
+  files.forEach((f) => {
+    const m = /^(.+)_Day\.(png|jpg|jpeg|webp)$/i.exec(f);
+    if (!m) return;
+    const night = files.find((g) => g.toLowerCase().indexOf((m[1] + "_Night.").toLowerCase()) === 0);
+    const key = m[1].toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+    if (!night) { console.error("  Wallpaper/" + f + " has no " + m[1] + "_Night picture, so it is skipped"); return; }
+    ART.push(["scene_" + key + "_day", "../Wallpaper/" + f, 1672, 0, 0.72]);
+    ART.push(["scene_" + key + "_night", "../Wallpaper/" + night, 1672, 0, 0.72]);
+  });
+}
+
 const checkOnly = process.argv.includes("--check");
 
 function checkSources() {
@@ -70,9 +91,19 @@ function checkSources() {
 if (checkOnly) {
   let bad = checkSources();
   const css = fs.existsSync(OUT) ? fs.readFileSync(OUT, "utf8") : "";
-  for (const a of ART) if (css.indexOf("--art-" + a[0] + ":") < 0) { console.error("  uiart.css lacks --art-" + a[0]); bad++; }
-  if (bad) { console.error("uiart.css is STALE or incomplete -- run `node tools/gen_ui_art.js`"); process.exit(1); }
-  console.log("uiart.css is up to date (" + ART.length + " images, " + Math.round(css.length / 1024) + " KB)");
+  const man = fs.existsSync(MANIFEST) ? fs.readFileSync(MANIFEST, "utf8") : "";
+  let scenes = 0;
+  for (const a of ART) {
+    if (a[0].indexOf("scene_") === 0) {
+      scenes++;
+      if (!fs.existsSync(path.join(SCENERY_DIR, a[0].slice(6) + ".webp"))) { console.error("  scenery/" + a[0].slice(6) + ".webp is missing"); bad++; }
+      continue;
+    }
+    if (css.indexOf("--art-" + a[0] + ":") < 0) { console.error("  uiart.css lacks --art-" + a[0]); bad++; }
+  }
+  ART.filter((a) => /^scene_.+_day$/.test(a[0])).forEach((a) => { const k = a[0].slice(6, -4); if (man.indexOf("\"" + k + "\"") < 0) { console.error("  scenery-data.js lacks " + k); bad++; } });
+  if (bad) { console.error("uiart.css or the scenery files are STALE or incomplete -- run `node tools/gen_ui_art.js`"); process.exit(1); }
+  console.log("uiart.css is up to date (" + (ART.length - scenes) + " images, " + Math.round(css.length / 1024) + " KB) and " + scenes / 2 + " scenery pair(s) are in /scenery");
   process.exit(0);
 }
 
@@ -109,21 +140,31 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
       const uri = await evaluate(`new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => {
-          const c = document.createElement("canvas"); c.width = ${w}; c.height = ${h};
-          const g = c.getContext("2d"); g.imageSmoothingQuality = "high"; g.drawImage(img, 0, 0, ${w}, ${h});
+          const H = ${h} || Math.round(img.naturalHeight * ${w} / img.naturalWidth);
+          const c = document.createElement("canvas"); c.width = ${w}; c.height = H;
+          const g = c.getContext("2d"); g.imageSmoothingQuality = "high"; g.drawImage(img, 0, 0, ${w}, H);
           resolve(c.toDataURL("image/webp", ${q}));
         };
         img.onerror = () => reject(new Error("could not load " + ${JSON.stringify(src)}));
         img.src = ${JSON.stringify(iconsUrl + src)};
       })`);
       if (!/^data:image\/webp/.test(uri)) throw new Error(name + ": the browser did not produce a WebP (" + String(uri).slice(0, 30) + ")");
+      if (name.indexOf("scene_") === 0) {
+        fs.mkdirSync(SCENERY_DIR, { recursive: true });
+        fs.writeFileSync(path.join(SCENERY_DIR, name.slice(6) + ".webp"), Buffer.from(uri.split(",")[1], "base64"));
+        console.log("  " + name.padEnd(9) + " -> scenery/" + name.slice(6) + ".webp  " + Math.round(uri.length * 0.75 / 1024) + " KB");
+        continue;
+      }
       out[name] = uri;
-      console.log("  " + name.padEnd(9) + " " + (w + "x" + h).padEnd(10) + " " + Math.round(uri.length * 0.75 / 1024) + " KB");
+      console.log("  " + name.padEnd(9) + " " + (w + "x" + (h || "auto")).padEnd(10) + " " + Math.round(uri.length * 0.75 / 1024) + " KB");
     }
     let css = "/*\n * UI ART -- generated by tools/gen_ui_art.js from ICONS/UiElements. Do not edit by hand; edit ART in that script and re-run it.\n * Each --art-<name> is a ready-to-use url(\"data:...\"), so a stylesheet writes e.g.  border-image: var(--art-frame) 55 / 38px stretch;\n */\n:root {\n";
     for (const name of Object.keys(out)) css += "  --art-" + name + ": url(\"" + out[name] + "\");\n";
     css += "}\n";
     fs.writeFileSync(OUT, css);
+    const keys = ART.filter((a) => /^scene_.+_day$/.test(a[0])).map((a) => a[0].slice(6, -4));
+    fs.writeFileSync(MANIFEST, "/* GENERATED by tools/gen_ui_art.js: the place backdrops that have a pair in /scenery (scenery.js reads it). Do not edit. */\nwindow.SCENERY_ART = " + JSON.stringify(keys) + ";\n");
+    console.log("wrote " + path.relative(ROOT, MANIFEST) + " (" + keys.length + " place(s))");
     console.log("wrote " + path.relative(ROOT, OUT) + " (" + Math.round(css.length / 1024) + " KB)");
   } finally {
     if (ws) try { ws.close(); } catch (e) {}
