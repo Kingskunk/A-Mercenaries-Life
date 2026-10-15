@@ -11,7 +11,7 @@ In a forest clearing the remains of a campfire and some
 broken tents can be found. A DC12 Survival check will
 identify that this place has been abandoned in the last
 couple of days and that it was ravaged by some sort of
-large beast (Brown Bear)
+predator (panther)
 Investigating the ruins (I)C12 Investigation check)
 Players can find a pouch of gold.
 
@@ -136,3 +136,17 @@ animal has recently eaten — therefore is extremely
 happy and has no care whatsoever of anyone being
 around in its territory.
 
+-------------------------------------------------
+CIRCLE OF FERNS
+A small clearing in the middle of the forest, with light
+ferns growing in a visible circle pattern. The center of
+the circle at first glance seems empty, devoid of
+vegetation.
+In the center an orc is buried, with their weapons and
+earthly belongings, without a headstone or any other
+marker.
+Players with a DC12 Religion check can identify that
+this place resembles a burial site. Detect Magic spell will
+give a signal from 6 feet below.
+in the center, the party can find rusted weapons, and armor, with a bit of silver as the only
+thing worth taking.

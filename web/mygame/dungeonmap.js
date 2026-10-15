@@ -164,13 +164,22 @@
    * options are hidden while the map is up (body.dgMapOn); "Classic list" puts them back, and "Show map" returns, like the battle HUD. */
   var PANEL_ID = "dungeonPanel";
   var classic = false, pinnedAt = "", panelSig = "", walk = null, walkTimer = 0, queuedScan = false;
-  var DIRS = { north: [0, -1], east: [1, 0], south: [0, 1], west: [-1, 0] };
-
-  function dirWord(a, b) {
-    var dx = b.x - a.x, dy = b.y - a.y;
-    for (var w in DIRS) if (DIRS[w][0] === dx && DIRS[w][1] === dy) return w;
-    return "";
+  // The word a way is called by, from where it leaves a place (2026-10-15: the places may sit anywhere, not only on a grid). Eight points of the compass by angle: a cardinal word covers 60 degrees centred
+  // on its direction (a trail that bends a little still reads as "east"), a diagonal word the 30 degrees between. tools/check_dungeon_map.js uses the same rule and fails a place whose ways share a word.
+  function compassWord(dx, dy) {
+    var a = Math.atan2(dx, -dy) * 180 / Math.PI;
+    if (a < 0) a += 360;
+    if (a < 30 || a >= 330) return "north";
+    if (a < 60) return "northeast";
+    if (a < 120) return "east";
+    if (a < 150) return "southeast";
+    if (a < 210) return "south";
+    if (a < 240) return "southwest";
+    if (a < 300) return "west";
+    return "northwest";
   }
+  function dirWord(a, b) { return compassWord(b.x - a.x, b.y - a.y); }
+  DM.compass = compassWord;
   function neighbours(m, id) {
     var out = [];
     var st = statsNow();
@@ -223,7 +232,7 @@
       var radio = labels[i].querySelector("input[type=radio]");
       if (!radio || radio.disabled) continue;
       var text = (labels[i].textContent || "").replace(/\s+/g, " ").trim();
-      var w = /^Go\b/.test(text) ? /\b(north|east|south|west)\b/i.exec(text) : null;
+      var w = /^Go\b/.test(text) ? /\b(north(?:east|west)?|south(?:east|west)?|east|west)\b/i.exec(text) : null;
       var box = labels[i].closest ? (labels[i].closest(".choice > div") || labels[i]) : labels[i];
       if (w && nb[w[1].toLowerCase()]) { moves[nb[w[1].toLowerCase()]] = { radio: radio, box: box }; count++; }
       else if (/^Mark this/.test(text)) chalk = { radio: radio, text: text };

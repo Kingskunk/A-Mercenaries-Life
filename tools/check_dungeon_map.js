@@ -58,7 +58,7 @@ for (const key of Object.keys(MAPS)) {
     const opt = /^\s*# (.*)$/.exec(ln);
     if (opt) {
       lastOption = opt[1]; lastWasMove = false;
-      if (/^Go\b/.test(lastOption) && /\b(west|east|north|south)\b/i.test(lastOption)) goOptions.push({ place: cur, text: lastOption, move: false });
+      if (/^Go\b/.test(lastOption) && /\b(north(?:east|west)?|south(?:east|west)?|east|west)\b/i.test(lastOption)) goOptions.push({ place: cur, text: lastOption, move: false });
       return;
     }
     const dest = /^\s*\*set dg_dest "(\w+)"/.exec(ln);
@@ -115,26 +115,37 @@ for (const key of Object.keys(MAPS)) {
   m.edges.forEach((e) => {
     const a = m.nodes[e[0]], b = m.nodes[e[1]];
     if (!a || !b) { fail("edge " + e.join("-") + " names a place that is not on the map"); return; }
-    if (Math.abs(a.x - b.x) + Math.abs(a.y - b.y) !== 1) fail("the way " + e.join("-") + " does not join neighbouring cells");
+    if (a.x === b.x && a.y === b.y) fail("the way " + e.join("-") + " joins two places at the same spot");
   });
 
   // 4 direction words
-  const WORDS = { west: [-1, 0], east: [1, 0], north: [0, -1], south: [0, 1] };
+  const compass = (dx, dy) => { let a = Math.atan2(dx, -dy) * 180 / Math.PI; if (a < 0) a += 360; return a < 30 || a >= 330 ? "north" : a < 60 ? "northeast" : a < 120 ? "east" : a < 150 ? "southeast" : a < 210 ? "south" : a < 240 ? "southwest" : a < 300 ? "west" : "northwest"; };
+  m.edges.forEach((e) => {   // rule 12: no place has two ways with the same word, or the map could not tell which option a click means
+    const a = m.nodes[e[0]], b = m.nodes[e[1]];
+    if (!a || !b) return;
+    [[e[0], e[1], a, b], [e[1], e[0], b, a]].forEach(([from, to, na, nb]) => {
+      const w = compass(nb.x - na.x, nb.y - na.y);
+      const key = from + "@" + w;
+      if (!compass.seen) compass.seen = {};
+      if (compass.seen[key] && compass.seen[key] !== to) fail(from + " has two ways called \"" + w + "\" (" + compass.seen[key] + " and " + to + ")");
+      compass.seen[key] = to;
+    });
+  });
   Object.keys(sceneEdges).forEach((k) => {
     const [a, b] = k.split(">"), na = m.nodes[a], nb = m.nodes[b];
     if (!na || !nb) return;
     sceneEdges[k].forEach((optText) => {
-      const w = /\b(west|east|north|south)\b/i.exec(optText);
+      const w = /\b(north(?:east|west)?|south(?:east|west)?|east|west)\b/i.exec(optText);
       if (!w) return;
-      const d = WORDS[w[1].toLowerCase()];
-      if (nb.x - na.x !== d[0] || nb.y - na.y !== d[1]) fail("\"" + optText + "\" (" + a + " -> " + b + ") says " + w[1] + " but the map puts " + b + " " + (nb.x - na.x) + "," + (nb.y - na.y) + " from " + a);
+      const word = compass(nb.x - na.x, nb.y - na.y);
+      if (w[1].toLowerCase() !== word) fail("\"" + optText + "\" (" + a + " -> " + b + ") says " + w[1] + " but the map puts " + b + " to the " + word + " of " + a);
     });
   });
 
   // 8 the in-page map presses a move by its direction word, so every move option must have one (and start with "Go")
   Object.keys(sceneEdges).forEach((k) => {
     sceneEdges[k].forEach((optText) => {
-      if (!/^Go\b/.test(optText) || !/\b(west|east|north|south)\b/i.test(optText)) fail("\"" + optText + "\" (" + k.replace(">", " -> ") + ") must start with \"Go\" and name a direction, or the in-page map cannot press it");
+      if (!/^Go\b/.test(optText) || !/\b(north(?:east|west)?|south(?:east|west)?|east|west)\b/i.test(optText)) fail("\"" + optText + "\" (" + k.replace(">", " -> ") + ") must start with \"Go\" and name a direction, or the in-page map cannot press it");
     });
   });
 
