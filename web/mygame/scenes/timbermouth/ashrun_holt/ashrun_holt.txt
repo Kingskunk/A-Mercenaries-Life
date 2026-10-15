@@ -34,6 +34,7 @@
 *gosub ah_place
 *gosub ah_sky
 *gosub ah_street
+*gosub ah_eh_hours
 
 *comment BUTTON FORMAT, as the other hubs: destination first, bold, a flavour that does not list stock, then [~N min].
 *choice
@@ -45,6 +46,24 @@
     *goto_scene timbermouth/ashrun_holt/work_yards ah_work_yards
   # [b]The Ashrun House[/b]: a hot meal, a room, and a dry hearth. [~5 min]
     *goto_scene timbermouth/ashrun_holt/ashrun_house ah_inn
+  *comment Odile and Bram's house: only once the player has said they would come by (the hunters in the Longshade Forest, overworld/longshade_forest.txt). The button stays listed and is reworded for why the door is shut.
+  *if (lsf_hunters_invited)
+    *if (ah_eh_why = "")
+      *if (lsf_hunters_dined)
+        # [b]Odile and Bram's House[/b]: look in on the hunters. [~5 min]
+          *goto ah_end_house
+      *else
+        # [b]Odile and Bram's House[/b]: dinner with the hunters. [~1 hour]
+          *goto ah_end_house
+    *elseif (ah_eh_why = "storm")
+      # [b]Odile and Bram's House[/b]: barred against the weather.
+        *goto ah_eh_closed
+    *elseif (ah_eh_why = "night")
+      # [b]Odile and Bram's House[/b]: dark and shuttered.
+        *goto ah_eh_closed
+    *else
+      # [b]Odile and Bram's House[/b]: the hunters are out.
+        *goto ah_eh_closed
   # [b]The forest track[/b]: leave the village.
     *set ow_pos "fo"
     *goto_scene overworld/overworld ow_here
@@ -176,3 +195,58 @@ Wet bark, green needles, woodsmoke, charcoal, and the sharp smell of bark water 
 *set se_helping_elders_enabled true
 *gosub_scene settlement_events se_roll
 *return
+
+*comment ── ODILE AND BRAM'S HOUSE (2026-10-15, the user's idea: the dinner the hunters offer in the Longshade Forest is a button here, not a teleport). Open from late afternoon through the evening (17:00 to 20:59) and not in a
+*comment storm; shut at night (they sleep), earlier in the day (they are out hunting) and in a storm. A shut house stays listed, reworded for why, and plays a short closure page that spends no time. ah_eh_hours works out
+*comment the reason into ah_eh_why each time the hub prints (the clock has not moved when the page replays). The first open visit is the dinner (an hour, hunger reset, once ever); later ones are a short visit.
+*label ah_eh_hours
+*set ah_eh_why ""
+*if (weather_severity >= 3)
+  *set ah_eh_why "storm"
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set ah_eh_why "night"
+*elseif (clock_hour < 17)
+  *set ah_eh_why "out"
+*return
+
+*label ah_eh_closed
+*if (ah_eh_why = "storm")
+  The end house at the edge of the clearing has its shutters bolted and a bar across the door. You rap once, and Odile's voice comes through the wood to say that nobody is receiving anyone in this weather.
+*elseif (ah_eh_why = "night")
+  The end house is dark and shuttered. Nobody answers your knock, and from inside comes the sound of two people snoring in two different rhythms.
+*else
+  The door of the end house is shut, and the pegs beside it hold neither a bow nor a coat. Nobody answers, and a chicken watches you knock.
+*goto ashrun_holt
+
+*label ah_end_house
+*comment Decided inside the page lock, so a refresh prints the same page: the first open visit is the dinner, every later one is a short visit.
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set ah_eh_first (not(lsf_hunters_dined))
+  *set lsf_hunters_dined true
+  *if (ah_eh_first)
+    *set hours_to_pass 1
+    *set minutes_to_pass 0
+    *set time_advance_call_id "ah_end_house_dinner"
+  *else
+    *set hours_to_pass 0
+    *set minutes_to_pass 5
+    *set time_advance_call_id "ah_end_house_visit"
+  *gosub_scene calendar advance_time
+  *if (ah_eh_first)
+    *set minutes_since_meal 0
+    *set neglect_damage_hunger 0
+    *set hunger_stage "Fed"
+  *gosub_scene calendar recalc_hp_from_neglect
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+*if (ah_eh_first)
+  The end house is low and crooked, its roof patched in three kinds of thatch. Traps hang from every wall, and Bram admits that most of them sort of work. Odile has the door open before you reach it.
+  *line_break
+  "You came," she says, and over her shoulder, "Bram! They came!" There is a crash from inside that may have been a pot.
+  *line_break
+  The stew is mostly turnip. The rabbit in it is thin and has clearly seen better days, and you eat two bowls anyway, because it is hot and they will not take no for an answer. Bram's uncle left him a bow, Odile says, and neither of them has had the heart to tell the bow.
+  *line_break
+  "If anyone in the village asks," she says at the door, "you were shot at by professionals."
+*else
+  Bram is on the step cleaning a trap with a rag and a great deal of concentration, and Odile is restringing a bow by the fire. They wave you to the bench and press a mug of something hot into your hands. Nothing much happens, which seems to be how they like it.
+*goto ashrun_holt

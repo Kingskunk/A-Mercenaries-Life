@@ -247,7 +247,7 @@ function showMenu() {
           curl();
         });
       } else if (option.settings) {
-        textOptionsMenu({ size: 1, color: 1, family: 1, animation: window.animationProperty, sliding: window.isMobile });
+        textOptionsMenu({ size: 1, color: 1, family: 1, animation: window.animationProperty, sliding: window.isMobile, sound: 1 });
       } else if (option.credits) {
         absolutizeAboutLink();
         aboutClick();
@@ -348,6 +348,17 @@ function textOptionsMenu(categories) {
     options = [
       {name:"Return to the game.", group:"choice", resume:true},
     ];
+    // The ambient sound (web/mygame/ambience.js), only in a game that has it: its level in a line of text, then up, down and mute, like the text size below.
+    var ambience = categories.sound && window.Ambience && window.Ambience.available && window.Ambience.available();
+    if (ambience) {
+      var snd = window.Ambience.state();
+      text.innerHTML += "<p>" + snd.text + ".</p>";
+      options.push({name:"Turn the sound up.", group:"choice", sound:"louder"});
+      if (snd.vol >= 1 && !snd.mute) options[options.length-1].unselectable = true;
+      options.push({name:"Turn the sound down.", group:"choice", sound:"quieter"});
+      if (snd.vol <= 0) options[options.length-1].unselectable = true;
+      options.push({name: snd.mute ? "Unmute the sound." : "Mute the sound.", group:"choice", sound:"toggleMute"});
+    }
     if (categories.size) {
       options.push(
         {name:"Make the text bigger.", group:"choice", bigger:true},
@@ -401,6 +412,8 @@ function textOptionsMenu(categories) {
         if (initStore()) store.set("preferredSliding", window.slidingEnabled);
       } else if (option.family) {
         changeFontFamily(option.family);
+      } else if (option.sound) {
+        window.Ambience[option.sound]();
       } else {
         changeFontSize(option.bigger);
       }

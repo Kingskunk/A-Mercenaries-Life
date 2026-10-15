@@ -72,12 +72,12 @@ You work your way back out to the edge of the trees, and the open ground lies ah
   *goto lsf_encounter
 *goto lsf_here
 
-*comment THE ENCOUNTERS: none yet (the table is empty, so dg_step never sets dg_enc_now). This stub is here so the branch has somewhere to land when the first row is added.
+*comment THE ENCOUNTERS: dg_step rolls the table (lsf_table) on a trail step and sets dg_enc_now; the id comes back in dg_encounter and goes to its own label here. One row so far, "hunters". An id with no label yet
+*comment falls through to the room, so a new row can be added to the table before its text is written.
 *label lsf_encounter
 *set dg_enc_now false
-*line_break
-Nothing happens here yet.
-*line_break
+*if (dg_encounter = "hunters")
+  *goto lsf_enc_hunters
 *goto lsf_here
 
 *label lsf_chalked
@@ -1378,10 +1378,76 @@ Thole counts the bundles into your hands one at a time and drops the coin into a
     *set dg_dest_hall false
     *goto lsf_move
 
-*comment The encounter table: empty for now (no rows), so nothing is ever rolled. A row is added here as one *set dg_trow_ line each; see port_valen_silt_conduits.txt pvsc_table for the shape.
+*comment The encounter table. A row is one *set dg_trow_ line each (see port_valen_silt_conduits.txt pvsc_table for the shape): the id, then its weight at "low tide" (here: by day, Morning through Dusk) and at "high tide"
+*comment (night and before dawn). The pick never repeats an id within one run.
+*comment   hunters   day only, and not in a storm (nobody hunts in one); gone for good once the player has met them (lsf_hunters_met).
 *label lsf_table
-*set dg_trow_count 0
+*set dg_trow_count 1
+*set dg_trow_id_1 "hunters"
+*set dg_trow_lo_1 3
+*set dg_trow_hi_1 0
+*if ((lsf_hunters_met) or (weather_severity >= 3))
+  *set dg_trow_lo_1 0
 *return
+
+*comment THE RECKLESS HUNTERS (the user's idea, 2026-10-15, from a published adventure's encounter; Odile and Bram, their talk, their house and their dinner are all invented here). An arrow nearly takes the player's head off; a
+*comment pair of hopeless hunters come out of the brush apologising. Three ways to take it (each its own text), then an invitation to dinner in Ashrun Holt. Accepting only sets lsf_hunters_invited (the player stays in the forest; the dinner
+*comment is a button in Ashrun Holt, timbermouth/ashrun_holt/ashrun_holt.txt ah_end_house); declining sets nothing. Either way it is ten minutes and back on the trail. Once ever: lsf_hunters_met is set on the page AFTER the one that shows the meeting, so a refresh prints
+*comment the same page. Nobody is hurt and nothing is gained but the meal. Nothing assumes the player's weapon, gear, trade or name, and the hunters' names come out in their own talk.
+*label lsf_enc_hunters
+Something hisses past your face and thuds into the trunk beside you. An arrow stands in the bark, its feathers still trembling, so close that the wind of it moved your hair.
+*line_break
+For a moment the only sound is leaves. Then a woman's voice tears through the trees, high and furious. "That was a person! Does that look like a deer to you?"
+*line_break
+"It was moving like a deer!" a man's voice shouts back, and then, much smaller, "Oh no."
+*line_break
+Two people crash out of the brush together. The woman is short and broad, muddy to the knees, with a bow clutched in both fists like a broom. The man is tall and thin in a patched green coat, with a quiver hanging open at his hip. Both have gone pale.
+*line_break
+"Are you hurt?" the woman says, before she has stopped running. She peers at your face from a hand's width away. "Is anything bleeding? I'm Odile, and this is Bram, who is going to apologise properly in a moment, as soon as he remembers how."
+*line_break
+"Sorry," Bram says. "So sorry. I thought you were... it was the way you were moving through the..."
+*line_break
+"Don't," says Odile.
+*choice
+  # Tell them you are unhurt and there is no harm done.
+    You tell them you are unhurt and that nobody needs to look at anything. Odile lets out a breath that seems to have been waiting a long time. Bram sits down on a root, quite suddenly.
+    *line_break
+    *goto lsf_hunters_invite
+  # Work the arrow out of the trunk and hand it back.
+    You work the arrow loose from the bark, turn it in your fingers, and hold it out to Bram shaft first. He takes it as if it might bite.
+    *line_break
+    "Thank you," he says. "Ah. Thank you."
+    *line_break
+    "Put it in the quiver," Odile tells him. "The right way up."
+    *line_break
+    *goto lsf_hunters_invite
+  # Tell them they nearly killed someone, and to look before they loose.
+    You tell them exactly how close it was, and that a bow is no tool for shooting at a shape in the leaves. Neither of them argues. Bram studies his boots, and Odile's jaw works while she nods at every word.
+    *line_break
+    "You're right," she says. "We know. We know, and we keep doing it. We're not good at this."
+    *line_break
+    *goto lsf_hunters_invite
+
+*label lsf_hunters_invite
+"We go out most weeks," Odile says, "and we come home with nothing, and then we eat turnips. Come by the village sometime. We have the end house in Ashrun Holt, at the edge of the clearing. There's a fire, and bread, and a stew I'll warn you now is mostly turnip. It's the least we can do for very nearly putting an arrow through your head."
+*line_break
+"There's a rabbit in it," Bram says. "Somebody else caught it."
+*choice
+  # Say you will come by for dinner.
+    *set lsf_hunters_met true
+    *set lsf_hunters_invited true
+    You say you will. Odile claps her hands once, hard enough to startle a bird off a branch. "We're home in the evenings," she says. "Anyone in the village can point you to the end house." She elbows Bram, and Bram nods several times too many.
+    *set dg_mins 10
+    *set dg_time_id "lsf_hunters_accept"
+    *gosub_scene dungeon dg_time
+    *goto lsf_here
+  # Thank them, and keep going.
+    *set lsf_hunters_met true
+    You thank them and say you have somewhere to be. Odile nods as if she had expected nothing else, and they stand in the trail and watch you go. Behind you Bram says, quietly, "Right way up," and an arrow slides home in the quiver.
+    *set dg_mins 10
+    *set dg_time_id "lsf_hunters_decline"
+    *gosub_scene dungeon dg_time
+    *goto lsf_here
 
 *comment What a refill clears: every trail step's encounter roll. Nothing in the rooms to clear yet. The map and the chalk are not touched (see dungeon.txt, THE RESPAWN).
 *label lsf_respawn

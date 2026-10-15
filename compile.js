@@ -27,6 +27,16 @@ if (typeof process != "undefined") {
   require(path.join(__dirname, 'tools', 'gen_equipment_data.js'));
   // startup.txt is built from web/mygame/scenes/startup_parts/ (the source); join them before anything reads it. gen_gear.js above already did after writing its part.
   require(path.join(__dirname, 'tools', 'build_startup.js')).write();
+  // The backdrops (Wallpaper/ -> scenery/) and the sounds (Sounds/ -> ambience/) are converted copies the game loads. Rebuild any whose source is newer, so replacing a picture or a recording
+  // and compiling is all it takes. Each tool's --check says whether anything is stale (and is quick); the rebuild needs Chrome (headless) and takes about a minute per few files. A failure only warns.
+  [['gen_ui_art.js', ['--scenery']], ['make_ambience.js', []]].forEach(function(job) {
+    var cp = require('child_process'), script = path.join(__dirname, 'tools', job[0]);
+    if (cp.spawnSync(process.execPath, [script].concat(job[1], ['--check']), {stdio: 'ignore'}).status !== 0) {
+      console.log('Rebuilding with tools/' + job[0] + ' (a source is newer than its converted copy)...');
+      var r = cp.spawnSync(process.execPath, [script].concat(job[1]), {stdio: 'inherit'});
+      if (r.status !== 0) console.log('WARNING: tools/' + job[0] + ' failed; the game keeps the old copies.');
+    }
+  });
   load = function(file) {
     vm.runInThisContext(fs.readFileSync(file), file);
   };

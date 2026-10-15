@@ -120,7 +120,7 @@ hear a loud surprised and relieved shout and a woman
 say "You almost hit them you bastard! Does that look
 like a deer to you?"
 The 2 Hunters (Maria and Pontus) then close in
-profuselyapologizing.
+profusely apologizing.
 They are a pair, who like to go out hunting but usually
 do not have much success — due to the lack of skill. They
 are trying regardless!

@@ -15,7 +15,10 @@
  *
  * Plain <audio> elements, not Web Audio: they stream (a 150 s stereo loop decoded to memory is 57 MB), and they play from file:// where fetch is blocked. Fades are stepped here. Browsers
  * stay silent until the player has clicked or pressed a key once; the first gesture starts everything. The loop point is a seamless crossfade made by the tool, so the one small gap the
- * browser leaves when it restarts the file falls inside dense noise. Volume and mute are kept in localStorage "ambience"; the Sound button in the rail opens them.
+ * browser leaves when it restarts the file falls inside dense noise. Volume and mute are kept in localStorage "ambience".
+ * CONTROLS (2026-10-15, the user's choice: no button on the rail): the game's Menu > Change settings has "Turn the sound up", "Turn the sound down" and "Mute the sound" (web/ui.js textOptionsMenu calls
+ * Ambience.louder / quieter / toggleMute), and the S key toggles mute from anywhere (listed in the keyboard shortcuts). While the read-aloud voice is playing the ambience ducks to about a third of its
+ * level and comes back when the voice stops.
  */
 (function () {
   "use strict";
@@ -115,7 +118,7 @@
   function layer(name) {
     var L = layers[name];
     if (!L) {
-      var el = new Audio(); el.loop = true; el.preload = "auto"; el.volume = 0; el.src = base + name + ".ogg";
+      var el = new Audio(); el.loop = true; el.preload = "auto"; el.volume = 0; el.src = base + name + ".ogg" + ((window.AMBIENCE_V || {})[name] ? "?v=" + window.AMBIENCE_V[name] : "");
       // Start somewhere in the loop, not always at its beginning, so the same storm or forest is never the same twice. Only when the length is a real number: a server with no partial downloads
       // (the simple test servers, possibly serve.js) makes the browser report an UNKNOWN length (Infinity), and a seek to a random point of that froze the page (found in testing). Once only,
       // in case a seek reloads the file and fires the event again.
@@ -125,10 +128,15 @@
     return L;
   }
 
-  function apply(L) { L.el.volume = Math.max(0, Math.min(1, L.level * cfg.vol * cfg.vol)); }   // a squared curve sounds even to the ear
+  // The read-aloud voice (shell.js reads the same button): while it plays, everything here ducks to DUCK of its level, quickly down and slowly back up, so the voice stays easy to follow.
+  var DUCK = 0.33, duck = 1;
+  function ttsPlaying() { var pp = document.getElementById("ttsPlayPause"); return !!pp && pp.textContent.indexOf("\u275A") >= 0; }
+  function apply(L) { L.el.volume = Math.max(0, Math.min(1, L.level * duck * cfg.vol * cfg.vol)); }   // a squared curve sounds even to the ear
 
   // every 100 ms each layer steps toward its target, starting when it has something to say and pausing once it has faded out
   function tick() {
+    var want = ttsPlaying() ? DUCK : 1;
+    duck += Math.max(want < duck ? -0.08 : -0.02, Math.min(want < duck ? 0.08 : 0.02, want - duck));   // 0.5 s down, 2 s back up
     for (var n in layers) if (layers.hasOwnProperty(n)) {
       var L = layers[n], step = 0.1 / FADE;
       L.level += Math.max(-step, Math.min(step, L.target - L.level));
@@ -143,7 +151,6 @@
     var want = targets(s), n;
     for (n in want) if (want.hasOwnProperty(n)) layer(n).target = want[n];
     for (n in layers) if (layers.hasOwnProperty(n) && !want.hasOwnProperty(n)) layers[n].target = 0;
-    syncButton();
   }
 
   // ---- the first click or key starts the sound (browsers keep a page silent until then)
@@ -154,45 +161,35 @@
   }
   ["pointerdown", "keydown"].forEach(function (e) { document.addEventListener(e, unlock, true); });
 
-  // ---- the Sound button in the rail, and its small panel (volume and mute)
-  var btn = null, panel = null;
-  function syncButton() { if (btn) btn.classList.toggle("muted", cfg.mute || cfg.vol === 0); }
-  function buildPanel() {
-    panel = document.createElement("div");
-    panel.id = "ambPanel"; panel.hidden = true;
-    panel.innerHTML = '<div class="ambRow"><label for="ambVol">Sound</label><input id="ambVol" type="range" min="0" max="100" step="1"></div>' +
-                      '<div class="ambRow"><label><input id="ambMute" type="checkbox"> Mute</label></div>';
-    document.body.appendChild(panel);
-    var vol = panel.querySelector("#ambVol"), mute = panel.querySelector("#ambMute");
-    vol.value = Math.round(cfg.vol * 100); mute.checked = cfg.mute;
-    vol.addEventListener("input", function () { cfg.vol = vol.value / 100; save(); update(); syncButton(); });
-    mute.addEventListener("change", function () { cfg.mute = mute.checked; save(); update(); syncButton(); });
-    document.addEventListener("pointerdown", function (e) { if (!panel.hidden && !panel.contains(e.target) && !(btn && btn.contains(e.target))) panel.hidden = true; }, true);
+  // ---- the controls: the settings menu (web/ui.js) and the S key call these. Volume moves in steps of 10%.
+  var toastEl = null, toastTimer = 0;
+  function toast(text) {
+    if (!document.body) return;
+    if (!toastEl) { toastEl = document.createElement("div"); toastEl.id = "ambToast"; document.body.appendChild(toastEl); }
+    toastEl.textContent = text; toastEl.classList.add("on");
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { toastEl.classList.remove("on"); }, 1600);
   }
-  function buildButton() {
-    var rail = document.getElementById("rail");
-    if (!rail || btn) return !!btn;
-    var spacer = rail.querySelector(".rspacer");
-    btn = document.createElement("button");
-    btn.type = "button"; btn.className = "rbtn"; btn.setAttribute("data-i", "sound"); btn.title = "Sound (volume and mute)"; btn.innerHTML = "<i></i>";
-    var lab = document.createElement("div"); lab.className = "rlabel"; lab.textContent = "Sound";
-    rail.insertBefore(btn, spacer); rail.insertBefore(lab, spacer);
-    buildPanel();
-    btn.addEventListener("click", function () {
-      panel.hidden = !panel.hidden;
-      if (!panel.hidden) { var r = btn.getBoundingClientRect(); panel.style.top = Math.max(8, Math.min(window.innerHeight - 120, r.top - 6)) + "px"; }   // beside the button, in the gap between the rail and the story
-    });
-    syncButton();
-    return true;
-  }
+  function label() { return cfg.mute || cfg.vol === 0 ? "Sound off" : "Sound " + Math.round(cfg.vol * 100) + "%"; }
+  function setVol(v) { cfg.vol = Math.max(0, Math.min(1, Math.round(v * 10) / 10)); save(); update(); }
+  function louder() { if (cfg.mute) cfg.mute = false; setVol(cfg.vol + 0.1); }
+  function quieter() { setVol(cfg.vol - 0.1); }
+  function toggleMute() { cfg.mute = !cfg.mute; if (!cfg.mute && cfg.vol === 0) cfg.vol = 0.5; save(); update(); }
+
+  // S mutes and unmutes from anywhere (not while typing, not with a modifier key, not over an open panel)
+  document.addEventListener("keydown", function (ev) {
+    if ((ev.key !== "s" && ev.key !== "S") || ev.ctrlKey || ev.metaKey || ev.altKey || ev.repeat) return;
+    var t = ev.target, tag = t && t.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (t && t.isContentEditable)) return;
+    if (document.querySelector("dialog[open]")) return;
+    toggleMute(); toast(label());
+  });
 
   function start() {
-    var tries = 0, t = setInterval(function () { if (buildButton() || ++tries > 60) clearInterval(t); }, 500);
     findBase();
     setInterval(update, 1000);
     setInterval(tick, 100);
     document.addEventListener("visibilitychange", update);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
-  window.Ambience = { update: update, targets: function () { return window.stats ? targets(window.stats) : {}; }, place: function () { return window.stats ? place(window.stats) : null; }, layers: layers, config: cfg };
+  window.Ambience = { available: function () { return FILES.length > 0; }, state: function () { return { vol: cfg.vol, mute: cfg.mute, text: label() }; }, louder: louder, quieter: quieter, toggleMute: toggleMute, update: update, targets: function () { return window.stats ? targets(window.stats) : {}; }, place: function () { return window.stats ? place(window.stats) : null; }, layers: layers, config: cfg };
 })();

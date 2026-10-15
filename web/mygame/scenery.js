@@ -18,7 +18,8 @@
  */
 (function () {
   "use strict";
-  var root = document.documentElement, el = null, last = "", off = false;
+  var root = document.documentElement, el = null, last = "", off = false, stages = null, cur = -1, curKey = null, goneTimer = [0, 0];
+  var FADE_MS = 1300;   // matches the stage's CSS transition in scenery.css, plus a little
   try { off = window.localStorage.getItem("scenery") === "off"; } catch (e) { off = false; }
 
   // a place name that should wear another key's picture: name -> key (a name that is already a picture key needs no line)
@@ -27,7 +28,7 @@
     woodroad: "forest",           // an overworld tile of wooded road
     compound: "carrion_compound", // the Carrion compound, where the story starts
     harbor: "city_harbour",
-    upper_wharves: "city_harbour",
+    upper_wharves: "civic_heights",   // the Patrician Quarter: a stand-in (the stately civic square) until it has a picture of its own: Upper_Wharves_Day.png / _Night.png replaces it
     tavern: "generic_tavern_inn"
   };
 
@@ -94,7 +95,8 @@
   // an absolute address (a relative one inside a custom property would resolve against the stylesheet, not the page)
   function urlOf(key, part) {
     var name = have()[key] === "single" ? key : key + "_" + part;
-    return new URL(base + name + ".webp", document.baseURI).href;
+    var v = (window.SCENERY_V || {})[key];   // a version stamp, so a changed picture is not shown from the browser's cache
+    return new URL(base + name + ".webp" + (v ? "?v=" + v : ""), document.baseURI).href;
   }
 
   // load a place's pictures once; it counts as ready only when all are in, so the backdrop never shows half a pair
@@ -109,14 +111,14 @@
     });
   }
 
-  // the first place name (or its alias) that has pictures wins; null until the folder is found and that place's pictures are loaded
+  // the first place name (or its alias) that has pictures wins. Returns "" while the folder is found and that place's pictures load (the backdrop stays as it was), and null for a place with no picture.
   function sceneKey(s) {
     var names = placeNames(s), H = have();
     for (var i = 0; i < names.length; i++) {
-      var key = ALIAS[names[i]] || names[i];
+      var key = H[names[i]] ? names[i] : (ALIAS[names[i]] || names[i]);   // a picture named for the place itself beats an alias
       if (!H[key]) continue;
-      if (!base) { findBase(); return null; }
-      if (!loaded[key]) { load(key); return null; }
+      if (!base) { findBase(); return ""; }          // "" = a place with a picture whose files are still loading: keep showing what is there
+      if (!loaded[key]) { load(key); return ""; }
       return key;
     }
     return null;
@@ -125,7 +127,11 @@
   function build() {
     el = document.createElement("div");
     el.id = "scenery"; el.setAttribute("aria-hidden", "true");
-    el.innerHTML = '<div class="sc-layer sc-night"></div><div class="sc-layer sc-day"></div><div class="sc-glow"></div><div class="sc-haze"></div><div class="sc-dim"></div>';
+    // Two stages, each a night layer and a day layer. A background image cannot fade, so a change of place brings the OTHER stage in (with the new place's pictures) over the old one, and the old one
+    // goes when the new is fully in. The glow, haze and dim are shared on top.
+    var stage = '<div class="sc-stage"><div class="sc-layer sc-night"></div><div class="sc-layer sc-day"></div></div>';
+    el.innerHTML = stage + stage + '<div class="sc-glow"></div><div class="sc-haze"></div><div class="sc-dim"></div>';
+    stages = el.querySelectorAll(".sc-stage");
     document.body.insertBefore(el, document.body.firstChild);
   }
 
@@ -137,27 +143,43 @@
   function update() {
     var s = window.stats; if (!s || off || !document.body) { root.classList.remove("hasScenery"); return; }
     var key = sceneKey(s);
-    if (!key) { root.classList.remove("hasScenery"); return; }
+    if (key === "") return;                                              // still loading: no change yet
+    if (!key) { root.classList.remove("hasScenery"); curKey = null; return; }
     if (!el) build();
     var single = have()[key] === "single";
     var h = (Number(s.clock_hour) || 0) + (Number(s.clock_minute) || 0) / 60;
     var day = daylight(h);
     var wet = !!s.weather_wet, poor = s.weather_visibility === "poor", storm = Number(s.weather_severity) >= 3, over = s.weather === "Overcast";
     var dark = !!(s.dg_in_run && s.dg_dark);
-    var v = {
-      "--sc-img-day": 'url("' + urlOf(key, "day") + '")',
-      "--sc-img-night": 'url("' + urlOf(key, "night") + '")',
-      "--sc-day": single ? "1" : day.toFixed(3),
+    var shared = {
       "--sc-glow": single ? "0" : (0.55 * Math.sin(Math.PI * Math.max(0.001, Math.min(0.999, day)))).toFixed(3),   // the dawn and dusk warmth, strongest half way
       "--sc-sat": (wet || over || poor ? 0.7 : 1).toFixed(2),
       "--sc-bright": (storm ? 0.62 : wet ? 0.78 : over ? 0.85 : 1).toFixed(2),
       "--sc-haze": poor && !storm ? "0.55" : (over ? "0.15" : "0"),
       "--sc-dim": dark ? "0.55" : (single ? (0.5 * (1 - day)).toFixed(2) : "0")   // a single picture is darkened at night instead of swapped
     };
-    var sig = key + JSON.stringify(v);
+    var mine = {
+      "--sc-img-day": 'url("' + urlOf(key, "day") + '")',
+      "--sc-img-night": 'url("' + urlOf(key, "night") + '")',
+      "--sc-day": single ? "1" : day.toFixed(3)
+    };
+    var sig = key + JSON.stringify(shared) + JSON.stringify(mine);
     if (sig === last) return; last = sig;
-    el.setAttribute("data-scene", key);
-    for (var k in v) if (v.hasOwnProperty(k)) el.style.setProperty(k, v[k]);
+    var k;
+    for (k in shared) if (shared.hasOwnProperty(k)) el.style.setProperty(k, shared[k]);
+    function paint(st) { for (var n in mine) if (mine.hasOwnProperty(n)) st.style.setProperty(n, mine[n]); }
+    if (key !== curKey) {
+      var next = cur === 0 ? 1 : 0;
+      if (curKey === null) { stages[0].classList.remove("on", "top"); stages[1].classList.remove("on", "top"); next = 0; }   // from nothing: the whole backdrop is fading in itself
+      clearTimeout(goneTimer[next]);
+      paint(stages[next]); stages[next].setAttribute("data-scene", key);
+      stages[next].classList.add("on", "top");                                    // the new place fades in over the old one...
+      if (cur >= 0 && curKey !== null) {
+        var old = cur; stages[old].classList.remove("top");
+        goneTimer[old] = setTimeout(function () { stages[old].classList.remove("on"); }, FADE_MS);   // ...and the old one leaves once the new is in
+      }
+      cur = next; curKey = key;
+    } else paint(stages[cur]);                                                      // the same place: only the day-and-night blend moves
     root.classList.add("hasScenery");
   }
 
