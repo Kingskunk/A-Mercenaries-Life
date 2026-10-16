@@ -292,6 +292,7 @@ function genDossierList() {
     L.push('  *set has_inventory_item true');
     L.push('  *line_break');
     var qty = stackable(it) ? "@{(spare_" + it.id + " > 0)  [+${spare_" + it.id + "} spare]|}" : "";
+    if (it.wear) qty = it.wear.tiers.map(function (t, k) { var hi = it.wear.tiers[k + 1]; return "@{(" + it.wear.var + " >= " + t[0] + (hi ? ") and (" + it.wear.var + " < " + hi[0] : "") + ")  [" + t[1] + "]|}"; }).join("").replace(/@\{\(/g, "@{((").replace(/\)  \[/g, "))  [") + qty;
     if (it.kind === "consumable") badge = " [" + effectSummary(it) + "]";
     L.push('  • [b]' + it.title + ':[/b] ' + d.line + badge + qty);
   });
@@ -378,7 +379,8 @@ function genInventory() {
     if (typeof it.weight !== "number") throw new Error("item '" + it.id + "' has no weight (a number of load points, 0.1 and up)");
     L.push('  weight: ' + it.weight + ', stow: true, stack: ' + (stackable(it) ? "true" : "false") + ',');
     if (stackable(it)) {
-      L.push('  name: function (s) { var n = 1 + (Number(s.spare_' + it.id + ') || 0); return ' + q(it.title) + ' + (n > 1 ? " ×" + n : ""); },');
+      var wearTag = it.wear ? ' + (function () { var w = Number(s.' + it.wear.var + ') || 0; return ' + it.wear.tiers.map(function (t) { return 'w >= ' + t[0] + ' ? " (' + t[1] + ')" : '; }).reverse().join('') + '""; })()' : '';
+      L.push('  name: function (s) { var n = 1 + (Number(s.spare_' + it.id + ') || 0); return ' + q(it.title) + wearTag + ' + (n > 1 ? " ×" + n : ""); },');
     } else {
       L.push('  name: ' + q(it.title) + ',');
     }

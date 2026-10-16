@@ -44,9 +44,9 @@
       lsf_j27: { x: 2.7, y: 1.4, kind: "hall" },   // the hallway to Room 15, a dead end
       lsf_r1: { x: 2.9, y: 6.5, kind: "room", name: "Watchtower" },
       lsf_r2: { x: 7.1, y: 6.3, kind: "room", name: "The Wallow" },
-      lsf_r3: { x: 9.5, y: 6.6, kind: "room", name: "Room 3" },
+      lsf_r3: { x: 9.5, y: 6.6, kind: "room", name: "Circle of Ferns" },
       lsf_r4: { x: 7.7, y: 8.6, kind: "room", name: "Hidden Spring" },
-      lsf_r5: { x: 0.7, y: 3.7, kind: "room", name: "Room 5" },
+      lsf_r5: { x: 0.7, y: 3.7, kind: "room", name: "Lightning Oak" },
       lsf_r6: { x: 0.7, y: 8.6, kind: "room", name: "Room 6" },
       lsf_r7: { x: 3.4, y: 3.9, kind: "room", name: "Room 7" },
       lsf_r8: { x: 7.4, y: 4.5, kind: "room", name: "Room 8" },

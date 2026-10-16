@@ -557,7 +557,7 @@
   *comment Natural recovery: slow on purpose. One night's sleep mends 1 HP, 2 in a private
   *comment room (a shared barracks is 1), and only once per calendar day so napping and
   *comment sleeping again cannot stack. Instant healing is for potions, spells and a healer.
-  *comment Two carried goods add 1 each, and only while there is something to mend: an owned wool blanket
+  *comment Two carried goods add 1 each, and only while there is something to mend: an owned camp kit (its bedroll)
   *comment on a SHARED bunk (a private room brings its own bedding, so the blanket adds nothing there, which
   *comment caps a night at 3), and a bound linen bandage (dressing_on), which is used up when it helps.
   *comment sleep_gear_note keeps the line the sleeping scenes print, set fresh inside this lock so a replay
@@ -568,9 +568,9 @@
     *if (not(sleep_is_shared))
       *set sleep_heal + 1
     *if (hp_current < hp_max)
-      *if ((sleep_is_shared) and (has_wool_blanket))
+      *if ((sleep_is_shared) and (has_camp_kit))
         *set sleep_heal + 1
-        *set sleep_gear_note "You pull your own wool blanket over the bedding, and the draft stops finding your ribs."
+        *set sleep_gear_note "You settle onto your own bedroll, and the draft stops finding your ribs."
       *if (dressing_on)
         *set sleep_heal + dressing_bonus
         *set dressing_on false
@@ -984,6 +984,10 @@
 *set ex_heat round((ex_heat * (100 - ex_cuth)) / 100)
 *if (has_waxed_oilcloth)
   *set ex_wet round(ex_wet / 2)
+*comment The camp kit's tent, up whenever the exposure is a camp's (a night, a short rest or a drill at the camp): it takes a share off the wet part, less as the canvas wears (camp_kit_state). It stacks with the oilcloth.
+*if ((exposure_camping) and (has_camp_kit))
+  *gosub camp_kit_state
+  *set ex_wet round((ex_wet * (100 - camp_kit_cut)) / 100)
 *comment A camp with a fire: a flint and tinderbox, the cantrips Fire Bolt and Prestidigitation (which light kindling and small fires), or a stranger's fire the player was asked to share (ow_camp_fire_shared), halve what the cold takes (the caller sets
 *comment exposure_camping only while it sleeps outdoors). overworld.txt ow_camp tells the two apart in its prose.
 *if ((exposure_camping) and ((((has_tinderbox) or (known_fire_bolt)) or (known_prestidigitation)) or (ow_camp_fire_shared)))
@@ -992,6 +996,50 @@
 *if (ex_pct > 100)
   *set ex_pct 100
 *set exposure_extra_mins round((exposure_base_mins * ex_pct) / 100)
+*return
+
+*comment THE CAMP KIT'S WEAR (2026-10-15). camp_kit_state works the tier and the tent's cut out of camp_kit_wear: New below 8 (the tent takes half the wet off), Worn from 8 (a third), Ragged from 16 (a sixth).
+*label camp_kit_state
+*set camp_kit_tier "new"
+*set camp_kit_cut 50
+*if (camp_kit_wear >= 16)
+  *set camp_kit_tier "ragged"
+  *set camp_kit_cut 17
+*elseif (camp_kit_wear >= 8)
+  *set camp_kit_tier "worn"
+  *set camp_kit_cut 33
+*return
+
+*comment One night under the kit's canvas wears it: 1 point, 2 if it rained (ow_camp_wet), 3 in a storm. Called by the camp page inside its lock, after the sleep. At 24 the kit is past use: a spare takes its place if one is owned, otherwise it is gone.
+*comment ow_kit_note is the one line it leaves for the morning (a tier crossed, or the end of the kit). Only a night's sleep wears it, never a short rest or a drill.
+*label camp_kit_wear_night
+*set ow_kit_note ""
+*if (not(has_camp_kit))
+  *return
+*gosub camp_kit_state
+*temp ckw_old camp_kit_tier
+*temp ckw_cost 1
+*if (ow_camp_wet)
+  *set ckw_cost 2
+*if (ow_camp_severe)
+  *set ckw_cost 3
+*set camp_kit_wear + ckw_cost
+*if (camp_kit_wear >= 24)
+  *set camp_kit_wear 0
+  *if (spare_camp_kit > 0)
+    *set spare_camp_kit - 1
+    *set ow_kit_note "In the morning the old tent will not hold its shape any longer, so you roll it up for the last time, leave it, and unroll your spare kit."
+  *else
+    *set has_camp_kit false
+    *set spare_camp_kit 0
+    *set ow_kit_note "In the morning the tent will not hold its shape any longer. The canvas is past mending, and you leave the whole roll where it lies."
+  *gosub camp_kit_state
+  *return
+*gosub camp_kit_state
+*if ((camp_kit_tier = "worn") and (ckw_old = "new"))
+  *set ow_kit_note "The canvas has gone soft and thin at the seams."
+*if ((camp_kit_tier = "ragged") and (not(ckw_old = "ragged")))
+  *set ow_kit_note "A seam has let go at one corner of the tent, and the poles rattle in their sleeves."
 *return
 
 *comment The pack's load (web/mygame/inventory.js loadOf, called through *script so the game and the Load bar read one calculation): load_total, load_capacity and load_over_pct. Fixed-value sets from what the

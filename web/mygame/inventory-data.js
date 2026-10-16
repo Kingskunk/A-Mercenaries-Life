@@ -290,6 +290,12 @@
       description: "Canvas roll of repair tools for field fixes and simple mechanisms."
     },
     {
+      id: "shovel", category: "provisions", owned: "has_shovel",
+      weight: 3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_shovel) || 0); return "Shovel" + (n > 1 ? " ×" + n : ""); },
+      description: "Long-handled iron shovel for digging."
+    },
+    {
       id: "lute", category: "provisions", owned: "has_lute",
       weight: 2, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_lute) || 0); return "Lute" + (n > 1 ? " ×" + n : ""); },
@@ -308,10 +314,10 @@
       description: "Six sticks of soft white chalk tied with string."
     },
     {
-      id: "wool_blanket", category: "provisions", owned: "has_wool_blanket",
-      weight: 2, stow: true, stack: true,
-      name: function (s) { var n = 1 + (Number(s.spare_wool_blanket) || 0); return "Wool Blanket" + (n > 1 ? " ×" + n : ""); },
-      description: "Heavy grey wool blanket with a red stripe at each end."
+      id: "camp_kit", category: "provisions", owned: "has_camp_kit",
+      weight: 8, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_camp_kit) || 0); return "Camp Kit" + (function () { var w = Number(s.camp_kit_wear) || 0; return w >= 16 ? " (Ragged)" : w >= 8 ? " (Worn)" : ""; })() + (n > 1 ? " ×" + n : ""); },
+      description: "Canvas tent, poles and pegs rolled in a wool bedroll, with needle and thread."
     },
     {
       id: "waxed_oilcloth", category: "provisions", owned: "has_waxed_oilcloth",

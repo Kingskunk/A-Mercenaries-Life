@@ -104,6 +104,7 @@ const MAP = {
   lute: "Equipment/Instrument/Instrument_Lute_Unfaded_Icon.png",
   lockpicks: "Thieves_Tools_Unfaded_Icon.png",
   key: "Key_Iron_A_Icon.png",
+  shovel: "Shovel_Unfaded_Icon.png",
   tool: "Blacksmith's_Tongs_Unfaded_Icon.png",                  // STAND-IN: prybar, manacles, bolt and any other hand tool
   tinder: "../Generic/Antique Tinderbox with Flint Stone.png",  // the user's own art (2026-10-02)
   chalk: "../Generic/Rustic Bundle of Chalk Sticks.png",         // the user's own art (2026-10-02)

@@ -2,7 +2,7 @@
 *comment THE GENERAL STORE (Timbermouth): the page you reach from the Timbermouth hub (timbermouth.txt). It replaced the Sawmill as a hub place (2026-10-07, the user's call): a place to buy
 *comment general goods again. MARLOW'S, beside the Market's yard gate, is run by Marlow (surname only, given in his own first-visit line; Port Valen's Hollis is introduced the same way). It sells the
 *comment SAME POOL OF GOODS as Hollis & Daughters in Port Valen (port_valen_middle_ward.txt mw_hollis_*) at the same prices, and buys them back at half retail (buyer "general"), so nothing is a dead
-*comment end: hemp rope, torch, lamp oil, hooded lantern, repair kit, lute, flint and tinderbox, chalk, wool blanket, oilcloth, lye soap, trail rations. The catalog entries are shared (tools/gear_catalog.json,
+*comment end: hemp rope, torch, lamp oil, hooded lantern, repair kit, lute, flint and tinderbox, chalk, camp kit, oilcloth, lye soap, trail rations. The catalog entries are shared (tools/gear_catalog.json,
 *comment shops tmstore_buy / tmstore_sell, trade "tmstore"); every block between GEN markers is written by tools/gen_gear.js. A stock change in one store means a change in the other's shop list.
 *comment The trail rations matter here: the road from Port Valen is two days of walking, and this is where the player stocks up for the way back.
 *comment
@@ -30,7 +30,7 @@
 *set tm_marlow_seen true
 [b]◈ MARLOW'S GENERAL STORE[/b]
 *line_break
-A deep shop with a plank floor stands beside the Market's yard gate, under a board reading [i]"MARLOW. General goods, by weight and measure."[/i] Coils of rope hang from the rafters by thickness, lanterns and harness leather hang from hooks along the walls, and sacks of feed and kegs of nails stand in rows on the floor. A beam-scale with a tray of brass weights hangs over the counter, and the shelves behind it hold tin cans of lamp oil, jars of chalk, folded blankets and bolts of waxed cloth. The shop smells of hemp, tar, lamp oil, leather and hay.
+A deep shop with a plank floor stands beside the Market's yard gate, under a board reading [i]"MARLOW. General goods, by weight and measure."[/i] Coils of rope hang from the rafters by thickness, lanterns and harness leather hang from hooks along the walls, and sacks of feed and kegs of nails stand in rows on the floor. A beam-scale with a tray of brass weights hangs over the counter, and the shelves behind it hold tin cans of lamp oil, jars of chalk, tied canvas rolls and bolts of waxed cloth. The shop smells of hemp, tar, lamp oil, leather and hay.
 
 *if (weather = "Rain")
   Rain runs down the front window in sheets, and a pool of water has spread under the door.
@@ -78,10 +78,11 @@ A deep shop with a plank floor stands beside the Market's yard gate, under a boa
 *temp mb_lamp_oil ""
 *temp mb_hooded_lantern ""
 *temp mb_tool_kit ""
+*temp mb_shovel ""
 *temp mb_lute ""
 *temp mb_tinderbox ""
 *temp mb_chalk_sticks ""
-*temp mb_wool_blanket ""
+*temp mb_camp_kit ""
 *temp mb_waxed_oilcloth ""
 *temp mb_lye_soap ""
 *temp mb_trail_rations ""
@@ -95,14 +96,16 @@ A deep shop with a plank floor stands beside the Market's yard gate, under a boa
 *set mb_hooded_lantern gear_label
 *gosub_scene equipment gear_buy_label "tool_kit"
 *set mb_tool_kit gear_label
+*gosub_scene equipment gear_buy_label "shovel"
+*set mb_shovel gear_label
 *gosub_scene equipment gear_buy_label "lute"
 *set mb_lute gear_label
 *gosub_scene equipment gear_buy_label "tinderbox"
 *set mb_tinderbox gear_label
 *gosub_scene equipment gear_buy_label "chalk_sticks"
 *set mb_chalk_sticks gear_label
-*gosub_scene equipment gear_buy_label "wool_blanket"
-*set mb_wool_blanket gear_label
+*gosub_scene equipment gear_buy_label "camp_kit"
+*set mb_camp_kit gear_label
 *gosub_scene equipment gear_buy_label "waxed_oilcloth"
 *set mb_waxed_oilcloth gear_label
 *gosub_scene equipment gear_buy_label "lye_soap"
@@ -110,7 +113,7 @@ A deep shop with a plank floor stands beside the Market's yard gate, under a boa
 *gosub_scene equipment gear_buy_label "trail_rations"
 *set mb_trail_rations gear_label
 *comment GEN:END tmstore_buy_labels
-You walk the shelves. Rope hangs in coils by thickness, from cord thin enough for a bootlace to a line as thick as your wrist. Pitch-dipped torches stand in a barrel by the door, hooded lanterns and canvas tool rolls hang from hooks along the wall, a lute hangs from a nail beside the window, and paper twists of lye soap, jars of chalk and tin boxes of flint and steel line the counter. Folded blankets and sheets of waxed cloth fill the lower racks, and a shelf by the door holds cloth-wrapped parcels of trail food. Every shelf has a weight and a price chalked on its edge.
+You walk the shelves. Rope hangs in coils by thickness, from cord thin enough for a bootlace to a line as thick as your wrist. Pitch-dipped torches stand in a barrel by the door, hooded lanterns and canvas tool rolls hang from hooks along the wall, a lute hangs from a nail beside the window, and paper twists of lye soap, jars of chalk and tin boxes of flint and steel line the counter. Tied canvas rolls and sheets of waxed cloth fill the lower racks, and a shelf by the door holds cloth-wrapped parcels of trail food. Every shelf has a weight and a price chalked on its edge.
 
 *choice
   *comment GEN:BEGIN tmstore_buy_options
@@ -129,6 +132,9 @@ You walk the shelves. Rope hangs in coils by thickness, from cord thin enough fo
   # ${mb_tool_kit}
     *set buy_item_id "tool_kit"
     *goto tm_store_buy_do
+  # ${mb_shovel}
+    *set buy_item_id "shovel"
+    *goto tm_store_buy_do
   # ${mb_lute}
     *set buy_item_id "lute"
     *goto tm_store_buy_do
@@ -138,8 +144,8 @@ You walk the shelves. Rope hangs in coils by thickness, from cord thin enough fo
   # ${mb_chalk_sticks}
     *set buy_item_id "chalk_sticks"
     *goto tm_store_buy_do
-  # ${mb_wool_blanket}
-    *set buy_item_id "wool_blanket"
+  # ${mb_camp_kit}
+    *set buy_item_id "camp_kit"
     *goto tm_store_buy_do
   # ${mb_waxed_oilcloth}
     *set buy_item_id "waxed_oilcloth"
@@ -196,10 +202,11 @@ Marlow pulls a pencil from behind his ear and clears a space on the counter. He 
 *temp ms_lamp_oil ""
 *temp ms_hooded_lantern ""
 *temp ms_tool_kit ""
+*temp ms_shovel ""
 *temp ms_lute ""
 *temp ms_tinderbox ""
 *temp ms_chalk_sticks ""
-*temp ms_wool_blanket ""
+*temp ms_camp_kit ""
 *temp ms_waxed_oilcloth ""
 *temp ms_lye_soap ""
 *temp ms_trail_rations ""
@@ -218,6 +225,9 @@ Marlow pulls a pencil from behind his ear and clears a space on the counter. He 
 *if (has_tool_kit)
   *gosub_scene equipment gear_sell_label "tool_kit" "general"
   *set ms_tool_kit gear_label
+*if (has_shovel)
+  *gosub_scene equipment gear_sell_label "shovel" "general"
+  *set ms_shovel gear_label
 *if (has_lute)
   *gosub_scene equipment gear_sell_label "lute" "general"
   *set ms_lute gear_label
@@ -227,9 +237,9 @@ Marlow pulls a pencil from behind his ear and clears a space on the counter. He 
 *if (has_chalk_sticks)
   *gosub_scene equipment gear_sell_label "chalk_sticks" "general"
   *set ms_chalk_sticks gear_label
-*if (has_wool_blanket)
-  *gosub_scene equipment gear_sell_label "wool_blanket" "general"
-  *set ms_wool_blanket gear_label
+*if (has_camp_kit)
+  *gosub_scene equipment gear_sell_label "camp_kit" "general"
+  *set ms_camp_kit gear_label
 *if (has_waxed_oilcloth)
   *gosub_scene equipment gear_sell_label "waxed_oilcloth" "general"
   *set ms_waxed_oilcloth gear_label
@@ -263,6 +273,10 @@ Marlow pulls a pencil from behind his ear and clears a space on the counter. He 
     # ${ms_tool_kit}
       *set sell_item_id "tool_kit"
       *goto tm_store_sell_do
+  *if (has_shovel)
+    # ${ms_shovel}
+      *set sell_item_id "shovel"
+      *goto tm_store_sell_do
   *if (has_lute)
     # ${ms_lute}
       *set sell_item_id "lute"
@@ -275,9 +289,9 @@ Marlow pulls a pencil from behind his ear and clears a space on the counter. He 
     # ${ms_chalk_sticks}
       *set sell_item_id "chalk_sticks"
       *goto tm_store_sell_do
-  *if (has_wool_blanket)
-    # ${ms_wool_blanket}
-      *set sell_item_id "wool_blanket"
+  *if (has_camp_kit)
+    # ${ms_camp_kit}
+      *set sell_item_id "camp_kit"
       *goto tm_store_sell_do
   *if (has_waxed_oilcloth)
     # ${ms_waxed_oilcloth}
@@ -325,7 +339,7 @@ Marlow weighs the ${gear_sale_name}, checks it for wear, and counts the coin out
 *label tm_store_open_panel
 *set shop_open "tmstore"
 *set shop_rows ""
-*temp ms_any_sale (((((has_hemp_rope) or (has_pitch_torch)) or ((has_lamp_oil) or (has_hooded_lantern))) or (((has_tinderbox) or (has_chalk_sticks)) or ((has_wool_blanket) or (has_waxed_oilcloth)))) or (((has_lye_soap) or (has_trail_rations)) or ((has_tool_kit) or (has_lute))))
+*temp ms_any_sale (((((has_hemp_rope) or (has_pitch_torch)) or ((has_lamp_oil) or (has_hooded_lantern))) or (((has_tinderbox) or (has_chalk_sticks)) or ((has_camp_kit) or (has_waxed_oilcloth)))) or (((has_lye_soap) or (has_trail_rations)) or (((has_tool_kit) or (has_shovel)) or (has_lute))))
 *set tm_store_has_sale ms_any_sale
 *comment GEN:BEGIN tmstore_panel_rows
 *gosub_scene equipment shop_row_add "hemp_rope"
@@ -333,10 +347,11 @@ Marlow weighs the ${gear_sale_name}, checks it for wear, and counts the coin out
 *gosub_scene equipment shop_row_add "lamp_oil"
 *gosub_scene equipment shop_row_add "hooded_lantern"
 *gosub_scene equipment shop_row_add "tool_kit"
+*gosub_scene equipment shop_row_add "shovel"
 *gosub_scene equipment shop_row_add "lute"
 *gosub_scene equipment shop_row_add "tinderbox"
 *gosub_scene equipment shop_row_add "chalk_sticks"
-*gosub_scene equipment shop_row_add "wool_blanket"
+*gosub_scene equipment shop_row_add "camp_kit"
 *gosub_scene equipment shop_row_add "waxed_oilcloth"
 *gosub_scene equipment shop_row_add "lye_soap"
 *gosub_scene equipment shop_row_add "trail_rations"
@@ -352,10 +367,11 @@ Marlow weighs the ${gear_sale_name}, checks it for wear, and counts the coin out
 *gosub_scene equipment shop_cart_sell "lamp_oil"
 *gosub_scene equipment shop_cart_sell "hooded_lantern"
 *gosub_scene equipment shop_cart_sell "tool_kit"
+*gosub_scene equipment shop_cart_sell "shovel"
 *gosub_scene equipment shop_cart_sell "lute"
 *gosub_scene equipment shop_cart_sell "tinderbox"
 *gosub_scene equipment shop_cart_sell "chalk_sticks"
-*gosub_scene equipment shop_cart_sell "wool_blanket"
+*gosub_scene equipment shop_cart_sell "camp_kit"
 *gosub_scene equipment shop_cart_sell "waxed_oilcloth"
 *gosub_scene equipment shop_cart_sell "lye_soap"
 *gosub_scene equipment shop_cart_sell "trail_rations"
@@ -365,10 +381,11 @@ Marlow weighs the ${gear_sale_name}, checks it for wear, and counts the coin out
 *gosub_scene equipment shop_cart_buy "lamp_oil"
 *gosub_scene equipment shop_cart_buy "hooded_lantern"
 *gosub_scene equipment shop_cart_buy "tool_kit"
+*gosub_scene equipment shop_cart_buy "shovel"
 *gosub_scene equipment shop_cart_buy "lute"
 *gosub_scene equipment shop_cart_buy "tinderbox"
 *gosub_scene equipment shop_cart_buy "chalk_sticks"
-*gosub_scene equipment shop_cart_buy "wool_blanket"
+*gosub_scene equipment shop_cart_buy "camp_kit"
 *gosub_scene equipment shop_cart_buy "waxed_oilcloth"
 *gosub_scene equipment shop_cart_buy "lye_soap"
 *gosub_scene equipment shop_cart_buy "trail_rations"

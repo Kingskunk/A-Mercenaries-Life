@@ -80,52 +80,6 @@ befriend it — DC12 Animal handling checks are required
 to make the bear doo certain actions — on these checks
 the party has advantage if food is involved
 
-THE HIDDEN SPRING
-In a particularly thick area, on a rocky-muddy hillside
-the party starts to hear the trickling of water. Looking
-for the source, under the bushes they can identify a bit
-rockier terrain, and a small spring originating from the
-ground.
-Water is clean and attracts nearby fa una, players can
-replenish their waterskins, and whoever drinks from the
-spring will lose one level of Exhaustion. (Effect does not
-stack)
-
-FOREST WATCHTOWER
-A square shaped building with a 30 -foot-high
-watchtower on top of it. It is inhabited by a trapper —
-who is friendly to all — unless he suspects the guests to
-be shapeshifters.
-Players can meet the trapper outside of their cabin
-setting up traps, processing leather, going to hunt, or
-smoking their pipe. The trapper will be cautious and will
-need to be convinced (DC12 Persuasion check) that the
-guests are not changelings, or shapeshifters. If any
-player uses an effect that alters their appearance, the
-trapper will cease to communicate and lock themselves
-in their home.
-Upon establishing friendly relations, the trapper will
-gift warm winter clothing made from fox and wolf fur to
-the travelers and supply them with rations if they
-require it.
-GERT BERTOS - HUMAN TRAPPER
-A forest hermit, infrequently meeting outsiders, making a
-living off the land, and maintaining their watchtower
-
-------------------------------------------
-RECKLESS HUNTERS
-Walking in the forest an arrow flies dangerously close to
-the face of one party member. Shortly afterwards you
-hear a loud surprised and relieved shout and a woman
-say "You almost hit them you bastard! Does that look
-like a deer to you?"
-The 2 Hunters (Maria and Pontus) then close in
-profusely apologizing.
-They are a pair, who like to go out hunting but usually
-do not have much success — due to the lack of skill. They
-are trying regardless!
-They will invite you for dinner in the nearby village as
-a compensation for the scary experience
 -------------------------------------------------
 DARK FRIEND
 From the bushes a small Panther walks out slowly. It
@@ -137,16 +91,55 @@ happy and has no care whatsoever of anyone being
 around in its territory.
 
 -------------------------------------------------
-CIRCLE OF FERNS
-A small clearing in the middle of the forest, with light
-ferns growing in a visible circle pattern. The center of
-the circle at first glance seems empty, devoid of
-vegetation.
-In the center an orc is buried, with their weapons and
-earthly belongings, without a headstone or any other
-marker.
-Players with a DC12 Religion check can identify that
-this place resembles a burial site. Detect Magic spell will
-give a signal from 6 feet below.
-in the center, the party can find rusted weapons, and armor, with a bit of silver as the only
-thing worth taking.
+
+THE TALKING TREE
+An old looking tree eerily resembles a face. As soon as
+the party would write this off as a coincidence, they can
+see the tree open two yellow eyes and turn towards them.
+The tree can be used as a "quest giver" a source of
+information, or a side plot to find out why he is able to
+• The tree speaks common and is friendly to the players.
+• It refers to itself as "Bark".
+• It has a hushed voice and loves company.
+• Not a lot of people come into this part of the forest and
+realize that a sentient tree is here. Those who do,
+usually run away.
+• It does not remember its past, for as long as Bark
+remembers it has always been a tree
+
+BARK - TREE
+Large, green leafed, healthy looking tree with face like
+protrusions on the trunk in 5-foot height. It has yellow eyes and
+loves company. Bark has not much to tell but can share details
+about how the forest came to be, as it is almost the same age as
+all other trees.
+Bark mentions that it can communicate with the trees through root
+connections — they share general emotions and images with it —
+and can relay their needs, worries or happiness through the
+connection. 
+
+Recently the trees have been complaining about a dark presen
+ce deeper in the woods, that has been posioning one of the water streams near a grove and slowly corrupting the northwest area of the forest. If the party helps end the source of this corruption, Bark promises a reward.
+----------------------------------------------------
+
+While traveling deep in the forest, the
+adventurers happen upon a violent feud
+between two tribes of sprites vying to
+add a sacred grove to their own territory. While such
+disputes among the fey are not uncommon, it is rare for
+these hostilities to escalate into warfare.
+
+Coilltean Grove is tended by a dryad caretaker named
+Flùràlainn. She has unsuccessfully
+tried to negotiate a truce between the Briarvine and
+Thornbranch sprite tribes - even offering to evenly
+divide her home between them if it would stop the
+war. When diplomacy failed, she resorted to using
+force to dissuade them from their actions. This
+prompted the sprites to set her most beloved tree
+ablaze.
+
+The player arrives as the frantic dryad attempts
+to douse the flames. The distraught Flùràlainn begs for
+assistance (20 gallons of water to extinguish the tree or
+it is destroyed in 4 rounds).

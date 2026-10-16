@@ -471,13 +471,14 @@ You scrape a bold cross into the bark at head height, so you will know this junc
 
 *label lsf_n_j5
 
-[b]◈ FOREST TRAIL 5[/b]
+[b]◈ THE WEST PATH[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  The dark under the trees is close, and you feel your way. This is forest trail 5. Nothing is written here yet.
+  The earth under your ${feet_prose} is packed hard and smooth, wider than any animal track. At the edges your hands find stems with their tops cut off at a slant, the cut ends rough and dry.
 *else
-  This is forest trail 5. Nothing is written here yet.
+  The path leaves the cleared ground around the lodge and runs west, beaten wider and smoother than the animal tracks. Hazel stems crowd both sides, and some have been cut off at a slant, the cut ends pale.
+*gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
   # Go east.
@@ -632,13 +633,14 @@ You find the first handholds in the rock and test each before you trust it.
 
 *label lsf_n_j8
 
-[b]◈ FOREST TRAIL 8[/b]
+[b]◈ WHERE THE PATH SPLITS[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  The dark under the trees is close, and you feel your way. This is forest trail 8. Nothing is written here yet.
+  The path splits under your ${feet_prose}. To the north the ground tilts up, dry and gritty. To the south it drops away into wet, soft leaves, and a sour, muddy smell comes up it. A leaning trunk stands at the fork, its bark peeling in curls under your fingers.
 *else
-  This is forest trail 8. Nothing is written here yet.
+  The path splits under a leaning birch whose white bark peels in curls. One way climbs north, over rising ground where the trees stand thinner. The other drops south into deep shade and damp leaves, and a sour, muddy smell comes up it.
+*gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
   # Go north.
@@ -660,13 +662,14 @@ You find the first handholds in the rock and test each before you trust it.
 
 *label lsf_n_j9
 
-[b]◈ FOREST TRAIL 9[/b]
+[b]◈ THE RISING PATH[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  The dark under the trees is close, and you feel your way. This is forest trail 9. Nothing is written here yet.
+  The path climbs a long slope. Dry branches crack under your ${feet_prose}, stripped of their bark, and your hands find long smooth scars running down the trunks beside you. The air smells faintly of old smoke, and the trees ahead feel farther apart.
 *else
-  This is forest trail 9. Nothing is written here yet.
+  The path climbs a long slope between trunks scarred with black streaks. Dead branches lie across it, peeled and white, and the air smells faintly of old smoke. Higher up, the trees open out.
+*gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
   # Go north.
@@ -1405,17 +1408,49 @@ You crouch at the edge of the hollow and go over the ground a hand's width at a 
 *gosub_scene dungeon dg_time
 *goto lsf_n_r2
 
+*comment THE CIRCLE OF FERNS (Room 3, from the user's own pool of ideas, 2026-10-15). A clearing ringed by ferns around a bare middle, where someone was buried with their gear and no marker. The player works out it is a grave
+*comment with a Religion check (DC 12, lit places only, five minutes, retryable) or with Detect Magic (works in the dark; dg_dm_check and dg_dm_cast in dungeon.txt, a Wizard casts it as a ritual), which sets lsf_ferns_known. Once
+*comment known, digging takes two hours by hand or one with a shovel (has_shovel, sold in the general stores) and finds rusted gear and a little silver (3 silver marks, once ever: lsf_ferns_dug, paid once under the currency lock). The rest of the grave is left where it lies.
 *label lsf_n_r3
 
-[b]◈ FOREST ROOM 3[/b]
+[b]◈ THE CIRCLE OF FERNS[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
+*gosub_scene dungeon dg_dm_check
 *if (dg_dark)
-  The dark under the trees is close, and you feel your way. This is forest room 3. Nothing is written here yet.
+  Your ${feet_prose} leave the leaf litter and brush through cool, wet fronds that stand in a ring around a patch of bare, packed earth.
 *else
-  This is forest room 3. Nothing is written here yet.
+  A small clearing opens in the forest, ringed by pale green ferns growing in a circle too even to be chance. Inside the ring the ground is bare and dark, and only a little moss grows in it.
+*if (lsf_ferns_dug)
+  *line_break
+  The middle of the ring has been dug out and has sunk into a shallow dip.
+*elseif (lsf_ferns_known)
+  *line_break
+  You know what the ring is now. Someone lies about six feet under the bare middle, buried under plain earth.
+*gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
+  *if ((not(lsf_ferns_known)) and (not(dg_dark)))
+    # Study the ring of ferns. [~5 min]@{show_stat_hints  [Religion DC 12]|}
+      *goto lsf_ferns_study
+  *if (((not(lsf_ferns_known)) and (known_detect_magic)) and (dg_dm_can))
+    *if (dg_dm_cost = "slot")
+      # Cast Detect Magic over the clearing. [Detect Magic, uses a spell slot, ~5 min]
+        *goto lsf_ferns_detect
+    *if (dg_dm_cost = "ritual")
+      # Cast Detect Magic over the clearing. [Detect Magic as a ritual, no slot, ~15 min]
+        *goto lsf_ferns_detect
+  *if (((not(lsf_ferns_known)) and (known_detect_magic)) and (not(dg_dm_can)))
+    # (You have no spell slot left to cast Detect Magic.)
+      The words come and the air stays still. Every slot you had is spent.
+      *goto lsf_n_r3
+  *if ((lsf_ferns_known) and (not(lsf_ferns_dug)))
+    *if (has_shovel)
+      # Dig down in the bare middle of the ring with your shovel. [~1 hour]
+        *goto lsf_ferns_dig
+    *else
+      # Dig down in the bare middle of the ring. [~2 hours]
+        *goto lsf_ferns_dig
   # Go north.
     *set dg_dest "lsf_j11"
     *set dg_dest_hall true
@@ -1424,6 +1459,69 @@ You crouch at the edge of the hollow and go over the ground a hand's width at a 
     *set dg_dest "lsf_j6"
     *set dg_dest_hall true
     *goto lsf_move
+
+*label lsf_ferns_study
+You walk the edge of the ring slowly, then stand in its bare middle and turn on your heel.
+*gosub_scene dice_engine roll_skill_check 12 "religion" "" "" "" "" ""
+*if (check_success)
+  The ring is too round and too even, and the ground inside it is packed and bare the way earth is where it has been dug once and filled in again. You have seen graves marked this way, by a ring of something that grows over what lies below.
+  *set lsf_ferns_known true
+  *line_break
+  [b][The ring of ferns is a grave][/b]
+*else
+  You see a pretty clearing ringed by ferns, and the shape stays a puzzle.
+*set dg_mins 5
+*set dg_time_id "lsf_ferns_study"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r3
+
+*label lsf_ferns_detect
+*gosub_scene dungeon dg_dm_check
+*gosub_scene dungeon dg_dm_cast
+*if (dg_dm_cost = "ritual")
+  You sit at the edge of the ring and speak the words slowly, the long way, as the book sets them out. A quarter of an hour later the clearing takes on a pale shimmer.
+*else
+  You speak the words and feel the spell leave you, and the clearing takes on a pale shimmer.
+*line_break
+One thing glows: right under the middle of the ring, about six feet down, a small light hangs in the earth, steady as a coin laid on a table.
+*set lsf_ferns_known true
+*line_break
+[b][The ring of ferns is a grave][/b]
+*set dg_mins 5
+*if (dg_dm_cost = "ritual")
+  *set dg_mins 15
+*set dg_time_id "lsf_ferns_detect"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r3
+
+*comment DIGGING: two hours by hand, one with a shovel. The silver is paid once under the currency lock, so a refresh cannot pay it twice; the rusted gear is not taken.
+*label lsf_ferns_dig
+*if (has_shovel)
+  You kneel in the bare middle of the ring and drive your shovel into the packed earth. The blade rings on roots and stones, and six feet is deeper than it sounds. The hole narrows as it goes.
+*else
+  You kneel in the bare middle of the ring and dig with what you have: a knife, a flat stone, your hands. The earth is packed hard and full of roots, and six feet is deeper than it sounds. The hole narrows as it goes.
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  At last your fingers strike bone.
+*else
+  At last a pale curve shows in the dirt: bone.
+*line_break
+A skeleton lies on its back with its arms folded, big-boned, and the lower jaw carries two long tusks. An orc, laid here with care. Their weapons and armor lie beside them, rusted to red flakes that crumble when you lift them. At the hip are the rotted remains of a pouch, and in it a small stack of silver marks, black with age and still silver. The silver is all that is worth carrying away, and you leave the rest where it lies.
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount 30
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*set lsf_ferns_dug true
+*line_break
+[b][💰 Found: 3 Silver Marks][/b]
+*set dg_mins 120
+*if (has_shovel)
+  *set dg_mins 60
+*set dg_time_id "lsf_ferns_dig"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r3
 
 *label lsf_n_r4
 
@@ -1511,15 +1609,22 @@ ${use_text}
   *gosub_scene dungeon dg_time
 *goto lsf_n_r4
 
+*comment THE LIGHTNING OAK (Room 5, the user's pick, 2026-10-15; the oak is invented here). The top of the Rising Path: an enormous oak split by lightning over bare ash. It is a landmark and nothing more. It once offered a piece of
+*comment lightning glass to sift out of the ash, removed the same day because the user does not want items that exist only to be sold. In a storm the room says you keep clear of the tree. A lit and a dark version, then the
+*comment shared forest layers.
 *label lsf_n_r5
 
-[b]◈ FOREST ROOM 5[/b]
+[b]◈ THE LIGHTNING OAK[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  The dark under the trees is close, and you feel your way. This is forest room 5. Nothing is written here yet.
+  The slope levels out, and your hand finds a trunk wider than your arms can reach, split from top to bottom. The gap between the halves is as wide as a doorway, and the ground there is dry and gritty with ash. In the grit your fingers find short, rough tubes, hard as stone.
 *else
-  This is forest room 5. Nothing is written here yet.
+  The slope ends in an open ring of ground around one enormous oak. Lightning has split it from crown to roots, and the two halves lean apart, black and bare inside, with a gap between them wide enough to walk through. The ground under it is bare grey ash, and short rough tubes of grey glass lie half-buried in it around the roots.
+*if (weather = "Storm")
+  *line_break
+  Thunder rolls close overhead, and you keep to the edge of the clearing, well away from the oak.
+*gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
   # Go east.

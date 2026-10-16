@@ -45,15 +45,23 @@
 *line_break
 [b][⏳ Overworld Hour: ${clock_time} (${time_period}) | Hit Points: ${hp_current}/${hp_max}${hub_condition_str}][/b]
 *line_break
-You have made camp off the road, in the best patch of ground you could find.
+You have made camp in the best patch of ground you could find.
 *if (cp_fire)
-  A small fire burns in a ring of stones.
+  A small fire burns at the center of the camp.
 *else
   You have no way to light a fire, and the camp is cold.
+*if (has_camp_kit)
+  *gosub_scene calendar camp_kit_state
+  *if (camp_kit_tier = "new")
+    The kit's tent is up and the canvas is tight.
+  *elseif (camp_kit_tier = "worn")
+    The kit's tent is up, its canvas faded and soft at the seams.
+  *else
+    The kit's tent is up, sagging, with a seam open at one corner.
 *if ((weather_wet) and (has_waxed_oilcloth))
-  The oilcloth is stretched over a low branch against the wet.
+  The oilcloth is spread over your gear against the wet.
 *elseif (weather_wet)
-  The wet comes straight through the branches.
+  The wet settles on everything in the camp.
 
 *choice
   # Sleep through the night. [~8 Hours]
@@ -75,6 +83,9 @@ You have made camp off the road, in the best patch of ground you could find.
   *if (has_trail_rations)
     # Eat a trail ration.
       *goto camp_eat
+  *if ((has_camp_kit) and (camp_kit_wear >= 8))
+    # Mend the camp kit. [~1 Hour]@{show_stat_hints  [Survival or Sleight of Hand DC 12]|}
+      *goto camp_kit_mend
   *if (cp_train_ok)
     # Train on your own. [~${training_hours} Hours]
       *goto camp_train
@@ -141,7 +152,7 @@ You have made camp off the road, in the best patch of ground you could find.
 [b]◈ CAMP[/b]
 *line_break
 *if (short_rest_pick = 1)
-  You sit with your back to a trunk and let your breathing settle. The hour passes slowly.
+  You sit down with your pack at your back and let your breathing settle. The hour passes slowly.
 *if (short_rest_pick = 2)
   You loosen your grip, roll the stiffness out of your shoulders, and let the camp go quiet around you.
 *if (short_rest_pick = 3)
@@ -154,6 +165,35 @@ You have made camp off the road, in the best patch of ground you could find.
   The strain behind your eyes eases, and some of what you had spent comes back to you.
 *line_break
 [b][🕐 Short Rest | 1 hour | ${short_rest_gave_text} restored | ${short_rests_left} / ${short_rests_max} short rests left | ${clock_time}][/b]
+*page_break Back to the fire…
+*goto camp_hub
+
+*comment ── Mend the camp kit (2026-10-15). An hour with the needle and waxed thread rolled inside it. A Survival or Sleight of Hand check (Tool Kit adds +1 through check_task_type "repair", DC 12): a pass takes 8 points of wear off, which is one tier back; a miss
+*comment costs only the hour. The wear is changed inside the page lock, so a refresh cannot mend it twice. Offered only when the kit is Worn or Ragged. ──
+*label camp_kit_mend
+You spread the camp kit out on the ground and go over it a seam at a time with the bone needle and the waxed thread.
+*set check_task_type "repair"
+*gosub_scene dice_engine roll_skill_check 12 "survival" "" "sleight_of_hand" "" "" ""
+*set check_task_type "none"
+*if (check_success)
+  The stitches pull the worst of the seams back together, and the patched canvas holds its shape again.
+  *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+    *set camp_kit_wear (camp_kit_wear - 8)
+    *if (camp_kit_wear < 0)
+      *set camp_kit_wear 0
+    *set stat_bump_locked true
+    *set locked_stat_bump_page_id page_id
+*else
+  The thread bunches and the patch puckers, and the seam is no better by the time the hour is up.
+*set exposure_base_mins 60
+*set exposure_camping true
+*gosub_scene calendar calc_exposure
+*set exposure_camping false
+*set hours_to_pass 1
+*set minutes_to_pass 0
+*set time_advance_call_id "camp_kit_mend_1"
+*gosub_scene calendar advance_time
+*gosub camp_after_time
 *page_break Back to the fire…
 *goto camp_hub
 

@@ -12,7 +12,7 @@
 *comment the exposure of the moment (calendar.txt calc_exposure: the weather changes while you walk, so a leg after midnight pays the new day's weather) and moves the clock once, trail
 *comment rations are eaten for you at the hunger point (calendar.txt advance_time), and one summary line is printed before the new overworld page follows on the same page with the new tile.
 *comment Nothing stops the player at each tile. The player stops by picking a nearer tile first and camping there: ow_camp is an 8-hour sleep on any tile that is not a town, which clears
-*comment fatigue. A camp counts as a shared bunk for resolve_sleep (so the wool blanket's +1 HP works), the oilcloth halves its rain, a flint and tinderbox (or the cantrips Fire Bolt and Prestidigitation) halves its cold. Roadside inns and
+*comment fatigue. A camp counts as a shared bunk for resolve_sleep (so the camp kit's bedroll gives its +1 HP), the oilcloth halves its rain, a flint and tinderbox (or the cantrips Fire Bolt and Prestidigitation) halves its cold. Roadside inns and
 *comment road events stop a journey on the tile they happen on (see ow_event below and travel_events.txt).
 *comment
 *comment A replay (a refresh, or opening Stats and returning) reruns a page from its start on top of its END state, so ow_travel must not read a value it changes itself. The route is
@@ -262,7 +262,7 @@ ${ow_here_text}
 *return
 
 *comment ── a night's sleep on the road: 8 hours (or, when dawn is 6 to 12 hours off, the option to sleep until dawn at 06:00), fatigue cleared. Only on a tile that is not a town (ow_can_camp, set by ow_here). Same order as every sleeping place: the clock first (with the
-*comment    exposure of lying out), the death check, then resolve_sleep. The camp is a SHARED bunk for resolve_sleep (no sleep-quality buff, 1 HP a night, and the wool blanket's +1 HP works); the
+*comment    exposure of lying out), the death check, then resolve_sleep. The camp is a SHARED bunk for resolve_sleep (no sleep-quality buff, 1 HP a night, and the camp kit's bedroll gives its +1 HP); the
 *comment    oilcloth halves the rain and a fire (a flint and tinderbox, or Fire Bolt or Prestidigitation) halves the cold (calc_exposure, exposure_camping). Sleeping out costs hunger, not rest: the clock still runs, and a ration is
 *comment    eaten for you if one comes due. All of it sits under ow_camp_locked, so a replay cannot sleep twice. ──
 *comment ── BEFORE THE SLEEP: a camp at dusk or in the dark may bring a stranger to the fire (Overworld.campEventPlan, rare, and on the road events' cooldown). Planned once under this page's lock, from the
@@ -285,6 +285,7 @@ ${ow_here_text}
   *set ow_rations_total 0
   *if (ow_camp_ok)
     *set ow_camp_wet weather_wet
+    *set ow_camp_severe (weather_severity >= 3)
     *comment How long: a fixed 8 hours, or until 06:00 (the same sum ow_here used to offer it: minutes from now to 360 round the clock, kept between 6 and 12 hours so an odd moment cannot give a 3-hour night).
     *set ow_camp_minutes 480
     *if (ow_camp_mode = "dawn")
@@ -314,13 +315,16 @@ ${ow_here_text}
     *set sleep_tier_stat2 "none"
     *set sleep_tier_bonus2 0
     *gosub_scene calendar resolve_sleep
+    *gosub_scene calendar camp_kit_wear_night
   *set ow_camp_locked true
   *set locked_ow_camp_page_id page_id
 *if (not(ow_camp_ok))
   [b][⛺ There is no camping in a town.][/b]
   *line_break
   *goto ow_here
-You make camp beside the road.
+You make camp for the night.
+*if ((has_camp_kit) or (not(ow_kit_note = "")))
+  You pitch the kit's tent in the best patch of ground, and the bedroll goes down inside it.
 *if (te_company = "guest")
   You sleep by the fire ${te_first} offered, and in the morning ${te_sub} has gone ahead and left the embers banked.
 *elseif (has_tinderbox)
@@ -334,9 +338,11 @@ You make camp beside the road.
 *if (te_company = "host")
   ${te_first} is gone before you wake, and has left the wood stacked beside the ashes.
 *if ((ow_camp_wet) and (has_waxed_oilcloth))
-  You stretch the oilcloth over a low branch, and the rain runs off it.
+  You pull the oilcloth over yourself and your gear, and the rain runs off it.
 *if (not(sleep_gear_note = ""))
   ${sleep_gear_note}
+*if (not(ow_kit_note = ""))
+  ${ow_kit_note}
 *line_break
 *if (ow_camp_mode = "dawn")
   [b][⛺ You slept until dawn. Fatigue cleared.][/b]

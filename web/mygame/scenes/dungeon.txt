@@ -684,3 +684,44 @@
     *set dg_swa_locked true
     *set locked_dg_swa_page_id page_id
 *return
+
+*comment Detect Magic (2026-10-15, the Circle of Ferns in the Longshade Forest): what casting it would cost this character, reported the way dg_swa_check reports Speak with Animals. A Wizard who knows it casts it as a
+*comment ritual: no slot, and ten extra minutes. A Bard, Ranger or Warlock pays one slot from their own pool. There is no racial version. Outputs: dg_dm_can, dg_dm_cost ("none", "ritual", "slot") and dg_dm_why. The
+*comment caller adds the casting time (5 minutes, 15 for a ritual) with dg_time. dg_dm_cast pays it (replay-locked). Call dg_dm_check first.
+*label dg_dm_check
+*set dg_dm_can false
+*set dg_dm_cost "none"
+*set dg_dm_why ""
+*if (not(known_detect_magic))
+  *return
+*if (character_class = "wizard")
+  *set dg_dm_cost "ritual"
+  *set dg_dm_can true
+  *return
+*set dg_dm_cost "slot"
+*temp dgdm_slots 0
+*if (character_class = "bard")
+  *set dgdm_slots bard_spell_slots
+*if (character_class = "warlock")
+  *set dgdm_slots warlock_spell_slots
+*if (character_class = "ranger")
+  *set dgdm_slots ranger_spell_slots
+*if (dgdm_slots <= 0)
+  *set dg_dm_why "You have no spell slot left to cast it."
+  *return
+*set dg_dm_can true
+*return
+
+*label dg_dm_cast
+*if (dg_dm_can)
+  *if (not(dg_dm_locked)) or (not(locked_dg_dm_page_id = page_id))
+    *if (dg_dm_cost = "slot")
+      *if (character_class = "bard")
+        *set bard_spell_slots - 1
+      *if (character_class = "warlock")
+        *set warlock_spell_slots - 1
+      *if (character_class = "ranger")
+        *set ranger_spell_slots - 1
+    *set dg_dm_locked true
+    *set locked_dg_dm_page_id page_id
+*return
