@@ -105,6 +105,9 @@ function genCreates() {
   return L;
 }
 
+// A thrown item and a special arrow are used only in a fight, from their own buttons on the fight's main menu, so neither is offered in the satchel menu or the fight's Use-an-item list.
+function isNoUse(it) { return !!(it.effect && (it.effect.type === "throw" || it.effect.type === "arrow")); }
+
 // One line for menus and banners: what using the item does.
 function effectSummary(it) {
   var ef = it.effect;
@@ -112,7 +115,7 @@ function effectSummary(it) {
   if (ef.type === "wash") return "Hygiene back to Clean, with water at hand";
   if (ef.type === "dressing") return "+" + ef.bonus + " HP from your next sleep";
   if (ef.type === "ration") return "Clears hunger, like a meal";
-  if (ef.type === "throw") return ef.summary;
+  if (ef.type === "throw" || ef.type === "arrow") return ef.summary;
   var h = ef.minutes % 60 === 0 ? (ef.minutes / 60) + " hours" : ef.minutes + " minutes";
   return "+" + ef.bonus + " " + ef.stat.toUpperCase() + " for " + h;
 }
@@ -153,7 +156,7 @@ function genGearInfo() {
         // no fields: use_consumable clears the hunger clock itself, and calendar.txt advance_time eats one for you on the overworld
       } else if (ef.type === "dressing") {
         L.push('  *set gear_eff_bonus ' + ef.bonus);
-      } else if (ef.type === "throw") {
+      } else if (ef.type === "throw" || ef.type === "arrow") {
         // no fields: a thrown item is used only in a fight, and combat.txt fight_throw_item / combat_spells.txt resolve_throw_item work from the item id
       } else {
         throw new Error("item '" + it.id + "': unknown effect type " + ef.type);
@@ -228,6 +231,7 @@ function loadoutBlock(kind) {
       L.push('  *set weapon_hands ' + q(o.hands));
       L.push('  *set weapon_prose ' + q(o.prose));
       if (o.reach) L.push('  *set weapon_reach ' + q(o.reach));
+      if (o.ammo) L.push('  *set weapon_ammo ' + q(o.ammo));
     } else if (kind === "ring") {
       need(o, ["desc", "prose"]);
       L.push('*if (item_id = ' + q(it.id) + ')');
@@ -396,10 +400,10 @@ function genInventory() {
         L.push('  badge: function (s) { return ' + q(effectSummary(it)) + ' + (' + on + '(s) ? " · active, using it refreshes" : ""); },');
         L.push('  useLabel: function (s) { return ' + on + '(s) ? "Refresh" : "Use"; },');
       } else {
-        L.push('  badge: ' + q(effectSummary(it)) + (it.effect.type === "throw" ? '' : ','));
+        L.push('  badge: ' + q(effectSummary(it)) + (isNoUse(it) ? '' : ','));
       }
       // Nothing to "Use" from the bag for a thrown item: it is thrown from the combat menu.
-      if (it.effect.type !== "throw") L.push('  use: true');
+      if (!isNoUse(it)) L.push('  use: true');
     }
     if (it.kind === "ring") {
       L.push('  badge: function (s) { return (s.equipped_ring1_id === ' + q(it.id) + ' || s.equipped_ring2_id === ' + q(it.id) + ') ? ' + q(d.badgeOn || "Worn") + ' : ' + q(d.badgeOff !== undefined ? d.badgeOff : "Stowed") + '; },');
@@ -448,7 +452,7 @@ function genShop(shop) {
 // ---------------------------------------------------------------- consumables (use menus)
 function consumables(combatOnly) {
   // A thrown item (effect type throw) is used only in a fight, and from its own Throw button on the fight's main menu (genThrowOptions), so it appears in neither the satchel menu nor the fight's Use-an-item list.
-  return items.filter(function (it) { return it.kind === "consumable" && it.effect.type !== "throw" && (!combatOnly || it.combat); });
+  return items.filter(function (it) { return it.kind === "consumable" && !isNoUse(it) && (!combatOnly || it.combat); });
 }
 function throwItems() {
   return items.filter(function (it) { return it.kind === "consumable" && it.effect.type === "throw" && it.combat; });
@@ -463,6 +467,22 @@ function genThrowOptions() {
     L.push('    # [b][ACTION][/b] [b][Throw: ' + it.title + '][/b] Hurl it at ${combat_med_epithet}.@{show_stat_hints  [' + effectSummary(it) + ']|}');
     L.push('      *set use_item_id ' + q(it.id));
     L.push('      *goto fight_throw_item');
+  });
+  return L;
+}
+// One option per special arrow (effect type arrow) for the fight's main menu, beside the plain weapon attack. They share the name "Shoot" and the battle bar folds them into one Shoot button with a fly-out. Offered while an attack is
+// unspent and the wielded weapon takes that ammunition (weapon_ammo, set from the loadout's ammo field); the shot is the ordinary weapon attack with the arrow's rider (combat.txt resolve_weapon_attack_choice, combat_arrow_apply).
+function arrowItems() {
+  return items.filter(function (it) { return it.kind === "consumable" && it.effect.type === "arrow" && it.combat; });
+}
+function genArrowOptions() {
+  var L = [];
+  arrowItems().forEach(function (it) {
+    L.push('*if (' + flag(it) + ')');
+    L.push('  *if (((combat_can_attack) and (weapon_ammo = ' + q(it.effect.ammo) + ')) and ((combat_wpn_far_ok) or (combat_primary_reach)))');
+    L.push('    # [b][ACTION][/b] [b][Shoot: ' + it.title + '][/b] Loose it at your target.@{show_stat_hints  [' + effectSummary(it) + ']|}');
+    L.push('      *set combat_arrow_kind ' + q(it.effect.element));
+    L.push('      *goto resolve_weapon_attack_choice');
   });
   return L;
 }
@@ -637,6 +657,7 @@ setRegion(F.stats, "codex_use_check", genUseCheck(false));
 setRegion(F.stats, "codex_use_check2", genUseCheck(false));   // the satchel page repeats the check
 setRegion(F.stats, "codex_use_options", genUseOptions("codex_use_do", false));
 setRegion(F.combat, "combat_throw_options", genThrowOptions());
+setRegion(F.combat, "combat_arrow_options", genArrowOptions());
 setRegion(F.combat, "combat_use_check", genUseCheck(true));
 setRegion(F.combat, "combat_use_options", genUseOptions("fight_use_do", true));
 CATALOG.shops.forEach(function (shop) {

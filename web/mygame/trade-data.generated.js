@@ -1944,6 +1944,54 @@ window.TRADE_DATA = {
     "herbalistPiece": 0,
     "countVar": ""
    }
+  },
+  "fire_arrow": {
+   "name": "fire arrow",
+   "title": "Fire Arrow",
+   "kind": "consumable",
+   "group": "",
+   "tier": "",
+   "retail": 5,
+   "weight": 0.1,
+   "minutes": 5,
+   "hint": "Shot: +1d4 fire, burns 2 turns",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "countVar": ""
+   }
+  },
+  "ice_arrow": {
+   "name": "ice arrow",
+   "title": "Ice Arrow",
+   "kind": "consumable",
+   "group": "",
+   "tier": "",
+   "retail": 8,
+   "weight": 0.1,
+   "minutes": 5,
+   "hint": "Shot: +1d4 cold, slows the target",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "countVar": ""
+   }
   }
  },
  "trades": {
@@ -2258,11 +2306,17 @@ window.TRADE_DATA = {
   },
   "trapper": {
    "title": "The Trapper's Bench",
-   "buyer": "",
+   "buyer": "general",
    "buy": [
-    "trail_rations"
+    "trail_rations",
+    "fire_arrow",
+    "ice_arrow"
    ],
-   "sell": []
+   "sell": [
+    "trail_rations",
+    "fire_arrow",
+    "ice_arrow"
+   ]
   }
  }
 };

@@ -540,6 +540,20 @@
       badge: "Thrown: 1d4 fire, then burns for 3 turns"
     },
     {
+      id: "fire_arrow", category: "consumables", owned: "has_fire_arrow",
+      weight: 0.1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_fire_arrow) || 0); return "Fire Arrow" + (n > 1 ? " ×" + n : ""); },
+      description: "Arrow wound with pitch-soaked cord that catches in open air.",
+      badge: "Shot: your bow attack plus 1d4 fire, then burns for 2 turns"
+    },
+    {
+      id: "ice_arrow", category: "consumables", owned: "has_ice_arrow",
+      weight: 0.1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_ice_arrow) || 0); return "Ice Arrow" + (n > 1 ? " ×" + n : ""); },
+      description: "Arrow tipped with pale frost-flint packed in damp moss.",
+      badge: "Shot: your bow attack plus 1d4 cold, and the target is slowed"
+    },
+    {
       id: "herbalists_kit", category: "provisions", owned: "has_herbalists_kit",
       weight: 1.5, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_herbalists_kit) || 0); return "Herbalist's Kit" + (n > 1 ? " ×" + n : ""); },

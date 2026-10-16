@@ -41,7 +41,8 @@
  *   stats     object of variables set last, so they win over weather/time/day and the preset
  *   rand      the forced roll before the first step that sets its own (default "mid")
  *   steps     [{ "pick": "text in the option" | number (1 = first option), "rand": "low"|"mid"|"high"|0..1,
- *               "whileAvail": true }]  whileAvail repeats the step until its option is gone (attack rounds)
+ *               "whileAvail": true, "optional": true }]  whileAvail repeats the step until its option is gone (attack rounds); optional skips the step
+ *               when its option is not on offer, instead of stopping with "pick not found" (one move list can then run through many different fights)
  *   picks     the same steps as one string: "text@high;other text*"  (@word sets rand, a trailing * = whileAvail)
  *   watch     variable names whose final values are reported
  *   refresh   true: after every page, replay it on a copy (what opening Stats and returning does) and
@@ -160,7 +161,7 @@ Scene.prototype.choice = function (data, isFakeChoice) {
     idx = typeof step.pick === "number" ? step.pick - 1 : names.findIndex(function (n) { return n.indexOf(step.pick) !== -1; });
     if (idx >= names.length) idx = -1;
     if (idx >= 0) break;
-    if (step.whileAvail) { D.stepIdx++; continue; }
+    if (step.whileAvail || step.optional) { D.stepIdx++; continue; }
     break;
   }
   if (D.stepIdx >= D.steps.length) {

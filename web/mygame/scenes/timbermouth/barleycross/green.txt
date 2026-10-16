@@ -14,7 +14,7 @@
 *label bc_hall
 [b]◈ THE COMMON AND THE GATHERING HALL[/b]
 *line_break
-The Gathering Hall is a single long room under a steep thatch, built of squared oak on a stone footing, with its door standing open on the common and a bench along its front. Inside are trestle tables stacked against one wall, a cold hearth at the far end, and a plank board holding papers beneath narrow wooden slats. A bell hangs in a little frame over the door, and the common spreads away below the bench, with its well-head, its pond and its notice post.
+The Gathering Hall is a single long room under a steep thatch, built of squared oak on a stone footing, with its door facing the common and a bench along its front. Inside are trestle tables stacked against one wall, a cold hearth at the far end, and a plank board holding papers beneath narrow wooden slats. A bell hangs in a little frame over the door, and the common spreads away below the bench, with its well-head, its pond and its notice post.
 
 *if (weather_severity >= 3)
   The door of the Hall has been pulled to against the weather, and the wind shakes the thatch and moans in the rafters. A fire has been lit in the cold hearth, and the benches along the walls are crowded with people who had nowhere else to be.
@@ -29,11 +29,14 @@ The Gathering Hall is a single long room under a steep thatch, built of squared 
 *elseif ((ground_state = "wet") and (not(weather_wet)))
   The floor inside the door is still dark from the last rain.
 
-*if (not(bc_head_seen))
-  *set bc_head_seen true
-  A halfling woman in a worn sheepskin waistcoat sits on the bench with her bare feet not quite reaching the ground, a folded packet of household papers across her knee and a pipe cold in her teeth, and she watches you cross the common the whole way. She is round, broad and brown-faced, with iron-grey curls cut short, and she hops down from the bench when you are close enough to speak to. "Wenna Hart. Village head, because nobody else would have it." She points with the pipe stem. "Business goes in the Hall. Idling goes by the pond. Both have kept people busy for years."
+*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+  *if (not(bc_head_seen))
+    *set bc_head_seen true
+    A halfling woman in a worn sheepskin waistcoat sits on the bench with a folded packet of household papers across her knee and a cold pipe between her teeth. She watches you cross the common, then hops down when you are close. "Wenna Hart. Village head, because nobody else would have it." She taps the hall door with her pipe stem. "Business goes in there. Idling goes by the pond. Both keep people busy."
+  *else
+    Wenna Hart sits on the bench with household papers across her knee, watching the common.
 *else
-  Wenna Hart sits on the bench with household papers across her knee, watching the common.
+  The bench outside the Hall is empty. Wenna has gone home; whatever is on the board can wait until daylight.
 
 *choice
   # Look over the notice post.
@@ -43,7 +46,14 @@ The Gathering Hall is a single long room under a steep thatch, built of squared 
     *set cr_inline true
     *goto_scene port_valen/radiant/hall_courier cr_read
   # Look in at the Hall.
-    The long room is empty and swept, and smells of dust, straw and old woodsmoke. The papers on the board are ruled into lines, one household to a line.
+    *if (weather_severity >= 3)
+      The long room is close with wet wool and woodsmoke. Families sit along the walls while children doze under the tables; the papers on the board are still ruled one household to a line.
+    *elseif ((weather = "Rain") or ((weather = "Snow") or (weather = "Sleet")))
+      A few villagers have taken the dry benches. The papers on the board are ruled one household to a line.
+    *elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+      The long room is dark and swept, with the board only a row of pale papers beneath its slats.
+    *else
+      The long room is empty and swept, and smells of dust, straw and old woodsmoke. The papers on the board are ruled one household to a line.
     *page_break Step back out onto the bench…
     *goto bc_hall
   # Walk back out onto the common.

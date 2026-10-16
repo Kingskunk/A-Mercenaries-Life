@@ -122,6 +122,8 @@ Recently the trees have been complaining about a dark presen
 ce deeper in the woods, that has been posioning one of the water streams near a grove and slowly corrupting the northwest area of the forest. If the party helps end the source of this corruption, Bark promises a reward.
 ----------------------------------------------------
 
+The Burning Tree of Coilltean Grove(Idea taken from another world, which I'm borrowing from, some parts need to be discared, others can be adapted if it can be cheaply done)
+
 While traveling deep in the forest, the
 adventurers happen upon a violent feud
 between two tribes of sprites vying to
@@ -142,4 +144,57 @@ ablaze.
 The player arrives as the frantic dryad attempts
 to douse the flames. The distraught Flùràlainn begs for
 assistance (20 gallons of water to extinguish the tree or
-it is destroyed in 4 rounds).
+it is destroyed ) (No water storage mechanic, I could make it, but even with it 20 gallons of water may still be  too much to carry. I am starting to wonder if we should have used the Dnd system of 1 strenght = 15 carry weight. Maybe using the shovel to throw dirt on the fire or other magiccal means / spells a character may have at their disposal could helps, sggestions needed. Althetics check? integlience check for ways to out the fire? Survival checks for what to do in a moment like that? all good choices.)
+
+(Our choice here would be to help, ob)
+
+If the adventurers successfully douse the flames they
+gain +10 on Charisma (Persuasion) checks made with
+Flùràlainn, and she considers them true friends.(I'm guessing this would pay off in the future)
+
+The tearful dryad explains that the sprites have all
+gone insane -each consumed with an unnatural greed
+to claim her home as their own. She explains that
+she has long been an ally to the sprites but recently
+darkness has taken over their minds.
+
+Unbeknownst to all, the nearby water supply, used
+by both tribes, has been tainted by an evil mage 
+named Dubhar, who watches gleefully at a distance
+while the sprites wage war. (He is also the one  who poisoned the water.)
+
+Meanwhile within the grove, the two tribes of
+sprites ferociously slaughter one another, but do
+not attack others unless they are directly engaged. If
+the adventurers attempt to stop the battle by force,
+both tribes attack (seven sprites targeting each PC)
+for consecutive two round intervals as long as they
+continue to interfere. ( Lets assume both tribes have 150 members, whoever designed this quest is being geneous here even with a party of 5 this would be impossible fight nless some kind of horde mechanic was involved and still. This would be an impossible fight to adapt, we can use horde mechanics, but the best thing to do is to punish the player for this choice, make the player loose some HP here to show that this is a futile endevor and a foolish choice they made.
+
+The evil mage is hiding in the dense foliage and intends to claim
+the grove as his own after the sprites have diminished their
+numbers and dealt with the dryad protector. He is none too
+pleased about the arrival of the adventurers, but only takes action
+if he is discovered (DC 15 [passive] Wisdom [Perception] check
+for a sense of being watched; DC 20 Wisdom [Perception] check
+to discover his location). (Seems like a high DC check for a lv 2 character, even when we create lvl 3, a lvl 3 character would still find this difficult of a DC check. I still like it. I'd reducde it just a bit to 12 / 15 and if you take the quest from brent first before coming here, you get advantage on that perception check.)
+
+If discovered, Dubhar attacks, while hiding behind a stout thorny briar
+He controls 3 Twig Blights
+
+Str 6, int 4, Dex 14, con 11, wis 8, cha 3, AC 14, HP 7 
+Vulnerable to Fire damage
+
+Pack Tactics. The blight has Advantage on an attack roll against a creature if at least one of the blight's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition.
+
+Actions
+Claw. Melee Attack Roll: +4, reach close only. Deals 1d4 + 2 Slashing damage.
+
+
+Evil Mage
+
+Dubhar abhors physical violence
+(when it applies to him), preferring to utilize greater invisibility
+and fly to flee rather than engage PCs who get too close to him.
+
+----------------------------------------

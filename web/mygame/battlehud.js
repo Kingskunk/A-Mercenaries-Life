@@ -330,6 +330,8 @@
   function variantArt(e, v) {
     // Throw: Grease Flask / Alchemist's Fire ... -- each thrown item wears its own art (ACTION_ICONS throw_<item>), the Throw icon when it has none.
     if (e.id === "throw") return (window.ACTION_ICONS || {})["throw_" + slug(v.label)] || "";
+    // Shoot: Fire Arrow / Ice Arrow ... -- each special arrow wears its own art (ACTION_ICONS shoot_<item>).
+    if (e.id === "shoot") return (window.ACTION_ICONS || {})["shoot_" + slug(v.label)] || "";
     if (e.id !== "booming_blade") return "";
     var st = statsNow(), art = window.ACTION_ICONS || {}, lab = String(v.label).toLowerCase();
     if (st.weapon && lab === String(st.weapon).toLowerCase()) return art.primary_melee || "";

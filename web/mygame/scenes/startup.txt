@@ -188,6 +188,9 @@
 *create weapon_type "melee"
 *comment How far a ranged weapon shoots (touch | short | medium | long), set by the loadout (equipment.txt); long unless the weapon says otherwise. combat_reach_medium is the tier "medium" means in this fight (2, or 3 in the six-band lane).
 *create weapon_reach "long"
+*comment weapon_ammo: what the wielded weapon shoots ("arrow" for the bows, "" for everything else); the special arrow options in a fight read it. The starting weapon keeps its own copy in starting_weapon_ammo.
+*create weapon_ammo ""
+*create starting_weapon_ammo ""
 *create sidearm_reach "long"
 *create combat_reach_medium 2
 *create combat_reach_tier_result 99
@@ -2661,6 +2664,18 @@
 *create combat_enemy4_position 3
 *create combat_enemy5_position 3
 *create combat_enemy6_position 3
+*comment Which side of the player an enemy stands on (2026-10-16, lane step 1): 1 = ahead (the far side, where every enemy started so far), -1 = behind. Distance (the legacy _range) is the gap whichever side it is, so
+*comment the lane coordinate an enemy's range is rebuilt into is the player's coordinate plus side times range. An enemy at distance 0 shares the player's tile and keeps its last side. Reset to 1 for every enemy at the start of every fight;
+*comment nothing sets -1 yet (a later step makes Slip Past and Push Forward cross an enemy and flip it).
+*comment combat_move_opens: set by fight_pick_nearest_target for the enemy a Push Forward or Fall Back is about. True when the move opens the gap to that enemy (a Fall Back from one ahead, a Push Forward away from one behind), false when it closes the gap.
+*create combat_move_opens false
+*create combat_enemy0_side 1
+*create combat_enemy1_side 1
+*create combat_enemy2_side 1
+*create combat_enemy3_side 1
+*create combat_enemy4_side 1
+*create combat_enemy5_side 1
+*create combat_enemy6_side 1
 *create combat_ally0_position 3
 *create combat_ally1_position 3
 *create combat_ally2_position 3
@@ -3385,6 +3400,16 @@
 *create dg_swa_why ""
 *create dg_swa_locked false
 *create locked_dg_swa_page_id 0
+*comment SPECIAL ARROWS (2026-10-15, Fire Arrow and Ice Arrow): combat_arrow_kind is the arrow the player picked ("fire", "ice" or ""), cleared the moment the shot is resolved; combat_arrow_used is the one actually loosed, and the rest
+*comment (the rider's damage, its resist or vulnerable tag, whether the grease caught, whether the target was set burning or slowed, the pick of prose line) is stored inside the weapon-attack lock so a replay prints the same page.
+*create combat_arrow_kind ""
+*create combat_arrow_used ""
+*create combat_arrow_dealt 0
+*create combat_arrow_suffix ""
+*create combat_arrow_grease false
+*create combat_arrow_burn false
+*create combat_arrow_slow false
+*create combat_arrow_v 1
 *create dg_dm_can false
 *create dg_dm_cost "none"
 *create dg_dm_why ""
@@ -5006,6 +5031,8 @@
 *create has_wooden_clogs false
 *create has_grease_flask false
 *create has_alchemists_fire false
+*create has_fire_arrow false
+*create has_ice_arrow false
 *create has_herbalists_kit false
 *create has_gem_agate false
 *create has_gem_citrine false
@@ -5077,6 +5104,8 @@
 *create spare_wooden_clogs 0
 *create spare_grease_flask 0
 *create spare_alchemists_fire 0
+*create spare_fire_arrow 0
+*create spare_ice_arrow 0
 *create spare_herbalists_kit 0
 *create spare_gem_agate 0
 *create spare_gem_citrine 0
@@ -5147,6 +5176,8 @@
 *create stow_saddlebags_wooden_clogs 0
 *create stow_saddlebags_grease_flask 0
 *create stow_saddlebags_alchemists_fire 0
+*create stow_saddlebags_fire_arrow 0
+*create stow_saddlebags_ice_arrow 0
 *create stow_saddlebags_herbalists_kit 0
 *create stow_saddlebags_gem_agate 0
 *create stow_saddlebags_gem_citrine 0
@@ -5217,6 +5248,8 @@
 *create cart_buy_wooden_clogs 0
 *create cart_buy_grease_flask 0
 *create cart_buy_alchemists_fire 0
+*create cart_buy_fire_arrow 0
+*create cart_buy_ice_arrow 0
 *create cart_buy_herbalists_kit 0
 *create cart_buy_gem_agate 0
 *create cart_buy_gem_citrine 0
@@ -5294,6 +5327,8 @@
 *create cart_sell_grave_ichor 0
 *create cart_sell_grease_flask 0
 *create cart_sell_alchemists_fire 0
+*create cart_sell_fire_arrow 0
+*create cart_sell_ice_arrow 0
 *create cart_sell_herbalists_kit 0
 *create cart_sell_gem_agate 0
 *create cart_sell_gem_citrine 0

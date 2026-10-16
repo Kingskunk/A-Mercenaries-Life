@@ -25,7 +25,14 @@
   // a place name that should wear another key's picture: name -> key (a name that is already a picture key needs no line)
   var ALIAS = {
     longshade_forest: "forest",   // the Longshade Forest dungeon
-    woodroad: "forest",           // an overworld tile of wooded road
+    woodroad: "overworld_forest_road", // an overworld tile of wooded road
+    the_river_road: "overworld_hilly_road", // temporary shared open-road view, until a flat-road backdrop exists
+    the_high_grey_road: "overworld_hilly_road",
+    marlcross: "village_green",
+    barleycross: "village_green",
+    ashrun_holt: "village_green",
+    port_valen: "city_harbour",
+    silt_conduits: "sewer",       // the Silt-Gate channels
     compound: "carrion_compound", // the Carrion compound, where the story starts
     harbor: "city_harbour",
     upper_wharves: "civic_heights",   // the Patrician Quarter: a stand-in (the stately civic square) until it has a picture of its own: Upper_Wharves_Day.png / _Night.png replaces it
@@ -39,6 +46,17 @@
     "alderford/redvein/red_lantern": "tavern",
     "alderford/whitefold/white_ram": "tavern",
     "port_valen/brinewick/reedhouse": "tavern",
+    "alderford/whitefold/fleecefold": "whitefold_fleecefold",
+    "timbermouth/ashrun_holt/longhouse": "ashrun_holt_longhouse",
+    "port_valen/brinewick/tide_house": "brinewick_tide_house",
+    "alderford/factors_hall": "shared_factors_hall",
+    "timbermouth/factors_hall": "shared_factors_hall",
+    "alderford/redvein/gather_house": "generic_village_gathering_hall",
+    "port_valen/marlcross/cross_hall": "generic_village_gathering_hall",
+    "alderford/timber_smithy": "generic_workshop_smithy",
+    "timbermouth/market": "town_market",
+    "alderford/lower_wharf_market": "town_market",
+    "alderford/talia_loft": "town_warehouse_loft",
     "prologue/battle_black_sinks": "siege"
   };
 
@@ -47,10 +65,15 @@
   // the rules, tried in order; each gets the stats and returns the name of where the player is, or nothing
   function tile(s) { var O = window.Overworld; return s.ow_on && O && O.nodes ? O.nodes[s.ow_pos] : null; }
   var RULES = [
+    function (s) { return s.sceneName === "overworld/camp" && s.has_camp_kit ? "generic_camp_tent_interior" : undefined; }, // the player-owned solo tent, never a company bivouac
+    function (s) { return s.sceneName === "timbermouth/workshops" && s.shop_open === "works" ? "generic_workshop_smithy" : undefined; }, // Roan's enclosed trade bench; the lane remains Timbermouth
+    function (s) { return s.shop_open === "halda" ? "generic_workshop_smithy" : undefined; }, // Halda trades from a working forge, not a goods shop
+    function (s) { return s.shop_open && s.shop_open !== "trapper" ? "generic_trade_shop" : undefined; }, // shop counters in settlements; the forest trapper stays outdoors
     function (s) { return SCENE_PLACES[s.sceneName]; },                                                // a scene that is a place of its own: an inn, the battle
     function (s) { if (s.shop_open) return "shop"; },                                                  // at a shop's counter
     function (s) { if (s.dg_in_run && s.dg_table && s.dg_table !== "none") return s.dg_table; },       // inside a dungeon: which one
     function (s) { var n = tile(s); return n ? n.name : undefined; },                                  // on the overworld: the tile's name,
+    function (s) { var n = tile(s); return n && n.kind === "road" && n.also === "hills" ? "overworld_hilly_road" : undefined; }, // a road through hilly ground
     function (s) { var n = tile(s); return n ? n.kind : undefined; },                                  //   then its kind of ground
     function (s) {                                                                                     // a Port Valen district, but only once the story is in the world:
       // current_district starts at "compound" and is only a remembered default before then, so the title screen, character creation, the prologue and the Developer menu have no district
@@ -64,6 +87,11 @@
   // A scene that is a place of its own (an inn, the battle) and a dungeon run stand alone: they never fall through to the district the player last stood in, which is only a stale
   // default there (the Silt-Gate channels are not the compound). A shop and the overworld do fall through to what is around them.
   function placeNames(s) {
+    // Developer screens are outside the fiction. Test state deliberately leaves useful world flags behind, so this
+    // has to run before EVERY location rule, not merely before the final district fallback below. Combat tests
+    // enter combat.txt with *gosub_scene, so they need the same exemption without muting real story combat.
+    var sn = String(s.sceneName || "");
+    if (/^dev_hub(?:\/|$)/.test(sn) || (sn === "combat" && /^fight_/.test(String(s.dctest_label || "")))) return [];
     var out = [], alone = SCENE_PLACES[s.sceneName] ? 1 : (s.dg_in_run && s.dg_table && s.dg_table !== "none" ? 3 : 0);
     for (var i = 0; i < RULES.length; i++) {
       var name = slug(RULES[i](s)); if (name && out.indexOf(name) < 0) out.push(name);

@@ -19,7 +19,7 @@
 *rand row_roll 1 4
 [b]◈ THE LANE[/b]
 *line_break
-The lane runs south from the common as the village's one street, with a farmstead on each side every fifty paces or so, some large and some barely more than a cottage and a shed, all fronting the ruts with their gable ends and their yard gates. Behind each house lie its barn, its midden and a strip of garden, and behind those the long narrow fields run out toward the hedges. Thatch hangs low over the doors, hay and barley ricks stand in the yards, and the ruts are deep and churned by cart wheels and hooves. Here and there a woman or a child sits at a gate with a basket or a crate to sell to whoever passes, and the whole lane smells of dung, sweet hay, boiled roots and woodsmoke.
+The lane runs south from the common, with a farmstead on either side every fifty paces or so. Some are large; some are little more than a cottage and shed. Barns, middens and gardens stand behind them, with long narrow fields beyond the hedges. Thatch hangs low over the doors, hay and barley ricks fill the yards, and cart wheels and hooves have cut deep ruts. By day, a few gates put out baskets or crates for passersby. The lane smells of dung, sweet hay, boiled roots and woodsmoke.
 
 *if (weather = "Rain")
   Rain drips from the thatch eaves and runs along the ruts, and every gate table has been dragged under a lean-to.
@@ -38,7 +38,25 @@ The lane runs south from the common as the village's one street, with a farmstea
 *elseif ((ground_state = "wet") and (not(weather_wet)))
   The ruts are still dark and wet from the last rain.
 
-*if (row_roll = 1)
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *if (row_roll = 1)
+    A barn door stands open a hand's breadth, and a cow shifts in the straw behind it.
+  *elseif (row_roll = 2)
+    A dog hears you on the ruts and gives one warning bark before settling again.
+  *elseif (row_roll = 3)
+    One shutter shows a thin line of firelight; the rest of the lane is dark.
+  *else
+    The gate tables have been brought in, leaving only wet ruts and hedge shadows between the houses.
+*elseif (time_period = "Dusk")
+  *if (row_roll = 1)
+    A woman carries a basket in from her gate, calling the hens after her.
+  *elseif (row_roll = 2)
+    A boy pulls a cow through a yard gate before the light goes.
+  *elseif (row_roll = 3)
+    Smoke thickens over the roofs as the last gate tables are folded away.
+  *else
+    A dog trots the lane while someone shuts a barn door at the far end.
+*elseif (row_roll = 1)
   A woman in a grey apron scatters grain for a flock of hens at a gate, and the whole flock arrives at once.
 *elseif (row_roll = 2)
   A burly half-orc and a farmhand carry a calf between them through a yard gate on a hurdle, with the cow walking behind and complaining.
@@ -48,8 +66,12 @@ The lane runs south from the common as the village's one street, with a farmstea
   A boy leads a cow on a rope across the lane from one meadow to another, and the whole lane waits for her.
 
 *choice
-  # Stop at a gate where something is for sale.
-    *goto bc_lane_table
+  *if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+    # Stop at a gate where something is for sale.
+      *goto bc_lane_table
+  *else
+    # Stop at a gate where something is for sale: the gate tables are put away after the working day.
+      *goto bc_lane_table_closed
   # Look over the hedge into a barn.
     *goto bc_lane_barn
   *if (not(bc_loft_paid))
@@ -66,8 +88,16 @@ An old woman sits on a stool just inside the gate with a hen-wire cage of brown 
 *page_break Turn back to the lane…
 *goto bc_lane_lane
 
+*label bc_lane_table_closed
+The baskets, crates and stools have been taken in. Only closed gates and the sound of animals in their yards meet you.
+*page_break Turn back to the lane…
+*goto bc_lane_lane
+
 *label bc_lane_barn
-Through the gap in the hedge a long barn stands open on its yard side, its floor deep in straw. A row of cows is tied in stalls along one wall, a stack of hay rises to the rafters, and a pair of boys are pitching it down through a hatch. Chickens walk freely in and out among the cows' legs, and a barn cat sits on a beam and looks at you without interest.
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  Through the gap in the hedge, a barn door stands shut against the dark. You hear cows shifting in the straw and leave the household to its sleep.
+*else
+  Through the gap in the hedge a long barn stands open on its yard side, its floor deep in straw. A row of cows is tied in stalls along one wall, a stack of hay rises to the rafters, and a pair of boys are pitching it down through a hatch. Chickens walk freely in and out among the cows' legs, and a barn cat sits on a beam and looks at you without interest.
 *page_break Turn back to the lane…
 *goto bc_lane_lane
 
@@ -83,7 +113,7 @@ Through the gap in the hedge a long barn stands open on its yard side, its floor
   *set bc_loft_seen true
   You stop at the third gate and nod toward the barn. "Could I have a corner of the loft for the night?"
 
-  The woman looks you over, then at the sky. "Loft's dry. No pipe up there." She holds out her palm.
+  The woman looks you over, then at the sky. "Loft's dry. Keep your pipe cold up there." She holds out her palm.
 
   You count the copper into her hand. She goes back to the cow she was milking.
 *else
@@ -94,7 +124,11 @@ Through the gap in the hedge a long barn stands open on its yard side, its floor
 *label bc_lane_sleep_menu
 [b]◈ THE HAYLOFT[/b]
 *line_break
-The ladder comes up into a long dark loft under the thatch, with the smell of hay and the warmth of the cows coming up through the floor boards. A heap of hay has been shaken out flat against the gable end, and the ridge is hung with bundles of herbs to dry. Light comes in through the cracks in the boards.
+The ladder comes up into a long loft under the thatch, with the smell of hay and warmth of the cows rising through the floorboards. A heap of hay has been shaken flat against the gable end, and bundles of herbs hang from the ridge to dry.
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  The cracks between the boards hold only a little darkness and the sound of the yard below.
+*else
+  Light comes in through the cracks in the boards.
 *choice
   # Burrow into the hay and sleep. [~8 Hours]
     *goto bc_lane_sleep

@@ -16,6 +16,7 @@
     *set cisl_range 0
   *if (cisl_range > combat_max_range)
     *set cisl_range combat_max_range
+  *set {(("combat_enemy" & cisl_enemy_i) & "_side")} 1
   *set {(("combat_enemy" & cisl_enemy_i) & "_position")} (combat_lane_player_position + cisl_range)
   *set cisl_enemy_i + 1
   *goto combat_initialize_shared_lane_enemy_loop
@@ -576,6 +577,10 @@
 *comment than silently doing nothing (the click stays sticky for its original purpose, attacks, either way).
 *params fpnt_direction
 *set combat_active_target 0
+*comment The default for the usual case: a Push Forward closes on an enemy ahead, a Fall Back opens the gap to one.
+*set combat_move_opens false
+*if (fpnt_direction = "fallback")
+  *set combat_move_opens true
 *if (combat_player_chosen_target > 0)
   *temp fpnt_chosen_hp {(("combat_enemy" & combat_player_chosen_target) & "_hp")}
   *if ((combat_player_chosen_target > combat_enemy_count) or (fpnt_chosen_hp <= 0))
@@ -593,27 +598,65 @@
     *comment should ever clear a click. It became materially more reachable once the movement buttons started
     *comment advertising a from/to tier, which invites exactly that click-then-move sequence.
     *temp fpnt_chosen_range {(("combat_enemy" & combat_player_chosen_target) & "_range")}
-    *if (((fpnt_direction = "push") and (fpnt_chosen_range > 0)) or ((fpnt_direction = "fallback") and (fpnt_chosen_range < combat_max_range)))
-      *set combat_active_target combat_player_chosen_target
+    *temp fpnt_chosen_behind false
+    *temp fpnt_chosen_side {(("combat_enemy" & combat_player_chosen_target) & "_side")}
+    *if ((fpnt_chosen_side = (0 - 1)) and (fpnt_chosen_range > 0))
+      *set fpnt_chosen_behind true
+    *comment An enemy ahead is closed on by a Push Forward and opened on by a Fall Back; an enemy behind (lane step 2) is the other way round. A clicked target is eligible whenever the move changes the gap to it in either direction.
+    *if (fpnt_direction = "push")
+      *if ((not(fpnt_chosen_behind)) and (fpnt_chosen_range > 0))
+        *set combat_active_target combat_player_chosen_target
+        *set combat_move_opens false
+      *if ((fpnt_chosen_behind) and (fpnt_chosen_range < combat_max_range))
+        *set combat_active_target combat_player_chosen_target
+        *set combat_move_opens true
+    *if (fpnt_direction = "fallback")
+      *if ((not(fpnt_chosen_behind)) and (fpnt_chosen_range < combat_max_range))
+        *set combat_active_target combat_player_chosen_target
+        *set combat_move_opens true
+      *if ((fpnt_chosen_behind) and (fpnt_chosen_range > 0))
+        *set combat_active_target combat_player_chosen_target
+        *set combat_move_opens false
 *if (combat_active_target = 0)
   *temp fpnt_i 1
   *temp fpnt_best_range 0
+  *temp fpnt_alt_slot 0
+  *temp fpnt_alt_range 0
   *label fight_pick_nearest_target_loop
   *if (fpnt_i <= combat_enemy_count)
     *temp fpnt_hp {(("combat_enemy" & fpnt_i) & "_hp")}
     *if (fpnt_hp > 0)
       *temp fpnt_range {(("combat_enemy" & fpnt_i) & "_range")}
+      *temp fpnt_side {(("combat_enemy" & fpnt_i) & "_side")}
+      *temp fpnt_behind false
+      *if ((fpnt_side = (0 - 1)) and (fpnt_range > 0))
+        *set fpnt_behind true
       *temp fpnt_ok false
-      *if ((fpnt_direction = "push") and (fpnt_range > 0))
+      *temp fpnt_alt false
+      *comment The preferred set is the usual one (ahead of you); the alternate set is an enemy behind you, which a Push Forward opens on and a Fall Back closes on. It is only used when nothing in the preferred set is eligible.
+      *if ((fpnt_direction = "push") and ((not(fpnt_behind)) and (fpnt_range > 0)))
         *set fpnt_ok true
-      *if ((fpnt_direction = "fallback") and (fpnt_range < combat_max_range))
+      *if ((fpnt_direction = "fallback") and ((not(fpnt_behind)) and (fpnt_range < combat_max_range)))
         *set fpnt_ok true
+      *if ((fpnt_direction = "push") and ((fpnt_behind) and (fpnt_range < combat_max_range)))
+        *set fpnt_alt true
+      *if ((fpnt_direction = "fallback") and ((fpnt_behind) and (fpnt_range > 0)))
+        *set fpnt_alt true
       *if (fpnt_ok)
         *if ((combat_active_target = 0) or (fpnt_range < fpnt_best_range))
           *set combat_active_target fpnt_i
           *set fpnt_best_range fpnt_range
+      *if (fpnt_alt)
+        *if ((fpnt_alt_slot = 0) or (fpnt_range < fpnt_alt_range))
+          *set fpnt_alt_slot fpnt_i
+          *set fpnt_alt_range fpnt_range
     *set fpnt_i + 1
     *goto fight_pick_nearest_target_loop
+  *if ((combat_active_target = 0) and (fpnt_alt_slot > 0))
+    *set combat_active_target fpnt_alt_slot
+    *set combat_move_opens false
+    *if (fpnt_direction = "push")
+      *set combat_move_opens true
 *if (combat_active_target > 0)
   *gosub_scene combat fight_sync_target_in
 *return
@@ -662,6 +705,11 @@
     *if (csar_hp > 0)
       *temp csar_pos {(("combat_enemy" & csar_i) & "_position")}
       *temp csar_to (csar_pos - combat_lane_player_position)
+      *comment Lane step 2: an enemy the step leaves on the far side of the player is now behind them (an enemy on the same tile keeps its last side).
+      *if (csar_to > 0)
+        *set {(("combat_enemy" & csar_i) & "_side")} 1
+      *if (csar_to < 0)
+        *set {(("combat_enemy" & csar_i) & "_side")} (0 - 1)
       *if (csar_to < 0)
         *set csar_to (0 - csar_to)
       *if (csar_to > combat_max_range)
@@ -685,34 +733,48 @@
     *set cspel_range 0
   *if (cspel_range > combat_max_range)
     *set cspel_range combat_max_range
-  *set {(("combat_enemy" & cspel_i) & "_position")} (combat_lane_player_position + cspel_range)
+  *temp cspel_side {(("combat_enemy" & cspel_i) & "_side")}
+  *if (not(cspel_side = (0 - 1)))
+    *set cspel_side 1
+  *set {(("combat_enemy" & cspel_i) & "_position")} (combat_lane_player_position + (cspel_side * cspel_range))
   *set cspel_i + 1
   *goto combat_sync_enemy_positions_from_legacy_ranges_loop
 *return
 
 *label combat_slip_player_past
-*comment Slip Past, success (combat.txt): the player gets the lane behind them back. The player's coordinate returns to the opening spot (3), or stays where it is if that is further on, every living enemy that was in reach (range 0) is put at range 2, and every enemy's coordinate is rebuilt from the player's with
-*comment its range, so the model stays what the rest of the engine assumes: enemies on the far side of the player. Allies keep their coordinates and have their range to their own target worked out again from where they now stand.
+*comment Slip Past, success (combat.txt; lane step 2, 2026-10-16): the player really crosses. They step one tile up the lane (nothing is offered at the far end, where there is no tile to step to), every living enemy that was in reach (range 0, on the player's own tile) is
+*comment thrown back one tile behind the tile the player left, so it ends BEHIND the player (side -1) at range 2, or range 1 when the lane's back end gives it no room, and every other enemy's range is worked out again from the new tile, each with its
+*comment side. The enemy then needs its free step and its Dash to catch up from range 2, so it does not attack that turn. Allies keep their coordinates and have their range to their own target worked out again from where they now stand.
 *gosub combat_sync_enemy_positions_from_legacy_ranges
-*temp csp_start 3
-*if (combat_lane_player_position > csp_start)
-  *set csp_start combat_lane_player_position
-*if (csp_start > combat_lane_max_position)
-  *set csp_start combat_lane_max_position
-*set combat_lane_player_position csp_start
-*temp csp_to 2
-*if (csp_to > combat_max_range)
-  *set csp_to combat_max_range
+*temp csp_old combat_lane_player_position
+*temp csp_new (csp_old + 1)
+*if (csp_new > combat_lane_max_position)
+  *set csp_new combat_lane_max_position
+*set combat_lane_player_position csp_new
+*temp csp_back (csp_old - 1)
+*if (csp_back < combat_lane_min_position)
+  *set csp_back combat_lane_min_position
 *temp csp_i 1
 *label combat_slip_player_past_loop
 *if (csp_i <= combat_enemy_count)
   *temp csp_hp {(("combat_enemy" & csp_i) & "_hp")}
-  *temp csp_range {(("combat_enemy" & csp_i) & "_range")}
-  *if ((csp_hp > 0) and (csp_range <= 0))
-    *set {(("combat_enemy" & csp_i) & "_range")} csp_to
+  *if (csp_hp > 0)
+    *temp csp_range {(("combat_enemy" & csp_i) & "_range")}
+    *temp csp_pos {(("combat_enemy" & csp_i) & "_position")}
+    *if (csp_range <= 0)
+      *set csp_pos csp_back
+      *set {(("combat_enemy" & csp_i) & "_position")} csp_back
+    *temp csp_off (csp_pos - combat_lane_player_position)
+    *if (csp_off > 0)
+      *set {(("combat_enemy" & csp_i) & "_side")} 1
+    *if (csp_off < 0)
+      *set {(("combat_enemy" & csp_i) & "_side")} (0 - 1)
+      *set csp_off (0 - csp_off)
+    *if (csp_off > combat_max_range)
+      *set csp_off combat_max_range
+    *set {(("combat_enemy" & csp_i) & "_range")} csp_off
   *set csp_i + 1
   *goto combat_slip_player_past_loop
-*gosub combat_sync_enemy_positions_from_legacy_ranges
 *temp csp_a 1
 *label combat_slip_player_past_ally_loop
 *if (csp_a <= combat_ally_slot_cap)
@@ -745,11 +807,15 @@
     *set clmer_range 0
   *if (clmer_range > combat_max_range)
     *set clmer_range combat_max_range
-  *temp clmer_pos (combat_lane_player_position + clmer_range)
+  *temp clmer_side {(("combat_enemy" & clmer_slot) & "_side")}
+  *if (not(clmer_side = (0 - 1)))
+    *set clmer_side 1
+  *temp clmer_pos (combat_lane_player_position + (clmer_side * clmer_range))
+  *comment Away adds a step on the enemy's own side of the player and toward takes one off it, so an enemy behind the player moves down the lane to get away.
   *if (clmer_direction = "away")
-    *set clmer_pos + 1
+    *set clmer_pos (clmer_pos + clmer_side)
   *if (clmer_direction = "toward")
-    *set clmer_pos - 1
+    *set clmer_pos (clmer_pos - clmer_side)
   *if (clmer_pos < combat_lane_min_position)
     *set clmer_pos combat_lane_min_position
   *if (clmer_pos > combat_lane_max_position)
@@ -810,6 +876,11 @@
   *set clmetp_position combat_lane_max_position
 *set {(("combat_enemy" & clmetp_slot) & "_position")} clmetp_position
 *temp clmetp_range (clmetp_position - combat_lane_player_position)
+*comment Lane step 3: the side follows the real destination (an enemy that ends on the player's tile keeps its last side).
+*if (clmetp_range > 0)
+  *set {(("combat_enemy" & clmetp_slot) & "_side")} 1
+*if (clmetp_range < 0)
+  *set {(("combat_enemy" & clmetp_slot) & "_side")} (0 - 1)
 *if (clmetp_range < 0)
   *set clmetp_range (0 - clmetp_range)
 *if (clmetp_range > combat_max_range)

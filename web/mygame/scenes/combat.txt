@@ -1691,6 +1691,12 @@
 *if (decs_enemy_pos > decs_ally_pos)
   *set decs_enemy_pos - 1
 *set {(("combat_enemy" & decs_slot) & "_position")} decs_enemy_pos
+*comment Lane step 3: a chasing enemy can cross the player's tile on its way to an ally, and then stands on the other side of them (before, the legacy bridge put it back ahead).
+*temp decs_off (decs_enemy_pos - combat_lane_player_position)
+*if (decs_off > 0)
+  *set {(("combat_enemy" & decs_slot) & "_side")} 1
+*if (decs_off < 0)
+  *set {(("combat_enemy" & decs_slot) & "_side")} (0 - 1)
 *set combat_enemy_chase_range (decs_enemy_pos - decs_ally_pos)
 *if (combat_enemy_chase_range < 0)
   *set combat_enemy_chase_range (0 - combat_enemy_chase_range)
@@ -2424,6 +2430,11 @@
 *temp cmc_chosen_fall cmc_range_sentinel
 *temp cmc_lock_push false
 *temp cmc_lock_fall false
+*comment Lane step 2: an enemy behind the player is the other way round. Pushing forward OPENS the gap to it and falling back CLOSES it, so the nearest such enemy is a candidate when nothing ahead is.
+*temp cmc_push_opens false
+*temp cmc_fall_opens true
+*temp cmc_push_open_range cmc_range_sentinel
+*temp cmc_fall_close_range cmc_range_sentinel
 *comment Fresh distance to the slot the NEXT action will actually target, resolved HERE (before the *choice) so
 *comment reach-gated options have a current number to test. The shared combat_enemy_range scratch cannot be used
 *comment for that: fight_round_hub calls fight_pick_target (which sets combat_active_target) but not
@@ -2576,28 +2587,64 @@
     *temp cmc_chosen_hp {(("combat_enemy" & cmc_chosen_slot) & "_hp")}
     *if (cmc_chosen_hp > 0)
       *temp cmc_chosen_range {(("combat_enemy" & cmc_chosen_slot) & "_range")}
-      *if (cmc_chosen_range > 0)
-        *set cmc_chosen_push cmc_chosen_range
-        *set cmc_lock_push true
-      *if (cmc_chosen_range < combat_max_range)
-        *set cmc_chosen_fall cmc_chosen_range
-        *set cmc_lock_fall true
+      *temp cmc_chosen_side {(("combat_enemy" & cmc_chosen_slot) & "_side")}
+      *if ((cmc_chosen_side = (0 - 1)) and (cmc_chosen_range > 0))
+        *if (cmc_chosen_range < combat_max_range)
+          *set cmc_chosen_push cmc_chosen_range
+          *set cmc_lock_push true
+          *set cmc_push_opens true
+          *set combat_can_push_forward true
+        *if (cmc_chosen_range > 0)
+          *set cmc_chosen_fall cmc_chosen_range
+          *set cmc_lock_fall true
+          *set cmc_fall_opens false
+          *set combat_can_fall_back true
+      *else
+        *if (cmc_chosen_range > 0)
+          *set cmc_chosen_push cmc_chosen_range
+          *set cmc_lock_push true
+        *if (cmc_chosen_range < combat_max_range)
+          *set cmc_chosen_fall cmc_chosen_range
+          *set cmc_lock_fall true
 *temp cmc_i 1
 *label combat_movement_check_loop
 *if (cmc_i <= combat_enemy_count)
   *temp cmc_hp {(("combat_enemy" & cmc_i) & "_hp")}
   *if (cmc_hp > 0)
     *temp cmc_range {(("combat_enemy" & cmc_i) & "_range")}
-    *if (cmc_range > 0)
-      *set combat_can_push_forward true
-      *if ((cmc_lock_push = false) and ((cmc_chosen_push = cmc_range_sentinel) or (cmc_range < cmc_chosen_push)))
-        *set cmc_chosen_push cmc_range
-    *if (cmc_range < combat_max_range)
-      *set combat_can_fall_back true
-      *if ((cmc_lock_fall = false) and ((cmc_chosen_fall = cmc_range_sentinel) or (cmc_range < cmc_chosen_fall)))
-        *set cmc_chosen_fall cmc_range
+    *temp cmc_side {(("combat_enemy" & cmc_i) & "_side")}
+    *comment An enemy on the player's own tile (range 0) counts as ahead whatever side it last had: a Fall Back leaves it and a Push Forward steps past it.
+    *if ((cmc_side = (0 - 1)) and (cmc_range > 0))
+      *if (cmc_range < combat_max_range)
+        *if (cmc_range < cmc_push_open_range)
+          *set cmc_push_open_range cmc_range
+      *if (cmc_range > 0)
+        *if (cmc_range < cmc_fall_close_range)
+          *set cmc_fall_close_range cmc_range
+    *else
+      *if (cmc_range > 0)
+        *set combat_can_push_forward true
+        *if ((cmc_lock_push = false) and ((cmc_chosen_push = cmc_range_sentinel) or (cmc_range < cmc_chosen_push)))
+          *set cmc_chosen_push cmc_range
+      *if (cmc_range < combat_max_range)
+        *set combat_can_fall_back true
+        *if ((cmc_lock_fall = false) and ((cmc_chosen_fall = cmc_range_sentinel) or (cmc_range < cmc_chosen_fall)))
+          *set cmc_chosen_fall cmc_range
   *set cmc_i + 1
   *goto combat_movement_check_loop
+*comment Nothing ahead to close on or open from: an enemy behind is what a move is about (and a Push Forward needs a tile ahead of the player to step to).
+*if ((cmc_lock_push = false) and (cmc_chosen_push = cmc_range_sentinel))
+  *if (cmc_push_open_range < cmc_range_sentinel)
+    *set cmc_chosen_push cmc_push_open_range
+    *set cmc_push_opens true
+    *set combat_can_push_forward true
+*if ((cmc_lock_fall = false) and (cmc_chosen_fall = cmc_range_sentinel))
+  *if (cmc_fall_close_range < cmc_range_sentinel)
+    *set cmc_chosen_fall cmc_fall_close_range
+    *set cmc_fall_opens false
+    *set combat_can_fall_back true
+*if (combat_lane_player_position >= combat_lane_max_position)
+  *set combat_can_push_forward false
 *comment A one-person opening held by an ally is not open floor the player can simply run through. The specific
 *comment Trade Places action below is the movement that takes that space; this only suppresses the generic advance.
 *if (combat_choke_player_blocked)
@@ -2637,8 +2684,10 @@
 *comment A level 2 rogue spends the BONUS action on it (combat_cunning, the same switch Dash, Disengage and Hide use), so the action stays free for an attack. With the bonus spent, or for anyone else, it is the action.
 *if (((combat_slip_slot > 0) and ((combat_player_actions_left > 0) or (combat_cunning))) and ((combat_can_move) and ((not(player_movement_restricted)) and (not(combat_choke_player_blocked)))))
   *set combat_can_slip true
+*if (combat_lane_player_position >= combat_lane_max_position)
+  *set combat_can_slip false
 *comment ADVANCE PAST (the user's call, 2026-10-12): with an enemy in reach and nothing farther to close on, Push Forward still works, as a step past it. Leaving reach gives the same free swing as falling back (see the Push Forward option).
-*if (((combat_slip_slot > 0) and (not(combat_can_push_forward))) and ((not(player_movement_restricted)) and (not(combat_choke_player_blocked))))
+*if ((combat_slip_slot > 0) and ((not(player_movement_restricted)) and (not(combat_choke_player_blocked))))
   *if (combat_lane_player_position < combat_lane_max_position)
     *set combat_can_push_forward true
     *set combat_push_past true
@@ -2649,6 +2698,9 @@
 *temp combat_push_leaves false
 *if ((combat_slip_slot > 0) and (not(combat_player_disengaged)))
   *set combat_push_leaves true
+*temp combat_push_phrase "and close the distance on the nearest enemy."
+*temp combat_push_text ""
+*temp combat_fall_phrase "and open the distance from the nearest enemy."
 *temp combat_push_from_name ""
 *temp combat_push_to_name ""
 *temp combat_fall_from_name ""
@@ -2657,18 +2709,34 @@
   *gosub_scene combat_movement combat_range_name cmc_chosen_push
   *set combat_push_from_name combat_range_display_name
   *temp cmc_push_to (cmc_chosen_push - 1)
+  *if (cmc_push_opens)
+    *set cmc_push_to (cmc_chosen_push + 1)
+    *set combat_push_phrase "and put ground between you and the nearest enemy at your back."
   *if (cmc_push_to < 0)
     *set cmc_push_to 0
+  *if (cmc_push_to > combat_max_range)
+    *set cmc_push_to combat_max_range
   *gosub_scene combat_movement combat_range_name cmc_push_to
   *set combat_push_to_name combat_range_display_name
 *if (cmc_chosen_fall < cmc_range_sentinel)
   *gosub_scene combat_movement combat_range_name cmc_chosen_fall
   *set combat_fall_from_name combat_range_display_name
   *temp cmc_fall_to (cmc_chosen_fall + 1)
+  *if (not(cmc_fall_opens))
+    *set cmc_fall_to (cmc_chosen_fall - 1)
+    *set combat_fall_phrase "toward the nearest enemy at your back."
+  *if (cmc_fall_to < 0)
+    *set cmc_fall_to 0
   *if (cmc_fall_to > combat_max_range)
     *set cmc_fall_to combat_max_range
   *gosub_scene combat_movement combat_range_name cmc_fall_to
   *set combat_fall_to_name combat_range_display_name
+*comment The Push Forward label: the usual sentence, or (an enemy on the player's tile is stepped past) the pass, with the gap to the nearest enemy ahead added when there is one to close on.
+*set combat_push_text "${combat_push_phrase} (${combat_push_from_name} → ${combat_push_to_name})"
+*if (combat_push_past)
+  *set combat_push_text "past ${combat_slip_epithet}, leaving them at your back."
+  *if ((cmc_chosen_push < cmc_range_sentinel) and (not(cmc_push_opens)))
+    *set combat_push_text "past ${combat_slip_epithet}, leaving them at your back, and close on the nearest enemy ahead. (${combat_push_from_name} → ${combat_push_to_name})"
 *comment Auto-end: silently loops back to the queue once there's truly nothing left to spend a resource on, not
 *comment just once every pool counter happens to read zero -- attacks_left and bonus_left both sit at their full
 *comment value on a turn that never touched them (a caster who casts instead of swinging, or any turn where no
@@ -2699,6 +2767,19 @@
           *line_break
           *goto fight_round_hub
       *goto resolve_weapon_attack_choice
+
+  *comment GEN:BEGIN combat_arrow_options -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
+  *if (has_fire_arrow)
+    *if (((combat_can_attack) and (weapon_ammo = "arrow")) and ((combat_wpn_far_ok) or (combat_primary_reach)))
+      # [b][ACTION][/b] [b][Shoot: Fire Arrow][/b] Loose it at your target.@{show_stat_hints  [Shot: your bow attack plus 1d4 fire, then burns for 2 turns]|}
+        *set combat_arrow_kind "fire"
+        *goto resolve_weapon_attack_choice
+  *if (has_ice_arrow)
+    *if (((combat_can_attack) and (weapon_ammo = "arrow")) and ((combat_wpn_far_ok) or (combat_primary_reach)))
+      # [b][ACTION][/b] [b][Shoot: Ice Arrow][/b] Loose it at your target.@{show_stat_hints  [Shot: your bow attack plus 1d4 cold, and the target is slowed]|}
+        *set combat_arrow_kind "ice"
+        *goto resolve_weapon_attack_choice
+  *comment GEN:END combat_arrow_options
 
   *if (combat_can_booming)
     *comment One variant per melee weapon: the battle bar folds "Booming Blade: X" into one slot and opens the weapons on a click (battlehud.js). The Classic list shows each as a line.
@@ -2871,7 +2952,7 @@
       *goto fight_move_spent
 
   *if ((combat_player_moves_left > 0) and (combat_can_push_forward))
-    # Push forward @{combat_push_past past ${combat_slip_epithet}, leaving them at your back.|and close the distance on the nearest enemy. (${combat_push_from_name} → ${combat_push_to_name})}@{combat_push_leaves  Leaving their reach gives them a free swing.|}
+    # Push forward ${combat_push_text}@{combat_push_leaves  Leaving their reach gives them a free swing.|}
       *comment Free movement (2026-09-28, replaces the old "Dash, RAW: the whole action" one-tier move) -- spends
       *comment combat_player_moves_left, not the action, so a player who's exactly one tier out can push forward
       *comment AND still attack the same turn once Engaged, same as real 5e letting you move up to your speed and
@@ -2907,6 +2988,11 @@
         You go in under ${combat_pushpast_name}'s guard and past them, and for a moment they are at your back.
         *line_break
         [b][🏃 You Push Forward — past ${combat_pushpast_name}][/b]
+      *elseif (combat_move_opens)
+        *gosub_scene combat_movement combat_range_name combat_enemy_range
+        You press on, putting more ground between yourself and ${combat_enemy_epithet}.
+        *line_break
+        [b][🏃 You Push Forward — ${combat_range_display_name}][/b]
       *elseif (combat_enemy_range <= 0)
         You break into a hard sprint, closing the last of the distance before ${combat_enemy_epithet} can react.
         *line_break
@@ -2930,7 +3016,8 @@
         *set combat_slip_success check_success
         *if (combat_slip_success)
           *gosub_scene combat_movement combat_slip_player_past
-          *gosub_scene combat_movement combat_range_name 2
+          *temp cs_slip_r {(("combat_enemy" & combat_slip_slot) & "_range")}
+          *gosub_scene combat_movement combat_range_name cs_slip_r
           *set combat_slip_to_name combat_range_display_name
         *else
           *if (not(combat_player_disengaged))
@@ -2938,9 +3025,9 @@
         *set combat_slip_locked true
         *set locked_combat_slip_page_id page_id
       *if (combat_slip_success)
-        You drop a shoulder, go low under ${combat_slip_name}'s guard and come up on the far side of them with the whole length of the ground open behind you. They have to turn to follow.
+        You drop a shoulder, go low under ${combat_slip_name}'s guard and come up on the far side of them with the open ground ahead of you. They have to turn to follow.
         *line_break
-        [b][🏃 You Slip Past — ${combat_slip_name} is thrown back to ${combat_slip_to_name}][/b]
+        [b][🏃 You Slip Past — ${combat_slip_name} is left behind you at ${combat_slip_to_name}][/b]
       *else
         You try to slip past ${combat_slip_name}, but they turn with you and shut the gap.
         *line_break
@@ -2952,7 +3039,7 @@
       *goto fight_action_spent
 
   *if ((combat_player_moves_left > 0) and (combat_can_fall_back))
-    # Fall back and open the distance from the nearest enemy. (${combat_fall_from_name} → ${combat_fall_to_name})
+    # Fall back ${combat_fall_phrase} (${combat_fall_from_name} → ${combat_fall_to_name})
       *comment Symmetric with Push Forward just above: free movement (2026-09-28), spends combat_player_moves_left
       *comment not the action -- 5e's own speed budget doesn't care which direction you move in. Opens exactly one
       *comment range tier, not straight to Long Range. Distinct from "Break off and run" below, which ends the
@@ -2976,7 +3063,12 @@
       *comment is still what the epithet below names, so the narration is unchanged.
       *gosub_scene combat_movement combat_shift_all_ranges "fallback"
       *gosub fight_sync_target_in
-      *if (combat_enemy_range >= combat_max_range)
+      *if (not(combat_move_opens))
+        *gosub_scene combat_movement combat_range_name combat_enemy_range
+        You turn back toward ${combat_enemy_epithet}, closing the gap.
+        *line_break
+        [b][🏃 You Fall Back — ${combat_range_display_name}][/b]
+      *elseif (combat_enemy_range >= combat_max_range)
         You break away hard, opening the last of the distance until ${combat_enemy_epithet} is barely in reach.
         *line_break
         [b][🏃 You Fall Back — Long Range][/b]
@@ -3962,6 +4054,19 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *comment Every targeted option re-syncs the HUD-picked target here, at the moment it's chosen, not just when the
   *comment page was built -- a click made while the page was already open would otherwise land on the stale target.
   *gosub_scene combat_movement fight_pick_target
+  *comment SPECIAL ARROWS (2026-10-15): the Shoot options set combat_arrow_kind and come here. The arrow is spent now, hit or miss, inside the lock so a replay cannot spend a second one; combat_arrow_used is what was loosed.
+  *set combat_arrow_used ""
+  *set combat_arrow_dealt 0
+  *set combat_arrow_suffix ""
+  *set combat_arrow_grease false
+  *set combat_arrow_burn false
+  *set combat_arrow_slow false
+  *if (not(combat_arrow_kind = ""))
+    *set combat_arrow_used combat_arrow_kind
+    *set combat_arrow_kind ""
+    *set use_item_id (combat_arrow_used & "_arrow")
+    *gosub_scene equipment spend_consumable use_item_id
+    *rand combat_arrow_v 1 3
   *if (weapon_type = "ranged")
     *gosub_scene combat_movement fight_retarget_by_class weapon_reach
   *if (not(weapon_type = "ranged"))
@@ -4018,6 +4123,9 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *comment Dual Shot: both shots are made with disadvantage.
   *if (combat_dual_shot_active)
     *set disadvantage true
+  *comment A fire arrow is a fire attack, so a greased target gives advantage (combat_attack_edge reads the tag).
+  *if (combat_arrow_used = "fire")
+    *set combat_attack_tag "fire"
   *gosub combat_hidden_attack_roll
   *gosub_scene dice_engine roll_d20_check
   *set check_flat_bonus 0
@@ -4075,6 +4183,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
           *set combat_player_dmg_bonus + barbarian_rage_damage_bonus
     *gosub_scene combat_dice resolve_player_weapon_hit
     *gosub combat_ensnare_apply
+    *gosub combat_arrow_apply
     *if ((not(combat_sneak_attack_triggered)) and (combat_enemy_hp <= 0))
       *gosub_scene combat_prose pick_weapon_death_flavor
   *set combat_weapon_attack_locked true
@@ -4145,6 +4254,53 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   ${fwm}
   *line_break
   [b][💨 Miss][/b]
+*if (not(combat_arrow_used = ""))
+  *if (check_success)
+    *if (combat_arrow_dealt > 0)
+      *line_break
+      *if (combat_arrow_used = "fire")
+        *if (combat_arrow_v = 1)
+          The arrowhead flares as it strikes, and flame runs over ${combat_enemy_epithet}.
+        *if (combat_arrow_v = 2)
+          The pitch on the shaft takes light in the strike, and the fire spreads across ${combat_enemy_epithet}.
+        *if (combat_arrow_v = 3)
+          The burning cord catches on ${combat_enemy_epithet} and flares higher.
+        *line_break
+        *if (combat_enemy_hp <= 0)
+          [b][🔥 Fire Arrow: +${combat_arrow_dealt} Fire damage${combat_arrow_suffix} | 💀 ${combat_enemy_name} Defeated][/b]
+        *else
+          [b][🔥 Fire Arrow: +${combat_arrow_dealt} Fire damage${combat_arrow_suffix}@{combat_arrow_grease  (the grease caught, +2)|}][/b]
+          *if (combat_arrow_burn)
+            *line_break
+            [b][🔥 ${combat_enemy_name} is burning: 1d4 fire damage at the start of each of its next two turns][/b]
+      *else
+        *if (combat_arrow_v = 1)
+          The frost-flint cracks on impact, and a pale rime spreads out from the shaft.
+        *if (combat_arrow_v = 2)
+          Cold bites out of the arrowhead, and frost whitens ${combat_enemy_epithet} around the shaft.
+        *if (combat_arrow_v = 3)
+          The arrowhead shatters into white splinters, and ice crackles across ${combat_enemy_epithet}.
+        *line_break
+        *if (combat_enemy_hp <= 0)
+          [b][❄️ Ice Arrow: +${combat_arrow_dealt} Cold damage${combat_arrow_suffix} | 💀 ${combat_enemy_name} Defeated][/b]
+        *else
+          [b][❄️ Ice Arrow: +${combat_arrow_dealt} Cold damage${combat_arrow_suffix} | ⚠️ Slowed — ${combat_enemy_epithet} can't Dash on its next turn][/b]
+  *else
+    *line_break
+    *if (combat_arrow_used = "fire")
+      *if (combat_arrow_v = 1)
+        The burning arrow flies wide and burns itself out where it lands.
+      *if (combat_arrow_v = 2)
+        The flame streams past ${combat_enemy_epithet} as they sidestep the arrow.
+      *if (combat_arrow_v = 3)
+        The arrow hisses past, and its flame gutters out.
+    *else
+      *if (combat_arrow_v = 1)
+        The arrow flies wide, and its frosted head shatters where it lands.
+      *if (combat_arrow_v = 2)
+        The arrow skims past ${combat_enemy_epithet}, and a thin trail of frost hangs in the air.
+      *if (combat_arrow_v = 3)
+        The arrow misses, and the cold bleeds out of its head.
 *if ((check_success) and (combat_ensnare_result > 0))
   *line_break
   Thorned vines burst from the blow and lash at ${combat_enemy_epithet}.
@@ -4164,6 +4320,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *comment The one and only entry point for both weapon and sidearm attacks -- flagging it here, right before the
 *comment shared fight_check_enemy_hp tail every damage option uses, is how that tail knows to spend an ATTACK
 *comment instead of an action for this specific one.
+*set combat_arrow_kind ""
 *set combat_pending_spend_is_attack true
 *goto fight_check_enemy_hp
 
@@ -4222,6 +4379,52 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *set combat_ensnare_result 2
       *set {(cea_p & "restrained_until")} ensnaring_expires_round
     *set check_success cea_cs
+*return
+
+*comment SPECIAL ARROWS (2026-10-15, Fire Arrow and Ice Arrow). Called inside the weapon-hit lock right after the weapon's own hit is resolved. combat_arrow_used is the arrow loosed ("fire", "ice" or ""). On a hit that leaves the target standing it adds 1d4 of its
+*comment element as a second damage packet (resistances and vulnerabilities apply to that packet alone; fire is +2 on a greased target, which burns well) and a rider: fire sets the target burning for two of its turns (or keeps a longer burn it already
+*comment has), ice slows it (the same Slowed as Ray of Frost, combat_enemyN_slowed). The weapon hit's own damage, type and suffix are kept and put back, since the report below reads them. Everything is stored in combat_arrow_* for the replay.
+*label combat_arrow_apply
+*if (combat_arrow_used = "")
+  *return
+*if (not(check_success))
+  *return
+*if (combat_enemy_hp <= 0)
+  *return
+*temp caa_p (("combat_enemy" & combat_active_target) & "_")
+*temp caa_main combat_player_dmg_dealt
+*temp caa_type combat_player_dmg_type
+*temp caa_suffix combat_outgoing_dmg_suffix
+*temp caa_die 1
+*rand caa_die 1 4
+*if (combat_arrow_used = "fire")
+  *temp caa_greased {(caa_p & "greased")}
+  *if (caa_greased > 0)
+    *set caa_die + 2
+    *set combat_arrow_grease true
+  *set combat_player_dmg_type "fire"
+*else
+  *set combat_player_dmg_type "cold"
+*set combat_player_dmg_dealt caa_die
+*gosub_scene combat_dice apply_outgoing_damage_resist_vuln
+*set combat_arrow_dealt combat_player_dmg_dealt
+*set combat_arrow_suffix combat_outgoing_dmg_suffix
+*set combat_player_dmg_dealt caa_main
+*set combat_player_dmg_type caa_type
+*set combat_outgoing_dmg_suffix caa_suffix
+*set combat_enemy_hp - combat_arrow_dealt
+*if (combat_enemy_hp < 0)
+  *set combat_enemy_hp 0
+*gosub fight_sync_target_out
+*if (combat_enemy_hp > 0)
+  *if (combat_arrow_used = "fire")
+    *temp caa_burn {(caa_p & "burning")}
+    *if (caa_burn < 2)
+      *set {(caa_p & "burning")} 2
+    *set combat_arrow_burn true
+  *else
+    *set {(caa_p & "slowed")} 1
+    *set combat_arrow_slow true
 *return
 
 *label combat_restrain_tick
@@ -4585,8 +4788,13 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *comment Room to back off (2026-10-12): a cornered ranged enemy can only give ground if the lane has any left behind it. At the far end it cannot, and used to narrate a retreat that moved nothing (then shot at disadvantage anyway, with a free swing taken against it); with no room it now falls through to the dagger like any cornered archer.
     *temp cnt_e_room false
     *temp cnt_e_back_range {(("combat_enemy" & cnt_slot) & "_range")}
-    *if ((combat_lane_player_position + cnt_e_back_range) < combat_lane_max_position)
-      *set cnt_e_room true
+    *temp cnt_e_side {(("combat_enemy" & cnt_slot) & "_side")}
+    *if (cnt_e_side = (0 - 1))
+      *if ((combat_lane_player_position - cnt_e_back_range) > combat_lane_min_position)
+        *set cnt_e_room true
+    *else
+      *if ((combat_lane_player_position + cnt_e_back_range) < combat_lane_max_position)
+        *set cnt_e_room true
     *comment Terrain intent is calculated before the ordinary decision tree but only consumed by the eligible
     *comment ranged reposition / melee chokepoint-hold branches below. Surprise, interception, fear, retreats,
     *comment active chases and forced movement retain their existing priority.
@@ -4930,12 +5138,15 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *gosub_scene combat_movement combat_lane_move_enemy_relative_to_player cnt_slot "toward"
         *temp cnt_dashed false
         *temp cnt_after_first_step {("combat_enemy" & cnt_slot) & "_position"}
-        *temp cnt_before_first_step (cnt_after_first_step + 1)
+        *temp cnt_dash_side {(("combat_enemy" & cnt_slot) & "_side")}
+        *temp cnt_before_first_step (cnt_after_first_step + cnt_dash_side)
         *gosub_scene combat_movement combat_difficult_terrain_crossing_query cnt_before_first_step cnt_after_first_step
         *temp cnt_difficult_after_first_step combat_difficult_terrain_blocks_dash
-        *temp cnt_next_dash_position (cnt_after_first_step - 1)
+        *temp cnt_next_dash_position (cnt_after_first_step - cnt_dash_side)
         *if (cnt_next_dash_position < combat_lane_min_position)
           *set cnt_next_dash_position combat_lane_min_position
+        *if (cnt_next_dash_position > combat_lane_max_position)
+          *set cnt_next_dash_position combat_lane_max_position
         *gosub_scene combat_movement combat_difficult_terrain_crossing_query cnt_after_first_step cnt_next_dash_position
         *temp cnt_difficult_dash_path combat_difficult_terrain_blocks_dash
         *comment Slow and Difficult Terrain both prevent the extra Dash tier; each still permits the ordinary close.

@@ -1,0 +1,19 @@
+*comment HOW TO RUN: copy this file to web/mygame/scenes/zz_lane_unit.txt, then: node tools/scripted_play.js scene=zz_lane_unit label=zz_lane_unit stats='{"combat_enemy_count":2,"combat_max_range":3,"combat_lane_player_position":3,"combat_lane_min_position":0,"combat_lane_max_position":6,"combat_enemy1_hp":5,"combat_enemy1_range":2,"combat_enemy1_side":-1,"combat_enemy2_hp":5,"combat_enemy2_range":1,"combat_enemy2_side":1}' ; delete the copy afterwards (it must not ship). Expected: A e1 pos 1 range 2; B push -> e1 range 3, e2 range 0; C fall back -> e1 2, e2 1; D toward -> pos 2 range 1; E away twice -> pos 0 range 3.
+*comment TEMPORARY unit test for lane step 1 (deleted after use): drives the movement primitives with an enemy behind the player.
+*label zz_lane_unit
+*gosub_scene combat_movement combat_sync_enemy_positions_from_legacy_ranges
+A start: player ${combat_lane_player_position}, e1 pos ${combat_enemy1_position} range ${combat_enemy1_range} side ${combat_enemy1_side}; e2 pos ${combat_enemy2_position} range ${combat_enemy2_range} side ${combat_enemy2_side}
+*page_break A
+*gosub_scene combat_movement combat_shift_all_ranges "push"
+B after push: player ${combat_lane_player_position}, e1 pos ${combat_enemy1_position} range ${combat_enemy1_range}; e2 pos ${combat_enemy2_position} range ${combat_enemy2_range}
+*page_break B
+*gosub_scene combat_movement combat_shift_all_ranges "fallback"
+C after fall back: player ${combat_lane_player_position}, e1 pos ${combat_enemy1_position} range ${combat_enemy1_range}; e2 pos ${combat_enemy2_position} range ${combat_enemy2_range}
+*page_break C
+*gosub_scene combat_movement combat_lane_move_enemy_relative_to_player 1 "toward"
+D e1 toward: pos ${combat_enemy1_position} range ${combat_enemy1_range}
+*page_break D
+*gosub_scene combat_movement combat_lane_move_enemy_relative_to_player 1 "away"
+*gosub_scene combat_movement combat_lane_move_enemy_relative_to_player 1 "away"
+E e1 away twice: pos ${combat_enemy1_position} range ${combat_enemy1_range}
+*finish

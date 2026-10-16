@@ -32,6 +32,9 @@ const MAP = {
   shove: "Action/Shove_Icon.webp",
   throw: "Action/Throw_Icon.webp",   // the one Throw button on the bar; its fly-out shows each item in its own art (below)
   // Each thrown item's own art, keyed throw_<slug of its title>: battlehud.js variantArt reads "Throw: Grease Flask" as throw_grease_flask.
+  shoot: "Action/Arcane_Shot_Piercing_Arrow_Icon.webp",   // the one Shoot button on the bar (the special arrows); its fly-out shows each arrow in its own art (below)
+  shoot_fire_arrow: "Item/Consumable/Arrow/Arrow_of_Fire_Unfaded_Icon.png",
+  shoot_ice_arrow: "Item/Consumable/Arrow/Arrow_of_Ice_Unfaded_Icon.png",
   throw_grease_flask: "Item/Consumable/Grenade/GRN_Grease_Bottle_Unfaded_Icon.png",
   throw_alchemists_fire: "Item/Consumable/Grenade/GRN_Alchemist's_Fire_Unfaded_Icon.png",
   slip_past: "Action/Evasive_Footwork_Icon.webp",

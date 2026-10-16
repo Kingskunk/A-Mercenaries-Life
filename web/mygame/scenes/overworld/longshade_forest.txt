@@ -1125,7 +1125,7 @@ You find the first handholds in the rock and test each before you trust it.
     # Knock at the shutter.
       *goto lsf_tw_knock
   *if ((lsf_trapper_trust) and (not(lsf_tw_shut)))
-    # Ask what food he can spare.
+    # Ask what he can spare.
       *goto lsf_tw_trade
     *if (not(lsf_trapper_why))
       # Ask what he was looking for when he looked you over. [~5 min]
@@ -1267,9 +1267,9 @@ You ask what he was looking for when he looked you over. Thole takes the short a
 *label lsf_tw_trade
 *gosub lsf_tw_open_panel
 *if (lsf_trapper_traded)
-  Thole sets the hemp sack on the bench by the door, unties it, and nods you toward the bundles of trail rations inside.
+  Thole sets the hemp sack on the bench by the door, unties it, and nods you toward the rations and the two kinds of arrows inside.
 *else
-  You ask what food he can spare. Thole sets a hemp sack on the bench by the door and unties it. Inside are cloth-wrapped bundles of trail rations. "Biscuit, dried sausage, a fist of raisins," he says. "Plain stuff, and it keeps."
+  You ask what he can spare. Thole sets a hemp sack on the bench by the door and unties it. Inside are cloth-wrapped bundles of trail rations, and under them two kinds of arrows, one wound in black cord and one packed in damp moss. "Biscuit, dried sausage, a fist of raisins," he says. "Plain stuff, and it keeps." He turns a black-corded arrow in his fingers. "These catch the moment they leave the string. The mossy ones are tipped with flint I cut up the Coldspine, and they bite cold."
 *choice
   # Step back from the bench.
     *set lsf_trapper_traded true
@@ -1300,7 +1300,15 @@ You ask what he was looking for when he looked you over. Thole takes the short a
 *if (shop_verdict = "short")
   You count your coin against his price and come up short. Thole nods and ties the sack closed again.
   *goto lsf_tw_after
-Thole counts the bundles into your hands one at a time and drops the coin into a pouch at his belt.
+*if ((shop_tot_bought > 0) and (shop_tot_sold > 0))
+  Thole weighs what you put down, counts the bundles into your hands, and settles the difference from the pouch at his belt.
+*elseif (shop_tot_bought > 0)
+  Thole counts the bundles into your hands one at a time and drops the coin into a pouch at his belt.
+*else
+  Thole weighs each thing you put down and counts the coin out of the pouch at his belt.
+*if (shop_tot_sold > 0)
+  *line_break
+  [b][💰 Sold: ${shop_sold_list} for ${shop_credit_desc}][/b]
 *if (shop_tot_bought > 0)
   *line_break
   [b][🛒 Bought: ${shop_recv} for ${shop_cost_desc}][/b]
@@ -1327,13 +1335,22 @@ Thole counts the bundles into your hands one at a time and drops the coin into a
 *set shop_rows ""
 *comment GEN:BEGIN trapper_panel_rows
 *gosub_scene equipment shop_row_add "trail_rations"
+*gosub_scene equipment shop_row_add "fire_arrow"
+*gosub_scene equipment shop_row_add "ice_arrow"
 *comment GEN:END trapper_panel_rows
 *return
 
 *label lsf_tw_cart_pass
 *comment GEN:BEGIN trapper_cart_pass
+*set shop_buyer "general"
+*set gear_shop "trapper_sell"
+*gosub_scene equipment shop_cart_sell "trail_rations"
+*gosub_scene equipment shop_cart_sell "fire_arrow"
+*gosub_scene equipment shop_cart_sell "ice_arrow"
 *set gear_shop "trapper"
 *gosub_scene equipment shop_cart_buy "trail_rations"
+*gosub_scene equipment shop_cart_buy "fire_arrow"
+*gosub_scene equipment shop_cart_buy "ice_arrow"
 *comment GEN:END trapper_cart_pass
 *return
 
