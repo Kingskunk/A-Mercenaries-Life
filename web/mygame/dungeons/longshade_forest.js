@@ -49,7 +49,7 @@
       lsf_r5: { x: 0.7, y: 3.7, kind: "room", name: "Lightning Oak" },
       lsf_r6: { x: 0.7, y: 8.6, kind: "room", name: "Room 6" },
       lsf_r7: { x: 3.4, y: 3.9, kind: "room", name: "Room 7" },
-      lsf_r8: { x: 7.4, y: 4.5, kind: "room", name: "Room 8" },
+      lsf_r8: { x: 7.4, y: 4.5, kind: "room", name: "Bark's Glade" },
       lsf_r9: { x: 3.6, y: 2.4, kind: "room", name: "Room 9" },
       lsf_r10: { x: 5.7, y: 4.7, kind: "room", name: "Room 10" },
       lsf_r11: { x: 8.1, y: 2.4, kind: "room", name: "Room 11" },

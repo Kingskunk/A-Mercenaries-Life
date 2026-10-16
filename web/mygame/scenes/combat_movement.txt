@@ -741,52 +741,6 @@
   *goto combat_sync_enemy_positions_from_legacy_ranges_loop
 *return
 
-*label combat_slip_player_past
-*comment Slip Past, success (combat.txt; lane step 2, 2026-10-16): the player really crosses. They step one tile up the lane (nothing is offered at the far end, where there is no tile to step to), every living enemy that was in reach (range 0, on the player's own tile) is
-*comment thrown back one tile behind the tile the player left, so it ends BEHIND the player (side -1) at range 2, or range 1 when the lane's back end gives it no room, and every other enemy's range is worked out again from the new tile, each with its
-*comment side. The enemy then needs its free step and its Dash to catch up from range 2, so it does not attack that turn. Allies keep their coordinates and have their range to their own target worked out again from where they now stand.
-*gosub combat_sync_enemy_positions_from_legacy_ranges
-*temp csp_old combat_lane_player_position
-*temp csp_new (csp_old + 1)
-*if (csp_new > combat_lane_max_position)
-  *set csp_new combat_lane_max_position
-*set combat_lane_player_position csp_new
-*temp csp_back (csp_old - 1)
-*if (csp_back < combat_lane_min_position)
-  *set csp_back combat_lane_min_position
-*temp csp_i 1
-*label combat_slip_player_past_loop
-*if (csp_i <= combat_enemy_count)
-  *temp csp_hp {(("combat_enemy" & csp_i) & "_hp")}
-  *if (csp_hp > 0)
-    *temp csp_range {(("combat_enemy" & csp_i) & "_range")}
-    *temp csp_pos {(("combat_enemy" & csp_i) & "_position")}
-    *if (csp_range <= 0)
-      *set csp_pos csp_back
-      *set {(("combat_enemy" & csp_i) & "_position")} csp_back
-    *temp csp_off (csp_pos - combat_lane_player_position)
-    *if (csp_off > 0)
-      *set {(("combat_enemy" & csp_i) & "_side")} 1
-    *if (csp_off < 0)
-      *set {(("combat_enemy" & csp_i) & "_side")} (0 - 1)
-      *set csp_off (0 - csp_off)
-    *if (csp_off > combat_max_range)
-      *set csp_off combat_max_range
-    *set {(("combat_enemy" & csp_i) & "_range")} csp_off
-  *set csp_i + 1
-  *goto combat_slip_player_past_loop
-*temp csp_a 1
-*label combat_slip_player_past_ally_loop
-*if (csp_a <= combat_ally_slot_cap)
-  *temp csp_ahp {(("combat_ally" & csp_a) & "_hp")}
-  *if (csp_ahp > 0)
-    *temp csp_apos {(("combat_ally" & csp_a) & "_position")}
-    *gosub combat_lane_move_ally_to_position csp_a 0 csp_apos
-  *set csp_a + 1
-  *goto combat_slip_player_past_ally_loop
-*set combat_move_touched_difficult_terrain false
-*return
-
 *label combat_shift_target_range
 *comment Move one living enemy one tier without moving the player or the rest of the line. This is forced movement,
 *comment so it deliberately does not call either opportunity-attack finder. The lane helper updates its absolute

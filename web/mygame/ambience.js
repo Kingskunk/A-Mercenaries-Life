@@ -37,8 +37,13 @@
     village:       { day: "generic_village", night: "generic_village_town_night" },
     woodland:      { day: "woodland_village", night: "generic_village_town_night" },
     shop:          { all: "city_indoor", indoor: true },
+    civic_indoor:  { all: "city_indoor", indoor: true },
     lodgings:      { all: "city_indoor", indoor: true },
     factors_hall:  { all: "city_indoor", indoor: true },
+    bathhouse:     { all: "bathhouse_ambience", indoor: true },
+    blacksmith:    { all: "village_blacksmith_ambience", indoor: true },
+    bivouac:       { all: "generic_village_town_night", indoor: false },
+    undercroft:    { all: "city_indoor", indoor: true },
     tavern:        { day: "quiet_tavern", night: "crowded_tavern", indoor: true },   // it fills up as the day ends
     silt_conduits: { all: "sewer", indoor: true },
     siege:         { all: "siege_battle" }
@@ -47,14 +52,37 @@
   var ALIAS = {
     longshade_forest: "forest", woodroad: "forest", forest: "forest",
     compound: "city", middle_ward: "city", civic_heights: "city", upper_wharves: "city", port_valen: "city", city: "city",
+    carrion_compound: "city",
     alderford: "village", whitefold: "village", redvein: "village", marlcross: "village", brinewick: "village", barleycross: "village", village: "village",
+    village_green: "village",
     timbermouth: "woodland", ashrun_holt: "woodland",
     generic_town_inn: "tavern",
     generic_town_inn_room: "lodgings",
     generic_village_inn: "tavern",
     generic_village_inn_room: "lodgings",
     generic_quiet_lodgings: "lodgings",
-    shared_factors_hall: "factors_hall"
+    shared_factors_hall: "factors_hall",
+    middle_ward_bathhouse: "bathhouse",
+    generic_workshop_smithy: "blacksmith",
+    generic_tavern_inn: "tavern",
+    generic_trade_shop: "shop",
+    town_warehouse_loft: "lodgings",
+    generic_curing_shed: "shop",
+    generic_domestic_cellar: "undercroft",
+    generic_warehouse_undercroft: "undercroft",
+    talia_loft: "lodgings",
+    janna_hearth_alcove: "lodgings",
+    saint_althea_chapel: "civic_indoor",
+    black_sinks_causeway_before: "siege",
+    black_sinks_bivouac: "bivouac",
+    civic_council_hall: "civic_indoor",
+    civic_hiring_hall: "civic_indoor",
+    civic_gilded_scales: "civic_indoor",
+    civic_cathedral_nave: "civic_indoor",
+    civic_saint_althea_chapel: "civic_indoor",
+    civic_tax_windows: "civic_indoor",
+    civic_magistrates_court: "civic_indoor",
+    civic_council_gallery: "civic_indoor"
   };
   var OVERWORLD_OPEN = { road: 1, woodroad: 1, hills: 1, forest: 1 };   // ground a rider travels over (not a town, a village or a fort)
 

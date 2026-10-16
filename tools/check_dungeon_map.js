@@ -53,6 +53,7 @@ for (const key of Object.keys(MAPS)) {
   lines.forEach((ln) => {
     const lab = labelRe.exec(ln);
     if (lab) { cur = m.idPrefix + lab[1]; places[cur] = true; return; }
+    if (/^\*label \w+_menu\s*$/.test(ln)) return;   // a place may keep its choices under its own *_menu label (Bark's Glade): still the same place
     if (/^\*label /.test(ln)) { cur = null; return; }
     if (!cur) return;
     const opt = /^\s*# (.*)$/.exec(ln);

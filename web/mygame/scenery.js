@@ -59,7 +59,9 @@
     "alderford/timber_smithy": "generic_workshop_smithy",
     "timbermouth/market": "town_market",
     "alderford/lower_wharf_market": "town_market",
-    "alderford/talia_loft": "town_warehouse_loft",
+    "alderford/talia_loft": "talia_loft",
+    "alderford/janna_alcove": "janna_hearth_alcove",
+    "port_valen/radiant/hall_pests": "generic_domestic_cellar",
     "prologue/battle_black_sinks": "siege"
   };
 
@@ -68,9 +70,33 @@
   // the rules, tried in order; each gets the stats and returns the name of where the player is, or nothing
   function tile(s) { var O = window.Overworld; return s.ow_on && O && O.nodes ? O.nodes[s.ow_pos] : null; }
   var RULES = [
+    function (s) { return s.sceneName === "combat" && s.scenery_combat_place ? s.scenery_combat_place : undefined; }, // a temporary combat scene keeps the location it was entered from
+    function (s) { return s.sceneName === "prologue/battle_black_sinks" && s.scenery_subplace === "black_sinks_causeway_before" ? "black_sinks_causeway_before" : undefined; }, // the ruined causeway during the prologue assault
+    function (s) { return s.sceneName === "prologue/battle_black_sinks" && s.scenery_subplace === "black_sinks_bivouac" ? "black_sinks_captured_gatehouse_bivouac" : undefined; }, // the company holds the captured gatehouse overnight
+    function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_talia_loft" ? "talia_loft" : undefined; }, // Talia's private curing-loft home
+    function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_janna_alcove" ? "janna_hearth_alcove" : undefined; }, // Janna's private hearth alcove behind the smithy
+    function (s) { return s.ow_on && s.ow_pos === "bs" ? "black_sinks_gilded_scales_toll_fort" : undefined; }, // repaired Gilded Scales toll fort, reached only after the prologue
     function (s) { return s.sceneName === "overworld/camp" && s.has_camp_kit ? "generic_camp_tent_interior" : undefined; }, // the player-owned solo tent, never a company bivouac
     function (s) { return s.sceneName === "timbermouth/workshops" && s.shop_open === "works" ? "generic_workshop_smithy" : undefined; }, // Roan's enclosed trade bench; the lane remains Timbermouth
     function (s) { return s.shop_open === "halda" ? "generic_workshop_smithy" : undefined; }, // Halda trades from a working forge, not a goods shop
+    function (s) { return s.sceneName === "port_valen/port_valen_upper_wharves" && s.scenery_subplace === "patrician_inner_gate" ? "patrician_inner_gate" : undefined; }, // the Patrician Quarter's writ gate
+    function (s) { return s.sceneName === "port_valen/port_valen_upper_wharves" && s.scenery_subplace === "patrician_avenue" ? "patrician_avenue" : undefined; }, // Avenue of Estates, including its great-house stretch
+    function (s) { return s.sceneName === "port_valen/port_valen_upper_wharves" && s.scenery_subplace === "patrician_terrace_walk" ? "patrician_terrace_walk" : undefined; }, // ridge promenade above the city
+    function (s) { return s.sceneName === "port_valen/port_valen_upper_wharves" && s.scenery_subplace === "patrician_gilt_needle" ? "patrician_gilt_needle" : undefined; }, // bespoke tailor interior beats the generic shop counter
+    function (s) { return s.sceneName === "prologue/company_intake" && s.scenery_subplace === "prologue_carrion_compound" ? "carrion_compound" : undefined; }, // Iron Carrion intake and munitions camp
+    function (s) { return s.sceneName === "prologue/company_intake" && s.scenery_subplace === "prologue_flashback_village" ? "village_green" : undefined; }, // Ashbrook memory
+    function (s) { return s.sceneName === "prologue/company_intake" && s.scenery_subplace === "prologue_flashback_dredge" ? "dredge_end" : undefined; }, // Dredge-End memory
+    function (s) { return s.sceneName === "prologue/camp_night" || s.sceneName === "prologue/dawn_trial" ? "carrion_compound" : undefined; }, // company bivouac and dawn trials
+    function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_alderford_riverfront" ? "alderford" : undefined; }, // prologue Alderford hub and morning muster
+    function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_curing_sheds" ? "generic_curing_shed" : undefined; }, // Alderford fish-curing shed
+    function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_cadre_pavilion" ? "carrion_compound" : undefined; }, // Carrion's riverside medical marquee
+    function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_smithy" ? "generic_workshop_smithy" : undefined; }, // Torvald's waterwheel forge
+    function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_taphouse" ? "generic_tavern_inn" : undefined; }, // Drowned Oar taproom
+    function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_counting_house" ? "shared_factors_hall" : undefined; }, // Morzan's factors' hall, not a retail counter
+    function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_granary" ? "town_warehouse_loft" : undefined; }, // Upper Weir grain store
+    function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_chapel" ? "saint_althea_chapel" : undefined; }, // Alderford parish chapel
+    function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_granary_undercroft" ? "generic_warehouse_undercroft" : undefined; }, // flooded warehouse foundation below the Upper Weir Granary
+    function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_sewer" ? "sewer" : undefined; }, // culvert and grain undercroft
     function (s) { return s.shop_open && s.shop_open !== "trapper" ? "generic_trade_shop" : undefined; }, // shop counters in settlements; the forest trapper stays outdoors
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_inn_room" ? "generic_town_inn_room" : undefined; }, // Wagoner's Rest guest room and Kess's rented chamber
     function (s) { return s.sceneName === "timbermouth/split_pine_inn" && s.scenery_subplace === "town_inn_room" ? "generic_town_inn_room" : undefined; }, // Split Pine guest room
@@ -88,6 +114,16 @@
     function (s) { return s.sceneName === "port_valen/port_valen_dredge_end" && s.scenery_subplace === "dredge_flooded_lower_steps" ? "dredge_flooded_lower_steps" : undefined; }, // canal stair and cellar vaults
     function (s) { return s.sceneName === "port_valen/port_valen_dredge_end" && s.scenery_subplace === "dredge_corve_parlor" ? "dredge_corve_parlor" : undefined; }, // Widow Corve's public parlor
     function (s) { return s.sceneName === "port_valen/port_valen_dredge_end" && s.scenery_subplace === "dredge_corve_private_chamber" ? "dredge_corve_private_chamber" : undefined; }, // Widow Corve's private room
+    function (s) { return s.sceneName === "port_valen/port_valen_civic_heights" && s.scenery_subplace === "civic_council_hall" ? "civic_council_hall" : undefined; }, // Council Hall concourse
+    function (s) { return s.sceneName === "port_valen/port_valen_civic_heights" && s.scenery_subplace === "civic_hiring_hall" ? "civic_hiring_hall" : undefined; }, // Hiring Hall
+    function (s) { return s.sceneName === "port_valen/port_valen_civic_heights" && s.scenery_subplace === "civic_gilded_scales" ? "civic_gilded_scales" : undefined; }, // Gilded Scales Head House
+    function (s) { return s.sceneName === "port_valen/port_valen_civic_heights" && s.scenery_subplace === "civic_port_watch" ? "civic_port_watch" : undefined; }, // Port Watch headquarters yard
+    function (s) { return s.sceneName === "port_valen/port_valen_civic_heights" && s.scenery_subplace === "civic_cathedral_exterior" ? "civic_cathedral_exterior" : undefined; }, // cathedral steps and doors
+    function (s) { return s.sceneName === "port_valen/port_valen_civic_heights" && s.scenery_subplace === "civic_cathedral_nave" ? "civic_cathedral_nave" : undefined; }, // cathedral's main hall
+    function (s) { return s.sceneName === "port_valen/port_valen_civic_heights" && s.scenery_subplace === "civic_saint_althea_chapel" ? "civic_saint_althea_chapel" : undefined; }, // Saint Althea's side chapel
+    function (s) { return s.sceneName === "port_valen/port_valen_civic_heights" && s.scenery_subplace === "civic_tax_windows" ? "civic_tax_windows" : undefined; }, // Council Hall tax windows
+    function (s) { return s.sceneName === "port_valen/port_valen_civic_heights" && s.scenery_subplace === "civic_magistrates_court" ? "civic_magistrates_court" : undefined; }, // Magistrates' Court
+    function (s) { return s.sceneName === "port_valen/port_valen_civic_heights" && s.scenery_subplace === "civic_council_gallery" ? "civic_council_gallery" : undefined; }, // Council's public gallery
     function (s) { return s.sceneName === "timbermouth/workshops" ? "generic_town_street" : undefined; }, // the outdoor workshops lane
     function (s) { return SCENE_PLACES[s.sceneName]; },                                                // a scene that is a place of its own: an inn, the battle
     function (s) { if (s.shop_open) return "shop"; },                                                  // at a shop's counter

@@ -150,6 +150,12 @@ Scene.prototype.printLoop = function printLoop() {
         // put transient, half-executed states into the recovery history).
         this.skipFooter = false;
     } else {
+        // Optional game presentation layers normally poll stats once a second.
+        // Refresh them at the actual visible-page boundary as well, so a
+        // cross-scene *gosub_scene (such as a combat encounter) cannot leave
+        // the previous location's backdrop or room tone on screen for a frame.
+        if (window.Scenery && window.Scenery.update) window.Scenery.update();
+        if (window.Ambience && window.Ambience.update) window.Ambience.update();
         this.refreshSavedProgress();
         this.save("temp");
         printFooter();

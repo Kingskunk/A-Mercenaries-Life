@@ -2654,16 +2654,14 @@
 *comment combat_range_display_name, so every call is copied out immediately before the next overwrites it -- four
 *comment separate temps rather than one reused name. Left as "" when that direction isn't available, which can't
 *comment reach the button text anyway (each option is gated on its own combat_can_ flag).
-*comment SLIP PAST (2026-10-12, the user's call): the lane has a back end, and a player who has been driven all the way to it could fall back no further, so a melee enemy that cornered a ranged fighter won outright. Slip Past is therefore its own option, offered anywhere
-*comment in the lane while an enemy is in reach (and Fall Back is withdrawn at the very back, where it can do nothing): an ACTION and a skill check (the better of Acrobatics and Athletics) against the toughest enemy in reach, DC 10 + its better STR or DEX modifier. A success puts the player back near the middle of the lane (combat_slip_player_past) with every enemy that was
-*comment in reach thrown out to Mid-Range, so the enemy has to turn and chase and the retreat has room again. A miss leaves things as they were and gives one engaged melee enemy its opportunity attack (none if Disengage covers the round). Only offered with an enemy actually in reach.
-*temp combat_can_slip false
+*comment SLIP PAST WAS REMOVED (the user's call, 2026-10-16): it was an action and a skill check that did what advancing past an enemy does for movement, so Push Forward past (below) is the one way to cross an enemy, and Disengage covers the round when the player wants no free swing. The scan below
+*comment still finds the toughest living enemy standing on the player's tile, because that is the enemy a Push Forward past names and leaves behind.
 *temp combat_push_past false
-*temp combat_slip_slot 0
-*temp combat_slip_best_mod (0 - 9)
+*temp combat_engaged_slot 0
+*temp combat_engaged_best_mod (0 - 9)
 *comment The engaged enemy to name and test against: the toughest living enemy at range 0.
 *temp csp_i 1
-*label combat_slip_scan_loop
+*label combat_engaged_scan_loop
 *if (csp_i <= combat_enemy_count)
   *temp csp_hp {(("combat_enemy" & csp_i) & "_hp")}
   *temp csp_range {(("combat_enemy" & csp_i) & "_range")}
@@ -2675,29 +2673,23 @@
     *gosub_scene startup score_to_mod csp_dex
     *if (sm_mod > csp_mod)
       *set csp_mod sm_mod
-    *if (csp_mod > combat_slip_best_mod)
-      *set combat_slip_best_mod csp_mod
-      *set combat_slip_slot csp_i
+    *if (csp_mod > combat_engaged_best_mod)
+      *set combat_engaged_best_mod csp_mod
+      *set combat_engaged_slot csp_i
   *set csp_i + 1
-  *goto combat_slip_scan_loop
+  *goto combat_engaged_scan_loop
 *if (combat_lane_player_position <= combat_lane_min_position)
   *set combat_can_fall_back false
-*comment A level 2 rogue spends the BONUS action on it (combat_cunning, the same switch Dash, Disengage and Hide use), so the action stays free for an attack. With the bonus spent, or for anyone else, it is the action.
-*if (((combat_slip_slot > 0) and ((combat_player_actions_left > 0) or (combat_cunning))) and ((combat_can_move) and ((not(player_movement_restricted)) and (not(combat_choke_player_blocked)))))
-  *set combat_can_slip true
-*if (combat_lane_player_position >= combat_lane_max_position)
-  *set combat_can_slip false
 *comment ADVANCE PAST (the user's call, 2026-10-12): with an enemy in reach and nothing farther to close on, Push Forward still works, as a step past it. Leaving reach gives the same free swing as falling back (see the Push Forward option).
-*if ((combat_slip_slot > 0) and ((not(player_movement_restricted)) and (not(combat_choke_player_blocked))))
+*if ((combat_engaged_slot > 0) and ((not(player_movement_restricted)) and (not(combat_choke_player_blocked))))
   *if (combat_lane_player_position < combat_lane_max_position)
     *set combat_can_push_forward true
     *set combat_push_past true
-*temp combat_slip_dc_now (10 + combat_slip_best_mod)
-*temp combat_slip_epithet "the enemy"
-*if (combat_can_slip)
-  *set combat_slip_epithet {(("combat_enemy" & combat_slip_slot) & "_epithet")}
+*temp combat_engaged_epithet "the enemy"
+*if (combat_engaged_slot > 0)
+  *set combat_engaged_epithet {(("combat_enemy" & combat_engaged_slot) & "_epithet")}
 *temp combat_push_leaves false
-*if ((combat_slip_slot > 0) and (not(combat_player_disengaged)))
+*if ((combat_engaged_slot > 0) and (not(combat_player_disengaged)))
   *set combat_push_leaves true
 *temp combat_push_phrase "and close the distance on the nearest enemy."
 *temp combat_push_text ""
@@ -2735,9 +2727,9 @@
 *comment The Push Forward label: the usual sentence, or (an enemy on the player's tile is stepped past) the pass, with the gap to the nearest enemy ahead added when there is one to close on.
 *set combat_push_text "${combat_push_phrase} (${combat_push_from_name} → ${combat_push_to_name})"
 *if (combat_push_past)
-  *set combat_push_text "past ${combat_slip_epithet}, leaving them at your back."
+  *set combat_push_text "past ${combat_engaged_epithet}, leaving them at your back."
   *if ((cmc_chosen_push < cmc_range_sentinel) and (not(cmc_push_opens)))
-    *set combat_push_text "past ${combat_slip_epithet}, leaving them at your back, and close on the nearest enemy ahead. (${combat_push_from_name} → ${combat_push_to_name})"
+    *set combat_push_text "past ${combat_engaged_epithet}, leaving them at your back, and close on the nearest enemy ahead. (${combat_push_from_name} → ${combat_push_to_name})"
 *comment Auto-end: silently loops back to the queue once there's truly nothing left to spend a resource on, not
 *comment just once every pool counter happens to read zero -- attacks_left and bonus_left both sit at their full
 *comment value on a turn that never touched them (a caster who casts instead of swinging, or any turn where no
@@ -2969,8 +2961,8 @@
       *comment before the step, while the enemy is still in reach; the swing lands after the move is narrated. With nothing farther to close on, the engaged enemy is the one the step is narrated against.
       *if (not(combat_pushpast_locked)) or (not(locked_combat_pushpast_page_id = page_id))
         *set combat_pushpast_flag combat_push_past
-        *set combat_pushpast_name combat_slip_epithet
-        *set combat_pushpast_slot combat_slip_slot
+        *set combat_pushpast_name combat_engaged_epithet
+        *set combat_pushpast_slot combat_engaged_slot
         *if (combat_push_leaves)
           *gosub find_opportunity_attacker
         *set combat_pushpast_locked true
@@ -3006,38 +2998,6 @@
       *line_break
       *gosub resolve_opportunity_attack
       *goto fight_move_spent
-
-  *if (combat_can_slip)
-    # [b][@{combat_cunning BONUS ACTION|ACTION}][/b] [b][Slip Past][/b] Duck round ${combat_slip_epithet} and break clear, wherever you stand. A miss gives them a free swing.@{show_stat_hints  [Acrobatics or Athletics vs. DC ${combat_slip_dc_now}]|}
-      *comment Slip Past (see the SLIP PAST comment above the movement checks): offered anywhere in the lane with an enemy in reach. Whole-choice replay lock, like Shove.
-      *if (not(combat_slip_locked)) or (not(locked_combat_slip_page_id = page_id))
-        *set combat_slip_dc combat_slip_dc_now
-        *set combat_slip_name combat_slip_epithet
-        *gosub_scene dice_engine roll_skill_check combat_slip_dc "acrobatics" "" "athletics" "" "" ""
-        *set combat_slip_success check_success
-        *if (combat_slip_success)
-          *gosub_scene combat_movement combat_slip_player_past
-          *temp cs_slip_r {(("combat_enemy" & combat_slip_slot) & "_range")}
-          *gosub_scene combat_movement combat_range_name cs_slip_r
-          *set combat_slip_to_name combat_range_display_name
-        *else
-          *if (not(combat_player_disengaged))
-            *gosub find_opportunity_attacker
-        *set combat_slip_locked true
-        *set locked_combat_slip_page_id page_id
-      *if (combat_slip_success)
-        You drop a shoulder, go low under ${combat_slip_name}'s guard and come up on the far side of them with the open ground ahead of you. They have to turn to follow.
-        *line_break
-        [b][🏃 You Slip Past — ${combat_slip_name} is left behind you at ${combat_slip_to_name}][/b]
-      *else
-        You try to slip past ${combat_slip_name}, but they turn with you and shut the gap.
-        *line_break
-        [b][Slip Past: Failed | DC ${combat_slip_dc}][/b]
-      *line_break
-      *gosub resolve_opportunity_attack
-      *if (combat_cunning)
-        *goto fight_bonus_spent
-      *goto fight_action_spent
 
   *if ((combat_player_moves_left > 0) and (combat_can_fall_back))
     # Fall back ${combat_fall_phrase} (${combat_fall_from_name} → ${combat_fall_to_name})

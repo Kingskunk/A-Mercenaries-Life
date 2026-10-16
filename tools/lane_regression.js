@@ -9,15 +9,15 @@
  *
  * To baseline code you are about to change while you keep editing, copy the repo (web and tools and the root *.js) to a temp folder and pass it as repoRoot: scripted_play reads the
  * scene files from disk on every run, so editing in place would corrupt the baseline mid-run. Each run takes about 35 seconds, so the whole suite is about 15 minutes.
- * The route is a list of OPTIONAL steps (scripted_play "optional": true): Push forward, Attack, Slip Past, Fall back, End your turn, repeated, each skipped when it is not on offer, so one list
+ * The route is a list of OPTIONAL steps (scripted_play "optional": true): Push forward, Attack, Fall back, End your turn, repeated, each skipped when it is not on offer, so one list
  * works in every fight. To prove a comparison can fail, sabotage a copy (e.g. start every enemy behind) and check it reports a difference.
  */
 const fs = require("fs"), path = require("path"), os = require("os"), cp = require("child_process");
 const FIGHTS = ["Silt-Lurker", "Rennick's Dock-Guards", "Granary Rats", "Dredge-End Night Ambush", "The Muffled Bell Wreckers", "The Stolen Shroud Thieves", "Captain Trent", "Grease & Fire Test", "Reach Test", "Squad Test"];
 const PRESETS = [["fighter", "Vanguard Line Fighter", "low"], ["fighterhigh", "Vanguard Line Fighter", "high"], ["rogue", "Scout Company Rogue", "mid"]];
-const ROUND_FULL = ["Push forward", "Attack with your", "Slip Past", "Fall back", "Attack with your", "Push forward", "Push forward", "Attack with your", "Slip Past", "End your turn"];
+const ROUND_FULL = ["Push forward", "Attack with your", "Fall back", "Attack with your", "Push forward", "Push forward", "Attack with your", "End your turn"];
 
-// The second route never picks Slip Past and only advances to CLOSE on an enemy (never "past" one), so in a fight where nothing is ever crossed it must play exactly as before a crossing change.
+// The second route only advances to CLOSE on an enemy (never "past" one), so in a fight where nothing is ever crossed it must play exactly as before a crossing change.
 const ROUND_NOCROSS = ["Push forward and close", "Attack with your", "Fall back", "Attack with your", "Push forward and close", "Attack with your", "End your turn"];
 let ROUND = ROUND_FULL;
 
