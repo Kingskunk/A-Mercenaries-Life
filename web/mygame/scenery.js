@@ -31,7 +31,7 @@
     marlcross: "village_green",
     barleycross: "village_green",
     ashrun_holt: "village_green",
-    port_valen: "city_harbour",
+    port_valen: "port_valen_river_gate", // the overworld node is the River Gate approach, not the quays
     silt_conduits: "sewer",       // the Silt-Gate channels
     compound: "carrion_compound", // the Carrion compound, where the story starts
     harbor: "city_harbour",
