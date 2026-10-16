@@ -42,10 +42,13 @@
   // scenes (the file under scenes/, as the engine reports it in stats.sceneName) that are a kind of place of their own
   var SCENE_PLACES = {
     "alderford/drowned_oar": "tavern",
-    "timbermouth/split_pine_inn": "tavern",
-    "alderford/redvein/red_lantern": "tavern",
-    "alderford/whitefold/white_ram": "tavern",
-    "port_valen/brinewick/reedhouse": "tavern",
+    "timbermouth/split_pine_inn": "generic_town_inn",
+    "alderford/wagon_lot": "village_stable_yard",
+    "timbermouth/wagon_lot": "village_stable_yard",
+    "alderford/redvein/red_lantern": "generic_village_inn",
+    "alderford/whitefold/white_ram": "generic_village_inn",
+    "port_valen/brinewick/reedhouse": "generic_village_inn",
+    "port_valen/marlcross/wayfarers_rest": "generic_village_inn",
     "alderford/whitefold/fleecefold": "whitefold_fleecefold",
     "timbermouth/ashrun_holt/longhouse": "ashrun_holt_longhouse",
     "port_valen/brinewick/tide_house": "brinewick_tide_house",
@@ -69,11 +72,16 @@
     function (s) { return s.sceneName === "timbermouth/workshops" && s.shop_open === "works" ? "generic_workshop_smithy" : undefined; }, // Roan's enclosed trade bench; the lane remains Timbermouth
     function (s) { return s.shop_open === "halda" ? "generic_workshop_smithy" : undefined; }, // Halda trades from a working forge, not a goods shop
     function (s) { return s.shop_open && s.shop_open !== "trapper" ? "generic_trade_shop" : undefined; }, // shop counters in settlements; the forest trapper stays outdoors
+    function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_inn_room" ? "generic_town_inn_room" : undefined; }, // Wagoner's Rest guest room and Kess's rented chamber
+    function (s) { return s.sceneName === "timbermouth/split_pine_inn" && s.scenery_subplace === "town_inn_room" ? "generic_town_inn_room" : undefined; }, // Split Pine guest room
+    function (s) { return s.scenery_subplace === "village_inn_room" && (s.sceneName === "alderford/drowned_oar" || s.sceneName === "alderford/redvein/red_lantern" || s.sceneName === "alderford/whitefold/white_ram" || s.sceneName === "port_valen/brinewick/reedhouse" || s.sceneName === "port_valen/marlcross/wayfarers_rest") ? "generic_village_inn_room" : undefined; }, // village inns and Maura's Drowned Oar rooms
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_lodgings" ? "generic_quiet_lodgings" : undefined; }, // Terrace Lodgings' ground-floor entry hall
-    function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_tavern" ? "tavern" : undefined; }, // the Wagoner's Rest hall and rooms
+    function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_tavern" ? "generic_town_inn" : undefined; }, // the Wagoner's Rest hall and rooms
+    function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_bakehouse" ? "middle_ward_bakehouse" : undefined; }, // Mother Marda's communal bakehouse
+    function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_bathhouse" ? "middle_ward_bathhouse" : undefined; }, // Conduit Baths' tub room
+    function (s) { return s.sceneName === "alderford/chapel" ? "saint_althea_chapel" : undefined; }, // Saint Althea's working parish chapel above the weir
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_city_street" ? "generic_city_street" : undefined; }, // Trunk Road and Lantern Lane; Conduit Square remains the district view
     function (s) { return s.sceneName === "timbermouth/workshops" ? "generic_town_street" : undefined; }, // the outdoor workshops lane
-    function (s) { return s.sceneName === "port_valen/port_valen_dredge_end" ? "generic_city_slum_street" : undefined; }, // Dredge-End's inland lanes; its shop counter still uses the trade interior above
     function (s) { return SCENE_PLACES[s.sceneName]; },                                                // a scene that is a place of its own: an inn, the battle
     function (s) { if (s.shop_open) return "shop"; },                                                  // at a shop's counter
     function (s) { if (s.dg_in_run && s.dg_table && s.dg_table !== "none") return s.dg_table; },       // inside a dungeon: which one

@@ -267,6 +267,21 @@
   *set combat_max_range 5
   *set combat_lane_max_position 8
 *set combat_range_mode_used combat_range_mode
+*comment OPENING DISTANCE (2026-10-02, from the fight log: every fight opened Engaged, so a ranged caster started in the close-combat penalty and a 7 HP wizard took blows
+*comment before a spell). Unless the story ambushes the player (combat_enemy_advantage) or the caller sets combat_opens_engaged true (a brawl already in progress), any enemy
+*comment left Engaged opens at Close: it spends its first turn closing (closing costs its action), so the player gets one clean round. A caller that set a range itself
+*comment (the dev tests) is untouched, since only a range of 0 is moved. Moved out of the initiative lock on 2026-10-16: it must run before combat_initialize_shared_lane, which seeds each enemy's lane position from its range (it used to run after, so an enemy opened at Close was drawn on the player's own tile until the first move). Setup runs once per fight, so it needs no lock.
+*if ((not(combat_enemy_advantage)) and (not(combat_opens_engaged)))
+  *temp cri_od 1
+  *label cri_open_loop
+  *if (cri_od <= combat_enemy_count)
+    *temp cri_od_range {(("combat_enemy" & cri_od) & "_range")}
+    *if (cri_od_range = 0)
+      *set {(("combat_enemy" & cri_od) & "_range")} 1
+      *if (cri_od = 1)
+        *set combat_enemy_range 1
+    *set cri_od + 1
+    *goto cri_open_loop
 *gosub_scene combat_movement combat_initialize_shared_lane
 *comment Terrain randomisation is resolved once, after every actor has an opening lane coordinate and before initiative.
 *comment Fixed is the default, so existing authored encounters remain exactly as they are until they opt in.
@@ -375,21 +390,7 @@
 *comment again, harmlessly. announce_turn_order (below) stays unlocked -- it only reads combat_turn_kind_N/
 *comment _slot_N back and prints them, so it reprints correctly off whatever this lock preserved.
 *if (not(combat_init_locked)) or (not(locked_combat_init_page_id = page_id))
-  *comment OPENING DISTANCE (2026-10-02, from the fight log: every fight opened Engaged, so a ranged caster started in the close-combat penalty and a 7 HP wizard took blows
-  *comment before a spell). Unless the story ambushes the player (combat_enemy_advantage) or the caller sets combat_opens_engaged true (a brawl already in progress), any enemy
-  *comment left Engaged opens at Close: it spends its first turn closing (closing costs its action), so the player gets one clean round. A caller that set a range itself
-  *comment (the dev tests) is untouched, since only a range of 0 is moved. Inside this lock so a refresh cannot move a slot that has already closed.
-  *if ((not(combat_enemy_advantage)) and (not(combat_opens_engaged)))
-    *temp cri_od 1
-    *label cri_open_loop
-    *if (cri_od <= combat_enemy_count)
-      *temp cri_od_range {(("combat_enemy" & cri_od) & "_range")}
-      *if (cri_od_range = 0)
-        *set {(("combat_enemy" & cri_od) & "_range")} 1
-        *if (cri_od = 1)
-          *set combat_enemy_range 1
-      *set cri_od + 1
-      *goto cri_open_loop
+  *comment OPENING DISTANCE (2026-10-02) now runs in fight_setup, before the lane is built (2026-10-16), so the sidebar strip shows an enemy at Close on the first frame.
   *temp cri_n 0
   *set cri_n + 1
   *set combat_init_kind_1 "player"

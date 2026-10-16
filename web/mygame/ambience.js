@@ -38,6 +38,7 @@
     woodland:      { day: "woodland_village", night: "generic_village_town_night" },
     shop:          { all: "city_indoor", indoor: true },
     lodgings:      { all: "city_indoor", indoor: true },
+    factors_hall:  { all: "city_indoor", indoor: true },
     tavern:        { day: "quiet_tavern", night: "crowded_tavern", indoor: true },   // it fills up as the day ends
     silt_conduits: { all: "sewer", indoor: true },
     siege:         { all: "siege_battle" }
@@ -48,7 +49,12 @@
     compound: "city", middle_ward: "city", civic_heights: "city", upper_wharves: "city", port_valen: "city", city: "city",
     alderford: "village", whitefold: "village", redvein: "village", marlcross: "village", brinewick: "village", barleycross: "village", village: "village",
     timbermouth: "woodland", ashrun_holt: "woodland",
-    generic_quiet_lodgings: "lodgings"
+    generic_town_inn: "tavern",
+    generic_town_inn_room: "lodgings",
+    generic_village_inn: "tavern",
+    generic_village_inn_room: "lodgings",
+    generic_quiet_lodgings: "lodgings",
+    shared_factors_hall: "factors_hall"
   };
   var OVERWORLD_OPEN = { road: 1, woodroad: 1, hills: 1, forest: 1 };   // ground a rider travels over (not a town, a village or a fort)
 
