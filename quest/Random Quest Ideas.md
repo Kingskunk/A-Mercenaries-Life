@@ -193,8 +193,11 @@ Claw. Melee Attack Roll: +4, reach close only. Deals 1d4 + 2 Slashing damage.
 
 Evil Mage
 
-Dubhar abhors physical violence
-(when it applies to him), preferring to utilize greater invisibility
-and fly to flee rather than engage PCs who get too close to him.
+Gear Quarterstaff
+Str 9, Int 17, Dex 14, Con 11, Cha 11, Wis 12, AC 12, HP 22 
+
+Actions
+Quarterstaff. Melee Weapon Attack: +4, reach close only. Deals 1d6 + 2 Bludgeoning damage.
+Spell, Po
 
 ----------------------------------------

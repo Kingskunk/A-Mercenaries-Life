@@ -69,6 +69,9 @@
     function (s) { return s.sceneName === "timbermouth/workshops" && s.shop_open === "works" ? "generic_workshop_smithy" : undefined; }, // Roan's enclosed trade bench; the lane remains Timbermouth
     function (s) { return s.shop_open === "halda" ? "generic_workshop_smithy" : undefined; }, // Halda trades from a working forge, not a goods shop
     function (s) { return s.shop_open && s.shop_open !== "trapper" ? "generic_trade_shop" : undefined; }, // shop counters in settlements; the forest trapper stays outdoors
+    function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_city_street" ? "generic_city_street" : undefined; }, // Trunk Road and Lantern Lane; Conduit Square remains the district view
+    function (s) { return s.sceneName === "timbermouth/workshops" ? "generic_town_street" : undefined; }, // the outdoor workshops lane
+    function (s) { return s.sceneName === "port_valen/port_valen_dredge_end" ? "generic_city_slum_street" : undefined; }, // Dredge-End's inland lanes; its shop counter still uses the trade interior above
     function (s) { return SCENE_PLACES[s.sceneName]; },                                                // a scene that is a place of its own: an inn, the battle
     function (s) { if (s.shop_open) return "shop"; },                                                  // at a shop's counter
     function (s) { if (s.dg_in_run && s.dg_table && s.dg_table !== "none") return s.dg_table; },       // inside a dungeon: which one
