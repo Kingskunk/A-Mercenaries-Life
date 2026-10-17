@@ -22,6 +22,7 @@
 *comment ====================================================================================
 
 *label rj_perf_arrive
+*set ambience_lute_active false
 *set minutes_to_pass 10
 *set time_advance_call_id "rj_perf_arrive_1"
 *gosub rj_perf_time
@@ -70,6 +71,7 @@
 *goto rj_perf_set
 
 *label rj_perf_set
+*set ambience_lute_active false
 *temp ord "the last set"
 *if (rj_perf_cur = 1)
   *set ord "the first set"
@@ -133,6 +135,8 @@
 
 *comment ── the song resolver: the room's taste sets the DC, then roll first and advance the clock after ──
 *label rj_perf_play
+*gosub rj_perf_choose_lute_track
+*set ambience_lute_active true
 *gosub rj_perf_taste
 *set rj_perf_dc 12
 *if (rj_perf_song = rj_perf_pref)
@@ -208,6 +212,7 @@
 
 *comment ── the pay: the venue's fee plus a tip for each set that landed; a Quarter gala closes the posting and walks the player out ──
 *label rj_perf_pay
+*set ambience_lute_active false
 *gosub rj_perf_patron
 *temp good 0
 *if (rj_perf_good1)
@@ -320,6 +325,18 @@ You tell ${name_first} you will come back another night. The lute goes back into
 *elseif (rj_perf_cur = 3)
   *set rj_perf_pref p3
 *set rj_perf_dislike ((rj_perf_pref modulo 3) + 1)
+*return
+
+*comment Choose a new recording for each set. The immediately previous recording is skipped so
+*comment a three-set booking does not accidentally sound like the same song played twice.
+*label rj_perf_choose_lute_track
+*rand ambience_lute_track 1 4
+*if (ambience_lute_track = ambience_lute_last_track)
+  *set ambience_lute_track + 1
+  *if (ambience_lute_track = 5)
+    *set ambience_lute_track 1
+*set ambience_lute_last_track ambience_lute_track
+*set ambience_lute_cue + 1
 *return
 
 *comment ── record this set: landed when rj_perf_ok. Assignments only. ──

@@ -90,7 +90,7 @@ const MAP = {
   // ---- consumables and tools
   potion: "POT_Potion_of_Healing_Unfaded_Icon.png",
   grease: "GRN_Grease_Bottle_Unfaded_Icon.png",
-  herbal_kit: "Herbalist_kit.png",
+  mortar_pestle: "Mortar_And_Pestle_Unfaded_Icon.png",
   alch_fire: "GRN_Alchemist's_Fire_Unfaded_Icon.png",
   elixir: "ELX_Elixir_of_Darkvision_Unfaded_Icon.png",
   salve: "Clutter_Bottle_Small_Flowers_Unfaded_Icon.webp",
@@ -120,6 +120,16 @@ const MAP = {
   gland: "Carrion_Crawler_Tentacle_Item_Icon.png",
   venom: "Conical_Flask_Filled_Unfaded_Icon.png",
   ichor: "Clutter_Bottle_Small_Eye_Unfaded_Icon.webp",
+  sluice_moss: "Weavemoss_Item_Icon.png",
+  brinecap: "Swarming_Toadstool_Item_Icon.png",
+  pale_crackroot: "Daggerroot_Unfaded_Icon.png",
+  cistern_spores: "Timmask_Spores_Item_Icon.png",
+  glowmold: "glowing_spore_group.png",
+  silverleaf: "01-silverleaf-herbs.png",
+  oakheart_balsam: "Balsam_Item_Icon.png",
+  shadefern: "frost_fern.png",
+  acorn_truffle: "Acorn_Truffle_Item_Icon.png",
+  brambleberry: "thorn_briar.png",
 
   // ---- loose stones
   gem_agate: "Miscellaneous_item/Valuables/Gemstone/GEM_Agate_Unfaded_Icon.png",

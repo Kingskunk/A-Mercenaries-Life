@@ -23,10 +23,22 @@
 (function () {
   "use strict";
   var FILES = window.AMBIENCE_FILES || [];
+  var LUTE_TRACKS = {
+    1: "ode_to_the_queen_lute",
+    2: "sway_as_we_kiss_lute",
+    3: "the_plane_meld_molag_bal_lute",
+    4: "warrior_goddess_mother_of_nords_lute"
+  };
+  var LUTE_SONG = {
+    ode_to_the_queen_lute: true,
+    sway_as_we_kiss_lute: true,
+    the_plane_meld_molag_bal_lute: true,
+    warrior_goddess_mother_of_nords_lute: true
+  };
   if (!FILES.length) return;
   var BASES = ["ambience/", "../../ambience/", "../ambience/"];   // where the folder may be, relative to the page
   var FADE = 3;                                                     // seconds for a layer to fade in or out
-  var base = null, probing = false, layers = {}, unlocked = false, cfg = { vol: 0.5, mute: false };
+  var base = null, probing = false, layers = {}, unlocked = false, lastLuteCue = 0, cfg = { vol: 0.5, mute: false };
 
   // what each kind of place plays: day (by day), night (at night), all (at every hour). indoor: the weather is muffled there.
   var SOUND = {
@@ -161,6 +173,9 @@
     // Never attach this to a romance, a room, or a person: it is only set for an explicit,
     // player-selected intimacy passage, and is deliberately quiet beneath the indoor bed.
     if (s.ambience_intimacy && p && p.spec.indoor) put("female_moans", 0.18);
+    // A performance is opt-in and short-lived. ChoiceScript picks a track per set/listen so
+    // regular taverns keep their room tone instead of acquiring a permanent bard loop.
+    if (s.ambience_lute_active) put(LUTE_TRACKS[Number(s.ambience_lute_track)] || LUTE_TRACKS[1], 0.34);
     for (var i = 0; i < names.length; i++) {
       var layersHere = OVERLAY[names[i]] || [];
       for (var j = 0; j < layersHere.length; j++) {
@@ -197,7 +212,7 @@
       // Start somewhere in the loop, not always at its beginning, so the same storm or forest is never the same twice. Only when the length is a real number: a server with no partial downloads
       // (the simple test servers, possibly serve.js) makes the browser report an UNKNOWN length (Infinity), and a seek to a random point of that froze the page (found in testing). Once only,
       // in case a seek reloads the file and fires the event again.
-      el.addEventListener("loadedmetadata", function () { if (isFinite(el.duration) && el.duration > 20 && el.seekable && el.seekable.length) el.currentTime = Math.random() * (el.duration - 10); }, { once: true });
+      el.addEventListener("loadedmetadata", function () { if (!LUTE_SONG[name] && isFinite(el.duration) && el.duration > 20 && el.seekable && el.seekable.length) el.currentTime = Math.random() * (el.duration - 10); }, { once: true });
       L = layers[name] = { el: el, level: 0, target: 0 };
     }
     return L;
@@ -223,6 +238,17 @@
 
   function update() {
     var s = window.stats; if (!s || !base) { if (!base) findBase(); return; }
+    // The dossier is a UI overlay, not a new place. Keep the story's existing sound alive
+    // while it is open instead of re-resolving it from the bookkeeping scene name.
+    if (String(s.sceneName || "") === "choicescript_stats") return;
+    // A cue is a newly chosen song, not a change of place. Rewind only that song, so it
+    // begins at its first note rather than resuming halfway through a prior booking.
+    var cue = Number(s.ambience_lute_cue) || 0;
+    if (s.ambience_lute_active && cue && cue !== lastLuteCue) {
+      lastLuteCue = cue;
+      var song = LUTE_TRACKS[Number(s.ambience_lute_track)] || LUTE_TRACKS[1], songLayer = layers[song];
+      if (songLayer) { songLayer.el.pause(); songLayer.el.currentTime = 0; songLayer.level = 0; songLayer.target = 0; }
+    }
     var want = targets(s), n;
     for (n in want) if (want.hasOwnProperty(n)) layer(n).target = want[n];
     for (n in layers) if (layers.hasOwnProperty(n) && !want.hasOwnProperty(n)) layers[n].target = 0;

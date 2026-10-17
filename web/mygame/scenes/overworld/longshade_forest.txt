@@ -2032,21 +2032,156 @@ A line of bees carries a slab of comb to the lip of the hollow, and you take it 
     *set dg_dest_hall true
     *goto lsf_move
 
+*comment THE ROOT HOLLOW (Room 13, the user's plan 2026-10-17: the bear story across Rooms 10 to 14; the hollow and the bear are invented here). A bear ill from a diet of nothing but meat, lying under a toppled pine. PART ONE: reading what ails her (Medicine or Survival
+*comment DC 12, ten minutes, ONE TRY PER REFILL on a miss: dg_lsf_bear_tried; or Speak with Animals, no roll, which also tells of her missing cub) and every way to heal her. Honey needs no reading (she smells it); a spell, Saint Althea's Water or the mortar and pestle
+*comment need the reading first. Healed is for good (lsf_bear_healed). PART TWO, after Room 14 is built: the cub comes home to her, and a button to sleep in the den (the forest has no long rest of its own).
 *label lsf_n_r13
 
-[b]◈ FOREST ROOM 13[/b]
+[b]◈ THE ROOT HOLLOW[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
-*if (dg_dark)
-  The dark under the trees is close, and you feel your way. This is forest room 13. Nothing is written here yet.
+*gosub_scene dungeon dg_swa_check
+*if (lsf_bear_healed)
+  *if (dg_dark)
+    The breathing ahead of you is slow and easy now, and heavy feet pace the ground in a short, restless line. A low whine rises and stops, and rises again.
+  *else
+    The ground drops into a hollow under the roots of a toppled pine, and the bear stands at its mouth shaking needles out of her coat. Her breath comes easy and her eyes are clear. She lifts her nose toward the east and holds it there, then paces the ring she has trampled in the dirt, over and over, as though she were waiting for someone.
 *else
-  This is forest room 13. Nothing is written here yet.
+  *if (dg_dark)
+    A sour, heavy smell reaches you before anything else, and then a sound: slow, uneven breathing, deep as a bellows, and now and then a low groan. The ground under your hand is trampled flat and strewn with small hard bones, and something large lies curled just ahead, close enough for you to feel its warmth.
+  *else
+    The ground drops into a hollow under the roots of a toppled pine, floored with dry needles and torn bark. A brown bear lies curled in it with her chin on her paws, her ribs lifting in short, uneven breaths. Now and then she shifts and groans low in her throat. The earth around her is trampled flat in a ring where she has turned and turned, and a scatter of bones lies at its edge, picked clean. A sour, heavy smell hangs over the whole hollow, and her eyes follow you without her head leaving her paws.
+  *if (lsf_bear_read)
+
+    You know what ails her now. Her belly is swollen and hard, and nothing she has eaten in weeks had a leaf or a seed in it. Something sweet or green would ease her more than anything.
+  *elseif (dg_lsf_bear_tried)
+
+    She keeps her face turned from you, and another day may show you more of her.
+*gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
+  *if ((not(lsf_bear_healed)) and (not(lsf_bear_read)))
+    *if (not(dg_lsf_bear_tried))
+      # Watch her closely from the edge of the hollow. [~10 min]@{show_stat_hints  [Medicine or Survival DC 12]|}
+        *goto lsf_bear_look
+    *if (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "slot"))
+      # Ask her what ails her. [Speak with Animals, uses a spell slot, ~5 min]
+        *goto lsf_bear_animals
+    *if (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "ritual"))
+      # Ask her what ails her. [Speak with Animals as a ritual, no slot, ~15 min]
+        *goto lsf_bear_animals
+    *if (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "free"))
+      # Ask her what ails her. [Speak with Animals, ~5 min]
+        *goto lsf_bear_animals
+  *if (not(lsf_bear_healed))
+    *if (honeycomb > 0)
+      # Set a piece of honeycomb down for her. [~10 min]
+        *goto lsf_bear_honey
+    *if (lsf_bear_read)
+      *if ((known_healing_word) and (bard_spell_slots > 0))
+        # Lay Healing Word on her. [uses a spell slot, ~10 min]
+          *goto lsf_bear_spell
+      *if (has_althea_phial)
+        # Tip Saint Althea's Water to her lips. [uses the flask, ~10 min]
+          *goto lsf_bear_phial
+      *if (has_mortar_pestle)
+        # Grind a mash of green herbs for her. [~10 min]
+          *goto lsf_bear_kit
   # Go south.
     *set dg_dest "lsf_j25"
     *set dg_dest_hall true
     *goto lsf_move
+
+*label lsf_bear_look
+You settle at the edge of the hollow with your hands open and your breathing slow, and you watch her for a long while.
+*gosub_scene dice_engine roll_skill_check 12 "medicine" "" "survival" "" "" ""
+*if (check_success)
+  Her belly is swollen tight and her gums are pale. The bones at the edge of the hollow are all gristle and sinew, and the dung you find has no seed or leaf in it. She has lived on flesh alone for weeks, and it is sickening her. Something sweet or green would ease her more than anything.
+  *set lsf_bear_read true
+*else
+  She groans, shifts, and turns her face away before you can make sense of her. You sit back with only the smell and the sound to go on, and another day may show you more.
+  *set dg_lsf_bear_tried true
+*set dg_mins 10
+*set dg_time_id "lsf_bear_look"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r13
+
+*label lsf_bear_animals
+*gosub_scene dungeon dg_swa_check
+*gosub_scene dungeon dg_swa_cast
+*if (dg_swa_cost = "ritual")
+  You sit at the edge of the hollow and say the words slowly, the long way, the way the book sets them out. A quarter of an hour later the groaning shapes itself into speech.
+*if (dg_swa_cost = "slot")
+  You murmur the words and feel the spell leave you, and the groaning shapes itself into speech.
+*if (dg_swa_cost = "free")
+  You let the old knack loose, and the groaning shapes itself into speech.
+
+"Heavy," she says, thick and slow. "All heavy. Meat, and meat, and meat, and my belly turns on it." She breathes out long. "My small one went east to find the red berries when the sap was rising, and has not come back. I cannot get up to follow."
+
+Her eyes close, and open again, and stay on you.
+*set lsf_bear_read true
+*set lsf_bear_cub_known true
+*set dg_mins 5
+*if (dg_swa_cost = "ritual")
+  *set dg_mins 15
+*set dg_time_id "lsf_bear_animals"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r13
+
+*label lsf_bear_honey
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set honeycomb (honeycomb - 1)
+  *set lsf_bear_healed true
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+You lay a slab of comb on a leaf at the edge of the hollow and back away. Her nose lifts first, then her head. She drags herself forward and takes the comb in two slow mouthfuls, wax and all, and licks the leaf clean.
+
+For a while she lies with her eyes shut. Then she lets out a long breath that ends in a rumble, and her sides stop heaving.
+*set dg_mins 10
+*set dg_time_id "lsf_bear_honey"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r13
+
+*label lsf_bear_spell
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set bard_spell_slots (bard_spell_slots - 1)
+  *set lsf_bear_healed true
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+You hold your hand out over her flank and say the words of Healing Word, soft and low. A pale light settles over her, and the swelling in her belly eases under it as you watch.
+
+She breathes out long and deep, and her eyes open clear.
+*set dg_mins 10
+*set dg_time_id "lsf_bear_spell"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r13
+
+*label lsf_bear_phial
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *gosub_scene equipment spend_consumable "althea_phial"
+  *set lsf_bear_healed true
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+You break the wax on Saint Althea's Water and kneel by her head. She lets you tip the flask against her mouth, and the smell of angelica and arnica fills the hollow as she swallows.
+
+A shudder runs the length of her, and then she goes slack and easy, breathing deep.
+*set dg_mins 10
+*set dg_time_id "lsf_bear_phial"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r13
+
+*label lsf_bear_kit
+You crouch by a flat stone and grind green stems and a handful of bitter leaves in your mortar until they make a damp mash. You set it down on a leaf within reach of her nose.
+
+She sniffs it, eats it a mouthful at a time, and lays her head down. Within the hour her breathing has slowed and deepened, and the knot of her belly has begun to soften.
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set lsf_bear_healed true
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+*set dg_mins 10
+*set dg_time_id "lsf_bear_kit"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r13
 
 *label lsf_n_r14
 
@@ -2198,6 +2333,7 @@ Two people crash out of the brush together. The woman is short and broad, muddy 
 *set dg_lsf_honey_taken false
 *set dg_lsf_spring_tried false
 *set dg_lsf_tracks_tried false
+*set dg_lsf_bear_tried false
 *return
 
 *comment The Developer menu's reset: forget the map (what was seen and every chalk mark).

@@ -313,6 +313,246 @@ window.TRADE_DATA = {
     "countVar": "grave_ichor"
    }
   },
+  "sluice_moss": {
+   "name": "sluice-moss",
+   "title": "Sluice-moss",
+   "kind": "salvage",
+   "group": "",
+   "tier": "",
+   "retail": 0,
+   "weight": 0.1,
+   "minutes": 10,
+   "hint": "",
+   "slot": "",
+   "stack": false,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 1,
+    "countVar": "sluice_moss"
+   }
+  },
+  "brinecap": {
+   "name": "brinecap",
+   "title": "Brinecap",
+   "kind": "salvage",
+   "group": "",
+   "tier": "",
+   "retail": 0,
+   "weight": 0.1,
+   "minutes": 10,
+   "hint": "",
+   "slot": "",
+   "stack": false,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 1,
+    "countVar": "brinecap"
+   }
+  },
+  "pale_crackroot": {
+   "name": "pale crackroot",
+   "title": "Pale Crackroot",
+   "kind": "salvage",
+   "group": "",
+   "tier": "",
+   "retail": 0,
+   "weight": 0.1,
+   "minutes": 10,
+   "hint": "",
+   "slot": "",
+   "stack": false,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 2,
+    "countVar": "pale_crackroot"
+   }
+  },
+  "cistern_spores": {
+   "name": "cistern spores",
+   "title": "Cistern Spores",
+   "kind": "salvage",
+   "group": "",
+   "tier": "",
+   "retail": 0,
+   "weight": 0.1,
+   "minutes": 10,
+   "hint": "",
+   "slot": "",
+   "stack": false,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 3,
+    "countVar": "cistern_spores"
+   }
+  },
+  "glowmold": {
+   "name": "glowmold",
+   "title": "Glowmold",
+   "kind": "salvage",
+   "group": "",
+   "tier": "",
+   "retail": 0,
+   "weight": 0.1,
+   "minutes": 10,
+   "hint": "",
+   "slot": "",
+   "stack": false,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 2,
+    "countVar": "glowmold"
+   }
+  },
+  "silverleaf": {
+   "name": "silverleaf",
+   "title": "Silverleaf",
+   "kind": "salvage",
+   "group": "",
+   "tier": "",
+   "retail": 0,
+   "weight": 0.1,
+   "minutes": 10,
+   "hint": "",
+   "slot": "",
+   "stack": false,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 1,
+    "countVar": "silverleaf"
+   }
+  },
+  "oakheart_balsam": {
+   "name": "oakheart balsam",
+   "title": "Oakheart Balsam",
+   "kind": "salvage",
+   "group": "",
+   "tier": "",
+   "retail": 0,
+   "weight": 0.1,
+   "minutes": 10,
+   "hint": "",
+   "slot": "",
+   "stack": false,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 1,
+    "countVar": "oakheart_balsam"
+   }
+  },
+  "shadefern": {
+   "name": "shadefern",
+   "title": "Shadefern",
+   "kind": "salvage",
+   "group": "",
+   "tier": "",
+   "retail": 0,
+   "weight": 0.1,
+   "minutes": 10,
+   "hint": "",
+   "slot": "",
+   "stack": false,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 2,
+    "countVar": "shadefern"
+   }
+  },
+  "acorn_truffle": {
+   "name": "acorn truffle",
+   "title": "Acorn Truffle",
+   "kind": "salvage",
+   "group": "",
+   "tier": "",
+   "retail": 0,
+   "weight": 0.1,
+   "minutes": 10,
+   "hint": "",
+   "slot": "",
+   "stack": false,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 3,
+    "countVar": "acorn_truffle"
+   }
+  },
+  "brambleberry": {
+   "name": "brambleberry",
+   "title": "Brambleberry",
+   "kind": "salvage",
+   "group": "",
+   "tier": "",
+   "retail": 0,
+   "weight": 0.1,
+   "minutes": 10,
+   "hint": "",
+   "slot": "",
+   "stack": false,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 2,
+    "countVar": "brambleberry"
+   }
+  },
   "alchemists_fire": {
    "name": "alchemist's fire",
    "title": "Alchemist's Fire",
@@ -337,9 +577,9 @@ window.TRADE_DATA = {
     "countVar": ""
    }
   },
-  "herbalists_kit": {
-   "name": "herbalist's kit",
-   "title": "Herbalist's Kit",
+  "mortar_pestle": {
+   "name": "mortar and pestle",
+   "title": "Mortar and Pestle",
    "kind": "tool",
    "group": "",
    "tier": "",
@@ -2027,15 +2267,25 @@ window.TRADE_DATA = {
     "clear_head_draught",
     "linen_bandage",
     "alchemists_fire",
-    "herbalists_kit"
+    "mortar_pestle"
    ],
    "sell": [
     "frog_slime",
     "centipede_gland",
     "viper_venom",
     "grave_ichor",
+    "sluice_moss",
+    "brinecap",
+    "pale_crackroot",
+    "cistern_spores",
+    "glowmold",
+    "silverleaf",
+    "oakheart_balsam",
+    "shadefern",
+    "acorn_truffle",
+    "brambleberry",
     "alchemists_fire",
-    "herbalists_kit"
+    "mortar_pestle"
    ]
   },
   "hollis": {

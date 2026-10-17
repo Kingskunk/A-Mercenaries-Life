@@ -554,10 +554,10 @@
       badge: "Shot: your bow attack plus 1d4 cold, and the target is slowed"
     },
     {
-      id: "herbalists_kit", category: "provisions", owned: "has_herbalists_kit",
+      id: "mortar_pestle", category: "provisions", owned: "has_mortar_pestle",
       weight: 1.5, stow: true, stack: true,
-      name: function (s) { var n = 1 + (Number(s.spare_herbalists_kit) || 0); return "Herbalist's Kit" + (n > 1 ? " ×" + n : ""); },
-      description: "Waxed-canvas satchel of phials, a mortar, pressed herbs and a needle, for treating wounds."
+      name: function (s) { var n = 1 + (Number(s.spare_mortar_pestle) || 0); return "Mortar and Pestle" + (n > 1 ? " ×" + n : ""); },
+      description: "Bronze mortar and stone pestle for grinding herbs into poultices and salves."
     },
     {
       id: "gem_agate", category: "valuables", owned: "has_gem_agate",
@@ -849,6 +849,88 @@
       name: function (s) { return "Grave Ichor (" + Number(s.grave_ichor) + ")"; },
       description: "Black fluid drawn from the drowned dead. Ambrose buys it by the phial.",
       badge: "Sells to a herbalist"
+    },
+    // Forage ingredients keep their future alchemy information here, rather than in their
+    // descriptions: effects can remain unknown to the player until they discover them.
+    {
+      id: "sluice_moss", category: "provisions", weight: 0.1,
+      owned: function (s) { return Number(s.sluice_moss) > 0; },
+      name: function (s) { return "Sluice-moss (" + Number(s.sluice_moss) + ")"; },
+      description: "Green-grey moss scraped from wet brick seams in the Silt-Gate Channels.",
+      badge: "Ingredient",
+      alchemy: { source: "silt_gates", form: "moss", rarity: "common", potency: 1, effects: ["mend", "resist_poison"] }
+    },
+    {
+      id: "brinecap", category: "provisions", weight: 0.1,
+      owned: function (s) { return Number(s.brinecap) > 0; },
+      name: function (s) { return "Brinecap (" + Number(s.brinecap) + ")"; },
+      description: "A squat, salt-speckled fungus gathered above the channel's high-water line.",
+      badge: "Ingredient",
+      alchemy: { source: "silt_gates", form: "fungus", rarity: "common", potency: 1, effects: ["resist_poison", "hold_breath"] }
+    },
+    {
+      id: "pale_crackroot", category: "provisions", weight: 0.1,
+      owned: function (s) { return Number(s.pale_crackroot) > 0; },
+      name: function (s) { return "Pale Crackroot (" + Number(s.pale_crackroot) + ")"; },
+      description: "Chalk-pale roots pulled from a fissure where the street above has found the dark.",
+      badge: "Ingredient",
+      alchemy: { source: "silt_gates", form: "root", rarity: "uncommon", potency: 1, effects: ["hold_breath", "keen_sight"] }
+    },
+    {
+      id: "cistern_spores", category: "provisions", weight: 0.1,
+      owned: function (s) { return Number(s.cistern_spores) > 0; },
+      name: function (s) { return "Cistern Spores (" + Number(s.cistern_spores) + ")"; },
+      description: "Fine, dry spores collected from an old culvert beyond the reach of the tide.",
+      badge: "Ingredient",
+      alchemy: { source: "silt_gates", form: "spore", rarity: "rare", potency: 1, effects: ["keen_sight", "fortify_health"] }
+    },
+    {
+      id: "glowmold", category: "provisions", weight: 0.1,
+      owned: function (s) { return Number(s.glowmold) > 0; },
+      name: function (s) { return "Glowmold (" + Number(s.glowmold) + ")"; },
+      description: "A faintly luminous film gathered from stone kept wet and dark.",
+      badge: "Ingredient",
+      alchemy: { source: "silt_gates", form: "mold", rarity: "uncommon", potency: 1, effects: ["fortify_health", "mend"] }
+    },
+    {
+      id: "silverleaf", category: "provisions", weight: 0.1,
+      owned: function (s) { return Number(s.silverleaf) > 0; },
+      name: function (s) { return "Silverleaf (" + Number(s.silverleaf) + ")"; },
+      description: "Soft silver-backed leaves gathered from a rare break in Longshade's canopy.",
+      badge: "Ingredient",
+      alchemy: { source: "longshade_forest", form: "herb", rarity: "common", potency: 1, effects: ["mend_rest", "clear_mind"] }
+    },
+    {
+      id: "oakheart_balsam", category: "provisions", weight: 0.1,
+      owned: function (s) { return Number(s.oakheart_balsam) > 0; },
+      name: function (s) { return "Oakheart Balsam (" + Number(s.oakheart_balsam) + ")"; },
+      description: "A fragrant amber resin collected from a scored oak or fallen beech.",
+      badge: "Ingredient",
+      alchemy: { source: "longshade_forest", form: "resin", rarity: "common", potency: 1, effects: ["mend_rest", "resist_cold"] }
+    },
+    {
+      id: "shadefern", category: "provisions", weight: 0.1,
+      owned: function (s) { return Number(s.shadefern) > 0; },
+      name: function (s) { return "Shadefern (" + Number(s.shadefern) + ")"; },
+      description: "A cool, dark-green fern cut from wet stone beneath the oldest trees.",
+      badge: "Ingredient",
+      alchemy: { source: "longshade_forest", form: "fern", rarity: "uncommon", potency: 1, effects: ["resist_cold", "fortify_health"] }
+    },
+    {
+      id: "acorn_truffle", category: "provisions", weight: 0.1,
+      owned: function (s) { return Number(s.acorn_truffle) > 0; },
+      name: function (s) { return "Acorn Truffle (" + Number(s.acorn_truffle) + ")"; },
+      description: "A knobbly brown truffle unearthed from the leaf mold below an old oak.",
+      badge: "Ingredient",
+      alchemy: { source: "longshade_forest", form: "truffle", rarity: "rare", potency: 1, effects: ["fortify_health", "surefooted"] }
+    },
+    {
+      id: "brambleberry", category: "provisions", weight: 0.1,
+      owned: function (s) { return Number(s.brambleberry) > 0; },
+      name: function (s) { return "Brambleberry (" + Number(s.brambleberry) + ")"; },
+      description: "A tart, near-black berry picked from briars along a game trail.",
+      badge: "Ingredient",
+      alchemy: { source: "longshade_forest", form: "berry", rarity: "uncommon", potency: 1, effects: ["surefooted", "clear_mind"] }
     },
     {
       id: "odessa_salve", category: "provisions", owned: "prep_odessa_salve",
