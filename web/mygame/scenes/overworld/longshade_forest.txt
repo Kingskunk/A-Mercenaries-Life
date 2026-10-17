@@ -542,6 +542,9 @@ You scrape a bold cross into the bark at head height, so you will know this junc
     The brush gives onto a face of rock and mud rising out of the undergrowth, dark with seeping water. The sound of the water comes down it from above.
   *else
     Here the track thins and then stops, swallowed by brush so dense the stems knit overhead. Somewhere inside it, water is trickling.
+*if ((dg_lsf_spring_tried) and (not(lsf_spring_found)))
+
+  Your ears are worn out from the brush, and the sound of the water keeps slipping away.
 *gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
@@ -555,8 +558,9 @@ You scrape a bold cross into the bark at head height, so you will know this junc
       *set dg_dest_hall false
       *goto lsf_move
   *if ((not(lsf_spring_found)) and (not(lsf_spring_reached)))
-    # Push into the brush toward the sound of running water. [~20 min]@{show_stat_hints  [Survival or Perception DC 12]|}
-      *goto lsf_spring_search
+    *if (not(dg_lsf_spring_tried))
+      # Push into the brush toward the sound of running water. [~20 min]@{show_stat_hints  [Survival or Perception DC 12]|}
+        *goto lsf_spring_search
     *if (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "slot"))
       # Ask the animals where the water is. [Speak with Animals, uses a spell slot, ~5 min]
         *goto lsf_spring_animals
@@ -588,7 +592,8 @@ You turn off the track and push in among the stems, stopping every few strides t
   You stop pushing and only listen, and the sound comes from low and to one side, from under a bush whose leaves are wetter than the rest. You part the stems and find a gap, and beyond it the ground rises in a face of rock and mud with water seeping down it.
   *set lsf_spring_found true
 *else
-  You crash around among the stems for twenty minutes with brambles hooked in your sleeves. Whichever way you turn, the sound of water seems to be behind you, and in the end you come out where you started.
+  You crash around among the stems for twenty minutes with brambles hooked in your sleeves. Whichever way you turn, the sound of water seems to be behind you, and in the end you come out where you started, ears ringing.
+  *set dg_lsf_spring_tried true
 *set dg_mins 20
 *set dg_time_id "lsf_spring_search"
 *gosub_scene dungeon dg_time
@@ -625,7 +630,13 @@ You find the first handholds in the rock and test each before you trust it.
   *set dg_dest_hall false
   *goto lsf_move
 *else
-  A foothold turns to mud under your ${feet_prose}, and you slide down the whole face in a rush of wet earth and land sitting at the bottom, filthy and unhurt.
+  *comment A failed climb bruises (1 HP, never below 1; the user's call 2026-10-17: a retry with no cost at all was too free). Under the page lock so a refresh costs it once.
+  *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+    *if (hp_current > 1)
+      *set hp_current (hp_current - 1)
+    *set stat_bump_locked true
+    *set locked_stat_bump_page_id page_id
+  A foothold turns to mud under your ${feet_prose}, and you slide down the whole face in a rush of wet earth and land sitting at the bottom, filthy and bruised. [b][-1 HP][/b]
   *set dg_mins 10
   *set dg_time_id "lsf_spring_climb"
   *gosub_scene dungeon dg_time
@@ -1390,10 +1401,13 @@ You ask what he was looking for when he looked you over. Thole takes the short a
   *if (lsf_tracks_read)
     *line_break
     The marks make sense to you now. Deer, a heavy boar, a fox and a badger all come through here, and most of the tracks leaving the clearing turn south into the thick brush, toward water.
+  *elseif (dg_lsf_tracks_tried)
+
+    The prints have run together in your head.
 *gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
-  *if ((not(dg_dark)) and (not(lsf_tracks_read)))
+  *if (((not(dg_dark)) and (not(lsf_tracks_read))) and (not(dg_lsf_tracks_tried)))
     # Read the tracks in the mud. [~10 min]@{show_stat_hints  [Survival or Nature DC 10]|}
       *goto lsf_wallow_tracks
   # Go east.
@@ -1419,7 +1433,8 @@ You crouch at the edge of the hollow and go over the ground a hand's width at a 
   *line_break
   [b][Tracks read: the animals here go south for water][/b]
 *else
-  The mud holds a hundred overlapping marks, each one blurred into the next. Twice you think you have found a line, and twice it ends in the churn.
+  The mud holds a hundred overlapping marks, each one blurred into the next. Twice you think you have found a line, and twice it ends in the churn. Your eyes have had enough of it, and the prints may sort themselves out another day.
+  *set dg_lsf_tracks_tried true
 *set dg_mins 10
 *set dg_time_id "lsf_wallow_tracks"
 *gosub_scene dungeon dg_time
@@ -1879,17 +1894,44 @@ A lower branch dips toward you in a slow arc, and the yellow eyes close and open
     *set dg_dest_hall true
     *goto lsf_move
 
+*comment THE BEE TREE (Room 11, the user's plan 2026-10-17: the bear story across Rooms 10 to 14; the tree, the bees and the claw marks are invented here). Wild bees in a split lime tree, and the bears that raid it. Taking the comb is Nature or Animal Handling
+*comment DC 12 (advantage under the smoke of a burning torch; a lantern gives none), twenty minutes; a miss is stung (2 HP, never below 1) and can try again; two pieces when the total beats the DC by 5. A character with Speak with Animals can ask the bees
+*comment instead, no roll. The hollow gives honeycomb (a counted ingredient with no buyer: the user means it for a cooking system to come, and it can be offered to the sick bear in Room 13) once per refill (dg_lsf_honey_taken, cleared by lsf_respawn).
 *label lsf_n_r11
 
-[b]◈ FOREST ROOM 11[/b]
+[b]◈ THE BEE TREE[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
+*gosub_scene dungeon dg_swa_check
 *if (dg_dark)
-  The dark under the trees is close, and you feel your way. This is forest room 11. Nothing is written here yet.
+  The air thickens first, warm and sweet, with the smell of wax in it, and a low hum comes out of the dark ahead. Your hand finds a trunk as broad as a doorway. The bark under your fingers is scored in deep parallel grooves at the height of your head, and above them a split in the wood breathes warmth like a hearth.
+  *if (dg_lsf_honey_taken)
+
+    The hum has a sharper edge tonight, and small bodies tick against your sleeve as they hurry in.
 *else
-  This is forest room 11. Nothing is written here yet.
+  A lime tree far older than the others stands alone in a ring of bare ground, its trunk split open at head height into a long dark hollow. A low hum comes out of it, steady as a kettle on the boil, and bees come and go along the lip of the wood. Gold stains run down the bark beneath it, and the grooves of long claws ring the trunk at the height of a standing bear's reach. The lip of the hollow has been torn wider and left ragged.
+  *if (dg_lsf_honey_taken)
+
+    The bees are busy at the torn comb inside, and the hum has a sharper edge than before.
+*gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
+  *if (not(dg_lsf_honey_taken))
+    # Take honeycomb from the hollow. [~20 min]@{show_stat_hints  [Nature or Animal Handling DC 12, advantage under torch smoke]|}
+      *goto lsf_bees_take
+    *if (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "slot"))
+      # Ask the bees for some of their honey. [Speak with Animals, uses a spell slot, ~5 min]
+        *goto lsf_bees_animals
+    *if (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "ritual"))
+      # Ask the bees for some of their honey. [Speak with Animals as a ritual, no slot, ~15 min]
+        *goto lsf_bees_animals
+    *if (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "free"))
+      # Ask the bees for some of their honey. [Speak with Animals, ~5 min]
+        *goto lsf_bees_animals
+    *if ((known_speak_with_animals) and (not(dg_swa_can)))
+      # (You have no spell slot left to speak with the bees.)
+        The hum goes on, a language you cannot reach tonight. Every spell slot you had is spent.
+        *goto lsf_n_r11
   # Go east.
     *set dg_dest "lsf_j18"
     *set dg_dest_hall true
@@ -1898,6 +1940,69 @@ A lower branch dips toward you in a slow arc, and the yellow eyes close and open
     *set dg_dest "lsf_j23"
     *set dg_dest_hall true
     *goto lsf_move
+
+*label lsf_bees_take
+*if ((dg_light_kind = "torch") and (dg_light_left > 0))
+  You hold the torch low under the hollow and let the smoke roll up into it. The hum drops to a drowsy mutter.
+  *set advantage true
+*else
+  You keep your breathing slow and your hands low, and come up to the hollow.
+*gosub_scene dice_engine roll_skill_check 12 "nature" "" "animal_handling" "" "" ""
+*temp lb_n 0
+*if (check_success)
+  *set lb_n 1
+*if (check_total >= 17)
+  *set lb_n 2
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *if (lb_n > 0)
+    *set honeycomb (honeycomb + lb_n)
+    *set dg_lsf_honey_taken true
+  *else
+    *if (hp_current > 2)
+      *set hp_current (hp_current - 2)
+    *else
+      *set hp_current 1
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+*if (lb_n > 0)
+  You work two fingers into the hollow and ease out a slab of comb, dark gold and dripping, with a few bees still walking over it. They let you lay it in a wrapping of broad leaves and back away.
+
+  [b][🌿 Harvested: ${lb_n} honeycomb][/b]
+*else
+  A hand goes in too far and the hum turns to a shriek. The bees are on your wrists and neck before you can pull clear, and you stagger back from the tree with hot stings rising on your skin. [b][-2 HP][/b]
+*set dg_mins 20
+*if (lb_n = 0)
+  *set dg_mins 30
+*set dg_time_id "lsf_bees_take"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r11
+
+*label lsf_bees_animals
+*gosub_scene dungeon dg_swa_check
+*gosub_scene dungeon dg_swa_cast
+*if (dg_swa_cost = "ritual")
+  You stand before the hollow and say the words slowly, the long way, the way the book sets them out. A quarter of an hour later the hum resolves into a single patient voice.
+*if (dg_swa_cost = "slot")
+  You murmur the words and feel the spell leave you. The hum resolves into a single patient voice.
+*if (dg_swa_cost = "free")
+  You let the old knack loose, and the hum resolves into a single patient voice.
+
+"Big one. Big one, with the claws. Takes it all, takes the young, takes the walls." The voice rises and falls. "You are not the big one. You are slow. You may have the outer comb. Leave the heart of the hive."
+
+A line of bees carries a slab of comb to the lip of the hollow, and you take it on a wrapping of broad leaves.
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set honeycomb (honeycomb + 1)
+  *set dg_lsf_honey_taken true
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+
+[b][🌿 Harvested: 1 honeycomb][/b]
+*set dg_mins 5
+*if (dg_swa_cost = "ritual")
+  *set dg_mins 15
+*set dg_time_id "lsf_bees_animals"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r11
 
 *label lsf_n_r12
 
@@ -2090,6 +2195,9 @@ Two people crash out of the brush together. The woman is short and broad, muddy 
 *set dg_done_lsf_j26 false
 *set dg_done_lsf_j27 false
 *set dg_lsf_spring_used false
+*set dg_lsf_honey_taken false
+*set dg_lsf_spring_tried false
+*set dg_lsf_tracks_tried false
 *return
 
 *comment The Developer menu's reset: forget the map (what was seen and every chalk mark).

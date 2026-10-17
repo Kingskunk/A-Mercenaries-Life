@@ -115,6 +115,7 @@ const MAP = {
 
   // ---- ingredients and salvage
   scrap: "Clutter_AdamantineScrap_Unfaded_Icon.webp",
+  honeycomb: "FOOD_Honey_Comb_Unfaded_Icon.png",                    // the Longshade bee tree
   frog_slime: "Bowl_With_Dead_Tadpoles_Unfaded_Icon.png",
   gland: "Carrion_Crawler_Tentacle_Item_Icon.png",
   venom: "Conical_Flask_Filled_Unfaded_Icon.png",

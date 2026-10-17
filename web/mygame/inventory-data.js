@@ -819,6 +819,14 @@
       badge: "Sells to a herbalist"
     },
     {
+      id: "honeycomb", category: "provisions",
+      weight: 0.3,
+      owned: function (s) { return Number(s.honeycomb) > 0; },
+      name: function (s) { return "Honeycomb (" + Number(s.honeycomb) + ")"; },
+      description: "Dark gold comb from the wild bees of the Longshade, wrapped in leaves. An ingredient, and a gift for a bear.",
+      badge: "Ingredient"
+    },
+    {
       id: "centipede_gland", category: "provisions",
       weight: 0.2,
       owned: function (s) { return Number(s.centipede_gland) > 0; },

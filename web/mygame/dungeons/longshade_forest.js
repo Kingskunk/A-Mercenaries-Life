@@ -52,7 +52,7 @@
       lsf_r8: { x: 7.4, y: 4.5, kind: "room", name: "Bark's Glade" },
       lsf_r9: { x: 3.6, y: 2.4, kind: "room", name: "Room 9" },
       lsf_r10: { x: 5.7, y: 4.7, kind: "room", name: "Room 10" },
-      lsf_r11: { x: 8.1, y: 2.4, kind: "room", name: "Room 11" },
+      lsf_r11: { x: 8.1, y: 2.4, kind: "room", name: "The Bee Tree" },
       lsf_r12: { x: 5.8, y: 2.3, kind: "room", name: "Room 12" },
       lsf_r13: { x: 4.5, y: 0.1, kind: "room", name: "Room 13" },
       lsf_r14: { x: 7.5, y: 0.2, kind: "room", name: "Room 14" },

@@ -156,7 +156,7 @@
     camp_kit: "blanket", waxed_oilcloth: "cloth", lockpick_set: "lockpicks", padlock: "key", door_bolt: "tool", iron_manacles: "tool",
     broadcloth_cloak: "cloak_traveler", storm_cape: "cloak_storm", winter_cloak: "cloak_winter", summer_duster: "cloak_duster", felt_hat: "h_hat", fur_cap: "h_cap",
     lined_gloves: "gloves_lined", scholar_gloves: "gloves_scholar", masters_gloves: "gloves_master", waxed_boots: "boots_rain", winter_boots: "boots_winter", dancing_slippers: "shoes_dancing",
-    wool_muffler: "neck_muffler", silk_neckcloth: "neck_cravat", scrap_steel: "scrap", frog_slime: "frog_slime", centipede_gland: "gland", viper_venom: "venom", grave_ichor: "ichor",
+    wool_muffler: "neck_muffler", silk_neckcloth: "neck_cravat", scrap_steel: "scrap", frog_slime: "frog_slime", honeycomb: "honeycomb", centipede_gland: "gland", viper_venom: "venom", grave_ichor: "ichor",
     talia_oiled_cloak: "cloak", rorik_grip_wraps: "gloves", rorik_campaign_belt: "belt", talia_deck_boots: "boots", brant_iron_heel_boots: "boots",
     althea_votive_ring: "ring", night_eye_ring: "ring", hearthstone_talisman: "stone", odessa_salve: "salve", fish_cache: "fish", kestrel_dispatch: "letter", ysolde_requisition: "letter",
     vanguard_grease_chit: "note", customs_vellum: "ledger", waterproof_gear: "jug", talia_provisions: "food", rotten_rib_splinter: "splinter",

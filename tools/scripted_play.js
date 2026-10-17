@@ -74,6 +74,8 @@ load("web/mygame/names-data.js");
 load("web/mygame/overworld-data.js");
 load("web/mygame/inventory-data.js");
 load("web/mygame/inventory.js");
+// web/scene.js pokes window.Scenery and window.Ambience at every page boundary (2026-10-17); a script run has no browser, so an empty window stands in. It is made AFTER util.js loads, which takes a defined window to mean a browser.
+if (typeof global.window === "undefined") global.window = {};
 
 nav = new SceneNavigator(["startup"]);
 stats = {};

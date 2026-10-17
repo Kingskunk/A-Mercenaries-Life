@@ -42,7 +42,9 @@
     factors_hall:  { all: "city_indoor", indoor: true },
     bathhouse:     { all: "bathhouse_ambience", indoor: true },
     blacksmith:    { all: "village_blacksmith_ambience", indoor: true },
-    bivouac:       { all: "generic_village_town_night", indoor: false },
+    warcamp:       { all: "military_camp_ambience", indoor: false },
+    bivouac:       { all: "military_camp_ambience", indoor: false },
+    marshland:     { day: "marshland_ambience_wind_birds_shallowwater_reeds", night: "marshland_night_crickets_shallowwater_ambience" },
     undercroft:    { all: "city_indoor", indoor: true },
     tavern:        { day: "quiet_tavern", night: "crowded_tavern", indoor: true },   // it fills up as the day ends
     silt_conduits: { all: "sewer", indoor: true },
@@ -52,7 +54,10 @@
   var ALIAS = {
     longshade_forest: "forest", woodroad: "forest", forest: "forest",
     compound: "city", middle_ward: "city", civic_heights: "city", upper_wharves: "city", port_valen: "city", city: "city",
-    carrion_compound: "city",
+    carrion_compound: "warcamp",
+    black_sinks_captured_gatehouse_bivouac: "bivouac",
+    black_sinks_gilded_scales_toll_fort: "warcamp",
+    stonewatch: "warcamp",
     port_valen_fishmongers_slip: "harbor",
     port_valen_iron_wharves: "harbor",
     port_valen_wreck_bell_pier: "harbor",
@@ -84,9 +89,9 @@
     generic_warehouse_undercroft: "undercroft",
     talia_loft: "lodgings",
     janna_hearth_alcove: "lodgings",
+    dredge_corve_private_chamber: "lodgings",
     saint_althea_chapel: "civic_indoor",
     black_sinks_causeway_before: "siege",
-    black_sinks_bivouac: "bivouac",
     civic_council_hall: "civic_indoor",
     civic_hiring_hall: "civic_indoor",
     civic_gilded_scales: "civic_indoor",
@@ -95,6 +100,16 @@
     civic_tax_windows: "civic_indoor",
     civic_magistrates_court: "civic_indoor",
     civic_council_gallery: "civic_indoor"
+  };
+  // Quiet location-specific layers over a normal place bed. They give a river town its weir,
+  // a battle approach its marsh, and exposed forts their wind without replacing the useful base
+  // ambience beneath them. Each level is deliberately below a full bed.
+  var OVERLAY = {
+    alderford: [{ all: "watermill_ambience_needs_to_be_layered_on_top_water_and_mill_sound_only", level: 0.34 }],
+    black_sinks_causeway_before: [{ day: "marshland_ambience_wind_birds_shallowwater_reeds", night: "marshland_night_crickets_shallowwater_ambience", level: 0.24 }],
+    black_sinks_captured_gatehouse_bivouac: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.22 }],
+    black_sinks_gilded_scales_toll_fort: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.18 }],
+    stonewatch: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.24 }]
   };
   var OVERWORLD_OPEN = { road: 1, woodroad: 1, hills: 1, forest: 1 };   // ground a rider travels over (not a town, a village or a fort)
 
@@ -119,8 +134,9 @@
   }
 
   // the place the player is in, for sound: the first name Scenery gives that plays something, as { kind, spec }
-  function place(s) {
-    var names = window.Scenery && window.Scenery.placeNames ? window.Scenery.placeNames(s) : [];
+  function placeNames(s) { return window.Scenery && window.Scenery.placeNames ? window.Scenery.placeNames(s) : []; }
+  function place(s, names) {
+    names = names || placeNames(s);
     for (var i = 0; i < names.length; i++) {
       var kind = ALIAS[names[i]] || names[i], spec = SOUND[kind];
       if (!spec) continue;
@@ -134,13 +150,24 @@
   function targets(s) {
     var t = {};
     if (cfg.mute || document.hidden || !window.Scenery) return t;
-    var p = place(s), d = window.Scenery.daylight((Number(s.clock_hour) || 0) + (Number(s.clock_minute) || 0) / 60);
+    var names = placeNames(s), p = place(s, names), d = window.Scenery.daylight((Number(s.clock_hour) || 0) + (Number(s.clock_minute) || 0) / 60);
     function put(name, v) { if (name && has(name) && v > 0) t[name] = Math.max(t[name] || 0, v); }
     if (p) {
       var sp = p.spec, siege = p.kind === "siege";
       if (siege) put(s.squad === "cadre" && has("siege_with_magic") ? "siege_with_magic" : "siege_battle", 1);
       else if (sp.all) put(sp.all, 1);
       else { put(sp.day, d); put(sp.night, 1 - d); }
+    }
+    // Never attach this to a romance, a room, or a person: it is only set for an explicit,
+    // player-selected intimacy passage, and is deliberately quiet beneath the indoor bed.
+    if (s.ambience_intimacy && p && p.spec.indoor) put("female_moans", 0.18);
+    for (var i = 0; i < names.length; i++) {
+      var layersHere = OVERLAY[names[i]] || [];
+      for (var j = 0; j < layersHere.length; j++) {
+        var ol = layersHere[j], level = Number(ol.level) || 1;
+        if (ol.all) put(ol.all, level);
+        else { put(ol.day, d * level); put(ol.night, (1 - d) * level); }
+      }
     }
     // travel: hooves, on open ground on the overworld, for a rider
     var O = window.Overworld, n = s.ow_on && O && O.nodes ? O.nodes[s.ow_pos] : null;
