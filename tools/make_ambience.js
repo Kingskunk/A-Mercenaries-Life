@@ -27,6 +27,9 @@ const CHROME = process.env.CHROME || "C:\\Program Files\\Google\\Chrome\\Applica
 const PORT = 9342;
 
 const arg = (n, d) => { const i = process.argv.indexOf("--" + n); return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : d; };
+// Dense noise (rain, wind, a storm, a blizzard) is the hardest thing for a low-bitrate Opus encode: at 64 kbps it crackles (the user heard it 2026-10-16, on loops cut from 128 kbps MP3s, so the sound had been
+// compressed twice). These four get 96 kbps unless --kbps says otherwise; everything else stays at 64.
+const NOISE_BEDS = /^weather_(rain|storm|wind|blizzard)$/;
 const SECONDS = Number(arg("seconds", 150)), KBPS = Number(arg("kbps", 64)), ONLY = arg("only", ""), FADE = 6, TARGET_RMS = 0.07;
 
 // ---------------------------------------------------------------- MP3 frames (no decoding): enough to cut a time window at a frame boundary
@@ -149,8 +152,8 @@ const CUT = (b64, lead, secs, fade, target, kbps) => `(async () => { ${DECODE}
   // Level to the target loudness. A recording with one loud spike (a clink, a rooster) cannot be raised that far without the spike clipping, so the boost is held to a peak of 1.8 and a soft knee
   // (above 0.6, tanh) squeezes the spikes under full scale; the bed itself is untouched.
   const rms = Math.sqrt(a / (2 * N)); let gain = ${target} / (rms || 1); if (peak * gain > 1.8) gain = 1.8 / peak;
-  let b2 = 0;
-  for (let c = 0; c < 2; c++) for (let t = 0; t < N; t++) { let v = out[c][t] * gain; const m = Math.abs(v); if (m > 0.6) v = Math.sign(v) * (0.6 + 0.37 * Math.tanh((m - 0.6) / 0.37)); out[c][t] = v; b2 += v * v; }
+  let b2 = 0, knee = 0;
+  for (let c = 0; c < 2; c++) for (let t = 0; t < N; t++) { let v = out[c][t] * gain; const m = Math.abs(v); if (m > 0.6) knee++, v = Math.sign(v) * (0.6 + 0.37 * Math.tanh((m - 0.6) / 0.37)); out[c][t] = v; b2 += v * v; }
   const rmsOut = Math.sqrt(b2 / (2 * N));
   const packets = []; let desc = null;
   const enc = new AudioEncoder({ output: (chunk, meta) => { const u = new Uint8Array(chunk.byteLength); chunk.copyTo(u); packets.push(Array.from(u)); if (!desc && meta && meta.decoderConfig && meta.decoderConfig.description) { desc = Array.from(new Uint8Array(meta.decoderConfig.description instanceof ArrayBuffer ? meta.decoderConfig.description : meta.decoderConfig.description.buffer)); } }, error: (e) => { throw e; } });
@@ -161,7 +164,7 @@ const CUT = (b64, lead, secs, fade, target, kbps) => `(async () => { ${DECODE}
     enc.encode(new AudioData({ format: "f32-planar", sampleRate: 48000, numberOfFrames: F, numberOfChannels: 2, timestamp: Math.round(s / 48000 * 1e6), data }));
   }
   await enc.flush(); enc.close();
-  return { packets, desc, gain, rms: rmsOut, N, n: packets.length };
+  return { packets, desc, gain, rms: rmsOut, N, n: packets.length, kneePct: 100 * knee / (2 * N), peakIn: peak };
 })()`;
 const VERIFY = (b64, secs) => `(async () => {
   const bin = atob(${JSON.stringify(b64)}), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
@@ -228,7 +231,7 @@ function writeManifest() {
         if (!best || score < best.score) best = { t0, score, s };
       }
       console.log("  using the window at " + Math.round(best.t0) + " s");
-      const r = await evaluate(CUT(best.s.bytes.toString("base64"), best.s.lead, secs, FADE, TARGET_RMS, KBPS));
+      const r = await evaluate(CUT(best.s.bytes.toString("base64"), best.s.lead, secs, FADE, TARGET_RMS, process.argv.includes("--kbps") ? KBPS : (NOISE_BEDS.test(key) ? 96 : KBPS)));
       const head = Buffer.from(r.desc && r.desc.length >= 19 ? r.desc : [0x4F, 0x70, 0x75, 0x73, 0x48, 0x65, 0x61, 0x64, 1, 2, 0x38, 0x01, 0x80, 0xBB, 0, 0, 0, 0, 0]);
       const pre = head.readUInt16LE(10);
       if (r.n * 960 < r.N + pre) throw new Error("the encoder gave fewer packets (" + r.n + ") than the loop needs");
@@ -237,6 +240,7 @@ function writeManifest() {
       fs.writeFileSync(outFile, ogg);
       const v = await evaluate(VERIFY(ogg.toString("base64"), SECONDS));
       writeManifest();
+      console.log("  gain x" + r.gain.toFixed(1) + ", input peak " + r.peakIn.toFixed(2) + ", " + r.kneePct.toFixed(3) + "% of samples squeezed by the limiter");
       console.log("  wrote ambience/" + key + ".ogg  " + (ogg.length / 1048576).toFixed(2) + " MB, " + v.seconds.toFixed(1) + " s, " + v.channels + " ch; level " + r.rms.toFixed(3) + " RMS; seam step " + v.seamOverTypical.toFixed(1) + "x a normal step (worst step within 5 ms of it " + v.worstStepAcrossSeamOverTypical.toFixed(1) + "x; the same measure elsewhere in the loop: median " + v.windowMedian.toFixed(1) + "x, largest " + v.windowMax.toFixed(1) + "x)");
     }
   });

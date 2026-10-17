@@ -51,11 +51,19 @@
     "port_valen/marlcross/wayfarers_rest": "generic_village_inn",
     "alderford/whitefold/fleecefold": "whitefold_fleecefold",
     "timbermouth/ashrun_holt/longhouse": "ashrun_holt_longhouse",
+    "timbermouth/ashrun_holt/ashrun_holt": "ashrun_holt_clearing",
+    "timbermouth/ashrun_holt/hide_yard": "ashrun_holt_hide_yard",
+    "timbermouth/ashrun_holt/work_yards": "ashrun_holt_work_yards",
+    "timbermouth/ashrun_holt/ashrun_house": "generic_village_inn",
     "port_valen/brinewick/tide_house": "brinewick_tide_house",
     "alderford/factors_hall": "shared_factors_hall",
     "timbermouth/factors_hall": "shared_factors_hall",
     "alderford/redvein/gather_house": "generic_village_gathering_hall",
     "port_valen/marlcross/cross_hall": "generic_village_gathering_hall",
+    "timbermouth/barleycross/barleycross": "village_green",
+    "timbermouth/barleycross/green": "generic_village_gathering_hall",
+    "timbermouth/barleycross/lane": "village_green",
+    "timbermouth/barleycross/pasture": "generic_village_pasture",
     "alderford/timber_smithy": "generic_workshop_smithy",
     "timbermouth/market": "town_market",
     "alderford/lower_wharf_market": "town_market",
@@ -83,6 +91,10 @@
     function (s) { return s.sceneName === "port_valen/port_valen_upper_wharves" && s.scenery_subplace === "patrician_avenue" ? "patrician_avenue" : undefined; }, // Avenue of Estates, including its great-house stretch
     function (s) { return s.sceneName === "port_valen/port_valen_upper_wharves" && s.scenery_subplace === "patrician_terrace_walk" ? "patrician_terrace_walk" : undefined; }, // ridge promenade above the city
     function (s) { return s.sceneName === "port_valen/port_valen_upper_wharves" && s.scenery_subplace === "patrician_gilt_needle" ? "patrician_gilt_needle" : undefined; }, // bespoke tailor interior beats the generic shop counter
+    function (s) { return s.sceneName === "port_valen/port_valen" && s.scenery_subplace === "port_valen_fishmongers_slip" ? "port_valen_fishmongers_slip" : undefined; }, // western fish landing, stalls, smokehouses and net loft
+    function (s) { return s.sceneName === "port_valen/port_valen" && s.scenery_subplace === "port_valen_iron_wharves" ? "port_valen_iron_wharves" : undefined; }, // shipyard ways and Brant's working slip
+    function (s) { return s.sceneName === "port_valen/port_valen" && s.scenery_subplace === "port_valen_wreck_bell_pier" ? "port_valen_wreck_bell_pier" : undefined; }, // exposed breakwater and wreck bell
+    function (s) { return s.sceneName === "port_valen/port_valen" && s.scenery_subplace === "port_valen_weigh_house" ? "port_valen_weigh_house" : undefined; }, // civic cargo-scale hall
     function (s) { return s.sceneName === "prologue/company_intake" && s.scenery_subplace === "prologue_carrion_compound" ? "carrion_compound" : undefined; }, // Iron Carrion intake and munitions camp
     function (s) { return s.sceneName === "prologue/company_intake" && s.scenery_subplace === "prologue_flashback_village" ? "village_green" : undefined; }, // Ashbrook memory
     function (s) { return s.sceneName === "prologue/company_intake" && s.scenery_subplace === "prologue_flashback_dredge" ? "dredge_end" : undefined; }, // Dredge-End memory
@@ -97,6 +109,11 @@
     function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_chapel" ? "saint_althea_chapel" : undefined; }, // Alderford parish chapel
     function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_granary_undercroft" ? "generic_warehouse_undercroft" : undefined; }, // flooded warehouse foundation below the Upper Weir Granary
     function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_sewer" ? "sewer" : undefined; }, // culvert and grain undercroft
+    function (s) { return s.sceneName === "timbermouth/ashrun_holt/longhouse" && s.scenery_subplace === "ashrun_holt_old_ash" ? "ashrun_holt_clearing" : undefined; }, // stepping outside to the ribboned Old Ash
+    function (s) { return s.sceneName === "timbermouth/ashrun_holt/ashrun_house" && s.scenery_subplace === "ashrun_holt_inn_room" ? "generic_village_inn_room" : undefined; }, // a plain hired room above the Ashrun House
+    function (s) { return s.sceneName === "timbermouth/barleycross/lane" && s.scenery_subplace === "barleycross_hayloft" ? "generic_farm_hayloft" : undefined; }, // paid loft above a Barleycross farmstead
+    function (s) { return s.sceneName === "horse_dealer" && s.horse_place === "bc" ? "generic_village_pasture" : undefined; }, // Barleycross's working-horse rail stands at the common pasture
+    function (s) { return s.sceneName === "horse_dealer" && s.horse_place === "mw" ? "village_stable_yard" : undefined; }, // Port Valen's dealer works from the Middle Ward yard
     function (s) { return s.shop_open && s.shop_open !== "trapper" ? "generic_trade_shop" : undefined; }, // shop counters in settlements; the forest trapper stays outdoors
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_inn_room" ? "generic_town_inn_room" : undefined; }, // Wagoner's Rest guest room and Kess's rented chamber
     function (s) { return s.sceneName === "timbermouth/split_pine_inn" && s.scenery_subplace === "town_inn_room" ? "generic_town_inn_room" : undefined; }, // Split Pine guest room
