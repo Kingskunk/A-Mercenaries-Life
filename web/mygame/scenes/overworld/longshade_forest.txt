@@ -1922,9 +1922,9 @@ A lower branch dips toward you in a slow arc, and the yellow eyes close and open
 *line_break
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  Your ${feet_prose} catch in torn cloth and then in a snapped pole. Your hand finds a cold firepit full of fine ash, split crates, and packs spilled open on the ground, and the pole beside you is scored with four deep grooves. A sour smell of old blood hangs over everything.
+  Your ${feet_prose} catch in torn cloth and then in a snapped pole. Your hand finds a cold firepit full of fine ash, split crates, and packs spilled open on the ground, with dented pots and cards of needles trodden among them, and the pole beside you is scored with four deep grooves. A sour smell of old blood hangs over everything.
 *else
-  A trampled clearing holds the wreck of a camp. Two canvas tents hang in ribbons from their poles, and a third lies flat with one pole snapped in two. A firepit sits cold and full of grey ash, and crates and packs lie split open across the ground, their contents strewn and trodden into the dirt. Four long parallel grooves score the nearest tent pole at the height of your chest.
+  A trampled clearing holds the wreck of a camp. Two canvas tents hang in ribbons from their poles, and a third lies flat with one pole snapped in two. A firepit sits cold and full of grey ash, and crates and packs lie split open across the ground, their contents strewn and trodden into the dirt: dented pots, cards of needles, scraps of bright ribbon. Four long parallel grooves score the nearest tent pole at the height of your chest.
 *if (lsf_camp_read)
 
   You know what struck this camp now: a big cat, and a drag trail runs north into the trees.
@@ -1951,9 +1951,12 @@ A lower branch dips toward you in a slow arc, and the yellow eyes close and open
 
 *label lsf_camp_look
 You circle the clearing slowly, bent low, and go over the ground a hand's width at a time.
+*if (peddler_lead_odile)
+  Odile's words about the scream sit in your mind, and you start where the ground is softest.
+  *set advantage true
 *gosub_scene dice_engine roll_skill_check 12 "survival" "" "" "" "" ""
 *if (check_success)
-  The ground tells it plainly. The cloth is slashed clean through, and round pad prints as wide as your palm cross the soft earth beside the tents with no claw marks beside them. The four grooves in the pole are a single stroke of long claws. A big cat came through here and took its time. A wide drag trail leaves the clearing to the north and runs into the trees.
+  The ground tells it plainly. The cloth is slashed clean through, and round pad prints as wide as your palm cross the soft earth beside the tents with no claw marks beside them. The four grooves in the pole are a single stroke of long claws. A big cat came through here and took its time. A spear-butt has dug a deep hole in the dirt beside the firepit, and the grass beyond it is spattered with blood that runs off in a different line from the rest. Someone stood here and struck back. A wide drag trail leaves the clearing to the north and runs into the trees.
   *set lsf_camp_read true
 *else
   The ground is churned so badly that you can't pull one clear print from it. You straighten up with a sore back and a few torn scraps in your hand, and another day may show you more.
@@ -2116,12 +2119,17 @@ A line of bees carries a slab of comb to the lip of the hollow, and you take it 
 *if (lsf_body_surv)
 
   Three trails of footprints scatter from the middle of the clearing, each ending in a body, and the cat's one steady line leaves to the northeast.
+  *if (lsf_stranger_tracks)
+    A fourth line of long-toed prints crosses the east edge and does not stop.
 *if (lsf_body_med)
 
   They died fast, all by the same big cat.
 *if (lsf_body_nat)
 
   A bear has fed here and marked these trees, and its marks run off to the northwest.
+*if (peddler_tag_found)
+
+  The smallest body's belt is bare now where you took the brass tag.
 *gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
@@ -2134,6 +2142,13 @@ A line of bees carries a slab of comb to the lip of the hollow, and you take it 
   *if ((not(lsf_body_nat)) and (not(dg_lsf_body_nat_tried)))
     # Study the raked trunks and the ground at their feet. [~10 min]@{show_stat_hints  [Nature DC 12]|}
       *goto lsf_body_nature
+  *if ((peddler_stage = "active") and ((not(peddler_tag_found)) and (not(dg_lsf_tag_tried))))
+    *if (peddler_lead_hall)
+      # Look for the clerk's brass tag on the nearest belts. [~10 min]
+        *goto lsf_body_tag
+    *else
+      # Go through the packs and coats for anything that names them. [~15 min]@{show_stat_hints  [Investigation DC 10]|}
+        *goto lsf_body_tag
   # Go northwest.
     *set dg_dest "lsf_j25"
     *set dg_dest_hall true
@@ -2155,13 +2170,45 @@ A line of bees carries a slab of comb to the lip of the hollow, and you take it 
 You walk the edge of the clearing bent low and pick the tracks out one at a time.
 *gosub_scene dice_engine roll_skill_check 12 "survival" "" "" "" "" ""
 *if (check_success)
-  Three trails of footprints leave the middle of the clearing, each running a different way, and each ends in a body. Round pad prints cross them and cross them again, patient, never hurrying. The cat took them one at a time. Its own line leaves the clearing to the northeast, deep and even.
+  Three trails of footprints leave the middle of the clearing, each running a different way, and each ends in a body. Round pad prints cross them and cross them again, patient, never hurrying. The cat took them one at a time. Its own line leaves the clearing to the northeast, deep and even. Along the east edge runs a fourth line, long-toed and bare of any boot, that belongs to neither the dead nor the cat. It crosses the clearing once and does not stop.
   *set lsf_body_surv true
+  *set lsf_stranger_tracks true
 *else
   The ground is trampled flat by too many feet and paws, and the prints run into each other. You find the same torn grass three times over and give it up, and another day may show you more.
   *set dg_lsf_body_surv_tried true
 *set dg_mins 15
 *set dg_time_id "lsf_body_survival"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r12
+
+*comment THE OVERDUE PEDDLER (timbermouth/barleycross/overdue_peddler.txt): with the job taken, the peddler's brass licence tag is on the smallest body's belt. The Hall clerk's lead finds it with no roll;
+*comment otherwise Investigation DC 10, and a miss is one try per refill (dg_lsf_tag_tried). peddler_tag_found is kept for good; has_peddler_tag is the item in the pack.
+*label lsf_body_tag
+*temp lt_found false
+*if (peddler_lead_hall)
+  You know what to look for: a brass disc on a thong at the belt. The smallest of the three lies nearest the packs, a pot-mender's hammer still looped through the cord at the waist, and you kneel beside it and ease back the stiff coat. The disc hangs at the left hip, dull with dirt.
+  *set lt_found true
+*else
+  You turn out the packs and go through every coat you can bring yourself to touch. Most of it is cloth, cord and mending tools.
+  *gosub_scene dice_engine roll_skill_check 10 "investigation" "" "" "" "" ""
+  *if (check_success)
+    At the left hip of the smallest body, under a stiff coat, your fingers close on a brass disc on a thong.
+    *set lt_found true
+*if (lt_found)
+  *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+    *set has_peddler_tag true
+    *set peddler_tag_found true
+    *set stat_bump_locked true
+    *set locked_stat_bump_page_id page_id
+  You wipe it on your sleeve. A seal is stamped on one face and a row of small numbers on the other. You wrap it in a scrap of cloth and tuck it away.
+
+  [b][🏷️ Found: Peddler's Tag][/b]
+  *set dg_mins 10
+*else
+  Your hands are stained to the wrists by the time you stop, and you have found nothing with a name on it. Another day may turn something up.
+  *set dg_lsf_tag_tried true
+  *set dg_mins 15
+*set dg_time_id "lsf_body_tag"
 *gosub_scene dungeon dg_time
 *goto lsf_n_r12
 
@@ -2549,6 +2596,7 @@ You settle onto your heels at the edge of the clearing, well clear of the tree, 
 *if (check_success)
   *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
     *set lsf_cub_freed true
+    *set lsf_cub_rescued true
     *set dg_lsf_cub_coaxed false
     *set stat_bump_locked true
     *set locked_stat_bump_page_id page_id
@@ -2712,6 +2760,7 @@ Two people crash out of the brush together. The woman is short and broad, muddy 
 *set dg_lsf_body_med_tried false
 *set dg_lsf_body_nat_tried false
 *set dg_lsf_r6_fern false
+*set dg_lsf_tag_tried false
 *set dg_lsf_r6_truffle false
 *return
 
@@ -2799,4 +2848,11 @@ Two people crash out of the brush together. The woman is short and broad, muddy 
 *set dg_mark_lsf_j25 false
 *set dg_mark_lsf_j26 false
 *set dg_mark_lsf_j27 false
+*return
+
+*comment Level-up quest pool (the user, 2026-10-18): leading the bear cub past the panther counts as a finished quest, once. lsf_cub_rescued is set only by a successful rescue; lsf_cub_freed is also set when the cub finds its own way home after a missed one, so it is not the marker.
+*comment replay-ok: refresh_quests_finished (character_progression.txt) sets quests_finished to 0 and then calls this label, so the count is rebuilt from flags on every call and a replay cannot double it.
+*label count_finished_longshade
+*if (lsf_cub_rescued)
+  *set quests_finished + 1
 *return

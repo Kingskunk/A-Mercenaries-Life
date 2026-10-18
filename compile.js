@@ -310,6 +310,7 @@ function compile(){
   verifyFileName("timbermouth/barleycross/green.txt");
   verifyFileName("timbermouth/barleycross/lane.txt");
   verifyFileName("timbermouth/barleycross/pasture.txt");
+  verifyFileName("timbermouth/barleycross/overdue_peddler.txt");
   verifyFileName("timbermouth/ashrun_holt/ashrun_holt.txt");
   verifyFileName("timbermouth/ashrun_holt/longhouse.txt");
   verifyFileName("timbermouth/ashrun_holt/hide_yard.txt");

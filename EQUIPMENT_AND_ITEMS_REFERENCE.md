@@ -226,6 +226,7 @@ Harvesting (2026-10-02, `dungeon.txt` `dg_harvest`) is an option a dungeon offer
 | `has_talia_provisions` | **Hearth-Baked Travel Provisions** | Food Supply | Talia's Loft or Middle Ward Bakery — **5c** | Warm crusty bread and salt-cured river trout wrapped in greasecloth. Provides dense, sustaining nourishment. |
 | `has_letter_of_credit` | **Gilded Scales Letter of Credit** | Financial Note | Gilded Scales Factor (Alderford / Port Valen) | Certified draft for silver marks (`letter_of_credit_value`), redeemable at counting houses in Alderford or Port Valen. |
 | `has_silt_gate_payout_slip` | **Broker's Payout Slip** | Quest Evidence | Silt-Gate Contraband, Branch C (squeeze the broker) | Wax vellum listing the Watch night-sergeants who take weekly payoffs. Spend it once: sell it to the Dockmaster for silver and Watch standing, or hold it for Captain Vane as leverage (`vane_watch_leverage`). |
+| `has_peddler_tag` | **Peddler's Tag** | Quest Evidence (0.1 lb) | The Overdue Peddler: the smallest body's belt in the Trampled Clearing, Longshade Forest Room 12 (Investigation DC 10, none with the Hall clerk's lead; once, `peddler_tag_found`) | A brass disc stamped with the Factor's Hall seal and a number, on a thong. Given to Merel Pellam (the tinker's wife, the last cottage on the Barleycross Lane) for her 8 silver; she keeps it. The Hall does not buy it back (the user removed that idea on 2026-10-18: a loophole). |
 
 ---
 

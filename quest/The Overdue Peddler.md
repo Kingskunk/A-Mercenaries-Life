@@ -26,7 +26,7 @@ A peddler and two hired guards left Barleycross for Ashrun Holt by the forest sh
 
 ### The party *(invented)*
 
-* **The peddler:** Aldis Rennick, a middle-aged tinker who sold pots, needles and ribbon on a fixed round between Timbermouth, Barleycross and Ashrun Holt.
+* **The peddler:** Aldis Pellam, a middle-aged tinker who sold pots, needles and ribbon on a fixed round between Timbermouth, Barleycross and Ashrun Holt.
 * **Two hired guards:** Marr, a broad woman with a spear, and Joss, a young man with a short bow (the snapped bow in Room 12 is his).
 * **The proof:** a **brass licence tag** stamped by the Factor's Hall, still on the peddler's belt in Room 12. The Hall issues these to peddlers, which is why the Hall is the natural patron.
 
@@ -140,7 +140,7 @@ Your answer: I think 8 silver is fair here, worth the risk.
 
 Your answer: I've always wanted to add in a Farm ownership, Wenna's goodwill can go a long way here, so goodwill from wenna makes sense if you hand it over, it'll play divends.
 
-**4. Do you want the party's names and the tag?** Aldis Rennick, Marr and Joss, and a brass licence tag from the Hall, are all invented. Keep, rename, or cut the tag and make the proof something else (the broken bow, a letter, a ring)?
+**4. Do you want the party's names and the tag?** Aldis Pellam, Marr and Joss, and a brass licence tag from the Hall, are all invented. Keep, rename, or cut the tag and make the proof something else (the broken bow, a letter, a ring)?
 
 Your answer: I think the Insignia tags being retrived is a good idea, the Hall can even pay a small fee for returned tags.  Leave out the broken bow, letter and ring. 
 
@@ -187,3 +187,16 @@ Your answer: Whichever you think best.
 **14. Anything else you want added, cut or changed?**
 
 Your answer: No, but don't work on any Ambrose things yet, untill the quest is finished, consider the ambrose thing a seperate quest for now, we'll deal with it after the Wenna one.
+---
+
+## DECISIONS AND WHAT WAS BUILT (2026-10-18)
+
+From your answers: the family posts it (Wenna Hart, no Insignia), 8 silver, handing over the pouch earns Wenna's goodwill (kept for the farm you mean to add), the brass tag is the proof (Wenna keeps it; the Hall's fee for a returned tag was built and then removed at your request, as a loophole), nothing else as proof, three optional leads, the job is taken and reported at Wenna's bench and never at the Hall, it counts toward the level-2 pool, and so does returning the bear cub. Ambrose waits.
+
+Built: `web/mygame/scenes/timbermouth/barleycross/overdue_peddler.txt` (Wenna's conversation and report), the notices on both boards, the Hall clerk's lead at the counter, Odile and Bram's lead, the camp and clearing additions, the tag item, and the two level-2 pool counts. The full list is in `quest/GAMEPLAY_MECHANICS_RULES.md`.
+
+Things I decided that you did not rule on: no term or lapse (a real quest, not a radiant job); a bare "told" report closes the job with no pay and no credit; the fight-back sign is at the camp and the stranger's tracks (a seed only) are in the clearing; the tinker was Aldis Rennick until you caught that the surname belongs to the Port Valen curing sheds, and is now Aldis Pellam.
+
+### Change the same day: the patron is the wife, and it is a notice
+
+You pointed out that Wenna Hart has nothing to do with it, and that it is about a wife and her missing husband. So the patron is now **Merel Pellam**, Aldis's wife (her name and the girls are mine). It is a plain notice: reading the new paper on the Gathering Hall's plank board and choosing "Take the job" accepts it, with no conversation first. The Timbermouth Hall board copy is display only. You report at **her cottage, the last house on the Barleycross Lane**, where her first conversation is the one place the quest is explained. Handing over the camp's 6 silver now has her promise that Wenna Hart will hear of it, which keeps the goodwill for your farm idea. Wenna herself is back to being only the village head on her bench.

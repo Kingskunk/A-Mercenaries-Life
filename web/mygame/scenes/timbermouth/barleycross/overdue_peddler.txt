@@ -1,0 +1,163 @@
+*comment ====================================================================================
+*comment THE OVERDUE PEDDLER (2026-10-18, the user's answers in quest/The Overdue Peddler.md; reworked the same day at the user's request: the patron is the missing man's WIFE, Merel Pellam, not Wenna Hart). Aldis Pellam, a tinker,
+*comment and two hired hands (Marr and Joss) went into the Longshade by the forest track and never reached Ashrun Holt. His wife pays 8 silver for word WITH PROOF. It is a NOTICE, taken by reading it: a private paper on the plank board
+*comment in the Barleycross Gathering Hall (green.txt) and a copy on the Timbermouth Factor's Hall board (factors_hall.txt, display only). No one has to be spoken to to take it, and a Hall Insignia is not needed. The work is
+*comment reported at her cottage, the end house on the Lane (lane.txt), never at the Hall (the user: how the Port Valen job notices work).
+*comment   peddler_stage       "none" -> "active" (the notice taken) -> "resolved". peddler_resolution is "paid" (the tag handed over: 8 silver, counts toward the level-2 pool) or "told" (word only: no pay, no credit).
+*comment   The leads (optional, any order): the Hall clerk (what the tag looks like: factors_hall.txt), and Odile and Bram (they heard a scream: ashrun_holt.txt, advantage on reading the Wrecked Camp). In the forest: the Wrecked Camp
+*comment   (Room 10) shows a tinker's stock and signs of a fight; the Trampled Clearing (Room 12) has the brass licence tag on the peddler's belt (Investigation DC 10, none with the Hall lead), one try per refill (dg_lsf_tag_tried).
+*comment   The first knock at the cottage is the one conversation with her (peddler_met_wife, decided inside the page lock as pd_first); later knocks with nothing to show are described.
+*comment   The camp's 6 silver (lsf_camp_pouch) is the choice: handed over, it earns the goodwill of Wenna Hart, the village head (bc_wenna_goodwill), who hears of it from Merel: the user's plan is a farm of the player's own later. Kept,
+*comment   nothing is said. Neither is called right.
+*comment Not in *scene_list: compile.js lists it with verifyFileName.
+*comment ====================================================================================
+
+*comment ── TAKING IT: the new paper on the plank board in the Gathering Hall ──
+*label pd_notice
+*set minutes_to_pass 5
+*set time_advance_call_id "pd_notice_1"
+*gosub_scene calendar advance_time
+[b]◈ THE GATHERING HALL: A NEW PAPER[/b]
+*line_break
+You cross to the plank board and read the newest paper. It is pinned a little crooked above the rest, in a careful, uneven hand:
+
+[i]"WORD WANTED. My husband Aldis Pellam, tinker, and two hired hands, Marr and Joss, left here for Ashrun Holt by the forest track and have not been seen since. Eight silver for word of them, with proof. The last cottage on the Lane. Merel Pellam."[/i]
+*choice
+  # Take the job.
+    *set peddler_stage "active"
+    You fold the particulars into your head: a tinker and two hands, the forest track, eight silver for word with proof. The last cottage on the Lane is where the paper says to bring it.
+    *page_break Step back from the board…
+    *goto_scene timbermouth/barleycross/green bc_hall
+  # Leave the paper where it hangs.
+    *page_break Step back from the board…
+    *goto_scene timbermouth/barleycross/green bc_hall
+
+*comment ── THE END COTTAGE: the first knock, the proof, or word without it ──
+*label pd_cottage
+*set minutes_to_pass 10
+*set time_advance_call_id "pd_cottage_1"
+*gosub_scene calendar advance_time
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set pd_first (not(peddler_met_wife))
+  *set peddler_met_wife true
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+[b]◈ THE END COTTAGE[/b]
+*line_break
+A low cottage stands at the far end of the lane, with a row of mended pots hung on pegs along its wall to dry and a bench by the door worn smooth by sitting. A woman in a patched apron opens the door before your second knock. A girl of about eight hangs at her hip, and the woman's eyes go straight to your hands.
+*if (has_peddler_tag)
+  *goto pd_report_tag
+*if (pd_first)
+  *goto pd_first_talk
+*if (dg_seen_lsf_r12)
+  *goto pd_report_none
+Merel Pellam looks at your hands, then at your face, and gives a small shake of her head. She waits, the door open, until you have stepped back off the sill.
+*page_break Step back to the lane…
+*goto_scene timbermouth/barleycross/lane bc_lane_lane
+
+*label pd_first_talk
+
+"I read your paper," you say. "I'll look for them."
+
+"Merel Pellam." She shifts the girl to her other hip. "Aldis, my husband. A tinker. Pots, needles, ribbon. He's walked the round from Timbermouth through here to the Holt every three weeks for twenty years, and he's never been late."
+
+"Who went with him?"
+
+"Two hands from this lane for the forest stretch. Marr and Joss. That track has a rough name." Her mouth goes tight. "It saves a day when the road's wet, and Aldis never could pass up a saved day. The Holt says none of the three ever arrived."
+
+"What do you want from me?"
+
+"Word. And something of his that I can put in my hands." She looks down at the girl, whose face is pressed into her apron. "I can't carry a story to the children. The village put in what it could, and so did my sister. Eight silver, and it's all there is."
+
+She waits until you nod, and then she shuts the door softly.
+*page_break Step back to the lane…
+*goto_scene timbermouth/barleycross/lane bc_lane_lane
+
+*label pd_report_none
+
+Merel Pellam looks at your hands, then at your face.
+
+"I haven't brought anything of his," you say. "I found where it ended. A camp in the Longshade, torn open, and three of them in a clearing near it. A big cat."
+*choice
+  # "That's all I can tell you. I'm sorry."
+    She listens with the girl's hair under her chin and her eyes on the lane behind you. When you finish, she nods once. "Then I know. That's something." Her hand tightens on the doorframe. "I said proof for the silver, and that's how it stays. I can't put your word in front of the girls."
+
+    She shuts the door softly. A moment later you hear her voice inside, low and even, and then it breaks.
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+      *set peddler_stage "resolved"
+      *set peddler_resolution "told"
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id page_id
+    *page_break Step back to the lane…
+    *goto_scene timbermouth/barleycross/lane bc_lane_lane
+  # "Forget I said it. I'll bring you proof."
+    Merel Pellam's eyes close for a moment. "Then bring it," she says, and the door shuts.
+    *page_break Step back to the lane…
+    *goto_scene timbermouth/barleycross/lane bc_lane_lane
+
+*comment ── REPORTING: the tag in her hand pays ──
+*label pd_report_tag
+
+"Merel," you say, and put the brass disc in her hand.
+
+She turns it over. Her thumb runs across the row of small numbers on the back, then across the seal on the front, and stops. The girl looks up at her face.
+
+"That's his," she says. "He wore it on the left, where he could reach it."
+
+"I found them in the Longshade, in a clearing off the middle trails," you say. "All three. A big cat took them, and it took the camp first."
+
+"Marr? Joss?"
+
+"Both of them, with him," you say, as gently as you can.
+
+Merel Pellam doesn't answer for a while. She looks past you down the lane, and the hand with the tag closes slowly on it. When she speaks, it is to the lane. "Thank you for going. I'd have gone myself, if there was anyone to leave them with."
+
+She takes the girl in and comes back with a twist of cloth. She counts eight silver marks into your palm, one at a time, and closes your fingers over them. The brass disc goes into her apron pocket and her hand stays on it. "I'll keep this."
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount 80
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*comment Fixed-value sets, safe to repeat on a replay; they cannot use the stat_bump lock because this page's first-knock check at the top of pd_cottage has already taken it.
+*set peddler_stage "resolved"
+*set peddler_resolution "paid"
+*set has_peddler_tag false
+
+[b][💰 Received: 8 Silver Marks][/b]
+*gosub_scene calendar update_hub_condition
+*if ((lsf_camp_pouch) and ((((gold * 100) + (silver * 10)) + copper) >= 60))
+  *goto pd_pouch_ask
+*page_break Step back to the lane…
+*goto_scene timbermouth/barleycross/lane bc_lane_lane
+
+*comment ── THE CAMP'S SILVER: hand it over or say nothing; neither is called right ──
+*label pd_pouch_ask
+Merel Pellam is turning away when she stops. "One more thing," she says. "Did they have anything with them? Their takings, a purse?"
+*choice
+  # "There was a pouch in the camp. Six silver. It's theirs."
+    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+      *set currency_add_amount (0 - 60)
+      *gosub_scene economy currency_add
+      *set currency_txn_locked true
+      *set locked_currency_txn_page_id page_id
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+      *set bc_pouch_returned true
+      *set bc_wenna_goodwill true
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id page_id
+    You count six silver marks into her free hand. Merel Pellam looks at the coins, and then at you, for a long moment.
+
+    "Most would have kept that," she says, "and I'd never have known." Her fingers close over it. "Wenna Hart will hear who brought this back to this house. She hears everything, and she'll hear that. You'll be welcome in Barleycross when you come through."
+    *page_break Step back to the lane…
+    *goto_scene timbermouth/barleycross/lane bc_lane_lane
+  # "No. The camp was bare."
+    "Then the trees have it," Merel Pellam says, and takes the girl inside.
+    *page_break Step back to the lane…
+    *goto_scene timbermouth/barleycross/lane bc_lane_lane
+
+*comment Level-up quest pool: finding the party with the tag counts once. A bare account ("told") does not.
+*comment replay-ok: refresh_quests_finished (character_progression.txt) sets quests_finished to 0 and then calls this label, so the count is rebuilt from flags on every call and a replay cannot double it.
+*label count_finished_peddler
+*if ((peddler_stage = "resolved") and (peddler_resolution = "paid"))
+  *set quests_finished + 1
+*return
