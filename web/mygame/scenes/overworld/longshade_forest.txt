@@ -703,13 +703,14 @@ You find the first handholds in the rock and test each before you trust it.
 
 *label lsf_n_j10
 
-[b]◈ FOREST TRAIL 10[/b]
+[b]◈ THE SUNKEN PATH[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  The dark under the trees is close, and you feel your way. This is forest trail 10. Nothing is written here yet.
+  The ground tips downhill, and the air turns cool and still around you. Roots cross the track in knotted ridges that your ankle finds before your eyes could, and a green, mossy smell rises from somewhere ahead. The leaves overhead hold the dark in, and the forest sounds fade behind you.
 *else
-  This is forest trail 10. Nothing is written here yet.
+  The path slopes down and south between trunks that grow wider with every stride. Moss furs their sides in thick green, and roots cross the track in knotted ridges under the leaf litter. The branches knit together overhead, and the air under them is cool and still, smelling of wet stone.
+*gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
   # Go north.
@@ -1682,17 +1683,41 @@ ${use_text}
     *set dg_dest_hall true
     *goto lsf_move
 
+*comment THE OLD GROVE (Room 6, 2026-10-18): the far south-west dead end, a hollow of the oldest trees. Two plants grow only here, each gathered once per refill through dungeon.txt dg_forage: shadefern on the wet rock
+*comment (Nature or Survival DC 12) and acorn truffle in the leaf mold under the great oak (DC 14). A miss spoils that patch until the refill. The flags are dg_lsf_r6_fern and dg_lsf_r6_truffle, set after any try.
+*comment The Ambrose request for these two is a later quest (the user, 2026-10-18); nothing here knows about it.
 *label lsf_n_r6
 
-[b]◈ FOREST ROOM 6[/b]
+[b]◈ THE OLD GROVE[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  The dark under the trees is close, and you feel your way. This is forest room 6. Nothing is written here yet.
+  The roots rise out of the ground in walls, and you feel your way between them with both hands. Your ${feet_prose} sink into leaf mold, deep and springy, and cold water seeps along a face of rock beside you. Fine fronds brush your knuckles where the stone is wet.
 *else
-  This is forest room 6. Nothing is written here yet.
+  The path ends in a hollow where the oldest trees in the forest stand shoulder to shoulder. Their trunks are wider than a cart is long, furrowed like dry riverbeds, and their crowns close so tightly overhead that the light reaches the ground slow and green. A seam of grey rock shows between the roots, dark with seep water, and dark ferns grow thick along it. Under the biggest oak the ground is a deep, springy mat of leaves and acorn husks, turned over here and there by something small.
+*if (dg_lsf_r6_fern)
+
+  The fronds along the wet rock have been cut back to ragged stubs.
+*if (dg_lsf_r6_truffle)
+
+  The leaf mold under the oak is raked into a rough heap where you dug.
+*gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
+  *if (not(dg_lsf_r6_fern))
+    # Cut ferns from the wet rock. [~15 min]@{show_stat_hints  [Nature or Survival DC 12]|}
+      You crouch at the seep and run your fingers along the stone, looking for the fronds with the firmest stems.
+      *set dg_fg_plant "shadefern"
+      *gosub_scene dungeon dg_forage
+      *set dg_lsf_r6_fern true
+      *goto lsf_n_r6
+  *if (not(dg_lsf_r6_truffle))
+    # Dig in the leaf mold under the oak. [~15 min]@{show_stat_hints  [Nature or Survival DC 14]|}
+      You kneel between two great roots, where the mold is darkest, and start to dig.
+      *set dg_fg_plant "acorn_truffle"
+      *gosub_scene dungeon dg_forage
+      *set dg_lsf_r6_truffle true
+      *goto lsf_n_r6
   # Go north.
     *set dg_dest "lsf_j10"
     *set dg_dest_hall true
@@ -2686,6 +2711,8 @@ Two people crash out of the brush together. The woman is short and broad, muddy 
 *set dg_lsf_body_surv_tried false
 *set dg_lsf_body_med_tried false
 *set dg_lsf_body_nat_tried false
+*set dg_lsf_r6_fern false
+*set dg_lsf_r6_truffle false
 *return
 
 *comment The Developer menu's reset: forget the map (what was seen and every chalk mark).

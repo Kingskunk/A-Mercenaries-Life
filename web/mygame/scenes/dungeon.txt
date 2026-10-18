@@ -289,6 +289,105 @@
 *return
 
 *comment ──────────────────────────────────────────────────────────────
+*comment GATHERING A PLANT (2026-10-18, the user's call: the swamp and sewer plants the game sold to Ambrose but never dropped). The plants are counted ingredients like the creature parts above (the count variable is the item id:
+*comment sluice_moss, brinecap, pale_crackroot, glowmold, cistern_spores; the forest ones, silverleaf, shadefern, oakheart_balsam, acorn_truffle and brambleberry, are one entry each here when they are placed). A room calls
+*comment   *set dg_fg_plant "<id>"
+*comment   *gosub_scene dungeon dg_forage              the Nature or Survival check (the better), the prose, the ingredient and 15 minutes
+*comment and sets its own once-per-refill flag (cleared by the dungeon's respawn label). One piece on a pass, two when the total beats the DC by 5 or more; a fail spoils the patch and costs the time. The counter shares
+*comment stat_bump_locked, so a replay of the page changes nothing a second time. The prose is the plant's own (where it grows is in its dossier line), so a new place only has to say where it is.
+*comment ──────────────────────────────────────────────────────────────
+*label dg_forage_info
+*set dg_fg_dc 0
+*set dg_fg_name ""
+*if (dg_fg_plant = "sluice_moss")
+  *set dg_fg_dc 10
+  *set dg_fg_name "sluice moss"
+*if (dg_fg_plant = "brinecap")
+  *set dg_fg_dc 11
+  *set dg_fg_name "brinecap"
+*if (dg_fg_plant = "pale_crackroot")
+  *set dg_fg_dc 11
+  *set dg_fg_name "pale crackroot"
+*if (dg_fg_plant = "glowmold")
+  *set dg_fg_dc 12
+  *set dg_fg_name "glowmold"
+*if (dg_fg_plant = "cistern_spores")
+  *set dg_fg_dc 11
+  *set dg_fg_name "cistern spores"
+*if (dg_fg_plant = "shadefern")
+  *set dg_fg_dc 12
+  *set dg_fg_name "shadefern"
+*if (dg_fg_plant = "acorn_truffle")
+  *set dg_fg_dc 14
+  *set dg_fg_name "acorn truffle"
+*return
+
+*label dg_forage
+*gosub dg_forage_info
+*if (dg_fg_dc = 0)
+  There is nothing here worth gathering.
+  *return
+*gosub_scene dice_engine roll_skill_check dg_fg_dc "nature" "" "survival" "" "" ""
+*temp dgf_n 0
+*if (check_success)
+  *set dgf_n 1
+*if (check_total >= (dg_fg_dc + 5))
+  *set dgf_n 2
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set {dg_fg_plant} (({dg_fg_plant}) + dgf_n)
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+*if (dgf_n = 0)
+  *if (dg_fg_plant = "sluice_moss")
+    The moss slides off the brick in grey slime that runs through your fingers.
+  *if (dg_fg_plant = "brinecap")
+    The first cap crumbles to damp powder in your fingers, and the rest split as you twist them.
+  *if (dg_fg_plant = "pale_crackroot")
+    The roots snap short and leave their pale ends in the stone, too deep to reach.
+  *if (dg_fg_plant = "glowmold")
+    The film smears to a dull grey paste as you scrape it, and its glow dies in your fingers.
+  *if (dg_fg_plant = "cistern_spores")
+    A pod bursts in your fingers and the spores puff away in a cloud, and you cough until your eyes stream.
+  *if (dg_fg_plant = "shadefern")
+    The fronds come away in limp green rags, bruised before you can wrap them.
+  *if (dg_fg_plant = "acorn_truffle")
+    You rake through the leaf mold until your nails are black, and every knob you lift turns out to be a stone or a knuckle of root.
+*else
+  *if (dg_fg_plant = "sluice_moss")
+    You scrape the slick green-grey moss off the wet brick in mats and press them flat between two squares of oilcloth.
+  *if (dg_fg_plant = "brinecap")
+    You twist the squat, salt-speckled caps off the stone one at a time, keeping them whole, and lay them in a fold of cloth.
+  *if (dg_fg_plant = "pale_crackroot")
+    You work your fingers into the fissure and draw the chalk-pale roots out whole, a hand at a time, until they snap free.
+  *if (dg_fg_plant = "glowmold")
+    You scrape the faintly glowing film from the stone with a flat chip of rock and fold it into a scrap of cloth, where it keeps its dim shine.
+  *if (dg_fg_plant = "cistern_spores")
+    You tap the dry pods over a fold of cloth until the fine spores fall, and tie it shut before they can drift.
+  *if (dg_fg_plant = "shadefern")
+    You cut the fronds close to the rock with a quick twist of the wrist, keeping the stems whole, and wrap them in a wet leaf to keep them cool.
+    *if (dgf_n = 2)
+
+      The stand is thick enough for a second bundle, and you fill it.
+  *if (dg_fg_plant = "acorn_truffle")
+    You rake the leaf mold back from between two roots, and the earth underneath smells suddenly rich and nutty. A knobbly lump comes up in your hand, firm as a chestnut, and you brush it clean.
+    *if (dgf_n = 2)
+
+      A second lies a hand's width away, and you work it loose too.
+  *line_break
+  [b][🌿 Gathered: ${dgf_n} ${dg_fg_name}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass 15
+*set time_advance_call_id "dg_forage"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return
+
+*comment ──────────────────────────────────────────────────────────────
 *comment WALKING A DUNGEON (2026-10-02). The dungeon's own scene owns its map (nodes, exits, prose); this file owns what every dungeon shares.
 *comment   dg_step         one move: the caller sets dg_dest (the node id) and dg_dest_hall (true for a hallway). It moves dg_pos, counts the step, spends 10 minutes
 *comment                   (advance_time), burns one step of light, and on a hallway step rolls a 40% chance of an encounter from dg_table (never twice running; the
