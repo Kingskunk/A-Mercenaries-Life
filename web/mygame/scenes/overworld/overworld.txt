@@ -79,10 +79,11 @@ ${ow_here_text}
         *goto_scene overworld/longshade_forest lsf_enter_south
       *goto_scene overworld/longshade_forest lsf_enter_east
   *if (ow_pos = "pv")
-    # Go back in through the River Gate.
+    # Enter Port Valen.
       *set ow_on false
       *set climate_shift 0
-      *goto_scene port_valen/port_valen_middle_ward mw_river_gate
+      *set current_district "middle_ward"
+      *goto_scene port_valen/port_valen port_valen_travel
   *if (ow_pos = "fv")
     # Go into Barleycross.
       *set ow_on false
@@ -162,7 +163,7 @@ ${ow_here_text}
   *comment lock (only for a valid trip), so a replay reads the stored values back instead of working a route from a position that has already changed.
   *comment The forecast in Overworld.travelPlan is also what the map card shows. Miles are resolved one at a time below so dusk, darkness and dawn change the pace at the same moments in the actual trip.
   *script var o = window.Overworld; var d = String(stats.ow_dest); var ok = !!(o.nodes[d] && o.nodes[stats.ow_pos] && d !== stats.ow_pos); var day = Number(stats.campaign_day); var light = !!((stats.has_hooded_lantern && stats.has_lamp_oil) || (stats.has_pitch_torch && stats.has_tinderbox) || stats.race_darkvision || stats.inv_devils_sight || stats.equipped_ring1_id === "night_eye_ring" || stats.equipped_ring2_id === "night_eye_ring"); var now = Number(stats.clock_hour) * 60 + Number(stats.clock_minute); var poor = String(stats.weather_visibility) === "poor"; var seed = day * 1440 + now; var ev = ok ? o.travelEventPlan(String(stats.ow_pos), d, seed, day, Number(stats.ow_event_last_day), String(stats.ow_event_force), now, light, poor, !!stats.has_horse) : null; stats.ow_goal = ev ? d : "none"; stats.ow_event_id = ev ? ev.id : "none"; stats.ow_event_seed = ev ? seed : 0; if (ev) { d = ev.tile; stats.ow_dest = d; stats.ow_event_last_day = day; stats.ow_event_force = ""; } var r = ok ? o.route(stats.ow_pos, d) : { ok: false, miles: 0, legs: [] }; var p = ok ? o.travelPlan(stats.ow_pos, d, now, light, String(stats.weather_visibility) === "poor", !!stats.has_horse) : { ok: false, miles: 0, minutes: 0, nightStops: 0 }; ok = ok && r.ok && p.ok; stats.ow_trip_ok = ok; stats.ow_from = stats.ow_pos; stats.ow_miles = ok ? p.miles : 0; stats.ow_minutes = ok ? p.minutes : 0; stats.ow_legs = ok ? r.legs.length : 0; stats.ow_text = ok ? o.duration(p.minutes) : ""; stats.ow_from_name = o.nodes[stats.ow_pos].name; stats.ow_dest_name = ok ? o.nodes[d].name : ""; stats.ow_has_night_light = light; stats.ow_night_stops = 0; stats.ow_night_wait_mins = 0; stats.ow_night_halt_reason = "light";
-  *set ow_rations_total 0
+  *gosub_scene calendar food_note_clear
   *if (ow_trip_ok)
     *set ow_pos ow_dest
     *comment Each mile is charged at the light and weather of the moment. This is deliberately inside the trip lock: advance_time's own lock remembers only its last call on this page.
@@ -183,7 +184,6 @@ ${ow_here_text}
         *if (ow_step_halt)
           *gosub ow_dark_halt
           *goto ow_leg_loop
-        *set ow_rations_total (ow_rations_total + rations_eaten_last)
         *set ow_leg_mile_i (ow_leg_mile_i + 1)
         *goto ow_leg_loop
       *set ow_leg_i (ow_leg_i + 1)
@@ -217,11 +217,9 @@ ${ow_here_text}
     *else
       [b][⛺ Without a lit lantern or torch, you made ${ow_night_stops} roadside halts until morning.][/b]
   *line_break
-*if (ow_rations_total = 1)
-  [b][🍞 You ate a trail ration on the way.][/b]
-  *line_break
-*if (ow_rations_total > 1)
-  [b][🍞 You ate ${ow_rations_total} trail rations on the way.][/b]
+*gosub_scene calendar food_note_build
+*if (not(food_eaten_note = ""))
+  [b][🍞 You ate ${food_eaten_note} on the way.][/b]
   *line_break
 *if (ow_event_id = "none")
   *goto ow_here
@@ -229,7 +227,7 @@ ${ow_here_text}
 *goto ow_event
 
 *comment ── A forced halt in darkness. This is a roadside camp rather than a destination tile: it advances to 07:00, charges normal camping exposure and resolves sleep before the stored route continues. ──
-*comment replay-ok: called only from ow_travel's trip loop, which is entirely inside the ow_trip_locked / page_id lock, and it resets ow_rations_total and ow_night_stops at the start of each trip.
+*comment replay-ok: called only from ow_travel's trip loop, which is entirely inside the ow_trip_locked / page_id lock, and it clears the food tally (calendar.txt food_note_clear) and ow_night_stops at the start of each trip.
 *label ow_dark_halt
 *set ow_night_stops + 1
 *script var now = Number(stats.clock_hour) * 60 + Number(stats.clock_minute); var wait = (1860 - now) % 1440; stats.ow_camp_minutes = wait || 1440;
@@ -242,7 +240,6 @@ ${ow_here_text}
 *set minutes_to_pass (ow_camp_minutes modulo 60)
 *set time_advance_call_id ("ow_trip_dark_halt_" & ow_night_stops)
 *gosub_scene calendar advance_time
-*set ow_rations_total (ow_rations_total + rations_eaten_last)
 *gosub_scene calendar recalc_hp_from_neglect
 *if (hp_current <= 0)
   *set death_cause "starvation"
@@ -282,7 +279,7 @@ ${ow_here_text}
 *set ow_event_id "none"
 *if (not(ow_camp_locked)) or (not(locked_ow_camp_page_id = page_id))
   *set ow_camp_ok ow_can_camp
-  *set ow_rations_total 0
+  *gosub_scene calendar food_note_clear
   *if (ow_camp_ok)
     *set ow_camp_wet weather_wet
     *set ow_camp_severe (weather_severity >= 3)
@@ -298,7 +295,6 @@ ${ow_here_text}
     *set minutes_to_pass (ow_camp_minutes modulo 60)
     *set time_advance_call_id "ow_camp"
     *gosub_scene calendar advance_time
-    *set ow_rations_total rations_eaten_last
     *gosub_scene calendar recalc_hp_from_neglect
     *if (hp_current <= 0)
       *set death_cause "starvation"
@@ -349,11 +345,9 @@ You make camp for the night.
 *else
   [b][⛺ You slept 8 hours on the road. Fatigue cleared.][/b]
 *line_break
-*if (ow_rations_total = 1)
-  [b][🍞 You ate a trail ration in the night.][/b]
-  *line_break
-*if (ow_rations_total > 1)
-  [b][🍞 You ate ${ow_rations_total} trail rations in the night.][/b]
+*gosub_scene calendar food_note_build
+*if (not(food_eaten_note = ""))
+  [b][🍞 You ate ${food_eaten_note} in the night.][/b]
   *line_break
 *goto ow_here
 

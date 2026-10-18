@@ -151,7 +151,7 @@
   var ID_ICON = {
     timber_axe: "w_battleaxe", stiletto: "w_dagger", iron_crowbar: "tool", torvald_iron_sallet: "h_helm", torvald_hide_cap: "h_cap",
     brigandine: "a_brig", chain_jack: "a_chain", plate_harness: "a_plate", court_coat: "a_coat", shield: "shield", toll_seal_ring: "signet",
-    warming_liniment: "salve", clear_head_draught: "elixir", althea_phial: "potion", grease_flask: "grease", alchemists_fire: "alch_fire", mortar_pestle: "mortar_pestle", linen_bandage: "bandage", lye_soap: "soap", trail_rations: "rations",
+    warming_liniment: "salve", clear_head_draught: "elixir", althea_phial: "potion", grease_flask: "grease", alchemists_fire: "alch_fire", mortar_pestle: "mortar_pestle", linen_bandage: "bandage", lye_soap: "soap", trail_rations: "rations", barley_loaf: "barley_loaf", hard_farm_cheese: "hard_farm_cheese", orchard_apple: "orchard_apple", root_vegetable_bundle: "root_vegetable_bundle", farm_eggs: "farm_eggs", dried_pork_sausage: "dried_pork_sausage",
     hemp_rope: "rope", pitch_torch: "torch", lamp_oil: "oil", hooded_lantern: "lantern", tool_kit: "toolkit", shovel: "shovel", fire_arrow: "arrow_fire", ice_arrow: "arrow_ice", lute: "lute", tinderbox: "tinder", chalk_sticks: "chalk",
     camp_kit: "blanket", waxed_oilcloth: "cloth", lockpick_set: "lockpicks", padlock: "key", door_bolt: "tool", iron_manacles: "tool",
     broadcloth_cloak: "cloak_traveler", storm_cape: "cloak_storm", winter_cloak: "cloak_winter", summer_duster: "cloak_duster", felt_hat: "h_hat", fur_cap: "h_cap",
@@ -259,7 +259,7 @@
   }
 
   /* ---------------------------------------------------------------------- load (2026-10-14)
-   * What the character carries, in load points (weights are per item in inventory-data.js; the capacity formula, coin weights and starting gear are its `load` block, generated from
+   * What the character carries, in pounds (weights are per item in inventory-data.js; the capacity formula, coin weights and starting gear are its `load` block, generated from
    * tools/gear_catalog.json). A stack weighs weight x quantity. The starting kit (the class's armour, weapon and sidearm, and the four plain pieces of clothing) is always carried: it is
    * not an item in the bag, but "switch back to starting gear" is always offered, so it is always on you. Coins weigh by kind; the Letter of Credit is a bag item like any other.
    * Nothing is written to the game's state: this is only read, for the pack's display. */
@@ -296,11 +296,13 @@
     var gold = Math.floor(n / 100), silver = Math.floor((n - gold * 100) / 10), cu = n - gold * 100 - silver * 10;
     return gold * (c.gold || 0) + silver * (c.silver || 0) + cu * (c.copper || 0);
   }
-  // One decimal at most, none when it is whole: 31.4, 20, 0.1.
-  function fmtLoad(n) { var r = Math.round(n * 10) / 10; return String(r); }
+  // One decimal at most, none when it is whole: 31.4, 20, 0.1; under a pound two decimals, so an arrow reads 0.05 (the weights are in pounds, 5e's scale).
+  function fmtLoad(n) { var r = n > 0 && n < 1 ? Math.round(n * 100) / 100 : Math.round(n * 10) / 10; return String(r); }
+  // A rider's body weight in pounds, by race (load.body, from the catalog), for a container that is ridden (the saddlebags: the horse carries the rider too).
+  function bodyWeight(s) { var b = (data().load || {}).body || {}, race = String(s.race || ""); return Number(b[race]) || Number(b["default"]) || 0; }
   /* ---------------------------------------------------------------------- containers (2026-10-14)
    * Places to put items that are not on the character (the user's design: several, some that follow, some fixed in a place). The list is load.containers, generated from the catalog:
-   * a container is an id, a name, a capacity in load points, `needs` (a flag that must be true to reach it) and `dungeon: "waits"` (it is left outside a dungeon run). Stowing MOVES a unit
+   * a container is an id, a name, a capacity in pounds (less the rider's body weight when `rider` is set), `needs` (a flag that must be true to reach it) and `dungeon: "waits"` (it is left outside a dungeon run). Stowing MOVES a unit
    * out of the character's own counts (has_<id>, spare_<id>) into stow_<container>_<id>, so everything else in the game (a torch to light, a potion to drink, a shop counter) simply sees it
    * as not owned, and none of those places had to learn about containers. Taking it back moves it in again. Rules: never in a fight; what is worn cannot be stowed (the piece in use stays);
    * a container refuses past its capacity, never penalises; its contents stay when it is out of reach and wait. Like EquipmentEngine this writes window.stats directly: a count move between
@@ -330,7 +332,9 @@
       var q = stowedOf(cid, item.id, s);
       if (q > 0) { total += (Number(item.weight) || 0) * q; entries.push({ item: item, qty: q }); }
     });
-    return { id: cid, name: c.name, note: c.note || "", capacity: c.capacity || 0, total: total, entries: entries, present: !c.needs || truthyS(s[c.needs]), why: containerBlock(cid, s) };
+    var cap = c.capacity || 0, note = c.note || "";
+    if (c.rider) { var body = bodyWeight(s); cap = Math.max(0, cap - body); note += " You weigh " + fmtLoad(body) + " of its " + fmtLoad(c.capacity) + " pounds, so " + fmtLoad(cap) + " are left for cargo."; }
+    return { id: cid, name: c.name, note: note, capacity: cap, total: total, entries: entries, present: !c.needs || truthyS(s[c.needs]), why: containerBlock(cid, s) };
   }
   // The containers the character has, or that still hold something while out of reach.
   function visibleContainers(s) {

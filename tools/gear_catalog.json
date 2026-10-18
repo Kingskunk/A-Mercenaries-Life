@@ -62,9 +62,13 @@
     "",
     "  A piece that gives a stat bonus is UNIQUE (the user, 2026-10-13): it cannot be stacked or bought a second time (stack false), and gen_gear.js treats any item with traits.stat that way. Their prices are 400c for +1 and 1,200c to 1,500c for +2: magical dress, not mundane stock.",
     "",
-    "  WEIGHT (2026-10-14, the user asked for a carrying limit): every item has a weight in LOAD points, from 0.1 up (a ring or a gem is 0.1, a longsword 3, plate 14). A character carries 40 + 2 x STR score. Weight is per item: a stack weighs weight x quantity. COINS WEIGH TOO (coin_weights, the user's call, so that turning a hoard into gems, jewelry or notes is a real choice). Starting gear that is not catalog stock is in starting_weights. Not used by any scene yet.",
+    "  WEIGHT (2026-10-14, the user asked for a carrying limit; moved to POUNDS 2026-10-18): every item has a weight in pounds on the 5e scale, in steps of 0.05 (a ring or a gem is 0.1, a longsword 3, plate 65). A character carries 15 x STR score pounds (capacity.base 0, per_str 15). Weight is per item: a stack weighs weight x quantity. COINS WEIGH TOO (coin_weights: 0.02 each, 50 to the pound; the user's call, so that turning a hoard into gems, jewelry or notes is a real choice). Starting gear that is not catalog stock is in starting_weights.",
     "",
-    "  CONTAINERS (2026-10-14, the user's design): a place to put items that is not on the character. Each has an id, a name, a capacity in load points, `needs` (a flag that must be true for it to be reachable, with `needs_reason` as the words when it is not) and `dungeon: \"waits\"` (it is left outside a dungeon run). Stowed counts are stow_<container>_<item>, created for every pack item the generator makes. A new container is one entry here; the pack reads the list. Kinds in mind: follows you everywhere (a magic bag), follows you but waits outside a dungeon (a horse's saddlebags, a wagon), fixed in a place (a stash)."
+    "  CONTAINERS (2026-10-14, the user's design): a place to put items that is not on the character. Each has an id, a name, a capacity in load points, `needs` (a flag that must be true for it to be reachable, with `needs_reason` as the words when it is not) and `dungeon: \"waits\"` (it is left outside a dungeon run). Stowed counts are stow_<container>_<item>, created for every pack item the generator makes. A new container is one entry here; the pack reads the list. Kinds in mind: follows you everywhere (a magic bag), follows you but waits outside a dungeon (a horse's saddlebags, a wagon), fixed in a place (a stash).",
+    "",
+    "  FOOD (2026-10-18, the user's design): a consumable with effect { type: \"ration\", food: <minutes of hunger it holds off> }. A trail ration is food 2160 (the default: 36 hours, a whole meal, the hunger clock back to 0); a snack or raw ingredient is a part of that (honeycomb 540, a quarter). Eating by hand takes any of them (refused within six hours of the last meal); the game eats for you only to stop starvation: when the hunger clock reaches 2160 it eats rations first, then the other foods, until the clock is covered. `autoEat: false` keeps an item out of that for good; `autoEatAfter: \"<variable>\"` keeps it out until that flag is true (a quest ingredient: honeycomb until the sick bear is healed). `autoEatOrder: <number>` overrides the order (otherwise the biggest food first). `ate: { one, many }` is how the night summary names it (\"you ate a trail ration\"). Generated into calendar.txt food_pick_list and overworldmap.js food_items.",
+    "",
+    "  POUNDS (2026-10-18, the user's design): every weight is in pounds on the 5e scale; capacity is `capacity.base` + `capacity.per_str` x STR (0 + 15 x STR). Weights are multiples of 0.05 (an arrow is 0.05, a coin 0.02 in coin_weights). A container with `rider: true` has its capacity reduced by the character's body weight (body_weights, by race)."
   ],
   "items": [
     {
@@ -73,7 +77,7 @@
       "name": "hewing axe",
       "title": "Highland Hewing Axe",
       "retail": 25,
-      "weight": 3,
+      "weight": 4,
       "minutes": 10,
       "hint": "1d8 Slashing, One-Handed",
       "blurb": "A broad-bearded felling axe with the balance forward of the haft.",
@@ -107,7 +111,7 @@
       "name": "stiletto",
       "title": "Alderford Stiletto",
       "retail": 15,
-      "weight": 0.5,
+      "weight": 1,
       "minutes": 10,
       "hint": "1d4 Piercing, Finesse",
       "blurb": "A slender, square-sided blade ground to a needle point from file-steel.",
@@ -172,7 +176,7 @@
       "name": "rough spear",
       "title": "Rough Spear",
       "retail": 8,
-      "weight": 2.5,
+      "weight": 3,
       "minutes": 5,
       "hint": "1d6 Piercing, Reach, One-Handed",
       "blurb": "A straight ash pole with an iron head bound on with wire and cord.",
@@ -203,7 +207,7 @@
       "name": "cord sling",
       "title": "Cord Sling",
       "retail": 4,
-      "weight": 0.3,
+      "weight": 0.5,
       "minutes": 5,
       "hint": "1d4 Bludgeoning, Ranged, One-Handed",
       "blurb": "A braided cord sling with a leather pouch, made for a long throw.",
@@ -235,7 +239,7 @@
       "name": "hunting bow",
       "title": "Hunting Bow",
       "retail": 15,
-      "weight": 1.5,
+      "weight": 2,
       "minutes": 5,
       "hint": "1d6 Piercing, Ranged, Two-Handed",
       "blurb": "A plain yew stave with a waxed string, strung for a day in the woods.",
@@ -267,7 +271,7 @@
       "name": "iron prybar",
       "title": "Iron Prybar",
       "retail": 12,
-      "weight": 2.5,
+      "weight": 5,
       "minutes": 10,
       "hint": "Advantage on Force and Pry Checks",
       "blurb": "A three-foot bar of octagonal iron with a curved claw at one end and a chisel heel at the other.",
@@ -288,7 +292,7 @@
       "name": "iron skullcap",
       "title": "Iron Skullcap",
       "retail": 30,
-      "weight": 1.5,
+      "weight": 3,
       "minutes": 10,
       "hint": "+1 AC, Counts as Armor",
       "blurb": "A plain riveted iron skullcap with a small touchmark stamped into the brow.",
@@ -324,7 +328,7 @@
       "name": "watch cap",
       "title": "Leather Watch Cap",
       "retail": 8,
-      "weight": 0.3,
+      "weight": 1,
       "minutes": 10,
       "sell": {
         "pawn": 35
@@ -348,7 +352,7 @@
       "name": "studded gambeson",
       "title": "Studded Gambeson",
       "retail": 70,
-      "weight": 4,
+      "weight": 20,
       "minutes": 20,
       "tier": "medium",
       "hint": "Medium Armor: AC 13 + DEX, max +2",
@@ -379,7 +383,7 @@
       "name": "mail shirt",
       "title": "Iron Chain Shirt",
       "retail": 70,
-      "weight": 6,
+      "weight": 25,
       "minutes": 20,
       "tier": "medium",
       "hint": "Medium Armor: AC 13 + DEX, max +2",
@@ -410,7 +414,7 @@
       "name": "iron plate harness",
       "title": "Iron Plate Harness",
       "retail": 150,
-      "weight": 14,
+      "weight": 65,
       "minutes": 40,
       "tier": "heavy",
       "hint": "Heavy Armor: AC 16, no DEX bonus",
@@ -441,7 +445,7 @@
       "name": "oak shield",
       "title": "Oak Shield",
       "retail": 30,
-      "weight": 3,
+      "weight": 6,
       "minutes": 10,
       "tier": "shield",
       "hint": "+2 Shield AC Bonus",
@@ -475,7 +479,7 @@
       "name": "warming liniment",
       "title": "Warming Liniment",
       "retail": 10,
-      "weight": 0.2,
+      "weight": 0.5,
       "minutes": 10,
       "hint": "+1 STR for 12h",
       "blurb": "A thumb-length of grey camphor-and-thyme tallow twisted in waxed paper.",
@@ -503,7 +507,7 @@
       "name": "clear-head draught",
       "title": "Clear-Head Draught",
       "retail": 10,
-      "weight": 0.3,
+      "weight": 0.5,
       "minutes": 10,
       "hint": "+1 WIS for 12h",
       "blurb": "A stoppered measure of amber liquid, pine and mint with something bitter underneath.",
@@ -531,7 +535,7 @@
       "name": "phial of Saint Althea's water",
       "title": "Saint Althea's Water",
       "retail": 50,
-      "weight": 0.4,
+      "weight": 0.5,
       "minutes": 5,
       "hint": "Restores 2d4+2 HP",
       "blurb": "A wax-stoppered clay flask of blessed cistern-water steeped with wild angelica and mountain arnica.",
@@ -558,7 +562,7 @@
       "name": "linen bandage",
       "title": "Linen Bandage",
       "retail": 5,
-      "weight": 0.1,
+      "weight": 0.2,
       "minutes": 5,
       "hint": "+1 HP from your next sleep",
       "blurb": "A clean strip of boiled linen, rolled tight around a pad of comfrey leaf and tied off with thread.",
@@ -581,7 +585,7 @@
       "name": "lye soap",
       "title": "Lye Soap",
       "retail": 2,
-      "weight": 0.3,
+      "weight": 0.5,
       "minutes": 5,
       "hint": "Hygiene back to Clean, with water at hand",
       "blurb": "A twist of brown paper holding grey shavings of lye soap, enough for one good scrub.",
@@ -606,7 +610,7 @@
       "name": "trail rations",
       "title": "Trail Rations",
       "retail": 2,
-      "weight": 0.5,
+      "weight": 2,
       "minutes": 5,
       "hint": "Eaten for you on the road when you grow hungry",
       "blurb": "A day's food wrapped in a cloth: a hard biscuit, a stick of dried sausage, and a fist of raisins.",
@@ -622,8 +626,132 @@
       "useVerb": "Eat",
       "useText": "You unwrap the cloth and eat the biscuit, the sausage and the raisins, one after the other. It is plain food, and it is enough.",
       "dossier": {
-        "line": "Cloth-wrapped biscuit, dried sausage and raisins, a day's food on the road"
+        "line": "Cloth-wrapped biscuit, dried sausage and raisins, a full meal for the road"
+      },
+      "ate": {
+        "one": "a trail ration",
+        "many": "trail rations"
       }
+    },
+    {
+      "id": "honeycomb",
+      "kind": "consumable",
+      "name": "honeycomb",
+      "title": "Honeycomb",
+      "weight": 0.5,
+      "minutes": 5,
+      "hint": "Eases hunger, a quarter of a meal",
+      "blurb": "A slab of dark gold comb from wild bees, wrapped in broad leaves.",
+      "effect": {
+        "type": "ration",
+        "food": 540,
+        "autoEatAfter": "lsf_bear_healed"
+      },
+      "useVerb": "Eat",
+      "useText": "You break off a slab of honeycomb and chew the sweet wax and honey together until nothing is left but a sticky mouthful of wax, which you spit out.",
+      "ate": {
+        "one": "a piece of honeycomb",
+        "many": "pieces of honeycomb"
+      },
+      "dossier": {
+        "line": "Dark gold comb from wild bees, an ingredient and a snack, and a gift for a bear"
+      }
+    },
+    {
+      "id": "barley_loaf",
+      "kind": "consumable",
+      "name": "barley loaf",
+      "title": "Barley Loaf",
+      "retail": 1,
+      "weight": 0.75,
+      "minutes": 5,
+      "hint": "Holds off about 12 hours of hunger",
+      "blurb": "A dense, dark loaf of barley and oat flour, baked that morning in a farm oven.",
+      "effect": { "type": "ration", "food": 720 },
+      "useVerb": "Eat",
+      "useText": "You tear the firm loaf into pieces and eat it slowly. It is plain, nutty, and filling.",
+      "ate": { "one": "a barley loaf", "many": "barley loaves" },
+      "dossier": { "line": "Dense barley-and-oat loaf from a Barleycross farm oven" }
+    },
+    {
+      "id": "hard_farm_cheese",
+      "kind": "consumable",
+      "name": "hard farm cheese",
+      "title": "Hard Farm Cheese",
+      "retail": 1,
+      "weight": 0.5,
+      "minutes": 5,
+      "hint": "Holds off about 12 hours of hunger",
+      "blurb": "A waxed wedge of sharp, hard cow's cheese that travels well in a cloth wrap.",
+      "effect": { "type": "ration", "food": 720 },
+      "useVerb": "Eat",
+      "useText": "You cut off the edge of the wedge and eat the sharp, salty cheese.",
+      "ate": { "one": "a wedge of hard farm cheese", "many": "wedges of hard farm cheese" },
+      "dossier": { "line": "Waxed wedge of sharp hard cheese from the village dairies" }
+    },
+    {
+      "id": "orchard_apple",
+      "kind": "consumable",
+      "name": "orchard apple",
+      "title": "Orchard Apple",
+      "retail": 1,
+      "weight": 0.25,
+      "minutes": 5,
+      "hint": "Holds off about 6 hours of hunger",
+      "blurb": "A firm green-red apple from a hedgerow orchard, rubbed clean on a sleeve.",
+      "effect": { "type": "ration", "food": 360 },
+      "useVerb": "Eat",
+      "useText": "You bite into the apple. Its tart juice cuts through the dust of the road.",
+      "ate": { "one": "an orchard apple", "many": "orchard apples" },
+      "dossier": { "line": "Firm tart apple from a Barleycross hedgerow orchard" }
+    },
+    {
+      "id": "root_vegetable_bundle",
+      "kind": "consumable",
+      "name": "root-vegetable bundle",
+      "title": "Root-Vegetable Bundle",
+      "retail": 1,
+      "weight": 1,
+      "minutes": 5,
+      "hint": "Holds off about 9 hours of hunger",
+      "blurb": "A string-tied bundle of scrubbed turnips and carrots, enough for a pot or a roadside meal.",
+      "effect": { "type": "ration", "food": 540 },
+      "useVerb": "Eat",
+      "useText": "You eat the crispest carrot and pare at a turnip with your knife. It is cold, earthy food, but it does the work.",
+      "ate": { "one": "a root-vegetable bundle", "many": "root-vegetable bundles" },
+      "dossier": { "line": "String-tied carrots and turnips from the village root fields" }
+    },
+    {
+      "id": "farm_eggs",
+      "kind": "consumable",
+      "name": "farm eggs",
+      "title": "Farm Eggs",
+      "retail": 1,
+      "weight": 0.75,
+      "minutes": 5,
+      "hint": "Holds off about 9 hours of hunger",
+      "blurb": "Six brown eggs packed in straw inside a lidded chip basket.",
+      "effect": { "type": "ration", "food": 540 },
+      "useVerb": "Eat",
+      "useText": "You cook the eggs over a small fire and eat them warm from the shell, with a pinch of salt from your kit.",
+      "ate": { "one": "a basket of farm eggs", "many": "baskets of farm eggs" },
+      "dossier": { "line": "Six brown eggs packed safely in straw" }
+    },
+    {
+      "id": "dried_pork_sausage",
+      "kind": "consumable",
+      "name": "dried pork sausage",
+      "title": "Dried Pork Sausage",
+      "retail": 1,
+      "weight": 0.4,
+      "minutes": 5,
+      "hint": "Holds off about 12 hours of hunger",
+      "blurb": "A short smoked pork sausage, tied in brown paper and dry enough for the road.",
+      "effect": { "type": "ration", "food": 720 },
+      "useVerb": "Eat",
+      "useText": "You cut the sausage into small pieces and eat it with the smoke and salt still sharp on your tongue.",
+      "ate": { "one": "a dried pork sausage", "many": "dried pork sausages" },
+      "dossier": { "line": "Short smoked pork sausage, wrapped for travel" }
     },
     {
       "id": "hemp_rope",
@@ -631,7 +759,7 @@
       "name": "hemp rope",
       "title": "Hemp Rope",
       "retail": 8,
-      "weight": 2,
+      "weight": 10,
       "minutes": 5,
       "blurb": "Fifty feet of tarred hemp as thick as a thumb, coiled tight and tied off with a slip-knot.",
       "quotes": {
@@ -650,7 +778,7 @@
       "name": "torch",
       "title": "Torch",
       "retail": 2,
-      "weight": 0.5,
+      "weight": 1,
       "minutes": 5,
       "blurb": "A pine stave bound with tarred rag and dipped in pitch, good for about an hour of steady light.",
       "sell": {
@@ -666,7 +794,7 @@
       "name": "lamp oil",
       "title": "Lamp Oil",
       "retail": 3,
-      "weight": 0.5,
+      "weight": 1,
       "minutes": 5,
       "blurb": "A stoppered tin flask of lamp oil, enough to keep a lantern burning through a long night.",
       "sell": {
@@ -682,7 +810,7 @@
       "name": "hooded lantern",
       "title": "Hooded Lantern",
       "retail": 12,
-      "weight": 1.5,
+      "weight": 2,
       "minutes": 5,
       "blurb": "An iron lantern with horn windows and a sliding tin shutter, its oil pot filled through a hinged cap on top.",
       "quotes": {
@@ -701,7 +829,7 @@
       "name": "repair kit",
       "title": "Repair Kit",
       "retail": 20,
-      "weight": 2,
+      "weight": 10,
       "minutes": 5,
       "hint": "+1 on repair and mechanism checks",
       "blurb": "A canvas roll holding a claw hammer, chisel, awl, pliers, folding saw, and soft wire for field repairs and simple mechanisms.",
@@ -721,7 +849,7 @@
       "name": "shovel",
       "title": "Shovel",
       "retail": 8,
-      "weight": 3,
+      "weight": 5,
       "minutes": 5,
       "hint": "Digs in half the time",
       "blurb": "A long-handled shovel with a flat iron blade, its handle worn smooth by someone else's hands.",
@@ -758,7 +886,7 @@
       "name": "flint and tinderbox",
       "title": "Flint and Tinderbox",
       "retail": 4,
-      "weight": 0.3,
+      "weight": 1,
       "minutes": 5,
       "blurb": "A dented tin box holding a striker, a lump of flint, and a wad of char-cloth that catches from a single spark.",
       "sell": {
@@ -774,7 +902,7 @@
       "name": "chalk sticks",
       "title": "Chalk Sticks",
       "retail": 2,
-      "weight": 0.2,
+      "weight": 0.1,
       "minutes": 5,
       "hint": "Six chalk marks for a dungeon map",
       "blurb": "Six sticks of soft white chalk tied together with string, for marking a wall or a route.",
@@ -794,7 +922,7 @@
       "name": "camp kit",
       "title": "Camp Kit",
       "retail": 30,
-      "weight": 8,
+      "weight": 25,
       "minutes": 10,
       "hint": "+1 HP sleeping rough; the tent keeps rain off at camp",
       "blurb": "A canvas tent with its poles and pegs rolled inside a wool bedroll, with a bone needle and waxed thread tucked in the fold, all tied with cord.",
@@ -824,7 +952,7 @@
       "name": "oilcloth sheet",
       "title": "Oilcloth Sheet",
       "retail": 6,
-      "weight": 1.5,
+      "weight": 3,
       "minutes": 5,
       "hint": "Halves the wear of rain and storms on the road",
       "blurb": "A square of canvas soaked in linseed oil and wax, stiff as a board when cold, that sheds rain like a roof.",
@@ -844,7 +972,7 @@
       "name": "lockpick set",
       "title": "Lockpick Set",
       "retail": 30,
-      "weight": 0.3,
+      "weight": 1,
       "minutes": 5,
       "hint": "Advantage on lock checks",
       "blurb": "A leather roll holding a dozen slim steel picks, two tension wrenches, and a hooked rake, each in its own loop.",
@@ -864,7 +992,7 @@
       "name": "padlock and key",
       "title": "Padlock and Key",
       "retail": 8,
-      "weight": 0.6,
+      "weight": 1,
       "minutes": 5,
       "blurb": "A heavy brass padlock with a hardened steel shackle, hung on a loop of cord with its two keys.",
       "quotes": {
@@ -883,7 +1011,7 @@
       "name": "door bolt",
       "title": "Door Bolt",
       "retail": 5,
-      "weight": 1,
+      "weight": 2,
       "minutes": 5,
       "blurb": "A forged iron slide-bolt with its keeper plate and four wood screws wrapped in cloth, small enough to carry in a pack.",
       "quotes": {
@@ -902,7 +1030,7 @@
       "name": "iron manacles",
       "title": "Iron Manacles",
       "retail": 15,
-      "weight": 2,
+      "weight": 6,
       "minutes": 5,
       "blurb": "A pair of hinged iron cuffs joined by a short chain, with a single key on a ring.",
       "quotes": {
@@ -921,7 +1049,7 @@
       "name": "traveler's cloak",
       "title": "Traveler's Cloak",
       "retail": 40,
-      "weight": 1.5,
+      "weight": 4,
       "minutes": 20,
       "blurb": "A full-length cloak of stout undyed broadcloth, cut wide enough to close over a pack, with a double-stitched hem.",
       "quotes": {
@@ -949,7 +1077,7 @@
       "name": "storm cape",
       "title": "Storm Cape",
       "retail": 70,
-      "weight": 2,
+      "weight": 4,
       "minutes": 20,
       "blurb": "A short cape of canvas-backed wool, rubbed with beeswax until water beads and rolls off it.",
       "quotes": {
@@ -977,7 +1105,7 @@
       "name": "winter cloak",
       "title": "Winter Cloak",
       "retail": 120,
-      "weight": 3,
+      "weight": 6,
       "minutes": 30,
       "blurb": "A heavy grey cloak lined edge to edge in marten fur, with a collar that stands up past the ears.",
       "quotes": {
@@ -1006,7 +1134,7 @@
       "name": "summer duster",
       "title": "Summer Duster",
       "retail": 50,
-      "weight": 1.5,
+      "weight": 3,
       "minutes": 20,
       "blurb": "A loose, ankle-length coat of bleached linen with wide sleeves and a back vent that lets the air through.",
       "quotes": {
@@ -1035,7 +1163,7 @@
       "name": "felt hat",
       "title": "Felt Hat",
       "retail": 20,
-      "weight": 0.3,
+      "weight": 0.5,
       "minutes": 15,
       "blurb": "A pressed grey felt hat with a broad brim and a grosgrain band, the crown blocked to hold its shape.",
       "sell": {
@@ -1064,7 +1192,7 @@
       "name": "fur cap",
       "title": "Fur Cap",
       "retail": 30,
-      "weight": 0.5,
+      "weight": 1,
       "minutes": 15,
       "blurb": "A close wool cap with turn-down flaps trimmed in rabbit fur, tied under the chin with a leather lace.",
       "sell": {
@@ -1092,7 +1220,7 @@
       "name": "pair of lined gloves",
       "title": "Lined Gloves",
       "retail": 30,
-      "weight": 0.3,
+      "weight": 0.5,
       "minutes": 15,
       "blurb": "Supple leather gloves lined with combed fleece, with a long cuff that tucks under a sleeve.",
       "sell": {
@@ -1116,7 +1244,7 @@
       "name": "pair of lamplight gloves",
       "title": "Lamplight Gloves",
       "retail": 400,
-      "weight": 0.2,
+      "weight": 0.5,
       "minutes": 15,
       "blurb": "Fine black kid gloves, cut close across the knuckles so a quill or a page can be worked without taking them off. The fingertips warm a little when they rest on a lit page.",
       "quotes": {
@@ -1146,7 +1274,7 @@
       "name": "pair of spellseeker gloves",
       "title": "Spellseeker Gloves",
       "retail": 1500,
-      "weight": 0.2,
+      "weight": 0.5,
       "minutes": 30,
       "blurb": "Black kid gloves cut from a single skin, each finger fitted to a plaster cast of the hand, and stitched in silk. The stitching is doubled in pale thread along every finger, and the fingertips warm whenever they pass near a written line.",
       "quotes": {
@@ -1176,7 +1304,7 @@
       "name": "pair of rain boots",
       "title": "Rain Boots",
       "retail": 60,
-      "weight": 2,
+      "weight": 4,
       "minutes": 20,
       "blurb": "Knee-high boots of oiled calf with a stitched welt, the seams waxed shut and the tops cut to shed a rain-soaked cloak.",
       "quotes": {
@@ -1204,7 +1332,7 @@
       "name": "pair of winter boots",
       "title": "Winter Boots",
       "retail": 50,
-      "weight": 2.5,
+      "weight": 5,
       "minutes": 20,
       "blurb": "Thick-soled boots of stiff leather lined with pressed felt, laced high with a snow-cuff of wool.",
       "sell": {
@@ -1228,7 +1356,7 @@
       "name": "pair of swallowstep shoes",
       "title": "Swallowstep Shoes",
       "retail": 400,
-      "weight": 0.5,
+      "weight": 1,
       "minutes": 15,
       "blurb": "Flat black shoes of soft kid with a thin, flexible sole and a strap over the instep, made for a ballroom floor. A second line of pale stitching runs along the strap, and the sole seems to rise to meet the floor.",
       "quotes": {
@@ -1258,7 +1386,7 @@
       "name": "wool muffler",
       "title": "Wool Muffler",
       "retail": 10,
-      "weight": 0.4,
+      "weight": 1,
       "minutes": 10,
       "blurb": "A long knitted muffler of thick grey wool, wound twice about the neck and tucked into the collar.",
       "sell": {
@@ -1282,7 +1410,7 @@
       "name": "silvertongue cravat",
       "title": "Silvertongue Cravat",
       "retail": 400,
-      "weight": 0.1,
+      "weight": 0.2,
       "minutes": 15,
       "blurb": "A neckcloth of dove-grey silk, folded and pinned in the Quarter fashion so the knot sits under the chin. Once pinned, the folds settle on their own and stay where they fell.",
       "quotes": {
@@ -1312,7 +1440,7 @@
       "name": "envoy's court coat",
       "title": "Envoy's Court Coat",
       "retail": 1200,
-      "weight": 2.5,
+      "weight": 4,
       "minutes": 30,
       "blurb": "A long-skirted coat in charcoal wool with a silk lining, cut close through the shoulder and finished with covered buttons. It hangs the same on every wearer, and people nearby stand a little straighter without knowing why.",
       "quotes": {
@@ -1356,7 +1484,7 @@
       "name": "ash quarterstaff",
       "title": "Ash Quarterstaff",
       "retail": 15,
-      "weight": 2,
+      "weight": 4,
       "minutes": 10,
       "hint": "1d6 Bludgeoning, One-Handed",
       "blurb": "A six-foot staff of straight-grained Longshade ash, planed round and rubbed with linseed until it shines.",
@@ -1386,7 +1514,7 @@
       "name": "Longshade spear",
       "title": "Longshade Spear",
       "retail": 20,
-      "weight": 2.5,
+      "weight": 3,
       "minutes": 10,
       "hint": "1d6 Piercing, Reach, One-Handed",
       "blurb": "A seven-foot ash shaft with a leaf-bladed iron head pinned through a socket, the grain running true from butt to point.",
@@ -1416,7 +1544,7 @@
       "name": "Longshade shortbow",
       "title": "Longshade Shortbow",
       "retail": 25,
-      "weight": 1.5,
+      "weight": 2,
       "minutes": 10,
       "hint": "1d6 Piercing, Ranged, Two-Handed",
       "blurb": "A short bow cut from a single stave of ash, backed with sinew along the belly and strung with waxed hemp.",
@@ -1447,7 +1575,7 @@
       "name": "pair of wooden clogs",
       "title": "Wooden Clogs",
       "retail": 10,
-      "weight": 1.5,
+      "weight": 3,
       "minutes": 10,
       "blurb": "Ash-wood clogs carved from the block, deep-heeled and tarred inside the toe, that keep a foot clear of wet ground.",
       "sell": {
@@ -1478,7 +1606,7 @@
         "create": false,
         "hand": true
       },
-      "weight": 1
+      "weight": 2
     },
     {
       "id": "frog_slime",
@@ -1493,7 +1621,7 @@
         "create": false,
         "hand": true
       },
-      "weight": 0.3
+      "weight": 0.5
     },
     {
       "id": "centipede_gland",
@@ -1538,15 +1666,21 @@
         "create": false,
         "hand": true
       },
-      "weight": 0.3
+      "weight": 0.5
     },
     {
       "id": "sluice_moss",
       "kind": "salvage",
       "name": "sluice-moss",
       "title": "Sluice-moss",
-      "sell": { "herbalistPiece": 1, "countVar": "sluice_moss" },
-      "flags": { "create": false, "hand": true },
+      "sell": {
+        "herbalistPiece": 1,
+        "countVar": "sluice_moss"
+      },
+      "flags": {
+        "create": false,
+        "hand": true
+      },
       "weight": 0.1
     },
     {
@@ -1554,8 +1688,14 @@
       "kind": "salvage",
       "name": "brinecap",
       "title": "Brinecap",
-      "sell": { "herbalistPiece": 1, "countVar": "brinecap" },
-      "flags": { "create": false, "hand": true },
+      "sell": {
+        "herbalistPiece": 1,
+        "countVar": "brinecap"
+      },
+      "flags": {
+        "create": false,
+        "hand": true
+      },
       "weight": 0.1
     },
     {
@@ -1563,8 +1703,14 @@
       "kind": "salvage",
       "name": "pale crackroot",
       "title": "Pale Crackroot",
-      "sell": { "herbalistPiece": 2, "countVar": "pale_crackroot" },
-      "flags": { "create": false, "hand": true },
+      "sell": {
+        "herbalistPiece": 2,
+        "countVar": "pale_crackroot"
+      },
+      "flags": {
+        "create": false,
+        "hand": true
+      },
       "weight": 0.1
     },
     {
@@ -1572,8 +1718,14 @@
       "kind": "salvage",
       "name": "cistern spores",
       "title": "Cistern Spores",
-      "sell": { "herbalistPiece": 3, "countVar": "cistern_spores" },
-      "flags": { "create": false, "hand": true },
+      "sell": {
+        "herbalistPiece": 3,
+        "countVar": "cistern_spores"
+      },
+      "flags": {
+        "create": false,
+        "hand": true
+      },
       "weight": 0.1
     },
     {
@@ -1581,8 +1733,14 @@
       "kind": "salvage",
       "name": "glowmold",
       "title": "Glowmold",
-      "sell": { "herbalistPiece": 2, "countVar": "glowmold" },
-      "flags": { "create": false, "hand": true },
+      "sell": {
+        "herbalistPiece": 2,
+        "countVar": "glowmold"
+      },
+      "flags": {
+        "create": false,
+        "hand": true
+      },
       "weight": 0.1
     },
     {
@@ -1590,8 +1748,14 @@
       "kind": "salvage",
       "name": "silverleaf",
       "title": "Silverleaf",
-      "sell": { "herbalistPiece": 1, "countVar": "silverleaf" },
-      "flags": { "create": false, "hand": true },
+      "sell": {
+        "herbalistPiece": 1,
+        "countVar": "silverleaf"
+      },
+      "flags": {
+        "create": false,
+        "hand": true
+      },
       "weight": 0.1
     },
     {
@@ -1599,8 +1763,14 @@
       "kind": "salvage",
       "name": "oakheart balsam",
       "title": "Oakheart Balsam",
-      "sell": { "herbalistPiece": 1, "countVar": "oakheart_balsam" },
-      "flags": { "create": false, "hand": true },
+      "sell": {
+        "herbalistPiece": 1,
+        "countVar": "oakheart_balsam"
+      },
+      "flags": {
+        "create": false,
+        "hand": true
+      },
       "weight": 0.1
     },
     {
@@ -1608,8 +1778,14 @@
       "kind": "salvage",
       "name": "shadefern",
       "title": "Shadefern",
-      "sell": { "herbalistPiece": 2, "countVar": "shadefern" },
-      "flags": { "create": false, "hand": true },
+      "sell": {
+        "herbalistPiece": 2,
+        "countVar": "shadefern"
+      },
+      "flags": {
+        "create": false,
+        "hand": true
+      },
       "weight": 0.1
     },
     {
@@ -1617,8 +1793,14 @@
       "kind": "salvage",
       "name": "acorn truffle",
       "title": "Acorn Truffle",
-      "sell": { "herbalistPiece": 3, "countVar": "acorn_truffle" },
-      "flags": { "create": false, "hand": true },
+      "sell": {
+        "herbalistPiece": 3,
+        "countVar": "acorn_truffle"
+      },
+      "flags": {
+        "create": false,
+        "hand": true
+      },
       "weight": 0.1
     },
     {
@@ -1626,8 +1808,14 @@
       "kind": "salvage",
       "name": "brambleberry",
       "title": "Brambleberry",
-      "sell": { "herbalistPiece": 2, "countVar": "brambleberry" },
-      "flags": { "create": false, "hand": true },
+      "sell": {
+        "herbalistPiece": 2,
+        "countVar": "brambleberry"
+      },
+      "flags": {
+        "create": false,
+        "hand": true
+      },
       "weight": 0.1
     },
     {
@@ -1636,7 +1824,7 @@
       "name": "grease flask",
       "title": "Grease Flask",
       "retail": 5,
-      "weight": 0.5,
+      "weight": 1,
       "minutes": 5,
       "hint": "Thrown: Dex save or slick, falls when it moves",
       "blurb": "A stoppered clay flask of rendered tallow and pitch-oil, thick and yellow, made to be thrown.",
@@ -1660,7 +1848,7 @@
       "name": "alchemist's fire",
       "title": "Alchemist's Fire",
       "retail": 25,
-      "weight": 0.5,
+      "weight": 1,
       "minutes": 5,
       "hint": "Thrown: 1d4 fire, burns 3 turns, worse on grease",
       "blurb": "A sealed glass flask of Ambrose's sticky amber mixture that catches the moment it meets air.",
@@ -1684,7 +1872,7 @@
       "name": "fire arrow",
       "title": "Fire Arrow",
       "retail": 5,
-      "weight": 0.1,
+      "weight": 0.05,
       "minutes": 5,
       "hint": "Shot: +1d4 fire, burns 2 turns",
       "blurb": "An arrow with pitch-soaked cord wound behind the head and dipped in a mixture that catches in open air.",
@@ -1710,7 +1898,7 @@
       "name": "ice arrow",
       "title": "Ice Arrow",
       "retail": 8,
-      "weight": 0.1,
+      "weight": 0.05,
       "minutes": 5,
       "hint": "Shot: +1d4 cold, slows the target",
       "blurb": "An arrow tipped with a sliver of pale frost-flint packed in damp moss, which bites with cold on whatever it strikes.",
@@ -1736,7 +1924,7 @@
       "name": "mortar and pestle",
       "title": "Mortar and Pestle",
       "retail": 30,
-      "weight": 1.5,
+      "weight": 3,
       "minutes": 5,
       "hint": "+1 on Medicine checks",
       "blurb": "A small bronze mortar with a stone pestle, its bowl stained green and brown from the herbs ground in it.",
@@ -2306,6 +2494,24 @@
       "sellShop": "afstore_sell",
       "buyKey": "afstore",
       "sellKey": "afstore_sell"
+    },
+    {
+      "name": "torvald",
+      "title": "Torvald's Timber Smithy",
+      "file": "alderford/timber_smithy.txt",
+      "labelPrefix": "af_smith",
+      "buyShop": "torvald_buy",
+      "sellShop": "torvald_sell",
+      "buyKey": "torvald",
+      "sellKey": "torvald_sell"
+    },
+    {
+      "name": "barley_farm",
+      "title": "Barleycross Farm Gates",
+      "file": "timbermouth/barleycross/lane.txt",
+      "labelPrefix": "bc_lane",
+      "buyShop": "barley_farm_buy",
+      "buyKey": "barley_farm"
     },
     {
       "name": "trapper",
@@ -3388,6 +3594,86 @@
       ]
     },
     {
+      "name": "torvald_buy",
+      "type": "buy",
+      "file": "alderford/timber_smithy.txt",
+      "prefix": "tb",
+      "goto": "af_smith_buy",
+      "menu": false,
+      "items": [
+        {
+          "id": "timber_axe"
+        },
+        {
+          "id": "stiletto"
+        },
+        {
+          "id": "iron_crowbar"
+        },
+        {
+          "id": "torvald_iron_sallet"
+        },
+        {
+          "id": "torvald_hide_cap"
+        },
+        {
+          "id": "shield"
+        }
+      ]
+    },
+    {
+      "name": "torvald_sell",
+      "type": "sell",
+      "buyer": "smith",
+      "file": "alderford/timber_smithy.txt",
+      "prefix": "ts",
+      "goto": "af_smith_sell_do",
+      "menu": false,
+      "items": [
+        {
+          "id": "brigandine"
+        },
+        {
+          "id": "chain_jack"
+        },
+        {
+          "id": "plate_harness"
+        },
+        {
+          "id": "timber_axe"
+        },
+        {
+          "id": "stiletto"
+        },
+        {
+          "id": "torvald_iron_sallet"
+        },
+        {
+          "id": "iron_crowbar"
+        },
+        {
+          "id": "scrap_steel",
+          "owned": "scrap_steel > 0"
+        }
+      ]
+    },
+    {
+      "name": "barley_farm_buy",
+      "type": "buy",
+      "file": "timbermouth/barleycross/lane.txt",
+      "prefix": "bf",
+      "goto": "bc_lane_table",
+      "menu": false,
+      "items": [
+        { "id": "barley_loaf" },
+        { "id": "hard_farm_cheese" },
+        { "id": "orchard_apple" },
+        { "id": "root_vegetable_bundle" },
+        { "id": "farm_eggs" },
+        { "id": "dried_pork_sausage" }
+      ]
+    },
+    {
       "name": "trapper_buy",
       "type": "buy",
       "menu": false,
@@ -3430,22 +3716,22 @@
   "starting_weights": {
     "_note": "Load weights for gear the game hands out by name instead of as catalog stock (equipment.txt grant_class_armor, grant_class_weapons, origin_clothing). The same unit as an item weight. armor is keyed by starting_armor, weapons by starting_weapon, sidearms by the class's sidearm id (sidearm_by_class), clothing is every character's four plain pieces.",
     "armor": {
-      "simple clothes": 1,
-      "barbarian clothes": 1.5,
-      "leather armor": 3,
-      "scale mail": 8
+      "simple clothes": 3,
+      "barbarian clothes": 4,
+      "leather armor": 10,
+      "scale mail": 45
     },
     "weapons": {
       "dagger": 1,
       "longsword": 3,
-      "broadaxe": 4,
-      "quarterstaff": 2,
-      "shortbow": 1.5,
+      "broadaxe": 7,
+      "quarterstaff": 4,
+      "shortbow": 2,
       "falchion": 3
     },
     "sidearms": {
-      "ash_spear": 2.5,
-      "hand_crossbow": 1.5,
+      "ash_spear": 3,
+      "hand_crossbow": 3,
       "matched_dagger": 1
     },
     "sidearm_by_class": {
@@ -3458,24 +3744,24 @@
       "ranger": "matched_dagger"
     },
     "clothing": {
-      "starting_cloak": 1.5,
-      "starting_gloves": 0.2,
-      "starting_belt": 0.3,
-      "starting_boots": 1.5
+      "starting_cloak": 3,
+      "starting_gloves": 0.5,
+      "starting_belt": 1,
+      "starting_boots": 3
     }
   },
   "coin_weights": {
-    "_note": "Load weight of ONE coin of each kind (the purse is always held as the fewest coins: 10 copper = 1 silver mark, 10 silver = 1 gold crown, see economy.txt currency_add), so a purse weighs gold x 0.25 + silver x 0.1 + copper x 0.05. A gem, a piece of jewelry or (later) a note of credit carries the same value for far less load. The Gilded Scales Letter of Credit (the account the factors' halls and the Port Valen head house keep, has_letter_of_credit and letter_of_credit_value in startup.txt) is one sealed paper: 0.1 while there is a balance, whatever the sum.",
-    "copper": 0.05,
-    "silver": 0.1,
-    "gold": 0.25,
+    "_note": "Load weight in pounds of ONE coin of each kind: 50 coins to the pound, as in 5e (the user, 2026-10-18), so 1000 coins are 20 pounds. The purse is always held as the fewest coins (10 copper = 1 silver mark, 10 silver = 1 gold crown, see economy.txt currency_add). A gem, a piece of jewelry or (later) a note of credit carries the same value for far less load. The Gilded Scales Letter of Credit (the account the factors' halls and the Port Valen head house keep, has_letter_of_credit and letter_of_credit_value in startup.txt) is one sealed paper: 0.1 while there is a balance, whatever the sum.",
+    "copper": 0.02,
+    "silver": 0.02,
+    "gold": 0.02,
     "letter_of_credit": 0.1
   },
   "capacity": {
-    "_note": "What a character can carry on their own back: base + per_str x the STR score (the user doubled the first draft, 2026-10-14). That is the one capacity everywhere: the Load bar, the shop warnings and the penalty all use it. Over it, every point over adds over_pct_per_point percent (rounded up, so any excess costs something) to how fast the rest clock runs while MOVING (overworld legs and dungeon steps, never sleeping), up to over_pct_cap. `horse` is 0 on purpose (the user's call, 2026-10-14): a horse's capacity must not inflate the character's own, because it is not with them in a dungeon. It is reserved for the saddlebags, a separate container with explicit stow and take-back, planned with other containers (a wagon, a stash in a fixed place).",
-    "base": 40,
-    "per_str": 2,
-    "over_pct_per_point": 3,
+    "_note": "What a character can carry on their own back: base + per_str x the STR score, in POUNDS (the user, 2026-10-18: the D&D and Baldur's Gate 3 rule of 15 pounds a point of STR, so STR 10 carries 150 and STR 16 carries 240; every weight in the game is in pounds, 5e's where there is a 5e item). STR is the live score (base + boons and food and drink buffs + equipment), so any new way to change it changes the capacity with no other edit. That is the one capacity everywhere: the Load bar, the shop warnings and the penalty all use it. Over it, every pound over adds over_pct_per_point percent (rounded up, so any excess costs something) to how fast the rest clock runs while MOVING (overworld legs and dungeon steps, never sleeping), up to over_pct_cap. `horse` is 0 on purpose (the user's call, 2026-10-14): a horse's capacity must not inflate the character's own, because it is not with them in a dungeon. It is the saddlebags' separate container (containers, below).",
+    "base": 0,
+    "per_str": 15,
+    "over_pct_per_point": 1,
     "over_pct_cap": 50,
     "horse": 0
   },
@@ -3483,11 +3769,23 @@
     {
       "id": "saddlebags",
       "name": "Saddlebags",
-      "capacity": 40,
+      "capacity": 480,
       "needs": "has_horse",
       "needs_reason": "Your horse is not with you.",
       "dungeon": "waits",
-      "note": "Carried by your horse. It never counts toward your own load, and it waits outside when you go into a dungeon."
+      "note": "Carried by your horse, which you ride: a riding horse carries 480 pounds in all, and your own weight is taken off that. It never counts toward your own load, and it waits outside when you go into a dungeon.",
+      "rider": true
     }
-  ]
+  ],
+  "body_weights": {
+    "_note": "A rider's body weight in pounds by race, in the 5e range (the user chose, 2026-10-18, that a horse's carrying capacity is reduced by its rider's weight: a riding horse carries 480 pounds in all). `default` is for any race not listed. Used by a container that has `rider: true` (the saddlebags): capacity - body weight.",
+    "human": 160,
+    "halfling": 40,
+    "elf": 120,
+    "dwarf": 150,
+    "tiefling": 150,
+    "hexblood": 150,
+    "half_orc": 200,
+    "default": 160
+  }
 }

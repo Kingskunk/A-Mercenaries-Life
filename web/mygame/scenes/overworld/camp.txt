@@ -6,7 +6,7 @@
 *comment What the camp offers, and where each piece comes from (this file prints and sequences; it never reimplements a rule):
 *comment   Sleep: overworld.txt ow_camp_pre / ow_camp, unchanged (the visitor at the fire, the 8 hours or the sleep until dawn, shared bunk, exposure, the death check, resolve_sleep). It ends on the map, as it always did.
 *comment   Rest: the one-hour short rest (character_progression.txt short_rest_preview / do_short_rest), the same one the dossier's Rest menu takes, with the camp's fire taken into the exposure.
-*comment   Eat: a trail ration through equipment.txt use_consumable (refused within six hours of a meal, like anywhere).
+*comment   Eat: not here any more (2026-10-18, the user's call): the player eats from the pack whenever they like, and the game eats for them only to stop starvation (calendar.txt advance_time).
 *comment   Train: a training session on your own (character_progression.txt training_preview / do_training_session). It counts fully toward the level-up sessions and shares the compound's once-a-day limit
 *comment     (last_training_day), so camping never gives a second session in a day. The compound keeps its teachers and its prose; this is a short self-directed track with no squad voice.
 *comment   Break camp: back to the map.
@@ -80,9 +80,6 @@ You have made camp in the best patch of ground you could find.
   *if ((not(cp_rest_ok)) and (short_rests_left > 0))
     # Take a short rest: you have nothing to win back.
       *goto camp_rest_closed
-  *if (has_trail_rations)
-    # Eat a trail ration.
-      *goto camp_eat
   *if ((has_camp_kit) and (camp_kit_wear >= 8))
     # Mend the camp kit. [~1 Hour]@{show_stat_hints  [Survival or Sleight of Hand DC 12]|}
       *goto camp_kit_mend
@@ -194,20 +191,6 @@ You spread the camp kit out on the ground and go over it a seam at a time with t
 *set time_advance_call_id "camp_kit_mend_1"
 *gosub_scene calendar advance_time
 *gosub camp_after_time
-*page_break Back to the fire…
-*goto camp_hub
-
-*comment ── Eat. A trail ration through the shared item routine (it refuses within six hours of a meal and says so). Costs no time of its own, like eating from the satchel anywhere. ──
-*label camp_eat
-*set use_in_combat false
-*set use_item_id "trail_rations"
-*gosub_scene equipment use_consumable use_item_id
-[b]◈ CAMP[/b]
-*line_break
-${use_text}
-*if (use_result = "ok")
-  *line_break
-  [b][${use_banner}][/b]
 *page_break Back to the fire…
 *goto camp_hub
 

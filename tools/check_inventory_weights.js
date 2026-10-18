@@ -13,11 +13,11 @@ const INV = global.window.INVENTORY;
 const catalog = require(path.join(ROOT, "tools", "gear_catalog.json"));
 let bad = 0;
 function fail(m) { console.error("  FAIL: " + m); bad++; }
-const tenth = (n) => Math.abs(n * 10 - Math.round(n * 10)) < 1e-9;
+const tenth = (n) => Math.abs(n * 20 - Math.round(n * 20)) < 1e-9;   // a multiple of 0.05 (an arrow is 0.05 lb)
 
 INV.items.forEach((it) => {
   if (typeof it.weight !== "number" || !(it.weight >= 0)) fail("pack item " + it.id + " has no weight (a number of load points, 0 or more)");
-  else if (!tenth(it.weight)) fail("pack item " + it.id + " weighs " + it.weight + ", which is not a multiple of 0.1");
+  else if (!tenth(it.weight)) fail("pack item " + it.id + " weighs " + it.weight + ", which is not a multiple of 0.05");
 });
 catalog.items.forEach((c) => {
   const e = INV.items.find((i) => i.id === c.id);
@@ -35,7 +35,7 @@ if (L) {
 }
 if (!L) fail("inventory-data.js has no load block (run node tools/gen_gear.js)");
 else {
-  if (!(L.capacityBase > 0) || !(L.capacityPerStr >= 0)) fail("load.capacityBase / capacityPerStr are missing");
+  if (!(L.capacityBase >= 0) || !(L.capacityPerStr > 0)) fail("load.capacityBase / capacityPerStr are missing");
   if (typeof L.capacityHorse !== "number") fail("load.capacityHorse is missing (the capacity a horse adds)");
   ["copper", "silver", "gold"].forEach((k) => { if (typeof (L.coin || {})[k] !== "number") fail("load.coin." + k + " is missing"); });
   const st = L.starting || {};

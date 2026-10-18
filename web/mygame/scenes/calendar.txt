@@ -212,36 +212,45 @@
   *temp neglect_mins (total_mins_this_call + exposure_extra_mins)
   *comment Carrying too much (calc_load, the pack's Load bar) tires the body on the move: load_extra_mins is counted toward the FATIGUE clock only, on top of the weather's extra. A mover sets it before this call.
   *temp rest_mins (neglect_mins + load_extra_mins)
-  *comment Trail rations (overworld only, ow_on): the hunger clock reaches 1080 minutes (the Hungry point) and a ration is eaten for you, exactly as a tavern meal: the clock and the hunger
-  *comment debt both go back to 0. The first one is eaten when the clock reaches 1080 (at once if it is already past), then one for every further 1080 minutes, until the rations run out.
-  *comment Everything is worked out from the clock as it stood before this call: rat_first minutes into the span the first ration is due, rat_due how many fall inside the span, and
-  *comment meal_mins what is left on the clock after the last ration eaten. Once the rations are gone the usual hunger ticks run on from that last meal. Inside the replay guard, so a
-  *comment refreshed page cannot eat a second set. rations_eaten_last stays set for the caller's summary line (every call zeroes it, so it only ever reports this trip).
+  *comment FOOD (2026-10-18, the user's design). The game eats for you ONLY to stop starvation: when the hunger clock reaches 2160 minutes (36 hours: past it the starving ticks begin; Hungry at 1080 is only a label), on the road or in a
+  *comment dungeon (not in a town, where there are inns). It eats a whole ration first (food_pick: the catalog's order, the biggest food first), and only when no ration is left the smaller foods, such as honeycomb, each taking
+  *comment its own minutes off the clock (catalog food); a quest ingredient is skipped until its flag is true (autoEatAfter). The clock is walked forward in order: wait for the trigger, eat, wait again, so a long span eats as many as it needs.
+  *comment Everything is worked out from the clock as it stood before this call, inside the replay guard, so a refreshed page cannot eat a second set. What was eaten is tallied in food_cnt_<n> (cleared by the caller with
+  *comment food_note_clear, read with food_note_build), so a trip's mile-by-mile calls add up. A meal clears the hunger debt only if it leaves the clock out of Starving.
   *set rations_eaten_last 0
   *temp meal_mins neglect_mins
-  *if ((vane_independent_operative) and (ow_on))
-    *temp rat_have 0
-    *if (has_trail_rations)
-      *set rat_have (1 + spare_trail_rations)
-    *if (rat_have > 0)
-      *temp rat_first 0
-      *if (minutes_since_meal < 1080)
-        *set rat_first (1080 - minutes_since_meal)
-      *if (neglect_mins >= rat_first)
-        *temp rat_after (neglect_mins - rat_first)
-        *temp rat_due (1 + ((rat_after - (rat_after modulo 1080)) / 1080))
-        *set rations_eaten_last rat_due
-        *if (rat_due > rat_have)
-          *set rations_eaten_last rat_have
-        *set meal_mins (neglect_mins - (rat_first + ((rations_eaten_last - 1) * 1080)))
-        *set minutes_since_meal 0
+  *if ((vane_independent_operative) and ((ow_on) or (dg_in_run)))
+    *temp fe_left neglect_mins
+    *temp fe_clock minutes_since_meal
+    *temp fe_ate 0
+    *temp fe_guard 0
+    *temp fe_wait 0
+    *temp fe_cv ""
+    *label food_eat_loop
+    *if (fe_guard < 60)
+      *set fe_guard + 1
+      *set fe_wait 0
+      *if (fe_clock < 2160)
+        *set fe_wait (2160 - fe_clock)
+      *if (fe_left >= fe_wait)
+        *gosub food_pick
+        *if (not(food_pick_item = ""))
+          *set fe_left (fe_left - fe_wait)
+          *set fe_clock (fe_clock + fe_wait)
+          *set fe_clock (fe_clock - food_pick_mins)
+          *if (fe_clock < 0)
+            *set fe_clock 0
+          *gosub_scene equipment spend_consumable food_pick_item
+          *set fe_cv ("food_cnt_" & food_pick_idx)
+          *set {fe_cv} (({fe_cv}) + 1)
+          *set fe_ate + 1
+          *goto food_eat_loop
+    *if (fe_ate > 0)
+      *set rations_eaten_last fe_ate
+      *set minutes_since_meal fe_clock
+      *set meal_mins fe_left
+      *if (fe_clock <= 2160)
         *set neglect_damage_hunger 0
-        *set rat_have (rat_have - rations_eaten_last)
-        *if (rat_have > 0)
-          *set spare_trail_rations (rat_have - 1)
-        *else
-          *set has_trail_rations false
-          *set spare_trail_rations 0
   *if (vane_independent_operative)
     *set minutes_since_meal + meal_mins
     *set minutes_since_rest + rest_mins
@@ -1133,4 +1142,112 @@
   *set buff_count_now + 1
 *if (sleep_buff2_active)
   *set buff_count_now + 1
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment FOOD THE GAME MAY EAT FOR YOU (2026-10-18). *gosub food_pick: the next food to eat to stop starvation. Outputs food_pick_item (an item id, "" when there is none to eat), food_pick_mins (the minutes it takes off the hunger
+*comment clock) and food_pick_idx (its place in the list, for the tally). The list and its order are generated from the catalog (a whole ration first, then smaller foods); an item with autoEat false is never eaten, and one with
+*comment autoEatAfter waits until that variable is true (a quest ingredient, honeycomb until the sick bear is healed). It does not spend anything: the caller does.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label food_pick
+*set food_pick_item ""
+*set food_pick_mins 0
+*set food_pick_idx 0
+*temp fp_n 0
+*temp fp_id ""
+*temp fp_i 1
+*temp fp_ok false
+*label food_pick_loop
+*set fp_id ""
+*comment GEN:BEGIN food_pick_list -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
+*set fp_n 8
+*if (fp_i = 1)
+  *set fp_id "trail_rations"
+*if (fp_i = 2)
+  *set fp_id "barley_loaf"
+*if (fp_i = 3)
+  *set fp_id "hard_farm_cheese"
+*if (fp_i = 4)
+  *set fp_id "dried_pork_sausage"
+*if (fp_i = 5)
+  *set fp_id "honeycomb"
+*if (fp_i = 6)
+  *set fp_id "root_vegetable_bundle"
+*if (fp_i = 7)
+  *set fp_id "farm_eggs"
+*if (fp_i = 8)
+  *set fp_id "orchard_apple"
+*comment GEN:END food_pick_list
+*if (fp_i <= fp_n)
+  *gosub_scene equipment gear_count fp_id
+  *if (gear_qty > 0)
+    *set fp_ok gear_food_auto
+    *if ((fp_ok) and (not(gear_food_after = "")))
+      *set fp_ok {gear_food_after}
+    *if (fp_ok)
+      *set food_pick_item fp_id
+      *set food_pick_mins gear_food_mins
+      *set food_pick_idx fp_i
+      *return
+  *set fp_i + 1
+  *goto food_pick_loop
+*return
+
+*comment *gosub food_note_clear: zero the tallies before a stretch of time passes (a trip, a night); *gosub food_note_build: afterwards, food_eaten_note is what was eaten ("a trail ration and 2 pieces of
+*comment honeycomb", "" when nothing was), for the caller's summary line. Pure reads and writes of the tallies, so a replayed page prints the same line.
+*label food_note_clear
+*set food_cnt_1 0
+*set food_cnt_2 0
+*set food_cnt_3 0
+*set food_cnt_4 0
+*set food_cnt_5 0
+*set food_cnt_6 0
+*set food_cnt_7 0
+*set food_cnt_8 0
+*set food_eaten_note ""
+*return
+
+*label food_note_build
+*set food_eaten_note ""
+*temp fp_n 0
+*temp fp_id ""
+*temp fp_i 1
+*temp fnb_cv ""
+*temp fnb_c 0
+*temp fnb_part ""
+*label food_note_loop
+*set fp_id ""
+*comment GEN:BEGIN food_note_list -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
+*set fp_n 8
+*if (fp_i = 1)
+  *set fp_id "trail_rations"
+*if (fp_i = 2)
+  *set fp_id "barley_loaf"
+*if (fp_i = 3)
+  *set fp_id "hard_farm_cheese"
+*if (fp_i = 4)
+  *set fp_id "dried_pork_sausage"
+*if (fp_i = 5)
+  *set fp_id "honeycomb"
+*if (fp_i = 6)
+  *set fp_id "root_vegetable_bundle"
+*if (fp_i = 7)
+  *set fp_id "farm_eggs"
+*if (fp_i = 8)
+  *set fp_id "orchard_apple"
+*comment GEN:END food_note_list
+*if (fp_i <= fp_n)
+  *set fnb_cv ("food_cnt_" & fp_i)
+  *set fnb_c {fnb_cv}
+  *if (fnb_c > 0)
+    *gosub_scene equipment gear_info fp_id
+    *set fnb_part gear_ate_one
+    *if (fnb_c > 1)
+      *set fnb_part ((fnb_c & " ") & gear_ate_many)
+    *if (food_eaten_note = "")
+      *set food_eaten_note fnb_part
+    *else
+      *set food_eaten_note ((food_eaten_note & " and ") & fnb_part)
+  *set fp_i + 1
+  *goto food_note_loop
 *return

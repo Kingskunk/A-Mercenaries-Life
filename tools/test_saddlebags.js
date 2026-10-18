@@ -38,9 +38,9 @@ ok(P.stowRoom(SB, "broadcloth_cloak", s).n === 0, "a worn cloak cannot be stowed
 s = fresh({ has_longshade_spear: true, spare_longshade_spear: 1, equipped_weapon_id: "longshade_spear" });
 ok(P.stowRoom(SB, "longshade_spear", s).n === 1, "a worn weapon's spare can be");
 
-// capacity: refuses, never penalises
-s = fresh({ has_plate_harness: true, spare_plate_harness: 5 });   // 14 each, 40 in the bags
-ok(P.stowRoom(SB, "plate_harness", s).n === 2, "two plate harnesses (28) fit in 40, a third (42) does not");
+// capacity: refuses, never penalises (the saddlebags are 480 pounds less the rider's body weight, load.body by race)
+s = fresh({ has_plate_harness: true, spare_plate_harness: 5 });   // 65 each; the bags hold 480 less the rider's weight (160 by default) = 320
+ok(P.stowRoom(SB, "plate_harness", s).n === 4, "four plate harnesses (260) fit in 320, a fifth (325) does not");
 P.stowUnits(SB, "plate_harness", 999);
 ok(P.stowRoom(SB, "plate_harness", s).n === 0 && /full/.test(P.stowRoom(SB, "plate_harness", s).why), "full bags refuse");
 ok(P.containerOf(SB, s).total <= P.containerOf(SB, s).capacity, "never over capacity");
@@ -66,7 +66,7 @@ s.has_horse = false; ok(P.visibleContainers(s).length === 0, "no horse and nothi
 // stowed things are not carried: the load drops by exactly their weight
 s = fresh({ has_hemp_rope: true, spare_hemp_rope: 2 });
 const before = P.loadOf(s).gear; P.stowUnits(SB, "hemp_rope", 3);
-ok(Math.abs(before - P.loadOf(s).gear - 6) < 1e-9, "three ropes (2 each) leave the load");
+ok(Math.abs(before - P.loadOf(s).gear - 30) < 1e-9, "three ropes (10 each) leave the load");
 
 // the rules read the container's own entry, and two containers keep separate counts
 const cfg = global.window.INVENTORY.load.containers;
@@ -76,6 +76,6 @@ ok(P.stowRoom("wagon", "pitch_torch", s).n === 0 && /wagon is not here/.test(P.s
 s.has_wagon = true;
 ok(P.stowUnits("wagon", "pitch_torch", 2).moved === 2 && P.stowUnits(SB, "pitch_torch", 1).moved === 1, "stow into two containers");
 ok(s.stow_wagon_pitch_torch === 2 && s.stow_saddlebags_pitch_torch === 1 && units(s, "pitch_torch") === 3 + 2 - 2 + 0, "separate counts (units outside the wagon: carried 2 + saddlebags 1)");
-ok(P.containerOf("wagon", s).capacity === 100 && P.containerOf(SB, s).capacity === 40, "separate capacities");
+ok(P.containerOf("wagon", s).capacity === 100 && P.containerOf(SB, s).capacity === 320, "separate capacities");
 cfg.pop();
 console.log("containers: " + n + " checks passed");

@@ -66,6 +66,7 @@ either express or implied.
 <script src="scenery.js"></script>
 <script src="ambience-data.js"></script>
 <script src="ambience.js"></script>
+<script src="scrollkeys.js"></script>
 <script src="shell.js"></script>
 <link href="../alertify.css" rel="stylesheet" type="text/css">
 <link href="uiart.css" rel="stylesheet" type="text/css">
@@ -410,6 +411,9 @@ button#statSidebar .turnRow,
 #csTip .tAb i.neg { color: var(--ch-bad); }   /* negative modifier */
 #csTip .tAb i.zero { color: var(--ch-dim); }
 #csTip .tDead { color: var(--ch-dim); font-size: 10.5px; margin-top: 6px; }
+#csTip .tText { white-space: normal; max-width: 250px; }   /* the condition chips' card: sentences, not one-line rows */
+#csTip .tText p { margin: 4px 0 0; }
+#csTip .tText b { color: var(--ch-dim); font-weight: 600; }
 #statSidebar .turnRow[data-combatant] {
   cursor: help;
 }
@@ -998,26 +1002,26 @@ button#statSidebar .turnRow,
     // on). A healthy stage is dim; the first bad stage is amber, the worst is red. The tooltip says what the stage costs, mirroring advance_time / roll_d20_check.
     var condChipsHtml = "";
     if (isTruthy(s.vane_independent_operative)) {
-      var condChip = function (stage, warn, bad, tips) {
+      var condChip = function (stage, warn, bad, tips, kind) {
         var cls = stage === bad ? " bad" : (stage === warn ? " warn" : "");
-        return "<span class=\"sbCond" + cls + "\" title=\"" + (tips[stage] || "") + "\">" + esc(stage) + "</span>";
+        return "<span class=\"sbCond" + cls + "\" data-cond=\"" + kind + "\" aria-label=\"" + (tips[stage] || "") + "\">" + esc(stage) + "</span>";
       };
       condChipsHtml = "<div class=\"sbConds\">" +
         condChip(fmt(s.hunger_stage), "Hungry", "Starving", {
-          Fed: "Fed. Past 18 hours without a meal you are Hungry.",
+          Fed: "Fed. Past 18 hours without a meal you are Hungry. Hover for details.",
           Hungry: "Hungry: no penalty yet. Past 36 hours without a meal you are Starving.",
           Starving: "Starving: you lose HP every 4 hours until you eat."
-        }) +
+        }, "hunger") +
         condChip(fmt(s.fatigue_stage), "Exhausted", "Collapsing", {
           Rested: "Rested. Past 20 hours awake you are Exhausted.",
           Exhausted: "Exhausted: -1 to every check. Sleep to clear it.",
           Collapsing: "Collapsing: -2 to every check and you lose HP every 4 hours. Sleep to clear it."
-        }) +
+        }, "fatigue") +
         condChip(fmt(s.hygiene_stage), "Grubby", "Foul", {
           Clean: "Clean. After 3 days without a wash you are Grubby.",
           Grubby: "Grubby: -1 to Charisma checks. A wash or the Conduit Baths clears it.",
           Foul: "Foul: -2 to Charisma checks. A wash or the Conduit Baths clears it."
-        }) +
+        }, "hygiene") +
         "</div>";
     }
     var resourceHtml = "";
@@ -1734,8 +1738,71 @@ button#statSidebar .turnRow,
       (who ? "<div class=\"tWho\">" + who + "</div>" : "");
     return true;
   }
+  // The card for one of the three condition chips under the HP bar (hunger, fatigue, hygiene): the live clock, when the next stage comes, what it costs, and what clears it. Built from window.stats on every call, like the other cards,
+  // from the same thresholds calendar.txt advance_time and roll_d20_check use (hungry past 18 hours since a meal, starving past 36; exhausted past 20 hours since sleep, collapsing past 40; grubby past 3 days since a wash, foul past 6).
+  // window.FOOD_ITEMS is the catalog's list of foods the game may eat for you (generated into overworldmap.js).
+  function spanText(mins) {
+    var m = Math.max(0, Math.round(mins)), d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60), r = m % 60;
+    if (d > 0) return d + (d === 1 ? " day" : " days") + (h ? " " + h + " h" : "");
+    if (h > 0) return h + " h" + (r ? " " + r + " min" : "");
+    return r + " min";
+  }
+  function paintCondCard(kind) {
+    var s = window.stats;
+    if (!s || !isTruthy(s.vane_independent_operative)) return false;
+    var head = "", lines = [];
+    function add(label, text) { lines.push("<p><b>" + esc(label) + "</b> " + esc(text) + "</p>"); }
+    var exposure = Number(s.ow_exposure_pct) || 0;
+    if (kind === "hunger") {
+      var m = Number(s.minutes_since_meal) || 0, debt = Number(s.neglect_damage_hunger) || 0;
+      head = "Hunger \u00b7 " + fmt(s.hunger_stage);
+      add("Last meal", spanText(m) + " ago.");
+      if (m <= 1080) add("Next", "Hungry in " + spanText(1080 - m) + ". Hungry has no penalty.");
+      else if (m <= 2160) add("Next", "Starving in " + spanText(2160 - m) + ". Then you lose HP every 4 hours until you eat.");
+      else add("Now", "You lose HP every 4 hours until you eat." + (debt > 0 ? " Hunger has cost you " + debt + " HP so far." : ""));
+      var have = [], held = [];
+      (window.FOOD_ITEMS || []).forEach(function (f) {
+        var n = isTruthy(s["has_" + f.id]) ? 1 + (Number(s["spare_" + f.id]) || 0) : 0;
+        if (n < 1) return;
+        have.push(n === 1 ? f.one : n + " " + f.many);
+        if (f.after && !isTruthy(s[f.after])) held.push(f.many);
+      });
+      add("In your pack", have.length ? have.join(", ") + "." : "No food.");
+      add("Eating", "Eat from your pack whenever you like, once 6 hours have passed since your last meal." + (m < 360 ? " You can eat again in " + spanText(360 - m) + "." : ""));
+      add("Automatic", "The game eats for you only to stop starvation: at 36 hours without a meal, on the road or in a dungeon, a ration before anything smaller.");
+      if (held.length) add("Saved", "Your " + held.join(" and ") + " are kept for a quest, and become food of last resort once it is done.");
+      if (exposure > 0) add("Weather", "The weather is burning through your food about " + exposure + "% faster.");
+    } else if (kind === "fatigue") {
+      var r = Number(s.minutes_since_rest) || 0, load = Number(s.load_over_pct) || 0;
+      head = "Fatigue \u00b7 " + fmt(s.fatigue_stage);
+      add("Last slept", spanText(r) + " ago.");
+      if (r <= 1200) add("Next", "Exhausted in " + spanText(1200 - r) + ": -1 to every check.");
+      else if (r <= 2400) { add("Now", "-1 to every check."); add("Next", "Collapsing in " + spanText(2400 - r) + ": -2 to every check and HP loss every 4 hours."); }
+      else add("Now", "-2 to every check, and you lose HP every 4 hours.");
+      add("Cure", "A night's sleep clears it. A short rest does not.");
+      if (load > 0) add("Load", "You carry more than you can: it tires you about " + load + "% faster on the road.");
+      if (exposure > 0) add("Weather", "The weather is wearing you down about " + exposure + "% faster.");
+    } else if (kind === "hygiene") {
+      var w = Number(s.minutes_since_wash) || 0;
+      head = "Hygiene \u00b7 " + fmt(s.hygiene_stage);
+      add("Last wash", spanText(w) + " ago.");
+      if (w <= 4320) add("Next", "Grubby in " + spanText(4320 - w) + ": -1 to Charisma checks.");
+      else if (w <= 8640) { add("Now", "-1 to Charisma checks."); add("Next", "Foul in " + spanText(8640 - w) + ": -2 to Charisma checks."); }
+      else add("Now", "-2 to Charisma checks.");
+      add("Cure", "A wash or the Conduit Baths clears it.");
+    } else return false;
+    tipNode().innerHTML = "<div class=\"tHd\">" + esc(head) + "</div><div class=\"tText\">" + lines.join("") + "</div>";
+    return true;
+  }
   function showTip(key, x, y) {
     var t = tipNode();
+    if (key.indexOf("cond:") === 0) {
+      tipKey = key; tipX = x; tipY = y;
+      if (!paintCondCard(key.slice(5))) return hideTip();
+      placeTip();
+      t.classList.add("on");
+      return;
+    }
     if (key.indexOf("node:") === 0) {
       tipKey = key; tipX = x; tipY = y;
       if (!paintNodeCard(key.slice(5))) return hideTip();
@@ -1773,6 +1840,14 @@ button#statSidebar .turnRow,
   // the same 400ms cycle, so they need the same treatment or their card would never track either.
   function refreshTip() {
     if (!tipKey) return;
+    if (tipKey.indexOf("cond:") === 0) {
+      // A condition chip: the sidebar is rebuilt every 400 ms, so find the chip under the pointer again and repaint it (its clock may have moved)
+      var cel = document.elementFromPoint(tipX, tipY), cchip = cel && cel.closest ? cel.closest("#statSidebar .sbCond[data-cond]") : null;
+      if (!cchip) return hideTip();
+      tipKey = "cond:" + cchip.getAttribute("data-cond");
+      if (!paintCondCard(tipKey.slice(5))) return hideTip();
+      return placeTip();
+    }
     if (tipKey.indexOf("node:") === 0) {
       // A lane node: re-resolve under the pointer, repaint (the lane may have moved), or drop the card.
       var nel = document.elementFromPoint(tipX, tipY), nnode = nel && nel.closest ? nel.closest("#statSidebar .battlefieldNode[data-node]") : null;
@@ -2155,6 +2230,17 @@ button#statSidebar .turnRow,
     if (!tipKey || tipKey.indexOf("node:") !== 0) return;
     var el = ev.target, node = el && el.closest ? el.closest(".battlefieldNode[data-node]") : null;
     if (node) { tipX = ev.clientX; tipY = ev.clientY; placeTip(); }
+  });
+  // The three condition chips open their own card (paintCondCard) and follow the pointer.
+  document.getElementById("statSidebar").addEventListener("mouseover", function (ev) {
+    var el = ev.target, chip = el && el.closest ? el.closest(".sbCond[data-cond]") : null;
+    if (chip) showTip("cond:" + chip.getAttribute("data-cond"), ev.clientX, ev.clientY);
+    else if (tipKey && tipKey.indexOf("cond:") === 0) hideTip();
+  });
+  document.getElementById("statSidebar").addEventListener("mousemove", function (ev) {
+    if (!tipKey || tipKey.indexOf("cond:") !== 0) return;
+    var el = ev.target, chip = el && el.closest ? el.closest(".sbCond[data-cond]") : null;
+    if (chip) { tipX = ev.clientX; tipY = ev.clientY; placeTip(); }
   });
   // A lane dot and its turn-order card light each other. Only a CHANGE re-renders: the rebuild puts a new element under a still pointer,
   // and the browser answers with another mouseover, which would otherwise loop.
@@ -2759,6 +2845,10 @@ if (window.location.hostname === 'localhost') {
   <div><span class="key">W</span></div>
   <div>Mute / Unmute Sound</div>
   <div><span class="key">S</span></div>
+  <div>Story to Top / Bottom</div>
+  <div><span class="key">A</span> / <span class="key">D</span></div>
+  <div>Sidebar to Top / Bottom</div>
+  <div><span class="key">Shift</span> + <span class="key">A</span> / <span class="key">D</span></div>
   <div>Show Shortcuts</div>
   <div><span class="key">?</span></div>
 </div>

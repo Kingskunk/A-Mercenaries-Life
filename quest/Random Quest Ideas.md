@@ -198,6 +198,45 @@ Str 9, Int 17, Dex 14, Con 11, Cha 11, Wis 12, AC 12, HP 22
 
 Actions
 Quarterstaff. Melee Weapon Attack: +4, reach close only. Deals 1d6 + 2 Bludgeoning damage.
-Spell, Po
+Spell, Poison spray
+
+
 
 ----------------------------------------
+Boar
+AC 11
+HP 13
+Dex 11
+Wis 9
+Con 14
+Cha 5
+Int 2
+Str 13
+>- **Initiative** +1
+>- **Proficiency Bonus** +2
+
+Actions
+Gore. Melee Attack Roll: +3 to hit. Hit: (1d6 + 1) Piercing damage. 
+
+
+___
+>## Venomous Snake (CR 1/4)
+>*Tiny Beast, Unaligned*
+>___
+>- **Armor Class** 12
+>- **Hit Points** 7
+>- **Initiative** +2 
+>___
+>|STR|DEX|CON|INT|WIS|CHA|
+>|:---:|:---:|:---:|:---:|:---:|:---:|
+>|2 (-4)|14 (+2)|13 (+1)|1 (-5)|10 (+0)|3 (-4)|
+>___
+>- **Proficiency Bonus** +2
+>___
+>### Actions
+>***Bite.*** *Melee Attack Roll:*  To hit +3, *Hit:* (1d4 + 2) Piercing damage plus (1d4) Poison damage.
+
+
+
+
+

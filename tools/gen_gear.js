@@ -114,7 +114,7 @@ function effectSummary(it) {
   if (ef.type === "heal") return "Restores " + ef.n + "d" + ef.sides + (ef.bonus ? "+" + ef.bonus : "") + " HP";
   if (ef.type === "wash") return "Hygiene back to Clean, with water at hand";
   if (ef.type === "dressing") return "+" + ef.bonus + " HP from your next sleep";
-  if (ef.type === "ration") return "Clears hunger, like a meal";
+  if (ef.type === "ration") return ef.food && ef.food < 2160 ? "Holds off about " + Math.round(ef.food / 60) + " hours of hunger" : "Clears hunger, like a meal";
   if (ef.type === "throw" || ef.type === "arrow") return ef.summary;
   var h = ef.minutes % 60 === 0 ? (ef.minutes / 60) + " hours" : ef.minutes + " minutes";
   return "+" + ef.bonus + " " + ef.stat.toUpperCase() + " for " + h;
@@ -153,7 +153,12 @@ function genGearInfo() {
       } else if (ef.type === "wash") {
         // no fields: use_consumable resets the hygiene clock itself
       } else if (ef.type === "ration") {
-        // no fields: use_consumable clears the hunger clock itself, and calendar.txt advance_time eats one for you on the overworld
+        // food: minutes of the hunger clock it holds off (a whole meal is 2160, the default). use_consumable takes that off the clock by hand, and calendar.txt advance_time eats it for you only to stop
+        // starvation (rations first, then the other foods; autoEat false or autoEatAfter <variable> keeps an item out of that)
+        L.push('  *set gear_food_mins ' + (ef.food || 2160));
+        if (ef.autoEat === false) L.push('  *set gear_food_auto false');
+        if (ef.autoEatAfter) L.push('  *set gear_food_after ' + q(ef.autoEatAfter));
+        if (it.ate) { L.push('  *set gear_ate_one ' + q(it.ate.one)); L.push('  *set gear_ate_many ' + q(it.ate.many)); }
       } else if (ef.type === "dressing") {
         L.push('  *set gear_eff_bonus ' + ef.bonus);
       } else if (ef.type === "throw" || ef.type === "arrow") {
@@ -187,6 +192,24 @@ function genGearInfo() {
     });
   });
   return L;
+}
+
+// The foods the game may eat for you, in the order it eats them: a whole meal first (the biggest food), then the smaller ones; autoEatOrder overrides. Written into calendar.txt food_pick_list.
+function foodItems() {
+  return items.filter(function (it) { return it.kind === "consumable" && it.effect && it.effect.type === "ration"; }).map(function (it, i) {
+    return { id: it.id, one: it.ate ? it.ate.one : it.name, many: it.ate ? it.ate.many : it.name, mins: it.effect.food || 2160, auto: it.effect.autoEat !== false, after: it.effect.autoEatAfter || "", order: it.effect.autoEatOrder !== undefined ? it.effect.autoEatOrder : -(it.effect.food || 2160), i: i };
+  }).sort(function (a, b) { return a.order - b.order || a.i - b.i; });
+}
+function genFoodPickList() {
+  var L = ["*set fp_n " + foodItems().length];
+  foodItems().forEach(function (f, k) {
+    L.push("*if (fp_i = " + (k + 1) + ")");
+    L.push("  *set fp_id " + q(f.id));
+  });
+  return L;
+}
+function genFoodItemsJs() {
+  return ["var FOOD = " + JSON.stringify(foodItems().filter(function (f) { return f.auto; }).map(function (f) { return { id: f.id, mins: f.mins, after: f.after, one: f.one, many: f.many }; })) + ";", "window.FOOD_ITEMS = FOOD;   // the sidebar's hunger card lists the foods too (index.html paintCondCard)"];
 }
 
 // One row per catalog item that carries traits: percent cuts to the cold, wet and heat parts of exposure (heat may be
@@ -368,7 +391,7 @@ function genLoadConfig() {
   if (!cap || !coin || !sw) throw new Error("the catalog needs capacity, coin_weights and starting_weights");
   var clean = function (o) { var r = {}; Object.keys(o).forEach(function (k) { if (k.charAt(0) !== "_") r[k] = o[k]; }); return r; };
   var coins = clean(coin); delete coins.letter_of_credit;   // the letter is an item of its own in the pack (inventory-data.js letter_of_credit), so it is weighed there
-  return ["load: " + JSON.stringify({ capacityBase: cap.base, capacityPerStr: cap.per_str, capacityHorse: cap.horse, containers: (CATALOG.containers || []).map(function (ct) { return { id: ct.id, name: ct.name, capacity: ct.capacity, needs: ct.needs || "", needsReason: ct.needs_reason || "", dungeon: ct.dungeon || "", note: ct.note || "" }; }), overPctPerPoint: cap.over_pct_per_point, overPctCap: cap.over_pct_cap, coin: coins, starting: clean(sw) }) + ","];
+  return ["load: " + JSON.stringify({ capacityBase: cap.base, capacityPerStr: cap.per_str, capacityHorse: cap.horse, containers: (CATALOG.containers || []).map(function (ct) { return { id: ct.id, name: ct.name, capacity: ct.capacity, needs: ct.needs || "", needsReason: ct.needs_reason || "", dungeon: ct.dungeon || "", rider: !!ct.rider, note: ct.note || "" }; }), overPctPerPoint: cap.over_pct_per_point, overPctCap: cap.over_pct_cap, coin: coins, body: clean(CATALOG.body_weights || {}), starting: clean(sw) }) + ","];
 }
 
 function genInventory() {
@@ -380,7 +403,7 @@ function genInventory() {
     var desc = /[.!?]$/.test(d.line) ? d.line : d.line + ".";
     L.push('{');
     L.push('  id: ' + q(it.id) + ', category: ' + q(cat) + ', owned: ' + q(flag(it)) + ',' + (slotLabel(it) ? ' slot: ' + q(slotLabel(it)) + ',' : ''));
-    if (typeof it.weight !== "number") throw new Error("item '" + it.id + "' has no weight (a number of load points, 0.1 and up)");
+    if (typeof it.weight !== "number") throw new Error("item '" + it.id + "' has no weight (a number of pounds, 0.05 and up)");
     L.push('  weight: ' + it.weight + ', stow: true, stack: ' + (stackable(it) ? "true" : "false") + ',');
     if (stackable(it)) {
       var wearTag = it.wear ? ' + (function () { var w = Number(s.' + it.wear.var + ') || 0; return ' + it.wear.tiers.map(function (t) { return 'w >= ' + t[0] + ' ? " (' + t[1] + ')" : '; }).reverse().join('') + '""; })()' : '';
@@ -633,7 +656,9 @@ var F = {
   equipment: path.join(SCENES, "equipment.txt"),
   stats: path.join(SCENES, "choicescript_stats.txt"),
   combat: path.join(SCENES, "combat.txt"),
-  inventory: path.join(GAME, "inventory-data.js")
+  inventory: path.join(GAME, "inventory-data.js"),
+  calendar: path.join(SCENES, "calendar.txt"),
+  overworldmap: path.join(GAME, "overworldmap.js")
 };
 
 setRegion(F.startup, "gear_creates", genCreates());
@@ -653,6 +678,9 @@ setRegion(F.stats, "gear_equip_neck", genEquipClothing(["neck"], "codex_equipmen
 setRegion(F.stats, "gear_equip_rings", genEquipRings());
 setRegion(F.inventory, "gear_items", genInventory());
 setRegion(F.inventory, "load_config", genLoadConfig());
+setRegion(F.calendar, "food_pick_list", genFoodPickList());
+setRegion(F.calendar, "food_note_list", genFoodPickList());
+setRegion(F.overworldmap, "food_items", genFoodItemsJs());
 setRegion(F.stats, "codex_use_check", genUseCheck(false));
 setRegion(F.stats, "codex_use_check2", genUseCheck(false));   // the satchel page repeats the check
 setRegion(F.stats, "codex_use_options", genUseOptions("codex_use_do", false));

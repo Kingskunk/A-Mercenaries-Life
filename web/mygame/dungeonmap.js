@@ -48,6 +48,26 @@
 
   /* ---------------------------------------------------------------- drawing */
 
+  // A room is a box with its name inside. The name is wrapped onto up to a few lines at the box's text size (14px bold) and the box grows to hold it, so a long name ("The Trampled Clearing") never runs out
+  // of the box. The width is measured with the browser's own canvas text measure (the same font as the CSS), with a plain per-letter guess when there is no canvas. The widest box is about 128 units, so
+  // two rooms a cell (120 units) apart still do not touch.
+  var measureCtx = null;
+  function textWidth(t) {
+    try {
+      if (!measureCtx) { measureCtx = document.createElement("canvas").getContext("2d"); measureCtx.font = "600 14px Helvetica, Arial, sans-serif"; }
+      return measureCtx.measureText(t).width;
+    } catch (e) { return String(t).length * 8; }
+  }
+  function roomFit(name) {
+    var words = String(name == null ? "" : name).split(/\s+/).filter(Boolean), lines = [], cur = "", MAXW = 104, widest = 0;
+    words.forEach(function (w) {
+      var t = cur ? cur + " " + w : w;
+      if (cur && textWidth(t) > MAXW) { lines.push(cur); cur = w; } else cur = t;
+    });
+    if (cur) lines.push(cur);
+    lines.forEach(function (l) { widest = Math.max(widest, textWidth(l)); });
+    return { lines: lines, w: Math.max(92, Math.ceil(widest) + 24), h: Math.max(40, lines.length * 17 + 14) };
+  }
   function svgFor(s) {
     var m = mapFor(s);
     if (!m) return "";
@@ -81,9 +101,11 @@
       var n = m.nodes[id], kind = id === blind ? "hall" : n.kind, x = n.x * CELL, y = n.y * CELL, hot = marked(s, id), cls = "dm-node dm-" + kind + (hot ? " dm-marked" : " dm-faint") + (here === id ? " dm-here" : "");
       pts.push([x, y]);
       nodesHtml += '<g class="' + cls + '" data-node="' + id + '">';
-      if (here === id) nodesHtml += '<circle class="dm-ring" cx="' + x + '" cy="' + y + '" r="' + (kind === "room" ? 34 : 24) + '"/>';
+      var fit = kind === "room" ? roomFit(n.name) : null;
+      if (here === id) nodesHtml += '<circle class="dm-ring" cx="' + x + '" cy="' + y + '" r="' + (fit ? Math.round(Math.sqrt(fit.w * fit.w + fit.h * fit.h) / 2 + 6) : 24) + '"/>';
       if (kind === "room") {
-        nodesHtml += '<rect x="' + (x - 46) + '" y="' + (y - 20) + '" width="92" height="40" rx="6"/><text x="' + x + '" y="' + (y + 5) + '" text-anchor="middle">' + esc(n.name) + "</text>";
+        var tspans = fit.lines.map(function (ln, i) { return '<tspan x="' + x + '" y="' + (y - (fit.lines.length - 1) * 8.5 + 5 + i * 17) + '">' + esc(ln) + "</tspan>"; }).join("");
+        nodesHtml += '<rect x="' + (x - fit.w / 2) + '" y="' + (y - fit.h / 2) + '" width="' + fit.w + '" height="' + fit.h + '" rx="6"/><text text-anchor="middle">' + tspans + "</text>";
       } else if (kind === "exit") {
         nodesHtml += '<rect x="' + (x - 14) + '" y="' + (y - 14) + '" width="28" height="28" rx="4"/><path class="dm-ladder" d="M' + (x - 5) + " " + (y - 9) + "V" + (y + 9) + "M" + (x + 5) + " " + (y - 9) + "V" + (y + 9) +
           "M" + (x - 5) + " " + (y - 4) + "H" + (x + 5) + "M" + (x - 5) + " " + (y + 4) + "H" + (x + 5) + '"/><text class="dm-label" x="' + x + '" y="' + (y + 30) + '" text-anchor="middle">' + esc(n.name) + "</text>";

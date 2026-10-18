@@ -85,9 +85,89 @@ The lane runs south from the common, with a farmstead on either side every fifty
     *goto_scene timbermouth/barleycross/barleycross barleycross
 
 *label bc_lane_table
+*goto bc_lane_table_open
 An old woman sits on a stool just inside the gate with a hen-wire cage of brown eggs at her feet and a crock under a cloth on her knee. She looks you over without much interest, and without getting up lets you know with a lift of her chin that anything you want is a matter for you and her. Further down the lane a boy minds a crate of cabbages and a barrow of turnips for his mother, and at the next gate a man is cutting a cheese in the yard and does not look round.
 *page_break Turn back to the lane…
 *goto bc_lane_lane
+
+*comment The farm-gate panel is a small personal-provisions trade, not the later bulk-goods simulation.
+*label bc_lane_open_farm_panel
+*set shop_open "barley_farm"
+*set shop_rows ""
+*comment GEN:BEGIN barley_farm_panel_rows
+*gosub_scene equipment shop_row_add "barley_loaf"
+*gosub_scene equipment shop_row_add "hard_farm_cheese"
+*gosub_scene equipment shop_row_add "orchard_apple"
+*gosub_scene equipment shop_row_add "root_vegetable_bundle"
+*gosub_scene equipment shop_row_add "farm_eggs"
+*gosub_scene equipment shop_row_add "dried_pork_sausage"
+*comment GEN:END barley_farm_panel_rows
+*return
+
+*label bc_lane_farm_cart_pass
+*comment GEN:BEGIN barley_farm_cart_pass
+*set gear_shop "barley_farm"
+*gosub_scene equipment shop_cart_buy "barley_loaf"
+*gosub_scene equipment shop_cart_buy "hard_farm_cheese"
+*gosub_scene equipment shop_cart_buy "orchard_apple"
+*gosub_scene equipment shop_cart_buy "root_vegetable_bundle"
+*gosub_scene equipment shop_cart_buy "farm_eggs"
+*gosub_scene equipment shop_cart_buy "dried_pork_sausage"
+*comment GEN:END barley_farm_cart_pass
+*return
+
+*label bc_lane_farm_settle
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment shop_begin
+  *gosub bc_lane_farm_cart_pass
+  *gosub_scene equipment shop_check
+  *if (shop_verdict = "ok")
+    *set shop_mode "apply"
+    *gosub bc_lane_farm_cart_pass
+    *set currency_add_amount (0 - shop_tot_cost)
+    *gosub_scene economy currency_add
+  *else
+    *set shop_mode "clear"
+    *gosub bc_lane_farm_cart_pass
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*if (shop_verdict = "empty")
+  The woman gives the empty tally a look and settles back on her stool. There is nothing to count.
+  *page_break Back to the gate table...
+  *goto bc_lane_table_open
+*if (shop_verdict = "short")
+  You come up short against the chalked amounts. The woman pulls the food back under the cloth without comment.
+  *page_break Back to the gate table...
+  *goto bc_lane_table_open
+The woman counts your coins into a small leather purse, then hands the food over in its paper, cloth, or straw wrapping.
+*line_break
+[b][Bought: ${shop_recv} for ${shop_cost_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass shop_tot_minutes
+*set time_advance_call_id "bc_lane_farm_trade"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+  *page_break Back to the gate table...
+  *goto bc_lane_table_open
+*set shop_open ""
+*page_break Back to the lane...
+*goto bc_lane_lane
+
+*label bc_lane_table_open
+*gosub bc_lane_open_farm_panel
+An old woman sits on a stool just inside the gate with a hen-wire cage of brown eggs at her feet and a crock under a cloth on her knee. She looks you over without much interest, and without getting up lets you know with a lift of her chin that anything you want is a matter for you and her. Further down the lane a boy minds a crate of cabbages and a barrow of turnips for his mother, and at the next gate a man is cutting a cheese in the yard and does not look round.
+*choice
+  # Step back to the lane.
+    *set shop_open ""
+    *goto bc_lane_lane
+  # Settle up the farm-gate trade.
+    *goto bc_lane_farm_settle
 
 *label bc_lane_table_closed
 The baskets, crates and stools have been taken in. Only closed gates and the sound of animals in their yards meet you.

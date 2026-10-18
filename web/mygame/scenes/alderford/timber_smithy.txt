@@ -17,9 +17,12 @@
 *label af_smith_floor
 *gosub_scene alderford/alderford af_hours
 *if (not(af_ok_smith))
+  *set shop_open ""
   Janna lays the last bar in the ash beside the forge, and Torvald banks the coals under a cover of slack. The mill-wheel keeps turning beneath the floor, but the work is done.
   *page_break Step out into Alderford…
   *goto_scene alderford/alderford alderford
+
+*gosub af_smith_open_panel
 
 *temp smith_first false
 *if (not(af_smith_seen))
@@ -173,7 +176,10 @@
       *page_break Let her return to work…
       *goto af_smith_floor
   # Step back out onto the mill bank.
+    *set shop_open ""
     *goto_scene alderford/alderford alderford
+  # ⚖ Settle up the trade panel.
+    *goto af_smith_settle
 
 *comment ── The racks: the six established Alderford pieces. Labels, prices, warnings and item grants all come from equipment.txt, so the same item cannot diverge from its Port Valen counterpart. ──
 *label af_smith_stock
@@ -329,6 +335,92 @@ Janna clears a square of bench. "Set it down," she says. "If the metal's sound, 
       *goto af_smith_sell_do
   # Take it back from the bench.
     *goto af_smith_floor
+
+*comment ── Shared trade panel: the forge sells finished Alderford work and buys sound iron or recoverable steel. ──
+*label af_smith_open_panel
+*set shop_open "torvald"
+*set shop_rows ""
+*comment GEN:BEGIN torvald_panel_rows
+*gosub_scene equipment shop_row_add "timber_axe"
+*gosub_scene equipment shop_row_add "stiletto"
+*gosub_scene equipment shop_row_add "iron_crowbar"
+*gosub_scene equipment shop_row_add "torvald_iron_sallet"
+*gosub_scene equipment shop_row_add "torvald_hide_cap"
+*gosub_scene equipment shop_row_add "shield"
+*comment GEN:END torvald_panel_rows
+*return
+
+*label af_smith_cart_pass
+*comment GEN:BEGIN torvald_cart_pass
+*set shop_buyer "smith"
+*set gear_shop "torvald_sell"
+*gosub_scene equipment shop_cart_sell "brigandine"
+*gosub_scene equipment shop_cart_sell "chain_jack"
+*gosub_scene equipment shop_cart_sell "plate_harness"
+*gosub_scene equipment shop_cart_sell "timber_axe"
+*gosub_scene equipment shop_cart_sell "stiletto"
+*gosub_scene equipment shop_cart_sell "torvald_iron_sallet"
+*gosub_scene equipment shop_cart_sell "iron_crowbar"
+*gosub_scene equipment shop_cart_sell "scrap_steel"
+*set gear_shop "torvald"
+*gosub_scene equipment shop_cart_buy "timber_axe"
+*gosub_scene equipment shop_cart_buy "stiletto"
+*gosub_scene equipment shop_cart_buy "iron_crowbar"
+*gosub_scene equipment shop_cart_buy "torvald_iron_sallet"
+*gosub_scene equipment shop_cart_buy "torvald_hide_cap"
+*gosub_scene equipment shop_cart_buy "shield"
+*comment GEN:END torvald_cart_pass
+*return
+
+*label af_smith_settle
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment shop_begin
+  *gosub af_smith_cart_pass
+  *gosub_scene equipment shop_check
+  *if (shop_verdict = "ok")
+    *set shop_mode "apply"
+    *gosub af_smith_cart_pass
+    *set currency_add_amount (shop_tot_credit - shop_tot_cost)
+    *gosub_scene economy currency_add
+  *else
+    *set shop_mode "clear"
+    *gosub af_smith_cart_pass
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*if (shop_verdict = "empty")
+  Janna glances at the empty tally, then wipes a stripe of scale dust from the bench. "Nothing to reckon."
+  *page_break Back to the forge floor...
+  *goto af_smith_floor
+*if (shop_verdict = "short")
+  You come up short against the chalked figures. Janna rubs them away with her thumb. "Coin first. The work will wait."
+  *page_break Back to the forge floor...
+  *goto af_smith_floor
+*if ((shop_tot_bought > 0) and (shop_tot_sold > 0))
+  Torvald tests the iron you put down, Janna totals both columns, and they settle the difference across the bench.
+*elseif (shop_tot_bought > 0)
+  Janna takes each finished piece from its rack and sets it out on the bench for you.
+*else
+  Torvald tests the metal with the edge of his hammer, then Janna counts out the coin.
+*if (shop_tot_sold > 0)
+  *line_break
+  [b][💰 Sold: ${shop_sold_list} for ${shop_credit_desc}][/b]
+*if (shop_tot_bought > 0)
+  *line_break
+  [b][🛒 Bought: ${shop_recv} for ${shop_cost_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass shop_tot_minutes
+*if (shop_tot_sold > 0)
+  *set minutes_to_pass (minutes_to_pass + 5)
+*set time_advance_call_id "af_smith_trade"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the forge floor...
+*goto af_smith_floor
 
 *label af_smith_sell_do
 *set gear_shop "torvald_sell"

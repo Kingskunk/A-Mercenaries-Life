@@ -1,0 +1,101 @@
+*comment FOOD RULES UNIT SCENE (2026-10-18): copy to web/mygame/scenes/zz_food_unit.txt, run `node tools/scripted_play.js` with {"scene":"zz_food_unit","label":"start","preset":"Scout Company Rogue","steps":[]}, then DELETE the copy (it must not ship). Expected: T1 2 trail rations, clock 2160; T2 one piece of honeycomb, clock 1660; T3 nothing eaten (quest guard); T4 a trail ration and 2 pieces of honeycomb, debt 2; T5 nothing (town); T6 a trail ration (dungeon); T7a ok, T7b refused.
+*label start
+*set vane_independent_operative true
+*set campaign_day 10
+*comment 1. rations only: two rations (one plus one spare), 6480 minutes from a fresh meal
+*set ow_on true
+*set dg_in_run false
+*set has_trail_rations true
+*set spare_trail_rations 1
+*set has_honeycomb false
+*set spare_honeycomb 0
+*set lsf_bear_healed true
+*set minutes_since_meal 0
+*set neglect_damage_hunger 0
+*gosub_scene calendar food_note_clear
+*set hours_to_pass 108
+*set minutes_to_pass 0
+*set time_advance_call_id "t1"
+*gosub_scene calendar advance_time
+*gosub_scene calendar food_note_build
+T1 rations only: ate [${food_eaten_note}] left rations=${has_trail_rations}/${spare_trail_rations} clock=${minutes_since_meal} debt=${neglect_damage_hunger}
+*comment 2. honey fallback, healed bear: no rations, 4 combs, clock 1000, +1200
+*set has_trail_rations false
+*set spare_trail_rations 0
+*set has_honeycomb true
+*set spare_honeycomb 3
+*set minutes_since_meal 1000
+*gosub_scene calendar food_note_clear
+*set hours_to_pass 20
+*set minutes_to_pass 0
+*set time_advance_call_id "t2"
+*gosub_scene calendar advance_time
+*gosub_scene calendar food_note_build
+T2 honey fallback: ate [${food_eaten_note}] combs left=${has_honeycomb}/${spare_honeycomb} clock=${minutes_since_meal}
+*comment 3. quest guard: the bear is not healed, so the honey is kept
+*set lsf_bear_healed false
+*set has_honeycomb true
+*set spare_honeycomb 3
+*set minutes_since_meal 1000
+*set neglect_damage_hunger 0
+*gosub_scene calendar food_note_clear
+*set hours_to_pass 20
+*set minutes_to_pass 0
+*set time_advance_call_id "t3"
+*gosub_scene calendar advance_time
+*gosub_scene calendar food_note_build
+T3 quest guard: ate [${food_eaten_note}] combs left=${has_honeycomb}/${spare_honeycomb} clock=${minutes_since_meal} debt=${neglect_damage_hunger}
+*comment 4. mixed: one ration, two combs, healed, 6000 minutes from a fresh meal
+*set lsf_bear_healed true
+*set has_trail_rations true
+*set spare_trail_rations 0
+*set has_honeycomb true
+*set spare_honeycomb 1
+*set minutes_since_meal 0
+*set neglect_damage_hunger 0
+*gosub_scene calendar food_note_clear
+*set hours_to_pass 100
+*set minutes_to_pass 0
+*set time_advance_call_id "t4"
+*gosub_scene calendar advance_time
+*gosub_scene calendar food_note_build
+T4 mixed: ate [${food_eaten_note}] rations=${has_trail_rations} combs=${has_honeycomb}/${spare_honeycomb} clock=${minutes_since_meal} debt=${neglect_damage_hunger}
+*comment 5. in a town (not on the road, not in a dungeon): nothing is eaten
+*set ow_on false
+*set dg_in_run false
+*set has_trail_rations true
+*set spare_trail_rations 0
+*set minutes_since_meal 2000
+*set neglect_damage_hunger 0
+*gosub_scene calendar food_note_clear
+*set hours_to_pass 5
+*set minutes_to_pass 0
+*set time_advance_call_id "t5"
+*gosub_scene calendar advance_time
+*gosub_scene calendar food_note_build
+T5 town: ate [${food_eaten_note}] ration kept=${has_trail_rations} clock=${minutes_since_meal}
+*comment 6. in a dungeon: eaten
+*set dg_in_run true
+*set minutes_since_meal 2000
+*set neglect_damage_hunger 0
+*gosub_scene calendar food_note_clear
+*set hours_to_pass 5
+*set minutes_to_pass 0
+*set time_advance_call_id "t6"
+*gosub_scene calendar advance_time
+*gosub_scene calendar food_note_build
+T6 dungeon: ate [${food_eaten_note}] ration left=${has_trail_rations} clock=${minutes_since_meal}
+*comment 7. by hand: honeycomb at clock 1000 takes 540 off; at clock 300 it is refused
+*set dg_in_run false
+*set has_honeycomb true
+*set spare_honeycomb 0
+*set minutes_since_meal 1000
+*set use_in_combat false
+*gosub_scene equipment use_consumable "honeycomb"
+T7a by hand at 1000: result=${use_result} clock=${minutes_since_meal} banner=${use_banner}
+*set use_locked false
+*set has_honeycomb true
+*set minutes_since_meal 300
+*gosub_scene equipment use_consumable "honeycomb"
+T7b by hand at 300: result=${use_result} text=${use_text}
+*finish

@@ -1671,7 +1671,7 @@
 *create ow_event_last_day 0
 *create ow_event_force ""
 *create locked_ow_trip_page_id 0
-*comment A journey is walked mile by mile inside its road legs (ow_legs, ow_leg_i and ow_leg_mile_i), so its pace can change at dusk, night and dawn. ow_night_stops/ow_night_wait_mins record forced roadside halts when darkness has no usable light or visibility is poor; ow_rations_total counts food over the whole trip. ow_exposure_pct is what the weather and the gear add to hunger and fatigue right now, kept for the map card. ow_can_camp is set on every overworld page
+*comment A journey is walked mile by mile inside its road legs (ow_legs, ow_leg_i and ow_leg_mile_i), so its pace can change at dusk, night and dawn. ow_night_stops/ow_night_wait_mins record forced roadside halts when darkness has no usable light or visibility is poor; the food eaten over the whole trip is tallied by calendar.txt food_note_clear and food_note_build. ow_exposure_pct is what the weather and the gear add to hunger and fatigue right now, kept for the map card. ow_can_camp is set on every overworld page
 *comment (not in a town). The camp page has its own page lock (ow_camp_locked) and keeps ow_camp_wet, whether it was raining when the player lay down, for its prose.
 *create ow_legs 0
 *create ow_leg_i 0
@@ -1680,7 +1680,6 @@
 *comment The terrain pace of the leg being walked, as a percent of a road mile (100 road, 200 pathless forest): set per leg by overworld.txt, read per mile by calendar.txt travel_step.
 *create ow_leg_pace 100
 *create ow_leg_mile_i 0
-*create ow_rations_total 0
 *create ow_has_night_light false
 *create ow_night_stops 0
 *create ow_night_wait_mins 0
@@ -2041,6 +2040,20 @@
 *create minutes_since_meal 0
 *comment How many trail rations the last advance_time ate for you on the overworld (calendar.txt zeroes it on every call; ow_travel reads it for its summary line).
 *create rations_eaten_last 0
+*comment FOOD (2026-10-18): rations_eaten_last is how many foods advance_time ate in its last call. food_cnt_<n> tally what was eaten (n is the place in the catalog's food order, calendar.txt food_pick), cleared and read by
+*comment calendar.txt food_note_clear and food_note_build; food_eaten_note is the sentence's noun phrase. food_pick_* are the outputs of food_pick.
+*create food_cnt_1 0
+*create food_cnt_2 0
+*create food_cnt_3 0
+*create food_cnt_4 0
+*create food_cnt_5 0
+*create food_cnt_6 0
+*create food_cnt_7 0
+*create food_cnt_8 0
+*create food_eaten_note ""
+*create food_pick_item ""
+*create food_pick_mins 0
+*create food_pick_idx 0
 *create minutes_since_rest 0
 *create neglect_damage_hunger 0
 *create neglect_damage_fatigue 0
@@ -4999,6 +5012,13 @@
 *create has_linen_bandage false
 *create has_lye_soap false
 *create has_trail_rations false
+*create has_honeycomb false
+*create has_barley_loaf false
+*create has_hard_farm_cheese false
+*create has_orchard_apple false
+*create has_root_vegetable_bundle false
+*create has_farm_eggs false
+*create has_dried_pork_sausage false
 *create has_hemp_rope false
 *create has_pitch_torch false
 *create has_lamp_oil false
@@ -5077,6 +5097,13 @@
 *create spare_linen_bandage 0
 *create spare_lye_soap 0
 *create spare_trail_rations 0
+*create spare_honeycomb 0
+*create spare_barley_loaf 0
+*create spare_hard_farm_cheese 0
+*create spare_orchard_apple 0
+*create spare_root_vegetable_bundle 0
+*create spare_farm_eggs 0
+*create spare_dried_pork_sausage 0
 *create spare_hemp_rope 0
 *create spare_pitch_torch 0
 *create spare_lamp_oil 0
@@ -5144,6 +5171,13 @@
 *create stow_saddlebags_linen_bandage 0
 *create stow_saddlebags_lye_soap 0
 *create stow_saddlebags_trail_rations 0
+*create stow_saddlebags_honeycomb 0
+*create stow_saddlebags_barley_loaf 0
+*create stow_saddlebags_hard_farm_cheese 0
+*create stow_saddlebags_orchard_apple 0
+*create stow_saddlebags_root_vegetable_bundle 0
+*create stow_saddlebags_farm_eggs 0
+*create stow_saddlebags_dried_pork_sausage 0
 *create stow_saddlebags_hemp_rope 0
 *create stow_saddlebags_pitch_torch 0
 *create stow_saddlebags_lamp_oil 0
@@ -5207,6 +5241,7 @@
 *create cart_buy_stiletto 0
 *create cart_buy_iron_crowbar 0
 *create cart_buy_torvald_iron_sallet 0
+*create cart_buy_torvald_hide_cap 0
 *create cart_buy_brigandine 0
 *create cart_buy_chain_jack 0
 *create cart_buy_plate_harness 0
@@ -5216,6 +5251,12 @@
 *create cart_buy_linen_bandage 0
 *create cart_buy_lye_soap 0
 *create cart_buy_trail_rations 0
+*create cart_buy_barley_loaf 0
+*create cart_buy_hard_farm_cheese 0
+*create cart_buy_orchard_apple 0
+*create cart_buy_root_vegetable_bundle 0
+*create cart_buy_farm_eggs 0
+*create cart_buy_dried_pork_sausage 0
 *create cart_buy_hemp_rope 0
 *create cart_buy_pitch_torch 0
 *create cart_buy_lamp_oil 0
@@ -5401,8 +5442,6 @@
 *create shadefern 0
 *create acorn_truffle 0
 *create brambleberry 0
-*comment Honeycomb (2026-10-17, the Longshade Forest bee tree): a counted ingredient like the harvested ones above, but with no buyer. The user means it for a cooking system to come, and it can be offered to the sick bear.
-*create honeycomb 0
 *comment The gear table (equipment.txt gear_info) and its outputs. An item's ownership flag is always
 *comment has_<id>, so the shared buy and sell routines reach it through gear_flag_var instead of a branch.
 *create gear_id ""
@@ -5481,6 +5520,13 @@
 *create gear_eff_stat ""
 *create gear_eff_bonus 0
 *create gear_eff_minutes 0
+*comment Food (a consumable whose effect is "ration"): gear_food_mins is how many minutes of the hunger clock it holds off, gear_food_auto false keeps it out of the game's eat-to-stop-starving, gear_food_after names a variable that must be true
+*comment before it may be eaten that way (a quest ingredient), gear_ate_one and gear_ate_many name it in the summary ("a trail ration", "trail rations").
+*create gear_food_mins 0
+*create gear_food_auto true
+*create gear_food_after ""
+*create gear_ate_one ""
+*create gear_ate_many ""
 *create use_item_id ""
 *comment The inventory panel sets these before it opens choicescript_stats codex_equip_do (an equip that changes ability scores).
 *create equip_slot ""
@@ -5605,6 +5651,34 @@
 *create lsf_bear_cub_known false
 *create lsf_bear_healed false
 *create dg_lsf_bear_tried false
+*comment THE PANTHER'S TREE (Longshade Forest Room 14): a sleeping panther, full and content, and a lost bear cub frozen beneath its branch. lsf_panther_read: the player knows the cat is full and sleeps deeply (Nature DC 12, or Speak with Animals); it gives advantage on the sneak.
+*comment lsf_cub_freed: the cub has been coaxed out and led past the cat, and has run home to its mother in Room 13 (kept for good, never reset: the cub does not leave the forest with the player). dg_lsf_panther_tried and dg_lsf_cub_tried: a missed reading and a missed attempt,
+*comment one try per refill (lsf_respawn clears them); dg_lsf_cub_coaxed: the cub has come to the player and the sneak past the cat is next (cleared by lsf_respawn and by a failed sneak).
+*create lsf_panther_read false
+*create lsf_cub_freed false
+*create dg_lsf_panther_tried false
+*create dg_lsf_cub_tried false
+*create dg_lsf_cub_coaxed false
+*comment THE DEN SLEEP (Room 13, once the bear is healed and the cub is home): the forest has no long rest of its own, so the den has one page, under its own whole-page lock (lsf_den_locked), like the camp's sleep. lsf_den_note is what was eaten in the night (calendar.txt food_note_build).
+*create lsf_den_locked false
+*create locked_lsf_den_page_id 0
+*create lsf_den_note ""
+*comment lsf_bees_spoken: the player has spoken with the bees once (Speak with Animals); later times the exchange is described, not quoted again (kept between runs). lsf_bees_first is what the page printed (set inside the page lock, so a refresh prints the same page).
+*create lsf_bees_spoken false
+*create lsf_bees_first false
+*comment THE WRECKED CAMP (Room 10) AND THE TRAMPLED CLEARING (Room 12), the dead travellers: lsf_camp_read (Survival DC 12: a big cat struck the camp and dragged its kills north), lsf_camp_pouch (the pouch found in the wreckage, once ever),
+*comment lsf_body_surv (Survival: how the travellers died and where the cat went), lsf_body_med (Medicine: how they died), lsf_body_nat (Nature: a bear has fed here and marked the trees). All kept between runs. Each reading is one try per refill on a miss:
+*comment dg_lsf_camp_tried, dg_lsf_search_tried, dg_lsf_body_surv_tried, dg_lsf_body_med_tried, dg_lsf_body_nat_tried (lsf_respawn clears them).
+*create lsf_camp_read false
+*create lsf_camp_pouch false
+*create lsf_body_surv false
+*create lsf_body_med false
+*create lsf_body_nat false
+*create dg_lsf_camp_tried false
+*create dg_lsf_search_tried false
+*create dg_lsf_body_surv_tried false
+*create dg_lsf_body_med_tried false
+*create dg_lsf_body_nat_tried false
 *comment --- GAME SETTINGS ---
 *comment The real first choice of the game, reached the instant the *create preamble above finishes. Everything
 *comment past this point -- the actual "Begin Campaign" vs. "Developer" fork, the 8 character presets, the combat
