@@ -1042,10 +1042,10 @@
       badge: "Physical Evidence"
     },
     {
-      id: "peddler_tag", category: "documents", owned: "has_peddler_tag",
-      weight: 0.1,
-      name: "Peddler's Tag",
-      description: "A brass disc the size of a palm, the Factor's Hall seal stamped on one face and a row of small numbers on the other, still on its thong.",
+      id: "pellam_pouch", category: "documents", owned: "has_pellam_pouch",
+      weight: 0.2,
+      name: "Leaf-Stitched Pouch",
+      description: "A small leather pouch with a green leaf stitched on the flap, the thread gone grey. Someone sewed it with care.",
       badge: "Evidence"
     },
     {

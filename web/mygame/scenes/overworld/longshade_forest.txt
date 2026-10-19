@@ -1922,9 +1922,9 @@ A lower branch dips toward you in a slow arc, and the yellow eyes close and open
 *line_break
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  Your ${feet_prose} catch in torn cloth and then in a snapped pole. Your hand finds a cold firepit full of fine ash, split crates, and packs spilled open on the ground, with dented pots and cards of needles trodden among them, and the pole beside you is scored with four deep grooves. A sour smell of old blood hangs over everything.
+  Your ${feet_prose} catch in torn cloth and then in a snapped pole. Your hand finds a cold firepit full of fine ash, split crates, and packs spilled open on the ground, with wooden presses and bundles of dry stems trodden among them, and the pole beside you is scored with four deep grooves. A sour smell of old blood hangs over everything.
 *else
-  A trampled clearing holds the wreck of a camp. Two canvas tents hang in ribbons from their poles, and a third lies flat with one pole snapped in two. A firepit sits cold and full of grey ash, and crates and packs lie split open across the ground, their contents strewn and trodden into the dirt: dented pots, cards of needles, scraps of bright ribbon. Four long parallel grooves score the nearest tent pole at the height of your chest.
+  A trampled clearing holds the wreck of a camp. Two canvas tents hang in ribbons from their poles, and a third lies flat with one pole snapped in two. A firepit sits cold and full of grey ash, and crates and packs lie split open across the ground, their contents strewn and trodden into the dirt: wooden plant presses, drying frames still hung with wilted fern and pale root, a spilled basket of cuttings. Four long parallel grooves score the nearest tent pole at the height of your chest.
 *if (lsf_camp_read)
 
   You know what struck this camp now: a big cat, and a drag trail runs north into the trees.
@@ -1968,6 +1968,9 @@ You circle the clearing slowly, bent low, and go over the ground a hand's width 
 
 *label lsf_camp_search
 You start at the firepit and work outward, turning over every crate and shaking out every pack.
+*if (peddler_lead_inn)
+  The innkeeper's words about the pack frames tell you what to look for, and you start with the heaviest.
+  *set advantage true
 *gosub_scene dice_engine roll_skill_check 12 "investigation" "" "" "" "" ""
 *if (check_success)
   *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
@@ -1976,7 +1979,8 @@ You start at the firepit and work outward, turning over every crate and shaking 
     *set currency_txn_locked true
     *set locked_currency_txn_page_id page_id
   *set lsf_camp_pouch true
-  Under a slashed bedroll, sewn into the lining of a pack that someone dragged a few yards and dropped, your fingers find a leather pouch, heavy and tight. Inside is a fistful of silver marks.
+  *set has_pellam_pouch true
+  Under a slashed bedroll, sewn into the lining of a pack that someone dragged a few yards and dropped, your fingers find a leather pouch, heavy and tight. A green leaf is stitched on the flap in thread gone grey. Inside is a fistful of silver marks.
 
   [b][💰 Found: 6 Silver Marks][/b]
 *else
@@ -2127,9 +2131,6 @@ A line of bees carries a slab of comb to the lip of the hollow, and you take it 
 *if (lsf_body_nat)
 
   A bear has fed here and marked these trees, and its marks run off to the northwest.
-*if (peddler_tag_found)
-
-  The smallest body's belt is bare now where you took the brass tag.
 *gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
@@ -2142,13 +2143,6 @@ A line of bees carries a slab of comb to the lip of the hollow, and you take it 
   *if ((not(lsf_body_nat)) and (not(dg_lsf_body_nat_tried)))
     # Study the raked trunks and the ground at their feet. [~10 min]@{show_stat_hints  [Nature DC 12]|}
       *goto lsf_body_nature
-  *if ((peddler_stage = "active") and ((not(peddler_tag_found)) and (not(dg_lsf_tag_tried))))
-    *if (peddler_lead_hall)
-      # Look for the clerk's brass tag on the nearest belts. [~10 min]
-        *goto lsf_body_tag
-    *else
-      # Go through the packs and coats for anything that names them. [~15 min]@{show_stat_hints  [Investigation DC 10]|}
-        *goto lsf_body_tag
   # Go northwest.
     *set dg_dest "lsf_j25"
     *set dg_dest_hall true
@@ -2178,37 +2172,6 @@ You walk the edge of the clearing bent low and pick the tracks out one at a time
   *set dg_lsf_body_surv_tried true
 *set dg_mins 15
 *set dg_time_id "lsf_body_survival"
-*gosub_scene dungeon dg_time
-*goto lsf_n_r12
-
-*comment THE OVERDUE PEDDLER (timbermouth/barleycross/overdue_peddler.txt): with the job taken, the peddler's brass licence tag is on the smallest body's belt. The Hall clerk's lead finds it with no roll;
-*comment otherwise Investigation DC 10, and a miss is one try per refill (dg_lsf_tag_tried). peddler_tag_found is kept for good; has_peddler_tag is the item in the pack.
-*label lsf_body_tag
-*temp lt_found false
-*if (peddler_lead_hall)
-  You know what to look for: a brass disc on a thong at the belt. The smallest of the three lies nearest the packs, a pot-mender's hammer still looped through the cord at the waist, and you kneel beside it and ease back the stiff coat. The disc hangs at the left hip, dull with dirt.
-  *set lt_found true
-*else
-  You turn out the packs and go through every coat you can bring yourself to touch. Most of it is cloth, cord and mending tools.
-  *gosub_scene dice_engine roll_skill_check 10 "investigation" "" "" "" "" ""
-  *if (check_success)
-    At the left hip of the smallest body, under a stiff coat, your fingers close on a brass disc on a thong.
-    *set lt_found true
-*if (lt_found)
-  *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-    *set has_peddler_tag true
-    *set peddler_tag_found true
-    *set stat_bump_locked true
-    *set locked_stat_bump_page_id page_id
-  You wipe it on your sleeve. A seal is stamped on one face and a row of small numbers on the other. You wrap it in a scrap of cloth and tuck it away.
-
-  [b][🏷️ Found: Peddler's Tag][/b]
-  *set dg_mins 10
-*else
-  Your hands are stained to the wrists by the time you stop, and you have found nothing with a name on it. Another day may turn something up.
-  *set dg_lsf_tag_tried true
-  *set dg_mins 15
-*set dg_time_id "lsf_body_tag"
 *gosub_scene dungeon dg_time
 *goto lsf_n_r12
 
@@ -2760,7 +2723,6 @@ Two people crash out of the brush together. The woman is short and broad, muddy 
 *set dg_lsf_body_med_tried false
 *set dg_lsf_body_nat_tried false
 *set dg_lsf_r6_fern false
-*set dg_lsf_tag_tried false
 *set dg_lsf_r6_truffle false
 *return
 
