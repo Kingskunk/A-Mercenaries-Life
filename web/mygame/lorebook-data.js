@@ -90,16 +90,14 @@
         meter: function (s) { return truthy(s.met_vane) ? { stat: "vane_standing", label: "Captain Vane's Regard" } : null; },
         body: function (s) {
           if (!truthy(s.met_vane)) {
-            return ["The aloof commander of the Iron Carrion. You have only seen his black raven pavilion from afar."];
+            return ["The Iron Carrion's commander. You have only seen his black raven pavilion from afar."];
           }
           var out = [
-            "The cold, calculating commander of the Iron Carrion, and the man who built it. A stern, aloof strategist who treats warfare as a business of ledgers, contracts, and calculated brutality, and who expects the same arithmetic from every soul drawing company pay. He gives his orders in fragments, and he negotiates the company's commissions himself, coin by coin.",
-            "Veterans of the hearth-circles say he raised the Carrion out of the wreckage of the Broken Crown War, gathering deserters, runaway bond-servants, and broken soldiers behind a quartered raven banner while the imperial legions were still dissolving across the Marches. He has run it on iron discipline and exact weight of coin ever since, and the men who have served him longest speak of it without much affection and without a single complaint.",
-            "Where he learned the trade, nobody in the ranks can settle. The telling among the veterans — never confirmed and never quite denied — is a cashiered imperial officer who traded high rank for the freedom of a mercenary captaincy, and his bearing does nothing to quiet it. <i>\"Tall and immaculately kept in a way that looks almost offensive against the mud of the camp—silver-templed, imperial-cut coat brushed clean, a jeweled signet ring on the hand that signs the contracts, and pale eyes that linger a beat too long pricing a man before they ever bother to judge him.\"</i> Nobody who has asked him straight has gotten a straight answer, and most have stopped asking.",
-            "He runs the company from behind the line and from behind a desk: in the field, mounted on dry ground under the raven banner with a brass spyglass, runners waiting on his hand signals; in quarters, a trestle desk of muster rolls and transit waybills with the banner nailed flat to the masonry instead of hung loose. In any town that pays the company, the same house law holds — no private collections, no unsanctioned bloodshed under a patron's colors, and a captain who will not know your name if the law comes asking. Leverage interests him more than glory, and he spends it the way he spends silver: late, deliberately, and only for something the company cannot take."
+            "The Iron Carrion's founding captain. In camp he receives reports at a trestle desk below the raven banner; on campaign he directs the company from horseback. He sets its contracts and its rules.",
+            "Veterans say he gathered the company after the Broken Crown War. They disagree about whom he was before, and he does not settle it."
           ];
           if (truthy(s.met_odessa)) {
-            out[1] += " Surgeon Odessa, ten years under his hand, puts it plainer: in the Carrion a soldier dies of steel or gangrene, never of politics.";
+            out[1] += " Surgeon Odessa has served under him for ten years.";
           }
           return out;
         },
@@ -115,8 +113,8 @@
         meter: { stat: "varren_respect", label: "Sergeant Varren's Regard" },
         body: function (s) {
           var out = [
-            "Vanguard drillmaster and frontline sergeant. He turned green recruits into soldiers who did not break the shield-wall, working from the munitions barrels at intake, the banner watch at night, and the practice post at dawn.",
-            "<i>\"A massive slab of a man, gone thick and hard with age rather than soft, half his face a crosshatch of old siege-scars that pull his mouth into a permanent, humorless line. Close-cropped grey stubble, a nose broken at least twice and never set straight, and one milk-pale eye that does not track quite right in bad light. Blackened chainmail, spit in the mud, and a voice like flint.\"</i>"
+            "The Iron Carrion's Vanguard drillmaster and a frontline sergeant. He keeps the practice post, checks a recruit's gear, and expects the line to hold together.",
+            "Grey stubble, old siege scars, a broken nose and one pale damaged eye make him easy to recognize."
           ];
           if (truthy(s.prep_varren_drill)) {
             out.push("His doctrine, drilled into every file: keep your files tight, keep your feet dry, do not get flanked in the reeds, and keep grease on your iron. He ran the Vanguard line himself before a fight, checking straps and grips.");
@@ -144,8 +142,8 @@
         meter: { stat: "kestrel_respect", label: "Kestrel's Regard" },
         body: function (s) {
           var out = [
-            "Scout Company's commander. Lean, weathered, and near-silent, she runs the smallest armed company in camp on trust earned the hard way and answers to no rank but her own reputation.",
-            "<i>\"Lean, weathered, and somewhere past sixty winters—though the keen stillness in her dark, watchful eyes and her untiring stride through the marsh betray none of it. Tapered half-elven ears sit tucked beneath a close-fitting coif of greased leather, dark hair cropped short and greying at the temples, and a long skinning knife worn plain at her hip with no ornament worth mentioning. She goes by one name and no formal rank, commanding the scouts on trust earned the hard way across decades of fen warfare. Watches everyone, including her own recruits, before they ever realize they're being watched.\"</i>"
+            "Commander of the Iron Carrion's scout company. She goes by Kestrel, wears her dark hair cropped short beneath a leather coif, and carries a plain skinning knife.",
+            "The company gives her no formal rank beyond the work she does: finding a road, reading the ground, and bringing the scouts back."
           ];
           if (truthy(s.kestrel_advice_told)) {
             out.push("From the shutter of the watchtower's top room she watches the compound and the inland road. Her advice is to keep watching the whole time, since everyone shows you what they are about to do before they do it and you can never know which moment matters. She admits it is exhausting and that she is terrible company.");
@@ -170,8 +168,8 @@
         meter: { stat: "ysolde_respect", label: "Ysolde's Regard" },
         body: function (s) {
           var out = [
-            "The Cadre's handler. She keeps the company's small handful of gifted recruits the way other sergeants keep count of rations: exactly, constantly, and with no intention of running short. Six or seven at any time against four hundred soldiers who mostly wish the number were smaller.",
-            "<i>\"An older woman carrying subtle marks of infernal bloodline—small, polished obsidian ram horns sweeping close against dark hair streaked with iron-grey and pulled back in severe braids, and pale mercury-silver irises that miss nothing while appearing to look at nothing in particular. A physician's leather satchel of scrolls and glass vials slung across one shoulder, hands steady enough to thread a needle by firelight without looking down.\"</i>"
+            "The Cadre's handler. An older tiefling woman with small obsidian horns, iron-grey braids and a satchel of scrolls and glass vials, she is responsible for the company's gifted recruits.",
+            "She keeps the Cadre's work, supplies and training under close count."
           ];
           if (s.squad === "cadre") {
             out.push("Those who marched under her hand knew the terms: worth more alive than heroic, and told so plainly. She rationed the Cadre's spells because they cost the caster: a spell worked under arrow fire runs through the caster's own nerves, fingers seize if it's held too long, and a heart can quit in the mud. Her praise was a dry nod or an errand of trust. Her discipline was a hand keeping you out of the arrow-hail until the line truly broke.");
@@ -258,8 +256,8 @@
         meter: { stat: "odessa_respect", label: "Surgeon Odessa's Regard" },
         body: function (s) {
           var out = [
-            "The company's field surgeon. She kept the four hundred patched together with boiled linen, bone needles, and waxed thread, working from a triage wagon on the march and a pair of overturned munitions crates behind the line.",
-            "<i>\"A gaunt, sharp-featured woman with more scars across her fingers and knuckles than most of the frontline veterans she stitches. Dark hair pulled back severe and pinned with a carved bone bodkin, leather apron stained with lanolin and iodine, small iron knife at her belt for shearing thread. Sharp-eyed and unsentimental, she prices every wound in linen, vinegar, and time.\"</i>"
+            "The Iron Carrion's field surgeon. She works from a triage wagon on the march and from whatever clear ground the line leaves behind, with boiled linen, bone needles and waxed thread.",
+            "She is gaunt and sharp-featured, with scars across her hands, dark hair pinned back, and a leather apron marked by her work."
           ];
           if (truthy(s.codex_odessa)) {
             out.push("What she told you at the Black Sinks, knotting thread with her teeth: ten years under Captain Vane. Before that she kept an apothecary in the high city until a tax-bailiff burned it for unpaid levies. Vane offered forty silver marks a season and one promise — no lord would ever tell her who she could or could not treat.");
@@ -362,8 +360,8 @@
         unlock: "met_torvald",
         body: function (s) {
           var out = [
-            "The Crag Dwarf behind Torvald's Timber Forge & River Ironworks, a timber-and-granite workshop built over the mill-race above the weir, with a soot-blackened signboard swinging over the door. He is barely five feet tall and wide as an anvil, with arms thick as cured ham, a grey beard braided in highland knots and singed with slag, a scarred leather patch over his left eye, and a bloodshot steel-grey right eye. Grindstones, guild-stamped helmets, blades, digging picks, and extra shields leave his racks. His offer to any Carrion customer never changes: lend a hand on the race when the wheel jams, or take your notched steel and sleep in the muck.",
-            "His temper is famous on the waterfront: all roar and flying sparks. He shouts at Janna from dawn to dusk and kicks the housing of his trip-hammer when the world displeases him. When a crisis passes he grabs a clay ale jug and stomps off to the Drowned Oar to drink barley ale with the river skippers, shouting over his shoulder that the factor will have both their hides if the sixteen barge mooring pins aren't finished before dawn muster."
+            "A Crag Dwarf smith and millwright who runs the timber forge over Alderford's mill-race. His workshop turns out river hardware, tools and arms, and its wheel must be kept clear of the river's driftwood.",
+            "He is broad, grey-bearded and scarred, with a patch over his left eye. Janna works beside him at the forge."
           ];
           if (truthy(s.knows_torvald_sluice_trick)) {
             out.push("Veteran Rorik, who swung sledge for him back in the Highland Crags, tells how the two of them framed the timber mill over the Alderford weir. Torvald swore he would drown before wading into freezing muck every time driftwood jammed the wheel, so he hid a bypass under the intake casing. Trip the catch and a counterweight backs the gear teeth off, and the river flushes the jam itself. He calls it 'preventative drainage' so the guild inspectors cannot fine him. His rule in the old shops was two taps to set the angle and one blow to draw the metal, kept to an exact three-count, or you caught hot tongs across your shins.");
@@ -412,8 +410,8 @@
         unlock: "met_rennick",
         body: function (s) {
           var out = [
-            "The Gilded Scales' toll bailiff on the Alderford wharf: a stocky, thick-necked man in a water-stained beaver-fur mantle, with a pewter cartel badge at his lapel, a brass-tipped cane, a ledger always at hand, and two dock-guards with iron-banded clubs at his back. He collects the cartel's tolls and 'shelter taxes' from the curing sheds and the weighing slips, and he does it loudly. He kicks a drying rack into the muck, reads the arrears out where every worker can hear, and promises the spillway to anyone who cannot pay tonight.",
-            "The numbers always favor the Scales. Salt is weighed a shade light, stamped weigh-slips are waved like writs, debts appear in his ledger that the workers swear were paid in full at the last weigh-in, and coin goes into an embroidered velvet purse. Up close he backs down as soon as real authority shows: imperial wax on a river charter, four hundred Carrion banners across the mud, the words 'command audit.' His parting line to anyone who squares up to him never varies: this will be settled at the toll office."
+            "The Gilded Scales' toll bailiff on the Alderford wharf. He wears a pewter cartel badge and a water-stained fur mantle, keeps a ledger close, and arrives with two dock-guards.",
+            "He collects tolls from the curing sheds and weighing slips, reading arrears aloud where the workers can hear."
           ];
           if (truthy(s.rennick_reported)) {
             out.push("Report his light scales to Factor Morzan and the answer comes back without surprise. Morzan already knew, and means to have a word with him. Rennick's power ends where the Factor's signature begins, and the office he struts through exists at Morzan's pleasure.");
@@ -434,8 +432,8 @@
         unlock: "met_morzan",
         body: function (s) {
           var out = [
-            "The Gilded Scales' factor in Alderford: portly and jowled, wrapped in water-stained beaver furs, with a parchment-bound account book never far from his hand and the frank, assessing stare of a man who has spent his life weighing cargo by eye. He met the Carrion column at the town palisade the day it arrived, flanked by bailiffs in pewter scale badges. He took Captain Vane's brass baggage chits, reported that the causeway was cleared and the Sinks prisoners were in the iron cage wagons as contracted, then unrolled a stamped ledger, checked every seal, and signed the company's contract vouchers. Coin only moves when the seals satisfy him.",
-            "His Factor's Hall sits on the customs slip on blackened ironwood pilings. Inside, the whole wharf's business is weighed, sealed, and filed: clerks at their desks, brass balance pans clinking against lead weights, a vault counter issuing Letters of Credit good in Gold Crowns at the cartel's head house on Port Valen's Civic Heights, and an iron-posted bounty board by the door. Chief Clerk Orlov runs the front of the hall. The Factor keeps to the back office and has no inclination to come out for routine business."
+            "The Gilded Scales' factor in Alderford. He receives the company's vouchers, checks their seals, and decides when the Hall will release payment.",
+            "His office is at the back of Alderford's Factor's Hall on the customs slip. Chief Clerk Orlov runs the public counter."
           ];
           if (truthy(s.rennick_reported)) {
             out.push("Report Rennick's skimming and the Factor answers: 'So you're the one. Word reached me a Carrion recruit walked into my own toll district's dispute and settled it without breaking a crate, and had the nerve to invoke my name doing it. A little bird already told me my bailiff's scales run light. Good instinct, chasing that up. I'll be having a word with Rennick myself.'");
@@ -487,8 +485,8 @@
         unlock: "met_corbel",
         body: function (s) {
           var out = [
-            "The elderly cleric of the Chapel of Saint Althea the Mender, on the granite ridge above the weir. He wears an undyed wool habit with a carved limestone spindle-cross at his chest, and has thin grey hair, spectacles tied behind his ears with hemp cord, and calm grey eyes. He keeps the parish ledger at the chancel desk, greets the road-worn in a gentle, measured voice, and runs his sanctuary on one rule, kept by custom and not by any sign: leave your quarrels on the gravel outside.",
-            "He is a mender in both of his saint's senses. Lay a wound before him and he sets his hand against it and channels Althea's grace until the golden light sinks back into the stone and he steps back, a little winded. It costs three copper bits, or nothing when the parish owes you a courtesy. The poor-chest holds no silver, since what little the chapel takes in goes to the town hearth-tax. What he keeps in plenty is the stone stoup by the door: cold spring water, fingers resting on your crown, and a blessing for the road. May the stone hold beneath your tread."
+            "The elderly deacon of Saint Althea's chapel on the ridge above the weir. He wears an undyed wool habit and a limestone spindle-cross, and keeps the parish ledger at the chancel desk.",
+            "Corbel offers healing and a blessing for the road. His sanctuary keeps one rule: leave quarrels outside."
           ];
           if (truthy(s.discussed_chapel_deity)) {
             out.push("He teaches his flock to pray to Saint Althea, while the bishops in Port Valen's grand cathedral sing of her father, the Sun-Father. See [[saint_althea|Saint Althea]]. In a marches town where no one can buy a master surgeon, he says her grace is all that stands between a gangrenous wound and a shallow grave.");
@@ -733,8 +731,7 @@
         tags: ["Regional", "Trade"], aliases: ["Marches", "frontier", "borderland", "map", "regions", "economy", "trade", "goods", "powers"],
         body: function (s) {
           var out = [
-            "A misty frontier borderland between the coastal trade routes and the northern highlands. Three kinds of country meet around one river: steep highland valleys in the north, chalk downland and farm country to the west, and peat bog and reed flats to the east. The Grey River runs down between them to Port Valen.",
-            "<b>Trade.</b> No part of the Marches feeds itself. The highlands have iron and coal and too little grain. The farm country has grain, hemp and horses and no iron. The bogs have fuel, eels and reeds, and no salt or timber. Salt comes in from the coast. Port Valen takes what the rest can spare and pays for it in coin."
+            "A frontier borderland between the coastal routes and the northern highlands. Highland valleys lie north of the Grey River, downland and farms west of it, and peat bogs and reed flats east of it. The river runs south to Port Valen."
           ];
           var held = [];
           if (truthy(s.codex_stenmark)) {
@@ -833,8 +830,7 @@
         tags: ["Grey River"], aliases: ["Grey River", "river gorge", "downriver", "waterway", "downriver run"],
         unlock: "codex_river_gorge",
         body: [
-          "A wide, navigable river running thirty miles between limestone bluffs and old imperial signal towers from Alderford down to Port Valen. It begins at the Alderford weir, where the hill streams gather into one channel. Above the weir there is only the highland road, with no barge water and no river town. The steady current makes a smooth downstream run for heavy grain barges and timber scows. The river damp, freezing autumn spray, and submerged imperial works like the anti-galley booms call for waterproofed gear and experienced watermen.",
-          "<b>Trade.</b> Downstream, the current carries a loaded barge from Alderford to Port Valen in a day. Upstream, the crew has to pole against it for days. Grain, cured fish, timber, coal, and small ironwork ride down; the light upriver cargo is coin, cloth, and finished wares. Salt for Alderford's curing lofts comes by cart on the High Grey Road, not against the river current. Barge owners fill the empty run home with whatever will pay a fee, and the Scales toll the river at both ends."
+          "A wide navigable river running between limestone bluffs from Alderford to Port Valen. Above the weir there is road but no barge water. The current carries loaded boats south; crews work far harder to bring them back. Cold spray, river damp and old imperial works make the gorge a waterman's road."
         ],
         see: ["alderford", "port_valen", "imperial_booms", "grey_marches"]
       },
@@ -846,14 +842,13 @@
         unlock: "codex_black_sinks",
         body: function (s) {
           var out = [
-            "An old imperial road built up on a dike across the Sinks, laid in fitted grey stone and wide enough for military freight wagons, then left to rot for decades. Sinking peat and seasonal floods have collapsed its outer edges, so only the raised center still carries wheels, single file, with waist-deep bog on both sides. At its eastern end, the last low spur of the Coldspine comes down to the marsh, leaving one narrow strip of firm ground for the dike and a squat stone gatehouse. There is no wagon detour around either the bog or the range, which makes it the last chokepoint on the toll road between the highland Crags and the Alderford weir."
+            "An old imperial dike-road across the Sinks. Its raised center is the only ground that still carries wheels between the bog and the range, with a squat gatehouse at the eastern end."
           ];
           if (!truthy(s.codex_marsh_squatters)) {
             out.push("This autumn the gatehouse is held by deserters and displaced tenants out of the high valleys, with scythes, sickles, and fishing spears, and nowhere else to run. The Gilded Scales bought the road back and handed the contract to the Carrion.");
           } else {
-            out.push("The gatehouse stands open. What held it is scattered into the reeds, dead on the flagstones, or riding downriver in the iron cage wagons as contracted. The Gilded Scales have ringed the old stone with a new palisade and reopened traffic under their black-and-gold banner.");
+            out.push("After the Carrion's assault, the gatehouse belongs to the company. The squatters who did not run scattered into the reeds rather than face it.");
           }
-          out.push("<b>Trade.</b> Nothing is made on the causeway. It is a toll station on the only dry road between the highlands and the river, so highland steel, coal and timber pass over it going south, and peat from the eastern bogs comes in over it. When the gatehouse is held, both streams stop at once, which is why the Scales paid to have it cleared.");
           return out;
         },
         see: ["squatters", "gilded_scales", "meridian_empire", "iron_carrion", "grey_river", "alderford", "grey_marches", "great_sedge", "stenmark"]
@@ -883,8 +878,7 @@
         unlock: "codex_stenmark",
         body: function (s) {
           var out = [
-            "The barony Baron Karr holds in the southern Crags: the valleys under the mountain face, the passes above them, and the forges in the deep valleys beyond. [[karrs_keep|Karr's Keep]] is the seat. Brandreth is the one market town, where the grain tax is measured out. Two roads leave it. The south road runs through Black Pike Gate and down to the Black Sinks. The west road climbs to Iron Gap and drops into the farm country beyond.",
-            "<b>Trade.</b> The Crags make pig iron, shear-steel, stone-coal, hard timber and upland wool. The valleys cannot feed the men who work them. Oats and barley ripen in a short summer, rye fails in a wet one, and the barony buys grain every year that it cannot grow. It buys salt, cloth and rope as well. Iron and coal pay for all of it, and both must go south through the Black Sinks to reach a buyer. The Baron holds the north end of that road and the Gilded Scales hold the south end, so neither can move iron without the other. The Crag Forge-Elders' Council certifies the iron and keeps the deep furnaces going, and the bailiffs hold the roads the iron travels on."
+            "Baron Karr's southern-Crags barony: high valleys, mountain passes and deep forges. [[karrs_keep|Karr's Keep]] stands above Brandreth, its market town. Roads south through Black Pike Gate and west through Iron Gap are guarded by the Baron's bailiffs."
           ];
           if (truthy(s.discussed_smiths_past)) {
             out.push("The steel tax has emptied some of the highland shops. [[torvald|Torvald]] left over it: by his own account, the shops could no longer buy coal, feed their hammer-men or pay the ore carters.");
@@ -934,8 +928,7 @@
           var karr = truthy(s.codex_baron_karr) ? "Baron Karr's" : "the highland lord's";
           var lord = truthy(s.codex_house_gault) ? "[[house_gault|House Gault]]" : "A noble house";
           return [
-            "Long chalk downland and river-fed farm country west of the Grey, with old forest along its southern edge. " + lord + " rules it from Dunmow. Fallowfield and the smaller market towns sit in the wheat land, and the villages of the downs run sheep. Two roads leave it. Coombe Gap takes carts east toward the river. Iron Gap climbs north into the Crags and " + karr + " tolls.",
-            "<b>Trade.</b> The vale is where the Marches' bread comes from. It grows the wheat and rye that feed Port Valen's ovens, and it sends out flax and hemp for canvas and rope, bacon fattened on acorns in the forest, pitch and tar from the pines, and horses bred on the downs. It has no iron and no coal. Plow blades, horseshoes and spearheads come down through Iron Gap, and the price is set at the gate. Salt comes in from the coast. The downs' own wool is short and coarse and mostly stays in the vale's cloth halls, and the fine wool that Port Valen buys comes from the Crags. Everything the vale sells to the coast goes down the river on Scales barges, at the Scales' freight rate."
+            "Chalk downland and river-fed farm country west of the Grey, with old forest along its southern edge. " + lord + " rules it from Dunmow. Fallowfield and smaller market towns sit among the fields, while the downs hold sheep villages. Coombe Gap leads east to the river; Iron Gap climbs north into the Crags and " + karr + " tolls."
           ];
         },
         see: ["house_gault", "stenmark", "grey_river", "grey_marches", "port_valen"]
@@ -949,8 +942,7 @@
         body: function (s) {
           var warlord = truthy(s.codex_warlord_skell) ? "[[skell|Warlord Skell]]" : "A warlord";
           var out = [
-            "A wide country of peat bog, reed beds and black meres, cut by slow channels and dotted with islands of firm ground. Waist-deep mud lies under most of what looks solid, and a wagon sinks to the axle within a dozen paces. " + warlord + " holds it from Gryke, an old fort that is sinking into the fen. The towns are small and built on piles. Sedgefleet is where the eel boats and peat barges load, and Wulverston, in the south, has the bog-iron works. The only dry ways through are woven brushwood tracks laid across the mud, and only the fen people know where they run.",
-            "<b>Trade.</b> The Sedge's staple is peat, cut, dried and stacked by the cartload. Port Valen's taprooms and tenements burn it beside their coal, and so do the salt-boilers on the coast. The fen also sends out smoked eels, wildfowl, reed thatch, and soft bog-iron for nails and cheap tools. Nothing grows well here and there is no timber, so grain, salt and sawn wood all come in. Without salt the eels rot in a week, so the boats that carry peat out bring salt back."
+            "A country of peat bog, reed beds and black meres, broken by slow channels and small islands of firm ground. " + warlord + " holds it from Gryke, an old fort sinking into the fen. Its towns stand on piles, and its few dry paths are brushwood tracks known to the fen people."
           ];
           if (s.silt_gate_resolution === "leverage" || truthy(s.has_silt_gate_payout_slip)) {
             out.push("The fen towns also make a rough spirit called peat-spiritus. What reaches Port Valen comes in un-stamped with the Black Oath's smugglers, through the Silt-Gates.");
@@ -1042,7 +1034,7 @@
 
       {
         id: "church_true_sun", category: "lore", title: "The Church of the True Sun",
-        link: ["Church of the True Sun", "the Church of the True Sun"],
+        link: ["Church of the True Sun"],
         sub: "Valen's church of the gods and saints",
         tags: ["Faith", "Port Valen"], aliases: ["True Sun", "Sun Church", "church", "high prelate", "prelate"],
         unlock: "cath_seen",

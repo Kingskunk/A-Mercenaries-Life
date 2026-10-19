@@ -426,7 +426,7 @@
       id: "weigh_house", category: "places", title: "The Weigh House",
       sub: "The city's scales on the cargo quay",
       tags: ["Quayside", "Trade"], aliases: ["weigh house", "weigh-house", "beam-scale", "scale house", "slate", "price boards"],
-      link: ["The Weigh House", "Weigh House"],
+      link: ["Weigh House"],
       unlock: "wh_named",
       body: function (s) {
         var out = [
@@ -954,7 +954,7 @@
       id: "wagoners_rest", category: "places", title: "The Wagoner's Rest",
       sub: "An inn on the trunk road",
       tags: ["Middle Ward"], aliases: ["inn", "wagoner's rest", "stables", "stable yard", "room for the night"],
-      link: ["The Wagoner's Rest", "Wagoner's Rest"],
+      link: ["Wagoner's Rest"],
       unlock: "mw_inn_seen",
       body: function (s) {
         var out = [
@@ -995,7 +995,7 @@
       id: "trunk_road", category: "places", title: "The Trunk Road",
       sub: "The city's main road, gate to gate",
       tags: ["Middle Ward"], aliases: ["trunk road", "gate road", "wagon road", "wheelwrights", "wagon yards"],
-      link: ["Trunk Road", "the trunk road"],
+      link: ["Trunk Road"],
       unlock: "mw_gate_road_seen",
       body: [
         "A broad paved way that crosses the Middle Ward from the River Gate in the north-west to the Charter Gate in the east, meeting Conduit Square at the middle and running on down the switchbacks to the harbor. Wheelwrights, farriers, harness-makers, chandlers and cheap cookshops line it, with wagon yards behind arched entries and the Wagoner's Rest a short way along.",
@@ -1007,7 +1007,7 @@
       id: "river_gate", category: "places", title: "The River Gate",
       sub: "The north-west gate in the landward wall",
       tags: ["Middle Ward"], aliases: ["river gate", "north-west gate", "west gate", "wicket", "toll-house", "wall levy"],
-      link: ["River Gate", "the River Gate"],
+      link: ["River Gate"],
       unlock: "mw_river_gate_seen",
       body: [
         "The north-west gate in the landward wall: thirty feet of grey blocks, with the trunk road passing through a gatehouse of two round towers. The road beyond turns north along the river cuttings toward the fork where the Grey and the Ashrun meet, with carters' yards and cheap inns outside the wall. Traffic sorts itself into three lanes under the arch: foot to the left, wheels to the right, stamped goods through the center. Watch wardens and Council toll-clerks work the lanes in shifts at every hour."
@@ -1029,7 +1029,7 @@
       id: "charter_gate", category: "places", title: "The Charter Gate",
       sub: "The east gate in the landward wall",
       tags: ["Middle Ward"], aliases: ["charter gate", "east gate", "imperial road", "wicket", "pilgrim hospices"],
-      link: ["Charter Gate", "the Charter Gate"],
+      link: ["Charter Gate"],
       unlock: "mw_charter_gate_seen",
       body: [
         "The east gate in the landward wall: newer, higher and faced in pale limestone, with a single great arch, an iron grate in the gallery above and oak leaves hung from the towers. Carved across the arch: By the Old Charter. Keep the Road Clear. Beyond it the imperial road runs east toward the Meridian country, with pilgrim hospices and salt-factors' yards outside the wall.",
@@ -1041,7 +1041,7 @@
       id: "cathedral", category: "places", title: "The Cathedral",
       sub: "The Church of the True Sun's chief Valen seat",
       tags: ["Civic Heights", "Faith"], aliases: ["cathedral", "church", "Church of the True Sun", "True Sun", "kettles", "poor-box", "althea chapel", "side chapel"],
-      link: ["The Cathedral", "the cathedral"],
+      link: [],
       unlock: "cath_seen",
       body: function (s) {
         var out = [
@@ -1062,7 +1062,7 @@
       id: "port_watch_hq", category: "places", title: "The Port Watch Headquarters",
       sub: "The Watch's gatehouse and yard beside the Council Hall",
       tags: ["Civic Heights", "Law"], aliases: ["watch yard", "watch headquarters", "watch hq", "guardhouse", "notice board", "duty desk"],
-      link: ["Port Watch Headquarters", "the Watch yard", "Watch yard"],
+      link: ["Port Watch Headquarters"],
       unlock: "pw_seen",
       body: function (s) {
         var out = [
@@ -1107,7 +1107,7 @@
       id: "scales_head_house", category: "places", title: "The Gilded Scales Head House",
       sub: "The Scales' seat on Civic Heights",
       tags: ["Civic Heights", "Gilded Scales", "Trade"], aliases: ["head house", "scales head house", "counting floor", "deposits", "dispatch board", "bank"],
-      link: ["Gilded Scales Head House", "the head house", "head house"],
+      link: ["Gilded Scales Head House"],
       unlock: "ch_head_named",
       body: function (s) {
         var out = [
@@ -1213,7 +1213,7 @@
       id: "the_slasher", category: "lore", title: "The Slasher",
       sub: "The killer the city is afraid of",
       tags: ["Port Valen", "Law"], aliases: ["slasher", "the killings", "the murders", "killer"],
-      link: ["the Slasher", "Slasher"],
+      link: ["Slasher"],
       unlock: "slasher_hook_seen",
       body: function (s) {
         var out = [
@@ -1255,7 +1255,7 @@
       id: "militia_post", category: "places", title: "The Militia Post",
       sub: "Captain Trent's post on the Trunk Road",
       tags: ["Middle Ward", "Law"], aliases: ["militia post", "the post", "militia"],
-      link: ["the militia post", "militia post"],
+      link: [],
       unlock: "slasher_trent_met",
       body: function (s) {
         var out = [
@@ -1325,7 +1325,7 @@
       id: "pq_terrace_walk", category: "places", title: "The Terrace Walk",
       sub: "A promenade on the ridge",
       tags: ["Patrician Quarter"], aliases: ["terrace walk", "promenade", "the walk", "overlook", "lindens"],
-      link: ["Terrace Walk", "the Terrace Walk"],
+      link: ["Terrace Walk"],
       unlock: "pq_walk_seen",
       index: false,
       body: [
@@ -1396,7 +1396,7 @@
       id: "gilt_needle", category: "places", title: "The Gilt Needle",
       sub: "Tailor to the Quarter",
       tags: ["Patrician Quarter", "Trade"], aliases: ["tailor", "tailors shop", "fitting", "clothing"],
-      link: ["The Gilt Needle", "Gilt Needle"],
+      link: ["Gilt Needle"],
       unlock: "pq_tailor_seen",
       body: function (s) {
         var out = [
@@ -1435,7 +1435,7 @@
       id: "ink_and_lamp", category: "places", title: "The Ink & Lamp",
       sub: "Bookseller and licensed scrollwork",
       tags: ["Patrician Quarter", "Trade", "Magic"], aliases: ["bookshop", "bookseller", "scrolls", "maps", "books"],
-      link: ["The Ink & Lamp", "Ink & Lamp"],
+      link: ["Ink & Lamp"],
       unlock: "pq_ink_lamp_seen",
       body: [
         "A narrow bookshop near the Inner Gate, marked by a brass lamp above a window full of books. Road guides, tide tables, house histories, legal books, copied records, and older works fill its dark shelves. A press, ink pots, and folded maps cover the worktable behind the counter.",
@@ -1460,7 +1460,7 @@
       id: "bright_setting", category: "places", title: "The Bright Setting",
       sub: "Jeweler and appraiser to the Quarter",
       tags: ["Patrician Quarter", "Trade"], aliases: ["jeweler", "jewellery", "jewelry", "rings", "chains", "appraiser"],
-      link: ["The Bright Setting", "Bright Setting"],
+      link: ["Bright Setting"],
       unlock: "pq_bright_setting_seen",
       body: [
         "A small jeweler's shop near the Inner Gate, marked by a faceted-stone sign. Rings, brooches, chains, carved stones, and worked gold sit one piece to a card in felt-lined glass cases. A rear bench carries fine files, tongs, a charcoal brazier, a balance, and a black touchstone used to test metal.",
@@ -1506,7 +1506,7 @@
       id: "magistrates_court", category: "places", title: "The Magistrates' Court",
       sub: "The courtroom in the Council Hall's west wing",
       tags: ["Civic Heights", "Law"], aliases: ["court", "courts", "courtroom", "magistrates", "magistrate", "dock", "bench"],
-      link: ["Magistrates' Court", "the courts"],
+      link: ["Magistrates' Court"],
       unlock: "ch_court_seen",
       index: false,
       body: [

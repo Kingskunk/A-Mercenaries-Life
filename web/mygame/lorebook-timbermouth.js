@@ -25,9 +25,8 @@
           truthy(s.tm_works_seen) || truthy(s.tm_store_seen) || truthy(s.tm_hall_seen);
       },
       body: [
-        "A town of timber houses on a paved square, where the road from the river comes up out of the lowlands and meets three smaller roads, one from the forest and two from the farm country. It is a quarter of an hour on foot from one end to the other. A signboard at the mouth of the square gives its name.",
-        "The forest is the Longshade, and its ash is stacked in long ranks under open sheds, each end-grain stamped with a grade mark and a year. The town has no wall, only gateposts at the mouth of each road. The Ashrun, a stony stream no wider than a road, comes down out of the forest past the sawmill and turns its wheel. It is too shallow for anything but loose logs, which are driven down it in the spring melt on their way to the Grey River, so nothing else travels by water here; the wells and a spring-fed trough in the square serve the town.",
-        "The town works wood and moves it: a sawmill, and a lane of workshops that turn timber into wheels, barrels and doors. The Gilded Scales hold the town from the Factor's Hall, a stone building with their river-serpent banner over its door. The market is a broad trading ground of bays and wagons where goods are sold by the lot or the cartload: graded timber and the pieces made from it, grain, salt, iron, coal, hides and pottery, with farm stalls at its edge, and a general store beside its gate sells rope, lamp oil, hardware and food for the road. The Crossfield Road runs through Barleycross to Alderford, moving forest goods east and salt, ironwork, cured fish and cloth back toward the Longshade. The Split Pine inn keeps beds, a hall and a wagon yard."
+        "A road town of timber houses around a paved square, at the edge of the Longshade. Roads lead toward the river, the forest and the farm country, with only gateposts at their mouths.",
+        "The Ashrun turns the sawmill below the town, and ranks of graded ash stand beneath open sheds. Workshops, the Market, the Split Pine and the Gilded Scales' Timbermouth Factor's Hall all open from the square."
       ],
       see: ["gilded_scales", "split_pine", "workshops_lane", "marlows_store", "factors_hall_tm"]
     },
@@ -70,7 +69,7 @@
       unlock: "tm_inn_seen",
       body: function (s) {
         var out = [
-          "A broad-shouldered woman with a grey-shot braid and a weathered face, the old scars of rope burns pale along both forearms, who stands behind the plank counter with a ring of keys at her belt. She asks where a traveller is bound, and what they carry, before anything else, and tells them to say so first if they have a beast."
+          "A broad-shouldered woman with a grey-shot braid and a weathered face, the old scars of rope burns pale along both forearms, who stands behind the plank counter with a ring of keys at her belt. When you met her, she asked whether you needed a bed, food or room in the yard, and told you to mention an animal first."
         ];
         if (truthy(s.tm_inn_talk_brother)) {
           out.push("She and her brother Oswin drove freight along this road together for eleven years before they split it: he keeps the Wagoner's Rest at the Port Valen end, and she keeps the Split Pine at this one. She says her stew is the better.");
@@ -203,7 +202,7 @@
       id: "factors_hall_tm", category: "places", title: "Timbermouth Factor's Hall",
       sub: "The Gilded Scales' Timbermouth office",
       tags: ["Timbermouth", "Gilded Scales"], aliases: ["factor's hall", "Timbermouth's Factor's Hall", "town hall", "counting house", "insignia", "notice board"],
-      link: ["Factor's Hall", "Timbermouth Factor's Hall", "Timbermouth's Factor's Hall"],
+      link: ["Timbermouth Factor's Hall", "Timbermouth's Factor's Hall"],
       unlock: "tm_hall_seen",
       body: function (s) {
         var out = [
