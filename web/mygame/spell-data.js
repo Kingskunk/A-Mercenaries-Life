@@ -40,6 +40,7 @@
     { id: "true_strike",         name: "True Strike",         level: 0, schools: "Divination" },
     { id: "vicious_mockery",    name: "Vicious Mockery",    level: 0, schools: "Enchantment" },
     { id: "thaumaturgy",        name: "Thaumaturgy",        level: 0, schools: "Transmutation" },
+    { id: "control_flames",     name: "Control Flames",     level: 0, schools: "Transmutation" },
 
     // ── 1st-level spells ──
     { id: "alarm",              name: "Alarm",              level: 1, schools: "Abjuration" },

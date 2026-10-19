@@ -54,6 +54,9 @@ const RENAMES = {
   // second naming scheme. (These arrived as .DDS and were converted to .webp; see tools/dds2png.js
   // for the DDS path still used by the rest of the library.)
   prestidigitation: "Spell/Spell_Transmutation_Prestidigitation.webp",
+  // control_flames is the spell's own art (a hand cradling a flame). It arrived as an uncompressed 32-bit .DDS that tools/dds2png.js misreads (it takes the pixel-format SIZE field for the format flags and decodes it as YUV, which draws green
+  // stripes), so the .png beside it was written with the real flags (RGB | ALPHA at byte 80). Do not regenerate it with dds2png.js as it is.
+  control_flames: "Spell/Spell_Transmutation_ControlFlames.png",
   booming_blade: "Spell/Spell_Evocation_BoomingBlade.webp",
   unseen_servant: "Spell/Spell_Conjuration_UnseenServant.webp",
   // NOTE: the library has no Chill Touch art. Action_ChillingHand is a DIFFERENT spell (a 1st-level

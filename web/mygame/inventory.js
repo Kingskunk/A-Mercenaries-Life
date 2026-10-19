@@ -160,7 +160,7 @@
     timber_axe: "w_battleaxe", stiletto: "w_dagger", iron_crowbar: "tool", torvald_iron_sallet: "h_helm", torvald_hide_cap: "h_cap",
     brigandine: "a_brig", chain_jack: "a_chain", plate_harness: "a_plate", court_coat: "a_coat", shield: "shield", toll_seal_ring: "signet",
     warming_liniment: "salve", clear_head_draught: "elixir", althea_phial: "potion", grease_flask: "grease", alchemists_fire: "alch_fire", mortar_pestle: "mortar_pestle", linen_bandage: "bandage", lye_soap: "soap", trail_rations: "rations", barley_loaf: "barley_loaf", hard_farm_cheese: "hard_farm_cheese", orchard_apple: "orchard_apple", root_vegetable_bundle: "root_vegetable_bundle", farm_eggs: "farm_eggs", dried_pork_sausage: "dried_pork_sausage",
-    hemp_rope: "rope", pitch_torch: "torch", lamp_oil: "oil", hooded_lantern: "lantern", tool_kit: "toolkit", shovel: "shovel", cooking_pot: "cooking_pot", fire_arrow: "arrow_fire", ice_arrow: "arrow_ice", lute: "lute", tinderbox: "tinder", chalk_sticks: "chalk",
+    hemp_rope: "rope", pitch_torch: "torch", lamp_oil: "oil", hooded_lantern: "lantern", tool_kit: "toolkit", shovel: "shovel", cooking_pot: "cooking_pot", fire_arrow: "arrow_fire", ice_arrow: "arrow_ice", lute: "lute", tinderbox: "tinder", water_jug: "water_jug", chalk_sticks: "chalk",
     camp_kit: "blanket", waxed_oilcloth: "cloth", lockpick_set: "lockpicks", padlock: "key", door_bolt: "tool", iron_manacles: "tool",
     broadcloth_cloak: "cloak_traveler", storm_cape: "cloak_storm", winter_cloak: "cloak_winter", summer_duster: "cloak_duster", felt_hat: "h_hat", fur_cap: "h_cap",
     lined_gloves: "gloves_lined", scholar_gloves: "gloves_scholar", masters_gloves: "gloves_master", waxed_boots: "boots_rain", winter_boots: "boots_winter", dancing_slippers: "shoes_dancing",
@@ -271,6 +271,9 @@
    * tools/gear_catalog.json). A stack weighs weight x quantity. The starting kit (the class's armour, weapon and sidearm, and the four plain pieces of clothing) is always carried: it is
    * not an item in the bag, but "switch back to starting gear" is always offered, so it is always on you. Coins weigh by kind; the Letter of Credit is a bag item like any other.
    * Nothing is written to the game's state: this is only read, for the pack's display. */
+  // An item that holds something (the water jug): item.held = { var, extra, full, empty }. `var` is the count of its full copies, `extra` the pounds a full one adds to the item's own weight.
+  function heldFull(item, s) { return item.held ? Math.max(0, Number(s[item.held.var]) || 0) : 0; }
+  function heldWeight(item, fullCount) { return item.held ? (Number(item.held.extra) || 0) * fullCount : 0; }
   function loadOf(s) {
     var cfg = data().load;
     if (!cfg) return null;
@@ -278,7 +281,8 @@
     data().items.forEach(function (item) {
       var w = Number(item.weight) || 0;
       if (!w || !isOwned(item, s)) return;
-      gear += w * splitCount(evalField(item.name, s)).count;
+      var n = splitCount(evalField(item.name, s)).count;
+      gear += w * n + heldWeight(item, Math.min(n, heldFull(item, s)));
     });
     var st = cfg.starting || {};
     kit += (st.armor && st.armor[s.starting_armor]) || 0;
@@ -338,7 +342,7 @@
     data().items.forEach(function (item) {
       if (!item.stow) return;
       var q = stowedOf(cid, item.id, s);
-      if (q > 0) { total += (Number(item.weight) || 0) * q; entries.push({ item: item, qty: q }); }
+      if (q > 0) { total += (Number(item.weight) || 0) * q + heldWeight(item, Math.min(q, stowedOf(cid, item.held ? item.held.var : "", s))); entries.push({ item: item, qty: q }); }
     });
     var cap = c.capacity || 0, note = c.note || "";
     if (c.rider) { var body = bodyWeight(s); cap = Math.max(0, cap - body); note += " You weigh " + fmtLoad(body) + " of its " + fmtLoad(c.capacity) + " pounds, so " + fmtLoad(cap) + " are left for cargo."; }
@@ -356,6 +360,12 @@
     var free = haveOf(item, s) - (isWornId(id, s) ? 1 : 0);
     if (free <= 0) return { n: 0, why: haveOf(item, s) > 0 ? "You are using it: take it off first." : "You have none." };
     var w = Number(item.weight) || 0, st = containerOf(cid, s), byWeight = w > 0 ? Math.floor((st.capacity - st.total) / w + 1e-9) : free;
+    if (item.held) {
+      // the empty ones go first and the full ones after, so the weight of k units is k x w plus the extra for every full one among them
+      var all = haveOf(item, s), full = Math.min(all, heldFull(item, s)), empties = all - full, extra = Number(item.held.extra) || 0, space = st.capacity - st.total, k = 0;
+      while (k < free && (k + 1) * w + Math.max(0, k + 1 - empties) * extra <= space + 1e-9) k++;
+      byWeight = k;
+    }
     if (byWeight <= 0) return { n: 0, why: st.name + (/s$/.test(st.name) ? " are full." : " is full.") };
     return { n: Math.min(free, byWeight), why: "" };
   }
@@ -363,10 +373,12 @@
     var s = statsNow(), item = stowItem(id), room = stowRoom(cid, id, s);
     n = Math.min(Math.max(0, Math.floor(Number(n) || 0)), room.n);
     if (!item || n <= 0) return { moved: 0, why: room.why };
-    var spare = item.stack ? (Number(s["spare_" + id]) || 0) : 0, fromSpare = Math.min(n, spare), rest = n - fromSpare;
+    var spare = item.stack ? (Number(s["spare_" + id]) || 0) : 0, fromSpare = Math.min(n, spare), rest = n - fromSpare, all = haveOf(item, s), packFull = Math.min(all, heldFull(item, s));
     if (fromSpare) s["spare_" + id] = spare - fromSpare;
     if (rest) s["has_" + id] = false;   // only the one base copy is left to take, and stowRoom has already ruled out the worn one
     s["stow_" + cid + "_" + id] = stowedOf(cid, id, s) + n;
+    // the water jug: the empty ones go in first, so only what is beyond them is a full one that goes into the container
+    if (item.held) { var keepFull = Math.min(packFull, all - n); s[item.held.var] = keepFull; s["stow_" + cid + "_" + item.held.var] = stowedOf(cid, item.held.var, s) + (packFull - keepFull); }
     return { moved: n, why: "" };
   }
   function takeUnits(cid, id, n) {
@@ -374,10 +386,12 @@
     if (!item || why) return { moved: 0, why: why || "That is not in there." };
     n = Math.min(Math.max(0, Math.floor(Number(n) || 0)), have);
     if (n <= 0) return { moved: 0, why: "" };
-    var left = n;
+    var left = n, packAll = haveOf(item, s), packFull = Math.min(packAll, heldFull(item, s)), stowedFull = Math.min(have, stowedOf(cid, item.held ? item.held.var : "", s));
     if (!truthyS(s["has_" + id])) { s["has_" + id] = true; left -= 1; }
     if (left > 0 && item.stack) s["spare_" + id] = (Number(s["spare_" + id]) || 0) + left;
     s["stow_" + cid + "_" + id] = have - n;
+    // the water jug: the empty ones come out first, and the full ones stay full
+    if (item.held) { var fullsBack = Math.max(0, n - (have - stowedFull)); s[item.held.var] = packFull + fullsBack; s["stow_" + cid + "_" + item.held.var] = stowedFull - fullsBack; }
     return { moved: n, why: "" };
   }
   INV.containerOf = containerOf; INV.visibleContainers = visibleContainers; INV.stowRoom = stowRoom; INV.stowUnits = stowUnits; INV.takeUnits = takeUnits; INV.containerBlock = containerBlock;
@@ -480,6 +494,7 @@
     if (!item || q <= 0 || !c) return null;
     var r = resolve(item, s), base = splitCount(r.name).name;
     r.name = base + (q > 1 ? " ×" + q : ""); r.badge = "In the " + c.name.toLowerCase(); r.equip = null; r.use = false; r.category = "container";
+    if (item.held) { var f = Math.min(q, stowedOf(cid, item.held.var, s)); r.traits = q === 1 ? (f ? item.held.full : item.held.empty).replace(/^./, function (m) { return m.toUpperCase(); }) : q + " jugs: " + f + " " + item.held.full + ", " + (q - f) + " " + item.held.empty; }
     return r;
   }
   function findOwned(id) {

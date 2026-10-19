@@ -88,7 +88,17 @@
 *label apply_outgoing_damage_resist_vuln
 *set combat_outgoing_dmg_suffix ""
 *temp aodrv_resisted (((combat_player_dmg_type = combat_enemy_resist_type_1) and (not(combat_enemy_resist_type_1 = ""))) or ((combat_player_dmg_type = combat_enemy_resist_type_2) and (not(combat_enemy_resist_type_2 = ""))))
+*comment WET (the user, 2026-10-19): a soaked target resists fire and is vulnerable to cold and lightning, on top of whatever it already has; resistance and vulnerability on the same type still cancel.
+*temp aodrv_wet 0
+*if (combat_active_target > 0)
+  *set aodrv_wet {(("combat_enemy" & combat_active_target) & "_wet")}
+*if (aodrv_wet > 0)
+  *if (combat_player_dmg_type = "fire")
+    *set aodrv_resisted true
 *temp aodrv_vulnerable (((combat_player_dmg_type = combat_enemy_vulnerable_type_1) and (not(combat_enemy_vulnerable_type_1 = ""))) or ((combat_player_dmg_type = combat_enemy_vulnerable_type_2) and (not(combat_enemy_vulnerable_type_2 = ""))))
+*if (aodrv_wet > 0)
+  *if ((combat_player_dmg_type = "cold") or (combat_player_dmg_type = "lightning"))
+    *set aodrv_vulnerable true
 *if ((aodrv_resisted) and (aodrv_vulnerable))
   *comment Cancel out -- normal damage, no banner tag.
 *elseif (aodrv_resisted)
@@ -143,7 +153,16 @@
 *set combat_packet_damage aodp_amount
 *set combat_packet_suffix ""
 *temp aodp_resisted (((aodp_type = combat_enemy_resist_type_1) and (not(combat_enemy_resist_type_1 = ""))) or ((aodp_type = combat_enemy_resist_type_2) and (not(combat_enemy_resist_type_2 = ""))))
+*temp aodp_wet 0
+*if (combat_active_target > 0)
+  *set aodp_wet {(("combat_enemy" & combat_active_target) & "_wet")}
+*if (aodp_wet > 0)
+  *if (aodp_type = "fire")
+    *set aodp_resisted true
 *temp aodp_vulnerable (((aodp_type = combat_enemy_vulnerable_type_1) and (not(combat_enemy_vulnerable_type_1 = ""))) or ((aodp_type = combat_enemy_vulnerable_type_2) and (not(combat_enemy_vulnerable_type_2 = ""))))
+*if (aodp_wet > 0)
+  *if ((aodp_type = "cold") or (aodp_type = "lightning"))
+    *set aodp_vulnerable true
 *if ((aodp_resisted) and (aodp_vulnerable))
   *comment Same type both resisted and vulnerable: normal damage.
 *elseif (aodp_resisted)

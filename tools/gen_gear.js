@@ -99,7 +99,7 @@ function genCreates() {
   var buys = tradeIds("buy"), sells = tradeIds("sell");
   var L = items.filter(makesFlag).map(function (it) { return "*create " + flag(it) + " false"; });
   items.forEach(function (it) { if (stackable(it)) L.push("*create spare_" + it.id + " 0"); });
-  (CATALOG.containers || []).forEach(function (ct) { listed().forEach(function (it) { L.push("*create stow_" + ct.id + "_" + it.id + " 0"); }); });   // what is in each container (web/mygame/inventory.js)
+  (CATALOG.containers || []).forEach(function (ct) { listed().forEach(function (it) { L.push("*create stow_" + ct.id + "_" + it.id + " 0"); if (it.holds) L.push("*create stow_" + ct.id + "_" + it.holds.var + " 0"); }); });   // what is in each container (web/mygame/inventory.js)
   items.forEach(function (it) { if (buys[it.id]) L.push("*create cart_buy_" + it.id + " 0"); });
   items.forEach(function (it) { if (sells[it.id]) L.push("*create cart_sell_" + it.id + " 0"); });
   return L;
@@ -302,6 +302,7 @@ function ringWornExpr(it, prefix) {
   prefix = prefix || "";
   return "((" + prefix + "equipped_ring1_id = " + q(it.id) + ") or (" + prefix + "equipped_ring2_id = " + q(it.id) + "))";
 }
+function capFirst(x) { return x.charAt(0).toUpperCase() + x.slice(1); }
 function listed() { return items.filter(function (it) { return it.dossier && !isHand(it); }); }
 
 function genDossierList() {
@@ -405,6 +406,12 @@ function genInventory() {
     L.push('  id: ' + q(it.id) + ', category: ' + q(cat) + ', owned: ' + q(flag(it)) + ',' + (slotLabel(it) ? ' slot: ' + q(slotLabel(it)) + ',' : ''));
     if (typeof it.weight !== "number") throw new Error("item '" + it.id + "' has no weight (a number of pounds, 0.05 and up)");
     L.push('  weight: ' + it.weight + ', stow: true, stack: ' + (stackable(it) ? "true" : "false") + ',');
+    if (it.holds) {
+      // HOLDS (2026-10-19, the user's water jug): ONE item whose copies are each empty or full. holds.var is the count of full ones (never above the copies owned), holds.extra the pounds a full one adds to its own weight; the hover line says how many of each
+      // (a stowed stack reads its own count, stow_<container>_<var>). inventory.js reads `held` for the load, the containers and the hover.
+      L.push('  held: { var: ' + q(it.holds.var) + ', extra: ' + it.holds.extra + ', full: ' + q(it.holds.full) + ', empty: ' + q(it.holds.empty) + ' },');
+      L.push('  traits: function (s) { var n = 1 + (Number(s.spare_' + it.id + ') || 0), f = Math.max(0, Math.min(n, Number(s.' + it.holds.var + ') || 0)); return n === 1 ? (f ? ' + q(capFirst(it.holds.full)) + ' : ' + q(capFirst(it.holds.empty)) + ') : n + " jugs: " + f + " " + ' + q(it.holds.full) + ' + ", " + (n - f) + " ' + it.holds.empty + '"; },');
+    }
     if (stackable(it)) {
       var wearTag = it.wear ? ' + (function () { var w = Number(s.' + it.wear.var + ') || 0; return ' + it.wear.tiers.map(function (t) { return 'w >= ' + t[0] + ' ? " (' + t[1] + ')" : '; }).reverse().join('') + '""; })()' : '';
       L.push('  name: function (s) { var n = 1 + (Number(s.spare_' + it.id + ') || 0); return ' + q(it.title) + wearTag + ' + (n > 1 ? " ×" + n : ""); },');

@@ -115,6 +115,7 @@
 *create known_shocking_grasp false
 *create known_vicious_mockery false
 *create known_thaumaturgy false
+*create known_control_flames false
 *create known_alarm false
 *create known_arms_of_hadar false
 *create known_hellish_rebuke false
@@ -4814,7 +4815,26 @@
 *comment callers. See Fire Bolt's own comment (combat.txt) for the fight_pick_target-rerun bug this caught.
 *create combat_cantrip_choice_locked false
 *create locked_combat_cantrip_choice_page_id 0
-
+*comment CONTROL FLAMES IN THE DARK (2026-10-19, the user): a caster who knows Control Flames can coax a torch that is about to go out on for three more steps, once per torch. dg_torch_fed: this torch has been fed (cleared when a torch is lit). dg_torch_fed_now: this step did it (the status line says so).
+*create dg_torch_fed false
+*create dg_torch_fed_now false
+*comment CONTROL FLAMES IN A FIGHT (2026-10-19, the user): "Spread the flames" costs the action. Every enemy standing on the same lane tile (combat_enemyN_position) as a burning enemy catches the same burning (the same number of turns left); an enemy on another tile does not.
+*comment combat_spread_n: how many enemies would newly catch fire (the scan) or did (the cast); combat_spread_epithet: the first burning enemy's epithet, for the prose. Both are written inside the cantrip's replay lock.
+*create combat_spread_n 0
+*create combat_spread_epithet ""
+*comment combat_spread_done_n and combat_spread_done_epithet: what the cast spread, copied inside the replay lock so the prose reads the same on a refresh (the scan that gates the option runs again before the page and finds nothing left to spread).
+*create combat_spread_done_n 0
+*create combat_spread_done_epithet ""
+*comment WET (2026-10-19, the user's design, the water jug thrown in a fight): per enemy slot, how many of its own turns the soaking still has (0 = dry; a thrown jug of water sets 3). A Wet enemy cannot catch fire (Alchemist's Fire, a Fire Arrow and Control Flames' spread leave it unlit), takes half damage from fire (resistance) and double from cold and lightning (vulnerability); both are read in combat_dice.txt from this counter, on top of whatever resistance the enemy already has. An enemy that is already burning cannot be soaked. It runs down one at the end of each of that enemy's turns (combat.txt cnt_boom_tail), beside Slowed.
+*create combat_enemy0_wet 0
+*create combat_enemy1_wet 0
+*create combat_enemy2_wet 0
+*create combat_enemy3_wet 0
+*create combat_enemy4_wet 0
+*create combat_enemy5_wet 0
+*create combat_enemy6_wet 0
+*comment combat_throw_wet: what the water jug's throw did, kept inside the replay lock for the report: "soaked" (the enemy is Wet now), "steam" (it was burning, so it stayed dry) or "" (a miss).
+*create combat_throw_wet ""
 *comment --- REPLAY LOCKS & SUBROUTINE PARAMETERS ---
 *create currency_txn_locked false
 *create locked_currency_txn_page_id 0
@@ -5040,6 +5060,7 @@
 *create has_shovel false
 *create has_lute false
 *create has_tinderbox false
+*create has_water_jug false
 *create has_cooking_pot false
 *create has_chalk_sticks false
 *create has_camp_kit false
@@ -5126,6 +5147,7 @@
 *create spare_shovel 0
 *create spare_lute 0
 *create spare_tinderbox 0
+*create spare_water_jug 0
 *create spare_cooking_pot 0
 *create spare_chalk_sticks 0
 *create spare_camp_kit 0
@@ -5201,6 +5223,8 @@
 *create stow_saddlebags_shovel 0
 *create stow_saddlebags_lute 0
 *create stow_saddlebags_tinderbox 0
+*create stow_saddlebags_water_jug 0
+*create stow_saddlebags_jug_full 0
 *create stow_saddlebags_cooking_pot 0
 *create stow_saddlebags_chalk_sticks 0
 *create stow_saddlebags_camp_kit 0
@@ -5281,6 +5305,7 @@
 *create cart_buy_shovel 0
 *create cart_buy_lute 0
 *create cart_buy_tinderbox 0
+*create cart_buy_water_jug 0
 *create cart_buy_cooking_pot 0
 *create cart_buy_chalk_sticks 0
 *create cart_buy_camp_kit 0
@@ -5356,6 +5381,7 @@
 *create cart_sell_shovel 0
 *create cart_sell_lute 0
 *create cart_sell_tinderbox 0
+*create cart_sell_water_jug 0
 *create cart_sell_cooking_pot 0
 *create cart_sell_chalk_sticks 0
 *create cart_sell_camp_kit 0
@@ -5707,6 +5733,16 @@
 *comment THE HAZEL CLEARING (Longshade Room 7, 2026-10-19, the user's design): a plain dead end until Bark's quest is taken (lsf_bark_accepted). The first time the player arrives afterwards the growth on the north side draws apart (lsf_r7_show_open is decided inside the page lock so a refresh prints the same page); lsf_r7_opened is kept for good. The way to Room 9 is a hidden map edge that reads lsf_bark_accepted, and the watchtower's view does not mark Room 9 or anything past Room 7.
 *create lsf_r7_opened false
 *create lsf_r7_show_open false
+*comment THE CLEAR POOL (Longshade Room 9, 2026-10-19, chunk 2 of Bark's quest): a pool that looks clean and is poisoned until Dubhar is dead (lsf_corruption_cleared, set in a later chunk). The ways of telling (each once, kept): lsf_pool_looked (a close look), lsf_pool_smelled (Medicine), lsf_pool_magic (Detect Magic), lsf_pool_animals (Speak with Animals); any one sets lsf_corruption_found. A miss is one try per refill (dg_lsf_pool_look_tried, dg_lsf_pool_smell_tried, cleared by lsf_respawn). Drinking it gives the timed effect "Clouded Mind" (-5 Wisdom, three days); lsf_fog_was is decided inside the page lock when a clean pool washes it away.
+*create lsf_pool_looked false
+*create lsf_pool_smelled false
+*create lsf_pool_magic false
+*create lsf_pool_animals false
+*create dg_lsf_pool_look_tried false
+*create dg_lsf_pool_smell_tried false
+*create lsf_fog_was false
+*comment lsf_env_quiet: set by a place that wants the sky layer only, no animal vignette (the poisoned pool); lsf_env clears it.
+*create lsf_env_quiet false
 *comment THE OVERDUE PEDDLER (2026-10-18, the user's outline; see overdue_peddler.txt): Merel Pellam of Barleycross wants to know what happened to her husband Aldis, a plant gatherer who went into the Longshade with two hired guards and never came out. peddler_stage is "none" (not taken), "active" (taken on a job board with the Hall insignia), "resolved" (the news given and paid, which counts toward the level-2 pool).
 *create peddler_stage "none"
 *comment pd_origin: which board the posting was read on ("tm" the Timbermouth Factor's Hall board, "fv" the Barleycross notice post), so taking it or stepping back returns the player there.
@@ -5759,6 +5795,15 @@
 *create amb_repeat false
 *create amb_pay 3
 *create amb_season_now 0
+*comment THE WATER JUG (2026-10-19, the user's design): the jug (catalog id water_jug, Hollis, 5 copper) holds about a gallon. It is ONE item: has_water_jug and spare_water_jug count the jugs, jug_full counts how many of them are full (never more than the jugs carried; equipment.txt jug_trim keeps it so after a sale). An empty jug weighs 1 pound and a full one 8. A full one is made at open water (equipment.txt water_at_hand: a camp beside a stream, the Hidden Spring, the cleaned Clear Pool) with jug_fill. Stowing and selling take the empty ones first.
+*create jug_full 0
+*comment jug_fill_n: how many jugs the last fill filled; jug_fill_v: which line of prose it used. Both are written inside the page lock so a refresh prints the same page.
+*create jug_fill_n 0
+*create jug_fill_v 1
+*comment jug_empty_n: the output of equipment.txt jug_empties.
+*create jug_empty_n 0
+*comment ow_water_name: the phrase for the tile's fresh water ("the river", "a forest spring"), set by overworld.txt ow_here beside ow_water; the camp's fill-your-jugs option prints it.
+*create ow_water_name ""
 *comment --- GAME SETTINGS ---
 *comment The real first choice of the game, reached the instant the *create preamble above finishes. Everything
 *comment past this point -- the actual "Begin Campaign" vs. "Developer" fork, the 8 character presets, the combat

@@ -359,8 +359,8 @@ How I read your answers, and the order I will build in. Tell me if I read anythi
 
 **The chunks**
 1. **Room 7 and the sealed path.** *(built 2026-10-19)*
-2. **Room 9 (the pool) and Trail 27.** The show-not-tell prose, the ways to tell the water is wrong, drinking, the timed -5 Wisdom.
-3. **Control Flames.** The cantrip in the spell list and the three classes, its uses at camp, with torches and in a fight; check the Light cantrip in the dungeons.
+2. **Room 9 (the pool) and Trail 27.** The show-not-tell prose, the ways to tell the water is wrong, drinking, the timed -5 Wisdom. *(built 2026-10-19)*
+3. **Control Flames.** The cantrip in the spell list and the three classes, its uses at camp, with torches and in a fight; check the Light cantrip in the dungeons. *(built 2026-10-19)*
 4. **Room 15, arrival.** The dryad, the burning tree routes, the sprite war's HP penalty, and the clock.
 5. **Dubhar and the Twig Blights.** The fight, and what the dryad and the bear take out of it.
 6. **After the mage.** Stopping the sprites, the mercy choice, the clean water, and Bark's fruits.
@@ -369,3 +369,33 @@ How I read your answers, and the order I will build in. Tell me if I read anythi
 ### Chunk 1 built (2026-10-19)
 
 Room 7 is **The Hazel Clearing** (a plain name for the map). Before Bark's quest it is a clearing of hazel and bramble with squirrels and a wren, a wall of old trunks bound with vines on the north side, and nothing else: no checks and no hints. After the quest is taken, the first time you arrive the vines slide off each other, the thorns lean aside and two roots rise and arch apart, leaving a gap (dark version by sound and touch). Afterwards the gap is simply there. The map edge to Room 9 is hidden until the quest is taken, and the watchtower no longer marks Room 9.
+
+### Chunk 2 built (2026-10-19)
+
+**Room 9, The Clear Pool.** Rewritten to show an empty place: a pool so clear every pebble shows, a ring of bare earth where the grass stops a stride back, grey drifts of dead leaves, a handful of minnows belly-up in the shallows, and your own breathing as the loudest sound. In the dark it is by touch and sound (a stiff fish at the waterline). The shared forest ambience (birds, scrabbling) is switched off here so nothing lives in the sky layer either. The roots' warning is **not** in (it was ambiguous in your notes, and Bark has already told the player the water is bad); say if you want it.
+
+**Ways to tell the water is wrong** (each once and kept; a miss is one try per refill; any one sets `lsf_corruption_found`): a close look (Nature or Survival DC 11, lit only; it finds a line of deer prints that stop a stride short of the water and turn back, and a drowned fly and moth), breathing it in (Medicine DC 12, by smell only, harmless on a miss), Detect Magic (a sick green shimmer that grows stronger up the stream, north), and Speak with Animals (a vole: "Water bad. Water takes the thinking. Don't."). After a close look the deer prints stay in the room's prose.
+
+**Drinking:** gives the timed effect **Clouded Mind, -5 Wisdom for three days** (a negative bonus in the same unique-effect slots as Ambrose's boons; drinking again only renews the clock; if the player already knows the water is wrong, one extra line, "You know what is in it. You kneel at the rim and drink anyway."). Once `lsf_corruption_cleared` is set (a later chunk) the pool is plain clean water: reeds, a water-strider, green on the stones, and drinking it just washes Clouded Mind away if the player has it. No Hidden Spring effect. The jug system will make this a place to fill water, later.
+
+**Trail 27, The Stream Path.** The stream beside the trail, bare banks and grey moss, a few pale fish on the stones, bitter smoke, and a high ringing like a hundred tiny bells.
+
+**Sidebar:** a negative effect now reads as an **Affliction** (a boon still reads Boon), with its sign (-5 WIS), a red tag on the ability score, and a long effect in hours or days ("3d left") instead of 4320 minutes.
+
+### Chunk 3 built (2026-10-19)
+
+**The cantrip.** Control Flames is a Transmutation cantrip for **Wizard, Bard and Warlock**, picked like the others at character creation (the Wizard's three slots, the Bard's two, the Warlock's two; each class has its own wording), with its own spell icon (the library's own hand-and-flame art; the file was a DDS that the converter tool misread, so I decoded it with the real header and saved a PNG beside it). It has a spell-card description and a dossier card.
+
+**What it does** (all your rulings):
+* **In a fight:** "Spread the flames" costs the action. If any enemy is burning, **every other living enemy on the same lane tile** catches the same burning, with the same turns left. Enemies on another tile do not (your example: the archer at Long range does not catch while the three at Mid-Range do; tested with beasts, which cannot douse the fire themselves). The option appears only when there is someone to spread to.
+* **At camp:** with a fire already lit (a tinderbox, Fire Bolt, Prestidigitation or a shared fire; it cannot start one), the cold part of the night's exposure is **cut by two-thirds instead of half** (checked: 96 extra minutes banked, 144 with a plain fire, 288 with none, in snow), and the camp and sleep prose say the fire is banked.
+* **With a torch:** a torch that is about to go out is **coaxed on for three more steps, once per torch**, automatically, with a line on the light banner (it resets when a new torch is lit; a lantern is not fed).
+* **The burning tree** (chunk 4) will use it outright.
+
+**Light (your ruling):** a character who knows the **Light cantrip is simply not affected by darkness in the dungeons**: no torch is needed, nothing burns, and the banner reads "Your Light cantrip: no torch needed". This covers both dungeons.
+
+Not built: "snuff the flames" on yourself (the player cannot burn yet).
+
+### The water jug and Wet built (2026-10-19, before chunk 4)
+
+**The jug** is one item that is empty or full (about a gallon, 1 pound empty, 8 full), 5 copper at Hollis, Marlow's and the Alderford market, filled at open water (a camp beside a stream, the Hidden Spring, and the Clear Pool once the poison is gone). **In a fight** a full jug is thrown from the Throw button: a Dexterity attack against AC, no damage, a hit leaves a foe **Wet** for 3 turns (cannot catch fire, resists fire, double cold and lightning damage; a burning foe cannot be soaked). The 20-gallon route to the burning tree (Fighter or Barbarian carrying 20 jugs, 160 pounds) comes with chunk 4. No thirst clock.

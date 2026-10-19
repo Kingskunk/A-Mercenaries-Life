@@ -1033,6 +1033,30 @@ window.TRADE_DATA = {
     "countVar": ""
    }
   },
+  "water_jug": {
+   "name": "water jug",
+   "title": "Water Jug",
+   "kind": "tool",
+   "group": "",
+   "tier": "",
+   "retail": 5,
+   "weight": 1,
+   "minutes": 5,
+   "hint": "",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "countVar": ""
+   }
+  },
   "lockpick_set": {
    "name": "lockpick set",
    "title": "Lockpick Set",
@@ -2474,7 +2498,8 @@ window.TRADE_DATA = {
     "waxed_oilcloth",
     "lye_soap",
     "trail_rations",
-    "grease_flask"
+    "grease_flask",
+    "water_jug"
    ],
    "sell": [
     "hemp_rope",
@@ -2491,7 +2516,8 @@ window.TRADE_DATA = {
     "waxed_oilcloth",
     "lye_soap",
     "trail_rations",
-    "grease_flask"
+    "grease_flask",
+    "water_jug"
    ]
   },
   "vael": {
@@ -2668,6 +2694,7 @@ window.TRADE_DATA = {
     "shovel",
     "lute",
     "tinderbox",
+    "water_jug",
     "cooking_pot",
     "chalk_sticks",
     "camp_kit",
@@ -2684,6 +2711,7 @@ window.TRADE_DATA = {
     "shovel",
     "lute",
     "tinderbox",
+    "water_jug",
     "cooking_pot",
     "chalk_sticks",
     "camp_kit",
@@ -2704,6 +2732,7 @@ window.TRADE_DATA = {
     "shovel",
     "lute",
     "tinderbox",
+    "water_jug",
     "cooking_pot",
     "chalk_sticks",
     "camp_kit",
@@ -2720,6 +2749,7 @@ window.TRADE_DATA = {
     "shovel",
     "lute",
     "tinderbox",
+    "water_jug",
     "cooking_pot",
     "chalk_sticks",
     "camp_kit",

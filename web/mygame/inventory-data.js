@@ -364,6 +364,14 @@
       description: "Dented tin box with a striker, flint and dry char-cloth."
     },
     {
+      id: "water_jug", category: "provisions", owned: "has_water_jug",
+      weight: 1, stow: true, stack: true,
+      held: { var: "jug_full", extra: 7, full: "full of water", empty: "empty" },
+      traits: function (s) { var n = 1 + (Number(s.spare_water_jug) || 0), f = Math.max(0, Math.min(n, Number(s.jug_full) || 0)); return n === 1 ? (f ? "Full of water" : "Empty") : n + " jugs: " + f + " " + "full of water" + ", " + (n - f) + " empty"; },
+      name: function (s) { var n = 1 + (Number(s.spare_water_jug) || 0); return "Water Jug" + (n > 1 ? " ×" + n : ""); },
+      description: "Glazed clay jug with a corked neck and a leather-wrapped grip."
+    },
+    {
       id: "cooking_pot", category: "provisions", owned: "has_cooking_pot",
       weight: 4, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_cooking_pot) || 0); return "Iron Cooking Pot" + (n > 1 ? " ×" + n : ""); },

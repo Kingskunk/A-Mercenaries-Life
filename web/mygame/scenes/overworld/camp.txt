@@ -38,6 +38,13 @@
 *temp cp_train_ok false
 *if (((not(cp_done)) and (training_can_train)) and ((not(cp_dark)) and (weather_severity < 3)))
   *set cp_train_ok true
+*temp cp_jug 0
+*if (has_water_jug)
+  *gosub_scene equipment jug_empties
+  *set cp_jug 1
+  *if (jug_empty_n > 0)
+    *set cp_jug 2
+*gosub_scene equipment water_at_hand
 *temp cp_fire false
 *if (((has_tinderbox) or (known_fire_bolt)) or (known_prestidigitation))
   *set cp_fire true
@@ -48,6 +55,8 @@
 You have made camp in the best patch of ground you could find.
 *if (cp_fire)
   A small fire burns at the center of the camp.
+  *if (known_control_flames)
+    A word and a lowered hand banks it to a steady, even glow that will last the night.
 *else
   You have no way to light a fire, and the camp is cold.
 *if (has_camp_kit)
@@ -83,6 +92,15 @@ You have made camp in the best patch of ground you could find.
   *if ((has_camp_kit) and (camp_kit_wear >= 8))
     # Mend the camp kit. [~1 Hour]@{show_stat_hints  [Survival or Sleight of Hand DC 12]|}
       *goto camp_kit_mend
+  *if ((cp_jug = 2) and (water_ok))
+    # Fill your water jugs at ${ow_water_name}. [~5 min]
+      *goto camp_fill_jugs
+  *if ((cp_jug >= 1) and (not(water_ok)))
+    # Fill your water jugs: there is no water near this camp.
+      *goto camp_fill_closed
+  *if (((cp_jug = 1) and (water_ok)))
+    # Fill your water jugs: they are all full.
+      *goto camp_fill_closed
   *if (cp_train_ok)
     # Train on your own. [~${training_hours} Hours]
       *goto camp_train
@@ -189,6 +207,47 @@ You spread the camp kit out on the ground and go over it a seam at a time with t
 *set hours_to_pass 1
 *set minutes_to_pass 0
 *set time_advance_call_id "camp_kit_mend_1"
+*gosub_scene calendar advance_time
+*gosub camp_after_time
+*page_break Back to the fire…
+*goto camp_hub
+
+*comment ── Fill your water jugs (2026-10-19, the user's water jug). Offered while a jug is empty and the tile has fresh water (water_at_hand); five minutes at the water, with the camp's weather and fire in the exposure like any other camp action. The fill itself is one
+*comment lock (jug_fill sets jug_full to the jugs carried, and the count and the prose line are kept in it), so a refresh prints the same page. ──
+*label camp_fill_closed
+*gosub_scene equipment jug_empties
+[b]◈ CAMP[/b]
+*line_break
+*if (not(water_ok))
+  There is no stream or spring near this camp to fill a jug from. You will have to find water along the road.
+*else
+  Every jug you carry is already full, and the corks sit snug in their necks.
+*page_break Back to the fire…
+*goto camp_hub
+
+*label camp_fill_jugs
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *gosub_scene equipment jug_fill
+  *rand jug_fill_v 1 3
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+[b]◈ CAMP[/b]
+*line_break
+*if (jug_fill_v = 1)
+  You walk down to ${ow_water_name} with the jugs knocking together at your hip, pull the corks, and hold each one under until the bubbles stop. The water is cold and clear.
+*if (jug_fill_v = 2)
+  You kneel at the edge of ${ow_water_name} and fill the jugs one at a time, tilting each against the current, then press the corks home with the heel of your hand.
+*if (jug_fill_v = 3)
+  You rinse each jug once and let it drink, watching the surface rise to the neck. The cork goes back in with a squeak, and you wipe your hands dry on your thigh.
+*line_break
+[b][💧 Water Jugs: @{(jug_fill_n = 1) 1 jug|${jug_fill_n} jugs} filled | ${jug_full} full | ${clock_time}][/b]
+*set exposure_base_mins 5
+*set exposure_camping true
+*gosub_scene calendar calc_exposure
+*set exposure_camping false
+*set hours_to_pass 0
+*set minutes_to_pass 5
+*set time_advance_call_id "camp_fill_jugs_1"
 *gosub_scene calendar advance_time
 *gosub camp_after_time
 *page_break Back to the fire…

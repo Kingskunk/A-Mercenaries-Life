@@ -31,7 +31,7 @@
 *set ow_camp_fire_shared false
 *set current_district "overworld"
 *comment The tile's climate shifts the temperature (calendar.txt reads climate_shift), and its water is what the lye soap needs. Set before update_hub_condition so the weather flags use them.
-*script var n = window.Overworld.nodes[stats.ow_pos]; stats.climate_shift = n.climate || 0; stats.ow_water = !!n.water;
+*script var n = window.Overworld.nodes[stats.ow_pos]; stats.climate_shift = n.climate || 0; stats.ow_water = !!n.water; stats.ow_water_name = n.water || "";
 *gosub_scene calendar update_hub_condition
 *script var o = window.Overworld; var k = o.nodes[stats.ow_pos].kind; stats.ow_name = o.nodes[stats.ow_pos].name; var n = o.nodes[stats.ow_pos]; var dark = (stats.time_period === "Night" || stats.time_period === "Pre-Dawn"); var storm = Number(stats.weather_severity) >= 3; stats.ow_here_text = (storm && n.hereStorm) ? n.hereStorm : ((dark && n.hereNight) ? n.hereNight : n.here); stats.ow_can_camp = (k !== "city" && k !== "town" && k !== "village" && k !== "fort"); var nowm = Number(stats.clock_hour) * 60 + Number(stats.clock_minute); var toDawn = (1800 - nowm) % 1440; stats.ow_dawn_ok = (toDawn >= 360 && toDawn <= 720); stats.ow_dawn_hours = Math.round(toDawn / 60);
 *comment What the weather and the gear add to hunger and fatigue right now, as a percent, for the map card (base 100 minutes, so the extra minutes ARE the percent). Plain sets: a replay is harmless.
@@ -331,6 +331,8 @@ You make camp for the night.
   A flick of your fingers sets a flame to the kindling, and you sleep with your back to the small fire.
 *else
   You have no way to light a fire, so you sleep without one.
+*if ((known_control_flames) and ((te_company = "guest") or ((has_tinderbox) or ((known_fire_bolt) or (known_prestidigitation)))))
+  Before you lie down you lower a hand to the fire and bank it to a steady, even glow that will last until morning.
 *if (te_company = "host")
   ${te_first} is gone before you wake, and has left the wood stacked beside the ashes.
 *if ((ow_camp_wet) and (has_waxed_oilcloth))

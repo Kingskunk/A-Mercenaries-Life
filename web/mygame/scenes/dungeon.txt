@@ -443,7 +443,8 @@
 *if (dg_in_run)
   *comment sees_in_dark also depends on the worn rings, which the inventory panel changes without running any ChoiceScript, so it is recomputed here.
   *gosub_scene character_progression refresh_invocations
-  *if (not(sees_in_dark))
+  *comment The Light cantrip is a light of the caster's own (the user, 2026-10-19: it costs nothing, so it is simply assumed, and a torch is never needed), the same as seeing in the dark.
+  *if ((not(sees_in_dark)) and (not(known_light)))
     *if (dg_light_left <= 0)
       *set dg_dark true
       *comment An open-air dungeon (dg_daylit, set by its entrance) is lit by day and at dusk, and dark at night, before dawn and in a storm (weather_severity 3 or more).
@@ -466,8 +467,13 @@
   *line_break
   [b][A chalk cross is drawn on the wall here][/b]
 *line_break
+*if (dg_torch_fed_now)
+  [b][The torch gutters, and a word to the flame coaxes it on for three more steps][/b]
+  *line_break
 *if (sees_in_dark)
   [b][You see in the dark: no light needed][/b]
+*elseif (known_light)
+  [b][Your Light cantrip: no torch needed][/b]
 *elseif (dg_light_left > 0)
   [b][Light: ${dg_light_kind}, ${dg_light_left} @{(dg_light_left = 1) step|steps} left][/b]
 *elseif ((dg_daylit) and (not(dg_dark)))
@@ -485,6 +491,7 @@
   *set dg_steps + 1
   *set dg_enc_now false
   *set dg_light_out_now false
+  *set dg_torch_fed_now false
   *gosub_scene calendar calc_load
   *set load_extra_mins round((10 * load_over_pct) / 100)
   *set hours_to_pass 0
@@ -499,12 +506,18 @@
     *goto_scene death death_screen
   *comment The map learns this node only if the player could see it on arrival (judged before this step's light burns: a torch that dies on arrival still lit the way in).
   *gosub dg_note_seen
-  *if (not(sees_in_dark))
+  *if ((not(sees_in_dark)) and (not(known_light)))
     *if (dg_light_left > 0)
       *set dg_light_left - 1
       *if (dg_light_left = 0)
-        *set dg_light_out_now true
-        *set dg_light_kind "none"
+        *comment CONTROL FLAMES (the user, 2026-10-19): the torch that is about to go out is coaxed on for three more steps, once per torch.
+        *if (((known_control_flames) and (dg_light_kind = "torch")) and (not(dg_torch_fed)))
+          *set dg_torch_fed true
+          *set dg_torch_fed_now true
+          *set dg_light_left 3
+        *else
+          *set dg_light_out_now true
+          *set dg_light_kind "none"
   *gosub dg_dark_check
   *comment dg_fell_dark: this step took the player from lit to dark without a light dying (the day ended under an open sky); the dungeon's move label offers a light. Set inside the lock, so a replay reads it back.
   *set dg_fell_dark false
@@ -542,7 +555,7 @@
 *label dg_rest_burn
 *set dg_rest_light_text ""
 *gosub dg_dark_check
-*if (not(sees_in_dark))
+*if ((not(sees_in_dark)) and (not(known_light)))
   *if (dg_light_left > 0)
     *if (dg_light_left > 6)
       *set dg_light_left (dg_light_left - 6)
@@ -579,6 +592,7 @@
         *gosub_scene equipment sell_gear "pitch_torch"
         *set dg_light_kind "torch"
         *set dg_light_left 6
+        *set dg_torch_fed false
         *set dg_light_locked true
         *set locked_dg_light_page_id page_id
       The tarred rag catches and the dark pulls back to the edge of the flame.

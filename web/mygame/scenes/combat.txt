@@ -803,6 +803,7 @@
   *set {(fc_p & "grease_page")} 0
   *set {(fc_p & "grease_res")} 0
   *set {(fc_p & "burning")} 0
+  *set {(fc_p & "wet")} 0
   *set {(fc_p & "burn_page")} 0
   *set {(fc_p & "burn_dealt")} 0
   *set {(fc_p & "burn_douse")} false
@@ -2338,6 +2339,12 @@
   *set combat_can_blade_ward true
 *if (blade_ward_active)
   *set combat_can_blade_ward false
+*comment CONTROL FLAMES (2026-10-19, the user): offered while some enemy burns and another living enemy on the SAME lane tile has less fire than it (combat_spread_scan).
+*temp combat_can_spread false
+*if ((known_control_flames) and (combat_player_actions_left > 0))
+  *gosub combat_spread_scan false
+  *if (combat_spread_n > 0)
+    *set combat_can_spread true
 *comment Cunning Action (2026-10-01, built as a level 1 house rule, then moved back to 5e's level 2 the same day): a level 2+ rogue can Dash, Disengage or Hide as a
 *comment BONUS action. combat_cunning is true while a level 2+ rogue still has the bonus action, and it switches those three options from
 *comment the action budget to the bonus budget (label, gate and spend all read it). With the bonus spent a rogue falls back to
@@ -3064,6 +3071,21 @@
         *goto fight_bonus_spent
       *goto fight_action_spent
 
+  *if ((combat_player_actions_left > 0) and (combat_can_spread))
+    # [b][ACTION][/b] [b][Control Flames][/b] Spread the fire on a burning foe to the others on its tile.
+      *comment Shares the cantrip replay lock (combat_cantrip_choice_locked) with the attack cantrips: they all cost the ACTION, so they are mutually exclusive on a page.
+      *if (not(combat_cantrip_choice_locked)) or (not(locked_combat_cantrip_choice_page_id = page_id))
+        *gosub combat_spread_scan true
+        *set combat_spread_done_n combat_spread_n
+        *set combat_spread_done_epithet combat_spread_epithet
+        *set combat_cantrip_choice_locked true
+        *set locked_combat_cantrip_choice_page_id page_id
+      You lift a hand toward the fire on ${combat_spread_done_epithet} and speak to it. It swells and leans, and leaps to those standing close, catching @{(combat_spread_done_n = 1) one more|${combat_spread_done_n} more} in the same flame.
+      *line_break
+      [b][🔥 Control Flames: the fire spreads to @{(combat_spread_done_n = 1) 1 other foe|${combat_spread_done_n} other foes}][/b]
+      *line_break
+      *goto fight_action_spent
+
   *if (((combat_player_actions_left > 0) and (known_fire_bolt)))
     # [b][ACTION][/b] [b][Fire Bolt][/b] Hurl a mote of arcane flame at ${combat_enemy_epithet}.
       *comment Whole-body replay lock (2026-09-30, shared by every attack-roll cantrip option below -- Ray of
@@ -3657,6 +3679,12 @@
         *set use_item_id "alchemists_fire"
         *goto fight_throw_item
   *comment GEN:END combat_throw_options
+  *comment THE WATER JUG (2026-10-19, the user): a full jug is thrown from the same Throw button. A ranged attack, Dexterity against AC, no damage; a hit leaves the foe Wet for three of its turns (fight_throw_water).
+  *if ((has_water_jug) and (jug_full > 0))
+    *if ((combat_player_actions_left > 0) and (combat_in_medium))
+      # [b][ACTION][/b] [b][Throw: Water Jug][/b] Fling the water at ${combat_med_epithet}.@{show_stat_hints  [Thrown: a hit leaves a foe Wet for 3 turns]|}
+        *set use_item_id "water_jug"
+        *goto fight_throw_item
   *if (cu_any)
     # Use an item from your satchel.
       *goto fight_use_item
@@ -3734,6 +3762,8 @@
 *label fight_throw_item
 *if (use_item_id = "alchemists_fire")
   *goto fight_throw_fire
+*if (use_item_id = "water_jug")
+  *goto fight_throw_water
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
   *gosub_scene combat_movement fight_pick_target
   *temp fti_reach combat_reach_medium
@@ -3749,6 +3779,7 @@
 *comment and a hit that leaves the enemy standing sets it burning for three of its turns (combat_burn_tick). Shares Fire Bolt's cantrip replay lock because they cost the same action. Target picked and ranged inside the lock, like Fire Bolt, so a replay never re-derives it.
 *label fight_throw_fire
 *if (not(combat_cantrip_choice_locked)) or (not(locked_combat_cantrip_choice_page_id = page_id))
+  *set combat_throw_wet ""
   *gosub_scene combat_movement fight_pick_target
   *temp ftf_reach combat_reach_medium
   *gosub_scene combat_movement fight_retarget_to_range ftf_reach
@@ -3784,24 +3815,40 @@
     *if (combat_throw_greased)
       *set combat_player_dmg_bonus 2
     *gosub_scene combat_dice resolve_player_hit true
-    *if (combat_enemy_hp > 0)
+    *temp ftf_wet {(ftf_p & "wet")}
+    *set combat_throw_wet ""
+    *if (ftf_wet > 0)
+      *set combat_throw_wet "soaked"
+    *elseif (combat_enemy_hp > 0)
       *set {(ftf_p & "burning")} 3
   *set combat_cantrip_choice_locked true
   *set locked_combat_cantrip_choice_page_id page_id
 *if (check_success)
-  *if (combat_throw_v = 1)
-    The flask breaks against ${combat_throw_epithet}, and the mixture meets the air and catches with a soft roar.
-  *if (combat_throw_v = 2)
-    It bursts on ${combat_throw_epithet}, and a sheet of amber flame runs over them, clinging to whatever it touches.
-  *if (combat_throw_v = 3)
-    The glass shatters, and the sticky fire spreads across ${combat_throw_epithet} before they can beat it out.
+  *if (combat_throw_wet = "soaked")
+    *comment A soaked target (the water jug, 2026-10-19): the mixture lands and finds nothing it can hold.
+    *if (combat_throw_v = 1)
+      The flask breaks against ${combat_throw_epithet}, and the mixture sputters on the wet skin and slides off in smoking beads.
+    *if (combat_throw_v = 2)
+      It bursts on ${combat_throw_epithet}, and the flame gutters at once in the water running down them.
+    *if (combat_throw_v = 3)
+      The glass shatters, and the sticky fire hisses out across ${combat_throw_epithet}'s soaked shoulders.
+  *else
+    *if (combat_throw_v = 1)
+      The flask breaks against ${combat_throw_epithet}, and the mixture meets the air and catches with a soft roar.
+    *if (combat_throw_v = 2)
+      It bursts on ${combat_throw_epithet}, and a sheet of amber flame runs over them, clinging to whatever it touches.
+    *if (combat_throw_v = 3)
+      The glass shatters, and the sticky fire spreads across ${combat_throw_epithet} before they can beat it out.
   *line_break
   *if (combat_enemy_hp <= 0)
     [b][💀 ${combat_throw_name} Defeated: ${combat_player_dmg_dealt} Fire damage${combat_outgoing_dmg_suffix}][/b]
   *else
     [b][🔥 Alchemist's Fire: Hit | ${combat_player_dmg_dealt} Fire damage${combat_outgoing_dmg_suffix}@{combat_throw_greased  (the grease caught, +2)|}][/b]
     *line_break
-    [b][🔥 ${combat_throw_name} is burning: 1d4 fire damage at the start of each of its next three turns][/b]
+    *if (combat_throw_wet = "soaked")
+      [b][💧 ${combat_throw_name} is Wet: the fire cannot take hold][/b]
+    *else
+      [b][🔥 ${combat_throw_name} is burning: 1d4 fire damage at the start of each of its next three turns][/b]
 *else
   *if (combat_throw_v = 1)
     The flask goes wide and bursts on the ground, and the fire gutters out on bare stone.
@@ -3813,6 +3860,77 @@
   [b][💨 Miss][/b]
 *line_break
 *goto fight_check_enemy_hp
+
+*comment THE WATER JUG, THROWN (2026-10-19, the user's design, copying Alchemist's Fire's hit rule): a ranged attack, Dexterity + proficiency against AC, at Mid-Range, the whole jug's water flung at the target. No damage. A hit leaves the enemy Wet for three of its turns
+*comment (combat_enemyN_wet): it cannot catch fire, resists fire, and takes double from cold and lightning (combat_dice.txt). A burning enemy cannot be soaked: the water goes to steam and it stays as it was. The water is spent hit or miss (jug_full - 1), the jug stays. Shares the
+*comment cantrip replay lock because it costs the same action; the target is picked and ranged inside the lock.
+*label fight_throw_water
+*if (not(combat_cantrip_choice_locked)) or (not(locked_combat_cantrip_choice_page_id = page_id))
+  *gosub_scene combat_movement fight_pick_target
+  *temp ftw_reach combat_reach_medium
+  *gosub_scene combat_movement fight_retarget_to_range ftw_reach
+  *if (combat_enemy_range > ftw_reach)
+    Nothing is close enough to throw at. Close the distance first.
+    *line_break
+    *goto fight_round_hub
+  *comment replay-ok: inside the cantrip replay lock below (fight_throw_water).
+  *set jug_full (jug_full - 1)
+  *set combat_throw_name combat_enemy_name
+  *set combat_throw_epithet combat_enemy_epithet
+  *rand combat_throw_v 1 3
+  *temp ftw_p (("combat_enemy" & combat_active_target) & "_")
+  *set check_stat "dex"
+  *set check_dc combat_enemy_ac
+  *set check_skill "Water Jug"
+  *set check_add_prof_bonus true
+  *gosub spell_range_of
+  *gosub combat_apply_player_ranged_terrain
+  *if (spell_penalty_result)
+    *set disadvantage true
+    *set combat_reach_pinned true
+  *set combat_attack_tag "water"
+  *gosub combat_hidden_attack_roll
+  *gosub_scene dice_engine roll_d20_check
+  *set combat_throw_wet ""
+  *if (check_success)
+    *temp ftw_burning {(ftw_p & "burning")}
+    *if (ftw_burning > 0)
+      *set combat_throw_wet "steam"
+    *else
+      *set combat_throw_wet "soaked"
+      *set {(ftw_p & "wet")} 3
+  *set combat_cantrip_choice_locked true
+  *set locked_combat_cantrip_choice_page_id page_id
+*if (check_success)
+  *if (combat_throw_wet = "steam")
+    *if (combat_throw_v = 1)
+      The water slaps into the flames on ${combat_throw_epithet} and flashes to steam, and the fire rolls on through it.
+    *if (combat_throw_v = 2)
+      You fling the water, and it hisses away to a white cloud before it can soak anything. The fire on ${combat_throw_epithet} burns on.
+    *if (combat_throw_v = 3)
+      A sheet of water hits ${combat_throw_epithet}, and the flames drink it down in a gout of steam.
+    *line_break
+    [b][🔥 Water Jug: Hit | ${combat_throw_name} is burning too fiercely to be soaked][/b]
+  *else
+    *if (combat_throw_v = 1)
+      You pull the cork and fling the whole gallon in a heavy sheet. It slaps into ${combat_throw_epithet} and runs from every edge.
+    *if (combat_throw_v = 2)
+      The water takes ${combat_throw_epithet} full in the chest and soaks them to the skin, streaming down onto the ground.
+    *if (combat_throw_v = 3)
+      You swing the jug and the water leaves it in one cold arc, drenching ${combat_throw_epithet} from head to foot.
+    *line_break
+    [b][💧 Water Jug: Hit | ${combat_throw_name} is Wet for 3 turns: it cannot catch fire, resists fire, and takes double cold and lightning damage][/b]
+*else
+  *if (combat_throw_v = 1)
+    The water goes wide and slaps onto the ground, leaving a dark stain and ${combat_throw_epithet} dry.
+  *if (combat_throw_v = 2)
+    ${combat_throw_name} twists aside, and the whole gallon spatters across the dirt.
+  *if (combat_throw_v = 3)
+    The water falls short of ${combat_throw_epithet} and soaks into the ground at their feet.
+  *line_break
+  [b][💨 Miss][/b]
+*line_break
+*goto fight_action_spent
 
 *label fight_use_do
 *set use_in_combat true
@@ -4380,9 +4498,11 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *if (combat_enemy_hp > 0)
   *if (combat_arrow_used = "fire")
     *temp caa_burn {(caa_p & "burning")}
-    *if (caa_burn < 2)
-      *set {(caa_p & "burning")} 2
-    *set combat_arrow_burn true
+    *temp caa_wet {(caa_p & "wet")}
+    *if (caa_wet <= 0)
+      *if (caa_burn < 2)
+        *set {(caa_p & "burning")} 2
+      *set combat_arrow_burn true
   *else
     *set {(caa_p & "slowed")} 1
     *set combat_arrow_slow true
@@ -4470,6 +4590,42 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     The vines hold ${combat_enemy_epithet} where they stand, and they fight from the spot.
     *line_break
 *set combat_turn_advanced_this_page true
+*return
+
+*comment CONTROL FLAMES: the scan (and, with the argument true, the spread itself). For each living burning enemy, every OTHER living enemy on the same lane tile whose fire is lower than it takes the burning enemy's turns. combat_spread_n counts the enemies that
+*comment catch (or catch more). Only the same tile spreads: an archer at Long range when the burning enemies are at Mid does not catch.
+*comment replay-ok: combat_spread_n is a scratch count that this label resets to 0 at its top before counting, so a replay recomputes it and never doubles it (the cast reads the copy it saved inside its replay lock).
+*label combat_spread_scan
+*params csp_apply
+*set combat_spread_n 0
+*set combat_spread_epithet ""
+*temp csp_i 1
+*label csp_loop_i
+*if (csp_i <= combat_enemy_count)
+  *temp csp_src_burn {(("combat_enemy" & csp_i) & "_burning")}
+  *temp csp_src_hp {(("combat_enemy" & csp_i) & "_hp")}
+  *if ((csp_src_burn > 0) and (csp_src_hp > 0))
+    *temp csp_src_pos {(("combat_enemy" & csp_i) & "_position")}
+    *temp csp_j 1
+    *comment replay-ok: combat_spread_n is a scratch count reset to 0 at the top of this scan, so a replay recomputes it and never doubles it.
+    *label csp_loop_j
+    *if (csp_j <= combat_enemy_count)
+      *if (not(csp_j = csp_i))
+        *temp csp_dst_hp {(("combat_enemy" & csp_j) & "_hp")}
+        *temp csp_dst_pos {(("combat_enemy" & csp_j) & "_position")}
+        *temp csp_dst_burn {(("combat_enemy" & csp_j) & "_burning")}
+        *temp csp_dst_wet {(("combat_enemy" & csp_j) & "_wet")}
+        *if (((csp_dst_hp > 0) and (csp_dst_wet <= 0)) and ((csp_dst_pos = csp_src_pos) and (csp_dst_burn < csp_src_burn)))
+          *comment replay-ok: combat_spread_n is a scratch count reset to 0 at the top of this scan, so a replay recomputes it and never doubles it.
+          *set combat_spread_n + 1
+          *if (combat_spread_epithet = "")
+            *set combat_spread_epithet {(("combat_enemy" & csp_i) & "_epithet")}
+          *if (csp_apply)
+            *set {(("combat_enemy" & csp_j) & "_burning")} csp_src_burn
+      *set csp_j + 1
+      *goto csp_loop_j
+  *set csp_i + 1
+  *goto csp_loop_i
 *return
 
 *label combat_burn_tick
@@ -4741,6 +4897,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *comment Range costs it multiple turns too.
     *temp cnt_first_pass {("combat_turn_first_pass_" & combat_current_turn_index)}
     *temp cnt_slowed {(("combat_enemy" & cnt_slot) & "_slowed")}
+    *temp cnt_wet {(("combat_enemy" & cnt_slot) & "_wet")}
     *temp cnt_frightened {(("combat_enemy" & cnt_slot) & "_frightened")}
     *set {("combat_turn_first_pass_" & combat_current_turn_index)} false
     *comment cnt_rv: shared by both branches below that roll a 3-way flavor variant, declared once here instead
@@ -5210,6 +5367,9 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *comment Slowed lasts until this enemy has taken its next turn: spent here, after the turn, whichever branch it took.
     *if (cnt_slowed > 0)
       *set {(("combat_enemy" & cnt_slot) & "_slowed")} (cnt_slowed - 1)
+    *comment Wet (the water jug): each of this enemy's turns takes one off, so a soaking lasts three of them.
+    *if (cnt_wet > 0)
+      *set {(("combat_enemy" & cnt_slot) & "_wet")} (cnt_wet - 1)
     *comment Frightened: the enemy repeats its Wisdom save at the end of its turn, and the fear ends on a success. If it died during its own turn (a Rebuke, Armor of Agathys) there is nothing to roll for.
     *if ((cnt_frightened > 0) and (combat_enemy_hp > 0))
       *temp cnt_fp (("combat_enemy" & cnt_slot) & "_")

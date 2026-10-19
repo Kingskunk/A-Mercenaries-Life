@@ -282,6 +282,10 @@ You scrape a bold cross into the bark at head height, so you will know this junc
     The fallen leaves are sodden, and mud sucks at your ${feet_prose}.
   *elseif ((ground_state = "wet") and (not(weather_wet)))
     The fallen leaves are damp and darkened by the last rain.
+*comment lsf_env_quiet (2026-10-19): a place whose point is that nothing lives there (the poisoned pool, Room 9) sets it before calling lsf_env, which then gives the sky and nothing else (no birds, no scrabbling); it is cleared here.
+*if (lsf_env_quiet)
+  *set lsf_env_quiet false
+  *return
 *line_break
 *if ((dg_dark) or (le_night))
   *if (le_pick = 0)
@@ -1083,13 +1087,14 @@ You find the first handholds in the rock and test each before you trust it.
 
 *label lsf_n_j27
 
-[b]◈ FOREST TRAIL 27[/b]
+[b]◈ THE STREAM PATH[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  The dark under the trees is close, and you feel your way. This is forest trail 27. Nothing is written here yet.
+  The stream talks beside you, thin and cold. The moss under your hand has gone dry and furred, and a bitter smoke hangs in the air. Ahead, a high ringing, like many small bells struck together.
 *else
-  This is forest trail 27. Nothing is written here yet.
+  The path runs beside the stream and climbs with it. The banks are stripped to bare earth here, and the moss lies grey and furred there. Farther up, a few small fish lie on the stones, whole and pale. Smoke hangs in the air, bitter and thin, and from somewhere ahead comes a high ringing, like a hundred tiny bells struck at once.
+*gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
   # Go northeast.
@@ -1621,7 +1626,11 @@ A skeleton lies on its back with its arms folded, big-boned, and the lower jaw c
       A wood pigeon drinks from the rim of the basin and watches you with one orange eye.
 *gosub lsf_env
 *gosub_scene dungeon dg_status_line
+*gosub_scene equipment jug_empties
 *choice
+  *if (jug_empty_n > 0)
+    # Fill your water jugs at the spring. [~5 min]
+      *goto lsf_spring_fill
   *if (not(dg_lsf_spring_used))
     # Drink from the spring. [~10 min]
       *goto lsf_spring_drink
@@ -1660,6 +1669,24 @@ A skeleton lies on its back with its arms folded, big-boned, and the lower jaw c
   You drink from your cupped hands. The water is cold and tastes of stone, and it quenches your thirst.
 *set dg_mins 10
 *set dg_time_id "lsf_spring_drink"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r4
+
+*comment FILLING JUGS at the spring (the user's water jug, 2026-10-19): the spring never runs dry for a jug, only for the draught; one lock keeps the count and the line.
+*label lsf_spring_fill
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *gosub_scene equipment jug_fill
+  *rand jug_fill_v 1 2
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+*if (jug_fill_v = 1)
+  You hold each jug under the thread where it spills over the ledge and let the cold water drum into the clay until it brims. The corks go back in tight.
+*else
+  You kneel on the wet stones and tip the jugs into the basin one at a time, feeling the weight grow in your hands, and press the corks home.
+*line_break
+[b][💧 Water Jugs: @{(jug_fill_n = 1) 1 jug|${jug_fill_n} jugs} filled | ${jug_full} full][/b]
+*set dg_mins 5
+*set dg_time_id "lsf_spring_fill"
 *gosub_scene dungeon dg_time
 *goto lsf_n_r4
 
@@ -1962,25 +1989,211 @@ A lower branch dips toward you in a slow arc, and the yellow eyes close and open
 *gosub_scene dungeon dg_time
 *goto lsf_bark_menu
 
+*comment THE CLEAR POOL (Room 9, the user's design 2026-10-19, chunk 2): the way in from the Hazel Clearing opens with Bark's quest. A pool that looks clean and is poisoned until Dubhar is dead (lsf_corruption_cleared): four ways to tell
+*comment (a close look, Nature or Survival DC 11, lit only; Medicine DC 12 by smell; Detect Magic; Speak with Animals; each once, kept, any one sets lsf_corruption_found, and a miss is one try per refill) and the drink, which gives the timed effect
+*comment "Clouded Mind" (-5 Wisdom for three days, a unique effect with a negative bonus). Once the poison is gone it is clean water, and drinking it washes the effect away (and later is where a jug is filled). No Hidden Spring effect (the user).
 *label lsf_n_r9
 
-[b]◈ FOREST ROOM 9[/b]
+[b]◈ THE CLEAR POOL[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
-*if (dg_dark)
-  The dark under the trees is close, and you feel your way. This is forest room 9. Nothing is written here yet.
+*gosub_scene dungeon dg_dm_check
+*gosub_scene dungeon dg_swa_check
+*if (lsf_corruption_cleared)
+  *if (dg_dark)
+    The path drops into a hollow loud with water. A thread of stream chatters in from the north and out to the south, and your hand finds the rim of a pool, cold and smooth, with stems of young reed standing up along its edge. Something small plops off the bank into the dark.
+  *else
+    The path drops into a hollow around a pool the size of a cart. The water is as clear as it ever was, and now things live in it: reeds are pushing up along the bank, a water-strider skates the surface, and a film of green has begun on the stones. A thread of stream chatters in from the north and runs out to the south.
+*elseif (dg_dark)
+  The path drops into a hollow, and the air turns cool and smells of cold stone. Water runs somewhere ahead, a thin, steady trickle, and your hand finds the rim of a pool, smooth and wet. Dry leaves crackle in drifts under your ${feet_prose}, and at the waterline your fingers close on something small and slick: a fish, stiff and whole. Your own breathing is the loudest sound here.
 *else
-  This is forest room 9. Nothing is written here yet.
+  The path drops into a hollow around a pool the size of a cart. The water is so clear that every pebble on the bottom stands out sharp, down to the pale veins in the stones, and a thread of stream slides in from the north and out to the south without a ripple. The grass stops a stride back from the edge and leaves a ring of smooth, bare earth. Dead leaves lie in grey, curled drifts along the bank, and a handful of minnows hang belly-up in the shallows, bright as coins. Your own breathing is the loudest sound in the hollow.
+*if ((lsf_pool_looked) and ((not(lsf_corruption_cleared)) and (not(dg_dark))))
+
+  A line of deer prints comes down the bank and stops a stride short of the water, then turns and climbs back out.
+*set lsf_env_quiet (not(lsf_corruption_cleared))
+*gosub lsf_env
 *gosub_scene dungeon dg_status_line
+*gosub_scene equipment jug_empties
 *choice
-  # Go northwest.
-    *set dg_dest "lsf_j27"
-    *set dg_dest_hall true
-    *goto lsf_move
+  *if ((((not(lsf_pool_looked)) and (not(dg_lsf_pool_look_tried))) and (not(dg_dark))) and (not(lsf_corruption_cleared)))
+    # Look closely at the water. [~10 min]@{show_stat_hints  [Nature or Survival DC 11]|}
+      *goto lsf_pool_look
+  *if (((not(lsf_pool_smelled)) and (not(dg_lsf_pool_smell_tried))) and (not(lsf_corruption_cleared)))
+    # Lean over the water and breathe it in. [~5 min]@{show_stat_hints  [Medicine DC 12]|}
+      *goto lsf_pool_smell
+  *if (((not(lsf_pool_magic)) and (not(lsf_corruption_cleared))) and ((known_detect_magic) and (dg_dm_can)))
+    *if (dg_dm_cost = "slot")
+      # Cast Detect Magic over the pool. [Detect Magic, uses a spell slot, ~5 min]
+        *goto lsf_pool_magic_cast
+    *if (dg_dm_cost = "ritual")
+      # Cast Detect Magic over the pool. [Detect Magic as a ritual, no slot, ~15 min]
+        *goto lsf_pool_magic_cast
+  *if (((not(lsf_pool_magic)) and (not(lsf_corruption_cleared))) and ((known_detect_magic) and (not(dg_dm_can))))
+    # Reach for Detect Magic over the pool. [no spell slot left]
+      You shape the words, and the power to answer them has gone out of you for now. The water lies still.
+      *goto lsf_n_r9
+  *if (((not(lsf_pool_animals)) and (not(lsf_corruption_cleared))) and (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "slot")))
+    # Ask the small creatures around the pool about the water. [Speak with Animals, uses a spell slot, ~5 min]
+      *goto lsf_pool_animals_cast
+  *if (((not(lsf_pool_animals)) and (not(lsf_corruption_cleared))) and (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "ritual")))
+    # Ask the small creatures around the pool about the water. [Speak with Animals as a ritual, no slot, ~15 min]
+      *goto lsf_pool_animals_cast
+  *if (((not(lsf_pool_animals)) and (not(lsf_corruption_cleared))) and (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "free")))
+    # Ask the small creatures around the pool about the water. [Speak with Animals, ~5 min]
+      *goto lsf_pool_animals_cast
+  *if (((not(lsf_pool_animals)) and (not(lsf_corruption_cleared))) and ((known_speak_with_animals) and (not(dg_swa_can))))
+    # Listen for words around the pool. [Speak with Animals, no spell slot left]
+      The words are there in your head, and the strength to speak them has gone out of you for now. The hollow gives you nothing.
+      *goto lsf_n_r9
+  *if ((lsf_corruption_cleared) and (jug_empty_n > 0))
+    # Fill your water jugs at the pool. [~5 min]
+      *goto lsf_pool_fill
+  # Drink from the pool. [~2 min]
+    *goto lsf_pool_drink
   # Go south.
     *set dg_dest "lsf_r7"
     *set dg_dest_hall false
     *goto lsf_move
+  # Go northwest.
+    *set dg_dest "lsf_j27"
+    *set dg_dest_hall true
+    *goto lsf_move
+
+*label lsf_pool_look
+You crouch at the edge, and the details come in one at a time.
+*gosub_scene dice_engine roll_skill_check 11 "nature" "" "survival" "" "" ""
+*if (check_success)
+  The stones on the bottom are scrubbed clean of green. A drowned fly and a drowned moth float side by side on the surface, and the mud of the bank is smooth as plaster where a line of deer prints comes down to the water, stops a stride short, and climbs back out. The far bank has the same prints, turned back at the same place.
+  *set lsf_pool_looked true
+  *set lsf_corruption_found true
+*else
+  You study the water until your eyes ache, and it stays what it looks like: a clear pool. Another day, with fresher eyes, may serve you better.
+  *set dg_lsf_pool_look_tried true
+*set dg_mins 10
+*set dg_time_id "lsf_pool_look"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r9
+
+*label lsf_pool_smell
+You lean over the water and breathe in slowly, the way you would test a bottle.
+*gosub_scene dice_engine roll_skill_check 12 "medicine" "" "" "" "" ""
+*if (check_success)
+  The smell is faint: a thin sweetness over a metal edge, like a coin held under the tongue. It matches nothing you have smelled at a stream. It reads as a slow poison, the kind that dulls thought long before it harms anything else, and it would leave a drinker foggy for days.
+  *set lsf_pool_smelled true
+  *set lsf_corruption_found true
+*else
+  You breathe in cold water and wet stone, and nothing more you can name. Another day may serve you better.
+  *set dg_lsf_pool_smell_tried true
+*set dg_mins 5
+*set dg_time_id "lsf_pool_smell"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r9
+
+*label lsf_pool_magic_cast
+*gosub_scene dungeon dg_dm_check
+*gosub_scene dungeon dg_dm_cast
+*if (dg_dm_cost = "ritual")
+  You kneel at the rim and speak the words slowly, one syllable at a time. A quarter of an hour later the hollow takes on a pale shimmer.
+*else
+  You speak the words and feel the spell leave you, and the hollow takes on a pale shimmer.
+*line_break
+The pool glows a faint, sick green, a clean shimmer that moves against the current. The glow thins and brightens with a slow pulse, and it grows stronger toward the north, up the stream.
+*set lsf_pool_magic true
+*set lsf_corruption_found true
+*line_break
+[b][The pool is tainted][/b]
+*set dg_mins 5
+*if (dg_dm_cost = "ritual")
+  *set dg_mins 15
+*set dg_time_id "lsf_pool_magic_cast"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r9
+
+*label lsf_pool_animals_cast
+*gosub_scene dungeon dg_swa_check
+*gosub_scene dungeon dg_swa_cast
+*if (dg_swa_cost = "ritual")
+  You sit by the rim and speak the words slowly, one syllable at a time. A quarter of an hour later a thin, quick voice comes from the roots at the edge of the hollow.
+*if (dg_swa_cost = "slot")
+  You murmur the words and feel the spell leave you. A thin, quick voice comes from the roots at the edge of the hollow.
+*if (dg_swa_cost = "free")
+  You speak the words easily, and a thin, quick voice comes from the roots at the edge of the hollow.
+*line_break
+A vole watches you from between two roots, whiskers working. "Water bad," it says. "Water takes the thinking. Don't." It backs into the dark of the roots and is gone.
+*set lsf_pool_animals true
+*set lsf_corruption_found true
+*set dg_mins 5
+*if (dg_swa_cost = "ritual")
+  *set dg_mins 15
+*set dg_time_id "lsf_pool_animals_cast"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r9
+
+*comment DRINKING: while the poison is in it, the timed effect Clouded Mind (-5 Wisdom, 4320 minutes, three days) through apply_unique_buff, the same slots as Ambrose's boons with a negative bonus; drinking again only renews the clock.
+*comment Once the poison is gone it is clean water, and drinking it washes Clouded Mind away (lsf_fog_was is decided inside the lock so a refresh prints the same page).
+*label lsf_pool_drink
+*if (lsf_corruption_cleared)
+  *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+    *set lsf_fog_was (((unique_buff1_active) and (unique_buff1_name = "Clouded Mind")) or (((unique_buff2_active) and (unique_buff2_name = "Clouded Mind")) or ((unique_buff3_active) and (unique_buff3_name = "Clouded Mind"))))
+    *gosub lsf_fog_end
+    *set stat_bump_locked true
+    *set locked_stat_bump_page_id page_id
+  You kneel at the rim and drink. The water is cold and tastes of stone and snow, and nothing clouds behind it.
+  *if (lsf_fog_was)
+    *line_break
+    The haze behind your eyes thins as you drink, and then it is gone.
+    *line_break
+    [b][Clouded Mind ends][/b]
+*else
+  *if (lsf_corruption_found)
+    You know what is in it. You kneel at the rim and drink anyway.
+  *else
+    You kneel at the rim and cup your hands.
+  *line_break
+  The water is cold and faintly sweet, better than anything you have tasted in days. By the time you stand, a haze has settled behind your eyes. The trees look the same, and the thoughts you reach for slide apart like wet cloth.
+  *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+    *set unique_buff_input_name "Clouded Mind"
+    *set unique_buff_input_desc "-5 WIS"
+    *set unique_buff_input_stat "wis"
+    *set unique_buff_input_bonus -5
+    *set unique_buff_input_minutes 4320
+    *gosub_scene economy apply_unique_buff
+    *set stat_bump_locked true
+    *set locked_stat_bump_page_id page_id
+  *line_break
+  [b][Clouded Mind: -5 Wisdom for 3 days][/b]
+*set dg_mins 2
+*set dg_time_id "lsf_pool_drink"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r9
+
+*comment FILLING JUGS at the pool: offered only once the poison is gone (lsf_corruption_cleared); a poisoned pool never goes into a jug.
+*label lsf_pool_fill
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *gosub_scene equipment jug_fill
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+You wade in to your ankles and fill the jugs from the clear water, one after another, with a water-strider skating off from around your feet. The corks go back in tight.
+*line_break
+[b][💧 Water Jugs: @{(jug_fill_n = 1) 1 jug|${jug_fill_n} jugs} filled | ${jug_full} full][/b]
+*set dg_mins 5
+*set dg_time_id "lsf_pool_fill"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r9
+
+*label lsf_fog_end
+*if ((unique_buff1_active) and (unique_buff1_name = "Clouded Mind"))
+  *set unique_buff1_active false
+  *set unique_buff1_minutes_left 0
+*if ((unique_buff2_active) and (unique_buff2_name = "Clouded Mind"))
+  *set unique_buff2_active false
+  *set unique_buff2_minutes_left 0
+*if ((unique_buff3_active) and (unique_buff3_name = "Clouded Mind"))
+  *set unique_buff3_active false
+  *set unique_buff3_minutes_left 0
+*gosub_scene character_buffs recalculate_buff_stats
+*return
 
 *comment THE WRECKED CAMP (Room 10, the user's plan 2026-10-18, from their Abandoned Camp idea; the tents, the cat's signs and the pouch's contents are invented here). A camp torn apart by a big cat (the panther of Room 14), with a drag trail running north to the bodies in Room 12. Reading the ground
 *comment (Survival DC 12, ten minutes) tells what struck it and sets lsf_camp_read; a miss is one try per refill (dg_lsf_camp_tried). Searching the wreckage (Investigation DC 12, twenty minutes) finds a pouch of coin ONCE EVER (lsf_camp_pouch, 6 Silver Marks under the currency lock; the user cut it from a gold crown and two silver, as too much to find so easily);
@@ -2827,6 +3040,8 @@ Two people crash out of the brush together. The woman is short and broad, muddy 
 *set dg_lsf_body_nat_tried false
 *set dg_lsf_r6_fern false
 *set dg_lsf_r5_silverleaf false
+*set dg_lsf_pool_look_tried false
+*set dg_lsf_pool_smell_tried false
 *set dg_lsf_j14_balsam false
 *set dg_lsf_j6_berry false
 *set dg_lsf_r6_truffle false

@@ -131,6 +131,7 @@ var rootDir = "../";
   text-align: right;
 }
 
+#statSidebar .boon.boonDown { color: #d98a5a; }
 #statSidebar .questLevelNote {
   color: var(--ch-gold, #c9a35a);
   font-style: normal;
@@ -1317,16 +1318,16 @@ button#statSidebar .turnRow,
           "<div class=\"timePeriod\">+" + fmt(s.drink_buff_bonus) + " " + fmt(s.drink_buff_stat).toUpperCase() + ", " + fmt(s.drink_buff_minutes_left) + "m left</div>"
           : "") +
         (isTruthy(s.unique_buff1_active) ?
-          "<div class=\"statRow\"><span>Boon</span><span>" + fmt(s.unique_buff1_name) + "</span></div>" +
-          "<div class=\"timePeriod\">+" + fmt(s.unique_buff1_bonus) + " " + fmt(s.unique_buff1_stat).toUpperCase() + ", " + fmt(s.unique_buff1_minutes_left) + "m left</div>"
+          "<div class=\"statRow\"><span>" + (Number(s.unique_buff1_bonus) < 0 ? "Affliction" : "Boon") + "</span><span>" + fmt(s.unique_buff1_name) + "</span></div>" +
+          "<div class=\"timePeriod\">" + signed(s.unique_buff1_bonus) + " " + fmt(s.unique_buff1_stat).toUpperCase() + ", " + buffLeft(s.unique_buff1_minutes_left) + " left</div>"
           : "") +
         (isTruthy(s.unique_buff2_active) ?
-          "<div class=\"statRow\"><span>Boon</span><span>" + fmt(s.unique_buff2_name) + "</span></div>" +
-          "<div class=\"timePeriod\">+" + fmt(s.unique_buff2_bonus) + " " + fmt(s.unique_buff2_stat).toUpperCase() + ", " + fmt(s.unique_buff2_minutes_left) + "m left</div>"
+          "<div class=\"statRow\"><span>" + (Number(s.unique_buff2_bonus) < 0 ? "Affliction" : "Boon") + "</span><span>" + fmt(s.unique_buff2_name) + "</span></div>" +
+          "<div class=\"timePeriod\">" + signed(s.unique_buff2_bonus) + " " + fmt(s.unique_buff2_stat).toUpperCase() + ", " + buffLeft(s.unique_buff2_minutes_left) + " left</div>"
           : "") +
         (isTruthy(s.unique_buff3_active) ?
-          "<div class=\"statRow\"><span>Boon</span><span>" + fmt(s.unique_buff3_name) + "</span></div>" +
-          "<div class=\"timePeriod\">+" + fmt(s.unique_buff3_bonus) + " " + fmt(s.unique_buff3_stat).toUpperCase() + ", " + fmt(s.unique_buff3_minutes_left) + "m left</div>"
+          "<div class=\"statRow\"><span>" + (Number(s.unique_buff3_bonus) < 0 ? "Affliction" : "Boon") + "</span><span>" + fmt(s.unique_buff3_name) + "</span></div>" +
+          "<div class=\"timePeriod\">" + signed(s.unique_buff3_bonus) + " " + fmt(s.unique_buff3_stat).toUpperCase() + ", " + buffLeft(s.unique_buff3_minutes_left) + " left</div>"
           : "") +
         (isTruthy(s.sleep_buff1_active) ?
           "<div class=\"statRow\"><span>Rest</span><span>" + fmt(s.sleep_buff1_name) + "</span></div>" +
@@ -1571,8 +1572,18 @@ button#statSidebar .turnRow,
   // The score shown already includes any boon. The small tag beside it says how much came from a boon:
   // green when it raised the modifier, struck through and dim when it did not (a +1 on an even score, or
   // at the +3 cap). buff_<stat>_helps comes from the game.
+  // A bonus with its sign (+1, -5), and the minutes a timed effect has left as minutes, hours or days (a three-day effect would otherwise read 4320m).
+  function signed(v) { var n = Number(v) || 0; return (n < 0 ? "" : "+") + n; }
+  function buffLeft(m) {
+    m = Math.max(0, Math.round(Number(m) || 0));
+    if (m < 120) return m + "m";
+    if (m < 2880) return Math.round(m / 60) + "h";
+    var hrs = Math.round(m / 60), days = Math.floor(hrs / 24), rest = hrs % 24;
+    return days + "d" + (rest ? " " + rest + "h" : "");
+  }
   function abilityBoon(bonus, helps) {
     var b = Number(bonus) || 0;
+    if (b < 0) return " <span class=\"boon boonDown\" title=\"Includes " + b + " from an affliction\">" + b + "</span>";
     if (b <= 0) return "";
     var cls = isTruthy(helps) ? "boon boonUp" : "boon boonIdle";
     var tip = isTruthy(helps) ? "Includes +" + b + " from a boon, which raises the modifier" : "Includes +" + b + " from a boon, which does not change the modifier";
@@ -1638,7 +1649,7 @@ button#statSidebar .turnRow,
   }
   // Active conditions on one combatant, read from per-slot "rounds left" variables (0 = none). To show a new
   // condition, add its variable suffix and label here; the game writes the value, this only reads it.
-  var CONDITION_KEYS = [["slowed", "Slowed"], ["frightened", "Frightened"], ["greased", "Greased"], ["prone", "Prone"], ["burning", "Burning"]];
+  var CONDITION_KEYS = [["slowed", "Slowed"], ["frightened", "Frightened"], ["greased", "Greased"], ["prone", "Prone"], ["burning", "Burning"], ["wet", "Wet"]];
   function conditionsOf(p, s) {
     var out = [];
     for (var i = 0; i < CONDITION_KEYS.length; i++) {

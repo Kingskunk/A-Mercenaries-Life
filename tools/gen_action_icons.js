@@ -37,6 +37,7 @@ const MAP = {
   shoot_ice_arrow: "Item/Consumable/Arrow/Arrow_of_Ice_Unfaded_Icon.png",
   throw_grease_flask: "Item/Consumable/Grenade/GRN_Grease_Bottle_Unfaded_Icon.png",
   throw_alchemists_fire: "Item/Consumable/Grenade/GRN_Alchemist's_Fire_Unfaded_Icon.png",
+  throw_water_jug: "Generic/Filled_Water_Jug_Generated_Source.png",   // the user's own jug art (2026-10-19)
   trade_places: "Action/Benign_Transposition_Swap_Icon.webp",
   call_ally_back: "Action/Benign_Transposition_Swap_Icon.webp",
 

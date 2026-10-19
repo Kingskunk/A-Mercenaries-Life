@@ -1625,6 +1625,15 @@
   *set gear_blurb "A dented tin box holding a striker, a lump of flint, and a wad of char-cloth that catches from a single spark."
   *set gear_minutes 5
   *set gear_pct_general 50
+*if (gi_item = "water_jug")
+  *set gear_name "water jug"
+  *set gear_retail 5
+  *set gear_kind "tool"
+  *set gear_title "Water Jug"
+  *set gear_stack true
+  *set gear_blurb "A glazed clay jug with a cork on a cord, big enough to hold about a gallon of water."
+  *set gear_minutes 5
+  *set gear_pct_general 50
 *if (gi_item = "cooking_pot")
   *set gear_name "iron cooking pot"
   *set gear_retail 6
@@ -2571,8 +2580,12 @@
     *set sg_spare {gear_spare_var}
   *if (sg_spare > 0)
     *set {gear_spare_var} (sg_spare - 1)
+    *if (sg_item = "water_jug")
+      *gosub jug_trim
     *return
   *set {gear_flag_var} false
+  *if (sg_item = "water_jug")
+    *set jug_full 0
   *if (sg_item = "camp_kit")
     *set camp_kit_wear 0
   *if (gear_kind = "armor")
@@ -2607,6 +2620,35 @@
       *gosub equip_ring "1" "none"
     *if (equipped_ring2_id = sg_item)
       *gosub equip_ring "2" "none"
+*return
+
+*comment THE WATER JUG (2026-10-19): jug_full never counts more jugs than are carried, so a sale, which takes the empty ones first, only touches the full ones when they are all that is left.
+*comment *gosub_scene equipment jug_trim
+*label jug_trim
+*temp jt_total 0
+*if (has_water_jug)
+  *set jt_total (1 + spare_water_jug)
+*if (jug_full > jt_total)
+  *set jug_full jt_total
+*return
+
+*comment *gosub_scene equipment jug_fill   (output jug_fill_n: how many empty jugs it filled; the caller has already checked open water and owns the page's replay lock)
+*label jug_fill
+*temp jf_total 0
+*if (has_water_jug)
+  *set jf_total (1 + spare_water_jug)
+*gosub jug_trim
+*set jug_fill_n (jf_total - jug_full)
+*set jug_full jf_total
+*return
+
+*comment *gosub_scene equipment jug_empties   (output jug_empty_n: how many carried jugs are empty)
+*label jug_empties
+*set jug_empty_n 0
+*if (has_water_jug)
+  *set jug_empty_n ((1 + spare_water_jug) - jug_full)
+  *if (jug_empty_n < 0)
+    *set jug_empty_n 0
 *return
 
 *comment *gosub equipment water_at_hand   (output water_ok: is open water within the player's reach right now?)

@@ -169,6 +169,7 @@ const MAP = {
   sack: "Camp_Supply_Sack_Unfaded_Icon.png",
   mount: "Miscellaneous_item/Horse.png",
   jug: "Ceramic_Jug_A_Unfaded_Icon.png",
+  water_jug: "../Generic/Filled_Water_Jug_Generated_Source.png",   // the user's own art (2026-10-19): the water jug, one icon for empty and full
   note: "Book_Note_A_Item_Icon.png",
   letter: "Book_Parchment_A_Item_Icon.png",
   ledger: "Book_Bound_A_Item_Icon.png",
