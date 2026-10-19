@@ -105,6 +105,7 @@ const MAP = {
   lockpicks: "Thieves_Tools_Unfaded_Icon.png",
   key: "Key_Iron_A_Icon.png",
   shovel: "Shovel_Unfaded_Icon.png",
+  cooking_pot: "Miscellaneous_item/Clutter/Cooking_Pot_A_Unfaded_Icon.png",
   arrow_fire: "Arrow_of_Fire_Unfaded_Icon.png",
   arrow_ice: "Arrow_of_Ice_Unfaded_Icon.png",
   tool: "Blacksmith's_Tongs_Unfaded_Icon.png",                  // STAND-IN: prybar, manacles, bolt and any other hand tool

@@ -88,6 +88,13 @@
     },
     courierEntry(1), courierEntry(2), courierEntry(3),
     {
+      // The Overdue Peddler (timbermouth/barleycross/overdue_peddler.txt, 2026-10-19): taken on a job board with the Hall insignia, briefed and paid at the wife's cottage. No term. Counts toward the level-2 pool and on the insignia.
+      id: "overdue_peddler", title: "Word of Aldis Pellam",
+      place: function (s) { return truthy(s.dg_seen_lsf_r12) ? "Barleycross · tell Merel Pellam what you found" : "Barleycross · the last cottage on the Lane"; },
+      levelProgress: true,
+      active: function (s) { return s.peddler_stage === "active"; }
+    },
+    {
       id: "varren_errand", title: "Varren's Errand", place: "Port Valen",
       levelProgress: "Counts toward level progress if Trent is brought to justice.",
       active: function (s) { return s.slasher_quest_stage === "active" || ((s.slasher_quest_stage === "resolved" || s.slasher_quest_stage === "failed") && !truthy(s.slasher_reported)); }

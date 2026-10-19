@@ -152,7 +152,7 @@
     timber_axe: "w_battleaxe", stiletto: "w_dagger", iron_crowbar: "tool", torvald_iron_sallet: "h_helm", torvald_hide_cap: "h_cap",
     brigandine: "a_brig", chain_jack: "a_chain", plate_harness: "a_plate", court_coat: "a_coat", shield: "shield", toll_seal_ring: "signet",
     warming_liniment: "salve", clear_head_draught: "elixir", althea_phial: "potion", grease_flask: "grease", alchemists_fire: "alch_fire", mortar_pestle: "mortar_pestle", linen_bandage: "bandage", lye_soap: "soap", trail_rations: "rations", barley_loaf: "barley_loaf", hard_farm_cheese: "hard_farm_cheese", orchard_apple: "orchard_apple", root_vegetable_bundle: "root_vegetable_bundle", farm_eggs: "farm_eggs", dried_pork_sausage: "dried_pork_sausage",
-    hemp_rope: "rope", pitch_torch: "torch", lamp_oil: "oil", hooded_lantern: "lantern", tool_kit: "toolkit", shovel: "shovel", fire_arrow: "arrow_fire", ice_arrow: "arrow_ice", lute: "lute", tinderbox: "tinder", chalk_sticks: "chalk",
+    hemp_rope: "rope", pitch_torch: "torch", lamp_oil: "oil", hooded_lantern: "lantern", tool_kit: "toolkit", shovel: "shovel", cooking_pot: "cooking_pot", fire_arrow: "arrow_fire", ice_arrow: "arrow_ice", lute: "lute", tinderbox: "tinder", chalk_sticks: "chalk",
     camp_kit: "blanket", waxed_oilcloth: "cloth", lockpick_set: "lockpicks", padlock: "key", door_bolt: "tool", iron_manacles: "tool",
     broadcloth_cloak: "cloak_traveler", storm_cape: "cloak_storm", winter_cloak: "cloak_winter", summer_duster: "cloak_duster", felt_hat: "h_hat", fur_cap: "h_cap",
     lined_gloves: "gloves_lined", scholar_gloves: "gloves_scholar", masters_gloves: "gloves_master", waxed_boots: "boots_rain", winter_boots: "boots_winter", dancing_slippers: "shoes_dancing",

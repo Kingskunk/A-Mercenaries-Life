@@ -364,6 +364,12 @@
       description: "Dented tin box with a striker, flint and dry char-cloth."
     },
     {
+      id: "cooking_pot", category: "provisions", owned: "has_cooking_pot",
+      weight: 4, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_cooking_pot) || 0); return "Iron Cooking Pot" + (n > 1 ? " ×" + n : ""); },
+      description: "Blackened lidded iron pot with a wire bail for cooking over a campfire."
+    },
+    {
       id: "chalk_sticks", category: "provisions", owned: "has_chalk_sticks",
       weight: 0.1, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_chalk_sticks) || 0); return "Chalk Sticks" + (n > 1 ? " ×" + n : ""); },

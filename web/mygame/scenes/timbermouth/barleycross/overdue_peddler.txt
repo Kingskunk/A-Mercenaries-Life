@@ -1,9 +1,10 @@
 *comment ====================================================================================
 *comment THE OVERDUE PEDDLER (2026-10-18, the user's outline: a posting on the job boards, the wife for the quest, the dead found in the forest, the pouch returned for closure). Aldis Pellam gathered rare plants in the Longshade to sell
 *comment in Port Valen, and went in with two hired guards (Marr and Joss) and never came out. His wife, Merel Pellam, held his funeral without him and wants to know what happened. She pays 8 silver for the telling.
-*comment   FOUND: a private "WORD WANTED" posting on the Timbermouth Factor's Hall board (factors_hall.txt) and on the Barleycross notice post (green.txt). Reading either sets peddler_posting_seen, which shows the way to her cottage, the last
-*comment   house on the Barleycross Lane (lane.txt). The posting is where the job is seen; the person who gives it is the wife, never the Hall (the user: how the Port Valen job notices work).
-*comment   peddler_stage       "none" -> "active" (accepted from Merel) -> "resolved" (the news given and paid). A Hall Insignia is not needed. There is no term and no lapse (the user counts it as a real quest, for the level-2 pool).
+*comment   TAKEN on a job board (the user, 2026-10-19): the private "WORD WANTED" posting on the Timbermouth Factor's Hall board (factors_hall.txt) and on the Barleycross notice post (green.txt) is taken there with the Hall insignia (pd_posting,
+*comment   pd_sign, pd_need), like the courier postings, so it needs an insignia and a finished one counts on it (hall_jobs_scales). It is listed in the sidebar's active quests (quest-data.js). The wife briefs the player and takes the
+*comment   news at her cottage, the last house on the Barleycross Lane (lane.txt); nothing is reported at the Hall.
+*comment   peddler_stage       "none" -> "active" (taken on a board) -> "resolved" (the news given and paid). There is no term and no lapse (the user counts it as a real quest, for the level-2 pool).
 *comment   LEADS (optional): Merel's first talk (what he did and why the forest); the woman at the Ashrun House counter (people saw him go in with two guards: peddler_lead_inn, advantage on searching the Wrecked Camp);
 *comment   Odile and Bram (they heard a scream: peddler_lead_odile, advantage on reading the camp's ground, ashrun_holt.txt).
 *comment   THE NEWS: having seen the Trampled Clearing (Room 12, dg_seen_lsf_r12). Merel pays 8 silver for it.
@@ -11,6 +12,40 @@
 *comment   the CLOSURE line and her favor (bc_pouch_returned, bc_wenna_goodwill: she says Wenna Hart, the village head, will hear of it; the user's plan is a farm of the player's own later). Kept, nothing more is said. Neither is called right.
 *comment The first knock is the one conversation (pd_first, decided inside the page lock); later knocks are described. Not in *scene_list: compile.js lists it with verifyFileName.
 *comment ====================================================================================
+
+*comment ── THE POSTING: take it with the insignia, or read on to the courier postings ──
+*label pd_posting
+*choice
+  *if (has_hall_insignia)
+    # Press your insignia to the posting and take the job.
+      *goto pd_sign
+  *if (not(has_hall_insignia))
+    # Take the job.
+      *goto pd_need
+  # Read the other notices.
+    *set cr_origin pd_origin
+    *set cr_inline false
+    *goto_scene port_valen/radiant/hall_courier cr_read
+
+*label pd_sign
+[b]◈ THE POSTING[/b]
+*line_break
+You press your insignia to the paper. The brass warms against your palm, and the terms run across its face in thin lines of light: a gatherer and two guards gone into the Longshade, and the last cottage on the Barleycross Lane.
+*set peddler_stage "active"
+*page_break Step back from the posting…
+*goto pd_back
+
+*label pd_need
+[b]◈ THE POSTING[/b]
+*line_break
+You reach for the paper, and a clerk's stamp at its foot shows that the Hall has taken it in. The work goes to a bearer of the Hall's insignia, and the seals grille at the Factor's Hall in Timbermouth sells one, once.
+*page_break Step back from the posting…
+*goto pd_back
+
+*label pd_back
+*if (pd_origin = "tm")
+  *goto_scene timbermouth/factors_hall tm_hall_floor
+*goto_scene timbermouth/barleycross/green bc_hall
 
 *label pd_cottage
 *set minutes_to_pass 10
@@ -24,41 +59,32 @@
 [b]◈ THE END COTTAGE[/b]
 *line_break
 A low cottage stands at the far end of the lane, with wooden drying frames leaned against its wall, hung with wisps of fern and pale root, and a bench by the door worn smooth by sitting. A woman in a patched apron opens the door before your second knock. A girl of about eight hangs at her hip, and the woman's eyes go to your face.
-*if (peddler_stage = "none")
-  *goto pd_offer
 *if (dg_seen_lsf_r12)
   *goto pd_report
+*if (pd_first)
+  *goto pd_first_talk
 Merel Pellam studies your face a moment, then gives a small shake of her head. She waits, the door open, until you have stepped back off the sill.
 *page_break Step back to the lane…
 *goto_scene timbermouth/barleycross/lane bc_lane_lane
 
-*comment ── THE OFFER: what she wants to know, and the way in ──
-*label pd_offer
+*comment ── THE BRIEFING: the one conversation, on the first knock ──
+*label pd_first_talk
 
-*if (pd_first)
-  "I read your paper," you say. "Tell me about him."
+"I've taken your posting," you say. "Tell me about him."
 
-  "Merel Pellam." She shifts the girl to her other hip. "Aldis, my husband. He gathered plants. Roots, ferns, truffles, anything the Longshade grows that the apothecaries in Port Valen will pay for. Twice a season he went in and came out with a pack that smelled like a wet cellar. This time he took two hands from the lane, Marr and Joss, because the rare stuff grows deep."
+"Merel Pellam." She shifts the girl to her other hip. "Aldis, my husband. He gathered plants. Roots, ferns, truffles, anything the Longshade grows that the apothecaries in Port Valen will pay for. Twice a season he went in and came out with a pack that smelled like a wet cellar. This time he took two hands from the lane, Marr and Joss, because the rare stuff grows deep."
 
-  "When did he go in?"
+"When did he go in?"
 
-  "Long enough ago that the Holt stopped asking, and so did I." Her chin lifts. "We held the funeral at the turn of the month. We buried his second-best coat, because there was nothing else."
+"Long enough ago that the Holt stopped asking, and so did I." Her chin lifts. "We held the funeral at the turn of the month. We buried his second-best coat, because there was nothing else."
 
-  "What do you want from me?"
+"What do you want from me?"
 
-  "I'm not asking you to bring him back." Her voice stays level and her hand moves in the girl's hair. "I want to know how it ended. Where he is, and whether it was quick. The village and my sister put eight silver together for whoever tells me, and that's all there is."
-*else
-  Merel Pellam waits at the door with her hand on the latch. Nothing has changed: Aldis, the two hands, the forest, eight silver for the telling.
-*choice
-  # "I'll find out what happened to him."
-    *set peddler_stage "active"
-    She nods, once, and her hand eases on the latch. "Ask in the Holt," she says. "He was seen going in."
-    *page_break Step back to the lane…
-    *goto_scene timbermouth/barleycross/lane bc_lane_lane
-  # "I can't take this on."
-    "No," Merel Pellam says, quietly. "It isn't an easy ask." She shuts the door.
-    *page_break Step back to the lane…
-    *goto_scene timbermouth/barleycross/lane bc_lane_lane
+"I'm not asking you to bring him back." Her voice stays level and her hand moves in the girl's hair. "I want to know how it ended. Where he is, and whether it was quick. The village and my sister put eight silver together for whoever tells me, and that's all there is. Ask in the Holt. He was seen going in."
+
+She waits until you nod, and then she shuts the door softly.
+*page_break Step back to the lane…
+*goto_scene timbermouth/barleycross/lane bc_lane_lane
 
 *comment ── THE NEWS: the dead found, and the pouch ──
 *label pd_report
@@ -81,10 +107,14 @@ She takes the girl inside and comes back with a twist of cloth. She counts eight
   *gosub_scene economy currency_add
   *set currency_txn_locked true
   *set locked_currency_txn_page_id page_id
-*comment Fixed-value set, safe to repeat on a replay; it cannot use the stat_bump lock because pd_cottage's first-knock check at the top has already taken it.
-*set peddler_stage "resolved"
+*comment The stage is the guard (the stat_bump lock is already taken by pd_cottage's first-knock check at the top): a replay finds it "resolved" and skips the count, like the other Hall jobs.
+*if (peddler_stage = "active")
+  *set peddler_stage "resolved"
+  *set hall_jobs_scales + 1
 
 [b][💰 Received: 8 Silver Marks][/b]
+*line_break
+[b][🏷️ Insignia: Port Valen page, ${hall_jobs_scales} @{(hall_jobs_scales = 1) job|jobs} finished][/b]
 *gosub_scene calendar update_hub_condition
 *if (has_pellam_pouch)
   *goto pd_pouch_ask

@@ -200,14 +200,14 @@
     },
 
     {
-      id: "factors_hall_tm", category: "places", title: "The Factor's Hall",
-      sub: "The Gilded Scales' hall in Timbermouth",
-      tags: ["Timbermouth", "Gilded Scales"], aliases: ["factor's hall", "town hall", "counting house", "insignia", "notice board"],
-      link: ["Factor's Hall", "Timbermouth's Factor's Hall"],
+      id: "factors_hall_tm", category: "places", title: "Timbermouth Factor's Hall",
+      sub: "The Gilded Scales' Timbermouth office",
+      tags: ["Timbermouth", "Gilded Scales"], aliases: ["factor's hall", "Timbermouth's Factor's Hall", "town hall", "counting house", "insignia", "notice board"],
+      link: ["Factor's Hall", "Timbermouth Factor's Hall", "Timbermouth's Factor's Hall"],
       unlock: "tm_hall_seen",
       body: function (s) {
         var out = [
-          "The only stone building on Timbermouth's square: a long, cool hall behind broad steps, under the Gilded Scales' river-serpent banner. Two clerks in black coats with river-serpent cuffs keep one long counter between them. The senior clerk takes deposits and letters, and the younger one keeps the seals. A schedule over the counter lists deeds and licences by appointment, a notice board by the door carries the forecast, the road notice and the postings, and a closed door at the back is the Factor's."
+          "Timbermouth's local office in the Gilded Scales' provincial network, and the only stone building on the square: a long, cool hall behind broad steps, under the river-serpent banner. Two clerks in black coats with river-serpent cuffs keep one long counter between them. The senior clerk takes deposits and letters, and the younger one keeps the seals. A schedule over the counter lists deeds and licences by appointment, a notice board by the door carries the forecast, the road notice and the postings, and a closed door at the back is the Town Factor's."
         ];
         if (truthy(s.has_letter_of_credit)) {
           out.push("The counter keeps the same Letters of Credit as the Gilded Scales' head house in Port Valen, so a balance made in one can be drawn in the other.");
@@ -217,7 +217,7 @@
         }
         return out;
       },
-      see: ["letters_of_credit", "gilded_scales", "timbermouth"]
+      see: ["letters_of_credit", "gilded_scales", "scales_head_house", "timbermouth"]
     },
 
     {
