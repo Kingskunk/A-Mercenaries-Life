@@ -87,6 +87,15 @@
     return (window.GARMENT_HINTS || {})[id] || "";
   }
 
+  // This describes the worn body's own AC formula, not the character's resolved AC.
+  // The latter also includes DEX, shields, head armor, and class or fighting-style bonuses.
+  function armorAcMeta(armorType) {
+    if (armorType === "leather" || armorType === "buff_coat") return "AC 11 + DEX";
+    if (armorType === "brigandine" || armorType === "chain_jack") return "AC 13 + DEX (max +2)";
+    if (armorType === "plate_harness") return "AC 16 (no DEX)";
+    return "AC 10 + DEX";
+  }
+
   function renderSlotValue(slot, s) {
     var desc = slot.desc ? (s[slot.desc] == null ? "" : String(s[slot.desc])) : "";
     var empty = !!EMPTY_DESCS[desc.toLowerCase()];
@@ -95,8 +104,7 @@
       var dmg = slot.dmg ? s[slot.dmg] : "";
       if (dmg && dmg !== "none") meta = String(dmg);
     } else if (slot.shape === "armor") {
-      var ac = slot.ac ? s[slot.ac] : null;
-      if (ac !== null && ac !== undefined && ac !== "") meta = "AC " + ac;
+      meta = armorAcMeta(s[slot.armorType]);
     } else if (slot.shape === "headwear") {
       if (truthy(s[slot.isArmor]) && Number(s[slot.ac]) > 0) meta = "+" + s[slot.ac] + " AC";
     } else if (slot.shape === "shield") {

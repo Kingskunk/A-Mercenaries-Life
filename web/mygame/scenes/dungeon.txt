@@ -335,6 +335,7 @@
 *gosub dg_forage_info
 *if (dg_fg_dc = 0)
   There is nothing here worth gathering.
+  *set dg_fg_stock ""
   *return
 *gosub_scene dice_engine roll_skill_check dg_fg_dc "nature" "" "survival" "" "" ""
 *temp dgf_n 0
@@ -342,11 +343,18 @@
   *set dgf_n 1
 *if (check_total >= (dg_fg_dc + 5))
   *set dgf_n 2
+*comment A SEASONAL STOCK (2026-10-19): a caller that sets dg_fg_stock to the NAME of a stock variable (the Old Grove's two plants, which come back once a season, not every refill) limits the pieces to what is left and takes
+*comment them off it. dg_fg_got is the pieces actually gathered, decided inside the lock so a replay prints the same line; the prose below reads it, not dgf_n. dg_fg_stock is cleared at the end so no later spot inherits it.
 *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-  *set {dg_fg_plant} (({dg_fg_plant}) + dgf_n)
+  *set dg_fg_got dgf_n
+  *if (dg_fg_stock != "")
+    *if (dg_fg_got > {dg_fg_stock})
+      *set dg_fg_got {dg_fg_stock}
+    *set {dg_fg_stock} (({dg_fg_stock}) - dg_fg_got)
+  *set {dg_fg_plant} (({dg_fg_plant}) + dg_fg_got)
   *set stat_bump_locked true
   *set locked_stat_bump_page_id page_id
-*if (dgf_n = 0)
+*if (dg_fg_got = 0)
   *if (dg_fg_plant = "sluice_moss")
     The moss slides off the brick in grey slime that runs through your fingers.
   *if (dg_fg_plant = "brinecap")
@@ -380,31 +388,31 @@
     You tap the dry pods over a fold of cloth until the fine spores fall, and tie it shut before they can drift.
   *if (dg_fg_plant = "shadefern")
     You cut the fronds close to the rock with a quick twist of the wrist, keeping the stems whole, and wrap them in a wet leaf to keep them cool.
-    *if (dgf_n = 2)
+    *if (dg_fg_got = 2)
 
       The stand is thick enough for a second bundle, and you fill it.
   *if (dg_fg_plant = "silverleaf")
     You pinch the soft, velvet-backed leaves off at the stem, one at a time, and press them flat inside a fold of cloth.
-    *if (dgf_n = 2)
+    *if (dg_fg_got = 2)
 
       The patch is thick enough for a second fold, and you fill it.
   *if (dg_fg_plant = "oakheart_balsam")
     You pry the beads of amber resin out of the cuts with a flat chip of bark, and they come away whole, sticky and sweet, into a twist of oilcloth.
-    *if (dgf_n = 2)
+    *if (dg_fg_got = 2)
 
       The cuts run thick enough for a second twist, and you fill that too.
   *if (dg_fg_plant = "brambleberry")
     You reach in past the thorns and pick the heavy, near-black berries one at a time, laying them in a fold of cloth so they don't crush.
-    *if (dgf_n = 2)
+    *if (dg_fg_got = 2)
 
       The canes hang thick with fruit, and you fill a second fold.
   *if (dg_fg_plant = "acorn_truffle")
     You rake the leaf mold back from between two roots, and the earth underneath smells suddenly rich and nutty. A knobbly lump comes up in your hand, firm as a chestnut, and you brush it clean.
-    *if (dgf_n = 2)
+    *if (dg_fg_got = 2)
 
       A second lies a hand's width away, and you work it loose too.
   *line_break
-  [b][🌿 Gathered: ${dgf_n} ${dg_fg_name}][/b]
+  [b][🌿 Gathered: ${dg_fg_got} ${dg_fg_name}][/b]
 *set hours_to_pass 0
 *set minutes_to_pass 15
 *set time_advance_call_id "dg_forage"
@@ -415,8 +423,8 @@
   *if (neglect_damage_fatigue > neglect_damage_hunger)
     *set death_cause "exhaustion"
   *goto_scene death death_screen
+*set dg_fg_stock ""
 *return
-
 *comment ──────────────────────────────────────────────────────────────
 *comment WALKING A DUNGEON (2026-10-02). The dungeon's own scene owns its map (nodes, exits, prose); this file owns what every dungeon shares.
 *comment   dg_step         one move: the caller sets dg_dest (the node id) and dg_dest_hall (true for a hallway). It moves dg_pos, counts the step, spends 10 minutes

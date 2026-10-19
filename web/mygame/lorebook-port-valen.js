@@ -56,7 +56,7 @@
       unlock: "pv_dice_met",
       body: [
         "A scarred longshoreman with a missing finger, grease-stained cuffs, and a screeching laugh like gulls fighting over offal. He runs the game at the long trestle by the hearth with a cut-down drinking horn banded in brass, and a chalk circle for the throw.",
-        "The standard stake is four copper bits. His copper is as good as any porter's, and he says so."
+        "He insists his coin is as good as any porter's."
       ],
       see: ["cleaved_keel", "maret"]
     },
@@ -186,7 +186,7 @@
       tags: ["Middle Ward"], aliases: ["Kess", "landlady", "lodgings", "rent"],
       unlock: "mw_lodgings_seen",
       body: [
-        "A crisp, no-nonsense landlady. Two silver marks buy seven days: clean straw, a dry roof, quiet stairs, and Master Vael's deadbolts on every door.",
+        "A crisp, no-nonsense landlady who keeps clean straw, a dry roof, quiet stairs, and Master Vael's deadbolts on every door.",
         "No blood in her hallway, no thieves under her rafters, and no Watchmen asking questions, so long as the coin hits the tin on time."
       ],
       see: ["vael", "middle_ward"]
@@ -239,11 +239,11 @@
       unlock: "met_vael",
       body: function (s) {
         var out = [
-          "A lean, wiry craftsman in a leather apron stiff with oil, with measuring calipers in his breast pocket, who works a needle file inside a lock held up to his ear and tests the mechanism with a sharp flick of the wrist until it answers with a crisp snick. His sign reads: Locks Warranted Against Pick and Wedge. Replacement Keys: Three Copper Bits.",
+          "A lean, wiry craftsman in a leather apron stiff with oil, with measuring calipers in his breast pocket, who works a needle file inside a lock held up to his ear and tests the mechanism with a sharp flick of the wrist until it answers with a crisp snick. His sign reads: Locks Warranted Against Pick and Wedge.",
           "The shop is Vael and Son, and the Son is long gone. He keeps the name up and works the trade himself, with apprentices on the benches."
         ];
         if (truthy(s.mw_vael_seen)) {
-          out.push("The workshop is one long room warm from a charcoal hearth, with sample locks on display boards along one wall: thumb-sized jewelry latches up to iron-banded chest deadbolts. The locks on the boards are samples, not stock. What he sells over the counter is small kit, priced on paper tags wired to each piece: lockpick sets, brass padlocks with two keys, door bolts, and iron manacles.");
+          out.push("The workshop is one long room warm from a charcoal hearth, with sample locks on display boards along one wall: thumb-sized jewelry latches up to iron-banded chest deadbolts. The locks on the boards are samples, not stock.");
         }
         if (truthy(s.mw_vael_sign_talk)) {
           out.push("He sells picks himself, to whoever asks. \"It's not a boast. It's mathematics.\" His customers are owners who have lost a key, clerks shut out of their own strongboxes, and the Watch, twice a year, trying to see if they can slip one of his deadbolts. A pick is just a lever with an attitude, and it doesn't care whose hand is on the grip. No one has picked one of his locks yet.");
@@ -323,7 +323,7 @@
       unlock: "mw_baths_seen",
       body: function (s) {
         var out = [
-          "A tall, thin woman in a spotless grey apron, with hands red and cracked from lye. She keeps the Conduit Baths from a small desk inside the door, where three copper bits buy a soak, a warm towel, and a cake of lavender soap. Whatever a visitor carries that cuts, crushes, or shoots goes on the rack by the door until they leave."
+          "A tall, thin woman in a spotless grey apron, with hands red and cracked from lye. She keeps the Conduit Baths from a small desk inside the door. Weapons go on the rack by the door until their owners leave."
         ];
         if (truthy(s.mw_merrin_rules_talk)) {
           out.push("Her rules are three: steel on the rack, no quarrels in the steam, and nobody stays past the night bell. In twenty years she has had one fight, and both people left by the drain door without their clothes. People say things in the steam they would not say in the street, and anyone who repeats it outside does not come back.");
@@ -347,7 +347,7 @@
       unlock: "ch_records_seen",
       body: function (s) {
         var out = [
-          "A broad-shouldered clerk in a dark grey coat and a matching cap, with a straight back and the flat, carrying voice of a man who reads other people's terms aloud all day. He keeps the Postings window at the Hiring Hall. Reading the wall is free. Signing costs."
+          "A broad-shouldered clerk in a dark grey coat and a matching cap, with a straight back and the flat, carrying voice of a man who reads other people's terms aloud all day. He keeps the Postings window at the Hiring Hall."
         ];
         if (truthy(s.ch_roll_rules_talk)) {
           out.push("To him the Hall is the law and not a courtesy, and the words carved over the lintel are there so nobody can say they did not see them.");
@@ -394,7 +394,7 @@
       },
       body: [
         "One long line of stone and timber along the estuary: the fish market's granite ramp and the low wooden taverns at the western end, the cargo quay with its slips and massive balance cranes, a squat customs tower where the road down from the terraces meets the quay gate, then the shipyard wall and a long stone breakwater running out toward the bar. Deep-hulled merchant vessels ride at anchor in the outer roadstead, while flat-bottomed river barges and fishing smacks crowd the inner docks.",
-        "From west to east the quayside holds the Fishmongers' Slip, the Cleaved Keel, the Cargo Quay with its long grey hall under an iron beam-scale and the customs tower at its end, the shipwrights' ways of the Iron Wharves, and the long pier out to the wreck-bell. Most of it shuts at dusk."
+        "From west to east the quayside holds the Fishmongers' Slip, the Cleaved Keel, the Cargo Quay with its long grey hall under an iron beam-scale and the customs tower at its end, the shipwrights' ways of the Iron Wharves, and the long pier out to the wreck-bell."
       ],
       see: ["cleaved_keel", "cargo_quay", "iron_wharves", "pier", "fishmongers_slip", "port_valen"]
     },
@@ -430,8 +430,7 @@
       unlock: "wh_named",
       body: function (s) {
         var out = [
-          "A long hall of grey stone midway along the cargo quay, with cart doors wide enough for a laden dray and a great iron beam-scale hung from its gable. Cut into the lintel is the line One Weight for All. Inside are platform scales sunk in the floor, racks of brass weights, and a wall of black boards ruled in columns, one for each good the port handles.",
-          "It opens at Seventh Bell, stays open in bad weather, and shuts at the evening horn and on Hallowday. A chalkboard on a post by the doors gives tomorrow's weather."
+          "A long hall of grey stone midway along the cargo quay, with cart doors wide enough for a laden dray and a great iron beam-scale hung from its gable. Cut into the lintel is the line One Weight for All. Inside are platform scales sunk in the floor, racks of brass weights, and a wall of black boards ruled in columns, one for each good the port handles. A chalkboard by the doors gives tomorrow's weather."
         ];
         if (truthy(s.wh_floor_talk)) {
           out.push("Goods are weighed here by the load, on the city's standard weights, before they are bought or sold, and a load on a cart may be brought to the scale. Fresh fish is not weighed here: the Fishmongers' Slip keeps its own market.");
@@ -472,7 +471,7 @@
       unlock: "pv_drydock_seen",
       body: [
         "Coal smoke, forge-spark, and the ring of caulking mauls announce the yard long before you see it. Behind the shipyard wall the merchant ways climb out of the tide like half-built animals: river barges and ocean hulls stripped to the ribs, steamed planks going down seam by seam under the Gilded Scales' river-serpent standard.",
-        "Every hull on the ways has a crew's name chalked on its cradle and a fine written under it. The yard gate is chained at dusk and in a storm."
+        "Every hull on the ways has a crew's name chalked on its cradle and a fine written under it."
       ],
       see: ["brant", "hendryk", "gilded_scales", "carrion_compound"]
     },
@@ -507,7 +506,7 @@
       unlock: "pv_slip_seen",
       body: [
         "A broad ramp of wet granite beside the fish market, sloped so the inshore boats can be hauled up on rollers and sold off the boards. Behind the stalls stand the low black smokehouses, and above them a long net-drying loft with its loading door open to the wind.",
-        "The market is open from before dawn through the afternoon, and shuts at dusk and in a storm. The dawn auction is the heart of it, with fried smelt, oysters and fish-and-onion pasties for sale at the stalls."
+        "The dawn auction is the heart of it, with food stalls gathered around the wet stone."
       ],
       see: ["auction_block", "wenna", "thale", "harbor_quayside"]
     },
@@ -615,7 +614,7 @@
       body: function (s) {
         var n = Number(s.cut_rumors_scrap) || 0;
         var out = [
-          "Sheds built out over the canal kerb line the bank with their doors open to the water and racks of half-shaped ash oars under the eaves. The ground between them is trampled cinder scattered with wood shavings. Further along is a fenced scrap yard of salvaged stone, coiled chain and plate iron, and a smith's bench under a lean-to. On Forgeday the yard is busy with chain coming off punts, and the smith's hammer carries across the canal. The sheds keep daylight hours: the open fronts are boarded at dusk, in a gale the yard is lashed shut, and on Hearthday the gate stays chained."
+          "Sheds built out over the canal kerb line the bank with their doors open to the water and racks of half-shaped ash oars under the eaves. The ground between them is trampled cinder scattered with wood shavings. Further along is a fenced scrap yard of salvaged stone, coiled chain and plate iron, and a smith's bench under a lean-to. The smith's hammer carries across the canal."
         ];
         if (n >= 1) {
           out.push("The dealer buys chain, plate, oar-pins and anything with iron in it, and flat stone for paving, because somebody in the quarter is always relaying a lane.");
@@ -666,7 +665,7 @@
           "A wide shelf of hard-packed cinder where the canal widens, with three low barges tied along its edge. Dredgers haul black spoil up in baskets with hooked poles and iron scoops on chains and tip it onto long mounds that dry to a crust on the bank. It can only be worked at low water, and the barges stay tied up in fog or a gale."
         ];
         if (Number(s.cut_labor_day) > 0) {
-          out.push("The foreman pays a few copper marks for four hours on the poles, and less for a spilled basket.");
+          out.push("The foreman hires people to work the poles, and cuts a worker loose after a spilled basket.");
         }
         if (n >= 1) {
           out.push("The dredgers pull up iron oar-pins, chain and, once in a while, a single boot.");
@@ -715,8 +714,8 @@
       unlock: "codex_corve",
       body: function (s) {
         var out = [
-          "A private house built into the granite base of the seawall on Lamp Stair, marked by a small brass plate reading \"Widow Corve's\" and twin lanterns with deep red bullseye glass burning over the door. It keeps dusk-to-pre-dawn hours and stands barred through the day. Past the felt curtain, a heated parlor smells of dried lavender, applewood coals and spiced wine, and every woman working the floor does so under the house's own leasehold, not anyone else's.",
-          "A mug of hot wine by the stove costs little and buys company for the evening; an hour upstairs with one of the parlor's regulars costs more. Regulars say the wine does a man sleeping too many nights running in the same rough cot more good than it ever does his thirst. Whoever holds the leasehold is never seen and never named -- she doesn't need to know a customer's."
+          "A private house built into the granite base of the seawall on Lamp Stair, marked by a small brass plate reading \"Widow Corve's\" and twin lanterns with deep red bullseye glass over the door. Past the felt curtain, a heated parlor smells of dried lavender, applewood coals and spiced wine, and every woman working the floor does so under the house's own leasehold, not anyone else's.",
+          "Regulars say the wine does a man sleeping too many nights running in the same rough cot more good than it ever does his thirst. Whoever holds the leasehold is never seen and never named -- she doesn't need to know a customer's."
         ];
         return out;
       },
@@ -891,8 +890,7 @@
       index: false,
       body: function (s) {
         var out = [
-          "A curving lane that climbs from Conduit Square under deep timber eaves, with an iron bracket for a horn lantern over every shop door. Rope, tin pans, blankets, cloth, boots, candles, lamp oil, paper and ink are sold from small shops and open counters. Hollis & Daughters General Goods has the widest front. At the head of the lane, a gap between two workshops leads into Herb-Pounder Close, where Master Ambrose keeps his still-room.",
-          "The shops open in daylight and close at dusk. On the holy day and in a blizzard the shutters stay barred."
+          "A curving lane that climbs from Conduit Square under deep timber eaves, with an iron bracket for a horn lantern over every shop door. Small shops and open counters line it, with Hollis & Daughters General Goods holding the widest front. At the head of the lane, a gap between two workshops leads into Herb-Pounder Close, where Master Ambrose keeps his still-room."
         ];
         if (truthy(s.mw_hollis_lane_talk)) {
           out.push("The name comes from the lanterns. Every shop keeps one lit over its door from dusk to dawn, and each pays a copper a week to the ward lamp-keeper for the oil. That makes it the best-lit street in the ward at night.");
@@ -910,8 +908,7 @@
       index: false,
       body: function (s) {
         var out = [
-          "A cobbled yard at the lower end of the Middle Ward, where the harbor road climbs in. Three forges stand under open sheds around a stone water trough, with racks of finished blades, helmets and tools along the walls. Iron bars and coal come up from the harbor by wagon. A cooper's bench at the far end still makes barrels for the ward.",
-          "The forges work in daylight and bank their fires at dusk. On the holy day and in a blizzard the sheds stay barred."
+          "A cobbled yard at the lower end of the Middle Ward, where the harbor road climbs in. Three forges stand under open sheds around a stone water trough, with racks of finished work along the walls. Iron bars and coal come up from the harbor by wagon. A cooper's bench at the far end still makes barrels for the ward."
         ];
         return out;
       },
@@ -925,8 +922,7 @@
       unlock: "mw_wash_seen",
       body: function (s) {
         var out = [
-          "A covered yard behind Conduit Square, where copper tubs sit on charcoal fires under long shed roofs and steam rolls out into the lanes. At the far end a low stone building holds the Conduit Baths, fed by a lead pipe from the conduit. A soak costs three copper bits, with a warm towel and scented soap.",
-          "The yard is busiest on Greyday, which is washday. It stays open into the evening for people coming off work, and it is closed at night and on the holy day."
+          "A covered yard behind Conduit Square, where copper tubs sit on charcoal fires under long shed roofs and steam rolls out into the lanes. At the far end a low stone building holds the Conduit Baths, fed by a lead pipe from the conduit. The yard is busiest on Greyday, which is washday."
         ];
         if (truthy(s.mw_merrin_water_talk)) {
           out.push("The water is heated by boilers built into the back wall of Mother Marda's ovens.");
@@ -958,10 +954,10 @@
       unlock: "mw_inn_seen",
       body: function (s) {
         var out = [
-          "A long two-storey inn of grey stone and dark timber on the trunk road, marked by a white-painted wagon wheel over its door. It lets rooms for a day and a night at " + (s.mw_inn_rate_copper || 5) + " copper bits, with a low beamed hall, a stair to the rooms above, and behind an archway a cobbled yard with a stable range and a cart shed."
+          "A long two-storey inn of grey stone and dark timber on the trunk road, marked by a white-painted wagon wheel over its door. It has a low beamed hall, rooms above, and behind an archway a cobbled yard with a stable range and a cart shed."
         ];
         if (truthy(s.mw_inn_talk_house)) {
-          out.push("One guest to a room. The key is yours for a full day from the hour you pay, to sleep in as often as you like and to carry out and back, and anything left behind when the day is up goes to the cathedral's poor-box.");
+          out.push("Rooms are kept one guest to a key.");
         }
         if (truthy(s.mw_inn_talk_road)) {
           out.push("Its guests are mostly carters, drovers and factors' clerks off the trunk road, and few stay longer than a night.");
@@ -1066,8 +1062,7 @@
       unlock: "pw_seen",
       body: function (s) {
         var out = [
-          "A gatehouse passage beside the Council Hall's west wing, signed Port Watch, with a duty desk, a notice board under the eave and an iron inner gate. Through the bars a cobbled yard runs back to a long two-storey guardhouse of dark stone, sheds full of tagged crates and casks, and a barred stair going down to the cells.",
-          "The public goes no further than the gatehouse passage. The desk is kept from Morning through Afternoon, and after that only a hatch in the gatehouse wall stays open."
+          "A gatehouse passage beside the Council Hall's west wing, signed Port Watch, with a duty desk, a notice board under the eave and an iron inner gate. Through the bars a cobbled yard runs back to a long two-storey guardhouse of dark stone, sheds full of tagged crates and casks, and a barred stair going down to the cells. The public goes no further than the gatehouse passage."
         ];
         if (truthy(s.pw_talk_rounds)) {
           out.push("The Watch wants hands for the night rounds, paid by the week. The captain draws the rosters herself and signs no one she has not looked at twice.");
@@ -1111,8 +1106,7 @@
       unlock: "ch_head_named",
       body: function (s) {
         var out = [
-          "The Gilded Scales' seat in Port Valen, facing the Council Hall across the plaza on Civic Heights. Brass balance-scales hang over its bronze-banded doors and a gilded river-serpent coils along the lintel. Inside, a vaulted counting floor holds four windows: Deposits and Letters, Writs and Registers, Dispatches, and a shuttered Contracts window.",
-          "It opens at Seventh Bell, shuts at the evening horn, and stays closed on Hallowday."
+          "The Gilded Scales' seat in Port Valen, facing the Council Hall across the plaza on Civic Heights. Brass balance-scales hang over its bronze-banded doors and a gilded river-serpent coils along the lintel. Inside, a vaulted counting floor holds four windows: Deposits and Letters, Writs and Registers, Dispatches, and a shuttered Contracts window."
         ];
         if (truthy(s.ch_head_contracts_talk)) {
           out.push("Contracts are let by appointment, to houses the Scales already trust and companies that have left nothing ugly in the Hall's book and nothing owing in the books.");
@@ -1159,7 +1153,7 @@
       unlock: "ch_head_writ_seen",
       body: function (s) {
         var out = [
-          "The Patrician Quarter admits only the holders of a writ, bought at the Gilded Scales head house and carrying both the Scales' seal and the city's three-masted seal. A Day Writ costs " + (s.patrician_day_price_silver || 1) + " silver mark and is good for the rest of the day it is bought. A Registered Writ costs " + (s.patrician_reg_price_silver || 8) + " silver marks, is good for " + (s.patrician_reg_days || 30) + " days, and enters the holder's name in the book at the Inner Gate."
+          "The Patrician Quarter admits only holders of a writ from the Gilded Scales head house, carrying both the Scales' seal and the city's three-masted seal. Day Writs admit their holders briefly; Registered Writs enter a name in the book at the Inner Gate."
         ];
         if (truthy(s.ch_head_writ_talk)) {
           out.push("A name in the book that draws steel in the Quarter without good cause is struck from it inside the hour, and the lockup keeps you until the shift bell. The Quarter's house guards make the arrests; the Council only reads about them.");
@@ -1312,7 +1306,7 @@
       unlock: "met_deacon_vey",
       body: function (s) {
         var out = [
-          "A lean man in a dark gold stole mended at the edge, with ink in the creases of his fingers. He keeps the oath desk near the front pews and gives the cathedral's healing rite for four silver marks, once a day, the rite closing what is open."
+          "A lean man in a dark gold stole mended at the edge, with ink in the creases of his fingers. He keeps the oath desk near the front pews and gives the cathedral's healing rite, the rite closing what is open."
         ];
         if (truthy(s.slasher_kenny_seen)) {
           out.push("He is tending a dying man in the Althea chapel and says the rite cannot reach what is cracked inside a skull. When the militia sent a clerk for the man's name, he gave the name and kept back the man's fevered shouting.");
@@ -1400,8 +1394,7 @@
       unlock: "pq_tailor_seen",
       body: function (s) {
         var out = [
-          "A narrow shop of dark wood and bow glass near the Inner Gate, marked by a gilt needle threaded with red silk. Bolts of cloth lean in racks to the ceiling, and a long cutting table is spread with paper patterns. Everything is cut to the wearer, and each piece is adjusted while you wait.",
-          "Finished cloaks, hats, gloves, boots and fine dress hang along the walls and sit in glass cases, each priced on a card in Fenwick's small square hand. He buys a piece back for about four in ten of what he asked, since it was cut to one person."
+          "A narrow shop of dark wood and bow glass near the Inner Gate, marked by a gilt needle threaded with red silk. Bolts of cloth lean in racks to the ceiling, and a long cutting table is spread with paper patterns. Everything is cut to the wearer, and finished garments hang along the walls and sit in glass cases."
         ];
         if (truthy(s.pq_tailor_talk_fine)) {
           out.push("The finest pieces are kept apart under the skylight, with a second line of pale stitching in every seam. There is one of each, finished for one wearer, and they cost a great deal more than the rest of the shop.");
@@ -1540,20 +1533,19 @@
       unlock: "ch_records_seen",
       body: function (s) {
         var out = [
-          "A long stone hall in the east wing of the Council Hall on the Civic Heights plaza. Hirers post the terms of their contracts on wooden frames along the walls, each sealed by the patron and stamped with the city's three-masted seal. Carved over the lintel: <i>What is not in the records does not exist in the world.</i> Sellswords, guards, drivers and hired hands read the postings here and wait for the Postings, Claims and Seals windows.",
-          "The hall is open by day and shuts when the evening horn sounds and on the holy day."
+          "A long stone hall in the east wing of the Council Hall on the Civic Heights plaza. Hirers post the terms of their contracts on wooden frames along the walls, each sealed by the patron and stamped with the city's three-masted seal. Carved over the lintel: <i>What is not in the records does not exist in the world.</i> Sellswords, guards, drivers and hired hands read the postings here and wait for the Postings, Claims and Seals windows."
         ];
         if (truthy(s.ch_roll_rules_talk)) {
           out.push("In Port Valen a hire is not a hire until both seals are on the posting, the patron's and the city's. The rule is the same for guilds, the Scales and a widow hiring a door-warden. The courts will not enforce a promise that is not posted.");
         }
         if (truthy(s.ch_roll_claims_talk)) {
-          out.push("A worker who was not paid files a claim at the Claims window with a copy of the posting. If the terms are posted, the court can order the patron to pay, and the city takes its fee out of what it wins back. If they are not posted, there is nothing to file.");
+          out.push("A worker who was not paid files a claim at the Claims window with a copy of the posting. If the terms are posted, the court can order the patron to pay. If they are not posted, there is nothing to file.");
         }
         if (truthy(s.ch_roll_deeds_talk)) {
           out.push("A fourth window, Deeds, stands behind a permanent iron shutter. A house changes hands on the records or not at all, and the window opens when there is a sale to witness.");
         }
         if (truthy(s.ch_seals_talk)) {
-          out.push("The Seals window sells the Hall's insignia for a one-time licence fee: a palm-sized brass disc with the wearer's name, rank and the terms of everything they sign worked into the metal, where any reader can pass over it and tell. A copy of the shape reads blank. It is the same disc in every kingdom and only its pages differ: each government writes its own rank onto it, and some honor each other's.");
+          out.push("The Seals window issues the Hall's insignia: a palm-sized brass disc with the wearer's name, rank and the terms of everything they sign worked into the metal. A copy of the shape reads blank. It is the same disc in every kingdom and only its pages differ: each government writes its own rank onto it, and some honor each other's.");
         }
         if (truthy(s.ch_seals_ranks_talk)) {
           out.push("The Scales keep four ranks, and the Hall only works the brass. In order: Open, Bonded, Sealed and Named.");

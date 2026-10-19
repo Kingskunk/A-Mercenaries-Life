@@ -62,7 +62,7 @@
     { label: "Primary Weapon", shape: "weapon", desc: "weapon_desc", dmg: "weapon_damage", bucket: "weapon",
       swappable: true, always: function () { return ["starting"]; } },
     { label: "Sidearm", shape: "weapon", desc: "sidearm_desc", dmg: "sidearm_damage", bucket: "sidearm" },
-    { label: "Armor", shape: "armor", desc: "armor_desc", ac: "armor_class", bucket: "armor",
+    { label: "Armor", shape: "armor", desc: "armor_desc", armorType: "armor_type", bucket: "armor",
       swappable: true, always: function () { return ["starting"]; } },
     { label: "Shield", shape: "shield", bucket: "shield", swappable: true },
     { label: "Head", shape: "headwear", desc: "head_desc", ac: "head_ac", isArmor: "head_is_armor", bucket: "head",

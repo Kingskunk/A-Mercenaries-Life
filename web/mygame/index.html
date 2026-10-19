@@ -135,6 +135,19 @@ var rootDir = "../";
   color: var(--ch-gold, #c9a35a);
   font-style: normal;
 }
+/* The quest panel (questPanelHtml): a title, the place under it, a progress line for a quest with counts. */
+#statSidebar .qGroup { margin: 8px 0 2px; font: 600 10.5px var(--ch-font-ui); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ch-dim); }
+#statSidebar .qItem { padding: 6px 0; border-bottom: 1px dotted var(--ch-line); cursor: help; }
+#statSidebar .qItem:last-child { border-bottom: 0; }
+#statSidebar .qTitle { font-weight: 600; }
+#statSidebar .qMark { margin-left: 6px; font-size: 0.8em; color: var(--ch-gold, #c9a35a); }
+#statSidebar .qPlace { font-size: 0.9em; font-style: italic; color: var(--ch-dim); }
+#statSidebar .qPlace.qUrgent { font-style: normal; font-weight: 600; color: #d98a5a; }
+#statSidebar .qProg { display: flex; align-items: center; gap: 8px; padding-top: 2px; font-size: 0.9em; }
+#statSidebar .qProg > span:first-child { flex: 1; color: var(--ch-dim); }
+#statSidebar .qTicks { letter-spacing: 2px; color: var(--ch-brass); }
+#statSidebar .qProg.qDone .qTicks, #statSidebar .qProg.qDone > span:last-child { color: var(--ch-gold, #c9a35a); }
+#csTip .tText .qClue { margin: 2px 0 0 4px; }
 #statSidebar .abilityGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -730,7 +743,7 @@ button#statSidebar .turnRow,
   // Sidebar sections that fold away like the spellbook (2026-10-02): Stats under the name, and Today. The open/closed flags live here, not on the <details>, because
   // the sidebar's innerHTML is rebuilt every 400ms; the summary click flips the flag (see the sidebar click handler). Both start closed; the HP bar, the name and
   // the turn order stay in view, and the folded Stats header still shows AC and the spell orbs.
-  var sbOpen = { stats: false, today: false, turnorder: true, effects: true, abilities: true, profs: true, skills: true };   // the three Stats-view sections start open: opening Stats is asking to look   // Effects starts open (it only exists while something is active) and can be folded
+  var sbOpen = { stats: false, today: false, turnorder: true, effects: true, abilities: true, profs: true, skills: true, quests: true };   // the three Stats-view sections start open: opening Stats is asking to look   // Effects starts open (it only exists while something is active) and can be folded
   // The sidebar has two views of the same column: "status" (HP, condition, Today / Turn Order, spellbook, quests, effects) and "stats" (the six scores, every skill's
   // modifier, proficiency): the things that rarely change. The name banner toggles it. Held here, not in the DOM, because the sidebar is rebuilt every 400ms.
   var sbView = "status";
@@ -781,6 +794,35 @@ button#statSidebar .turnRow,
   }
   function foldHtml(id, label, summary, body) {
     return "<details class=\"sbFold\" data-fold=\"" + id + "\"" + (sbOpen[id] ? " open" : "") + "><summary><span>" + label + "</span><span class=\"sbSum\">" + summary + "</span></summary>" + body + "</details>";
+  }
+  // THE QUEST PANEL (2026-10-19, the user's five ideas): a fold with a one-line summary, quests above Hiring Hall jobs, a progress line for a quest that has counts, a gold diamond for one that counts toward
+  // level progress, the last day of a job in a warm colour, and a hover card (paintQuestCard) with who gave it, the goal, the clues found and what it counts toward. All of it is read from quest-data.js entries,
+  // whose new fields are optional (group, giver, goal, progress, clues, levelProgress, insignia), so an older entry draws as before with just a title and a place.
+  function qVal(v, s) { return typeof v === "function" ? v(s) : v; }
+  function qTicks(have, need) {
+    have = Math.max(0, Math.min(Number(have) || 0, Number(need) || 0)); need = Number(need) || 0;
+    if (need <= 0 || need > 8) return "";
+    var t = "", i;
+    for (i = 0; i < need; i++) t += i < have ? "\u25cf" : "\u25cb";
+    return t;
+  }
+  function questItemHtml(q, s) {
+    var title = qVal(q.title, s), place = qVal(q.place, s), prog = q.progress ? (q.progress(s) || []) : [];
+    var h = "<div class=\"qItem\" data-quest=\"" + esc(q.id) + "\"><div class=\"qTitle\">" + esc(title) + (q.levelProgress ? "<span class=\"qMark\">\u25c6</span>" : "") + "</div>";
+    if (place) h += "<div class=\"qPlace" + (/last day/.test(place) ? " qUrgent" : "") + "\">" + esc(place) + "</div>";
+    prog.forEach(function (p) {
+      var done = Number(p.have) >= Number(p.need);
+      h += "<div class=\"qProg" + (done ? " qDone" : "") + "\"><span>" + esc(p.label) + "</span><span class=\"qTicks\">" + qTicks(p.have, p.need) + "</span><span>" + Math.min(Number(p.have) || 0, Number(p.need) || 0) + "/" + (Number(p.need) || 0) + "</span></div>";
+    });
+    return h + "</div>";
+  }
+  function questPanelHtml(s, list) {
+    var quests = list.filter(function (q) { return q.group !== "job"; }), jobs = list.filter(function (q) { return q.group === "job"; });
+    var body = "";
+    if (quests.length) body += quests.map(function (q) { return questItemHtml(q, s); }).join("");
+    if (jobs.length) body += (quests.length ? "<div class=\"qGroup\">Hiring Hall jobs</div>" : "") + jobs.map(function (q) { return questItemHtml(q, s); }).join("");
+    var summary = list.length === 1 ? esc(qVal(list[0].title, s)) : list.length + " active";
+    return "<div class=\"sbPanel\">" + foldHtml("quests", list.length > 1 ? "Quests" : "Active quest", summary, body) + "</div>";
   }
   function miniOrbs(now, max, extra) {
     now = Number(now) || 0; max = Number(max) || 0;
@@ -1053,18 +1095,12 @@ button#statSidebar .turnRow,
       resourceHtml += "<div class=\"statRow\"><span>Short Rests</span><span>" + fmt(s.short_rests_left) + " / " + fmt(s.short_rests_max) + "</span></div>";
     }
 
-    // Every quest listed in quest-data.js whose active(stats) is true.
+    // Every quest listed in quest-data.js whose active(stats) is true, drawn by questPanelHtml.
     var activeQuestHtml = "";
     var activeQuests = (window.QUESTLOG || []).filter(function (q) {
       try { return q.active(s); } catch (e) { return false; }
     });
-    if (activeQuests.length) {
-      activeQuestHtml = "<div class=\"sbPanel\"><div class=\"shead\">" + (activeQuests.length > 1 ? "Quests" : "Active quest") + "</div>" + activeQuests.map(function (q) {
-        var title = typeof q.title === "function" ? q.title(s) : q.title, place = typeof q.place === "function" ? q.place(s) : q.place;
-        var levelNote = q.levelProgress === true ? "Counts toward level progress on success." : (typeof q.levelProgress === "string" ? q.levelProgress : "");
-        return "<div class=\"statRow\"><span>" + (activeQuests.length > 1 ? "Quest" : "Active Quest") + "</span><span style=\"font-size:0.9em;\">" + title + "</span></div><div class=\"timePeriod\">" + place + (levelNote ? "<br><span class=\"questLevelNote\">&#9670; " + levelNote + "</span>" : "") + "</div>";
-      }).join("") + "</div>";
-    }
+    if (activeQuests.length) activeQuestHtml = questPanelHtml(s, activeQuests);
 
     var dayDisplay = s.day_of_week ? fmt(s.day_of_week) : ("Day " + fmt(s.campaign_day || "1"));
     var dateDisplay = fmt(s.calendar_date);
@@ -1794,8 +1830,39 @@ button#statSidebar .turnRow,
     tipNode().innerHTML = "<div class=\"tHd\">" + esc(head) + "</div><div class=\"tText\">" + lines.join("") + "</div>";
     return true;
   }
+  // The card for one quest in the sidebar's quest panel: who gave it, where, the goal, the counts, the clues the player has found, and what finishing it counts toward. Built from the quest-data.js entry and window.stats on
+  // every call, like the condition cards. A clue appears only once the player has it (the entry's clues(s) returns found ones), so the card never names something the player has not learned.
+  function paintQuestCard(id) {
+    var s = window.stats, q = null, i;
+    if (!s) return false;
+    for (i = 0; i < (window.QUESTLOG || []).length; i++) if (window.QUESTLOG[i].id === id) q = window.QUESTLOG[i];
+    if (!q) return false;
+    try { if (!q.active(s)) return false; } catch (e) { return false; }
+    var lines = [];
+    function add(label, text) { lines.push("<p><b>" + esc(label) + "</b> " + esc(text) + "</p>"); }
+    var giver = qVal(q.giver, s), place = qVal(q.place, s), goal = qVal(q.goal, s);
+    if (giver) add("Given by", giver);
+    if (place) add("Where", place);
+    if (goal) add("Goal", goal);
+    (q.progress ? (q.progress(s) || []) : []).forEach(function (p) { add(p.label, Math.min(Number(p.have) || 0, Number(p.need) || 0) + " of " + (Number(p.need) || 0) + (Number(p.have) >= Number(p.need) ? " (enough)" : "")); });
+    var clues = q.clues ? (q.clues(s) || []) : [];
+    if (clues.length) lines.push("<p><b>So far</b></p>" + clues.map(function (c) { return "<p class=\"qClue\">\u2022 " + esc(c) + "</p>"; }).join(""));
+    var counts = [];
+    if (q.levelProgress) counts.push(typeof q.levelProgress === "string" ? q.levelProgress : "level progress, on success");
+    if (q.insignia) counts.push("your Hall insignia's finished jobs");
+    if (counts.length) add("Counts toward", counts.join(" and ") + ".");
+    tipNode().innerHTML = "<div class=\"tHd\">" + esc(qVal(q.title, s)) + "</div><div class=\"tText\">" + lines.join("") + "</div>";
+    return true;
+  }
   function showTip(key, x, y) {
     var t = tipNode();
+    if (key.indexOf("quest:") === 0) {
+      tipKey = key; tipX = x; tipY = y;
+      if (!paintQuestCard(key.slice(6))) return hideTip();
+      placeTip();
+      t.classList.add("on");
+      return;
+    }
     if (key.indexOf("cond:") === 0) {
       tipKey = key; tipX = x; tipY = y;
       if (!paintCondCard(key.slice(5))) return hideTip();
@@ -1840,6 +1907,14 @@ button#statSidebar .turnRow,
   // the same 400ms cycle, so they need the same treatment or their card would never track either.
   function refreshTip() {
     if (!tipKey) return;
+    if (tipKey.indexOf("quest:") === 0) {
+      // A quest in the quest panel: the sidebar is rebuilt every 400 ms, so find the row under the pointer again and repaint it (its counts may have moved)
+      var qel = document.elementFromPoint(tipX, tipY), qrow = qel && qel.closest ? qel.closest("#statSidebar .qItem[data-quest]") : null;
+      if (!qrow) return hideTip();
+      tipKey = "quest:" + qrow.getAttribute("data-quest");
+      if (!paintQuestCard(tipKey.slice(6))) return hideTip();
+      return placeTip();
+    }
     if (tipKey.indexOf("cond:") === 0) {
       // A condition chip: the sidebar is rebuilt every 400 ms, so find the chip under the pointer again and repaint it (its clock may have moved)
       var cel = document.elementFromPoint(tipX, tipY), cchip = cel && cel.closest ? cel.closest("#statSidebar .sbCond[data-cond]") : null;
@@ -2231,16 +2306,17 @@ button#statSidebar .turnRow,
     var el = ev.target, node = el && el.closest ? el.closest(".battlefieldNode[data-node]") : null;
     if (node) { tipX = ev.clientX; tipY = ev.clientY; placeTip(); }
   });
-  // The three condition chips open their own card (paintCondCard) and follow the pointer.
+  // The three condition chips open their own card (paintCondCard) and follow the pointer; so does each quest in the quest panel (paintQuestCard).
   document.getElementById("statSidebar").addEventListener("mouseover", function (ev) {
-    var el = ev.target, chip = el && el.closest ? el.closest(".sbCond[data-cond]") : null;
+    var el = ev.target, chip = el && el.closest ? el.closest(".sbCond[data-cond]") : null, qrow = el && el.closest ? el.closest(".qItem[data-quest]") : null;
     if (chip) showTip("cond:" + chip.getAttribute("data-cond"), ev.clientX, ev.clientY);
-    else if (tipKey && tipKey.indexOf("cond:") === 0) hideTip();
+    else if (qrow) showTip("quest:" + qrow.getAttribute("data-quest"), ev.clientX, ev.clientY);
+    else if (tipKey && (tipKey.indexOf("cond:") === 0 || tipKey.indexOf("quest:") === 0)) hideTip();
   });
   document.getElementById("statSidebar").addEventListener("mousemove", function (ev) {
-    if (!tipKey || tipKey.indexOf("cond:") !== 0) return;
-    var el = ev.target, chip = el && el.closest ? el.closest(".sbCond[data-cond]") : null;
-    if (chip) { tipX = ev.clientX; tipY = ev.clientY; placeTip(); }
+    if (!tipKey || (tipKey.indexOf("cond:") !== 0 && tipKey.indexOf("quest:") !== 0)) return;
+    var el = ev.target, chip = el && el.closest ? el.closest(".sbCond[data-cond]") : null, qrow = el && el.closest ? el.closest(".qItem[data-quest]") : null;
+    if (chip || qrow) { tipX = ev.clientX; tipY = ev.clientY; placeTip(); }
   });
   // A lane dot and its turn-order card light each other. Only a CHANGE re-renders: the rebuild puts a new element under a still pointer,
   // and the browser answers with another mouseover, which would otherwise loop.

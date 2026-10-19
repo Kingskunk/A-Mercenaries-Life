@@ -2509,6 +2509,7 @@ Hollis turns the ${gear_sale_name} over once in the light, checks it for wear, a
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label mw_herb_close
+*gosub mw_amb_season_check
 *comment The painted sign over the door names the shop the moment the player reaches the close, and
 *comment the hub prose at the top of this label already shows it to them -- so reaching the place is
 *comment what earns the name, not choosing to speak to Ambrose. Set here rather than on the counter
@@ -2543,6 +2544,10 @@ Tucked behind the main lane, this stone dead-end is sheltered by cedar roofs and
       A small slate board hangs beneath the mortar-and-pestle sign: [i]"Ambrose's Physic. Stills banked until Seventh Bell. Emergency Poultices: Inquire at the parish infirmary."[/i]
       *page_break Step back from the shutters…
       *goto mw_herb_close
+    *comment AMBROSE'S ORDER (mw_amb_*, below): the blackboard by the door, from the thirty-first day on and until the order is done.
+    *if ((campaign_day > 30) and (not(amb_order_stage = "done")))
+      # Read the blackboard by the door. [~2 min]
+        *goto mw_amb_board
     # Walk back down to Lantern Lane.
       *goto mw_lantern_lane
 
@@ -2576,6 +2581,19 @@ Tucked behind the main lane, this stone dead-end is sheltered by cedar roofs and
       You examine the neat bundles of highland roots and dried riverbank herbs hanging under the eaves. Master Ambrose, an elderly herbalist with yellow-stained fingers, looks up from pouring pine medicine into small dark glass bottles. "Looking for wound salve or bitter tonics?" he murmurs, his pale eyes taking in the road dust on your gear. "The garrison takes most of our willow bark for their surgeons, but a jar of warming rubbing salve does wonders for stiff knees or swollen ankles."
       *page_break Step away from the still-room…
       *goto mw_herb_close
+    *comment AMBROSE'S ORDER (mw_amb_*, below). The blackboard from the thirty-first day on; the talk once it has been read; the delivery once the plants are in the pack.
+    *if ((campaign_day > 30) and (not(amb_order_stage = "done")))
+      # Read the blackboard by the door. [~2 min]
+        *goto mw_amb_board
+    *if (((amb_order_seen) and (amb_order_stage = "none")) and (not(amb_repeat)))
+      # Ask Master Ambrose about the blackboard. [~5 min]
+        *goto mw_amb_ask
+    *if (((amb_order_seen) and (amb_order_stage = "none")) and (amb_repeat))
+      # Ask Master Ambrose about the new blackboard. [~5 min]
+        *goto mw_amb_repeat
+    *if ((amb_order_stage = "active") and ((shadefern >= amb_need_fern) and (acorn_truffle >= amb_need_truffle)))
+      # Lay out the shadefern and the acorn truffle he asked for. [~5 min]
+        *goto mw_amb_deliver
     *if (mw_herb_talk)
       # Ask Master Ambrose about his liniments.
         Master Ambrose wipes a glass dropper on a clean linen rag. "Carters, quarrymen, and dock porters all swear by it," the old herbalist says, tapping a row of sealed stoneware pots. "Rendered animal tallow infused with wintergreen, wild thyme, and crushed camphor. Rub it over strained joints or tender arches before you pull your ${feet_prose} on, and it keeps the swelling down through a full day on the cobbles."
@@ -2593,6 +2611,191 @@ Tucked behind the main lane, this stone dead-end is sheltered by cedar roofs and
       *goto mw_lantern_lane
     # ⚖ Settle up the trade panel.
       *goto mw_ambrose_settle
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment AMBROSE'S DEEP-WOOD ORDER (2026-10-19, quest/Ambrose's Deep-Wood Order.md, the user's text). A blackboard by the door asks for three shadefern and two acorn truffle (Longshade Room 6), paid above the counter price for the lot at
+*comment one time. It shows from campaign day 31 on (the user) and until the order is done; it is read at any hour. By day the player can ask him about it (mw_amb_ask), take the order or turn it down, and later lay the plants out
+*comment (mw_amb_deliver: the plants come off the pack, three silver marks, the blackboard is wiped). The sidebar lists it with the live counts (quest-data.js ambrose_order). Not a Hall job and not toward the level-2 pool.
+*comment If the player finished The Overdue Peddler, two optional beats tie in Aldis Pellam, who was his supplier. A season-by-season repeat is planned and not built.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label mw_amb_board
+*set minutes_to_pass 2
+*set time_advance_call_id "mw_amb_board_1"
+*gosub_scene calendar advance_time
+*set amb_order_seen true
+[b]◈ HERB-POUNDER CLOSE: THE BLACKBOARD[/b]
+*line_break
+Beside the door, below the painted mortar-and-pestle sign, hangs a second blackboard, chalked in a thin, upright white script.
+*if (amb_repeat)
+
+  [i]"WANTED AGAIN. Shadefern, ${amb_need_fern}. Acorn truffle, ${amb_need_truffle}. Cut clean and unbruised. Paid ${amb_pay} silver @{(amb_pay = 1) mark|marks} for the lot, and only for this season's cutting. Ask within."[/i]
+*else
+
+  [i]"WANTED. Shadefern, three. Acorn truffle, two. Cut clean and unbruised. Paid above the counter price, for the lot at one time. Ask within."[/i]
+*if (((time_period = "Night") or (time_period = "Pre-Dawn")) or (time_period = "Dusk")) or (((weather_severity >= 3) and (weather_cold)) or (day_of_week = "Hallowday"))
+
+  The shutters are barred. Whatever he means by "within" will have to wait for the stills to be lit again.
+*page_break Step back from the blackboard…
+*goto mw_herb_close
+
+*label mw_amb_ask
+*set minutes_to_pass 5
+*set time_advance_call_id "mw_amb_ask_1"
+*gosub_scene calendar advance_time
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set amb_first (not(amb_asked))
+  *set amb_asked true
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+[b]◈ THE STILL-ROOM: THE BLACKBOARD[/b]
+*line_break
+*if (amb_first)
+  "I saw that you're seeking shadefern and acorn truffle," you say.
+
+  Master Ambrose looks up from a row of amber bottles with a dropper still in his yellow-stained fingers. His pale eyes go to the door, and then to you. "Ah," he says. "You've read it."
+*else
+  Master Ambrose glances up from his bottles at the question on your face, and nods toward the door. Nothing on the blackboard has changed: three fern, two truffle, three silver marks, the lot at one time.
+*goto mw_amb_menu
+
+*label mw_amb_menu
+*choice
+  *if (not(amb_q_why))
+    # "Why those two plants?"
+      "Does no one in the city supply them?" you ask.
+
+      He sets the dropper down and pushes his spectacles up his nose. "Hardly. Supplies are always unreliable." The voice is dry and calm, the way it is when he talks about anything. "Shadefern can cool a migraine, and it also sharpens and quickens the mind. Acorn truffle I use in a restorative that took me twenty years to get right. It strengthens the blood and improves the constitution. I can't grow either in a garden, and the best sources are adventurers, mercenaries and brave gatherers who go into deep forests."
+      *set amb_q_why true
+      *goto mw_amb_menu
+  *if (not(amb_q_where))
+    # "Where do they grow?"
+      "Where would I find them?" you ask.
+
+      "The nearest deep wood is the Longshade, among the oldest trees, so I've been told." He lifts a hand and lowers it, as if drawing a line on the counter. He gives you a look over the spectacles. "I won't draw you a map. I've never been there, and I don't trust what I haven't walked."
+      *set amb_q_where true
+      *goto mw_amb_menu
+  *if (not(amb_q_who))
+    # "Who brought them to you before?"
+      "Who brought them before?" you ask.
+
+      His hands go still on the counter. "A gatherer. A quiet fellow, who came up from the river country twice a season with a pack on his back, all frames and straps." He looks at the amber bottles. "He stopped coming, and I've not heard word of him since. I hope he's all right."
+      *set amb_q_who true
+      *goto mw_amb_menu
+  *if ((amb_q_who) and ((peddler_stage = "resolved") and (not(amb_q_aldis))))
+    # "Was his name Aldis Pellam?"
+      "Was his name Aldis Pellam?" you ask.
+
+      Master Ambrose takes a moment before he answers. He takes his spectacles off, folds them, and sets them on the counter. "It was," he says. "How do you know that?"
+
+      "His wife asked me to find out what became of him."
+
+      "And?" He keeps his eyes on the spectacles.
+
+      "He died in the Longshade."
+
+      The old herbalist is quiet for a time. The apprentices' pestles go on thudding in the stone bowls behind him. "Huh," he says. "I knew him for so long, and I'm ashamed how little I knew about him." He puts the spectacles back on.
+      *set amb_q_aldis true
+      *goto mw_amb_menu
+  *if (not(amb_q_price))
+    # "What will you pay?"
+      "What does it pay?" you ask.
+
+      "Three silver marks, for the lot." He taps the counter once. "That's well above market price. I pay more for a delivery I can use the same day, and for a clean cut."
+      *set amb_q_price true
+      *goto mw_amb_menu
+  # "I'll bring them."
+    *set amb_order_stage "active"
+    "Three of the fern, two of the truffle," you say.
+
+    "Make sure they're clean." Master Ambrose nods, and for the first time something like warmth crosses his face. "Mind the cuts. Fern bruises if you look at it hard, and truffle spoils in a wet pack. Wrap them separately, in something dry."
+    *page_break Step away from the counter…
+    *goto mw_herb_close
+  # "That's not for me."
+    "Not for me," you say.
+
+    "No." He takes up the dropper again. "It's a lot of danger for a few leaves."
+    *page_break Step away from the counter…
+    *goto mw_herb_close
+
+*label mw_amb_deliver
+*set minutes_to_pass 5
+*set time_advance_call_id "mw_amb_deliver_1"
+*gosub_scene calendar advance_time
+[b]◈ THE STILL-ROOM: THE ORDER[/b]
+*line_break
+*if (amb_repeat)
+  You unwrap the fern and the truffle on the counter. Master Ambrose goes over them with the brass tongs as he did before, frond by frond and lump by lump, and sets each in its place with small, exact movements. When the last is down, he nods.
+*else
+  You unwrap the fern first. Master Ambrose draws a pair of brass tongs from his apron and turns each frond over, his nose almost touching the cut ends, and then lifts one to the light from the window. He does the same to the truffle, pressing the skin with a thumbnail and holding each lump to his ear as if it might speak.
+
+  "Three of the fern," you say. "Two of the truffle."
+
+  "So I see." He sets the last truffle beside the others and sits back. "Cut clean, dry, and not a bruise on any of it."
+  *if (bc_pouch_returned)
+
+    "You spoke to his wife," Master Ambrose says, without looking up from the fern. "I'll have to visit her the next time I'm in Barleycross."
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set shadefern (shadefern - amb_need_fern)
+  *set acorn_truffle (acorn_truffle - amb_need_truffle)
+  *set currency_add_amount (amb_pay * 10)
+  *gosub_scene economy currency_add
+  *set amb_order_stage "done"
+  *set amb_done_season amb_season_now
+  *set amb_orders_done + 1
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+
+*if (amb_repeat)
+  He counts ${amb_pay} silver @{(amb_pay = 1) mark|marks} out of the tin box beneath the counter and lays @{(amb_pay = 1) it|them} in your palm. The plants go into his cloth in a single movement.
+*else
+  He counts three silver marks out of the tin box beneath the counter and lays them in your palm, one at a time. "As promised." He sweeps the plants into a cloth in a single movement. "These will not go to waste."
+
+[b][💰 Received: ${amb_pay} Silver @{(amb_pay = 1) Mark|Marks}][/b]
+*gosub_scene calendar update_hub_condition
+
+On your way out you see him take a rag to the blackboard by the door, and the chalk goes in one long smear.
+*page_break Step away from the still-room…
+*goto mw_herb_close
+
+*comment ── THE SEASON'S ORDER (2026-10-19, the user): after the first order is done, a new order is posted each season; a repeat that is not delivered lapses when its season ends. The numbers come from the season, so a replay or a second look
+*comment sees the same order: fern 2 to 4, truffle 1 to 3 (inside the grove's seasonal stock of 4 and 3), pay in silver marks = pieces less two (never under one). The first, story order has no lapse. ──
+*label mw_amb_season_check
+*set amb_season_now ((calendar_year * 4) + (((calendar_month_num - 1) - ((calendar_month_num - 1) modulo 3)) / 3))
+*if ((amb_order_stage = "done") and (amb_season_now != amb_done_season))
+  *gosub mw_amb_new_order
+*elseif ((amb_repeat) and (not(amb_order_stage = "done")))
+  *if (amb_order_season != amb_season_now)
+    *gosub mw_amb_new_order
+*return
+
+*label mw_amb_new_order
+*set amb_order_stage "none"
+*set amb_repeat true
+*set amb_order_seen false
+*set amb_order_season amb_season_now
+*set amb_need_fern (2 + (amb_season_now modulo 3))
+*set amb_need_truffle (1 + ((amb_season_now + 1) modulo 3))
+*set amb_pay ((amb_need_fern + amb_need_truffle) - 2)
+*return
+
+*comment ── A REPEAT'S ASK: described, not quoted (the order is the same kind of errand), one choice ──
+*label mw_amb_repeat
+*set minutes_to_pass 5
+*set time_advance_call_id "mw_amb_repeat_1"
+*gosub_scene calendar advance_time
+[b]◈ THE STILL-ROOM: THE NEW BLACKBOARD[/b]
+*line_break
+Master Ambrose looks up from the stills as you finish reading, and gives you the new order without ceremony: ${amb_need_fern} of the fern and ${amb_need_truffle} of the truffle, cut clean and wrapped apart, at ${amb_pay} silver @{(amb_pay = 1) mark|marks} for the lot, and only for this season's cutting.
+*choice
+  # "I'll bring them."
+    *set amb_order_stage "active"
+    "${amb_need_fern} of the fern, ${amb_need_truffle} of the truffle," you say, and he nods and goes back to his bottles.
+    *page_break Step away from the counter…
+    *goto mw_herb_close
+  # "Not this season."
+    "Not this season," you say, and he lifts the dropper again.
+    *page_break Step away from the counter…
+    *goto mw_herb_close
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment AMBROSE'S SHELVES (the buy menu, its trade panel, and the shared purchase)
@@ -3808,4 +4011,6 @@ You take a bench in the hot room, where the steam is so thick that faces are onl
   *set quests_finished + 1
 *if ((a_key_quest_stage = "resolved") and (not(a_key_resolution = "compromised")))
   *set quests_finished + 1
+*comment Ambrose's Deep-Wood Order (2026-10-19, the user): each delivered order, the first and every seasonal repeat, adds one. amb_orders_done only goes up.
+*set quests_finished + amb_orders_done
 *return

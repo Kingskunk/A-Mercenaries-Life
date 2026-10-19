@@ -1714,9 +1714,19 @@ ${use_text}
     *goto lsf_move
 
 *comment THE OLD GROVE (Room 6, 2026-10-18): the far south-west dead end, a hollow of the oldest trees. Two plants grow only here, each gathered once per refill through dungeon.txt dg_forage: shadefern on the wet rock
-*comment (Nature or Survival DC 12) and acorn truffle in the leaf mold under the great oak (DC 14). A miss spoils that patch until the refill. The flags are dg_lsf_r6_fern and dg_lsf_r6_truffle, set after any try.
+*comment (Nature or Survival DC 12) and acorn truffle in the leaf mold under the great oak (DC 14). A miss spoils that patch until the refill (the flags dg_lsf_r6_fern and dg_lsf_r6_truffle, set after any try). The two plants also have a SEASONAL stock (lsf_grove_*_stock) that limits what can be gathered in a season.
 *comment The Ambrose request for these two is a later quest (the user, 2026-10-18); nothing here knows about it.
 *label lsf_n_r6
+
+*comment THE SEASONAL STOCK (the user, 2026-10-19): the grove's two plants come back once a season, not at every refill. The stock is filled when the player arrives in a season it was not filled in (year x 4 + season, three
+*comment months a season); the ordinary refill still clears the tries flags. Four pieces of shadefern and three of acorn truffle a season, my numbers, so Ambrose's order of three and two can be made in one season.
+*temp r6_season ((calendar_year * 4) + (((calendar_month_num - 1) - ((calendar_month_num - 1) modulo 3)) / 3))
+*if (lsf_grove_season != r6_season)
+  *set lsf_grove_season r6_season
+  *set lsf_grove_fern_stock 4
+  *set lsf_grove_truffle_stock 3
+  *set dg_lsf_r6_fern false
+  *set dg_lsf_r6_truffle false
 
 [b]◈ THE OLD GROVE[/b]
 *line_break
@@ -1725,26 +1735,34 @@ ${use_text}
   The roots rise out of the ground in walls, and you feel your way between them with both hands. Your ${feet_prose} sink into leaf mold, deep and springy, and cold water seeps along a face of rock beside you. Fine fronds brush your knuckles where the stone is wet.
 *else
   The path ends in a hollow where the oldest trees in the forest stand shoulder to shoulder. Their trunks are wider than a cart is long, furrowed like dry riverbeds, and their crowns close so tightly overhead that the light reaches the ground slow and green. A seam of grey rock shows between the roots, dark with seep water, and dark ferns grow thick along it. Under the biggest oak the ground is a deep, springy mat of leaves and acorn husks, turned over here and there by something small.
-*if (dg_lsf_r6_fern)
+*if (lsf_grove_fern_stock = 0)
+
+  The fronds along the wet rock have been cut back to the stone, and they will not be back for a long while.
+*elseif (dg_lsf_r6_fern)
 
   The fronds along the wet rock have been cut back to ragged stubs.
-*if (dg_lsf_r6_truffle)
+*if (lsf_grove_truffle_stock = 0)
+
+  The leaf mold under the oak has been dug over until there is little left to find, and it will be a long while before it is rich again.
+*elseif (dg_lsf_r6_truffle)
 
   The leaf mold under the oak is raked into a rough heap where you dug.
 *gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
-  *if (not(dg_lsf_r6_fern))
+  *if ((not(dg_lsf_r6_fern)) and (lsf_grove_fern_stock > 0))
     # Cut ferns from the wet rock. [~15 min]@{show_stat_hints  [Nature or Survival DC 12]|}
       You crouch at the seep and run your fingers along the stone, looking for the fronds with the firmest stems.
       *set dg_fg_plant "shadefern"
+      *set dg_fg_stock "lsf_grove_fern_stock"
       *gosub_scene dungeon dg_forage
       *set dg_lsf_r6_fern true
       *goto lsf_n_r6
-  *if (not(dg_lsf_r6_truffle))
+  *if ((not(dg_lsf_r6_truffle)) and (lsf_grove_truffle_stock > 0))
     # Dig in the leaf mold under the oak. [~15 min]@{show_stat_hints  [Nature or Survival DC 14]|}
       You kneel between two great roots, where the mold is darkest, and start to dig.
       *set dg_fg_plant "acorn_truffle"
+      *set dg_fg_stock "lsf_grove_truffle_stock"
       *gosub_scene dungeon dg_forage
       *set dg_lsf_r6_truffle true
       *goto lsf_n_r6
@@ -2140,19 +2158,24 @@ A line of bees carries a slab of comb to the lip of the hollow, and you take it 
 *goto lsf_n_r11
 
 *comment THE TRAMPLED CLEARING (Room 12, the user's plan 2026-10-18: the bodies of the travellers from the camp, mauled and fed on by the panther, with bear marks on the trees; the details are invented here). The hub where the trails to Rooms 10, 11, 13 and 14 meet. Three readings, each kept once passed and one try per refill on a miss:
-*comment Survival DC 12 (how they ran and where the cat went: northeast, toward Room 14), Medicine DC 12 (how they died), Nature DC 12 (a bear has fed here and marked the trees, its marks running northwest, toward Room 13). Nothing here is dated, so the room is as true on any day.
+*comment Survival DC 12 (how they ran and where the cat went: northeast, toward Room 14), Medicine DC 12 (how they died), Nature DC 12 (a bear has fed here and marked the trees, its marks running northwest, toward Room 13). Nothing here is dated, so the room is as true on any day. The player can also BURY the three (lsf_dead_buried, 2026-10-19, the user): three to five hours of digging, a shovel makes it quicker, once and for good; the room then shows three weighted mounds, the Medicine reading (it needs a body) is gone, and Merel Pellam is told if the job is reported after.
 *label lsf_n_r12
 
 [b]◈ THE TRAMPLED CLEARING[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
-*if (dg_dark)
+*if (lsf_dead_buried)
+  *if (dg_dark)
+    The ground in the middle of the clearing is turned and soft under your ${feet_prose}, and your hands find three long, low mounds, weighted with stones. The smell that hung here is gone. Around you the trunks are scored with long grooves at the height of your head.
+  *else
+    The drag trail ends in a wide clearing where four trails meet. Three long, low mounds of turned earth lie in the open ground, each weighted with stones against the animals, and the snapped short bow lies across the last. The bark on several of the trunks around the clearing is raked in long scars as high as your head.
+*elseif (dg_dark)
   The drone of flies reaches you before the smell does, sweet and thick and old. Your foot meets something soft that lies still, and your hand, reaching out, finds cloth stiff with dried blood. Around you the trunks are scored with long grooves at the height of your head.
 *else
   The drag trail ends in a wide, trampled clearing where four trails meet. Three bodies lie in the open ground, torn and partly eaten, their clothes dark and stiff with blood, and the flies hang over them in a drone. Packs and a snapped short bow lie among them. The bark on several of the trunks around the clearing is raked in long scars as high as your head.
 *if (lsf_body_surv)
 
-  Three trails of footprints scatter from the middle of the clearing, each ending in a body, and the cat's one steady line leaves to the northeast.
+  Three trails of footprints scatter from the middle of the clearing, each ending @{(lsf_dead_buried) at a grave|in a body}, and the cat's one steady line leaves to the northeast.
   *if (lsf_stranger_tracks)
     A fourth line of long-toed prints crosses the east edge and does not stop.
 *if (lsf_body_med)
@@ -2167,12 +2190,19 @@ A line of bees carries a slab of comb to the lip of the hollow, and you take it 
   *if ((not(lsf_body_surv)) and (not(dg_lsf_body_surv_tried)))
     # Follow the footprints and the drag marks across the clearing. [~15 min]@{show_stat_hints  [Survival DC 12]|}
       *goto lsf_body_survival
-  *if ((not(lsf_body_med)) and (not(dg_lsf_body_med_tried)))
+  *if (((not(lsf_body_med)) and (not(dg_lsf_body_med_tried))) and (not(lsf_dead_buried)))
     # Kneel beside the nearest body and look at the wounds. [~10 min]@{show_stat_hints  [Medicine DC 12]|}
       *goto lsf_body_medicine
   *if ((not(lsf_body_nat)) and (not(dg_lsf_body_nat_tried)))
     # Study the raked trunks and the ground at their feet. [~10 min]@{show_stat_hints  [Nature DC 12]|}
       *goto lsf_body_nature
+  *if (not(lsf_dead_buried))
+    *if (has_shovel)
+      # Bury the dead. [~3 hours]
+        *goto lsf_bury_dead
+    *else
+      # Bury the dead. [~5 hours by hand]
+        *goto lsf_bury_dead
   # Go northwest.
     *set dg_dest "lsf_j25"
     *set dg_dest_hall true
@@ -2194,7 +2224,7 @@ A line of bees carries a slab of comb to the lip of the hollow, and you take it 
 You walk the edge of the clearing bent low and pick the tracks out one at a time.
 *gosub_scene dice_engine roll_skill_check 12 "survival" "" "" "" "" ""
 *if (check_success)
-  Three trails of footprints leave the middle of the clearing, each running a different way, and each ends in a body. Round pad prints cross them and cross them again, patient, never hurrying. The cat took them one at a time. Its own line leaves the clearing to the northeast, deep and even. Along the east edge runs a fourth line, long-toed and bare of any boot, that belongs to neither the dead nor the cat. It crosses the clearing once and does not stop.
+  Three trails of footprints leave the middle of the clearing, each running a different way, and each ends @{(lsf_dead_buried) at a grave|in a body}. Round pad prints cross them and cross them again, patient, never hurrying. The cat took them one at a time. Its own line leaves the clearing to the northeast, deep and even. Along the east edge runs a fourth line, long-toed and bare of any boot, that belongs to neither the dead nor the cat. It crosses the clearing once and does not stop.
   *set lsf_body_surv true
   *set lsf_stranger_tracks true
 *else
@@ -2202,6 +2232,28 @@ You walk the edge of the clearing bent low and pick the tracks out one at a time
   *set dg_lsf_body_surv_tried true
 *set dg_mins 15
 *set dg_time_id "lsf_body_survival"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r12
+
+*comment BURYING THE DEAD (the user, 2026-10-19): once and for good, no roll. Three to five hours (a shovel is quicker), through dg_time like the other long jobs here, so the hours cost hunger and rest as time does. It rewards nothing.
+*label lsf_bury_dead
+*if (has_shovel)
+  You choose a patch of ground under the oldest trunk, where the roots run thin, and drive your shovel in. The ground gives up its stones and roots one at a time, and it takes the better part of three hours to dig three graves.
+*else
+  You choose a patch of ground under the oldest trunk, where the roots run thin, and dig with a flat stone, a split branch and your hands. The ground gives up its stones and roots one at a time, and it takes the better part of five hours to dig three graves.
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  You carry each of them across the clearing by touch, slowly, and lay them down with their heads to the same side. Your hands know the work before your mind lets itself.
+*else
+  You carry each of them across the clearing, one at a time, and lay them down with their heads to the same side. You pull what is left of their coats straight, and turn their faces from the sky.
+*line_break
+You fill each grave and roll stones over it from the edge of the clearing until nothing could dig it open, and lay the snapped short bow across the last. By the end your arms shake and your hands are raw.
+*set lsf_dead_buried true
+*set dg_mins 300
+*if (has_shovel)
+  *set dg_mins 180
+*set dg_time_id "lsf_bury_dead"
 *gosub_scene dungeon dg_time
 *goto lsf_n_r12
 

@@ -2,7 +2,7 @@
 
 Written for you, the author. Answer in the **Your answer:** lines under each question and I will build from them. Anything marked *(invented)* is mine; change or cut it freely. Nothing in this file is built yet, apart from the forest rooms listed under "Already built".
 
-Two quests are in here. **Part 1** is the investigation job that gives the Longshade Forest a reason to be entered. **Part 2** is a small Ambrose request that gives Room 6's two plants a reason to be gathered. Part 2 can wait.
+**Part 1** is the investigation job that gives the Longshade Forest a reason to be entered, and is built. **Part 2**, the Ambrose request that gives Room 6's two plants a reason to be gathered, now lives in its own file.
 
 ---
 
@@ -93,29 +93,9 @@ I would make this the whole moral weight of the quest, with no extra item for ei
 
 ---
 
-## PART 2: AMBROSE'S REQUEST (Room 6's two plants)
+## PART 2: AMBROSE'S REQUEST
 
-### The idea
-
-Ambrose, the herbalist at the Still-Room in Port Valen, already buys all five forest plants by the piece. The request is for two he cannot get from anyone: **shadefern** and **acorn truffle**, which grow only in the Old Grove (Room 6). He wants a set of each to remake a recipe he has not been able to make since his supplier stopped coming.
-
-### Hook *(suggestions, pick one)*
-
-* **A.** He raises it when the player shows or sells him a shadefern or acorn truffle for the first time ("Where did you get that? I have wanted one of these for years").
-* **B.** A request on his own slate board outside the Still-Room.
-* **C.** Both: the slate board gives the request, and showing him a plant also starts it.
-
-### What he asks for
-
-A fixed set, for example **3 shadefern and 2 acorn truffle**, in one delivery, with no deadline. The player gathers them over one or more visits to Room 6 (each patch refills every few days).
-
-### Reward *(my suggestion, mechanical rather than flavour only)*
-
-One of:
-
-* **A tonic he brews from them**, a one-time timed boon of the same kind he already sells, but stronger or longer. His alchemy effects for these plants are cold resistance, health, and sure footing.
-* **A permanent discount** at the Still-Room.
-* **Nothing but the plants' sale price** (the quest is a favour, and the payoff is later, when the alchemy system exists).
+Moved to its own file, with all of its prose, dialogue and choices written out for review: [Ambrose's Deep-Wood Order.md](Ambrose's%20Deep-Wood%20Order.md).
 
 ---
 
@@ -162,21 +142,7 @@ Your answer: I think this is a good idea, we can do this.
 
 ### Part 2
 
-**9. Hook:** A, B or C? 
-
-Your answer: B
-
-**10. Amount:** is 3 shadefern and 2 acorn truffle about right, or fewer? (Each gather gives 1 or 2 pieces once per refill, so 5 pieces takes at least two visits.)
-
-Your answer: This is a good amount.
-
-**11. Reward:** a timed tonic, a discount, or the plants' price only? If a tonic, which ability should it raise?
-
-Your answer: Can't the reward just be payment? Ambrose would pay above market price for it as a reward when you bring them all in.
-
-**12. Where does Ambrose give the request?** He is in Port Valen, a long way from the forest. Does the player need to be sent from somewhere nearer (Timbermouth's own herbalist or general store), or is it fine that the quest starts in Port Valen and the player carries the plants back?
-
-Your answer: Yeah this is fine. 
+Moved with the rest of it to the Ambrose file: your answers (hook B, 3 shadefern and 2 acorn truffle, payment above market price, starting in Port Valen) are recorded there.
 
 ### General
 

@@ -201,6 +201,9 @@ Quarterstaff. Melee Weapon Attack: +4, reach close only. Deals 1d6 + 2 Bludgeoni
 Spell, Poison spray
 
 
+Killing the evil mage cleanes any posion from the forest, completes Bark's mission. For Barts reward we grant five special fruits, eating 1 of these fruits, increasses your training sessions to the next level, +1, means you can eat this fruit, and train, so you'd be able to train twice during 1 day with this fruit( a bit of Xanxia inspiration here.) Bark's mission. 
+
+
 
 ----------------------------------------
 Boar

@@ -11,6 +11,12 @@
  *   active  function(stats) -> true while the quest is in progress
  *   levelProgress  optional: true if a successful completion adds to the level-up quest total;
  *                  a short string when a particular successful resolution is required
+ *   group     optional: "job" for a Hiring Hall job or a courier parcel, which the sidebar lists under its own heading below the quests
+ *   giver     optional: who gave it (text or function(stats)), shown on the hover card
+ *   goal      optional: one sentence of what to do next (text or function(stats)), shown on the hover card
+ *   progress  optional: function(stats) -> [{label, have, need}], drawn as a progress line under the title and listed on the card
+ *   clues     optional: function(stats) -> [text], only what the player has FOUND (never a lead they have not met), listed on the card
+ *   insignia  optional: true if finishing it adds to the Hall insignia's job count (said on the card)
  *
  * Quest stage variables are set by the scenes (see quest/QUESTS.md). A quest that is
  * "unstarted", "resolved", "failed" or "declined" is not active and is not listed.
@@ -20,6 +26,8 @@
 
   function truthy(v) { return v === true || v === "true"; }
 
+  // The season, as the game counts it for Ambrose's order and the Old Grove: year x 4 + season, three months a season (calendar.txt).
+  function ambSeason(s) { return Number(s.calendar_year) * 4 + Math.floor((Number(s.calendar_month_num) - 1) / 3); }
   // The second line of a Hiring Hall job: where to go, then how long is left. Every job keeps its last day in rj_<job>_until; the term is the days up to and including it.
   var WARDS = { middle_ward: "Middle Ward", quarter: "Patrician Quarter", docks: "Harbor Quayside" };
   function daysLeft(s, until) {
@@ -88,9 +96,39 @@
     },
     courierEntry(1), courierEntry(2), courierEntry(3),
     {
+      // Ambrose's Deep-Wood Order (port_valen/port_valen_middle_ward.txt, 2026-10-19): shadefern and acorn truffle from the Old Grove, brought in at one time. Not a Hall job. Every delivered order counts toward level progress (the user), and a seasonal repeat is gone when its season ends.
+      id: "ambrose_order", title: "Ambrose's Deep-Wood Order",
+      giver: "Master Ambrose, the Still-Room in Herb-Pounder Close",
+      place: function (s) { return "Port Valen · Herb-Pounder Close" + (truthy(s.amb_repeat) ? " · this season only" : ""); },
+      levelProgress: true,
+      goal: function (s) { return "Bring him " + s.amb_need_fern + " shadefern and " + s.amb_need_truffle + " acorn truffle, cut clean and wrapped dry, all at one time."; },
+      progress: function (s) { return [{ label: "Shadefern", have: Number(s.shadefern) || 0, need: Number(s.amb_need_fern) || 0 }, { label: "Acorn truffle", have: Number(s.acorn_truffle) || 0, need: Number(s.amb_need_truffle) || 0 }]; },
+      clues: function (s) {
+        var c = [];
+        if (truthy(s.amb_q_where)) c.push("They grow in the deepest part of the Longshade, among the oldest trees.");
+        if (truthy(s.amb_q_why)) c.push("He cannot buy them in the city.");
+        return c;
+      },
+      active: function (s) { return s.amb_order_stage === "active" && (!truthy(s.amb_repeat) || Number(s.amb_order_season) === ambSeason(s)); }
+    },
+    {
       // The Overdue Peddler (timbermouth/barleycross/overdue_peddler.txt, 2026-10-19): taken on a job board with the Hall insignia, briefed and paid at the wife's cottage. No term. Counts toward the level-2 pool and on the insignia.
       id: "overdue_peddler", title: "Word of Aldis Pellam",
+      giver: "Merel Pellam, the last cottage on the Barleycross Lane",
       place: function (s) { return truthy(s.dg_seen_lsf_r12) ? "Barleycross · tell Merel Pellam what you found" : "Barleycross · the last cottage on the Lane"; },
+      goal: function (s) { return truthy(s.dg_seen_lsf_r12) ? "Tell Merel Pellam what became of her husband." : "Learn what became of Aldis Pellam in the Longshade, and tell his wife."; },
+      clues: function (s) {
+        var c = [];
+        if (truthy(s.peddler_met_wife)) c.push("Aldis gathered plants in the Longshade to sell in Port Valen, with two hired guards.");
+        if (truthy(s.peddler_lead_inn)) c.push("The woman at the Ashrun House saw him go into the forest at first light.");
+        if (truthy(s.peddler_lead_odile)) c.push("Odile and Bram heard something scream near the middle of the forest.");
+        if (truthy(s.lsf_camp_read)) c.push("A big cat wrecked a camp in the forest, and someone there fought back.");
+        if (truthy(s.has_pellam_pouch)) c.push("You hold a leaf-stitched pouch from the camp.");
+        if (truthy(s.dg_seen_lsf_r12)) c.push("You found the three of them in a clearing.");
+        if (truthy(s.lsf_dead_buried)) c.push("You buried them there, under stones.");
+        return c;
+      },
+      insignia: true,
       levelProgress: true,
       active: function (s) { return s.peddler_stage === "active"; }
     },
@@ -148,4 +186,9 @@
       active: function (s) { return s.black_oath_night_list_stage === "active"; }
     }
   ];
+
+  // Hiring Hall jobs and courier parcels are listed under their own heading, and each finished one counts on the insignia.
+  window.QUESTLOG.forEach(function (q) {
+    if (/^(hall_|courier_)/.test(q.id)) { q.group = "job"; q.insignia = true; }
+  });
 })();

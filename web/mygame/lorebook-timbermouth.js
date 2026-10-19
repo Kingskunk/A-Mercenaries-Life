@@ -50,10 +50,10 @@
       unlock: "tm_inn_seen",
       body: function (s) {
         var out = [
-          "A long two-storey house of dark timber at the road end of Timbermouth's square, with a split pine trunk standing by the door as its signpost. It lets rooms at " + (s.tm_inn_rate_copper || 4) + " copper bits for a day and a night, and keeps a hot pot on from first light until the last wagon is in: stew at two copper bits, a plate of bread, cheese and pickled onion at one. Behind it an arch leads to a cobbled yard with a range of stalls and a lean-to for wagons."
+          "A long two-storey house of dark timber at the road end of Timbermouth's square, with a split pine trunk standing by the door as its signpost. It offers beds and food, and an arch leads through to a cobbled yard with stalls and a lean-to for wagons."
         ];
         if (truthy(s.tm_inn_talk_house)) {
-          out.push("One guest to a room. The key is yours for a full day from the hour you pay, to sleep in as often as you like and to carry out and back, and whatever is left in a room when the day is up is sold on the first of the month.");
+          out.push("Rooms are kept one guest to a key, with the yard and stalls behind the house.");
         }
         return out;
       },
@@ -90,7 +90,7 @@
           "A lane of low, open-fronted workshops that runs back from Timbermouth's square beside the sawmill, with each bench set in the light of its doorway and its work hung in the rafters. A wheelwright's shop stands at the head of the lane, with a cooper's, a wainwright's and a bowyer's further down and a small forge at the far end."
         ];
         if (truthy(s.tm_roan_seen)) {
-          out.push("The wheelwright's counter at the head of the lane is where the whole lane's finished goods are sold: Longshade ash staves, spears, shortbows and clogs. Each piece is branded with the bench that made it, and the counter buys them back at half the price it asks.");
+          out.push("The wheelwright's counter at the head of the lane gathers the lane's finished work. Each piece is branded with the bench that made it.");
         }
         return out;
       },
@@ -124,7 +124,7 @@
       unlock: "tm_store_seen",
       body: function (s) {
         return [
-          "A deep shop with a plank floor beside the Market's yard gate, under a board reading \"MARLOW. General goods, by weight and measure.\" Coils of rope, lanterns and harness hang from its rafters and walls, sacks of feed and kegs of nails stand on the floor, and a beam-scale hangs over the counter. It sells the same ordinary goods as Hollis & Daughters in Port Valen (rope, torches, lamp oil, lanterns, a repair kit, chalk, blankets, oilcloth, lye soap and trail food) and buys them back at half the price it asks."
+          "A deep shop with a plank floor beside the Market's yard gate, under a board reading \"MARLOW. General goods, by weight and measure.\" Coils of rope, lanterns and harness hang from its rafters and walls, sacks of feed and kegs of nails stand on the floor, and a beam-scale hangs over the counter."
         ];
       },
       see: ["marlow", "timbermouth"]
@@ -141,7 +141,7 @@
           "A farming village with no wall, spread over a wide common where four farm roads cross: thirty or forty farmsteads standing back behind their hedges, with barley, oats, roots, hay meadows and pastures running out around them, and a grain mill on the brook at the village's edge. The plain timber Gathering Hall stands on the common's eastern side."
         ];
         if (truthy(s.bc_lane_seen)) {
-          out.push("The Lane is the village's one street, running south from the common with a farmstead on each side, some large and some small. A household will let a traveller a hayloft bed for a copper bit.");
+          out.push("The Lane is the village's one street, running south from the common with a farmstead on each side, some large and some small. Travellers can find a hayloft bed with a household there.");
         }
         if (truthy(s.bc_pasture_seen)) {
           out.push("The common pasture by the brook holds sheep and cattle, and a row of rail pens where families keep their working horses and mules.");
@@ -178,7 +178,7 @@
           out.push("Below the houses a gravel shelf on the stream bank is stacked with decks of bark-stripped logs, each deck with its family's mark painted on the cut ends, beside a chute of squared planks leading to a run of ledges.");
         }
         if (truthy(s.ah_clearing_seen)) {
-          out.push("A track runs out past the last houses to the charcoal camp, where earth-covered mounds of logs smoulder for days into charcoal, with a bunkhouse where a cutter or traveller can rent a bunk for a copper bit.");
+          out.push("A track runs out past the last houses to the charcoal camp, where earth-covered mounds of logs smoulder into charcoal beside a bunkhouse for cutters and travellers.");
         }
         return out;
       },
@@ -193,7 +193,7 @@
       tags: ["Ashrun Holt"], aliases: ["Lysa", "Thorn", "speaker"],
       unlock: "ah_speaker_seen",
       body: [
-        "A narrow, upright woman with a long silver-brown braid and resin-dark fingertips, who keeps a flat wooden map case under one arm. She speaks for the Holt, listening to everyone and deciding nothing alone, and keeps the hall's board of knotted cords."
+        "The speaker at Ashrun Holt's Longhouse: a narrow, upright woman with a long silver-brown braid and resin-dark fingertips, who keeps a flat wooden map case under one arm. When a visitor needs something from the village, she hears it and takes it to the households concerned. She studies the Longhouse's board of knotted cords."
       ],
       see: ["ashrun_holt"]
     },
