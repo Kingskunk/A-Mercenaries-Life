@@ -48,7 +48,7 @@
       lsf_r4: { x: 7.7, y: 8.6, kind: "room", name: "Hidden Spring" },
       lsf_r5: { x: 0.7, y: 3.7, kind: "room", name: "Lightning Oak" },
       lsf_r6: { x: 0.7, y: 8.6, kind: "room", name: "Room 6" },
-      lsf_r7: { x: 3.4, y: 3.9, kind: "room", name: "Room 7" },
+      lsf_r7: { x: 3.4, y: 3.9, kind: "room", name: "Hazel Clearing" },
       lsf_r8: { x: 7.4, y: 4.5, kind: "room", name: "Bark's Glade" },
       lsf_r9: { x: 3.6, y: 2.4, kind: "room", name: "Room 9" },
       lsf_r10: { x: 5.7, y: 4.7, kind: "room", name: "The Wrecked Camp" },
@@ -58,7 +58,7 @@
       lsf_r14: { x: 7.5, y: 0.2, kind: "room", name: "The Panther's Tree" },
       lsf_r15: { x: 3.5, y: 0.4, kind: "room", name: "Room 15" }
     },
-    edges: [["lsf_x1", "lsf_j1"], ["lsf_j1", "lsf_j2"], ["lsf_j2", "lsf_j3"], ["lsf_j3", "lsf_r1"], ["lsf_r1", "lsf_j5"], ["lsf_j5", "lsf_j8"], ["lsf_j8", "lsf_j9"], ["lsf_j9", "lsf_r5"], ["lsf_j8", "lsf_j10"], ["lsf_j10", "lsf_r6"], ["lsf_r5", "lsf_j13"], ["lsf_j13", "lsf_r7"], ["lsf_r7", "lsf_r9"], ["lsf_r9", "lsf_j27"], ["lsf_j27", "lsf_r15"], ["lsf_j2", "lsf_j22"], ["lsf_j22", "lsf_r10"], ["lsf_r10", "lsf_j21"], ["lsf_j21", "lsf_r12"], ["lsf_r12", "lsf_j25"], ["lsf_j25", "lsf_r13"], ["lsf_r12", "lsf_j26"], ["lsf_j26", "lsf_r14"], ["lsf_r12", "lsf_j23"], ["lsf_j23", "lsf_r11"], ["lsf_r11", "lsf_j18"], ["lsf_j18", "lsf_j16"], ["lsf_j16", "lsf_x2"], ["lsf_j16", "lsf_j14"], ["lsf_j14", "lsf_j12"], ["lsf_j12", "lsf_j15"], ["lsf_j15", "lsf_r8"], ["lsf_j12", "lsf_j11"], ["lsf_j11", "lsf_r3"], ["lsf_r3", "lsf_j6"], ["lsf_j6", "lsf_r2"], ["lsf_r2", "lsf_j4"], ["lsf_j4", "lsf_j2"], ["lsf_r2", "lsf_j7"],
+    edges: [["lsf_x1", "lsf_j1"], ["lsf_j1", "lsf_j2"], ["lsf_j2", "lsf_j3"], ["lsf_j3", "lsf_r1"], ["lsf_r1", "lsf_j5"], ["lsf_j5", "lsf_j8"], ["lsf_j8", "lsf_j9"], ["lsf_j9", "lsf_r5"], ["lsf_j8", "lsf_j10"], ["lsf_j10", "lsf_r6"], ["lsf_r5", "lsf_j13"], ["lsf_j13", "lsf_r7"], ["lsf_r7", "lsf_r9", "lsf_bark_accepted"], ["lsf_r9", "lsf_j27"], ["lsf_j27", "lsf_r15"], ["lsf_j2", "lsf_j22"], ["lsf_j22", "lsf_r10"], ["lsf_r10", "lsf_j21"], ["lsf_j21", "lsf_r12"], ["lsf_r12", "lsf_j25"], ["lsf_j25", "lsf_r13"], ["lsf_r12", "lsf_j26"], ["lsf_j26", "lsf_r14"], ["lsf_r12", "lsf_j23"], ["lsf_j23", "lsf_r11"], ["lsf_r11", "lsf_j18"], ["lsf_j18", "lsf_j16"], ["lsf_j16", "lsf_x2"], ["lsf_j16", "lsf_j14"], ["lsf_j14", "lsf_j12"], ["lsf_j12", "lsf_j15"], ["lsf_j15", "lsf_r8"], ["lsf_j12", "lsf_j11"], ["lsf_j11", "lsf_r3"], ["lsf_r3", "lsf_j6"], ["lsf_j6", "lsf_r2"], ["lsf_r2", "lsf_j4"], ["lsf_j4", "lsf_j2"], ["lsf_r2", "lsf_j7"],
       ["lsf_r1", "lsf_j24", "lsf_tower_viewed"], ["lsf_j24", "lsf_r7", "lsf_tower_viewed"], ["lsf_j7", "lsf_r4", "lsf_spring_reached"]]
   };
 })();

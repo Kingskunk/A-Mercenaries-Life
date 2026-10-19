@@ -1302,7 +1302,6 @@ You find the first handholds in the rock and test each before you trust it.
 *set dg_seen_lsf_r5 true
 *set dg_seen_lsf_r6 true
 *set dg_seen_lsf_r7 true
-*set dg_seen_lsf_r9 true
 *set dg_seen_lsf_r10 true
 *set lsf_tower_viewed true
 *set dg_mins 20
@@ -1771,21 +1770,43 @@ ${use_text}
     *set dg_dest_hall true
     *goto lsf_move
 
+*comment THE HAZEL CLEARING (Room 7, the user's design 2026-10-19): a dead end that gives no sign of a way on. Once Bark's quest is taken (lsf_bark_accepted) the growth on the north side draws apart the first time the player arrives
+*comment (lsf_r7_show_open, decided inside the page lock; lsf_r7_opened kept for good) and the way north to Room 9 stays open. The map edge to Room 9 is hidden until then, and the watchtower's view marks nothing past this room.
 *label lsf_n_r7
 
-[b]◈ FOREST ROOM 7[/b]
+*if (lsf_bark_accepted)
+  *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+    *set lsf_r7_show_open (not(lsf_r7_opened))
+    *set lsf_r7_opened true
+    *set stat_bump_locked true
+    *set locked_stat_bump_page_id page_id
+[b]◈ THE HAZEL CLEARING[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  The dark under the trees is close, and you feel your way. This is forest room 7. Nothing is written here yet.
+  *if (lsf_bark_accepted)
+    *if (lsf_r7_show_open)
+      The trail stops against hazel and bramble that catch at your sleeve, and under your ${feet_prose} the leaf litter crackles with nutshells. You are halfway across the clearing when a creak runs along the north side. Something rope-thick slides over bark near your hand, thorns rasp against each other and draw away, and the litter stirs underfoot as roots rise out of it. When the sounds stop, the air on your face has changed: cooler, and moving.
+    *else
+      The trail stops against hazel and bramble that catch at your sleeve, and under your ${feet_prose} the leaf litter crackles with nutshells. To the north your hand finds vines hanging in loose loops between two trunks, and between them a gap floored with soft litter, with roots arched up on either side. Cool air moves through it.
+  *else
+    The trail stops against hazel and bramble that catch at your sleeve, and under your ${feet_prose} the leaf litter crackles with nutshells. Something small scrabbles away across a log. To the north your hands meet bark: trunks standing side by side, tied together with vines as thick as your wrist.
 *else
-  This is forest room 7. Nothing is written here yet.
+  *if (lsf_bark_accepted)
+    *if (lsf_r7_show_open)
+      The trail ends in a small clearing hemmed in by hazel and bramble. Squirrels have split a heap of nutshells on a mossy log, and a wren scolds from the thicket. You are halfway across when a creak runs along the north side. The vines between the old trunks slide off one another like rope paid out, thorn stems lean aside with a dry rasp, and two thick roots lift out of the leaf litter and arch apart. Where the trunks stood shoulder to shoulder there is a gap now, wide enough for one, with cooler air moving through it.
+    *else
+      The trail ends in a small clearing hemmed in by hazel and bramble. Squirrels have split a heap of nutshells on a mossy log, and a wren scolds from the thicket. On the north side, between two old trunks, the vines hang in loose loops, and a gap stands open there, wide enough for one, floored with leaf litter and edged with roots arched like doorposts. The air that comes through it is cooler.
+  *else
+    The trail ends in a small clearing hemmed in by hazel and bramble. Squirrels have split a heap of nutshells on a mossy log, and a wren scolds from the thicket. On the north side the old trunks stand shoulder to shoulder, bound together with vines as thick as your wrist.
+*gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
-  # Go north.
-    *set dg_dest "lsf_r9"
-    *set dg_dest_hall false
-    *goto lsf_move
+  *if (lsf_bark_accepted)
+    # Go north, through the gap.
+      *set dg_dest "lsf_r9"
+      *set dg_dest_hall false
+      *goto lsf_move
   # Go west.
     *set dg_dest "lsf_j13"
     *set dg_dest_hall true

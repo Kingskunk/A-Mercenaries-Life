@@ -164,7 +164,7 @@ The trail follows the stream upstream, so the signs of the poison thicken as the
 * **Control Flames** *(a Wizard, Bard or Warlock who knows it)*
   > You raise a hand and speak to the flame as you would to a nervous animal. It leans toward your voice. One by one you gather the patches of fire, trunk and limb and crown, and bend them down, thinner and thinner, until the last bright thread gutters and goes out. The smoke thins. The great tree stands scorched and whole.
   *(No roll. It takes a few casts, and the fire cannot beat the player.)*
-* **Throw earth on the flames with a shovel. [Athletics DC 14, ~2 hours]** *(needs a shovel)*
+* **Throw earth on the flames with a shovel. [Athletics DC 14, ~2 hours]** *(needs a shovel)*(Can't be an option anything more thaqn 5 minutues can't be an option, we have to defeat the evil mage, and try to avoid the Sprites from killing each other. either time is paused here doesn't advance, of this cant be an option.)
   > *Pass:* You dig and throw until your arms burn. The earth smothers the flames on the trunk and the low limbs, and the dryad drags the last of the crown's embers out with her hands. The tree is scarred but alive.
   > *Miss by little:* The tree lives, but the crown is lost.
   > *Miss badly:* The fire wins. The tree is gone.
@@ -176,11 +176,11 @@ The trail follows the stream upstream, so the signs of the poison thicken as the
 
 **If the tree is saved, the dryad explains (player speaks too):**
 
-> "Thank you," the dryad says, and sits down where she stands. "I am Flùràlainn. I keep this grove." *(her name is from your notes)* "The sprites were my friends. For years I kept the peace between them. Then something changed, and now they will kill each other for one more tree."
+> "Thank you," the dryad says, and sits down where she stands. "I am Flùràlainn. I keep this grove." *(her name is from your notes)* "The sprites were my friends. For years I kept the peace between them. Then something changed, and now they will kill each other over my grove."
 >
 > "What changed?" you ask.
 >
-> "Their minds. They drink from the stream that feeds this place, and it has done something to them. Greed, and nothing else, as if the greed were the only thing left." She looks at the burning crown, the grey scar. "I thought it was a spell. I do not know who would cast it."
+> "Their minds. They drink from the stream that feeds this place, and it has done something to them. Greed, and nothing else, as if the greed were the only thing left." She looks at the burning crown, the grey scar. "I do not know what is wrong, the grove is being poisoned, I fear, by who I do not know."
 
 *(If the player has noticed the water is wrong, a line from them here: "The water is poisoned. I've seen what it does.")*
 
@@ -209,6 +209,8 @@ The two tribes fight in the air and in the boughs and do not attack anyone who s
 
 *(The player can answer or attack. If Dubhar speaks more, nothing he says changes the outcome.)*
 
+(Needs better description, and missing a monologue as well.)
+
 **The fight:** Dubhar (AC 12, HP 22, quarterstaff 1d6+2, **Poison Spray**) and **three Twig Blights** (AC 14, HP 7, claw 1d4+2, vulnerable to fire, pack tactics). Dubhar fights from behind the briar. *(See question 9: three blights and a mage is heavy for one level 1 or 2 character.)*
 
 **When he dies:** the poison goes out of the forest at once.
@@ -224,6 +226,8 @@ The two tribes fight in the air and in the boughs and do not attack anyone who s
 * **The grove:** the sprites, dazed, break off the fight and leave in two small groups. The dryad, if the player saved the tree, thanks them again.
 * **Room 9's pool:** clean, safe, and the Wisdom penalty can be washed away.
 * **Bark:** he has felt it in the roots.
+
+(No the sprites don't just break away, this is yet another challene after the mage has been defeated.) We have to stop the spirtes battle. We have depending on how long the player takes to defeat the mage is how hard this DC is going to be.
 
 ---
 
@@ -257,6 +261,8 @@ The two tribes fight in the air and in the boughs and do not attack anyone who s
 * **Dungeons:** *"Feed the torch,"* so a lit torch burns a few steps longer, or *"Pinch the torch out"* to go unseen in a room.
 * **Combat:** *"Snuff the flames"* on the player when they are burning, once.
 
+Control flames can also expand flames as well, not sure how difficult this would be too do, we don't yet have a way for the player character to gain the burning status, but we do have a way for enenmies too, control flames can copy the same burning condition an enemy has, onto any enemies in the same "room" in combat.
+
 ---
 
 ## BUILD NOTES (for me, not for you to decide)
@@ -277,7 +283,7 @@ Answer in place. If you would rather I just choose, write "your call" and I will
 
 **1. Names.** The dryad (Flùràlainn), the two sprite tribes (Briarvine and Thornbranch), the grove (Coilltean) and Dubhar come from the idea you borrowed. Keep them, or give them names of our own? Rooms are named for what they are (The Grey Edge, The Clear Pool, The Stream Path, The Burning Grove, all mine).
 
-Your answer:
+Your answer: We can keep the names.
 
 **2. Room 7.** Is "the forest sealed this way itself" the right reason for the closed path? And do you want the dead thrush and the grey leaves, or something plainer?
 
@@ -285,48 +291,81 @@ Your answer:
 
 **3. Bark's two changed lines.** Is the proposed wording right, now that the water is clear?
 
-Your answer:
+Your answer: Answered this already in the section itself.
 
 **4. The roots' warning in Room 9** (a line added when the quest is taken). Keep it, or leave the player to find out for themselves?
 
-Your answer:
+Your answer: Answered this already in the section itself.
 
 **5. The pool.** (a) Should tasting the water on a miss harm the player a little, or is the check harmless? (b) After Dubhar's death, should the clean pool also work like the Hidden Spring (clears fatigue once per refill), or just remove the Wisdom penalty?
 
-Your answer:
+Your answer: I think I ansered this already, it's a normal stream after the eevil mage dies. It's simple, if you drink you get a minus wisdom, if you don't drink you don't get a wisdom negative boon.
 
 **6. The tree's outcomes.** I wrote four: saved clean, saved with the crown lost, lost, and the grove saved but the tree lost. Is that the right spread, and does losing the tree close the dryad's gratitude only, with Bark's quest still open?
 
-Your answer:
+Your answer: I'll think more about this at a later date, this does look like a good spread though.
 
 **7. Other spells on the burning tree.** Should Ray of Frost also put the fire out (slowly), or only Control Flames and the shovel/Survival routes?
 
-Your answer:
-
+Your answer: I answered a bit of this early, I mostly had temporarl issues with this here. 
+ 
 **8. The +10 Persuasion with the dryad.** It is far above the normal scale of a d20 plus a few points. Do you want it as written, or as "advantage plus 5", or as a permanent friendly state with no number?
 
-Your answer:
+Your answer: Yeah I think what you suggested is better here.
 
 **9. The fight.** Three Twig Blights and a mage is a lot for one level 1 or 2 character. Fewer blights (two), the mage already wounded by the dryad, or the dryad's help in the fight? Or keep it as written?
 
-Your answer:
+Your answer: I assume this is a death sentence for a lvl 1 character, which is okay, this is a death battle. Lvl 2 could do it, But we aren't fighting alone, if you save the tree, the dyrad removes something from the fight, if you save the bear, the bear removes something from the fight. You could well end up fighting three twigs and a mage at lvl 2 and die, or pass, or you could save the tree, and the bear and only have to fight the mage alone.
 
 **10. Mercy.** If Dubhar is beaten, can he surrender or flee, or must he die for the poison to end? (As you wrote: the stream cannot be cleaned unless he is dead.)
 
-Your answer:
+Your answer: You can chose to spear him, if you do, the Dryad kills him and the +5 and advantage you get with her, turns into an advantage alone.
 
 **11. What Dubhar leaves behind.** Nothing but his staff? Or something small, a spell, a note, or the reason he wanted the grove?
 
-Your answer:
+Your answer: We'll return to this after, this is alot to do as is, and we'll already be breaking this implementation down into several sections, remind me to work this out when we've finished with everything else.
 
 **12. The fruit.** (a) Is "Heartwood Fruit" an acceptable name? (b) Do fruits kept past their season spoil? (c) Does Bark let the player take the five at once at the turn-in, or one at a time as the bough bears them?
 
-Your answer:
+Your answer: This is acceptable, we'll use the goodberry Icon as the icon for this. He lets you take all five at once. It bears once a season, 5 fruits.
 
 **13. Control Flames in the game.** Do you want the camp, torch and combat uses above, or only some of them?
 
-Your answer:
+Your answer: All of the above. You know I just remembered we have a light spell, we'll have to return and check if it's use is included in the dungeon / the split gates dungeon as well.
 
 **14. Anything else you want added, cut or changed?**
 
-Your answer:
+Your answer: Maybe just two things, a water system that we'll build after at the end, after we've worked out everything else. it's a simple water system that usefull to actually out the fire by water, due to the weight I imagine only fighters and barbarians with their STR would be able to carry enough water to out these flames.
+
+---
+
+## BUILD PLAN IN CHUNKS (2026-10-19, after your marked-up answers)
+
+How I read your answers, and the order I will build in. Tell me if I read anything wrong.
+
+**What I took from your notes**
+* **Bark's lines (0a):** left exactly as they are. "Runs black" stays as Bark speaking in a metaphor, so nothing changes in Room 8 until the reward.
+* **Room 7:** a plain dead end until the quest is taken. No clues, no checks, no hints before. The watchtower view must not mark anything past Room 7 either.
+* **Show, not tell:** Room 9's prose and Room 7's reveal are rewritten to show an empty place and a moving wall, without explaining or announcing.
+* **The pool:** drinking gives -5 Wisdom for three days, and after Dubhar is dead it is just clean water. No Hidden Spring effect. The water system (a jug) comes at the very end, and this pool is a place to fill it.
+* **The grove has a clock:** the shovel and firebreak routes cannot take hours. How long the player takes to deal with the mage sets how hard it is to stop the sprites afterwards.
+* **The sprite war is a second challenge after the mage dies**, not something that simply ends.
+* **The fight:** three Twig Blights and the mage is allowed to be deadly. Saving the tree takes something out of the fight (the dryad helps), and saving the bear (Room 13) takes something out too.
+* **Mercy:** the player may *spare* Dubhar (I read "spear" as a slip for "spare"), and the dryad then kills him anyway. The poison still ends, and the bonus with her drops from +5 and advantage to advantage alone. *(Tell me if I read this wrong.)*
+* **The +10:** replaced by "+5 and advantage" with the dryad.
+* **The fruit:** "Heartwood Fruit", the goodberry icon, all five at once at the turn-in, a new five each season.
+* **Control Flames:** all four uses (the tree, camp, torch, combat), and it can also copy the burning condition from one enemy to the others in the same fight. The Light cantrip's use in the dungeons has to be checked at the same time.
+* **Later, not now:** what Dubhar leaves behind, and the water system (a jug that a Fighter or Barbarian could use to fight the fire by water).
+
+**The chunks**
+1. **Room 7 and the sealed path.** *(built 2026-10-19)*
+2. **Room 9 (the pool) and Trail 27.** The show-not-tell prose, the ways to tell the water is wrong, drinking, the timed -5 Wisdom.
+3. **Control Flames.** The cantrip in the spell list and the three classes, its uses at camp, with torches and in a fight; check the Light cantrip in the dungeons.
+4. **Room 15, arrival.** The dryad, the burning tree routes, the sprite war's HP penalty, and the clock.
+5. **Dubhar and the Twig Blights.** The fight, and what the dryad and the bear take out of it.
+6. **After the mage.** Stopping the sprites, the mercy choice, the clean water, and Bark's fruits.
+7. **Later:** the water system, Dubhar's drop.
+
+### Chunk 1 built (2026-10-19)
+
+Room 7 is **The Hazel Clearing** (a plain name for the map). Before Bark's quest it is a clearing of hazel and bramble with squirrels and a wren, a wall of old trunks bound with vines on the north side, and nothing else: no checks and no hints. After the quest is taken, the first time you arrive the vines slide off each other, the thorns lean aside and two roots rise and arch apart, leaving a gap (dark version by sound and touch). Afterwards the gap is simply there. The map edge to Room 9 is hidden until the quest is taken, and the watchtower no longer marks Room 9.
