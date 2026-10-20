@@ -332,6 +332,8 @@
     if (e.id === "throw") return (window.ACTION_ICONS || {})["throw_" + slug(v.label)] || "";
     // Shoot: Fire Arrow / Ice Arrow ... -- each special arrow wears its own art (ACTION_ICONS shoot_<item>).
     if (e.id === "shoot") return (window.ACTION_ICONS || {})["shoot_" + slug(v.label)] || "";
+    // Read: Magic Missile Scroll / Bane Scroll ... -- each spell scroll wears its own art (ACTION_ICONS read_<slug of its title>); the plain Read button has none yet.
+    if (e.id === "read") return (window.ACTION_ICONS || {})["read_" + slug(v.label)] || "";
     if (e.id !== "booming_blade") return "";
     var st = statsNow(), art = window.ACTION_ICONS || {}, lab = String(v.label).toLowerCase();
     if (st.weapon && lab === String(st.weapon).toLowerCase()) return art.primary_melee || "";

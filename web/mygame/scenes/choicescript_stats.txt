@@ -459,6 +459,38 @@
   *set has_inventory_item true
   *line_break
   • [b]Water Jug:[/b] Glazed clay jug with a corked neck and a leather-wrapped grip@{(spare_water_jug > 0)  [+${spare_water_jug} spare]|}
+*if (has_scroll_magic_missile)
+  *set has_inventory_item true
+  *line_break
+  • [b]Magic Missile Scroll:[/b] Rolled paper with three lines of silver-dusted script [Read in a fight: three darts of force that never miss]@{(spare_scroll_magic_missile > 0)  [+${spare_scroll_magic_missile} spare]|}
+*if (has_scroll_healing_word)
+  *set has_inventory_item true
+  *line_break
+  • [b]Healing Word Scroll:[/b] Short slip of folded paper with one bright line of script [Read in a fight, as a bonus action: heal 1d4 plus your casting modifier]@{(spare_scroll_healing_word > 0)  [+${spare_scroll_healing_word} spare]|}
+*if (has_scroll_mage_armor)
+  *set has_inventory_item true
+  *line_break
+  • [b]Mage Armor Scroll:[/b] Long narrow scroll lettered in careful columns [Read: base AC 13 + Dexterity for 24 hours, with no armor worn]@{(spare_scroll_mage_armor > 0)  [+${spare_scroll_mage_armor} spare]|}
+*if (has_scroll_bane)
+  *set has_inventory_item true
+  *line_break
+  • [b]Bane Scroll:[/b] Curl of dark paper written in thin red ink [Read in a fight: up to three foes make a Charisma save or are Baned for 10 rounds]@{(spare_scroll_bane > 0)  [+${spare_scroll_bane} spare]|}
+*if (has_scroll_false_life)
+  *set has_inventory_item true
+  *line_break
+  • [b]False Life Scroll:[/b] Stiff yellowed sheet on a wooden spindle [Read: 1d4 + 4 temporary hit points for 12 hours]@{(spare_scroll_false_life > 0)  [+${spare_scroll_false_life} spare]|}
+*if (has_scroll_detect_magic)
+  *set has_inventory_item true
+  *line_break
+  • [b]Detect Magic Scroll:[/b] Narrow grey slip with a ring of script round a blank center [Read where magic may lie: it stands in for the spell, once]@{(spare_scroll_detect_magic > 0)  [+${spare_scroll_detect_magic} spare]|}
+*if (has_scroll_speak_with_animals)
+  *set has_inventory_item true
+  *line_break
+  • [b]Animal Speech Scroll:[/b] Brown scroll in looping script with a small inked bird [Read where an animal may answer: it stands in for Speak with Animals, once]@{(spare_scroll_speak_with_animals > 0)  [+${spare_scroll_speak_with_animals} spare]|}
+*if (has_scroll_charm_person)
+  *set has_inventory_item true
+  *line_break
+  • [b]Charm Person Scroll:[/b] Soft pink-edged sheet in curling script [Read where a conversation offers Charm Person: it stands in for the spell, once]@{(spare_scroll_charm_person > 0)  [+${spare_scroll_charm_person} spare]|}
 *if (has_cooking_pot)
   *set has_inventory_item true
   *line_break
@@ -796,6 +828,10 @@ Review loadout, grimoire, or interface settings. Known contacts, factions, place
   *set cu_any true
 *if (has_dried_pork_sausage)
   *set cu_any true
+*if (has_scroll_mage_armor)
+  *set cu_any true
+*if (has_scroll_false_life)
+  *set cu_any true
 *comment GEN:END codex_use_check
 
 *choice
@@ -862,6 +898,10 @@ Review loadout, grimoire, or interface settings. Known contacts, factions, place
   *set cu_any true
 *if (has_dried_pork_sausage)
   *set cu_any true
+*if (has_scroll_mage_armor)
+  *set cu_any true
+*if (has_scroll_false_life)
+  *set cu_any true
 *comment GEN:END codex_use_check2
 *if (not(cu_any))
   Nothing in your satchel is made to be used up.
@@ -921,6 +961,14 @@ Review loadout, grimoire, or interface settings. Known contacts, factions, place
   *if (has_dried_pork_sausage)
     # Eat the dried pork sausage.@{show_stat_hints  [Holds off about 12 hours of hunger]|}
       *set use_item_id "dried_pork_sausage"
+      *goto codex_use_do
+  *if (has_scroll_mage_armor)
+    # Read the mage armor scroll.@{show_stat_hints  [Read: base AC 13 + Dexterity for 24 hours, with no armor worn]|}
+      *set use_item_id "scroll_mage_armor"
+      *goto codex_use_do
+  *if (has_scroll_false_life)
+    # Read the false life scroll.@{show_stat_hints  [Read: 1d4 + 4 temporary hit points for 12 hours]|}
+      *set use_item_id "scroll_false_life"
       *goto codex_use_do
   *comment GEN:END codex_use_options
   # [Return to Dossier]
@@ -1039,6 +1087,40 @@ ${use_text}
   [b][✨ False Life | +${combat_cast_result} Temporary Hit Points | 12 hours][/b]
 *page_break Back to the casting…
 *goto codex_cast
+
+*comment ONE-SHOT USE (2026-10-19, the user): what the inventory panel's Use button runs. It uses the item at once (equipment.txt use_consumable, the one place an effect is written) and ends with *finish, so the player is handed straight back
+*comment to the page they were on with no result page to click through, the same as a spell cast from the sidebar. The one-line result goes through spell_cast_toast: the item's banner when it did something, otherwise the words that say why it did not.
+*label codex_use_now
+*if (combat_engaged)
+  *set spell_cast_toast "You cannot use that in the middle of a fight."
+  *finish
+*set use_in_combat false
+*comment The page locks (use_locked, mage_armor_cast_locked, false_life_cast_locked) are keyed on the id of the page this dossier sits over, and that id does not change for a one-shot, so a second use on the same page would find its own lock still set and
+*comment do nothing while the toast repeated the last banner (2026-10-20, the user's False Life report). This label runs once per click and is never replayed, so it takes the locks off for its own call and puts them back as they were, which keeps the page
+*comment underneath safe when it replays as the dossier closes.
+*temp cun_use_l use_locked
+*temp cun_use_p locked_use_page_id
+*temp cun_ma_l mage_armor_cast_locked
+*temp cun_ma_p locked_mage_armor_cast_page_id
+*temp cun_fl_l false_life_cast_locked
+*temp cun_fl_p locked_false_life_cast_page_id
+*set use_locked false
+*set mage_armor_cast_locked false
+*set false_life_cast_locked false
+*gosub_scene equipment use_consumable use_item_id
+*set use_locked cun_use_l
+*set locked_use_page_id cun_use_p
+*set mage_armor_cast_locked cun_ma_l
+*set locked_mage_armor_cast_page_id cun_ma_p
+*set false_life_cast_locked cun_fl_l
+*set locked_false_life_cast_page_id cun_fl_p
+*if ((use_result = "ok") and (not(use_banner = "")))
+  *set spell_cast_toast use_banner
+*elseif (not(use_text = ""))
+  *set spell_cast_toast use_text
+*else
+  *set spell_cast_toast "You have none of that left."
+*finish
 
 *comment ONE-SHOT CASTS (2026-10-02). What the sidebar spellbook's Cast button runs: it opens the dossier AT one of these labels, which casts at once and ends with *finish, so the game hands the player straight
 *comment back to the page they were on, with no menu to click through. The one-line result goes through spell_cast_toast, which the sidebar shows and clears. A refused cast says why in the same line.

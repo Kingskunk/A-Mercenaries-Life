@@ -2862,6 +2862,7 @@ You walk over to the rim of the pit. The rhythmic rasp of the long saw slows, th
 
 The sawyer spits dark tobacco into the sawdust and wipes his mouth with the back of his hand, eyes narrowing at you. "We're paid to saw oak, stranger, not answer questions for drifters. If you want yard business, take it to Hendryk's guards at the gate. Clear off before a beam rolls."
 
+*gosub_scene dungeon dg_spell_source "charm_person" "Charm Person" 0 false
 *choice
   # "Thirty people will drown if that rotten spruce takes open water. Tell me where the heartwood went."${hint_sawyers_cha}
     *gosub_scene dice_engine roll_skill_check 12 "persuasion" "" "" "" "" ""
@@ -2875,8 +2876,8 @@ The sawyer spits dark tobacco into the sawdust and wipes his mouth with the back
       *goto beat_3_sawyers_success
     *else
       *goto beat_3_sawyers_failure
-  *if (((((character_class = "bard") and (known_charm_person)) and (bard_spell_slots > 0)) or (((character_class = "wizard") and (known_charm_person)) and (wizard_spell_slots > 0))) or (((character_class = "warlock") and (known_charm_person)) and (warlock_spell_slots > 0)))
-    # [Spell: Charm Person] Weave an enchanting warmth into your voice, putting the sawyer at ease.
+  *if (dg_ss_can)
+    # [${dg_ss_word}: Charm Person] Weave an enchanting warmth into your voice, putting the sawyer at ease.
       *goto beat_3_sawyers_charm
   *if ((((gold * 100) + (silver * 10)) + copper) >= 20)
     # Slide a pair of silver marks across the cut log to buy a straight answer. [2 Silver Marks]
@@ -2885,16 +2886,12 @@ The sawyer spits dark tobacco into the sawdust and wipes his mouth with the back
     *goto beat_3_investigation_hub
 
 *label beat_3_sawyers_charm
-*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-  *if (character_class = "bard")
-    *set bard_spell_slots - 1
-  *elseif (character_class = "wizard")
-    *set wizard_spell_slots - 1
-  *else
-    *set warlock_spell_slots - 1
-  *set stat_bump_locked true
-  *set locked_stat_bump_page_id page_id
-You trace a slow spiral in the sawdust-laden air and speak with a gentle, hypnotic cadence. The enchantment settles over the sawyer's strained features like warm wine, and his defensive scowl softens into easy camaraderie.
+*gosub_scene dungeon dg_spell_source "charm_person" "Charm Person" 0 false
+*gosub_scene dungeon dg_spell_cast "charm_person"
+*if (dg_ss_cost = "scroll")
+  You unroll the scroll and read its curling script aloud in a gentle, hypnotic cadence. The enchantment settles over the sawyer's strained features like warm wine, and his defensive scowl softens into easy camaraderie.
+*else
+  You trace a slow spiral in the sawdust-laden air and speak with a gentle, hypnotic cadence. The enchantment settles over the sawyer's strained features like warm wine, and his defensive scowl softens into easy camaraderie.
 
 "A pair of dray teams hitched up when the load cleared," he confides warmly, leaning on the saw handle as if speaking to an old shipmate. "The clerk came down the stairs himself with a private waybill. Told the teamsters the heartwood was condemned for worm-rot and had them roll the logs behind the boiler shed to wait for a river barge. Check behind the cod crates by the boiler wall."
 *goto beat_3_find_stash

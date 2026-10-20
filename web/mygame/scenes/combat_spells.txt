@@ -77,7 +77,10 @@
 ${fsh}
 *line_break
 *if (not(combat_magic_missile_locked)) or (not(locked_combat_magic_missile_page_id = page_id))
-  *set wizard_spell_slots - 1
+  *if (combat_scroll_id = "")
+    *set wizard_spell_slots - 1
+  *else
+    *gosub_scene equipment spend_consumable combat_scroll_id
   *comment Always Force damage, RAW -- no per-caster variation.
   *set combat_player_dmg_type "force"
   *set combat_mm_banner_1 ""
@@ -362,7 +365,10 @@ ${combat_fear_banner}
 *comment instead would let a Stats-screen replay double-spend it.
 *label resolve_cast_bane
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *set bard_spell_slots - 1
+  *if (combat_scroll_id = "")
+    *set bard_spell_slots - 1
+  *else
+    *gosub_scene equipment spend_consumable combat_scroll_id
   *temp rcb_targeted 0
   *temp rcb_i 1
   *label resolve_cast_bane_loop
@@ -407,6 +413,9 @@ ${combat_fear_banner}
   *set false_life_cost "free"
 *elseif (known_false_life)
   *set false_life_cost "slot"
+*comment A False Life scroll (combat_scroll_id) is read by anyone and costs no slot.
+*if (combat_scroll_id = "scroll_false_life")
+  *set false_life_cost "scroll"
 *if (false_life_cost = "none")
   *set false_life_why "You do not know False Life."
   *return
@@ -442,6 +451,8 @@ ${combat_fear_banner}
         *set warlock_spell_slots - 1
       *if (character_class = "ranger")
         *set ranger_spell_slots - 1
+    *if (false_life_cost = "scroll")
+      *gosub_scene equipment spend_consumable combat_scroll_id
     *temp fl_roll 0
     *rand fl_roll 1 4
     *set combat_cast_result (fl_roll + 4)
@@ -462,10 +473,14 @@ ${combat_fear_banner}
 *label resolve_cast_healing_word
 *comment Heals the player when combat_friendly_target is 0, otherwise the ally in that slot (chosen in the sidebar, see fight_target_friendly_healing_word).
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *set bard_spell_slots - 1
+  *if (combat_scroll_id = "")
+    *set bard_spell_slots - 1
+  *else
+    *gosub_scene equipment spend_consumable combat_scroll_id
   *temp hw_roll 0
   *rand hw_roll 1 4
-  *set combat_cast_result (hw_roll + cha_mod)
+  *comment The casting modifier (spell_damage_mod): a Bard's Charisma as always, and for a scroll read by anyone, the reader's own (Intelligence for a Fighter or Rogue, Charisma for a Barbarian).
+  *set combat_cast_result (hw_roll + spell_damage_mod)
   *if (combat_cast_result < 1)
     *set combat_cast_result 1
   *if (combat_friendly_target = 0)

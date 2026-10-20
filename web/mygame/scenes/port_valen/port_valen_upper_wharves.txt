@@ -639,9 +639,8 @@ A long promenade of pale paving runs along the crest of the ridge, edged on the 
 *comment which hands over to the avenue once the shop has closed. Boots and gloves gained their weather traits in the
 *comment same pass; older worn pieces are grandfathered into the same table. Fenwick's voice is exact and dry.
 
-*comment THE INK & LAMP (BOOKSELLER AND FUTURE SCROLL SHOP)
-*comment The stock is deliberately established before books and scrolls become purchasable inventory. When those
-*comment systems exist, their menu belongs at pq_ink_lamp_stock; the location and Aldren's identity need no rewrite.
+*comment THE INK & LAMP (BOOKSELLER AND SCROLL SHOP)
+*comment The scroll cabinet is open (the user, 2026-10-19): five first-level spell scrolls, menu and trade panel at pq_ink_lamp_stock below. Books are still shelf dressing.
 *label pq_ink_lamp
 *temp pq_ink_lamp_first false
 *if (not(pq_ink_lamp_seen))
@@ -666,6 +665,8 @@ A bell over the door gives one dry note as you enter. The shop is narrow and dee
 *elseif ((ground_state = "sodden") and (not(weather_wet)))
   Damp has crept under the door and darkened the mat inside the threshold.
 
+*temp ink_has_sale ((((has_scroll_magic_missile) or (has_scroll_healing_word)) or ((has_scroll_mage_armor) or (has_scroll_bane))) or (has_scroll_false_life))
+*gosub pq_ink_lamp_open_panel
 *if (pq_ink_lamp_first)
   A lean man with close-cropped black hair and a narrow pale scar across one thumb sits at the worktable. He holds a brass stylus over a sheet of scraped parchment; a line of faded ink lifts from the page, sharpens, and settles again under the lens. He notices you watching and lays the stylus down.
 
@@ -674,6 +675,11 @@ A bell over the door gives one dry note as you enter. The shop is narrow and dee
   Aldren works at the table with a book held open under the brass lens. The locked cabinet stands behind him.
 
 *choice
+  # Ask Aldren to open the scroll cabinet.
+    *goto pq_ink_lamp_stock
+  *if (ink_has_sale)
+    # Put a scroll on the counter to sell.
+      *goto pq_ink_lamp_sell
   # Browse the shelves.
     The front shelves hold road guides, tide tables, house histories, law books, and slim primers with their titles written by hand. The higher shelves are set aside for copied records and older works with cracked leather covers. Price slips wait beneath the books, but the stock is too varied to buy by a glance and Aldren stands at the counter between you and the rarer shelves.
     *page_break Step back from the shelves...
@@ -683,11 +689,311 @@ A bell over the door gives one dry note as you enter. The shop is narrow and dee
       *set pq_ink_lamp_talk_scrolls true
       You nod toward the three locks. "What makes a scroll need all that?"
 
-      Aldren turns the brass plate with one finger until it hangs straight. "A bad copy can burn a hand, break a window, or do nothing at all after taking a month's wages. A good one is worth more than paper and ink." He meets your eyes. "I test what I sell. When I have something fit to sell, the card goes in the window."
+      Aldren turns the brass plate with one finger until it hangs straight. "A bad copy can burn a hand, break a window, or do nothing at all after taking a month's wages. A good one is worth more than paper and ink." He meets your eyes. "I test what I sell. Ask, and I'll open the cabinet for what has passed."
       *page_break Step back from the counter...
       *goto pq_ink_lamp
   # Leave the shop.
+    *set shop_open ""
     *goto pq_avenue
+  # ⚖ Settle up the trade panel.
+    *goto pq_ink_lamp_settle
+
+*comment ────────────────────────────────────────────────
+*comment THE INK & LAMP: THE SCROLL CABINET (the user, 2026-10-19). Aldren sells five first-level spell scrolls (Magic Missile, Healing Word, Mage Armor, Bane, False Life), always in stock, and buys them back at half (the general counter). Anyone can read a scroll; see
+*comment equipment.txt use_consumable and combat.txt's Read options. Same pieces as Hollis's store: menus generated from the catalog (tools/gear_catalog.json: inklamp_buy, inklamp_sell), one purchase label and one sale label with the currency lock,
+*comment and the trade panel on top (open_panel, cart_pass, settle). Stock limits and rotation are deliberately not built (the user: that code will be replaced later).
+*label pq_ink_lamp_stock
+*gosub pq_ink_lamp_open_panel
+*comment GEN:BEGIN inklamp_buy_labels
+*temp ik_scroll_magic_missile ""
+*temp ik_scroll_healing_word ""
+*temp ik_scroll_mage_armor ""
+*temp ik_scroll_bane ""
+*temp ik_scroll_false_life ""
+*temp ik_scroll_detect_magic ""
+*temp ik_scroll_speak_with_animals ""
+*temp ik_scroll_charm_person ""
+*gosub_scene equipment gear_buy_label "scroll_magic_missile"
+*set ik_scroll_magic_missile gear_label
+*gosub_scene equipment gear_buy_label "scroll_healing_word"
+*set ik_scroll_healing_word gear_label
+*gosub_scene equipment gear_buy_label "scroll_mage_armor"
+*set ik_scroll_mage_armor gear_label
+*gosub_scene equipment gear_buy_label "scroll_bane"
+*set ik_scroll_bane gear_label
+*gosub_scene equipment gear_buy_label "scroll_false_life"
+*set ik_scroll_false_life gear_label
+*gosub_scene equipment gear_buy_label "scroll_detect_magic"
+*set ik_scroll_detect_magic gear_label
+*gosub_scene equipment gear_buy_label "scroll_speak_with_animals"
+*set ik_scroll_speak_with_animals gear_label
+*gosub_scene equipment gear_buy_label "scroll_charm_person"
+*set ik_scroll_charm_person gear_label
+*comment GEN:END inklamp_buy_labels
+Aldren turns three keys in three locks, one after another, and swings the cabinet door open on its hinges. Rolled scrolls lie inside in slots lined with green baize, each one tied with a ribbon and tagged in his square hand. "Don't handle them," he says. "Point, and I'll lift it out."
+
+*choice
+  *comment GEN:BEGIN inklamp_buy_options
+  # ${ik_scroll_magic_missile}
+    *set buy_item_id "scroll_magic_missile"
+    *goto pq_ink_lamp_buy_do
+  # ${ik_scroll_healing_word}
+    *set buy_item_id "scroll_healing_word"
+    *goto pq_ink_lamp_buy_do
+  # ${ik_scroll_mage_armor}
+    *set buy_item_id "scroll_mage_armor"
+    *goto pq_ink_lamp_buy_do
+  # ${ik_scroll_bane}
+    *set buy_item_id "scroll_bane"
+    *goto pq_ink_lamp_buy_do
+  # ${ik_scroll_false_life}
+    *set buy_item_id "scroll_false_life"
+    *goto pq_ink_lamp_buy_do
+  # ${ik_scroll_detect_magic}
+    *set buy_item_id "scroll_detect_magic"
+    *goto pq_ink_lamp_buy_do
+  # ${ik_scroll_speak_with_animals}
+    *set buy_item_id "scroll_speak_with_animals"
+    *goto pq_ink_lamp_buy_do
+  # ${ik_scroll_charm_person}
+    *set buy_item_id "scroll_charm_person"
+    *goto pq_ink_lamp_buy_do
+  *comment GEN:END inklamp_buy_options
+  # Step back from the cabinet.
+    *goto pq_ink_lamp
+  # ⚖ Settle up the trade panel.
+    *goto pq_ink_lamp_settle
+
+*comment The purchase itself, shared by every scroll: price and prose come from the catalog. One currency change and one advance_time per page.
+*label pq_ink_lamp_buy_do
+*set gear_shop "inklamp"
+*gosub_scene equipment gear_info buy_item_id
+*temp il_price gear_retail
+*if ((((gold * 100) + (silver * 10)) + copper) < il_price)
+  You count your coin against the figure on the tag and come up short. Aldren lays the ${gear_name} back in its slot and turns the key. "When you have it," he says.
+  *page_break Back to the cabinet…
+  *goto pq_ink_lamp_stock
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount (0 - il_price)
+  *gosub_scene economy currency_add
+  *gosub_scene equipment grant_gear buy_item_id 1
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+Aldren lifts the ${gear_name} from its slot with two fingers, reads the figure off its tag, and sets it on the counter. ${gear_blurb}
+*if (not(gear_quote = ""))
+  *line_break
+  ${gear_quote}
+*gosub_scene equipment format_copper il_price
+*line_break
+[b][💰 Paid: ${gear_sale_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass gear_minutes
+*set time_advance_call_id "ink_lamp_buy"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the cabinet…
+*goto pq_ink_lamp_stock
+
+*label pq_ink_lamp_sell
+Aldren draws the brass lens across the table and clears a space on the counter. "Put it down. I pay half of what I sell it for, and only for what is still tight and whole."
+*comment GEN:BEGIN inklamp_sell_labels
+*temp is_scroll_magic_missile ""
+*temp is_scroll_healing_word ""
+*temp is_scroll_mage_armor ""
+*temp is_scroll_bane ""
+*temp is_scroll_false_life ""
+*temp is_scroll_detect_magic ""
+*temp is_scroll_speak_with_animals ""
+*temp is_scroll_charm_person ""
+*if (has_scroll_magic_missile)
+  *gosub_scene equipment gear_sell_label "scroll_magic_missile" "general"
+  *set is_scroll_magic_missile gear_label
+*if (has_scroll_healing_word)
+  *gosub_scene equipment gear_sell_label "scroll_healing_word" "general"
+  *set is_scroll_healing_word gear_label
+*if (has_scroll_mage_armor)
+  *gosub_scene equipment gear_sell_label "scroll_mage_armor" "general"
+  *set is_scroll_mage_armor gear_label
+*if (has_scroll_bane)
+  *gosub_scene equipment gear_sell_label "scroll_bane" "general"
+  *set is_scroll_bane gear_label
+*if (has_scroll_false_life)
+  *gosub_scene equipment gear_sell_label "scroll_false_life" "general"
+  *set is_scroll_false_life gear_label
+*if (has_scroll_detect_magic)
+  *gosub_scene equipment gear_sell_label "scroll_detect_magic" "general"
+  *set is_scroll_detect_magic gear_label
+*if (has_scroll_speak_with_animals)
+  *gosub_scene equipment gear_sell_label "scroll_speak_with_animals" "general"
+  *set is_scroll_speak_with_animals gear_label
+*if (has_scroll_charm_person)
+  *gosub_scene equipment gear_sell_label "scroll_charm_person" "general"
+  *set is_scroll_charm_person gear_label
+*comment GEN:END inklamp_sell_labels
+*choice
+  *comment GEN:BEGIN inklamp_sell_options
+  *if (has_scroll_magic_missile)
+    # ${is_scroll_magic_missile}
+      *set sell_item_id "scroll_magic_missile"
+      *goto pq_ink_lamp_sell_do
+  *if (has_scroll_healing_word)
+    # ${is_scroll_healing_word}
+      *set sell_item_id "scroll_healing_word"
+      *goto pq_ink_lamp_sell_do
+  *if (has_scroll_mage_armor)
+    # ${is_scroll_mage_armor}
+      *set sell_item_id "scroll_mage_armor"
+      *goto pq_ink_lamp_sell_do
+  *if (has_scroll_bane)
+    # ${is_scroll_bane}
+      *set sell_item_id "scroll_bane"
+      *goto pq_ink_lamp_sell_do
+  *if (has_scroll_false_life)
+    # ${is_scroll_false_life}
+      *set sell_item_id "scroll_false_life"
+      *goto pq_ink_lamp_sell_do
+  *if (has_scroll_detect_magic)
+    # ${is_scroll_detect_magic}
+      *set sell_item_id "scroll_detect_magic"
+      *goto pq_ink_lamp_sell_do
+  *if (has_scroll_speak_with_animals)
+    # ${is_scroll_speak_with_animals}
+      *set sell_item_id "scroll_speak_with_animals"
+      *goto pq_ink_lamp_sell_do
+  *if (has_scroll_charm_person)
+    # ${is_scroll_charm_person}
+      *set sell_item_id "scroll_charm_person"
+      *goto pq_ink_lamp_sell_do
+  *comment GEN:END inklamp_sell_options
+  # Take it all back off the counter.
+    *goto pq_ink_lamp
+
+*comment The sale itself. The price is worked out inside the currency lock and kept in gear_sale_* so a replayed page prints the same banner. One currency change and one advance_time per page.
+*label pq_ink_lamp_sell_do
+*set gear_shop "inklamp_sell"
+*gosub_scene equipment gear_info sell_item_id
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment gear_sale_value sell_item_id "general"
+  *gosub_scene equipment sell_gear sell_item_id
+  *set currency_add_amount gear_sale_copper
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+Aldren unrolls the ${gear_sale_name} a hand's width under the lens, follows the ink with the tip of his stylus, and counts the coin out of a locked drawer.
+*if (not(gear_quote = ""))
+  *line_break
+  ${gear_quote}
+*line_break
+[b][💰 Sold: ${gear_sale_name} for ${gear_sale_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass 5
+*set time_advance_call_id "ink_lamp_sell"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the counter…
+*goto pq_ink_lamp
+
+*label pq_ink_lamp_open_panel
+*set shop_open "inklamp"
+*set shop_rows ""
+*comment GEN:BEGIN inklamp_panel_rows
+*gosub_scene equipment shop_row_add "scroll_magic_missile"
+*gosub_scene equipment shop_row_add "scroll_healing_word"
+*gosub_scene equipment shop_row_add "scroll_mage_armor"
+*gosub_scene equipment shop_row_add "scroll_bane"
+*gosub_scene equipment shop_row_add "scroll_false_life"
+*gosub_scene equipment shop_row_add "scroll_detect_magic"
+*gosub_scene equipment shop_row_add "scroll_speak_with_animals"
+*gosub_scene equipment shop_row_add "scroll_charm_person"
+*comment GEN:END inklamp_panel_rows
+*return
+
+*label pq_ink_lamp_cart_pass
+*comment GEN:BEGIN inklamp_cart_pass
+*set shop_buyer "general"
+*set gear_shop "inklamp_sell"
+*gosub_scene equipment shop_cart_sell "scroll_magic_missile"
+*gosub_scene equipment shop_cart_sell "scroll_healing_word"
+*gosub_scene equipment shop_cart_sell "scroll_mage_armor"
+*gosub_scene equipment shop_cart_sell "scroll_bane"
+*gosub_scene equipment shop_cart_sell "scroll_false_life"
+*gosub_scene equipment shop_cart_sell "scroll_detect_magic"
+*gosub_scene equipment shop_cart_sell "scroll_speak_with_animals"
+*gosub_scene equipment shop_cart_sell "scroll_charm_person"
+*set gear_shop "inklamp"
+*gosub_scene equipment shop_cart_buy "scroll_magic_missile"
+*gosub_scene equipment shop_cart_buy "scroll_healing_word"
+*gosub_scene equipment shop_cart_buy "scroll_mage_armor"
+*gosub_scene equipment shop_cart_buy "scroll_bane"
+*gosub_scene equipment shop_cart_buy "scroll_false_life"
+*gosub_scene equipment shop_cart_buy "scroll_detect_magic"
+*gosub_scene equipment shop_cart_buy "scroll_speak_with_animals"
+*gosub_scene equipment shop_cart_buy "scroll_charm_person"
+*comment GEN:END inklamp_cart_pass
+*return
+
+*label pq_ink_lamp_settle
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment shop_begin
+  *gosub pq_ink_lamp_cart_pass
+  *gosub_scene equipment shop_check
+  *if (shop_verdict = "ok")
+    *set shop_mode "apply"
+    *gosub pq_ink_lamp_cart_pass
+    *set currency_add_amount (shop_tot_credit - shop_tot_cost)
+    *gosub_scene economy currency_add
+  *else
+    *set shop_mode "clear"
+    *gosub pq_ink_lamp_cart_pass
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*if (shop_verdict = "empty")
+  Aldren waits with the stylus above the page, finds nothing to write, and lays it down.
+  *page_break Back to the counter…
+  *goto pq_ink_lamp
+*if (shop_verdict = "short")
+  You count your coin against the figures and come up short. Aldren turns the key in the cabinet lock. "When you have it," he says.
+  *page_break Back to the counter…
+  *goto pq_ink_lamp
+*if ((shop_tot_bought > 0) and (shop_tot_sold > 0))
+  Aldren checks each scroll you put down under the lens, writes both columns on a scrap of paper, and settles the difference across the counter.
+*elseif (shop_tot_bought > 0)
+  Aldren lifts each scroll from its slot, reads the figure off its tag, and sets it on the counter.
+*else
+  Aldren unrolls each scroll you put down a hand's width under the lens, and follows the ink with the tip of his stylus.
+*if (not(shop_quote_line = ""))
+  *line_break
+  ${shop_quote_line}
+*if (shop_tot_sold > 0)
+  *line_break
+  [b][💰 Sold: ${shop_sold_list} for ${shop_credit_desc}][/b]
+*if (shop_tot_bought > 0)
+  *line_break
+  [b][🛒 Bought: ${shop_recv} for ${shop_cost_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass shop_tot_minutes
+*if (shop_tot_sold > 0)
+  *set minutes_to_pass (minutes_to_pass + 5)
+*set time_advance_call_id "ink_lamp_trade"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the counter…
+*goto pq_ink_lamp
 
 *comment THE BRIGHT SETTING (JEWELER AND APPRAISER)
 *comment Cassia sells finished decorative jewelry as valuables, separate from powered rings and amulets. These pieces

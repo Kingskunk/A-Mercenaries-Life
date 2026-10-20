@@ -372,6 +372,64 @@
       description: "Glazed clay jug with a corked neck and a leather-wrapped grip."
     },
     {
+      id: "scroll_magic_missile", category: "consumables", owned: "has_scroll_magic_missile",
+      weight: 0.05, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_scroll_magic_missile) || 0); return "Magic Missile Scroll" + (n > 1 ? " ×" + n : ""); },
+      description: "Rolled paper with three lines of silver-dusted script.",
+      badge: "Read in a fight: three darts of force that never miss"
+    },
+    {
+      id: "scroll_healing_word", category: "consumables", owned: "has_scroll_healing_word",
+      weight: 0.05, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_scroll_healing_word) || 0); return "Healing Word Scroll" + (n > 1 ? " ×" + n : ""); },
+      description: "Short slip of folded paper with one bright line of script.",
+      badge: "Read in a fight, as a bonus action: heal 1d4 plus your casting modifier"
+    },
+    {
+      id: "scroll_mage_armor", category: "consumables", owned: "has_scroll_mage_armor",
+      weight: 0.05, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_scroll_mage_armor) || 0); return "Mage Armor Scroll" + (n > 1 ? " ×" + n : ""); },
+      description: "Long narrow scroll lettered in careful columns.",
+      badge: "Read: base AC 13 + Dexterity for 24 hours, with no armor worn",
+      use: true
+    },
+    {
+      id: "scroll_bane", category: "consumables", owned: "has_scroll_bane",
+      weight: 0.05, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_scroll_bane) || 0); return "Bane Scroll" + (n > 1 ? " ×" + n : ""); },
+      description: "Curl of dark paper written in thin red ink.",
+      badge: "Read in a fight: up to three foes make a Charisma save or are Baned for 10 rounds"
+    },
+    {
+      id: "scroll_false_life", category: "consumables", owned: "has_scroll_false_life",
+      weight: 0.05, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_scroll_false_life) || 0); return "False Life Scroll" + (n > 1 ? " ×" + n : ""); },
+      description: "Stiff yellowed sheet on a wooden spindle.",
+      badge: "Read: 1d4 + 4 temporary hit points for 12 hours",
+      use: true
+    },
+    {
+      id: "scroll_detect_magic", category: "consumables", owned: "has_scroll_detect_magic",
+      weight: 0.05, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_scroll_detect_magic) || 0); return "Detect Magic Scroll" + (n > 1 ? " ×" + n : ""); },
+      description: "Narrow grey slip with a ring of script round a blank center.",
+      badge: "Read where magic may lie: it stands in for the spell, once"
+    },
+    {
+      id: "scroll_speak_with_animals", category: "consumables", owned: "has_scroll_speak_with_animals",
+      weight: 0.05, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_scroll_speak_with_animals) || 0); return "Animal Speech Scroll" + (n > 1 ? " ×" + n : ""); },
+      description: "Brown scroll in looping script with a small inked bird.",
+      badge: "Read where an animal may answer: it stands in for Speak with Animals, once"
+    },
+    {
+      id: "scroll_charm_person", category: "consumables", owned: "has_scroll_charm_person",
+      weight: 0.05, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_scroll_charm_person) || 0); return "Charm Person Scroll" + (n > 1 ? " ×" + n : ""); },
+      description: "Soft pink-edged sheet in curling script.",
+      badge: "Read where a conversation offers Charm Person: it stands in for the spell, once"
+    },
+    {
       id: "cooking_pot", category: "provisions", owned: "has_cooking_pot",
       weight: 4, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_cooking_pot) || 0); return "Iron Cooking Pot" + (n > 1 ? " ×" + n : ""); },

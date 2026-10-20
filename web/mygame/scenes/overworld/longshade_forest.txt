@@ -578,14 +578,8 @@ You scrape a bold cross into the bark at head height, so you will know this junc
     *if (not(dg_lsf_spring_tried))
       # Push into the brush toward the sound of running water. [~20 min]@{show_stat_hints  [Survival or Perception DC 12]|}
         *goto lsf_spring_search
-    *if (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "slot"))
-      # Ask the animals where the water is. [Speak with Animals, uses a spell slot, ~5 min]
-        *goto lsf_spring_animals
-    *if (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "ritual"))
-      # Ask the animals where the water is. [Speak with Animals as a ritual, no slot, ~15 min]
-        *goto lsf_spring_animals
-    *if (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "free"))
-      # Ask the animals where the water is. [Speak with Animals, ~5 min]
+    *if (dg_swa_can)
+      # Ask the animals where the water is. [${dg_swa_tag}]
         *goto lsf_spring_animals
     *if ((known_speak_with_animals) and (not(dg_swa_can)))
       # Try to ask the animals again. [Speak with Animals, no spell slot left]
@@ -625,6 +619,8 @@ You turn off the track and push in among the stems, stopping every few strides t
   You murmur the words and feel the spell leave you. A thrush on a low branch turns its head to look at you.
 *if (dg_swa_cost = "free")
   You speak the words easily, and a thrush on a low branch turns its head to look at you.
+*if (dg_swa_cost = "scroll")
+  You unroll the scroll among the stems and read it aloud. A thrush on a low branch turns its head to look at you.
 *line_break
 "Where's the water?" you ask it. "I can hear it, but I can't find it."
 *line_break
@@ -1511,13 +1507,9 @@ You crouch at the edge of the hollow and go over the ground a hand's width at a 
   *if ((not(lsf_ferns_known)) and (not(dg_dark)))
     # Study the ring of ferns. [~5 min]@{show_stat_hints  [Religion DC 12]|}
       *goto lsf_ferns_study
-  *if (((not(lsf_ferns_known)) and (known_detect_magic)) and (dg_dm_can))
-    *if (dg_dm_cost = "slot")
-      # Cast Detect Magic over the clearing. [Detect Magic, uses a spell slot, ~5 min]
-        *goto lsf_ferns_detect
-    *if (dg_dm_cost = "ritual")
-      # Cast Detect Magic over the clearing. [Detect Magic as a ritual, no slot, ~15 min]
-        *goto lsf_ferns_detect
+  *if ((not(lsf_ferns_known)) and (dg_dm_can))
+    # Cast Detect Magic over the clearing. [${dg_dm_tag}]
+      *goto lsf_ferns_detect
   *if (((not(lsf_ferns_known)) and (known_detect_magic)) and (not(dg_dm_can)))
     # Reach for Detect Magic over the clearing. [no spell slot left]
       You shape the words, and the power to answer them has gone out of you for now. The air stays still.
@@ -1558,6 +1550,8 @@ You walk the edge of the ring slowly, then stand in its bare middle and turn on 
 *gosub_scene dungeon dg_dm_cast
 *if (dg_dm_cost = "ritual")
   You sit at the edge of the ring and speak the words slowly, one syllable at a time. A quarter of an hour later the clearing takes on a pale shimmer.
+*elseif (dg_dm_cost = "scroll")
+  You unroll the slip at the edge of the ring and read the ring of script aloud, and the clearing takes on a pale shimmer.
 *else
   You speak the words and feel the spell leave you, and the clearing takes on a pale shimmer.
 *line_break
@@ -2052,25 +2046,15 @@ A lower branch dips toward you in a slow arc, and the yellow eyes close and open
   *if (((not(lsf_pool_smelled)) and (not(dg_lsf_pool_smell_tried))) and (not(lsf_corruption_cleared)))
     # Lean over the water and breathe it in. [~5 min]@{show_stat_hints  [Medicine DC 12]|}
       *goto lsf_pool_smell
-  *if (((not(lsf_pool_magic)) and (not(lsf_corruption_cleared))) and ((known_detect_magic) and (dg_dm_can)))
-    *if (dg_dm_cost = "slot")
-      # Cast Detect Magic over the pool. [Detect Magic, uses a spell slot, ~5 min]
-        *goto lsf_pool_magic_cast
-    *if (dg_dm_cost = "ritual")
-      # Cast Detect Magic over the pool. [Detect Magic as a ritual, no slot, ~15 min]
-        *goto lsf_pool_magic_cast
+  *if (((not(lsf_pool_magic)) and (not(lsf_corruption_cleared))) and (dg_dm_can))
+    # Cast Detect Magic over the pool. [${dg_dm_tag}]
+      *goto lsf_pool_magic_cast
   *if (((not(lsf_pool_magic)) and (not(lsf_corruption_cleared))) and ((known_detect_magic) and (not(dg_dm_can))))
     # Reach for Detect Magic over the pool. [no spell slot left]
       You shape the words, and the power to answer them has gone out of you for now. The water lies still.
       *goto lsf_n_r9
-  *if (((not(lsf_pool_animals)) and (not(lsf_corruption_cleared))) and (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "slot")))
-    # Ask the small creatures around the pool about the water. [Speak with Animals, uses a spell slot, ~5 min]
-      *goto lsf_pool_animals_cast
-  *if (((not(lsf_pool_animals)) and (not(lsf_corruption_cleared))) and (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "ritual")))
-    # Ask the small creatures around the pool about the water. [Speak with Animals as a ritual, no slot, ~15 min]
-      *goto lsf_pool_animals_cast
-  *if (((not(lsf_pool_animals)) and (not(lsf_corruption_cleared))) and (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "free")))
-    # Ask the small creatures around the pool about the water. [Speak with Animals, ~5 min]
+  *if (((not(lsf_pool_animals)) and (not(lsf_corruption_cleared))) and (dg_swa_can))
+    # Ask the small creatures around the pool about the water. [${dg_swa_tag}]
       *goto lsf_pool_animals_cast
   *if (((not(lsf_pool_animals)) and (not(lsf_corruption_cleared))) and ((known_speak_with_animals) and (not(dg_swa_can))))
     # Listen for words around the pool. [Speak with Animals, no spell slot left]
@@ -2125,6 +2109,8 @@ You lean over the water and breathe in slowly, the way you would test a bottle.
 *gosub_scene dungeon dg_dm_cast
 *if (dg_dm_cost = "ritual")
   You kneel at the rim and speak the words slowly, one syllable at a time. A quarter of an hour later the hollow takes on a pale shimmer.
+*elseif (dg_dm_cost = "scroll")
+  You unroll the slip at the rim and read the ring of script aloud, and the hollow takes on a pale shimmer.
 *else
   You speak the words and feel the spell leave you, and the hollow takes on a pale shimmer.
 *line_break
@@ -2149,6 +2135,8 @@ The pool glows a faint, sick green, a clean shimmer that moves against the curre
   You murmur the words and feel the spell leave you. A thin, quick voice comes from the roots at the edge of the hollow.
 *if (dg_swa_cost = "free")
   You speak the words easily, and a thin, quick voice comes from the roots at the edge of the hollow.
+*if (dg_swa_cost = "scroll")
+  You unroll the scroll at the rim and read it aloud. A thin, quick voice comes from the roots at the edge of the hollow.
 *line_break
 A vole watches you from between two roots, whiskers working. "Water bad," it says. "Water takes the thinking. Don't." It backs into the dark of the roots and is gone.
 *set lsf_pool_animals true
@@ -2328,14 +2316,8 @@ You start at the firepit and work outward, turning over every crate and shaking 
   *if (not(dg_lsf_honey_taken))
     # Take honeycomb from the hollow. [~20 min]@{show_stat_hints  [Nature or Animal Handling DC 12, advantage under torch smoke]|}
       *goto lsf_bees_take
-    *if (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "slot"))
-      # Ask the bees for some of their honey. [Speak with Animals, uses a spell slot, ~5 min]
-        *goto lsf_bees_animals
-    *if (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "ritual"))
-      # Ask the bees for some of their honey. [Speak with Animals as a ritual, no slot, ~15 min]
-        *goto lsf_bees_animals
-    *if (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "free"))
-      # Ask the bees for some of their honey. [Speak with Animals, ~5 min]
+    *if (dg_swa_can)
+      # Ask the bees for some of their honey. [${dg_swa_tag}]
         *goto lsf_bees_animals
     *if ((known_speak_with_animals) and (not(dg_swa_can)))
       # Listen for words in the hum. [Speak with Animals, no spell slot left]
@@ -2402,6 +2384,8 @@ You start at the firepit and work outward, turning over every crate and shaking 
   You murmur the words and feel the spell leave you. The hum resolves into a single patient voice.
 *if (dg_swa_cost = "free")
   You speak the words easily, and the hum resolves into a single patient voice.
+*if (dg_swa_cost = "scroll")
+  You unroll the scroll before the hollow and read it aloud. The hum resolves into a single patient voice.
 *if (lsf_bees_first)
 
   "I only want a little of your honey," you tell the hum. "I'll take what you can spare, and I'll leave the hive alone."
@@ -2587,27 +2571,22 @@ You walk the edge of the clearing and study the raked trunks and the ground at t
     She keeps her face to the roots whenever you move, and a clearer look will have to wait for another day.
 *gosub lsf_env
 *gosub_scene dungeon dg_status_line
+*gosub_scene dungeon dg_spell_source "healing_word" "Healing Word" 10 false
 *choice
   *if ((not(lsf_bear_healed)) and (not(lsf_bear_read)))
     *if (not(dg_lsf_bear_tried))
       # Watch her closely from the edge of the hollow. [~10 min]@{show_stat_hints  [Medicine or Survival DC 12]|}
         *goto lsf_bear_look
-    *if (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "slot"))
-      # Ask her what ails her. [Speak with Animals, uses a spell slot, ~5 min]
-        *goto lsf_bear_animals
-    *if (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "ritual"))
-      # Ask her what ails her. [Speak with Animals as a ritual, no slot, ~15 min]
-        *goto lsf_bear_animals
-    *if (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "free"))
-      # Ask her what ails her. [Speak with Animals, ~5 min]
+    *if (dg_swa_can)
+      # Ask her what ails her. [${dg_swa_tag}]
         *goto lsf_bear_animals
   *if (not(lsf_bear_healed))
     *if (has_honeycomb)
       # Set a piece of honeycomb down for her. [~10 min]
         *goto lsf_bear_honey
     *if (lsf_bear_read)
-      *if ((known_healing_word) and (bard_spell_slots > 0))
-        # Lay Healing Word on her. [uses a spell slot, ~10 min]
+      *if (dg_ss_can)
+        # Lay Healing Word on her. [${dg_ss_tag}]
           *goto lsf_bear_spell
       *if (has_althea_phial)
         # Tip Saint Althea's Water to her lips. [uses the flask, ~10 min]
@@ -2646,6 +2625,8 @@ You settle at the edge of the hollow with your hands open and your breathing slo
   You murmur the words and feel the spell leave you, and the groaning shapes itself into speech.
 *if (dg_swa_cost = "free")
   You speak the words easily, and the groaning shapes itself into speech.
+*if (dg_swa_cost = "scroll")
+  You unroll the scroll at the edge of the hollow and read it aloud, and the groaning shapes itself into speech.
 
 "What's wrong?" you ask her, low and slow. "Where does it hurt?"
 
@@ -2676,12 +2657,13 @@ For a while she lies with her eyes shut. Then she lets out a long breath that en
 *goto lsf_n_r13
 
 *label lsf_bear_spell
-*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-  *set bard_spell_slots (bard_spell_slots - 1)
-  *set lsf_bear_healed true
-  *set stat_bump_locked true
-  *set locked_stat_bump_page_id page_id
-You hold your hand out over her flank and say the words of Healing Word, soft and low. A pale light settles over her, and the swelling in her belly eases under it as you watch.
+*gosub_scene dungeon dg_spell_source "healing_word" "Healing Word" 10 false
+*gosub_scene dungeon dg_spell_cast "healing_word"
+*set lsf_bear_healed true
+*if (dg_ss_cost = "scroll")
+  You unroll the slip over her flank and read the line aloud, soft and low. A pale light settles over her, and the swelling in her belly eases under it as you watch.
+*else
+  You hold your hand out over her flank and say the words of Healing Word, soft and low. A pale light settles over her, and the swelling in her belly eases under it as you watch.
 
 She breathes out long and deep, and her eyes open clear.
 *set dg_mins 10
@@ -2799,14 +2781,8 @@ You ease down into the dry needles at the back of the hollow, and the bear shift
       # Study the sleeping cat from the edge of the clearing. [~10 min]@{show_stat_hints  [Nature DC 12]|}
         *goto lsf_panther_study
     *if (not(lsf_panther_read))
-      *if (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "slot"))
-        # Ask the cat and the cub what they want. [Speak with Animals, uses a spell slot, ~5 min]
-          *goto lsf_panther_animals
-      *if (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "ritual"))
-        # Ask the cat and the cub what they want. [Speak with Animals as a ritual, no slot, ~15 min]
-          *goto lsf_panther_animals
-      *if (((known_speak_with_animals) and (dg_swa_can)) and (dg_swa_cost = "free"))
-        # Ask the cat and the cub what they want. [Speak with Animals, ~5 min]
+      *if (dg_swa_can)
+        # Ask the cat and the cub what they want. [${dg_swa_tag}]
           *goto lsf_panther_animals
     *if (dg_lsf_cub_coaxed)
       # Lead the cub out past the sleeping cat. [~10 min]@{show_stat_hints  [Stealth DC 12]|}
@@ -2845,6 +2821,8 @@ You sit down at the edge of the clearing and watch the cat for a long while, kee
   You murmur the words and feel the spell leave you, and the purr above you shapes itself into a voice.
 *if (dg_swa_cost = "free")
   You speak the words easily, and the purr above you shapes itself into a voice.
+*if (dg_swa_cost = "scroll")
+  You unroll the scroll at the edge of the clearing and read it aloud, and the purr above you shapes itself into a voice.
 
 "Is the cub safe under you?" you ask up into the leaves. "Will you let me take it out of here?"
 

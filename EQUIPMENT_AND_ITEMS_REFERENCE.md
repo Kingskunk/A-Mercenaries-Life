@@ -362,3 +362,19 @@ Cassia also sells finished, nonmagical jewelry. Each piece can be worn in its li
 | `jewelry_ruby_pearl_necklace` | **Ruby Pearl Necklace** | Neck | 4g 5s | 2g 7s | 1g 5s 7c | 75 |
 | `jewelry_emerald_pearl_necklace` | **Emerald Pearl Necklace** | Neck | 5g 5s | 3g 3s | 1g 9s 2c | 91⅔ |
 | `jewelry_diamond_gold_ring` | **Diamond Gold Ring** | Ring | 7g | 4g 2s | 2g 4s 5c | 116⅔ |
+
+### Spell scrolls (2026-10-19)
+
+Sold at **The Ink & Lamp** (Aldren Saye, Patrician Quarter), always in stock, bought back at 50 percent. Each is read once, by anyone, with no spell slot; a character with no spells casts from Intelligence (Fighter, Rogue) or Charisma (Barbarian). 0.05 pound each.
+
+| Item | Price | Where it is read | What it does |
+|---|---|---|---|
+| Magic Missile Scroll (`has_scroll_magic_missile`) | 60c | in a fight | Three darts of force, 1d4+1 each, never miss, split among targets in the sidebar |
+| Healing Word Scroll (`has_scroll_healing_word`) | 40c | in a fight (bonus action) | Heals 1d4 plus the reader's casting modifier, you or an ally |
+| Mage Armor Scroll (`has_scroll_mage_armor`) | 50c | in a fight or from the pack | Base AC 13 + Dexterity for 24 hours, with no armor worn |
+| Bane Scroll (`has_scroll_bane`) | 50c | in a fight | Up to three foes make a Charisma save (DC 8 + proficiency + casting modifier) or are Baned for 10 rounds |
+| False Life Scroll (`has_scroll_false_life`) | 40c | in a fight or from the pack | 1d4 + 4 temporary hit points for 12 hours |
+
+Two more scrolls (2026-10-20), 40c each, read from the place that offers the spell, never from a fight or the pack: **Detect Magic Scroll** (`has_scroll_detect_magic`) and **Animal Speech Scroll** (`has_scroll_speak_with_animals`, the Speak with Animals scroll). A character who cannot cast the spell any other way reads it at the forest's rooms, the road events and the Silt-Gate mouse; one who can cast it keeps the scroll.
+
+A **Charm Person Scroll** (`has_scroll_charm_person`, 50c) is read at the sawyer's pit in Port Valen, where a conversation offers the spell. The bear's Healing Word and the broker's Dissonant Whispers now accept a scroll too (the Healing Word scroll already exists for fights; Dissonant Whispers has no scroll yet).

@@ -844,6 +844,7 @@ The broker goes pale against the wet masonry. The porters freeze, hands well cle
     *set hint_divert_wis " [WIS DC 11]"
     *set hint_divert_thaum " [CHA DC 10]"
 
+*gosub_scene dungeon dg_spell_source "dissonant_whispers" "Dissonant Whispers" 0 false
 *choice
   *if ((race_cantrip = "thaumaturgy") or (race_cantrip_2 = "thaumaturgy"))
     # [Cantrip: Thaumaturgy] Make the stone platform vibrate under his hands and demand every corrupt name.${hint_divert_thaum}
@@ -862,13 +863,14 @@ The broker goes pale against the wet masonry. The porters freeze, hands well cle
         You let the power roll, but the broker thrashes against the mooring ring, and a stoneware jug shatters, splashing peat-spiritus across the stone. You tear his coat open and take the slip while the porters find their nerve. Their lanterns swing toward you and stay there.
       *goto pv_silt_gate_divert_conclude
 
-  *if (((character_class = "bard") and (known_dissonant_whispers)) and (bard_spell_slots > 0))
-    # [Spell: Dissonant Whispers] Whisper an agonizing chord of psychic discord directly into his mind.
-      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-        *set bard_spell_slots - 1
-        *set stat_bump_locked true
-        *set locked_stat_bump_page_id page_id
-      You lean down and murmur a harsh, discordant syllable that tears into the broker's mind like rusted iron hooks. He clutches his temples with a choked scream, agony twisting his face as his defenses shatter completely.
+  *if (dg_ss_can)
+    # [${dg_ss_word}: Dissonant Whispers] Whisper an agonizing chord of psychic discord directly into his mind.
+      *gosub_scene dungeon dg_spell_source "dissonant_whispers" "Dissonant Whispers" 0 false
+      *gosub_scene dungeon dg_spell_cast "dissonant_whispers"
+      *if (dg_ss_cost = "scroll")
+        You unroll the scroll and read its harsh syllables low and fast, and they tear into the broker's mind like rusted iron hooks. He clutches his temples with a choked scream, agony twisting his face as his defenses shatter completely.
+      *else
+        You lean down and murmur a harsh, discordant syllable that tears into the broker's mind like rusted iron hooks. He clutches his temples with a choked scream, agony twisting his face as his defenses shatter completely.
       
       "Stop! Stop it!" he weeps, fumbling the oilskin-wrapped slip from his inner pocket and pressing it into your hands. "Sergeant Kray and watchman Pell! Every payout is marked in the wax. Take it all!"
       *goto pv_silt_gate_divert_conclude

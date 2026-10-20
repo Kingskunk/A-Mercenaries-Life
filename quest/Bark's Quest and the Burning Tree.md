@@ -362,7 +362,7 @@ How I read your answers, and the order I will build in. Tell me if I read anythi
 2. **Room 9 (the pool) and Trail 27.** The show-not-tell prose, the ways to tell the water is wrong, drinking, the timed -5 Wisdom. *(built 2026-10-19)*
 3. **Control Flames.** The cantrip in the spell list and the three classes, its uses at camp, with torches and in a fight; check the Light cantrip in the dungeons. *(built 2026-10-19)*
 4. **Room 15, arrival.** The dryad, the burning tree routes, the sprite war's HP penalty, and the clock. *(built 2026-10-19 up to the oak being saved; see "Bark's Quest - Room 15, the Burning Grove.md")*
-5. **Dubhar and the Twig Blights.** The fight, and what the dryad and the bear take out of it.
+5. **Dubhar and the Twig Blights.** The fight, and what the dryad and the bear take out of it. *(written out for review in "Bark's Quest - Dubhar and the Twig Blights.md", not built)*
 6. **After the mage.** Stopping the sprites, the mercy choice, the clean water, and Bark's fruits.
 7. **Later:** the water system, Dubhar's drop.
 

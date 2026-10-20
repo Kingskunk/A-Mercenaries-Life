@@ -37,7 +37,13 @@ const MAP = {
   shoot_ice_arrow: "Item/Consumable/Arrow/Arrow_of_Ice_Unfaded_Icon.png",
   throw_grease_flask: "Item/Consumable/Grenade/GRN_Grease_Bottle_Unfaded_Icon.png",
   throw_alchemists_fire: "Item/Consumable/Grenade/GRN_Alchemist's_Fire_Unfaded_Icon.png",
-  throw_water_jug: "Generic/Filled_Water_Jug_Generated_Source.png",   // the user's own jug art (2026-10-19)
+  throw_water_jug: "Generic/Filled_Water_Jug_Generated_Source.png",
+  // Each spell scroll's own art on the Read fly-out, keyed read_<slug of its title> (battlehud.js variantArt); the plain Read button has no art yet (the user to choose), so it shows its letter.
+  read_magic_missile_scroll: "Item/Consumable/Scroll/Scroll_of_Magic_Missile_Unfaded_Icon.png",
+  read_healing_word_scroll: "Item/Consumable/Scroll/Scroll_of_Healing_Word_Unfaded_Icon.png",
+  read_mage_armor_scroll: "Item/Consumable/Scroll/Scroll_of_Mage_Armour_Unfaded_Icon.png",
+  read_bane_scroll: "Item/Consumable/Scroll/Scroll_of_Bane_Unfaded_Icon.png",
+  read_false_life_scroll: "Item/Consumable/Scroll/Scroll_of_False_Life_Unfaded_Icon.png",   // the user's own jug art (2026-10-19)
   trade_places: "Action/Benign_Transposition_Swap_Icon.webp",
   call_ally_back: "Action/Benign_Transposition_Swap_Icon.webp",
 

@@ -95,10 +95,21 @@ function tradeIds(field) {
   return out;
 }
 
+function spellIdsOfLevelOneUp() {
+  var saved = global.window;
+  global.window = {};
+  try {
+    delete require.cache[require.resolve(path.join(GAME, "spell-data.js"))];
+    require(path.join(GAME, "spell-data.js"));
+    return (global.window.SPELL_DATA || []).filter(function (sp) { return sp.level >= 1; }).map(function (sp) { return sp.id; });
+  } finally { global.window = saved; }
+}
 function genCreates() {
   var buys = tradeIds("buy"), sells = tradeIds("sell");
   var L = items.filter(makesFlag).map(function (it) { return "*create " + flag(it) + " false"; });
   items.forEach(function (it) { if (stackable(it)) L.push("*create spare_" + it.id + " 0"); });
+  // SPELL SOURCES (2026-10-20): dungeon.txt dg_spell_source reads has_scroll_<spell id> for ANY spell it is asked about, so the flag exists for every spell of level 1 and up even before its scroll does (the scroll items above create their own).
+  spellIdsOfLevelOneUp().forEach(function (id) { if (!items.some(function (it) { return it.id === "scroll_" + id; })) L.push("*create has_scroll_" + id + " false"); });
   (CATALOG.containers || []).forEach(function (ct) { listed().forEach(function (it) { L.push("*create stow_" + ct.id + "_" + it.id + " 0"); if (it.holds) L.push("*create stow_" + ct.id + "_" + it.holds.var + " 0"); }); });   // what is in each container (web/mygame/inventory.js)
   items.forEach(function (it) { if (buys[it.id]) L.push("*create cart_buy_" + it.id + " 0"); });
   items.forEach(function (it) { if (sells[it.id]) L.push("*create cart_sell_" + it.id + " 0"); });
@@ -106,7 +117,8 @@ function genCreates() {
 }
 
 // A thrown item and a special arrow are used only in a fight, from their own buttons on the fight's main menu, so neither is offered in the satchel menu or the fight's Use-an-item list.
-function isNoUse(it) { return !!(it.effect && (it.effect.type === "throw" || it.effect.type === "arrow")); }
+// A spell scroll (effect type scroll) is read from its own "Read" options on the fight's main menu (written by hand in combat.txt); only a scroll marked outOfCombat (Mage Armor, False Life) can be read from the pack.
+function isNoUse(it) { return !!(it.effect && (it.effect.type === "throw" || it.effect.type === "arrow" || (it.effect.type === "scroll" && !it.effect.outOfCombat))); }
 
 // One line for menus and banners: what using the item does.
 function effectSummary(it) {
@@ -115,7 +127,7 @@ function effectSummary(it) {
   if (ef.type === "wash") return "Hygiene back to Clean, with water at hand";
   if (ef.type === "dressing") return "+" + ef.bonus + " HP from your next sleep";
   if (ef.type === "ration") return ef.food && ef.food < 2160 ? "Holds off about " + Math.round(ef.food / 60) + " hours of hunger" : "Clears hunger, like a meal";
-  if (ef.type === "throw" || ef.type === "arrow") return ef.summary;
+  if (ef.type === "throw" || ef.type === "arrow" || ef.type === "scroll") return ef.summary;
   var h = ef.minutes % 60 === 0 ? (ef.minutes / 60) + " hours" : ef.minutes + " minutes";
   return "+" + ef.bonus + " " + ef.stat.toUpperCase() + " for " + h;
 }
@@ -161,6 +173,9 @@ function genGearInfo() {
         if (it.ate) { L.push('  *set gear_ate_one ' + q(it.ate.one)); L.push('  *set gear_ate_many ' + q(it.ate.many)); }
       } else if (ef.type === "dressing") {
         L.push('  *set gear_eff_bonus ' + ef.bonus);
+      } else if (ef.type === "scroll") {
+        // the spell the scroll casts (its id); use_consumable (equipment.txt) reads it for a scroll read outside a fight, and combat.txt's Read options are written by hand
+        L.push('  *set gear_eff_name ' + q(ef.spell));
       } else if (ef.type === "throw" || ef.type === "arrow") {
         // no fields: a thrown item is used only in a fight, and combat.txt fight_throw_item / combat_spells.txt resolve_throw_item work from the item id
       } else {
@@ -482,7 +497,7 @@ function genShop(shop) {
 // ---------------------------------------------------------------- consumables (use menus)
 function consumables(combatOnly) {
   // A thrown item (effect type throw) is used only in a fight, and from its own Throw button on the fight's main menu (genThrowOptions), so it appears in neither the satchel menu nor the fight's Use-an-item list.
-  return items.filter(function (it) { return it.kind === "consumable" && !isNoUse(it) && (!combatOnly || it.combat); });
+  return items.filter(function (it) { return it.kind === "consumable" && !isNoUse(it) && !(combatOnly && it.effect.type === "scroll") && (!combatOnly || it.combat); });
 }
 function throwItems() {
   return items.filter(function (it) { return it.kind === "consumable" && it.effect.type === "throw" && it.combat; });
@@ -497,6 +512,35 @@ function genThrowOptions() {
     L.push('    # [b][ACTION][/b] [b][Throw: ' + it.title + '][/b] Hurl it at ${combat_med_epithet}.@{show_stat_hints  [' + effectSummary(it) + ']|}');
     L.push('      *set use_item_id ' + q(it.id));
     L.push('      *goto fight_throw_item');
+  });
+  return L;
+}
+// SPELL SCROLLS (2026-10-20): a scroll with effect.fight is read in a fight from its own "Read: <Title>" option. The generator writes (1) the check that decides which are offered this turn: the scroll is owned,
+// the action or bonus action is there, and the spell's own gate label fight_read_can_<spell> (hand-written in combat.txt, sets combat_read_ok) says yes; and (2) the option itself, which sets combat_scroll_id and goes to
+// the hand-written body label fight_read_<spell>. A new scroll for a spell the fight already handles is a catalog entry plus those two small labels.
+function readScrolls() {
+  return items.filter(function (it) { return it.kind === "consumable" && it.effect && it.effect.type === "scroll" && it.effect.fight; });
+}
+function genReadCheck() {
+  var L = [];
+  readScrolls().forEach(function (it) { L.push("*temp combat_read_" + it.effect.spell + " false"); });
+  readScrolls().forEach(function (it) {
+    var sp = it.effect.spell, budget = it.effect.fight.cost === "bonus" ? "combat_player_bonus_left > 0" : "combat_player_actions_left > 0";
+    L.push("*if ((" + flag(it) + ") and (" + budget + "))");
+    L.push("  *gosub fight_read_can_" + sp);
+    L.push("  *if (combat_read_ok)");
+    L.push("    *set combat_read_" + sp + " true");
+  });
+  return L;
+}
+function genReadOptions() {
+  var L = [];
+  readScrolls().forEach(function (it) {
+    var sp = it.effect.spell, f = it.effect.fight, cost = f.cost === "bonus" ? "BONUS ACTION" : "ACTION";
+    L.push("*if (combat_read_" + sp + ")");
+    L.push("  # [b][" + cost + "][/b] [b][Read: " + it.title + "][/b] " + f.blurb + (f.hint ? "@{show_stat_hints  [" + f.hint + "]|}" : ""));
+    L.push("    *set combat_scroll_id " + q(it.id));
+    L.push("    *goto fight_read_" + sp);
   });
   return L;
 }
@@ -693,6 +737,8 @@ setRegion(F.stats, "codex_use_check2", genUseCheck(false));   // the satchel pag
 setRegion(F.stats, "codex_use_options", genUseOptions("codex_use_do", false));
 setRegion(F.combat, "combat_throw_options", genThrowOptions());
 setRegion(F.combat, "combat_arrow_options", genArrowOptions());
+setRegion(F.combat, "combat_read_check", genReadCheck());
+setRegion(F.combat, "combat_read_options", genReadOptions());
 setRegion(F.combat, "combat_use_check", genUseCheck(true));
 setRegion(F.combat, "combat_use_options", genUseOptions("fight_use_do", true));
 CATALOG.shops.forEach(function (shop) {

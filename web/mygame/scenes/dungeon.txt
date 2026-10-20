@@ -796,90 +796,116 @@
 *return
 
 
-*comment Speaking with a beast (2026-10-02): what casting Speak with Animals would cost this character, for an encounter that offers it. dg_swa_check reports it and dg_swa_cast pays it, so an
-*comment encounter never repeats the rules. A racial Speak with Animals (race_cantrip) is innate and free. A Wizard who knows it casts it as a ritual: no slot, and ten extra minutes (the rule in
-*comment MAGIC_AND_ABILITIES_REFERENCE.md). A Bard, Ranger or Warlock pays one slot from their own pool. Outputs: dg_swa_can, dg_swa_cost ("none", "free", "ritual", "slot") and dg_swa_why (what
-*comment is missing when it cannot be cast). The caller adds the casting time itself (5 minutes, 15 for a ritual) with dg_time.
-*label dg_swa_check
-*set dg_swa_can false
-*set dg_swa_cost "none"
-*set dg_swa_why ""
-*if (not(known_speak_with_animals))
+*comment SPELL SOURCES (2026-10-20, the user's scrolls). dg_spell_source <spell id> <spell name>: can this character cast the spell outside a fight right now, and what pays for it? Outputs: dg_ss_can; dg_ss_cost ("none", "free", "ritual", "slot", "scroll"); dg_ss_why
+*comment (what is missing when it cannot be cast); dg_ss_tag (the bracket text for a button: "Detect Magic, uses a spell slot, ~5 min"). The order: a racial knack is free; a Wizard who knows the spell casts it as a ritual (no slot, ten extra minutes, the rule in
+*comment MAGIC_AND_ABILITIES_REFERENCE.md); a Bard, Ranger or Warlock who knows it pays a slot; and a character who cannot cast it any of those ways but holds a scroll of it (the item scroll_<spell id>, flag has_scroll_<spell id>) reads
+*comment the scroll, once. Anyone can read a scroll. A new way to cast it (a wand, a charm) is added HERE and nowhere else: the places that offer a spell only ever read dg_ss_can, dg_ss_cost and dg_ss_tag. The caller adds the casting time (5 minutes, 15 for a ritual).
+*label dg_spell_source
+*params dss_spell dss_name dss_mins dss_ritual
+*comment dss_mins: how many minutes the use takes, for the tag (0 for none); dss_ritual: true if a Wizard who knows it can cast it as a ritual (Detect Magic and Speak with Animals), false for an ordinary spell, which a Wizard pays a slot for.
+*comment A page that has already paid for THIS spell (dg_spell_cast) keeps its outputs as they were: the page replays when the dossier or the pack closes, and a scroll that has just been read would otherwise make the replay report "no scroll" and print a different page.
+*if (((dg_ss_locked) and (locked_dg_ss_page_id = page_id)) and (dg_ss_paid_spell = dss_spell))
+  *set dg_ss_can dg_ss_snap_can
+  *set dg_ss_cost dg_ss_snap_cost
+  *set dg_ss_why dg_ss_snap_why
+  *set dg_ss_tag dg_ss_snap_tag
+  *set dg_ss_word dg_ss_snap_word
   *return
-*if ((race_cantrip = "speak_with_animals") or (race_cantrip_2 = "speak_with_animals"))
-  *set dg_swa_cost "free"
-  *set dg_swa_can true
-  *return
+*set dg_ss_can false
+*set dg_ss_cost "none"
+*set dg_ss_why ""
+*set dg_ss_tag ""
+*set dg_ss_word "Spell"
+*temp dss_known {("known_" & dss_spell)}
+*temp dss_scroll {("has_scroll_" & dss_spell)}
+*temp dss_slots 0
 *if (character_class = "wizard")
-  *set dg_swa_cost "ritual"
-  *set dg_swa_can true
-  *return
-*set dg_swa_cost "slot"
-*temp dgsw_slots 0
+  *set dss_slots wizard_spell_slots
 *if (character_class = "bard")
-  *set dgsw_slots bard_spell_slots
+  *set dss_slots bard_spell_slots
 *if (character_class = "warlock")
-  *set dgsw_slots warlock_spell_slots
+  *set dss_slots warlock_spell_slots
 *if (character_class = "ranger")
-  *set dgsw_slots ranger_spell_slots
-*if (dgsw_slots <= 0)
-  *set dg_swa_why "You have no spell slot left to cast it."
-  *return
-*set dg_swa_can true
+  *set dss_slots ranger_spell_slots
+*if (dss_known)
+  *if ((race_cantrip = dss_spell) or (race_cantrip_2 = dss_spell))
+    *set dg_ss_cost "free"
+    *set dg_ss_can true
+  *elseif ((character_class = "wizard") and (dss_ritual))
+    *set dg_ss_cost "ritual"
+    *set dg_ss_can true
+  *elseif (dss_slots > 0)
+    *set dg_ss_cost "slot"
+    *set dg_ss_can true
+*if ((not(dg_ss_can)) and (dss_scroll))
+  *set dg_ss_cost "scroll"
+  *set dg_ss_can true
+  *set dg_ss_word "Scroll"
+*if (dg_ss_can)
+  *temp dss_time ""
+  *if (dss_mins > 0)
+    *set dss_time ((", ~" & dss_mins) & " min")
+  *if (dg_ss_cost = "free")
+    *set dg_ss_tag (dss_name & dss_time)
+  *if (dg_ss_cost = "ritual")
+    *set dg_ss_tag (((dss_name & " as a ritual, no slot, ~") & (dss_mins + 10)) & " min")
+  *if (dg_ss_cost = "slot")
+    *set dg_ss_tag ((dss_name & ", uses a spell slot") & dss_time)
+  *if (dg_ss_cost = "scroll")
+    *set dg_ss_tag ((dss_name & ", uses a scroll") & dss_time)
+*elseif (dss_known)
+  *set dg_ss_cost "slot"
+  *set dg_ss_why "You have no spell slot left to cast it."
 *return
 
-*comment Pays the slot (a bare -1, so it is guarded by dg_swa_locked / locked_dg_swa_page_id like every other spend). Call dg_swa_check first.
-*label dg_swa_cast
-*if (dg_swa_can)
-  *if (not(dg_swa_locked)) or (not(locked_dg_swa_page_id = page_id))
-    *if (dg_swa_cost = "slot")
+*comment dg_spell_cast <spell id>: pays for what dg_spell_source reported, inside one replay lock (a slot or a scroll is a bare -1). Call dg_spell_source first. The lock is dg_ss_locked / locked_dg_ss_page_id, shared by every spell, because one page casts one spell.
+*label dg_spell_cast
+*params dsc_spell
+*if (dg_ss_can)
+  *if (not(dg_ss_locked)) or (not(locked_dg_ss_page_id = page_id))
+    *if (dg_ss_cost = "slot")
+      *if (character_class = "wizard")
+        *set wizard_spell_slots - 1
       *if (character_class = "bard")
         *set bard_spell_slots - 1
       *if (character_class = "warlock")
         *set warlock_spell_slots - 1
       *if (character_class = "ranger")
         *set ranger_spell_slots - 1
-    *set dg_swa_locked true
-    *set locked_dg_swa_page_id page_id
+    *if (dg_ss_cost = "scroll")
+      *temp dsc_item ("scroll_" & dsc_spell)
+      *gosub_scene equipment spend_consumable dsc_item
+    *set dg_ss_paid_spell dsc_spell
+    *set dg_ss_snap_can dg_ss_can
+    *set dg_ss_snap_cost dg_ss_cost
+    *set dg_ss_snap_why dg_ss_why
+    *set dg_ss_snap_tag dg_ss_tag
+    *set dg_ss_snap_word dg_ss_word
+    *set dg_ss_locked true
+    *set locked_dg_ss_page_id page_id
 *return
 
-*comment Detect Magic (2026-10-15, the Circle of Ferns in the Longshade Forest): what casting it would cost this character, reported the way dg_swa_check reports Speak with Animals. A Wizard who knows it casts it as a
-*comment ritual: no slot, and ten extra minutes. A Bard, Ranger or Warlock pays one slot from their own pool. There is no racial version. Outputs: dg_dm_can, dg_dm_cost ("none", "ritual", "slot") and dg_dm_why. The
-*comment caller adds the casting time (5 minutes, 15 for a ritual) with dg_time. dg_dm_cast pays it (replay-locked). Call dg_dm_check first.
+*comment Speaking with a beast and Detect Magic keep their old labels and outputs (dg_swa_can / dg_swa_cost / dg_swa_why, dg_dm_can / dg_dm_cost / dg_dm_why) and add dg_swa_tag and dg_dm_tag, so every place that already calls them works as before; both now go through dg_spell_source.
+*label dg_swa_check
+*gosub dg_spell_source "speak_with_animals" "Speak with Animals" 5 true
+*set dg_swa_can dg_ss_can
+*set dg_swa_cost dg_ss_cost
+*set dg_swa_why dg_ss_why
+*set dg_swa_tag dg_ss_tag
+*return
+
+*label dg_swa_cast
+*gosub dg_spell_cast "speak_with_animals"
+*return
+
 *label dg_dm_check
-*set dg_dm_can false
-*set dg_dm_cost "none"
-*set dg_dm_why ""
-*if (not(known_detect_magic))
-  *return
-*if (character_class = "wizard")
-  *set dg_dm_cost "ritual"
-  *set dg_dm_can true
-  *return
-*set dg_dm_cost "slot"
-*temp dgdm_slots 0
-*if (character_class = "bard")
-  *set dgdm_slots bard_spell_slots
-*if (character_class = "warlock")
-  *set dgdm_slots warlock_spell_slots
-*if (character_class = "ranger")
-  *set dgdm_slots ranger_spell_slots
-*if (dgdm_slots <= 0)
-  *set dg_dm_why "You have no spell slot left to cast it."
-  *return
-*set dg_dm_can true
+*gosub dg_spell_source "detect_magic" "Detect Magic" 5 true
+*set dg_dm_can dg_ss_can
+*set dg_dm_cost dg_ss_cost
+*set dg_dm_why dg_ss_why
+*set dg_dm_tag dg_ss_tag
 *return
 
 *label dg_dm_cast
-*if (dg_dm_can)
-  *if (not(dg_dm_locked)) or (not(locked_dg_dm_page_id = page_id))
-    *if (dg_dm_cost = "slot")
-      *if (character_class = "bard")
-        *set bard_spell_slots - 1
-      *if (character_class = "warlock")
-        *set warlock_spell_slots - 1
-      *if (character_class = "ranger")
-        *set ranger_spell_slots - 1
-    *set dg_dm_locked true
-    *set locked_dg_dm_page_id page_id
+*gosub dg_spell_cast "detect_magic"
 *return

@@ -160,7 +160,7 @@
     timber_axe: "w_battleaxe", stiletto: "w_dagger", iron_crowbar: "tool", torvald_iron_sallet: "h_helm", torvald_hide_cap: "h_cap",
     brigandine: "a_brig", chain_jack: "a_chain", plate_harness: "a_plate", court_coat: "a_coat", shield: "shield", toll_seal_ring: "signet",
     warming_liniment: "salve", clear_head_draught: "elixir", althea_phial: "potion", grease_flask: "grease", alchemists_fire: "alch_fire", mortar_pestle: "mortar_pestle", linen_bandage: "bandage", lye_soap: "soap", trail_rations: "rations", barley_loaf: "barley_loaf", hard_farm_cheese: "hard_farm_cheese", orchard_apple: "orchard_apple", root_vegetable_bundle: "root_vegetable_bundle", farm_eggs: "farm_eggs", dried_pork_sausage: "dried_pork_sausage",
-    hemp_rope: "rope", pitch_torch: "torch", lamp_oil: "oil", hooded_lantern: "lantern", tool_kit: "toolkit", shovel: "shovel", cooking_pot: "cooking_pot", fire_arrow: "arrow_fire", ice_arrow: "arrow_ice", lute: "lute", tinderbox: "tinder", water_jug: "water_jug", chalk_sticks: "chalk",
+    hemp_rope: "rope", pitch_torch: "torch", lamp_oil: "oil", hooded_lantern: "lantern", tool_kit: "toolkit", shovel: "shovel", cooking_pot: "cooking_pot", fire_arrow: "arrow_fire", ice_arrow: "arrow_ice", lute: "lute", tinderbox: "tinder", water_jug: "water_jug", scroll_magic_missile: "scroll_magic_missile", scroll_healing_word: "scroll_healing_word", scroll_mage_armor: "scroll_mage_armor", scroll_bane: "scroll_bane", scroll_false_life: "scroll_false_life", scroll_detect_magic: "scroll_detect_magic", scroll_charm_person: "scroll_charm_person", scroll_speak_with_animals: "scroll_speak_with_animals", chalk_sticks: "chalk",
     camp_kit: "blanket", waxed_oilcloth: "cloth", lockpick_set: "lockpicks", padlock: "key", door_bolt: "tool", iron_manacles: "tool",
     broadcloth_cloak: "cloak_traveler", storm_cape: "cloak_storm", winter_cloak: "cloak_winter", summer_duster: "cloak_duster", felt_hat: "h_hat", fur_cap: "h_cap",
     lined_gloves: "gloves_lined", scholar_gloves: "gloves_scholar", masters_gloves: "gloves_master", waxed_boots: "boots_rain", winter_boots: "boots_winter", dancing_slippers: "shoes_dancing",
@@ -855,8 +855,8 @@
   }
 
   // Consumables are used through the game's own dossier (real ChoiceScript: equipment.txt use_consumable is the only
-  // place an effect is written, so nothing is mirrored here). The Use button drops straight onto the result page
-  // (choicescript_stats codex_use_do); from there the satchel menu and the dossier are one tap away. Not offered
+  // place an effect is written, so nothing is mirrored here). The Use button runs a one-shot label (choicescript_stats codex_use_now) that uses the item and hands
+  // the player straight back to their page with a one-line result (spell_cast_toast), as the sidebar's Cast button does (2026-10-19, the user: no result page to click out of). Not offered
   // mid-fight (the fight has its own item option) or while the dossier is already open. "Open" is the running scene being the stats
   // scene, not the Show Stats button's data-return marker: closing the dossier from its own menu leaves that marker set.
   function canUse() {
@@ -869,7 +869,7 @@
     statsNow().use_item_id = id;
     close();
     var scene = new window.Scene("choicescript_stats", window.stats, window.nav, { secondaryMode: "stats", saveSlot: "temp" });
-    scene.targetLabel = { label: "codex_use_do", origin: "url", originLine: 0 };
+    scene.targetLabel = { label: "codex_use_now", origin: "url", originLine: 0 };
     window.clearScreen(function () {
       if (typeof window.setButtonTitles === "function") window.setButtonTitles();
       scene.execute();

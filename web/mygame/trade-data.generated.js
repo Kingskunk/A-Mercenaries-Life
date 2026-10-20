@@ -1513,6 +1513,198 @@ window.TRADE_DATA = {
     "countVar": ""
    }
   },
+  "scroll_magic_missile": {
+   "name": "magic missile scroll",
+   "title": "Magic Missile Scroll",
+   "kind": "consumable",
+   "group": "",
+   "tier": "",
+   "retail": 60,
+   "weight": 0.05,
+   "minutes": 5,
+   "hint": "Read in a fight: three darts of force, none miss",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "countVar": ""
+   }
+  },
+  "scroll_healing_word": {
+   "name": "healing word scroll",
+   "title": "Healing Word Scroll",
+   "kind": "consumable",
+   "group": "",
+   "tier": "",
+   "retail": 40,
+   "weight": 0.05,
+   "minutes": 5,
+   "hint": "Read in a fight: a bonus-action heal at range",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "countVar": ""
+   }
+  },
+  "scroll_mage_armor": {
+   "name": "mage armor scroll",
+   "title": "Mage Armor Scroll",
+   "kind": "consumable",
+   "group": "",
+   "tier": "",
+   "retail": 50,
+   "weight": 0.05,
+   "minutes": 5,
+   "hint": "Read: base AC 13 + Dexterity for 24 hours, with no armor",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "countVar": ""
+   }
+  },
+  "scroll_bane": {
+   "name": "bane scroll",
+   "title": "Bane Scroll",
+   "kind": "consumable",
+   "group": "",
+   "tier": "",
+   "retail": 50,
+   "weight": 0.05,
+   "minutes": 5,
+   "hint": "Read in a fight: up to three foes make a Charisma save or fight at a penalty",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "countVar": ""
+   }
+  },
+  "scroll_false_life": {
+   "name": "false life scroll",
+   "title": "False Life Scroll",
+   "kind": "consumable",
+   "group": "",
+   "tier": "",
+   "retail": 40,
+   "weight": 0.05,
+   "minutes": 5,
+   "hint": "Read: 1d4 + 4 temporary hit points for 12 hours",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "countVar": ""
+   }
+  },
+  "scroll_detect_magic": {
+   "name": "detect magic scroll",
+   "title": "Detect Magic Scroll",
+   "kind": "consumable",
+   "group": "",
+   "tier": "",
+   "retail": 40,
+   "weight": 0.05,
+   "minutes": 5,
+   "hint": "Read where magic may lie: the place offers it as a spell",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "countVar": ""
+   }
+  },
+  "scroll_speak_with_animals": {
+   "name": "animal speech scroll",
+   "title": "Animal Speech Scroll",
+   "kind": "consumable",
+   "group": "",
+   "tier": "",
+   "retail": 40,
+   "weight": 0.05,
+   "minutes": 5,
+   "hint": "Read where an animal may answer: the place offers it as a spell",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "countVar": ""
+   }
+  },
+  "scroll_charm_person": {
+   "name": "charm person scroll",
+   "title": "Charm Person Scroll",
+   "kind": "consumable",
+   "group": "",
+   "tier": "",
+   "retail": 50,
+   "weight": 0.05,
+   "minutes": 5,
+   "hint": "Read where a conversation offers the spell: it stands in for it, once",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "countVar": ""
+   }
+  },
   "gem_agate": {
    "name": "agate",
    "title": "Agate",
@@ -2572,6 +2764,30 @@ window.TRADE_DATA = {
     "dancing_slippers",
     "masters_gloves",
     "court_coat"
+   ]
+  },
+  "inklamp": {
+   "title": "The Ink & Lamp",
+   "buyer": "general",
+   "buy": [
+    "scroll_magic_missile",
+    "scroll_healing_word",
+    "scroll_mage_armor",
+    "scroll_bane",
+    "scroll_false_life",
+    "scroll_detect_magic",
+    "scroll_speak_with_animals",
+    "scroll_charm_person"
+   ],
+   "sell": [
+    "scroll_magic_missile",
+    "scroll_healing_word",
+    "scroll_mage_armor",
+    "scroll_bane",
+    "scroll_false_life",
+    "scroll_detect_magic",
+    "scroll_speak_with_animals",
+    "scroll_charm_person"
    ]
   },
   "jeweler": {
