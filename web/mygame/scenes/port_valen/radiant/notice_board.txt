@@ -1,0 +1,69 @@
+*comment ====================================================================================
+*comment SETTLEMENT NOTICE BOARD: shared renderer for a settlement's local notices and its
+*comment origin-specific courier contracts. cr_origin identifies the physical board; the scene
+*comment never makes boards share postings or state. A bespoke quest adds a notice only through
+*comment its own eligibility block here, while its quest scene owns acceptance and resolution.
+*comment ====================================================================================
+
+*label nb_read
+*temp nb_peddler_open false
+*if ((((cr_origin = "tm") or (cr_origin = "fv")) and (peddler_stage = "none")))
+  *set nb_peddler_open true
+  *set pd_origin cr_origin
+  One notice is newer than the rest, in a careful, uneven hand:
+
+  [i]"WORD WANTED. My husband Aldis Pellam went into the Longshade to gather plants, with two hired guards, and did not come out. We held his funeral without him, and I would still know what happened. Eight silver for the telling. The last cottage on the Lane, Barleycross. Merel Pellam."[/i]
+
+*gosub_scene port_valen/radiant/hall_courier cr_board_prepare
+*if ((crp1_on) or ((crp2_on) or (crp3_on)))
+  *if (nb_peddler_open)
+    Below it, a few sheets are ruled like forms, each headed with a posting number.
+  *else
+    A few sheets are ruled like forms, each headed with a posting number.
+
+  *if ((crp1_on) and (not(crp1_taken)))
+    *gosub_scene port_valen/radiant/hall_courier cr_post_line 1
+  *if ((crp2_on) and (not(crp2_taken)))
+    *gosub_scene port_valen/radiant/hall_courier cr_post_line 2
+  *if ((crp3_on) and (not(crp3_taken)))
+    *gosub_scene port_valen/radiant/hall_courier cr_post_line 3
+*choice
+  *if (nb_peddler_open)
+    *if (has_hall_insignia)
+      # Press your insignia to Merel Pellam's notice and take the missing-gatherer job.
+        *goto_scene timbermouth/barleycross/overdue_peddler pd_sign
+    *else
+      # Take Merel Pellam's missing-gatherer job.
+        *goto_scene timbermouth/barleycross/overdue_peddler pd_need
+  *if ((crp1_open) and (has_hall_insignia))
+    # Press your insignia to the posting and take the courier job to ${crp1_to_name}.
+      *set cr_pick 1
+      *goto_scene port_valen/radiant/hall_courier cr_sign
+  *if ((crp1_open) and (not(has_hall_insignia)))
+    # Take the courier job to ${crp1_to_name}.
+      *goto_scene port_valen/radiant/hall_courier cr_need
+  *if (crp1_full)
+    # Take the courier job to ${crp1_to_name}.
+      *goto_scene port_valen/radiant/hall_courier cr_full
+  *if ((crp2_open) and (has_hall_insignia))
+    # Press your insignia to the posting and take the courier job to ${crp2_to_name}.
+      *set cr_pick 2
+      *goto_scene port_valen/radiant/hall_courier cr_sign
+  *if ((crp2_open) and (not(has_hall_insignia)))
+    # Take the courier job to ${crp2_to_name}.
+      *goto_scene port_valen/radiant/hall_courier cr_need
+  *if (crp2_full)
+    # Take the courier job to ${crp2_to_name}.
+      *goto_scene port_valen/radiant/hall_courier cr_full
+  *if ((crp3_open) and (has_hall_insignia))
+    # Press your insignia to the posting and take the courier job to ${crp3_to_name}.
+      *set cr_pick 3
+      *goto_scene port_valen/radiant/hall_courier cr_sign
+  *if ((crp3_open) and (not(has_hall_insignia)))
+    # Take the courier job to ${crp3_to_name}.
+      *goto_scene port_valen/radiant/hall_courier cr_need
+  *if (crp3_full)
+    # Take the courier job to ${crp3_to_name}.
+      *goto_scene port_valen/radiant/hall_courier cr_full
+  # Step back from the notices.
+    *goto_scene port_valen/radiant/hall_courier cr_back

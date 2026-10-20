@@ -296,6 +296,7 @@ function compile(){
   verifyFileName("port_valen/radiant/hall_perform.txt");
   verifyFileName("port_valen/radiant/hall_escort.txt");
   verifyFileName("port_valen/radiant/hall_courier.txt");
+  verifyFileName("port_valen/radiant/notice_board.txt");
   verifyFileName("overworld/camp.txt");
   // Timbermouth, the placeholder town (see its hub's header comment): a hub plus one file per place, all reached only by *goto_scene (from the developer menu for now), so none
   // of them is in *scene_list and each needs its own line here or a compiled build fails with "scene doesn't exist" the moment the player walks in.

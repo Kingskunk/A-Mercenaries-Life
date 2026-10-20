@@ -76,7 +76,7 @@
       var text = (labels[i].textContent || "").replace(/\s+/g, " ").trim();
       if (/^Travel to the tile you picked/.test(text)) travel = radio;
       else if (/^Make camp/.test(text)) camp = radio;
-      else if (/^Go (in|into|back)\b/.test(text)) enter = { radio: radio, text: text };
+      else if (/^(Enter\b|Go (in|into|back)\b)/.test(text)) enter = { radio: radio, text: text };
       else if (/^Deliver /.test(text)) deliver.push({ radio: radio, text: text });   // a courier's parcel for this tile (radiant/hall_courier.txt): one button each, none for a tile nobody wrote
     }
     return travel ? { travel: travel, enter: enter, camp: camp, dawn: dawn, deliver: deliver } : null;
