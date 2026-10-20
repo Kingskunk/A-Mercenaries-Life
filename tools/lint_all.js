@@ -36,6 +36,7 @@ const LINTERS = [
   'lint_thin_prose',
   'lint_vocab_overuse',
   'lint_dash_frequency',
+  'lint_keep_ownership',
   'lint_weather_names',
   'lint_slow_healing',
   'lint_replay_guard',

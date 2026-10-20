@@ -31,6 +31,7 @@
 *comment a CHALKED junction still rolls no encounter after a refill, so chalk is the way to keep a route quiet. Fleeing a fight does not bring the creature back: the step stays rolled.
 *comment dg_table (set by the caller before this) names the dungeon; its last refill day is the variable dg_reset_day_<dg_table>, so one dungeon's refill never touches another's.
 *label dg_run_begin
+*set dg_lit_here false
 *temp dgb_last {(("dg_reset_day_" & dg_table))}
 *if (dgb_last = 0)
   *set {(("dg_reset_day_" & dg_table))} campaign_day
@@ -452,6 +453,9 @@
         *if (not((time_period = "Night") or (time_period = "Pre-Dawn")))
           *if (weather_severity < 3)
             *set dg_dark false
+  *comment A fire in the place itself (dg_lit_here, set by the room's own scene, cleared by dg_step and dg_run_begin: the Longshade's burning oak, 2026-10-19) lights it, so a player with no torch is not in the dark there.
+  *if (dg_lit_here)
+    *set dg_dark false
 *return
 
 *label dg_fight_prep
@@ -476,6 +480,8 @@
   [b][Your Light cantrip: no torch needed][/b]
 *elseif (dg_light_left > 0)
   [b][Light: ${dg_light_kind}, ${dg_light_left} @{(dg_light_left = 1) step|steps} left][/b]
+*elseif (dg_lit_here)
+  [b][A fire lights this place: no light needed][/b]
 *elseif ((dg_daylit) and (not(dg_dark)))
   [b][Daylight: no light needed][/b]
 *else
@@ -487,6 +493,7 @@
   *gosub dg_dark_check
   *set dg_was_dark dg_dark
   *set dg_from dg_pos
+  *set dg_lit_here false
   *set dg_pos dg_dest
   *set dg_steps + 1
   *set dg_enc_now false

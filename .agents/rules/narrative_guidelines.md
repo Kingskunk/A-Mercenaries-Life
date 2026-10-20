@@ -63,6 +63,7 @@ Unless backed by clear, visual, audiotory or compacting factors that made it obv
 * **Frame Actions Positively:** Avoid defining behavior by what a character *doesn't* do ("he doesn't ask why") or "Not X. Just Y." fragments — write the affirmative action instead.
 * **Skip Standalone One-Word Replies:** "Yeah," "Right," "Good" as a complete response is filler dressed as an emotional beat — write what the character actually wants to say.
 * **Avoid Borrowed-Comparison Shorthand:** "The way he always does" or "the kind of quiet that..." outsources specificity to a vague category — state the concrete detail directly.
+* **Say Ownership and Duty Outright (the "keep" habit).** Never use keep, keeps, kept or keeping to say who owns, runs, staffs or guards something: "I keep this grove", "Nessa keeps the counter", "keeps the Postings window", "kept the peace" read like a character speaking of themselves in the third person (as bad as "this grove belongs to Flùràlainn"). State it: "This is my grove", "works the counter", "sits at the window", "holds the gate", "I stood between them". Ordinary uses are fine ("keep your voice low", "keep to the edge", "keep going", "keeps the doorway clear", a promise kept, innkeeper). `tools/lint_keep_ownership.js` flags the pattern (it runs in `tools/lint_all.js`).
 * **Cut Filler Processing Gestures:** "He files it away" or "let that settle" marks information landing without showing what happens next. Cut it, or write the actual decision/shift that follows.
 
 ## 7. Describe NPCs on Introduction

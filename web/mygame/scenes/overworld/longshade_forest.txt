@@ -771,9 +771,15 @@ You find the first handholds in the rock and test each before you trust it.
 *line_break
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  The ground opens under your ${feet_prose} where three ways meet. To the north it tilts up, and to the south it drops away. To the west low branches catch at your sleeve, and the air on that side is cooler and smells of damp stone and sap.
+  *if (lsf_glade_open)
+    The ground opens under your ${feet_prose} where three ways meet. To the north it tilts up, and to the south it drops away. To the west low branches catch at your sleeve, and the air on that side is cooler and smells of damp stone and sap.
+  *else
+    The ground opens under your ${feet_prose} where two ways cross. To the north it tilts up, and to the south it drops away. To the west your hand finds thick, unbroken undergrowth.
 *else
-  Three paths meet on a bare patch of earth, worn by animals and now and then a traveller. North, the track climbs gently between older trunks. South, it drops back toward the fern circle. West, the path narrows between darker trunks with lower branches, and the air that comes out of it is cooler, with a smell of damp stone and sap.
+  *if (lsf_glade_open)
+    Three paths meet on a bare patch of earth, worn by animals and now and then a traveller. North, the track climbs gently between older trunks. South, it drops back toward the fern circle. West, the path narrows between darker trunks with lower branches, and the air that comes out of it is cooler, with a smell of damp stone and sap.
+  *else
+    A track crosses a bare patch of earth, worn by animals and now and then a traveller. North, it climbs gently between older trunks, and south it drops back toward the fern circle. West of the patch the undergrowth stands unbroken.
 *gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
@@ -785,10 +791,11 @@ You find the first handholds in the rock and test each before you trust it.
     *set dg_dest "lsf_j11"
     *set dg_dest_hall true
     *goto lsf_move
-  # Go west.
-    *set dg_dest "lsf_j15"
-    *set dg_dest_hall true
-    *goto lsf_move
+  *if (lsf_glade_open)
+    # Go west.
+      *set dg_dest "lsf_j15"
+      *set dg_dest_hall true
+      *goto lsf_move
   *if (dg_chalk_ok)
     # Mark this junction with chalk. [~5 min]
       *gosub_scene dungeon dg_chalk_mark
@@ -968,7 +975,7 @@ You find the first handholds in the rock and test each before you trust it.
 *if (dg_dark)
   The ground under your ${feet_prose} is packed hard and flat, and your raised hand finds only air: the branches overhead have been cut back to head height, and the cut ends are rough under your fingers.
 *else
-  A straight path runs north through the trees, trodden wider and flatter than the animal paths around it. Someone has kept it open: the low branches are cut back at head height, and the stumps of the cuts have weathered grey.
+  A straight path runs north through the trees, trodden wider and flatter than the animal paths around it. Someone has cleared it: the low branches are cut back at head height, and the stumps of the cuts have weathered grey.
 *gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
@@ -1801,15 +1808,38 @@ ${use_text}
 *comment (lsf_r7_show_open, decided inside the page lock; lsf_r7_opened kept for good) and the way north to Room 9 stays open. The map edge to Room 9 is hidden until then, and the watchtower's view marks nothing past this room.
 *label lsf_n_r7
 
-*if (lsf_bark_accepted)
-  *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+*comment WALKING AWAY FROM THE GROVE (the user's ruling, 2026-10-19): arriving here after lsf_bark_failed closes the gap for good (lsf_gap_closing is this page's flag, decided inside the lock), puts the room back as it was before the quest, and wipes the map of everything north of it and of Bark's Glade and its spur (the nodes forget they were seen or chalked; the edges read lsf_bark_accepted and lsf_glade_open).
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set lsf_gap_closing false
+  *if ((lsf_bark_failed) and (not(lsf_gap_sealed)))
+    *set lsf_gap_sealed true
+    *set lsf_gap_closing true
+    *set lsf_r7_opened false
+    *set lsf_r7_show_open false
+    *set dg_seen_lsf_r9 false
+    *set dg_seen_lsf_j27 false
+    *set dg_seen_lsf_r15 false
+    *set dg_seen_lsf_j15 false
+    *set dg_seen_lsf_r8 false
+    *set dg_mark_lsf_r9 false
+    *set dg_mark_lsf_j27 false
+    *set dg_mark_lsf_r15 false
+    *set dg_mark_lsf_j15 false
+    *set dg_mark_lsf_r8 false
+  *if (lsf_bark_accepted)
     *set lsf_r7_show_open (not(lsf_r7_opened))
     *set lsf_r7_opened true
-    *set stat_bump_locked true
-    *set locked_stat_bump_page_id page_id
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
 [b]◈ THE HAZEL CLEARING[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
+*if (lsf_gap_closing)
+  *if (dg_dark)
+    A creak behind you, and the leaf litter stirs as roots sink into it. Thorns rasp together, something rope-thick slides over bark, and the cool air on your back stops moving. When the sounds are done, your hand finds the north side: trunks shoulder to shoulder, tied together with vines as thick as your wrist.
+  *else
+    A creak runs along the north side behind you, and you turn. The two roots that arched apart are sinking back into the leaf litter, the thorns lean together, and the vines slide across the gap one over another until the old trunks stand shoulder to shoulder, bound and whole. There is no seam where the way was.
+  *line_break
 *if (dg_dark)
   *if (lsf_bark_accepted)
     *if (lsf_r7_show_open)
@@ -2892,21 +2922,284 @@ You settle onto your heels at the edge of the clearing, well clear of the tree, 
 *gosub_scene dungeon dg_time
 *goto lsf_n_r14
 
+*comment THE BURNING GROVE (Room 15, the user's design 2026-10-19, chunk 4 of Bark's Quest and the Burning Tree; quest/Bark's Quest - Room 15, the Burning Grove.md): the end of the stream path. The old oak at the center of the ring is on fire (lsf_tree_state "burning"), a dryad beats at it, and two swarms of
+*comment sprites fight overhead. The fire lights the room even at night (dungeon.txt dg_dark_check reads lsf_tree_state). Four ways to put it out, none longer than 5 minutes: Control Flames and twenty full water jugs save it outright; a shovel (Athletics DC 14) and a firebreak (Survival DC 13) are rolls, and a
+*comment pass saves it too. A miss means the dryad puts it out herself and has no time to help later (lsf_dryad_busy). The oak is always saved. A player who saves it is the dryad's friend (lsf_dryad_friend, +5 and advantage on Persuasion with her). The only way out while it burns is the walk-away button, which fails
+*comment Bark's quest for good (lsf_bark_failed; Room 7 closes behind the player, lsf_gap_sealed). lsf_grove_mins counts the minutes spent in this room, for the sprites' difficulty later. NOTHING PAST THE OAK BEING SAVED IS WRITTEN YET (the user: wait for the word): no Dubhar, no fight, no talk of the poison.
 *label lsf_n_r15
 
-[b]◈ FOREST ROOM 15[/b]
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set lsf_r15_first (not(lsf_grove_seen))
+  *if (lsf_r15_first)
+    *set lsf_grove_seen true
+    *comment The sense of being watched (the user): passive Perception 12, with advantage (+5) if Bark's quest was taken, which it always has been to be here.
+    *temp lsf_pp (10 + wis_mod)
+    *if (skill_perception)
+      *set lsf_pp (lsf_pp + prof_bonus)
+    *elseif ((character_class = "bard") and (character_level >= 2))
+      *set lsf_pp (lsf_pp + ((prof_bonus - (prof_bonus modulo 2)) / 2))
+    *if (lsf_bark_accepted)
+      *set lsf_pp (lsf_pp + 5)
+    *if (lsf_pp >= 12)
+      *set lsf_dubhar_felt true
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+*set dg_seen_lsf_r15 true
+*set dg_lit_here (lsf_tree_state = "burning")
+*temp r15_night ((time_period = "Night") or (time_period = "Pre-Dawn"))
+*temp r15_ticks ((lsf_grove_mins - (lsf_grove_mins modulo 5)) / 5)
+*temp r15_pick ((r15_ticks modulo 4) + 1)
+*if (lsf_tree_state = "burning")
+  [b]◈ THE BURNING GROVE[/b]
+*else
+  [b]◈ THE SCORCHED GROVE[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
-*if (dg_dark)
-  The dark under the trees is close, and you feel your way. This is forest room 15. Nothing is written here yet.
+*if (lsf_tree_state = "burning")
+  *if (lsf_r15_first)
+    *if (r15_night)
+      Firelight first, then heat. The oak at the center of the ring is burning from root to top, and the flames throw the nearest trunks into black and gold. A woman is at its foot, beating the bark with her bare hands, her hair steaming. Up in the boughs, tiny winged figures fly at one another in two swarms, green and thorn-brown, and the air rings with their shrieking.
+    *else
+      The trail ends at a wide ring of trees around one old oak, and the oak is on fire. Flames climb the trunk and run out along the low limbs. A column of dirty smoke rolls from the top of the tree and spreads flat under the canopy, and the heat reaches you across the whole clearing. A woman stands at the foot of the tree, beating at the bark with her bare hands. Her skin is the grey-brown of old wood and her hair hangs in long green ropes that steam as she works. Around her and high in the boughs, hand-sized figures on thin wings wheel and collide. Some wear green, some a brown like dead thorn, and the whole swarm shrieks in one thin, glassy note, like a spoon dragged round a glass.
+    *if (lsf_dubhar_felt)
+      *line_break
+      The skin between your shoulders prickles, the way it does when someone is watching from a place you cannot see.
+    *line_break
+    The woman spins around and sees you. "You! Help me!" Her voice cracks. "The tree, my tree. It wants water, twenty great jars of it at least, and the stream is... Please. Anything you have."
+  *else
+    *if (r15_night)
+      The oak still burns from root to top, throwing the ring of trunks into black and gold. The woman is at its foot, beating at the bark, and the ringing of the swarms fills the air.
+    *else
+      The oak is still on fire. The woman stands at its foot, beating at the bark with her bare hands, and the two swarms wheel and shriek in the smoke overhead.
+  *line_break
+  *if (r15_pick = 1)
+    A limb of the oak splits with a crack and drops a spray of sparks across the grass.
+  *if (r15_pick = 2)
+    A knot of thorn-brown sprites dives at the green ones, and the green ones scatter through the smoke.
+  *if (r15_pick = 3)
+    Ash drifts down through the heat like grey snow and settles on your shoulders.
+  *if (r15_pick = 4)
+    The fire cracks in the heartwood like a stick snapped over a knee.
 *else
-  This is forest room 15. Nothing is written here yet.
+  *if (dg_dark)
+    Heat still comes off the oak in slow breaths, and the air is thick with wet char. The bark ticks as it cools, and ash shifts under your ${feet_prose}. Overhead the two swarms keep up their thin, glassy shrieking.
+  *elseif (r15_night)
+    Embers glow in the cracks along the oak's trunk and give the ring a low red light. The oak stands black from root to top, and the grass around it is grey with ash. Flùràlainn stands at its foot with her palm flat against the bark, and overhead the two swarms keep up their thin, glassy shrieking.
+  *else
+    The ring of trees stands quiet under a haze of thinning smoke. The old oak at its center is black from root to top and ticking as it cools, and the grass around it is grey with ash. Flùràlainn stands at its foot with her palm flat against the bark. Overhead the two swarms still wheel and shriek.
+  *line_break
+  *if (r15_pick = 1)
+    A last wisp of smoke slides out of a crack in the trunk and thins to nothing.
+  *if (r15_pick = 2)
+    Ash lifts and settles on the grass in the draft the swarms stir up.
+  *if (r15_pick = 3)
+    The bark ticks as it cools, a slow sound like a clock.
+  *if (r15_pick = 4)
+    A green sprite drops into the ash, stares at the black oak with unfocused eyes, and flits away.
+  *set lsf_env_quiet true
+  *gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
-  # Go southwest.
-    *set dg_dest "lsf_j27"
-    *set dg_dest_hall true
-    *goto lsf_move
+  *if (lsf_tree_state = "burning")
+    *if (not(lsf_dryad_talked))
+      # Talk to the woman. [~2 min]
+        *goto lsf_r15_talk
+    *if (known_control_flames)
+      # Speak to the fire with Control Flames. [~5 min]
+        *goto lsf_r15_flames
+    *if ((has_water_jug) and (jug_full >= 20))
+      # Pour out your water on the burning oak. [~5 min]
+        *goto lsf_r15_water
+    *if ((has_water_jug) and (jug_full < 20))
+      # Pour out your water: you carry ${jug_full} full @{(jug_full = 1) jug|jugs}, and the oak wants twenty.
+        *goto lsf_r15_water_short
+    *if (has_shovel)
+      # Throw earth on the trunk with your shovel. [~5 min]@{show_stat_hints  [Athletics DC 14]|}
+        *goto lsf_r15_shovel
+    # Cut a firebreak around the roots. [~5 min]@{show_stat_hints  [Survival DC 13]|}
+      *goto lsf_r15_firebreak
+  *comment REMOVED FOR NOW (the user, 2026-10-19): there is no attempt to stop the sprite battle before the mage is beaten, so the three options below (Watch the swarms, Step between the swarms, Shout at the swarms again) are kept as comments, to go back in when the label that stops the battle is written.
+  *comment *if (not(lsf_sprites_watch_tried))
+  *comment # Watch the swarms. [~5 min]@{show_stat_hints  [Insight DC 12]|}
+  *comment *goto lsf_r15_watch
+  *comment *if (not(lsf_sprites_tried))
+  *comment # Step between the swarms and order them to stop.
+  *comment *goto lsf_r15_charge
+  *comment *else
+  *comment # Shout at the swarms again. [~1 min]
+  *comment *goto lsf_r15_shout
+  *if (lsf_tree_state = "burning")
+    # Turn your back on her and go.
+      *goto lsf_r15_walk_away
+  *else
+    # Go back down the trail, southwest.
+      *set dg_dest "lsf_j27"
+      *set dg_dest_hall true
+      *goto lsf_move
+
+*comment The grove clock: every action in this room adds its minutes (dg_mins, set by the caller before this) to lsf_grove_mins, once per page. Chunk 6 will read the total to set how hard the sprites are to stop.
+*comment replay-ok: guarded by lsf_grove_tick_locked and the page id.
+*label lsf_grove_tick
+*if (not(lsf_grove_tick_locked)) or (not(locked_lsf_grove_tick_page_id = page_id))
+  *set lsf_grove_mins (lsf_grove_mins + dg_mins)
+  *set lsf_grove_tick_locked true
+  *set locked_lsf_grove_tick_page_id page_id
+*return
+
+*label lsf_r15_talk
+"What happened to the tree?" you ask, loud over the roaring.
+*line_break
+"They did it." She keeps her eyes on the flames. "Those two, the green and the brown. They were fighting over it, over the grove, over the stream that feeds it, and one of them set its upper branches alight. I have stood between them for longer than that oak has been tall. I never saw them like this."
+*line_break
+"Can it be put out?"
+*line_break
+"Water. A river of it. Or a hand that can talk to fire." She looks at you properly, then. "If you have either, now. Please."
+*set lsf_dryad_talked true
+*set dg_mins 2
+*set dg_time_id "lsf_r15_talk"
+*gosub_scene dungeon dg_time
+*gosub lsf_grove_tick
+*goto lsf_n_r15
+
+*comment THE FOUR WAYS TO THE FIRE. Each ends at lsf_r15_done, which spends the five minutes and goes on to her thanks. A pass, or a route with no roll, sets lsf_tree_state "saved_by_player" and makes her the player's friend; a miss sets "saved_by_dryad" and lsf_dryad_busy.
+*label lsf_r15_flames
+*set lsf_tree_route "flames"
+*if (character_class = "wizard")
+  You lift a hand and speak to the flame the way you would to a skittish horse. It leans toward your voice. You gather the fire off the trunk, limb by limb, and press it thinner and thinner until the last bright thread gutters and goes out. Smoke curls up from black bark, and the tree stands whole.
+*elseif (character_class = "bard")
+  You hum, low, on the note the fire's own crackle already makes, and let the tune drop. The flames sway down with it, shortening from the top branches down to the trunk, a quieter verse at every line, until the last bright thread goes out.
+*else
+  You reach for the pact and ask the fire to remember that it answers to something older than itself. It cringes. The flames fold down along the trunk and go out one limb at a time, smoke drifting up like breath.
+*set lsf_tree_state "saved_by_player"
+*set lsf_dryad_friend true
+*goto lsf_r15_done
+
+*label lsf_r15_water_short
+*comment A closure page: no time, nothing set.
+You count your full jugs against the height of the oak and the roar of the fire. It will take more water than that.
+*page_break Back to the oak…
+*goto lsf_n_r15
+
+*label lsf_r15_water
+*set lsf_tree_route "water"
+You line the jugs up at the edge of the heat and start. One after another you pull the cork, swing the jug and throw the water high up the trunk. It hits the bark with a hiss and a roll of steam. The woman is running up beside you with her hands full of the runoff, flinging it into the upper branches. The last jug lands, the steam thins and clears, and the trunk stands black and streaming, with green still in the top branches.
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *comment replay-ok: inside the stat_bump page lock; the twenty full jugs are used up once (the empty jugs stay).
+  *set jug_full (jug_full - 20)
+  *set lsf_tree_state "saved_by_player"
+  *set lsf_dryad_friend true
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+*line_break
+[b][💧 Water Jugs: 20 emptied | ${jug_full} full left][/b]
+*goto lsf_r15_done
+
+*label lsf_r15_shovel
+*set lsf_tree_route "shovel"
+You drive the shovel into the ground at the edge of the roots and start throwing. Earth hits the burning bark and smothers it in a hiss and a cloud of dust. The woman is beside you, scooping soil in her cupped hands and scraping it up the trunk.
+*line_break
+*gosub_scene dice_engine roll_skill_check 14 "athletics" "" "" "" "" ""
+*if (check_success)
+  The earth takes the trunk and the low limbs. She drags the last embers from the upper branches with her hands, and the oak stands scorched and alive.
+  *set lsf_tree_state "saved_by_player"
+  *set lsf_dryad_friend true
+*else
+  The soil is too thin, and the fire has too much of a head start in the upper branches. You are still scraping at the trunk when the woman shoves you aside, plants both hands on the bark and speaks one low word. The fire dies under her palms.
+  *set lsf_tree_state "saved_by_dryad"
+  *set lsf_dryad_busy true
+*goto lsf_r15_done
+
+*label lsf_r15_firebreak
+*set lsf_tree_route "firebreak"
+You choose the line where the grass ends and start tearing it up, then the roots, hurling the turf behind you into a raw black trench around the foot of the oak. Sparks tick across the gap and die in the dirt, and the fire at the roots starves in the bare dirt.
+*line_break
+*gosub_scene dice_engine roll_skill_check 13 "survival" "" "" "" "" ""
+*if (check_success)
+  With the roots safe, the woman gets both hands flat on the trunk, and with you hauling turf up the bark beside her, the flames die down limb by limb.
+  *set lsf_tree_state "saved_by_player"
+  *set lsf_dryad_friend true
+*else
+  Sparks jump the trench and catch the nearest trunk. You are beating at the new fire when the woman shoves past you, plants both hands on the bark and speaks one low word, and it goes out.
+  *set lsf_tree_state "saved_by_dryad"
+  *set lsf_dryad_busy true
+*goto lsf_r15_done
+
+*label lsf_r15_done
+*line_break
+*set dg_mins 5
+*set dg_time_id "lsf_r15_route"
+*gosub_scene dungeon dg_time
+*gosub lsf_grove_tick
+*goto lsf_r15_thanks
+
+*comment THE OAK IS SAVED. This is where the written story stops for now (the user: wait for the word before going on): her thanks and her name, and whether she is the player's friend or too spent to help. Nothing about the sprites, the stream or the poison is said yet.
+*label lsf_r15_thanks
+She is on her knees in the ash with her hair hanging over her face, and when she lifts it her eyes are wet. "I thank you," she says. "I am Flùràlainn. This is my grove, and it was mine before the oldest of these trees was a seed."
+*line_break
+*if (lsf_dryad_friend)
+  She grips your forearm and says it again. "Whatever you need in this grove, you have only to ask."
+*else
+  She turns back to the black bark and lays her palm on it. "I would have liked the strength to do more for you. I have none left."
+*goto lsf_n_r15
+
+*comment REMOVED FOR NOW (the user, 2026-10-19): trying to stop the sprite battle only happens AFTER the mage is beaten (order: save the oak, fight the mage, then stop the battle). The three labels below (lsf_r15_watch, lsf_r15_charge, lsf_r15_shout) are kept as comments, to be refactored into that later label. Nothing jumps to them.
+*comment *label lsf_r15_watch
+*comment You stand clear of the heat and watch the swarms instead of the fire.
+*comment *gosub_scene dice_engine roll_skill_check 12 "insight" "" "" "" "" ""
+*comment *if (check_success)
+*comment   Something is wrong in them. Their eyes slide past you and past each other, bright and unfocused, and between rushes they drift down to the stream and kneel on the bank to drink, over and over, as if they cannot stop.
+*comment   *set lsf_sprites_watched true
+*comment *else
+*comment   It is a blur of wings and tiny blades, and nothing in it makes sense.
+*comment *set lsf_sprites_watch_tried true
+*comment *set dg_mins 5
+*comment *set dg_time_id "lsf_r15_watch"
+*comment *gosub_scene dungeon dg_time
+*comment *gosub lsf_grove_tick
+*comment *goto lsf_n_r15
+*comment
+*comment *comment Stepping between the swarms costs a quarter of the player's maximum HP, at least 2 (the user: either works), never below 1, once. After that it is only described.
+*comment *label lsf_r15_charge
+*comment *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+*comment   *set lsf_sprite_cost ((hp_max - (hp_max modulo 4)) / 4)
+*comment   *if (lsf_sprite_cost < 2)
+*comment     *set lsf_sprite_cost 2
+*comment   *if (lsf_sprite_cost > (hp_current - 1))
+*comment     *set lsf_sprite_cost (hp_current - 1)
+*comment   *if (lsf_sprite_cost < 0)
+*comment     *set lsf_sprite_cost 0
+*comment   *comment replay-ok: inside the stat_bump page lock, and lsf_sprites_tried keeps the option from being paid twice.
+*comment   *set hp_current (hp_current - lsf_sprite_cost)
+*comment   *set lsf_sprites_tried true
+*comment   *set stat_bump_locked true
+*comment   *set locked_stat_bump_page_id page_id
+*comment You walk into the middle of the dogfight with your hands up and shout. Both swarms turn on you at once, a hail of tiny blades and thorns and furious small faces, and you stagger out of the cloud with your arms over your head, bleeding from a hundred scratches. They have already forgotten you.
+*comment *line_break
+*comment [b][🩸 Scratched raw: -${lsf_sprite_cost} HP | HP: ${hp_current} / ${hp_max}][/b]
+*comment *set dg_mins 2
+*comment *set dg_time_id "lsf_r15_charge"
+*comment *gosub_scene dungeon dg_time
+*comment *gosub lsf_grove_tick
+*comment *goto lsf_n_r15
+*comment
+*comment *label lsf_r15_shout
+*comment Your voice vanishes under the shrieking, and both swarms keep to their fight.
+*comment *set dg_mins 1
+*comment *set dg_time_id "lsf_r15_shout"
+*comment *gosub_scene dungeon dg_time
+*comment *gosub lsf_grove_tick
+*comment *goto lsf_n_r15
+
+*comment WALKING AWAY (the user's ruling, no confirmation): the quest fails for good. The player walks out the way they came; arriving in Room 7 closes the gap behind them and takes everything north of it, and Bark's Glade with its spur, off the map (lsf_n_r7).
+*label lsf_r15_walk_away
+You turn away. Behind you the roar climbs, and the woman's voice breaks on a word you do not know.
+*set lsf_bark_failed true
+*set lsf_bark_accepted false
+*set lsf_glade_open false
+*line_break
+*set dg_dest "lsf_j27"
+*set dg_dest_hall true
+*goto lsf_move
 
 *comment The encounter table. A row is one *set dg_trow_ line each (see port_valen_silt_conduits.txt pvsc_table for the shape): the id, then its weight at "low tide" (here: by day, Morning through Dusk) and at "high tide"
 *comment (night and before dawn). The pick never repeats an id within one run.

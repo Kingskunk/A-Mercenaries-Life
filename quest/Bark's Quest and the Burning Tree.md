@@ -361,7 +361,7 @@ How I read your answers, and the order I will build in. Tell me if I read anythi
 1. **Room 7 and the sealed path.** *(built 2026-10-19)*
 2. **Room 9 (the pool) and Trail 27.** The show-not-tell prose, the ways to tell the water is wrong, drinking, the timed -5 Wisdom. *(built 2026-10-19)*
 3. **Control Flames.** The cantrip in the spell list and the three classes, its uses at camp, with torches and in a fight; check the Light cantrip in the dungeons. *(built 2026-10-19)*
-4. **Room 15, arrival.** The dryad, the burning tree routes, the sprite war's HP penalty, and the clock.
+4. **Room 15, arrival.** The dryad, the burning tree routes, the sprite war's HP penalty, and the clock. *(built 2026-10-19 up to the oak being saved; see "Bark's Quest - Room 15, the Burning Grove.md")*
 5. **Dubhar and the Twig Blights.** The fight, and what the dryad and the bear take out of it.
 6. **After the mage.** Stopping the sprites, the mercy choice, the clean water, and Bark's fruits.
 7. **Later:** the water system, Dubhar's drop.
@@ -399,3 +399,19 @@ Not built: "snuff the flames" on yourself (the player cannot burn yet).
 ### The water jug and Wet built (2026-10-19, before chunk 4)
 
 **The jug** is one item that is empty or full (about a gallon, 1 pound empty, 8 full), 5 copper at Hollis, Marlow's and the Alderford market, filled at open water (a camp beside a stream, the Hidden Spring, and the Clear Pool once the poison is gone). **In a fight** a full jug is thrown from the Throw button: a Dexterity attack against AC, no damage, a hit leaves a foe **Wet** for 3 turns (cannot catch fire, resists fire, double cold and lightning damage; a burning foe cannot be soaked). The 20-gallon route to the burning tree (Fighter or Barbarian carrying 20 jugs, 160 pounds) comes with chunk 4. No thirst clock.
+
+### Chunk 4 built (2026-10-19), up to the oak being saved
+
+Room 15 is **The Burning Grove** (map name; the heading reads **The Scorched Grove** once the fire is out). Built to the review file: the first arrival by day and by night, the sense of being watched (passive Perception 12, +5 once the quest is taken), the dryad's cry and the first talk, and the four ways to put out the fire, each 5 minutes or less. **Control Flames** (a line for each class) and **twenty full jugs** save the oak outright; the **shovel** (Athletics DC 14) and the **firebreak** (Survival DC 13) are rolls, and a pass saves the oak while a miss means the dryad puts it out herself. A player who saves it is her friend (`lsf_dryad_friend`); otherwise `lsf_dryad_busy` (no +5, no advantage, no help in the fight, a later chunk). The oak is always saved. **The story stops at her thanks and her name** (the user: wait for the word): nothing about the sprites' madness, the stream or the poison is said, and there is no Dubhar and no fight. After the fire the room has a day, a night-by-embers and a dark version.
+
+**The burning oak lights its own room** (even at night with no torch): a general `dg_lit_here` flag that `dungeon.txt` reads, set by the room, cleared by every step.
+
+**The sprite war is NOT in this chunk (the user, 2026-10-19):** the order is save the oak, fight the mage, THEN try to stop the battle, so there is no attempt to stop it before the mage is beaten. The three options (Watch the swarms, Step between the swarms with its HP cost, Shout again) were built and then commented out in `longshade_forest.txt` (`lsf_r15_watch`, `lsf_r15_charge`, `lsf_r15_shout`), to be refactored into the later label when it is written. The wording in this chunk now says "upper branches" and "top of the tree" instead of "crown".
+
+**The grove clock** (`lsf_grove_mins`) adds the minutes of every action in the room; nothing reads it yet (chunk 6).
+
+**Walking away** ("Turn your back on her and go", the only way out while the oak burns, no confirmation): `lsf_bark_failed`, `lsf_bark_accepted` false, `lsf_glade_open` false; the player walks out, and **arriving in Room 7 closes the gap behind them** (a short page) and the map forgets Rooms 9 and 15, Junction 27, Bark's Glade (Room 8) and Junction 15; Room 7 returns to the plain dead end and the Old Crossing loses its west path.
+
+**Sidebar:** "The Troubled Water" appears once the quest is taken and leaves when it fails or is finished, with a goal line that follows the grove and four clues.
+
+The map now names Room 9 **The Clear Pool**.

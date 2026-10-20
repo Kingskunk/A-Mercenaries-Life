@@ -112,6 +112,8 @@
     function (s) { return s.sceneName === "timbermouth/ashrun_holt/longhouse" && s.scenery_subplace === "ashrun_holt_old_ash" ? "ashrun_holt_clearing" : undefined; }, // stepping outside to the ribboned Old Ash
     function (s) { return s.sceneName === "timbermouth/ashrun_holt/ashrun_house" && s.scenery_subplace === "ashrun_holt_inn_room" ? "generic_village_inn_room" : undefined; }, // a plain hired room above the Ashrun House
     function (s) { return s.sceneName === "timbermouth/barleycross/lane" && s.scenery_subplace === "barleycross_hayloft" ? "generic_farm_hayloft" : undefined; }, // paid loft above a Barleycross farmstead
+    function (s) { return s.sceneName === "port_valen/radiant/notice_board" && s.cr_origin === "tm" ? "shared_factors_hall" : undefined; }, // Timbermouth's board is inside its Factor's Hall
+    function (s) { return s.sceneName === "port_valen/radiant/notice_board" && s.cr_origin === "fv" ? "generic_village_gathering_hall" : undefined; }, // Barleycross's board is inside its village hall
     function (s) { return s.sceneName === "horse_dealer" && s.horse_place === "bc" ? "generic_village_pasture" : undefined; }, // Barleycross's working-horse rail stands at the common pasture
     function (s) { return s.sceneName === "horse_dealer" && s.horse_place === "mw" ? "village_stable_yard" : undefined; }, // Port Valen's dealer works from the Middle Ward yard
     function (s) { return s.shop_open && s.shop_open !== "trapper" ? "generic_trade_shop" : undefined; }, // shop counters in settlements; the forest trapper stays outdoors

@@ -1,4 +1,4 @@
-*comment --- CLASS PATH (Revealed during the Dawn Trial) ---
+*comment Class progression and combat resource state.
 *create character_class "none"
 *create class_title "Unproven Recruit"
 *create class_name "Recruit"
@@ -8,47 +8,36 @@
 *create class_feature_desc "You have not yet manifested a defining class feature."
 *create class_feature_2_title "None"
 *create class_feature_2_desc "You have no second defining class feature."
-*comment Fighting Style (2026-10-02), shared by every class that can take one (the Fighter at the Dawn Trial, the Ranger at level 2). One id: archery, close_combat,
-*comment defense, dueling, great_weapon, protection. fighting_style_info (character_progression.txt) is the one place the names and descriptions live; it fills
-*comment fs_label and fs_desc for whoever prints them.
+*comment Shared Fighting Style id; fighting_style_info supplies its display text.
 *create fighting_style "none"
 *create fs_label ""
 *create fs_desc ""
 *create fighter_second_wind_uses 2
 *create second_wind_roll 0
-*comment Action Surge (Fighter, level 2): uses left. Its maximum is fighter_action_surge_max below; both are 0 until the level that grants it.
+*comment Action Surge uses and maximum; unavailable before its granting level.
 *create fighter_action_surge_uses 0
-*comment Short rest (character_progression.txt short_rest_preview / do_short_rest): rest_gave names what a short rest gives back to this class right now
-*comment ("" when nothing), rest_can_gain is true when there is something to win back.
+*comment Short-rest preview and result state.
 *create rest_gave ""
 *create rest_can_gain false
-*comment SHORT REST CAP (2026-10-02): how many short rests may be taken between long sleeps, for EVERY class. short_rests_max is the one number to change (2 now). A short rest that gives something
-*comment back spends one of short_rests_left; restore_class_resources (a long rest) refills it. Short rests still take an hour and never touch the hunger or tiredness clocks, so they are not a way around sleep.
+*comment Shared short-rest cap. A resource-restoring short rest spends one use; a long rest restores them.
 *create short_rests_max 2
 *create short_rests_left 2
-*comment codex_rest_short (choicescript_stats.txt): short_rest_applied is true once the rest's result page has done its work, and it keeps a REPLAY of that page from taking a second rest (another hour, another give-back,
-*comment another short rest spent). It is cleared by the Rest MENU (codex_rest) every time that is shown, so a new rest chosen from the menu always runs. It is deliberately not keyed on page_id: the dossier's page numbers
-*comment restart from the game page's own when it closes, so a page_id lock from one dossier visit collides with the next and skips a real rest (found 2026-10-02). short_rest_gave_text and short_rest_pick are the two values the
-*comment result page prints, kept in stats so a replay prints the same page it printed the first time.
+*comment Dossier short-rest replay lock and its printed result fields. The menu clears the lock for each new rest.
 *create short_rest_applied false
 *create short_rest_gave_text ""
-*comment dg_rest_light_text: what a short rest inside a dungeon did to the light (dungeon.txt dg_rest_burn), printed in the rest report.
+*comment Dungeon-rest light result for the report.
 *create dg_rest_light_text ""
 *create short_rest_pick 1
-*comment Class resource MAXIMUMS. refresh_class_resource_maxs (character_progression.txt) is the only place a maximum is written down, and
-*comment update_dnd_stats calls it, so they follow character_level. These are the level 1 numbers; nothing else may hard-code them.
+*comment refresh_class_resource_maxs owns class resource maximums; do not hard-code them elsewhere.
 *create fighter_second_wind_max 2
 *create fighter_action_surge_max 0
 *create barbarian_rage_max 2
 *create warlock_spell_slots_max 1
-*comment ARCANE RECOVERY (Wizard, 2026-10-02): true once it has been used since the last long rest. A short rest returns expended spell slots whose combined level is up to half the Wizard's level,
-*comment rounded up (all slots are first level here, so that many slots), once between long rests. restore_class_resources clears it. See do_short_rest in character_progression.txt.
+*comment Arcane Recovery is available once per long rest and restores the permitted spell-slot value on a short rest.
 *create wizard_arcane_recovery_used false
-*comment SCHOLAR (Wizard, level 2, 2026-10-02): Expertise in one skill the Wizard is already proficient in, chosen from Arcana, History, Investigation, Medicine, Nature and Religion. Stored as the
-*comment display name ("Arcana"), matching check_skill, like the other Expertise picks. A Wizard's own proficiencies are fixed at level 1 (character_stats.txt apply_class_skills), so the pick
-*comment only offers the ones whose skill_<id> flag is true.
+*comment Wizard Scholar Expertise, stored as a proficient skill's display name.
 *create wizard_expertise_1 "none"
-*comment The Wizard's level 2 spell picks (2026-10-02): two more spells in the book, filled on the level-up page (level_up_wizard_2_spell1/2). Every gate asks known_<id>, never these slots.
+*comment Wizard's level-up spell slots; gates use known_<id>, never these fields.
 *create wizard_spell_2 "none"
 *create wizard_spell_2_desc "You have copied no second spell into your book yet."
 *create wizard_spell_3 "none"
@@ -56,9 +45,9 @@
 *create wizard_spell_slots_max 2
 *create bard_spell_slots_max 2
 *create ranger_spell_slots_max 0
-*comment Clock stamp of the last short rest that gave something back (do_short_rest uses it so a replayed page cannot give twice).
+*comment Timestamp preventing a replayed short rest from restoring resources twice.
 *create last_short_rest_stamp 0
-*comment Level-up progress (character_progression.txt refresh_quests_finished, refresh_level_up_progress, training_preview, do_training_session).
+*comment Level-up and training progress, maintained by character_progression.txt.
 *create quests_finished 0
 *create training_sessions 0
 *create last_training_day 0
@@ -68,38 +57,24 @@
 *create level_up_sessions_needed 30
 *create level_up_quests_needed 10
 *create level_up_ready false
-*comment Input of do_level_up: the level being left, set on the confirm page (dossier codex_levelup) so the apply page can set an exact
-*comment target level instead of adding one (a replayed apply page then sets the same level again).
+*comment Confirmed source level lets the apply page set an exact replay-safe target level.
 *create level_up_from 1
 *create rogue_expertise_1 "none"
 *create rogue_expertise_2 "none"
-*comment Canny (Ranger, Tasha's Deft Explorer -- replaces Natural Explorer, 2026-09-29): same double-proficiency
-*comment mechanic as Rogue's Expertise just above, one skill instead of two, hardcoded at chargen the same way
-*comment rogue_expertise_1/2 already are (dawn_trial.txt never offered a real picker for those either -- see
-*comment roll_d20_check, dice_engine.txt, for the shared gate).
+*comment Ranger Canny Expertise, using the shared skill-check gate.
 *create ranger_expertise_1 "none"
 *create rogue_sneak_attack_die "1d6"
-*comment HUNTER'S MARK (2026-10-02), the Ranger's level 1 feature. It replaces Tasha's Favored Foe (2026-09-29) and follows the 2024 rules,
-*comment where Favored Enemy IS free castings of Hunter's Mark: a BONUS ACTION marks one creature as your quarry, and for 10 rounds every weapon
-*comment hit you land on it adds 1d6 force. The free castings are favored_foe_uses (proficiency bonus, long rest); a level 2 Ranger's spell slots
-*comment will pay for more. If the marked creature drops, the mark waits and can be moved to a new creature with another bonus action at no cost.
-*comment Only one mark can be live at a time, so target_slot/expires_round hold it directly (contrast Bane, which needs a field per slot). Duration is
-*comment a flat 10 rounds, the same stand-in for concentration Bane uses: nothing in this engine tracks concentration. The variable names keep
-*comment "favored_foe" so no saved variable had to change; the player sees "Hunter's Mark" everywhere.
+*comment Hunter's Mark state: one target, ten rounds, free uses per long rest, then spell slots. Legacy favored_foe names remain for compatibility.
 *create favored_foe_uses 0
 *create favored_foe_max 0
 *create favored_foe_die_sides 6
 *create favored_foe_target_slot 0
 *create favored_foe_expires_round 0
-*comment Set each time the combat hub opens (combat_hm_state, combat.txt): combat_hm_live is true while the mark is on a living creature,
-*comment combat_hm_orphaned while it is unexpired but its creature has dropped (a bonus action moves it free), combat_hm_name the creature's name.
+*comment Combat-hub display state for an active or orphaned Hunter's Mark.
 *create combat_hm_live false
 *create combat_hm_orphaned false
 *create combat_hm_name ""
-*comment DUAL SHOT (2026-10-02, the Grim Hollow fighting style): two shots from one Attack action, at two different creatures at the same range, both with disadvantage.
-*comment The player assigns them in the sidebar, reusing Magic Missile's dart allocation with a maximum of 2. combat_dual_pair_ok says a legal pair exists (the option is
-*comment offered), combat_dual_valid/combat_dual_a/_b/_why report what the player assigned. combat_dual_shot_active marks the two-shot sequence (disadvantage on each);
-*comment combat_dual_second_slot holds the second target between the shots, and fight_check_enemy_hp starts the second shot on its own page from it.
+*comment Dual Shot targets two distinct enemies at the same range with disadvantage; these fields manage selection and the second shot.
 *create combat_dual_shot_active false
 *create combat_dual_second_slot 0
 *create combat_dual_pair_ok false
@@ -107,31 +82,23 @@
 *create combat_dual_a 0
 *create combat_dual_b 0
 *create combat_dual_why ""
-*comment RECKLESS ATTACK (Barbarian level 2, 2026-10-02): true from the moment the player declares it, before their first attack of a turn, until their next turn
-*comment begins (combat_next_turn clears it when the queue reaches the player). While true: the player's Strength attack rolls have advantage, and every enemy attack
-*comment roll against the player has advantage too (resolve_enemy_attack and the reverse opportunity attack, combat_dice.txt). Reset false with the other fight flags.
+*comment Reckless Attack lasts until the player's next turn: Strength attacks gain advantage, as do attacks against the player.
 *create combat_reckless_active false
-*comment ARMS OF HADAR (Warlock, 2026-10-02): combat_hadar_ok is true when the spell is castable right now (a living enemy is Engaged, within the 10 foot emanation).
+*comment Arms of Hadar availability: a living enemy must be engaged.
 *create combat_hadar_ok false
-*comment HELLISH REBUKE (Warlock, 2026-10-02), modelled on Shield: rebuke_armed is a free declaration (the hub option) that fires on the next enemy attack that actually DAMAGES the player. When it
-*comment fires it spends a Pact Magic slot and the player's reaction (player_oa_used, which combat_begin_round clears each round), the attacker makes a Dexterity save against spell_save_dc, and takes
-*comment 2d10 fire (half on a save). The result is kept in combat_rebuke_* so the attack's narration prints it in order (resolve_enemy_attack, combat_dice.txt; fight_narrate_enemy_turn, combat_prose.txt).
-*comment combat_save_quiet makes resolve_enemy_save keep its banner to itself (stored in combat_save_banner_<slot>) instead of printing it where it is called.
+*comment Hellish Rebuke is armed for the next damaging enemy attack; its result fields preserve ordered combat narration.
+*comment combat_save_quiet stores a save banner for the caller to print.
 *create rebuke_armed false
 *create combat_rebuke_triggered false
 *create combat_rebuke_save_banner ""
 *create combat_rebuke_banner ""
-*comment fight_reach_check (combat.txt): set by the reach check that melee attacks and Shocking Grasp run when chosen.
-*comment combat_any_engaged: set by combat_check_engaged (combat.txt): true when ANY living enemy is at range 0, which spoils every ranged attack the player makes (5e: a hostile within 5 feet), whoever the target is.
+*comment Reach-check result and whether any living enemy is engaged, which affects ranged attacks.
 *create combat_any_engaged false
 *create combat_reach_ok true
 *create combat_reach_msg ""
 *create combat_save_quiet false
 *create combat_fear_banner ""
-*comment FRIENDLY TARGETING (2026-10-02): a friendly spell (Healing Word first) lets the player pick who it lands on in the sidebar, the way Magic Missile picks its targets. While
-*comment combat_friendly_targeting_active is true the sidebar makes the player's own row and every living ally's row clickable, and a click writes combat_friendly_target (0 = the player,
-*comment otherwise the ally's slot). combat_friendly_reach is the farthest ally distance the spell allows (a tier 0-3; 3 = anywhere, which is what a 60 foot range comes to in this
-*comment tier model, 0 would be a touch spell). combat_allyN_distance is the ally's distance from the player, refreshed by combat_refresh_ally_distances.
+*comment Friendly-spell targeting state: target 0 is the player; ally distances determine reach.
 *create combat_friendly_targeting_active false
 *create combat_friendly_target 0
 *create combat_friendly_reach 3
@@ -145,15 +112,10 @@
 *create combat_ally2_distance 0
 *create combat_ally3_distance 0
 *create combat_ally4_distance 0
-*comment Slot 0 is the inert placeholder quicktest's branch walk needs (see combat_enemy0_*); it is never read by a real turn.
+*comment Inert ally slot retained for Quicktest branch coverage.
 *create combat_ally0_distance 0
-*comment BARDIC INSPIRATION (2026-10-02, built; it was only dossier text before). A bonus action spends one use (bard_inspiration_uses, maximum = the Charisma modifier, at
-*comment least 1; refresh_class_resource_maxs sets it, and a short or long rest returns every use, the short-rest rule being a house rule). The die is bard_inspiration_die_sides
-*comment (d6, d8 at level 5, d10 at 10, d12 at 15). An ally in the fight is inspired when there is one (combat_inspired_ally = its slot); otherwise the Bard inspires
-*comment themselves (combat_inspired_self), as a house rule so the feature is not dead in solo fights. The Bard's held die is applied in roll_d20_check (dice_engine.txt), so it
-*comment covers every player attack roll (weapon and spell), ability check and saving throw: rolled only when the roll would FAIL and added to it, deciding after the d20 like 5e, and lost
-*comment whether or not it is enough. It lasts through the fight (5e's 10 minutes is not modelled). An inspired ally's die is applied in resolve_ally_attack (combat_dice.txt).
-*comment bard_inspiration_started is false until the first refresh_class_resource_maxs of a Bard, which fills the uses to the maximum once.
+*comment Bardic Inspiration uses and die scale with level; rests restore uses. It targets an ally or the Bard in solo combat and is consumed on a failed d20 roll.
+*comment bard_inspiration_started initializes a Bard's uses once after resource maxima are first refreshed.
 *create bard_inspiration_uses 0
 *create bard_inspiration_started false
 *create bard_inspiration_max 0
