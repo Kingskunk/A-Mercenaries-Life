@@ -2839,6 +2839,52 @@
 *set jug_full jf_total
 *return
 
+*comment *gosub_scene equipment jug_fill_some   (input jug_fill_take; fills that many empty carried jugs, up to the number available; output jug_fill_n)
+*label jug_fill_some
+*gosub jug_empties
+*set jug_fill_n jug_fill_take
+*if (jug_fill_n > jug_empty_n)
+  *set jug_fill_n jug_empty_n
+*if (jug_fill_n < 0)
+  *set jug_fill_n 0
+*set jug_full (jug_full + jug_fill_n)
+*return
+
+*comment *gosub_scene equipment jug_refill_menu   (inputs jug_refill_source and jug_refill_time_id; offers 1, 3, or all empty carried jugs, advances five minutes, output jug_fill_n)
+*label jug_refill_menu
+*set jug_fill_n 0
+*gosub jug_empties
+*if (jug_empty_n <= 0)
+  *return
+*choice
+  # Fill 1 water jug. [~5 min]
+    *set jug_fill_take 1
+    *goto jug_refill_complete
+  *if (jug_empty_n >= 3)
+    # Fill 3 water jugs. [~5 min]
+      *set jug_fill_take 3
+      *goto jug_refill_complete
+  *if (jug_empty_n > 1)
+    # Fill all ${jug_empty_n} empty water jugs. [~5 min]
+      *set jug_fill_take jug_empty_n
+      *goto jug_refill_complete
+  # Leave the water where it is.
+    *return
+
+*label jug_refill_complete
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *gosub jug_fill_some
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+You fill the empty @{(jug_fill_n = 1)jug|jugs} from ${jug_refill_source}, then press @{(jug_fill_n = 1)the cork home|their corks home} before the water can spill.
+*line_break
+[b][💧 Water Jugs: @{(jug_fill_n = 1)1 jug|${jug_fill_n} jugs} filled | ${jug_full} full][/b]
+*set hours_to_pass 0
+*set minutes_to_pass 5
+*set time_advance_call_id jug_refill_time_id
+*gosub_scene calendar advance_time
+*return
+
 *comment *gosub_scene equipment jug_empties   (output jug_empty_n: how many carried jugs are empty)
 *label jug_empties
 *set jug_empty_n 0

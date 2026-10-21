@@ -230,6 +230,10 @@
     *gosub mw_walk_time
     *if ((dry_lion_hook_seen) and (not(dry_lion_quest_stage = "resolved")))
       *goto_scene port_valen/MiddlewardQuest/dry_lion dry_lion_return
+    *if ((dry_lion_resolution = "failed") and (campaign_day <= dry_lion_outage_until_day))
+      The lion-head spouts are dry, and a rope keeps people off the flags around the basin until the city repair crew has the line open again.
+      *page_break Step back from the conduit…
+      *goto mw_conduit_square
 
     *temp spout_flavor 0
     *rand spout_flavor 1 3
@@ -267,6 +271,10 @@
       *comment Daytime
       You wipe your mouth with the back of your sleeve and step back from the fountain, feeling refreshed and grounded as the regular craft noise of the Middle Ward hums along the lanes around you.
 
+    *if (has_water_jug)
+      *set jug_refill_source "the lion-head spouts"
+      *set jug_refill_time_id "mw_spout_fill"
+      *gosub_scene equipment jug_refill_menu
     *page_break Step back from the conduit…
     *goto mw_conduit_square
   # Travel to another district in the city.
@@ -905,6 +913,8 @@ You turn the key twice in the lock and step into your room. Directly beneath the
 *temp room_days_left (mw_rent_expiry_day - campaign_day)
 [i]Lease: ${room_days_left} days remaining until sunset.[/i]
 
+*if (has_water_jug)
+  *gosub_scene equipment jug_empties
 *choice
   # Bar the heavy door and sleep on your cot. [~8 Hours]
     *goto mw_room_sleep
@@ -912,6 +922,14 @@ You turn the key twice in the lock and step into your room. Directly beneath the
     *goto mw_room_short_rest
   # Pour well-water into the tin basin and wash off road grime. [~10 min]
     *goto mw_room_wash
+  *if ((has_water_jug) and (jug_empty_n > 0))
+    # Refill water jugs from the lodging's water supply. [~5 min]
+      *set jug_refill_source "the lodging's water cask"
+      *set jug_refill_time_id "mw_room_fill"
+      *gosub_scene equipment jug_refill_menu
+      *if (jug_fill_n > 0)
+        *page_break Back to your chamber…
+      *goto mw_room_hub
   # Sit by the narrow casement to observe the district. [~15 min]
     *goto mw_room_reflect
   # Lock the room and head back down the stairs.
@@ -1270,11 +1288,21 @@ You turn the iron key and step into a narrow room under the eaves at the back of
 *elseif ((ground_state = "wet") and (not(weather_wet)))
   The air in the room is faintly damp.
 
+*if (has_water_jug)
+  *gosub_scene equipment jug_empties
 *choice
   # Bar the door and sleep in the bed. [~8 Hours]
     *goto mw_inn_sleep
   # Pour water into the tin basin and wash off road grime. [~10 min]
     *goto mw_inn_wash
+  *if ((has_water_jug) and (jug_empty_n > 0))
+    # Ask for water to refill your jugs. [~5 min]
+      *set jug_refill_source "a pail from the yard pump"
+      *set jug_refill_time_id "mw_inn_fill"
+      *gosub_scene equipment jug_refill_menu
+      *if (jug_fill_n > 0)
+        *page_break Back to your room…
+      *goto mw_inn_room
   # Go back down to the hall.
     *goto mw_inn_hall
 

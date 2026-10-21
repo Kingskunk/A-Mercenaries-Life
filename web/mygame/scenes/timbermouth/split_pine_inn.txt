@@ -291,11 +291,21 @@ You turn the iron key and step into a narrow room under the roof at the back of 
 *elseif ((ground_state = "wet") and (not(weather_wet)))
   The air in the room is faintly damp.
 
+*if (has_water_jug)
+  *gosub_scene equipment jug_empties
 *choice
   # Bar the door and sleep in the bed. [~8 Hours]
     *goto tm_inn_sleep
   # Pour water into the tin basin and wash off road grime. [~10 min]
     *goto tm_inn_wash
+  *if ((has_water_jug) and (jug_empty_n > 0))
+    # Ask for water to refill your jugs. [~5 min]
+      *set jug_refill_source "a pail from the well"
+      *set jug_refill_time_id "tm_inn_fill"
+      *gosub_scene equipment jug_refill_menu
+      *if (jug_fill_n > 0)
+        *page_break Back to your room…
+      *goto tm_inn_room
   # Go back down to the hall.
     *goto tm_inn_hall
 

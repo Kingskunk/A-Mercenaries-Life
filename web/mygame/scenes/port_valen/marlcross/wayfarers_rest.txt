@@ -219,11 +219,21 @@ The room beneath the low roof holds a plank bed, a straw mattress, a folded wool
 *elseif ((weather = "Snow") or (weather = "Sleet"))
   Cold rests against the window wall, though the room itself remains dry.
 
+*if (has_water_jug)
+  *gosub_scene equipment jug_empties
 *choice
   # Bar the door and sleep in the bed. [~8 Hours]
     *goto mc_rest_sleep
   # Wash in the basin. [~10 min]
     *goto mc_rest_wash
+  *if ((has_water_jug) and (jug_empty_n > 0))
+    # Ask for water to refill your jugs. [~5 min]
+      *set jug_refill_source "a pail from the well"
+      *set jug_refill_time_id "mc_rest_fill"
+      *gosub_scene equipment jug_refill_menu
+      *if (jug_fill_n > 0)
+        *page_break Back to your room...
+      *goto mc_rest_room
   # Go back down to the inn.
     *goto mc_wayfarers_rest_main
 

@@ -799,11 +799,6 @@ The crates are on the stone. The crew is huddled around the load, their backs co
   The faint, phantom clatter of Watch boot-irons continues to echo down the north tunnel, keeping every man on the platform on edge.
 
 *choice
-  *if ((known_guidance) and (not(guidance_active)))
-    # [Cantrip: Guidance] Murmur a quiet divination blessing to steady your nerves and reflexes.
-      *set guidance_active true
-      You whisper a soft warding rhyme, feeling the subtle warmth of divination settle behind your eyes.
-      *goto pv_silt_gate_stakeout
   *if ((known_prestidigitation) and (not(silt_gate_lamp_snuffed)))
     # [Cantrip: Prestidigitation] Snuff the platform's fish-oil lamp with a whispered friction-word from across the dark water.
       *set silt_gate_lamp_snuffed true
@@ -1113,10 +1108,6 @@ The market runs along the lane on broken stone and packed cinder, with planks la
   *if (((day_of_week = "Marketday") and (not(cut_market_night))) and (cut_market_watch_day < campaign_day))
     # Stand at the edge of the crowd and watch the pickpockets work.@{show_stat_hints  [WIS DC 12]|}
       *set cut_market_watch_day campaign_day
-      *set hours_to_pass 0
-      *set minutes_to_pass 20
-      *set time_advance_call_id "cut_market_watch_1"
-      *gosub_scene calendar advance_time
       *gosub_scene dice_engine roll_skill_check 12 "perception" "" "" "" "" ""
       *if (check_success)
         You pick out the pattern in a minute: two lads drifting apart to bracket a distracted mark, a third coming through the middle with eyes on the sky. When a hand dips toward an unguarded pocket, you catch the wrist in an iron grip. The boy squawks, twists free, and vanishes between the stalls with his crew. The mark, pale with sudden relief, presses two copper bits into your palm before hurrying off.
@@ -1138,6 +1129,10 @@ The market runs along the lane on broken stone and packed cinder, with planks la
           [b][💰 Purse Lifted: -3 Copper Bits][/b]
         *else
           There was little enough in your purse to take.
+      *set hours_to_pass 0
+      *set minutes_to_pass 20
+      *set time_advance_call_id "cut_market_watch_1"
+      *gosub_scene calendar advance_time
       *gosub_scene calendar recalc_hp_from_neglect
       *if (hp_current <= 0)
         *set death_cause "starvation"
@@ -1680,6 +1675,8 @@ A thickset foreman in a stiff oxhide coat stands on an upturned nail-keg, whittl
     *set exposure_base_mins 360
     *gosub_scene calendar calc_exposure
     *set time_advance_call_id "cut_landing_shift_1"
+    *comment The six hours are part of the checked shift, so a Guidance cast ahead is held through them (guidance_hold, cleared by the roll below).
+    *set guidance_hold true
     *gosub_scene calendar advance_time
     *comment cut_labor_day is stamped AFTER advance_time, not before (2026-09-30) -- a 6-hour shift is far more
     *comment likely to cross midnight than most time-costing actions, and the same refresh-duplication shape as
@@ -2461,17 +2458,6 @@ Steps go down from the green door into a low brick cellar lit by two lamps. A do
 *choice
   *if ((cut_dice_day < campaign_day) and ((((gold * 100) + (silver * 10)) + copper) >= 4))
     # Put down four copper bits and read the throw.@{show_stat_hints  [4 Copper Bits, WIS DC 12]|}
-      *set hours_to_pass 0
-      *set minutes_to_pass 20
-      *set time_advance_call_id "cut_dice_1"
-      *gosub_scene calendar advance_time
-      *comment cut_dice_day is stamped AFTER advance_time, not before (2026-09-30, real bug caught live via
-      *comment refresh_fuzz_test.js + a targeted scripted_play.js repro): stamping it with the PRE-advance
-      *comment campaign_day and then crossing midnight during this same call means a refresh replaying from this
-      *comment exact point re-reads campaign_day from a snapshot where the day has ALREADY rolled over, stamping a
-      *comment different (later) day than the original run did. Stamping after advance_time reads the same,
-      *comment already-settled value on both the original run and any replay.
-      *set cut_dice_day campaign_day
       You have watched enough hands to think you can read the bones.
       *gosub_scene dice_engine roll_skill_check 12 "perception" "" "" "" "" ""
       *if (check_success)
@@ -2492,6 +2478,17 @@ Steps go down from the green door into a low brick cellar lit by two lamps. A do
           *set locked_currency_txn_page_id page_id
 
         [b][🎲 Lost the Throw: -4 Copper Bits][/b]
+      *set hours_to_pass 0
+      *set minutes_to_pass 20
+      *set time_advance_call_id "cut_dice_1"
+      *gosub_scene calendar advance_time
+      *comment cut_dice_day is stamped AFTER advance_time, not before (2026-09-30, real bug caught live via
+      *comment refresh_fuzz_test.js + a targeted scripted_play.js repro): stamping it with the PRE-advance
+      *comment campaign_day and then crossing midnight during this same call means a refresh replaying from this
+      *comment exact point re-reads campaign_day from a snapshot where the day has ALREADY rolled over, stamping a
+      *comment different (later) day than the original run did. Stamping after advance_time reads the same,
+      *comment already-settled value on both the original run and any replay.
+      *set cut_dice_day campaign_day
       *gosub_scene calendar recalc_hp_from_neglect
       *if (hp_current <= 0)
         *set death_cause "starvation"
@@ -3411,11 +3408,6 @@ Somewhere along it, a scarred young man is spending the parish's money.
     *set hint_shr_cha " [CHA DC 12]"
 
 *choice
-  *if ((known_guidance) and (not(guidance_active)))
-    # [Cantrip: Guidance] Murmur the focusing verse and let the street sort itself out.
-      *set guidance_active true
-      You breathe the verse out, and the noise of the terrace settles into things you can use.
-      *goto shroud_b2_hub
   # Follow what he left behind.${hint_shr_int}
     *gosub_scene dice_engine roll_skill_check 12 "investigation" "" "" "" "" ""
     *if (check_success)
@@ -3510,11 +3502,6 @@ The scarred one is already reaching under the barrel-head, and something long an
     *set hint_shr_cha2 " [CHA DC 12]"
 
 *choice
-  *if ((known_guidance) and (not(guidance_active)))
-    # [Cantrip: Guidance] Murmur the focusing verse and let your breathing slow.
-      *set guidance_active true
-      You breathe the verse out, and the pounding in your ears drops to something you can think through.
-      *goto shroud_b3_hub
   # Step inside the knife and put him into the barrels.${hint_shr_str}
     *gosub_scene dice_engine roll_skill_check 12 "athletics" "" "" "" "" ""
     *if (check_success)
@@ -3795,6 +3782,8 @@ A broad, steep flight of granite steps is cut directly into the sheer face of th
       *set hours_to_pass 5
       *set minutes_to_pass 0
       *set time_advance_call_id "cut_steps_search_1"
+      *comment The five hours are part of the checked wade, so a Guidance cast ahead is held through them (guidance_hold, cleared by the roll below).
+      *set guidance_hold true
       *gosub_scene calendar advance_time
       *comment Stamped AFTER advance_time, not before (2026-09-30) -- same refresh-duplication shape as
       *comment cut_dice_day/cut_labor_day's own fix: a 5-hour wade can cross midnight, and stamping with the

@@ -125,12 +125,6 @@ You cannot see the chain. You can see what the current does around it: a flat pa
   *set weather_hazard_visual true
 
 *choice
-  *if ((known_guidance) and (not(guidance_active)))
-    # [Cantrip: Guidance] Murmur the focusing cadence before the barge closes on the hazard.
-      *set guidance_active true
-      You whisper the soft focusing syllable, feeling a cool clarity steady your grip on the rail.
-      *goto transit_boom_hazard
-
   # Grab a boat-pole and brace to shove off the submerged boom the instant the hull grinds close.${hint_boom_str}
     *if (weather_hazard_physical)
       *set disadvantage true
@@ -197,12 +191,6 @@ Every mile down the gorge is paid in shivering muscles and frozen spray. The cur
     *set hint_cold_dex " [DEX Check (DC 12)]"
 
 *choice
-  *if ((known_guidance) and (not(guidance_active)))
-    # [Cantrip: Guidance] Murmur the focusing cadence against the cold and the ache in your shoulders.
-      *set guidance_active true
-      You whisper the soft focusing syllable, feeling a cool clarity settle the shiver out of your hands.
-      *goto transit_cold_approach
-
   # Grit your teeth and absorb the cold directly, saving your strength for whatever's waiting at the far end.${hint_cold_con}
     *set check_stat "con"
     *set check_dc 12
@@ -2076,18 +2064,6 @@ He looks you over again, more carefully this time.
 
 
 *label pv_crane_shift_str
-*set hours_to_pass 4
-*set minutes_to_pass 30
-*set time_advance_call_id "pv_crane_shift_str_1"
-*gosub_scene calendar advance_time
-*gosub_scene calendar recalc_hp_from_neglect
-
-*if (hp_current <= 0)
-  *set death_cause "starvation"
-  *if (neglect_damage_fatigue > neglect_damage_hunger)
-    *set death_cause "exhaustion"
-  *goto_scene death death_screen
-
 *set crane_first_shift_method "muscle"
 *gosub_scene dice_engine roll_skill_check 12 "athletics" "" "" "" "" ""
 *if (check_success)
@@ -2106,13 +2082,9 @@ He looks you over again, more carefully this time.
   Dell surveys the empty deck and nods, short. "Counted and dry. You're walking like it cost you something, but it's not costing me."
   *set crane_shift_ontime true
   *set crane_shift_damaged false
-*goto pv_crane_shift_resolve
-
-
-*label pv_crane_shift_dex
 *set hours_to_pass 4
-*set minutes_to_pass 0
-*set time_advance_call_id "pv_crane_shift_dex_1"
+*set minutes_to_pass 30
+*set time_advance_call_id "pv_crane_shift_str_1"
 *gosub_scene calendar advance_time
 *gosub_scene calendar recalc_hp_from_neglect
 
@@ -2122,6 +2094,10 @@ He looks you over again, more carefully this time.
     *set death_cause "exhaustion"
   *goto_scene death death_screen
 
+*goto pv_crane_shift_resolve
+
+
+*label pv_crane_shift_dex
 *set crane_first_shift_method "rigging"
 *gosub_scene dice_engine roll_skill_check 12 "acrobatics" "" "" "" "" ""
 *if (check_success)
@@ -2136,13 +2112,9 @@ He looks you over again, more carefully this time.
   It's glazed pottery, half of it in pieces. Dell swears once, thoroughly, and resumes counting the rest of the hold.
   *set crane_shift_ontime true
   *set crane_shift_damaged true
-*goto pv_crane_shift_resolve
-
-
-*label pv_crane_shift_int
-*set hours_to_pass 3
-*set minutes_to_pass 45
-*set time_advance_call_id "pv_crane_shift_int_1"
+*set hours_to_pass 4
+*set minutes_to_pass 0
+*set time_advance_call_id "pv_crane_shift_dex_1"
 *gosub_scene calendar advance_time
 *gosub_scene calendar recalc_hp_from_neglect
 
@@ -2152,6 +2124,10 @@ He looks you over again, more carefully this time.
     *set death_cause "exhaustion"
   *goto_scene death death_screen
 
+*goto pv_crane_shift_resolve
+
+
+*label pv_crane_shift_int
 *set crane_first_shift_method "tally"
 *gosub_scene dice_engine roll_skill_check 11 "investigation" "" "" "" "" ""
 *if (check_success)
@@ -2168,13 +2144,9 @@ He looks you over again, more carefully this time.
   Dell checks the hold, checks the sun, and doesn't check his temper. "Counted. Late. I don't pay bonus on late."
   *set crane_shift_ontime false
   *set crane_shift_damaged false
-*goto pv_crane_shift_resolve
-
-
-*label pv_crane_shift_cha
-*set hours_to_pass 4
-*set minutes_to_pass 40
-*set time_advance_call_id "pv_crane_shift_cha_1"
+*set hours_to_pass 3
+*set minutes_to_pass 45
+*set time_advance_call_id "pv_crane_shift_int_1"
 *gosub_scene calendar advance_time
 *gosub_scene calendar recalc_hp_from_neglect
 
@@ -2184,6 +2156,10 @@ He looks you over again, more carefully this time.
     *set death_cause "exhaustion"
   *goto_scene death death_screen
 
+*goto pv_crane_shift_resolve
+
+
+*label pv_crane_shift_cha
 *set crane_first_shift_method "talked"
 *gosub_scene dice_engine roll_skill_check 11 "persuasion" "" "" "" "" ""
 *if (check_success)
@@ -2205,6 +2181,18 @@ He looks you over again, more carefully this time.
   Dell inspects the empty deck against his manifest, and against the sky. "Dry, counted, and early. I don't know what you said to him, and I don't want to."
 *else
   Dell inspects the empty belly. "Counted. Dry. Late enough the factor'll hear about it. Don't spend an hour talking next time. Spend it lifting."
+*set hours_to_pass 4
+*set minutes_to_pass 40
+*set time_advance_call_id "pv_crane_shift_cha_1"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
 *goto pv_crane_shift_resolve
 
 
@@ -2781,11 +2769,6 @@ Beneath the parchment, Bay Four's skids sit bare. Crushed bark and damp impressi
     *set hint_rib_int " [INT DC 11]"
 
 *choice
-  *if ((known_guidance) and (not(guidance_active)))
-    # [Cantrip: Guidance] Murmur a quiet divination blessing to steady your mind and senses.
-      *set guidance_active true
-      You trace a calming sign across your temples and murmur an old divination verse. A faint prickle of clairvoyance steadies your pulse and sharpens the edges of everything in the yard.
-      *goto beat_3_investigation_hub
   # Follow the fresh drag-scrapes and crushed bark in the mud leading away from Bay Four.${hint_rib_wis}
     *gosub_scene dice_engine roll_skill_check 11 "survival" "" "" "" "" ""
     *if (check_success)
@@ -3680,11 +3663,6 @@ You lay a hand on the frame post the way the watermen do. The timber is slick, a
     *set hint_bell_dex (hint_bell_dex & " (Advantage)")
 
 *choice
-  *if ((known_guidance) and (not(guidance_active)))
-    # [Cantrip: Guidance] Murmur the focusing verse under the noise of the surf.
-      *set guidance_active true
-      You breathe the verse out through your teeth, and the shake goes out of your hands.
-      *goto bell_b2_hub
   # Climb the frame and tear the wool off the striker by hand.${hint_bell_str}
     *gosub_scene dice_engine roll_skill_check 12 "athletics" "" "" "" "" ""
     *if (check_success)
@@ -3779,11 +3757,6 @@ Below the head of the stone, the oars stop. The boat bumps the foot of the ladde
     *set hint_bell_wis " [WIS DC 12]"
 
 *choice
-  *if ((known_guidance) and (not(guidance_active)))
-    # [Cantrip: Guidance] Murmur the focusing verse and let your breathing slow.
-      *set guidance_active true
-      You breathe the verse out, and the pounding in your ears drops to something you can think through.
-      *goto bell_b3_hub
   # Tell them the whole harbor heard that bell, and the Watch is coming.${hint_bell_cha}
     *gosub_scene dice_engine roll_skill_check 12 "persuasion" "" "" "" "" ""
     *if (check_success)
@@ -4201,11 +4174,6 @@ You take a place at the rail along the top of the block. Below it, boats are hau
     *set hint_fish_study " [INT DC 11]"
 
 *choice
-  *if ((known_guidance) and (not(guidance_active)))
-    # [Cantrip: Guidance] Murmur a quiet blessing to steady your eyes and your patience.
-      *set guidance_active true
-      You breathe out a short divination verse, and the noise of the block seems to draw back a step.
-      *goto fish_block_hub
   *if (not(fish_met_wenna))
     # Follow the woman with the empty baskets down the ramp and ask what just happened.
       *goto fish_wenna_talk

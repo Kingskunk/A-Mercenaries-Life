@@ -189,11 +189,21 @@ The room beneath the roof holds a plank bed, straw mattress, folded wool blanket
 *elseif ((weather = "Snow") or (weather = "Sleet"))
   Cold clings to the window wall, though the room itself stays dry.
 
+*if (has_water_jug)
+  *gosub_scene equipment jug_empties
 *choice
   # Bar the door and sleep in the bed. [~8 Hours]
     *goto rv_lantern_sleep
   # Wash in the basin. [~10 min]
     *goto rv_lantern_wash
+  *if ((has_water_jug) and (jug_empty_n > 0))
+    # Ask for water to refill your jugs. [~5 min]
+      *set jug_refill_source "a pail from the covered pump"
+      *set jug_refill_time_id "rv_lantern_fill"
+      *gosub_scene equipment jug_refill_menu
+      *if (jug_fill_n > 0)
+        *page_break Back to your room...
+      *goto rv_lantern_room
   # Go back down to the Red Lantern.
     *goto rv_lantern_main
 
