@@ -24,6 +24,8 @@
       silt_j4: { x: 2, y: 1, kind: "hall" },
       silt_j6: { x: 3, y: 1, kind: "hall" },
       silt_j7: { x: 4, y: 1, kind: "hall" },
+      silt_r6: { x: 5, y: 1, kind: "room", name: "Service Chamber" },
+      silt_x4: { x: 6, y: 1, kind: "exit", name: "Patrician Court" },
       silt_r2: { x: 3, y: -1, kind: "room", name: "Gate Hall" },
       silt_r3: { x: 4, y: -1, kind: "room", name: "Collapsed Run" },
       silt_x2: { x: 2, y: 2, kind: "exit", name: "Cellar" },
@@ -32,6 +34,6 @@
       silt_r4: { x: 5, y: 2, kind: "room", name: "Lair" },
       silt_r5: { x: 6, y: 2, kind: "room", name: "Vault" }
     },
-    edges: [["silt_x1", "silt_j1"], ["silt_j1", "silt_r1"], ["silt_j1", "silt_j2"], ["silt_j2", "silt_j3"], ["silt_j2", "silt_j4"], ["silt_j3", "silt_r2"], ["silt_j3", "silt_j5"], ["silt_j4", "silt_x2"], ["silt_j4", "silt_j6"], ["silt_j5", "silt_r3"], ["silt_j5", "silt_j7"], ["silt_j6", "silt_x3"], ["silt_j6", "silt_j7"], ["silt_j7", "silt_j8"], ["silt_j8", "silt_r4"], ["silt_r4", "silt_r5"]]
+    edges: [["silt_x1", "silt_j1"], ["silt_j1", "silt_r1"], ["silt_j1", "silt_j2"], ["silt_j2", "silt_j3"], ["silt_j2", "silt_j4"], ["silt_j3", "silt_r2"], ["silt_j3", "silt_j5"], ["silt_j4", "silt_x2"], ["silt_j4", "silt_j6"], ["silt_j5", "silt_r3"], ["silt_j5", "silt_j7"], ["silt_j6", "silt_x3"], ["silt_j6", "silt_j7"], ["silt_j7", "silt_r6"], ["silt_r6", "silt_x4"], ["silt_j7", "silt_j8"], ["silt_j8", "silt_r4"], ["silt_r4", "silt_r5"]]
   };
 })();

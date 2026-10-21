@@ -3,10 +3,10 @@
 *comment Encounter Picker" -> "Walk the Silt-Gate channels"); later a Dredge-End lead, the cellar trapdoor and the Middle Ward cistern lead in. A *goto_scene-only scene
 *comment like the district files, NOT in *scene_list, listed in compile.js.
 *comment
-*comment THE MAP (8 hallway junctions, 5 rooms, 3 dead-end exits; the exits are also the ways in). Directions are consistent both ways.
+*comment THE MAP (8 hallway junctions, 6 rooms, 4 dead-end exits; the exits are also the ways in). Directions are consistent both ways.
 *comment   x1 (channel mouth) is west of J1.   J1: x1 W, Landing S, J2 E.   J2: J1 W, J3 E, J4 S.   J3: J2 W, Gate Hall N, J5 E.
 *comment   J4: J2 N, x2 (cellar ladder) S, J6 E.   J5: J3 W, Collapsed Run N, J7 S.   J6: J4 W, x3 (cistern ladder) S, J7 E.   J7: J6 W, J5 N, J8 S.
-*comment   J8: J7 N, Lair E.   The Lair opens on the Vault to the east. Ladders go at hallway dead ends, never inside a room where something lives.
+*comment   J7 also opens east on the Dry Service Chamber and its Patrician service shaft. J8: J7 N, Lair E. The Lair opens on the Vault to the east.
 *comment
 *comment HOW A MOVE RUNS. Each option sets dg_dest and dg_dest_hall and goes to pvsc_move, which calls dungeon.txt dg_step (10 minutes, one step of light, a 40% encounter
 *comment roll on a hallway step), prompts for light if it just died, shows the encounter if one rolled, then lands on the new node. Rooms are STUBS: their prose is a
@@ -51,6 +51,18 @@ It is a round slab, heavy, but its rim is worn bright where it has been levered 
 *gosub_scene dungeon dg_run_begin
 *goto pvsc_begin
 
+*label pvsc_enter_patrician_drain
+You ease shut the service door behind you and descend the narrow stair by its cold iron rail. The sounds of the avenue fade above, replaced by the small, steady drip of water in old brick.
+*line_break
+*set dg_mins 10
+*set dg_time_id "enter_patrician_drain"
+*gosub_scene dungeon dg_time
+*set dg_table "silt_conduits"
+*set dg_start "silt_x4"
+*set dg_dev_entry false
+*gosub_scene dungeon dg_run_begin
+*goto pvsc_begin
+
 *label pvsc_exit_silt_gates
 You climb the wet steps, put your shoulder to the grating and step out onto the timber walkway, blinking in the open air with the channel muttering behind you. You pull the grating shut.
 *page_break Step out onto the walkway…
@@ -72,6 +84,19 @@ You climb the wet steps, put your shoulder to the grating and step out onto the 
   You lift it a finger's width and wait for the nearest washer to look away, then slide out and ease the stone back into its ring. Nobody looks twice at one more figure by the bakery wall.
 *page_break Step into the yard…
 *goto_scene port_valen/port_valen_middle_ward mw_wash_yard
+
+*label pvsc_exit_patrician_drain
+*if (not(dg_patrician_drain_locked)) or (not(locked_dg_patrician_drain_page_id = page_id))
+  *set dg_patrician_drain_first (not(patrician_drain_open))
+  *set patrician_drain_open true
+  *set dg_patrician_drain_locked true
+  *set locked_dg_patrician_drain_page_id page_id
+*if (dg_patrician_drain_first)
+  You climb until your shoulder meets a square iron cover. A simple bar holds it from above. You work it free, push the cover aside, and climb into a small service court screened from the avenue by a high wall. You leave the bar unseated; from now on the cover will lift from either side.
+*else
+  You climb the stair, lift the unbarred cover, and step into the small service court above.
+*page_break Step into the service court…
+*goto_scene port_valen/port_valen_upper_wharves pq_enter_service_drain
 
 *label pvsc_x2_bolted
 You climb to the trapdoor and push with your shoulder. It lifts a thumb's width and stops against a bolt on the far side. Whatever is above is not for you to open from here.
@@ -186,6 +211,10 @@ You scrape a bold cross into the brick at head height, so you will know this jun
   *goto pvsc_n_x3
 *if (dg_pos = "silt_j7")
   *goto pvsc_n_j7
+*if (dg_pos = "silt_r6")
+  *goto pvsc_n_r6
+*if (dg_pos = "silt_x4")
+  *goto pvsc_n_x4
 *if (dg_pos = "silt_j8")
   *goto pvsc_n_j8
 *if (dg_pos = "silt_r4")
@@ -852,9 +881,9 @@ Nothing more can be shifted without bringing the rest of the roof down.
 *line_break
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  Passages open west, north and south, and to the east your hand meets brick, an arch bricked up solid. The floor is gritty, and the south passage smells of something sour.
+  Passages open west, north and south. To the east, the old brickwork gives way to a narrow service arch, and dry air comes through it, carrying a faint trace of beeswax. The floor is gritty, and the south passage smells of something sour.
 *else
-  Four passages meet here, and the brick is scratched with chalk crosses and arrows where others have marked the wall before you. The arch to the east has been bricked up, the mortar newer than the wall around it. Long, wide scrapes in the grime run up from the south passage, broader than any boot.
+  Four passages meet here, and the brick is scratched with chalk crosses and arrows where others have marked the wall before you. The east arch was once bricked up, but the centre has been cut back into a narrow service passage. Its stone is cleaner and better dressed than the conduit brick, and dry air comes through it carrying a faint trace of beeswax. Long, wide scrapes in the grime run up from the south passage, broader than any boot.
 *set dg_wet 1
 *gosub_scene dungeon dg_env
 *gosub_scene dungeon dg_status_line
@@ -871,10 +900,59 @@ Nothing more can be shifted without bringing the rest of the roof down.
     *set dg_dest "silt_j8"
     *set dg_dest_hall true
     *goto pvsc_move
+  # Go east through the service arch.
+    *set dg_dest "silt_r6"
+    *set dg_dest_hall false
+    *goto pvsc_move
   *if (dg_chalk_ok)
     # Mark this junction with chalk. [~5 min]
       *gosub_scene dungeon dg_chalk_mark
       *goto pvsc_chalked
+
+*label pvsc_n_r6
+
+[b]◈ THE DRY SERVICE CHAMBER[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  The air dries at once. Your hand finds close-set stone blocks, smoother than the conduit brick, and a narrow stair rising east beneath a low arch. The faint scent of wax and lavender comes down from above.
+*else
+  A small barrel-vaulted chamber has been built into the old conduit line with pale, close-set stone. The floor falls gently toward a covered drain in the west wall, but it is dry underfoot. A narrow stair rises east beneath a low arch, its iron rail polished where many hands have used it. A faded three-masted seal is cut into the lintel above it.
+*set dg_wet 0
+*gosub_scene dungeon dg_env
+*gosub_scene dungeon dg_status_line
+*choice
+  # Go east up the service stair to the covered court above.
+    *set dg_dest "silt_x4"
+    *set dg_dest_hall false
+    *goto pvsc_move
+  # Go west, back to the four ways.
+    *set dg_dest "silt_j7"
+    *set dg_dest_hall true
+    *goto pvsc_move
+
+*label pvsc_n_x4
+
+[b]◈ THE SERVICE SHAFT[/b]
+*line_break
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  A tight stair of dressed stone rises to a square iron cover. Fresh air slips through its rim, scented faintly with lavender and horse leather.
+*else
+  The stair ends beneath a square iron cover set in a ring of pale stone. Its hinges are oiled, its edges clean, and a slim iron bar lies across it in brackets. Fresh air slips through the rim, scented faintly with lavender and horse leather.
+*set dg_wet 0
+*gosub_scene dungeon dg_env
+*gosub_scene dungeon dg_status_line
+*choice
+  # Climb up to the service court above.
+    *gosub_scene dungeon dg_run_end
+    *if (dg_dev_entry)
+      *goto_scene dev_hub dev_dungeon_test_hub
+    *goto pvsc_exit_patrician_drain
+  # Go west, back down the service stair.
+    *set dg_dest "silt_r6"
+    *set dg_dest_hall false
+    *goto pvsc_move
 
 
 *label pvsc_n_j8
@@ -1562,6 +1640,7 @@ It speaks in a dry, quick whisper, and it does not like the wet. "Big drowned on
 *set dg_done_silt_x1 false
 *set dg_done_silt_x2 false
 *set dg_done_silt_x3 false
+*set dg_done_silt_x4 false
 *set dg_done_silt_j1 false
 *set dg_done_silt_j2 false
 *set dg_done_silt_j3 false
@@ -1575,6 +1654,7 @@ It speaks in a dry, quick whisper, and it does not like the wet. "Big drowned on
 *set dg_done_silt_r3 false
 *set dg_done_silt_r4 false
 *set dg_done_silt_r5 false
+*set dg_done_silt_r6 false
 *set dg_silt_r1_tally false
 *set dg_silt_r1_tally_ok false
 *set dg_silt_r1_search false
@@ -1604,6 +1684,7 @@ It speaks in a dry, quick whisper, and it does not like the wet. "Big drowned on
 *set dg_seen_silt_x1 false
 *set dg_seen_silt_x2 false
 *set dg_seen_silt_x3 false
+*set dg_seen_silt_x4 false
 *set dg_seen_silt_j1 false
 *set dg_seen_silt_j2 false
 *set dg_seen_silt_j3 false
@@ -1617,9 +1698,11 @@ It speaks in a dry, quick whisper, and it does not like the wet. "Big drowned on
 *set dg_seen_silt_r3 false
 *set dg_seen_silt_r4 false
 *set dg_seen_silt_r5 false
+*set dg_seen_silt_r6 false
 *set dg_mark_silt_x1 false
 *set dg_mark_silt_x2 false
 *set dg_mark_silt_x3 false
+*set dg_mark_silt_x4 false
 *set dg_mark_silt_j1 false
 *set dg_mark_silt_j2 false
 *set dg_mark_silt_j3 false
@@ -1633,6 +1716,7 @@ It speaks in a dry, quick whisper, and it does not like the wet. "Big drowned on
 *set dg_mark_silt_r3 false
 *set dg_mark_silt_r4 false
 *set dg_mark_silt_r5 false
+*set dg_mark_silt_r6 false
 *return
 
 *comment The level-up quest total (character_progression.txt refresh_quests_finished). The Silt-Gate vault counts once the strongbox has been opened, by the pick or the break-off; a failed try never does.

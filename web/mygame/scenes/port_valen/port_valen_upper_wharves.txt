@@ -54,6 +54,24 @@
   *goto pq_avenue
 *goto pq_gate_refused
 
+*label pq_enter_service_drain
+*set current_district "upper_wharves"
+*gosub_scene calendar update_hub_condition
+*temp pqd_admitted false
+*if ((patrician_reg_until >= campaign_day) or (patrician_day_writ_day = campaign_day))
+  *set pqd_admitted true
+*if (((rj_pest_stage = "active") and (rj_pest_where = "quarter")) and (campaign_day <= rj_pest_until))
+  *set pqd_admitted true
+*if (((rj_perf_stage = "active") and (rj_perf_where = "quarter")) and (campaign_day <= rj_perf_until))
+  *set pqd_admitted true
+*if (pqd_admitted)
+  A service court lies behind the avenue wall, quiet except for a horse shifting in its stall. You close the iron cover behind you and pass through the small door into the Patrician Quarter.
+  *line_break
+  *goto pq_avenue
+A house guard is waiting in the service court when you emerge. He takes in the open cover, then you. "This is not an entrance," he says. "Inner Gate." He walks you there without touching you, and the guards at the arch turn you back toward Civic Heights.
+*page_break Step back from the Inner Gate…
+*goto pq_gate_refused
+
 *comment ── SHARED PIECES ──
 
 *label pq_walk_time
@@ -434,6 +452,9 @@ A guard lowers his halberd across the arch as you approach. "Writ," he says. You
     *set time_advance_call_id "pq_walk_gate_1"
     *gosub pq_walk_time
     *goto pq_gate
+  *if (patrician_drain_open)
+    # Take the service stair down to the old drain. [~10 min]
+      *goto_scene port_valen/port_valen_silt_conduits pvsc_enter_patrician_drain
   # [Travel: Head to another district]
     *goto_scene port_valen/port_valen port_valen_travel
 

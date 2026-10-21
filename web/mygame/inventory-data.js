@@ -263,7 +263,7 @@
       id: "heartwood_fruit", category: "consumables", owned: "has_heartwood_fruit",
       weight: 0.1, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_heartwood_fruit) || 0); return "Heartwood Fruit" + (n > 1 ? " ×" + n : ""); },
-      description: "Pale fruit from the old tree in the Longshade; one a day is a training session.",
+      description: "Pale fruit from the old tree in the Longshade.",
       badge: "One training session, once a day",
       use: true
     },
