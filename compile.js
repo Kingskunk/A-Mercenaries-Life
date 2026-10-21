@@ -366,6 +366,7 @@ function compile(){
   // The Longshade Forest dungeon (2026-10-14): a *goto_scene-only scene entered from the overworld tiles lf and ua.
   verifyFileName("longshade/longshade_forest.txt");
   verifyFileName("longshade/longshade_dryad.txt");
+  verifyFileName("prologue/class_select.txt");
 
   //Check startup.txt for a *scene_list
   var sceneList = false;

@@ -79,6 +79,7 @@ const MAP = {
   gloves_lined: "Bracers_Barbarian_Unfaded_Icon.png",         // Lined Gloves
   gloves_master: "Spellseeking_Gloves_Unfaded_Icon.png",      // Spellseeker Gloves
   boots: "Boots_Leather_Unfaded_Icon.png",
+  boots_iron_heel: "../Generic/Brants_Iron_Heel_Boots_Generated_Source.png", // Brant's shipyard reward
   boots_rain: "Boots_Leather_A_Unfaded_Icon.png",             // Rain Boots
   boots_winter: "Shoes_Barbarian_Unfaded_Icon.png",          // Winter Boots
   shoes_dancing: "Camp_Shoes_C_Unfaded_Icon.webp",            // Swallowstep Shoes

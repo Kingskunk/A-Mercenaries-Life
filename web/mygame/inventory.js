@@ -167,7 +167,7 @@
     wool_muffler: "neck_muffler", silk_neckcloth: "neck_cravat", scrap_steel: "scrap", frog_slime: "frog_slime", honeycomb: "honeycomb", heartwood_fruit: "heartwood_fruit", centipede_gland: "gland", viper_venom: "venom", grave_ichor: "ichor",
     sluice_moss: "sluice_moss", brinecap: "brinecap", pale_crackroot: "pale_crackroot", cistern_spores: "cistern_spores", glowmold: "glowmold",
     silverleaf: "silverleaf", oakheart_balsam: "oakheart_balsam", shadefern: "shadefern", acorn_truffle: "acorn_truffle", brambleberry: "brambleberry",
-    talia_oiled_cloak: "cloak", rorik_grip_wraps: "gloves", rorik_campaign_belt: "belt", talia_deck_boots: "boots", brant_iron_heel_boots: "boots",
+    talia_oiled_cloak: "cloak", rorik_grip_wraps: "gloves", rorik_campaign_belt: "belt", talia_deck_boots: "boots", brant_iron_heel_boots: "boots_iron_heel",
     althea_votive_ring: "ring", night_eye_ring: "ring", hearthstone_talisman: "stone", odessa_salve: "salve", fish_cache: "fish", kestrel_dispatch: "letter", ysolde_requisition: "letter",
     vanguard_grease_chit: "note", customs_vellum: "ledger", waterproof_gear: "jug", talia_provisions: "food", rotten_rib_splinter: "splinter",
     gem_agate: "gem_agate", gem_citrine: "gem_citrine", gem_quartz: "gem_quartz", gem_aquamarine: "gem_aquamarine", gem_opal: "gem_opal", gem_pearl: "gem_pearl", gem_sapphire: "gem_sapphire", gem_ruby: "gem_ruby", gem_emerald: "gem_emerald", gem_diamond: "gem_diamond",

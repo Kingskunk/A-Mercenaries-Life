@@ -98,7 +98,7 @@
     function (s) { return s.sceneName === "prologue/company_intake" && s.scenery_subplace === "prologue_carrion_compound" ? "carrion_compound" : undefined; }, // Iron Carrion intake and munitions camp
     function (s) { return s.sceneName === "prologue/company_intake" && s.scenery_subplace === "prologue_flashback_village" ? "village_green" : undefined; }, // Ashbrook memory
     function (s) { return s.sceneName === "prologue/company_intake" && s.scenery_subplace === "prologue_flashback_dredge" ? "dredge_end" : undefined; }, // Dredge-End memory
-    function (s) { return s.sceneName === "prologue/camp_night" || s.sceneName === "prologue/dawn_trial" ? "carrion_compound" : undefined; }, // company bivouac and dawn trials
+    function (s) { return s.sceneName === "prologue/camp_night" || s.sceneName === "prologue/dawn_trial" || s.sceneName === "prologue/class_select" ? "carrion_compound" : undefined; }, // company bivouac and dawn trials
     function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_alderford_riverfront" ? "alderford" : undefined; }, // prologue Alderford hub and morning muster
     function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_curing_sheds" ? "generic_curing_shed" : undefined; }, // Alderford fish-curing shed
     function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_cadre_pavilion" ? "carrion_compound" : undefined; }, // Carrion's riverside medical marquee
