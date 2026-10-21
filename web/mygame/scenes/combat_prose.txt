@@ -266,6 +266,8 @@
 *comment test is not optional: this label is also the enemy-as-attacker narration for interception and chase
 *comment (combat.txt's three "enemy" call sites), so a flag left true from an ally's turn would otherwise narrate an
 *comment ENEMY's sword swing as a knife attack.
+*temp fnaa_type {(fnaa_ap & "flavor_type")}
+*temp fnaa_claws ((fnaa_type = "blight_twig") or (fnaa_type = "twig_blight"))
 *temp fnaa_knife (((fnaa_attacker_kind = "ally") and (combat_ally_atk_used_sidearm)) or ((fnaa_attacker_kind = "enemy") and (combat_enemy_used_sidearm)))
 *temp fnaa_dp ((("combat_" & fnaa_defender_kind) & fnaa_defender_slot) & "_")
 *set combat_defender_name {(fnaa_dp & "name")}
@@ -275,6 +277,29 @@
 *temp fnaa_line ""
 *if (fnaa_knife)
   *gosub flavor_ally_dagger
+*elseif (fnaa_claws)
+  *comment A twig-and-bramble creature (the Gnarled Bramble Heart's Blight Twigs, or an enemy Twig Blight striking an ally): claws, thorns and knotted fists, never a weapon.
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} scuttles in and rakes ${combat_defender_epithet} with a claw of knotted wood."
+  *if (fnaa_v = 2)
+    *set fnaa_line "A tangle of thorned fingers from ${combat_attacker_epithet} closes on ${combat_defender_epithet}, and the thorns bite."
+  *if (fnaa_v = 3)
+    *set fnaa_line "$!{combat_attacker_epithet} springs at ${combat_defender_epithet} and clings, raking with both claws."
+  *if (fnaa_v = 4)
+    *set fnaa_line "$!{combat_attacker_epithet} darts low and rakes at ${combat_defender_epithet}'s legs, and the claw tears through."
+  *if (fnaa_v = 5)
+    *set fnaa_line "$!{combat_attacker_epithet}'s knotted fist swings like a club and lands hard on ${combat_defender_epithet}."
+  *if (not(fnaa_hit))
+    *if (fnaa_v = 1)
+      *set fnaa_line "$!{combat_attacker_epithet} scuttles at ${combat_defender_epithet}, but the claw rakes only air."
+    *if (fnaa_v = 2)
+      *set fnaa_line "$!{combat_attacker_epithet} springs for ${combat_defender_epithet}, and ${combat_defender_epithet} knocks the bundle of twigs aside."
+    *if (fnaa_v = 3)
+      *set fnaa_line "$!{combat_attacker_epithet} lashes out with a whip of bramble, but ${combat_defender_epithet} steps clear of it."
+    *if (fnaa_v = 4)
+      *set fnaa_line "$!{combat_attacker_epithet} darts in low, and ${combat_defender_epithet} stamps down, and the twig body skitters away."
+    *if (fnaa_v = 5)
+      *set fnaa_line "$!{combat_attacker_epithet}'s knotted fist swings wide of ${combat_defender_epithet}."
 *elseif (fnaa_ranged)
   *if (fnaa_v = 1)
     *set fnaa_line "$!{combat_attacker_epithet} looses a shot that finds ${combat_defender_epithet}."

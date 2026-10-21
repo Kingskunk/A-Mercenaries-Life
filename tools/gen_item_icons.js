@@ -116,6 +116,7 @@ const MAP = {
 
   // ---- ingredients and salvage
   scrap: "Clutter_AdamantineScrap_Unfaded_Icon.webp",
+  bramble_heart: "../Generic/Gnarled_Bramble_Heart_Generated_Source.png",   // the user's own art (2026-10-21): Dubhar's heart of bramble
   poisoners_robes: "Poisoners_Robe_Unfaded_Icon.png",                  // Dubhar's robes
   heartwood_fruit: "FOOD_Goodberry_Unfaded_Icon.png",                   // Bark's reward
   honeycomb: "FOOD_Honey_Comb_Unfaded_Icon.png",                    // the Longshade bee tree

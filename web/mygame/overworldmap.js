@@ -64,12 +64,12 @@
     return { x: x * SCALE, y: y * SCALE };
   }
 
-  // The options the scene may offer on the newest page: the one Travel option, a way into the town the player stands in, and the camp. Only the newest form: while ChoiceScript fades a page
+  // The options the scene may offer on the newest page: the one Travel option, a standard settlement entrance, known-place shortcuts, and the camp. Only the newest form: while ChoiceScript fades a page
   // out, the old one is still in the document beside the new one.
   function scanOptions() {
     var forms = document.querySelectorAll("#main form");
     var labels = forms.length ? forms[forms.length - 1].querySelectorAll(".choice label") : [];
-    var travel = null, enter = null, camp = null, dawn = null, deliver = [];
+    var travel = null, enter = null, direct = [], camp = null, dawn = null, deliver = [];
     for (var i = 0; i < labels.length; i++) {
       var radio = labels[i].querySelector("input[type=radio]");
       if (!radio || radio.disabled) continue;
@@ -78,8 +78,9 @@
       else if (/^Make camp/.test(text)) camp = radio;
       else if (/^(Enter\b|Go (in|into|back)\b)/.test(text)) enter = { radio: radio, text: text };
       else if (/^Deliver /.test(text)) deliver.push({ radio: radio, text: text });   // a courier's parcel for this tile (radiant/hall_courier.txt): one button each, none for a tile nobody wrote
+      else direct.push({ radio: radio, text: text });
     }
-    return travel ? { travel: travel, enter: enter, camp: camp, dawn: dawn, deliver: deliver } : null;
+    return travel ? { travel: travel, enter: enter, direct: direct, camp: camp, dawn: dawn, deliver: deliver } : null;
   }
 
   function available() { return truthy(statsNow().ow_on) && !!scanOptions(); }
@@ -278,6 +279,10 @@
     if (show === here) {
       html += "<div class=\"ow-card-line\">You are here.</div>";
       if (opts.enter) html += "<button type=\"button\" class=\"ow-btn\" data-ow-act=\"enter\">" + esc(opts.enter.text.replace(/\.$/, "")) + "</button>";
+      if (opts.direct && opts.direct.length) {
+        html += "<div class=\"ow-card-line ow-known-title\">Known places</div>";
+        opts.direct.forEach(function (d, i) { html += "<button type=\"button\" class=\"ow-btn ow-direct\" data-ow-act=\"direct\" data-ow-i=\"" + i + "\">" + esc(d.text) + "</button>"; });
+      }
       (opts.deliver || []).forEach(function (d, i) { html += "<button type=\"button\" class=\"ow-btn ow-deliver\" data-ow-act=\"deliver\" data-ow-i=\"" + i + "\">" + esc(d.text.replace(/\.$/, "")) + "</button>"; });
       if (opts.camp) html += "<div class=\"ow-card-line\">Make camp here to sleep, rest, eat or drill.</div><button type=\"button\" class=\"ow-btn\" data-ow-act=\"camp\">Make camp</button>";
       if (opts.dawn) html += "<button type=\"button\" class=\"ow-btn\" data-ow-act=\"dawn\">" + esc(opts.dawn.text.replace(/^Make camp and /, "").replace(/\.\s*(\[~?)/, " $1").replace(/^s/, "S")) + "</button>";
@@ -392,7 +397,7 @@
         if (mx < view.cx - view.w / 2 + 60 || mx > view.cx + view.w / 2 - 60 || my < view.cy - h0 / 2 + 60 || my > view.cy + h0 / 2 - 60) { view.cx = mx; view.cy = my; }
       }
     }
-    var sig = [s.ow_pos, selected, selectedFeature, opts.enter ? opts.enter.text : "", (opts.deliver || []).map(function (d) { return d.text; }).join("|"), num(s.minutes_since_meal), num(s.minutes_since_rest), rot, num(s.ow_exposure_pct), truthy(s.has_trail_rations) ? 1 + num(s.spare_trail_rations) : 0, opts.camp ? "camp" : "", opts.dawn ? opts.dawn.text : "", Object.keys(OW.nodes).length].join("|");
+    var sig = [s.ow_pos, selected, selectedFeature, opts.enter ? opts.enter.text : "", (opts.direct || []).map(function (d) { return d.text; }).join("|"), (opts.deliver || []).map(function (d) { return d.text; }).join("|"), num(s.minutes_since_meal), num(s.minutes_since_rest), rot, num(s.ow_exposure_pct), truthy(s.has_trail_rations) ? 1 + num(s.spare_trail_rations) : 0, opts.camp ? "camp" : "", opts.dawn ? opts.dawn.text : "", Object.keys(OW.nodes).length].join("|");
     var el = document.getElementById(PANEL_ID);
     if (el && sig === lastSig) return;
     if (sig !== lastSig) pressed = false; // a new page of options: the old press is over
@@ -487,6 +492,7 @@
     var act = t.getAttribute("data-ow-act"), o = scanOptions();
     if (act === "go") { var sel = selected && OW.nodes[selected] ? selected : null; if (sel) travel(sel); }
     else if (act === "enter") { if (o && o.enter) { quiet(false); press(o.enter.radio); } }
+    else if (act === "direct") { var xi = Number(t.getAttribute("data-ow-i")); if (o && o.direct && o.direct[xi]) { quiet(false); press(o.direct[xi].radio); } }
     else if (act === "camp") { if (o && o.camp) { quiet(true); press(o.camp); } }
     else if (act === "deliver") { var di = Number(t.getAttribute("data-ow-i")); if (o && o.deliver && o.deliver[di]) { quiet(true); press(o.deliver[di].radio); } }
     else if (act === "dawn") { if (o && o.dawn) { quiet(true); press(o.dawn.radio); } }

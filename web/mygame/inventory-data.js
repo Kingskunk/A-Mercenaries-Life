@@ -633,6 +633,12 @@
       statBonus: true
     },
     {
+      id: "bramble_heart", category: "provisions", owned: "has_bramble_heart",
+      weight: 1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_bramble_heart) || 0); return "Gnarled Bramble Heart" + (n > 1 ? " ×" + n : ""); },
+      description: "Black bramble knotted into a heart, warm to the touch; once a day it calls up Blight Twigs in a fight."
+    },
+    {
       id: "poisoners_robes", category: "apparel", owned: "has_poisoners_robes", slot: "Body armor",
       weight: 3, stow: true, stack: false,
       name: "Poisoner's Robes",

@@ -180,6 +180,7 @@
   *rand apr_roll 1 4
   *temp apr_raw apr_roll
   *gosub adjust_outgoing_damage_packet apr_raw "poison"
+  *comment replay-ok: called only from inside a spell hit's once-per-page lock (resolve_player_hit), which halves a roll made in that same lock.
   *set combat_player_dmg_dealt + combat_packet_damage
   *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${apr_roll} poison (Poisoner's Robes) = ${combat_packet_damage}${combat_packet_suffix}][/b]"
 *return
@@ -825,6 +826,23 @@ ${combat_player_dmg_roll_banner}
       *set reao_dmg_bonus_str "${combat_enemy_dmg_bonus}"
     *temp reao_dmg_total (reao_dmg + combat_enemy_dmg_bonus)
     *set {(reao_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${reao_dmg} ${reao_dmg_bonus_str} = ${reao_dmg_total}][/b]"
+    *comment An ally's own resistances and vulnerabilities (combat_allyN_resist_type_1/_2, _vulnerable_type_1/_2): the blight twig takes double fire, halved by a matching resistance, cancelled if both. Half rounds down; a banner tag says which.
+    *temp reao_rt1 {(reao_ap & "resist_type_1")}
+    *temp reao_rt2 {(reao_ap & "resist_type_2")}
+    *temp reao_vt1 {(reao_ap & "vulnerable_type_1")}
+    *temp reao_vt2 {(reao_ap & "vulnerable_type_2")}
+    *temp reao_res (((combat_enemy_dmg_type = reao_rt1) and (not(reao_rt1 = ""))) or ((combat_enemy_dmg_type = reao_rt2) and (not(reao_rt2 = ""))))
+    *temp reao_vul (((combat_enemy_dmg_type = reao_vt1) and (not(reao_vt1 = ""))) or ((combat_enemy_dmg_type = reao_vt2) and (not(reao_vt2 = ""))))
+    *temp reao_tag ""
+    *if ((reao_res) and (reao_vul))
+      *set reao_tag ""
+    *elseif (reao_res)
+      *set reao_dmg_total ((reao_dmg_total - (reao_dmg_total modulo 2)) / 2)
+      *set reao_tag " | 🛡️ Resisted"
+    *elseif (reao_vul)
+      *set reao_dmg_total (reao_dmg_total * 2)
+      *set reao_tag " | 💥 Vulnerable"
+    *set {(reao_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${reao_dmg} ${reao_dmg_bonus_str} = ${reao_dmg_total}${reao_tag}][/b]"
     *set combat_enemy_dmg_on_ally_dealt reao_dmg_total
     *set {(reao_ap & "hp")} - reao_dmg_total
     *if ({(reao_ap & "hp")} < 0)

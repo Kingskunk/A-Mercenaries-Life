@@ -80,6 +80,26 @@
 
 *label fight_setup
 *gosub_scene character_progression refresh_class_resource_maxs
+*comment STALE SLOTS (2026-10-21, from the dev hub: summoned Blight Twigs showed in the next fight, and enemies of a fight the player fled did too). A slot beyond this fight's count keeps whatever hit points the last fight left in it, and the sidebar lane and anything that scans every slot see a living combatant there. Zero every ally and enemy slot above the counts before the fight is built; the slots in use are filled by the library or the hand-authored setup as always.
+*temp fss_e combat_enemy_count
+*temp fss_a combat_ally_count
+*temp fss_i 1
+*label fight_setup_stale_loop
+*if (fss_i <= combat_enemy_slot_cap)
+  *if (fss_i > fss_e)
+    *set {(("combat_enemy" & fss_i) & "_hp")} 0
+    *set {(("combat_enemy" & fss_i) & "_max_hp")} 0
+  *set fss_i (fss_i + 1)
+  *goto fight_setup_stale_loop
+*set fss_i 1
+*label fight_setup_stale_ally_loop
+*if (fss_i <= combat_ally_slot_cap)
+  *if (fss_i > fss_a)
+    *set {(("combat_ally" & fss_i) & "_hp")} 0
+    *set {(("combat_ally" & fss_i) & "_max_hp")} 0
+    *set {(("combat_ally" & fss_i) & "_name")} "none"
+  *set fss_i (fss_i + 1)
+  *goto fight_setup_stale_ally_loop
 *gosub_scene character_progression refresh_known_spells
 *comment The current ancestry list has one Small player option. Keep this mapping at the combat boundary so Shove
 *comment always reads a valid size even in dev presets and old saves; new ancestry sizes extend this tiny mapping.
@@ -640,6 +660,9 @@
 *set combat_player_surprise false
 *set combat_opens_engaged false
 *set combat_no_flee false
+*set combat_summon_locked false
+*set combat_summon_n 0
+*set combat_dubhar_blights 0
 *set combat_leader_slot 0
 *set combat_nonlethal_slot 0
 *set combat_multiattack_slot 0
@@ -886,6 +909,11 @@
   *set {(("combat_ally" & fc_a_i) & "_range")} 0
   *set {(("combat_ally" & fc_a_i) & "_behavior_profile")} "guardian"
   *set {(("combat_ally" & fc_a_i) & "_target")} 0
+  *set {(("combat_ally" & fc_a_i) & "_flavor_type")} ""
+  *set {(("combat_ally" & fc_a_i) & "_resist_type_1")} ""
+  *set {(("combat_ally" & fc_a_i) & "_resist_type_2")} ""
+  *set {(("combat_ally" & fc_a_i) & "_vulnerable_type_1")} ""
+  *set {(("combat_ally" & fc_a_i) & "_vulnerable_type_2")} ""
   *set {("combat_ally_lib_" & fc_a_i)} ""
   *comment Reaction asymmetry (2026-09-29, plan §4.5/Phase 5) -- same leftover-state reason as the enemy-side
   *comment oa_used reset above.
@@ -2449,6 +2477,11 @@
   *set combat_can_move true
 *comment Dodge itself: an unspent action, and NOT re-offered while already dodging -- a second Dodge would
 *comment only overwrite the first with an identical +5, so charging for it would be a pure trap.
+*comment The Gnarled Bramble Heart (2026-10-20, Dubhar's drop): an ACTION, once a campaign day, while an ally slot is free.
+*temp combat_can_summon_blights false
+*if ((has_bramble_heart) and (combat_player_actions_left > 0))
+  *if ((not(bramble_heart_day = campaign_day)) and (combat_ally_count < combat_ally_slot_cap))
+    *set combat_can_summon_blights true
 *temp combat_can_dodge false
 *if (combat_player_actions_left > 0)
   *if (not(dodge_active))
@@ -3792,6 +3825,9 @@
       # [b][ACTION][/b] [b][Throw: Water Jug][/b] Fling the water at ${combat_med_epithet}.@{show_stat_hints  [Thrown: a hit leaves a foe Wet for 3 turns]|}
         *set use_item_id "water_jug"
         *goto fight_throw_item
+  *if (combat_can_summon_blights)
+    # [b][ACTION][/b] [b][Bramble Heart][/b] Press the gnarled heart to your chest and call up one or two Blight Twigs to fight at your side.@{show_stat_hints  [Once a day]|}
+      *goto fight_summon_blights
   *if (cu_any)
     # Use an item from your satchel.
       *goto fight_use_item
@@ -3842,6 +3878,71 @@
     *comment Resets combat_turn_advanced_this_page so next round's page-break gating starts fresh.
     *set combat_turn_advanced_this_page false
     *goto fight_end_player_turn
+
+*comment THE GNARLED BRAMBLE HEART (the user, 2026-10-20): an ACTION, once a campaign day (bramble_heart_day), that raises 1d2 Blight Twigs as allies for the rest of the fight. They are ordinary ally-library creatures (blight_twig, combat_types.txt) seated into the next free ally slots on the player's own lane tile and added to the END of the turn order (so they act last this round and in their place after it). The count is rolled and the allies built inside one page lock, so a replay (the dossier closing) prints the same page and builds nothing twice. Fewer than the roll arrive if the ally slots run short.
+*label fight_summon_blights
+*if (not(combat_summon_locked)) or (not(locked_combat_summon_page_id = page_id))
+  *temp fsb_roll 1
+  *rand fsb_roll 1 2
+  *temp fsb_free (combat_ally_slot_cap - combat_ally_count)
+  *if (fsb_roll > fsb_free)
+    *set fsb_roll fsb_free
+  *set combat_summon_n fsb_roll
+  *temp fsb_i 0
+  *label fsb_loop
+  *if (fsb_i < fsb_roll)
+    *set combat_ally_count (combat_ally_count + 1)
+    *set combat_apply_ally_slot combat_ally_count
+    *set combat_apply_ally_type "blight_twig"
+    *gosub_scene combat_types apply_ally_type
+    *gosub fight_seat_summoned_ally combat_apply_ally_slot
+    *set fsb_i (fsb_i + 1)
+    *goto fsb_loop
+  *set bramble_heart_day campaign_day
+  *set combat_summon_locked true
+  *set locked_combat_summon_page_id page_id
+You press the gnarled heart to your chest. It beats once against your palm, slow and wooden, and the earth at your feet splits with a sound like dry sticks snapping.
+*line_break
+*if (combat_summon_n = 1)
+  A knot of briar drags itself up out of the soil and uncurls, small as a dog, with knuckles of knotted wood where its hands should be. It turns toward the nearest foe and waits for your word.
+*else
+  Two knots of briar drag themselves up out of the soil and uncurl, each small as a dog, with knuckles of knotted wood where their hands should be. They turn toward the nearest foe and wait for your word.
+*line_break
+[b][🌿 Gnarled Bramble Heart: ${combat_summon_n} Blight @{(combat_summon_n = 1) Twig|Twigs} answer your call | once today][/b]
+*line_break
+*goto fight_action_spent
+
+*comment Seats one summoned ally on the lane and in the turn order. Position: the player's tile. Range: the distance from the player to the nearest living enemy (an ally closes one tier a turn from there). Turn order: appended, with its first-pass flag already spent so it is not mistaken for a first round that never ran.
+*label fight_seat_summoned_ally
+*params fsa_slot
+*temp fsa_p (("combat_ally" & fsa_slot) & "_")
+*set {(fsa_p & "position")} combat_lane_player_position
+*temp fsa_best 99
+*temp fsa_e 1
+*label fsa_enemy_loop
+*if (fsa_e <= combat_enemy_count)
+  *temp fsa_ehp {(("combat_enemy" & fsa_e) & "_hp")}
+  *if (fsa_ehp > 0)
+    *temp fsa_dist ({(("combat_enemy" & fsa_e) & "_position")} - combat_lane_player_position)
+    *if (fsa_dist < 0)
+      *set fsa_dist (0 - fsa_dist)
+    *if (fsa_dist < fsa_best)
+      *set fsa_best fsa_dist
+  *set fsa_e (fsa_e + 1)
+  *goto fsa_enemy_loop
+*if (fsa_best > combat_max_range)
+  *set fsa_best combat_max_range
+*if (fsa_best = 99)
+  *set fsa_best 0
+*set {(fsa_p & "range")} fsa_best
+*set {(fsa_p & "target")} 0
+*if (combat_turn_count < 11)
+  *comment replay-ok: only called from fight_summon_blights, inside its combat_summon_locked page lock.
+  *set combat_turn_count (combat_turn_count + 1)
+  *set {("combat_turn_kind_" & combat_turn_count)} "ally"
+  *set {("combat_turn_slot_" & combat_turn_count)} fsa_slot
+  *set {("combat_turn_first_pass_" & combat_turn_count)} false
+*return
 
 *comment Using an item costs the turn. The menu, the routine and every effect come from the catalog
 *comment (equipment.txt use_consumable); a heal while unhurt is refused and costs nothing.
@@ -5884,6 +5985,24 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *goto fight_round_hub
 
 *comment The named fights below are thin callers of fight_library: they say who is in the fight and nothing else.
+
+*comment THE MAGE IN THE BURNING GROVE (2026-10-21): the one definition of Dubhar's fight, called by longshade/longshade_forest.txt lsf_r15_fight and by the dev hub. combat_dubhar_blights (0 to 2) says how many Twig Blights stand with him; the caller raises combat_player_can_die if the fight is to be lethal. The fight cannot be fled (combat_no_flee), ends the moment the mage falls (combat_leader_slot), and only the mage's defeat is non-lethal (combat_nonlethal_slot), so the blights keep creature lines. The mage opens at Mid-Range, the blights at Close.
+*label fight_dubhar
+*set combat_is_nonlethal false
+*set combat_no_flee true
+*set combat_leader_slot 1
+*set combat_nonlethal_slot 1
+*set combat_lib_1 "hedge_mage"
+*set combat_enemy_name_override "Grey-Cloaked Man"
+*set combat_enemy_epithet_override "the grey-cloaked man"
+*set combat_enemy_range 2
+*if (combat_dubhar_blights >= 1)
+  *set combat_lib_2 "twig_blight"
+  *set combat_enemy2_range 1
+*if (combat_dubhar_blights >= 2)
+  *set combat_lib_3 "twig_blight"
+  *set combat_enemy3_range 1
+*goto fight_library
 
 *label fight_dev_range_test
 *comment Dev-hub only (dev_hub.txt dev_combat_test_hub) -- no story scene calls this. One lacedon opened at Long
