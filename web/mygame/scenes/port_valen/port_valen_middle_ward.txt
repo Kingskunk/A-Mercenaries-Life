@@ -913,8 +913,6 @@ You turn the key twice in the lock and step into your room. Directly beneath the
 *temp room_days_left (mw_rent_expiry_day - campaign_day)
 [i]Lease: ${room_days_left} days remaining until sunset.[/i]
 
-*if (has_water_jug)
-  *gosub_scene equipment jug_empties
 *choice
   # Bar the heavy door and sleep on your cot. [~8 Hours]
     *goto mw_room_sleep
@@ -922,14 +920,6 @@ You turn the key twice in the lock and step into your room. Directly beneath the
     *goto mw_room_short_rest
   # Pour well-water into the tin basin and wash off road grime. [~10 min]
     *goto mw_room_wash
-  *if ((has_water_jug) and (jug_empty_n > 0))
-    # Refill water jugs from the lodging's water supply. [~5 min]
-      *set jug_refill_source "the lodging's water cask"
-      *set jug_refill_time_id "mw_room_fill"
-      *gosub_scene equipment jug_refill_menu
-      *if (jug_fill_n > 0)
-        *page_break Back to your chamber…
-      *goto mw_room_hub
   # Sit by the narrow casement to observe the district. [~15 min]
     *goto mw_room_reflect
   # Lock the room and head back down the stairs.
@@ -940,13 +930,11 @@ You turn the key twice in the lock and step into your room. Directly beneath the
 *set minutes_to_pass 0
 *set time_advance_call_id "mw_room_sleep"
 *gosub_scene calendar advance_time
-
 *if (hp_current <= 0)
   *set death_cause "starvation"
   *if (neglect_damage_fatigue > neglect_damage_hunger)
     *set death_cause "exhaustion"
   *goto_scene death death_screen
-
 *set sleep_location_id "terrace_lodgings"
 *set sleep_is_shared false
 *set sleep_is_permanent_home true
@@ -957,11 +945,7 @@ You turn the key twice in the lock and step into your room. Directly beneath the
 *set sleep_tier_stat2 "none"
 *set sleep_tier_bonus2 0
 *gosub_scene calendar resolve_sleep
-
-*comment resolve_sleep (above) gives back everything a long rest gives back: class pools and temp HP (character_progression.txt restore_class_resources).
-
-You drop the door bar into its brackets, put out the smoking candle, and pull the coarse blanket over your shoulders. The straw mattress is firm, and the room is peaceful: no shouting officers, no drunken tavern brawlers, and no Watch patrol schedule waiting for you.
-
+You drop the door bar into its brackets, put out the smoking candle, and pull the coarse blanket over your shoulders. The straw mattress is firm, and the room is peaceful.
 *if ((time_period = "Morning") or (time_period = "Pre-Dawn"))
   The distant chime of cathedral bells and the warm aroma of hearth loaves drifting past the eaves stir you from sleep. Pale daylight washes over the floorboards, and your limbs feel rested and loose.
 *elseif (time_period = "Dusk")
@@ -981,18 +965,13 @@ You drop the door bar into its brackets, put out the smoking candle, and pull th
 *set minutes_to_pass 0
 *set time_advance_call_id "mw_room_short_rest"
 *gosub_scene calendar advance_time
-
 *if (hp_current <= 0)
   *set death_cause "starvation"
   *if (neglect_damage_fatigue > neglect_damage_hunger)
     *set death_cause "exhaustion"
   *goto_scene death death_screen
-
 *gosub_scene character_progression do_short_rest
-
-You stretch out atop the straw mattress with your head propped on the bolster, and let your spine decompress against the mattress.
-
-For a full hour, you lie resting in the garret, listening to the wind over the slate roof and the muffled pulse of the city beyond the walls. When you sit up, the ache in your arches has eased and your shoulders feel lighter.
+You stretch out atop the straw mattress and let the strain of travel leave your shoulders.
 *gosub_scene character_progression short_rest_banner
 *page_break Swing your legs off the cot…
 *goto mw_room_hub
@@ -1001,16 +980,11 @@ For a full hour, you lie resting in the garret, listening to the wind over the s
 *set minutes_to_pass 10
 *set time_advance_call_id "mw_room_wash"
 *gosub_scene calendar advance_time
-*comment Resets hygiene like the Conduit Baths, but with no boon. Reset after advance_time, which
-*comment re-derives the stage. Fixed-value sets, so a refreshed page cannot double-apply them.
 *set minutes_since_wash 0
 *set hygiene_stage "Clean"
 *gosub_scene calendar update_hub_condition
-
-You pour cold spring water from the ceramic jug into the battered tin basin. Using a harsh bar of caustic soap, you scrub road mud, sweat, and street grime from your hands, neck, and forearms.
-
-Splashing cold water over your face, you blow out a sharp breath as the icy shock clears your head. Drying yourself briskly with the coarse linen rag, your skin feels raw, refreshed, and awake.
-
+You pour cold spring water into the tin basin and scrub away road mud, sweat, and street grime with the harsh soap beside it.
+*line_break
 [b][🧼 Washed Up: Hygiene Restored to Clean][/b]
 *page_break Step away from the washstand…
 *goto mw_room_hub
@@ -1288,21 +1262,11 @@ You turn the iron key and step into a narrow room under the eaves at the back of
 *elseif ((ground_state = "wet") and (not(weather_wet)))
   The air in the room is faintly damp.
 
-*if (has_water_jug)
-  *gosub_scene equipment jug_empties
 *choice
   # Bar the door and sleep in the bed. [~8 Hours]
     *goto mw_inn_sleep
   # Pour water into the tin basin and wash off road grime. [~10 min]
     *goto mw_inn_wash
-  *if ((has_water_jug) and (jug_empty_n > 0))
-    # Ask for water to refill your jugs. [~5 min]
-      *set jug_refill_source "a pail from the yard pump"
-      *set jug_refill_time_id "mw_inn_fill"
-      *gosub_scene equipment jug_refill_menu
-      *if (jug_fill_n > 0)
-        *page_break Back to your room…
-      *goto mw_inn_room
   # Go back down to the hall.
     *goto mw_inn_hall
 
@@ -1311,13 +1275,11 @@ You turn the iron key and step into a narrow room under the eaves at the back of
 *set minutes_to_pass 0
 *set time_advance_call_id "mw_inn_sleep"
 *gosub_scene calendar advance_time
-
 *if (hp_current <= 0)
   *set death_cause "starvation"
   *if (neglect_damage_fatigue > neglect_damage_hunger)
     *set death_cause "exhaustion"
   *goto_scene death death_screen
-
 *set sleep_location_id "wagoners_rest"
 *set sleep_is_shared false
 *set sleep_is_permanent_home false
@@ -1328,11 +1290,7 @@ You turn the iron key and step into a narrow room under the eaves at the back of
 *set sleep_tier_stat2 "none"
 *set sleep_tier_bonus2 0
 *gosub_scene calendar resolve_sleep
-
-*comment resolve_sleep (above) gives back everything a long rest gives back: class pools and temp HP (character_progression.txt restore_class_resources).
-
-You drop the bar across the door, shove the shutter closed against the yard noise, and pull the woollen blanket over your shoulders. The bed is narrow, but the room is your own for the night.
-
+You drop the bar across the door, close the shutter against the yard noise, and settle beneath the woollen blanket.
 *if ((time_period = "Morning") or (time_period = "Pre-Dawn"))
   Cart wheels and the shouts of ostlers in the yard wake you before the shutter shows much light. Your limbs are loose and rested.
 *elseif (time_period = "Dusk")
@@ -1341,13 +1299,11 @@ You drop the bar across the door, shove the shutter closed against the yard nois
   You surface in the dark to the tick of the cooling roof and the snores of the next room. Your fatigue has cleared.
 *else
   Midday light fills the shutter gaps when you wake, and the yard below is quiet. Your mind is clear and your energy is renewed.
-
 *if (not(sleep_gear_note = ""))
   *line_break
   ${sleep_gear_note}
-
 Your name stays chalked on Oswin's slate, and the iron key is yours until this hour tomorrow.
-*page_break Step out into the hall…
+*page_break Sit up in your room…
 *goto mw_inn_room
 
 *label mw_inn_wash
@@ -1355,14 +1311,11 @@ Your name stays chalked on Oswin's slate, and the iron key is yours until this h
 *set minutes_to_pass 10
 *set time_advance_call_id "mw_inn_wash"
 *gosub_scene calendar advance_time
-*comment Resets hygiene like the Conduit Baths, but with no boon. Reset after advance_time, which re-derives
-*comment the stage. Fixed-value sets, so a refreshed page cannot double-apply them.
 *set minutes_since_wash 0
 *set hygiene_stage "Clean"
 *gosub_scene calendar update_hub_condition
-
-You pour cold water from the jug into the tin basin and scrub the road mud, sweat, and grime from your hands, neck, and forearms with a rough bar of soap. The water clouds grey, and the towel on the peg is coarse but dry.
-
+You pour water into the tin basin and scrub the road mud, sweat, and grime from your hands, neck, and forearms with a rough bar of soap.
+*line_break
 [b][🧼 Washed Up: Hygiene Restored to Clean][/b]
 *page_break Set down the jug…
 *goto mw_inn_room

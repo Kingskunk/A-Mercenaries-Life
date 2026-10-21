@@ -113,18 +113,16 @@ The Ashrun House is a broad, two-storey log building with a deep porch facing th
     *goto_scene timbermouth/ashrun_holt/ashrun_holt ashrun_holt
 
 *label ah_inn_room
-*set scenery_subplace "ashrun_holt_inn_room"
 *temp room_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
 *if (room_now >= ah_inn_room_until)
   *set ah_inn_room_active false
 *if (not(ah_inn_room_active))
   *goto ah_inn_main
+*set scenery_subplace "ashrun_holt_inn_room"
 [b]◈ YOUR ROOM: THE ASHRUN HOUSE[/b]
 *line_break
 The room has a plank bed, straw mattress, wool blanket, washbasin and a shuttered window looking over the clearing. It is plain, clean and warm enough that the forest sounds beyond the wall seem far away.
 
-*if (has_water_jug)
-  *gosub_scene equipment jug_empties
 *choice
   # Bar the door and sleep. [~8 Hours]
     *set hours_to_pass 8
@@ -147,17 +145,19 @@ The room has a plank bed, straw mattress, wool blanket, washbasin and a shuttere
     *set sleep_tier_bonus2 0
     *gosub_scene calendar resolve_sleep
     You pull the blanket up, and the river and the work of the clearing settle into a low, far-off noise below the window.
-
+    *if ((time_period = "Morning") or (time_period = "Pre-Dawn"))
+      Dawn work in the clearing and the river below bring you back to waking. Your limbs are loose and rested.
+    *elseif (time_period = "Dusk")
+      You wake to the last calls from the clearing. The ache of travel has eased.
+    *elseif (time_period = "Night")
+      You wake in the dark, with the forest beyond the walls gone quiet and your fatigue cleared.
+    *else
+      Daylight reaches the room as the clearing settles into its ordinary work. Your mind is clear.
+    *if (not(sleep_gear_note = ""))
+      *line_break
+      ${sleep_gear_note}
     *page_break Wake rested...
     *goto ah_inn_room
-  *if ((has_water_jug) and (jug_empty_n > 0))
-    # Ask for water to refill your jugs. [~5 min]
-      *set jug_refill_source "a pail from the clearing well"
-      *set jug_refill_time_id "ah_inn_fill"
-      *gosub_scene equipment jug_refill_menu
-      *if (jug_fill_n > 0)
-        *page_break Back to your room...
-      *goto ah_inn_room
   # Go back down to the Ashrun House.
     *goto ah_inn_main
 
