@@ -1,7 +1,7 @@
 /*
  * SCENERY -- the page's backdrop follows where the player is and what time and weather it is there (a test that grew, 2026-10-14).
  *
- * Reads only the game's own state (window.stats), the same way the sidebar does, so no scene has to know it exists:
+ * Reads only the game's own state (window.stats), the same way the sidebar does, so no scene has to know it exists. The dossier is an overlay, not a place: while it is open, it keeps the backdrop it inherited from the story beneath it.
  *   where     placeNames(): the names the rules below give for where the player is (a scene, a shop, a dungeon, an overworld tile, a Port Valen district), most specific first
  *   the hour  clock_hour + clock_minute  ->  how much of the DAY picture shows over the NIGHT one (the two pictures are the same view, so blending them reads as the light changing)
  *   weather   weather_wet / weather_visibility / weather (Overcast): a greyer, dimmer picture and a haze. No rain or snow is drawn (judged not worth the cost, 2026-10-15); the sound carries it. dg_dark dims a dungeon with no light.
@@ -245,7 +245,10 @@
 
   function update() {
     var s = window.stats; if (!s || off || !document.body) { root.classList.remove("hasScenery"); return; }
-    var key = sceneKey(s);
+    // choicescript_stats is the dossier overlay. Re-resolving that bookkeeping scene would fall through to a
+    // stale district (or no place) and replace the view the player was just standing in. Reuse the displayed
+    // key instead; the lighting below still reads the current clock, so waiting through dusk changes the view.
+    var key = String(s.sceneName || "") === "choicescript_stats" ? curKey : sceneKey(s);
     if (key === "") return;                                              // still loading: no change yet
     if (!key) { root.classList.remove("hasScenery"); curKey = null; return; }
     if (!el) build();

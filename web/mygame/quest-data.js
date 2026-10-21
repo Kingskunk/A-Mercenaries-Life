@@ -154,7 +154,21 @@
     },
     {
       id: "varren_errand", title: "Varren's Errand", place: "Port Valen",
-      levelProgress: "Counts toward level progress if Trent is brought to justice.",
+      giver: "Sergeant Varren, the Carrion Compound",
+      levelProgress: "Counts toward level progress on a successful resolution.",
+      goal: function (s) {
+        if ((s.slasher_quest_stage === "resolved" || s.slasher_quest_stage === "failed") && !truthy(s.slasher_reported)) return "Return to Sergeant Varren at the Carrion Compound and report what happened.";
+        if (!truthy(s.slasher_trent_met)) return "Speak with Captain Bronner Trent at the militia post on the Trunk Road.";
+        if (truthy(s.slasher_alibi_known)) return "Follow the evidence from the militia post and decide what it proves.";
+        return "Follow the leads from Captain Trent's post and find out who is behind the killings.";
+      },
+      clues: function (s) {
+        var c = [];
+        if (truthy(s.slasher_trent_met)) c.push("Captain Trent says Ulrich of Avir is responsible for the killings.");
+        if (truthy(s.slasher_alibi_known)) c.push("Accounts place Ulrich in Alderford during the most recent killings.");
+        if (truthy(s.slasher_survivor_known)) c.push("A wounded mercenary connected to the case is being tended in the Althea chapel.");
+        return c;
+      },
       active: function (s) { return s.slasher_quest_stage === "active" || ((s.slasher_quest_stage === "resolved" || s.slasher_quest_stage === "failed") && !truthy(s.slasher_reported)); }
     },
     {
@@ -174,7 +188,18 @@
     },
     {
       id: "rotten_rib", title: "The Rotten Rib", place: "Iron Wharves",
+      giver: "Ysolde Ostrand, the Carrion Compound",
       levelProgress: true,
+      goal: function (s) {
+        if (!truthy(s.has_rotten_rib_splinter)) return "Speak with the shipwright at Slipway Two about the delayed timber.";
+        return "Find proof of what happened to the heartwood meant for Slipway Two.";
+      },
+      clues: function (s) {
+        var c = [];
+        if (truthy(s.has_rotten_rib_splinter)) c.push("The timber in the ship's fourth rib is fresh-cut spruce, not cured heartwood.");
+        if (truthy(s.rotten_rib_ledger_clue)) c.push("Bay Four's papers show the heartwood was cleared for Slipway Two, but the bay is empty.");
+        return c;
+      },
       active: function (s) { return s.rotten_rib_quest_stage === "active"; }
     },
     {

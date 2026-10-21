@@ -59,42 +59,58 @@
   // `always(s)` (weapon, head) returns id(s) that must appear in the dropdown regardless
   // of has_x ownership, mirroring the menu's own "switch back to X" option.
   equippedSlots: [
-    { label: "Primary Weapon", shape: "weapon", desc: "weapon_desc", dmg: "weapon_damage", bucket: "weapon",
-      swappable: true, always: function () { return ["starting"]; } },
+    {
+      label: "Primary Weapon", shape: "weapon", desc: "weapon_desc", dmg: "weapon_damage", bucket: "weapon",
+      swappable: true, always: function () { return ["starting"]; }
+    },
     { label: "Sidearm", shape: "weapon", desc: "sidearm_desc", dmg: "sidearm_damage", bucket: "sidearm" },
-    { label: "Armor", shape: "armor", desc: "armor_desc", armorType: "armor_type", bucket: "armor",
-      swappable: true, always: function () { return ["starting"]; } },
+    {
+      label: "Armor", shape: "armor", desc: "armor_desc", armorType: "armor_type", bucket: "armor",
+      swappable: true, always: function () { return ["starting"]; }
+    },
     { label: "Shield", shape: "shield", bucket: "shield", swappable: true },
-    { label: "Head", shape: "headwear", desc: "head_desc", ac: "head_ac", isArmor: "head_is_armor", bucket: "head",
+    {
+      label: "Head", shape: "headwear", desc: "head_desc", ac: "head_ac", isArmor: "head_is_armor", bucket: "head",
       swappable: true,
       always: function (s) {
         return ["none"];   // nobody starts in headwear; a hat or helm can always come off (equipment.txt apply_head_loadout)
-      } },
-    { label: "Cloak", shape: "plain", desc: "cloak_desc", bucket: "cloak",
+      }
+    },
+    {
+      label: "Cloak", shape: "plain", desc: "cloak_desc", bucket: "cloak",
       swappable: true,
       always: function (s) {
         return ["starting_cloak"];   // the same plain cloak for every origin (equipment.txt apply_cloak_loadout)
-      } },
-    { label: "Hands", shape: "plain", desc: "hands_desc", bucket: "hands",
+      }
+    },
+    {
+      label: "Hands", shape: "plain", desc: "hands_desc", bucket: "hands",
       swappable: true,
       always: function (s) {
         return ["starting_gloves"];   // the same plain gloves for every origin (equipment.txt apply_hands_loadout)
-      } },
-    { label: "Waist", shape: "plain", desc: "waist_desc", bucket: "waist",
+      }
+    },
+    {
+      label: "Waist", shape: "plain", desc: "waist_desc", bucket: "waist",
       swappable: true,
       always: function (s) {
         return ["starting_belt"];   // the same leather belt for every origin (equipment.txt apply_waist_loadout)
-      } },
-    { label: "Feet", shape: "plain", desc: "feet_desc", bucket: "feet",
+      }
+    },
+    {
+      label: "Feet", shape: "plain", desc: "feet_desc", bucket: "feet",
       swappable: true,
       always: function (s) {
         return ["starting_boots"];   // the same plain boots for every origin (equipment.txt apply_feet_loadout)
-      } },
+      }
+    },
     // Neck and rings became swappable 2026-10-02 (the dossier already offers neck pieces; rings had no menu at all and were only ever put on by the story).
     // Both can be taken off: "none" is a bare throat or finger. A neck is not offered the way back while the Hearthstone is attuned (that is broken with its
     // own option, which ChoiceScript carries out because it changes CON and max HP).
-    { label: "Neck", shape: "plain", desc: "neck_desc", bucket: "neck", swappable: true,
-      always: function (s) { return truthy(s.hearthstone_attuned) ? [] : ["none"]; } },
+    {
+      label: "Neck", shape: "plain", desc: "neck_desc", bucket: "neck", swappable: true,
+      always: function (s) { return truthy(s.hearthstone_attuned) ? [] : ["none"]; }
+    },
     { label: "Ring (1)", shape: "plain", desc: "ring1_desc", bucket: "ring", ringSlot: "1", swappable: true, always: function () { return ["none"]; } },
     { label: "Ring (2)", shape: "plain", desc: "ring2_desc", bucket: "ring", ringSlot: "2", swappable: true, always: function () { return ["none"]; } }
   ],
@@ -902,7 +918,7 @@
       id: "brant_iron_heel_boots", category: "apparel", owned: "has_brant_iron_heel_boots",
       weight: 5,
       name: "Brant's Iron-Heel Boots",
-      description: "Heavy bull-hide boots pitch-sealed against estuary damp, fitted with caulked iron heel-plates for slipway grip.",
+      description: "Heavy bull-hide boots pitch-sealed against estuary damp, fitted with caulked iron heel-plates for slipway grip. While worn: rain exposure -20%; Caulked Grip +2 on footing checks.",
       badge: function (s) { return s.equipped_feet_id === "brant_iron_heel_boots" ? "Worn" : "Stowed"; },
       equip: { slot: "feet", id: "brant_iron_heel_boots" }
     },
@@ -1167,10 +1183,10 @@
     {
       id: "hall_insignia", category: "documents", owned: "has_hall_insignia",
       weight: 0.2,
-      name: "Hall Insignia",
+      name: "Mercenary Insignia",
       description: function (s) {
         var n = Number(s.hall_jobs_scales) || 0;
-        return "A palm-sized brass disc worked by the Hiring Hall's sealers. Your name, rank and the terms of what you sign are set into the metal, where any reader can pass over it and tell. Port Valen page: " + n + (n === 1 ? " job" : " jobs") + " finished.";
+        return "A palm-sized brass disc. Your name, rank and the terms of what you sign are set into the metal, where any reader can pass over it and tell. Port Valen page: " + n + (n === 1 ? " job" : " jobs") + " finished.";
       },
       badge: function (s) {
         var r = String(s.hall_insignia_rank || "open");

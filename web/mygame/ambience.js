@@ -176,6 +176,9 @@
     // A performance is opt-in and short-lived. ChoiceScript picks a track per set/listen so
     // regular taverns keep their room tone instead of acquiring a permanent bard loop.
     if (s.ambience_lute_active) put(LUTE_TRACKS[Number(s.ambience_lute_track)] || LUTE_TRACKS[1], 0.34);
+    // Halda's is an enclosed forge in Port Valen: keep the hammering foreground, with the city interior's
+    // low room tone beneath it. Other smithies remain just their local forge bed.
+    if (s.shop_open === "halda" && p && p.kind === "blacksmith") put("city_indoor", 0.34);
     for (var i = 0; i < names.length; i++) {
       var layersHere = OVERLAY[names[i]] || [];
       for (var j = 0; j < layersHere.length; j++) {
@@ -184,9 +187,10 @@
         else { put(ol.day, d * level); put(ol.night, (1 - d) * level); }
       }
     }
-    // travel: hooves, on open ground on the overworld, for a rider
+    // travel: hooves, on open ground on the overworld, for a rider. Camp deliberately retains ow_on
+    // so its weather and supplies resolve against the tile, but the player is stationary there.
     var O = window.Overworld, n = s.ow_on && O && O.nodes ? O.nodes[s.ow_pos] : null;
-    var riding = !!(n && s.has_horse && OVERWORLD_OPEN[n.kind]);
+    var riding = !!(n && s.has_horse && OVERWORLD_OPEN[n.kind] && s.sceneName !== "overworld/camp");
     if (riding) put("horseback_travel", 0.9);
     // weather: where there is a bed to hear it in, or on open ground; muffled indoors and underground
     if (p || riding) {

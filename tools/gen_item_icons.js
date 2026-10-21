@@ -187,7 +187,7 @@ const MAP = {
   ledger: "Book_Bound_A_Item_Icon.png",
   scroll: "Scroll_of_Arcane_Lock_Unfaded_Icon.png",
   stone: "Resonance_Stone_Unfaded_Icon.png",
-  splinter: "Broken_Cane_Unfaded_Icon.png",                      // STAND-IN
+  splinter: "../Generic/Sap_Weeping_Spruce_Splinter_Generated_Source.png",
   misc: "Pouch_A_Unfaded_Icon.webp"                              // STAND-IN: the fallback for anything without art
 };
 

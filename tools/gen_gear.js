@@ -67,6 +67,7 @@ function traitHint(it) {
   if (t.heat) w.push(t.heat > 0 ? "heat -" + t.heat + "%" : "heat +" + (-t.heat) + "%");
   if (w.length) out = "Weather wear: " + w.join(", ");
   if (t.stat) out += (out ? "; " : "") + "+" + t.bonus + " " + STAT_NAMES[t.stat];
+  if (t.footing) out += (out ? "; " : "") + "Sure Footing +" + t.footing;
   return out;
 }
 // A piece that gives an ability-score bonus is magical and unique (the user, 2026-10-13): one copy at most, whatever its kind.
@@ -240,6 +241,10 @@ function genGarmentTraits() {
     if (t.cold) L.push('  *set garment_cold ' + t.cold);
     if (t.wet) L.push('  *set garment_wet ' + t.wet);
     if (t.heat) L.push('  *set garment_heat ' + (t.heat < 0 ? "0 - " + (-t.heat) : t.heat));
+    if (t.footing) {
+      L.push('  *set garment_footing ' + t.footing);
+      L.push('  *set garment_footing_label "Sure Footing"');
+    }
     if (t.stat) {
       L.push('  *set garment_stat ' + q(t.stat));
       L.push('  *set garment_bonus ' + t.bonus);

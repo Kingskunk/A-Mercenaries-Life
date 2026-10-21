@@ -212,7 +212,7 @@
           out.push("The counter keeps the same Letters of Credit as the Gilded Scales' head house in Port Valen, so a balance made in one can be drawn in the other.");
         }
         if (truthy(s.has_hall_insignia)) {
-          out.push("The younger clerk issues the same brass Hall insignia as Port Valen's Seals window, to anyone who has none, and reads the rank off it when it is shown.");
+          out.push("The younger clerk issues the same brass insignia as Port Valen's Seals window, to anyone who has none, and reads the rank off it when it is shown.");
         }
         return out;
       },

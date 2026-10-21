@@ -111,7 +111,42 @@
   // The real button is "showing" unless the page (or a panel script) has display:none'd it. Trade and Level Up start hidden.
   function showing(real) { return !!real && real.style.display !== "none"; }
 
+  // THE PLACE IN THE BANNER (2026-10-21, the user): the crimson banner at the top of every page said "A Mercenary's Path" and nothing else. Nearly every place already opens with a
+  // heading line, [b]◈ HARBOR QUAYSIDE[/b], so the banner takes that name and the heading is hidden from the prose (no scene had to change). A page with no heading, or with more than one
+  // (the stats screens are sections of ◈ headings, which must all stay), keeps the game's own title. The h1 is rewritten rather than overlaid, so it reads the same to everything else.
+  var defaultTitle = "", lastPlace = "";
+  function hidePlaceHeading(b) {
+    b.style.display = "none";
+    b.setAttribute("data-place-hidden", "1");
+    var n = b.nextSibling;
+    while (n && n.nodeType === 3 && !n.textContent.replace(/\s+/g, "")) n = n.nextSibling;
+    if (n && n.nodeName === "BR") n.style.display = "none";
+    var p = b.parentNode;
+    if (p && p.id !== "main" && !p.textContent.replace(b.textContent, "").replace(/\s+/g, "")) p.style.display = "none";
+  }
+  function syncPlace() {
+    var t = document.getElementById("title");
+    if (!t) return;
+    if (!defaultTitle && t.textContent && !lastPlace) defaultTitle = t.textContent;
+    if (!defaultTitle) return;
+    var mains = document.querySelectorAll("#main");
+    var main = mains.length ? mains[mains.length - 1] : null;
+    var place = "", heads = [];
+    if (main) {
+      var bs = main.querySelectorAll("b");
+      for (var i = 0; i < bs.length; i++) {
+        var tx = bs[i].textContent.replace(/\s+/g, " ").trim();
+        if (tx.charAt(0) === "\u25C8") heads.push({ el: bs[i], text: tx.replace(/^\u25C8\s*/, "") });
+      }
+    }
+    if (heads.length === 1 && heads[0].text) { place = heads[0].text; hidePlaceHeading(heads[0].el); }
+    var want = place || defaultTitle;
+    if (t.textContent !== want) t.textContent = want;
+    lastPlace = place;
+  }
+
   function sync() {
+    syncPlace();
     if (!rail) return;
     var s = window.stats || {};
     var btns = rail.querySelectorAll("[data-real]");

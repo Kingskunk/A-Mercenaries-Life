@@ -2043,7 +2043,7 @@ button#statSidebar .turnRow,
   function waitButtonHtml(s) {
     var reason = String(s.wait_lock_reason || "");
     var off = !!reason || !canOpenDossier();
-    var tip = reason || "Pass the time: wait a few minutes, or until a time of day.";
+    var tip = reason || "Pass the time: wait a few minutes, or until a time of day. [T]";
     var restOff = !canOpenDossier();
     return "<div class=\"sbWaitRow\"><button type=\"button\" class=\"sbWait\" data-wait-open=\"1\" title=\"" + esc(tip) + "\"" + (off ? " disabled" : "") + ">Wait\u2026</button>" +
       "<button type=\"button\" class=\"sbWait\" data-rest-open=\"1\" title=\"Catch your breath: an hour's rest, and what it wins back.\"" + (restOff ? " disabled" : "") + ">Rest\u2026</button></div>";
@@ -2057,6 +2057,17 @@ button#statSidebar .turnRow,
       scene.execute();
     });
   }
+  // T opens the same Wait menu as the Today card. It never steals a keystroke from text entry, an open panel,
+  // combat, or a scene that has marked waiting unavailable.
+  document.addEventListener("keydown", function (ev) {
+    if ((ev.key !== "t" && ev.key !== "T") || ev.ctrlKey || ev.metaKey || ev.altKey || ev.repeat) return;
+    var target = ev.target, tag = target && target.tagName ? target.tagName.toLowerCase() : "";
+    if (tag === "input" || tag === "textarea" || tag === "select" || (target && target.isContentEditable)) return;
+    if (document.querySelector("dialog[open]")) return;
+    if (String((window.stats || {}).wait_lock_reason || "") || !canOpenDossier()) return;
+    ev.preventDefault();
+    openDossierAt("codex_wait");
+  });
   // One-shot casts (CASTABLE_OUT_OF_COMBAT) leave a one-line result in stats.spell_cast_toast just before the game hands the player back to their page; this shows it and clears it.
   function showSpellToast() {
     var s = window.stats || {};
@@ -2906,6 +2917,8 @@ if (window.location.hostname === 'localhost') {
 <div class="table">
   <div>Select / Continue</div>
   <div><span class="key">Space</span></div>
+  <div>Take a choice at once</div>
+  <div>Double-click it</div>
   <div>Next (Press and Hold)</div>
   <div><span class="key">Enter</span></div>
   <div>Scroll Down</div>
@@ -2926,6 +2939,8 @@ if (window.location.hostname === 'localhost') {
   <div><span class="key">I</span></div>
   <div>Menu</div>
   <div><span class="key">W</span></div>
+  <div>Wait / Pass Time</div>
+  <div><span class="key">T</span></div>
   <div>Mute / Unmute Sound</div>
   <div><span class="key">S</span></div>
   <div>Story to Top / Bottom</div>

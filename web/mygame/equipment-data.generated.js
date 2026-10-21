@@ -1411,7 +1411,7 @@ window.GARMENT_HINTS = {
   "camo_cloak": "Weather wear: cold -40%, rain -40%",
   "talia_oiled_cloak": "Weather wear: cold -50%, rain -80%",
   "talia_deck_boots": "Weather wear: rain -30%",
-  "brant_iron_heel_boots": "Weather wear: rain -20%",
+  "brant_iron_heel_boots": "Weather wear: rain -20%; Caulked Grip +2",
   "broadcloth_cloak": "Weather wear: cold -55%, rain -45%",
   "storm_cape": "Weather wear: cold -30%, rain -75%",
   "winter_cloak": "Weather wear: cold -90%, rain -40%, heat +40%",
