@@ -639,6 +639,9 @@
 *comment into the next fight_<name> label and grant an unearned surprise round there.
 *set combat_player_surprise false
 *set combat_opens_engaged false
+*set combat_no_flee false
+*set combat_leader_slot 0
+*set combat_nonlethal_slot 0
 *set combat_multiattack_slot 0
 *comment Same reason for hiding: cover from one fight must not arm advantage in the next.
 *set combat_player_hidden false
@@ -981,6 +984,13 @@
 *comment Generic over any slot via combat_active_target and {}-name indirection instead of one hand-written
 *comment branch per slot. Widening combat_enemy_slot_cap needs no change here.
 *temp fti_p (("combat_enemy" & combat_active_target) & "_")
+*comment A fight with one non-lethal slot (combat_nonlethal_slot) reads the flag off the enemy now being attacked.
+*if (combat_nonlethal_slot > 0)
+  *set combat_is_nonlethal (combat_active_target = combat_nonlethal_slot)
+*comment The player's strike and finishing lines follow the enemy being attacked (a creature in the same fight as a person, the Burning Grove's Twig Blights beside the mage), not only slot 1.
+*temp fti_ft {(fti_p & "flavor_type")}
+*if (not(fti_ft = ""))
+  *set combat_player_creature ((((fti_ft = "lacedon") or (fti_ft = "mire_rat")) or (fti_ft = "beast")) or (fti_ft = "twig_blight"))
 *set combat_enemy_name {(fti_p & "name")}
 *set combat_enemy_hp {(fti_p & "hp")}
 *set combat_enemy_max_hp {(fti_p & "max_hp")}
@@ -1674,6 +1684,11 @@
     *set combat_all_enemies_dead false
   *set fcd_i + 1
   *goto fight_check_all_dead_loop
+*comment A fight with a leader (combat_leader_slot) is won when the leader falls, whoever else is still on their feet.
+*if (combat_leader_slot > 0)
+  *temp fcd_lhp {(("combat_enemy" & combat_leader_slot) & "_hp")}
+  *if (fcd_lhp <= 0)
+    *set combat_all_enemies_dead true
 *return
 
 *label do_enemy_chase_step
@@ -2421,7 +2436,8 @@
 *if ((((combat_player_actions_left > 0) or (combat_cunning)) and (not(combat_player_disengaged))) and (not(player_movement_restricted)))
   *set combat_can_disengage true
 *temp combat_can_break_off false
-*if ((combat_player_moves_left > 0) and (not(player_movement_restricted)))
+*comment A fight that cannot be left (combat_no_flee, the Burning Grove) never offers Break off.
+*if (((combat_player_moves_left > 0) and (not(player_movement_restricted))) and (not(combat_no_flee)))
   *set combat_can_break_off true
 *comment Dodge (2026-09-28, RAW): +5 AC for the current turn AND "you cannot move". The movement half is
 *comment enforced through ONE flag rather than by editing each movement gate separately, so it cannot be

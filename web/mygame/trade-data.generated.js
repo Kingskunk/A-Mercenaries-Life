@@ -1657,6 +1657,30 @@ window.TRADE_DATA = {
     "countVar": ""
    }
   },
+  "scroll_jump": {
+   "name": "jump scroll",
+   "title": "Jump Scroll",
+   "kind": "consumable",
+   "group": "",
+   "tier": "",
+   "retail": 40,
+   "weight": 0.05,
+   "minutes": 5,
+   "hint": "Read where a leap is needed: the place offers it as a spell",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "countVar": ""
+   }
+  },
   "scroll_speak_with_animals": {
    "name": "animal speech scroll",
    "title": "Animal Speech Scroll",
@@ -2776,6 +2800,7 @@ window.TRADE_DATA = {
     "scroll_bane",
     "scroll_false_life",
     "scroll_detect_magic",
+    "scroll_jump",
     "scroll_speak_with_animals",
     "scroll_charm_person"
    ],
@@ -2786,6 +2811,7 @@ window.TRADE_DATA = {
     "scroll_bane",
     "scroll_false_life",
     "scroll_detect_magic",
+    "scroll_jump",
     "scroll_speak_with_animals",
     "scroll_charm_person"
    ]

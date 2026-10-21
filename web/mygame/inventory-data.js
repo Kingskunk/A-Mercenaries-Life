@@ -260,6 +260,14 @@
       use: true
     },
     {
+      id: "heartwood_fruit", category: "consumables", owned: "has_heartwood_fruit",
+      weight: 0.1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_heartwood_fruit) || 0); return "Heartwood Fruit" + (n > 1 ? " ×" + n : ""); },
+      description: "Pale fruit from the old tree in the Longshade; one a day is a training session.",
+      badge: "One training session, once a day",
+      use: true
+    },
+    {
       id: "honeycomb", category: "consumables", owned: "has_honeycomb",
       weight: 0.5, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_honeycomb) || 0); return "Honeycomb" + (n > 1 ? " ×" + n : ""); },
@@ -414,6 +422,13 @@
       name: function (s) { var n = 1 + (Number(s.spare_scroll_detect_magic) || 0); return "Detect Magic Scroll" + (n > 1 ? " ×" + n : ""); },
       description: "Narrow grey slip with a ring of script round a blank center.",
       badge: "Read where magic may lie: it stands in for the spell, once"
+    },
+    {
+      id: "scroll_jump", category: "consumables", owned: "has_scroll_jump",
+      weight: 0.05, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_scroll_jump) || 0); return "Jump Scroll" + (n > 1 ? " ×" + n : ""); },
+      description: "Pale paper bearing one blue line that rises in a sharp curve.",
+      badge: "Read where a leap is needed: it stands in for Jump, once"
     },
     {
       id: "scroll_speak_with_animals", category: "consumables", owned: "has_scroll_speak_with_animals",

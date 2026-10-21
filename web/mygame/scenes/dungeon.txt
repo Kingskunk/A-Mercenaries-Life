@@ -77,7 +77,7 @@
 *if (dg_table = "silt_conduits")
   *gosub_scene port_valen/port_valen_silt_conduits pvsc_respawn
 *if (dg_table = "longshade_forest")
-  *gosub_scene overworld/longshade_forest lsf_respawn
+  *gosub_scene longshade/longshade_forest lsf_respawn
 *return
 
 *comment The run is over (the player climbed out): clears the darkness debuff and the run flag.
@@ -183,7 +183,7 @@
 *if (dg_table = "silt_conduits")
   *gosub_scene port_valen/port_valen_silt_conduits pvsc_table
 *if (dg_table = "longshade_forest")
-  *gosub_scene overworld/longshade_forest lsf_table
+  *gosub_scene longshade/longshade_forest lsf_table
 *temp dgt_i 1
 *temp dgt_id ""
 *temp dgt_lo 0
@@ -710,7 +710,7 @@
 *if (dg_table = "silt_conduits")
   *gosub_scene port_valen/port_valen_silt_conduits pvsc_forget_map
 *if (dg_table = "longshade_forest")
-  *gosub_scene overworld/longshade_forest lsf_forget_map
+  *gosub_scene longshade/longshade_forest lsf_forget_map
 *set dg_chalk_left 0
 *return
 
@@ -796,13 +796,13 @@
 *return
 
 
-*comment SPELL SOURCES (2026-10-20, the user's scrolls). dg_spell_source <spell id> <spell name>: can this character cast the spell outside a fight right now, and what pays for it? Outputs: dg_ss_can; dg_ss_cost ("none", "free", "ritual", "slot", "scroll"); dg_ss_why
+*comment SPELL SOURCES: dg_spell_source <spell id> <spell name> <minutes> <kind> reports whether a character can cast an out-of-combat spell now and what pays for it. Kind is "cantrip", "ritual", or "spell". Outputs: dg_ss_can; dg_ss_cost ("none", "free", "ritual", "slot", "scroll"); dg_ss_why
 *comment (what is missing when it cannot be cast); dg_ss_tag (the bracket text for a button: "Detect Magic, uses a spell slot, ~5 min"). The order: a racial knack is free; a Wizard who knows the spell casts it as a ritual (no slot, ten extra minutes, the rule in
 *comment MAGIC_AND_ABILITIES_REFERENCE.md); a Bard, Ranger or Warlock who knows it pays a slot; and a character who cannot cast it any of those ways but holds a scroll of it (the item scroll_<spell id>, flag has_scroll_<spell id>) reads
 *comment the scroll, once. Anyone can read a scroll. A new way to cast it (a wand, a charm) is added HERE and nowhere else: the places that offer a spell only ever read dg_ss_can, dg_ss_cost and dg_ss_tag. The caller adds the casting time (5 minutes, 15 for a ritual).
 *label dg_spell_source
-*params dss_spell dss_name dss_mins dss_ritual
-*comment dss_mins: how many minutes the use takes, for the tag (0 for none); dss_ritual: true if a Wizard who knows it can cast it as a ritual (Detect Magic and Speak with Animals), false for an ordinary spell, which a Wizard pays a slot for.
+*params dss_spell dss_name dss_mins dss_kind
+*comment dss_mins: how many minutes the use takes for the tag (0 for none). dss_kind is "cantrip", "ritual", or "spell".
 *comment A page that has already paid for THIS spell (dg_spell_cast) keeps its outputs as they were: the page replays when the dossier or the pack closes, and a scroll that has just been read would otherwise make the replay report "no scroll" and print a different page.
 *if (((dg_ss_locked) and (locked_dg_ss_page_id = page_id)) and (dg_ss_paid_spell = dss_spell))
   *set dg_ss_can dg_ss_snap_can
@@ -817,8 +817,17 @@
 *set dg_ss_tag ""
 *set dg_ss_word "Spell"
 *temp dss_known {("known_" & dss_spell)}
-*temp dss_scroll {("has_scroll_" & dss_spell)}
+*temp dss_scroll false
+*if (not(dss_kind = "cantrip"))
+  *set dss_scroll {("has_scroll_" & dss_spell)}
 *temp dss_slots 0
+*temp dss_permanent_free false
+*if ((dss_spell = "jump") and (inv_otherworldly_leap))
+  *set dss_permanent_free true
+*if ((dss_spell = "mage_armor") and (inv_armor_of_shadows))
+  *set dss_permanent_free true
+*if ((dss_spell = "false_life") and (inv_fiendish_vigor))
+  *set dss_permanent_free true
 *if (character_class = "wizard")
   *set dss_slots wizard_spell_slots
 *if (character_class = "bard")
@@ -827,17 +836,23 @@
   *set dss_slots warlock_spell_slots
 *if (character_class = "ranger")
   *set dss_slots ranger_spell_slots
-*if (dss_known)
-  *if ((race_cantrip = dss_spell) or (race_cantrip_2 = dss_spell))
+*if ((dss_known) or (dss_permanent_free))
+  *if (dss_permanent_free)
     *set dg_ss_cost "free"
     *set dg_ss_can true
-  *elseif ((character_class = "wizard") and (dss_ritual))
+  *elseif ((race_cantrip = dss_spell) or (race_cantrip_2 = dss_spell))
+    *set dg_ss_cost "free"
+    *set dg_ss_can true
+  *elseif (dss_kind = "cantrip")
+    *set dg_ss_cost "free"
+    *set dg_ss_can true
+  *elseif ((character_class = "wizard") and (dss_kind = "ritual"))
     *set dg_ss_cost "ritual"
     *set dg_ss_can true
   *elseif (dss_slots > 0)
     *set dg_ss_cost "slot"
     *set dg_ss_can true
-*if ((not(dg_ss_can)) and (dss_scroll))
+*if (((not(dg_ss_can)) and (dss_scroll)) and (not(dss_kind = "cantrip")))
   *set dg_ss_cost "scroll"
   *set dg_ss_can true
   *set dg_ss_word "Scroll"
@@ -887,7 +902,7 @@
 
 *comment Speaking with a beast and Detect Magic keep their old labels and outputs (dg_swa_can / dg_swa_cost / dg_swa_why, dg_dm_can / dg_dm_cost / dg_dm_why) and add dg_swa_tag and dg_dm_tag, so every place that already calls them works as before; both now go through dg_spell_source.
 *label dg_swa_check
-*gosub dg_spell_source "speak_with_animals" "Speak with Animals" 5 true
+*gosub dg_spell_source "speak_with_animals" "Speak with Animals" 5 "ritual"
 *set dg_swa_can dg_ss_can
 *set dg_swa_cost dg_ss_cost
 *set dg_swa_why dg_ss_why
@@ -899,7 +914,7 @@
 *return
 
 *label dg_dm_check
-*gosub dg_spell_source "detect_magic" "Detect Magic" 5 true
+*gosub dg_spell_source "detect_magic" "Detect Magic" 5 "ritual"
 *set dg_dm_can dg_ss_can
 *set dg_dm_cost dg_ss_cost
 *set dg_dm_why dg_ss_why

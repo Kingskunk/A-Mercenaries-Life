@@ -53,6 +53,8 @@
   *set aeb_profile "sharpshooter"
 *if (aeb_type = "guard")
   *set aeb_profile "guardian"
+*if (aeb_type = "hedge_mage")
+  *set aeb_profile "sharpshooter"
 *comment Slot 0 is the inert placeholder quicktest's branch walk needs: it also walks the else branch below with slot 1, where this prefix would otherwise still be empty. Real slots 2 and up set it before use.
 *temp aeb_p "combat_enemy0_"
 *temp aeb_weapon "melee"
@@ -101,7 +103,7 @@
 *label assign_enemy_size
 *params aes_slot aes_type
 *temp aes_size "medium"
-*if (aes_type = "mire_rat")
+*if ((aes_type = "mire_rat") or (aes_type = "twig_blight"))
   *set aes_size "small"
 *if (aes_slot = 1)
   *set combat_enemy_size aes_size
@@ -265,7 +267,7 @@
 *comment fight_setup runs), so it never bleeds into a later fight or a
 *comment different slot reusing the same type.
 *comment
-*comment Available types, by weapon: "swordsman", "axeman", "knifeman", "maceman", "spearman", "hookman" (hooked
+*comment Available types, by weapon (2026-10-20: hedge_mage, a caster with a poison spray and a staff, and twig_blight, a plant creature vulnerable to fire, were added for the Burning Grove): "swordsman", "axeman", "knifeman", "maceman", "spearman", "hookman" (hooked
 *comment pole), "archer", "slinger" and "guard" (plain mace, no special move), and the creatures "lacedon", "mire_rat" and
 *comment "beast" (a generic natural-attack monster; the player's lines against them are flavor_creature_<slashing|piercing|
 *comment bludgeoning|ranged>, where against the human types they are flavor_player_<...>, both built per attack by the
@@ -316,6 +318,10 @@
   *gosub apply_type_mire_rat
 *if (combat_apply_type = "beast")
   *gosub apply_type_beast
+*if (combat_apply_type = "hedge_mage")
+  *gosub apply_type_hedge_mage
+*if (combat_apply_type = "twig_blight")
+  *gosub apply_type_twig_blight
 *gosub assign_enemy_behavior_profile combat_apply_slot combat_apply_type
 *gosub assign_enemy_size combat_apply_slot combat_apply_type
 *gosub assign_enemy_reach combat_apply_slot combat_apply_type
@@ -1003,6 +1009,106 @@
   *gosub apply_derived_combat_bonuses apt_p
 *return
 
+
+*label apply_type_hedge_mage
+*comment A wandering caster: 22 HP, AC 12, and Poison Spray from range, an ordinary ranged attack at +4 for 1d12 poison (the engine has no save-based attacks for enemies, so the spell is a spell attack). When the player gets close he drops to the
+*comment quarterstaff sidearm, 1d6+2 (the same machinery the archers use for a dagger; flavor_type_hedge_mage_dagger), and falls back when he can. Sharpshooter profile. Not balance-simmed. The Burning Grove's Dubhar (longshade_forest.txt).
+*if (combat_apply_slot = 1)
+  *set combat_enemy_name "Hedge-Mage"
+  *set combat_enemy_hp 22
+  *set combat_enemy_max_hp 22
+  *set combat_enemy_ac 12
+  *set combat_enemy_dmg_dice_sides 12
+  *set combat_enemy_epithet "the hedge-mage"
+  *set combat_enemy_dmg_type "poison"
+  *set combat_enemy_weapon_type "ranged"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 9 11
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 12 14
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 12 14
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 15 16
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 12 14
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 10 12
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
+  *set combat_enemy_atk_bonus 4
+  *set combat_enemy_dmg_bonus 0
+  *set combat_enemy_sidearm_weapon_type "melee"
+  *set combat_enemy_sidearm_atk_bonus 4
+  *set combat_enemy_sidearm_dmg_dice_sides 6
+  *set combat_enemy_sidearm_dmg_bonus 2
+  *set combat_enemy_sidearm_dmg_type "bludgeoning"
+  *set combat_enemy_can_retreat true
+  *set combat_enemy_flee_hp_pct 33
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Hedge-Mage"
+  *set {(apt_p & "hp")} 22
+  *set {(apt_p & "max_hp")} 22
+  *set {(apt_p & "ac")} 12
+  *set {(apt_p & "dmg_dice_sides")} 12
+  *set {(apt_p & "epithet")} "the hedge-mage"
+  *set {(apt_p & "dmg_type")} "poison"
+  *set {(apt_p & "weapon_type")} "ranged"
+  *gosub apply_ability_score_range apt_p "strength" 9 11
+  *gosub apply_ability_score_range apt_p "dexterity" 12 14
+  *gosub apply_ability_score_range apt_p "constitution" 12 14
+  *gosub apply_ability_score_range apt_p "intelligence" 15 16
+  *gosub apply_ability_score_range apt_p "wisdom" 12 14
+  *gosub apply_ability_score_range apt_p "charisma" 10 12
+  *gosub apply_derived_combat_bonuses apt_p
+  *set {(apt_p & "atk_bonus")} 4
+  *set {(apt_p & "dmg_bonus")} 0
+  *set {(apt_p & "sidearm_weapon_type")} "melee"
+  *set {(apt_p & "sidearm_atk_bonus")} 4
+  *set {(apt_p & "sidearm_dmg_dice_sides")} 6
+  *set {(apt_p & "sidearm_dmg_bonus")} 2
+  *set {(apt_p & "sidearm_dmg_type")} "bludgeoning"
+  *set {(apt_p & "can_retreat")} true
+  *set {(apt_p & "flee_hp_pct")} 33
+*return
+
+*label apply_type_twig_blight
+*comment A small plant creature of twig and bramble: 7 HP, AC 14, a claw of knotted wood for 1d4+2, and vulnerable to fire (double fire damage: Control Flames' spread and Alchemist's Fire catch a whole pack). Mindless like the lacedon: never sets
+*comment a chase chance, so it fights whatever is in front of it. Small. Not balance-simmed.
+*if (combat_apply_slot = 1)
+  *set combat_enemy_name "Twig Blight"
+  *set combat_enemy_hp 7
+  *set combat_enemy_max_hp 7
+  *set combat_enemy_ac 14
+  *set combat_enemy_dmg_dice_sides 4
+  *set combat_enemy_epithet "the twig blight"
+  *set combat_enemy_dmg_type "slashing"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 8 10
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 12 14
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 10 12
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 3 5
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 8 10
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 3 5
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
+  *set combat_enemy_atk_bonus 3
+  *set combat_enemy_dmg_bonus 2
+  *set combat_enemy_vulnerable_type_1 "fire"
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Twig Blight"
+  *set {(apt_p & "hp")} 7
+  *set {(apt_p & "max_hp")} 7
+  *set {(apt_p & "ac")} 14
+  *set {(apt_p & "dmg_dice_sides")} 4
+  *set {(apt_p & "epithet")} "the twig blight"
+  *set {(apt_p & "dmg_type")} "slashing"
+  *gosub apply_ability_score_range apt_p "strength" 8 10
+  *gosub apply_ability_score_range apt_p "dexterity" 12 14
+  *gosub apply_ability_score_range apt_p "constitution" 10 12
+  *gosub apply_ability_score_range apt_p "intelligence" 3 5
+  *gosub apply_ability_score_range apt_p "wisdom" 8 10
+  *gosub apply_ability_score_range apt_p "charisma" 3 5
+  *gosub apply_derived_combat_bonuses apt_p
+  *set {(apt_p & "atk_bonus")} 3
+  *set {(apt_p & "dmg_bonus")} 2
+  *set {(apt_p & "vulnerable_type_1")} "fire"
+*return
 
 *label apply_generic_weapon_flavor
 *comment The player's side of a fight against a human fighter. Nothing is stored: every weapon line, finishing blow and

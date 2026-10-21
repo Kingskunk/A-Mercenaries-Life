@@ -545,6 +545,7 @@ You scrape a bold cross into the bark at head height, so you will know this junc
 *line_break
 *gosub_scene dungeon dg_dark_check
 *gosub_scene dungeon dg_swa_check
+*gosub_scene dungeon dg_spell_source "jump" "Jump" 0 "spell"
 *if (dg_dark)
   *if (lsf_spring_reached)
     The track thins under your ${feet_prose} and your hands find stems on every side, but the way south is trampled down now. Water trickles somewhere above.
@@ -588,6 +589,9 @@ You scrape a bold cross into the bark at head height, so you will know this junc
   *if ((lsf_spring_found) and (not(lsf_spring_reached)))
     # Climb the muddy rock toward the sound of water. [~10 min]@{show_stat_hints  [Athletics or Acrobatics DC 11]|}
       *goto lsf_spring_climb
+    *if (dg_ss_can)
+      # Cast Jump and clear the muddy face. [${dg_ss_tag}]
+        *goto lsf_spring_jump
   *if (dg_chalk_ok)
     # Mark this junction with chalk. [~5 min]
       *gosub_scene dungeon dg_chalk_mark
@@ -656,6 +660,18 @@ You find the first handholds in the rock and test each before you trust it.
   *set dg_time_id "lsf_spring_climb"
   *gosub_scene dungeon dg_time
   *goto lsf_n_j7
+
+*label lsf_spring_jump
+*gosub_scene dungeon dg_spell_source "jump" "Jump" 0 "spell"
+*gosub_scene dungeon dg_spell_cast "jump"
+*if (dg_ss_cost = "scroll")
+  You unroll the pale slip against the wet rock and read its rising line aloud. The mud falls away beneath one long stride, and you land on the ledge with water close enough to touch.
+*else
+  You speak the word and spring from the mud. For one breath the slick face drops away beneath you, and you land on the ledge with water close enough to touch.
+*set lsf_spring_reached true
+*set dg_dest "lsf_r4"
+*set dg_dest_hall false
+*goto lsf_move
 
 *label lsf_n_j8
 
@@ -1898,6 +1914,7 @@ ${use_text}
     A low rumble of greeting runs through the roots under your ${feet_prose}, and the yellow eyes follow you in.
 *comment The menu is its own label so a topic returns here and not to the top: the reply is the last prose above the choices, and the room's heading and description are not drawn a second time under it.
 *label lsf_bark_menu
+*temp bm_season ((calendar_year * 4) + (((calendar_month_num - 1) - ((calendar_month_num - 1) modulo 3)) / 3))
 *gosub_scene dungeon dg_status_line
 *choice
   *if (not(lsf_bark_asked_what))
@@ -1921,6 +1938,12 @@ ${use_text}
   *if (lsf_corruption_cleared and not(lsf_bark_reward))
     # "The dark source is ended. The water runs clean again."
       *goto lsf_bark_turnin
+  *if ((lsf_bark_reward) and (not(lsf_fruit_season = bm_season)))
+    # "Has the tree borne again?"
+      *goto lsf_bark_fruit
+  *if ((lsf_dubhar_dead) and (not(lsf_bark_dryad_asked)))
+    # "What can you tell me about the dryad in the grove?"
+      *goto lsf_bark_dryad
   # Go east.
     *set dg_dest "lsf_j15"
     *set dg_dest_hall true
@@ -2007,9 +2030,38 @@ Bark's upper branches rustle like dry paper and windblown reed. The yellow eyes 
 
 "The roots felt the cool water return," he rumbles, a deep hum vibrating through the clearing. "The sick boughs drink again. You kept your word, traveler. The wood remembers its debts, and it will see yours paid."
 
-A lower branch dips toward you in a slow arc, and the yellow eyes close and open again, as if the matter were settled.
+A lower branch bends toward you, and from among the leaves five small fruits drop into your hand, firm and pale as river stones. "These are for you," Bark says, "to help cultivate your body." The yellow eyes close slowly. "There will be more again with the seasons."
+*temp bt_season ((calendar_year * 4) + (((calendar_month_num - 1) - ((calendar_month_num - 1) modulo 3)) / 3))
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *gosub_scene equipment grant_gear "heartwood_fruit" 5
+  *set lsf_fruit_season bt_season
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+*line_break
+[b][🌰 Received: 5 Heartwood Fruit][/b]
 *set dg_mins 5
 *set dg_time_id "lsf_bark_turnin"
+*gosub_scene dungeon dg_time
+*goto lsf_bark_menu
+
+*label lsf_bark_dryad
+*set lsf_bark_dryad_asked true
+"The dryad is rooted deeper than I am," Bark rumbles. "She feels the wood as I do, and she does not lie." The yellow eyes close slowly. "Be gentle with her. Her tree was nearly lost."
+*goto lsf_bark_menu
+
+*comment A new five each season (year x 4 + quarter, the same count as the Old Grove's stock), only from Bark himself: the player has to come back. Fruit not eaten stays in the pack.
+*label lsf_bark_fruit
+*temp bf_season ((calendar_year * 4) + (((calendar_month_num - 1) - ((calendar_month_num - 1) modulo 3)) / 3))
+A lower branch bends toward you, and five more of the pale fruits drop into your hand. "The seasons have turned," Bark rumbles. "Eat them as before."
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *gosub_scene equipment grant_gear "heartwood_fruit" 5
+  *set lsf_fruit_season bf_season
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+*line_break
+[b][🌰 Received: 5 Heartwood Fruit][/b]
+*set dg_mins 5
+*set dg_time_id "lsf_bark_fruit"
 *gosub_scene dungeon dg_time
 *goto lsf_bark_menu
 
@@ -2217,10 +2269,15 @@ You wade in to your ankles and fill the jugs from the clear water, one after ano
 *comment (Survival DC 12, ten minutes) tells what struck it and sets lsf_camp_read; a miss is one try per refill (dg_lsf_camp_tried). Searching the wreckage (Investigation DC 12, twenty minutes) finds a pouch of coin ONCE EVER (lsf_camp_pouch, 6 Silver Marks under the currency lock; the user cut it from a gold crown and two silver, as too much to find so easily);
 *comment a miss is one try per refill (dg_lsf_search_tried). Nothing here is dated, so the room is as true on any day.
 *label lsf_n_r10
+*temp lsf_camp_servant_can false
+*temp lsf_camp_servant_tag ""
 
 [b]◈ THE WRECKED CAMP[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
+*gosub_scene dungeon dg_spell_source "unseen_servant" "Unseen Servant" 5 "ritual"
+*set lsf_camp_servant_can dg_ss_can
+*set lsf_camp_servant_tag dg_ss_tag
 *if (dg_dark)
   Your ${feet_prose} catch in torn cloth and then in a snapped pole. Your hand finds a cold firepit full of fine ash, split crates, and packs spilled open on the ground, with wooden presses and bundles of dry stems trodden among them, and the pole beside you is scored with four deep grooves. A sour smell of old blood hangs over everything.
 *else
@@ -2240,6 +2297,9 @@ You wade in to your ankles and fill the jugs from the clear water, one after ano
   *if ((not(lsf_camp_pouch)) and (not(dg_lsf_search_tried)))
     # Search through the wreckage. [~20 min]@{show_stat_hints  [Investigation DC 12]|}
       *goto lsf_camp_search
+  *if ((not(lsf_camp_pouch)) and (lsf_camp_servant_can))
+    # Send an Unseen Servant through the wreckage. [${lsf_camp_servant_tag}]
+      *goto lsf_camp_servant
   # Go north.
     *set dg_dest "lsf_j21"
     *set dg_dest_hall true
@@ -2291,15 +2351,50 @@ You start at the firepit and work outward, turning over every crate and shaking 
 *gosub_scene dungeon dg_time
 *goto lsf_n_r10
 
+*label lsf_camp_servant
+*gosub_scene dungeon dg_spell_source "unseen_servant" "Unseen Servant" 5 "ritual"
+*gosub_scene dungeon dg_spell_cast "unseen_servant"
+*if (dg_ss_cost = "ritual")
+  You speak the long call over the broken camp. When the last word fades, a faint outline gathers beside the firepit.
+*else
+  You speak the call over the broken camp, and a faint outline gathers beside the firepit.
+*line_break
+It slips between the torn tents and lifts each scrap without disturbing the rest. At a slashed bedroll it pauses, reaches into the lining, and sets a leather pouch in your open hand. A green leaf is stitched on the flap in thread gone grey. Inside is a fistful of silver marks.
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount 60
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*set lsf_camp_pouch true
+*set has_pellam_pouch true
+
+[b][Found: 6 Silver Marks][/b]
+*set dg_mins 5
+*if (dg_ss_cost = "ritual")
+  *set dg_mins 15
+*set dg_time_id "lsf_camp_servant"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r10
+
 *comment THE BEE TREE (Room 11, the user's plan 2026-10-17: the bear story across Rooms 10 to 14; the tree, the bees and the claw marks are invented here). Wild bees in a split lime tree, and the bears that raid it. Taking the comb is Nature or Animal Handling
 *comment DC 12 (advantage under the smoke of a burning torch; a lantern gives none), twenty minutes; a miss is stung (2 HP, never below 1) and can try again; two pieces when the total beats the DC by 5. A character with Speak with Animals can ask the bees
 *comment instead, no roll. The hollow gives honeycomb (a food, 540 minutes of hunger; an ingredient with no buyer for the cooking system to come, and a gift for the sick bear in Room 13; the game will not eat it to stop starvation until she is healed) once per refill (dg_lsf_honey_taken, cleared by lsf_respawn).
 *label lsf_n_r11
+*temp lsf_bees_mage_hand_can false
+*temp lsf_bees_mage_hand_tag ""
+*temp lsf_bees_servant_can false
+*temp lsf_bees_servant_tag ""
 
 [b]◈ THE BEE TREE[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
 *gosub_scene dungeon dg_swa_check
+*gosub_scene dungeon dg_spell_source "mage_hand" "Mage Hand" 0 "cantrip"
+*set lsf_bees_mage_hand_can dg_ss_can
+*set lsf_bees_mage_hand_tag dg_ss_tag
+*gosub_scene dungeon dg_spell_source "unseen_servant" "Unseen Servant" 5 "ritual"
+*set lsf_bees_servant_can dg_ss_can
+*set lsf_bees_servant_tag dg_ss_tag
 *if (dg_dark)
   The air thickens first, warm and sweet, with the smell of wax in it, and a low hum comes out of the dark ahead. Your hand finds a trunk as broad as a doorway. The bark under your fingers is scored in deep parallel grooves at the height of your head, and above them a split in the wood breathes warmth like a hearth.
   *if (dg_lsf_honey_taken)
@@ -2323,6 +2418,12 @@ You start at the firepit and work outward, turning over every crate and shaking 
       # Listen for words in the hum. [Speak with Animals, no spell slot left]
         The words are there in your head, and the strength to speak them has gone out of you for now. The hum stays a hum.
         *goto lsf_n_r11
+    *if (lsf_bees_mage_hand_can)
+      # Use Mage Hand to draw an outer comb from the hollow. [${lsf_bees_mage_hand_tag}]
+        *goto lsf_bees_mage_hand
+    *if (lsf_bees_servant_can)
+      # Send an Unseen Servant for an outer comb. [${lsf_bees_servant_tag}]
+        *goto lsf_bees_servant
   # Go east.
     *set dg_dest "lsf_j18"
     *set dg_dest_hall true
@@ -2402,6 +2503,45 @@ A line of bees carries a slab of comb to the lip of the hollow, and you take it 
 *if (dg_swa_cost = "ritual")
   *set dg_mins 15
 *set dg_time_id "lsf_bees_animals"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r11
+
+*label lsf_bees_mage_hand
+*gosub_scene dungeon dg_spell_source "mage_hand" "Mage Hand" 0 "cantrip"
+*gosub_scene dungeon dg_spell_cast "mage_hand"
+You trace the sign in the air. A pale hand forms beside the hollow, slips between the bees, and eases one outer slab of comb free. It lowers the dripping honey into your waiting leaves while the hive's hum stays low and steady.
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *gosub_scene equipment grant_gear "honeycomb" 1
+  *set dg_lsf_honey_taken true
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+
+[b][Harvested: 1 honeycomb][/b]
+*set dg_mins 5
+*set dg_time_id "lsf_bees_mage_hand"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r11
+
+*label lsf_bees_servant
+*gosub_scene dungeon dg_spell_source "unseen_servant" "Unseen Servant" 5 "ritual"
+*gosub_scene dungeon dg_spell_cast "unseen_servant"
+*if (dg_ss_cost = "ritual")
+  You speak the long call beneath the lime tree. When the last word fades, a faint outline gathers before the hollow.
+*else
+  You speak the call beneath the lime tree, and a faint outline gathers before the hollow.
+*line_break
+It reaches through the bees, lifts one outer slab of comb from the split trunk, and lays it on your waiting leaves. The hum follows it down, then settles.
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *gosub_scene equipment grant_gear "honeycomb" 1
+  *set dg_lsf_honey_taken true
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+
+[b][Harvested: 1 honeycomb][/b]
+*set dg_mins 5
+*if (dg_ss_cost = "ritual")
+  *set dg_mins 15
+*set dg_time_id "lsf_bees_servant"
 *gosub_scene dungeon dg_time
 *goto lsf_n_r11
 
@@ -2571,7 +2711,7 @@ You walk the edge of the clearing and study the raked trunks and the ground at t
     She keeps her face to the roots whenever you move, and a clearer look will have to wait for another day.
 *gosub lsf_env
 *gosub_scene dungeon dg_status_line
-*gosub_scene dungeon dg_spell_source "healing_word" "Healing Word" 10 false
+*gosub_scene dungeon dg_spell_source "healing_word" "Healing Word" 10 "spell"
 *choice
   *if ((not(lsf_bear_healed)) and (not(lsf_bear_read)))
     *if (not(dg_lsf_bear_tried))
@@ -2657,7 +2797,7 @@ For a while she lies with her eyes shut. Then she lets out a long breath that en
 *goto lsf_n_r13
 
 *label lsf_bear_spell
-*gosub_scene dungeon dg_spell_source "healing_word" "Healing Word" 10 false
+*gosub_scene dungeon dg_spell_source "healing_word" "Healing Word" 10 "spell"
 *gosub_scene dungeon dg_spell_cast "healing_word"
 *set lsf_bear_healed true
 *if (dg_ss_cost = "scroll")
@@ -2903,7 +3043,7 @@ You settle onto your heels at the edge of the clearing, well clear of the tree, 
 *comment THE BURNING GROVE (Room 15, the user's design 2026-10-19, chunk 4 of Bark's Quest and the Burning Tree; quest/Bark's Quest - Room 15, the Burning Grove.md): the end of the stream path. The old oak at the center of the ring is on fire (lsf_tree_state "burning"), a dryad beats at it, and two swarms of
 *comment sprites fight overhead. The fire lights the room even at night (dungeon.txt dg_dark_check reads lsf_tree_state). Four ways to put it out, none longer than 5 minutes: Control Flames and twenty full water jugs save it outright; a shovel (Athletics DC 14) and a firebreak (Survival DC 13) are rolls, and a
 *comment pass saves it too. A miss means the dryad puts it out herself and has no time to help later (lsf_dryad_busy). The oak is always saved. A player who saves it is the dryad's friend (lsf_dryad_friend, +5 and advantage on Persuasion with her). The only way out while it burns is the walk-away button, which fails
-*comment Bark's quest for good (lsf_bark_failed; Room 7 closes behind the player, lsf_gap_sealed). lsf_grove_mins counts the minutes spent in this room, for the sprites' difficulty later. NOTHING PAST THE OAK BEING SAVED IS WRITTEN YET (the user: wait for the word): no Dubhar, no fight, no talk of the poison.
+*comment Bark's quest for good (lsf_bark_failed; Room 7 closes behind the player, lsf_gap_sealed). lsf_grove_mins counts the minutes spent in this room, for the sprites' difficulty later. CHUNK 5 (the dryad's talk, the search for Dubhar, his speech and the fight, lsf_r15_bridge to lsf_r15_dubhar_down) is built; NOTHING PAST HIS FALL IS WRITTEN YET (the user: wait for the word).
 *label lsf_n_r15
 
 *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
@@ -2927,8 +3067,13 @@ You settle onto your heels at the edge of the clearing, well clear of the tree, 
 *temp r15_night ((time_period = "Night") or (time_period = "Pre-Dawn"))
 *temp r15_ticks ((lsf_grove_mins - (lsf_grove_mins modulo 5)) / 5)
 *temp r15_pick ((r15_ticks modulo 4) + 1)
+*comment The oak greens in any season after the one Dubhar died in (the dryad's relationship opens then).
+*temp r15_season ((calendar_year * 4) + (((calendar_month_num - 1) - ((calendar_month_num - 1) modulo 3)) / 3))
+*temp r15_green ((lsf_dubhar_dead) and (not(lsf_dubhar_death_season = r15_season)))
 *if (lsf_tree_state = "burning")
   [b]◈ THE BURNING GROVE[/b]
+*elseif (r15_green)
+  [b]◈ THE GREENING OAK[/b]
 *else
   [b]◈ THE SCORCHED GROVE[/b]
 *line_break
@@ -2943,7 +3088,7 @@ You settle onto your heels at the edge of the clearing, well clear of the tree, 
       *line_break
       The skin between your shoulders prickles, the way it does when someone is watching from a place you cannot see.
     *line_break
-    The dryad spins around at the sound of your steps. "Please." Her voice is raw. She looks from you to the burning oak, then up at the swarms tearing at one another through the smoke. "Help me. Water, earth, magic—anything. They will not stop, and I cannot leave him." Her hands go back to the bark. "Please."
+    The dryad spins around at the sound of your steps. "Please." Her voice is raw. She looks from you to the burning oak, then up at the swarms tearing at one another through the smoke. "Help me. Water, earth, magic—anything. They will not stop, and I cannot leave it to burn." Her hands go back to the bark. "Please."
   *else
     *if (r15_night)
       The oak still burns from root to top, throwing the ring of trunks into black and gold. The woman is at its foot, beating at the bark, and the ringing of the swarms fills the air.
@@ -2959,23 +3104,60 @@ You settle onto your heels at the edge of the clearing, well clear of the tree, 
   *if (r15_pick = 4)
     The fire cracks in the heartwood like a stick snapped over a knee.
 *else
-  *if (dg_dark)
-    Heat still comes off the oak in slow breaths, and the air is thick with wet char. The bark ticks as it cools, and ash shifts under your ${feet_prose}. Overhead the two swarms keep up their thin, glassy shrieking.
-  *elseif (r15_night)
-    Embers glow in the cracks along the oak's trunk and give the ring a low red light. The oak stands black from root to top, and the grass around it is grey with ash. Flùràlainn stands at its foot with her palm flat against the bark, and overhead the two swarms keep up their thin, glassy shrieking.
+  *if (r15_green)
+    *if (dg_dark)
+      The air is cool and green-smelling, and the trunk is rough with new growth under your palm. Leaves stir overhead, and the stream talks to itself in the dark.
+    *elseif (r15_night)
+      The moon reaches down through the ring and catches the new leaves all up the oak. Flùràlainn sits among its roots with her feet in the stream, and the boughs overhead are loud with sleeping sprites.
+    *else
+      New growth has broken through the black bark all up the trunk, bright as new copper, and the low limbs are pricked with buds. Flùràlainn sits among the roots with her feet in the stream, and small wings flicker in the boughs overhead.
+    *line_break
+    *if (r15_pick = 1)
+      A bud splits on a low limb and shows a curl of green.
+    *if (r15_pick = 2)
+      A thorn-brown sprite and a green one share a branch and a crust of something, arguing mildly.
+    *if (r15_pick = 3)
+      Wind moves through the new leaves with a sound like rain.
+    *if (r15_pick = 4)
+      A leaf drifts down from the boughs and settles on the water.
+    *set lsf_env_quiet true
+    *gosub lsf_env
   *else
-    The ring of trees stands quiet under a haze of thinning smoke. The old oak at its center is black from root to top and ticking as it cools, and the grass around it is grey with ash. Flùràlainn stands at its foot with her palm flat against the bark. Overhead the two swarms still wheel and shriek.
-  *line_break
-  *if (r15_pick = 1)
-    A last wisp of smoke slides out of a crack in the trunk and thins to nothing.
-  *if (r15_pick = 2)
-    Ash lifts and settles on the grass in the draft the swarms stir up.
-  *if (r15_pick = 3)
-    The bark ticks as it cools, a slow sound like a clock.
-  *if (r15_pick = 4)
-    A green sprite drops into the ash, stares at the black oak with unfocused eyes, and flits away.
-  *set lsf_env_quiet true
-  *gosub lsf_env
+    *if (dg_dark)
+      Heat still comes off the oak in slow breaths, and the air is thick with wet char. The bark ticks as it cools, and ash shifts under your ${feet_prose}.
+      *if (lsf_dubhar_dead)
+        The boughs overhead are silent.
+      *else
+        Overhead the two swarms keep up their thin, glassy shrieking.
+    *elseif (r15_night)
+      Embers glow in the cracks along the oak's trunk and give the ring a low red light. The oak stands black from root to top, and the grass around it is grey with ash. Flùràlainn stands at its foot with her palm flat against the bark.
+      *if (lsf_dubhar_dead)
+        The boughs overhead are empty and still.
+      *else
+        Overhead the two swarms keep up their thin, glassy shrieking.
+    *else
+      The ring of trees stands quiet under a haze of thinning smoke. The old oak at its center is black from root to top and ticking as it cools, and the grass around it is grey with ash. Flùràlainn stands at its foot with her palm flat against the bark.
+      *if (lsf_dubhar_dead)
+        The boughs overhead are empty and still.
+      *else
+        Overhead the two swarms still wheel and shriek.
+    *line_break
+    *if (r15_pick = 1)
+      A last wisp of smoke slides out of a crack in the trunk and thins to nothing.
+    *if (r15_pick = 2)
+      *if (lsf_dubhar_dead)
+        Ash lifts and settles on the grass in a small passing draft.
+      *else
+        Ash lifts and settles on the grass in the draft the swarms stir up.
+    *if (r15_pick = 3)
+      The bark ticks as it cools, a slow sound like a clock.
+    *if (r15_pick = 4)
+      *if (lsf_dubhar_dead)
+        A leaf drifts down from the boughs and settles on the black bark.
+      *else
+        A green sprite drops into the ash, stares at the black oak with unfocused eyes, and flits away.
+    *set lsf_env_quiet true
+    *gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
   *if (lsf_tree_state = "burning")
@@ -2996,16 +3178,20 @@ You settle onto your heels at the edge of the clearing, well clear of the tree, 
         *goto lsf_r15_shovel
     # Cut a firebreak around the roots. [~5 min]@{show_stat_hints  [Survival DC 13]|}
       *goto lsf_r15_firebreak
-  *comment REMOVED FOR NOW (the user, 2026-10-19): there is no attempt to stop the sprite battle before the mage is beaten, so the three options below (Watch the swarms, Step between the swarms, Shout at the swarms again) are kept as comments, to go back in when the label that stops the battle is written.
-  *comment *if (not(lsf_sprites_watch_tried))
-  *comment # Watch the swarms. [~5 min]@{show_stat_hints  [Insight DC 12]|}
-  *comment *goto lsf_r15_watch
-  *comment *if (not(lsf_sprites_tried))
-  *comment # Step between the swarms and order them to stop.
-  *comment *goto lsf_r15_charge
-  *comment *else
-  *comment # Shout at the swarms again. [~1 min]
-  *comment *goto lsf_r15_shout
+  *if ((not(lsf_tree_state = "burning")) and (not(lsf_dubhar_down)))
+    *if (lsf_dryad_hint)
+      # Go to the thicket where she pointed. [~5 min]
+        *goto lsf_r15_search
+    *if (not(lsf_dryad_hint))
+      # Look for whoever has been in the grove. [~5 min]@{show_stat_hints  [Perception DC 15, advantage]|}
+        *goto lsf_r15_search
+  *if (lsf_dubhar_dead)
+    *if (r15_green)
+      # Spend time with Flùràlainn. [~1 hour]
+        *goto_scene longshade/longshade_dryad ld_enter
+    *if (not(r15_green))
+      # Speak with Flùràlainn. [~5 min]
+        *goto_scene longshade/longshade_dryad ld_early
   *if (lsf_tree_state = "burning")
     # Turn your back on her and go.
       *goto lsf_r15_walk_away
@@ -3031,7 +3217,7 @@ You settle onto your heels at the edge of the clearing, well clear of the tree, 
 *line_break
 "Can it be saved?"
 *line_break
-"For a little while, I can make the flames yield. I cannot stop them." Her palms press to the bark; the fire shrinks, then snaps back. "If you carry water, bring it. If you can command fire, do it. If you can save the roots with earth—please. Do not let him burn."
+"For a little while, I can make the flames yield. I cannot stop them." Her palms press to the bark; the fire shrinks, then snaps back. "If you carry water, bring it. If you can command fire, do it. If you can save the roots with earth—please. Do not let the oak burn."
 *set lsf_dryad_talked true
 *set dg_mins 2
 *set dg_time_id "lsf_r15_talk"
@@ -3110,7 +3296,7 @@ You choose the line where the grass ends and start tearing it up, then the roots
 *gosub lsf_grove_tick
 *goto lsf_r15_thanks
 
-*comment THE OAK IS SAVED. This is where the written story stops for now (the user: wait for the word before going on): her thanks and her name, and whether she is the player's friend or too spent to help. Nothing about the sprites, the stream or the poison is said yet.
+*comment THE OAK IS SAVED: her thanks and her name, and whether she is the player's friend or too spent to help. It hands on to her talk about the sprites and the stream (lsf_r15_bridge, below).
 *label lsf_r15_thanks
 She is on her knees in the ash with her hair hanging over her face, and when she lifts it her eyes are wet. "I thank you," she says. "I am Flùràlainn. This is my grove, and it was mine before the oldest of these trees was a seed."
 *line_break
@@ -3118,55 +3304,303 @@ She is on her knees in the ash with her hair hanging over her face, and when she
   She grips your forearm and says it again. "Whatever you need in this grove, you have only to ask."
 *else
   She turns back to the black bark and lays her palm on it. "I would have liked the strength to do more for you. I have none left."
+*page_break Ask her about the swarms.
+*goto lsf_r15_bridge
+
+*comment THE DRYAD'S TALK (chunk 5): once, right after her thanks. She says why the swarms are fighting; if the player has found the pool poisoned (lsf_corruption_found) she looks at the thicket where the stream bends (lsf_dryad_hint), busy or not.
+*label lsf_r15_bridge
+"Why are they fighting?" you ask.
+*line_break
+"They are not themselves." Flùràlainn stares at the two swarms wheeling over the clearing. "The Briarvine and the Thornbranch. For years I stood between them, and they listened. Then something changed, and now each would burn the grove if it meant the other could not have it. They drink from the stream and they get worse. Greed, and nothing else, as if all that was left of them was wanting."
+*if (lsf_corruption_found)
+  *line_break
+  "The water is poisoned," you tell her. "I've seen what it does."
+  *line_break
+  She goes very still. "Poisoned. By whom?" You shake your head, and her eyes slide to the thicket of briar where the stream bends, and back to you. "Someone has been in my grove, and I did not feel them. That should not be possible."
+  *set lsf_dryad_hint true
+*set dg_mins 2
+*set dg_time_id "lsf_r15_bridge"
+*gosub_scene dungeon dg_time
+*gosub lsf_grove_tick
 *goto lsf_n_r15
 
-*comment REMOVED FOR NOW (the user, 2026-10-19): trying to stop the sprite battle only happens AFTER the mage is beaten (order: save the oak, fight the mage, then stop the battle). The three labels below (lsf_r15_watch, lsf_r15_charge, lsf_r15_shout) are kept as comments, to be refactored into that later label. Nothing jumps to them.
-*comment *label lsf_r15_watch
-*comment You stand clear of the heat and watch the swarms instead of the fire.
-*comment *gosub_scene dice_engine roll_skill_check 12 "insight" "" "" "" "" ""
-*comment *if (check_success)
-*comment   Something is wrong in them. Their eyes slide past you and past each other, bright and unfocused, and between rushes they drift down to the stream and kneel on the bank to drink, over and over, as if they cannot stop.
-*comment   *set lsf_sprites_watched true
-*comment *else
-*comment   It is a blur of wings and tiny blades, and nothing in it makes sense.
-*comment *set lsf_sprites_watch_tried true
-*comment *set dg_mins 5
-*comment *set dg_time_id "lsf_r15_watch"
-*comment *gosub_scene dungeon dg_time
-*comment *gosub lsf_grove_tick
-*comment *goto lsf_n_r15
-*comment
-*comment *comment Stepping between the swarms costs a quarter of the player's maximum HP, at least 2 (the user: either works), never below 1, once. After that it is only described.
-*comment *label lsf_r15_charge
-*comment *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-*comment   *set lsf_sprite_cost ((hp_max - (hp_max modulo 4)) / 4)
-*comment   *if (lsf_sprite_cost < 2)
-*comment     *set lsf_sprite_cost 2
-*comment   *if (lsf_sprite_cost > (hp_current - 1))
-*comment     *set lsf_sprite_cost (hp_current - 1)
-*comment   *if (lsf_sprite_cost < 0)
-*comment     *set lsf_sprite_cost 0
-*comment   *comment replay-ok: inside the stat_bump page lock, and lsf_sprites_tried keeps the option from being paid twice.
-*comment   *set hp_current (hp_current - lsf_sprite_cost)
-*comment   *set lsf_sprites_tried true
-*comment   *set stat_bump_locked true
-*comment   *set locked_stat_bump_page_id page_id
-*comment You walk into the middle of the dogfight with your hands up and shout. Both swarms turn on you at once, a hail of tiny blades and thorns and furious small faces, and you stagger out of the cloud with your arms over your head, bleeding from a hundred scratches. They have already forgotten you.
-*comment *line_break
-*comment [b][🩸 Scratched raw: -${lsf_sprite_cost} HP | HP: ${hp_current} / ${hp_max}][/b]
-*comment *set dg_mins 2
-*comment *set dg_time_id "lsf_r15_charge"
-*comment *gosub_scene dungeon dg_time
-*comment *gosub lsf_grove_tick
-*comment *goto lsf_n_r15
-*comment
-*comment *label lsf_r15_shout
-*comment Your voice vanishes under the shrieking, and both swarms keep to their fight.
-*comment *set dg_mins 1
-*comment *set dg_time_id "lsf_r15_shout"
-*comment *gosub_scene dungeon dg_time
-*comment *gosub lsf_grove_tick
-*comment *goto lsf_n_r15
+*comment THE SEARCH (chunk 5). With the dryad's pointer the player walks straight to the thicket; without it, Perception DC 15 with advantage (Bark's quest is taken), five minutes a try, retryable, and each try is on the grove clock. A pass, or the pointer, reaches lsf_r15_found.
+*label lsf_r15_search
+*if (lsf_dryad_hint)
+  You follow her pointing hand across the ash to the bend in the stream.
+  *line_break
+*else
+  You turn slowly, studying the ring of trees, the stream bank and the black oak.
+  *set advantage true
+  *gosub_scene dice_engine roll_skill_check 15 "perception" "" "" "" "" ""
+  *if (not(check_success))
+    The grove gives back nothing but ash and ringing.
+    *set dg_mins 5
+    *set dg_time_id "lsf_r15_search"
+    *gosub_scene dungeon dg_time
+    *gosub lsf_grove_tick
+    *page_break Back to the oak…
+    *goto lsf_n_r15
+  Then you see it: between the stream and the trees, one patch of briar is wrong.
+  *line_break
+*set dg_mins 5
+*set dg_time_id "lsf_r15_search"
+*gosub_scene dungeon dg_time
+*gosub lsf_grove_tick
+*goto lsf_r15_found
+
+*label lsf_r15_found
+*set lsf_dubhar_found true
+*temp r15f_night ((time_period = "Night") or (time_period = "Pre-Dawn"))
+*if (r15f_night)
+  Between the stream and the ring of trees a stand of briar grows head-high, thick with thorns as long as your finger. In the low red glow from the embers, a shape in the middle of it picks itself out. It is not part of the briar. It is a man in a grey cloak, crouched so still that his hood had looked like a stone.
+*else
+  Between the stream and the ring of trees a stand of briar grows head-high, thick with thorns as long as your finger. A shape in the middle of it has not moved since you came in. It is not part of the briar. It is a man in a grey cloak, crouched so still that his hood had looked like a stone.
+*line_break
+He stands up unhurried, as if you had knocked at his door at a bad hour. He is lean, with a long face gone grey at the temples and ink on his fingertips, and he holds a quarterstaff wrapped at the grip in strips of bark.
+*line_break
+*if (r15f_night)
+  At his feet the dark shifts, and three small shapes of twig and bramble lift out of the leaf litter one at a time and stand, each no taller than a dog, with knuckles of knotted wood where their hands should be.
+*else
+  At his feet the ground shifts. Three small shapes of twig and bramble uncurl from the leaf litter and stand, each no taller than a dog, with knuckles of knotted wood where their hands should be.
+*line_break
+"You," he says mildly, as if you were a small inconvenience. "I do wish you hadn't."
+*line_break
+He lays one ink-stained hand flat on the staff. "I did try the quiet way, you know. Some things did not turn out as I had hoped. I would have prefered the easy way, but it seem I will have to get my hands dirty."
+*line_break
+"Why are you doing this?" you ask.
+*line_break
+The corners of his mouth lift, he ignores your question. "It is remarkable how little a creature needs to want, once you've taken everything else away. A week more and the whole wood would have been drinking from my hand. You've been very thorough. You've also been very tiresome."
+*set lsf_dubhar_speech_done true
+*page_break Square up to him.
+
+*comment THE FIGHT (chunk 5). A death battle that cannot be left: combat_player_can_die is raised for it and combat_no_flee takes away "Break off and run" (the user: no fleeing this one). combat_leader_slot 1 ends it the moment the mage falls, and the twig shapes fall apart with him. Two Twig Blights stand with him; the dryad (lsf_dryad_friend) takes one out of the fight, and the healed bear (lsf_bear_healed) takes the other, so both together leave him alone. The player's own strike lines follow slot 1, the mage, so they are the human ones even against a blight.
+*label lsf_r15_fight
+*set lsf_dubhar_fight_started true
+*set lsf_blights_left 2
+*if (lsf_dryad_friend)
+  *set lsf_blights_left (lsf_blights_left - 1)
+  Flùràlainn steps up beside you with both hands raised. The ground bursts at the feet of one of the twig shapes, and roots haul it down, thrashing, until the leaf litter closes over it.
+*else
+  Flùràlainn leans against the black oak, spent, and cannot lift a hand.
+*line_break
+*if (lsf_bear_healed)
+  *set lsf_blights_left (lsf_blights_left - 1)
+  A roar comes down the trail, and then the crash of something heavy through the brush. A brown bear bursts into the grove at a run and takes the nearest twig shape in her jaws, shaking it apart.
+  *line_break
+Behind you the briar rattles and draws tight across the way you came in.
+*set combat_is_nonlethal false
+*set combat_player_can_die true
+*set combat_no_flee true
+*set combat_leader_slot 1
+*set combat_nonlethal_slot 1
+*set combat_lib_1 "hedge_mage"
+*set combat_enemy_name_override "Grey-Cloaked Man"
+*set combat_enemy_epithet_override "the grey-cloaked man"
+*set combat_enemy_range 2
+*if (lsf_blights_left >= 1)
+  *set combat_lib_2 "twig_blight"
+  *set combat_enemy2_range 1
+*if (lsf_blights_left >= 2)
+  *set combat_lib_3 "twig_blight"
+  *set combat_enemy3_range 1
+*gosub_scene dungeon dg_fight_prep
+*gosub_scene combat fight_library
+*set combat_player_can_die false
+*if (combat_outcome = "player_died")
+  *set death_cause "combat"
+  *set death_location_name "The Burning Grove"
+  *set death_enemy_epithet "the grey-cloaked man and his twig blights"
+  *goto_scene death death_screen
+*goto lsf_r15_dubhar_down
+
+*comment HE IS DOWN, and the war is still on. Stopping it is the first beat of chunk 6 (quest/Bark's Quest - Stopping the Sprites.md); NOTHING PAST THE SWARMS STOPPING IS WRITTEN YET (the user: wait for the word): his waking, the begging, the spare-or-kill choice, the clean water, the sprites' second challenge, Bark's fruit.
+*label lsf_r15_dubhar_down
+*set lsf_dubhar_down true
+*if (lsf_blights_left > 0)
+  The grey-cloaked man goes down, and the twig shapes still standing fall apart into heaps of dead sticks.
+*else
+  The grey-cloaked man goes down, and the thicket falls quiet around him.
+*line_break
+Overhead the swarms fight on, louder than before, as if his fall had loosed whatever held them and left only the rage. Small bodies drop through the smoke into the ash. There is one way to end this, and it is to walk into the middle of it and make them listen.
+*goto lsf_r15_war
+
+*comment THE WAR (the user's design 2026-10-20). Persuasion, Intimidation or Performance, all DC 13, tried as often as it takes, each try one minute on the grove clock (the roll comes BEFORE the minute, so a Guidance cast ahead still counts). The helpers set the roll: neither the dryad (lsf_dryad_friend) nor the bear (lsf_bear_healed) is disadvantage, one is a straight roll, both is advantage. A miss costs half the HP the player has, rounded down and never below 1; the third miss is death. One pass ends it, and the misses before it say how much of both armies is gone: 0 = 10%, 1 = 20%, 2 = 40% (recorded in lsf_sprite_dead_pct, nothing reads it yet). There is no way out of the war, so no other option is offered.
+*label lsf_r15_war
+*temp lw_edge ""
+*temp lw_helpers 0
+*if (lsf_dryad_friend)
+  *set lw_helpers (lw_helpers + 1)
+*if (lsf_bear_healed)
+  *set lw_helpers (lw_helpers + 1)
+*if (lw_helpers = 0)
+  *set lw_edge ", disadvantage"
+*if (lw_helpers = 2)
+  *set lw_edge ", advantage"
+*temp lw_h1 ""
+*temp lw_h2 ""
+*temp lw_h3 ""
+*if (show_stat_hints)
+  *set lw_h1 (" [Persuasion DC 13" & (lw_edge & "]"))
+  *set lw_h2 (" [Intimidation DC 13" & (lw_edge & "]"))
+  *set lw_h3 (" [Performance DC 13" & (lw_edge & "]"))
+*choice
+  # Shout over the din that their minds are not their own.${lw_h1}
+    *goto lsf_r15_war_persuade
+  # Roar at them to put up their blades.${lw_h2}
+    *goto lsf_r15_war_intimidate
+  # Sing to them.${lw_h3}
+    *goto lsf_r15_war_sing
+
+*comment Sets advantage or disadvantage for the roll that follows, from the helpers.
+*label lsf_r15_war_edge
+*temp lwe_helpers 0
+*if (lsf_dryad_friend)
+  *set lwe_helpers (lwe_helpers + 1)
+*if (lsf_bear_healed)
+  *set lwe_helpers (lwe_helpers + 1)
+*if (lwe_helpers = 0)
+  *set disadvantage true
+*if (lwe_helpers = 2)
+  *set advantage true
+*return
+
+*label lsf_r15_war_persuade
+You wade in with your arms spread and shout until your voice cracks. The water is poisoned, you tell them. The man who did it lies senseless in the briar. Every one of you has been made to want what you never wanted. "Look at yourselves!"
+*gosub lsf_r15_war_edge
+*gosub_scene dice_engine roll_skill_check 13 "persuasion" "" "" "" "" ""
+*if (check_success)
+  Something in the swarm hitches. A green sprite lowers her blade and stares at her own hand, then at the thorn-brown one she had been about to cut. "We were not..." she says, in a voice no bigger than a bell. The words run through both swarms like a wind.
+  *goto lsf_r15_war_won
+*goto lsf_r15_war_miss
+
+*label lsf_r15_war_intimidate
+You plant your feet under the thickest of the fighting and bellow, loud enough to shake ash off the branches, that the next one to raise a blade will answer to you.
+*gosub lsf_r15_war_edge
+*gosub_scene dice_engine roll_skill_check 13 "intimidation" "" "" "" "" ""
+*if (check_success)
+  The din dies from the edges inward. Blades drop, and both swarms hang in the smoke, staring at the thing that shouted. For the first time since you came, you can hear the embers ticking in the black oak.
+  *goto lsf_r15_war_won
+*goto lsf_r15_war_miss
+
+*label lsf_r15_war_sing
+You draw a breath from the soles of your feet and sing. A long, rising note first, and then a verse as plain as a lullaby, pitched to carry over the shrieking.
+*gosub lsf_r15_war_edge
+*gosub_scene dice_engine roll_skill_check 13 "performance" "" "" "" "" ""
+*if (check_success)
+  The verse climbs, and the shrieking thins under it. One by one the sprites stop where they hang to listen, until the last wingbeat falters and both swarms drift down onto the branches, quiet as roosting birds.
+  *goto lsf_r15_war_won
+*goto lsf_r15_war_miss
+
+*comment A miss: half the HP the player has (rounded down, never below 1 HP left), once per page; the third miss is death. The failure count and the HP are taken inside one page lock, so a replay of this page cannot take them twice.
+*label lsf_r15_war_miss
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *comment replay-ok: inside the stat_bump page lock.
+  *set lsf_sprite_fails (lsf_sprite_fails + 1)
+  *set lsf_sprite_cost ((hp_current - (hp_current modulo 2)) / 2)
+  *if (lsf_sprite_cost > (hp_current - 1))
+    *set lsf_sprite_cost (hp_current - 1)
+  *if (lsf_sprite_cost < 0)
+    *set lsf_sprite_cost 0
+  *if (lsf_sprite_fails < 3)
+    *comment replay-ok: inside the stat_bump page lock.
+    *set hp_current (hp_current - lsf_sprite_cost)
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+*if (lsf_sprite_fails >= 3)
+  The cloud closes over you. You see a wall of wings, then a wall of knives, and then you see nothing.
+  *page_break Everything goes dark…
+  *set death_cause "combat"
+  *set death_location_name "The Burning Grove"
+  *set death_enemy_epithet "the sprites in the grove"
+  *goto_scene death death_screen
+Both swarms turn on you at once, a hail of tiny blades and thorns and furious small faces. You stagger out of the cloud with your arms over your head, bleeding from a hundred scratches. They have already forgotten you.
+*line_break
+[b][🩸 Scratched raw: -${lsf_sprite_cost} HP | HP: ${hp_current} / ${hp_max}][/b]
+*gosub lsf_r15_war_time
+*page_break Fight your way back to them.
+*goto lsf_r15_war
+
+*label lsf_r15_war_won
+*set lsf_sprites_stopped true
+*if (lsf_sprite_fails = 0)
+  *set lsf_sprite_dead_pct 10
+*if (lsf_sprite_fails = 1)
+  *set lsf_sprite_dead_pct 20
+*if (lsf_sprite_fails >= 2)
+  *set lsf_sprite_dead_pct 40
+*line_break
+*if (lsf_sprite_fails = 0)
+  The smoke thins. Here and there a small body lies still in the ash, perhaps one in ten of them. The rest hover and stare at their own hands as if they had never seen them.
+*if (lsf_sprite_fails = 1)
+  The smoke thins, and the ash is dotted with small bodies, about one in five of them. The living drift among them, silent, turning them over.
+*if (lsf_sprite_fails >= 2)
+  The smoke thins on a grim count. Two in every five of them lie in the ash, green and thorn-brown together, and the living hang over them in a silence worse than the shrieking.
+*gosub lsf_r15_war_time
+*page_break Turn toward the briar.
+*goto lsf_r15_end
+
+*comment DUBHAR'S END (the user's design 2026-10-20; quest/Bark's Quest - Dubhar's End and the Fruit.md). The war is over and he wakes, begs, and the player spares him or ends him. A spared Dubhar dies anyway, at random by the dryad's roots or the sprites (decided once and saved, so a replay prints the same page); the poison goes with him either way (lsf_corruption_cleared), and refusing to kill him costs the player the dryad's regard (lsf_dryad_regard_lost). NOTHING PAST THIS IS WRITTEN: what he leaves behind is a later chunk.
+*label lsf_r15_end
+A cough comes from the thicket. The grey-cloaked man has dragged himself upright against the briar with one hand pressed to where you struck him. The mildness is still on his face, but it has worn thin, like paper over a flame.
+*line_break
+"Well," he says. "That was thorough." His eyes go past you to the black oak, to the swarms hanging quiet in the smoke, to the small bodies in the ash. "I did not think anyone could stop them."
+*line_break
+"Please." The word comes out smaller than the rest of him. "I'll go. This hour, this minute. I'll not set foot in this wood again, I swear it on anything you like. You've won. What more is there to take?"
+*choice
+  # Let him go.
+    *goto lsf_r15_spare
+  # End it.
+    *goto lsf_r15_kill
+
+*label lsf_r15_kill
+You make it quick. He meets your eyes until the end, and then his hand opens on the staff.
+*set lsf_dubhar_killed_by "player"
+*goto lsf_r15_poison_gone
+
+*label lsf_r15_spare
+"Go," you tell him. "And keep going."
+*line_break
+He gets a hand under him and hauls himself up on the briar. He has taken three steps along the stream when the grove makes up its mind.
+*line_break
+*if (lsf_dubhar_killed_by = "")
+  *temp lsp_pick 0
+  *rand lsp_pick 1 2
+  *if (lsp_pick = 1)
+    *set lsf_dubhar_killed_by "dryad"
+  *else
+    *set lsf_dubhar_killed_by "sprites"
+*set lsf_dubhar_spared true
+*set lsf_dryad_regard_lost true
+*if (lsf_dubhar_killed_by = "dryad")
+  Roots break the ground across his path, thick as a man's thigh, and close around his legs. Flùràlainn walks out of the smoke with her palm held out flat. "Not through my wood," she says, not loudly. The roots draw him down, and the leaf litter closes over the place.
+*else
+  A single green sprite drops out of the smoke and lands on his shoulder. He stops. "This is for my friends!" it says, in a voice no bigger than a bell. Behind it both swarms lift off the branches together, green and thorn-brown in one cloud. They pass over you without a glance, and then the briar is full of the sound of tiny wings, and then silence.
+*goto lsf_r15_poison_gone
+
+*comment The poison goes with him, whoever it was. The sidebar entry's goal (quest-data.js) reads lsf_corruption_cleared and sends the player back to Bark.
+*label lsf_r15_poison_gone
+*set lsf_dubhar_dead true
+*set lsf_corruption_cleared true
+*if (lsf_dubhar_death_season = 0)
+  *set lsf_dubhar_death_season ((calendar_year * 4) + (((calendar_month_num - 1) - ((calendar_month_num - 1) modulo 3)) / 3))
+*line_break
+Down in the grove the ringing has already stopped, and now the air above the stream feels different, like a held breath let go.
+*line_break
+The sprites do not stay. The green ones gather their dead in their arms, and the thorn-brown ones do the same, and the two groups drift apart toward opposite edges of the ring. A few look back at you as they go.
+*line_break
+*if (lsf_dryad_friend)
+  Flùràlainn stays where she is, one hand on the black bark. "You came into my grove with nothing to gain by it," she says. "I will remember that. When the oak greens again, come and see it."
+*else
+  Flùràlainn leans on the black bark. "I could not do what you did," she says quietly. "Thank you."
+*goto lsf_n_r15
+
+*label lsf_r15_war_time
+*set dg_mins 1
+*set dg_time_id "lsf_r15_war"
+*gosub_scene dungeon dg_time
+*gosub lsf_grove_tick
+*return
 
 *comment WALKING AWAY (the user's ruling, no confirmation): the quest fails for good. The player walks out the way they came; arriving in Room 7 closes the gap behind them and takes everything north of it, and Bark's Glade with its spur, off the map (lsf_n_r7).
 *label lsf_r15_walk_away

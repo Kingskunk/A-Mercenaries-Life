@@ -267,7 +267,7 @@ Control flames can also expand flames as well, not sure how difficult this would
 
 ## BUILD NOTES (for me, not for you to decide)
 
-* Edits to Bark's lines (0a), the turn-in reward (0b), and the new rooms 7, 9, 15 and Trail 27 in `overworld/longshade_forest.txt`. The map names and the hidden-edge rule for Room 7 to Room 9 in `dungeons/longshade_forest.js` (the edge reads `lsf_bark_accepted`).
+* Edits to Bark's lines (0a), the turn-in reward (0b), and the new rooms 7, 9, 15 and Trail 27 in `longshade/longshade_forest.txt`. The map names and the hidden-edge rule for Room 7 to Room 9 in `dungeons/longshade_forest.js` (the edge reads `lsf_bark_accepted`).
 * State: `lsf_dubhar_felt`, `lsf_dubhar_found`, `lsf_dubhar_dead`, `lsf_pool_wrong`, `lsf_tree_saved` (and its degrees), `lsf_dryad_friend`, plus the existing `lsf_bark_quest`, `lsf_bark_accepted`, `lsf_corruption_found` and `lsf_corruption_cleared`.
 * The -5 Wisdom effect uses one of the three unique effect slots with a negative bonus for 4,320 minutes; it needs a check that a negative bonus shows and applies.
 * Two new enemies for the fight library: Dubhar (a human caster with Poison Spray, which the library may not have) and the Twig Blight (a plant creature that takes extra damage from fire).

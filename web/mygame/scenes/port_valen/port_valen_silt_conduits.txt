@@ -465,6 +465,7 @@ The water is over the lowest steps and still rising at the edges. Whatever is do
 
 *gosub_scene dungeon dg_tide_check
 *gosub_scene dungeon dg_dark_check
+*gosub_scene dungeon dg_spell_source "mage_hand" "Mage Hand" 0 "cantrip"
 [b]◈ THE GATE HALL[/b]
 *line_break
 *if (dg_dark)
@@ -505,6 +506,9 @@ The water is over the lowest steps and still rising at the edges. Whatever is do
   *if ((not(dg_silt_r2_cross)) and (dg_tide = "high"))
     # Cross the walkway, through the water over the middle. [~10 min]@{show_stat_hints  [Acrobatics DC 13]|}
       *goto pvsc_r2_cross
+  *if ((not(dg_silt_r2_cross)) and (dg_ss_can))
+    # Use Mage Hand to take the oilcloth through the booth's slit window. [${dg_ss_tag}]
+      *goto pvsc_r2_mage_hand
   *if ((not(dg_silt_r2_climb)) and (not(dg_dark)))
     # Climb a hanging chain to the hoist beam. [~15 min]@{show_stat_hints  [Athletics DC 12]|}
       *goto pvsc_r2_climb
@@ -522,6 +526,23 @@ The water is over the lowest steps and still rising at the edges. Whatever is do
 *label pvsc_r2_climb_dark
 You hear the chains clink above you, but you cannot tell where they lead or which of them is sound.
 *line_break
+*goto pvsc_n_r2
+
+*label pvsc_r2_mage_hand
+*gosub_scene dungeon dg_spell_source "mage_hand" "Mage Hand" 0 "cantrip"
+*gosub_scene dungeon dg_spell_cast "mage_hand"
+You trace the sign over the basin. A pale hand takes shape above the black water, drifts to the booth, and slips through its narrow window. A moment later it returns with the stiff oilcloth folded between its fingers.
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *gosub_scene equipment grant_gear "waxed_oilcloth" 1
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+*set dg_silt_r2_found true
+*set dg_silt_r2_cross true
+*line_break
+[b][Found: an oilcloth sheet][/b]
+*set dg_mins 5
+*set dg_time_id "r2_mage_hand"
+*gosub_scene dungeon dg_time
 *goto pvsc_n_r2
 
 *label pvsc_r2_cross
@@ -891,6 +912,7 @@ Nothing more can be shifted without bringing the rest of the roof down.
 
 *gosub_scene dungeon dg_tide_check
 *gosub_scene dungeon dg_dark_check
+*gosub_scene dungeon dg_spell_source "minor_illusion" "Minor Illusion" 0 "cantrip"
 [b]◈ THE LAIR[/b]
 *line_break
 *if (dg_dark)
@@ -925,6 +947,9 @@ Nothing more can be shifted without bringing the rest of the roof down.
   *if ((not(dg_silt_r4_brood_dead)) and (not(dg_silt_r4_quiet)))
     # Creep round the edge of the room to the narrow arch. [~10 min]@{show_stat_hints  [Stealth DC 13]|}
       *goto pvsc_r4_creep
+  *if (((not(dg_silt_r4_brood_dead)) and (not(dg_silt_r4_quiet))) and (dg_ss_can))
+    # Cast Minor Illusion to draw the brood from the narrow arch. [${dg_ss_tag}]
+      *goto pvsc_r4_illusion
   *if ((dg_silt_r4_brood_dead) and (not(dg_silt_r4_plant)))
     # Scrape the faintly glowing film off the wall behind the nest. [~15 min]@{show_stat_hints  [Nature or Survival DC 12]|}
       *goto pvsc_r4_plant
@@ -958,6 +983,16 @@ You cross the mud with your weapon ready. Halfway to the mound the heap splits o
   *set combat_enemy_advantage true
   *line_break
   *goto pvsc_r4_fight
+
+*label pvsc_r4_illusion
+*gosub_scene dungeon dg_spell_source "minor_illusion" "Minor Illusion" 0 "cantrip"
+*gosub_scene dungeon dg_spell_cast "minor_illusion"
+You shape a dry skittering from the far side of the chamber, sharp as shells being crushed under many feet. The mound stirs. The brood-mother uncoils toward the sound, and the smaller thing follows her across the mud. You keep to the wall and slip through the narrow arch while they hunt for what is not there.
+*set dg_silt_r4_quiet true
+*set dg_mins 10
+*set dg_time_id "r4_illusion"
+*gosub_scene dungeon dg_time
+*goto pvsc_n_r4
 
 *label pvsc_r4_fight
 *set combat_is_nonlethal false
@@ -1324,6 +1359,7 @@ You turn back the way you came.
 *comment ──────────────────────────────────────────────────────────────
 *label pvsc_enc_ledge
 *gosub_scene dungeon dg_dark_check
+*gosub_scene dungeon dg_spell_source "jump" "Jump" 0 "spell"
 *if (dg_dark)
   The floor ends under your foot, and a pebble you kick goes over the edge and lands in water a long moment later, far below. Your hand finds a narrow rim of brick running along the wall, one foot wide, and above it a rusted iron ring-bolt set in the stone.
 *else
@@ -1337,8 +1373,21 @@ You turn back the way you came.
       Your foot skids on the wet brick and you drop to your chest, fingers clawing at the rim. You haul yourself up, scraped and shaking, and finish the crossing on your hands and knees.
       *gosub pvsc_hurt
     *goto pvsc_here
+  *if (dg_ss_can)
+    # Cast Jump across the gap. [${dg_ss_tag}]
+      *goto pvsc_ledge_jump
   # Turn back.
     *goto pvsc_retreat
+
+*label pvsc_ledge_jump
+*gosub_scene dungeon dg_spell_source "jump" "Jump" 0 "spell"
+*gosub_scene dungeon dg_spell_cast "jump"
+*if (dg_ss_cost = "scroll")
+  You read the scroll's rising line over the black water. The far lip comes up beneath you in one long stride, and you land clear of the crumbling edge.
+*else
+  You speak the word and spring. The gap drops away beneath you, and you land clear of the crumbling edge.
+*line_break
+*goto pvsc_here
 
 *label pvsc_enc_rising_water
 *gosub_scene dungeon dg_dark_check

@@ -375,6 +375,10 @@ Sold at **The Ink & Lamp** (Aldren Saye, Patrician Quarter), always in stock, bo
 | Bane Scroll (`has_scroll_bane`) | 50c | in a fight | Up to three foes make a Charisma save (DC 8 + proficiency + casting modifier) or are Baned for 10 rounds |
 | False Life Scroll (`has_scroll_false_life`) | 40c | in a fight or from the pack | 1d4 + 4 temporary hit points for 12 hours |
 
-Two more scrolls (2026-10-20), 40c each, read from the place that offers the spell, never from a fight or the pack: **Detect Magic Scroll** (`has_scroll_detect_magic`) and **Animal Speech Scroll** (`has_scroll_speak_with_animals`, the Speak with Animals scroll). A character who cannot cast the spell any other way reads it at the forest's rooms, the road events and the Silt-Gate mouse; one who can cast it keeps the scroll.
+Three more scrolls, 40c each, are read from the place that offers the spell, never from a fight or the pack: **Detect Magic Scroll** (`has_scroll_detect_magic`), **Animal Speech Scroll** (`has_scroll_speak_with_animals`, the Speak with Animals scroll), and **Jump Scroll** (`has_scroll_jump`). A character who cannot cast the spell any other way reads it at the relevant site; one who can cast it keeps the scroll. The Jump Scroll clears the Hidden Spring's muddy climb in Longshade.
 
 A **Charm Person Scroll** (`has_scroll_charm_person`, 50c) is read at the sawyer's pit in Port Valen, where a conversation offers the spell. The bear's Healing Word and the broker's Dissonant Whispers now accept a scroll too (the Healing Word scroll already exists for fights; Dissonant Whispers has no scroll yet).
+
+### Heartwood Fruit (2026-10-20, Bark's reward)
+
+**Heartwood Fruit** (`has_heartwood_fruit`, goodberry icon): five at once from Bark when the player tells him the water runs clean, and five more each season (year x 4 + quarter) when the player goes back and asks if the tree has borne again. Not bought or sold. **Eating one** (the pack's Use button, 5 minutes) adds **one training session** (`training_sessions`), **once a day** (`heartwood_last_day`); a second fruit the same day is refused and stays. It does not touch `last_training_day`, so the day's own training is still open (two sessions a day at most). Fruit not eaten stays in the pack; nothing spoils.

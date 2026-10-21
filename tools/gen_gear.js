@@ -127,7 +127,7 @@ function effectSummary(it) {
   if (ef.type === "wash") return "Hygiene back to Clean, with water at hand";
   if (ef.type === "dressing") return "+" + ef.bonus + " HP from your next sleep";
   if (ef.type === "ration") return ef.food && ef.food < 2160 ? "Holds off about " + Math.round(ef.food / 60) + " hours of hunger" : "Clears hunger, like a meal";
-  if (ef.type === "throw" || ef.type === "arrow" || ef.type === "scroll") return ef.summary;
+  if (ef.type === "throw" || ef.type === "arrow" || ef.type === "scroll" || ef.type === "training") return ef.summary;
   var h = ef.minutes % 60 === 0 ? (ef.minutes / 60) + " hours" : ef.minutes + " minutes";
   return "+" + ef.bonus + " " + ef.stat.toUpperCase() + " for " + h;
 }
@@ -176,6 +176,8 @@ function genGearInfo() {
       } else if (ef.type === "scroll") {
         // the spell the scroll casts (its id); use_consumable (equipment.txt) reads it for a scroll read outside a fight, and combat.txt's Read options are written by hand
         L.push('  *set gear_eff_name ' + q(ef.spell));
+      } else if (ef.type === "training") {
+        // no fields: use_consumable (equipment.txt) adds the session and keeps the once-a-day rule itself
       } else if (ef.type === "throw" || ef.type === "arrow") {
         // no fields: a thrown item is used only in a fight, and combat.txt fight_throw_item / combat_spells.txt resolve_throw_item work from the item id
       } else {

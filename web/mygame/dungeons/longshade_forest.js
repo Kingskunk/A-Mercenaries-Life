@@ -4,7 +4,7 @@
  * prefix lsf_, so the flags dg_seen_<id>, dg_mark_<id> and dg_done_<id> cannot collide with another dungeon's.
  * Positions are grid cells, east and south positive, and may be fractions. A prose option that names a compass direction (Go east) must still point roughly that way on this map. kind: "hall" (a trail junction, can be chalked),
  * "room" (named), "exit" (a way in or out). The two exits are the two mouths: the south mouth opens on The Longshade (overworld tile lf) and the east mouth on West Longshade (ua). An edge with a third element is HIDDEN until that
- * stat is true (dungeonmap.js liveEdge). tools/check_dungeon_map.js compares this file with the scene (scenes/overworld/longshade_forest.txt).
+ * stat is true (dungeonmap.js liveEdge). tools/check_dungeon_map.js compares this file with the scene (scenes/longshade/longshade_forest.txt).
  */
 (function () {
   "use strict";
@@ -12,7 +12,7 @@
   DM.maps = DM.maps || {};
   DM.maps.longshade_forest = {
     title: "The Longshade Forest",
-    scene: "overworld/longshade_forest.txt",
+    scene: "longshade/longshade_forest.txt",
     idPrefix: "lsf_",
     labelPrefix: "lsf_n_",
     nodes: {

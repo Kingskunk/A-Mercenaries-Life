@@ -112,11 +112,12 @@
       active: function (s) { return s.amb_order_stage === "active" && (!truthy(s.amb_repeat) || Number(s.amb_order_season) === ambSeason(s)); }
     },
     {
-      // Bark's quest (overworld/longshade_forest.txt, 2026-10-19; quest/Bark's Quest and the Burning Tree.md): taken from Bark in the Longshade, in progress until it is finished or the player walks away from the burning grove (lsf_bark_failed, which also clears lsf_bark_accepted). A finished or failed quest simply leaves the list.
+      // Bark's quest (longshade/longshade_forest.txt, 2026-10-19; quest/Bark's Quest and the Burning Tree.md): taken from Bark in the Longshade, in progress until it is finished or the player walks away from the burning grove (lsf_bark_failed, which also clears lsf_bark_accepted). A finished or failed quest simply leaves the list.
       id: "bark_poisoned_water", title: "The Troubled Water",
       giver: "Bark, the old tree in the Longshade",
       place: "Longshade Forest · northwest of the Hazel Clearing",
       goal: function (s) {
+        if (truthy(s.lsf_corruption_cleared)) return "Return to Bark in his glade.";
         if (truthy(s.lsf_grove_seen) && s.lsf_tree_state === "burning") return "Put out the burning oak in the grove.";
         if (truthy(s.lsf_grove_seen)) return "Find out what is poisoning the water.";
         return "Follow the stream northwest and find what is poisoning the water.";
@@ -125,7 +126,6 @@
         var c = [];
         if (truthy(s.lsf_corruption_found)) c.push("The pool at the head of the path is poisoned. Drinking it clouds the mind.");
         if (truthy(s.lsf_grove_seen)) c.push("At the end of the stream a great oak is burning, and two swarms of sprites are at war over it.");
-        if (truthy(s.lsf_sprites_watched)) c.push("The sprites are not themselves: they keep drifting down to the stream to drink.");
         if (truthy(s.lsf_dubhar_felt)) c.push("Something in the grove was watching you.");
         return c;
       },

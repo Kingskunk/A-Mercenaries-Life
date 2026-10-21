@@ -1,0 +1,383 @@
+*comment ====================================================================================
+*comment FLÙRÀLAINN, THE DRYAD OF THE GROVE (the user's design 2026-10-20; quest/Flùràlainn - The Dryad of the Grove.md). The Janna model (alderford/janna_alcove.txt): a bond number that starts by what the quest did
+*comment (10 saved the oak and killed Dubhar, 7 saved the oak and spared him, 6 she saved the oak herself, 4 she saved it herself and he was spared), +3 for the first meeting, +3 for one evening a campaign week, and
+*comment at 20 bond one night a week, outdoors under the oak, that is a long rest with a short boon (Rooted Calm, +1 CON for three days). She opens when the oak greens, the season after Dubhar dies
+*comment (lsf_dubhar_death_season); before that she has one short quiet exchange. A library scene entered from Room 15's menu (longshade/longshade_forest.txt) and always returning to lsf_n_r15. No jealousy system.
+*comment ====================================================================================
+
+*comment The quiet exchange before the oak has greened: no bond, and it can be repeated.
+*label ld_early
+*set dryad_early_seen true
+Flùràlainn sits with her back against the black oak and her palm flat on the bark. She looks up when you come into the ring, and some of the weight goes out of her face.
+*line_break
+"It is not dead," she says. "Do not look at me like that. The roots are still drawing water."
+*line_break
+She listens to the bark beneath her hand. "Come back when the year turns. I think you will see new growth."
+*set hours_to_pass 0
+*set minutes_to_pass 5
+*set time_advance_call_id "ld_early"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the grove…
+*goto_scene longshade/longshade_forest lsf_n_r15
+
+*comment Spending time with her once the oak has greened. The bond is seeded the first time, from what the player did in the grove.
+*label ld_enter
+*if (not(dryad_bond_seeded))
+  *if (lsf_dryad_friend)
+    *if (lsf_dryad_regard_lost)
+      *set dryad_bond 7
+    *else
+      *set dryad_bond 10
+  *else
+    *if (lsf_dryad_regard_lost)
+      *set dryad_bond 4
+    *else
+      *set dryad_bond 6
+  *set dryad_bond_seeded true
+*if (dryad_first_met)
+  *goto ld_hub
+
+*label ld_first
+*comment The first meeting (+3 bond, +1 more for the reply). The paragraph about the grove follows how the war ended (lsf_sprite_dead_pct).
+[b]◈ THE GREENING OAK[/b]
+*line_break
+New growth has broken through the black bark all up the trunk, bright as new copper, and the low limbs are pricked with buds.
+*if (lsf_sprite_dead_pct <= 10)
+  The boughs are loud with small voices again, careful at first and then not careful at all. A few sprites have strung tiny garlands round the oak's roots.
+*elseif (lsf_sprite_dead_pct <= 20)
+  There are fewer voices in the boughs than there should be, but they are singing, and a green sprite lands on your shoulder, looks at you, and goes.
+*else
+  The grove is quiet. White flowers are laid out in rows at the foot of the oak, each with a small flat stone beside it, and the sprites go about in twos and threes without a sound.
+*line_break
+Flùràlainn comes down off the roots to meet you, and for the first time you see her face without ash or fear on it. "You came," she says. Then, more quietly: "I thought perhaps you belonged here only on the worst day."
+*if (lsf_dryad_busy)
+  *line_break
+  "You saw me at my weakest, that day," she says. Her mouth tightens. "I have been trying not to think about it."
+*if ((lsf_dubhar_spared) and (not(lsf_dubhar_killed_by = "dryad")))
+  *line_break
+  "You asked that he be allowed to live. The amount of pain he cause the grove, protecting it was the only choice." She glances toward the woods beyond the ring. "I was angry with you for a while. I am not angry anymore. But I am not certain I understand either."
+*choice
+  # "How is the oak?"
+    You nod toward the new leaves. "How is your tree?"
+
+    Her whole face opens. "Hungry. The roots have not stopped drinking since the first rain." She puts both hands on the bark. "It is drawing water from half the hill. I ought to redirect some of it, but I have missed having that problem."
+  # "How are you?"
+    You wait until she looks at you. "How are you?"
+
+    "The oak is better," she says at once.
+
+    You wait.
+
+    She looks down at the soil beneath her nails. "I keep waking because I think I have forgotten something. Probably I have. Just not the thing I am afraid of."
+  # "I wanted to see it for myself."
+    "I wanted to see it for myself," you tell her. "You said to come."
+
+    She smiles, then seems to catch herself at it. "I did. I assumed promises made by people on roads were different from promises made here."
+*if (not(dryad_bond_award_locked)) or (not(locked_dryad_bond_page_id = page_id))
+  *set dryad_bond (dryad_bond + 4)
+  *set dryad_bond_award_locked true
+  *set locked_dryad_bond_page_id page_id
+*set dryad_first_met true
+*set hours_to_pass 0
+*set minutes_to_pass 30
+*set time_advance_call_id "ld_first"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+You stay while the shadows move. She shows you where the stream bends, where the first sapling has taken root in the ash, and a beetle with a blue shell that she insists is unusually clever. When you rise to go, she walks you to the edge of the ring.
+*line_break
+"You can come again," she says.
+*line_break
+Her fingers catch on a loose strand of bark. "Do not make a promise. Just... if you are nearby."
+*if (show_stat_hints)
+  *line_break
+  [b][Flùràlainn Bond +4: ${dryad_bond}][/b]
+*page_break Back to the grove…
+*goto_scene longshade/longshade_forest lsf_n_r15
+
+*label ld_hub
+*temp ld_week ((((campaign_day - 1) - ((campaign_day - 1) modulo 7)) / 7) + 1)
+*temp ld_weekly_open (not(dryad_bond_week = ld_week))
+*temp ld_evening ((time_period = "Dusk") or (time_period = "Night"))
+
+[b]◈ THE GREENING OAK[/b]
+*line_break
+The oak stands in its new green at the center of the ring, and Flùràlainn sits among its roots with her feet in the stream.
+*temp ld_sprite (campaign_day modulo 5)
+*if (ld_sprite = 0)
+  A sprite drops onto your shoulder, announces that a white flower opened by the water this morning, and is gone.
+*elseif (ld_sprite = 1)
+  A thorn-brown sprite circles your head twice, looks you over with great seriousness, and lands in the oak.
+*elseif (ld_sprite = 2)
+  Two sprites, one green and one thorn-brown, go past arm in arm, arguing cheerfully about a beetle.
+*elseif (ld_sprite = 3)
+  A green sprite perches on your shoulder, says it has been told you are a friend of the grove, and asks whether this is true.
+*else
+  A sprite hovers in front of your face for a moment, whispers a rumor about a fox, and vanishes up the trunk.
+*line_break
+*if (not(ld_weekly_open))
+  Flùràlainn looks up and smiles. "You were here only a few days ago. I have not had time to invent a new worry." She pats the root beside her. "You may sit anyway."
+  *if (dryad_last_evening = "oak")
+    "The squirrels have begun knocking unripe acorns loose," she adds. "I am trying to decide whether that is a good sign."
+  *elseif (dryad_last_evening = "names")
+    "One of the Thornbranch came this morning," she says. "We did not speak. It was still better than yesterday."
+  *elseif (dryad_last_evening = "harbour")
+    "I have been thinking about your gulls," she says. "They sound badly brought up."
+*if ((dryad_intimacy_unlocked) and (not(ld_evening)))
+  She leans her head back against the oak. "If you stay until dark, I would not object. I am not saying you must."
+*choice
+  *if (ld_weekly_open)
+    # Spend an evening with Flùràlainn. [~1 hour]
+      *goto ld_event
+  *if ((dryad_intimacy_unlocked) and ((ld_weekly_open) and (ld_evening)))
+    # Ask Flùràlainn if you may stay the night. [~8 hours]
+      *goto ld_night_offer
+  # Leave her to the grove.
+    You get to your feet. "I will let you have the quiet back."
+
+    "It will be here," she says.
+    *page_break Back to the grove…
+    *goto_scene longshade/longshade_forest lsf_n_r15
+
+*label ld_event
+*temp ld_ev (ld_week modulo 3)
+*if (ld_ev = 1)
+  She is looking at the oak, and she does not turn when you come to sit beside her. "I woke at its foot," she says. "Before I knew a word for anything, I knew bark under my hands. I have never been able to say who planted it. I do not think it was planted."
+  *line_break
+  *choice
+    # Ask what it was like, waking there.
+      "What was it like?" you ask. "Waking against the tree."
+
+      "Confusing." Her thumb moves over a knot in the root. "I knew I was safe before I knew what safe meant. I thought the whole world would feel like that. It was an unfair beginning."
+    # Ask if the sap in the oak and the blood in her are the same thing.
+      "Is it the same thing?" you ask. "What moves in the oak and what moves in you?"
+
+      She looks at you sidelong. "No." A pause. "Yes. Perhaps. I have had a very long time to become unhelpful when people ask that."
+    # Say that she has kept the oak alive.
+      "You have kept it alive," you say.
+
+      She rubs at one eye with the heel of her hand, irritated by it. "For now." Then she looks up at you. "But... thank you."
+  *set dryad_last_evening "oak"
+*elseif (ld_ev = 2)
+  She is weaving stems of white flowers into a long pale chain, and she talks without looking up. "The Briarvine and the Thornbranch were one people once. A storm broke the old nest, and the survivors argued about which way to rebuild. Each side thought the other had cost them a child." The chain pauses in her fingers. "I knew most of the dead by name."
+  *line_break
+  *choice
+    # Say their names, if she wants to say them.
+      "Tell me their names," you say. "If you would like to say them."
+
+      She does. When she is done, she lays the chain in the stream and watches it turn once before it drifts away.
+    # Offer to carry a message to the survivors.
+      "If there is anything you want carried to the survivors," you say, "I will go."
+
+      She shakes her head. "Not yet. They would hear your footsteps and think I had sent a warning." She considers. "Ask me again when the flowers are gone."
+    # Only sit with her, and listen.
+      You sit beside her, and she works, and the stream goes on talking to itself.
+
+      After a while, she leans her shoulder against yours. She does not say why.
+  *set dryad_last_evening "names"
+*else
+  She has her feet in the stream and her face turned up to the light. "Tell me what a harbour smells like," she says. "I have never been past the edge of the water."
+  *line_break
+  *choice
+    # Tell her about tar, salt and the smoke of the fish-sheds.
+      You tell her: tar and cold salt and wet rope, fish smoke coming off the sheds, a thousand gulls over a basin full of masts. She listens with her eyes closed.
+
+      "It sounds like a forest made of ships." She opens one eye. "Are the gulls always that loud, or do they become louder when they know you have food?"
+    # Describe how loud a city is, and how little anyone listens.
+      "A city never stops," you say. "Cartwheels, bells, shouting from every window. Everyone is saying something and almost no one is listening."
+
+      She wrinkles her nose. "How do they sleep?" she asks. You tell her: badly, and then you learn not to hear it. She looks genuinely troubled by this.
+    # Ask what she would want to see, if she could leave.
+      "If you could go," you say, "what would you want to see?"
+
+      She thinks about it a long while. "The sea, I think. And someone else's forest." Her expression shifts, almost wary. "I want to know whether the trees there know the same songs. I am not certain I want them not to."
+  *set dryad_last_evening "harbour"
+*set dryad_bond_week ld_week
+*if (not(dryad_bond_award_locked)) or (not(locked_dryad_bond_page_id = page_id))
+  *set dryad_bond (dryad_bond + 3)
+  *set dryad_bond_award_locked true
+  *set locked_dryad_bond_page_id page_id
+*set hours_to_pass 0
+*set minutes_to_pass 60
+*set time_advance_call_id "ld_evening"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*if ((dryad_bond >= 20) and (not(dryad_intimacy_unlocked)))
+  *set dryad_intimacy_unlocked true
+  *line_break
+  When you rise to leave, Flùràlainn catches your hand. She seems about to speak, changes her mind, then tries again. "You could stay one night, if you wanted to." Her thumb moves once over your knuckles. "Ask me. I prefer being asked."
+*if (show_stat_hints)
+  [b][Flùràlainn Bond +3: ${dryad_bond}][/b]
+*page_break Back to the grove…
+*goto_scene longshade/longshade_forest lsf_n_r15
+
+*label ld_night_offer
+*temp dno_week ((((campaign_day - 1) - ((campaign_day - 1) modulo 7)) / 7) + 1)
+The moon has come up over the ring, and the new leaves of the oak catch it. Flùràlainn's palm rests on the bark. Then she lifts it and holds out her hand to you.
+*line_break
+"Stay," she says. Her mouth twitches, as if she dislikes how bare the word sounds. "If you want to. With me."
+*choice
+  # "Are you certain?"
+    You take her hand, and you do not pull her to you. "Are you certain?"
+
+    "Yes." Her fingers close around yours. After a moment, she adds, "Ask tomorrow if you like. I will answer tomorrow too."
+    *set dryad_intimacy_tone "ask"
+    *set dryad_bond_week dno_week
+    *goto ld_night_scene
+  # "I want to."
+    You step into the circle of moonlight beside her. "I want to stay. I want you."
+
+    A low sound catches in her throat, not quite a laugh. "That is very plainly said." She pulls you down beside the roots. "Good."
+    *set dryad_intimacy_tone "want"
+    *set dryad_bond_week dno_week
+    *goto ld_night_scene
+  # "Come here."
+    You hold out both hands. "Come here."
+
+    Her eyes widen. Then she takes one of your hands and puts it at her waist. "You could have asked," she says, but she is smiling when she comes close.
+    *set dryad_intimacy_tone "lead"
+    *set dryad_bond_week dno_week
+    *goto ld_night_scene
+  # "I would rather sleep beside you, and only that."
+    "I would rather sleep beside you," you say, "and only that."
+
+    Her face softens in the dark. "Good," she says. "I wanted that too. I did not want you to have to guess."
+    *set dryad_intimacy_tone "quiet"
+    *set dryad_bond_week dno_week
+    *goto ld_night_quiet
+
+*label ld_night_scene
+*set ambience_intimacy true
+*temp ld_var (campaign_day modulo 4)
+*if (ld_var = 0)
+  She kisses you under the leaves, slowly at first, and her hands find the places the road has left tight in you and loosen them one by one. Her skin is warm and a little rough, like sunlit bark that has learned to be soft, and where your palms cross it a pale green flush follows, spreading and fading like light through water. She draws you down onto the moss and over her, opening beneath you with a quiet, glad sound, and keeps you close enough that every change in her breath has an answer.
+  *line_break
+  The pace builds without hurry. Her heels hook behind you; her hair, long ropes of green gone silver in the moonlight, spills across the moss and tangles in your fingers. When she comes she holds you through it, trembling, and above you the new leaves shiver all at once without any wind.
+  *line_break
+  She stays close afterward, her forehead against yours, breathing the sweet green smell of cut stems. Above you, the oak's leaves whisper against one another.
+*elseif (ld_var = 1)
+  Flùràlainn leads you down to the stream, where the moss gives way to cool, smooth stones. She sits on the bank with her feet in the water and draws you between her knees, and the first long kiss tastes of rain. Her hands are braver than her voice; they push the cloth from your shoulders and trace your ribs, your spine, and when you bend to her throat she makes a sound like wind through a thousand leaves.
+  *line_break
+  You find her with your mouth and hands until she is shaking against you, then she pulls you into her. The stream runs cold over the stones, her body is warm and certain around you, and the rhythm you find comes in time with the water. She comes apart with her head thrown back, her nails scoring your shoulders, and you follow a breath behind.
+  *line_break
+  Afterward she laughs, low and breathless, and splashes you. "Do not look pleased with yourself," she says. "I am still deciding whether the stream is better with you in it."
+*elseif (ld_var = 2)
+  She pushes you back against the trunk of the oak, and the bark is warm at your shoulders, warmer than the night has any right to make it. "Mind the rough places," Flùràlainn says into your mouth. Her palms flatten on the wood either side of your head, and she sinks onto you with a slow sigh.
+  *line_break
+  There is nothing gentle in how she wants you now. Her body rolls over yours in long, hungry strokes that tighten and quicken until you hold her by the hips and drive up to meet her. The branches rattle overhead. When she breaks, she cries out your name into the leaves, and the sound goes up through the whole grove.
+  *line_break
+  She folds against your chest, shaking, and laughs weakly. "The sprites will hear that." A beat. "They will make it unbearable."
+*else
+  The night is warm, and Flùràlainn undresses you as carefully as someone unwrapping a gift she has been told is fragile. She lays you on a bed of moss and ferns still warm from the day, and kneels over you in the moonlight, and for a while she only looks. Then her hands begin, and her mouth, taking her time, until you are the one asking her not to stop.
+  *line_break
+  When she finally draws you into her, her eyes never leave your face. The slow rock of her body, the green flush rising under her skin, the small sounds she makes when you move your hand between you: you give her everything you have, and she takes it and gives it back, until her whole body goes taut and then softens and she pulls you over the edge with her.
+  *line_break
+  She lies on your chest while the stars wheel overhead. "I had a thought," she says after a while. "It was probably profound. I have lost it entirely."
+*page_break Stay close…
+*set ambience_intimacy false
+
+*label ld_night_after
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set intimate_encounters + 1
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+*if (not(dryad_bond_award_locked)) or (not(locked_dryad_bond_page_id = page_id))
+  *set dryad_bond (dryad_bond + 2)
+  *set dryad_bond_award_locked true
+  *set locked_dryad_bond_page_id page_id
+Afterward you lie together under the oak while the stream talks to itself, and Flùràlainn stays close until your breathing has slowed.
+*line_break
+*if (dryad_intimacy_tone = "ask")
+  "You kept asking," she says, her voice low in the dark. "I noticed."
+*elseif (dryad_intimacy_tone = "want")
+  "You say things very plainly," Flùràlainn says. Her fingers close briefly around yours. "It is unsettling. Do it again sometime."
+*elseif (dryad_intimacy_tone = "lead")
+  "Next time, ask before you summon me," she murmurs. The corner of her mouth lifts. "I may still come."
+*else
+  "Do not move yet," she says. "I want to remember this part."
+*set dryad_intimacy_tone ""
+*if (show_stat_hints)
+  [b][Flùràlainn Bond +2: ${dryad_bond}][/b]
+*set hours_to_pass 8
+*set minutes_to_pass 0
+*set time_advance_call_id "ld_night_sleep"
+*gosub_scene calendar advance_time
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*set sleep_location_id "dryad_grove"
+*set sleep_is_shared false
+*set sleep_is_permanent_home false
+*set sleep_is_paid_inn false
+*set sleep_tier_name "none"
+*set sleep_tier_stat1 "none"
+*set sleep_tier_bonus1 0
+*set sleep_tier_stat2 "none"
+*set sleep_tier_bonus2 0
+*gosub_scene calendar resolve_sleep
+*set minutes_since_wash 0
+*set hygiene_stage "Clean"
+*set unique_buff_input_name "Rooted Calm"
+*set unique_buff_input_desc "+1 CON (Flùràlainn's Rooted Calm)"
+*set unique_buff_input_stat "con"
+*set unique_buff_input_bonus 1
+*set unique_buff_input_minutes 4320
+*gosub_scene economy apply_unique_buff
+*gosub_scene calendar update_hub_condition
+
+You wake with moss under your cheek and the first light coming green through the leaves. Flùràlainn is already awake, sitting with her back against the oak and her feet in the stream. She looks round at you. "You grind your teeth when you sleep," she says. Then, when you look at her: "So do I."
+
+[b][Rooted Calm: +1 CON for 3 days | Long Rest Resolved | Hygiene Restored to Clean][/b]
+*page_break Back to the grove…
+*goto_scene longshade/longshade_forest lsf_n_r15
+
+*comment The quiet night: a long rest beside her with no boon and no encounter counted.
+*label ld_night_quiet
+*set dryad_intimacy_tone ""
+You lie down in the moss with her head on your shoulder. She talks for a while about the grove, in a voice that slows as the night goes on, and then she stops talking, and you do not mean to sleep and you do.
+*page_break Sleep…
+*set hours_to_pass 8
+*set minutes_to_pass 0
+*set time_advance_call_id "ld_quiet_sleep"
+*gosub_scene calendar advance_time
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*set sleep_location_id "dryad_grove"
+*set sleep_is_shared false
+*set sleep_is_permanent_home false
+*set sleep_is_paid_inn false
+*set sleep_tier_name "none"
+*set sleep_tier_stat1 "none"
+*set sleep_tier_bonus1 0
+*set sleep_tier_stat2 "none"
+*set sleep_tier_bonus2 0
+*gosub_scene calendar resolve_sleep
+*gosub_scene calendar update_hub_condition
+
+You wake to birdsong and her breathing against your neck. When you stir, she tightens her arm around you for a moment before she lets go. "Do not move yet," she says. "The birds will get tired of this eventually."
+
+[b][Long Rest Resolved][/b]
+*page_break Back to the grove…
+*goto_scene longshade/longshade_forest lsf_n_r15

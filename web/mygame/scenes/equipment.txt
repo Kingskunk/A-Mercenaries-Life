@@ -1430,6 +1430,18 @@
   *set gear_pct_general 50
   *if (gear_shop = "hollis")
     *set gear_quote "\"One a day is enough to walk on,\" Hollis says. \"You'll tire of it by the second. You'll still eat it.\""
+*if (gi_item = "heartwood_fruit")
+  *set gear_name "heartwood fruit"
+  *set gear_kind "consumable"
+  *set gear_title "Heartwood Fruit"
+  *set gear_stack true
+  *set gear_effect "training"
+  *set gear_use_text "You bite into the pale fruit. It is cool and faintly sweet, and a clear strength runs down your limbs, as if a day's drilling had been done in the time it takes to chew."
+  *set gear_use_verb "Eat"
+  *set gear_eff_summary "One training session, once a day"
+  *set gear_hint "One training session, once a day"
+  *set gear_blurb "A small pale fruit, firm and smooth as a river stone, from the old tree in the Longshade."
+  *set gear_minutes 5
 *if (gi_item = "honeycomb")
   *set gear_name "honeycomb"
   *set gear_kind "consumable"
@@ -1727,6 +1739,21 @@
   *set gear_eff_name "detect_magic"
   *set gear_hint "Read where magic may lie: the place offers it as a spell"
   *set gear_blurb "A narrow slip of grey paper with a thin ring of script drawn round a blank center."
+  *set gear_minutes 5
+  *set gear_pct_general 50
+*if (gi_item = "scroll_jump")
+  *set gear_name "jump scroll"
+  *set gear_retail 40
+  *set gear_kind "consumable"
+  *set gear_title "Jump Scroll"
+  *set gear_stack true
+  *set gear_effect "scroll"
+  *set gear_use_text "You unroll the scroll and read the rising line aloud."
+  *set gear_use_verb "Read"
+  *set gear_eff_summary "Read where a leap is needed: it stands in for Jump, once"
+  *set gear_eff_name "jump"
+  *set gear_hint "Read where a leap is needed: the place offers it as a spell"
+  *set gear_blurb "A short roll of pale paper, its single line of blue script rising in a sharp curve."
   *set gear_minutes 5
   *set gear_pct_general 50
 *if (gi_item = "scroll_speak_with_animals")
@@ -2785,7 +2812,7 @@
 *set water_ok false
 *if (ow_on)
   *set water_ok ow_water
-*comment The Longshade Forest's Hidden Spring (overworld/longshade_forest.txt, Room 4) is clean running water too.
+*comment The Longshade Forest's Hidden Spring (longshade/longshade_forest.txt, Room 4) is clean running water too.
 *if ((dg_in_run) and (dg_pos = "lsf_r4"))
   *set water_ok true
 *return
@@ -2912,6 +2939,15 @@
         *set dressing_bonus gear_eff_bonus
         *gosub_scene calendar update_hub_condition
         *set use_banner ("🩹 Wounds Dressed: " & gear_eff_summary)
+    *comment A Heartwood Fruit (Bark's reward, 2026-10-20) is one training session, once a day: it adds to training_sessions and stamps heartwood_last_day, and leaves last_training_day alone, so the day's own training is still open. A second fruit the same day is refused and stays.
+    *if (gear_effect = "training")
+      *if (heartwood_last_day = campaign_day)
+        *set use_result "limit"
+        *set use_text "You have already taken a fruit today. The tree meant one a day, and a second would only be swallowed."
+      *else
+        *set heartwood_last_day campaign_day
+        *set training_sessions (training_sessions + 1)
+        *set use_banner (((("🌰 Heartwood Fruit: +1 training session | Training " & training_sessions) & " / ") & level_up_sessions_needed))
     *comment A spell scroll read outside a fight (the user's scrolls, 2026-10-19): only the two that make sense out of one. The cast routines spend the scroll themselves (combat_scroll_id), inside their own replay locks, so the generic spend below is skipped for a scroll.
     *if (gear_effect = "scroll")
       *set combat_scroll_id uc_item

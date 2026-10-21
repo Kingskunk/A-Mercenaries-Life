@@ -116,6 +116,7 @@ const MAP = {
 
   // ---- ingredients and salvage
   scrap: "Clutter_AdamantineScrap_Unfaded_Icon.webp",
+  heartwood_fruit: "FOOD_Goodberry_Unfaded_Icon.png",                   // Bark's reward
   honeycomb: "FOOD_Honey_Comb_Unfaded_Icon.png",                    // the Longshade bee tree
   frog_slime: "Bowl_With_Dead_Tadpoles_Unfaded_Icon.png",
   gland: "Carrion_Crawler_Tentacle_Item_Icon.png",
@@ -175,6 +176,7 @@ const MAP = {
   scroll_bane: "Scroll_of_Bane_Unfaded_Icon.png",
   scroll_false_life: "Scroll_of_False_Life_Unfaded_Icon.png",
   scroll_detect_magic: "Scroll_of_Detect_Magic_Unfaded_Icon.png",
+  scroll_jump: "Scroll_of_Jump_Unfaded_Icon.png",
   scroll_charm_person: "Scroll_of_Charm_Person_Unfaded_Icon.png",
   scroll_speak_with_animals: "Scroll_of_Speak_with_Animals_Unfaded_Icon.png",
   water_jug: "../Generic/Filled_Water_Jug_Generated_Source.png",   // the user's own art (2026-10-19): the water jug, one icon for empty and full

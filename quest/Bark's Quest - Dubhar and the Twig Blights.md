@@ -1,4 +1,6 @@
-# Finding Dubhar and the fight in the grove (chunk 5, for review)
+# Finding Dubhar and the fight in the grove (chunk 5, BUILT 2026-10-20)
+
+**Built as answered:** the dryad's pointer finds him outright; the bear counts when healed; the Twig Blights are two (the dryad removes one, the healed bear the other); Poison Spray is a ranged attack roll; no surprise round and no choice at the end of his speech; pack tactics dropped; **the fight cannot be fled** (a new `combat_no_flee` flag); his speech is kept as written. See the rules entry "Dubhar's Fight in the Burning Grove" in GAMEPLAY_MECHANICS_RULES.md.
 
 For you to mark up before anything is built. It covers the part of the story between the oak being saved and Dubhar going down: the dryad's talk about the sprites (which leads the player to the thicket), the search for him, his entrance and his speech, the fight and what the dryad and the bear take out of it, and the two new enemy types the fight needs. **Nothing after he falls is written here** (his last moments, the mercy choice, the clean water, the sprites' second challenge and Bark's fruit are chunk 6). Prose, spoken lines and choices are written out in the order the player meets them. Anything marked *(invented)* is mine. Answer in place under the QUESTIONS at the end; "your call" means use my suggestion.
 
@@ -126,36 +128,36 @@ Not built, on purpose: what happens when he goes down (his last words, the mercy
 
 **1. The dryad's pointer.** If the player has told her the water is poisoned, she points at the thicket. Should that find him outright (no roll), or only give the Perception check advantage (which the player already has) and still need the DC 15 roll? My suggestion: it finds him outright, since she is the one who feels the grove.
 
-Your answer:
+Your answer: Your suggestion
 
 **2. The bear.** "Saved the bear" is which one: the sick bear in the Root Hollow **healed** (`lsf_bear_healed`), her **cub freed** (`lsf_cub_freed`), or either? My suggestion: healed, because then she is the player's debt-holder and comes to help.
 
-Your answer:
+Your answer: healed
 
 **3. How many blights each helper removes.** I wrote two from the dryad and one from the bear, so that both together leave the mage alone and neither leaves all three. You said "one or two extra enemies" when the dryad is busy; the table above gives two or three. Is that right, or do you want one extra enemy at the least?
 
-Your answer:
+Your answer: We have have two, one gets removed by the dryad, another by the bear.
 
 **4. Poison Spray.** An ordinary ranged attack roll against the player's armor, 1d12 poison, rather than a Constitution save. The save version needs a new enemy-save mechanic for one fight. Is the attack roll acceptable?
 
-Your answer:
+Your answer: Yeah, that's right.
 
 **5. The player's first move.** Should striking him before the end of his speech give the player the first move in round 1 (a surprise round), with "let him finish" as the plain start? Or no difference, and no choice at all?
 
-Your answer:
+Your answer: No difference, just normal.
 
 **6. Pack tactics.** Advantage on a blight's attack while two or more blights are alive. This needs a small new rule (enemy attacks have no advantage source yet). OK, or drop pack tactics and make each blight a little tougher instead?
 
-Your answer:
+Your answer: We can drop the pack tactics.
 
 **7. Running away.** If the player breaks off and leaves, Dubhar is back at full health when they return (my suggestion, so the fight cannot be won in installments). Or he stays wounded?
 
-Your answer:
+Your answer: Are there options to disable flee mechanics for fights? Can we disable flee for this.
 
 **8. His speech.** Wording, the motive it hints at (wanting the grove for himself, taking it by making everyone want), and his manner (mild and patient). Keep, change or rewrite?
 
-Your answer:
+Your answer: We can keep it, I'll make edits to it after if needed.
 
 **9. Anything else you want added, cut or changed?**
 
-Your answer:
+Your answer: No.
