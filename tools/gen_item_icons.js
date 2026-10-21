@@ -116,6 +116,7 @@ const MAP = {
 
   // ---- ingredients and salvage
   scrap: "Clutter_AdamantineScrap_Unfaded_Icon.webp",
+  poisoners_robes: "Poisoners_Robe_Unfaded_Icon.png",                  // Dubhar's robes
   heartwood_fruit: "FOOD_Goodberry_Unfaded_Icon.png",                   // Bark's reward
   honeycomb: "FOOD_Honey_Comb_Unfaded_Icon.png",                    // the Longshade bee tree
   frog_slime: "Bowl_With_Dead_Tadpoles_Unfaded_Icon.png",

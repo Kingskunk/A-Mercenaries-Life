@@ -132,6 +132,29 @@ window.EQUIPMENT_CATALOG = {
     },
     {
       "ids": [
+        "poisoners_robes"
+      ],
+      "fields": {
+        "armor": {
+          "type": "literal",
+          "value": "poisoners-robes"
+        },
+        "armor_desc": {
+          "type": "literal",
+          "value": "Poisoner's Robes"
+        },
+        "armor_type": {
+          "type": "literal",
+          "value": "cloth"
+        },
+        "armor_prose": {
+          "type": "literal",
+          "value": "poisoner's robes"
+        }
+      }
+    },
+    {
+      "ids": [
         "buff_coat"
       ],
       "fields": {

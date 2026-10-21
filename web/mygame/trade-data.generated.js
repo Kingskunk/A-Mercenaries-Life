@@ -1513,6 +1513,30 @@ window.TRADE_DATA = {
     "countVar": ""
    }
   },
+  "poisoners_robes": {
+   "name": "poisoner's robes",
+   "title": "Poisoner's Robes",
+   "kind": "armor",
+   "group": "",
+   "tier": "none",
+   "retail": 900,
+   "weight": 3,
+   "minutes": 30,
+   "hint": "Cloth armor: AC 10 + DEX; +1d4 to the poison damage of your spells",
+   "slot": "Body armor",
+   "stack": false,
+   "sell": {
+    "smith": 0,
+    "pawn": 35,
+    "general": 0,
+    "tailor": 40,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "countVar": ""
+   }
+  },
   "scroll_magic_missile": {
    "name": "magic missile scroll",
    "title": "Magic Missile Scroll",
@@ -2787,7 +2811,8 @@ window.TRADE_DATA = {
     "scholar_gloves",
     "dancing_slippers",
     "masters_gloves",
-    "court_coat"
+    "court_coat",
+    "poisoners_robes"
    ]
   },
   "inklamp": {
@@ -2901,7 +2926,8 @@ window.TRADE_DATA = {
     "jewelry_ruby_pearl_necklace",
     "jewelry_sapphire_gold_ring",
     "jewelry_ruby_gold_ring",
-    "jewelry_diamond_gold_ring"
+    "jewelry_diamond_gold_ring",
+    "poisoners_robes"
    ]
   },
   "works": {

@@ -173,6 +173,17 @@
   *set combat_packet_suffix " | 💥 Vulnerable"
 *return
 
+*comment The Poisoner's Robes' rider: while they are worn, poison damage from a SPELL gets 1d4 more poison, resisted or doubled like any other poison packet. Reads combat_player_dmg_type (the spell's damage type); adds to combat_player_dmg_dealt and extends combat_player_dmg_roll_banner. Call it from a spell's damage code only, inside that code's own once-per-page lock.
+*label apply_poison_rider
+*if ((combat_player_dmg_type = "poison") and (equipped_armor_id = "poisoners_robes"))
+  *temp apr_roll 0
+  *rand apr_roll 1 4
+  *temp apr_raw apr_roll
+  *gosub adjust_outgoing_damage_packet apr_raw "poison"
+  *set combat_player_dmg_dealt + combat_packet_damage
+  *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${apr_roll} poison (Poisoner's Robes) = ${combat_packet_damage}${combat_packet_suffix}][/b]"
+*return
+
 *label resolve_player_hit
 *params rph_is_attack_roll
 *if (not(combat_player_hit_locked)) or (not(locked_combat_player_hit_page_id = page_id))
@@ -211,6 +222,8 @@
     *gosub adjust_outgoing_damage_packet cph_packet_raw combat_player_extra_dmg_type
     *set combat_player_dmg_dealt + combat_packet_damage
     *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${cph_packet_roll} ${cph_packet_bonus_str} ${combat_player_extra_dmg_type} = ${combat_packet_damage}${combat_packet_suffix}][/b]"
+  *comment THE POISONER'S ROBES (the user, 2026-10-20): a SPELL that deals poison damage deals 1d4 more (apply_poison_rider, below). resolve_player_hit is the spell resolver, so every poison spell that goes through it gets the rider here; a spell with its own damage code calls apply_poison_rider where it adds up its damage. Weapon hits never reach it.
+  *gosub apply_poison_rider
   *set combat_enemy_hp - combat_player_dmg_dealt
   *if (combat_enemy_hp < 0)
     *set combat_enemy_hp 0

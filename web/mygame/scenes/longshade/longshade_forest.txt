@@ -3185,6 +3185,9 @@ You settle onto your heels at the edge of the clearing, well clear of the tree, 
     *if (not(lsf_dryad_hint))
       # Look for whoever has been in the grove. [~5 min]@{show_stat_hints  [Perception DC 15, advantage]|}
         *goto lsf_r15_search
+  *if ((lsf_dubhar_dead) and (not(lsf_dubhar_looted)))
+    # Search the thicket for what he left behind. [~5 min]
+      *goto lsf_r15_loot
   *if (lsf_dubhar_dead)
     *if (r15_green)
       # Spend time with Flùràlainn. [~1 hour]
@@ -3577,6 +3580,26 @@ He gets a hand under him and hauls himself up on the briar. He has taken three s
 *else
   A single green sprite drops out of the smoke and lands on his shoulder. He stops. "This is for my friends!" it says, in a voice no bigger than a bell. Behind it both swarms lift off the branches together, green and thorn-brown in one cloud. They pass over you without a glance, and then the briar is full of the sound of tiny wings, and then silence.
 *goto lsf_r15_poison_gone
+
+*comment WHAT HE LEFT (the user, 2026-10-20: looted from his body, the Poisoner's Robes first; the second reward is still to come and goes in here). Found stowed, never worn, so the player's armor is not swapped under them. Where the player did not kill him there is no body, so the satchel the grove left is searched instead.
+*label lsf_r15_loot
+*if (lsf_dubhar_killed_by = "player")
+  You kneel beside him and open the grey cloak. Under it he wore a robe of dull green-black cloth, stitched at hem and cuff with a thread that smells faintly bitter. You work it off him and fold it into your pack.
+*else
+  Where he fell, a satchel lies torn from his shoulder. Inside, folded flat beneath a handful of stoppered vials, is a robe of dull green-black cloth, stitched at hem and cuff with a thread that smells faintly bitter. You fold it into your pack.
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set has_poisoners_robes true
+  *set lsf_dubhar_looted true
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+*line_break
+[b][🧥 Found: Poisoner's Robes (in your pack, not worn)][/b]
+*set dg_mins 5
+*set dg_time_id "lsf_r15_loot"
+*gosub_scene dungeon dg_time
+*gosub lsf_grove_tick
+*page_break Back to the grove…
+*goto lsf_n_r15
 
 *comment The poison goes with him, whoever it was. The sidebar entry's goal (quest-data.js) reads lsf_corruption_cleared and sends the player back to Bark.
 *label lsf_r15_poison_gone

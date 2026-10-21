@@ -1055,8 +1055,9 @@ button#statSidebar .turnRow,
           Hungry: "Hungry: no penalty yet. Past 36 hours without a meal you are Starving.",
           Starving: "Starving: you lose HP every 4 hours until you eat."
         }, "hunger") +
-        condChip(fmt(s.fatigue_stage), "Exhausted", "Collapsing", {
+        condChip(isTruthy(s.well_rested_active) ? "Well Rested" : fmt(s.fatigue_stage), "Exhausted", "Collapsing", {
           Rested: "Rested. Past 20 hours awake you are Exhausted.",
+          "Well Rested": "Well Rested: +1 to Intelligence and Wisdom checks.",
           Exhausted: "Exhausted: -1 to every check. Sleep to clear it.",
           Collapsing: "Collapsing: -2 to every check and you lose HP every 4 hours. Sleep to clear it."
         }, "fatigue") +
@@ -1785,7 +1786,7 @@ button#statSidebar .turnRow,
       (who ? "<div class=\"tWho\">" + who + "</div>" : "");
     return true;
   }
-  // The card for one of the three condition chips under the HP bar (hunger, fatigue, hygiene): the live clock, when the next stage comes, what it costs, and what clears it. Built from window.stats on every call, like the other cards,
+   // The card for one of the three condition chips under the HP bar (hunger, fatigue, hygiene): the live clock, the next stage, and active pressures. Built from window.stats on every call, like the other cards,
   // from the same thresholds calendar.txt advance_time and roll_d20_check use (hungry past 18 hours since a meal, starving past 36; exhausted past 20 hours since sleep, collapsing past 40; grubby past 3 days since a wash, foul past 6).
   // window.FOOD_ITEMS is the catalog's list of foods the game may eat for you (generated into overworldmap.js).
   function spanText(mins) {
@@ -1807,26 +1808,22 @@ button#statSidebar .turnRow,
       if (m <= 1080) add("Next", "Hungry in " + spanText(1080 - m) + ". Hungry has no penalty.");
       else if (m <= 2160) add("Next", "Starving in " + spanText(2160 - m) + ". Then you lose HP every 4 hours until you eat.");
       else add("Now", "You lose HP every 4 hours until you eat." + (debt > 0 ? " Hunger has cost you " + debt + " HP so far." : ""));
-      var have = [], held = [];
+       var have = [];
       (window.FOOD_ITEMS || []).forEach(function (f) {
         var n = isTruthy(s["has_" + f.id]) ? 1 + (Number(s["spare_" + f.id]) || 0) : 0;
         if (n < 1) return;
         have.push(n === 1 ? f.one : n + " " + f.many);
-        if (f.after && !isTruthy(s[f.after])) held.push(f.many);
       });
       add("In your pack", have.length ? have.join(", ") + "." : "No food.");
-      add("Eating", "Eat from your pack whenever you like, once 6 hours have passed since your last meal." + (m < 360 ? " You can eat again in " + spanText(360 - m) + "." : ""));
-      add("Automatic", "The game eats for you only to stop starvation: at 36 hours without a meal, on the road or in a dungeon, a ration before anything smaller.");
-      if (held.length) add("Saved", "Your " + held.join(" and ") + " are kept for a quest, and become food of last resort once it is done.");
       if (exposure > 0) add("Weather", "The weather is burning through your food about " + exposure + "% faster.");
     } else if (kind === "fatigue") {
-      var r = Number(s.minutes_since_rest) || 0, load = Number(s.load_over_pct) || 0;
-      head = "Fatigue \u00b7 " + fmt(s.fatigue_stage);
+      var r = Number(s.minutes_since_rest) || 0, load = Number(s.load_over_pct) || 0, wellRested = isTruthy(s.well_rested_active), wellRestedLeft = Number(s.well_rested_minutes_left) || 0;
+      head = "Fatigue \u00b7 " + (wellRested ? "Well Rested" : fmt(s.fatigue_stage));
       add("Last slept", spanText(r) + " ago.");
+      if (wellRested) add("Well Rested", "+1 to Intelligence and Wisdom checks for " + spanText(wellRestedLeft) + " more.");
       if (r <= 1200) add("Next", "Exhausted in " + spanText(1200 - r) + ": -1 to every check.");
       else if (r <= 2400) { add("Now", "-1 to every check."); add("Next", "Collapsing in " + spanText(2400 - r) + ": -2 to every check and HP loss every 4 hours."); }
       else add("Now", "-2 to every check, and you lose HP every 4 hours.");
-      add("Cure", "A night's sleep clears it. A short rest does not.");
       if (load > 0) add("Load", "You carry more than you can: it tires you about " + load + "% faster on the road.");
       if (exposure > 0) add("Weather", "The weather is wearing you down about " + exposure + "% faster.");
     } else if (kind === "hygiene") {
@@ -1836,7 +1833,6 @@ button#statSidebar .turnRow,
       if (w <= 4320) add("Next", "Grubby in " + spanText(4320 - w) + ": -1 to Charisma checks.");
       else if (w <= 8640) { add("Now", "-1 to Charisma checks."); add("Next", "Foul in " + spanText(8640 - w) + ": -2 to Charisma checks."); }
       else add("Now", "-2 to Charisma checks.");
-      add("Cure", "A wash or the Conduit Baths clears it.");
     } else return false;
     tipNode().innerHTML = "<div class=\"tHd\">" + esc(head) + "</div><div class=\"tText\">" + lines.join("") + "</div>";
     return true;

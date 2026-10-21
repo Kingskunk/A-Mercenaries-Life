@@ -633,6 +633,15 @@
       statBonus: true
     },
     {
+      id: "poisoners_robes", category: "apparel", owned: "has_poisoners_robes", slot: "Body armor",
+      weight: 3, stow: true, stack: false,
+      name: "Poisoner's Robes",
+      description: "Dull green-black robes, bitter-threaded at hem and cuff.",
+      traits: "Cloth armor: AC 10 + DEX; +1d4 to the poison damage of your spells",
+      badge: function (s) { return s.equipped_armor_id === "poisoners_robes" ? "Worn, Cloth Armor" : "Stowed"; },
+      equip: { slot: "armor", id: "poisoners_robes" }
+    },
+    {
       id: "longshade_quarterstaff", category: "weapons", owned: "has_longshade_quarterstaff", slot: "Weapon",
       weight: 4, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_longshade_quarterstaff) || 0); return "Ash Quarterstaff" + (n > 1 ? " ×" + n : ""); },

@@ -2051,7 +2051,6 @@ stats = {
  "fatigue_stage": "Rested",
  "minutes_since_wash": "0",
  "hygiene_stage": "Clean",
- "hub_condition_str": "",
  "sleep_buff1_active": "false",
  "sleep_buff1_name": "none",
  "sleep_buff1_desc": "none",

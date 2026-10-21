@@ -2609,6 +2609,7 @@
 *temp spell_reach_ok_eldritch_blast combat_in_long
 *temp spell_reach_ok_chill_touch combat_in_medium
 *temp spell_reach_ok_vicious_mockery combat_in_medium
+*temp spell_reach_ok_poison_spray combat_in_short
 *temp spell_reach_ok_shocking_grasp combat_melee_reach
 *temp spell_reach_ok_magic_missile combat_in_long
 *temp spell_reach_ok_dissonant_whispers combat_in_medium
@@ -2619,7 +2620,7 @@
 *comment GEN:END spell_reach_flags
 *comment Tell the player why a short-reach spell or weapon has gone from the menu, instead of letting it vanish without a word.
 *if ((combat_in_long) and (not(combat_in_medium)))
-  *if (((((known_ray_of_frost) or (known_chill_touch)) or ((known_vicious_mockery) or (known_dissonant_whispers))) or ((weapon_type = "ranged") and (weapon_reach = "medium"))) or ((sidearm_type = "ranged") and (sidearm_reach = "medium")))
+  *if ((known_poison_spray) or (((((known_ray_of_frost) or (known_chill_touch)) or ((known_vicious_mockery) or (known_dissonant_whispers))) or ((weapon_type = "ranged") and (weapon_reach = "medium"))) or ((sidearm_type = "ranged") and (sidearm_reach = "medium"))))
     [b][🎯 Every foe is beyond Mid-Range: close in to use your shorter-reach spells and weapons][/b]
     *line_break
 *comment True Strike: a cantrip and an ACTION, one weapon attack made with the spellcasting ability. It takes the place of a weapon attack, so it needs one to spend (combat_can_attack), a real weapon in hand and, for a melee one, an enemy in reach (combat_primary_reach, just above).
@@ -3454,6 +3455,40 @@
           ${fsh}
           *line_break
           [b][🎭 Vicious Mockery: Hit | ${combat_player_dmg_dealt} Psychic damage${combat_outgoing_dmg_suffix} | ⚠️ Rattled — disadvantage on ${combat_enemy_epithet}'s next attack][/b]
+      *else
+        ${fsm}
+        *line_break
+        [b][💨 Resisted][/b]
+      *line_break
+      *goto fight_check_enemy_hp
+
+  *if ((((combat_player_actions_left > 0) and (known_poison_spray)) and (spell_reach_ok_poison_spray)))
+    *comment POISON SPRAY (2026-10-20, the 2024 cantrip): a Constitution SAVE against the player's spell save DC, like Vicious Mockery's Wisdom one, so there is no attack roll and Hex cannot fire. 1d12 poison on a failure; the dice scale at 5th level (2d12), which no character reaches yet, so resolve_player_hit still rolls one die. Reach "short" (30 ft): Close or nearer. The Poisoner's Robes add 1d4 poison to this (combat_dice.txt resolve_player_hit).
+    # [b][ACTION][/b] [b][Poison Spray][/b] Fling a bitter puff of poison at the nearest foe.
+      *if (not(combat_cantrip_choice_locked)) or (not(locked_combat_cantrip_choice_page_id = page_id))
+        *gosub_scene combat_movement fight_pick_target
+        *gosub_scene combat_movement fight_retarget_by_class "short"
+        *set combat_current_spell_id "poison_spray"
+        *gosub_scene combat_prose pick_spell_flavor
+        *gosub_scene combat_dice resolve_enemy_save "combat_enemy_" "constitution" "Constitution" 0
+        *if (check_success)
+          *set combat_player_dmg_type "poison"
+          *set combat_player_dmg_dice_sides 12
+          *set combat_player_dmg_bonus 0
+          *gosub_scene combat_dice resolve_player_hit false
+          *if (combat_enemy_hp <= 0)
+            *gosub_scene combat_prose pick_spell_death_flavor
+        *set combat_cantrip_choice_locked true
+        *set locked_combat_cantrip_choice_page_id page_id
+      *if (check_success)
+        *if (combat_enemy_hp <= 0)
+          ${fdh}
+          *line_break
+          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Poison damage${combat_outgoing_dmg_suffix}][/b]
+        *else
+          ${fsh}
+          *line_break
+          [b][☠️ Poison Spray: Hit | ${combat_player_dmg_dealt} Poison damage${combat_outgoing_dmg_suffix}][/b]
       *else
         ${fsm}
         *line_break

@@ -41,6 +41,7 @@
     { id: "vicious_mockery",    name: "Vicious Mockery",    level: 0, schools: "Enchantment" },
     { id: "thaumaturgy",        name: "Thaumaturgy",        level: 0, schools: "Transmutation" },
     { id: "control_flames",     name: "Control Flames",     level: 0, schools: "Transmutation" },
+    { id: "poison_spray",       name: "Poison Spray",       level: 0, schools: "Necromancy" },
 
     // ── 1st-level spells ──
     { id: "alarm",              name: "Alarm",              level: 1, schools: "Abjuration" },
