@@ -53,6 +53,10 @@ either express or implied.
 <script src="inventory.js"></script>
 <script src="trade-data.generated.js"></script>
 <script src="trade.js"></script>
+<script src="city-data.generated.js"></script>
+<script src="citytravel.js"></script>
+<script src="dungeonwait.js"></script>
+<script src="pagegate.js"></script>
 <script src="levelup.js"></script>
 <script src="battlehud.js"></script>
 <script src="dungeonmap.js"></script>
@@ -74,6 +78,8 @@ either express or implied.
 <link href="lorebook.css" rel="stylesheet" type="text/css">
 <link href="inventory.css" rel="stylesheet" type="text/css">
 <link href="trade.css" rel="stylesheet" type="text/css">
+<link href="citytravel.css" rel="stylesheet" type="text/css">
+<link href="dungeonwait.css" rel="stylesheet" type="text/css">
 <link href="levelup.css" rel="stylesheet" type="text/css">
 <link href="battlehud.css" rel="stylesheet" type="text/css">
 <link href="dungeonmap.css" rel="stylesheet" type="text/css">
@@ -2057,12 +2063,19 @@ button#statSidebar .turnRow,
   // The Wait button in the Today card opens the dossier at its Wait menu. The menu decides when waiting is refused, through the one variable wait_lock_reason (empty means allowed), so a new dungeon or a new kind of long
   // chain only has to set that variable; this button greys out and shows the reason on hover.
   function waitButtonHtml(s) {
-    var reason = String(s.wait_lock_reason || "");
+    // Wait and Rest are an allow-list (pagegate.js): only on a page that says it is open-world free time, never in the prologue, a fight, a quest page or a dungeon.
+    var reason = window.PageGate ? window.PageGate.waitReason() : String(s.wait_lock_reason || "");
     var off = !!reason || !canOpenDossier();
-    var tip = reason || "Pass the time: wait a few minutes, or until a time of day. [T]";
-    var restOff = !canOpenDossier();
+    var tip = reason || "Pass the time: wait a few minutes, or until a time of day. [F]";
+    var restReason = window.PageGate ? window.PageGate.restReason() : "";
+    var restOff = !!restReason || !canOpenDossier();
+    var restTip = restReason || "Catch your breath: an hour's rest, and what it wins back.";
+    // Travel (2026-10-21): enabled only on a page that carries the hidden walk option (citytravel.js), so quest pages, timed jobs and dungeons are never walked away from.
+    var travelOn = !!(window.CityTravel && window.CityTravel.available());
+    var travelTip = travelOn ? "Walk to another district. It costs the walking time. [T]" : "You can set off for another district from the streets of a district, not from here.";
     return "<div class=\"sbWaitRow\"><button type=\"button\" class=\"sbWait\" data-wait-open=\"1\" title=\"" + esc(tip) + "\"" + (off ? " disabled" : "") + ">Wait\u2026</button>" +
-      "<button type=\"button\" class=\"sbWait\" data-rest-open=\"1\" title=\"Catch your breath: an hour's rest, and what it wins back.\"" + (restOff ? " disabled" : "") + ">Rest\u2026</button></div>";
+      "<button type=\"button\" class=\"sbWait\" data-rest-open=\"1\" title=\"" + esc(restTip) + "\"" + (restOff ? " disabled" : "") + ">Rest\u2026</button>" +
+      "<button type=\"button\" class=\"sbWait\" data-travel-open=\"1\" title=\"" + esc(travelTip) + "\"" + (travelOn ? "" : " disabled") + ">Travel\u2026</button></div>";
   }
   function openDossierAt(label) {
     if (!canOpenDossier()) return;
@@ -2073,16 +2086,16 @@ button#statSidebar .turnRow,
       scene.execute();
     });
   }
-  // T opens the same Wait menu as the Today card. It never steals a keystroke from text entry, an open panel,
+  // F opens the same Wait menu as the Today card (it was T until 2026-10-21, when T became Travel). It never steals a keystroke from text entry, an open panel,
   // combat, or a scene that has marked waiting unavailable.
   document.addEventListener("keydown", function (ev) {
-    if ((ev.key !== "t" && ev.key !== "T") || ev.ctrlKey || ev.metaKey || ev.altKey || ev.repeat) return;
+    if ((ev.key !== "f" && ev.key !== "F") || ev.ctrlKey || ev.metaKey || ev.altKey || ev.repeat) return;
     var target = ev.target, tag = target && target.tagName ? target.tagName.toLowerCase() : "";
     if (tag === "input" || tag === "textarea" || tag === "select" || (target && target.isContentEditable)) return;
     if (document.querySelector("dialog[open]")) return;
-    if (String((window.stats || {}).wait_lock_reason || "") || !canOpenDossier()) return;
+    if ((window.PageGate && window.PageGate.waitReason()) || !canOpenDossier()) return;
     ev.preventDefault();
-    openDossierAt("codex_wait");
+    if (window.DungeonWait && window.DungeonWait.onPage()) window.DungeonWait.open(); else openDossierAt("codex_wait");
   });
   // One-shot casts (CASTABLE_OUT_OF_COMBAT) leave a one-line result in stats.spell_cast_toast just before the game hands the player back to their page; this shows it and clears it.
   function showSpellToast() {
@@ -2191,7 +2204,12 @@ button#statSidebar .turnRow,
     }
     var waitBtn = el.closest("[data-wait-open]");
     if (waitBtn) {
-      if (!waitBtn.disabled) openDossierAt("codex_wait");
+      if (!waitBtn.disabled) { if (window.DungeonWait && window.DungeonWait.onPage()) window.DungeonWait.open(); else openDossierAt("codex_wait"); }
+      return;
+    }
+    var travelBtn = el.closest("[data-travel-open]");
+    if (travelBtn) {
+      if (!travelBtn.disabled && window.CityTravel) window.CityTravel.open();
       return;
     }
     var restBtn = el.closest("[data-rest-open]");
@@ -2956,6 +2974,8 @@ if (window.location.hostname === 'localhost') {
   <div>Menu</div>
   <div><span class="key">W</span></div>
   <div>Wait / Pass Time</div>
+  <div><span class="key">F</span></div>
+  <div>Travel (Walk to Another District)</div>
   <div><span class="key">T</span></div>
   <div>Mute / Unmute Sound</div>
   <div><span class="key">S</span></div>

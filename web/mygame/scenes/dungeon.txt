@@ -32,6 +32,8 @@
 *comment dg_table (set by the caller before this) names the dungeon; its last refill day is the variable dg_reset_day_<dg_table>, so one dungeon's refill never touches another's.
 *label dg_run_begin
 *set dg_lit_here false
+*set dg_wait_total 0
+*set dg_waits 0
 *temp dgb_last {(("dg_reset_day_" & dg_table))}
 *if (dgb_last = 0)
   *set {(("dg_reset_day_" & dg_table))} campaign_day
@@ -554,6 +556,90 @@
     *set dg_prev_enc false
   *set dg_step_locked true
   *set locked_dg_step_page_id page_id
+*return
+
+*comment WAITING IN A DUNGEON (2026-10-22, the user's call). The sidebar's Wait presses a hidden option, "⏳ Wait a while. [dungeon_wait]", that every node page carries; the sidebar offers it only on a quiet node (a page with nothing but
+*comment directions on it, the same test the dungeon map uses to fold itself), and says 15, 30 or 60 minutes in dg_wait_mins. The scene's wait label (pvsc_wait, lsf_wait) calls this, then handles a light going out, the dark coming down, and an
+*comment encounter exactly as its move label does (it also sets dg_wait_roll_ok: an encounter rolls only where walking would, not on a plain bend or in a room). COST: the clock runs the minutes, and the light burns a step per fifteen minutes (a step of walking is ten, so waiting is the gentler way to use a light); a character who sees in the dark
+*comment or has the Light cantrip burns nothing. ENCOUNTER: one roll per wait on the same 40 percent as walking, none on a chalked node and none right after an encounter. CAP: dg_wait_cap minutes per run (dg_wait_total), and never "until morning".
+*comment Replay-safe: the whole wait sits in one lock keyed on page_id.
+*label dg_wait
+*if (not(dg_wait_locked)) or (not(locked_dg_wait_page_id = page_id))
+  *set dg_wait_refused false
+  *set dg_light_out_now false
+  *set dg_torch_fed_now false
+  *set dg_fell_dark false
+  *set dg_enc_now false
+  *temp dgw_ok false
+  *if (dg_wait_mins = 15)
+    *set dgw_ok true
+  *if (dg_wait_mins = 30)
+    *set dgw_ok true
+  *if (dg_wait_mins = 60)
+    *set dgw_ok true
+  *if (not(dgw_ok))
+    *set dg_wait_mins 15
+  *if ((dg_wait_total + dg_wait_mins) > dg_wait_cap)
+    *set dg_wait_refused true
+  *else
+    *temp dgw_steps (dg_wait_mins / 15)
+    *gosub dg_dark_check
+    *set dg_was_dark dg_dark
+    *set hours_to_pass 0
+    *set minutes_to_pass dg_wait_mins
+    *set time_advance_call_id "dg_wait"
+    *gosub_scene calendar advance_time
+    *gosub_scene calendar recalc_hp_from_neglect
+    *if (hp_current <= 0)
+      *set death_cause "starvation"
+      *if (neglect_damage_fatigue > neglect_damage_hunger)
+        *set death_cause "exhaustion"
+      *goto_scene death death_screen
+    *set dg_wait_total + dg_wait_mins
+    *if ((not(sees_in_dark)) and (not(known_light)))
+      *if (dg_light_left > 0)
+        *temp dgw_left (dg_light_left - dgw_steps)
+        *if (dgw_left > 0)
+          *set dg_light_left dgw_left
+        *else
+          *comment CONTROL FLAMES, as in dg_step: the torch that is about to go out is coaxed on for three more steps, once per torch.
+          *if (((known_control_flames) and (dg_light_kind = "torch")) and (not(dg_torch_fed)))
+            *set dg_torch_fed true
+            *set dg_torch_fed_now true
+            *set dg_light_left 3
+          *else
+            *set dg_light_out_now true
+            *set dg_light_kind "none"
+            *set dg_light_left 0
+    *gosub dg_dark_check
+    *if ((dg_dark) and (not(dg_was_dark)))
+      *if (not(dg_light_out_now))
+        *set dg_fell_dark true
+    *temp dgw_marked {(("dg_mark_" & dg_pos))}
+    *if (not(dgw_marked))
+      *if (dg_wait_roll_ok)
+        *if (dg_prev_enc)
+          *set dg_prev_enc false
+        *else
+          *rand dg_walk_roll 1 100
+          *if (dg_walk_roll <= 40)
+            *set dg_waits + 1
+            *set dg_call_id ("wait_" & dg_waits)
+            *gosub dg_pick
+            *if (not(dg_encounter = "none"))
+              *set dg_enc_now true
+              *set dg_prev_enc true
+  *set dg_wait_locked true
+  *set locked_dg_wait_page_id page_id
+*if (dg_wait_refused)
+  You have sat here long enough. The place has begun to feel as if it is waiting for you to move.
+*elseif (dg_wait_mins = 60)
+  You settle with your back to the wall and let an hour go by, listening to the place go on around you.
+*elseif (dg_wait_mins = 30)
+  You keep still for half an hour, listening to the place settle.
+*else
+  You keep still for a quarter of an hour and listen.
+*line_break
 *return
 
 *comment A SHORT REST INSIDE A DUNGEON (2026-10-14, the user's call): the hour sits by the light like six steps of walking, so the torch or lantern burns six steps (an hour of light) and may go out, unless the

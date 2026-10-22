@@ -176,6 +176,8 @@
   }
   function close() { if (dlg && dlg.open) dlg.close(); }
   function toggle() { if (dlg && dlg.open) close(); else open(); }
+  // Is the page a quiet node: only directions, chalk and ways out on it? dungeonwait.js allows Wait and Rest only there (the user, 2026-10-22), by the same test that folds the map to its "only" mode.
+  DM.quiet = function () { var i = scanPage(); return !!(i && !i.interesting); };
   DM.open = open; DM.close = close; DM.toggle = toggle; DM.svgFor = svgFor;   // svgFor is exposed for the tests (tools and browser probes)
 
   /* ---------------------------------------------------------------- the map in the page (2026-10-14)
@@ -258,6 +260,7 @@
       var box = labels[i].closest ? (labels[i].closest(".choice > div") || labels[i]) : labels[i];
       if (w && nb[w[1].toLowerCase()]) { moves[nb[w[1].toLowerCase()]] = { radio: radio, box: box }; count++; }
       else if (/^Mark this/.test(text)) chalk = { radio: radio, text: text };
+      else if (text.charAt(0) === "\u23F3") { /* the hidden wait option (dungeonwait.js): not something to do */ }
       else if (/^Go (up|down|back out)\b/.test(text)) leaves.push({ radio: radio, text: text });
       else interesting = true;
     }

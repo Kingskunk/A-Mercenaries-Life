@@ -538,6 +538,9 @@ The Watch captain offers Vane a sealed parchment writ bearing the Council mark. 
       *goto_scene port_valen/lyra_quests/lyra_quest lyra_repay
   # Turn in to your bedroll inside the barracks for the night.
     *goto port_valen_rest
+  *if (vane_independent_operative)
+    # ↦ Walk to the district picked on the sidebar. [port_valen]
+      *goto port_valen_walk_picked
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment TRAVEL: CITY-SCALE NAVIGATION
@@ -831,6 +834,53 @@ The port city climbs from the tideline in uneven tiers of granite, timber, canal
 *if (pv_travel_dest = "middle_ward")
   *goto_scene port_valen/port_valen_middle_ward port_valen_middle_ward
 
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment THE SIDEBAR'S TRAVEL BUTTON (2026-10-21, the user's call; web/mygame/citytravel.js)
+*comment The button writes the district the player picked into pv_travel_dest and presses the hidden "↦ Walk to the district picked on the sidebar. [port_valen]" option that the
+*comment free-roaming menus carry (the six district hubs so far). It is enabled only on a page that carries that option, so a quest page, a timed job or a dungeon, which never
+*comment offers it, cannot be walked away from. This label is the scene's side of the trip: it checks the pick against the districts that are open and not the one the player stands
+*comment in, then takes the same road as the travel menu (port_valen_travel_to: the walking time, the exposure, the once-a-day street encounter and the arrival at the district hub).
+*comment A pick it does not allow leaves the player where they are. The minutes the button shows come from get_district_distance through tools/gen_city_data.js.
+*label port_valen_walk_picked
+*temp pwp_ok false
+*if (not(pv_travel_dest = current_district))
+  *if (pv_travel_dest = "compound")
+    *set pwp_ok true
+  *if (pv_travel_dest = "harbor")
+    *set pwp_ok true
+  *if (pv_travel_dest = "civic_heights")
+    *if (civic_heights_open)
+      *set pwp_ok true
+  *if (pv_travel_dest = "upper_wharves")
+    *if (upper_wharves_open)
+      *set pwp_ok true
+  *if (pv_travel_dest = "dredge_end")
+    *if (dredge_end_open)
+      *set pwp_ok true
+  *if (pv_travel_dest = "middle_ward")
+    *if (middle_ward_open)
+      *set pwp_ok true
+*if (not(pwp_ok))
+  *goto port_valen_back_to_hub
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+*goto port_valen_travel_to
+
+*comment Puts the player back on the hub of the district they stand in (the same targets as the travel menu's "stay here" options).
+*label port_valen_back_to_hub
+*if (current_district = "harbor")
+  *goto port_valen_harbor_pois
+*if (current_district = "civic_heights")
+  *goto_scene port_valen/port_valen_civic_heights port_valen_civic_heights
+*if (current_district = "upper_wharves")
+  *goto_scene port_valen/port_valen_upper_wharves port_valen_upper_wharves
+*if (current_district = "dredge_end")
+  *goto_scene port_valen/port_valen_dredge_end port_valen_dredge_end_arrive
+*if (current_district = "middle_ward")
+  *goto_scene port_valen/port_valen_middle_ward port_valen_middle_ward
+*goto port_valen_hub
+
 *label port_valen_harbor
 *label port_valen_harbor_pois
 *set scenery_subplace "port_valen_harbor"
@@ -1002,6 +1052,9 @@ The port city climbs from the tideline in uneven tiers of granite, timber, canal
       *goto_scene port_valen/radiant/radiant_hub rh_hub
   # Move on to the rest of the city.
     *goto port_valen_travel
+  *if (vane_independent_operative)
+    # ↦ Walk to the district picked on the sidebar. [port_valen]
+      *goto port_valen_walk_picked
 
 *label pv_poi_tavern
 *set scenery_subplace "port_valen_cleaved_keel"
@@ -1071,6 +1124,9 @@ The port city climbs from the tideline in uneven tiers of granite, timber, canal
     *goto pv_poi_tavern_rumors
   # Return to the quayside.
     *goto port_valen_harbor_pois
+  *if (vane_independent_operative)
+    # ↦ Walk to the district picked on the sidebar. [port_valen]
+      *goto port_valen_walk_picked
 
 *label pv_poi_tavern_bar
 *temp bar_approach_roll 0
@@ -1600,6 +1656,9 @@ The floor goes on around you, with the great scale at its center and the boards 
       *goto pv_wh_menu
   # Step back out onto the quay.
     *goto port_valen_harbor_pois
+  *if (vane_independent_operative)
+    # ↦ Walk to the district picked on the sidebar. [port_valen]
+      *goto port_valen_walk_picked
 
 *label pv_wh_boards
 *comment TRADE HOOK: the price boards. When the trading system exists, print its figures here. For now the boards are
@@ -1682,6 +1741,9 @@ A wall of black boards is ruled in columns behind the gallery, each headed with 
           *goto pv_quays_observe
         # Return to the quayside.
           *goto port_valen_harbor_pois
+        *if (vane_independent_operative)
+          # ↦ Walk to the district picked on the sidebar. [port_valen]
+            *goto port_valen_walk_picked
     *elseif (silt_gate_quest_stage = "active")
       *choice
         # Check in with Dockmaster Voss regarding the Silt-Gates investigation.
@@ -1692,6 +1754,9 @@ A wall of black boards is ruled in columns behind the gallery, each headed with 
           *goto pv_quays_observe
         # Return to the quayside.
           *goto port_valen_harbor_pois
+        *if (vane_independent_operative)
+          # ↦ Walk to the district picked on the sidebar. [port_valen]
+            *goto port_valen_walk_picked
     *else
       *choice
         # Step up to the customs desk to ask Dockmaster Voss about current shipping traffic.
@@ -1702,6 +1767,9 @@ A wall of black boards is ruled in columns behind the gallery, each headed with 
           *goto pv_quays_observe
         # Return to the quayside.
           *goto port_valen_harbor_pois
+        *if (vane_independent_operative)
+          # ↦ Walk to the district picked on the sidebar. [port_valen]
+            *goto port_valen_walk_picked
   *else
     *page_break Back to the harbor streets…
     *goto port_valen_harbor_pois
@@ -2494,6 +2562,9 @@ He looks you over again, more carefully this time.
     *goto pv_poi_drydock_salvage
   # Return to the Harbor Quayside.
     *goto port_valen_harbor_pois
+  *if (vane_independent_operative)
+    # ↦ Walk to the district picked on the sidebar. [port_valen]
+      *goto port_valen_walk_picked
 
 *label pv_poi_drydock_observe
 You lean against the stone retaining wall above the ways and watch the yard work. Balance cranes swing heavy oak timbers through the air, weighed down by iron cages of river stone. Shipwrights drive boiling tar into hull seams with steady mallet strikes, and foremen with chalkboards shout numbers over the rasp of the sawpits. Every hull on the ways has a crew's name chalked on its cradle and a fine written under it.
@@ -3483,6 +3554,9 @@ When he spots you on the staging, the old shipwright lays down his blade and wip
       *goto pv_poi_pier_ladders
   # Head back along the causeway to the quayside.
     *goto port_valen_harbor_pois
+  *if (vane_independent_operative)
+    # ↦ Walk to the district picked on the sidebar. [port_valen]
+      *goto port_valen_walk_picked
 
 *label pv_poi_pier_observe
 *temp obs_pick 0
@@ -3981,6 +4055,9 @@ Two watchmen in greased sheepskins reach the head of the breakwater, a lantern s
     *goto pv_poi_fish_gossip
   # Head back up the ramp to the quayside.
     *goto port_valen_harbor_pois
+  *if (vane_independent_operative)
+    # ↦ Walk to the district picked on the sidebar. [port_valen]
+      *goto port_valen_walk_picked
 
 *label pv_poi_fish_stalls
 Stalls line both sides of the ramp, each with a fishwife behind a plank of wet slate, a knife, and a bucket. Steam and the smell of hot oil hang under the awnings.
@@ -4715,6 +4792,9 @@ A rail fence rings a wide square of packed ground behind the barracks, scuffed b
       *goto pv_carrion_leader_away
   # Head back across the compound.
     *goto port_valen_hub
+  *if (vane_independent_operative)
+    # ↦ Walk to the district picked on the sidebar. [port_valen]
+      *goto port_valen_walk_picked
 
 *comment Closure page for the drill button above. It costs no time and sets nothing. It reads the clock and the derived flags directly
 *comment (not the temps the yard set), so it plays from any label.
@@ -5084,6 +5164,9 @@ The pointer goes back to the chart, and the scribe's nib keeps scratching.
       *goto pv_workroom_signet
   # Head back across the compound.
     *goto port_valen_hub
+  *if (vane_independent_operative)
+    # ↦ Walk to the district picked on the sidebar. [port_valen]
+      *goto port_valen_walk_picked
 
 *label pv_workroom_charts
 [b]◈ THE WORKROOM[/b]
@@ -5253,6 +5336,9 @@ The strap goes back through the rivet, and the grindstone behind the partition s
       *goto_scene port_valen/varren_quests/varren_errand slasher_hook
   # Head back across the compound.
     *goto port_valen_hub
+  *if (vane_independent_operative)
+    # ↦ Walk to the district picked on the sidebar. [port_valen]
+      *goto port_valen_walk_picked
 
 *label pv_armory_advice
 [b]◈ THE ARMORY SHED[/b]

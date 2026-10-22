@@ -424,6 +424,7 @@
   TP.isActive = isActive;
   TP._state = function () { return { reopen: reopen, built: !!dlg, open: !!(dlg && dlg.open) }; };
   TP.title = function () { var t = currentTrade(); return t ? t.def.title : ""; };
+  TP.active = isActive;   // citytravel.js leaves T to the trade panel on a page where one is active
 
   /* ------------------------------------------------------------------ keeping the page in step */
 

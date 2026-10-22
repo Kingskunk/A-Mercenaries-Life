@@ -25,6 +25,8 @@ if (typeof process != "undefined") {
   // shop menus) from tools/gear_catalog.json into the scenes that gen_equipment_data.js then parses.
   require(path.join(__dirname, 'tools', 'gen_gear.js'));
   require(path.join(__dirname, 'tools', 'gen_equipment_data.js'));
+  // The district table the sidebar's Travel button reads (minutes come from the scene's own distances).
+  require(path.join(__dirname, 'tools', 'gen_city_data.js'));
   // startup.txt is built from web/mygame/scenes/startup_parts/ (the source); join them before anything reads it. gen_gear.js above already did after writing its part.
   require(path.join(__dirname, 'tools', 'build_startup.js')).write();
   // The backdrops (Wallpaper/ -> scenery/) and the sounds (Sounds/ -> ambience/) are converted copies the game loads. Rebuild any whose source is newer, so replacing a picture or a recording
