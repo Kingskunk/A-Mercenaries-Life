@@ -95,6 +95,11 @@
         if (truthy(s.has_rotten_rib_splinter)) {
           out.push("Under his mallet the third rib rings clean iron and the fourth gives back a flat, sodden thud. The oak in Bay Four's delivery was green, and he wants somebody to know it before the ship is launched on it.");
         }
+        if (s.rotten_rib_resolution === "failed") {
+          out.push("The ship went down the ways with a green rib bolted over. He stood on the staging with the mallet hanging from his hand and did not strike the fourth rib again.");
+        } else if (s.rotten_rib_resolution === "blackmail") {
+          out.push("The three highland oak beams went onto his slip and into the cradle. He gave you a pair of pitch-sealed bull-hide boots with iron heel-plates and will not ask what you said to the clerk. His slip is open to you for honest counsel, word along the wharves, or a skipper who does not ask the guild's leave.");
+        }
         return out;
       },
       see: ["iron_wharves", "hendryk", "elric"]
@@ -124,9 +129,17 @@
       link: ["Clerk Elric", "Elric"],
       tags: ["Iron Wharves"], aliases: ["clerk", "yard office"],
       unlock: "met_elric",
-      body: [
-        "The clerk who runs the yard office up on stilts behind the sawpits. Every load that passes through the yard gets his initials. Brant's warning about the yard: whatever sits still too long grows legs."
-      ],
+      body: function (s) {
+        var out = [
+          "The clerk who runs the yard office up on stilts behind the sawpits. Every load that passes through the yard gets his initials. Brant's warning about the yard: whatever sits still too long grows legs."
+        ];
+        if (s.rotten_rib_resolution === "failed") {
+          out.push("A waybill carrying Master Hendryk's proof-stamp, which condemned the naval oak as worm-rotten, " + (truthy(s.ysolde_timber_turned_in) ? "went to Ysolde, its red seal whole." : "is in your pouch with its red seal whole.") + " The oak is gone.");
+        } else if (s.rotten_rib_resolution === "blackmail") {
+          out.push("You turned down his purse. The three oak beams went back to Brant's slip, and the waybill that carries Master Hendryk's proof-stamp " + (truthy(s.ysolde_timber_turned_in) ? "went to Ysolde. He knows it exists and does not know whose hands it is in." : "is in your hands. He knows it exists and does not know whose hands it is in."));
+        }
+        return out;
+      },
       see: ["brant", "hendryk", "iron_wharves"]
     },
 
@@ -253,6 +266,17 @@
         }
         if (truthy(s.mw_vael_son_talk)) {
           out.push("The shop is called Vael and Son because there was a son. Serran is cut into the workshop awning in Vael's own lettering, and he has never taken the name down. Serran took the Gilded Scales' contract work north out of Port Valen eight years ago and writes when he can. \"He is not dead, and he is not coming back either. A man who leaves to take other people's money is doing the same work I do, only he lies about the hours.\"");
+        }
+        if (s.a_key_resolution === "lawful") {
+          out.push("The pattern book came back to him unopened. The Watch took the thief and the runner, the compromised doors were re-keyed the same night, and he counted three silver marks onto the counter for you.");
+        } else if (s.a_key_resolution === "pragmatic") {
+          out.push("The pattern book came back to him, and you carried away a purse of four silver marks. The buyer was left at large, and Vael burned the wax impressions in his brazier knowing a larger matter was left breathing.");
+        } else if (s.a_key_resolution === "strategic") {
+          out.push("The pattern book came back to him and the wax packet went into his brazier. A notched brass token and a fountain phrase point toward the buyer, and he gave you the details of every lock that needs changing and a promise that his door is open when you pursue it.");
+        } else if (s.a_key_resolution === "compromised") {
+          out.push(s.a_key_pattern_book === "copied"
+            ? "The Watch took the thief, but the pattern book came back to him lighter, with a fistful of pages torn out. He has been taking sample keys down off the wall since: every lock in those pages is a question."
+            : "The pattern book is gone. He has been taking sample keys down off the wall since: every lock in it is a question, Kess's first and Hollis's next.");
         }
         return out;
       },
@@ -489,6 +513,13 @@
         ];
         if (s.bell_quest_stage === "resolved") {
           out.push("One night wreckers packed the striker with greased wool so the bell could not ring, and waited below the ladder to strip a ketch on the reef. It rang in the end, and the ketch went by.");
+          if (s.bell_resolution === "reported") {
+            out.push("You left the wreckers' pouch where it lay, and the older watchman tipped the silver into his palm under the lantern.");
+          } else if (s.bell_resolution === "pocketed") {
+            out.push("You took the wreckers' pouch, five silver marks, under the older watchman's eye. He said only that you rang it, and sent you down to the quay.");
+          } else if (s.bell_resolution === "bloodied") {
+            out.push("The Watch came along the causeway on the sound of a whistle before the wreckers could finish, and sent you off the stone.");
+          }
         } else if (s.bell_quest_stage === "failed") {
           out.push("One night wreckers packed the striker with greased wool so the bell could not ring, and a ketch broke on the reef.");
         } else if (truthy(s.bell_heard_story)) {

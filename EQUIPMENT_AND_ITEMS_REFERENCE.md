@@ -111,7 +111,7 @@ Worn over the shoulders. Standard civilian and military mantles share a flat **1
 
 ## 6. Handwear Slot (`equipped_hands_id`)
 
-Handwear and weapon wraps. The wraps below are cosmetic; the gloves sold at the Gilt Needle carry traits (section 15). Swap from the dossier (Equipment > Apparel) or the inventory panel: your origin's own piece is always on offer, and Rorik's wraps come back once you have swapped them out. All non-armor wraps share a flat **8c** baseline.
+Handwear and weapon wraps. The wraps below are cosmetic; the gloves sold at the Gilt Needle carry traits (section 15). Swap from the inventory panel: your origin's own piece is always on offer, and Rorik's wraps come back once you have swapped them out. All non-armor wraps share a flat **8c** baseline.
 
 | Item ID | Item Name | Acquisition & Retail Cost | Description & Mechanical Role |
 |---|---|---|---|
@@ -321,9 +321,9 @@ Master Idris Fenwick sells finished pieces "cut to the wearer" from three racks 
 
 **Envoy's Court Coat.** Cloth armor (`armor_type "cloth"`: AC 10 + DEX, Mage Armor and Barbarian Unarmored Defense still work), so it competes with mail for the body slot; the shop warns before it replaces armor you are wearing, and selling it puts you back in your starting armor.
 
-**Swapping.** The dossier's Apparel page offers, for each slot, the character's origin piece (`origin_clothing`: Ashbrook, outlaw and disgraced each start in their own cloak, gloves, belt and boots), the quest pieces they hold (Talia's cloak and boots, Brant's boots, Rorik's grip wraps and belt) and everything bought. The inventory panel's Cloak, Hands, Waist and Feet dropdowns do the same; a swap that changes an ability score is handed to the dossier (`codex_equip_do`) so ChoiceScript re-derives scores, max HP and AC. Neckwear swaps only from the dossier (the Hearthstone's attunement lives there).
+**Swapping.** The inventory panel offers, for each slot, the character's origin piece (`origin_clothing`: Ashbrook, outlaw and disgraced each start in their own cloak, gloves, belt and boots), the quest pieces they hold (Talia's cloak and boots, Brant's boots, Rorik's grip wraps and belt) and everything bought. The slot dropdowns for Cloak, Hands, Waist and Feet list them; a swap that changes an ability score is handed to the dossier (`codex_equip_do`) so ChoiceScript re-derives scores, max HP and AC. Neckwear swaps only from the dossier (the Hearthstone's attunement lives there).
 
-**Comparing with what you wear.** The inventory's slot cards show each worn piece's weather cuts and score bonus (or "No bonuses"), the dossier's worn-gear lists show the same text, and the trade panel adds a "Wearing:" line under each equipment row (your weapon's damage, your armor's AC, or the piece in that slot and what it does), so a purchase can be weighed against what is on. All of it reads the `garment_traits` table.
+**Comparing with what you wear.** The inventory's slot cards show each worn piece's weather cuts and score bonus (or "No bonuses"), and the trade panel adds a "Wearing:" line under each equipment row (your weapon's damage, your armor's AC, or the piece in that slot and what it does), so a purchase can be weighed against what is on. All of it reads the `garment_traits` table.
 
 **Regions.** `climate_shift` (startup.txt, 0 in Port Valen) moves the raw temperature before it is clamped into the six bands; each step it pushes past freezing or hot adds +20% to that part of exposure (`temp_extreme`). Port Valen's own numbers are unchanged. Set it per region when overland travel exists.
 

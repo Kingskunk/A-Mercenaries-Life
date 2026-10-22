@@ -619,6 +619,7 @@ button#statSidebar .turnRow,
 }
 #statSidebar .sbCond.warn { color: var(--ch-warn); border-color: var(--ch-warn); }
 #statSidebar .sbCond.bad { color: var(--ch-bad); border-color: var(--ch-bad); background: rgba(181, 58, 53, 0.18); }
+#statSidebar .sbCond.good { color: var(--ch-good); border-color: var(--ch-good); }
 
 /* spell slots as orbs */
 #statSidebar .orbs { display: inline-flex; gap: 5px; align-items: center; }
@@ -792,6 +793,14 @@ button#statSidebar .turnRow,
     return "<div class=\"sbSkills\">" + rows + "</div>" +
       "<div class=\"timePeriod\">● proficient &nbsp;◆ expertise &nbsp;½ half &nbsp;○ none</div>" +
       (note.length ? "<div class=\"timePeriod sbSkillNote\">Right now: " + note.join("; ") + ".</div>" : "");
+  }
+  // Level progress for the Stats view (2026-10-21, moved here from the Dossier): training sessions and finished quests toward the next level, as the game counts them
+  // (character_progression.txt refresh_level_up_progress keeps the four numbers current). Nothing when no level is left to earn.
+  function levelProgressHtml(s) {
+    if (!(Number(s.level_up_sessions_needed) > 0)) return "";
+    return "<div class=\"statRow\"><span>Training</span><span>" + fmt(s.training_sessions) + " / " + fmt(s.level_up_sessions_needed) + "</span></div>" +
+      "<div class=\"statRow\"><span>Quests</span><span>" + fmt(s.quests_finished) + " / " + fmt(s.level_up_quests_needed) + "</span></div>" +
+      (isTruthy(s.level_up_ready) ? "<div class=\"timePeriod\">Ready to level up.</div>" : "");
   }
   function foldHtml(id, label, summary, body) {
     return "<details class=\"sbFold\" data-fold=\"" + id + "\"" + (sbOpen[id] ? " open" : "") + "><summary><span>" + label + "</span><span class=\"sbSum\">" + summary + "</span></summary>" + body + "</details>";
@@ -1067,6 +1076,12 @@ button#statSidebar .turnRow,
           Foul: "Foul: -2 to Charisma checks. A wash or the Conduit Baths clears it."
         }, "hygiene") +
         "</div>";
+      // Routine and a bound dressing (2026-10-21, moved here from the Dossier's status line): a second row of chips that exists only while one applies.
+      var extraChips = "";
+      if (s.routine_stage === "Restless") extraChips += "<span class=\"sbCond warn\" title=\"Restless: three nights or more in the same bed. -1 to every check. A night somewhere new clears it.\">Restless</span>";
+      if (s.routine_stage === "Rutted") extraChips += "<span class=\"sbCond bad\" title=\"Rutted: six nights or more in the same bed. -2 to every check. A night somewhere new clears it.\">Rutted</span>";
+      if (isTruthy(s.dressing_on)) extraChips += "<span class=\"sbCond good\" title=\"Wounds dressed: the bandage adds HP to your next sleep.\">Wounds dressed</span>";
+      if (extraChips) condChipsHtml += "<div class=\"sbConds\">" + extraChips + "</div>";
     }
     var resourceHtml = "";
     if (s.character_class === "wizard") {
@@ -1285,6 +1300,7 @@ button#statSidebar .turnRow,
         "<div class=\"sbPanel\">" + foldHtml("profs", "Proficiency", "Lv " + fmt(s.character_level) + " &middot; +" + fmt(s.prof_bonus),
           "<div class=\"statRow\"><span>Level</span><span>" + fmt(s.character_level) + "</span></div>" +
           "<div class=\"statRow\"><span>Proficiency bonus</span><span>+" + fmt(s.prof_bonus) + "</span></div>" +
+          levelProgressHtml(s) +
           armorNote) + "</div>" +
         "<div class=\"sbPanel\">" + foldHtml("skills", "Skills", skillsSummary(s), skillsHtml(s)) + "</div>";
       return;

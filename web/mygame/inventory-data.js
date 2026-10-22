@@ -32,8 +32,8 @@
   // `bucket` (+ `ringSlot` for rings) names which EquipmentEngine slot this is.
   //
   // `swappable: true` is the ONLY thing that turns a slot's control on -- and it's set
-  // to match choicescript_stats.txt's real codex_equipment_* menus EXACTLY, not by what
-  // EquipmentEngine could technically do. That menu (read it before touching this list):
+  // to match the equip choices the game has always offered (the Dossier's codex_equipment_* pages, removed 2026-10-21, listed exactly these) EXACTLY, not by what
+  // EquipmentEngine could technically do. That list (read it before touching this one):
   //   - Weapon: "switch back to starting" (ALWAYS offered) + has_x alternates. Never
   //     offers "unarmed" -- that's a narrative-only state, not a player action.
   //   - Head: "switch back to your ORIGIN's default" (arming_cap/camo_hood/scholar_coif,

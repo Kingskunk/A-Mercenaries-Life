@@ -3,7 +3,7 @@
  * gen_gear.js -- generates the repeated per-item code from tools/gear_catalog.json.
  *
  * WHY: every tradeable item used to mean ~10 hand-edited places (a *create, a loadout branch, a trade table
- * entry, dossier list and equip lines, an inventory-panel entry, and a buy/sell stanza in every shop). With
+ * entry, an inventory-panel entry, and a buy/sell stanza in every shop). With
  * hundreds of items across dozens of shops that is thousands of near-identical lines, so the catalog is now
  * the only place an item is written and this script writes the rest.
  *
@@ -320,91 +320,8 @@ function genSidearms() {
 
 var EQUIPPED_VAR = { weapon: "equipped_weapon_id", head: "equipped_head_id", armor: "equipped_armor_id",
   cloak: "equipped_cloak_id", hands: "equipped_hands_id", waist: "equipped_waist_id", feet: "equipped_feet_id", neck: "equipped_neck_id" };
-function ringWornExpr(it, prefix) {
-  prefix = prefix || "";
-  return "((" + prefix + "equipped_ring1_id = " + q(it.id) + ") or (" + prefix + "equipped_ring2_id = " + q(it.id) + "))";
-}
 function capFirst(x) { return x.charAt(0).toUpperCase() + x.slice(1); }
 function listed() { return items.filter(function (it) { return it.dossier && !isHand(it); }); }
-
-function genDossierList() {
-  var L = [];
-  listed().forEach(function (it) {
-    need(it.dossier, ["line"]);
-    var d = it.dossier, badge = "";
-    var badgeOn = d.badgeOn || (isClothing(it) ? "Worn" : ""), badgeOff = d.badgeOff !== undefined ? d.badgeOff : (isClothing(it) ? "Stowed" : "");
-    if (it.kind === "ring") {
-      badge = "@{" + ringWornExpr(it) + "  [" + (d.badgeOn || "Worn") + "]|" + (d.badgeOff ? " [" + d.badgeOff + "]" : "") + "}";
-    } else if (EQUIPPED_VAR[it.kind] && badgeOn) {
-      badge = "@{(" + EQUIPPED_VAR[it.kind] + " = " + q(it.id) + ")  [" + badgeOn + "]|" + (badgeOff ? " [" + badgeOff + "]" : "") + "}";
-    }
-    L.push('*if (' + flag(it) + ')');
-    L.push('  *set has_inventory_item true');
-    L.push('  *line_break');
-    var qty = stackable(it) ? "@{(spare_" + it.id + " > 0)  [+${spare_" + it.id + "} spare]|}" : "";
-    if (it.wear) qty = it.wear.tiers.map(function (t, k) { var hi = it.wear.tiers[k + 1]; return "@{(" + it.wear.var + " >= " + t[0] + (hi ? ") and (" + it.wear.var + " < " + hi[0] : "") + ")  [" + t[1] + "]|}"; }).join("").replace(/@\{\(/g, "@{((").replace(/\)  \[/g, "))  [") + qty;
-    if (it.kind === "consumable") badge = " [" + effectSummary(it) + "]";
-    L.push('  • [b]' + it.title + ':[/b] ' + d.line + badge + qty);
-  });
-  return L;
-}
-
-var EQUIP_LABEL = { weapon: "equip_weapon", head: "equip_head", armor: "equip_armor", cloak: "equip_cloak", hands: "equip_hands", waist: "equip_waist", feet: "equip_feet", neck: "equip_neck" };
-// returnLabel: the dossier page the option came from (weapons and worn armor live on codex_equipment_weapons).
-function equipOption(it, returnLabel) {
-  need(it.dossier, ["equipText"]);
-  var text = it.dossier.equipText;
-  if (it.traits && traitHint(it) && text.indexOf("[") === -1) text = text.replace(/\.$/, "") + " [" + traitHint(it) + "].";
-  return [
-    '*if ((' + flag(it) + ') and (not(' + EQUIPPED_VAR[it.kind] + ' = ' + q(it.id) + ')))',
-    '  # ' + text,
-    '    *gosub_scene equipment ' + EQUIP_LABEL[it.kind] + ' ' + q(it.id),
-    '    *goto ' + (returnLabel || "codex_equipment_weapons")
-  ];
-}
-
-function genEquipWeapons() {
-  var L = [];
-  listed().filter(function (it) { return it.kind === "weapon"; }).forEach(function (it) { L = L.concat(equipOption(it)); });
-  return L;
-}
-
-// Cloaks, gloves, belts and boots swap on the Apparel page, neckwear on the Accessories page.
-function genEquipClothing(kinds, returnLabel) {
-  var L = [];
-  listed().filter(function (it) { return kinds.indexOf(it.kind) !== -1; }).forEach(function (it) { L = L.concat(equipOption(it, returnLabel)); });
-  return L;
-}
-
-function genEquipWorn() {
-  var L = [];
-  listed().filter(function (it) { return it.kind === "head"; }).forEach(function (it) { L = L.concat(equipOption(it)); });
-  var armors = listed().filter(function (it) { return it.kind === "armor"; });
-  if (armors.length) {
-    L.push('*if (' + orChain(armors.map(flag)) + ' and (not(equipped_armor_id = "starting")))');
-    L.push('  # Switch back to your ${starting_armor_desc}.');
-    L.push('    *gosub_scene equipment equip_armor "starting"');
-    L.push('    *goto codex_equipment_weapons');
-    armors.forEach(function (it) { L = L.concat(equipOption(it)); });
-  }
-  return L;
-}
-
-function genEquipRings() {
-  var L = [];
-  listed().filter(function (it) { return it.kind === "ring"; }).forEach(function (it) {
-    var worn = ringWornExpr(it);
-    L.push('*if ((' + flag(it) + ') and (not(' + worn + ')))');
-    L.push('  # Wear the ' + it.title + ' in your first ring slot, replacing ${ring1_desc}.');
-    L.push('    *gosub_scene equipment equip_ring "1" ' + q(it.id));
-    L.push('    *goto codex_equipment_accessories');
-    L.push('*if ((' + flag(it) + ') and (not(' + worn + ')))');
-    L.push('  # Wear the ' + it.title + ' in your second ring slot, replacing ${ring2_desc}.');
-    L.push('    *gosub_scene equipment equip_ring "2" ' + q(it.id));
-    L.push('    *goto codex_equipment_accessories');
-  });
-  return L;
-}
 
 var INV_CATEGORY = { weapon: "weapons", armor: "apparel", head: "apparel", tool: "provisions", consumable: "consumables", valuable: "valuables",
   cloak: "apparel", hands: "apparel", waist: "apparel", feet: "apparel", neck: "apparel", ring: "accessories" };
@@ -712,7 +629,6 @@ function setRegion(file, name, lines) {
 var F = {
   startup: path.join(SCENES, "startup_parts", "40_gear_creates_generated.txt"),   // a part of startup.txt; build_startup.js joins the parts (run at the end of this script)
   equipment: path.join(SCENES, "equipment.txt"),
-  stats: path.join(SCENES, "choicescript_stats.txt"),
   combat: path.join(SCENES, "combat.txt"),
   inventory: path.join(GAME, "inventory-data.js"),
   calendar: path.join(SCENES, "calendar.txt"),
@@ -728,20 +644,11 @@ setRegion(F.equipment, "head_items", loadoutBlock("head"));
 setRegion(F.equipment, "ring_items", loadoutBlock("ring"));
 CLOTHING.forEach(function (k) { setRegion(F.equipment, k + "_items", loadoutBlock(k)); });
 setRegion(F.equipment, "garment_traits_items", genGarmentTraits());
-setRegion(F.stats, "gear_list", genDossierList());
-setRegion(F.stats, "gear_equip_weapons", genEquipWeapons());
-setRegion(F.stats, "gear_equip_worn", genEquipWorn());
-setRegion(F.stats, "gear_equip_apparel", genEquipClothing(["cloak", "hands", "waist", "feet"], "codex_equipment_apparel"));
-setRegion(F.stats, "gear_equip_neck", genEquipClothing(["neck"], "codex_equipment_accessories"));
-setRegion(F.stats, "gear_equip_rings", genEquipRings());
 setRegion(F.inventory, "gear_items", genInventory());
 setRegion(F.inventory, "load_config", genLoadConfig());
 setRegion(F.calendar, "food_pick_list", genFoodPickList());
 setRegion(F.calendar, "food_note_list", genFoodPickList());
 setRegion(F.overworldmap, "food_items", genFoodItemsJs());
-setRegion(F.stats, "codex_use_check", genUseCheck(false));
-setRegion(F.stats, "codex_use_check2", genUseCheck(false));   // the satchel page repeats the check
-setRegion(F.stats, "codex_use_options", genUseOptions("codex_use_do", false));
 setRegion(F.combat, "combat_throw_options", genThrowOptions());
 setRegion(F.combat, "combat_arrow_options", genArrowOptions());
 setRegion(F.combat, "combat_read_check", genReadCheck());
