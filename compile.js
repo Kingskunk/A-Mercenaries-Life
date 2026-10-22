@@ -268,6 +268,9 @@ function compile(){
   // so it is deliberately NOT in *scene_list and has to be listed here or the
   // compiled build fails with "scene doesn't exist" the moment chargen runs.
   verifyFileName("equipment.txt");
+  // Shared forge-work routines, called from individual smithies with
+  // *gosub_scene rather than through the chapter scene list.
+  verifyFileName("work/smithing.txt");
   // Port Valen's three smaller districts (Dredge-End, Civic Heights, Upper
   // Wharves) were split out of port_valen.txt into their own files once each
   // had enough content to be worth isolating (see each file's own header

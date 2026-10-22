@@ -235,262 +235,35 @@ Cast, read your abilities, or change interface settings. Rest and Wait are in th
 *page_break Back to the casting…
 *goto codex_cast
 
-*comment REST (2026-09-26). The dossier's Rest menu, and where the inventory panel's pinned Rest card lands (label codex_rest).
-*comment Real ChoiceScript like the satchel, so it is refused mid-fight. A short rest takes an hour of the clock (advance_time, so it burns
-*comment hunger and tiredness like any other hour) and gives back what a short rest gives back (character_progression.txt do_short_rest). It does not heal:
-*comment healing stays slow. Two rules make it safe from inside the dossier. (1) The dossier's writes carry back to the game and the page
-*comment underneath is REPLAYED when the dossier closes, so advance_time's shared lock (time_advance_locked, locked_time_advance_page_id,
-*comment locked_time_advance_id) and time_advance_call_id are put back exactly as they were found: left holding this call's id, the page
-*comment underneath would find a lock that is not its own and apply its own time advance a second time. (2) An hour can tick the hunger and
-*comment fatigue debts by one hit point each, and only once starving or collapsing, so the rest is refused at 2 HP or less in that state:
-*comment a death cannot be handled from inside the dossier.
-*label codex_rest
-*set short_rest_applied false
-[b]REST[/b]
-[i]Catch your breath, and see what a quiet hour will win back[/i]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+*comment WAIT AND REST AS ONE-SHOTS (2026-10-22, the user: the Dossier's Wait menu cost five clicks and a page of one line of prose, where the dungeon's wait card and the travel card cost two). The sidebar's Wait card
+*comment (web/mygame/waitcard.js) writes the minutes into wait_total_mins and opens the dossier AT codex_wait_now; its Rest button opens it AT codex_rest_now. Each does its work at once and ends with *finish, so the game hands the
+*comment player straight back to the page they were on with no menu to click through (the shape of codex_use_now and the one-shot casts), and the one-line result goes through spell_cast_toast, which the sidebar shows and clears.
+*comment A refusal says why in the same line. Two rules that made the old menus safe still hold. (1) The dossier's writes carry back to the game and the page underneath is REPLAYED when the dossier closes, so advance_time's shared
+*comment lock (time_advance_locked, locked_time_advance_page_id, locked_time_advance_id) and time_advance_call_id are put back exactly as they were found: left holding this call's id, the page underneath would find a lock that is
+*comment not its own and apply its own time advance a second time. (2) An hour can tick the hunger and fatigue debts by one hit point each, and only once starving or collapsing, so a wait or a rest is refused there when it could kill:
+*comment a death cannot be handled from inside the dossier. A one-shot needs no replay guard of its own (the old wait_applied and short_rest_applied): it ends at once, so there is no page of its own to replay. WHEN a wait or a rest
+*comment is allowed is decided in the sidebar (web/mygame/pagegate.js); this label still refuses a fight and a scene's wait_lock_reason. The until-morning, midday, dusk and night minutes are worked out in waitcard.js (07:00, 12:00, 18:00, 21:00).
+*label codex_wait_now
 *if (combat_engaged)
-  You cannot sit down and rest in the middle of a fight.
-  *page_break Back to the dossier…
-  *goto_scene choicescript_stats
-*gosub_scene character_progression short_rest_preview
-*temp cr_weak false
-*if (((hunger_stage = "Starving") or (fatigue_stage = "Collapsing")) and (hp_current <= 2))
-  *set cr_weak true
-
-[b]◈ RIGHT NOW[/b]
-*line_break
-• [b]Time:[/b] ${clock_time} (${time_period})
-*if (vane_independent_operative)
-  *line_break
-  • [b]Condition:[/b] Hunger: ${hunger_stage} | Fatigue: ${fatigue_stage}
-*if (character_class = "fighter")
-  *line_break
-  • [b]Second Wind:[/b] ${fighter_second_wind_uses} / ${fighter_second_wind_max}
-  *if (fighter_action_surge_max > 0)
-    *line_break
-    • [b]Action Surge:[/b] ${fighter_action_surge_uses} / ${fighter_action_surge_max}
-*if (character_class = "warlock")
-  *line_break
-  • [b]Pact Magic slots:[/b] ${warlock_spell_slots} / ${warlock_spell_slots_max}
-*if (character_class = "bard")
-  *line_break
-  • [b]Bardic Inspiration:[/b] ${bard_inspiration_uses} / ${bard_inspiration_max}
-  *line_break
-  • [b]Spell slots:[/b] ${bard_spell_slots} / ${bard_spell_slots_max}
-*if (character_class = "wizard")
-  *line_break
-  • [b]Spell slots:[/b] ${wizard_spell_slots} / ${wizard_spell_slots_max}
-*if ((character_class = "ranger") and (ranger_spell_slots_max > 0))
-  *line_break
-  • [b]Spell slots:[/b] ${ranger_spell_slots} / ${ranger_spell_slots_max}
-*if (not(((((character_class = "fighter") or (character_class = "warlock")) or (character_class = "bard")) or (character_class = "wizard")) or ((character_class = "ranger") and (ranger_spell_slots_max > 0))))
-  *line_break
-  • A short rest gives nothing back to your class yet. Your strength returns with sleep.
-*line_break
-• [b]Short rests left before you sleep:[/b] ${short_rests_left} / ${short_rests_max}
-
-A short rest takes about an hour off the clock, so it costs the same hunger and tiredness as any other hour. It does not heal wounds: those mend slowly, and best with sleep.
-
-*if (cr_weak)
-  You are too starved and spent to sit still for an hour without it costing what little you have left. Eat, or sleep, first.
-*elseif (short_rests_left <= 0)
-  You have rested as much as the road allows since you last slept. Only a night's sleep will give back more.
-*elseif (not(rest_can_gain))
-  *if (not(((character_class = "barbarian") or (character_class = "rogue")) or ((character_class = "ranger") and (ranger_spell_slots_max <= 0))))
-    Nothing has been spent, so a short rest would give you nothing back.
-
-*choice
-  *selectable_if ((rest_can_gain) and (not(cr_weak))) # Take a short rest. [~1 Hour]@{(show_stat_hints and rest_can_gain)  [Restores ${rest_gave}]|}
-    *goto codex_rest_short
-  # [Return to Dossier]
-    *goto_scene choicescript_stats
-  # [Close Dossier & Return]
-    *finish
-
-*label codex_rest_short
-*if (combat_engaged)
-  You cannot sit down and rest in the middle of a fight.
-  *page_break Back to the dossier…
-  *goto_scene choicescript_stats
-*comment REPLAY (2026-10-02, found by scripted_play.js refresh=true): this page spends an hour, gives things back and spends one of the short rests, none of it idempotent -- and the time lock below is
-*comment deliberately handed back as it was found, so it cannot stop a replay of THIS page. short_rest_applied does: once this page has done its work, a replay of it skips straight to the report and prints the same
-*comment result from the values kept in stats, instead of finding "nothing to gain" or taking a second rest. The Rest menu (codex_rest) clears it, so choosing another rest from the menu always runs. It is NOT a page_id
-*comment lock: a page_id set in the dossier collides with the next dossier visit's numbers and silently skipped a real second rest.
-*if (short_rest_applied)
-  *goto codex_rest_short_report
-*gosub_scene character_progression short_rest_preview
-*if (not(rest_can_gain))
-  *if (short_rests_left <= 0)
-    You have rested as much as the road allows since you last slept.
-  *else
-    A short rest would give you nothing back right now.
-  *page_break Back to your rest…
-  *goto codex_rest
-*if ((((hunger_stage = "Starving") or (fatigue_stage = "Collapsing"))) and (hp_current <= 2))
-  You are too starved and spent to sit still for an hour without it costing what little you have left. Eat, or sleep, first.
-  *page_break Back to your rest…
-  *goto codex_rest
-*set short_rest_gave_text rest_gave
-*temp cr_saved_locked time_advance_locked
-*temp cr_saved_page locked_time_advance_page_id
-*temp cr_saved_id locked_time_advance_id
-*temp cr_saved_call time_advance_call_id
-*set hours_to_pass 1
-*set minutes_to_pass 0
-*set time_advance_call_id "codex_short_rest"
-*gosub_scene calendar advance_time
-*set time_advance_locked cr_saved_locked
-*set locked_time_advance_page_id cr_saved_page
-*set locked_time_advance_id cr_saved_id
-*set time_advance_call_id cr_saved_call
-*gosub_scene calendar recalc_hp_from_neglect
-*gosub_scene character_progression do_short_rest
-*set dg_rest_light_text ""
-*if (dg_in_run)
-  *gosub_scene dungeon dg_rest_burn
-*set short_rest_pick 1
-*rand short_rest_pick 1 3
-*set short_rest_applied true
-*label codex_rest_short_report
-*if (short_rest_pick = 1)
-  You find somewhere to sit, ease the weight off your feet, and let your breathing settle. The hour passes slowly.
-*if (short_rest_pick = 2)
-  You loosen your grip, roll the stiffness out of your shoulders, and let everything go quiet for a while.
-*if (short_rest_pick = 3)
-  You sit still, close your eyes for a stretch, and let the tension drain out of your limbs.
-*if (character_class = "fighter")
-  The stubborn steadiness comes back into your arms, the way it does after a hard drill.
-*if (character_class = "warlock")
-  The pact's low hum settles back behind your ribs, ready to be called on again.
-*if (((character_class = "wizard") or (character_class = "bard")) or (character_class = "ranger"))
-  The strain behind your eyes eases, and some of what you had spent comes back to you, the words and the shapes of them settling into place.
-*if (not(dg_rest_light_text = ""))
-  ${dg_rest_light_text}
-*line_break
-[b][🕐 Short Rest | 1 hour | ${short_rest_gave_text} restored | ${short_rests_left} / ${short_rests_max} short rests left | ${clock_time}][/b]
-*page_break Back to your rest…
-*goto codex_rest
-
-*comment WAIT (2026-10-08). The dossier's Wait menu, and where the sidebar's Wait button in the Today card lands (label codex_wait). Waiting is a way to let the clock run by a chosen amount, not an activity: it is real
-*comment time through advance_time, so it burns hunger and tiredness like any other hours, adds weather exposure when the player is out on the overworld (ow_on), and lets the day roll over and the weather change. It does not heal.
-*comment WHEN IT IS REFUSED is decided by ONE variable, wait_lock_reason (startup.txt): empty means waiting is allowed, anything else is the reason shown to the player. This menu never names a dungeon, a road or a quest.
-*comment Whatever runs a long chain of its own sets it at the start and clears it at the end (the dungeon in dg_run_begin and dg_run_end, the escort road at its pull-out and its pay), so a new dungeon or a new kind of chain
-*comment never needs this menu edited. A fight is refused through combat_engaged, which the dossier already checks. Same two rules as the Rest menu make it safe from inside the dossier: the time lock pair
-*comment (time_advance_locked, locked_time_advance_page_id, locked_time_advance_id, time_advance_call_id) is put back exactly as it was found, and a replay of the doing page reprints its stored report instead of waiting
-*comment again (wait_applied, cleared by the menu). A wait is refused when the player is starving or collapsing and could not survive the hours, because a death cannot be handled from inside the dossier.
-*label codex_wait
-*set wait_applied false
-[b]WAIT[/b]
-[i]Let the hours pass[/i]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-*if (combat_engaged)
-  You cannot stand and wait in the middle of a fight.
-  *page_break Back to the dossier…
-  *goto_scene choicescript_stats
+  *set spell_cast_toast "You cannot stand and wait in the middle of a fight."
+  *finish
 *if (not(wait_lock_reason = ""))
-  ${wait_lock_reason}
-  *page_break Back to the dossier…
-  *goto_scene choicescript_stats
-*gosub wait_prep
-
-[b]◈ RIGHT NOW[/b]
-*line_break
-• [b]Time:[/b] ${clock_time} (${time_period})
-*if (vane_independent_operative)
-  *line_break
-  • [b]Condition:[/b] Hunger: ${hunger_stage} | Fatigue: ${fatigue_stage}
-*line_break
-Waiting costs the same hunger and tiredness as any other hours, and the weather and the day move on without you.
-
-*choice
-  # Wait 15 minutes.
-    *set wait_total_mins 15
-    *goto codex_wait_do
-  # Wait 30 minutes.
-    *set wait_total_mins 30
-    *goto codex_wait_do
-  # Wait an hour.
-    *set wait_total_mins 60
-    *goto codex_wait_do
-  # Wait two hours.
-    *set wait_total_mins 120
-    *goto codex_wait_do
-  *if (wait_m_morning > 0)
-    # Wait until morning. [~${wait_t_morning}]
-      *set wait_total_mins wait_m_morning
-      *goto codex_wait_do
-  *if (wait_m_midday > 0)
-    # Wait until midday. [~${wait_t_midday}]
-      *set wait_total_mins wait_m_midday
-      *goto codex_wait_do
-  *if (wait_m_dusk > 0)
-    # Wait until dusk. [~${wait_t_dusk}]
-      *set wait_total_mins wait_m_dusk
-      *goto codex_wait_do
-  *if (wait_m_night > 0)
-    # Wait until night. [~${wait_t_night}]
-      *set wait_total_mins wait_m_night
-      *goto codex_wait_do
-  # Wait a specific time.
-    *goto codex_wait_custom
-  # [Return to Dossier]
-    *goto_scene choicescript_stats
-  # [Close Dossier & Return]
-    *finish
-
-*comment ── The minutes from now to the next morning (07:00), midday (12:00), dusk (18:00) and night (21:00), and the same as short text. Pure: it only reads the clock. ──
-*label wait_prep
-*script var now = Number(stats.clock_hour) * 60 + Number(stats.clock_minute); function until(t) { return ((t - now) % 1440 + 1440) % 1440; } function txt(m) { var h = Math.floor(m / 60), r = m % 60; return (h ? h + (h === 1 ? " hour" : " hours") : "") + (h && r ? " " : "") + (r ? r + " min" : ""); } stats.wait_m_morning = until(420); stats.wait_m_midday = until(720); stats.wait_m_dusk = until(1080); stats.wait_m_night = until(1260); stats.wait_t_morning = txt(stats.wait_m_morning); stats.wait_t_midday = txt(stats.wait_m_midday); stats.wait_t_dusk = txt(stats.wait_m_dusk); stats.wait_t_night = txt(stats.wait_m_night);
-*return
-
-*comment ── A specific amount: hours, then minutes. Nothing passes until the player chooses to wait. ──
-*label codex_wait_custom
-*set wait_applied false
-[b]WAIT: A SPECIFIC TIME[/b]
-[i]Hours first, then minutes[/i]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-How many hours? (0 to 23)
-*input_number wait_in_hours 0 23
-How many minutes? (0 to 59)
-*input_number wait_in_minutes 0 59
-*set wait_total_mins ((wait_in_hours * 60) + wait_in_minutes)
-*if (wait_total_mins = 0)
-  No time passes.
-  *page_break Back to your waiting…
-  *goto codex_wait
-*goto codex_wait_do
-
-*label codex_wait_do
-*if (combat_engaged)
-  You cannot stand and wait in the middle of a fight.
-  *page_break Back to the dossier…
-  *goto_scene choicescript_stats
-*comment REPLAY (the same trap as the short rest): this page spends time, and the lock below is handed back as it was found, so it cannot stop a replay of THIS page. wait_applied does: once the page has done its work, a replay
-*comment skips straight to the report. The Wait menu clears it, so choosing another wait from the menu always runs.
-*if (wait_applied)
-  *goto codex_wait_report
-*if (not(wait_lock_reason = ""))
-  ${wait_lock_reason}
-  *page_break Back to your waiting…
-  *goto codex_wait
+  *set spell_cast_toast wait_lock_reason
+  *finish
 *if (wait_total_mins <= 0)
-  No time passes.
-  *page_break Back to your waiting…
-  *goto codex_wait
-*temp cw_hours (((wait_total_mins + 59) - ((wait_total_mins + 59) modulo 60)) / 60)
-*if (((hunger_stage = "Starving") or (fatigue_stage = "Collapsing")) and (hp_current <= ((cw_hours * 2) + 1)))
-  You are too starved and spent to sit through that long without it costing more than you have left. Eat, or sleep, first.
-  *page_break Back to your waiting…
-  *goto codex_wait
+  *set spell_cast_toast "No time passes."
+  *finish
+*if (wait_total_mins > 1439)
+  *set wait_total_mins 1439
+*temp cwn_hours (((wait_total_mins + 59) - ((wait_total_mins + 59) modulo 60)) / 60)
+*if (((hunger_stage = "Starving") or (fatigue_stage = "Collapsing")) and (hp_current <= ((cwn_hours * 2) + 1)))
+  *set spell_cast_toast "You are too starved and spent to sit through that long without it costing more than you have left. Eat, or sleep, first."
+  *finish
 *script var m = Number(stats.wait_total_mins), h = Math.floor(m / 60), r = m % 60; stats.wait_report_text = (h ? h + (h === 1 ? " hour" : " hours") : "") + (h && r ? " " : "") + (r ? r + " min" : "");
-*temp cw_saved_locked time_advance_locked
-*temp cw_saved_page locked_time_advance_page_id
-*temp cw_saved_id locked_time_advance_id
-*temp cw_saved_call time_advance_call_id
+*temp cwn_saved_locked time_advance_locked
+*temp cwn_saved_page locked_time_advance_page_id
+*temp cwn_saved_id locked_time_advance_id
+*temp cwn_saved_call time_advance_call_id
 *comment Out on the road the hours cost weather and gear exposure like any outdoor time; in a town or a building they do not.
 *if (ow_on)
   *set exposure_base_mins wait_total_mins
@@ -500,25 +273,50 @@ How many minutes? (0 to 59)
 *set minutes_to_pass (wait_total_mins modulo 60)
 *set time_advance_call_id "codex_wait"
 *gosub_scene calendar advance_time
-*set time_advance_locked cw_saved_locked
-*set locked_time_advance_page_id cw_saved_page
-*set locked_time_advance_id cw_saved_id
-*set time_advance_call_id cw_saved_call
+*set time_advance_locked cwn_saved_locked
+*set locked_time_advance_page_id cwn_saved_page
+*set locked_time_advance_id cwn_saved_id
+*set time_advance_call_id cwn_saved_call
 *gosub_scene calendar recalc_hp_from_neglect
-*set wait_pick 1
-*rand wait_pick 1 3
-*set wait_applied true
-*label codex_wait_report
-*if (wait_pick = 1)
-  You find somewhere to sit and let the time go by.
-*elseif (wait_pick = 2)
-  You lean back, watch the light move, and let the hours take their own pace.
-*else
-  You pass the time as best you can, and it passes.
-*line_break
-[b][🕐 Waited | ${wait_report_text} | ${clock_time} (${time_period})][/b]
-*page_break Back to your waiting…
-*goto codex_wait
+*set spell_cast_toast "Waited ${wait_report_text}. It is ${clock_time}, ${time_period}."
+*finish
+
+*label codex_rest_now
+*if (combat_engaged)
+  *set spell_cast_toast "You cannot sit down and rest in the middle of a fight."
+  *finish
+*gosub_scene character_progression short_rest_preview
+*if (((hunger_stage = "Starving") or (fatigue_stage = "Collapsing")) and (hp_current <= 2))
+  *set spell_cast_toast "You are too starved and spent to sit still for an hour without it costing what little you have left. Eat, or sleep, first."
+  *finish
+*if (short_rests_left <= 0)
+  *set spell_cast_toast "You have rested as much as the road allows since you last slept. Only a night's sleep will give back more."
+  *finish
+*if (not(rest_can_gain))
+  *set spell_cast_toast "A short rest would give you nothing back right now."
+  *finish
+*set short_rest_gave_text rest_gave
+*temp crn_saved_locked time_advance_locked
+*temp crn_saved_page locked_time_advance_page_id
+*temp crn_saved_id locked_time_advance_id
+*temp crn_saved_call time_advance_call_id
+*set hours_to_pass 1
+*set minutes_to_pass 0
+*set time_advance_call_id "codex_short_rest"
+*gosub_scene calendar advance_time
+*set time_advance_locked crn_saved_locked
+*set locked_time_advance_page_id crn_saved_page
+*set locked_time_advance_id crn_saved_id
+*set time_advance_call_id crn_saved_call
+*gosub_scene calendar recalc_hp_from_neglect
+*gosub_scene character_progression do_short_rest
+*set dg_rest_light_text ""
+*if (dg_in_run)
+  *gosub_scene dungeon dg_rest_burn
+*set spell_cast_toast "Short rest, one hour: ${short_rest_gave_text} restored. ${short_rests_left} of ${short_rests_max} short rests left. It is ${clock_time}."
+*if (not(dg_rest_light_text = ""))
+  *set spell_cast_toast "${spell_cast_toast} ${dg_rest_light_text}"
+*finish
 
 *label codex_levelup
 *if (combat_engaged)

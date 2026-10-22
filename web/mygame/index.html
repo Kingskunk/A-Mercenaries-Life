@@ -56,6 +56,7 @@ either express or implied.
 <script src="city-data.generated.js"></script>
 <script src="citytravel.js"></script>
 <script src="dungeonwait.js"></script>
+<script src="waitcard.js"></script>
 <script src="pagegate.js"></script>
 <script src="levelup.js"></script>
 <script src="battlehud.js"></script>
@@ -80,6 +81,7 @@ either express or implied.
 <link href="trade.css" rel="stylesheet" type="text/css">
 <link href="citytravel.css" rel="stylesheet" type="text/css">
 <link href="dungeonwait.css" rel="stylesheet" type="text/css">
+<link href="waitcard.css" rel="stylesheet" type="text/css">
 <link href="levelup.css" rel="stylesheet" type="text/css">
 <link href="battlehud.css" rel="stylesheet" type="text/css">
 <link href="dungeonmap.css" rel="stylesheet" type="text/css">
@@ -2069,10 +2071,10 @@ button#statSidebar .turnRow,
     var tip = reason || "Pass the time: wait a few minutes, or until a time of day. [F]";
     var restReason = window.PageGate ? window.PageGate.restReason() : "";
     var restOff = !!restReason || !canOpenDossier();
-    var restTip = restReason || "Catch your breath: an hour's rest, and what it wins back.";
+    var restTip = restReason || ("Catch your breath: an hour's short rest, at once, and what it wins back. [R] " + (Number(s.short_rests_max) > 0 ? "Short rests left: " + s.short_rests_left + " of " + s.short_rests_max + "." : ""));
     // Travel (2026-10-21): enabled only on a page that carries the hidden walk option (citytravel.js), so quest pages, timed jobs and dungeons are never walked away from.
     var travelOn = !!(window.CityTravel && window.CityTravel.available());
-    var travelTip = travelOn ? "Walk to another district. It costs the walking time. [T]" : "You can set off for another district from the streets of a district, not from here.";
+    var travelTip = travelOn ? "Go somewhere else: another district, a place you know, the notice board, the inn, or out of town. It costs the walking time. [T]" : "You can set off from the streets of a district or a town, not from here.";
     return "<div class=\"sbWaitRow\"><button type=\"button\" class=\"sbWait\" data-wait-open=\"1\" title=\"" + esc(tip) + "\"" + (off ? " disabled" : "") + ">Wait\u2026</button>" +
       "<button type=\"button\" class=\"sbWait\" data-rest-open=\"1\" title=\"" + esc(restTip) + "\"" + (restOff ? " disabled" : "") + ">Rest\u2026</button>" +
       "<button type=\"button\" class=\"sbWait\" data-travel-open=\"1\" title=\"" + esc(travelTip) + "\"" + (travelOn ? "" : " disabled") + ">Travel\u2026</button></div>";
@@ -2086,7 +2088,8 @@ button#statSidebar .turnRow,
       scene.execute();
     });
   }
-  // F opens the same Wait menu as the Today card (it was T until 2026-10-21, when T became Travel). It never steals a keystroke from text entry, an open panel,
+  window.OpenDossierAt = openDossierAt;   // waitcard.js hands a wait or a rest to the dossier's one-shot labels through this
+  // F opens the Wait card (the dungeon's own card on a quiet dungeon node), as the Wait button in the Today card does (it was T until 2026-10-21, when T became Travel). It never steals a keystroke from text entry, an open panel,
   // combat, or a scene that has marked waiting unavailable.
   document.addEventListener("keydown", function (ev) {
     if ((ev.key !== "f" && ev.key !== "F") || ev.ctrlKey || ev.metaKey || ev.altKey || ev.repeat) return;
@@ -2095,7 +2098,7 @@ button#statSidebar .turnRow,
     if (document.querySelector("dialog[open]")) return;
     if ((window.PageGate && window.PageGate.waitReason()) || !canOpenDossier()) return;
     ev.preventDefault();
-    if (window.DungeonWait && window.DungeonWait.onPage()) window.DungeonWait.open(); else openDossierAt("codex_wait");
+    if (window.DungeonWait && window.DungeonWait.onPage()) window.DungeonWait.open(); else if (window.WaitCard) window.WaitCard.open();
   });
   // One-shot casts (CASTABLE_OUT_OF_COMBAT) leave a one-line result in stats.spell_cast_toast just before the game hands the player back to their page; this shows it and clears it.
   function showSpellToast() {
@@ -2204,7 +2207,7 @@ button#statSidebar .turnRow,
     }
     var waitBtn = el.closest("[data-wait-open]");
     if (waitBtn) {
-      if (!waitBtn.disabled) { if (window.DungeonWait && window.DungeonWait.onPage()) window.DungeonWait.open(); else openDossierAt("codex_wait"); }
+      if (!waitBtn.disabled) { if (window.DungeonWait && window.DungeonWait.onPage()) window.DungeonWait.open(); else if (window.WaitCard) window.WaitCard.open(); }
       return;
     }
     var travelBtn = el.closest("[data-travel-open]");
@@ -2214,7 +2217,7 @@ button#statSidebar .turnRow,
     }
     var restBtn = el.closest("[data-rest-open]");
     if (restBtn) {
-      if (!restBtn.disabled) openDossierAt("codex_rest");
+      if (!restBtn.disabled && window.WaitCard) window.WaitCard.rest();
       return;
     }
     var castBtn = el.closest("[data-spell-cast]");
@@ -2960,9 +2963,9 @@ if (window.location.hostname === 'localhost') {
   <div>Scroll Up</div>
   <div><span class="key">Shift</span> + <span class="key">Space</span></div>
   <div>Next Option</div>
-  <div><span class="key">J</span></div>
+  <div><span class="key">E</span></div>
   <div>Previous Option</div>
-  <div><span class="key">K</span></div>
+  <div><span class="key">W</span></div>
   <div>Jump to Option</div>
   <div><span class="key">1</span> - <span class="key">9</span></div>
   <div>Show Stats</div>
@@ -2972,11 +2975,13 @@ if (window.location.hostname === 'localhost') {
   <div>Inventory</div>
   <div><span class="key">I</span></div>
   <div>Menu</div>
-  <div><span class="key">W</span></div>
+  <div><span class="key">V</span></div>
   <div>Wait / Pass Time</div>
   <div><span class="key">F</span></div>
   <div>Travel (Walk to Another District)</div>
   <div><span class="key">T</span></div>
+  <div>Rest (a Short Rest, One Hour)</div>
+  <div><span class="key">R</span></div>
   <div>Mute / Unmute Sound</div>
   <div><span class="key">S</span></div>
   <div>Story to Top / Bottom</div>

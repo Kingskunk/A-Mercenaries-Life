@@ -3727,7 +3727,9 @@ window.onload=function() {
         button.click();
       }
 
-      if (key === 'j') {
+      // E is the next-option key (it was J until 2026-10-22, the user's call) and W the previous-option key (it was K): both under the left hand. The menu moved from W to V, off the prime keys,
+      // where it is reachable but not touched by accident.
+      if (key === 'e') {
         var oldTarget = document.querySelector('input[type=radio]:checked');
         if (!oldTarget) {
           var input = document.querySelector('#main input');
@@ -3745,7 +3747,7 @@ window.onload=function() {
           value = availableValues[valueIndex + 1];
         }
         clickRadio(value);
-      } else if (key === 'k') {
+      } else if (key === 'w') {
         var oldTarget = document.querySelector('input[type=radio]:checked');
         if (!oldTarget) return;
         var value = Number(oldTarget.value);
@@ -3792,7 +3794,7 @@ window.onload=function() {
         clickRadio(key);
       } else if (key === 'q') {
         clickButton('statsButton');
-      } else if (key === 'w') {
+      } else if (key === 'v') {
         clickButton('menuButton');
       } else if (key === 'Enter') {
         if (ev.target && (ev.target.tagName === "BUTTON" || ev.target.tagName === "A")) {
