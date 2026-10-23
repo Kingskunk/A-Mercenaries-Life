@@ -25,7 +25,7 @@ const { ind, stripBlocks, optionsOf, cloneLines, SCENES, MARK } = core;
 function S(page, target, file) { return [page, target, file]; }
 const SETTLEMENTS = {
   alderford: {
-    name: "Alderford", start: "alderford", startScene: "alderford/alderford", hubFile: "alderford/alderford.txt", hubLabels: ["alderford"],
+    name: "Alderford", start: "alderford", startScene: "alderford/alderford", hubFile: "alderford/alderford.txt", hubLabels: ["alderford", "af_menu"],
     files: ["alderford/drowned_oar.txt", "alderford/factors_hall.txt", "alderford/lower_wharf_market.txt", "alderford/timber_smithy.txt", "alderford/chapel.txt"],
     services: {
       board: { name: "Notice board", seen: "af_hall_seen", steps: [S("af_menu", "af_hall", "alderford/alderford.txt"), S("af_hall_floor", "af_hall_board", "alderford/factors_hall.txt")], done: "You are at the notice board." },
@@ -34,7 +34,7 @@ const SETTLEMENTS = {
     }
   },
   timbermouth: {
-    name: "Timbermouth", start: "timbermouth", startScene: "timbermouth/timbermouth", hubFile: "timbermouth/timbermouth.txt", hubLabels: ["timbermouth"],
+    name: "Timbermouth", start: "timbermouth", startScene: "timbermouth/timbermouth", hubFile: "timbermouth/timbermouth.txt", hubLabels: ["timbermouth", "tm_menu"],
     files: ["timbermouth/factors_hall.txt", "timbermouth/general_store.txt", "timbermouth/split_pine_inn.txt", "timbermouth/workshops.txt"],
     services: {
       board: { name: "Notice board", seen: "tm_hall_seen", steps: [S("tm_menu", "tm_hall", "timbermouth/timbermouth.txt"), S("tm_hall_floor", "tm_hall_board", "timbermouth/factors_hall.txt")], done: "You are at the notice board." },
@@ -151,7 +151,7 @@ function applyFile(id, def, file, stepsHere, home, dry) {
   if (home) {
     labelsOf(L).forEach(lab => {
       optionsOf(L, lab, file).forEach(b => {
-        b.opts.filter(o => plainBody(o) && home.has(o.target) && home.has(lab) && home.get(o.target) < home.get(lab)).forEach(o => add(b, "home:" + id, cloneLines(o, "home", id, b.indent + 2)));
+        b.opts.filter(o => plainBody(o) && home.has(o.target) && home.has(lab) && (home.get(o.target) < home.get(lab) || (b.opts.length === 1 && home.get(o.target) <= home.get(lab)))).forEach(o => add(b, "home:" + id, cloneLines(o, "home", id, b.indent + 2)));
       });
     });
   }

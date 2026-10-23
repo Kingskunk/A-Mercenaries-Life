@@ -154,8 +154,11 @@ Scene.prototype.printLoop = function printLoop() {
         // Refresh them at the actual visible-page boundary as well, so a
         // cross-scene *gosub_scene (such as a combat encounter) cannot leave
         // the previous location's backdrop or room tone on screen for a frame.
-        if (window.Scenery && window.Scenery.update) window.Scenery.update();
-        if (window.Ambience && window.Ambience.update) window.Ambience.update();
+        // (typeof guard: quicktest and randomtest run this file in Node, where there is no window)
+        if (typeof window !== "undefined") {
+            if (window.Scenery && window.Scenery.update) window.Scenery.update();
+            if (window.Ambience && window.Ambience.update) window.Ambience.update();
+        }
         this.refreshSavedProgress();
         this.save("temp");
         printFooter();
