@@ -74,6 +74,7 @@ function parseLoadoutLabel(lines, labelName, idVar) {
   var body = extractLabelBody(lines, labelName);
   var entries = [];
   var current = null;
+  var defaults = [];   // column-0 *set lines BEFORE the first id *if: the resets a swap starts from (weapon_reach "long", weapon_ammo ""); an entry overrides them
   var idPatt = idVar === "item_id"
     ? /item_id\s*=\s*"([^"]+)"/g
     : new RegExp(idVar.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*=\\s*\"([^\"]+)\"", "g");
@@ -104,8 +105,14 @@ function parseLoadoutLabel(lines, labelName, idVar) {
       continue;
     }
     if (/^\*set\s+/.test(trimmed) && !indented) {
-      // A *set at column 0 (not nested under our current *if) also means the table's
-      // over -- same trailing-logic case as above.
+      // Before the first id *if, a column-0 *set is a reset the loadout starts from (a swap must not leave the last weapon's reach or ammunition behind): it fills any field an
+      // entry does not set itself. After the table has begun, a column-0 *set means the table's over -- the trailing-logic case above.
+      if (!entries.length) {
+        var dm = /^\*set\s+(\w+)\s+(.+)$/.exec(trimmed);
+        if (!dm) throw new Error("gen_equipment_data: unparseable *set in " + labelName + ": " + trimmed);
+        defaults.push([dm[1], parseValue(dm[2])]);
+        continue;
+      }
       break;
     }
     if (/^\*set\s+/.test(trimmed)) {
@@ -124,6 +131,7 @@ function parseLoadoutLabel(lines, labelName, idVar) {
     }
     break; // *return or anything else at column 0 ends the table
   }
+  entries.forEach(function (e) { defaults.forEach(function (d) { if (!(d[0] in e.fields)) e.fields[d[0]] = d[1]; }); });
   return entries;
 }
 
@@ -155,6 +163,8 @@ function generate() {
   Object.keys(LABELS).forEach(function (labelName) {
     var info = LABELS[labelName];
     catalog[info.bucket] = parseLoadoutLabel(lines, labelName, info.idVar);
+    // an empty table means the parser stopped early on a shape it did not expect (the weapon table was silently empty for ten days, so the Inventory equipped a weapon's id and none of its stats): fail loudly
+    if (!catalog[info.bucket].length) throw new Error("gen_equipment_data: " + labelName + " parsed to no entries; its first lines are probably a shape the parser does not understand");
   });
 
   var hints = parseGarmentHints(lines);

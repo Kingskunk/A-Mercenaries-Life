@@ -45,6 +45,7 @@ const MAP = {
   read_mage_armor_scroll: "Item/Consumable/Scroll/Scroll_of_Mage_Armour_Unfaded_Icon.png",
   read_bane_scroll: "Item/Consumable/Scroll/Scroll_of_Bane_Unfaded_Icon.png",
   read_false_life_scroll: "Item/Consumable/Scroll/Scroll_of_False_Life_Unfaded_Icon.png",   // the user's own jug art (2026-10-19)
+  swap_weapons: "Passive_feature/Dual_Wielder_Icon.webp",   // STAND-IN for the Swap Weapons button (the user to choose their own art)
   trade_places: "Action/Benign_Transposition_Swap_Icon.webp",
   call_ally_back: "Action/Benign_Transposition_Swap_Icon.webp",
 

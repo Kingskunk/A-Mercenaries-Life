@@ -2899,6 +2899,21 @@
       *line_break
       *goto fight_bonus_spent
 
+  *comment Swap Weapons (2026-10-23, the user: a solo adventure, so as many free swaps as they like): the weapon and the sidearm trade places (equipment.txt swap_active_sidearm, the same swap the Inventory's button makes). No action, no limit, and it
+  *comment is not counted in what keeps a turn alive. A swap flips two ids, so a replay of the page must not flip them back: the lock is the page's own number, the same shape as combat_weapon_attack_locked. The Battle HUD shows it as a button by the name.
+  *if (not(equipped_sidearm_id = "none"))
+    # [b][NO COST][/b] [b][Swap Weapons][/b] Put away your ${weapon_prose} and take up your ${sidearm_prose}, as often as you like.
+      *if (not(combat_swap_locked)) or (not(locked_combat_swap_page_id = page_id))
+        *set combat_swap_old_prose weapon_prose
+        *gosub_scene equipment swap_active_sidearm
+        *set combat_swap_locked true
+        *set locked_combat_swap_page_id page_id
+      You put away your ${combat_swap_old_prose} and take up your ${weapon_prose}.
+      *line_break
+      [b][🔄 In hand: ${weapon_desc}][/b]
+      *line_break
+      *goto fight_round_hub
+
   *if (combat_can_reckless)
     # [b][NO COST][/b] [b][Reckless Attack][/b] Strength attacks have advantage until your next turn, but attacks against you do too.
       *set combat_reckless_active true

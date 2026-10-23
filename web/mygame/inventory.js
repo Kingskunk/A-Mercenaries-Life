@@ -4,8 +4,13 @@
  * and lorebook read), so it never goes stale; writes go through EquipmentEngine (equipment-panel.js), never directly.
  *
  * Wearing something: drag a bag item onto the slot that takes it, double-click it, or select it and press Equip (the last two work on a touch screen too, where
- * dragging does not). Clicking a slot opens the list of everything that fits it, including "switch back to starting gear", exactly the options the old
- * dropdowns offered. Hovering an item or a slot shows its card. Neck pieces and rings are worn and taken off here too. Two kinds of change are handed to the
+ * dragging does not). Taking something off: drag the worn piece back onto the bag (the slot goes back to the starting piece, or to nothing for a ring or the neck); a ring
+ * dragged onto the other ring slot, or the weapon onto the sidearm slot, swaps the two. Clicking a slot lights up what in the bag fits it and shows the slot's own actions
+ * (take off, stow the shield, swap weapon and sidearm), replacing the old option list (2026-10-23).
+ *
+ * The bag is positional (2026-10-23): every carried item keeps a cell of its own, saved with the game as ONE string stat, inv_layout ("timber_axe:3,felt_hat:7"). A new item takes
+ * the first free cell, a sold one frees its cell, dragging an item onto another cell moves it (onto an item, swaps the two), and Sort packs the lot to the front by kind. The grid
+ * has no limit: it always shows one empty row past the last item and scrolls. The category chips only dim what they filter out, so nothing moves when one is picked. Hovering an item or a slot shows its card. Neck pieces and rings are worn and taken off here too. Two kinds of change are handed to the
  * dossier's ChoiceScript instead of being written here, because they change scores or max HP: a piece with an ability-score bonus (equipViaDossier) and the
  * Hearthstone Talisman's attunement (attuneViaDossier).
  *
@@ -118,37 +123,6 @@
     var traits = wornTraits(slot.bucket, s), noBonus = false;
     if (!traits && !meta && !empty && PLAIN_WORN[slot.bucket]) { traits = "No bonuses"; noBonus = true; }
     return { desc: desc, meta: meta, empty: empty, traits: traits, noBonus: noBonus };
-  }
-
-  // Every catalog id for this bucket that the player currently owns (via a Satchel
-  // item's `equip.slot`), regardless of category filters -- the swap dropdown always
-  // offers every eligible owned item, independent of whichever chip is selected below.
-  function ownedIdsForBucket(bucket, s) {
-    var ids = [];
-    data().items.forEach(function (item) {
-      if (item.equip && item.equip.slot === bucket && item.equip.id && isOwned(item, s)) {
-        ids.push(item.equip.id);
-      }
-    });
-    return ids;
-  }
-
-  // Builds the <option> list for one id-based slot: whatever's currently equipped
-  // (even an unowned class-starting choice, so the dropdown never opens on a value
-  // that isn't one of its own options) + this slot's `always` id(s) (the menu's own
-  // "switch back to starting/origin-default" option) + every owned alternative.
-  // Deliberately never offers "none"/unequip -- see inventory-data.js's header comment
-  // on `swappable` for why that's a narrative-only state in the real menu, not
-  // something a dropdown here should be able to reach.
-  function buildSlotOptions(slot, currentId, s) {
-    var ids = [];
-    function add(id) { if (id && ids.indexOf(id) === -1) ids.push(id); }
-    add(currentId);
-    if (slot.always) evalField(slot.always, s).forEach(add);
-    ownedIdsForBucket(slot.bucket, s).forEach(add);
-    return ids.map(function (id) {
-      return { id: id, label: window.EquipmentEngine.describeOption(slot.bucket, id) };
-    });
   }
 
   /* ----------------------------------------------------------------------- icons */
@@ -417,7 +391,7 @@
   if (typeof document === "undefined") return; // node tests stop here (mirrors lorebook.js)
 
   var dlg, elDoll, elBag, elTip;
-  var view = { category: "", sel: null, drag: null, pop: null, note: "", left: "you", csel: null, qty: 1 };
+  var view = { category: "", sel: null, drag: null, slot: null, dragSlot: null, note: "", left: "you", csel: null, qty: 1 };
 
   function statsNow() { return window.stats || {}; }
 
@@ -471,13 +445,15 @@
     dlg.addEventListener("keydown", function (ev) {
       ev.stopPropagation();
       if (isTextTarget(ev.target)) return;
-      if (ev.key === "Escape" && view.pop) { ev.preventDefault(); view.pop = null; render(); return; }
+      if (ev.key === "Escape" && view.slot) { ev.preventDefault(); view.slot = null; render(); return; }
       if ((ev.key === "i" || ev.key === "I") && !ev.ctrlKey && !ev.metaKey && !ev.altKey) {
         ev.preventDefault();
         close();
       }
     });
     dlg.addEventListener("mousedown", function (ev) { if (ev.target === dlg) close(); });
+    // Escape closes a dialog natively, wherever the focus is (a redraw leaves it on the page): with a slot lit, the first press only puts the light away
+    dlg.addEventListener("cancel", function (ev) { if (view.slot) { ev.preventDefault(); view.slot = null; render(); } });
   }
 
   function categoryLabel(id) {
@@ -507,6 +483,42 @@
   function accepts(r, bucket) { return !!(r && r.equip && r.equip.slot === bucket); }
   function slotSwappable(bucket, ringSlot) { var d = slotDesc(bucket, ringSlot); return !!(d && d.swappable); }
 
+  // Taking a worn piece off: the id the slot goes back to (the starting or origin piece, or "none" for a ring or the neck), or "" when there is nothing to take off (the slot already
+  // holds its starting piece, the sidearm slot has no take-off, the attuned Hearthstone is broken from its own button). The shield is stowed, which is its toggle.
+  function takeOffTarget(bucket, ringSlot) {
+    var EQ = window.EquipmentEngine, d = slotDesc(bucket, ringSlot), s = statsNow();
+    if (!EQ || !d || bucket === "sidearm") return "";
+    if (bucket === "shield") return truthy(s.shield_equipped) ? "shield" : "";
+    if (!d.swappable) return "";
+    var cur = EQ.getEquippedId(bucket, ringSlot), defs = d.always ? evalField(d.always, s) : [];
+    if (!defs || !defs.length || defs.indexOf(cur) >= 0) return "";
+    if (cur === "hearthstone_talisman" && truthy(s.hearthstone_attuned)) return "";
+    return defs[0];
+  }
+  function hasSidearm(s) { return !!(s.equipped_sidearm_id && s.equipped_sidearm_id !== "none"); }
+  // Another slot a worn piece can be dropped on to swap with it: the other ring slot, or the weapon and sidearm pair when there is a sidearm.
+  function swapPartner(bucket, ringSlot) {
+    if (bucket === "ring") return { bucket: "ring", ring: ringSlot === "1" ? "2" : "1" };
+    if (bucket === "weapon" && hasSidearm(statsNow())) return { bucket: "sidearm", ring: "" };
+    if (bucket === "sidearm" && hasSidearm(statsNow())) return { bucket: "weapon", ring: "" };
+    return null;
+  }
+  function slotDraggable(bucket, ringSlot) {
+    var EQ = window.EquipmentEngine;
+    if (!EQ) return false;
+    if (takeOffTarget(bucket, ringSlot)) return true;
+    if (bucket === "ring") return EQ.getEquippedId("ring", ringSlot) !== "none" && slotSwappable("ring", ringSlot);
+    return !!swapPartner(bucket, ringSlot) && (bucket === "sidearm" || slotSwappable(bucket, ringSlot));
+  }
+  // Two rings change fingers. The engine refuses one ring on two fingers, so each is cleared before it is put on the other hand.
+  function swapRings(from, to) {
+    var EQ = window.EquipmentEngine, a = EQ.getEquippedId("ring", from), b = EQ.getEquippedId("ring", to);
+    EQ.equipItem("ring", "none", from); EQ.equipItem("ring", "none", to);
+    EQ.equipItem("ring", a, to);
+    if (b && b !== "none") EQ.equipItem("ring", b, from);
+    view.slot = null; view.sel = null; note(""); render();
+  }
+
   function note(msg) { view.note = msg || ""; }
 
   // The single path that puts something on: the same EquipmentEngine calls the old dropdowns made, with the same hand-off to the dossier for
@@ -518,7 +530,7 @@
     if (bucket === "shield") {
       if (statsNow().weapon_hands === "two_handed") { note("Your weapon needs both hands, so there is no hand free for a shield."); render(); return; }
       EQ.equipItem("shield");
-      view.pop = null; view.sel = null; note(""); render();
+      view.slot = null; view.sel = null; note(""); render();
       return;
     }
     if (bucket === "neck" && id === "hearthstone_talisman") { attuneViaDossier("attune"); return; }
@@ -530,7 +542,7 @@
       if (EQ.getEquippedId("ring", other) === id) EQ.equipItem("ring", "none", other);
     }
     EQ.equipItem(bucket, id, ringSlot);
-    view.pop = null; view.sel = null; note(""); render();
+    view.slot = null; view.sel = null; note(""); render();
   }
 
   // Which finger a ring goes on when the player did not pick one: the one it is already on, else the first bare one, else the first.
@@ -559,37 +571,10 @@
     var ok = accepts(r, bucket);
     var buffed = !!v.meta || (!!v.traits && !v.noBonus);
     var cls = "inv-tile inv-slot" + (v.empty ? " inv-slot-empty" : "") + (buffed ? " inv-slot-buffed" : "") + (ok ? " inv-accepts" : "") +
-      (view.pop && view.pop.bucket === bucket && (view.pop.ring || "") === (ringSlot || "") ? " inv-sel" : "");
+      (view.slot && view.slot.bucket === bucket && (view.slot.ring || "") === (ringSlot || "") ? " inv-sel" : "");
     var pos = col ? ' style="grid-column:' + col + ";grid-row:" + row + '"' : "";
-    return '<button type="button" class="' + cls + '" data-slot="' + esc(bucket) + '"' + (ringSlot ? ' data-ring="' + esc(ringSlot) + '"' : "") + pos +
+    return '<button type="button" class="' + cls + '" data-slot="' + esc(bucket) + '"' + (ringSlot ? ' data-ring="' + esc(ringSlot) + '"' : "") + pos + (slotDraggable(bucket, ringSlot) ? ' draggable="true"' : "") +
       ' aria-label="' + esc(d.label + ": " + (v.empty ? "empty" : v.desc)) + '">' + iconImg(slotIconKey(bucket, ringSlot, s)) + "</button>";
-  }
-
-  function popHtml() {
-    if (!view.pop) return "";
-    var s = statsNow(), EQ = window.EquipmentEngine, d = slotDesc(view.pop.bucket, view.pop.ring);
-    if (!d || !EQ) return "";
-    var html = '<div class="inv-pop" style="left:0;top:0;visibility:hidden"><div class="inv-pop-title">' + esc(d.label) + "</div>";
-    if (d.bucket === "shield") {
-      if (!truthy(s.has_shield)) html += '<div class="inv-pop-note">No shield carried.</div>';
-      else html += '<button type="button" class="inv-pop-opt" data-pop-shield>' + (truthy(s.shield_equipped) ? "Stow the shield" : "Take up the shield") + "</button>";
-    } else if (d.bucket === "sidearm") {
-      html += '<button type="button" class="inv-pop-opt" data-swap-sidearm>⇄ Swap weapon and sidearm</button>';
-    } else if (!d.swappable) {
-      html += '<div class="inv-pop-note">Changed from the dossier’s Equipment menu.</div>';
-    } else if (d.bucket === "neck" && truthy(s.hearthstone_attuned)) {
-      html += '<div class="inv-pop-note">Torvald’s Hearthstone Talisman is worn, attuned (+1 CON).</div>' +
-        '<button type="button" class="inv-pop-opt" data-attune="break">Break the attunement</button>';
-    } else {
-      var currentId = EQ.getEquippedId(d.bucket, d.ringSlot);
-      var options = buildSlotOptions(d, currentId, s);
-      if (options.length < 2) html += '<div class="inv-pop-note">Nothing else to wear here.</div>';
-      options.forEach(function (opt) {
-        html += '<button type="button" class="inv-pop-opt' + (opt.id === currentId ? " inv-pop-cur" : "") + '" data-pop-id="' + esc(opt.id) + '"' + (opt.id === currentId ? " disabled" : "") + ">" +
-          esc(opt.label) + (opt.id === currentId ? " (worn)" : (opt.id === "hearthstone_talisman" ? " (attune, +1 CON)" : "")) + "</button>";
-      });
-    }
-    return html + "</div>";
   }
 
   function renderDoll(s) {
@@ -601,7 +586,7 @@
     if (hasSidearm && window.EquipmentEngine) html += '<button type="button" class="inv-swap-sidearm" data-swap-sidearm>⇄ Swap Weapon &amp; Sidearm</button>';
     html += '<div class="inv-vitals"><span>AC <b>' + esc(s.armor_class) + '</b></span><span>HP <b>' + esc(s.hp_current) + "/" + esc(s.hp_max) + '</b></span><span>Proficiency <b>+' + esc(s.prof_bonus) + "</b></span></div>";
     var cs = visibleContainers(s);
-    if (view.left === "you") elDoll.innerHTML = (cs.length ? leftTabsHtml(cs) : "") + html + popHtml();
+    if (view.left === "you") elDoll.innerHTML = (cs.length ? leftTabsHtml(cs) : "") + html;
     else elDoll.innerHTML = leftTabsHtml(cs) + containerPaneHtml(containerOf(view.left, s), s);
   }
 
@@ -615,7 +600,77 @@
     return parts.join(", ");
   }
 
+  // The picked slot's card in the detail strip: what is worn, what the pack offers it, and the slot's own actions.
+  function slotCardHtml(s, lit) {
+    var sl = view.slot, d = slotDesc(sl.bucket, sl.ring);
+    if (!d) return "";
+    var v = renderSlotValue(d, s), off = takeOffTarget(sl.bucket, sl.ring), acts = "";
+    if (sl.bucket === "shield") {
+      if (truthy(s.has_shield)) acts += '<button type="button" class="inv-use" data-pop-shield>' + (truthy(s.shield_equipped) ? "Stow the shield" : "Take up the shield") + "</button>";
+    } else if (d.bucket === "neck" && truthy(s.hearthstone_attuned)) {
+      acts += '<button type="button" class="inv-use" data-attune="break">Break the attunement</button>';
+    } else if (off) {
+      acts += '<button type="button" class="inv-use" data-takeoff>' + (off === "none" ? "Take off" : "Back to your starting piece") + "</button>";
+    }
+    var line = !d.swappable && sl.bucket !== "sidearm" && sl.bucket !== "shield" ? "This slot is changed from the dossier’s Equipment menu."
+      : (sl.bucket === "sidearm" ? "The sidearm is changed by swapping it with the weapon."
+      : (sl.bucket === "shield" ? "The shield is stowed or taken up here."
+      : (lit ? "Pick one of the lit pieces in your pack to wear it here." : "Nothing in your pack fits this slot.")));
+    return '<div class="inv-detail-main"><div class="inv-detail-name">' + esc(d.label) + '<span class="inv-item-slot">' + esc(v.empty ? "Nothing worn" : v.desc) + "</span></div>" +
+      '<div class="inv-item-desc">' + esc(line) + "</div></div>" +
+      (acts ? '<div class="inv-detail-acts">' + acts + "</div>" : "");
+  }
+
   var MIN_CELLS = 30, COLS = 6;
+
+  // The layout string: "id:cell,id:cell" (ids are plain letters, digits and underscores), in cell order.
+  function parseLayout(str) {
+    var map = {};
+    String(str || "").split(",").forEach(function (pair) {
+      var p = pair.split(":"), n = Number(p[1]);
+      if (p.length === 2 && p[0] && isFinite(n) && n >= 0 && Math.floor(n) === n && map[p[0]] === undefined) map[p[0]] = n;
+    });
+    return map;
+  }
+  function serializeLayout(placed) {
+    return Object.keys(placed).sort(function (a, b) { return placed[a] - placed[b]; }).map(function (id) { return id + ":" + placed[id]; }).join(",");
+  }
+  // Where every carried item sits: its saved cell if that is free, else the first free cell (a new item). Written back at once, so a sold item's cell stays empty and a new
+  // one never shifts the rest; items no longer carried drop out of the string.
+  function placeItems(current, s) {
+    var saved = parseLayout(s.inv_layout), used = {}, placed = {}, next = 0;
+    current.forEach(function (r) { var c = saved[r.id]; if (c !== undefined && used[c] === undefined) { used[c] = r.id; placed[r.id] = c; } });
+    current.forEach(function (r) { if (placed[r.id] === undefined) { while (used[next] !== undefined) next++; used[next] = r.id; placed[r.id] = next; } });
+    var str = serializeLayout(placed);
+    if (str !== String(s.inv_layout || "")) s.inv_layout = str;
+    return placed;
+  }
+  // Drop an item on a cell: an empty cell takes it, an occupied one swaps places with it.
+  function moveItem(id, cell) {
+    var s = statsNow(), placed = placeItems(owned(s), s);
+    if (placed[id] === undefined || placed[id] === cell) return;
+    var other = null;
+    Object.keys(placed).forEach(function (k) { if (placed[k] === cell && k !== id) other = k; });
+    if (other) placed[other] = placed[id];
+    placed[id] = cell;
+    s.inv_layout = serializeLayout(placed);
+    render();
+  }
+  // Sort: everything packed to the front, by kind (the catalog's category order) and then by name.
+  function sortBag() {
+    var s = statsNow(), order = {}, list = owned(s);
+    data().categories.forEach(function (c, i) { order[c.id] = i; });
+    list.sort(function (a, b) {
+      var oa = order[a.category] === undefined ? 99 : order[a.category], ob = order[b.category] === undefined ? 99 : order[b.category];
+      if (oa !== ob) return oa - ob;
+      var na = splitCount(a.name).name.toLowerCase(), nb = splitCount(b.name).name.toLowerCase();
+      return na < nb ? -1 : (na > nb ? 1 : 0);
+    });
+    var placed = {};
+    list.forEach(function (r, i) { placed[r.id] = i; });
+    s.inv_layout = serializeLayout(placed);
+    render();
+  }
 
   function renderBag(s) {
     var current = owned(s);
@@ -644,26 +699,32 @@
       if (!counts[c.id]) return;
       html += '<button type="button" class="inv-chip" data-cat="' + esc(c.id) + '" aria-pressed="' + (view.category === c.id) + '">' + esc(c.label) + "<small>" + counts[c.id] + "</small></button>";
     });
-    html += "</div>";
+    html += '<button type="button" class="inv-chip inv-sort" data-act="sort" title="Pack everything to the front, by kind">Sort</button></div>';
 
-    var shown = view.category ? current.filter(function (r) { return r.category === view.category; }) : current;
+    var lit = view.slot ? current.filter(function (r) { return accepts(r, view.slot.bucket); }).length : 0;
+    var placed = placeItems(current, s), byCell = {}, last = -1;
+    current.forEach(function (r) { byCell[placed[r.id]] = r; if (placed[r.id] > last) last = placed[r.id]; });
+    var cells = Math.max(MIN_CELLS, (Math.floor(last / COLS) + 2) * COLS);
     html += '<div class="inv-grid">';
-    shown.forEach(function (r) {
+    for (var cell = 0; cell < cells; cell++) {
+      var r = byCell[cell];
+      if (!r) { html += '<span class="inv-tile inv-blank" data-cell="' + cell + '" aria-hidden="true"></span>'; continue; }
       var c = splitCount(r.name);
       var on = /^equipped/i.test(r.badge || "");
-      html += '<button type="button" class="inv-tile inv-bagitem' + (view.sel === r.id ? " inv-sel" : "") + (on ? " inv-on" : "") + '" data-item="' + esc(r.id) + '"' +
-        (r.equip ? ' draggable="true"' : "") + ' aria-label="' + esc(c.name) + '">' + iconImg(itemIconKey(r)) +
+      var fits = view.slot && accepts(r, view.slot.bucket);
+      var out = (view.slot && !fits) || (view.category && r.category !== view.category);
+      html += '<button type="button" class="inv-tile inv-bagitem' + (view.sel === r.id ? " inv-sel" : "") + (on ? " inv-on" : "") + (fits ? " inv-accepts" : (out ? " inv-dim" : "")) + '" data-item="' + esc(r.id) + '" data-cell="' + cell + '"' +
+        ' draggable="true" aria-label="' + esc(c.name) + '">' + iconImg(itemIconKey(r)) +
         (c.count > 1 ? '<span class="inv-cnt">' + c.count + "</span>" : "") + (on ? '<span class="inv-eq" aria-hidden="true"></span>' : "") + "</button>";
-    });
-    var cells = Math.max(MIN_CELLS, Math.ceil(shown.length / COLS) * COLS);
-    for (var i = shown.length; i < cells; i++) html += '<span class="inv-tile inv-blank" aria-hidden="true"></span>';
+    }
     html += "</div>";
 
     // the selected item's details and its actions, under the grid: the touch-friendly way to do what hovering and dragging do on a desktop
     var xc = xferContext(s), sel = xc && xc.sel ? xc.sel : (view.sel ? findOwned(view.sel) : null);
-    html += '<div class="inv-detail">';
+    html += '<div class="inv-detail' + (!sel && view.slot ? " inv-detail-slot" : "") + '">';
     if (view.note) html += '<div class="inv-note inv-note-warn">' + esc(view.note) + "</div>";
-    if (sel) {
+    if (!sel && view.slot) html += slotCardHtml(s, lit);
+    else if (sel) {
       var sc = splitCount(sel.name);
       html += '<div class="inv-detail-main"><div class="inv-detail-name">' + esc(sc.name) + (sel.slot ? '<span class="inv-item-slot">' + esc(sel.slot) + "</span>" : "") +
         (sel.badge ? '<span class="inv-item-badge">' + esc(sel.badge) + "</span>" : "") + "</div>" +
@@ -677,10 +738,12 @@
         "</div>";
     } else if (view.note) {
       /* the notice above is all there is to say */
+    } else if (view.slot) {
+      /* the slot's card above */
     } else if (!current.length) {
       html += '<div class="inv-note">Your satchel holds only dry trail rations, flint and steel, and basic road gear.</div>';
     } else {
-      html += '<div class="inv-note">Drag a piece onto the figure to wear it, or select it and press Equip. Click a slot to see what else fits.</div>';
+      html += '<div class="inv-note">Drag a piece onto the figure to wear it, and drag a worn piece back here to take it off. Drag items to arrange your pack. Click a slot to light up what fits.</div>';
     }
     if (xc && xc.sel && xc.dir) html += xferHtml(xc);
     html += '<div class="inv-purse" title="Coin on you">' + esc(purseText(s)) + (ld ? " · weighs " + fmtLoad(ld.coin) : "") + "</div></div>";
@@ -759,7 +822,6 @@
     if (view.left !== "you" && !visibleContainers(s).some(function (c) { return c.id === view.left; })) { view.left = "you"; view.csel = null; }
     renderDoll(s);
     renderBag(s);
-    placePop();
   }
 
   /* ---------------------------------------------------------------- hover cards */
@@ -783,7 +845,7 @@
       '<div class="bt-kind">' + esc(d.label) + "</div>" +
       (v.meta ? '<div class="bt-meta">' + esc(v.meta) + "</div>" : "") +
       (v.traits ? '<div class="bt-meta' + (v.noBonus ? " bt-dim" : "") + '">' + esc(v.traits) + "</div>" : "") +
-      '<div class="bt-hint">' + (d.swappable || d.bucket === "sidearm" ? "Click to change what is worn here" : "Changed from the dossier’s Equipment menu") + "</div>";
+      '<div class="bt-hint">' + (d.swappable || d.bucket === "sidearm" || d.bucket === "shield" ? (slotDraggable(bucket, ringSlot) ? "Click to light up what fits here, or drag it to your pack to take it off" : "Click to light up what fits here") : "Changed from the dossier’s Equipment menu") + "</div>";
   }
   function showTip(el, html) {
     if (!html) { hideTip(); return; }
@@ -823,7 +885,23 @@
 
   /* ---------------------------------------------------------------- drag and drop */
 
+  function clearDrag() {
+    view.drag = null; view.dragSlot = null;
+    Array.prototype.forEach.call(dlg.querySelectorAll(".inv-accepts, .inv-over, .inv-drop-ok"), function (el) { el.classList.remove("inv-accepts", "inv-over", "inv-drop-ok"); });
+  }
   function onDragStart(ev) {
+    var st = ev.target && ev.target.closest ? ev.target.closest("[data-slot]") : null;
+    if (st && st.getAttribute("draggable") === "true") {
+      // a worn piece: the pack is where it can be dropped to take it off, and a ring or the weapon pair can swap
+      var b = st.getAttribute("data-slot"), rg = st.getAttribute("data-ring") || "";
+      view.dragSlot = { bucket: b, ring: rg };
+      try { ev.dataTransfer.setData("text/plain", "slot:" + b + ":" + rg); ev.dataTransfer.effectAllowed = "move"; } catch (e) { /* the drop reads view.dragSlot */ }
+      hideTip();
+      if (takeOffTarget(b, rg)) elBag.classList.add("inv-drop-ok");
+      var pt = swapPartner(b, rg);
+      if (pt) Array.prototype.forEach.call(dlg.querySelectorAll("[data-slot]"), function (el) { if (el.getAttribute("data-slot") === pt.bucket && (el.getAttribute("data-ring") || "") === pt.ring) el.classList.add("inv-accepts"); });
+      return;
+    }
     var t = ev.target && ev.target.closest ? ev.target.closest("[data-item]") : null;
     if (!t || !findOwned(t.getAttribute("data-item"))) return;
     view.drag = t.getAttribute("data-item");
@@ -833,20 +911,48 @@
     var r = findOwned(view.drag);
     Array.prototype.forEach.call(dlg.querySelectorAll("[data-slot]"), function (el) { if (accepts(r, el.getAttribute("data-slot"))) el.classList.add("inv-accepts"); });
   }
-  function onDragEnd() {
-    view.drag = null;
-    Array.prototype.forEach.call(dlg.querySelectorAll(".inv-accepts, .inv-over"), function (el) { el.classList.remove("inv-accepts", "inv-over"); });
+  function onDragEnd() { clearDrag(); }
+  function cellOf(ev) { var c = ev.target && ev.target.closest ? ev.target.closest("[data-cell]") : null; return c && elBag.contains(c) ? c : null; }
+  // Where a worn piece being dragged may land: the pack (take off), or its swap partner.
+  function slotDropKind(ev) {
+    if (!view.dragSlot) return "";
+    var t = ev.target && ev.target.closest ? ev.target.closest("[data-slot]") : null, ds = view.dragSlot, pt = swapPartner(ds.bucket, ds.ring);
+    if (t && pt && t.getAttribute("data-slot") === pt.bucket && (t.getAttribute("data-ring") || "") === pt.ring) return "swap";
+    if (!t && elBag.contains(ev.target) && takeOffTarget(ds.bucket, ds.ring)) return "off";
+    return "";
   }
   function onDragOver(ev) {
     var t = ev.target && ev.target.closest ? ev.target.closest("[data-slot]") : null;
     Array.prototype.forEach.call(dlg.querySelectorAll(".inv-over"), function (el) { if (el !== t) el.classList.remove("inv-over"); });
-    if (!t || !view.drag) return;
-    if (accepts(findOwned(view.drag), t.getAttribute("data-slot"))) { ev.preventDefault(); t.classList.add("inv-over"); }
+    if (view.dragSlot) {
+      var kind = slotDropKind(ev);
+      if (kind) { ev.preventDefault(); if (kind === "swap") t.classList.add("inv-over"); }
+      return;
+    }
+    if (!view.drag) return;
+    if (t) { if (accepts(findOwned(view.drag), t.getAttribute("data-slot"))) { ev.preventDefault(); t.classList.add("inv-over"); } return; }
+    var cl = cellOf(ev);
+    if (cl && cl.getAttribute("data-item") !== view.drag) { ev.preventDefault(); cl.classList.add("inv-over"); }
   }
   function onDrop(ev) {
+    if (view.dragSlot) {
+      var kind = slotDropKind(ev), ds = view.dragSlot;
+      clearDrag();
+      if (!kind) return;
+      ev.preventDefault();
+      if (kind === "off") { equipTo(ds.bucket, takeOffTarget(ds.bucket, ds.ring), ds.ring || undefined); return; }
+      if (ds.bucket === "ring") { swapRings(ds.ring, ds.ring === "1" ? "2" : "1"); return; }
+      window.EquipmentEngine.swapSidearm(); view.slot = null; render();
+      return;
+    }
     var t = ev.target && ev.target.closest ? ev.target.closest("[data-slot]") : null;
     var id = view.drag;
-    if (!t || !id) return;
+    if (!id) return;
+    if (!t) {
+      var cl = cellOf(ev);
+      if (cl) { ev.preventDefault(); view.drag = null; moveItem(id, Number(cl.getAttribute("data-cell"))); }
+      return;
+    }
     ev.preventDefault();
     var r = findOwned(id), bucket = t.getAttribute("data-slot");
     view.drag = null;
@@ -910,20 +1016,6 @@
     });
   }
 
-  // Where the option list for a slot sits: just under the tile, or above it when there is no room below, kept inside the doll column. Measured in viewport
-  // pixels and set in CSS pixels (the screen-fit zoom, window.UI_ZOOM), the same rule the hover cards follow.
-  function placePop() {
-    var pop = elDoll.querySelector(".inv-pop");
-    if (!pop || !view.pop || !view.pop.anchor) return;
-    var z = window.UI_ZOOM || 1, a = view.pop.anchor, dr = elDoll.getBoundingClientRect(), pr = pop.getBoundingClientRect();
-    var left = Math.min(Math.max(dr.left + 4, a.left + a.width / 2 - pr.width / 2), dr.right - pr.width - 4);
-    var top = a.bottom + 6;
-    if (top + pr.height > dr.bottom - 4) top = a.top - pr.height - 6;
-    pop.style.left = ((left - dr.left) / z) + "px";
-    pop.style.top = ((top - dr.top) / z) + "px";
-    pop.style.visibility = "visible";
-  }
-
   function quickAct(id) {
     var r = findOwned(id);
     if (!r) return;
@@ -936,13 +1028,15 @@
   }
 
   function onClick(ev) {
-    var t = ev.target && ev.target.closest ? ev.target.closest("[data-act], [data-cat], [data-item], [data-slot], [data-pop-id], [data-pop-shield], [data-attune], [data-swap-sidearm], [data-equip-sel], [data-use], [data-left], [data-citem], [data-qty], [data-qty-set], [data-xfer]") : null;
+    var t = ev.target && ev.target.closest ? ev.target.closest("[data-act], [data-cat], [data-item], [data-slot], .inv-blank[data-cell], [data-takeoff], [data-pop-shield], [data-attune], [data-swap-sidearm], [data-equip-sel], [data-use], [data-left], [data-citem], [data-qty], [data-qty-set], [data-xfer]") : null;
     if (!t || !dlg.contains(t)) {
-      if (view.pop) { view.pop = null; render(); }   // a click on empty space puts the option list away
+      if (view.slot) { view.slot = null; render(); }   // a click on empty space puts the lit slot away
       return;
     }
     var act = t.getAttribute("data-act");
     if (act === "close") return close();
+    if (act === "sort") { sortBag(); return; }
+    if (t.classList.contains("inv-blank")) { if (view.sel) moveItem(view.sel, Number(t.getAttribute("data-cell"))); return; }
     if (act === "trade") {
       // The trade panel (trade.js) sits over the shop menus; from here it is one tap away.
       close();
@@ -950,7 +1044,7 @@
       return;
     }
     if (t.hasAttribute("data-left")) {
-      view.left = t.getAttribute("data-left"); view.sel = null; view.csel = null; view.pop = null; view.qty = 1; note("");
+      view.left = t.getAttribute("data-left"); view.sel = null; view.csel = null; view.slot = null; view.qty = 1; note("");
       render();
       return;
     }
@@ -977,7 +1071,7 @@
       var id = t.getAttribute("data-item");
       if (ev.shiftKey && view.left !== "you") { var carried = findOwned(id); if (carried && carried.stow) { doMove("stow", id, 99999); return; } }   // shift-click moves the whole stack into the open container
       view.sel = view.sel === id ? null : id; view.csel = null; view.qty = 1;
-      view.pop = null; note("");
+      view.slot = null; note("");
       render();
       return;
     }
@@ -985,14 +1079,13 @@
       var bucket = t.getAttribute("data-slot"), ring = t.getAttribute("data-ring") || "";
       var picked = view.sel ? findOwned(view.sel) : null;
       if (picked && accepts(picked, bucket)) { equipTo(bucket, picked.equip.id, ring || undefined); return; }
-      var wasOpen = view.pop && view.pop.bucket === bucket && (view.pop.ring || "") === ring;
-      var rect = t.getBoundingClientRect();
-      view.pop = wasOpen ? null : { bucket: bucket, ring: ring, anchor: { left: rect.left, top: rect.top, bottom: rect.bottom, width: rect.width } };
+      var wasOpen = view.slot && view.slot.bucket === bucket && (view.slot.ring || "") === ring;
+      view.slot = wasOpen ? null : { bucket: bucket, ring: ring };
       view.sel = null; note("");
       render();
       return;
     }
-    if (t.hasAttribute("data-pop-id")) { equipTo(view.pop.bucket, t.getAttribute("data-pop-id"), view.pop.ring || undefined); return; }
+    if (t.hasAttribute("data-takeoff")) { if (view.slot) equipTo(view.slot.bucket, takeOffTarget(view.slot.bucket, view.slot.ring), view.slot.ring || undefined); return; }
     if (t.hasAttribute("data-pop-shield")) { equipTo("shield"); return; }
     if (t.hasAttribute("data-attune")) { attuneViaDossier(t.getAttribute("data-attune")); return; }
     if (t.hasAttribute("data-equip-sel")) {
@@ -1002,7 +1095,7 @@
     }
     if (t.hasAttribute("data-swap-sidearm")) {
       window.EquipmentEngine.swapSidearm();
-      view.pop = null;
+      view.slot = null;
       render();
     }
   }
@@ -1018,11 +1111,10 @@
   function open() {
     build();
     if (dlg.open) return;
-    view.category = ""; view.sel = null; view.drag = null; view.pop = null; view.note = "";
+    view.category = ""; view.sel = null; view.drag = null; view.slot = null; view.note = "";
     render();
     if (!dlg.showModal) { window.alert("This browser is too old to show the Inventory."); return; }
     dlg.showModal();
-    placePop();
   }
 
   function close() { if (dlg && dlg.open) dlg.close(); }

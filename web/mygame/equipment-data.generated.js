@@ -12,8 +12,1240 @@
  * these get resolved.
  */
 window.EQUIPMENT_CATALOG = {
-  "weapon": [],
-  "sidearm": [],
+  "weapon": [
+    {
+      "ids": [
+        "starting"
+      ],
+      "fields": {
+        "weapon_ammo": {
+          "type": "statRef",
+          "value": "starting_weapon_ammo"
+        },
+        "weapon": {
+          "type": "statRef",
+          "value": "starting_weapon"
+        },
+        "weapon_desc": {
+          "type": "statRef",
+          "value": "starting_weapon_desc"
+        },
+        "weapon_damage": {
+          "type": "statRef",
+          "value": "starting_weapon_damage"
+        },
+        "weapon_damage_type": {
+          "type": "statRef",
+          "value": "starting_weapon_damage_type"
+        },
+        "weapon_type": {
+          "type": "statRef",
+          "value": "starting_weapon_type"
+        },
+        "weapon_hands": {
+          "type": "statRef",
+          "value": "starting_weapon_hands"
+        },
+        "weapon_prose": {
+          "type": "statRef",
+          "value": "starting_weapon"
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "timber_axe"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "timber axe"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Highland Hewing Axe"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d8 slashing"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "slashing"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "hewing axe"
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": ""
+        }
+      }
+    },
+    {
+      "ids": [
+        "stiletto"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "stiletto"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Alderford Stiletto"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d4 piercing"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "finesse"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "stiletto"
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": ""
+        }
+      }
+    },
+    {
+      "ids": [
+        "road_club"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "wooden club"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Wooden Club"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d4 bludgeoning"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "bludgeoning"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "club"
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": ""
+        }
+      }
+    },
+    {
+      "ids": [
+        "rough_spear"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "rough spear"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Rough Spear"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d6 piercing"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "reach"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "rough spear"
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": ""
+        }
+      }
+    },
+    {
+      "ids": [
+        "cord_sling"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "cord sling"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Cord Sling"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d4 bludgeoning"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "bludgeoning"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "ranged"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "sling"
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "medium"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": ""
+        }
+      }
+    },
+    {
+      "ids": [
+        "hunting_bow"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "hunting bow"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Hunting Bow"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d6 piercing"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "ranged"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "two_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "hunting bow"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": "arrow"
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "longshade_quarterstaff"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "ash quarterstaff"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Ash Quarterstaff"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d6 bludgeoning"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "bludgeoning"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "ash quarterstaff"
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": ""
+        }
+      }
+    },
+    {
+      "ids": [
+        "longshade_spear"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "Longshade spear"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Longshade Spear"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d6 piercing"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "reach"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "Longshade spear"
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": ""
+        }
+      }
+    },
+    {
+      "ids": [
+        "longshade_shortbow"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "Longshade shortbow"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Longshade Shortbow"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d6 piercing"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "ranged"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "two_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "Longshade shortbow"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": "arrow"
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "ash_spear"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "spear"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Spear"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d6/1d8 piercing"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "reach"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "spear"
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": ""
+        }
+      }
+    },
+    {
+      "ids": [
+        "felling_axe"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "broadaxe"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Broadaxe"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d12 slashing"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "slashing"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "two_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "broadaxe"
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": ""
+        }
+      }
+    },
+    {
+      "ids": [
+        "matched_dagger"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "dagger"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Dagger"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d4 piercing"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "finesse"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "dagger"
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": ""
+        }
+      }
+    },
+    {
+      "ids": [
+        "hand_crossbow"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "crossbow"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Crossbow"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d6 piercing"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "ranged"
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "medium"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "crossbow"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": ""
+        }
+      }
+    },
+    {
+      "ids": [
+        "none"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "unarmed"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Unarmed"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1 bludgeoning"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "bludgeoning"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "bare fists"
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": ""
+        }
+      }
+    }
+  ],
+  "sidearm": [
+    {
+      "ids": [
+        "starting"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "statRef",
+          "value": "starting_weapon"
+        },
+        "sidearm_desc": {
+          "type": "statRef",
+          "value": "starting_weapon_desc"
+        },
+        "sidearm_damage": {
+          "type": "statRef",
+          "value": "starting_weapon_damage"
+        },
+        "sidearm_damage_type": {
+          "type": "statRef",
+          "value": "starting_weapon_damage_type"
+        },
+        "sidearm_type": {
+          "type": "statRef",
+          "value": "starting_weapon_type"
+        },
+        "sidearm_hands": {
+          "type": "statRef",
+          "value": "starting_weapon_hands"
+        },
+        "sidearm_prose": {
+          "type": "statRef",
+          "value": "starting_weapon"
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "ash_spear"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "spear"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Slung Spear"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d6/1d8 piercing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "reach"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "spear"
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "felling_axe"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "felling axe"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Slung Felling Axe"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d8 slashing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "slashing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "felling axe"
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "matched_dagger"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "dagger"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Sheathed Dagger"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d4 piercing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "finesse"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "dagger"
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "hand_crossbow"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "crossbow"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Holstered Crossbow"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d6 piercing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "ranged"
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "medium"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "crossbow"
+        }
+      }
+    },
+    {
+      "ids": [
+        "timber_axe"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "timber axe"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Slung Hewing Axe"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d8 slashing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "slashing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "hewing axe"
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "stiletto"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "stiletto"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Sheathed Alderford Stiletto"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d4 piercing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "finesse"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "stiletto"
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "road_club"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "wooden club"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Hung Wooden Club"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d4 bludgeoning"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "bludgeoning"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "club"
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "rough_spear"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "rough spear"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Slung Rough Spear"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d6 piercing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "reach"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "rough spear"
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "cord_sling"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "cord sling"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Coiled Cord Sling"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d4 bludgeoning"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "bludgeoning"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "ranged"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "sling"
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "medium"
+        }
+      }
+    },
+    {
+      "ids": [
+        "hunting_bow"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "hunting bow"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Slung Hunting Bow"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d6 piercing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "ranged"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "two_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "hunting bow"
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "longshade_quarterstaff"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "ash quarterstaff"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Slung Ash Quarterstaff"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d6 bludgeoning"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "bludgeoning"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "ash quarterstaff"
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "longshade_spear"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "Longshade spear"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Slung Longshade Spear"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d6 piercing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "reach"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "Longshade spear"
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "longshade_shortbow"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "Longshade shortbow"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Slung Longshade Shortbow"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d6 piercing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "ranged"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "two_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "Longshade shortbow"
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "none"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "none"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "None"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "none"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "none"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "none"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "empty hand"
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    }
+  ],
   "armor": [
     {
       "ids": [
