@@ -177,6 +177,7 @@ function scanLanding(lines, startIdx) {
   let i = startIdx + 1; // skip the *label line itself
   let scanned = 0;
   let sawBanner = false;
+  const baseIndent = indentOf(lines[startIdx]);
   while (i < lines.length && scanned < maxScan) {
     const raw = lines[i];
     if (isBlank(raw)) {
@@ -185,11 +186,17 @@ function scanLanding(lines, startIdx) {
     }
     scanned++;
     const trimmed = raw.trim();
-    if (CHOICE_LINE.test(trimmed)) return sawBanner ? 'banner-only' : 'blank';
+    if (CHOICE_LINE.test(trimmed) && indentOf(raw) <= baseIndent) return sawBanner ? 'banner-only' : 'blank';
     if (LABEL_DEF.test(raw)) return 'inconclusive';
     if (/^\*/.test(trimmed)) {
       i++;
       continue; // command line, not prose
+    }
+    // Prose inside a conditional branch might not render on this landing.
+    // Only unconditionally printed prose proves that the page is safe.
+    if (indentOf(raw) > baseIndent) {
+      i++;
+      continue;
     }
     if (DELEGATED_LINE.test(trimmed)) return 'delegated';
     const stripped = trimmed.replace(BRACKET_SPAN, '').trim();
@@ -277,6 +284,20 @@ function findCallers(file, labelName) {
   return callers;
 }
 
+// A direct jump from a choice with no prose before it creates a fresh player
+// page. If the option prints prose first, that prose keeps the result readable
+// even when the target itself is a bare choice.
+function silentChoiceJump(lines, idx) {
+  const opt = enclosingOption(lines, idx);
+  if (!opt) return null;
+  for (let i = opt.line; i < idx; i++) {
+    const trimmed = lines[i].trim();
+    if (!trimmed || COMMENT_LINE.test(lines[i]) || /^\*/.test(trimmed)) continue;
+    return null;
+  }
+  return opt;
+}
+
 // Describe the player-facing way into a *page_break: the option text that
 // contains it, or -- if it's reached by falling through / jumping to a label
 // -- the options that jump to that label.
@@ -312,6 +333,7 @@ function lintFile(basename) {
       if (verdict !== 'blank' && verdict !== 'banner-only') continue;
       const labelMatch = LABEL_DEF.exec(fileLines[t.file][t.line]);
       const entry = {
+        kind: 'page_break',
         file: basename,
         line: pageBreakLine,
         targetFile: t.file,
@@ -321,6 +343,31 @@ function lintFile(basename) {
       };
       (verdict === 'blank' ? blank : bannerOnly).push(entry);
     }
+  }
+  // Choice-driven *goto transitions need the same check as *page_break:
+  // ChoiceScript renders a direct, otherwise silent jump as a fresh page.
+  for (let i = 0; i < lines.length; i++) {
+    const silentOption = silentChoiceJump(lines, i);
+    if (!silentOption) continue;
+    let target = null;
+    const gm = GOTO_LINE.exec(lines[i]);
+    if (gm) target = resolveGoto(basename, gm[1]);
+    const gsm = GOTO_SCENE_LINE.exec(lines[i]);
+    if (gsm) target = resolveGotoScene(gsm[1], gsm[2]);
+    if (!target) continue;
+    const verdict = scanLanding(fileLines[target.file], target.line);
+    if (verdict !== 'blank' && verdict !== 'banner-only') continue;
+    const labelMatch = LABEL_DEF.exec(fileLines[target.file][target.line]);
+    const entry = {
+      kind: 'choice_goto',
+      file: basename,
+      line: i + 1,
+      targetFile: target.file,
+      targetLine: target.line + 1,
+      targetLabel: labelMatch ? labelMatch[1] : '?',
+      path: { via: [{ file: basename, ...silentOption }], label: nearestLabelAbove(lines, i), direct: true },
+    };
+    (verdict === 'blank' ? blank : bannerOnly).push(entry);
   }
   return { blank, bannerOnly };
 }
@@ -338,7 +385,8 @@ for (const f of files) {
 
 function formatEntry(f) {
   const same = f.file === f.targetFile;
-  let out = `  ${f.file}:${f.line} *page_break -> ${same ? '' : f.targetFile + ':'}${f.targetLabel} (${f.targetFile}:${f.targetLine})`;
+  const transition = f.kind === 'choice_goto' ? 'choice *goto' : '*page_break';
+  let out = `  ${f.file}:${f.line} ${transition} -> ${same ? '' : f.targetFile + ':'}${f.targetLabel} (${f.targetFile}:${f.targetLine})`;
   const { via, label, direct } = f.path;
   if (via.length === 0) {
     out += `\n      reached by: fall-through${label ? ` from *label ${label}` : ''} (no option or *goto found -- check the lines above)`;
@@ -355,7 +403,7 @@ function formatEntry(f) {
   return out;
 }
 
-console.log(`Scanned ${files.length} file(s) for blank *page_break landings.\n`);
+console.log(`Scanned ${files.length} file(s) for blank page-transition landings.\n`);
 
 if (allBlank.length === 0) {
   console.log('No blank landings found.');

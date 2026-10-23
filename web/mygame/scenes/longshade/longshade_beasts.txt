@@ -1,0 +1,350 @@
+*comment ====================================================================================
+*comment THE LONGSHADE FOREST'S WILD BEASTS (2026-10-23, the user's list: the boar, the venomous snake and the elk). Random trail encounters like the Silt-Gate channels': longshade_forest.txt's table (lsf_table) picks an id
+*comment on a fork or room and its lsf_encounter sends it here. Each beast is the library "beast" with name, hit point, armor and attack overrides (the boar is the user's own sheet: AC 11, 13 HP, +3 to hit, d6+1).
+*comment STEALTH (the user: "we don't use Stealth enough in random encounters"): a beast is met first and the player chooses how to take it. Creeping up is a Stealth check, and a pass is a surprise round (the
+*comment beast loses its first turn, combat_player_surprise, and the player's first strike has advantage); a miss gives the beast the first strike. Backing away quietly is an easier Stealth check; a miss and the beast charges.
+*comment HARVEST: after a kill the player may skin and butcher it (25 minutes, Survival DC 11): a pass gives meat, a raw hide and a tusk, a miss only a little meat. The parts sell to the trapper's bench
+*comment (buyer "game", catalog gamePiece). Fights are lethal, like every dungeon fight: lsb_fight_go raises combat_player_can_die, and a death names the forest.
+*comment Built: the boar (night), the venomous snake (day and night) and the elk (day).
+*comment ====================================================================================
+
+*comment THE BOAR. Night only (lsf_table: weight 0 by day, 3 at night). dg_dark is true without a light of one's own, so the same check also reads the dark: the dice engine already gives disadvantage on every d20 roll then.
+*label lsb_enc_boar
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  Something heavy shoves through the leaf litter ahead, and the dark fills with the smell of mud and musk. Roots crack under a weight you cannot see. A wet, snuffling grunt rolls out of the undergrowth, close enough that you feel it in your chest.
+*else
+  A boar is rooting at the foot of an old trunk, head down, its back a ridge of coarse bristles. Each time it lifts its snout the light finds two yellow tusks, curved like a pair of sickles. It is busy with the ground and breathes in short, greedy huffs.
+*choice
+  # Creep up on it and strike first.@{show_stat_hints  [DEX (Stealth) DC 12, a pass takes the first strike]|}
+    *gosub_scene dice_engine roll_skill_check 12 "stealth" "" "" "" "" ""
+    *if (check_success)
+      You set each foot on bare earth and wait out every crackle of the leaves, edging along the side where the wind comes from the boar to you. The grunting keeps its slow rhythm. When you are an arm's length from the bristled flank, the boar is still bent over the ground.
+      *set advantage true
+      *set combat_player_surprise true
+
+      [b][🗡️ Unnoticed — the boar loses its first turn and you strike with advantage][/b]
+    *else
+      A dry twig folds under your heel with a sound like a snapped knuckle. The grunting stops. The head comes up, small eyes catching what light there is, and the boar lowers its tusks and comes straight at you.
+      *set combat_enemy_advantage true
+
+      [b][⚠️ Spotted — the boar strikes first][/b]
+    *goto lsb_boar_fight
+  # Plant your feet and face it.
+    You stamp once on the leaf litter, and the boar's head snaps round. It paws the ground twice, snorts, and drops its tusks to meet you.
+    *goto lsb_boar_fight
+  # Back away quietly.@{show_stat_hints  [DEX (Stealth) DC 10]|}
+    *gosub_scene dice_engine roll_skill_check 10 "stealth" "" "" "" "" ""
+    *if (check_success)
+      You shift your weight onto the back foot and ease backward, one placed step at a time, until the grunting is a mutter behind the trees.
+      *goto lsb_retreat
+    *else
+      The leaves crackle under your back foot. The grunting breaks off, and the boar wheels toward the sound and charges.
+      *set combat_enemy_advantage true
+
+      [b][⚠️ Spotted — the boar strikes first][/b]
+      *goto lsb_boar_fight
+
+*label lsb_boar_fight
+*set combat_is_nonlethal false
+*set combat_lib_1 "beast"
+*set combat_enemy_name_override "Wild Boar"
+*set combat_enemy_epithet_override "the wild boar"
+*set combat_enemy_hp_override 13
+*set combat_enemy_ac_override 11
+*set combat_enemy_atk_override 3
+*set combat_enemy_size_override "medium"
+*set dg_hv_creature "boar"
+*goto lsb_fight_go
+
+*comment THE VENOMOUS SNAKE. Day and night (lsf_table: weight 2 in each column). The user's sheet: AC 12, 7 HP, +3 to hit, a bite that also poisons; the library "beast" has no poison, so it fights like the Silt-Gate viper (hit point, armor and attack overrides only, not balance-simmed).
+*comment The same three-way approach as the boar. The harvest is the shared dg_harvest (dungeon.txt, creature "snake"): viper venom, Survival DC 12, 15 minutes, and a miss stings for 1 HP.
+*label lsb_enc_snake
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  A dry hiss comes out of the leaf litter a pace ahead of your boot, thin and steady, like air leaking from a bellows. The leaves shiver over something long that is gathering itself into a coil.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  At the edge of your light a snake lies coiled across the path, thick as your wrist, its back marked in dull brown diamonds. The broad head lifts from the top coil when the light touches it, and a forked tongue tastes the air.
+*else
+  A snake lies coiled on a root where a patch of sun reaches the ground, thick as your wrist, its back marked in dull brown diamonds. Its broad head rests on the top coil, and a forked tongue flickers at the air.
+*choice
+  # Creep up on it and strike first.@{show_stat_hints  [DEX (Stealth) DC 12, a pass takes the first strike]|}
+    *gosub_scene dice_engine roll_skill_check 12 "stealth" "" "" "" "" ""
+    *if (check_success)
+      You come at it from the side the trunk hides, setting each foot down heel first and waiting out every rustle. The tongue keeps tasting the air in the wrong direction. When you are a long step away, the coil still lies as you found it.
+
+      *set advantage true
+      *set combat_player_surprise true
+      [b][🗡️ Unnoticed — the snake loses its first turn and you strike with advantage][/b]
+    *else
+      A stone turns under your boot and clicks against another. The coil snaps tight, the head rears back in an S, and the snake strikes before you can set your feet.
+
+      *set combat_enemy_advantage true
+      [b][⚠️ Spotted — the snake strikes first][/b]
+    *goto lsb_snake_fight
+  # Stand your ground and let it come.
+    You plant your feet. The head sways once, twice, and the snake drops its coils and slides straight at you.
+    *goto lsb_snake_fight
+  # Back away quietly.@{show_stat_hints  [DEX (Stealth) DC 10]|}
+    *gosub_scene dice_engine roll_skill_check 10 "stealth" "" "" "" "" ""
+    *if (check_success)
+      You lift each foot clear of the leaves and take it back a step at a time, eyes on the coil, until it is only a pale shape among the roots.
+      *goto lsb_retreat
+    *else
+      A twig cracks under your back foot. The head swings round on the sound, and the snake lunges.
+
+      *set combat_enemy_advantage true
+      [b][⚠️ Spotted — the snake strikes first][/b]
+      *goto lsb_snake_fight
+
+*label lsb_snake_fight
+*set combat_is_nonlethal false
+*set combat_lib_1 "beast"
+*set combat_enemy_name_override "Venomous Snake"
+*set combat_enemy_epithet_override "the venomous snake"
+*set combat_enemy_hp_override 7
+*set combat_enemy_ac_override 12
+*set combat_enemy_atk_override 3
+*set combat_enemy_size_override "small"
+*set dg_hv_creature "snake"
+*goto lsb_fight_go
+
+*comment THE ELK. Day only (lsf_table: weight 3 by day, 0 at night). The user's sheet: AC 10, 11 HP, a ram of d6+3 (strength 16 here; +5 to hit is my number, the sheet gave none). Spotting it starts nothing: the player may shoot it
+*comment (a ranged weapon in the primary OR the secondary slot: weapon_type / sidearm_type "ranged"), creep closer for a better shot (Stealth, advantage on the shot), creep up and strike it first (Stealth, a surprise round), or let it be.
+*comment A hit with the shot kills it outright and skips the fight. A miss, or a failed creep, spooks it: it usually bolts and sometimes turns and fights (a cornered animal), lsb_elk_spooked. The shot is a plain d20 check (dex, proficiency, DC 10 = its armor).
+*label lsb_enc_elk
+*gosub_scene dungeon dg_dark_check
+*temp lse_ranged false
+*temp lse_gun ""
+*temp lse_r 1
+*if (weapon_type = "ranged")
+  *set lse_ranged true
+  *set lse_gun weapon_prose
+*elseif (sidearm_type = "ranged")
+  *set lse_ranged true
+  *set lse_gun sidearm_prose
+*if (dg_dark)
+  In the gloom under the storm clouds a big animal stands among the ferns ahead, tall at the shoulder, its breath smoking and a wide fan of antlers lifted above the leaves. It chews slowly, and its ears turn to every small sound.
+*else
+  A gap in the trees lets the light fall on an elk standing in knee-high ferns, its body the colour of wet bark and a darker mane thick at the throat. Its antlers sweep up and back in a wide fan. It chews with its head high, and its ears turn to every small sound.
+*choice
+  *if (lse_ranged)
+    # Take a shot at it.@{show_stat_hints  [DEX attack, DC 10, a hit brings it down]|}
+      You bring up your ${lse_gun} and let out half a breath.
+      *goto lsb_elk_shot
+    # Creep closer for a better shot.@{show_stat_hints  [DEX (Stealth) DC 12, a pass gives advantage on the shot]|}
+      *gosub_scene dice_engine roll_skill_check 12 "stealth" "" "" "" "" ""
+      *if (check_success)
+        You work along the edge of the ferns with the trunks between you and the elk, testing each foot before you trust it, until a clean line opens.
+
+        *set advantage true
+        [b][🎯 Unnoticed — you shoot with advantage][/b]
+        *goto lsb_elk_shot
+      *else
+        A dry branch cracks under your boot. The elk's head comes up, antlers swinging, and every muscle in its shoulders bunches.
+        *goto lsb_elk_spooked
+  # Creep up and strike it first.@{show_stat_hints  [DEX (Stealth) DC 12, a pass takes the first strike]|}
+    *gosub_scene dice_engine roll_skill_check 12 "stealth" "" "" "" "" ""
+    *if (check_success)
+      You keep the trunks between you and the elk and set each foot down on the dry patches, until the broad flank is an arm's length away and the ears are still turned toward the far trees.
+
+      *set advantage true
+      *set combat_player_surprise true
+      [b][🗡️ Unnoticed — the elk loses its first turn and you strike with advantage][/b]
+      *goto lsb_elk_fight
+    *else
+      A twig snaps under your heel. The elk's head comes up, antlers swinging, and every muscle in its shoulders bunches.
+      *goto lsb_elk_spooked
+  # Let it be and go on.
+    You let the elk go on chewing and slip past along the edge of the ferns.
+    *goto_scene longshade/longshade_forest lsf_here
+
+*comment The shot: a hit brings the elk down (no fight, straight to the harvest offer); a miss spooks it.
+*label lsb_elk_shot
+*set check_stat "dex"
+*set check_dc 10
+*set check_skill "Shot"
+*set check_add_prof_bonus true
+*gosub_scene dice_engine roll_d20_check
+*if (check_success)
+  The shot takes the elk behind the shoulder. It staggers two steps through the ferns, and its legs fold under it.
+  *set dg_hv_creature "elk"
+  *goto lsb_won_harvest
+*else
+  The shot hisses past the elk's shoulder and splits a fern frond. The elk's head comes up, antlers swinging.
+  *goto lsb_elk_spooked
+
+*comment A spooked elk usually bolts and sometimes turns on the player (the user: a cornered animal may fight back): a four-in-ten chance of a fight, the rest a clean escape.
+*label lsb_elk_spooked
+*rand lse_r 1 10
+*if (lse_r <= 4)
+  It wheels toward you with its head low and its antlers levelled, and charges.
+
+  *goto lsb_elk_fight
+*else
+  The elk crashes away through the ferns, antlers clattering on the branches, and the sound of it thins to nothing among the trees.
+  *goto_scene longshade/longshade_forest lsf_here
+
+*label lsb_elk_fight
+*set combat_is_nonlethal false
+*set combat_lib_1 "beast"
+*set combat_enemy_name_override "Elk"
+*set combat_enemy_epithet_override "the elk"
+*set combat_enemy_hp_override 11
+*set combat_enemy_ac_override 10
+*set combat_enemy_atk_override 5
+*set combat_enemy_strength_override 16
+*set dg_hv_creature "elk"
+*goto lsb_fight_go
+
+*comment The shared fight call, the way pvsc_fight_go does it: darkness gives the beast the first strike, the fight is lethal, and then the outcome decides the next page.
+*label lsb_fight_go
+*gosub_scene dungeon dg_fight_prep
+*set combat_player_can_die true
+*gosub_scene combat fight_library
+*set combat_player_can_die false
+*if (combat_outcome = "player_died")
+  *set death_cause "combat"
+  *set death_location_name "The Longshade Forest"
+  *if (dg_hv_creature = "boar")
+    *set death_enemy_epithet "the wild boar"
+  *if (dg_hv_creature = "snake")
+    *set death_enemy_epithet "the venomous snake"
+  *if (dg_hv_creature = "elk")
+    *set death_enemy_epithet "the elk"
+  *goto_scene death death_screen
+*if (combat_outcome = "rescued")
+  *goto lsb_rescued
+*if (combat_outcome = "fled")
+  *goto lsb_fled
+*goto lsb_won
+
+*label lsb_won
+*if (dg_hv_creature = "boar")
+  The boar drops onto its side with a long, shuddering grunt, and its legs paddle once in the leaves before they stop.
+*if (dg_hv_creature = "snake")
+  The snake loosens from its coil and lies still across the ground, the tongue gone slack.
+*if (dg_hv_creature = "elk")
+  The elk goes down on its knees in the ferns and rolls onto its side, and the great antlers settle among the leaves.
+*label lsb_won_harvest
+*if (dg_hv_creature = "boar")
+  *gosub lsb_harvest_boar
+*if (dg_hv_creature = "snake")
+  *gosub lsb_harvest_snake
+*if (dg_hv_creature = "elk")
+  *gosub lsb_harvest_elk
+*goto_scene longshade/longshade_forest lsf_here
+
+*comment The boar's harvest offer after a kill (a gosub, so a taken harvest and a refusal both come back to the caller).
+*label lsb_harvest_boar
+*temp lsb_hint ""
+*if (show_stat_hints)
+  *set lsb_hint " [Survival DC 11]"
+*temp lsb_meat 1
+*temp lsb_hide 0
+*temp lsb_tusk 0
+*comment lint-ok two-options: take the harvest or leave the carcass
+*choice
+  # Skin and butcher it. [~25 min]${lsb_hint}
+    *gosub_scene dice_engine roll_skill_check 11 "survival" "" "" "" "" ""
+    *if (check_success)
+      *set lsb_meat 2
+      *set lsb_hide 1
+      *set lsb_tusk 1
+    *if (check_total >= 16)
+      *set lsb_meat 3
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+      *gosub_scene equipment grant_gear "boar_meat" lsb_meat
+      *set raw_hide (raw_hide + lsb_hide)
+      *set boar_tusk (boar_tusk + lsb_tusk)
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id page_id
+    *if (lsb_hide > 0)
+      You open the belly from breastbone to flank and work the hide back from the meat in long, steady pulls, the knife held flat. The tusks come away with a twist at the root. You roll the hide fur-in, cut away the best of the haunch and wrap it in leaves.
+      *line_break
+      [b][🌿 Harvested: ${lsb_meat} boar meat, 1 raw hide, 1 boar tusk][/b]
+    *else
+      The hide tears under the knife, and the cut wanders through the fat. You save a piece of the haunch and leave the rest of the carcass to the forest.
+      *line_break
+      [b][🌿 Harvested: ${lsb_meat} boar meat][/b]
+    *set dg_mins 25
+    *set dg_time_id "lsb_harvest"
+    *gosub_scene dungeon dg_time
+    *return
+  # Leave it.
+    *return
+
+*comment The snake's harvest offer: the shared dg_harvest (dungeon.txt) does the check, the prose, the venom and the 15 minutes.
+*label lsb_harvest_snake
+*gosub_scene dungeon dg_harvest_info
+*temp lsb_hint ""
+*if (show_stat_hints)
+  *set lsb_hint ((" [Survival DC " & dg_hv_dc) & "]")
+*comment lint-ok two-options: take the harvest or leave the carcass
+*choice
+  # Milk the fangs. [~15 min]${lsb_hint}
+    You kneel beside the slack coils.
+    *gosub_scene dungeon dg_harvest
+    *return
+  # Leave it.
+    *return
+
+*comment The elk's harvest offer: a larger animal, so half an hour and more meat; the hide and an antler come with a pass.
+*label lsb_harvest_elk
+*temp lsb_hint ""
+*if (show_stat_hints)
+  *set lsb_hint " [Survival DC 11]"
+*temp lsb_meat 1
+*temp lsb_hide 0
+*temp lsb_horn 0
+*comment lint-ok two-options: take the harvest or leave the carcass
+*choice
+  # Skin and butcher it. [~30 min]${lsb_hint}
+    *gosub_scene dice_engine roll_skill_check 11 "survival" "" "" "" "" ""
+    *if (check_success)
+      *set lsb_meat 3
+      *set lsb_hide 1
+      *set lsb_horn 1
+    *if (check_total >= 16)
+      *set lsb_meat 4
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+      *gosub_scene equipment grant_gear "venison" lsb_meat
+      *set raw_hide (raw_hide + lsb_hide)
+      *set elk_antler (elk_antler + lsb_horn)
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id page_id
+    *if (lsb_hide > 0)
+      You open the belly from breastbone to flank and work the hide back from the meat in long, steady pulls, the knife held flat. The antlers come away at the base with a twist. You roll the hide fur-in, cut away the best of the haunch and wrap it in leaves.
+      *line_break
+      [b][🌿 Harvested: ${lsb_meat} venison, 1 raw hide, 1 elk antler][/b]
+    *else
+      The hide tears under the knife, and the cut wanders through the fat. You save a piece of the haunch and leave the rest of the carcass to the forest.
+      *line_break
+      [b][🌿 Harvested: ${lsb_meat} venison][/b]
+    *set dg_mins 30
+    *set dg_time_id "lsb_harvest"
+    *gosub_scene dungeon dg_time
+    *return
+  # Leave it.
+    *return
+
+*comment A quiet retreat: one step back the way you came, at the usual cost and with no encounter roll (dg_dest_hall false). The step changes dg_from, so the read sits inside the step's own lock (a replay would read the changed value).
+*label lsb_retreat
+*if (not(dg_step_locked)) or (not(locked_dg_step_page_id = page_id))
+  *set dg_dest dg_from
+  *set dg_dest_hall false
+*gosub_scene dungeon dg_step
+*goto_scene longshade/longshade_forest lsf_step_done
+
+*label lsb_fled
+You break away and back off the way you came, branches whipping at your arms, until the grunting falls behind you.
+*if (not(dg_step_locked)) or (not(locked_dg_step_page_id = page_id))
+  *set dg_dest dg_from
+  *set dg_dest_hall false
+*gosub_scene dungeon dg_step
+*goto_scene longshade/longshade_forest lsf_step_done
+
+*label lsb_rescued
+You go down hard, and the dark closes over you. When you come to, a long time has passed, and nothing stands where it stood. You get up slowly and go back the way you came.
+*gosub_scene dungeon dg_blackout
+*goto_scene longshade/longshade_forest lsf_here

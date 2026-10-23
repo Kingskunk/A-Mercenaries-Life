@@ -23,8 +23,8 @@
     "            sets ('halda', 'halda_sell', 'pawn_sell'); values are full lines and may contain \\\" quotes.",
     "  warn      OPTIONAL [{when, text}]: a ChoiceScript condition and a warning appended to the buy option",
     "  tier      armor only: light | medium | heavy (proficiency tier); use 'shield' for shields",
-    "  sell      { smith: percent, pawn: percent, general: percent, tailor: percent, jeweler: percent, pawnFixed: copper, smithPiece: copper each, herbalistPiece: copper each, countVar: variable }",
-    "            (a shop's buyer is 'smith', 'pawn', 'general', 'tailor', 'jeweler' or 'herbalist', which buys counted salvage by the piece (herbalistPiece) and nothing else; general is the flat 50 percent counter that Hollis and Vael both use. Each price is floor(retail * pct),",
+    "  sell      { smith: percent, pawn: percent, general: percent, tailor: percent, jeweler: percent, pawnFixed: copper, smithPiece: copper each, herbalistPiece: copper each, gamePiece: copper each, countVar: variable }",
+    "            (a shop's buyer is 'smith', 'pawn', 'general', 'tailor', 'jeweler' or 'herbalist', which buys counted salvage by the piece (herbalistPiece) and nothing else, or 'game', the trapper's and the hide yard's counter: game parts and meat by the piece (gamePiece), and anything else at the general rate; general is the flat 50 percent counter that Hollis and Vael both use. Each price is floor(retail * pct),",
     "            and a price of 0 means that buyer declines, so keep general-goods retail high enough that 50 percent is at least 1)",
     "  loadout   slot fields for equipment.txt (weapon, armor and head items; cloak, hands, waist, feet and neck take desc and prose)",
     "  traits    OPTIONAL, any worn item: { cold, wet, heat, footing, stat, bonus }. cold, wet and heat are PERCENT CUTS to that part of",
@@ -674,6 +674,60 @@
       },
       "dossier": {
         "line": "Dark gold comb from wild bees, an ingredient and a snack, and a gift for a bear"
+      }
+    },
+    {
+      "id": "boar_meat",
+      "kind": "consumable",
+      "name": "boar meat",
+      "title": "Boar Meat",
+      "retail": 6,
+      "weight": 2,
+      "minutes": 5,
+      "hint": "Eases hunger, about a third of a meal",
+      "blurb": "A haunch of dark, close-grained meat wrapped in leaves.",
+      "sell": {
+        "gamePiece": 3
+      },
+      "effect": {
+        "type": "ration",
+        "food": 720
+      },
+      "useVerb": "Eat",
+      "useText": "You spit a strip of boar meat over a few coals and eat it hot, tough and greasy, with the fat running down your wrist.",
+      "ate": {
+        "one": "a piece of boar meat",
+        "many": "pieces of boar meat"
+      },
+      "dossier": {
+        "line": "Dark, close-grained meat from a wild boar, a hearty meal and a trapper's trade"
+      }
+    },
+    {
+      "id": "venison",
+      "kind": "consumable",
+      "name": "venison",
+      "title": "Venison",
+      "retail": 6,
+      "weight": 2,
+      "minutes": 5,
+      "hint": "Eases hunger, about a third of a meal",
+      "blurb": "A haunch of lean, dark red meat wrapped in leaves.",
+      "sell": {
+        "gamePiece": 3
+      },
+      "effect": {
+        "type": "ration",
+        "food": 720
+      },
+      "useVerb": "Eat",
+      "useText": "You roast a strip of venison over a few coals and eat it lean and smoky, with the juice running down your wrist.",
+      "ate": {
+        "one": "a piece of venison",
+        "many": "pieces of venison"
+      },
+      "dossier": {
+        "line": "Lean, dark meat from an elk, a hearty meal and a trapper's trade"
       }
     },
     {
@@ -2077,6 +2131,51 @@
       "weight": 0.5
     },
     {
+      "id": "raw_hide",
+      "kind": "salvage",
+      "name": "raw hide",
+      "title": "Raw Hide",
+      "sell": {
+        "gamePiece": 6,
+        "countVar": "raw_hide"
+      },
+      "flags": {
+        "create": false,
+        "hand": true
+      },
+      "weight": 3
+    },
+    {
+      "id": "boar_tusk",
+      "kind": "salvage",
+      "name": "boar tusk",
+      "title": "Boar Tusk",
+      "sell": {
+        "gamePiece": 5,
+        "countVar": "boar_tusk"
+      },
+      "flags": {
+        "create": false,
+        "hand": true
+      },
+      "weight": 0.5
+    },
+    {
+      "id": "elk_antler",
+      "kind": "salvage",
+      "name": "elk antler",
+      "title": "Elk Antler",
+      "sell": {
+        "gamePiece": 5,
+        "countVar": "elk_antler"
+      },
+      "flags": {
+        "create": false,
+        "hand": true
+      },
+      "weight": 1.5
+    },
+    {
       "id": "sluice_moss",
       "kind": "salvage",
       "name": "sluice-moss",
@@ -2940,6 +3039,16 @@
       "buyKey": "trapper",
       "sellShop": "trapper_sell",
       "sellKey": "trapper_sell"
+    },
+    {
+      "name": "hideyard",
+      "title": "The Hide Yard",
+      "file": "timbermouth/ashrun_holt/hide_yard.txt",
+      "labelPrefix": "ah_hy",
+      "sellShop": "hideyard_sell",
+      "sellKey": "hideyard_sell",
+      "buyShop": "hideyard_buy",
+      "buyKey": "hideyard"
     }
   ],
   "shops": [
@@ -4240,7 +4349,7 @@
     {
       "name": "trapper_sell",
       "type": "sell",
-      "buyer": "general",
+      "buyer": "game",
       "menu": false,
       "file": "longshade/longshade_forest.txt",
       "prefix": "tps",
@@ -4254,6 +4363,57 @@
         },
         {
           "id": "ice_arrow"
+        },
+        {
+          "id": "boar_meat"
+        },
+        {
+          "id": "raw_hide"
+        },
+        {
+          "id": "boar_tusk"
+        },
+        {
+          "id": "venison"
+        },
+        {
+          "id": "elk_antler"
+        }
+      ]
+    },
+    {
+      "name": "hideyard_buy",
+      "type": "buy",
+      "menu": false,
+      "file": "timbermouth/ashrun_holt/hide_yard.txt",
+      "prefix": "hyb",
+      "goto": "ah_hy_trade",
+      "items": [
+        {
+          "id": "boar_meat"
+        },
+        {
+          "id": "venison"
+        }
+      ]
+    },
+    {
+      "name": "hideyard_sell",
+      "type": "sell",
+      "buyer": "game",
+      "menu": false,
+      "file": "timbermouth/ashrun_holt/hide_yard.txt",
+      "prefix": "hys",
+      "goto": "ah_hy_settle",
+      "items": [
+        {
+          "id": "raw_hide"
+        },
+        {
+          "id": "boar_meat"
+        },
+        {
+          "id": "venison"
         }
       ]
     }

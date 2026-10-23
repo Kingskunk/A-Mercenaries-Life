@@ -359,6 +359,7 @@ function compile(){
   // *scene_list and needs its own line here or a compiled build fails with "scene doesn't exist" the moment the player leaves a town.
   verifyFileName("overworld/overworld.txt");
   verifyFileName("overworld/travel_events.txt");
+  verifyFileName("overworld/river_transport.txt");
   verifyFileName("horse_dealer.txt");
   // The hub that lists signed jobs and routes to them (reached from the Trunk Road and the Patrician Avenue).
   verifyFileName("port_valen/radiant/radiant_hub.txt");
@@ -371,6 +372,7 @@ function compile(){
   // The Longshade Forest dungeon (2026-10-14): a *goto_scene-only scene entered from the overworld tiles lf and ua.
   verifyFileName("longshade/longshade_forest.txt");
   verifyFileName("longshade/longshade_dryad.txt");
+  verifyFileName("longshade/longshade_beasts.txt");
   verifyFileName("prologue/class_select.txt");
 
   //Check startup.txt for a *scene_list

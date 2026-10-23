@@ -20,7 +20,7 @@ or try and find its owner.
 Showing the ring to someone adept at jewelry they will
 point the party to the person known for the special cut,
 who in turn can share the information about the owner's
-whereabouts
+whereabouts (We can use the jewler in Valen)
 
 VALERIAN SLIMMER - HUMAN TRADER
 The owner of the ring. A wealthy trader who commissioned

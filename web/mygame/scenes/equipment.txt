@@ -1167,6 +1167,7 @@
 *set gear_fixed_pawn 0
 *set gear_piece_smith 0
 *set gear_piece_herbalist 0
+*set gear_piece_game 0
 *set gear_count_var ""
 *set gear_warn ""
 *set gear_quote ""
@@ -1479,6 +1480,40 @@
   *set gear_hint "Eases hunger, a quarter of a meal"
   *set gear_blurb "A slab of dark gold comb from wild bees, wrapped in broad leaves."
   *set gear_minutes 5
+*if (gi_item = "boar_meat")
+  *set gear_name "boar meat"
+  *set gear_retail 6
+  *set gear_kind "consumable"
+  *set gear_title "Boar Meat"
+  *set gear_stack true
+  *set gear_effect "ration"
+  *set gear_use_text "You spit a strip of boar meat over a few coals and eat it hot, tough and greasy, with the fat running down your wrist."
+  *set gear_use_verb "Eat"
+  *set gear_eff_summary "Holds off about 12 hours of hunger"
+  *set gear_food_mins 720
+  *set gear_ate_one "a piece of boar meat"
+  *set gear_ate_many "pieces of boar meat"
+  *set gear_hint "Eases hunger, about a third of a meal"
+  *set gear_blurb "A haunch of dark, close-grained meat wrapped in leaves."
+  *set gear_minutes 5
+  *set gear_piece_game 3
+*if (gi_item = "venison")
+  *set gear_name "venison"
+  *set gear_retail 6
+  *set gear_kind "consumable"
+  *set gear_title "Venison"
+  *set gear_stack true
+  *set gear_effect "ration"
+  *set gear_use_text "You roast a strip of venison over a few coals and eat it lean and smoky, with the juice running down your wrist."
+  *set gear_use_verb "Eat"
+  *set gear_eff_summary "Holds off about 12 hours of hunger"
+  *set gear_food_mins 720
+  *set gear_ate_one "a piece of venison"
+  *set gear_ate_many "pieces of venison"
+  *set gear_hint "Eases hunger, about a third of a meal"
+  *set gear_blurb "A haunch of lean, dark red meat wrapped in leaves."
+  *set gear_minutes 5
+  *set gear_piece_game 3
 *if (gi_item = "barley_loaf")
   *set gear_name "barley loaf"
   *set gear_retail 1
@@ -2183,6 +2218,24 @@
   *set gear_title "Grave Ichor"
   *set gear_piece_herbalist 15
   *set gear_count_var "grave_ichor"
+*if (gi_item = "raw_hide")
+  *set gear_name "raw hide"
+  *set gear_kind "salvage"
+  *set gear_title "Raw Hide"
+  *set gear_piece_game 6
+  *set gear_count_var "raw_hide"
+*if (gi_item = "boar_tusk")
+  *set gear_name "boar tusk"
+  *set gear_kind "salvage"
+  *set gear_title "Boar Tusk"
+  *set gear_piece_game 5
+  *set gear_count_var "boar_tusk"
+*if (gi_item = "elk_antler")
+  *set gear_name "elk antler"
+  *set gear_kind "salvage"
+  *set gear_title "Elk Antler"
+  *set gear_piece_game 5
+  *set gear_count_var "elk_antler"
 *if (gi_item = "sluice_moss")
   *set gear_name "sluice-moss"
   *set gear_kind "salvage"
@@ -2599,6 +2652,9 @@
   *set guv_pct gear_pct_smith
 *if (guv_buyer = "general")
   *set guv_pct gear_pct_general
+*comment The game counter (the trapper's bench) pays the general rate for anything of the ordinary kind, and a per-piece price for game parts and meat.
+*if (guv_buyer = "game")
+  *set guv_pct gear_pct_general
 *if (guv_buyer = "tailor")
   *set guv_pct gear_pct_tailor
 *if (guv_buyer = "jeweler")
@@ -2613,6 +2669,8 @@
   *set gear_unit_copper gear_piece_smith
 *if ((guv_buyer = "herbalist") and (gear_piece_herbalist > 0))
   *set gear_unit_copper gear_piece_herbalist
+*if ((guv_buyer = "game") and (gear_piece_game > 0))
+  *set gear_unit_copper gear_piece_game
 *comment The sell bonus, last, on the final per-unit price (a fixed pawn price and a per-piece price get it too), rounded to the NEAREST copper (half up): prices here are a handful of coppers, and rounding down would let
 *comment a +15% vanish on anything under 7 coppers. A price still too small to gain a copper stays as it was.
 *gosub sell_bonus_percent
@@ -2633,6 +2691,8 @@
   *set gear_sale_copper (gear_unit_copper * {gear_count_var})
 *comment A tool that is not counted (the mortar and pestle) has no count variable: it sells for its one piece price (fixed 2026-10-17; selling the old herbalist's kit to Ambrose crashed here).
 *if (((gsv_buyer = "herbalist") and (gear_piece_herbalist > 0)) and (not(gear_count_var = "")))
+  *set gear_sale_copper (gear_unit_copper * {gear_count_var})
+*if (((gsv_buyer = "game") and (gear_piece_game > 0)) and (not(gear_count_var = "")))
   *set gear_sale_copper (gear_unit_copper * {gear_count_var})
 *gosub format_copper gear_sale_copper
 *return

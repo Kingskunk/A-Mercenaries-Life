@@ -617,7 +617,7 @@ You trace the sign over the basin. A pale hand takes shape above the black water
 *if ((dg_tide = "high") and (not(dg_silt_r2_lacedon_dead)))
   You are halfway across, with the water sliding over the stones round your ${feet_prose}, when the surface ahead of you swells.
   *line_break
-  *goto pvsc_enc_lacedon
+  *goto pvsc_lacedon_ambush
 *temp pvr2_dc 11
 *if (dg_tide = "high")
   *set pvr2_dc 13
@@ -1312,12 +1312,46 @@ Under a folded cloth lies a small leather purse, heavy with coin.
 *comment ──────────────────────────────────────────────────────────────
 *comment FIGHTS
 *comment ──────────────────────────────────────────────────────────────
+*comment STEALTH APPROACH (2026-10-23, the user: we do not use Stealth enough in random encounters; the Longshade boar and snake were the test): a random fight now begins with the creature unaware.
+*comment The player may creep up (Stealth: a pass is a surprise round and the first strike with advantage, a miss gives the creature the first strike), stand and let it come, or back away quietly (an easier Stealth check:
+*comment a pass is one step back, a miss gives the creature the first strike). The dark already gives disadvantage on d20 rolls. Each fight's setup is its own label (pvsc_<x>_fight).
 *label pvsc_enc_mire_rats
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  A wet scrabbling comes out of the dark ahead, close to the floor, and a thin chorus of squeals rises with it. Something furry and heavy hits your foot and is gone, and then there are claws on your leg, and the small, sharp stink of rats wraps round you.
+  A wet scrabbling comes out of the dark ahead, close to the floor, with a thin chorus of squeals. Claws skitter over the brick, and the small, sharp stink of rats drifts down the passage.
 *else
-  A dry rattle of claws comes from the drain-mouths along the wall, and then a chorus of thin squeals. Two black rats the size of cats pour out of the nearest drain and stop in the middle of the floor, noses working, their wet fur slick and shining. The larger one has an ear torn to ribbons. They look at you, and at each other, and then they come.
+  A dry rattle of claws comes from the drain-mouths along the wall, and then a chorus of thin squeals. Two black rats the size of cats pour out of the nearest drain and stop in the middle of the floor, noses working, their wet fur slick and shining. The larger one has an ear torn to ribbons. They nose along the brick, busy with the wet floor.
+*choice
+  # Creep up on them and strike first.@{show_stat_hints  [DEX (Stealth) DC 13, a pass takes the first strike]|}
+    *gosub_scene dice_engine roll_skill_check 13 "stealth" "" "" "" "" ""
+    *if (check_success)
+      You keep to the shadow of the wall and set each foot down between the puddles, timing your steps to the drip of the drains. The rats go on nosing at the brick until you are almost on top of them.
+
+      *set advantage true
+      *set combat_player_surprise true
+      [b][🗡️ Unnoticed — the rats lose their first turn and you strike with advantage][/b]
+    *else
+      Your heel splashes into a puddle, and both heads snap round. The squeals stop for a breath, and then the pair come at you low and fast.
+
+      *set combat_enemy_advantage true
+      [b][⚠️ Spotted — the rats strike first][/b]
+    *goto pvsc_rats_fight
+  # Stand your ground and let them come.
+    You stamp once on the wet brick. Both heads turn, and the pair come at you together.
+    *goto pvsc_rats_fight
+  # Back away quietly.@{show_stat_hints  [DEX (Stealth) DC 11]|}
+    *gosub_scene dice_engine roll_skill_check 11 "stealth" "" "" "" "" ""
+    *if (check_success)
+      You ease back the way you came, one placed step at a time, until the squealing is a mutter behind the wall.
+      *goto pvsc_retreat_quiet
+    *else
+      Your boot scrapes the brick as you back away. The squealing stops, and both rats wheel toward the sound.
+
+      *set combat_enemy_advantage true
+      [b][⚠️ Spotted — the rats strike first][/b]
+      *goto pvsc_rats_fight
+
+*label pvsc_rats_fight
 *set combat_is_nonlethal false
 *set combat_lib_1 "mire_rat"
 *set combat_enemy_name_override "Black Mire-Rat (Lead)"
@@ -1328,7 +1362,8 @@ Under a folded cloth lies a small leather purse, heavy with coin.
 *set dg_hv_creature "mire_rat"
 *goto pvsc_fight_go
 
-*label pvsc_enc_lacedon
+*comment The river crossing (pvsc_r2_cross) meets the lacedon as an ambush: the original text, and no choice.
+*label pvsc_lacedon_ambush
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
   In the dark the water gives one long, slow slap, and the stillness after it is worse. Something wet drags itself over the stone toward you, claws clicking, and a smell of grave-rot rolls over you, cold and sweet.
@@ -1336,6 +1371,47 @@ Under a folded cloth lies a small leather purse, heavy with coin.
   The black water parts, and a grey, hairless figure drags itself up onto the walkway, streaming. Its claws click on the stone. Its eyes are white as boiled eggs, and they find you at once.
 *else
   The water standing in the passage goes flat and still, the way water does when something under it is holding its breath. Then a grey, hairless figure rises out of it, streaming, its lipless mouth open and its arms hanging long. It drags itself onto the dry brick at the water's edge, claws clicking. Its eyes are white as boiled eggs, and they find you at once.
+*goto pvsc_lacedon_fight
+
+*label pvsc_enc_lacedon
+*gosub_scene dungeon dg_dark_check
+*if (dg_dark)
+  In the dark the water gives one long, slow slap, and the stillness after it is worse. Something wet drags itself over the stone ahead, claws clicking, and a smell of grave-rot rolls down the passage, cold and sweet.
+*elseif (dg_pos = "silt_r2")
+  The black water parts, and a grey, hairless figure drags itself up onto the walkway, streaming. Its claws click on the stone. Its eyes are white as boiled eggs and turned to the far wall, and its head swings slowly from side to side.
+*else
+  The water standing in the passage goes flat and still, the way water does when something under it is holding its breath. Then a grey, hairless figure rises out of it, streaming, its lipless mouth open and its arms hanging long. It drags itself onto the dry brick at the water's edge, claws clicking. Its eyes are white as boiled eggs and turned to the far wall, and its head swings slowly from side to side.
+*choice
+  # Creep up on it and strike first.@{show_stat_hints  [DEX (Stealth) DC 12, a pass takes the first strike]|}
+    *gosub_scene dice_engine roll_skill_check 12 "stealth" "" "" "" "" ""
+    *if (check_success)
+      You move along the wall with the slap of the water covering your steps, one foot at a time, until the grey skin is an arm's length from you and the head is still swinging toward the far wall.
+
+      *set advantage true
+      *set combat_player_surprise true
+      [b][🗡️ Unnoticed — the lacedon loses its first turn and you strike with advantage][/b]
+    *else
+      A loose brick grates under your boot. The white eyes swing round and fix on you, and the lacedon lunges.
+
+      *set combat_enemy_advantage true
+      [b][⚠️ Spotted — the lacedon strikes first][/b]
+    *goto pvsc_lacedon_fight
+  # Stand your ground and let it come.
+    You plant your feet on the wet stone. The white eyes find you, and the lacedon drags itself forward, claws clicking.
+    *goto pvsc_lacedon_fight
+  # Back away quietly.@{show_stat_hints  [DEX (Stealth) DC 10]|}
+    *gosub_scene dice_engine roll_skill_check 10 "stealth" "" "" "" "" ""
+    *if (check_success)
+      You ease back the way you came, one placed step at a time, until the click of claws is only a memory behind you.
+      *goto pvsc_retreat_quiet
+    *else
+      Your boot grates on the brick as you back away. The white eyes swing round and fix on you, and the lacedon lunges.
+
+      *set combat_enemy_advantage true
+      [b][⚠️ Spotted — the lacedon strikes first][/b]
+      *goto pvsc_lacedon_fight
+
+*label pvsc_lacedon_fight
 *set combat_is_nonlethal false
 *set combat_lib_1 "lacedon"
 *set combat_enemy_name_override "Drowned Lacedon"
@@ -1346,9 +1422,40 @@ Under a folded cloth lies a small leather purse, heavy with coin.
 *label pvsc_enc_centipede
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  A dry whispering runs along the wall above you, like a hand drawn slowly over paper. Something lands on the floor in front of you with a click, and then comes the fast ticking of many legs on stone, and a sharp, sour smell like crushed beetles.
+  A dry whispering runs along the wall above you, like a hand drawn slowly over paper. Somewhere ahead in the dark comes the fast ticking of many legs on stone, and a sharp, sour smell like crushed beetles.
 *else
-  A dry whispering runs along the wall above you, like a hand drawn slowly over paper. A centipede as long as your arm drops from a crack in the roof and lands on the brick with a click, a hundred legs rippling. Its body is the dull red of old rust. It rears up its front end, feelers sweeping, its jaws opening and shutting.
+  A dry whispering runs along the wall above you, like a hand drawn slowly over paper. A centipede as long as your arm is working its way along a crack in the roof, a hundred legs rippling, its body the dull red of old rust, its feelers sweeping the brick ahead of it.
+*choice
+  # Creep up on it and strike first.@{show_stat_hints  [DEX (Stealth) DC 12, a pass takes the first strike]|}
+    *gosub_scene dice_engine roll_skill_check 12 "stealth" "" "" "" "" ""
+    *if (check_success)
+      You ease along the wall under the crack, keeping out from beneath it, and come up behind the slow rippling of its body while the feelers sweep the brick ahead.
+
+      *set advantage true
+      *set combat_player_surprise true
+      [b][🗡️ Unnoticed — the centipede loses its first turn and you strike with advantage][/b]
+    *else
+      A pebble clicks away across the brick. The feelers whip toward you, and the centipede drops from the roof.
+
+      *set combat_enemy_advantage true
+      [b][⚠️ Spotted — the centipede strikes first][/b]
+    *goto pvsc_centipede_fight
+  # Stand your ground and let it come.
+    You plant your feet. The feelers turn toward you, and the centipede pours down the wall, legs rippling.
+    *goto pvsc_centipede_fight
+  # Back away quietly.@{show_stat_hints  [DEX (Stealth) DC 10]|}
+    *gosub_scene dice_engine roll_skill_check 10 "stealth" "" "" "" "" ""
+    *if (check_success)
+      You ease back the way you came, one placed step at a time, until the whispering on the wall fades behind you.
+      *goto pvsc_retreat_quiet
+    *else
+      A pebble clicks away under your heel. The feelers whip round, and the centipede drops from the roof.
+
+      *set combat_enemy_advantage true
+      [b][⚠️ Spotted — the centipede strikes first][/b]
+      *goto pvsc_centipede_fight
+
+*label pvsc_centipede_fight
 *set combat_is_nonlethal false
 *set combat_lib_1 "beast"
 *set combat_enemy_name_override "Giant Centipede"
@@ -1363,9 +1470,39 @@ Under a folded cloth lies a small leather purse, heavy with coin.
 *label pvsc_enc_viper
 *gosub_scene dungeon dg_dark_check
 *if (dg_dark)
-  A dry, rising hiss comes out of the dark to one side, the sound of a leaking bellows, and it stops you where you stand. Something thick moves in the rags there, slow and heavy, and a cold, sour smell comes off it like a wet cellar.
+  A dry, rising hiss comes out of the dark to one side, the sound of a leaking bellows, and it stops you where you stand. Something thick shifts in the rags there, slow and heavy, and a cold, sour smell comes off it like a wet cellar.
 *else
-  A heap of rotted rags lies in the corner where the wall meets the floor. One of the rags is thicker than the rest, and it lifts. A viper as thick as your forearm unwinds from the heap, the colour of wet slate, with a broad, flat head that turns toward you. Its tongue flickers once, twice, tasting the air, and then it flattens its neck and hisses.
+  A heap of rotted rags lies in the corner where the wall meets the floor. One of the rags is thicker than the rest, a loose coil the colour of wet slate and as thick as your forearm, with a broad, flat head resting on top. Its tongue flickers once, twice, tasting the air.
+*choice
+  # Creep up on it and strike first.@{show_stat_hints  [DEX (Stealth) DC 12, a pass takes the first strike]|}
+    *gosub_scene dice_engine roll_skill_check 12 "stealth" "" "" "" "" ""
+    *if (check_success)
+      You come at it along the wall, slow and low, setting each foot down on the dry patches between the puddles. The tongue keeps tasting the air in the wrong direction until you are a long step away.
+
+      *set advantage true
+      *set combat_player_surprise true
+      [b][🗡️ Unnoticed — the viper loses its first turn and you strike with advantage][/b]
+    *else
+      A stone clicks underfoot. The flat head lifts from the coil, the neck flattens, and the viper hisses and strikes.
+
+      *set combat_enemy_advantage true
+      [b][⚠️ Spotted — the viper strikes first][/b]
+    *goto pvsc_viper_fight
+  # Stand your ground and let it come.
+    You plant your feet. The head lifts, the neck flattens, and the viper unwinds toward you with a hiss.
+    *goto pvsc_viper_fight
+  # Back away quietly.@{show_stat_hints  [DEX (Stealth) DC 10]|}
+    *gosub_scene dice_engine roll_skill_check 10 "stealth" "" "" "" "" ""
+    *if (check_success)
+      You ease back the way you came, one placed step at a time, until the hissing is a thread of sound behind you.
+      *goto pvsc_retreat_quiet
+    *else
+      A stone clicks under your back foot. The head swings round, and the viper hisses and strikes.
+
+      *set combat_enemy_advantage true
+      [b][⚠️ Spotted — the viper strikes first][/b]
+      *goto pvsc_viper_fight
+
 *comment pvsc_viper_fight is the viper's setup on its own, for a room that tells its own lead-in (the Collapsed Run).
 *label pvsc_viper_fight
 *set combat_is_nonlethal false
@@ -1392,6 +1529,37 @@ Under a folded cloth lies a small leather purse, heavy with coin.
   Water laps against the stone ahead of you where it should lie still. Something heavy shifts in the shallows, a wet flop and a drag, and a deep, wet croak rolls down the passage and stops you in your tracks. The smell of pond mud is thick on the air.
 *else
   The passage floods to a shallow pool here, and a ripple crosses it that did not come from your ${feet_prose}. Something heavy shifts in the shallows ahead, and a frog as big as a hound hauls itself onto the brick, mottled green and brown, its wet skin shining. Its throat swells like a bellows, and a low croak rolls down the passage. A long tongue flicks out and curls back.
+*choice
+  # Creep up on it and strike first.@{show_stat_hints  [DEX (Stealth) DC 11, a pass takes the first strike]|}
+    *gosub_scene dice_engine roll_skill_check 11 "stealth" "" "" "" "" ""
+    *if (check_success)
+      You wade the shallows one slow step at a time, placing each foot ahead of the ripple it makes, until the swelling throat is an arm's length away and the frog is still facing the far wall.
+
+      *set advantage true
+      *set combat_player_surprise true
+      [b][🗡️ Unnoticed — the frog loses its first turn and you strike with advantage][/b]
+    *else
+      Your boot slaps the water. The great head swings round, and the frog's tongue lashes out.
+
+      *set combat_enemy_advantage true
+      [b][⚠️ Spotted — the frog strikes first][/b]
+    *goto pvsc_frog_fight
+  # Stand your ground and let it come.
+    You plant your feet in the shallows. The great head swings round, and the frog hauls itself toward you with a heavy, wet slap.
+    *goto pvsc_frog_fight
+  # Back away quietly.@{show_stat_hints  [DEX (Stealth) DC 10]|}
+    *gosub_scene dice_engine roll_skill_check 10 "stealth" "" "" "" "" ""
+    *if (check_success)
+      You ease back through the shallows, one placed step at a time, until the croaking is a low murmur behind you.
+      *goto pvsc_retreat_quiet
+    *else
+      Your boot slaps the water as you back away. The great head swings round, and the frog's tongue lashes out.
+
+      *set combat_enemy_advantage true
+      [b][⚠️ Spotted — the frog strikes first][/b]
+      *goto pvsc_frog_fight
+
+*label pvsc_frog_fight
 *set combat_is_nonlethal false
 *set combat_lib_1 "beast"
 *set combat_enemy_name_override "Giant Frog"
@@ -1402,6 +1570,14 @@ Under a folded cloth lies a small leather purse, heavy with coin.
 *set combat_enemy_size_override "medium"
 *set dg_hv_creature "frog"
 *goto pvsc_fight_go
+
+*comment A quiet retreat from a creature that has not noticed the player (the Stealth approach): one step back the way you came, at the usual cost, with no encounter roll; the same lock as pvsc_retreat.
+*label pvsc_retreat_quiet
+*if (not(dg_step_locked)) or (not(locked_dg_step_page_id = page_id))
+  *set dg_dest dg_from
+  *set dg_dest_hall false
+*gosub_scene dungeon dg_step
+*goto pvsc_here
 
 *comment THE DUNGEON'S FIGHTS ARE LETHAL (2026-10-02, the user wants more ways to die): combat_player_can_die is raised for the fight and lowered again after it, because
 *comment fight_cleanup does not reset it and it would leak into every later fight. With it on, a fight is never "rescued"; it is won, fled or lost for good.

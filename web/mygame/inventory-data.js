@@ -292,6 +292,22 @@
       use: true
     },
     {
+      id: "boar_meat", category: "consumables", owned: "has_boar_meat",
+      weight: 2, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_boar_meat) || 0); return "Boar Meat" + (n > 1 ? " ×" + n : ""); },
+      description: "Dark, close-grained meat from a wild boar, a hearty meal and a trapper's trade.",
+      badge: "Holds off about 12 hours of hunger",
+      use: true
+    },
+    {
+      id: "venison", category: "consumables", owned: "has_venison",
+      weight: 2, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_venison) || 0); return "Venison" + (n > 1 ? " ×" + n : ""); },
+      description: "Lean, dark meat from an elk, a hearty meal and a trapper's trade.",
+      badge: "Holds off about 12 hours of hunger",
+      use: true
+    },
+    {
       id: "barley_loaf", category: "consumables", owned: "has_barley_loaf",
       weight: 0.75, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_barley_loaf) || 0); return "Barley Loaf" + (n > 1 ? " ×" + n : ""); },
@@ -1015,6 +1031,27 @@
       name: function (s) { return "Grave Ichor (" + Number(s.grave_ichor) + ")"; },
       description: "Black fluid drawn from the drowned dead. Ambrose buys it by the phial.",
       badge: "Sells to a herbalist"
+    },
+    {
+      id: "raw_hide", category: "provisions", weight: 3,
+      owned: function (s) { return Number(s.raw_hide) > 0; },
+      name: function (s) { return "Raw Hide (" + Number(s.raw_hide) + ")"; },
+      description: "A skinned hide, still green. A trapper or the Hide Yard buys it by the piece.",
+      badge: "Sells to a trapper"
+    },
+    {
+      id: "boar_tusk", category: "provisions", weight: 0.5,
+      owned: function (s) { return Number(s.boar_tusk) > 0; },
+      name: function (s) { return "Boar Tusk (" + Number(s.boar_tusk) + ")"; },
+      description: "A curved tusk, yellowed and ridged. A trapper buys it by the piece.",
+      badge: "Sells to a trapper"
+    },
+    {
+      id: "elk_antler", category: "provisions", weight: 1.5,
+      owned: function (s) { return Number(s.elk_antler) > 0; },
+      name: function (s) { return "Elk Antler (" + Number(s.elk_antler) + ")"; },
+      description: "A branching antler, brown and ridged. A trapper buys it by the piece.",
+      badge: "Sells to a trapper"
     },
     // Forage ingredients keep their future alchemy information here, rather than in their
     // descriptions: effects can remain unknown to the player until they discover them.

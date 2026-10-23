@@ -25,7 +25,7 @@ const { ind, stripBlocks, optionsOf, cloneLines, SCENES, MARK } = core;
 function S(page, target, file) { return [page, target, file]; }
 const SETTLEMENTS = {
   alderford: {
-    name: "Alderford", start: "alderford", startScene: "alderford/alderford", hubFile: "alderford/alderford.txt", hubLabels: ["alderford", "af_menu"],
+    name: "Alderford", start: "alderford", startScene: "alderford/alderford", hubFile: "alderford/alderford.txt", hubLabels: ["alderford", "af_menu", "af_return", "af_market_return"],
     files: ["alderford/drowned_oar.txt", "alderford/factors_hall.txt", "alderford/lower_wharf_market.txt", "alderford/timber_smithy.txt", "alderford/chapel.txt"],
     services: {
       board: { name: "Notice board", seen: "af_hall_seen", steps: [S("af_menu", "af_hall", "alderford/alderford.txt"), S("af_hall_floor", "af_hall_board", "alderford/factors_hall.txt")], done: "You are at the notice board." },

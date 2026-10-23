@@ -164,7 +164,7 @@
     camp_kit: "blanket", waxed_oilcloth: "cloth", lockpick_set: "lockpicks", padlock: "key", door_bolt: "tool", iron_manacles: "tool",
     broadcloth_cloak: "cloak_traveler", storm_cape: "cloak_storm", winter_cloak: "cloak_winter", summer_duster: "cloak_duster", felt_hat: "h_hat", fur_cap: "h_cap",
     lined_gloves: "gloves_lined", scholar_gloves: "gloves_scholar", masters_gloves: "gloves_master", waxed_boots: "boots_rain", winter_boots: "boots_winter", dancing_slippers: "shoes_dancing",
-    wool_muffler: "neck_muffler", silk_neckcloth: "neck_cravat", scrap_steel: "scrap", frog_slime: "frog_slime", honeycomb: "honeycomb", heartwood_fruit: "heartwood_fruit", centipede_gland: "gland", viper_venom: "venom", grave_ichor: "ichor",
+    wool_muffler: "neck_muffler", silk_neckcloth: "neck_cravat", scrap_steel: "scrap", frog_slime: "frog_slime", honeycomb: "honeycomb", heartwood_fruit: "heartwood_fruit", boar_meat: "boar_meat", raw_hide: "raw_hide", boar_tusk: "boar_tusk", elk_antler: "elk_antler", venison: "venison", centipede_gland: "gland", viper_venom: "venom", grave_ichor: "ichor",
     sluice_moss: "sluice_moss", brinecap: "brinecap", pale_crackroot: "pale_crackroot", cistern_spores: "cistern_spores", glowmold: "glowmold",
     silverleaf: "silverleaf", oakheart_balsam: "oakheart_balsam", shadefern: "shadefern", acorn_truffle: "acorn_truffle", brambleberry: "brambleberry",
     talia_oiled_cloak: "cloak", rorik_grip_wraps: "gloves", rorik_campaign_belt: "belt", talia_deck_boots: "boots", brant_iron_heel_boots: "boots_iron_heel",

@@ -1,0 +1,137 @@
+*comment ====================================================================================
+*comment GREY RIVER TRANSPORT: shared travel between the working river berths at Alderford and
+*comment Port Valen. The company established the scale of this traffic during the prologue:
+*comment forty-foot freight barges carry people, horses, wagons and military stores together.
+*comment Passage therefore keeps an owned horse with the player and never touches stable state.
+*comment
+*comment The prologue advances eight hours downriver, which remains the ordinary southbound
+*comment duration here. The return passage takes twelve hours against the Grey, using tow teams
+*comment and poles through the gorge. Passage costs five copper on foot, one silver with a horse,
+*comment or two silver with a wagon and its team. has_wagon is reserved for the future wagon system.
+*comment The waterfront scenes own availability; this scene owns payment, elapsed time, journey
+*comment prose, death from neglect, and arrival state.
+*comment ====================================================================================
+
+*label alderford_to_port_valen
+*temp rt_fare 5
+*temp rt_fare_text "5 Copper Bits"
+*if (has_wagon)
+  *set rt_fare 20
+  *set rt_fare_text "2 Silver Marks"
+*elseif (has_horse)
+  *set rt_fare 10
+  *set rt_fare_text "1 Silver Mark"
+*temp rt_purse (((gold * 100) + (silver * 10)) + copper)
+*if (rt_purse < rt_fare)
+  The berth clerk counts what you have and pushes it back across the tally board. "${rt_fare_text} for Valen. I cannot put you on the manifest for less."
+  *goto_scene alderford/lower_wharf_market af_market_hub
+
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount (0 - rt_fare)
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+
+[b]◈ THE GREY RIVER TRANSPORT: DOWNRIVER[/b]
+*line_break
+
+The berth clerk marks your passage, and you cross the loading plank onto a broad forty-foot freight barge. A wagon has been chocked between stacks of bound timber, with passengers and their baggage settled beneath an oiled-canvas awning amid the working cargo.
+
+*if (has_wagon)
+  Your wagon is rolled aboard over the reinforced freight ramp, its wheels chocked and its team secured among the draft animals near the middle of the deck.
+*elseif (has_horse)
+  ${horse_name} follows you up the broad livestock ramp and is tied among the draft animals near the middle of the deck, where the hull moves least. The transport hands treat ${horse_obj} as ordinary freight with opinions.
+*else
+  Behind you, handlers lead draft animals aboard by the broad livestock ramp while the last wheels are chained against the deck chocks.
+
+The crew casts off below the weir and lets the current take the laden hull south. Alderford's wharves disappear behind the bends; the gorge closes around the river, then slowly opens toward the tidal reach and the masts of Port Valen.
+
+*set ow_pos "af"
+*set ow_on true
+*set climate_shift 0
+*set hours_to_pass 8
+*set minutes_to_pass 0
+*set time_advance_call_id "river_transport_af_pv"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set ow_on false
+  *set death_location_name "the Grey River"
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+Eight hours after casting off, the barge noses into the cargo quay beneath the customs tower. Ramps go down among the waiting drays, and the river traffic closes around the new arrival before its ropes are fully tied.
+
+[b][River Passage: ${rt_fare_text} | 8 hours | Arrived at Port Valen][/b]
+
+*set ow_pos "pv"
+*set ow_on false
+*set current_district "harbor"
+*set scenery_subplace "port_valen_cargo_quay"
+*set climate_shift 0
+*set death_location_name "Port Valen"
+*goto_scene port_valen/port_valen pv_poi_quays_menu
+
+*label port_valen_to_alderford
+*temp rt_fare 5
+*temp rt_fare_text "5 Copper Bits"
+*if (has_wagon)
+  *set rt_fare 20
+  *set rt_fare_text "2 Silver Marks"
+*elseif (has_horse)
+  *set rt_fare 10
+  *set rt_fare_text "1 Silver Mark"
+*temp rt_purse (((gold * 100) + (silver * 10)) + copper)
+*if (rt_purse < rt_fare)
+  The passage clerk counts what you have and closes the manifest. "${rt_fare_text} for Alderford. Come back when you can meet the fare."
+  *goto_scene port_valen/port_valen pv_poi_quays_menu
+
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount (0 - rt_fare)
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+
+[b]◈ THE GREY RIVER TRANSPORT: UPRIVER[/b]
+*line_break
+
+The passage clerk adds your name to the upriver manifest, and you board a broad forty-foot freight barge among traders, bundled cargo and a wagon chained over its axles.
+
+*if (has_wagon)
+  Your wagon is rolled aboard over the reinforced freight ramp, its wheels chained over the axles and its team secured where the hull moves least.
+*elseif (has_horse)
+  ${horse_name} is led up the livestock ramp and tied among the draft animals near the middle of the deck. There is room enough for ${horse_obj} to shift ${horse_pos} footing when the towline draws taut.
+*else
+  The last draft team comes aboard behind you, iron-shod wheels sounding across the loading planks before the ramps are hauled in.
+
+Going north is slower work. Tow teams take the bank where the gorge allows it; elsewhere the deck crew lean into long poles and haul against fixed lines while the Grey presses steadily south beneath the hull. Port Valen's masts sink behind the bends, replaced by limestone walls, wooded banks and the long pull toward Alderford's weir.
+
+*set ow_pos "pv"
+*set ow_on true
+*set climate_shift 0
+*set hours_to_pass 12
+*set minutes_to_pass 0
+*set time_advance_call_id "river_transport_pv_af"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set ow_on false
+  *set death_location_name "the Grey River"
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+Twelve hours after leaving the city, the towline slackens and the barge comes against Alderford's lower timber wharf. The weir roars above the basin while handlers lower the ramps and carts wait to take cargo up around the stone.
+
+[b][River Passage: ${rt_fare_text} | 12 hours | Arrived at Alderford][/b]
+
+*set ow_pos "af"
+*set ow_on false
+*set current_district "alderford"
+*set scenery_subplace "alderford_lower_wharf"
+*set climate_shift 0
+*set death_location_name "Alderford"
+*goto_scene alderford/alderford af_menu

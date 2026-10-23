@@ -63,6 +63,7 @@
     if (buyer === "pawn" && sl.pawnFixed > 0) v = sl.pawnFixed;
     if (buyer === "smith" && sl.smithPiece > 0) v = sl.smithPiece;
     if (buyer === "herbalist") v = sl.herbalistPiece > 0 ? sl.herbalistPiece : 0;
+    if (buyer === "game") v = sl.gamePiece > 0 ? sl.gamePiece : Math.floor((it.retail * sl.general) / 100);
     var b = sellBonus();
     if (b > 0) v = Math.floor((v * (100 + b) + 50) / 100);   // to the nearest copper, half up, as equipment.txt does
     return v;

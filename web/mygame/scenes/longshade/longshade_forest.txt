@@ -116,6 +116,8 @@ You work your way back out to the edge of the trees, and the open ground lies ah
 *set dg_dest_hall true
 *gosub lsf_bend_check
 *gosub_scene dungeon dg_step
+*comment lsf_step_done: where the end of a step is finished (light, then an encounter roll); a wild beast's retreat (longshade_beasts.txt) comes back here after its own dg_step.
+*label lsf_step_done
 *if (dg_light_out_now)
   The light gutters and goes out.
   *line_break
@@ -154,6 +156,12 @@ You work your way back out to the edge of the trees, and the open ground lies ah
 *set dg_enc_now false
 *if (dg_encounter = "hunters")
   *goto lsf_enc_hunters
+*if (dg_encounter = "boar")
+  *goto_scene longshade/longshade_beasts lsb_enc_boar
+*if (dg_encounter = "snake")
+  *goto_scene longshade/longshade_beasts lsb_enc_snake
+*if (dg_encounter = "elk")
+  *goto_scene longshade/longshade_beasts lsb_enc_elk
 *goto lsf_here
 
 *label lsf_chalked
@@ -1410,6 +1418,9 @@ You find the first handholds in the rock and test each before you trust it.
   Thole sets the hemp sack on the bench by the door, unties it, and nods you toward the rations and the two kinds of arrows inside.
 *else
   "What can you spare?" you ask. Thole sets a hemp sack on the bench by the door and unties it. Inside are cloth-wrapped bundles of trail rations, and under them two kinds of arrows, one wound in black cord and one packed in damp moss. "Biscuit, dried sausage, a fist of raisins," he says. "Plain stuff, and it keeps." He turns a black-corded arrow in his fingers. "These catch the moment they leave the string. The mossy ones are tipped with flint I cut up the Coldspine, and they bite cold."
+*if (((raw_hide > 0) or (boar_tusk > 0)) or (has_boar_meat))
+  *line_break
+  His eyes go to the hides, tusks and meat you carry, and he clears a corner of the bench for them.
 *choice
   # Step back from the bench.
     *set lsf_trapper_traded true
@@ -1482,11 +1493,16 @@ You find the first handholds in the rock and test each before you trust it.
 
 *label lsf_tw_cart_pass
 *comment GEN:BEGIN trapper_cart_pass
-*set shop_buyer "general"
+*set shop_buyer "game"
 *set gear_shop "trapper_sell"
 *gosub_scene equipment shop_cart_sell "trail_rations"
 *gosub_scene equipment shop_cart_sell "fire_arrow"
 *gosub_scene equipment shop_cart_sell "ice_arrow"
+*gosub_scene equipment shop_cart_sell "boar_meat"
+*gosub_scene equipment shop_cart_sell "raw_hide"
+*gosub_scene equipment shop_cart_sell "boar_tusk"
+*gosub_scene equipment shop_cart_sell "venison"
+*gosub_scene equipment shop_cart_sell "elk_antler"
 *set gear_shop "trapper"
 *gosub_scene equipment shop_cart_buy "trail_rations"
 *gosub_scene equipment shop_cart_buy "fire_arrow"
@@ -3725,14 +3741,26 @@ You turn away. Behind you the roar climbs, and the woman's voice breaks on a wor
 
 *comment The encounter table. A row is one *set dg_trow_ line each (see port_valen_silt_conduits.txt pvsc_table for the shape): the id, then its weight at "low tide" (here: by day, Morning through Dusk) and at "high tide"
 *comment (night and before dawn). The pick never repeats an id within one run.
+*comment   elk       day only (weight 3 by day, 0 at night): longshade_beasts.txt lsb_enc_elk.
+*comment   snake     day and night (weight 2 in each column): longshade_beasts.txt lsb_enc_snake.
+*comment   boar      night only (weight 3 at night, 0 by day): longshade_beasts.txt lsb_enc_boar.
 *comment   hunters   day only, and not in a storm (nobody hunts in one); gone for good once the player has met them (lsf_hunters_met).
 *label lsf_table
-*set dg_trow_count 1
+*set dg_trow_count 4
 *set dg_trow_id_1 "hunters"
 *set dg_trow_lo_1 3
 *set dg_trow_hi_1 0
 *if ((lsf_hunters_met) or (weather_severity >= 3))
   *set dg_trow_lo_1 0
+*set dg_trow_id_2 "boar"
+*set dg_trow_lo_2 0
+*set dg_trow_hi_2 3
+*set dg_trow_id_3 "snake"
+*set dg_trow_lo_3 2
+*set dg_trow_hi_3 2
+*set dg_trow_id_4 "elk"
+*set dg_trow_lo_4 3
+*set dg_trow_hi_4 0
 *return
 
 *comment THE RECKLESS HUNTERS (the user's idea, 2026-10-15, from a published adventure's encounter; Odile and Bram, their talk, their house and their dinner are all invented here). An arrow nearly takes the player's head off; a

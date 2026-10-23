@@ -22,6 +22,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -46,6 +47,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -70,6 +72,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -94,6 +97,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -118,6 +122,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -142,6 +147,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -166,6 +172,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -190,6 +197,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 5,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": "scrap_steel"
    }
   },
@@ -214,6 +222,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -238,6 +247,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 4,
+    "gamePiece": 0,
     "countVar": "frog_slime"
    }
   },
@@ -262,6 +272,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 8,
+    "gamePiece": 0,
     "countVar": "centipede_gland"
    }
   },
@@ -286,6 +297,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 10,
+    "gamePiece": 0,
     "countVar": "viper_venom"
    }
   },
@@ -310,6 +322,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 15,
+    "gamePiece": 0,
     "countVar": "grave_ichor"
    }
   },
@@ -334,6 +347,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 1,
+    "gamePiece": 0,
     "countVar": "sluice_moss"
    }
   },
@@ -358,6 +372,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 1,
+    "gamePiece": 0,
     "countVar": "brinecap"
    }
   },
@@ -382,6 +397,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 2,
+    "gamePiece": 0,
     "countVar": "pale_crackroot"
    }
   },
@@ -406,6 +422,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 3,
+    "gamePiece": 0,
     "countVar": "cistern_spores"
    }
   },
@@ -430,6 +447,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 2,
+    "gamePiece": 0,
     "countVar": "glowmold"
    }
   },
@@ -454,6 +472,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 1,
+    "gamePiece": 0,
     "countVar": "silverleaf"
    }
   },
@@ -478,6 +497,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 1,
+    "gamePiece": 0,
     "countVar": "oakheart_balsam"
    }
   },
@@ -502,6 +522,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 2,
+    "gamePiece": 0,
     "countVar": "shadefern"
    }
   },
@@ -526,6 +547,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 3,
+    "gamePiece": 0,
     "countVar": "acorn_truffle"
    }
   },
@@ -550,6 +572,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 2,
+    "gamePiece": 0,
     "countVar": "brambleberry"
    }
   },
@@ -574,6 +597,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 12,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -598,6 +622,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 15,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -622,6 +647,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -646,6 +672,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -670,6 +697,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -694,6 +722,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -718,6 +747,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -742,6 +772,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -766,6 +797,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -790,6 +822,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -814,6 +847,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -838,6 +872,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -862,6 +897,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -886,6 +922,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -910,6 +947,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -934,6 +972,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -958,6 +997,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -982,6 +1022,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1006,6 +1047,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1030,6 +1072,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1054,6 +1097,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1078,6 +1122,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1102,6 +1147,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1126,6 +1172,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1150,6 +1197,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1174,6 +1222,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1198,6 +1247,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1222,6 +1272,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1246,6 +1297,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1270,6 +1322,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1294,6 +1347,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1318,6 +1372,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1342,6 +1397,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1366,6 +1422,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1390,6 +1447,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1414,6 +1472,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1438,6 +1497,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1462,6 +1522,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1486,6 +1547,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1510,6 +1572,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1534,6 +1597,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1558,6 +1622,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1582,6 +1647,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1606,6 +1672,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1630,6 +1697,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1654,6 +1722,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1678,6 +1747,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1702,6 +1772,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1726,6 +1797,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1750,6 +1822,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1774,6 +1847,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1798,6 +1872,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1822,6 +1897,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1846,6 +1922,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1870,6 +1947,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1894,6 +1972,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1918,6 +1997,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1942,6 +2022,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1966,6 +2047,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -1990,6 +2072,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2014,6 +2097,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2038,6 +2122,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2062,6 +2147,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2086,6 +2172,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2110,6 +2197,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2134,6 +2222,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2158,6 +2247,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2182,6 +2272,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2206,6 +2297,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2230,6 +2322,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2254,6 +2347,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2278,6 +2372,7 @@ window.TRADE_DATA = {
     "pawnFixed": 80,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2302,6 +2397,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2326,6 +2422,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2350,6 +2447,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2374,6 +2472,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2398,6 +2497,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2422,6 +2522,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2446,6 +2547,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2470,6 +2572,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2494,6 +2597,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2518,6 +2622,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2542,6 +2647,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2566,6 +2672,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2590,6 +2697,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2614,6 +2722,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2638,6 +2747,7 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
    }
   },
@@ -2662,7 +2772,133 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 0,
+    "gamePiece": 0,
     "countVar": ""
+   }
+  },
+  "boar_meat": {
+   "name": "boar meat",
+   "title": "Boar Meat",
+   "kind": "consumable",
+   "group": "",
+   "tier": "",
+   "retail": 6,
+   "weight": 2,
+   "minutes": 5,
+   "hint": "Eases hunger, about a third of a meal",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 3,
+    "countVar": ""
+   }
+  },
+  "raw_hide": {
+   "name": "raw hide",
+   "title": "Raw Hide",
+   "kind": "salvage",
+   "group": "",
+   "tier": "",
+   "retail": 0,
+   "weight": 3,
+   "minutes": 10,
+   "hint": "",
+   "slot": "",
+   "stack": false,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 6,
+    "countVar": "raw_hide"
+   }
+  },
+  "boar_tusk": {
+   "name": "boar tusk",
+   "title": "Boar Tusk",
+   "kind": "salvage",
+   "group": "",
+   "tier": "",
+   "retail": 0,
+   "weight": 0.5,
+   "minutes": 10,
+   "hint": "",
+   "slot": "",
+   "stack": false,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 5,
+    "countVar": "boar_tusk"
+   }
+  },
+  "venison": {
+   "name": "venison",
+   "title": "Venison",
+   "kind": "consumable",
+   "group": "",
+   "tier": "",
+   "retail": 6,
+   "weight": 2,
+   "minutes": 5,
+   "hint": "Eases hunger, about a third of a meal",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 3,
+    "countVar": ""
+   }
+  },
+  "elk_antler": {
+   "name": "elk antler",
+   "title": "Elk Antler",
+   "kind": "salvage",
+   "group": "",
+   "tier": "",
+   "retail": 0,
+   "weight": 1.5,
+   "minutes": 10,
+   "hint": "",
+   "slot": "",
+   "stack": false,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 5,
+    "countVar": "elk_antler"
    }
   }
  },
@@ -3063,7 +3299,7 @@ window.TRADE_DATA = {
   },
   "trapper": {
    "title": "The Trapper's Bench",
-   "buyer": "general",
+   "buyer": "game",
    "buy": [
     "trail_rations",
     "fire_arrow",
@@ -3072,7 +3308,25 @@ window.TRADE_DATA = {
    "sell": [
     "trail_rations",
     "fire_arrow",
-    "ice_arrow"
+    "ice_arrow",
+    "boar_meat",
+    "raw_hide",
+    "boar_tusk",
+    "venison",
+    "elk_antler"
+   ]
+  },
+  "hideyard": {
+   "title": "The Hide Yard",
+   "buyer": "game",
+   "buy": [
+    "boar_meat",
+    "venison"
+   ],
+   "sell": [
+    "raw_hide",
+    "boar_meat",
+    "venison"
    ]
   }
  }

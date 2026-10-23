@@ -119,6 +119,11 @@ const MAP = {
   scrap: "Clutter_AdamantineScrap_Unfaded_Icon.webp",
   bramble_heart: "../Generic/Gnarled_Bramble_Heart_Generated_Source.png",   // the user's own art (2026-10-21): Dubhar's heart of bramble
   poisoners_robes: "Poisoners_Robe_Unfaded_Icon.png",                  // Dubhar's robes
+  boar_meat: "FOOD_Pork_Shoulder_Unfaded_Icon.png",                    // a boar's haunch (STAND-IN: no wild-meat art yet)
+  raw_hide: "../Generic/Raw_Hide_Generated_Source.png",                 // a skinned beast's hide, from the Longshade's boar and elk
+  boar_tusk: "../Generic/Boar_Tusk_Generated_Source.png",
+  elk_antler: "../Generic/Elk_Antler_Generated_Source.png",
+  venison: "FOOD_Raw_Steak_Unfaded_Icon.png",                                   // an elk's haunch (STAND-IN: no wild-meat art yet)
   heartwood_fruit: "FOOD_Goodberry_Unfaded_Icon.png",                   // Bark's reward
   honeycomb: "FOOD_Honey_Comb_Unfaded_Icon.png",                    // the Longshade bee tree
   frog_slime: "Bowl_With_Dead_Tadpoles_Unfaded_Icon.png",
