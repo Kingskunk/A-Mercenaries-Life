@@ -27,27 +27,67 @@
   ],
   "ordinary": ["jewelry_silver_ring", "jewelry_gold_ring", "jewelry_sapphire_gold_ring", "jewelry_ruby_gold_ring", "jewelry_diamond_gold_ring"],
   "minDepth": 3,
+  "settlements": {
+    "_readme": "Who lives where (2026-10-24, proposed by Claude from each settlement's size on the map; the user may change them): the people a settlement feeds, by overworld tile. A settlement that makes nothing still eats; a tile without a market (Whitefold) still draws on the makers and still counts.",
+    "pv": { "name": "Port Valen", "pop": 9000 }, "af": { "name": "Alderford", "pop": 2400 }, "tm": { "name": "Timbermouth", "pop": 1800 },
+    "mc": { "name": "Marlcross", "pop": 650 }, "fv": { "name": "Barleycross", "pop": 550 }, "rv": { "name": "Redvein", "pop": 500 },
+    "bw": { "name": "Brinewick", "pop": 450 }, "wf": { "name": "Whitefold", "pop": 420 }, "fo": { "name": "Ashrun Holt", "pop": 350 }
+  },
+  "world": {
+    "_readme": "The food-cycle model (web/mygame/world.js, tools/gen_world.js). margin: the region's makers can turn out this many times what every settlement eats; pullExp: a settlement's pull on a maker is (population / 1000) ^ this, so a big city outbids a village when there is not enough to go round; capExp: a maker's capacity share is its tier weight x population ^ this; minDemand: units a day every settlement wants of every good at least (so every market feels its own makers).",
+    "margin": 1.2, "pullExp": 0.12, "capExp": 0.3, "minDemand": 3
+  },
+  "demand": {
+    "_readme": "Units a day that a thousand people use of each commodity (a unit is one item: a sack, a loaf, a bar). A good that is only worked (iron ore, hides) has none here and is eaten by industry below.",
+    "grain": 90, "barley_loaf": 150, "root_vegetable_bundle": 60, "onions": 25, "potatoes": 60, "cabbage": 30, "pumpkin": 15, "tomatoes": 15, "orchard_apple": 30,
+    "farm_eggs": 60, "dressed_chicken": 12, "cheese": 25, "dried_pork_sausage": 20, "fresh_fish_fillet": 50, "salt": 15, "boar_meat": 8, "venison": 6, "honeycomb": 3,
+    "iron_bar": 10, "charcoal": 40, "longshade_timber": 25, "wool": 12, "wool_cloth": 10, "leather": 8, "furs": 2, "boar_tusk": 0.5, "elk_antler": 0.5
+  },
+  "industry": {
+    "_readme": "What a settlement's trades eat, units a day: forges eat ore and charcoal, weavers wool, tanneries hides, smiths bars.",
+    "af": { "iron_ore": 110, "charcoal": 70, "wool": 80, "iron_bar": 30 },
+    "tm": { "raw_hide": 50, "longshade_timber": 40, "charcoal": 15, "leather": 10 },
+    "pv": { "iron_bar": 40, "wool_cloth": 25, "leather": 20, "salt": 25, "fresh_fish_fillet": 25, "raw_hide": 10, "charcoal": 30 },
+    "fo": { "raw_hide": 12 },
+    "rv": { "charcoal": 10 }
+  },
+  "dseason": {
+    "_readme": "How demand swings over the year (spring, summer, autumn, winter; a year averages 1): fuel and wool and furs in winter, salt for the autumn curing, sausage in the cold. Anything not listed is flat.",
+    "charcoal": [0.8, 0.5, 0.9, 1.8], "longshade_timber": [0.9, 0.8, 1.0, 1.4], "wool": [0.9, 0.7, 1.1, 1.4], "wool_cloth": [0.8, 0.6, 1.1, 1.6], "furs": [0.3, 0.2, 1.0, 2.0],
+    "salt": [0.8, 1.0, 1.7, 0.9], "dried_pork_sausage": [0.8, 0.7, 1.0, 1.4]
+  },
+  "inputs": {
+    "_readme": "What a ware is worked from, for the shops that carry a tile and \"inputs\": true (a smith, a tailor, a general store): the share of its price that is the cost of each input commodity. A ware's price level follows (1 - the shares) + each share x the input's price ratio at the shop's tile (web/mygame/world.js), so iron bars and leather and cloth going up or down move the smiths' and tailors' prices. byItem beats byKind. Jewelry, one-of-a-kind pieces, potions, scrolls and food are not listed.",
+    "byKind": {
+      "weapon": { "iron_bar": 0.35 }, "armor": { "iron_bar": 0.45 }, "shield": { "iron_bar": 0.3 }, "head": { "iron_bar": 0.4 },
+      "cloak": { "wool_cloth": 0.5 }, "hands": { "leather": 0.45 }, "feet": { "leather": 0.5 }, "waist": { "leather": 0.5 }, "neck": { "wool_cloth": 0.4 }
+    },
+    "byItem": {
+      "brigandine": { "leather": 0.3, "iron_bar": 0.2 }, "chain_jack": { "iron_bar": 0.55 }, "plate_harness": { "iron_bar": 0.6 }, "buff_coat": { "leather": 0.5 },
+      "longshade_quarterstaff": {}, "longshade_spear": { "iron_bar": 0.15 }, "longshade_shortbow": {}, "hunting_bow": {}, "cord_sling": {}, "road_club": {}, "torvald_hide_cap": { "leather": 0.5 }, "felt_hat": { "wool_cloth": 0.5 }, "fur_cap": { "leather": 0.2, "wool_cloth": 0.2 }
+    }
+  },
   "commodity": {
     "_readme": "The distance model for open markets (see tools/gen_markets.js). perMile: the price rises this share of the base for every mile from the nearest maker; capLevel: the dearest it gets; cost: the price level AT the source (a major maker sells under the base, a minor one at it); supplyHalf: the miles at which a maker's share of a market's shelf has halved (it keeps falling, never to nothing); weight: a maker's share of a usual shelf; minSupply: below this a market makes nothing of a good; unsuppliedShare and useRate: a market with no supply wants a thin shelf (a share of the usual) and uses a share of it each day.",
     "perMile": 0.005, "capLevel": 2.0, "supplyHalf": 30, "minSupply": 0.1,
-    "cost": { "major": 0.8, "minor": 1.0 },
+    "cost": { "major": 0.9, "minor": 1.0 },
     "weight": { "major": 1, "minor": 0.25 },
     "unsuppliedShare": 0.1, "useRate": 0.05
   },
   "defaults": { "regen": { "stock": 0.1, "purse": 0.1 }, "mult": 1 },
   "merchants": {
-    "halda":       { "tier": "city shop", "purse": 3500,  "depthMult": 1.5 },
+    "halda":       { "tile": "pv", "inputs": true, "tier": "city shop", "purse": 3500,  "depthMult": 1.5 },
     "ambrose":     { "tier": "city shop", "purse": 1800,  "depthMult": 1.2 },
-    "hollis":      { "tier": "city shop", "purse": 4000,  "depthMult": 1.5 },
-    "vael":        { "tier": "city shop", "purse": 1500,  "depthMult": 1 },
-    "tailor":      { "tier": "city shop", "purse": 8000,  "depthMult": 1 },
+    "hollis":      { "tile": "pv", "inputs": true, "tier": "city shop", "purse": 4000,  "depthMult": 1.5 },
+    "vael":        { "tile": "pv", "inputs": true, "tier": "city shop", "purse": 1500,  "depthMult": 1 },
+    "tailor":      { "tile": "pv", "inputs": true, "tier": "city shop", "purse": 8000,  "depthMult": 1 },
     "inklamp":     { "tier": "city shop", "purse": 6000,  "depthMult": 1 },
     "jeweler":     { "tier": "city shop", "purse": 20000, "depthMult": 1 },
     "pawn":        { "tier": "city shop", "purse": 5000,  "depthMult": 1.5 },
-    "works":       { "tier": "town shop", "purse": 600,   "depthMult": 1 },
-    "tmstore":     { "tier": "town shop", "purse": 1200,  "depthMult": 1.2 },
-    "afstore":     { "tier": "town shop", "purse": 800,   "depthMult": 1 },
-    "torvald":     { "tier": "town shop", "purse": 1500,  "depthMult": 1.2 },
+    "works":       { "tile": "tm", "inputs": true, "tier": "town shop", "purse": 600,   "depthMult": 1 },
+    "tmstore":     { "tile": "tm", "inputs": true, "tier": "town shop", "purse": 1200,  "depthMult": 1.2 },
+    "afstore":     { "tile": "af", "inputs": true, "tier": "town shop", "purse": 800,   "depthMult": 1 },
+    "torvald":     { "tile": "af", "inputs": true, "tier": "town shop", "purse": 1500,  "depthMult": 1.2 },
     "barley_farm": { "tier": "village market", "tile": "fv", "commodities": true, "purse": 900, "depthMult": 3, "buyShare": 0.8, "regen": { "stock": 0.2, "purse": 0.1 } },
     "tm_market":   { "tier": "town market", "tile": "tm", "commodities": true, "purse": 3000, "depthMult": 4, "buyShare": 0.8, "regen": { "stock": 0.2, "purse": 0.1 } },
     "bw_market":   { "tier": "village market", "tile": "bw", "commodities": true, "purse": 1200, "depthMult": 3, "buyShare": 0.8, "regen": { "stock": 0.2, "purse": 0.1 } },
@@ -55,6 +95,8 @@
     "mc_market":   { "tier": "village market", "tile": "mc", "commodities": true, "purse": 1200, "depthMult": 3, "buyShare": 0.8, "regen": { "stock": 0.2, "purse": 0.1 } },
     "af_market":   { "tier": "town market", "tile": "af", "commodities": true, "purse": 3500, "depthMult": 4, "buyShare": 0.8, "regen": { "stock": 0.2, "purse": 0.1 } },
     "rv_market":   { "tier": "village market", "tile": "rv", "commodities": true, "purse": 1000, "depthMult": 3, "buyShare": 0.8, "regen": { "stock": 0.2, "purse": 0.1 } },
+    "wf_market":   { "tier": "village market", "tile": "wf", "commodities": true, "purse": 900, "depthMult": 3, "buyShare": 0.8, "regen": { "stock": 0.2, "purse": 0.1 } },
+    "pv_market":   { "tier": "city market", "tile": "pv", "commodities": true, "purse": 15000, "depthMult": 6, "buyShare": 0.8, "regen": { "stock": 0.25, "purse": 0.1 } },
     "trapper":     { "tier": "stall",     "purse": 150,   "depthMult": 0.8 },
     "hideyard":    { "tier": "yard",      "purse": 400,   "depthMult": 1 },
     "fish_slip":   { "tier": "stall",     "purse": 40,    "depthMult": 1, "regen": { "stock": 0.3, "purse": 0.1 } }

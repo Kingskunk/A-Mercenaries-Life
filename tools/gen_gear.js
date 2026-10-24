@@ -46,7 +46,7 @@ items.forEach(function (it) {
   [t.buyShop, t.sellShop].forEach(function (name) {
     var sh = (CATALOG.shops || []).filter(function (x) { return x.name === name; })[0];
     if (!sh) throw new Error("trade " + t.name + ": unknown shop " + name);
-    items.forEach(function (it) { if (it.commodity && !sh.items.some(function (r) { return r.id === it.id; })) sh.items.push({ id: it.id }); });
+    items.forEach(function (it) { if (it.commodity && (t.excludeCommodities || []).indexOf(it.id) < 0 && !sh.items.some(function (r) { return r.id === it.id; })) sh.items.push({ id: it.id }); });   // excludeCommodities: goods the market never handles (the Weigh House leaves fresh fish to the Fishmongers' Slip)
   });
 });
 

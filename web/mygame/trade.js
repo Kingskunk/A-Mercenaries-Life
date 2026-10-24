@@ -73,14 +73,19 @@
    * A merchant listed in PILOT is priced by web/mygame/market.js (finite stock and purse, slippage, buy-back) instead of by the flat prices above. The market is one saved string per merchant
    * (stats.market_<key>); the panel reads it brought up to today, prices the cart against it, and writes the new state only when the trade is confirmed, together with the totals it agreed
    * (market_cost, market_credit, market_on), which equipment.txt shop_check then takes in place of its own. */
-  var PILOT = { halda: true, barley_farm: true, tm_market: true, bw_market: true, ah_market: true, mc_market: true, af_market: true, rv_market: true };
+  var PILOT = { halda: true, barley_farm: true, tm_market: true, bw_market: true, ah_market: true, mc_market: true, af_market: true, rv_market: true, wf_market: true, pv_market: true };
   function marketOn(trade) { return !!(trade && PILOT[trade.key] && window.Market && window.MARKET_DEFS && window.MARKET_DEFS[trade.key]); }
   function today() { return num(statsNow().campaign_day); }
+  // The market's definition for today: the generated one with the season and the makers' shocks applied (web/mygame/world.js). world_seed is a saved stat (0 until the game picks one).
+  function marketDef(trade) {
+    var def = window.MARKET_DEFS[trade.key];
+    return window.World ? window.World.derive(def, today(), num(statsNow().world_seed) || 1) : def;
+  }
   function marketState(trade) {
-    var def = window.MARKET_DEFS[trade.key], str = String(statsNow()["market_" + trade.key] || "");
+    var def = marketDef(trade), str = String(statsNow()["market_" + trade.key] || "");
     return window.Market.refresh(str ? window.Market.parse(str) : window.Market.init(def, today()), def, today());
   }
-  function marketQuote(trade, st, c) { return window.Market.quote(st, window.MARKET_DEFS[trade.key], { buy: c.buy, sell: c.sell }, null, { sellBonusPct: sellBonus() }); }
+  function marketQuote(trade, st, c) { return window.Market.quote(st, marketDef(trade), { buy: c.buy, sell: c.sell }, null, { sellBonusPct: sellBonus() }); }
   // What one unit of a good costs or fetches here right now (the first unit of a cart of one).
   function marketUnit(trade, st, kind, id) {
     var q = marketQuote(trade, st, kind === "buy" ? { buy: (function () { var o = {}; o[id] = 1; return o; })(), sell: {} } : { buy: {}, sell: (function () { var o = {}; o[id] = 1; return o; })() });
@@ -157,6 +162,8 @@
     var out = [];
     trade.def.sell.forEach(function (id) {
       var n = owned(id, s), unit = st ? marketUnit(trade, st, "sell", id) : unitPrice(id, trade.def.buyer);
+      // A cheap good can pay nothing for one unit and something for a lot (the sale rounds down a whole line): it stays listed while the whole stack still fetches a copper.
+      if (n > 0 && !unit && st) { var lot = {}; lot[id] = n; var lq = marketQuote(trade, st, { buy: {}, sell: lot }); if (lq.ok && lq.sell.length && lq.sell[0].total > 0) { out.push({ id: id, have: n, unit: 0 }); return; } }
       if (n > 0 && unit > 0) out.push({ id: id, have: n, unit: unit });
     });
     return out;
@@ -281,7 +288,7 @@
     for (n = cur + 1; n <= hard; n++) {
       cart[kind][id] = n;
       var q = marketQuote(trade, st, cart);
-      if (!q.ok) break;
+      if (!q.ok) { if (kind === "sell" && /worth nothing/.test(q.problems.join())) continue; break; }
       best = n;
     }
     if (cur) cart[kind][id] = cur; else delete cart[kind][id];
@@ -293,11 +300,11 @@
     var g = mk.def.goods[id], S = num(mk.st.stock[id]), unit = line ? Math.round(line.total / line.qty) : (kind === "buy" ? Math.ceil(g.base * (g.fixed ? 1 : window.Market.factor(S, g.target)) - 1e-9) : 0);
     if (kind === "sell") unit = marketUnit(currentTrade(), mk.st, "sell", id);
     else unit = marketUnit(currentTrade(), mk.st, "buy", id) || unit;
-    var f = g.fixed ? 1 : window.Market.factor(S, g.target), mark = f > 1.1 ? ' <span class="trd-vs trd-vs-up" title="Dearer than usual">▲</span>' : (f < 0.9 ? ' <span class="trd-vs trd-vs-down" title="Cheaper than usual">▼</span>' : "");
+    var f = g.fixed ? 1 : window.Market.factor(S, g.target), wr = g.worldRatio || 1, mark = (f > 1.1 || wr > 1.1) ? ' <span class="trd-vs trd-vs-up" title="' + (wr > 1.1 ? 'Dearer than usual: short supply' : 'Dearer than usual') + '">▲</span>' : ((f < 0.9 || wr < 0.9) ? ' <span class="trd-vs trd-vs-down" title="' + (wr < 0.9 ? 'Cheaper than usual: plentiful' : 'Cheaper than usual') + '">▼</span>' : "");
     var held = mk.st.resv && mk.st.resv[id] ? mk.st.resv[id].qty : 0;
     var shelf = kind === "buy" ? '<small class="trd-stock">' + (S > 0 ? S + " on the shelf" : "sold out") + (held ? ", " + Math.min(held, S) + " yours" : "") + "</small>"
       : '<small class="trd-stock">' + (g.fixed ? "" : (S > 0 ? S + " held here" : "none held here")) + "</small>";
-    return fmt(unit) + mark + (line && line.qty > 1 ? '<small class="trd-total">' + line.qty + " for " + fmt(line.total) + "</small>" : "") + shelf;
+    return (kind === "sell" && !unit ? "under 1c each" : fmt(unit)) + mark + (line && line.qty > 1 ? '<small class="trd-total">' + line.qty + " for " + fmt(line.total) + "</small>" : "") + shelf;
   }
 
   function renderStepper(kind, id, qty, max) {
@@ -315,7 +322,7 @@
     if (view.key !== trade.key) { view.key = trade.key; view.tab = trade.def.buy.length ? "buy" : "sell"; view.category = ""; cart = { buy: {}, sell: {} }; }
 
     elTitle.textContent = trade.def.title;
-    var mk = marketOn(trade) ? { def: window.MARKET_DEFS[trade.key], st: marketState(trade) } : null;
+    var mk = marketOn(trade) ? { def: marketDef(trade), st: marketState(trade) } : null;
     elPurse.textContent = "Purse: " + fmt(purse(s)) + (mk ? " · " + trade.def.title + " holds " + fmt(mk.st.purse) : "");
 
     var buys = buyRows(trade, s), sells = sellRows(trade, s, mk && mk.st);
@@ -422,7 +429,7 @@
     if (marketOn(trade)) {
       var mkt = marketState(trade), mq = marketQuote(trade, mkt, cart);
       if (!mq.ok || purse(s) + mq.sellTotal < mq.buyTotal) return;
-      s["market_" + trade.key] = window.Market.serialize(window.Market.commit(mkt, window.MARKET_DEFS[trade.key], mq, today()));
+      s["market_" + trade.key] = window.Market.serialize(window.Market.commit(mkt, marketDef(trade), mq, today()));
       s.market_cost = mq.buyTotal; s.market_credit = mq.sellTotal; s.market_on = true;
     }
     // Every cart starts from zero so a stale entry can never ride along; the game clears them again when it settles.

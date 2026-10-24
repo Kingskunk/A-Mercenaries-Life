@@ -24,6 +24,9 @@
  * Money: the player's payment goes into the purse and the merchant's payout comes out of it, so a cart that buys and sells (a barter) needs the purse to cover only the NET payout. Totals
  * are whole copper and always round in the merchant's favour (a buy rounds up, a sale rounds down), so rounding can never be farmed.
  *
+ * A good may also carry a SUPPLY (web/mygame/world.js sets it from the season and the makers' shocks, 1 is normal): the shelf then settles at target x supply, while the price level still reads
+ * the usual target and the good's mult (which the world also scales), so a shortage thins the shelf and lifts the price and a glut does the reverse.
+ *
  * A good may also have a flow: whole units a day the market PRODUCES (positive: a farm's grain) or CONSUMES (negative: a town eating it), added before the drift toward target. The
  * drift alone only closes a share of the gap, so a trader who keeps two markets level every day would earn next to nothing; the flow is what a route's income is made of.
  *
@@ -38,7 +41,7 @@
 })(typeof window !== "undefined" ? window : this, function () {
   "use strict";
 
-  var LO = 0.5, HI = 1.5, MIN_F = 0.6, MAX_F = 2.0, KNEE_MULT = 2, FLOOR_F = 0.25, BUYBACK_DAYS = 14, MAX_BUY_PCT = 0.8;
+  var LO = 0.5, HI = 1.5, MIN_F = 0.6, MAX_F = 2.0, KNEE_MULT = 2, FLOOR_F = 0.25, BUYBACK_DAYS = 14, MAX_BUY_PCT = 0.8, MAX_ASK = 2, MIN_ASK = 0.5;
 
   function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
   function num(v, d) { var n = Number(v); return isFinite(n) ? n : (d || 0); }
@@ -54,8 +57,11 @@
     return 1;
   }
   // What the merchant asks for one unit when it holds `stock` (before the unit leaves), and what it pays for one unit when the shelf would then hold `stockAfter` (the stock once the unit has arrived).
-  function ask(base, stock, target, mult) { return base * (mult || 1) * factor(stock, target); }
-  function bid(base, stockAfter, target, buyPct, mult) { return base * (mult || 1) * factor(stockAfter, target) * buyPct; }
+  // No ask is ever above MAX_ASK times the base price (the user, 2026-10-24: a shortage may double a price, never more): the distance level, the world's supply and the shelf all multiply, and this caps the product.
+  // The payout is capped the same way, so it still never rises with stock (the round-trip proof needs that).
+  // And none below MIN_ASK times the base (a harvest glut halves a price, it does not make a pumpkin worth nothing). Both clamps keep the price from rising with stock.
+  function ask(base, stock, target, mult) { return Math.max(base * MIN_ASK, Math.min(base * (mult || 1) * factor(stock, target), base * MAX_ASK)); }
+  function bid(base, stockAfter, target, buyPct, mult) { return Math.max(base * MIN_ASK, Math.min(base * (mult || 1) * factor(stockAfter, target), base * MAX_ASK)) * buyPct; }
 
   function good(def, id) { return def.goods && def.goods[id] ? def.goods[id] : null; }
   function copyState(st) {
@@ -84,7 +90,7 @@
     var st = { day: num(today), purse: Math.round(num(def.purseTarget)), stock: {}, resv: {} };
     Object.keys(def.goods || {}).forEach(function (id) {
       var g = def.goods[id];
-      st.stock[id] = Math.max(0, Math.round(g.stock0 === undefined ? g.target : g.stock0));
+      st.stock[id] = Math.max(0, Math.round((g.stock0 === undefined ? g.target : g.stock0) * (g.supply === undefined || g.fixed ? 1 : g.supply)));
     });
     return st;
   }
@@ -99,7 +105,7 @@
     Object.keys(def.goods || {}).forEach(function (id) {
       var g = def.goods[id];
       if (g.fixed) return;
-      var S = num(st.stock[id]), T = g.target, held = st.resv[id] ? st.resv[id].qty : 0;
+      var S = num(st.stock[id]), T = g.supply === undefined ? g.target : Math.max(0, Math.round(g.target * g.supply)), held = st.resv[id] ? st.resv[id].qty : 0;
       if (g.flow) { S = clamp(S + Math.round(g.flow * days), Math.max(0, held), Math.max(S, Math.ceil(KNEE_MULT * T))); st.stock[id] = S; }
       if (S < T) {
         if (g.restock !== false) st.stock[id] = Math.min(T, S + Math.max(1, Math.round((T - S) * gStock)));
@@ -180,7 +186,7 @@
     if (!g) return null;
     if (base === undefined) base = num(g.base);
     var S = num(state.stock[id]), f = g.fixed ? 1 : factor(S, g.target), pct = num(g.buyPct, 0.5);
-    return { stock: S, target: g.target, held: state.resv[id] ? state.resv[id].qty : 0, askNow: Math.ceil(base * (g.fixed ? 1 : num(g.mult, 1)) * f - 1e-9), bidNow: Math.floor(base * (g.fixed ? 1 : num(g.mult, 1) * factor(S + 1, g.target)) * pct + 1e-9), vsUsual: f > 1.1 ? 1 : (f < 0.9 ? -1 : 0) };
+    return { stock: S, target: g.target, held: state.resv[id] ? state.resv[id].qty : 0, askNow: Math.ceil(Math.max(base * MIN_ASK, Math.min(base * (g.fixed ? 1 : num(g.mult, 1)) * f, base * MAX_ASK)) - 1e-9), bidNow: Math.floor(Math.max(base * MIN_ASK, Math.min(base * (g.fixed ? 1 : num(g.mult, 1) * factor(S + 1, g.target)), base * MAX_ASK)) * pct + 1e-9), vsUsual: f > 1.1 ? 1 : (f < 0.9 ? -1 : 0) };
   }
 
   // One short string for a saved stat: v1|d=<day>|p=<purse>|s=id:qty,id:qty|r=id:qty@until,...
@@ -201,6 +207,6 @@
     return st;
   }
 
-  return { LO: LO, HI: HI, MIN_F: MIN_F, MAX_F: MAX_F, KNEE_MULT: KNEE_MULT, FLOOR_F: FLOOR_F, BUYBACK_DAYS: BUYBACK_DAYS, MAX_BUY_PCT: MAX_BUY_PCT,
+  return { LO: LO, HI: HI, MIN_F: MIN_F, MAX_F: MAX_F, KNEE_MULT: KNEE_MULT, FLOOR_F: FLOOR_F, BUYBACK_DAYS: BUYBACK_DAYS, MAX_BUY_PCT: MAX_BUY_PCT, MAX_ASK: MAX_ASK, MIN_ASK: MIN_ASK,
     factor: factor, ask: ask, bid: bid, validate: validate, init: init, refresh: refresh, quote: quote, commit: commit, describe: describe, serialize: serialize, parse: parse };
 });

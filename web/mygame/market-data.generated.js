@@ -18,21 +18,52 @@ window.MARKET_DEFS = {
     "target": 5,
     "stock0": 5,
     "buyPct": 0.5,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "leather",
+       "share": 0.3
+      },
+      {
+       "good": "iron_bar",
+       "share": 0.2
+      }
+     ]
+    }
    },
    "chain_jack": {
     "base": 70,
     "target": 5,
     "stock0": 5,
     "buyPct": 0.5,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.55
+      }
+     ]
+    }
    },
    "plate_harness": {
     "base": 150,
     "target": 5,
     "stock0": 5,
     "buyPct": 0.5,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.6
+      }
+     ]
+    }
    },
    "shield": {
     "base": 30,
@@ -40,28 +71,64 @@ window.MARKET_DEFS = {
     "stock0": 7,
     "buyPct": 0.5,
     "mult": 1,
-    "buys": false
+    "buys": false,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.3
+      }
+     ]
+    }
    },
    "timber_axe": {
     "base": 25,
     "target": 9,
     "stock0": 9,
     "buyPct": 0.48,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
    },
    "stiletto": {
     "base": 15,
     "target": 9,
     "stock0": 9,
     "buyPct": 0.467,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
    },
    "torvald_iron_sallet": {
     "base": 30,
     "target": 9,
     "stock0": 9,
     "buyPct": 0.5,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.4
+      }
+     ]
+    }
    },
    "iron_crowbar": {
     "base": 12,
@@ -435,70 +502,164 @@ window.MARKET_DEFS = {
     "target": 6,
     "stock0": 6,
     "buyPct": 0.4,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "wool_cloth",
+       "share": 0.5
+      }
+     ]
+    }
    },
    "storm_cape": {
     "base": 70,
     "target": 4,
     "stock0": 4,
     "buyPct": 0.4,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "wool_cloth",
+       "share": 0.5
+      }
+     ]
+    }
    },
    "winter_cloak": {
     "base": 120,
     "target": 4,
     "stock0": 4,
     "buyPct": 0.4,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "wool_cloth",
+       "share": 0.5
+      }
+     ]
+    }
    },
    "summer_duster": {
     "base": 50,
     "target": 4,
     "stock0": 4,
     "buyPct": 0.4,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "wool_cloth",
+       "share": 0.5
+      }
+     ]
+    }
    },
    "felt_hat": {
     "base": 20,
     "target": 6,
     "stock0": 6,
     "buyPct": 0.4,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "wool_cloth",
+       "share": 0.5
+      }
+     ]
+    }
    },
    "fur_cap": {
     "base": 30,
     "target": 6,
     "stock0": 6,
     "buyPct": 0.4,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "leather",
+       "share": 0.2
+      },
+      {
+       "good": "wool_cloth",
+       "share": 0.2
+      }
+     ]
+    }
    },
    "lined_gloves": {
     "base": 30,
     "target": 5,
     "stock0": 5,
     "buyPct": 0.4,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "leather",
+       "share": 0.45
+      }
+     ]
+    }
    },
    "waxed_boots": {
     "base": 60,
     "target": 4,
     "stock0": 4,
     "buyPct": 0.4,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "leather",
+       "share": 0.5
+      }
+     ]
+    }
    },
    "winter_boots": {
     "base": 50,
     "target": 4,
     "stock0": 4,
     "buyPct": 0.4,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "leather",
+       "share": 0.5
+      }
+     ]
+    }
    },
    "wool_muffler": {
     "base": 10,
     "target": 8,
     "stock0": 8,
     "buyPct": 0.4,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "wool_cloth",
+       "share": 0.4
+      }
+     ]
+    }
    },
    "silk_neckcloth": {
     "base": 400,
@@ -1086,7 +1247,16 @@ window.MARKET_DEFS = {
     "target": 6,
     "stock0": 6,
     "buyPct": 0.5,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "tm",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.15
+      }
+     ]
+    }
    },
    "longshade_shortbow": {
     "base": 25,
@@ -1100,7 +1270,16 @@ window.MARKET_DEFS = {
     "target": 10,
     "stock0": 10,
     "buyPct": 0.5,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "tm",
+     "inputs": [
+      {
+       "good": "leather",
+       "share": 0.5
+      }
+     ]
+    }
    },
    "road_club": {
     "base": 5,
@@ -1116,7 +1295,16 @@ window.MARKET_DEFS = {
     "stock0": 10,
     "buyPct": 0.5,
     "mult": 1,
-    "sells": false
+    "sells": false,
+    "world": {
+     "tile": "tm",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
    },
    "cord_sling": {
     "base": 4,
@@ -1393,14 +1581,32 @@ window.MARKET_DEFS = {
     "target": 7,
     "stock0": 7,
     "buyPct": 0.48,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "af",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
    },
    "stiletto": {
     "base": 15,
     "target": 7,
     "stock0": 7,
     "buyPct": 0.467,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "af",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
    },
    "iron_crowbar": {
     "base": 12,
@@ -1414,7 +1620,16 @@ window.MARKET_DEFS = {
     "target": 7,
     "stock0": 7,
     "buyPct": 0.5,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "af",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.4
+      }
+     ]
+    }
    },
    "torvald_hide_cap": {
     "base": 8,
@@ -1422,7 +1637,16 @@ window.MARKET_DEFS = {
     "stock0": 12,
     "buyPct": 0.5,
     "mult": 1,
-    "buys": false
+    "buys": false,
+    "world": {
+     "tile": "af",
+     "inputs": [
+      {
+       "good": "leather",
+       "share": 0.5
+      }
+     ]
+    }
    },
    "shield": {
     "base": 30,
@@ -1430,7 +1654,16 @@ window.MARKET_DEFS = {
     "stock0": 5,
     "buyPct": 0.5,
     "mult": 1,
-    "buys": false
+    "buys": false,
+    "world": {
+     "tile": "af",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.3
+      }
+     ]
+    }
    },
    "brigandine": {
     "base": 70,
@@ -1438,7 +1671,20 @@ window.MARKET_DEFS = {
     "stock0": 4,
     "buyPct": 0.5,
     "mult": 1,
-    "sells": false
+    "sells": false,
+    "world": {
+     "tile": "af",
+     "inputs": [
+      {
+       "good": "leather",
+       "share": 0.3
+      },
+      {
+       "good": "iron_bar",
+       "share": 0.2
+      }
+     ]
+    }
    },
    "chain_jack": {
     "base": 70,
@@ -1446,7 +1692,16 @@ window.MARKET_DEFS = {
     "stock0": 4,
     "buyPct": 0.5,
     "mult": 1,
-    "sells": false
+    "sells": false,
+    "world": {
+     "tile": "af",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.55
+      }
+     ]
+    }
    },
    "plate_harness": {
     "base": 150,
@@ -1454,7 +1709,16 @@ window.MARKET_DEFS = {
     "stock0": 4,
     "buyPct": 0.5,
     "mult": 1,
-    "sells": false
+    "sells": false,
+    "world": {
+     "tile": "af",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.6
+      }
+     ]
+    }
    },
    "scrap_steel": {
     "base": 10,
@@ -1481,203 +1745,290 @@ window.MARKET_DEFS = {
     "target": 175,
     "stock0": 175,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "fv"
+    }
    },
    "grain": {
     "base": 2,
     "target": 233,
     "stock0": 233,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "fv"
+    }
    },
    "cheese": {
     "base": 3,
     "target": 107,
     "stock0": 107,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "fv"
+    }
    },
    "orchard_apple": {
     "base": 1,
     "target": 107,
     "stock0": 107,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "fv"
+    }
    },
    "root_vegetable_bundle": {
     "base": 2,
     "target": 210,
     "stock0": 210,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "fv"
+    }
    },
    "farm_eggs": {
     "base": 3,
     "target": 185,
     "stock0": 185,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "fv"
+    }
    },
    "dried_pork_sausage": {
     "base": 3,
     "target": 122,
     "stock0": 122,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "fv"
+    }
    },
    "onions": {
     "base": 2,
     "target": 210,
     "stock0": 210,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "fv"
+    }
    },
    "potatoes": {
     "base": 1,
     "target": 210,
     "stock0": 210,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "fv"
+    }
    },
    "tomatoes": {
     "base": 3,
     "target": 161,
     "stock0": 161,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "fv"
+    }
    },
    "dressed_chicken": {
     "base": 7,
     "target": 115,
     "stock0": 115,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "fv"
+    }
    },
    "cabbage": {
     "base": 2,
     "target": 210,
     "stock0": 210,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "fv"
+    }
    },
    "pumpkin": {
     "base": 3,
     "target": 161,
     "stock0": 161,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "fv"
+    }
    },
    "honeycomb": {
     "base": 4,
     "target": 25,
     "stock0": 25,
     "buyPct": 0.8,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "fv"
+    }
    },
    "boar_meat": {
     "base": 6,
     "target": 79,
     "stock0": 79,
     "buyPct": 0.8,
-    "mult": 0.875
+    "mult": 0.975,
+    "world": {
+     "tile": "fv"
+    }
    },
    "venison": {
     "base": 7,
     "target": 79,
     "stock0": 79,
     "buyPct": 0.8,
-    "mult": 0.875
+    "mult": 0.975,
+    "world": {
+     "tile": "fv"
+    }
    },
    "fresh_fish_fillet": {
     "base": 4,
     "target": 92,
     "stock0": 92,
     "buyPct": 0.8,
-    "mult": 1.01
+    "mult": 1.03,
+    "world": {
+     "tile": "fv"
+    }
    },
    "iron_ore": {
     "base": 3,
     "target": 94,
     "stock0": 94,
     "buyPct": 0.8,
-    "mult": 0.93
+    "mult": 1.03,
+    "world": {
+     "tile": "fv"
+    }
    },
    "iron_bar": {
     "base": 8,
     "target": 56,
     "stock0": 56,
     "buyPct": 0.8,
-    "mult": 0.89
+    "mult": 0.99,
+    "world": {
+     "tile": "fv"
+    }
    },
    "longshade_timber": {
     "base": 6,
     "target": 79,
     "stock0": 79,
     "buyPct": 0.8,
-    "mult": 0.875
+    "mult": 0.975,
+    "world": {
+     "tile": "fv"
+    }
    },
    "charcoal": {
     "base": 3,
     "target": 145,
     "stock0": 145,
     "buyPct": 0.8,
-    "mult": 0.875
+    "mult": 0.975,
+    "world": {
+     "tile": "fv"
+    }
    },
    "salt": {
     "base": 6,
     "target": 46,
     "stock0": 46,
     "buyPct": 0.8,
-    "mult": 1.01
+    "mult": 1.11,
+    "world": {
+     "tile": "fv"
+    }
    },
    "furs": {
     "base": 14,
     "target": 50,
     "stock0": 50,
     "buyPct": 0.8,
-    "mult": 0.875
+    "mult": 0.975,
+    "world": {
+     "tile": "fv"
+    }
    },
    "leather": {
     "base": 12,
     "target": 59,
     "stock0": 59,
     "buyPct": 0.8,
-    "mult": 0.83
+    "mult": 0.93,
+    "world": {
+     "tile": "fv"
+    }
    },
    "wool": {
     "base": 4,
     "target": 124,
     "stock0": 124,
     "buyPct": 0.8,
-    "mult": 0.93
+    "mult": 1,
+    "world": {
+     "tile": "fv"
+    }
    },
    "wool_cloth": {
     "base": 15,
     "target": 50,
     "stock0": 50,
     "buyPct": 0.8,
-    "mult": 0.89
+    "mult": 0.99,
+    "world": {
+     "tile": "fv"
+    }
    },
    "raw_hide": {
     "base": 8,
     "target": 79,
     "stock0": 79,
     "buyPct": 0.8,
-    "mult": 0.875
+    "mult": 0.975,
+    "world": {
+     "tile": "fv"
+    }
    },
    "boar_tusk": {
     "base": 10,
     "target": 79,
     "stock0": 79,
     "buyPct": 0.8,
-    "mult": 0.875
+    "mult": 0.975,
+    "world": {
+     "tile": "fv"
+    }
    },
    "elk_antler": {
     "base": 7,
     "target": 79,
     "stock0": 79,
     "buyPct": 0.8,
-    "mult": 0.875
+    "mult": 0.975,
+    "world": {
+     "tile": "fv"
+    }
    }
   },
   "commodities": true
@@ -1697,203 +2048,290 @@ window.MARKET_DEFS = {
     "target": 32,
     "stock0": 32,
     "buyPct": 0.8,
-    "mult": 1.03
+    "mult": 1.03,
+    "world": {
+     "tile": "tm"
+    }
    },
    "boar_meat": {
     "base": 6,
     "target": 122,
     "stock0": 122,
     "buyPct": 0.8,
-    "mult": 0.845
+    "mult": 0.945,
+    "world": {
+     "tile": "tm"
+    }
    },
    "venison": {
     "base": 7,
     "target": 122,
     "stock0": 122,
     "buyPct": 0.8,
-    "mult": 0.845
+    "mult": 0.945,
+    "world": {
+     "tile": "tm"
+    }
    },
    "barley_loaf": {
     "base": 2,
     "target": 211,
     "stock0": 211,
     "buyPct": 0.8,
-    "mult": 0.83
+    "mult": 0.93,
+    "world": {
+     "tile": "tm"
+    }
    },
    "grain": {
     "base": 2,
     "target": 268,
     "stock0": 268,
     "buyPct": 0.8,
-    "mult": 0.83
+    "mult": 0.93,
+    "world": {
+     "tile": "tm"
+    }
    },
    "cheese": {
     "base": 3,
     "target": 120,
     "stock0": 120,
     "buyPct": 0.8,
-    "mult": 0.83
+    "mult": 0.93,
+    "world": {
+     "tile": "tm"
+    }
    },
    "orchard_apple": {
     "base": 1,
     "target": 120,
     "stock0": 120,
     "buyPct": 0.8,
-    "mult": 0.83
+    "mult": 0.93,
+    "world": {
+     "tile": "tm"
+    }
    },
    "root_vegetable_bundle": {
     "base": 2,
     "target": 241,
     "stock0": 241,
     "buyPct": 0.8,
-    "mult": 0.83
+    "mult": 0.93,
+    "world": {
+     "tile": "tm"
+    }
    },
    "farm_eggs": {
     "base": 3,
     "target": 217,
     "stock0": 217,
     "buyPct": 0.8,
-    "mult": 0.83
+    "mult": 0.93,
+    "world": {
+     "tile": "tm"
+    }
    },
    "dried_pork_sausage": {
     "base": 3,
     "target": 138,
     "stock0": 138,
     "buyPct": 0.8,
-    "mult": 0.83
+    "mult": 0.93,
+    "world": {
+     "tile": "tm"
+    }
    },
    "onions": {
     "base": 2,
     "target": 241,
     "stock0": 241,
     "buyPct": 0.8,
-    "mult": 0.83
+    "mult": 0.93,
+    "world": {
+     "tile": "tm"
+    }
    },
    "potatoes": {
     "base": 1,
     "target": 241,
     "stock0": 241,
     "buyPct": 0.8,
-    "mult": 0.83
+    "mult": 0.93,
+    "world": {
+     "tile": "tm"
+    }
    },
    "tomatoes": {
     "base": 3,
     "target": 180,
     "stock0": 180,
     "buyPct": 0.8,
-    "mult": 0.83
+    "mult": 0.93,
+    "world": {
+     "tile": "tm"
+    }
    },
    "dressed_chicken": {
     "base": 7,
     "target": 136,
     "stock0": 136,
     "buyPct": 0.8,
-    "mult": 0.83
+    "mult": 0.93,
+    "world": {
+     "tile": "tm"
+    }
    },
    "fresh_fish_fillet": {
     "base": 4,
     "target": 136,
     "stock0": 136,
     "buyPct": 0.8,
-    "mult": 0.98
+    "mult": 1,
+    "world": {
+     "tile": "tm"
+    }
    },
    "cabbage": {
     "base": 2,
     "target": 241,
     "stock0": 241,
     "buyPct": 0.8,
-    "mult": 0.83
+    "mult": 0.93,
+    "world": {
+     "tile": "tm"
+    }
    },
    "pumpkin": {
     "base": 3,
     "target": 180,
     "stock0": 180,
     "buyPct": 0.8,
-    "mult": 0.83
+    "mult": 0.93,
+    "world": {
+     "tile": "tm"
+    }
    },
    "iron_ore": {
     "base": 3,
     "target": 114,
     "stock0": 114,
     "buyPct": 0.8,
-    "mult": 0.96
+    "mult": 1.06,
+    "world": {
+     "tile": "tm"
+    }
    },
    "iron_bar": {
     "base": 8,
     "target": 67,
     "stock0": 67,
     "buyPct": 0.8,
-    "mult": 0.92
+    "mult": 1.02,
+    "world": {
+     "tile": "tm"
+    }
    },
    "longshade_timber": {
     "base": 6,
     "target": 122,
     "stock0": 122,
     "buyPct": 0.8,
-    "mult": 0.845
+    "mult": 0.945,
+    "world": {
+     "tile": "tm"
+    }
    },
    "charcoal": {
     "base": 3,
     "target": 219,
     "stock0": 219,
     "buyPct": 0.8,
-    "mult": 0.845
+    "mult": 0.945,
+    "world": {
+     "tile": "tm"
+    }
    },
    "salt": {
     "base": 6,
     "target": 67,
     "stock0": 67,
     "buyPct": 0.8,
-    "mult": 0.98
+    "mult": 1.08,
+    "world": {
+     "tile": "tm"
+    }
    },
    "furs": {
     "base": 14,
     "target": 72,
     "stock0": 72,
     "buyPct": 0.8,
-    "mult": 0.845
+    "mult": 0.945,
+    "world": {
+     "tile": "tm"
+    }
    },
    "leather": {
     "base": 12,
     "target": 94,
     "stock0": 94,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "tm"
+    }
    },
    "wool": {
     "base": 4,
     "target": 148,
     "stock0": 148,
     "buyPct": 0.8,
-    "mult": 0.96
+    "mult": 1.03,
+    "world": {
+     "tile": "tm"
+    }
    },
    "wool_cloth": {
     "base": 15,
     "target": 66,
     "stock0": 66,
     "buyPct": 0.8,
-    "mult": 0.92
+    "mult": 1,
+    "world": {
+     "tile": "tm"
+    }
    },
    "raw_hide": {
     "base": 8,
     "target": 122,
     "stock0": 122,
     "buyPct": 0.8,
-    "mult": 0.845
+    "mult": 0.945,
+    "world": {
+     "tile": "tm"
+    }
    },
    "boar_tusk": {
     "base": 10,
     "target": 122,
     "stock0": 122,
     "buyPct": 0.8,
-    "mult": 0.845
+    "mult": 0.945,
+    "world": {
+     "tile": "tm"
+    }
    },
    "elk_antler": {
     "base": 7,
     "target": 122,
     "stock0": 122,
     "buyPct": 0.8,
-    "mult": 0.845
+    "mult": 0.945,
+    "world": {
+     "tile": "tm"
+    }
    }
   },
   "commodities": true
@@ -1913,203 +2351,290 @@ window.MARKET_DEFS = {
     "target": 12,
     "stock0": 12,
     "buyPct": 0.8,
-    "mult": 1.21
+    "mult": 1.21,
+    "world": {
+     "tile": "bw"
+    }
    },
    "boar_meat": {
     "base": 6,
     "target": 46,
     "stock0": 46,
     "buyPct": 0.8,
-    "mult": 1.025
+    "mult": 1.125,
+    "world": {
+     "tile": "bw"
+    }
    },
    "venison": {
     "base": 7,
     "target": 46,
     "stock0": 46,
     "buyPct": 0.8,
-    "mult": 1.025
+    "mult": 1.125,
+    "world": {
+     "tile": "bw"
+    }
    },
    "barley_loaf": {
     "base": 2,
     "target": 107,
     "stock0": 107,
     "buyPct": 0.8,
-    "mult": 0.96
+    "mult": 1.06,
+    "world": {
+     "tile": "bw"
+    }
    },
    "grain": {
     "base": 2,
     "target": 144,
     "stock0": 144,
     "buyPct": 0.8,
-    "mult": 0.96
+    "mult": 1.06,
+    "world": {
+     "tile": "bw"
+    }
    },
    "cheese": {
     "base": 3,
     "target": 52,
     "stock0": 52,
     "buyPct": 0.8,
-    "mult": 1.01
+    "mult": 1.11,
+    "world": {
+     "tile": "bw"
+    }
    },
    "orchard_apple": {
     "base": 1,
     "target": 52,
     "stock0": 52,
     "buyPct": 0.8,
-    "mult": 1.01
+    "mult": 1.11,
+    "world": {
+     "tile": "bw"
+    }
    },
    "root_vegetable_bundle": {
     "base": 2,
     "target": 130,
     "stock0": 130,
     "buyPct": 0.8,
-    "mult": 0.96
+    "mult": 1.06,
+    "world": {
+     "tile": "bw"
+    }
    },
    "farm_eggs": {
     "base": 3,
     "target": 92,
     "stock0": 92,
     "buyPct": 0.8,
-    "mult": 1.01
+    "mult": 1.11,
+    "world": {
+     "tile": "bw"
+    }
    },
    "dried_pork_sausage": {
     "base": 3,
     "target": 61,
     "stock0": 61,
     "buyPct": 0.8,
-    "mult": 1.01
+    "mult": 1.11,
+    "world": {
+     "tile": "bw"
+    }
    },
    "onions": {
     "base": 2,
     "target": 130,
     "stock0": 130,
     "buyPct": 0.8,
-    "mult": 0.96
+    "mult": 1.06,
+    "world": {
+     "tile": "bw"
+    }
    },
    "potatoes": {
     "base": 1,
     "target": 130,
     "stock0": 130,
     "buyPct": 0.8,
-    "mult": 0.96
+    "mult": 1.06,
+    "world": {
+     "tile": "bw"
+    }
    },
    "tomatoes": {
     "base": 3,
     "target": 77,
     "stock0": 77,
     "buyPct": 0.8,
-    "mult": 1.01
+    "mult": 1.11,
+    "world": {
+     "tile": "bw"
+    }
    },
    "dressed_chicken": {
     "base": 7,
     "target": 57,
     "stock0": 57,
     "buyPct": 0.8,
-    "mult": 1.01
+    "mult": 1.11,
+    "world": {
+     "tile": "bw"
+    }
    },
    "fresh_fish_fillet": {
     "base": 4,
     "target": 159,
     "stock0": 159,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "bw"
+    }
    },
    "cabbage": {
     "base": 2,
     "target": 130,
     "stock0": 130,
     "buyPct": 0.8,
-    "mult": 0.96
+    "mult": 1.06,
+    "world": {
+     "tile": "bw"
+    }
    },
    "pumpkin": {
     "base": 3,
     "target": 77,
     "stock0": 77,
     "buyPct": 0.8,
-    "mult": 1.01
+    "mult": 1.11,
+    "world": {
+     "tile": "bw"
+    }
    },
    "iron_ore": {
     "base": 3,
     "target": 65,
     "stock0": 65,
     "buyPct": 0.8,
-    "mult": 1.07
+    "mult": 1.17,
+    "world": {
+     "tile": "bw"
+    }
    },
    "iron_bar": {
     "base": 8,
     "target": 36,
     "stock0": 36,
     "buyPct": 0.8,
-    "mult": 1.03
+    "mult": 1.13,
+    "world": {
+     "tile": "bw"
+    }
    },
    "longshade_timber": {
     "base": 6,
     "target": 46,
     "stock0": 46,
     "buyPct": 0.8,
-    "mult": 1.025
+    "mult": 1.125,
+    "world": {
+     "tile": "bw"
+    }
    },
    "charcoal": {
     "base": 3,
     "target": 87,
     "stock0": 87,
     "buyPct": 0.8,
-    "mult": 1.025
+    "mult": 1.125,
+    "world": {
+     "tile": "bw"
+    }
    },
    "salt": {
     "base": 6,
     "target": 105,
     "stock0": 105,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "bw"
+    }
    },
    "furs": {
     "base": 14,
     "target": 31,
     "stock0": 31,
     "buyPct": 0.8,
-    "mult": 1.025
+    "mult": 1.125,
+    "world": {
+     "tile": "bw"
+    }
    },
    "leather": {
     "base": 12,
     "target": 39,
     "stock0": 39,
     "buyPct": 0.8,
-    "mult": 0.98
+    "mult": 1.08,
+    "world": {
+     "tile": "bw"
+    }
    },
    "wool": {
     "base": 4,
     "target": 86,
     "stock0": 86,
     "buyPct": 0.8,
-    "mult": 1.05
+    "mult": 1.15,
+    "world": {
+     "tile": "bw"
+    }
    },
    "wool_cloth": {
     "base": 15,
     "target": 36,
     "stock0": 36,
     "buyPct": 0.8,
-    "mult": 1.03
+    "mult": 1.08,
+    "world": {
+     "tile": "bw"
+    }
    },
    "raw_hide": {
     "base": 8,
     "target": 46,
     "stock0": 46,
     "buyPct": 0.8,
-    "mult": 1.025
+    "mult": 1.125,
+    "world": {
+     "tile": "bw"
+    }
    },
    "boar_tusk": {
     "base": 10,
     "target": 46,
     "stock0": 46,
     "buyPct": 0.8,
-    "mult": 1.025
+    "mult": 1.125,
+    "world": {
+     "tile": "bw"
+    }
    },
    "elk_antler": {
     "base": 7,
     "target": 46,
     "stock0": 46,
     "buyPct": 0.8,
-    "mult": 1.025
+    "mult": 1.125,
+    "world": {
+     "tile": "bw"
+    }
    }
   },
   "commodities": true
@@ -2129,203 +2654,290 @@ window.MARKET_DEFS = {
     "target": 25,
     "stock0": 25,
     "buyPct": 0.8,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "fo"
+    }
    },
    "boar_meat": {
     "base": 6,
     "target": 107,
     "stock0": 107,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "fo"
+    }
    },
    "venison": {
     "base": 7,
     "target": 107,
     "stock0": 107,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "fo"
+    }
    },
    "barley_loaf": {
     "base": 2,
     "target": 130,
     "stock0": 130,
     "buyPct": 0.8,
-    "mult": 0.875
+    "mult": 0.975,
+    "world": {
+     "tile": "fo"
+    }
    },
    "grain": {
     "base": 2,
     "target": 167,
     "stock0": 167,
     "buyPct": 0.8,
-    "mult": 0.875
+    "mult": 0.975,
+    "world": {
+     "tile": "fo"
+    }
    },
    "cheese": {
     "base": 3,
     "target": 73,
     "stock0": 73,
     "buyPct": 0.8,
-    "mult": 0.875
+    "mult": 0.975,
+    "world": {
+     "tile": "fo"
+    }
    },
    "orchard_apple": {
     "base": 1,
     "target": 73,
     "stock0": 73,
     "buyPct": 0.8,
-    "mult": 0.875
+    "mult": 0.975,
+    "world": {
+     "tile": "fo"
+    }
    },
    "root_vegetable_bundle": {
     "base": 2,
     "target": 150,
     "stock0": 150,
     "buyPct": 0.8,
-    "mult": 0.875
+    "mult": 0.975,
+    "world": {
+     "tile": "fo"
+    }
    },
    "farm_eggs": {
     "base": 3,
     "target": 145,
     "stock0": 145,
     "buyPct": 0.8,
-    "mult": 0.875
+    "mult": 0.975,
+    "world": {
+     "tile": "fo"
+    }
    },
    "dried_pork_sausage": {
     "base": 3,
     "target": 84,
     "stock0": 84,
     "buyPct": 0.8,
-    "mult": 0.875
+    "mult": 0.975,
+    "world": {
+     "tile": "fo"
+    }
    },
    "onions": {
     "base": 2,
     "target": 150,
     "stock0": 150,
     "buyPct": 0.8,
-    "mult": 0.875
+    "mult": 0.975,
+    "world": {
+     "tile": "fo"
+    }
    },
    "potatoes": {
     "base": 1,
     "target": 150,
     "stock0": 150,
     "buyPct": 0.8,
-    "mult": 0.875
+    "mult": 0.975,
+    "world": {
+     "tile": "fo"
+    }
    },
    "tomatoes": {
     "base": 3,
     "target": 110,
     "stock0": 110,
     "buyPct": 0.8,
-    "mult": 0.875
+    "mult": 0.975,
+    "world": {
+     "tile": "fo"
+    }
    },
    "dressed_chicken": {
     "base": 7,
     "target": 91,
     "stock0": 91,
     "buyPct": 0.8,
-    "mult": 0.875
+    "mult": 0.975,
+    "world": {
+     "tile": "fo"
+    }
    },
    "fresh_fish_fillet": {
     "base": 4,
     "target": 87,
     "stock0": 87,
     "buyPct": 0.8,
-    "mult": 1.025
+    "mult": 1.045,
+    "world": {
+     "tile": "fo"
+    }
    },
    "cabbage": {
     "base": 2,
     "target": 150,
     "stock0": 150,
     "buyPct": 0.8,
-    "mult": 0.875
+    "mult": 0.975,
+    "world": {
+     "tile": "fo"
+    }
    },
    "pumpkin": {
     "base": 3,
     "target": 110,
     "stock0": 110,
     "buyPct": 0.8,
-    "mult": 0.875
+    "mult": 0.975,
+    "world": {
+     "tile": "fo"
+    }
    },
    "iron_ore": {
     "base": 3,
     "target": 75,
     "stock0": 75,
     "buyPct": 0.8,
-    "mult": 1.005
+    "mult": 1.105,
+    "world": {
+     "tile": "fo"
+    }
    },
    "iron_bar": {
     "base": 8,
     "target": 43,
     "stock0": 43,
     "buyPct": 0.8,
-    "mult": 0.965
+    "mult": 1.065,
+    "world": {
+     "tile": "fo"
+    }
    },
    "longshade_timber": {
     "base": 6,
     "target": 107,
     "stock0": 107,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "fo"
+    }
    },
    "charcoal": {
     "base": 3,
     "target": 187,
     "stock0": 187,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "fo"
+    }
    },
    "salt": {
     "base": 6,
     "target": 45,
     "stock0": 45,
     "buyPct": 0.8,
-    "mult": 1.025
+    "mult": 1.125,
+    "world": {
+     "tile": "fo"
+    }
    },
    "furs": {
     "base": 14,
     "target": 65,
     "stock0": 65,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "fo"
+    }
    },
    "leather": {
     "base": 12,
     "target": 60,
     "stock0": 60,
     "buyPct": 0.8,
-    "mult": 0.845
+    "mult": 0.945,
+    "world": {
+     "tile": "fo"
+    }
    },
    "wool": {
     "base": 4,
     "target": 96,
     "stock0": 96,
     "buyPct": 0.8,
-    "mult": 1.005
+    "mult": 1.075,
+    "world": {
+     "tile": "fo"
+    }
    },
    "wool_cloth": {
     "base": 15,
     "target": 41,
     "stock0": 41,
     "buyPct": 0.8,
-    "mult": 0.965
+    "mult": 1.045,
+    "world": {
+     "tile": "fo"
+    }
    },
    "raw_hide": {
     "base": 8,
     "target": 107,
     "stock0": 107,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "fo"
+    }
    },
    "boar_tusk": {
     "base": 10,
     "target": 107,
     "stock0": 107,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "fo"
+    }
    },
    "elk_antler": {
     "base": 7,
     "target": 107,
     "stock0": 107,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "fo"
+    }
    }
   },
   "commodities": true
@@ -2345,203 +2957,290 @@ window.MARKET_DEFS = {
     "target": 13,
     "stock0": 13,
     "buyPct": 0.8,
-    "mult": 1.175
+    "mult": 1.175,
+    "world": {
+     "tile": "mc"
+    }
    },
    "boar_meat": {
     "base": 6,
     "target": 43,
     "stock0": 43,
     "buyPct": 0.8,
-    "mult": 1.05
+    "mult": 1.15,
+    "world": {
+     "tile": "mc"
+    }
    },
    "venison": {
     "base": 7,
     "target": 43,
     "stock0": 43,
     "buyPct": 0.8,
-    "mult": 1.05
+    "mult": 1.15,
+    "world": {
+     "tile": "mc"
+    }
    },
    "barley_loaf": {
     "base": 2,
     "target": 166,
     "stock0": 166,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "mc"
+    }
    },
    "grain": {
     "base": 2,
     "target": 233,
     "stock0": 233,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "mc"
+    }
    },
    "cheese": {
     "base": 3,
     "target": 68,
     "stock0": 68,
     "buyPct": 0.8,
-    "mult": 0.975
+    "mult": 1,
+    "world": {
+     "tile": "mc"
+    }
    },
    "orchard_apple": {
     "base": 1,
     "target": 68,
     "stock0": 68,
     "buyPct": 0.8,
-    "mult": 0.975
+    "mult": 1,
+    "world": {
+     "tile": "mc"
+    }
    },
    "root_vegetable_bundle": {
     "base": 2,
     "target": 210,
     "stock0": 210,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "mc"
+    }
    },
    "farm_eggs": {
     "base": 3,
     "target": 116,
     "stock0": 116,
     "buyPct": 0.8,
-    "mult": 0.975
+    "mult": 1,
+    "world": {
+     "tile": "mc"
+    }
    },
    "dried_pork_sausage": {
     "base": 3,
     "target": 84,
     "stock0": 84,
     "buyPct": 0.8,
-    "mult": 0.975
+    "mult": 1,
+    "world": {
+     "tile": "mc"
+    }
    },
    "onions": {
     "base": 2,
     "target": 210,
     "stock0": 210,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "mc"
+    }
    },
    "potatoes": {
     "base": 1,
     "target": 210,
     "stock0": 210,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "mc"
+    }
    },
    "tomatoes": {
     "base": 3,
     "target": 102,
     "stock0": 102,
     "buyPct": 0.8,
-    "mult": 0.975
+    "mult": 1,
+    "world": {
+     "tile": "mc"
+    }
    },
    "dressed_chicken": {
     "base": 7,
     "target": 72,
     "stock0": 72,
     "buyPct": 0.8,
-    "mult": 0.975
+    "mult": 1,
+    "world": {
+     "tile": "mc"
+    }
    },
    "fresh_fish_fillet": {
     "base": 4,
     "target": 112,
     "stock0": 112,
     "buyPct": 0.8,
-    "mult": 0.88
+    "mult": 0.98,
+    "world": {
+     "tile": "mc"
+    }
    },
    "cabbage": {
     "base": 2,
     "target": 210,
     "stock0": 210,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "mc"
+    }
    },
    "pumpkin": {
     "base": 3,
     "target": 102,
     "stock0": 102,
     "buyPct": 0.8,
-    "mult": 0.975
+    "mult": 1,
+    "world": {
+     "tile": "mc"
+    }
    },
    "iron_ore": {
     "base": 3,
     "target": 101,
     "stock0": 101,
     "buyPct": 0.8,
-    "mult": 0.925
+    "mult": 1.025,
+    "world": {
+     "tile": "mc"
+    }
    },
    "iron_bar": {
     "base": 8,
     "target": 57,
     "stock0": 57,
     "buyPct": 0.8,
-    "mult": 0.885
+    "mult": 0.985,
+    "world": {
+     "tile": "mc"
+    }
    },
    "longshade_timber": {
     "base": 6,
     "target": 43,
     "stock0": 43,
     "buyPct": 0.8,
-    "mult": 1.05
+    "mult": 1.15,
+    "world": {
+     "tile": "mc"
+    }
    },
    "charcoal": {
     "base": 3,
     "target": 89,
     "stock0": 89,
     "buyPct": 0.8,
-    "mult": 1.05
+    "mult": 1.125,
+    "world": {
+     "tile": "mc"
+    }
    },
    "salt": {
     "base": 6,
     "target": 58,
     "stock0": 58,
     "buyPct": 0.8,
-    "mult": 0.96
+    "mult": 1.06,
+    "world": {
+     "tile": "mc"
+    }
    },
    "furs": {
     "base": 14,
     "target": 36,
     "stock0": 36,
     "buyPct": 0.8,
-    "mult": 1.05
+    "mult": 1.09,
+    "world": {
+     "tile": "mc"
+    }
    },
    "leather": {
     "base": 12,
     "target": 37,
     "stock0": 37,
     "buyPct": 0.8,
-    "mult": 1.005
+    "mult": 1.08,
+    "world": {
+     "tile": "mc"
+    }
    },
    "wool": {
     "base": 4,
     "target": 138,
     "stock0": 138,
     "buyPct": 0.8,
-    "mult": 0.89
+    "mult": 0.99,
+    "world": {
+     "tile": "mc"
+    }
    },
    "wool_cloth": {
     "base": 15,
     "target": 49,
     "stock0": 49,
     "buyPct": 0.8,
-    "mult": 0.885
+    "mult": 0.985,
+    "world": {
+     "tile": "mc"
+    }
    },
    "raw_hide": {
     "base": 8,
     "target": 43,
     "stock0": 43,
     "buyPct": 0.8,
-    "mult": 1.05
+    "mult": 1.15,
+    "world": {
+     "tile": "mc"
+    }
    },
    "boar_tusk": {
     "base": 10,
     "target": 43,
     "stock0": 43,
     "buyPct": 0.8,
-    "mult": 1.05
+    "mult": 1.15,
+    "world": {
+     "tile": "mc"
+    }
    },
    "elk_antler": {
     "base": 7,
     "target": 43,
     "stock0": 43,
     "buyPct": 0.8,
-    "mult": 1.05
+    "mult": 1.15,
+    "world": {
+     "tile": "mc"
+    }
    }
   },
   "commodities": true
@@ -2561,203 +3260,290 @@ window.MARKET_DEFS = {
     "target": 22,
     "stock0": 22,
     "buyPct": 0.8,
-    "mult": 1.09
+    "mult": 1.09,
+    "world": {
+     "tile": "af"
+    }
    },
    "boar_meat": {
     "base": 6,
     "target": 74,
     "stock0": 74,
     "buyPct": 0.8,
-    "mult": 0.965
+    "mult": 1.065,
+    "world": {
+     "tile": "af"
+    }
    },
    "venison": {
     "base": 7,
     "target": 74,
     "stock0": 74,
     "buyPct": 0.8,
-    "mult": 0.965
+    "mult": 1.065,
+    "world": {
+     "tile": "af"
+    }
    },
    "barley_loaf": {
     "base": 2,
     "target": 211,
     "stock0": 211,
     "buyPct": 0.8,
-    "mult": 0.885
+    "mult": 0.985,
+    "world": {
+     "tile": "af"
+    }
    },
    "grain": {
     "base": 2,
     "target": 291,
     "stock0": 291,
     "buyPct": 0.8,
-    "mult": 0.885
+    "mult": 0.985,
+    "world": {
+     "tile": "af"
+    }
    },
    "cheese": {
     "base": 3,
     "target": 100,
     "stock0": 100,
     "buyPct": 0.8,
-    "mult": 0.89
+    "mult": 0.99,
+    "world": {
+     "tile": "af"
+    }
    },
    "orchard_apple": {
     "base": 1,
     "target": 100,
     "stock0": 100,
     "buyPct": 0.8,
-    "mult": 0.89
+    "mult": 0.99,
+    "world": {
+     "tile": "af"
+    }
    },
    "root_vegetable_bundle": {
     "base": 2,
     "target": 243,
     "stock0": 243,
     "buyPct": 0.8,
-    "mult": 0.885
+    "mult": 0.985,
+    "world": {
+     "tile": "af"
+    }
    },
    "farm_eggs": {
     "base": 3,
     "target": 173,
     "stock0": 173,
     "buyPct": 0.8,
-    "mult": 0.89
+    "mult": 0.99,
+    "world": {
+     "tile": "af"
+    }
    },
    "dried_pork_sausage": {
     "base": 3,
     "target": 132,
     "stock0": 132,
     "buyPct": 0.8,
-    "mult": 0.89
+    "mult": 0.99,
+    "world": {
+     "tile": "af"
+    }
    },
    "onions": {
     "base": 2,
     "target": 243,
     "stock0": 243,
     "buyPct": 0.8,
-    "mult": 0.885
+    "mult": 0.985,
+    "world": {
+     "tile": "af"
+    }
    },
    "potatoes": {
     "base": 1,
     "target": 243,
     "stock0": 243,
     "buyPct": 0.8,
-    "mult": 0.885
+    "mult": 0.985,
+    "world": {
+     "tile": "af"
+    }
    },
    "tomatoes": {
     "base": 3,
     "target": 151,
     "stock0": 151,
     "buyPct": 0.8,
-    "mult": 0.89
+    "mult": 0.99,
+    "world": {
+     "tile": "af"
+    }
    },
    "dressed_chicken": {
     "base": 7,
     "target": 108,
     "stock0": 108,
     "buyPct": 0.8,
-    "mult": 0.89
+    "mult": 0.99,
+    "world": {
+     "tile": "af"
+    }
    },
    "fresh_fish_fillet": {
     "base": 4,
     "target": 124,
     "stock0": 124,
     "buyPct": 0.8,
-    "mult": 0.95
+    "mult": 1.05,
+    "world": {
+     "tile": "af"
+    }
    },
    "cabbage": {
     "base": 2,
     "target": 243,
     "stock0": 243,
     "buyPct": 0.8,
-    "mult": 0.885
+    "mult": 0.985,
+    "world": {
+     "tile": "af"
+    }
    },
    "pumpkin": {
     "base": 3,
     "target": 151,
     "stock0": 151,
     "buyPct": 0.8,
-    "mult": 0.89
+    "mult": 0.99,
+    "world": {
+     "tile": "af"
+    }
    },
    "iron_ore": {
     "base": 3,
     "target": 184,
     "stock0": 184,
     "buyPct": 0.8,
-    "mult": 0.84
+    "mult": 0.94,
+    "world": {
+     "tile": "af"
+    }
    },
    "iron_bar": {
     "base": 8,
     "target": 120,
     "stock0": 120,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "af"
+    }
    },
    "longshade_timber": {
     "base": 6,
     "target": 74,
     "stock0": 74,
     "buyPct": 0.8,
-    "mult": 0.965
+    "mult": 1.065,
+    "world": {
+     "tile": "af"
+    }
    },
    "charcoal": {
     "base": 3,
     "target": 156,
     "stock0": 156,
     "buyPct": 0.8,
-    "mult": 0.965
+    "mult": 1.04,
+    "world": {
+     "tile": "af"
+    }
    },
    "salt": {
     "base": 6,
     "target": 62,
     "stock0": 62,
     "buyPct": 0.8,
-    "mult": 1.03
+    "mult": 1.13,
+    "world": {
+     "tile": "af"
+    }
    },
    "furs": {
     "base": 14,
     "target": 60,
     "stock0": 60,
     "buyPct": 0.8,
-    "mult": 0.965
+    "mult": 1.04,
+    "world": {
+     "tile": "af"
+    }
    },
    "leather": {
     "base": 12,
     "target": 58,
     "stock0": 58,
     "buyPct": 0.8,
-    "mult": 0.92
+    "mult": 1.02,
+    "world": {
+     "tile": "af"
+    }
    },
    "wool": {
     "base": 4,
     "target": 213,
     "stock0": 213,
     "buyPct": 0.8,
-    "mult": 0.84
+    "mult": 0.94,
+    "world": {
+     "tile": "af"
+    }
    },
    "wool_cloth": {
     "base": 15,
     "target": 91,
     "stock0": 91,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "af"
+    }
    },
    "raw_hide": {
     "base": 8,
     "target": 74,
     "stock0": 74,
     "buyPct": 0.8,
-    "mult": 0.965
+    "mult": 1.065,
+    "world": {
+     "tile": "af"
+    }
    },
    "boar_tusk": {
     "base": 10,
     "target": 74,
     "stock0": 74,
     "buyPct": 0.8,
-    "mult": 0.965
+    "mult": 1.065,
+    "world": {
+     "tile": "af"
+    }
    },
    "elk_antler": {
     "base": 7,
     "target": 74,
     "stock0": 74,
     "buyPct": 0.8,
-    "mult": 0.965
+    "mult": 1.065,
+    "world": {
+     "tile": "af"
+    }
    }
   },
   "commodities": true
@@ -2777,203 +3563,886 @@ window.MARKET_DEFS = {
     "target": 14,
     "stock0": 14,
     "buyPct": 0.8,
-    "mult": 1.13
+    "mult": 1.13,
+    "world": {
+     "tile": "rv"
+    }
    },
    "boar_meat": {
     "base": 6,
     "target": 49,
     "stock0": 49,
     "buyPct": 0.8,
-    "mult": 1.005
+    "mult": 1.105,
+    "world": {
+     "tile": "rv"
+    }
    },
    "venison": {
     "base": 7,
     "target": 49,
     "stock0": 49,
     "buyPct": 0.8,
-    "mult": 1.005
+    "mult": 1.105,
+    "world": {
+     "tile": "rv"
+    }
    },
    "barley_loaf": {
     "base": 2,
     "target": 134,
     "stock0": 134,
     "buyPct": 0.8,
-    "mult": 0.925
+    "mult": 1.025,
+    "world": {
+     "tile": "rv"
+    }
    },
    "grain": {
     "base": 2,
     "target": 184,
     "stock0": 184,
     "buyPct": 0.8,
-    "mult": 0.925
+    "mult": 1.025,
+    "world": {
+     "tile": "rv"
+    }
    },
    "cheese": {
     "base": 3,
     "target": 65,
     "stock0": 65,
     "buyPct": 0.8,
-    "mult": 0.93
+    "mult": 1.03,
+    "world": {
+     "tile": "rv"
+    }
    },
    "orchard_apple": {
     "base": 1,
     "target": 65,
     "stock0": 65,
     "buyPct": 0.8,
-    "mult": 0.93
+    "mult": 1.03,
+    "world": {
+     "tile": "rv"
+    }
    },
    "root_vegetable_bundle": {
     "base": 2,
     "target": 156,
     "stock0": 156,
     "buyPct": 0.8,
-    "mult": 0.925
+    "mult": 1.025,
+    "world": {
+     "tile": "rv"
+    }
    },
    "farm_eggs": {
     "base": 3,
     "target": 112,
     "stock0": 112,
     "buyPct": 0.8,
-    "mult": 0.93
+    "mult": 1.03,
+    "world": {
+     "tile": "rv"
+    }
    },
    "dried_pork_sausage": {
     "base": 3,
     "target": 83,
     "stock0": 83,
     "buyPct": 0.8,
-    "mult": 0.93
+    "mult": 1.03,
+    "world": {
+     "tile": "rv"
+    }
    },
    "onions": {
     "base": 2,
     "target": 156,
     "stock0": 156,
     "buyPct": 0.8,
-    "mult": 0.925
+    "mult": 1.025,
+    "world": {
+     "tile": "rv"
+    }
    },
    "potatoes": {
     "base": 1,
     "target": 156,
     "stock0": 156,
     "buyPct": 0.8,
-    "mult": 0.925
+    "mult": 1.025,
+    "world": {
+     "tile": "rv"
+    }
    },
    "tomatoes": {
     "base": 3,
     "target": 97,
     "stock0": 97,
     "buyPct": 0.8,
-    "mult": 0.93
+    "mult": 1.03,
+    "world": {
+     "tile": "rv"
+    }
    },
    "dressed_chicken": {
     "base": 7,
     "target": 70,
     "stock0": 70,
     "buyPct": 0.8,
-    "mult": 0.93
+    "mult": 1.03,
+    "world": {
+     "tile": "rv"
+    }
    },
    "fresh_fish_fillet": {
     "base": 4,
     "target": 83,
     "stock0": 83,
     "buyPct": 0.8,
-    "mult": 0.99
+    "mult": 1.09,
+    "world": {
+     "tile": "rv"
+    }
    },
    "cabbage": {
     "base": 2,
     "target": 156,
     "stock0": 156,
     "buyPct": 0.8,
-    "mult": 0.925
+    "mult": 1.025,
+    "world": {
+     "tile": "rv"
+    }
    },
    "pumpkin": {
     "base": 3,
     "target": 97,
     "stock0": 97,
     "buyPct": 0.8,
-    "mult": 0.93
+    "mult": 1.03,
+    "world": {
+     "tile": "rv"
+    }
    },
    "iron_ore": {
     "base": 3,
     "target": 172,
     "stock0": 172,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "rv"
+    }
    },
    "iron_bar": {
     "base": 8,
     "target": 71,
     "stock0": 71,
     "buyPct": 0.8,
-    "mult": 0.84
+    "mult": 0.94,
+    "world": {
+     "tile": "rv"
+    }
    },
    "longshade_timber": {
     "base": 6,
     "target": 49,
     "stock0": 49,
     "buyPct": 0.8,
-    "mult": 1.005
+    "mult": 1.105,
+    "world": {
+     "tile": "rv"
+    }
    },
    "charcoal": {
     "base": 3,
     "target": 114,
     "stock0": 114,
     "buyPct": 0.8,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "rv"
+    }
    },
    "salt": {
     "base": 6,
     "target": 42,
     "stock0": 42,
     "buyPct": 0.8,
-    "mult": 1.07
+    "mult": 1.17,
+    "world": {
+     "tile": "rv"
+    }
    },
    "furs": {
     "base": 14,
     "target": 47,
     "stock0": 47,
     "buyPct": 0.8,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "rv"
+    }
    },
    "leather": {
     "base": 12,
     "target": 38,
     "stock0": 38,
     "buyPct": 0.8,
-    "mult": 0.96
+    "mult": 1.06,
+    "world": {
+     "tile": "rv"
+    }
    },
    "wool": {
     "base": 4,
     "target": 184,
     "stock0": 184,
     "buyPct": 0.8,
-    "mult": 0.8
+    "mult": 0.9,
+    "world": {
+     "tile": "rv"
+    }
    },
    "wool_cloth": {
     "base": 15,
     "target": 55,
     "stock0": 55,
     "buyPct": 0.8,
-    "mult": 0.84
+    "mult": 0.94,
+    "world": {
+     "tile": "rv"
+    }
    },
    "raw_hide": {
     "base": 8,
     "target": 49,
     "stock0": 49,
     "buyPct": 0.8,
-    "mult": 1.005
+    "mult": 1.105,
+    "world": {
+     "tile": "rv"
+    }
    },
    "boar_tusk": {
     "base": 10,
     "target": 49,
     "stock0": 49,
     "buyPct": 0.8,
-    "mult": 1.005
+    "mult": 1.105,
+    "world": {
+     "tile": "rv"
+    }
    },
    "elk_antler": {
     "base": 7,
     "target": 49,
     "stock0": 49,
     "buyPct": 0.8,
-    "mult": 1.005
+    "mult": 1.105,
+    "world": {
+     "tile": "rv"
+    }
+   }
+  },
+  "commodities": true
+ },
+ "wf_market": {
+  "id": "wf_market",
+  "title": "Whitefold Market",
+  "tier": "village market",
+  "purseTarget": 900,
+  "regen": {
+   "stock": 0.2,
+   "purse": 0.1
+  },
+  "goods": {
+   "honeycomb": {
+    "base": 4,
+    "target": 13,
+    "stock0": 13,
+    "buyPct": 0.8,
+    "mult": 1.165,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "boar_meat": {
+    "base": 6,
+    "target": 44,
+    "stock0": 44,
+    "buyPct": 0.8,
+    "mult": 1.14,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "venison": {
+    "base": 7,
+    "target": 44,
+    "stock0": 44,
+    "buyPct": 0.8,
+    "mult": 1.14,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "barley_loaf": {
+    "base": 2,
+    "target": 132,
+    "stock0": 132,
+    "buyPct": 0.8,
+    "mult": 0.99,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "grain": {
+    "base": 2,
+    "target": 183,
+    "stock0": 183,
+    "buyPct": 0.8,
+    "mult": 0.99,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "cheese": {
+    "base": 3,
+    "target": 61,
+    "stock0": 61,
+    "buyPct": 0.8,
+    "mult": 1.065,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "orchard_apple": {
+    "base": 1,
+    "target": 61,
+    "stock0": 61,
+    "buyPct": 0.8,
+    "mult": 1.065,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "root_vegetable_bundle": {
+    "base": 2,
+    "target": 159,
+    "stock0": 159,
+    "buyPct": 0.8,
+    "mult": 0.99,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "farm_eggs": {
+    "base": 3,
+    "target": 105,
+    "stock0": 105,
+    "buyPct": 0.8,
+    "mult": 1.065,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "dried_pork_sausage": {
+    "base": 3,
+    "target": 77,
+    "stock0": 77,
+    "buyPct": 0.8,
+    "mult": 1.065,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "onions": {
+    "base": 2,
+    "target": 159,
+    "stock0": 159,
+    "buyPct": 0.8,
+    "mult": 0.99,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "potatoes": {
+    "base": 1,
+    "target": 159,
+    "stock0": 159,
+    "buyPct": 0.8,
+    "mult": 0.99,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "tomatoes": {
+    "base": 3,
+    "target": 91,
+    "stock0": 91,
+    "buyPct": 0.8,
+    "mult": 1.065,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "dressed_chicken": {
+    "base": 7,
+    "target": 66,
+    "stock0": 66,
+    "buyPct": 0.8,
+    "mult": 1.065,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "fresh_fish_fillet": {
+    "base": 4,
+    "target": 86,
+    "stock0": 86,
+    "buyPct": 0.8,
+    "mult": 1.07,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "cabbage": {
+    "base": 2,
+    "target": 159,
+    "stock0": 159,
+    "buyPct": 0.8,
+    "mult": 0.99,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "pumpkin": {
+    "base": 3,
+    "target": 91,
+    "stock0": 91,
+    "buyPct": 0.8,
+    "mult": 1.065,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "iron_ore": {
+    "base": 3,
+    "target": 147,
+    "stock0": 147,
+    "buyPct": 0.8,
+    "mult": 0.945,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "iron_bar": {
+    "base": 8,
+    "target": 60,
+    "stock0": 60,
+    "buyPct": 0.8,
+    "mult": 0.975,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "longshade_timber": {
+    "base": 6,
+    "target": 44,
+    "stock0": 44,
+    "buyPct": 0.8,
+    "mult": 1.14,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "charcoal": {
+    "base": 3,
+    "target": 99,
+    "stock0": 99,
+    "buyPct": 0.8,
+    "mult": 1.045,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "salt": {
+    "base": 6,
+    "target": 44,
+    "stock0": 44,
+    "buyPct": 0.8,
+    "mult": 1.15,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "furs": {
+    "base": 14,
+    "target": 45,
+    "stock0": 45,
+    "buyPct": 0.8,
+    "mult": 1,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "leather": {
+    "base": 12,
+    "target": 35,
+    "stock0": 35,
+    "buyPct": 0.8,
+    "mult": 1.095,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "wool": {
+    "base": 4,
+    "target": 184,
+    "stock0": 184,
+    "buyPct": 0.8,
+    "mult": 0.9,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "wool_cloth": {
+    "base": 15,
+    "target": 48,
+    "stock0": 48,
+    "buyPct": 0.8,
+    "mult": 0.975,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "raw_hide": {
+    "base": 8,
+    "target": 44,
+    "stock0": 44,
+    "buyPct": 0.8,
+    "mult": 1.14,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "boar_tusk": {
+    "base": 10,
+    "target": 44,
+    "stock0": 44,
+    "buyPct": 0.8,
+    "mult": 1.14,
+    "world": {
+     "tile": "wf"
+    }
+   },
+   "elk_antler": {
+    "base": 7,
+    "target": 44,
+    "stock0": 44,
+    "buyPct": 0.8,
+    "mult": 1.14,
+    "world": {
+     "tile": "wf"
+    }
+   }
+  },
+  "commodities": true
+ },
+ "pv_market": {
+  "id": "pv_market",
+  "title": "The Weigh House",
+  "tier": "city market",
+  "purseTarget": 15000,
+  "regen": {
+   "stock": 0.25,
+   "purse": 0.1
+  },
+  "goods": {
+   "honeycomb": {
+    "base": 4,
+    "target": 23,
+    "stock0": 23,
+    "buyPct": 0.8,
+    "mult": 1.23,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "boar_meat": {
+    "base": 6,
+    "target": 88,
+    "stock0": 88,
+    "buyPct": 0.8,
+    "mult": 1.145,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "venison": {
+    "base": 7,
+    "target": 88,
+    "stock0": 88,
+    "buyPct": 0.8,
+    "mult": 1.145,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "barley_loaf": {
+    "base": 2,
+    "target": 246,
+    "stock0": 246,
+    "buyPct": 0.8,
+    "mult": 0.98,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "grain": {
+    "base": 2,
+    "target": 338,
+    "stock0": 338,
+    "buyPct": 0.8,
+    "mult": 0.98,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "cheese": {
+    "base": 3,
+    "target": 107,
+    "stock0": 107,
+    "buyPct": 0.8,
+    "mult": 1.08,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "orchard_apple": {
+    "base": 1,
+    "target": 107,
+    "stock0": 107,
+    "buyPct": 0.8,
+    "mult": 1.08,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "root_vegetable_bundle": {
+    "base": 2,
+    "target": 302,
+    "stock0": 302,
+    "buyPct": 0.8,
+    "mult": 0.98,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "farm_eggs": {
+    "base": 3,
+    "target": 188,
+    "stock0": 188,
+    "buyPct": 0.8,
+    "mult": 1.08,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "dried_pork_sausage": {
+    "base": 3,
+    "target": 131,
+    "stock0": 131,
+    "buyPct": 0.8,
+    "mult": 1.08,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "onions": {
+    "base": 2,
+    "target": 302,
+    "stock0": 302,
+    "buyPct": 0.8,
+    "mult": 0.98,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "potatoes": {
+    "base": 1,
+    "target": 302,
+    "stock0": 302,
+    "buyPct": 0.8,
+    "mult": 0.98,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "tomatoes": {
+    "base": 3,
+    "target": 161,
+    "stock0": 161,
+    "buyPct": 0.8,
+    "mult": 1.08,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "dressed_chicken": {
+    "base": 7,
+    "target": 117,
+    "stock0": 117,
+    "buyPct": 0.8,
+    "mult": 1.08,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "cabbage": {
+    "base": 2,
+    "target": 302,
+    "stock0": 302,
+    "buyPct": 0.8,
+    "mult": 0.98,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "pumpkin": {
+    "base": 3,
+    "target": 161,
+    "stock0": 161,
+    "buyPct": 0.8,
+    "mult": 1.08,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "iron_ore": {
+    "base": 3,
+    "target": 161,
+    "stock0": 161,
+    "buyPct": 0.8,
+    "mult": 1.09,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "iron_bar": {
+    "base": 8,
+    "target": 90,
+    "stock0": 90,
+    "buyPct": 0.8,
+    "mult": 1.05,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "longshade_timber": {
+    "base": 6,
+    "target": 88,
+    "stock0": 88,
+    "buyPct": 0.8,
+    "mult": 1.145,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "charcoal": {
+    "base": 3,
+    "target": 172,
+    "stock0": 172,
+    "buyPct": 0.8,
+    "mult": 1.145,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "salt": {
+    "base": 6,
+    "target": 162,
+    "stock0": 162,
+    "buyPct": 0.8,
+    "mult": 0.98,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "furs": {
+    "base": 14,
+    "target": 66,
+    "stock0": 66,
+    "buyPct": 0.8,
+    "mult": 1.145,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "leather": {
+    "base": 12,
+    "target": 84,
+    "stock0": 84,
+    "buyPct": 0.8,
+    "mult": 1,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "wool": {
+    "base": 4,
+    "target": 211,
+    "stock0": 211,
+    "buyPct": 0.8,
+    "mult": 1.07,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "wool_cloth": {
+    "base": 15,
+    "target": 93,
+    "stock0": 93,
+    "buyPct": 0.8,
+    "mult": 1,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "raw_hide": {
+    "base": 8,
+    "target": 88,
+    "stock0": 88,
+    "buyPct": 0.8,
+    "mult": 1.145,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "boar_tusk": {
+    "base": 10,
+    "target": 88,
+    "stock0": 88,
+    "buyPct": 0.8,
+    "mult": 1.145,
+    "world": {
+     "tile": "pv"
+    }
+   },
+   "elk_antler": {
+    "base": 7,
+    "target": 88,
+    "stock0": 88,
+    "buyPct": 0.8,
+    "mult": 1.145,
+    "world": {
+     "tile": "pv"
+    }
    }
   },
   "commodities": true

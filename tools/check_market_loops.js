@@ -321,13 +321,115 @@ section("commodities and distance");
     const def = DEFS[mid], tile = defsJson.merchants[mid].tile;
     commodities.forEach((it) => {
       const g = def.goods[it.id];
-      if (!g) { ok(false, mid + " deals in " + it.id); return; }
+      if (!g) { const tr = cat.trades.find((t) => t.name === mid); ok(!!(tr && (tr.excludeCommodities || []).indexOf(it.id) >= 0), mid + " deals in " + it.id + " (or the catalog leaves it off that floor on purpose)"); return; }
       let level = CP.capLevel;
       Object.keys(it.commodity.makers).forEach((t) => { const d = tile === t ? 0 : OW.route(tile, t).miles; level = Math.min(level, CP.cost[it.commodity.makers[t]] + CP.perMile * d); });
       ok(g.buys !== false && g.sells !== false && Math.abs(g.mult - level) < 0.001 && g.mult >= CP.cost.major - 1e-9 && g.mult <= CP.capLevel + 1e-9, mid + "/" + it.id + ": bought here, price level " + g.mult + " is the nearest maker's cost plus the miles");
       if (g.restock === false) ok(g.stock0 === 0 && g.flow < 0, mid + "/" + it.id + ": a good with no supply starts empty and is used up, never restocked");
     });
   });
+}
+
+// ---------------------------------------------------------------- 11. the world: seasons and shocks (web/mygame/world.js)
+section("the world: seasons and shocks");
+{
+  const W = require(path.join(__dirname, "..", "web", "mygame", "world.js"));
+  const wsb = { window: {} };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, "..", "web", "mygame", "world-data.generated.js"), "utf8"), wsb);
+  const WD = wsb.window.WORLD_DATA;
+  W.setData(WD);
+  const sandbox = { window: {} };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, "..", "web", "mygame", "market-data.generated.js"), "utf8"), sandbox);
+  const DEFS = sandbox.window.MARKET_DEFS, open = Object.keys(DEFS).filter((m) => DEFS[m].commodities);
+  const cat = JSON.parse(fs.readFileSync(path.join(__dirname, "gear_catalog.json"), "utf8"));
+  // determinism and range of one maker's output
+  ok(W.output(7, "rv", "iron_ore", 123.4, [1, 1, 1, 1]) === W.output(7, "rv", "iron_ore", 123.4, [1, 1, 1, 1]), "the same seed, tile, good and day always give the same output");
+  ok(W.output(7, "rv", "iron_ore", 50, [1, 1, 1, 1]) !== W.output(8, "rv", "iron_ore", 50, [1, 1, 1, 1]) || W.output(7, "rv", "iron_ore", 90, [1, 1, 1, 1]) !== W.output(8, "rv", "iron_ore", 90, [1, 1, 1, 1]), "a different seed gives a different history");
+  let lo = Infinity, hi = -Infinity, sum = 0, n = 0, crisis = 0, bad = 0, good = 0;
+  for (let seed = 1; seed <= 20; seed++) for (let d = 1; d <= 720; d++) { const v = W.shock(seed, "fv", "grain", d); lo = Math.min(lo, v); hi = Math.max(hi, v); sum += v; n++; if (v < 0.4) crisis++; if (v < 0.75) bad++; if (v > 1.25) good++; }
+  ok(lo >= 0.05 && hi <= 2.0, "a shock stays between 0.05 and 2 (" + lo.toFixed(2) + " to " + hi.toFixed(2) + ")");
+  ok(Math.abs(sum / n - 1) < 0.06, "shocks average out near 1 over many years (" + (sum / n).toFixed(3) + ")");
+  console.log("   a maker is below 0.75 on " + (100 * bad / n).toFixed(0) + " percent of days, above 1.25 on " + (100 * good / n).toFixed(0) + " percent, in crisis (below 0.4) on " + (100 * crisis / n).toFixed(1) + " percent");
+  ok(crisis / n < 0.08 && bad / n < 0.4, "shortages are real but not the rule");
+  // seasons: a year averages 1 and never jumps
+  cat.items.filter((it) => it.commodity).forEach((it) => {
+    let ys = 0, jump = 0, prev = null;
+    for (let d = 1; d <= 360; d++) { const v = W.seasonMult(it.commodity.season, d); ys += v; if (prev !== null) jump = Math.max(jump, Math.abs(v - prev)); prev = v; }
+    ok(Math.abs(ys / 360 - 1) < 0.04 && jump < 0.1, it.id + ": a season curve averages " + (ys / 360).toFixed(2) + " with no daily jump over " + jump.toFixed(3));
+  });
+  // derived definitions: sound, in range, and still unable to turn a round trip into a profit
+  let worstRt = -Infinity, cases = 0, minLevel = Infinity, maxLevel = 0;
+  [1, 40, 95, 150, 215, 300].forEach((day) => Object.keys(DEFS).forEach((mid) => {
+    const def = W.derive(DEFS[mid], day, 4242);
+    ok(M.validate(def).length === 0, mid + " derived for day " + day + " validates");
+    Object.keys(def.goods).forEach((gid) => {
+      const g = def.goods[gid], g0 = DEFS[mid].goods[gid];
+      if (g.worldRatio !== undefined) { minLevel = Math.min(minLevel, g.mult / g0.mult); maxLevel = Math.max(maxLevel, g.mult / g0.mult); }
+      const st = M.init(def, day); st.purse = 1e9;
+      [1, 3, 9].forEach((k) => { const b = M.quote(st, def, { buy: { [gid]: k } }, null); if (!b.ok || !b.buy.length) return; const q = b.buy[0].qty; const st2 = M.commit(st, def, b, day); const sl = M.quote(st2, def, { sell: { [gid]: q } }, null); if (!sl.ok || !sl.sell.length) return; cases++; worstRt = Math.max(worstRt, sl.sellTotal - b.buyTotal); });
+    });
+  }));
+  ok(worstRt <= 0, "a round trip loses money at every merchant on every sampled day, " + cases + " cases (best " + worstRt + ")");
+  ok(minLevel >= 0.6 - 1e-9 && maxLevel <= 2 + 1e-9, "the world scales a price level between 0.6 and 2 (" + minLevel.toFixed(2) + " to " + maxLevel.toFixed(2) + ")");
+  // the 2x cap: no ask is ever above twice the base price, with the world and an empty shelf together
+  let capBreaks = 0, capCases = 0, capWorst = 0;
+  for (let seed = 1; seed <= 8; seed++) for (let day = 5; day <= 360; day += 25) Object.keys(DEFS).forEach((mid) => {
+    const def = W.derive(DEFS[mid], day, seed), st = M.init(def, day); st.purse = 1e9;
+    Object.keys(def.goods).forEach((gid) => {
+      const g = def.goods[gid]; if (g.fixed || g.sells === false) return;
+      st.stock[gid] = 1; const b = M.quote(st, def, { buy: { [gid]: 1 } }, null); if (!b.ok || !b.buy.length) return;
+      capCases++; capWorst = Math.max(capWorst, b.buyTotal / g.base); if (b.buyTotal > Math.ceil(2 * g.base)) capBreaks++;
+    });
+  });
+  ok(capBreaks === 0, "no ask in " + capCases + " cases is above twice the base price (worst " + capWorst.toFixed(2) + " times, rounding up)");
+  ok(M.ask(8, 0, 10, 1.9) <= 16 + 1e-9 && M.bid(8, 0, 10, 0.8, 1.9) <= 16 * 0.8 + 1e-9, "the ask and the payout are both capped at twice the base price");
+  ok(M.ask(8, 500, 10, 0.5) >= 4 - 1e-9 && M.bid(8, 500, 10, 0.8, 0.5) >= 4 * 0.8 - 1e-9, "and neither falls below half the base price, so a glut never prices a pumpkin at nothing");
+  // chains: a mine's bad spell thins the bars at the forge and lifts the smith's price a few days later
+  let lowBar = 0, lowN = 0, highBar = 0, highN = 0, lowAxe = 0, highAxe = 0, axeMin = Infinity, axeMax = 0;
+  for (let seed = 1; seed <= 40; seed++) for (let day = 10; day <= 360; day += 4) {
+    // the ore Alderford's forges get (its own makers keep their own first, so a maker's market does not show a poor spell until it is deep), and the bars Port Valen gets three days on
+    const ore = W.supplyAt(seed, "iron_ore", "af", day), bar = W.supplyAt(seed, "iron_bar", "pv", day + 3), axe = W.derive(DEFS.halda, day + 3, seed).goods.timber_axe;
+    axeMin = Math.min(axeMin, axe.worldRatio); axeMax = Math.max(axeMax, axe.worldRatio);
+    if (ore < 0.85) { lowBar += bar; lowAxe += axe.worldRatio; lowN++; } else if (ore > 0.99) { highBar += bar; highAxe += axe.worldRatio; highN++; }
+  }
+  ok(lowN > 20 && highN > 20 && lowBar / lowN < highBar / highN - 0.01, "iron bars reach Port Valen thinner after a poor spell of ore at Alderford (" + (lowBar / lowN).toFixed(3) + " after poor ore, " + (highBar / highN).toFixed(3) + " after enough; " + lowN + " and " + highN + " days)");
+  ok(lowAxe / lowN > highAxe / highN, "Halda's axe is dearer after a poor spell at the mine (" + (lowAxe / lowN).toFixed(3) + " against " + (highAxe / highN).toFixed(3) + ")");
+  ok(axeMin >= 0.6 - 1e-9 && axeMax <= 2 + 1e-9, "a smith's price level from its inputs stays between 0.6 and 2 (" + axeMin.toFixed(2) + " to " + axeMax.toFixed(2) + ")");
+  // population and the food cycle (step 2): settlements eat, the makers feed the whole region, a maker's own settlement is served first
+  const tiles = Object.keys(WD.tiles);
+  ok(tiles.length >= 9 && tiles.every((t) => WD.tiles[t].pop > 0), tiles.length + " settlements have populations (" + tiles.map((t) => WD.tiles[t].name + " " + WD.tiles[t].pop).join(", ") + ")");
+  let dataOk = true;
+  Object.keys(WD.goods).forEach((id) => { const G = WD.goods[id]; if (!G.makers.length || G.makers.some((m) => !(m.cap > 0)) || G.consumers.length !== tiles.length || G.consumers.some((c) => Math.abs(Object.keys(c.s).reduce((a, k) => a + c.s[k], 0) - 1) > 0.002 || !(c.D > 0))) dataOk = false; });
+  ok(dataOk, "every commodity has makers with a capacity, and every settlement eats it and draws shares from its makers that sum to 1");
+  function yearAvg(good, tile, seeds) { let t = 0, c = 0; for (let seed = 1; seed <= seeds; seed++) for (let d = 5; d <= 360; d += 5) { t += W.supplyAt(seed, good, tile, d); c++; } return t / c; }
+  const farm = yearAvg("grain", "fv", 12), mine = yearAvg("grain", "rv", 12), city = yearAvg("grain", "pv", 12);
+  ok(farm > mine + 0.05, "a farm village is better supplied with grain (" + farm.toFixed(2) + ") than a mining village that grows none (" + mine.toFixed(2) + ")");
+  ok(city > mine, "a city outbids a village for the grain that is short (" + city.toFixed(2) + " against " + mine.toFixed(2) + ")");
+  // competition: a growing city takes more of the same farms and its smaller neighbours get less
+  const saved = JSON.parse(JSON.stringify(WD)), bigger = JSON.parse(JSON.stringify(WD));
+  bigger.goods.grain.consumers.forEach((c) => { if (c.tile === "pv") c.D *= 1.4; });
+  const before = yearAvg("grain", "rv", 12); W.setData(bigger); const after = yearAvg("grain", "rv", 12); W.setData(saved);
+  ok(after < before - 0.005, "when Port Valen's demand for grain grows by 40 percent, a village drawing on the same farms is worse supplied (" + before.toFixed(3) + " to " + after.toFixed(3) + ")");
+  // a maker's own settlement keeps what it eats before it ships any
+  const lowOut = JSON.parse(JSON.stringify(WD)); lowOut.goods.grain.makers.forEach((m) => { if (m.tile === "fv") m.cap *= 0.4; });
+  const fvOwn = yearAvg("grain", "fv", 12); W.setData(lowOut); const fvLow = yearAvg("grain", "fv", 12), pvLow = yearAvg("grain", "pv", 12); W.setData(saved);
+  ok(fvLow < fvOwn && pvLow < city, "when Barleycross turns out 40 percent as much grain, Barleycross (" + fvLow.toFixed(2) + ") and Port Valen (" + pvLow.toFixed(2) + ") both go short");
+  // distance: a crisis at the source is felt more by a market close to it than by a far one (averaged over many days)
+  let nearDev = 0, farDev = 0, cnt = 0;
+  for (let seed = 1; seed <= 30; seed++) for (let d = 10; d <= 360; d += 5) { const near = W.derive(DEFS.rv_market, d, seed).goods.iron_ore, far = W.derive(DEFS.tm_market, d, seed).goods.iron_ore; nearDev += Math.abs(near.supply - 1); farDev += Math.abs(far.supply - 1); cnt++; }
+  ok(nearDev / cnt > farDev / cnt, "iron ore supply swings more at Redvein (" + (nearDev / cnt).toFixed(3) + ") than at Timbermouth (" + (farDev / cnt).toFixed(3) + "), where it is cushioned by distance and other makers");
+  // the best first-unit margin between two open markets over many days (the trade the shocks create)
+  let bestM = 0, bestD = "";
+  for (let seed = 1; seed <= 6; seed++) for (let d = 10; d <= 360; d += 10) {
+    const defs = {}; open.forEach((mid) => { defs[mid] = W.derive(DEFS[mid], d, seed); });
+    open.forEach((a) => open.forEach((b) => { if (a === b) return; Object.keys(defs[a].goods).forEach((gid) => {
+      if (!defs[b].goods[gid]) return;
+      const buy = M.quote(M.init(defs[a], d), defs[a], { buy: { [gid]: 1 } }, null), sell = M.quote(M.init(defs[b], d), defs[b], { sell: { [gid]: 1 } }, null);
+      if (buy.ok && buy.buy.length && sell.ok && sell.sell.length) { const m = sell.sellTotal - buy.buyTotal; if (m > bestM) { bestM = m; bestD = gid + " " + a + " to " + b + " day " + d + " seed " + seed; } }
+    }); }));
+  }
+  console.log("   best first-unit route margin over the sampled days: " + bestM + " copper (" + bestD + ")");
+  ok(bestM <= 30, "no commodity carries more than 30 copper a unit between two open markets on the sampled days (" + bestM + ")");
 }
 
 console.log("\n" + checks + " checks, " + fails + " failed");

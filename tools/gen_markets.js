@@ -20,6 +20,10 @@
  *   supplied      supply >= minSupply: the shelf starts full at target = the standard depth x supply, and restocks. Otherwise the market makes nothing of it and nothing reaches it: it starts at 0 on the
  *                 shelf, never restocks, uses the little it is sold slowly (flow), and pays a shortage price for it
  *   buys          every commodity, at buyShare of the price (the market's own share)
+ *   inputs        a refined good's makers have inputs (the catalog's commodity.inputs: bars from ore, cloth from wool, leather from hides), and a shop with a tile and "inputs": true (a smith, a tailor)
+ *                 prices its wares by theirs (market_defs.json "inputs": byKind and byItem shares of the price), so a crisis at a mine reaches the smiths through the bars
+ *   world         each good carries its market's tile (and a ware its inputs); web/mygame/world.js scales its supply and price level by the day from web/mygame/world-data.generated.js (tools/gen_world.js:
+ *                 populations, demand, capacities, seasons and shocks)
 
  *
  * Run: node tools/gen_markets.js            (write, and print the report)
@@ -100,7 +104,13 @@ Object.keys(defs.merchants).forEach((mid) => {
       delete g.buys; delete g.sells;
       g.mult = Math.round(level * 1000) / 1000; g.target = t2; g.stock0 = supplied ? t2 : 0; g.buyPct = Math.min(M.MAX_BUY_PCT, m.buyShare || 0.8);
       if (!supplied) { g.restock = false; g.flow = -Math.round(t2 * CP.useRate * 100) / 100; }
+      // the world (web/mygame/world.js): the makers this market draws on [tile, reach weight, miles] and the good's season curve
+      g.world = { tile: m.tile };   // what the world does to it comes from web/mygame/world-data.generated.js (tools/gen_world.js)
       commodityReport.push({ mid: mid, id: id, level: g.mult, supply: Math.round(supply * 100) / 100, target: t2, supplied: supplied });
+    }
+    if (m.inputs && m.tile && !m.commodities && !fixed && it.group !== "jewelry") {
+      const IN = defs.inputs, sh = Object.prototype.hasOwnProperty.call(IN.byItem, id) ? IN.byItem[id] : IN.byKind[it.kind];
+      if (sh && Object.keys(sh).length) g.world = { tile: m.tile, inputs: Object.keys(sh).map((ig) => { if (!CAT[ig] || !CAT[ig].commodity) problems.push(id + ": input " + ig + " is not a commodity"); return { good: ig, share: sh[ig] }; }) };
     }
     const over = (m.goods && m.goods[id]) || {};
     Object.keys(over).forEach((k) => { g[k] = over[k]; });
@@ -120,10 +130,15 @@ if (problems.length) { console.error("gen_markets: problems:\n  " + problems.joi
 if (process.argv.indexOf("--check") >= 0) {
   const have = fs.existsSync(OUT) ? fs.readFileSync(OUT, "utf8") : "";
   if (have.replace(/\r\n/g, "\n") !== body) { console.error("gen_markets: market-data.generated.js is stale. Run: node tools/gen_markets.js"); process.exit(1); }
+  const GWc = require("./gen_world.js"), wb = GWc.build();
+  if (wb.problems.length) { console.error("gen_world: problems:\n  " + wb.problems.join("\n  ")); process.exit(1); }
+  const haveW = fs.existsSync(GWc.OUT) ? fs.readFileSync(GWc.OUT, "utf8").replace(/\r\n/g, "\n") : "";
+  if (haveW !== GWc.body(wb.data)) { console.error("gen_markets: world-data.generated.js is stale. Run: node tools/gen_markets.js"); process.exit(1); }
   console.log("gen_markets: up to date (" + Object.keys(out).length + " markets).");
   process.exit(0);
 }
 fs.writeFileSync(OUT, body);
+{ const GW = require("./gen_world.js"), wb = GW.build(); if (wb.problems.length) { console.error("gen_world: problems:\n  " + wb.problems.join("\n  ")); process.exit(1); } fs.writeFileSync(GW.OUT, GW.body(wb.data)); console.log("gen_world: wrote " + path.relative(ROOT, GW.OUT)); }
 commodityReport.forEach((r) => { if (process.argv.indexOf("--commodities") >= 0) console.log("  " + (r.mid + "/" + r.id).padEnd(34) + "level " + String(r.level).padEnd(6) + "supply " + String(r.supply).padEnd(6) + (r.supplied ? "shelf " + r.target : "none (shortage)")); });
 const goodsN = Object.keys(out).reduce((n, k) => n + Object.keys(out[k].goods).length, 0);
 console.log("gen_markets: wrote " + path.relative(ROOT, OUT) + " (" + Object.keys(out).length + " markets, " + goodsN + " goods)");
