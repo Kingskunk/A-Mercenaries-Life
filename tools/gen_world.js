@@ -5,9 +5,11 @@
  * settlement's trades eat; "dseason": demand's seasons; "world": the model's parameters).
  *
  * For every commodity (an item with commodity.makers) it works out
+ *   (a settlement draws only on makers within the good's reach, the catalog's commodity.reach in road miles; one with no maker in reach is left out and the market there does not stock the good)
  *   consumers   every settlement: its normal demand D (units a day: population / 1000 x the good's use, plus industry, never below minDemand), its pull (population ^ pullExp), and for each maker
  *               the settlement draws on its SHARE s (the maker's reach weight, tier weight / (1 + miles / supplyHalf), over the sum for that settlement) and the miles
- *   makers      each maker's CAPACITY, units a day: margin x (the total demand of every settlement that can reach a maker) x (tier weight x population ^ capExp) over the sum of that for the good's makers
+ *   store       the good's STOCKPILE time constant in days (the catalog's commodity.store): web/mygame/world.js smooths a maker's output over it (a granary, a salt shed, a timber stack)
+ *   makers      each maker's CAPACITY, units a day, never below coverFloor x what the settlements drawing on it want of it, and otherwise: margin x (the total demand of every settlement that can reach a maker) x (tier weight x population ^ capExp) over the sum of that for the good's makers
  * Nothing here is random. Run via node tools/gen_markets.js (which calls this), or alone: node tools/gen_world.js [--check]
  */
 "use strict";
@@ -34,13 +36,14 @@ function build() {
     const mk = it.commodity.makers, makerTiles = Object.keys(mk);
     const G = { id: id, season: it.commodity.season || [1, 1, 1, 1], dseason: defs.dseason[id] || [1, 1, 1, 1], makers: [], consumers: [] };
     if (it.commodity.inputs) G.inputs = it.commodity.inputs;
+    if (it.commodity.store) G.store = it.commodity.store;
     makerTiles.forEach((t) => { if (!S[t]) problems.push(id + ": maker tile " + t + " has no settlement entry"); });
     // consumers
     Object.keys(S).forEach((t) => {
       const per = (defs.demand[id] || 0) * S[t].pop / 1000, ind = (defs.industry[t] && defs.industry[t][id]) || 0;
       const D = Math.max(P.minDemand, per + ind);
       const w = {}, d = {}; let sw = 0;
-      makerTiles.forEach((m) => { const mi = miles(t, m); if (!isFinite(mi)) return; d[m] = Math.round(mi * 10) / 10; w[m] = CP.weight[mk[m]] / (1 + mi / CP.supplyHalf); sw += w[m]; });
+      makerTiles.forEach((m) => { const mi = miles(t, m); if (!isFinite(mi) || mi > (it.commodity.reach || Infinity)) return; d[m] = Math.round(mi * 10) / 10; w[m] = CP.weight[mk[m]] / (1 + mi / CP.supplyHalf); sw += w[m]; });
       if (sw <= 0) return;
       const s = {}; Object.keys(w).forEach((m) => { s[m] = r4(w[m] / sw); });
       G.consumers.push({ tile: t, D: Math.round(D * 100) / 100, pull: data.tiles[t].pull, s: s, miles: d });
@@ -48,7 +51,11 @@ function build() {
     // capacities
     const Dtot = G.consumers.reduce((a, c) => a + c.D, 0);
     const cw = makerTiles.map((m) => CP.weight[mk[m]] * Math.pow(S[m] ? S[m].pop : 100, P.capExp)), cws = cw.reduce((a, b) => a + b, 0);
-    makerTiles.forEach((m, i) => { G.makers.push({ tile: m, tier: mk[m], cap: Math.round(P.margin * Dtot * cw[i] / cws * 100) / 100 }); });
+    makerTiles.forEach((m, i) => {
+      // never less than coverFloor x what the settlements that draw on this maker want of it, so a settlement whose only maker in reach is a small one is not starved for ever
+      const cover = G.consumers.reduce((a, c) => a + (c.s[m] ? c.D * c.s[m] : 0), 0);
+      G.makers.push({ tile: m, tier: mk[m], cap: Math.round(Math.max(P.margin * Dtot * cw[i] / cws, P.coverFloor * cover) * 100) / 100 });
+    });
     data.goods[id] = G;
   });
   return { data, report, problems, defs };

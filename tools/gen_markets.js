@@ -22,6 +22,8 @@
  *   buys          every commodity, at buyShare of the price (the market's own share)
  *   inputs        a refined good's makers have inputs (the catalog's commodity.inputs: bars from ore, cloth from wool, leather from hides), and a shop with a tile and "inputs": true (a smith, a tailor)
  *                 prices its wares by theirs (market_defs.json "inputs": byKind and byItem shares of the price), so a crisis at a mine reaches the smiths through the bars
+ *   reach/need    commodity.reach (road miles a good travels to be stocked: a market with no maker in reach does not stock it, flagged unstocked, and pays no shortage premium for it) and commodity.need (0 to 1:
+ *                 how much of the shortage premium the market PAYS for it; a market always charges the full premium) come from the catalog; def.appetite is the share of its purse a market spends on one good a day
  *   world         each good carries its market's tile (and a ware its inputs); web/mygame/world.js scales its supply and price level by the day from web/mygame/world-data.generated.js (tools/gen_world.js:
  *                 populations, demand, capacities, seasons and shocks)
 
@@ -91,11 +93,12 @@ Object.keys(defs.merchants).forEach((mid) => {
     if (!sells) g.sells = false;
     if (fixed) g.fixed = true;
     if (m.commodities && CAT[id] && CAT[id].commodity) {
-      const mk = CAT[id].commodity.makers, bt = target;
+      const mk = CAT[id].commodity.makers, bt = target, reach = CAT[id].commodity.reach || Infinity;
       let supply = 0, level = CP.capLevel;
       Object.keys(mk).forEach((tile) => {
         if (!OW.nodes[tile]) problems.push(id + ": maker tile " + tile + " is not on the map");
         const d = miles(m.tile, tile);
+        if (d > reach) return;   // beyond the good's reach
         supply += CP.weight[mk[tile]] / (1 + d / CP.supplyHalf);
         level = Math.min(level, CP.cost[mk[tile]] + CP.perMile * d);
       });
@@ -105,7 +108,9 @@ Object.keys(defs.merchants).forEach((mid) => {
       g.mult = Math.round(level * 1000) / 1000; g.target = t2; g.stock0 = supplied ? t2 : 0; g.buyPct = Math.min(M.MAX_BUY_PCT, m.buyShare || 0.8);
       if (!supplied) { g.restock = false; g.flow = -Math.round(t2 * CP.useRate * 100) / 100; }
       // the world (web/mygame/world.js): the makers this market draws on [tile, reach weight, miles] and the good's season curve
-      g.world = { tile: m.tile };   // what the world does to it comes from web/mygame/world-data.generated.js (tools/gen_world.js)
+      if (supply > 0) g.world = { tile: m.tile };   // what the world does to it comes from web/mygame/world-data.generated.js (tools/gen_world.js)
+      g.need = CAT[id].commodity.need;
+      if (supply <= 0) { g.unstocked = true; g.sells = false; g.mult = 1; g.target = defs.minDepth; g.stock0 = 0; g.buyPct = Math.min(M.MAX_BUY_PCT, m.buyShare || 0.8); delete g.world; delete g.restock; delete g.flow; }
       commodityReport.push({ mid: mid, id: id, level: g.mult, supply: Math.round(supply * 100) / 100, target: t2, supplied: supplied });
     }
     if (m.inputs && m.tile && !m.commodities && !fixed && it.group !== "jewelry") {
@@ -118,7 +123,7 @@ Object.keys(defs.merchants).forEach((mid) => {
     if (unit > 0 && !fixed && !m.commodities) report.push({ mid: mid, id: id, unit: unit, firstNow: Math.floor(base * M.factor(g.target + 1, g.target) * g.buyPct * (g.mult || 1) + 1e-9), target: g.target });
   });
   const def = { id: mid, title: tr.title, tier: m.tier, purseTarget: m.purse, regen: m.regen || defs.defaults.regen, goods: goods };
-  if (m.commodities) def.commodities = true;
+  if (m.commodities) { def.commodities = true; def.appetite = defs.appetite; }
   const errs = M.validate(def);
   if (errs.length) problems.push(mid + ": " + errs.join("; "));
   out[mid] = def;

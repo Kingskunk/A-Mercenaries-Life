@@ -1748,7 +1748,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 1
    },
    "grain": {
     "base": 2,
@@ -1758,7 +1759,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 1
    },
    "cheese": {
     "base": 3,
@@ -1768,7 +1770,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.6
    },
    "orchard_apple": {
     "base": 1,
@@ -1778,7 +1781,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.4
    },
    "root_vegetable_bundle": {
     "base": 2,
@@ -1788,7 +1792,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.9
    },
    "farm_eggs": {
     "base": 3,
@@ -1798,7 +1803,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.7
    },
    "dried_pork_sausage": {
     "base": 3,
@@ -1808,7 +1814,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.7
    },
    "onions": {
     "base": 2,
@@ -1818,7 +1825,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.8
    },
    "potatoes": {
     "base": 1,
@@ -1828,7 +1836,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.9
    },
    "tomatoes": {
     "base": 3,
@@ -1838,7 +1847,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.3
    },
    "dressed_chicken": {
     "base": 7,
@@ -1848,7 +1858,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.6
    },
    "cabbage": {
     "base": 2,
@@ -1858,7 +1869,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.8
    },
    "pumpkin": {
     "base": 3,
@@ -1868,7 +1880,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.4
    },
    "honeycomb": {
     "base": 4,
@@ -1878,7 +1891,8 @@ window.MARKET_DEFS = {
     "mult": 1,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.2
    },
    "boar_meat": {
     "base": 6,
@@ -1888,7 +1902,8 @@ window.MARKET_DEFS = {
     "mult": 0.975,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.5
    },
    "venison": {
     "base": 7,
@@ -1898,17 +1913,19 @@ window.MARKET_DEFS = {
     "mult": 0.975,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.4
    },
    "fresh_fish_fillet": {
     "base": 4,
-    "target": 92,
-    "stock0": 92,
+    "target": 19,
+    "stock0": 19,
     "buyPct": 0.8,
     "mult": 1.03,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.8
    },
    "iron_ore": {
     "base": 3,
@@ -1918,7 +1935,8 @@ window.MARKET_DEFS = {
     "mult": 1.03,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.1
    },
    "iron_bar": {
     "base": 8,
@@ -1928,7 +1946,8 @@ window.MARKET_DEFS = {
     "mult": 0.99,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.5
    },
    "longshade_timber": {
     "base": 6,
@@ -1938,7 +1957,8 @@ window.MARKET_DEFS = {
     "mult": 0.975,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.4
    },
    "charcoal": {
     "base": 3,
@@ -1948,7 +1968,8 @@ window.MARKET_DEFS = {
     "mult": 0.975,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.8
    },
    "salt": {
     "base": 6,
@@ -1958,7 +1979,8 @@ window.MARKET_DEFS = {
     "mult": 1.11,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.8
    },
    "furs": {
     "base": 14,
@@ -1968,7 +1990,8 @@ window.MARKET_DEFS = {
     "mult": 0.975,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.3
    },
    "leather": {
     "base": 12,
@@ -1978,7 +2001,8 @@ window.MARKET_DEFS = {
     "mult": 0.93,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.4
    },
    "wool": {
     "base": 4,
@@ -1988,7 +2012,8 @@ window.MARKET_DEFS = {
     "mult": 1,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.4
    },
    "wool_cloth": {
     "base": 15,
@@ -1998,7 +2023,8 @@ window.MARKET_DEFS = {
     "mult": 0.99,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.5
    },
    "raw_hide": {
     "base": 8,
@@ -2008,7 +2034,8 @@ window.MARKET_DEFS = {
     "mult": 0.975,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.2
    },
    "boar_tusk": {
     "base": 10,
@@ -2018,7 +2045,8 @@ window.MARKET_DEFS = {
     "mult": 0.975,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.1
    },
    "elk_antler": {
     "base": 7,
@@ -2028,10 +2056,16 @@ window.MARKET_DEFS = {
     "mult": 0.975,
     "world": {
      "tile": "fv"
-    }
+    },
+    "need": 0.1
    }
   },
-  "commodities": true
+  "commodities": true,
+  "appetite": {
+   "_readme": "A commodity market spends at most this share of its purse (its target) on ONE good a day (2026-10-24, the user: a hill village would not throw all its gold at wool or timber it has lived without). stocked: a good the market holds; unstocked: a good with no maker in its reach.",
+   "stocked": 0.1,
+   "unstocked": 0.03
+  }
  },
  "tm_market": {
   "id": "tm_market",
@@ -2051,7 +2085,8 @@ window.MARKET_DEFS = {
     "mult": 1.03,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.2
    },
    "boar_meat": {
     "base": 6,
@@ -2061,7 +2096,8 @@ window.MARKET_DEFS = {
     "mult": 0.945,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.5
    },
    "venison": {
     "base": 7,
@@ -2071,7 +2107,8 @@ window.MARKET_DEFS = {
     "mult": 0.945,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.4
    },
    "barley_loaf": {
     "base": 2,
@@ -2081,7 +2118,8 @@ window.MARKET_DEFS = {
     "mult": 0.93,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 1
    },
    "grain": {
     "base": 2,
@@ -2091,7 +2129,8 @@ window.MARKET_DEFS = {
     "mult": 0.93,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 1
    },
    "cheese": {
     "base": 3,
@@ -2101,7 +2140,8 @@ window.MARKET_DEFS = {
     "mult": 0.93,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.6
    },
    "orchard_apple": {
     "base": 1,
@@ -2111,7 +2151,8 @@ window.MARKET_DEFS = {
     "mult": 0.93,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.4
    },
    "root_vegetable_bundle": {
     "base": 2,
@@ -2121,17 +2162,19 @@ window.MARKET_DEFS = {
     "mult": 0.93,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.9
    },
    "farm_eggs": {
     "base": 3,
-    "target": 217,
-    "stock0": 217,
+    "target": 197,
+    "stock0": 197,
     "buyPct": 0.8,
     "mult": 0.93,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.7
    },
    "dried_pork_sausage": {
     "base": 3,
@@ -2141,7 +2184,8 @@ window.MARKET_DEFS = {
     "mult": 0.93,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.7
    },
    "onions": {
     "base": 2,
@@ -2151,7 +2195,8 @@ window.MARKET_DEFS = {
     "mult": 0.93,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.8
    },
    "potatoes": {
     "base": 1,
@@ -2161,7 +2206,8 @@ window.MARKET_DEFS = {
     "mult": 0.93,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.9
    },
    "tomatoes": {
     "base": 3,
@@ -2171,27 +2217,30 @@ window.MARKET_DEFS = {
     "mult": 0.93,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.3
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 136,
-    "stock0": 136,
+    "target": 123,
+    "stock0": 123,
     "buyPct": 0.8,
     "mult": 0.93,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.6
    },
    "fresh_fish_fillet": {
     "base": 4,
-    "target": 136,
-    "stock0": 136,
+    "target": 30,
+    "stock0": 30,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.8
    },
    "cabbage": {
     "base": 2,
@@ -2201,7 +2250,8 @@ window.MARKET_DEFS = {
     "mult": 0.93,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.8
    },
    "pumpkin": {
     "base": 3,
@@ -2211,7 +2261,8 @@ window.MARKET_DEFS = {
     "mult": 0.93,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.4
    },
    "iron_ore": {
     "base": 3,
@@ -2221,7 +2272,8 @@ window.MARKET_DEFS = {
     "mult": 1.06,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.1
    },
    "iron_bar": {
     "base": 8,
@@ -2231,7 +2283,8 @@ window.MARKET_DEFS = {
     "mult": 1.02,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.5
    },
    "longshade_timber": {
     "base": 6,
@@ -2241,7 +2294,8 @@ window.MARKET_DEFS = {
     "mult": 0.945,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.4
    },
    "charcoal": {
     "base": 3,
@@ -2251,7 +2305,8 @@ window.MARKET_DEFS = {
     "mult": 0.945,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.8
    },
    "salt": {
     "base": 6,
@@ -2261,7 +2316,8 @@ window.MARKET_DEFS = {
     "mult": 1.08,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.8
    },
    "furs": {
     "base": 14,
@@ -2271,7 +2327,8 @@ window.MARKET_DEFS = {
     "mult": 0.945,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.3
    },
    "leather": {
     "base": 12,
@@ -2281,7 +2338,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.4
    },
    "wool": {
     "base": 4,
@@ -2291,7 +2349,8 @@ window.MARKET_DEFS = {
     "mult": 1.03,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.4
    },
    "wool_cloth": {
     "base": 15,
@@ -2301,7 +2360,8 @@ window.MARKET_DEFS = {
     "mult": 1,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.5
    },
    "raw_hide": {
     "base": 8,
@@ -2311,7 +2371,8 @@ window.MARKET_DEFS = {
     "mult": 0.945,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.2
    },
    "boar_tusk": {
     "base": 10,
@@ -2321,7 +2382,8 @@ window.MARKET_DEFS = {
     "mult": 0.945,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.1
    },
    "elk_antler": {
     "base": 7,
@@ -2331,10 +2393,16 @@ window.MARKET_DEFS = {
     "mult": 0.945,
     "world": {
      "tile": "tm"
-    }
+    },
+    "need": 0.1
    }
   },
-  "commodities": true
+  "commodities": true,
+  "appetite": {
+   "_readme": "A commodity market spends at most this share of its purse (its target) on ONE good a day (2026-10-24, the user: a hill village would not throw all its gold at wool or timber it has lived without). stocked: a good the market holds; unstocked: a good with no maker in its reach.",
+   "stocked": 0.1,
+   "unstocked": 0.03
+  }
  },
  "bw_market": {
   "id": "bw_market",
@@ -2354,7 +2422,8 @@ window.MARKET_DEFS = {
     "mult": 1.21,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.2
    },
    "boar_meat": {
     "base": 6,
@@ -2364,7 +2433,8 @@ window.MARKET_DEFS = {
     "mult": 1.125,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.5
    },
    "venison": {
     "base": 7,
@@ -2374,7 +2444,8 @@ window.MARKET_DEFS = {
     "mult": 1.125,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.4
    },
    "barley_loaf": {
     "base": 2,
@@ -2384,7 +2455,8 @@ window.MARKET_DEFS = {
     "mult": 1.06,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 1
    },
    "grain": {
     "base": 2,
@@ -2394,7 +2466,8 @@ window.MARKET_DEFS = {
     "mult": 1.06,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 1
    },
    "cheese": {
     "base": 3,
@@ -2404,7 +2477,8 @@ window.MARKET_DEFS = {
     "mult": 1.11,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.6
    },
    "orchard_apple": {
     "base": 1,
@@ -2414,7 +2488,8 @@ window.MARKET_DEFS = {
     "mult": 1.11,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.4
    },
    "root_vegetable_bundle": {
     "base": 2,
@@ -2424,17 +2499,19 @@ window.MARKET_DEFS = {
     "mult": 1.06,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.9
    },
    "farm_eggs": {
     "base": 3,
-    "target": 92,
-    "stock0": 92,
+    "target": 17,
+    "stock0": 17,
     "buyPct": 0.8,
-    "mult": 1.11,
+    "mult": 1.16,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.7
    },
    "dried_pork_sausage": {
     "base": 3,
@@ -2444,7 +2521,8 @@ window.MARKET_DEFS = {
     "mult": 1.11,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.7
    },
    "onions": {
     "base": 2,
@@ -2454,7 +2532,8 @@ window.MARKET_DEFS = {
     "mult": 1.06,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.8
    },
    "potatoes": {
     "base": 1,
@@ -2464,7 +2543,8 @@ window.MARKET_DEFS = {
     "mult": 1.06,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.9
    },
    "tomatoes": {
     "base": 3,
@@ -2474,27 +2554,30 @@ window.MARKET_DEFS = {
     "mult": 1.11,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.3
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 57,
-    "stock0": 57,
+    "target": 11,
+    "stock0": 11,
     "buyPct": 0.8,
-    "mult": 1.11,
+    "mult": 1.16,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.6
    },
    "fresh_fish_fillet": {
     "base": 4,
-    "target": 159,
-    "stock0": 159,
+    "target": 149,
+    "stock0": 149,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.8
    },
    "cabbage": {
     "base": 2,
@@ -2504,7 +2587,8 @@ window.MARKET_DEFS = {
     "mult": 1.06,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.8
    },
    "pumpkin": {
     "base": 3,
@@ -2514,7 +2598,8 @@ window.MARKET_DEFS = {
     "mult": 1.11,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.4
    },
    "iron_ore": {
     "base": 3,
@@ -2524,7 +2609,8 @@ window.MARKET_DEFS = {
     "mult": 1.17,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.1
    },
    "iron_bar": {
     "base": 8,
@@ -2534,7 +2620,8 @@ window.MARKET_DEFS = {
     "mult": 1.13,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.5
    },
    "longshade_timber": {
     "base": 6,
@@ -2544,7 +2631,8 @@ window.MARKET_DEFS = {
     "mult": 1.125,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.4
    },
    "charcoal": {
     "base": 3,
@@ -2554,7 +2642,8 @@ window.MARKET_DEFS = {
     "mult": 1.125,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.8
    },
    "salt": {
     "base": 6,
@@ -2564,7 +2653,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.8
    },
    "furs": {
     "base": 14,
@@ -2574,7 +2664,8 @@ window.MARKET_DEFS = {
     "mult": 1.125,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.3
    },
    "leather": {
     "base": 12,
@@ -2584,7 +2675,8 @@ window.MARKET_DEFS = {
     "mult": 1.08,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.4
    },
    "wool": {
     "base": 4,
@@ -2594,7 +2686,8 @@ window.MARKET_DEFS = {
     "mult": 1.15,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.4
    },
    "wool_cloth": {
     "base": 15,
@@ -2604,7 +2697,8 @@ window.MARKET_DEFS = {
     "mult": 1.08,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.5
    },
    "raw_hide": {
     "base": 8,
@@ -2614,7 +2708,8 @@ window.MARKET_DEFS = {
     "mult": 1.125,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.2
    },
    "boar_tusk": {
     "base": 10,
@@ -2624,7 +2719,8 @@ window.MARKET_DEFS = {
     "mult": 1.125,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.1
    },
    "elk_antler": {
     "base": 7,
@@ -2634,10 +2730,16 @@ window.MARKET_DEFS = {
     "mult": 1.125,
     "world": {
      "tile": "bw"
-    }
+    },
+    "need": 0.1
    }
   },
-  "commodities": true
+  "commodities": true,
+  "appetite": {
+   "_readme": "A commodity market spends at most this share of its purse (its target) on ONE good a day (2026-10-24, the user: a hill village would not throw all its gold at wool or timber it has lived without). stocked: a good the market holds; unstocked: a good with no maker in its reach.",
+   "stocked": 0.1,
+   "unstocked": 0.03
+  }
  },
  "ah_market": {
   "id": "ah_market",
@@ -2657,7 +2759,8 @@ window.MARKET_DEFS = {
     "mult": 1,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.2
    },
    "boar_meat": {
     "base": 6,
@@ -2667,7 +2770,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.5
    },
    "venison": {
     "base": 7,
@@ -2677,7 +2781,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.4
    },
    "barley_loaf": {
     "base": 2,
@@ -2687,7 +2792,8 @@ window.MARKET_DEFS = {
     "mult": 0.975,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 1
    },
    "grain": {
     "base": 2,
@@ -2697,7 +2803,8 @@ window.MARKET_DEFS = {
     "mult": 0.975,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 1
    },
    "cheese": {
     "base": 3,
@@ -2707,7 +2814,8 @@ window.MARKET_DEFS = {
     "mult": 0.975,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.6
    },
    "orchard_apple": {
     "base": 1,
@@ -2717,7 +2825,8 @@ window.MARKET_DEFS = {
     "mult": 0.975,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.4
    },
    "root_vegetable_bundle": {
     "base": 2,
@@ -2727,17 +2836,19 @@ window.MARKET_DEFS = {
     "mult": 0.975,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.9
    },
    "farm_eggs": {
     "base": 3,
-    "target": 145,
-    "stock0": 145,
+    "target": 132,
+    "stock0": 132,
     "buyPct": 0.8,
     "mult": 0.975,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.7
    },
    "dried_pork_sausage": {
     "base": 3,
@@ -2747,7 +2858,8 @@ window.MARKET_DEFS = {
     "mult": 0.975,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.7
    },
    "onions": {
     "base": 2,
@@ -2757,7 +2869,8 @@ window.MARKET_DEFS = {
     "mult": 0.975,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.8
    },
    "potatoes": {
     "base": 1,
@@ -2767,7 +2880,8 @@ window.MARKET_DEFS = {
     "mult": 0.975,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.9
    },
    "tomatoes": {
     "base": 3,
@@ -2777,27 +2891,30 @@ window.MARKET_DEFS = {
     "mult": 0.975,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.3
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 91,
-    "stock0": 91,
+    "target": 83,
+    "stock0": 83,
     "buyPct": 0.8,
     "mult": 0.975,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.6
    },
    "fresh_fish_fillet": {
     "base": 4,
-    "target": 87,
-    "stock0": 87,
+    "target": 17,
+    "stock0": 17,
     "buyPct": 0.8,
     "mult": 1.045,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.8
    },
    "cabbage": {
     "base": 2,
@@ -2807,7 +2924,8 @@ window.MARKET_DEFS = {
     "mult": 0.975,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.8
    },
    "pumpkin": {
     "base": 3,
@@ -2817,7 +2935,8 @@ window.MARKET_DEFS = {
     "mult": 0.975,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.4
    },
    "iron_ore": {
     "base": 3,
@@ -2827,7 +2946,8 @@ window.MARKET_DEFS = {
     "mult": 1.105,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.1
    },
    "iron_bar": {
     "base": 8,
@@ -2837,7 +2957,8 @@ window.MARKET_DEFS = {
     "mult": 1.065,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.5
    },
    "longshade_timber": {
     "base": 6,
@@ -2847,7 +2968,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.4
    },
    "charcoal": {
     "base": 3,
@@ -2857,7 +2979,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.8
    },
    "salt": {
     "base": 6,
@@ -2867,7 +2990,8 @@ window.MARKET_DEFS = {
     "mult": 1.125,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.8
    },
    "furs": {
     "base": 14,
@@ -2877,7 +3001,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.3
    },
    "leather": {
     "base": 12,
@@ -2887,7 +3012,8 @@ window.MARKET_DEFS = {
     "mult": 0.945,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.4
    },
    "wool": {
     "base": 4,
@@ -2897,7 +3023,8 @@ window.MARKET_DEFS = {
     "mult": 1.075,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.4
    },
    "wool_cloth": {
     "base": 15,
@@ -2907,7 +3034,8 @@ window.MARKET_DEFS = {
     "mult": 1.045,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.5
    },
    "raw_hide": {
     "base": 8,
@@ -2917,7 +3045,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.2
    },
    "boar_tusk": {
     "base": 10,
@@ -2927,7 +3056,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.1
    },
    "elk_antler": {
     "base": 7,
@@ -2937,10 +3067,16 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "fo"
-    }
+    },
+    "need": 0.1
    }
   },
-  "commodities": true
+  "commodities": true,
+  "appetite": {
+   "_readme": "A commodity market spends at most this share of its purse (its target) on ONE good a day (2026-10-24, the user: a hill village would not throw all its gold at wool or timber it has lived without). stocked: a good the market holds; unstocked: a good with no maker in its reach.",
+   "stocked": 0.1,
+   "unstocked": 0.03
+  }
  },
  "mc_market": {
   "id": "mc_market",
@@ -2960,27 +3096,30 @@ window.MARKET_DEFS = {
     "mult": 1.175,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.2
    },
    "boar_meat": {
     "base": 6,
-    "target": 43,
-    "stock0": 43,
+    "target": 10,
+    "stock0": 10,
     "buyPct": 0.8,
-    "mult": 1.15,
+    "mult": 1.205,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.5
    },
    "venison": {
     "base": 7,
-    "target": 43,
-    "stock0": 43,
+    "target": 10,
+    "stock0": 10,
     "buyPct": 0.8,
-    "mult": 1.15,
+    "mult": 1.205,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.4
    },
    "barley_loaf": {
     "base": 2,
@@ -2990,7 +3129,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 1
    },
    "grain": {
     "base": 2,
@@ -3000,7 +3140,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 1
    },
    "cheese": {
     "base": 3,
@@ -3010,7 +3151,8 @@ window.MARKET_DEFS = {
     "mult": 1,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.6
    },
    "orchard_apple": {
     "base": 1,
@@ -3020,7 +3162,8 @@ window.MARKET_DEFS = {
     "mult": 1,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.4
    },
    "root_vegetable_bundle": {
     "base": 2,
@@ -3030,17 +3173,19 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.9
    },
    "farm_eggs": {
     "base": 3,
-    "target": 116,
-    "stock0": 116,
+    "target": 102,
+    "stock0": 102,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.7
    },
    "dried_pork_sausage": {
     "base": 3,
@@ -3050,7 +3195,8 @@ window.MARKET_DEFS = {
     "mult": 1,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.7
    },
    "onions": {
     "base": 2,
@@ -3060,7 +3206,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.8
    },
    "potatoes": {
     "base": 1,
@@ -3070,7 +3217,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.9
    },
    "tomatoes": {
     "base": 3,
@@ -3080,27 +3228,30 @@ window.MARKET_DEFS = {
     "mult": 1,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.3
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 72,
-    "stock0": 72,
+    "target": 64,
+    "stock0": 64,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.6
    },
    "fresh_fish_fillet": {
     "base": 4,
-    "target": 112,
-    "stock0": 112,
+    "target": 59,
+    "stock0": 59,
     "buyPct": 0.8,
     "mult": 0.98,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.8
    },
    "cabbage": {
     "base": 2,
@@ -3110,7 +3261,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.8
    },
    "pumpkin": {
     "base": 3,
@@ -3120,7 +3272,8 @@ window.MARKET_DEFS = {
     "mult": 1,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.4
    },
    "iron_ore": {
     "base": 3,
@@ -3130,7 +3283,8 @@ window.MARKET_DEFS = {
     "mult": 1.025,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.1
    },
    "iron_bar": {
     "base": 8,
@@ -3140,7 +3294,8 @@ window.MARKET_DEFS = {
     "mult": 0.985,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.5
    },
    "longshade_timber": {
     "base": 6,
@@ -3150,7 +3305,8 @@ window.MARKET_DEFS = {
     "mult": 1.15,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.4
    },
    "charcoal": {
     "base": 3,
@@ -3160,7 +3316,8 @@ window.MARKET_DEFS = {
     "mult": 1.125,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.8
    },
    "salt": {
     "base": 6,
@@ -3170,7 +3327,8 @@ window.MARKET_DEFS = {
     "mult": 1.06,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.8
    },
    "furs": {
     "base": 14,
@@ -3180,7 +3338,8 @@ window.MARKET_DEFS = {
     "mult": 1.09,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.3
    },
    "leather": {
     "base": 12,
@@ -3190,7 +3349,8 @@ window.MARKET_DEFS = {
     "mult": 1.08,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.4
    },
    "wool": {
     "base": 4,
@@ -3200,7 +3360,8 @@ window.MARKET_DEFS = {
     "mult": 0.99,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.4
    },
    "wool_cloth": {
     "base": 15,
@@ -3210,7 +3371,8 @@ window.MARKET_DEFS = {
     "mult": 0.985,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.5
    },
    "raw_hide": {
     "base": 8,
@@ -3220,7 +3382,8 @@ window.MARKET_DEFS = {
     "mult": 1.15,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.2
    },
    "boar_tusk": {
     "base": 10,
@@ -3230,7 +3393,8 @@ window.MARKET_DEFS = {
     "mult": 1.15,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.1
    },
    "elk_antler": {
     "base": 7,
@@ -3240,10 +3404,16 @@ window.MARKET_DEFS = {
     "mult": 1.15,
     "world": {
      "tile": "mc"
-    }
+    },
+    "need": 0.1
    }
   },
-  "commodities": true
+  "commodities": true,
+  "appetite": {
+   "_readme": "A commodity market spends at most this share of its purse (its target) on ONE good a day (2026-10-24, the user: a hill village would not throw all its gold at wool or timber it has lived without). stocked: a good the market holds; unstocked: a good with no maker in its reach.",
+   "stocked": 0.1,
+   "unstocked": 0.03
+  }
  },
  "af_market": {
   "id": "af_market",
@@ -3263,7 +3433,8 @@ window.MARKET_DEFS = {
     "mult": 1.09,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.2
    },
    "boar_meat": {
     "base": 6,
@@ -3273,7 +3444,8 @@ window.MARKET_DEFS = {
     "mult": 1.065,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.5
    },
    "venison": {
     "base": 7,
@@ -3283,7 +3455,8 @@ window.MARKET_DEFS = {
     "mult": 1.065,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.4
    },
    "barley_loaf": {
     "base": 2,
@@ -3293,7 +3466,8 @@ window.MARKET_DEFS = {
     "mult": 0.985,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 1
    },
    "grain": {
     "base": 2,
@@ -3303,7 +3477,8 @@ window.MARKET_DEFS = {
     "mult": 0.985,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 1
    },
    "cheese": {
     "base": 3,
@@ -3313,7 +3488,8 @@ window.MARKET_DEFS = {
     "mult": 0.99,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.6
    },
    "orchard_apple": {
     "base": 1,
@@ -3323,7 +3499,8 @@ window.MARKET_DEFS = {
     "mult": 0.99,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.4
    },
    "root_vegetable_bundle": {
     "base": 2,
@@ -3333,7 +3510,8 @@ window.MARKET_DEFS = {
     "mult": 0.985,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.9
    },
    "farm_eggs": {
     "base": 3,
@@ -3343,7 +3521,8 @@ window.MARKET_DEFS = {
     "mult": 0.99,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.7
    },
    "dried_pork_sausage": {
     "base": 3,
@@ -3353,7 +3532,8 @@ window.MARKET_DEFS = {
     "mult": 0.99,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.7
    },
    "onions": {
     "base": 2,
@@ -3363,7 +3543,8 @@ window.MARKET_DEFS = {
     "mult": 0.985,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.8
    },
    "potatoes": {
     "base": 1,
@@ -3373,7 +3554,8 @@ window.MARKET_DEFS = {
     "mult": 0.985,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.9
    },
    "tomatoes": {
     "base": 3,
@@ -3383,7 +3565,8 @@ window.MARKET_DEFS = {
     "mult": 0.99,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.3
    },
    "dressed_chicken": {
     "base": 7,
@@ -3393,17 +3576,19 @@ window.MARKET_DEFS = {
     "mult": 0.99,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.6
    },
    "fresh_fish_fillet": {
     "base": 4,
-    "target": 124,
-    "stock0": 124,
+    "target": 17,
+    "stock0": 17,
     "buyPct": 0.8,
-    "mult": 1.05,
+    "mult": 1.12,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.8
    },
    "cabbage": {
     "base": 2,
@@ -3413,7 +3598,8 @@ window.MARKET_DEFS = {
     "mult": 0.985,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.8
    },
    "pumpkin": {
     "base": 3,
@@ -3423,7 +3609,8 @@ window.MARKET_DEFS = {
     "mult": 0.99,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.4
    },
    "iron_ore": {
     "base": 3,
@@ -3433,7 +3620,8 @@ window.MARKET_DEFS = {
     "mult": 0.94,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.1
    },
    "iron_bar": {
     "base": 8,
@@ -3443,7 +3631,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.5
    },
    "longshade_timber": {
     "base": 6,
@@ -3453,7 +3642,8 @@ window.MARKET_DEFS = {
     "mult": 1.065,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.4
    },
    "charcoal": {
     "base": 3,
@@ -3463,7 +3653,8 @@ window.MARKET_DEFS = {
     "mult": 1.04,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.8
    },
    "salt": {
     "base": 6,
@@ -3473,7 +3664,8 @@ window.MARKET_DEFS = {
     "mult": 1.13,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.8
    },
    "furs": {
     "base": 14,
@@ -3483,7 +3675,8 @@ window.MARKET_DEFS = {
     "mult": 1.04,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.3
    },
    "leather": {
     "base": 12,
@@ -3493,7 +3686,8 @@ window.MARKET_DEFS = {
     "mult": 1.02,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.4
    },
    "wool": {
     "base": 4,
@@ -3503,7 +3697,8 @@ window.MARKET_DEFS = {
     "mult": 0.94,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.4
    },
    "wool_cloth": {
     "base": 15,
@@ -3513,7 +3708,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.5
    },
    "raw_hide": {
     "base": 8,
@@ -3523,7 +3719,8 @@ window.MARKET_DEFS = {
     "mult": 1.065,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.2
    },
    "boar_tusk": {
     "base": 10,
@@ -3533,7 +3730,8 @@ window.MARKET_DEFS = {
     "mult": 1.065,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.1
    },
    "elk_antler": {
     "base": 7,
@@ -3543,10 +3741,16 @@ window.MARKET_DEFS = {
     "mult": 1.065,
     "world": {
      "tile": "af"
-    }
+    },
+    "need": 0.1
    }
   },
-  "commodities": true
+  "commodities": true,
+  "appetite": {
+   "_readme": "A commodity market spends at most this share of its purse (its target) on ONE good a day (2026-10-24, the user: a hill village would not throw all its gold at wool or timber it has lived without). stocked: a good the market holds; unstocked: a good with no maker in its reach.",
+   "stocked": 0.1,
+   "unstocked": 0.03
+  }
  },
  "rv_market": {
   "id": "rv_market",
@@ -3566,7 +3770,8 @@ window.MARKET_DEFS = {
     "mult": 1.13,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.2
    },
    "boar_meat": {
     "base": 6,
@@ -3576,7 +3781,8 @@ window.MARKET_DEFS = {
     "mult": 1.105,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.5
    },
    "venison": {
     "base": 7,
@@ -3586,7 +3792,8 @@ window.MARKET_DEFS = {
     "mult": 1.105,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.4
    },
    "barley_loaf": {
     "base": 2,
@@ -3596,7 +3803,8 @@ window.MARKET_DEFS = {
     "mult": 1.025,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 1
    },
    "grain": {
     "base": 2,
@@ -3606,7 +3814,8 @@ window.MARKET_DEFS = {
     "mult": 1.025,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 1
    },
    "cheese": {
     "base": 3,
@@ -3616,7 +3825,8 @@ window.MARKET_DEFS = {
     "mult": 1.03,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.6
    },
    "orchard_apple": {
     "base": 1,
@@ -3626,7 +3836,8 @@ window.MARKET_DEFS = {
     "mult": 1.03,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.4
    },
    "root_vegetable_bundle": {
     "base": 2,
@@ -3636,17 +3847,19 @@ window.MARKET_DEFS = {
     "mult": 1.025,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.9
    },
    "farm_eggs": {
     "base": 3,
-    "target": 112,
-    "stock0": 112,
+    "target": 97,
+    "stock0": 97,
     "buyPct": 0.8,
     "mult": 1.03,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.7
    },
    "dried_pork_sausage": {
     "base": 3,
@@ -3656,7 +3869,8 @@ window.MARKET_DEFS = {
     "mult": 1.03,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.7
    },
    "onions": {
     "base": 2,
@@ -3666,7 +3880,8 @@ window.MARKET_DEFS = {
     "mult": 1.025,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.8
    },
    "potatoes": {
     "base": 1,
@@ -3676,7 +3891,8 @@ window.MARKET_DEFS = {
     "mult": 1.025,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.9
    },
    "tomatoes": {
     "base": 3,
@@ -3686,27 +3902,29 @@ window.MARKET_DEFS = {
     "mult": 1.03,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.3
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 70,
-    "stock0": 70,
+    "target": 60,
+    "stock0": 60,
     "buyPct": 0.8,
     "mult": 1.03,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.6
    },
    "fresh_fish_fillet": {
     "base": 4,
-    "target": 83,
-    "stock0": 83,
+    "target": 3,
+    "stock0": 0,
     "buyPct": 0.8,
-    "mult": 1.09,
-    "world": {
-     "tile": "rv"
-    }
+    "mult": 1,
+    "need": 0.8,
+    "unstocked": true,
+    "sells": false
    },
    "cabbage": {
     "base": 2,
@@ -3716,7 +3934,8 @@ window.MARKET_DEFS = {
     "mult": 1.025,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.8
    },
    "pumpkin": {
     "base": 3,
@@ -3726,7 +3945,8 @@ window.MARKET_DEFS = {
     "mult": 1.03,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.4
    },
    "iron_ore": {
     "base": 3,
@@ -3736,7 +3956,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.1
    },
    "iron_bar": {
     "base": 8,
@@ -3746,7 +3967,8 @@ window.MARKET_DEFS = {
     "mult": 0.94,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.5
    },
    "longshade_timber": {
     "base": 6,
@@ -3756,7 +3978,8 @@ window.MARKET_DEFS = {
     "mult": 1.105,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.4
    },
    "charcoal": {
     "base": 3,
@@ -3766,7 +3989,8 @@ window.MARKET_DEFS = {
     "mult": 1,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.8
    },
    "salt": {
     "base": 6,
@@ -3776,7 +4000,8 @@ window.MARKET_DEFS = {
     "mult": 1.17,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.8
    },
    "furs": {
     "base": 14,
@@ -3786,7 +4011,8 @@ window.MARKET_DEFS = {
     "mult": 1,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.3
    },
    "leather": {
     "base": 12,
@@ -3796,7 +4022,8 @@ window.MARKET_DEFS = {
     "mult": 1.06,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.4
    },
    "wool": {
     "base": 4,
@@ -3806,7 +4033,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.4
    },
    "wool_cloth": {
     "base": 15,
@@ -3816,7 +4044,8 @@ window.MARKET_DEFS = {
     "mult": 0.94,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.5
    },
    "raw_hide": {
     "base": 8,
@@ -3826,7 +4055,8 @@ window.MARKET_DEFS = {
     "mult": 1.105,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.2
    },
    "boar_tusk": {
     "base": 10,
@@ -3836,7 +4066,8 @@ window.MARKET_DEFS = {
     "mult": 1.105,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.1
    },
    "elk_antler": {
     "base": 7,
@@ -3846,10 +4077,16 @@ window.MARKET_DEFS = {
     "mult": 1.105,
     "world": {
      "tile": "rv"
-    }
+    },
+    "need": 0.1
    }
   },
-  "commodities": true
+  "commodities": true,
+  "appetite": {
+   "_readme": "A commodity market spends at most this share of its purse (its target) on ONE good a day (2026-10-24, the user: a hill village would not throw all its gold at wool or timber it has lived without). stocked: a good the market holds; unstocked: a good with no maker in its reach.",
+   "stocked": 0.1,
+   "unstocked": 0.03
+  }
  },
  "wf_market": {
   "id": "wf_market",
@@ -3869,27 +4106,30 @@ window.MARKET_DEFS = {
     "mult": 1.165,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.2
    },
    "boar_meat": {
     "base": 6,
-    "target": 44,
-    "stock0": 44,
+    "target": 10,
+    "stock0": 10,
     "buyPct": 0.8,
-    "mult": 1.14,
+    "mult": 1.195,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.5
    },
    "venison": {
     "base": 7,
-    "target": 44,
-    "stock0": 44,
+    "target": 10,
+    "stock0": 10,
     "buyPct": 0.8,
-    "mult": 1.14,
+    "mult": 1.195,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.4
    },
    "barley_loaf": {
     "base": 2,
@@ -3899,7 +4139,8 @@ window.MARKET_DEFS = {
     "mult": 0.99,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 1
    },
    "grain": {
     "base": 2,
@@ -3909,7 +4150,8 @@ window.MARKET_DEFS = {
     "mult": 0.99,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 1
    },
    "cheese": {
     "base": 3,
@@ -3919,7 +4161,8 @@ window.MARKET_DEFS = {
     "mult": 1.065,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.6
    },
    "orchard_apple": {
     "base": 1,
@@ -3929,7 +4172,8 @@ window.MARKET_DEFS = {
     "mult": 1.065,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.4
    },
    "root_vegetable_bundle": {
     "base": 2,
@@ -3939,17 +4183,19 @@ window.MARKET_DEFS = {
     "mult": 0.99,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.9
    },
    "farm_eggs": {
     "base": 3,
-    "target": 105,
-    "stock0": 105,
+    "target": 91,
+    "stock0": 91,
     "buyPct": 0.8,
     "mult": 1.065,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.7
    },
    "dried_pork_sausage": {
     "base": 3,
@@ -3959,7 +4205,8 @@ window.MARKET_DEFS = {
     "mult": 1.065,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.7
    },
    "onions": {
     "base": 2,
@@ -3969,7 +4216,8 @@ window.MARKET_DEFS = {
     "mult": 0.99,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.8
    },
    "potatoes": {
     "base": 1,
@@ -3979,7 +4227,8 @@ window.MARKET_DEFS = {
     "mult": 0.99,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.9
    },
    "tomatoes": {
     "base": 3,
@@ -3989,27 +4238,29 @@ window.MARKET_DEFS = {
     "mult": 1.065,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.3
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 66,
-    "stock0": 66,
+    "target": 57,
+    "stock0": 57,
     "buyPct": 0.8,
     "mult": 1.065,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.6
    },
    "fresh_fish_fillet": {
     "base": 4,
-    "target": 86,
-    "stock0": 86,
+    "target": 3,
+    "stock0": 0,
     "buyPct": 0.8,
-    "mult": 1.07,
-    "world": {
-     "tile": "wf"
-    }
+    "mult": 1,
+    "need": 0.8,
+    "unstocked": true,
+    "sells": false
    },
    "cabbage": {
     "base": 2,
@@ -4019,7 +4270,8 @@ window.MARKET_DEFS = {
     "mult": 0.99,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.8
    },
    "pumpkin": {
     "base": 3,
@@ -4029,7 +4281,8 @@ window.MARKET_DEFS = {
     "mult": 1.065,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.4
    },
    "iron_ore": {
     "base": 3,
@@ -4039,7 +4292,8 @@ window.MARKET_DEFS = {
     "mult": 0.945,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.1
    },
    "iron_bar": {
     "base": 8,
@@ -4049,7 +4303,8 @@ window.MARKET_DEFS = {
     "mult": 0.975,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.5
    },
    "longshade_timber": {
     "base": 6,
@@ -4059,7 +4314,8 @@ window.MARKET_DEFS = {
     "mult": 1.14,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.4
    },
    "charcoal": {
     "base": 3,
@@ -4069,7 +4325,8 @@ window.MARKET_DEFS = {
     "mult": 1.045,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.8
    },
    "salt": {
     "base": 6,
@@ -4079,7 +4336,8 @@ window.MARKET_DEFS = {
     "mult": 1.15,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.8
    },
    "furs": {
     "base": 14,
@@ -4089,7 +4347,8 @@ window.MARKET_DEFS = {
     "mult": 1,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.3
    },
    "leather": {
     "base": 12,
@@ -4099,7 +4358,8 @@ window.MARKET_DEFS = {
     "mult": 1.095,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.4
    },
    "wool": {
     "base": 4,
@@ -4109,7 +4369,8 @@ window.MARKET_DEFS = {
     "mult": 0.9,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.4
    },
    "wool_cloth": {
     "base": 15,
@@ -4119,7 +4380,8 @@ window.MARKET_DEFS = {
     "mult": 0.975,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.5
    },
    "raw_hide": {
     "base": 8,
@@ -4129,7 +4391,8 @@ window.MARKET_DEFS = {
     "mult": 1.14,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.2
    },
    "boar_tusk": {
     "base": 10,
@@ -4139,7 +4402,8 @@ window.MARKET_DEFS = {
     "mult": 1.14,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.1
    },
    "elk_antler": {
     "base": 7,
@@ -4149,10 +4413,16 @@ window.MARKET_DEFS = {
     "mult": 1.14,
     "world": {
      "tile": "wf"
-    }
+    },
+    "need": 0.1
    }
   },
-  "commodities": true
+  "commodities": true,
+  "appetite": {
+   "_readme": "A commodity market spends at most this share of its purse (its target) on ONE good a day (2026-10-24, the user: a hill village would not throw all its gold at wool or timber it has lived without). stocked: a good the market holds; unstocked: a good with no maker in its reach.",
+   "stocked": 0.1,
+   "unstocked": 0.03
+  }
  },
  "pv_market": {
   "id": "pv_market",
@@ -4172,27 +4442,30 @@ window.MARKET_DEFS = {
     "mult": 1.23,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.2
    },
    "boar_meat": {
     "base": 6,
-    "target": 88,
-    "stock0": 88,
+    "target": 19,
+    "stock0": 19,
     "buyPct": 0.8,
-    "mult": 1.145,
+    "mult": 1.2,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.5
    },
    "venison": {
     "base": 7,
-    "target": 88,
-    "stock0": 88,
+    "target": 19,
+    "stock0": 19,
     "buyPct": 0.8,
-    "mult": 1.145,
+    "mult": 1.2,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.4
    },
    "barley_loaf": {
     "base": 2,
@@ -4202,7 +4475,8 @@ window.MARKET_DEFS = {
     "mult": 0.98,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 1
    },
    "grain": {
     "base": 2,
@@ -4212,7 +4486,8 @@ window.MARKET_DEFS = {
     "mult": 0.98,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 1
    },
    "cheese": {
     "base": 3,
@@ -4222,7 +4497,8 @@ window.MARKET_DEFS = {
     "mult": 1.08,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.6
    },
    "orchard_apple": {
     "base": 1,
@@ -4232,7 +4508,8 @@ window.MARKET_DEFS = {
     "mult": 1.08,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.4
    },
    "root_vegetable_bundle": {
     "base": 2,
@@ -4242,17 +4519,19 @@ window.MARKET_DEFS = {
     "mult": 0.98,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.9
    },
    "farm_eggs": {
     "base": 3,
-    "target": 188,
-    "stock0": 188,
+    "target": 47,
+    "stock0": 47,
     "buyPct": 0.8,
     "mult": 1.08,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.7
    },
    "dried_pork_sausage": {
     "base": 3,
@@ -4262,7 +4541,8 @@ window.MARKET_DEFS = {
     "mult": 1.08,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.7
    },
    "onions": {
     "base": 2,
@@ -4272,7 +4552,8 @@ window.MARKET_DEFS = {
     "mult": 0.98,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.8
    },
    "potatoes": {
     "base": 1,
@@ -4282,7 +4563,8 @@ window.MARKET_DEFS = {
     "mult": 0.98,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.9
    },
    "tomatoes": {
     "base": 3,
@@ -4292,17 +4574,19 @@ window.MARKET_DEFS = {
     "mult": 1.08,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.3
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 117,
-    "stock0": 117,
+    "target": 29,
+    "stock0": 29,
     "buyPct": 0.8,
     "mult": 1.08,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.6
    },
    "cabbage": {
     "base": 2,
@@ -4312,7 +4596,8 @@ window.MARKET_DEFS = {
     "mult": 0.98,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.8
    },
    "pumpkin": {
     "base": 3,
@@ -4322,7 +4607,8 @@ window.MARKET_DEFS = {
     "mult": 1.08,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.4
    },
    "iron_ore": {
     "base": 3,
@@ -4332,7 +4618,8 @@ window.MARKET_DEFS = {
     "mult": 1.09,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.1
    },
    "iron_bar": {
     "base": 8,
@@ -4342,7 +4629,8 @@ window.MARKET_DEFS = {
     "mult": 1.05,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.5
    },
    "longshade_timber": {
     "base": 6,
@@ -4352,7 +4640,8 @@ window.MARKET_DEFS = {
     "mult": 1.145,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.4
    },
    "charcoal": {
     "base": 3,
@@ -4362,7 +4651,8 @@ window.MARKET_DEFS = {
     "mult": 1.145,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.8
    },
    "salt": {
     "base": 6,
@@ -4372,7 +4662,8 @@ window.MARKET_DEFS = {
     "mult": 0.98,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.8
    },
    "furs": {
     "base": 14,
@@ -4382,7 +4673,8 @@ window.MARKET_DEFS = {
     "mult": 1.145,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.3
    },
    "leather": {
     "base": 12,
@@ -4392,7 +4684,8 @@ window.MARKET_DEFS = {
     "mult": 1,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.4
    },
    "wool": {
     "base": 4,
@@ -4402,7 +4695,8 @@ window.MARKET_DEFS = {
     "mult": 1.07,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.4
    },
    "wool_cloth": {
     "base": 15,
@@ -4412,7 +4706,8 @@ window.MARKET_DEFS = {
     "mult": 1,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.5
    },
    "raw_hide": {
     "base": 8,
@@ -4422,7 +4717,8 @@ window.MARKET_DEFS = {
     "mult": 1.145,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.2
    },
    "boar_tusk": {
     "base": 10,
@@ -4432,7 +4728,8 @@ window.MARKET_DEFS = {
     "mult": 1.145,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.1
    },
    "elk_antler": {
     "base": 7,
@@ -4442,10 +4739,16 @@ window.MARKET_DEFS = {
     "mult": 1.145,
     "world": {
      "tile": "pv"
-    }
+    },
+    "need": 0.1
    }
   },
-  "commodities": true
+  "commodities": true,
+  "appetite": {
+   "_readme": "A commodity market spends at most this share of its purse (its target) on ONE good a day (2026-10-24, the user: a hill village would not throw all its gold at wool or timber it has lived without). stocked: a good the market holds; unstocked: a good with no maker in its reach.",
+   "stocked": 0.1,
+   "unstocked": 0.03
+  }
  },
  "trapper": {
   "id": "trapper",

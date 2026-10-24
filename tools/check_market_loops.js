@@ -322,9 +322,10 @@ section("commodities and distance");
     commodities.forEach((it) => {
       const g = def.goods[it.id];
       if (!g) { const tr = cat.trades.find((t) => t.name === mid); ok(!!(tr && (tr.excludeCommodities || []).indexOf(it.id) >= 0), mid + " deals in " + it.id + " (or the catalog leaves it off that floor on purpose)"); return; }
-      let level = CP.capLevel;
-      Object.keys(it.commodity.makers).forEach((t) => { const d = tile === t ? 0 : OW.route(tile, t).miles; level = Math.min(level, CP.cost[it.commodity.makers[t]] + CP.perMile * d); });
-      ok(g.buys !== false && g.sells !== false && Math.abs(g.mult - level) < 0.001 && g.mult >= CP.cost.major - 1e-9 && g.mult <= CP.capLevel + 1e-9, mid + "/" + it.id + ": bought here, price level " + g.mult + " is the nearest maker's cost plus the miles");
+      let level = CP.capLevel, inReach = 0;
+      Object.keys(it.commodity.makers).forEach((t) => { const d = tile === t ? 0 : OW.route(tile, t).miles; if (d > (it.commodity.reach || Infinity)) return; inReach++; level = Math.min(level, CP.cost[it.commodity.makers[t]] + CP.perMile * d); });
+      if (!inReach) { ok(g.unstocked === true && g.sells === false && g.buys !== false && !g.world, mid + "/" + it.id + ": no maker within " + it.commodity.reach + " miles, so it is not stocked and the market pays no premium for it"); return; }
+      ok(g.buys !== false && g.sells !== false && Math.abs(g.mult - level) < 0.001 && g.mult >= CP.cost.major - 1e-9 && g.mult <= CP.capLevel + 1e-9, mid + "/" + it.id + ": bought here, price level " + g.mult + " is the nearest maker's cost plus the miles (makers within reach only)");
       if (g.restock === false) ok(g.stock0 === 0 && g.flow < 0, mid + "/" + it.id + ": a good with no supply starts empty and is used up, never restocked");
     });
   });
@@ -399,7 +400,7 @@ section("the world: seasons and shocks");
   const tiles = Object.keys(WD.tiles);
   ok(tiles.length >= 9 && tiles.every((t) => WD.tiles[t].pop > 0), tiles.length + " settlements have populations (" + tiles.map((t) => WD.tiles[t].name + " " + WD.tiles[t].pop).join(", ") + ")");
   let dataOk = true;
-  Object.keys(WD.goods).forEach((id) => { const G = WD.goods[id]; if (!G.makers.length || G.makers.some((m) => !(m.cap > 0)) || G.consumers.length !== tiles.length || G.consumers.some((c) => Math.abs(Object.keys(c.s).reduce((a, k) => a + c.s[k], 0) - 1) > 0.002 || !(c.D > 0))) dataOk = false; });
+  Object.keys(WD.goods).forEach((id) => { const G = WD.goods[id]; if (!G.makers.length || G.makers.some((m) => !(m.cap > 0)) || G.consumers.length > tiles.length || G.consumers.some((c) => Math.abs(Object.keys(c.s).reduce((a, k) => a + c.s[k], 0) - 1) > 0.002 || !(c.D > 0))) dataOk = false; });
   ok(dataOk, "every commodity has makers with a capacity, and every settlement eats it and draws shares from its makers that sum to 1");
   function yearAvg(good, tile, seeds) { let t = 0, c = 0; for (let seed = 1; seed <= seeds; seed++) for (let d = 5; d <= 360; d += 5) { t += W.supplyAt(seed, good, tile, d); c++; } return t / c; }
   const farm = yearAvg("grain", "fv", 12), mine = yearAvg("grain", "rv", 12), city = yearAvg("grain", "pv", 12);
@@ -411,9 +412,9 @@ section("the world: seasons and shocks");
   const before = yearAvg("grain", "rv", 12); W.setData(bigger); const after = yearAvg("grain", "rv", 12); W.setData(saved);
   ok(after < before - 0.005, "when Port Valen's demand for grain grows by 40 percent, a village drawing on the same farms is worse supplied (" + before.toFixed(3) + " to " + after.toFixed(3) + ")");
   // a maker's own settlement keeps what it eats before it ships any
-  const lowOut = JSON.parse(JSON.stringify(WD)); lowOut.goods.grain.makers.forEach((m) => { if (m.tile === "fv") m.cap *= 0.4; });
+  const lowOut = JSON.parse(JSON.stringify(WD)); lowOut.goods.grain.makers.forEach((m) => { if (m.tile === "fv") m.cap *= 0.1; });
   const fvOwn = yearAvg("grain", "fv", 12); W.setData(lowOut); const fvLow = yearAvg("grain", "fv", 12), pvLow = yearAvg("grain", "pv", 12); W.setData(saved);
-  ok(fvLow < fvOwn && pvLow < city, "when Barleycross turns out 40 percent as much grain, Barleycross (" + fvLow.toFixed(2) + ") and Port Valen (" + pvLow.toFixed(2) + ") both go short");
+  ok(fvLow >= fvOwn - 0.02 && pvLow < city - 0.1, "when Barleycross turns out a tenth as much grain it still feeds itself first (" + fvLow.toFixed(2) + " against " + fvOwn.toFixed(2) + ") and the shortage lands on Port Valen (" + pvLow.toFixed(2) + " against " + city.toFixed(2) + ")");
   // distance: a crisis at the source is felt more by a market close to it than by a far one (averaged over many days)
   let nearDev = 0, farDev = 0, cnt = 0;
   for (let seed = 1; seed <= 30; seed++) for (let d = 10; d <= 360; d += 5) { const near = W.derive(DEFS.rv_market, d, seed).goods.iron_ore, far = W.derive(DEFS.tm_market, d, seed).goods.iron_ore; nearDev += Math.abs(near.supply - 1); farDev += Math.abs(far.supply - 1); cnt++; }
@@ -430,6 +431,72 @@ section("the world: seasons and shocks");
   }
   console.log("   best first-unit route margin over the sampled days: " + bestM + " copper (" + bestD + ")");
   ok(bestM <= 30, "no commodity carries more than 30 copper a unit between two open markets on the sampled days (" + bestM + ")");
+}
+
+// ---------------------------------------------------------------- 12. reach, need and appetite (what a far or small market pays for a good it does not need)
+section("reach, need and appetite");
+{
+  const mkDef = (goods, extra) => Object.assign({ id: "t", purseTarget: 1000, regen: { stock: 0.2, purse: 0.1 }, commodities: true, appetite: { stocked: 0.1, unstocked: 0.03 }, goods: goods }, extra || {});
+  const g = (o) => Object.assign({ base: 10, target: 40, stock0: 40, buyPct: 0.8, mult: 1 }, o);
+  // the premium on what a market PAYS is scaled by need; what it CHARGES is not
+  const dep = mkDef({ staple: g({ stock0: 0, mult: 1.6, worldRatio: 1.6, need: 1 }), luxury: g({ stock0: 0, mult: 1.6, worldRatio: 1.6, need: 0.2 }) });
+  const st = M.init(dep, 0); st.purse = 1e9;
+  const pay = (id) => M.quote(st, dep, { sell: { [id]: 1 } }, null).sellTotal, charge = (id) => M.quote(Object.assign({}, st, { stock: { staple: 5, luxury: 5 } }), dep, { buy: { [id]: 1 } }, null).buyTotal;
+  ok(pay("luxury") < pay("staple"), "a short market pays less for a good it needs little (" + pay("luxury") + " copper) than for one it needs (" + pay("staple") + ")");
+  ok(pay("staple") <= 20 * 0.8 + 1e-9 && pay("luxury") >= 5 * 0.8 - 1e-9, "and the payout stays between the floor and twice the base price");
+  ok(charge("luxury") === charge("staple"), "while what the market CHARGES for a short good is the same whatever it needs (" + charge("luxury") + " copper)");
+  // an unstocked good pays no premium at all
+  const dun = mkDef({ wool: g({ stock0: 0, target: 3, unstocked: true, sells: false, need: 0.4 }) }), stu = M.init(dun, 0); stu.purse = 1e9;
+  const qu = M.quote(stu, dun, { sell: { wool: 1 } }, null);
+  ok(qu.ok && qu.sellTotal <= 10 * 0.8 + 1e-9, "a market with no stock of a good pays no shortage premium for it (" + qu.sellTotal + " copper for a base price of 10)");
+  ok(!M.quote(stu, dun, { buy: { wool: 1 } }, null).ok, "and it has nothing to sell");
+  // appetite: a market spends only a share of its purse on one good a day
+  const dap = mkDef({ iron: g({ stock0: 40, target: 40 }) }); let sap = M.init(dap, 5); sap.purse = 1e9;
+  const big = M.quote(sap, dap, { sell: { iron: 60 } }, null);
+  ok(!big.ok && /will spend only/.test(big.problems.join()), "a market refuses to spend more than its share of the purse on one good in a day (" + big.problems.join("; ") + ")");
+  let fit = 0; for (let n = 1; n <= 60; n++) { const q1 = M.quote(sap, dap, { sell: { iron: n } }, null); if (q1.ok) fit = n; else break; }
+  ok(fit > 0 && fit < 60, "a lot that fits the day's appetite goes through (" + fit + " units)");
+  const q2 = M.quote(sap, dap, { sell: { iron: fit } }, null); sap = M.commit(sap, dap, q2, 5);
+  ok(!M.quote(sap, dap, { sell: { iron: fit } }, null).ok, "the same lot is refused later that day, after the appetite has been used");
+  const rt = M.parse(M.serialize(sap));
+  ok(M.spentToday(rt, "iron") === M.spentToday(sap, "iron") && M.spentToday(rt, "iron") > 0, "what was spent today survives the saved string (" + M.spentToday(rt, "iron") + " copper)");
+  const nextDay = M.refresh(rt, dap, 6); nextDay.purse = 1e9;
+  ok(M.spentToday(nextDay, "iron") === 0 && M.quote(nextDay, dap, { sell: { iron: fit } }, null).ok, "and the appetite is back the next day");
+  // the real markets: a hunter's load still fits (ten hides at the smallest village market), a trader's cartload of cloth does not
+  const real = DEFS_REAL();
+  function DEFS_REAL() { const sbx = { window: {} }; vm.runInNewContext(fs.readFileSync(path.join(__dirname, "..", "web", "mygame", "market-data.generated.js"), "utf8"), sbx); return sbx.window.MARKET_DEFS; }
+  const ash = real.ah_market, sa = M.init(ash, 3); sa.purse = 1e9;
+  ok(M.quote(sa, ash, { sell: { raw_hide: 10 } }, null).ok, "a hunter's ten hides fit Ashrun Holt's daily appetite for hides");
+  ok(!M.quote(sa, ash, { sell: { wool_cloth: 40 } }, null).ok, "but forty bolts of cloth in a day do not (a village market of " + ash.purseTarget + " copper)");
+}
+
+// ---------------------------------------------------------------- 13. stockpiles (the stored average of a maker's output)
+section("stockpiles");
+{
+  const W = require(path.join(__dirname, "..", "web", "mygame", "world.js"));
+  const wsb = { window: {} }; vm.runInNewContext(fs.readFileSync(path.join(__dirname, "..", "web", "mygame", "world-data.generated.js"), "utf8"), wsb);
+  const WD = wsb.window.WORLD_DATA; W.setData(WD);
+  const mean = (a) => a.reduce((x, y) => x + y, 0) / a.length, sd = (a) => { const m = mean(a); return Math.sqrt(mean(a.map((v) => (v - m) * (v - m)))); };
+  const grainSeason = WD.goods.grain.season, raw = (d) => W.seasonMult(grainSeason, d), tau = WD.goods.grain.store;
+  const days = Array.from({ length: 360 }, (_, i) => 360 + i + 1), sm = days.map((d) => W.smooth(raw, d, tau)), rw = days.map(raw);
+  ok(Math.abs(mean(sm) - mean(rw)) < 0.03, "storing a good gives back what was put in: a year averages " + mean(sm).toFixed(3) + " smoothed and " + mean(rw).toFixed(3) + " raw");
+  ok(sd(sm) < 0.7 * sd(rw), "a granary (grain, " + tau + " days) flattens the seasons: spread " + sd(sm).toFixed(2) + " against " + sd(rw).toFixed(2) + " raw");
+  const peak = (arr) => days[arr.indexOf(Math.max.apply(null, arr))];
+  ok(peak(sm) > peak(rw) + 20 || (peak(sm) < peak(rw) - 300), "and the glut is released into the lean season: the smoothed peak comes at day " + peak(sm) + " against the harvest at " + peak(rw));
+  const dip = (len, t) => { const fn = (d) => (d >= 1000 && d < 1000 + len) ? 0.2 : 1; let lo = 1; for (let d = 1000; d < 1000 + len + 200; d += 3) lo = Math.min(lo, W.smooth(fn, d, t)); return lo; };
+  ok(dip(12, 45) > 0.7, "a fortnight's crisis at the source is cushioned by the sheds: the supply dips only to " + dip(12, 45).toFixed(2) + " of normal");
+  ok(dip(90, 45) < 0.45, "but a 90-day one drains them: " + dip(90, 45).toFixed(2) + " of normal");
+  const fnLong = (d) => (d >= 1000 && d < 1090) ? 0.3 : 1; const after = W.smooth(fnLong, 1090 + 30, 45), later = W.smooth(fnLong, 1090 + 150, 45);
+  ok(after < 0.9 && later > 0.97, "and the stores stay thin after it ends (" + after.toFixed(2) + " a month later) and recover (" + later.toFixed(2) + " five months on)");
+  // real goods: every storable good is steadier than its raw output, a perishable is not smoothed at all, and the average is the same whatever order it is asked in
+  let steady = true, perish = true, nS = 0, nP = 0;
+  Object.keys(WD.goods).forEach((id) => { const G = WD.goods[id], tile = G.makers[0].tile; const rr = [], ss = [];
+    for (let d = 20; d <= 740; d += 4) { rr.push(W.rawOutput(11, tile, id, d, 0)); ss.push(W.outputMult(11, tile, id, d, 0)); }
+    if (G.store > 6) { nS++; if (!(sd(ss) < sd(rr))) steady = false; } else { nP++; if (Math.abs(sd(ss) - sd(rr)) > 1e-9) perish = false; } });
+  ok(steady && nS > 15, nS + " storable goods are steadier than their raw output");
+  ok(perish && nP >= 4, nP + " perishable goods (fresh fish, eggs, bread, meat, tomatoes) are not smoothed at all");
+  const v1 = W.outputMult(5, "fv", "grain", 200.5, 0); W.setData(WD); W.outputMult(5, "fv", "grain", 33, 0); const v2 = W.outputMult(5, "fv", "grain", 200.5, 0);
+  ok(v1 === v2, "the stored average is the same whatever order it is asked in");
 }
 
 console.log("\n" + checks + " checks, " + fails + " failed");

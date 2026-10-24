@@ -27,6 +27,10 @@
  * A good may also carry a SUPPLY (web/mygame/world.js sets it from the season and the makers' shocks, 1 is normal): the shelf then settles at target x supply, while the price level still reads
  * the usual target and the good's mult (which the world also scales), so a shortage thins the shelf and lifts the price and a glut does the reverse.
  *
+ * A good may carry a NEED (0 to 1, the catalog's commodity.need: how much a settlement must have it). The shortage premium on what the market PAYS the player is scaled by it (need 1 keeps the whole premium, need 0.2 keeps a fifth of it),
+ * so a village in the hills does not pay dear for wool it has always done without; what the market CHARGES is unchanged. A good the market does not stock at all (no maker within its reach: unstocked) pays no premium whatever.
+ * A commodity market also spends only a share of its purse on one good a day (def.appetite: stocked goods and unstocked ones), tracked in the state (sp) and reset by the day.
+ *
  * A good may also have a flow: whole units a day the market PRODUCES (positive: a farm's grain) or CONSUMES (negative: a town eating it), added before the drift toward target. The
  * drift alone only closes a share of the gap, so a trader who keeps two markets level every day would earn next to nothing; the flow is what a route's income is made of.
  *
@@ -61,12 +65,20 @@
   // The payout is capped the same way, so it still never rises with stock (the round-trip proof needs that).
   // And none below MIN_ASK times the base (a harvest glut halves a price, it does not make a pumpkin worth nothing). Both clamps keep the price from rising with stock.
   function ask(base, stock, target, mult) { return Math.max(base * MIN_ASK, Math.min(base * (mult || 1) * factor(stock, target), base * MAX_ASK)); }
-  function bid(base, stockAfter, target, buyPct, mult) { return Math.max(base * MIN_ASK, Math.min(base * (mult || 1) * factor(stockAfter, target), base * MAX_ASK)) * buyPct; }
+  // What the market pays: the same price, with the shortage premium damped by the good's need (damp), and none at all for an unstocked good (flat). ratio is the world's part of mult (worldRatio).
+  function damp(v, need) { return v > 1 && need !== undefined ? 1 + need * (v - 1) : v; }
+  function bid(base, stockAfter, target, buyPct, mult, need, ratio, flat) {
+    var f = factor(stockAfter, target), m = mult || 1;
+    if (flat) { f = Math.min(1, f); if (ratio && ratio > 1) m = m / ratio; }
+    else { f = damp(f, need); if (ratio && ratio > 1) m = m / ratio * damp(ratio, need); }
+    return Math.max(base * MIN_ASK, Math.min(base * m * f, base * MAX_ASK)) * buyPct;
+  }
 
   function good(def, id) { return def.goods && def.goods[id] ? def.goods[id] : null; }
   function copyState(st) {
-    var o = { day: st.day, purse: st.purse, stock: {}, resv: {} };
+    var o = { day: st.day, purse: st.purse, stock: {}, resv: {}, sp: {} };
     Object.keys(st.stock).forEach(function (k) { o.stock[k] = st.stock[k]; });
+    Object.keys(st.sp || {}).forEach(function (k) { o.sp[k] = { d: st.sp[k].d, a: st.sp[k].a }; });
     Object.keys(st.resv).forEach(function (k) { o.resv[k] = { qty: st.resv[k].qty, until: st.resv[k].until }; });
     return o;
   }
@@ -87,7 +99,7 @@
   }
 
   function init(def, today) {
-    var st = { day: num(today), purse: Math.round(num(def.purseTarget)), stock: {}, resv: {} };
+    var st = { day: num(today), purse: Math.round(num(def.purseTarget)), stock: {}, resv: {}, sp: {} };
     Object.keys(def.goods || {}).forEach(function (id) {
       var g = def.goods[id];
       st.stock[id] = Math.max(0, Math.round((g.stock0 === undefined ? g.target : g.stock0) * (g.supply === undefined || g.fixed ? 1 : g.supply)));
@@ -150,9 +162,14 @@
       if (!g || g.buys === false) { problem(id + ": not wanted here"); return; }
       if (n <= 0) return;
       var pct = num(g.buyPct, 0.5), sum = 0, first = 0, last = 0, s = S, i;
-      for (i = 0; i < n; i++) { var p = (g.fixed ? b * pct : bid(b, s + 1, g.target, pct, g.mult)) * bonus; if (i === 0) first = p; last = p; sum += p; s += 1; }
+      for (i = 0; i < n; i++) { var p = (g.fixed ? b * pct : bid(b, s + 1, g.target, pct, g.mult, g.need, g.worldRatio, g.unstocked)) * bonus; if (i === 0) first = p; last = p; sum += p; s += 1; }
       var total = Math.floor(sum + 1e-9);
       if (total <= 0) { problem(id + ": worth nothing at this price"); return; }
+      // a commodity market spends only a share of its purse on one good a day
+      if (def.appetite && def.commodities) {
+        var share = g.unstocked ? def.appetite.unstocked : def.appetite.stocked, room = Math.floor(share * num(def.purseTarget)) - spentToday(state, id);
+        if (total > room) { problem(id + ": the market will spend only " + Math.max(0, room) + " copper more on this today"); return; }
+      }
       q.sell.push({ id: id, qty: n, total: total, first: first, last: last });
       q.sellTotal += total;
     });
@@ -161,6 +178,8 @@
     if (q.purseAfter < 0) problem("the purse is short by " + (-q.purseAfter) + " copper");
     return q;
   }
+
+  function spentToday(state, id) { var e = state.sp && state.sp[id]; return e && e.d === state.day ? e.a : 0; }
 
   // Apply a quote that came back ok: stock and purse move, and what the player sold is reserved for buy-back. Returns the new state; the player's coin is the caller's to change by -q.net.
   function commit(state, def, q, today) {
@@ -171,6 +190,7 @@
       if (st.resv[l.id]) { st.resv[l.id].qty -= l.qty; if (st.resv[l.id].qty <= 0) delete st.resv[l.id]; }
     });
     q.sell.forEach(function (l) {
+      st.sp[l.id] = { d: st.day, a: spentToday(st, l.id) + l.total };
       st.stock[l.id] = num(st.stock[l.id]) + l.qty;
       var r = st.resv[l.id] || { qty: 0, until: 0 };
       r.qty += l.qty; r.until = Math.max(r.until, num(today) + BUYBACK_DAYS);
@@ -193,20 +213,23 @@
   function serialize(st) {
     var s = Object.keys(st.stock).sort().map(function (k) { return k + ":" + st.stock[k]; }).join(",");
     var r = Object.keys(st.resv).sort().map(function (k) { return k + ":" + st.resv[k].qty + "@" + st.resv[k].until; }).join(",");
-    return "v1|d=" + st.day + "|p=" + st.purse + "|s=" + s + "|r=" + r;
+    var a = Object.keys(st.sp || {}).sort().filter(function (k) { return st.sp[k].d === st.day; }).map(function (k) { return k + ":" + st.sp[k].a; }).join(",");
+    return "v1|d=" + st.day + "|p=" + st.purse + "|s=" + s + "|r=" + r + "|a=" + a;
   }
   function parse(str) {
-    var st = { day: 0, purse: 0, stock: {}, resv: {} };
+    var st = { day: 0, purse: 0, stock: {}, resv: {}, sp: {} };
     String(str || "").split("|").forEach(function (part) {
       var kv = part.split("="), k = kv[0], v = kv.slice(1).join("=");
       if (k === "d") st.day = num(v);
       else if (k === "p") st.purse = num(v);
       else if (k === "s") v.split(",").forEach(function (x) { var a = x.split(":"); if (a[0] && a.length === 2) st.stock[a[0]] = num(a[1]); });
+      else if (k === "a") v.split(",").forEach(function (x) { var a = x.split(":"); if (a[0] && a.length === 2) st.sp[a[0]] = { d: -1, a: num(a[1]) }; });
       else if (k === "r") v.split(",").forEach(function (x) { var a = x.split(":"), b = (a[1] || "").split("@"); if (a[0] && b.length === 2) st.resv[a[0]] = { qty: num(b[0]), until: num(b[1]) }; });
     });
+    Object.keys(st.sp).forEach(function (k) { st.sp[k].d = st.day; });   // what was spent is dated by the state's own day
     return st;
   }
 
   return { LO: LO, HI: HI, MIN_F: MIN_F, MAX_F: MAX_F, KNEE_MULT: KNEE_MULT, FLOOR_F: FLOOR_F, BUYBACK_DAYS: BUYBACK_DAYS, MAX_BUY_PCT: MAX_BUY_PCT, MAX_ASK: MAX_ASK, MIN_ASK: MIN_ASK,
-    factor: factor, ask: ask, bid: bid, validate: validate, init: init, refresh: refresh, quote: quote, commit: commit, describe: describe, serialize: serialize, parse: parse };
+    factor: factor, ask: ask, bid: bid, validate: validate, init: init, refresh: refresh, quote: quote, commit: commit, describe: describe, serialize: serialize, parse: parse, spentToday: spentToday };
 });

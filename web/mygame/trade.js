@@ -295,6 +295,14 @@
     return best;
   }
 
+  // How much more of its purse an open market will spend on one good today (null for a shop, which has no appetite limit).
+  function appetiteLeft(mk, id) {
+    var d = mk.def, g = d.goods[id];
+    if (!d.commodities || !d.appetite || !g || g.fixed) return null;
+    var share = g.unstocked ? d.appetite.unstocked : d.appetite.stocked;
+    return Math.max(0, Math.floor(share * num(d.purseTarget)) - window.Market.spentToday(mk.st, id));
+  }
+
   // The price column of a market row: what the next unit costs or fetches, a marker when the market is dearer or cheaper than usual, the shelf, and the cart line's total.
   function marketPriceHtml(mk, id, it, line, qty, kind) {
     var g = mk.def.goods[id], S = num(mk.st.stock[id]), unit = line ? Math.round(line.total / line.qty) : (kind === "buy" ? Math.ceil(g.base * (g.fixed ? 1 : window.Market.factor(S, g.target)) - 1e-9) : 0);
@@ -303,7 +311,7 @@
     var f = g.fixed ? 1 : window.Market.factor(S, g.target), wr = g.worldRatio || 1, mark = (f > 1.1 || wr > 1.1) ? ' <span class="trd-vs trd-vs-up" title="' + (wr > 1.1 ? 'Dearer than usual: short supply' : 'Dearer than usual') + '">▲</span>' : ((f < 0.9 || wr < 0.9) ? ' <span class="trd-vs trd-vs-down" title="' + (wr < 0.9 ? 'Cheaper than usual: plentiful' : 'Cheaper than usual') + '">▼</span>' : "");
     var held = mk.st.resv && mk.st.resv[id] ? mk.st.resv[id].qty : 0;
     var shelf = kind === "buy" ? '<small class="trd-stock">' + (S > 0 ? S + " on the shelf" : "sold out") + (held ? ", " + Math.min(held, S) + " yours" : "") + "</small>"
-      : '<small class="trd-stock">' + (g.fixed ? "" : (S > 0 ? S + " held here" : "none held here")) + "</small>";
+      : '<small class="trd-stock">' + (g.fixed ? "" : (S > 0 ? S + " held here" : "none held here")) + (appetiteLeft(mk, id) !== null ? ", spends up to " + fmt(appetiteLeft(mk, id)) + " more today" : "") + "</small>";
     return (kind === "sell" && !unit ? "under 1c each" : fmt(unit)) + mark + (line && line.qty > 1 ? '<small class="trd-total">' + line.qty + " for " + fmt(line.total) + "</small>" : "") + shelf;
   }
 

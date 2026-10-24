@@ -20,6 +20,10 @@
  * STEP 3 -- INPUT CHAINS. A refined good's output is (1 - the shares) + each share x the supply of that input at the maker's own tile (iron bars from ore, cloth from wool, leather from hides; the
  *   input's own chain behind it, three deep at most). A shop that works the goods (a smith, a tailor) prices its ware by INPUTS too: its price level is (1 - the shares) + each share x the input's
  *   price ratio (supply ^ -0.8, kept between 0.6 and 2) at the shop's tile.
+ * STOCKPILES (2026-10-24, the user): a good that keeps (grain, salt, iron, timber, cloth) is held in store, so what reaches the markets is not what the makers turn out TODAY but a running average of it: an
+ * exponentially weighted average over the last few time constants (the catalog's commodity.store, days). A harvest glut is stored and released into the lean season, a short shock (a flooded shaft for
+ * a fortnight) is cushioned by what is in the sheds, and a LONG one drains them and bites, then lingers (a blight in autumn thins the winter and the spring after it). The average is taken on a 6-day
+ * grid and interpolated, so it is cheap and the same on every call. A perishable (fresh fish, eggs, bread, meat, tomatoes) has a time constant of a few days and is as volatile as ever.
  * derive() returns a copy of a market definition for one day: each good's price level (mult) scaled by supply ^ -0.8 (0.6 to 2) and its settling shelf (supply) set to the supply. Market.js caps the final
  * ask at 2 times the base price and floors it at half.
  */
@@ -32,12 +36,13 @@
   var YEAR = 360, START_YEARDAY = 7 * 30 + 13;             // campaign day 1 is the 14th of Scorpio, day 224 of the year
   var SEASON_MID = [45, 135, 225, 315];                    // the middle day of spring, summer, autumn and winter
   var TRAVEL_MPD = 20, WINDOW = 12, DEMAND_WINDOW = 20, PRICE_EXP = -0.8, PRICE_MIN = 0.6, PRICE_MAX = 2, SUPPLY_MIN = 0.05, SUPPLY_MAX = 3, EXT_CAP = 1.5, LOCAL_CAP = 1.5;
-  var DATA = null, scache = {}, dcache = {}, derived = {}, scount = 0, dcount = 0, dercount = 0;
+  var STEP = 6;
+  var DATA = null, scache = {}, dcache = {}, derived = {}, scount = 0, dcount = 0, dercount = 0, rcache = {}, rcount = 0, ecache = {}, ecount = 0;
 
   function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
   function num(v, d) { var n = Number(v); return isFinite(n) ? n : (d || 0); }
   function data() { return DATA || (typeof window !== "undefined" ? window.WORLD_DATA : null) || null; }
-  function setData(d) { DATA = d; scache = {}; dcache = {}; derived = {}; scount = 0; dcount = 0; dercount = 0; }
+  function setData(d) { DATA = d; scache = {}; dcache = {}; derived = {}; scount = 0; dcount = 0; dercount = 0; rcache = {}; rcount = 0; ecache = {}; ecount = 0; }
 
   // A small integer hash of a string and numbers, as a number in [0, 1).
   function hash01(str, a, b) {
@@ -111,8 +116,8 @@
     return sum;
   }
 
-  // What one maker turns out of a good on a day: its capacity x the season x the shock, and its inputs if it refines something (1 is normal).
-  function outputMult(seed, tile, good, day, depth) {
+  // What one maker turns out of a good on one exact day: the season x the shock, and its inputs if it refines something (1 is normal).
+  function rawOutput(seed, tile, good, day, depth) {
     var D = data(), G = D && D.goods[good], o;
     o = seasonMult(G ? G.season : null, day) * shock(seed, tile, good, day);
     if (G && G.inputs && (depth || 0) < 3) {
@@ -121,6 +126,39 @@
       o *= clamp(f, SUPPLY_MIN, 1.3);
     }
     return o;
+  }
+  // The same on a day of the 6-day grid, remembered.
+  function rawGrid(seed, tile, good, g, depth) {
+    var key = seed + "|" + tile + "|" + good + "|" + g + "|" + (depth || 0), hit = rcache[key];
+    if (hit !== undefined) return hit;
+    var v = rawOutput(seed, tile, good, g * STEP, depth);
+    if (++rcount > 30000) { rcache = {}; rcount = 0; }
+    rcache[key] = v;
+    return v;
+  }
+  // The stockpile average at grid day g: the output of the last three time constants, weighted by exp(-age / tau).
+  function emaGrid(seed, tile, good, g, tau, depth) {
+    var key = seed + "|" + tile + "|" + good + "|" + g + "|" + (depth || 0), hit = ecache[key];
+    if (hit !== undefined) return hit;
+    var n = Math.min(Math.ceil(3 * tau / STEP), 60), sum = 0, wsum = 0, k, w;
+    for (k = 0; k <= n; k++) { w = Math.exp(-k * STEP / tau); sum += w * rawGrid(seed, tile, good, g - k, depth); wsum += w; }
+    var v = sum / wsum;
+    if (++ecount > 30000) { ecache = {}; ecount = 0; }
+    ecache[key] = v;
+    return v;
+  }
+  // What reaches the markets from one maker on a day: its output after the stockpile (1 is normal).
+  function outputMult(seed, tile, good, day, depth) {
+    var D = data(), G = D && D.goods[good], tau = G && G.store;
+    if (!tau || tau <= STEP) return rawOutput(seed, tile, good, day, depth);
+    var g = Math.floor(num(day) / STEP), f = num(day) / STEP - g, e0 = emaGrid(seed, tile, good, g, tau, depth), e1 = emaGrid(seed, tile, good, g + 1, tau, depth);
+    return e0 + (e1 - e0) * f;
+  }
+  // A stockpile average of ANY series (for the checker): fn(day) smoothed over the last three time constants with the same weights.
+  function smooth(fn, day, tau) {
+    var n = Math.min(Math.ceil(3 * tau / STEP), 60), sum = 0, wsum = 0, k, w;
+    for (k = 0; k <= n; k++) { w = Math.exp(-k * STEP / tau); sum += w * fn(day - k * STEP); wsum += w; }
+    return sum / wsum;
   }
   // Kept for the checker and older callers: a maker's output multiplier.
   function output(seed, tile, good, day, season, depth) { return outputMult(seed, tile, good, day, depth); }
@@ -174,7 +212,7 @@
     Object.keys(def.goods || {}).forEach(function (id) {
       var g = def.goods[id], c = {};
       Object.keys(g).forEach(function (k) { c[k] = g[k]; });
-      if (g.world && !g.fixed) {
+      if (g.world && !g.fixed && !g.unstocked) {
         if (g.world.inputs && g.world.inputs.length) {
           var ir = inputRatio(seed, g.world.inputs, g.world.tile, day);
           c.mult = Math.round(num(g.mult, 1) * ir * 1000) / 1000;
@@ -194,6 +232,6 @@
     return out;
   }
 
-  return { YEAR: YEAR, TRAVEL_MPD: TRAVEL_MPD, WINDOW: WINDOW, setData: setData, data: data, yearDay: yearDay, seasonMult: seasonMult, shock: shock, demandShock: demandShock, output: output, outputMult: outputMult,
+  return { YEAR: YEAR, TRAVEL_MPD: TRAVEL_MPD, WINDOW: WINDOW, setData: setData, data: data, yearDay: yearDay, seasonMult: seasonMult, shock: shock, demandShock: demandShock, output: output, outputMult: outputMult, rawOutput: rawOutput, smooth: smooth,
     supplyAt: supplyAt, drawOn: drawOn, demandAt: demandAt, inputRatio: inputRatio, ratioOf: ratioOf, derive: derive };
 });
