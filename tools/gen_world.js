@@ -30,7 +30,7 @@ function build() {
   const r4 = (v) => Math.round(v * 10000) / 10000;
   const data = { params: { margin: P.margin, pullExp: P.pullExp, capExp: P.capExp }, tiles: {}, goods: {} };
   const report = [], problems = [];
-  Object.keys(S).forEach((t) => { if (!OW.nodes[t]) problems.push("settlement " + t + " is not on the map"); data.tiles[t] = { name: S[t].name, pop: S[t].pop, pull: r4(Math.pow(S[t].pop / 1000, P.pullExp)) }; });
+  Object.keys(S).forEach((t) => { if (!OW.nodes[t]) problems.push("settlement " + t + " is not on the map"); data.tiles[t] = { name: S[t].name, anon: S[t].anon || "a settlement", pop: S[t].pop, pull: r4(Math.pow(S[t].pop / 1000, P.pullExp)) }; });
   Object.keys(CAT).forEach((id) => {
     const it = CAT[id]; if (!it.commodity) return;
     const mk = it.commodity.makers, makerTiles = Object.keys(mk);
@@ -58,6 +58,15 @@ function build() {
     });
     data.goods[id] = G;
   });
+  // long named events (market_defs.json "events"): copied as they are, after a check that every tile and good they name exists and that a length stays within 30 to 90 days
+  const EV = defs.events, evKinds = EV.kinds.concat(EV.regional);
+  evKinds.forEach((k) => {
+    k.tiles.forEach((t) => { if (t !== "*" && !S[t]) problems.push("event " + k.id + ": tile " + t + " is not a settlement"); });
+    k.effects.forEach((e) => e.goods.forEach((g) => { if (!CAT[g] || !CAT[g].commodity) problems.push("event " + k.id + ": " + g + " is not a commodity"); }));
+    if (!(k.days[0] >= 30 && k.days[1] <= 90 && k.days[0] <= k.days[1])) problems.push("event " + k.id + ": days must lie within 30 to 90");
+    k.effects.forEach((e) => { if (!(e.mag[0] > 0 && e.mag[0] <= e.mag[1])) problems.push("event " + k.id + ": bad magnitude range"); });
+  });
+  data.events = { spacing: EV.spacing, regionalSpacing: EV.regionalSpacing, envelope: EV.envelope, kinds: evKinds };
   return { data, report, problems, defs };
 }
 

@@ -93,6 +93,67 @@
     return l ? l.total : 0;
   }
 
+  // One unit's price for the panel: a cheap good shows a tenth of a copper (so a slip from 2.0c to 2.4c is visible), a dearer one whole coins; a buyer's price rounds up, a seller's down.
+  function fmtUnit(v, kind) {
+    if (v >= 10) return fmt(kind === "buy" ? Math.ceil(v - 1e-9) : Math.floor(v + 1e-9));
+    var t = kind === "buy" ? Math.ceil(v * 10 - 1e-9) / 10 : Math.floor(v * 10 + 1e-9) / 10;
+    return (t === Math.floor(t) ? String(t) : t.toFixed(1)) + "c";
+  }
+  function signed(copper) { return (copper < 0 ? "−" : "+") + fmt(Math.abs(copper)); }
+  function ladderOf(mk, kind, id, from, count) { return window.Market.ladder(mk.st, mk.def, id, kind, from, count, { sellBonusPct: sellBonus() }); }
+
+  /* ------------------------------------------------------------------ the trade book (2026-10-24, the user's QoL list)
+   * What the player paid for what they hold (stats.trade_basis) and the last prices seen in each market (stats.trade_seen). Both are only ever shown: nothing here changes a price or grants a thing. */
+  function parseBasis(str) { var o = {}; String(str || "").split("|").forEach(function (x) { var a = x.split(":"); if (a[0] && a.length === 3) o[a[0]] = { q: num(a[1]), t: num(a[2]) }; }); return o; }
+  function serializeBasis(o) { return Object.keys(o).sort().filter(function (k) { return o[k].q > 0; }).map(function (k) { return k + ":" + o[k].q + ":" + Math.round(o[k].t); }).join("|"); }
+  // What the player paid, per unit in tenths of a copper, for the units they still hold (never more units than they own).
+  function basisFor(id, s) { var b = parseBasis(s.trade_basis)[id]; if (!b) return null; var q = Math.min(b.q, owned(id, s)); return q > 0 ? { q: q, t: b.t } : null; }
+  // stats.trade_seen: market@day#order:id=ask/bid,... split by ; (ask and bid in tenths of a copper, - for none; order counts the stops, the highest is the latest)
+  function parseSeen(str) {
+    var o = {}; String(str || "").split(";").forEach(function (chunk) {
+      var m = /^([^@]+)@(\d+)#(\d+):(.*)$/.exec(chunk); if (!m) return; var goods = {};
+      m[4].split(",").forEach(function (g) { var a = g.split("="); if (!a[0] || a.length < 2) return; var p = a[1].split("/"); goods[a[0]] = [p[0] === "-" ? null : num(p[0]), p[1] === "-" ? null : num(p[1])]; });
+      o[m[1]] = { d: num(m[2]), q: num(m[3]), p: goods };
+    });
+    return o;
+  }
+  function serializeSeen(o) { return Object.keys(o).sort().map(function (k) { return k + "@" + o[k].d + "#" + o[k].q + ":" + Object.keys(o[k].p).sort().map(function (g) { var p = o[k].p[g]; return g + "=" + (p[0] === null ? "-" : p[0]) + "/" + (p[1] === null ? "-" : p[1]); }).join(","); }).join(";"); }
+  // Note what this market asks and pays today (one unit each way), as the player has now seen it, as the latest stop.
+  function remember(trade, mk) {
+    if (!mk) return;
+    var s = statsNow(), seen = parseSeen(s.trade_seen), p = {}, top = 0;
+    trade.def.buy.concat(trade.def.sell).forEach(function (id) {
+      if (p[id] !== undefined) return;
+      var g = mk.def.goods[id]; if (!g) return;
+      var a = (g.sells !== false && num(mk.st.stock[id]) > 0) ? ladderOf(mk, "buy", id, 0, 1)[0] : undefined, b = g.buys !== false ? ladderOf(mk, "sell", id, 0, 1)[0] : undefined;
+      p[id] = [a === undefined ? null : Math.round(a * 10), b === undefined ? null : Math.round(b * 10)];
+    });
+    Object.keys(seen).forEach(function (k) { if (k !== trade.key) top = Math.max(top, seen[k].q); });
+    seen[trade.key] = { d: today(), q: top + 1, p: p };
+    s.trade_seen = serializeSeen(seen);
+  }
+  // The markets the player stood in most recently before this one (the newest first).
+  function lastStops(trade, s, n) {
+    var seen = parseSeen(s.trade_seen), out = [];
+    Object.keys(seen).forEach(function (k) { if (k !== trade.key && data().trades[k]) out.push({ key: k, title: String(data().trades[k].title).replace(/ Market$/, "").replace(/^The /, ""), d: seen[k].d, q: seen[k].q, p: seen[k].p }); });
+    out.sort(function (a, b) { return b.q - a.q; });
+    return out.slice(0, n);
+  }
+  function ageText(days) { return days <= 0 ? "today" : (days === 1 ? "yesterday" : days + " days ago"); }
+  // The best price the player has seen for a good in ANOTHER market (the lowest ask for a buy row, the highest bid for a sell row), and every one they know of.
+  function elsewhere(kind, id, trade, s) {
+    var seen = parseSeen(s.trade_seen), all = [], best = null;
+    Object.keys(seen).forEach(function (k) {
+      if (k === trade.key || !data().trades[k]) return;
+      var p = seen[k].p[id]; if (!p) return;
+      var v = kind === "buy" ? p[0] : p[1]; if (v === null || v === undefined) return;
+      var e = { title: String(data().trades[k].title).replace(/ Market$/, "").replace(/^The /, ""), v: v / 10, age: today() - seen[k].d };
+      all.push(e); if (!best || (kind === "buy" ? e.v < best.v : e.v > best.v)) best = e;
+    });
+    all.sort(function (a, b) { return kind === "buy" ? a.v - b.v : b.v - a.v; });
+    return { best: best, all: all };
+  }
+
   // What the player has on in the slot an item would fill, so a purchase can be weighed against it. Worn names and stats
   // come off window.stats, and what a piece does (weather cuts, score bonus) from window.GARMENT_HINTS, the same table
   // the game uses. Returns "" when the slot is empty or the item is the one already worn.
@@ -236,6 +297,9 @@
     elFoot = dlg.querySelector(".trd-foot");
     dlg.addEventListener("click", onClick);
     dlg.addEventListener("change", onChange);
+    dlg.addEventListener("mouseover", onOver);
+    dlg.addEventListener("mousemove", onMove);
+    dlg.addEventListener("mouseleave", hideTip);
     // Keep typing from reaching the game's own hotkeys (1-9, J/K...) while this panel is up.
     dlg.addEventListener("keydown", function (ev) {
       ev.stopPropagation();
@@ -282,17 +346,22 @@
     return { cost: cost, credit: credit, buying: buying, selling: selling, funds: funds, short: Math.max(0, cost - credit - funds) };
   }
 
-  // The most of one good the cart can hold with the market still agreeing to it (stock, room on the shelf and the purse all count).
-  function marketMax(trade, st, kind, id, hard) {
-    var cur = cart[kind][id] || 0, best = cur, n;
-    for (n = cur + 1; n <= hard; n++) {
+  // The most of one good the cart can hold with the market still agreeing to it (stock, room on the shelf and the market's purse and appetite all count); with afford, also only what the player can pay for.
+  // Feasibility only gets worse as the amount grows, so this is a binary search: a shelf of 500 costs about ten quotes, not 500. A sale that rounds to nothing is let through (a bigger lot is worth something).
+  function marketMax(trade, st, kind, id, hard, afford) {
+    var cur = cart[kind][id] || 0, best = cur, funds = purse(statsNow());
+    function passable(n) {
       cart[kind][id] = n;
       var q = marketQuote(trade, st, cart);
-      if (!q.ok) { if (kind === "sell" && /worth nothing/.test(q.problems.join())) continue; break; }
-      best = n;
+      if (afford && funds + q.sellTotal < q.buyTotal) return false;
+      return q.ok || (kind === "sell" && q.problems.length > 0 && q.problems.every(function (p) { return /worth nothing/.test(p); }));
+    }
+    if (hard > cur) {
+      if (passable(hard)) best = hard;
+      else { var lo = cur + 1, hi = hard - 1; while (lo <= hi) { var mid = (lo + hi) >> 1; if (passable(mid)) { best = mid; lo = mid + 1; } else hi = mid - 1; } }
     }
     if (cur) cart[kind][id] = cur; else delete cart[kind][id];
-    return best;
+    return Math.max(best, cur);
   }
 
   // How much more of its purse an open market will spend on one good today (null for a shop, which has no appetite limit).
@@ -304,34 +373,121 @@
   }
 
   // The price column of a market row: what the next unit costs or fetches, a marker when the market is dearer or cheaper than usual, the shelf, and the cart line's total.
-  function marketPriceHtml(mk, id, it, line, qty, kind) {
-    var g = mk.def.goods[id], S = num(mk.st.stock[id]), unit = line ? Math.round(line.total / line.qty) : (kind === "buy" ? Math.ceil(g.base * (g.fixed ? 1 : window.Market.factor(S, g.target)) - 1e-9) : 0);
-    if (kind === "sell") unit = marketUnit(currentTrade(), mk.st, "sell", id);
-    else unit = marketUnit(currentTrade(), mk.st, "buy", id) || unit;
-    var f = g.fixed ? 1 : window.Market.factor(S, g.target), wr = g.worldRatio || 1, mark = (f > 1.1 || wr > 1.1) ? ' <span class="trd-vs trd-vs-up" title="' + (wr > 1.1 ? 'Dearer than usual: short supply' : 'Dearer than usual') + '">▲</span>' : ((f < 0.9 || wr < 0.9) ? ' <span class="trd-vs trd-vs-down" title="' + (wr < 0.9 ? 'Cheaper than usual: plentiful' : 'Cheaper than usual') + '">▼</span>' : "");
-    var held = mk.st.resv && mk.st.resv[id] ? mk.st.resv[id].qty : 0;
-    var shelf = kind === "buy" ? '<small class="trd-stock">' + (S > 0 ? S + " on the shelf" : "sold out") + (held ? ", " + Math.min(held, S) + " yours" : "") + "</small>"
-      : '<small class="trd-stock">' + (g.fixed ? "" : (S > 0 ? S + " held here" : "none held here")) + (appetiteLeft(mk, id) !== null ? ", spends up to " + fmt(appetiteLeft(mk, id)) + " more today" : "") + "</small>";
-    return (kind === "sell" && !unit ? "under 1c each" : fmt(unit)) + mark + (line && line.qty > 1 ? '<small class="trd-total">' + line.qty + " for " + fmt(line.total) + "</small>" : "") + shelf;
+  // What the + button would do to the price: the next unit's unrounded price, the average of the cart line, the ladder of the next units, and whether (and when) the price steps.
+  function stepInfo(mk, id, kind, qty, line) {
+    var lad = ladderOf(mk, kind, id, qty, 40), next = lad.length ? lad[0] : null, info = { next: next, first: null, delta: 0, slip: false, stepAt: 0, tip: "" };
+    if (next === null) return info;
+    var first = ladderOf(mk, kind, id, 0, 1)[0], r10 = function (v) { return Math.round(v * 10) / 10; };
+    // adverse = dearer to buy, lower to sell. 'moved' is a rise or fall of at least 0.2c and 8 percent against the FIRST unit's price.
+    var adverse = function (v) { return kind === "buy" ? v > first : v < first; };
+    var moved = function (v) { return adverse(v) && Math.abs(r10(v) - r10(first)) >= 0.2 && Math.abs(v - first) / Math.max(0.1, Math.min(v, first)) >= 0.08; };
+    info.first = first; info.delta = r10(next) - r10(first);
+    if (qty > 0 && moved(next)) info.slip = true;
+    if (!info.slip) for (var i = 1; i < lad.length; i++) if (moved(lad[i])) { info.stepAt = qty + 1 + i; break; }
+    return info;
   }
 
-  function renderStepper(kind, id, qty, max) {
+  function marketPriceHtml(mk, id, it, line, qty, kind, info, limited) {
+    var g = mk.def.goods[id], S = num(mk.st.stock[id]), next = info && info.next !== null ? info.next : null;
+    var f = g.fixed ? 1 : window.Market.factor(S, g.target), wr = g.worldRatio || 1, mark = (f > 1.1 || wr > 1.1) ? ' <span class="trd-vs trd-vs-up">▲</span>' : ((f < 0.9 || wr < 0.9) ? ' <span class="trd-vs trd-vs-down">▼</span>' : "");
+    var held = mk.st.resv && mk.st.resv[id] ? mk.st.resv[id].qty : 0;
+    var shelf = kind === "buy" ? '<small class="trd-stock">' + (S > 0 ? S + " on the shelf" : "sold out") + (held ? ", " + Math.min(held, S) + " yours" : "") + "</small>"
+      : '<small class="trd-stock">' + (g.fixed ? "" : (S > 0 ? S + " held" : "none held")) + (limited && appetiteLeft(mk, id) !== null ? " · takes " + fmt(appetiteLeft(mk, id)) + " today" : "") + "</small>";
+    var head = next === null ? (kind === "buy" ? "sold out" : "—") : (qty > 0 ? '<small class="trd-nextlabel">next</small> ' : "") + fmtUnit(next, kind);
+    var avg = line && line.qty > 0 ? '<small class="trd-total">' + line.qty + " for " + fmt(line.total) + (line.qty > 1 ? " · avg " + fmtUnit(line.total / line.qty, kind) : "") + "</small>" : "";
+    var bits = [];
+    if (info && qty > 0 && Math.abs(info.delta) >= 0.1) bits.push('<span class="' + (info.slip ? "trd-slipnote-bad" : "trd-slipnote") + '">' + (info.delta > 0 ? "+" : "−") + Math.abs(info.delta).toFixed(1) + "c" + "</span>");
+    if (info && info.stepAt && info.stepAt - qty <= 40) bits.push('<span class="trd-steps">' + (kind === "buy" ? "rises" : "falls") + " at unit " + info.stepAt + "</span>");
+    var note = bits.length ? '<small class="trd-note">' + bits.join(" · ") + "</small>" : "";
+    return '<span class="trd-now">' + head + mark + "</span>" + avg + note + shelf;
+  }
+
+  // The best price seen in another market, for a row: where, how long ago, and a nudge when it is clearly better there.
+  function elsewhereHtml(el, kind, here) {
+    if (!el || !el.best) return "";
+    var b = el.best, better = here !== null && here !== undefined && (kind === "buy" ? b.v < here * 0.9 : b.v > here * 1.1);
+    var when = b.age <= 0 ? "today" : b.age + "d ago" + (b.age > 20 ? " (old)" : "");
+    return '<div class="trd-known' + (better ? " trd-known-better" : "") + '">Elsewhere: ' + fmtUnit(b.v, kind) + " · " + esc(b.title) + " · " + when + (better ? (kind === "buy" ? " · cheaper" : " · pays more") : "") + "</div>";
+  }
+
+  /* ---- the hover card (2026-10-24): the combatant and condition cards' look (index.html #csTip), built inside the dialog because a modal dialog sits above everything else */
+  var tipEl = null;
+  function tipNode() { if (!tipEl) { tipEl = document.createElement("div"); tipEl.className = "trd-tip"; dlg.appendChild(tipEl); } return tipEl; }
+  function hideTip() { if (tipEl) tipEl.classList.remove("on"); }
+  function stray(pct, goodWhenHigh) {
+    if (Math.abs(pct) < 2) return '<span class="tNeutral">about the usual</span>';
+    var up = pct > 0, good = goodWhenHigh ? up : !up;
+    return '<span class="' + (good ? "tGood" : "tBad") + '">' + (up ? "▲ " : "▼ ") + Math.abs(pct) + "% " + (up ? "above" : "below") + "</span>";
+  }
+  function tipHtml(trade, mk, kind, id) {
+    var s = statsNow(), it = data().items[id]; if (!it) return "";
+    var g = mk ? mk.def.goods[id] : null, have = owned(id, s), bs = basisFor(id, s), base = g ? num(g.base) : num(it.retail);
+    var out = '<div class="tHd">' + esc(it.title) + "</div>";
+    out += '<div class="tMeta">Base cost <b>' + fmtUnit(base, "buy") + "</b> · you have <b>" + have + "</b>" + (bs ? " (paid an average " + fmtUnit(bs.t / 10, "buy") + ")" : "") + "</div>";
+    if (mk && g) {
+      var first = ladderOf(mk, kind, id, 0, 1)[0];
+      if (first !== undefined && base > 0) {
+        if (kind === "buy") out += '<div class="tRow"><span>Costs now</span><span><b>' + fmtUnit(first, "buy") + "</b> · " + stray(Math.round((first / base - 1) * 100), false) + " base</span></div>";
+        else {
+          var usual = base * (g.mult / (g.worldRatio || 1)) * num(g.buyPct, 0.5);
+          out += '<div class="tRow"><span>Pays now</span><span><b>' + fmtUnit(first, "sell") + "</b> · " + Math.round(first / base * 100) + "% of base</span></div>";
+          if (usual > 0) out += '<div class="tRow"><span>Its usual rate here</span><span><b>' + fmtUnit(usual, "sell") + "</b> · now " + stray(Math.round((first / usual - 1) * 100), true) + "</span></div>";
+        }
+      }
+      // why the price is where it is: the world's supply and the shelf
+      var wr = g.worldRatio || 1, sf = g.fixed ? 1 : window.Market.factor(num(mk.st.stock[id]), g.target);
+      var dearC = kind === "buy" ? "tBad" : "tGood", cheapC = kind === "buy" ? "tGood" : "tBad";
+      if (wr > 1.1) out += '<div class="tRow"><span>Supply</span><span class="' + dearC + '">short · higher than usual</span></div>';
+      else if (wr < 0.9) out += '<div class="tRow"><span>Supply</span><span class="' + cheapC + '">plentiful · lower than usual</span></div>';
+      if (sf > 1.1) out += '<div class="tRow"><span>Shelf</span><span class="' + dearC + '">thin</span></div>';
+      else if (sf < 0.9) out += '<div class="tRow"><span>Shelf</span><span class="' + cheapC + '">well stocked</span></div>';
+      var stops = lastStops(trade, s, 3);
+      out += '<div class="tSub">At your last stops</div>';
+      if (!stops.length) out += '<div class="tText">No other market seen yet.</div>';
+      stops.forEach(function (st) {
+        var p = st.p[id], a = p && p[0] !== null && p[0] !== undefined ? fmtUnit(p[0] / 10, "buy") : "—", b = p && p[1] !== null && p[1] !== undefined ? fmtUnit(p[1] / 10, "sell") : "—";
+        out += '<div class="tRow"><span>' + esc(st.title) + ' <i>' + ageText(today() - st.d) + "</i></span><span>buy " + a + " · sell " + b + "</span></div>";
+      });
+    }
+    return out;
+  }
+  function placeTip(x, y) {
+    var t = tipNode(), r = t.getBoundingClientRect(), vw = window.innerWidth, vh = window.innerHeight, left = x + 16, top = y + 18, z = window.UI_ZOOM || 1;
+    if (left + r.width > vw - 8) left = x - r.width - 14;
+    if (left < 8) left = 8;
+    if (top + r.height > vh - 8) top = y - r.height - 12;
+    if (top < 8) top = 8;
+    t.style.left = (left / z) + "px"; t.style.top = (top / z) + "px";
+  }
+  function onOver(ev) {
+    var t = ev.target, hit = t && t.closest ? t.closest(".trd-price, .trd-name, .trd-icon") : null, row = hit ? hit.closest(".trd-row[data-tip]") : null;
+    if (!row) return hideTip();
+    var trade = currentTrade(); if (!trade) return hideTip();
+    var bits = row.getAttribute("data-tip").split(":"), mk = marketOn(trade) ? { def: marketDef(trade), st: marketState(trade) } : null, html = tipHtml(trade, mk, bits[0], bits.slice(1).join(":"));
+    if (!html) return hideTip();
+    var n = tipNode(); n.innerHTML = html; placeTip(ev.clientX, ev.clientY); n.classList.add("on");
+  }
+  function onMove(ev) { if (tipEl && tipEl.classList.contains("on")) placeTip(ev.clientX, ev.clientY); }
+
+  function renderStepper(kind, id, qty, max, slip, fit) {
     return '<span class="trd-step">' +
       '<button type="button" class="trd-btn" data-step="-1" data-kind="' + kind + '" data-id="' + esc(id) + '" data-max="' + max + '"' + (qty ? "" : " disabled") + ' aria-label="Fewer">−</button>' +
       '<span class="trd-qty' + (qty ? " trd-qty-on" : "") + '">' + qty + "</span>" +
-      '<button type="button" class="trd-btn" data-step="1" data-kind="' + kind + '" data-id="' + esc(id) + '" data-max="' + max + '"' + (qty >= max ? " disabled" : "") + ' aria-label="More">+</button>' +
+      '<button type="button" class="trd-btn' + (slip ? " trd-btn-slip" : "") + '" data-step="1" data-kind="' + kind + '" data-id="' + esc(id) + '" data-max="' + max + '"' + (qty >= max ? " disabled" : "") + ' aria-label="More">+</button>' +
+      (max > 1 ? '<button type="button" class="trd-btn trd-btn-max" data-step="max" data-kind="' + kind + '" data-id="' + esc(id) + '" data-max="' + max + '" data-fit="' + (fit === undefined ? max : fit) + '"' + (qty >= (fit === undefined ? max : fit) ? " disabled" : "") + ' aria-label="As many as possible">Max</button>' : "") +
       "</span>";
   }
 
   function render() {
     if (!dlg) return;
     var s = statsNow(), trade = currentTrade();
+    hideTip();
     if (!trade) { elBody.innerHTML = '<div class="trd-empty">There is nothing to trade here.</div>'; elFoot.innerHTML = ""; elTabs.innerHTML = ""; elControls.style.display = "none"; return; }
     if (view.key !== trade.key) { view.key = trade.key; view.tab = trade.def.buy.length ? "buy" : "sell"; view.category = ""; cart = { buy: {}, sell: {} }; }
 
     elTitle.textContent = trade.def.title;
     var mk = marketOn(trade) ? { def: marketDef(trade), st: marketState(trade) } : null;
-    elPurse.textContent = "Purse: " + fmt(purse(s)) + (mk ? " · " + trade.def.title + " holds " + fmt(mk.st.purse) : "");
+    elPurse.textContent = "Purse: " + fmt(purse(s)) + (mk ? " · " + trade.def.title + " holds " + fmt(mk.st.purse) : "") + (mk && num(s.trade_profit) ? " · Made from trading: " + signed(num(s.trade_profit)) : "");
 
     var buys = buyRows(trade, s), sells = sellRows(trade, s, mk && mk.st);
     // An open market (def.commodities) deals in every commodity, so a row shows only while the shelf holds some.
@@ -370,21 +526,29 @@
 
     var q = mk ? marketQuote(trade, mk.st, cart) : null;
     function lineOf(list, id) { var f = null; (list || []).forEach(function (l) { if (l.id === id) f = l; }); return f; }
+    // the profit the book shows on what is in the sell cart that the player bought (units with a known cost only)
+    var sumProfit = 0, profitN = 0;
+    Object.keys(cart.sell).forEach(function (id) { var bs = basisFor(id, s), qn = cart.sell[id], ln = lineOf(q ? q.sell : [], id); if (!bs || !qn) return; var credit = ln ? ln.total : unitPrice(id, trade.def.buyer) * qn, m = Math.min(qn, bs.q); sumProfit += Math.round(credit * (m / qn) - m * bs.t / 10); profitN += m; });
     var html = "", hints = truthy(s.show_stat_hints);
     if (view.tab === "buy") {
       if (!buys.length) html = '<div class="trd-empty">Nothing on the racks right now.</div>';
       buys.forEach(function (r) {
         var it = data().items[r.id], have = owned(r.id, s), qty = cart.buy[r.id] || 0;
-        html += '<div class="trd-row' + (qty ? " trd-row-on" : "") + '">' +
+        var bl = lineOf(q ? q.buy : [], r.id), info = mk ? stepInfo(mk, r.id, "buy", qty, bl) : null;
+        var many = it.stack || it.kind === "salvage", bcap = many ? (mk ? num((mk.st.stock || {})[r.id]) : 99) : 1, bmax = mk ? marketMax(trade, mk.st, "buy", r.id, bcap) : bcap, bfit = mk ? marketMax(trade, mk.st, "buy", r.id, bmax, true) : bmax;
+        var bs = have ? basisFor(r.id, s) : null, el = mk ? elsewhere("buy", r.id, trade, s) : null;
+        html += '<div class="trd-row' + (qty ? " trd-row-on" : "") + '" data-tip="buy:' + esc(r.id) + '">' +
           tradeIcon(r.id, it) +
           '<div class="trd-main">' +
             '<div class="trd-name">' + esc(it.title) + (it.slot ? '<span class="trd-slot">' + esc(it.slot) + "</span>" : "") + (have ? '<span class="trd-have">you have ' + have + "</span>" : "") + weightTag(r.id) + "</div>" +
             (hints && it.hint ? '<div class="trd-meta">' + esc(it.hint) + "</div>" : "") +
             (r.warn ? '<div class="trd-warn">' + esc(r.warn) + "</div>" : "") +
             (wearingLine(r.id, it, s) ? '<div class="trd-worn">' + esc(wearingLine(r.id, it, s)) + "</div>" : "") +
+            (bs ? '<div class="trd-basis">Paid avg ' + fmtUnit(bs.t / 10, "buy") + "</div>" : "") +
+            elsewhereHtml(el, "buy", info ? info.next : null) +
           "</div>" +
-          '<div class="trd-price">' + (mk ? marketPriceHtml(mk, r.id, it, lineOf(q.buy, r.id), qty, "buy") : fmt(it.retail)) + "</div>" +
-          renderStepper("buy", r.id, qty, mk ? marketMax(trade, mk.st, "buy", r.id, Math.min((it.stack || it.kind === "salvage") ? 20 : 1, num((mk.st.stock || {})[r.id]))) : ((it.stack || it.kind === "salvage") ? 20 : 1)) +
+          '<div class="trd-price">' + (mk ? marketPriceHtml(mk, r.id, it, bl, qty, "buy", info) : fmt(it.retail)) + "</div>" +
+          renderStepper("buy", r.id, qty, bmax, info && info.slip, bfit) +
         "</div>";
       });
     } else {
@@ -392,17 +556,26 @@
       else if (sellBonus() > 0) html += '<div class="trd-bonus">Your Charisma earns you ' + sellBonus() + '% more on everything you sell.</div>';
       sells.forEach(function (r) {
         var it = data().items[r.id], qty = cart.sell[r.id] || 0, worn = isWorn(r.id, s);
+        var sl = lineOf(q ? q.sell : [], r.id), info = mk ? stepInfo(mk, r.id, "sell", qty, sl) : null, bs = basisFor(r.id, s), el = mk ? elsewhere("sell", r.id, trade, s) : null;
+        var smax = mk ? marketMax(trade, mk.st, "sell", r.id, r.have) : r.have, limited = !!mk && smax < r.have;
+        var basisHtml = "";
+        if (bs) {
+          var credit = sl ? sl.total : r.unit * qty, m = Math.min(qty, bs.q), prof = qty > 0 ? Math.round(credit * (m / qty) - m * bs.t / 10) : 0;
+          basisHtml = '<div class="trd-basis">Paid avg ' + fmtUnit(bs.t / 10, "buy") + (qty > 0 ? ' · <span class="' + (prof >= 0 ? "trd-profit-pos" : "trd-profit-neg") + '">' + signed(prof) + "</span>" : "") + "</div>";
+        }
         var note = "";
         if (worn && qty >= r.have && it.kind !== "salvage") note = "Selling your last one puts you back in your starting gear.";
-        html += '<div class="trd-row' + (qty ? " trd-row-on" : "") + '">' +
+        html += '<div class="trd-row' + (qty ? " trd-row-on" : "") + '" data-tip="sell:' + esc(r.id) + '">' +
           tradeIcon(r.id, it) +
           '<div class="trd-main">' +
             '<div class="trd-name">' + esc(it.title) + (it.slot ? '<span class="trd-slot">' + esc(it.slot) + "</span>" : "") + '<span class="trd-have">you have ' + r.have + "</span>" + weightTag(r.id) +
               (worn ? '<span class="trd-badge">worn</span>' : "") + "</div>" +
             (note ? '<div class="trd-warn">' + esc(note) + "</div>" : "") +
+            basisHtml +
+            elsewhereHtml(el, "sell", info ? info.next : null) +
           "</div>" +
-          '<div class="trd-price trd-price-sell">' + (mk ? marketPriceHtml(mk, r.id, it, lineOf(q.sell, r.id), qty, "sell") : fmt(r.unit) + (it.kind === "salvage" ? " each" : "")) + "</div>" +
-          renderStepper("sell", r.id, qty, mk ? marketMax(trade, mk.st, "sell", r.id, r.have) : r.have) +
+          '<div class="trd-price trd-price-sell">' + (mk ? marketPriceHtml(mk, r.id, it, sl, qty, "sell", info, limited) : fmt(r.unit) + (it.kind === "salvage" ? " each" : "")) + "</div>" +
+          renderStepper("sell", r.id, qty, smax, info && info.slip) +
         "</div>";
       });
     }
@@ -411,6 +584,7 @@
     var t = totals(trade, s, q), lines = "";
     if (t.buying) lines += '<div class="trd-line"><span>Buying ' + t.buying + (t.buying === 1 ? " item" : " items") + '</span><span>−' + fmt(t.cost) + "</span></div>";
     if (t.selling) lines += '<div class="trd-line"><span>Selling ' + t.selling + (t.selling === 1 ? " item" : " items") + '</span><span>+' + fmt(t.credit) + "</span></div>";
+    if (t.selling && profitN) lines += '<div class="trd-line trd-line-profit"><span>Profit on the ' + profitN + (profitN === 1 ? " you bought" : " you bought") + '</span><span class="' + (sumProfit >= 0 ? "trd-profit-pos" : "trd-profit-neg") + '">' + signed(sumProfit) + "</span></div>";
     if (!t.buying && !t.selling) lines = '<div class="trd-line trd-line-idle"><span>Set some items aside to trade.</span></div>';
     else if (t.short) lines += '<div class="trd-line trd-line-bad"><span>Not enough coin</span><span>short ' + fmt(t.short) + "</span></div>";
     else lines += '<div class="trd-line trd-line-net"><span>Purse after</span><span>' + fmt(t.funds + t.credit - t.cost) + "</span></div>";
@@ -439,6 +613,12 @@
       if (!mq.ok || purse(s) + mq.sellTotal < mq.buyTotal) return;
       s["market_" + trade.key] = window.Market.serialize(window.Market.commit(mkt, marketDef(trade), mq, today()));
       s.market_cost = mq.buyTotal; s.market_credit = mq.sellTotal; s.market_on = true;
+      // the trade book: what was paid for the units now held, the profit on units sold that had a known cost, and the prices seen here after the trade
+      var basis = parseBasis(s.trade_basis), prof = num(s.trade_profit);
+      mq.sell.forEach(function (l) { var b = basis[l.id]; if (!b) return; var bq = Math.min(b.q, owned(l.id, s)), m = Math.min(l.qty, bq); if (m > 0) prof += Math.round(l.total * (m / l.qty) - m * b.t / 10); b.q = Math.max(0, bq - l.qty); });
+      mq.buy.forEach(function (l) { var b = basis[l.id] || { q: 0, t: 0 }, bq = Math.min(b.q, owned(l.id, s)), nq = bq + l.qty; b.t = (bq * b.t + l.total * 10) / nq; b.q = nq; basis[l.id] = b; });
+      s.trade_basis = serializeBasis(basis); s.trade_profit = prof;
+      remember(trade, { def: marketDef(trade), st: window.Market.parse(s["market_" + trade.key]) });
     }
     // Every cart starts from zero so a stale entry can never ride along; the game clears them again when it settles.
     Object.keys(s).forEach(function (k) { if (k.indexOf("cart_buy_") === 0 || k.indexOf("cart_sell_") === 0) s[k] = 0; });
@@ -463,7 +643,8 @@
     if (t.hasAttribute("data-step")) {
       if (t.disabled) return;
       var kind = t.getAttribute("data-kind"), id = t.getAttribute("data-id"), max = num(t.getAttribute("data-max"));
-      setQty(kind, id, (cart[kind][id] || 0) + num(t.getAttribute("data-step")), max);
+      if (t.getAttribute("data-step") === "max") setQty(kind, id, num(t.getAttribute("data-fit")), max);
+      else setQty(kind, id, (cart[kind][id] || 0) + num(t.getAttribute("data-step")) * (ev.shiftKey ? 10 : 1), max);
       render();
       return;
     }
@@ -485,6 +666,7 @@
     if (!isActive()) return;
     build();
     if (dlg.open) return;
+    var tr0 = currentTrade(); if (marketOn(tr0)) remember(tr0, { def: marketDef(tr0), st: marketState(tr0) });
     render();
     if (!dlg.showModal) { window.alert("This browser is too old to show the Trade panel."); return; }
     dlg.showModal();
@@ -497,6 +679,7 @@
   TP.toggle = toggle;
   TP.isActive = isActive;
   TP._state = function () { return { reopen: reopen, built: !!dlg, open: !!(dlg && dlg.open) }; };
+  TP._tipHtml = function (kind, id) { var tr = currentTrade(); return tr ? tipHtml(tr, marketOn(tr) ? { def: marketDef(tr), st: marketState(tr) } : null, kind, id) : ""; };   // for the browser tests
   TP.title = function () { var t = currentTrade(); return t ? t.def.title : ""; };
   TP.active = isActive;   // citytravel.js leaves T to the trade panel on a page where one is active
 

@@ -179,6 +179,20 @@
     return q;
   }
 
+  // The UNROUNDED price of each of the next `count` units of one good, after `from` units are already in the cart: what the panel shows as the next unit's price and builds its price ladder from.
+  // kind "buy": what the player pays per unit (ask); "sell": what the market pays per unit (bid, with opts.sellBonusPct). The same formulas as quote(), unit by unit.
+  function ladder(state, def, id, kind, from, count, opts) {
+    var g = good(def, id), out = [], i;
+    if (!g) return out;
+    var b = num(g.base), bonus = 1 + Math.max(0, num(opts && opts.sellBonusPct)) / 100, S = num(state.stock[id]), pct = num(g.buyPct, 0.5);
+    for (i = 0; i < count; i++) {
+      var k = from + i;
+      if (kind === "buy") { if (k >= S) break; out.push(g.fixed ? b : ask(b, S - k, g.target, g.mult)); }
+      else out.push((g.fixed ? b * pct : bid(b, S + k + 1, g.target, pct, g.mult, g.need, g.worldRatio, g.unstocked)) * bonus);
+    }
+    return out;
+  }
+
   function spentToday(state, id) { var e = state.sp && state.sp[id]; return e && e.d === state.day ? e.a : 0; }
 
   // Apply a quote that came back ok: stock and purse move, and what the player sold is reserved for buy-back. Returns the new state; the player's coin is the caller's to change by -q.net.
@@ -231,5 +245,5 @@
   }
 
   return { LO: LO, HI: HI, MIN_F: MIN_F, MAX_F: MAX_F, KNEE_MULT: KNEE_MULT, FLOOR_F: FLOOR_F, BUYBACK_DAYS: BUYBACK_DAYS, MAX_BUY_PCT: MAX_BUY_PCT, MAX_ASK: MAX_ASK, MIN_ASK: MIN_ASK,
-    factor: factor, ask: ask, bid: bid, validate: validate, init: init, refresh: refresh, quote: quote, commit: commit, describe: describe, serialize: serialize, parse: parse, spentToday: spentToday };
+    factor: factor, ask: ask, bid: bid, validate: validate, init: init, refresh: refresh, quote: quote, commit: commit, describe: describe, serialize: serialize, parse: parse, spentToday: spentToday, ladder: ladder };
 });

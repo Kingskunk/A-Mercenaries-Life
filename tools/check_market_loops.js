@@ -468,6 +468,21 @@ section("reach, need and appetite");
   const ash = real.ah_market, sa = M.init(ash, 3); sa.purse = 1e9;
   ok(M.quote(sa, ash, { sell: { raw_hide: 10 } }, null).ok, "a hunter's ten hides fit Ashrun Holt's daily appetite for hides");
   ok(!M.quote(sa, ash, { sell: { wool_cloth: 40 } }, null).ok, "but forty bolts of cloth in a day do not (a village market of " + ash.purseTarget + " copper)");
+  // the panel's price ladder is the quote, unit by unit: its sum rounds to the quote's total (the trade panel's live next-unit price is built on it)
+  let ladOk = 0, ladBad = 0;
+  ["barley_farm", "pv_market", "rv_market", "halda"].forEach((mid) => [3, 9, 17].forEach((day) => {
+    const def = require(path.join(__dirname, "..", "web", "mygame", "world.js")).derive(real[mid], day, 7), stl = M.init(def, day); stl.purse = 1e9;
+    Object.keys(def.goods).slice(0, 14).forEach((gid) => [1, 4, 9].forEach((n) => {
+      const b = M.quote(stl, def, { buy: { [gid]: n } }, null), sl = M.quote(stl, def, { sell: { [gid]: n } }, null);
+      if (b.ok && b.buy.length) { const sum = M.ladder(stl, def, gid, "buy", 0, b.buy[0].qty).reduce((a, v) => a + v, 0); if (Math.ceil(sum - 1e-9) === b.buyTotal) ladOk++; else ladBad++; }
+      if (sl.ok && sl.sell.length) { const sum = M.ladder(stl, def, gid, "sell", 0, sl.sell[0].qty).reduce((a, v) => a + v, 0); if (Math.floor(sum + 1e-9) === sl.sellTotal) ladOk++; else ladBad++; }
+    }));
+  }));
+  ok(ladBad === 0 && ladOk > 100, "the price ladder adds up to the quote in every case (" + ladOk + " cases)");
+  const stp = M.init(mkDef({ x: g({ target: 10, stock0: 10, buyPct: 0.8 }) }), 1);
+  const lb = M.ladder(stp, mkDef({ x: g({ target: 10, stock0: 10, buyPct: 0.8 }) }), "x", "buy", 0, 12), ls = M.ladder(stp, mkDef({ x: g({ target: 10, stock0: 10, buyPct: 0.8 }) }), "x", "sell", 0, 12);
+  ok(lb.length === 10 && lb.every((v, i) => i === 0 || v >= lb[i - 1] - 1e-9), "buying draws the shelf down, so each next unit costs the same or more (" + lb.slice(0, 4).map((v) => v.toFixed(2)).join(", ") + " ...)");
+  ok(ls.every((v, i) => i === 0 || v <= ls[i - 1] + 1e-9), "and selling piles the shelf up, so each next unit pays the same or less (" + ls.slice(0, 4).map((v) => v.toFixed(2)).join(", ") + " ...)");
 }
 
 // ---------------------------------------------------------------- 13. stockpiles (the stored average of a maker's output)
@@ -497,6 +512,75 @@ section("stockpiles");
   ok(perish && nP >= 4, nP + " perishable goods (fresh fish, eggs, bread, meat, tomatoes) are not smoothed at all");
   const v1 = W.outputMult(5, "fv", "grain", 200.5, 0); W.setData(WD); W.outputMult(5, "fv", "grain", 33, 0); const v2 = W.outputMult(5, "fv", "grain", 200.5, 0);
   ok(v1 === v2, "the stored average is the same whatever order it is asked in");
+}
+
+// ---------------------------------------------------------------- 14. long named events
+section("long named events");
+{
+  const W = require(path.join(__dirname, "..", "web", "mygame", "world.js"));
+  const wsb = { window: {} }; vm.runInNewContext(fs.readFileSync(path.join(__dirname, "..", "web", "mygame", "world-data.generated.js"), "utf8"), wsb);
+  const WD = wsb.window.WORLD_DATA; W.setData(WD);
+  const E = WD.events, tiles = Object.keys(WD.tiles), allTiles = tiles.concat(["*"]);
+  ok(E.kinds.length >= 15 && E.kinds.every((k) => k.days[0] >= 30 && k.days[1] <= 90), E.kinds.length + " kinds of event, every one 30 to 90 days long");
+  const kinds = E.kinds.reduce((o, k) => { o[k.id] = k; return o; }, {});
+  // the schedule: lengths, gaps, seasons, rate
+  let bad = 0, gapBad = 0, seasonBad = 0, count = 0, tileYears = 0; const SEEDS = [1, 2, 3, 4, 5, 6, 7, 8];
+  SEEDS.forEach((seed) => allTiles.forEach((t) => {
+    const list = W.eventList(seed, t, 360 * 8), sp = t === "*" ? E.regionalSpacing : E.spacing; let prev = null;
+    list.filter((ev) => ev.start < 360 * 8).forEach((ev) => {
+      const k = kinds[ev.kind]; count++;
+      if (ev.dur < k.days[0] || ev.dur > k.days[1] || ev.mags.some((m, i) => m < k.effects[i].mag[0] - 1e-9 || m > k.effects[i].mag[1] + 1e-9)) bad++;
+      if (prev && ev.start < prev.end + prev.aftermath + sp.min) gapBad++;
+      if (k.season && k.season[0] <= k.season[1]) { const yd = W.yearDay(ev.start); const hi = k.season[1] + Math.ceil((k.season[1] - k.season[0] + 1) * 0.5); if (yd < k.season[0] || yd > hi) seasonBad++; }
+      prev = ev;
+    });
+    if (t !== "*") tileYears += 8;
+  }));
+  ok(bad === 0, "every event's length and size lie inside its kind's ranges (" + count + " events over " + SEEDS.length + " seeds and 8 years)");
+  ok(gapBad === 0, "events at one tile never overlap, and each waits at least the minimum gap (and its aftermath) after the last");
+  ok(seasonBad === 0, "a seasonal event (a forest fire in summer, a harvest in autumn) starts in its season");
+  let perTile = 0; SEEDS.forEach((seed) => tiles.forEach((t) => { perTile += W.eventList(seed, t, 360 * 8).filter((ev) => ev.start < 360 * 8).length; }));
+  const rate = perTile / tileYears;
+  ok(rate > 0.5 && rate < 1.1, "a settlement has about one event every year or two (" + rate.toFixed(2) + " a year)");
+  let anyDays = 0, totalDays = 0; SEEDS.slice(0, 4).forEach((seed) => { for (let d = 1; d <= 360 * 4; d += 3) { totalDays++; if (W.eventsAt(seed, d).some((e) => e.phase === "active")) anyDays++; } });
+  console.log("   somewhere in the region an event is under way on " + (100 * anyDays / totalDays).toFixed(0) + " percent of days");
+  ok(anyDays / totalDays > 0.3 && anyDays / totalDays < 0.95, "there is usually something going on somewhere but never everything at once");
+  ok(JSON.stringify(W.eventList(5, "rv", 1500)) === JSON.stringify(W.eventList(5, "rv", 1500)) && JSON.stringify(W.eventList(5, "rv", 1500)) !== JSON.stringify(W.eventList(6, "rv", 1500)), "the same seed gives the same events and another seed gives others");
+  const sample = W.eventsAt(3, 400).slice(0, 2).map((e) => e.name + " at " + e.place + " (" + e.cause + ")").join("; ");
+  // anything a rumor can say about where or why stays anonymous: no settlement names, no war, no faction
+  const names = tiles.map((t) => WD.tiles[t].name.toLowerCase());
+  let leak = 0; SEEDS.slice(0, 3).forEach((seed) => { for (let d = 1; d <= 1500; d += 7) W.eventsAt(seed, d).forEach((e) => { const txt = (e.name + " " + e.cause + " " + e.place).toLowerCase(); if (names.some((n) => txt.indexOf(n) >= 0) || /\bwar\b|warfare|the scales|garrison/.test(txt)) leak++; }); });
+  ok(leak === 0, "no event line names a settlement, a faction or a war (" + E.kinds.map((k) => k.name).join(", ") + ")");
+  console.log("   for example, day 400 of seed 3: " + (sample || "nothing"));
+  // find a particular event and its effect against the same day with the events switched off
+  function find(kind, tile) { for (let seed = 1; seed <= 40; seed++) { const ev = W.eventList(seed, tile, 360 * 6).find((e) => e.kind === kind && e.start > 60); if (ev) return { seed, ev }; } return null; }
+  function onOff(seed, fn) { W.setEvents(true); const on = fn(); W.setEvents(false); const off = fn(); W.setEvents(true); return { on, off }; }
+  const bl = find("blight", "fv"), mid = bl.ev.start + Math.floor(bl.ev.dur * 0.6);
+  const r1 = onOff(bl.seed, () => W.rawOutput(bl.seed, "fv", "grain", mid, 0));
+  ok(r1.on < r1.off * 0.7, "a blight at Barleycross cuts its grain output (" + r1.on.toFixed(2) + " against " + r1.off.toFixed(2) + " without it)");
+  const r2 = onOff(bl.seed, () => W.supplyAt(bl.seed, "grain", "pv", mid + 20));
+  ok(r2.on < r2.off - 0.02, "and Port Valen, which draws on those farms, is worse supplied some weeks in (" + r2.on.toFixed(2) + " against " + r2.off.toFixed(2) + ")");
+  const r3 = onOff(bl.seed, () => W.rawOutput(bl.seed, "fv", "grain", bl.ev.end + 60, 0));
+  ok(r3.on < r3.off - 0.05 && bl.ev.aftermath > 0, "the blight's aftermath lowers the output for months after it ends (" + r3.on.toFixed(2) + " against " + r3.off.toFixed(2) + ", two months on)");
+  const r4 = onOff(bl.seed, () => W.rawOutput(bl.seed, "fv", "farm_eggs", mid, 0));
+  ok(Math.abs(r4.on - r4.off) < 1e-9, "and it leaves the goods it does not name alone (eggs are untouched)");
+  const bh = find("bumper_harvest", "mc"), bm = bh.ev.start + Math.floor(bh.ev.dur * 0.6), r5 = onOff(bh.seed, () => W.rawOutput(bh.seed, "mc", "grain", bm, 0));
+  ok(r5.on > r5.off * 1.3, "a bumper harvest at Marlcross raises its grain output (" + r5.on.toFixed(2) + " against " + r5.off.toFixed(2) + ")");
+  const bd = find("bandit_road", "af"), dm = bd.ev.start + Math.floor(bd.ev.dur * 0.6);
+  const x1 = onOff(bd.seed, () => W.supplyAt(bd.seed, "iron_bar", "pv", dm + 3)), x2 = onOff(bd.seed, () => W.supplyAt(bd.seed, "iron_bar", "af", dm + 3));
+  ok(x1.on < x1.off - 0.02 && Math.abs(x2.on - x2.off) < 1e-9, "a held road at Alderford starves Port Valen of bars (" + x1.on.toFixed(2) + " against " + x1.off.toFixed(2) + ") but Alderford keeps what it eats");
+  const lv = find("stores_levy", "pv"), lm = lv.ev.start + Math.floor(lv.ev.dur * 0.6);
+  const d1 = onOff(lv.seed, () => W.supplyAt(lv.seed, "iron_bar", "pv", lm)), d2 = onOff(lv.seed, () => W.supplyAt(lv.seed, "iron_bar", "tm", lm));
+  ok(d1.on < d1.off - 0.02, "a levy on stores at the port city leaves it short of bars (" + d1.on.toFixed(2) + " against " + d1.off.toFixed(2) + ")");
+  ok(d2.on <= d2.off + 1e-9, "and the towns drawing on the same forges get no more because of it (" + d2.on.toFixed(3) + " against " + d2.off.toFixed(3) + ")");
+  const hw = (() => { for (let seed = 1; seed <= 20; seed++) { const ev = W.eventList(seed, "*", 360 * 6).find((e) => e.kind === "hard_winter"); if (ev) return { seed, ev }; } return null; })();
+  const hm = hw.ev.start + Math.floor(hw.ev.dur * 0.5), w1 = onOff(hw.seed, () => W.demandAt(hw.seed, WD.goods.charcoal, WD.goods.charcoal.consumers.find((c) => c.tile === "tm"), hm));
+  ok(w1.on > w1.off * 1.2 && W.yearDay(hw.ev.start) >= 270, "a hard winter (which starts in winter) raises the demand for fuel across the region (" + w1.on.toFixed(1) + " against " + w1.off.toFixed(1) + " a day at Timbermouth)");
+  // nothing breaks: the world ratio, and the derived definitions, stay inside their ranges with the events on
+  let lo = Infinity, hi = 0;
+  const DEFS = (() => { const sb2 = { window: {} }; vm.runInNewContext(fs.readFileSync(path.join(__dirname, "..", "web", "mygame", "market-data.generated.js"), "utf8"), sb2); return sb2.window.MARKET_DEFS; })();
+  [2, 5].forEach((seed) => [60, 150, 240, 330, 420, 500, 640].forEach((day) => Object.keys(DEFS).forEach((mid) => { const def = W.derive(DEFS[mid], day, seed); Object.keys(def.goods).forEach((gid) => { const g = def.goods[gid]; if (g.worldRatio !== undefined) { lo = Math.min(lo, g.worldRatio); hi = Math.max(hi, g.worldRatio); } }); })));
+  ok(lo >= 0.6 - 1e-9 && hi <= 2 + 1e-9, "with the events on, the world's price level stays between 0.6 and 2 (" + lo.toFixed(2) + " to " + hi.toFixed(2) + ")");
 }
 
 console.log("\n" + checks + " checks, " + fails + " failed");

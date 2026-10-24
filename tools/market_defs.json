@@ -32,10 +32,10 @@
     "stocked": 0.1, "unstocked": 0.03
   },
   "settlements": {
-    "_readme": "Who lives where (2026-10-24, proposed by Claude from each settlement's size on the map; the user may change them): the people a settlement feeds, by overworld tile. A settlement that makes nothing still eats; a tile without a market (Whitefold) still draws on the makers and still counts.",
-    "pv": { "name": "Port Valen", "pop": 9000 }, "af": { "name": "Alderford", "pop": 2400 }, "tm": { "name": "Timbermouth", "pop": 1800 },
-    "mc": { "name": "Marlcross", "pop": 650 }, "fv": { "name": "Barleycross", "pop": 550 }, "rv": { "name": "Redvein", "pop": 500 },
-    "bw": { "name": "Brinewick", "pop": 450 }, "wf": { "name": "Whitefold", "pop": 420 }, "fo": { "name": "Ashrun Holt", "pop": 350 }
+    "_readme": "Who lives where (2026-10-24, proposed by Claude from each settlement's size on the map; the user may change them; anon is how a rumor or a board may refer to the place, never its name): the people a settlement feeds, by overworld tile. A settlement that makes nothing still eats; a tile without a market (Whitefold) still draws on the makers and still counts.",
+    "pv": { "name": "Port Valen", "pop": 9000, "anon": "the port city" }, "af": { "name": "Alderford", "pop": 2400, "anon": "the river town" }, "tm": { "name": "Timbermouth", "pop": 1800, "anon": "the timber town" },
+    "mc": { "name": "Marlcross", "pop": 650, "anon": "a grain village" }, "fv": { "name": "Barleycross", "pop": 550, "anon": "a farming village" }, "rv": { "name": "Redvein", "pop": 500, "anon": "a mining village" },
+    "bw": { "name": "Brinewick", "pop": 450, "anon": "a salt village on the tidal flats" }, "wf": { "name": "Whitefold", "pop": 420, "anon": "a hill village" }, "fo": { "name": "Ashrun Holt", "pop": 350, "anon": "a forest village" }
   },
   "world": {
     "_readme": "The food-cycle model (web/mygame/world.js, tools/gen_world.js). margin: the region's makers can turn out this many times what every settlement eats; coverFloor: a maker can always turn out at least this many times what the settlements drawing on it want of it, so no settlement is starved for ever just because its only maker in reach is a small one; pullExp: a settlement's pull on a maker is (population / 1000) ^ this, so a big city outbids a village when there is not enough to go round; capExp: a maker's capacity share is its tier weight x population ^ this; minDemand: units a day every settlement wants of every good at least (so every market feels its own makers).",
@@ -70,6 +70,697 @@
       "brigandine": { "leather": 0.3, "iron_bar": 0.2 }, "chain_jack": { "iron_bar": 0.55 }, "plate_harness": { "iron_bar": 0.6 }, "buff_coat": { "leather": 0.5 },
       "longshade_quarterstaff": {}, "longshade_spear": { "iron_bar": 0.15 }, "longshade_shortbow": {}, "hunting_bow": {}, "cord_sling": {}, "road_club": {}, "torvald_hide_cap": { "leather": 0.5 }, "felt_hat": { "wool_cloth": 0.5 }, "fur_cap": { "leather": 0.2, "wool_cloth": 0.2 }
     }
+  },
+  "events": {
+    "_readme": "Long named events (2026-10-24, the user: 30 to 90 days, about one at each settlement every year or two, a blight lowers the next year a little). web/mygame/world.js schedules them from the world seed: each settlement (tile) gets a string of events, one after another, each with a kind picked by weight from the kinds listed for the tile, a length in days, and magnitudes inside the ranges below; the regional kinds (tile \"*\") hit the whole region. An event ramps in over envelope.rise days, holds, and ramps out over envelope.fall days; a kind with an aftermath leaves the output lowered by frac of the dip, fading over its days. spacing: days between the END of one event and the START of the next at one tile; season: [first, last] day of the year the event may START (0 = the first of Aries; spring 0-89, summer 90-179, autumn 180-269, winter 270-359). effects: output (what the makers of the goods at the tile turn out), export (what the tile's makers send OUT to other settlements; the tile keeps what it eats), demand (what the settlement wants). mag is the multiplier at the peak. cause is for the rumors and notice boards.",
+    "spacing": {
+      "min": 300,
+      "max": 700
+    },
+    "regionalSpacing": {
+      "min": 500,
+      "max": 1000
+    },
+    "envelope": {
+      "rise": 6,
+      "fall": 10
+    },
+    "kinds": [
+      {
+        "id": "blight",
+        "name": "Blight",
+        "tiles": [
+          "fv",
+          "mc"
+        ],
+        "weight": 3,
+        "days": [
+          60,
+          90
+        ],
+        "season": [
+          60,
+          170
+        ],
+        "aftermath": {
+          "days": 150,
+          "frac": 0.35
+        },
+        "effects": [
+          {
+            "type": "output",
+            "goods": [
+              "grain",
+              "barley_loaf",
+              "root_vegetable_bundle",
+              "onions",
+              "potatoes",
+              "cabbage",
+              "pumpkin",
+              "tomatoes",
+              "orchard_apple"
+            ],
+            "mag": [
+              0.3,
+              0.55
+            ]
+          }
+        ],
+        "cause": "A blight has taken the crops in the fields"
+      },
+      {
+        "id": "bumper_harvest",
+        "name": "Bumper harvest",
+        "tiles": [
+          "fv",
+          "mc"
+        ],
+        "weight": 3,
+        "days": [
+          60,
+          90
+        ],
+        "season": [
+          190,
+          240
+        ],
+        "effects": [
+          {
+            "type": "output",
+            "goods": [
+              "grain",
+              "barley_loaf",
+              "root_vegetable_bundle",
+              "onions",
+              "potatoes",
+              "cabbage",
+              "pumpkin",
+              "tomatoes",
+              "orchard_apple"
+            ],
+            "mag": [
+              1.5,
+              1.8
+            ]
+          }
+        ],
+        "cause": "A bumper harvest has the barns bursting"
+      },
+      {
+        "id": "murrain",
+        "name": "Murrain",
+        "tiles": [
+          "fv",
+          "mc",
+          "wf",
+          "fo"
+        ],
+        "weight": 2,
+        "days": [
+          45,
+          75
+        ],
+        "season": [
+          0,
+          359
+        ],
+        "aftermath": {
+          "days": 120,
+          "frac": 0.3
+        },
+        "effects": [
+          {
+            "type": "output",
+            "goods": [
+              "farm_eggs",
+              "dressed_chicken",
+              "cheese",
+              "dried_pork_sausage",
+              "wool"
+            ],
+            "mag": [
+              0.3,
+              0.55
+            ]
+          }
+        ],
+        "cause": "Murrain is running through the herds and flocks"
+      },
+      {
+        "id": "flooded_shaft",
+        "name": "Flooded shaft",
+        "tiles": [
+          "rv",
+          "wf"
+        ],
+        "weight": 3,
+        "days": [
+          30,
+          60
+        ],
+        "season": [
+          0,
+          359
+        ],
+        "effects": [
+          {
+            "type": "output",
+            "goods": [
+              "iron_ore"
+            ],
+            "mag": [
+              0.15,
+              0.4
+            ]
+          }
+        ],
+        "cause": "Water has flooded the lower shaft and the pumps are losing"
+      },
+      {
+        "id": "forge_strike",
+        "name": "Forge strike",
+        "tiles": [
+          "af"
+        ],
+        "weight": 2,
+        "days": [
+          30,
+          50
+        ],
+        "season": [
+          0,
+          359
+        ],
+        "effects": [
+          {
+            "type": "output",
+            "goods": [
+              "iron_bar",
+              "wool_cloth"
+            ],
+            "mag": [
+              0.2,
+              0.45
+            ]
+          }
+        ],
+        "cause": "The forge and weaving hands have downed tools over their pay"
+      },
+      {
+        "id": "weir_flood",
+        "name": "Weir flood",
+        "tiles": [
+          "af"
+        ],
+        "weight": 2,
+        "days": [
+          30,
+          45
+        ],
+        "season": [
+          30,
+          120
+        ],
+        "effects": [
+          {
+            "type": "output",
+            "goods": [
+              "iron_bar",
+              "wool_cloth",
+              "leather"
+            ],
+            "mag": [
+              0.3,
+              0.5
+            ]
+          }
+        ],
+        "cause": "The river is over its banks and the works along the weir are shut"
+      },
+      {
+        "id": "tannery_strike",
+        "name": "Tannery stoppage",
+        "tiles": [
+          "tm"
+        ],
+        "weight": 2,
+        "days": [
+          30,
+          50
+        ],
+        "season": [
+          0,
+          359
+        ],
+        "effects": [
+          {
+            "type": "output",
+            "goods": [
+              "leather"
+            ],
+            "mag": [
+              0.2,
+              0.45
+            ]
+          }
+        ],
+        "cause": "The tanneries have stopped over a quarrel with the hide buyers"
+      },
+      {
+        "id": "forest_fire",
+        "name": "Forest fire",
+        "tiles": [
+          "fo"
+        ],
+        "weight": 3,
+        "days": [
+          45,
+          75
+        ],
+        "season": [
+          100,
+          170
+        ],
+        "aftermath": {
+          "days": 120,
+          "frac": 0.3
+        },
+        "effects": [
+          {
+            "type": "output",
+            "goods": [
+              "longshade_timber",
+              "charcoal",
+              "raw_hide",
+              "boar_meat",
+              "venison",
+              "furs",
+              "boar_tusk",
+              "elk_antler"
+            ],
+            "mag": [
+              0.3,
+              0.5
+            ]
+          }
+        ],
+        "cause": "Fire has run through the forest and the cutters and hunters cannot work it"
+      },
+      {
+        "id": "windfall",
+        "name": "Windfall timber",
+        "tiles": [
+          "fo",
+          "tm"
+        ],
+        "weight": 2,
+        "days": [
+          30,
+          50
+        ],
+        "season": [
+          200,
+          300
+        ],
+        "effects": [
+          {
+            "type": "output",
+            "goods": [
+              "longshade_timber",
+              "charcoal"
+            ],
+            "mag": [
+              1.5,
+              1.8
+            ]
+          }
+        ],
+        "cause": "A great gale has brought the timber down and the yards are full of it"
+      },
+      {
+        "id": "great_hunt",
+        "name": "Great hunt",
+        "tiles": [
+          "fo"
+        ],
+        "weight": 2,
+        "days": [
+          30,
+          50
+        ],
+        "season": [
+          190,
+          260
+        ],
+        "effects": [
+          {
+            "type": "output",
+            "goods": [
+              "raw_hide",
+              "boar_meat",
+              "venison",
+              "furs",
+              "boar_tusk",
+              "elk_antler"
+            ],
+            "mag": [
+              1.5,
+              1.8
+            ]
+          }
+        ],
+        "cause": "The hunters are bringing in more game than the yards can hold"
+      },
+      {
+        "id": "salt_failure",
+        "name": "Failed salt season",
+        "tiles": [
+          "bw"
+        ],
+        "weight": 3,
+        "days": [
+          30,
+          60
+        ],
+        "season": [
+          150,
+          260
+        ],
+        "effects": [
+          {
+            "type": "output",
+            "goods": [
+              "salt"
+            ],
+            "mag": [
+              0.2,
+              0.4
+            ]
+          }
+        ],
+        "cause": "Storm tides have drowned the salt beds"
+      },
+      {
+        "id": "great_catch",
+        "name": "Great catch",
+        "tiles": [
+          "bw",
+          "pv"
+        ],
+        "weight": 2,
+        "days": [
+          30,
+          50
+        ],
+        "season": [
+          90,
+          170
+        ],
+        "effects": [
+          {
+            "type": "output",
+            "goods": [
+              "fresh_fish_fillet"
+            ],
+            "mag": [
+              1.5,
+              1.8
+            ]
+          }
+        ],
+        "cause": "The boats are coming in loaded to the gunwales"
+      },
+      {
+        "id": "poor_clip",
+        "name": "Poor shearing",
+        "tiles": [
+          "wf",
+          "rv"
+        ],
+        "weight": 2,
+        "days": [
+          45,
+          70
+        ],
+        "season": [
+          20,
+          100
+        ],
+        "effects": [
+          {
+            "type": "output",
+            "goods": [
+              "wool"
+            ],
+            "mag": [
+              0.4,
+              0.6
+            ]
+          }
+        ],
+        "cause": "The shearing has come in thin after a hard lambing"
+      },
+      {
+        "id": "great_clip",
+        "name": "Great clip",
+        "tiles": [
+          "wf",
+          "rv"
+        ],
+        "weight": 2,
+        "days": [
+          45,
+          70
+        ],
+        "season": [
+          20,
+          100
+        ],
+        "effects": [
+          {
+            "type": "output",
+            "goods": [
+              "wool"
+            ],
+            "mag": [
+              1.5,
+              1.7
+            ]
+          }
+        ],
+        "cause": "The clip is the best in years and the fold sheds are full"
+      },
+      {
+        "id": "bandit_road",
+        "name": "Bandit-held road",
+        "tiles": [
+          "af",
+          "tm",
+          "rv",
+          "mc",
+          "fv",
+          "wf",
+          "bw"
+        ],
+        "weight": 2,
+        "days": [
+          30,
+          60
+        ],
+        "season": [
+          0,
+          359
+        ],
+        "effects": [
+          {
+            "type": "export",
+            "goods": [
+              "honeycomb",
+              "boar_meat",
+              "venison",
+              "barley_loaf",
+              "grain",
+              "cheese",
+              "orchard_apple",
+              "root_vegetable_bundle",
+              "farm_eggs",
+              "dried_pork_sausage",
+              "onions",
+              "potatoes",
+              "tomatoes",
+              "dressed_chicken",
+              "fresh_fish_fillet",
+              "cabbage",
+              "pumpkin",
+              "iron_ore",
+              "iron_bar",
+              "longshade_timber",
+              "charcoal",
+              "salt",
+              "furs",
+              "leather",
+              "wool",
+              "wool_cloth",
+              "raw_hide",
+              "boar_tusk",
+              "elk_antler"
+            ],
+            "mag": [
+              0.25,
+              0.5
+            ]
+          }
+        ],
+        "cause": "Bandits hold the road out and the carters will not go"
+      },
+      {
+        "id": "stores_levy",
+        "name": "Levy on stores",
+        "tiles": [
+          "pv"
+        ],
+        "weight": 3,
+        "days": [
+          40,
+          70
+        ],
+        "season": [
+          0,
+          359
+        ],
+        "effects": [
+          {
+            "type": "demand",
+            "goods": [
+              "grain",
+              "barley_loaf",
+              "iron_bar",
+              "leather",
+              "wool_cloth",
+              "salt"
+            ],
+            "mag": [
+              1.4,
+              1.8
+            ]
+          }
+        ],
+        "cause": "A levy is drawing heavily on the city's stores"
+      },
+      {
+        "id": "refugees",
+        "name": "Refugees",
+        "tiles": [
+          "mc",
+          "fv",
+          "af",
+          "tm",
+          "wf",
+          "rv",
+          "fo",
+          "bw"
+        ],
+        "weight": 2,
+        "days": [
+          50,
+          90
+        ],
+        "season": [
+          0,
+          359
+        ],
+        "effects": [
+          {
+            "type": "demand",
+            "goods": [
+              "grain",
+              "barley_loaf",
+              "root_vegetable_bundle",
+              "onions",
+              "potatoes",
+              "cabbage",
+              "pumpkin",
+              "tomatoes",
+              "orchard_apple",
+              "farm_eggs",
+              "dressed_chicken",
+              "cheese",
+              "dried_pork_sausage",
+              "fresh_fish_fillet",
+              "boar_meat",
+              "venison",
+              "salt"
+            ],
+            "mag": [
+              1.3,
+              1.6
+            ]
+          }
+        ],
+        "cause": "Refugees have come in off the roads and every cottage is feeding extra mouths"
+      }
+    ],
+    "regional": [
+      {
+        "id": "hard_winter",
+        "name": "Hard winter",
+        "tiles": [
+          "*"
+        ],
+        "weight": 1,
+        "days": [
+          60,
+          90
+        ],
+        "season": [
+          270,
+          320
+        ],
+        "effects": [
+          {
+            "type": "output",
+            "goods": [
+              "grain",
+              "barley_loaf",
+              "root_vegetable_bundle",
+              "onions",
+              "potatoes",
+              "cabbage",
+              "pumpkin",
+              "tomatoes",
+              "orchard_apple",
+              "farm_eggs",
+              "dressed_chicken",
+              "cheese",
+              "dried_pork_sausage",
+              "fresh_fish_fillet",
+              "boar_meat",
+              "venison",
+              "salt"
+            ],
+            "mag": [
+              0.65,
+              0.85
+            ]
+          },
+          {
+            "type": "demand",
+            "goods": [
+              "charcoal",
+              "longshade_timber",
+              "wool",
+              "wool_cloth",
+              "furs"
+            ],
+            "mag": [
+              1.3,
+              1.6
+            ]
+          }
+        ],
+        "cause": "A hard winter has closed the passes and emptied the woodpiles"
+      }
+    ]
   },
   "commodity": {
     "_readme": "The distance model for open markets (see tools/gen_markets.js). perMile: the price rises this share of the base for every mile from the nearest maker; capLevel: the dearest it gets; cost: the price level AT the source (a major maker sells under the base, a minor one at it); supplyHalf: the miles at which a maker's share of a market's shelf has halved (it keeps falling, never to nothing); weight: a maker's share of a usual shelf; minSupply: below this a market makes nothing of a good; unsuppliedShare and useRate: a market with no supply wants a thin shelf (a share of the usual) and uses a share of it each day.",

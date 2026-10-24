@@ -24,6 +24,12 @@
  * exponentially weighted average over the last few time constants (the catalog's commodity.store, days). A harvest glut is stored and released into the lean season, a short shock (a flooded shaft for
  * a fortnight) is cushioned by what is in the sheds, and a LONG one drains them and bites, then lingers (a blight in autumn thins the winter and the spring after it). The average is taken on a 6-day
  * grid and interpolated, so it is cheap and the same on every call. A perishable (fresh fish, eggs, bread, meat, tomatoes) has a time constant of a few days and is as volatile as ever.
+ * LONG NAMED EVENTS (2026-10-24, the user): on top of the seasons and the 12-day shocks, each settlement has a string of events of 30 to 90 days, about one every year or two, each with a kind (a blight,
+ * a flooded shaft, a forest fire, a strike, a bandit-held road, a levy on stores, a hard winter for the whole region: market_defs.json "events"), a length, a size, a cause and a place, all fixed by the seed. An
+ * event ramps in over six days and out over ten; a blight, a murrain or a fire leaves an AFTERMATH (the output stays lowered by a third of the dip for months, fading) so it reaches into the next season.
+ * Its effect is on what the makers of the named goods at that tile turn out (so it passes through the stockpile average, the distance delay and the input chains like any other output), on what the tile's
+ * makers SEND OUT to other settlements (a held road: the tile keeps what it eats), or on what the settlement WANTS (a levy, refugees, a cold snap). eventsAt() lists what is going on, for the rumors; its place
+ * is an ANONYMOUS description ("a hill village", "the port city"), never a name (the user, 2026-10-24).
  * derive() returns a copy of a market definition for one day: each good's price level (mult) scaled by supply ^ -0.8 (0.6 to 2) and its settling shelf (supply) set to the supply. Market.js caps the final
  * ask at 2 times the base price and floors it at half.
  */
@@ -37,12 +43,15 @@
   var SEASON_MID = [45, 135, 225, 315];                    // the middle day of spring, summer, autumn and winter
   var TRAVEL_MPD = 20, WINDOW = 12, DEMAND_WINDOW = 20, PRICE_EXP = -0.8, PRICE_MIN = 0.6, PRICE_MAX = 2, SUPPLY_MIN = 0.05, SUPPLY_MAX = 3, EXT_CAP = 1.5, LOCAL_CAP = 1.5;
   var STEP = 6;
+  var EVENTS_ON = true, evcache = {};
   var DATA = null, scache = {}, dcache = {}, derived = {}, scount = 0, dcount = 0, dercount = 0, rcache = {}, rcount = 0, ecache = {}, ecount = 0;
 
   function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
   function num(v, d) { var n = Number(v); return isFinite(n) ? n : (d || 0); }
   function data() { return DATA || (typeof window !== "undefined" ? window.WORLD_DATA : null) || null; }
-  function setData(d) { DATA = d; scache = {}; dcache = {}; derived = {}; scount = 0; dcount = 0; dercount = 0; rcache = {}; rcount = 0; ecache = {}; ecount = 0; }
+  function setData(d) { DATA = d; scache = {}; dcache = {}; derived = {}; scount = 0; dcount = 0; dercount = 0; rcache = {}; rcount = 0; ecache = {}; ecount = 0; evcache = {}; }
+  // The events can be switched off to see what they do (the checker).
+  function setEvents(on) { EVENTS_ON = !!on; scache = {}; dcache = {}; derived = {}; scount = 0; dcount = 0; dercount = 0; rcache = {}; rcount = 0; ecache = {}; ecount = 0; }
 
   // A small integer hash of a string and numbers, as a number in [0, 1).
   function hash01(str, a, b) {
@@ -101,7 +110,75 @@
   }
 
   // What a settlement wants of a good on a day (units a day): its normal demand x the good's seasonal demand curve x its own shock.
-  function demandAt(seed, G, c, day) { return c.D * seasonMult(G.dseason, day) * demandShock(seed, c.tile, G.id, day); }
+  function demandAt(seed, G, c, day) { return c.D * seasonMult(G.dseason, day) * demandShock(seed, c.tile, G.id, day) * eventMult(seed, c.tile, G.id, day, "demand"); }
+
+  /* ---- long named events ---- */
+  // The kinds a tile may have ('*' is the whole region), by weight.
+  function kindsFor(tile) {
+    var D = data(), E = D && D.events, out = [];
+    if (!E) return out;
+    E.kinds.forEach(function (k) { if (k.tiles.indexOf(tile) >= 0 || (tile === "*" && k.tiles.indexOf("*") >= 0)) out.push(k); });
+    return out;
+  }
+  // The string of events of one tile, built one after another from the seed and remembered: each starts after the gap that follows the end (and aftermath) of the one before, inside its kind's season.
+  function eventList(seed, tile, upto) {
+    var D = data(), E = D && D.events, key = seed + "|" + tile, rec = evcache[key];
+    if (!E) return [];
+    var kinds = kindsFor(tile); if (!kinds.length) return [];
+    if (!rec) rec = evcache[key] = { list: [], next: null, n: 0 };
+    var sp = tile === "*" ? E.regionalSpacing : E.spacing, skey = "ev:" + seed + ":" + tile;
+    while (rec.next === null || rec.next <= upto) {
+      var n = rec.n, at = rec.next === null ? 20 + Math.floor(hash01(skey, n, 1) * (sp.min + (sp.max - sp.min) / 2)) : rec.next;
+      var wsum = 0, i; kinds.forEach(function (k) { wsum += k.weight; });
+      var r = hash01(skey, n, 2) * wsum, kind = kinds[0]; for (i = 0; i < kinds.length; i++) { if (r < kinds[i].weight) { kind = kinds[i]; break; } r -= kinds[i].weight; }
+      var start = at;
+      if (kind.season) {
+        var yd = yearDay(start), a = kind.season[0], b = kind.season[1];
+        if (yd < a || yd > b) start += ((a - yd + YEAR) % YEAR);
+        start += Math.floor(hash01(skey, n, 3) * Math.max(1, b - a + 1) * 0.5);
+      }
+      var dur = kind.days[0] + Math.floor(hash01(skey, n, 4) * (kind.days[1] - kind.days[0] + 1));
+      var mags = kind.effects.map(function (e, j) { return Math.round((e.mag[0] + (e.mag[1] - e.mag[0]) * hash01(skey, n, 10 + j)) * 1000) / 1000; });
+      var after = kind.aftermath ? kind.aftermath.days : 0;
+      rec.list.push({ id: tile + "#" + n, kind: kind.id, name: kind.name, cause: kind.cause, tile: tile, start: start, end: start + dur, dur: dur, mags: mags, aftermath: after, afterFrac: kind.aftermath ? kind.aftermath.frac : 0, effects: kind.effects });
+      rec.n = n + 1;
+      rec.next = start + dur + after + sp.min + Math.floor(hash01(skey, n, 5) * (sp.max - sp.min + 1));
+    }
+    return rec.list;
+  }
+  // How far an event has taken hold on a day: 1 at its peak, ramping in and out; and the aftermath fade (1 just after it ends, 0 when it is over).
+  function envelopeOf(ev, day) {
+    var E = data().events.envelope;
+    if (day >= ev.start && day < ev.end) return { e: Math.max(0, Math.min(1, (day - ev.start + 1) / E.rise, (ev.end - day) / E.fall)), after: 0 };
+    if (ev.aftermath && day >= ev.end && day < ev.end + ev.aftermath) return { e: 0, after: 1 - (day - ev.end) / ev.aftermath };
+    return null;
+  }
+  // The multiplier on one good at one tile from the events of one type on a day: output, export or demand (1 is normal).
+  function eventMult(seed, tile, good, day, type) {
+    if (!EVENTS_ON || !data() || !data().events) return 1;
+    var m = 1, t, tiles = [tile, "*"], i, j, ev, env, list;
+    for (t = 0; t < 2; t++) {
+      list = eventList(seed, tiles[t], num(day) + 1);
+      for (i = 0; i < list.length; i++) {
+        ev = list[i]; if (ev.start > day + 1) break;
+        env = envelopeOf(ev, day); if (!env) continue;
+        for (j = 0; j < ev.effects.length; j++) {
+          if (ev.effects[j].type !== type || ev.effects[j].goods.indexOf(good) < 0) continue;
+          m *= env.e > 0 ? 1 + (ev.mags[j] - 1) * env.e : 1 + (ev.mags[j] - 1) * ev.afterFrac * env.after;
+        }
+      }
+    }
+    return m;
+  }
+  // What is going on on a day: every event in progress (and every aftermath still fading) anywhere, with its cause and place, newest first; for the rumors and the notice boards. Pass a tile to see only its own and the region's.
+  function eventsAt(seed, day, tile) {
+    var D = data(), out = [], tiles, t, list, i, env;
+    if (!D || !D.events) return out;
+    tiles = tile ? [tile, "*"] : Object.keys(D.tiles).concat(["*"]);
+    tiles.forEach(function (tl) { list = eventList(seed, tl, num(day) + 1); for (i = 0; i < list.length; i++) { if (list[i].start > day) break; env = envelopeOf(list[i], day); if (env) out.push({ id: list[i].id, kind: list[i].kind, name: list[i].name, cause: list[i].cause, tile: list[i].tile, place: list[i].tile === "*" ? "the whole region" : (D.tiles[list[i].tile] ? D.tiles[list[i].tile].anon : "a settlement"), start: list[i].start, end: list[i].end, day: day, phase: env.after ? "aftermath" : "active", strength: env.after ? env.after * list[i].afterFrac : env.e, effects: list[i].effects.map(function (e, j) { return { type: e.type, goods: e.goods, mag: list[i].mags[j] }; }) }); } });
+    out.sort(function (a, b) { return b.start - a.start; });
+    return out;
+  }
 
   // The pull-weighted draw of every OTHER settlement on one maker of a good on a day: the sum over settlements of (what each wants of it) x its pull.
   function drawOn(seed, G, makerTile, day) {
@@ -119,7 +196,7 @@
   // What one maker turns out of a good on one exact day: the season x the shock, and its inputs if it refines something (1 is normal).
   function rawOutput(seed, tile, good, day, depth) {
     var D = data(), G = D && D.goods[good], o;
-    o = seasonMult(G ? G.season : null, day) * shock(seed, tile, good, day);
+    o = seasonMult(G ? G.season : null, day) * shock(seed, tile, good, day) * eventMult(seed, tile, good, day, "output");
     if (G && G.inputs && (depth || 0) < 3) {
       var f = 1, ig;
       for (ig in G.inputs) if (Object.prototype.hasOwnProperty.call(G.inputs, ig)) f += G.inputs[ig] * (clamp(supplyAt(seed, ig, tile, day, (depth || 0) + 1), SUPPLY_MIN, 1.3) - 1);
@@ -182,7 +259,7 @@
           var mc = null, j;
           for (j = 0; j < G.consumers.length; j++) if (G.consumers[j].tile === m.tile) { mc = G.consumers[j]; break; }
           var keep = mc && mc.s[m.tile] ? demandAt(seed, G, mc, day) * mc.s[m.tile] : 0;
-          ratio = Math.min(EXT_CAP, Math.max(0, out - keep) * c.pull / Math.max(1e-9, drawOn(seed, G, m.tile, day)));
+          ratio = Math.min(EXT_CAP, Math.max(0, out - keep) * c.pull / Math.max(1e-9, drawOn(seed, G, m.tile, day))) * eventMult(seed, m.tile, good, num(day) - miles / TRAVEL_MPD, "export");
         }
         sum += s * ratio;
       }
@@ -232,6 +309,6 @@
     return out;
   }
 
-  return { YEAR: YEAR, TRAVEL_MPD: TRAVEL_MPD, WINDOW: WINDOW, setData: setData, data: data, yearDay: yearDay, seasonMult: seasonMult, shock: shock, demandShock: demandShock, output: output, outputMult: outputMult, rawOutput: rawOutput, smooth: smooth,
+  return { YEAR: YEAR, TRAVEL_MPD: TRAVEL_MPD, WINDOW: WINDOW, setData: setData, data: data, yearDay: yearDay, seasonMult: seasonMult, shock: shock, demandShock: demandShock, setEvents: setEvents, eventsAt: eventsAt, eventList: eventList, eventMult: eventMult, output: output, outputMult: outputMult, rawOutput: rawOutput, smooth: smooth,
     supplyAt: supplyAt, drawOn: drawOn, demandAt: demandAt, inputRatio: inputRatio, ratioOf: ratioOf, derive: derive };
 });

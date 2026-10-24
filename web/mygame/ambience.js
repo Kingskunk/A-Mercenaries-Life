@@ -77,6 +77,7 @@
     alderford: "village", whitefold: "village", redvein: "village", marlcross: "village", brinewick: "village", barleycross: "village", village: "village",
     village_green: "village",
     village_stable_yard: "village",
+    town_market: "village",
     generic_village_pasture: "village",
     generic_village_gathering_hall: "lodgings",
     generic_farm_hayloft: "lodgings",
