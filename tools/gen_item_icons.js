@@ -116,12 +116,14 @@ const MAP = {
   toolkit: "Trap_Disarm_Toolkit_Unfaded_Icon.png",
   lute: "Equipment/Instrument/Instrument_Lute_Unfaded_Icon.png",
   lockpicks: "Thieves_Tools_Unfaded_Icon.png",
-  key: "Key_Iron_A_Icon.png",
+  padlock: "../Generic/Padlock_and_Key_Generated_Source.png",
+  door_bolt: "../Generic/Door_Bolt_Generated_Source.png",
+  iron_manacles: "../Generic/Iron_Manacles_Generated_Source.png",
   shovel: "Shovel_Unfaded_Icon.png",
   cooking_pot: "Miscellaneous_item/Clutter/Cooking_Pot_A_Unfaded_Icon.png",
   arrow_fire: "Arrow_of_Fire_Unfaded_Icon.png",
   arrow_ice: "Arrow_of_Ice_Unfaded_Icon.png",
-  tool: "Blacksmith's_Tongs_Unfaded_Icon.png",                  // STAND-IN: prybar, manacles, bolt and any other hand tool
+  tool: "Blacksmith's_Tongs_Unfaded_Icon.png",                  // STAND-IN: prybar and any other hand tool
   tinder: "../Generic/Antique Tinderbox with Flint Stone.png",  // the user's own art (2026-10-02)
   chalk: "../Generic/Rustic Bundle of Chalk Sticks.png",         // the user's own art (2026-10-02)
   blanket: "Clutter_Bedroll_Unfaded_Icon.webp",

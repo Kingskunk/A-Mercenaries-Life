@@ -162,6 +162,9 @@
   // A scene that is a place of its own (an inn, the battle) and a dungeon run stand alone: they never fall through to the district the player last stood in, which is only a stale
   // default there (the Silt-Gate channels are not the compound). A shop and the overworld do fall through to what is around them.
   function placeNames(s) {
+    // A Dev Hub combat fixture sets this explicitly before entering combat.txt.  Do not infer any fiction
+    // from the current or recently visited scene while it remains true.
+    if (s.scenery_suppressed) return [];
     // Developer screens are outside the fiction. Test state deliberately leaves useful world flags behind, so this
     // has to run before EVERY location rule, not merely before the final district fallback below. Combat tests
     // enter combat.txt with *gosub_scene, so they need the same exemption without muting real story combat.
@@ -272,6 +275,17 @@
     var key = String(s.sceneName || "") === "choicescript_stats" ? curKey : sceneKey(s);
     if (key === "") return;                                              // still loading: no change yet
     if (!key) {
+      // Developer and other deliberately scenery-free pages must not leave a previously painted stage
+      // (usually the pre-story Carrion Compound) available to fade back in during a ChoiceScript redraw.
+      // Clear both stages and suppress the outgoing opacity transition for this one blank state.
+      if (el) {
+        el.classList.add("scenery-cleared");
+        for (var i = 0; i < stages.length; i++) {
+          clearTimeout(goneTimer[i]);
+          stages[i].classList.remove("on", "top");
+          stages[i].removeAttribute("data-scene");
+        }
+      }
       root.classList.remove("hasScenery");
       curKey = null;
       // We have deliberately removed the image.  Clear the render signature too: returning to the same
@@ -280,6 +294,7 @@
       return;
     }
     if (!el) build();
+    el.classList.remove("scenery-cleared");
     var single = have()[key] === "single";
     var h = (Number(s.clock_hour) || 0) + (Number(s.clock_minute) || 0) / 60;
     var day = daylight(h);

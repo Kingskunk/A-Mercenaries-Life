@@ -36,6 +36,14 @@
   *set combat_behavior_seek_high_ground 2
   *set combat_behavior_avoid_difficult_terrain 2
   *set combat_behavior_avoid_melee_threat 1
+*if (rbp_profile = "caster")
+  *comment A spellcaster (2026-10-23, the user): holds as far back as its own spells reach and no farther (combat_ai.txt's reach guard), takes cover and high ground, withdraws when cornered or wounded, and answers a melee threat that can Dash into it. The same knobs as the sharpshooter today; the name is where a caster's spell-picking will attach.
+  *set combat_behavior_can_retreat true
+  *set combat_behavior_flee_hp_pct 33
+  *set combat_behavior_seek_cover 3
+  *set combat_behavior_seek_high_ground 2
+  *set combat_behavior_avoid_difficult_terrain 2
+  *set combat_behavior_avoid_melee_threat 1
 *if (rbp_profile = "guardian")
   *set combat_behavior_seek_cover 1
   *set combat_behavior_hold_chokepoint 3
@@ -54,7 +62,7 @@
 *if (aeb_type = "guard")
   *set aeb_profile "guardian"
 *if (aeb_type = "hedge_mage")
-  *set aeb_profile "sharpshooter"
+  *set aeb_profile "caster"
 *comment Slot 0 is the inert placeholder quicktest's branch walk needs: it also walks the else branch below with slot 1, where this prefix would otherwise still be empty. Real slots 2 and up set it before use.
 *temp aeb_p "combat_enemy0_"
 *temp aeb_weapon "melee"
@@ -96,6 +104,9 @@
 *params aer_slot aer_type
 *temp aer_class "long"
 *if (aer_type = "slinger")
+  *set aer_class "medium"
+*comment The hedge-mage casts Poison Spray, whose reach is medium (the user, 2026-10-23: a mage must be as close as the player would have to be to cast the same spell, 30 feet by the 2024 rules), so he too must be within Mid-Range to use it.
+*if (aer_type = "hedge_mage")
   *set aer_class "medium"
 *set {(("combat_enemy" & aer_slot) & "_reach")} aer_class
 *return

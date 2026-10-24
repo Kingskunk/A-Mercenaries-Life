@@ -297,6 +297,22 @@
         *set combat_ai_terrain_step_destination ccrts_current_position
         *set combat_ai_terrain_step_reason "none"
         *set combat_ai_terrain_hold_position false
+*comment REACH GUARD (2026-10-23, the user): an enemy never steps (for cover, high ground or to keep its distance) to a tile from which its own reach no longer covers its target, unless the step gets it nearer. Without this a mage whose spray is medium stepped back to Long Range and sprayed from there.
+*if ((ccrts_actor_kind = "enemy") and (combat_ai_terrain_step_direction != "none"))
+  *temp ccrts_class {(("combat_enemy" & ccrts_actor_slot) & "_reach")}
+  *gosub_scene combat_movement combat_reach_tier ccrts_class
+  *temp ccrts_tier combat_reach_tier_result
+  *temp ccrts_dest_d (combat_ai_terrain_step_destination - ccrts_target_position)
+  *if (ccrts_dest_d < 0)
+    *set ccrts_dest_d (0 - ccrts_dest_d)
+  *temp ccrts_now_d (ccrts_current_position - ccrts_target_position)
+  *if (ccrts_now_d < 0)
+    *set ccrts_now_d (0 - ccrts_now_d)
+  *if ((ccrts_dest_d > ccrts_tier) and (ccrts_dest_d > ccrts_now_d))
+    *set combat_ai_terrain_step_direction "none"
+    *set combat_ai_terrain_step_destination ccrts_current_position
+    *set combat_ai_terrain_step_reason "none"
+    *set combat_ai_terrain_hold_position false
 *return
 *label find_intercepting_ally
 *comment Interception (2026-09-28; broadened 2026-09-28 again; widened into full target selection 2026-09-29,
@@ -433,6 +449,10 @@
 *params crt_slot
 *set combat_intercepting_ally 0
 *set combat_ranged_cornered false
+*comment REACH (2026-10-23, the user): an opponent beyond this enemy's own reach is not a candidate, whether it is the player or an ally (a slinger or a hedge-mage is medium, everything else long = anywhere, so those are unchanged). With nobody in reach the enemy falls through to its closing step in combat_next_turn.
+*temp crt_rcls {(("combat_enemy" & crt_slot) & "_reach")}
+*gosub_scene combat_movement combat_reach_tier crt_rcls
+*temp crt_tier combat_reach_tier_result
 *temp crt_epos {(("combat_enemy" & crt_slot) & "_position")}
 *temp crt_pd (crt_epos - combat_lane_player_position)
 *if (crt_pd < 0)
@@ -453,7 +473,7 @@
 *temp crt_best_d 999
 *temp crt_best_hp 0
 *temp crt_best_max 1
-*if ((not(combat_player_hidden)) and ((not(combat_ranged_cornered)) or (crt_pd <= 0)))
+*if (((not(combat_player_hidden)) and ((not(combat_ranged_cornered)) or (crt_pd <= 0))) and (crt_pd <= crt_tier))
   *set crt_found true
   *set crt_best_d crt_pd
   *set crt_best_hp hp_current
@@ -468,7 +488,7 @@
     *temp crt_d (crt_epos - crt_apos)
     *if (crt_d < 0)
       *set crt_d (0 - crt_d)
-    *if ((not(combat_ranged_cornered)) or (crt_d <= 0))
+    *if (((not(combat_ranged_cornered)) or (crt_d <= 0)) and (crt_d <= crt_tier))
       *temp crt_lt ((crt_hp * crt_best_max) < (crt_best_hp * crt_max))
       *temp crt_eq ((crt_hp * crt_best_max) = (crt_best_hp * crt_max))
       *if (((not(crt_found)) or (crt_lt)) or ((crt_eq) and ((crt_d < crt_best_d) or ((crt_d = crt_best_d) and (crt_hp < crt_best_hp)))))
