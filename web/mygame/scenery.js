@@ -109,6 +109,9 @@
 
   // the rules, tried in order; each gets the stats and returns the name of where the player is, or nothing
   function tile(s) { var O = window.Overworld; return s.ow_on && O && O.nodes ? O.nodes[s.ow_pos] : null; }
+  // The trade panel's shop_open names an OPEN MARKET (a lane, a green, a trading ground: web/mygame/market-data.generated.js, commodities) outdoors, not a shop counter, and the stat stays set
+  // when the player walks on, so it must never choose the shop interior picture or the "shop" place.
+  function counterShop(s) { var D = window.MARKET_DEFS; return !!(s.shop_open && !(D && D[s.shop_open] && D[s.shop_open].commodities)); }
   var RULES = [
     function (s) { return s.sceneName === "combat" && s.scenery_combat_place ? s.scenery_combat_place : undefined; }, // a temporary combat scene keeps the location it was entered from
     function (s) { return s.sceneName === "prologue/battle_black_sinks" && s.scenery_subplace === "black_sinks_causeway_before" ? "black_sinks_causeway_before" : undefined; }, // the ruined causeway during the prologue assault
@@ -149,7 +152,7 @@
     function (s) { return s.sceneName === "port_valen/radiant/notice_board" && s.cr_origin === "fv" ? "generic_village_gathering_hall" : undefined; }, // Barleycross's board is inside its village hall
     function (s) { return s.sceneName === "horse_dealer" && s.horse_place === "bc" ? "generic_village_pasture" : undefined; }, // Barleycross's working-horse rail stands at the common pasture
     function (s) { return s.sceneName === "horse_dealer" && s.horse_place === "mw" ? "village_stable_yard" : undefined; }, // Port Valen's dealer works from the Middle Ward yard
-    function (s) { return s.shop_open && s.shop_open !== "trapper" && s.shop_open !== "halda" ? "generic_trade_shop" : undefined; }, // shop counters in settlements; Halda has a scoped forge rule above and the forest trapper stays outdoors
+    function (s) { return counterShop(s) && s.shop_open !== "trapper" && s.shop_open !== "halda" ? "generic_trade_shop" : undefined; }, // shop counters in settlements; Halda has a scoped forge rule above and the forest trapper stays outdoors
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_inn_room" ? "generic_town_inn_room" : undefined; }, // Wagoner's Rest guest room and Kess's rented chamber
     function (s) { return s.sceneName === "timbermouth/split_pine_inn" && s.scenery_subplace === "town_inn_room" ? "generic_town_inn_room" : undefined; }, // Split Pine guest room
     function (s) { return s.scenery_subplace === "village_inn_room" && (s.sceneName === "alderford/drowned_oar" || s.sceneName === "alderford/redvein/red_lantern" || s.sceneName === "alderford/whitefold/white_ram" || s.sceneName === "port_valen/brinewick/reedhouse" || s.sceneName === "port_valen/marlcross/wayfarers_rest") ? "generic_village_inn_room" : undefined; }, // village inns and Maura's Drowned Oar rooms
@@ -178,7 +181,7 @@
     function (s) { return s.sceneName === "port_valen/port_valen_civic_heights" && s.scenery_subplace === "civic_council_gallery" ? "civic_council_gallery" : undefined; }, // Council's public gallery
     function (s) { return s.sceneName === "timbermouth/workshops" ? "generic_town_street" : undefined; }, // the outdoor workshops lane
     function (s) { return SCENE_PLACES[s.sceneName]; },                                                // a scene that is a place of its own: an inn, the battle
-    function (s) { if (s.shop_open) return "shop"; },                                                  // at a shop's counter
+    function (s) { if (counterShop(s)) return "shop"; },                                                  // at a shop's counter
     function (s) { if (s.dg_in_run && s.dg_table && s.dg_table !== "none") return s.dg_table; },       // inside a dungeon: which one
     function (s) { var n = tile(s); return n ? n.name : undefined; },                                  // on the overworld: the tile's name,
     function (s) { var n = tile(s); return n && n.kind === "road" && n.also === "hills" ? "overworld_hilly_road" : undefined; }, // a road through hilly ground

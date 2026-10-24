@@ -3,7 +3,7 @@
 *comment than a town, four distinct places, a headperson, rural, no factor, bank or services), but it is a different KIND of place: a clearing in the Longshade where the Ashrun comes
 *comment out from under the trees, with log houses scattered around it and no street. The places are the Longhouse (the gathering hall, with the Old Ash on the clearing outside it), the Ashrun House (a small inn for cutters, haulers and travellers), the Hide Yard (a covered cutting shed, hide frames and bark-soaking troughs), and the Work Yards. The Work Yards contain both the Log Yard beside the Ashrun and the Charcoal Ground beyond the last houses. The headperson is a SPEAKER, Lysa Thorn (the plan's 8.5, kept at the
 *comment user's word; the plan's ash-limit dispute is NOT used: "disregard any current situation relating to the Ashwood trees, I don't like that political situation").
-*comment The trading system is never explained to the player (the user: they should work it out): prose shows decks, marks and animals, never where anything goes. No items or shop are built.
+*comment The trading system is never explained to the player (the user: they should work it out): prose shows decks, marks and animals, never where anything goes. Since 2026-10-24 (the user) THIS HUB PAGE is the village's open market: by day the trade panel is on it and the beaten ground in the clearing is the trading ground (no separate place); priced by web/mygame/market.js, tools/market_defs.json ah_market.
 *comment The shrine to the Old Ash while the village fells its cousins is left UNREMARKED: the irony is the user's, and nobody in the prose points at it.
 *comment Hours: none; always open. Each place is its own file in this folder (longhouse, landing, hide_yard, clearing). None is in *scene_list: compile.js lists them.
 *comment ====================================================================================
@@ -32,10 +32,22 @@
 *gosub ah_street
 *gosub ah_eh_hours
 
+*comment The clearing is the village's market by day (not in the dark or in a storm that empties it); the panel and its hidden settle option are on this page only then.
+*temp ah_market_open false
+*if ((not(time_period = "Night")) and (not(time_period = "Pre-Dawn")))
+  *if (not(street_life = "empty"))
+    *set ah_market_open true
+*if (ah_market_open)
+  *gosub ah_market_open_panel
+  Carters from Timbermouth have backed their wagons along the stream side, and cutters, burners and trappers have laid their goods out on sacking across the beaten ground.
+
 *comment BUTTON FORMAT, as the other hubs: destination first, bold, a flavour that does not list stock, then [~N min].
 *comment Open-world free time: the sidebar's Wait and Rest work on this page (web/mygame/pagegate.js).
 *set wait_ok_page page_id
 *choice
+  *if (ah_market_open)
+    # ⚖ Settle up in the clearing.
+      *goto ah_market_settle
   # [b]The Longhouse[/b]: the long log hall under the old tree. [~5 min]
     *goto_scene timbermouth/ashrun_holt/longhouse ah_longhouse
   # [b]The Hide Yard[/b]: hide frames, bark troughs and the cutting shed. [~5 min]
@@ -79,7 +91,7 @@
 *label ah_place
 The trees open around a clearing where the Ashrun runs over grey stones. An old ash grows in its middle, broad enough that its lowest limbs reach over the beaten ground. Strips of cloth and small knotted cords hang from the boughs.
 
-Log houses stand apart around the clearing, roofed in peeled bark. There is no street: hard paths run between doorsteps, chopping blocks, woodpiles, and the stream. The Longhouse stands on the east side beneath the old ash, with a deep porch facing the clearing. The Ashrun House has a broad porch and a row of stable rails facing the ground. One work track follows the Ashrun downhill toward the log decks; another runs downwind toward the smoke of the charcoal ground. A third track leads past a fenced hide yard, where pale hides hang on frames.
+Log houses stand apart around the clearing, roofed in peeled bark. There is no street: hard paths run between doorsteps, chopping blocks, woodpiles, and the stream. The ground between the old ash and the porches is beaten flat and wide, and it is where the village does its trading. The Longhouse stands on the east side beneath the old ash, with a deep porch facing the clearing. The Ashrun House has a broad porch and a row of stable rails facing the ground. One work track follows the Ashrun downhill toward the log decks; another runs downwind toward the smoke of the charcoal ground. A third track leads past a fenced hide yard, where pale hides hang on frames.
 
 Wet bark, green needles, woodsmoke, charcoal, and the sharp smell of bark water fill the air beneath the trees.
 *return
@@ -286,3 +298,162 @@ Wet bark, green needles, woodsmoke, charcoal, and the sharp smell of bark water 
   # ⇥ [pvgo:home:ashrun_holt]
     *goto ashrun_holt
   *comment GEN:END place_steps home:ashrun_holt
+
+*comment The clearing's market panel (2026-10-24): one open market for the whole beaten ground, every commodity bought and the shelf sold from what it holds. Settling takes the panel's agreed totals (equipment.txt shop_check).
+*label ah_market_open_panel
+*set shop_open "ah_market"
+*set shop_rows ""
+*comment GEN:BEGIN ah_market_panel_rows
+*gosub_scene equipment shop_row_add "honeycomb"
+*gosub_scene equipment shop_row_add "boar_meat"
+*gosub_scene equipment shop_row_add "venison"
+*gosub_scene equipment shop_row_add "barley_loaf"
+*gosub_scene equipment shop_row_add "grain"
+*gosub_scene equipment shop_row_add "cheese"
+*gosub_scene equipment shop_row_add "orchard_apple"
+*gosub_scene equipment shop_row_add "root_vegetable_bundle"
+*gosub_scene equipment shop_row_add "farm_eggs"
+*gosub_scene equipment shop_row_add "dried_pork_sausage"
+*gosub_scene equipment shop_row_add "onions"
+*gosub_scene equipment shop_row_add "potatoes"
+*gosub_scene equipment shop_row_add "tomatoes"
+*gosub_scene equipment shop_row_add "dressed_chicken"
+*gosub_scene equipment shop_row_add "fresh_fish_fillet"
+*gosub_scene equipment shop_row_add "cabbage"
+*gosub_scene equipment shop_row_add "pumpkin"
+*gosub_scene equipment shop_row_add "iron_ore"
+*gosub_scene equipment shop_row_add "iron_bar"
+*gosub_scene equipment shop_row_add "longshade_timber"
+*gosub_scene equipment shop_row_add "charcoal"
+*gosub_scene equipment shop_row_add "salt"
+*gosub_scene equipment shop_row_add "furs"
+*gosub_scene equipment shop_row_add "leather"
+*gosub_scene equipment shop_row_add "wool"
+*gosub_scene equipment shop_row_add "wool_cloth"
+*gosub_scene equipment shop_row_add "raw_hide"
+*gosub_scene equipment shop_row_add "boar_tusk"
+*gosub_scene equipment shop_row_add "elk_antler"
+*comment GEN:END ah_market_panel_rows
+*return
+
+*label ah_market_cart_pass
+*comment GEN:BEGIN ah_market_cart_pass
+*set shop_buyer "market"
+*set gear_shop "ah_market_sell"
+*gosub_scene equipment shop_cart_sell "honeycomb"
+*gosub_scene equipment shop_cart_sell "boar_meat"
+*gosub_scene equipment shop_cart_sell "venison"
+*gosub_scene equipment shop_cart_sell "barley_loaf"
+*gosub_scene equipment shop_cart_sell "grain"
+*gosub_scene equipment shop_cart_sell "cheese"
+*gosub_scene equipment shop_cart_sell "orchard_apple"
+*gosub_scene equipment shop_cart_sell "root_vegetable_bundle"
+*gosub_scene equipment shop_cart_sell "farm_eggs"
+*gosub_scene equipment shop_cart_sell "dried_pork_sausage"
+*gosub_scene equipment shop_cart_sell "onions"
+*gosub_scene equipment shop_cart_sell "potatoes"
+*gosub_scene equipment shop_cart_sell "tomatoes"
+*gosub_scene equipment shop_cart_sell "dressed_chicken"
+*gosub_scene equipment shop_cart_sell "fresh_fish_fillet"
+*gosub_scene equipment shop_cart_sell "cabbage"
+*gosub_scene equipment shop_cart_sell "pumpkin"
+*gosub_scene equipment shop_cart_sell "iron_ore"
+*gosub_scene equipment shop_cart_sell "iron_bar"
+*gosub_scene equipment shop_cart_sell "longshade_timber"
+*gosub_scene equipment shop_cart_sell "charcoal"
+*gosub_scene equipment shop_cart_sell "salt"
+*gosub_scene equipment shop_cart_sell "furs"
+*gosub_scene equipment shop_cart_sell "leather"
+*gosub_scene equipment shop_cart_sell "wool"
+*gosub_scene equipment shop_cart_sell "wool_cloth"
+*gosub_scene equipment shop_cart_sell "raw_hide"
+*gosub_scene equipment shop_cart_sell "boar_tusk"
+*gosub_scene equipment shop_cart_sell "elk_antler"
+*set gear_shop "ah_market"
+*gosub_scene equipment shop_cart_buy "honeycomb"
+*gosub_scene equipment shop_cart_buy "boar_meat"
+*gosub_scene equipment shop_cart_buy "venison"
+*gosub_scene equipment shop_cart_buy "barley_loaf"
+*gosub_scene equipment shop_cart_buy "grain"
+*gosub_scene equipment shop_cart_buy "cheese"
+*gosub_scene equipment shop_cart_buy "orchard_apple"
+*gosub_scene equipment shop_cart_buy "root_vegetable_bundle"
+*gosub_scene equipment shop_cart_buy "farm_eggs"
+*gosub_scene equipment shop_cart_buy "dried_pork_sausage"
+*gosub_scene equipment shop_cart_buy "onions"
+*gosub_scene equipment shop_cart_buy "potatoes"
+*gosub_scene equipment shop_cart_buy "tomatoes"
+*gosub_scene equipment shop_cart_buy "dressed_chicken"
+*gosub_scene equipment shop_cart_buy "fresh_fish_fillet"
+*gosub_scene equipment shop_cart_buy "cabbage"
+*gosub_scene equipment shop_cart_buy "pumpkin"
+*gosub_scene equipment shop_cart_buy "iron_ore"
+*gosub_scene equipment shop_cart_buy "iron_bar"
+*gosub_scene equipment shop_cart_buy "longshade_timber"
+*gosub_scene equipment shop_cart_buy "charcoal"
+*gosub_scene equipment shop_cart_buy "salt"
+*gosub_scene equipment shop_cart_buy "furs"
+*gosub_scene equipment shop_cart_buy "leather"
+*gosub_scene equipment shop_cart_buy "wool"
+*gosub_scene equipment shop_cart_buy "wool_cloth"
+*gosub_scene equipment shop_cart_buy "raw_hide"
+*gosub_scene equipment shop_cart_buy "boar_tusk"
+*gosub_scene equipment shop_cart_buy "elk_antler"
+*comment GEN:END ah_market_cart_pass
+*return
+
+*label ah_market_settle
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment shop_begin
+  *gosub ah_market_cart_pass
+  *gosub_scene equipment shop_check
+  *if (shop_verdict = "ok")
+    *set shop_mode "apply"
+    *gosub ah_market_cart_pass
+    *set currency_add_amount (shop_tot_credit - shop_tot_cost)
+    *gosub_scene economy currency_add
+  *else
+    *set shop_mode "clear"
+    *gosub ah_market_cart_pass
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*if (shop_verdict = "empty")
+  You stand a moment on the beaten ground with nothing set aside, and the clearing goes on with its day.
+  *page_break Back to the clearing…
+  *goto ashrun_holt
+*if (shop_verdict = "short")
+  You count your coin against the marks scratched on the sacking and come up short. The goods stay where they lie.
+  *page_break Back to the clearing…
+  *goto ashrun_holt
+*if ((shop_tot_bought > 0) and (shop_tot_sold > 0))
+  You go from sacking to wagon-bed across the beaten ground, setting your goods down and lifting others, and each side counts until it comes out square.
+*elseif (shop_tot_bought > 0)
+  You go from sacking to wagon-bed, hefting each bundle and counting out coin, and the carters' boys swing your purchases up beside you.
+*else
+  At one spread of sacking after another you set your goods down, and each seller or carter counts out coin from a belt-pouch.
+*if (not(shop_quote_line = ""))
+  *line_break
+  ${shop_quote_line}
+*if (not(shop_note_line = ""))
+  *line_break
+  ${shop_note_line}
+*if (shop_tot_sold > 0)
+  *line_break
+  [b][💰 Sold: ${shop_sold_list} for ${shop_credit_desc}][/b]
+*if (shop_tot_bought > 0)
+  *line_break
+  [b][🛒 Bought: ${shop_recv} for ${shop_cost_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass shop_tot_minutes
+*if (shop_tot_sold > 0)
+  *set minutes_to_pass (minutes_to_pass + 5)
+*set time_advance_call_id "ah_market_trade"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the clearing…
+*goto ashrun_holt

@@ -73,7 +73,7 @@
    * A merchant listed in PILOT is priced by web/mygame/market.js (finite stock and purse, slippage, buy-back) instead of by the flat prices above. The market is one saved string per merchant
    * (stats.market_<key>); the panel reads it brought up to today, prices the cart against it, and writes the new state only when the trade is confirmed, together with the totals it agreed
    * (market_cost, market_credit, market_on), which equipment.txt shop_check then takes in place of its own. */
-  var PILOT = { halda: true, barley_farm: true, tm_market: true, bw_market: true };
+  var PILOT = { halda: true, barley_farm: true, tm_market: true, bw_market: true, ah_market: true, mc_market: true, af_market: true, rv_market: true };
   function marketOn(trade) { return !!(trade && PILOT[trade.key] && window.Market && window.MARKET_DEFS && window.MARKET_DEFS[trade.key]); }
   function today() { return num(statsNow().campaign_day); }
   function marketState(trade) {

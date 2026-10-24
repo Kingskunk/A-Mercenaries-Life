@@ -132,16 +132,16 @@
 
     {
       id: "barleycross", category: "places", title: "Barleycross",
-      sub: "A farming village off the Timbermouth road",
-      tags: ["Barleycross", "Timbermouth"], aliases: ["farming village", "farm country", "gathering hall", "farm row", "common pasture"],
+      sub: "A farming village six miles from Timbermouth",
+      tags: ["Barleycross", "Timbermouth", "Trade"], aliases: ["farming village", "farm country", "gathering hall", "the lane", "lane market", "common pasture"],
       link: ["Barleycross"],
       unlock: "bc_seen",
       body: function (s) {
         var out = [
-          "A farming village with no wall, spread over a wide common where four farm roads cross: thirty or forty farmsteads standing back behind their hedges, with barley, oats, roots, hay meadows and pastures running out around them, and a grain mill on the brook at the village's edge. The plain timber Gathering Hall stands on the common's eastern side."
+          "An unwalled farming village spread around a broad common where four farm roads meet. Some forty farmsteads stand behind their hedges, with barley, oats, roots, hay meadows and pastures running out around them; a brook turns the grain mill at the southern edge, while the timber Gathering Hall faces the common."
         ];
         if (truthy(s.bc_lane_seen)) {
-          out.push("The Lane is the village's one street, running south from the common with a farmstead on each side, some large and some small. Travellers can find a hayloft bed with a household there.");
+          out.push("The Lane is its one street, running south from the common between farmsteads of every size. By day, households put out watched baskets and crates at their gates, making an open market for farm goods; a traveller can also pay for a hayloft bed.");
         }
         if (truthy(s.bc_pasture_seen)) {
           out.push("The common pasture by the brook holds sheep and cattle, and a row of rail pens where families keep their working horses and mules.");
@@ -159,9 +159,32 @@
       tags: ["Barleycross"], aliases: ["Wenna", "Hart", "village head"],
       unlock: "bc_head_seen",
       body: [
-        "A halfling woman, round and brown-faced, with short iron-grey curls and a worn sheepskin waistcoat, who sits on the bench outside the Gathering Hall with a tally stick longer than her forearm across her knee and a cold pipe in her teeth. She says she is village head because nobody else would take it."
+        "A halfling woman in a worn sheepskin waistcoat, usually found on the bench outside the Gathering Hall with a folded packet of household papers across her knee and a cold pipe between her teeth. She says she is village head because nobody else would take it.",
+        "Her division is plain: village business belongs in the Hall, while idling belongs by the pond. Both, she says, keep people busy."
       ],
       see: ["barleycross"]
+    },
+    {
+      id: "merel_pellam", category: "people", title: "Merel Pellam",
+      sub: "Aldis Pellam's wife",
+      role: "Resident, the last cottage on the Barleycross Lane",
+      link: ["Merel Pellam"],
+      tags: ["Barleycross", "Longshade"], aliases: ["Merel", "Pellam", "Aldis", "end cottage", "overdue peddler"],
+      unlock: "peddler_met_wife",
+      body: function (s) {
+        var out = [
+          "Aldis Pellam's wife, who lives with her young daughter in the last cottage on the Barleycross Lane. She held herself steady while seeking word of Aldis, a gatherer who went deep into the Longshade with Marr and Joss to collect plants for Port Valen's apothecaries."
+        ];
+        if (s.peddler_stage === "active") {
+          out.push("She does not expect anyone to bring them back. She wants to know where their journey ended, and whether it was quick.");
+        } else if (s.peddler_stage === "resolved") {
+          out.push(truthy(s.bc_pouch_returned)
+            ? "She has the answer she sought, as well as the leaf-stitched pouch she made for Aldis before he left."
+            : "She has the answer she sought about Aldis and the two hands who went with him.");
+        }
+        return out;
+      },
+      see: ["barleycross", "wenna_hart"]
     },
 
     {
@@ -172,7 +195,7 @@
       unlock: "ah_seen",
       body: function (s) {
         var out = [
-          "A village of log houses with bark roofs, scattered through a clearing in the Longshade where the Ashrun comes out from under the trees. A vast old ash stands at the middle of the clearing, its trunk wound with ribbons, cords and carved tokens, and the long Longhouse stands beside it."
+          "A village of log houses with bark roofs, scattered through a clearing in the Longshade where the Ashrun comes out from under the trees. A vast old ash stands at the middle of the clearing, its trunk wound with ribbons, cords and carved tokens, and the long Longhouse stands beside it. The beaten ground between the old ash and the porches is where the village trades: carters from Timbermouth wait along the stream side, and cutters, charcoal burners and trappers lay their goods out on sacking."
         ];
         if (truthy(s.ah_landing_seen)) {
           out.push("Below the houses a gravel shelf on the stream bank is stacked with decks of bark-stripped logs, each deck with its family's mark painted on the cut ends, beside a chute of squared planks leading to a run of ledges.");

@@ -309,15 +309,15 @@
       use: true
     },
     {
-      id: "barley_grain", category: "provisions", owned: "has_barley_grain",
+      id: "grain", category: "provisions", owned: "has_grain",
       weight: 2, stow: true, stack: true,
-      name: function (s) { var n = 1 + (Number(s.spare_barley_grain) || 0); return "Barley Grain" + (n > 1 ? " ×" + n : ""); },
-      description: "Two-pound sack of Barleycross grain, for milling, porridge, brewing, or a pot."
+      name: function (s) { var n = 1 + (Number(s.spare_grain) || 0); return "Grain" + (n > 1 ? " ×" + n : ""); },
+      description: "Two-pound sack of grain, for milling, porridge, brewing, or a pot."
     },
     {
-      id: "hard_farm_cheese", category: "consumables", owned: "has_hard_farm_cheese",
+      id: "cheese", category: "consumables", owned: "has_cheese",
       weight: 0.5, stow: true, stack: true,
-      name: function (s) { var n = 1 + (Number(s.spare_hard_farm_cheese) || 0); return "Hard Farm Cheese" + (n > 1 ? " ×" + n : ""); },
+      name: function (s) { var n = 1 + (Number(s.spare_cheese) || 0); return "Cheese" + (n > 1 ? " ×" + n : ""); },
       description: "Waxed wedge of sharp hard cheese from the village dairies.",
       badge: "Holds off about 12 hours of hunger",
       use: true
@@ -753,6 +753,12 @@
       equip: { slot: "feet", id: "wooden_clogs" }
     },
     {
+      id: "iron_ore", category: "provisions", owned: "has_iron_ore",
+      weight: 3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_iron_ore) || 0); return "Iron Ore" + (n > 1 ? " ×" + n : ""); },
+      description: "Hand-sorted red iron ore from the Eastcut, for a smelter's furnace."
+    },
+    {
       id: "iron_bar", category: "provisions", owned: "has_iron_bar",
       weight: 2.5, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_iron_bar) || 0); return "Iron Bar" + (n > 1 ? " ×" + n : ""); },
@@ -775,6 +781,30 @@
       weight: 2, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_salt) || 0); return "Salt" + (n > 1 ? " ×" + n : ""); },
       description: "Two-pound sack of coarse coast salt, for curing and the cook-pot."
+    },
+    {
+      id: "furs", category: "provisions", owned: "has_furs",
+      weight: 1.5, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_furs) || 0); return "Furs" + (n > 1 ? " ×" + n : ""); },
+      description: "Bundle of dressed furs, tied for the pack and ready for a furrier."
+    },
+    {
+      id: "leather", category: "provisions", owned: "has_leather",
+      weight: 3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_leather) || 0); return "Leather" + (n > 1 ? " ×" + n : ""); },
+      description: "Stack of bark-tanned hides, ready for a saddler or cobbler."
+    },
+    {
+      id: "wool", category: "provisions", owned: "has_wool",
+      weight: 2, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_wool) || 0); return "Wool" + (n > 1 ? " ×" + n : ""); },
+      description: "Sack of washed fleece, ready for the spinner."
+    },
+    {
+      id: "wool_cloth", category: "provisions", owned: "has_wool_cloth",
+      weight: 4, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_wool_cloth) || 0); return "Wool Cloth" + (n > 1 ? " ×" + n : ""); },
+      description: "Bolt of close-woven wool cloth, ready for a tailor."
     },
     {
       id: "grease_flask", category: "consumables", owned: "has_grease_flask",

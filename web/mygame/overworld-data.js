@@ -246,10 +246,10 @@
       name: "Marlcross", kind: "village", x: 1.72, y: -1.18, region: "The eastern grainlands",
       territory: "scales",
       danger: 1,
-      info: "A grain and carting village on the eastern high ground: barley, rye, grazing oxen, and a mill serving the traffic bound for Port Valen.",
-      here: "Fields of barley and rye run over the gentler slopes around a mill and a cluster of wagon yards. Pale marl shows in the banks where the cart tracks have cut through the soil.",
-      hereNight: "Marlcross is a few square windows beyond the dark fields, with the mill's sails still against the stars and a dog barking from the wagon yards.",
-      hereStorm: "Rain flattens the grain and turns the cart tracks through Marlcross to pale, clinging mud. The mill has its sails furled and every yard gate shut."
+      info: "A rye-and-milling village on the eastern high ground: the surrounding high fields feed its Grain Green, windmill, drying floors, and raised stores before the harvest goes on toward Port Valen.",
+      here: "Rye runs over the gentler slopes around a windmill, threshing sheds, and raised grain stores. Pale marl shows in the banks where the farm tracks have cut through the soil.",
+      hereNight: "Marlcross is a few square windows beyond the dark rye fields, with the mill's sails still against the stars and a dog barking from the grain sheds.",
+      hereStorm: "Rain flattens the rye and turns the farm tracks through Marlcross to pale, clinging mud. The mill has its sails furled and every storehouse door shut."
     },
     r3: {
       name: "Longshade Edge", kind: "woodroad", also: "hills", x: -1.67, y: -2.5, region: "The edge of the Longshade",

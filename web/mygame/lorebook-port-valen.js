@@ -384,6 +384,143 @@
       see: ["hiring_hall", "civic_heights"]
     },
 
+    /* --------------------------------------------------------- PEOPLE: MARLCROSS */
+
+    {
+      id: "sella_morren", category: "people", title: "Sella Morren",
+      sub: "Elder of Marlcross",
+      role: "Holds the elder's chair, Marlcross Cross Hall",
+      link: ["Sella Morren"],
+      tags: ["Marlcross"], aliases: ["Sella", "Elder Morren", "elder", "Cross Hall"],
+      unlock: "mc_sella_met",
+      body: [
+        "The lean, weather-browned elder who holds Marlcross's chair at the Cross Hall. She sorts notices and council papers at the table nearest the door, and expects anyone with village business to say it plainly.",
+        "Disputes are heard by the people who will live beside the answer; Sella and the council put a choice before the room rather than deciding it alone. The same rule covers road work and the grain-market business that depends on it."
+      ],
+      see: ["marlcross"]
+    },
+    {
+      id: "tamsin_pike", category: "people", title: "Tamsin Pike",
+      sub: "Keeper of the Wayfarer's Rest",
+      role: "Innkeeper, The Wayfarer's Rest in Marlcross",
+      link: ["Tamsin Pike"],
+      tags: ["Marlcross"], aliases: ["Tamsin", "innkeeper", "Wayfarer's Rest", "rooms", "stable yard"],
+      unlock: "mc_rest_seen",
+      body: [
+        "A broad-shouldered innkeeper with a close-cropped head, a pale burn scar across one hand, and a ring of room keys at her belt. She keeps the Wayfarer's Rest with a plain rule: the pot is on when it is on, rooms cost three copper, and the yard has water and hay.",
+        "During the annual Milling Fair, she keeps the entry book and sends contestants on to the Grain Green when the judges call the table."
+      ],
+      see: ["marlcross", "sella_morren"]
+    },
+    {
+      id: "broadbelt_cousins", category: "people", title: "The Broadbelt Cousins",
+      sub: "Repeat entrants in Marlcross's Milling Fair",
+      role: "Pie-eating contestants, the Milling Fair",
+      link: ["Boro Broadbelt", "Tov Broadbelt", "Keda Broadbelt"],
+      tags: ["Marlcross"], aliases: ["Boro", "Tov", "Keda", "Broadbelt", "Broadbelts", "pie-eating contest"],
+      unlock: function (s) {
+        return truthy(s.marlcross_milling_fair_completed) || truthy(s.marlcross_milling_fair_spotted_trick) || truthy(s.marlcross_milling_fair_boro_out);
+      },
+      body: function (s) {
+        var out = [
+          "Boro, Tov and Keda Broadbelt are dwarf cousins who return to Marlcross's annual pie-eating contest. When they enter, one usually takes the table while the others keep close to the benches."
+        ];
+        if (truthy(s.marlcross_milling_fair_spotted_trick) || truthy(s.marlcross_milling_fair_boro_out)) {
+          out.push("Their great padded coat hid a cheating scheme: the cousins changed places beneath it while the crowd watched the plates. Sella disqualifies them if the trick is brought to her.");
+        }
+        return out;
+      },
+      see: ["marlcross", "sella_morren", "tamsin_pike"]
+    },
+
+    /* ---------------------------------------------------------- PEOPLE: BRINEWICK */
+
+    {
+      id: "hesta_rill", category: "people", title: "Hesta Rill",
+      sub: "Elder of Brinewick",
+      role: "Holds the elder's chair, Brinewick Tide House",
+      link: ["Hesta Rill"],
+      tags: ["Brinewick"], aliases: ["Hesta", "Elder Rill", "elder", "Tide House", "tide gates"],
+      unlock: "bw_tide_house_seen",
+      body: [
+        "The short, square-built elder who keeps Brinewick's chair at the Tide House. Notices, lamp oil and spare rope are arranged within reach of her place at the long table; when the water rises, the house is the village refuge.",
+        "Hesta's rule for closing the tide gates is practical: the water, wind and channel marks decide the moment, and whoever is nearest shuts the gate. The village sorts out repairs afterward."
+      ],
+      see: ["brinewick"]
+    },
+    {
+      id: "nessa_cale", category: "people", title: "Nessa Cale",
+      sub: "Keeper of the Reedhouse",
+      role: "Innkeeper, the Reedhouse in Brinewick",
+      link: ["Nessa Cale"],
+      tags: ["Brinewick"], aliases: ["Nessa", "innkeeper", "Reedhouse", "rooms", "stable yard"],
+      unlock: "bw_reedhouse_seen",
+      body: function (s) {
+        var out = [
+          "The practical innkeeper of the Reedhouse, with salt-cracked hands and a plain kerchief over her dark hair. She keeps the counter, rooms and high-ground stable yard, and makes no ceremony of prices or necessities."
+        ];
+        if (s.bw_daughter_quest_stage === "active") {
+          out.push("Her daughter Iria's intended marriage troubles her less for the man than for the quieter home she fears it will leave.");
+        } else if (truthy(s.bw_daughter_completed)) {
+          out.push("Iria's marriage has not driven her away: she still takes breakfast and noon tables at the Reedhouse, which is the answer Nessa needed more than anyone.");
+        }
+        return out;
+      },
+      see: ["brinewick", "iria_tovin"]
+    },
+    {
+      id: "iria_tovin", category: "people", title: "Iria Cale and Tovin Rusk",
+      sub: "A Reedhouse daughter and a tanner's son",
+      role: "Brinewick couple",
+      link: ["Iria Cale", "Tovin Rusk"],
+      tags: ["Brinewick"], aliases: ["Iria", "Tovin", "Cale", "Rusk", "tanyard", "tannery"],
+      unlock: "bw_daughter_met",
+      body: function (s) {
+        var out = [
+          "Iria Cale is Nessa's daughter and a Reedhouse server. Tovin Rusk is the son of a Brinewick tanner; his family's small tanyard stands just past the salt store, across the bank rather than across the sea.",
+          "Their proposed marriage became difficult because Nessa feared a new household would turn Iria's childhood home into a stopover."
+        ];
+        if (truthy(s.bw_daughter_completed)) {
+          out.push("The couple were given Nessa's blessing and planned their household close enough to keep a place at both fires.");
+        }
+        if (truthy(s.bw_daughter_wedding_seen)) {
+          out.push("They married in Brinewick with both families present. Iria still works at the Reedhouse.");
+        }
+        return out;
+      },
+      see: ["brinewick", "nessa_cale"]
+    },
+
+    /* ----------------------------------------------------- PLACES: EASTERN GRAINLANDS */
+
+    {
+      id: "marlcross", category: "places", title: "Marlcross",
+      sub: "The eastern rye and milling village",
+      tags: ["Eastern Grainlands", "Trade"], aliases: ["grain green", "cross hall", "windmill", "rye", "milling fair", "eastern high ground"],
+      link: ["Marlcross"],
+      unlock: "mc_seen",
+      body: [
+        "A village where the High Grey Road meets three farm tracks on the eastern high ground. Its surrounding fields are known for rye: sacks come to the Grain Green to be weighed, then go on to the drying floors, windmill, or raised storehouses.",
+        "The old stone cross and the Cross Hall stand at the meeting of the roads. Its annual Milling Fair turns the Grain Green into a day of pies, prizes, and a very public contest."
+      ],
+      see: ["sella_morren", "tamsin_pike"]
+    },
+
+    /* -------------------------------------------------------- PLACES: TIDAL FLATS */
+
+    {
+      id: "brinewick", category: "places", title: "Brinewick",
+      sub: "Salt village on the western tidal flats",
+      tags: ["Western Tidal Flats", "Trade"], aliases: ["Tide House", "Reedhouse", "Slip Market", "Saltworks", "salt pans", "brine beds"],
+      link: ["Brinewick"],
+      unlock: "bw_seen",
+      body: [
+        "A village built inside an earthen bank where the road meets the tidal flats. Brinewick makes salt by letting brine stand in shallow beds, then boiling it in peat-fired pan sheds.",
+        "The raised Tide House is its refuge and council room; salt, fish and road goods trade at the narrow loading slip. The Reedhouse and its stable yard sit on the highest ground by the road gate."
+      ],
+      see: ["hesta_rill", "nessa_cale"]
+    },
+
     /* ------------------------------------------------------------- PLACES: THE CITY */
 
     {
@@ -456,12 +593,6 @@
         var out = [
           "A long hall of grey stone midway along the cargo quay, with cart doors wide enough for a laden dray and a great iron beam-scale hung from its gable. Cut into the lintel is the line One Weight for All. Inside are platform scales sunk in the floor, racks of brass weights, and a wall of black boards ruled in columns, one for each good the port handles. A chalkboard by the doors gives tomorrow's weather."
         ];
-        if (truthy(s.wh_floor_talk)) {
-          out.push("Goods are weighed here by the load, on the city's standard weights, before they are bought or sold, and a load on a cart may be brought to the scale. Fresh fish is not weighed here: the Fishmongers' Slip keeps its own market.");
-        }
-        if (truthy(s.wh_slate_talk)) {
-          out.push("Wet wool and wet grain weigh heavier than dry, so a merchant who knows tomorrow's weather knows what his load will weigh. The same forecast is pinned to the board at the Gilded Scales head house on Civic Heights.");
-        }
         if (truthy(s.ch_tax_licence_talk)) {
           out.push("Selling goods by the load here needs a Trade Licence from the Council Hall's tax windows. Without one, the Weighmaster will weigh a cart and no more.");
         }
@@ -476,15 +607,9 @@
       link: ["Odo Farrow", "Weighmaster Farrow", "Farrow"],
       tags: ["Quayside", "Trade"], aliases: ["Farrow", "Odo", "weighmaster"],
       unlock: "wh_seen",
-      body: function (s) {
-        var out = [
-          "A stout, bald man in a grey coat and a leather apron, with a brass plumb-bob on a cord at his belt and chalk to the elbows, who keeps the great scale from a low platform beside it. He says nothing leaves his floor unweighed and nothing on it is weighed twice."
-        ];
-        if (truthy(s.wh_hull_talk)) {
-          out.push("He leaves hulls, papers and duties to the Dockmaster at the customs tower and weighs what comes off them.");
-        }
-        return out;
-      },
+      body: [
+        "A stout, bald man in a grey coat and a leather apron, with a brass plumb-bob on a cord at his belt and chalk to the elbows, who keeps the great scale from a low platform beside it. He says nothing leaves his floor unweighed and nothing on it is weighed twice."
+      ],
       see: ["weigh_house", "voss"]
     },
     {

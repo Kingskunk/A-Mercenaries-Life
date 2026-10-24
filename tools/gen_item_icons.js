@@ -131,6 +131,7 @@ const MAP = {
 
   // ---- ingredients and salvage
   iron_bar: "../Generic/Iron_Bars_Generated_Source.png",
+  iron_ore: "../Generic/Iron_Ore_Generated_Source.png",     // the user's own art (2026-10-24)
   longshade_timber: "../Generic/Longshade_Timber_Generated_Source.png",   // the user's own art (2026-10-24)
   salt: "../Generic/Salt_Generated_Source.png",                         // the user's own art (2026-10-24)
   charcoal: "../Generic/Charcoal_Generated_Source.png",                  // the user's own art (2026-10-24)
@@ -187,8 +188,12 @@ const MAP = {
   food: "FOOD_Dried_Rope_Sausage_Unfaded_Icon.png",
   rations: "Consumable/Camp_supply/Heavy_Supply_Pack_Unfaded_Icon.png",
   barley_loaf: "FOOD_Sourdough_Bread_Unfaded_Icon.png",
-  barley_grain: "../Generic/Barley_Grain_Generated_Source.png",
-  hard_farm_cheese: "FOOD_Durinbold_Cheese_Wedge_Unfaded_Icon.png",
+  grain: "../Generic/Barley_Grain_Generated_Source.png",   // one picture for every grain (the user, 2026-10-24)
+  furs: "../Generic/Furs_Generated_Source.png",             // the user's own art (2026-10-24)
+  leather: "../Generic/Cured_Hides_Generated_Source.png",
+  wool: "../Generic/Wool_Generated_Source.png",
+  wool_cloth: "../Generic/Wool_Cloth_Generated_Source.png",
+  cheese: "FOOD_Durinbold_Cheese_Wedge_Unfaded_Icon.png",
   orchard_apple: "FOOD_Apple_Unfaded_Icon.png",
   root_vegetable_bundle: "FOOD_Turnip_Unfaded_Icon.png",
   farm_eggs: "FOOD_Egg_Unfaded_Icon.png",

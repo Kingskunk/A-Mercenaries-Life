@@ -1,6 +1,10 @@
 *comment ====================================================================================
-*comment THE GRAIN GREEN (Marlcross): a public market and weighing ground, not a shop menu. Its
-*comment scale, awnings and storehouse access make it the future trade-simulation anchor.
+*comment THE GRAIN GREEN (Marlcross): the village's open market and weighing ground, not a shop
+*comment menu. Rye and the public scale are its wholesale core; ordinary food and household stalls
+*comment use the road-facing awnings by day. Its scale, awnings and storehouse access make it the future
+*comment trade-simulation anchor.
+*comment 2026-10-24 (the user): the Green now carries the trade panel (the village's open market, priced by web/mygame/market.js from the distance to the makers, tools/market_defs.json mc_market): by day,
+*comment not in a storm that strips the awnings, with a hidden settle option. It buys every commodity; Marlcross makes grain and the farm goods like Barleycross.
 *comment ====================================================================================
 
 *label mc_grain_green
@@ -17,7 +21,7 @@
 *set mc_market_seen true
 [b]◈ THE GRAIN GREEN[/b]
 *line_break
-The Green is a long, open strip of packed earth beside the High Grey Road. A beam scale stands under a roof of rough boards, its iron hooks black with use. Around it, simple timber frames hold canvas awnings when people are selling, and low stone blocks give buyers somewhere to rest a sample sack. The storehouses rise behind the fence with their loading doors above head height and their lower walls rubbed pale by carts passing close.
+The Green is a long, open strip of packed earth beside the High Grey Road. A beam scale stands under a roof of rough boards, its iron hooks black with use. Rye comes in from the high fields here to be weighed before it goes on to the drying floors, the mill or the raised storehouses behind the fence. Around the road-facing edge, simple timber frames hold canvas awnings for ordinary market stalls, with low stone blocks for sample sacks, baskets and goods brought in from the surrounding farms. The storehouses rise behind the fence with their loading doors above head height and their lower walls rubbed pale by carts passing close.
 
 *if (marlcross_milling_fair_today)
   *if (marlcross_milling_fair_indoors)
@@ -50,13 +54,26 @@ The Green is a long, open strip of packed earth beside the High Grey Road. A bea
 *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
   The market is shut, but the road remains open along its edge.
 *elseif (mc_market_first)
-  Sacks stand in small groups beneath the awnings, each tied at the neck with cord or a strip of cloth. People lift handfuls of grain into their palms, compare colour and weight, then carry their sacks toward the scale or back to their carts.
+  Rye sacks stand in small groups beneath the scale awnings, each tied at the neck with cord or a strip of cloth. Along the road, other sellers set out roots, eggs, cheese, bread, cloth and small household goods beside their carts. People lift grain into their palms to compare colour and weight, then carry their sacks toward the scale or back to their carts.
 *else
-  Grain moves through the Green in a slow exchange of lifted sacks, weighed loads and carts leaving room for one another along the road.
+  Rye moves through the Green in a slow exchange of lifted sacks, weighed loads and carts leaving room for one another along the road. Beside that larger trade, the awnings hold the small business of the day: farm produce, bread, cloth, repairs and travellers' goods changing hands.
+
+*comment The market is open by day (the awnings come down in a storm, and the Green is shut at night); the panel and its hidden settle option are on this page only then.
+*temp mc_market_open false
+*if ((not(time_period = "Night")) and (not(time_period = "Pre-Dawn")))
+  *if (weather_severity < 3)
+    *set mc_market_open true
+*if (mc_market_open)
+  *gosub mc_market_open_panel
+*else
+  *set shop_open ""
 
 *comment Open-world free time: the sidebar's Wait and Rest work on this page (web/mygame/pagegate.js).
 *set wait_ok_page page_id
 *choice
+  *if (mc_market_open)
+    # ⚖ Settle up at the scale and the awnings.
+      *goto mc_market_settle
   *if ((marlcross_milling_fair_today and (marlcross_milling_fair_phase = "morning")) and (marlcross_milling_fair_years_completed > 0))
     # Read the prize board and the line beneath it.
       The board names ${marlcross_milling_fair_pie_description} and ${marlcross_milling_fair_prize_description}.
@@ -101,6 +118,16 @@ The Green is a long, open strip of packed earth beside the High Grey Road. A bea
       # ⇥ [pvgo:home:marlcross]
         *goto mc_grain_green_main
       *comment GEN:END place_steps home:marlcross
+  *if ((not(time_period = "Night")) and (not(time_period = "Pre-Dawn")))
+    # Walk between the market awnings.
+      Along the road-facing edge, a baker has laid dark loaves on a cloth beside a cooper's spare hoops and a farmer's basket of roots. A woman checks the stitching on a length of linen while a drover buys cheese to take up the road. The stalls are small, but they give the Green a use even when no cart is waiting on the scale.
+      *choice
+        # Return to the Green.
+          *goto mc_grain_green_main
+        *comment GEN:BEGIN place_steps home:marlcross -- generated by tools/gen_city_settlements.js from its registry; edit the registry, not this block
+        # ⇥ [pvgo:home:marlcross]
+          *goto mc_grain_green_main
+        *comment GEN:END place_steps home:marlcross
   # Walk the edge of the storehouses.
     You follow the fence line beneath the raised loading doors. Dusty straw has collected under the walls, and the smell behind the shutters is dry grain and old wood.
     *choice
@@ -116,3 +143,162 @@ The Green is a long, open strip of packed earth beside the High Grey Road. A bea
   # ⇥ [pvgo:home:marlcross]
     *goto_scene port_valen/marlcross/marlcross marlcross
       *comment GEN:END place_steps home:marlcross
+
+*comment The Green's market panel (2026-10-24): one open market for the whole strip, every commodity bought and the shelf sold from what it holds. Settling takes the panel's agreed totals (equipment.txt shop_check).
+*label mc_market_open_panel
+*set shop_open "mc_market"
+*set shop_rows ""
+*comment GEN:BEGIN mc_market_panel_rows
+*gosub_scene equipment shop_row_add "honeycomb"
+*gosub_scene equipment shop_row_add "boar_meat"
+*gosub_scene equipment shop_row_add "venison"
+*gosub_scene equipment shop_row_add "barley_loaf"
+*gosub_scene equipment shop_row_add "grain"
+*gosub_scene equipment shop_row_add "cheese"
+*gosub_scene equipment shop_row_add "orchard_apple"
+*gosub_scene equipment shop_row_add "root_vegetable_bundle"
+*gosub_scene equipment shop_row_add "farm_eggs"
+*gosub_scene equipment shop_row_add "dried_pork_sausage"
+*gosub_scene equipment shop_row_add "onions"
+*gosub_scene equipment shop_row_add "potatoes"
+*gosub_scene equipment shop_row_add "tomatoes"
+*gosub_scene equipment shop_row_add "dressed_chicken"
+*gosub_scene equipment shop_row_add "fresh_fish_fillet"
+*gosub_scene equipment shop_row_add "cabbage"
+*gosub_scene equipment shop_row_add "pumpkin"
+*gosub_scene equipment shop_row_add "iron_ore"
+*gosub_scene equipment shop_row_add "iron_bar"
+*gosub_scene equipment shop_row_add "longshade_timber"
+*gosub_scene equipment shop_row_add "charcoal"
+*gosub_scene equipment shop_row_add "salt"
+*gosub_scene equipment shop_row_add "furs"
+*gosub_scene equipment shop_row_add "leather"
+*gosub_scene equipment shop_row_add "wool"
+*gosub_scene equipment shop_row_add "wool_cloth"
+*gosub_scene equipment shop_row_add "raw_hide"
+*gosub_scene equipment shop_row_add "boar_tusk"
+*gosub_scene equipment shop_row_add "elk_antler"
+*comment GEN:END mc_market_panel_rows
+*return
+
+*label mc_market_cart_pass
+*comment GEN:BEGIN mc_market_cart_pass
+*set shop_buyer "market"
+*set gear_shop "mc_market_sell"
+*gosub_scene equipment shop_cart_sell "honeycomb"
+*gosub_scene equipment shop_cart_sell "boar_meat"
+*gosub_scene equipment shop_cart_sell "venison"
+*gosub_scene equipment shop_cart_sell "barley_loaf"
+*gosub_scene equipment shop_cart_sell "grain"
+*gosub_scene equipment shop_cart_sell "cheese"
+*gosub_scene equipment shop_cart_sell "orchard_apple"
+*gosub_scene equipment shop_cart_sell "root_vegetable_bundle"
+*gosub_scene equipment shop_cart_sell "farm_eggs"
+*gosub_scene equipment shop_cart_sell "dried_pork_sausage"
+*gosub_scene equipment shop_cart_sell "onions"
+*gosub_scene equipment shop_cart_sell "potatoes"
+*gosub_scene equipment shop_cart_sell "tomatoes"
+*gosub_scene equipment shop_cart_sell "dressed_chicken"
+*gosub_scene equipment shop_cart_sell "fresh_fish_fillet"
+*gosub_scene equipment shop_cart_sell "cabbage"
+*gosub_scene equipment shop_cart_sell "pumpkin"
+*gosub_scene equipment shop_cart_sell "iron_ore"
+*gosub_scene equipment shop_cart_sell "iron_bar"
+*gosub_scene equipment shop_cart_sell "longshade_timber"
+*gosub_scene equipment shop_cart_sell "charcoal"
+*gosub_scene equipment shop_cart_sell "salt"
+*gosub_scene equipment shop_cart_sell "furs"
+*gosub_scene equipment shop_cart_sell "leather"
+*gosub_scene equipment shop_cart_sell "wool"
+*gosub_scene equipment shop_cart_sell "wool_cloth"
+*gosub_scene equipment shop_cart_sell "raw_hide"
+*gosub_scene equipment shop_cart_sell "boar_tusk"
+*gosub_scene equipment shop_cart_sell "elk_antler"
+*set gear_shop "mc_market"
+*gosub_scene equipment shop_cart_buy "honeycomb"
+*gosub_scene equipment shop_cart_buy "boar_meat"
+*gosub_scene equipment shop_cart_buy "venison"
+*gosub_scene equipment shop_cart_buy "barley_loaf"
+*gosub_scene equipment shop_cart_buy "grain"
+*gosub_scene equipment shop_cart_buy "cheese"
+*gosub_scene equipment shop_cart_buy "orchard_apple"
+*gosub_scene equipment shop_cart_buy "root_vegetable_bundle"
+*gosub_scene equipment shop_cart_buy "farm_eggs"
+*gosub_scene equipment shop_cart_buy "dried_pork_sausage"
+*gosub_scene equipment shop_cart_buy "onions"
+*gosub_scene equipment shop_cart_buy "potatoes"
+*gosub_scene equipment shop_cart_buy "tomatoes"
+*gosub_scene equipment shop_cart_buy "dressed_chicken"
+*gosub_scene equipment shop_cart_buy "fresh_fish_fillet"
+*gosub_scene equipment shop_cart_buy "cabbage"
+*gosub_scene equipment shop_cart_buy "pumpkin"
+*gosub_scene equipment shop_cart_buy "iron_ore"
+*gosub_scene equipment shop_cart_buy "iron_bar"
+*gosub_scene equipment shop_cart_buy "longshade_timber"
+*gosub_scene equipment shop_cart_buy "charcoal"
+*gosub_scene equipment shop_cart_buy "salt"
+*gosub_scene equipment shop_cart_buy "furs"
+*gosub_scene equipment shop_cart_buy "leather"
+*gosub_scene equipment shop_cart_buy "wool"
+*gosub_scene equipment shop_cart_buy "wool_cloth"
+*gosub_scene equipment shop_cart_buy "raw_hide"
+*gosub_scene equipment shop_cart_buy "boar_tusk"
+*gosub_scene equipment shop_cart_buy "elk_antler"
+*comment GEN:END mc_market_cart_pass
+*return
+
+*label mc_market_settle
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment shop_begin
+  *gosub mc_market_cart_pass
+  *gosub_scene equipment shop_check
+  *if (shop_verdict = "ok")
+    *set shop_mode "apply"
+    *gosub mc_market_cart_pass
+    *set currency_add_amount (shop_tot_credit - shop_tot_cost)
+    *gosub_scene economy currency_add
+  *else
+    *set shop_mode "clear"
+    *gosub mc_market_cart_pass
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*if (shop_verdict = "empty")
+  You stand a moment by the scale with nothing set aside, and the Green goes on with its day.
+  *page_break Back to the Green…
+  *goto mc_grain_green_main
+*if (shop_verdict = "short")
+  You count your coin against the figures chalked on the scale-keeper's board and come up short. The goods stay where they lie.
+  *page_break Back to the Green…
+  *goto mc_grain_green_main
+*if ((shop_tot_bought > 0) and (shop_tot_sold > 0))
+  You work between the beam scale and the awnings, hanging your goods on the hooks and lifting others down, and the scale-keeper chalks each side until they come out square.
+*elseif (shop_tot_bought > 0)
+  You go from awning to awning and sack to sack, having each lot weighed and counting out coin, and a drover's boy loads your purchases onto the nearest cart bed.
+*else
+  You hang your goods from the beam scale one lot at a time, and the scale-keeper chalks the weights and counts out coin from the strongbox.
+*if (not(shop_quote_line = ""))
+  *line_break
+  ${shop_quote_line}
+*if (not(shop_note_line = ""))
+  *line_break
+  ${shop_note_line}
+*if (shop_tot_sold > 0)
+  *line_break
+  [b][💰 Sold: ${shop_sold_list} for ${shop_credit_desc}][/b]
+*if (shop_tot_bought > 0)
+  *line_break
+  [b][🛒 Bought: ${shop_recv} for ${shop_cost_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass shop_tot_minutes
+*if (shop_tot_sold > 0)
+  *set minutes_to_pass (minutes_to_pass + 5)
+*set time_advance_call_id "mc_market_trade"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the Green…
+*goto mc_grain_green_main

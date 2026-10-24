@@ -1,7 +1,8 @@
 *comment ====================================================================================
-*comment THE EASTCUT (Redvein): public edge of the mine. The working faces are not a player
-*comment destination yet; the yard, sorting tables and scale platform establish the future ore
-*comment trade and labour hooks without pretending that an untrained visitor can enter the mine.
+*comment THE EASTCUT MARKET (Redvein; the scene and its labels keep the old name, rv_eastcut). Retconned 2026-10-24 (the user) from a mine-yard look-in that served no purpose and read as only ore, with no
+*comment village to feed, into Redvein's open market: the mine-gate yard where the ore tables, the scale platform and the trestle stalls share the ground. The working faces are still not a destination.
+*comment The trade panel opens here by day (the hub shuts the place in storm weather; not at night) and the market buys every commodity, priced by distance (web/mygame/market.js, tools/market_defs.json
+*comment rv_market). Redvein makes iron ore (Alderford smelts it into bars); the ore tables, the scale and the wagons stay as things to look at.
 *comment ====================================================================================
 
 *label rv_eastcut
@@ -15,9 +16,9 @@
 *if (not(rv_eastcut_seen))
   *set rv_cut_first true
 *set rv_eastcut_seen true
-[b]◈ THE EASTCUT[/b]
+[b]◈ THE EASTCUT MARKET[/b]
 *line_break
-The work yard lies below a raw red slope where several dark mine mouths have been cut into the hill. Thick timber frames hold the ground above their entrances, and a bell rope hangs beside the nearest gate. Long tables stand in the open with baskets of broken stone, while a raised scale platform takes the weight of each loaded wagon before it goes down the ridge. A large wooden wheel turns slowly at the far end of the yard, winding rope over a sheltered shaft.
+The work yard lies below a raw red slope where several dark mine mouths have been cut into the hill. Thick timber frames hold the ground above their entrances, and a bell rope hangs beside the nearest gate. The packed ground before the shelters is Redvein's market: carters' wagons and trestle stalls line its edge, miners' wives sell bread, roots and wool between the long tables of broken stone, and a raised scale platform takes the weight of each loaded wagon before it goes down the ridge. A large wooden wheel turns slowly at the far end of the yard, winding rope over a sheltered shaft.
 
 *if (weather = "Rain")
   Rain darkens the cut slope and taps steadily on the timber roofs over the mine mouths.
@@ -26,7 +27,7 @@ The work yard lies below a raw red slope where several dark mine mouths have bee
 *elseif ((weather = "Snow") or (weather = "Sleet"))
   Wet snow gathers on the timber frames and melts where it touches the churned red ground.
 *elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
-  A few covered lamps burn near the gate, and the work faces beyond the frames are black.
+  A few covered lamps burn near the gate, the stalls stand bare under their tarpaulins, and the work faces beyond the frames are black.
 
 *if ((ground_state = "sodden") and (not(weather_wet)))
   The yard stays soft around the cart tracks, with water darkening the ground beside the scale platform.
@@ -34,15 +35,27 @@ The work yard lies below a raw red slope where several dark mine mouths have bee
   Red mud has dried in a thin crust along the cart ruts.
 
 *if (rv_cut_first)
-  The work follows a careful order: stone broken underground is brought up in baskets and carts, pale waste is thrown aside, and the red, heavy pieces are sorted into waiting wagons. The people at the tables keep their hands clear of one another's hammers and do not look up for long.
+  The work follows a careful order: stone broken underground is brought up in baskets and carts, pale waste is thrown aside, and the red, heavy pieces are sorted into waiting wagons, while the stalls along the edge do a quieter trade of their own. The people at the tables keep their hands clear of one another's hammers and do not look up for long.
 *elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
-  Open sorting has stopped for the moment, though the wheel and the guarded lamps show that work below has not entirely ended.
+  Open sorting and trading have stopped for the moment, though the wheel and the guarded lamps show that work below has not entirely ended.
 *else
-  Stone, rope and wagon wheels move through the yard in separate lines, each leaving space for the next.
+  Stone, rope, wagon wheels and shoppers move through the yard in separate lines, each leaving space for the next.
+
+*comment The market is open by day (the hub shuts the yard in storm weather); the panel and its hidden settle option are on this page only then.
+*temp rv_market_open false
+*if ((not(time_period = "Night")) and (not(time_period = "Pre-Dawn")))
+  *set rv_market_open true
+*if (rv_market_open)
+  *gosub rv_market_open_panel
+*else
+  *set shop_open ""
 
 *comment Open-world free time: the sidebar's Wait and Rest work on this page (web/mygame/pagegate.js).
 *set wait_ok_page page_id
 *choice
+  *if (rv_market_open)
+    # ⚖ Settle up at the scale and the stalls.
+      *goto rv_market_settle
   # Look over the sorting tables.
     You stop at the edge of a table where red ore lies among pale stone. The useful pieces are heavier than they look and leave rusty dust across the boards; the waste has been stacked into low heaps for road fill.
     *choice
@@ -67,3 +80,162 @@ The work yard lies below a raw red slope where several dark mine mouths have bee
   # ⇥ [pvgo:home:redvein]
     *goto_scene alderford/redvein/redvein redvein
       *comment GEN:END place_steps home:redvein
+
+*comment The Eastcut's market panel (2026-10-24): one open market for the whole yard, every commodity bought and the shelf sold from what it holds. Settling takes the panel's agreed totals (equipment.txt shop_check).
+*label rv_market_open_panel
+*set shop_open "rv_market"
+*set shop_rows ""
+*comment GEN:BEGIN rv_market_panel_rows
+*gosub_scene equipment shop_row_add "honeycomb"
+*gosub_scene equipment shop_row_add "boar_meat"
+*gosub_scene equipment shop_row_add "venison"
+*gosub_scene equipment shop_row_add "barley_loaf"
+*gosub_scene equipment shop_row_add "grain"
+*gosub_scene equipment shop_row_add "cheese"
+*gosub_scene equipment shop_row_add "orchard_apple"
+*gosub_scene equipment shop_row_add "root_vegetable_bundle"
+*gosub_scene equipment shop_row_add "farm_eggs"
+*gosub_scene equipment shop_row_add "dried_pork_sausage"
+*gosub_scene equipment shop_row_add "onions"
+*gosub_scene equipment shop_row_add "potatoes"
+*gosub_scene equipment shop_row_add "tomatoes"
+*gosub_scene equipment shop_row_add "dressed_chicken"
+*gosub_scene equipment shop_row_add "fresh_fish_fillet"
+*gosub_scene equipment shop_row_add "cabbage"
+*gosub_scene equipment shop_row_add "pumpkin"
+*gosub_scene equipment shop_row_add "iron_ore"
+*gosub_scene equipment shop_row_add "iron_bar"
+*gosub_scene equipment shop_row_add "longshade_timber"
+*gosub_scene equipment shop_row_add "charcoal"
+*gosub_scene equipment shop_row_add "salt"
+*gosub_scene equipment shop_row_add "furs"
+*gosub_scene equipment shop_row_add "leather"
+*gosub_scene equipment shop_row_add "wool"
+*gosub_scene equipment shop_row_add "wool_cloth"
+*gosub_scene equipment shop_row_add "raw_hide"
+*gosub_scene equipment shop_row_add "boar_tusk"
+*gosub_scene equipment shop_row_add "elk_antler"
+*comment GEN:END rv_market_panel_rows
+*return
+
+*label rv_market_cart_pass
+*comment GEN:BEGIN rv_market_cart_pass
+*set shop_buyer "market"
+*set gear_shop "rv_market_sell"
+*gosub_scene equipment shop_cart_sell "honeycomb"
+*gosub_scene equipment shop_cart_sell "boar_meat"
+*gosub_scene equipment shop_cart_sell "venison"
+*gosub_scene equipment shop_cart_sell "barley_loaf"
+*gosub_scene equipment shop_cart_sell "grain"
+*gosub_scene equipment shop_cart_sell "cheese"
+*gosub_scene equipment shop_cart_sell "orchard_apple"
+*gosub_scene equipment shop_cart_sell "root_vegetable_bundle"
+*gosub_scene equipment shop_cart_sell "farm_eggs"
+*gosub_scene equipment shop_cart_sell "dried_pork_sausage"
+*gosub_scene equipment shop_cart_sell "onions"
+*gosub_scene equipment shop_cart_sell "potatoes"
+*gosub_scene equipment shop_cart_sell "tomatoes"
+*gosub_scene equipment shop_cart_sell "dressed_chicken"
+*gosub_scene equipment shop_cart_sell "fresh_fish_fillet"
+*gosub_scene equipment shop_cart_sell "cabbage"
+*gosub_scene equipment shop_cart_sell "pumpkin"
+*gosub_scene equipment shop_cart_sell "iron_ore"
+*gosub_scene equipment shop_cart_sell "iron_bar"
+*gosub_scene equipment shop_cart_sell "longshade_timber"
+*gosub_scene equipment shop_cart_sell "charcoal"
+*gosub_scene equipment shop_cart_sell "salt"
+*gosub_scene equipment shop_cart_sell "furs"
+*gosub_scene equipment shop_cart_sell "leather"
+*gosub_scene equipment shop_cart_sell "wool"
+*gosub_scene equipment shop_cart_sell "wool_cloth"
+*gosub_scene equipment shop_cart_sell "raw_hide"
+*gosub_scene equipment shop_cart_sell "boar_tusk"
+*gosub_scene equipment shop_cart_sell "elk_antler"
+*set gear_shop "rv_market"
+*gosub_scene equipment shop_cart_buy "honeycomb"
+*gosub_scene equipment shop_cart_buy "boar_meat"
+*gosub_scene equipment shop_cart_buy "venison"
+*gosub_scene equipment shop_cart_buy "barley_loaf"
+*gosub_scene equipment shop_cart_buy "grain"
+*gosub_scene equipment shop_cart_buy "cheese"
+*gosub_scene equipment shop_cart_buy "orchard_apple"
+*gosub_scene equipment shop_cart_buy "root_vegetable_bundle"
+*gosub_scene equipment shop_cart_buy "farm_eggs"
+*gosub_scene equipment shop_cart_buy "dried_pork_sausage"
+*gosub_scene equipment shop_cart_buy "onions"
+*gosub_scene equipment shop_cart_buy "potatoes"
+*gosub_scene equipment shop_cart_buy "tomatoes"
+*gosub_scene equipment shop_cart_buy "dressed_chicken"
+*gosub_scene equipment shop_cart_buy "fresh_fish_fillet"
+*gosub_scene equipment shop_cart_buy "cabbage"
+*gosub_scene equipment shop_cart_buy "pumpkin"
+*gosub_scene equipment shop_cart_buy "iron_ore"
+*gosub_scene equipment shop_cart_buy "iron_bar"
+*gosub_scene equipment shop_cart_buy "longshade_timber"
+*gosub_scene equipment shop_cart_buy "charcoal"
+*gosub_scene equipment shop_cart_buy "salt"
+*gosub_scene equipment shop_cart_buy "furs"
+*gosub_scene equipment shop_cart_buy "leather"
+*gosub_scene equipment shop_cart_buy "wool"
+*gosub_scene equipment shop_cart_buy "wool_cloth"
+*gosub_scene equipment shop_cart_buy "raw_hide"
+*gosub_scene equipment shop_cart_buy "boar_tusk"
+*gosub_scene equipment shop_cart_buy "elk_antler"
+*comment GEN:END rv_market_cart_pass
+*return
+
+*label rv_market_settle
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment shop_begin
+  *gosub rv_market_cart_pass
+  *gosub_scene equipment shop_check
+  *if (shop_verdict = "ok")
+    *set shop_mode "apply"
+    *gosub rv_market_cart_pass
+    *set currency_add_amount (shop_tot_credit - shop_tot_cost)
+    *gosub_scene economy currency_add
+  *else
+    *set shop_mode "clear"
+    *gosub rv_market_cart_pass
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*if (shop_verdict = "empty")
+  You stand a moment by the scale platform with nothing set aside, and the yard goes on with its work around you.
+  *page_break Back to the yard…
+  *goto rv_eastcut_main
+*if (shop_verdict = "short")
+  You count your coin against the figures chalked on the scale-keeper's slate and come up short. The goods stay where they lie.
+  *page_break Back to the yard…
+  *goto rv_eastcut_main
+*if ((shop_tot_bought > 0) and (shop_tot_sold > 0))
+  You work between the scale platform and the stalls, setting your goods down and lifting others up, and the scale-keeper chalks each side until they come out square.
+*elseif (shop_tot_bought > 0)
+  You go from stall to wagon-bed, having each lot weighed and counting out coin, and a carter's boy swings your purchases up beside you.
+*else
+  You set your goods on the scale platform one lot at a time, and the scale-keeper chalks the weights and counts out coin from a strongbox.
+*if (not(shop_quote_line = ""))
+  *line_break
+  ${shop_quote_line}
+*if (not(shop_note_line = ""))
+  *line_break
+  ${shop_note_line}
+*if (shop_tot_sold > 0)
+  *line_break
+  [b][💰 Sold: ${shop_sold_list} for ${shop_credit_desc}][/b]
+*if (shop_tot_bought > 0)
+  *line_break
+  [b][🛒 Bought: ${shop_recv} for ${shop_cost_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass shop_tot_minutes
+*if (shop_tot_sold > 0)
+  *set minutes_to_pass (minutes_to_pass + 5)
+*set time_advance_call_id "rv_market_trade"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the yard…
+*goto rv_eastcut_main
