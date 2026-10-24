@@ -2000,6 +2000,9 @@
 *create last_mundane_treatment_day 0
 *create dressing_on false
 *create dressing_bonus 0
+*comment draught_on: a Mending Draught has been drunk and waits for the next sleep that heals (calendar.txt resolve_sleep adds draught_bonus HP, then clears it). Its own flag, so it stacks with a bandage.
+*create draught_on false
+*create draught_bonus 0
 *comment water_ok is the output of equipment.txt water_at_hand (open water within reach; the lye soap needs it).
 *create water_ok false
 *create sleep_gear_note ""
@@ -2877,6 +2880,9 @@
 *comment Optional size override for a named use of a broad library type (for example a Small giant centipede drawn
 *comment from the generic beast block). "" means use the type's own size. Consumed by fight_setup.
 *create combat_enemy_size_override ""
+*comment Optional overrides of the basic attack's damage die (0 = not set) and damage type ("" = not set), for a named use of a broad library type (the Venomous Snake's d4 piercing bite). Consumed by fight_setup.
+*create combat_enemy_dmg_sides_override 0
+*create combat_enemy_dmg_type_override ""
 *comment Never read or written by real code: slot 1's own rename-override is the plain names above, applied by
 *comment fight_setup (see its comment). These exist only so quicktest's line-coverage walk, which explores an *if's
 *comment untaken branch too, can safely indirection-read combat_enemy1_name_override from apply_enemy_type's generic
@@ -5114,6 +5120,17 @@
 *create has_fire_arrow false
 *create has_ice_arrow false
 *create has_mortar_pestle false
+*create has_empty_potion_vial false
+*create has_portable_burner false
+*create has_mending_draught false
+*create has_brine_antivenom false
+*create has_tidebreath_elixir false
+*create has_darksight_tonic false
+*create has_fortifying_tonic false
+*create has_restful_balsam false
+*create has_clearhead_tea false
+*create has_winterward_tea false
+*create has_surestep_cordial false
 *create has_gem_agate false
 *create has_gem_citrine false
 *create has_gem_quartz false
@@ -5209,6 +5226,17 @@
 *create spare_fire_arrow 0
 *create spare_ice_arrow 0
 *create spare_mortar_pestle 0
+*create spare_empty_potion_vial 0
+*create spare_portable_burner 0
+*create spare_mending_draught 0
+*create spare_brine_antivenom 0
+*create spare_tidebreath_elixir 0
+*create spare_darksight_tonic 0
+*create spare_fortifying_tonic 0
+*create spare_restful_balsam 0
+*create spare_clearhead_tea 0
+*create spare_winterward_tea 0
+*create spare_surestep_cordial 0
 *create spare_gem_agate 0
 *create spare_gem_citrine 0
 *create spare_gem_quartz 0
@@ -5320,6 +5348,17 @@
 *create stow_saddlebags_fire_arrow 0
 *create stow_saddlebags_ice_arrow 0
 *create stow_saddlebags_mortar_pestle 0
+*create stow_saddlebags_empty_potion_vial 0
+*create stow_saddlebags_portable_burner 0
+*create stow_saddlebags_mending_draught 0
+*create stow_saddlebags_brine_antivenom 0
+*create stow_saddlebags_tidebreath_elixir 0
+*create stow_saddlebags_darksight_tonic 0
+*create stow_saddlebags_fortifying_tonic 0
+*create stow_saddlebags_restful_balsam 0
+*create stow_saddlebags_clearhead_tea 0
+*create stow_saddlebags_winterward_tea 0
+*create stow_saddlebags_surestep_cordial 0
 *create stow_saddlebags_gem_agate 0
 *create stow_saddlebags_gem_citrine 0
 *create stow_saddlebags_gem_quartz 0
@@ -5412,6 +5451,8 @@
 *create cart_buy_fire_arrow 0
 *create cart_buy_ice_arrow 0
 *create cart_buy_mortar_pestle 0
+*create cart_buy_empty_potion_vial 0
+*create cart_buy_portable_burner 0
 *create cart_buy_gem_agate 0
 *create cart_buy_gem_citrine 0
 *create cart_buy_gem_quartz 0
@@ -5518,6 +5559,8 @@
 *create cart_sell_fire_arrow 0
 *create cart_sell_ice_arrow 0
 *create cart_sell_mortar_pestle 0
+*create cart_sell_empty_potion_vial 0
+*create cart_sell_portable_burner 0
 *create cart_sell_gem_agate 0
 *create cart_sell_gem_citrine 0
 *create cart_sell_gem_quartz 0
@@ -5665,6 +5708,8 @@
 *create gear_eff_stat ""
 *create gear_eff_bonus 0
 *create gear_eff_minutes 0
+*create gear_eff_timer ""
+*create gear_eff_temp_hp 0
 *comment Food (a consumable whose effect is "ration"): gear_food_mins is how many minutes of the hunger clock it holds off, gear_food_auto false keeps it out of the game's eat-to-stop-starving, gear_food_after names a variable that must be true
 *comment before it may be eaten that way (a quest ingredient), gear_ate_one and gear_ate_many name it in the summary ("a trail ration", "trail rations").
 *create gear_food_mins 0
@@ -5955,6 +6000,28 @@
 *create lsf_dubhar_looted false
 *comment bramble_heart_day: the last campaign day the Gnarled Bramble Heart was used (once a day).
 *create bramble_heart_day 0
+*comment Crafting (crafting.txt, the Inventory's Craft view). The panel fills craft_* from its boxes and hands over to choicescript_stats codex_craft_now, which runs craft_brew once.
+*create craft_potion ""
+*create craft_potion_name ""
+*create craft_a ""
+*create craft_b ""
+*create craft_a_name ""
+*create craft_b_name ""
+*create craft_dc 15
+*create craft_ok false
+*create craft_text ""
+*comment Brewed potions (equipment.txt use_consumable): each timed one is minutes left, counted down by calendar.txt advance_time; drinking one again refreshes the time and never makes a second timer.
+*comment brine_minutes_left: Brine Antivenom (poison resistance, advantage on poison saves). tidebreath_minutes_left: held breath for a submerged route (no scene asks for it yet). darksight_minutes_left: no darkness penalty in a dungeon.
+*comment winterward_minutes_left: half the cold. surestep_minutes_left: +2 to footing checks. clearhead_minutes_left: +2 to the next INT or WIS check, used up by it. balsam_on: Restful Balsam drunk, waiting for the next sleep;
+*comment sleep_balsam_night: that sleep used it (set once inside resolve_sleep's lock, so a replay still grants Well Rested).
+*create brine_minutes_left 0
+*create tidebreath_minutes_left 0
+*create darksight_minutes_left 0
+*create winterward_minutes_left 0
+*create surestep_minutes_left 0
+*create clearhead_minutes_left 0
+*create balsam_on false
+*create sleep_balsam_night false
 *comment --- GAME SETTINGS ---
 *comment The real first choice of the game, reached the instant the *create preamble above finishes. Everything
 *comment past this point -- the actual "Begin Campaign" vs. "Developer" fork, the 8 character presets, the combat

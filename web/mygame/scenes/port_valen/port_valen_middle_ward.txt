@@ -2809,7 +2809,7 @@ Tucked behind the main lane, this stone dead-end is sheltered by cedar roofs and
   *if (not(mw_herb_seen))
     *set mw_herb_seen true
   *gosub mw_ambrose_open_panel
-  *temp ambrose_has_sale (((((frog_slime > 0) or (centipede_gland > 0)) or (viper_venom > 0)) or (grave_ichor > 0)) or ((has_alchemists_fire) or (has_mortar_pestle)))
+  *temp ambrose_has_sale (((((frog_slime > 0) or (centipede_gland > 0)) or (viper_venom > 0)) or (grave_ichor > 0)) or (((has_alchemists_fire) or (has_mortar_pestle)) or ((has_empty_potion_vial) or (has_portable_burner))))
 
   *choice
     # Look over the shelves.
@@ -3083,6 +3083,8 @@ Master Ambrose looks up from the stills as you finish reading, and gives you the
 *temp ab_linen_bandage ""
 *temp ab_alchemists_fire ""
 *temp ab_mortar_pestle ""
+*temp ab_empty_potion_vial ""
+*temp ab_portable_burner ""
 *gosub_scene equipment gear_buy_label "warming_liniment"
 *set ab_warming_liniment gear_label
 *gosub_scene equipment gear_buy_label "clear_head_draught"
@@ -3093,8 +3095,12 @@ Master Ambrose looks up from the stills as you finish reading, and gives you the
 *set ab_alchemists_fire gear_label
 *gosub_scene equipment gear_buy_label "mortar_pestle"
 *set ab_mortar_pestle gear_label
+*gosub_scene equipment gear_buy_label "empty_potion_vial"
+*set ab_empty_potion_vial gear_label
+*gosub_scene equipment gear_buy_label "portable_burner"
+*set ab_portable_burner gear_label
 *comment GEN:END ambrose_buy_labels
-Stoneware pots and stoppered bottles stand in rows on the counter, each with a slip of chalked slate against it. Two things sell better than the rest: a grey tallow for stiff joints, and an amber tonic for a foggy head. Ambrose sells each for a silver mark. A shallow basket at the end of the counter holds rolls of boiled linen, five copper bits apiece, for anyone who needs to bind a wound.
+Stoneware pots and stoppered bottles stand in rows on the counter, each with a slip of chalked slate against it. Two things sell better than the rest: a grey tallow for stiff joints, and an amber tonic for a foggy head. Ambrose sells each for a silver mark. A shallow basket at the end of the counter holds rolls of boiled linen, five copper bits apiece, for anyone who needs to bind a wound. On the shelf behind him, clear vials sit corked in a wooden rack, a copper bit each, beside a squat brass burner for brewing on the road.
 
 *choice
   *comment GEN:BEGIN ambrose_buy_options
@@ -3112,6 +3118,12 @@ Stoneware pots and stoppered bottles stand in rows on the counter, each with a s
     *goto mw_ambrose_buy_do
   # ${ab_mortar_pestle}
     *set buy_item_id "mortar_pestle"
+    *goto mw_ambrose_buy_do
+  # ${ab_empty_potion_vial}
+    *set buy_item_id "empty_potion_vial"
+    *goto mw_ambrose_buy_do
+  # ${ab_portable_burner}
+    *set buy_item_id "portable_burner"
     *goto mw_ambrose_buy_do
   *comment GEN:END ambrose_buy_options
   # Step back from the counter.
@@ -3179,6 +3191,8 @@ Master Ambrose pushes his spectacles up his nose and clears a square of the coun
 *temp as_brambleberry ""
 *temp as_alchemists_fire ""
 *temp as_mortar_pestle ""
+*temp as_empty_potion_vial ""
+*temp as_portable_burner ""
 *if (frog_slime > 0)
   *gosub_scene equipment gear_sell_label "frog_slime" "herbalist"
   *set as_frog_slime gear_label
@@ -3227,6 +3241,12 @@ Master Ambrose pushes his spectacles up his nose and clears a square of the coun
 *if (has_mortar_pestle)
   *gosub_scene equipment gear_sell_label "mortar_pestle" "herbalist"
   *set as_mortar_pestle gear_label
+*if (has_empty_potion_vial)
+  *gosub_scene equipment gear_sell_label "empty_potion_vial" "herbalist"
+  *set as_empty_potion_vial gear_label
+*if (has_portable_burner)
+  *gosub_scene equipment gear_sell_label "portable_burner" "herbalist"
+  *set as_portable_burner gear_label
 *comment GEN:END ambrose_sell_labels
 
 *choice
@@ -3295,6 +3315,14 @@ Master Ambrose pushes his spectacles up his nose and clears a square of the coun
     # ${as_mortar_pestle}
       *set sell_item_id "mortar_pestle"
       *goto mw_ambrose_sell_do
+  *if (has_empty_potion_vial)
+    # ${as_empty_potion_vial}
+      *set sell_item_id "empty_potion_vial"
+      *goto mw_ambrose_sell_do
+  *if (has_portable_burner)
+    # ${as_portable_burner}
+      *set sell_item_id "portable_burner"
+      *goto mw_ambrose_sell_do
   *comment GEN:END ambrose_sell_options
   # Put them back in your satchel.
     *goto mw_herb_close
@@ -3342,6 +3370,8 @@ Master Ambrose weighs the ${gear_sale_name} in a brass pan, nods once, and count
 *gosub_scene equipment shop_row_add "linen_bandage"
 *gosub_scene equipment shop_row_add "alchemists_fire"
 *gosub_scene equipment shop_row_add "mortar_pestle"
+*gosub_scene equipment shop_row_add "empty_potion_vial"
+*gosub_scene equipment shop_row_add "portable_burner"
 *comment GEN:END ambrose_panel_rows
 *return
 
@@ -3365,12 +3395,16 @@ Master Ambrose weighs the ${gear_sale_name} in a brass pan, nods once, and count
 *gosub_scene equipment shop_cart_sell "brambleberry"
 *gosub_scene equipment shop_cart_sell "alchemists_fire"
 *gosub_scene equipment shop_cart_sell "mortar_pestle"
+*gosub_scene equipment shop_cart_sell "empty_potion_vial"
+*gosub_scene equipment shop_cart_sell "portable_burner"
 *set gear_shop "ambrose"
 *gosub_scene equipment shop_cart_buy "warming_liniment"
 *gosub_scene equipment shop_cart_buy "clear_head_draught"
 *gosub_scene equipment shop_cart_buy "linen_bandage"
 *gosub_scene equipment shop_cart_buy "alchemists_fire"
 *gosub_scene equipment shop_cart_buy "mortar_pestle"
+*gosub_scene equipment shop_cart_buy "empty_potion_vial"
+*gosub_scene equipment shop_cart_buy "portable_burner"
 *comment GEN:END ambrose_cart_pass
 *return
 
@@ -3451,6 +3485,9 @@ Master Ambrose weighs the ${gear_sale_name} in a brass pan, nods once, and count
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label mw_smiths_row
+*comment An outside return after a shift can bypass the forge's explicit "Step out" choice. The trade-panel
+*comment marker belongs only to the indoor counter; clear it before exterior scenery and audio resolve.
+*set shop_open ""
 *set mw_smiths_seen true
 *set scenery_subplace "middle_ward_city_street"
 [b]◈ SMITHS' ROW[/b]
@@ -3554,6 +3591,7 @@ Where the harbor road climbs into the ward, the lane opens into a broad cobbled 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label mw_smiths_forge
+*set scenery_subplace "middle_ward_halda_forge"
 [b]◈ HALDA'S FORGE[/b]
 *line_break
 The largest shed is open on the yard side, with a forge at the back and an anvil as wide as a tree stump. Racks along the walls hold finished work: knives, hatchets, spear heads, swords, axe heads, helmets, mail shirts, shields, and bundles of arrow and crossbow bolt heads. Coal smoke and hot iron thicken the air, and the heat reaches you at the door.

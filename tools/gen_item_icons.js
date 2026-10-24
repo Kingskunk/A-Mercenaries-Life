@@ -92,6 +92,18 @@ const MAP = {
   potion: "POT_Potion_of_Healing_Unfaded_Icon.png",
   grease: "GRN_Grease_Bottle_Unfaded_Icon.png",
   mortar_pestle: "Mortar_And_Pestle_Unfaded_Icon.png",
+  empty_potion_vial: "05-empty-vial.png",                              // the user's own art: the herbalist's corked vial
+  portable_burner: "07-portable-burner.png",
+  // ---- the nine brews of the crafting view's result box (the user's chosen source art, ALCHEMY_CRAFTING_REFERENCE.md)
+  potion_mending: "Consumable/Potion/POT_Remedial_Potion_Unfaded_Icon.png",
+  potion_antivenom: "Consumable/Potion/POT_Antidote_Unfaded_Icon.png",
+  potion_tidebreath: "Consumable/Potion/POT_Potion_of_Gaseous_Form_Unfaded_Icon.png",
+  potion_darksight: "Consumable/Elixir/ELX_Elixir_of_Darkvision_Unfaded_Icon.png",
+  potion_fortifying: "Consumable/Potion/POT_Potion_of_Vitality_Unfaded_Icon.png",
+  potion_restful: "Consumable/Potion/POT_Wilted_Dreams_Unfaded_Icon.png",
+  potion_clearhead: "Consumable/Elixir/ELX_Elixir_of_Vigilance_Unfaded_Icon.png",
+  potion_winterward: "Consumable/Elixir/ELX_Elixir_of_Cold_Resistance_Unfaded_Icon.png",
+  potion_surestep: "Consumable/Potion/POT_Potion_of_Glorious_Vaulting_Unfaded_Icon.png",                           // the user's own art: the herbalist's brass burner
   alch_fire: "GRN_Alchemist's_Fire_Unfaded_Icon.png",
   elixir: "ELX_Elixir_of_Darkvision_Unfaded_Icon.png",
   salve: "Clutter_Bottle_Small_Flowers_Unfaded_Icon.webp",

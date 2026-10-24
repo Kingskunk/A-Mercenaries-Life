@@ -179,6 +179,42 @@ Cast, read your abilities, or change interface settings. Rest and Wait are in th
   *set spell_cast_toast "You have none of that left."
 *finish
 
+*comment ONE-SHOT BREW (2026-10-23, the user's crafting view). The Inventory's Craft button leaves the recipe in craft_* and opens the dossier AT this label, which brews once (crafting.txt craft_brew) and ends with *finish, so the player is handed
+*comment straight back to their page with the one-line result in spell_cast_toast. The same two rules as the wait one-shot: the roll's lock and advance_time's lock are keyed on the page underneath, whose id does not change for a one-shot, so they are
+*comment taken off for this brew (a second brew on one page would otherwise reuse the first roll and skip its time) and put back exactly as found, so the page replayed as the dossier closes does not find a lock that is not its own. A brew can tick
+*comment the hunger and fatigue debts like any half hour, so it is refused where that could kill, as a wait is.
+*label codex_craft_now
+*if (combat_engaged)
+  *set spell_cast_toast "You cannot brew in the middle of a fight."
+  *finish
+*if (((hunger_stage = "Starving") or (fatigue_stage = "Collapsing")) and (hp_current <= 2))
+  *set spell_cast_toast "You are too starved and spent to stand over a brew for half an hour without it costing what little you have left. Eat, or sleep, first."
+  *finish
+*temp ccn_roll_locked roll_locked
+*temp ccn_roll_page locked_page_id
+*temp ccn_roll_guidance locked_guidance_roll
+*temp ccn_roll_adv locked_adv_label
+*temp ccn_time_locked time_advance_locked
+*temp ccn_time_page locked_time_advance_page_id
+*temp ccn_time_id locked_time_advance_id
+*temp ccn_time_call time_advance_call_id
+*set roll_locked false
+*set time_advance_locked false
+*gosub_scene crafting craft_brew
+*set roll_locked ccn_roll_locked
+*set locked_page_id ccn_roll_page
+*set locked_guidance_roll ccn_roll_guidance
+*set locked_adv_label ccn_roll_adv
+*set time_advance_locked ccn_time_locked
+*set locked_time_advance_page_id ccn_time_page
+*set locked_time_advance_id ccn_time_id
+*set time_advance_call_id ccn_time_call
+*gosub_scene calendar recalc_hp_from_neglect
+*set spell_cast_toast craft_text
+*comment The roll prints its banner ("D20 Check: ..."), and a scene that has printed anything waits behind a Next button when it ends in the dossier. The check is in the toast, so the screen is marked empty and the player goes straight back.
+*script if (stats.scene) stats.scene.screenEmpty = true;
+*finish
+
 *comment ONE-SHOT CASTS (2026-10-02). What the sidebar spellbook's Cast button runs: it opens the dossier AT one of these labels, which casts at once and ends with *finish, so the game hands the player straight
 *comment back to the page they were on, with no menu to click through. The one-line result goes through spell_cast_toast, which the sidebar shows and clears. A refused cast says why in the same line.
 *label codex_cast_now_mage_armor

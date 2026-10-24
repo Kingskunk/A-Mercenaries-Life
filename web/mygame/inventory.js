@@ -61,7 +61,8 @@
       stow: !!item.stow,
       use: !!item.use,
       useLabel: evalField(item.useLabel, s) || "Use",
-      equip: item.equip || null
+      equip: item.equip || null,
+      alchemy: item.alchemy || null
     };
   }
 
@@ -82,8 +83,10 @@
   // What a worn piece does (weather cuts, ability-score bonus): the text comes from equipment.txt garment_traits through
   // window.GARMENT_HINTS (generated), so the card can never disagree with the game. The attuned Hearthstone is the one
   // worn piece that is not in that table.
-  var WORN_ID = { armor: "equipped_armor_id", head: "equipped_head_id", cloak: "equipped_cloak_id", hands: "equipped_hands_id",
-    waist: "equipped_waist_id", feet: "equipped_feet_id", neck: "equipped_neck_id" };
+  var WORN_ID = {
+    armor: "equipped_armor_id", head: "equipped_head_id", cloak: "equipped_cloak_id", hands: "equipped_hands_id",
+    waist: "equipped_waist_id", feet: "equipped_feet_id", neck: "equipped_neck_id"
+  };
   var PLAIN_WORN = { head: 1, cloak: 1, hands: 1, waist: 1, feet: 1, neck: 1 };
   function wornTraits(bucket, s) {
     var id = WORN_ID[bucket] ? s[WORN_ID[bucket]] : "";
@@ -133,7 +136,7 @@
   var ID_ICON = {
     timber_axe: "w_battleaxe", stiletto: "w_dagger", iron_crowbar: "tool", torvald_iron_sallet: "h_helm", torvald_hide_cap: "h_cap",
     brigandine: "a_brig", chain_jack: "a_chain", plate_harness: "a_plate", court_coat: "a_coat", poisoners_robes: "poisoners_robes", bramble_heart: "bramble_heart", shield: "shield", toll_seal_ring: "signet",
-    warming_liniment: "salve", clear_head_draught: "elixir", althea_phial: "potion", grease_flask: "grease", alchemists_fire: "alch_fire", mortar_pestle: "mortar_pestle", linen_bandage: "bandage", lye_soap: "soap", trail_rations: "rations", barley_loaf: "barley_loaf", hard_farm_cheese: "hard_farm_cheese", orchard_apple: "orchard_apple", root_vegetable_bundle: "root_vegetable_bundle", farm_eggs: "farm_eggs", dried_pork_sausage: "dried_pork_sausage",
+    warming_liniment: "salve", clear_head_draught: "elixir", althea_phial: "potion", grease_flask: "grease", alchemists_fire: "alch_fire", mortar_pestle: "mortar_pestle", empty_potion_vial: "empty_potion_vial", portable_burner: "portable_burner", linen_bandage: "bandage", lye_soap: "soap", trail_rations: "rations", barley_loaf: "barley_loaf", hard_farm_cheese: "hard_farm_cheese", orchard_apple: "orchard_apple", root_vegetable_bundle: "root_vegetable_bundle", farm_eggs: "farm_eggs", dried_pork_sausage: "dried_pork_sausage",
     hemp_rope: "rope", pitch_torch: "torch", lamp_oil: "oil", hooded_lantern: "lantern", tool_kit: "toolkit", shovel: "shovel", cooking_pot: "cooking_pot", fire_arrow: "arrow_fire", ice_arrow: "arrow_ice", lute: "lute", tinderbox: "tinder", water_jug: "water_jug", scroll_magic_missile: "scroll_magic_missile", scroll_healing_word: "scroll_healing_word", scroll_mage_armor: "scroll_mage_armor", scroll_bane: "scroll_bane", scroll_false_life: "scroll_false_life", scroll_detect_magic: "scroll_detect_magic", scroll_jump: "scroll_jump", scroll_charm_person: "scroll_charm_person", scroll_speak_with_animals: "scroll_speak_with_animals", chalk_sticks: "chalk",
     camp_kit: "blanket", waxed_oilcloth: "cloth", lockpick_set: "lockpicks", padlock: "key", door_bolt: "tool", iron_manacles: "tool",
     broadcloth_cloak: "cloak_traveler", storm_cape: "cloak_storm", winter_cloak: "cloak_winter", summer_duster: "cloak_duster", felt_hat: "h_hat", fur_cap: "h_cap",
@@ -391,7 +394,7 @@
   if (typeof document === "undefined") return; // node tests stop here (mirrors lorebook.js)
 
   var dlg, elDoll, elBag, elTip;
-  var view = { category: "", sel: null, drag: null, slot: null, dragSlot: null, note: "", left: "you", csel: null, qty: 1 };
+  var view = { category: "", sel: null, drag: null, slot: null, dragSlot: null, note: "", left: "you", csel: null, qty: 1, craft: "alchemy", box: [null, null, null] };
 
   function statsNow() { return window.stats || {}; }
 
@@ -416,13 +419,13 @@
     dlg.setAttribute("aria-label", "Inventory");
     dlg.innerHTML =
       '<div class="inv-head">' +
-        "<h2>Inventory</h2>" +
-        '<span class="inv-count"></span><span class="inv-spacer"></span>' +
-        '<button type="button" class="inv-close" data-act="close" aria-label="Close inventory">×</button>' +
+      "<h2>Inventory</h2>" +
+      '<span class="inv-count"></span><span class="inv-spacer"></span>' +
+      '<button type="button" class="inv-close" data-act="close" aria-label="Close inventory">×</button>' +
       "</div>" +
       '<div class="inv-main">' +
-        '<section class="inv-doll" aria-label="Equipment"></section>' +
-        '<section class="inv-bag" aria-label="Carried gear"></section>' +
+      '<section class="inv-doll" aria-label="Equipment"></section>' +
+      '<section class="inv-bag" aria-label="Carried gear"></section>' +
       "</div>" +
       '<div class="inv-tip" id="invTip" role="tooltip"></div>';
     document.body.appendChild(dlg);
@@ -586,7 +589,8 @@
     if (hasSidearm && window.EquipmentEngine) html += '<button type="button" class="inv-swap-sidearm" data-swap-sidearm>⇄ Swap Weapon &amp; Sidearm</button>';
     html += '<div class="inv-vitals"><span>AC <b>' + esc(s.armor_class) + '</b></span><span>HP <b>' + esc(s.hp_current) + "/" + esc(s.hp_max) + '</b></span><span>Proficiency <b>+' + esc(s.prof_bonus) + "</b></span></div>";
     var cs = visibleContainers(s);
-    if (view.left === "you") elDoll.innerHTML = (cs.length ? leftTabsHtml(cs) : "") + html;
+    if (view.left === "you") elDoll.innerHTML = leftTabsHtml(cs) + html;
+    else if (view.left === "craft") elDoll.innerHTML = leftTabsHtml(cs) + craftPaneHtml(s);
     else elDoll.innerHTML = leftTabsHtml(cs) + containerPaneHtml(containerOf(view.left, s), s);
   }
 
@@ -614,8 +618,8 @@
     }
     var line = !d.swappable && sl.bucket !== "sidearm" && sl.bucket !== "shield" ? "This slot is changed from the dossier’s Equipment menu."
       : (sl.bucket === "sidearm" ? "The sidearm is changed by swapping it with the weapon."
-      : (sl.bucket === "shield" ? "The shield is stowed or taken up here."
-      : (lit ? "Pick one of the lit pieces in your pack to wear it here." : "Nothing in your pack fits this slot.")));
+        : (sl.bucket === "shield" ? "The shield is stowed or taken up here."
+          : (lit ? "Pick one of the lit pieces in your pack to wear it here." : "Nothing in your pack fits this slot.")));
     return '<div class="inv-detail-main"><div class="inv-detail-name">' + esc(d.label) + '<span class="inv-item-slot">' + esc(v.empty ? "Nothing worn" : v.desc) + "</span></div>" +
       '<div class="inv-item-desc">' + esc(line) + "</div></div>" +
       (acts ? '<div class="inv-detail-acts">' + acts + "</div>" : "");
@@ -712,7 +716,7 @@
       var c = splitCount(r.name);
       var on = /^equipped/i.test(r.badge || "");
       var fits = view.slot && accepts(r, view.slot.bucket);
-      var out = (view.slot && !fits) || (view.category && r.category !== view.category);
+      var out = (view.slot && !fits) || (view.category && r.category !== view.category) || (view.left === "craft" && !r.alchemy);
       html += '<button type="button" class="inv-tile inv-bagitem' + (view.sel === r.id ? " inv-sel" : "") + (on ? " inv-on" : "") + (fits ? " inv-accepts" : (out ? " inv-dim" : "")) + '" data-item="' + esc(r.id) + '" data-cell="' + cell + '"' +
         ' draggable="true" aria-label="' + esc(c.name) + '">' + iconImg(itemIconKey(r)) +
         (c.count > 1 ? '<span class="inv-cnt">' + c.count + "</span>" : "") + (on ? '<span class="inv-eq" aria-hidden="true"></span>' : "") + "</button>";
@@ -743,7 +747,7 @@
     } else if (!current.length) {
       html += '<div class="inv-note">Your satchel holds only dry trail rations, flint and steel, and basic road gear.</div>';
     } else {
-      html += '<div class="inv-note">Drag a piece onto the figure to wear it, and drag a worn piece back here to take it off. Drag items to arrange your pack. Click a slot to light up what fits.</div>';
+      html += '<div class="inv-note">Drag items to equip, unequip, or organize. Click a slot to see what fits.</div>';
     }
     if (xc && xc.sel && xc.dir) html += xferHtml(xc);
     html += '<div class="inv-purse" title="Coin on you">' + esc(purseText(s)) + (ld ? " · weighs " + fmtLoad(ld.coin) : "") + "</div></div>";
@@ -754,7 +758,7 @@
 
   // What is selected and what a move would do: the open container, the selected item (carried, or in the container), the direction and how many can move now.
   function xferContext(s) {
-    var open = view.left !== "you" ? containerOf(view.left, s) : null;
+    var open = view.left !== "you" && view.left !== "craft" ? containerOf(view.left, s) : null;
     if (!open) return null;
     var sel = null, from = "";
     if (view.csel) { sel = stowedEntry(open.id, view.csel, s); from = "container"; if (!sel) view.csel = null; }
@@ -772,7 +776,7 @@
     var label = xc.dir === "stow" ? "To " + xc.open.name + " →" : "← Take back";
     return '<div class="inv-xfer"><span class="inv-xfer-label">Move</span>' +
       '<span class="inv-xfer-step"><button type="button" data-qty="-1"' + (off || qty <= 1 ? " disabled" : "") + ' aria-label="Fewer">−</button>' +
-        '<span class="inv-xfer-qty">' + qty + '</span><button type="button" data-qty="1"' + (off || qty >= xc.max ? " disabled" : "") + ' aria-label="More">+</button></span>' +
+      '<span class="inv-xfer-qty">' + qty + '</span><button type="button" data-qty="1"' + (off || qty >= xc.max ? " disabled" : "") + ' aria-label="More">+</button></span>' +
       '<span class="inv-xfer-pre"><button type="button" data-qty-set="1"' + (off ? " disabled" : "") + ">1</button><button type=\"button\" data-qty-set=\"10\"" + (off ? " disabled" : "") + ">10</button><button type=\"button\" data-qty-set=\"all\"" + (off ? " disabled" : "") + ">All</button></span>" +
       '<button type="button" class="inv-use inv-xfer-go" data-xfer="' + xc.dir + '"' + (off ? " disabled" : "") + ">" + esc(label) + "</button>" +
       (xc.why ? '<div class="inv-xfer-why">' + esc(xc.why) + "</div>" : "") + "</div>";
@@ -784,7 +788,148 @@
       html += '<button type="button" class="inv-ctab' + (c.present ? "" : " inv-ctab-off") + '" data-left="' + esc(c.id) + '" aria-pressed="' + (view.left === c.id) + '"' + (c.why ? ' title="' + esc(c.why) + '"' : "") + ">" +
         esc(c.name) + (c.entries.length ? "<small>" + c.entries.length + "</small>" : "") + "</button>";
     });
+    html += '<button type="button" class="inv-ctab inv-ctab-craft" data-left="craft" aria-pressed="' + (view.left === "craft") + '">' + iconImg("mortar_pestle") + "Craft</button>";   // STAND-IN icon: the mortar's, until the user picks one
     return html + "</div>";
+  }
+
+  /* ---------------------------------------------------------------- crafting (2026-10-23, the user's design)
+   * The Craft tab swaps the left side for the crafting view. Its tools are never dragged in: each slot fills itself from everything the character can reach, the pack first and then every
+   * container that is with them (the saddlebags, and any later one), so a tool stowed on the horse still counts. A container that waits outside a dungeon is out of reach inside one.
+   * CRAFT_MODES is what each kind of crafting needs: alchemy now, cooking later with its own tools. */
+  var CRAFT_MODES = {
+    alchemy: {
+      name: "Alchemy", tools: [
+        { id: "empty_potion_vial", label: "Empty Potion Vial", role: "Holds the brew" },
+        { id: "portable_burner", label: "Portable Burner", role: "The flame to brew over" },
+        { id: "mortar_pestle", label: "Mortar and Pestle", role: "Grinds the herbs" }
+      ]
+    }
+  };
+  // Where the character can reach this item now: how many, and a short list of the places ("Pack", "Saddlebags").
+  function craftReach(id, s) {
+    var item = stowItem(id), places = [], n = 0;
+    if (!item) return { n: 0, places: places };
+    var own = haveOf(item, s);
+    if (own > 0) { n += own; places.push("Pack"); }
+    containersCfg().forEach(function (c) {
+      var q = stowedOf(c.id, id, s);
+      if (q <= 0) return;
+      if (c.needs && !truthyS(s[c.needs])) return;
+      if (c.dungeon === "waits" && truthyS(s.dg_in_run)) return;
+      n += q; places.push(c.name);
+    });
+    return { n: n, places: places };
+  }
+  function craftPaneHtml(s) {
+    var mode = CRAFT_MODES[view.craft || "alchemy"], html = '<div class="inv-cpane inv-craft"><div class="inv-craft-title">' + esc(mode.name) + "</div>" +
+      '<div class="inv-cnote">All reachable tools are ready to use—no dragging needed.</div><div class="inv-craft-tools">';
+    mode.tools.forEach(function (t) {
+      var r = craftReach(t.id, s), have = r.n > 0;
+      html += '<div class="inv-craft-tool' + (have ? "" : " inv-craft-miss") + '" data-tool="' + esc(t.id) + '">' +
+        '<span class="inv-tile inv-slot' + (have ? "" : " inv-slot-empty") + '" aria-label="' + esc(t.label + (have ? "" : ": missing")) + '">' + iconImg(ID_ICON[t.id] || "misc") + "</span>" +
+        '<span class="inv-craft-name">' + esc(t.label) + "</span>" +
+        '<span class="inv-craft-src">' + esc(have ? r.places.join(", ") + (r.n > 1 ? " ×" + r.n : "") : "You have none") + "</span></div>";
+    });
+    html += "</div>";
+    normalizeBox(s);
+    html += '<div class="inv-craft-sub">Ingredients</div><div class="inv-craft-boxes">';
+    view.box.forEach(function (id, i) {
+      var r = id ? findOwned(id) : null, nm = r ? splitCount(r.name).name : "";
+      html += '<div class="inv-craft-tool">' +
+        '<button type="button" class="inv-tile inv-craft-box' + (r ? " inv-craft-full" : "") + '" data-box="' + i + '" aria-label="' + esc(r ? nm + ": click to take it back" : "Empty ingredient box " + (i + 1)) + '"' + (r ? ' title="Click to take it back"' : "") + ">" + (r ? iconImg(itemIconKey(r)) : "") + "</button>" +
+        '<span class="inv-craft-name">' + esc(r ? nm : "Empty") + "</span>" +
+        '<span class="inv-craft-src">' + esc(r ? boxFree(id, s) + " more in your pack" : "") + "</span></div>";
+    });
+    html += '</div><div class="inv-cnote">Click or drag an ingredient to a box. Click to remove.</div>';
+    var res = craftResult(s);
+    html += '<div class="inv-craft-sub">Makes</div><div class="inv-craft-result' + (res.recipe ? " inv-craft-ok" : "") + '">' +
+      '<span class="inv-tile inv-craft-out' + (res.recipe ? "" : " inv-slot-empty") + '" aria-hidden="true">' + (res.recipe ? iconImg(res.recipe.icon) : "") + "</span>" +
+      '<div class="inv-craft-info"><div class="inv-craft-pname">' + esc(res.recipe ? res.recipe.name : "Nothing yet") + "</div>" +
+      (res.recipe ? '<div class="inv-craft-meta">' + esc(res.property + " · Crafting DC " + res.recipe.dc) + "</div>" : "") +
+      '<div class="inv-craft-desc">' + esc(res.recipe ? res.recipe.summary : res.text) + "</div></div></div>";
+    var why = res.recipe ? craftWhy(s) : "";
+    html += '<div class="inv-craft-act"><button type="button" class="inv-use inv-craft-go" data-craft-go' + (res.recipe && !why ? "" : " disabled") + ">Craft</button>" +
+      (why ? '<div class="inv-craft-why">' + esc(why) + "</div>" : (res.recipe ? '<div class="inv-cnote">A brew takes 20 to 30 minutes. A failed brew loses one ingredient and keeps the vial.</div>' : "")) + "</div>";
+    return html + "</div>";
+  }
+  // Why the brew cannot be made now, or "": a fight, a missing tool, and later the place (the user: an inn room, the Middle Ward apartment, the overworld; not decided yet).
+  function craftWhy(s) {
+    var mode = CRAFT_MODES[view.craft || "alchemy"], missing = [];
+    if (truthyS(s.combat_engaged)) return "Not in the middle of a fight.";
+    mode.tools.forEach(function (t) { if (craftReach(t.id, s).n <= 0) missing.push(t.label.toLowerCase()); });
+    if (missing.length) return "You need your " + missing.join(" and ") + ".";
+    if (!canUse()) return "You cannot brew from here right now.";
+    return "";
+  }
+  // Brew: hand the recipe to ChoiceScript through the dossier (the same one-shot route as Use). The result is one line shown as a toast on the page; the boxes keep what is left, so another brew is one click away.
+  function craftNow() {
+    var s = statsNow(), res = craftResult(s);
+    normalizeBox(s);
+    var ids = view.box.filter(Boolean), why = res.recipe ? craftWhy(s) : "Nothing to brew yet.";
+    if (why || ids.length !== 2) { note(why || "Two ingredients are needed."); render(); return; }
+    // the vial is used from the pack: if it is only in a container, one is taken out first
+    var vial = stowItem("empty_potion_vial");
+    if (vial && haveOf(vial, s) <= 0) {
+      var cfg = containersCfg().filter(function (c) { return stowedOf(c.id, vial.id, s) > 0 && !containerBlock(c.id, s); })[0];
+      var mv = cfg ? takeUnits(cfg.id, vial.id, 1) : { moved: 0, why: "Your vial is out of reach." };
+      if (!mv.moved) { note(mv.why || "Your vial is out of reach."); render(); return; }
+    }
+    var ra = findOwned(ids[0]), rb = findOwned(ids[1]);
+    s.craft_potion = res.recipe.id; s.craft_potion_name = res.recipe.name; s.craft_dc = res.recipe.dc;
+    s.craft_a = ids[0]; s.craft_b = ids[1];
+    s.craft_a_name = ra ? splitCount(ra.name).name : ids[0]; s.craft_b_name = rb ? splitCount(rb.name).name : ids[1];
+    close();
+    var scene = new window.Scene("choicescript_stats", window.stats, window.nav, { secondaryMode: "stats", saveSlot: "temp" });
+    scene.targetLabel = { label: "codex_craft_now", origin: "url", originLine: 0 };
+    window.clearScreen(function () {
+      if (typeof window.setButtonTitles === "function") window.setButtonTitles();
+      scene.execute();
+    });
+  }
+  function effectLabel(e) { return String(e || "").split("_").map(function (w) { return w.charAt(0).toUpperCase() + w.slice(1); }).join(" "); }
+  // What the filled boxes would make: {recipe, property} for a known pair, else {text} saying why not. Order does not matter; three ingredients are for stronger brews later.
+  function craftResult(s) {
+    var ids = view.box.filter(Boolean), table = (window.CRAFT_RECIPES || {})[view.craft || "alchemy"] || [];
+    if (ids.length === 0) return { text: "Put two ingredients in the boxes to see the result." };
+    if (ids.length === 1) return { text: "Add a second ingredient." };
+    if (ids.length === 3) return { text: "Three ingredients are for stronger brews later. For now, a brew takes two." };
+    var a = ids[0], b = ids[1];
+    for (var i = 0; i < table.length; i++) {
+      var p = table[i].ingredients;
+      if ((p[0] === a && p[1] === b) || (p[0] === b && p[1] === a)) return { recipe: table[i], property: effectLabel(table[i].property) };
+    }
+    if (a === b) return { text: "Two of the same ingredient make nothing." };
+    var ra = findOwned(a), rb = findOwned(b), ea = ra && ra.alchemy ? ra.alchemy.effects : [], eb = rb && rb.alchemy ? rb.alchemy.effects : [];
+    var shared = ea.filter(function (e) { return eb.indexOf(e) >= 0; });
+    return { text: shared.length ? "They share " + effectLabel(shared[0]) + ", but nothing is brewed from this pair." : "These two have nothing in common to brew." };
+  }
+  // Ingredients are counted in the pack under their own id. What the boxes hold is only chosen, not spent: this is how many of one are still free to choose.
+  function boxFree(id, s) {
+    var used = 0;
+    view.box.forEach(function (b) { if (b === id) used++; });
+    return (Number(s[id]) || 0) - used;
+  }
+  // A box whose ingredient is no longer carried (used, sold, dropped) empties itself.
+  function normalizeBox(s) {
+    var seen = {};
+    view.box = view.box.map(function (id) {
+      if (!id) return null;
+      seen[id] = (seen[id] || 0) + 1;
+      return seen[id] <= (Number(s[id]) || 0) ? id : null;
+    });
+  }
+  // Put an ingredient in a box: the one named, or the first empty one. A filled box takes the new one in its place.
+  function addToBox(id, idx) {
+    var s = statsNow(), r = findOwned(id);
+    normalizeBox(s);
+    if (!r || !r.alchemy) { note("That is not an ingredient."); render(); return; }
+    var nm = splitCount(r.name).name;
+    if (idx === undefined || idx === null) idx = view.box.indexOf(null);
+    if (idx < 0) { note("All three boxes are full. Click a filled box to take its ingredient back."); render(); return; }
+    var prev = view.box[idx];
+    view.box[idx] = null;
+    if (boxFree(id, s) <= 0) { view.box[idx] = prev; note("You have no more " + nm + " to add."); render(); return; }
+    view.box[idx] = id; note(""); render();
   }
 
   // The open container in place of the paper doll: its meter, its note, why it is out of reach if it is, and a grid of what is in it.
@@ -808,7 +953,7 @@
   // Move units between the character and the open container, then draw again with the reason when nothing moved.
   function doMove(dir, id, want) {
     var s = statsNow(), cid = view.left;
-    if (cid === "you") return;
+    if (cid === "you" || cid === "craft") return;
     var res = dir === "stow" ? stowUnits(cid, id, want) : takeUnits(cid, id, want);
     note(res.moved ? "" : (res.why || ""));
     if (res.moved && dir === "stow" && !haveOf(stowItem(id) || {}, statsNow())) view.sel = null;
@@ -819,7 +964,7 @@
   function render() {
     var s = statsNow();
     hideTip();
-    if (view.left !== "you" && !visibleContainers(s).some(function (c) { return c.id === view.left; })) { view.left = "you"; view.csel = null; }
+    if (view.left !== "you" && view.left !== "craft" && !visibleContainers(s).some(function (c) { return c.id === view.left; })) { view.left = "you"; view.csel = null; }
     renderDoll(s);
     renderBag(s);
   }
@@ -845,7 +990,7 @@
       '<div class="bt-kind">' + esc(d.label) + "</div>" +
       (v.meta ? '<div class="bt-meta">' + esc(v.meta) + "</div>" : "") +
       (v.traits ? '<div class="bt-meta' + (v.noBonus ? " bt-dim" : "") + '">' + esc(v.traits) + "</div>" : "") +
-      '<div class="bt-hint">' + (d.swappable || d.bucket === "sidearm" || d.bucket === "shield" ? (slotDraggable(bucket, ringSlot) ? "Click to light up what fits here, or drag it to your pack to take it off" : "Click to light up what fits here") : "Changed from the dossier’s Equipment menu") + "</div>";
+      '<div class="bt-hint">' + (d.swappable || d.bucket === "sidearm" || d.bucket === "shield" ? (slotDraggable(bucket, ringSlot) ? "Click to highlight matches, or drag to remove" : "Click to light up what fits here") : "Changed from the dossier’s Equipment menu") + "</div>";
   }
   function showTip(el, html) {
     if (!html) { hideTip(); return; }
@@ -910,6 +1055,7 @@
     // mark the slots that take it, without rebuilding the DOM mid-drag (that would cancel the drag)
     var r = findOwned(view.drag);
     Array.prototype.forEach.call(dlg.querySelectorAll("[data-slot]"), function (el) { if (accepts(r, el.getAttribute("data-slot"))) el.classList.add("inv-accepts"); });
+    if (view.left === "craft" && r.alchemy) Array.prototype.forEach.call(dlg.querySelectorAll("[data-box]"), function (el) { el.classList.add("inv-accepts"); });
   }
   function onDragEnd() { clearDrag(); }
   function cellOf(ev) { var c = ev.target && ev.target.closest ? ev.target.closest("[data-cell]") : null; return c && elBag.contains(c) ? c : null; }
@@ -930,6 +1076,8 @@
       return;
     }
     if (!view.drag) return;
+    var bx = ev.target && ev.target.closest ? ev.target.closest("[data-box]") : null;
+    if (bx) { var di = findOwned(view.drag); if (di && di.alchemy) { ev.preventDefault(); bx.classList.add("inv-over"); } return; }
     if (t) { if (accepts(findOwned(view.drag), t.getAttribute("data-slot"))) { ev.preventDefault(); t.classList.add("inv-over"); } return; }
     var cl = cellOf(ev);
     if (cl && cl.getAttribute("data-item") !== view.drag) { ev.preventDefault(); cl.classList.add("inv-over"); }
@@ -948,6 +1096,8 @@
     var t = ev.target && ev.target.closest ? ev.target.closest("[data-slot]") : null;
     var id = view.drag;
     if (!id) return;
+    var dbx = ev.target && ev.target.closest ? ev.target.closest("[data-box]") : null;
+    if (dbx) { ev.preventDefault(); view.drag = null; addToBox(id, Number(dbx.getAttribute("data-box"))); return; }
     if (!t) {
       var cl = cellOf(ev);
       if (cl) { ev.preventDefault(); view.drag = null; moveItem(id, Number(cl.getAttribute("data-cell"))); }
@@ -1028,7 +1178,7 @@
   }
 
   function onClick(ev) {
-    var t = ev.target && ev.target.closest ? ev.target.closest("[data-act], [data-cat], [data-item], [data-slot], .inv-blank[data-cell], [data-takeoff], [data-pop-shield], [data-attune], [data-swap-sidearm], [data-equip-sel], [data-use], [data-left], [data-citem], [data-qty], [data-qty-set], [data-xfer]") : null;
+    var t = ev.target && ev.target.closest ? ev.target.closest("[data-act], [data-cat], [data-item], [data-slot], .inv-blank[data-cell], [data-takeoff], [data-pop-shield], [data-attune], [data-swap-sidearm], [data-equip-sel], [data-use], [data-left], [data-citem], [data-qty], [data-qty-set], [data-xfer], [data-box], [data-craft-go]") : null;
     if (!t || !dlg.contains(t)) {
       if (view.slot) { view.slot = null; render(); }   // a click on empty space puts the lit slot away
       return;
@@ -1065,11 +1215,14 @@
       doMove(xc2.dir, xc2.sel.id, cur);
       return;
     }
+    if (t.hasAttribute("data-craft-go")) { if (!t.disabled) craftNow(); return; }
+    if (t.hasAttribute("data-box")) { view.box[Number(t.getAttribute("data-box"))] = null; note(""); render(); return; }
     if (t.hasAttribute("data-use")) { if (!t.disabled) useItem(t.getAttribute("data-use")); return; }
     if (t.hasAttribute("data-cat")) { view.category = t.getAttribute("data-cat"); render(); return; }
     if (t.hasAttribute("data-item")) {
       var id = t.getAttribute("data-item");
-      if (ev.shiftKey && view.left !== "you") { var carried = findOwned(id); if (carried && carried.stow) { doMove("stow", id, 99999); return; } }   // shift-click moves the whole stack into the open container
+      if (view.left === "craft") { var ing = findOwned(id); if (ing && ing.alchemy) { addToBox(id); return; } }
+      if (ev.shiftKey && view.left !== "you" && view.left !== "craft") { var carried = findOwned(id); if (carried && carried.stow) { doMove("stow", id, 99999); return; } }   // shift-click moves the whole stack into the open container
       view.sel = view.sel === id ? null : id; view.csel = null; view.qty = 1;
       view.slot = null; note("");
       render();
@@ -1104,7 +1257,7 @@
     var ct = ev.target && ev.target.closest ? ev.target.closest("[data-citem]") : null;
     if (ct) { doMove("take", ct.getAttribute("data-citem"), 1); return; }   // with a container open, a double-click moves one unit across
     var t = ev.target && ev.target.closest ? ev.target.closest("[data-item]") : null;
-    if (t && view.left !== "you") { var it = findOwned(t.getAttribute("data-item")); if (it && it.stow) { doMove("stow", it.id, 1); return; } }
+    if (t && view.left !== "you" && view.left !== "craft") { var it = findOwned(t.getAttribute("data-item")); if (it && it.stow) { doMove("stow", it.id, 1); return; } }
     if (t) quickAct(t.getAttribute("data-item"));
   }
 

@@ -57,7 +57,7 @@ ___
 >- **Proficiency Bonus** +2
 >___
 >### Actions
->***Bite.*** *Melee Attack Roll:*  To hit +3, *Hit:* (1d4 + 2) Piercing damage plus (1d6) Poison damage.
+>***Bite.*** *Melee Attack Roll:*  To hit +3, *Hit:* (1d4 + 2) Piercing damage plus (1d4) Poison damage.
 ___
 >## Elk
 >*Large Beast, Unaligned*

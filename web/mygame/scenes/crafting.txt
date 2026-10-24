@@ -1,0 +1,47 @@
+*comment Crafting: one brew, made from the Inventory's Craft view (2026-10-23, the user's design; the view and its rules are in Resources & Quest/ALCHEMY_CRAFTING_REFERENCE.md).
+*comment The panel checks the tools, picks the recipe from crafting-data.js and leaves the choice in craft_potion (a catalog id), craft_potion_name, craft_a, craft_b (counted ingredient ids), their names and craft_dc.
+*comment It then runs choicescript_stats codex_craft_now, which gosubs craft_brew: a Herbalism check (the better of Nature or Medicine), 20 to 30 minutes either way, and then
+*comment   a success: both ingredients and one empty vial are used up and the potion is added to the pack;
+*comment   a failure: one of the two ingredients, picked at random, is lost, and the vial is kept.
+*comment Output craft_ok and craft_text (one line, which the sidebar shows as a toast). No page lock of its own: it is run once per click by codex_craft_now, which ends at once, so there is no page to replay.
+*label craft_brew
+*set craft_text ""
+*set craft_ok false
+*if (combat_engaged)
+  *set craft_text "You cannot brew in the middle of a fight."
+  *return
+*temp cb_have_a ({craft_a})
+*temp cb_have_b ({craft_b})
+*if (not(has_empty_potion_vial))
+  *set craft_text "You have no empty vial to fill."
+  *return
+*if (cb_have_a < 1)
+  *set craft_text "You have no ${craft_a_name} left."
+  *return
+*if (cb_have_b < 1)
+  *set craft_text "You have no ${craft_b_name} left."
+  *return
+*gosub_scene dice_engine roll_skill_check craft_dc "nature" "" "medicine" "" "" ""
+*set craft_ok check_success
+*temp cb_minutes 25
+*rand cb_minutes 20 30
+*temp cb_lost 1
+*rand cb_lost 1 2
+*if (craft_ok)
+  *set {craft_a} (cb_have_a - 1)
+  *set {craft_b} (cb_have_b - 1)
+  *gosub_scene equipment sell_gear "empty_potion_vial"
+  *gosub_scene equipment grant_gear craft_potion 1
+  *set craft_text "🧪 Brewed ${craft_potion_name} (check ${check_total} against ${craft_dc}). ${cb_minutes} minutes."
+*else
+  *if (cb_lost = 1)
+    *set {craft_a} (cb_have_a - 1)
+    *set craft_text "The brew fouls (check ${check_total} against ${craft_dc}) and the ${craft_a_name} is lost. Your vial is safe. ${cb_minutes} minutes."
+  *else
+    *set {craft_b} (cb_have_b - 1)
+    *set craft_text "The brew fouls (check ${check_total} against ${craft_dc}) and the ${craft_b_name} is lost. Your vial is safe. ${cb_minutes} minutes."
+*set hours_to_pass 0
+*set minutes_to_pass cb_minutes
+*set time_advance_call_id "craft_brew_time"
+*gosub_scene calendar advance_time
+*return

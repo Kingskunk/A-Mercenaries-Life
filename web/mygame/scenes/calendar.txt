@@ -118,6 +118,37 @@
       *if (temp_hp <= false_life_hp)
         *set temp_hp 0
       *set false_life_hp 0
+  *comment Brewed potions (the crafting view, 2026-10-23): each timed one is counted down with the clock and is simply gone when it reaches 0.
+  *if (brine_minutes_left > 0) and (total_mins_this_call > 0)
+    *if (brine_minutes_left > total_mins_this_call)
+      *set brine_minutes_left - total_mins_this_call
+    *else
+      *set brine_minutes_left 0
+  *if (tidebreath_minutes_left > 0) and (total_mins_this_call > 0)
+    *if (tidebreath_minutes_left > total_mins_this_call)
+      *set tidebreath_minutes_left - total_mins_this_call
+    *else
+      *set tidebreath_minutes_left 0
+  *if (darksight_minutes_left > 0) and (total_mins_this_call > 0)
+    *if (darksight_minutes_left > total_mins_this_call)
+      *set darksight_minutes_left - total_mins_this_call
+    *else
+      *set darksight_minutes_left 0
+  *if (winterward_minutes_left > 0) and (total_mins_this_call > 0)
+    *if (winterward_minutes_left > total_mins_this_call)
+      *set winterward_minutes_left - total_mins_this_call
+    *else
+      *set winterward_minutes_left 0
+  *if (surestep_minutes_left > 0) and (total_mins_this_call > 0)
+    *if (surestep_minutes_left > total_mins_this_call)
+      *set surestep_minutes_left - total_mins_this_call
+    *else
+      *set surestep_minutes_left 0
+  *if (clearhead_minutes_left > 0) and (total_mins_this_call > 0)
+    *if (clearhead_minutes_left > total_mins_this_call)
+      *set clearhead_minutes_left - total_mins_this_call
+    *else
+      *set clearhead_minutes_left 0
   *comment Guidance cast ahead from the spellbook: counted down with the clock; when the time is up it is gone unused. A timer of 0 means an old in-scene cast, which has no time limit.
   *comment guidance_hold (the checked action's own time, set just before this call and cleared by the roll) leaves the timer alone.
   *if ((guidance_minutes_left > 0) and (total_mins_this_call > 0)) and (not(guidance_hold))
@@ -573,6 +604,12 @@
   *comment sleep_gear_note keeps the line the sleeping scenes print, set fresh inside this lock so a replay
   *comment prints the same one. Tune sleep_heal here.
   *set sleep_gear_note ""
+  *comment A Restful Balsam (2026-10-23) is used by this sleep whether or not it heals: the night leaves Well Rested (set below, outside the lock, from sleep_balsam_night so a replay agrees).
+  *set sleep_balsam_night false
+  *if (balsam_on)
+    *set balsam_on false
+    *set sleep_balsam_night true
+    *set sleep_gear_note "The balsam's resin-sweet warmth stays with you through the night, and you wake with a clear head."
   *if (campaign_day > last_sleep_heal_day)
     *temp sleep_heal 1
     *if (not(sleep_is_shared))
@@ -589,6 +626,15 @@
           *set sleep_gear_note "The linen stays snug on your wound all night, and the sting under it has faded by morning."
         *else
           *set sleep_gear_note "${sleep_gear_note} The linen stays snug on your wound all night, and the sting under it has faded by morning."
+      *comment A mending draught (2026-10-23) adds its HP on a night that heals, like the bandage and in the same way, but it is its own flag so the two stack.
+      *if (draught_on)
+        *set sleep_heal + draught_bonus
+        *set draught_on false
+        *set draught_bonus 0
+        *if (sleep_gear_note = "")
+          *set sleep_gear_note "The draught does its quiet work through the night, and the ache is dull by waking."
+        *else
+          *set sleep_gear_note "${sleep_gear_note} The draught does its quiet work through the night, and the ache is dull by waking."
     *set hp_current + sleep_heal
     *if (hp_current > hp_max)
       *set hp_current hp_max
@@ -650,6 +696,9 @@
   *set well_rested_active false
   *set well_rested_minutes_left 0
 *else
+  *set well_rested_active true
+  *set well_rested_minutes_left 720
+*if (sleep_balsam_night)
   *set well_rested_active true
   *set well_rested_minutes_left 720
 *gosub_scene character_buffs recalculate_buff_stats
@@ -958,6 +1007,9 @@
 *if (not(exposure_gear_cached))
   *gosub_scene equipment exposure_gear_sum
 *set ex_cutc exposure_gear_cutc
+*comment Winterward Tea (2026-10-23): half the cold again for its four hours, added to the gear's cut before the 90 percent cap below.
+*if (winterward_minutes_left > 0)
+  *set ex_cutc (ex_cutc + 50)
 *set ex_cutw exposure_gear_cutw
 *set ex_cuth exposure_gear_cuth
 *if (ex_cutc > 90)

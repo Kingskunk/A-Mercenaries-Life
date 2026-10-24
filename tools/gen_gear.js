@@ -119,7 +119,7 @@ function genCreates() {
 
 // A thrown item and a special arrow are used only in a fight, from their own buttons on the fight's main menu, so neither is offered in the satchel menu or the fight's Use-an-item list.
 // A spell scroll (effect type scroll) is read from its own "Read" options on the fight's main menu (written by hand in combat.txt); only a scroll marked outOfCombat (Mage Armor, False Life) can be read from the pack.
-function isNoUse(it) { return !!(it.effect && (it.effect.type === "throw" || it.effect.type === "arrow" || (it.effect.type === "scroll" && !it.effect.outOfCombat))); }
+function isNoUse(it) { return !!(it.effect && (it.effect.type === "throw" || it.effect.type === "arrow" || it.effect.type === "brew" || (it.effect.type === "scroll" && !it.effect.outOfCombat))); }
 
 // One line for menus and banners: what using the item does.
 function effectSummary(it) {
@@ -128,7 +128,7 @@ function effectSummary(it) {
   if (ef.type === "wash") return "Hygiene back to Clean, with water at hand";
   if (ef.type === "dressing") return "+" + ef.bonus + " HP from your next sleep";
   if (ef.type === "ration") return ef.food && ef.food < 2160 ? "Holds off about " + Math.round(ef.food / 60) + " hours of hunger" : "Clears hunger, like a meal";
-  if (ef.type === "throw" || ef.type === "arrow" || ef.type === "scroll" || ef.type === "training") return ef.summary;
+  if (ef.type === "throw" || ef.type === "arrow" || ef.type === "scroll" || ef.type === "training" || ef.type === "brew" || ef.type === "draught" || ef.type === "brewed") return ef.summary;
   var h = ef.minutes % 60 === 0 ? (ef.minutes / 60) + " hours" : ef.minutes + " minutes";
   return "+" + ef.bonus + " " + ef.stat.toUpperCase() + " for " + h;
 }
@@ -147,9 +147,9 @@ function genGearInfo() {
     if (stackable(it)) L.push('  *set gear_stack true');
     if (it.kind === "consumable") {
       var ef = it.effect || {};
-      need(it, ["effect", "useText"]);
+      need(it, (it.effect && it.effect.type === "brew") ? ["effect"] : ["effect", "useText"]);
       L.push('  *set gear_effect ' + q(ef.type));
-      L.push('  *set gear_use_text ' + q(it.useText));
+      if (it.useText) L.push('  *set gear_use_text ' + q(it.useText));
       L.push('  *set gear_use_verb ' + q(it.useVerb || "Use"));
       if (it.combat) L.push('  *set gear_combat true');
       L.push('  *set gear_eff_summary ' + q(effectSummary(it)));
@@ -172,13 +172,19 @@ function genGearInfo() {
         if (ef.autoEat === false) L.push('  *set gear_food_auto false');
         if (ef.autoEatAfter) L.push('  *set gear_food_after ' + q(ef.autoEatAfter));
         if (it.ate) { L.push('  *set gear_ate_one ' + q(it.ate.one)); L.push('  *set gear_ate_many ' + q(it.ate.many)); }
-      } else if (ef.type === "dressing") {
+      } else if (ef.type === "dressing" || ef.type === "draught") {
         L.push('  *set gear_eff_bonus ' + ef.bonus);
       } else if (ef.type === "scroll") {
         // the spell the scroll casts (its id); use_consumable (equipment.txt) reads it for a scroll read outside a fight, and combat.txt's Read options are written by hand
         L.push('  *set gear_eff_name ' + q(ef.spell));
       } else if (ef.type === "training") {
         // no fields: use_consumable (equipment.txt) adds the session and keeps the once-a-day rule itself
+      } else if (ef.type === "brewed") {
+        // a brewed potion: a timer (a stat counted down by calendar.txt advance_time) with its minutes, or temporary hit points; the rest is by item id in use_consumable
+        if (ef.timer) { L.push('  *set gear_eff_timer ' + q(ef.timer)); L.push('  *set gear_eff_minutes ' + ef.minutes); }
+        if (ef.tempHp) L.push('  *set gear_eff_temp_hp ' + ef.tempHp);
+      } else if (ef.type === "brew") {
+        // no fields: a brewed potion is made in the crafting view and carried; its effect is written one potion at a time
       } else if (ef.type === "throw" || ef.type === "arrow") {
         // no fields: a thrown item is used only in a fight, and combat.txt fight_throw_item / combat_spells.txt resolve_throw_item work from the item id
       } else {

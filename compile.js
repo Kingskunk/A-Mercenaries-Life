@@ -373,6 +373,8 @@ function compile(){
   verifyFileName("longshade/longshade_forest.txt");
   verifyFileName("longshade/longshade_dryad.txt");
   verifyFileName("longshade/longshade_beasts.txt");
+  // The crafting scene (2026-10-23): craft_brew, run from the Inventory's Craft view through choicescript_stats codex_craft_now.
+  verifyFileName("crafting.txt");
   verifyFileName("prologue/class_select.txt");
 
   //Check startup.txt for a *scene_list

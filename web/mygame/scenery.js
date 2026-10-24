@@ -19,7 +19,7 @@
 (function () {
   "use strict";
   var root = document.documentElement, el = null, last = "", off = false, stages = null, cur = -1, curKey = null, goneTimer = [0, 0];
-  var FADE_MS = 1300;   // matches the stage's CSS transition in scenery.css, plus a little
+  var FADE_MS = 320;    // matches the quick stage transition in scenery.css, plus a little
   try { off = window.localStorage.getItem("scenery") === "off"; } catch (e) { off = false; }
 
   // a place name that should wear another key's picture: name -> key (a name that is already a picture key needs no line)
@@ -86,7 +86,7 @@
     function (s) { return s.ow_on && s.ow_pos === "bs" ? "black_sinks_gilded_scales_toll_fort" : undefined; }, // repaired Gilded Scales toll fort, reached only after the prologue
     function (s) { return s.sceneName === "overworld/camp" && s.has_camp_kit ? "generic_camp_tent_interior" : undefined; }, // the player-owned solo tent, never a company bivouac
     function (s) { return s.sceneName === "timbermouth/workshops" && s.shop_open === "works" ? "generic_workshop_smithy" : undefined; }, // Roan's enclosed trade bench; the lane remains Timbermouth
-    function (s) { return s.shop_open === "halda" ? "generic_workshop_smithy" : undefined; }, // Halda trades from a working forge, not a goods shop
+    function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_halda_forge" && s.shop_open === "halda" ? "generic_workshop_smithy" : undefined; }, // Halda trades from a working forge, not a goods shop
     function (s) { return s.sceneName === "port_valen/port_valen_upper_wharves" && s.scenery_subplace === "patrician_inner_gate" ? "patrician_inner_gate" : undefined; }, // the Patrician Quarter's writ gate
     function (s) { return s.sceneName === "port_valen/port_valen_upper_wharves" && s.scenery_subplace === "patrician_avenue" ? "patrician_avenue" : undefined; }, // Avenue of Estates, including its great-house stretch
     function (s) { return s.sceneName === "port_valen/port_valen_upper_wharves" && s.scenery_subplace === "patrician_terrace_walk" ? "patrician_terrace_walk" : undefined; }, // ridge promenade above the city
@@ -116,7 +116,7 @@
     function (s) { return s.sceneName === "port_valen/radiant/notice_board" && s.cr_origin === "fv" ? "generic_village_gathering_hall" : undefined; }, // Barleycross's board is inside its village hall
     function (s) { return s.sceneName === "horse_dealer" && s.horse_place === "bc" ? "generic_village_pasture" : undefined; }, // Barleycross's working-horse rail stands at the common pasture
     function (s) { return s.sceneName === "horse_dealer" && s.horse_place === "mw" ? "village_stable_yard" : undefined; }, // Port Valen's dealer works from the Middle Ward yard
-    function (s) { return s.shop_open && s.shop_open !== "trapper" ? "generic_trade_shop" : undefined; }, // shop counters in settlements; the forest trapper stays outdoors
+    function (s) { return s.shop_open && s.shop_open !== "trapper" && s.shop_open !== "halda" ? "generic_trade_shop" : undefined; }, // shop counters in settlements; Halda has a scoped forge rule above and the forest trapper stays outdoors
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_inn_room" ? "generic_town_inn_room" : undefined; }, // Wagoner's Rest guest room and Kess's rented chamber
     function (s) { return s.sceneName === "timbermouth/split_pine_inn" && s.scenery_subplace === "town_inn_room" ? "generic_town_inn_room" : undefined; }, // Split Pine guest room
     function (s) { return s.scenery_subplace === "village_inn_room" && (s.sceneName === "alderford/drowned_oar" || s.sceneName === "alderford/redvein/red_lantern" || s.sceneName === "alderford/whitefold/white_ram" || s.sceneName === "port_valen/brinewick/reedhouse" || s.sceneName === "port_valen/marlcross/wayfarers_rest") ? "generic_village_inn_room" : undefined; }, // village inns and Maura's Drowned Oar rooms
@@ -202,14 +202,29 @@
     return new URL(base + name + ".webp" + (v ? "?v=" + v : ""), document.baseURI).href;
   }
 
-  // load a place's pictures once; it counts as ready only when all are in, so the backdrop never shows half a pair
+  // Load and decode a place's pictures before assigning them to the full-screen CSS layers.  A WebP's network
+  // load may finish well before its first decode; waiting here lets the old backdrop remain stable instead of
+  // making the first frame of a new scene hitch while Chrome decodes two large images.
+  // It counts as ready only when all parts are in, so the backdrop never shows half a pair.
   function load(key) {
     if (loaded[key] || loading[key]) return;
     loading[key] = true;
     var parts = have()[key] === "single" ? ["day"] : ["day", "night"], left = parts.length;
     parts.forEach(function (part) {
       var img = new Image();
-      img.onload = img.onerror = function () { if (!--left) { loaded[key] = true; loading[key] = false; update(); } };
+      var done = false;
+      function ready() {
+        if (done) return;
+        done = true;
+        if (!--left) { loaded[key] = true; loading[key] = false; update(); }
+      }
+      img.onload = function () {
+        var decoding = null;
+        try { decoding = img.decode && img.decode(); } catch (e) { decoding = null; }
+        if (decoding && decoding.then) decoding.then(ready, ready);
+        else ready();
+      };
+      img.onerror = ready;
       img.src = urlOf(key, part);
     });
   }
@@ -244,13 +259,26 @@
   function daylight(h) { return Math.min(smooth(5, 7.5, h), 1 - smooth(17.5, 20.5, h)); }
 
   function update() {
-    var s = window.stats; if (!s || off || !document.body) { root.classList.remove("hasScenery"); return; }
+    var s = window.stats; if (!s || off || !document.body) {
+      root.classList.remove("hasScenery");
+      // A disabled or unavailable backdrop must not retain a signature that says it is still painted.
+      // Otherwise turning scenery back on can return early below and leave the page permanently blank.
+      last = "";
+      return;
+    }
     // choicescript_stats is the dossier overlay. Re-resolving that bookkeeping scene would fall through to a
     // stale district (or no place) and replace the view the player was just standing in. Reuse the displayed
     // key instead; the lighting below still reads the current clock, so waiting through dusk changes the view.
     var key = String(s.sceneName || "") === "choicescript_stats" ? curKey : sceneKey(s);
     if (key === "") return;                                              // still loading: no change yet
-    if (!key) { root.classList.remove("hasScenery"); curKey = null; return; }
+    if (!key) {
+      root.classList.remove("hasScenery");
+      curKey = null;
+      // We have deliberately removed the image.  Clear the render signature too: returning to the same
+      // backdrop at the same hour/weather must restore it rather than being treated as a no-op.
+      last = "";
+      return;
+    }
     if (!el) build();
     var single = have()[key] === "single";
     var h = (Number(s.clock_hour) || 0) + (Number(s.clock_minute) || 0) / 60;
@@ -289,7 +317,29 @@
     root.classList.add("hasScenery");
   }
 
-  function start() { update(); setInterval(update, 1000); }
+  // ChoiceScript redraws a page synchronously after a choice.  Polling once a second was enough for weather and
+  // clock changes, but it made a new backdrop visibly arrive up to a second after the new prose.  Queue exactly
+  // one refresh for the next paint after the engine prints the page; the interval remains for passive changes.
+  var updateQueued = false;
+  function requestUpdate() {
+    if (updateQueued) return;
+    updateQueued = true;
+    var run = function () { updateQueued = false; update(); };
+    if (window.requestAnimationFrame) window.requestAnimationFrame(run);
+    else setTimeout(run, 0);
+  }
+  function hookPageRender() {
+    var original = window.printParagraph;
+    if (typeof original !== "function" || original._sceneryHooked) return;
+    function wrappedPrintParagraph(msg, parent) {
+      var result = original.apply(this, arguments);
+      requestUpdate();
+      return result;
+    }
+    wrappedPrintParagraph._sceneryHooked = true;
+    window.printParagraph = wrappedPrintParagraph;
+  }
+  function start() { hookPageRender(); update(); setInterval(update, 1000); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
   window.Scenery = { update: update, daylight: daylight, placeNames: placeNames, key: function () { return window.stats ? sceneKey(window.stats) : null; }, setOff: function (b) { off = !!b; try { window.localStorage.setItem("scenery", b ? "off" : "on"); } catch (e) {} update(); } };
 })();

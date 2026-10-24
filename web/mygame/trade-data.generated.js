@@ -610,7 +610,7 @@ window.TRADE_DATA = {
    "retail": 30,
    "weight": 3,
    "minutes": 5,
-   "hint": "+1 on Medicine checks",
+   "hint": "Grinds herbs for brewing",
    "slot": "",
    "stack": true,
    "sell": {
@@ -622,6 +622,56 @@ window.TRADE_DATA = {
     "pawnFixed": 0,
     "smithPiece": 0,
     "herbalistPiece": 15,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
+  "empty_potion_vial": {
+   "name": "empty potion vial",
+   "title": "Empty Potion Vial",
+   "kind": "tool",
+   "group": "",
+   "tier": "",
+   "retail": 1,
+   "weight": 0.1,
+   "minutes": 5,
+   "hint": "One is used up for each potion you brew",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 1,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
+  "portable_burner": {
+   "name": "portable burner",
+   "title": "Portable Burner",
+   "kind": "tool",
+   "group": "",
+   "tier": "",
+   "retail": 45,
+   "weight": 4,
+   "minutes": 5,
+   "hint": "A small flame to brew over, on the road or at camp",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 22,
     "gamePiece": 0,
     "countVar": ""
    }
@@ -2935,7 +2985,9 @@ window.TRADE_DATA = {
     "clear_head_draught",
     "linen_bandage",
     "alchemists_fire",
-    "mortar_pestle"
+    "mortar_pestle",
+    "empty_potion_vial",
+    "portable_burner"
    ],
    "sell": [
     "frog_slime",
@@ -2953,7 +3005,9 @@ window.TRADE_DATA = {
     "acorn_truffle",
     "brambleberry",
     "alchemists_fire",
-    "mortar_pestle"
+    "mortar_pestle",
+    "empty_potion_vial",
+    "portable_burner"
    ]
   },
   "hollis": {

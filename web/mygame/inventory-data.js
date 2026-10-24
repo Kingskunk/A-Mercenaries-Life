@@ -750,6 +750,90 @@
       description: "Bronze mortar and stone pestle for grinding herbs into poultices and salves."
     },
     {
+      id: "empty_potion_vial", category: "provisions", owned: "has_empty_potion_vial",
+      weight: 0.1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_empty_potion_vial) || 0); return "Empty Potion Vial" + (n > 1 ? " ×" + n : ""); },
+      description: "Clear-glass vial with a snug cork, for bottling a brew."
+    },
+    {
+      id: "portable_burner", category: "provisions", owned: "has_portable_burner",
+      weight: 4, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_portable_burner) || 0); return "Portable Burner" + (n > 1 ? " ×" + n : ""); },
+      description: "Squat brass burner with an oil well and a lipped pan, for brewing on the road."
+    },
+    {
+      id: "mending_draught", category: "consumables", owned: "has_mending_draught",
+      weight: 0.3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_mending_draught) || 0); return "Mending Draught" + (n > 1 ? " ×" + n : ""); },
+      description: "A stoppered vial of clear green liquid that smells of wet moss and warm stone.",
+      badge: "The next proper sleep restores 2 extra HP",
+      use: true
+    },
+    {
+      id: "brine_antivenom", category: "consumables", owned: "has_brine_antivenom",
+      weight: 0.3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_brine_antivenom) || 0); return "Brine Antivenom" + (n > 1 ? " ×" + n : ""); },
+      description: "A stoppered vial of cloudy grey-green liquid with a sharp tang of salt.",
+      badge: "For 4 hours: resistance to poison damage and advantage on saves against poison",
+      use: true
+    },
+    {
+      id: "tidebreath_elixir", category: "consumables", owned: "has_tidebreath_elixir",
+      weight: 0.3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_tidebreath_elixir) || 0); return "Tidebreath Elixir" + (n > 1 ? " ×" + n : ""); },
+      description: "A stoppered vial of pale, bubbling liquid that smells of cold sea air.",
+      badge: "Ten minutes of held breath for one submerged route or dive",
+      use: true
+    },
+    {
+      id: "darksight_tonic", category: "consumables", owned: "has_darksight_tonic",
+      weight: 0.3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_darksight_tonic) || 0); return "Darksight Tonic" + (n > 1 ? " ×" + n : ""); },
+      description: "A stoppered vial of milky blue liquid with a faint chill to the glass.",
+      badge: "For 4 hours: the dark no longer hampers sight if you have no darkvision",
+      use: true
+    },
+    {
+      id: "fortifying_tonic", category: "consumables", owned: "has_fortifying_tonic",
+      weight: 0.3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_fortifying_tonic) || 0); return "Fortifying Tonic" + (n > 1 ? " ×" + n : ""); },
+      description: "A stoppered vial of warm amber liquid that glows faintly when shaken.",
+      badge: "Gain 4 temporary HP",
+      use: true
+    },
+    {
+      id: "restful_balsam", category: "consumables", owned: "has_restful_balsam",
+      weight: 0.3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_restful_balsam) || 0); return "Restful Balsam" + (n > 1 ? " ×" + n : ""); },
+      description: "A stoppered vial of thick golden balsam that smells of resin and silverleaf.",
+      badge: "The next proper sleep leaves you Well Rested for 12 hours",
+      use: true
+    },
+    {
+      id: "clearhead_tea", category: "consumables", owned: "has_clearhead_tea",
+      weight: 0.3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_clearhead_tea) || 0); return "Clearhead Tea" + (n > 1 ? " ×" + n : ""); },
+      description: "A stoppered vial of pale gold tea that smells of crushed leaves and berries.",
+      badge: "Clears a clouded mind, then +2 to your next INT or WIS check within 4 hours",
+      use: true
+    },
+    {
+      id: "winterward_tea", category: "consumables", owned: "has_winterward_tea",
+      weight: 0.3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_winterward_tea) || 0); return "Winterward Tea" + (n > 1 ? " ×" + n : ""); },
+      description: "A stoppered vial of dark red-brown tea, warm to hold even when cold.",
+      badge: "For 4 hours: cold exposure is cut by half",
+      use: true
+    },
+    {
+      id: "surestep_cordial", category: "consumables", owned: "has_surestep_cordial",
+      weight: 0.3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_surestep_cordial) || 0); return "Surestep Cordial" + (n > 1 ? " ×" + n : ""); },
+      description: "A stoppered vial of sweet, deep-purple cordial with a trace of truffle.",
+      badge: "For 8 hours: +3 to footing checks on slick stone, fords, wet timber and loose scree",
+      use: true
+    },
+    {
       id: "gem_agate", category: "valuables", owned: "has_gem_agate",
       weight: 0.1, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_gem_agate) || 0); return "Agate" + (n > 1 ? " ×" + n : ""); },

@@ -42,6 +42,9 @@
   *set advantage true
 *if ((race = "dwarf") and (save_vs = "poison"))
   *set advantage true
+*comment Brine Antivenom (2026-10-23): advantage on a save against poison for its four hours.
+*if ((save_vs = "poison") and (brine_minutes_left > 0))
+  *set advantage true
 *comment Danger Sense (Barbarian level 2, 2026-10-02): advantage on Dexterity saving throws. A scene making a DEX saving throw sets save_vs "dex" first, the same
 *comment convention as the racial saves above (no scene makes one yet, so this is ready and has no caller). The 5e exception for being Incapacitated is not modelled.
 *if (((character_class = "barbarian") and (character_level >= 2)) and ((check_stat = "dex") and (save_vs = "dex")))
@@ -140,10 +143,10 @@
     *if (footwear_footing_bonus > 0)
       *set check_mod + footwear_footing_bonus
       *set adv_label "${adv_label} (${footwear_footing_label} +${footwear_footing_bonus})"
-  *comment Mortar and Pestle: +1 on any Medicine check, whichever scene rolls it. Keyed on the skill, not a task mark, so no scene has to know about the tool; it works through roll_skill_check too, where check_skill is the skill that was picked.
-  *if ((check_skill = "Medicine") and (has_mortar_pestle))
-    *set check_mod + 1
-    *set adv_label "${adv_label} (Mortar and Pestle +1)"
+    *comment Surestep Cordial (2026-10-23, made stronger the same day): +3 on a marked footing check for its eight hours, on top of the boots.
+    *if (surestep_minutes_left > 0)
+      *set check_mod + 3
+      *set adv_label "${adv_label} (Surestep Cordial +3)"
   *set check_task_type "none"
 
   *comment Expertise doubles proficiency, it doesn't stack a second one on top: if check_add_prof_bonus already
@@ -194,6 +197,12 @@
     *if ((check_stat = "int") or (check_stat = "wis"))
       *set check_mod + 1
       *set adv_label "${adv_label} (Well Rested +1)"
+  *comment Clearhead Tea (2026-10-23): +2 to the next INT or WIS CHECK within its four hours (not a save, not in a fight), and the tea is used up by it. Inside the roll's own lock, so a replay cannot spend it twice.
+  *if ((clearhead_minutes_left > 0) and ((not(combat_engaged)) and (save_vs = "none")))
+    *if ((check_stat = "int") or (check_stat = "wis"))
+      *set check_mod + 2
+      *set clearhead_minutes_left 0
+      *set adv_label "${adv_label} (Clearhead Tea +2)"
 
   *comment Grime is a social penalty only: it never touches a STR, DEX or spellcasting roll.
   *if (check_stat = "cha")

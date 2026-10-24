@@ -45,6 +45,7 @@
  *               when its option is not on offer, instead of stopping with "pick not found" (one move list can then run through many different fights)
  *   picks     the same steps as one string: "text@high;other text*"  (@word sets rand, a trailing * = whileAvail)
  *   watch     variable names whose final values are reported
+ *   requireNoDeadSpace  true: fail this scenario if a *line_break prints an empty line
  *   refresh   true: after every page, replay it on a copy (what opening Stats and returning does) and
  *             report any variable that changes; a reward or a time advance that is not guarded shows up here
  *   sabotage  variables forced false on the replay copy, to prove the refresh check can see a double apply
@@ -489,7 +490,8 @@ function main(argv) {
   });
   var r = play(scn);
   console.log(flags.json ? formatJson(scn, r) : formatText(scn, r, { raw: !!flags.raw, menus: !flags["no-menus"] }));
-  var bad = r.errors.length || r.refreshDiffs.some(function (d) { return !KNOWN_ENGINE_DIFF.test(d); });
+  var bad = r.errors.length || r.refreshDiffs.some(function (d) { return !KNOWN_ENGINE_DIFF.test(d); }) ||
+    (scn.requireNoDeadSpace && r.deadSpace.length);
   return bad ? 1 : 0;
 }
 
