@@ -130,6 +130,10 @@ const MAP = {
   cloth: "Bed_Linen_Unfaded_Icon.png",                          // STAND-IN: oilcloth
 
   // ---- ingredients and salvage
+  iron_bar: "../Generic/Iron_Bars_Generated_Source.png",
+  longshade_timber: "../Generic/Longshade_Timber_Generated_Source.png",   // the user's own art (2026-10-24)
+  salt: "../Generic/Salt_Generated_Source.png",                         // the user's own art (2026-10-24)
+  charcoal: "../Generic/Charcoal_Generated_Source.png",                  // the user's own art (2026-10-24)
   scrap: "Clutter_AdamantineScrap_Unfaded_Icon.webp",
   bramble_heart: "../Generic/Gnarled_Bramble_Heart_Generated_Source.png",   // the user's own art (2026-10-21): Dubhar's heart of bramble
   poisoners_robes: "Poisoners_Robe_Unfaded_Icon.png",                  // Dubhar's robes
@@ -183,6 +187,7 @@ const MAP = {
   food: "FOOD_Dried_Rope_Sausage_Unfaded_Icon.png",
   rations: "Consumable/Camp_supply/Heavy_Supply_Pack_Unfaded_Icon.png",
   barley_loaf: "FOOD_Sourdough_Bread_Unfaded_Icon.png",
+  barley_grain: "../Generic/Barley_Grain_Generated_Source.png",
   hard_farm_cheese: "FOOD_Durinbold_Cheese_Wedge_Unfaded_Icon.png",
   orchard_apple: "FOOD_Apple_Unfaded_Icon.png",
   root_vegetable_bundle: "FOOD_Turnip_Unfaded_Icon.png",
@@ -193,6 +198,8 @@ const MAP = {
   tomatoes: "FOOD_Tomato_Unfaded_Icon.png",
   dressed_chicken: "FOOD_Whole_Chicken_Unfaded_Icon.png",
   fresh_fish_fillet: "FOOD_Fish_Fillet_Unfaded_Icon.png",
+  cabbage: "FOOD_Cabbage_Unfaded_Icon.png",
+  pumpkin: "FOOD_Pumpkin_Unfaded_Icon.png",
   fish: "Bucket_of_Fish_Unfaded_Icon.png",
   sack: "Camp_Supply_Sack_Unfaded_Icon.png",
   mount: "Miscellaneous_item/Horse.png",

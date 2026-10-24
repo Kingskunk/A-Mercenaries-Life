@@ -1,6 +1,8 @@
 *comment ====================================================================================
-*comment THE SALTWORKS (Brinewick): public working edge of the salt production site. It is not a
-*comment shop yet; the pans, packing racks and raised salt store make it the future trade anchor.
+*comment THE SLIP MARKET (Brinewick; the scene and its labels keep the old name, bw_saltworks). Retconned 2026-10-24 (the user) from "the Saltworks", a future trade anchor that read as only salt,
+*comment into the village's open market, still salt-led because of where it stands: the salt store's loading slip. The trade panel opens here by day (not at night; the hub shuts the place in storm
+*comment weather) and the market buys every commodity, priced by distance (web/mygame/market.js, tools/market_defs.json bw_market). Brinewick makes salt and fish, so those sit deep and cheap; goods it
+*comment does not make, such as grain, hides, timber and iron, bring a shortage price. The pans, packing rack and channel gates stay as things to look at.
 *comment ====================================================================================
 
 *label bw_saltworks
@@ -14,9 +16,9 @@
 *if (not(bw_saltworks_seen))
   *set bw_salt_first true
 *set bw_saltworks_seen true
-[b]◈ THE SALTWORKS[/b]
+[b]◈ THE SLIP MARKET[/b]
 *line_break
-The work path runs between shallow beds of brine, each walled with packed earth and linked by narrow channels. Wooden gates divide one bed from the next. Beyond them stand the pan sheds, open at the roof ridge to let steam out, and the raised salt store with its loading doors facing the slip. A packing rack under a long lean-to holds open sacks, wooden scoops and broad shovels stained white at the edges.
+The salt store's loading doors open onto the slip, and the slip is where Brinewick does its trading. Sacked salt stands in bays along the quay, stacked to a man's height and chalked with the day's weight, and wagons back up between the bays with their tailboards down. Fish racks line the seaward rail, and a tally-man with a wax tablet walks the quay beside a beam-scale. Behind the store the work path runs out between shallow beds of brine, walled with packed earth, to pan sheds open at the roof ridge to let their steam out. A packing rack under a long lean-to holds open sacks, wooden scoops and broad shovels stained white at the edges.
 
 *if (weather = "Rain")
   Rain rings on the shed roofs and breaks the smooth surface of every open bed.
@@ -25,7 +27,7 @@ The work path runs between shallow beds of brine, each walled with packed earth 
 *elseif ((weather = "Snow") or (weather = "Sleet"))
   Wet snow gathers on the low bed walls and turns to water where the sheds breathe heat.
 *elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
-  A few furnace windows glow beneath the pan sheds, and the salt store's loading doors are shut above the black mud.
+  A few furnace windows glow beneath the pan sheds, and the bays stand bare under their tarpaulins with the salt store's doors shut above the black mud.
 
 *if ((ground_state = "sodden") and (not(weather_wet)))
   The work path remains soft at the edges, where boots and cart wheels have pressed it down beside the beds.
@@ -33,15 +35,25 @@ The work path runs between shallow beds of brine, each walled with packed earth 
   A dry skin has formed on the path, but water still glints in every low print.
 
 *if (bw_salt_first)
-  The place is full of simple movements repeated carefully: brine guided from bed to bed, salt drawn from the pans, sacks filled and carried toward the raised store. The work leaves white dust on sleeves, boots and the rail tops.
+  Everything here is counted by the sack and the cartload, and the white dust of the pans lies on sleeves, boots and every rail top.
 *elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
-  The open work has ended for the moment, though heat and steam still rise from the sheds.
+  The trading has ended for the day, though heat and steam still rise from the sheds.
 *else
-  The saltworks continues in measured stages, with water, heat, sacks and carts each moving through their own part of the ground.
+  The slip goes on in its measured way, with salt, fish and inland freight each moving through its own bay.
 
 *comment Open-world free time: the sidebar's Wait and Rest work on this page (web/mygame/pagegate.js).
 *set wait_ok_page page_id
+*comment The market is open by day (the hub already shuts the place in storm weather); the panel and its hidden settle option are on this page only then.
+*temp bw_market_open false
+*if ((not(time_period = "Night")) and (not(time_period = "Pre-Dawn")))
+  *set bw_market_open true
+  *gosub bw_market_open_panel
+*else
+  *set shop_open ""
 *choice
+  *if (bw_market_open)
+    # ⚖ Settle up along the slip.
+      *goto bw_market_settle
   # Look over the packing rack.
     You examine the open sacks and long-handled scoops beneath the lean-to. Fine salt has collected in the cracks of the boards, and every tool is dry despite the flats around it.
     *choice
@@ -66,3 +78,147 @@ The work path runs between shallow beds of brine, each walled with packed earth 
   # ⇥ [pvgo:home:brinewick]
     *goto_scene port_valen/brinewick/brinewick brinewick
       *comment GEN:END place_steps home:brinewick
+
+*comment The slip's market panel (2026-10-24): one open market for the whole quay, every commodity bought and the shelf sold from what it holds. Settling takes the panel's agreed totals (equipment.txt shop_check).
+*label bw_market_open_panel
+*set shop_open "bw_market"
+*set shop_rows ""
+*comment GEN:BEGIN bw_market_panel_rows
+*gosub_scene equipment shop_row_add "honeycomb"
+*gosub_scene equipment shop_row_add "boar_meat"
+*gosub_scene equipment shop_row_add "venison"
+*gosub_scene equipment shop_row_add "barley_loaf"
+*gosub_scene equipment shop_row_add "barley_grain"
+*gosub_scene equipment shop_row_add "hard_farm_cheese"
+*gosub_scene equipment shop_row_add "orchard_apple"
+*gosub_scene equipment shop_row_add "root_vegetable_bundle"
+*gosub_scene equipment shop_row_add "farm_eggs"
+*gosub_scene equipment shop_row_add "dried_pork_sausage"
+*gosub_scene equipment shop_row_add "onions"
+*gosub_scene equipment shop_row_add "potatoes"
+*gosub_scene equipment shop_row_add "tomatoes"
+*gosub_scene equipment shop_row_add "dressed_chicken"
+*gosub_scene equipment shop_row_add "fresh_fish_fillet"
+*gosub_scene equipment shop_row_add "cabbage"
+*gosub_scene equipment shop_row_add "pumpkin"
+*gosub_scene equipment shop_row_add "iron_bar"
+*gosub_scene equipment shop_row_add "longshade_timber"
+*gosub_scene equipment shop_row_add "charcoal"
+*gosub_scene equipment shop_row_add "salt"
+*gosub_scene equipment shop_row_add "raw_hide"
+*gosub_scene equipment shop_row_add "boar_tusk"
+*gosub_scene equipment shop_row_add "elk_antler"
+*comment GEN:END bw_market_panel_rows
+*return
+
+*label bw_market_cart_pass
+*comment GEN:BEGIN bw_market_cart_pass
+*set shop_buyer "market"
+*set gear_shop "bw_market_sell"
+*gosub_scene equipment shop_cart_sell "honeycomb"
+*gosub_scene equipment shop_cart_sell "boar_meat"
+*gosub_scene equipment shop_cart_sell "venison"
+*gosub_scene equipment shop_cart_sell "barley_loaf"
+*gosub_scene equipment shop_cart_sell "barley_grain"
+*gosub_scene equipment shop_cart_sell "hard_farm_cheese"
+*gosub_scene equipment shop_cart_sell "orchard_apple"
+*gosub_scene equipment shop_cart_sell "root_vegetable_bundle"
+*gosub_scene equipment shop_cart_sell "farm_eggs"
+*gosub_scene equipment shop_cart_sell "dried_pork_sausage"
+*gosub_scene equipment shop_cart_sell "onions"
+*gosub_scene equipment shop_cart_sell "potatoes"
+*gosub_scene equipment shop_cart_sell "tomatoes"
+*gosub_scene equipment shop_cart_sell "dressed_chicken"
+*gosub_scene equipment shop_cart_sell "fresh_fish_fillet"
+*gosub_scene equipment shop_cart_sell "cabbage"
+*gosub_scene equipment shop_cart_sell "pumpkin"
+*gosub_scene equipment shop_cart_sell "iron_bar"
+*gosub_scene equipment shop_cart_sell "longshade_timber"
+*gosub_scene equipment shop_cart_sell "charcoal"
+*gosub_scene equipment shop_cart_sell "salt"
+*gosub_scene equipment shop_cart_sell "raw_hide"
+*gosub_scene equipment shop_cart_sell "boar_tusk"
+*gosub_scene equipment shop_cart_sell "elk_antler"
+*set gear_shop "bw_market"
+*gosub_scene equipment shop_cart_buy "honeycomb"
+*gosub_scene equipment shop_cart_buy "boar_meat"
+*gosub_scene equipment shop_cart_buy "venison"
+*gosub_scene equipment shop_cart_buy "barley_loaf"
+*gosub_scene equipment shop_cart_buy "barley_grain"
+*gosub_scene equipment shop_cart_buy "hard_farm_cheese"
+*gosub_scene equipment shop_cart_buy "orchard_apple"
+*gosub_scene equipment shop_cart_buy "root_vegetable_bundle"
+*gosub_scene equipment shop_cart_buy "farm_eggs"
+*gosub_scene equipment shop_cart_buy "dried_pork_sausage"
+*gosub_scene equipment shop_cart_buy "onions"
+*gosub_scene equipment shop_cart_buy "potatoes"
+*gosub_scene equipment shop_cart_buy "tomatoes"
+*gosub_scene equipment shop_cart_buy "dressed_chicken"
+*gosub_scene equipment shop_cart_buy "fresh_fish_fillet"
+*gosub_scene equipment shop_cart_buy "cabbage"
+*gosub_scene equipment shop_cart_buy "pumpkin"
+*gosub_scene equipment shop_cart_buy "iron_bar"
+*gosub_scene equipment shop_cart_buy "longshade_timber"
+*gosub_scene equipment shop_cart_buy "charcoal"
+*gosub_scene equipment shop_cart_buy "salt"
+*gosub_scene equipment shop_cart_buy "raw_hide"
+*gosub_scene equipment shop_cart_buy "boar_tusk"
+*gosub_scene equipment shop_cart_buy "elk_antler"
+*comment GEN:END bw_market_cart_pass
+*return
+
+*label bw_market_settle
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment shop_begin
+  *gosub bw_market_cart_pass
+  *gosub_scene equipment shop_check
+  *if (shop_verdict = "ok")
+    *set shop_mode "apply"
+    *gosub bw_market_cart_pass
+    *set currency_add_amount (shop_tot_credit - shop_tot_cost)
+    *gosub_scene economy currency_add
+  *else
+    *set shop_mode "clear"
+    *gosub bw_market_cart_pass
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*if (shop_verdict = "empty")
+  You stand a moment on the quay with nothing set aside, and the slip goes on with its day.
+  *page_break Back to the slip…
+  *goto bw_saltworks_main
+*if (shop_verdict = "short")
+  You count your coin against the chalked amounts and come up short. The lots stay where they are.
+  *page_break Back to the slip…
+  *goto bw_saltworks_main
+*if ((shop_tot_bought > 0) and (shop_tot_sold > 0))
+  You go from bay to bay along the quay, setting your goods on the beam-scale and taking others up, and the tally-man chalks each side until they come out square.
+*elseif (shop_tot_bought > 0)
+  You go from bay to bay, having each lot weighed and paying the tally-man in turn, and the carters swing your purchases onto the quay rail.
+*else
+  At one bay after another you set your goods on the beam-scale, and each factor counts out coin from a strongbox.
+*if (not(shop_quote_line = ""))
+  *line_break
+  ${shop_quote_line}
+*if (not(shop_note_line = ""))
+  *line_break
+  ${shop_note_line}
+*if (shop_tot_sold > 0)
+  *line_break
+  [b][💰 Sold: ${shop_sold_list} for ${shop_credit_desc}][/b]
+*if (shop_tot_bought > 0)
+  *line_break
+  [b][🛒 Bought: ${shop_recv} for ${shop_cost_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass shop_tot_minutes
+*if (shop_tot_sold > 0)
+  *set minutes_to_pass (minutes_to_pass + 5)
+*set time_advance_call_id "bw_market_trade"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the slip…
+*goto bw_saltworks_main

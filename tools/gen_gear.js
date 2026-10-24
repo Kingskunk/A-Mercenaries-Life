@@ -39,6 +39,17 @@ items.forEach(function (it) {
   byId[it.id] = it;
 });
 
+// A trade marked "commodities" (an open market: a village lane, a town's trading ground) deals in EVERY item tagged with a commodity (tools/gear_catalog.json, item.commodity.makers), on both its
+// shops, so a new trade good is one tagged item and no market list is edited by hand. The items it already lists keep their place; the rest follow in catalog order.
+(CATALOG.trades || []).forEach(function (t) {
+  if (!t.commodities) return;
+  [t.buyShop, t.sellShop].forEach(function (name) {
+    var sh = (CATALOG.shops || []).filter(function (x) { return x.name === name; })[0];
+    if (!sh) throw new Error("trade " + t.name + ": unknown shop " + name);
+    items.forEach(function (it) { if (it.commodity && !sh.items.some(function (r) { return r.id === it.id; })) sh.items.push({ id: it.id }); });
+  });
+});
+
 // ---------------------------------------------------------------- helpers
 function q(s) { return JSON.stringify(String(s)); }            // a ChoiceScript string literal ("\"" escapes work)
 function flag(it) { return "has_" + it.id; }

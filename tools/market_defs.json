@@ -1,0 +1,58 @@
+{
+  "_readme": [
+    "The hand-written numbers behind every merchant's market (2026-10-24). tools/gen_markets.js turns this plus the shop data (web/mygame/trade-data.generated.js) into web/mygame/market-data.generated.js; edit THIS file, not the output.",
+    "",
+    "WHAT IT KEEPS THE SAME: at its usual stock a merchant asks exactly the retail price it asks today, and pays today's price (buyPct is worked out from the price it pays now), so nothing changes until stock or purse are pushed. What changes is what happens when they are.",
+    "Prices are whole copper (1 silver = 10 copper, 1 gold = 100 copper).",
+    "",
+    "purse:     the coin a merchant can pay out (and the target it drifts back to). A stall is a few silver, a shop tens of silver, a city shop tens of gold, a jeweler hundreds.",
+    "regen:     the share of the gap to target that stock and purse close each day (0.1 = a tenth).",
+    "depthMult: how much more or less than the standard a merchant holds of everything (a city shop deep, a stall shallow). 'depth' is the target stock: how much the merchant wants to hold. A small target moves the price a lot per unit.",
+    "tile / commodities: an open market (a village lane, a town's trading ground) on a map tile, dealing in every tagged commodity (see 'commodity' below and tools/gen_markets.js); its goods need no listing here.",
+    "buyShare: a market (a village) that pays a set share of the base price for everything it takes, instead of the shop rates; the merchant's buyer is 'village'.",
+    "goods:     per-merchant overrides for single goods: target, stock0 (starting stock), mult (regional price multiplier: below 1 cheap here, above 1 dear), flow (units a day made or eaten), fixed (one-of-a-kind), buyPct.",
+    "",
+    "kindDepth is the standard target stock by kind of good; priceTiers scales it by how cheap the good is (cheap goods are held deep, costly ones shallow). One-of-a-kind goods are the ones the shop rules already sell once only (not stackable, not a counted salvage or ingredient): they are fixed and never move, except the ids listed under 'ordinary' (the plain rings, which the user ruled ordinary goods on 2026-10-24)."
+  ],
+  "kindDepth": {
+    "weapon": 4, "armor": 3, "shield": 3, "head": 4, "cloak": 4, "hands": 3, "feet": 4, "neck": 3, "ring": 3,
+    "tool": 6, "consumable": 8, "valuable": 3, "salvage": 12, "ingredient": 12
+  },
+  "priceTiers": [
+    { "upTo": 3, "mult": 4 },
+    { "upTo": 10, "mult": 2.5 },
+    { "upTo": 40, "mult": 1.5 },
+    { "upTo": 150, "mult": 1 },
+    { "upTo": 1000000, "mult": 0.6 }
+  ],
+  "ordinary": ["jewelry_silver_ring", "jewelry_gold_ring", "jewelry_sapphire_gold_ring", "jewelry_ruby_gold_ring", "jewelry_diamond_gold_ring"],
+  "minDepth": 3,
+  "commodity": {
+    "_readme": "The distance model for open markets (see tools/gen_markets.js). perMile: the price rises this share of the base for every mile from the nearest maker; capLevel: the dearest it gets; cost: the price level AT the source (a major maker sells under the base, a minor one at it); supplyHalf: the miles at which a maker's share of a market's shelf has halved (it keeps falling, never to nothing); weight: a maker's share of a usual shelf; minSupply: below this a market makes nothing of a good; unsuppliedShare and useRate: a market with no supply wants a thin shelf (a share of the usual) and uses a share of it each day.",
+    "perMile": 0.005, "capLevel": 2.0, "supplyHalf": 30, "minSupply": 0.1,
+    "cost": { "major": 0.8, "minor": 1.0 },
+    "weight": { "major": 1, "minor": 0.25 },
+    "unsuppliedShare": 0.1, "useRate": 0.05
+  },
+  "defaults": { "regen": { "stock": 0.1, "purse": 0.1 }, "mult": 1 },
+  "merchants": {
+    "halda":       { "tier": "city shop", "purse": 3500,  "depthMult": 1.5 },
+    "ambrose":     { "tier": "city shop", "purse": 1800,  "depthMult": 1.2 },
+    "hollis":      { "tier": "city shop", "purse": 4000,  "depthMult": 1.5 },
+    "vael":        { "tier": "city shop", "purse": 1500,  "depthMult": 1 },
+    "tailor":      { "tier": "city shop", "purse": 8000,  "depthMult": 1 },
+    "inklamp":     { "tier": "city shop", "purse": 6000,  "depthMult": 1 },
+    "jeweler":     { "tier": "city shop", "purse": 20000, "depthMult": 1 },
+    "pawn":        { "tier": "city shop", "purse": 5000,  "depthMult": 1.5 },
+    "works":       { "tier": "town shop", "purse": 600,   "depthMult": 1 },
+    "tmstore":     { "tier": "town shop", "purse": 1200,  "depthMult": 1.2 },
+    "afstore":     { "tier": "town shop", "purse": 800,   "depthMult": 1 },
+    "torvald":     { "tier": "town shop", "purse": 1500,  "depthMult": 1.2 },
+    "barley_farm": { "tier": "village market", "tile": "fv", "commodities": true, "purse": 900, "depthMult": 3, "buyShare": 0.8, "regen": { "stock": 0.2, "purse": 0.1 } },
+    "tm_market":   { "tier": "town market", "tile": "tm", "commodities": true, "purse": 3000, "depthMult": 4, "buyShare": 0.8, "regen": { "stock": 0.2, "purse": 0.1 } },
+    "bw_market":   { "tier": "village market", "tile": "bw", "commodities": true, "purse": 1200, "depthMult": 3, "buyShare": 0.8, "regen": { "stock": 0.2, "purse": 0.1 } },
+    "trapper":     { "tier": "stall",     "purse": 150,   "depthMult": 0.8 },
+    "hideyard":    { "tier": "yard",      "purse": 400,   "depthMult": 1 },
+    "fish_slip":   { "tier": "stall",     "purse": 40,    "depthMult": 1, "regen": { "stock": 0.3, "purse": 0.1 } }
+  }
+}

@@ -309,6 +309,12 @@
       use: true
     },
     {
+      id: "barley_grain", category: "provisions", owned: "has_barley_grain",
+      weight: 2, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_barley_grain) || 0); return "Barley Grain" + (n > 1 ? " ×" + n : ""); },
+      description: "Two-pound sack of Barleycross grain, for milling, porridge, brewing, or a pot."
+    },
+    {
       id: "hard_farm_cheese", category: "consumables", owned: "has_hard_farm_cheese",
       weight: 0.5, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_hard_farm_cheese) || 0); return "Hard Farm Cheese" + (n > 1 ? " ×" + n : ""); },
@@ -373,6 +379,18 @@
       weight: 0.75, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_fresh_fish_fillet) || 0); return "Fresh Fish Fillet" + (n > 1 ? " ×" + n : ""); },
       description: "White-fleshed river fish fillet, wrapped in damp leaves for cooking that day."
+    },
+    {
+      id: "cabbage", category: "provisions", owned: "has_cabbage",
+      weight: 1.5, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_cabbage) || 0); return "Cabbage" + (n > 1 ? " ×" + n : ""); },
+      description: "Fresh field cabbage, a cheap staple for soups, braises, and pickling."
+    },
+    {
+      id: "pumpkin", category: "provisions", owned: "has_pumpkin",
+      weight: 4, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_pumpkin) || 0); return "Pumpkin" + (n > 1 ? " ×" + n : ""); },
+      description: "Whole pumpkin for roasting, stews, pies, or storing through the colder weeks."
     },
     {
       id: "hemp_rope", category: "provisions", owned: "has_hemp_rope",
@@ -733,6 +751,30 @@
       traits: "Weather wear: rain -15%",
       badge: function (s) { return s.equipped_feet_id === "wooden_clogs" ? "Worn" : "Stowed"; },
       equip: { slot: "feet", id: "wooden_clogs" }
+    },
+    {
+      id: "iron_bar", category: "provisions", owned: "has_iron_bar",
+      weight: 2.5, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_iron_bar) || 0); return "Iron Bar" + (n > 1 ? " ×" + n : ""); },
+      description: "Single forged bar of wrought iron, ready for a smith's work."
+    },
+    {
+      id: "longshade_timber", category: "provisions", owned: "has_longshade_timber",
+      weight: 6, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_longshade_timber) || 0); return "Longshade Timber" + (n > 1 ? " ×" + n : ""); },
+      description: "Seasoned length of Longshade ash, squared and ready for a wright's work."
+    },
+    {
+      id: "charcoal", category: "provisions", owned: "has_charcoal",
+      weight: 3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_charcoal) || 0); return "Charcoal" + (n > 1 ? " ×" + n : ""); },
+      description: "Sack of Ashrun charcoal, burned slow in the earth-covered mounds."
+    },
+    {
+      id: "salt", category: "provisions", owned: "has_salt",
+      weight: 2, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_salt) || 0); return "Salt" + (n > 1 ? " ×" + n : ""); },
+      description: "Two-pound sack of coarse coast salt, for curing and the cook-pot."
     },
     {
       id: "grease_flask", category: "consumables", owned: "has_grease_flask",
