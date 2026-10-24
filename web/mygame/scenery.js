@@ -165,6 +165,14 @@
     // A Dev Hub combat fixture sets this explicitly before entering combat.txt.  Do not infer any fiction
     // from the current or recently visited scene while it remains true.
     if (s.scenery_suppressed) return [];
+    // Dev Hub choices also call reusable mechanics libraries such as character_stats.txt with *gosub_scene.
+    // The child scene temporarily becomes sceneName, and would otherwise fall through to the initial
+    // "compound" district before it returns. The call stack is the durable indication that it is still a
+    // non-fiction developer flow.
+    var subscenes = s.choice_subscene_stack || [];
+    for (var si = 0; si < subscenes.length; si++) {
+      if (/^dev_hub(?:\/|$)/.test(String(subscenes[si].name || ""))) return [];
+    }
     // Developer screens are outside the fiction. Test state deliberately leaves useful world flags behind, so this
     // has to run before EVERY location rule, not merely before the final district fallback below. Combat tests
     // enter combat.txt with *gosub_scene, so they need the same exemption without muting real story combat.
