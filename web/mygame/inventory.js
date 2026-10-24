@@ -136,7 +136,7 @@
   var ID_ICON = {
     timber_axe: "w_battleaxe", stiletto: "w_dagger", iron_crowbar: "tool", torvald_iron_sallet: "h_helm", torvald_hide_cap: "h_cap",
     brigandine: "a_brig", chain_jack: "a_chain", plate_harness: "a_plate", court_coat: "a_coat", poisoners_robes: "poisoners_robes", bramble_heart: "bramble_heart", shield: "shield", toll_seal_ring: "signet",
-    warming_liniment: "salve", clear_head_draught: "elixir", althea_phial: "potion", grease_flask: "grease", alchemists_fire: "alch_fire", mortar_pestle: "mortar_pestle", empty_potion_vial: "empty_potion_vial", portable_burner: "portable_burner", linen_bandage: "bandage", lye_soap: "soap", trail_rations: "rations", barley_loaf: "barley_loaf", hard_farm_cheese: "hard_farm_cheese", orchard_apple: "orchard_apple", root_vegetable_bundle: "root_vegetable_bundle", farm_eggs: "farm_eggs", dried_pork_sausage: "dried_pork_sausage",
+    warming_liniment: "salve", clear_head_draught: "elixir", althea_phial: "potion", grease_flask: "grease", alchemists_fire: "alch_fire", mortar_pestle: "mortar_pestle", empty_potion_vial: "empty_potion_vial", portable_burner: "portable_burner", linen_bandage: "bandage", lye_soap: "soap", trail_rations: "rations", barley_loaf: "barley_loaf", hard_farm_cheese: "hard_farm_cheese", orchard_apple: "orchard_apple", root_vegetable_bundle: "root_vegetable_bundle", farm_eggs: "farm_eggs", dried_pork_sausage: "dried_pork_sausage", onions: "onions", potatoes: "potatoes", tomatoes: "tomatoes", dressed_chicken: "dressed_chicken", fresh_fish_fillet: "fresh_fish_fillet",
     hemp_rope: "rope", pitch_torch: "torch", lamp_oil: "oil", hooded_lantern: "lantern", tool_kit: "toolkit", shovel: "shovel", cooking_pot: "cooking_pot", fire_arrow: "arrow_fire", ice_arrow: "arrow_ice", lute: "lute", tinderbox: "tinder", water_jug: "water_jug", scroll_magic_missile: "scroll_magic_missile", scroll_healing_word: "scroll_healing_word", scroll_mage_armor: "scroll_mage_armor", scroll_bane: "scroll_bane", scroll_false_life: "scroll_false_life", scroll_detect_magic: "scroll_detect_magic", scroll_jump: "scroll_jump", scroll_charm_person: "scroll_charm_person", scroll_speak_with_animals: "scroll_speak_with_animals", chalk_sticks: "chalk",
     camp_kit: "blanket", waxed_oilcloth: "cloth", lockpick_set: "lockpicks", padlock: "padlock", door_bolt: "door_bolt", iron_manacles: "iron_manacles",
     broadcloth_cloak: "cloak_traveler", storm_cape: "cloak_storm", winter_cloak: "cloak_winter", summer_duster: "cloak_duster", felt_hat: "h_hat", fur_cap: "h_cap",
@@ -394,7 +394,7 @@
   if (typeof document === "undefined") return; // node tests stop here (mirrors lorebook.js)
 
   var dlg, elDoll, elBag, elTip;
-  var view = { category: "", sel: null, drag: null, slot: null, dragSlot: null, note: "", left: "you", csel: null, qty: 1, craft: "alchemy", box: [null, null, null] };
+  var view = { craftTab: "brew", category: "", sel: null, drag: null, slot: null, dragSlot: null, note: "", left: "you", csel: null, qty: 1, craft: "alchemy", box: [null, null, null] };
 
   function statsNow() { return window.stats || {}; }
 
@@ -798,7 +798,7 @@
    * CRAFT_MODES is what each kind of crafting needs: alchemy now, cooking later with its own tools. */
   var CRAFT_MODES = {
     alchemy: {
-      name: "Alchemy", tools: [
+      name: "Alchemy", fuel: { burner: "portable_burner", item: "lamp_oil", uses: 5, flame: ["known_fire_bolt", "known_prestidigitation", "known_control_flames"] }, tools: [
         { id: "empty_potion_vial", label: "Empty Potion Vial", role: "Holds the brew" },
         { id: "portable_burner", label: "Portable Burner", role: "The flame to brew over" },
         { id: "mortar_pestle", label: "Mortar and Pestle", role: "Grinds the herbs" }
@@ -820,15 +820,31 @@
     });
     return { n: n, places: places };
   }
+  // The burner's fuel (2026-10-23): a flask of lamp oil fills it for five brews (crafting.txt craft_brew pours it in by itself when it is empty), and a caster with a flame cantrip lights it for nothing.
+  function burnerState(s, mode) {
+    var f = mode.fuel;
+    if (!f) return null;
+    var lit = f.flame.some(function (k) { return truthyS(s[k]); });
+    return { lit: lit, left: Number(s.burner_fuel) || 0, uses: f.uses, flasks: craftReach(f.item, s).n, item: f.item, tool: f.burner };
+  }
+  function burnerLine(b) {
+    if (b.lit) return "Lit by your own flame";
+    return "Fuel " + b.left + " of " + b.uses + " · " + b.flasks + (b.flasks === 1 ? " flask" : " flasks");
+  }
   function craftPaneHtml(s) {
     var mode = CRAFT_MODES[view.craft || "alchemy"], html = '<div class="inv-cpane inv-craft"><div class="inv-craft-title">' + esc(mode.name) + "</div>" +
+      '<div class="inv-craft-tabs" role="tablist"><button type="button" class="inv-ctab" data-craft-tab="brew" aria-pressed="' + (view.craftTab !== "recipes") + '">Brew</button><button type="button" class="inv-ctab" data-craft-tab="recipes" aria-pressed="' + (view.craftTab === "recipes") + '">Recipes</button></div>';
+    if (view.craftTab === "recipes") return html + recipesHtml(s) + "</div>";
+    html +=
       '<div class="inv-cnote">All reachable tools are ready to use—no dragging needed.</div><div class="inv-craft-tools">';
+    var bs = burnerState(s, mode);
     mode.tools.forEach(function (t) {
       var r = craftReach(t.id, s), have = r.n > 0;
       html += '<div class="inv-craft-tool' + (have ? "" : " inv-craft-miss") + '" data-tool="' + esc(t.id) + '">' +
         '<span class="inv-tile inv-slot' + (have ? "" : " inv-slot-empty") + '" aria-label="' + esc(t.label + (have ? "" : ": missing")) + '">' + iconImg(ID_ICON[t.id] || "misc") + "</span>" +
         '<span class="inv-craft-name">' + esc(t.label) + "</span>" +
-        '<span class="inv-craft-src">' + esc(have ? r.places.join(", ") + (r.n > 1 ? " ×" + r.n : "") : "You have none") + "</span></div>";
+        '<span class="inv-craft-src">' + esc(have ? r.places.join(", ") + (r.n > 1 ? " ×" + r.n : "") : "You have none") + "</span>" +
+        (have && bs && t.id === bs.tool ? '<span class="inv-craft-src inv-craft-fuel' + (!bs.lit && bs.left <= 0 && bs.flasks <= 0 ? " inv-craft-nofuel" : "") + '">' + esc(burnerLine(bs)) + "</span>" : "") + "</div>";
     });
     html += "</div>";
     normalizeBox(s);
@@ -852,12 +868,40 @@
       (why ? '<div class="inv-craft-why">' + esc(why) + "</div>" : (res.recipe ? '<div class="inv-cnote">A brew takes 20 to 30 minutes. A failed brew loses one ingredient and keeps the vial.</div>' : "")) + "</div>";
     return html + "</div>";
   }
-  // Why the brew cannot be made now, or "": a fight, a missing tool, and later the place (the user: an inn room, the Middle Ward apartment, the overworld; not decided yet).
+  // The recipes the character knows, one row each: the potion, its two herbs with how many are carried, and a click that puts the herbs in the boxes and goes back to Brew.
+  function ingredientName(id) {
+    var f = null;
+    data().items.forEach(function (i) { if (i.id === id) f = i; });
+    return f ? splitCount(String(evalField(f.name, statsNow()))).name : id;
+  }
+  function knownRecipes(s) {
+    return ((window.CRAFT_RECIPES || {})[view.craft || "alchemy"] || []).filter(function (r) { return truthyS(s["recipe_" + r.id]); });
+  }
+  function recipesHtml(s) {
+    var list = knownRecipes(s);
+    if (!list.length) return '<div class="inv-cnote">No recipes yet. Brew matching herbs to discover them.</div>';
+    var html = '<div class="inv-cnote">Click a recipe to put its herbs in the boxes.</div><div class="inv-recipes">';
+    list.forEach(function (r) {
+      var a = r.ingredients[0], b = r.ingredients[1], na = Number(s[a]) || 0, nb = Number(s[b]) || 0, ok = na > 0 && nb > 0, miss = [];
+      if (na <= 0) miss.push(ingredientName(a));
+      if (nb <= 0) miss.push(ingredientName(b));
+      html += '<button type="button" class="inv-recipe' + (ok ? "" : " inv-recipe-off") + '" data-recipe="' + esc(r.id) + '"' + (ok ? "" : " disabled") + ' aria-label="' + esc(r.name + (ok ? "" : ": you need " + miss.join(" and "))) + '">' +
+        '<span class="inv-tile inv-recipe-out">' + iconImg(r.icon) + "</span>" +
+        '<span class="inv-recipe-text"><span class="inv-recipe-name">' + esc(r.name) + '</span><span class="inv-recipe-sub">' + esc(ok ? effectLabel(r.property) + " · DC " + r.dc : "You need " + miss.join(" and ")) + "</span></span>" +
+        '<span class="inv-recipe-herbs"><span class="inv-recipe-herb' + (na > 0 ? "" : " inv-recipe-miss") + '" title="' + esc(ingredientName(a)) + '">' + iconImg(ID_ICON[a] || "misc") + "<b>" + na + '</b></span><span class="inv-recipe-herb' + (nb > 0 ? "" : " inv-recipe-miss") + '" title="' + esc(ingredientName(b)) + '">' + iconImg(ID_ICON[b] || "misc") + "<b>" + nb + "</b></span></span></button>";
+    });
+    return html + "</div>";
+  }
+  // Why the brew cannot be made now, or "": a fight, a place where the Wait menu is closed (pagegate.js), or a missing tool.
   function craftWhy(s) {
     var mode = CRAFT_MODES[view.craft || "alchemy"], missing = [];
     if (truthyS(s.combat_engaged)) return "Not in the middle of a fight.";
+    // THE PLACE (2026-10-23, the user: for now, brewing is open wherever the Wait menu is): the same page gate the sidebar's Wait button asks (pagegate.js), so a page that allows waiting allows a brew, and a quest page, a conversation, a busy dungeon node or the prologue does not.
+    if (window.PageGate && window.PageGate.waitReason()) return "You can brew only where you could stop and wait: the streets of a district, a town, the road, or a quiet passage in a dungeon.";
     mode.tools.forEach(function (t) { if (craftReach(t.id, s).n <= 0) missing.push(t.label.toLowerCase()); });
     if (missing.length) return "You need your " + missing.join(" and ") + ".";
+    var bs = burnerState(s, mode);
+    if (bs && !bs.lit && bs.left <= 0 && bs.flasks <= 0) return "Your burner has no oil.";
     if (!canUse()) return "You cannot brew from here right now.";
     return "";
   }
@@ -868,12 +912,17 @@
     var ids = view.box.filter(Boolean), why = res.recipe ? craftWhy(s) : "Nothing to brew yet.";
     if (why || ids.length !== 2) { note(why || "Two ingredients are needed."); render(); return; }
     // the vial is used from the pack: if it is only in a container, one is taken out first
-    var vial = stowItem("empty_potion_vial");
-    if (vial && haveOf(vial, s) <= 0) {
-      var cfg = containersCfg().filter(function (c) { return stowedOf(c.id, vial.id, s) > 0 && !containerBlock(c.id, s); })[0];
-      var mv = cfg ? takeUnits(cfg.id, vial.id, 1) : { moved: 0, why: "Your vial is out of reach." };
-      if (!mv.moved) { note(mv.why || "Your vial is out of reach."); render(); return; }
+    var pulls = ["empty_potion_vial"], bst = burnerState(s, CRAFT_MODES[view.craft || "alchemy"]);
+    if (bst && !bst.lit && bst.left <= 0) pulls.push(bst.item);
+    for (var pi = 0; pi < pulls.length; pi++) {
+      var pit = stowItem(pulls[pi]);
+      if (pit && haveOf(pit, s) <= 0) {
+        var cfg = containersCfg().filter(function (c) { return stowedOf(c.id, pit.id, s) > 0 && !containerBlock(c.id, s); })[0];
+        var mv = cfg ? takeUnits(cfg.id, pit.id, 1) : { moved: 0, why: "That is out of reach." };
+        if (!mv.moved) { note(mv.why || "That is out of reach."); render(); return; }
+      }
     }
+    s.craft_burner = !!bst;
     var ra = findOwned(ids[0]), rb = findOwned(ids[1]);
     s.craft_potion = res.recipe.id; s.craft_potion_name = res.recipe.name; s.craft_dc = res.recipe.dc;
     s.craft_a = ids[0]; s.craft_b = ids[1];
@@ -1178,7 +1227,7 @@
   }
 
   function onClick(ev) {
-    var t = ev.target && ev.target.closest ? ev.target.closest("[data-act], [data-cat], [data-item], [data-slot], .inv-blank[data-cell], [data-takeoff], [data-pop-shield], [data-attune], [data-swap-sidearm], [data-equip-sel], [data-use], [data-left], [data-citem], [data-qty], [data-qty-set], [data-xfer], [data-box], [data-craft-go]") : null;
+    var t = ev.target && ev.target.closest ? ev.target.closest("[data-act], [data-cat], [data-item], [data-slot], .inv-blank[data-cell], [data-takeoff], [data-pop-shield], [data-attune], [data-swap-sidearm], [data-equip-sel], [data-use], [data-left], [data-citem], [data-qty], [data-qty-set], [data-xfer], [data-box], [data-craft-go], [data-craft-tab], [data-recipe]") : null;
     if (!t || !dlg.contains(t)) {
       if (view.slot) { view.slot = null; render(); }   // a click on empty space puts the lit slot away
       return;
@@ -1216,6 +1265,13 @@
       return;
     }
     if (t.hasAttribute("data-craft-go")) { if (!t.disabled) craftNow(); return; }
+    if (t.hasAttribute("data-craft-tab")) { view.craftTab = t.getAttribute("data-craft-tab"); note(""); render(); return; }
+    if (t.hasAttribute("data-recipe")) {
+      if (t.disabled) return;
+      var rid = t.getAttribute("data-recipe"), rr = ((window.CRAFT_RECIPES || {})[view.craft || "alchemy"] || []).filter(function (x) { return x.id === rid; })[0];
+      if (rr) { view.box = [rr.ingredients[0], rr.ingredients[1], null]; normalizeBox(statsNow()); view.craftTab = "brew"; note(""); render(); }
+      return;
+    }
     if (t.hasAttribute("data-box")) { view.box[Number(t.getAttribute("data-box"))] = null; note(""); render(); return; }
     if (t.hasAttribute("data-use")) { if (!t.disabled) useItem(t.getAttribute("data-use")); return; }
     if (t.hasAttribute("data-cat")) { view.category = t.getAttribute("data-cat"); render(); return; }

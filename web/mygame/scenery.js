@@ -73,7 +73,39 @@
     "prologue/battle_black_sinks": "siege"
   };
 
+  // These files are rule libraries entered with *gosub_scene, rather than places the player can enter.
+  // ChoiceScript temporarily writes their filename to stats.sceneName while they run.  If the scenery
+  // refresh happens in that small window, resolving them as locations falls through to the remembered
+  // district and briefly paints an exterior over the actual room.  They inherit the nearest real caller
+  // from ChoiceScript's own return stack instead.
+  var CONTEXT_CHILD_SCENES = {
+    calendar: 1, economy: 1, character_buffs: 1, character_progression: 1, character_stats: 1,
+    combat_ai: 1, combat_dice: 1, combat_movement: 1, combat_prose: 1, combat_spells: 1,
+    combat_types: 1, dice_engine: 1, equipment: 1
+  };
+
   function slug(v) { return String(v || "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, ""); }
+
+  function storyContext(s, subscenes) {
+    if (!CONTEXT_CHILD_SCENES[String(s.sceneName || "")]) return s;
+    for (var i = subscenes.length - 1; i >= 0; i--) {
+      var caller = String(subscenes[i].name || "");
+      if (caller && !CONTEXT_CHILD_SCENES[caller]) {
+        var inherited = Object.create(s);
+        inherited.sceneName = caller;
+        return inherited;
+      }
+    }
+    return s;
+  }
+
+  function isStatsOverlay(s, subscenes) {
+    if (String(s.sceneName || "") === "choicescript_stats") return true;
+    for (var i = 0; i < subscenes.length; i++) {
+      if (String(subscenes[i].name || "") === "choicescript_stats") return true;
+    }
+    return false;
+  }
 
   // the rules, tried in order; each gets the stats and returns the name of where the player is, or nothing
   function tile(s) { var O = window.Overworld; return s.ow_on && O && O.nodes ? O.nodes[s.ow_pos] : null; }
@@ -86,6 +118,7 @@
     function (s) { return s.ow_on && s.ow_pos === "bs" ? "black_sinks_gilded_scales_toll_fort" : undefined; }, // repaired Gilded Scales toll fort, reached only after the prologue
     function (s) { return s.sceneName === "overworld/camp" && s.has_camp_kit ? "generic_camp_tent_interior" : undefined; }, // the player-owned solo tent, never a company bivouac
     function (s) { return s.sceneName === "timbermouth/workshops" && s.shop_open === "works" ? "generic_workshop_smithy" : undefined; }, // Roan's enclosed trade bench; the lane remains Timbermouth
+    function (s) { return s.sceneName === "alderford/timber_smithy" && s.shop_open === "torvald" ? "generic_workshop_smithy" : undefined; }, // Torvald trades from the Timber Smithy's waterwheel forge, not a generic shop counter
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_halda_forge" && s.shop_open === "halda" ? "generic_workshop_smithy" : undefined; }, // Halda trades from a working forge, not a goods shop
     function (s) { return s.sceneName === "port_valen/port_valen_upper_wharves" && s.scenery_subplace === "patrician_inner_gate" ? "patrician_inner_gate" : undefined; }, // the Patrician Quarter's writ gate
     function (s) { return s.sceneName === "port_valen/port_valen_upper_wharves" && s.scenery_subplace === "patrician_avenue" ? "patrician_avenue" : undefined; }, // Avenue of Estates, including its great-house stretch
@@ -178,6 +211,9 @@
     // enter combat.txt with *gosub_scene, so they need the same exemption without muting real story combat.
     var sn = String(s.sceneName || "");
     if (/^dev_hub(?:\/|$)/.test(sn) || (sn === "combat" && /^fight_/.test(String(s.dctest_label || "")))) return [];
+    // Mechanics helpers have no world location of their own.  Keep their caller's backdrop during the
+    // transaction/calculation, including nested helpers such as economy -> calendar -> character_buffs.
+    s = storyContext(s, subscenes);
     var out = [], alone = SCENE_PLACES[s.sceneName] ? 1 : (s.dg_in_run && s.dg_table && s.dg_table !== "none" ? 3 : 0);
     for (var i = 0; i < RULES.length; i++) {
       var name = slug(RULES[i](s)); if (name && out.indexOf(name) < 0) out.push(name);
@@ -280,7 +316,7 @@
     // choicescript_stats is the dossier overlay. Re-resolving that bookkeeping scene would fall through to a
     // stale district (or no place) and replace the view the player was just standing in. Reuse the displayed
     // key instead; the lighting below still reads the current clock, so waiting through dusk changes the view.
-    var key = String(s.sceneName || "") === "choicescript_stats" ? curKey : sceneKey(s);
+    var key = isStatsOverlay(s, s.choice_subscene_stack || []) ? curKey : sceneKey(s);
     if (key === "") return;                                              // still loading: no change yet
     if (!key) {
       // Developer and other deliberately scenery-free pages must not leave a previously painted stage

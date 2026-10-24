@@ -1903,12 +1903,17 @@ You wake to grey pre-dawn light through the gatehouse's broken roof, stiff, sore
   *temp battle_damage_roll 0
   *rand battle_damage_roll 1 6
   *set battle_damage_roll + 2
-  *if ((character_class = "barbarian") and (is_raging))
+  *comment Rage resists bludgeoning, piercing and slashing only (2026-10-23, the user): every hit in this battle is a blade, an arrow or a blow, so "physical" is the default, and a hit of any other type is marked in battle_damage_type before the gosub.
+  *temp battle_rage_halves false
+  *if ((battle_damage_type = "physical") or (((battle_damage_type = "bludgeoning") or (battle_damage_type = "piercing")) or (battle_damage_type = "slashing")))
+    *set battle_rage_halves true
+  *if (((character_class = "barbarian") and (is_raging)) and (battle_rage_halves))
     *comment RAW rounds resistance damage down -- plain "/ 2" on an odd
     *comment number produces a fractional HP value, which ChoiceScript's
     *comment *set happily stores and prints. Floor it first.
     *set battle_damage_roll ((battle_damage_roll - (battle_damage_roll modulo 2)) / 2)
   *set hp_current - battle_damage_roll
+  *set battle_damage_type "physical"
   *set damage_roll_locked true
   *set locked_damage_page_id page_id
 *if (hp_current <= 0)

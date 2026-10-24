@@ -443,7 +443,8 @@ ${combat_player_dmg_roll_banner}
   *comment That is the cost of treating melee as a shared adjacency bucket; a real per-pair distance would
   *comment close both this gap and the interception looseness documented in find_intercepting_ally.
   *temp cea_ranged_pinned false
-  *if ((combat_enemy_weapon_type = "ranged") and (combat_enemy_range <= 0))
+  *comment 2026-10-23 (the user): any opponent in the shooter's tile counts, not only the player (combat_ranged_cornered, set by choose_ranged_enemy_target), as the 2024 rule has it: a ranged attack roll, a spell attack included, has disadvantage while a hostile is within 5 feet.
+  *if ((combat_enemy_weapon_type = "ranged") and ((combat_enemy_range <= 0) or (combat_ranged_cornered)))
     *set cea_ranged_pinned true
   *temp cea_roll 0
   *rand cea_roll 1 20
@@ -766,13 +767,24 @@ ${combat_player_dmg_roll_banner}
   *temp reao_roll 0
   *rand reao_roll 1 20
   *temp reao_adv_label ""
-  *if ((combat_enemy_disadvantage) and (not(combat_enemy_advantage)))
+  *comment 2026-10-23 (the user): a ranged attacker with any opponent in its tile shoots an ally at disadvantage too (the same pin as resolve_enemy_attack's cea_ranged_pinned); a quick-drawn sidearm is melee and is not pinned.
+  *temp reao_pinned false
+  *if ((combat_enemy_weapon_type = "ranged") and (combat_ranged_cornered))
+    *set reao_pinned true
+  *temp reao_dis false
+  *if ((combat_enemy_disadvantage) or (reao_pinned))
+    *if (not(combat_enemy_advantage))
+      *set reao_dis true
+  *if (reao_dis)
     *temp reao_roll_2 0
     *rand reao_roll_2 1 20
     *if (reao_roll_2 < reao_roll)
       *set reao_roll reao_roll_2
-    *set reao_adv_label " (Disadvantage)"
-  *if ((combat_enemy_advantage) and (not(combat_enemy_disadvantage)))
+    *if (reao_pinned)
+      *set reao_adv_label " (Disadvantage — in reach)"
+    *else
+      *set reao_adv_label " (Disadvantage)"
+  *if ((combat_enemy_advantage) and ((not(combat_enemy_disadvantage)) and (not(reao_pinned))))
     *temp reao_roll_2 0
     *rand reao_roll_2 1 20
     *if (reao_roll_2 > reao_roll)

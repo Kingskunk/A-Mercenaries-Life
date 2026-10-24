@@ -329,7 +329,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "weapon_damage": {
           "type": "literal",
-          "value": "1d6 bludgeoning"
+          "value": "1d8 bludgeoning"
         },
         "weapon_damage_type": {
           "type": "literal",
@@ -458,7 +458,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "weapon_damage": {
           "type": "literal",
-          "value": "1d6/1d8 piercing"
+          "value": "1d8 piercing"
         },
         "weapon_damage_type": {
           "type": "literal",
@@ -714,7 +714,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "sidearm_damage": {
           "type": "literal",
-          "value": "1d6/1d8 piercing"
+          "value": "1d8 piercing"
         },
         "sidearm_damage_type": {
           "type": "literal",
@@ -1104,7 +1104,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "sidearm_damage": {
           "type": "literal",
-          "value": "1d6 bludgeoning"
+          "value": "1d8 bludgeoning"
         },
         "sidearm_damage_type": {
           "type": "literal",

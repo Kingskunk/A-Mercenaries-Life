@@ -679,7 +679,7 @@ window.TRADE_DATA = {
   "warming_liniment": {
    "name": "warming liniment",
    "title": "Warming Liniment",
-   "kind": "consumable",
+   "kind": "ingredient",
    "group": "",
    "tier": "",
    "retail": 10,
@@ -2535,7 +2535,7 @@ window.TRADE_DATA = {
    "retail": 15,
    "weight": 4,
    "minutes": 10,
-   "hint": "1d6 Bludgeoning, One-Handed",
+   "hint": "1d8 Bludgeoning, One-Handed",
    "slot": "Weapon",
    "stack": true,
    "sell": {
@@ -2626,6 +2626,31 @@ window.TRADE_DATA = {
     "countVar": ""
    }
   },
+  "fresh_fish_fillet": {
+   "name": "fresh fish fillet",
+   "title": "Fresh Fish Fillet",
+   "kind": "ingredient",
+   "group": "",
+   "tier": "",
+   "retail": 2,
+   "weight": 0.75,
+   "minutes": 5,
+   "hint": "Fresh cooking ingredient",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
   "barley_loaf": {
    "name": "barley loaf",
    "title": "Barley Loaf",
@@ -2704,13 +2729,13 @@ window.TRADE_DATA = {
   "root_vegetable_bundle": {
    "name": "root-vegetable bundle",
    "title": "Root-Vegetable Bundle",
-   "kind": "consumable",
+   "kind": "ingredient",
    "group": "",
    "tier": "",
    "retail": 1,
    "weight": 1,
    "minutes": 5,
-   "hint": "Holds off about 9 hours of hunger",
+   "hint": "Raw cooking ingredients",
    "slot": "",
    "stack": true,
    "sell": {
@@ -2729,13 +2754,13 @@ window.TRADE_DATA = {
   "farm_eggs": {
    "name": "farm eggs",
    "title": "Farm Eggs",
-   "kind": "consumable",
+   "kind": "ingredient",
    "group": "",
    "tier": "",
    "retail": 1,
    "weight": 0.75,
    "minutes": 5,
-   "hint": "Holds off about 9 hours of hunger",
+   "hint": "Raw cooking ingredient",
    "slot": "",
    "stack": true,
    "sell": {
@@ -2761,6 +2786,106 @@ window.TRADE_DATA = {
    "weight": 0.4,
    "minutes": 5,
    "hint": "Holds off about 12 hours of hunger",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
+  "onions": {
+   "name": "onions",
+   "title": "Onions",
+   "kind": "ingredient",
+   "group": "",
+   "tier": "",
+   "retail": 1,
+   "weight": 0.5,
+   "minutes": 5,
+   "hint": "Raw cooking ingredient",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
+  "potatoes": {
+   "name": "potatoes",
+   "title": "Potatoes",
+   "kind": "ingredient",
+   "group": "",
+   "tier": "",
+   "retail": 1,
+   "weight": 1,
+   "minutes": 5,
+   "hint": "Raw cooking ingredient",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
+  "tomatoes": {
+   "name": "tomatoes",
+   "title": "Tomatoes",
+   "kind": "ingredient",
+   "group": "",
+   "tier": "",
+   "retail": 1,
+   "weight": 0.75,
+   "minutes": 5,
+   "hint": "Fresh cooking ingredient",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
+  "dressed_chicken": {
+   "name": "dressed chicken",
+   "title": "Dressed Chicken",
+   "kind": "ingredient",
+   "group": "",
+   "tier": "",
+   "retail": 5,
+   "weight": 3,
+   "minutes": 5,
+   "hint": "Raw cooking ingredient",
    "slot": "",
    "stack": true,
    "sell": {
@@ -2829,13 +2954,13 @@ window.TRADE_DATA = {
   "boar_meat": {
    "name": "boar meat",
    "title": "Boar Meat",
-   "kind": "consumable",
+   "kind": "ingredient",
    "group": "",
    "tier": "",
    "retail": 6,
    "weight": 2,
    "minutes": 5,
-   "hint": "Eases hunger, about a third of a meal",
+   "hint": "Raw cooking ingredient",
    "slot": "",
    "stack": true,
    "sell": {
@@ -2904,13 +3029,13 @@ window.TRADE_DATA = {
   "venison": {
    "name": "venison",
    "title": "Venison",
-   "kind": "consumable",
+   "kind": "ingredient",
    "group": "",
    "tier": "",
    "retail": 6,
    "weight": 2,
    "minutes": 5,
-   "hint": "Eases hunger, about a third of a meal",
+   "hint": "Raw cooking ingredient",
    "slot": "",
    "stack": true,
    "sell": {
@@ -3296,7 +3421,8 @@ window.TRADE_DATA = {
     "camp_kit",
     "waxed_oilcloth",
     "lye_soap",
-    "trail_rations"
+    "trail_rations",
+    "fresh_fish_fillet"
    ],
    "sell": [
     "hemp_rope",
@@ -3347,7 +3473,11 @@ window.TRADE_DATA = {
     "orchard_apple",
     "root_vegetable_bundle",
     "farm_eggs",
-    "dried_pork_sausage"
+    "dried_pork_sausage",
+    "onions",
+    "potatoes",
+    "tomatoes",
+    "dressed_chicken"
    ],
    "sell": []
   },
@@ -3382,6 +3512,14 @@ window.TRADE_DATA = {
     "boar_meat",
     "venison"
    ]
+  },
+  "fish_slip": {
+   "title": "Fishmongers' Slip",
+   "buyer": "",
+   "buy": [
+    "fresh_fish_fillet"
+   ],
+   "sell": []
   }
  }
 };

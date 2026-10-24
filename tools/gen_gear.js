@@ -46,7 +46,7 @@ function has(it, key) { return it[key] !== undefined && it[key] !== null && it[k
 function isHand(it) { return !!(it.flags && it.flags.hand); }
 function makesFlag(it) { return !(it.flags && it.flags.create === false); }
 
-var STACKABLE_KINDS = ["armor", "shield", "weapon", "head", "tool", "consumable", "cloak", "hands", "waist", "feet", "neck", "valuable"];
+var STACKABLE_KINDS = ["armor", "shield", "weapon", "head", "tool", "ingredient", "consumable", "cloak", "hands", "waist", "feet", "neck", "valuable"];
 // Clothing kinds worn in their own slot. Each has equipped_<kind>_id, <kind>_desc and <kind>_prose in equipment.txt.
 var CLOTHING = ["cloak", "hands", "waist", "feet", "neck"];
 function isClothing(it) { return CLOTHING.indexOf(it.kind) !== -1; }
@@ -225,7 +225,7 @@ function foodItems() {
     return { id: it.id, one: it.ate ? it.ate.one : it.name, many: it.ate ? it.ate.many : it.name, mins: it.effect.food || 2160, auto: it.effect.autoEat !== false, after: it.effect.autoEatAfter || "", order: it.effect.autoEatOrder !== undefined ? it.effect.autoEatOrder : -(it.effect.food || 2160), i: i };
   }).sort(function (a, b) { return a.order - b.order || a.i - b.i; });
 }
-function genFoodPickList() {
+function genFoodPickList(withGates) {
   var L = ["*set fp_n " + foodItems().length];
   // the per-food tally (food_cnt_<n>) is hand-made state: one *create in startup_parts/24 and one *set in calendar.txt food_note_clear for every food, so a new food must not outrun them
   var tallyPart = fs.readFileSync(path.join(SCENES, "startup_parts", "24_district_tracking.txt"), "utf8"), tallyCal = fs.readFileSync(path.join(SCENES, "calendar.txt"), "utf8");
@@ -235,6 +235,7 @@ function genFoodPickList() {
   foodItems().forEach(function (f, k) {
     L.push("*if (fp_i = " + (k + 1) + ")");
     L.push("  *set fp_id " + q(f.id));
+    if (withGates && f.after) L.push("  *set fp_gate_ok " + f.after);
   });
   return L;
 }
@@ -335,7 +336,7 @@ var EQUIPPED_VAR = { weapon: "equipped_weapon_id", head: "equipped_head_id", arm
 function capFirst(x) { return x.charAt(0).toUpperCase() + x.slice(1); }
 function listed() { return items.filter(function (it) { return it.dossier && !isHand(it); }); }
 
-var INV_CATEGORY = { weapon: "weapons", armor: "apparel", head: "apparel", tool: "provisions", consumable: "consumables", valuable: "valuables",
+var INV_CATEGORY = { weapon: "weapons", armor: "apparel", head: "apparel", tool: "provisions", ingredient: "provisions", consumable: "consumables", valuable: "valuables",
   cloak: "apparel", hands: "apparel", waist: "apparel", feet: "apparel", neck: "apparel", ring: "accessories" };
 // The load rules the pack reads (inventory.js): capacity, coin weights and the starting gear that is not catalog stock. Weights are per ONE item; a stack weighs weight x quantity.
 function genLoadConfig() {
@@ -658,8 +659,8 @@ CLOTHING.forEach(function (k) { setRegion(F.equipment, k + "_items", loadoutBloc
 setRegion(F.equipment, "garment_traits_items", genGarmentTraits());
 setRegion(F.inventory, "gear_items", genInventory());
 setRegion(F.inventory, "load_config", genLoadConfig());
-setRegion(F.calendar, "food_pick_list", genFoodPickList());
-setRegion(F.calendar, "food_note_list", genFoodPickList());
+setRegion(F.calendar, "food_pick_list", genFoodPickList(true));
+setRegion(F.calendar, "food_note_list", genFoodPickList(false));
 setRegion(F.overworldmap, "food_items", genFoodItemsJs());
 setRegion(F.combat, "combat_throw_options", genThrowOptions());
 setRegion(F.combat, "combat_arrow_options", genArrowOptions());

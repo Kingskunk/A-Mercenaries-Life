@@ -297,6 +297,27 @@
         *set combat_ai_terrain_step_destination ccrts_current_position
         *set combat_ai_terrain_step_reason "none"
         *set combat_ai_terrain_hold_position false
+*comment KITE TO THE EDGE (2026-10-23, the user: a mage nearer his target than he need be should step back, not stand and cast): a profile with combat_behavior_kite_to_edge takes one legal step directly away from its target when no other step was chosen, the target is nearer than the edge of its reach, and it is not standing on terrain it values. The destination is one tile farther, never beyond its reach. It still attacks this turn, like every ranged enemy that repositions.
+*if ((ccrts_actor_kind = "enemy") and ((combat_ai_terrain_step_direction = "none") and (combat_behavior_kite_to_edge > 0)))
+  *if (not(combat_ai_terrain_hold_position))
+    *temp ccrts_k_class {(("combat_enemy" & ccrts_actor_slot) & "_reach")}
+    *gosub_scene combat_movement combat_reach_tier ccrts_k_class
+    *temp ccrts_k_tier combat_reach_tier_result
+    *temp ccrts_k_d (ccrts_current_position - ccrts_target_position)
+    *if (ccrts_k_d < 0)
+      *set ccrts_k_d (0 - ccrts_k_d)
+    *if ((ccrts_k_d > 0) and (ccrts_k_d < ccrts_k_tier))
+      *temp ccrts_k_dest ccrts_current_position
+      *if (ccrts_current_position > ccrts_target_position)
+        *set ccrts_k_dest + 1
+      *else
+        *set ccrts_k_dest - 1
+      *gosub combat_ai_terrain_destination_is_legal ccrts_actor_kind ccrts_actor_slot ccrts_k_dest
+      *if (combat_ai_terrain_destination_legal)
+        *set combat_ai_terrain_step_direction "kite"
+        *set combat_ai_terrain_step_destination ccrts_k_dest
+        *set combat_ai_terrain_step_reason "kite"
+        *set combat_ai_terrain_hold_position false
 *comment REACH GUARD (2026-10-23, the user): an enemy never steps (for cover, high ground or to keep its distance) to a tile from which its own reach no longer covers its target, unless the step gets it nearer. Without this a mage whose spray is medium stepped back to Long Range and sprayed from there.
 *if ((ccrts_actor_kind = "enemy") and (combat_ai_terrain_step_direction != "none"))
   *temp ccrts_class {(("combat_enemy" & ccrts_actor_slot) & "_reach")}

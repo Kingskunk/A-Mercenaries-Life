@@ -21,18 +21,37 @@
 *if (cb_have_b < 1)
   *set craft_text "You have no ${craft_b_name} left."
   *return
+*comment THE BURNER'S FLAME (2026-10-23, the user): a brew over the burner burns one of its five uses (burner_fuel), whether it works or not; an empty burner takes a flask of lamp oil from the pack to fill (five uses), and with no flask the brew is refused before anything is spent. A flame cantrip lights it for nothing.
+*temp cb_flame (((known_fire_bolt) or (known_prestidigitation)) or (known_control_flames))
+*temp cb_poured false
+*if ((craft_burner) and (not(cb_flame)))
+  *if (burner_fuel <= 0)
+    *gosub_scene equipment gear_count "lamp_oil"
+    *if (gear_qty < 1)
+      *set craft_text "Your burner has no oil."
+      *return
+    *gosub_scene equipment sell_gear "lamp_oil"
+    *set burner_fuel 5
+    *set cb_poured true
 *gosub_scene dice_engine roll_skill_check craft_dc "nature" "" "medicine" "" "" ""
 *set craft_ok check_success
 *temp cb_minutes 25
 *rand cb_minutes 20 30
 *temp cb_lost 1
 *rand cb_lost 1 2
+*if ((craft_burner) and (not(cb_flame)))
+  *set burner_fuel - 1
 *if (craft_ok)
   *set {craft_a} (cb_have_a - 1)
   *set {craft_b} (cb_have_b - 1)
   *gosub_scene equipment sell_gear "empty_potion_vial"
   *gosub_scene equipment grant_gear craft_potion 1
   *set craft_text "🧪 Brewed ${craft_potion_name} (check ${check_total} against ${craft_dc}). ${cb_minutes} minutes."
+  *comment The first success teaches the recipe (the Craft view's Recipes list reads recipe_<id>).
+  *temp cb_flag ("recipe_" & craft_potion)
+  *if (not({cb_flag}))
+    *set {cb_flag} true
+    *set craft_text "${craft_text} New recipe learned."
 *else
   *if (cb_lost = 1)
     *set {craft_a} (cb_have_a - 1)
@@ -40,6 +59,8 @@
   *else
     *set {craft_b} (cb_have_b - 1)
     *set craft_text "The brew fouls (check ${check_total} against ${craft_dc}) and the ${craft_b_name} is lost. Your vial is safe. ${cb_minutes} minutes."
+*if (cb_poured)
+  *set craft_text "${craft_text} You fill the burner from a flask of oil."
 *set hours_to_pass 0
 *set minutes_to_pass cb_minutes
 *set time_advance_call_id "craft_brew_time"

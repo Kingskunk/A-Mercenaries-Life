@@ -226,13 +226,10 @@
       equip: { slot: "armor", id: "plate_harness" }
     },
     {
-      id: "warming_liniment", category: "consumables", owned: "has_warming_liniment",
+      id: "warming_liniment", category: "provisions", owned: "has_warming_liniment",
       weight: 0.5, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_warming_liniment) || 0); return "Warming Liniment" + (n > 1 ? " ×" + n : ""); },
-      description: "Pot of grey camphor-and-thyme tallow for stiff joints.",
-      badge: function (s) { return "+1 STR for 12 hours" + (function (s) { for (var n = 1; n <= 3; n++) { var a = s["unique_buff" + n + "_active"]; if ((a === true || a === "true") && s["unique_buff" + n + "_name"] === "Warming Liniment") return true; } return false; }(s) ? " · active, using it refreshes" : ""); },
-      useLabel: function (s) { return function (s) { for (var n = 1; n <= 3; n++) { var a = s["unique_buff" + n + "_active"]; if ((a === true || a === "true") && s["unique_buff" + n + "_name"] === "Warming Liniment") return true; } return false; }(s) ? "Refresh" : "Use"; },
-      use: true
+      description: "Pot of grey camphor-and-thyme tallow for stiff joints."
     },
     {
       id: "clear_head_draught", category: "consumables", owned: "has_clear_head_draught",
@@ -292,20 +289,16 @@
       use: true
     },
     {
-      id: "boar_meat", category: "consumables", owned: "has_boar_meat",
+      id: "boar_meat", category: "provisions", owned: "has_boar_meat",
       weight: 2, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_boar_meat) || 0); return "Boar Meat" + (n > 1 ? " ×" + n : ""); },
-      description: "Dark, close-grained meat from a wild boar, a hearty meal and a trapper's trade.",
-      badge: "Holds off about 12 hours of hunger",
-      use: true
+      description: "Dark, close-grained meat from a wild boar, for cooking or a trapper's trade."
     },
     {
-      id: "venison", category: "consumables", owned: "has_venison",
+      id: "venison", category: "provisions", owned: "has_venison",
       weight: 2, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_venison) || 0); return "Venison" + (n > 1 ? " ×" + n : ""); },
-      description: "Lean, dark meat from an elk, a hearty meal and a trapper's trade.",
-      badge: "Holds off about 12 hours of hunger",
-      use: true
+      description: "Lean, dark meat from an elk, for cooking or a trapper's trade."
     },
     {
       id: "barley_loaf", category: "consumables", owned: "has_barley_loaf",
@@ -332,20 +325,16 @@
       use: true
     },
     {
-      id: "root_vegetable_bundle", category: "consumables", owned: "has_root_vegetable_bundle",
+      id: "root_vegetable_bundle", category: "provisions", owned: "has_root_vegetable_bundle",
       weight: 1, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_root_vegetable_bundle) || 0); return "Root-Vegetable Bundle" + (n > 1 ? " ×" + n : ""); },
-      description: "String-tied carrots and turnips from the village root fields.",
-      badge: "Holds off about 9 hours of hunger",
-      use: true
+      description: "String-tied carrots and turnips from the village root fields, ready for a pot."
     },
     {
-      id: "farm_eggs", category: "consumables", owned: "has_farm_eggs",
+      id: "farm_eggs", category: "provisions", owned: "has_farm_eggs",
       weight: 0.75, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_farm_eggs) || 0); return "Farm Eggs" + (n > 1 ? " ×" + n : ""); },
-      description: "Six brown eggs packed safely in straw.",
-      badge: "Holds off about 9 hours of hunger",
-      use: true
+      description: "Six brown eggs packed safely in straw, for frying, baking, or a pot."
     },
     {
       id: "dried_pork_sausage", category: "consumables", owned: "has_dried_pork_sausage",
@@ -354,6 +343,36 @@
       description: "Short smoked pork sausage, wrapped for travel.",
       badge: "Holds off about 12 hours of hunger",
       use: true
+    },
+    {
+      id: "onions", category: "provisions", owned: "has_onions",
+      weight: 0.5, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_onions) || 0); return "Onions" + (n > 1 ? " ×" + n : ""); },
+      description: "Four dry onions on a stem-string, a cheap base for a pot or a roadside meal."
+    },
+    {
+      id: "potatoes", category: "provisions", owned: "has_potatoes",
+      weight: 1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_potatoes) || 0); return "Potatoes" + (n > 1 ? " ×" + n : ""); },
+      description: "Small potatoes in a cloth net, good roasted in embers or added to a pot."
+    },
+    {
+      id: "tomatoes", category: "provisions", owned: "has_tomatoes",
+      weight: 0.75, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_tomatoes) || 0); return "Tomatoes" + (n > 1 ? " ×" + n : ""); },
+      description: "Ripe red tomatoes from a sheltered garden, for cooking down in a pot."
+    },
+    {
+      id: "dressed_chicken", category: "provisions", owned: "has_dressed_chicken",
+      weight: 3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_dressed_chicken) || 0); return "Dressed Chicken" + (n > 1 ? " ×" + n : ""); },
+      description: "Plucked and cleaned farm chicken, wrapped for the road and ready for a fire or pot."
+    },
+    {
+      id: "fresh_fish_fillet", category: "provisions", owned: "has_fresh_fish_fillet",
+      weight: 0.75, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_fresh_fish_fillet) || 0); return "Fresh Fish Fillet" + (n > 1 ? " ×" + n : ""); },
+      description: "White-fleshed river fish fillet, wrapped in damp leaves for cooking that day."
     },
     {
       id: "hemp_rope", category: "provisions", owned: "has_hemp_rope",
@@ -684,7 +703,7 @@
       weight: 4, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_longshade_quarterstaff) || 0); return "Ash Quarterstaff" + (n > 1 ? " ×" + n : ""); },
       description: "Six-foot staff of straight-grained Longshade ash, planed round and oiled.",
-      traits: "1d6 Bludgeoning, One-Handed",
+      traits: "1d8 Bludgeoning, One-Handed",
       badge: function (s) { return s.equipped_weapon_id === "longshade_quarterstaff" ? "Equipped" : ""; },
       equip: { slot: "weapon", id: "longshade_quarterstaff" }
     },
