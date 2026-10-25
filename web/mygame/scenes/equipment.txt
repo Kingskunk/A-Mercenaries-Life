@@ -3554,6 +3554,32 @@ You fill the empty @{(jug_fill_n = 1) jug|jugs} from ${jug_refill_source}, then 
   *set {shop_cart_var} 0
 *return
 
+*comment *gosub_scene equipment shop_cart_run <buyer> <sell_key> <buy_key>   (the cart pass of an open market, in place of one line per good in the shop's scene)
+*comment The panel names the goods in the cart in cart_sell_ids and cart_buy_ids as |id|id|. Sales run first, then purchases, each good through shop_cart_sell / shop_cart_buy, which read the count in cart_sell_<id> / cart_buy_<id> and do the work for the current shop_mode. A good with no cart_* variable is skipped (so a stale name cannot break a trade). After an apply or clear pass the lists are emptied, as the counts are.
+*label shop_cart_run
+*params scr_buyer scr_sell_key scr_buy_key
+*set shop_buyer scr_buyer
+*set gear_shop scr_sell_key
+*set cart_walk cart_sell_ids
+*label shop_cart_run_sell
+*script var m = /^\|([^|]+)/.exec(stats.cart_walk || ""); stats.cart_item = m && ("cart_sell_" + m[1]) in stats ? m[1] : ""; stats.cart_walk = m ? stats.cart_walk.slice(1 + m[1].length) : ""; stats.cart_more = !!m;
+*if (cart_more)
+  *if (not(cart_item = ""))
+    *gosub shop_cart_sell cart_item
+  *goto shop_cart_run_sell
+*set gear_shop scr_buy_key
+*set cart_walk cart_buy_ids
+*label shop_cart_run_buy
+*script var m = /^\|([^|]+)/.exec(stats.cart_walk || ""); stats.cart_item = m && ("cart_buy_" + m[1]) in stats ? m[1] : ""; stats.cart_walk = m ? stats.cart_walk.slice(1 + m[1].length) : ""; stats.cart_more = !!m;
+*if (cart_more)
+  *if (not(cart_item = ""))
+    *gosub shop_cart_buy cart_item
+  *goto shop_cart_run_buy
+*if (not(shop_mode = "tally"))
+  *set cart_sell_ids ""
+  *set cart_buy_ids ""
+*return
+
 *comment *gosub_scene equipment shop_check   (after the tally pass; output shop_verdict "empty" | "short" | "ok" and
 *comment the cost and credit wording)
 *label shop_check

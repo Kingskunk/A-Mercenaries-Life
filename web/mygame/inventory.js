@@ -394,7 +394,7 @@
   if (typeof document === "undefined") return; // node tests stop here (mirrors lorebook.js)
 
   var dlg, elDoll, elBag, elTip;
-  var view = { craftTab: "brew", category: "", sel: null, drag: null, slot: null, dragSlot: null, note: "", left: "you", csel: null, qty: 1, craft: "alchemy", box: [null, null, null] };
+  var view = { craftTab: "brew", category: "", sel: null, drag: null, dragC: null, slot: null, dragSlot: null, note: "", left: "you", csel: null, qty: 1, craft: "alchemy", box: [null, null, null] };
 
   function statsNow() { return window.stats || {}; }
 
@@ -991,7 +991,7 @@
       (c.why ? '<div class="inv-cwhy">' + esc(c.why) + "</div>" : "") + '<div class="inv-grid inv-cgrid">';
     c.entries.forEach(function (e) {
       var r = stowedEntry(c.id, e.item.id, s), cn = splitCount(r.name);
-      html += '<button type="button" class="inv-tile inv-bagitem inv-citem' + (view.csel === r.id ? " inv-sel" : "") + '" data-citem="' + esc(r.id) + '" aria-label="' + esc(cn.name) + '">' + iconImg(itemIconKey(r)) +
+      html += '<button type="button" class="inv-tile inv-bagitem inv-citem' + (view.csel === r.id ? " inv-sel" : "") + '" data-citem="' + esc(r.id) + '" draggable="true" aria-label="' + esc(cn.name) + '">' + iconImg(itemIconKey(r)) +
         (cn.count > 1 ? '<span class="inv-cnt">' + cn.count + "</span>" : "") + "</button>";
     });
     var cells = Math.max(15, Math.ceil(c.entries.length / 5) * 5);
@@ -1080,7 +1080,7 @@
   /* ---------------------------------------------------------------- drag and drop */
 
   function clearDrag() {
-    view.drag = null; view.dragSlot = null;
+    view.drag = null; view.dragSlot = null; view.dragC = null;
     Array.prototype.forEach.call(dlg.querySelectorAll(".inv-accepts, .inv-over, .inv-drop-ok"), function (el) { el.classList.remove("inv-accepts", "inv-over", "inv-drop-ok"); });
   }
   function onDragStart(ev) {
@@ -1096,6 +1096,15 @@
       if (pt) Array.prototype.forEach.call(dlg.querySelectorAll("[data-slot]"), function (el) { if (el.getAttribute("data-slot") === pt.bucket && (el.getAttribute("data-ring") || "") === pt.ring) el.classList.add("inv-accepts"); });
       return;
     }
+    var ci = ev.target && ev.target.closest ? ev.target.closest("[data-citem]") : null;
+    if (ci && containerOpen()) {
+      // something stowed: the pack is where it can be dropped to take it back
+      view.dragC = ci.getAttribute("data-citem");
+      try { ev.dataTransfer.setData("text/plain", "stowed:" + view.dragC); ev.dataTransfer.effectAllowed = "move"; } catch (e) { /* the drop reads view.dragC */ }
+      hideTip();
+      elBag.classList.add("inv-drop-ok");
+      return;
+    }
     var t = ev.target && ev.target.closest ? ev.target.closest("[data-item]") : null;
     if (!t || !findOwned(t.getAttribute("data-item"))) return;
     view.drag = t.getAttribute("data-item");
@@ -1105,7 +1114,12 @@
     var r = findOwned(view.drag);
     Array.prototype.forEach.call(dlg.querySelectorAll("[data-slot]"), function (el) { if (accepts(r, el.getAttribute("data-slot"))) el.classList.add("inv-accepts"); });
     if (view.left === "craft" && r.alchemy) Array.prototype.forEach.call(dlg.querySelectorAll("[data-box]"), function (el) { el.classList.add("inv-accepts"); });
+    // with a container open, its pane takes what can be stowed
+    if (containerOpen() && r.stow) Array.prototype.forEach.call(dlg.querySelectorAll(".inv-cpane"), function (el) { el.classList.add("inv-drop-ok"); });
   }
+  // a container's pane is showing in place of the doll
+  function containerOpen() { return view.left !== "you" && view.left !== "craft"; }
+  function overPane(ev) { return !!(ev.target && ev.target.closest && ev.target.closest(".inv-cpane")); }
   function onDragEnd() { clearDrag(); }
   function cellOf(ev) { var c = ev.target && ev.target.closest ? ev.target.closest("[data-cell]") : null; return c && elBag.contains(c) ? c : null; }
   // Where a worn piece being dragged may land: the pack (take off), or its swap partner.
@@ -1124,7 +1138,9 @@
       if (kind) { ev.preventDefault(); if (kind === "swap") t.classList.add("inv-over"); }
       return;
     }
+    if (view.dragC) { if (elBag.contains(ev.target)) ev.preventDefault(); return; }
     if (!view.drag) return;
+    if (containerOpen() && overPane(ev)) { var ds2 = findOwned(view.drag); if (ds2 && ds2.stow) ev.preventDefault(); return; }
     var bx = ev.target && ev.target.closest ? ev.target.closest("[data-box]") : null;
     if (bx) { var di = findOwned(view.drag); if (di && di.alchemy) { ev.preventDefault(); bx.classList.add("inv-over"); } return; }
     if (t) { if (accepts(findOwned(view.drag), t.getAttribute("data-slot"))) { ev.preventDefault(); t.classList.add("inv-over"); } return; }
@@ -1142,9 +1158,21 @@
       window.EquipmentEngine.swapSidearm(); view.slot = null; render();
       return;
     }
+    if (view.dragC) {
+      var cid = view.dragC, onBag = elBag.contains(ev.target);
+      clearDrag();
+      if (onBag) { ev.preventDefault(); doMove("take", cid, 99999); }
+      return;
+    }
     var t = ev.target && ev.target.closest ? ev.target.closest("[data-slot]") : null;
     var id = view.drag;
     if (!id) return;
+    if (containerOpen() && overPane(ev)) {
+      var sr = findOwned(id);
+      clearDrag();
+      if (sr && sr.stow) { ev.preventDefault(); doMove("stow", id, 99999); }
+      return;
+    }
     var dbx = ev.target && ev.target.closest ? ev.target.closest("[data-box]") : null;
     if (dbx) { ev.preventDefault(); view.drag = null; addToBox(id, Number(dbx.getAttribute("data-box"))); return; }
     if (!t) {

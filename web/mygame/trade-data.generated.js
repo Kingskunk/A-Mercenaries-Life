@@ -3405,6 +3405,7 @@ window.TRADE_DATA = {
  "trades": {
   "halda": {
    "title": "Halda's Forge",
+   "commodities": false,
    "buyer": "smith",
    "buy": [
     "brigandine",
@@ -3429,6 +3430,7 @@ window.TRADE_DATA = {
   },
   "ambrose": {
    "title": "Ambrose's Still-Room",
+   "commodities": false,
    "buyer": "herbalist",
    "buy": [
     "warming_liniment",
@@ -3462,6 +3464,7 @@ window.TRADE_DATA = {
   },
   "hollis": {
    "title": "Hollis & Daughters",
+   "commodities": false,
    "buyer": "general",
    "buy": [
     "hemp_rope",
@@ -3502,6 +3505,7 @@ window.TRADE_DATA = {
   },
   "vael": {
    "title": "Vael & Son",
+   "commodities": false,
    "buyer": "general",
    "buy": [
     "lockpick_set",
@@ -3518,6 +3522,7 @@ window.TRADE_DATA = {
   },
   "tailor": {
    "title": "The Gilt Needle",
+   "commodities": false,
    "buyer": "tailor",
    "buy": [
     "broadcloth_cloak",
@@ -3557,6 +3562,7 @@ window.TRADE_DATA = {
   },
   "inklamp": {
    "title": "The Ink & Lamp",
+   "commodities": false,
    "buyer": "general",
    "buy": [
     "scroll_magic_missile",
@@ -3583,6 +3589,7 @@ window.TRADE_DATA = {
   },
   "jeweler": {
    "title": "The Bright Setting",
+   "commodities": false,
    "buyer": "jeweler",
    "buy": [
     "gem_agate",
@@ -3631,6 +3638,7 @@ window.TRADE_DATA = {
   },
   "pawn": {
    "title": "The Pawnbroker's Window",
+   "commodities": false,
    "buyer": "pawn",
    "buy": [],
    "sell": [
@@ -3672,6 +3680,7 @@ window.TRADE_DATA = {
   },
   "works": {
    "title": "Roan's Wheel Shop",
+   "commodities": false,
    "buyer": "general",
    "buy": [
     "longshade_quarterstaff",
@@ -3692,6 +3701,7 @@ window.TRADE_DATA = {
   },
   "tmstore": {
    "title": "Marlow's General Goods",
+   "commodities": false,
    "buyer": "general",
    "buy": [
     "hemp_rope",
@@ -3730,6 +3740,7 @@ window.TRADE_DATA = {
   },
   "afstore": {
    "title": "Pell's Stores",
+   "commodities": false,
    "buyer": "general",
    "buy": [
     "hemp_rope",
@@ -3769,6 +3780,7 @@ window.TRADE_DATA = {
   },
   "torvald": {
    "title": "Torvald's Timber Smithy",
+   "commodities": false,
    "buyer": "smith",
    "buy": [
     "timber_axe",
@@ -3791,6 +3803,7 @@ window.TRADE_DATA = {
   },
   "barley_farm": {
    "title": "Barleycross Lane Market",
+   "commodities": true,
    "buyer": "market",
    "buy": [
     "barley_loaf",
@@ -3857,6 +3870,7 @@ window.TRADE_DATA = {
   },
   "tm_market": {
    "title": "Timbermouth Market",
+   "commodities": true,
    "buyer": "market",
    "buy": [
     "honeycomb",
@@ -3923,6 +3937,7 @@ window.TRADE_DATA = {
   },
   "bw_market": {
    "title": "Brinewick Slip Market",
+   "commodities": true,
    "buyer": "market",
    "buy": [
     "honeycomb",
@@ -3989,6 +4004,7 @@ window.TRADE_DATA = {
   },
   "ah_market": {
    "title": "Ashrun Holt Market",
+   "commodities": true,
    "buyer": "market",
    "buy": [
     "honeycomb",
@@ -4055,6 +4071,7 @@ window.TRADE_DATA = {
   },
   "mc_market": {
    "title": "Grain Green Market",
+   "commodities": true,
    "buyer": "market",
    "buy": [
     "honeycomb",
@@ -4121,6 +4138,7 @@ window.TRADE_DATA = {
   },
   "af_market": {
    "title": "Lower Wharf Market",
+   "commodities": true,
    "buyer": "market",
    "buy": [
     "honeycomb",
@@ -4187,6 +4205,7 @@ window.TRADE_DATA = {
   },
   "rv_market": {
    "title": "Eastcut Market",
+   "commodities": true,
    "buyer": "market",
    "buy": [
     "honeycomb",
@@ -4253,6 +4272,7 @@ window.TRADE_DATA = {
   },
   "wf_market": {
    "title": "Whitefold Market",
+   "commodities": true,
    "buyer": "market",
    "buy": [
     "honeycomb",
@@ -4319,6 +4339,7 @@ window.TRADE_DATA = {
   },
   "pv_market": {
    "title": "The Weigh House",
+   "commodities": true,
    "buyer": "market",
    "buy": [
     "honeycomb",
@@ -4383,6 +4404,7 @@ window.TRADE_DATA = {
   },
   "trapper": {
    "title": "The Trapper's Bench",
+   "commodities": false,
    "buyer": "game",
    "buy": [
     "trail_rations",
@@ -4402,6 +4424,7 @@ window.TRADE_DATA = {
   },
   "hideyard": {
    "title": "The Hide Yard",
+   "commodities": false,
    "buyer": "game",
    "buy": [
     "boar_meat",
@@ -4415,6 +4438,7 @@ window.TRADE_DATA = {
   },
   "fish_slip": {
    "title": "Fishmongers' Slip",
+   "commodities": false,
    "buyer": "",
    "buy": [
     "fresh_fish_fillet"

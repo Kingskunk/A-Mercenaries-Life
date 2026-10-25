@@ -1549,8 +1549,8 @@ You find a bench against the wall with your back to it, a watchful habit, and le
 *comment hulls, papers and duties; the Weigh House owns the goods: weighing, tally, price boards, storage. Fresh fish
 *comment never crosses this floor (the Fishmongers' Slip has its own market). The house keeps the weather slate by the
 *comment door and issues the forecast slip on the Civic Heights dispatch board, because wet goods weigh heavier.
-*comment Hours: open Morning through Afternoon, INCLUDING severe weather (traders come in out of it); shut at Dusk,
-*comment Night, Pre-Dawn and Hallowday. wh_named records that the player has read the carved lintel. Weighmaster Odo
+*comment Hours: open Morning through Afternoon, INCLUDING severe weather and Hallowday (traders come in out of it); shut at Dusk,
+*comment Night and Pre-Dawn. wh_named records that the player has read the carved lintel. Weighmaster Odo
 *comment Farrow keeps the great scale.
 *comment WHOLESALE TRADE, BUILT 2026-10-24 (the user: the Weigh House is the natural place for the city's market): the trade panel is on the floor menu (pv_wh_menu) while the floor is open, with a hidden settle
 *comment option; it deals in every commodity except fresh fish (the Fishmongers' Slip has that), priced by distance and the world (tools/market_defs.json pv_market, web/mygame/world.js); purse 150 gold, depth x6.
@@ -1581,16 +1581,13 @@ A chalkboard on a post by the doors is lettered in a square hand: [i]"Tomorrow: 
 
 *label pv_wh_door
 *set scenery_subplace "port_valen_weigh_house"
-*if (((time_period = "Dusk") or (time_period = "Night")) or (time_period = "Pre-Dawn")) or (day_of_week = "Hallowday")
-  *comment Closed: Dusk, Night, Pre-Dawn, Hallowday
+*if ((time_period = "Dusk") or (time_period = "Night")) or (time_period = "Pre-Dawn")
+  *comment Closed: Dusk, Night, Pre-Dawn
   *set wh_named true
   [b]◈ THE WEIGH HOUSE[/b]
   *line_break
   A long hall of grey stone stands on the quay with a great iron beam-scale hung from its gable, and cut into the lintel over the cart doors is a line of lettering: [i]"The Weigh House. One Weight for All."[/i]
-  *if (day_of_week = "Hallowday")
-    The cart doors are shut for the holy day, and a chain is looped through the handles.
-    A Port Watch officer checks the Council seal on the chain from beneath the eaves, then resumes the short beat between the scales and the customs arch.
-  *elseif (time_period = "Dusk")
+  *if (time_period = "Dusk")
     A man in an apron drags one of the cart doors shut on its iron track while the last empty carts rattle away along the quay. Two Port Watch officers wait by the lintel: one takes the door key and seal pouch while the other walks the last buyers clear of the scale floor.
   *else
     The cart doors are shut and barred, and a lantern burns on a bracket over the lintel. A two-person Port Watch post holds the paving outside, one officer under the light and the other making a slow circuit past the barred carts and the customs arch.
@@ -1598,7 +1595,7 @@ A chalkboard on a post by the doors is lettered in a square hand: [i]"Tomorrow: 
 
   *choice
     # Read the notice beside the doors.
-      A painted board reads: [i]"The Weigh House. Weighing, Measures, and Storage. Open at Seventh Bell until the evening horn. Closed on Hallowday."[/i]
+      A painted board reads: [i]"The Weigh House. Weighing, Measures, and Storage. Open daily at Seventh Bell until the evening horn."[/i]
       *page_break Step back from the doors…
       *goto pv_wh_door
     # Return to the quay.
@@ -1660,6 +1657,8 @@ Inside the cart doors, a long hall of grey flagstone runs under a high raftered 
   Bars of pig iron and bundles of steel blanks are stacked beside the platform scales, and each one rings when it is dropped.
 *elseif (day_of_week = "Ironday")
   Bolts of flax canvas and coils of hemp rope are heaped along the walls.
+*elseif (day_of_week = "Hallowday")
+  The floor is quieter for the holy day, but the public scales and storage remain open: necessary loads are weighed, the boards are kept current, and the carts that must travel are worked through without ceremony.
 *else
   *comment Hearthday
   The floor is slow today, with only a few carts at the platform scales.
@@ -1731,98 +1730,12 @@ A wall of black boards is ruled in columns behind the gallery, each headed with 
 *set shop_open "pv_market"
 *set shop_rows ""
 *comment GEN:BEGIN pv_market_panel_rows
-*gosub_scene equipment shop_row_add "honeycomb"
-*gosub_scene equipment shop_row_add "boar_meat"
-*gosub_scene equipment shop_row_add "venison"
-*gosub_scene equipment shop_row_add "barley_loaf"
-*gosub_scene equipment shop_row_add "grain"
-*gosub_scene equipment shop_row_add "cheese"
-*gosub_scene equipment shop_row_add "orchard_apple"
-*gosub_scene equipment shop_row_add "root_vegetable_bundle"
-*gosub_scene equipment shop_row_add "farm_eggs"
-*gosub_scene equipment shop_row_add "dried_pork_sausage"
-*gosub_scene equipment shop_row_add "onions"
-*gosub_scene equipment shop_row_add "potatoes"
-*gosub_scene equipment shop_row_add "tomatoes"
-*gosub_scene equipment shop_row_add "dressed_chicken"
-*gosub_scene equipment shop_row_add "cabbage"
-*gosub_scene equipment shop_row_add "pumpkin"
-*gosub_scene equipment shop_row_add "iron_ore"
-*gosub_scene equipment shop_row_add "iron_bar"
-*gosub_scene equipment shop_row_add "longshade_timber"
-*gosub_scene equipment shop_row_add "charcoal"
-*gosub_scene equipment shop_row_add "salt"
-*gosub_scene equipment shop_row_add "furs"
-*gosub_scene equipment shop_row_add "leather"
-*gosub_scene equipment shop_row_add "wool"
-*gosub_scene equipment shop_row_add "wool_cloth"
-*gosub_scene equipment shop_row_add "raw_hide"
-*gosub_scene equipment shop_row_add "boar_tusk"
-*gosub_scene equipment shop_row_add "elk_antler"
 *comment GEN:END pv_market_panel_rows
 *return
 
 *label pv_wh_cart_pass
 *comment GEN:BEGIN pv_market_cart_pass
-*set shop_buyer "market"
-*set gear_shop "pv_market_sell"
-*gosub_scene equipment shop_cart_sell "honeycomb"
-*gosub_scene equipment shop_cart_sell "boar_meat"
-*gosub_scene equipment shop_cart_sell "venison"
-*gosub_scene equipment shop_cart_sell "barley_loaf"
-*gosub_scene equipment shop_cart_sell "grain"
-*gosub_scene equipment shop_cart_sell "cheese"
-*gosub_scene equipment shop_cart_sell "orchard_apple"
-*gosub_scene equipment shop_cart_sell "root_vegetable_bundle"
-*gosub_scene equipment shop_cart_sell "farm_eggs"
-*gosub_scene equipment shop_cart_sell "dried_pork_sausage"
-*gosub_scene equipment shop_cart_sell "onions"
-*gosub_scene equipment shop_cart_sell "potatoes"
-*gosub_scene equipment shop_cart_sell "tomatoes"
-*gosub_scene equipment shop_cart_sell "dressed_chicken"
-*gosub_scene equipment shop_cart_sell "cabbage"
-*gosub_scene equipment shop_cart_sell "pumpkin"
-*gosub_scene equipment shop_cart_sell "iron_ore"
-*gosub_scene equipment shop_cart_sell "iron_bar"
-*gosub_scene equipment shop_cart_sell "longshade_timber"
-*gosub_scene equipment shop_cart_sell "charcoal"
-*gosub_scene equipment shop_cart_sell "salt"
-*gosub_scene equipment shop_cart_sell "furs"
-*gosub_scene equipment shop_cart_sell "leather"
-*gosub_scene equipment shop_cart_sell "wool"
-*gosub_scene equipment shop_cart_sell "wool_cloth"
-*gosub_scene equipment shop_cart_sell "raw_hide"
-*gosub_scene equipment shop_cart_sell "boar_tusk"
-*gosub_scene equipment shop_cart_sell "elk_antler"
-*set gear_shop "pv_market"
-*gosub_scene equipment shop_cart_buy "honeycomb"
-*gosub_scene equipment shop_cart_buy "boar_meat"
-*gosub_scene equipment shop_cart_buy "venison"
-*gosub_scene equipment shop_cart_buy "barley_loaf"
-*gosub_scene equipment shop_cart_buy "grain"
-*gosub_scene equipment shop_cart_buy "cheese"
-*gosub_scene equipment shop_cart_buy "orchard_apple"
-*gosub_scene equipment shop_cart_buy "root_vegetable_bundle"
-*gosub_scene equipment shop_cart_buy "farm_eggs"
-*gosub_scene equipment shop_cart_buy "dried_pork_sausage"
-*gosub_scene equipment shop_cart_buy "onions"
-*gosub_scene equipment shop_cart_buy "potatoes"
-*gosub_scene equipment shop_cart_buy "tomatoes"
-*gosub_scene equipment shop_cart_buy "dressed_chicken"
-*gosub_scene equipment shop_cart_buy "cabbage"
-*gosub_scene equipment shop_cart_buy "pumpkin"
-*gosub_scene equipment shop_cart_buy "iron_ore"
-*gosub_scene equipment shop_cart_buy "iron_bar"
-*gosub_scene equipment shop_cart_buy "longshade_timber"
-*gosub_scene equipment shop_cart_buy "charcoal"
-*gosub_scene equipment shop_cart_buy "salt"
-*gosub_scene equipment shop_cart_buy "furs"
-*gosub_scene equipment shop_cart_buy "leather"
-*gosub_scene equipment shop_cart_buy "wool"
-*gosub_scene equipment shop_cart_buy "wool_cloth"
-*gosub_scene equipment shop_cart_buy "raw_hide"
-*gosub_scene equipment shop_cart_buy "boar_tusk"
-*gosub_scene equipment shop_cart_buy "elk_antler"
+*gosub_scene equipment shop_cart_run "market" "pv_market_sell" "pv_market"
 *comment GEN:END pv_market_cart_pass
 *return
 
@@ -2065,8 +1978,7 @@ You lean against a mooring bitt and watch the rhythm of the cargo line.
 
 *if (weather_severity >= 3)
   Along the stone quay sills, the river barges have been doubled-roped and stripped of their cargo, and they lunge against the fenders with every surge. The ramps are chained up, the tally boards have gone indoors, and only a Port Watch sentry in a streaming greatcoat holds the gate.
-  *if (day_of_week != "Hallowday")
-    The wide doors of the Weigh House are the one place on the quay still open, with lamplight showing inside.
+  The wide doors of the Weigh House are the one place on the quay still open, with lamplight showing inside.
 *else
   Along the stone quay sills, flat-bottomed river barges bump against heavy hemp fenders. ${qo_cargo}, and dockworkers muscle them up slick wooden ramps onto carts, their boots finding purchase in the wet grit. Men and women in river-serpent colors tick each load off on a wax tablet as it passes, and the loaded carts roll along the quay toward the wide doors of the Weigh House, while a steady stream of people carry slips up the steps of the customs tower at the far end. Port Watch sentries keep a measured, watchful perimeter.
 
@@ -4537,14 +4449,15 @@ Stalls line both sides of the ramp, each with a fishwife behind a plank of wet s
 *set shop_open "fish_slip"
 *set shop_rows ""
 *comment GEN:BEGIN fish_slip_panel_rows -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
-*gosub_scene equipment shop_row_add "fresh_fish_fillet"
+*set shop_rows (shop_rows & "fresh_fish_fillet~|")
 *comment GEN:END fish_slip_panel_rows
 *return
 
 *label pv_fish_cart_pass
 *comment GEN:BEGIN fish_slip_cart_pass -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
 *set gear_shop "fish_slip"
-*gosub_scene equipment shop_cart_buy "fresh_fish_fillet"
+*if (cart_buy_fresh_fish_fillet > 0)
+  *gosub_scene equipment shop_cart_buy "fresh_fish_fillet"
 *comment GEN:END fish_slip_cart_pass
 *return
 

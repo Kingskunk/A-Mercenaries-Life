@@ -26,6 +26,9 @@
 *else
   The lower market is busy between the curing lofts and the barge landing: wagons come through the uphill gate, porters work the cobbles between the sheds, and the crane keeps taking cargo on and off the water. A Scales bailiff walks the route from the beam scale to the quay, checking that no one blocks the marked cargo lane.
 
+*if (day_of_week = "Hallowday")
+  The Factor's Hall and the town's private counters are closed above the wharf, but the public ground remains at work. The queues are shorter and the voices lower, while the beam scale, cargo lane, and river landing stay available to any load that needs to change hands or keep moving.
+
 *gosub af_market_weather
 *gosub af_market_shift
 
@@ -38,8 +41,13 @@ You step back into the market yard, where the crane chain and the river carry on
 *goto af_market_hub
 
 *label af_market_hub
-*temp af_store_open true
+*temp af_market_open true
 *if (((time_period = "Dusk") or (time_period = "Night")) or (time_period = "Pre-Dawn"))
+  *set af_market_open false
+*if (street_life = "empty")
+  *set af_market_open false
+*temp af_store_open af_market_open
+*if (day_of_week = "Hallowday")
   *set af_store_open false
 *temp af_river_transport_open true
 *if (((((time_period = "Dusk") or (time_period = "Night")) or (time_period = "Pre-Dawn")) or (weather_severity >= 3)) or (weather = "Fog"))
@@ -51,15 +59,15 @@ You step back into the market yard, where the crane chain and the river carry on
     The river transport remains at its berth while the gorge is blind. Its master will not cast off until the lower channel marks show.
   *else
     The river transport's tally board is closed for the day. The next Port Valen passage begins loading after dawn.
-*comment The market is open while the sheds are (af_store_open: not Dusk, Night or Pre-Dawn); the panel and its hidden settle option are on this page only then.
-*if (af_store_open)
+*comment The public market is open through Dusk (af_market_open); Pell's Stores follows private shop hours (af_store_open) and closes on Hallowday. The market panel and its hidden settle option are on this page while the public market is open.
+*if (af_market_open)
   *gosub af_market_open_panel
 *else
   *set shop_open ""
 *comment Open-world free time: the sidebar's Wait and Rest work on this page (web/mygame/pagegate.js).
 *set wait_ok_page page_id
 *choice
-  *if (af_store_open)
+  *if (af_market_open)
     # ⚖ Settle up at the beam scale and the sheds.
       *goto af_market_settle
   *if ((not(af_market_talk_bran)) and (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon")))
@@ -551,22 +559,22 @@ Nessa checks the ${gear_sale_name} for wear, sets a practical price, and counts 
 *temp afs_any_sale (((((has_hemp_rope) or (has_pitch_torch)) or ((has_lamp_oil) or (has_hooded_lantern))) or (((has_tinderbox) or (has_chalk_sticks)) or ((has_camp_kit) or (has_waxed_oilcloth)))) or (((has_lye_soap) or (has_trail_rations)) or (((has_tool_kit) or (has_shovel)) or (has_lute))))
 *set af_store_has_sale afs_any_sale
 *comment GEN:BEGIN afstore_panel_rows
-*gosub_scene equipment shop_row_add "hemp_rope"
-*gosub_scene equipment shop_row_add "pitch_torch"
-*gosub_scene equipment shop_row_add "lamp_oil"
-*gosub_scene equipment shop_row_add "hooded_lantern"
-*gosub_scene equipment shop_row_add "tool_kit"
-*gosub_scene equipment shop_row_add "shovel"
-*gosub_scene equipment shop_row_add "lute"
-*gosub_scene equipment shop_row_add "tinderbox"
-*gosub_scene equipment shop_row_add "water_jug"
-*gosub_scene equipment shop_row_add "cooking_pot"
-*gosub_scene equipment shop_row_add "chalk_sticks"
-*gosub_scene equipment shop_row_add "camp_kit"
-*gosub_scene equipment shop_row_add "waxed_oilcloth"
-*gosub_scene equipment shop_row_add "lye_soap"
-*gosub_scene equipment shop_row_add "trail_rations"
-*gosub_scene equipment shop_row_add "fresh_fish_fillet"
+*set shop_rows (shop_rows & "hemp_rope~|")
+*set shop_rows (shop_rows & "pitch_torch~|")
+*set shop_rows (shop_rows & "lamp_oil~|")
+*set shop_rows (shop_rows & "hooded_lantern~|")
+*set shop_rows (shop_rows & "tool_kit~|")
+*set shop_rows (shop_rows & "shovel~|")
+*set shop_rows (shop_rows & "lute~|")
+*set shop_rows (shop_rows & "tinderbox~|")
+*set shop_rows (shop_rows & "water_jug~|")
+*set shop_rows (shop_rows & "cooking_pot~|")
+*set shop_rows (shop_rows & "chalk_sticks~|")
+*set shop_rows (shop_rows & "camp_kit~|")
+*set shop_rows (shop_rows & "waxed_oilcloth~|")
+*set shop_rows (shop_rows & "lye_soap~|")
+*set shop_rows (shop_rows & "trail_rations~|")
+*set shop_rows (shop_rows & "fresh_fish_fillet~|")
 *comment GEN:END afstore_panel_rows
 *return
 
@@ -574,38 +582,69 @@ Nessa checks the ${gear_sale_name} for wear, sets a practical price, and counts 
 *comment GEN:BEGIN afstore_cart_pass
 *set shop_buyer "general"
 *set gear_shop "afstore_sell"
-*gosub_scene equipment shop_cart_sell "hemp_rope"
-*gosub_scene equipment shop_cart_sell "pitch_torch"
-*gosub_scene equipment shop_cart_sell "lamp_oil"
-*gosub_scene equipment shop_cart_sell "hooded_lantern"
-*gosub_scene equipment shop_cart_sell "tool_kit"
-*gosub_scene equipment shop_cart_sell "shovel"
-*gosub_scene equipment shop_cart_sell "lute"
-*gosub_scene equipment shop_cart_sell "tinderbox"
-*gosub_scene equipment shop_cart_sell "water_jug"
-*gosub_scene equipment shop_cart_sell "cooking_pot"
-*gosub_scene equipment shop_cart_sell "chalk_sticks"
-*gosub_scene equipment shop_cart_sell "camp_kit"
-*gosub_scene equipment shop_cart_sell "waxed_oilcloth"
-*gosub_scene equipment shop_cart_sell "lye_soap"
-*gosub_scene equipment shop_cart_sell "trail_rations"
+*if (cart_sell_hemp_rope > 0)
+  *gosub_scene equipment shop_cart_sell "hemp_rope"
+*if (cart_sell_pitch_torch > 0)
+  *gosub_scene equipment shop_cart_sell "pitch_torch"
+*if (cart_sell_lamp_oil > 0)
+  *gosub_scene equipment shop_cart_sell "lamp_oil"
+*if (cart_sell_hooded_lantern > 0)
+  *gosub_scene equipment shop_cart_sell "hooded_lantern"
+*if (cart_sell_tool_kit > 0)
+  *gosub_scene equipment shop_cart_sell "tool_kit"
+*if (cart_sell_shovel > 0)
+  *gosub_scene equipment shop_cart_sell "shovel"
+*if (cart_sell_lute > 0)
+  *gosub_scene equipment shop_cart_sell "lute"
+*if (cart_sell_tinderbox > 0)
+  *gosub_scene equipment shop_cart_sell "tinderbox"
+*if (cart_sell_water_jug > 0)
+  *gosub_scene equipment shop_cart_sell "water_jug"
+*if (cart_sell_cooking_pot > 0)
+  *gosub_scene equipment shop_cart_sell "cooking_pot"
+*if (cart_sell_chalk_sticks > 0)
+  *gosub_scene equipment shop_cart_sell "chalk_sticks"
+*if (cart_sell_camp_kit > 0)
+  *gosub_scene equipment shop_cart_sell "camp_kit"
+*if (cart_sell_waxed_oilcloth > 0)
+  *gosub_scene equipment shop_cart_sell "waxed_oilcloth"
+*if (cart_sell_lye_soap > 0)
+  *gosub_scene equipment shop_cart_sell "lye_soap"
+*if (cart_sell_trail_rations > 0)
+  *gosub_scene equipment shop_cart_sell "trail_rations"
 *set gear_shop "afstore"
-*gosub_scene equipment shop_cart_buy "hemp_rope"
-*gosub_scene equipment shop_cart_buy "pitch_torch"
-*gosub_scene equipment shop_cart_buy "lamp_oil"
-*gosub_scene equipment shop_cart_buy "hooded_lantern"
-*gosub_scene equipment shop_cart_buy "tool_kit"
-*gosub_scene equipment shop_cart_buy "shovel"
-*gosub_scene equipment shop_cart_buy "lute"
-*gosub_scene equipment shop_cart_buy "tinderbox"
-*gosub_scene equipment shop_cart_buy "water_jug"
-*gosub_scene equipment shop_cart_buy "cooking_pot"
-*gosub_scene equipment shop_cart_buy "chalk_sticks"
-*gosub_scene equipment shop_cart_buy "camp_kit"
-*gosub_scene equipment shop_cart_buy "waxed_oilcloth"
-*gosub_scene equipment shop_cart_buy "lye_soap"
-*gosub_scene equipment shop_cart_buy "trail_rations"
-*gosub_scene equipment shop_cart_buy "fresh_fish_fillet"
+*if (cart_buy_hemp_rope > 0)
+  *gosub_scene equipment shop_cart_buy "hemp_rope"
+*if (cart_buy_pitch_torch > 0)
+  *gosub_scene equipment shop_cart_buy "pitch_torch"
+*if (cart_buy_lamp_oil > 0)
+  *gosub_scene equipment shop_cart_buy "lamp_oil"
+*if (cart_buy_hooded_lantern > 0)
+  *gosub_scene equipment shop_cart_buy "hooded_lantern"
+*if (cart_buy_tool_kit > 0)
+  *gosub_scene equipment shop_cart_buy "tool_kit"
+*if (cart_buy_shovel > 0)
+  *gosub_scene equipment shop_cart_buy "shovel"
+*if (cart_buy_lute > 0)
+  *gosub_scene equipment shop_cart_buy "lute"
+*if (cart_buy_tinderbox > 0)
+  *gosub_scene equipment shop_cart_buy "tinderbox"
+*if (cart_buy_water_jug > 0)
+  *gosub_scene equipment shop_cart_buy "water_jug"
+*if (cart_buy_cooking_pot > 0)
+  *gosub_scene equipment shop_cart_buy "cooking_pot"
+*if (cart_buy_chalk_sticks > 0)
+  *gosub_scene equipment shop_cart_buy "chalk_sticks"
+*if (cart_buy_camp_kit > 0)
+  *gosub_scene equipment shop_cart_buy "camp_kit"
+*if (cart_buy_waxed_oilcloth > 0)
+  *gosub_scene equipment shop_cart_buy "waxed_oilcloth"
+*if (cart_buy_lye_soap > 0)
+  *gosub_scene equipment shop_cart_buy "lye_soap"
+*if (cart_buy_trail_rations > 0)
+  *gosub_scene equipment shop_cart_buy "trail_rations"
+*if (cart_buy_fresh_fish_fillet > 0)
+  *gosub_scene equipment shop_cart_buy "fresh_fish_fillet"
 *comment GEN:END afstore_cart_pass
 *return
 
@@ -711,101 +750,12 @@ Nessa checks the ${gear_sale_name} for wear, sets a practical price, and counts 
 *set shop_open "af_market"
 *set shop_rows ""
 *comment GEN:BEGIN af_market_panel_rows
-*gosub_scene equipment shop_row_add "honeycomb"
-*gosub_scene equipment shop_row_add "boar_meat"
-*gosub_scene equipment shop_row_add "venison"
-*gosub_scene equipment shop_row_add "barley_loaf"
-*gosub_scene equipment shop_row_add "grain"
-*gosub_scene equipment shop_row_add "cheese"
-*gosub_scene equipment shop_row_add "orchard_apple"
-*gosub_scene equipment shop_row_add "root_vegetable_bundle"
-*gosub_scene equipment shop_row_add "farm_eggs"
-*gosub_scene equipment shop_row_add "dried_pork_sausage"
-*gosub_scene equipment shop_row_add "onions"
-*gosub_scene equipment shop_row_add "potatoes"
-*gosub_scene equipment shop_row_add "tomatoes"
-*gosub_scene equipment shop_row_add "dressed_chicken"
-*gosub_scene equipment shop_row_add "fresh_fish_fillet"
-*gosub_scene equipment shop_row_add "cabbage"
-*gosub_scene equipment shop_row_add "pumpkin"
-*gosub_scene equipment shop_row_add "iron_ore"
-*gosub_scene equipment shop_row_add "iron_bar"
-*gosub_scene equipment shop_row_add "longshade_timber"
-*gosub_scene equipment shop_row_add "charcoal"
-*gosub_scene equipment shop_row_add "salt"
-*gosub_scene equipment shop_row_add "furs"
-*gosub_scene equipment shop_row_add "leather"
-*gosub_scene equipment shop_row_add "wool"
-*gosub_scene equipment shop_row_add "wool_cloth"
-*gosub_scene equipment shop_row_add "raw_hide"
-*gosub_scene equipment shop_row_add "boar_tusk"
-*gosub_scene equipment shop_row_add "elk_antler"
 *comment GEN:END af_market_panel_rows
 *return
 
 *label af_market_cart_pass
 *comment GEN:BEGIN af_market_cart_pass
-*set shop_buyer "market"
-*set gear_shop "af_market_sell"
-*gosub_scene equipment shop_cart_sell "honeycomb"
-*gosub_scene equipment shop_cart_sell "boar_meat"
-*gosub_scene equipment shop_cart_sell "venison"
-*gosub_scene equipment shop_cart_sell "barley_loaf"
-*gosub_scene equipment shop_cart_sell "grain"
-*gosub_scene equipment shop_cart_sell "cheese"
-*gosub_scene equipment shop_cart_sell "orchard_apple"
-*gosub_scene equipment shop_cart_sell "root_vegetable_bundle"
-*gosub_scene equipment shop_cart_sell "farm_eggs"
-*gosub_scene equipment shop_cart_sell "dried_pork_sausage"
-*gosub_scene equipment shop_cart_sell "onions"
-*gosub_scene equipment shop_cart_sell "potatoes"
-*gosub_scene equipment shop_cart_sell "tomatoes"
-*gosub_scene equipment shop_cart_sell "dressed_chicken"
-*gosub_scene equipment shop_cart_sell "fresh_fish_fillet"
-*gosub_scene equipment shop_cart_sell "cabbage"
-*gosub_scene equipment shop_cart_sell "pumpkin"
-*gosub_scene equipment shop_cart_sell "iron_ore"
-*gosub_scene equipment shop_cart_sell "iron_bar"
-*gosub_scene equipment shop_cart_sell "longshade_timber"
-*gosub_scene equipment shop_cart_sell "charcoal"
-*gosub_scene equipment shop_cart_sell "salt"
-*gosub_scene equipment shop_cart_sell "furs"
-*gosub_scene equipment shop_cart_sell "leather"
-*gosub_scene equipment shop_cart_sell "wool"
-*gosub_scene equipment shop_cart_sell "wool_cloth"
-*gosub_scene equipment shop_cart_sell "raw_hide"
-*gosub_scene equipment shop_cart_sell "boar_tusk"
-*gosub_scene equipment shop_cart_sell "elk_antler"
-*set gear_shop "af_market"
-*gosub_scene equipment shop_cart_buy "honeycomb"
-*gosub_scene equipment shop_cart_buy "boar_meat"
-*gosub_scene equipment shop_cart_buy "venison"
-*gosub_scene equipment shop_cart_buy "barley_loaf"
-*gosub_scene equipment shop_cart_buy "grain"
-*gosub_scene equipment shop_cart_buy "cheese"
-*gosub_scene equipment shop_cart_buy "orchard_apple"
-*gosub_scene equipment shop_cart_buy "root_vegetable_bundle"
-*gosub_scene equipment shop_cart_buy "farm_eggs"
-*gosub_scene equipment shop_cart_buy "dried_pork_sausage"
-*gosub_scene equipment shop_cart_buy "onions"
-*gosub_scene equipment shop_cart_buy "potatoes"
-*gosub_scene equipment shop_cart_buy "tomatoes"
-*gosub_scene equipment shop_cart_buy "dressed_chicken"
-*gosub_scene equipment shop_cart_buy "fresh_fish_fillet"
-*gosub_scene equipment shop_cart_buy "cabbage"
-*gosub_scene equipment shop_cart_buy "pumpkin"
-*gosub_scene equipment shop_cart_buy "iron_ore"
-*gosub_scene equipment shop_cart_buy "iron_bar"
-*gosub_scene equipment shop_cart_buy "longshade_timber"
-*gosub_scene equipment shop_cart_buy "charcoal"
-*gosub_scene equipment shop_cart_buy "salt"
-*gosub_scene equipment shop_cart_buy "furs"
-*gosub_scene equipment shop_cart_buy "leather"
-*gosub_scene equipment shop_cart_buy "wool"
-*gosub_scene equipment shop_cart_buy "wool_cloth"
-*gosub_scene equipment shop_cart_buy "raw_hide"
-*gosub_scene equipment shop_cart_buy "boar_tusk"
-*gosub_scene equipment shop_cart_buy "elk_antler"
+*gosub_scene equipment shop_cart_run "market" "af_market_sell" "af_market"
 *comment GEN:END af_market_cart_pass
 *return
 

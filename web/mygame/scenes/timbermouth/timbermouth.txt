@@ -17,8 +17,8 @@
 *comment
 *comment The day and night cycle: a closed place stays on the menu with its bold name kept and the flavour swapped for the reason, and picking it plays a short closure page
 *comment that costs no time and returns here. The hours are a first draft, all in tm_hours: the Workshops and Factor's Hall work Morning through
-*comment Afternoon and keep Hallowday; the Market trades Morning through Dusk, keeps Hallowday and also closes when street_life is "empty" (a dangerous storm); the General Store trades
-*comment Morning through Dusk and keeps Hallowday; the Split Pine Inn and Stables never closes.
+*comment Afternoon and close for Hallowday; the public Market trades Morning through Dusk, including Hallowday, and closes when street_life is "empty" (a dangerous storm); the private General Store trades
+*comment Morning through Dusk except on Hallowday; the Split Pine Inn and Stables never closes.
 *comment ====================================================================================
 
 *label timbermouth
@@ -44,9 +44,9 @@
   *set tm_why "closed for the night"
 *if ((day_of_week = "Hallowday") and (not(tm_night)))
   *set tm_why "closed for the rest day"
-*comment The two open-air markets give the weather as their reason when that is why they are shut (not on the rest day or at night).
+*comment The open-air market gives the weather as its reason whenever dangerous weather is why it is shut.
 *temp tm_why_out tm_why
-*if (((street_life = "empty") and (not(tm_night))) and (not(day_of_week = "Hallowday")))
+*if ((street_life = "empty") and (not(tm_night)))
   *set tm_why_out "closed for the weather"
 *return
 
@@ -487,7 +487,7 @@
 
 *comment ── THE HOURS: the one place that decides what is open. Sets the tm_ok_* flags; every closure page calls it again, so they read the clock rather than a stale hub temp. ──
 *label tm_hours
-*comment Morning through Afternoon is the working day for the Workshops and the Factor's Hall; the Market (open air) and the General Store trade through Dusk. Hallowday is the rest day. The
+*comment Morning through Afternoon is the working day for the Workshops and the Factor's Hall; the public Market trades through Dusk every day, while the private General Store closes on Hallowday. The
 *comment Market also closes at street_life "empty".
 *set tm_ok_market false
 *set tm_ok_store false
@@ -499,8 +499,9 @@
     *set tm_ok_hall true
   *if ((((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon")) or (time_period = "Dusk"))
     *set tm_ok_store true
-    *if (not(street_life = "empty"))
-      *set tm_ok_market true
+*if ((((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon")) or (time_period = "Dusk"))
+  *if (not(street_life = "empty"))
+    *set tm_ok_market true
 *comment The wagon lot is part of the Market (it follows the Market hours). The hub shows a shortcut to it only while a line is making up (Tideday to Port Valen, Hearthday to Alderford; the prose never names the day) or the
 *comment player holds a job that sets out from here, so nobody has to go through the Market page.
 *set tm_lot_show false
@@ -529,6 +530,9 @@
 
 *label tm_closed
 *gosub_scene calendar update_hub_condition
+*gosub tm_hours
+*if ((tm_which = "market") and (tm_ok_market))
+  *goto_scene timbermouth/market tm_market
 *if (tm_which = "market")
   [b]◈ THE MARKET[/b]
 *elseif (tm_which = "store")
@@ -538,20 +542,20 @@
 *else
   [b]◈ THE FACTOR'S HALL[/b]
 *line_break
-*if (day_of_week = "Hallowday")
+*if ((street_life = "empty") and (tm_which = "market"))
+  The weather has cleared the ground. Tarpaulins are lashed down hard over the stacks, the stalls are folded away, and the yard gate is shut and barred.
+*elseif (day_of_week = "Hallowday")
   *if (tm_which = "market")
-    The yard gates are chained, the grading boards turned to the wall, and the stalls folded with their awnings rolled up. A paper notice beneath a wooden hood beside the gate says that the market closes for the rest day.
+    The public yard is open for weighing and market trade on the rest day.
   *elseif (tm_which = "store")
     The shutters are up and barred, and a card in the window says that the store closes for the rest day. The hooks outside have been taken in.
   *elseif (tm_which = "works")
     The workshop doors are shut and the benches inside are covered. Nobody works on the rest day.
   *else
     The doors of the hall are shut and the shutters closed. A paper notice beneath a wooden hood by the door says that it closes for the rest day.
-*elseif ((street_life = "empty") and (tm_which = "market"))
-  The weather has cleared the ground. Tarpaulins are lashed down hard over the stacks, the stalls are folded away, and the yard gate is shut and barred.
 *elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
   *if (tm_which = "market")
-    The yard gate is chained for the night and the stalls are gone, leaving bare ground where loose straw turns in the wind. A lantern burns on a post beside the bays, and nothing else moves.
+    The yard gate is chained for the night and the stalls are gone, leaving bare ground where loose straw turns in the wind. A lantern burns on a post beside the bays, and a pair of the watch tests the gate chain and shed fronts before returning to the square.
   *elseif (tm_which = "store")
     The shutters are up and a bar lies across the door. The coils and lanterns have been taken in, and only the empty hooks show beneath the board.
   *elseif (tm_which = "works")

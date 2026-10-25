@@ -210,11 +210,22 @@
   // stats.shop_rows is "id~warning|id~warning|": the items on sale right now and why each might be a bad idea.
   function buyRows(trade, s) {
     var out = [];
+    // An open market lists every good in its trade data (nothing is written per good in its scene); the panel's own stock filter then hides what the shelf lacks.
+    if (trade.def.commodities) {
+      var P0 = IP();
+      trade.def.buy.forEach(function (id) { if (data().items[id]) out.push({ id: id, warn: P0 && P0.overloadNote ? P0.overloadNote(s, id) : "" }); });
+      return out;
+    }
     String(s.shop_rows || "").split("|").forEach(function (chunk) {
       if (!chunk) return;
       var at = chunk.indexOf("~");
       var id = at < 0 ? chunk : chunk.slice(0, at);
-      if (data().items[id] && trade.def.buy.indexOf(id) !== -1) out.push({ id: id, warn: at < 0 ? "" : chunk.slice(at + 1) });
+      if (data().items[id] && trade.def.buy.indexOf(id) !== -1) {
+        var warn = at < 0 ? "" : chunk.slice(at + 1), P = IP();
+        // A good listed without a warning is checked against the load here (the same words equipment.txt gear_warning_text would give).
+        if (!warn && P && P.overloadNote) warn = P.overloadNote(s, id);
+        out.push({ id: id, warn: warn });
+      }
     });
     return out;
   }
@@ -624,6 +635,11 @@
     Object.keys(s).forEach(function (k) { if (k.indexOf("cart_buy_") === 0 || k.indexOf("cart_sell_") === 0) s[k] = 0; });
     Object.keys(cart.buy).forEach(function (id) { if (("cart_buy_" + id) in s) s["cart_buy_" + id] = cart.buy[id]; });
     Object.keys(cart.sell).forEach(function (id) { if (("cart_sell_" + id) in s) s["cart_sell_" + id] = cart.sell[id]; });
+    // the goods in the cart, for the shared cart routine (equipment.txt shop_cart_run)
+    s.cart_buy_ids = Object.keys(cart.buy).filter(function (id) { return ("cart_buy_" + id) in s && cart.buy[id] > 0; }).map(function (id) { return "|" + id; }).join("");
+    s.cart_sell_ids = Object.keys(cart.sell).filter(function (id) { return ("cart_sell_" + id) in s && cart.sell[id] > 0; }).map(function (id) { return "|" + id; }).join("");
+    if (s.cart_buy_ids) s.cart_buy_ids += "|";
+    if (s.cart_sell_ids) s.cart_sell_ids += "|";
     var radio = settle.querySelector("input[type=radio]");
     if (!radio) return;
     var form = radio.form;

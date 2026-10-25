@@ -554,9 +554,15 @@ var shopByName = {};
 
 // One pass over every item the shop deals in. equipment.txt shop_cart_sell / shop_cart_buy read the cart_* variables
 // the trade panel wrote and, depending on shop_mode ("tally", "apply" or "clear"), add up, carry out or discard them.
-// Sales run before purchases so a worn suit that is sold is swapped out before its replacement is put on.
+// Sales run before purchases so a worn suit that is sold is swapped out before its replacement is put on. A good that is not in the cart is skipped without a scene call (the panel zeroes every cart_* before it sets its own).
 function genCartPass(trade) {
   var L = [];
+  // An open market (commodities) needs no line per good: one call to the shared routine (equipment.txt shop_cart_run), which walks the goods the panel put in the cart.
+  if (trade.commodities) {
+    var sh = trade.sellShop ? shopByName[trade.sellShop] : null;
+    L.push('*gosub_scene equipment shop_cart_run ' + q(sh ? sh.buyer : '') + ' ' + q(trade.sellKey || '') + ' ' + q(trade.buyKey || ''));
+    return L;
+  }
   var sell = trade.sellShop ? shopByName[trade.sellShop] : null, buy = trade.buyShop ? shopByName[trade.buyShop] : null;
   if (trade.sellShop && !sell) throw new Error("trade " + trade.name + ": unknown sellShop " + trade.sellShop);
   if (!sell && !buy) throw new Error("trade " + trade.name + " has neither a buyShop nor a sellShop");
@@ -565,18 +571,20 @@ function genCartPass(trade) {
     L.push('*set gear_shop ' + q(trade.sellKey));
     sell.items.forEach(function (r) {
       if (!byId[r.id]) throw new Error("trade " + trade.name + " lists unknown item " + r.id);
-      L.push('*gosub_scene equipment shop_cart_sell ' + q(r.id));
+      L.push('*if (cart_sell_' + r.id + ' > 0)');
+      L.push('  *gosub_scene equipment shop_cart_sell ' + q(r.id));
     });
   }
   if (buy) {
     L.push('*set gear_shop ' + q(trade.buyKey));
     buy.items.forEach(function (r) {
       if (!byId[r.id]) throw new Error("trade " + trade.name + " lists unknown item " + r.id);
+      L.push('*if (cart_buy_' + r.id + ' > 0)');
       if (r.when) {
-        L.push('*if (' + r.when + ')');
-        L.push('  *gosub_scene equipment shop_cart_buy ' + q(r.id));
+        L.push('  *if (' + r.when + ')');
+        L.push('    *gosub_scene equipment shop_cart_buy ' + q(r.id));
       } else {
-        L.push('*gosub_scene equipment shop_cart_buy ' + q(r.id));
+        L.push('  *gosub_scene equipment shop_cart_buy ' + q(r.id));
       }
     });
   }
@@ -586,12 +594,16 @@ function genCartPass(trade) {
 // The rows the panel shows for the buy side: every item currently for sale, with its live warning text.
 function genPanelRows(trade) {
   var L = [];
+  if (trade.commodities) return L;   // an open market's rows come from the trade data (trade.js buyRows), not from the scene
   shopByName[trade.buyShop].items.forEach(function (r) {
+    // Only armor, a shield or an item with a warn rule can have a warning the scene must work out; every other good is listed in place, and the panel adds the load note itself (trade.js buyRows).
+    var it = byId[r.id], plain = it && !it.warn && it.kind !== "armor" && it.kind !== "shield";
+    var add = plain ? '*set shop_rows (shop_rows & ' + q(r.id + '~|') + ')' : '*gosub_scene equipment shop_row_add ' + q(r.id);
     if (r.when) {
       L.push('*if (' + r.when + ')');
-      L.push('  *gosub_scene equipment shop_row_add ' + q(r.id));
+      L.push('  ' + add);
     } else {
-      L.push('*gosub_scene equipment shop_row_add ' + q(r.id));
+      L.push(add);
     }
   });
   return L;
@@ -607,6 +619,7 @@ function genTradeData() {
     if (buy) buy.items.forEach(function (r) { ids[r.id] = true; });
     data.trades[t.name] = {
       title: t.title,
+      commodities: !!t.commodities,
       buyer: sell ? sell.buyer : "",
       buy: buy ? buy.items.map(function (r) { return r.id; }) : [],
       sell: sell ? sell.items.map(function (r) { return r.id; }) : []
