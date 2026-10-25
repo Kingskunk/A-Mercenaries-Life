@@ -525,14 +525,14 @@
 
     {
       id: "carrion_compound", category: "places", title: "The Carrion Compound",
-      sub: "The company's rented home base",
+      sub: "The company's chartered home base",
       tags: ["Port Valen", "Iron Carrion"], aliases: ["compound", "barracks", "mess", "headquarters"],
       link: ["Carrion Compound"],
       unlock: "port_valen_hub_seen",
       body: function (s) {
         var out = [
-          "The fortified compound the Iron Carrion rents near the Iron Wharves. The company returns here between contracts to collect pay, repair equipment, and recruit replacements. Recruits sleep on bedrolls in the barracks, and the company mess serves plain fare from the stores awning.",
-          "It is a headquarters, not a fief. The company owns no land and can be driven elsewhere whenever its contracts or enemies demand it."
+          "The fortified compound assigned to the Iron Carrion near the Iron Wharves under Valen's war charter. It holds the company's recruits, stores, workshops, and pay records between field calls. Recruits sleep on bedrolls in the barracks, and the company mess serves plain fare from the stores awning.",
+          "It is headquarters, not a fief. The city controls the lease and Captain Vane governs the company's internal ground; neither arrangement gives the Carrion a claim to Valen's land or civil law."
         ];
         if (truthy(s.pv_drill_seen)) {
           out.push("Behind the barracks lies the drill square, a fenced stretch of packed ground with practice posts and a lean-to of wooden weapons. Each squad drills there under its own leader, one long shift a day at most, and the company asks nothing for it.");
@@ -1387,7 +1387,7 @@
       unlock: "slasher_hook_seen",
       body: function (s) {
         var out = [
-          "A captain in the city militia with a post on the Trunk Road. Varren says he served through the war, is loud about wanting the killings solved, and has put out word that he wants hands from outside the Watch and the militia."
+          "A captain in the city militia with a post on the Trunk Road. The militia keeps local rosters and arms residents for alarms, fires, and emergencies; it is not Valen's field army. Varren says Trent served through the war, is loud about wanting the killings solved, and has put out word that he wants hands from outside the Watch and the militia."
         ];
         if (truthy(s.slasher_trent_met)) {
           out.push("A broad, barrel-chested man in a boiled-leather coat in the city's colors, with two horn-handled knives at his belt that are cleaner than anything else in his office. He says the Watch leaks, and that Ulrich of Avir is the killer.");
@@ -1701,7 +1701,7 @@
           out.push("A fourth window, Deeds, stands behind a permanent iron shutter. A house changes hands on the records or not at all, and the window opens when there is a sale to witness.");
         }
         if (truthy(s.ch_seals_talk)) {
-          out.push("The Seals window issues the Hall's insignia: a palm-sized brass disc with the wearer's name, rank and the terms of everything they sign worked into the metal. A copy of the shape reads blank. It is the same disc in every kingdom and only its pages differ: each government writes its own rank onto it, and some honor each other's.");
+          out.push("The Seals window issues a Contractor's Insignia: a palm-sized brass disc with the wearer's name, rank and the terms of everything they sign worked into the metal. A copy of the shape reads blank. It is the same disc in every kingdom and only its pages differ: each government writes its own rank onto it, and some honor each other's.");
         }
         if (truthy(s.ch_seals_ranks_talk)) {
           out.push("The Scales keep four ranks, and the Hall only works the brass. In order: Open, Bonded, Sealed and Named.");

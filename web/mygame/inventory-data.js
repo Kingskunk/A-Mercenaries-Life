@@ -1395,10 +1395,10 @@
     {
       id: "hall_insignia", category: "documents", owned: "has_hall_insignia",
       weight: 0.2,
-      name: "Mercenary Insignia",
+      name: "Contractor's Insignia",
       description: function (s) {
         var n = Number(s.hall_jobs_scales) || 0;
-        return "A palm-sized brass disc. Your name, rank and the terms of what you sign are set into the metal, where any reader can pass over it and tell. Port Valen page: " + n + (n === 1 ? " job" : " jobs") + " finished.";
+        return "A palm-sized brass contractor's disc. Your name, rank and the terms of what you sign are set into the metal, where any reader can pass over it and tell. Port Valen page: " + n + (n === 1 ? " job" : " jobs") + " finished.";
       },
       badge: function (s) {
         var r = String(s.hall_insignia_rank || "open");

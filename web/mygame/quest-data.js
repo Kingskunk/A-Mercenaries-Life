@@ -16,7 +16,7 @@
  *   goal      optional: one sentence of what to do next (text or function(stats)), shown on the hover card
  *   progress  optional: function(stats) -> [{label, have, need}], drawn as a progress line under the title and listed on the card
  *   clues     optional: function(stats) -> [text], only what the player has FOUND (never a lead they have not met), listed on the card
- *   insignia  optional: true if finishing it adds to the Hall insignia's job count (said on the card)
+ *   insignia  optional: true if finishing it adds to the Contractor's Insignia job count (said on the card)
  *
  * Quest stage variables are set by the scenes (see quest/QUESTS.md). A quest that is
  * "unstarted", "resolved", "failed" or "declined" is not active and is not listed.
@@ -132,7 +132,7 @@
       active: function (s) { return truthy(s.lsf_bark_accepted) && !truthy(s.lsf_bark_failed) && !truthy(s.lsf_bark_reward); }
     },
     {
-      // The Overdue Peddler (timbermouth/barleycross/overdue_peddler.txt, 2026-10-19): taken on a job board with the Hall insignia, briefed and paid at the wife's cottage. No term. Counts toward the level-2 pool and on the insignia.
+      // The Overdue Peddler (timbermouth/barleycross/overdue_peddler.txt, 2026-10-19): taken on a job board with the Contractor's Insignia, briefed and paid at the wife's cottage. No term. Counts toward the level-2 pool and on the insignia.
       id: "overdue_peddler", title: "Word of Aldis Pellam",
       giver: "Merel Pellam, the last cottage on the Barleycross Lane",
       place: function (s) { return truthy(s.dg_seen_lsf_r12) ? "Barleycross · tell Merel Pellam what you found" : "Barleycross · the last cottage on the Lane"; },

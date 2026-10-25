@@ -93,7 +93,7 @@
             return ["The Iron Carrion's commander. You have only seen his black raven pavilion from afar."];
           }
           var out = [
-            "The Iron Carrion's founding captain. In camp he receives reports at a trestle desk below the raven banner; on campaign he directs the company from horseback. He sets its contracts and its rules.",
+            "The Iron Carrion's founding captain. In camp he receives reports at a trestle desk below the raven banner; on campaign he directs the company from horseback. He accepted Valen's standing war charter, but he sets the company's field orders and its internal rules.",
             "Veterans say he gathered the company after the Broken Crown War. They disagree about whom he was before, and he does not settle it."
           ];
           if (truthy(s.met_odessa)) {
@@ -260,7 +260,7 @@
             "She is gaunt and sharp-featured, with scars across her hands, dark hair pinned back, and a leather apron marked by her work."
           ];
           if (truthy(s.codex_odessa)) {
-            out.push("What she told you at the Black Sinks, knotting thread with her teeth: ten years under Captain Vane. Before that she kept an apothecary in the high city until a tax-bailiff burned it for unpaid levies. Vane offered forty silver marks a season and one promise — no lord would ever tell her who she could or could not treat.");
+            out.push("What she told you at the Black Sinks, knotting thread with her teeth: ten years under Captain Vane. Before that she kept an apothecary in the high city until a tax-bailiff burned it for unpaid levies. Vane offered forty silver marks a season and one promise — no lord, factor, or council clerk would tell her who she could or could not treat.");
           }
           if (truthy(s.prep_odessa_salve)) {
             out.push("The tin she pressed into your hands at the triage cart: camphor fat, rubbed into the joints to seal out the damp and boot-chafe on a long march, and to ward off marsh sickness. Dirty water, she told you, kills more soldiers than steel.");
@@ -457,7 +457,7 @@
         unlock: "met_orlov",
         body: function (s) {
           var out = [
-            "Chief clerk of the Gilded Scales' Alderford Factor's Hall: a narrow man in ink-stained shirtsleeves behind an oak desk with a tarnished brass nameplate, spectacles pushed up into thinning grey hair, a goose quill behind one ear. He looks harried and behind on his own paperwork, and he sizes up every stranger by the state of their boots. He greets a Carrion contractor with the news that the guild contract is current and the board is open to you like any other contractor's.",
+            "Chief clerk of the Gilded Scales' Alderford Factor's Hall: a narrow man in ink-stained shirtsleeves behind an oak desk with a tarnished brass nameplate, spectacles pushed up into thinning grey hair, a goose quill behind one ear. He looks harried and behind on his own paperwork, and he sizes up every stranger by the state of their boots. He greets a Carrion hand on charter business with the news that the guild's board is open to you like any other contractor's.",
             "Everything on the wharf that is weighed, sealed, taxed, or owed passes through his quill: the district parish register, the bounty board by the door, the vault floor with its rows of lead weights. The Factor signs behind the side door, but Orlov writes the wharf's business."
           ];
           if (truthy(s.asked_ch_commutation)) {
@@ -594,12 +594,13 @@
       {
         id: "iron_carrion", category: "factions", title: "The Iron Carrion",
         link: ["Iron Carrion", "Carrion Company"],
-        sub: "Free company hierarchy & command",
-        tags: ["Iron Carrion"], aliases: ["Carrion", "company", "chain of command", "the 400"],
+        sub: "Valen's chartered free company",
+        tags: ["Iron Carrion", "Port Valen"], aliases: ["Carrion", "company", "chain of command", "the 400", "war charter", "standing retainer"],
         body: [
           "<i>\"Crows feast where lords bleed.\"</i>",
-          "Founded thirty years ago in the ashes of the Broken Crown War, the Iron Carrion is a four-hundred-man free company of veteran sellswords, runaway bond-servants, and disgraced soldiers. They answer to no crown and hold no land. Their loyalty lasts as long as a patron's coin purse holds weight.",
-          "Port Valen is the company's home base. The Carrion rents a fortified compound near the Iron Wharves and returns there between contracts to collect pay, repair its equipment, recruit replacements, and negotiate its next commission. The company owns none of it and can be driven elsewhere whenever its contracts or enemies demand."
+          "Founded thirty years ago in the ashes of the Broken Crown War, the Iron Carrion is a four-hundred-strong free company of veteran sellswords, runaway bond-servants, and disgraced soldiers. They answer to no crown, hold no land, and keep their own ranks, discipline, and field command.",
+          "Eight years ago the Council of Factors placed the company on Valen's war charter: a standing retainer for border campaigns, dangerous roads, convoy protection, and field defence when the city needs more than guards or a local levy. The Council funds the charter and the Gilded Scales keep its books, but Captain Vane decides how the Carrion fights.",
+          "Port Valen is the company's chartered home base. Its fortified compound near the Iron Wharves holds recruits, stores, workshops, and the four hundred's pay records between calls. It is headquarters, not a fief; the company owns no land and the city retains the lease."
         ],
         see: ["vane", "carrion_founding", "varren", "kestrel", "ysolde", "odessa", "lyra", "rorik", "port_valen", "carrion_compound"]
       },
@@ -611,7 +612,7 @@
         unlock: "codex_gilded_scales",
         meter: { stat: "gilded_scales_rep", label: "Standing with the Gilded Scales" },
         body: [
-          "A cartel of river merchants and guild-masters based in Port Valen, with its head house on Civic Heights beside the Council Hall and its merchant houses' estates in the Patrician Quarter. They hold the timber trade, the grain barges, and the river toll-gates across the province, and they enforce their contracts with hired iron. A free company is a line in their ledgers like any other expense: hired when iron is needed, paid by the season, and dismissed the moment the road is open.",
+          "A cartel of river merchants and guild-masters based in Port Valen, with its head house on Civic Heights beside the Council Hall and its merchant houses' estates in the Patrician Quarter. They hold the timber trade, the grain barges, and the river toll-gates across the province. Through the Council, they fund Valen's war charter; their clerks book the Carrion's stores, pay, and road costs, but cannot give the company field orders.",
           "The cartel is led by a <b>First Factor</b>, who speaks for the Scales on war, treaty, and city policy. The First Factor answers to the Council of Factors, the ruling council of Port Valen, made up of the senior merchant houses. Below them, appointed officers run records, taxes, courts, and the Port Watch. Port Valen holds the old imperial title of a free city, and no crown rules it."
         ],
         see: ["port_valen", "port_watch", "letters_of_credit", "alderford", "council", "upper_wharves", "debtor_crews"]
@@ -626,10 +627,11 @@
         body: function (s) {
           var out = [
             "The city guard, charged with keeping the peace, patrolling the harbor quays, and manning the stone water-gates. They wear boiled leather jerkins stamped with the city's three-masted seal, carry swords, spears, and crossbows, and walk the beat between foreign crews, dockside brawlers, and Dredge-End cutpurses.",
-            "They are sworn to the City Council and the public order, but the Watch is under-strength and underpaid. It is pulled between the Gilded Scales, who expect immediate protection for merchant cargo, and a crowded port full of refugees and armed sellswords."
+            "They are sworn to the City Council and the public order, but the Watch is under-strength and underpaid. It is pulled between the Gilded Scales, who expect immediate protection for merchant cargo, and a crowded port full of refugees and armed sellswords. Arrests, custody, and day-to-day peacekeeping remain the Watch's work.",
+            "Valen keeps no standing army. Its militia is a local levy for alarms and emergencies; for border war, road clearing, and field defence, the Council calls the Iron Carrion under the city's standing war charter."
           ];
           if (truthy(s.pv_tavern_rumor_2)) {
-            out.push("Four hundred mercenaries now reinforce the Watch's patrol rosters from the Iron Wharves to the lower landing-stairs, under terms the Watch captain read out at the pier: no private collections, no unsanctioned arrests, and no settling old debts under city colors. The porters recite them like a litany neither of them quite believes will hold.");
+            out.push("Carrion details now reinforce the Watch's patrol rosters from the Iron Wharves to the lower landing-stairs while the rest of the company remains at its compound. The Watch captain's terms are clear: no private collections, no unsanctioned arrests, and no settling old debts under city colors. The porters recite them like a litany neither of them quite believes will hold.");
           }
           return out;
         },
@@ -845,9 +847,9 @@
             "An old imperial dike-road across the Sinks. Its raised center is the only ground that still carries wheels between the bog and the range, with a squat gatehouse at the eastern end."
           ];
           if (!truthy(s.codex_marsh_squatters)) {
-            out.push("This autumn the gatehouse is held by deserters and displaced tenants out of the high valleys, with scythes, sickles, and fishing spears, and nowhere else to run. The Gilded Scales bought the road back and handed the contract to the Carrion.");
+            out.push("This autumn the gatehouse is held by deserters and displaced tenants out of the high valleys, with scythes, sickles, and fishing spears, and nowhere else to run. The Gilded Scales hold the debt-paper on the road, and the Council has put its reopening under Valen's war charter.");
           } else {
-            out.push("After the Carrion's assault, the gatehouse belongs to the company. The squatters who did not run scattered into the reeds rather than face it.");
+            out.push("After the Carrion's assault, the company holds the gatehouse for Valen. The squatters who did not run scattered into the reeds rather than face it.");
           }
           return out;
         },
@@ -985,7 +987,7 @@
         body: [
           "The Iron Carrion was raised thirty years ago, while the Meridian Empire's death was still becoming a fact rather than a rumor. The legions that had garrisoned the Grey Marches dissolved where they stood instead of marching home: pay in arrears, orders that never came, officers with nothing left to give them. The provinces they abandoned fell to feuding client lords and frontier barons, and onto the roads went the men the war had finished with: deserters, runaway bond-servants, and soldiers whose colors no longer existed.",
           "The company that took them in was the work of [[vane|Captain Vane]]. He offered terms: a written contract, honest weight of coin, and a discipline harsher than any feudal levy enforced. Where he came from is a tale the veterans tell in different ways. The motto painted under the raven standard is a soldier's joke about the trade: <i>\"Crows feast where lords bleed.\"</i>",
-          "Thirty years on, that shape has not changed. The Carrion raises, pays, and replaces its men by written contract, keeps a rented compound instead of a fief, and negotiates the next commission while the last one is still being paid out. Its veterans measure the company by the only two things it has ever promised: coin weighed honestly, and a contract kept to the letter."
+          "For twenty-two years the Carrion sold its service from campaign to campaign. Eight years ago the Council of Factors put it on Valen's standing war charter, giving it a permanent base and a continuing civic client without turning it into a city regiment. The Carrion still raises, pays, and replaces its people by written contract; Vane, not the Council, commands it in the field. Its veterans measure the company by the only two things it has ever promised: coin weighed honestly, and a contract kept to the letter."
         ],
         see: ["vane", "iron_carrion", "meridian_empire", "broken_crown_war"]
       },
