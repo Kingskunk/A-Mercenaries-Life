@@ -3687,7 +3687,7 @@ window.TRADE_DATA = {
    ]
   },
   "pawn": {
-   "title": "The Pawnbroker's Window",
+   "title": "The Open Hand",
    "commodities": false,
    "buyer": "pawn",
    "buy": [],

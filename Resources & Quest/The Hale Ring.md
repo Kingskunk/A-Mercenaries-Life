@@ -1,6 +1,6 @@
 # The Hale Ring
 
-*Prose draft only. This is not wired into the game yet.*
+*Implemented as a one-time overworld discovery and tracked quest.*
 
 ## Premise
 
@@ -16,7 +16,7 @@ If the player examines it closely and succeeds on a difficult check (roughly DC 
 
 ## Following the Clue
 
-The player can simply keep the ring, sell it, or ask after its owner.
+The player can simply keep the ring, sell it to Angel at the Open Hand in Dredge-End, or ask after its owner.
 
 At the Bright Setting in Port Valen, Cassia Rell turns the ring over beneath her glass and studies the stone before looking at the initials.
 
@@ -24,7 +24,7 @@ At the Bright Setting in Port Valen, Cassia Rell turns the ring over beneath her
 
 She taps the inner edge with one clean fingernail.
 
-> “Ressa Hale's. Keeper of the Split Pine at Timbermouth. Her and her brother had the work done after their parents died. It was meant to keep them both close while she was on the road.”
+> “Ressa Hale's. Keeper of the Split Pine at Timbermouth. She and her brother had the work done after their parents died. It was meant to keep them both close while she was on the road.”
 
 Cassia does not demand the ring or make the discovery into a grand mystery. She gives the player Ressa's name because the work is distinctive and because the initials leave little room for doubt.
 
@@ -74,9 +74,7 @@ The player still resolves the quest and keeps Ressa as a usable contact, but doe
 
 ### Sell it before identifying the owner
 
-The player can sell the ring to an appropriate jeweller, pawnbroker, or fence for **4 gold crowns and 2 silver marks**. This closes the return route. The buyer values the gold and stone, not its history.
-
-No approrpiate jewler at the moment,  other than cassia, we can add it to the pawn broker store in city in dredge end to sell. Cassia wont purchase this from the player. 
+The player can sell the ring to Angel at the Open Hand on Lamp Stair in Dredge-End for **4 gold crowns and 2 silver marks**. This closes the return route. She values the gold and stone, not its history; Cassia identifies the owner but will not buy the ring.
 
 There should be no trick punishment for this choice. It is simply a choice between immediate coin and returning a lost keepsake.
 

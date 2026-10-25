@@ -571,6 +571,8 @@
     { id: "bandits", kinds: ["road", "forest", "hills"], territories: [], weight: [0, 1, 2, 4] },
     { id: "night_beasts", kinds: ["road", "forest", "hills"], territories: [], weight: [1, 2, 3, 4], when: ["dark"] }
   ];
+  // The Hale Ring is a one-time personal quest, not part of the repeatable event weights above. It gets a plain 5% roll whenever a solo journey reaches one of Ressa and Oswin's former freight-road nodes in daylight or at dusk. The caller only asks for this while its quest stage is "none".
+  var HALE_RING_TILES = ["r1", "r2", "r3"];
   function periodOf(t) { t = ((Math.floor(t) % 1440) + 1440) % 1440; return (t >= NIGHT_START || t < DAYLIGHT_START) ? "dark" : (t >= DUSK_START ? "dusk" : "day"); }
   function pickTravel(n, seed, salt, force, period) {
     var d = dangerOf(n), rows = TRAVEL_EVENTS.filter(function (e) {
@@ -582,6 +584,19 @@
     var total = rows.reduce(function (a, e) { return a + e.weight[d]; }, 0), r = hash100(seed, salt) % total;
     for (var i = 0; i < rows.length; i++) { if (r < rows[i].weight[d]) return rows[i].id; r -= rows[i].weight[d]; }
     return rows[rows.length - 1].id;
+  }
+  function haleRingPlan(from, to, seed, force, startMinute, hasNightLight, poorVisibility, mounted) {
+    force = String(force || "");
+    if (force && force !== "hale_ring") return null;
+    var legs = route(from, to).legs || [];
+    var ends = (travelPlan(from, to, Number(startMinute) || 0, hasNightLight !== false, !!poorVisibility, !!mounted).ends) || [];
+    for (var i = 0; i < legs.length; i++) {
+      if (HALE_RING_TILES.indexOf(legs[i].to) < 0) continue;
+      var period = periodOf(ends[i] === undefined ? 0 : ends[i]);
+      if (!force && period !== "day" && period !== "dusk") continue;
+      if (force || (hash100(seed, 850 + i) % 100) < 5) return { id: "hale_ring", tile: legs[i].to, leg: i + 1 };
+    }
+    return null;
   }
   // Does the trip from -> to meet an event, and where? Returns { id, tile, leg } (tile is the tile the walk ends on, leg its number) or null. seed is any whole number the page keeps fixed (the day and the clock);
   // day and lastDay are the campaign days now and of the last event (the cooldown); force is an event id the developer menu asks for (it ignores the chance and the cooldown, and takes the first eligible tile).
@@ -747,5 +762,5 @@
     return Math.max(Math.floor(full * (beats - lost) / beats), Math.floor(full / 3));
   }
 
-  root.Overworld = { courierCount: courierCount, courierPostings: courierPostings, courierTile: courierTile, MINUTES_PER_MILE: MINUTES_PER_MILE, features: FEATURES, terrains: TERRAIN, nodes: NODES, edges: EDGES, territories: TERRITORIES, convoyPlan: convoyPlan, convoyNight: convoyNight, convoyFee: convoyFee, coinText: coinText, convoyMaxLegs: CONVOY_MAX_LEGS, dangerOf: function (id) { return dangerOf(NODES[id]); }, mountMinutesPerMile: MOUNT_MINUTES_PER_MILE, convoyPace: CONVOY_PACE, haltEvents: HALT_EVENTS, travelEventPlan: travelEventPlan, travelEvents: TRAVEL_EVENTS, campEventPlan: campEventPlan, campEvents: CAMP_EVENTS, campChance: CAMP_CHANCE, travelCooldownDays: TRAVEL_COOLDOWN_DAYS, travelChance: TRAVEL_CHANCE, route: route, duration: duration, span: span, label: label, travelPlan: travelPlan, north: NORTH };
+  root.Overworld = { courierCount: courierCount, courierPostings: courierPostings, courierTile: courierTile, haleRingPlan: haleRingPlan, MINUTES_PER_MILE: MINUTES_PER_MILE, features: FEATURES, terrains: TERRAIN, nodes: NODES, edges: EDGES, territories: TERRITORIES, convoyPlan: convoyPlan, convoyNight: convoyNight, convoyFee: convoyFee, coinText: coinText, convoyMaxLegs: CONVOY_MAX_LEGS, dangerOf: function (id) { return dangerOf(NODES[id]); }, mountMinutesPerMile: MOUNT_MINUTES_PER_MILE, convoyPace: CONVOY_PACE, haltEvents: HALT_EVENTS, travelEventPlan: travelEventPlan, travelEvents: TRAVEL_EVENTS, campEventPlan: campEventPlan, campEvents: CAMP_EVENTS, campChance: CAMP_CHANCE, travelCooldownDays: TRAVEL_COOLDOWN_DAYS, travelChance: TRAVEL_CHANCE, route: route, duration: duration, span: span, label: label, travelPlan: travelPlan, north: NORTH };
 })(typeof window !== "undefined" ? window : global);

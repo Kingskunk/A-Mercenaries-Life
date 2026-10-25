@@ -199,6 +199,7 @@ const MAP = {
   jewelry_sapphire_gold_ring: "Equipment/Ring/Sapphire_Gold_Ring.png",
   jewelry_ruby_gold_ring: "Equipment/Ring/Gold_Ruby_Ring.png",
   jewelry_diamond_gold_ring: "Equipment/Ring/Golden Diamond Ring Render.png",
+  ressa_hale_ring: "Equipment/Ring/Ring_A_Gem_A_Gold_Unfaded_Icon.png",
 
   // ---- provisions, papers and everything else
   food: "FOOD_Dried_Rope_Sausage_Unfaded_Icon.png",

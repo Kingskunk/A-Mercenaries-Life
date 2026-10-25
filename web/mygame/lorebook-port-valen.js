@@ -696,7 +696,7 @@
           out.push("<b>The dredge landing.</b> At low water, workers haul black spoil from the canal into drying mounds. The made ground beneath the district is laid down a basket at a time.");
         }
         if (truthy(s.cut_seen_lamp_stair)) {
-          out.push("<b>Lamp Stair.</b> Above the flood line beneath the seawall, a short stair reaches a row of red-shaded lamps, a pawnbroker and hedge-doctor by day, and a dice cellar and drinking house after dusk.");
+          out.push("<b>Lamp Stair.</b> Above the flood line beneath the seawall, a short stair reaches a row of red-shaded lamps, the Open Hand pawnshop and a hedge-doctor by day, and a dice cellar and drinking house after dusk.");
         }
         if (truthy(s.cut_seen_lower_steps)) {
           out.push("<b>The lower steps.</b> A seawall stair falls toward the canal and its tide-flooded cellars, some used as flophouses when the water is low.");
@@ -836,22 +836,15 @@
     {
       id: "lamp_stair", category: "places", title: "Lamp Stair",
       sub: "The red-lamp street under the seawall",
-      tags: ["Dredge-End", "Black Oath"], aliases: ["red lamps", "red-lamp street", "blue door", "dice cellar", "pawnbroker", "hedge-doctor", "drinking house"],
+      tags: ["Dredge-End", "Black Oath"], aliases: ["red lamps", "red-lamp street", "blue door", "dice cellar", "pawnbroker", "open hand", "hedge-doctor", "drinking house"],
       link: ["Lamp Stair"],
       unlock: "cut_seen_lamp_stair",
       index: false,
       body: function (s) {
-        var pawn = Number(s.cut_rumors_pawn) || 0;
         var drink = Number(s.cut_rumors_drink) || 0;
         var out = [
-          "A flagged street along the foot of the seawall, above the flood line, reached by a short flight of stone steps from the canal. The flags are worn into shallow bowls by a great many feet, and the doors along it are painted blue, green and a red gone brown, each with a red-shaded lamp over it. What is open depends on the hour: a pawnbroker's window and a hedge-doctor's stall by day, and from dusk a dice cellar, an all-night drinking house and the house with the blue door."
+          "A flagged street along the foot of the seawall, above the flood line, reached by a short flight of stone steps from the canal. The flags are worn into shallow bowls by a great many feet, and the doors along it are painted blue, green and a red gone brown, each with a red-shaded lamp over it. What is open depends on the hour: the Open Hand pawnshop and a hedge-doctor's stall by day, and from dusk a dice cellar, an all-night drinking house and the house with the blue door."
         ];
-        if (pawn >= 1) {
-          out.push("The pawnbroker lends against tools before rings. A man can live without his ring.");
-        }
-        if (pawn >= 2) {
-          out.push("A woman is said to come on Hallowdays with a pouch of temple silver and leave with tincture vials nobody wrote down. The pawnbroker says he does not know her.");
-        }
         if (drink >= 1) {
           out.push("A ferryman in the drinking house says the Oath never has to raise a hand. You just wake up owing something you do not remember borrowing.");
         }
@@ -860,7 +853,31 @@
         }
         return out;
       },
-      see: ["dredge_end", "black_oath", "upper_gangways", "corve"]
+      see: ["dredge_end", "black_oath", "upper_gangways", "corve", "open_hand"]
+    },
+    {
+      id: "open_hand", category: "places", title: "The Open Hand",
+      sub: "A pawnshop on Lamp Stair",
+      tags: ["Dredge-End", "Trade"], aliases: ["open hand", "Angel's shop", "pawnshop", "pawn shop"],
+      link: ["The Open Hand", "Open Hand"],
+      unlock: "cut_pawn_angel_met",
+      body: [
+        "A small, orderly pawnshop on Lamp Stair, with cedar beams, woven mats and tagged second-hand goods stacked along the walls. A felted counter holds a balance, a black touchstone and a brass handbell.",
+        "Angel buys goods for a hard price and asks no questions unless the customer decides to offer a story. The more unusual pieces do not always stay on the shelf; she can usually put a thing before someone who is looking for it."
+      ],
+      see: ["angel", "lamp_stair", "dredge_end"]
+    },
+    {
+      id: "angel", category: "people", title: "Angel",
+      sub: "Keeper of the Open Hand",
+      role: "Pawnbroker, Lamp Stair",
+      link: ["Angel"],
+      tags: ["Dredge-End", "Trade"], aliases: ["Angel", "pawnbroker", "shopkeeper"],
+      unlock: "cut_pawn_angel_met",
+      body: [
+        "A half-elf woman with dark curls pinned by a brass comb, quick eyes and a plum-coloured waistcoat. She calls herself Angel and keeps the Open Hand with a warm smile and no patience for bad prices. She says she can usually find the right customer for an unusual thing."
+      ],
+      see: ["open_hand", "lamp_stair"]
     },
     {
       id: "corve", category: "places", title: "Widow Corve's",

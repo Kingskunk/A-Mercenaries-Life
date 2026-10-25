@@ -32,6 +32,9 @@
 *temp inn_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
 *if (inn_now >= tm_inn_room_until)
   *set tm_inn_room_active false
+*temp tm_room_price tm_inn_rate_copper
+*if (tm_hale_ring_discount)
+  *set tm_room_price 2
 *temp inn_first false
 *if (not(tm_inn_seen))
   *set inn_first true
@@ -65,9 +68,15 @@ A long two-storey house of dark timber stands at the road end of the square, wit
   The boards inside the door are still dark from the last rain.
 
 *if (inn_first)
-  A broad-shouldered woman stands behind the plank counter with a ring of keys at her belt. Her braid is grey-shot, her face is weathered, and the old scars of rope burns show pale along both forearms. She looks you over once, then looks past you at the door. "Ressa Hale. Bed, food, or a place for an animal?" Her eyes stay on the yard. "Tell me about the animal first. It causes more trouble than you do." She turns back to you. "A bed is ${tm_inn_rate_copper} copper bits for a day and a night, a bowl of stew is two, and a plate is one. The pot is on from first light until the last wagon is in."
+  A broad-shouldered woman stands behind the plank counter with a ring of keys at her belt. Her braid is grey-shot, her face is weathered, and the old scars of rope burns show pale along both forearms. She looks you over once, then looks past you at the door. "Ressa Hale. Bed, food, or a place for an animal?" Her eyes stay on the yard. "Tell me about the animal first. It causes more trouble than you do."
+  *if (tm_hale_ring_discount)
+    She turns back to you. "A bed is two copper bits for a day and a night. A bowl of stew is two, and a plate is one. The pot is on from first light until the last wagon is in."
+  *else
+    She turns back to you. "A bed is ${tm_inn_rate_copper} copper bits for a day and a night, a bowl of stew is two, and a plate is one. The pot is on from first light until the last wagon is in."
 *else
   Ressa Hale stands behind the plank counter with her keys at her belt, watching the door.
+*if ((tm_hale_ring_discount) and (not(inn_first)))
+  Ressa catches your eye and taps the key board once. "Two copper for a room, as promised. So long as I have one empty."
 
 *if (inn_state = "morning")
   *if (inn_roll = 1)
@@ -169,10 +178,10 @@ A long two-storey house of dark timber stands at the road end of the square, wit
   *if (tm_inn_room_active)
     # Go up to your room.
       *goto tm_inn_room
-  *if ((not(tm_inn_room_active)) and ((((gold * 100) + (silver * 10)) + copper) >= tm_inn_rate_copper))
-    # [${tm_inn_rate_copper} Copper Bits] Take a room for 24 hours.
+  *if ((not(tm_inn_room_active)) and ((((gold * 100) + (silver * 10)) + copper) >= tm_room_price))
+    # [${tm_room_price} Copper Bits] Take a room for 24 hours.
       *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-        *set currency_add_amount (0 - tm_inn_rate_copper)
+        *set currency_add_amount (0 - tm_room_price)
         *gosub_scene economy currency_add
         *set currency_txn_locked true
         *set locked_currency_txn_page_id page_id
@@ -182,11 +191,11 @@ A long two-storey house of dark timber stands at the road end of the square, wit
 
       Ressa takes the coppers, drops them into a tin under the counter, and unhooks an iron key from the board behind her. "Top of the stair, the door on the left," she says. "It is yours until this hour tomorrow, so go out and come back as you like. The window faces the yard, so you will hear the wagons. Bar the door."
       *goto tm_inn_room
-  *if ((not(tm_inn_room_active)) and ((((gold * 100) + (silver * 10)) + copper) < tm_inn_rate_copper))
+  *if ((not(tm_inn_room_active)) and ((((gold * 100) + (silver * 10)) + copper) < tm_room_price))
     # Ask Ressa about a room.
       "What do you charge for a room?" you ask.
 
-      "${tm_inn_rate_copper} copper bits for a day and a night," Ressa says. "Come back with it and the bed is yours. I do not let on credit, and I do not let the same bed twice."
+      "${tm_room_price} copper bits for a day and a night," Ressa says. "Come back with it and the bed is yours. I do not let on credit, and I do not let the same bed twice."
 
       You nod. "I'll be back."
       *choice
@@ -196,6 +205,9 @@ A long two-storey house of dark timber stands at the road end of the square, wit
         # ⇥ [pvgo:home:timbermouth]
           *goto tm_inn_hall
         *comment GEN:END place_steps home:timbermouth
+  *if ((has_ressa_hale_ring) and (hale_ring_cassia_spoken))
+    # Show Ressa the gold ring engraved R. H.
+      *goto tm_inn_hale_ring
   # Walk through the arch to the stable yard.
     *goto tm_inn_yard
   *if ((mw_inn_seen) and (not(tm_inn_talk_brother)))
@@ -219,6 +231,49 @@ A long two-storey house of dark timber stands at the road end of the square, wit
   # ⇥ [pvgo:home:timbermouth]
     *goto_scene timbermouth/timbermouth timbermouth
         *comment GEN:END place_steps home:timbermouth
+
+*label tm_inn_hale_ring
+You set the ring on the plank between you. "I found this on the River Road," you say. Ressa does not reach for it. First she reads the initials; then she turns the band until she finds the old join in the gold.
+
+"I thought that was gone on the River Road," she says. "The cord broke somewhere north of here. I looked until the light failed, then had a wagon waiting and a load that would not wait with me."
+
+She rubs her thumb across the seam. "My father wore one piece. My mother wore the other. Oswin and I had Cassia make this after they were gone. Nothing grand. Just something I could carry."
+
+There is a pause before she looks up again.
+
+*choice
+  # Return the ring freely.
+    *set has_ressa_hale_ring false
+    *set hale_ring_stage "returned_free"
+    *set tm_hale_ring_discount true
+    "It's yours. Take it," you say.
+
+    Ressa closes her hand around the ring. "Thank you. Truly."
+
+    She takes one of the keys from the board, lets it fall back against the wood, and meets your eyes. "For you, two copper for a room. So long as I have a bed empty."
+    *page_break Step back from the counter…
+    *goto tm_inn_hall
+  # Ask for payment.
+    *set has_ressa_hale_ring false
+    *set hale_ring_stage "returned_paid"
+    "I want payment for it," you say.
+
+    Ressa lets out a breath through her nose. "Fair enough. You found it."
+
+    She goes upstairs and returns with a small wrapped bundle. Inside are two gold crowns, their edges worn soft from keeping.
+    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+      *set currency_add_amount 200
+      *gosub_scene economy currency_add
+      *set currency_txn_locked true
+      *set locked_currency_txn_page_id page_id
+    [b]💰 Ressa paid 2 Gold Crowns for her ring.[/b]
+    *page_break Step back from the counter…
+    *goto tm_inn_hall
+  # Keep the ring for now.
+    "Not today," you say, closing your hand around the ring.
+
+    Ressa nods once and does not ask you to put it down again.
+    *goto tm_inn_hall
 
 *label tm_inn_yard
 *temp inn_yard_roll 1
@@ -308,6 +363,7 @@ Behind the house, a cobbled yard runs between a long range of stalls and a lean-
   *goto tm_inn_hall
 *comment A rented private room is open-world free time for the sidebar's Wait and Rest controls.
 *set wait_ok_page page_id
+*line_break
 [b]◈ YOUR ROOM: THE SPLIT PINE[/b]
 *line_break
 You turn the iron key and step into a narrow room under the roof at the back of the house. A plank bed stands against the wall with a straw mattress and a folded wool blanket, a tin basin and a jug sit on a shelf beside a peg rack, and a shuttered window looks down over the stable yard. The room smells of straw, tallow and resin.
@@ -337,8 +393,6 @@ You turn the iron key and step into a narrow room under the roof at the back of 
     *goto tm_inn_sleep
   # Pour water into the tin basin and wash off road grime. [~10 min]
     *goto tm_inn_wash
-  # Walk back out to Timbermouth.
-    *goto_scene timbermouth/timbermouth timbermouth
   # Walk back out to Timbermouth.
     *goto_scene timbermouth/timbermouth timbermouth
   # Go back down to the hall.
@@ -382,6 +436,12 @@ You drop the bar across the door, shove the shutter closed against the yard nois
   ${sleep_gear_note}
 The iron key is yours until this hour tomorrow, and Ressa does not ask for it back.
 *goto tm_inn_room
+
+*comment LEVEL-UP QUEST COUNT: The Hale Ring is a successful quest only when it is returned to Ressa. Selling it is a valid resolution, but does not add a quest credit.
+*label count_finished_split_pine
+*if ((hale_ring_stage = "returned_free") or (hale_ring_stage = "returned_paid"))
+  *set quests_finished + 1
+*return
 
 *label tm_inn_wash
 *set hours_to_pass 0

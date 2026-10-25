@@ -321,7 +321,7 @@ window.CITY_TRAVEL = {
    },
    {
     "id": "pawnbroker",
-    "name": "The Pawnbroker's Window",
+    "name": "The Open Hand",
     "district": "dredge_end",
     "kind": "shops",
     "seen": "cut_seen_lamp_stair",

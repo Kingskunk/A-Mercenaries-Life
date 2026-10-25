@@ -1086,7 +1086,6 @@ stats = {
  "cut_rumors_gangways": "0",
  "cut_rumors_scrap": "0",
  "cut_rumors_landing": "0",
- "cut_rumors_pawn": "0",
  "cut_rumors_drink": "0",
  "cut_rumors_shrine": "0",
  "cut_rumors_steps": "0",

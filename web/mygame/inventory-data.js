@@ -1403,6 +1403,13 @@
       badge: "Evidence"
     },
     {
+      id: "ressa_hale_ring", category: "documents", owned: "has_ressa_hale_ring",
+      weight: 0.05,
+      name: "Ressa Hale's Ring",
+      description: function (s) { return truthy(s.hale_ring_cut_known) ? "A worn gold ring engraved R. H., set with a small diamond cut in an unusual, deliberate pattern." : "A worn gold ring engraved R. H., set with a small, sharply cut diamond."; },
+      badge: "Quest Item"
+    },
+    {
       id: "diverted_timber_waybill", category: "documents", owned: "has_diverted_timber_waybill",
       weight: 0.1,
       name: "Diverted Timber Waybill",

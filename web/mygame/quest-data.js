@@ -153,6 +153,21 @@
       active: function (s) { return s.peddler_stage === "active"; }
     },
     {
+      id: "hale_ring", title: "The Hale Ring",
+      giver: function (s) { return truthy(s.hale_ring_cassia_spoken) ? "Cassia Rell, the Bright Setting" : "A ring found on the River Road"; },
+      levelProgress: "Counts toward level progress when returned to Ressa Hale.",
+      place: function (s) { return (truthy(s.hale_ring_cassia_spoken) || truthy(s.hale_ring_oswin_spoken)) ? "Timbermouth · the Split Pine" : "Port Valen · the Bright Setting"; },
+      goal: function (s) { return (truthy(s.hale_ring_cassia_spoken) || truthy(s.hale_ring_oswin_spoken)) ? "Return Ressa Hale's ring to her at the Split Pine in Timbermouth." : "Show the gold ring engraved R. H. to Cassia Rell at the Bright Setting."; },
+      clues: function (s) {
+        var c = ["The inside of the gold band is engraved R. H."];
+        if (truthy(s.hale_ring_cut_known)) c.push("Its small diamond has an unusually deliberate cut, not common market work.");
+        if (truthy(s.hale_ring_cassia_spoken)) c.push("Cassia Rell says the ring belongs to Ressa Hale of the Split Pine. It was made from her parents' old jewellery.");
+        if (truthy(s.hale_ring_oswin_spoken)) c.push("Oswin Hale recognizes the old seam in the ring and says Ressa lost it on their last freight run together.");
+        return c;
+      },
+      active: function (s) { return truthy(s.has_ressa_hale_ring) && (s.hale_ring_stage === "found" || s.hale_ring_stage === "owner_known"); }
+    },
+    {
       id: "varren_errand", title: "Varren's Errand", place: "Port Valen",
       giver: "Sergeant Varren, the Carrion Compound",
       levelProgress: "Counts toward level progress on a successful resolution.",

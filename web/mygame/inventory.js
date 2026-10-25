@@ -149,7 +149,7 @@
     vanguard_grease_chit: "note", customs_vellum: "ledger", herbalists_field_notes: "note", waterproof_gear: "jug", talia_provisions: "food", rotten_rib_splinter: "splinter",
     gem_agate: "gem_agate", gem_citrine: "gem_citrine", gem_quartz: "gem_quartz", gem_aquamarine: "gem_aquamarine", gem_opal: "gem_opal", gem_pearl: "gem_pearl", gem_sapphire: "gem_sapphire", gem_ruby: "gem_ruby", gem_emerald: "gem_emerald", gem_diamond: "gem_diamond",
     jewelry_silver_ring: "jewelry_silver_ring", jewelry_gold_ring: "jewelry_gold_ring", jewelry_crescent_earrings: "jewelry_crescent_earrings", jewelry_drop_pendant: "jewelry_drop_pendant", jewelry_gold_necklace: "jewelry_gold_necklace",
-    jewelry_emerald_pearl_necklace: "jewelry_emerald_pearl_necklace", jewelry_ruby_pearl_necklace: "jewelry_ruby_pearl_necklace", jewelry_sapphire_gold_ring: "jewelry_sapphire_gold_ring", jewelry_ruby_gold_ring: "jewelry_ruby_gold_ring", jewelry_diamond_gold_ring: "jewelry_diamond_gold_ring",
+    jewelry_emerald_pearl_necklace: "jewelry_emerald_pearl_necklace", jewelry_ruby_pearl_necklace: "jewelry_ruby_pearl_necklace", jewelry_sapphire_gold_ring: "jewelry_sapphire_gold_ring", jewelry_ruby_gold_ring: "jewelry_ruby_gold_ring", jewelry_diamond_gold_ring: "jewelry_diamond_gold_ring", ressa_hale_ring: "ressa_hale_ring",
     horse: "mount", diverted_timber_waybill: "note", silt_gate_payout_slip: "note", hall_insignia: "signet", letter_of_credit: "letter"
   };
   var BUCKET_ICON = { weapon: "w_generic", sidearm: "w_generic", armor: "a_generic", shield: "shield", head: "h_cap", cloak: "cloak", hands: "gloves", waist: "belt", feet: "boots", neck: "neck", ring: "ring" };

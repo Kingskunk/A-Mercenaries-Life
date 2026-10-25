@@ -66,11 +66,24 @@
       role: "Innkeeper, the Split Pine (Timbermouth)",
       link: ["Ressa Hale", "Ressa"],
       tags: ["Timbermouth"], aliases: ["Ressa", "Hale", "keeper of the inn"],
-      unlock: "tm_inn_seen",
+      unlock: function (s) {
+        return truthy(s.tm_inn_seen) || truthy(s.hale_ring_cassia_spoken) || truthy(s.hale_ring_oswin_spoken);
+      },
       body: function (s) {
-        var out = [
-          "A broad-shouldered woman with a grey-shot braid and a weathered face, the old scars of rope burns pale along both forearms, who stands behind the plank counter with a ring of keys at her belt. When you met her, she asked whether you needed a bed, food or room in the yard, and told you to mention an animal first."
-        ];
+        var out;
+        if (truthy(s.tm_inn_seen)) {
+          out = [
+            "A broad-shouldered woman with a grey-shot braid and a weathered face, the old scars of rope burns pale along both forearms, who stands behind the plank counter with a ring of keys at her belt. When you met her, she asked whether you needed a bed, food or room in the yard, and told you to mention an animal first."
+          ];
+        } else if (truthy(s.hale_ring_cassia_spoken)) {
+          out = [
+            "Cassia Rell identifies Ressa Hale as the keeper of the Split Pine in Timbermouth. She says Ressa had a family ring made from her parents' old gold."
+          ];
+        } else {
+          out = [
+            "Oswin Hale says Ressa is his sister and keeps the Split Pine in Timbermouth. He says she lost her family ring on their last freight run together."
+          ];
+        }
         if (truthy(s.tm_inn_talk_brother)) {
           out.push("She and her brother Oswin drove freight along this road together for eleven years before they split it: he keeps the Wagoner's Rest at the Port Valen end, and she keeps the Split Pine at this one. She says her stew is the better.");
         }
