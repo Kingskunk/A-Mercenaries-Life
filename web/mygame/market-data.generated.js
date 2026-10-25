@@ -1916,6 +1916,28 @@ window.MARKET_DEFS = {
     },
     "need": 0.4
    },
+   "butter": {
+    "base": 5,
+    "target": 100,
+    "stock0": 100,
+    "buyPct": 0.8,
+    "mult": 0.9,
+    "world": {
+     "tile": "fv"
+    },
+    "need": 0.6
+   },
+   "animal_fat": {
+    "base": 3,
+    "target": 179,
+    "stock0": 179,
+    "buyPct": 0.8,
+    "mult": 0.975,
+    "world": {
+     "tile": "fv"
+    },
+    "need": 0.5
+   },
    "fresh_fish_fillet": {
     "base": 4,
     "target": 19,
@@ -2065,7 +2087,9 @@ window.MARKET_DEFS = {
    "_readme": "A commodity market spends at most this share of its purse (its target) on ONE good a day (2026-10-24, the user: a hill village would not throw all its gold at wool or timber it has lived without). stocked: a good the market holds; unstocked: a good with no maker in its reach.",
    "stocked": 0.1,
    "unstocked": 0.03
-  }
+  },
+  "tile": "fv",
+  "rumorDc": 10
  },
  "tm_market": {
   "id": "tm_market",
@@ -2142,6 +2166,28 @@ window.MARKET_DEFS = {
      "tile": "tm"
     },
     "need": 0.6
+   },
+   "butter": {
+    "base": 5,
+    "target": 113,
+    "stock0": 113,
+    "buyPct": 0.8,
+    "mult": 0.93,
+    "world": {
+     "tile": "tm"
+    },
+    "need": 0.6
+   },
+   "animal_fat": {
+    "base": 3,
+    "target": 256,
+    "stock0": 256,
+    "buyPct": 0.8,
+    "mult": 0.945,
+    "world": {
+     "tile": "tm"
+    },
+    "need": 0.5
    },
    "orchard_apple": {
     "base": 1,
@@ -2402,7 +2448,9 @@ window.MARKET_DEFS = {
    "_readme": "A commodity market spends at most this share of its purse (its target) on ONE good a day (2026-10-24, the user: a hill village would not throw all its gold at wool or timber it has lived without). stocked: a good the market holds; unstocked: a good with no maker in its reach.",
    "stocked": 0.1,
    "unstocked": 0.03
-  }
+  },
+  "tile": "tm",
+  "rumorDc": 12
  },
  "bw_market": {
   "id": "bw_market",
@@ -2479,6 +2527,28 @@ window.MARKET_DEFS = {
      "tile": "bw"
     },
     "need": 0.6
+   },
+   "butter": {
+    "base": 5,
+    "target": 48,
+    "stock0": 48,
+    "buyPct": 0.8,
+    "mult": 1.11,
+    "world": {
+     "tile": "bw"
+    },
+    "need": 0.6
+   },
+   "animal_fat": {
+    "base": 3,
+    "target": 106,
+    "stock0": 106,
+    "buyPct": 0.8,
+    "mult": 1.125,
+    "world": {
+     "tile": "bw"
+    },
+    "need": 0.5
    },
    "orchard_apple": {
     "base": 1,
@@ -2739,7 +2809,9 @@ window.MARKET_DEFS = {
    "_readme": "A commodity market spends at most this share of its purse (its target) on ONE good a day (2026-10-24, the user: a hill village would not throw all its gold at wool or timber it has lived without). stocked: a good the market holds; unstocked: a good with no maker in its reach.",
    "stocked": 0.1,
    "unstocked": 0.03
-  }
+  },
+  "tile": "bw",
+  "rumorDc": 10
  },
  "ah_market": {
   "id": "ah_market",
@@ -2816,6 +2888,28 @@ window.MARKET_DEFS = {
      "tile": "fo"
     },
     "need": 0.6
+   },
+   "butter": {
+    "base": 5,
+    "target": 68,
+    "stock0": 68,
+    "buyPct": 0.8,
+    "mult": 0.975,
+    "world": {
+     "tile": "fo"
+    },
+    "need": 0.6
+   },
+   "animal_fat": {
+    "base": 3,
+    "target": 209,
+    "stock0": 209,
+    "buyPct": 0.8,
+    "mult": 0.9,
+    "world": {
+     "tile": "fo"
+    },
+    "need": 0.5
    },
    "orchard_apple": {
     "base": 1,
@@ -3076,7 +3170,9 @@ window.MARKET_DEFS = {
    "_readme": "A commodity market spends at most this share of its purse (its target) on ONE good a day (2026-10-24, the user: a hill village would not throw all its gold at wool or timber it has lived without). stocked: a good the market holds; unstocked: a good with no maker in its reach.",
    "stocked": 0.1,
    "unstocked": 0.03
-  }
+  },
+  "tile": "fo",
+  "rumorDc": 10
  },
  "mc_market": {
   "id": "mc_market",
@@ -3153,6 +3249,28 @@ window.MARKET_DEFS = {
      "tile": "mc"
     },
     "need": 0.6
+   },
+   "butter": {
+    "base": 5,
+    "target": 64,
+    "stock0": 64,
+    "buyPct": 0.8,
+    "mult": 1,
+    "world": {
+     "tile": "mc"
+    },
+    "need": 0.6
+   },
+   "animal_fat": {
+    "base": 3,
+    "target": 122,
+    "stock0": 122,
+    "buyPct": 0.8,
+    "mult": 1,
+    "world": {
+     "tile": "mc"
+    },
+    "need": 0.5
    },
    "orchard_apple": {
     "base": 1,
@@ -3413,7 +3531,9 @@ window.MARKET_DEFS = {
    "_readme": "A commodity market spends at most this share of its purse (its target) on ONE good a day (2026-10-24, the user: a hill village would not throw all its gold at wool or timber it has lived without). stocked: a good the market holds; unstocked: a good with no maker in its reach.",
    "stocked": 0.1,
    "unstocked": 0.03
-  }
+  },
+  "tile": "mc",
+  "rumorDc": 10
  },
  "af_market": {
   "id": "af_market",
@@ -3490,6 +3610,28 @@ window.MARKET_DEFS = {
      "tile": "af"
     },
     "need": 0.6
+   },
+   "butter": {
+    "base": 5,
+    "target": 94,
+    "stock0": 94,
+    "buyPct": 0.8,
+    "mult": 0.99,
+    "world": {
+     "tile": "af"
+    },
+    "need": 0.6
+   },
+   "animal_fat": {
+    "base": 3,
+    "target": 179,
+    "stock0": 179,
+    "buyPct": 0.8,
+    "mult": 1.065,
+    "world": {
+     "tile": "af"
+    },
+    "need": 0.5
    },
    "orchard_apple": {
     "base": 1,
@@ -3750,7 +3892,9 @@ window.MARKET_DEFS = {
    "_readme": "A commodity market spends at most this share of its purse (its target) on ONE good a day (2026-10-24, the user: a hill village would not throw all its gold at wool or timber it has lived without). stocked: a good the market holds; unstocked: a good with no maker in its reach.",
    "stocked": 0.1,
    "unstocked": 0.03
-  }
+  },
+  "tile": "af",
+  "rumorDc": 12
  },
  "rv_market": {
   "id": "rv_market",
@@ -3827,6 +3971,28 @@ window.MARKET_DEFS = {
      "tile": "rv"
     },
     "need": 0.6
+   },
+   "butter": {
+    "base": 5,
+    "target": 60,
+    "stock0": 60,
+    "buyPct": 0.8,
+    "mult": 1.03,
+    "world": {
+     "tile": "rv"
+    },
+    "need": 0.6
+   },
+   "animal_fat": {
+    "base": 3,
+    "target": 117,
+    "stock0": 117,
+    "buyPct": 0.8,
+    "mult": 1.105,
+    "world": {
+     "tile": "rv"
+    },
+    "need": 0.5
    },
    "orchard_apple": {
     "base": 1,
@@ -4086,7 +4252,9 @@ window.MARKET_DEFS = {
    "_readme": "A commodity market spends at most this share of its purse (its target) on ONE good a day (2026-10-24, the user: a hill village would not throw all its gold at wool or timber it has lived without). stocked: a good the market holds; unstocked: a good with no maker in its reach.",
    "stocked": 0.1,
    "unstocked": 0.03
-  }
+  },
+  "tile": "rv",
+  "rumorDc": 10
  },
  "wf_market": {
   "id": "wf_market",
@@ -4163,6 +4331,28 @@ window.MARKET_DEFS = {
      "tile": "wf"
     },
     "need": 0.6
+   },
+   "butter": {
+    "base": 5,
+    "target": 57,
+    "stock0": 57,
+    "buyPct": 0.8,
+    "mult": 1.065,
+    "world": {
+     "tile": "wf"
+    },
+    "need": 0.6
+   },
+   "animal_fat": {
+    "base": 3,
+    "target": 111,
+    "stock0": 111,
+    "buyPct": 0.8,
+    "mult": 1.09,
+    "world": {
+     "tile": "wf"
+    },
+    "need": 0.5
    },
    "orchard_apple": {
     "base": 1,
@@ -4422,7 +4612,9 @@ window.MARKET_DEFS = {
    "_readme": "A commodity market spends at most this share of its purse (its target) on ONE good a day (2026-10-24, the user: a hill village would not throw all its gold at wool or timber it has lived without). stocked: a good the market holds; unstocked: a good with no maker in its reach.",
    "stocked": 0.1,
    "unstocked": 0.03
-  }
+  },
+  "tile": "wf",
+  "rumorDc": 10
  },
  "pv_market": {
   "id": "pv_market",
@@ -4499,6 +4691,28 @@ window.MARKET_DEFS = {
      "tile": "pv"
     },
     "need": 0.6
+   },
+   "butter": {
+    "base": 5,
+    "target": 100,
+    "stock0": 100,
+    "buyPct": 0.8,
+    "mult": 1.08,
+    "world": {
+     "tile": "pv"
+    },
+    "need": 0.6
+   },
+   "animal_fat": {
+    "base": 3,
+    "target": 216,
+    "stock0": 216,
+    "buyPct": 0.8,
+    "mult": 1.08,
+    "world": {
+     "tile": "pv"
+    },
+    "need": 0.5
    },
    "orchard_apple": {
     "base": 1,
@@ -4748,7 +4962,9 @@ window.MARKET_DEFS = {
    "_readme": "A commodity market spends at most this share of its purse (its target) on ONE good a day (2026-10-24, the user: a hill village would not throw all its gold at wool or timber it has lived without). stocked: a good the market holds; unstocked: a good with no maker in its reach.",
    "stocked": 0.1,
    "unstocked": 0.03
-  }
+  },
+  "tile": "pv",
+  "rumorDc": 14
  },
  "trapper": {
   "id": "trapper",
@@ -4813,6 +5029,14 @@ window.MARKET_DEFS = {
     "mult": 1,
     "sells": false
    },
+   "animal_fat": {
+    "base": 3,
+    "target": 38,
+    "stock0": 38,
+    "buyPct": 0.667,
+    "mult": 1,
+    "sells": false
+   },
    "elk_antler": {
     "base": 7,
     "target": 24,
@@ -4852,6 +5076,14 @@ window.MARKET_DEFS = {
     "target": 30,
     "stock0": 30,
     "buyPct": 0.75,
+    "mult": 1,
+    "sells": false
+   },
+   "animal_fat": {
+    "base": 3,
+    "target": 48,
+    "stock0": 48,
+    "buyPct": 0.667,
     "mult": 1,
     "sells": false
    }

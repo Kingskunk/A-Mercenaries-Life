@@ -8,13 +8,29 @@
 *comment Built: the boar (night), the venomous snake (day and night) and the elk (day).
 *comment ====================================================================================
 
-*comment THE BOAR. Night only (lsf_table: weight 0 by day, 3 at night). dg_dark is true without a light of one's own, so the same check also reads the dark: the dice engine already gives disadvantage on every d20 roll then.
+*comment THE BOAR. Night only (lsf_table: weight 0 by day, 3 at night). dg_lsf_boar_intro is picked once per dungeon run so a browser refresh does not change the encounter prose. dg_dark is true without a light of one's own, so the same check also reads the dark: the dice engine already gives disadvantage on every d20 roll then.
 *label lsb_enc_boar
 *gosub_scene dungeon dg_dark_check
+*if (dg_lsf_boar_intro = 0)
+  *rand dg_lsf_boar_intro 1 4
 *if (dg_dark)
-  Something heavy shoves through the leaf litter ahead, and the dark fills with the smell of mud and musk. Roots crack under a weight you cannot see. A wet, snuffling grunt rolls out of the undergrowth, close enough that you feel it in your chest.
+  *if (dg_lsf_boar_intro = 1)
+    Something heavy shoves through the leaf litter ahead, and the dark fills with the smell of mud and musk. Roots crack under a weight you cannot see. A wet, snuffling grunt rolls out of the undergrowth, close enough that you feel it in your chest.
+  *elseif (dg_lsf_boar_intro = 2)
+    Water sucks once in a shallow wallow beside the path. Then a broad body moves in the dark, close enough for the stink of wet hide and churned mud to reach you.
+  *elseif (dg_lsf_boar_intro = 3)
+    A dead branch grates against a fallen log ahead. Something gives a low, angry huff, and the leaf mold shakes under a weight working at the wood.
+  *else
+    The dark ahead breaks with a short, hard snort. Hooves stamp once among the roots, followed by the dry click of tusks against bark.
 *else
-  A boar is rooting at the foot of an old trunk, head down, its back a ridge of coarse bristles. Each time it lifts its snout the light finds two yellow tusks, curved like a pair of sickles. It is busy with the ground and breathes in short, greedy huffs.
+  *if (dg_lsf_boar_intro = 1)
+    A boar is rooting at the foot of an old trunk, head down, its back a ridge of coarse bristles. Each time it lifts its snout the light finds two yellow tusks, curved like a pair of sickles. It is busy with the ground and breathes in short, greedy huffs.
+  *elseif (dg_lsf_boar_intro = 2)
+    A broad wild boar stands knee-deep in a shallow wallow beside the path, shouldering mud over its flanks. It shakes itself once, spraying the leaves, then lowers its snout to the black water with a wet, greedy snort.
+  *elseif (dg_lsf_boar_intro = 3)
+    A boar has wedged its snout under a fallen log and is worrying it back and forth through the leaf mold. The log jumps with each shove, exposing beetles and pale roots; its tusks flash when it lifts its head to listen.
+  *else
+    A heavy boar crosses the path ahead, stopping beneath a stand of hazel to scrape at the earth with one forehoof. Its ears work constantly, but it has not caught your scent, and its curved tusks are clear in the light.
 *choice
   # Creep up on it and strike first.@{show_stat_hints  [DEX (Stealth) DC 12, a pass takes the first strike]|}
     *gosub_scene dice_engine roll_skill_check 12 "stealth" "" "" "" "" ""
@@ -252,6 +268,7 @@
 *temp lsb_meat 1
 *temp lsb_hide 0
 *temp lsb_tusk 0
+*temp lsb_fat 0
 *comment lint-ok two-options: take the harvest or leave the carcass
 *choice
   # Skin and butcher it. [~25 min]${lsb_hint}
@@ -260,18 +277,22 @@
       *set lsb_meat 2
       *set lsb_hide 1
       *set lsb_tusk 1
+      *set lsb_fat 2
     *if (check_total >= 16)
       *set lsb_meat 3
+      *set lsb_fat 3
     *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
       *gosub_scene equipment grant_gear "boar_meat" lsb_meat
+      *if (lsb_fat > 0)
+        *gosub_scene equipment grant_gear "animal_fat" lsb_fat
       *set raw_hide (raw_hide + lsb_hide)
       *set boar_tusk (boar_tusk + lsb_tusk)
       *set stat_bump_locked true
       *set locked_stat_bump_page_id page_id
     *if (lsb_hide > 0)
-      You open the belly from breastbone to flank and work the hide back from the meat in long, steady pulls, the knife held flat. The tusks come away with a twist at the root. You roll the hide fur-in, cut away the best of the haunch and wrap it in leaves.
+      You open the belly from breastbone to flank and work the hide back from the meat in long, steady pulls, the knife held flat. The tusks come away with a twist at the root. Under the hide the fat lies thick along the back and ribs, and you pare it off in slabs. You roll the hide fur-in, cut away the best of the haunch and wrap the meat and the fat in leaves.
       *line_break
-      [b][🌿 Harvested: ${lsb_meat} boar meat, 1 raw hide, 1 boar tusk][/b]
+      [b][🌿 Harvested: ${lsb_meat} boar meat, ${lsb_fat} animal fat, 1 raw hide, 1 boar tusk][/b]
     *else
       The hide tears under the knife, and the cut wanders through the fat. You save a piece of the haunch and leave the rest of the carcass to the forest.
       *line_break
@@ -306,6 +327,7 @@
 *temp lsb_meat 1
 *temp lsb_hide 0
 *temp lsb_horn 0
+*temp lsb_fat 0
 *comment lint-ok two-options: take the harvest or leave the carcass
 *choice
   # Skin and butcher it. [~30 min]${lsb_hint}
@@ -314,18 +336,22 @@
       *set lsb_meat 3
       *set lsb_hide 1
       *set lsb_horn 1
+      *set lsb_fat 1
     *if (check_total >= 16)
       *set lsb_meat 4
+      *set lsb_fat 2
     *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
       *gosub_scene equipment grant_gear "venison" lsb_meat
+      *if (lsb_fat > 0)
+        *gosub_scene equipment grant_gear "animal_fat" lsb_fat
       *set raw_hide (raw_hide + lsb_hide)
       *set elk_antler (elk_antler + lsb_horn)
       *set stat_bump_locked true
       *set locked_stat_bump_page_id page_id
     *if (lsb_hide > 0)
-      You open the belly from breastbone to flank and work the hide back from the meat in long, steady pulls, the knife held flat. The antlers come away at the base with a twist. You roll the hide fur-in, cut away the best of the haunch and wrap it in leaves.
+      You open the belly from breastbone to flank and work the hide back from the meat in long, steady pulls, the knife held flat. The antlers come away at the base with a twist. The animal is lean, but a thin pad of hard white fat sits over the kidneys and you cut it free. You roll the hide fur-in, cut away the best of the haunch and wrap the meat and the fat in leaves.
       *line_break
-      [b][🌿 Harvested: ${lsb_meat} venison, 1 raw hide, 1 elk antler][/b]
+      [b][🌿 Harvested: ${lsb_meat} venison, ${lsb_fat} animal fat, 1 raw hide, 1 elk antler][/b]
     *else
       The hide tears under the knife, and the cut wanders through the fat. You save a piece of the haunch and leave the rest of the carcass to the forest.
       *line_break

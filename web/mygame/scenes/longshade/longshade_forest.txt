@@ -1509,6 +1509,8 @@ You find the first handholds in the rock and test each before you trust it.
   *gosub_scene equipment shop_cart_sell "boar_tusk"
 *if (cart_sell_venison > 0)
   *gosub_scene equipment shop_cart_sell "venison"
+*if (cart_sell_animal_fat > 0)
+  *gosub_scene equipment shop_cart_sell "animal_fat"
 *if (cart_sell_elk_antler > 0)
   *gosub_scene equipment shop_cart_sell "elk_antler"
 *set gear_shop "trapper"
@@ -1859,8 +1861,8 @@ ${use_text}
   # ⏳ Wait a while. [dungeon_wait]
     *goto lsf_wait
 
-*comment THE OLD GROVE (Room 6, 2026-10-18): the far south-west dead end, a hollow of the oldest trees. Two plants grow only here, each gathered once per refill through dungeon.txt dg_forage: shadefern on the wet rock
-*comment (Nature or Survival DC 12) and acorn truffle in the leaf mold under the great oak (DC 14). A miss spoils that patch until the refill (the flags dg_lsf_r6_fern and dg_lsf_r6_truffle, set after any try). The two plants also have a SEASONAL stock (lsf_grove_*_stock) that limits what can be gathered in a season.
+*comment THE OLD GROVE (Room 6, 2026-10-18; expanded 2026-10-25): the far south-west dead end, a hollow of the oldest trees. A wild boar roots beneath the oak each refill; Stealth DC 12 slips the player past it, or they may fight it using the shared Longshade boar sheet and harvest. The cache is permanent and holds a dead herbalist's field kit and notes.
+*comment Two plants grow only here, each gathered once per refill through dungeon.txt dg_forage: shadefern on the wet rock (Nature or Survival DC 12) and acorn truffle in the leaf mold under the great oak (DC 14). A miss spoils that patch until the refill (the flags dg_lsf_r6_fern and dg_lsf_r6_truffle, set after any try). The two plants also have a SEASONAL stock (lsf_grove_*_stock) that limits what can be gathered in a season.
 *comment The Ambrose request for these two is a later quest (the user, 2026-10-18); nothing here knows about it.
 *label lsf_n_r6
 
@@ -1893,31 +1895,135 @@ ${use_text}
 *elseif (dg_lsf_r6_truffle)
 
   The leaf mold under the oak is raked into a rough heap where you dug.
+*if (not(dg_lsf_r6_boar_cleared))
+  *if (dg_dark)
+    Beneath the oak, a heavy body works through the leaf mold with wet, impatient snorts. The roots hide most of it, but the smell of mud and musk reaches you plainly.
+  *else
+    A broad wild boar roots beneath the oak, tossing damp leaves and acorn husks aside with its snout. Its coarse back is level with your hip, and its yellow tusks show whenever it lifts its head.
+*elseif (not(lsf_grove_cache_found))
+  A pale shape lies beneath a low shelf of roots on the far side of the oak, partly covered by leaf mold.
 *gosub lsf_env
 *gosub_scene dungeon dg_status_line
 *choice
-  *if ((not(dg_lsf_r6_fern)) and (lsf_grove_fern_stock > 0))
-    # Cut ferns from the wet rock. [~15 min]@{show_stat_hints  [Nature or Survival DC 12]|}
-      You crouch at the seep and run your fingers along the stone, looking for the fronds with the firmest stems.
-      *set dg_fg_plant "shadefern"
-      *set dg_fg_stock "lsf_grove_fern_stock"
-      *gosub_scene dungeon dg_forage
-      *set dg_lsf_r6_fern true
-      *goto lsf_n_r6
-  *if ((not(dg_lsf_r6_truffle)) and (lsf_grove_truffle_stock > 0))
-    # Dig in the leaf mold under the oak. [~15 min]@{show_stat_hints  [Nature or Survival DC 14]|}
-      You kneel between two great roots, where the mold is darkest, and start to dig.
-      *set dg_fg_plant "acorn_truffle"
-      *set dg_fg_stock "lsf_grove_truffle_stock"
-      *gosub_scene dungeon dg_forage
-      *set dg_lsf_r6_truffle true
-      *goto lsf_n_r6
+  *if (not(dg_lsf_r6_boar_cleared))
+    # Ease around the boar without disturbing it. [~5 min]@{show_stat_hints  [DEX (Stealth) DC 12]|}
+      *goto lsf_r6_boar_sneak
+    # Creep close and strike the boar first.@{show_stat_hints  [DEX (Stealth) DC 12, a pass takes the first strike]|}
+      *goto lsf_r6_boar_ambush
+    # Drive the boar out of the grove.
+      *goto lsf_r6_boar_fight
+  *if (dg_lsf_r6_boar_cleared)
+    *if (not(lsf_grove_cache_found))
+      # Examine the bones beneath the root shelf. [~10 min]
+        *goto lsf_r6_cache
+    *if ((not(dg_lsf_r6_fern)) and (lsf_grove_fern_stock > 0))
+      # Cut ferns from the wet rock. [~15 min]@{show_stat_hints  [Nature or Survival DC 12]|}
+        You crouch at the seep and run your fingers along the stone, looking for the fronds with the firmest stems.
+        *set dg_fg_plant "shadefern"
+        *set dg_fg_stock "lsf_grove_fern_stock"
+        *gosub_scene dungeon dg_forage
+        *set dg_lsf_r6_fern true
+        *goto lsf_n_r6
+    *if ((not(dg_lsf_r6_truffle)) and (lsf_grove_truffle_stock > 0))
+      # Dig in the leaf mold under the oak. [~15 min]@{show_stat_hints  [Nature or Survival DC 14]|}
+        You kneel between two great roots, where the mold is darkest, and start to dig.
+        *set dg_fg_plant "acorn_truffle"
+        *set dg_fg_stock "lsf_grove_truffle_stock"
+        *gosub_scene dungeon dg_forage
+        *set dg_lsf_r6_truffle true
+        *goto lsf_n_r6
   # Go north.
     *set dg_dest "lsf_j10"
     *set dg_dest_hall true
     *goto lsf_move
   # ⏳ Wait a while. [dungeon_wait]
     *goto lsf_wait
+
+*label lsf_r6_boar_sneak
+You wait for the boar to bury its snout in the leaf mold, then take the wet rock side of the hollow one careful step at a time.
+*gosub_scene dice_engine roll_skill_check 12 "stealth" "" "" "" "" ""
+*if (check_success)
+  The boar snuffles on while you pass the oak. When it finally raises its head, you are already clear. It stares once, then grunts and shoulders away through the trees.
+  *set dg_lsf_r6_boar_cleared true
+*else
+  A root shifts under your boot. The boar jerks its head up, leaves hanging from its snout, and wheels toward you with its tusks low.
+  *set combat_enemy_advantage true
+  *goto lsf_r6_boar_fight
+*set dg_mins 5
+*set dg_time_id "lsf_r6_boar_sneak"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r6
+
+*label lsf_r6_boar_ambush
+You wait until the boar buries its snout in the leaf mold, then circle along the wet rock with each step placed on bare ground.
+*gosub_scene dice_engine roll_skill_check 12 "stealth" "" "" "" "" ""
+*if (check_success)
+  You come within an arm's length of its bristled flank before it hears you. The boar is still rooting when you strike.
+  *set advantage true
+  *set combat_player_surprise true
+
+  [b][🗡️ Unnoticed — the boar loses its first turn and you strike with advantage][/b]
+*else
+  A root cracks under your heel. The boar jerks its head up, leaves hanging from its snout, and wheels toward you with its tusks low.
+  *set combat_enemy_advantage true
+
+  [b][⚠️ Spotted — the boar strikes first][/b]
+*goto lsf_r6_boar_fight
+
+*label lsf_r6_boar_fight
+*set combat_is_nonlethal false
+*set combat_no_flee true
+*set combat_lib_1 "beast"
+*set combat_enemy_name_override "Wild Boar"
+*set combat_enemy_epithet_override "the wild boar"
+*set combat_enemy_hp_override 13
+*set combat_enemy_ac_override 11
+*set combat_enemy_atk_override 3
+*set combat_enemy_size_override "medium"
+*set dg_hv_creature "boar"
+*gosub_scene dungeon dg_fight_prep
+*set combat_player_can_die true
+*gosub_scene combat fight_library
+*set combat_player_can_die false
+*if (combat_outcome = "player_died")
+  *set death_cause "combat"
+  *set death_location_name "The Old Grove"
+  *set death_enemy_epithet "the wild boar"
+  *goto_scene death death_screen
+*if (combat_outcome = "rescued")
+  You come to beneath the oak with a throbbing head and churned leaf mold pressed into your clothes. The boar has gone.
+  *set dg_lsf_r6_boar_cleared true
+  *goto lsf_n_r6
+*if (combat_outcome = "fled")
+  *goto lsf_n_r6
+The boar drops onto its side with a long, shuddering grunt. Its legs paddle once in the leaves before they stop.
+*set dg_lsf_r6_boar_cleared true
+*gosub_scene longshade/longshade_beasts lsb_harvest_boar
+*goto lsf_n_r6
+
+*label lsf_r6_cache
+*if (lsf_grove_cache_found)
+  *goto lsf_n_r6
+The pale shape is a human skeleton laid in the shallow hollow under the roots, its ribs collapsed but its hands still folded over its middle. A mouldered leather satchel has held together beneath the root shelf, though the strap comes apart when you touch it.
+
+Inside are a small bronze mortar with its stone pestle wrapped in cloth, a squat brass burner, a sealed flask of lamp oil, and three clean empty vials nested in straw. A weathered notebook lies flat at the bottom, its pages blotched with old green fingerprints but still readable.
+
+The notes give three formulas: Green Honey Mash, made from shadefern and honeycomb; Restful Balsam; and Winterward Tea.
+*gosub_scene equipment grant_gear "herbalists_field_notes" 1
+*gosub_scene equipment grant_gear "mortar_pestle" 1
+*gosub_scene equipment grant_gear "portable_burner" 1
+*gosub_scene equipment grant_gear "lamp_oil" 1
+*gosub_scene equipment grant_gear "empty_potion_vial" 3
+*set recipe_green_honey_mash true
+*set recipe_restful_balsam true
+*set recipe_winterward_tea true
+*set lsf_grove_cache_found true
+
+[b][Found: Herbalist's Field Notes, a mortar and pestle, a portable burner, lamp oil, and 3 empty potion vials][/b]
+*set dg_mins 10
+*set dg_time_id "lsf_r6_cache"
+*gosub_scene dungeon dg_time
+*goto lsf_n_r6
 
 *comment THE HAZEL CLEARING (Room 7, the user's design 2026-10-19): a dead end that gives no sign of a way on. Once Bark's quest is taken (lsf_bark_accepted) the growth on the north side draws apart the first time the player arrives
 *comment (lsf_r7_show_open, decided inside the page lock; lsf_r7_opened kept for good) and the way north to Room 9 stays open. The map edge to Room 9 is hidden until then, and the watchtower's view marks nothing past this room.
@@ -2789,7 +2895,7 @@ You walk the edge of the clearing and study the raked trunks and the ground at t
 *goto lsf_n_r12
 
 *comment THE ROOT HOLLOW (Room 13, the user's plan 2026-10-17: the bear story across Rooms 10 to 14; the hollow and the bear are invented here). A bear ill from a diet of nothing but meat, lying under a toppled pine. PART ONE: reading what ails her (Medicine or Survival
-*comment DC 12, ten minutes, ONE TRY PER REFILL on a miss: dg_lsf_bear_tried; or Speak with Animals, no roll, which also tells of her missing cub) and every way to heal her. Honey needs no reading (she smells it); a spell, Saint Althea's Water or the mortar and pestle
+*comment DC 12, ten minutes, ONE TRY PER REFILL on a miss: dg_lsf_bear_tried; or Speak with Animals, no roll, which also tells of her missing cub) and every way to heal her. Honey and the learned Green Honey Mash need no reading; a spell or Saint Althea's Water
 *comment need the reading first. Healed is for good (lsf_bear_healed). PART TWO, after Room 14 is built: the cub comes home to her, and a button to sleep in the den (the forest has no long rest of its own).
 *label lsf_n_r13
 
@@ -2839,6 +2945,9 @@ You walk the edge of the clearing and study the raked trunks and the ground at t
     *if (has_honeycomb)
       # Set a piece of honeycomb down for her. [~10 min]
         *goto lsf_bear_honey
+    *if (((recipe_green_honey_mash) and (has_mortar_pestle)) and ((has_shadefern) and (has_honeycomb)))
+      # Make Green Honey Mash for her. [uses 1 shadefern and 1 honeycomb, ~10 min]@{show_stat_hints  [Medicine or Nature DC 8]|}
+        *goto lsf_bear_green_honey_mash
     *if (lsf_bear_read)
       *if (dg_ss_can)
         # Lay Healing Word on her. [${dg_ss_tag}]
@@ -2846,9 +2955,6 @@ You walk the edge of the clearing and study the raked trunks and the ground at t
       *if (has_althea_phial)
         # Tip Saint Althea's Water to her lips. [uses the flask, ~10 min]
           *goto lsf_bear_phial
-      *if (has_mortar_pestle)
-        # Grind a mash of green herbs for her. [~10 min]
-          *goto lsf_bear_kit
   *if ((lsf_bear_healed) and (lsf_cub_freed))
     # Lie down in the hollow beside them and sleep. [~8 hours]
       *goto lsf_den_sleep
@@ -2942,16 +3048,25 @@ A shudder runs the length of her, and then she goes slack and easy, breathing de
 *gosub_scene dungeon dg_time
 *goto lsf_n_r13
 
-*label lsf_bear_kit
-You crouch by a flat stone and grind green stems and a handful of bitter leaves in your mortar until they make a damp mash. You set it down on a leaf within reach of her nose.
-
-She sniffs it, eats it a mouthful at a time, and lays her head down. Within the hour her breathing has slowed and deepened, and the knot of her belly has begun to soften.
-*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-  *set lsf_bear_healed true
-  *set stat_bump_locked true
-  *set locked_stat_bump_page_id page_id
+*label lsf_bear_green_honey_mash
+You bruise the shadefern in the mortar until its cool green scent rises, then work the honeycomb through it into a thick, bright mash. You set it on a leaf beside her muzzle.
+*gosub_scene dice_engine roll_skill_check 8 "medicine" "" "nature" "" "" ""
+*if (check_success)
+  *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+    *gosub_scene equipment spend_consumable "shadefern"
+    *gosub_scene equipment spend_consumable "honeycomb"
+    *set lsf_bear_healed true
+    *set stat_bump_locked true
+    *set locked_stat_bump_page_id page_id
+  She sniffs once, then eats the mash a mouthful at a time. Before long her breathing has slowed and deepened, and the hard knot of her belly begins to soften.
+*else
+  *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+    *gosub_scene equipment spend_consumable "shadefern"
+    *set stat_bump_locked true
+    *set locked_stat_bump_page_id page_id
+  The fern turns bitter in the mortar. She sniffs the mash and turns her head away; the honeycomb is still whole, but you will need fresh shadefern to try again.
 *set dg_mins 10
-*set dg_time_id "lsf_bear_kit"
+*set dg_time_id "lsf_bear_green_honey_mash"
 *gosub_scene dungeon dg_time
 *goto lsf_n_r13
 
@@ -3897,6 +4012,8 @@ Two people crash out of the brush together. The woman is short and broad, muddy 
 *set dg_lsf_body_surv_tried false
 *set dg_lsf_body_med_tried false
 *set dg_lsf_body_nat_tried false
+*set dg_lsf_r6_boar_cleared false
+*set dg_lsf_boar_intro 0
 *set dg_lsf_r6_fern false
 *set dg_lsf_r5_silverleaf false
 *set dg_lsf_pool_look_tried false

@@ -323,6 +323,18 @@
       use: true
     },
     {
+      id: "butter", category: "provisions", owned: "has_butter",
+      weight: 0.5, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_butter) || 0); return "Butter" + (n > 1 ? " ×" + n : ""); },
+      description: "Salted block of village butter, for the pan, the loaf and the pot."
+    },
+    {
+      id: "animal_fat", category: "provisions", owned: "has_animal_fat",
+      weight: 1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_animal_fat) || 0); return "Animal Fat" + (n > 1 ? " ×" + n : ""); },
+      description: "Rendered lard or tallow, for the pan, the lamp and dressing leather."
+    },
+    {
       id: "orchard_apple", category: "consumables", owned: "has_orchard_apple",
       weight: 0.25, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_orchard_apple) || 0); return "Orchard Apple" + (n > 1 ? " ×" + n : ""); },
@@ -851,6 +863,12 @@
       weight: 4, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_portable_burner) || 0); return "Portable Burner" + (n > 1 ? " ×" + n : ""); },
       description: "Squat brass burner with an oil well and a lipped pan, for brewing on the road."
+    },
+    {
+      id: "herbalists_field_notes", category: "documents", owned: "has_herbalists_field_notes",
+      weight: 0.5, stow: true, stack: false,
+      name: "Herbalist's Field Notes",
+      description: "Weathered herbal notes recording Green Honey Mash (shadefern and honeycomb), Restful Balsam, and Winterward Tea."
     },
     {
       id: "mending_draught", category: "consumables", owned: "has_mending_draught",

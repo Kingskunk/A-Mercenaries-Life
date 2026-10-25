@@ -146,6 +146,8 @@ const MAP = {
   iron_bar: "../Generic/Iron_Bars_Generated_Source.png",
   iron_ore: "../Generic/Iron_Ore_Generated_Source.png",     // the user's own art (2026-10-24)
   longshade_timber: "../Generic/Longshade_Timber_Generated_Source.png",   // the user's own art (2026-10-24)
+  butter: "../Generic/Butter_Generated_Source.png",                      // the user's own art (2026-10-25)
+  animal_fat: "../Generic/Animal_Fat_Generated_Source.png",              // the user's own art (2026-10-25)
   salt: "../Generic/Salt_Generated_Source.png",                         // the user's own art (2026-10-24)
   charcoal: "../Generic/Charcoal_Generated_Source.png",                  // the user's own art (2026-10-24)
   scrap: "Clutter_AdamantineScrap_Unfaded_Icon.webp",

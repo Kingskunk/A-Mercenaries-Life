@@ -30,6 +30,7 @@ function build() {
   const r4 = (v) => Math.round(v * 10000) / 10000;
   const data = { params: { margin: P.margin, pullExp: P.pullExp, capExp: P.capExp }, tiles: {}, goods: {} };
   const report = [], problems = [];
+  data.rumor = { memory: defs.rumor.memory, age: defs.rumor.age, swing: defs.rumor.swing };
   Object.keys(S).forEach((t) => { if (!OW.nodes[t]) problems.push("settlement " + t + " is not on the map"); data.tiles[t] = { name: S[t].name, anon: S[t].anon || "a settlement", pop: S[t].pop, pull: r4(Math.pow(S[t].pop / 1000, P.pullExp)) }; });
   Object.keys(CAT).forEach((id) => {
     const it = CAT[id]; if (!it.commodity) return;
@@ -58,6 +59,8 @@ function build() {
     });
     data.goods[id] = G;
   });
+  // every settlement's road distance to the others, nearest first (rumors pick the nearest market the player has no price data for)
+  Object.keys(data.tiles).forEach((t) => { data.tiles[t].near = Object.keys(data.tiles).filter((o) => o !== t).map((o) => [o, Math.round(miles(t, o) * 10) / 10]).filter((e) => isFinite(e[1])).sort((a, b) => a[1] - b[1] || (a[0] < b[0] ? -1 : 1)); });
   // long named events (market_defs.json "events"): copied as they are, after a check that every tile and good they name exists and that a length stays within 30 to 90 days
   const EV = defs.events, evKinds = EV.kinds.concat(EV.regional);
   evKinds.forEach((k) => {

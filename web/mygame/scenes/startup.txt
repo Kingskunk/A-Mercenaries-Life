@@ -2149,6 +2149,8 @@
 *create check_add_prof_bonus false
 *comment check_no_guidance: a scene sets it true right before roll_d20_check for a check Guidance must not help (it adds nothing, and a cast Guidance is not spent). roll_d20_check clears it on every exit.
 *create check_no_guidance false
+*comment check_silent (2026-10-25): a background check (a market's rumor) sets it true right before the roll so no banner prints, win or lose; roll_d20_check clears it on every exit. The caller prints what it wants to show.
+*create check_silent false
 *comment ══════════════════════════════════════════════════════════════
 *comment SKILL PROFICIENCIES (5e's 18 skills). One boolean each, granted by class/background/race wherever
 *comment those get assigned (not yet wired into the 3 starting backgrounds -- next step after this). Read by
@@ -5075,6 +5077,8 @@
 *create has_barley_loaf false
 *create has_grain false
 *create has_cheese false
+*create has_butter false
+*create has_animal_fat false
 *create has_orchard_apple false
 *create has_root_vegetable_bundle false
 *create has_farm_eggs false
@@ -5149,6 +5153,7 @@
 *create has_mortar_pestle false
 *create has_empty_potion_vial false
 *create has_portable_burner false
+*create has_herbalists_field_notes false
 *create has_mending_draught false
 *create has_brine_antivenom false
 *create has_tidebreath_elixir false
@@ -5204,6 +5209,8 @@
 *create spare_barley_loaf 0
 *create spare_grain 0
 *create spare_cheese 0
+*create spare_butter 0
+*create spare_animal_fat 0
 *create spare_orchard_apple 0
 *create spare_root_vegetable_bundle 0
 *create spare_farm_eggs 0
@@ -5336,6 +5343,8 @@
 *create stow_saddlebags_barley_loaf 0
 *create stow_saddlebags_grain 0
 *create stow_saddlebags_cheese 0
+*create stow_saddlebags_butter 0
+*create stow_saddlebags_animal_fat 0
 *create stow_saddlebags_orchard_apple 0
 *create stow_saddlebags_root_vegetable_bundle 0
 *create stow_saddlebags_farm_eggs 0
@@ -5411,6 +5420,7 @@
 *create stow_saddlebags_mortar_pestle 0
 *create stow_saddlebags_empty_potion_vial 0
 *create stow_saddlebags_portable_burner 0
+*create stow_saddlebags_herbalists_field_notes 0
 *create stow_saddlebags_mending_draught 0
 *create stow_saddlebags_brine_antivenom 0
 *create stow_saddlebags_tidebreath_elixir 0
@@ -5460,6 +5470,8 @@
 *create cart_buy_barley_loaf 0
 *create cart_buy_grain 0
 *create cart_buy_cheese 0
+*create cart_buy_butter 0
+*create cart_buy_animal_fat 0
 *create cart_buy_orchard_apple 0
 *create cart_buy_root_vegetable_bundle 0
 *create cart_buy_farm_eggs 0
@@ -5576,6 +5588,8 @@
 *create cart_sell_barley_loaf 0
 *create cart_sell_grain 0
 *create cart_sell_cheese 0
+*create cart_sell_butter 0
+*create cart_sell_animal_fat 0
 *create cart_sell_orchard_apple 0
 *create cart_sell_root_vegetable_bundle 0
 *create cart_sell_farm_eggs 0
@@ -5962,7 +5976,10 @@
 *create dg_lsf_body_surv_tried false
 *create dg_lsf_body_med_tried false
 *create dg_lsf_body_nat_tried false
-*comment Old Grove forage: shadefern and acorn truffle, one attempt each per refill.
+*comment Old Grove: a boar blocks the forage and the old herbalist's cache until it is slipped past, ambushed, or driven off; the boar returns on refill, the cache does not. The two forage patches are one attempt each per refill.
+*create dg_lsf_r6_boar_cleared false
+*create dg_lsf_boar_intro 0
+*create lsf_grove_cache_found false
 *create dg_lsf_r6_fern false
 *create dg_lsf_r6_truffle false
 *comment Forest forage: silverleaf, oakheart balsam, and brambleberry; one attempt each per refill.
@@ -6119,7 +6136,7 @@
 *comment The burner's fuel: burner_fuel is the brews left in it (a flask of lamp oil fills it to 5, poured in by crafting.txt craft_brew when it is empty); craft_burner is set by the panel when the crafting kind uses the burner as its flame. A character who knows Fire Bolt, Prestidigitation or Control Flames lights it themselves and burns no oil.
 *create burner_fuel 0
 *create craft_burner false
-*comment Recipes the character knows (the Craft view's Recipes list): recipe_<potion id>, set the first time that potion is brewed (crafting.txt craft_brew); a book or a teacher can set one too.
+*comment Recipes the character knows (the Craft view's Recipes list): recipe_<potion id>, set the first time that potion is brewed (crafting.txt craft_brew); a book or a teacher can set one too. recipe_green_honey_mash is a field formula rather than a bottled brew: the bear's hollow will read it directly when the Herbalist's Field Notes are found.
 *create recipe_mending_draught false
 *create recipe_brine_antivenom false
 *create recipe_tidebreath_elixir false
@@ -6129,6 +6146,7 @@
 *create recipe_clearhead_tea false
 *create recipe_winterward_tea false
 *create recipe_surestep_cordial false
+*create recipe_green_honey_mash false
 *comment Brewed potions (equipment.txt use_consumable): each timed one is minutes left, counted down by calendar.txt advance_time; drinking one again refreshes the time and never makes a second timer.
 *comment brine_minutes_left: Brine Antivenom (poison resistance, advantage on poison saves). tidebreath_minutes_left: held breath for a submerged route (no scene asks for it yet). darksight_minutes_left: no darkness penalty in a dungeon.
 *comment winterward_minutes_left: half the cold. surestep_minutes_left: +2 to footing checks. clearhead_minutes_left: +2 to the next INT or WIS check, used up by it. balsam_on: Restful Balsam drunk, waiting for the next sleep;
@@ -6167,6 +6185,22 @@
 *create cart_walk ""
 *create cart_item ""
 *create cart_more false
+*comment Rumors (web/mygame/tradebook.js, equipment.txt market_rumor_check): a quiet check once a day at each open market. rumor_log is "market@day" for today only (the daily guard); rumor_page_id is the page the check was made on, so a replay of that page reprints and never rolls again; the rest is what the check found, kept for the reprint.
+*create rumor_log ""
+*create rumor_key ""
+*create rumor_due false
+*create rumor_dc 12
+*create rumor_margin 0
+*create rumor_nat20 false
+*create rumor_total 0
+*create rumor_skill ""
+*create rumor_found 0
+*create rumor_place ""
+*create rumor_tidbit ""
+*create rumor_place_2 ""
+*create rumor_tidbit_2 ""
+*create rumor_pick 1
+*create rumor_page_id 0
 *comment --- GAME SETTINGS ---
 *comment The real first choice of the game, reached the instant the *create preamble above finishes. Everything
 *comment past this point -- the actual "Begin Campaign" vs. "Developer" fork, the 8 character presets, the combat

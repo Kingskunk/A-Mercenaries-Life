@@ -1540,6 +1540,27 @@
   *set gear_hint "Holds off about 12 hours of hunger"
   *set gear_blurb "A waxed wedge of sharp, hard cow's cheese that travels well in a cloth wrap."
   *set gear_minutes 5
+*if (gi_item = "butter")
+  *set gear_name "butter"
+  *set gear_retail 5
+  *set gear_kind "ingredient"
+  *set gear_group "dairy"
+  *set gear_title "Butter"
+  *set gear_stack true
+  *set gear_hint "Cooking ingredient"
+  *set gear_blurb "A pale, salted block of churned butter, wrapped in damp muslin to keep it firm."
+  *set gear_minutes 5
+*if (gi_item = "animal_fat")
+  *set gear_name "animal fat"
+  *set gear_retail 3
+  *set gear_kind "ingredient"
+  *set gear_group "meat"
+  *set gear_title "Animal Fat"
+  *set gear_stack true
+  *set gear_hint "Cooking ingredient"
+  *set gear_blurb "A white, waxy slab of rendered fat, lard from a hog or tallow from a deer, set in a clay lid."
+  *set gear_minutes 5
+  *set gear_piece_game 2
 *if (gi_item = "orchard_apple")
   *set gear_name "orchard apple"
   *set gear_retail 1
@@ -2542,6 +2563,12 @@
   *set gear_piece_herbalist 22
   *if (gear_shop = "ambrose")
     *set gear_quote "\"Small enough for a pack and steady enough for a pot,\" Master Ambrose says, turning the little brass pan in his hands. \"Trim the wick low and it will hold a simmer all evening.\""
+*if (gi_item = "herbalists_field_notes")
+  *set gear_name "herbalist's field notes"
+  *set gear_kind "valuable"
+  *set gear_title "Herbalist's Field Notes"
+  *set gear_hint "Records three Longshade formulas"
+  *set gear_blurb "A weathered little notebook, its oil-spotted pages held closed by a fraying green cord."
 *if (gi_item = "mending_draught")
   *set gear_name "mending draught"
   *set gear_retail 25
@@ -3611,6 +3638,102 @@ You fill the empty @{(jug_fill_n = 1) jug|jugs} from ${jug_refill_source}, then 
 *if (not(shop_mode = "tally"))
   *set cart_sell_ids ""
   *set cart_buy_ids ""
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment RUMORS (2026-10-25, the user's design; web/mygame/tradebook.js holds the rules)
+*comment *gosub_scene equipment market_rumor_check <market key>   Called by the generated panel-open region of every open market, so it runs only while the market is open.
+*comment Once a day at each market the character quietly rolls the best of Perception, Investigation and Persuasion against that market's tier DC (rumor_dc, set by tradebook.js scriptDue),
+*comment guarded by rumor_log so leaving and coming back the same day never rolls again. A failure prints nothing. A success teaches the character the prices of the nearest market they hold no data
+*comment for (two on a natural 20; the better the roll, the fresher the news) and says how they came by it, in the voice of the skill that won. Nothing here names a place or a good: the place is
+*comment the market's own title and the tidbit is worked out from the data. The check is made once per page (rumor_page_id): the same page running again reprints from the saved result and rolls nothing.
+*label market_rumor_check
+*params mr_key
+*if (rumor_page_id = page_id)
+  *goto market_rumor_print
+*set rumor_key mr_key
+*script if (typeof window !== "undefined" && window.TradeBook) { window.TradeBook.scriptDue(stats); } else { stats.rumor_due = false; }
+*if (not(rumor_due))
+  *return
+*set rumor_page_id page_id
+*set rumor_found 0
+*comment The roll must not touch a roll another part of this page has made: its lock is saved and put back.
+*temp mr_roll_locked roll_locked
+*temp mr_roll_page locked_page_id
+*temp mr_roll_guidance locked_guidance_roll
+*temp mr_roll_adv locked_adv_label
+*set roll_locked false
+*set check_no_guidance true
+*set check_silent true
+*gosub_scene dice_engine roll_skill_check rumor_dc "perception" "" "investigation" "" "persuasion" ""
+*set roll_locked mr_roll_locked
+*set locked_page_id mr_roll_page
+*set locked_guidance_roll mr_roll_guidance
+*set locked_adv_label mr_roll_adv
+*if (check_success)
+  *set rumor_margin (check_total - check_dc)
+  *set rumor_nat20 is_nat_20
+  *set rumor_total check_total
+  *set rumor_skill check_skill
+  *script if (typeof window !== "undefined" && window.TradeBook) { window.TradeBook.scriptRun(stats); } else { stats.rumor_found = 0; }
+  *rand rumor_pick 1 6
+*label market_rumor_print
+*if (rumor_found > 0)
+  *if (rumor_nat20)
+    [b][🎲 D20 Check: ${rumor_skill} (DC ${rumor_dc}) | Natural 20! Total: ${rumor_total} — CRITICAL SUCCESS][/b]
+  *else
+    [b][🎲 D20 Check: ${rumor_skill} (DC ${rumor_dc}) | Total: ${rumor_total} — SUCCESS][/b]
+  *line_break
+  *if (rumor_skill = "Perception")
+    *if (rumor_pick = 1)
+      Two people unloading a handcart beside you are comparing what their loads fetched at ${rumor_place}. You catch the figures without trying.
+    *elseif (rumor_pick = 2)
+      A woman haggling at the next stall raises her voice about what everything costs at ${rumor_place}, and you catch most of it.
+    *elseif (rumor_pick = 3)
+      Over the noise of the wheels, someone tells a friend what the stalls at ${rumor_place} are charging.
+    *elseif (rumor_pick = 4)
+      Two people resting against a post near you trade prices from ${rumor_place}, and neither bothers to lower their voice.
+    *elseif (rumor_pick = 5)
+      A child sent running with a message recites the prices at ${rumor_place} to a stallholder, and you listen in.
+    *else
+      You catch the end of an argument over whether hauling a load to ${rumor_place} is worth the cost of the road, given what it pays.
+  *elseif (rumor_skill = "Investigation")
+    *if (rumor_pick = 1)
+      A price slate leans against a crate with places chalked down its side, and one line gives the prices at ${rumor_place}. You read it before it's wiped.
+    *elseif (rumor_pick = 2)
+      The tags tied to a stack of sacks name ${rumor_place} as where they came from, with the price paid chalked beside each.
+    *elseif (rumor_pick = 3)
+      A weighing slip has been left on a crate lid, stamped for a load from ${rumor_place}, with what the buyer paid written under the weight.
+    *elseif (rumor_pick = 4)
+      A waybill lies open on a cart seat, showing what goods from ${rumor_place} sold for. You read it before anyone notices.
+    *elseif (rumor_pick = 5)
+      You watch what the stallholders mark down and what they hold back, and the pattern gives you a fair picture of ${rumor_place}.
+    *else
+      A receipt pinned to a post lists what was paid at ${rumor_place}, line by line.
+  *else
+    *if (rumor_pick = 1)
+      You ask a stallholder how trade has gone with ${rumor_place}, and a little flattery brings out the numbers.
+    *elseif (rumor_pick = 2)
+      A friendly word loosens a seller's tongue, and soon you have the going prices at ${rumor_place}.
+    *elseif (rumor_pick = 3)
+      You swap stories with someone resting on a bench and steer them round to ${rumor_place}, which they know well.
+    *elseif (rumor_pick = 4)
+      A seller you stop to chat with tells you the going rates at ${rumor_place} for nothing more than your attention.
+    *elseif (rumor_pick = 5)
+      You stand a few minutes by a busy stall asking the right questions, and the people nearby tell you what ${rumor_place} is paying.
+    *else
+      A shared joke over the weighing scales opens a seller up, and they talk freely about prices at ${rumor_place}.
+  *if (not(rumor_tidbit = ""))
+    ${rumor_tidbit}
+  *if (rumor_found > 1)
+    *if ((rumor_pick modulo 3) = 0)
+      A moment later a second thread surfaces, this one about ${rumor_place_2}.
+    *elseif ((rumor_pick modulo 3) = 1)
+      Close by, someone else is talking about ${rumor_place_2}, and you catch that as well.
+    *else
+      Another voice carries a different tale, about ${rumor_place_2}.
+    *if (not(rumor_tidbit_2 = ""))
+      ${rumor_tidbit_2}
 *return
 
 *comment *gosub_scene equipment shop_check   (after the tally pass; output shop_verdict "empty" | "short" | "ok" and

@@ -108,36 +108,26 @@
   function serializeBasis(o) { return Object.keys(o).sort().filter(function (k) { return o[k].q > 0; }).map(function (k) { return k + ":" + o[k].q + ":" + Math.round(o[k].t); }).join("|"); }
   // What the player paid, per unit in tenths of a copper, for the units they still hold (never more units than they own).
   function basisFor(id, s) { var b = parseBasis(s.trade_basis)[id]; if (!b) return null; var q = Math.min(b.q, owned(id, s)); return q > 0 ? { q: q, t: b.t } : null; }
-  // stats.trade_seen: market@day#order:id=ask/bid,... split by ; (ask and bid in tenths of a copper, - for none; order counts the stops, the highest is the latest)
-  function parseSeen(str) {
-    var o = {}; String(str || "").split(";").forEach(function (chunk) {
-      var m = /^([^@]+)@(\d+)#(\d+):(.*)$/.exec(chunk); if (!m) return; var goods = {};
-      m[4].split(",").forEach(function (g) { var a = g.split("="); if (!a[0] || a.length < 2) return; var p = a[1].split("/"); goods[a[0]] = [p[0] === "-" ? null : num(p[0]), p[1] === "-" ? null : num(p[1])]; });
-      o[m[1]] = { d: num(m[2]), q: num(m[3]), p: goods };
-    });
-    return o;
-  }
-  function serializeSeen(o) { return Object.keys(o).sort().map(function (k) { return k + "@" + o[k].d + "#" + o[k].q + ":" + Object.keys(o[k].p).sort().map(function (g) { var p = o[k].p[g]; return g + "=" + (p[0] === null ? "-" : p[0]) + "/" + (p[1] === null ? "-" : p[1]); }).join(","); }).join(";"); }
-  // Note what this market asks and pays today (one unit each way), as the player has now seen it, as the latest stop.
+  // stats.trade_seen (web/mygame/tradebook.js holds the format and the rules): the book of what the player remembers of other markets, three they visited and three they heard of.
+  function TB() { return window.TradeBook; }
+  function parseSeen(str) { return TB().parseSeen(str); }
+  function serializeSeen(o) { return TB().serializeSeen(o); }
+  // Note what this market asks and pays today (one unit each way), as the player has now seen it, as the latest visited stop.
   function remember(trade, mk) {
     if (!mk) return;
-    var s = statsNow(), seen = parseSeen(s.trade_seen), p = {}, top = 0;
+    var s = statsNow(), seen = parseSeen(s.trade_seen), p = {};
     trade.def.buy.concat(trade.def.sell).forEach(function (id) {
       if (p[id] !== undefined) return;
       var g = mk.def.goods[id]; if (!g) return;
       var a = (g.sells !== false && num(mk.st.stock[id]) > 0) ? ladderOf(mk, "buy", id, 0, 1)[0] : undefined, b = g.buys !== false ? ladderOf(mk, "sell", id, 0, 1)[0] : undefined;
       p[id] = [a === undefined ? null : Math.round(a * 10), b === undefined ? null : Math.round(b * 10)];
     });
-    Object.keys(seen).forEach(function (k) { if (k !== trade.key) top = Math.max(top, seen[k].q); });
-    seen[trade.key] = { d: today(), q: top + 1, p: p };
+    TB().markVisit(seen, trade.key, today(), p);
     s.trade_seen = serializeSeen(seen);
   }
-  // The markets the player stood in most recently before this one (the newest first).
-  function lastStops(trade, s, n) {
-    var seen = parseSeen(s.trade_seen), out = [];
-    Object.keys(seen).forEach(function (k) { if (k !== trade.key && data().trades[k]) out.push({ key: k, title: String(data().trades[k].title).replace(/ Market$/, "").replace(/^The /, ""), d: seen[k].d, q: seen[k].q, p: seen[k].p }); });
-    out.sort(function (a, b) { return b.q - a.q; });
-    return out.slice(0, n);
+  // The markets the player stood in most recently before this one (the newest first), or, with heard, the ones they heard of.
+  function lastStops(trade, s, n, heard) {
+    return TB().stops(parseSeen(s.trade_seen), !!heard, trade.key, 99).filter(function (e) { return data().trades[e.key]; }).slice(0, n).map(function (e) { return { key: e.key, title: String(data().trades[e.key].title).replace(/ Market$/, "").replace(/^The /, ""), d: e.d, q: e.q, h: e.h, p: e.p }; });
   }
   function ageText(days) { return days <= 0 ? "today" : (days === 1 ? "yesterday" : days + " days ago"); }
   // The best price the player has seen for a good in ANOTHER market (the lowest ask for a buy row, the highest bid for a sell row), and every one they know of.
@@ -147,7 +137,7 @@
       if (k === trade.key || !data().trades[k]) return;
       var p = seen[k].p[id]; if (!p) return;
       var v = kind === "buy" ? p[0] : p[1]; if (v === null || v === undefined) return;
-      var e = { title: String(data().trades[k].title).replace(/ Market$/, "").replace(/^The /, ""), v: v / 10, age: today() - seen[k].d };
+      var e = { title: String(data().trades[k].title).replace(/ Market$/, "").replace(/^The /, ""), v: v / 10, age: today() - seen[k].d, heard: !!seen[k].h };
       all.push(e); if (!best || (kind === "buy" ? e.v < best.v : e.v > best.v)) best = e;
     });
     all.sort(function (a, b) { return kind === "buy" ? a.v - b.v : b.v - a.v; });
@@ -496,7 +486,7 @@
   function elsewhereHtml(el, kind, here) {
     if (!el || !el.best) return "";
     var b = el.best, better = here !== null && here !== undefined && (kind === "buy" ? b.v < here * 0.9 : b.v > here * 1.1);
-    var when = b.age <= 0 ? "today" : b.age + "d ago" + (b.age > 20 ? " (old)" : "");
+    var when = (b.heard ? "heard " : "") + (b.age <= 0 ? "today" : b.age + "d ago" + (b.age > 20 ? " (old)" : ""));
     return '<div class="trd-known' + (better ? " trd-known-better" : "") + '">' + fmtUnit(b.v, kind) + " · " + esc(b.title) + " · " + when + (better ? (kind === "buy" ? " · cheaper" : " · pays more") : "") + "</div>";
   }
 
@@ -532,14 +522,18 @@
       if (!g.fixed) out += '<div class="tRow"><span>' + (kind === "buy" ? "On the shelf" : "Held here") + "</span><span><b>" + num(mk.st.stock[id]) + "</b></span></div>";
       if (sf > 1.1) out += '<div class="tRow"><span>Shelf</span><span class="' + dearC + '">thin</span></div>';
       else if (sf < 0.9) out += '<div class="tRow"><span>Shelf</span><span class="' + cheapC + '">well stocked</span></div>';
-      if (kind === "buy") { var rs = elsewhere("sell", id, trade, s).best; if (rs && first !== undefined && rs.v >= first * 1.1) out += '<div class="tRow"><span>Pays more at</span><span><b>' + esc(rs.title) + "</b> · " + fmtUnit(rs.v, "sell") + " <i>" + ageText(rs.age) + "</i></span></div>"; }
-      var stops = lastStops(trade, s, 3);
+      if (kind === "buy") { var rs = elsewhere("sell", id, trade, s).best; if (rs && first !== undefined && rs.v >= first * 1.1) out += '<div class="tRow"><span>Pays more at</span><span><b>' + esc(rs.title) + "</b> · " + fmtUnit(rs.v, "sell") + " <i>" + (rs.heard ? "heard " : "") + ageText(rs.age) + "</i></span></div>"; }
+      var stops = lastStops(trade, s, 3), heard = lastStops(trade, s, 3, true);
+      function stopRows(list, word) {
+        list.forEach(function (st) {
+          var p = st.p[id], a = p && p[0] !== null && p[0] !== undefined ? fmtUnit(p[0] / 10, "buy") : "—", b = p && p[1] !== null && p[1] !== undefined ? fmtUnit(p[1] / 10, "sell") : "—";
+          out += '<div class="tRow"><span>' + esc(st.title) + ' <i>' + word + ageText(today() - st.d) + "</i></span><span>buy " + a + " · sell " + b + "</span></div>";
+        });
+      }
       out += '<div class="tSub">At your last stops</div>';
       if (!stops.length) out += '<div class="tText">No other market seen yet.</div>';
-      stops.forEach(function (st) {
-        var p = st.p[id], a = p && p[0] !== null && p[0] !== undefined ? fmtUnit(p[0] / 10, "buy") : "—", b = p && p[1] !== null && p[1] !== undefined ? fmtUnit(p[1] / 10, "sell") : "—";
-        out += '<div class="tRow"><span>' + esc(st.title) + ' <i>' + ageText(today() - st.d) + "</i></span><span>buy " + a + " · sell " + b + "</span></div>";
-      });
+      stopRows(stops, "");
+      if (heard.length) { out += '<div class="tSub">Word on the road</div>'; stopRows(heard, "heard "); }
     }
     return out;
   }

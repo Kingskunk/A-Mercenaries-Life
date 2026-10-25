@@ -594,7 +594,8 @@ function genCartPass(trade) {
 // The rows the panel shows for the buy side: every item currently for sale, with its live warning text.
 function genPanelRows(trade) {
   var L = [];
-  if (trade.commodities) return L;   // an open market's rows come from the trade data (trade.js buyRows), not from the scene
+  // an open market's rows come from the trade data (trade.js buyRows), not from the scene; this region only asks for the day's rumor (equipment.txt market_rumor_check), so a new open market takes part with no edit
+  if (trade.commodities) { L.push('*gosub_scene equipment market_rumor_check ' + q(trade.name)); return L; }
   shopByName[trade.buyShop].items.forEach(function (r) {
     // Only armor, a shield or an item with a warn rule can have a warning the scene must work out; every other good is listed in place, and the panel adds the load note itself (trade.js buyRows).
     var it = byId[r.id], plain = it && !it.warn && it.kind !== "armor" && it.kind !== "shield";

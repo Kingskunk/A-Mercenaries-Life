@@ -123,7 +123,12 @@ Object.keys(defs.merchants).forEach((mid) => {
     if (unit > 0 && !fixed && !m.commodities) report.push({ mid: mid, id: id, unit: unit, firstNow: Math.floor(base * M.factor(g.target + 1, g.target) * g.buyPct * (g.mult || 1) + 1e-9), target: g.target });
   });
   const def = { id: mid, title: tr.title, tier: m.tier, purseTarget: m.purse, regen: m.regen || defs.defaults.regen, goods: goods };
-  if (m.commodities) { def.commodities = true; def.appetite = defs.appetite; }
+  if (m.commodities) {
+    def.commodities = true; def.appetite = defs.appetite;
+    // rumors (web/mygame/tradebook.js): where the market stands on the map, and the DC of the quiet check made there once a day
+    def.tile = m.tile; def.rumorDc = defs.rumor.dc[m.tier];
+    if (!(def.rumorDc > 0)) problems.push(mid + ": no rumor DC for the tier '" + m.tier + "' (market_defs.json rumor.dc)");
+  }
   const errs = M.validate(def);
   if (errs.length) problems.push(mid + ": " + errs.join("; "));
   out[mid] = def;
