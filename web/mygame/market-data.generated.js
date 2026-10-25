@@ -422,7 +422,16 @@ window.MARKET_DEFS = {
     "target": 48,
     "stock0": 48,
     "buyPct": 0.5,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "animal_fat",
+       "share": 0.5
+      }
+     ]
+    }
    },
    "trail_rations": {
     "base": 2,
@@ -436,7 +445,16 @@ window.MARKET_DEFS = {
     "target": 30,
     "stock0": 30,
     "buyPct": 0.4,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "animal_fat",
+       "share": 0.5
+      }
+     ]
+    }
    },
    "water_jug": {
     "base": 5,
@@ -1430,7 +1448,16 @@ window.MARKET_DEFS = {
     "target": 38,
     "stock0": 38,
     "buyPct": 0.5,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "tm",
+     "inputs": [
+      {
+       "good": "animal_fat",
+       "share": 0.5
+      }
+     ]
+    }
    },
    "trail_rations": {
     "base": 2,
@@ -1547,7 +1574,16 @@ window.MARKET_DEFS = {
     "target": 32,
     "stock0": 32,
     "buyPct": 0.5,
-    "mult": 1
+    "mult": 1,
+    "world": {
+     "tile": "af",
+     "inputs": [
+      {
+       "good": "animal_fat",
+       "share": 0.5
+      }
+     ]
+    }
    },
    "trail_rations": {
     "base": 2,

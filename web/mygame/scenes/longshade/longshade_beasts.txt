@@ -73,16 +73,39 @@
 *set dg_hv_creature "boar"
 *goto lsb_fight_go
 
-*comment THE VENOMOUS SNAKE. Day and night (lsf_table: weight 2 in each column). The user's sheet: AC 12, 7 HP, +3 to hit, a bite that also poisons; the library "beast" has no poison, so it fights like the Silt-Gate viper (hit point, armor and attack overrides only, not balance-simmed).
+*comment THE VENOMOUS SNAKE. Day and night (lsf_table: weight 2 in each column). dg_lsf_snake_intro is picked once per dungeon run, preserving its flavour text on refresh. The user's sheet: AC 12, 7 HP, +3 to hit, a bite that also poisons; the library "beast" has no poison, so it fights like the Silt-Gate viper (hit point, armor and attack overrides only, not balance-simmed).
 *comment The same three-way approach as the boar. The harvest is the shared dg_harvest (dungeon.txt, creature "snake"): viper venom, Survival DC 12, 15 minutes, and a miss stings for 1 HP.
 *label lsb_enc_snake
 *gosub_scene dungeon dg_dark_check
+*if (dg_lsf_snake_intro = 0)
+  *rand dg_lsf_snake_intro 1 4
 *if (dg_dark)
-  A dry hiss comes out of the leaf litter a pace ahead of your boot, thin and steady, like air leaking from a bellows. The leaves shiver over something long that is gathering itself into a coil.
+  *if (dg_lsf_snake_intro = 1)
+    A dry hiss comes out of the leaf litter a pace ahead of your boot, thin and steady, like air leaking from a bellows. The leaves shiver over something long that is gathering itself into a coil.
+  *elseif (dg_lsf_snake_intro = 2)
+    Something smooth drags across a root in the dark. A forked tongue clicks once in the leaves, then the sound stops close by.
+  *elseif (dg_lsf_snake_intro = 3)
+    A faint rasp works through the dead leaves at the edge of the path. The smell of crushed green stems comes up with it, sharp and cold.
+  *else
+    Your boot nearly finds a cool, heavy coil. It tightens before you touch it, scales whispering over one another in the dark.
 *elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
-  At the edge of your light a snake lies coiled across the path, thick as your wrist, its back marked in dull brown diamonds. The broad head lifts from the top coil when the light touches it, and a forked tongue tastes the air.
+  *if (dg_lsf_snake_intro = 1)
+    At the edge of your light a snake lies coiled across the path, thick as your wrist, its back marked in dull brown diamonds. The broad head lifts from the top coil when the light touches it, and a forked tongue tastes the air.
+  *elseif (dg_lsf_snake_intro = 2)
+    Your light catches a snake slipping along the root line beside the path, its dull brown diamonds appearing and vanishing beneath the leaves. It stops with half its body coiled and lifts its broad head toward you.
+  *elseif (dg_lsf_snake_intro = 3)
+    A snake lies looped around a fallen branch at the edge of your light, still as a length of old rope until its tongue flickers. Its scaled back is marked in muddy brown diamonds.
+  *else
+    The beam finds a thick snake drinking from a rain-filled hollow between the roots. It draws back from the water, gathering itself into a low coil with its head raised.
 *else
-  A snake lies coiled on a root where a patch of sun reaches the ground, thick as your wrist, its back marked in dull brown diamonds. Its broad head rests on the top coil, and a forked tongue flickers at the air.
+  *if (dg_lsf_snake_intro = 1)
+    A snake lies coiled on a root where a patch of sun reaches the ground, thick as your wrist, its back marked in dull brown diamonds. Its broad head rests on the top coil, and a forked tongue flickers at the air.
+  *elseif (dg_lsf_snake_intro = 2)
+    A thick snake slides out from under a mat of last year's leaves and stops in the warm edge of the path. Dull brown diamonds run down its back as it tastes the air with its tongue.
+  *elseif (dg_lsf_snake_intro = 3)
+    A snake is stretched across a low branch above the leaf litter, warming where the sun falls through the canopy. It begins to gather its body when your shadow reaches it.
+  *else
+    Beside a patch of crushed ferns, a broad-headed snake has pinned a field mouse beneath a coil. It lifts its head as you approach, the prey forgotten for the moment.
 *choice
   # Creep up on it and strike first.@{show_stat_hints  [DEX (Stealth) DC 12, a pass takes the first strike]|}
     *gosub_scene dice_engine roll_skill_check 12 "stealth" "" "" "" "" ""
@@ -132,11 +155,13 @@
 *set dg_hv_creature "snake"
 *goto lsb_fight_go
 
-*comment THE ELK. Day only (lsf_table: weight 3 by day, 0 at night). The user's sheet: AC 10, 11 HP, a ram of d6+3 (strength 16 here; +5 to hit is my number, the sheet gave none). Spotting it starts nothing: the player may shoot it
+*comment THE ELK. Day only (lsf_table: weight 3 by day, 0 at night). dg_lsf_elk_intro is picked once per dungeon run, preserving its flavour text on refresh. The user's sheet: AC 10, 11 HP, a ram of d6+3 (strength 16 here; +5 to hit is my number, the sheet gave none). Spotting it starts nothing: the player may shoot it
 *comment (a ranged weapon in the primary OR the secondary slot: weapon_type / sidearm_type "ranged"), creep closer for a better shot (Stealth, advantage on the shot), creep up and strike it first (Stealth, a surprise round), or let it be.
 *comment A hit with the shot kills it outright and skips the fight. A miss, or a failed creep, spooks it: it usually bolts and sometimes turns and fights (a cornered animal), lsb_elk_spooked. The shot is a plain d20 check (dex, proficiency, DC 10 = its armor).
 *label lsb_enc_elk
 *gosub_scene dungeon dg_dark_check
+*if (dg_lsf_elk_intro = 0)
+  *rand dg_lsf_elk_intro 1 4
 *temp lse_ranged false
 *temp lse_gun ""
 *temp lse_r 1
@@ -147,9 +172,23 @@
   *set lse_ranged true
   *set lse_gun sidearm_prose
 *if (dg_dark)
-  In the gloom under the storm clouds a big animal stands among the ferns ahead, tall at the shoulder, its breath smoking and a wide fan of antlers lifted above the leaves. It chews slowly, and its ears turn to every small sound.
+  *if (dg_lsf_elk_intro = 1)
+    In the gloom under the storm clouds a big animal stands among the ferns ahead, tall at the shoulder, its breath smoking and a wide fan of antlers lifted above the leaves. It chews slowly, and its ears turn to every small sound.
+  *elseif (dg_lsf_elk_intro = 2)
+    Ferns bow and lift in the gloom ahead. An elk moves through them slowly, its antlers a dark rack above its back and its breath pale in the cold air.
+  *elseif (dg_lsf_elk_intro = 3)
+    A branch creaks under a heavy rubbing. Through the dim trunks, an elk works its antlers against the bark, then goes still with one ear turned toward you.
+  *else
+    A broad shape stands at a seep among the ferns, lowering its muzzle to drink. When it raises its head, the antlers are only a black fan against the clouded light.
 *else
-  A gap in the trees lets the light fall on an elk standing in knee-high ferns, its body the colour of wet bark and a darker mane thick at the throat. Its antlers sweep up and back in a wide fan. It chews with its head high, and its ears turn to every small sound.
+  *if (dg_lsf_elk_intro = 1)
+    A gap in the trees lets the light fall on an elk standing in knee-high ferns, its body the colour of wet bark and a darker mane thick at the throat. Its antlers sweep up and back in a wide fan. It chews with its head high, and its ears turn to every small sound.
+  *elseif (dg_lsf_elk_intro = 2)
+    An elk stands at the edge of a fern bed, stripping leaves from a low hazel branch with slow, deliberate bites. Its dark mane lies heavy at the throat, and its wide antlers clear the branches by inches.
+  *elseif (dg_lsf_elk_intro = 3)
+    A bull elk has stopped beside a scarred pine and is rubbing one antler against the bark. It pauses between strokes, tall and still among the ferns, listening with its ears angled toward the woods.
+  *else
+    At a shallow seep below the path, an elk drinks with its forelegs braced in the wet ground. Sunlight catches in the wide spread of its antlers when it raises its head.
 *choice
   *if (lse_ranged)
     # Take a shot at it.@{show_stat_hints  [DEX attack, DC 10, a hit brings it down]|}

@@ -233,28 +233,29 @@
 
   /* ------------------------------------------------------------------ categories and art */
 
-  // Fine-grained where equipment has a slot, broad where it does not. A shop
-  // only offers filter choices represented by its current Buy or Sell list.
+  // Fine-grained where equipment has a slot, broad where it does not. Commodity
+  // goods use the same future-proof trade classes everywhere. A shop only offers
+  // filter choices represented by its current Buy or Sell list.
   var CATEGORY_LABEL = {
     weapon: "Weapons", armor: "Body armor", shield: "Shields & off-hand", head: "Headwear",
     cloak: "Cloaks", hands: "Gloves", feet: "Footwear", neck: "Neckwear", ring: "Rings",
-    tool: "Tools", consumable: "Consumables", gemstone: "Loose stones", jewelry: "Jewelry", salvage: "Salvage", other: "Other",
-    grain: "Grain & bread", produce: "Produce", meat: "Meat & fish", dairy: "Dairy & eggs", pantry: "Salt & sweets", ore: "Ore & metal", timber: "Timber & fuel", hides: "Hides & horn", cloth: "Wool & cloth"
+    tool: "Tools", consumable: "Consumables", valuable: "Valuables", salvage: "Salvage", other: "Other",
+    provisions: "Provisions", raw_material: "Raw materials", worked_material: "Worked materials"
   };
-  var CATEGORY_ORDER = ["weapon", "armor", "shield", "head", "cloak", "hands", "feet", "neck", "ring", "tool", "consumable", "gemstone", "jewelry", "salvage", "other", "grain", "produce", "meat", "dairy", "pantry", "ore", "timber", "hides", "cloth"];
+  var CATEGORY_ORDER = ["weapon", "armor", "shield", "head", "cloak", "hands", "feet", "neck", "ring", "tool", "consumable", "valuable", "salvage", "other", "provisions", "raw_material", "worked_material"];
   function categoryOf(it) {
     var kind = String(it && it.kind || "").toLowerCase();
     var group = String(it && it.group || "").toLowerCase();
     if (CATEGORY_LABEL[group]) return group;
-    if (kind === "valuable") return "gemstone";
+    if (kind === "valuable") return "valuable";
     return CATEGORY_LABEL[kind] ? kind : "other";
   }
   /* ------------------------------------------------------------------ finding things (2026-10-25, the user: a long list needs navigating)
    * The rows of one tab are filtered by the search box, the flag chips and the category chip, sorted, and (when sorted by group with no category picked) split under folding group headers.
    * Facts about a row (its first unit's price, how that stands against the usual price, what the player holds and has set aside) are worked out once here and used for all three. */
   var SORTS = {
-    buy: [["group", "By group"], ["name", "Name A–Z"], ["low", "Price: low to high"], ["high", "Price: high to low"], ["usual", "Cheapest for its worth"], ["margin", "Best resale margin"], ["perload", "Most value per load"]],
-    sell: [["group", "By group"], ["name", "Name A–Z"], ["low", "Price: low to high"], ["high", "Price: high to low"], ["usual", "Best for its worth"], ["profit", "Most profit"], ["perload", "Most value per load"]]
+    buy: [["group", "By category"], ["name", "Name A–Z"], ["low", "Price: low to high"], ["high", "Price: high to low"], ["usual", "Cheapest for its worth"], ["margin", "Best resale margin"], ["perload", "Most value per load"]],
+    sell: [["group", "By category"], ["name", "Name A–Z"], ["low", "Price: low to high"], ["high", "Price: high to low"], ["usual", "Best for its worth"], ["profit", "Most profit"], ["perload", "Most value per load"]]
   };
   function flagList(kind, mk) {
     var f = [["cart", "In cart"]];
